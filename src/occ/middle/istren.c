@@ -573,6 +573,8 @@ static void ReduceStrength(BLOCK *b)
                 ReduceStrengthAssign(head);
                 break;
             case i_add:
+                if (head->dc.right->offset->type == en_structelem)
+                    break;
             case i_sub:
             case i_or:
             case i_eor:

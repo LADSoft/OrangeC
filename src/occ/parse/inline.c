@@ -400,6 +400,7 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOLEAN *fromlval)
         case en_c_u16:
         case en_c_u32:
         case en_nullptr:
+        case en_structelem:
             break;
         case en_global:
         case en_pc:
@@ -860,6 +861,7 @@ static BOOLEAN sideEffects(EXPRESSION *node)
         case en_c_u16:
         case en_c_u32:
         case en_nullptr:
+        case en_structelem:
             rv = FALSE;
             break;
         case en_global:

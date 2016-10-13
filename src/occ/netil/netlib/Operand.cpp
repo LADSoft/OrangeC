@@ -38,6 +38,7 @@
         email: TouchStone222@runbox.com <David Lindauer>
 */
 #include "DotNetPELib.h"
+#include "PEFile.h"
 #include <iomanip>
 
 namespace DotNetPELib
@@ -100,5 +101,58 @@ namespace DotNetPELib
                 break;
         }
         return true;
+    }
+    size_t Operand::Render(PELib &peLib, int opcode, int operandType, unsigned char *result)
+    {
+        int sz = 0;
+        switch (type)
+        {
+            case t_none: // no operand, nothing to display
+                break;
+            case t_value:
+                sz = refValue->Render(peLib, opcode, operandType, result);
+                break;
+            case t_int:
+                switch (operandType)
+                {
+                    case Instruction::o_immed1:
+                        result[sz++] = intValue;
+                        break;
+                    case Instruction::o_immed4:
+                        *(int *)(result) = intValue;
+                        sz += 4;
+                        break;
+                    case Instruction::o_immed8:
+                        *(longlong *)result = intValue;
+                        sz += 8;
+                        break;
+                }
+                break;
+            case t_real:
+                switch (operandType)
+                {
+                    case Instruction::o_float4:
+                        *(float *)result = floatValue;
+                        sz += 4;
+                        break;
+                    case Instruction::o_float8:
+                        *(double *)result = floatValue;
+                        sz += 8;
+                        break;
+                }
+                break;
+            case t_string:
+            {
+                wchar_t *buf = new wchar_t[stringValue.size() + 1];
+                for (int i=0; i < stringValue.size() + 1; i++)
+                    buf[i] = stringValue.c_str()[i];
+                size_t usIndex = peLib.PEOut().HashUS(buf);
+                *(int *)(result) = usIndex | (0x70 << 24);
+                sz += 4;
+                delete[] buf;
+                break;
+            }
+        }
+
     }
 }

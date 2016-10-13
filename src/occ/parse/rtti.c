@@ -460,6 +460,7 @@ static void XCExpression(EXPRESSION *node, XCLIST ***listPtr)
         case en_c_u32:        
         case en_nullptr:
         case en_memberptr:
+        case en_structelem:
             break;
         case en_global:
         case en_label:
@@ -769,6 +770,7 @@ static int evalofs(EXPRESSION *exp)
         case en_c_ul:
             return exp->v.i;
         case en_auto:
+        case en_structelem:
             return exp->v.sp->offset;
         default:
             return 0;

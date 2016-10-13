@@ -179,8 +179,8 @@ namespace DotNetPELib
     	{ "ldelem.u4", 0x95, -1, 1, o_single, -1 }, 
     	{ "ldelem.u8", 0x96, -1, 1, o_single, -1 }, 
     	{ "ldelema", 0x8f, -1, 5, o_index4, -1 }, 
-    	{ "ldfld", 0x7b, -1, 5, o_index4, 1 }, 
-    	{ "ldflda", 0x7c, -1, 1, o_index4, 1 }, 
+    	{ "ldfld", 0x7b, -1, 5, o_index4, 0 }, 
+    	{ "ldflda", 0x7c, -1, 5, o_index4, 0 }, 
     	{ "ldftn", 0xfe, 0x06, 6, o_index4, 1 }, 
     	{ "ldind.i", 0x4d, -1, 1, o_single, 0 }, 
     	{ "ldind.i1", 0x46, -1, 1, o_single, 0 }, 
@@ -368,5 +368,48 @@ namespace DotNetPELib
             }
         }
         return true;
+    }
+    size_t Instruction::Render(PELib &peLib, unsigned char *result, std::map<std::string, Instruction *> labels)
+    {
+
+        int sz = 0;
+        if (op != i_label && op != i_comment)
+        {
+            result[sz++] = instructions[op].op1;
+            if (instructions[op].op2 != -1)
+                result[sz++] = instructions[op].op2;
+            if (op == i_switch)
+            {
+                *(int *)(result + sz) = switches->size();
+                sz += sizeof(int);
+                for (std::list<std::string>::iterator it = switches->begin(); it != switches->end(); )
+                {
+                    int n = labels[*it]->offset;
+                    *(int *)(result + sz) = n;
+                    sz += sizeof(int);
+                }
+            }
+            else if (IsBranch())
+            {
+                std::string branchLabel = operand->GetStringValue();
+                int n = labels[branchLabel]->offset;
+                int cur = offset + 1 + IsRel4() ? 4 : 1;
+                if (IsRel4())
+                {
+                    *(int *)(result + sz) = n;
+                    sz += 4;
+                }
+                else
+                {
+                    *(unsigned char *)(result + sz) = n;
+                    sz += 1;
+                }
+            }
+            else if (operand && instructions[op].operandType != o_single)
+            {
+                sz += operand->Render(peLib, op, instructions[op].operandType, result + sz);
+            }
+        }
+        return sz;
     }
 }

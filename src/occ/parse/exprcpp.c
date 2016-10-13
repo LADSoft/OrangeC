@@ -1988,6 +1988,7 @@ static BOOLEAN noexceptExpression(EXPRESSION *node)
         case en_c_u32:        
         case en_nullptr:
         case en_memberptr:
+        case en_structelem:
             break;
         case en_global:
         case en_label:

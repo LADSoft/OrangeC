@@ -38,6 +38,8 @@
         email: TouchStone222@runbox.com <David Lindauer>
 */
 #include "DotNetPELib.h"
+#include "PEFile.h"
+#include <stdio.h>
 namespace DotNetPELib
 {
 
@@ -123,5 +125,64 @@ namespace DotNetPELib
         }
         peLib.Out() << ")";
         return true;
+    }
+    bool MethodSignature::PEDump(PELib &peLib, bool asType)
+    {
+        if (fullName.size() != 0)
+        {
+            char assemblyName[1024],namespaceName[1024],className[1024], functionName[1024];
+            if (sscanf(fullName.c_str(), "[%[^]]]%[^.].%s::%s", assemblyName, namespaceName, className, functionName) == 4)
+            {
+                AssemblyDef *assembly = peLib.FindAssembly(assemblyName);
+                if (!assembly)
+                {
+                    peLib.AllocateAssemblyDef(assemblyName, true);
+                    assembly = peLib.FindAssembly(assemblyName);
+                    assembly->PEDump(peLib);
+                }
+                size_t nmspc = peLib.PEOut().HashString(namespaceName);
+                size_t cls = peLib.PEOut().HashString(className);
+                ResolutionScope rs(ResolutionScope::AssemblyRef, assembly->GetPEIndex() );
+                TableEntryBase *table = new TypeRefTableEntry(rs, cls, nmspc);
+                peIndexCallSite = peLib.PEOut().AddTableEntry(table);
+                size_t sz;
+                unsigned char *sig = SignatureGenerator::MethodRefSig(this, sz);
+                size_t methodSignature = peLib.PEOut().HashBlob(sig, sz);
+                delete[] sig;
+                if (functionName[0] == '\'')
+                {
+                    strcpy(functionName, functionName + 1);
+                    functionName[strlen(functionName)-1] = 0;
+                }
+                size_t function = peLib.PEOut().HashString(functionName);
+                MemberRefParent memberRef(MemberRefParent::TypeRef, peIndexCallSite);
+                table = new MemberRefTableEntry(memberRef, function, methodSignature);
+                peIndexCallSite = peLib.PEOut().AddTableEntry(table);
+            }
+        }
+        else if (asType)
+        {
+            if (!peIndexType)
+            {
+                size_t sz;
+                unsigned char *sig = SignatureGenerator::MethodRefSig(this, sz);
+                size_t methodSignature = peLib.PEOut().HashBlob(sig, sz);
+                delete[] sig;
+                TableEntryBase *table = new StandaloneSigTableEntry(methodSignature);
+                peIndexType = peLib.PEOut().AddTableEntry(table);            
+            }
+        }
+        else if (!peIndexCallSite || (flags & Vararg))
+        {
+            size_t sz;
+            size_t function = peLib.PEOut().HashString(name);
+            size_t parent = container->GetParentClass();
+            MemberRefParent memberRef(MemberRefParent::TypeRef, parent);
+            unsigned char *sig = SignatureGenerator::MethodRefSig(this, sz);
+            size_t methodSignature = peLib.PEOut().HashBlob(sig, sz);
+            delete[] sig;
+            TableEntryBase *table = new MemberRefTableEntry(memberRef, function, methodSignature);
+            peIndexCallSite = peLib.PEOut().AddTableEntry(table);            
+        }
     }
 }

@@ -40,7 +40,6 @@
 #include "DotNetPELib.h"
 namespace DotNetPELib
 {
-
     char *Qualifiers::qualifierNames[] =
     { 
         "nested", "public", "private", "static", "explicit", "ansi", "sealed", "enum",
@@ -62,16 +61,16 @@ namespace DotNetPELib
             if (n & ( 1 << i))
                 peLib.Out() << " " << qualifierNames[i];
     }
-    void Qualifiers::ReverseNamePrefix(std::string &rv, DataContainer *parent, int &pos, std::string separator)
+    void Qualifiers::ReverseNamePrefix(std::string &rv, DataContainer *parent, int &pos, bool type)
     {
         if (parent)
         {
-            ReverseNamePrefix(rv, parent->GetParent(), pos, separator);
+            ReverseNamePrefix(rv, parent->GetParent(), pos, type);
             if (pos != 0)
             {
                 rv += parent->GetName();
                 if (pos == 2)
-                    rv += separator;
+                    rv += type ? "\xf8" : "/";
                 else
                     rv += '.';
             }
@@ -79,35 +78,28 @@ namespace DotNetPELib
         }
 
     }
-    std::string Qualifiers::GetNamePrefix(DataContainer *parent, std::string separator)
+    std::string Qualifiers::GetNamePrefix(DataContainer *parent, bool type)
     {
         std::string rv;
         if (parent)
         {
             int pos = 0;
-            ReverseNamePrefix(rv, parent, pos, separator);
+            ReverseNamePrefix(rv, parent, pos, type);
         }
         return rv;
     }
-    std::string Qualifiers::GetName(std::string root, DataContainer *parent, std::string separator)
+    std::string Qualifiers::GetName(std::string root, DataContainer *parent, bool type)
     {
-        std::string rv = GetNamePrefix(parent, separator);
-        if (!root.size () && rv.size() && rv[rv.size()-1] == '.')
-        {
-            rv = rv.substr(0, rv.size()-1);
-        }
-        if (!root.size () && rv.size() > separator.size() && (rv.substr(rv.size()-separator.size(), separator.size()) == separator))
+        std::string rv = GetNamePrefix(parent, type);
+        if (rv.size())
         {
             rv = rv.substr(0, rv.size()-1);
         }
         if (root.size())
         {
-//            if (rv.size())
-//                rv += "::";
             if (rv.size())
-                rv += root;
-            else
-                rv += "'" + root + "'";
+                rv += "::";
+            rv += "'" + root + "'";
         }
         return rv;
     }

@@ -38,17 +38,18 @@
         email: TouchStone222@runbox.com <David Lindauer>
 */
 #include "DotNetPELib.h"
-
+#include "PEFile.h"
+#include <stdio.h>
 namespace DotNetPELib
 {
 
     char *Type::typeNames[] = {
-        "", "", "void", "int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "int",
+        "", "", "void", "int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "int", "uint",
         "float32", "float64", "object", "object []", "string" 
     };    
     char *BoxedType::typeNames[] = { "", "", "", "Int8", "UInt8",
         "Int16", "UInt16", "Int32", "UInt32",
-        "Int64", "UInt64", "Int", "Float", "Double"
+        "Int64", "UInt64", "Int", "UInt", "Float", "Double"
     };
     bool Type::ILSrcDump(PELib &peLib)
     {
@@ -58,7 +59,7 @@ namespace DotNetPELib
         }
         else if (tp == cls)
         {
-            peLib.Out() << "'" << Qualifiers::GetName("", typeRef, "\xf8") << "'";
+            peLib.Out() << "'" << Qualifiers::GetName("", typeRef, true) << "'";
         }
         else if (tp == method)
         {
@@ -73,8 +74,74 @@ namespace DotNetPELib
             peLib.Out() << " *";
         return true;
     }
+    size_t Type::Render(PELib &peLib, unsigned char *result)
+    {
+        if (fullName.size())
+        {
+            if (!peIndex)
+            {
+                char assemblyName[1024],namespaceName[1024],className[1024];
+                if (sscanf(fullName.c_str(), "[%[^]]]%[^.].%s", assemblyName, namespaceName, className) == 3)
+                {
+                    AssemblyDef *assembly = peLib.FindAssembly(assemblyName);
+                    if (!assembly)
+                    {
+                        peLib.AllocateAssemblyDef(assemblyName, true);
+                        assembly = peLib.FindAssembly(assemblyName);
+                        assembly->PEDump(peLib);
+                    }
+                    size_t nmspc = peLib.PEOut().HashString(namespaceName);
+                    size_t cls = peLib.PEOut().HashString(className);
+                    ResolutionScope rs(ResolutionScope::AssemblyRef, assembly->GetPEIndex() );
+                    TableEntryBase *table = new TypeRefTableEntry(rs, cls, nmspc);
+                    peIndex = peLib.PEOut().AddTableEntry(table);
+                }
+            }
+            *(int *)result = peIndex | (tTypeRef << 24);
+            return 4;
+        }
+        else switch(tp)
+        {
+            case cls:
+                *(int *)result = typeRef->GetPEIndex() | (tTypeDef << 24);
+                return 4;
+                break;
+            case method:
+            default:
+            {
+                if (!peIndex)
+                {
+                    size_t sz;
+                    unsigned char *sig = SignatureGenerator::TypeSig(this, sz);
+                    size_t signature = peLib.PEOut().HashBlob(sig, sz);
+                    delete[] sig;
+                    TypeSpecTableEntry *table = new TypeSpecTableEntry(signature);
+                    peIndex = peLib.PEOut().AddTableEntry(table);
+                }
+                *(int *)result = peIndex | (tTypeSpec << 24);
+                return 4;
+            }
+                break;
+        }
+        return true;
+    }
     bool BoxedType::ILSrcDump(PELib &peLib)
     {
         peLib.Out() << "[mscorlib]System." << typeNames[tp];
+        return true;
+    }
+    size_t BoxedType::Render(PELib &peLib, unsigned char *result)
+    {
+        if (!peIndex)
+        {
+            size_t system = peLib.PEOut().SystemName();
+            size_t name = peLib.PEOut().HashString(typeNames[tp]);
+            AssemblyDef *assembly = peLib.FindAssembly("mscorlib");
+            ResolutionScope rs(ResolutionScope::AssemblyRef, assembly->GetPEIndex() );
+            TableEntryBase *table = new TypeRefTableEntry(rs, name, system);
+            peIndex = peLib.PEOut().AddTableEntry(table);
+        }
+        *(int *)result = peIndex | (tTypeRef << 24);
+        return 4;
     }
 }

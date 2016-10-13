@@ -38,6 +38,7 @@
         email: TouchStone222@runbox.com <David Lindauer>
 */
 #include "DotNetPELib.h"
+#include "PEFile.h"
 namespace DotNetPELib
 {
     bool Value::ILSrcDump(PELib &peLib)
@@ -46,15 +47,49 @@ namespace DotNetPELib
         type->ILSrcDump(peLib);
         return true;
     }
+    size_t Value::Render(PELib &peLib, int opcode, int operandType, unsigned char *result)
+    {
+        return type->Render(peLib, result);
+    }
     bool Local::ILSrcDump(PELib &peLib)
     {
         peLib.Out() << "'" << name << "/" << index << "'";
         return true;
     }
+    size_t Local::Render(PELib &peLib, int opcode, int operandType, unsigned char *result)
+    {
+        int sz = 0;
+        if (operandType == Instruction::o_index1)
+        {
+            *(unsigned char *)result = index;
+            sz = 1;
+        }
+        else if (operandType == Instruction::o_index2)
+        {
+            *(unsigned short *)result = index;
+            sz = 2;
+        }
+        return sz;
+    }
     bool Param::ILSrcDump(PELib &peLib)
     {
         peLib.Out() << "'" << name << "'";
         return true;
+    }
+    size_t Param::Render(PELib &peLib, int opcode, int operandType, unsigned char *result)
+    {
+        int sz = 0;
+        if (operandType == Instruction::o_index1)
+        {
+            *(unsigned char *)result = index;
+            sz = 1;
+        }
+        else if (operandType == Instruction::o_index2)
+        {
+            *(unsigned short *)result = index;
+            sz = 2;
+        }
+        return sz;
     }
     bool FieldName::ILSrcDump(PELib &peLib)
     {
@@ -71,6 +106,11 @@ namespace DotNetPELib
             peLib.Out() << Qualifiers::GetName(field->GetName(), field->GetContainer());
         return true;
     }
+    size_t FieldName::Render(PELib &peLib, int opcode, int operandType, unsigned char *result)
+    {
+        *(unsigned char *)result = field->GetPEIndex() | (tField << 24);
+        return 4;
+    }
     MethodName::MethodName(MethodSignature *M, std::string Name, std::string Path) : signature(M), Value("", NULL) 
     {
         if (Name.size())
@@ -83,5 +123,24 @@ namespace DotNetPELib
     {
         signature->ILSrcDump(peLib, false, false, false);
         return true;
+    }
+    size_t MethodName::Render(PELib &peLib, int opcode, int operandType, unsigned char *result)
+    {
+        if (opcode == Instruction:: i_calli)
+        {
+            if (signature->GetPEIndexType() == 0)
+               signature->PEDump(peLib, true);
+            *(unsigned char *)result = signature->GetPEIndexType() | (tStandaloneSig << 24);
+        }
+        else
+        {
+            if (signature->GetPEIndex() == 0 && signature->GetPEIndexCallSite() == 0)
+               signature->PEDump(peLib, false);
+            if (signature->GetPEIndex())
+                *(unsigned char *)result = signature->GetPEIndex() | (tMethodDef << 24);
+            else    
+                *(unsigned char *)result = signature->GetPEIndexCallSite() | (tMemberRef << 24);
+        }
+        return 4;
     }
 }

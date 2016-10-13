@@ -38,6 +38,7 @@
         email: TouchStone222@runbox.com <David Lindauer>
 */
 #include "DotNetPELib.h"
+#include "PEFile.h"
 namespace DotNetPELib
 {
 
@@ -47,6 +48,21 @@ namespace DotNetPELib
         peLib.Out() << ".namespace '" << name << "' {" << std::endl;
         DataContainer::ILSrcDump(peLib);
         peLib.Out() << "}" << std::endl;
+        return true;
+    }
+    std::string Namespace::ReverseName(DataContainer *child)
+    {
+        std::string rv;
+        if (child->GetParent())
+        {
+            rv = ReverseName(child->GetParent()) + ".";
+        }
+        rv += child->GetName();
+    }
+    bool Namespace::PEDump(PELib &peLib)
+    {
+        std::string fullName = ReverseName(this);
+        peIndex = peLib.PEOut().HashString(fullName);
         return true;
     }
 }

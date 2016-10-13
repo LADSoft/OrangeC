@@ -590,6 +590,8 @@ void ConstantFold(QUAD *d, BOOLEAN reflow)
             break;
         case i_add:
         case i_array:
+            if (d->dc.right->offset->type == en_structelem)
+                break;
             index = xgetmode(d, &left, &right);
             switch (index)
             {

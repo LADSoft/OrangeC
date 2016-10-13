@@ -45,14 +45,62 @@ namespace DotNetPELib
         field->SetContainer(this);
         fields.push_back(field);
     }
+    size_t DataContainer::GetParentNamespace()
+    {
+        DataContainer *current = this->GetParent();
+        while (current && typeid(current) != typeid(Namespace *))
+            current = current->GetParent();
+        if (current)
+            return current->GetPEIndex();
+        return 0;
+    }
+    size_t DataContainer::GetParentClass()
+    {
+        DataContainer *current = GetParent();
+        if (current && typeid(current) == typeid(Class *))
+        {
+            return current->GetPEIndex();
+        }
+        return 0;
+    }
     bool DataContainer::ILSrcDump(PELib &peLib)
     {
         for (std::list<Field *>::iterator it = fields.begin(); it != fields.end(); ++it)
             (*it)->ILSrcDump(peLib);
-        for (std::list<DataContainer *>::iterator it = children.begin(); it != children.end(); ++it)
-            (*it)->ILSrcDump(peLib);
         for (std::list<CodeContainer *>::iterator it = methods.begin(); it != methods.end(); ++it)
+            (*it)->ILSrcDump(peLib);
+        for (std::list<DataContainer *>::iterator it = children.begin(); it != children.end(); ++it)
             (*it)->ILSrcDump(peLib);
         return true;
     }
+    bool DataContainer::PEDump(PELib &peLib)
+    {
+        for (std::list<Field *>::iterator it = fields.begin(); it != fields.end(); ++it)
+            (*it)->PEDump(peLib);
+        for (std::list<CodeContainer *>::iterator it = methods.begin(); it != methods.end(); ++it)
+            (*it)->PEDump(peLib);
+        for (std::list<DataContainer *>::iterator it = children.begin(); it != children.end(); ++it)
+            (*it)->PEDump(peLib);
     }
+    void DataContainer::Compile(PELib &peLib)
+    {
+        for (std::list<CodeContainer *>::iterator it = methods.begin(); it != methods.end(); ++it)
+            (*it)->Render(peLib);
+        for (std::list<DataContainer *>::iterator it = children.begin(); it != children.end(); ++it)
+            (*it)->Render(peLib);
+    }
+    void DataContainer::GetBaseTypes(int &types)
+    {
+        for (std::list<CodeContainer *>::iterator it = methods.begin(); it != methods.end(); ++it)
+            (*it)->GetBaseTypes(types);
+        for (std::list<DataContainer *>::iterator it = children.begin(); it != children.end(); ++it)
+            (*it)->GetBaseTypes(types);
+        if (typeid(this) == typeid(Enum *))
+            types |= basetypeEnum;
+        else if (typeid(this) != typeid(Namespace *))
+            if (flags.flags & Qualifiers::Value)
+                types |= basetypeValue;
+            else
+                types |= basetypeObject;
+    }
+}

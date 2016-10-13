@@ -38,6 +38,7 @@
         email: TouchStone222@runbox.com <David Lindauer>
 */
 #include "DotNetPELib.h"
+#include "PEFile.h"
 #include <iomanip>
 namespace DotNetPELib
 {
@@ -114,6 +115,82 @@ namespace DotNetPELib
                 break;
         }
         peLib.Out() << std::endl;
+        return true;
+    }
+    bool Field::PEDump(PELib &peLib)
+    {
+        size_t sz;
+        unsigned char *sig = SignatureGenerator::FieldSig(this, sz);
+        size_t sigindex = peLib.PEOut().HashBlob(sig, sz);
+        size_t nameindex = peIndex = peLib.PEOut().HashString(GetName());
+        int peflags = 0;
+        if (flags.flags & Qualifiers::Public)
+            peflags |= FieldTableEntry::Public;
+        else if (flags.flags & Qualifiers::Private)
+            peflags |= FieldTableEntry::Private;
+
+        if (flags.flags & Qualifiers::Static)
+            peflags  |= FieldTableEntry::Static;
+        if (flags.flags & Qualifiers::Literal)
+            peflags  |= FieldTableEntry::Literal;
+        switch (mode)
+        {
+            case Enum:
+                peflags |= FieldTableEntry::HasDefault; // in the blob;
+                break;
+            case Bytes:
+                if (byteValue && byteLength)
+                    peflags |= FieldTableEntry::HasFieldRVA; // in separate memory
+                break;
+        }
+        TableEntryBase *table = new FieldTableEntry(peflags, nameindex, sigindex);
+        peIndex = peLib.PEOut().AddTableEntry(table);
+        delete [] sig;
+
+        int buf[2];
+        *(longlong *)(buf) = enumValue;
+        int type;
+        switch (mode)
+        {
+            case Enum:
+            {
+                switch (size)
+                {
+                    case Field::i8:
+                        sz = 1;
+                        type = ELEMENT_TYPE_I1;
+                        break;
+                    case Field::i16:
+                        sz = 1;
+                        type = ELEMENT_TYPE_I2;
+                        break;
+                    case Field::i32:
+                    default:
+                        sz = 1;
+                        type = ELEMENT_TYPE_I4;
+                        break;
+                    case Field::i64:
+                        sz = 2;
+                        type = ELEMENT_TYPE_I8;
+                        break;
+                }
+                unsigned char * bytes = SignatureGenerator::ConvertToBlob(buf, sz, sz);
+                size_t valueIndex = peLib.PEOut().HashBlob(bytes, sz);
+                delete [] bytes;
+                Constant constant(Constant::FieldDef, peIndex);
+                table = new ConstantTableEntry(type, constant, valueIndex);
+                peLib.PEOut().AddTableEntry(table);
+
+            }
+            case Bytes:
+                if (byteValue && byteLength)
+                {
+                    size_t valueIndex = peLib.PEOut().RVABytes(byteValue, byteLength);
+                    table = new FieldRVATableEntry(valueIndex, peIndex);
+                    peLib.PEOut().AddTableEntry(table);                    
+                }
+                break;
+        }
         return true;
     }
 }

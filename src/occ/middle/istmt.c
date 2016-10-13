@@ -543,7 +543,7 @@ void genreturn(STATEMENT *stmt, SYMBOL *funcsp, int flag, int noepilogue, IMODE 
         
             if (!inlinesym_count)
             {
-                if (allocaAP)
+                if (allocaAP && !chosenAssembler->msil)
                 {
                     gen_icode(i_loadstack, 0, allocaAP, 0);
                 }
@@ -1023,7 +1023,7 @@ void genfunc(SYMBOL *funcsp, BOOLEAN doOptimize)
 /*    if (funcsp->loadds && funcsp->farproc) */
 /*	        gen_icode(i_loadcontext, 0,0,0); */
     AllocateLocalContext(NULL, funcsp, nextLabel++);
-    if (funcsp->allocaUsed)
+    if (funcsp->allocaUsed && !chosenAssembler->msil)
     {
             EXPRESSION *allocaExp = anonymousVar(sc_auto, &stdpointer);
             allocaAP = gen_expr(funcsp, allocaExp, 0, ISZ_ADDR);

@@ -169,9 +169,9 @@ int RunExternalFiles(char *rootPath)
     GetOutputFileName(outName, temp);
     StripExt(outName);
     AddExt(outName, ".il");
-    if (beGetIncludePath)
-        sprintf(args, "\"-i%s\"", beGetIncludePath);
-    else
+//    if (beGetIncludePath)
+//        sprintf(args, "\"-i%s\"", beGetIncludePath);
+//    else
         args[0] = 0;
     while (rclist)
     {

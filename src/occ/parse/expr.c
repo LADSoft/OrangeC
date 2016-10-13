@@ -1368,7 +1368,11 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                     }
                     else
                     {
-                        EXPRESSION *offset = intNode(en_c_i, sp2->offset);
+                        EXPRESSION *offset;
+                        if (chosenAssembler->msil)
+                            offset = varNode(en_structelem, sp2); // prepare for the MSIL ldflda instruction
+                        else
+                            offset = intNode(en_c_i, sp2->offset);
                         if (sp2->parentClass != basetype(typ2)->sp)
                         {
                             *exp = baseClassOffset(sp2->parentClass, basetype(typ2)->sp, *exp);

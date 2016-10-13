@@ -38,6 +38,7 @@
         email: TouchStone222@runbox.com <David Lindauer>
 */
 #include "DotNetPELib.h"
+#include <typeinfo>
 namespace DotNetPELib
 {
     void CodeContainer::AddInstruction(Instruction *instruction)
@@ -58,6 +59,41 @@ namespace DotNetPELib
         for (std::list<Instruction *>::iterator it = instructions.begin(); it != instructions.end(); ++it)
             (*it)->ILSrcDump(peLib);
         return true;
+    }
+    unsigned char * CodeContainer::Compile(PELib &peLib, size_t &sz)
+    {
+        unsigned char *rv = NULL;
+        Instruction *last = instructions.back();
+        sz = last->GetOffset() + last->GetInstructionSize();
+        if (sz)
+        {
+            rv = new unsigned char[sz];
+            int pos = 0;
+            for (std::list<Instruction *>::iterator it = instructions.begin(); it != instructions.end(); ++it)
+                pos += (*it)->Render(peLib, rv + pos, labels);
+        }
+    }
+    void CodeContainer::GetBaseTypes(int &types)
+    {
+        if (!(types & DataContainer::baseIndexSystem))
+        {
+            for (std::list<Instruction *>::iterator it = instructions.begin(); it != instructions.end(); ++it)
+            {
+                Operand *op = (*it)->GetOperand();
+                if (op->GetType() == Operand::t_value)
+                {
+                    if (typeid(op->GetValue()) == typeid(Value *))
+                    {
+                        Type * type = op->GetValue()->GetType();
+                        if (typeid(type) == typeid(BoxedType *))
+                        {
+                            types |= DataContainer::baseIndexSystem;
+                            break;
+                        }
+                    }
+                }
+            }                
+        }
     }
     void CodeContainer::Optimize(PELib &peLib)
     {

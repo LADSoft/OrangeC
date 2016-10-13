@@ -184,8 +184,8 @@ struct PEHeader
     int boundimp_size;
     int iat_rva;
     int iat_size;
-    int res1_rva, res1_size;
-    int res2_rva, res2_size;
+    int delay_imports_rva, delay_imports_size;
+    int com_rva, com_size;
     int res3_rva, res3_size;
 };
 

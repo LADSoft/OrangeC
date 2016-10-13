@@ -116,7 +116,7 @@ std::vector<Local *> localList;
 static std::map<std::string, Type *> typeList;
 static std::map<int, Field *> charFieldsList;
 // weed out unions, structures with nested structures or bit fields
-static BOOLEAN qualifiedStruct(SYMBOL *sp)
+BOOLEAN qualifiedStruct(SYMBOL *sp)
 {
     HASHREC *hr ;
     if (!sp->tp->size)
@@ -129,10 +129,10 @@ static BOOLEAN qualifiedStruct(SYMBOL *sp)
         SYMBOL *check = (SYMBOL *)hr->p;
         if (basetype(check->tp)->bits)
             return FALSE;
-        if (isstructured(check->tp))
-            return FALSE;
+//        if (isstructured(check->tp))
+//            return FALSE;
         if (basetype(check->tp)->array)
-            return FALSE;
+           return FALSE;
         hr = hr->next;
     }
     return TRUE;
@@ -263,18 +263,25 @@ Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg, BOOLEAN pinvoke)
 {
     if (isstructured(tp))
     {
+        Type *type = NULL;
         std::map<std::string, Type *>::iterator it = typeList.find(basetype(tp)->sp->name);
         if (it != typeList.end())
-            return it->second;
+            type = it->second;
         if (commit)
         {
-            Class *newClass = peLib->AllocateClass(basetype(tp)->sp->name, Qualifiers::Public | Qualifiers::ClassClass |( nested ? Qualifiers::Nested : 0), 
-                                       basetype(tp)->sp->structAlign, basetype(tp)->size);
-            mainContainer->Add(newClass);
-            Type *type = peLib->AllocateType(newClass);
-            typeList[basetype(tp)->sp->name] = type;
-            if (qualifiedStruct(basetype(tp)->sp))
+            if (!type)
             {
+                Class *newClass = peLib->AllocateClass(basetype(tp)->sp->name, Qualifiers::Public | Qualifiers::ClassClass |( nested ? Qualifiers::Nested : 0), 
+                                       basetype(tp)->sp->structAlign, basetype(tp)->size);
+                mainContainer->Add(newClass);
+                type = peLib->AllocateType(newClass);
+                typeList[basetype(tp)->sp->name] = type;
+            }
+            if (qualifiedStruct(basetype(tp)->sp) && !type->GetClass()->IsInstantiated())
+            {
+    
+                Class *cls = (Class *)type->GetClass();
+                cls->SetInstantiated();
                 HASHREC *hr = basetype(tp)->syms->table[0];
                 while (hr)
                 {
@@ -284,7 +291,7 @@ Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg, BOOLEAN pinvoke)
                     if (isarray(sym->tp) || IsPointedStruct(sym->tp))
                         flags |= Qualifiers::ValueType;
                     Field *newField = peLib->AllocateField(sym->name, newType, flags);
-                    newClass->Add(newField);
+                    cls->Add(newField);
                     hr = hr->next;
                 }
             }
@@ -348,9 +355,10 @@ Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg, BOOLEAN pinvoke)
     }
     else if (isfuncptr(tp))
     {
-        tp = basetype(tp)->btp;
-        MethodSignature *sig = GetMethodSignature(basetype(tp), FALSE);
-        return peLib->AllocateType(sig);
+        return peLib->AllocateType(Type::Void, 1); // pointer to void
+//        tp = basetype(tp)->btp;
+//        MethodSignature *sig = GetMethodSignature(basetype(tp), FALSE);
+//        return peLib->AllocateType(sig);
     }
     else if (ispointer(tp))
     {
@@ -893,24 +901,21 @@ static void dumpCallToMain(void)
         signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::Void, 1)));
         currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
 
-        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloc, peLib->AllocateOperand(localList[0]))); // load argc
-        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloc, peLib->AllocateOperand(localList[1]))); // load argcv
-
-        signature = peLib->AllocateMethodSignature("main", MethodSignature::Managed, mainContainer);
-        if (mainSym && mainSym->GetSignature()->GetReturnType()->GetBasicType() == Type::Void)
+        if (mainSym)
         {
-            signature->AddReturnType(peLib->AllocateType(Type::Void, 0));
+            int n = mainSym->GetSignature()->GetParamCount();
+            if (n >= 1)
+                currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloc, peLib->AllocateOperand(localList[0]))); // load argc
+            if (n >= 2)
+                currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloc, peLib->AllocateOperand(localList[1]))); // load argcv
+            for (int i=2; i < n; i++)
+                currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldnull, NULL)); // load a spare arg
+            signature = peLib->AllocateMethodSignature("main", MethodSignature::Managed, mainContainer);
+            currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(mainSym->GetSignature()))));
         }
-        else
-        {
-            signature->AddReturnType(peLib->AllocateType(Type::i32, 0));
-        }
-        signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::i32, 0)));
-        signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::i8, 2)));
-        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
         dumpInitializerCalls(deinitializersHead);
 
-        if (mainSym && mainSym->GetSignature()->GetReturnType()->GetBasicType() == Type::Void)
+        if (mainSym && mainSym->GetSignature()->GetReturnType()->IsVoid())
             currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)0, Operand::i32))); 
         signature = peLib->AllocateMethodSignature("exit", 0, NULL);
             signature->AddReturnType(peLib->AllocateType(Type::Void, 0));
@@ -1187,8 +1192,6 @@ extern "C" void oa_gen_strlab(SYMBOL *sp)
  */
 {
     oa_enterseg(0);
-    if (!strcmp(sp->name, "malloc"))
-        printf("hi");
     if (sp->storage_class != sc_localstatic && sp->storage_class != sc_constant && sp->storage_class != sc_static)
     {
         CacheGlobal(sp);

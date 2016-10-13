@@ -38,11 +38,13 @@
         email: TouchStone222@runbox.com <David Lindauer>
 */
 #include "DotNetPELib.h"
+#include "PEFile.h"
 
 namespace DotNetPELib
 {
 
-    PELib::PELib(std::string AssemblyName, int CoreFlags) : DataContainer("", 0), corFlags(CoreFlags)
+    PELib::PELib(std::string AssemblyName, int CoreFlags) 
+        : DataContainer("", 0), corFlags(CoreFlags), peWriter(NULL)
     {
         AssemblyDef *assemblyRef = AllocateAssemblyDef(AssemblyName, false);
         assemblyRefs.push_back(assemblyRef);
@@ -57,10 +59,10 @@ namespace DotNetPELib
                 rv = ILSrcDump(*this);
                 break;
             case peexe:
-                rv = DumpPEFile(true);
+                rv = DumpPEFile(file, true);
                 break;
             case pedll:
-                rv = DumpPEFile(false);
+                rv = DumpPEFile(file, false);
                 break;
             default:
                 rv = false;
@@ -102,8 +104,97 @@ namespace DotNetPELib
         }
         return rv;
     }
-    bool PELib::DumpPEFile(bool isexe)
+    AssemblyDef *PELib::FindAssembly(std::string assemblyName)
     {
+        for (std::list<AssemblyDef *>::iterator it = assemblyRefs.begin(); it != assemblyRefs.end(); ++it)
+        {
+            if ((*it)->GetName() == assemblyName)
+                return *it;
+        }
+        return NULL;
+    }
+    bool PELib::DumpPEFile(std::string file, bool isexe)
+    {
+        peWriter = new PEWriter(isexe);
+        size_t moduleIndex = peWriter->HashString("<Module>");
+        TypeDefOrRef typeDef(TypeDefOrRef::TypeDef, 0);
+        TableEntryBase *table = new TypeDefTableEntry(0,moduleIndex, 0, typeDef, 1, 1);
+        peWriter->AddTableEntry(table);
+
+        int types = 0;
+        GetBaseTypes(types);
+        if (types)
+        {
+            AssemblyDef *mscorlibAssembly = FindAssembly("mscorlib");
+            if (mscorlibAssembly == NULL)
+            {
+                AllocateAssemblyDef("mscorlib", true);
+            }
+        }
+        size_t systemIndex = peWriter->HashString("System");
+        size_t objectIndex = 0;
+        size_t valueIndex = 0;
+        size_t enumIndex = 0;
+        if (types)
+        {
+            if (types & basetypeObject)
+            {
+                objectIndex = peWriter->HashString("Object");
+            }
+            if (types & basetypeValue)
+            {
+                valueIndex = peWriter->HashString("ValueType");
+            }
+            if (types & basetypeEnum)
+            {
+                enumIndex = peWriter->HashString("Enum");
+            }
+        }
+        for (std::list<AssemblyDef *>::iterator it = assemblyRefs.begin(); it != assemblyRefs.end(); ++it)
+        {
+            (*it)->PEDump(*this);
+        }
+        if (types)
+        {
+            AssemblyDef *mscorlibAssembly = FindAssembly("mscorlib");
+            int assemblyIndex = mscorlibAssembly->GetPEIndex();
+            ResolutionScope rs(ResolutionScope::AssemblyRef, assemblyIndex );
+            if (types & basetypeObject)
+            {
+                table = new TypeRefTableEntry(rs, objectIndex, systemIndex);
+                objectIndex = peWriter->AddTableEntry(table);
+            }
+            if (types & basetypeValue)
+            {
+                table = new TypeRefTableEntry(rs, valueIndex, systemIndex);
+                valueIndex = peWriter->AddTableEntry(table);
+            }
+            if (types & basetypeEnum)
+            {
+                table = new TypeRefTableEntry(rs, enumIndex, systemIndex);
+                enumIndex = peWriter->AddTableEntry(table);
+            }
+            peWriter->SetBaseClasses(objectIndex, valueIndex, enumIndex, systemIndex);
+        }
+        size_t npos = file.find_last_of("\\");
+        if (npos != std::string::npos && npos != file.size()-1)
+            file = file.substr(npos + 1);
+        size_t nameIndex = peWriter->HashString(file);
+        unsigned char guid[128/8];
+        peWriter->CreateGuid(guid);
+        size_t guidIndex = peWriter->HashGUID(guid);
+        table = new ModuleTableEntry(nameIndex, guidIndex);
+        peWriter->AddTableEntry(table);
+
+
+        bool rv = DataContainer::PEDump(*this);
+        for (std::list<Method *>::iterator it = pInvokeSignatures.begin(); it != pInvokeSignatures.end(); ++it)
+        {
+            (*it)->PEDump(*this);
+        }
+        Compile(*this);
+        peWriter->WriteFile(*this, *outputStream);
+        delete peWriter;
         return false;
     }
 }

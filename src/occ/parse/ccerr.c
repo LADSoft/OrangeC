@@ -1580,6 +1580,7 @@ void assignmentUsages(EXPRESSION *node, BOOLEAN first)
         case en_c_u32:        
         case en_nullptr:
         case en_memberptr:
+        case en_structelem:
             break;
         case en_global:
         case en_label:
@@ -1800,6 +1801,7 @@ static int checkDefaultExpression(EXPRESSION *node)
         case en_c_u16:
         case en_c_u32:        
         case en_nullptr:
+        case en_structelem:
             break;
         case en_global:
         case en_label:

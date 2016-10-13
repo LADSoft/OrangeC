@@ -38,6 +38,7 @@
         email: TouchStone222@runbox.com <David Lindauer>
 */
 #include "DotNetPELib.h"
+#include "PEFile.h"
 namespace DotNetPELib
 {
     bool AssemblyDef::ILSrcDump(PELib &peLib)
@@ -46,6 +47,21 @@ namespace DotNetPELib
         if (external)
             peLib.Out() << "extern ";
         peLib.Out() << name << "{ }" << std::endl;
+        return true;
+    }
+    bool AssemblyDef::PEDump(PELib &peLib)
+    {
+        size_t nameIndex = peLib.PEOut().HashString(name);
+        TableEntryBase *table;
+        if (external)
+        {
+            table = new AssemblyRefTableEntry(PA_MSIL, 0,0,0,0, nameIndex);
+        }
+        else
+        {
+            table = new AssemblyDefTableEntry(PA_MSIL, 0,0,0,0, nameIndex);
+        }
+        peIndex = peLib.PEOut().AddTableEntry(table);
         return true;
     }
 }

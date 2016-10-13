@@ -3055,6 +3055,7 @@ BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams)
         case en_c_u16:
         case en_c_u32:        
         case en_nullptr:
+        case en_structelem:
             rv = TRUE;
             break;
         case en_global:

@@ -668,6 +668,8 @@ void dooper(EXPRESSION **node, int mode)
     switch (ep->type)
     {
         case en_structadd:
+            if (ep->right->type == en_structelem)
+                break;
         case en_add:
         case en_arrayadd:
             switch (mode)
@@ -1539,6 +1541,8 @@ int opt0(EXPRESSION **node)
         case en_sub:
             rv |= opt0(&(ep->left));
             rv |= opt0(&(ep->right));
+            if (ep->right->type == en_structelem)
+                break;
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {
@@ -2457,6 +2461,8 @@ int fold_const(EXPRESSION *node)
         case en_structadd:
             rv |= fold_const(node->left);
             rv |= fold_const(node->right);
+            if (node->right->type == en_structelem)
+                break;
             if (isoptconst(node->right))
             {
                 switch (node->left->type)
@@ -3424,6 +3430,7 @@ static int depth(EXPRESSION *ep)
         case en_absolute:
         case en_nullptr:
         case en_atomic:
+        case en_structelem:
             return 1;
         case en_funcret:
             return depth(ep->left);
@@ -3471,6 +3478,7 @@ static void rebalance(EXPRESSION *ep)
         case en_label:
         case en_absolute:
         case en_nullptr:
+        case en_structelem:
             break;
         case en_add:
         case en_mul:

@@ -794,7 +794,28 @@ IMODE *gen_deref(EXPRESSION *node, SYMBOL *funcsp, int flags)
             siz1 = ISZ_UINT;
     }
     /* deref for add nodes */
-    if (node->left->type == en_add || node->left->type == en_arrayadd 
+    if (node->left->type == en_structadd && node->left->right->type == en_structelem)
+    {
+        // prepare for the MSIL ldfld instruction
+        IMODE *aa1, *aa2;
+        aa1 = gen_expr(funcsp, node->left->left, 0, siz1);
+//        if (!aa1->offset || aa1->mode != i_direct || aa1->offset->type != en_tempref)
+        {
+            aa2 = tempreg(aa1->size, 0);
+            gen_icode(i_assn, aa2, aa1, NULL);
+        }
+        aa1 = (IMODE *)Alloc(sizeof(IMODE));
+        aa1->offset = node->left->right;
+        aa1->mode = i_direct;
+        aa1->size = aa2->size;
+        ap1 = LookupExpression(i_add, aa1->size, aa2, aa1);
+        ap1 = indnode(ap1, siz1);
+        ap1->fieldname = TRUE;
+        ap1->vararg = node->left->right;
+        ap1->vol = node->isvolatile;
+        ap1->restricted = node->isrestrict;
+    }
+    else if (node->left->type == en_add || node->left->type == en_arrayadd 
         || node->left->type == en_structadd)
     {
         ap1 = gen_expr(funcsp, node->left, 0, ISZ_ADDR);
@@ -3021,7 +3042,26 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
             }
             break;
         case en_structadd:
-            rv = gen_binary( funcsp, node,flags,ISZ_ADDR,/*i_struct*/ i_add);
+            if (node->right->type == en_structelem)
+            {
+                // prepare for the MSIL ldflda instruction
+                IMODE *aa1, *aa2;
+                aa1 = gen_expr(funcsp, node->left, 0, size);
+//                if (!aa1->offset || aa1->mode != i_direct || aa1->offset->type != en_tempref)
+                {
+                    aa2 = tempreg(aa1->size, 0);
+                    gen_icode(i_assn, aa2, aa1, NULL);
+                }
+                aa1 = (IMODE *)Alloc(sizeof(IMODE));
+                aa1->offset = node->right;
+                aa1->mode = i_immed;
+                aa1->size = aa2->size;
+                ap1 = LookupExpression(i_add, aa2->size, aa2, aa1);
+                rv = ap1;
+                break;
+            }
+            else
+                rv = gen_binary( funcsp, node,flags,ISZ_ADDR,/*i_struct*/ i_add);
             break;
         case en_arrayadd:
             rv = gen_binary( funcsp, node,flags,ISZ_ADDR,/*i_arrayindex*/ i_add);
@@ -3178,6 +3218,7 @@ int natural_size(EXPRESSION *node)
         case en_c_i:
         case en_l_i:
         case en_x_i:
+        case en_structelem:
             return  - ISZ_UINT;
         case en_c_ul:
         case en_l_ul:

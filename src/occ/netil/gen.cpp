@@ -91,6 +91,7 @@ Value *GetFieldData(SYMBOL *sp);
 MethodSignature *GetMethodSignature(TYPE *tp, BOOLEAN pinvoke);
 void LoadLocals(SYMBOL *sp);
 void LoadParams(SYMBOL *sp);
+BOOLEAN qualifiedStruct(SYMBOL *sp);
 
 void include_start(char *name, int num)
 {
@@ -133,6 +134,13 @@ Operand *make_constant(int sz, EXPRESSION *exp)
         double a;
         FPFToDouble((char *)&a, &exp->v.f);
         operand = peLib->AllocateOperand(a, Operand::any);
+    }
+    else if (exp->type == en_structelem)
+    {
+        Field *field = peLib->AllocateField(exp->v.sp->name, GetType(exp->v.sp->tp, TRUE), Qualifiers::Public | Qualifiers::ValueType);
+        Type *parentType = GetType(exp->v.sp->parentClass->tp, TRUE);
+        field->SetContainer(parentType->GetClass());
+        operand = peLib->AllocateOperand(peLib->AllocateFieldName(field));
     }
     else if (exp->type == en_labcon)
     {
@@ -218,33 +226,43 @@ Operand *getOperand(IMODE *oper)
             break;
         case i_direct:
         {
-            EXPRESSION *en = GetSymRef(oper->offset);
-            SYMBOL *sp;
-            if (en)
+            if (oper->offset->type == en_structelem)
             {
-                sp = en->v.sp;
+                Field *field = peLib->AllocateField(oper->offset->v.sp->name, GetType(oper->offset->v.sp->tp, TRUE), Qualifiers::Public | Qualifiers::ValueType);
+                Type *parentType = GetType(oper->offset->v.sp->parentClass->tp, TRUE);
+                field->SetContainer(parentType->GetClass());
+                rv = peLib->AllocateOperand(peLib->AllocateFieldName(field));
             }
-            else if (oper->offset->type == en_tempref)
+            else
             {
-                sp = (SYMBOL *)oper->offset->right;
-            }
-            if (sp)
-            {
-                if (sp->storage_class == sc_auto || sp->storage_class == sc_register || sp->storage_class == sc_parameter)
-                    rv = peLib->AllocateOperand(GetLocalData(sp));
-                else
-                    rv = peLib->AllocateOperand(GetFieldData(sp));
-            }
-            else if (oper->offset->type != en_tempref)
-            {
-                if (oper->offset == objectArray_exp)
+                EXPRESSION *en = GetSymRef(oper->offset);
+                SYMBOL *sp;
+                if (en)
                 {
-                    rv = peLib->AllocateOperand(peLib->AllocateValue("", peLib->AllocateType(Type::objectArray, 0)));
-
+                    sp = en->v.sp;
                 }
-                else
+                else if (oper->offset->type == en_tempref)
                 {
-                    diag("Invalid load node");
+                    sp = (SYMBOL *)oper->offset->right;
+                }
+                if (sp)
+                {
+                    if (sp->storage_class == sc_auto || sp->storage_class == sc_register || sp->storage_class == sc_parameter)
+                        rv = peLib->AllocateOperand(GetLocalData(sp));
+                    else
+                        rv = peLib->AllocateOperand(GetFieldData(sp));
+                }
+                else if (oper->offset->type != en_tempref)
+                {
+                    if (oper->offset == objectArray_exp)
+                    {
+                        rv = peLib->AllocateOperand(peLib->AllocateValue("", peLib->AllocateType(Type::objectArray, 0)));
+    
+                    }
+                    else
+                    {
+                        diag("Invalid load node");
+                    }
                 }
             }
             break;
@@ -483,7 +501,26 @@ void gen_load(IMODE *im, Operand *dest)
 {
     if (im->mode == i_ind)
     {
-        load_ind(im->size);
+        if (im->fieldname)
+        {
+            EXPRESSION *offset = (EXPRESSION *)im->vararg;
+            if (qualifiedStruct(offset->v.sp->parentClass))
+            {
+                Field *field = peLib->AllocateField(offset->v.sp->name, GetType(offset->v.sp->tp, TRUE), Qualifiers::Public | Qualifiers::ValueType);
+                Type *parentType = GetType(offset->v.sp->parentClass->tp, TRUE);
+                field->SetContainer(parentType->GetClass());
+                Operand *operand = peLib->AllocateOperand(peLib->AllocateFieldName(field));
+                gen_code(Instruction::i_ldfld, operand);
+            }
+            else
+            {
+                load_ind(im->size);
+            }
+        }
+        else
+        {
+            load_ind(im->size);
+        }
         return;
     }
     if (!dest)
@@ -518,11 +555,21 @@ void gen_load(IMODE *im, Operand *dest)
             }
             else // fieldname
             {
-                if (im->mode == i_immed)
-                    gen_code(Instruction::i_ldsflda, dest);
+                if (im->offset->type == en_structelem)
+                {
+                    if (im->mode == i_immed)
+                        gen_code(Instruction::i_ldflda, dest);
+                    else
+                        gen_code(Instruction::i_ldfld, dest);
+                }
                 else
-                    gen_code(Instruction::i_ldsfld, dest);
-                increment_stack();
+                {
+                    if (im->mode == i_immed)
+                        gen_code(Instruction::i_ldsflda, dest);
+                    else
+                        gen_code(Instruction::i_ldsfld, dest);
+                    increment_stack();
+                }
             }
             break;
     }
@@ -531,7 +578,28 @@ void gen_store(IMODE *im, Operand *dest)
 {
     if (im->mode == i_ind)
     {
-        store_ind(im->size);
+        if (im->fieldname)
+        {
+            EXPRESSION *offset = (EXPRESSION *)im->vararg;
+            if (qualifiedStruct(offset->v.sp->parentClass))
+            {
+                Field *field = peLib->AllocateField(offset->v.sp->name, GetType(offset->v.sp->tp, TRUE), Qualifiers::Public | Qualifiers::ValueType);
+                Type *parentType = GetType(offset->v.sp->parentClass->tp, TRUE);
+                field->SetContainer(parentType->GetClass());
+                Operand *operand = peLib->AllocateOperand(peLib->AllocateFieldName(field));
+                gen_code(Instruction::i_stfld, operand);
+                decrement_stack();
+                decrement_stack();
+            }
+            else
+            {
+                store_ind(im->size);
+            }
+        }
+        else
+        {
+            store_ind(im->size);
+        }
         return;
     }
     if (!dest)
@@ -917,8 +985,24 @@ extern "C" void asm_rett(QUAD *q)               /* return from trap or int */
 }
 extern "C" void asm_add(QUAD *q)                /* evaluate an addition */
 {
-    decrement_stack();
-    gen_code(Instruction::i_add, NULL);
+    if (q->dc.right->offset && q->dc.right->offset->type == en_structelem)
+    {
+        // the 'add' for a structure offset had to remain until now because it 
+        // held the left and right side both in the expression trees...   
+        // it is ignored for 'direct' access by used as a field address for 
+        // immed access
+        if (q->dc.right->mode == i_immed)
+        {
+            Operand *ap = getOperand(q->dc.right);
+            gen_load(q->dc.right, ap);
+        }
+
+    }
+    else
+    {
+        decrement_stack();
+        gen_code(Instruction::i_add, NULL);
+    }
 }
 extern "C" void asm_sub(QUAD *q)                /* evaluate a subtraction */
 {
@@ -1079,6 +1163,8 @@ extern "C" void asm_setge(QUAD *q)              /* evaluate a = b S>= c */
 extern "C" void asm_assn(QUAD *q)               /* assignment */
 {
     Operand *ap;
+
+    // don't generate if it is a placeholder ind...
     if (q->ans->mode == i_direct && !(q->temps & TEMP_ANS) && q->ans->offset->type == en_auto)
     {
         TYPE *tp = q->ans->offset->v.sp->tp;
@@ -1494,19 +1580,31 @@ int examine_icode(QUAD *head)
                 q->dc.left->offset = intNode(en_c_i, 0);
                 InsertInstruction(head->back, q);
             }
+            if (head->dc.right && head->dc.right->offset->type == en_structelem)
+            {
+                // by definition this is an add node...
+                if (!qualifiedStruct(head->dc.right->offset->v.sp->parentClass))
+                {
+                    head->dc.right-> mode = i_immed;
+                    head->dc.right->offset = intNode(en_c_i, head->dc.right->offset->v.sp->offset);
+                }
+            }
             if (head->dc.right && head->dc.right->mode == i_immed)
             {
                 if (head->dc.opcode != i_je && head->dc.opcode != i_jne || !isconstzero(&stdint, head->dc.right->offset))
                 {
-                    IMODE *ap = InitTempOpt(head->dc.right->size, head->dc.right->size);
-                    QUAD *q = (QUAD *)Alloc(sizeof(QUAD));
-                    q->dc.opcode = i_assn;
-                    q->ans = ap;
-                    q->temps = TEMP_ANS;
-                    q->dc.left = head->dc.right;
-                    head->dc.right = ap;
-                    head->temps |= TEMP_RIGHT;
-                    InsertInstruction(head->back, q);
+                    if (head->dc.right->offset->type != en_structelem)
+                    {
+                        IMODE *ap = InitTempOpt(head->dc.right->size, head->dc.right->size);
+                        QUAD *q = (QUAD *)Alloc(sizeof(QUAD));
+                        q->dc.opcode = i_assn;
+                        q->ans = ap;
+                        q->temps = TEMP_ANS;
+                        q->dc.left = head->dc.right;
+                        head->dc.right = ap;
+                        head->temps |= TEMP_RIGHT;
+                        InsertInstruction(head->back, q);
+                    }
                 }
             }
             if (head->vararg)

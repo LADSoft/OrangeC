@@ -37,20 +37,26 @@
     contact information:
         email: TouchStone222@runbox.com <David Lindauer>
 */
+#include <Windows.h>
+#include <WinCrypt.h>
 #include "DotNetPELib.h"
-namespace DotNetPELib
+#include "PEFile.h"
+
+namespace DotNetPELib 
 {
-    char *PELibError::errorNames[]  = 
-    {
-        "Variable Length Argument parameters already declared",
-        "Stack underflow",
-        "Mismatched stack at label",
-        "Stack not empty at end of function",
-        "Duplicate label",
-        "Missing label",
-        "Short branch out of range",
-        "Index out of range",
-        "Multiple Entry Points",
-        "Missing Entry Point"
-    };
+void PEWriter::CreateGuid(unsigned char *Guid)
+{
+    HCRYPTPROV hProv;
+    // get a highly random number
+    CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_FULL, CRYPT_NEWKEYSET);
+    CryptGenRandom(hProv,  128/8, Guid);
+    CryptReleaseContext(hProv, 0); 
+    // make it a valid version 4 (random) GUID
+    // remember that on windows GUIDs are native endianness so this may need
+    // work if you port it
+    Guid[7/*6*/] &= 0xf;
+    Guid[7/*6*/] |= 0x40;
+    Guid[9/*8*/] &= 0x3f;
+    Guid[9/*8*/] |= 0x80;
+}
 }

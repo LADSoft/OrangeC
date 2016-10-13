@@ -3,7 +3,6 @@
     
     Copyright (c) 1997-2011, David Lindauer, (LADSoft).
     All rights reserved.
-    
     Redistribution and use of this software in source and binary forms, 
     with or without modification, are permitted provided that the following 
     conditions are met:
@@ -97,10 +96,11 @@ typedef struct _imode_
     char size; /* size */
     char ptrsize; /* ptr indirection size, either ISZ_ADDR or ISZ_FARPTR */
     char startbit, bits; /* bit width  for i_Bf*/
+    char seg;	/* seg reg  for segmented architectures */
     char vol; /* TRUE if is a node for a volatile var */
     char restricted; /* TRUE if pointer type is set to restricted */
-    char seg;	/* seg reg  for segmented architectures */
     char retval;	/* TRUE if this is the value returned by a function */
+    char fieldname; /* vararg is an en_structelem field name */
 } IMODE;
 
 /*-------------------------------------------------------------------------*/

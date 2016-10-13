@@ -3,7 +3,7 @@
     
     Copyright (c) 1997-2011, David Lindauer, (LADSoft).
     All rights reserved.
-    
+    class
     Redistribution and use of this software in source and binary forms, 
     with or without modification, are permitted provided that the following 
     conditions are met:
@@ -64,6 +64,8 @@ class Operand;
 class Type;
 class FieldName;
 class DataContainer;
+class PEWriter;
+class PEMethod;
 
 /* contains data, types, methods */
 
@@ -88,6 +90,8 @@ public:
         MissingLabel,
         ShortBranchOutOfRange,
         IndexOutOfRange,
+        MultipleEntryPoints,
+        MissingEntryPoint
     };
     PELibError(ErrorList err, const std::string &Name="") : errnum(err), std::runtime_error(std::string(errorNames[err]) + " " + Name ) 
     {
@@ -125,8 +129,8 @@ class Qualifiers : public DestructorBase
     enum
     {
         // settings appropriate for occil, e.g. everything is static.  add public/private...
-        MainClass = Explicit | Ansi | Sealed,
-        ClassClass = Value | Explicit | Sequential | Ansi | Sealed,
+        MainClass = /*Explicit |*/ Ansi | Sealed,
+        ClassClass = Value | /*Explicit |*/ Sequential | Ansi | Sealed,
         ClassField = 0,
         FieldInitialized = Static | ValueType,
         EnumClass =  Enum | Auto | Ansi | Sealed,
@@ -143,11 +147,11 @@ class Qualifiers : public DestructorBase
     }
     bool ILSrcDumpBeforeFlags(PELib &);
     bool ILSrcDumpAfterFlags(PELib &);
-    static std::string GetName(std::string root, DataContainer *parent, std::string separator = "::");
+    static std::string GetName(std::string root, DataContainer *parent, bool type = false);
     int flags;
 protected:
-    static void ReverseNamePrefix(std::string &rv, DataContainer *parent, int &pos, std::string separator);
-    static std::string GetNamePrefix(DataContainer *parent, std::string separator);
+    static void ReverseNamePrefix(std::string &rv, DataContainer *parent, int &pos, bool type);
+    static std::string GetNamePrefix(DataContainer *parent, bool type);
 private:
     static char * qualifierNames[];
     static int afterFlags;
@@ -169,6 +173,10 @@ public:
     void ValidateInstructions();
     virtual void Optimize(PELib &);
     virtual bool ILSrcDump(PELib &);
+    virtual void Render(PELib&) { }
+    unsigned char *Compile(PELib &, size_t &sz);
+    virtual bool PEDump(PELib &);
+    void GetBaseTypes(int &types);
     Qualifiers GetFlags() { return flags; }
 protected:
     std::map<std::string, Instruction *> labels;
@@ -185,7 +193,15 @@ protected:
 class DataContainer  : public DestructorBase
 {
 public:
-    DataContainer(std::string Name, Qualifiers Flags) : name(Name), flags(Flags), parent(NULL) 
+    enum
+    {
+        // all classes have to extend from SOMETHING...  this gets the ones in use
+        basetypeObject = 1,
+        basetypeValue = 2,
+        basetypeEnum = 4,
+        baseIndexSystem = 8
+    };
+    DataContainer(std::string Name, Qualifiers Flags) : name(Name), flags(Flags), parent(NULL), instantiated(false), peIndex(0) 
     { 
     }
     void Add(DataContainer *item)
@@ -197,29 +213,45 @@ public:
     {
         methods.push_back(item);
     }
+    bool IsInstantiated() { return instantiated; }
+    void SetInstantiated() { instantiated = true; }
     void Add(Field *field);
     virtual bool ILSrcDump(PELib &);
+    virtual bool PEDump(PELib &);
+    virtual void Compile(PELib&);
     DataContainer *GetParent() { return parent; }
     std::string GetName() { return name; }
     Qualifiers GetFlags() { return flags; }
+    size_t GetPEIndex() { return peIndex; }
+    void Render(PELib&);
+    size_t GetParentNamespace();
+    size_t GetParentClass();
 protected:
+    void GetBaseTypes(int &types);
     std::list<DataContainer *> children;
     std::list<CodeContainer *> methods;
     std::list<Field *> fields;
     DataContainer *parent;
     Qualifiers flags;
     std::string name;
+    bool instantiated;
+    size_t peIndex; // generic index into a table or stream
 };
 class AssemblyDef  : public DestructorBase
 {
 public:
-    AssemblyDef(std::string Name, bool External) : name(Name), external(External)
+    AssemblyDef(std::string Name, bool External) : name(Name), external(External), peIndex(0)
     {
     }
+    virtual ~AssemblyDef() { }
     virtual bool ILSrcDump(PELib &);
+    virtual bool PEDump(PELib &);
+    std::string GetName() { return name; }
+    size_t GetPEIndex() { return peIndex; }
 private:
     std::string name;
     bool external;
+    size_t peIndex;
 };
 /* a namespace */
 class Namespace : public DataContainer
@@ -228,7 +260,9 @@ public:
     Namespace::Namespace(std::string Name) : DataContainer(Name, Qualifiers(0))
     {
     }
+    std::string ReverseName(DataContainer *child);
     virtual bool ILSrcDump(PELib &);
+    virtual bool PEDump(PELib &);
 };
 
 /* a class, note that it cannot contain namespaces which is enforced at compile time*/
@@ -240,8 +274,10 @@ public:
     {
     }
     virtual bool ILSrcDump(PELib &);
+    virtual bool PEDump(PELib &);
     void ILSrcDumpClassHeader(PELib &);
 protected:
+    int TransferFlags();
     int pack;
     int size;
 };
@@ -266,8 +302,14 @@ public:
         modifierValues.push_back(value);
     }
     virtual bool ILSrcDump(PELib &);
+    virtual bool PEDump(PELib &);
+    virtual void Compile(PELib&);
     virtual void Optimize(PELib &);
     MethodSignature *GetSignature() { return prototype; }
+    typedef std::list<Local *>::iterator iterator;
+    iterator begin() { return varList.begin(); }
+    iterator end() { return varList.end(); }
+    size_t size() { return varList.size(); }
 protected:
     void OptimizeLocals(PELib &);
     void CalculateMaxStack();
@@ -281,6 +323,7 @@ protected:
     InvokeType pInvokeType;
     int maxStack;
     bool entryPoint;
+    PEMethod *rendering;
 };
 
 /* a field, usually static but could be non-static */
@@ -290,21 +333,25 @@ public:
     enum ValueSize { i8, i16, i32, i64 };
     enum ValueMode { None, Enum, Bytes };
     Field::Field(std::string Name, Type *tp, Qualifiers Flags) : mode(Field::None), name(Name), flags(Flags),
-                type(tp), enumValue(0), byteValue(NULL), byteLength(0)
+                type(tp), enumValue(0), byteValue(NULL), byteLength(0), ref(0), peIndex(0)
     {
     }
     void AddEnumValue(longlong Value, ValueSize Size);
     void AddInitializer(unsigned char *bytes, int len); // this will be readonly in ILONLY assemblies
     static bool ILSrcDumpTypeName(PELib &peLib, ValueSize size);
     virtual bool ILSrcDump(PELib &);
+    virtual bool PEDump(PELib &);
     std::string GetName() { return name; }
     void SetContainer(DataContainer *Parent) { parent = Parent; }
     DataContainer *GetContainer() { return parent; }
-    void SetFullName(std::string FullName) { fullName = FullName; }
+    void SetFullName(std::string FullName) { fullName = FullName; SetRef(true); }
     std::string GetFullName() { return fullName; }
     Type *GetType() { return type; }
     void SetType(Type *tp) { type = tp; }
     Qualifiers GetFlags() { return flags; }
+    void SetRef(bool Ref) { ref = Ref; }
+    bool IsRef() { return ref; }
+    size_t GetPEIndex() { return peIndex; }
 protected:
     DataContainer *parent;
     std::string name;
@@ -318,6 +365,8 @@ protected:
     };
     int byteLength;
     ValueSize size;
+    size_t peIndex;
+    bool ref;
 };
 /* A special kind of class: enum */
 class Enum : public Class
@@ -329,6 +378,7 @@ public:
     }
     void AddValue(Allocator &allocator, std::string Name, longlong Value);
     virtual bool ILSrcDump(PELib &);
+    virtual bool PEDump(PELib &);
 protected:
     Field::ValueSize size;
 };
@@ -359,6 +409,7 @@ public:
         stringValue = Value;
     }
     virtual bool ILSrcDump(PELib &);
+    size_t Render(PELib &peLib, int opcode, int operandType, unsigned char *);
     Value * GetValue() { return type == t_value ? refValue : NULL; }
     OpType GetType() { return type; }
     longlong GetIntValue() { return intValue; }
@@ -420,6 +471,7 @@ public:
 
     virtual ~Instruction() { if (switches) delete switches; }
     virtual bool ILSrcDump(PELib &);
+    size_t Render(PELib & peLib, unsigned char *, std::map<std::string, Instruction *> labels);
     struct InstructionName {
         char *name;
         unsigned char op1;
@@ -461,6 +513,7 @@ class Value : public DestructorBase
 public:
     Value(std::string Name, Type *tp) : name(Name), type(tp) { }
     virtual bool ILSrcDump(PELib &);
+    virtual size_t Render(PELib &peLib, int opcode, int OperandType, unsigned char *);
     Type *GetType() { return type; }
     std::string GetName() { return name; }
 protected:
@@ -475,6 +528,7 @@ public:
     void SetIndex(int Index) { index = Index; }
     int GetIndex() { return index; }
     virtual bool ILSrcDump(PELib &);
+    virtual size_t Render(PELib &peLib, int opcode, int OperandType, unsigned char *);
     void IncrementUses() { uses++; }
     int Uses() { return uses; }
 private:
@@ -489,6 +543,7 @@ public:
     void SetIndex(int Index) { index = Index; }
     int GetIndex() { return index; }
     virtual bool ILSrcDump(PELib &);
+    virtual size_t Render(PELib &peLib, int opcode, int OperandType, unsigned char *);
 private:
     int index;
 };
@@ -505,6 +560,7 @@ public:
                 field->SetFullName(std::string("'") + Name + "'");
     }
     virtual bool ILSrcDump(PELib &);
+    virtual size_t Render(PELib &peLib, int opcode, int OperandType, unsigned char *);
     Field *GetField() { return field; }
 protected:
     Field *field;
@@ -515,6 +571,7 @@ class MethodName : public Value
 public:
     MethodName(MethodSignature *M, std::string Name = "", std::string Path = "");
     virtual bool ILSrcDump(PELib &);
+    virtual size_t Render(PELib &peLib, int opcode, int OperandType, unsigned char *);
     MethodSignature *GetSignature() { return signature; }
 protected:
     MethodSignature *signature;
@@ -526,7 +583,7 @@ class MethodSignature : public DestructorBase
 {
 public:
     enum { Vararg = 1, Managed = 2, Instance = 4 };
-    MethodSignature(std::string Name, int Flags, DataContainer *Container) : container(Container), name(Name), flags(Flags), returnType(NULL)
+    MethodSignature(std::string Name, int Flags, DataContainer *Container) : container(Container), name(Name), flags(Flags), returnType(NULL), ref(false), peIndex(0)
     {
     }
     void AddReturnType(Type *type)
@@ -547,12 +604,25 @@ public:
     std::string GetName() { return name; }
     void SetName(std::string Name) { name = Name; }
     std::string GetFullName() { return fullName; }
-    void SetFullName(std::string FullName) { fullName = FullName; }
+    void SetFullName(std::string FullName) { fullName = FullName; SetRef(true); }
     virtual bool ILSrcDump(PELib &, bool names, bool asType, bool PInvoke );
+    virtual bool PEDump(PELib &, bool asType);
     void SetInstanceFlag() { flags |= Instance; }
     int GetFlags() { return flags; }
     size_t GetParamCount() { return params.size(); }
     size_t GetVarargParamCount() { return varargParams.size(); }
+    void SetRef(bool Ref) { ref = Ref; }
+    bool IsRef()  { return ref; }
+    size_t GetPEIndex() { return peIndex; }
+    size_t GetPEIndexCallSite() { return peIndexCallSite; }
+    size_t GetPEIndexType() { return peIndexType; }
+    void SetPEIndex(size_t index) { peIndex = index; }
+    typedef std::list<Param *>::iterator iterator;
+    iterator begin() { return params.begin(); }
+    iterator end() { return params.end(); }
+    typedef std::list<Param *>::iterator viterator;
+    iterator vbegin() { return varargParams.begin(); }
+    iterator vend() { return varargParams.end(); }
 protected:
     DataContainer *container;
     Type *returnType;
@@ -560,34 +630,41 @@ protected:
     std::string fullName;
     int flags;
     std::list<Param *> params, varargParams;
+    bool ref;
+    size_t peIndex, peIndexCallSite, peIndexType;
 };
 /* a type reference */
 class Type : public DestructorBase
 {
 public:
-    enum BasicType {cls, method, Void, i8, u8, i16, u16, i32, u32, i64, u64, inative, r32, r64, object, objectArray, string};
-    Type(BasicType Tp, int PointerLevel) : tp(Tp), pointerLevel(PointerLevel), typeRef(NULL), methodRef(NULL)
+    enum BasicType {cls, method, Void, i8, u8, i16, u16, i32, u32, i64, u64, inative, unative, r32, r64, object, objectArray, string};
+    Type(BasicType Tp, int PointerLevel) : tp(Tp), pointerLevel(PointerLevel), typeRef(NULL), methodRef(NULL), peIndex(0)
     {
     }
-    Type(DataContainer *clsref) : tp(cls), pointerLevel(0), typeRef(clsref), methodRef(NULL)
+    Type(DataContainer *clsref) : tp(cls), pointerLevel(0), typeRef(clsref), methodRef(NULL), peIndex(0)
     {
     }
-    Type(MethodSignature *methodref) : tp(method), pointerLevel(0), typeRef(NULL), methodRef(methodref) 
+    Type(MethodSignature *methodref) : tp(method), pointerLevel(0), typeRef(NULL), methodRef(methodref), peIndex(0) 
     { 
     }
     void SetFullName(std::string name) { fullName = name; }
     void SetPointer(int n) { pointerLevel = n; }
+    int GetPointer() { return pointerLevel; }
     enum BasicType GetBasicType() { return tp; }
     void SetBasicType(BasicType type) { tp = type; }
     DataContainer *GetClass() { return typeRef; }
+    MethodSignature *GetMethod() { return methodRef; }
     virtual bool ILSrcDump(PELib &);
+    virtual size_t Render(PELib &, unsigned char *);
     bool IsVoid() { return tp == Void && pointerLevel == 0; }
+    size_t GetPEIndex() { return peIndex; }
 protected:
     std::string fullName;
     int pointerLevel;
     BasicType tp;
     DataContainer *typeRef; 
     MethodSignature *methodRef;
+    size_t peIndex;
 private:
     static char *typeNames[];
 };
@@ -598,6 +675,7 @@ public:
     {
     }
     virtual bool ILSrcDump(PELib &);
+    virtual size_t Render(PELib &, unsigned char *);
 private:
     static char *typeNames[];
 };
@@ -663,16 +741,19 @@ public:
     void AddPInvokeReference(MethodSignature *methodsig, std::string dllname, bool iscdecl);
     virtual bool ILSrcDump(PELib &) { return ILSrcDumpHeader() && ILSrcDumpFile(); }
     std::fstream &Out() { return *outputStream; }
+    PEWriter &PEOut() { return *peWriter; }
+    AssemblyDef *FindAssembly(std::string assemblyName);
 protected:
     bool ILSrcDumpHeader();
     bool ILSrcDumpFile();
-    bool DumpPEFile(bool isexe);
+    bool DumpPEFile(std::string name, bool isexe);
     std::list<AssemblyDef *>assemblyRefs;
     std::list<Method *>pInvokeSignatures;
     std::string assemblyName;
     std::fstream *outputStream;
     std::string fileName;
     int corFlags;
+    PEWriter *peWriter;
 };
 
 } // namespace

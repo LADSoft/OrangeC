@@ -95,6 +95,7 @@ int equalnode(EXPRESSION *node1, EXPRESSION *node2)
         case en_auto:
         case en_absolute:
         case en_threadlocal:
+        case en_structelem:
             return node1->v.sp == node2->v.sp;
         case en_labcon:
             return node1->v.i == node2->v.i;

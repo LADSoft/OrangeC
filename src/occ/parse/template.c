@@ -2373,6 +2373,7 @@ static TYPE *LookupTypeFromExpression(EXPRESSION *exp, TEMPLATEPARAMLIST *enclos
         case en_c_i:
         case en_x_i:
         case en_l_i:
+        case en_structelem:
             return &stdint;
         case en_c_ui:
         case en_x_ui:

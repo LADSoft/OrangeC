@@ -1,5 +1,10 @@
 Release notes:
 
+version 6.0.10:
+    occ:        bug fixes
+    dlpe:       generate DLLs that don't trigger problems from antivirus programs
+    clibs:      reintegrate lscrtl.dll
+
 version 6.0.9:
     occ:        assigning a string to an unsized character array left the array one byte too large
     occ:        export records weren't being placed in the object files

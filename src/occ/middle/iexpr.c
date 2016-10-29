@@ -798,7 +798,7 @@ IMODE *gen_deref(EXPRESSION *node, SYMBOL *funcsp, int flags)
     {
         // prepare for the MSIL ldfld instruction
         IMODE *aa1, *aa2;
-        aa1 = gen_expr(funcsp, node->left->left, 0, siz1);
+        aa1 = gen_expr(funcsp, node->left->left, 0, ISZ_ADDR);
 //        if (!aa1->offset || aa1->mode != i_direct || aa1->offset->type != en_tempref)
         {
             aa2 = tempreg(aa1->size, 0);
@@ -1605,7 +1605,7 @@ IMODE *gen_aincdec(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i
         }
         else
             gen_icode(i_assn, ap6, ap2, NULL);
-        return ap3;
+        return NULL;
     }
     else if (flags & F_COMPARE)
     {
@@ -3046,7 +3046,7 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
             {
                 // prepare for the MSIL ldflda instruction
                 IMODE *aa1, *aa2;
-                aa1 = gen_expr(funcsp, node->left, 0, size);
+                aa1 = gen_expr(funcsp, node->left, 0, ISZ_ADDR);
 //                if (!aa1->offset || aa1->mode != i_direct || aa1->offset->type != en_tempref)
                 {
                     aa2 = tempreg(aa1->size, 0);

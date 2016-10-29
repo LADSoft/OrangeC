@@ -39,7 +39,7 @@ ASM_DEPENDENCIES = $(wildcard 386\*.nas)
 C_DEPENDENCIES = $(wildcard *.c)
 
 ifdef BUILDING_DLL
-EXCLUDE = $(EXCLUDE) profilew.o proftmw.o
+EXCLUDE = $(EXCLUDE) profilew.o proftmw.o profile.o
 endif
 
 all: $(DEPENDENCIES)

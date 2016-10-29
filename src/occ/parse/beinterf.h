@@ -492,6 +492,9 @@ typedef struct {
 #define beGetCurrentInstruction currentQuad
 #define beGlobalAlloc(x) globalAlloc(x)
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern COMPILER_PARAMS cparams;
 extern int nextLabel;
 extern SYMBOL *theCurrentFunc;
@@ -500,9 +503,6 @@ extern char *prm_searchpath;
 extern ASMNAME *identdata;
 extern QUAD *currentQuad;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 void bePrintf(char *format, ...);
 void beWrite(char *buf, size_t size);
 void *globalAlloc(int siz);

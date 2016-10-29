@@ -1,36 +1,36 @@
 /*
     Software License Agreement (BSD License)
-    
-    Copyright (c) 1997-2011, David Lindauer, (LADSoft).
+
+    Copyright (c) 2016, David Lindauer, (LADSoft).
     All rights reserved.
-    
-    Redistribution and use of this software in source and binary forms, 
-    with or without modification, are permitted provided that the following 
+
+    Redistribution and use of this software in source and binary forms,
+    with or without modification, are permitted provided that the following
     conditions are met:
-    
+
     * Redistributions of source code must retain the above
       copyright notice, this list of conditions and the
       following disclaimer.
-    
+
     * Redistributions in binary form must reproduce the above
       copyright notice, this list of conditions and the
       following disclaimer in the documentation and/or other
       materials provided with the distribution.
-    
+
     * Neither the name of LADSoft nor the names of its
       contributors may be used to endorse or promote products
       derived from this software without specific prior
       written permission of LADSoft.
-    
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
-    THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
-    PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
-    OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
-    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
-    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
-    OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-    WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+    THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+    PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
+    OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+    OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+    WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
     OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
     ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
@@ -40,993 +40,1138 @@
 
 #include <vector>
 #include <string>
+
+// this is an internal header used to define the various aspects of a PE file
+// and the functions to render the files
+// it won't normally be much use to users of the DotNetPELib Library
+//
+// There are five basic types of entities in this file
+//
+// Tables are the metadata tables; each metadatatable we support has an associated
+// TableEntry structure that defines rows in the tables.
+//
+// Often the metadata rows have indexes to other tables, or to offsets in one of the
+// other streams - low bits in the indexes often indicate what table the index
+// references and also the indexes can 'grow' from 16 to 32 bits for huge files
+// so there are index structures for each type of index
+//
+// There is also support for inserting data in the streams
+//
+// There is also an object for defining method bodies
+//
+// Finally, a PEWriter object combines data from all the other objects to
+// create the EXE or DLL image.
+//
 namespace DotNetPELib {
 
+    // forward refs
 
+    class TableEntryBase;
+    class Method;
+    class Field;
+    class Type;
+    class PELib;
 
-class TableEntryBase;
-class Method;
-class Field;
-class Type;
-class PELib;
+    class PEMethod;
 
-class PEMethod;
-typedef std::vector<TableEntryBase *> DNLTable;
+    // vector of tables that can appear in a PE file
+    // empty tables are elided
+    typedef std::vector<TableEntryBase *> DNLTable;
 
-enum
-{
-    MaxTables = 64
-};
-enum Tables {
-    tModule = 0,//
-    tTypeRef = 1,//
-    tTypeDef = 2,//
-    tField = 4,//
-    tMethodDef = 6,//
-    tParam = 8,//
-    tMemberRef = 10,//
-    tConstant = 11,//
-    tCustomAttribute = 12,
-    tClassLayout = 15,//
-    tFieldLayout = 16,
-    tStandaloneSig = 17,
-    tModuleRef = 26,
-    tTypeSpec = 27,//
-    tImplMap = 28,//
-    tFieldRVA = 29,//
-    tAssemblyDef = 32,//
-    tAssemblyRef = 35,//
-    tNestedClass = 41,//
-};
-
-enum Types
-{
-    ELEMENT_TYPE_END            = 0x0,
-
-    ELEMENT_TYPE_VOID           = 0x1,
-    ELEMENT_TYPE_BOOLEAN        = 0x2,
-    ELEMENT_TYPE_CHAR           = 0x3,
-    ELEMENT_TYPE_I1             = 0x4,
-    ELEMENT_TYPE_U1             = 0x5,
-
-    ELEMENT_TYPE_I2             = 0x6,
-    ELEMENT_TYPE_U2             = 0x7,
-    ELEMENT_TYPE_I4             = 0x8,
-    ELEMENT_TYPE_U4             = 0x9,
-    ELEMENT_TYPE_I8             = 0xa,
-
-    ELEMENT_TYPE_U8             = 0xb,
-    ELEMENT_TYPE_R4             = 0xc,
-    ELEMENT_TYPE_R8             = 0xd,
-    ELEMENT_TYPE_STRING         = 0xe,
-
-    // every type above PTR will be simple type
-
-
-    ELEMENT_TYPE_PTR            = 0xf,      // PTR <type>
-
-    ELEMENT_TYPE_BYREF          = 0x10,     // BYREF <type>
-
-
-    // Please use ELEMENT_TYPE_VALUETYPE.
-
-    // ELEMENT_TYPE_VALUECLASS is deprecated.
-
-    ELEMENT_TYPE_VALUETYPE      = 0x11,  // VALUETYPE <class Token>
-
-    ELEMENT_TYPE_CLASS          = 0x12,  // CLASS <class Token>
-
-    ELEMENT_TYPE_VAR            = 0x13,  // a class type variable VAR <U1>
-
-    // MDARRAY <type> <rank> <bcount>
-
-    // <bound1> ... <lbcount> <lb1> ...
-
-    ELEMENT_TYPE_ARRAY          = 0x14,
-    // GENERICINST <generic type> <argCnt> <arg1> ... <argn>
-
-    ELEMENT_TYPE_GENERICINST    = 0x15,
-    // TYPEDREF  (it takes no args) a typed referece to some other type
-
-    ELEMENT_TYPE_TYPEDBYREF     = 0x16,
-
-    // native integer size
-
-    ELEMENT_TYPE_I              = 0x18,
-
-    // native unsigned integer size
-
-    ELEMENT_TYPE_U              = 0x19,
-    // FNPTR <complete sig for the function
-
-    // including calling convention>
-
-    ELEMENT_TYPE_FNPTR          = 0x1B,
-
-    // Shortcut for System.Object
-
-    ELEMENT_TYPE_OBJECT         = 0x1C,
-    // Shortcut for single dimension zero lower bound array
-
-    // SZARRAY <type>
-
-    ELEMENT_TYPE_SZARRAY        = 0x1D,
-
-    // a method type variable MVAR <U1>
-
-    ELEMENT_TYPE_MVAR           = 0x1e,
-
-    // This is only for binding
-
-    // required C modifier : E_T_CMOD_REQD <mdTypeRef/mdTypeDef>
-
-    ELEMENT_TYPE_CMOD_REQD      = 0x1F,
-
-    ELEMENT_TYPE_CMOD_OPT       = 0x20,
-    // optional C modifier : E_T_CMOD_OPT <mdTypeRef/mdTypeDef>
-
-
-    // This is for signatures generated internally
-
-    // (which will not be persisted in any way).
-
-    ELEMENT_TYPE_INTERNAL       = 0x21,
-
-    // INTERNAL <typehandle>
-
-
-    // Note that this is the max of base type excluding modifiers
-
-    ELEMENT_TYPE_MAX            = 0x22,
-    // first invalid element type
-
-
-
-    ELEMENT_TYPE_MODIFIER       = 0x40,
-
-    // sentinel for varargs
-
-    ELEMENT_TYPE_SENTINEL       = 0x01 | ELEMENT_TYPE_MODIFIER,
-    ELEMENT_TYPE_PINNED         = 0x05 | ELEMENT_TYPE_MODIFIER,
-    // used only internally for R4 HFA types
-
-    ELEMENT_TYPE_R4_HFA         = 0x06 | ELEMENT_TYPE_MODIFIER,
-    // used only internally for R8 HFA types
-
-
-    ELEMENT_TYPE_R8_HFA         = 0x07 | ELEMENT_TYPE_MODIFIER,
-
-};
-class SignatureGenerator
-{
-public:
-    static unsigned char *MethodDefSig(MethodSignature *signature, size_t &sz);
-    static unsigned char *MethodRefSig(MethodSignature *signature, size_t &sz);
-    //unsigned char *MethodSpecSig(Method *method);
-    static unsigned char *FieldSig(Field *field, size_t &sz);
-    //unsigned char *PropertySig(Property *property);
-    static unsigned char *LocalVarSig(Method *method, size_t &sz);
-    static unsigned char *TypeSig(Type *type, size_t &sz);
-    static size_t EmbedType(int *buf, int offset, Type *tp);
-    static unsigned char *ConvertToBlob(int *buf, int size, int &sz);
-    static void SetObjectType(size_t ObjectBase) { objectBase = ObjectBase; }
-private:
-    static size_t CoreMethod(MethodSignature *method, int paramCount, int *buf, int offset);
-    static int workArea[400 * 1024];
-    static int basicTypes[];
-    static int objectBase;
-};
-class PEWriter
-{
-public:
-    PEWriter(bool isexe) : DLL(!isexe), objectBase(0), valueBase(0), enumBase(0), 
-            systemIndex(0), entryPoint(0), paramAttributeType(0), paramAttributeData(0) { }
-    virtual ~PEWriter();
-    size_t AddTableEntry(TableEntryBase *entry);
-    void AddMethod(PEMethod *method);
-    size_t HashString(std::string utf8);
-    size_t HashUS(std::wstring str);
-    size_t HashGUID(unsigned char *Guid);
-    size_t HashBlob(unsigned char *blobData, size_t blobLen);
-    size_t RVABytes(unsigned char *bytes, size_t data);
-    void SetBaseClasses(size_t ObjectIndex, size_t ValueIndex, size_t EnumIndex, size_t SystemIndex)
-    {
-        SignatureGenerator::SetObjectType(ObjectIndex);
-        objectBase = ObjectIndex;
-        valueBase = ValueIndex;
-        enumBase = EnumIndex;
-        systemIndex = SystemIndex;
-    }
-    void SetParamAttribute(size_t paramAttributeType, size_t paramAttributeData)
-    {
-        paramAttributeType = paramAttributeType;
-        paramAttributeData = paramAttributeData;
-    }
-
-    size_t ObjectBaseClass() { return objectBase; }
-    size_t ValueBaseClass() { return valueBase; }
-    size_t EnumBaseClass() { return enumBase; }
-    size_t SystemName() { return systemIndex; }
-
-    size_t GetParamAttributeType() { return paramAttributeType; }
-    size_t GetParamAttributeData() { return paramAttributeData; }
-
-    static void CreateGuid(unsigned char *Guid);
-
-    bool WriteFile(PELib &peLib, std::fstream &out);
-    size_t GetIndex(int table) { return tables[table].size() + 1; }
-protected:
-
-    bool WritePEHeader();
-    bool WriteStartupInfo();
-    bool WriteImportInfo();
-    bool WriteCoreHeader();
-    bool WriteStreamHeaders();
-    bool WriteStrings();
-    bool WriteUS();
-    bool WriteBlob();
-    bool WriteGUID();
-    bool WriteDatabase();
-    bool WriteMethods();
-    bool WriteTables();
-    bool WriteRelocInfo();
-
-
-private:
-    std::map<std::string, size_t> stringMap;
-    struct pool
-    {
-        pool() : size(1), max(200), base(NULL) { base = (unsigned char *)calloc(1, max); }
-        ~pool() { free(base); }
-        size_t size;
-        size_t max;
-        unsigned char *base;
-        void Ensure(size_t newSize);
-    };
-    DNLTable tables[MaxTables];
-    size_t entryPoint;
-    std::list<PEMethod *>methods;
-    size_t objectBase;
-    size_t valueBase;
-    size_t enumBase;
-    size_t systemIndex;
-    size_t paramAttributeType, paramAttributeData;
-    bool DLL;
-    pool strings;
-    pool us;
-    pool blob;
-    pool guid;
-    pool rva;
-};
-
-class IndexBase
-{
-public:
-    IndexBase() : tag(0), index(0) { }
-    IndexBase(size_t Index) : tag(0), index(Index)  { UpdateWidth(); }
-    IndexBase(int Tag, size_t Index) : tag(Tag), index(index) { UpdateWidth(); }
-    int tag;
-    size_t index;
-    void UpdateWidth();
-
-    size_t Render(size_t sizes[MaxTables + 4], unsigned char *);
-    size_t Get(size_t sizes[MaxTables + 4], unsigned char *);
-    virtual int GetShift() = 0;
-    virtual bool GetOverflow(size_t sizes[MaxTables + 4]) = 0;
-};
-class ResolutionScope : public IndexBase
-{
-public:
-    ResolutionScope() { }
-    ResolutionScope(int tag, int index) : IndexBase(tag, index) { }
-    enum Tags
-    {
-        TagBits = 2,
-        Module = 0,
-        ModuleRef = 1,
-        AssemblyRef = 2,
-        TypeRef = 3
-    };
-    virtual int GetShift() { return TagBits; }
-    virtual bool GetOverflow(size_t sizes[MaxTables + 4]);
-};
-class TypeDefOrRef : public IndexBase
-{
-public:
-    TypeDefOrRef() { }
-    TypeDefOrRef(int tag, int index) : IndexBase(tag, index) { }
-    enum Tags
-    {
-        TagBits = 2,
-        TypeDef = 0,
-        TypeRef = 1,
-        TypeSpec = 2,
-    };
-    virtual int GetShift() { return TagBits; }
-    virtual bool GetOverflow(size_t sizes[MaxTables + 4]);
-};
-class MemberRefParent : public IndexBase
-{
-public:
-    MemberRefParent() { }
-    MemberRefParent(int tag, int index) : IndexBase(tag, index) { }
-    enum Tags
-    {
-        // memberrefparent
-        TagBits = 3,
-        TypeDef = 0,
-        TypeRef = 1,
-        ModuleRef = 2,
-        MethodDef = 3,
-        TypeSpec = 4,
-    };
-    virtual int GetShift() { return TagBits; }
-    virtual bool GetOverflow(size_t sizes[MaxTables + 4]);
-};
-class Constant : public IndexBase
-{
-public:
-    Constant() { }
-    Constant(int tag, int index) : IndexBase(tag, index) { }
-    enum Tags {
-        // HasConstant
-        TagBits = 2,
-        FieldDef = 0,
-        ParamDef = 1,
-        //TagProperty = 2,
-    };
-    virtual int GetShift() { return TagBits; }
-    virtual bool GetOverflow(size_t sizes[MaxTables + 4]);
-};
-class CustomAttribute : public IndexBase
-{
-public:
-    CustomAttribute() { }
-    CustomAttribute(int tag, int index) : IndexBase(tag, index) { }
-    enum Tags {
-        TagBits = 5,
-        MethodDef = 0,
-        FieldDef = 1,
-        TypeRef = 2,
-        TypeDef = 3,
-        ParamDef = 4,
-        InterfaceImpl = 5,
-        MemberRef = 6,
-        Module = 7,
-        Permission = 8,
-        Property = 9,
-        Event = 10,
-        StandaloneSig = 11,
-        ModuleRef = 12,
-        TypeSpec = 13,
-        Assembly = 14,
-        AssemblyRef = 15,
-        File = 16,
-        ExportedType = 17,
-        ManifestResource = 18,
-    };
-    virtual int GetShift() { return TagBits; }
-    virtual bool GetOverflow(size_t sizes[MaxTables + 4]);
-};
-class CustomAttributeType : public IndexBase
-{
-public:
-    CustomAttributeType() { }
-    CustomAttributeType(int tag, int index) : IndexBase(tag, index) { }
-    enum Tags
-    {
-        // custom attribute type
-        TagBits = 3,
-        MethodDef = 2,
-        MethodRef = 3,
-    };
-    virtual int GetShift() { return TagBits; }
-    virtual bool GetOverflow(size_t sizes[MaxTables + 4]);
-};
-class MemberForwarded : public IndexBase
-{
-public:
-    MemberForwarded() { }
-    MemberForwarded(int tag, int index) : IndexBase(tag, index) { }
-    enum Tags {
-        TagBits = 1,
-        FieldDef = 0,
-        MethodDef = 1,
-    };
-    virtual int GetShift() { return TagBits; }
-    virtual bool GetOverflow(size_t sizes[MaxTables + 4]);
-};
-class FieldList : public IndexBase
-{
-public:
-    FieldList() { }
-    FieldList(int index) : IndexBase(index) { }
-    virtual int GetShift() { return 0; }
-    virtual bool GetOverflow(size_t sizes[MaxTables + 4]);
-};
-class MethodList : public IndexBase
-{
-public:
-    MethodList() { }
-    MethodList(int index) : IndexBase(index) { }
-    virtual int GetShift() { return 0; }
-    virtual bool GetOverflow(size_t sizes[MaxTables + 4]);
-};
-class ParamList : public IndexBase
-{
-public:
-    ParamList() { }
-    ParamList(int index) : IndexBase(index) { }
-    virtual int GetShift() { return 0; }
-    virtual bool GetOverflow(size_t sizes[MaxTables + 4]);
-};
-class TypeDef : public IndexBase
-{
-public:
-    TypeDef() { }
-    TypeDef(int index) : IndexBase(index) { }
-    virtual int GetShift() { return 0; }
-    virtual bool GetOverflow(size_t sizes[MaxTables + 4]);
-};
-class ModuleRef : public IndexBase
-{
-public:
-    ModuleRef() { }
-    ModuleRef(int index) : IndexBase(index) { }
-    virtual int GetShift() { return 0; }
-    virtual bool GetOverflow(size_t sizes[MaxTables + 4]);
-};
-class String : public IndexBase
-{
-public:
-    String() { }
-    String(int index) : IndexBase(index) { }
-    virtual int GetShift() { return 0; }
-    virtual bool GetOverflow(size_t sizes[MaxTables + 4]);
-};
-class US : public IndexBase
-{
-public:
-    US() { }
-    US(int index) : IndexBase(index) { }
-    virtual int GetShift() { return 0; }
-    virtual bool GetOverflow(size_t sizes[MaxTables + 4]);
-};
-class GUID : public IndexBase
-{
-public:
-    GUID() { }
-    GUID(int index) : IndexBase(index) { }
-    virtual int GetShift() { return 0; }
-    virtual bool GetOverflow(size_t sizes[MaxTables + 4]);
-};
-
-class Blob : public IndexBase
-{
-public:
-    Blob() { }
-    Blob(int index) : IndexBase(index) { }
-    virtual int GetShift() { return 0; }
-    virtual bool GetOverflow(size_t sizes[MaxTables + 4]);
-};
-class TableEntryBase
-{
-public:
-    virtual int Index() = 0;
-    virtual size_t Render(size_t sizes[MaxTables + 4], unsigned char *) = 0;
-    virtual size_t Get(size_t sizes[MaxTables + 4], unsigned char *) = 0;
-};
-class ModuleTableEntry : public TableEntryBase
-{
-public:
-    ModuleTableEntry() { }
-    ModuleTableEntry(size_t NameIndex, size_t GuidIndex) : nameIndex(NameIndex), guidIndex(GuidIndex) { }
-    virtual int Index() { return tModule; }
-    String nameIndex;
-    GUID guidIndex;
-    virtual size_t Render(size_t sizes[MaxTables + 4], unsigned char *);
-    virtual size_t Get(size_t sizes[MaxTables + 4], unsigned char *);
-};
-class TypeRefTableEntry : public TableEntryBase
-{
-public:
-    TypeRefTableEntry() { }
-    TypeRefTableEntry(ResolutionScope Resolution, size_t TypeNameIndex, size_t TypeNameSpaceIndex) :
-        resolution(Resolution), typeNameIndex(TypeNameIndex), typeNameSpaceIndex(typeNameSpaceIndex) { }
-    virtual int Index() { return tTypeRef; }
-    ResolutionScope resolution;
-    String typeNameIndex;
-    String typeNameSpaceIndex;
-    virtual size_t Render(size_t sizes[MaxTables + 4], unsigned char *);
-    virtual size_t Get(size_t sizes[MaxTables + 4], unsigned char *);
-};
-class TypeDefTableEntry : public TableEntryBase
-{
-public:
-    enum Flags
-    {
-
-        // visibility
-        VisibilityMask        =   0x00000007,
-
-        NotPublic             =   0x00000000,     
-        Public                =   0x00000001,     
-
-        NestedPublic          =   0x00000002,     
-        NestedPrivate         =   0x00000003,     
-        NestedFamily          =   0x00000004,     
-        NestedAssembly        =   0x00000005,     
-        NestedFamANDAssem     =   0x00000006,     
-        NestedFamORAssem      =   0x00000007,     
-
-        // layout 
-        LayoutMask            =   0x00000018,
-
-        AutoLayout            =   0x00000000,     
-        SequentialLayout      =   0x00000008,     
-        ExplicitLayout        =   0x00000010,     
-
-        // semantics
-        ClassSemanticsMask    =   0x00000060,
-    
-        Class                 =   0x00000000,     
-        Interface             =   0x00000020,     
-
-        // other attributes
-        Abstract              =   0x00000080,     
-        Sealed                =   0x00000100,     
-        SpecialName           =   0x00000400,     
-        Import                =   0x00001000,     
-        Serializable          =   0x00002000,     
-
-        // string format
-        StringFormatMask      =   0x00030000,
-
-        AnsiClass             =   0x00000000,     
-        UnicodeClass          =   0x00010000,     
-        AutoClass             =   0x00020000,     
-        CustomFormatClass     =   0x00030000,     
-
-        // valid for custom format class, but undefined
-        CustomFormatMask      =   0x00C00000,     
-
-
-        BeforeFieldInit       =   0x00100000,     
-        Forwarder             =   0x00200000,     
-
-        // runtime
-        ReservedMask          =   0x00040800,
-        RTSpecialName         =   0x00000800,     
-
-        HasSecurity           =   0x00040000,     
-    };
-    TypeDefTableEntry() : flags(0) { }
-    TypeDefTableEntry(int Flags, size_t TypeNameIndex, size_t TypeNameSpaceIndex,
-                     TypeDefOrRef Extends, size_t FieldIndex, size_t MethodIndex) :
-        flags(Flags), typeNameIndex(TypeNameIndex), typeNameSpaceIndex(typeNameSpaceIndex),
-        extends(Extends), fields(FieldIndex), methods(MethodIndex) { }
-    virtual int Index() { return tTypeDef; }
-    enum Flags flags;
-    String typeNameIndex;
-    String typeNameSpaceIndex;
-    TypeDefOrRef extends;
-    FieldList fields;
-    MethodList methods;
-    virtual size_t Render(size_t sizes[MaxTables + 4], unsigned char *);
-    virtual size_t Get(size_t sizes[MaxTables + 4], unsigned char *);
-};
-
-class FieldTableEntry : public TableEntryBase
-{
-public:
-    enum Flags
-    {
-        FieldAccessMask           =   0x0007,
-
-        PrivateScope              =   0x0000,     
-        Private                   =   0x0001,     
-        FamANDAssem               =   0x0002,     
-        Assembly                  =   0x0003,     
-        Family                    =   0x0004,     
-        FamORAssem                =   0x0005,     
-        Public                    =   0x0006,     
-
-        // other attribs
-        Static                    =   0x0010,     
-        InitOnly                  =   0x0020,     
-        Literal                   =   0x0040,     
-        NotSerialized             =   0x0080,     
-        SpecialName               =   0x0200,     
-
-        // pinvoke    
-        PinvokeImpl               =   0x2000,     
-
-        // runtime
-        ReservedMask              =   0x9500,
-        RTSpecialName             =   0x0400,     
-        HasFieldMarshal           =   0x1000,         
-        HasDefault                =   0x8000,     
-        HasFieldRVA               =   0x0100,     
-    };
-    FieldTableEntry() : flags(0) { }
-    FieldTableEntry(int Flags, size_t NameIndex, size_t SignatureIndex) :
-        flags(Flags), nameIndex(NameIndex), signatureIndex(SignatureIndex) { }
-    virtual int Index() { return tField; }
-    enum Flags flags;
-    String nameIndex;
-    Blob signatureIndex;
-    virtual size_t Render(size_t sizes[MaxTables + 4], unsigned char *);
-    virtual size_t Get(size_t sizes[MaxTables + 4], unsigned char *);
-};
-class MethodDefTableEntry : public TableEntryBase
-{
-public:
-    enum ImplFlags
-    {
-        CodeTypeMask      =   0x0003,   // Flags about code type.
-        IL                =   0x0000,   // Method impl is IL.
-        Native            =   0x0001,   // Method impl is native.
-        OPTIL             =   0x0002,   // Method impl is OPTIL
-        Runtime           =   0x0003,   // Method impl is provided by the runtime.
-        ManagedMask       =   0x0004,   // Flags specifying whether the code is managed
-                                          // or unmanaged.
-        Unmanaged         =   0x0004,   // Method impl is unmanaged, otherwise managed.
-        Managed           =   0x0000,   // Method impl is managed.
-
-        ForwardRef        =   0x0010,   // Indicates method is defined; used primarily
-                                          // in merge scenarios.
-        PreserveSig       =   0x0080,   // Indicates method sig is not to be mangled to
-                                          // do HRESULT conversion.
-    
-        InternalCall      =   0x1000,   // Reserved for internal use.
-    
-        Synchronized      =   0x0020,   // Method is single threaded through the body.
-        NoInlining        =   0x0008,   // Method may not be inlined.
-        MaxMethodImplVal  =   0xffff,   // Range check value
-    };
-    enum Flags
-    {
-
-        MemberAccessMask          =   0x0007,
-        PrivateScope              =   0x0000,     
-        Private                   =   0x0001,         
-        FamANDAssem               =   0x0002,     
-        Assem                     =   0x0003,     
-        Family                    =   0x0004,     
-        FamORAssem                =   0x0005,     
-        Public                    =   0x0006,     
-    
-        Static                    =   0x0010,         
-        Final                     =   0x0020,         
-        Virtual                   =   0x0040,     
-        HideBySig                 =   0x0080,     
-    
-        VtableLayoutMask          =   0x0100,
-
-        ReuseSlot                 =   0x0000,     // The default.
-        NewSlot                   =   0x0100,     
-
-        // implementation attribs    
-        CheckAccessOnOverride     =   0x0200,     
-        Abstract                  =   0x0400,     
-        SpecialName               =   0x0800,     
-    
-    
-        PinvokeImpl               =   0x2000,     
-    
-        UnmanagedExport           =   0x0008,         
-    
-           // Reserved flags for runtime use only.
-    
-        ReservedMask              =   0xd000,
-        RTSpecialName             =   0x1000,     
-    
-        HasSecurity               =   0x4000,         
-        RequireSecObject          =   0x8000,     
-    };
-    MethodDefTableEntry() : implFlags(0), flags(0) { }
-    MethodDefTableEntry(Method *method, int IFlags, int MFlags, size_t NameIndex,
-                       size_t SignatureIndex, size_t ParamIndex) : implFlags(IFlags),
-                       flags(MFlags), nameIndex(NameIndex), signatureIndex(SignatureIndex),
-                       paramIndex(ParamIndex) { }
-    virtual int Index() { return tMethodDef; }
-    Method *method ; // for rva
-    enum ImplFlags implFlags;
-    enum Flags flags;
-    String nameIndex;
-    Blob signatureIndex;
-    ParamList paramIndex;
-    virtual size_t Render(size_t sizes[MaxTables + 4], unsigned char *);
-    virtual size_t Get(size_t sizes[MaxTables + 4], unsigned char *);
-};
-class ParamTableEntry : public TableEntryBase
-{
-
-public:
-    enum Flags
-    {
-        In                        =   0x0001,     // Param is [In]    
-        Out                       =   0x0002,     // Param is [out]
-        Optional                  =   0x0010,     // Param is optional
-    
-    
-        // runtime attribs
-    
-        ReservedMask              =   0xf000,
-        HasDefault                =   0x1000,     // Param has default value.
-    
-        HasFieldMarshal           =   0x2000,     // Param has FieldMarshal.
-        Unused                    =   0xcfe0,
-    };
-    ParamTableEntry() : flags(0), sequenceIndex(0) { }
-    ParamTableEntry(int Flags, unsigned short SequenceIndex, size_t NameIndex) :
-        flags(Flags), sequenceIndex(SequenceIndex), nameIndex(NameIndex) { }
-    virtual int Index() { return tParam; }
-    enum Flags flags;
-    unsigned short sequenceIndex;
-    String nameIndex;
-    virtual size_t Render(size_t sizes[MaxTables + 4], unsigned char *);
-    virtual size_t Get(size_t sizes[MaxTables + 4], unsigned char *);
-};
-class MemberRefTableEntry : public TableEntryBase
-{
-public:
-    MemberRefTableEntry() { }
-    MemberRefTableEntry(MemberRefParent ParentIndex, size_t NameIndex, size_t SignatureIndex)
-        : parentIndex(ParentIndex), nameIndex(NameIndex), signatureIndex(SignatureIndex) { }
-    virtual int Index() { return tMemberRef; }
-    MemberRefParent parentIndex;
-    String nameIndex;
-    Blob signatureIndex;
-    virtual size_t Render(size_t sizes[MaxTables + 4], unsigned char *);
-    virtual size_t Get(size_t sizes[MaxTables + 4], unsigned char *);
-};
-class ConstantTableEntry : public TableEntryBase
-{
-public:
-    ConstantTableEntry() : type(0) { }
-    ConstantTableEntry(int Type, Constant ParentIndex, size_t ValueIndex) :
-        type(Type), parentIndex(ParentIndex), valueIndex(ValueIndex) { }
-    virtual int Index() { return tConstant; }
-    unsigned char type;
-    Constant parentIndex;
-    Blob valueIndex;
-    virtual size_t Render(size_t sizes[MaxTables + 4], unsigned char *);
-    virtual size_t Get(size_t sizes[MaxTables + 4], unsigned char *);
-};
-class CustomAttributeTableEntry : public TableEntryBase
-{
-public: 
-    CustomAttributeTableEntry() { }
-    CustomAttributeTableEntry(CustomAttribute ParentIndex, CustomAttributeType TypeIndex, size_t ValueIndex)
-        : parentIndex(ParentIndex), typeIndex(TypeIndex), valueIndex(ValueIndex) { }
-    virtual int Index() { return tCustomAttribute; }
-    CustomAttribute parentIndex;
-    CustomAttributeType typeIndex;
-    Blob valueIndex;
-    virtual size_t Render(size_t sizes[MaxTables + 4], unsigned char *);
-    virtual size_t Get(size_t sizes[MaxTables + 4], unsigned char *);
-};
-class ClassLayoutTableEntry : public TableEntryBase
-{
-public:
-    ClassLayoutTableEntry() : pack(1), size(1) { }
-    ClassLayoutTableEntry(unsigned short Pack, size_t Size, size_t Parent)
-        : pack(Pack), size(Size), parent(Parent) { }
-    virtual int Index() { return tClassLayout; }
-    unsigned short pack ;
-    size_t size;
-    TypeDef parent;
-    virtual size_t Render(size_t sizes[MaxTables + 4], unsigned char *);
-    virtual size_t Get(size_t sizes[MaxTables + 4], unsigned char *);
-};
-class FieldLayoutTableEntry : public TableEntryBase
-{
-public:
-    FieldLayoutTableEntry() : offset(0) { }
-    FieldLayoutTableEntry(size_t Offset, size_t Parent) : offset(Offset), parent(Parent) { } 
-    virtual int Index() { return tFieldLayout; }
-    size_t offset;
-    FieldList parent;
-    virtual size_t Render(size_t sizes[MaxTables + 4], unsigned char *);
-    virtual size_t Get(size_t sizes[MaxTables + 4], unsigned char *);
-};
-class StandaloneSigTableEntry : public TableEntryBase
-{
-public:
-    StandaloneSigTableEntry() { }
-    StandaloneSigTableEntry(size_t SignatureIndex) : signatureIndex(SignatureIndex) { }
-    virtual int Index() { return tStandaloneSig; }
-    Blob signatureIndex;
-    virtual size_t Render(size_t sizes[MaxTables + 4], unsigned char *);
-    virtual size_t Get(size_t sizes[MaxTables + 4], unsigned char *);
-};
-class ModuleRefTableEntry : public TableEntryBase
-{
-public:
-    ModuleRefTableEntry() { }
-    ModuleRefTableEntry(size_t NameIndex) : nameIndex(NameIndex) { }
-    String nameIndex;
-    virtual int Index() { return tModuleRef; }
-    virtual size_t Render(size_t sizes[MaxTables + 4], unsigned char *);
-    virtual size_t Get(size_t sizes[MaxTables + 4], unsigned char *);
-};
-class TypeSpecTableEntry : public TableEntryBase
-{
-public:
-    TypeSpecTableEntry() { }
-    TypeSpecTableEntry(size_t SignatureIndex) : signatureIndex(SignatureIndex) { }
-    virtual int Index() { return tTypeSpec; }
-    Blob signatureIndex;
-    virtual size_t Render(size_t sizes[MaxTables + 4], unsigned char *);
-    virtual size_t Get(size_t sizes[MaxTables + 4], unsigned char *);
-};
-class ImplMapTableEntry : public TableEntryBase
-{
-public:
-    enum Flags
-    {
-        NoMangle          = 0x0001,   // use the member name as specified
-        
-        CharSetMask       = 0x0006,
-        CharSetNotSpec    = 0x0000,
-        CharSetAnsi       = 0x0002,
-        CharSetUnicode    = 0x0004,
-        CharSetAuto       = 0x0006,
-    
-        BestFitUseAssem   = 0x0000,
-        BestFitEnabled    = 0x0010,
-        BestFitDisabled   = 0x0020,
-        BestFitMask       = 0x0030,
-    
-        ThrowOnUnmappableCharUseAssem   = 0x0000,
-        ThrowOnUnmappableCharEnabled    = 0x1000,
-        ThrowOnUnmappableCharDisabled   = 0x2000,
-        ThrowOnUnmappableCharMask       = 0x3000,
-    
-        SupportsLastError = 0x0040,   
-            
-        CallConvMask      = 0x0700,
-        CallConvWinapi    = 0x0100,   // Pinvoke will use native callconv appropriate to target windows platform.    
-        CallConvCdecl     = 0x0200,
-        CallConvStdcall   = 0x0300,
-        CallConvThiscall  = 0x0400,   // In M9, pinvoke will raise exception.
-    
-        CallConvFastcall  = 0x0500,
-    
-        MaxValue          = 0xFFFF,
-    };
-    ImplMapTableEntry() : flags(0) { }
-    ImplMapTableEntry(int Flags, MemberForwarded MethodIndex, size_t ImportNameIndex, size_t ModuleIndex)
-        : flags(Flags), methodIndex(MethodIndex), importNameIndex(ImportNameIndex), moduleIndex(ModuleIndex) { }
-    virtual int Index() { return tImplMap; }
-    enum Flags flags;
-    MemberForwarded methodIndex;
-    String importNameIndex;
-    ModuleRef moduleIndex;
-    virtual size_t Render(size_t sizes[MaxTables + 4], unsigned char *);
-    virtual size_t Get(size_t sizes[MaxTables + 4], unsigned char *);
-};
-class FieldRVATableEntry : public TableEntryBase
-{
-public:
-    FieldRVATableEntry() : rva(NULL) { }
-    FieldRVATableEntry(size_t Rva, size_t FieldIndex) : rva(Rva), fieldIndex(FieldIndex) { }
-    virtual int Index() { return tFieldRVA; }
-    size_t rva;
-    FieldList fieldIndex;
-    virtual size_t Render(size_t sizes[MaxTables + 4], unsigned char *);
-    virtual size_t Get(size_t sizes[MaxTables + 4], unsigned char *);
-};
-enum AssemblyFlags
-{
-    PublicKey             =   0x0001,      // full key
-    PA_None               =   0x0000,     
-    PA_MSIL               =   0x0010,     
-    PA_x86                =   0x0020,     
-    PA_IA64               =   0x0030,     
-    PA_AMD64              =   0x0040,     
-    PA_Specified          =   0x0080,     
-
-    PA_Mask               =   0x0070,         
-    PA_FullMask           =   0x00F0,     
-
-    PA_Shift              =   0x0004,     // shift count
-
-
-    EnableJITcompileTracking  =   0x8000, // From "DebuggableAttribute".    
-    DisableJITcompileOptimizer=   0x4000, // From "DebuggableAttribute".
-    
-    Retargetable          =   0x0100,     
-};
-class AssemblyDefTableEntry : public TableEntryBase
-{
-public:
+    // constants related to the tables in the PE file
     enum
     {
-        DefaultHashAlgId = 0x8004
-    };
-    AssemblyDefTableEntry() : hashAlgId(DefaultHashAlgId), major(0), minor(0), build(0), revision(0), flags(0) { }
-    AssemblyDefTableEntry(int Flags, unsigned short Major, unsigned short Minor, unsigned short Build, unsigned short Revision,
-                         size_t NameIndex) : hashAlgId(DefaultHashAlgId), flags(Flags),
-                            major(Major), minor(Minor), build(Build), revision(Revision),
-                            nameIndex(NameIndex) { }
-    virtual int Index() { return tAssemblyDef; }
-    unsigned short hashAlgId;
-    unsigned short major, minor, build, revision;
-    enum AssemblyFlags flags;
-    Blob publicKeyIndex;
-    String nameIndex;
-    String cultureIndex;
-    virtual size_t Render(size_t sizes[MaxTables + 4], unsigned char *);
-    virtual size_t Get(size_t sizes[MaxTables + 4], unsigned char *);
-};
-class AssemblyRefTableEntry : public TableEntryBase
-{
-public:
-    AssemblyRefTableEntry() : major(0), minor(0), build(0), revision(0), flags(0) { }
-    AssemblyRefTableEntry(int Flags, unsigned short Major, unsigned short Minor, unsigned short Build, unsigned short Revision,
-                         size_t NameIndex) : flags(Flags),
-                            major(Major), minor(Minor), build(Build), revision(Revision),
-                            nameIndex(NameIndex) { }
-    virtual int Index() { return tAssemblyRef; }
-    unsigned short major, minor, build, revision;
-    enum AssemblyFlags flags;
-    Blob publicKeyIndex;
-    String nameIndex;
-    String cultureIndex;
-    Blob hashIndex;    
-    virtual size_t Render(size_t sizes[MaxTables + 4], unsigned char *);
-    virtual size_t Get(size_t sizes[MaxTables + 4], unsigned char *);
-};
-class NestedClassTableEntry : public TableEntryBase
-{
-public:
-    NestedClassTableEntry() { }
-    NestedClassTableEntry(size_t nested, size_t enclosing) : nestedIndex(nested), enclosingIndex(enclosing) { }
-    virtual int Index() { return tNestedClass; }
-    TypeDef nestedIndex;
-    TypeDef enclosingIndex;
-    virtual size_t Render(size_t sizes[MaxTables + 4], unsigned char *);
-    virtual size_t Get(size_t sizes[MaxTables + 4], unsigned char *);
-};
+        MaxTables = 64,
+        // the following are after the tables indexes, these are used to
+        // allow figuring out the size of indexes to 'special' streams
+        // generally if the stream is > 65535 bytes the index fits in a 32 bit DWORD
+        // otherwise the index fits into a 16 bit WORD
+        ExtraIndexes = 4,
+        tString = 64,
+        tUS = 65,
+        tGUID = 66,
+        tBlob = 67
 
-class PEMethod
-{
-public:
-    enum Flags
-    {
-        TinyFormat = 2, // no local variables, MAXstack <=8, size < 64;
-        FatFormat = 3,
-        // more flags only availble for FAT format
-        MoreSects = 8,
-        InitLocals = 0x10,
-
-        EntryPoint = 0x8000 // not a real flag that goes in the PE file
     };
-    PEMethod(int Flags, size_t MethodDef, int MaxStack, int localCount, int CodeSize, size_t signature) 
-        : flags(Flags), hdrSize(3), maxStack(MaxStack), codeSize(CodeSize), code(NULL) , signatureToken(signature), rva(0), methodDef(MethodDef)
+    // these are the indexes to the tables.   They are in order as they will appear
+    // in the PE file (if they do appear in the PE file)
+    enum Tables {
+        tModule = 0,// Assembly def
+        tTypeRef = 1,// References to other assemblies
+        tTypeDef = 2,// definitions of classes and enumerations
+        tField = 4,// definitions of fields
+        tMethodDef = 6,// definitions of methods, includes both managed and unmanaged
+        tParam = 8,// definitions of parameters
+        tMemberRef = 10,// references to external methods, also the call site references for vararg-style pinvokes
+        tConstant = 11,// initialization constants, we use them for enumerations but that is about it
+        tCustomAttribute = 12, // custom attributes, we use it for C# style varargs but nothing else
+        tClassLayout = 15,// size, packing for classes
+        tFieldLayout = 16, // field offsets, we don't use it
+        tStandaloneSig = 17, //?? we don't use it
+        tModuleRef = 26, // references to external modules
+        tTypeSpec = 27,// we use it for referenced types not found in the typedef table
+        tImplMap = 28,// pinvoke DLL information
+        tFieldRVA = 29,// sdata RVAs for field initialized data
+        tAssemblyDef = 32,// our main assembly
+        tAssemblyRef = 35,// any external assemblies
+        tNestedClass = 41,// list of nested classes and their parents
+    };
+
+    // these are standard type identifiers uses in signatures
+    enum Types
     {
-        if ((flags &0x7fff) == 0)
-            if (MaxStack <=8 && codeSize < 64 & localCount == 0)
-            {
-                flags |= TinyFormat;
-            }
-            else
-            {
-                flags |= FatFormat;
-            }
-    }
-    enum Flags flags;
-    int hdrSize; /* = 3 */
-    unsigned short maxStack;
-    size_t codeSize;
-    unsigned char *code;
-    Blob signatureToken;
-    int rva;
-    size_t methodDef;
-    bool WriteHeader();
-    bool WriteBody();
-};
+        ELEMENT_TYPE_END = 0x0,
+
+        ELEMENT_TYPE_VOID = 0x1,
+        ELEMENT_TYPE_bool = 0x2,
+        ELEMENT_TYPE_CHAR = 0x3,
+        ELEMENT_TYPE_I1 = 0x4,
+        ELEMENT_TYPE_U1 = 0x5,
+
+        ELEMENT_TYPE_I2 = 0x6,
+        ELEMENT_TYPE_U2 = 0x7,
+        ELEMENT_TYPE_I4 = 0x8,
+        ELEMENT_TYPE_U4 = 0x9,
+        ELEMENT_TYPE_I8 = 0xa,
+
+        ELEMENT_TYPE_U8 = 0xb,
+        ELEMENT_TYPE_R4 = 0xc,
+        ELEMENT_TYPE_R8 = 0xd,
+        ELEMENT_TYPE_STRING = 0xe,
+
+        // every type above PTR will be simple type
+
+
+        ELEMENT_TYPE_PTR = 0xf,      // PTR <type>
+
+        ELEMENT_TYPE_BYREF = 0x10,     // BYREF <type>
+
+
+        // Please use ELEMENT_TYPE_VALUETYPE.
+
+        // ELEMENT_TYPE_VALUECLASS is deprecated.
+
+        ELEMENT_TYPE_VALUETYPE = 0x11,  // VALUETYPE <class Token>
+
+        ELEMENT_TYPE_CLASS = 0x12,  // CLASS <class Token>
+
+        ELEMENT_TYPE_VAR = 0x13,  // a class type variable VAR <U1>
+
+        // MDARRAY <type> <rank> <bcount>
+
+        // <bound1> ... <lbcount> <lb1> ...
+
+        ELEMENT_TYPE_ARRAY = 0x14,
+        // GENERICINST <generic type> <argCnt> <arg1> ... <argn>
+
+        ELEMENT_TYPE_GENERICINST = 0x15,
+        // TYPEDREF  (it takes no args) a typed referece to some other type
+
+        ELEMENT_TYPE_TYPEDBYREF = 0x16,
+
+        // native integer size
+
+        ELEMENT_TYPE_I = 0x18,
+
+        // native DWord integer size
+
+        ELEMENT_TYPE_U = 0x19,
+        // FNPTR <complete sig for the function
+
+        // including calling convention>
+
+        ELEMENT_TYPE_FNPTR = 0x1B,
+
+        // Shortcut for System.Object
+
+        ELEMENT_TYPE_OBJECT = 0x1C,
+        // Shortcut for single dimension zero lower bound array
+
+        // SZARRAY <type>
+
+        ELEMENT_TYPE_SZARRAY = 0x1D,
+
+        // a method type variable MVAR <U1>
+
+        ELEMENT_TYPE_MVAR = 0x1e,
+
+        // This is only for binding
+
+        // required C modifier : E_T_CMOD_REQD <mdTypeRef/mdTypeDef>
+
+        ELEMENT_TYPE_CMOD_REQD = 0x1F,
+
+        ELEMENT_TYPE_CMOD_OPT = 0x20,
+        // optional C modifier : E_T_CMOD_OPT <mdTypeRef/mdTypeDef>
+
+
+        // This is for signatures generated internally
+
+        // (which will not be persisted in any way).
+
+        ELEMENT_TYPE_INTERNAL = 0x21,
+
+        // INTERNAL <typehandle>
+
+
+        // Note that this is the max of base type excluding modifiers
+
+        ELEMENT_TYPE_MAX = 0x22,
+        // first invalid element type
+
+
+
+        ELEMENT_TYPE_MODIFIER = 0x40,
+
+        // sentinel for varargs
+
+        ELEMENT_TYPE_SENTINEL = 0x01 | ELEMENT_TYPE_MODIFIER,
+        ELEMENT_TYPE_PINNED = 0x05 | ELEMENT_TYPE_MODIFIER,
+        // used only internally for R4 HFA types
+
+        ELEMENT_TYPE_R4_HFA = 0x06 | ELEMENT_TYPE_MODIFIER,
+        // used only internally for R8 HFA types
+
+
+        ELEMENT_TYPE_R8_HFA = 0x07 | ELEMENT_TYPE_MODIFIER,
+
+    };
+
+    // This class holds functions for generating the various signatures we need
+    // to put in the blob stream
+    class SignatureGenerator
+    {
+        // this implementation isn't completely thread safe - it uses the equivalent the
+        // equivalent of a global variable to keep track of state
+    public:
+        static Byte *MethodDefSig(MethodSignature *signature, size_t &sz);
+        static Byte *MethodRefSig(MethodSignature *signature, size_t &sz);
+        //Byte *MethodSpecSig(Method *method);
+        static Byte *FieldSig(Field *field, size_t &sz);
+        //Byte *PropertySig(Property *property);
+        static Byte *LocalVarSig(Method *method, size_t &sz);
+        static Byte *TypeSig(Type *type, size_t &sz);
+
+        // end of signature generators, this function is a generic function to embed a type
+        // inito a signature
+        static size_t EmbedType(int *buf, int offset, Type *tp);
+        // this function converts a signature buffer to a blob entry, by compressing
+        // the integer values in the signature
+        static Byte *ConvertToBlob(int *buf, int size, size_t &sz);
+
+        // this function sets the index for the 'object' class entry
+        static void SetObjectType(size_t ObjectBase) { objectBase = ObjectBase; }
+    private:
+        // a shared function for the various signatures that put in method signatures
+        static size_t CoreMethod(MethodSignature *method, int paramCount, int *buf, int offset);
+        static int workArea[400 * 1024];
+        static int basicTypes[];
+        static int objectBase;
+    };
+    // This is the main class for generating a PE file
+    class PEWriter
+    {
+    public:
+        // the maximum number of PE objects we will generate
+        // this includes the following:
+        //   .text
+        //   .sdata (when there is a .DATA declaration for a field)
+        //   .reloc (for the single necessary reloc entry)
+        //   .rsrc (not implemented yet, will hold version info record)
+        enum { MAX_PE_OBJECTS = 4 };
+
+        // Constructor to instantiate class
+        PEWriter(bool isexe, bool gui) : DLL_(!isexe), GUI_(gui), objectBase_(0), valueBase_(0), enumBase_(0),
+            systemIndex_(0), entryPoint_(0), paramAttributeType_(0), paramAttributeData_(0),
+            fileAlign_(0x200), objectAlign_(0x2000), imageBase_(0x400000), language_(0x4b0),
+            peHeader_(nullptr), peObjects_(nullptr), cor20Header_(nullptr), tablesHeader_(nullptr) { }
+        virtual ~PEWriter();
+        // add an entry to one of the tables
+        // note the data for the table will be a class inherited from TableEntryBase,
+        // and this class will self-report the table index to use
+        size_t AddTableEntry(TableEntryBase *entry);
+        // add a method entry to the output list.  Note that Index_(D methods won't be added here.
+        void AddMethod(PEMethod *method);
+        // various functions to throw things into one of the streams, they return the stream index
+        size_t HashString(std::string utf8);
+        size_t HashUS(std::wstring str);
+        size_t HashGUID(Byte *Guid);
+        size_t HashBlob(Byte *blobData, size_t blobLen);
+        // this is the '.sdata' contents.   Again we emit into the .sdata and it returns the offset in
+        // the sdata to use.  It does NOT return the rva immediately, that is calculated later
+        size_t RVABytes(Byte *bytes, size_t data);
+
+        // Set the indexes of the various classes which can be extended to make new classes
+        // these are typically in the typeref table
+        // Also set the index of the System namespace entry which is t
+        void SetBaseClasses(size_t ObjectIndex, size_t ValueIndex, size_t EnumIndex, size_t SystemIndex)
+        {
+            SignatureGenerator::SetObjectType(ObjectIndex);
+            objectBase_ = ObjectIndex;
+            valueBase_ = ValueIndex;
+            enumBase_ = EnumIndex;
+            systemIndex_ = SystemIndex;
+        }
+        // this sets the data for the paramater attribute we support
+        // we aren't generally supporting attributes in this version but we do need to be able to
+        // set a single attribute that means a function has a variable length argument list
+        void ParamAttribute(size_t paramAttributeType, size_t paramAttributeData)
+        {
+            paramAttributeType_ = paramAttributeType;
+            paramAttributeData_ = paramAttributeData;
+        }
+
+        size_t ObjectBaseClass() const { return objectBase_; }
+        size_t ValueBaseClass() const { return valueBase_; }
+        size_t EnumBaseClass() const { return enumBase_; }
+        size_t SystemName() const { return systemIndex_; }
+
+        size_t ParamAttributeType() const { return paramAttributeType_; }
+        size_t ParamAttributeData() const { return paramAttributeData_; }
+
+        static void CreateGuid(Byte *Guid);
+
+        size_t NextTableIndex(int table) const { return tables_[table].size() + 1; }
+        bool WriteFile(PELib &peLib, std::fstream &out);
+
+        // another thing that makes this lib not thread safe, the RVA for 
+        // the beginning of the SDATA gets put here after it is calculated
+        static DWord sdata_rva_;
+    protected:
+        // this calculates various addresses and offsets that will be used and referenced
+        // when we actually generate the data.   This must be kept in sync with the code to
+        // generate data
+        void CalculateObjects(PELib &peLib);
+        // These functions put various information into the PE file
+        bool WriteMZData(PELib &peLib) const; //
+        bool WritePEHeader(PELib &peLib) const;//
+        bool WritePEObjects(PELib &peLib) const;//
+        bool WriteIAT(PELib &peLib) const;
+        bool WriteCoreHeader(PELib &peLib) const;//
+        bool WriteMethods(PELib &peLib) const;
+        bool WriteMetadataHeaders(PELib &peLib) const;//
+        bool WriteTables(PELib &peLib) const;
+        bool WriteStrings(PELib &peLib) const;
+        bool WriteUS(PELib &peLib) const;
+        bool WriteGUID(PELib &peLib) const;
+        bool WriteBlob(PELib &peLib) const;
+        bool WriteImports(PELib &peLib) const;
+        bool WriteEntryPoint(PELib &peLib) const;
+
+        bool WriteStaticData(PELib &peLib) const;
+
+        bool WriteVersionInfo(PELib &peLib) const;
+        bool WriteRelocs(PELib &peLib) const;
+
+        // a helper to put a string into the string area of the version information
+        void VersionString(const wchar_t *name, const char *value) const;
+
+        // Various helpers to put data to the output
+        void put(const void *data, size_t size) const { outputFile_->write((char *)data, size); }
+        std::streamoff offset() const { return outputFile_->tellp(); }
+        void seek(size_t offset) const { outputFile_->seekp(offset); }
+        void align(size_t offset) const;
+    private:
+        std::fstream *outputFile_;
+        // a reflection of the String stream so that we can keep from doing duplicates.
+        // right now we don't check duplicates on any of the other streams...
+        std::map<std::string, size_t> stringMap_;
+        struct pool
+        {
+            pool() : size(0), maxSize(200), base(nullptr) { base = (Byte *)calloc(1, maxSize); }
+            ~pool() { free(base); }
+            size_t size;
+            size_t maxSize;
+            Byte *base;
+            void Ensure(size_t newSize);
+        };
+        DNLTable tables_[MaxTables];
+        size_t entryPoint_;
+        std::list<PEMethod *>methods_;
+        size_t objectBase_;
+        size_t valueBase_;
+        size_t enumBase_;
+        size_t systemIndex_;
+        size_t paramAttributeType_, paramAttributeData_;
+        bool DLL_;
+        bool GUI_;
+        pool strings_;
+        pool us_;
+        pool blob_;
+        pool guid_;
+        pool rva_;
+        size_t fileAlign_;
+        size_t objectAlign_;
+        size_t imageBase_;
+        DWord language_;
+        Word assemblyVersion_[4];
+        Word fileVersion_[4];
+        Word productVersion_[4];
+        struct PEHeader *peHeader_;
+        struct PEObject *peObjects_;
+        struct DotNetCOR20Header *cor20Header_;
+        struct DotNetMetaTablesHeader *tablesHeader_;
+        size_t streamHeaders_[5][2];
+        static Byte MZHeader_[];
+        static struct DotNetMetaHeader *metaHeader_;
+        static char *streamNames_[];
+        static Byte defaultUS_[];
+    };
+
+    // this class is the base class for index rendering
+    // it defines a tag type (which indicates which table the index belongs with) and an index value
+    // Based on the specific type of index being rendered, the index is shifted left by a constant and
+    // the tag is added in the lower bits.
+    // Note that these indexes are used in tables and also in the blobs, however, in the actual intermediate
+    // code a token is used.  the index in the is 24 bits unshifted, bits 24-31 holding the table number
+
+    class IndexBase
+    {
+    public:
+        IndexBase() : tag_(0), index_(0) { }
+        IndexBase(size_t Index) : tag_(0), index_(Index) { }
+        IndexBase(int Tag, size_t Index) : tag_(Tag), index_(Index) { }
+
+        size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const;
+        //size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+        virtual int GetIndexShift() const = 0;
+        virtual bool HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const = 0;
+
+        bool Large(unsigned x) const { return (x << GetIndexShift()) > 0xffff; }
+
+        int tag_;
+        size_t index_;
+    };
+
+    // the next group of classes defines all the possible index types that occur in the tables we are
+    // interested in
+    class ResolutionScope : public IndexBase
+    {
+    public:
+        ResolutionScope() { }
+        ResolutionScope(int tag, int index) : IndexBase(tag, index) { }
+        enum Tags
+        {
+            TagBits = 2,
+            Module = 0,
+            ModuleRef = 1,
+            AssemblyRef = 2,
+            TypeRef = 3
+        };
+        virtual int GetIndexShift() const override { return TagBits; }
+        virtual bool HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const override;
+    };
+    class TypeDefOrRef : public IndexBase
+    {
+    public:
+        TypeDefOrRef() { }
+        TypeDefOrRef(int tag, int index) : IndexBase(tag, index) { }
+        enum Tags
+        {
+            TagBits = 2,
+            TypeDef = 0,
+            TypeRef = 1,
+            TypeSpec = 2,
+        };
+        virtual int GetIndexShift() const override { return TagBits; }
+        virtual bool HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const override;
+    };
+    class MemberRefParent : public IndexBase
+    {
+    public:
+        MemberRefParent() { }
+        MemberRefParent(int tag, int index) : IndexBase(tag, index) { }
+        enum Tags
+        {
+            // memberrefparent
+            TagBits = 3,
+            TypeDef = 0,
+            TypeRef = 1,
+            ModuleRef = 2,
+            MethodDef = 3,
+            TypeSpec = 4,
+        };
+        virtual int GetIndexShift() const override { return TagBits; }
+        virtual bool HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const override;
+    };
+    class Constant : public IndexBase
+    {
+    public:
+        Constant() { }
+        Constant(int tag, int index) : IndexBase(tag, index) { }
+        enum Tags {
+            // HasConstant
+            TagBits = 2,
+            FieldDef = 0,
+            ParamDef = 1,
+            //TagProperty = 2,
+        };
+        virtual int GetIndexShift() const override { return TagBits; }
+        virtual bool HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const override;
+    };
+    class CustomAttribute : public IndexBase
+    {
+    public:
+        CustomAttribute() { }
+        CustomAttribute(int tag, int index) : IndexBase(tag, index) { }
+        enum Tags {
+            TagBits = 5,
+            MethodDef = 0,
+            FieldDef = 1,
+            TypeRef = 2,
+            TypeDef = 3,
+            ParamDef = 4,
+            InterfaceImpl = 5,
+            MemberRef = 6,
+            Module = 7,
+            Permission = 8,
+            Property = 9,
+            Event = 10,
+            StandaloneSig = 11,
+            ModuleRef = 12,
+            TypeSpec = 13,
+            Assembly = 14,
+            AssemblyRef = 15,
+            File = 16,
+            ExportedType = 17,
+            ManifestResource = 18,
+        };
+        virtual int GetIndexShift() const override { return TagBits; }
+        virtual bool HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const override;
+    };
+    class CustomAttributeType : public IndexBase
+    {
+    public:
+        CustomAttributeType() { }
+        CustomAttributeType(int tag, int index) : IndexBase(tag, index) { }
+        enum Tags
+        {
+            // custom attribute type
+            TagBits = 3,
+            MethodDef = 2,
+            MethodRef = 3,
+        };
+        virtual int GetIndexShift() const override { return TagBits; }
+        virtual bool HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const override;
+    };
+    class MemberForwarded : public IndexBase
+    {
+    public:
+        MemberForwarded() { }
+        MemberForwarded(int tag, int index) : IndexBase(tag, index) { }
+        enum Tags {
+            TagBits = 1,
+            FieldDef = 0,
+            MethodDef = 1,
+        };
+        virtual int GetIndexShift() const override { return TagBits; }
+        virtual bool HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const override;
+    };
+    class FieldList : public IndexBase
+    {
+    public:
+        FieldList() { }
+        FieldList(int index) : IndexBase(index) { }
+        virtual int GetIndexShift() const override { return 0; }
+        virtual bool HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const override;
+    };
+    class MethodList : public IndexBase
+    {
+    public:
+        MethodList() { }
+        MethodList(int index) : IndexBase(index) { }
+        virtual int GetIndexShift() const override { return 0; }
+        virtual bool HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const override;
+    };
+    class ParamList : public IndexBase
+    {
+    public:
+        ParamList() { }
+        ParamList(int index) : IndexBase(index) { }
+        virtual int GetIndexShift() const override { return 0; }
+        virtual bool HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const override;
+    };
+    class TypeDef : public IndexBase
+    {
+    public:
+        TypeDef() { }
+        TypeDef(int index) : IndexBase(index) { }
+        virtual int GetIndexShift() const override { return 0; }
+        virtual bool HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const override;
+    };
+    class ModuleRef : public IndexBase
+    {
+    public:
+        ModuleRef() { }
+        ModuleRef(int index) : IndexBase(index) { }
+        virtual int GetIndexShift() const override { return 0; }
+        virtual bool HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const override;
+    };
+    // we also have psuedo-indexes for the various streams
+    // these are like regular indexes except streams are unambiguous so we don't need to shift
+    // and add a tag
+    class String : public IndexBase
+    {
+    public:
+        String() { }
+        String(int index) : IndexBase(index) { }
+        virtual int GetIndexShift() const override { return 0; }
+        virtual bool HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const override;
+    };
+    class US : public IndexBase
+    {
+    public:
+        US() { }
+        US(int index) : IndexBase(index) { }
+        virtual int GetIndexShift() const override { return 0; }
+        virtual bool HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const override;
+    };
+    class GUID : public IndexBase
+    {
+    public:
+        GUID() { }
+        GUID(int index) : IndexBase(index) { }
+        virtual int GetIndexShift() const override { return 0; }
+        virtual bool HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const override;
+    };
+
+    class Blob : public IndexBase
+    {
+    public:
+        Blob() { }
+        Blob(int index) : IndexBase(index) { }
+        virtual int GetIndexShift() const override { return 0; }
+        virtual bool HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const override;
+    };
+    // this is the base class for the metadata tables
+    //
+    class TableEntryBase
+    {
+    public:
+        virtual int TableIndex() const = 0;
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const = 0;
+        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) = 0;
+    };
+
+    // following we have the data describing each table
+    class ModuleTableEntry : public TableEntryBase
+    {
+    public:
+        ModuleTableEntry() { }
+        ModuleTableEntry(size_t NameIndex, size_t GuidIndex) : nameIndex_(NameIndex), guidIndex_(GuidIndex) { }
+        virtual int TableIndex() const override { return tModule; }
+        String nameIndex_;
+        GUID guidIndex_;
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
+        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+    };
+    class TypeRefTableEntry : public TableEntryBase
+    {
+    public:
+        TypeRefTableEntry() { }
+        TypeRefTableEntry(ResolutionScope Resolution, size_t TypeNameIndex, size_t TypeNameSpaceIndex) :
+            resolution(Resolution), typeNameIndex_(TypeNameIndex), typeNameSpaceIndex_(TypeNameSpaceIndex) { }
+        virtual int TableIndex() const override { return tTypeRef; }
+        ResolutionScope resolution;
+        String typeNameIndex_;
+        String typeNameSpaceIndex_;
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
+        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+    };
+    class TypeDefTableEntry : public TableEntryBase
+    {
+    public:
+        enum Flags
+        {
+
+            // visibility
+            VisibilityMask = 0x00000007,
+
+            NotPublic = 0x00000000,
+            Public = 0x00000001,
+
+            NestedPublic = 0x00000002,
+            NestedPrivate = 0x00000003,
+            NestedFamily = 0x00000004,
+            NestedAssembly = 0x00000005,
+            NestedFamANDAssem = 0x00000006,
+            NestedFamORAssem = 0x00000007,
+
+            // layout 
+            LayoutMask = 0x00000018,
+
+            AutoLayout = 0x00000000,
+            SequentialLayout = 0x00000008,
+            ExplicitLayout = 0x00000010,
+
+            // semantics
+            ClassSemanticsMask = 0x00000060,
+
+            Class = 0x00000000,
+            Interface = 0x00000020,
+
+            // other attributes
+            Abstract = 0x00000080,
+            Sealed = 0x00000100,
+            SpecialName = 0x00000400,
+            Import = 0x00001000,
+            Serializable = 0x00002000,
+
+            // string format
+            StringFormatMask = 0x00030000,
+
+            AnsiClass = 0x00000000,
+            UnicodeClass = 0x00010000,
+            AutoClass = 0x00020000,
+            CustomFormatClass = 0x00030000,
+
+            // valid for custom format class, but undefined
+            CustomFormatMask = 0x00C00000,
+
+
+            BeforeFieldInit = 0x00100000,
+            Forwarder = 0x00200000,
+
+            // runtime
+            ReservedMask = 0x00040800,
+            RTSpecialName = 0x00000800,
+
+            HasSecurity = 0x00040000,
+        };
+        TypeDefTableEntry() : flags_(0) { }
+        TypeDefTableEntry(int Flags, size_t TypeNameIndex, size_t TypeNameSpaceIndex,
+            TypeDefOrRef Extends, size_t FieldIndex, size_t MethodIndex) :
+            flags_(Flags), typeNameIndex_(TypeNameIndex), typeNameSpaceIndex_(TypeNameSpaceIndex),
+            extends_(Extends), fields_(FieldIndex), methods_(MethodIndex) { }
+        virtual int TableIndex() const override { return tTypeDef; }
+        int flags_;
+        String typeNameIndex_;
+        String typeNameSpaceIndex_;
+        TypeDefOrRef extends_;
+        FieldList fields_;
+        MethodList methods_;
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
+        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+    };
+
+    class FieldTableEntry : public TableEntryBase
+    {
+    public:
+        enum Flags
+        {
+            FieldAccessMask = 0x0007,
+
+            PrivateScope = 0x0000,
+            Private = 0x0001,
+            FamANDAssem = 0x0002,
+            Assembly = 0x0003,
+            Family = 0x0004,
+            FamORAssem = 0x0005,
+            Public = 0x0006,
+
+            // other attribs
+            Static = 0x0010,
+            InitOnly = 0x0020,
+            Literal = 0x0040,
+            NotSerialized = 0x0080,
+            SpecialName = 0x0200,
+
+            // pinvoke    
+            PinvokeImpl = 0x2000,
+
+            // runtime
+            ReservedMask = 0x9500,
+            RTSpecialName = 0x0400,
+            HasFieldMarshal = 0x1000,
+            HasDefault = 0x8000,
+            HasFieldRVA = 0x0100,
+        };
+        FieldTableEntry() : flags_(0) { }
+        FieldTableEntry(int Flags, size_t NameIndex, size_t SignatureIndex) :
+            flags_(Flags), nameIndex_(NameIndex), signatureIndex_(SignatureIndex) { }
+        virtual int TableIndex() const override { return tField; }
+        int flags_;
+        String nameIndex_;
+        Blob signatureIndex_;
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
+        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+    };
+    class MethodDefTableEntry : public TableEntryBase
+    {
+    public:
+        enum ImplFlags
+        {
+            CodeTypeMask = 0x0003,   // Flags about code type.
+            IL = 0x0000,   // Method impl is IL.
+            Native = 0x0001,   // Method impl is native.
+            OPTIL = 0x0002,   // Method impl is OPTIL
+            Runtime = 0x0003,   // Method impl is provided by the runtime.
+            ManagedMask = 0x0004,   // Flags specifying whether the code is managed
+                                              // or unmanaged.
+                                              Unmanaged = 0x0004,   // Method impl is unmanaged, otherwise managed.
+                                              Managed = 0x0000,   // Method impl is managed.
+
+                                              ForwardRef = 0x0010,   // Indicates method is defined; used primarily
+                                                                                // in merge scenarios.
+                                                                                PreserveSig = 0x0080,   // Indicates method sig is not to be mangled to
+                                                                                                                  // do HRESULT conversion.
+
+                                                                                                                  InternalCall = 0x1000,   // Reserved for internal use.
+
+                                                                                                                  Synchronized = 0x0020,   // Method is single threaded through the body.
+                                                                                                                  NoInlining = 0x0008,   // Method may not be inlined.
+                                                                                                                  MaxMethodImplVal = 0xffff,   // Range check value
+        };
+        enum Flags
+        {
+
+            MemberAccessMask = 0x0007,
+            PrivateScope = 0x0000,
+            Private = 0x0001,
+            FamANDAssem = 0x0002,
+            Assem = 0x0003,
+            Family = 0x0004,
+            FamORAssem = 0x0005,
+            Public = 0x0006,
+
+            Static = 0x0010,
+            Final = 0x0020,
+            Virtual = 0x0040,
+            HideBySig = 0x0080,
+
+            VtableLayoutMask = 0x0100,
+
+            ReuseSlot = 0x0000,     // The default.
+            NewSlot = 0x0100,
+
+            // implementation attribs    
+            CheckAccessOnOverride = 0x0200,
+            Abstract = 0x0400,
+            SpecialName = 0x0800,
+
+
+            PinvokeImpl = 0x2000,
+
+            UnmanagedExport = 0x0008,
+
+            // Reserved flags for runtime use only.
+
+            ReservedMask = 0xd000,
+            RTSpecialName = 0x1000,
+
+            HasSecurity = 0x4000,
+            RequireSecObject = 0x8000,
+        };
+        MethodDefTableEntry() : implFlags_(0), flags_(0) { }
+        MethodDefTableEntry(PEMethod *Method, int IFlags, int MFlags, size_t NameIndex,
+            size_t SignatureIndex, size_t ParamIndex) : implFlags_(IFlags),
+            flags_(MFlags), nameIndex_(NameIndex), signatureIndex_(SignatureIndex),
+            paramIndex_(ParamIndex), method_(Method) { }
+        virtual int TableIndex() const override { return tMethodDef; }
+        PEMethod *method_; // for rva
+        int implFlags_;
+        int flags_;
+        String nameIndex_;
+        Blob signatureIndex_;
+        ParamList paramIndex_;
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
+        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+    };
+    class ParamTableEntry : public TableEntryBase
+    {
+
+    public:
+        enum Flags
+        {
+            In = 0x0001,     // Param is [In]    
+            Out = 0x0002,     // Param is [out]
+            Optional = 0x0010,     // Param is optional
+
+
+            // runtime attribs
+
+            ReservedMask = 0xf000,
+            HasDefault = 0x1000,     // Param has default value.
+
+            HasFieldMarshal = 0x2000,     // Param has FieldMarshal.
+            Unused = 0xcfe0,
+        };
+        ParamTableEntry() : flags_(0), sequenceIndex_(0) { }
+        ParamTableEntry(int Flags, Word SequenceIndex, size_t NameIndex) :
+            flags_(Flags), sequenceIndex_(SequenceIndex), nameIndex_(NameIndex) { }
+        virtual int TableIndex() const override { return tParam; }
+        int flags_;
+        Word sequenceIndex_;
+        String nameIndex_;
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
+        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+    };
+    class MemberRefTableEntry : public TableEntryBase
+    {
+    public:
+        MemberRefTableEntry() { }
+        MemberRefTableEntry(MemberRefParent ParentIndex, size_t NameIndex, size_t SignatureIndex)
+            : parentIndex_(ParentIndex), nameIndex_(NameIndex), signatureIndex_(SignatureIndex) { }
+        virtual int TableIndex() const override { return tMemberRef; }
+        MemberRefParent parentIndex_;
+        String nameIndex_;
+        Blob signatureIndex_;
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
+        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+    };
+    class ConstantTableEntry : public TableEntryBase
+    {
+    public:
+        ConstantTableEntry() : type_(0) { }
+        ConstantTableEntry(int Type, Constant ParentIndex, size_t ValueIndex) :
+            type_(Type), parentIndex_(ParentIndex), valueIndex_(ValueIndex) { }
+        virtual int TableIndex() const override { return tConstant; }
+        Byte type_;
+        Constant parentIndex_;
+        Blob valueIndex_;
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
+        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+    };
+    class CustomAttributeTableEntry : public TableEntryBase
+    {
+    public:
+        CustomAttributeTableEntry() { }
+        CustomAttributeTableEntry(CustomAttribute ParentIndex, CustomAttributeType TypeIndex, size_t ValueIndex)
+            : parentIndex_(ParentIndex), typeIndex_(TypeIndex), valueIndex_(ValueIndex) { }
+        virtual int TableIndex() const override { return tCustomAttribute; }
+        CustomAttribute parentIndex_;
+        CustomAttributeType typeIndex_;
+        Blob valueIndex_;
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
+        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+    };
+    class ClassLayoutTableEntry : public TableEntryBase
+    {
+    public:
+        ClassLayoutTableEntry() : pack_(1), size_(1) { }
+        ClassLayoutTableEntry(Word Pack, size_t Size, size_t Parent)
+            : pack_(Pack), size_(Size), parent_(Parent) { }
+        virtual int TableIndex() const override { return tClassLayout; }
+        Word pack_;
+        size_t size_;
+        TypeDef parent_;
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
+        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+    };
+    class FieldLayoutTableEntry : public TableEntryBase
+    {
+    public:
+        FieldLayoutTableEntry() : offset_(0) { }
+        FieldLayoutTableEntry(size_t Offset, size_t Parent) : offset_(Offset), parent_(Parent) { }
+        virtual int TableIndex() const override { return tFieldLayout; }
+        size_t offset_;
+        FieldList parent_;
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
+        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+    };
+    class StandaloneSigTableEntry : public TableEntryBase
+    {
+    public:
+        StandaloneSigTableEntry() { }
+        StandaloneSigTableEntry(size_t SignatureIndex) : signatureIndex_(SignatureIndex) { }
+        virtual int TableIndex() const override { return tStandaloneSig; }
+        Blob signatureIndex_;
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
+        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+    };
+    class ModuleRefTableEntry : public TableEntryBase
+    {
+    public:
+        ModuleRefTableEntry() { }
+        ModuleRefTableEntry(size_t NameIndex) : nameIndex_(NameIndex) { }
+        String nameIndex_;
+        virtual int TableIndex() const override { return tModuleRef; }
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
+        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+    };
+    class TypeSpecTableEntry : public TableEntryBase
+    {
+    public:
+        TypeSpecTableEntry() { }
+        TypeSpecTableEntry(size_t SignatureIndex) : signatureIndex_(SignatureIndex) { }
+        virtual int TableIndex() const override { return tTypeSpec; }
+        Blob signatureIndex_;
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
+        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+    };
+
+    // note this is necessary for pinvokes, however, there will be one record in the METHODDEF table
+    // to give information about the function and its parameters.
+    // if the function has a variable length argument list, there will also be one entry in the MEMBERREF
+    // table for each invocation
+    class ImplMapTableEntry : public TableEntryBase
+    {
+    public:
+        enum Flags
+        {
+            NoMangle = 0x0001,   // use the member name as specified
+
+            CharSetMask = 0x0006,
+            CharSetNotSpec = 0x0000,
+            CharSetAnsi = 0x0002,
+            CharSetUnicode = 0x0004,
+            CharSetAuto = 0x0006,
+
+            BestFitUseAssem = 0x0000,
+            BestFitEnabled = 0x0010,
+            BestFitDisabled = 0x0020,
+            BestFitMask = 0x0030,
+
+            ThrowOnUnmappableCharUseAssem = 0x0000,
+            ThrowOnUnmappableCharEnabled = 0x1000,
+            ThrowOnUnmappableCharDisabled = 0x2000,
+            ThrowOnUnmappableCharMask = 0x3000,
+
+            SupportsLastError = 0x0040,
+
+            CallConvMask = 0x0700,
+            CallConvWinapi = 0x0100,   // Index_( will use native callconv appropriate to target windows platform.    
+            CallConvCdecl = 0x0200,
+            CallConvStdcall = 0x0300,
+            CallConvThiscall = 0x0400,   // In M9, Index_( will raise exception.
+
+            CallConvFastcall = 0x0500,
+
+            MaxValue = 0xFFFF,
+        };
+        ImplMapTableEntry() : flags_(0) { }
+        ImplMapTableEntry(int Flags, MemberForwarded MethodIndex, size_t ImportNameIndex, size_t ModuleIndex)
+            : flags_(Flags), methodIndex_(MethodIndex), importNameIndex_(ImportNameIndex), moduleIndex_(ModuleIndex) {  }
+        virtual int TableIndex() const override { return tImplMap; }
+        int flags_;
+        MemberForwarded methodIndex_;
+        String importNameIndex_;
+        ModuleRef moduleIndex_;
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
+        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+    };
+    class FieldRVATableEntry : public TableEntryBase
+    {
+    public:
+        FieldRVATableEntry() : rva_(0) { }
+        FieldRVATableEntry(size_t Rva, size_t FieldIndex) : rva_(Rva), fieldIndex_(FieldIndex) { }
+        virtual int TableIndex() const override { return tFieldRVA; }
+        size_t rva_;
+        FieldList fieldIndex_;
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
+        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+    };
+    enum AssemblyFlags
+    {
+        PublicKey = 0x0001,      // full key
+        PA_None = 0x0000,
+        PA_MSIL = 0x0010,
+        PA_x86 = 0x0020,
+        PA_IA64 = 0x0030,
+        PA_AMD64 = 0x0040,
+        PA_Specified = 0x0080,
+
+        PA_Mask = 0x0070,
+        PA_FullMask = 0x00F0,
+
+        PA_Shift = 0x0004,     // shift count
+
+
+        EnableJITcompileTracking = 0x8000, // From "DebuggableAttribute".    
+        DisableJITcompileOptimizer = 0x4000, // From "DebuggableAttribute".
+
+        Retargetable = 0x0100,
+    };
+    class AssemblyDefTableEntry : public TableEntryBase
+    {
+    public:
+        enum
+        {
+            DefaultHashAlgId = 0x8004
+        };
+        AssemblyDefTableEntry() : hashAlgId_(DefaultHashAlgId), major_(0), minor_(0), build_(0), revision_(0), flags_(0) { }
+        AssemblyDefTableEntry(int Flags, Word Major, Word Minor, Word Build, Word Revision,
+            size_t NameIndex) : hashAlgId_(DefaultHashAlgId), flags_(Flags),
+            major_(Major), minor_(Minor), build_(Build), revision_(Revision),
+            nameIndex_(NameIndex) { }
+        virtual int TableIndex()  const override { return tAssemblyDef; }
+        Word hashAlgId_;
+        Word major_, minor_, build_, revision_;
+        int flags_;
+        Blob publicKeyIndex_;
+        String nameIndex_;
+        String cultureIndex_;
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
+        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+    };
+    class AssemblyRefTableEntry : public TableEntryBase
+    {
+    public:
+        AssemblyRefTableEntry() : major_(0), minor_(0), build_(0), revision_(0), flags_(0) { }
+        AssemblyRefTableEntry(int Flags, Word Major, Word Minor, Word Build, Word Revision,
+            size_t NameIndex, size_t KeyIndex = 0) : flags_(Flags),
+            major_(Major), minor_(Minor), build_(Build), revision_(Revision),
+            nameIndex_(NameIndex), publicKeyIndex_(KeyIndex) { }
+        virtual int TableIndex() const override { return tAssemblyRef; }
+        Word major_, minor_, build_, revision_;
+        int flags_;
+        Blob publicKeyIndex_;
+        String nameIndex_;
+        String cultureIndex_;
+        Blob hashIndex_;
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
+        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+    };
+    class NestedClassTableEntry : public TableEntryBase
+    {
+    public:
+        NestedClassTableEntry() { }
+        NestedClassTableEntry(size_t nested, size_t enclosing) : nestedIndex_(nested), enclosingIndex_(enclosing) { }
+        virtual int TableIndex() const override { return tNestedClass; }
+        TypeDef nestedIndex_;
+        TypeDef enclosingIndex_;
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
+        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+    };
+
+    // this class holds the data for a method
+    // right now it holds redundant data for the function body
+    class PEMethod
+    {
+    public:
+        enum Flags
+        {
+            TinyFormat = 2, // no local variables, MAXstack <=8, size < 64;
+            FatFormat = 3,
+            // more flags only availble for FAT format
+            MoreSects = 8,
+            InitLocals = 0x10,
+
+            CIL = 0x4000, // not a real flag either
+            EntryPoint = 0x8000 // not a real flag that goes in the PE file
+        };
+        PEMethod(int Flags, size_t MethodDef, int MaxStack, int localCount, int CodeSize, size_t signature)
+            : flags_(Flags), hdrSize_(3), maxStack_(MaxStack), codeSize_(CodeSize), code_(nullptr), signatureToken_(signature), rva_(0), methodDef_(MethodDef)
+        {
+            if ((flags_ & 0xfff) == 0)
+                if (maxStack_ <= 8 && codeSize_ < 64 && localCount == 0)
+                {
+                    flags_ = flags_ | (int)TinyFormat;
+                }
+                else
+                {
+                    flags_ = flags_ | (int)FatFormat;
+                }
+        }
+        int flags_;
+        int hdrSize_; /* = 3 */
+        Word maxStack_;
+        size_t codeSize_;
+        Byte *code_;
+        size_t signatureToken_;
+        size_t rva_;
+        size_t methodDef_;
+        size_t Write(size_t sizes[MaxTables + ExtraIndexes], std::fstream &out) const;
+    };
 
 } // namespace

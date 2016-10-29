@@ -273,7 +273,7 @@ typedef struct expr
                 
         struct {
             struct expr *thisptr;
-            struct type *tp;
+            struct typ *tp;
         } t;
     } v;
     LIST *destructors; // for &&  and ||
@@ -319,11 +319,11 @@ union u_val    {
         } s;
         struct _defstruct *defs ; /* macro definition */
     } ;
-typedef    struct type
+typedef    struct typ
     {
         enum e_bt type; /* the type */
         long size; /* total size of type */
-        struct type *btp; /* pointer to next type (pointers & arrays */
+        struct typ *btp; /* pointer to next type (pointers & arrays */
         int used:1; /* type has actually been used in a declaration or cast or expression */
         int array:1; /* not a dereferenceable pointer */
         int vla:1;   /* varriable length array */
@@ -349,7 +349,7 @@ typedef    struct type
         int dbgindex; /* type index for debugger */
         int alignment; /* alignment pref for this structure/class/union   */
         EXPRESSION *esize; /* enode version of size */
-        struct type *etype; /* type of size field  when size isn't constant */
+        struct typ *etype; /* type of size field  when size isn't constant */
         int vlaindex; /* index into the vararray */
         EXPRESSION *templateDeclType; /* for bt_templatedecltype, used in templates */
     } TYPE;
@@ -627,7 +627,7 @@ typedef struct sym
     } *xc;
     LIST *friends;
     /* Type declarations */
-    struct type *tp;
+    struct typ *tp;
 } SYMBOL;
 
 typedef struct __lambda

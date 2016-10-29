@@ -36,11 +36,12 @@
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
 
-all: clib # dll
+all: dll clib 
 
-CLIBDIRS= ALLOC cmath COMPLIB IO locale MATH PROCONT stdlib STRING strings \
-	threads TIME uio wc uchar cpp
-
+BASEDIRS= ALLOC cmath COMPLIB IO locale MATH PROCONT stdlib STRING strings \
+	threads TIME uio wc uchar
+CLIBDIRS = $(BASEDIRS) cpp
+DLLDIRS = $(BASEDIRS)
 DIRS= $(CLIBDIRS) platform
 
 MAKEFILES := $(MAKEFILES) $(realpath maker.mak)
@@ -73,7 +74,7 @@ endef
 SYSOBJECT :=$(realpath object\startup)
 export SYSOBJECT
 
-LSCRTLOBJECT :=$(realpath object\lscrtl)
+LSCRTLOBJECT :=$(realpath object\startup)
 export LSCRTLOBJECT
 
 DLLOBJECT :=$(realpath object\dll)
@@ -113,7 +114,7 @@ BUILDING_DLL = /DBUILDING_DLL=-D__BUILDING_LSCRTL_DLL
 define dlldef
 dll:
 	-mkdir object\dll
-	$(foreach dir, $(CLIBDIRS), $(DLL))
+	$(foreach dir, $(DLLDIRS), $(DLL))
 endef
 
 $(eval $(clibdef))
@@ -154,7 +155,7 @@ ifndef BUILDENV
 	$(COPYDIR) object\startup\%.l $(DISTLIB)
 	$(COPYDIR) object\startup\%.o $(DISTLIB)
 	$(COPYDIR) object\startup\%.exe $(DISTLIB)
-#	$(COPYDIR) object\startup\%.dll $(DISTBIN)
+	$(COPYDIR) object\startup\%.dll $(DISTBIN)
 	$(MAKE) /Cplatform DISTRIBUTE
 endif
 endif

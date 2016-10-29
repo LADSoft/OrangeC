@@ -61,5 +61,5 @@ $(RCFILE).res
 $(RCFILE).res: $(RCFILE).rc ..\..\..\..\version.h
 	orc $(RCFILE).rc
 
-DISTRIBUTE:
-	$(ZIP) -porangec a $(DISTADDON)\lscrtl $(LSCRTLOBJECT)\*.*
+#DISTRIBUTE:
+#	$(ZIP) -porangec a $(DISTADDON)\lscrtl $(LSCRTLOBJECT)\*.*

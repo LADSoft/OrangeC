@@ -37,41 +37,27 @@
     contact information:
         email: TouchStone222@runbox.com <David Lindauer>
 */
-#include "DotNetPELib.h"
-#include "PEFile.h"
-namespace DotNetPELib
-{
-    bool AssemblyDef::ILHeaderDump(PELib &peLib)
-    {
-        peLib.Out() << ".assembly ";
-        if (external_)
-            peLib.Out() << "extern ";
-        peLib.Out() << name_ << "{ }" << std::endl;
-        return true;
+#ifndef MZHeader_h
+#define MZHeader_h
 
-    }
-    bool AssemblyDef::PEHeaderDump(PELib &peLib)
-    {
-        size_t nameIndex = peLib.PEOut().HashString(name_);
-        TableEntryBase *table;
-        if (external_)
-        {
-            size_t blobIndex = 0;
-            for (int i = 0; i < 8; i++)
-            {
-                if (publicKeyToken_[i])
-                {
-                    blobIndex = peLib.PEOut().HashBlob(publicKeyToken_, 8);
-                    break;
-                }
-            }
-            table = new AssemblyRefTableEntry(PA_None, 0, 0, 0, 0, nameIndex, blobIndex);
-        }
-        else
-        {
-            table = new AssemblyDefTableEntry(PA_None, 0, 0, 0, 0, nameIndex);
-        }
-        peIndex_ = peLib.PEOut().AddTableEntry(table);
-        return true;
-    }
-}
+#define MZ_SIGNATURE 0x5A4D /* MZ */
+
+struct MZHeader
+{
+    unsigned short signature;
+    unsigned short image_length_MOD_512;
+    unsigned short image_length_DIV_512;
+    unsigned short n_relocation_items;
+    unsigned short n_header_paragraphs;
+    unsigned short min_paragraphs_above;
+    unsigned short max_paragraphs_above;
+    unsigned short initial_SS;
+    unsigned short initial_SP;
+    unsigned short checksum;
+    unsigned short initial_IP;
+    unsigned short initial_CS;
+    unsigned short offset_to_relocation_table;
+    unsigned short overlay;
+    unsigned short always_one;
+};
+#endif

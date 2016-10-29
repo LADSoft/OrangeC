@@ -1,36 +1,36 @@
 /*
     Software License Agreement (BSD License)
-    
-    Copyright (c) 1997-2011, David Lindauer, (LADSoft).
+
+    Copyright (c) 2016, David Lindauer, (LADSoft).
     All rights reserved.
-    
-    Redistribution and use of this software in source and binary forms, 
-    with or without modification, are permitted provided that the following 
+
+    Redistribution and use of this software in source and binary forms,
+    with or without modification, are permitted provided that the following
     conditions are met:
-    
+
     * Redistributions of source code must retain the above
       copyright notice, this list of conditions and the
       following disclaimer.
-    
+
     * Redistributions in binary form must reproduce the above
       copyright notice, this list of conditions and the
       following disclaimer in the documentation and/or other
       materials provided with the distribution.
-    
+
     * Neither the name of LADSoft nor the names of its
       contributors may be used to endorse or promote products
       derived from this software without specific prior
       written permission of LADSoft.
-    
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
-    THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
-    PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
-    OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
-    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
-    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
-    OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-    WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+    THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+    PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
+    OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+    OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+    WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
     OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
     ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
@@ -44,73 +44,77 @@
 #include <set>
 #include <typeinfo>
 namespace DotNetPELib
-{    
-    Method::Method(MethodSignature *Prototype, Qualifiers flags, bool entry) 
-        :CodeContainer(flags), prototype(Prototype), maxStack(100), 
-        invokeMode(CIL), pInvokeType(Stdcall), entryPoint(entry), rendering(NULL)
+{
+    Method::Method(MethodSignature *Prototype, Qualifiers flags, bool entry)
+        : CodeContainer(flags), prototype_(Prototype), maxStack_(100),
+        invokeMode_(CIL), pInvokeType_(Stdcall), entryPoint_(entry), rendering_(nullptr)
     {
-        if (!(flags.flags & Qualifiers::Static))
-            prototype->SetInstanceFlag();
+        if (!(flags_.Flags() & Qualifiers::Static))
+            prototype_->SetInstanceFlag();
     }
     void Method::AddLocal(Local *local)
     {
-        local->SetIndex(varList.size());
-        varList.push_back(local);
+        local->Index(varList_.size());
+        varList_.push_back(local);
     }
 
-    bool Method::ILSrcDump(PELib &peLib)
+    bool Method::ILSrcDump(PELib &peLib) const
     {
         peLib.Out() << ".method";
-        flags.ILSrcDumpBeforeFlags(peLib);
-        if (invokeMode == PInvoke)
+        flags_.ILSrcDumpBeforeFlags(peLib);
+        if (invokeMode_ == PInvoke)
         {
-            peLib.Out() << " pinvokeimpl(\"" << pInvokeName << "\" " 
-                        << (pInvokeType == Cdecl ? "cdecl) " : "stdcall) ");
-            
+            peLib.Out() << " pinvokeimpl(\"" << pInvokeName_ << "\" "
+                << (pInvokeType_ == Cdecl ? "cdecl) " : "stdcall) ");
+
         }
         else
         {
             peLib.Out() << " ";
         }
-        prototype->ILSrcDump(peLib, invokeMode != PInvoke, false, invokeMode == PInvoke);
-        flags.ILSrcDumpAfterFlags(peLib);
-        if (invokeMode != PInvoke)
+        prototype_->ILSrcDump(peLib, invokeMode_ != PInvoke, false, invokeMode_ == PInvoke);
+        flags_.ILSrcDumpAfterFlags(peLib);
+        if (invokeMode_ != PInvoke)
         {
             peLib.Out() << "{" << std::endl;
-            if ((prototype->GetFlags() & MethodSignature::Vararg) && (prototype->GetFlags() & MethodSignature::Managed))
+            if ((prototype_->Flags() & MethodSignature::Vararg) && (prototype_->Flags() & MethodSignature::Managed))
             {
                 // allow C# to use ...
-                peLib.Out() << "\t.param\t[" << prototype->GetParamCount() << "]" << std::endl;
-                peLib.Out() << "\t.custom instance void [mscorlib]System.ParamArrayAttribute::.ctor() = ( 01 00 00 00 )" << std::endl; 
+                peLib.Out() << "\t.param\t[" << prototype_->ParamCount() << "]" << std::endl;
+                peLib.Out() << "\t.custom instance void [mscorlib]System.ParamArrayAttribute::.ctor() = ( 01 00 00 00 )" << std::endl;
             }
-            if (varList.size())
+            if (varList_.size())
             {
                 peLib.Out() << "\t.locals (" << std::endl;
-                for (std::list<Local *>::iterator it = varList.begin(); it != varList.end();)
+                for (std::list<Local *>::const_iterator it = varList_.begin(); it != varList_.end();)
                 {
 
-                    peLib.Out() << "\t\t[" << (*it)->GetIndex() << "]\t";
+                    peLib.Out() << "\t\t[" << (*it)->Index() << "]\t";
                     if ((*it)->GetType()->GetBasicType() == Type::cls)
                     {
-                        if ((*it)->GetType()->GetClass()->GetFlags().flags & Qualifiers::Value)
+                        if ((*it)->GetType()->GetClass()->Flags().Flags() & Qualifiers::Value)
                             peLib.Out() << "valuetype ";
                         else
                             peLib.Out() << "class ";
                     }
+                    else if ((*it)->GetType()->FullName().size())
+                    {
+                        peLib.Out() << "class ";
+                    }
                     (*it)->GetType()->ILSrcDump(peLib);
                     peLib.Out() << " ";
                     (*it)->ILSrcDump(peLib);
-                    ++it ;
-                    if (it != varList.end())
+                    ++it;
+                    if (it != varList_.end())
                         peLib.Out() << "," << std::endl;
                     else
                         peLib.Out() << std::endl;
                 }
                 peLib.Out() << "\t)" << std::endl;
             }
-            if (entryPoint)
+            if (entryPoint_)
                 peLib.Out() << "\t.entrypoint" << std::endl;
-            peLib.Out() << "\t.maxstack " << maxStack << std::endl << std::endl;
+            peLib.Out() << "\t.maxstack " << maxStack_ << std::endl << std::endl;
             CodeContainer::ILSrcDump(peLib);
             peLib.Out() << "}" << std::endl;
         }
@@ -122,103 +126,151 @@ namespace DotNetPELib
     }
     bool Method::PEDump(PELib &peLib)
     {
-        unsigned char *code;
+        Byte *code;
         size_t sz;
-        unsigned char *sig = SignatureGenerator::LocalVarSig(this, sz);
-        size_t methodSignature = peLib.PEOut().HashBlob(sig, sz);
-        TableEntryBase *table = new StandaloneSigTableEntry(methodSignature);
-        methodSignature = peLib.PEOut().AddTableEntry(table);
-        Instruction *last = instructions.back();        
-        rendering = new PEMethod(entryPoint ? PEMethod::EntryPoint : 0, peLib.PEOut().GetIndex(tMethodDef),
-                                    maxStack,  varList.size(), 
-                                    last->GetOffset() + last->GetInstructionSize(), 
-                                    methodSignature) ;
-        peLib.PEOut().AddMethod(rendering);
+        size_t methodSignature = 0;
+        Byte *sig = nullptr;
+        TableEntryBase *table;
+        if (prototype_->ParamCount())
+        {
+            // assign an index to any params...
+            for (auto it = prototype_->begin(); it != prototype_->end(); ++it)
+            {
+                auto param = *it;
+                Type *tp = param->GetType();
+                if (tp->FullName().size() || tp->GetBasicType() == Type::cls)
+                {
+                    if (!tp->PEIndex())
+                    {
+                        Byte buf[256];
+                        tp->Render(peLib, buf);
+                    }
+                }
+
+            }
+        }
+        if (varList_.size())
+        {
+            // assign type indexes to any types that haven't already been defined
+            for (auto local : varList_)
+            {
+                Type *tp = local->GetType();
+                if (tp->FullName().size() || tp->GetBasicType() == Type::cls)
+                {
+                    if (!tp->PEIndex())
+                    {
+                        Byte buf[256];
+                        tp->Render(peLib, buf);
+                    }
+                }
+            }
+            sig = SignatureGenerator::LocalVarSig(this, sz);
+            methodSignature = peLib.PEOut().HashBlob(sig, sz);
+            table = new StandaloneSigTableEntry(methodSignature);
+            methodSignature = peLib.PEOut().AddTableEntry(table);
+        }
+        Instruction *last = nullptr;
+        if (instructions_.size())
+            last = instructions_.back();
+        rendering_ = new PEMethod((entryPoint_ ? PEMethod::EntryPoint : 0) | (invokeMode_ == CIL ? PEMethod::CIL : 0),
+            peLib.PEOut().NextTableIndex(tMethodDef),
+            maxStack_, varList_.size(),
+            last ? last->Offset() + last->InstructionSize() : 0,
+            methodSignature ? methodSignature | (tStandaloneSig << 24) : 0);
+        if (invokeMode_ == CIL)
+            peLib.PEOut().AddMethod(rendering_);
         delete[] sig;
 
-        int implFlags = MethodDefTableEntry::ForwardRef;
+        int implFlags = 0;
         int MFlags = 0;
-        if (flags.flags & Qualifiers::CIL)
+        if (flags_.Flags() & Qualifiers::CIL)
             implFlags |= MethodDefTableEntry::IL;
-        if (flags.flags & Qualifiers::Managed)
+        if (flags_.Flags() & Qualifiers::Managed)
             implFlags |= MethodDefTableEntry::Managed;
-        if (flags.flags & Qualifiers::PreserveSig)
+        if (flags_.Flags() & Qualifiers::PreserveSig)
             implFlags |= MethodDefTableEntry::PreserveSig;
-        if (flags.flags & Qualifiers::Public)
+        if (flags_.Flags() & Qualifiers::Public)
             MFlags |= MethodDefTableEntry::Public;
-        else if (flags.flags & Qualifiers::Private)
+        else if (flags_.Flags() & Qualifiers::Private)
             MFlags |= MethodDefTableEntry::Private;
-        if (flags.flags & Qualifiers::Static)
+        if (flags_.Flags() & Qualifiers::Static)
             MFlags |= MethodDefTableEntry::Static;
-        if (flags.flags & Qualifiers::SpecialName)
+        if (flags_.Flags() & Qualifiers::SpecialName)
             MFlags |= MethodDefTableEntry::SpecialName;
-        if (flags.flags & Qualifiers::RTSpecialName)
+        if (flags_.Flags() & Qualifiers::RTSpecialName)
             MFlags |= MethodDefTableEntry::RTSpecialName;
-        if (flags.flags & Qualifiers::HideBySig)
+        if (flags_.Flags() & Qualifiers::HideBySig)
             MFlags |= MethodDefTableEntry::HideBySig;
-        if (invokeMode == PInvoke)
+        if (invokeMode_ == PInvoke)
         {
             MFlags |= MethodDefTableEntry::PinvokeImpl;
         }
-        size_t nameIndex = peLib.PEOut().HashString(prototype->GetName());
-        size_t paramIndex = peLib.PEOut().GetIndex(tParam);
-        table = new MethodDefTableEntry(this, implFlags, MFlags, 
-                           nameIndex,  methodSignature, paramIndex);
-        prototype->SetPEIndex(peLib.PEOut().AddTableEntry(table));
-        int i = 0;
-        for (MethodSignature::iterator it = prototype->begin(); it != prototype->end(); ++it)
+        size_t nameIndex = peLib.PEOut().HashString(prototype_->Name());
+        size_t paramIndex = peLib.PEOut().NextTableIndex(tParam);
+
+        sig = SignatureGenerator::MethodDefSig(prototype_, sz);
+        methodSignature = peLib.PEOut().HashBlob(sig, sz);
+        delete[] sig;
+
+        table = new MethodDefTableEntry(rendering_, implFlags, MFlags,
+            nameIndex, methodSignature, paramIndex);
+        prototype_->SetPEIndex(peLib.PEOut().AddTableEntry(table));
+        int i = 1;
+        size_t lastParamIndex = 0;
+        for (auto it = prototype_->begin(); it != prototype_->end(); ++it)
         {
-            size_t nameIndex = peLib.PEOut().HashString((*it)->GetName());
-            ParamTableEntry *table = new ParamTableEntry(ParamTableEntry::In, i++, nameIndex);
-            peLib.PEOut().AddTableEntry(table);
+            int flags = 0;
+            size_t nameIndex = peLib.PEOut().HashString((*it)->Name());
+            TableEntryBase *table = new ParamTableEntry(flags, i++, nameIndex);
+            lastParamIndex = peLib.PEOut().AddTableEntry(table);
         }
 
-        if (invokeMode == PInvoke)
+        if (invokeMode_ == PInvoke)
         {
             int Flags = 0;
-            Flags |= ImplMapTableEntry::CharSetAnsi;
-            if (pInvokeType == Cdecl)
+            //            Flags |= ImplMapTableEntry::CharSetAnsi;
+            if (pInvokeType_ == Cdecl)
                 Flags |= ImplMapTableEntry::CallConvCdecl;
             else
                 Flags |= ImplMapTableEntry::CallConvStdcall;
             size_t importName = nameIndex;
-            size_t moduleName = peLib.PEOut().HashString(pInvokeName);
-            MemberForwarded methodIndex(MemberForwarded::MethodDef, prototype->GetPEIndex());
-            ImplMapTableEntry *table = new ImplMapTableEntry(Flags, methodIndex, importName, moduleName);
+            size_t moduleName = peLib.PEOut().HashString(pInvokeName_);
+            size_t moduleRef = peLib.moduleRefs[moduleName];
+            if (moduleRef == 0)
+            {
+                TableEntryBase *table = new ModuleRefTableEntry(moduleName);
+                moduleRef = peLib.PEOut().AddTableEntry(table);
+                peLib.moduleRefs[moduleName] = moduleRef;
+            }
+            MemberForwarded methodIndex(MemberForwarded::MethodDef, prototype_->PEIndex());
+            ImplMapTableEntry *table = new ImplMapTableEntry(Flags, methodIndex, importName, moduleRef);
             peLib.PEOut().AddTableEntry(table);
         }
-        if ((prototype->GetFlags() & MethodSignature::Vararg) && (prototype->GetFlags() & MethodSignature::Managed))
+        if ((prototype_->Flags() & MethodSignature::Vararg) && (prototype_->Flags() & MethodSignature::Managed))
         {
-            size_t attributeType = peLib.PEOut().GetParamAttributeType();
-            size_t attributeData = peLib.PEOut().GetParamAttributeData();
+            size_t attributeType = peLib.PEOut().ParamAttributeType();
+            size_t attributeData = peLib.PEOut().ParamAttributeData();
             if (!attributeType && !attributeData)
             {
-                AssemblyDef *assembly = peLib.FindAssembly("mscorlib");
-                if (!assembly)
-                {
-                    peLib.AllocateAssemblyDef("mscorlib", true);
-                    
-                    assembly = peLib.FindAssembly("mscorlib");
-                    assembly->PEDump(peLib);
-                }
+                AssemblyDef *assembly = peLib.MSCorLibAssembly(true);
                 size_t ns = peLib.PEOut().HashString("System");
                 size_t cls = peLib.PEOut().HashString("ParamArrayAttribute");
                 size_t ctor = peLib.PEOut().HashString(".ctor");
-                ResolutionScope rs(ResolutionScope::AssemblyRef, assembly->GetPEIndex());
+                ResolutionScope rs(ResolutionScope::AssemblyRef, assembly->PEIndex());
                 TableEntryBase *table = new TypeRefTableEntry(rs, cls, ns);
                 size_t typeEntry = peLib.PEOut().AddTableEntry(table);
-                static unsigned char ctorSig[] = { 0x20, 0, 1};
+                static Byte ctorSig[] = { 0x20, 0, 1 };
                 size_t ctor_sig = peLib.PEOut().HashBlob(ctorSig, sizeof(ctorSig));
-                MemberRefParent parentClass(MemberRefParent::TypeRef, typeEntry); 
+                MemberRefParent parentClass(MemberRefParent::TypeRef, typeEntry);
                 table = new MemberRefTableEntry(parentClass, ctor, ctor_sig);
                 size_t ctor_index = peLib.PEOut().AddTableEntry(table);
-                static unsigned char data[] = { 1 };
+                static Byte data[] = { 1, 0, 0, 0 };
                 size_t data_sig = peLib.PEOut().HashBlob(data, sizeof(data));
-                peLib.PEOut().SetParamAttribute(ctor_index, data_sig);
-                size_t attributeType = peLib.PEOut().GetParamAttributeType();
-                size_t attributeData = peLib.PEOut().GetParamAttributeData();
+                peLib.PEOut().ParamAttribute(ctor_index, data_sig);
+                attributeType = peLib.PEOut().ParamAttributeType();
+                attributeData = peLib.PEOut().ParamAttributeData();
             }
-            CustomAttribute attribute(CustomAttribute::MethodDef, prototype->GetPEIndex());
+            CustomAttribute attribute(CustomAttribute::ParamDef, lastParamIndex);
             CustomAttributeType type(CustomAttributeType::MethodRef, attributeType);
             TableEntryBase *table = new CustomAttributeTableEntry(attribute, type, attributeData);
             peLib.PEOut().AddTableEntry(table);
@@ -227,13 +279,13 @@ namespace DotNetPELib
     }
     void Method::Compile(PELib &peLib)
     {
-        rendering->code = CodeContainer::Compile(peLib, rendering->codeSize);
+        rendering_->code_ = CodeContainer::Compile(peLib, rendering_->codeSize_);
     }
     void Method::Optimize(PELib &peLib)
     {
         CalculateLive();
         CalculateMaxStack();
-        OptimizeLocals(peLib );
+        OptimizeLocals(peLib);
         CodeContainer::Optimize(peLib);
     }
     void Method::CalculateLive()
@@ -244,26 +296,26 @@ namespace DotNetPELib
         while (!done)
         {
             done = true;
-            for (std::list<Instruction *>::iterator it = instructions.begin(); it != instructions.end(); ++it)
+            for (auto instruction : instructions_)
             {
                 if (!skipping)
                 {
-                    (*it)->SetLive(true);
-                    if ((*it)->IsBranch())
+                    instruction->Live(true);
+                    if (instruction->IsBranch())
                     {
-                        if (labelsReached.find((*it)->GetOperand()->GetStringValue()) == labelsReached.end())
+                        if (labelsReached.find(instruction->GetOperand()->StringValue()) == labelsReached.end())
                         {
                             done = false;
-                            labelsReached.insert((*it)->GetOperand()->GetStringValue());
+                            labelsReached.insert(instruction->GetOperand()->StringValue());
                         }
-                        if ((*it)->GetOp() == Instruction::i_br)
+                        if (instruction->OpCode() == Instruction::i_br)
                             skipping = true;
                     }
-                    else if ((*it)->GetOp() == Instruction::i_switch)
+                    else if (instruction->OpCode() == Instruction::i_switch)
                     {
-                        if ((*it)->GetSwitches())
+                        if (instruction->GetSwitches())
                         {
-                            for (std::list<std::string>::iterator its = (*it)->GetSwitches()->begin(); its != (*it)->GetSwitches()->end(); ++its)
+                            for (auto its = instruction->GetSwitches()->begin(); its != instruction->GetSwitches()->end(); ++its)
                             {
                                 if (labelsReached.find(*its) == labelsReached.end())
                                 {
@@ -274,11 +326,11 @@ namespace DotNetPELib
                         }
                     }
                 }
-                else if ((*it)->GetOp() == Instruction::i_label)
+                else if (instruction->OpCode() == Instruction::i_label)
                 {
-                    if (labelsReached.find((*it)->GetText()) != labelsReached.end())
+                    if (labelsReached.find(instruction->GetText()) != labelsReached.end())
                     {
-                        (*it)->SetLive(true);
+                        instruction->Live(true);
                         skipping = false;
                     }
                 }
@@ -288,49 +340,49 @@ namespace DotNetPELib
     void Method::CalculateMaxStack()
     {
         std::map<std::string, int> labels;
-        maxStack = 0;
+        maxStack_ = 0;
         int n = 0;
         bool lastBranch = false;
         bool skipping = false;
-        for (std::list<Instruction *>::iterator it = instructions.begin(); it != instructions.end(); ++it)
+        for (auto instruction : instructions_)
         {
-            if ((*it)->IsLive())
+            if (instruction->IsLive())
             {
-                int m = (*it)->GetStackUsage();
+                int m = instruction->StackUsage();
                 if (m == -127)
                     n = 0;
                 else
                     n += m;
-                if (n > maxStack)
-                    maxStack = n;
-                if (n <0 )
+                if (n > maxStack_)
+                    maxStack_ = n;
+                if (n < 0)
                 {
                     throw PELibError(PELibError::StackUnderflow);
                 }
-                if ((*it)->IsBranch())
+                if (instruction->IsBranch())
                 {
                     lastBranch = true;
-                    std::map<std::string, int>::iterator it1 = labels.find((*it)->GetOperand()->GetStringValue());
+                    auto it1 = labels.find(instruction->GetOperand()->StringValue());
                     if (it1 != labels.end())
                     {
                         if (it1->second != n)
                         {
-                            throw PELibError(PELibError::MismatchedStack, (*it)->GetOperand()->GetStringValue());
+                            throw PELibError(PELibError::MismatchedStack, instruction->GetOperand()->StringValue());
                         }
                     }
                     else
                     {
-                        labels[(*it)->GetOperand()->GetStringValue()] = n;
+                        labels[instruction->GetOperand()->StringValue()] = n;
                     }
-    
+
                 }
-                else if ((*it)->GetOp() == Instruction::i_switch)
+                else if (instruction->OpCode() == Instruction::i_switch)
                 {
-                    if ((*it)->GetSwitches())
+                    if (instruction->GetSwitches())
                     {
-                        for (std::list<std::string>::iterator its = (*it)->GetSwitches()->begin(); its != (*it)->GetSwitches()->end(); ++its)
+                        for (auto its = instruction->GetSwitches()->begin(); its != instruction->GetSwitches()->end(); ++its)
                         {
-                            std::map<std::string, int>::iterator it1 = labels.find(*its);
+                            auto it1 = labels.find(*its);
                             if (it1 != labels.end())
                             {
                                 if (it1->second != n)
@@ -345,11 +397,11 @@ namespace DotNetPELib
                         }
                     }
                 }
-                else if ((*it)->GetOp() == Instruction::i_label)
+                else if (instruction->OpCode() == Instruction::i_label)
                 {
                     if (lastBranch)
                     {
-                        std::map<std::string, int>::iterator it1 = labels.find((*it)->GetText());
+                        auto it1 = labels.find(instruction->GetText());
                         if (it1 != labels.end())
                         {
                             n = it1->second;
@@ -361,22 +413,22 @@ namespace DotNetPELib
                     }
                     else
                     {
-                        std::map<std::string, int>::iterator it1 = labels.find((*it)->GetText());
+                        auto it1 = labels.find(instruction->GetText());
                         if (it1 != labels.end())
                         {
                             if (it1->second != n)
                             {
-                                throw PELibError(PELibError::MismatchedStack, (*it)->GetText());
+                                throw PELibError(PELibError::MismatchedStack, instruction->GetText());
                             }
                         }
                         else
                         {
-                            labels[(*it)->GetText()] = n;
+                            labels[instruction->GetText()] = n;
                         }
                     }
-    
+
                 }
-                else if ((*it)->GetOp() == Instruction::i_comment)
+                else if (instruction->OpCode() == Instruction::i_comment)
                 {
                     // placeholder
                 }
@@ -388,7 +440,7 @@ namespace DotNetPELib
         }
         if (n != 0)
         {
-            if (n != 1 || prototype->GetReturnType()->IsVoid())
+            if (n != 1 || prototype_->ReturnType()->IsVoid())
                 throw PELibError(PELibError::StackNotEmpty, " at end of function");
         }
     }
@@ -403,9 +455,9 @@ namespace DotNetPELib
     }
     void Method::OptimizeLocals(PELib &peLib)
     {
-        for (std::list<Instruction *>::iterator it = instructions.begin(); it != instructions.end(); ++it)
+        for (auto instruction : instructions_)
         {
-            Operand *op = (*it)->GetOperand();
+            Operand *op = instruction->GetOperand();
             if (op)
             {
                 Value *v = op->GetValue();
@@ -415,20 +467,20 @@ namespace DotNetPELib
                 }
             }
         }
-        int n = varList.size();
+        int n = varList_.size();
         Local **vars = new Local *[n];
         int i = 0;
-        for (std::list<Local *>::iterator it = varList.begin(); it != varList.end(); ++it, ++i)
+        for (auto local : varList_)
         {
-            vars[i] = *it;
+            vars[i++] = local;
         }
-        varList.clear();
+        varList_.clear();
         qsort(vars, n, sizeof(Local *), localCompare);
-        for (int i=0; i < n; i++)
+        for (int i = 0; i < n; i++)
         {
-            vars[i]->SetIndex(i);
-            varList.push_back(vars[i]);
+            vars[i]->Index(i);
+            varList_.push_back(vars[i]);
         }
-        delete [] vars;
+        delete[] vars;
     }
 }

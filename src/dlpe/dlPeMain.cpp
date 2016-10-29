@@ -325,8 +325,8 @@ void dlPeMain::InitHeader(unsigned headerSize, ObjInt endVa)
     header.time=(unsigned)time(NULL);
     header.nt_hdr_size = PE_OPTIONAL_HEADER_SIZE ;
 
-    header.flags = PE_FILE_EXECUTABLE | PE_FILE_32BIT | PE_FILE_REVERSE_BITS_HIGH |
-                PE_FILE_REVERSE_BITS_LOW | PE_FILE_LOCAL_SYMBOLS_STRIPPED | PE_FILE_LINE_NUMBERS_STRIPPED  ;
+    header.flags = PE_FILE_EXECUTABLE | PE_FILE_32BIT | PE_FILE_LOCAL_SYMBOLS_STRIPPED | PE_FILE_LINE_NUMBERS_STRIPPED
+                 | PE_FILE_REVERSE_BITS_HIGH | PE_FILE_REVERSE_BITS_LOW ;
     if (mode == DLL)
     {
         header.flags |= PE_FILE_LIBRARY;
@@ -337,13 +337,24 @@ void dlPeMain::InitHeader(unsigned headerSize, ObjInt endVa)
     header.file_align = fileAlign ;
     header.object_align = objectAlign ;
 
-    header.os_major_version = osMajor ;
-    header.os_minor_version = osMinor ;
-    header.user_major_version = userMajor ;
-    header.user_minor_version = userMinor ;
-    header.subsys_major_version = subsysMajor ;
-    header.subsys_minor_version = subsysMinor ;
-    
+    if (mode == DLL)
+    {
+        header.os_major_version = 4 ;
+        header.os_minor_version = 0 ;
+        header.user_major_version = userMajor ;
+        header.user_minor_version = userMinor ;
+        header.subsys_major_version = 4 ;
+        header.subsys_minor_version = 0 ;
+    }
+    else
+    {
+        header.os_major_version = osMajor ;
+        header.os_minor_version = osMinor ;
+        header.user_major_version = userMajor ;
+        header.user_minor_version = userMinor ;
+        header.subsys_major_version = subsysMajor ;
+        header.subsys_minor_version = subsysMinor ;
+    }    
     header.subsystem = mode == GUI ? PE_SUBSYS_WINDOWS : PE_SUBSYS_CONSOLE ;
 
     header.num_rvas = PE_NUM_VAS ;

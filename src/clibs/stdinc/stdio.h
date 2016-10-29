@@ -99,6 +99,12 @@ extern __STD_NS_QUALIFIER FILE * __stdout ;
 extern __STD_NS_QUALIFIER FILE * __stderr ;
 extern __STD_NS_QUALIFIER FILE * __stdaux ;
 extern __STD_NS_QUALIFIER FILE * __stdprn ;
+#elif defined(__LSCRTL_DLL)
+extern __STD_NS_QUALIFIER FILE _IMPORT * __stdin ;
+extern __STD_NS_QUALIFIER FILE _IMPORT * __stdout ;
+extern __STD_NS_QUALIFIER FILE _IMPORT * __stderr ;
+extern __STD_NS_QUALIFIER FILE _IMPORT * __stdaux ;
+extern __STD_NS_QUALIFIER FILE _IMPORT * __stdprn ;
 #else
 extern __STD_NS_QUALIFIER FILE _RTL_DATA * __stdin ;
 extern __STD_NS_QUALIFIER FILE _RTL_DATA * __stdout ;
@@ -301,7 +307,7 @@ int _RTL_FUNC _IMPORT _setmaxstdio(int);
 
 /*  The following macros provide for common functions */
 
-#if !defined(__CRTDLL_DLL) && !defined(__MSVCRT_DLL) && !defined(__MSIL__)
+#if !defined(__CRTDLL_DLL) && !defined(__MSVCRT_DLL) && !defined(__MSIL__) && !defined(__LSCRTL_DLL)
 #define ferror(f)   ((f)->flags & _F_ERR)
 #define feof(f)     ((f)->flags & _F_EOF)
 #endif

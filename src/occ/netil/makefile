@@ -105,7 +105,7 @@ LIB_DEPENDENCIES=util netlib
 WIN32 = WIN32
 #use long long type
 LL = USE_LONGLONG
-DEFINES=$(i386) $(LL) $(MSDOS) $(WIN32)
+DEFINES=$(i386) $(LL) $(MSDOS) $(WIN32) nullptr=NULL override
 
 SOURCE = ..\parse;..\preproc;..\middle
 
@@ -123,8 +123,8 @@ redirect:
 	@$(MAKE) /T
 
 occmsil: occmsil.c
-	-del occmsil.l
-	occ /Wd /9 occmsil.c
+	-del occmsil.dll
+	bcc32 /WD occmsil.c
 
 lsmsilcrtl.dll: lsmsilcrtl.cs
 	csc /unsafe /t:library lsmsilcrtl.cs

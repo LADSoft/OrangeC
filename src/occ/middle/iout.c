@@ -1991,7 +1991,7 @@ int genstring(STRING *str)
                     genuint32(*p++);
                     break;
                 default:
-                    if (isgraph(*p) || *p == ' ')
+                    if (p >= 0x20 && p < 0x7f || *p == ' ')
                     {
                         if (!instring)
                         {

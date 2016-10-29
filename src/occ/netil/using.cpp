@@ -1,6 +1,5 @@
 #include "compiler.h"
 #include "dllexportreader.h"
-#include "CmdFiles.h"
 #include <string>
 struct data
 {
@@ -10,6 +9,7 @@ struct data
 #define HASHLEN 2048
 static HASHREC *_using_hash[HASHLEN];
 static LIST *_global_using_list;
+static char *DIR_SEP = "\\";
 extern "C" void _using_init()
 {
 }
@@ -44,8 +44,8 @@ extern "C" BOOLEAN _using_(char *file)
     DLLExportReader reader(file);
     if (reader.Read())
     {
-        std::string rootName = reader.GetName();
-        unsigned npos = rootName.find_last_of(CmdFiles::DIR_SEP);
+        std::string rootName = reader.Name();
+        unsigned npos = rootName.find_last_of(DIR_SEP);
         if (npos != std::string::npos && npos != rootName.size()-1)
         {
             rootName = rootName.substr(npos+1);

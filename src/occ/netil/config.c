@@ -300,7 +300,6 @@ static int initnasm(COMPILER_PARAMS *parms, ARCH_ASM *data, ARCH_DEBUG *debug)
     (void)data;
     (void)debug;
     prm_assembler = pa_nasm;
-    cparams.prm_asmfile = TRUE;
     return 1;
 }
     static void WinmodeSetup(char select, char *string)
@@ -556,7 +555,7 @@ ARCH_ASM assemblerInterface[] = {
     NULL,		/* translate an assembly instruction which was inlined */
     0,                   /* initialize intrinsic mechanism, compiler startup */
     0,                   /* search for an intrinsic */
-    0,                     /* enter a type in the BE */
+    oa_enter_type,                     /* enter a type in the BE */
     },
     { 0 }
 } ;

@@ -45,20 +45,25 @@
 
 using namespace DotNetPELib;
 
-extern PELib *peLib;
-extern int startlab, retlab;
-extern int MSILLocalOffset;
-extern TYPE stdint;
-extern EXPRESSION *objectArray_exp;
-extern MethodSignature *argsCtor;
-extern MethodSignature *argsNextArg;
-extern MethodSignature *argsUnmanaged;
-extern MethodSignature *ptrBox;
-extern MethodSignature *ptrUnbox;
-extern Type *systemObject;
-extern Method *currentMethod;
-extern std::vector<Local *> localList;
-extern DataContainer *mainContainer;
+extern "C" {
+
+	extern int nextLabel;
+	extern SYMBOL *theCurrentFunc;
+	extern PELib *peLib;
+	extern int startlab, retlab;
+	extern int MSILLocalOffset;
+	extern TYPE stdint;
+	extern EXPRESSION *objectArray_exp;
+	extern MethodSignature *argsCtor;
+	extern MethodSignature *argsNextArg;
+	extern MethodSignature *argsUnmanaged;
+	extern MethodSignature *ptrBox;
+	extern MethodSignature *ptrUnbox;
+	extern Type *systemObject;
+	extern Method *currentMethod;
+	extern std::vector<Local *> localList;
+	extern DataContainer *mainContainer;
+}
 #define MAX_ALIGNS 50
 
 struct swlist
@@ -88,10 +93,12 @@ Type * GetStringType(int type);
 Value *GetLocalData(SYMBOL *sp);
 Value *GetParamData(std::string name);
 Value *GetFieldData(SYMBOL *sp);
-MethodSignature *GetMethodSignature(TYPE *tp, BOOLEAN pinvoke);
+MethodSignature *GetMethodSignature(SYMBOL *sp);
 void LoadLocals(SYMBOL *sp);
 void LoadParams(SYMBOL *sp);
 BOOLEAN qualifiedStruct(SYMBOL *sp);
+Value *GetStringFieldData(int i, int type);
+Value *GetStructField(SYMBOL *sp);
 
 void include_start(char *name, int num)
 {
@@ -132,23 +139,20 @@ Operand *make_constant(int sz, EXPRESSION *exp)
     else if (isfloatconst(exp))
     {
         double a;
-        FPFToDouble((char *)&a, &exp->v.f);
+        FPFToDouble((unsigned char *)&a, &exp->v.f);
         operand = peLib->AllocateOperand(a, Operand::any);
     }
     else if (exp->type == en_structelem)
     {
-        Field *field = peLib->AllocateField(exp->v.sp->name, GetType(exp->v.sp->tp, TRUE), Qualifiers::Public | Qualifiers::ValueType);
-        Type *parentType = GetType(exp->v.sp->parentClass->tp, TRUE);
-        field->SetContainer(parentType->GetClass());
-        operand = peLib->AllocateOperand(peLib->AllocateFieldName(field));
+        Value *field = GetStructField(exp->v.sp);
+        operand = peLib->AllocateOperand(field);
     }
     else if (exp->type == en_labcon)
     {
         char lbl[256];
         sprintf(lbl, "L_%d", exp->v.i);
-        Field *field = peLib->AllocateField(lbl, GetStringType((int)exp->altdata), Qualifiers::Private | Qualifiers::Static | Qualifiers::ValueType);
-        field->SetContainer(mainContainer);
-        operand = peLib->AllocateOperand(peLib->AllocateFieldName(field));
+        Value *field = GetStringFieldData(exp->v.i, exp->altdata);
+        operand = peLib->AllocateOperand(field);
     }
     else if (exp->type == en_auto)
     {
@@ -156,7 +160,7 @@ Operand *make_constant(int sz, EXPRESSION *exp)
     }
     else if (isfunction(exp->v.sp->tp))
     {
-        operand = peLib->AllocateOperand(peLib->AllocateMethodName(GetMethodSignature(exp->v.sp->tp, !msil_managed(exp->v.sp))));
+        operand = peLib->AllocateOperand(peLib->AllocateMethodName(GetMethodSignature(exp->v.sp)));
     }
     else
     {
@@ -193,11 +197,11 @@ Operand *getCallOperand(QUAD *q)
     if (q->dc.left->mode == i_immed)
     {
         SYMBOL *sp = en->v.sp;
-        sig = GetMethodSignature(sp->tp, !msil_managed(sp));
+        sig = GetMethodSignature(sp);
         if (!msil_managed(sp))
         {
             INITLIST *valist = ((FUNCTIONCALL *)q->altdata)->arguments;
-            int n = sig->GetParamCount();
+            int n = sig->ParamCount();
             while (n-- && valist)
                 valist = valist->next;
             while (valist)
@@ -210,7 +214,7 @@ Operand *getCallOperand(QUAD *q)
     else
     {
         SYMBOL *sp = ((FUNCTIONCALL *)q->altdata)->sp;
-       sig = GetMethodSignature(sp->tp, !msil_managed(sp));
+       sig = GetMethodSignature(sp);
         sig->SetName(""); // for calli instruction
     }
     operand = peLib->AllocateOperand(peLib->AllocateMethodName(sig));
@@ -228,10 +232,8 @@ Operand *getOperand(IMODE *oper)
         {
             if (oper->offset->type == en_structelem)
             {
-                Field *field = peLib->AllocateField(oper->offset->v.sp->name, GetType(oper->offset->v.sp->tp, TRUE), Qualifiers::Public | Qualifiers::ValueType);
-                Type *parentType = GetType(oper->offset->v.sp->parentClass->tp, TRUE);
-                field->SetContainer(parentType->GetClass());
-                rv = peLib->AllocateOperand(peLib->AllocateFieldName(field));
+                Value *field = GetStructField(oper->offset->v.sp);
+                rv = peLib->AllocateOperand(field);
             }
             else
             {
@@ -308,11 +310,11 @@ void load_ind(int sz)
             break;
         case ISZ_ADDR:
         {
-            Operand *oper = currentMethod->GetLastInstruction()->GetOperand();
+            Operand *oper = currentMethod->LastInstruction()->GetOperand();
             // check for __va_arg__ on a pointer type
-            if (oper && oper->GetType() == Operand::t_value && typeid(*oper->GetValue()) == typeid(MethodName))
+            if (oper && oper->OperandType() == Operand::t_value && typeid(*oper->GetValue()) == typeid(MethodName))
             {
-                if (((MethodName *)oper->GetValue())->GetSignature()->GetFullName() == ptrUnbox->GetFullName())
+                if (((MethodName *)oper->GetValue())->Signature()->FullName() == ptrUnbox->FullName())
                     return;
             }
             op = Instruction::i_ldind_u4;
@@ -506,10 +508,8 @@ void gen_load(IMODE *im, Operand *dest)
             EXPRESSION *offset = (EXPRESSION *)im->vararg;
             if (qualifiedStruct(offset->v.sp->parentClass))
             {
-                Field *field = peLib->AllocateField(offset->v.sp->name, GetType(offset->v.sp->tp, TRUE), Qualifiers::Public | Qualifiers::ValueType);
-                Type *parentType = GetType(offset->v.sp->parentClass->tp, TRUE);
-                field->SetContainer(parentType->GetClass());
-                Operand *operand = peLib->AllocateOperand(peLib->AllocateFieldName(field));
+                Value *field = GetStructField(offset->v.sp);
+                Operand *operand = peLib->AllocateOperand(field);
                 gen_code(Instruction::i_ldfld, operand);
             }
             else
@@ -525,7 +525,7 @@ void gen_load(IMODE *im, Operand *dest)
     }
     if (!dest)
         return;
-    switch(dest->GetType())
+    switch(dest->OperandType())
     {
         case Operand::t_int:
         case Operand::t_real:
@@ -583,10 +583,8 @@ void gen_store(IMODE *im, Operand *dest)
             EXPRESSION *offset = (EXPRESSION *)im->vararg;
             if (qualifiedStruct(offset->v.sp->parentClass))
             {
-                Field *field = peLib->AllocateField(offset->v.sp->name, GetType(offset->v.sp->tp, TRUE), Qualifiers::Public | Qualifiers::ValueType);
-                Type *parentType = GetType(offset->v.sp->parentClass->tp, TRUE);
-                field->SetContainer(parentType->GetClass());
-                Operand *operand = peLib->AllocateOperand(peLib->AllocateFieldName(field));
+                Value *field = GetStructField(offset->v.sp);
+                Operand *operand = peLib->AllocateOperand(field);
                 gen_code(Instruction::i_stfld, operand);
                 decrement_stack();
                 decrement_stack();
@@ -604,7 +602,7 @@ void gen_store(IMODE *im, Operand *dest)
     }
     if (!dest)
         return;
-    switch(dest->GetType())
+    switch(dest->OperandType())
     {
         case Operand::t_value:
             if (typeid(*dest->GetValue()) == typeid(Local))
@@ -713,9 +711,6 @@ void gen_branch(Instruction::iop op, int label, BOOLEAN decrement)
         }
     }
 }
-void put_label(int label)
-{
-}
 
 extern "C" void asm_expressiontag(QUAD *q)
 {
@@ -821,18 +816,18 @@ extern "C" void asm_parm(QUAD *q)               /* push a parameter*/
         }
         else
         {
-            static int names[] = { 0, 0, Type::u8, Type::u8,
+			static Type::BasicType names[] = { Type::u32, Type::u32, Type::u8, Type::u8,
                 Type::u16, Type::u16, Type::u16, Type::u32, Type::u32, Type::u32,
-                Type::u64, 0, 0, Type::u16, Type::u16, Type::r32, Type::r64, 
+                Type::u64, Type::u32, Type::u32, Type::u16, Type::u16, Type::r32, Type::r64,
                 Type::r64, Type::r32, Type::r64, Type::r64
             };
-            static int mnames[] = { 0, 0, Type::i8, Type::i8,
+            static Type::BasicType mnames[] = { Type::i32, Type::i32, Type::i8, Type::i8,
                 Type::i16, Type::i16, Type::i16, Type::i32, Type::i32, Type::i32,
-                Type::i64, 0, 0, Type::i16, Type::i16, Type::r32, Type::r64, 
+                Type::i64, Type::i32, Type::i32, Type::i16, Type::i16, Type::r32, Type::r64,
                 Type::r64, Type::r32, Type::r64, Type::r64
             };
 
-            int n = q->dc.left->size < 0 ? mnames[-q->dc.left->size] : names[q->dc.left->size];
+            Type::BasicType n = q->dc.left->size < 0 ? mnames[-q->dc.left->size] : names[q->dc.left->size];
             BoxedType *type = peLib->AllocateBoxedType(n);
             Operand *operand = peLib->AllocateOperand(peLib->AllocateValue("", type));
             gen_code(Instruction::i_box, operand);
@@ -868,8 +863,8 @@ extern "C" void asm_parmblock(QUAD *q)          /* push a block of memory */
     else
     {
         // have to see if it was already loaded...
-        Instruction *i = currentMethod->GetLastInstruction();
-        if (i->GetOp() == Instruction::i_ldloc || i->GetOp() == Instruction::i_ldarg || i->GetOp() == Instruction::i_ldsfld)
+        Instruction *i = currentMethod->LastInstruction();
+        if (i->OpCode() == Instruction::i_ldloc || i->OpCode() == Instruction::i_ldarg || i->OpCode() == Instruction::i_ldsfld)
         {
             return;
         }
@@ -888,63 +883,70 @@ extern "C" void asm_parmadj(QUAD *q)            /* adjust stack after function c
     else if (n < 0)
         increment_stack();
 }
-static BOOLEAN bltin_gosub(QUAD *q, Operand *ap)
+static BOOLEAN bltin_gosub(QUAD *q)
 {
-    MethodSignature *sig = ((MethodName *)ap->GetValue())->GetSignature();
-    if (sig->GetName() == "__va_start__")
-    {
-        EXPRESSION *en = GetSymRef(q->dc.left->offset);
-        en->v.sp->genreffed = FALSE;
-        Operand *op1 = peLib->AllocateOperand(GetParamData("__va_start__"));
-        gen_code(Instruction::i_ldarg, op1);
-        op1 = peLib->AllocateOperand(peLib->AllocateMethodName(argsCtor));
-        gen_code(Instruction::i_newobj, op1);
-        return TRUE;
-    }
-    else if (sig->GetName() == "__va_arg__")
-    {
-        EXPRESSION *en = GetSymRef(q->dc.left->offset);
-        en->v.sp->genreffed = FALSE;
-        FUNCTIONCALL *func = (FUNCTIONCALL *)q->altdata;
-        TYPE *tp = en->v.sp->tp;
-        if (func->arguments->next)
-            tp = func->arguments->next->tp;
-        Operand *operand = peLib->AllocateOperand(peLib->AllocateMethodName(argsNextArg));
-        // the function pushes both an arglist val and a type to cast to on the stack
-        // remove the type to cast to.
-        currentMethod->RemoveLastInstruction();
-        gen_code(Instruction::i_callvirt, operand);
-        if (ispointer(tp))
-        {
-            Operand *operand = peLib->AllocateOperand(peLib->AllocateMethodName(ptrUnbox));
-            gen_code(Instruction::i_call, operand);
-        }
-        else if (!isstructured(tp) && !isarray(tp))
-        {
-        static Type::BasicType typeNames[] = { Type::i8, Type::i8, Type::i8, Type::i8, Type::u8,
-                Type::i16, Type::i16, Type::u16, Type::u16, Type::i32, Type::i32, Type::i32, Type::u32, Type::i32, Type::u32,
-                Type::i64, Type::u64, Type::r32, Type::r64, Type::r64, Type::r32, Type::r64, Type::r64 };
-            EXPRESSION *exp = func->arguments->next->exp;
-            Operand *op1 = peLib->AllocateOperand(peLib->AllocateValue("", peLib->AllocateType(typeNames[basetype(exp->v.sp->tp)->type], 0)));
-            gen_code(Instruction::i_unbox, op1);
-        }
-        return TRUE;
-    }
+	EXPRESSION *en = GetSymRef(q->dc.left->offset);
+
+	Operand *operand;
+	if (q->dc.left->mode == i_immed)
+	{
+		SYMBOL *sp = en->v.sp;
+		if (!strcmp(sp->name, "__va_start__"))
+		{
+			EXPRESSION *en = GetSymRef(q->dc.left->offset);
+			en->v.sp->genreffed = FALSE;
+			Operand *op1 = peLib->AllocateOperand(GetParamData("__va_list__"));
+			gen_code(Instruction::i_ldarg, op1);
+			op1 = peLib->AllocateOperand(peLib->AllocateMethodName(argsCtor));
+			gen_code(Instruction::i_newobj, op1);
+			return TRUE;
+		}
+		else if (!strcmp(sp->name, "__va_arg__"))
+		{
+			EXPRESSION *en = GetSymRef(q->dc.left->offset);
+			en->v.sp->genreffed = FALSE;
+			FUNCTIONCALL *func = (FUNCTIONCALL *)q->altdata;
+			TYPE *tp = en->v.sp->tp;
+			if (func->arguments->next)
+				tp = func->arguments->next->tp;
+			Operand *operand = peLib->AllocateOperand(peLib->AllocateMethodName(argsNextArg));
+			// the function pushes both an arglist val and a type to cast to on the stack
+			// remove the type to cast to.
+			currentMethod->RemoveLastInstruction();
+			gen_code(Instruction::i_callvirt, operand);
+			if (ispointer(tp))
+			{
+				Operand *operand = peLib->AllocateOperand(peLib->AllocateMethodName(ptrUnbox));
+				gen_code(Instruction::i_call, operand);
+			}
+			else if (!isstructured(tp) && !isarray(tp))
+			{
+				static Type::BasicType typeNames[] = { Type::i8, Type::i8, Type::i8, Type::i8, Type::u8,
+						Type::i16, Type::i16, Type::u16, Type::u16, Type::i32, Type::i32, Type::i32, Type::u32, Type::i32, Type::u32,
+						Type::i64, Type::u64, Type::r32, Type::r64, Type::r64, Type::r32, Type::r64, Type::r64 };
+				EXPRESSION *exp = func->arguments->next->exp;
+				Operand *op1 = peLib->AllocateOperand(peLib->AllocateValue("", peLib->AllocateType(typeNames[basetype(exp->v.sp->tp)->type], 0)));
+				gen_code(Instruction::i_unbox, op1);
+			}
+			return TRUE;
+		}
+	}
     return FALSE;
 }
 extern "C" void asm_gosub(QUAD *q)              /* normal gosub to an immediate label or through a var */
 {
-    Operand *ap = getCallOperand(q);
     if (q->dc.left->mode == i_immed)
     {
-        if (!bltin_gosub(q, ap))
+        if (!bltin_gosub(q))
         {
-            gen_code(Instruction::i_call, ap);
+			Operand *ap = getCallOperand(q);
+			gen_code(Instruction::i_call, ap);
         }
     }
     else
     {
-        gen_code(Instruction::i_calli, ap);
+		Operand *ap = getCallOperand(q);
+		gen_code(Instruction::i_calli, ap);
         decrement_stack();
     }
     if (q->novalue && q->novalue != -1)
@@ -1667,4 +1669,5 @@ int examine_icode(QUAD *head)
         }
         head = head->fwd;
     }
+	return 0;
 }

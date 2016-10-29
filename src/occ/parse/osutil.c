@@ -999,7 +999,7 @@ void ccinit(int argc, char *argv[])
     strcpy(copyright, COPYRIGHT);
     strcpy(version, STRING_VERSION);
 
-    outfile[0] = 1;
+    outfile[0] = 0;
     for (i = 1; i < argc; i++)
         if (argv[i][0] == '-' || argv[i][0] == '/')
             if (argv[i][1] == '!')

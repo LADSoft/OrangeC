@@ -1,36 +1,36 @@
 /*
     Software License Agreement (BSD License)
-    
+
     Copyright (c) 1997-2011, David Lindauer, (LADSoft).
     All rights reserved.
-    
-    Redistribution and use of this software in source and binary forms, 
-    with or without modification, are permitted provided that the following 
+
+    Redistribution and use of this software in source and binary forms,
+    with or without modification, are permitted provided that the following
     conditions are met:
-    
+
     * Redistributions of source code must retain the above
       copyright notice, this list of conditions and the
       following disclaimer.
-    
+
     * Redistributions in binary form must reproduce the above
       copyright notice, this list of conditions and the
       following disclaimer in the documentation and/or other
       materials provided with the distribution.
-    
+
     * Neither the name of LADSoft nor the names of its
       contributors may be used to endorse or promote products
       derived from this software without specific prior
       written permission of LADSoft.
-    
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
-    THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
-    PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
-    OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
-    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
-    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
-    OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-    WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+    THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+    PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
+    OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+    OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+    WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
     OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
     ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
@@ -47,78 +47,108 @@
 #include <vector>
 using namespace DotNetPELib;
 
-extern TYPE stdchar, stdshort, stdint;
-extern LIST *externals;
-extern int prm_targettype;
-extern char namespaceAndClass[512];
-extern LIST *temporarySymbols;
+extern "C" {
 
-MethodSignature *argsCtor;
-MethodSignature *argsNextArg;
-MethodSignature *argsUnmanaged;
-MethodSignature *ptrBox;
-MethodSignature *ptrUnbox;
-Type *systemObject;
-Method *currentMethod;
+    extern SYMBOL *theCurrentFunc;
+    extern COMPILER_PARAMS cparams;
+    extern TYPE stdchar, stdshort, stdint;
+    extern LIST *externals;
+    extern int prm_targettype;
+    extern char namespaceAndClass[512];
+    extern LIST *temporarySymbols;
+
+    MethodSignature *argsCtor;
+    MethodSignature *argsNextArg;
+    MethodSignature *argsUnmanaged;
+    MethodSignature *ptrBox;
+    MethodSignature *ptrUnbox;
+    Type *systemObject;
+    Method *currentMethod;
+    PELib *peLib;
+    DataContainer *mainContainer;
+
+    char msil_bltins[] = " void exit(int); "
+        "void __getmainargs(void *,void *,void*,int, void *); "
+        "void *__iob_func(); "
+        "unsigned short *__pctype_func(); "
+        "int *_errno(); "
+        "void *__OCCMSIL_GetProcThunkToManaged(void *proc, void *pdata); "
+        "void *__OCCMSIL_GetProcThunkToUnmanaged(void *proc); "
+        "void *__msil_rtl malloc(unsigned); "
+        "void __msil_rtl free(void *); "
+        "void *__va_start__(); "
+        "void *__va_arg__(void *, ...); ";
+}
 static SYMBOL retblocksym;
 
 static Method *mainSym;
 
-PELib *peLib;
-DataContainer *mainContainer;
 static int errCount;
 static LIST *initializersHead, *initializersTail;
 static LIST *deinitializersHead, *deinitializersTail;
-static BOOLEAN nested = false;
 static int dataPos, dataMax;
 static BYTE *dataPointer;
 static Field *initializingField;
-static SYMBOL *spstack[1000];
-static int spstackcount;
-char msil_bltins[] = " void exit(int); "
-    "void __getmainargs(void *,void *,void*,int, void *); "
-    "void *__iob_func(); "
-    "unsigned short *__pctype_func(); "
-    "int *_errno(); "
-    "void *__OCCMSIL_GetProcThunkToManaged(void *proc, void *pdata); "
-    "void *__OCCMSIL_GetProcThunkToUnmanaged(void *proc); "
-    "void *__msil_rtl malloc(unsigned); "
-    "void __msil_rtl free(void *); "
-    "void *__va_start__(); "
-    "void *__va_arg__(void *, ...); ";
 
 Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg = false, BOOLEAN pinvoke = false);
+static SYMBOL *clone(SYMBOL *sp);
+void CacheExtern(SYMBOL *sp);
+void CacheGlobal(SYMBOL *sp);
+void CacheStatic(SYMBOL *sp);
 
 
 struct byName
 {
-    BOOLEAN operator () (const SYMBOL *left, const SYMBOL *right)
+    BOOLEAN operator () (const SYMBOL *left, const SYMBOL *right) const
     {
         return strcmp(left->name, right->name) < 0;
     }
 };
 struct byLabel
 {
-    BOOLEAN operator () (const SYMBOL *left, const SYMBOL *right)
+    BOOLEAN operator () (const SYMBOL *left, const SYMBOL *right) const
     {
         return left->label < right->label;
     }
 };
-
+struct byField
+{
+    BOOLEAN operator () (const SYMBOL *left, const SYMBOL *right) const
+    {
+        int n = strcmp(left->parentClass->name, right->parentClass->name);
+        if (n < 0)
+        {
+            return true;
+        }
+        else if (n > 0)
+        {
+            return false;
+        }
+        else
+        {
+            return strcmp(left->name, right->name) < 0;
+        }
+    }
+};
 static std::map<SYMBOL *, Value *, byName> externalMethods;
 static std::map<SYMBOL *, Value *, byName> externalList;
 static std::map<SYMBOL *, Value *, byName> globalMethods;
 static std::map<SYMBOL *, Value *, byName> globalList;
 static std::map<SYMBOL *, Value *, byLabel> staticMethods;
 static std::map<SYMBOL *, Value *, byLabel> staticList;
+static std::map<SYMBOL *, MethodSignature *, byName> pinvokeInstances;
 static std::map<SYMBOL *, Param *, byName> paramList;
-std::vector<Local *> localList;
+extern "C"
+{
+    std::vector<Local *> localList;
+}
 static std::map<std::string, Type *> typeList;
-static std::map<int, Field *> charFieldsList;
+static std::map<SYMBOL *, Value *, byField> fieldList;
+
 // weed out unions, structures with nested structures or bit fields
 BOOLEAN qualifiedStruct(SYMBOL *sp)
 {
-    HASHREC *hr ;
+    HASHREC *hr;
     if (!sp->tp->size)
         return FALSE;
     hr = basetype(sp->tp)->syms->table[0];
@@ -129,10 +159,10 @@ BOOLEAN qualifiedStruct(SYMBOL *sp)
         SYMBOL *check = (SYMBOL *)hr->p;
         if (basetype(check->tp)->bits)
             return FALSE;
-//        if (isstructured(check->tp))
-//            return FALSE;
+        //        if (isstructured(check->tp))
+        //            return FALSE;
         if (basetype(check->tp)->array)
-           return FALSE;
+            return FALSE;
         hr = hr->next;
     }
     return TRUE;
@@ -147,8 +177,6 @@ bool IsPointedStruct(TYPE *tp)
 Field *GetField(SYMBOL *sp)
 {
     int flags = Qualifiers::Public | Qualifiers::Static;
-    if (isarray(sp->tp) || IsPointedStruct(sp->tp))
-        flags |= Qualifiers::ValueType;
     if (sp->storage_class != sc_localstatic && sp->storage_class != sc_constant && sp->storage_class != sc_static)
     {
         Field *field = peLib->AllocateField(sp->name, GetType(sp->tp, TRUE), flags);
@@ -158,11 +186,11 @@ Field *GetField(SYMBOL *sp)
     {
         char buf[256];
         sprintf(buf, "L_%d", sp->label);
-        Field *field = peLib->AllocateField(buf, GetType(sp->tp, TRUE), flags );
+        Field *field = peLib->AllocateField(buf, GetType(sp->tp, TRUE), flags);
         return field;
     }
 }
-MethodSignature *GetMethodSignature(TYPE *tp, BOOLEAN pinvoke)
+MethodSignature *GetMethodSignature(TYPE *tp, bool pinvoke)
 {
     int flags = pinvoke ? 0 : MethodSignature::Managed;
     while (ispointer(tp))
@@ -184,7 +212,7 @@ MethodSignature *GetMethodSignature(TYPE *tp, BOOLEAN pinvoke)
         {
             char buf[1024];
             sprintf(buf, "[lsmsilcrtl]lsmsilcrtl.rtl::%s", sp->name);
-            rv->SetFullName(buf);
+            rv->FullName(buf);
         }
     }
     else
@@ -195,13 +223,13 @@ MethodSignature *GetMethodSignature(TYPE *tp, BOOLEAN pinvoke)
     }
     if (isstructured(basetype(tp)->btp))
     {
-        rv->AddReturnType(peLib->AllocateType(Type::Void, 1));
+        rv->ReturnType(peLib->AllocateType(Type::Void, 1));
         Param * p = peLib->AllocateParam("__retblock", peLib->AllocateType(Type::Void, 1));
         rv->AddParam(p);
     }
     else
     {
-        rv->AddReturnType(GetType(basetype(tp)->btp, true));
+        rv->ReturnType(GetType(basetype(tp)->btp, true));
     }
 
     hr = basetype(tp)->syms->table[0];
@@ -214,7 +242,7 @@ MethodSignature *GetMethodSignature(TYPE *tp, BOOLEAN pinvoke)
         {
             if (!pinvoke)
             {
-                Param * p = peLib->AllocateParam("__va_start__", peLib->AllocateType(Type::objectArray, 0));
+                Param * p = peLib->AllocateParam("__va_list__", peLib->AllocateType(Type::objectArray, 0));
                 rv->AddParam(p);
             }
             break;
@@ -224,10 +252,86 @@ MethodSignature *GetMethodSignature(TYPE *tp, BOOLEAN pinvoke)
     }
     return rv;
 }
+MethodSignature *GetMethodSignature(SYMBOL *sp)
+{
+    BOOLEAN pinvoke = false;
+    if (sp)
+        pinvoke = !msil_managed(sp);
+    std::map<SYMBOL *, Value *, byName>::iterator it = globalMethods.find(sp);
+    if (it != globalMethods.end())
+    {
+        return static_cast<MethodName *>(it->second)->Signature();
+    }
+    it = externalMethods.find(sp);
+    if (it != externalMethods.end())
+    {
+        return static_cast<MethodName *>(it->second)->Signature();
+    }
+    if (pinvoke)
+    {
+        std::map<SYMBOL *, MethodSignature *, byName>::iterator it1 = pinvokeInstances.find(sp);
+        if (it1 != pinvokeInstances.end())
+        {
+            // if we get here we have a pinvoke instance.   If it isnt vararg just return it
+            if (!(it1->second->Flags() & MethodSignature::Vararg))
+                return it1->second;
+            // vararg create a new instance
+            // the arguments will likely change.   There is a further chance for merging
+            // here but we aren't currently doing it.
+            MethodSignature *sig = GetMethodSignature(sp->tp, true);
+            sig->SignatureParent(it1->second->SignatureParent());
+            return sig;
+        }
+        else
+        {
+            // no current pinvoke instance, create a new one
+            MethodSignature *parent = GetMethodSignature(sp->tp, true);
+            peLib->AddPInvokeReference(parent, _dll_name(sp->name), sp->linkage != lk_stdcall);
+            sp = clone(sp);
+            if (parent->Flags() & MethodSignature::Vararg)
+            {
+                MethodSignature *sig = GetMethodSignature(sp->tp, true);
+                sig->SignatureParent(parent);
+                pinvokeInstances[sp] = sig;
+                return sig;
+            }
+            else
+            {
+                pinvokeInstances[sp] = parent;
+                return parent;
+            }
+        }
+    }
+    else if (!isfunction(sp->tp))
+    {
+        // function pointer is here
+        // we aren't caching these aggressively...
+        return GetMethodSignature(sp->tp, false);
+
+    }
+    else if (sp->storage_class == sc_external)
+    {
+        CacheExtern(sp);
+        it = externalMethods.find(sp);
+        return static_cast<MethodName *>(it->second)->Signature();
+    }
+    else if (sp->storage_class == sc_static)
+    {
+        CacheStatic(sp);
+        std::map<SYMBOL *, Value *, byLabel>::iterator it = staticMethods.find(sp);
+        return static_cast<MethodName *>(it->second)->Signature();
+    }
+    else
+    {
+        CacheGlobal(sp);
+        it = globalMethods.find(sp);
+        return static_cast<MethodName *>(it->second)->Signature();
+    }
+}
 std::string GetArrayName(TYPE *tp)
 {
     char end[512];
-    end[0] =0;
+    end[0] = 0;
     tp = basetype(tp);
     while (isarray(tp))
     {
@@ -259,10 +363,19 @@ std::string GetArrayName(TYPE *tp)
         return std::string(typeNames[basetype(tp)->type]) + end;
     }
 }
+Value *GetStructField(SYMBOL *sp)
+{
+    // guaranteed to always succeed because the front end would have thrown an error
+    // if the field didn't exist...
+    std::map<SYMBOL *, Value *, byField>::iterator it = fieldList.find(sp);
+    return it->second;
+}
 Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg, BOOLEAN pinvoke)
 {
     if (isstructured(tp))
     {
+        if (!strcmp(basetype(tp)->sp->name, "CODE"))
+            std::cout << "1";
         Type *type = NULL;
         std::map<std::string, Type *>::iterator it = typeList.find(basetype(tp)->sp->name);
         if (it != typeList.end())
@@ -271,15 +384,21 @@ Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg, BOOLEAN pinvoke)
         {
             if (!type)
             {
-                Class *newClass = peLib->AllocateClass(basetype(tp)->sp->name, Qualifiers::Public | Qualifiers::ClassClass |( nested ? Qualifiers::Nested : 0), 
-                                       basetype(tp)->sp->structAlign, basetype(tp)->size);
+                Class *newClass = peLib->AllocateClass(basetype(tp)->sp->name, Qualifiers::Public | Qualifiers::ClassClass,
+                    basetype(tp)->sp->structAlign, basetype(tp)->size);
                 mainContainer->Add(newClass);
                 type = peLib->AllocateType(newClass);
                 typeList[basetype(tp)->sp->name] = type;
             }
+            if (basetype(tp)->size != 0)
+            {
+                Class *cls = (Class *)type->GetClass();
+                cls->size(basetype(tp)->size);
+                cls->pack(basetype(tp)->sp->structAlign);
+            }
             if (qualifiedStruct(basetype(tp)->sp) && !type->GetClass()->IsInstantiated())
             {
-    
+
                 Class *cls = (Class *)type->GetClass();
                 cls->SetInstantiated();
                 HASHREC *hr = basetype(tp)->syms->table[0];
@@ -288,10 +407,12 @@ Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg, BOOLEAN pinvoke)
                     SYMBOL *sym = (SYMBOL *)hr->p;
                     Type *newType = GetType(sym->tp, TRUE);
                     int flags = Qualifiers::ClassField | Qualifiers::Public;
-                    if (isarray(sym->tp) || IsPointedStruct(sym->tp))
-                        flags |= Qualifiers::ValueType;
                     Field *newField = peLib->AllocateField(sym->name, newType, flags);
+                    newField->SetContainer(cls);
                     cls->Add(newField);
+                    sym = clone(sym);
+                    sym->parentClass = clone(sym->parentClass);
+                    fieldList[sym] = peLib->AllocateFieldName(newField);
                     hr = hr->next;
                 }
             }
@@ -300,7 +421,7 @@ Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg, BOOLEAN pinvoke)
         else
         {
             return peLib->AllocateType((DataContainer *)NULL);
-        }           
+        }
     }
     else if (basetype(tp)->type == bt_enum)
     {
@@ -309,7 +430,7 @@ Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg, BOOLEAN pinvoke)
             return it->second;
         if (commit)
         {
-            Enum *newEnum = peLib->AllocateEnum(basetype(tp)->sp->name, Qualifiers::Public | Qualifiers::EnumClass | ( nested ? Qualifiers::Nested : 0), Field::i32);
+            Enum *newEnum = peLib->AllocateEnum(basetype(tp)->sp->name, Qualifiers::Public | Qualifiers::EnumClass, Field::i32);
             mainContainer->Add(newEnum);
 
             if (basetype(tp)->syms)
@@ -331,7 +452,7 @@ Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg, BOOLEAN pinvoke)
         else
         {
             return peLib->AllocateType((DataContainer *)NULL);
-        }           
+        }
     }
     else if (isarray(tp) && !funcarg)
     {
@@ -341,11 +462,16 @@ Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg, BOOLEAN pinvoke)
             return it->second;
         if (commit)
         {
-            Class *newClass = peLib->AllocateClass(name, Qualifiers::Public | Qualifiers::ClassClass |( nested ? Qualifiers::Nested : 0), 
-                                       -1, basetype(tp)->size);
+            Class *newClass = peLib->AllocateClass(name, Qualifiers::Public | Qualifiers::ClassClass,
+                -1, basetype(tp)->size);
             mainContainer->Add(newClass);
             Type *type = peLib->AllocateType(newClass);
             typeList[name] = type;
+            while (ispointer(tp))
+                tp = basetype(tp)->btp;
+            // declare any structure we are referencing..
+            if (isstructured(tp))
+                GetType(tp, true);
             return type;
         }
         else
@@ -357,7 +483,7 @@ Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg, BOOLEAN pinvoke)
     {
         return peLib->AllocateType(Type::Void, 1); // pointer to void
 //        tp = basetype(tp)->btp;
-//        MethodSignature *sig = GetMethodSignature(basetype(tp), FALSE);
+//        MethodSignature *sig = GetMethodSignature(basetype(tp), false);
 //        return peLib->AllocateType(sig);
     }
     else if (ispointer(tp))
@@ -371,8 +497,8 @@ Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg, BOOLEAN pinvoke)
         {
             if (tp1->type == bt_va_list)
             {
-                Type *rv = peLib->AllocateType(Type::Void, level); // pointer to void
-                rv->SetFullName("class [lsmsilcrtl]lsmsilcrtl.args");
+                Type *rv = peLib->AllocateType(Type::Void, level); // pointer to class
+                rv->FullName("[lsmsilcrtl]lsmsilcrtl.args");
                 return rv;
             }
             if (tp1->type == bt_pointer)
@@ -393,7 +519,7 @@ Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg, BOOLEAN pinvoke)
         {
             rv = peLib->AllocateType(rv->GetClass());
         }
-        rv->SetPointer(level);
+        rv->PointerLevel(level);
         return rv;
     }
     else if (basetype(tp)->type == bt_void)
@@ -408,32 +534,28 @@ Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg, BOOLEAN pinvoke)
         return peLib->AllocateType(typeNames[basetype(tp)->type], 0);
     }
 }
+void oa_enter_type(SYMBOL *sp)
+{
+    if (!istype(sp))
+    {
+        TYPE *tp = sp->tp;
+        while (ispointer(tp))
+            tp = basetype(tp)->btp;
+
+        if (isstructured(tp))
+        {
+            GetType(tp, TRUE, FALSE, FALSE);
+        }
+    }
+}
 static BOOLEAN validateGlobalRef(SYMBOL *sp1, SYMBOL *sp2);
 static SYMBOL *clone(SYMBOL *sp)
 {
-    for (int i=0; i < spstackcount; i+= 2)
-        if (spstack[i] == sp)
-            return spstack[i+1];
     // shallow copy
     SYMBOL *rv = (SYMBOL *)peLib->AllocateBytes(sizeof(SYMBOL));
     *rv = *sp;
-    spstack[spstackcount++ ] = sp;
-    spstack[spstackcount++ ] = rv;
-    rv->name = (char *)peLib->AllocateBytes(strlen(rv->name)+1);
+    rv->name = (char *)peLib->AllocateBytes(strlen(rv->name) + 1);
     strcpy(rv->name, sp->name);
-    TYPE **tp1 = &rv->tp;
-    while (*tp1)
-    {
-        TYPE *tp2= (TYPE *)peLib->AllocateBytes(sizeof(TYPE));
-        *tp2 = **tp1;
-        *tp1 = tp2;
-        if (isstructured(*tp1) || basetype(*tp1)->type == bt_enum || isfunction(*tp1))
-        {
-            basetype(*tp1)->sp = clone (basetype(*tp1)->sp);
-        }
-        tp1 = &(*tp1)->btp;
-    }
-    spstackcount-=2;
     return rv;
 }
 void CacheExtern(SYMBOL *sp)
@@ -480,16 +602,24 @@ void CacheGlobal(SYMBOL *sp)
         std::map<SYMBOL *, Value *, byName>::iterator it = globalMethods.find(sp);
         if (it == globalMethods.end())
         {
+            sp = clone(sp);
             it = externalMethods.find(sp);
             if (it != externalMethods.end())
+            {
+                globalMethods[sp] = it->second;
                 externalMethods.erase(it);
-            sp = clone(sp);
-            globalMethods[sp] = peLib->AllocateMethodName(GetMethodSignature(sp->tp, FALSE));
+            }
+            else
+            {
+                globalMethods[sp] = peLib->AllocateMethodName(GetMethodSignature(sp->tp, false));
+            }
         }
+        /*
         else
         {
             printf("Error: Multiple definition of %s", sp->name);
         }
+        */
     }
     else
     {
@@ -505,9 +635,9 @@ void CacheGlobal(SYMBOL *sp)
             if (it != externalList.end())
             {
                 validateGlobalRef(sp, it->first);
-                externalList.erase(it);
                 f = ((FieldName *)it->second)->GetField();
-                f->SetType(GetType(sp->tp, TRUE));
+                externalList.erase(it);
+                f->FieldType(GetType(sp->tp, TRUE));
             }
             else
             {
@@ -527,11 +657,11 @@ void CacheStatic(SYMBOL *sp)
         if (it == staticMethods.end())
         {
             sp = clone(sp);
-            staticMethods[sp] = peLib->AllocateMethodName(GetMethodSignature(sp->tp, FALSE));
+            staticMethods[sp] = peLib->AllocateMethodName(GetMethodSignature(sp->tp, false));
         }
         else
         {
-//            printf("Error: Multiple definition of %s", sp->name);
+            //            printf("Error: Multiple definition of %s", sp->name);
         }
     }
     else
@@ -539,7 +669,7 @@ void CacheStatic(SYMBOL *sp)
         std::map<SYMBOL *, Value *, byLabel>::iterator it = staticList.find(sp);
         if (it != staticList.end())
         {
-//            printf("Error: Multiple definition of %s", sp->name);
+            //            printf("Error: Multiple definition of %s", sp->name);
         }
         else
         {
@@ -578,7 +708,7 @@ Value *GetFieldData(SYMBOL *sp)
             {
                 it = externalMethods.find(sp);
                 if (it == externalMethods.end())
-                   return NULL;
+                    return NULL;
             }
             return it->second;
         }
@@ -591,45 +721,45 @@ Value *GetFieldData(SYMBOL *sp)
     }
     else
     {
-        switch(sp->storage_class)
+        switch (sp->storage_class)
         {
-            case sc_auto:
-            case sc_register:
-                return localList[sp->offset];
-            case sc_parameter:
-            {
-                std::map<SYMBOL *, Param *, byName>::iterator it = paramList.find(sp);
-                if (it != paramList.end())
-                    return it->second;
-            }
-                break;
-            case sc_static:
-            case sc_localstatic:
-            case sc_constant:
-            {
-                std::map<SYMBOL *, Value *, byLabel>::iterator it =  staticList.find(sp);
-                if (it != staticList.end())
-                    return it->second;
-                CacheStatic(sp);
-                it =  staticList.find(sp);
-                if (it != staticList.end())
-                    return it->second;
-                break;
-            }
-            default:
-            {
-                std::map<SYMBOL *, Value *, byName>::iterator it =  globalList.find(sp);
-                if (it != globalList.end())
-                    return it->second;
-                it =  externalList.find(sp);
-                if (it != externalList.end())
-                    return it->second;
-                CacheExtern(sp);
-                it =  externalList.find(sp);
-                if (it != externalList.end())
-                    return it->second;
-                break;
-            }
+        case sc_auto:
+        case sc_register:
+            return localList[sp->offset];
+        case sc_parameter:
+        {
+            std::map<SYMBOL *, Param *, byName>::iterator it = paramList.find(sp);
+            if (it != paramList.end())
+                return it->second;
+        }
+        break;
+        case sc_static:
+        case sc_localstatic:
+        case sc_constant:
+        {
+            std::map<SYMBOL *, Value *, byLabel>::iterator it = staticList.find(sp);
+            if (it != staticList.end())
+                return it->second;
+            CacheStatic(sp);
+            it = staticList.find(sp);
+            if (it != staticList.end())
+                return it->second;
+            break;
+        }
+        default:
+        {
+            std::map<SYMBOL *, Value *, byName>::iterator it = globalList.find(sp);
+            if (it != globalList.end())
+                return it->second;
+            it = externalList.find(sp);
+            if (it != externalList.end())
+                return it->second;
+            CacheExtern(sp);
+            it = externalList.find(sp);
+            if (it != externalList.end())
+                return it->second;
+            break;
+        }
         }
     }
     return NULL;
@@ -639,7 +769,7 @@ void LoadLocals(SYMBOL *sp)
     localList.clear();
     int count = 0;
     HASHTABLE *temp = sp->inlineFunc.syms;
-    LIST *lst;
+    LIST *lst = NULL;
     while (temp)
     {
         HASHREC *hr = temp->table[0];
@@ -700,7 +830,7 @@ void LoadLocals(SYMBOL *sp)
                     Type *type = GetType(sym->tp, TRUE);
                     Local *newLocal = peLib->AllocateLocal(sym->name, type);
                     localList.push_back(newLocal);
-                    newLocal->SetIndex(count);
+                    newLocal->Index(count);
                     sym->offset = count++;
                 }
                 hr = hr->next;
@@ -713,11 +843,11 @@ void LoadLocals(SYMBOL *sp)
             SYMBOL *sym = (SYMBOL *)lst->data;
             if (!sym->anonymous && !sym->temp)
             {
-                sym->temp= TRUE;
+                sym->temp = TRUE;
                 Type *type = GetType(sym->tp, TRUE);
                 Local *newLocal = peLib->AllocateLocal(sym->name, type);
                 localList.push_back(newLocal);
-                newLocal->SetIndex(count);
+                newLocal->Index(count);
                 sym->offset = count++;
             }
             lst = lst->next;
@@ -730,8 +860,8 @@ void LoadParams(SYMBOL *sp)
     paramList.clear();
     if (isstructured(basetype(sp->tp)->btp))
     {
-        Param * newParam  = peLib->AllocateParam("__retblock", peLib->AllocateType(Type::Void, 1));
-        newParam->SetIndex(count++);
+        Param * newParam = peLib->AllocateParam("__retblock", peLib->AllocateType(Type::Void, 1));
+        newParam->Index(count++);
         paramList[&retblocksym] = newParam;
     }
     HASHREC *hr = basetype(sp->tp)->syms->table[0];
@@ -743,15 +873,15 @@ void LoadParams(SYMBOL *sp)
         Param *newParam;
         if (sym->tp->type == bt_ellipse)
         {
-            newParam = peLib->AllocateParam("__va_start__", peLib->AllocateType(Type::objectArray, 0));
-            sym->name = "__va_start__";
+            newParam = peLib->AllocateParam("__va_list__", peLib->AllocateType(Type::objectArray, 0));
+            sym->name = "__va_list__";
         }
         else
         {
             Type *type = GetType(sym->tp, TRUE);
             newParam = peLib->AllocateParam(sym->name, type);
         }
-        newParam->SetIndex(count++);
+        newParam->Index(count++);
         paramList[sym] = newParam;
         hr = hr->next;
     }
@@ -759,7 +889,6 @@ void LoadParams(SYMBOL *sp)
 extern "C" void compile_start(char *name)
 {
     _using_init();
-    cparams.prm_asmfile = TRUE; // temporary
     staticList.clear();
 }
 void LoadFuncs(void)
@@ -781,6 +910,12 @@ void LoadFuncs(void)
     if (sp)
         ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = TRUE;
     sp = gsearch("__GetErrno");
+    if (sp)
+        ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = FALSE;
+    sp = gsearch("_malloc");
+    if (sp)
+        ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = FALSE;
+    sp = gsearch("_free");
     if (sp)
         ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = FALSE;
 }
@@ -815,6 +950,20 @@ void CreateFunction(MethodSignature *sig, SYMBOL *sp)
         if (!theCurrentFunc->parentClass && !theCurrentFunc->parentNameSpace)
             mainSym = currentMethod;
 
+    auto hr = basetype(sp->tp)->syms->table[0];
+    auto it = sig->begin();
+    while (hr && it != sig->end())
+    {
+        SYMBOL *sym = (SYMBOL *)hr->p;
+        if (sym->tp->type == bt_void)
+            break;
+        if (sym->tp->type != bt_ellipse)
+        {
+            (*it)->Name(sym->name);
+        }
+        ++it;
+        hr = hr->next;
+    }
 }
 static void mainLocals(void)
 {
@@ -824,6 +973,35 @@ static void mainLocals(void)
     localList.push_back(peLib->AllocateLocal("argv", peLib->AllocateType(Type::Void, 1)));
     localList.push_back(peLib->AllocateLocal("environ", peLib->AllocateType(Type::Void, 1)));
     localList.push_back(peLib->AllocateLocal("newmode", peLib->AllocateType(Type::Void, 1)));
+}
+static MethodSignature *LookupSignature(char * name)
+{
+    static SYMBOL sp;
+    sp.name = name;
+    std::map<SYMBOL *, MethodSignature*, byName>::iterator it = pinvokeInstances.find(&sp);
+    if (it != pinvokeInstances.end())
+        return it->second;
+    return NULL;
+}
+static Field *LookupField(char *name)
+{
+    static SYMBOL sp;
+    sp.name = name;
+    std::map<SYMBOL *, Value *, byName>::iterator it = globalList.find(&sp);
+    if (it != globalList.end())
+        return static_cast<FieldName *>(it->second)->GetField();
+    it = externalList.find(&sp);
+    if (it != externalList.end())
+    {
+        SYMBOL *sp = it->first;
+        Value *v = it->second;
+        externalList.erase(it);
+        globalList[sp] = v;
+        peLib->WorkingAssembly()->Add(static_cast<FieldName *>(v)->GetField());
+        return static_cast<FieldName *>(v)->GetField();
+    }
+
+    return NULL;
 }
 static void mainInit(void)
 {
@@ -835,49 +1013,77 @@ static void mainInit(void)
         flags |= Qualifiers::SpecialName | Qualifiers::RTSpecialName;
     }
     MethodSignature *signature = peLib->AllocateMethodSignature(name, MethodSignature::Managed, mainContainer);
-    signature->AddReturnType(peLib->AllocateType(Type::Void, 0));
+    signature->ReturnType(peLib->AllocateType(Type::Void, 0));
     currentMethod = peLib->AllocateMethod(signature, flags, prm_targettype != DLL);
     mainContainer->Add(currentMethod);
 
-    signature = peLib->AllocateMethodSignature("__pctype_func", 0, NULL);
-    signature->AddReturnType(peLib->AllocateType(Type::u16, 1));
+    signature = LookupSignature("__pctype_func");
+    if (!signature)
+    {
+        signature = peLib->AllocateMethodSignature("__pctype_func", 0, NULL);
+        signature->ReturnType(peLib->AllocateType(Type::u16, 1));
+        peLib->AddPInvokeReference(signature, "msvcrt.dll", false);
+    }
     currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
 
-    Field *field = peLib->AllocateField("_pctype", peLib->AllocateType(Type::u16, 1), Qualifiers::Public | Qualifiers::Static);
-    peLib->Add(field);
+    Field *field = LookupField("_pctype");
+    if (!field)
+    {
+        field = peLib->AllocateField("_pctype", peLib->AllocateType(Type::u16, 1), Qualifiers::Public | Qualifiers::Static);
+        peLib->WorkingAssembly()->Add(field);
+    }
     currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_stsfld, peLib->AllocateOperand(peLib->AllocateFieldName(field))));
 
-    signature = peLib->AllocateMethodSignature("__iob_func", 0, NULL);
-    signature->AddReturnType(peLib->AllocateType(Type::Void, 1));
+    signature = LookupSignature("__iob_func");
+    if (!signature)
+    {
+        signature = peLib->AllocateMethodSignature("__iob_func", 0, NULL);
+        signature->ReturnType(peLib->AllocateType(Type::Void, 1));
+        peLib->AddPInvokeReference(signature, "msvcrt.dll", false);
+    }
     currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
 
     currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_dup));
-    field = peLib->AllocateField("__stdin", peLib->AllocateType(Type::Void, 1), Qualifiers::Public | Qualifiers::Static);
-    peLib->Add(field);
+    field = LookupField("__stdin");
+    if (!field)
+    {
+        field = peLib->AllocateField("__stdin", peLib->AllocateType(Type::Void, 1), Qualifiers::Public | Qualifiers::Static);
+        peLib->WorkingAssembly()->Add(field);
+    }
     currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_stsfld, peLib->AllocateOperand(peLib->AllocateFieldName(field))));
 
     currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_dup));
     currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)32, Operand::any)));
     currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_add));
 
-    field = peLib->AllocateField("__stdout", peLib->AllocateType(Type::Void, 1), Qualifiers::Public | Qualifiers::Static);
-    peLib->Add(field);
+    field = LookupField("__stdout");
+    if (!field)
+    {
+        field = peLib->AllocateField("__stdout", peLib->AllocateType(Type::Void, 1), Qualifiers::Public | Qualifiers::Static);
+        peLib->WorkingAssembly()->Add(field);
+    }
     currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_stsfld, peLib->AllocateOperand(peLib->AllocateFieldName(field))));
 
     currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)64, Operand::any)));
     currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_add));
 
-    field = peLib->AllocateField("__stderr", peLib->AllocateType(Type::Void, 1), Qualifiers::Public | Qualifiers::Static);
-    peLib->Add(field);
+    field = LookupField("__stderr");
+    if (!field)
+    {
+        field = peLib->AllocateField("__stderr", peLib->AllocateType(Type::Void, 1), Qualifiers::Public | Qualifiers::Static);
+        peLib->WorkingAssembly()->Add(field);
+    }
     currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_stsfld, peLib->AllocateOperand(peLib->AllocateFieldName(field))));
-                          
+
 }
 static void dumpInitializerCalls(LIST *lst)
 {
     while (lst)
     {
-        MethodSignature *signature = peLib->AllocateMethodSignature((char *)lst->data, MethodSignature::Managed, mainContainer);
-        signature->AddReturnType(peLib->AllocateType(Type::Void, 0));
+        static SYMBOL sp;
+        sp.name = (char *)lst->data;
+        std::map<SYMBOL *, Value *, byName>::iterator it = globalMethods.find(&sp);
+        MethodSignature *signature = static_cast<MethodName *>(it->second)->Signature();
         currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
         lst = lst->next;
     }
@@ -892,34 +1098,42 @@ static void dumpCallToMain(void)
         currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)0, Operand::i32)));
         currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloca, peLib->AllocateOperand(localList[3]))); // load newmode
 
+
         MethodSignature *signature = peLib->AllocateMethodSignature("__getmainargs", 0, NULL);
-        signature->AddReturnType(peLib->AllocateType(Type::Void, 0));
+        signature->ReturnType(peLib->AllocateType(Type::Void, 0));
         signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::Void, 1)));
         signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::Void, 1)));
         signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::Void, 1)));
         signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::i32, 0)));
         signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::Void, 1)));
+        peLib->AddPInvokeReference(signature, "msvcrt.dll", false);
         currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
 
         if (mainSym)
         {
-            int n = mainSym->GetSignature()->GetParamCount();
+            int n = mainSym->Signature()->ParamCount();
             if (n >= 1)
                 currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloc, peLib->AllocateOperand(localList[0]))); // load argc
             if (n >= 2)
                 currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloc, peLib->AllocateOperand(localList[1]))); // load argcv
-            for (int i=2; i < n; i++)
+            for (int i = 2; i < n; i++)
                 currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldnull, NULL)); // load a spare arg
             signature = peLib->AllocateMethodSignature("main", MethodSignature::Managed, mainContainer);
-            currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(mainSym->GetSignature()))));
+            currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(mainSym->Signature()))));
         }
         dumpInitializerCalls(deinitializersHead);
 
-        if (mainSym && mainSym->GetSignature()->GetReturnType()->IsVoid())
-            currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)0, Operand::i32))); 
-        signature = peLib->AllocateMethodSignature("exit", 0, NULL);
-            signature->AddReturnType(peLib->AllocateType(Type::Void, 0));
-        signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::i32, 0)));
+        if (!mainSym || mainSym && mainSym->Signature()->ReturnType()->IsVoid())
+            currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)0, Operand::i32)));
+        signature = LookupSignature("exit");
+        if (!signature)
+        {
+
+            signature = peLib->AllocateMethodSignature("exit", 0, NULL);
+            signature->ReturnType(peLib->AllocateType(Type::Void, 0));
+            signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::i32, 0)));
+            peLib->AddPInvokeReference(signature, "msvcrt.dll", false);
+        }
         currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
     }
 }
@@ -929,12 +1143,17 @@ static void dumpGlobalFuncs()
     int flags = Qualifiers::Private | Qualifiers::HideBySig | Qualifiers::Static | Qualifiers::CIL | Qualifiers::Managed;
 
     MethodSignature *signature = peLib->AllocateMethodSignature(name, MethodSignature::Managed, mainContainer);
-    signature->AddReturnType(peLib->AllocateType(Type::i32, 1));
+    signature->ReturnType(peLib->AllocateType(Type::i32, 1));
     currentMethod = peLib->AllocateMethod(signature, flags);
     mainContainer->Add(currentMethod);
 
-    signature = peLib->AllocateMethodSignature("_errno", 0, NULL);
-    signature->AddReturnType(peLib->AllocateType(Type::i32, 1));
+    signature = LookupSignature("_errno");
+    if (!signature)
+    {
+        signature = peLib->AllocateMethodSignature("_errno", 0, NULL);
+        signature->ReturnType(peLib->AllocateType(Type::i32, 1));
+        peLib->AddPInvokeReference(signature, "msvcrt.dll", false);
+    }
     currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
     currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ret));
     currentMethod->Optimize(*peLib);
@@ -945,18 +1164,18 @@ static void AddRTLThunks()
     Param *param;
     if (mainSym)
     {
-        if (mainSym->GetSignature()->GetParamCount() < 1)
+        if (mainSym->Signature()->ParamCount() < 1)
         {
             param = peLib->AllocateParam("argc", peLib->AllocateType(Type::i32, 0));
-            mainSym->GetSignature()->AddParam(param);
+            mainSym->Signature()->AddParam(param);
         }
-        if (mainSym->GetSignature()->GetParamCount() < 2)
+        if (mainSym->Signature()->ParamCount() < 2)
         {
             param = peLib->AllocateParam("argv", peLib->AllocateType(Type::Void, 1));
-            mainSym->GetSignature()->AddParam(param);
+            mainSym->Signature()->AddParam(param);
         }
     }
-    oa_enterseg(0);
+    oa_enterseg();
 
     mainInit();
     dumpInitializerCalls(initializersHead);
@@ -964,38 +1183,46 @@ static void AddRTLThunks()
     dumpCallToMain();
 
     currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ret));
-    for (int i=0; i < localList.size(); i++)
+    for (int i = 0; i < localList.size(); i++)
         currentMethod->AddLocal(localList[i]);
-    currentMethod->Optimize(*peLib);
+
+    try
+    {
+        currentMethod->Optimize(*peLib);
+    }
+    catch (PELibError exc)
+    {
+        std::cout << "Optimizer error: ( $Main ) " << exc.what() << std::endl;
+    }
 
     dumpGlobalFuncs();
 }
 static void CreateExternalCSharpReferences()
 {
-//        case am_argit_args:
-//            bePrintf("\t'__varargs__'");
-//            break;
+    //        case am_argit_args:
+    //            bePrintf("\t'__varargs__'");
+    //            break;
     argsCtor = peLib->AllocateMethodSignature(".ctor", MethodSignature::Instance, NULL);
-    argsCtor->SetFullName("[lsmsilcrtl]lsmsilcrtl.args::.ctor");
-    argsCtor->AddReturnType(peLib->AllocateType(Type::Void, 0));
-    argsCtor->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::objectArray, 0))); 
+    argsCtor->FullName("[lsmsilcrtl]lsmsilcrtl.args::.ctor");
+    argsCtor->ReturnType(peLib->AllocateType(Type::Void, 0));
+    argsCtor->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::objectArray, 0)));
     argsNextArg = peLib->AllocateMethodSignature("GetNextArg", MethodSignature::Instance, NULL);
-    argsNextArg->SetFullName("[lsmsilcrtl]lsmsilcrtl.args::GetNextArg");
-    argsNextArg->AddReturnType(peLib->AllocateType(Type::object, 0));
+    argsNextArg->FullName("[lsmsilcrtl]lsmsilcrtl.args::GetNextArg");
+    argsNextArg->ReturnType(peLib->AllocateType(Type::object, 0));
     argsUnmanaged = peLib->AllocateMethodSignature("GetUnmanaged", MethodSignature::Instance, NULL);
-    argsUnmanaged->SetFullName("[lsmsilcrtl]lsmsilcrtl.args::GetUnmanaged");
-    argsUnmanaged->AddReturnType(peLib->AllocateType(Type::Void, 1));
+    argsUnmanaged->FullName("[lsmsilcrtl]lsmsilcrtl.args::GetUnmanaged");
+    argsUnmanaged->ReturnType(peLib->AllocateType(Type::Void, 1));
     ptrBox = peLib->AllocateMethodSignature("box", 0, NULL);
-    ptrBox->SetFullName("[lsmsilcrtl]lsmsilcrtl.pointer::'box'");
-    ptrBox->AddReturnType(peLib->AllocateType(Type::object, 0));
-    ptrBox->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::Void, 1))); 
+    ptrBox->FullName("[lsmsilcrtl]lsmsilcrtl.pointer::'box'");
+    ptrBox->ReturnType(peLib->AllocateType(Type::object, 0));
+    ptrBox->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::Void, 1)));
     ptrUnbox = peLib->AllocateMethodSignature("unbox", 0, NULL);
-    ptrUnbox->SetFullName("[lsmsilcrtl]lsmsilcrtl.pointer::'unbox'");
-    ptrUnbox->AddReturnType(peLib->AllocateType(Type::Void, 1));
-    ptrUnbox->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::object, 0))); 
-    
+    ptrUnbox->FullName("[lsmsilcrtl]lsmsilcrtl.pointer::'unbox'");
+    ptrUnbox->ReturnType(peLib->AllocateType(Type::Void, 1));
+    ptrUnbox->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::object, 0)));
+
     systemObject = peLib->AllocateType(Type::object, 0);
-    systemObject->SetFullName("[mscorlib]System.Object");
+    systemObject->FullName("[mscorlib]System.Object");
 
 }
 extern "C" BOOLEAN oa_main_preprocess(void)
@@ -1004,7 +1231,7 @@ extern "C" BOOLEAN oa_main_preprocess(void)
 
     PELib::CorFlags corFlags = PELib::bits32;
     if (namespaceAndClass[0])
-        corFlags |= PELib::ilonly;
+        corFlags = (PELib::CorFlags)((int)corFlags | PELib::ilonly);
     char path[260], fileName[256];
     GetOutputFileName(fileName, path);
     char *p = strrchr(fileName, '.');
@@ -1027,15 +1254,14 @@ extern "C" BOOLEAN oa_main_preprocess(void)
         p = strchr(namespaceAndClass, '.');
         *p = 0;
         Namespace *nm = peLib->AllocateNamespace(namespaceAndClass);
-        peLib->Add(nm);
+        peLib->WorkingAssembly()->Add(nm);
         Class *cls = peLib->AllocateClass(p + 1, Qualifiers::MainClass | Qualifiers::Public, -1, -1);
         nm->Add(cls);
         mainContainer = cls;
-        nested = true;
     }
     else
     {
-        mainContainer = peLib;
+        mainContainer = peLib->WorkingAssembly();
     }
 
     peLib->AddExternalAssembly("mscorlib");
@@ -1048,19 +1274,22 @@ static BOOLEAN checkExterns(void)
 {
     BOOLEAN rv = FALSE;
     for (std::map<SYMBOL *, Value *, byName>::iterator it = externalMethods.begin();
-        it !=externalMethods.end(); ++it)
+        it != externalMethods.end(); ++it)
     {
-        printf ("Error: Undefined external symbol %s\n", it->first->name);
-        rv = TRUE;
+        if (it->first->linkage2 != lk_msil_rtl)
+        {
+            printf("Error: Undefined external symbol %s\n", it->first->name);
+            rv = TRUE;
+        }
     }
     for (std::map<SYMBOL *, Value *, byName>::iterator it = externalList.begin();
         it != externalList.end(); ++it)
     {
         char *name = it->first->name;
-        if (strcmp(name, "_pctype") && strcmp(name, "__stdin") && 
-           strcmp(name, "__stdout") && strcmp(name, "__stderr"))
+        if (strcmp(name, "_pctype") && strcmp(name, "__stdin") &&
+            strcmp(name, "__stdout") && strcmp(name, "__stderr"))
         {
-            printf ("Error: Undefined external symbol %s\n", name);
+            printf("Error: Undefined external symbol %s\n", name);
             rv = TRUE;
         }
     }
@@ -1115,8 +1344,13 @@ extern "C" void oa_main_postprocess(BOOLEAN errors)
         char ilName[260];
         GetOutputFileName(ilName, path);
         StripExt(ilName);
-        AddExt(ilName, ".il");
-        peLib->DumpOutputFile(ilName, PELib::ilasm);
+        if (cparams.prm_asmfile)
+            AddExt(ilName, ".il");
+        else if (prm_targettype == DLL)
+            AddExt(ilName, ".dll");
+        else
+            AddExt(ilName, ".exe");
+        peLib->DumpOutputFile(ilName, cparams.prm_asmfile ? PELib::ilasm : (prm_targettype == DLL ? PELib::pedll : PELib::peexe), prm_targettype != CONSOLE);
     }
 }
 extern "C" void oa_end_generation(void)
@@ -1139,7 +1373,7 @@ extern "C" void oa_end_generation(void)
     if (start)
     {
         LIST *lst = (LIST *)peLib->AllocateBytes(sizeof(LIST));
-        lst->data = peLib->AllocateBytes(strlen(start->name)+1);
+        lst->data = peLib->AllocateBytes(strlen(start->name) + 1);
         strcpy((char *)lst->data, start->name);
         if (initializersHead)
             initializersTail = initializersTail->next = lst;
@@ -1149,7 +1383,7 @@ extern "C" void oa_end_generation(void)
     if (end)
     {
         LIST *lst = (LIST *)peLib->AllocateBytes(sizeof(LIST));
-        lst->data = peLib->AllocateBytes(strlen(end->name)+1);
+        lst->data = peLib->AllocateBytes(strlen(end->name) + 1);
         strcpy((char *)lst->data, end->name);
         if (deinitializersHead)
             deinitializersTail = deinitializersTail->next = lst;
@@ -1163,19 +1397,6 @@ extern "C" void oa_put_extern(SYMBOL *sp, int code)
     {
         if (!msil_managed(sp))
         {
-            if (isfunction(sp->tp))
-            {
-                if (globalMethods.find(sp) != globalMethods.end())
-                    return;
-            }
-            else
-            {
-                if (globalList.find(sp) != globalList.end())
-                    return;
-            }
-            CacheGlobal(sp);
-            std::string dllname = _dll_name(sp->name);
-            peLib->AddPInvokeReference(GetMethodSignature(sp->tp, TRUE), dllname, sp->linkage != lk_stdcall);
         }
         else if (sp->linkage2 != lk_msil_rtl)
         {
@@ -1191,7 +1412,7 @@ extern "C" void oa_gen_strlab(SYMBOL *sp)
  *      generate a named label.
  */
 {
-    oa_enterseg(0);
+    oa_enterseg();
     if (sp->storage_class != sc_localstatic && sp->storage_class != sc_constant && sp->storage_class != sc_static)
     {
         CacheGlobal(sp);
@@ -1202,48 +1423,69 @@ extern "C" void oa_gen_strlab(SYMBOL *sp)
     }
     if (isfunction(sp->tp))
     {
-        CreateFunction(GetMethodSignature(sp->tp, FALSE), sp);
+        CreateFunction(GetMethodSignature(sp), sp);
     }
-//    else
-//    {
-//        CreateField(sp);
-//    }
+    //    else
+    //    {
+    //        CreateField(sp);
+    //    }
 }
 Type * GetStringType(int type)
 {
     std::string name;
-    switch(type)
+    switch (type)
     {
-        case lexeme::l_ustr:
-        case lexeme::l_astr:
-            name = "int8[]";
-            break;
-        case lexeme::l_Ustr:
-            name = "int32[]";
-            break;
-        case lexeme::l_wstr:
-            name = "int16[]";
-            break;
+    case lexeme::l_ustr:
+    case lexeme::l_astr:
+        name = "int8[]";
+        break;
+    case lexeme::l_Ustr:
+        name = "int32[]";
+        break;
+    case lexeme::l_wstr:
+        name = "int16[]";
+        break;
     }
     std::map<std::string, Type *>::iterator it = typeList.find(name);
     if (it != typeList.end())
         return it->second;
-    Class *newClass = peLib->AllocateClass(name, Qualifiers::Private | Qualifiers::Value | Qualifiers::Explicit | Qualifiers::Ansi | Qualifiers::Sealed |( nested ? Qualifiers::Nested : 0), 
-                               1, 1);
+    Class *newClass = peLib->AllocateClass(name, Qualifiers::Private | Qualifiers::Value | Qualifiers::Explicit | Qualifiers::Ansi | Qualifiers::Sealed,
+        1, 1);
     mainContainer->Add(newClass);
     Type *type2 = peLib->AllocateType(newClass);
     typeList[name] = type2;
     return type2;
 }
-void oa_put_string_label(int lab, int type)
+Value *GetStringFieldData(int lab, int type)
 {
-    oa_enterseg(0);
+    static SYMBOL sp1;
+    sp1.name = "$$$";
+    sp1.label = lab;
+    SYMBOL *sp = clonesym(&sp1);
+
+    std::map<SYMBOL *, Value *, byLabel>::iterator it = staticList.find(sp);
+    if (it != staticList.end())
+        return it->second;
+
     char buf[256];
     sprintf(buf, "L_%d", lab);
-    Field *field = peLib->AllocateField(buf, GetStringType(type), Qualifiers::ClassField | Qualifiers::ValueType | Qualifiers::Private | Qualifiers::Static);
+    Field *field = peLib->AllocateField(buf, GetStringType(type), Qualifiers::ClassField | Qualifiers::Private | Qualifiers::Static);
     mainContainer->Add(field);
+    sp = clone(sp);
+    Value *v = peLib->AllocateFieldName(field);
+    staticList[sp] = v;
+
+    return v;
+}
+void oa_put_string_label(int lab, int type)
+{
+    oa_enterseg();
+
+    Field *field = static_cast<FieldName *>(GetStringFieldData(lab, type))->GetField();
+
     initializingField = field;
     dataPos = 0;
+
 }
 /*-------------------------------------------------------------------------*/
 // we should only get here for strings...
@@ -1271,17 +1513,14 @@ void oa_genstring(LCHAR *str, int len)
  * Generate a string literal
  */
 {
-    if (cparams.prm_asmfile)
+    int nlen = len;
+    while (nlen--)
     {
-        int nlen = len;
-        while (nlen--)
-        {
-            oa_genbyte(*str++);
-        }
+        oa_genbyte(*str++);
     }
 }
 
-void oa_enterseg(enum e_sg seg)
+void oa_enterseg()
 {
     if (initializingField && dataPos)
     {

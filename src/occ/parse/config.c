@@ -941,7 +941,7 @@ ARCH_ASM assemblerInterface[] = {
     0,                                      /* backend data (compiler ignores) */
     "1",								/* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
     ".asm",                                  /* extension for assembly files */
-    0,                               /* extension for object files, NULL = has no object mode */
+    "",                               /* extension for object files, NULL = has no object mode */
     "CC",                               /* name of an environment variable to parse, or 0 */
     "CC",                             /* name of the program, for usage */
     "CC",                              /* name of a config file if you want to use one, or NULL (sans extension) */

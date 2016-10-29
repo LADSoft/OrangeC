@@ -748,8 +748,6 @@ EXPRESSION *anonymousVar(enum e_sc storage_class, TYPE *tp)
     if (theCurrentFunc && !inDefaultParam)
         InsertSymbol(rv, storage_class, FALSE, FALSE);
     SetLinkerNames(rv, lk_none);
-    if (chosenAssembler->enter_type)
-        chosenAssembler->enter_type(rv);
     return varNode(storage_class == sc_auto || storage_class == sc_parameter ? en_auto : storage_class == sc_localstatic ? en_label : en_global, rv);
 }
 void deref(TYPE *tp, EXPRESSION **exp)

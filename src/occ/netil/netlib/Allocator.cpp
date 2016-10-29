@@ -1,7 +1,7 @@
 /*
     Software License Agreement (BSD License)
     
-    Copyright (c) 1997-2011, David Lindauer, (LADSoft).
+    Copyright (c) 2016, David Lindauer, (LADSoft).
     All rights reserved.
     
     Redistribution and use of this software in source and binary forms, 
@@ -41,10 +41,10 @@
 #include <new>
 namespace DotNetPELib {
 
-    AssemblyDef *Allocator::AllocateAssemblyDef(std::string Name, bool External)
+    AssemblyDef *Allocator::AllocateAssemblyDef(std::string Name, bool External, Byte *KeyToken)
     {
         void *rv = BaseAlloc(sizeof(AssemblyDef));
-        new (rv) AssemblyDef(Name, External);
+        new (rv) AssemblyDef(Name, External, KeyToken);
         return static_cast<AssemblyDef *>(rv);
     }
     Namespace * Allocator::AllocateNamespace(std::string Name)
@@ -185,56 +185,57 @@ namespace DotNetPELib {
         new (rv) BoxedType(Tp);
         return static_cast<BoxedType *>(rv);
     }
-    unsigned char *Allocator::AllocateBytes(size_t sz)
+    Byte *Allocator::AllocateBytes(size_t sz)
     {
         void *rv = BaseAlloc(sz);
-        return static_cast<unsigned char *>(rv);
+        return static_cast<Byte *>(rv);
     }
     void *Allocator::BaseAlloc(size_t size)
     {
         // this assumes that size < the allocation pool size for a block
         size += sizeof(size_t);
-        if (!current)
+        if (!current_)
         {
-            first = current = (Block *)malloc(sizeof(Block));
-            if (!current)
+            first_ = current_ = (Block *)malloc(sizeof(Block));
+            if (!current_)
                 throw std::bad_alloc();
-            new (current) Block();
+            new (current_) Block();
         }
-        else if (AllocationSize - current->offset < size)
+        else if (AllocationSize - current_->offset_ < size)
         {
-            current = current->next = (Block *)malloc(sizeof(Block));
-            if (!current)
+            current_ = current_->next_ = (Block *)malloc(sizeof(Block));
+            if (!current_)
                 throw std::bad_alloc();
-            new (current) Block();
+            new (current_) Block();
         }
-        void *rv = &current->bytes[current->offset];
+        void *rv = &current_->bytes_[current_->offset_];
         size_t *s = (size_t *)rv;
         *s++ = size;
         rv = (void *)s;
-        current->offset += size;
+        current_->offset_ += size;
         return rv;
     }
     // have to destruct all objects in our local memory, because, some of them did
     // explicit memory allocation in the constructor
     void Allocator::FreeBlock(Block *b)
     {
-        char *next = (char *)&b->bytes[0];
-        while (next < (void **)&b->bytes[b->offset])
+        char *next = (char *)&b->bytes_[0];
+        while (next < (char *)&b->bytes_[b->offset_])
         {
             size_t add = *(size_t *)next;
             DestructorBase *d = reinterpret_cast<DestructorBase *>(next + sizeof(size_t));
             d->~DestructorBase();
             next += add;
         }
+        free(b);
     }
     void Allocator::FreeAll()
     {
-        while (first)
+        while (first_)
         {
-            Block *next = first->next;
-            FreeBlock(first);
-            first = next;
+            Block *next = first_->next_;
+            FreeBlock(first_);
+            first_ = next;
         }
     }
 

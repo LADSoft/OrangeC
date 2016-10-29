@@ -159,6 +159,7 @@ int RunExternalFiles(char *rootPath)
     char outName[260] ,*p;
     int rv;
     char temp[260];
+    return;
     strcpy(root, rootPath);
     p = strrchr(root, '\\');
     if (!p)

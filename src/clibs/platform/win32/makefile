@@ -35,7 +35,7 @@
 
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
-DIRS=pe rtl def pels msvcrdm crtdmain #lscrtl
+DIRS=pe rtl def msvcrdm crtdmain lscrtl pels 
 BUILDING_DLL = /DBUILDING_DLL=-D__BUILDING_LSCRTL_DLL
 
 all: lscrtl_objs alldirs

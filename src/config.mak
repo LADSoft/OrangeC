@@ -37,16 +37,16 @@
 #		email: TouchStone222@runbox.com <David Lindauer>
 
 #
-# BCC32 - borland c                         5.5
+# MS    - microsoft 32 bit compiler         VS2015
 # MINGW - mingw32 compiler                  4.8.1
 # OWC   - open watcom compiler              1.9
 # CLANG - clang compiler, using MS linker   3.5.0
 #
 ifndef COMPILER
-COMPILER := BCC32
+COMPILER := MS
 endif
 
-include $(TREETOP)\bcc32.mak
+include $(TREETOP)\ms.mak
 include $(TREETOP)\mingw.mak
 include $(TREETOP)\owc.mak
 include $(TREETOP)\clang.mak

@@ -3,7 +3,7 @@ Building Orange C
 
 These instructions are for building on WIN32.  I actually build on Windows 7 64-bit.
 
-You will need either Borland C++ 5.5, Visual Studio 2010, OpenWatcom, or MINGW to compile this set of applications.   For help support, C# tools version 4.0 and .NET framework 4.5 need to be installed.  Additionally, with the exception of the C# code this package currently will compile and link itself.
+You will need either Visual Studio 2015, OpenWatcom, or MINGW to compile this set of applications.   For help support, C# tools version 4.0 and .NET framework 4.5 need to be installed.  Additionally, with the exception of the C# code this package currently will compile and link itself.
 
 You will also need 7-zip and inno setup, to do a complete build including making the distribution files.
 
@@ -21,9 +21,13 @@ You can change the version number by editing `SRC\VERSION.H` then rebuilding eve
 
 Building orange C happens in three steps.  First, the executables are built.  Then, the C Runtime library is built.  After that, the distribution release files are built.
 
-To build the executables you can either install Borland C++ 5.5, the free version, or you you can install Visual Studio Express.  The build files for Visual Studio Express assume VC2010, I don't know if they will port forward.
+To build the executables the easiest thing to do is install Visual studio 2015.  Then you can either build the release version from the IDE, or from the command line.
 
 If you want to use VC to compile the executables, install the command line build environment (using VCVARS32.bat) and type:
+
+    omake
+
+or alternately
 
     ms.bat
 
@@ -55,9 +59,9 @@ Which builds the run-time library but doesn't copy the info to the release direc
 
     omake distribute
 
-which copies all files to the distribution directories and creates the distribution packages into `\orangec\dist`.  I use Visual Studio 2010 to generate the binaries for release, so after building the programs I type:
+which copies all files to the distribution directories and creates the distribution packages into `\orangec\dist`.  If you build instead from Visual Studio IDE or using MSBUILD you need to include /DMS:
 
-    omake -DMS distribute
+    omake /DMS distribute
 
 which copies the Visual Studio binaries from `\orangec\src\release` instead of the binaries that are built by the make program in each destination directory.
 

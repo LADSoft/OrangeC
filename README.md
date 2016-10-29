@@ -1,4 +1,4 @@
-OrangeC
+﻿OrangeC
 =======
 
 OrangeC Compiler And Tool Chain
@@ -9,7 +9,7 @@ Orange C is released under a Berkely-style license.
 
 This compiler comes in an install package with an IDE suitable for developing WIN32 programs.  Help files are included; the source format for the help files is HELPSCRIBBLE's HSC format.
 
-My primary development environment for many years has been Borland C 5.5, and I still support that.  Recently, I have started including build files for Visual Studio Express.  There is currently no support for compiling under other operating systems although most of the sources are OS-agnostic, with the exception of the make program which has heavy reliance on win32.
+The compiler can be built with various C++11 compilers, however, by default it is configured to use the Visual Studio 2015 community edition.   A solution exists which will build all files in the project, or you can use the project's omake program to build it from the command line (you can also use MSBUILD if so inclined)
 
 The compiler uses a text-based output format, a variant of the IEEE-695 OMF.   I've preferred this since it is easier to debug…  at one point I did try turning it into a binary format but once I got far enough to prototype it there didn't seem to be enough gain to complete the work.  And I really like text files a lot lol!
 
@@ -22,7 +22,5 @@ The linker supports specification files to allow customization of the link and d
 There is some support for retargeting the assembler;  the instruction set may be completely customized in an architecture description file, which makes a set of tables to guide the translation from text to binary code.   This is used to retarget the assembler code generation, and will eventually also be used in the compiler.  There is some other data such as for assembler directives which will also eventually be placed into the architecture description….  and long term there is a goal of placing directives for translating the intermediate code into assembly language statements there as well.
 
 There has been some thought as to eventually making this an x64 compiler, however, that would take a bit of effort as it wasn't well-supported while developing the code.  Mostly, there are a lot of place that long-long values need to be passed around in the tools, where only ints are being passed around.
-
-To reach the retarget ability goal there is some compiler and assembler work, however, that is currently deferred while work is being done to turn this into a c++ compiler.
 
 See the file `build.md` for instructions on how to build the project.

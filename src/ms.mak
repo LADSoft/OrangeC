@@ -36,10 +36,16 @@
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
 
-ifeq "$(COMPILER)" "BCC32"
+ifeq "$(COMPILER)" "MS"
 
-COMPILER_PATH := c:\bcc55
-OBJ_IND_PATH := bcc32
+// you have to run vcvars32 before you can use this
+//
+// this path is subject to change, if you don't want to worry with it
+// you can probably download and initialize the Windows SDK 10
+// and the correct path will be picked up by the code below
+UCRTPATH=C:\Program Files (x86)\Windows Kits\10\Lib\10.0.10240.0\ucrt\x86
+
+OBJ_IND_PATH := ms
 
 CPP_deps = $(notdir $(CPP_DEPENDENCIES:.cpp=.obj))
 C_deps = $(notdir $(C_DEPENDENCIES:.c=.obj))
@@ -52,56 +58,53 @@ ifeq "$(MAIN_DEPENDENCIES)" "$(MAIN_FILE)"
 MAIN_DEPENDENCIES = $(MAIN_FILE:.c=.obj)
 endif
 
-LLIB_DEPENDENCIES = $(notdir $(filter-out $(addsuffix .obj,$(EXCLUDE)) $(MAIN_DEPENDENCIES), $(CPP_deps) $(C_deps) $(ASM_deps) $(TASM_deps)))
+LLIB_DEPENDENCIES := $(notdir $(filter-out $(addsuffix .obj,$(EXCLUDE)) $(MAIN_DEPENDENCIES), $(CPP_deps) $(C_deps) $(ASM_deps) $(TASM_deps)))
 
 
-CC=$(COMPILER_PATH)\bin\bcc32
-CCFLAGS = /c /w- /O2 /v  
+CC=cl.exe
+CCFLAGS = /O2 /EHs /c
 
-LINK=$(COMPILER_PATH)\bin\ilink32
-LFLAGS=-S:5242880 -v -c -m -Gn -Gi /V5.1 /L$(COMPILER_PATH)\lib;$(COMPILER_PATH)\lib\psdk;$(_LIBDIR)
+LINK=link.exe
+LFLAGS=/LTCG:incremental /NXCOMPAT /DYNAMICBASE /MACHINE:x86 /OPT:REF /SAFESEH  /OPT:ICF /NOLOGO /TLBID:1
 
-LIB=$(COMPILER_PATH)\bin\tlib
-LIBFLAGS=/P1024
+LIB=lib.exe
+LIBFLAGS=/MACHINE:x86 /LTCG
 LIB_EXT:=.lib
 LIB_PREFIX:=
 TASM=$(COMPILER_PATH)\bin\\tasm32
 
 ASM=nasm
-ASMFLAGS = -fobj
+ASMFLAGS = -fwin32
 
-RC=$(DISTROOT)\src\orc
-RCINCLUDE=$(DISTROOT)\include
-RCFLAGS = -r
+RC=rc.exe
+RCFLAGS = ./r
 
 ifneq "$(INCLUDES)" ""
 CINCLUDES:=$(addprefix /I,$(INCLUDES))
 endif
 DEFINES := $(addprefix /D,$(DEFINES))
 DEFINES := $(subst @, ,$(DEFINES))
-LIB_DEPENDENCIES := $(addsuffix .lib,$(LIB_DEPENDENCIES))
+LIB_DEPENDENCIES := $(addsuffix $(LIB_EXT),$(LIB_DEPENDENCIES))
 
-CCFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) /DMICROSOFT /DBORLAND /DWIN32
+CCFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) /DMICROSOFT /DWIN32
+
 ifeq "$(TARGET)" "GUI"
-STARTUP=C0W32.obj
-TYPE=/Tpe/aa
-COMPLIB=cw32mt$(LIB_EXT)
+LFLAGS:= $(LFLAGS) /SUBSYSTEM:WINDOWS
 else
-STARTUP=C0X32.obj
-TYPE=/Tpe/ap
-COMPLIB=cw32$(LIB_EXT)
+LFLAGS:= $(LFLAGS) /MANIFEST /SUBSYSTEM:CONSOLE /MANIFESTUAC:"level='asInvoker' uiAccess = 'false'"
 endif
 
-COMPLIB:=$(COMPLIB) msimg32 shell32
+COMPLIB:=$(COMPLIB) "kernel32.lib" "user32.lib" "gdi32.lib" "winspool.lib" "comdlg32.lib" "advapi32.lib" "shell32.lib" "ole32.lib" "oleaut32.lib" "uuid.lib" "odbc32.lib" "odbccp32.lib" "uxtheme.lib" "comctl32.lib" "msimg32.lib"
+
 vpath %.obj $(_OUTPUTDIR)
-vpath %$(LIB_EXT) c:\bcc55\lib c:\bcc55\lib\psdk $(_LIBDIR)
+vpath %.lib $(_LIBDIR)
 vpath %.res $(_OUTPUTDIR)
 
 %.obj: %.cpp
-	$(CC) $(CCFLAGS) -o$@ $^
+	$(CC) $(CCFLAGS) -Fo$@ $^
 
 %.obj: %.c
-	$(CC) $(CCFLAGS) -o$@ $^
+	$(CC) $(CCFLAGS) -Fo$@ $^
 
 %.obj: %.asm
 	$(TASM) /ml /zi /i$(INCLUDE) $(ADEFINES) $^, $@
@@ -110,22 +113,17 @@ vpath %.res $(_OUTPUTDIR)
 	$(ASM) $(ASMFLAGS) -o$@ $^
 
 %.res: %.rc
-	$(RC) -i$(RCINCLUDE) $(RCFLAGS) -o$@ $^
+	$(RC) -i$(RCINCLUDE) $(RCFLAGS) -fo$@ $^
 
 $(_LIBDIR)\$(NAME)$(LIB_EXT): $(LLIB_DEPENDENCIES)
-#	-del $(_LIBDIR)\$(NAME)$(LIB_EXT) >> $(NULLDEV)
-	$(LIB) $(LIBFLAGS) $(_LIBDIR)\$(NAME)$(LIB_EXT) @&&|
- $(addprefix -+$(_OUTPUTDIR)\,$(LLIB_DEPENDENCIES))
+#	-del $()_LIBDIR)\$(NAME)$(LIB_EXT) >> $(NULLDEV)
+	$(LIB) $(LIBFLAGS) /OUT:$(_LIBDIR)\$(NAME)$(LIB_EXT) @&&|
+ 	$(addprefix $(_OUTPUTDIR)\,$(LLIB_DEPENDENCIES))
 |
 
-$(NAME).exe: $(MAIN_DEPENDENCIES) $(addprefix $(_LIBDIR)\,$(LIB_DEPENDENCIES)) $(_LIBDIR)\$(NAME)$(LIB_EXT) $(RES_deps)
-	$(LINK) $(TYPE) $(LFLAGS) @&&|
-$(STARTUP) $(addprefix $(_OUTPUTDIR)\,$(MAIN_DEPENDENCIES))
-$(NAME)
-$(NAME)
-$(_LIBDIR)\$(NAME)$(LIB_EXT) $(LIB_DEPENDENCIES) $(COMPLIB) import32$(LIB_EXT)
-$(DEF_DEPENDENCIES)
-$(addprefix $(_OUTPUTDIR)\,$(RES_deps))
+$(NAME).exe: $(MAIN_DEPENDENCIES) $(LIB_DEPENDENCIES) $(_LIBDIR)\$(NAME)$(LIB_EXT) $(RES_deps)
+	$(LINK) $(TYPE) $(LFLAGS) $(COMPLIB) /LIBPATH:"$(UCRTPATH)" /LIBPATH:"$(WindowsSdkDir)\lib\$(WindowsSDKLibVersion)\um\x86" /LIBPATH:"$(VCINSTALLDIR)\lib" /OUT:$@ $(_LIBDIR)\$(NAME)$(LIB_EXT) $(LIB_DEPENDENCIES) $(addprefix /DEF:,$(DEF_DEPENDENCIES)) $(addprefix $(_OUTPUTDIR)\,$(RES_deps)) @&&|
+$(addprefix $(_OUTPUTDIR)\,$(MAIN_DEPENDENCIES))
 |
 
 %.exe: %.c

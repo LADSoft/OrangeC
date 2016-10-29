@@ -100,7 +100,7 @@ void ppInclude::pushFile(const std::string &name)
 {
     // gotta do the test first to get the error correct if it isn't there
     std::fstream in(name.c_str(), std::ios::in);
-    if (in == NULL)
+    if (!in.is_open())
     {
         Errors::Error(std::string("Could not open ") + name + " for input");
     }

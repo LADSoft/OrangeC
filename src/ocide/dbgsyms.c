@@ -477,7 +477,7 @@ void ExpandPointerInfo(DEBUG_INFO *dbg_info, VARINFO *v)
     vx->size = DeclType(dbg_info, vx);
 }
 
-int GetPointerInfo(DEBUG_INFO *dbg_info, VARINFO *v)
+int GetDbgPointerInfo(DEBUG_INFO *dbg_info, VARINFO *v)
 {
     v->pointer = TRUE;
     v->derefaddress = -1;
@@ -633,13 +633,13 @@ int DeclType(DEBUG_INFO *dbg_info, VARINFO *v)
     {
         case eLRef:
             v->lref = TRUE;
-            return GetPointerInfo(dbg_info, v);
+            return GetDbgPointerInfo(dbg_info, v);
         case eRRef:
             v->rref = TRUE;
-            return GetPointerInfo(dbg_info, v);
+            return GetDbgPointerInfo(dbg_info, v);
         case ePointer:
         case eFunction:
-            return GetPointerInfo(dbg_info, v);
+            return GetDbgPointerInfo(dbg_info, v);
         case eBitField:
             return GetBitFieldInfo(dbg_info, v);
         case eStruct:

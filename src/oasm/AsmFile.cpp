@@ -618,7 +618,7 @@ void AsmFile::IncbinDirective()
         }
     }
     std::fstream in(name.c_str(), std::ios::in | std::ios::binary);
-    if (in == NULL)
+    if (!in.is_open())
         throw new std::runtime_error(std::string("File '") + name + "' not found.");
     in.seekg(0, std::ios::end);
     int len = in.tellg();

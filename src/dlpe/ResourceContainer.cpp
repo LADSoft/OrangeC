@@ -115,7 +115,7 @@ int ResourceContainer::GetId(unsigned short *hdrdata, int &i, int &id, std::wstr
 bool ResourceContainer::LoadFile(const std::string &name)
 {
     std::fstream in(name.c_str(), std::ios::in | std::ios::binary);
-    if (in == NULL)
+    if (!in.is_open())
         return false;
     unsigned char buf[sizeof(resourceHeader)];
     in.read((char *)buf, sizeof(resourceHeader));

@@ -16,6 +16,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />
+    <None Include="CC386.CFG" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="altcomb.c">
@@ -79,9 +80,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="dlgctlwnd.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="DOCKMGR.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="doswind.c">
@@ -159,36 +157,6 @@
     <ClCompile Include="instance.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="jumplist.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="lsblank.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="lscont.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="lsctrl.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="lsframe.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="lsgrip.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="lstab.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="lstool.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="LSTREE.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="lstt.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="make.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -249,9 +217,6 @@
     <ClCompile Include="props.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="propswnd.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="rcgs.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -300,12 +265,6 @@
     <ClCompile Include="SRCHPATH.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="tabproj.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="tabtool.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="TAGS.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -328,6 +287,90 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\sqlite3\sqlite3.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="bookmarks.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="brkwnd.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="brsJump.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="brsLookup.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="brswnd.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ctlbound.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ctlcont.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ctlframe.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ctltab.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ctltb.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ctltree.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ctltt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dlgpropwnd.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="errorwnd.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="findwnd.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="memwnd.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="prjdepends.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="unmangle.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="xclipbrd.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="xcodefunc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="xcodestruc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="xcodeutil.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="xcolorize.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="xformat.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="xmatch.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="xpaint.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="xundo.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="xutil.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -360,9 +403,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="img.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="LSCTRL.H">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="OPCODES.H">
@@ -410,15 +450,21 @@
     <ClInclude Include="wargs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="winconst.h">
+    <ClInclude Include="XML.H">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="XML.H">
+    <ClInclude Include="ctl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="idewinconst.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="symtypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="ocide.rc">
+    <ResourceCompile Include="ociderc.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
   </ItemGroup>

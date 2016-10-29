@@ -213,10 +213,10 @@ void Listing::ListLine(std::fstream &out, std::string &line, ListedLine *cur, bo
 bool Listing::Write(std::string &listingName, std::string &inName, bool listMacros)
 {
     std::fstream in(inName.c_str(), std::ios::in);
-    if (in == NULL)
+    if (!in.is_open())
         return false;
     std::fstream out(listingName.c_str(), std::ios::out);
-    if (out == NULL)
+    if (!out.is_open())
     {
         Utils::fatal(std::string(std::string("Could not open ") + listingName.c_str() + " for write.").c_str());
         return false;

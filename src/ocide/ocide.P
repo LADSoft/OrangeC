@@ -317,7 +317,7 @@ SCOPE * FindSymbol(DEBUG_INFO **dbg_info, SCOPE *scope, char *name, int *address
 int FindTypeSymbol(DEBUG_INFO **dbg_info, SCOPE *scope, char *name);
 int basictypesize(int type);
 void ExpandPointerInfo(DEBUG_INFO *dbg_info, VARINFO *v);
-int GetPointerInfo(DEBUG_INFO *dbg_info, VARINFO *v);
+int GetDbgPointerInfo(DEBUG_INFO *dbg_info, VARINFO *v);
 int GetBitFieldInfo(DEBUG_INFO *dbg_info, VARINFO *v);
 int GetStructInfo(DEBUG_INFO *dbg_info, VARINFO *v, int qual);
 int GetArrayInfo(DEBUG_INFO *dbg_info, VARINFO *v);

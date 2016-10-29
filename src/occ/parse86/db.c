@@ -180,7 +180,7 @@ char *tables=
     " ,FOREIGN KEY (symbolId) REFERENCES Names(id)"
     " );"
     "INSERT INTO ccPropertyBag (property, value)"
-    " VALUES (\"ccVersion\", "STRINGVERSION");"
+    " VALUES (\"ccVersion\", " STRINGVERSION ");"
     "COMMIT; "
 } ;
 static char *deletion =

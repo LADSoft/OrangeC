@@ -59,7 +59,7 @@ class CmdSwitchBase
         CmdSwitchBase(const CmdSwitchBase &orig) { switchChar = orig.switchChar; }
         virtual int Parse(const char *data) { return 0; } 
         
-        char GetSwitchChar() { return switchChar; }
+        char GetSwitchChar() const { return switchChar; }
     private:
         char switchChar;
 } ;
@@ -197,7 +197,7 @@ class CmdSwitchParser
     private:
         struct plt
         {
-            bool operator ()(CmdSwitchBase *left, CmdSwitchBase *right)
+            bool operator ()(const CmdSwitchBase *left, const CmdSwitchBase *right) const
             {
                 return left->GetSwitchChar() < right->GetSwitchChar();
             }

@@ -172,7 +172,7 @@ char *LinkDebugFile::tables=
     " ,complexId INTEGER"
     " );"
     "INSERT INTO dbPropertyBag (property, value)"
-    " VALUES (\"dbVersion\", "STRINGVERSION");"
+    " VALUES (\"dbVersion\", " STRINGVERSION ");"
     "COMMIT; "
 } ;
 char *LinkDebugFile::indexes = 

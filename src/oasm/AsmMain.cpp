@@ -201,7 +201,7 @@ int AsmMain::Run(int argc, char *argv[])
         {
             std::string working = Utils::QualifiedFile((*it)->c_str(), ".i");
             std::fstream out(working.c_str(), std::ios::out);
-            if (out == NULL)
+            if (!out.is_open())
             {
                 Utils::fatal(std::string(std::string("Could not open ") + working.c_str() + " for write.").c_str());
             }

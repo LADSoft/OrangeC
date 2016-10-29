@@ -71,7 +71,7 @@ class LinkRegion
             std::vector<OneSection> sections;
         };
         struct nslt {
-            bool operator ()(const NamedSection *left, const NamedSection *right)
+            bool operator ()(const NamedSection *left, const NamedSection *right) const
             {
                 return strcmp(left->name.c_str(), right->name.c_str()) < 0;
             }

@@ -112,7 +112,7 @@ char *BRCWriter::tables=
     " ,complexId INTEGER"
     " );"
     "INSERT INTO brPropertyBag (property, value)"
-    " VALUES (\"brVersion\", "STRINGVERSION");"
+    " VALUES (\"brVersion\", " STRINGVERSION ");"
     "COMMIT; "
 } ;
 char *BRCWriter::deletion =

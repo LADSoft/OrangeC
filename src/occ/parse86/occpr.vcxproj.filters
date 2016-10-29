@@ -132,6 +132,9 @@
     <ClCompile Include="..\parse\libcxx.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\parse\crc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\parse\beinterf.h">

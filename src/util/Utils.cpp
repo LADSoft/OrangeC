@@ -84,7 +84,7 @@ void Utils::banner(char *progName)
         if (__argv[i] && (__argv[i][0] == '/' || __argv[i][0] == '-'))
             if (__argv[i][1] == '!')
                 return;
-       printf("%s Version "STRING_VERSION" "COPYRIGHT"\n", ShortName(progName));
+       printf("%s Version " STRING_VERSION " " COPYRIGHT "\n", ShortName(progName));
 }
 void Utils::usage(char *prog_name, char *text)
 {

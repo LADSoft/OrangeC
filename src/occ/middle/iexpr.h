@@ -1,7 +1,7 @@
 /*
     Software License Agreement (BSD License)
     
-    Copyright (c) 1997-2011, David Lindauer, (LADSoft).
+    Copyright (c) 1997-2016, David Lindauer, (LADSoft).
     All rights reserved.
     Redistribution and use of this software in source and binary forms, 
     with or without modification, are permitted provided that the following 

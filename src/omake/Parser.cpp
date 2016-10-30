@@ -100,23 +100,26 @@ std::string Parser::GetLine(bool inCommand)
         inCommand = true;
         
     // concatenate lines
-    while (rv[rv.size()-1] == '\\')
+    if (rv.size())
     {
-        if (!remaining.size())
+        while (rv[rv.size() - 1] == '\\')
         {
-            Eval::error("backslash-newline at end of input stream");
-            break;
+            if (!remaining.size())
+            {
+                Eval::error("backslash-newline at end of input stream");
+                break;
+            }
+            if (!inCommand)
+            {
+                rv.replace(rv.size() - 1, 1, "");
+                rv = rv + " ";
+            }
+            lineno++;
+            std::string next = Eval::ExtractFirst(remaining, "\n");
+            rv += next;
+            if (!next.size())
+                break;
         }
-        if (!inCommand)
-        {
-            rv.replace(rv.size()-1, 1,"");
-            rv = rv + " ";
-        }
-        lineno++;
-        std::string next = Eval::ExtractFirst(remaining, "\n");
-        rv += next;
-        if (!next.size())
-            break;
     }
     // get rid of comments
     if (!inCommand)

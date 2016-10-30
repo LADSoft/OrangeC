@@ -1,4 +1,4 @@
-if NOT "%VS100COMNTOOLS%"=="" goto noload
+if NOT "%VCINSTALLDIR%"=="" goto noload
 
 call "vcvars32.bat"
 

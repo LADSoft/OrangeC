@@ -1,7 +1,7 @@
 /*
     Software License Agreement (BSD License)
     
-    Copyright (c) 1997-2016, David Lindauer, (LADSoft).
+    Copyright (c) 1997-2011, David Lindauer, (LADSoft).
     All rights reserved.
     
     Redistribution and use of this software in source and binary forms, 
@@ -40,7 +40,11 @@
 #include <setjmp.h>
 #include <stdarg.h>
 #include <ctype.h>
+#ifdef MSIL
+#include "..\version.h"
+#else
 #include "..\..\version.h"
+#endif
 #if defined(_MSC_VER) || defined(BORLAND) || defined(__ORANGEC__)
 #include <io.h>
 #endif

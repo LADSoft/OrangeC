@@ -38,11 +38,11 @@
 
 ifeq "$(COMPILER)" "MS"
 
-// you have to run vcvars32 before you can use this
-//
-// this path is subject to change, if you don't want to worry with it
-// you can probably download and initialize the Windows SDK 10
-// and the correct path will be picked up by the code below
+# you have to run vcvars32 before you can use this
+#
+# this path is subject to change, if you don't want to worry with it
+# you can probably download and initialize the Windows SDK 10
+# and the correct path will be picked up by the code below
 UCRTPATH=C:\Program Files (x86)\Windows Kits\10\Lib\10.0.10240.0\ucrt\x86
 
 OBJ_IND_PATH := ms

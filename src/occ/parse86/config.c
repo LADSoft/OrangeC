@@ -267,6 +267,7 @@ static ARCH_CHARACTERISTICS architecture = {
     0,   /* defines peephole information */
     0,             /* preferred optimizations */
     0,             /* optimizations we don't want */
+    0,             /* error options */
     FALSE,			/* true if has floating point regs */
     0,            /* floating point modes, not honored currently */
     ABM_USESIZE,  /* bool is determined by sizing above */

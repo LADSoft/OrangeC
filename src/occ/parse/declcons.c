@@ -539,7 +539,10 @@ BOOLEAN matchesCopy(SYMBOL *sp, BOOLEAN move)
             {
                 TYPE *tp  = basetype(arg1->tp)->btp;
                 if (isstructured(tp))
-                    if (basetype(tp)->sp == sp->parentClass || sameTemplate(tp, sp->parentClass->tp))
+                    if (basetype(tp)->sp == sp->parentClass || 
+                        basetype(tp)->sp == sp->parentClass->mainsym || 
+                        basetype(tp)->sp->mainsym == sp->parentClass ||
+                        sameTemplate(tp, sp->parentClass->tp))
                         return TRUE;
             }
         }
@@ -629,7 +632,9 @@ SYMBOL *getCopyCons(SYMBOL *base, BOOLEAN move)
                     tp = basetype(tp->btp);
                     if (isstructured(tp))
                     {
-                        if (comparetypes(tp, base->tp, TRUE) || sameTemplate(tp, base->tp))
+                        if (tp->sp == base->tp->sp || 
+                            tp->sp == base->tp->sp->mainsym || 
+                            sameTemplate(tp, base->tp))
                         {
                             return (SYMBOL *)hr->p;
                         }

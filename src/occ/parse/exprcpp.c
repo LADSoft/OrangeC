@@ -269,7 +269,7 @@ EXPRESSION *getMemberBase(SYMBOL *memberSym, SYMBOL *strSym, SYMBOL *funcsp, BOO
             }
         }
         deref(&stdpointer, &en);
-        if (enclosing != memberSym->parentClass)
+        if (enclosing != memberSym->parentClass && enclosing->mainsym != memberSym->parentClass)
         {
             if (classRefCount(memberSym->parentClass, enclosing) != 1)
             {

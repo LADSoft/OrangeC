@@ -90,7 +90,7 @@ public:
 class Numeric
 {
 public:
-    Numeric(): node(NULL) { }
+    Numeric(): node(nullptr) { }
     AsmExprNode *node;
     int pos;
     int relOfs;
@@ -119,7 +119,7 @@ public:
 class InstructionParser
 {
 public:
-    InstructionParser() :expr(NULL) { }
+    InstructionParser() :expr(nullptr) { }
     
     static InstructionParser *GetInstance();
     

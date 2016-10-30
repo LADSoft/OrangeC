@@ -50,7 +50,7 @@ class Bitmap : public Resource
 {
 public:
     Bitmap(const ResourceId &Id, const ResourceInfo &info)
-        : Resource(eBitmap, Id, info), data(NULL) { }
+        : Resource(eBitmap, Id, info), data(nullptr) { }
     virtual ~Bitmap();
     virtual void WriteRes(ResFile &resFile);
     virtual void ReadRC(RCFile &rcFile);

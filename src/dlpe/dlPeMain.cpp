@@ -119,11 +119,8 @@ int main(int argc, char **argv)
 }
 dlPeMain::~dlPeMain()
 {
-    for (std::deque<PEObject *>::iterator it = objects.begin(); it != objects.end(); ++it)
-    {
-        PEObject *p = (*it);
-        delete p;
-    }
+    for (auto obj : objects)
+        delete obj;
     delete stubData;
     delete factory;
 }
@@ -254,13 +251,13 @@ bool dlPeMain::ReadSections(const std::string &path)
         delete file;
         Utils::fatal("Input file is in relative format");
     }
-    if (ieee.GetStartAddress() == NULL)
+    if (ieee.GetStartAddress() == nullptr)
     {
         delete file;
         Utils::fatal("No start address specified");
     }
     startAddress = ieee.GetStartAddress()->Eval(0);
-    if (file != NULL)
+    if (file != nullptr)
     {
         ReadValues();
         if (LoadImports(file))
@@ -322,7 +319,7 @@ void dlPeMain::InitHeader(unsigned headerSize, ObjInt endVa)
     header.magic = PE_MAGICNUM ;
     header.cpu_type = PE_INTEL386 ;
     /* store time/date of creation */
-    header.time=(unsigned)time(NULL);
+    header.time=(unsigned)time(nullptr);
     header.nt_hdr_size = PE_OPTIONAL_HEADER_SIZE ;
 
     header.flags = PE_FILE_EXECUTABLE | PE_FILE_32BIT | PE_FILE_LOCAL_SYMBOLS_STRIPPED | PE_FILE_LINE_NUMBERS_STRIPPED
@@ -376,50 +373,50 @@ void dlPeMain::InitHeader(unsigned headerSize, ObjInt endVa)
 
     
     header.image_size = endVa;
-    for (std::deque<PEObject *>::iterator it = objects.begin(); it != objects.end(); ++it)
+    for (auto obj : objects)
     {
-        if ((*it)->GetName() == ".text")
+        if (obj->GetName() == ".text")
         {
-            header.code_base = (*it)->GetAddr();
-            header.code_size = ObjectAlign(objectAlign, (*it)->GetSize());
+            header.code_base = obj->GetAddr();
+            header.code_size = ObjectAlign(objectAlign, obj->GetSize());
         }
-        else if ((*it)->GetName() == ".data")
+        else if (obj->GetName() == ".data")
         {
-            header.data_base = (*it)->GetAddr();
-            header.data_size = ObjectAlign(objectAlign, (*it)->GetSize());
+            header.data_base = obj->GetAddr();
+            header.data_size = ObjectAlign(objectAlign, obj->GetSize());
             header.bss_size = 0;
         }
-        else if ((*it)->GetName() == ".idata")
+        else if (obj->GetName() == ".idata")
         {
-            header.import_rva = (*it)->GetAddr();
-            header.import_size = (*it)->GetRawSize();
+            header.import_rva = obj->GetAddr();
+            header.import_size = obj->GetRawSize();
         }
-        else if ((*it)->GetName() == ".edata")
+        else if (obj->GetName() == ".edata")
         {
-            header.export_rva = (*it)->GetAddr();
-            header.export_size = (*it)->GetRawSize();
+            header.export_rva = obj->GetAddr();
+            header.export_size = obj->GetRawSize();
         }
-        else if ((*it)->GetName() == ".reloc")
+        else if (obj->GetName() == ".reloc")
         {
-            header.fixup_rva  = (*it)->GetAddr();
-            header.fixup_size  = (*it)->GetRawSize();
+            header.fixup_rva  = obj->GetAddr();
+            header.fixup_size  = obj->GetRawSize();
         }
-        else if ((*it)->GetName() == ".rsrc")
+        else if (obj->GetName() == ".rsrc")
         {
-            header.resource_rva = (*it)->GetAddr();
-            header.resource_size = (*it)->GetRawSize();
+            header.resource_rva = obj->GetAddr();
+            header.resource_size = obj->GetRawSize();
         }
-        else if ((*it)->GetName() == ".debug")
+        else if (obj->GetName() == ".debug")
         {
-            header.debug_rva = (*it)->GetAddr();
-            header.debug_size = (*it)->GetRawSize();
+            header.debug_rva = obj->GetAddr();
+            header.debug_size = obj->GetRawSize();
         }
     }
 }
 bool dlPeMain::LoadStub(const std::string &exeName)
 {
     std::string val = stubSwitch.GetValue();
-    if (val.size() == NULL)
+    if (val.size() == 0)
         val = "dfstb32.exe";
     // look in current directory
     std::fstream *file = new std::fstream(val.c_str(), std::ios::in | std::ios::binary);
@@ -428,7 +425,7 @@ bool dlPeMain::LoadStub(const std::string &exeName)
         if (file)
         {
             delete file;
-            file = NULL;
+            file = nullptr;
         }
         // look in lib directory if not there
         int npos = exeName.find_last_of(CmdFiles::DIR_SEP);
@@ -443,7 +440,7 @@ bool dlPeMain::LoadStub(const std::string &exeName)
             if (file)
             {
                 delete file;
-                file = NULL;
+                file = nullptr;
             }
             // look in lib directory if not there
             int npos = exeName.find_last_of(CmdFiles::DIR_SEP);
@@ -459,7 +456,7 @@ bool dlPeMain::LoadStub(const std::string &exeName)
         if (file)
         {
             delete file;
-            file = NULL;
+            file = nullptr;
         }
         if (stubSwitch.GetValue().size() == 0)
         {
@@ -577,13 +574,13 @@ int dlPeMain::Run(int argc, char **argv)
     ObjInt endVa = objects[0]->GetAddr();
     if (endVa < endPhys)
         Utils::fatal("ObjectAlign too small");
-    for (std::deque<PEObject *>::iterator it = objects.begin(); it != objects.end(); ++it)
+    for (auto obj : objects)
     {
-        (*it)->Setup(endVa, endPhys);
+        obj->Setup(endVa, endPhys);
     }
-    for (std::deque<PEObject *>::iterator it = objects.begin(); it != objects.end(); ++it)
+    for (auto obj : objects)
     {
-        (*it)->Fill();
+        obj->Fill();
     }
     InitHeader(headerSize, endVa);
     std::fstream out(outputName.c_str(), std::ios::out | std::ios::binary);
@@ -591,15 +588,15 @@ int dlPeMain::Run(int argc, char **argv)
     {
         WriteStub(out);
         out.write((char *)&header, sizeof(header));
-        for (std::deque<PEObject *>::iterator it = objects.begin(); it != objects.end(); ++it)
+        for (auto obj : objects)
         {
-            (*it)->WriteHeader(out);
+            obj->WriteHeader(out);
         }
         PadHeader(out);
         out.flush();
-        for (std::deque<PEObject *>::iterator it = objects.begin(); it != objects.end(); ++it)
+        for (auto obj : objects)
         {
-            (*it)->Write(out);
+            obj->Write(out);
             out.flush();
         }		
         out.flush();

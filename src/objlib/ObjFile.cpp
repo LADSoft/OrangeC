@@ -80,8 +80,8 @@ void ObjFile ::Add(ObjSymbol *Symbol)
 }
 ObjSection *ObjFile ::FindSection(const ObjString Name)
 {
-    for (SectionIterator it = sections.begin(); it != sections.end(); ++it)
-        if ((*it)->GetName() == Name)
-            return *it;
-    return NULL;
+    for (auto sect : sections)
+        if (sect->GetName() == Name)
+            return sect;
+    return nullptr;
 }

@@ -169,11 +169,11 @@ void Real::WriteHeader(std::fstream &stream)
     header.overlay = 0;
     header.always_one = 1;
     stream.write((char *)&header, sizeof(header));
-    for (std::deque<Fixup>::iterator it = fixups.begin(); it != fixups.end(); ++it)
+    for (auto fixup : fixups)
     {
         unsigned short dd[2];
-        dd[0] = (*it).off;
-        dd[1] = (*it).seg;
+        dd[0] = fixup.off;
+        dd[1] = fixup.seg;
         stream.write((char *)&dd, sizeof(dd));
     }
     int n = stream.tellg() & 15;

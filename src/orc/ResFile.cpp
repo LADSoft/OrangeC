@@ -51,14 +51,12 @@
 
 ResFile::~ResFile()
 {
-    for (std::deque<Resource *>::iterator it = resources.begin(); it != resources.end(); ++it)
+    for (auto res : resources)
     {
-        Resource *res = *it;
         delete res;
     }
-    for (std::set<Resource *, lt>::iterator it = strings.begin(); it != strings.end(); ++it)
+    for (auto res : strings)
     {
-        Resource *res = *it;
         delete res;
     }
 }
@@ -145,13 +143,13 @@ bool ResFile::Write(const std::string &name)
     stream = new std::fstream(name.c_str(), std::ios::out | std::ios::binary);
     //if (!stream->fail())
     {
-        for (std::deque<Resource *>::iterator it = resources.begin(); it != resources.end(); ++it)
+        for (auto res : resources)
         {
-            (*it)->WriteRes(*this);
+            res->WriteRes(*this);
         }
-        for (std::set<Resource *, lt>::iterator it = strings.begin(); it != strings.end(); ++it)
+        for (auto res : strings)
         {
-            (*it)->WriteRes(*this);
+            res->WriteRes(*this);
         }
         // the alignment rules for end of file seem strange
         // we are just going to align on a dword boundary like gnu rc does
@@ -159,7 +157,7 @@ bool ResFile::Write(const std::string &name)
         stream->close();
         bool rv = !stream->fail();
         delete stream;
-        stream = NULL;
+        stream = nullptr;
         return rv;
     }
     return false;

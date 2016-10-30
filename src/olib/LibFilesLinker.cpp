@@ -83,7 +83,7 @@ ObjFile *LibFiles::LoadModule(FILE *stream, ObjInt FileIndex, ObjFactory *factor
 {
     const FileDescriptor *a = files[FileIndex];
     if (!a->offset)
-        return NULL;
+        return nullptr;
     fseek(stream, a->offset, SEEK_SET);
     return ReadData(stream, a->name, factory);
 }

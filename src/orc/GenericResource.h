@@ -50,7 +50,7 @@ class GenericResource : public Resource
 {
 public:
     GenericResource(const ResourceId &type, const ResourceId &Id, const ResourceInfo &info)
-        : Resource(type, Id, info), data(NULL) { }
+        : Resource(type, Id, info), data(nullptr) { }
     virtual ~GenericResource();
     virtual void WriteRes(ResFile &resFile);
     virtual void ReadRC(RCFile &rcFile);

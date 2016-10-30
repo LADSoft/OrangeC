@@ -125,13 +125,13 @@ bool dlLeMain::ReadSections(const std::string &path, const std::string &exeName)
         delete file;
         Utils::fatal("Input file is in relative format");
     }
-    if (ieee.GetStartAddress() == NULL)
+    if (ieee.GetStartAddress() == nullptr)
     {
         delete file;
         Utils::fatal("No start address specified");
     }
     startAddress = ieee.GetStartAddress()->Eval(0);
-    if (file != NULL)
+    if (file != nullptr)
     {
         LEObject::SetFile(file);
         ReadValues();
@@ -201,14 +201,14 @@ void dlLeMain::InitHeader()
     
     unsigned totalPages = 0;
     unsigned initPages = 0;
-    for (std::deque<LEObject *>::iterator it = objects.begin(); it != objects.end(); ++it)
+    for (auto obj : objects)
     {
-        totalPages += ObjectAlign(4096, (*it)->GetSize())/4096;
-        initPages += ObjectAlign(4096, (*it)->GetInitSize())/4096;
+        totalPages += ObjectAlign(4096, obj->GetSize())/4096;
+        initPages += ObjectAlign(4096, obj->GetInitSize())/4096;
         if (mode != eLx)
         {
-            if ((*it)->GetInitSize())
-                header.page_offset_shift = (*it)->GetInitSize() % 4096 ; // for le this is bytes last page
+            if (obj->GetInitSize())
+                header.page_offset_shift = obj->GetInitSize() % 4096 ; // for le this is bytes last page
         }
     }
     header.module_page_count = initPages ;
@@ -242,16 +242,16 @@ void dlLeMain::InitHeader()
 bool dlLeMain::LoadStub(const std::string &exeName)
 {
     std::string val = stubSwitch.GetValue();
-    if (val.size() == NULL)
+    if (val.size() == 0)
         val = "dos32a.exe";
     // look in current directory
     std::fstream *file = new std::fstream(val.c_str(), std::ios::in | std::ios::binary);
-    if (file == NULL || !file->is_open())
+    if (file == nullptr || !file->is_open())
     {
         if (file)
         {
             delete file;
-            file = NULL;
+            file = nullptr;
         }
         // look in exe directory if not there
         int npos = exeName.find_last_of(CmdFiles::DIR_SEP);
@@ -261,12 +261,12 @@ bool dlLeMain::LoadStub(const std::string &exeName)
             file = new std::fstream(val.c_str(), std::ios::in | std::ios::binary);
         }
     }
-    if (file == NULL || !file->is_open())
+    if (file == nullptr || !file->is_open())
     {
         if (file)
         {
             delete file;
-            file = NULL;
+            file = nullptr;
         }
         return false;
     }
@@ -347,9 +347,9 @@ int dlLeMain::Run(int argc, char **argv)
         Utils::fatal("Invalid .rel file");
     
     unsigned ofs = 0;
-    for (std::deque<LEObject *>::iterator it = objects.begin(); it != objects.end(); ++it)
+    for (auto obj : objects)
     {
-        (*it)->Setup(ofs);
+        obj->Setup(ofs);
     }
     fixups->Setup();
     objectPages->Setup();
@@ -361,9 +361,9 @@ int dlLeMain::Run(int argc, char **argv)
     {
         WriteStub(out);
         out.write((char *)&header, sizeof(header));
-        for (std::deque<LEObject *>::iterator it = objects.begin(); it != objects.end(); ++it)
+        for (auto obj : objects)
         {
-            (*it)->WriteHeader(out);
+            obj->WriteHeader(out);
         }
         objectPages->Write(out);
         if (rnt)
@@ -371,9 +371,9 @@ int dlLeMain::Run(int argc, char **argv)
         fixups->Write(out);
         unsigned vv = 0;
         out.write((char *)&vv, 3); // import tables
-        for (std::deque<LEObject *>::iterator it = objects.begin(); it != objects.end(); ++it)
+        for (auto obj : objects)
         {
-            (*it)->Write(out);
+            obj->Write(out);
         }
         out.close();
         return !!out.fail();

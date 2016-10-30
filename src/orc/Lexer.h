@@ -75,7 +75,7 @@ public:
         STATE3, STRINGTABLE, STYLE, VALUE, 
         VERSION, VERSIONINFO, VIRTKEY, WEIGHT, 
     };
-    Lexer(PreProcessor &PP) : pp(PP), atEol(false), atEof(false), tokenizer(NULL), token(NULL) 
+    Lexer(PreProcessor &PP) : pp(PP), atEol(false), atEof(false), tokenizer(nullptr), token(nullptr) 
         { InitHash(); InitTokenizer(); NextToken(); }
     ~Lexer() { }
 

@@ -192,7 +192,7 @@ LinkNameLogic::ParseItem *LinkNameLogic::ParseOutPrimary(std::string &spec)
             spec.erase(0, n);
         }
         if (!spec.size() || spec[0] != ')')
-            return NULL;
+            return nullptr;
         spec.erase(0, 1);
         return rv;
     }

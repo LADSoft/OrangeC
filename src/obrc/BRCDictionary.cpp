@@ -244,9 +244,9 @@ void BRCDictionary::CreateDictionary(void)
     int symbolCount = 0;
     if (data)
         Clear();
-    for (Symbols::iterator it = symbols.begin(); it != symbols.end(); ++it)
+    for (auto sym : symbols)
     {
-        int n = strlen(it->first.c_str()) + 1;
+        int n = strlen(sym.first.c_str()) + 1;
         if (n & 1)
             n++;
         total += n;
@@ -275,9 +275,9 @@ void BRCDictionary::CreateDictionary(void)
         data = new DICTPAGE[blockCount];
         memset(data, 0, blockCount * sizeof(DICTPAGE));
         int i = 0;
-        for (Symbols::iterator it = symbols.begin(); it != symbols.end(); ++it)
+        for (auto sym : symbols)
         {
-            if (!InsertInDictionary(it->second))
+            if (!InsertInDictionary(sym.second))
             {
                 running = true;
                 break;
@@ -309,9 +309,8 @@ bool BRCDictionary::InsertInDictionary(SymData *sym)
                 {
                     int type = 0;
                     int offs = sym->fileOffs;
-                    for (BrowseDataset::iterator it = sym->data.begin(); it != sym->data.end(); ++it)
+                    for (auto l : sym->data)
                     {
-                        BrowseData *l = *it;
                         if (!l->blockLevel && l->qual != ObjBrowseInfo::eExternal)
                         {
                             type |= 0x40; // global

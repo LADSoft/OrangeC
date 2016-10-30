@@ -46,8 +46,8 @@
 KeywordHash Lexer::hash;	
 bool Lexer::hashInitted;
 
-Lexer::Lexer(PreProcessor &PP) : asmFile(NULL), 
-    pp(PP), atEol(false), atEof(false), tokenizer(NULL), token(NULL), stopAtEol(false),
+Lexer::Lexer(PreProcessor &PP) : asmFile(nullptr), 
+    pp(PP), atEol(false), atEof(false), tokenizer(nullptr), token(nullptr), stopAtEol(false),
     parsingDirective(false)
 {
     pp.SetPreData(preData);

@@ -54,11 +54,8 @@ std::map<std::string, std::string> Maker::filePaths;
 
 Maker::Depends::~Depends()
 {
-    for (std::list<Depends *>::iterator it = subgoals.begin(); it != subgoals.end(); ++it)
-    {
-        Depends *x = *it;
-        delete x;
-    }
+    for (auto goal : subgoals)
+        delete goal;
     subgoals.clear();
 }
 
@@ -113,12 +110,12 @@ bool Maker::CreateDependencyTree()
     {
         intermediate = v->GetValue();
     }
-    for (std::list<std::string>::iterator it = goals.begin(); it != goals.end(); ++it)
+    for (auto goal : goals)
     {
         Time tv1, tv2;
         dependsNesting = 0;        
-        Depends *t = Dependencies(*it, "", tv1);
-        if (t || OnList(*it,".PHONY"))
+        Depends *t = Dependencies(goal, "", tv1);
+        if (t || OnList(goal,".PHONY"))
         {
             depends.push_back(t);
         }
@@ -166,11 +163,11 @@ Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &
             std::string foundPath = GetFileTime(goal ,preferredPath, goalTime);
             bool exists = ! !goalTime;
             rv = new Depends(goal, xx, intermediate && !precious && !secondary);
-            Rule *executionRule = NULL;
+            Rule *executionRule = nullptr;
             std::string newerPrereqs;
-            for (RuleList::iterator it = ruleList->begin(); it != ruleList->end(); ++it)
+            for (auto rule : *ruleList)
             {
-                std::string working = (*it)->GetPrerequisites();
+                std::string working = rule->GetPrerequisites();
                 bool remakeThis = false;
                 while (working.size())
                 {
@@ -193,7 +190,7 @@ Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &
                         remakeThis = true;
                     }
                 }
-                working = (*it)->GetOrderPrerequisites();
+                working = rule->GetOrderPrerequisites();
                 while (working.size())
                 {
                     Time current;
@@ -205,7 +202,7 @@ Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &
                         (*rv) += dp;
                     }
                 }
-                if ((*it)->HasCommands())
+                if (rule->HasCommands())
                     if ((ruleList->GetDoubleColon() && remakeThis) || !ruleList->GetDoubleColon())
                     {
                         if (executionRule)
@@ -238,7 +235,7 @@ Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &
             if (!rv->size())
             {
                     delete rv;
-                    rv = NULL;
+                    rv = nullptr;
             }
             else
             {
@@ -250,7 +247,7 @@ Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &
                 if (check)
                 {
                     delete rv;
-                    rv = NULL;
+                    rv = nullptr;
                 }
             }
         }
@@ -390,12 +387,12 @@ void Maker::EnterSpecificRule(RuleList *l, const std::string &stem,
     }
     std::string orderPrereq;
     std::string prereq;
-    Command *commands = NULL;
-    for (RuleList::iterator it = l->begin(); it != l->end(); ++it)
+    Command *commands = nullptr;
+    for (auto rule : *l)
     {
         if (!commands)
-            commands = (*it)->GetCommands();
-        std::string working = (*it)->GetPrerequisites();
+            commands = rule->GetCommands();
+        std::string working = rule->GetPrerequisites();
         while (working.size())
         {
             std::string temp = Eval::ExtractFirst(working, " ");
@@ -404,7 +401,7 @@ void Maker::EnterSpecificRule(RuleList *l, const std::string &stem,
                 prereq += " ";
             prereq += temp;
         }
-        working = (*it)->GetOrderPrerequisites();
+        working = rule->GetOrderPrerequisites();
         while (working.size())
         {
             std::string temp = Eval::ExtractFirst(working, " ");
@@ -430,7 +427,7 @@ void Maker::EnterDefaultRule(const std::string &goal, RuleList *dflt)
 {
     if (!RuleContainer::Instance()->Lookup(goal))
     {
-        Command *commands = NULL;
+        Command *commands = nullptr;
         for (RuleList::iterator it = dflt->begin(); !commands && it != dflt->end(); ++it)
             commands = (*it)->GetCommands();
         RuleList *ruleList = new RuleList(goal);
@@ -490,7 +487,7 @@ bool Maker::SearchImplicitRules(const std::string &goal, const std::string &pref
         for (std::list<RuleList *>::iterator it = matchedRules.begin();
              it != matchedRules.end();)
         {
-            std::list<RuleList *>::iterator it1 = it;
+            auto it1 = it;
             ++it;
             if ((*it1)->GetTarget() == "%")
                 if (!(*it1)->GetDoubleColon())
@@ -500,27 +497,25 @@ bool Maker::SearchImplicitRules(const std::string &goal, const std::string &pref
     for (std::list<RuleList *>::iterator it = matchedRules.begin();
          it != matchedRules.end();)
     {
-        std::list<RuleList *>::iterator it1 = it;
+        auto it1 = it;
         ++it;
         if (!(*it1)->HasCommands())
             matchedRules.erase(it1);
     }
-    for (std::list<RuleList *>::iterator it = matchedRules.begin();
-         it != matchedRules.end(); ++it)
+    for (auto rule : matchedRules)
     {
         
-        std::string stem = Eval::FindStem(goal, (*it)->GetTarget());
-        if (ExistsOrMentioned(stem, *it, preferredPath, dir, false, outerMost))
+        std::string stem = Eval::FindStem(goal, rule->GetTarget());
+        if (ExistsOrMentioned(stem, rule, preferredPath, dir, false, outerMost))
             return true;
     }
     // no matches so far, dig into indirections...
-    for (std::list<RuleList *>::iterator it = matchedRules.begin();
-         it != matchedRules.end(); ++it)
+    for (auto rule : matchedRules)
     {
-        if ((*it)->GetTarget() != "%" || !(*it)->GetDoubleColon())
+        if (rule->GetTarget() != "%" || !rule->GetDoubleColon())
         {
-            std::string stem = Eval::FindStem(goal, (*it)->GetTarget());		
-            if (ExistsOrMentioned(stem, *it, preferredPath, dir, true, outerMost))
+            std::string stem = Eval::FindStem(goal, rule->GetTarget());		
+            if (ExistsOrMentioned(stem, rule, preferredPath, dir, true, outerMost))
                 return true;
         }
     }
@@ -533,7 +528,7 @@ bool Maker::SearchImplicitRules(const std::string &goal, const std::string &pref
     }
     if (outerMost && err)
     {
-        std::set<std::string>::iterator it = ignoreFailedTargets.find(goal);
+        auto it = ignoreFailedTargets.find(goal);
         if (it == ignoreFailedTargets.end())
         {
             Time time;
@@ -597,9 +592,9 @@ void Maker::EnterSuffixTerminals()
     RuleList *rl = RuleContainer::Instance()->Lookup(".SUFFIXES");
     if (rl)
     {
-        for (RuleList::iterator it = rl->begin(); it != rl->end(); ++it)
+        for (auto rule : *rl)
         {
-            std::string value = (*it)->GetPrerequisites();
+            std::string value = rule->GetPrerequisites();
             while (value.size())
             {
                 std::string target = "%" + Eval::ExtractFirst(value, " ");
@@ -609,7 +604,7 @@ void Maker::EnterSuffixTerminals()
                     ruleList = new RuleList(target);
                     //if (ruleList)
                     {
-                        Rule *rule = new Rule(target, "", "", NULL, "<implicitbuild>", 1);
+                        Rule *rule = new Rule(target, "", "", nullptr, "<implicitbuild>", 1);
                         //if (rule)
                             ruleList->Add(rule);
                     }
@@ -624,21 +619,20 @@ void Maker::GetEnvironment(EnvironmentStrings &env)
     RuleList *rl = RuleContainer::Instance()->Lookup(".EXPORT_ALL_VARIABLES");
     if (rl)
         exportAll = true;
-    for (VariableContainer::iterator it = VariableContainer::Instance()->begin();
-         it != VariableContainer::Instance()->end(); ++it)
+    for (auto var : *VariableContainer::Instance())
     {
-        if (exportAll || it->second->GetExport())
+        if (exportAll || var.second->GetExport())
         {
-            EnvEntry a(*(it->first), it->second->GetValue());
+            EnvEntry a(*(var.first), var.second->GetValue());
             env.push_back(a);
         }
     }
 }
 void Maker::DeleteOne(Depends *depend)
 {
-    for (Depends::iterator it = depend->begin(); it != depend->end(); ++it)
+    for (auto d : *depend)
     {
-        DeleteOne(*it);
+        DeleteOne(d);
     }
     if (depend->ShouldDelete())
         OS::RemoveFile(depend->GetGoal());	
@@ -652,11 +646,11 @@ int Maker::RunOne(Depends *depend, EnvironmentStrings &env, bool keepGoing)
     Eval::PushruleStack(rl);
     bool stop = false;
     bool cantbuild = false;
-    for (Depends::iterator it = depend->begin(); it != depend->end(); ++it)
+    for (auto d : *depend)
     {
-//		if (!(*it)->GetOrdered())
+//		if (!d->GetOrdered())
         {
-            if ((rv = RunOne(*it, env, keepGoing)))
+            if ((rv = RunOne(d, env, keepGoing)))
             {
                 stop = true;
                 if (!keepGoing)
@@ -667,7 +661,7 @@ int Maker::RunOne(Depends *depend, EnvironmentStrings &env, bool keepGoing)
             }			
         }
 //		else 
-//			cantbuild |= !(*it)->GetRuleList()->IsBuilt();
+//			cantbuild |= d->GetRuleList()->IsBuilt();
     }
     if (stop)
     {
@@ -692,7 +686,7 @@ int Maker::RunOne(Depends *depend, EnvironmentStrings &env, bool keepGoing)
         ig = OnList(depend->GetGoal(), ".IGNORE");
     Spawner sp(env, ig, sil, displayOnly, keepResponseFiles);
     if (depend->GetRule() && depend->GetRule()->GetCommands())
-        rv = sp.Run(*depend->GetRule()->GetCommands(), rl, NULL);
+        rv = sp.Run(*depend->GetRule()->GetCommands(), rl, nullptr);
     if (rv)
     {
         std::string b = Utils::NumberToString(rv);
@@ -713,9 +707,9 @@ int Maker::RunOne(Depends *depend, EnvironmentStrings &env, bool keepGoing)
 }
 void Maker::CancelOne(Depends *depend)
 {
-    for (Depends::iterator it = depend->begin(); it != depend->end(); ++it)
+    for (auto d : *depend)
     {
-        CancelOne(*it);
+        CancelOne(d);
     }
     std::string path = filePaths[depend->GetGoal()];
     if (path.size() != 0)
@@ -753,9 +747,9 @@ int Maker::RunCommands(bool keepGoing)
         if (rv)
             stop = true;
     }
-    for (std::list<Depends *>::iterator it = depends.begin(); it != depends.end(); ++it)
+    for (auto d : depends)
     {
-        DeleteOne(*it);
+        DeleteOne(d);
     }
     if (stop)
         return 2;
@@ -765,11 +759,8 @@ int Maker::RunCommands(bool keepGoing)
 void Maker::Clear() 
 { 
     goals.clear(); 
-    for (std::list<Depends *>::iterator it = depends.begin(); it != depends.end(); ++it)
-    {
-        Depends *d = *it;
+    for (auto d : depends)
         delete d;
-    }
     depends.clear();
     filePaths.clear();
 }

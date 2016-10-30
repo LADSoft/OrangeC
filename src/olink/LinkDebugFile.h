@@ -51,7 +51,7 @@ class ObjField;
 class LinkDebugFile
 {
 public:
-    LinkDebugFile(std::string OutputFile, ObjFile *File, std::vector<ObjSection *> &sections, std::map<ObjSection *, ObjSection *> &parentSections) : Sections(sections), ParentSections(parentSections), outputFile(OutputFile), file(File), dbPointer(NULL) { }
+    LinkDebugFile(std::string OutputFile, ObjFile *File, std::vector<ObjSection *> &sections, std::map<ObjSection *, ObjSection *> &parentSections) : Sections(sections), ParentSections(parentSections), outputFile(OutputFile), file(File), dbPointer(nullptr) { }
     virtual ~LinkDebugFile();
     bool CreateOutput();
 protected:

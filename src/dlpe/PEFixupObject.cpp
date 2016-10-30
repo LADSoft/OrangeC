@@ -70,14 +70,14 @@ void PEFixupObject::Setup(ObjInt &endVa, ObjInt &endPhys)
     {
         int base = -1;
         initSize = 0;
-        for (std::set<ObjInt>::iterator it = fixups.begin(); it != fixups.end(); ++it)
+        for (auto fixup : fixups)
         {
-            if ((base ^ (*it)) & ~4095)
+            if ((base ^ fixup) & ~4095)
             {
                 if (initSize & 2)
                     initSize += 2;
                 initSize += 8;
-                base = (*it);
+                base = fixup;
             }
             initSize += 2;
         }
@@ -89,7 +89,7 @@ void PEFixupObject::Setup(ObjInt &endVa, ObjInt &endPhys)
         // we relied on the set implementation to sort the fixups...
         int curSize = 0;
         Block *block = (Block *)data;
-        for (std::set<ObjInt>::iterator it = fixups.begin(); it != fixups.end();)
+        for (auto it = fixups.begin(); it != fixups.end();)
         {
             ObjInt base = (*it) & ~(4096 - 1);
             int current = 0;

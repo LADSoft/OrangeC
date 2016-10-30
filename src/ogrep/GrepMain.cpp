@@ -229,7 +229,7 @@ void GrepMain::OneFile(RegExpContext &regexp, const std::string &fileName, int &
                 bool matched = true;
                 while (matched)
                 {
-                    char *p = NULL;
+                    char *p = nullptr;
                     matched = regexp.Match(str-buf, length, buf);
                     if (matched)
                     {

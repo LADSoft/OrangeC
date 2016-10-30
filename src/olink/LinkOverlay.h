@@ -89,8 +89,8 @@ class LinkOverlay
 class LinkRegionSpecifier
 {
     public:
-        LinkRegionSpecifier(LinkRegion *Region) : region(Region), symbol(NULL) {}
-        LinkRegionSpecifier(LinkExpressionSymbol *Symbol) : region(NULL), symbol(Symbol) {}
+        LinkRegionSpecifier(LinkRegion *Region) : region(Region), symbol(nullptr) {}
+        LinkRegionSpecifier(LinkExpressionSymbol *Symbol) : region(nullptr), symbol(Symbol) {}
         ~LinkRegionSpecifier();
         LinkRegion *GetRegion() { return region; }
         LinkExpressionSymbol *GetSymbol() { return symbol; }

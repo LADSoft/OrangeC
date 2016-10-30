@@ -65,20 +65,18 @@ void HookError(int aa)
 }
 LinkManager::~LinkManager()
 {
-    for (std::set<LinkLibrary *>::iterator it = dictionaries.begin(); it != dictionaries.end(); ++it)
-        delete (*it);
-    for (PartitionIterator it = partitions.begin(); it != partitions.end(); ++it)
-        delete(*it);
-    for (SymbolIterator it = publics.begin(); it != publics.end(); ++it)
-        delete(*it);
-    for (SymbolIterator it = externals.begin(); it != externals.end(); ++it)
-        delete(*it);
-    for (SymbolIterator it = imports.begin(); it != imports.end(); ++it)
-        delete(*it);
-    for (SymbolIterator it = exports.begin(); it != exports.end(); ++it)
-        delete(*it);
-//	for (FileIterator it = fileData.begin(); it != fileData.end(); ++it)
-//		delete(*it);
+    for (auto d : dictionaries)
+        delete d;
+    for (auto p : partitions)
+        delete p;
+    for (auto s : publics)
+        delete s;
+    for (auto s : externals)
+        delete s;
+    for (auto s : imports)
+        delete s;
+    for (auto s : exports)
+        delete s;
 }
 void LinkManager::AddObject(const ObjString &name) 
 {
@@ -313,12 +311,12 @@ bool LinkManager::HasVirtual(std::string name)
 bool LinkManager::ScanVirtuals()
 {
     bool rv = false;
-    for (SymbolIterator it = virtsections.begin(); it !=  virtsections.end(); ++it)
+    for (auto sym : virtsections)
     {
-        if ((*it)->GetRemapped())
+        if (sym->GetRemapped())
         {
-            (*it)->SetRemapped(false);
-            LoadSectionExternals((*it)->GetFile(), (ObjSection *)(*it)->GetAuxData());
+            sym->SetRemapped(false);
+            LoadSectionExternals(sym->GetFile(), (ObjSection *)sym->GetAuxData());
             rv = true;
         }
     }
@@ -418,7 +416,7 @@ LinkLibrary *LinkManager::OpenLibrary(const ObjString &name)
         if (rv)
         {
             delete rv;
-            rv = NULL;
+            rv = nullptr;
         }
         std::string hold = libPath;
         std::string next;
@@ -457,7 +455,7 @@ LinkLibrary *LinkManager::OpenLibrary(const ObjString &name)
         else
         {
             delete rv;
-            rv = NULL;
+            rv = nullptr;
         }
     }
     return rv;
@@ -503,18 +501,17 @@ bool LinkManager::ResolveLibrary(LinkLibrary *lib, std::string &name)
     if (LoadLibrarySymbol(lib, name))
     {
         bool done = false;
-        for (SymbolIterator it = externals.begin(); it != externals.end(); ++it)
-            (*it)->SetVisited(false);
+        for (auto sym : externals)
+            sym->SetVisited(false);
         while (!done)
         {
             done = true;
-            for (SymbolIterator it = externals.begin(); it != externals.end(); ++it)
+            for (auto sym : externals)
             {
-                if (!(*it)->GetVisited())
+                if (!sym->GetVisited())
                 {
-                    (*it)->SetVisited(true);
-                    LinkSymbolData *a = *it;
-                    if (LoadLibrarySymbol(lib, a->GetSymbol()->GetName()))
+                    sym->SetVisited(true);
+                    if (LoadLibrarySymbol(lib, sym->GetSymbol()->GetName()))
                     {
                         done = false;
                         break;
@@ -541,9 +538,9 @@ void LinkManager::ScanLibraries()
         if (extit == externals.end())
             break;
         LinkSymbolData *current = *extit;
-        for (std::set<LinkLibrary *>::iterator it = dictionaries.begin(); it != dictionaries.end(); ++it)
+        for (auto d : dictionaries)
         {
-            found = ResolveLibrary(*it, (*extit)->GetSymbol()->GetName());
+            found = ResolveLibrary(d, (*extit)->GetSymbol()->GetName());
             if (found)
                 break;
         }
@@ -555,17 +552,15 @@ void LinkManager::ScanLibraries()
             externals.erase(extit);
         }
     }
-    for (SymbolIterator it = dt.begin(); it != dt.end(); ++it)
+    for (auto d : dt)
     {
-        externals.insert(*it);
+        externals.insert(d);
     }
 }
 void LinkManager::CloseLibraries()
 {
-    for (std::set<LinkLibrary *>::iterator it = dictionaries.begin(); it != dictionaries.end(); ++it)
-    {
-        delete(*it);
-    }
+    for (auto d : dictionaries)
+        delete d;
     dictionaries.clear();
 }
 bool LinkManager::ParseAssignment(LinkTokenizer &spec)
@@ -602,58 +597,55 @@ bool LinkManager::CreateSeparateRegions(LinkManager *manager, CmdFiles &files, L
     for (LinkRegion::SectionDataIterator itr = newRegion->NowDataBegin();
          itr != newRegion->NowDataEnd(); ++itr)
     {
-        for (LinkRegion::OneSectionIterator it = (*itr)->sections.begin();
-             it != (*itr)->sections.end(); ++ it)
+        for (auto sect : (*itr)->sections)
         {
             LinkPartition * partition = new LinkPartition(this);
             partition->SetName("replicate");
             partitions.push_back(new LinkPartitionSpecifier(partition));
             LinkOverlay *overlay = new LinkOverlay(partition);
-            overlay->SetName(std::string((*it).file->GetName()) + "_" + (*it).section->GetName());
+            overlay->SetName(std::string(sect.file->GetName()) + "_" + sect.section->GetName());
             partition->Add(new LinkOverlaySpecifier(overlay));
             LinkRegion *region = new LinkRegion(overlay);
             overlay->Add(new LinkRegionSpecifier(region));
             region->SetName(newRegion->GetName());
             region->SetAttribs(newRegion->GetAttribs());
-            region->AddNormalData((*it).file, (*it).section);
+            region->AddNormalData(sect.file, sect.section);
         }
     }
     for (LinkRegion::SectionDataIterator itr = newRegion->NormalDataBegin();
          itr != newRegion->NormalDataEnd(); ++itr)
     {
-        for (LinkRegion::OneSectionIterator it = (*itr)->sections.begin();
-             it != (*itr)->sections.end(); ++ it)
+        for (auto sect : (*itr)->sections)
         {
             LinkPartition * partition = new LinkPartition(this);
             partition->SetName("replicate");
             partitions.push_back(new LinkPartitionSpecifier(partition));
             LinkOverlay *overlay = new LinkOverlay(partition);
-            overlay->SetName(std::string((*it).file->GetName()) + "_" + (*it).section->GetName());
+            overlay->SetName(std::string(sect.file->GetName()) + "_" + sect.section->GetName());
             partition->Add(new LinkOverlaySpecifier(overlay));
             LinkRegion *region = new LinkRegion(overlay);
             overlay->Add(new LinkRegionSpecifier(region));
             region->SetName(newRegion->GetName());
             region->SetAttribs(newRegion->GetAttribs());
-            region->AddNormalData((*it).file, (*it).section);
+            region->AddNormalData(sect.file, sect.section);
         }
     }
     for (LinkRegion::SectionDataIterator itr = newRegion->PostponeDataBegin();
          itr != newRegion->PostponeDataEnd(); ++itr)
     {
-        for (LinkRegion::OneSectionIterator it = (*itr)->sections.begin();
-             it != (*itr)->sections.end(); ++ it)
+        for (auto sect : (*itr)->sections)
         {
             LinkPartition * partition = new LinkPartition(this);
             partition->SetName("replicate");
             partitions.push_back(new LinkPartitionSpecifier(partition));
             LinkOverlay *overlay = new LinkOverlay(partition);
-            overlay->SetName(std::string((*it).file->GetName()) + "_" + (*it).section->GetName());
+            overlay->SetName(std::string(sect.file->GetName()) + "_" + sect.section->GetName());
             partition->Add(new LinkOverlaySpecifier(overlay));
             LinkRegion *region = new LinkRegion(overlay);
             overlay->Add(new LinkRegionSpecifier(region));
             region->SetName(newRegion->GetName());
             region->SetAttribs(newRegion->GetAttribs());
-            region->AddNormalData((*it).file, (*it).section);
+            region->AddNormalData(sect.file, sect.section);
         }
     }
     delete newRegion;
@@ -665,8 +657,8 @@ bool LinkManager::ParsePartitions()
 {
     bool done = false;
     int numImports = 0;
-    for (SymbolIterator it = imports.begin(); it != imports.end(); ++it)
-        if ((*it)->GetUsed())
+    for (auto import : imports)
+        if (import->GetUsed())
             numImports++;
     
     LinkExpression *value = new LinkExpression(numImports);
@@ -704,12 +696,12 @@ bool LinkManager::ParsePartitions()
 void LinkManager::CreatePartitions()
 {
     std::map<ObjString, LinkRegion *> createdRegions;
-    for (FileIterator it = fileData.begin(); it != fileData.end(); ++it)
+    for (auto file : fileData)
     {
-        for (ObjFile::SectionIterator its = (*it)->SectionBegin(); its != (*it)->SectionEnd(); ++its)
+        for (ObjFile::SectionIterator its = file->SectionBegin(); its != file->SectionEnd(); ++its)
         {
             ObjString name = (*its)->GetName();
-            std::map<ObjString, LinkRegion *>::iterator itr = createdRegions.find(name);
+            auto itr = createdRegions.find(name);
             if (itr == createdRegions.end())
             {
                 LinkPartition *partition = new LinkPartition(this);
@@ -723,12 +715,12 @@ void LinkManager::CreatePartitions()
                 LinkRegionSpecifier *rspec = new LinkRegionSpecifier(region);
                 overlay->Add(rspec);
                 region->SetName(name);
-                region->AddNormalData((*it), (*its));
+                region->AddNormalData(file, (*its));
                 createdRegions[name] = region;
             }
             else
             {
-                itr->second->AddNormalData((*it), (*its));
+                itr->second->AddNormalData(file, (*its));
             }
         }
     }
@@ -738,16 +730,16 @@ void LinkManager::PlaceSections()
     try {
         int bottom = 0;
         int overlayNum = 0;
-        for (PartitionIterator it = partitions.begin(); it != partitions.end(); ++it)
+        for (auto partition : partitions)
         {
-            if ((*it)->GetSymbol())
+            if (partition->GetSymbol())
             {
                 if (completeLink)
-                    (*it)->GetSymbol()->GetValue()->Eval(bottom);
+                    partition->GetSymbol()->GetValue()->Eval(bottom);
             }
             else
             {
-                bottom = (*it)->GetPartition()->PlacePartition(this, bottom, completeLink, overlayNum);
+                bottom = partition->GetPartition()->PlacePartition(this, bottom, completeLink, overlayNum);
             }
         }
     }
@@ -759,10 +751,10 @@ void LinkManager::PlaceSections()
 }
 void LinkManager::UnplacedWarnings()
 {
-    for (FileIterator it = fileData.begin(); it != fileData.end(); ++it)
-        for (ObjFile::SectionIterator its = (*it)->SectionBegin(); its != (*it)->SectionEnd(); ++its)
+    for (auto file : fileData)
+        for (ObjFile::SectionIterator its = file->SectionBegin(); its != file->SectionEnd(); ++its)
             if (!(*its)->GetUtilityFlag())
-                LinkError("Section " + (*its)->GetName() + " unused in module " + (*it)->GetName());
+                LinkError("Section " + (*its)->GetName() + " unused in module " + file->GetName());
             
 }
 bool LinkManager::ExternalErrors()
@@ -772,7 +764,7 @@ bool LinkManager::ExternalErrors()
     while (!done)
     {
         done = true;
-        for (SymbolIterator it = externals.begin(); it != externals.end(); it++)
+        for (auto it = externals.begin() ; it != externals.end(); ++it)
         {
             if (LinkExpression::FindSymbol((*it)->GetSymbol()->GetName()))
             {
@@ -783,12 +775,12 @@ bool LinkManager::ExternalErrors()
         }
     }
     int n = 0;
-    for (SymbolIterator pt = externals.begin(); pt != externals.end(); pt++)
+    for (auto ext : externals)
     {
         bool found = false;
-        for (SymbolIterator it = imports.begin(); it != imports.end(); it++)
+        for (auto sym : imports)
         {
-            if ((*it)->GetSymbol()->GetName() == (*pt)->GetSymbol()->GetName())
+            if (sym->GetSymbol()->GetName() == ext->GetSymbol()->GetName())
             {
                 found = true;
                 break;
@@ -796,8 +788,8 @@ bool LinkManager::ExternalErrors()
         }
         if (!found)
         {
-            LinkError("Undefined External " + (*pt)->GetSymbol()->GetDisplayName() +
-                  " in module " + (*pt)->GetFile()->GetName());
+            LinkError("Undefined External " + ext->GetSymbol()->GetDisplayName() +
+                  " in module " + ext->GetFile()->GetName());
             rv = true;
         }
     }
@@ -814,7 +806,7 @@ void LinkManager::CreateOutputFile()
     else
     {
         FILE *ofile = fopen(outputFile.c_str(), "wb");
-        if (ofile != NULL)
+        if (ofile != nullptr)
         {
             // copy the definitions into the rel file
             for (LinkExpression::iterator it = LinkExpression::begin(); it != LinkExpression::end(); ++ it)

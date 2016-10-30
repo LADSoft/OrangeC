@@ -48,7 +48,7 @@
 #include <iostream>
 #include <string.h>
 
-Include *Include::instance = NULL;
+Include *Include::instance = nullptr;
 
 Include *Include::Instance()
 {
@@ -151,14 +151,13 @@ bool Include::AddFileList(const std::string &name, bool ignoreOk, bool MakeFile)
 bool Include::MakeMakefiles(bool Silent)
 {
     Maker maker(Silent, false, false, false);
-    for (iterator it = begin(); it != end(); ++it)
+    for (auto goal : *this)
     {
-        maker.AddGoal(*it);
+        maker.AddGoal(goal);
     }
-    for (std::set<std::string>::iterator it = ignoredFiles.begin();
-         it != ignoredFiles.end(); ++it)
+    for (auto file : ignoredFiles)
     {
-        maker.SetIgnoreFailed(*it);
+        maker.SetIgnoreFailed(file);
     }
     maker.CreateDependencyTree();
     return maker.RunCommands();

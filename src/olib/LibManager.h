@@ -72,7 +72,7 @@ class LibManager
         bool LoadLibrary();
         bool SaveLibrary();
         bool fail() const { return false; } //stream.fail(); }
-        bool IsOpen() const { return stream != NULL; }
+        bool IsOpen() const { return stream != nullptr; }
         void Close() { if (stream) fclose(stream); }
         enum { ALIGN = 512 };
         struct LibHeader

@@ -71,8 +71,8 @@ class AsmFile
 {
 public:
     AsmFile(PreProcessor &pp, bool CaseInsensitive, Listing &List) : preProcessor(pp), caseInsensitive(CaseInsensitive),
-        lexer(pp), expr(false), asmexpr(NULL), startSection(NULL), startupLabel(NULL), startupSection(NULL), inAbsolute(false),
-        currentSection(NULL), currentLabel(NULL), listing(List) { parser = InstructionParser::GetInstance(); lexer.SetAsmFile(this); lexer.NextToken(); }
+        lexer(pp), expr(false), asmexpr(nullptr), startSection(nullptr), startupLabel(nullptr), startupSection(nullptr), inAbsolute(false),
+        currentSection(nullptr), currentLabel(nullptr), listing(List) { parser = InstructionParser::GetInstance(); lexer.SetAsmFile(this); lexer.NextToken(); }
     virtual ~AsmFile();
 
     Label *Lookup(std::string &name) { 

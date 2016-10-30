@@ -43,8 +43,8 @@
 #include "os.h"
 #include "Spawner.h"
 #include <iostream>
-CommandContainer *CommandContainer::instance = NULL;
-RuleContainer *RuleContainer::instance = NULL;
+CommandContainer *CommandContainer::instance = nullptr;
+RuleContainer *RuleContainer::instance = nullptr;
 
 CommandContainer *CommandContainer::Instance()
 {
@@ -54,11 +54,8 @@ CommandContainer *CommandContainer::Instance()
 }
 void CommandContainer::Clear()
 {
-    for (std::list<Command *>::iterator it = commands.begin(); it != commands.end(); ++it)
-    {
-        Command *p = *it;
-        delete p;
-    }
+    for (auto cmd : commands)
+        delete cmd;
     commands.clear();
 }
 
@@ -87,28 +84,20 @@ RuleList::RuleList(const std::string &Target)
 RuleList::~RuleList()
 {
     relatedPatternRules = "";
-    for (std::list<Rule *>:: iterator it = rules.begin();
-             it != rules.end(); ++it)
-    {
-        Rule *p = *it;
-        delete p;
-    }
+    for (auto rule : rules)
+        delete rule;
     rules.clear();
-    for (std::map<const std::string *, Variable *, rllt>:: iterator it = specificVariables.begin();
-             it != specificVariables.end(); ++it)
-    {
-        Variable *p = it->second;
-        delete p;
-    }
+    for (auto var : specificVariables)
+        delete var.second;
     specificVariables.clear();
 }
 Variable *RuleList::Lookup(const std::string &name)
 {
-    std::map<const std::string *, Variable *, rllt>:: iterator it = specificVariables.find(&name);
+    auto it = specificVariables.find(&name);
     if (it != specificVariables.end())
         return it->second;
     else
-        return NULL;
+        return nullptr;
 }
 bool RuleList::Touch(const Time &time)
 {
@@ -118,9 +107,9 @@ bool RuleList::Touch(const Time &time)
 }
 bool RuleList::HasCommands()
 {
-    for (iterator it = begin(); it != end(); ++it)
+    for (auto rule : *this)
     {
-        if ((*it)->HasCommands())
+        if (rule->HasCommands())
             return true;
     }
     return false;
@@ -142,8 +131,8 @@ void RuleList::operator +=(Variable *variable)
 }
 void RuleList::SecondaryEval()
 {
-    for (std::list<Rule *>::iterator it = rules.begin(); it != rules.end(); ++it)
-        (*it)->SecondaryEval(this);
+    for (auto rule : rules)
+        rule->SecondaryEval(this);
 }
 bool RuleList::IsUpToDate()
 {
@@ -172,11 +161,11 @@ RuleContainer *RuleContainer::Instance()
 }
 RuleList *RuleContainer::Lookup(const std::string &name)
 {
-    std::map<const std::string *, RuleList *, rllt>::iterator it = namedRules.find(&name);
+    auto it = namedRules.find(&name);
     if (it != namedRules.end())
         return it->second;
     else
-        return NULL;
+        return nullptr;
 
 }
 void RuleContainer::operator +=(RuleList *list)
@@ -198,7 +187,7 @@ void RuleContainer::operator -=(RuleList *list)
     }
     else
     {
-        iterator it = namedRules.find(&list->GetTarget());
+        auto it = namedRules.find(&list->GetTarget());
         if (it != namedRules.end())
         {
             delete list;
@@ -208,29 +197,17 @@ void RuleContainer::operator -=(RuleList *list)
 }
 void RuleContainer::SecondaryEval()
 {
-    for (std::map<const std::string *, RuleList *, rllt>::iterator it = namedRules.begin();
-         it != namedRules.end(); ++it)
-    {
-        RuleList *p = it->second;
-        p->SecondaryEval();
-    }
-    for (std::list<RuleList *>::iterator it = implicitRules.begin(); it != implicitRules.end(); ++it)
-        (*it)->SecondaryEval();
+    for (auto rule : namedRules)
+        rule.second->SecondaryEval();
+    for (auto rule : implicitRules)
+        rule->SecondaryEval();
 }
 void RuleContainer::Clear()
 {
-    for (std::map<const std::string *, RuleList *, rllt>::iterator it = namedRules.begin();
-         it != namedRules.end(); ++it)
-    {
-        RuleList *p = it->second;
-        delete p;
-    }
+    for (auto rule : namedRules)
+        delete rule.second;
     namedRules.clear();
-    for(std::list<RuleList *>::iterator it = implicitRules.begin(); it !=implicitRules.end(); ++it)
-    {
-        RuleList *p = (*it);
-        delete p;
-        
-    }
+    for (auto rule : implicitRules)
+        delete rule;
     implicitRules.clear();
 }

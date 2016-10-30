@@ -73,7 +73,7 @@ struct Module
 class CoffLibrary
 {
 public:
-    CoffLibrary(std::string Name) : name(Name), inputFile(NULL), importFile(NULL), importFactory(&importIndexManager) { }
+    CoffLibrary(std::string Name) : name(Name), inputFile(nullptr), importFile(nullptr), importFactory(&importIndexManager) { }
     virtual ~CoffLibrary();
 
     bool Load();

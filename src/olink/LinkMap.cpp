@@ -190,28 +190,25 @@ void LinkMap::DetailedSections(std::fstream &stream)
                             for (LinkRegion::SectionDataIterator it = (*itr)->GetRegion()->NowDataBegin();
                                  it != (*itr)->GetRegion()->NowDataEnd(); ++ it)
                             {
-                                for (LinkRegion::OneSectionIterator it1 = (*it)->sections.begin();
-                                     it1 != (*it)->sections.end(); ++ it1)
+                                for (auto sect : (*it)->sections)
                                 {
-                                    ShowFileLine (stream, &(*it1), n);
+                                    ShowFileLine (stream, &sect, n);
                                 }
                             }
                             for (LinkRegion::SectionDataIterator it = (*itr)->GetRegion()->NormalDataBegin();
                                  it != (*itr)->GetRegion()->NormalDataEnd(); ++ it)
                             {
-                                for (LinkRegion::OneSectionIterator it1 = (*it)->sections.begin();
-                                     it1 != (*it)->sections.end(); ++ it1)
+                                for (auto sect : (*it)->sections)
                                 {
-                                    ShowFileLine (stream, &(*it1), n);
+                                    ShowFileLine(stream, &sect, n);
                                 }
                             }
                             for (LinkRegion::SectionDataIterator it = (*itr)->GetRegion()->PostponeDataBegin();
                                  it != (*itr)->GetRegion()->PostponeDataEnd(); ++ it)
                             {
-                                for (LinkRegion::OneSectionIterator it1 = (*it)->sections.begin();
-                                     it1 != (*it)->sections.end(); ++ it1)
+                                for (auto sect : (*it)->sections)
                                 {
-                                    ShowFileLine (stream, &(*it1), n);
+                                    ShowFileLine(stream, &sect, n);
                                 }
                             }
                         }
@@ -235,13 +232,11 @@ void LinkMap::Publics(std::fstream &stream)
         byValue.insert(MapSymbolData((*it), ofs+base, base, group));
     }
     stream << std::endl << "Publics By Name" << std::endl << std::endl;
-    for (std::set<MapSymbolData, linkltcomparebyname>::iterator it 
-             = byName.begin(); it != byName.end(); ++it)
-        ShowSymbol(stream, (*it));
+    for (auto sym : byName)
+        ShowSymbol(stream, sym);
     stream << std::endl << "Publics By Value" << std::endl << std::endl;
-    for (std::set<MapSymbolData, linkltcomparebyvalue>::iterator it 
-             = byValue.begin(); it != byValue.end(); ++it)
-        ShowSymbol(stream, (*it));
+    for (auto sym : byValue)
+        ShowSymbol(stream, sym);
 }
 void LinkMap::WriteMap()
 {

@@ -69,9 +69,9 @@ AsmFile::~AsmFile()
         Label *l = numericLabels[i];
         delete l;
     }
-    for (std::map<std::string, Import *>::iterator it = imports.begin(); it != imports.end(); ++it)
+    for (auto import : imports)
     {
-        Import *i = it->second;
+        Import *i = import.second;
         delete i;
     }
 }
@@ -92,7 +92,7 @@ bool AsmFile::Read()
             if (GetKeyword() == Lexer::openbr)
             {
                 Directive();
-                thisLabel = NULL;
+                thisLabel = nullptr;
             }
             else if (parser->MatchesOpcode(GetToken()->GetChars()))
             {
@@ -105,7 +105,7 @@ bool AsmFile::Read()
                     listing.Add(ins, lineno, preProcessor.InMacro());
                 NextToken();
                 currentSection->InsertInstruction(ins);
-                thisLabel = NULL;
+                thisLabel = nullptr;
             }
             else
             {
@@ -125,28 +125,28 @@ bool AsmFile::Read()
                 lexer.SkipPastEol();
         }
     }
-    for (std::map<std::string, std::string>::iterator it = exports.begin(); it != exports.end(); ++it)
+    for (auto exp : exports)
     {
-        if (labels[it->first] == NULL)
+        if (labels[exp.first] == nullptr)
         {
-            Errors::Error(std::string("Undefined export symbol '") + it->first + "'");
+            Errors::Error(std::string("Undefined export symbol '") + exp.first + "'");
             rv = false;
         }
         else
         {
-            labels[it->first]->SetPublic(true);
+            labels[exp.first]->SetPublic(true);
         }
     }
-    for (std::set<std::string>::iterator it = globals.begin(); it != globals.end(); ++it)
+    for (auto global : globals)
     {
-        if (labels[*it] == NULL)
+        if (labels[global] == nullptr)
         {
-            Errors::Error(std::string("Undefined public '") + *it + "'");
+            Errors::Error(std::string("Undefined public '") + global + "'");
             rv = false;
         }
         else
         {
-            labels[*it]->SetPublic(true);
+            labels[global]->SetPublic(true);
         }
     }
     return rv && !Errors::ErrorCount();
@@ -190,7 +190,7 @@ void AsmFile::DoLabel(std::string &name, int lineno)
             }
         }
     } 
-    if (labels[realName] != NULL)
+    if (labels[realName] != nullptr)
     {
         if (realName != "..start")
         {
@@ -229,7 +229,7 @@ void AsmFile::DoLabel(std::string &name, int lineno)
     if (GetKeyword() == Lexer::colon)
     {
         NextToken();
-        thisLabel = NULL;
+        thisLabel = nullptr;
     }
 }
 void AsmFile::DoDB()
@@ -661,7 +661,7 @@ void AsmFile::ExternDirective()
                 name[i] = toupper(name[i]);
         }
         externs.insert(name);
-        if (labels[name] != NULL && !labels[name]->IsExtern())
+        if (labels[name] != nullptr && !labels[name]->IsExtern())
         {
             throw new std::runtime_error(std::string("Label '") + name + "' already exists.");
         }
@@ -705,7 +705,7 @@ void AsmFile::SectionDirective()
 {
     NextToken();
     std::string name = GetId();
-    if (sections[name] == NULL)
+    if (sections[name] == nullptr)
     {
         Section *section = new Section(name, sections.size());
         sections[name] = section;
@@ -719,7 +719,7 @@ void AsmFile::SectionDirective()
     }
     AsmExpr::SetSection(currentSection);
     parser->Setup(currentSection);
-    currentLabel = NULL;
+    currentLabel = nullptr;
     AsmExpr::SetCurrentLabel(std::string(""));
     inAbsolute = false;
 }
@@ -747,7 +747,7 @@ void AsmFile::NeedSection()
         currentSection = section;
         AsmExpr::SetSection(currentSection);
         parser->Setup(currentSection);
-        currentLabel = NULL;
+        currentLabel = nullptr;
         AsmExpr::SetCurrentLabel(std::string(""));
     }
 }
@@ -763,7 +763,7 @@ bool AsmFile::Write(std::string &fileName, std::string &srcName)
         
 //        std::fstream out(fileName.c_str(), std::fstream::trunc | std::fstream::out);
         FILE *out = fopen(fileName.c_str(), "wb");
-        if (out != NULL)
+        if (out != nullptr)
         {
         
             ObjIeee i(fileName.c_str());
@@ -840,17 +840,17 @@ ObjFile *AsmFile::MakeFile(ObjFactory &factory, std::string &name)
                 }
             }
         }
-        for (std::map<ObjString, std::string>::iterator it = exports.begin(); it != exports.end(); ++it)
+        for (auto exp : exports)
         {
-            ObjExportSymbol *p = factory.MakeExportSymbol(it->first);
-            p->SetExternalName(it->second);
+            ObjExportSymbol *p = factory.MakeExportSymbol(exp.first);
+            p->SetExternalName(exp.second);
             fi->Add(p);			
         }
-        for (std::map<ObjString, Import *>::iterator it = imports.begin(); it != imports.end(); ++it)
+        for (auto import : imports)
         {
-            ObjImportSymbol *p = factory.MakeImportSymbol(it->first);
-            p->SetExternalName(it->second->extname);
-            p->SetDllName(it->second->dll);
+            ObjImportSymbol *p = factory.MakeImportSymbol(import.first);
+            p->SetExternalName(import.second->extname);
+            p->SetDllName(import.second->dll);
             fi->Add(p);			
         }
         for (int i=0; i < numericSections.size(); i++)
@@ -861,7 +861,7 @@ ObjFile *AsmFile::MakeFile(ObjFactory &factory, std::string &name)
     }
     if (!rv)
     {
-        fi = NULL;
+        fi = nullptr;
     }
     return fi;
 }
@@ -973,8 +973,8 @@ void AsmFile::NeedEol()
 }
 ObjSection *AsmFile::GetSectionByName(std::string &name)
 {
-    std::map<std::string, Section *>::iterator it = sections.find(name);
+    auto it = sections.find(name);
     if (it != sections.end())
         return it->second->GetObjectSection();
-    return NULL;
+    return nullptr;
 }

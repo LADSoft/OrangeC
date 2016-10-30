@@ -506,7 +506,7 @@ void KeywordToken::Parse(std::string &line)
         for (int j=i; j > 0; j--)
         {
             buf[j] = 0;
-            KeywordHash::const_iterator it = keywordTable->find(std::string(buf));
+            auto it = keywordTable->find(std::string(buf));
             if (it != keywordTable->end())
             {
                 SetChars(line.substr(0, j));

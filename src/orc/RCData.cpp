@@ -54,10 +54,9 @@ RCData::~RCData()
 void RCData::WriteRes(ResFile &resFile)
 {
     Resource::WriteRes(resFile);
-    for (iterator it = begin(); it != end(); ++it)
+    for (auto res : *this)
     {
-        ResourceData *r = (*it);
-        r->WriteRes(resFile);
+        res->WriteRes(resFile);
     }
     resFile.Release();
 }

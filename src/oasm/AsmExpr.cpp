@@ -58,7 +58,7 @@ enum { dollars = 300, dollarsdollars, sdivide, smod, SEG, WRT };
 void AsmExpr::ReInit()
 {
     currentLabel = "";
-    section = NULL;
+    section = nullptr;
     equs.clear();
 }
 void AsmExpr::InitHash()
@@ -133,7 +133,7 @@ AsmExprNode *AsmExpr::ConvertToBased(AsmExprNode *n, int pc)
 }
 AsmExprNode *AsmExpr::Eval(AsmExprNode *n, int pc)
 {
-    AsmExprNode *rv = NULL;
+    AsmExprNode *rv = nullptr;
     FPF fv;
     AsmExprNode *xleft=0, *xright=0;
     if (n->GetLeft())
@@ -156,7 +156,7 @@ AsmExprNode *AsmExpr::Eval(AsmExprNode *n, int pc)
             }
             else 
             {
-                std::map<std::string, int>::iterator it = section->Lookup(n->label);
+                auto it = section->Lookup(n->label);
                 if (it != section->GetLabels().end())
                 {
                     rv = new AsmExprNode(it->second);
@@ -550,7 +550,7 @@ bool AsmExprNode::IsAbsoluteInternal(int &n)
     bool rv = true;
     if (type == LABEL)
     {
-        std::map<std::string, int>::iterator it = AsmExpr::GetSection()->Lookup(label);
+        auto it = AsmExpr::GetSection()->Lookup(label);
         AsmExprNode *num = AsmExpr::GetEqu(label);
         if (!num)
             if (it == AsmExpr::GetSection()->GetLabels().end())

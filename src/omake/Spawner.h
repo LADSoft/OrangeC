@@ -72,7 +72,7 @@ class Spawner
             bool DontRun, bool KeepResponseFiles) : environment(Environ),
             ignoreErrors(IgnoreErrors), silent(Silent), dontRun(DontRun), keepResponseFiles(KeepResponseFiles), tempNum(1) { }
         ~Spawner() { }
-        int Run(Command &commands, RuleList *ruleList = NULL, Rule *rule= NULL);
+        int Run(Command &commands, RuleList *ruleList = nullptr, Rule *rule= nullptr);
         std::string shell(const std::string &command);
         void SetLineLength(int length) { lineLength = length; }
         bool GetLineLength() const { return lineLength; }

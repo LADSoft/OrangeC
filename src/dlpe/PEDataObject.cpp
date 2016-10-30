@@ -88,7 +88,7 @@ ObjExpression* PEDataObject::getExtern(ObjExpression *exp)
         if (s)
             return s;
     }
-    return NULL;
+    return nullptr;
 }
 void PEDataObject::GetImportNames()
 {

@@ -54,13 +54,13 @@ class Instruction
 {
 public:
     enum iType { LABEL, DATA, CODE, ALIGN, RESERVE };
-    Instruction(Label *lbl ) : data(NULL), label(lbl), type(LABEL), pos(0), fpos(0),
+    Instruction(Label *lbl ) : data(nullptr), label(lbl), type(LABEL), pos(0), fpos(0),
             size(0), offs(0), repeat(1) { }
     Instruction(unsigned char *Data, int Size, bool isData=false ) : type(isData ? DATA : CODE), 
-            label(NULL), pos(0), fpos(0), repeat(1),
+            label(nullptr), pos(0), fpos(0), repeat(1),
             size(Size), offs(0) { data = new unsigned char[size]; memcpy(data, Data, size); }
-    Instruction(int aln) : data(NULL), type(ALIGN), label(NULL), pos(0), fpos(0), size(aln), offs(0), repeat(1) { }
-    Instruction(int Repeat, int Size) : type(RESERVE), label(NULL), pos(0), fpos(0), size(Size), repeat(Repeat), offs(0) { data = new unsigned char[size]; memset(data, 0, size); }
+    Instruction(int aln) : data(nullptr), type(ALIGN), label(nullptr), pos(0), fpos(0), size(aln), offs(0), repeat(1) { }
+    Instruction(int Repeat, int Size) : type(RESERVE), label(nullptr), pos(0), fpos(0), size(Size), repeat(Repeat), offs(0) { data = new unsigned char[size]; memset(data, 0, size); }
     virtual ~Instruction();
 
     Label *GetLabel() { return label; }

@@ -47,19 +47,19 @@ class ObjUtil
 public:
     static ObjString ToHex(ObjInt value, int width = 0);
     static ObjString ToDecimal(ObjInt value, int width = 0);
-    static ObjInt FromHex(const char *data, int *pos=NULL, int width=0)
+    static ObjInt FromHex(const char *data, int *pos=nullptr, int width=0)
     {
         return FromInt(data, pos, width, 16);
     }
-    static ObjInt FromDecimal(const char *data, int *pos=NULL, int width=0)
+    static ObjInt FromDecimal(const char *data, int *pos=nullptr, int width=0)
     {
         return FromInt(data, pos, width, 10);
     }
-    static ObjInt FromBinary(const char *data, int *pos=NULL, int width=0)
+    static ObjInt FromBinary(const char *data, int *pos=nullptr, int width=0)
     {
         return FromInt(data, pos, width, 2);
     }
-    static ObjInt FromOctal(const char *data, int *pos=NULL, int width=0)
+    static ObjInt FromOctal(const char *data, int *pos=nullptr, int width=0)
     {
         return FromInt(data, pos, width, 8);
     }

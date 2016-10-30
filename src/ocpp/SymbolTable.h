@@ -84,11 +84,11 @@ public:
     virtual ~SymbolTable();
     Symbol *Lookup(const std::string &name)
     {
-        std::map<std::string, Symbol *>::iterator it = hashTable.find(name);
+        auto it = hashTable.find(name);
         if (it != hashTable.end())
             return it->second;
         else
-            return NULL;
+            return nullptr;
     }
     void Add(Symbol *symbol)
     {
@@ -97,11 +97,11 @@ public:
     }
     void Remove(Symbol *symbol)
     {
-        std::map<std::string, Symbol *>::iterator it = hashTable.find(symbol->GetName());
+        auto it = hashTable.find(symbol->GetName());
         if (it != hashTable.end())
         {
             hashTable.erase(it);
-            for (std::deque<Symbol *>::iterator it = symList.begin(); it != symList.end(); ++it)
+            for (auto it = symList.begin(); it != symList.end(); ++it)
             {
                 if (*it == symbol)
                 {

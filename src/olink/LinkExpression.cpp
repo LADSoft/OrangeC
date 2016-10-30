@@ -56,15 +56,15 @@ LinkExpression::LinkExpression(const LinkExpression &exp)
     if (exp.left)
         left = new LinkExpression(*exp.left);
     else
-        left = NULL;
+        left = nullptr;
     if (exp.right)
         right = new LinkExpression(*exp.right);
     else
-        right = NULL;
+        right = nullptr;
         
 }
 LinkExpression::LinkExpression(int section, ObjInt base, ObjInt offs) : op (eAdd), 
-        left(NULL), right(new LinkExpression(offs)), symbolName(""), 
+        left(nullptr), right(new LinkExpression(offs)), symbolName(""), 
         value(0), sect(0)
 {
     left = new LinkExpression;
@@ -150,7 +150,7 @@ ObjInt LinkExpression::Eval(ObjInt pc)
 }
 bool LinkExpression::EnterSymbol(LinkExpressionSymbol *Symbol, bool removeOld)
 {
-    std::set<LinkExpressionSymbol *, leltcompare>::iterator it = symbols.find(Symbol);
+    auto it = symbols.find(Symbol);
     if (it == symbols.end())
     {
         symbols.insert(Symbol);
@@ -169,18 +169,18 @@ bool LinkExpression::EnterSymbol(LinkExpressionSymbol *Symbol, bool removeOld)
 LinkExpressionSymbol *LinkExpression::FindSymbol(const std::string &name)
 {
     LinkExpressionSymbol sym(name, 0);
-    std::set<LinkExpressionSymbol *, leltcompare>::iterator it = symbols.find(&sym);
+    auto it = symbols.find(&sym);
     if (it != symbols.end())
     {
         return *it;
     }
-    return NULL;
+    return nullptr;
 }
 LinkExpression *LinkExpression::LookupSymbol(ObjString &symbolName)
 {
-    LinkExpressionSymbol sym(symbolName, NULL);
-    LinkExpressionSymbol *exp = NULL;
-    std::set<LinkExpressionSymbol *, leltcompare>::iterator it = symbols.find(&sym);
+    LinkExpressionSymbol sym(symbolName, nullptr);
+    LinkExpressionSymbol *exp = nullptr;
+    auto it = symbols.find(&sym);
     if (it != symbols.end())
         exp = *it;
     if (!exp)

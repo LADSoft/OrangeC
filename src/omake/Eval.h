@@ -52,7 +52,7 @@ class Variable;
 class Eval
 {
 public:
-    Eval(const std::string name, bool expandWildcards, RuleList *ruleList = NULL, Rule *rule = NULL);
+    Eval(const std::string name, bool expandWildcards, RuleList *ruleList = nullptr, Rule *rule = nullptr);
     ~Eval() { }
     std::string Evaluate();
     void PushCallArg(std::string arg)

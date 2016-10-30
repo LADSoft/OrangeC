@@ -66,13 +66,13 @@ public:
     ObjDebugTag(ObjSection *Section, bool Start) : type(Start ? eVirtualFunctionStart : eVirtualFunctionEnd), section(Section) {} 
     ObjDebugTag(ObjSymbol *Symbol, bool Start) 
             : type (Start ? eFunctionStart : eFunctionEnd) , symbol(Symbol) {}
-    ObjDebugTag(bool Start) : type(Start ? eBlockStart : eBlockEnd), lineNo(NULL) {} ;
+    ObjDebugTag(bool Start) : type(Start ? eBlockStart : eBlockEnd), lineNo(nullptr) {} ;
     virtual ~ObjDebugTag() { }	
     eType GetType() { return type; }
     void SetType(eType Type) { type = Type; }
     ObjLineNo *GetLineNo()
     {
-        return type == eLineNo ? lineNo : NULL;
+        return type == eLineNo ? lineNo : nullptr;
     }
     ObjSymbol *GetSymbol()
     {

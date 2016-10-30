@@ -56,7 +56,7 @@ enum kw
 class ppExpr
 {
 public:
-    ppExpr(bool isunsignedchar) : define(NULL),
+    ppExpr(bool isunsignedchar) : define(nullptr),
         unsignedchar(isunsignedchar) { InitHash(); }
     ~ppExpr() { }
 

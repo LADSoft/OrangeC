@@ -50,8 +50,8 @@ class ppCtx;
 class ppCond
 {
 public:
-    ppCond(bool isunsignedchar, bool C89, bool Extensions, bool AsmPP) : current(NULL), 
-            define(NULL), c89(C89), expr(isunsignedchar), extensions(Extensions), ctx(NULL), asmpp(AsmPP) { };
+    ppCond(bool isunsignedchar, bool C89, bool Extensions, bool AsmPP) : current(nullptr), 
+            define(nullptr), c89(C89), expr(isunsignedchar), extensions(Extensions), ctx(nullptr), asmpp(AsmPP) { };
     ~ppCond();
 	void SetParams(ppDefine *Define, ppCtx *Ctx)
 	{
@@ -62,14 +62,14 @@ public:
     bool Check(int token, const std::string &line, int lineno);
     void CheckErrors() ;
     bool Skipping() { return current && current->skipping; }
-    void Mark() { marks.push_front(skipList.size() + current != NULL); }
+    void Mark() { marks.push_front(skipList.size() + current != nullptr); }
     void Drop() { marks.pop_front(); }
     void Release() { 
         if (marks.size())
         {
             int n = marks.front(); 
             marks.pop_front(); 
-            while ((skipList.size() + (current != NULL)) > n)
+            while ((skipList.size() + (current != nullptr)) > n)
             {
 				std::string s(""); 
                 HandleEndIf(s);

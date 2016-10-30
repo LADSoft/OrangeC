@@ -54,7 +54,7 @@
 static const int ellipses = 100;
 
 ppDefine::ppDefine(bool UseExtensions, ppInclude *Include, bool C89, bool Asmpp) : 
-        expr(false), include(Include), c89(C89), asmpp(Asmpp), ctx(NULL), macro(NULL)
+        expr(false), include(Include), c89(C89), asmpp(Asmpp), ctx(nullptr), macro(nullptr)
 { 
     SetDefaults(); 
     InitHash(); 
@@ -107,7 +107,7 @@ ppDefine::Definition *ppDefine::Define(const std::string &name, std::string &val
         if (old->IsUndefined()) // undefined forever?
         {
             delete args;
-            return NULL;
+            return nullptr;
         }
     }
     size_t n = value.find_first_not_of(" \t\v\n");
@@ -242,7 +242,7 @@ void ppDefine::DoAssign(std::string &line, bool caseInsensitive)
         if (!failed)
         {
             std::string value = Utils::NumberToString((int)n);
-            Define(name, value, NULL, false, false, false, caseInsensitive);
+            Define(name, value, nullptr, false, false, false, caseInsensitive);
         }
     }
     if (failed)
@@ -272,7 +272,7 @@ void ppDefine::DoDefine(std::string &line, bool caseInsensitive)
     const Token *next = tk.Next();
     bool failed = false;
     bool hasEllipses = false;
-    DefinitionArgList *da = NULL;
+    DefinitionArgList *da = nullptr;
     std::string name;
     if (!next->IsIdentifier())
     {
@@ -341,7 +341,7 @@ void ppDefine::DoDefine(std::string &line, bool caseInsensitive)
 }
 void ppDefine::DoUndefine(std::string &line)
 {
-    Tokenizer tk(line, NULL);
+    Tokenizer tk(line, nullptr);
     const Token *t = tk.Next();
     if (!t->IsIdentifier())
     {
@@ -526,7 +526,7 @@ void ppDefine::Tokenize(std::string &macro)
 int ppDefine::InsertReplacementString(std::string &macro, int end, int begin, std::string text, std::string etext)
 {
     int q;
-    static char NULLTOKEN[] = { TOKENIZING_PLACEHOLDER, 0 };
+    static char nullptrTOKEN[] = { TOKENIZING_PLACEHOLDER, 0 };
     static char STRINGIZERTOKEN[] = { STRINGIZING_PLACEHOLDER, 0 };
     int  p, r;
     int val;
@@ -537,7 +537,7 @@ int ppDefine::InsertReplacementString(std::string &macro, int end, int begin, st
     {
         if (!text.size())
         {
-            text = NULLTOKEN;
+            text = nullptrTOKEN;
         }
     }
     else
@@ -548,7 +548,7 @@ int ppDefine::InsertReplacementString(std::string &macro, int end, int begin, st
         {
             if (!text.size())
             {
-                text = NULLTOKEN;
+                text = nullptrTOKEN;
             }
         }
         else if (macro[q] == '#')
@@ -729,19 +729,19 @@ int ppDefine::ReplaceSegment(std::string &line, int begin, int end, int &pptr)
                 }
                 else
                 {
-                    sym = NULL;
-                    d = NULL;
+                    sym = nullptr;
+                    d = nullptr;
                 }
             }
             if (
 #ifndef NOCPLUSPLUS
                 (name != "R" || line[p] != '"') &&
 #endif
-                d != NULL && !d->IsUndefined() && 
+                d != nullptr && !d->IsUndefined() && 
                 (!q || line[q-1] != REPLACED_ALREADY) && !ppNumber(line, q, p-1))
             {
                 std::string macro;
-                if (d->GetArgList() != NULL)
+                if (d->GetArgList() != nullptr)
                 {
                     int q1 = p;
                     int count = 0;

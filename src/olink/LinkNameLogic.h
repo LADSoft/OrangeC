@@ -45,14 +45,14 @@
 class LinkNameLogic
 {
 public:
-    LinkNameLogic(std::string spec) : top(NULL) { ParseOut(spec); }
+    LinkNameLogic(std::string spec) : top(nullptr) { ParseOut(spec); }
     virtual ~LinkNameLogic();
     
     bool Matches(const std::string &name);
 protected:
     struct ParseItem
     {
-        ParseItem() : left(NULL), right(NULL) { }
+        ParseItem() : left(nullptr), right(nullptr) { }
         enum Mode { eNot, eOr, eAnd, eName } mode ;
         ParseItem *left, *right;
         std::string token;

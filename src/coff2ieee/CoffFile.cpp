@@ -119,7 +119,7 @@ bool CoffFile::Load()
                                 }
                                 else
                                 {
-                                    relocs.push_back(NULL);
+                                    relocs.push_back(nullptr);
                                 }
                             }
                             if (i >= header.NumberOfSections)
@@ -293,7 +293,7 @@ ObjFile *CoffFile::ConvertToObject(std::string outputName, ObjFactory &factory)
         }
         else
         {
-            objectSections.push_back(NULL);
+            objectSections.push_back(nullptr);
         }
     }
     // dump comdefs
@@ -392,7 +392,7 @@ ObjFile *CoffFile::ConvertToObject(std::string outputName, ObjFactory &factory)
                         inputFile->read((char *)data, sections[i].SizeOfRawData-offset);
                         if (inputFile->fail())
                         {
-                            return NULL;
+                            return nullptr;
                         }
                         ObjMemory *newMem = new ObjMemory(data, sections[i].SizeOfRawData-offset);
                         objectSections[i]->Add(newMem);
@@ -408,7 +408,7 @@ ObjFile *CoffFile::ConvertToObject(std::string outputName, ObjFactory &factory)
                             inputFile->read((char *)data, n);
                             if (inputFile->fail())
                             {
-                                return NULL;
+                                return nullptr;
                             }
                             ObjMemory *newMem = new ObjMemory(data, n);
                             objectSections[i]->Add(newMem);
@@ -416,7 +416,7 @@ ObjFile *CoffFile::ConvertToObject(std::string outputName, ObjFactory &factory)
                         inputFile->read((char *)&fixupOffset, sizeof(unsigned));
                         if (inputFile->fail())
                         {
-                            return NULL;
+                            return nullptr;
                         }
                         switch (relocPointer->Type)
                         {
@@ -461,7 +461,7 @@ ObjFile *CoffFile::ConvertToObject(std::string outputName, ObjFactory &factory)
                                 break;
                             default:
                                 std::cout << "Invalid relocation" << std::endl;
-                                return NULL;
+                                return nullptr;
                         }
                         
                         offset += n + 4;

@@ -47,7 +47,7 @@ int Expression::primary()
     if (lexer.GetToken()->GetKeyword() == Lexer::openpa)
     {
         lexer.NextToken();
-        if (lexer.GetToken() != NULL )
+        if (lexer.GetToken() != nullptr )
         {
             rv = Eval();
             if (lexer.GetToken()->GetKeyword() == Lexer::closepa)
@@ -74,13 +74,13 @@ int Expression::primary()
 }
 int Expression::unary()
 {
-    if (lexer.GetToken() != NULL)
+    if (lexer.GetToken() != nullptr)
     {
         int kw = lexer.GetToken()->GetKeyword();
         if (kw == Lexer::plus || kw == Lexer::minus || kw == Lexer::lnot || kw == Lexer::bcompl)
         {
             lexer.NextToken();
-            if (lexer.GetToken() != NULL)
+            if (lexer.GetToken() != nullptr)
             {
                 int val1 = unary();
                 switch(kw)
@@ -116,7 +116,7 @@ int Expression::multiply()
     while (kw == Lexer::star || kw == Lexer::divide || kw == Lexer::mod)
     {
         lexer.NextToken();
-        if (lexer.GetToken() != NULL)
+        if (lexer.GetToken() != nullptr)
         {
             int val2 = unary();
             switch(kw)
@@ -159,7 +159,7 @@ int Expression::add()
     while (kw == Lexer::plus || kw == Lexer::minus)
     {
         lexer.NextToken();
-        if (lexer.GetToken() != NULL)
+        if (lexer.GetToken() != nullptr)
         {
             int val2 = multiply();
             switch(kw)
@@ -183,7 +183,7 @@ int Expression::shift()
     while (kw == Lexer::leftshift || kw == Lexer::rightshift)
     {
         lexer.NextToken();
-        if (lexer.GetToken() != NULL)
+        if (lexer.GetToken() != nullptr)
         {
             int val2 = add();
             switch(kw)
@@ -207,7 +207,7 @@ int Expression::relation()
     while (kw == Lexer::gt || kw == Lexer::lt || kw == Lexer::geq || kw == Lexer::leq)
     {
         lexer.NextToken();
-        if (lexer.GetToken() != NULL)
+        if (lexer.GetToken() != nullptr)
         {
             int val2 = shift();
             switch(kw)
@@ -237,7 +237,7 @@ int Expression::equal()
     while (kw == Lexer::eq || kw == Lexer::ne)
     {
         lexer.NextToken();
-        if (lexer.GetToken() != NULL)
+        if (lexer.GetToken() != nullptr)
         {
             int val2 = shift();
             switch(kw)
@@ -257,10 +257,10 @@ int Expression::equal()
 int Expression::and_()
 {
     int val1 = equal();
-    while (lexer.GetToken() != NULL && lexer.GetToken()->GetKeyword() == Lexer::band)
+    while (lexer.GetToken() != nullptr && lexer.GetToken()->GetKeyword() == Lexer::band)
     {
         lexer.NextToken();
-        if (lexer.GetToken() != NULL)
+        if (lexer.GetToken() != nullptr)
         {
             int val2 = equal();
             val1 &= val2;
@@ -271,10 +271,10 @@ int Expression::and_()
 int Expression::xor_()
 {
     int val1 = and_();
-    while (lexer.GetToken() != NULL && lexer.GetToken()->GetKeyword() == Lexer::bxor)
+    while (lexer.GetToken() != nullptr && lexer.GetToken()->GetKeyword() == Lexer::bxor)
     {
         lexer.NextToken();
-        if (lexer.GetToken() != NULL)
+        if (lexer.GetToken() != nullptr)
         {
             int val2 = and_();
             val1 ^= val2;
@@ -285,10 +285,10 @@ int Expression::xor_()
 int Expression::or_()
 {
     int val1 = xor_();
-    while (lexer.GetToken() != NULL && lexer.GetToken()->GetKeyword() == Lexer::bor)
+    while (lexer.GetToken() != nullptr && lexer.GetToken()->GetKeyword() == Lexer::bor)
     {
         lexer.NextToken();
-        if (lexer.GetToken() != NULL)
+        if (lexer.GetToken() != nullptr)
         {
             int val2 = xor_();
             val1 |= val2;
@@ -299,10 +299,10 @@ int Expression::or_()
 int Expression::logicaland()
 {
     int val1 = or_();
-    while (lexer.GetToken() != NULL && lexer.GetToken()->GetKeyword() == Lexer::land)
+    while (lexer.GetToken() != nullptr && lexer.GetToken()->GetKeyword() == Lexer::land)
     {
         lexer.NextToken();
-        if (lexer.GetToken() != NULL)
+        if (lexer.GetToken() != nullptr)
         {
             int val2 = or_();
             val1 = val1 && val2;
@@ -313,10 +313,10 @@ int Expression::logicaland()
 int Expression::logicalor()
 {
     int val1 = logicaland();
-    while (lexer.GetToken() != NULL && lexer.GetToken()->GetKeyword() == Lexer::lor)
+    while (lexer.GetToken() != nullptr && lexer.GetToken()->GetKeyword() == Lexer::lor)
     {
         lexer.NextToken();
-        if (lexer.GetToken() != NULL)
+        if (lexer.GetToken() != nullptr)
         {
             int val2 = logicaland();
             val1 = val1 || val2;
@@ -327,19 +327,19 @@ int Expression::logicalor()
 int Expression::conditional()
 {
     int val1 = logicalor();
-    if ((lexer.GetToken() != NULL) && lexer.GetToken()->GetKeyword() == Lexer::hook)
+    if ((lexer.GetToken() != nullptr) && lexer.GetToken()->GetKeyword() == Lexer::hook)
     {
         lexer.NextToken();
-        if (lexer.GetToken() != NULL)
+        if (lexer.GetToken() != nullptr)
         {
             int val2 = logicalor();
             lexer.NextToken();
-            if (lexer.GetToken() != NULL)
+            if (lexer.GetToken() != nullptr)
             {
                 if (lexer.GetToken()->GetKeyword() == Lexer::colon)
                 {
                     lexer.NextToken();
-                    if (lexer.GetToken() != NULL)
+                    if (lexer.GetToken() != nullptr)
                     {
                         int val3 = conditional();
                         if (val1)

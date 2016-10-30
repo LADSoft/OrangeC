@@ -45,7 +45,7 @@
 
 
 Font::Font(const ResourceId &Id, const ResourceInfo &info)
-        : Resource(eFont, Id, info), data(NULL) 
+        : Resource(eFont, Id, info), data(nullptr) 
 { 
 }
 Font::~Font() 

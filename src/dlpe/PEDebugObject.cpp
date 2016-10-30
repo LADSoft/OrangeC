@@ -77,8 +77,8 @@ int PEDebugObject::NullCallback(void *NotUsed, int argc, char **argv, char **azC
 }
 void PEDebugObject::SetDebugInfo(ObjString fileName, ObjInt base)
 {
-    sqlite3 *dbPointer = NULL;
-    if (sqlite3_open_v2(fileName.c_str(), &dbPointer, SQLITE_OPEN_READWRITE, NULL) == SQLITE_OK)
+    sqlite3 *dbPointer = nullptr;
+    if (sqlite3_open_v2(fileName.c_str(), &dbPointer, SQLITE_OPEN_READWRITE, nullptr) == SQLITE_OK)
     {
         sqlite3_busy_timeout(dbPointer, 400);
         char *zErrMsg  = 0;

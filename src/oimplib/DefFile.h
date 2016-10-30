@@ -75,7 +75,7 @@ class DefFile
 {
 public:
     DefFile(const std::string &fname) : fileName(fname), tokenizer("", &keywords), lineno(0), imageBase(-1),
-        stackSize(-1), heapSize(-1), token(NULL)
+        stackSize(-1), heapSize(-1), token(nullptr)
         { Init(); }
     virtual ~DefFile();
     bool Read();

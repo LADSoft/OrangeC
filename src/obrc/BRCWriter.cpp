@@ -207,7 +207,7 @@ int BRCWriter::DBOpen(char *name)
 {
     int rv = false;
     unlink(name);
-    if (sqlite3_open_v2(name, &dbPointer,SQLITE_OPEN_READWRITE, NULL) == SQLITE_OK)
+    if (sqlite3_open_v2(name, &dbPointer,SQLITE_OPEN_READWRITE, nullptr) == SQLITE_OK)
     {
 #ifdef TEST
         printf("checkdb...");
@@ -225,8 +225,8 @@ int BRCWriter::DBOpen(char *name)
         if (dbPointer)
             sqlite3_close(dbPointer);
 doCreate:
-        dbPointer = NULL;
-        if (sqlite3_open_v2(name, &dbPointer, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL) == SQLITE_OK)
+        dbPointer = nullptr;
+        if (sqlite3_open_v2(name, &dbPointer, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr) == SQLITE_OK)
         {
 #ifdef TEST
             printf("createdb...");
@@ -251,7 +251,7 @@ bool BRCWriter::Insert(sqlite3_int64 simpleId, sqlite3_int64 complexId)
     static sqlite3_stmt *handle;
     if (!handle)
     {
-        rc = sqlite3_prepare_v2(dbPointer, query, strlen(query)+1, &handle, NULL);
+        rc = sqlite3_prepare_v2(dbPointer, query, strlen(query)+1, &handle, nullptr);
     }
     if (rc == SQLITE_OK)
     {
@@ -285,7 +285,7 @@ bool BRCWriter::Insert(std::string fileName, int index)
     static sqlite3_stmt *handle;
     if (!handle)
     {
-        rc = sqlite3_prepare_v2(dbPointer, query, strlen(query)+1, &handle, NULL);
+        rc = sqlite3_prepare_v2(dbPointer, query, strlen(query)+1, &handle, nullptr);
     }
     if (rc == SQLITE_OK)
     {
@@ -323,7 +323,7 @@ bool BRCWriter::Insert(std::string symName, int type, sqlite3_int64 *id)
     static sqlite3_stmt *handle;
     if (!handle)
     {
-        rc = sqlite3_prepare_v2(dbPointer, query, strlen(query)+1, &handle, NULL);
+        rc = sqlite3_prepare_v2(dbPointer, query, strlen(query)+1, &handle, nullptr);
     }
     if (rc == SQLITE_OK)
     {
@@ -362,7 +362,7 @@ bool BRCWriter::Insert(sqlite3_int64 fileId, int start, int end, sqlite3_int64 n
     static sqlite3_stmt *handle;
     if (!handle)
     {
-        rc = sqlite3_prepare_v2(dbPointer, query, strlen(query)+1, &handle, NULL);
+        rc = sqlite3_prepare_v2(dbPointer, query, strlen(query)+1, &handle, nullptr);
     }
     if (rc == SQLITE_OK)
     {
@@ -401,8 +401,8 @@ bool BRCWriter::Insert(sqlite3_int64 symIndex, BrowseData *b, bool usages)
     static sqlite3_stmt *handle, *handle1;
     if (!handle)
     {
-        rc = sqlite3_prepare_v2(dbPointer, query1, strlen(query1)+1, &handle1, NULL);
-        rc = sqlite3_prepare_v2(dbPointer, query, strlen(query)+1, &handle, NULL);
+        rc = sqlite3_prepare_v2(dbPointer, query1, strlen(query1)+1, &handle1, nullptr);
+        rc = sqlite3_prepare_v2(dbPointer, query, strlen(query)+1, &handle, nullptr);
     }
     if (rc == SQLITE_OK)
     {
@@ -444,11 +444,11 @@ bool BRCWriter::WriteFileList()
 {
     Begin();
     std::map<std::string, int> &unsorted = loader.GetFileNames();
-    for (std::map<std::string, int>::iterator it = unsorted.begin(); it != unsorted.end(); ++it)
+    for (auto item : unsorted)
     {
-        std::string myString = it->first;
+        std::string myString = item.first;
         std::transform(myString.begin(), myString.end(), myString.begin(), easytolower); 
-        if (!Insert(myString.c_str(), it->second))
+        if (!Insert(myString.c_str(), item.second))
             return false;
     }
     End();
@@ -458,8 +458,8 @@ bool BRCWriter::WriteFileList()
 void BRCWriter:: InsertMappingSym(std::string name, SymData *orig, std::map<std::string, SymData *> &syms,
                  std::map<std::string, SymData *> &newSyms)
 {
-    SymData *sym = NULL;
-    std::map<std::string, SymData *>::iterator it = syms.find(name);
+    SymData *sym = nullptr;
+    auto it = syms.find(name);
     if (it != syms.end())
     {
          sym = it->second;
@@ -522,23 +522,22 @@ void BRCWriter::PushCPPNames(std::string name, SymData * orig, std::map<std::str
 bool BRCWriter::WriteDictionary(Symbols &syms)
 {
     std::map<std::string, SymData *> newSyms;
-    for (Symbols::iterator it = syms.begin(); it != syms.end(); ++it)
+    for (auto sym : syms)
     {
-        PushCPPNames(it->first, it->second, syms, newSyms);        
+        PushCPPNames(sym.first, sym.second, syms, newSyms);        
     }
-    for (Symbols::iterator it = newSyms.begin(); it != newSyms.end(); ++it)
+    for (auto sym : newSyms)
     {
-        syms[it->first] = it->second;
+        syms[sym.first] = sym.second;
     }
     newSyms.clear();
     Begin();
-    for (Symbols::iterator it = syms.begin(); it != syms.end(); ++it)
+    for (auto sym1 : syms)
     {
-        SymData *sym = it->second;
+        SymData *sym = sym1.second;
         int type = sym->mapping.size() ? JT_MAPPING : 0;
-        for (BrowseDataset::iterator it1 = sym->data.begin(); it1 != sym->data.end(); ++it1)
+        for (auto l : sym->data)
         {
-            BrowseData *l = *it1;
             if (!l->blockLevel && l->qual != ObjBrowseInfo::eExternal)
             {
                 type |= JT_GLOBAL;
@@ -569,7 +568,7 @@ bool BRCWriter::WriteDictionary(Symbols &syms)
                     break;
             }
         }	
-        if (!Insert(it->first.c_str(), type, &sym->index))
+        if (!Insert(sym1.first.c_str(), type, &sym->index))
             return false;
     }
     End();
@@ -578,11 +577,11 @@ bool BRCWriter::WriteDictionary(Symbols &syms)
 bool BRCWriter::WriteMapping(Symbols &syms)
 {
     Begin();
-    for (Symbols::iterator it = syms.begin(); it != syms.end(); ++it)
+    for (auto sym : syms)
     {
-        SymData *s = it->second;
-        for (std::deque<SymData *>::iterator it1 = s->mapping.begin(); it1 != s->mapping.end(); it1++)
-            Insert(s->index, (*it1)->index);
+        SymData *s = sym.second;
+        for (auto map : s->mapping)
+            Insert(s->index, map->index);
     }
     End();
     return true;
@@ -590,12 +589,11 @@ bool BRCWriter::WriteMapping(Symbols &syms)
 bool BRCWriter::WriteLineData(Symbols &syms)
 {
     Begin();
-    for (Symbols::iterator it = syms.begin(); it != syms.end(); ++it)
+    for (auto sym : syms)
     {
-        SymData *s = it->second;
-        for (BrowseDataset::iterator it = s->data.begin(); it != s->data.end(); ++it)
+        SymData *s = sym.second;
+        for (auto bd :s->data)
         {
-            BrowseData *bd = *it;
             if (bd->qual != ObjBrowseInfo::eExternal || !s->globalCount)
                 if (!Insert(s->index, bd))
                     return false;
@@ -607,12 +605,11 @@ bool BRCWriter::WriteLineData(Symbols &syms)
 bool BRCWriter::WriteUsageData(Symbols &syms)
 {
     Begin();
-    for (Symbols::iterator it = syms.begin(); it != syms.end(); ++it)
+    for (auto sym : syms)
     {
-        SymData *s = it->second;
-        for (BrowseDataset::iterator it = s->usages.begin(); it != s->usages.end(); ++it)
+        SymData *s = sym.second;
+        for (auto bd : s->usages)
         {
-            BrowseData *bd = *it;
             if (bd->qual != ObjBrowseInfo::eExternal || !s->globalCount)
                 if (!Insert(s->index, bd, true))
                     return false;
@@ -624,15 +621,14 @@ bool BRCWriter::WriteUsageData(Symbols &syms)
 bool BRCWriter::WriteJumpTable(Symbols &syms)
 {
     Begin();
-    for (Symbols::iterator it = syms.begin(); it != syms.end(); ++it)
+    for (auto sym : syms)
     {
-        SymData *s = it->second;
+        SymData *s = sym.second;
         if (s->data.size())
         {
-            BrowseData *gl = NULL, *ex = NULL;
-            for (BrowseDataset::iterator it1 = s->data.begin(); it1 != s->data.end(); ++it1)
+            BrowseData *gl = nullptr, *ex = nullptr;
+            for (auto b : s->data)
             {
-                BrowseData *b = *it1;
                 if (b->type == ObjBrowseInfo::eFuncStart)
                 {
                     if (b->qual == ObjBrowseInfo::eExternal)

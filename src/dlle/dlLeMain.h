@@ -56,7 +56,7 @@ class ResidentNameTable;
 class dlLeMain
 {
 public:
-    dlLeMain() : mode(eLe), rnt(NULL) { }
+    dlLeMain() : mode(eLe), rnt(nullptr) { }
     ~dlLeMain();
     
     int Run(int argc, char **argv);

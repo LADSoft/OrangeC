@@ -130,10 +130,9 @@ int CmdSwitchOutput::Parse(const char *data)
 }
 CmdSwitchDefine::~CmdSwitchDefine()
 {
-    for (std::vector<define *>::iterator it = defines.begin(); it != defines.end(); ++it)
+    for (auto define : defines)
     {
-        define *aa = *it;
-        delete aa;
+        delete define;
     }
     defines.clear();
 }
@@ -151,7 +150,7 @@ int CmdSwitchDefine::Parse(const char *data)
         return -1;
     }
     define *newDefine = new define;
-//	if (!newDefine) // new return not NULL or exception!
+//	if (!newDefine) // new return not nullptr or exception!
 //        return -1;
     newDefine->name = name;
     if (*data == '=')
@@ -172,7 +171,7 @@ CmdSwitchDefine::define *CmdSwitchDefine::GetValue(int index)
 {
     if (defines.size() > (size_t)index)
         return defines[index];
-    return NULL;		
+    return nullptr;		
 }
 int CmdSwitchFile::Parse(const char *data)
 {
@@ -281,7 +280,7 @@ bool CmdSwitchParser::Parse(int *argc, char *argv[])
         {
             const char *data = &argv[0][1];
             CmdSwitchBase temp('@');
-            std::set<CmdSwitchBase *, plt>::iterator it = switches.find(&temp);
+            auto it = switches.find(&temp);
             if (it == switches.end())
                 return false;
             (*it)->Parse(&argv[0][1]);
@@ -301,7 +300,7 @@ bool CmdSwitchParser::Parse(int *argc, char *argv[])
                 while (data < end)
                 {
                     CmdSwitchBase temp(*data);
-                    std::set<CmdSwitchBase *,plt>::iterator it = switches.find(&temp);
+                    auto it = switches.find(&temp);
                     if (it == switches.end())
                         return false;
                     data++;

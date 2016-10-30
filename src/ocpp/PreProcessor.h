@@ -106,7 +106,7 @@ public:
     PreProcessor(const std::string &FileName, const std::string &SrchPth, const std::string &SysSrchPth,
                  bool fullName, bool Trigraph, char PPStart, bool isunsignedchar, 
                  bool C89, bool extensions) 
-        : ppStart(PPStart), preData(NULL), lineno(0),
+        : ppStart(PPStart), preData(nullptr), lineno(0),
         include(fullName, Trigraph, extensions, isunsignedchar, C89, SrchPth, SysSrchPth, PPStart == '%'), 
             define(extensions, &include, C89, PPStart == '%'), 
             macro(include, define), ctx(define), trigraphs(Trigraph)
@@ -118,7 +118,7 @@ public:
     std::string GetFile() { return include.GetFile(); }
     int GetLineNo() { return include.GetLineNo(); }
     int GetMainLineNo() { return lineno; }
-    void Define(const std::string &name, std::string &value, bool caseInsensitive) { define.Define(name, value, NULL, false, false, false, caseInsensitive); }
+    void Define(const std::string &name, std::string &value, bool caseInsensitive) { define.Define(name, value, nullptr, false, false, false, caseInsensitive); }
     void Undefine(std::string &name) { define.Undefine(name, true); }
     void IncludeFile(const std::string &name) { include.IncludeFile(name); }
     int GetCtxId() { return ctx.GetTopId(); }

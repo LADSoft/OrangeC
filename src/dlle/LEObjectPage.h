@@ -47,7 +47,7 @@ class LEObject;
 class ObjectPage
 {
 public:
-    ObjectPage(std::deque<LEObject *> Objects) : objects(Objects), data(NULL) { }
+    ObjectPage(std::deque<LEObject *> Objects) : objects(Objects), data(nullptr) { }
     virtual ~ObjectPage() { if (data) delete [] data; }
     virtual void Setup() = 0;
     void Write(std::fstream &stream);

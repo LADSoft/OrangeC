@@ -61,10 +61,10 @@ protected:
     std::string FirstWord(const std::string &line, size_t &n);
     bool ParseLine(const std::string &line);
     std::string RemoveComment(const std::string &line);
-    bool ParseAssign(const std::string &left, const std::string &right, bool dooverride, RuleList *ruleList = NULL);
-    bool ParseRecursiveAssign(const std::string &left, const std::string &right, bool dooverride, RuleList *ruleList = NULL);
-    bool ParsePlusAssign(const std::string &left, const std::string &right, bool dooverride, RuleList *ruleList = NULL);
-    bool ParseQuestionAssign(const std::string &left, const std::string &right, bool dooverride, RuleList *ruleList = NULL);
+    bool ParseAssign(const std::string &left, const std::string &right, bool dooverride, RuleList *ruleList = nullptr);
+    bool ParseRecursiveAssign(const std::string &left, const std::string &right, bool dooverride, RuleList *ruleList = nullptr);
+    bool ParsePlusAssign(const std::string &left, const std::string &right, bool dooverride, RuleList *ruleList = nullptr);
+    bool ParseQuestionAssign(const std::string &left, const std::string &right, bool dooverride, RuleList *ruleList = nullptr);
     std::string ReplaceAllStems(const std::string &stem, const std::string value);
     bool ParseRule(const std::string &left, const std::string &line);
     bool ParseDefine(const std::string &line, bool dooverride);

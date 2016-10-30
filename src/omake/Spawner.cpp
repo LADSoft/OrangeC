@@ -127,9 +127,8 @@ int Spawner::Run(const std::string &cmd, bool ignoreErrors, bool silent, bool do
     }
     else
     {
-        for (std::list<std::string>::iterator it = cmdList.begin(); it != cmdList.end(); ++it)
+        for (auto command : cmdList)
         {
-            std::string command = *it;
             if (!silent)
                 std::cout << "\t" << command.c_str() << std::endl;
             int rv = 0;

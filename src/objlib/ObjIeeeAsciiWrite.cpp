@@ -605,7 +605,7 @@ bool ObjIeeeAscii::HandleWrite()
     WriteTrailer();
     flush();
     delete [] ioBuffer;
-    ioBuffer = NULL;
+    ioBuffer = nullptr;
     return true;
 }
 void ObjIeeeAscii::WriteHeader()

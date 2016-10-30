@@ -173,16 +173,14 @@ char xmlAttrib::ReadTextChar(std::fstream &stream)
 
 xmlNode::~xmlNode()
 {
-    for (std::deque<xmlAttrib *>::iterator it = attribs.begin(); it != attribs.end(); ++it)
+    for (auto attrib : attribs)
     {
-        xmlAttrib *a = (*it);
-        delete a;
+        delete attrib;
     }
     attribs.clear();
-    for (std::deque<xmlNode *>::iterator it = children.begin(); it != children.end(); ++it)
+    for (auto child : children)
     {
-        xmlNode *n = (*it);
-        delete n;
+        delete child;
     }
     children.clear();
 }
@@ -397,16 +395,14 @@ bool xmlNode::Write(std::fstream &stream, int indent)
     stream << '<' << elementType.c_str();
     if (attribs.size())
     {
-        std::deque<xmlAttrib *>::iterator it;
-        for (it= attribs.begin(); it != attribs.end(); ++it)
-            (*it)->Write(stream);
+        for (auto attrib : attribs)
+            attrib->Write(stream);
     }
     if (children.size() || text.size())
     {
         stream << '>' << std::endl;
-        std::deque<xmlNode *>::iterator it;
-        for (it= children.begin(); it != children.end(); ++it)
-            (*it)->Write(stream, indent + 1);
+        for (auto child : children)
+            child->Write(stream, indent + 1);
         if (text.size())
         {
             const char *p = text.c_str();
@@ -465,14 +461,14 @@ void xmlNode::RemoveChild(const xmlNode *child)
 }
 bool xmlNode::Visit(xmlVisitor &v, void *userData)
 {
-    for (std::deque<xmlAttrib *>::iterator it = attribs.begin(); it != attribs.end(); ++it)
+    for (auto attrib : attribs)
     {
-        if (!v.VisitAttrib(*this, *it, userData))
+        if (!v.VisitAttrib(*this, attrib, userData))
             break;
     }
-    for (std::deque<xmlNode *>::iterator it = children.begin(); it != children.end(); ++it)
+    for (auto child : children)
     {
-        if (!v.VisitNode(*this, *it, userData))
+        if (!v.VisitNode(*this, child, userData))
             return false;
     }
     return true;

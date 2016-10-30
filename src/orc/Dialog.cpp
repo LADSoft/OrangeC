@@ -74,19 +74,19 @@ void Control::WriteRes(ResFile &resFile, bool ex, bool last)
     cls.WriteRes(resFile);
     text.WriteRes(resFile);
     int len = 0;
-    for (iterator it = begin() ; it != end(); ++it)
+    for (auto res : *this)
     {
-        len += (*it)->GetLen();
+        len += res->GetLen();
     }
     resFile.WriteWord(len);
     if (len)
     {
         resFile.Align();
-        for (iterator it = begin() ; it != end(); ++it)
+        for (auto res : *this)
         {
-            if ((*it)->GetLen())
+            if (res->GetLen())
             {
-                resFile.WriteData((*it)->GetData(), (*it)->GetLen());
+                resFile.WriteData(res->GetData(), res->GetLen());
             }
         }
     }
@@ -361,10 +361,10 @@ void Dialog::WriteRes(ResFile &resFile)
         resFile.WriteString(font);
     }
     int count = controls.size();
-    for (iterator it = begin(); it != end(); ++it)
+    for (auto res : *this)
     {
         resFile.Align();
-        (*it)->WriteRes(resFile, extended, !--count);
+        res->WriteRes(resFile, extended, !--count);
     }
     resFile.Release();
 }

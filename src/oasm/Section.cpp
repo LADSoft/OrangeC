@@ -150,8 +150,8 @@ ObjSection *Section::CreateObject(ObjFactory &factory)
 }
 ObjExpression *Section::ConvertExpression(AsmExprNode *node, AsmFile *fil, ObjFactory &factory)
 {
-    ObjExpression *xleft = NULL;
-    ObjExpression *xright = NULL;
+    ObjExpression *xleft = nullptr;
+    ObjExpression *xright = nullptr;
     if (node->GetLeft())
         xleft = ConvertExpression(node->GetLeft(), fil, factory);
     if (node->GetRight())
@@ -183,7 +183,7 @@ ObjExpression *Section::ConvertExpression(AsmExprNode *node, AsmFile *fil, ObjFa
             else
             {
                 Label * label = fil->Lookup(node->label);
-                if (label != NULL)
+                if (label != nullptr)
                 {
                     
                     ObjExpression *t;
@@ -261,7 +261,7 @@ ObjExpression *Section::ConvertExpression(AsmExprNode *node, AsmFile *fil, ObjFa
         case AsmExprNode::REG:
             throw new std::runtime_error("Operator not allowed in address expression");
     }
-    return NULL;
+    return nullptr;
 }
 bool Section::SwapSectionIntoPlace(ObjExpression *t)
 {
@@ -333,7 +333,7 @@ bool Section::MakeData(ObjFactory &factory, AsmFile *fil)
                     Errors::IncrementCount();
                     std::cout << "Error " << f.GetFileName().c_str() << "(" << f.GetErrorLine() << "):" << e->what() << std::endl;
                     delete e;
-                    t = NULL;
+                    t = nullptr;
                     rv = false;
                 }
                 if (t && f.IsRel())

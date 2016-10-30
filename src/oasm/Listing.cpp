@@ -223,7 +223,7 @@ bool Listing::Write(std::string &listingName, std::string &inName, bool listMacr
     }
     std::vector<std::string> lines;
     int lineno = 1;
-    ListedLine *cur = NULL;
+    ListedLine *cur = nullptr;
     if (list.size())
     {
         cur = list.front();
@@ -238,7 +238,7 @@ bool Listing::Write(std::string &listingName, std::string &inName, bool listMacr
             std::string bufs = buf;
             lineno++;
             lines.push_back(bufs);
-            ListLine(out, bufs, NULL, false);
+            ListLine(out, bufs, nullptr, false);
         }
         if (cur && cur->lineno == lineno)
         {
@@ -254,7 +254,7 @@ bool Listing::Write(std::string &listingName, std::string &inName, bool listMacr
             }
             else
             {
-                cur = NULL;
+                cur = nullptr;
             }
         }
         if (cur && cur->lineno < lineno)
@@ -263,7 +263,7 @@ bool Listing::Write(std::string &listingName, std::string &inName, bool listMacr
             std::string bufs = buf;
             lineno++;
             lines.push_back(bufs);
-            ListLine(out, bufs, NULL, false);
+            ListLine(out, bufs, nullptr, false);
         }
         while (cur && cur->lineno < lineno)
         {
@@ -276,7 +276,7 @@ bool Listing::Write(std::string &listingName, std::string &inName, bool listMacr
             }
             else
             {
-                cur = NULL;
+                cur = nullptr;
             }
         }
     }

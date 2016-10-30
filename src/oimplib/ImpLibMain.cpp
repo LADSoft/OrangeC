@@ -75,11 +75,8 @@ char *ImpLibMain::usageText = "[options] outputfile [+ files] [- files] [* files
 
 ImpLibMain::~ImpLibMain()
 {
-    for (std::deque<ObjectData *>::iterator it = objectData.begin(); it != objectData.end(); ++it)
-    {
-        ObjectData *od = (*it);
-        delete od;
-    }
+    for (auto obj : objectData)
+        delete obj;
     objectData.clear();
 }
 void ImpLibMain::AddFile(LibManager &librarian, const char *arg)
@@ -248,11 +245,11 @@ int ImpLibMain::HandleDefFile(const std::string &outputFile, int argc, char **ar
         else
             npos++;
         defFile.SetLibraryName(inputFile.substr(npos));
-        for (DLLExportReader::iterator it = dllFile.begin(); it != dllFile.end(); ++it)
+        for (auto item : dllFile)
         {
             DefFile::Export *exp = new DefFile::Export;
-            exp->id = (*it)->name;
-            exp->ord = (*it)->ordinal;
+            exp->id = item->name;
+            exp->ord = item->ordinal;
             defFile.Add(exp);
         }
         defFile.Write();
@@ -286,12 +283,12 @@ ObjFile *ImpLibMain::DllFileToObjFile(DLLExportReader &dll)
         name.erase(0, npos + 1);
     ObjectData *od = new ObjectData;
     ObjFile *obj = new ObjFile(name);
-    for (DLLExportReader::iterator it = dll.begin(); it != dll.end(); ++it)
+    for (auto exp : dll)
     {
-        ObjImportSymbol *p = od->factory.MakeImportSymbol((*it)->name);
-        p->SetExternalName((*it)->name);
-        p->SetByOrdinal((*it)->byOrd);
-        p->SetOrdinal((*it)->ordinal);
+        ObjImportSymbol *p = od->factory.MakeImportSymbol(exp->name);
+        p->SetExternalName(exp->name);
+        p->SetByOrdinal(exp->byOrd);
+        p->SetOrdinal(exp->ordinal);
         p->SetDllName(name);
         obj->Add(p);		
     }
@@ -300,7 +297,7 @@ ObjFile *ImpLibMain::DllFileToObjFile(DLLExportReader &dll)
 int ImpLibMain::HandleObjFile(const std::string &outputFile, int argc, char **argv)
 {
     bool def;
-    ObjFile *obj = NULL;
+    ObjFile *obj = nullptr;
     std::string inputFile = GetInputFile(argc, argv, def);
     if (inputFile == "")
         return 1;
@@ -322,7 +319,7 @@ int ImpLibMain::HandleObjFile(const std::string &outputFile, int argc, char **ar
     ObjFactory fact1(&im1);
     ObjIeee ieee(outputFile.c_str());
     FILE *stream = fopen(outputFile.c_str(), "wb");
-    if (stream != NULL)
+    if (stream != nullptr)
     {
         ieee.Write(stream, obj, &fact1);
         fclose(stream);

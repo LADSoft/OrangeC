@@ -52,22 +52,16 @@
 
 SymData::~SymData()
 {
-    for (BrowseDataset::iterator it = data.begin(); it != data.end(); it++)
-    {
-        BrowseData *q = *it;
-        delete q;
-    }
+    for (auto l : data)
+        delete l;
 }
 BlockData::~BlockData()
 {
 }
 BRCLoader::~BRCLoader()
 {
-    for (Symbols::iterator it = syms.begin(); it != syms.end(); ++it)
-    {
-        SymData *s = it->second;
-        delete s;
-    }
+    for (auto sym : syms)
+        delete sym.second;
 }
 void BRCLoader::InsertSymData(std::string s, BrowseData *ldata, bool func)
 {
@@ -82,9 +76,8 @@ void BRCLoader::InsertSymData(std::string s, BrowseData *ldata, bool func)
         sym = new SymData(s);
         syms[s] = sym;
     }
-    for (BrowseDataset::iterator it = sym->data.begin(); it != sym->data.end(); it++)
+    for (auto compare : sym->data)
     {
-        BrowseData *compare = *it;
         if (ldata->type == compare->type)
             if (ldata->startLine == compare->startLine)
                 if (ldata->qual == compare->qual)
@@ -222,10 +215,9 @@ void BRCLoader::EndBlock(int line)
 
         b->end = line;
         int i;
-        for (std::map<std::string, BrowseData *>::iterator it = b->syms.begin();
-             it != b->syms.end(); ++it)
+        for (auto sym : b->syms)
         {
-            InsertSymData(it->first, it->second);
+            InsertSymData(sym.first, sym.second);
         }
         delete b;
     }
@@ -278,7 +270,7 @@ void BRCLoader::LoadSourceFiles(ObjFile &fil)
     for (ObjFile::SourceFileIterator it = fil.SourceFileBegin(); it != fil.SourceFileEnd(); ++it)
     {
         int index;
-        std::map<std::string, int>::iterator it1 = nameMap.find((*it)->GetName());
+        auto it1 = nameMap.find((*it)->GetName());
         if (it1 == nameMap.end())
         {
             index = nameMap.size();
@@ -303,7 +295,7 @@ bool BRCLoader::load()
         ObjFactory fact1(&im1);
         FILE *b = fopen(name.c_str(), "rb");
 //        std::fstream b(name.c_str(), std::fstream::in);
-        if (b != NULL)
+        if (b != nullptr)
         {
             ObjIeee i(name);
             ObjFile *fil = i.Read(b, ObjIeee::eAll, &fact1);

@@ -89,8 +89,8 @@ class LinkPartition
 class LinkPartitionSpecifier
 {
     public:
-        LinkPartitionSpecifier(LinkPartition *Partition) : partition(Partition), symbol(NULL) {}
-        LinkPartitionSpecifier(LinkExpressionSymbol *Symbol) : partition(NULL), symbol(Symbol) {}
+        LinkPartitionSpecifier(LinkPartition *Partition) : partition(Partition), symbol(nullptr) {}
+        LinkPartitionSpecifier(LinkExpressionSymbol *Symbol) : partition(nullptr), symbol(Symbol) {}
         ~LinkPartitionSpecifier()
         {
             delete partition;
@@ -106,8 +106,8 @@ class LinkPartitionSpecifier
 class LinkOverlaySpecifier
 {
     public:
-        LinkOverlaySpecifier(LinkOverlay *Overlay) : overlay(Overlay), symbol(NULL) {}
-        LinkOverlaySpecifier(LinkExpressionSymbol *Symbol) : overlay(NULL), symbol(Symbol) {}
+        LinkOverlaySpecifier(LinkOverlay *Overlay) : overlay(Overlay), symbol(nullptr) {}
+        LinkOverlaySpecifier(LinkExpressionSymbol *Symbol) : overlay(nullptr), symbol(Symbol) {}
         ~LinkOverlaySpecifier();
         LinkOverlay *GetOverlay() { return overlay; }
         LinkExpressionSymbol *GetSymbol() { return symbol; }

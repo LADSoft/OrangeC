@@ -50,7 +50,7 @@ class dlPmMain
 {
     struct Section
     {
-        Section(ObjInt Address = 0, ObjInt Size = 0) : address(Address), size(Size), data(NULL) { }
+        Section(ObjInt Address = 0, ObjInt Size = 0) : address(Address), size(Size), data(nullptr) { }
         ~Section() {  delete data; }
         ObjInt address;
         ObjInt size;

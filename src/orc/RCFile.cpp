@@ -208,7 +208,7 @@ Resource *RCFile::GetRes()
     std::wstring name;
     ResourceId id;
     bool done = false;
-    Resource *rv = NULL;
+    Resource *rv = nullptr;
     while (!done && !AtEof())
     {
         done= true;
@@ -282,7 +282,7 @@ Resource *RCFile::GetRes()
         }
         ResourceInfo info(language);
         info.SetFlags(ResourceInfo::Moveable | ResourceInfo::Discardable);
-        rv = NULL;
+        rv = nullptr;
         switch (type)
         {
             case -1:
@@ -336,7 +336,7 @@ Resource *RCFile::GetRes()
                 rv = new StringTable(info);
                 rv->ReadRC(*this);
                 delete rv;
-                rv = NULL;
+                rv = nullptr;
                 done = false;
                 break;
             case Lexer::LANGUAGE:

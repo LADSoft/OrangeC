@@ -81,17 +81,17 @@ void GroupIcon::WriteRes(ResFile &resFile)
     resFile.WriteWord(0);
     resFile.WriteWord(1);
     resFile.WriteWord(icons.size());	
-    for (iterator it = begin(); it != end(); ++it)
+    for (auto res : *this)
     {
-        resFile.WriteByte((*it)->GetSize().x);
-        resFile.WriteByte((*it)->GetSize().y);
-        resFile.WriteByte((*it)->GetColors());
+        resFile.WriteByte(res->GetSize().x);
+        resFile.WriteByte(res->GetSize().y);
+        resFile.WriteByte(res->GetColors());
         resFile.WriteByte(0);
         // sometimes plans or bits are zero so we calculate them
         // note that borland sets the planes to one and bits to 24.  I think this is wrong...
-        int bits = (*it)->GetBits();
-        int planes = (*it)->GetPlanes();
-        int colors = (*it)->GetColors();
+        int bits = res->GetBits();
+        int planes = res->GetPlanes();
+        int colors = res->GetColors();
         if (!bits || !planes)
         {
             planes = 1;
@@ -101,8 +101,8 @@ void GroupIcon::WriteRes(ResFile &resFile)
         }
         resFile.WriteWord(planes);
         resFile.WriteWord(bits);
-        resFile.WriteDWord((*it)->GetBytes());
-        resFile.WriteWord((*it)->GetIndex());
+        resFile.WriteDWord(res->GetBytes());
+        resFile.WriteWord(res->GetIndex());
     }
     resFile.Release();
 }

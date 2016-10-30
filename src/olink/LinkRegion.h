@@ -59,7 +59,7 @@ class LinkRegion
     public:
         struct OneSection
         {
-            OneSection() : file(NULL), section(NULL) { }
+            OneSection() : file(nullptr), section(nullptr) { }
             OneSection(ObjFile *File, ObjSection *Section) : file(File), section(Section) { }
             ObjFile *file;
             ObjSection *section;
@@ -121,7 +121,7 @@ class LinkRegion
         void AddData(SectionData &data, LookasideBuf &lookaside, ObjFile *file, ObjSection *section);
     private:
         std::map<std::string, int> equalSections;
-        ObjInt ArrangeOverlayed(LinkManager *manager, SectionDataIterator it, ObjInt address);
+        ObjInt ArrangeOverlayed(LinkManager *manager, NamedSection *data, ObjInt address);
         void AddFile(ObjFile *file);
         bool ParseFiles(CmdFiles &files, LinkTokenizer &spec);
         bool ParseName(LinkTokenizer &spec);

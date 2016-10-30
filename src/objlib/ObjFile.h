@@ -60,7 +60,7 @@ class ObjFile : public ObjWrapper
     typedef std::vector<ObjBrowseInfo *> BrowseInfoContainer;
     typedef std::vector<ObjSourceFile *> SourceFileContainer;
 public:
-    ObjFile (ObjString Name) : name(Name), inputFile(NULL), bigEndian(false)
+    ObjFile (ObjString Name) : name(Name), inputFile(nullptr), bigEndian(false)
     { 
         memset(&fileTime, 0, sizeof(fileTime));
     }

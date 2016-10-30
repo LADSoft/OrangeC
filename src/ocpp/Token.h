@@ -194,9 +194,9 @@ class Tokenizer
 {
 public:
     Tokenizer(const std::string &Line, KeywordHash *Table) : line(Line), keywordTable(Table),
-        currentToken(NULL), caseInsensitive(false) { }
+        currentToken(nullptr), caseInsensitive(false) { }
     virtual ~Tokenizer() {  delete currentToken; }
-    void Reset(const std::string &Line) { line = Line; delete currentToken; currentToken = NULL; }
+    void Reset(const std::string &Line) { line = Line; delete currentToken; currentToken = nullptr; }
     const Token *Next() ;
     std::string &GetString() { return line; }
     static void SetUnsigned(bool flag) { CharacterToken::SetUnsigned(flag); }

@@ -51,8 +51,8 @@
 class CoffFile
 {
 public:
-    CoffFile(std::string Name) : name(Name), inputFile(NULL), sections(NULL), symbols(NULL), strings(NULL), libOffset(0) { }
-    CoffFile(std::fstream *in, ObjInt offset) : name(""), inputFile(in), sections(NULL), symbols(NULL), strings(NULL), libOffset(offset) { }
+    CoffFile(std::string Name) : name(Name), inputFile(nullptr), sections(nullptr), symbols(nullptr), strings(nullptr), libOffset(0) { }
+    CoffFile(std::fstream *in, ObjInt offset) : name(""), inputFile(in), sections(nullptr), symbols(nullptr), strings(nullptr), libOffset(offset) { }
     virtual ~CoffFile();
 
     bool Load();

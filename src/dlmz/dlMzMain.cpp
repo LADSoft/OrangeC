@@ -106,12 +106,12 @@ bool dlMzMain::ReadSections(const std::string &path)
         delete file;
         Utils::fatal("Input file is in relative format");
     }
-    if (ieee.GetStartAddress() == NULL)
+    if (ieee.GetStartAddress() == nullptr)
     {
         delete file;
         Utils::fatal("No start address specified");
     }
-    if (file != NULL)
+    if (file != nullptr)
     {
         if (mode == TINY)
             data = new Tiny();

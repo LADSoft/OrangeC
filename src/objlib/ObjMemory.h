@@ -52,13 +52,13 @@ class ObjFactory;
 class ObjMemory : public ObjWrapper
 {
 public:
-    ObjMemory(ObjByte *Data, ObjInt Size) : fixup(NULL), data(NULL), fill(0), enumerated(false), debugTags(NULL)
+    ObjMemory(ObjByte *Data, ObjInt Size) : fixup(nullptr), data(nullptr), fill(0), enumerated(false), debugTags(nullptr)
     {
         SetData(Data, Size);
     }
-    ObjMemory(ObjExpression *Expression, ObjInt Size) : data(NULL), fill(0), enumerated(false), debugTags(NULL),
+    ObjMemory(ObjExpression *Expression, ObjInt Size) : data(nullptr), fill(0), enumerated(false), debugTags(nullptr),
             fixup(Expression), size(Size) {}
-    ObjMemory(ObjInt Size, ObjInt Fill) : data(NULL), fixup(NULL), size(Size), fill(Fill), enumerated(true), debugTags(NULL) { }
+    ObjMemory(ObjInt Size, ObjInt Fill) : data(nullptr), fixup(nullptr), size(Size), fill(Fill), enumerated(true), debugTags(nullptr) { }
     virtual ~ObjMemory() { delete debugTags; };
     
     ObjInt GetSize() { return size; }
@@ -69,7 +69,7 @@ public:
     void SetFixup(ObjExpression *f) { fixup = f; }
     void SetData(ObjByte *Data, ObjInt Size);
     void SetData(ObjExpression *Data, ObjInt Size);
-    bool HasDebugTags() { return debugTags != NULL; }
+    bool HasDebugTags() { return debugTags != nullptr; }
 
     typedef std::vector<ObjDebugTag *> DebugTagContainer;
     typedef DebugTagContainer::iterator DebugTagIterator;

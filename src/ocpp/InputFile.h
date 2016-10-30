@@ -52,7 +52,7 @@ class InputFile
 public:
     InputFile(bool fullname, const std::string &Name) : 
         name(Name), lineno(0), errlineno(0), errname(GetErrorName(fullname, name)),
-        inComment(false), commentLine(0), endedWithoutEOL(false), file(NULL) { }
+        inComment(false), commentLine(0), endedWithoutEOL(false), file(nullptr) { }
     virtual ~InputFile() 
     { 
         if (file) 
@@ -62,7 +62,7 @@ public:
     virtual bool Open()
     {
         file = fopen(name.c_str(),"r");
-        return file != NULL;
+        return file != nullptr;
     }
     int GetLineNo() { return lineno; }
     int GetErrorLine() { return errlineno; }

@@ -49,7 +49,7 @@
 class ResFile
 {
 public:
-    ResFile() : stream(NULL) { }
+    ResFile() : stream(nullptr) { }
     virtual ~ResFile();
     void Mark();
     void MarkHeader();

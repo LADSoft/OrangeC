@@ -50,7 +50,7 @@ class DlgInclude : public Resource
 {
 public:
     DlgInclude(const ResourceId &Id, const ResourceInfo &info)
-        : Resource(eDlgInclude, Id, info), data(NULL) { }
+        : Resource(eDlgInclude, Id, info), data(nullptr) { }
     virtual ~DlgInclude();
     virtual void WriteRes(ResFile &resFile);
     virtual void ReadRC(RCFile &rcFile);

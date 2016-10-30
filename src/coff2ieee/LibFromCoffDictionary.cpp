@@ -54,31 +54,31 @@ void LibDictionary::CreateDictionary(std::map<int, Module *> &Modules)
     int total = 0;
     int symbols = 0;
     Clear();
-    for (std::map<int, Module *>::iterator it = Modules.begin(); it != Modules.end(); ++it)
+    for (auto m : Modules)
     {
-        if (!it->second->ignore)
+        if (!m.second->ignore)
         {
-            for (std::set<std::string>::iterator it1 = it->second->aliases.begin(); it1 != it->second->aliases.end(); ++ it1)
+            for (auto alias : m.second->aliases)
             {
-                int n = strlen((*it1).c_str()) + 1;
+                int n = strlen(alias.c_str()) + 1;
                 if (n & 1)
                     n++;
                 total += n;
                 symbols++;                
             }
-            if (!it->second->import)
+            if (!m.second->import)
                 files++;
         }
     }
     int dictpages2, dictpages1;
     int i = 0;
-    for (std::map<int, Module *>::iterator it = Modules.begin(); it != Modules.end(); ++it)
+    for (auto m : Modules)
     {
-        if (!it->second->ignore)
+        if (!m.second->ignore)
         {
-            for (std::set<std::string>::iterator it1 = it->second->aliases.begin(); it1 != it->second->aliases.end(); ++ it1)
+            for (auto alias : m.second->aliases)
             {
-                InsertInDictionary((*it1).c_str(), it->second->import ? files : i);
+                InsertInDictionary(alias.c_str(), m.second->import ? files : i);
             }
             i++;
         }
@@ -102,12 +102,12 @@ void LibDictionary::Write(FILE *stream)
 {
     char sig[4] = { '1','0',0,0 };
     fwrite(&sig[0], 4, 1, stream);
-    for (std::map<ObjString, ObjInt, DictCompare>::iterator it = dictionary.begin(); it != dictionary.end(); ++it)
+    for (auto d : dictionary)
     {
-        short len = it->first.size();
+        short len = d.first.size();
         fwrite(&len, sizeof(len), 1, stream);
-        fwrite(it->first.c_str(), len , 1, stream);
-        ObjInt fileNum = it->second;
+        fwrite(d.first.c_str(), len , 1, stream);
+        ObjInt fileNum = d.second;
         fwrite(&fileNum, sizeof(fileNum), 1, stream);
     }
     short eof = 0;

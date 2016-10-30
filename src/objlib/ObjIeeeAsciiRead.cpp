@@ -119,7 +119,7 @@ ObjString ObjIeeeAscii::GetSymbolName(const char *buffer, int *index)
 }
 ObjSymbol *ObjIeeeAscii::FindSymbol(char ch, int index)
 {
-    ObjSymbol *sym = NULL;
+    ObjSymbol *sym = nullptr;
     switch(ch)
     {
         case 'A':
@@ -227,7 +227,7 @@ ObjExpression *ObjIeeeAscii::GetExpression(const char *buffer, int *pos)
         else if (!done)
             (*pos)++;
     }
-    ObjExpression *rv = NULL;
+    ObjExpression *rv = nullptr;
     if (stack.empty())
         ThrowSyntax(buffer, eAll);
     while (!stack.empty())
@@ -276,10 +276,10 @@ ObjFile *ObjIeeeAscii::HandleRead(eParseType ParseType)
     ioBuffer = new char[BUFFERSIZE];
     if (!ioBuffer)
     {
-        return NULL;
+        return nullptr;
     }
     ResetCS();
-    file = NULL;
+    file = nullptr;
     currentTags = new ObjMemory::DebugTagContainer;
     publics.clear();
     locals.clear();
@@ -289,7 +289,7 @@ ObjFile *ObjIeeeAscii::HandleRead(eParseType ParseType)
     types.clear();
     sections.clear();
     files.clear();
-    currentDataSection = NULL;
+    currentDataSection = nullptr;
     lineno = 0;
     while (!done)
     {
@@ -305,15 +305,15 @@ ObjFile *ObjIeeeAscii::HandleRead(eParseType ParseType)
         {
             if (ioBuffer)
                 delete [] ioBuffer;
-            ioBuffer = NULL;
-            return NULL;
+            ioBuffer = nullptr;
+            return nullptr;
         }
         catch (SyntaxError &e)
         {
             if (ioBuffer)
                 delete [] ioBuffer;
-            ioBuffer = NULL;
-            return NULL;
+            ioBuffer = nullptr;
+            return nullptr;
         }		
     }
     for (int i=0; i < publics.size(); i++)
@@ -352,7 +352,7 @@ ObjFile *ObjIeeeAscii::HandleRead(eParseType ParseType)
     delete currentTags;
     if (ioBuffer)
         delete [] ioBuffer;
-    ioBuffer = NULL;
+    ioBuffer = nullptr;
     return file;
 }
 bool ObjIeeeAscii::GetOffset(const char *buffer, eParseType ParseType)
@@ -1231,7 +1231,7 @@ bool ObjIeeeAscii::Data(const char *buffer, eParseType ParseType)
     // this function is optimized to not use C++ stream objects
     // because it is called a lot, and the resultant memory allocations
     // really slow down linker and librarian operations
-    if (!file || currentDataSection == NULL)
+    if (!file || currentDataSection == nullptr)
         ThrowSyntax(buffer, ParseType);
     ObjByte data[1024]; 
     int pos = 2, i=0;
@@ -1256,7 +1256,7 @@ bool ObjIeeeAscii::Data(const char *buffer, eParseType ParseType)
 }
 bool ObjIeeeAscii::EnumeratedData(const char *buffer, eParseType ParseType)
 {
-    if (!file || currentDataSection == NULL)
+    if (!file || currentDataSection == nullptr)
         ThrowSyntax(buffer, ParseType);
     int pos = 2;
     if (buffer[pos++] != '(')
@@ -1276,7 +1276,7 @@ bool ObjIeeeAscii::EnumeratedData(const char *buffer, eParseType ParseType)
 }
 bool ObjIeeeAscii::Fixup(const char *buffer, eParseType ParseType)
 {
-    if (!file || currentDataSection == NULL)
+    if (!file || currentDataSection == nullptr)
         ThrowSyntax(buffer, ParseType);
     int pos = 3;
     if (buffer[2] != '(')
@@ -1380,7 +1380,7 @@ void ObjIeeeAscii::PutSymbol(SymbolMap &map, int index, ObjSymbol *sym)
         int old = map.size();
         map.resize(index > 100 ? index*2 : 200);
         for (int i= old; i < map.size(); i++)
-            map[i] = NULL;
+            map[i] = nullptr;
     }
     map[index] = sym;
 }
@@ -1391,7 +1391,7 @@ void ObjIeeeAscii::PutType(int index, ObjType *type)
         int old = types.size();
         types.resize(index > 100 ? index*2 : 200);
         for (int i= old; i < types.size(); i++)
-            types[i] = NULL;
+            types[i] = nullptr;
     }
     types[index] = type;
 }
@@ -1402,7 +1402,7 @@ void ObjIeeeAscii::PutSection(int index, ObjSection *sect)
         int old = sections.size();
         sections.resize(index > 100 ? index*2 : 200);
         for (int i= old; i < sections.size(); i++)
-            sections[i] = NULL;
+            sections[i] = nullptr;
     }
     sections[index] = sect;
 }
@@ -1413,7 +1413,7 @@ void ObjIeeeAscii::PutFile(int index, ObjSourceFile *file)
         int old = files.size();
         files.resize(index > 100 ? index*2 : 200);
         for (int i= old; i < files.size(); i++)
-            files[i] = NULL;
+            files[i] = nullptr;
     }
     files[index] = file;
 }

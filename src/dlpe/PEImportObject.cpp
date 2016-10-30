@@ -85,7 +85,7 @@ void PEImportObject::Setup(ObjInt &endVa, ObjInt &endPhys)
             if (sz & 1)
                 sz ++;
             nameSize += sz;
-            if (m == NULL)
+            if (m == nullptr)
             {
                 modules[s->GetDllName()] = m = new Module;
                 m->module = s->GetDllName();
@@ -120,7 +120,8 @@ void PEImportObject::Setup(ObjInt &endVa, ObjInt &endPhys)
     Entry *addressPos = (Entry *)(hintPos + ((impNameSize + 3) & ~3));
     size = initSize = (unsigned)(((unsigned char *)addressPos) - data + (importCount + dllCount) * sizeof(Entry));
     memset(data, 0, size); // note this does clean out some areas we deliberately are not initializing
-    for (std::map<std::string, Module *>::iterator it = modules.begin(); it != modules.end(); ++it)
+
+    for (auto module : modules)
     {
         dirPos->time = 0;
         dirPos->version = 0;
@@ -128,19 +129,19 @@ void PEImportObject::Setup(ObjInt &endVa, ObjInt &endPhys)
         dirPos->thunkPos = ((unsigned char *)lookupPos) - data + virtual_addr;
         dirPos->thunkPos2 = ((unsigned char *)addressPos) - data + virtual_addr;
         dirPos++;
-        strcpy(namePos, it->first.c_str());
-        int n = it->first.size() + 1;
+        strcpy(namePos, module.first.c_str());
+        int n = module.first.size() + 1;
         if (n & 1)
             n++;
         namePos += n;
-        for (int i = 0; i < it->second->externalNames.size(); i++)
+        for (int i = 0; i < module.second->externalNames.size(); i++)
         {
-            const std::string &str = it->second->externalNames[i];
+            const std::string &str = module.second->externalNames[i];
             if (str.size())
             {
                 lookupPos->ord_or_rva = (unsigned char *)hintPos - data + virtual_addr;
                 addressPos->ord_or_rva = (unsigned char *) hintPos - data + virtual_addr;
-                *(short *)hintPos = 0; //it->second->ordinals[i];
+                *(short *)hintPos = 0;
                 hintPos += 2;
                 strcpy(hintPos, str.c_str());
                 int n = str.size() + 1;
@@ -150,21 +151,9 @@ void PEImportObject::Setup(ObjInt &endVa, ObjInt &endPhys)
             }
             else
             {
-                lookupPos->ord_or_rva = addressPos->ord_or_rva = it->second->ordinals[i] | IMPORT_BY_ORDINAL;
+                lookupPos->ord_or_rva = addressPos->ord_or_rva = module.second->ordinals[i] | IMPORT_BY_ORDINAL;
             }
-            // next up we make a thunk that will get us from the rel calls genned by
-            // the compiler to the import table;		
-            /*
-            ObjSymbol *sym = externs[it->second->publicNames[i]];
-            int en = sym->GetIndex();
-            for (std::deque<PEObject *>::iterator it1 = objects.begin(); it1 != objects.end(); ++ it1)
-            {
-                ObjInt val;
-                if ((val = (*it1)->SetThunk(en, ((unsigned char *)lookupPos) - data + virtual_addr + imageBase)) != -1)
-                    sym->SetOffset(new ObjExpression(val));
-            }
-            */
-            ObjSymbol *sym = externs[it->second->publicNames[i]];
+            ObjSymbol *sym = externs[module.second->publicNames[i]];
             sym->SetOffset(new ObjExpression(((unsigned char *)lookupPos) - data + virtual_addr + imageBase));
 
             lookupPos++;
@@ -174,9 +163,9 @@ void PEImportObject::Setup(ObjInt &endVa, ObjInt &endPhys)
         lookupPos++;
         addressPos++;
     }
-    for (std::map<std::string, Module *>::iterator it = modules.begin(); it != modules.end(); ++it)
+    for (auto module : modules)
     {
-        Module *p = it->second;
+        Module *p = module.second;
         delete p;
     }
 

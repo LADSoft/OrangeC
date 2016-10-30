@@ -53,17 +53,17 @@ class Maker
     {
     public:
         Depends(const std::string &Goal, Time &xx, bool ToDelete)
-        : goal(Goal), time(xx), toDelete(ToDelete), ordered(false), isSecondary(false), rule(NULL), ruleList(NULL) { }
+        : goal(Goal), time(xx), toDelete(ToDelete), ordered(false), isSecondary(false), rule(nullptr), ruleList(nullptr) { }
         ~Depends();
         
         void operator +=(Depends *depend) { subgoals.push_back(depend); }
         Time &GetTime() { return time; }
         static Depends *Lookup(const std::string &val) 
         { 
-            std::map<std::string, Depends *>::iterator it = all.find(val);
+            auto it = all.find(val);
             if (it != all.end())
                 return it->second;
-            return NULL;
+            return nullptr;
         }
         size_t size() const { return subgoals.size(); }
         void SetRuleList(RuleList *r) { ruleList = r; }

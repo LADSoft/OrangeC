@@ -49,8 +49,8 @@ class LibFiles
 public:
     struct FileDescriptor
     {
-        FileDescriptor(const ObjString &Name) : offset(0), name(Name), data(NULL) { }
-        FileDescriptor(const FileDescriptor &old) : name(old.name), offset(old.offset), data(NULL) { }
+        FileDescriptor(const ObjString &Name) : offset(0), name(Name), data(nullptr) { }
+        FileDescriptor(const FileDescriptor &old) : name(old.name), offset(old.offset), data(nullptr) { }
         ~FileDescriptor() { /* if (data) delete data; */ } // data will go away when the factory goes awsy
         ObjString name;
         ObjInt offset;

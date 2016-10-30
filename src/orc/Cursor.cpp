@@ -84,14 +84,14 @@ void GroupCursor::WriteRes(ResFile &resFile)
     resFile.WriteWord(0);
     resFile.WriteWord(2);
     resFile.WriteWord(cursors.size());
-    for (iterator it = begin(); it != end(); ++it)
+    for (auto res : *this)
     {
-        resFile.WriteWord((*it)->GetSize().x);
-        resFile.WriteWord((*it)->GetSize().x * 2);
+        resFile.WriteWord(res->GetSize().x);
+        resFile.WriteWord(res->GetSize().x * 2);
         resFile.WriteWord(1);
         resFile.WriteWord(1);
-        resFile.WriteDWord((*it)->GetBytes() + 4);
-        resFile.WriteWord((*it)->GetIndex());
+        resFile.WriteDWord(res->GetBytes() + 4);
+        resFile.WriteWord(res->GetIndex());
      }
     resFile.Release();
 }

@@ -49,7 +49,7 @@ void ObjMemory::SetData(ObjByte *Data, ObjInt Size)
     if (data)
         delete[] data;
     data = new ObjByte[Size];
-    if (data != NULL)
+    if (data != nullptr)
     {
         memcpy(data, Data, Size);
         size = Size;
@@ -61,7 +61,7 @@ void ObjMemory::SetData(ObjByte *Data, ObjInt Size)
     if (fixup)
     {
         delete fixup;
-        fixup = NULL;
+        fixup = nullptr;
     }
 }
 void ObjMemory::SetData(ObjExpression *Data, ObjInt Size)
@@ -71,7 +71,7 @@ void ObjMemory::SetData(ObjExpression *Data, ObjInt Size)
     if (data)
     {
         delete data;
-        data = NULL;
+        data = nullptr;
     }
 }
 void ObjMemoryManager::ResolveSymbols(ObjFactory *Factory, ObjSection *Section)

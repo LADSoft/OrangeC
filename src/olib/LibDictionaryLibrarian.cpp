@@ -103,12 +103,12 @@ void LibDictionary::Write(FILE *stream)
 {
     char sig[4] = { '1','0',0,0 };
     fwrite(&sig[0], 4, 1, stream);
-    for (std::map<ObjString, ObjInt, DictCompare>::iterator it = dictionary.begin(); it != dictionary.end(); ++it)
+    for (auto d : dictionary)
     {
-        short len = it->first.size();
+        short len = d.first.size();
         fwrite(&len, sizeof(len), 1, stream);
-        fwrite(it->first.c_str(), len , 1, stream);
-        ObjInt fileNum = it->second;
+        fwrite(d.first.c_str(), len , 1, stream);
+        ObjInt fileNum = d.second;
         fwrite(&fileNum, sizeof(fileNum), 1, stream);
     }
     short eof = 0;

@@ -51,11 +51,8 @@ LinkRegionSpecifier::~LinkRegionSpecifier()
 }
 LinkOverlay::~LinkOverlay()
 {
-    for (RegionIterator it = regions.begin(); it != regions.end(); ++it)
-    {
-        LinkRegionSpecifier *s = *it;
-        delete s;
-    }
+    for (auto region : regions)
+        delete region;
 }
 bool LinkOverlay::ParseAssignment(LinkTokenizer &spec)
 {
@@ -195,11 +192,11 @@ ObjInt LinkOverlay::PlaceOverlay(LinkManager *manager, LinkAttribs &partitionAtt
     ObjInt size = 0;
     ObjInt base = partitionAttribs.GetAddress();
     ObjInt alignRegion0 = 1;
-    for (RegionIterator it = regions.begin(); it != regions.end(); ++it)
+    for (auto region : regions)
     {
-        if (!(*it)->GetSymbol())
+        if (!region->GetSymbol())
         {
-            alignRegion0= (*it)->GetRegion()->GetAttribs().GetAlign();
+            alignRegion0= region->GetRegion()->GetAttribs().GetAlign();
             break;
         }
     }
@@ -218,18 +215,18 @@ ObjInt LinkOverlay::PlaceOverlay(LinkManager *manager, LinkAttribs &partitionAtt
     if (!attribs.GetHasFill())
         if (partitionAttribs.GetHasFill())
             attribs.SetFill(new LinkExpression(partitionAttribs.GetFill()));
-    for (RegionIterator it = regions.begin(); it != regions.end(); ++it)
+    for (auto region : regions)
     {
-        if ((*it)->GetSymbol())
+        if (region->GetSymbol())
         {
 //			if (completeLink)
-//				(*it)->GetSymbol()->SetValue(new LinkExpression((*it)->GetSymbol()->GetValue()->Eval(base + size)));
+//				region->GetSymbol()->SetValue(new LinkExpression(region->GetSymbol()->GetValue()->Eval(base + size)));
 //			else
-                (*it)->GetSymbol()->SetValue((*it)->GetSymbol()->GetValue()->Eval(overlayNum, base, size));
+                region->GetSymbol()->SetValue(region->GetSymbol()->GetValue()->Eval(overlayNum, base, size));
         }
         else
         {
-            size += (*it)->GetRegion()->PlaceRegion(manager, attribs, base + size);
+            size += region->GetRegion()->PlaceRegion(manager, attribs, base + size);
         }
     }	
 //	if (attribs.GetAlign() > partitionAttribs.GetAlign())

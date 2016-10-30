@@ -50,7 +50,7 @@ class Label
 {
 public:
     Label(std::string &Name, int Label, int Sect) : name(Name), label(Label), 
-        sect(Sect), publc(false), extrn(false), node(NULL) { }
+        sect(Sect), publc(false), extrn(false), node(nullptr) { }
     ~Label() { if (node) delete node; }
     int GetLabel() { return label; }
     std::string GetName() { return name; }

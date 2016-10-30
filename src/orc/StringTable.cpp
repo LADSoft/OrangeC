@@ -105,7 +105,7 @@ void StringTable::Add(int id, const std::wstring& val)
 StringTable *StringTable::Lookup(ResFile &resFile, int id)
 {
     int idv = (id >> 4) +  1;
-    std::map<int, StringTable *>::iterator it = stringTables.find(idv);
+    auto it = stringTables.find(idv);
     if (it != stringTables.end())
     {
         return it->second;

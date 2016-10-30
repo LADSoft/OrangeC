@@ -110,7 +110,7 @@ void ppInclude::pushFile(const std::string &name)
         if (current)
         {
             files.push_front(current);
-            current = NULL;
+            current = nullptr;
         }
         current = new ppFile(fullname, trigraphs, extendedComment, name, define, *ctx, unsignedchar, c89, asmpp);
         //if (current)
@@ -126,7 +126,7 @@ bool ppInclude::popFile()
     if (current)
     {
         delete current;
-        current = NULL;
+        current = nullptr;
     }
     if (files.size())
     {
@@ -211,7 +211,7 @@ const char *ppInclude::RetrievePath(char *buf, const char *path)
     }
     else
     {
-        return NULL;
+        return nullptr;
     }
 }
 void ppInclude::AddName(char *buf)

@@ -40,7 +40,7 @@
 #include "Variable.h"
 
 bool Variable::environmentHasPriority = false;
-VariableContainer *VariableContainer::instance = NULL;
+VariableContainer *VariableContainer::instance = nullptr;
 
 Variable::Variable(const std::string &Name, const std::string &Value, Flavor oFlavor, Origin oOrigin)
     : name(Name), value(Value), flavor(oFlavor), origin(oOrigin), constant(false), permanent(false)
@@ -75,7 +75,7 @@ VariableContainer *VariableContainer::Instance()
 }
 Variable *VariableContainer::Lookup(const std::string &name)
 {
-    Variable *rv = NULL;
+    Variable *rv = nullptr;
     if (name.find_first_of('%') != std::string::npos)
     {
         for (PatternIterator it = PatternBegin(); it != PatternEnd(); ++it)
@@ -89,7 +89,7 @@ Variable *VariableContainer::Lookup(const std::string &name)
     }
     else
     {
-        std::map<const std::string *, Variable *, vlt>::iterator it = variables.find(&name);
+        auto it = variables.find(&name);
         if (it != variables.end())
         {
             rv = it->second;
@@ -116,10 +116,7 @@ void VariableContainer::Clear()
         delete p;
     }
     patternVariables.clear();
-    for (iterator it = begin(); it != end(); ++it)
-    {
-        Variable *p = it->second;
-        delete p;
-    }
+    for (auto var : *this)
+        delete var.second;
     variables.clear();
 }

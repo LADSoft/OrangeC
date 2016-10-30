@@ -54,11 +54,8 @@ LinkOverlaySpecifier::~LinkOverlaySpecifier()
 }
 LinkPartition::~LinkPartition()
 {
-    for (OverlayIterator it = overlays.begin(); it != overlays.end(); ++it)
-    {
-        LinkOverlaySpecifier *s = *it;
-        delete s;
-    }
+    for (auto overlay : overlays)
+        delete overlay;
 }
 bool LinkPartition::ParseName(LinkTokenizer &spec)
 {
@@ -171,49 +168,46 @@ bool LinkPartition::CreateSeparateRegions(LinkManager *manager, CmdFiles &files,
     for (LinkRegion::SectionDataIterator itr = newRegion->NowDataBegin();
          itr != newRegion->NowDataEnd(); ++itr)
     {
-        for (LinkRegion::OneSectionIterator it = (*itr)->sections.begin();
-             it != (*itr)->sections.end(); ++ it)
+        for (auto sect : (*itr)->sections)
         {
             LinkOverlay *overlay = new LinkOverlay(this);
-            overlay->SetName(std::string((*it).file->GetName()) + "_" + (*it).section->GetName());
+            overlay->SetName(std::string(sect.file->GetName()) + "_" + sect.section->GetName());
             overlays.push_back(new LinkOverlaySpecifier(overlay));
             LinkRegion *region = new LinkRegion(overlay);
             overlay->Add(new LinkRegionSpecifier(region));
             region->SetName(newRegion->GetName());
             region->SetAttribs(newRegion->GetAttribs());
-            region->AddNormalData((*it).file, (*it).section);
+            region->AddNormalData(sect.file, sect.section);
         }
     }
     for (LinkRegion::SectionDataIterator itr = newRegion->NormalDataBegin();
          itr != newRegion->NormalDataEnd(); ++itr)
     {
-        for (LinkRegion::OneSectionIterator it = (*itr)->sections.begin();
-             it != (*itr)->sections.end(); ++ it)
+        for (auto sect : (*itr)->sections)
         {
             LinkOverlay *overlay = new LinkOverlay(this);
-            overlay->SetName(std::string((*it).file->GetName()) + "_" + (*it).section->GetName());
+            overlay->SetName(std::string(sect.file->GetName()) + "_" + sect.section->GetName());
             overlays.push_back(new LinkOverlaySpecifier(overlay));
             LinkRegion *region = new LinkRegion(overlay);
             overlay->Add(new LinkRegionSpecifier(region));
             region->SetName(newRegion->GetName());
             region->SetAttribs(newRegion->GetAttribs());
-            region->AddNormalData((*it).file, (*it).section);
+            region->AddNormalData(sect.file, sect.section);
         }
     }
     for (LinkRegion::SectionDataIterator itr = newRegion->PostponeDataBegin();
          itr != newRegion->PostponeDataEnd(); ++itr)
     {
-        for (LinkRegion::OneSectionIterator it = (*itr)->sections.begin();
-             it != (*itr)->sections.end(); ++ it)
+        for (auto sect : (*itr)->sections)
         {
             LinkOverlay *overlay = new LinkOverlay(this);
-            overlay->SetName(std::string((*it).file->GetName()) + "_" + (*it).section->GetName());
+            overlay->SetName(std::string(sect.file->GetName()) + "_" + sect.section->GetName());
             overlays.push_back(new LinkOverlaySpecifier(overlay));
             LinkRegion *region = new LinkRegion(overlay);
             overlay->Add(new LinkRegionSpecifier(region));
             region->SetName(newRegion->GetName());
             region->SetAttribs(newRegion->GetAttribs());
-            region->AddNormalData((*it).file, (*it).section);
+            region->AddNormalData(sect.file, sect.section);
         }
     }
     delete newRegion;
@@ -274,18 +268,18 @@ ObjInt LinkPartition::PlacePartition(LinkManager *manager, ObjInt bottom, bool c
     }
     bottom = attribs.GetAddress();
     ObjInt size = 0;
-    for (OverlayIterator it = overlays.begin(); it != overlays.end(); ++it)
+    for (auto overlay : overlays)
     {
-        if ((*it)->GetSymbol())
+        if (overlay->GetSymbol())
         {
 //			if (completeLink)
-//				(*it)->GetSymbol()->SetValue(new LinkExpression((*it)->GetSymbol()->GetValue()->Eval(bottom + size)));
+//				overlay->GetSymbol()->SetValue(new LinkExpression(overlay->GetSymbol()->GetValue()->Eval(bottom + size)));
 //			else
-                (*it)->GetSymbol()->SetValue((*it)->GetSymbol()->GetValue()->Eval(overlayNum ? overlayNum -1 : 0, bottom, size));
+                overlay->GetSymbol()->SetValue(overlay->GetSymbol()->GetValue()->Eval(overlayNum ? overlayNum -1 : 0, bottom, size));
         }
         else
         {
-            size = (*it)->GetOverlay()->PlaceOverlay(manager, attribs, completeLink, overlayNum++);
+            size = overlay->GetOverlay()->PlaceOverlay(manager, attribs, completeLink, overlayNum++);
             maxSize = max(size, maxSize);
         }
     }

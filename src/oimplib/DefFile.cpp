@@ -219,7 +219,7 @@ void DefFile::ReadName()
 {
     std::string line = tokenizer.GetString();
     tokenizer.Reset("");
-    token = NULL;
+    token = nullptr;
     NextToken();
     
     int npos1 = line.find_first_not_of(SPACES);
@@ -236,7 +236,7 @@ void DefFile::ReadName()
         int npos3 = line.find_first_not_of(COMMA SPACES, npos2);
         if (npos3 != std::string::npos)
         {
-            imageBase = strtoul(line.substr(npos3).c_str(), NULL, 0);
+            imageBase = strtoul(line.substr(npos3).c_str(), nullptr, 0);
         }
     }
 }
@@ -244,7 +244,7 @@ void DefFile::ReadLibrary()
 {
     std::string line = tokenizer.GetString();
     tokenizer.Reset("");
-    token = NULL;
+    token = nullptr;
     NextToken();
     
     int npos1 = line.find_first_not_of(SPACES);
@@ -261,7 +261,7 @@ void DefFile::ReadLibrary()
         int npos3 = line.find_first_not_of(COMMA SPACES, npos2);
         if (npos3 != std::string::npos)
         {
-            imageBase = strtoul(line.substr(npos3).c_str(), NULL, 0);
+            imageBase = strtoul(line.substr(npos3).c_str(), nullptr, 0);
         }
     }
 }
@@ -298,7 +298,7 @@ void DefFile::ReadExports()
                     {
                         oneExport->module = line;
                         tokenizer.Reset("");
-                        token = NULL;
+                        token = nullptr;
                     }
                     tokenizer.Next();
                 }
@@ -407,7 +407,7 @@ void DefFile::ReadDescription()
     if (!description.size())
         throw new std::runtime_error("Expected Description");
     tokenizer.Reset("");
-    token = NULL;
+    token = nullptr;
     NextToken();
 }
 void DefFile::ReadStacksize()
@@ -518,23 +518,23 @@ void DefFile::WriteLibrary()
 void DefFile::WriteExports()
 {
     bool first = true;
-    for (std::deque<Export *>::iterator it = exports.begin(); it != exports.end(); ++it)
+    for (auto exp : exports)
     {
         if (first)
         {
             *stream << "EXPORTS" << std::endl;
             first = false;
         }
-        *stream << "\t" << (*it)->id.c_str();
-        if (((*it)->entry.size() && (*it)->entry != (*it)->id) || (*it)->module.size())
+        *stream << "\t" << exp->id.c_str();
+        if ((exp->entry.size() && exp->entry != exp->id) || exp->module.size())
         {
-            *stream << "=" << (*it)->entry.c_str();
-            if ((*it)->module.size())
-                *stream << "." << (*it)->module.c_str();
+            *stream << "=" << exp->entry.c_str();
+            if (exp->module.size())
+                *stream << "." << exp->module.c_str();
         }
-        if ((*it)->ord != -1)
-            *stream << " @" << (*it)->ord;
-        if ((*it)->byOrd)
+        if (exp->ord != -1)
+            *stream << " @" << exp->ord;
+        if (exp->byOrd)
             *stream << " " << "NONAME";
         *stream << std::endl;
     }
@@ -542,27 +542,27 @@ void DefFile::WriteExports()
 void DefFile::WriteImports()
 {
     bool first = true;
-    for (std::deque<Import *>::iterator it = imports.begin(); it != imports.end(); ++it)
+    for (auto import : imports)
     {
         if (first)
         {
             *stream << "IMPORTS" << std::endl;
             first = false;
         }
-        if ((*it)->module.size())
+        if (import->module.size())
         {
-            if ((*it)->entry == (*it)->id)
+            if (import->entry == import->id)
             {
-                *stream << "\t" << (*it)->module.c_str() << "." << (*it)->id.c_str();
+                *stream << "\t" << import->module.c_str() << "." << import->id.c_str();
             }
             else
             {
-                *stream << "\t" << (*it)->id.c_str() << "=" << (*it)->module.c_str() << "." << (*it)->entry.c_str();
+                *stream << "\t" << import->id.c_str() << "=" << import->module.c_str() << "." << import->entry.c_str();
             }
         }
         else
         {
-            *stream << "\t" << (*it)->id.c_str();
+            *stream << "\t" << import->id.c_str();
         }
         *stream << std::endl;
     }
@@ -600,26 +600,24 @@ void DefFile::WriteSectionBits(unsigned value)
 }
 void DefFile::WriteCode()
 {
-    for (std::map<std::string, unsigned>::iterator it = sectionMap.begin();
-             it != sectionMap.end(); ++it)
+    for (auto section : sectionMap)
     {
-        if (it->first == "CODE")
+        if (section.first == "CODE")
         {
-            *stream << "CODE " << it->second << std::endl;
-            WriteSectionBits(it->second);
+            *stream << "CODE " << section.second << std::endl;
+            WriteSectionBits(section.second);
             break;
         }
     }
 }
 void DefFile::WriteData()
 {
-    for (std::map<std::string, unsigned>::iterator it = sectionMap.begin();
-             it != sectionMap.end(); ++it)
+    for (auto section : sectionMap)
     {
-        if (it->first == "DATA")
+        if (section.first == "DATA")
         {
             *stream << "DATA " ;
-            WriteSectionBits(it->second);
+            WriteSectionBits(section.second);
             break;
         }
     }
@@ -627,18 +625,17 @@ void DefFile::WriteData()
 void DefFile::WriteSections()
 {
     bool first = true;
-    for (std::map<std::string, unsigned>::iterator it = sectionMap.begin();
-             it != sectionMap.end(); ++it)
+    for (auto section : sectionMap)
     {
-        if (it->first != "CODE" && it->first != "DATA")
+        if (section.first != "CODE" && section.first != "DATA")
         {
             if (first)
             {
                 std::cout << "SECTIONS" << std::endl;
                 first = false;
             }
-            *stream << "\t" << it->first.c_str() << " " ;
-            WriteSectionBits(it->second);
+            *stream << "\t" << section.first.c_str() << " " ;
+            WriteSectionBits(section.second);
             break;
         }
     }

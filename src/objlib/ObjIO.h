@@ -53,7 +53,7 @@ class ObjIOBase
 public:
     enum eParseType { eMake, eLink, eBrowse, eAll };
     ObjIOBase(const ObjString Name, bool CaseSensitive) : name(Name), translatorName(""),bitsPerMAU(8),
-                MAUS(4), debugInfo(true), startAddress(NULL), caseSensitive(CaseSensitive), absolute(false) {}
+                MAUS(4), debugInfo(true), startAddress(nullptr), caseSensitive(CaseSensitive), absolute(false) {}
     virtual ~ObjIOBase() { }
     ObjString &GetName() { return name; }
     virtual bool Write(FILE *fil, ObjFile *File, ObjFactory *Factory) = 0;

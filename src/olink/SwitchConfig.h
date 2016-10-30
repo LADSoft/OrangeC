@@ -52,7 +52,7 @@ class ConfigData : public xmlVisitor
 {
     friend class SwitchConfig;
 public:
-    ConfigData(xmlNode *node) : selected(false), currentDefine(NULL), relFile(false), mapMode(0),
+    ConfigData(xmlNode *node) : selected(false), currentDefine(nullptr), relFile(false), mapMode(0),
         debugPassThrough(false)
         { node->Visit(*this); }
     virtual ~ConfigData();

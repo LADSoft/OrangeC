@@ -63,12 +63,12 @@ public:
         ObjByte names[LIB_PAGE_SIZE-LIB_BUCKETS-1];	/* followed by names section */
       } f;
     };
-    BRCDictionary(Symbols &p) : symbols(p), blockCount(0), data(NULL) { }
+    BRCDictionary(Symbols &p) : symbols(p), blockCount(0), data(nullptr) { }
     ~BRCDictionary() {  delete [] data; }
     ObjInt Lookup(std::fstream &stream, ObjInt dictOffset, ObjInt dictPages, const ObjString &str);
     void Write(std::fstream &stream);
     void CreateDictionary(void);
-    void Clear() { dictionary.clear(); if (data) { delete [] data; data = NULL; } blockCount = 0; }
+    void Clear() { dictionary.clear(); if (data) { delete [] data; data = nullptr; } blockCount = 0; }
     ObjInt GetBlockCount() const { return blockCount; }
     void SetBlockCount(ObjInt BlockCount) { blockCount = BlockCount; }
     ObjInt casecmp(const char *str1, const char *str2, int n);

@@ -115,9 +115,9 @@ void Accelerators::WriteRes(ResFile &resFile)
 {
     Resource::WriteRes(resFile);
     int count = keys.size();
-    for (iterator it = begin(); it != end(); ++it)
+    for (auto res : *this)
     {
-        (*it).WriteRes(resFile, --count == 0);
+        res.WriteRes(resFile, --count == 0);
     }
     resFile.Release();
 }

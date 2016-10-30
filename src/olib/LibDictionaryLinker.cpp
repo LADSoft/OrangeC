@@ -103,7 +103,7 @@ ObjInt LibDictionary::Lookup(FILE *stream, ObjInt dictionaryOffset, ObjInt dicti
         }
         delete [] buf;
     }
-    std::map<ObjString, ObjInt, DictCompare>::iterator it= dictionary.find(name);
+    auto it= dictionary.find(name);
     if (it != dictionary.end())
         return it->second;
     return -1;

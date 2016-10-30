@@ -108,7 +108,7 @@ int SQL3VirtualTable::Start(sqlite3 *dbx)
     if(!running)
     {
         db = dbx;
-        rc = sqlite3_create_module_v2(dbx, GetName(), GetModule(), this, NULL);
+        rc = sqlite3_create_module_v2(dbx, GetName(), GetModule(), this, nullptr);
         if( rc==SQLITE_OK ){
             char *zSql;
             zSql = sqlite3_mprintf("CREATE VIRTUAL TABLE TEMP.%Q USING %Q",

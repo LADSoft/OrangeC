@@ -182,15 +182,13 @@ Instruction *InstructionParser::Parse(const std::string args, int PC)
     std::string errName = Errors::GetFileName();
     line = args;
     std::string op;
-    for (std::list<Coding *>::iterator it = CleanupValues.begin(); it != CleanupValues.end(); ++ it)
+    for (auto val : CleanupValues)
     {
-        Coding *aa = (*it);
-        delete []aa; 
+        delete []val; 
     }
-    for (std::list<Numeric *>::iterator it = operands.begin(); it != operands.end(); ++it)
+    for (auto val : operands)
     {
-        Numeric *aa = (*it);
-        delete aa;
+        delete val;
     }
     for (int i = 0; i < inputTokens.size(); ++i)
     {
@@ -203,7 +201,7 @@ Instruction *InstructionParser::Parse(const std::string args, int PC)
     CleanupValues.clear();
     operands.clear();
     prefixes.clear();
-    numeric = NULL;
+    numeric = nullptr;
 //	std::cout << line << std::endl;
     while (true)
     {
@@ -227,7 +225,7 @@ Instruction *InstructionParser::Parse(const std::string args, int PC)
             op = line;
             line = "";
         }
-        std::map<std::string, int, lt>::iterator it = prefixTable.find(op);
+        auto it = prefixTable.find(op);
         if (it != prefixTable.end())
         {
             prefixes.push_back(it->second);
@@ -249,7 +247,7 @@ Instruction *InstructionParser::Parse(const std::string args, int PC)
     }
     else
     {
-        std::map<std::string, int, lt>::iterator it = opcodeTable.find(op);
+        auto it = opcodeTable.find(op);
         if (it != opcodeTable.end())
         {
             bits.Reset();
@@ -259,7 +257,7 @@ Instruction *InstructionParser::Parse(const std::string args, int PC)
             }
             eol = false;
             bool rv = DispatchOpcode(it->second);
-            Instruction *s = NULL;
+            Instruction *s = nullptr;
             if (rv)
             {
                 unsigned char buf[32];
@@ -274,15 +272,15 @@ Instruction *InstructionParser::Parse(const std::string args, int PC)
                     throw new std::runtime_error("Extra characters at end of line");
                 s = new Instruction(buf, (bits.GetBits() + 7)/8);
     //			std::cout << bits.GetBits() << std::endl;
-                for (std::list<Numeric *>::iterator it = operands.begin(); it != operands.end(); ++it)
+                for (auto operand : operands)
                 {
-                    if ((*it)->used && (*it)->size)
+                    if (operand->used && operand->size)
                     {
-                        int n = (*it)->relOfs;
+                        int n = operand->relOfs;
                         if (n < 0)
                             n = - n;
-                        Fixup *f = new Fixup((*it)->node, ((*it)->size + 7)/8, (*it)->relOfs != 0, n, (*it)->relOfs>0);
-                        f->SetInsOffs(((*it)->pos + 7)/8);
+                        Fixup *f = new Fixup(operand->node, (operand->size + 7)/8, operand->relOfs != 0, n, operand->relOfs>0);
+                        f->SetInsOffs((operand->pos + 7)/8);
                         f->SetFileName(errName);
                         f->SetErrorLine(errLine);
                         s->Add(f);
@@ -302,7 +300,7 @@ void InstructionParser::RenameRegisters(AsmExprNode *val)
 {
     if (val->GetType() == AsmExprNode::LABEL)
     {
-        std::map<std::string, int, lt>::iterator it = tokenTable.find(val->label);
+        auto it = tokenTable.find(val->label);
         if (it != tokenTable.end())
         {
             int n = it->second;
@@ -323,12 +321,12 @@ void InstructionParser::RenameRegisters(AsmExprNode *val)
 }
 AsmExprNode *InstructionParser::ExtractReg(AsmExprNode **val)
 {
-    AsmExprNode *rv = NULL;
+    AsmExprNode *rv = nullptr;
     switch ((*val)->GetType())
     {
         case AsmExprNode::REG:
             rv = *val;
-            *val = NULL;
+            *val = nullptr;
             break;
         case AsmExprNode::ADD:
             if ((*val)->GetLeft()->GetType() == AsmExprNode::REG)
@@ -336,8 +334,8 @@ AsmExprNode *InstructionParser::ExtractReg(AsmExprNode **val)
                 rv = (*val)->GetLeft();
                 AsmExprNode *todel = (*val);
                 *val = (*val)->GetRight();
-                todel->SetLeft(NULL);
-                todel->SetRight(NULL);
+                todel->SetLeft(nullptr);
+                todel->SetRight(nullptr);
                 delete todel;
             }
             else if ((*val)->GetRight()->GetType() == AsmExprNode::REG)
@@ -345,8 +343,8 @@ AsmExprNode *InstructionParser::ExtractReg(AsmExprNode **val)
                 rv = (*val)->GetRight();
                 AsmExprNode *todel = (*val);
                 *val = (*val)->GetLeft();
-                todel->SetLeft(NULL);
-                todel->SetRight(NULL);
+                todel->SetLeft(nullptr);
+                todel->SetRight(nullptr);
                 delete todel;
             }
             else
@@ -372,7 +370,7 @@ AsmExprNode *InstructionParser::ExtractReg(AsmExprNode **val)
             {
                 rv = (*val)->GetLeft();
                 (*val)->SetLeft((*val)->GetRight());
-                (*val)->SetRight(NULL);
+                (*val)->SetRight(nullptr);
                 (*val)->SetType(AsmExprNode::NEG);
             }
             else
@@ -403,14 +401,14 @@ bool InstructionParser::MatchesTimes(AsmExprNode *val)
 }
 AsmExprNode *InstructionParser::ExtractTimes(AsmExprNode **val)
 {
-    AsmExprNode *rv = NULL;
+    AsmExprNode *rv = nullptr;
     switch ((*val)->GetType())
     {
         case AsmExprNode::MUL:
             if (MatchesTimes(*val))
             {
                 rv = *val;
-                *val = NULL;
+                *val = nullptr;
             }
             break;
         case AsmExprNode::ADD:
@@ -419,8 +417,8 @@ AsmExprNode *InstructionParser::ExtractTimes(AsmExprNode **val)
                 rv = (*val)->GetLeft();
                 AsmExprNode *todel = (*val);
                 *val = (*val)->GetRight();
-                todel->SetLeft(NULL);
-                todel->SetRight(NULL);
+                todel->SetLeft(nullptr);
+                todel->SetRight(nullptr);
                 delete todel;
             }
             else if (MatchesTimes((*val)->GetRight()))
@@ -428,8 +426,8 @@ AsmExprNode *InstructionParser::ExtractTimes(AsmExprNode **val)
                 rv = (*val)->GetRight();
                 AsmExprNode *todel = (*val);
                 *val = (*val)->GetLeft();
-                todel->SetLeft(NULL);
-                todel->SetRight(NULL);
+                todel->SetLeft(nullptr);
+                todel->SetRight(nullptr);
                 delete todel;
             }
             else 
@@ -455,7 +453,7 @@ AsmExprNode *InstructionParser::ExtractTimes(AsmExprNode **val)
             {
                 rv = (*val)->GetLeft();
                 (*val)->SetLeft((*val)->GetRight());
-                (*val)->SetRight(NULL);
+                (*val)->SetRight(nullptr);
                 (*val)->SetType(AsmExprNode::NEG);
             }
             else
@@ -492,7 +490,7 @@ bool InstructionParser::CheckRegs(AsmExprNode *val)
 void InstructionParser::ParseNumeric(int PC)
 {
     int plus = -1, times = -1;
-    std::map<std::string, int, lt>::iterator it = tokenTable.find("+");
+    auto it = tokenTable.find("+");
     if (it != tokenTable.end())
         plus = it->second;
     it = tokenTable.find("*");
@@ -501,7 +499,7 @@ void InstructionParser::ParseNumeric(int PC)
     RenameRegisters(val);
     if (val->GetType() == AsmExprNode::LABEL)
     {
-        std::map<std::string, int, lt>::iterator it = tokenTable.find(val->label);
+        auto it = tokenTable.find(val->label);
         InputToken *next;
         if (it != tokenTable.end())
         {
@@ -627,7 +625,7 @@ bool InstructionParser::Tokenize(int PC)
                 break;
             case TK_NUMERIC:
                 ParseNumeric(PC);
-                next = NULL;
+                next = nullptr;
                 if (val && !CheckRegs(val))
                 {
                     return false;
@@ -684,7 +682,7 @@ void InstructionParser::NextToken(int PC)
         {
             token = line[0];
             line.erase(0, 1);
-            std::map<std::string, int, lt>::iterator it = tokenTable.find(token);
+            auto it = tokenTable.find(token);
             if (it != tokenTable.end())
             {
                 id = it->second;

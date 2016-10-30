@@ -49,7 +49,7 @@
 #include <fstream>
 #include <iostream>
 Parser::Parser(const std::string &string, const std::string &File, int Lineno, bool IncrementLineno, Variable::Origin oOrigin)
-        : file(File), remaining(string), lineno(Lineno-1), incrementLineno(IncrementLineno), lastCommand(NULL),
+        : file(File), remaining(string), lineno(Lineno-1), incrementLineno(IncrementLineno), lastCommand(nullptr),
                secondaryExpansionEnabled(false), origin(oOrigin), ignoreFirstGoal(false)
 {
 }
@@ -979,9 +979,9 @@ bool Parser::ParseDef(const std::string &line, bool def)
         Variable *v = VariableContainer::Instance()->Lookup(ls);
         bool b;	
         if (def)
-            b = v == NULL;
+            b = v == nullptr;
         else
-            b = v != NULL;
+            b = v != nullptr;
         skips.push_front(b);
     }
     return true;

@@ -71,8 +71,8 @@ public:
     
     ObjSection(ObjString Name, ObjInt Index) :name(Name), externalName(""), 
             alignment(1), quals(ram), index(Index), utilityFlag(false), virtualOffset(-1), 
-            size(new ObjExpression(0)), offset(new ObjExpression(0)), aliasFor(NULL), used(false),
-            virtualSectionType(NULL) {}
+            size(new ObjExpression(0)), offset(new ObjExpression(0)), aliasFor(nullptr), used(false),
+            virtualSectionType(nullptr) {}
     virtual ~ObjSection() { };
     ObjString &GetName() { return name; }
     void SetName(ObjString Name) { name = Name; }

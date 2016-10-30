@@ -56,7 +56,7 @@ class LEObject
 public:
     enum { HeaderSize = 6 * 4 };
     
-    LEObject(ObjSection *Sect) : data(NULL), sect(Sect) { InitFlags(); }
+    LEObject(ObjSection *Sect) : data(nullptr), sect(Sect) { InitFlags(); }
     virtual ~LEObject() { if (data) delete data; }
     void Setup(unsigned &offs);
     void InitFlags();

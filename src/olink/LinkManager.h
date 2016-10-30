@@ -67,9 +67,9 @@ void HookError(int);
 class LinkSymbolData
 {
     public:
-        LinkSymbolData(ObjFile *File, ObjSymbol *Symbol): file(File), symbol(Symbol), used(false), visited(false), remapped(false), auxData(NULL) {}
-        LinkSymbolData(ObjSymbol *Symbol): file(NULL), symbol(Symbol), used(false), visited(false), remapped(false), auxData(NULL) {}
-        LinkSymbolData(): file(NULL), symbol(NULL), used(false), visited(false), remapped(false), auxData(NULL) {}
+        LinkSymbolData(ObjFile *File, ObjSymbol *Symbol): file(File), symbol(Symbol), used(false), visited(false), remapped(false), auxData(nullptr) {}
+        LinkSymbolData(ObjSymbol *Symbol): file(nullptr), symbol(Symbol), used(false), visited(false), remapped(false), auxData(nullptr) {}
+        LinkSymbolData(): file(nullptr), symbol(nullptr), used(false), visited(false), remapped(false), auxData(nullptr) {}
         ~LinkSymbolData() {}
         
         ObjFile *GetFile() const { return file; }
@@ -108,8 +108,8 @@ class LinkManager
         LinkManager(ObjString Specification, bool CaseSensitive, const ObjString OutputFile = "", 
                         bool CompleteLink = false, bool DebugPassThrough = false, ObjString DebugFile = "") :
                         specification(Specification), outputFile(OutputFile), specName(Specification),
-                        factory(NULL), indexManager(NULL), completeLink(CompleteLink),
-                        ioBase(NULL), caseSensitive(CaseSensitive), debugPassThrough(DebugPassThrough), 
+                        factory(nullptr), indexManager(nullptr), completeLink(CompleteLink),
+                        ioBase(nullptr), caseSensitive(CaseSensitive), debugPassThrough(DebugPassThrough), 
                         debugFile(DebugFile) { }
             
         ~LinkManager();

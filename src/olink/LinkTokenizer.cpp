@@ -346,7 +346,7 @@ bool LinkTokenizer::GetAdd(LinkExpression **exp, bool canUsePC)
         {
             eTokenType cur = token;
             NextToken();
-            LinkExpression *right = NULL;
+            LinkExpression *right = nullptr;
             if (!GetAdd(&right, canUsePC))
             {
                 
@@ -373,7 +373,7 @@ bool LinkTokenizer::GetMul(LinkExpression **exp, bool canUsePC)
         {
             eTokenType cur = token;
             NextToken();
-            LinkExpression *right = NULL;
+            LinkExpression *right = nullptr;
             if (!GetAdd(&right, canUsePC))
             {
                 
@@ -391,12 +391,12 @@ bool LinkTokenizer::GetMul(LinkExpression **exp, bool canUsePC)
 }
 bool LinkTokenizer::GetExpression(LinkExpression **exp, bool canUsePC)
 {
-    *exp = NULL;
+    *exp = nullptr;
     if (!GetMul(exp, canUsePC))
     {
         
             delete *exp;
-        *exp = NULL;
+        *exp = nullptr;
         return false;
     }
     return true;

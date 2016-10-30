@@ -211,7 +211,7 @@ ObjExpression *LinkRemapper::Optimize(ObjExpression *exp, ObjExpression *right)
             if (right)
                 exp->SetLeft(Optimize(exp->GetLeft(), right));
             exp->SetLeft(Optimize(exp->GetLeft(), exp->GetRight()));
-            exp->SetRight(Optimize(exp->GetRight(), NULL));
+            exp->SetRight(Optimize(exp->GetRight(), nullptr));
             break;
         }
         default:
@@ -225,7 +225,7 @@ ObjExpression *LinkRemapper::Optimize(ObjExpression *exp, ObjExpression *right)
 }
 ObjExpression *LinkRemapper::RewriteExpression(LinkExpression *exp, LinkExpressionSymbol *sym)
 {
-    ObjExpression *rv = NULL;
+    ObjExpression *rv = nullptr;
     switch (exp->GetOperator())
     {
         case LinkExpression::eValue:
@@ -298,7 +298,7 @@ ObjExpression *LinkRemapper::ScanExpression(ObjExpression *offset, LinkSymbolDat
                 LinkExpressionSymbol *sym = LinkExpression::FindSymbol(offset->GetSymbol()->GetName());
                 if (sym)
                 {
-                    return Optimize(RewriteExpression(sym->GetValue(), sym), NULL);
+                    return Optimize(RewriteExpression(sym->GetValue(), sym), nullptr);
                 }
             }
             return offset;
@@ -340,7 +340,7 @@ ObjExpression *LinkRemapper::ScanExpression(ObjExpression *offset, LinkSymbolDat
 void LinkRemapper::RenumberSymbol(ObjFile *file, ObjSymbol *sym, int index)
 {
     if (sym->GetOffset())
-        sym->SetOffset(ScanExpression(sym->GetOffset(), NULL));
+        sym->SetOffset(ScanExpression(sym->GetOffset(), nullptr));
     sym->SetIndex(index);
     file->Add(sym);
 }
@@ -363,7 +363,7 @@ void LinkRemapper::SetTypeIndex(ObjType *type)
 ObjInt LinkRemapper::RegisterType(ObjFile *file, ObjType *type, char *name)
 {
     int n;
-    std::map<ObjString, int>::iterator sny = newTypes.find(name);
+    auto sny = newTypes.find(name);
     if (sny != newTypes.end())
     {
         n = sny->second; // already exists in another module
@@ -446,7 +446,7 @@ ObjInt LinkRemapper::LookupFileType(ObjInt type)
     if (type <= ObjType::eReservedTop)
         return type;
     // see if we already have a mapping for this type
-    std::map<ObjInt, ObjInt>::iterator nty = fileTypes.find(type);
+    auto nty = fileTypes.find(type);
     if (nty != fileTypes.end())
         return nty->second;
     else
@@ -513,7 +513,7 @@ ObjFile *LinkRemapper::Remap()
             std::string name = (*its)->GetName();
             if (manager->IsExternal(name))
             {
-                std::map<std::string, int>::iterator itf = externs.find(name);
+                auto itf = externs.find(name);
                 
                 int n;
                 if (itf == externs.end())
@@ -525,7 +525,7 @@ ObjFile *LinkRemapper::Remap()
                 else
                 {
                     if ((*its)->GetOffset())
-                        (*its)->SetOffset(ScanExpression((*its)->GetOffset(), NULL));
+                        (*its)->SetOffset(ScanExpression((*its)->GetOffset(), nullptr));
                     (*its)->SetIndex(itf->second);
                 }
             }
@@ -590,26 +590,17 @@ ObjFile *LinkRemapper::Remap()
                             ObjInt bytes = 0;
                             for (LinkRegion::SectionDataIterator its = (*itr)->GetRegion()->NowDataBegin();
                                  its != (*itr)->GetRegion()->NowDataEnd(); ++its)
-                                for (LinkRegion::OneSectionIterator itt = (*its)->sections.begin();
-                                     itt != (*its)->sections.end(); ++ itt)
-                                {
-                                    bytes += RenumberSection((*itr)->GetRegion(), section, &(*itt), group, bytes + base);
-                                }
+                                for (auto cursect : (*its)->sections)
+                                    bytes += RenumberSection((*itr)->GetRegion(), section, &cursect, group, bytes + base);
                             for (LinkRegion::SectionDataIterator its = (*itr)->GetRegion()->NormalDataBegin();
                                  its != (*itr)->GetRegion()->NormalDataEnd(); ++its)
-                                for (LinkRegion::OneSectionIterator itt = (*its)->sections.begin();
-                                     itt != (*its)->sections.end(); ++ itt)
-                                {
-                                    bytes += RenumberSection((*itr)->GetRegion(), section, &(*itt), group, bytes + base);
-                                }
+                                for (auto cursect : (*its)->sections)
+                                    bytes += RenumberSection((*itr)->GetRegion(), section, &cursect, group, bytes + base);
                             for (LinkRegion::SectionDataIterator its = (*itr)->GetRegion()->PostponeDataBegin();
                                  its != (*itr)->GetRegion()->PostponeDataEnd(); ++its)
-                                for (LinkRegion::OneSectionIterator itt = (*its)->sections.begin();
-                                     itt != (*its)->sections.end(); ++ itt)
-                                {
-                                    bytes += RenumberSection((*itr)->GetRegion(), section, &(*itt), group, bytes + base);
-                                }
-                                /*
+                                for (auto cursect : (*its)->sections)
+                                    bytes += RenumberSection((*itr)->GetRegion(), section, &cursect, group, bytes + base);
+                            /*
                             int n= (*itr)->GetRegion()->GetAttribs().GetSize() - bytes;
                             if (n > 0)
                             {
@@ -646,7 +637,7 @@ ObjFile *LinkRemapper::Remap()
     ObjExpression *sa = manager->GetObjIo()->GetStartAddress();
     if (sa)
     {
-        manager->GetObjIo()->SetStartAddress(file, ScanExpression(sa, NULL));
+        manager->GetObjIo()->SetStartAddress(file, ScanExpression(sa, nullptr));
     }
 
     return file;

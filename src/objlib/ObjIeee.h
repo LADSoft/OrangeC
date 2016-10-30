@@ -83,7 +83,7 @@ public:
     virtual bool Write(FILE *fil, ObjFile *File, ObjFactory *Factory)
         { sfile = fil; factory = Factory; file = File; return HandleWrite(); }
     virtual ObjFile *Read(FILE *fil, eParseType ParseType, ObjFactory *Factory) 
-        { sfile = fil; factory = Factory; file = NULL; return HandleRead(ParseType); }
+        { sfile = fil; factory = Factory; file = nullptr; return HandleRead(ParseType); }
     
 protected:
     class BadCS : public std::domain_error
@@ -262,7 +262,7 @@ public:
     virtual bool Write(FILE *fil, ObjFile *File, ObjFactory *Factory)
         { sfile = fil; factory = Factory; file = File; return HandleWrite(); }
     virtual ObjFile *Read(FILE *fil, eParseType ParseType, ObjFactory *Factory) 
-        { sfile = fil; factory = Factory; file = NULL; return HandleRead(ParseType); }
+        { sfile = fil; factory = Factory; file = nullptr; return HandleRead(ParseType); }
     virtual std::string GetErrorQualifier() { return std::string ("in line ") + Utils::NumberToString(lineno); }
     
     struct ParseDataLT {

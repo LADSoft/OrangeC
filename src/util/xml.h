@@ -92,7 +92,7 @@ public:
     void SetText(const std::string &Text) { text = Text; }
     const std::string &GetText() const { return text; }
     const std::string &GetName() const { return elementType; }
-    bool Visit(xmlVisitor &v, void *userData=NULL);
+    bool Visit(xmlVisitor &v, void *userData=nullptr);
     void SetStripSpaces(bool flag) { stripSpaces = flag; }
     bool GetStripSpaces() const { return stripSpaces; }
     void Strip();

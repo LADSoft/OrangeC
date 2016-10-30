@@ -63,7 +63,7 @@ class PEObject
 {
 public:
     enum { HeaderSize = 40 } ;
-    PEObject(std::string Name) : data(NULL), name(Name), size(0), initSize(0),
+    PEObject(std::string Name) : data(nullptr), name(Name), size(0), initSize(0),
         virtual_addr(0), raw_addr(0), flags(0) { }
     virtual ~PEObject() { if (data) delete[] data; }
     virtual void Setup(ObjInt &endVa, ObjInt &endPhys) = 0;

@@ -46,7 +46,7 @@
 class ResidentNameTable
 {
 public:
-    ResidentNameTable(const std::string &FileName) : fileName(FileName), data(NULL) { }
+    ResidentNameTable(const std::string &FileName) : fileName(FileName), data(nullptr) { }
     virtual ~ResidentNameTable() { if (data) delete[] data; }
     unsigned GetEntrySize() { return entryOffset; }
     unsigned GetSize() { return size; }

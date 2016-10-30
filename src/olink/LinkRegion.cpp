@@ -55,24 +55,13 @@
 
 LinkRegion::~LinkRegion()
 {
-    for (std::vector<NamedSection *>:: iterator it =
-         nowData.begin(); it != nowData.end(); ++it)
-    {
-        NamedSection *n = (*it);
-        delete n;
-    }
-    for (std::vector<NamedSection *>:: iterator it =
-         normalData.begin(); it != normalData.end(); ++it)
-    {
-        NamedSection *n = (*it);
-        delete n;
-    }
-    for (std::vector<NamedSection *>:: iterator it =
-         postponeData.begin(); it != postponeData.end(); ++it)
-    {
-        NamedSection *n = (*it);
-        delete n;
-    }
+    for (auto sect : nowData)
+        delete sect;
+    for (auto sect : normalData)
+        delete sect;
+    for (auto sect : postponeData)
+        delete sect;
+
 }
 ObjString LinkRegion::QualifiedRegionName()
 {
@@ -224,9 +213,9 @@ bool LinkRegion::ParseRegionSpec(LinkManager *manager, CmdFiles &files, LinkToke
 }
 bool LinkRegion::HoldsFile(const ObjString &fileName)
 {
-    for (SourceFileIterator it = sourceFiles.begin(); it != sourceFiles.end(); ++it)
+    for (auto name : sourceFiles)
     {
-        if (*(*it) == fileName)
+        if (*name == fileName)
             return true;
     }
     return false;
@@ -244,13 +233,13 @@ void LinkRegion::AddSourceFile(CmdFiles &filelist, const ObjString &spec)
 }
 void LinkRegion::AddData(SectionData &data, LookasideBuf &lookaside, ObjFile *file, ObjSection *section)
 {
-    NamedSection *ns = NULL;
+    NamedSection *ns = nullptr;
     NamedSection aa;
     aa.name = section->GetName();
     LookasideBuf::iterator it= lookaside.find(&aa);
     if (it != lookaside.end())
         ns = *it;
-    if (ns == NULL)
+    if (ns == nullptr)
     {
         ns = new NamedSection;
         ns->name = section->GetName();
@@ -299,9 +288,9 @@ void LinkRegion::AddSection(LinkManager *manager)
         ObjFile *file = *it;
         if (sourceFiles.size() == 0)
             AddFile(file);
-        else for (CmdFiles::FileNameIterator it = sourceFiles.begin(); it != sourceFiles.end(); ++it)
+        else for (auto srcFile : sourceFiles)
         {
-            if (**it == file->GetInputName())
+            if (*srcFile == file->GetInputName())
             {
                 AddFile(file);
                 break;
@@ -323,11 +312,11 @@ void LinkRegion::CheckAttributes()
         bool anySeparate = false;
         bool notEqual = false;
         ObjInt maxAlign = -1;
-        for (SectionDataIterator it1 = nowData.begin(); it1 != nowData.end(); ++it1)
+        for (auto data : nowData)
         {
-            for (OneSectionIterator it = (*it1)->sections.begin(); it != (*it1)->sections.end(); ++it)
+            for (auto item : data->sections)
             {
-                ObjSection *sect = (*it).section;
+                ObjSection *sect = item.section;
                 ObjInt quals = sect->GetQuals();
                 if (maxSize != -1 && maxSize != sect->GetAbsSize())
                     notEqual = true;
@@ -353,11 +342,11 @@ void LinkRegion::CheckAttributes()
                     anySeparate = true;
             }
         }
-        for (SectionDataIterator it1 = normalData.begin(); it1 != normalData.end(); ++it1)
+        for (auto data : normalData)
         {
-            for (OneSectionIterator it = (*it1)->sections.begin(); it != (*it1)->sections.end(); ++it)
+            for (auto item : data->sections)
             {
-                ObjSection *sect = (*it).section;
+                ObjSection *sect = item.section;
                 ObjInt quals = sect->GetQuals();
                 if (maxSize != -1 && maxSize != sect->GetAbsSize())
                     notEqual = true;
@@ -383,11 +372,11 @@ void LinkRegion::CheckAttributes()
                     anySeparate = true;
             }
         }
-        for (SectionDataIterator it1 = postponeData.begin(); it1 != postponeData.end(); ++it1)
+        for (auto data : postponeData)
         {
-            for (OneSectionIterator it = (*it1)->sections.begin(); it != (*it1)->sections.end(); ++it)
+            for (auto item : data->sections)
             {
-                ObjSection *sect = (*it).section;
+                ObjSection *sect = item.section;
                 ObjInt quals = sect->GetQuals();
                 if (maxSize != -1 && maxSize != sect->GetAbsSize())
                     notEqual = true;
@@ -431,34 +420,34 @@ void LinkRegion::CheckAttributes()
     }
 }
 #include <stdio.h>
-ObjInt LinkRegion::ArrangeOverlayed(LinkManager *manager, SectionDataIterator it, ObjInt address)
+ObjInt LinkRegion::ArrangeOverlayed(LinkManager *manager, NamedSection *data, ObjInt address)
 {
     // weeding
-    OneSectionIterator test1 = (*it)->sections.begin();
+    auto test1 = data->sections.begin();
     ObjSection *test2 = (*test1).section;
     if (!manager->HasVirtual(test2->GetName()))
     {
-        (*it)->sections.clear();
+        data->sections.clear();
         return 0;
     }    
-    ObjSection *curSection = NULL;
-    ObjFile *curFile = NULL;
-    for (OneSectionIterator it1 = (*it)->sections.begin(); it1 != (*it)->sections.end(); ++it1)
+    ObjSection *curSection = nullptr;
+    ObjFile *curFile = nullptr;
+    for (auto item : data->sections)
     {
-        ObjSection *sect = (*it1).section;
+        ObjSection *sect = item.section;
         if (!curSection || sect->GetAbsSize() > curSection->GetAbsSize())
         {
             curSection = sect;
-            curFile = (*it1).file;
+            curFile = item.file;
         }
     }
-    for (OneSectionIterator it1 = (*it)->sections.begin(); it1 != (*it)->sections.end(); ++it1)
+    for (auto item : data->sections)
     {
-        ObjSection *sect = (*it1).section;
+        ObjSection *sect = item.section;
         sect->SetAliasFor(curSection);
     }
-    (*it)->sections.clear();
-    (*it)->sections.push_back(OneSection(curFile, curSection));
+    data->sections.clear();
+    data->sections.push_back(OneSection(curFile, curSection));
 
     curSection->SetBase(address);
     if (attribs.GetVirtualOffsetSpecified())
@@ -502,31 +491,31 @@ ObjInt LinkRegion::ArrangeSections(LinkManager *manager)
     attribs.SetAddress(new LinkExpression(address));
     if (common)
     {
-        for (SectionDataIterator it = nowData.begin(); it != nowData.end(); ++it)
+        for (auto data : nowData)
         {
-            for (OneSectionIterator it1 = (*it)->sections.begin(); it1 != (*it)->sections.end(); ++it1)
+            for (auto item : data->sections)
             {
-                ObjSection *sect = (*it1).section;
+                ObjSection *sect = item.section;
                 sect->SetBase(address);
                 if (attribs.GetVirtualOffsetSpecified())
                     sect->SetVirtualOffset(attribs.GetVirtualOffset());
             }
         }
-        for (SectionDataIterator it = normalData.begin(); it != normalData.end(); ++it)
+        for (auto data : normalData)
         {
-            for (OneSectionIterator it1 = (*it)->sections.begin(); it1 != (*it)->sections.end(); ++it1)
+            for (auto item : data->sections)
             {
-                ObjSection *sect = (*it1).section;
+                ObjSection *sect = item.section;
                 sect->SetBase(address);
                 if (attribs.GetVirtualOffsetSpecified())
                     sect->SetVirtualOffset(attribs.GetVirtualOffset());
             }
         }
-        for (SectionDataIterator it = postponeData.begin(); it != postponeData.end(); ++it)
+        for (auto data : postponeData)
         {
-            for (OneSectionIterator it1 = (*it)->sections.begin(); it1 != (*it)->sections.end(); ++it1)
+            for (auto item : data->sections)
             {
-                ObjSection *sect = (*it1).section;
+                ObjSection *sect = item.section;
                 sect->SetBase(address);
                 if (attribs.GetVirtualOffsetSpecified())
                     sect->SetVirtualOffset(attribs.GetVirtualOffset());
@@ -539,36 +528,36 @@ ObjInt LinkRegion::ArrangeSections(LinkManager *manager)
         // it is an error if an overlayed section appears in multiple categories
         // and for non-virtual sections it won't be flagged.   For virtual sections
         // the implicit public will be redeclared and cause an error...
-        for (SectionDataIterator it = nowData.begin(); it != nowData.end(); ++it)
+        for (auto data : nowData)
         {
             address += align - 1;
             address /= align;
             address *= align;
-            address += ArrangeOverlayed(manager, it, address);
+            address += ArrangeOverlayed(manager, data, address);
         }
-        for (SectionDataIterator it = normalData.begin(); it != normalData.end(); ++it)
+        for (auto data : normalData)
         {
             address += align - 1;
             address /= align;
             address *= align;
-            address += ArrangeOverlayed(manager, it, address);
+            address += ArrangeOverlayed(manager, data, address);
         }
-        for (SectionDataIterator it = postponeData.begin(); it != postponeData.end(); ++it)
+        for (auto data : postponeData)
         {
             address += align - 1;
             address /= align;
             address *= align;
-            address += ArrangeOverlayed(manager, it, address);
+            address += ArrangeOverlayed(manager, data, address);
         }
         size = address - oldAddress;
     }
     else
     {
-        for (SectionDataIterator it = nowData.begin(); it != nowData.end(); ++it)
+        for (auto data : nowData)
         {
-            for (OneSectionIterator it1 = (*it)->sections.begin(); it1 != (*it)->sections.end(); ++it1)
+            for (auto item : data->sections)
             {
-                ObjSection *sect = (*it1).section;
+                ObjSection *sect = item.section;
                 address += align - 1;
                 address /= align;
                 address *= align;
@@ -578,11 +567,11 @@ ObjInt LinkRegion::ArrangeSections(LinkManager *manager)
                 address += sect->GetAbsSize();
             }
         }
-        for (SectionDataIterator it = normalData.begin(); it != normalData.end(); ++it)
+        for (auto data : normalData)
         {
-            for (OneSectionIterator it1 = (*it)->sections.begin(); it1 != (*it)->sections.end(); ++it1)
+            for (auto item : data->sections)
             {
-                ObjSection *sect = (*it1).section;
+                ObjSection *sect = item.section;
                 address += align - 1;
                 address /= align;
                 address *= align;
@@ -592,11 +581,11 @@ ObjInt LinkRegion::ArrangeSections(LinkManager *manager)
                 address += sect->GetAbsSize();
             }
         }
-        for (SectionDataIterator it = postponeData.begin(); it != postponeData.end(); ++it)
+        for (auto data : postponeData)
         {
-            for (OneSectionIterator it1 = (*it)->sections.begin(); it1 != (*it)->sections.end(); ++it1)
+            for (auto item : data->sections)
             {
-                ObjSection *sect = (*it1).section;
+                ObjSection *sect = item.section;
                 address += align - 1;
                 address /= align;
                 address *= align;

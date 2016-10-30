@@ -44,18 +44,18 @@
 unsigned LEObjectPage::CountPages()
 {
     int n = 0;
-    for (std::deque<LEObject *>::iterator it = objects.begin(); it != objects.end(); ++it)
+    for (auto obj : objects)
     {
-        n += ObjectAlign(4096, (*it)->GetInitSize())/4096;
+        n += ObjectAlign(4096, obj->GetInitSize())/4096;
     }
     return n;
 }
 unsigned LXObjectPage::CountPages()
 {
     int n = 0;
-    for (std::deque<LEObject *>::iterator it = objects.begin(); it != objects.end(); ++it)
+    for (auto obj : objects)
     {
-        n += ObjectAlign(4096, (*it)->GetSize())/4096;
+        n += ObjectAlign(4096, obj->GetSize())/4096;
     }
     return n;
 }
@@ -87,11 +87,11 @@ void LXObjectPage::Setup()
     
     PageData *p = (PageData *)data;
     int k = 1;
-    for (std::deque<LEObject *>::iterator it = objects.begin(); it != objects.end(); ++it)
+    for (auto obj : objects)
     {
-        for (int size = 0; size < (*it)->GetSize(); size += 4096)
+        for (int size = 0; size < obj->GetSize(); size += 4096)
         {
-            if (size >= (*it)->GetInitSize())
+            if (size >= obj->GetInitSize())
             {
                 p->flags = LX_OPF_ZERO;
                 p->data_offset = 0;

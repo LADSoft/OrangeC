@@ -52,8 +52,8 @@ static const int Bytes = 8;
 class ListedLine
 {
 public:
-    ListedLine(Instruction *Ins, int LineNo) : lineno(LineNo), label(NULL), ins(Ins) { }
-    ListedLine(Label *lbl, int LineNo) : lineno(LineNo), label(lbl), ins(NULL) { }
+    ListedLine(Instruction *Ins, int LineNo) : lineno(LineNo), label(nullptr), ins(Ins) { }
+    ListedLine(Label *lbl, int LineNo) : lineno(LineNo), label(lbl), ins(nullptr) { }
     int lineno;
     Label *label;
     Instruction *ins;

@@ -57,19 +57,19 @@ void StringVerInfo::WriteRes(ResFile &resFile)
     resFile.WriteWord(0);
     resFile.WriteWord(0);
     resFile.WriteString(language);
-    for (iterator it = begin(); it != end(); ++it)
+    for (auto info : *this)
     {
         resFile.Align();
         size_t pos3 = resFile.GetPos();
         resFile.WriteWord(0);
-        resFile.WriteWord(it->value.size());
+        resFile.WriteWord(info.value.size());
         resFile.WriteWord(1);
-        resFile.WriteString(it->key);
+        resFile.WriteString(info.key);
         resFile.Align();
-        int n = it->value.size();
+        int n = info.value.size();
         // write word by word for portability
         for (int i=0; i < n; i++)
-            resFile.WriteWord(it->value[i]);
+            resFile.WriteWord(info.value[i]);
         size_t pos4 = resFile.GetPos();
         resFile.SetPos(pos3);
         resFile.WriteWord(pos4-pos3);
@@ -101,8 +101,8 @@ void StringVerInfo::ReadRC(RCFile &rcFile)
 VarVerInfo::Info::Info(const Info &Old)
 {
     key = Old.key;
-    for (const_iterator it = Old.begin(); it != Old.end(); ++it)
-        languages.push_back(*it);
+    for (auto info : Old)
+        languages.push_back(info);
 }
 void VarVerInfo::WriteRes(ResFile &resFile)
 {
@@ -112,18 +112,18 @@ void VarVerInfo::WriteRes(ResFile &resFile)
     resFile.WriteWord(0);
     resFile.WriteWord(0);
     resFile.WriteString(L"VarFileInfo");
-    for (iterator it = info.begin(); it != info.end(); ++it)
+    for (auto item : info)
     {
         resFile.Align();
         size_t pos3 = resFile.GetPos();
         resFile.WriteWord(0);
-        resFile.WriteWord(it->languages.size() * sizeof(WORD));
+        resFile.WriteWord(item.languages.size() * sizeof(WORD));
         resFile.WriteWord(0);
-        resFile.WriteString(it->key);
+        resFile.WriteString(item.key);
         resFile.Align();
-        for (Info::iterator it1 = it->begin(); it1 != it->end(); ++ it1)
+        for (auto val : item)
         {
-            resFile.WriteWord(*it1);
+            resFile.WriteWord(val);
         }
         size_t pos4 = resFile.GetPos();
         resFile.SetPos(pos3);
@@ -156,11 +156,9 @@ void VarVerInfo::ReadRC(RCFile &rcFile)
 }
 VersionInfo::~VersionInfo()
 {
-    for (std::deque<InternalVerInfo *>::iterator it = varInfo.begin();
-         it != varInfo.end(); ++it)
+    for (auto var : varInfo)
     {
-        InternalVerInfo *p = *it;
-        delete p;
+        delete var;
     }
     varInfo.clear();
 }
@@ -196,9 +194,9 @@ void VersionInfo::WriteRes(ResFile &resFile)
         resFile.WriteDWord(fileDateMS);
         resFile.WriteDWord(fileDateLS);
     }
-    for (iterator it = begin(); it != end(); ++it)
+    for (auto res : *this)
     {
-        (*it)->WriteRes(resFile);
+        res->WriteRes(resFile);
     }
     size_t pos1 = resFile.GetPos();
     resFile.SetPos(pos);

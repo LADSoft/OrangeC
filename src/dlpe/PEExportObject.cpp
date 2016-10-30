@@ -171,12 +171,12 @@ void PEExportObject::Setup(ObjInt &endVa, ObjInt &endPhys)
         }
     }
     // process named exports
-    for (std::set<ObjExportSymbol *, namelt>::iterator it = names.begin(); it != names.end(); ++it)
+    for (auto name : names)
     {
         *nameTable++ = (unsigned)((unsigned char *)stringTable - data + virtual_addr);
-        *ordinalTable++ = (*it)->GetOrdinal() - minOrd;
-        strcpy((char *)stringTable, (*it)->GetName().c_str());
-        stringTable += (*it)->GetName().size();
+        *ordinalTable++ = name->GetOrdinal() - minOrd;
+        strcpy((char *)stringTable, name->GetName().c_str());
+        stringTable += name->GetName().size();
         *stringTable++ = 0;
     }
     // throw in the DLL name

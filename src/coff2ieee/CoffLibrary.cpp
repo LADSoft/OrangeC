@@ -46,10 +46,10 @@
 
 CoffLibrary::~CoffLibrary()
 {
-    for (std::map<int, Module *>::iterator it = modules.begin(); it != modules.end(); ++it)
+    for (auto m : modules)
     {
-        Module *m = it->second;
-        delete m;
+        Module *md = m.second;
+        delete md;
     }
     if (inputFile)
         delete inputFile;
@@ -66,9 +66,9 @@ bool CoffLibrary::Load()
     else
     {
         delete inputFile;
-        inputFile = NULL;
+        inputFile = nullptr;
     }
-    return inputFile != NULL;
+    return inputFile != nullptr;
 }
 bool CoffLibrary::Convert()
 {
@@ -76,11 +76,11 @@ bool CoffLibrary::Convert()
 }
 bool CoffLibrary::Write(std::string fileName)
 {
-    for (std::map<int, Module *>::iterator it = modules.begin(); it != modules.end(); ++it)
+    for (auto m : modules)
     {
-        if (!it->second->ignore && !it->second->import)
+        if (!m.second->ignore && !m.second->import)
         {
-            files.Add(*(it->second->file));
+            files.Add(*(m.second->file));
         }
     }
     if (importFile)
@@ -109,7 +109,7 @@ bool CoffLibrary::LoadNames()
             {
                 Module *m;
                 int t = swap(hdr->OffsetArray[i]);
-                std::map<int, Module *>::iterator it = modules.find(t);
+                auto it = modules.find(t);
                 if (it == modules.end())
                 {
                     m = new Module;
@@ -131,14 +131,13 @@ bool CoffLibrary::LoadNames()
 }
 bool CoffLibrary::LoadHeaders()
 {
-    for (std::map<int, Module *>::iterator it = modules.begin(); it != modules.end(); ++it)
+    for (auto m : modules)
     {
-        Module *m = it->second;
-        inputFile->seekg(it->first);
-        inputFile->read((char *)&m->header, sizeof(m->header));
-        if (!memcmp(m->header.EndOfHeader, "`\n", 2))
+        inputFile->seekg(m.first);
+        inputFile->read((char *)&m.second->header, sizeof(m.second->header));
+        if (!memcmp(m.second->header.EndOfHeader, "`\n", 2))
         {
-            m->header.EndOfHeader[0] = 0;
+            m.second->header.EndOfHeader[0] = 0;
         }
         else
         {
@@ -150,17 +149,17 @@ bool CoffLibrary::LoadHeaders()
 }
 bool CoffLibrary::ScanIntegrity()
 {
-    for (std::map<int, Module *>::iterator it = modules.begin(); it != modules.end(); ++it)
+    for (auto module : modules)
     {
-        inputFile->seekg(it->first + sizeof(CoffLinkerMemberHeader));
+        inputFile->seekg(module.first + sizeof(CoffLinkerMemberHeader));
         ObjByte buf[8];
         inputFile->read((char *)buf, 8);
         if (inputFile->fail())
             return false;
-		it->second->ignore = false;
+		module.second->ignore = false;
         if (*(unsigned short *)buf == IMAGE_FILE_MACHINE_I386)
         {
-            it->second->import = false;
+            module.second->import = false;
         }
         else
         {
@@ -168,10 +167,10 @@ bool CoffLibrary::ScanIntegrity()
             if (*(unsigned short *)buf ==IMAGE_FILE_MACHINE_UNKNOWN)
                if (*(unsigned short *)(buf+2) == 0xffff)
                    if (*(unsigned short *)(buf+6) == IMAGE_FILE_MACHINE_I386)
-                       it->second->import = found = true;
+                       module.second->import = found = true;
             if (!found)
             {
-                it->second->ignore = true;
+                module.second->ignore = true;
             }
         }            
     }
@@ -179,23 +178,23 @@ bool CoffLibrary::ScanIntegrity()
 }
 bool CoffLibrary::ConvertNormalMods()
 {
-    for (std::map<int, Module *>::iterator it = modules.begin(); it != modules.end(); ++it)
+    for (auto m : modules)
     {
-        if (!it->second->import && !it->second->ignore)
+        if (!m.second->import && !m.second->ignore)
         {
-            if (it->second->aliases.begin()->find("_IMPORT_DESCRIPTOR") == std::string::npos &&
-                it->second->aliases.begin()->find("_NULL_THUNK_DATA") == std::string::npos)
+            if (m.second->aliases.begin()->find("_IMPORT_DESCRIPTOR") == std::string::npos &&
+                m.second->aliases.begin()->find("_nullptr_THUNK_DATA") == std::string::npos)
             {
-                CoffFile object(inputFile, it->first + sizeof(CoffLinkerMemberHeader));
-                inputFile->seekg(it->first + sizeof(CoffLinkerMemberHeader));
+                CoffFile object(inputFile, m.first + sizeof(CoffLinkerMemberHeader));
+                inputFile->seekg(m.first + sizeof(CoffLinkerMemberHeader));
                 if (object.Load())
                 {
                     char name[256];
-                    sprintf(name, "%d.o", it->first);
-                    ObjFile *file = object.ConvertToObject(name, it->second->factory);
+                    sprintf(name, "%d.o", m.first);
+                    ObjFile *file = object.ConvertToObject(name, m.second->factory);
                     if (file)
                     {
-                        it->second->file = file;
+                        m.second->file = file;
                     }
                     else
                     {
@@ -211,7 +210,7 @@ bool CoffLibrary::ConvertNormalMods()
             }
 			else
 			{
-				it->second->ignore = true;
+				m.second->ignore = true;
 			}
         }
     }
@@ -220,12 +219,12 @@ bool CoffLibrary::ConvertNormalMods()
 bool CoffLibrary::ConvertImportMods()
 {
     bool foundImports = false;
-    for (std::map<int, Module *>::iterator it = modules.begin(); it != modules.end(); ++it)
+    for (auto m : modules)
     {
-        if (it->second->import && !it->second->ignore)
+        if (m.second->import && !m.second->ignore)
         {
             foundImports = true;
-            inputFile->seekg(it->first + sizeof(CoffLinkerMemberHeader));
+            inputFile->seekg(m.first + sizeof(CoffLinkerMemberHeader));
             CoffImportHeader hdr;
             inputFile->read((char *)&hdr, sizeof(hdr));
             if (inputFile->fail())
@@ -255,22 +254,22 @@ bool CoffLibrary::ConvertImportMods()
                     } 
                     break;
             }
-            it->second->importName = buf;
-            it->second->importDLL = p;
+            m.second->importName = buf;
+            m.second->importDLL = p;
         }
     }
     if (foundImports)
     {
         ObjFile *file = new ObjFile("__imports__.o");
-        for (std::map<int, Module *>::iterator it = modules.begin(); it != modules.end(); ++it)
+        for (auto m : modules)
         {
-            if (it->second->import && !it->second->ignore)
+            if (m.second->import && !m.second->ignore)
             {
-                for (std::set<std::string>::iterator it1 = it->second->aliases.begin(); it1 != it->second->aliases.end(); ++it1)
+                for (auto alias : m.second->aliases)
                 {
-                    ObjImportSymbol *sym = importFactory.MakeImportSymbol(*it1);
-                    sym->SetExternalName(it->second->importName);
-                    sym->SetDllName(it->second->importDLL);
+                    ObjImportSymbol *sym = importFactory.MakeImportSymbol(alias);
+                    sym->SetExternalName(m.second->importName);
+                    sym->SetDllName(m.second->importDLL);
                     file->Add(sym);
                 }
             }

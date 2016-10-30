@@ -79,9 +79,10 @@ void dlPmMain::GetSectionNames(std::vector<std::string> &names, ObjFile *file)
 }
 void dlPmMain::GetInputSections(const std::vector<std::string> &names, ObjFile *file, ObjFactory *factory)
 {
-    for (std::vector<std::string>::const_iterator it = names.begin(); it != names.end(); ++it)
+
+    for (auto name : names)
     {
-        ObjSection *s = file->FindSection((*it));
+        ObjSection *s = file->FindSection(name);
         ObjInt size = s->GetSize()->Eval(0);
         ObjInt addr = s->GetOffset()->Eval(0);
         Section *p = new Section(addr, size);
@@ -164,13 +165,13 @@ bool dlPmMain::ReadSections(const std::string &path)
         delete file;
         Utils::fatal("Input file is in relative format");
     }
-    if (ieee.GetStartAddress() == NULL)
+    if (ieee.GetStartAddress() == nullptr)
     {
         delete file;
         Utils::fatal("No start address specified");
     }
     startAddress = ieee.GetStartAddress()->Eval(0);
-    if (file != NULL)
+    if (file != nullptr)
     {
         LoadVars(file);
         std::vector<std::string> names;
@@ -218,12 +219,12 @@ bool dlPmMain::LoadStub(const std::string &exeName)
     std::string val = "pmstb.exe";
     // look in current directory
     std::fstream *file = new std::fstream(val.c_str(), std::ios::in | std::ios::binary);
-    if (file == NULL || !file->is_open())
+    if (file == nullptr || !file->is_open())
     {
         if (file)
         {
             delete file;
-            file = NULL;
+            file = nullptr;
         }
         // look in exe directory if not there
         int npos = exeName.find_last_of(CmdFiles::DIR_SEP);
@@ -233,12 +234,12 @@ bool dlPmMain::LoadStub(const std::string &exeName)
             file = new std::fstream(val.c_str(), std::ios::in | std::ios::binary);
         }
     }
-    if (file == NULL || !file->is_open())
+    if (file == nullptr || !file->is_open())
     {
         if (file)
         {
             delete file;
-            file = NULL;
+            file = nullptr;
         }
         return false;
     }

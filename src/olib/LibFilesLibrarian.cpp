@@ -108,7 +108,7 @@ void LibFiles::Extract(FILE *stream, const ObjString &Name)
             if (p)
             {
                 FILE *ostr = fopen(Name.c_str(), "wb");
-                if (ostr != NULL)
+                if (ostr != nullptr)
                 {
                     WriteData(ostr, p, (*it)->name);
                     fclose(ostr);
@@ -140,7 +140,7 @@ void LibFiles::Replace(const ObjString &Name)
             if ((*it)->data)
             {
                 delete (*it)->data;
-                (*it)->data = NULL;
+                (*it)->data = nullptr;
             }
             (*it)->name = Name;
             (*it)->offset = 0;
@@ -217,7 +217,7 @@ bool LibFiles::ReadFiles(FILE *stream, ObjFactory *factory)
                 else
                 {
                     FILE *istr = fopen((*itn)->name.c_str(), "rb");
-                    if (istr != NULL)
+                    if (istr != nullptr)
                     {
                         (*itn)->data = ReadData(istr, (*itn)->name, factory);
                         fclose(istr);

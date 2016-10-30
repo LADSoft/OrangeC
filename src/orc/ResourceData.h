@@ -50,8 +50,8 @@ class ResFile;
 class ResourceData
 {
 public:
-    ResourceData() : len(0), data(NULL), pos(0) { }
-    ResourceData(const unsigned char *rdata, size_t len): len(0), data(NULL), pos(0) 
+    ResourceData() : len(0), data(nullptr), pos(0) { }
+    ResourceData(const unsigned char *rdata, size_t len): len(0), data(nullptr), pos(0) 
     {
         SetData(rdata, len);
     }

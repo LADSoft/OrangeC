@@ -251,9 +251,9 @@ bool LinkDebugFile::CreateIndexes(void)
 bool LinkDebugFile::DBOpen(char *name)
 {
     bool rv = false;
-    dbPointer = NULL;
+    dbPointer = nullptr;
     unlink(name);
-    if (sqlite3_open_v2(name, &dbPointer, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL) == SQLITE_OK)
+    if (sqlite3_open_v2(name, &dbPointer, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr) == SQLITE_OK)
     {
         rv = CreateTables();
     }
@@ -306,7 +306,7 @@ bool LinkDebugFile::WriteLineNumbers()
         {
             if ((*it1)->HasDebugTags())
             {
-                ObjLineNo *ln = NULL;
+                ObjLineNo *ln = nullptr;
                 // full list of line numbers needed for symbol data...
                 for (ObjMemory::DebugTagIterator it2 = (*it1)->DebugTagBegin(); it2 != (*it1)->DebugTagEnd(); ++it2)
                 {
@@ -395,7 +395,7 @@ void LinkDebugFile::PushCPPName(ObjString name, int n)
 }
 int LinkDebugFile::GetSQLNameId(ObjString name)
 {
-    std::map<ObjString, int>::iterator it = names.find(name);
+    auto it = names.find(name);
     if (it != names.end())
     {
         return it->second;
@@ -423,10 +423,10 @@ bool LinkDebugFile::WriteNamesTable()
     }
     nameList.clear();
     v.clear();
-    for (std::deque<CPPMapping>::iterator it = CPPMappingList.begin(); it != CPPMappingList.end(); ++it)
+    for (auto map : CPPMappingList)
     {
-        v.push_back((*it).simpleId);
-        v.push_back((*it).complexId);
+        v.push_back(map.simpleId);
+        v.push_back(map.complexId);
     }
     IntegerColumnsVirtualTable args(v, 2);
     args.Start(dbPointer);
@@ -648,16 +648,16 @@ bool LinkDebugFile::WriteVariableNames()
             typeMap[index] = n;
         }
    }
-    for (ObjFile::SectionIterator it = Sections.begin(); it != Sections.end(); ++it)
+    for (auto sect : Sections)
     {
-        ObjString name = (*it)->GetName();
+        ObjString name = sect->GetName();
         int npos = name.find("@");
         if (npos != std::string::npos && npos != name.size() - 1)
             name = name.substr(npos);
         int n = GetSQLNameId(name);
         if (n == -1)
             return false;
-        sectionMap[(*it)->GetName()] = n;
+        sectionMap[sect->GetName()] = n;
     }
     return true;
 }
@@ -731,14 +731,14 @@ bool LinkDebugFile::WriteGlobalsTable()
     locals.Stop();
 
     v.clear();
-    for (ObjFile::SectionIterator it = Sections.begin(); it != Sections.end(); ++it)
+    for (auto sect : Sections)
     {
-        int n = sectionMap[(*it)->GetName()];
-        int address = ParentSections[*it]->GetBase() + (*it)->GetBase();
+        int n = sectionMap[sect->GetName()];
+        int address = ParentSections[sect]->GetBase() + sect->GetBase();
         int type = -1;
-        if ((*it)->GetVirtualType())
-            type = GetTypeIndex((*it)->GetVirtualType());
-        int fileId = /*(*it)->GetSourceFile() ? (*it)->GetSourceFile()->GetIndex() :*/ 0;
+        if (sect->GetVirtualType())
+            type = GetTypeIndex(sect->GetVirtualType());
+        int fileId = /*(*it)->GetSourceFile() ? sect->GetSourceFile()->GetIndex() :*/ 0;
         v.push_back(n);
         v.push_back(type);
         v.push_back(address);
@@ -754,7 +754,7 @@ bool LinkDebugFile::WriteGlobalsTable()
 class context
 {
 public:
-    context() : startLine(NULL), currentLine(NULL) { }
+    context() : startLine(nullptr), currentLine(nullptr) { }
     ObjLineNo *startLine;
     ObjLineNo *currentLine;
     std::map<ObjSymbol *, ObjLineNo *>vars;
@@ -763,13 +763,13 @@ bool LinkDebugFile::WriteAutosTable()
 {
     std::vector<sqlite3_int64> v;
     std::deque<context *> contexts;
-    context *currentContext = NULL;
+    context *currentContext = nullptr;
     int funcId = 0;
     for (ObjFile::SectionIterator it = file->SectionBegin(); it != file->SectionEnd(); ++it)
     {
         ObjMemoryManager &m = (*it)->GetMemoryManager();
         ObjInt address = m.GetBase();
-        ObjLineNo *currentLine = NULL;
+        ObjLineNo *currentLine = nullptr;
         for (ObjMemoryManager::MemoryIterator it1 = m.MemoryBegin(); it1 != m.MemoryEnd(); ++it1)
         {
             // find the line number first.  This is because it is difficult to get the line number
@@ -826,10 +826,10 @@ bool LinkDebugFile::WriteAutosTable()
                         {
                             int end = currentLine->GetLineNumber();
                             int fileId = currentContext->startLine->GetFile()->GetIndex();
-                            for (std::map<ObjSymbol *, ObjLineNo *>::iterator it = currentContext->vars.begin(); it != currentContext->vars.end(); ++it)
+                            for (auto obj : currentContext->vars)
                             {
-                                ObjSymbol *s = it->first;
-                                int startLine = it->second->GetLineNumber();
+                                ObjSymbol *s = obj.first;
+                                int startLine = obj.second->GetLineNumber();
                                 v.push_back(autoMap[s->GetIndex()]);
                                 v.push_back(GetTypeIndex(s->GetBaseType()));
                                 v.push_back(funcId);

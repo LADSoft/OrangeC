@@ -93,7 +93,7 @@ std::string Eval::GetVPATH(const std::string &goal)
     {
         if (v->GetFlavor() == Variable::f_recursive)
         {
-            Eval r(v->GetValue(), false, NULL, NULL);
+            Eval r(v->GetValue(), false, nullptr, nullptr);
             rv = r.Evaluate();
         }
         else
@@ -103,16 +103,16 @@ std::string Eval::GetVPATH(const std::string &goal)
     }		
     if (goal.size())
     {
-        for (std::map<std::string, std::string>::iterator it = vpaths.begin(); it != vpaths.end(); ++it)
+        for (auto path : vpaths)
         {
             size_t start;
             size_t len;
-            len = MatchesPattern(goal, it->first, start, 0);
+            len = MatchesPattern(goal, path.first, start, 0);
             if (len == goal.size())
             {
                 if (rv.size())
                     rv += " ";
-                rv += it->second;
+                rv += path.second;
             }
         }
     }
@@ -120,7 +120,8 @@ std::string Eval::GetVPATH(const std::string &goal)
 }
 void Eval::RemoveVPath(const std::string &path)
 {
-    std::map<std::string, std::string>::iterator it = vpaths.find(path);
+    
+    auto it = vpaths.find(path);
     if (it != vpaths.end())
         vpaths.erase(it);
 }
@@ -224,15 +225,15 @@ std::string Eval::ParseMacroLine(const std::string &in)
 }
 Variable *Eval::LookupVariable(const std::string &name)
 {
-    Variable *v = NULL;
-    for (std::list<Variable *>::iterator it = foreachVars.begin(); it != foreachVars.end() && v == NULL; ++it)
+    Variable *v = nullptr;
+    for (std::list<Variable *>::iterator it = foreachVars.begin(); it != foreachVars.end() && v == nullptr; ++it)
     {
         if ((*it)->GetName() == name)
             v = (*it);
     }
     if (!v)
     {
-        for (std::list<RuleList *>::iterator it = ruleStack.begin(); it != ruleStack.end() && v == NULL; ++it)
+        for (std::list<RuleList *>::iterator it = ruleStack.begin(); it != ruleStack.end() && v == nullptr; ++it)
             
         {
             v = (*it)->Lookup(name);
@@ -263,7 +264,7 @@ bool Eval::AutomaticVar(const std::string &name, std::string &rv)
         }
         else if (name[0] == '<') // first prereq of first rule
         {
-            RuleList::iterator it = ruleList->begin();
+            auto it = ruleList->begin();
             if (!rule || *it != rule)
             {
                 extra = (*it)->GetPrerequisites();
@@ -274,11 +275,11 @@ bool Eval::AutomaticVar(const std::string &name, std::string &rv)
         }
         else if (name[0] == '^') // all prereq or prereq of rules that have appeared
         {
-            for (RuleList::iterator it = ruleList->begin(); it != ruleList->end(); ++it)
+            for (auto item : *ruleList)
             {
-                if ((*it) == rule)
+                if (item == rule)
                     break;
-                extra = (*it)->GetPrerequisites();
+                extra = item->GetPrerequisites();
                 while (extra.size())
                 {
                     std::string temp = ExtractFirst(extra, " ");
@@ -295,11 +296,11 @@ bool Eval::AutomaticVar(const std::string &name, std::string &rv)
         }
         else if (name[0] == '+') // same with repetition
         {			
-            for (RuleList::iterator it = ruleList->begin(); it != ruleList->end(); ++it)
+            for (auto item : *ruleList)
             {
-                if ((*it) == rule)
+                if (item == rule)
                     break;
-                extra = (*it)->GetPrerequisites();
+                extra = item->GetPrerequisites();
                 while (extra.size())
                 {
                     std::string temp = ExtractFirst(extra, " ");
@@ -356,11 +357,11 @@ bool Eval::AutomaticVar(const std::string &name, std::string &rv)
         else if (name[0] == '|') // or names of order-only prerequisites
         {
             std::set<std::string> set;
-            for (RuleList::iterator it = ruleList->begin(); it != ruleList->end(); ++it)
+            for (auto item : *ruleList)
             {
-                if ((*it) == rule)
+                if (item == rule)
                     break;
-                extra = (*it)->GetOrderPrerequisites();
+                extra = item->GetOrderPrerequisites();
                 while (extra.size())
                 {
                     std::string temp = ExtractFirst(extra, " ");
@@ -434,12 +435,11 @@ std::string Eval::ExpandMacro(const std::string &name)
         return rv;
     if (name == ".VARIABLES")
     {
-        for(VariableContainer::iterator it = VariableContainer::Instance()->begin();
-                    it != VariableContainer::Instance()->end(); ++ it)
+        for (auto var : *VariableContainer::Instance())
         {
             if (rv.size())
                 rv += " ";
-            rv += *(it->first);
+            rv += *(var.first);
         }	
     }
     else if (name[0] == '$')
@@ -456,7 +456,7 @@ std::string Eval::ExpandMacro(const std::string &name)
     {
         std::string temp = name;
         std::string fw = ExtractFirst(temp, " ");
-        std::map<const std::string, StringFunc>::iterator it = builtins.find(fw);
+        auto it = builtins.find(fw);
         if (it != builtins.end())
         {
             size_t z = name.find_first_not_of(' ', fw.size());
@@ -495,7 +495,7 @@ join:
                 {
                     if (macroset.find(v->GetName()) == macroset.end())
                     {
-                        std::pair<std::set<std::string>::iterator, bool> p = macroset.insert(v->GetName());
+                        auto p = macroset.insert(v->GetName());
                         rv = ParseMacroLine(rv);
                         macroset.erase(p.first);
                     }
@@ -895,11 +895,11 @@ std::string Eval::sort(const std::string &arglist)
         sortList.insert(ExtractFirst(working, " "));
     }
     std::string rv;
-    for (std::set<std::string>::iterator it = sortList.begin(); it != sortList.end(); ++it)
+    for (auto strng : sortList)
     {
         if (rv.size())
             rv += " ";
-        rv += *it;
+        rv += strng;
     }
     return rv;
 }
@@ -1338,7 +1338,7 @@ std::string Eval::call(const std::string &arglist)
     size_t n = sub.find_first_of(',');
     if (n == std::string::npos)
     {
-        std::map<const std::string, StringFunc>::iterator it = builtins.find(sub);
+        auto it = builtins.find(sub);
         if (it != builtins.end())
         {
             rv = (this->*(it->second))("");
@@ -1353,7 +1353,7 @@ std::string Eval::call(const std::string &arglist)
     {
         sub = sub.substr(0, n);
         args = arglist.substr(n+1);
-        std::map<const std::string, StringFunc>::iterator it = builtins.find(sub);
+        auto it = builtins.find(sub);
         if (it != builtins.end())
         {
             rv = (this->*(it->second))(args);
@@ -1477,7 +1477,7 @@ std::string Eval::error(const std::string &arglist)
 }
 std::string Eval::errorx(const std::string &arglist)
 {
-    Eval a(arglist, false, NULL, NULL);
+    Eval a(arglist, false, nullptr, nullptr);
     std::cout << "Error " << file.c_str() << "(" << lineno << "): " << a.Evaluate().c_str() << std::endl;
     errcount++;
     return "";
@@ -1489,7 +1489,7 @@ std::string Eval::warning(const std::string &arglist)
 }
 std::string Eval::warningx(const std::string &arglist)
 {
-    Eval a(arglist, false, NULL, NULL);
+    Eval a(arglist, false, nullptr, nullptr);
     std::cout << "Warning " << file.c_str() << "(" << lineno << "): " << a.Evaluate().c_str() << std::endl;
     return "";
 }

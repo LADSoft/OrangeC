@@ -70,7 +70,7 @@ public:
                  eReservedTop = 1023
     } ;
     ObjType(eType Type, ObjInt Index) : name(""), type(Type), base(0), top(1), 
-                constVal(0), baseType(NULL), index(Index),
+                constVal(0), baseType(nullptr), index(Index),
                 indexType(&defaultIndexType) {}
     ObjType(eType Type, ObjType *BaseType, ObjInt Index) : name(""), type(Type), base(0), top(1), 
                 index(Index), constVal(0), baseType(BaseType), 

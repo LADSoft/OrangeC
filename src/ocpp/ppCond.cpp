@@ -190,7 +190,7 @@ void ppCond::HandleElif(bool val, const std::string &line)
     }
     else 
     {
-        skip *old = NULL;
+        skip *old = nullptr;
         if (skipList.size())
             old = skipList.front();
         if ((!old || !old->skipping) && current->takeElse && val)
@@ -245,13 +245,13 @@ void ppCond::HandleEndIf(std::string &line)
         }
         else
         {
-            current = NULL;
+            current = nullptr;
         }
     }
 }
 void ppCond::HandleDef(std::string &line, bool Else, bool negate, int lineno)
 {
-    Tokenizer tk(line, NULL);
+    Tokenizer tk(line, nullptr);
     const Token *t = tk.Next();
     if (!t->IsIdentifier())
     {
@@ -353,7 +353,7 @@ void ppCond::HandleIdn(std::string &line, bool Else, bool negate, bool caseSensi
 void ppCond::HandleId(std::string &line, bool Else, bool negate, int lineno)
 {
     define->Process(line);
-    Tokenizer tk(line, NULL);
+    Tokenizer tk(line, nullptr);
     const Token *t = tk.Next();
     bool v = t->IsIdentifier();
     if (negate)
@@ -366,7 +366,7 @@ void ppCond::HandleId(std::string &line, bool Else, bool negate, int lineno)
 void ppCond::HandleNum(std::string &line, bool Else, bool negate, int lineno)
 {
     define->Process(line);
-    Tokenizer tk(line, NULL);
+    Tokenizer tk(line, nullptr);
     const Token *t = tk.Next();
     bool v = t->IsNumeric();
     if (negate)
@@ -379,7 +379,7 @@ void ppCond::HandleNum(std::string &line, bool Else, bool negate, int lineno)
 void ppCond::HandleStr(std::string &line, bool Else, bool negate, int lineno)
 {
     define->Process(line);
-    Tokenizer tk(line, NULL);
+    Tokenizer tk(line, nullptr);
     const Token *t = tk.Next();
     bool v = t->IsString();
     if (negate)
@@ -392,7 +392,7 @@ void ppCond::HandleStr(std::string &line, bool Else, bool negate, int lineno)
 void ppCond::HandleCtx(std::string &line, bool Else, bool negate, int lineno)
 {
     define->Process(line);
-    Tokenizer tk(line, NULL);
+    Tokenizer tk(line, nullptr);
     const Token *t = tk.Next();
     bool v = false;
     if (t->IsIdentifier())

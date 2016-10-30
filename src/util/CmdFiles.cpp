@@ -48,9 +48,9 @@ const char *CmdFiles::PATH_SEP = ";";
 
 CmdFiles::~CmdFiles()
 {
-    for (FileNameIterator it = names.begin(); it != names.end(); ++it)
+    for (auto name : names)
     {
-        delete (*it);
+        delete name;
     }
 }
 bool CmdFiles::Add(char **array, bool recurseDirs)

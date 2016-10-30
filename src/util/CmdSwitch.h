@@ -167,8 +167,8 @@ class CmdSwitchDefine : public CmdSwitchBase
 class CmdSwitchFile : public CmdSwitchString
 {
     public:
-        CmdSwitchFile(CmdSwitchParser &parser, char SwitchChar) : CmdSwitchString(parser, SwitchChar), Parser(&parser), argc(0), argv(NULL) {}
-        CmdSwitchFile(CmdSwitchParser &parser) : CmdSwitchString(), Parser(&parser), argc(0), argv(NULL) { }
+        CmdSwitchFile(CmdSwitchParser &parser, char SwitchChar) : CmdSwitchString(parser, SwitchChar), Parser(&parser), argc(0), argv(nullptr) {}
+        CmdSwitchFile(CmdSwitchParser &parser) : CmdSwitchString(), Parser(&parser), argc(0), argv(nullptr) { }
 
         virtual int Parse(const char *data);
         int GetCount() const { return argc; }

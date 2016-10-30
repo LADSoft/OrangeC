@@ -53,12 +53,12 @@ class AsmExprNode
 public:
     enum Type { IVAL, FVAL, LABEL, ADD, SUB, NEG, NOT, CMPL, MUL, DIV, SDIV, MOD, SMOD, LSHIFT,
                 RSHIFT, GT, LT, GE, LE, EQ, NE, OR, XOR, AND, LAND, LOR, PC, SECTBASE, BASED, REG };
-    AsmExprNode(Type xType, AsmExprNode *Left = NULL, AsmExprNode *Right = NULL) :
-                type(xType), ival(0), left(Left), right(Right), sect(NULL) { }
-    AsmExprNode(PPINT Ival) : type(IVAL), ival(Ival), left(NULL), right(NULL), sect(NULL) { }
-    AsmExprNode(const FPF &Fval) : type(FVAL), ival(0), fval(Fval), left(NULL), right(NULL), sect(NULL) { }
-    AsmExprNode(std::string lbl) : type(LABEL), ival(0), left(NULL), right(NULL), label(lbl), sect(NULL){ }
-    AsmExprNode(Section *Sect, int offs) : type(BASED), ival(offs), left(NULL), right(NULL), sect(Sect){ }
+    AsmExprNode(Type xType, AsmExprNode *Left = nullptr, AsmExprNode *Right = nullptr) :
+                type(xType), ival(0), left(Left), right(Right), sect(nullptr) { }
+    AsmExprNode(PPINT Ival) : type(IVAL), ival(Ival), left(nullptr), right(nullptr), sect(nullptr) { }
+    AsmExprNode(const FPF &Fval) : type(FVAL), ival(0), fval(Fval), left(nullptr), right(nullptr), sect(nullptr) { }
+    AsmExprNode(std::string lbl) : type(LABEL), ival(0), left(nullptr), right(nullptr), label(lbl), sect(nullptr){ }
+    AsmExprNode(Section *Sect, int offs) : type(BASED), ival(offs), left(nullptr), right(nullptr), sect(Sect){ }
     AsmExprNode(const AsmExprNode &old)
     {
         fval = old.fval;
@@ -105,14 +105,14 @@ public:
     static AsmExprNode *ConvertToBased(AsmExprNode *n, int pc);
     static AsmExprNode *GetEqu(std::string name)
     {
-        std::map<std::string, AsmExprNode *>::iterator it = equs.find(name);
+        auto it = equs.find(name);
         if (it != equs.end())
         {
             return it->second;
         }
         else
         {
-            return NULL;
+            return nullptr;
         }
             
     }

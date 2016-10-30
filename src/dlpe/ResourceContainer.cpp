@@ -52,41 +52,29 @@ unsigned char ResourceContainer::resourceHeader[32] =
 };
 ResourceContainer::~ResourceContainer()
 {
-    for (NumberedTypes::iterator it = numberedTypes.begin(); it != numberedTypes.end(); ++ it)
+    for (auto type : numberedTypes)
     {
-        for (NumberedIds::iterator nt = it->second.numberedIds.begin(); nt != it->second.numberedIds.end(); ++ nt)
-        {
-            if (nt->second.data)
-                delete[] nt->second.data;
-        }
-        for (NamedIds::iterator nt = it->second.namedIds.begin(); nt != it->second.namedIds.end(); ++ nt)
-        {
-            if (nt->second.data)
-                delete[] nt->second.data;
-        }
+        for (auto nt : type.second.numberedIds)
+            delete[] nt.second.data;
+        for (auto nt : type.second.namedIds)
+            delete[] nt.second.data;
     }
-    for (NamedTypes::iterator it = namedTypes.begin(); it != namedTypes.end(); ++ it)
+    for (auto type : namedTypes)
     {
-        for (NumberedIds::iterator nt = it->second.numberedIds.begin(); nt != it->second.numberedIds.end(); ++ nt)
-        {
-            if (nt->second.data)
-                delete[] nt->second.data;
-        }
-        for (NamedIds::iterator nt = it->second.namedIds.begin(); nt != it->second.namedIds.end(); ++ nt)
-        {
-            if (nt->second.data)
-                delete[] nt->second.data;
-        }
+        for (auto nt : type.second.numberedIds)
+            delete[] nt.second.data;
+        for (auto nt : type.second.namedIds)
+            delete[] nt.second.data;
     }
 }
 bool ResourceContainer::LoadFiles()
 {
     bool rv = true;
-    for (std::deque<std::string>::iterator it = names.begin(); it != names.end(); ++it)
+    for (auto name : names)
     {
-        if (!LoadFile((*it)))
+        if (!LoadFile(name))
         {
-            std::cout << "Error loading resource file '" << (*it).c_str() << "'" << std::endl;
+            std::cout << "Error loading resource file '" << name.c_str() << "'" << std::endl;
             rv = false;
         }
     }

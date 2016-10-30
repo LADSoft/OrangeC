@@ -173,15 +173,15 @@ void Instruction::Optimize(int pc, bool last)
     }
     if (type == CODE || type == DATA || type == RESERVE)
     {
-        for (FixupContainer::iterator it = fixups.begin(); it != fixups.end(); ++it)
+        for (auto fixup : fixups)
         {
-            AsmExprNode *expr = (*it)->GetExpr();
+            AsmExprNode *expr = fixup->GetExpr();
             expr = AsmExpr::Eval(expr, pc);
-            if ((*it)->GetExpr()->IsAbsolute() || ((*it)->IsRel() && expr->GetType() == AsmExprNode::IVAL))
+            if (fixup->GetExpr()->IsAbsolute() || (fixup->IsRel() && expr->GetType() == AsmExprNode::IVAL))
             {
-                int n = (*it)->GetSize() * 8;
-                int p = (*it)->GetInsOffs();
-                if ((*it)->GetSize() < 4 || (expr->GetType() == AsmExprNode::IVAL && (*it)->GetSize() == 4))
+                int n = fixup->GetSize() * 8;
+                int p = fixup->GetInsOffs();
+                if (fixup->GetSize() < 4 || (expr->GetType() == AsmExprNode::IVAL && fixup->GetSize() == 4))
                 {
                     int o;
                     bool error = false;
@@ -189,10 +189,10 @@ void Instruction::Optimize(int pc, bool last)
                         o = expr->ival;
                     else
                         o = (L_INT)expr->fval;
-                    if ((*it)->IsRel())
+                    if (fixup->IsRel())
                     {
                         o -= size + pc;
-                        if ((*it)->IsAdjustable())
+                        if (fixup->IsAdjustable())
                         {
                             if (type == CODE)
                             {
@@ -201,9 +201,9 @@ void Instruction::Optimize(int pc, bool last)
                                     if (o <= 127 && o >= -128 - ((n/8) - 1))
                                     {
                                         data[p-1] = 0xeb;
-                                        size -= (*it)->GetSize() - 1;
-                                        (*it)->SetSize(1);
-                                        (*it)->SetRelOffs(1);
+                                        size -= fixup->GetSize() - 1;
+                                        fixup->SetSize(1);
+                                        fixup->SetRelOffs(1);
                                         n = 8;
                                     }
                                 }
@@ -212,10 +212,10 @@ void Instruction::Optimize(int pc, bool last)
                                     if (o <= 127 && o >= -128 - (n/8))
                                     {
                                         data[p-2] = data[p-1] - 0x80 + 0x70;
-                                        size -= (*it)->GetSize();
-                                        (*it)->SetInsOffs(p = (*it)->GetInsOffs()-1);
-                                        (*it)->SetSize(1);
-                                        (*it)->SetRelOffs(1);
+                                        size -= fixup->GetSize();
+                                        fixup->SetInsOffs(p = fixup->GetInsOffs()-1);
+                                        fixup->SetSize(1);
+                                        fixup->SetRelOffs(1);
                                         n = 8;
                                     }
                                 }
@@ -225,12 +225,12 @@ void Instruction::Optimize(int pc, bool last)
                         if (t != 0 && t != -1)
                         {
                             error = true;
-                            if (!(*it)->IsResolved())
+                            if (!fixup->IsResolved())
                             {
                                 if (last)
                                 {
                                     Errors::IncrementCount();
-                                    std::cout << "Error " << (*it)->GetFileName().c_str() << "(" << (*it)->GetErrorLine() << "):" << "Branch out of range" << std::endl;
+                                    std::cout << "Error " << fixup->GetFileName().c_str() << "(" << fixup->GetErrorLine() << "):" << "Branch out of range" << std::endl;
                                 }
                             }
                         }
@@ -243,19 +243,19 @@ void Instruction::Optimize(int pc, bool last)
                             if (t != 0 && t != -1)
                             {
                                 error = true;
-                                if (!(*it)->IsResolved())
+                                if (!fixup->IsResolved())
                                 {
                                     if (last)
                                     {
                                         Errors::IncrementCount();
-                                        std::cout << "Error " << (*it)->GetFileName().c_str() << "(" << (*it)->GetErrorLine() << "):" << "Value out of range" << std::endl;
+                                        std::cout << "Error " << fixup->GetFileName().c_str() << "(" << fixup->GetErrorLine() << "):" << "Value out of range" << std::endl;
                                     }
                                 }
                             }
                         }
                     }
                     if (!error)
-                        (*it)->SetResolved();
+                        fixup->SetResolved();
                     if (bigEndian)
                     {
                         // never get here on an x86
@@ -271,7 +271,7 @@ void Instruction::Optimize(int pc, bool last)
                 else if (expr->GetType() == AsmExprNode::IVAL || expr->GetType() == AsmExprNode::FVAL)
                 {
                     FPF o;
-                    (*it)->SetResolved();
+                    fixup->SetResolved();
                     if (expr->GetType() == AsmExprNode::FVAL)
                         o = expr->fval;
                     else

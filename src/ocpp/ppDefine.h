@@ -72,9 +72,9 @@ public:
         int GetArgCount() { if (!argList) return 0; else return argList->size(); }
         DefinitionArgList *GetArg(int count) 
         { 
-            if (!argList) return NULL; 
+            if (!argList) return nullptr; 
             else if (count < argList->size()) return &argList[count];
-            else return NULL;
+            else return nullptr;
         }
         DefinitionArgList *GetArgList() const { return argList; }
         std::string &GetValue() { return value; }
@@ -110,7 +110,7 @@ public:
     void Assign(const std::string &name, int value, bool caseInsensitive) 
         { 
             std::string v = Utils::NumberToString(value);
-            Define(name, v, NULL, false, false, false, caseInsensitive);
+            Define(name, v, nullptr, false, false, false, caseInsensitive);
         }
 
 protected:

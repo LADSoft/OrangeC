@@ -292,18 +292,18 @@ void MakeMain::SetupImplicit()
 }
 void MakeMain::ShowRule(RuleList *ruleList)
 {
-    for (RuleList::iterator it = ruleList->begin(); it != ruleList->end(); ++it)
+    for (auto rule : *ruleList)
     {
         std::cout << ruleList->GetTarget().c_str() << (ruleList->GetDoubleColon() ? "::" : ":") << std::endl;
         std::cout << "\tPrerequisites:" << std::endl;
-        std::cout << "\t\t" << (*it)->GetPrerequisites().c_str() << std::endl;
+        std::cout << "\t\t" << rule->GetPrerequisites().c_str() << std::endl;
         std::cout << "\tOrder Prerequisites:" << std::endl;
-        std::cout << "\t\t" << (*it)->GetOrderPrerequisites().c_str() << std::endl;
+        std::cout << "\t\t" << rule->GetOrderPrerequisites().c_str() << std::endl;
         std::cout << "\tCommands:" << std::endl;
-        Command *commands = (*it)->GetCommands();
-        for (Command::iterator it = commands->begin(); it != commands->end(); ++it)
+        Command *commands = rule->GetCommands();
+        for (auto command : *rule->GetCommands())
         {
-            std::cout << "\t\t" << (*it).c_str() << std::endl;
+            std::cout << "\t\t" << command.c_str() << std::endl;
         }
     }
     std::cout << "\tTargetVariables:" << std::endl;
@@ -320,21 +320,19 @@ void MakeMain::ShowRule(RuleList *ruleList)
 void MakeMain::ShowDatabase()
 {
     std::cout << "Variables:" << std::endl;
-    for (VariableContainer::iterator it = VariableContainer::Instance()->begin();
-         it != VariableContainer::Instance()->end(); ++it)
+    for (auto var : *VariableContainer::Instance())
     {
-        std::cout << std::setw(25) << std::setfill(' ') << std::right << (*it->first).c_str();
-        if (it->second->GetFlavor() == Variable::f_recursive)
+        std::cout << std::setw(25) << std::setfill(' ') << std::right << (*var.first).c_str();
+        if (var.second->GetFlavor() == Variable::f_recursive)
             std::cout << " =  ";
         else
             std::cout << " := ";
-        std::cout << it->second->GetValue().c_str() << std::endl;
+        std::cout << var.second->GetValue().c_str() << std::endl;
     }
     std::cout << std::endl << "Explicit rules:" << std::endl;
-    for (RuleContainer::iterator it = RuleContainer::Instance()->begin();
-         it != RuleContainer::Instance()->end(); ++it)
+    for (auto rule: *RuleContainer::Instance())
     {
-        ShowRule(it->second);
+        ShowRule(rule.second);
     }
     std::cout << std::endl << "Implicit rules:" << std::endl;
     for (RuleContainer::ImplicitIterator it = RuleContainer::Instance()->ImplicitBegin();

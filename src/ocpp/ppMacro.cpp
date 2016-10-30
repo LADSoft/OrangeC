@@ -113,7 +113,7 @@ bool ppMacro::HandleRep(std::string &line)
     define.Process(line);
     PPINT n = expr.Eval(line);
     int level = 1;
-    MacroData *p = NULL;
+    MacroData *p = nullptr;
     if (n < 0 || n > INT_MAX)
     {
         Errors::Error("Invalid range in %rep expression");
@@ -251,7 +251,7 @@ bool ppMacro::HandleMacro(std::string &line, bool caseInsensitive)
     bool plussign;
     Tokenizer tk(line, ppExpr::GetHash());
     const Token *next = tk.Next();
-    MacroData *p = NULL;
+    MacroData *p = nullptr;
     bool bailed = false;
     if (next->IsIdentifier())
     {
@@ -427,7 +427,7 @@ bool ppMacro::HandleRotate(std::string &line)
 }
 bool ppMacro::Invoke(std::string name, std::string line)
 {
-    std::map<std::string, MacroData *>::iterator it = macros.find(name);
+   auto it = macros.find(name);
     if (it == macros.end())
     {
         std::string name1 = UTF8::ToUpper(name);
@@ -476,5 +476,5 @@ MacroData *ppMacro::GetTopMacro()
     for (int i = stack.size()-1; i >= 0; i--)
         if (stack[i]->id != -1)
             return stack[i];
-    return NULL;
+    return nullptr;
 }

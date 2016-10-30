@@ -126,9 +126,9 @@ void dlHexMain::GetSectionNames(std::vector<std::string> &names, ObjFile *file)
 }
 void dlHexMain::GetInputSections(const std::vector<std::string> &names, ObjFile *file, ObjFactory *factory)
 {
-    for (std::vector<std::string>::const_iterator it = names.begin(); it != names.end(); ++it)
+    for (auto name : names)
     {
-        ObjSection *s = file->FindSection((*it));
+        ObjSection *s = file->FindSection(name);
         ObjInt size = s->GetSize()->Eval(0);
         ObjInt addr = s->GetOffset()->Eval(0);
         Section *p = new Section(addr, size);
@@ -211,7 +211,7 @@ bool dlHexMain::ReadSections(const std::string &path)
         delete file;
         Utils::fatal("Input file is in relative format");
     }
-    if (file != NULL)
+    if (file != nullptr)
     {
         std::vector<std::string> names;
         GetSectionNames(names, file);
@@ -307,7 +307,7 @@ int dlHexMain::Run(int argc, char **argv)
         Utils::fatal("Invalid .rel file");
         
     std::string outputName = GetOutputName(argv[1]);
-    OutputObject *o = NULL;
+    OutputObject *o = nullptr;
     switch(outputMode)
     {
         case eBinary:

@@ -69,8 +69,8 @@ void MenuItem::WriteRes(ResFile &resFile, bool ex, bool last)
         if (fl & Popup)
         {
             int count = popup.size();
-            for (iterator it = begin(); it != end(); ++it)
-                (*it)->WriteRes(resFile, ex, !--count);
+            for (auto res : *this)
+                res->WriteRes(resFile, ex, !--count);
         }
     }
     else
@@ -91,8 +91,8 @@ void MenuItem::WriteRes(ResFile &resFile, bool ex, bool last)
             resFile.Align();
             resFile.WriteDWord(helpIndex);
             int count = popup.size();
-            for (iterator it = begin(); it != end(); ++it)
-                (*it)->WriteRes(resFile, ex, !--count);
+            for (auto res : *this)
+                res->WriteRes(resFile, ex, !--count);
         }
     }
 }
@@ -266,8 +266,8 @@ void Menu::WriteRes(ResFile &resFile)
         resFile.WriteDWord(helpIndex);
     }
     int count = menuItems.size();
-    for (iterator it = begin(); it != end(); ++it)
-        (*it)->WriteRes(resFile, extended, !--count);
+    for (auto res : *this)
+        res->WriteRes(resFile, extended, !--count);
     resFile.Release();
 }
 void Menu::ReadRC(RCFile &rcFile)

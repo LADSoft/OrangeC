@@ -71,12 +71,12 @@ bool LEFixup::IsRel(ObjExpression *e)
 void LEFixup::LoadFixups(ObjFile &file)
 {
     pages = 0;
-    for (std::deque<LEObject *>::iterator it = objects.begin(); it != objects.end(); ++it)
+    for (auto obj : objects)
     {
         if (lx)
-            pages += ObjectAlign(4096, (*it)->GetSize())/4096;
+            pages += ObjectAlign(4096, obj->GetSize())/4096;
         else
-            pages += ObjectAlign(4096, (*it)->GetInitSize())/4096;
+            pages += ObjectAlign(4096, obj->GetInitSize())/4096;
     }
     int i = 0;
     for (ObjFile::SectionIterator it = file.SectionBegin(); it != file.SectionEnd(); ++it)
@@ -120,7 +120,7 @@ void LEFixup::Setup()
     int size = 0;
     int sect = -1;
     int base = 0;
-    std::map<ObjInt, Target>::iterator it = fixups.begin();
+    auto it = fixups.begin();
     for (page = 0; page < pages; page++)
     {
         ((unsigned *)indexTable)[page] = foffs;
@@ -190,16 +190,16 @@ unsigned LEFixup::CreateSections()
     fixupSize = 0;
     indexTableSize = (pages + 1) * sizeof(unsigned);
     indexTable = new unsigned char[indexTableSize];
-    for (std::map<ObjInt, Target>::iterator it = fixups.begin(); it != fixups.end(); ++it)
+    for (auto fixup : fixups)
     {
         int size;
-        if (it->second.target >= 65536)
+        if (fixup.second.target >= 65536)
             size = 9;
         else
             size = 7;
         fixupSize += size;
         // if a fixup crosses a page boundary, it must reside in both pages
-        if ((it->first & ~4095) != ((it->first + 3) & ~4095))
+        if ((fixup.first & ~4095) != ((fixup.first + 3) & ~4095))
             fixupSize += size;
     }
     fixupTable = new unsigned char[fixupSize];

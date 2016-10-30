@@ -411,10 +411,10 @@ void RegExpContext::Parse(const char *exp, bool regular, bool CaseSensitive, boo
     }
     if (regular)
     {
-        RegExpMatch *lastMatch = NULL;
+        RegExpMatch *lastMatch = nullptr;
         while (!invalid && *exp)
         {
-            RegExpMatch *currentMatch = NULL;
+            RegExpMatch *currentMatch = nullptr;
             switch(*exp)
             {
                 case '.':
@@ -427,7 +427,7 @@ void RegExpContext::Parse(const char *exp, bool regular, bool CaseSensitive, boo
                     if (lastMatch)
                     {
                         lastMatch->SetInterval(0, INT_MAX);
-                        lastMatch = NULL;
+                        lastMatch = nullptr;
                     }
                     else 
                         invalid = true;
@@ -437,7 +437,7 @@ void RegExpContext::Parse(const char *exp, bool regular, bool CaseSensitive, boo
                     if (lastMatch)
                     {
                         lastMatch->SetInterval(1, INT_MAX);
-                        lastMatch = NULL;
+                        lastMatch = nullptr;
                     }
                     else 
                         invalid = true;
@@ -447,7 +447,7 @@ void RegExpContext::Parse(const char *exp, bool regular, bool CaseSensitive, boo
                     if (lastMatch)
                     {
                         lastMatch->SetInterval(0,1);
-                        lastMatch = NULL;
+                        lastMatch = nullptr;
                     }
                     else 
                         invalid = true;
@@ -558,7 +558,7 @@ void RegExpContext::Parse(const char *exp, bool regular, bool CaseSensitive, boo
                             case '\\':
                                 exp++;
                                 lastMatch->SetChar(GetSpecial(*exp++), caseSensitive);
-                                lastMatch = NULL;
+                                lastMatch = nullptr;
                                 break;
                             case '[':
                                 exp++;
@@ -571,7 +571,7 @@ void RegExpContext::Parse(const char *exp, bool regular, bool CaseSensitive, boo
                                 break;
                         }
                     }
-                    lastMatch = NULL;
+                    lastMatch = nullptr;
                     break;				
                 default:
                     currentMatch = new RegExpMatch(*exp++, caseSensitive);
@@ -607,9 +607,9 @@ int RegExpContext::MatchOne(const char *str)
     RegExpMatch::Reset(caseSensitive);
     matchCount = 0;
     matchStackTop = 0;
-    for (std::deque<RegExpMatch *>::iterator it = matches.begin(); it != matches.end(); ++it)
+    for (auto match : matches)
     {
-        int n = (*it)->Matches(*this, str + m);
+        int n = match->Matches(*this, str + m);
         if (n < 0)
             return n;
         m += n;

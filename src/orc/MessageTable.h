@@ -50,7 +50,7 @@ class MessageTable : public Resource
 {
 public:
     MessageTable(const ResourceId &Id, const ResourceInfo &info)
-        : Resource(eMessageTable, Id, info), data(NULL) { }
+        : Resource(eMessageTable, Id, info), data(nullptr) { }
     virtual ~MessageTable();
     virtual void WriteRes(ResFile &resFile);
     virtual void ReadRC(RCFile &rcFile);

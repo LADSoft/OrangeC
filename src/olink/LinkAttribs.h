@@ -46,8 +46,8 @@
 class LinkAttribs
 {
     public:
-        LinkAttribs() : address(NULL), align(NULL), maxSize(NULL), 
-                roundSize(NULL), size(NULL), virtualOffset(NULL), fill(NULL) {}
+        LinkAttribs() : address(nullptr), align(nullptr), maxSize(nullptr), 
+                roundSize(nullptr), size(nullptr), virtualOffset(nullptr), fill(nullptr) {}
         ~LinkAttribs();
         LinkAttribs &operator =(const LinkAttribs &Attribs);
         ObjInt GetAddress()
@@ -77,9 +77,9 @@ class LinkAttribs
         ObjInt GetFill() { if (fill) return fill->Eval(0); else return 0; }
         void SetFill(LinkExpression *Fill)
             { delete fill; fill = Fill; }
-        bool GetAddressSpecified() { return address != NULL; }
-        bool GetVirtualOffsetSpecified() { return virtualOffset != NULL; }
-        bool GetHasFill() { return fill != NULL; }
+        bool GetAddressSpecified() { return address != nullptr; }
+        bool GetVirtualOffsetSpecified() { return virtualOffset != nullptr; }
+        bool GetHasFill() { return fill != nullptr; }
     private:
         LinkExpression *address;
         LinkExpression *align;

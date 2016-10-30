@@ -82,9 +82,9 @@ int OS::Spawn(const std::string command, EnvironmentStrings &environment)
     startup.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
     startup.hStdError = GetStdHandle(STD_ERROR_HANDLE);
     int n = 0;
-    for (EnvironmentStrings::iterator it = environment.begin(); it != environment.end(); ++it)
+    for (auto env : environment)
     {
-        n += (*it).name.size() + (*it).value.size() + 2;
+        n += env.name.size() + env.value.size() + 2;
     }
     n++;
     char *env = new char[n];
@@ -92,13 +92,13 @@ int OS::Spawn(const std::string command, EnvironmentStrings &environment)
     {
         memset(env, 0, sizeof(char)*n); // !!!
         char *p = env;
-        for (EnvironmentStrings::iterator it = environment.begin(); it != environment.end(); ++it)
+        for (auto env : environment)
         {
-            memcpy(p, (*it).name.c_str(), (*it).name.size());
-            p+= (*it).name.size();
+            memcpy(p, env.name.c_str(), env.name.size());
+            p+= env.name.size();
             *p++ = '=';
-            memcpy(p, (*it).value.c_str(), (*it).value.size());
-            p+= (*it).value.size();
+            memcpy(p, env.value.c_str(), env.value.size());
+            p+= env.value.size();
             *p++ = '\0';
         }
         *p++ = '\0';
@@ -107,8 +107,8 @@ int OS::Spawn(const std::string command, EnvironmentStrings &environment)
 //    {
 //        return -1;
 //    }
-    if (CreateProcess(NULL, (char *)cmd.c_str(), NULL, NULL, true, 0, env,
-                      NULL, &startup, &pi))
+    if (CreateProcess(nullptr, (char *)cmd.c_str(), nullptr, nullptr, true, 0, env,
+                      nullptr, &startup, &pi))
     {
         WaitForSingleObject(pi.hProcess, INFINITE);
         DWORD x;
@@ -142,7 +142,7 @@ std::string OS::SpawnWithRedirect(const std::string command)
     PROCESS_INFORMATION pi;
     memset(&startup, 0, sizeof(startup));
     HANDLE pipeRead, pipeWrite, pipeWriteDuplicate;
-    CreatePipe(&pipeRead, &pipeWrite, NULL, 1024*1024);
+    CreatePipe(&pipeRead, &pipeWrite, nullptr, 1024*1024);
     DuplicateHandle(GetCurrentProcess(),pipeWrite, GetCurrentProcess(), &pipeWriteDuplicate, 0, TRUE, DUPLICATE_SAME_ACCESS);
     CloseHandle(pipeWrite);
     startup.cb = sizeof(STARTUPINFO);
@@ -150,15 +150,15 @@ std::string OS::SpawnWithRedirect(const std::string command)
     startup.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
     startup.hStdOutput = pipeWriteDuplicate;
     startup.hStdError = pipeWriteDuplicate;
-    if (CreateProcess(NULL, (char *)cmd.c_str(), NULL, NULL, true, 0, NULL,
-                      NULL, &startup, &pi))
+    if (CreateProcess(nullptr, (char *)cmd.c_str(), nullptr, nullptr, true, 0, nullptr,
+                      nullptr, &startup, &pi))
     {
         WaitForSingleObject(pi.hProcess, INFINITE);
         char *buffer = new char[1024 * 1024];
 //        if (buffer)
         {
             DWORD readlen;
-            ReadFile(pipeRead,buffer, 1024 * 1024, &readlen, NULL);
+            ReadFile(pipeRead,buffer, 1024 * 1024, &readlen, nullptr);
             buffer[readlen] = 0;
             rv = buffer;
         }
@@ -192,10 +192,10 @@ Time OS::GetCurrentTime()
 Time OS::GetFileTime(const std::string fileName)
 {
     FILETIME mod;
-    HANDLE h = CreateFile(fileName.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL,
-                          OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    HANDLE h = CreateFile(fileName.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr,
+                          OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
                           
-    if (h != INVALID_HANDLE_VALUE && ::GetFileTime(h, NULL, NULL, &mod))
+    if (h != INVALID_HANDLE_VALUE && ::GetFileTime(h, nullptr, nullptr, &mod))
     {
         CloseHandle(h);
         FILETIME v;
@@ -220,8 +220,8 @@ Time OS::GetFileTime(const std::string fileName)
 void OS::SetFileTime(const std::string fileName, Time time)
 {
     FILETIME cr, ac, mod;
-    HANDLE h = CreateFile(fileName.c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL,
-                          OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    HANDLE h = CreateFile(fileName.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr,
+                          OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
                           
     if (h != INVALID_HANDLE_VALUE)
     {
@@ -239,7 +239,7 @@ void OS::SetFileTime(const std::string fileName, Time time)
         FILETIME v, mod;
         SystemTimeToFileTime(&systemTime, &v);
         LocalFileTimeToFileTime(&v, &mod);
-        ::SetFileTime(h, NULL, NULL, &mod);
+        ::SetFileTime(h, nullptr, nullptr, &mod);
         CloseHandle(h);
     }
 }

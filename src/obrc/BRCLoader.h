@@ -76,7 +76,7 @@ typedef std::deque<BrowseData *> BrowseDataset;
 class SymData
 {
 public:
-    SymData(std::string &Name) : name(Name), externalCount(0), func(NULL),
+    SymData(std::string &Name) : name(Name), externalCount(0), func(nullptr),
         globalCount(0), argCount(0), localCount(0), fileOffs(0) { }
     ~SymData();
     std::string name;

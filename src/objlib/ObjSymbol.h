@@ -53,7 +53,7 @@ public:
     enum eType { eLabel, ePublic, eLocal, eGlobal, eExternal, eAuto, eReg, 
             eExport, eImport, eDefinition };
     ObjSymbol(const ObjString Name, eType Type, ObjInt Index) : name(Name), 
-            offset(0), index(Index), type(Type), baseType(NULL),
+            offset(0), index(Index), type(Type), baseType(nullptr),
             sectionRelative(false) { }
     virtual ~ObjSymbol() { }
     bool IsSectionRelative() { return sectionRelative; }

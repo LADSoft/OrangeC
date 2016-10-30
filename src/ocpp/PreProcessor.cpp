@@ -147,7 +147,7 @@ bool PreProcessor::GetPreLine(std::string &line)
         else
         {
             delete preData;
-            preData = NULL;
+            preData = nullptr;
         }
     }
     if (ppStart == '%' && macro.GetLine(line, lineno))

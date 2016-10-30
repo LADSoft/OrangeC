@@ -62,9 +62,9 @@ char *Utils::ShortName(char *v)
     static char prog_name[MAX_PATH], *short_name, *extension;
     strcpy(prog_name, v);
     short_name = strrchr(prog_name, '\\');
-    if (short_name == NULL)
+    if (short_name == nullptr)
         short_name = strrchr(prog_name, '/');
-    if (short_name == NULL)
+    if (short_name == nullptr)
         short_name = strrchr(prog_name, ':');
     if (short_name)
         short_name++;
@@ -72,7 +72,7 @@ char *Utils::ShortName(char *v)
         short_name = prog_name;
 
     extension = strrchr(short_name, '.');
-    if (extension != NULL)
+    if (extension != nullptr)
         *extension = '\0';
     return short_name;
 }
@@ -106,7 +106,7 @@ char *Utils::GetModuleName()
 {
     static char buf[256];
 #if defined(WIN32) || defined(MICROSOFT)
-    GetModuleFileNameA(NULL, buf, sizeof(buf));
+    GetModuleFileNameA(nullptr, buf, sizeof(buf));
 #else   
     strcpy(buf, __argv[0]);
 #endif

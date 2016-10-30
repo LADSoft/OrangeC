@@ -53,10 +53,10 @@ class Icon : public Resource
 public:
     Icon(const ResourceInfo &info)
         : Resource(eIcon, ResourceId(++nextIconIndex), info),
-        colors(0), planes(0), bits(0), data(NULL) { }
+        colors(0), planes(0), bits(0), data(nullptr) { }
     Icon(const ResourceInfo &info, const ResourceId &id)
         : Resource(eIcon, id, info),
-        colors(0), planes(0), bits(0), data(NULL) { }
+        colors(0), planes(0), bits(0), data(nullptr) { }
     virtual ~Icon() { delete data; }
     void ReadBin(ResourceData *rd);
     virtual void WriteRes(ResFile &resFile);

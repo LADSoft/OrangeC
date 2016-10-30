@@ -68,13 +68,13 @@ class LinkExpression
 
     public:
         enum eOperator { eValue, ePC, eSymbol, eUnresolvedSection, eSection, eAdd, eSub, eMul, eDiv, eNeg, eCpl };
-        LinkExpression() : op (eValue), left(NULL), right(NULL), symbolName(""), value(0), sect(0) {}
-        LinkExpression(eOperator Op) : op (Op), left(NULL), right(NULL), symbolName(""), value(0) {}
-        LinkExpression(ObjInt Value) : op (eValue), left(NULL), right(NULL), symbolName(""), value(Value) {}
+        LinkExpression() : op (eValue), left(nullptr), right(nullptr), symbolName(""), value(0), sect(0) {}
+        LinkExpression(eOperator Op) : op (Op), left(nullptr), right(nullptr), symbolName(""), value(0) {}
+        LinkExpression(ObjInt Value) : op (eValue), left(nullptr), right(nullptr), symbolName(""), value(Value) {}
         LinkExpression(int section, ObjInt base, ObjInt offs);
-        LinkExpression(const ObjString &SymbolName) : op (eSymbol), left(NULL), right(NULL), symbolName(SymbolName), value(0) {}
+        LinkExpression(const ObjString &SymbolName) : op (eSymbol), left(nullptr), right(nullptr), symbolName(SymbolName), value(0) {}
         LinkExpression(eOperator Op, LinkExpression *Left)
-            : op (Op), left(Left), right(NULL), symbolName(""), value(0) {}
+            : op (Op), left(Left), right(nullptr), symbolName(""), value(0) {}
         LinkExpression(eOperator Op, LinkExpression *Left, LinkExpression *Right)
             : op (Op), left(Left), right(Right), symbolName(""), value(0) {}
         LinkExpression(const LinkExpression &exp);

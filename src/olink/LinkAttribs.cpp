@@ -44,27 +44,27 @@ LinkAttribs &LinkAttribs::operator =(const LinkAttribs &Attribs)
     if (Attribs.address)
         address = new LinkExpression(*Attribs.address);
     else
-        address = NULL;
+        address = nullptr;
     if (Attribs.align)
         align = new LinkExpression(*Attribs.align);
     else
-        align = NULL;
+        align = nullptr;
     if (Attribs.maxSize)
         maxSize = new LinkExpression(*Attribs.maxSize);
     else
-        maxSize = NULL;
+        maxSize = nullptr;
     if (Attribs.roundSize)
         roundSize = new LinkExpression(*Attribs.roundSize);
     else
-        roundSize = NULL;
+        roundSize = nullptr;
     if (Attribs.virtualOffset)
         virtualOffset = new LinkExpression(*Attribs.virtualOffset);
     else
-        virtualOffset = NULL;
+        virtualOffset = nullptr;
     if (Attribs.fill)
         fill = new LinkExpression(*Attribs.fill);
     else
-        fill = NULL;
+        fill = nullptr;
     return *this;
 }
 LinkAttribs::~LinkAttribs()

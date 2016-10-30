@@ -53,11 +53,8 @@ extern "C" int winsystem(const char *);
 
 ConfigData::~ConfigData()
 {
-    for (std::vector<CmdSwitchDefine::define *>::iterator it = defines.begin(); it != defines.end(); ++it)
-    {
-        CmdSwitchDefine::define *d = (*it);
-        delete d;
-    }
+    for (auto define : defines)
+        delete define;
     defines.clear();
 }
 bool ConfigData::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
@@ -133,23 +130,20 @@ bool ConfigData::VisitNode(xmlNode &node, xmlNode *child, void *userData)
 }
 void ConfigData::AddDefine(LinkManager &linker, const std::string &name, const std::string &value)
 {
-    int n = strtoul(value.c_str(), NULL, 0);
+    int n = strtoul(value.c_str(), nullptr, 0);
     LinkExpression *lexp = new LinkExpression(n);
     LinkExpressionSymbol *lsym = new LinkExpressionSymbol(name, lexp);
     LinkExpression::EnterSymbol(lsym, true);
 }
 void ConfigData::SetDefines(LinkManager &linker)
 {
-    for (std::vector<CmdSwitchDefine::define *>::iterator it = defines.begin(); it != defines.end(); ++it)
-        AddDefine(linker, (*it)->name, (*it)->value);
+    for (auto define : defines)
+        AddDefine(linker, define->name, define->value);
 }
 SwitchConfig::~SwitchConfig()
 {
-    for (std::vector<ConfigData *>::iterator it = configData.begin(); it != configData.end(); ++it)
-    {
-        ConfigData *p = *it;
-        delete p;
-    }
+    for (auto data : configData)
+        delete data;
     configData.clear();
 }
 int SwitchConfig::Parse(const char *data)
@@ -170,12 +164,12 @@ int SwitchConfig::Parse(const char *data)
     *q = 0;
     std::string flags = name;
     bool found = false;
-    for (std::vector<ConfigData *>::iterator it = configData.begin(); it != configData.end(); ++it)
+    for (auto data : configData)
     {
-        if ((*it)->name == swname)
+        if (data->name == swname)
         {
-            (*it)->selected = true;
-            (*it)->appFlags += " " + flags + " ";
+            data->selected = true;
+            data->appFlags += " " + flags + " ";
             found = true;
         }
     }	
@@ -208,35 +202,35 @@ bool SwitchConfig::Validate()
 {
     std::string name;
     std::string spec;
-    for (std::vector<ConfigData *>::iterator it = configData.begin(); it != configData.end(); ++it)
+    for (auto data : configData)
     {
-        if ((*it)->selected)
+        if (data->selected)
         {
             if (name.size() != 0)
             {
-                if (name != (*it)->app)
+                if (name != data->app)
                     return false;
             }
             else
-                name = (*it)->app;
+                name = data->app;
             if (spec.size() != 0)
             {
-                if (spec != (*it)->specFile)
+                if (spec != data->specFile)
                     return false;
             }
             else
-                spec = (*it)->specFile;
+                spec = data->specFile;
         }
     }
     return true;
 }
 std::string SwitchConfig::GetSpecFile()
 {
-    for (std::vector<ConfigData *>::iterator it = configData.begin(); it != configData.end(); ++it)
+    for (auto data : configData)
     {
-        if ((*it)->selected)
+        if (data->selected)
         {
-            return (*it)->specFile;
+            return data->specFile;
         }
     }
     return std::string("");
@@ -244,11 +238,11 @@ std::string SwitchConfig::GetSpecFile()
 bool SwitchConfig::GetRelFile()
 {
     bool rel = false;
-    for (std::vector<ConfigData *>::iterator it = configData.begin(); it != configData.end(); ++it)
+    for (auto data : configData)
     {
-        if ((*it)->selected)
+        if (data->selected)
         {
-            if ((*it)->relFile)
+            if (data->relFile)
             {
                 rel = true;
                 break;
@@ -260,11 +254,11 @@ bool SwitchConfig::GetRelFile()
 bool SwitchConfig::GetDebugPassThrough()
 {
     bool passThrough = false;
-    for (std::vector<ConfigData *>::iterator it = configData.begin(); it != configData.end(); ++it)
+    for (auto data : configData)
     {
-        if ((*it)->selected)
+        if (data->selected)
         {
-            if ((*it)->debugPassThrough)
+            if (data->debugPassThrough)
             {
                 passThrough = true;
                 break;
@@ -276,22 +270,22 @@ bool SwitchConfig::GetDebugPassThrough()
 int SwitchConfig::GetMapMode()
 {
     int mode = 0;
-    for (std::vector<ConfigData *>::iterator it = configData.begin(); it != configData.end(); ++it)
+    for (auto data : configData)
     {
-        if ((*it)->selected)
+        if (data->selected)
         {
-            mode = (*it)->mapMode;
+            mode = data->mapMode;
         }
     }
     return mode;
 }
 void SwitchConfig::SetDefines(LinkManager &linker)
 {
-    for (std::vector<ConfigData *>::iterator it = configData.begin(); it != configData.end(); ++it)
+    for (auto data : configData)
     {
-        if ((*it)->selected)
+        if (data->selected)
         {
-            (*it)->SetDefines(linker);
+            data->SetDefines(linker);
         }
     }
 }
@@ -304,13 +298,13 @@ bool SwitchConfig::InterceptFile(const std::string &file)
         // by convention the extensions in the APP file are lower case
         for (int i=0; i < ext.size(); i++)
             ext[i] = tolower(ext[i]);
-        for (std::vector<ConfigData *>::iterator it = configData.begin(); it != configData.end(); ++it)
+        for (auto data : configData)
         {
-            if ((*it)->selected)
+            if (data->selected)
             {
-                for (std::deque<std::string>::iterator it1 = (*it)->extensions.begin(); it1 != (*it)->extensions.end(); ++it1)
+                for (auto extension : data->extensions)
                 {
-                    if (ext == (*it1))
+                    if (ext == extension)
                     {
                         files.push_back(file);
                         return true;
@@ -325,12 +319,12 @@ int SwitchConfig::RunApp(const std::string &path, const std::string &file, const
 {
     std::string flags;
     std::string name;
-    for (std::vector<ConfigData *>::iterator it = configData.begin(); it != configData.end(); ++it)
+    for (auto data : configData)
     {
-        if ((*it)->selected)
+        if (data->selected)
         {
-            name = (*it)->app;
-            flags = flags + " " + (*it)->appFlags;
+            name = data->app;
+            flags = flags + " " + data->appFlags;
         }
     }
     if (name.size() == 0)
@@ -339,8 +333,8 @@ int SwitchConfig::RunApp(const std::string &path, const std::string &file, const
     if (debugFile.size())
         cmd = cmd + "\"/v"+debugFile + "\" " ;
     cmd = cmd + flags + "\"" + file + "\"";
-    for (std::deque<std::string>::iterator it = files.begin(); it != files.end(); ++it)
-        cmd = cmd + " \"" + (*it) + "\"";
+    for (auto name : files)
+        cmd = cmd + " \"" + name + "\"";
 	//std::cout << "Running App: " << cmd << std::endl;
     return system(cmd.c_str());
 }

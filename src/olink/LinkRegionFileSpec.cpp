@@ -64,13 +64,14 @@ LinkRegionFileSpecContainer::LinkRegionFileSpecContainer(const ObjString &Spec)
 }
 LinkRegionFileSpecContainer::~LinkRegionFileSpecContainer()
 {
-    for (std::vector<LinkRegionFileSpec *>::iterator it = specs.begin(); it != specs.end(); ++it)
-        delete *it;
+    for (auto spec : specs)
+        delete spec;
 }
 bool LinkRegionFileSpecContainer::Matches(const ObjString &Spec)
 {
     ObjString working = Spec;
-    for (std::vector<LinkRegionFileSpec *>::iterator it = specs.begin(); it != specs.end(); ++it)
+    for (auto spec : specs)
+    for (auto it = specs.begin(); it != specs.end(); ++it)
     {
         switch ((*it)->GetType())
         {

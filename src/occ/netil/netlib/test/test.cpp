@@ -328,7 +328,7 @@ void test4()
 //
 void test5()
 {
-    PELib libEntry("test3", PELib::ilonly | PELib::bits32);
+    PELib libEntry("test5", PELib::ilonly | PELib::bits32);
 
     DataContainer *working = libEntry.WorkingAssembly();
 
@@ -415,6 +415,95 @@ void test5()
     libEntry.DumpOutputFile("test5.il", PELib::ilasm, false);
     libEntry.DumpOutputFile("test5.exe", PELib::peexe, false);
 }
+// the sixth program calls a function 'Start(string)' in namespace 'nmspc' and class 'cls'
+// Start prints both the passed string and a locally defined string to the console using
+// System.Console.WriteLine()
+//
+void test6()
+{
+    PELib libEntry("test6", PELib::ilonly | PELib::bits32);
+
+    DataContainer *working = libEntry.WorkingAssembly();
+
+    Namespace *nmspc = libEntry.AllocateNamespace("nmspc");
+    working->Add(nmspc);
+    Class *cls = libEntry.AllocateClass("cls", Qualifiers::Ansi | Qualifiers::Sealed, -1, -1);
+    nmspc->Add(cls);
+
+    MethodSignature *signatures = libEntry.AllocateMethodSignature("Start", MethodSignature::Managed, cls);
+    signatures->ReturnType(libEntry.AllocateType(Type::Void, 0));
+    Param *parames1 = libEntry.AllocateParam("strn", libEntry.AllocateType(Type::string, 0));
+    signatures->AddParam(parames1);
+
+    // add a reference to the assembly
+    libEntry.AddExternalAssembly("mscorlib");
+
+    // create the function refernce
+    MethodSignature *signaturep = libEntry.AllocateMethodSignature("WriteLine", 0, nullptr);
+    signaturep->ReturnType(libEntry.AllocateType(Type::Void, 0));
+    signaturep->AddParam(libEntry.AllocateParam("strng", libEntry.AllocateType(Type::string, 0)));
+    // this is what links it to the external assembly
+    // this will only work for functions in the outer class at present...
+    // later I will make the lib read in the contents of assemblies and then you would
+    // do a search for the signature using a string similar to below (but with argument list attached), 
+    // instead of creating one from scratch
+    signaturep->FullName("[mscorlib]System.Console::WriteLine");
+
+    Method *start = libEntry.AllocateMethod(signatures, Qualifiers::Public |
+        Qualifiers::Static |
+        Qualifiers::HideBySig |
+        Qualifiers::CIL |
+        Qualifiers::Managed);
+    start->AddInstruction(libEntry.AllocateInstruction(Instruction::i_ldarg,
+        libEntry.AllocateOperand(parames1)));
+    start->AddInstruction(libEntry.AllocateInstruction(Instruction::i_call,
+        libEntry.AllocateOperand(libEntry.AllocateMethodName(signaturep))));
+
+    start->AddInstruction(libEntry.AllocateInstruction(Instruction::i_ldstr,
+        libEntry.AllocateOperand("this is a string in Start()", true)));
+    start->AddInstruction(libEntry.AllocateInstruction(Instruction::i_call,
+        libEntry.AllocateOperand(libEntry.AllocateMethodName(signaturep))));
+
+    start->AddInstruction(libEntry.AllocateInstruction(Instruction::i_ret, nullptr));
+
+    try
+    {
+        start->Optimize(libEntry);
+    }
+    catch (PELibError exc)
+    {
+        std::cout << "Optimizer error: " << exc.what() << std::endl;
+    }
+    cls->Add(start);
+
+    MethodSignature *signaturem = libEntry.AllocateMethodSignature("$Main", MethodSignature::Managed, working);
+    signaturem->ReturnType(libEntry.AllocateType(Type::Void, 0));
+    Method *main = libEntry.AllocateMethod(signaturem, Qualifiers::Private |
+        Qualifiers::Static |
+        Qualifiers::HideBySig |
+        Qualifiers::CIL |
+        Qualifiers::Managed, true);
+    working->Add(main);
+
+    // note the reference to the generic form of ldc.i4 ... it will be optimized
+    // into an ldc.i4.s by the library
+    main->AddInstruction(libEntry.AllocateInstruction(Instruction::i_ldstr,
+        libEntry.AllocateOperand("this is a string in $Main()", true)));
+    main->AddInstruction(libEntry.AllocateInstruction(Instruction::i_call,
+        libEntry.AllocateOperand(libEntry.AllocateMethodName(signatures))));
+    main->AddInstruction(libEntry.AllocateInstruction(Instruction::i_ret, nullptr));
+
+    try
+    {
+        main->Optimize(libEntry);
+    }
+    catch (PELibError exc)
+    {
+        std::cout << "Optimizer error: " << exc.what() << std::endl;
+    }
+    libEntry.DumpOutputFile("test6.il", PELib::ilasm, false);
+    libEntry.DumpOutputFile("test6.exe", PELib::peexe, false);
+}
 int main()
 {
     test1();
@@ -422,4 +511,5 @@ int main()
     test3();
     test4();
     test5();
+    test6();
 }

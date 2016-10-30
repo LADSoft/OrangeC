@@ -99,7 +99,12 @@ static struct hash *GetThunkRecord(void *proc, int n)
     }
     return NULL;
 }
-_declspec(dllexport) void * __OCCMSIL_GetProcThunkToManaged(void *proc, unsigned char *pdata)
+#ifdef __ORANGEC__
+__export
+#else
+__declspec(dllexport) 
+#endif
+void * __OCCMSIL_GetProcThunkToManaged(void *proc, unsigned char *pdata)
  {
 	static struct thunk1 {       /* must be <= 16 bytes, not sure if this is an MSIL limitation or not */
 		unsigned char code[10];
@@ -182,7 +187,12 @@ _declspec(dllexport) void * __OCCMSIL_GetProcThunkToManaged(void *proc, unsigned
     }
     return NULL;
  }
-__declspec(dllexport) void *__OCCMSIL_GetProcThunkToUnmanaged(void *proc)
+#ifdef __ORANGEC__
+__export
+#else
+__declspec(dllexport) 
+#endif
+void *__OCCMSIL_GetProcThunkToUnmanaged(void *proc)
  {
 	static struct thunk {       /* must be <= 16 bytes, not sure if this is an MSIL limitation or not */
 		unsigned char code[3];

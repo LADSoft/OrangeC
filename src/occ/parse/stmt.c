@@ -661,6 +661,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 }
                 else
                 {
+                    selectTP = basetype(selectTP)->sp->tp;
                     EXPRESSION *ibegin=NULL, *iend=NULL;
                     SYMBOL *sbegin=NULL, *send=NULL;
                     TYPE *iteratorType = NULL;
@@ -781,7 +782,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                             sbegin = namespacesearch("begin", globalNameSpace, FALSE, FALSE);
                             send = namespacesearch("end", globalNameSpace, FALSE, FALSE);
                             // now possibly lookup in namespace std
-                            if (!sbegin || send)
+                            if (!sbegin || !send)
                             {
                                 SYMBOL *standard = namespacesearch("std", globalNameSpace, FALSE, FALSE);
                                 if (standard)
@@ -1130,6 +1131,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         else
                         {
                             TYPE *ppType = iteratorType;
+                            ppType = basetype(ppType);
                             st->select = eBegin;
                             if (ispointer(iteratorType))
                             {

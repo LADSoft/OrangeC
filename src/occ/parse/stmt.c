@@ -672,7 +672,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                     needkw(&lex, closepa);
                     while (castvalue(select))
                         select = select->left;
-                    if (lvalue(select) && select->type != en_l_ref)
+                    if (lvalue(select) && select->type != en_l_ref && !isstructured(selectTP))
                         select = select->left;
                     tpref->size = getSize(bt_pointer);
                     tpref->type = bt_rref;

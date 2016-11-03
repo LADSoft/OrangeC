@@ -1553,7 +1553,7 @@ static void genConsData(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi,
 static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi, SYMBOL *member, int memberOffs, BOOLEAN top, EXPRESSION *thisptr, EXPRESSION *otherptr, SYMBOL *parentCons, BOOLEAN baseClass, BOOLEAN doCopy)
 {
     STATEMENT *st = NULL;
-    if (member->init)
+    if (cls !=member && member->init)
     {
         EXPRESSION *exp;
         if (member->init->exp)
@@ -1882,11 +1882,15 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
 {
     MEMBERINITIALIZERS *init = cons->memberInitializers;
     HASHREC *hr;
+    BOOLEAN first = TRUE;
+    BOOLEAN hasDelegate = FALSE;
     while (init)
     {
         LEXEME *lex;
         BASECLASS *bc = cls->baseClasses;
         VBASEENTRY *vbase = cls->vbaseEntries;
+        if (!first && hasDelegate)
+            error(ERR_DELEGATING_CONSTRUCTOR_ONLY_INITIALIZER);
         init->sp = search(init->name, basetype(cls->tp)->syms);
         if (init->sp)
         {
@@ -1902,7 +1906,7 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
         }
         if (init->sp)
         {
-            if (init->sp->storage_class != sc_member && init->sp->storage_class != sc_mutable)
+            if (init->sp != cls && init->sp->storage_class != sc_member && init->sp->storage_class != sc_mutable)
             {
                 errorsym(ERR_NEED_NONSTATIC_MEMBER, init->sp);
             }
@@ -2074,7 +2078,17 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
             else
             {
                 int offset = 0;
-                init->sp = findClassName(init->name, cls, bc, vbase, &offset);
+                // check for a delegating constructor call
+                if (!strcmp(init->name, cls->name))
+                {
+                    init->sp = cls;
+                    init->delegating = TRUE;
+                    if (!first)
+                        error(ERR_DELEGATING_CONSTRUCTOR_ONLY_INITIALIZER);
+                    hasDelegate = TRUE;
+                }
+                if (!init->sp)
+                    init->sp = findClassName(init->name, cls, bc, vbase, &offset);
                 if (init->sp)
                 {
                     // have to make a *real* variable as a fudge...
@@ -2190,6 +2204,7 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
             SYMBOL *sp = findClassName(init->name, cls, bc, vbase, &offset);
             errorstrsym(ERR_NOT_A_MEMBER_OR_BASE_CLASS, init->name, cls);
         }
+        first = FALSE;
         init = init->next;
     }
 }
@@ -2262,84 +2277,91 @@ EXPRESSION *thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTA
     deref(&stdpointer, &otherptr);
     if (parseInitializers)
         allocInitializers(sym, cons, thisptr);
-    if (sym->tp->type == bt_union)
+    if (cons->memberInitializers && cons->memberInitializers->delegating)
     {
-        AllocateLocalContext(NULL, cons, codeLabel++);
-        hr = sym->tp->syms->table[0];
-        while (hr)
+        genConstructorCall(b, sym, cons->memberInitializers, sym, 0, FALSE, thisptr, otherptr, cons, TRUE, doCopy);
+    }
+    else
+    {
+        if (sym->tp->type == bt_union)
         {
-            SYMBOL *sp = (SYMBOL *)hr->p;
-            if ((sp->storage_class == sc_member || sp->storage_class == sc_mutable) && sp->tp->type != bt_aggregate)
+            AllocateLocalContext(NULL, cons, codeLabel++);
+            hr = sym->tp->syms->table[0];
+            while (hr)
             {
-                if (sp->init)
+                SYMBOL *sp = (SYMBOL *)hr->p;
+                if ((sp->storage_class == sc_member || sp->storage_class == sc_mutable) && sp->tp->type != bt_aggregate)
+                {
+                    if (sp->init)
+                    {
+                        if (isstructured(sp->tp))
+                        {
+                            genConstructorCall(b, basetype(sp->tp)->sp, cons->memberInitializers, sp, sp->offset, TRUE, thisptr, otherptr, cons, FALSE, doCopy);
+                        }
+                        else
+                        {
+                            genConsData(b, sym, cons->memberInitializers, sp, sp->offset, thisptr, otherptr, cons, doCopy);
+                        }
+                    }
+                }
+                hr = hr->next;
+            }
+            FreeLocalContext(NULL, cons, codeLabel++);
+        }
+        else
+        {
+            if (sym->vbaseEntries)
+            {
+                SYMBOL *sp = makeID(sc_parameter, &stdint, NULL, "__$$constop");
+                EXPRESSION *val = varNode(en_auto, sp);
+                int lbl = codeLabel++;
+                STATEMENT *st;
+                sp->constop = TRUE;
+                sp->decoratedName = sp->errname = sp->name;
+                sp->offset = chosenAssembler->arch->retblocksize + cons->paramsize;
+                insert(sp, localNameSpace->syms);
+
+                deref(&stdint, &val);
+                st = stmtNode(NULL, b, st_notselect);
+                optimize_for_constants(&val);
+                st->select = val;
+                st->label = lbl;
+                virtualBaseThunks(b, sym, thisptr);
+                doVirtualBases(b, sym, cons->memberInitializers, sym->vbaseEntries, thisptr, otherptr, cons, doCopy);
+                if (hasVTab(sym))
+                    dovtabThunks(b, sym, thisptr, TRUE);
+                st = stmtNode(NULL, b, st_label);
+                st->label = lbl;
+            }
+            AllocateLocalContext(NULL, cons, codeLabel++);
+            bc = sym->baseClasses;
+            while (bc)
+            {
+                if (!bc->isvirtual)
+                    genConstructorCall(b, sym, cons->memberInitializers, bc->cls, bc->offset, FALSE, thisptr, otherptr, cons, TRUE, doCopy || !cons->memberInitializers);
+                bc = bc->next;
+            }
+            if (hasVTab(sym))
+                dovtabThunks(b, sym, thisptr, FALSE);
+            hr = sym->tp->syms->table[0];
+            while (hr)
+            {
+                SYMBOL *sp = (SYMBOL *)hr->p;
+                if ((sp->storage_class == sc_member || sp->storage_class == sc_mutable) && sp->tp->type != bt_aggregate)
                 {
                     if (isstructured(sp->tp))
                     {
-                        genConstructorCall(b, basetype(sp->tp)->sp, cons->memberInitializers, sp, sp->offset,TRUE, thisptr, otherptr, cons, FALSE, doCopy);
+                        genConstructorCall(b, basetype(sp->tp)->sp, cons->memberInitializers, sp, sp->offset, TRUE, thisptr, otherptr, cons, FALSE, doCopy);
                     }
                     else
                     {
                         genConsData(b, sym, cons->memberInitializers, sp, sp->offset, thisptr, otherptr, cons, doCopy);
                     }
                 }
+                hr = hr->next;
             }
-            hr = hr->next;
+            FreeLocalContext(NULL, cons, codeLabel++);
         }
-        FreeLocalContext(NULL, cons, codeLabel++);
-    }
-    else
-    {
-        if (sym->vbaseEntries)
-        {
-            SYMBOL *sp = makeID(sc_parameter, &stdint, NULL, "__$$constop");
-            EXPRESSION *val = varNode(en_auto, sp);
-            int lbl = codeLabel++;
-            STATEMENT *st;
-            sp->constop = TRUE;
-            sp->decoratedName = sp->errname = sp->name;
-            sp->offset = chosenAssembler->arch->retblocksize + cons->paramsize;
-            insert(sp, localNameSpace->syms);
-    
-            deref(&stdint, &val);
-            st = stmtNode(NULL,b, st_notselect);
-            optimize_for_constants(&val);
-            st->select = val;
-            st->label = lbl;
-            virtualBaseThunks(b, sym, thisptr);
-            doVirtualBases(b, sym, cons->memberInitializers, sym->vbaseEntries, thisptr, otherptr, cons, doCopy);
-            if (hasVTab(sym))
-                dovtabThunks(b, sym, thisptr, TRUE);
-            st = stmtNode(NULL,b, st_label);
-            st->label = lbl;
-        }
-        AllocateLocalContext(NULL, cons, codeLabel++);
-        bc = sym->baseClasses;
-        while (bc)
-        {
-            if (!bc->isvirtual)
-                genConstructorCall(b, sym, cons->memberInitializers, bc->cls, bc->offset, FALSE, thisptr, otherptr, cons, TRUE, doCopy || !cons->memberInitializers);
-            bc = bc->next;
-        }
-        if (hasVTab(sym))
-            dovtabThunks(b, sym, thisptr, FALSE);
-        hr = sym->tp->syms->table[0];
-        while (hr)
-        {
-            SYMBOL *sp = (SYMBOL *)hr->p;
-            if ((sp->storage_class == sc_member || sp->storage_class == sc_mutable) && sp->tp->type != bt_aggregate)
-            {
-                if (isstructured(sp->tp))
-                {
-                    genConstructorCall(b, basetype(sp->tp)->sp, cons->memberInitializers, sp, sp->offset,TRUE, thisptr, otherptr, cons, FALSE, doCopy);
-                }
-                else
-                {
-                    genConsData(b, sym, cons->memberInitializers, sp, sp->offset, thisptr, otherptr, cons, doCopy);
-                }
-            }
-            hr = hr->next;
-        }
-        FreeLocalContext(NULL, cons, codeLabel++);
     }
     if (parseInitializers)
         releaseInitializers(sym, cons);

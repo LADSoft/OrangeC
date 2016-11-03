@@ -667,6 +667,7 @@ typedef struct _memberInitializers
     char *file;
     struct lexeme *initData;
     int packed : 1;
+    int delegating : 1;
 } MEMBERINITIALIZERS;
 
 typedef struct _baseClass

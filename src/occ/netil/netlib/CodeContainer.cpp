@@ -115,11 +115,11 @@ namespace DotNetPELib
         {
             if (instruction->OpCode() == Instruction::i_label)
             {
-                if (labels[instruction->GetText()] != 0)
+                if (labels[instruction->Label()] != 0)
                 {
-                    throw PELibError(PELibError::DuplicateLabel, instruction->GetText());
+                    throw PELibError(PELibError::DuplicateLabel, instruction->Label());
                 }
-                labels[instruction->GetText()] = instruction;
+                labels[instruction->Label()] = instruction;
             }
         }
     }

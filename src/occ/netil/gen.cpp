@@ -125,7 +125,7 @@ void oa_gen_label(int labno)
 {
     char buf[256];
     sprintf(buf, "L_%d", labno);
-    Instruction *i = peLib->AllocateInstruction(Instruction::i_label, buf);
+    Instruction *i = peLib->AllocateInstruction(Instruction::i_label, peLib->AllocateOperand(buf));
     currentMethod->AddInstruction(i);
 }
 

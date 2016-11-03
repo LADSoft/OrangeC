@@ -604,6 +604,8 @@ namespace DotNetPELib
         Operand::Operand(longlong Value, OpSize Size) : type_(t_int), intValue_(Value), sz_(Size)
         {
         }
+        Operand::Operand(int Value, OpSize Size) : Operand((longlong)Value, Size) { }
+        Operand::Operand(unsigned Value, OpSize Size) : Operand((longlong)Value, Size) { }
         ///** Operand is a floating point constant
         Operand::Operand(double Value, OpSize Size) : type_(t_real), floatValue_(Value), sz_(Size)
         {
@@ -705,8 +707,16 @@ namespace DotNetPELib
         void NullOperand(Allocator &allocator);
         ///** Get the operand (CIL instructions have either zero or 1 operands)
         Operand *GetOperand() const { return operand_; }
-        ///** Get text, e.g. for a label name
-        std::string GetText() const { return text_; }
+        ///** Get text, e.g. for a comment
+        std::string Text() const { return text_; }
+        ///** Get the label name associated with the instruction
+        std::string Label() const
+        {
+            if (operand_)
+                return operand_->StringValue();
+            else
+                return "";
+        }
         ///** The offset of the instruction within the method
         int Offset() const { return offset_; }
         ///** Set the offset of the instruction within the method
@@ -751,7 +761,7 @@ namespace DotNetPELib
         iop op_;
         int offset_;
         Operand *operand_; // for non-labels
-        std::string text_; // for labels or comments
+        std::string text_; // for comments
         bool live_;
         static InstructionName instructions_[];
     };
@@ -1034,6 +1044,12 @@ namespace DotNetPELib
         Operand *AllocateOperand();
         Operand *AllocateOperand(Value *V);
         Operand *AllocateOperand(longlong Value, Operand::OpSize Size);
+        Operand *AllocateOperand(int Value, Operand::OpSize Size) {
+            return AllocateOperand((longlong)Value, Size);
+        }
+        Operand *AllocateOperand(unsigned Value, Operand::OpSize Size) {
+            return AllocateOperand((longlong)Value, Size);
+        }
         Operand *AllocateOperand(double Value, Operand::OpSize Size);
         Operand *AllocateOperand(std::string Value, bool);
         Operand *AllocateOperand(std::string Value);

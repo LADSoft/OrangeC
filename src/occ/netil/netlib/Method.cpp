@@ -328,7 +328,7 @@ namespace DotNetPELib
                 }
                 else if (instruction->OpCode() == Instruction::i_label)
                 {
-                    if (labelsReached.find(instruction->GetText()) != labelsReached.end())
+                    if (labelsReached.find(instruction->Label()) != labelsReached.end())
                     {
                         instruction->Live(true);
                         skipping = false;
@@ -401,7 +401,7 @@ namespace DotNetPELib
                 {
                     if (lastBranch)
                     {
-                        auto it1 = labels.find(instruction->GetText());
+                        auto it1 = labels.find(instruction->Label());
                         if (it1 != labels.end())
                         {
                             n = it1->second;
@@ -413,17 +413,17 @@ namespace DotNetPELib
                     }
                     else
                     {
-                        auto it1 = labels.find(instruction->GetText());
+                        auto it1 = labels.find(instruction->Label());
                         if (it1 != labels.end())
                         {
                             if (it1->second != n)
                             {
-                                throw PELibError(PELibError::MismatchedStack, instruction->GetText());
+                                throw PELibError(PELibError::MismatchedStack, instruction->Label());
                             }
                         }
                         else
                         {
-                            labels[instruction->GetText()] = n;
+                            labels[instruction->Label()] = n;
                         }
                     }
 

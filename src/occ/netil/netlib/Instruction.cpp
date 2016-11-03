@@ -327,11 +327,11 @@ namespace DotNetPELib
     {
         if (op_ == i_label)
         {
-            peLib.Out() << text_ << ":" << std::endl;
+            peLib.Out() << Label() << ":" << std::endl;
         }
         else if (op_ == i_comment)
         {
-            peLib.Out() << "// " << text_ << std::endl;
+            peLib.Out() << "// " << Text() << std::endl;
         }
         else if (op_ == i_switch)
         {

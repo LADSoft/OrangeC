@@ -37,25 +37,34 @@
     contact information:
         email: TouchStone222@runbox.com <David Lindauer>
 */
-#include <Windows.h>
-#include <WinCrypt.h>
+#include <random>
+#include <array>
+#include <algorithm>
+#include <functional>
 #include "DotNetPELib.h"
 #include "PEFile.h"
 
 void DotNetPELib::PEWriter::CreateGuid(Byte *Guid)
 {
-    HCRYPTPROV hProv;
-    // get a highly random number
-    if (!CryptAcquireContext(&hProv, nullptr, nullptr, PROV_RSA_FULL, 0))
-        CryptAcquireContext(&hProv, nullptr, nullptr, PROV_RSA_FULL, CRYPT_NEWKEYSET);
+    std::array<unsigned char, 128/8> rnd;
 
-    CryptGenRandom(hProv, 128 / 8, Guid);
-    CryptReleaseContext(hProv, 0);
+    std::uniform_int_distribution<int> distribution(0, 0xff);
+    // note that this whole thing will fall apart if the C++ lib uses
+    // a prng with constant seed for the random_device implementation.
+    // that shouldn't be a problem on OS we are interested in.
+    std::random_device dev;
+    std::mt19937 engine(dev());
+    auto generator = std::bind(distribution, engine);
+
+    std::generate(rnd.begin(), rnd.end(), generator);
+
     // make it a valid version 4 (random) GUID
     // remember that on windows GUIDs are native endianness so this may need
     // work if you port it
-    Guid[7/*6*/] &= 0xf;
-    Guid[7/*6*/] |= 0x40;
-    Guid[9/*8*/] &= 0x3f;
-    Guid[9/*8*/] |= 0x80;
+    rnd[7/*6*/] &= 0xf;
+    rnd[7/*6*/] |= 0x40;
+    rnd[9/*8*/] &= 0x3f;
+    rnd[9/*8*/] |= 0x80;
+
+    memcpy(Guid, rnd.data(), rnd.size());
 }

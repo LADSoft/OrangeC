@@ -38,6 +38,7 @@
         email: TouchStone222@runbox.com <David Lindauer>
 */
 #include <list>
+#include <vector>
 #include <map>
 #include <string>
 #include <iostream>
@@ -478,7 +479,7 @@ namespace DotNetPELib
         MethodSignature *Signature() const { return prototype_; }
 
         ///** Iterate through local variables
-        typedef std::list<Local *>::iterator iterator;
+        typedef std::vector<Local *>::iterator iterator;
         iterator begin() { return varList_.begin(); }
         iterator end() { return varList_.end(); }
         size_t size() const { return varList_.size(); }
@@ -493,7 +494,7 @@ namespace DotNetPELib
         void CalculateMaxStack();
         void CalculateLive();
         MethodSignature *prototype_;
-        std::list<Local *> varList_;
+        std::vector<Local *> varList_;
         std::string pInvokeName_;
         InvokeMode invokeMode_;
         InvokeType pInvokeType_;

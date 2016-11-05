@@ -43,6 +43,7 @@
 #include <stdio.h>
 #include <set>
 #include <typeinfo>
+#include <algorithm>
 namespace DotNetPELib
 {
     Method::Method(MethodSignature *Prototype, Qualifiers flags, bool entry)
@@ -86,7 +87,7 @@ namespace DotNetPELib
             if (varList_.size())
             {
                 peLib.Out() << "\t.locals (" << std::endl;
-                for (std::list<Local *>::const_iterator it = varList_.begin(); it != varList_.end();)
+                for (auto it = varList_.begin(); it != varList_.end();)
                 {
 
                     peLib.Out() << "\t\t[" << (*it)->Index() << "]\t";
@@ -444,15 +445,6 @@ namespace DotNetPELib
                 throw PELibError(PELibError::StackNotEmpty, " at end of function");
         }
     }
-    static int localCompare(const void *left, const void *right)
-    {
-        Local **l = (Local **)left;
-        Local **r = (Local **)right;
-        // sort from highest to lowest
-        if ((*l)->Uses() > (*r)->Uses())
-            return -1;
-        return (*l)->Uses() < (*r)->Uses();
-    }
     void Method::OptimizeLocals(PELib &peLib)
     {
         for (auto instruction : instructions_)
@@ -467,20 +459,8 @@ namespace DotNetPELib
                 }
             }
         }
-        int n = varList_.size();
-        Local **vars = new Local *[n];
-        int i = 0;
-        for (auto local : varList_)
-        {
-            vars[i++] = local;
-        }
-        varList_.clear();
-        qsort(vars, n, sizeof(Local *), localCompare);
-        for (int i = 0; i < n; i++)
-        {
-            vars[i]->Index(i);
-            varList_.push_back(vars[i]);
-        }
-        delete[] vars;
+        std::sort(varList_.begin(), varList_.end(), [](const Local *left, const Local *right) {
+            return left->Uses() > right->Uses();
+        });
     }
 }

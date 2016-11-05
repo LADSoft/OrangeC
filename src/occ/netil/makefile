@@ -105,7 +105,7 @@ LIB_DEPENDENCIES=util netlib
 WIN32 = WIN32
 #use long long type
 LL = USE_LONGLONG
-DEFINES=$(i386) $(LL) $(MSDOS) $(WIN32) nullptr=NULL override
+DEFINES=$(i386) $(LL) $(MSDOS) $(WIN32)
 
 SOURCE = ..\parse;..\preproc;..\middle
 
@@ -119,12 +119,12 @@ vpath %.cs $(SRCPATH);dll
 
 compiler: redirect netlib.lib lsmsilcrtl.dll occmsil testsqlite.exe
 
-redirect: 
+redirect:
 	@$(MAKE) /T
 
 occmsil: occmsil.c
 	-del occmsil.dll
-	bcc32 /WD occmsil.c
+	occ /Wd occmsil.c
 
 lsmsilcrtl.dll: lsmsilcrtl.cs
 	csc /unsafe /t:library lsmsilcrtl.cs
@@ -137,11 +137,9 @@ testsqlite.exe: zzz.dll sqlite3.dll sqlite3\testsqlite.cs
 
 zzz.dll: sqlite3\zzz.c
 	occil /c /Wd sqlite3\zzz.c /Nzzz.ar
-	ilasm /DLL zzz
 
 sqlite3.dll: sqlite3\sqlite3.c
 	occil /c /9 /Wd /Lkernel32 sqlite3\sqlite3.c /Nsqlite3.sqlite
-	ilasm /DLL sqlite3
 
 DISTRIBUTE: copyexe
 	copy target.cfg $(DISTBIN)\occ.cfg

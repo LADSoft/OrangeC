@@ -1,7 +1,16 @@
 Release notes:
 
 version 6.0.10:
-    occ:        bug fixes
+    occ:        fix problem where copy constructors sometimes caused a compile error
+    occ:        fix problem where sometimes compiling a range based for could fail
+    occ:        fix problem with for-range: 'for (auto a : *tt)' compiled incorrectly
+    occ:        add delegating constructors
+//    occ:        add inherited constructors
+    occ:	fix problems with compiling std::bind (type conversions for functions)
+    occ:        defining a function while specifying both a namespace and a class qualifier did not work
+		the namespace wasn't used as a reference
+    occ:        fix problem with templates sometimes not being instantiated
+    occ:        lambda functions used inside namespaces other than the global one crashed the compiler
     dlpe:       generate DLLs that don't trigger problems from antivirus programs
     clibs:      reintegrate lscrtl.dll
 

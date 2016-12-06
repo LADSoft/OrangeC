@@ -302,7 +302,7 @@ static void createCaller(void)
     FUNCTIONCALL *params = Alloc(sizeof(FUNCTIONCALL));
     TYPE *args = realArgs(lambdas->func);
     SYMBOL *func = makeID(sc_member, args, NULL, overloadNameTab[CI_FUNC]);
-    SYMBOL *lambdaCall = search(isstructured(basetype(lambdas->func->tp)->btp) ? "__lambdaCallS" : "__lambdaCall", globalNameSpace->syms);
+    SYMBOL *lambdaCall = namespacesearch(isstructured(basetype(lambdas->func->tp)->btp) ? "__lambdaPtrCallS" : "__lambdaPtrCall", globalNameSpace, FALSE, FALSE);
     BLOCKDATA block1, block2;
     STATEMENT *st;
     lambdaCall = (SYMBOL *)lambdaCall->tp->syms->table[0]->p;
@@ -340,7 +340,7 @@ static SYMBOL *createPtrCaller(SYMBOL *self)
     FUNCTIONCALL *params = Alloc(sizeof(FUNCTIONCALL));
     TYPE *pargs = realArgs(lambdas->func);
     SYMBOL *func = makeID(sc_static, pargs, NULL, "$ptrcaller");
-    SYMBOL *lambdaCall = search(isstructured(basetype(lambdas->func->tp)->btp) ? "__lambdaPtrCallS" : "__lambdaPtrCall", globalNameSpace->syms);
+    SYMBOL *lambdaCall = namespacesearch(isstructured(basetype(lambdas->func->tp)->btp) ? "__lambdaPtrCallS" : "__lambdaPtrCall", globalNameSpace, FALSE, FALSE);
     BLOCKDATA block1, block2;
     STATEMENT *st;
     EXPRESSION *exp = varNode(en_label, self);

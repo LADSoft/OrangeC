@@ -63,6 +63,7 @@ extern LAMBDA *lambdas;
 extern int anonymousNotAlloc;
 extern BOOLEAN functionCanThrow;
 extern LINEDATA *linesHead, *linesTail;
+extern BOOLEAN inTemplateType;
 
 LIST *nameSpaceList;
 char anonymousNameSpaceName[512];
@@ -968,10 +969,10 @@ TYPE *PerformDeferredInitialization (TYPE *tp, SYMBOL *funcsp)
         tpx = &basetype(*tpx)->btp;
     while ((*tpx)->btp && !isfunction(*tpx))
         tpx = &(*tpx)->btp;
-    if (cparams.prm_cplusplus && isstructured(*tpx))
+    if (cparams.prm_cplusplus && !inTemplateType && isstructured(*tpx))
     {
         SYMBOL *sp = basetype(*tpx)->sp;
-        if (sp->templateLevel && (!sp->instantiated || sp->linkage != lk_virtual) 
+        if (sp->templateLevel && (!sp->instantiated || sp->linkage != lk_virtual)
             && sp->templateParams && allTemplateArgsSpecified(sp, sp->templateParams->next))
         {
 	        sp = TemplateClassInstantiateInternal(sp, NULL, FALSE);
@@ -1604,10 +1605,10 @@ void GatherPackedVars(int *count, SYMBOL **arg, EXPRESSION *packedExp)
         TEMPLATEPARAMLIST *tpl = packedExp->v.func->templateParams;
         while (tpl)
         {
-            if (tpl->p->packed)
+            if (tpl->p->packed && tpl->argsym)
             {
-                arg[(*count)++] = tpl->p->sym;
-                NormalizePacked(tpl->p->sym->tp);
+                arg[(*count)++] = tpl->argsym;
+                NormalizePacked(tpl->argsym->tp);
                 break;
             }
             tpl = tpl->next;

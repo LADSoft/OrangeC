@@ -101,12 +101,12 @@ BOOLEAN startOfType(LEXEME *lex, BOOLEAN assumeType)
        
     if (lex->type == l_id)
     { 
-        TEMPLATEPARAM *tparam = TemplateLookupSpecializationParam(lex->value.s.a);
+        TEMPLATEPARAMLIST *tparam = TemplateLookupSpecializationParam(lex->value.s.a);
         if (tparam)
         {
             linesHead = oldHead;
             linesTail = oldTail;
-            return tparam->type == kw_typename || tparam->type == kw_template;
+            return tparam->p->type == kw_typename || tparam->p->type == kw_template;
         }
     }
     if (lex->type == l_id || MATCHKW(lex, classsel))

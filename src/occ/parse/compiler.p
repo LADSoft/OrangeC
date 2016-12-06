@@ -114,7 +114,7 @@ BOOLEAN equalTemplateIntNode(EXPRESSION *exp1, EXPRESSION *exp2);
 BOOLEAN templatecomparetypes(TYPE *tp1, TYPE *tp2, BOOLEAN exact);
 BOOLEAN templatecompareexpressions(EXPRESSION *exp1, EXPRESSION *exp2);
 BOOLEAN templateselectorcompare(TEMPLATESELECTOR *ts1, TEMPLATESELECTOR *ts2);
-TEMPLATEPARAM *TemplateLookupSpecializationParam(char *name);
+TEMPLATEPARAMLIST *TemplateLookupSpecializationParam(char *name);
 BOOLEAN hasVTab(SYMBOL *sp);
 BOOLEAN sameTemplatePointedTo(TYPE *tnew, TYPE *told);
 BOOLEAN sameTemplate(TYPE *P, TYPE *A);

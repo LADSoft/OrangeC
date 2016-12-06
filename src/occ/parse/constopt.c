@@ -2414,7 +2414,7 @@ join_lor:
                         TEMPLATEPARAMLIST *tpl = search->tmpl;
                         while (tpl && !found)
                         {
-                            if (tpl->p->sym && !strcmp(tpl->p->sym->name, sym->name))
+                            if (tpl->argsym && !strcmp(tpl->argsym->name, sym->name))
                                 found = tpl;
                             tpl = tpl->next;
                         }

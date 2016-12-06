@@ -716,7 +716,7 @@ typedef struct _templateParam
     int index:8;
     int packed:1;
     int initialized:1;
-    SYMBOL *sym, *packsym;
+    SYMBOL *packsym;
     void *hold; /* value held during partial template ordering */
     union {
         // the dflt & val fields must be in the same place for each item
@@ -760,6 +760,7 @@ typedef struct _templateParam
 typedef struct _templateParamList
 {
     struct _templateParamList *next;
+    SYMBOL *argsym;
     TEMPLATEPARAM *p;
 } TEMPLATEPARAMLIST;
 

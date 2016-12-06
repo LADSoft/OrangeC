@@ -603,14 +603,17 @@ static void HandleAssn(QUAD *head)
                 // mem, immed
                 ALIASNAME *an2 = LookupMem(head->dc.left);
                 ALIASADDRESS *aa2 = LookupAddress(an2, 0);
-                ALIASNAME *an = LookupMem(head->ans->offset->v.sp->imvalue);
-                ALIASADDRESS *aa;
-                ALIASLIST *al = aAlloc(sizeof(ALIASLIST));
-                al->address = aa2;
-                if (head->ans->mode == i_direct)
-                    an = LookupAliasName(an, 0);
-                aa = LookupAddress(an, 0);
-                AliasUnion(&aa->pointsto, al);
+                if (head->ans->offset->v.sp->imvalue)
+                {
+                    ALIASNAME *an = LookupMem(head->ans->offset->v.sp->imvalue);
+                    ALIASADDRESS *aa;
+                    ALIASLIST *al = aAlloc(sizeof(ALIASLIST));
+                    al->address = aa2;
+                    if (head->ans->mode == i_direct)
+                        an = LookupAliasName(an, 0);
+                    aa = LookupAddress(an, 0);
+                    AliasUnion(&aa->pointsto, al);
+                }
             }
         }
         else if (head->temps & TEMP_ANS)

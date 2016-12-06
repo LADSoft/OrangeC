@@ -447,7 +447,7 @@ static char * mangleTemplate(char *buf, SYMBOL *sym, TEMPLATEPARAMLIST *params)
 						else
 						{
 							*buf++ = 'e';
-							buf = getName(buf, params->p->sym);
+							buf = getName(buf, params->argsym);
 						}
 					}
 					else if (bySpecial)
@@ -466,7 +466,7 @@ static char * mangleTemplate(char *buf, SYMBOL *sym, TEMPLATEPARAMLIST *params)
 						}
 						else
 						{
-							buf = getName(buf, params->p->sym);
+							buf = getName(buf, params->argsym);
 						}
 					}
 					break;
@@ -481,9 +481,9 @@ static char * mangleTemplate(char *buf, SYMBOL *sym, TEMPLATEPARAMLIST *params)
 					{
 						buf = mangleTemplate(buf, params->p->byTemplate.val, params->p->byTemplate.val->templateParams);
 					}
-					else if (params->p->sym)
+					else if (params->argsym)
 					{
-						buf = getName(buf, params->p->sym);
+						buf = getName(buf, params->argsym);
 					}
 					else
 					{
@@ -779,7 +779,7 @@ char *mangleType (char *in, TYPE *tp, BOOLEAN first)
                 *in++ = 'v';
                 break;
             case bt_templateparam:
-                in = getName(in, tp->templateParam->p->sym);
+                in = getName(in, tp->templateParam->argsym);
                 break;
             case bt_templateselector:
             {

@@ -625,8 +625,8 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
         }
         else
         {
-            errortype(ERR_IMPROPER_USE_OF_TYPE, *tp, NULL);
             *exp = intNode(en_c_i, 0);
+            errortype(ERR_IMPROPER_USE_OF_TYPE, *tp, NULL);
             errskim(&lex, skim_semi);
         }
     }
@@ -638,6 +638,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
     }
     else
     {
+
         if (isref(*tp))
             *tp = basetype(basetype(*tp)->btp);
         if (isstructured(*tp))

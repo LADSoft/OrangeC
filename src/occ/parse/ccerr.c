@@ -539,6 +539,7 @@ static struct {
 {"Exception specifier blocks locally thrown exception of type '%s'", WARNING },
 {"undefined external '%s'", ERROR },
 {"Delegating constructor call must be the only initializer", ERROR },
+{"Mismatch on packed template types", ERROR },
 #endif
 } ;
 

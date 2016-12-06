@@ -1408,7 +1408,19 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
                 error(ERR_INVALID_POINTER_CONVERSION);
             else if (isint(tp) && !isconstzero(tp, exp))
                 error(ERR_NONPORTABLE_POINTER_CONVERSION);
-            else if ((ispointer(tp) || isfunction(tp) || tp->type == bt_aggregate)&& !comparetypes(itype, tp, TRUE))
+            else if (isfunction(tp) || tp->type == bt_aggregate)
+            {
+                if (!isfuncptr(itype) || !comparetypes(basetype(itype)->btp, tp, TRUE))
+                    if (cparams.prm_cplusplus)
+                    {
+                        if (!isvoidptr(itype) && !tp->nullptrType)
+                            if (tp->type == bt_aggregate)
+                                errortype(ERR_CANNOT_CONVERT_TYPE, tp, itype);
+                    }
+                    else if (!isvoidptr(tp) && !isvoidptr(itype))
+                            error(ERR_SUSPICIOUS_POINTER_CONVERSION);
+            }
+            else if (ispointer(tp) && !comparetypes(itype, tp, TRUE))
                 if (cparams.prm_cplusplus)
                 {
                     if (!isvoidptr(itype) && !tp->nullptrType)
@@ -2890,7 +2902,7 @@ LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc,
         {
             TEMPLATEPARAMLIST *args = basetype(ts->tp)->templateParam->p->byDeferred.args;
             TEMPLATEPARAMLIST *val = NULL, **lst = &val;
-            sp = tp->templateParam->p->sym;
+            sp = tp->templateParam->argsym;
             sp = TemplateClassInstantiateInternal(sp, args, TRUE);
         }
         if (sp)

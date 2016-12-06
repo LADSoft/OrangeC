@@ -1082,7 +1082,6 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
         charindex = -1;
         anonymous = TRUE;
     }
-
     lex = tagsearch(lex, tagname, &sp, &table, &strSym, &nsv, storage_class);
 
     if (charindex != -1 && cparams.prm_cplusplus && MATCHKW(lex, kw_final))
@@ -1172,7 +1171,7 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
                     TEMPLATEPARAMLIST *tpl = templateParams->next;
                     while (tpl && tpln)
                     {
-                        tpln->p->sym->name = tpl->p->sym->name;
+                        tpln->argsym->name = tpl->argsym->name;
                         tpln = tpln->next;
                         tpl = tpl->next;
                     } 
@@ -2424,13 +2423,13 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                                         {
                                             (*tnew)->p = told->p;
                                         }
-                                        else if (!lst->p->sym)
+                                        else if (!lst->argsym)
                                         {
                                             (*tnew)->p = lst->p;
                                         }
                                         else
                                         {
-                                            SYMBOL *sp = classsearch(lst->p->sym->name, FALSE, FALSE);
+                                            SYMBOL *sp = classsearch(lst->argsym->name, FALSE, FALSE);
                                             if (sp && sp->tp->type == bt_templateparam)
                                             {
                                                 (*tnew)->p = sp->tp->templateParam->p;
@@ -2538,7 +2537,7 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                     {
                         TEMPLATEPARAMLIST *lst = NULL;
                         if (MATCHKW(lex, lt))
-                       {
+                        {
                             if (sp->parentTemplate)
                                 sp = sp->parentTemplate;
                             lex = GetTemplateArguments(lex, funcsp, sp, &lst);
@@ -3137,6 +3136,8 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                 BOOLEAN notype = FALSE;
                 BOOLEAN clonedParams = FALSE;
                 TYPE *tp2;
+                if (lex->line == 1324 && strstr(lex->file, "iterator"))
+                    printf("hi");
                 spi = NULL;
                 tp1 = NULL;
                 lex = getStorageAndType(lex, funcsp, NULL, FALSE, TRUE, &storage_class, &storage_class,
@@ -4012,6 +4013,7 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
     if (ISID(lex) || MATCHKW(lex, classsel) || MATCHKW(lex, kw_operator) || (cparams.prm_cplusplus && MATCHKW(lex, ellipse)))
     {
         SYMBOL *strSymX = NULL;
+        NAMESPACEVALUES *nsvX = NULL;
         STRUCTSYM s;
         BOOLEAN oldTemplateSpecialization = inTemplateSpecialization;
         s.tmpl = NULL;
@@ -4020,7 +4022,6 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
         if (cparams.prm_cplusplus)
         {
             STRUCTSYM s;
-            NAMESPACEVALUES *nsvX = NULL;
             BOOLEAN throughClass = FALSE;
             BOOLEAN pack = FALSE;
             if (MATCHKW(lex, ellipse))
@@ -4163,8 +4164,25 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
                 addTemplateDeclaration(&s);
             }
         }
+        if (nsvX)
+        {
+            LIST *nlist;
+
+            nlist = Alloc(sizeof(LIST));
+            nlist->next = nameSpaceList;
+            nlist->data = nsvX->name;
+            nameSpaceList = nlist;
+
+            nsvX->name->nameSpaceValues->next = globalNameSpace;
+            globalNameSpace = nsvX->name->nameSpaceValues;
+        }
         ParseAttributeSpecifiers(&lex, funcsp, TRUE);
         lex = getAfterType(lex, funcsp, tp, spi, inTemplate, storage_class, consdest);
+        if (nsvX)
+        {
+            nameSpaceList = nameSpaceList->next;
+            globalNameSpace = globalNameSpace->next;
+        }
         if (s.tmpl)
             dropStructureDeclaration();
         if (strSymX)
@@ -4794,9 +4812,9 @@ static BOOLEAN differentTemplateNames(TEMPLATEPARAMLIST *a, TEMPLATEPARAMLIST *b
     {
         if (a->p->type != b->p->type)
             return TRUE;
-        if (!a->p->sym || !b->p->sym)
+        if (!a->argsym || !b->argsym)
             return TRUE;
-        if (strcmp(a->p->sym->name, b->p->sym->name))
+        if (strcmp(a->argsym->name, b->argsym->name))
             return TRUE;
         a = a->next;
         b = b->next;
@@ -5318,7 +5336,7 @@ jointemplate:
                             }
                         }
                         spi = NULL;
-                        if (nsv)
+                        if (nsv && !strSym)
                         {
                             LIST *rvl;
                             unvisitUsingDirectives(nsv);
@@ -5638,14 +5656,14 @@ jointemplate:
                                 TEMPLATEPARAMLIST **nw = &sp->templateParams;
                                 while (*nw)
                                 {
-                                    if ((*nw)->p->sym)
+                                    if ((*nw)->argsym)
                                     {
                                         TEMPLATEPARAMLIST *old = spi->templateParams;
                                         while (old)
                                         {
-                                            if (old->p->sym)
+                                            if (old->argsym)
                                             {
-                                                if (!strcmp((*nw)->p->sym->name, old->p->sym->name))
+                                                if (!strcmp((*nw)->argsym->name, old->argsym->name))
                                                     break;
                                             }
                                             old = old->next;

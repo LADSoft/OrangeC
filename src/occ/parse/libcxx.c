@@ -543,7 +543,48 @@ static BOOLEAN is_constructible(LEXEME **lex, SYMBOL *funcsp, SYMBOL *sym, TYPE 
         }
         if (tp2)
         {
-            if (isarithmetic(tp2) || ispointer(tp2) || basetype(tp2)->type == bt_enum)
+            if (isfuncptr(tp2))
+            {
+                if (funcparams.arguments->next && !funcparams.arguments->next->next)
+                {
+                    if (isfunction(funcparams.arguments->next->tp))
+                    {
+                        rv = comparetypes(basetype(tp2)->btp, funcparams.arguments->next->tp, TRUE);
+                    }
+                    else if (isstructured(funcparams.arguments->next->tp))
+                    {
+                        // look for operator () with args from tp2
+                        HASHREC *hr;
+                        EXPRESSION *cexp = NULL;
+                        INITLIST **arg = &funcparams.arguments;
+                        SYMBOL *bcall = search(overloadNameTab[CI_FUNC], basetype(funcparams.arguments->next->tp)->syms);
+                        funcparams.thisptr = intNode(en_c_i, 0);
+                        funcparams.thistp = Alloc(sizeof(TYPE));
+                        funcparams.thistp->type = bt_pointer;
+                        funcparams.thistp->btp = basetype(funcparams.arguments->next->tp);
+                        funcparams.thistp->size = getSize(bt_pointer);
+                        funcparams.ascall = TRUE;
+                        funcparams.arguments = NULL;
+                        funcparams.sp = NULL;
+                        hr = basetype(basetype(tp2)->btp)->syms->table[0];
+                        while (hr)
+                        {
+                            *arg = (INITLIST *)Alloc(sizeof(INITLIST));
+                            (*arg)->tp = ((SYMBOL *)hr->p)->tp;
+                            (*arg)->exp = intNode(en_c_i, 0);
+                            arg = &(*arg)->next;
+                            hr = hr->next;
+                        }
+                        rv = GetOverloadedFunction(tp, &funcparams.fcall, bcall, &funcparams, NULL, FALSE,
+                            FALSE, FALSE, _F_SIZEOF) != NULL;
+                    }
+                    else
+                    {
+                        rv = comparetypes(tp2, funcparams.arguments->next->tp, TRUE);
+                    }
+                }
+            }
+            else if (isarithmetic(tp2) || ispointer(tp2) || basetype(tp2)->type == bt_enum)
             {
                 if (!funcparams.arguments->next)
                 {
@@ -563,7 +604,6 @@ static BOOLEAN is_constructible(LEXEME **lex, SYMBOL *funcsp, SYMBOL *sym, TYPE 
             }
             else if (isstructured(tp2))
             {
-                TYPE *ctp = tp2;
                 EXPRESSION *cexp = NULL;
                 SYMBOL *cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(tp2)->syms);
                 funcparams.thisptr = intNode(en_c_i, 0);

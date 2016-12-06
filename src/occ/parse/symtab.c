@@ -360,8 +360,8 @@ BOOLEAN matchOverload(TYPE *tnew, TYPE *told, BOOLEAN argsOnly)
                         break;
 					if (tpn->templateParam->p->packed != tps->templateParam->p->packed)
 						break;
-                    tableOld[tCount] = GetHashValue(tps->templateParam->p->sym->name);
-                    tableNew[tCount] = GetHashValue(tpn->templateParam->p->sym->name);
+                    tableOld[tCount] = GetHashValue(tps->templateParam->argsym->name);
+                    tableNew[tCount] = GetHashValue(tpn->templateParam->argsym->name);
                     tCount++;
                 }
             }
@@ -387,10 +387,10 @@ BOOLEAN matchOverload(TYPE *tnew, TYPE *told, BOOLEAN argsOnly)
             tplOld = fold && fold->templateParams ? fold->templateParams->next : NULL;
             while (tplNew && tplOld)
             {
-                if (tplOld->p->sym && tplNew->p->sym)
+                if (tplOld->argsym && tplNew->argsym)
                 {
-                    oldIndex[iCount] = GetHashValue(tplOld->p->sym->name);
-                    newIndex[iCount] = GetHashValue(tplNew->p->sym->name);
+                    oldIndex[iCount] = GetHashValue(tplOld->argsym->name);
+                    newIndex[iCount] = GetHashValue(tplNew->argsym->name);
                     iCount++;
                 }
                 tplNew = tplNew->next;
@@ -580,7 +580,7 @@ SYMBOL *searchOverloads(SYMBOL *sp, HASHTABLE *table)
                             break;
                         if (tpr->p->type == kw_int && tpr->p->byNonType.tp->type == bt_templateselector)
                             break;
-                        if (tpl->p->sym->compilerDeclared || tpr->p->sym->compilerDeclared)
+                        if (tpl->argsym->compilerDeclared || tpr->argsym->compilerDeclared)
                             break;
                         tpl = tpl->next;
                         tpr = tpr->next;

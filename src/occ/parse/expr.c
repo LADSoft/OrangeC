@@ -416,7 +416,16 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                 case kw_template:
                     lex = prevsym(placeholder);
                     *tp = NULL;
-                    lex = expression_func_type_cast(lex, funcsp, tp, exp, flags);
+                    if ((flags & (_F_SIZEOF | _F_PACKABLE)) == (_F_SIZEOF | _F_PACKABLE))
+                    {
+                        *exp = intNode(en_templateparam, sp);
+                        *tp = sp->tp;
+                        lex = getsym();
+                    }
+                    else
+                    {
+                        lex = expression_func_type_cast(lex, funcsp, tp, exp, flags);
+                    }
                     return lex;
                 case kw_int:
                     *exp = sp->tp->templateParam->p->byNonType.val;
@@ -435,7 +444,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                             while (s && !rv)
                             {
                                 if (s->tmpl)
-                                    rv = templatesearch((*tp)->templateParam->p->sym->name, s->tmpl);
+                                    rv = templatesearch((*tp)->templateParam->argsym->name, s->tmpl);
                                 s = s->next;
                             }
                             if (rv && rv->tp->templateParam->p->type == kw_typename)
@@ -4391,8 +4400,9 @@ static LEXEME *expression_sizeof(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
         else
         {
             EXPRESSION *exp1 = NULL;
+            LEXEME *old = lex;
             lex = variableName(lex, funcsp, NULL, tp, &exp1, NULL, _F_PACKABLE | _F_SIZEOF);
-            if (!*tp || !(*tp)->templateParam || !(*tp)->templateParam->p->packed)
+            if (!exp1 || !exp1->v.sp->tp->templateParam->p->packed)
             {
                 error(ERR_SIZEOFELLIPSE_NEEDS_TEMPLATE_PACK);
                 *tp = &stdunsigned;
@@ -4403,6 +4413,11 @@ static LEXEME *expression_sizeof(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                 *exp = intNode(en_sizeofellipse, 0);
                 (*exp)->v.templateParam = (*tp)->templateParam;
                 *tp = &stdunsigned;
+            }
+            else if (!(*tp)->templateParam->p->packed)
+            {
+                *tp = &stdunsigned;
+                *exp = intNode(en_c_i, 1);
             }
             else
             {
@@ -5890,6 +5905,8 @@ static LEXEME *expression_equality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE 
             *tp = NULL;
             return lex;
         }
+        if (lex->line == 1542 && strstr(lex->file, "\\locale"))
+            printf("hi");
         if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_binary_numericptr, kw,
                                funcsp, tp, exp, tp1, exp1, NULL, flags))
         {

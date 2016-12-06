@@ -16,15 +16,15 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />
+    <None Include="parse\compiler.p">
+      <Filter>Header Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="parse\beinterf.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="parse\BROWSE.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="parse\ccerr.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="parse\ccmain.c">
@@ -214,6 +214,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="parse\crc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parse\ccerr.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

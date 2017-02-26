@@ -127,7 +127,7 @@ occmsil: occmsil.c
 	occ /Wd occmsil.c
 
 lsmsilcrtl.dll: lsmsilcrtl.cs
-	csc /unsafe /t:library lsmsilcrtl.cs
+	csc /unsafe /keyfile:..\occil\lsmsilcrtl\occil.snk /t:library ..\occil\lsmsilcrtl\lsmsilcrtl.cs ..\occil\lsmsilcrtl\properties\assemblyinfo.cs
 
 netlib:
 	@$(MAKE) /Cnetlib

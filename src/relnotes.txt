@@ -5,14 +5,21 @@ version 6.0.10:
     occ:        fix problem where sometimes compiling a range based for could fail
     occ:        fix problem with for-range: 'for (auto a : *tt)' compiled incorrectly
     occ:        add delegating constructors
-//    occ:        add inherited constructors
-    occ:	fix problems with compiling std::bind (type conversions for functions)
+    occ:	    fix problems compiling std::bind
+    occ:        fix problems compiling std::call_once
+    occ:        fix problems compiling std::function
+    occ:        fix problems with destructs and break statements
+    occ:        lambda functions used inside namespaces other than the global one crashed the compiler
+    occ:        allow decltype() to work on types in addition to expressions
     occ:        defining a function while specifying both a namespace and a class qualifier did not work
 		the namespace wasn't used as a reference
     occ:        fix problem with templates sometimes not being instantiated
-    occ:        lambda functions used inside namespaces other than the global one crashed the compiler
+    occ:        fix many other small bugs in the C++ compiler
     dlpe:       generate DLLs that don't trigger problems from antivirus programs
     clibs:      reintegrate lscrtl.dll
+    clibs:      align malloc'd memory on 8-byte boundaries
+    clibs:      fix chdir() to handle drive letters
+    clibs:      fix system() to do a chdir() instead of spawning cmd.exe for a 'cd' command
 
 version 6.0.9:
     occ:        assigning a string to an unsized character array left the array one byte too large

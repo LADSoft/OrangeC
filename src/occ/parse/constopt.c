@@ -4,7 +4,7 @@
     Copyright (c) 1997-2016, David Lindauer, (LADSoft).
     All rights reserved.
     
-    Redistribution and use of this software in source and binary forms, 
+    Redistribution and use of this software in source and binareby forms, 
     with or without modification, are permitted provided that the following 
     conditions are met:
     
@@ -58,7 +58,8 @@ ULLONG_TYPE reint(EXPRESSION *node);
 LLONG_TYPE mod_mask(int i);
 
 static unsigned LLONG_TYPE shifts[sizeof(LLONG_TYPE)*8] ;
-
+static EXPRESSION *functionnesting[100];
+static int functionnestingcount = 0;
 void constoptinit(void)
 {
     int i;
@@ -2892,12 +2893,61 @@ int fold_const(EXPRESSION *node)
         case en_argnopush:
         case en_not_lvalue:
         case en_lvalue:
-        case en_thisref:
-        case en_funcret:
             rv |= fold_const(node->left);
             break;
+        case en_funcret:
+            rv |= fold_const(node->left);
+            if (node->left->type != en_func && node->left->type != en_funcret)
+                *node = *node->left;
+            break;
+        case en_thisref:
+            rv |= fold_const(node->left);
+            if (node->left->type != en_func && node->left->type != en_funcret)
+                *node = *node->left;
+            break;
         case en_func:
-            rv |= fold_const(node->v.func->fcall);
+            if (node->v.func->sp && node->v.func->sp->constexpression && node->v.func->sp->inlineFunc.stmt)
+            {
+                int i;
+                STATEMENT *stmt = node->v.func->sp->inlineFunc.stmt;
+                    while (stmt && stmt->type == st_expr)
+                        stmt = stmt->next;
+                    if (stmt && stmt->type == st_block && stmt->lower)
+                    {
+                        STATEMENT *st = stmt->lower;
+                        while (st->type == st_varstart)
+                            st = st->next;
+                        if (st->type == st_block && !st->next)
+                        {
+                            st = st->lower;
+                            while (st->type == st_line || st->type == st_dbgblock)
+                                st = st->next;
+                            if (st->type == st_expr || st->type == st_return)
+                            {
+                                if (st->select)
+                                {
+                                    for (i = 0; i < functionnestingcount; i++)
+                                        if (functionnesting[i] == st->select)
+                                            break;
+                                    if (i >= functionnestingcount)
+                                    {
+                                        functionnesting[functionnestingcount++] = st->select;
+                                        optimize_for_constants(&st->select);
+                                        functionnestingcount--;
+                                        if (IsConstantExpression(st->select, FALSE))
+                                        {
+                                            *node = *st->select;
+                                            node->noexprerr = TRUE;
+                                            rv = TRUE;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+            }
+            if (!rv)
+                rv |= fold_const(node->v.func->fcall);
             break;
         case en_mp_as_bool:
             if (node->left->type == en_memberptr)
@@ -2926,7 +2976,7 @@ int fold_const(EXPRESSION *node)
                     {
                         EXPRESSION *exp = st->select;
                         optimize_for_constants(&st->select);
-                        if (IsConstantExpression(exp, TRUE))
+                        if (IsConstantExpression(st->select, TRUE))
                         {
                             *node = *st->select;
                             node->noexprerr = TRUE;

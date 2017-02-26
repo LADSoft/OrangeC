@@ -39,7 +39,7 @@
 
 extern NAMESPACEVALUES *globalNameSpace, *localNameSpace;
 extern char *overloadNameTab[];
-extern TYPE stdpointer, stdvoid, stdauto;
+extern TYPE stdpointer, stdvoid, stdauto, stdint;
 extern int nextLabel;
 extern char infile[];
 
@@ -302,7 +302,7 @@ static void createCaller(void)
     FUNCTIONCALL *params = Alloc(sizeof(FUNCTIONCALL));
     TYPE *args = realArgs(lambdas->func);
     SYMBOL *func = makeID(sc_member, args, NULL, overloadNameTab[CI_FUNC]);
-    SYMBOL *lambdaCall = namespacesearch(isstructured(basetype(lambdas->func->tp)->btp) ? "__lambdaPtrCallS" : "__lambdaPtrCall", globalNameSpace, FALSE, FALSE);
+    SYMBOL *lambdaCall = namespacesearch(isstructured(basetype(lambdas->func->tp)->btp) ? "__lambdaCallS" : "__lambdaCall", globalNameSpace, FALSE, FALSE);
     BLOCKDATA block1, block2;
     STATEMENT *st;
     lambdaCall = (SYMBOL *)lambdaCall->tp->syms->table[0]->p;
@@ -775,8 +775,18 @@ LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
         TYPE *tpx = &stdvoid;
         HASHREC *hr;
         lex = getFunctionParams(lex, NULL, &self->func, &tpx, FALSE, sc_auto);
-        self->funcargs = self->func->tp->syms->table[0];
-        hr = self->func->tp->syms->table[0];
+        if (!self->func->tp->syms)
+        {
+            errorstr(ERR_MISSING_TYPE_FOR_PARAMETER, "undefined");
+            *tp = &stdint;
+            *exp = intNode(en_c_i, 0, 0);
+            return lex;
+        }
+        else
+        {
+            self->funcargs = self->func->tp->syms->table[0];
+            hr = self->func->tp->syms->table[0];
+        }
         while (hr)
         {
             SYMBOL *sym = (SYMBOL *)hr->p;

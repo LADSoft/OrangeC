@@ -1899,12 +1899,9 @@ LEXEME *getInitList(LEXEME *lex, SYMBOL *funcsp, INITLIST **owner)
 LEXEME *getArgs(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcparams, enum e_kw finish, BOOLEAN allowPack, int flags)
 {
     LEXEME *rv;
-//    int old = packIndex;
-//    packIndex = -1;
     argument_nesting++;
     rv = getInitInternal(lex, funcsp, &funcparams->arguments, finish, TRUE,allowPack, argument_nesting == 1, flags);
     argument_nesting--;
-//    packIndex = old;
     return rv;
 }
 LEXEME *getMemberInitializers(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcparams, enum e_kw finish, BOOLEAN allowPack)
@@ -2037,6 +2034,8 @@ BOOLEAN cloneTempStmt(STATEMENT **block, SYMBOL **found, SYMBOL **replace)
             case st_passthrough:
                 break;
             case st_datapassthrough:
+                break;
+            case st_nop:
                 break;
             case st_line:
             case st_varstart:
@@ -2652,14 +2651,17 @@ void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, 
                                 exp = exp->left;
                             if (exp->type != en_l_ref)
                             {
-                                if (!lvalue(exp))
+                                if (!isref(sym->tp) || !isfunction(basetype(sym->tp)->btp))
                                 {
-                                    // make numeric temp and perform cast
-                                    exp = createTemporary(sym->tp, exp);
-                                }
-                                else
-                                {
-                                    exp = exp->left; // take address
+                                    if (!lvalue(exp))
+                                    {
+                                        // make numeric temp and perform cast
+                                        exp = createTemporary(sym->tp, exp);
+                                    }
+                                    else
+                                    {
+                                        exp = exp->left; // take address
+                                    }
                                 }
                                 p->exp = exp;
                             }
@@ -2863,12 +2865,12 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
     }
     if (*tp)
         getFunctionSP(tp);
-    if ((*exp)->type == en_funcret)
-    {
-        (*exp)->v.func = funcparams;
-        *exp = exprNode(en_funcret, *exp, NULL);
-        return lex;
-    }
+//    if ((*exp)->type == en_funcret)
+//    {
+//        (*exp)->v.func = funcparams;
+//        *exp = exprNode(en_funcret, *exp, NULL);
+//        return lex;
+//    }
     if (cparams.prm_cplusplus && funcparams->sp)
     {
         SYMBOL *sp = NULL;
@@ -3086,16 +3088,19 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
                     }
                 }
             }
-            if (initializerListType)
+            if (!(flags & _F_SIZEOF))
             {
-                CreateInitializerList(initializerListTemplate, initializerListType, lptr, operands, initializerRef); 
-                if (hr->next)
-                   AdjustParams(funcparams->sp, hr->next, &(*lptr)->next, operands, TRUE);
-                
-            }
-            else
-            {
-                AdjustParams(funcparams->sp, hr, lptr, operands, TRUE);
+                if (initializerListType)
+                {
+                    CreateInitializerList(initializerListTemplate, initializerListType, lptr, operands, initializerRef);
+                    if (hr->next)
+                        AdjustParams(funcparams->sp, hr->next, &(*lptr)->next, operands, TRUE);
+
+                }
+                else
+                {
+                    AdjustParams(funcparams->sp, hr, lptr, operands, TRUE);
+                }
             }
             CheckCalledException(funcparams->sp, funcparams->thisptr);
             if (cparams.prm_cplusplus)
@@ -3135,8 +3140,11 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
                 }
                 if (isstructured(basetype(*tp)->btp) || basetype(basetype(*tp)->btp)->type == bt_memberptr)
                 {
-                    funcparams->returnEXP = anonymousVar(sc_auto, basetype(*tp)->btp);
-                    funcparams->returnSP = funcparams->returnEXP->v.sp;
+                    if (!(flags & _F_SIZEOF))
+                    {
+                        funcparams->returnEXP = anonymousVar(sc_auto, basetype(*tp)->btp);
+                        funcparams->returnSP = funcparams->returnEXP->v.sp;
+                    }
                 }
                 funcparams->ascall = TRUE;    
                 funcparams->functp = *tp;
@@ -3160,6 +3168,11 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
                             (*tp)->rref = FALSE;
                         }
                     }
+                    else if (ispointer(*tp) && (*tp)->array)
+                    {
+                        (*tp)->lref = TRUE;
+                        (*tp)->rref = FALSE;
+                    }
                     tp1 = tp;
                     while (ispointer(*tp1) || basetype(*tp1)->type == bt_memberptr)
                         tp1 = &basetype(*tp1)->btp;
@@ -3170,7 +3183,10 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
                         *tp1 = (*tp1)->sp->tp;
                     }
                 }
-                checkArgs(funcparams, funcsp);
+                if (!(flags & _F_SIZEOF))
+                {
+                    checkArgs(funcparams, funcsp);
+                }
                 if (funcparams->returnSP)
                 {
                     SYMBOL *sp = basetype(funcparams->returnSP->tp)->sp;
@@ -3250,9 +3266,9 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
             }
             else
             {
-                *tp = &stdvoid;
                 if (!templateNestingCount)
                     error(ERR_CALL_OF_NONFUNCTION);
+                *tp = &stdvoid;
             }
         }
         else
@@ -4404,9 +4420,9 @@ static LEXEME *expression_sizeof(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
             lex = variableName(lex, funcsp, NULL, tp, &exp1, NULL, _F_PACKABLE | _F_SIZEOF);
             if (!exp1 || !exp1->v.sp->tp->templateParam->p->packed)
             {
-                error(ERR_SIZEOFELLIPSE_NEEDS_TEMPLATE_PACK);
+//                error(ERR_SIZEOFELLIPSE_NEEDS_TEMPLATE_PACK);
                 *tp = &stdunsigned;
-                *exp = intNode(en_c_i, 0);
+                *exp = intNode(en_c_i, 1);
             }
             else if (templateNestingCount)
             {
@@ -5905,8 +5921,6 @@ static LEXEME *expression_equality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE 
             *tp = NULL;
             return lex;
         }
-        if (lex->line == 1542 && strstr(lex->file, "\\locale"))
-            printf("hi");
         if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_binary_numericptr, kw,
                                funcsp, tp, exp, tp1, exp1, NULL, flags))
         {

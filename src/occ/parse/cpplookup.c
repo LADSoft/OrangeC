@@ -454,17 +454,30 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
                     }
                     if (!deferred)
                     {
-                        SYMBOL *sp1 = sp;
-                        sp = GetClassTemplate(sp, current, FALSE);
-                        if (!sp)
-                            if (templateNestingCount)
-                            {
-                                sp = sp1;
-                            }
+                        TEMPLATEPARAMLIST *p = current;
+                        while (p)
+                        {
+                            if (p->p->usedAsUnpacked)
+                                break;
+
+                            p = p->next;
+                        }
+                        if (p)
+                            deferred = TRUE;
+                        if (!deferred)
+                        {
+                            SYMBOL *sp1 = sp;
+                            sp = GetClassTemplate(sp, current, FALSE);
+                            if (!sp)
+                                if (templateNestingCount)
+                                {
+                                    sp = sp1;
+                                }
+                        }
                     }
                 }
             }
-            if (sp)
+            if (sp && !deferred)
                 sp->tp = PerformDeferredInitialization (sp->tp, NULL);
             lex = getsym();
             finalPos = lex;
@@ -2734,8 +2747,8 @@ BOOLEAN sameTemplate(TYPE *P, TYPE *A)
 void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n, 
                                 enum e_cvsrn *seq, SYMBOL *candidate, SYMBOL **userFunc, BOOLEAN allowUser)
 {
-    BOOLEAN lref;
-    BOOLEAN rref;
+    BOOLEAN lref=FALSE;
+    BOOLEAN rref=FALSE;
     EXPRESSION *exp = expa;
     TYPE *tpax = tpa;
     TYPE *tppx = tpp;
@@ -2830,7 +2843,7 @@ void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
             seq[(*n)++] = CV_QUALS;
         if (lref && !rref && tpp->type == bt_rref)
             seq[(*n)++] = CV_LVALUETORVALUE;
-        if (tpp->type == bt_rref && lref && !isfunction(tpa) && !isarithmeticconst(expa))
+        if (tpp->type == bt_rref && lref && !isfunction(tpa) && !isfuncptr(tpa) && !isarithmeticconst(expa))
         {
             // lvalue to rvalue ref not allowed unless the lvalue is nonvolatile and const
             if (!isDerivedFromTemplate(tppx))
@@ -2883,6 +2896,24 @@ void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
                 getUserConversion(F_WITHCONS, tpp, tpa, expa, n, seq, candidate, userFunc, TRUE);
             else
                 seq[(*n)++] = CV_NONE;
+        }
+        else if (isfuncptr(tppp))
+        {
+            tpp = basetype(tppp)->btp;
+            if (isfuncptr(tpa))
+                tpa = basetype(tpa)->btp;
+            if (comparetypes(tpp, tpa, TRUE))
+            {
+                seq[(*n)++] = CV_IDENTITY;
+            }
+            else if (isint(tpa) && expa && (isconstzero(tpa, expa) || expa->type == en_nullptr))
+            {
+                seq[(*n)++] = CV_POINTERCONVERSION;
+            }
+            else
+            {
+                seq[(*n)++] = CV_NONE;
+            }
         }
         else
         {
@@ -4194,4 +4225,4 @@ SYMBOL *MatchOverloadedFunction(TYPE *tp, TYPE **mtp, SYMBOL *sp, EXPRESSION **e
     fpargs.ascall = TRUE;
     return GetOverloadedFunction(mtp, exp, sp, &fpargs, NULL, TRUE, FALSE, TRUE, flags); 
 }
-                                
+                         

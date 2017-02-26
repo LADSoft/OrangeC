@@ -649,13 +649,18 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
             EXPRESSION *exp1;
             ctype = PerformDeferredInitialization(ctype, funcsp);
             lex = getArgs(lex, funcsp, funcparams, closepa, TRUE, flags);
-            exp1 = *exp = anonymousVar(sc_auto, basetype(*tp)->sp->tp);
-            sp = exp1->v.sp;
-            callConstructor(&ctype, exp, funcparams, FALSE, NULL, TRUE, TRUE, FALSE, FALSE, FALSE); 
-            callDestructor(basetype(*tp)->sp, NULL, &exp1, NULL, TRUE, FALSE, FALSE);
-            initInsert(&sp->dest, *tp, exp1, 0, TRUE);
-            if (flags & _F_SIZEOF)
-                sp->destructed = TRUE; // in case we don't actually use this instantiation
+            if (!(flags & _F_SIZEOF))
+            {
+                exp1 = *exp = anonymousVar(sc_auto, basetype(*tp)->sp->tp);
+                sp = exp1->v.sp;
+                callConstructor(&ctype, exp, funcparams, FALSE, NULL, TRUE, TRUE, FALSE, FALSE, FALSE);
+                callDestructor(basetype(*tp)->sp, NULL, &exp1, NULL, TRUE, FALSE, FALSE);
+                initInsert(&sp->dest, *tp, exp1, 0, TRUE);
+//                if (flags & _F_SIZEOF)
+//                    sp->destructed = TRUE; // in case we don't actually use this instantiation
+            }
+            else
+                *exp = intNode(en_c_i, 0);
         }
         else
         {
@@ -1642,6 +1647,8 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
         EXPRESSION *sz;
         INITLIST *sza;
         int n = (*tp)->size;
+        if (isref(*tp))
+            error(ERR_NEW_NO_ALLOCATE_REFERENCE);
         if (arrSize && isstructured(*tp))
         {
             int al = n % basetype(*tp)->sp->structAlign;
@@ -2183,6 +2190,8 @@ static BOOLEAN noexceptStmt(STATEMENT *block)
             case st_passthrough:
                 break;
             case st_datapassthrough:
+                break;
+            case st_nop:
                 break;
             case st_line:
             case st_varstart:

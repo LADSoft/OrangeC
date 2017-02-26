@@ -306,6 +306,7 @@ static LEXEME *tagsearch(LEXEME *lex, char *name, SYMBOL **rsp, HASHTABLE **tabl
         lex = nestedSearch(lex, rsp, &strSym, &nsv, NULL, NULL, TRUE, storage_class, FALSE, FALSE);
         if (*rsp)
         {
+            strcpy(name, (*rsp)->name);
             lex = getsym();
             if (MATCHKW(lex, begin))
             {
@@ -335,14 +336,13 @@ static LEXEME *tagsearch(LEXEME *lex, char *name, SYMBOL **rsp, HASHTABLE **tabl
         }
         else if (ISID(lex))
         {
-            char buf[256];
-            strcpy(buf, lex->value.s.a);
+            strcpy(name, lex->value.s.a);
             lex = getsym();
             if (MATCHKW(lex, begin))
             {
                 if (nsv || strSym)
                 {
-                    errorNotMember(strSym, nsv, buf);                    
+                    errorNotMember(strSym, nsv, name);
                 }
             }
         }
@@ -575,7 +575,9 @@ void calculateStructOffsets(SYMBOL *sp)
                 checkIncompleteArray(tp, p->declfile, p->declline);
             }
             if (isstructured(tp) && !tp->size && !templateNestingCount)
+            {
                 errorsym(ERR_UNSIZED, p);
+            }
             if (tp->hasbits)
             {
                 /* tp->bits == 0 or change of type
@@ -640,8 +642,7 @@ void calculateStructOffsets(SYMBOL *sp)
         if (cparams.prm_cplusplus)
         {
             // make it non-zero size to avoid further errors...
-            if (!templateNestingCount)
-                size = getSize(bt_int);
+            size = getSize(bt_int);
         }
     }
     sp->tp->size = size ;
@@ -920,6 +921,7 @@ static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac cur
     dropStructureDeclaration();
     sp->hasvtab = usesVTab(sp);
     calculateStructOffsets(sp);
+
     if (cparams.prm_cplusplus)
     {
         calculateStructAbstractness(sp, sp);
@@ -986,6 +988,7 @@ LEXEME *innerDeclStruct(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, BOOLEAN inTempl
 {
     BOOLEAN hasBody = (cparams.prm_cplusplus && KW(lex) == colon) || KW(lex) == begin;
     SYMBOL *injected = NULL;
+
     if (/*templateNestingCount &&*/ nameSpaceList)
         SetTemplateNamespace(sp);
     if (sp->structAlign == 0)
@@ -1042,6 +1045,7 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
     BOOLEAN isfinal = FALSE;
     HASHTABLE *table;
     char *tagname ;
+    char newName[4096];
     enum e_bt type = bt_none;
     SYMBOL *sp;
     int charindex;
@@ -1082,7 +1086,12 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
         charindex = -1;
         anonymous = TRUE;
     }
-    lex = tagsearch(lex, tagname, &sp, &table, &strSym, &nsv, storage_class);
+    strcpy(newName, tagname);
+    if (inTemplate)
+        inTemplateSpecialization++;
+    lex = tagsearch(lex, newName, &sp, &table, &strSym, &nsv, storage_class);
+    if (inTemplate)
+        inTemplateSpecialization--;
 
     if (charindex != -1 && cparams.prm_cplusplus && MATCHKW(lex, kw_final))
     {
@@ -1095,7 +1104,10 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
     {
         addedNew = TRUE;
         sp = Alloc(sizeof(SYMBOL ));
-        sp->name = tagname;
+        if (!strcmp(newName, tagname))
+            sp->name = tagname;
+        else
+            sp->name = litlate(newName);
         sp->anonymous = anonymous;
         sp->storage_class = sc_type;
         sp->tp = Alloc(sizeof(TYPE));
@@ -1387,6 +1399,7 @@ static LEXEME *declenum(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storag
 {
     HASHTABLE *table;
     char *tagname ;
+    char newName[4096];
     int charindex;
     BOOLEAN noname = FALSE;
     BOOLEAN scoped = FALSE;
@@ -1418,8 +1431,9 @@ static LEXEME *declenum(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storag
         charindex = -1;
         anonymous = TRUE;
     }
-    
-    lex = tagsearch(lex, lex->value.s.a, &sp, &table, &strSym, &nsv, storage_class);
+
+    strcpy(newName, tagname);
+    lex = tagsearch(lex, newName, &sp, &table, &strSym, &nsv, storage_class);
 
     if (cparams.prm_cplusplus && KW(lex) == colon)
     {
@@ -1447,7 +1461,10 @@ static LEXEME *declenum(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storag
     if (!sp)
     {
         sp = Alloc(sizeof(SYMBOL ));
-        sp->name = tagname;
+        if (!strcmp(newName, tagname))
+            sp->name = tagname;
+        else
+            sp->name = litlate(newName);
         sp->access = access;
         sp->anonymous = anonymous;
         sp->storage_class = sc_type;
@@ -1853,6 +1870,16 @@ static BOOLEAN isPointer(LEXEME *lex)
         }
     return FALSE;
 }
+static BOOLEAN constructedType(LEXEME *lex)
+{
+    BOOLEAN rv;
+    LEXEME *orig = lex;
+    while (lex && (ISID(lex) || MATCHKW(lex, classsel)))
+        lex = getsym();
+    rv = MATCHKW(lex, openpa) || MATCHKW(lex, begin);
+    lex = prevsym(orig);
+    return rv;
+}
 LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out, BOOLEAN inTemplate, enum e_sc storage_class, 
                      enum e_lk *linkage_in, enum e_lk *linkage2_in, enum e_lk *linkage3_in, 
                      enum e_ac access, BOOLEAN *notype, BOOLEAN *defd, int *consdest, 
@@ -2170,6 +2197,7 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                 break;
             case kw_decltype:
                 {
+                    BOOLEAN hasAmpersand = FALSE;
                     EXPRESSION *exp, *exp2;
                     type = bt_void; /* won't really be used */
                     foundtypeof = TRUE;
@@ -2178,66 +2206,80 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                     lex = getsym();
                     needkw(&lex, openpa);
                     extended = MATCHKW(lex, openpa);
-
-                    lex = expression_no_check(lex, NULL, NULL, &tn, &exp, _F_SIZEOF);
-                    if (tn && tn->type == bt_aggregate && exp->type == en_func && exp->v.func->asaddress)
+                    hasAmpersand = MATCHKW(lex, and);
+                    if (startOfType(lex, FALSE) & !constructedType(lex))
                     {
-                        HASHREC *hr = tn->syms->table[0];
-                        if (hr->next)
-                            errorsym2(ERR_AMBIGUITY_BETWEEN, hr->p, hr->next->p);
-                        exp->v.func->sp = (SYMBOL *)hr->p;
-                        tn = Alloc(sizeof(TYPE));
-                        tn->size = getSize(bt_pointer);
-                        tn->type = bt_pointer;
-                        tn->btp = exp->v.func->functp = exp->v.func->sp->tp;
+                        lex = get_type_id(lex, &tn, funcsp, sc_cast, FALSE, FALSE);
                     }
-                    if (tn)
+                    else
                     {
-                        optimize_for_constants(&exp);
-                        if (templateNestingCount && !instantiatingTemplate)
+                        lex = expression_no_check(lex, NULL, NULL, &tn, &exp, _F_SIZEOF);
+                        if (tn && tn->type == bt_aggregate && exp->type == en_func)
                         {
-                            TYPE *tp2 = Alloc(sizeof(TYPE));
-                            tp2->type = bt_templatedecltype;
-                            tp2->templateDeclType = exp;
-                            tn = tp2;
-                        }
-                    }
-                    exp2 = exp;
-                    if (!tn)
-                    {
-                        error(ERR_IDENTIFIER_EXPECTED);
-                        errskim(&lex, skim_semi_declare);
-                        break;
-                    }
-                    if (extended && lvalue(exp) && exp->left->type == en_auto)
-                    {
-                        if (!lambdas && xvalue(exp))
-                        {
-                            TYPE *tp2 = Alloc(sizeof(TYPE));
-                            if (isref(tn))
-                                tn = basetype(tn)->btp;
-                            tp2->type = bt_rref;
-                            tp2->size = getSize(bt_pointer);
-                            tp2->btp = tn;
-                            tn = tp2;
-                        }
-                        else if (lvalue(exp))
-                        {
-                            TYPE *tp2 = Alloc(sizeof(TYPE));
-                            if (isref(tn))
-                                tn = basetype(tn)->btp;
-                            if (lambdas && !lambdas->isMutable)
+                            HASHREC *hr = tn->syms->table[0];
+                            if (hr->next)
+                                errorsym2(ERR_AMBIGUITY_BETWEEN, hr->p, hr->next->p);
+                            exp->v.func->sp = (SYMBOL *)hr->p;
+                            if (hasAmpersand)
                             {
-                                tp2->type = bt_const;
-                                tp2->size = tn->size;
+                                tn = (TYPE *)Alloc(sizeof(TYPE));
+                                tn->type = bt_pointer;
+                                tn->size = getSize(bt_pointer);
+                                tn->btp = exp->v.func->functp = exp->v.func->sp->tp;
+                            }
+                            else
+                            {
+                                tn = exp->v.func->functp = exp->v.func->sp->tp;
+                            }
+                        }
+                        if (tn)
+                        {
+                            optimize_for_constants(&exp);
+                            if (templateNestingCount && !instantiatingTemplate)
+                            {
+                                TYPE *tp2 = Alloc(sizeof(TYPE));
+                                tp2->type = bt_templatedecltype;
+                                tp2->templateDeclType = exp;
+                                tn = tp2;
+                            }
+                        }
+                        exp2 = exp;
+                        if (!tn)
+                        {
+                            error(ERR_IDENTIFIER_EXPECTED);
+                            errskim(&lex, skim_semi_declare);
+                            break;
+                        }
+                        if (extended && lvalue(exp) && exp->left->type == en_auto)
+                        {
+                            if (!lambdas && xvalue(exp))
+                            {
+                                TYPE *tp2 = Alloc(sizeof(TYPE));
+                                if (isref(tn))
+                                    tn = basetype(tn)->btp;
+                                tp2->type = bt_rref;
+                                tp2->size = getSize(bt_pointer);
                                 tp2->btp = tn;
                                 tn = tp2;
-                                tp2 = Alloc(sizeof(TYPE));
                             }
-                            tp2->type = bt_lref;
-                            tp2->size = getSize(bt_pointer);
-                            tp2->btp = tn;
-                            tn = tp2;
+                            else if (lvalue(exp))
+                            {
+                                TYPE *tp2 = Alloc(sizeof(TYPE));
+                                if (isref(tn))
+                                    tn = basetype(tn)->btp;
+                                if (lambdas && !lambdas->isMutable)
+                                {
+                                    tp2->type = bt_const;
+                                    tp2->size = tn->size;
+                                    tp2->btp = tn;
+                                    tn = tp2;
+                                    tp2 = Alloc(sizeof(TYPE));
+                                }
+                                tp2->type = bt_lref;
+                                tp2->size = getSize(bt_pointer);
+                                tp2->btp = tn;
+                                tn = tp2;
+                            }
                         }
                     }
                 }
@@ -2542,6 +2584,8 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                                 sp = sp->parentTemplate;
                             lex = GetTemplateArguments(lex, funcsp, sp, &lst);
                             sp = GetClassTemplate(sp, lst, !templateErr);
+                            if (sp)
+                                sp->tp = PerformDeferredInitialization(sp->tp, funcsp);
                         }
                         else
                         {
@@ -3136,8 +3180,6 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                 BOOLEAN notype = FALSE;
                 BOOLEAN clonedParams = FALSE;
                 TYPE *tp2;
-                if (lex->line == 1324 && strstr(lex->file, "iterator"))
-                    printf("hi");
                 spi = NULL;
                 tp1 = NULL;
                 lex = getStorageAndType(lex, funcsp, NULL, FALSE, TRUE, &storage_class, &storage_class,
@@ -3715,6 +3757,7 @@ LEXEME *getExceptionSpecifiers(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_s
             }
             break;
     }
+
     return lex;
 }
 static LEXEME *getAfterType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **sp, BOOLEAN inTemplate, enum e_sc storage_class, int consdest)

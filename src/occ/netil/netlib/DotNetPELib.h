@@ -397,12 +397,20 @@ namespace DotNetPELib
     class AssemblyDef : public DataContainer
     {
     public:
-        AssemblyDef(std::string Name, bool External, Byte * KeyToken = 0) : DataContainer("", 0), name_(Name), external_(External), peIndex_(0)
+        AssemblyDef(std::string Name, bool External, Byte * KeyToken = 0) : DataContainer("", 0), name_(Name), external_(External), peIndex_(0),
+            major_(0), minor_(0), build_(0), revision_(0)
         {
             if (KeyToken)
                 memcpy(publicKeyToken_, KeyToken, 8);
             else
                 memset(publicKeyToken_, 0, 8);
+        }
+        void SetVersion(int major, int minor, int build, int revision)
+        {
+            major_ = major;
+            minor_ = minor;
+            build_ = build;
+            revision_ = revision;
         }
         ///** Assembly name
         const std::string& Name() const { return name_; }
@@ -416,6 +424,7 @@ namespace DotNetPELib
         bool external_;
         size_t peIndex_;
         Byte publicKeyToken_[8];
+        int major_, minor_, build_, revision_;
     };
     ///** a namespace
     class Namespace : public DataContainer

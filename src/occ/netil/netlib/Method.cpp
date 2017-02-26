@@ -462,5 +462,10 @@ namespace DotNetPELib
         std::sort(varList_.begin(), varList_.end(), [](const Local *left, const Local *right) {
             return left->Uses() > right->Uses();
         });
+        int index = 0;
+        for (auto a : varList_)
+        {
+            a->Index(index++);
+        }
     }
 }

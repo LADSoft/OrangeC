@@ -1574,7 +1574,11 @@ private:
         _LIBCPP_INLINE_VISIBILITY
         static void __construct(false_type, allocator_type&, _Tp* __p, _Args&&... __args)
             {
+#ifdef __ORANGEC__
+                ::new ((void*)__p) _Tp(_VSTD::__forward<_Args>(__args)...);
+#else
                 ::new ((void*)__p) _Tp(_VSTD::forward<_Args>(__args)...);
+#endif
             }
 #endif  // _LIBCPP_HAS_NO_VARIADICS
 

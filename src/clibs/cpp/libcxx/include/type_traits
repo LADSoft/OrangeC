@@ -1648,6 +1648,23 @@ forward(typename std::remove_reference<_Tp>::type&& __t) _NOEXCEPT
     return static_cast<_Tp&&>(__t);
 }
 
+#ifdef __ORANGEC__
+template <class _Tp>
+inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX11
+_Tp&
+__forward(typename std::remove_reference<_Tp>::type& __t) _NOEXCEPT
+{
+    return static_cast<_Tp&>(__t);
+}
+
+template <class _Tp>
+inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX11
+_Tp&
+__forward(typename std::remove_reference<_Tp>::type&& __t) _NOEXCEPT
+{
+    return static_cast<_Tp&>(__t);
+}
+#endif
 #else  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
 
 template <class _Tp>

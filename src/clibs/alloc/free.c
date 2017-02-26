@@ -43,7 +43,6 @@ extern FREELIST *__mallocchains[MEMCHAINS];
 void _RTL_FUNC free(void *buf)
 {
     FREELIST *p, **c;
-    int size;
     if (!buf)
         return;
     p = buf;

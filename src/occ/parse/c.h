@@ -161,7 +161,7 @@ enum e_node
 
 enum e_stmt
 {
-    st_line, st_expr, st_declare, st_goto, st_asmgoto, st_asmcond, 
+    st_line, st_nop, st_expr, st_declare, st_goto, st_asmgoto, st_asmcond, 
     st_loopgoto, st_select, st_notselect, st_varstart, st_dbgblock,
     st_switch, st_return, st_block, st_throw, st_try, st_catch,
     st__genword, st_passthrough, st_datapassthrough, st_abs, st_label
@@ -395,6 +395,7 @@ typedef struct stmt
 typedef struct blockdata
 {
     struct blockdata *next;
+    struct blockdata *caseDestruct;
     enum e_kw type;
     CASEDATA *cases;
     STATEMENT *head, *tail;
@@ -715,7 +716,10 @@ typedef struct _templateParam
     enum e_kw type;
     int index:8;
     int packed:1;
+    int usedAsUnpacked : 1;
     int initialized:1;
+    int lref:1;
+    int rref:1;
     SYMBOL *packsym;
     void *hold; /* value held during partial template ordering */
     union {

@@ -667,6 +667,7 @@ static void XCStmt(STATEMENT *block, XCLIST ***listPtr)
                 XCStmt(block->blockTail, listPtr);
                 break;
             case st_passthrough:
+            case st_nop:
                 break;
             case st_datapassthrough:
                 break;

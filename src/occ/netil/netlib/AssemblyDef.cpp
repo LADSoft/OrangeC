@@ -46,7 +46,23 @@ namespace DotNetPELib
         peLib.Out() << ".assembly ";
         if (external_)
             peLib.Out() << "extern ";
-        peLib.Out() << name_ << "{ }" << std::endl;
+        peLib.Out() << name_ << "{" << std::endl;
+        if (major_ || minor_ || build_ || revision_ )
+            peLib.Out() << "\t.ver " << major_ << ":" << minor_ << ":" << build_ << ":" << revision_ << std::endl;
+        for (int i = 0; i < 8; i++)
+        {
+            if (publicKeyToken_[i])
+            {
+                peLib.Out() << "\t.publickeytoken = (";
+                for (int i = 0; i < 8; i++)
+                {
+                    peLib.Out() << std::hex << (int)(unsigned char)publicKeyToken_[i] << " ";
+                }
+                peLib.Out() << ")" << std::endl;
+                break;
+            }
+        }
+        peLib.Out() << "}" << std::endl;
         return true;
 
     }
@@ -65,7 +81,7 @@ namespace DotNetPELib
                     break;
                 }
             }
-            table = new AssemblyRefTableEntry(PA_None, 0, 0, 0, 0, nameIndex, blobIndex);
+            table = new AssemblyRefTableEntry(PA_None, major_, minor_, build_, revision_, nameIndex, blobIndex);
         }
         else
         {

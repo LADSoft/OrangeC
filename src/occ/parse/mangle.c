@@ -631,7 +631,7 @@ char *mangleType (char *in, TYPE *tp, BOOLEAN first)
         */
             case bt_func:
             case bt_ifunc:
-                if (basetype(tp)->sp && basetype(tp)->sp->parentClass && !first)
+                if (basetype(tp)->sp && ismember(basetype(tp)->sp) && !first)
                 {
                     *in++ = 'M';
                     in = getName(in, tp->sp->parentClass);

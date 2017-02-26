@@ -1418,8 +1418,8 @@ void createDefaultConstructors(SYMBOL *sp)
         newcons = declareConstructor(sp, TRUE, FALSE);
         newcons->trivialCons = sp->trivialCons;
         cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(sp->tp)->syms);
+        conditionallyDeleteDefaultConstructor(cons);
     }
-    conditionallyDeleteDefaultConstructor(cons);
     // now if there is no copy constructor or assignment operator declare them
     if (!hasCopy(cons, FALSE))
     {
@@ -1429,8 +1429,8 @@ void createDefaultConstructors(SYMBOL *sp)
             newcons->deleted = TRUE;
         if (!asgn)
             asgn = search(overloadNameTab[assign - kw_new + CI_NEW], basetype(sp->tp)->syms);
+        conditionallyDeleteCopyConstructor(cons, FALSE);
     }
-    conditionallyDeleteCopyConstructor(cons, FALSE);
     if (!asgn || !hasCopy(asgn, FALSE))
     {
         SYMBOL *newsp = declareAssignmentOp(sp, FALSE);
@@ -1439,8 +1439,8 @@ void createDefaultConstructors(SYMBOL *sp)
             newsp->deleted = TRUE;            
         if (!asgn)
             asgn = search(overloadNameTab[assign - kw_new + CI_NEW], basetype(sp->tp)->syms);
+        conditionallyDeleteCopyAssignment(asgn,FALSE);
     }
-    conditionallyDeleteCopyAssignment(asgn,FALSE);
     // now if there is no move constructor, no copy constructor,
         // no copy assignment, no move assignment, no destructor
         // and wouldn't be defined as deleted
@@ -1787,6 +1787,8 @@ static STATEMENT * unshimstmt(STATEMENT *block, EXPRESSION *ths)
                 break;
             case st_datapassthrough:
                 break;
+            case st_nop:
+                break;
             case st_line:
             case st_varstart:
             case st_dbgblock:
@@ -1931,59 +1933,53 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                 {
 					if (MATCHKW(lex, openpa)) 
 					{
-						lex = getsym();
-						if (MATCHKW(lex, closepa))
-						{
-							lex = getsym();
-							init->init = NULL;
-							initInsert(&init->init, init->sp->tp, intNode(en_c_i,0), init->sp->offset, FALSE);
-							done = TRUE;
-						}
-						else
-						{
-							lex = backupsym();
-						}
-					}
-					if (!done)
-					{
-                        needkw(&lex, openpa);
-						init->init = NULL;
-						argument_nesting++;
-						lex = initType(lex, cons, 0, sc_auto, &init->init,  NULL, init->sp->tp, init->sp, FALSE, 0);
-						argument_nesting--;
-						done = TRUE;
-                        needkw(&lex, closepa);
+                        if (MATCHKW(lex, openpa))
+                        {
+                            lex = getsym();
+                            if (MATCHKW(lex, closepa))
+                            {
+                                lex = getsym();
+                                init->init = NULL;
+                                initInsert(&init->init, init->sp->tp, intNode(en_c_i, 0), init->sp->offset, FALSE);
+                                done = TRUE;
+                            }
+                            else
+                            {
+                                lex = backupsym();
+                            }
+                        }
+                        if (!done)
+                        {
+                            needkw(&lex, openpa);
+                            init->init = NULL;
+                            argument_nesting++;
+                            lex = initType(lex, cons, 0, sc_auto, &init->init, NULL, init->sp->tp, init->sp, FALSE, 0);
+                            argument_nesting--;
+                            done = TRUE;
+                            needkw(&lex, closepa);
+                        }
                     }
                 }
 				else
 				{
 					if (MATCHKW(lex, openpa) && basetype(init->sp->tp)->sp->trivialCons)
 					{
-						FUNCTIONCALL *funcparams = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
-						TYPE *ctype = init->sp->tp;
-						EXPRESSION *exp = exprNode(en_add, getThisNode(init->sp), intNode(en_c_i, init->sp->offset));
-						lex = getMemberInitializers(lex, cons, funcparams, closepa, TRUE);
-						init->init = NULL;
-						if (!funcparams->arguments)
-						{	
-							initInsert(&init->init, NULL, NULL, init->sp->offset, FALSE);
-						}
-						else {
-							if (funcparams->arguments->next)
-							{
-								error(ERR_TOO_MANY_INITIALIZERS);
-							}
-							initInsert(&init->init, init->sp->tp, funcparams->arguments->exp, init->sp->offset, TRUE);
-						}
-					}
+                        init->init = NULL;
+                        argument_nesting++;
+                        lex = initType(lex, cons, 0, sc_auto, &init->init, NULL, init->sp->tp, init->sp, FALSE, 0);
+                        argument_nesting--;
+                        done = TRUE;
+                        if (init->packed || MATCHKW(lex, ellipse))
+                            error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
+                    }
 					else
 					{
 						init->init = NULL;
 						lex = initType(lex, cons, 0, sc_auto, &init->init,  NULL, init->sp->tp, init->sp, FALSE, 0);
-					}
+                        if (init->packed)
+                            error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
+                    }
                 }
-                if (init->packed)
-                    error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
                 SetAlternateLex(NULL);
             }
         }
@@ -1996,12 +1992,11 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                 {
                     if (sp->tp->templateParam->p->packed)
                     {
-                        EXPRESSION *expPacked = NULL;
                         MEMBERINITIALIZERS **p = &cons->memberInitializers;
                         FUNCTIONCALL shim;
                         lex = SetAlternateLex(init->initData);
                         shim.arguments = NULL;
-                        lex = getMemberInitializers(lex, cons, &shim, MATCHKW(lex, openpa) ? closepa : end, TRUE);
+                        getMemberInitializers(lex, cons, &shim, MATCHKW(lex, openpa) ? closepa : end, TRUE);
                         if (!init->packed)
                             error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
                         SetAlternateLex(NULL);
@@ -2041,7 +2036,7 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                             init->sp = sp;
                             lex = SetAlternateLex(init->initData);
                             shim.arguments = NULL;
-                            lex = getMemberInitializers(lex, cons, &shim, MATCHKW(lex, openpa) ? closepa : end, TRUE);
+                            getMemberInitializers(lex, cons, &shim, MATCHKW(lex, openpa) ? closepa : end, TRUE);
                             if (init->packed)
                                 error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
                             SetAlternateLex(NULL);
@@ -2114,7 +2109,7 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                     sp->offset = offset;
                     init->sp = sp;
                     shim.arguments = NULL;
-                    lex = getMemberInitializers(lex, cons, &shim, MATCHKW(lex, openpa) ? closepa : end, TRUE);
+                    getMemberInitializers(lex, cons, &shim, MATCHKW(lex, openpa) ? closepa : end, TRUE);
                     SetAlternateLex(NULL);
                     if (init->packed)
                     {
@@ -2174,7 +2169,7 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                         sp->offset = offset;
                         init->sp = sp;
                         shim.arguments = NULL;
-                        lex = getMemberInitializers(lex, cons, &shim, MATCHKW(lex, openpa) ? closepa : end, TRUE);
+                        getMemberInitializers(lex, cons, &shim, MATCHKW(lex, openpa) ? closepa : end, TRUE);
                         if (init->packed)
                             error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
                         SetAlternateLex(NULL);

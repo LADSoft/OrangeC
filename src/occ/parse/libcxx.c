@@ -113,40 +113,47 @@ static LEXEME *getTypeList(LEXEME *lex, SYMBOL *funcsp, INITLIST **lptr)
         lex = get_type_id(lex, &tp, funcsp, sc_cast, FALSE, TRUE);
         if (!tp)
             break;
-        if (tp->type != bt_templateparam)
+        if (basetype(tp)->type != bt_templateparam)
         {
             *lptr = Alloc(sizeof(INITLIST));
             (*lptr)->tp = tp;
             (*lptr)->exp = intNode(en_c_i, 0);
             lptr = &(*lptr)->next;
         }
-        else if (tp->templateParam->p->packed)
+        else
         {
-            TEMPLATEPARAMLIST *tpl = tp->templateParam->p->byPack.pack;
-            needkw(&lex, ellipse);
-            while (tpl)
+            tp = basetype(tp);
+            if (tp->templateParam->p->packed)
             {
-                if (tpl->p->byClass.val)
+                TEMPLATEPARAMLIST *tpl = tp->templateParam->p->byPack.pack;
+                needkw(&lex, ellipse);
+                while (tpl)
+                {
+                    if (tpl->p->byClass.val)
+                    {
+                        *lptr = Alloc(sizeof(INITLIST));
+                        (*lptr)->tp = tpl->p->byClass.val;
+                        (*lptr)->exp = intNode(en_c_i, 0);
+                        lptr = &(*lptr)->next;
+                    }
+                    tpl = tpl->next;
+                }
+
+            }
+            else
+            {
+                if (tp->templateParam->p->byClass.val)
                 {
                     *lptr = Alloc(sizeof(INITLIST));
-                    (*lptr)->tp = tpl->p->byClass.val;
+                    (*lptr)->tp = tp->templateParam->p->byClass.val;
                     (*lptr)->exp = intNode(en_c_i, 0);
                     lptr = &(*lptr)->next;
                 }
-                tpl = tpl->next;
-            }
-            
-        }
-        else   
-        {
-            if (tp->templateParam->p->byClass.val)
-            {
-                *lptr = Alloc(sizeof(INITLIST));
-                (*lptr)->tp = tp->templateParam->p->byClass.val;
-                (*lptr)->exp = intNode(en_c_i, 0);
-                lptr = &(*lptr)->next;
             }
         }
+        // this may be a bit naive...
+        if (MATCHKW(lex, ellipse))
+            lex = getsym();
     } while (MATCHKW(lex, comma));
     needkw(&lex, closepa);
     return lex;
@@ -394,6 +401,8 @@ static BOOLEAN triviallyCopyable(TYPE *tp)
 }
 static BOOLEAN trivialStructure(TYPE *tp)
 {
+    if (isref(tp))
+        tp = basetype(tp)->btp;
     if (isstructured(tp))
     {
         return triviallyCopyable(tp) && trivialDefaultConstructor(tp);
@@ -543,7 +552,23 @@ static BOOLEAN is_constructible(LEXEME **lex, SYMBOL *funcsp, SYMBOL *sym, TYPE 
         }
         if (tp2)
         {
-            if (isfuncptr(tp2))
+            TYPE *tpf = tp2;
+            if (isref(tp2))
+                tp2 = basetype(tp2)->btp;
+            if (isfunction(tp2))
+            {
+                if (funcparams.arguments->next && !funcparams.arguments->next->next)
+                {
+                    TYPE *tpy = funcparams.arguments->next->tp;
+                    if (isref(tpf))
+                    {
+                        if (isref(tpy))
+                            tpy = basetype(tpy)->btp;
+                        rv = comparetypes(tp2, tpy, TRUE);
+                    }
+                }
+            }
+            else if (isfuncptr(tp2))
             {
                 if (funcparams.arguments->next && !funcparams.arguments->next->next)
                 {
@@ -595,26 +620,48 @@ static BOOLEAN is_constructible(LEXEME **lex, SYMBOL *funcsp, SYMBOL *sym, TYPE 
                     rv = comparetypes(tp2, funcparams.arguments->next->tp, TRUE);
                 }
             }
-            else if (isref(tp2))
-            {
-                if (funcparams.arguments->next && !funcparams.arguments->next->next)
-                {
-                    rv = comparetypes(tp2, funcparams.arguments->next->tp, TRUE);
-                }
-            }
             else if (isstructured(tp2))
             {
-                EXPRESSION *cexp = NULL;
-                SYMBOL *cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(tp2)->syms);
-                funcparams.thisptr = intNode(en_c_i, 0);
-                funcparams.thistp = Alloc(sizeof(TYPE));
-                funcparams.thistp->type = bt_pointer;
-                funcparams.thistp->btp = basetype(tp2);
-                funcparams.thistp->size = getSize(bt_pointer);
-                funcparams.ascall = TRUE;
-                funcparams.arguments = funcparams.arguments->next;
-                rv = GetOverloadedFunction(tp, &funcparams.fcall, cons, &funcparams, NULL, FALSE, 
-                              FALSE, FALSE, _F_SIZEOF) != NULL;
+                if (funcparams.arguments->next && isstructured(funcparams.arguments->next->tp)
+                    && (comparetypes(tp2, funcparams.arguments->next->tp, TRUE) || sameTemplate(tp2, funcparams.arguments->next->tp)))
+                {
+                    rv = TRUE;
+                }
+                else
+                {
+                    int i = 0;
+                    char holdl[100], holdr[100];
+                    INITLIST *temp;
+                    EXPRESSION *cexp = NULL;
+                    SYMBOL *cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(tp2)->syms);
+                    funcparams.thisptr = intNode(en_c_i, 0);
+                    funcparams.thistp = Alloc(sizeof(TYPE));
+                    funcparams.thistp->type = bt_pointer;
+                    funcparams.thistp->btp = basetype(tp2);
+                    funcparams.thistp->size = getSize(bt_pointer);
+                    funcparams.ascall = TRUE;
+                    funcparams.arguments = funcparams.arguments->next;
+                    temp = funcparams.arguments;
+                    while (temp)
+                    {
+                        holdl[i] = temp->tp->lref;
+                        holdr[i] = temp->tp->rref;
+                        if (!temp->tp->rref && basetype(temp->tp) != bt_rref)
+                        {
+                            temp->tp->lref = TRUE;
+                        }
+                        temp = temp->next;
+                    }
+                    rv = GetOverloadedFunction(tp, &funcparams.fcall, cons, &funcparams, NULL, FALSE,
+                        FALSE, FALSE, _F_SIZEOF) != NULL;
+                    temp = funcparams.arguments;
+                    while (temp)
+                    {
+                        temp->tp->lref = holdl[i];
+                        temp->tp->rref = holdr[i];
+                        temp = temp->next;
+                    }
+                }
             }
         }
     }
@@ -772,9 +819,12 @@ static BOOLEAN is_nothrow_constructible(LEXEME **lex, SYMBOL *funcsp, SYMBOL *sy
         lst = lst->next;
         
     }
-    if (funcparams.arguments && !funcparams.arguments-> next)
+    if (funcparams.arguments && !funcparams.arguments->next)
     {
-        if (isstructured(funcparams.arguments->tp))
+        TYPE *tp = funcparams.arguments->tp;
+        if (isref(tp))
+            tp = basetype(tp)->btp;
+        if (isstructured(tp) && !basetype(tp)->sp->trivialCons)
             rv = nothrowConstructible(funcparams.arguments->tp);
     }
     *exp = intNode(en_c_i, rv);
@@ -869,7 +919,7 @@ static BOOLEAN is_trivial(LEXEME **lex, SYMBOL *funcsp, SYMBOL *sym, TYPE **tp, 
     }
     if (funcparams.arguments && !funcparams.arguments-> next)
     {
-        rv = !!trivialStructure(funcparams.arguments->tp);
+        rv = !isstructured(funcparams.arguments->tp) || !!trivialStructure(funcparams.arguments->tp);
     }
     *exp = intNode(en_c_i, rv);
     *tp = &stdint;

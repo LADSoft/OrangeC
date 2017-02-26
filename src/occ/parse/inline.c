@@ -690,6 +690,8 @@ STATEMENT *inlinestmt(STATEMENT *block)
                     if (chosenAssembler->inlineAsmStmt)
                         block->lower = (*chosenAssembler->inlineAsmStmt)(block->lower);
                 break;
+            case st_nop:
+                break;
             case st_datapassthrough:
                 break;
             case st_line:
@@ -768,6 +770,8 @@ static void reduceReturns(STATEMENT *block, TYPE *rettp, EXPRESSION *retnode)
             case st_passthrough:
             case st_datapassthrough:
                 break;
+            case st_nop:
+                break;
             case st_line:
             case st_varstart:
             case st_dbgblock:
@@ -795,7 +799,10 @@ static EXPRESSION *scanReturn(STATEMENT *block, TYPE *rettp)
             case st_return:
                 rv = block->select;
                 if (!isstructured(rettp))
-                    cast(rettp, &rv);
+                    if (isref(rettp))
+                        deref(&stdpointer, &rv);
+                    else
+                        cast(rettp, &rv);
                 block->type = st_expr;
                 block->select = rv;
                 return rv;
@@ -817,6 +824,8 @@ static EXPRESSION *scanReturn(STATEMENT *block, TYPE *rettp)
                 break;
             case st_passthrough:
             case st_datapassthrough:
+                break;
+            case st_nop:
                 break;
             case st_line:
             case st_varstart:
@@ -1212,6 +1221,8 @@ static BOOLEAN IsEmptyBlocks(STATEMENT *block)
             case st_passthrough:
             case st_datapassthrough:
                 rv = FALSE;
+                break;
+            case st_nop:
                 break;
             case st_label:
                 break;

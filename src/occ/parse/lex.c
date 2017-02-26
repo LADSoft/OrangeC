@@ -48,7 +48,7 @@
 #endif
 
 #define KW_HASH
-#define MAX_LOOKBACK 256
+#define MAX_LOOKBACK 1024
 
 extern COMPILER_PARAMS cparams ;
 extern INCLUDES *includes;
@@ -1249,7 +1249,7 @@ LEXEME *getsym(void)
     BOOLEAN contin ;
     FPF rval;
     LLONG_TYPE ival;
-    static unsigned char buf[2048];
+    static unsigned char buf[16384];
     static int pos = 0;
     int cval;
     SLCHAR *strptr;

@@ -110,6 +110,7 @@ void displayLexeme(LEXEME *lex);
 
 BOOLEAN intcmp(TYPE *t1, TYPE *t2);
 EXPRESSION *GetSymRef(EXPRESSION *n);
+EXPRESSION *copy_expression(EXPRESSION *exp);
 BOOLEAN equalTemplateIntNode(EXPRESSION *exp1, EXPRESSION *exp2);
 BOOLEAN templatecomparetypes(TYPE *tp1, TYPE *tp2, BOOLEAN exact);
 BOOLEAN templatecompareexpressions(EXPRESSION *exp1, EXPRESSION *exp2);

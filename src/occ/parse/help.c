@@ -745,7 +745,7 @@ EXPRESSION *anonymousVar(enum e_sc storage_class, TYPE *tp)
     sprintf(buf,"$anontemp%d", anonct++);
     rv->name = litlate(buf);
     tp->size = basetype(tp)->size;
-    if (theCurrentFunc && !inDefaultParam)
+    if (theCurrentFunc && !inDefaultParam && !anonymousNotAlloc)
         InsertSymbol(rv, storage_class, FALSE, FALSE);
     SetLinkerNames(rv, lk_none);
     return varNode(storage_class == sc_auto || storage_class == sc_parameter ? en_auto : storage_class == sc_localstatic ? en_label : en_global, rv);
@@ -1154,6 +1154,7 @@ BOOLEAN lvalue(EXPRESSION *exp)
 }
 EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIALIZER *init, EXPRESSION *thisptr, BOOLEAN isdest)
 {
+    BOOLEAN local = FALSE;
     EXPRESSION *rv = NULL, **pos = &rv;
     EXPRESSION *exp = NULL, **expp;
     EXPRESSION *expsym;
@@ -1190,6 +1191,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
         case sc_auto:
         case sc_register:
         case sc_parameter:
+            local = TRUE;
             expsym = varNode(en_auto, sp);
             break;
         case sc_localstatic:
@@ -1199,6 +1201,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
             }
             else
             {
+                local = TRUE;
                 expsym = varNode(en_label, sp);
             }
             break;
@@ -1210,6 +1213,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
             }
             else
             {
+                local = TRUE;
                 expsym = varNode(en_global, sp);
             }
             break;
@@ -1228,6 +1232,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
             break;
         case sc_external:
 /*			expsym = varNode(en_global, sp);
+            local = TRUE;
             break;
 */
         case sc_constant:
@@ -1289,7 +1294,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                         exp = exp2;
                         noClear = TRUE;
                     }
-                    else if (cparams.prm_cplusplus)
+                    else if (cparams.prm_cplusplus && !basetype(init->basetp)->sp->trivialCons)
                     {
                         TYPE *ctype = init->basetp;
                         FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
@@ -1299,10 +1304,11 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                         callConstructor(&ctype, &expsym, funcparams, FALSE, NULL, TRUE, FALSE, FALSE, FALSE, FALSE); 
                         exp = expsym;
                     }
-                    else
+                    else 
                     {
                         exp = exprNode(en_blockassign, expsym, exp2);
                         exp->size = init->basetp->size;
+                        noClear = TRUE;
                     }
                 }
                 else

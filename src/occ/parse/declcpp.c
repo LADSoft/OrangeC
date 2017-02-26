@@ -64,6 +64,7 @@ extern int anonymousNotAlloc;
 extern BOOLEAN functionCanThrow;
 extern LINEDATA *linesHead, *linesTail;
 extern BOOLEAN inTemplateType;
+extern STRUCTSYM *structSyms;
 
 LIST *nameSpaceList;
 char anonymousNameSpaceName[512];
@@ -731,6 +732,7 @@ void calculateVirtualBaseOffsets(SYMBOL *sp)
     {
         if (vbase->alloc)
         {
+            int n;
             int align = vbase->cls->structAlign;
             VBASEENTRY *cur;
             VTABENTRY *old = vbase->cls->vtabEntries;
@@ -752,7 +754,11 @@ void calculateVirtualBaseOffsets(SYMBOL *sp)
                 }
                 cur = cur->next;
             }
-            sp->tp->size += vbase->cls->sizeNoVirtual;
+            if (vbase->cls->maintemplate && !vbase->cls->sizeNoVirtual)
+                n = vbase->cls->maintemplate->sizeNoVirtual;
+            else
+                n = vbase->cls->sizeNoVirtual;
+            sp->tp->size += n;
         }
         vbase = vbase->next;
     }
@@ -962,37 +968,68 @@ void deferredInitializeStructMembers(SYMBOL *cur)
     }
     PopTemplateNamespace(tns);
 }
+static BOOLEAN declaringTemplate(SYMBOL *sp)
+{
+    STRUCTSYM *l = structSyms;
+    while (l)
+    {
+        if (l->str && l->str->templateLevel)
+        {
+            if (!strcmp(sp->decoratedName, l->str->decoratedName))
+                return TRUE;
+        }
+        l = l->next;
+    }
+    return FALSE;
+}
 TYPE *PerformDeferredInitialization (TYPE *tp, SYMBOL *funcsp)
 {
-    TYPE **tpx = &tp;
-    if (isref(*tpx))
-        tpx = &basetype(*tpx)->btp;
-    while ((*tpx)->btp && !isfunction(*tpx))
-        tpx = &(*tpx)->btp;
-    if (cparams.prm_cplusplus && !inTemplateType && isstructured(*tpx))
+    if (!inTemplateSpecialization)
     {
-        SYMBOL *sp = basetype(*tpx)->sp;
-        if (sp->templateLevel && (!sp->instantiated || sp->linkage != lk_virtual)
-            && sp->templateParams && allTemplateArgsSpecified(sp, sp->templateParams->next))
+        TYPE **tpx = &tp;
+        if (isref(*tpx))
+            tpx = &basetype(*tpx)->btp;
+        while ((*tpx)->btp && !isfunction(*tpx))
+            tpx = &(*tpx)->btp;
+        if (cparams.prm_cplusplus && !inTemplateType && isstructured(*tpx))
         {
-	        sp = TemplateClassInstantiateInternal(sp, NULL, FALSE);
-		    if (sp)
-			    *tpx = sp->tp;
-        }
-        else if (!sp->templateLevel && sp->parentClass && sp->parentClass->templateLevel
-            && (!sp->instantiated || sp->linkage != lk_virtual)
-            && sp->parentClass->templateParams && allTemplateArgsSpecified(sp->parentClass, sp->parentClass->templateParams->next))
-        {
-            TEMPLATEPARAMLIST *tpl = sp->parentClass->templateParams;
-            sp->templateParams = tpl;
-	        sp = TemplateClassInstantiateInternal(sp, NULL, FALSE);
-            sp->templateParams = NULL;
-		    if (sp)
-			    *tpx = sp->tp;
-        }
-        else if (sp->instantiated)
-        {
-            *tpx = sp->tp;
+            SYMBOL *sp = basetype(*tpx)->sp;
+            TEMPLATEPARAMLIST *tpl = sp->templateParams;
+            while (tpl)
+            {
+                if (tpl->p->usedAsUnpacked)
+                    return tp;
+                tpl = tpl->next;
+            }
+            if (declaringTemplate(sp))
+            {
+                if (sp->instantiated)
+                {
+                    *tpx = sp->tp;
+                }
+            }
+            else if (sp->templateLevel && (!sp->instantiated || sp->linkage != lk_virtual)
+                && sp->templateParams && allTemplateArgsSpecified(sp, sp->templateParams->next))
+            {
+                sp = TemplateClassInstantiateInternal(sp, NULL, FALSE);
+                if (sp)
+                    *tpx = sp->tp;
+            }
+            else if (!sp->templateLevel && sp->parentClass && sp->parentClass->templateLevel
+                && (!sp->instantiated || sp->linkage != lk_virtual)
+                && sp->parentClass->templateParams && allTemplateArgsSpecified(sp->parentClass, sp->parentClass->templateParams->next))
+            {
+                TEMPLATEPARAMLIST *tpl = sp->parentClass->templateParams;
+                sp->templateParams = tpl;
+                sp = TemplateClassInstantiateInternal(sp, NULL, FALSE);
+                sp->templateParams = NULL;
+                if (sp)
+                    *tpx = sp->tp;
+            }
+            else if (sp->instantiated)
+            {
+                *tpx = sp->tp;
+            }
         }
     }
     return tp;
@@ -1186,7 +1223,10 @@ restart:
                                             p = p->next;
                                         }
                                         if (!p)
+                                        {
+                                            done = TRUE;
                                             break;
+                                        }
                                         *(*workingListPtr)->p = *(p->p);
                                         (*workingListPtr)->p->byClass.dflt = p->p->byClass.val;
                                     }
@@ -1199,8 +1239,8 @@ restart:
                                     dest = dest->next;
                                     src = src->next;
                                 }
-                                if (dest)
-                                    done = TRUE;
+                                if (done)
+                                    break;
                                 if (workingList)
                                 {
                                     temp = GetClassTemplate(bcsym, workingList, TRUE);
@@ -1517,24 +1557,27 @@ static BOOLEAN hasPackedTemplate(TYPE *tp)
 void checkPackedType(SYMBOL *sp)
 {
     TYPE *tp = sp->tp;
+    /*
     if (!hasPackedTemplate(tp))
     {
         error(ERR_PACK_SPECIFIER_REQUIRES_PACKED_TEMPLATE_PARAMETER);
     }
-    else if (sp->storage_class != sc_parameter)
+    else 
+    */
+    if (sp->storage_class != sc_parameter)
     {
         error(ERR_PACK_SPECIFIER_MUST_BE_USED_IN_PARAMETER);
     }
 }
-BOOLEAN hasPackedExpression(EXPRESSION *exp)
+BOOLEAN hasPackedExpression(EXPRESSION *exp, BOOLEAN useAuto)
 {
     if (!exp)
         return FALSE;
-    if (hasPackedExpression(exp->left))
+    if (hasPackedExpression(exp->left, useAuto))
         return TRUE;
-    if (hasPackedExpression(exp->right))
+    if (hasPackedExpression(exp->right, useAuto))
         return TRUE;
-    if (exp->type == en_auto)
+    if (useAuto && exp->type == en_auto)
         return exp->v.sp->packed;
     if (exp->type == en_func)
     {
@@ -1549,7 +1592,7 @@ BOOLEAN hasPackedExpression(EXPRESSION *exp)
         il = exp->v.func->arguments;
         while (il)
         {
-            if (hasPackedExpression(il->exp))
+            if (hasPackedExpression(il->exp, useAuto))
                 return TRUE;
             il = il->next;
         }
@@ -1558,12 +1601,12 @@ BOOLEAN hasPackedExpression(EXPRESSION *exp)
 }
 void checkPackedExpression(EXPRESSION *exp)
 {
-    if (!hasPackedExpression(exp) && !templateNestingCount)
+    if (!hasPackedExpression(exp, TRUE) && !templateNestingCount)
         error(ERR_PACK_SPECIFIER_REQUIRES_PACKED_FUNCTION_PARAMETER);
 }
 void checkUnpackedExpression(EXPRESSION *exp)
 {
-    if (hasPackedExpression(exp))
+    if (hasPackedExpression(exp, FALSE))
         error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
 }
 void GatherPackedVars(int *count, SYMBOL **arg, EXPRESSION *packedExp)
@@ -1602,6 +1645,7 @@ void GatherPackedVars(int *count, SYMBOL **arg, EXPRESSION *packedExp)
     }
     else if (packedExp->type == en_func)
     {
+        INITLIST *lst;
         TEMPLATEPARAMLIST *tpl = packedExp->v.func->templateParams;
         while (tpl)
         {
@@ -1613,8 +1657,25 @@ void GatherPackedVars(int *count, SYMBOL **arg, EXPRESSION *packedExp)
             }
             tpl = tpl->next;
         }
+        lst = packedExp->v.func->arguments;
+        while (lst)
+        {
+            GatherPackedVars(count, arg, lst->exp);
+            lst = lst->next;
+        }
     }
-    
+    else if (packedExp->type == en_templateselector)
+    {
+        TEMPLATEPARAMLIST *tpl = packedExp->v.templateSelector->next->templateParams;
+        while (tpl)
+        {
+            if (tpl->p->packed && tpl->argsym)
+            {
+                arg[(*count)++] = tpl->argsym;
+            }
+            tpl = tpl->next;
+        }
+    }
 }
 int CountPacks(TEMPLATEPARAMLIST *packs)
 {
@@ -1635,7 +1696,7 @@ INITLIST **expandPackedInitList(INITLIST **lptr, SYMBOL *funcsp, LEXEME *start, 
     expandingParams++;
     if (count)
     {
-		if (arg[0]->packed)
+		if (arg[0]->packed && arg[0]->parent)
 		{
 			HASHREC *hr = basetype(arg[0]->parent->tp)->syms->table[0];
 			while (hr->p && hr->p != arg[0])
@@ -1665,14 +1726,17 @@ INITLIST **expandPackedInitList(INITLIST **lptr, SYMBOL *funcsp, LEXEME *start, 
 		{
 			int i;
 			int n = CountPacks(arg[0]->tp->templateParam->p->byPack.pack);
+            /*
 			for (i=1; i < count; i++)
 			{
 				if (CountPacks(arg[i]->tp->templateParam->p->byPack.pack) != n)
 				{
-					error(ERR_PACK_SPECIFIERS_SIZE_MISMATCH);
+                    CountPacks(arg[i]->tp->templateParam->p->byPack.pack);
+                    error(ERR_PACK_SPECIFIERS_SIZE_MISMATCH);
 					break;
 				}
 			}
+            */
 			for (i=0; i < n; i++)
 			{
 				INITLIST *p = Alloc(sizeof(INITLIST));
@@ -1692,12 +1756,92 @@ INITLIST **expandPackedInitList(INITLIST **lptr, SYMBOL *funcsp, LEXEME *start, 
     packIndex = oldPack;
     return lptr;
 }
+static int GetBaseClassList(char *name, SYMBOL *cls, BASECLASS *bc, BASECLASS **result)
+{
+    int n = 0;
+    char str[1024];
+    char *clslst[100];
+    char *p = str, *c;
+    int ccount = 0;
+    strcpy(str, name);
+    while ((c = strstr(p, "::")))
+    {
+        clslst[n++] = p;
+        p = c;
+        *p = 0;
+        p += 2;
+    }
+    clslst[n++] = p;
+
+    while (bc)
+    {
+        if (!bc->isvirtual)
+        {
+            SYMBOL *parent = bc->cls;
+            int i;
+            if (parent->tp->type == bt_typedef)
+                parent = basetype(parent->tp)->sp;
+            for (i = n - 1; i >= 0 && parent; i--, parent = parent->parentClass ? parent->parentClass : parent->parentNameSpace)
+                if (strcmp(parent->name, clslst[i]))
+                    break;
+            if (i < 0 || i == 0 && parent == NULL && clslst[0][0] == '\0')
+            {
+                result[ccount++] = bc;
+            }
+        }
+        bc = bc->next;
+    }
+    return ccount;
+}
+static int GetVBaseClassList(char *name, SYMBOL *cls, VBASEENTRY *vbase, VBASEENTRY **result)
+{
+    int n = 0;
+    char str[1024];
+    char *clslst[100];
+    char *p = str, *c;
+    int vcount = 0;
+    strcpy(str, name);
+    while ((c = strstr(p, "::")))
+    {
+        clslst[n++] = p;
+        p = c;
+        *p = 0;
+        p += 2;
+    }
+    clslst[n++] = p;
+
+    while (vbase)
+    {
+        SYMBOL *parent = vbase->cls;
+        int i;
+        if (parent->tp->type == bt_typedef)
+            parent = basetype(parent->tp)->sp;
+        for (i = n - 1; i >= 0 && parent; i--, parent = parent->parentClass ? parent->parentClass : parent->parentNameSpace)
+            if (strcmp(parent->name, clslst[i]))
+                break;
+        if (i < 0 || i == 0 && parent == NULL && clslst[0][0] == '\0')
+        {
+            result[vcount++] = vbase;
+        }
+        vbase = vbase->next;
+    }
+    return vcount;
+}
 MEMBERINITIALIZERS *expandPackedBaseClasses(SYMBOL *cls, SYMBOL *funcsp, MEMBERINITIALIZERS **init, BASECLASS *bc, VBASEENTRY *vbase)
 {
     MEMBERINITIALIZERS *linit = *init;
-    int offset;
-    SYMBOL *baseSP = findClassName(linit->name, cls, bc, vbase, &offset);
-    if (!baseSP->templateLevel)
+    int basecount = 0, vbasecount = 0;
+    BASECLASS *baseEntries[200];
+    VBASEENTRY *vbaseEntries[200];
+    basecount = GetBaseClassList(linit->name, cls, bc, baseEntries);
+    if (!basecount)
+        vbasecount = GetVBaseClassList(linit-> name, cls, vbase, vbaseEntries);
+    if (!basecount && !vbasecount)
+    {
+        // already evaluated to not having a base class
+        init = &(*init)->next;
+    }
+    else if (basecount && !baseEntries[0]->cls->templateLevel || vbasecount && !vbaseEntries[0]->cls->templateLevel)
     {
         init = &(*init)->next;
         errorsym(ERR_NOT_A_TEMPLATE, linit->sp);
@@ -1708,9 +1852,12 @@ MEMBERINITIALIZERS *expandPackedBaseClasses(SYMBOL *cls, SYMBOL *funcsp, MEMBERI
         *init = (*init)->next;
         if (MATCHKW(lex, lt))
         {
+            // at this point we've already created the independent base classes
+            // but the initdata has the argument list, so get it out of the way
+            // and also count the number of packs to see if it matches the number of templates..
             int n = -1;
             TEMPLATEPARAMLIST *lst = NULL, *pack;
-            lex = GetTemplateArguments(lex, funcsp, linit->sp, &lst);
+            LEXEME *arglex = GetTemplateArguments(lex, funcsp, linit->sp, &lst);
             SetAlternateLex(NULL);
             pack = lst;
             while (pack)
@@ -1734,71 +1881,60 @@ MEMBERINITIALIZERS *expandPackedBaseClasses(SYMBOL *cls, SYMBOL *funcsp, MEMBERI
             if (n != -1)
             {
                 int i;
-                int oldPack = packIndex;
-                for (i=0; i < n; i++)
+                // the presumption is that the number of packed vars will be the same as the number
+                // of instantiated templates...
+                //
+                // I have also seen n be 0 during parsing...
+                for (i = 0; i < n; i++)
                 {
+                    int oldPack = packIndex;
+                    SYMBOL *baseSP = basecount ? baseEntries[i]->cls : vbaseEntries[i]->cls;
                     BASECLASS *bc1;
                     MEMBERINITIALIZERS *added = (MEMBERINITIALIZERS *)Alloc(sizeof(MEMBERINITIALIZERS));
-                    lst = NULL;
-                    lex = SetAlternateLex(linit->initData);
+                    BOOLEAN done = FALSE;
+                    lex = SetAlternateLex(arglex);
                     packIndex = i;
                     added->name = linit->name;
                     added->next = *init;
                     *init = added;
                     init = &added->next;
-                    lex = GetTemplateArguments(lex, funcsp, linit->sp, &lst);
-                    added->sp = GetClassTemplate(baseSP, lst, TRUE);
-                    if (added->sp)
-                        added -> sp = TemplateClassInstantiate(added->sp, lst, FALSE,  sc_global);
-                    bc1 = bc;
-                    while (bc1)
+                    added->sp = baseSP;
+                    if (MATCHKW(lex, openpa) && added->sp->tp->sp->trivialCons)
                     {
-                        if (bc1->cls == added->sp || sameTemplate(bc1->cls->tp, added->sp->tp))
-                            break;
-                        bc1 = bc1->next;
-                    }
-                    if (!bc1)
-                        errorsym2(ERR_NOT_A_MEMBER_OR_BASE_CLASS, added->sp ? added->sp : baseSP, cls);
-                    else if (added->sp)
-                    {
-                        BOOLEAN done = FALSE;
-                        if (MATCHKW(lex, openpa) && added->sp->tp->sp->trivialCons)
+                        lex = getsym();
+                        if (MATCHKW(lex, closepa))
                         {
                             lex = getsym();
-                            if (MATCHKW(lex, closepa))
-                            {
-                                lex = getsym();
-                                added->init = NULL;
-                                initInsert(&added->init, NULL, NULL, added->sp->offset, FALSE);
-                                done = TRUE;
-                            }
-                            else
-                            {
-                                lex = backupsym();
-                            }
+                            added->init = NULL;
+                            initInsert(&added->init, NULL, NULL, added->sp->offset, FALSE);
+                            done = TRUE;
                         }
-                        if (!done)
+                        else
                         {
-                            SYMBOL *sp = makeID(sc_member, added->sp->tp, NULL, added->sp->name);
-                            FUNCTIONCALL shim;
-                            INITIALIZER **xinit = &added->init;
-                            added->sp = sp;
-                            shim.arguments = NULL;
-                            lex = getMemberInitializers(lex, funcsp, &shim, MATCHKW(lex, openpa) ? closepa : end, FALSE);
-                            while (shim.arguments)
-                            {
-                                *xinit = (INITIALIZER *)Alloc(sizeof(INITIALIZER));
-                                (*xinit)->basetp = shim.arguments->tp;
-                                (*xinit)->exp = shim.arguments->exp;
-                                xinit = &(*xinit)->next;
-                                shim.arguments = shim.arguments->next;
-                            }                
+                            lex = backupsym();
+                        }
+                    }
+                    if (!done)
+                    {
+                        SYMBOL *sp = makeID(sc_member, added->sp->tp, NULL, added->sp->name);
+                        FUNCTIONCALL shim;
+                        INITIALIZER **xinit = &added->init;
+                        added->sp = sp;
+                        shim.arguments = NULL;
+                        getMemberInitializers(lex, funcsp, &shim, MATCHKW(lex, openpa) ? closepa : end, FALSE);
+                        while (shim.arguments)
+                        {
+                            *xinit = (INITIALIZER *)Alloc(sizeof(INITIALIZER));
+                            (*xinit)->basetp = shim.arguments->tp;
+                            (*xinit)->exp = shim.arguments->exp;
+                            xinit = &(*xinit)->next;
+                            shim.arguments = shim.arguments->next;
                         }
                     }
                     SetAlternateLex(NULL);
+                    packIndex = oldPack;
                 }
-                packIndex = oldPack;
-            }    
+            }
         }
         else
         {
@@ -1899,7 +2035,7 @@ void expandPackedMemberInitializers(SYMBOL *cls, SYMBOL *funcsp, TEMPLATEPARAMLI
                     mi->sp = sp;
                     lex = SetAlternateLex(mi->initData);
                     shim.arguments = NULL;
-                    lex = getMemberInitializers(lex, funcsp, &shim, MATCHKW(lex, openpa) ? closepa : end, FALSE);
+                    getMemberInitializers(lex, funcsp, &shim, MATCHKW(lex, openpa) ? closepa : end, FALSE);
                     SetAlternateLex(NULL);
                     while (shim.arguments)
                     {

@@ -95,8 +95,8 @@ void * _RTL_FUNC malloc(size_t size)
     register int siz1 ;
     if (!size)
         return NULL;
-    size +=3;	/* must be the same as in realloc for comparison purposes */
-    size &= 0xfffffffc;
+    size += 7;	/* must be the same as in realloc for comparison purposes */
+    size &= 0xfffffff8;
 
     siz1 = size + sizeof(FREELIST);
 

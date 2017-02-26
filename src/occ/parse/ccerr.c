@@ -540,6 +540,7 @@ static struct {
 {"undefined external '%s'", ERROR },
 {"Delegating constructor call must be the only initializer", ERROR },
 {"Mismatch on packed template types", ERROR },
+{"Cannot use new() to allocate a reference", ERROR },
 #endif
 } ;
 
@@ -1123,6 +1124,8 @@ static BOOLEAN hasGoto(STATEMENT *stmt)
             case st_varstart:
             case st_dbgblock:
                 break;
+            case st_nop:
+                break;
             default:
                 diag("unknown stmt type in hasgoto");
                 break;
@@ -1160,6 +1163,8 @@ static BOOLEAN findVLAs(STATEMENT *stmt)
             case st_asmcond:
             case st_varstart:
             case st_dbgblock:
+                break;
+            case st_nop:
                 break;
             default:
                 diag("unknown stmt type in findvlas");
@@ -1253,6 +1258,8 @@ static void getVLAList(STATEMENT *stmt, VLASHIM ***shims, VLASHIM **prev, int le
             case st_asmcond:
             case st_varstart:
             case st_dbgblock:
+                break;
+            case st_nop:
                 break;
             case st_goto:
                 **shims = Alloc(sizeof(VLASHIM));

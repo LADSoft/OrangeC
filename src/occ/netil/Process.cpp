@@ -91,7 +91,7 @@ static BYTE *dataPointer;
 static Field *initializingField;
 
 Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg = false, BOOLEAN pinvoke = false);
-static SYMBOL *clone(SYMBOL *sp);
+static SYMBOL *clone(SYMBOL *sp, bool ctype = true);
 void CacheExtern(SYMBOL *sp);
 void CacheGlobal(SYMBOL *sp);
 void CacheStatic(SYMBOL *sp);
@@ -374,8 +374,6 @@ Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg, BOOLEAN pinvoke)
 {
     if (isstructured(tp))
     {
-        if (!strcmp(basetype(tp)->sp->name, "CODE"))
-            std::cout << "1";
         Type *type = NULL;
         std::map<std::string, Type *>::iterator it = typeList.find(basetype(tp)->sp->name);
         if (it != typeList.end())
@@ -536,9 +534,9 @@ Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg, BOOLEAN pinvoke)
 }
 void oa_enter_type(SYMBOL *sp)
 {
-    if (!istype(sp))
+    if (!istype(sp) || sp->storage_class == sc_typedef)
     {
-        TYPE *tp = sp->tp;
+        TYPE *tp = basetype(sp->tp);
         while (ispointer(tp))
             tp = basetype(tp)->btp;
 
@@ -549,12 +547,30 @@ void oa_enter_type(SYMBOL *sp)
     }
 }
 static BOOLEAN validateGlobalRef(SYMBOL *sp1, SYMBOL *sp2);
-static SYMBOL *clone(SYMBOL *sp)
+static TYPE *cloneType(TYPE *tp)
+{
+    TYPE *rv = NULL, **lst = &rv;
+    while (tp)
+    {
+        *lst = (TYPE *)peLib->AllocateBytes(sizeof(TYPE));
+        **lst = *tp;
+        if (tp->type == bt_struct || tp->type == bt_enum)
+        {
+            (*lst)->sp = clone(tp->sp, false);
+        }
+        tp = tp->btp;
+        lst = &(*lst)->btp;
+    }
+    return rv;
+}
+static SYMBOL *clone(SYMBOL *sp, bool ctype)
 {
     // shallow copy
     SYMBOL *rv = (SYMBOL *)peLib->AllocateBytes(sizeof(SYMBOL));
     *rv = *sp;
     rv->name = (char *)peLib->AllocateBytes(strlen(rv->name) + 1);
+    if (ctype)
+        rv->tp = cloneType(rv->tp);
     strcpy(rv->name, sp->name);
     return rv;
 }
@@ -1265,7 +1281,10 @@ extern "C" BOOLEAN oa_main_preprocess(void)
     }
 
     peLib->AddExternalAssembly("mscorlib");
-    peLib->AddExternalAssembly("lsmsilcrtl");
+    BYTE publickeytoken[] = { 0xbc, 0x9b,0x11,0x12,0x35,0x64,0x2d,0x7d };
+    peLib->AddExternalAssembly("lsmsilcrtl", publickeytoken);
+    AssemblyDef *lsmsilcrtl = peLib->FindAssembly("lsmsilcrtl");
+    lsmsilcrtl->SetVersion(1, 0, 0, 0);
     CreateExternalCSharpReferences();
     retblocksym.name = "__retblock";
     return FALSE;

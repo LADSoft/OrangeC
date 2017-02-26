@@ -78,7 +78,7 @@ Source: "C:\orangec\doc\ogrep\*.*"; DestDir: "{app}\doc\ogrep\"; Flags: IgnoreVe
 Source: "C:\orangec\doc\olink\*.*"; DestDir: "{app}\doc\olink\"; Flags: IgnoreVersion; Components: main
 Source: "C:\orangec\doc\omake\*.*"; DestDir: "{app}\doc\omake\"; Flags: IgnoreVersion; Components: main
 
-;Source: "C:\orangec\bin\lscrtl.dll"; DestDir: "{sys}"; Components: main\desktop
+Source: "C:\orangec\bin\lscrtl.dll"; DestDir: "{sys}"; Components: main\desktop
 
 Source: "C:\orangec\examples\*.*"; DestDir: "{userdocs}\Orange C Projects\examples\"; Flags: IgnoreVersion; Components: main\desktop
 Source: "C:\orangec\examples\msdos\*.*"; DestDir: "{userdocs}\Orange C Projects\examples\msdos\"; Flags: IgnoreVersion; Components: main\desktop

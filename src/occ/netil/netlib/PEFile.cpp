@@ -500,13 +500,13 @@ namespace DotNetPELib
     {
         int n = 0;
         // assembly version
-        *(Word *)(dest + n) = 0;
+        *(Word *)(dest + n) = major_;
         n += 2;
-        *(Word *)(dest + n) = 0;
+        *(Word *)(dest + n) = minor_;
         n += 2;
-        *(Word *)(dest + n) = 0;
+        *(Word *)(dest + n) = build_;
         n += 2;
-        *(Word *)(dest + n) = 0;
+        *(Word *)(dest + n) = revision_;
         n += 2;
         *(DWord *)(dest + n) = flags_;
         n += 4;
@@ -672,11 +672,11 @@ namespace DotNetPELib
         tablesHeader_->MajorVersion = 2;
         tablesHeader_->Reserved2 = 1;
         tablesHeader_->MaskSorted = (((longlong)0x1600) << 32) + (0x3325FA00);
-        if (strings_.size >= 0x65536)
+        if (strings_.size >= 65536)
             tablesHeader_->HeapOffsetSizes |= 1;
-        if (guid_.size >= 0x65536)
+        if (guid_.size >= 65536)
             tablesHeader_->HeapOffsetSizes |= 2;
-        if (blob_.size >= 0x65536)
+        if (blob_.size >= 65536)
             tablesHeader_->HeapOffsetSizes |= 4;
         n = 0;
         size_t counts[MaxTables + ExtraIndexes];
@@ -986,7 +986,9 @@ namespace DotNetPELib
         {
             DWord n = counts[i] = tables_[i].size();
             if (n)
+            {
                 put(&n, sizeof(n));
+            }
         }
 
         for (int i = 0; i < MaxTables; i++)

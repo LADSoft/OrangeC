@@ -41,7 +41,7 @@ DISTNAME = $(NAME)
 endif
 
 stubexe:
-	$(RESTUB) $(DISTBIN)\$(DISTNAME).exe $(STUB)
+#	$(RESTUB) $(DISTBIN)\$(DISTNAME).exe $(STUB)
 #	upx $(DISTBIN)\$(DISTNAME).exe
 #	$(RENSEG) $(DISTBIN)\$(DISTNAME).exe
 distcopy:

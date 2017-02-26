@@ -47,16 +47,12 @@ int _RTL_FUNC system(const char *string)
     char buf[1024],*a;
 	if (*string)
 	{
-		int n = string[3];
 		while (isspace(*string))
 			string++;
-		string[3] = 0;
-		if (!stricmp(string, "cd "))
+		if (!strnicmp(string, "cd ", 3))
 		{
-			string[3] = n;
 			return chdir(string + 3);
 		}
-		string[3] = n;
 
 	}
 	a = getenv("COMSPEC");

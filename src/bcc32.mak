@@ -40,13 +40,15 @@
 # use of C++11 constructs in the sources.
 ifeq "$(COMPILER)" "BCC32"
 
+$(error "Compiling with Embarcadero C++ doesn't work; programs don't run properly")
+
 RADSTUDIO_BASE := c:\program files (x86)\Embarcadero\Studio
 RADSTUDIO_VERSION := $(lastword $(shell dir /b "$(RADSTUDIO_BASE)"))
 COMPILER_PATH := $(RADSTUDIO_BASE)\$(RADSTUDIO_VERSION)
 OBJ_IND_PATH := bcc32
 
 ifeq "$(RADSTUDIO_VERSION)" ""
-error "Please install Embarcadero RadStudio"
+$(error "Please install Embarcadero RadStudio")
 endif
 
 CPP_deps = $(notdir $(CPP_DEPENDENCIES:.cpp=.obj))
@@ -63,11 +65,11 @@ endif
 LLIB_DEPENDENCIES = $(notdir $(filter-out $(addsuffix .obj,$(EXCLUDE)) $(MAIN_DEPENDENCIES), $(CPP_deps) $(C_deps) $(ASM_deps) $(TASM_deps)))
 
 
-CC="$(COMPILER_PATH)\bin\bcc32"
+CC="$(COMPILER_PATH)\bin\bcc32c"
 CCFLAGS = /c /w- /RT- /O2 /v  
 
 LINK="$(COMPILER_PATH)\bin\ilink32"
-LFLAGS=-v -c -m -Gn -Gi /V5.1 /L"$(COMPILER_PATH)\lib";"$(COMPILER_PATH)\lib\psdk";$(_LIBDIR)
+LFLAGS=-v -c -m -Gn -Gi /V5.1 /L"$(COMPILER_PATH)\lib\win32c\release";"$(COMPILER_PATH)\lib\win32c\release\psdk";$(_LIBDIR)
 
 LIB="$(COMPILER_PATH)\bin\tlib"
 LIBFLAGS=/P1024

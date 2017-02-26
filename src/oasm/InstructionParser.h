@@ -149,9 +149,9 @@ protected:
     virtual bool DispatchOpcode(int opcode) = 0;
     void NextToken(int PC);
     enum {
-        TK_ID = 0x80000000,
-        TK_REG = 0x80000001,
-        TK_NUMERIC= 0x80000002,
+        TK_ID = INT_MIN,
+        TK_REG = INT_MIN +1,
+        TK_NUMERIC= INT_MIN +2,
     };
     std::string token;
     std::string line;

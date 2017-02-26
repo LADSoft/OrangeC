@@ -2325,7 +2325,7 @@ static TYPE * SynthesizeStructure(TYPE *tp_in, TEMPLATEPARAMLIST *enclosing)
                     }
                     search = search->next;
                 }
-                sp = GetClassTemplate(sp, params, FALSE, FALSE);
+                sp = GetClassTemplate(sp, params, FALSE);
             }
             else
             {
@@ -2335,7 +2335,7 @@ static TYPE * SynthesizeStructure(TYPE *tp_in, TEMPLATEPARAMLIST *enclosing)
                 *sp1->tp = *sp->tp;
                 sp1->tp->sp = sp1;
                 sp = sp1;
-                sp = GetClassTemplate(sp, params, FALSE, FALSE);
+                sp = GetClassTemplate(sp, params, FALSE);
             }
             if (sp)
                 sp = TemplateClassInstantiate(sp, sp->templateParams, FALSE, sc_global);
@@ -2815,7 +2815,7 @@ TYPE *SynthesizeType(TYPE *tp, TEMPLATEPARAMLIST *enclosing, BOOLEAN alt)
                         }
                     }
                     current = tp->sp->templateSelector->next->templateParams;
-                    sp = GetClassTemplate(ts, current, TRUE, FALSE);
+                    sp = GetClassTemplate(ts, current, TRUE);
 					if (sp)
 						sp = TemplateClassInstantiateInternal(sp, current, FALSE);
                     current = tp->sp->templateSelector->next->templateParams;
@@ -3988,7 +3988,7 @@ static BOOLEAN ValidArg(TYPE *tp)
                 if (tp->sp->templateSelector->next->isTemplate)
                 {
                     TEMPLATEPARAMLIST *current = tp->sp->templateSelector->next->templateParams;
-                    sp = GetClassTemplate(ts, current, FALSE, FALSE);
+                    sp = GetClassTemplate(ts, current, FALSE);
                     tp = NULL;
                 }
                 else if (basetype(ts->tp)->templateParam->p->type == kw_typename)
@@ -6861,7 +6861,7 @@ static TEMPLATEPARAMLIST *ResolveTemplateSelectors(TEMPLATEPARAMLIST *args)
                         if (tp->sp->templateSelector->next->isTemplate)
                         {
                             TEMPLATEPARAMLIST *current = tp->sp->templateSelector->next->templateParams;
-                            sp = GetClassTemplate(ts, current, FALSE, FALSE);
+                            sp = GetClassTemplate(ts, current, FALSE);
                             tp = NULL;
                         }
                         else if (basetype(ts->tp)->templateParam->p->type == kw_typename)

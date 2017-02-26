@@ -598,7 +598,7 @@ LRESULT CALLBACK JumpListProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 HWND CreateJumpListWindow(void)
 {
     if (hwndJumpList)
-        return ;
+        return hwndJumpList;
     hwndJumpList = CreateWindow(szJumpListClassName, "", WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
         CW_USEDEFAULT, CW_USEDEFAULT, 200, 200, hwndFrame, 0, hInstance, 0);
     return hwndJumpList;

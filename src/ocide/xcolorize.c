@@ -90,10 +90,10 @@ COLORREF *colors[] = { &backgroundColor, &readonlyBackgroundColor, &textColor, &
                         };
 
 
-
 static int page_size = -1;
 
 void SendUpdate(HWND hwnd);
+static int LookupColorizeEntry(COLORIZE_HASH_ENTRY *entries[], char *name, int line);
 // The C_keywordList is a list of all keywords, with colorization info
 KEYLIST C_keywordList[] = 
 {

@@ -779,7 +779,7 @@ LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
         {
             errorstr(ERR_MISSING_TYPE_FOR_PARAMETER, "undefined");
             *tp = &stdint;
-            *exp = intNode(en_c_i, 0, 0);
+            *exp = intNode(en_c_i, 0);
             return lex;
         }
         else

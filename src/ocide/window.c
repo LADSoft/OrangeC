@@ -625,12 +625,12 @@ BOOL SelectWindowInternal(int DID, BOOL select)
     if (i >= 0)
     {
         SendMessage(docks[i].hwnd, TW_SELECT, select, (LPARAM)handles[DID]);
-        return;
+        return FALSE;
     }
     for (i=0; i < freeWindowCount; i++)
     {
         if (SendMessage(freeWindows[i], TW_HAS, select, (LPARAM)handles[DID]))
-            return;
+            return FALSE;
     }
     for (i=0; i < sizeof(windowDeclarations)/sizeof(windowDeclarations[0]); i++)
     {
@@ -2372,7 +2372,7 @@ BOOL DockDrag(HWND hwnd, int ox, int oy, int x, int y)
     {
         GetCursorPos(&pt4);
         if (pt4.x == pt3.x && pt4.y == pt3.y)
-            return;
+            return FALSE;
         pt3 = pt4;   
     }    
     hwndParent = WindowUnderCursor(hwnd);

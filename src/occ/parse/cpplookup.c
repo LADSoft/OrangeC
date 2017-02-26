@@ -57,6 +57,8 @@ extern INCLUDES *includes;
 extern BOOLEAN inTemplateType;
 extern LIST *nameSpaceList;
 
+static int insertFuncs(SYMBOL **spList, SYMBOL **spFilterList, LIST *gather, FUNCTIONCALL *args, TYPE *atp);
+
 #define DEBUG
 
 HASHTABLE *CreateHashTable(int size);

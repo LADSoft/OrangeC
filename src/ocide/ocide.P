@@ -178,7 +178,6 @@ HWND CreateToolBarWindow(int id, HWND notify, HWND parent, int bmp, int bmpcount
 
 int LoadItemText(HWND hwnd, HTREEITEM htreeItem, char *buf, int indent);
 int GetClipboardText(HWND hwnd, HTREEITEM item, char *buf, int indent);
-void CopyText(HWND hwnd);
 LRESULT CALLBACK extTreeWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
 LRESULT CALLBACK ColumnTreeWndProc(HWND hwnd, UINT iMessage, WPARAM
@@ -449,7 +448,6 @@ void CreateImageDrawWindow(struct resRes *info);
 
                              /* Drawmenu.c */
 
-void SetSeparatorFlag(MENU *menu, MENUITEM *mi, BOOL issep, BOOL extended);
 void RecurseSetSeparator(MENU *menu, MENUITEM *item, BOOL issep);
 int menuHitTest(HWND hwnd, struct resRes *menuData, POINT mouse);
 void InsertDelete(HWND hwnd, struct resRes * menuData, int code);
@@ -675,7 +673,6 @@ void SimpleSearchInTextBox(HWND hwndEdit);
 int getfile(char *start, char *buffer, char end, DWINFO *info);
 void TextToClipBoard(HWND hwnd, char *text);
 void EditCopyText(HWND hwnd);
-void BumpToEditor(HWND hwnd);
 LRESULT CALLBACK buildEditProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
 LRESULT CALLBACK errorProc(HWND hwnd, UINT iMessage, WPARAM wParam,
@@ -1358,23 +1355,16 @@ void Colorize(INTERNAL_CHAR *buf, int start, int len, int color, int
 int keysym(char x);
 INTERNAL_CHAR *strpstr(INTERNAL_CHAR *t, char *text, int len);
 int strplen(INTERNAL_CHAR *t);
-int backalpha(INTERNAL_CHAR *buf, int i);                         
 int pcmp(INTERNAL_CHAR *s, char *t, int preproc, int *retlen, int
     caseinsensitive, int bykey);
 KEYLIST *matchkeyword(KEYLIST *table, int tabsize, int preproc, INTERNAL_CHAR
     *t, int *retlen, int insensitive);
-void SearchKeywords(COLORIZE_HASH_ENTRY *entries[], INTERNAL_CHAR *buf, 
-                           int chars, int start, int type, int bkColor);
 int instring(INTERNAL_CHAR *buf, INTERNAL_CHAR *t1);              
 void FormatBuffer(COLORIZE_HASH_ENTRY *entries[], INTERNAL_CHAR *buf, int start, int end, int type, int bkColor);
 void FormatBufferFromScratch(COLORIZE_HASH_ENTRY *entries[], INTERNAL_CHAR *buf, int start, int end, int
     type, int bkColor);                                           
 void FormatLine(HWND hwnd, INTERNAL_CHAR *buf, int type, int bkColor);
-void colorizeThread(CINFO *info);                                 
 void FullColorize(HWND hwnd, EDITDATA *p, int creation);
-int getColorizeHashKey(char *name);                               
-COLORIZE_HASH_ENTRY *lookupColorizeName(COLORIZE_HASH_ENTRY *entries[], char *name);
-int LookupColorizeEntry(COLORIZE_HASH_ENTRY *entries[], char *name, int line);
 void InsertColorizeEntry(COLORIZE_HASH_ENTRY *entries[], char *name, int start, int end, int type);
 void FreeColorizeEntries(COLORIZE_HASH_ENTRY *entries[]);
 
@@ -1385,7 +1375,6 @@ int freemem(EDITDATA *p);
 int allocmem(EDITDATA *p, int size);
 int commitmem(EDITDATA *p, int size);
 void reparse(HWND hwnd, EDITDATA *p);
-void UpdateSiblings(EDITDATA *p, int pos, int insert);            
 int posfromchar(HWND hwnd, EDITDATA *p, POINTL *point, int pos);
 int charfrompos(HWND hwnd, EDITDATA *p, POINTL *point);
 void VScrollLen(HWND hwnd, int count, int set);
@@ -1400,7 +1389,6 @@ void TrackVScroll(HWND hwnd, EDITDATA *p, int end);
 void TrackHScroll(HWND hwnd, EDITDATA *p, int end);
 int lfchars(INTERNAL_CHAR *c, int start, int end);
 int LineFromChar(EDITDATA *p, int pos);
-int SelLine(EDITDATA *p, int pos);                                
 void Replace(HWND hwnd, EDITDATA *p, char *s, int lens);
 int GetLineOffset(HWND hwnd, EDITDATA *p, int chpos);
 void drawline(HWND hwnd, EDITDATA *p, int chpos);                 
@@ -1425,7 +1413,6 @@ void StartAutoScroll(HWND hwnd, EDITDATA *p, int dir);
 void EndAutoScroll(HWND hwnd, EDITDATA *p);
 void HilightWord(HWND hwnd, EDITDATA *p);
 void verticalCenter(HWND hwnd, EDITDATA *p);
-BOOL multilineSelect(EDITDATA *p);                                
 LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
     lParam);
 void RegisterXeditWindow(void);

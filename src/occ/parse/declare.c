@@ -1040,6 +1040,47 @@ LEXEME *innerDeclStruct(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, BOOLEAN inTempl
     --structLevel;
     return lex;
 }
+static unsigned char *ParseUUID(LEXEME **lex)
+{
+    if (MATCHKW(*lex, kw__uuid))
+    {
+        unsigned vals[16];
+        unsigned char *rv = (unsigned char *)Alloc(16);
+        *lex = getsym();
+        needkw(lex, openpa);
+        if ((*lex)->type == l_astr)
+        {
+            int i;
+            int count = ((SLCHAR *)(*lex)->value.s.w)->count;
+            LCHAR *str = ((SLCHAR *)(*lex)->value.s.w)->str;
+            unsigned short buf[200];
+            for (i=0; i < count ;i++)
+                buf[i] = *str++;
+            buf[i] = 0;
+            if (11 == swscanf(buf, L"%x-%x-%x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+               &vals[0], &vals[1], &vals[2],
+               &vals[8], &vals[9], &vals[10], &vals[11],
+               &vals[12], &vals[13], &vals[14], &vals[15]))
+            {
+                int i;
+                rv[0] = vals[0] & 0xff;
+                rv[1] = (vals[0] >>8) & 0xff;
+                rv[2] = (vals[0] >>16)& 0xff;
+                rv[3] = (vals[0] >>24)& 0xff;
+                rv[4] = vals[1] & 0xff;
+                rv[5] = (vals[1] >>8) & 0xff;
+                rv[6] = vals[2] & 0xff;
+                rv[7] = (vals[2] >>8) & 0xff;
+                for (i=8; i < 16; i++)
+                    rv[i] = vals[i];
+            }
+            *lex = getsym();
+        }
+        needkw(lex, closepa);
+        return rv;
+    }
+    return NULL;
+}
 static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemplate, enum e_sc storage_class, enum e_ac access, BOOLEAN *defd)
 {
     BOOLEAN isfinal = FALSE;
@@ -1055,6 +1096,7 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
     BOOLEAN addedNew = FALSE;
     int declline = lex->line;
     BOOLEAN anonymous = FALSE;
+    unsigned char *uuid;
     *defd = FALSE;
     switch(KW(lex))
     {
@@ -1072,6 +1114,7 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
             break;
     }
     lex = getsym();
+    uuid = ParseUUID(&lex);
     ParseAttributeSpecifiers(&lex, funcsp, TRUE);
     if (ISID(lex))
     {
@@ -1125,6 +1168,7 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
             sp->parentTemplate = sp;
         sp->anonymous = charindex == -1;
         sp->access = access;
+        sp->uuid = uuid;
         SetLinkerNames(sp, lk_cdecl);
         if (inTemplate && templateNestingCount)
         {
@@ -1221,6 +1265,8 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
     }
     if (sp)
     {
+        if (uuid)
+            sp->uuid = uuid;
         if (access != sp->access && sp->tp->syms && (MATCHKW(lex, begin) || MATCHKW(lex, colon)))
         {
             errorsym(ERR_CANNOT_REDEFINE_ACCESS_FOR, sp);

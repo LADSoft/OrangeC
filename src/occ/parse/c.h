@@ -103,7 +103,7 @@ enum e_kw
         kw__pascal, kw__stdcall, kw__cdecl, kw__intrinsic, kw_asm, kw__loadds,
         kw__far, kw_asmreg, kw_asminst, kw__indirect, kw__export, kw__import, kw___func__,
         kw__near, kw__seg, kw___typeid, kw___int64, kw_alloca, kw__msil_rtl,
-        kw___va_list__,  kw___va_typeof__, kw__unmanaged, 
+        kw___va_list__,  kw___va_typeof__, kw__unmanaged,  kw__uuid, kw__uuidof,
     /* These next are generic register names */
     kw_D0, kw_D1, kw_D2, kw_D3, kw_D4, kw_D5, kw_D6, kw_D7, kw_D8, kw_D9, kw_DA,
         kw_DB, kw_DC, kw_DD, kw_DE, kw_DF, kw_A0, kw_A1, kw_A2, kw_A3, kw_A4,
@@ -592,6 +592,8 @@ typedef struct sym
     /* Also name for CPP overload lists */
     /* also default for template parameters, is a TYP */
     char *importfile; /* import name */
+    unsigned char *uuid; /* Microsoft: GUID */
+    int uuidLabel; /* Microsoft: Label for a GUID which has been instantiated */
     struct sym *overloadName;
     struct sym *typedefSym;
     struct sym *mainsym; /* pointer to the global version of a copied symbol */

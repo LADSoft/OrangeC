@@ -2388,7 +2388,7 @@ void oa_genstring(LCHAR *str, int len)
     {
         int nlen = len;
         while (nlen--)
-            if ((isgraph(*str) && *str != '\'' && *str != '\"') || *str == ' ')
+            if (*str >= ' ' && *str < 0x7f && *str != '\'' && *str != '\"')
             {	
                 if (!instring)
                 {

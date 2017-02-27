@@ -135,6 +135,34 @@ void thunkForImportTable(EXPRESSION **exp)
         }
     }
 }
+static EXPRESSION *GetUUIDData(SYMBOL *cls)
+{
+    if (cls && cls->uuidLabel)
+    {
+        return intNode(en_labcon, cls->uuidLabel);
+    }
+    else
+    {
+        EXPRESSION *rv;
+        STRING *data = Alloc(sizeof(STRING));
+        data->pointers = Alloc(sizeof(void *));
+        data->size = 1;
+        data->strtype = l_astr;
+        data->pointers[0] = Alloc(sizeof(SLCHAR));
+        data->pointers[0]->count = 16;
+        data->pointers[0]->str = Alloc(16 * sizeof(LCHAR));
+        if (cls && cls->uuid)
+        {
+            int i;
+            for (i=0; i < 16; i++)
+                data->pointers[0]->str[i] = cls->uuid[i];
+        }
+        rv = stringlit(data);
+        if (cls)
+            cls->uuidLabel = rv->v.i;
+        return rv;
+    }
+}
 static EXPRESSION *GetManagedFuncData(TYPE *tp)
 {
     // while managed functions seem to be always stdcall, the caller may be
@@ -4018,6 +4046,7 @@ static LEXEME *expression_primary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
         case l_kw:
             switch(KW(lex))
             {
+                SYMBOL *sym;
                 case openbr:
                     if (cparams.prm_cplusplus)
                         lex = expression_lambda(lex, funcsp, atp, tp, exp, flags);
@@ -4130,6 +4159,32 @@ static LEXEME *expression_primary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
                     else
                         *exp = intNode(en_labcon, funcsp->__func__label);
                     lex = getsym();
+                    break;
+                case kw__uuidof:
+                    lex = getsym();
+                    needkw(&lex, openpa);
+                    if (ISID(lex))
+                    {
+                        sym = tsearch(lex->value.s.a);
+                        lex = getsym();
+                    }
+                    else
+                    {
+                        TYPE *tp1;
+                        EXPRESSION *exp1;
+                        lex = expression_no_comma(lex, funcsp, NULL, &tp1, &exp1, NULL, 0);
+                        if (tp1 && isstructured(tp1))
+                        {
+                            sym = basetype(tp1)->sp;
+                        }
+                        else
+                        {
+                            sym = NULL;
+                        }
+                    }
+                    needkw(&lex, closepa);
+                    *exp = GetUUIDData(sym);
+                    *tp = &stdpointer;
                     break;
                 case kw___va_typeof__:
                     lex = getsym();

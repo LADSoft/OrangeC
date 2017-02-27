@@ -783,6 +783,8 @@ doinf:
 			*(int *)p = (int)(*written);
 			break;
 		case 's':
+            if (!lc)
+                mode = 'l';
             if (mode == 'l') {
                 char *p;
                 mbstate_t st;

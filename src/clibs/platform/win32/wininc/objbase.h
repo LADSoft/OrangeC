@@ -13,8 +13,10 @@
 #pragma pack(push,8)
 #include <basetyps.h>
 
+#ifndef WINOLEAPI
 #define WINOLEAPI STDAPI
 #define WINOLEAPI_(type) STDAPI_(type)
+#endif
 #define FARSTRUCT
 #define HUGEP
 #define LISet32(li,v) ((li).HighPart=(v)<0?-1:0,(li).LowPart=(v))

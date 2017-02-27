@@ -219,6 +219,8 @@ KEYWORD keywords[] = {
     { "__stdcall", 9,  kw__stdcall, KW_NONANSI | KW_ALL, TT_LINKAGE},
     { "__typeid", 8,  kw___typeid, KW_CPLUSPLUS, 0},
     { "__unmanaged", 11,  kw__unmanaged, KW_NONANSI | KW_ALL, TT_LINKAGE},
+    { "__uuid", 6,  kw__uuid, 0, TT_LINKAGE },
+    { "__uuidof", 8,  kw__uuidof, 0, TT_VAR },
     { "__va_list__", 11, kw___va_list__, KW_NONANSI | KW_ALL, TT_TYPEQUAL | TT_POINTERQUAL },
     { "__va_typeof__", 13, kw___va_typeof__, KW_NONANSI | KW_ALL, TT_VAR },
     { "_absolute", 9,  kw__absolute, KW_NONANSI | KW_ALL, TT_STORAGE_CLASS},

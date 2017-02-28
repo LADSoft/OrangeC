@@ -208,7 +208,7 @@ Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &
                         if (executionRule)
                             Eval::warning("Conflicting command lists for goal '" + goal + "'");
                         else
-                            executionRule = *it;
+                            executionRule = rule;
                     }
             }
             if (executionRule)

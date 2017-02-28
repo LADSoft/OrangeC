@@ -15,13 +15,16 @@ version 6.0.10:
 		the namespace wasn't used as a reference
     occ:        fix problem with templates sometimes not being instantiated
     occ:        fix many other small bugs in the C++ compiler
+    occ:        fix nested anonymous unions in C++ mode
+    occ:        fix so that microsoft object headers will compile in C++ mode
+    install:    fix so that running the IDE as part of the install works properly
     dlpe:       generate DLLs that don't trigger problems from antivirus programs
     clibs:      reintegrate lscrtl.dll
     clibs:      align malloc'd memory on 8-byte boundaries
     clibs:      fix chdir() to handle drive letters
     clibs:      fix system() to do a chdir() instead of spawning cmd.exe for a 'cd' command
-
-version 6.0.9:
+    clibs:      add msxml6.h and rtl support
+version 6.0.9: Aug 25, 2016
     occ:        assigning a string to an unsized character array left the array one byte too large
     occ:        export records weren't being placed in the object files
     clibs:      dll startup was broken.   Dlls couldn't be used by .net assemblies.

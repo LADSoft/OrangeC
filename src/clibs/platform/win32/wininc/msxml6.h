@@ -255,6 +255,9 @@ typedef interface IXMLHTTPRequest3 IXMLHTTPRequest3;
 #include "unknwn.h"
 #include "objidl.h"
 #include "oaidl.h"
+#ifdef __cplusplus
+extern "C"{
+#endif 
 #define _W64
 #if !defined(__msxml_h__)
 typedef  
@@ -10663,7 +10666,7 @@ EXTERN_C const IID IID_ISchemaType;
              ISchemaItemCollection **baseTypes);
          HRESULT ( STDMETHODCALLTYPE *get_final )( 
             ISchemaType * This,
-             SCHEMADERIVATIONMETHOD *final);
+             SCHEMADERIVATIONMETHOD *finall);
          HRESULT ( STDMETHODCALLTYPE *get_variety )( 
             ISchemaType * This,
              SCHEMATYPEVARIETY *variety);
@@ -10844,7 +10847,7 @@ EXTERN_C const IID IID_ISchemaComplexType;
              ISchemaItemCollection **baseTypes);
          HRESULT ( STDMETHODCALLTYPE *get_final )( 
             ISchemaComplexType * This,
-             SCHEMADERIVATIONMETHOD *final);
+             SCHEMADERIVATIONMETHOD *finall);
          HRESULT ( STDMETHODCALLTYPE *get_variety )( 
             ISchemaComplexType * This,
              SCHEMATYPEVARIETY *variety);

@@ -663,12 +663,12 @@ static BOOLEAN validateAnonymousUnion(SYMBOL *parent, TYPE *unionType)
 {
     BOOLEAN rv = TRUE;
     unionType = basetype(unionType);
-    if (cparams.prm_cplusplus && (!unionType->sp->trivialCons || unionType->tags->table[0]->next))
+    if (cparams.prm_cplusplus && (!unionType->sp->trivialCons))// || unionType->tags->table[0]->next))
     {
         error(ERR_ANONYMOUS_UNION_NO_FUNCTION_OR_TYPE);
         rv = FALSE;
     }
-    else 
+    else
     {
         HASHREC *newhr =  unionType->syms->table[0];
         while (newhr)
@@ -1812,7 +1812,7 @@ static LEXEME *getLinkageQualifiers(LEXEME *lex, enum e_lk *linkage, enum e_lk *
                 *linkage = lk_cdecl;
                 break;
             case kw__stdcall:
-                if (*linkage != lk_none && *linkage != lk_stdcall)
+                if (*linkage != lk_none && *linkage != lk_stdcall && (!cparams.prm_cplusplus || *linkage != lk_c))
                     error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
                 *linkage = lk_stdcall;
                 break;

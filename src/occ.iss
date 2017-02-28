@@ -107,7 +107,7 @@ Name: "{group}\Tools Help"; Filename: "{app}\help\tools.chm"; Components: main\d
 Name: "{userdesktop}\Orange C IDE"; Filename: "{app}\bin\ocide.exe"; MinVersion: 4,4; Components: main\desktop; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\bin\ocide.exe"; Parameters: " "; Description: "Launch Orange C IDE"; Flags: nowait postinstall skipifsilent unchecked; Components: main\desktop; BeforeInstall: SetEnvPath;
+Filename: "{app}\bin\ocide.exe"; Parameters: " "; Description: "Launch Orange C IDE"; Flags: runascurrentuser nowait postinstall skipifsilent unchecked; Components: main\desktop; BeforeInstall: SetEnvPath;
 
 [Registry]
 Root: HKLM; Subkey: "Software\LADSoft"; Flags: uninsdeletekeyifempty; Components: main\desktop;
@@ -190,9 +190,6 @@ type: filesandordirs; Name: "{userdocs}\Orange C Projects\default.ods"; Componen
 type: filesandordirs; Name: "{userappdata}\Orange C\ocide.ini"; Components: main\desktop;
 type: filesandordirs; Name: "{userappdata}\Orange C"; Components: main\desktop;
 
-;[UninstallRun]
-;Filename: "{app}\bin\defs.exe";  Parameters: "/U ""{app}"" "; Flags: runminimized
-
 [Code]
 #ifdef UNICODE
   #define AW "W"
@@ -205,11 +202,19 @@ function SetEnvironmentVariable(lpName: string; lpValue: string): BOOL;
 function SHChangeNotify(cmd:Integer; flags:Integer; dwItem1:Integer; dwItem2:Integer) : Integer;
   external 'SHChangeNotify@shell32.dll stdcall';
 
+// sets up the environment so we can spawn the IDE from the setup program without problems
 procedure SetEnvPath;
+var
+  WorkingVar : String;
 begin
-  if not SetEnvironmentVariable('PATH', ExpandConstant('{app}')) then
+  RegQueryStringValue(HKEY_CURRENT_USER, 'Environment', 'Path', WorkingVar);
+  Insert(ExpandConstant('{app}\bin;'), WorkingVar, 1);
+  if not SetEnvironmentVariable('PATH', WorkingVar) then
+    MsgBox(SysErrorMessage(DLLGetLastError), mbError, MB_OK);
+  if not SetEnvironmentVariable('ORANGEC', ExpandConstant('{app}')) then
     MsgBox(SysErrorMessage(DLLGetLastError), mbError, MB_OK);
 end;
+
 function InitializeSetup(): Boolean;
 begin
   Result := True;

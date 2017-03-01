@@ -446,7 +446,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                     *tp = NULL;
                     if ((flags & (_F_SIZEOF | _F_PACKABLE)) == (_F_SIZEOF | _F_PACKABLE))
                     {
-                        *exp = intNode(en_templateparam, sp);
+                        *exp = varNode(en_templateparam, sp);
                         *tp = sp->tp;
                         lex = getsym();
                     }

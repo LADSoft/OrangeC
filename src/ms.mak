@@ -67,7 +67,7 @@ CCFLAGS = /O2 /EHs /c
 LINK=link.exe
 LFLAGS=/LTCG:incremental /NXCOMPAT /DYNAMICBASE /MACHINE:x86 /OPT:REF /SAFESEH  /OPT:ICF /NOLOGO /TLBID:1
 
-LIB=lib.exe
+LIBEXE=lib.exe
 LIBFLAGS=/MACHINE:x86 /LTCG
 LIB_EXT:=.lib
 LIB_PREFIX:=
@@ -117,19 +117,19 @@ vpath %.res $(_OUTPUTDIR)
 
 $(_LIBDIR)\$(NAME)$(LIB_EXT): $(LLIB_DEPENDENCIES)
 #	-del $()_LIBDIR)\$(NAME)$(LIB_EXT) >> $(NULLDEV)
-	$(LIB) $(LIBFLAGS) /OUT:$(_LIBDIR)\$(NAME)$(LIB_EXT) @&&|
+	$(LIBEXE) $(LIBFLAGS) /OUT:$(_LIBDIR)\$(NAME)$(LIB_EXT) @&&|
  	$(addprefix $(_OUTPUTDIR)\,$(LLIB_DEPENDENCIES))
 |
 
 $(NAME).exe: $(MAIN_DEPENDENCIES) $(LIB_DEPENDENCIES) $(_LIBDIR)\$(NAME)$(LIB_EXT) $(RES_deps)
-	$(LINK) $(TYPE) $(LFLAGS) $(COMPLIB) /LIBPATH:"$(UCRTPATH)" /LIBPATH:"$(WindowsSdkDir)\lib\$(WindowsSDKLibVersion)\um\x86" /LIBPATH:"$(VCINSTALLDIR)\lib" /OUT:$@ $(_LIBDIR)\$(NAME)$(LIB_EXT) $(LIB_DEPENDENCIES) $(addprefix /DEF:,$(DEF_DEPENDENCIES)) $(addprefix $(_OUTPUTDIR)\,$(RES_deps)) @&&|
+	$(LINK) $(TYPE) $(LFLAGS) $(COMPLIB) /LIBPATH:"$(UCRTPATH)" /LIBPATH:"$(VCINSTALLDIR)\lib" /OUT:$@ $(_LIBDIR)\$(NAME)$(LIB_EXT) $(LIB_DEPENDENCIES) $(addprefix /DEF:,$(DEF_DEPENDENCIES)) $(addprefix $(_OUTPUTDIR)\,$(RES_deps)) @&&|
 $(addprefix $(_OUTPUTDIR)\,$(MAIN_DEPENDENCIES))
 |
 
 %.exe: %.c
-	$(CC) -o$@ $^
+	$(CC) $^
 
 %.exe: %.cpp
-	$(CC) -o$@ $^
+	$(CC) $^
 
 endif

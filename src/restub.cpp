@@ -53,7 +53,7 @@ unsigned char *exeData;
 bool LoadEXE(const std::string &exeName)
 {
     std::fstream file(exeName.c_str(), std::ios::in | std::ios::binary);
-    if (file == NULL || !file.is_open())
+    if (!file.is_open())
     {
         return false;
     }

@@ -54,7 +54,7 @@ bool Load(const std::string &exeName)
 {
     char buf[512];
     std::fstream file(exeName.c_str(), std::ios::in | std::ios::binary | std::ios::out);
-    if (file == NULL || !file.is_open())
+    if (!file.is_open())
     {
         return false;
     }

@@ -41,6 +41,8 @@
 # MINGW - mingw32 compiler                  4.8.1
 # OWC   - open watcom compiler              1.9
 # CLANG - clang compiler, using MS linker   3.5.0
+# BCC32 - embarcadero C++                   Package 18.0, compiler 7.20
+# OCC   - Orange C
 #
 ifndef COMPILER
 COMPILER := MS

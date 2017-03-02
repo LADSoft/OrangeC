@@ -40,8 +40,6 @@
 # use of C++11 constructs in the sources.
 ifeq "$(COMPILER)" "BCC32"
 
-$(error "Compiling with Embarcadero C++ doesn't work; programs don't run properly")
-
 RADSTUDIO_BASE := c:\program files (x86)\Embarcadero\Studio
 RADSTUDIO_VERSION := $(lastword $(shell dir /b "$(RADSTUDIO_BASE)"))
 COMPILER_PATH := $(RADSTUDIO_BASE)\$(RADSTUDIO_VERSION)

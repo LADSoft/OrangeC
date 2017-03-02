@@ -1883,7 +1883,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         funcparams->arguments->exp = exp1;
                         oldrref = basetype(tp1)->rref;
                         oldlref = basetype(tp1)->lref;
-                        basetype(tp1)->rref = exp1->type == en_func || exp1->type == en_thisref || exp1->type == en_auto || lvalue(exp1);
+                        basetype(tp1)->rref = exp1->type == en_func || exp1->type == en_thisref || exp1->type == en_auto && exp1->v.sp->storage_class != sc_parameter || lvalue(exp1) && (exp1->type != en_l_ref || exp1->left->type != en_auto || exp1->left->v.sp->storage_class != sc_parameter);
                         basetype(tp1)->lref = !basetype(tp1)->rref;
                         maybeConversion = FALSE;
                         returntype = tp;

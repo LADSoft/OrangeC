@@ -645,6 +645,9 @@ int main(int argc, char *argv[])
         strcpy(infile, buffer);
         if (cparams.prm_makestubs)
         {
+            preprocini(infile, inputFile);
+            if (chosenAssembler->enter_filename)
+                chosenAssembler->enter_filename(clist->data);
             MakeStubs();
         }
         else

@@ -201,6 +201,7 @@ SYMBOL *namespacesearch(char *name, NAMESPACEVALUES *ns, BOOLEAN qualified, BOOL
                 TYPE *tp = Alloc(sizeof(TYPE));
                 SYMBOL *sp = makeID(sc_overloads, tp, NULL, ((SYMBOL *)lst->data)->name);
                 tp->type = bt_aggregate;
+                tp->rootType = tp;
                 tp->sp = sp;
                 tp->syms = CreateHashTable(1);
                 a = lst;
@@ -542,6 +543,7 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
     {
         TYPE *tp = Alloc(sizeof(TYPE));
         tp->type = bt_templateselector;
+        tp->rootType = tp;
         *sym = makeID(sc_global, tp, NULL, AnonymousName());
         (*sym)->templateSelector = templateSelector;
         tp->sp = *sym;
@@ -1006,7 +1008,7 @@ LEXEME *getIdName(LEXEME *lex, SYMBOL *funcsp, char *buf, int *ov, TYPE **castTy
             
             if (ISID(lex))
             {
-                sprintf(buf, "%s@%s", overloadNameTab[CI_LIT], lex->value.s.a);
+                my_sprintf(buf, "%s@%s", overloadNameTab[CI_LIT], lex->value.s.a);
                 *ov = CI_LIT;
             }
             else
@@ -1543,6 +1545,7 @@ static TYPE *toThis(TYPE *tp)
     tpx->type = bt_pointer;
     tpx->size = getSize(bt_pointer);
     tpx->btp = tp;
+    tpx->rootType = tpx;
     return tpx;
 }
 static int compareConversions(SYMBOL *spLeft, SYMBOL *spRight, enum e_cvsrn *seql, enum e_cvsrn *seqr,
@@ -2307,6 +2310,7 @@ static SYMBOL *getUserConversion(int flags,
             funcparams.thisptr = expa;
             funcparams.thistp = &thistp;
             thistp.btp = tpa;
+            thistp.rootType = &thistp;
             thistp.type = bt_pointer;
             thistp.size = getSize(bt_pointer);
             while (lst2)
@@ -2400,6 +2404,7 @@ static SYMBOL *getUserConversion(int flags,
                                         lref = TRUE;
                                 }
                                 thistp.btp = tpa;
+                                thistp.rootType = &thistp;
                                 thistp.type = bt_pointer;
                                 thistp.size = getSize(bt_pointer);
                                 getSingleConversion(((SYMBOL *)args->p)->tp, &thistp, &exp, &n2, seq3, candidate, NULL, TRUE);
@@ -3251,6 +3256,7 @@ static void getInitListConversion(TYPE *tp, INITLIST *list, TYPE *tpp, int *n, e
                 exp.type = en_c_i;
                 thistp.type = bt_pointer;
                 thistp.btp = tp;
+                thistp.rootType = &thistp;
                 thistp.size = getSize(bt_pointer);
                 funcparams.thistp = &thistp;
                 funcparams.thisptr = &exp;
@@ -3345,6 +3351,7 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp,
         tpx.type = bt_pointer;
         tpx.size = getSize(bt_pointer);
         tpx.btp = f->arguments->tp;
+        tpx.rootType = &tpx;
         m = 0;
         getSingleConversion(tpp, &tpx, f->thisptr, &m, seq, sp, userFunc ? &userFunc[n] : NULL, TRUE);
         m1 = m;
@@ -3396,6 +3403,7 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp,
                         tpx.type = bt_pointer;
                         tpx.size = getSize(bt_pointer);
                         tpx.btp = f->arguments->tp;
+                        tpx.rootType = &tpx;
                     }
                     else if (theCurrentFunc 
                              && (f->thisptr && f->thisptr->type == en_l_p && f->thisptr->left->type == en_auto && f->thisptr->left->v.sp->thisPtr)
@@ -3407,6 +3415,7 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp,
                         tpx.type = bt_pointer;
                         tpx.size = getSize(bt_pointer);
                         tpx.btp = basetype(f->thistp)->btp;
+                        tpx.rootType = &tpx;
                         qualifyForFunc(theCurrentFunc, &tpx.btp, FALSE);
                     }
                     else if (sp->isDestructor)
@@ -3415,6 +3424,7 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp,
                         tpx.type = bt_pointer;
                         tpx.size = getSize(bt_pointer);
                         tpx.btp = basetype(basetype(f->thistp)->btp);
+                        tpx.rootType = &tpx;
                     }
                     if (islrqual(sp->tp) || isrrqual(sp->tp))
                     {
@@ -4086,13 +4096,14 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
                         sym->tp->type = bt_func;
                         sym->tp->size = getSize(bt_pointer);
                         sym->tp->btp = &stdint;
+                        sym->tp->rootType = sym->tp;
                         sym->tp->syms = CreateHashTable(1);
                         sym->tp->sp = sym;
                         while (a)
                         {
                             SYMBOL *sym1 = Alloc(sizeof(SYMBOL));
                             char nn[10];
-                            sprintf(nn, "%d", v++);
+                            my_sprintf(nn, "%d", v++);
                             sym1->name = litlate(nn);
                             sym1->tp = a->tp;
                             insert(sym1, sym->tp->syms);
@@ -4210,6 +4221,7 @@ SYMBOL *MatchOverloadedFunction(TYPE *tp, TYPE **mtp, SYMBOL *sp, EXPRESSION **e
         fpargs.thistp->type = bt_pointer;
         fpargs.thistp->size = getSize(bt_pointer);
         fpargs.thistp->btp = tp->sp->tp;
+        fpargs.thistp->rootType = fpargs.thistp;
         fpargs.thisptr = intNode(en_c_i, 0);
     }
     while (hrp)

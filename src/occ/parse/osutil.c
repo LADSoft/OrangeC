@@ -635,7 +635,7 @@ void setglbdefs(void)
         l = l->next;
     }
     sscanf(STRING_VERSION, "%d.%d", &major, &minor);
-    sprintf(buf, "%d", major *100+minor);
+    my_sprintf(buf, "%d", major *100+minor);
     glbdefine("__ORANGEC__", buf, TRUE);
     glbdefine("__CHAR_BIT__", "8", TRUE);
     if (cparams.prm_cplusplus)

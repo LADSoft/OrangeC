@@ -1873,6 +1873,7 @@ static int gen_parm(INITLIST *a, SYMBOL *funcsp)
             tp->type = bt_objectArray;
             tp->size = getSize(bt_pointer);
             tp->btp = &stdpointer;
+            tp->rootType = tp->btp;
             objectArray_exp = anonymousVar(sc_auto, tp);
         }
         intermed_tail->varargPrev = TRUE;

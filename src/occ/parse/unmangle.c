@@ -180,7 +180,7 @@ static char *unmangptr(char *buf , char *name, char *last)
                 name++;
                 while (isdigit (*name))
                     n = n * 10 + (*name ++ & 0xf);
-                sprintf(buf + strlen(buf), "[%d]", n);
+                my_sprintf(buf + strlen(buf), "[%d]", n);
             }
             name = unmangptr(buf, name, last);
         }
@@ -873,11 +873,11 @@ char *unmang1(char *buf, char *name, char *last, BOOLEAN tof)
             }
             if (buf3[0])
             {
-                sprintf(buf, "%s((%s)%s)", buf1, buf2, buf3);
+                my_sprintf(buf, "%s((%s)%s)", buf1, buf2, buf3);
             }
             else
             {
-                sprintf(buf, "%s %s", buf1, buf2);
+                my_sprintf(buf, "%s %s", buf1, buf2);
             }
             break;
         case 'n':

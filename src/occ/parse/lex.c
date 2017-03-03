@@ -568,10 +568,12 @@ int getChar(unsigned char **source, enum e_lexType *tp)
 }
 SLCHAR *getString(unsigned char **source, enum e_lexType *tp)
 {
+    // the static declaration speeds it up by about 5% on windows platforms.
+    static LCHAR data[32768];
+    LCHAR *dest = data;
     BOOLEAN raw = FALSE;
     BOOLEAN found = FALSE;
     unsigned char *p = (unsigned char *)*source;
-    LCHAR data[32768], *dest = data;
     int len = sizeof(data)/sizeof(data[0]);
     int count = 0;
     BOOLEAN errored = FALSE;
@@ -799,9 +801,7 @@ SLCHAR *getString(unsigned char **source, enum e_lexType *tp)
         rv = Alloc(sizeof(SLCHAR));
         rv->str = (LCHAR *)Alloc(count * sizeof(LCHAR));
         for (i=0; i < count; i++)
-        {
             rv->str[i] = data[i];
-        }
         rv->count = count;
         DecGlobalFlag();
         return rv;

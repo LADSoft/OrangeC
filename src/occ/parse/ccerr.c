@@ -683,14 +683,11 @@ BOOLEAN printerrinternal(int err, char *file, int line, va_list args)
         return FALSE;
     if (err >= sizeof(errors)/sizeof(errors[0]))
     {
-        sprintf(buf, "Error %d", err);
+        my_sprintf(buf, "Error %d", err);
     }
     else
     {
-//        va_list arg;	
-//        va_start(arg, line);
-        vsprintf(buf, errors[err].name, args);
-//        va_end(arg);
+          vsprintf(buf, errors[err].name, args);
     }
     if (IsReturnErr(err) || (errors[err].level & ERROR) || (cparams.prm_ansi && (errors[err].level & ANSIERROR)) 
         || (cparams.prm_cplusplus && (errors[err].level & CPLUSPLUSERROR)))
@@ -839,7 +836,7 @@ void errorqualified(int err, SYMBOL *strSym, NAMESPACEVALUES *nsv, char *name)
     {
         strcpy(unopped, name);
     }
-    sprintf(buf, "'%s' is not a member of '", unopped);
+    my_sprintf(buf, "'%s' is not a member of '", unopped);
     if (strSym)
     {
         typeToString(buf + strlen(buf), strSym->tp);
@@ -928,7 +925,7 @@ void errorarg(int err, int argnum, SYMBOL *declsp, SYMBOL *funcsp)
     char argbuf[2048];
     char buf[2048];
     if (declsp->anonymous)
-        sprintf(argbuf,"%d",argnum);
+        my_sprintf(argbuf,"%d",argnum);
     else
     {
         unmangle(argbuf, declsp->errname);
@@ -1087,7 +1084,7 @@ void AddErrorToList(char *tag, char *str)
         char buf[512];
         char *p ;
         LIST *l;
-        sprintf(buf, "******** %s: %s", tag, str);
+        my_sprintf(buf, "******** %s: %s", tag, str);
         p = litlate(buf);
         l = Alloc(sizeof(LIST));
         l->data = p;
@@ -1295,14 +1292,14 @@ static void getVLAList(STATEMENT *stmt, VLASHIM ***shims, VLASHIM **prev, int le
 static void vlaError(VLASHIM *gotoShim, VLASHIM *errShim)
 {
     char buf[256];
-    sprintf(buf, "%d", errShim->line);
+    my_sprintf(buf, "%d", errShim->line);
     currentErrorLine = 0;
     specerror(ERR_GOTO_BYPASSES_VLA_INITIALIZATION, buf, gotoShim->file, gotoShim->line);
 }
 static void declError(VLASHIM *gotoShim, VLASHIM *errShim)
 {
     char buf[256];
-    sprintf(buf, "%d", errShim->line);
+    my_sprintf(buf, "%d", errShim->line);
     currentErrorLine = 0;
     specerror(ERR_GOTO_BYPASSES_INITIALIZATION, buf, gotoShim->file, gotoShim->line);
 }

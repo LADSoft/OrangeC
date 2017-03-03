@@ -564,6 +564,7 @@ int getBaseAlign(enum e_bt type)
         type = bt_struct;
     tp.type = type; /* other fields don't matter, we never call this for structured types*/
     tp.array = tp.vla = FALSE;
+    tp.rootType = &tp;
     return basesize(chosenAssembler->arch->type_align, &tp);    
 }
 long getautoval(long val)
@@ -696,6 +697,40 @@ int init_backend(int *argc ,char **argv)
         stdwcharptr.size = getSize(bt_pointer);
         stdchar16tptr.size = getSize(bt_pointer);
         stdchar32tptr.size = getSize(bt_pointer);
+
+        stdpointer.rootType = &stdpointer;
+        stdnullpointer.rootType = &stdnullpointer;
+        stdfloatimaginary.rootType = &stdfloatimaginary;
+        stdfloat.rootType = &stdfloat;
+        stddouble.rootType = &stddouble;
+        stddoubleimaginary.rootType = &stddoubleimaginary;;
+        stdlongdouble.rootType = &stdlongdouble;
+        stdlongdoubleimaginary.rootType = &stdlongdoubleimaginary;;
+        stdfloatcomplex.rootType = &stdfloatcomplex;
+        stddoublecomplex.rootType = &stddoublecomplex;
+        stdlongdoublecomplex.rootType = &stdlongdoublecomplex;
+        stdunsignedlonglong.rootType = &stdunsignedlonglong;
+        stdlonglong.rootType = &stdlonglong;
+        stdunsignedlong.rootType = &stdunsignedlong;
+        stdlong.rootType = &stdlong;
+        stdconst.rootType = &stdconst;
+        stdunsigned.rootType = &stdunsigned;
+        stdint.rootType = &stdint;        
+        stdstring.rootType = &stdstring;
+        stdchar.rootType = &stdchar;
+        stdsignedchar.rootType = &stdsignedchar;
+        stdunsignedchar.rootType = &stdunsignedchar;
+        stdshort.rootType = &stdshort;
+        stdunsignedshort.rootType = &stdunsignedshort;
+        stdcharptr.rootType = &stdcharptr;
+        std__func__.rootType = &std__func__;
+        std__func__nc.rootType = &std__func__nc;
+        stdbool.rootType = &stdbool;
+        stdwidechar.rootType = &stdwidechar;
+        stdwcharptr.rootType = &stdwcharptr;
+        stdchar16tptr.rootType = &stdchar16tptr;
+        stdchar32tptr.rootType = &stdchar32tptr;
+
     }
     return rv ;
 }

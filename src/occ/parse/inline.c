@@ -315,7 +315,7 @@ SYMBOL *getvc1Thunk(int offset)
 {
     char name[256];
     SYMBOL *rv;
-    sprintf(name, "@$vc1$B0$%d$0", offset+1);
+    my_sprintf(name, "@$vc1$B0$%d$0", offset+1);
     rv = search(name, vc1Thunks);
     if (!rv)
     {

@@ -355,7 +355,7 @@ BOOLEAN ismember(SYMBOL *sym);
 BOOLEAN istype(SYMBOL *sym);
 BOOLEAN ismemberdata(SYMBOL *sp);
 BOOLEAN startOfType(LEXEME *lex, BOOLEAN assumeType);
-TYPE *basetype(TYPE *tp);
+void UpdateRootTypes(TYPE *tp);
 BOOLEAN isDerivedFromTemplate(TYPE *tp);
 BOOLEAN isunsigned(TYPE *tp);
 BOOLEAN isint(TYPE *tp);
@@ -371,14 +371,9 @@ BOOLEAN isrrqual(TYPE *tp);
 BOOLEAN isrestrict(TYPE *tp);
 BOOLEAN isatomic(TYPE *tp);
 BOOLEAN isvoid(TYPE *tp);
-BOOLEAN ispointer(TYPE *tp);
-BOOLEAN isref(TYPE *tp);
 BOOLEAN isvoidptr(TYPE *tp);
-BOOLEAN isfunction(TYPE *tp);
-BOOLEAN isfuncptr(TYPE *tp);
 BOOLEAN isarray(TYPE *tp);
 BOOLEAN isunion(TYPE *tp);
-BOOLEAN isstructured(TYPE *tp);
 SYMBOL *getFunctionSP(TYPE **tp);
 LEXEME *concatStringsInternal(LEXEME *lex, STRING **str, int *elems);
 LEXEME *concatStrings(LEXEME *lex, EXPRESSION **exp, enum e_lexType *tp, int *elems);
@@ -404,6 +399,7 @@ TYPE *destSize(TYPE *tp1, TYPE *tp2, EXPRESSION **exp1, EXPRESSION **exp2, BOOLE
 EXPRESSION *RemoveAutoIncDec(EXPRESSION *exp);
 LLONG_TYPE imax(LLONG_TYPE x, LLONG_TYPE y);
 LLONG_TYPE imin(LLONG_TYPE x, LLONG_TYPE y);
+void my_sprintf(char *dest, const char *fmt, ...);
 
 
 							  /* IAlias.c */

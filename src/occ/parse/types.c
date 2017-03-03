@@ -100,9 +100,9 @@ BOOLEAN comparetypes(TYPE *typ1, TYPE *typ2, int exact)
         typ2 = basetype(typ2);
     typ1 = replaceTemplateSelector(typ1);
     typ2 = replaceTemplateSelector(typ2);
-    if (isDerivedFromTemplate(typ1))
+    if (typ1->type == bt_derivedfromtemplate)
         typ1 = typ1->btp;
-    if (isDerivedFromTemplate(typ2))
+    if (typ2->type == bt_derivedfromtemplate)
         typ2 = typ2->btp;
     while (isref(typ1))
         typ1 = basetype(typ1)->btp;
@@ -257,17 +257,17 @@ static char *putpointer(char *p, TYPE *tp)
 {
     *p = 0;
     if (tp->type == bt_far)
-        sprintf(p,"far ");
+        my_sprintf(p,"far ");
     p = p +strlen(p);
     if (tp->array)
         if (tp->btp->size)
-            sprintf(p,"[%ld]",tp->size/tp->btp->size);
+            my_sprintf(p,"[%ld]",tp->size/tp->btp->size);
         else
-            sprintf(p,"[]");
+            my_sprintf(p,"[]");
     else if (tp->vla)
-        sprintf(p, "[*]");
+        my_sprintf(p, "[*]");
     else
-        sprintf(p," *");
+        my_sprintf(p," *");
     return p + strlen(p);
 }
     

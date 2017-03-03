@@ -369,6 +369,8 @@ static void dumpDynamicInitializers(void)
         tp->type = bt_ifunc;
         tp->btp = Alloc(sizeof(TYPE));
         tp->btp->type = bt_void;
+        tp->rootType = tp;
+        tp->btp->rootType = tp->btp;
         tp->syms = CreateHashTable(1);
         funcsp = makeUniqueID(chosenAssembler->msil ? sc_global : sc_static, tp, NULL,"__DYNAMIC_STARTUP__");
         funcsp->inlineFunc.stmt = stmtNode(NULL, NULL, st_block);
@@ -402,6 +404,8 @@ static void dumpTLSInitializers(void)
         tp->type = bt_ifunc;
         tp->btp = Alloc(sizeof(TYPE));
         tp->btp->type = bt_void;
+        tp->rootType = tp;
+        tp->btp->rootType = tp->btp;
         tp->syms = CreateHashTable(1);
         funcsp = makeUniqueID(chosenAssembler->msil ? sc_global : sc_static, tp, NULL,"__TLS_DYNAMIC_STARTUP__");
         funcsp->inlineFunc.stmt = stmtNode(NULL, NULL, st_block);
@@ -453,6 +457,8 @@ static void dumpDynamicDestructors(void)
         tp->type = bt_ifunc;
         tp->btp = Alloc(sizeof(TYPE));
         tp->btp->type = bt_void;
+        tp->rootType = tp;
+        tp->btp->rootType = tp->btp;
         tp->syms = CreateHashTable(1);
         funcsp = makeUniqueID(chosenAssembler->msil ? sc_global : sc_static, tp, NULL,"__DYNAMIC_RUNDOWN__");
         funcsp->inlineFunc.stmt = stmtNode(NULL, NULL, st_block);
@@ -486,6 +492,8 @@ static void dumpTLSDestructors(void)
         tp->type = bt_ifunc;
         tp->btp = Alloc(sizeof(TYPE));
         tp->btp->type = bt_void;
+        tp->rootType = tp;
+        tp->btp->rootType = tp->btp;
         tp->syms = CreateHashTable(1);
         funcsp = makeUniqueID(chosenAssembler->msil ? sc_global : sc_static, tp, NULL,"__TLS_DYNAMIC_RUNDOWN__");
         funcsp->inlineFunc.stmt = stmtNode(NULL, NULL, st_block);
@@ -2553,6 +2561,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                         ttp1 = &(*ttp1)->btp;
                     }
                     (*ttp1)->btp = itype;
+                    UpdateRootTypes(ttp);
                     tp1 = itype;
                     if (funcparams->arguments && !isref(funcparams->arguments->tp))
                     {
@@ -2748,6 +2757,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                         tn->type = bt_pointer;
                         tn->size = n * s;
                         tn->btp = btp;
+                        tn->rootType = tn;
                         tn->esize = sz;
                     }
                     callConstructor(&ctype, &exp, NULL, TRUE, sz, TRUE, FALSE, FALSE, FALSE, FALSE);
@@ -2788,6 +2798,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                     tn->type = bt_pointer;
                     tn->size = n * s;
                     tn->btp = btp;
+                    tn->rootType = tn;
                     tn->esize = sz;
                 }
                 if (sc != sc_auto && sc != sc_parameter && sc != sc_member && sc != sc_mutable)
@@ -2852,12 +2863,14 @@ static LEXEME *initialize_auto(LEXEME *lex, SYMBOL *funcsp, int offset,
                 itp->type = bt_pointer;
                 itp->size = getSize(bt_pointer);
                 itp->btp = basetype(tp)->btp;
+                itp->rootType = itp;
                 if (isconst(itp))
                 {
                     TYPE *itp1 = Alloc(sizeof(TYPE));
                     itp1->type = bt_const;
                     itp1->size = itp->size;
                     itp1->btp = itp;
+                    itp1->rootType = itp->rootType;
                     itp = itp1;
                 }
                 if (isvolatile(itp))
@@ -2866,6 +2879,7 @@ static LEXEME *initialize_auto(LEXEME *lex, SYMBOL *funcsp, int offset,
                     itp1->type = bt_volatile;
                     itp1->size = itp->size;
                     itp1->btp = itp;
+                    itp1->rootType = itp->rootType;
                     itp = itp1;
                 }
                 tp = itp;
@@ -2877,6 +2891,7 @@ static LEXEME *initialize_auto(LEXEME *lex, SYMBOL *funcsp, int offset,
                 itp->type = bt_const;
                 itp->size = tp->size;
                 itp->btp = tp;
+                itp->rootType = tp->rootType;
                 tp = itp;
             }
             if (isvolatile(sp->tp) && !isvolatile(tp))
@@ -2885,6 +2900,7 @@ static LEXEME *initialize_auto(LEXEME *lex, SYMBOL *funcsp, int offset,
                 itp->type = bt_volatile;
                 itp->size = tp->size;
                 itp->btp = tp;
+                itp->rootType = tp->rootType;
                 tp = itp;
             }
             sp->tp = tp; // sets type for variable
@@ -3422,6 +3438,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                 {
                     *tp3 = Alloc(sizeof(TYPE));
                     **tp3 = *tp;
+                    UpdateRootTypes(*tp3);
                     tp3 = &(*tp3)->btp;
                     tp = tp->btp;
                 }

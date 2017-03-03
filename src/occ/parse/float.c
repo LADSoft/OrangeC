@@ -1177,7 +1177,7 @@ void FPFMultiplyPowTen(FPF *value, int power)
 ** Returns length of converted number.
 ** NOTE: dest must point to a buffer big enough to hold the
 **  result.  Also, this routine does append a null (an effect
-**  of using the sprintf() function).  It also returns
+**  of using the my_sprintf() function).  It also returns
 **  a length count.
 ** NOTE: This routine returns 5 significant digits.  Thats
 **  about all I feel safe with, given the method of
@@ -1281,7 +1281,7 @@ char * FPFToString(char *dest,
 	            *dest++ = '-';
 	        } else
 	            *dest++ = '+';
-	        sprintf(dest,"%d",power);
+	        my_sprintf(dest,"%d",power);
 	    } else
 	        *dest = 0 ;
 	}

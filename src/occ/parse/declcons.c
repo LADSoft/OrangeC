@@ -261,6 +261,7 @@ SYMBOL *insertFunc(SYMBOL *sp, SYMBOL *ovl)
     {
         TYPE *tp = (TYPE *)Alloc(sizeof(TYPE));
         tp->type = bt_aggregate;
+        tp->rootType = tp;
         funcs = makeID(sc_overloads, tp, 0, ovl->name) ;
         funcs->parentClass = sp;
         tp->sp = funcs;
@@ -297,6 +298,8 @@ static SYMBOL *declareDestructor(SYMBOL *sp)
     tp->size = getSize(bt_pointer);
     tp->btp = (TYPE *)Alloc(sizeof(TYPE));
     tp->btp->type = bt_void;
+    tp->rootType = tp;
+    tp->btp->rootType = tp->btp;
     func = makeID(sc_member, tp, NULL, overloadNameTab[CI_DESTRUCTOR]);
     func->xcMode = xc_none;
     tp->syms = CreateHashTable(1);        
@@ -420,6 +423,8 @@ static SYMBOL *declareConstructor(SYMBOL *sp, BOOLEAN deflt, BOOLEAN move)
     tp->size = getSize(bt_pointer);
     tp->btp = (TYPE *)Alloc(sizeof(TYPE));
     tp->btp->type = bt_void;
+    tp->rootType = tp;
+    tp->btp->rootType = tp->btp;
     func = makeID(sc_member, tp, NULL, overloadNameTab[CI_CONSTRUCTOR]);
     func->isConstructor = TRUE;
     sp1= makeID(sc_parameter, NULL, NULL, AnonymousName());
@@ -430,6 +435,7 @@ static SYMBOL *declareConstructor(SYMBOL *sp, BOOLEAN deflt, BOOLEAN move)
     if (deflt)
     {
         sp1->tp->type = bt_void;
+        sp1->tp->rootType = sp1->tp;
     }
     else
     {
@@ -447,6 +453,7 @@ static SYMBOL *declareConstructor(SYMBOL *sp, BOOLEAN deflt, BOOLEAN move)
         }
         *tpx = *basetype(sp->tp);
     }
+    UpdateRootTypes(sp1->tp);
     return insertFunc(sp, func);
 }
 static BOOLEAN constAssignmentOp(SYMBOL *sp, BOOLEAN move)
@@ -496,6 +503,7 @@ static SYMBOL *declareAssignmentOp(SYMBOL *sp, BOOLEAN move)
         tpx = tpx->btp = (TYPE *)Alloc(sizeof(TYPE));
     }
     *(tpx) = *basetype(sp->tp);
+    UpdateRootTypes(tp);
     func = makeID(sc_member, tp, NULL, overloadNameTab[assign - kw_new + CI_NEW]);
     sp1= makeID(sc_parameter, NULL, NULL, AnonymousName());
     tp->syms = CreateHashTable(1);
@@ -514,6 +522,7 @@ static SYMBOL *declareAssignmentOp(SYMBOL *sp, BOOLEAN move)
         tpx = tpx->btp;
     }
     *tpx = *basetype(sp->tp);
+    UpdateRootTypes(sp1->tp);
     return insertFunc(sp, func);
 }
 static BOOLEAN matchesDefaultConstructor(SYMBOL *sp)
@@ -1310,6 +1319,7 @@ static void shimDefaultConstructor(SYMBOL *sp, SYMBOL *cons)
             params->thistp = Alloc(sizeof(TYPE));
             params->thistp->type = bt_pointer;
             params->thistp->btp = sp->tp;
+            params->thistp->rootType = params->thistp;
             params->thistp->size = getSize(bt_pointer);
             params->fcall = varNode(en_pc, match);
             params->functp = match->tp;
@@ -1321,6 +1331,7 @@ static void shimDefaultConstructor(SYMBOL *sp, SYMBOL *cons)
                 INITLIST *x = (INITLIST *)Alloc(sizeof(INITLIST)), **p;
                 x->tp = (TYPE *)Alloc(sizeof(TYPE));
                 x->tp->type = bt_int;
+                x->tp->rootType = x->tp;
                 x->tp->size = getSize(bt_int);
                 x->exp = intNode(en_c_i, 1);
                 p = &params->arguments;
@@ -1586,6 +1597,7 @@ static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi
                 tp->type = bt_const;
                 tp->size = basetype(member->tp)->size;
                 tp->btp = member->tp;
+                tp->rootType = member->tp->rootType;
             }
             else
             {
@@ -1611,6 +1623,7 @@ static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi
                 tp->type = bt_const;
                 tp->size = basetype(member->tp)->size;
                 tp->btp = member->tp;
+                tp->rootType = member->tp->rootType;
             }
             else
             {
@@ -2436,6 +2449,7 @@ static void genAsnCall(BLOCKDATA *b, SYMBOL *cls, SYMBOL *base, int offset, EXPR
         tp->type = bt_const;
         tp->size = base->tp->size;
         tp->btp = base->tp;
+        tp->rootType = base->tp->rootType;
     }
     else
     {
@@ -2453,6 +2467,7 @@ static void genAsnCall(BLOCKDATA *b, SYMBOL *cls, SYMBOL *base, int offset, EXPR
     params->thistp->type = bt_pointer;
     params->thistp->size = getSize(bt_pointer);
     params->thistp->btp = base->tp;
+    params->thistp->rootType = params->thistp;
     params->ascall = TRUE;
     asn1 = GetOverloadedFunction(&tp, &params->fcall, cons, params, NULL, TRUE, FALSE, TRUE, 0);
         
@@ -2467,6 +2482,7 @@ static void genAsnCall(BLOCKDATA *b, SYMBOL *cls, SYMBOL *base, int offset, EXPR
             tp1->type = bt_lref;
             tp1->size = getSize(bt_lref);
             tp1->btp = params->arguments->tp;
+            tp1->rootType = tp1;
             params->arguments->tp = tp1;
         }
         if (!isAccessible(base,base, asn1, NULL, ac_protected, FALSE))
@@ -2748,6 +2764,7 @@ void callDestructor(SYMBOL *sp, SYMBOL *against, EXPRESSION **exp, EXPRESSION *a
     params->thistp->type = bt_pointer;
     params->thistp->size = getSize(bt_pointer);
     params->thistp->btp = sp->tp;
+    params->thistp->rootType = params->thistp;
     params->ascall = TRUE;
     dest1 = basetype(dest->tp)->syms->table[0]->p;
     if (!dest1 || ! dest1->defaulted)
@@ -2778,6 +2795,7 @@ void callDestructor(SYMBOL *sp, SYMBOL *against, EXPRESSION **exp, EXPRESSION *a
                 x->tp = (TYPE *)Alloc(sizeof(TYPE));
                 x->tp->type = bt_int;
                 x->tp->size = getSize(bt_int);
+                x->tp->rootType = x->tp;
                 x->exp = intNode(en_c_i, top);
                 p = &params->arguments;
                 while (*p) p = &(*p)->next;
@@ -2845,6 +2863,7 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
     params->thistp = Alloc(sizeof(TYPE));
     params->thistp->type = bt_pointer;
     params->thistp->btp = sp->tp;
+    params->thistp->rootType = params->thistp;
     params->thistp->size = getSize(bt_pointer);
     params->ascall = TRUE;
     cons1 = GetOverloadedFunction(tp, &params->fcall, cons, params, NULL, TRUE, 
@@ -2869,6 +2888,7 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
             oparams->thistp->type = bt_pointer;
             oparams->thistp->size = getSize(bt_pointer);
             oparams->thistp->btp = cons1->parentClass->tp;
+            oparams->thistp->rootType = oparams->thistp;
             oparams->functp = cons1->tp;
             oparams->sp = cons1;
             oparams->ascall = TRUE;
@@ -2946,6 +2966,7 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
                 params->thistp->type = bt_pointer;
                 params->thistp->size = getSize(bt_pointer);
                 params->thistp->btp = sp->tp;
+                params->thistp->rootType = params->thistp;
                 params->ascall = TRUE;
                 dest1 = GetOverloadedFunction(&tp, &params->fcall, dest, params, NULL, TRUE, FALSE, TRUE, 0);
                 if (dest1 && !isAccessible(against,sp, dest1, NULL, top ? (theCurrentFunc && theCurrentFunc->parentClass == sp ? ac_protected : ac_public) : ac_protected, FALSE))
@@ -2963,6 +2984,7 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
                     INITLIST *x = (INITLIST *)Alloc(sizeof(INITLIST)), **p;
                     x->tp = (TYPE *)Alloc(sizeof(TYPE));
                     x->tp->type = bt_int;
+                    x->tp->rootType = x->tp;
                     x->tp->size = getSize(bt_int);
                     x->exp = intNode(en_c_i, top);
                     p = &params->arguments;

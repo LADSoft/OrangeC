@@ -1427,6 +1427,7 @@ SYMBOL *LookupSpecialization(SYMBOL *sym, TEMPLATEPARAMLIST *templateParams)
         candidate->tp = (TYPE *)Alloc(sizeof(TYPE));
         *candidate->tp = *sym->tp;
         candidate->tp->sp = candidate;
+        UpdateRootTypes(candidate->tp);
     }
     candidate->maintemplate = candidate;
     candidate->templateParams = templateParams;
@@ -1443,6 +1444,7 @@ SYMBOL *LookupSpecialization(SYMBOL *sym, TEMPLATEPARAMLIST *templateParams)
     candidate->vtabEntries = NULL;
     tp = Alloc(sizeof(TYPE));
     *tp = *candidate->tp;
+    UpdateRootTypes(tp);
     candidate->tp = tp;
     candidate->tp->syms = NULL;
     candidate->tp->tags = NULL;
@@ -1787,6 +1789,7 @@ static LEXEME *TemplateArg(LEXEME *lex, SYMBOL *funcsp, TEMPLATEPARAMLIST *arg, 
                     {
                         TEMPLATESELECTOR **last;
                         tp = Alloc(sizeof(TYPE));
+                        tp->rootType = tp;
                         tp->type = bt_templateselector;
                         sp = sym = makeID(sc_type, tp, NULL, lex->value.s.a);
                         tp->sp = sym;
@@ -1818,6 +1821,7 @@ static LEXEME *TemplateArg(LEXEME *lex, SYMBOL *funcsp, TEMPLATEPARAMLIST *arg, 
                 else if (ISID(lex))
                 {
                     TYPE *tp = Alloc(sizeof(TYPE));
+                    tp->rootType = tp;
                     tp->type = bt_templateparam;
                     tp->templateParam = arg;
                     arg->argsym = makeID(sc_templateparam, tp, NULL, litlate(lex->value.s.a));
@@ -1834,6 +1838,7 @@ static LEXEME *TemplateArg(LEXEME *lex, SYMBOL *funcsp, TEMPLATEPARAMLIST *arg, 
             {
                 TYPE *tp = Alloc(sizeof(TYPE));
                 tp->type = bt_templateparam;
+                tp->rootType = tp;
                 tp->templateParam = arg;
                 arg->argsym = makeID(sc_templateparam, tp, NULL, AnonymousName());
             }
@@ -1877,6 +1882,7 @@ static LEXEME *TemplateArg(LEXEME *lex, SYMBOL *funcsp, TEMPLATEPARAMLIST *arg, 
             {
                 TYPE *tp = Alloc(sizeof(TYPE));
                 tp->type = bt_templateparam;
+                tp->rootType = tp;
                 tp->templateParam = arg;
                 arg->argsym = makeID(sc_templateparam, tp, NULL, litlate(lex->value.s.a));
                 lex = getsym();
@@ -1885,6 +1891,7 @@ static LEXEME *TemplateArg(LEXEME *lex, SYMBOL *funcsp, TEMPLATEPARAMLIST *arg, 
             {
                 TYPE *tp = Alloc(sizeof(TYPE));
                 tp->type = bt_templateparam;
+                tp->rootType = tp;
                 tp->templateParam = arg;
                 arg->argsym = makeID(sc_templateparam, tp, NULL, AnonymousName());
             }
@@ -1962,6 +1969,7 @@ non_type_join:
                 tpa = Alloc(sizeof(TYPE));
                 tpa->type = bt_templateparam;
                 tpa->templateParam = arg;
+                tpa->rootType = tpa;
                 sp->storage_class = sc_templateparam;
                 sp->tp = tpa;
                 arg->p->type = kw_int;
@@ -1974,6 +1982,7 @@ non_type_join:
                     tp1->type = bt_pointer;
                     tp1->size = getSize(bt_pointer);
                     tp1->btp = tp;
+                    tp1->rootType = tp1;
                     tp = tp1;
                 }
                 arg->p->byNonType.tp = tp;
@@ -2062,24 +2071,10 @@ static TEMPLATEPARAMLIST *copyParams(TEMPLATEPARAMLIST *t, BOOLEAN alsoSpecializ
                 sp->tp = Alloc(sizeof(TYPE));
                 sp->tp->type = bt_templateparam;
                 sp->tp->templateParam = *last;
+                sp->tp->rootType = sp->tp;
                 (*last)->argsym = sp;
             }
                 
-            /*
-            if (parse->p->type == kw_typename)
-            {
-                TYPE *tp = parse->p->byClass.val;
-                if (tp && isstructured(tp) && basetype(tp)->sp->templateLevel)
-                {
-                    TYPE *tpx = Alloc(sizeof(TYPE));
-                    *tpx = *tp;
-                    tpx->sp = clonesym(tpx->sp);
-                    tpx->sp->tp = tpx;
-                    tpx->sp->templateParams = copyParams(tpx->sp->templateParams);
-                    (*last)->p->byClass.val = tpx;
-                }
-            }
-            */
             last = &(*last)->next;
             parse = parse->next;
         }
@@ -2116,6 +2111,7 @@ static TEMPLATEPARAMLIST *copyParams(TEMPLATEPARAMLIST *t, BOOLEAN alsoSpecializ
                                 TYPE * old = rv1->p->byNonType.tp;
                                 rv1->p->byNonType.tp = (TYPE *)Alloc(sizeof(TYPE));
                                 *rv1->p->byNonType.tp = *old;
+                                UpdateRootTypes(rv1->p->byNonType.tp);
                                 rv1->p->byNonType.tp->templateParam = rv2;
                                 break;
                             }
@@ -2177,6 +2173,7 @@ static SYMBOL *SynthesizeTemplate(TYPE *tp, BOOLEAN alt)
     rv = clonesym(tp->sp);
     rv->tp = Alloc(sizeof(TYPE));
     *rv->tp = *tp;
+    UpdateRootTypes(rv->tp);
     rv->tp->sp = rv;
     rv->templateParams = Alloc(sizeof(TEMPLATEPARAMLIST));
     rv->templateParams->p = Alloc(sizeof(TEMPLATEPARAM));
@@ -2259,6 +2256,7 @@ static TEMPLATEPARAMLIST *paramsToDefault(TEMPLATEPARAMLIST *templateParams)
                     tp1->type = find->p->lref ? bt_lref : bt_rref;
                     tp1->size = getSize(bt_pointer);
                     tp1->btp = tpl->p->byClass.dflt;
+                    tp1->rootType = tp1;
                     tpl->p->byClass.dflt = tp1;
                     tpl = tpl->next;
                 }
@@ -2333,6 +2331,8 @@ static TYPE * SynthesizeStructure(TYPE *tp_in, TEMPLATEPARAMLIST *enclosing)
                 SYMBOL *sp1 = clonesym(sp);
                 sp1->tp = Alloc(sizeof(TYPE));
                 *sp1->tp = *sp->tp;
+                UpdateRootTypes(sp1->tp);
+
                 sp1->tp->sp = sp1;
                 sp = sp1;
                 sp = GetClassTemplate(sp, params, FALSE);
@@ -2586,6 +2586,7 @@ static TYPE *LookupTypeFromExpression(EXPRESSION *exp, TEMPLATEPARAMLIST *enclos
                         rve->type = bt_const;
                         rve->size = rv->size;
                         rve->btp = rv;
+                        rve->rootType = rv->rootType;
                         rv = rve;
                     }
                 }
@@ -2606,6 +2607,7 @@ static TYPE *LookupTypeFromExpression(EXPRESSION *exp, TEMPLATEPARAMLIST *enclos
                         rve->type = bt_const;
                         rve->size = rv->size;
                         rve->btp = rv;
+                        rve->rootType = rv->rootType;
                         rv = rve;
                     }
                 }
@@ -2747,6 +2749,7 @@ TYPE *SynthesizeType(TYPE *tp, TEMPLATEPARAMLIST *enclosing, BOOLEAN alt)
                 **last = *tp;
                 (*last)->btp = SynthesizeType(tp->btp, enclosing, alt);
                 SynthesizeQuals(&last, &qual, &lastQual);                
+                UpdateRootTypes(rv);
                 return rv;
             case bt_templatedecltype:
                 *last = LookupTypeFromExpression(tp->templateDeclType, enclosing, alt);
@@ -2754,6 +2757,7 @@ TYPE *SynthesizeType(TYPE *tp, TEMPLATEPARAMLIST *enclosing, BOOLEAN alt)
                     return &stdany;
                 *last = SynthesizeType(*last, enclosing, alt);
                 SynthesizeQuals(&last, &qual, &lastQual);
+                UpdateRootTypes(rv);
                 return rv;
             case bt_templateselector:
             {
@@ -2887,6 +2891,7 @@ TYPE *SynthesizeType(TYPE *tp, TEMPLATEPARAMLIST *enclosing, BOOLEAN alt)
                         rv = tp;
                         SynthesizeQuals(&last, &qual, &lastQual);
                     }
+                    UpdateRootTypes(rv);
                     return rv;
                 }
                 return &stdany;
@@ -3001,6 +3006,7 @@ TYPE *SynthesizeType(TYPE *tp, TEMPLATEPARAMLIST *enclosing, BOOLEAN alt)
                                     tp1->size = clone->tp->size;
                                     tp1->templateParam = clone->tp->templateParam;
                                     clone->tp = tp1;
+                                    UpdateRootTypes(tp1);
                                     templateParams->p->packsym = clone;
                                     insert(clone, func->syms);
                                     first = FALSE;
@@ -3030,6 +3036,7 @@ TYPE *SynthesizeType(TYPE *tp, TEMPLATEPARAMLIST *enclosing, BOOLEAN alt)
                             tp1->btp = clone->tp;
                             tp1->size = clone->tp->size;
                             clone->tp = tp1;
+                            UpdateRootTypes(tp1);
                         }
                     }
                     hr = hr->next;
@@ -3048,7 +3055,10 @@ TYPE *SynthesizeType(TYPE *tp, TEMPLATEPARAMLIST *enclosing, BOOLEAN alt)
                     for (i=0; i < index; i++)
                         tpa = tpa->next;
                     if (!tpa)
+                    {
+                        UpdateRootTypes(rv);
                         return rv;
+                    }
                 }
                 if (tpa->p->type == kw_typename)
                 {
@@ -3080,6 +3090,7 @@ TYPE *SynthesizeType(TYPE *tp, TEMPLATEPARAMLIST *enclosing, BOOLEAN alt)
                         rv = tp;
                         SynthesizeQuals(&last, &qual, &lastQual);
                     }
+                    UpdateRootTypes(rv);
                     return rv;
                 }
                 else if (tpa->p->type == kw_template)
@@ -3106,6 +3117,7 @@ TYPE *SynthesizeType(TYPE *tp, TEMPLATEPARAMLIST *enclosing, BOOLEAN alt)
                         rv = tp;
                         SynthesizeQuals(&last, &qual, &lastQual);
                     }
+                    UpdateRootTypes(rv);
                     return rv;
                 }
                 else
@@ -3148,6 +3160,7 @@ TYPE *SynthesizeType(TYPE *tp, TEMPLATEPARAMLIST *enclosing, BOOLEAN alt)
                         tp = Alloc(sizeof(TYPE));
                         tp->type = bt_derivedfromtemplate;
                         tp->btp = rv;
+                        tp->rootType = tp;
                         tp->size = rv->size;
                         rv = tp;
                         tp = tp_in;
@@ -3155,6 +3168,7 @@ TYPE *SynthesizeType(TYPE *tp, TEMPLATEPARAMLIST *enclosing, BOOLEAN alt)
                 }
                 *last = tp;
                 SynthesizeQuals(&last, &qual, &lastQual);
+                UpdateRootTypes(rv);
                 return rv;
         }
     }
@@ -3292,6 +3306,7 @@ static TYPE *rewriteNonRef(TYPE *A)
         while (isarray(A))
             A = basetype(A)->btp;
         x->btp = A;
+        x->rootType = x;
         A = x;
     } 
     else if (isfunction(A))
@@ -3301,6 +3316,7 @@ static TYPE *rewriteNonRef(TYPE *A)
         x->size = getSize(bt_pointer);
         A=basetype(A);
         x->btp = A;
+        x->rootType = x;
         return x;
     }
     return removeTLQuals(A);
@@ -3735,6 +3751,7 @@ static TYPE *FixConsts(TYPE *P, TYPE *A)
         *last = NULL;
         A = A->btp;
     }
+    UpdateRootTypes(q);
     return q;
 }
 static BOOLEAN DeduceTemplateParam(TEMPLATEPARAMLIST *Pt, TYPE *P, TYPE *A, BOOLEAN change)
@@ -4319,6 +4336,7 @@ static BOOLEAN TemplateDeduceFromArg(TYPE *orig, TYPE *sym, EXPRESSION *exp, BOO
             x->type = bt_lref;
             x->size = getSize(bt_pointer);
             x->btp = A;
+            x->rootType = x;
         }
     }
     if (Deduce(P, A, TRUE, byClass, allowSelectors))
@@ -5133,6 +5151,7 @@ void TemplatePartialOrdering(SYMBOL **table, int count, FUNCTIONCALL *funcparams
                                 tp->type = bt_class;
                                 tp->sp = params->argsym;
                                 tp->size = tp->sp->tp->size;
+                                tp->rootType = tp;
                                 params->p->byClass.temp = tp;
                                 lst->data = tp;
                                 lst->next = types;
@@ -5777,6 +5796,7 @@ SYMBOL *TemplateClassInstantiateInternal(SYMBOL *sym, TEMPLATEPARAMLIST *args, B
             cls->linkage = lk_virtual;
             cls->tp = Alloc(sizeof(TYPE));
             *cls->tp = *old.tp;
+            UpdateRootTypes(cls->tp);
             cls->tp->syms = NULL;
             cls->tp->tags = NULL;
             cls->tp->sp = cls;
@@ -5844,6 +5864,7 @@ SYMBOL *TemplateClassInstantiate(SYMBOL *sym, TEMPLATEPARAMLIST *args, BOOLEAN i
             {
                 *tpx = Alloc(sizeof(TYPE));
                 **tpx = *tp;
+                UpdateRootTypes(*tpx);
                 if (!tp->btp)
                 {
                     (*tpx)->sp = sym1;
@@ -6900,6 +6921,7 @@ static TEMPLATEPARAMLIST *ResolveTemplateSelectors(TEMPLATEPARAMLIST *args)
                                 {
                                     *tx = (TYPE *)Alloc(sizeof(TYPE));
                                     **tx = *tp;
+                                    UpdateRootTypes(*tx);
                                     tx = &(*tx)->btp;
                                     tp = tp->btp;
                                 }
@@ -6953,6 +6975,7 @@ static void copySyms(SYMBOL *found1, SYMBOL *sym)
             dest->argsym->errname = hold->errname;
         }
         *dest->argsym->tp = *src->argsym->tp;
+        UpdateRootTypes(dest->argsym->tp);
         dest->argsym->tp->templateParam = dest;
         dest = dest->next;
         src = src->next;
@@ -7143,6 +7166,7 @@ SYMBOL *GetClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *args, BOOLEAN noErr)
             found1->maintemplate = sym;
             found1->tp = Alloc(sizeof(TYPE));
             *found1->tp = *sym->tp;
+            UpdateRootTypes(found1->tp);
             found1->tp->sp = found1;
             found1->gentemplate = TRUE;
             found1->instantiated = TRUE;
@@ -7167,6 +7191,7 @@ SYMBOL *GetClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *args, BOOLEAN noErr)
             found1->maintemplate = sym;
             found1->tp = Alloc(sizeof(TYPE));
             *found1->tp = *sym->tp;
+            UpdateRootTypes(found1->tp);
             found1->tp->sp = found1;
 
             found1->templateParams = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
@@ -7238,6 +7263,7 @@ void DoInstantiateTemplateFunction(TYPE *tp, SYMBOL **sp, NAMESPACEVALUES *nsv, 
                 tp->type = bt_pointer;
                 tp->size = getSize(bt_pointer);
                 tp->btp = spi->parentClass->tp;
+                tp->rootType = tp;
                 funcparams->thistp = tp;
                 funcparams->thisptr = intNode(en_c_i, 0);
             }

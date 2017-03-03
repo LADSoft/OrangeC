@@ -138,7 +138,7 @@ static int dumpVTabEntries(int count, THUNK *thunks, SYMBOL *sym, VTABENTRY *ent
                     char buf[512];
                     SYMBOL *localsp;
                     strcpy(buf, sym->decoratedName);
-                    sprintf(buf + strlen(buf), "_$%c%d", count%26 + 'A', count / 26);
+                    my_sprintf(buf + strlen(buf), "_$%c%d", count%26 + 'A', count / 26);
                         
                     thunks[count].entry = entry;
                     thunks[count].func = vf->func;
@@ -2623,7 +2623,7 @@ LEXEME *insertNamespace(LEXEME *lex, enum e_lk linkage, enum e_sc storage_class,
             else
                 p++;
             
-            sprintf(anonymousNameSpaceName, "__%s__%d", p, CRC32(infile, strlen(infile)));
+            my_sprintf(anonymousNameSpaceName, "__%s__%d", p, CRC32(infile, strlen(infile)));
             while ((p = strchr(anonymousNameSpaceName, '.')) != 0)
                 *p = '_';			
         }
@@ -3133,7 +3133,7 @@ static BOOLEAN constArgValid(TYPE *tp)
         while (hr)
         {
             sym1 = (SYMBOL *)hr->p;
-            if (sym1->storage_class == sc_member && !isfunction(sym1))
+            if (sym1->storage_class == sc_member && !isfunction(sym1->tp))
                 if (!constArgValid(sym1->tp))
                     return FALSE;
             hr = hr->next;

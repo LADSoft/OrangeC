@@ -107,9 +107,9 @@ void browse_init(void)
 static void getBrowseName(char *buf, SYMBOL *sp)
 {
     if (sp->storage_class == sc_localstatic)
-        sprintf(buf, "_%s", sp->name);
+        my_sprintf(buf, "_%s", sp->name);
     else
-        sprintf(buf, "%s", sp->decoratedName);
+        my_sprintf(buf, "%s", sp->decoratedName);
 }
 static void addBrowseRecord(BROWSEINFO *bri)
 {

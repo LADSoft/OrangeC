@@ -587,6 +587,7 @@ static BOOLEAN is_constructible(LEXEME **lex, SYMBOL *funcsp, SYMBOL *sym, TYPE 
                         funcparams.thistp = Alloc(sizeof(TYPE));
                         funcparams.thistp->type = bt_pointer;
                         funcparams.thistp->btp = basetype(funcparams.arguments->next->tp);
+                        funcparams.thistp->rootType = funcparams.thistp;
                         funcparams.thistp->size = getSize(bt_pointer);
                         funcparams.ascall = TRUE;
                         funcparams.arguments = NULL;
@@ -638,6 +639,7 @@ static BOOLEAN is_constructible(LEXEME **lex, SYMBOL *funcsp, SYMBOL *sym, TYPE 
                     funcparams.thistp = Alloc(sizeof(TYPE));
                     funcparams.thistp->type = bt_pointer;
                     funcparams.thistp->btp = basetype(tp2);
+                    funcparams.thistp->rootType = funcparams.thistp;
                     funcparams.thistp->size = getSize(bt_pointer);
                     funcparams.ascall = TRUE;
                     funcparams.arguments = funcparams.arguments->next;

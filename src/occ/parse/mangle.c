@@ -76,7 +76,7 @@ char *mangleNameSpaces(char *in, SYMBOL *sp)
 //    if (!sp || sp->value.i > 1)
 //        return in;
     in = mangleNameSpaces(in, sp->parentNameSpace);
-    sprintf(in, "@%s", sp->name);
+    my_sprintf(in, "@%s", sp->name);
     return in + strlen(in);
 }
 static char * mangleTemplate(char *buf, SYMBOL *sym, TEMPLATEPARAMLIST *params);
@@ -95,7 +95,7 @@ static char *mangleClasses(char *in, SYMBOL *sp)
         mangleTemplate(in, sp, sp->templateParams);
     }
     else
-        sprintf(in, "@%s", sp->name);
+        my_sprintf(in, "@%s", sp->name);
     return in + strlen(in);
 }
 static char * mangleExpressionInternal (char *buf, EXPRESSION *exp)
@@ -106,11 +106,11 @@ static char * mangleExpressionInternal (char *buf, EXPRESSION *exp)
 	{
         if (exp->type == en_const)
         {
-            sprintf(buf, "%lld&", exp->v.sp->value.i);
+            my_sprintf(buf, "%lld&", exp->v.sp->value.i);
         }
         else
         {
-    		sprintf(buf, "%lld&", exp->v.i);
+    		my_sprintf(buf, "%lld&", exp->v.i);
         }
 		if (buf[0] == '-')
 			buf[0] = '_';
@@ -420,7 +420,7 @@ static char * mangleTemplate(char *buf, SYMBOL *sym, TEMPLATEPARAMLIST *params)
 	if ((sym->isConstructor || sym->isDestructor) && sym->templateLevel == sym->parentClass->templateLevel)
 	{
 		strcpy(buf, sym->name);
-		buf += strlen(buf);
+        while (*buf) buf++;
 	}
 	else
 	{
@@ -532,13 +532,13 @@ static char *lookupName(char *in, char *name)
             break;
     if (i < mangledNamesCount)
     {
-        sprintf(in, "n%c", i < 10 ? i + '0' : i - 10 + 'A');
+        my_sprintf(in, "n%c", i < 10 ? i + '0' : i - 10 + 'A');
     }
     else
     {
         if (mangledNamesCount < MAX_MANGLE_NAME_COUNT)
             strcpy(mangledNames[mangledNamesCount++], name);                    
-        sprintf(in, "%d%s", strlen(name), name);
+        my_sprintf(in, "%d%s", strlen(name), name);
     }
     return in;
 }
@@ -565,7 +565,7 @@ static char *getName(char *in, SYMBOL *sp)
         }
         in = lookupName(in, buf);
     }
-    in += strlen(in);
+    while (*in) in++;
     return in;
 }
 char *mangleType (char *in, TYPE *tp, BOOLEAN first)
@@ -575,15 +575,29 @@ char *mangleType (char *in, TYPE *tp, BOOLEAN first)
     HASHREC *hr ;
     if(!tp)
     {
-        sprintf(in, "%d%s", strlen("initializer-list"), "initializer-list");
-        in += strlen(in);
+        my_sprintf(in, "%d%s", strlen("initializer-list"), "initializer-list");
+        while (*in) in++;
+        return in;
     }
-    else if (tp->type == bt_typedef)
+    while (tp)
     {
-       in = mangleType(in, tp->btp, FALSE);
-    }
-    else if (isstructured(tp) && basetype(tp)->sp->templateLevel)
-    {
+        while(tp->type == bt_typedef) tp = tp->btp;
+        if (isstructured(tp) && basetype(tp)->sp->templateLevel)
+        {
+            {
+                if (isconst(tp))
+                    *in++ = 'x';
+                if (isvolatile(tp))
+                    *in++ = 'y';
+                if (islrqual(tp))
+                    *in++ = 'r';
+                if (isrrqual(tp))
+                    *in++ = 'R';
+            }
+            in = mangleTemplate(in, basetype(tp)->sp, basetype(tp)->sp->templateParams);
+            return in;
+        }
+        else
         {
             if (isconst(tp))
                 *in++ = 'x';
@@ -593,49 +607,16 @@ char *mangleType (char *in, TYPE *tp, BOOLEAN first)
                 *in++ = 'r';
             if (isrrqual(tp))
                 *in++ = 'R';
-        }
-        in = mangleTemplate(in, basetype(tp)->sp, basetype(tp)->sp->templateParams);
-    }
-    else
-    {
-//        if (ispointer(tp) || isref(tp))
-//        {
-//            if (basetype(tp)->btp)
-//            {
-//                if (isconst(basetype(tp)->btp))
-//                    *in++ = 'x';
-//                if (isvolatile(basetype(tp)->btp))
-//                    *in++ = 'y';
-//            }
-//        }
-//        if (isfunction(tp))
-        {
-            if (isconst(tp))
-                *in++ = 'x';
-            if (isvolatile(tp))
-                *in++ = 'y';
-            if (islrqual(tp))
-                *in++ = 'r';
-            if (isrrqual(tp))
-                *in++ = 'R';
-        }
-        tp = basetype(tp);
-        switch (tp->type)
-        {
-        /*
-            case bt_templateplaceholder:
-                tplPlaceholder(nm, tp->lst.head->name, tp->lst.tail);
-                sprintf(buf, "%d%s", strlen(nm), nm);
-                buf += strlen(buf);
-                break;
-        */
+            tp = basetype(tp);
+            switch (tp->type)
+            {
             case bt_func:
             case bt_ifunc:
                 if (basetype(tp)->sp && ismember(basetype(tp)->sp) && !first)
                 {
                     *in++ = 'M';
                     in = getName(in, tp->sp->parentClass);
-                    in += strlen(in);
+                    while (*in) in++;
                 }
                 *in++ = 'q';
                 hr = tp->syms->table[0];
@@ -644,11 +625,10 @@ char *mangleType (char *in, TYPE *tp, BOOLEAN first)
                     SYMBOL *sp = (SYMBOL *)hr->p;
                     if (!sp->thisPtr)
                         in = mangleType(in, sp->tp, TRUE);
-                    hr = hr->next ;
+                    hr = hr->next;
                 }
                 *in++ = '$';
-                // return value
-                in = mangleType(in, tp->btp, TRUE);
+                // return value comes next
                 break;
             case bt_memberptr:
                 *in++ = 'M';
@@ -662,15 +642,14 @@ char *mangleType (char *in, TYPE *tp, BOOLEAN first)
                         SYMBOL *sp = (SYMBOL *)hr->p;
                         if (!sp->thisPtr)
                             in = mangleType(in, sp->tp, TRUE);
-                        hr = hr->next ;
+                        hr = hr->next;
                     }
                     *in++ = '$';
-                    in = mangleType (in, tp->btp->btp, TRUE);
+                    tp = tp->btp; // so we can get to tp->btp->btp
                 }
                 else
                 {
                     *in++ = '$';
-                    in = mangleType (in, basetype(tp)->btp, TRUE);
                 }
                 break;
             case bt_enum:
@@ -678,10 +657,10 @@ char *mangleType (char *in, TYPE *tp, BOOLEAN first)
             case bt_union:
             case bt_class:
                 in = getName(in, tp->sp);
-                break;
+                return in;
             case bt_bool:
                 in = lookupName(in, "bool");
-                in += strlen(in);
+                while (*in) in++;
                 break;
             case bt_unsigned_short:
                 *in++ = 'u';
@@ -743,33 +722,30 @@ char *mangleType (char *in, TYPE *tp, BOOLEAN first)
                 if (tp->nullptrType)
                 {
                     in = lookupName(in, "nullptr_t");
-                    in += strlen(in);
+                    while (*in) in++;
+                    return;
                 }
                 else
                 {
-                    if (first|| !tp->array)
+                    if (first || !tp->array)
                     {
                         *in++ = 'p';
                     }
                     else
                     {
-                        sprintf(in,"A%ld",tp->btp->size ? tp->size / tp->btp->size : 0);
-                        in += strlen(in);
+                        my_sprintf(in, "A%ld", tp->btp->size ? tp->size / tp->btp->size : 0);
+                        while (*in) in++;
                     }
-                    in = mangleType(in, tp->btp, FALSE);
                 }
                 break;
             case bt_far:
                 *in++ = 'P';
-                in = mangleType(in, tp->btp, FALSE);
                 break;
             case bt_lref:
                 *in++ = 'r';
-                in = mangleType(in, tp->btp, FALSE);
                 break;
             case bt_rref:
                 *in++ = 'R';
-                in = mangleType(in, tp->btp, FALSE);
                 break;
             case bt_ellipse:
                 *in++ = 'e';
@@ -790,29 +766,30 @@ char *mangleType (char *in, TYPE *tp, BOOLEAN first)
                     p = mangleTemplate(nm, s->sym, s->templateParams);
                 else
                     p = getName(nm, s->sym);
-				p[0] =0;
-				if (strlen(nm) > sizeof(nm))
+                p[0] = 0;
+                if (strlen(nm) > sizeof(nm))
                     p = mangleTemplate(nm, s->sym, s->templateParams);
-                s = s->next ;
+                s = s->next;
                 while (s)
                 {
-                    strcat(nm , "@");
-                    strcat(nm , s->name);
-                    s= s->next;
+                    strcat(nm, "@");
+                    strcat(nm, s->name);
+                    s = s->next;
                 }
                 p = nm;
                 while (isdigit(*p))
                     p++;
-                sprintf(in, "%d%s", strlen(p), p);
-                in += strlen(in);
+                my_sprintf(in, "%d%s", strlen(p), p);
+                while (*in) in++;
+                return in;
             }
-                break;
+            break;
             case bt_templatedecltype:
                 // the index is being used to make names unique so two decltypes won't collide when storing them
                 // in a symbol table...
-                declTypeIndex = (declTypeIndex + 1) %1000;
+                declTypeIndex = (declTypeIndex + 1) % 1000;
                 *in++ = 'E';
-                sprintf(in, "%03d", declTypeIndex);
+                my_sprintf(in, "%03d", declTypeIndex);
                 in += 3;
                 break;
             case bt_aggregate:
@@ -821,7 +798,9 @@ char *mangleType (char *in, TYPE *tp, BOOLEAN first)
             default:
                 diag("mangleType: unknown type");
                 break;
+            }
         }
+        tp = tp->btp;
     }
     *in= 0;
     return in;
@@ -862,7 +841,7 @@ void SetLinkerNames(SYMBOL *sym, enum e_lk linkage)
     {
         case lk_auto:
             p = mangleClasses(p, theCurrentFunc);
-            sprintf(p, "@%s", sym->name);
+            my_sprintf(p, "@%s", sym->name);
             
             break;
         case lk_pascal:

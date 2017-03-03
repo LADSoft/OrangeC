@@ -199,6 +199,7 @@ void qualifyForFunc(SYMBOL *sym, TYPE **tp, BOOLEAN isMutable)
             tp1->size = (*tp)->size;
             tp1->type = bt_const;
             tp1->btp = *tp;
+            tp1->rootType = (*tp)->rootType;
             *tp = tp1;
         }
         if (isvolatile(sym->tp))
@@ -207,6 +208,7 @@ void qualifyForFunc(SYMBOL *sym, TYPE **tp, BOOLEAN isMutable)
             tp1->size = (*tp)->size;
             tp1->type = bt_volatile;
             tp1->btp = *tp;
+            tp1->rootType = (*tp)->rootType;
             *tp = tp1;
         }
     }
@@ -219,6 +221,7 @@ void getThisType(SYMBOL *sym, TYPE **tp)
     (*tp)->type = bt_pointer;
     (*tp)->size = getSize(bt_pointer);
     (*tp)->btp = sym->parentClass->tp;
+    (*tp)->rootType = (*tp);
     qualifyForFunc(sym, tp, FALSE);
 }
 EXPRESSION *getMemberBase(SYMBOL *memberSym, SYMBOL *strSym, SYMBOL *funcsp, BOOLEAN toError)
@@ -307,6 +310,7 @@ EXPRESSION *getMemberPtr(SYMBOL *memberSym, SYMBOL *strSym, TYPE **tp, SYMBOL *f
     TYPE *tpq = Alloc(sizeof(TYPE));
     tpq->type = bt_memberptr;
     tpq->btp = memberSym->tp;
+    tpq->rootType = tpq;
     tpq->sp = memberSym->parentClass;
     *tp = tpq;
     rv = varNode(en_memberptr, memberSym);
@@ -333,6 +337,7 @@ BOOLEAN castToArithmeticInternal(BOOLEAN integer, TYPE **tp, EXPRESSION **exp, e
             params->thistp = Alloc(sizeof(TYPE));
             params->thistp->type = bt_pointer;
             params->thistp->btp = cst->parentClass->tp;
+            params->thistp->rootType = params->thistp;
             params->thistp->size = getSize(bt_pointer);
             params->functp = cst->tp;
             params->sp = cst;
@@ -382,7 +387,7 @@ void castToArithmetic(BOOLEAN integer, TYPE **tp, EXPRESSION **exp, enum e_kw kw
                     strcat(tbuf, ", ");
                     typeToString(tbuf+strlen(tbuf), other);
                 }
-                sprintf(buf, "operator %s(%s)", overloadXlateTab[kw - kw_new + CI_NEW], tbuf);
+                my_sprintf(buf, "operator %s(%s)", overloadXlateTab[kw - kw_new + CI_NEW], tbuf);
                 errorstr(ERR_NO_OVERLOAD_MATCH_FOUND, buf);
             }
             else
@@ -414,6 +419,7 @@ BOOLEAN castToPointer(TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other)
                 params->thistp = Alloc(sizeof(TYPE));
                 params->thistp->type = bt_pointer;
                 params->thistp->btp = cst->parentClass->tp;
+                params->thistp->rootType = params->thistp;
                 params->thistp->size = getSize(bt_pointer);
                 params->functp = cst->tp;
                 params->sp = cst;
@@ -463,6 +469,7 @@ BOOLEAN cppCast(TYPE *src, TYPE **tp, EXPRESSION **exp)
                 params->thistp->type = bt_pointer;
                 params->thistp->size = getSize(bt_pointer);
                 params->thistp->btp = cst->parentClass->tp;
+                params->thistp->rootType = params->thistp;
                 params->functp = cst->tp;
                 params->sp = cst;
                 params->ascall = TRUE;
@@ -1172,6 +1179,7 @@ LEXEME *expression_typeid(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
                 valtp->array = TRUE;
                 valtp->size = 2 * stdpointer.size;
                 valtp->btp = &stdpointer;
+                valtp->rootType = valtp;
                 valtp->esize = intNode(en_c_i, 2);
                 val = makeID(sc_auto, valtp, NULL, AnonymousName());
                 val->allocate = TRUE;
@@ -1212,6 +1220,7 @@ LEXEME *expression_typeid(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
                         (*tp)->type = bt_const;
                         (*tp)->size = sp->tp->size;
                         (*tp)->btp = sp->tp;
+                        (*tp)->rootType = sp->tp->rootType;
                     }
                 }
             }
@@ -1239,6 +1248,7 @@ BOOLEAN insertOperatorParams(SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, FUNCTI
         funcparams->thistp->type = bt_pointer;
         funcparams->thistp->size = getSize(bt_pointer);
         funcparams->thistp->btp = *tp;        
+        funcparams->thistp->rootType = funcparams->thistp;        
         funcparams->thisptr = *exp;
     }
     // quit if there are no matches because we will use the default...
@@ -1251,6 +1261,7 @@ BOOLEAN insertOperatorParams(SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, FUNCTI
     // finally make a shell to put all this in and add shims for any builtins we want to try
     tpx = (TYPE *)Alloc(sizeof(TYPE));
     tpx->type = bt_aggregate;
+    tpx->rootType = tpx;
     s3 = makeID(sc_overloads, tpx, NULL, name);
     tpx->sp = s3;
     SetLinkerNames(s3, lk_c);
@@ -1367,6 +1378,7 @@ BOOLEAN insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
     // finally make a shell to put all this in and add shims for any builtins we want to try
     tpx = (TYPE *)Alloc(sizeof(TYPE));
     tpx->type = bt_aggregate;
+    tpx->rootType = tpx;
     s3 = makeID(sc_overloads, tpx, NULL, name);
     tpx->sp = s3;
     SetLinkerNames(s3, lk_c);
@@ -1421,37 +1433,6 @@ BOOLEAN insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
         }
     }
     funcparams = Alloc(sizeof(FUNCTIONCALL));
-    /*
-    if (isstructured(*tp))
-    {
-        funcparams->thistp = Alloc(sizeof(TYPE));
-        funcparams->thistp->type = bt_pointer;
-        funcparams->thistp->size = getSize(bt_pointer);
-        funcparams->thistp->btp = *tp;        
-        funcparams->thisptr = *exp;
-        if (args)
-        {
-            INITLIST *one = Alloc(sizeof(INITLIST));
-            one->nested = args;
-            funcparams->arguments = one;
-        }
-        else if (tp1)
-        {
-            INITLIST *one = Alloc(sizeof(INITLIST));
-            one->exp = exp1;
-            one->tp = tp1;
-            funcparams->arguments = one;
-        }
-        else if (cls == ovcl_unary_postfix)
-        {
-            INITLIST *one = Alloc(sizeof(INITLIST));
-            one->exp = intNode(en_c_i, 0);
-            one->tp = &stdint;
-            funcparams->arguments = one;
-        }
-    }
-    else
-        */
     {
         INITLIST *one = NULL, *two = NULL;
         if (*tp)
@@ -1539,6 +1520,7 @@ BOOLEAN insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
             funcparams->thistp->type = bt_pointer;
             funcparams->thistp->size = getSize(bt_pointer);
             funcparams->thistp->btp = tpin;        
+            funcparams->thistp->rootType = funcparams->thistp;        
             funcparams->thisptr = *exp;
         }
         s3->throughClass = s3->parentClass != NULL;
@@ -1777,6 +1759,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
                 tp1->array = 1;
                 tp1->type = bt_pointer;                
                 tp1->btp = *tp;
+                tp1->rootType = tp1;
                 tp1->esize = arrSize;
             }
             lex = initType(lex, funcsp, 0, sc_auto, &init, NULL, tp1, sp, FALSE, 0);
@@ -1848,6 +1831,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
     tpf->type = bt_pointer;
     tpf->size = getSize(bt_pointer);
     tpf->btp = *tp;
+    tpf->rootType = tpf;
     *tp = tpf;
 
     if (val && newfunc)

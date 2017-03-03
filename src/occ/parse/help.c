@@ -36,6 +36,7 @@
 
 */
 #include "compiler.h"
+#include <stdarg.h>
 
 extern COMPILER_PARAMS cparams;
 extern ARCH_ASM *chosenAssembler;
@@ -129,7 +130,7 @@ BOOLEAN startOfType(LEXEME *lex, BOOLEAN assumeType)
     }
     
 }
-TYPE *basetype(TYPE *tp)
+static TYPE *rootType(TYPE *tp)
 {
     while(tp) 
     {
@@ -156,31 +157,37 @@ TYPE *basetype(TYPE *tp)
     }
     return NULL;
 }
+void UpdateRootTypes(TYPE *tp)
+{
+    while (tp)
+    {
+        TYPE *tp1 = rootType(tp);
+        while (tp && tp1 != tp)
+        {
+            tp->rootType = tp1;
+            tp = tp->btp;
+        }
+        if (tp)
+        {
+            tp->rootType = tp;
+            tp = tp->btp;
+        }
+    }
+}
 BOOLEAN isDerivedFromTemplate(TYPE *tp)
 {
     while (tp)
     {
         switch(tp->type)
         {
-            case bt_far:
-            case bt_near:
-            case bt_const:
-            case bt_va_list:
-            case bt_objectArray:
-            case bt_volatile:
-            case bt_restrict:
-            case bt_static:
-            case bt_atomic:
-            case bt_typedef:
-            case bt_lrqual:
-            case bt_rrqual:
-                tp = tp->btp;
-                break;
+            case bt_pointer:
+            case bt_func:
+            case bt_ifunc:
+                return FALSE;
             case bt_derivedfromtemplate:
                 return TRUE;
-            default:
-                return FALSE;
         }
+        tp = tp->btp;
     }
     return FALSE;
 }
@@ -489,66 +496,10 @@ BOOLEAN isvoid(TYPE *tp)
         return tp->type == bt_void;
     return FALSE;
 }
-BOOLEAN ispointer(TYPE *tp)
-{
-    tp = basetype(tp);
-    if (tp)
-    {
-        switch(tp->type)
-        {
-            case bt_far:
-            case bt_pointer:
-            case bt_seg:
-                return TRUE;
-            case bt_templateparam:
-                if (tp->templateParam->p->type == kw_int)
-                    return ispointer(tp->templateParam->p->byNonType.tp);
-                return FALSE;
-            default:
-                return FALSE;
-        }
-    }
-    return FALSE;
-}
-BOOLEAN isref(TYPE *tp)
-{
-    tp = basetype(tp);
-    if (tp)
-    {
-        switch(tp->type)
-        {
-            case bt_lref:
-                return TRUE;
-            case bt_rref:
-                return TRUE;
-            case bt_templateparam:
-                if (tp->templateParam->p->type == kw_int)
-                    return isref(tp->templateParam->p->byNonType.tp);
-                return FALSE;
-            default:
-                return FALSE;
-        }
-    }
-    return FALSE;
-}
 BOOLEAN isvoidptr(TYPE *tp)
 {
     tp = basetype(tp);
     return ispointer(tp) && isvoid(tp->btp);
-}
-BOOLEAN isfunction(TYPE *tp)
-{
-    tp = basetype(tp);
-    if (tp)
-        return tp && (tp->type == bt_func || tp->type == bt_ifunc);
-    return FALSE;
-}
-BOOLEAN isfuncptr(TYPE *tp)
-{
-    tp = basetype(tp);
-    if (tp)
-        return ispointer(tp) && tp->btp && isfunction(tp->btp);
-    return FALSE;
 }
 BOOLEAN isarray(TYPE *tp)
 {
@@ -562,21 +513,6 @@ BOOLEAN isunion(TYPE *tp)
     tp = basetype(tp);
     if (tp)
         return tp->type == bt_union;
-    return FALSE;
-}
-BOOLEAN isstructured(TYPE *tp)
-{
-    tp = basetype(tp);
-    if (tp)
-        switch(tp->type)
-        {
-            case bt_struct:
-            case bt_union:
-            case bt_class:
-                return TRUE;
-            default:
-                return FALSE;
-        }
     return FALSE;
 }
 SYMBOL *getFunctionSP(TYPE **tp)
@@ -742,7 +678,7 @@ EXPRESSION *anonymousVar(enum e_sc storage_class, TYPE *tp)
     rv->used = TRUE;
     if (theCurrentFunc)
         rv->value.i = theCurrentFunc->value.i;
-    sprintf(buf,"$anontemp%d", anonct++);
+    my_sprintf(buf,"$anontemp%d", anonct++);
     rv->name = litlate(buf);
     tp->size = basetype(tp)->size;
     if (theCurrentFunc && !inDefaultParam && !anonymousNotAlloc)
@@ -1898,3 +1834,92 @@ LLONG_TYPE imin(LLONG_TYPE x, LLONG_TYPE y)
 {
     return x < y ? x : y;
 }
+static char *write_llong(char *dest, ULLONG_TYPE val)
+{
+    char obuf[256], *p = obuf + sizeof(obuf);
+    *--p = 0;
+    if (val)
+    {
+        while (val)
+        {
+            unsigned aa = val % 10;
+            *--p = '0' + aa;
+            val = val / 10;
+        }
+    }
+    else
+    {
+        *--p = '0';
+    }
+    strcpy(dest, p);
+    return dest + strlen(dest);
+}
+static char *write_int(char *dest, unsigned val)
+{
+    char obuf[256], *p = obuf + sizeof(obuf);
+    *--p = 0;
+    if (val)
+    {
+        while (val)
+        {
+            unsigned aa = val % 10;
+            *--p = '0' + aa;
+            val = val / 10;
+        }
+    }
+    else
+    {
+        *--p = '0';
+    }
+    strcpy(dest, p);
+    return dest + strlen(dest);
+}
+void my_sprintf(char *dest, const char *fmt, ...)
+{
+    va_list aa;
+    va_start(aa, fmt);
+    while (*fmt)
+    {
+        char *q = strchr(fmt, '%');
+        if (!q)
+            q = fmt + strlen(fmt);
+        memcpy(dest, fmt, q - fmt);
+        dest += q - fmt;
+        fmt += q - fmt;
+        if (*fmt)
+        {
+            fmt++;
+            switch (*fmt++)
+            {
+                ULLONG_TYPE val;
+                unsigned val1;
+                char *str;
+                case 'l':
+                    while (*fmt == 'd' || *fmt == 'l')
+                        fmt ++;
+                    val = va_arg(aa, ULLONG_TYPE);
+                    dest = write_llong(dest, val);
+                    break;
+                case 'd':
+                case 'u':
+                    val1 = va_arg(aa, unsigned);
+                    dest = write_int(dest, val1);
+                    break;
+                case 'c':
+                    val1 = va_arg(aa, unsigned);
+                    *dest++ = val1;
+                    break;
+                case 's':
+                    str = va_arg(aa, char *);
+                    strcpy(dest, str);
+                    dest += strlen(dest);
+                    break;
+                default:
+                    fmt++;
+                    break;
+            }
+        }
+    }
+    *dest = 0;
+}
+

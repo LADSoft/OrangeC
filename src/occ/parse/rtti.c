@@ -62,7 +62,7 @@ static char *addNameSpace(char *buf, SYMBOL *sp)
     if (!sp)
         return buf;
     buf = addNameSpace(buf, sp->parentNameSpace);
-    sprintf(buf, "%s::", sp->name);
+    my_sprintf(buf, "%s::", sp->name);
     return buf + strlen(buf);
 }
 static char *addParent(char *buf, SYMBOL *sp)
@@ -73,7 +73,7 @@ static char *addParent(char *buf, SYMBOL *sp)
         buf = addParent(buf, sp->parentClass);
     else
         buf = addNameSpace(buf, sp->parentNameSpace);
-    sprintf(buf, "%s", sp->name);
+    my_sprintf(buf, "%s", sp->name);
     return buf + strlen(buf);
 }
 static char *RTTIGetDisplayName(char *buf, TYPE *tp)
@@ -85,12 +85,12 @@ static char *RTTIGetDisplayName(char *buf, TYPE *tp)
     }
     if (isconst(tp))
     {
-        sprintf(buf, "%s ", "const");
+        my_sprintf(buf, "%s ", "const");
         buf += strlen(buf);
     }
     if (isvolatile(tp))
     {
-        sprintf(buf, "%s ", "volatile");
+        my_sprintf(buf, "%s ", "volatile");
         buf += strlen(buf);
     }
     tp = basetype(tp);
@@ -715,7 +715,7 @@ static SYMBOL *DumpXCSpecifiers(SYMBOL *funcsp)
                 p = p->next;
             }
         }
-        sprintf(name, "@$xct%s", funcsp->decoratedName);
+        my_sprintf(name, "@$xct%s", funcsp->decoratedName);
         xcSym = makeID(sc_global, &stdpointer, NULL, litlate(name));
         xcSym->linkage = lk_virtual;
         xcSym->decoratedName = xcSym->errname = xcSym->name;

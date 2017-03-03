@@ -483,7 +483,7 @@ static LEXEME *statement_case(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             if ((*cases)->val == val)
             {
                 char buf[256];
-                sprintf(buf, LLONG_FORMAT_SPECIFIER, val);
+                my_sprintf(buf, LLONG_FORMAT_SPECIFIER, val);
                 preverror(ERR_DUPLICATE_CASE, buf, (*cases)->file, (*cases)->line);
                 break;
             }
@@ -735,6 +735,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                     tpref->size = getSize(bt_pointer);
                     tpref->type = bt_rref;
                     tpref->btp = selectTP;
+                    tpref->rootType = tpref;
                     st = stmtNode(lex, forstmt, st_expr);
                     st->select = exprNode(en_assign, rangeExp, select);
                     if (!isstructured(selectTP))
@@ -761,6 +762,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         thisTP.type = bt_pointer;
                         thisTP.size = getSize(bt_pointer);
                         thisTP.btp = rangeSP->tp->btp;
+                        thisTP.rootType = &thisTP;
                         sbegin = search("begin", basetype(selectTP)->syms);
                         send = search("end", basetype(selectTP)->syms);
                         if (sbegin && send)
@@ -933,6 +935,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                             fc->arguments->tp->type = bt_lref;
                                             fc->arguments->tp->size = getSize(bt_pointer);
                                             fc->arguments->tp->btp = fcb.arguments->tp;
+                                            fc->arguments->tp->rootType = fc->arguments->tp;
                                         }
                                         ibegin = exprNode(en_func, NULL, NULL);
                                         ibegin->v.func = fc;
@@ -961,6 +964,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                             fc->arguments->tp->type = bt_lref;
                                             fc->arguments->tp->size = getSize(bt_pointer);
                                             fc->arguments->tp->btp = fce.arguments->tp;
+                                            fc->arguments->tp->rootType = fc->arguments->tp;
                                         }
                                         iend = exprNode(en_func, NULL, NULL);
                                         iend->v.func = fc;
@@ -1130,7 +1134,10 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                 while (isconst(*tp) || isvolatile(*tp))
                                     tp = &(*tp)->btp;
                                 if ((*tp)->type == bt_auto && starType)
+                                {
                                     (*tp) = starType;
+                                    UpdateRootTypes(declSP->tp);
+                                }
                                 if (!comparetypes(declSP->tp, starType, TRUE))
                                 {
                                     error(ERR_OPERATOR_STAR_FORRANGE_WRONG_TYPE);
@@ -2906,7 +2913,7 @@ static void insertXCInfo(SYMBOL *funcsp)
     char name[2048];
     SYMBOL *sp; 
     makeXCTab(funcsp);
-    sprintf(name, "@$xc%s", funcsp->decoratedName);
+    my_sprintf(name, "@$xc%s", funcsp->decoratedName);
     sp = makeID(sc_global, &stdpointer, NULL, litlate(name));
     sp->linkage = lk_virtual;
     sp->decoratedName = sp->errname = sp->name;

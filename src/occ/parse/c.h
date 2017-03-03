@@ -59,6 +59,28 @@
 
 #define MACRO_REPLACE_SIZE (128 * 1024)
 
+#define basetype(x) ((x) && (x)->rootType ? (x)->rootType : (x))
+
+
+#define __isref(x) ((x)->type == bt_lref || (x)->type == bt_rref)
+#define isref(x) (__isref(basetype(x)) || \
+                 (x)->type == bt_templateparam && \
+                 (x)->templateParam->p->type == kw_int && \
+                 __isref((x)->templateParam->p->byNonType.tp))
+
+#define __ispointer(x) ((x)->type == bt_pointer || (x)->type == bt_seg)
+#define ispointer(x) (__ispointer(basetype(x)) || \
+                 (x)->type == bt_templateparam && \
+                 (x)->templateParam->p->type == kw_int && \
+                 __ispointer((x)->templateParam->p->byNonType.tp))
+
+#define __isfunction(x) ((x)->type == bt_func || (x)->type == bt_ifunc)
+#define isfunction(x) (__isfunction(basetype(x)))
+
+#define isfuncptr(x) (ispointer(x) && basetype(x)->btp && isfunction(basetype(x)->btp))
+#define __isstructured(x) ((x)->type == bt_class || (x)->type == bt_struct || (x)->type == bt_union)
+#define isstructured(x) (__isstructured(basetype(x)))
+
 typedef struct
 {
     LCHAR *str;
@@ -324,6 +346,7 @@ typedef    struct typ
         enum e_bt type; /* the type */
         long size; /* total size of type */
         struct typ *btp; /* pointer to next type (pointers & arrays */
+        struct typ *rootType; /* pointer to base type of sequence */
         int used:1; /* type has actually been used in a declaration or cast or expression */
         int array:1; /* not a dereferenceable pointer */
         int vla:1;   /* varriable length array */

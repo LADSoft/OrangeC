@@ -85,7 +85,7 @@ static char *navhints[] =
 };
 static char *buildTypehints[] = 
 {
-    "", "Profile", "", "Build Type"
+    "", "Profile", "", "Build Type", ""
 };
 static char *edithints[] = 
 {

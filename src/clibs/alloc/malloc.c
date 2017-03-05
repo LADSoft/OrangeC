@@ -101,9 +101,17 @@ void * _RTL_FUNC malloc(size_t size)
     siz1 = size + sizeof(FREELIST);
 
    __ll_enter_critical() ;
+    if (!__mallocchains[0])
+    {
+        int i;
+        for (i=0; i < MEMCHAINS; i++)
+        {
+            __mallocchains[i] = 1; // nonzero to help the 'double free' situation
+        }
+    }
     /* search the chain for reuse */
     slist = &__mallocchains[(siz1 >> 2) % MEMCHAINS];
-    while (*slist) {
+    while (*slist != 1) {
         p = *slist;
         if (p->size == siz1) {
              *slist = p->next;

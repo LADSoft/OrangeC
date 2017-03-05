@@ -46,6 +46,7 @@ void _RTL_FUNC free(void *buf)
     if (!buf)
         return;
     p = buf;
+ 
     p-- ;
     int n = p->size;
     if (n < 0)

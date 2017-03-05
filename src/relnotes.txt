@@ -1,6 +1,27 @@
 Release notes:
 
-version 6.0.10:
+version 6.0.11:
+    occ:        halve compile time for C++ programs
+    occ:        fix miscellaneous crashes when compiling invalid sources
+    occ:        fix make stub generation when generating for multiple files
+    occ:        returning an object which was passed in by reference resulted in the
+                move constructor being called on the referenced object, instead 
+                of the copy constructor.
+    occ:        improve errors when assigning to pointers
+    occ:        operator new would not default construct non-structured types
+    occ:        operator new/delete could attempt to work with structures that
+                haven't been instantiated
+    ocide:      fix code completion annoying popup that sometimes occurred when 
+                editing a source file with syntax errors.
+    ocide:      bug in ocide caused crash when compiled with Embarcadero C++
+
+    clib:       improve guard against multiple frees
+    clib:       declare a destructor for fstream() and call close()
+
+    build:      builds with itself again
+    build:      add Embarcadero C++
+
+version 6.0.10: Feb 28, 2017
     occ:        fix problem where copy constructors sometimes caused a compile error
     occ:        fix problem where sometimes compiling a range based for could fail
     occ:        fix problem with for-range: 'for (auto a : *tt)' compiled incorrectly

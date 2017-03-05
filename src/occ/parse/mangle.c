@@ -88,7 +88,9 @@ static char *mangleClasses(char *in, SYMBOL *sp)
     if (sp->parentClass)
         in = mangleClasses(in, sp->parentClass);
     if (sp->castoperator)
+    {
         strcat(in, "@");
+    }
     else if (sp->templateLevel && sp->templateParams)
     {
         *in++ = '@';

@@ -807,10 +807,11 @@ void getcls(char *buf, SYMBOL *clssym)
 }
 void errorqualified(int err, SYMBOL *strSym, NAMESPACEVALUES *nsv, char *name)
 {
-    char buf[2048];
+    char buf[4096];
     char unopped[2048];
     char *last = "typename";
     char lastb[2048];
+    memset(buf, 0, sizeof(buf));
     if (strSym)
     {
         unmangle(lastb, strSym->decoratedName);
@@ -897,7 +898,8 @@ void errorstrsym(int err, char *name, SYMBOL *sym2)
 }
 void errorstringtype(int err, char *str, TYPE *tp1)
 {
-    char tpb1[256];
+    char tpb1[4096];
+    memset(tpb1, 0, sizeof(tpb1));
     typeToString(tpb1, tp1);
     printerr(err, preprocFile, preprocLine, str, tpb1);
 }
@@ -905,6 +907,8 @@ void errorstringtype(int err, char *str, TYPE *tp1)
 void errortype (int err, TYPE *tp1, TYPE *tp2)
 {
     char tpb1[4096], tpb2[4096];
+    memset(tpb1, 0, sizeof(tpb1));
+    memset(tpb2, 0, sizeof(tpb2));
     typeToString(tpb1, tp1);
     if (tp2)
         typeToString(tpb2, tp2);

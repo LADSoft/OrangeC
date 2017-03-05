@@ -1414,8 +1414,6 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
                 error(ERR_ILL_STRUCTURE_ASSIGNMENT);
             else if (!ispointer(tp) && !isfunction(tp) && !isint(tp) && tp->type != bt_aggregate)
                 error(ERR_INVALID_POINTER_CONVERSION);
-            else if (isint(tp) && !isconstzero(tp, exp))
-                error(ERR_NONPORTABLE_POINTER_CONVERSION);
             else if (isfunction(tp) || tp->type == bt_aggregate)
             {
                 if (!isfuncptr(itype) || !comparetypes(basetype(itype)->btp, tp, TRUE))
@@ -1428,16 +1426,30 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
                     else if (!isvoidptr(tp) && !isvoidptr(itype))
                             error(ERR_SUSPICIOUS_POINTER_CONVERSION);
             }
-            else if (ispointer(tp) && !comparetypes(itype, tp, TRUE))
-                if (cparams.prm_cplusplus)
+            else if (!comparetypes(itype, tp, TRUE))
+            {
+                if (ispointer(tp))
                 {
-                    if (!isvoidptr(itype) && !tp->nullptrType)
-                        if (!ispointer(itype) || tp->type == bt_aggregate || !isstructured(basetype(tp)->btp) || !isstructured(basetype(itype)->btp) || classRefCount(basetype(basetype(itype)->btp)->sp, basetype(basetype(tp)->btp)->sp) != 1)
-                            errortype(ERR_CANNOT_CONVERT_TYPE, tp, itype);
+                    if (cparams.prm_cplusplus)
+                    {
+                        if (!isvoidptr(itype) && !tp->nullptrType)
+                            if (!ispointer(itype) || tp->type == bt_aggregate || !isstructured(basetype(tp)->btp) || !isstructured(basetype(itype)->btp) || classRefCount(basetype(basetype(itype)->btp)->sp, basetype(basetype(tp)->btp)->sp) != 1)
+                                errortype(ERR_CANNOT_CONVERT_TYPE, tp, itype);
+                    }
+                    else if (!isvoidptr(tp) && !isvoidptr(itype))
+                        if (!matchingCharTypes(tp, itype))
+                            error(ERR_SUSPICIOUS_POINTER_CONVERSION);
                 }
-                else if (!isvoidptr(tp) && !isvoidptr(itype))
-                    if (!matchingCharTypes(tp, itype))
-                       error(ERR_SUSPICIOUS_POINTER_CONVERSION);
+                else if (isint(tp) && isintconst(exp))
+                {
+                    if (!isconstzero(tp, exp))
+                        error(ERR_NONPORTABLE_POINTER_CONVERSION);
+                }
+                else if (cparams.prm_cplusplus)
+                {
+                    errortype(ERR_CANNOT_CONVERT_TYPE, tp, itype);
+                }
+            }
             /* might want other types of conversion checks */
             if (!comparetypes(itype, tp, TRUE) && !isint(tp))
                 cast(tp, &exp);
@@ -2436,6 +2448,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                     }
                     else
                     {
+                        EXPRESSION *exp3 = exp1;
                         constructed = TRUE;
                         if (exp1->left->v.func->thisptr || !exp1->left->v.func->returnEXP)
                         {
@@ -2466,7 +2479,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                             }
                             exp1->left->v.func->returnEXP = exp;
                         }
-                        exp = exp1;
+                        exp = exp3;
                         itype = tp1;
                     }
                 }

@@ -43,6 +43,7 @@
 #include "MZHeader.h"
 #include <stdexcept>
 #include <iostream>
+#include <fstream>
 #include <stdlib.h>
 #include "UTF8.h"
 
@@ -170,7 +171,7 @@ bool DefFile::Read()
     }
     else
     {
-        std::cout << "File '" << name.c_str() << "' not found." << std::endl;
+        std::cout << "File '" << fileName.c_str() << "' not found." << std::endl;
     }
     return true;
 }

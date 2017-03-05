@@ -58,6 +58,7 @@ void PEImportObject::Setup(ObjInt &endVa, ObjInt &endPhys)
         if (virtual_addr != endVa)
             Utils::fatal("Internal error");
     }
+    size = 0;
     raw_addr = endPhys;
     std::map<ObjString, ObjSymbol *> externs;
     for (ObjFile::SymbolIterator it = file->ExternalBegin(); it != file->ExternalEnd(); ++it)

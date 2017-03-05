@@ -654,6 +654,7 @@ char *unmang1(char *buf, char *name, char *last, BOOLEAN tof)
 				{
                     *buf++ =  *name++;
                     *buf++ =  *name++;
+                    *buf = 0;
 					v -= 2;
 				}
 				else
@@ -816,6 +817,7 @@ char *unmang1(char *buf, char *name, char *last, BOOLEAN tof)
             }
             break;
         case 'M':
+            buf2[0] = 0;
             if (*name == '#')
             {
                 name = unmangTemplate(buf2, name, last);

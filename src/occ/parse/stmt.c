@@ -713,19 +713,20 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 {
                     lex = expression_no_comma(lex, funcsp, NULL, &selectTP, &select, NULL, 0);
                 }
-                if (!selectTP)
+                if (!selectTP || selectTP->type == bt_any)
                 {
                     error(ERR_EXPRESSION_SYNTAX);
                 }
                 else
                 {
-                    selectTP = basetype(selectTP)->sp->tp;
                     EXPRESSION *ibegin=NULL, *iend=NULL;
                     SYMBOL *sbegin=NULL, *send=NULL;
                     TYPE *iteratorType = NULL;
                     TYPE *tpref = Alloc(sizeof(TYPE));
                     EXPRESSION *rangeExp = anonymousVar(sc_auto, tpref);
                     SYMBOL *rangeSP = rangeExp->v.sp;
+                    if (isstructured(selectTP))
+                        selectTP = basetype(selectTP)->sp->tp;
                     deref(&stdpointer, &rangeExp);
                     needkw(&lex, closepa);
                     while (castvalue(select))
@@ -1885,8 +1886,6 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                     else
                     */
                     {
-                        if (!strcmp(funcsp->name, "v2"))
-                            printf("hi");
                         funcparams->arguments = Alloc(sizeof(INITLIST));
                         funcparams->arguments->tp = tp1;
                         funcparams->arguments->exp = exp1;

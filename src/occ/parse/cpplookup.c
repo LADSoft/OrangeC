@@ -4049,9 +4049,10 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
                 {
                     if (*tp && isstructured(*tp))
                     {
-                        char buf[1024], *p;
+                        char buf[4096], *p;
                         int n;
                         INITLIST *a;
+                        memset(buf, 0, sizeof(buf));
                         unmangle(buf, basetype(*tp)->sp->decoratedName);
                         n = strlen(buf);
                         p = strrchr(buf, ':');

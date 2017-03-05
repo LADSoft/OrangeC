@@ -2153,7 +2153,7 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                     BASECLASS *bc = cls->baseClasses;
                     while (bc)
                     {
-                        if (!comparetypes(bc->cls, init->sp, TRUE) || sameTemplate(bc->cls->tp, init->sp->tp))
+                        if (!comparetypes(bc->cls->tp, init->sp->tp, TRUE) || sameTemplate(bc->cls->tp, init->sp->tp))
                             break;
                         bc = bc->next;
                     }

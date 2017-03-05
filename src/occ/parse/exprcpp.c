@@ -379,7 +379,8 @@ void castToArithmetic(BOOLEAN integer, TYPE **tp, EXPRESSION **exp, enum e_kw kw
             {
                 // LHS, put up an operator whatever message
                 char buf[256];
-                char tbuf[256];
+                char tbuf[4096];
+                memset(tbuf, 0, sizeof(tbuf));
                 tbuf[0] = 0;
                 typeToString(tbuf, *tp);
                 if (other)
@@ -1628,7 +1629,16 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
     {
         EXPRESSION *sz;
         INITLIST *sza;
-        int n = (*tp)->size;
+        int n;
+        if (isstructured(*tp))
+        {
+            *tp = PerformDeferredInitialization(*tp, funcsp);
+            n = basetype(*tp)->sp->tp->size;
+        }
+        else
+        {
+            n = (*tp)->size;
+        }
         if (isref(*tp))
             error(ERR_NEW_NO_ALLOCATE_REFERENCE);
         if (arrSize && isstructured(*tp))
@@ -1733,6 +1743,18 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
                         deref(*tp, &pval);
                         *exp = exprNode(en_assign, pval, exp1);
                     }
+                }
+            }
+            else
+            {
+                // default-construct
+                if (val)
+                {
+                    EXPRESSION *pval = val;
+                    exp1 = intNode(en_c_i, 0);
+                    cast(*tp, &exp1);
+                    deref(*tp, &pval);
+                    *exp = exprNode(en_assign, pval, exp1);
                 }
             }
         }
@@ -1881,7 +1903,8 @@ LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
     }
     if (!templateNestingCount && isstructured(basetype(*tp)->btp))
     {
-        if (basetype(basetype(*tp)->btp)->size == 0)
+        basetype(*tp)->btp = PerformDeferredInitialization(basetype(*tp)->btp, funcsp);
+        if (basetype(basetype(*tp)->btp)->sp->tp->size == 0)
             errorsym(ERR_DELETE_OF_POINTER_TO_UNDEFINED_TYPE, basetype(basetype(*tp)->btp)->sp);
     }
     asn = *exp;
@@ -1890,7 +1913,7 @@ LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
     in = exp2 = *exp = var;
     if (basetype(*tp)->btp && isstructured(basetype(*tp)->btp))
     {
-        callDestructor(basetype(*tp)->btp->sp, NULL, exp, exp1, TRUE, TRUE, FALSE);
+        callDestructor(basetype(basetype(*tp)->btp)->sp, NULL, exp, exp1, TRUE, TRUE, FALSE);
     }
     exp1 = exp2;
     if (!global)

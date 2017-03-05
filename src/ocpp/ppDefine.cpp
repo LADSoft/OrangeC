@@ -93,6 +93,7 @@ void ppDefine::InitHash()
     defTokens[","] = comma;
     defTokens["..."] = ellipses;
 }
+#include <iostream>
 ppDefine::Definition *ppDefine::Define(const std::string &name, std::string &value, DefinitionArgList *args, bool permanent, bool varargs, bool errors,
                                        bool caseInsensitive)
 {

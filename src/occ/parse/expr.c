@@ -2546,7 +2546,7 @@ void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, 
                         temp = p->exp->left;
                     }
                     // use constructor or conversion function and push on stack ( no destructor)
-                    if (temp->type == en_func && !isref(basetype(temp->v.func->sp->tp)->btp) &&((sameType = comparetypes(sym->tp, tpx, TRUE)) || classRefCount(basetype(sym->tp)->sp, basetype(tpx)->sp) == 1))
+                    if (temp->type == en_func && basetype(temp->v.func->sp->tp)->btp && !isref(basetype(temp->v.func->sp->tp)->btp) &&((sameType = comparetypes(sym->tp, tpx, TRUE)) || classRefCount(basetype(sym->tp)->sp, basetype(tpx)->sp) == 1))
                     {
                         EXPRESSION **exp = NULL;
                         SYMBOL *esp;
@@ -6763,6 +6763,14 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                         {
                             if (!isintconst(exp1) || !isconstzero(*tp, exp1))
                                 error(ERR_NONPORTABLE_POINTER_CONVERSION);
+                        }
+                        else if (cparams.prm_cplusplus)
+                        {
+                            errortype(ERR_CANNOT_CONVERT_TYPE, tp1, *tp);
+                        }
+                        else
+                        {
+                            error(ERR_NONPORTABLE_POINTER_CONVERSION);
                         }
                     }
                     else if (ispointer(tp1))

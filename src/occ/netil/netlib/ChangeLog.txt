@@ -1,0 +1,10 @@
+Version 1.2:
+    remove sdata section; move the data into the CIL data section (fix for avast
+        not liking generated files)
+
+Version 1.1:
+    fix problems with generating the binary for large programs
+
+Version 1.0:
+    initial release
+

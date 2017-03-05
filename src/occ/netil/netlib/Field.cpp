@@ -107,7 +107,7 @@ namespace DotNetPELib
             if (byteValue_ && byteLength_)
             {
                 peLib.Out() << " at $" << name_ << std::endl;
-                peLib.Out() << ".data $" << name_ << " = bytearray (" << std::endl << std::hex;
+                peLib.Out() << ".data cil $" << name_ << " = bytearray (" << std::endl << std::hex;
                 int i;
                 for (i = 0; i < byteLength_; i++)
                 {

@@ -45,6 +45,10 @@
 #include <fstream>
 #include <stdexcept>
 
+// reference changelog.txt to see what the changes are
+//
+#define DOTNETPELIB_VERSION "1.2"
+
 // this is the main library header
 // it allows creation of the methods and data that would be dumped into 
 // a .net assembly.  The data can be either directly written to an 

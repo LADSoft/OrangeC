@@ -335,8 +335,8 @@ namespace DotNetPELib {
         bool WriteFile(PELib &peLib, std::fstream &out);
 
         // another thing that makes this lib not thread safe, the RVA for 
-        // the beginning of the SDATA gets put here after it is calculated
-        static DWord sdata_rva_;
+        // the beginning of the .data section gets put here after it is calculated
+        static DWord cildata_rva_;
     protected:
         // this calculates various addresses and offsets that will be used and referenced
         // when we actually generate the data.   This must be kept in sync with the code to

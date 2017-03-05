@@ -10,7 +10,6 @@
 
     * Redistributions of source code must retain the above
       copyright notice, this list of conditions and the
-      following disclaimer.
 
     * Redistributions in binary form must reproduce the above
       copyright notice, this list of conditions and the
@@ -76,7 +75,7 @@ namespace DotNetPELib
     };
     DotNetMetaHeader *PEWriter::metaHeader_ = &metaHeader1;
 
-    DWord PEWriter::sdata_rva_;
+    DWord PEWriter::cildata_rva_;
     Byte PEWriter::defaultUS_[8] = { 0, 3, 0x20, 0, 0 };
 
     void PEWriter::pool::Ensure(size_t newSize) {
@@ -470,7 +469,7 @@ namespace DotNetPELib
     }
     size_t FieldRVATableEntry::Render(size_t sizes[MaxTables + ExtraIndexes], Byte *dest) const
     {
-        *(DWord *)dest = rva_ + PEWriter::sdata_rva_;
+        *(DWord *)dest = rva_ + PEWriter::cildata_rva_;
         int n = 4;
         n += fieldIndex_.Render(sizes, dest + n);
         return n;
@@ -568,8 +567,6 @@ namespace DotNetPELib
         peHeader_->num_rvas = 16;
 
         peHeader_->num_objects = 2;
-        if (rva_.size)
-            peHeader_->num_objects++;
         peHeader_->header_size = sizeof(MZHeader_) + sizeof(PEHeader) + peHeader_->num_objects * sizeof(PEObject);
         if (peHeader_->header_size % fileAlign_)
         {
@@ -583,11 +580,6 @@ namespace DotNetPELib
         int n = 0;
         strncpy(peObjects_[n].name, ".text", 8);
         peObjects_[n++].flags = WINF_EXECUTE | WINF_CODE | WINF_READABLE;
-        if (rva_.size)
-        {
-            strncpy(peObjects_[n].name, ".sdata", 8);
-            peObjects_[n++].flags = WINF_INITDATA | WINF_READABLE | WINF_WRITEABLE;
-        }
         /*
         strncpy(peObjects_[n].name, ".rsrc", 8);
         peObjects_[n++].flags = WINF_INITDATA | WINF_READABLE;
@@ -619,6 +611,13 @@ namespace DotNetPELib
         cor20Header_->Flags = peLib.GetCorFlags();
         cor20Header_->EntryPointToken = entryPoint_;
 
+        cildata_rva_ = currentRVA;
+        if (rva_.size)
+        {
+            currentRVA += rva_.size;
+            if (currentRVA % 8)
+                currentRVA += 8 - (currentRVA % 8);
+        }
         size_t lastRVA = currentRVA;
         for (auto method : methods_)
         {
@@ -751,8 +750,8 @@ namespace DotNetPELib
         int sect = 0;
         peObjects_[sect].virtual_size = currentRVA - peObjects_[sect].virtual_addr;
         n = peObjects_[sect].virtual_size;
-        if (n % fileAlign_);
-        n += fileAlign_ - n % fileAlign_;
+        if (n % fileAlign_)
+            n += fileAlign_ - n % fileAlign_;
         peObjects_[sect].raw_size = n;
         peHeader_->code_size = n;
 
@@ -762,23 +761,6 @@ namespace DotNetPELib
         peObjects_[sect + 1].virtual_addr = currentRVA;
         peHeader_->data_base = currentRVA;
         sect++;
-        if (rva_.size)
-        {
-            sdata_rva_ = currentRVA;
-            currentRVA += rva_.size; // sizeof sdata
-            peObjects_[sect].virtual_size = currentRVA - peObjects_[sect].virtual_addr;
-            n = peObjects_[sect].virtual_size;
-            if (n % fileAlign_);
-            n += fileAlign_ - n % fileAlign_;
-            peObjects_[sect].raw_size = n;
-            peHeader_->data_size = n;
-
-            if (currentRVA %objectAlign_)
-                currentRVA += objectAlign_ - currentRVA % objectAlign_;
-            peObjects_[sect + 1].raw_ptr = peObjects_[sect].raw_ptr + peObjects_[sect].raw_size;
-            peObjects_[sect + 1].virtual_addr = currentRVA;
-            sect++;
-        }
 
 #if 0
         peHeader_->resource_rva = currentRVA;
@@ -865,6 +847,7 @@ namespace DotNetPELib
             WritePEObjects(peLib) &&
             WriteIAT(peLib) &&
             WriteCoreHeader(peLib) &&
+            WriteStaticData(peLib) &&
             WriteMethods(peLib) &&
             WriteMetadataHeaders(peLib) &&
             WriteTables(peLib) &&
@@ -874,7 +857,6 @@ namespace DotNetPELib
             WriteBlob(peLib) &&
             WriteImports(peLib) &&
             WriteEntryPoint(peLib) &&
-            WriteStaticData(peLib) &&
             //        WriteVersionInfo(peLib) &&
             WriteRelocs(peLib);
     }
@@ -1080,8 +1062,8 @@ namespace DotNetPELib
     {
         if (rva_.size)
         {
-            align(fileAlign_);
             put(rva_.base, rva_.size);
+            align(8);
         }
         return true;
     }

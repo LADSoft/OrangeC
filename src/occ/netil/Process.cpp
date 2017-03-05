@@ -1280,11 +1280,16 @@ extern "C" BOOLEAN oa_main_preprocess(void)
         mainContainer = peLib->WorkingAssembly();
     }
 
-    peLib->AddExternalAssembly("mscorlib");
-    BYTE publickeytoken[] = { 0xbc, 0x9b,0x11,0x12,0x35,0x64,0x2d,0x7d };
-    peLib->AddExternalAssembly("lsmsilcrtl", publickeytoken);
+    BYTE mscorlibPublicKeytoken[] = { 0xb7, 0x7a, 0x5c, 0x56, 0x19, 0x34, 0xe0, 0x89 };
+    peLib->AddExternalAssembly("mscorlib", mscorlibPublicKeytoken);
+    AssemblyDef *mscorlib = peLib->FindAssembly("mscorlib");
+    mscorlib->SetVersion(4, 0, 0, 0);
+
+    BYTE lsmsilcrtlPublickeytoken[] = { 0xbc, 0x9b,0x11,0x12,0x35,0x64,0x2d,0x7d };
+    peLib->AddExternalAssembly("lsmsilcrtl", lsmsilcrtlPublickeytoken);
     AssemblyDef *lsmsilcrtl = peLib->FindAssembly("lsmsilcrtl");
     lsmsilcrtl->SetVersion(1, 0, 0, 0);
+
     CreateExternalCSharpReferences();
     retblocksym.name = "__retblock";
     return FALSE;

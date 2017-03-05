@@ -1295,6 +1295,9 @@ public:
     typedef typename traits_type::off_type off_type;
 
     basic_fstream();
+#ifdef __ORANGEC__
+    virtual ~basic_fstream() { close(); }
+#endif
     explicit basic_fstream(const char* __s, ios_base::openmode __mode = ios_base::in | ios_base::out);
     explicit basic_fstream(const string& __s, ios_base::openmode __mode = ios_base::in | ios_base::out);
 #ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES

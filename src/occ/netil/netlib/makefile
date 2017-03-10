@@ -38,6 +38,7 @@
 NAME=netlib
 INCLUDES=..\..\..\util;..\..\..\exefmt
 CPP_DEPENDENCIES=$(wildcard *.cpp)
+C_DEPENDENCIES=$(wildcard *.c)
 redirect:
 	@$(MAKE) /T
 

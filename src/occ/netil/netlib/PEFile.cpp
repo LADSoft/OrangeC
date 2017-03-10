@@ -41,7 +41,6 @@
 #include "PEHeader.h"
 #include <time.h>
 #include <stdio.h>
-
 namespace DotNetPELib
 {
 
@@ -154,7 +153,7 @@ namespace DotNetPELib
         else if (blobLen <= 0x3fff)
         {
             us_.base[us_.size++] = (blobLen >> 8) | 0x80;
-            us_.base[us_.size++] = blobLen & 0x7f;
+            us_.base[us_.size++] = blobLen;
         }
         else
         {
@@ -200,7 +199,7 @@ namespace DotNetPELib
         else if (blobLen <= 0x3fff)
         {
             blob_.base[blob_.size++] = (blobLen >> 8) | 0x80;
-            blob_.base[blob_.size++] = blobLen & 0x7f;
+            blob_.base[blob_.size++] = blobLen;
         }
         else
         {
@@ -551,7 +550,7 @@ namespace DotNetPELib
         peHeader_->cpu_type = PE_INTEL386;
         peHeader_->magic = PE_MAGICNUM;
         peHeader_->nt_hdr_size = 0xe0; // optional header sie
-        peHeader_->flags = PE_FILE_32BIT + PE_FILE_EXECUTABLE + (DLL_ ? PE_FILE_LIBRARY : 0);
+        peHeader_->flags = PE_FILE_EXECUTABLE + (DLL_ ? PE_FILE_LIBRARY : 0);
         peHeader_->linker_major_version = 6;
         peHeader_->object_align = objectAlign_;
         peHeader_->file_align = fileAlign_;
@@ -611,6 +610,26 @@ namespace DotNetPELib
         cor20Header_->Flags = peLib.GetCorFlags();
         cor20Header_->EntryPointToken = entryPoint_;
 
+        if (snkFile_.size())
+        {
+            snkLen_ = rsaEncoder.LoadStrongNameKeys(snkFile_.c_str());
+            if (snkLen_)
+            {
+                Byte buf[16384];
+                size_t len = 0;
+                rsaEncoder.GetPublicKeyData(buf, &len);
+                ((AssemblyDefTableEntry *)tables_[tAssemblyDef][0])->publicKeyIndex_ = HashBlob(buf, len);
+                ((AssemblyDefTableEntry *)tables_[tAssemblyDef][0])->flags_ |= PublicKey;
+
+                cor20Header_->Flags |= 8; // strong name signed
+
+            }
+            if (!snkLen_)
+            {
+                std::cout << "Warning: key file not found or invalid.   Assembly will not be signed" << std::endl;
+            }
+     
+        }
         cildata_rva_ = currentRVA;
         if (rva_.size)
         {
@@ -745,6 +764,14 @@ namespace DotNetPELib
         currentRVA += 2;
         peHeader_->entry_point = currentRVA;
         currentRVA += 6;
+        if (snkLen_)
+        {
+
+            cor20Header_->StrongNameSignature[0] = currentRVA;
+            cor20Header_->StrongNameSignature[1] = snkLen_;
+
+            currentRVA += snkLen_;
+        }
 
 
         int sect = 0;
@@ -823,8 +850,8 @@ namespace DotNetPELib
         peObjects_[sect].virtual_size = currentRVA - peObjects_[sect].virtual_addr;
         peHeader_->fixup_size = peObjects_[sect].virtual_size;
         n = peObjects_[sect].virtual_size;
-        if (n % fileAlign_);
-        n += fileAlign_ - n % fileAlign_;
+        if (n % fileAlign_) 
+            n += fileAlign_ - n % fileAlign_;
         peObjects_[sect].raw_size = n;
         peHeader_->data_size += n;
 
@@ -835,13 +862,27 @@ namespace DotNetPELib
 
         peHeader_->image_size = currentRVA;
     }
+    void PEWriter::HashPartOfFile(SHA1Context &context,
+                                 size_t offset, size_t len)
+    {
+        outputFile_->seekg(offset);
+        char buf[8192];
+        int sz = 0x0;
+        while (sz < len)
+        {
+            int l = len - sz > 8192 ? 8192 : len - sz;
+            outputFile_->read(buf, l);
+            SHA1Input(&context, (Byte *)buf, l);
+            sz += l;
+        }
+    }
     bool PEWriter::WriteFile(PELib &peLib, std::fstream &out)
     {
         outputFile_ = &out;
         if (!entryPoint_ && !DLL_)
             throw new PELibError(PELibError::MissingEntryPoint);
         CalculateObjects(peLib);
-        return
+        bool rv =
             WriteMZData(peLib) &&
             WritePEHeader(peLib) &&
             WritePEObjects(peLib) &&
@@ -857,8 +898,52 @@ namespace DotNetPELib
             WriteBlob(peLib) &&
             WriteImports(peLib) &&
             WriteEntryPoint(peLib) &&
+            WriteHashData(peLib) && 
             //        WriteVersionInfo(peLib) &&
             WriteRelocs(peLib);
+        if (rv && snkLen_)
+        {
+            SHA1Context context;
+            SHA1Reset(&context);
+
+            int pos = 0;
+            HashPartOfFile(context, 0, 0x80);
+            // if there was something between here and the PE header we would hash it now
+
+            // well we are supposed to zero the pe header checksum and the
+            // authenticode signature pointer, but, since we don't set them nonzero anyway
+            // this is fine.
+            HashPartOfFile(context, 0x80, 0xf8);
+
+            HashPartOfFile(context, 0x80 + 0xf8, sizeof(PEObject) * peHeader_->num_objects);
+
+            // yes we do NOT hash the gap between the objects table and the first section
+            for (int i=0; i < peHeader_->num_objects; i++)
+            {
+                if (peObjects_[i].virtual_addr < cor20Header_->StrongNameSignature[0] &&
+                    cor20Header_->StrongNameSignature[0] < peObjects_[i].virtual_addr + peObjects_[i].virtual_size)
+                {
+                    int offs = cor20Header_->StrongNameSignature[0] - peObjects_[i].virtual_addr; 
+                    int sz = cor20Header_->StrongNameSignature[1];
+                    HashPartOfFile(context, peObjects_[i].raw_ptr, offs);
+                    HashPartOfFile(context, peObjects_[i].raw_ptr+ offs + sz,
+                                  peObjects_[i].raw_size - offs - sz);
+                }
+                else
+                {
+                    HashPartOfFile(context, peObjects_[i].raw_ptr, peObjects_[i].raw_size);
+                }
+            }
+
+            SHA1Result(&context);
+            Byte sigHash[16384];
+            memset(sigHash, 0xfe, 128);
+            size_t sigLen = 0;
+            rsaEncoder.GetStrongNameSignature(sigHash, &sigLen, (Byte *)context.Message_Digest, 20);
+            outputFile_->seekp(snkBase_);
+            outputFile_->write((char *)sigHash, sigLen);
+        }
+        return rv;
     }
     void PEWriter::align(size_t algn) const
     {
@@ -877,8 +962,9 @@ namespace DotNetPELib
         put(MZHeader_, sizeof(MZHeader_));
         return true;
     }
-    bool PEWriter::WritePEHeader(PELib &peLib) const
+    bool PEWriter::WritePEHeader(PELib &peLib)
     {
+        peBase_ = outputFile_->tellp();
         put(peHeader_, sizeof(PEHeader));
         return true;
     }
@@ -899,9 +985,21 @@ namespace DotNetPELib
         put(&n, sizeof(n));
         return true;
     }
-    bool PEWriter::WriteCoreHeader(PELib &peLib) const
+    bool PEWriter::WriteCoreHeader(PELib &peLib)
     {
+        corBase_ = outputFile_->tellp();
         put(cor20Header_, sizeof(DotNetCOR20Header));
+        return true;
+    }
+    bool PEWriter::WriteHashData(PELib &peLib)
+    {
+        snkBase_ = outputFile_->tellp();
+        if (snkLen_)
+        {
+            Byte buf[2048];
+            memset(buf, 0, snkLen_);
+            put(buf, snkLen_);
+        }
         return true;
     }
     bool PEWriter::WriteMethods(PELib &peLib) const

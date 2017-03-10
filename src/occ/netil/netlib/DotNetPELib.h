@@ -37,6 +37,8 @@
     contact information:
         email: TouchStone222@runbox.com <David Lindauer>
 */
+#ifndef DOTNETPELIB_H
+#define DOTNETPELIB_H
 #include <list>
 #include <vector>
 #include <map>
@@ -401,7 +403,7 @@ namespace DotNetPELib
     class AssemblyDef : public DataContainer
     {
     public:
-        AssemblyDef(std::string Name, bool External, Byte * KeyToken = 0) : DataContainer("", 0), name_(Name), external_(External), peIndex_(0),
+        AssemblyDef(std::string Name, bool External, Byte * KeyToken = nullptr) : DataContainer("", 0), name_(Name), external_(External), peIndex_(0),
             major_(0), minor_(0), build_(0), revision_(0)
         {
             if (KeyToken)
@@ -420,11 +422,16 @@ namespace DotNetPELib
         const std::string& Name() const { return name_; }
         ///** metatable index for the assembly in the PE file
         size_t PEIndex() const { return peIndex_; }
+        ///** get name of strong name key file (will be "" by default)
+        const std::string& SNKFile() const { return snkFile_; }
+        ///** set name of strong name key file
+        void SNKFile(std::string file) { snkFile_ = file; }
         virtual ~AssemblyDef() { }
         bool ILHeaderDump(PELib &);
         bool PEHeaderDump(PELib &);
     private:
         std::string name_;
+        std::string snkFile_;
         bool external_;
         size_t peIndex_;
         Byte publicKeyToken_[8];
@@ -1159,3 +1166,4 @@ namespace DotNetPELib
     };
 
 } // namespace
+#endif DOTNETPELIB_H

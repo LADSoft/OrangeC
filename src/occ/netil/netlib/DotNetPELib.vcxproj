@@ -29,14 +29,14 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -130,16 +130,21 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="bigdigits.h" />
+    <ClInclude Include="bigdtypes.h" />
     <ClInclude Include="DLLExportReader.h" />
     <ClInclude Include="DotNetPELib.h" />
     <ClInclude Include="MZHeader.h" />
     <ClInclude Include="PEFile.h" />
     <ClInclude Include="PEHeader.h" />
+    <ClInclude Include="RSAEncoder.h" />
+    <ClInclude Include="sha1.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Allocator.cpp" />
     <ClCompile Include="AssemblyDef.cpp" />
+    <ClCompile Include="bigdigits.cpp" />
     <ClCompile Include="Class.cpp" />
     <ClCompile Include="CodeContainer.cpp" />
     <ClCompile Include="CreateGUID.cpp" />
@@ -157,6 +162,8 @@
     <ClCompile Include="PELib.cpp" />
     <ClCompile Include="PELibError.cpp" />
     <ClCompile Include="Qualifiers.cpp" />
+    <ClCompile Include="RSAEncoder.cpp" />
+    <ClCompile Include="sha1.cpp" />
     <ClCompile Include="Type.cpp" />
     <ClCompile Include="Value.cpp" />
   </ItemGroup>

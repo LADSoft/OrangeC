@@ -40,7 +40,8 @@
 
 #include <vector>
 #include <string>
-
+#include "RSAEncoder.h"
+#include "sha1.h"
 // this is an internal header used to define the various aspects of a PE file
 // and the functions to render the files
 // it won't normally be much use to users of the DotNetPELib Library
@@ -281,10 +282,11 @@ namespace DotNetPELib {
         enum { MAX_PE_OBJECTS = 4 };
 
         // Constructor to instantiate class
-        PEWriter(bool isexe, bool gui) : DLL_(!isexe), GUI_(gui), objectBase_(0), valueBase_(0), enumBase_(0),
+        PEWriter(bool isexe, bool gui, std::string snkFile) : DLL_(!isexe), GUI_(gui), objectBase_(0), valueBase_(0), enumBase_(0),
             systemIndex_(0), entryPoint_(0), paramAttributeType_(0), paramAttributeData_(0),
             fileAlign_(0x200), objectAlign_(0x2000), imageBase_(0x400000), language_(0x4b0),
-            peHeader_(nullptr), peObjects_(nullptr), cor20Header_(nullptr), tablesHeader_(nullptr) { }
+            peHeader_(nullptr), peObjects_(nullptr), cor20Header_(nullptr), tablesHeader_(nullptr),
+            snkFile_(snkFile), snkLen_(0) { }
         virtual ~PEWriter();
         // add an entry to one of the tables
         // note the data for the table will be a class inherited from TableEntryBase,
@@ -333,6 +335,7 @@ namespace DotNetPELib {
 
         size_t NextTableIndex(int table) const { return tables_[table].size() + 1; }
         bool WriteFile(PELib &peLib, std::fstream &out);
+        void HashPartOfFile(SHA1Context &context, size_t offset, size_t len);
 
         // another thing that makes this lib not thread safe, the RVA for 
         // the beginning of the .data section gets put here after it is calculated
@@ -344,10 +347,12 @@ namespace DotNetPELib {
         void CalculateObjects(PELib &peLib);
         // These functions put various information into the PE file
         bool WriteMZData(PELib &peLib) const; //
-        bool WritePEHeader(PELib &peLib) const;//
+        bool WritePEHeader(PELib &peLib);//
         bool WritePEObjects(PELib &peLib) const;//
         bool WriteIAT(PELib &peLib) const;
-        bool WriteCoreHeader(PELib &peLib) const;//
+        bool WriteCoreHeader(PELib &peLib);//
+        bool WriteHashData(PELib &peLib);
+        bool WriteStaticData(PELib &peLib) const;
         bool WriteMethods(PELib &peLib) const;
         bool WriteMetadataHeaders(PELib &peLib) const;//
         bool WriteTables(PELib &peLib) const;
@@ -357,8 +362,6 @@ namespace DotNetPELib {
         bool WriteBlob(PELib &peLib) const;
         bool WriteImports(PELib &peLib) const;
         bool WriteEntryPoint(PELib &peLib) const;
-
-        bool WriteStaticData(PELib &peLib) const;
 
         bool WriteVersionInfo(PELib &peLib) const;
         bool WriteRelocs(PELib &peLib) const;
@@ -373,6 +376,7 @@ namespace DotNetPELib {
         void align(size_t offset) const;
     private:
         std::fstream *outputFile_;
+        std::string snkFile_;
         // a reflection of the String stream so that we can keep from doing duplicates.
         // right now we don't check duplicates on any of the other streams...
         std::map<std::string, size_t> stringMap_;
@@ -412,6 +416,11 @@ namespace DotNetPELib {
         struct DotNetCOR20Header *cor20Header_;
         struct DotNetMetaTablesHeader *tablesHeader_;
         size_t streamHeaders_[5][2];
+        size_t snkLen_;
+	unsigned peBase_;
+	unsigned corBase_;
+	unsigned snkBase_;
+        RSAEncoder rsaEncoder;
         static Byte MZHeader_[];
         static struct DotNetMetaHeader *metaHeader_;
         static char *streamNames_[];
@@ -1173,5 +1182,8 @@ namespace DotNetPELib {
         size_t methodDef_;
         size_t Write(size_t sizes[MaxTables + ExtraIndexes], std::fstream &out) const;
     };
+    int LoadStrongNameKeys(const char *file);
+    void GetPublicKeyData(Byte *key, size_t *keySize);
+    void GetStrongNameSignature(Byte *sig, size_t *sigSize, const Byte *hash, size_t hashSize );
 
 } // namespace

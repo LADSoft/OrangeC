@@ -56,6 +56,7 @@ extern "C" {
     extern int prm_targettype;
     extern char namespaceAndClass[512];
     extern LIST *temporarySymbols;
+    extern char prm_snkKeyFile[260];
 
     MethodSignature *argsCtor;
     MethodSignature *argsNextArg;
@@ -561,6 +562,7 @@ static TYPE *cloneType(TYPE *tp)
         tp = tp->btp;
         lst = &(*lst)->btp;
     }
+    UpdateRootTypes(rv);
     return rv;
 }
 static SYMBOL *clone(SYMBOL *sp, bool ctype)
@@ -1279,7 +1281,7 @@ extern "C" BOOLEAN oa_main_preprocess(void)
     {
         mainContainer = peLib->WorkingAssembly();
     }
-
+    peLib->WorkingAssembly()->SNKFile(prm_snkKeyFile);
     BYTE mscorlibPublicKeytoken[] = { 0xb7, 0x7a, 0x5c, 0x56, 0x19, 0x34, 0xe0, 0x89 };
     peLib->AddExternalAssembly("mscorlib", mscorlibPublicKeytoken);
     AssemblyDef *mscorlib = peLib->FindAssembly("mscorlib");

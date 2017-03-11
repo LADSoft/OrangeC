@@ -4,7 +4,7 @@
 [Setup]
 PrivilegesRequired=admin
 AppName=Orange C MSIL Version
-AppVerName=Orange C MSIL Version 6.10
+AppVerName=Orange C MSIL Version 6.12
 OutputBaseFileName=setup
 AppPublisher=LADSoft
 AppPublisherURL=http:\\members.tripod.com\~ladsoft

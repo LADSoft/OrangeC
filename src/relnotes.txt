@@ -1,6 +1,12 @@
 Release notes:
 
-version 6.0.11:
+version 6.0.12:
+    ocide:      allow exception unrolling after first chance exception
+    ocide:      reenable breakpoints when continuing after an exception
+    occil:      add strong name support
+    clibs:      fix msxml6.h and runtime support to handle UUIDs more generically
+
+version 6.0.11:  Mar 5, 2017
     occ:        halve compile time for C++ programs
     occ:        fix miscellaneous crashes when compiling invalid sources
     occ:        fix make stub generation when generating for multiple files

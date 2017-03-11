@@ -1,11 +1,22 @@
+#ifndef __REQUIRED_RPCNDR_H_VERSION__
+#define __REQUIRED_RPCNDR_H_VERSION__ 500
+#endif
+#ifndef __REQUIRED_RPCSAL_H_VERSION__
+#define __REQUIRED_RPCSAL_H_VERSION__ 100
+#endif
 #include "rpc.h"
 #include "rpcndr.h"
+#ifndef __RPCNDR_H_VERSION__
+#error this stub requires an updated version of <rpcndr.h>
+#endif 
 #ifndef COM_NO_WINDOWS_H
 #include "windows.h"
 #include "ole2.h"
 #endif 
 #ifndef __msxml6_h__
 #define __msxml6_h__
+#if defined(_MSC_VER) && (_MSC_VER >= 1020)
+#endif
 typedef interface IXMLDOMNode IXMLDOMNode;
 
 typedef interface IXMLDOMDocument IXMLDOMDocument;
@@ -256,9 +267,10 @@ typedef interface IXMLHTTPRequest3 IXMLHTTPRequest3;
 #include "objidl.h"
 #include "oaidl.h"
 #ifdef __cplusplus
-extern "C"{
 #endif 
-#define _W64
+#ifdef __USE_MSXML6_NAMESPACE__
+namespace MSXML6 {
+#endif
 #if !defined(__msxml_h__)
 typedef  
 enum tagDOMNodeType
@@ -436,7 +448,8 @@ EXTERN_C const IID IID_IXMLDOMNode;
              VARIANT outputObject);
         END_INTERFACE
     } IXMLDOMNodeVtbl;
-    interface IXMLDOMNode
+    interface __uuid("2933BF80-7B36-11d2-B20E-00C04F983E60") IXMLDOMNode
+
     {
         CONST_VTBL struct IXMLDOMNodeVtbl *lpVtbl;
     };
@@ -799,7 +812,8 @@ EXTERN_C const IID IID_IXMLDOMDocument;
              VARIANT ontransformnodeSink);
         END_INTERFACE
     } IXMLDOMDocumentVtbl;
-    interface IXMLDOMDocument
+    interface __uuid("2933BF81-7B36-11d2-B20E-00C04F983E60") IXMLDOMDocument
+
     {
         CONST_VTBL struct IXMLDOMDocumentVtbl *lpVtbl;
     };
@@ -1248,7 +1262,8 @@ EXTERN_C const IID IID_IXMLDOMDocument2;
              VARIANT *value);
         END_INTERFACE
     } IXMLDOMDocument2Vtbl;
-    interface IXMLDOMDocument2
+    interface __uuid("2933BF95-7B36-11d2-B20E-00C04F983E60") IXMLDOMDocument2
+
     {
         CONST_VTBL struct IXMLDOMDocument2Vtbl *lpVtbl;
     };
@@ -1718,7 +1733,8 @@ EXTERN_C const IID IID_IXMLDOMDocument3;
              IXMLDOMNode **clone);
         END_INTERFACE
     } IXMLDOMDocument3Vtbl;
-    interface IXMLDOMDocument3
+    interface __uuid("2933BF96-7B36-11d2-B20E-00C04F983E60") IXMLDOMDocument3
+
     {
         CONST_VTBL struct IXMLDOMDocument3Vtbl *lpVtbl;
     };
@@ -1955,7 +1971,8 @@ EXTERN_C const IID IID_IXMLDOMSchemaCollection;
              IUnknown **ppUnk);
         END_INTERFACE
     } IXMLDOMSchemaCollectionVtbl;
-    interface IXMLDOMSchemaCollection
+    interface __uuid("373984c8-b845-449b-91e7-45ac83036ade") IXMLDOMSchemaCollection
+
     {
         CONST_VTBL struct IXMLDOMSchemaCollectionVtbl *lpVtbl;
     };
@@ -2043,7 +2060,8 @@ EXTERN_C const IID IID_IXMLDOMNodeList;
              IUnknown **ppUnk);
         END_INTERFACE
     } IXMLDOMNodeListVtbl;
-    interface IXMLDOMNodeList
+    interface __uuid("2933BF82-7B36-11d2-B20E-00C04F983E60") IXMLDOMNodeList
+
     {
         CONST_VTBL struct IXMLDOMNodeListVtbl *lpVtbl;
     };
@@ -2162,7 +2180,8 @@ EXTERN_C const IID IID_IXMLDOMSelection;
              VARIANT value);
         END_INTERFACE
     } IXMLDOMSelectionVtbl;
-    interface IXMLDOMSelection
+    interface __uuid("AA634FC7-5888-44a7-A257-3A47150D3A0E") IXMLDOMSelection
+
     {
         CONST_VTBL struct IXMLDOMSelectionVtbl *lpVtbl;
     };
@@ -2290,7 +2309,8 @@ EXTERN_C const IID IID_IXMLDOMNamedNodeMap;
              IUnknown **ppUnk);
         END_INTERFACE
     } IXMLDOMNamedNodeMapVtbl;
-    interface IXMLDOMNamedNodeMap
+    interface __uuid("2933BF83-7B36-11d2-B20E-00C04F983E60") IXMLDOMNamedNodeMap
+
     {
         CONST_VTBL struct IXMLDOMNamedNodeMapVtbl *lpVtbl;
     };
@@ -2488,7 +2508,8 @@ EXTERN_C const IID IID_IXMLDOMDocumentFragment;
              VARIANT outputObject);
         END_INTERFACE
     } IXMLDOMDocumentFragmentVtbl;
-    interface IXMLDOMDocumentFragment
+    interface __uuid("3efaa413-272f-11d2-836f-0000f87a7782") IXMLDOMDocumentFragment
+
     {
         CONST_VTBL struct IXMLDOMDocumentFragmentVtbl *lpVtbl;
     };
@@ -2768,7 +2789,8 @@ EXTERN_C const IID IID_IXMLDOMCharacterData;
              BSTR data);
         END_INTERFACE
     } IXMLDOMCharacterDataVtbl;
-    interface IXMLDOMCharacterData
+    interface __uuid("2933BF84-7B36-11d2-B20E-00C04F983E60") IXMLDOMCharacterData
+
     {
         CONST_VTBL struct IXMLDOMCharacterDataVtbl *lpVtbl;
     };
@@ -3043,7 +3065,8 @@ EXTERN_C const IID IID_IXMLDOMAttribute;
              VARIANT attributeValue);
         END_INTERFACE
     } IXMLDOMAttributeVtbl;
-    interface IXMLDOMAttribute
+    interface __uuid("2933BF85-7B36-11d2-B20E-00C04F983E60") IXMLDOMAttribute
+
     {
         CONST_VTBL struct IXMLDOMAttributeVtbl *lpVtbl;
     };
@@ -3331,7 +3354,8 @@ EXTERN_C const IID IID_IXMLDOMElement;
             IXMLDOMElement * This);
         END_INTERFACE
     } IXMLDOMElementVtbl;
-    interface IXMLDOMElement
+    interface __uuid("2933BF86-7B36-11d2-B20E-00C04F983E60") IXMLDOMElement
+
     {
         CONST_VTBL struct IXMLDOMElementVtbl *lpVtbl;
     };
@@ -3633,7 +3657,8 @@ EXTERN_C const IID IID_IXMLDOMText;
              IXMLDOMText **rightHandTextNode);
         END_INTERFACE
     } IXMLDOMTextVtbl;
-    interface IXMLDOMText
+    interface __uuid("2933BF87-7B36-11d2-B20E-00C04F983E60") IXMLDOMText
+
     {
         CONST_VTBL struct IXMLDOMTextVtbl *lpVtbl;
     };
@@ -3931,7 +3956,8 @@ EXTERN_C const IID IID_IXMLDOMComment;
              BSTR data);
         END_INTERFACE
     } IXMLDOMCommentVtbl;
-    interface IXMLDOMComment
+    interface __uuid("2933BF88-7B36-11d2-B20E-00C04F983E60") IXMLDOMComment
+
     {
         CONST_VTBL struct IXMLDOMCommentVtbl *lpVtbl;
     };
@@ -4206,7 +4232,8 @@ EXTERN_C const IID IID_IXMLDOMProcessingInstruction;
              BSTR value);
         END_INTERFACE
     } IXMLDOMProcessingInstructionVtbl;
-    interface IXMLDOMProcessingInstruction
+    interface __uuid("2933BF89-7B36-11d2-B20E-00C04F983E60") IXMLDOMProcessingInstruction
+
     {
         CONST_VTBL struct IXMLDOMProcessingInstructionVtbl *lpVtbl;
     };
@@ -4496,7 +4523,8 @@ EXTERN_C const IID IID_IXMLDOMCDATASection;
              IXMLDOMText **rightHandTextNode);
         END_INTERFACE
     } IXMLDOMCDATASectionVtbl;
-    interface IXMLDOMCDATASection
+    interface __uuid("2933BF8A-7B36-11d2-B20E-00C04F983E60") IXMLDOMCDATASection
+
     {
         CONST_VTBL struct IXMLDOMCDATASectionVtbl *lpVtbl;
     };
@@ -4773,7 +4801,8 @@ EXTERN_C const IID IID_IXMLDOMDocumentType;
              IXMLDOMNamedNodeMap **notationMap);
         END_INTERFACE
     } IXMLDOMDocumentTypeVtbl;
-    interface IXMLDOMDocumentType
+    interface __uuid("2933BF8B-7B36-11d2-B20E-00C04F983E60") IXMLDOMDocumentType
+
     {
         CONST_VTBL struct IXMLDOMDocumentTypeVtbl *lpVtbl;
     };
@@ -5035,7 +5064,8 @@ EXTERN_C const IID IID_IXMLDOMNotation;
              VARIANT *systemID);
         END_INTERFACE
     } IXMLDOMNotationVtbl;
-    interface IXMLDOMNotation
+    interface __uuid("2933BF8C-7B36-11d2-B20E-00C04F983E60") IXMLDOMNotation
+
     {
         CONST_VTBL struct IXMLDOMNotationVtbl *lpVtbl;
     };
@@ -5298,7 +5328,8 @@ EXTERN_C const IID IID_IXMLDOMEntity;
              BSTR *name);
         END_INTERFACE
     } IXMLDOMEntityVtbl;
-    interface IXMLDOMEntity
+    interface __uuid("2933BF8D-7B36-11d2-B20E-00C04F983E60") IXMLDOMEntity
+
     {
         CONST_VTBL struct IXMLDOMEntityVtbl *lpVtbl;
     };
@@ -5554,7 +5585,8 @@ EXTERN_C const IID IID_IXMLDOMEntityReference;
              VARIANT outputObject);
         END_INTERFACE
     } IXMLDOMEntityReferenceVtbl;
-    interface IXMLDOMEntityReference
+    interface __uuid("2933BF8E-7B36-11d2-B20E-00C04F983E60") IXMLDOMEntityReference
+
     {
         CONST_VTBL struct IXMLDOMEntityReferenceVtbl *lpVtbl;
     };
@@ -5690,7 +5722,8 @@ EXTERN_C const IID IID_IXMLDOMImplementation;
              VARIANT_BOOL *hasFeature);
         END_INTERFACE
     } IXMLDOMImplementationVtbl;
-    interface IXMLDOMImplementation
+    interface __uuid("2933BF8F-7B36-11d2-B20E-00C04F983E60") IXMLDOMImplementation
+
     {
         CONST_VTBL struct IXMLDOMImplementationVtbl *lpVtbl;
     };
@@ -5913,7 +5946,8 @@ EXTERN_C const IID IID_IXTLRuntime;
              BSTR *pbstrFormattedString);
         END_INTERFACE
     } IXTLRuntimeVtbl;
-    interface IXTLRuntime
+    interface __uuid("3efaa425-272f-11d2-836f-0000f87a7782") IXTLRuntime
+
     {
         CONST_VTBL struct IXTLRuntimeVtbl *lpVtbl;
     };
@@ -6083,7 +6117,8 @@ EXTERN_C const IID IID_IXMLDOMParseError;
              long *filePosition);
         END_INTERFACE
     } IXMLDOMParseErrorVtbl;
-    interface IXMLDOMParseError
+    interface __uuid("3efaa426-272f-11d2-836f-0000f87a7782") IXMLDOMParseError
+
     {
         CONST_VTBL struct IXMLDOMParseErrorVtbl *lpVtbl;
     };
@@ -6190,7 +6225,8 @@ EXTERN_C const IID IID_IXMLDOMParseError2;
              long *count);
         END_INTERFACE
     } IXMLDOMParseError2Vtbl;
-    interface IXMLDOMParseError2
+    interface __uuid("3efaa428-272f-11d2-836f-0000f87a7782") IXMLDOMParseError2
+
     {
         CONST_VTBL struct IXMLDOMParseError2Vtbl *lpVtbl;
     };
@@ -6286,7 +6322,8 @@ EXTERN_C const IID IID_IXMLDOMParseErrorCollection;
              IUnknown **ppunk);
         END_INTERFACE
     } IXMLDOMParseErrorCollectionVtbl;
-    interface IXMLDOMParseErrorCollection
+    interface __uuid("3efaa429-272f-11d2-836f-0000f87a7782") IXMLDOMParseErrorCollection
+
     {
         CONST_VTBL struct IXMLDOMParseErrorCollectionVtbl *lpVtbl;
     };
@@ -6400,7 +6437,8 @@ EXTERN_C const IID IID_IXSLProcessor;
              IXMLDOMNode **stylesheet);
         END_INTERFACE
     } IXSLProcessorVtbl;
-    interface IXSLProcessor
+    interface __uuid("2933BF92-7B36-11d2-B20E-00C04F983E60") IXSLProcessor
+
     {
         CONST_VTBL struct IXSLProcessorVtbl *lpVtbl;
     };
@@ -6496,7 +6534,8 @@ EXTERN_C const IID IID_IXSLTemplate;
              IXSLProcessor **ppProcessor);
         END_INTERFACE
     } IXSLTemplateVtbl;
-    interface IXSLTemplate
+    interface __uuid("2933BF93-7B36-11d2-B20E-00C04F983E60") IXSLTemplate
+
     {
         CONST_VTBL struct IXSLTemplateVtbl *lpVtbl;
     };
@@ -6608,7 +6647,8 @@ EXTERN_C const IID IID_IXMLHTTPRequest;
              IDispatch *pReadyStateSink);
         END_INTERFACE
     } IXMLHTTPRequestVtbl;
-    interface IXMLHTTPRequest
+    interface __uuid("ED8C108D-4349-11D2-91A4-00C04F7969E8") IXMLHTTPRequest
+
     {
         CONST_VTBL struct IXMLHTTPRequestVtbl *lpVtbl;
     };
@@ -6789,7 +6829,8 @@ EXTERN_C const IID IID_IServerXMLHTTPRequest;
              VARIANT value);
         END_INTERFACE
     } IServerXMLHTTPRequestVtbl;
-    interface IServerXMLHTTPRequest
+    interface __uuid("2e9196bf-13ba-4dd4-91ca-6c571f281495") IServerXMLHTTPRequest
+
     {
         CONST_VTBL struct IServerXMLHTTPRequestVtbl *lpVtbl;
     };
@@ -6958,7 +6999,8 @@ EXTERN_C const IID IID_IServerXMLHTTPRequest2;
              BSTR bstrPassword);
         END_INTERFACE
     } IServerXMLHTTPRequest2Vtbl;
-    interface IServerXMLHTTPRequest2
+    interface __uuid("2e01311b-c322-4b0a-bd77-b90cfdc8dce7") IServerXMLHTTPRequest2
+
     {
         CONST_VTBL struct IServerXMLHTTPRequest2Vtbl *lpVtbl;
     };
@@ -7090,7 +7132,8 @@ EXTERN_C const IID IID_ISAXXMLReader;
              const wchar_t *pwchUrl);
         END_INTERFACE
     } ISAXXMLReaderVtbl;
-    interface ISAXXMLReader
+    interface __uuid("a4f96ed0-f829-476e-81c0-cdc7bd2a0802") ISAXXMLReader
+
     {
         CONST_VTBL struct ISAXXMLReaderVtbl *lpVtbl;
     };
@@ -7216,7 +7259,8 @@ EXTERN_C const IID IID_ISAXXMLFilter;
              ISAXXMLReader *pReader);
         END_INTERFACE
     } ISAXXMLFilterVtbl;
-    interface ISAXXMLFilter
+    interface __uuid("70409222-ca09-4475-acb8-40312fe8d145") ISAXXMLFilter
+
     {
         CONST_VTBL struct ISAXXMLFilterVtbl *lpVtbl;
     };
@@ -7294,7 +7338,8 @@ EXTERN_C const IID IID_ISAXLocator;
              const wchar_t **ppwchSystemId);
         END_INTERFACE
     } ISAXLocatorVtbl;
-    interface ISAXLocator
+    interface __uuid("9b7e472a-0de4-4640-bff3-84d38a051c31") ISAXLocator
+
     {
         CONST_VTBL struct ISAXLocatorVtbl *lpVtbl;
     };
@@ -7333,7 +7378,8 @@ EXTERN_C const IID IID_ISAXEntityResolver;
              VARIANT *pvarInput);
         END_INTERFACE
     } ISAXEntityResolverVtbl;
-    interface ISAXEntityResolver
+    interface __uuid("99bca7bd-e8c4-4d5f-a0cf-6d907901ff07") ISAXEntityResolver
+
     {
         CONST_VTBL struct ISAXEntityResolverVtbl *lpVtbl;
     };
@@ -7413,7 +7459,8 @@ EXTERN_C const IID IID_ISAXContentHandler;
              int cchName);
         END_INTERFACE
     } ISAXContentHandlerVtbl;
-    interface ISAXContentHandler
+    interface __uuid("1545cdfa-9e4e-4497-a8a4-2bf7d0112c44") ISAXContentHandler
+
     {
         CONST_VTBL struct ISAXContentHandlerVtbl *lpVtbl;
     };
@@ -7479,7 +7526,8 @@ EXTERN_C const IID IID_ISAXDTDHandler;
              int cchNotationName);
         END_INTERFACE
     } ISAXDTDHandlerVtbl;
-    interface ISAXDTDHandler
+    interface __uuid("e15c1baf-afb3-4d60-8c36-19a8c45defed") ISAXDTDHandler
+
     {
         CONST_VTBL struct ISAXDTDHandlerVtbl *lpVtbl;
     };
@@ -7524,7 +7572,8 @@ EXTERN_C const IID IID_ISAXErrorHandler;
              HRESULT hrErrorCode);
         END_INTERFACE
     } ISAXErrorHandlerVtbl;
-    interface ISAXErrorHandler
+    interface __uuid("a60511c4-ccf5-479e-98a3-dc8dc545b7d0") ISAXErrorHandler
+
     {
         CONST_VTBL struct ISAXErrorHandlerVtbl *lpVtbl;
     };
@@ -7582,7 +7631,8 @@ EXTERN_C const IID IID_ISAXLexicalHandler;
              int cchChars);
         END_INTERFACE
     } ISAXLexicalHandlerVtbl;
-    interface ISAXLexicalHandler
+    interface __uuid("7f85d5f5-47a8-4497-bda5-84ba04819ea6") ISAXLexicalHandler
+
     {
         CONST_VTBL struct ISAXLexicalHandlerVtbl *lpVtbl;
     };
@@ -7654,7 +7704,8 @@ EXTERN_C const IID IID_ISAXDeclHandler;
              int cchSystemId);
         END_INTERFACE
     } ISAXDeclHandlerVtbl;
-    interface ISAXDeclHandler
+    interface __uuid("862629ac-771a-47b2-8337-4e6843c1be90") ISAXDeclHandler
+
     {
         CONST_VTBL struct ISAXDeclHandlerVtbl *lpVtbl;
     };
@@ -7765,7 +7816,8 @@ EXTERN_C const IID IID_ISAXAttributes;
              int *pcchValue);
         END_INTERFACE
     } ISAXAttributesVtbl;
-    interface ISAXAttributes
+    interface __uuid("f078abe1-45d2-4832-91ea-4466ce2f25c9") ISAXAttributes
+
     {
         CONST_VTBL struct ISAXAttributesVtbl *lpVtbl;
     };
@@ -7900,7 +7952,8 @@ EXTERN_C const IID IID_IVBSAXXMLReader;
              BSTR strURL);
         END_INTERFACE
     } IVBSAXXMLReaderVtbl;
-    interface IVBSAXXMLReader
+    interface __uuid("8c033caa-6cd6-4f73-b728-4531af74945f") IVBSAXXMLReader
+
     {
         CONST_VTBL struct IVBSAXXMLReaderVtbl *lpVtbl;
     };
@@ -8001,7 +8054,8 @@ EXTERN_C const IID IID_IVBSAXXMLFilter;
              IVBSAXXMLReader *oReader);
         END_INTERFACE
     } IVBSAXXMLFilterVtbl;
-    interface IVBSAXXMLFilter
+    interface __uuid("1299eb1b-5b88-433e-82de-82ca75ad4e04") IVBSAXXMLFilter
+
     {
         CONST_VTBL struct IVBSAXXMLFilterVtbl *lpVtbl;
     };
@@ -8076,7 +8130,8 @@ EXTERN_C const IID IID_IVBSAXLocator;
              BSTR *strSystemId);
         END_INTERFACE
     } IVBSAXLocatorVtbl;
-    interface IVBSAXLocator
+    interface __uuid("796e7ac5-5aa2-4eff-acad-3faaf01a3288") IVBSAXLocator
+
     {
         CONST_VTBL struct IVBSAXLocatorVtbl *lpVtbl;
     };
@@ -8148,7 +8203,8 @@ EXTERN_C const IID IID_IVBSAXEntityResolver;
              VARIANT *varInput);
         END_INTERFACE
     } IVBSAXEntityResolverVtbl;
-    interface IVBSAXEntityResolver
+    interface __uuid("0c05d096-f45b-4aca-ad1a-aa0bc25518dc") IVBSAXEntityResolver
+
     {
         CONST_VTBL struct IVBSAXEntityResolverVtbl *lpVtbl;
     };
@@ -8247,7 +8303,8 @@ EXTERN_C const IID IID_IVBSAXContentHandler;
              BSTR *strName);
         END_INTERFACE
     } IVBSAXContentHandlerVtbl;
-    interface IVBSAXContentHandler
+    interface __uuid("2ed7290a-4dd5-4b46-bb26-4e4155e77faa") IVBSAXContentHandler
+
     {
         CONST_VTBL struct IVBSAXContentHandlerVtbl *lpVtbl;
     };
@@ -8339,7 +8396,8 @@ EXTERN_C const IID IID_IVBSAXDTDHandler;
              BSTR *strNotationName);
         END_INTERFACE
     } IVBSAXDTDHandlerVtbl;
-    interface IVBSAXDTDHandler
+    interface __uuid("24fb3297-302d-4620-ba39-3a732d850558") IVBSAXDTDHandler
+
     {
         CONST_VTBL struct IVBSAXDTDHandlerVtbl *lpVtbl;
     };
@@ -8417,7 +8475,8 @@ EXTERN_C const IID IID_IVBSAXErrorHandler;
              long nErrorCode);
         END_INTERFACE
     } IVBSAXErrorHandlerVtbl;
-    interface IVBSAXErrorHandler
+    interface __uuid("d963d3fe-173c-4862-9095-b92f66995f52") IVBSAXErrorHandler
+
     {
         CONST_VTBL struct IVBSAXErrorHandlerVtbl *lpVtbl;
     };
@@ -8502,7 +8561,8 @@ EXTERN_C const IID IID_IVBSAXLexicalHandler;
              BSTR *strChars);
         END_INTERFACE
     } IVBSAXLexicalHandlerVtbl;
-    interface IVBSAXLexicalHandler
+    interface __uuid("032aac35-8c0e-4d9d-979f-e3b702935576") IVBSAXLexicalHandler
+
     {
         CONST_VTBL struct IVBSAXLexicalHandlerVtbl *lpVtbl;
     };
@@ -8595,7 +8655,8 @@ EXTERN_C const IID IID_IVBSAXDeclHandler;
              BSTR *strSystemId);
         END_INTERFACE
     } IVBSAXDeclHandlerVtbl;
-    interface IVBSAXDeclHandler
+    interface __uuid("e8917260-7579-4be1-b5dd-7afbfa6f077b") IVBSAXDeclHandler
+
     {
         CONST_VTBL struct IVBSAXDeclHandlerVtbl *lpVtbl;
     };
@@ -8712,7 +8773,8 @@ EXTERN_C const IID IID_IVBSAXAttributes;
              BSTR *strValue);
         END_INTERFACE
     } IVBSAXAttributesVtbl;
-    interface IVBSAXAttributes
+    interface __uuid("10dc0586-132b-4cac-8bb3-db00ac8b7ee0") IVBSAXAttributes
+
     {
         CONST_VTBL struct IVBSAXAttributesVtbl *lpVtbl;
     };
@@ -8845,7 +8907,8 @@ EXTERN_C const IID IID_IMXWriter;
             IMXWriter * This);
         END_INTERFACE
     } IMXWriterVtbl;
-    interface IMXWriter
+    interface __uuid("4d7ff4ba-1565-4ea8-94e1-6e724a46f98d") IMXWriter
+
     {
         CONST_VTBL struct IMXWriterVtbl *lpVtbl;
     };
@@ -8985,7 +9048,8 @@ EXTERN_C const IID IID_IMXAttributes;
              BSTR strValue);
         END_INTERFACE
     } IMXAttributesVtbl;
-    interface IMXAttributes
+    interface __uuid("f10d27cc-3ec0-415c-8ed8-77ab1c5e7262") IMXAttributes
+
     {
         CONST_VTBL struct IMXAttributesVtbl *lpVtbl;
     };
@@ -9072,7 +9136,8 @@ EXTERN_C const IID IID_IMXReaderControl;
             IMXReaderControl * This);
         END_INTERFACE
     } IMXReaderControlVtbl;
-    interface IMXReaderControl
+    interface __uuid("808f4e35-8d5a-4fbe-8466-33a41279ed30") IMXReaderControl
+
     {
         CONST_VTBL struct IMXReaderControlVtbl *lpVtbl;
     };
@@ -9140,7 +9205,8 @@ EXTERN_C const IID IID_IMXSchemaDeclHandler;
              ISchemaElement *oSchemaElement);
         END_INTERFACE
     } IMXSchemaDeclHandlerVtbl;
-    interface IMXSchemaDeclHandler
+    interface __uuid("fa4bb38c-faf9-4cca-9302-d1dd0fe520db") IMXSchemaDeclHandler
+
     {
         CONST_VTBL struct IMXSchemaDeclHandlerVtbl *lpVtbl;
     };
@@ -9211,7 +9277,8 @@ EXTERN_C const IID IID_IMXNamespacePrefixes;
              IUnknown **ppUnk);
         END_INTERFACE
     } IMXNamespacePrefixesVtbl;
-    interface IMXNamespacePrefixes
+    interface __uuid("c90352f4-643c-4fbc-bb23-e996eb2d51fd") IMXNamespacePrefixes
+
     {
         CONST_VTBL struct IMXNamespacePrefixesVtbl *lpVtbl;
     };
@@ -9312,7 +9379,8 @@ EXTERN_C const IID IID_IVBMXNamespaceManager;
              VARIANT *uri);
         END_INTERFACE
     } IVBMXNamespaceManagerVtbl;
-    interface IVBMXNamespaceManager
+    interface __uuid("c90352f5-643c-4fbc-bb23-e996eb2d51fd") IVBMXNamespaceManager
+
     {
         CONST_VTBL struct IVBMXNamespaceManagerVtbl *lpVtbl;
     };
@@ -9405,7 +9473,8 @@ EXTERN_C const IID IID_IMXNamespaceManager;
              int *pcchUri);
         END_INTERFACE
     } IMXNamespaceManagerVtbl;
-    interface IMXNamespaceManager
+    interface __uuid("c90352f6-643c-4fbc-bb23-e996eb2d51fd") IMXNamespaceManager
+
     {
         CONST_VTBL struct IMXNamespaceManagerVtbl *lpVtbl;
     };
@@ -9516,7 +9585,8 @@ EXTERN_C const IID IID_IMXXMLFilter;
              IUnknown *oHandler);
         END_INTERFACE
     } IMXXMLFilterVtbl;
-    interface IMXXMLFilter
+    interface __uuid("c90352f7-643c-4fbc-bb23-e996eb2d51fd") IMXXMLFilter
+
     {
         CONST_VTBL struct IMXXMLFilterVtbl *lpVtbl;
     };
@@ -9770,7 +9840,8 @@ EXTERN_C const IID IID_IXMLDOMSchemaCollection2;
              ISchemaItem **item);
         END_INTERFACE
     } IXMLDOMSchemaCollection2Vtbl;
-    interface IXMLDOMSchemaCollection2
+    interface __uuid("50ea08b0-dd1b-4664-9a50-c2f40f4bd79a") IXMLDOMSchemaCollection2
+
     {
         CONST_VTBL struct IXMLDOMSchemaCollection2Vtbl *lpVtbl;
     };
@@ -9863,7 +9934,8 @@ EXTERN_C const IID IID_ISchemaStringCollection;
              IUnknown **ppunk);
         END_INTERFACE
     } ISchemaStringCollectionVtbl;
-    interface ISchemaStringCollection
+    interface __uuid("50ea08b1-dd1b-4664-9a50-c2f40f4bd79a") ISchemaStringCollection
+
     {
         CONST_VTBL struct ISchemaStringCollectionVtbl *lpVtbl;
     };
@@ -9947,7 +10019,8 @@ EXTERN_C const IID IID_ISchemaItemCollection;
              IUnknown **ppunk);
         END_INTERFACE
     } ISchemaItemCollectionVtbl;
-    interface ISchemaItemCollection
+    interface __uuid("50ea08b2-dd1b-4664-9a50-c2f40f4bd79a") ISchemaItemCollection
+
     {
         CONST_VTBL struct ISchemaItemCollectionVtbl *lpVtbl;
     };
@@ -10038,7 +10111,8 @@ EXTERN_C const IID IID_ISchemaItem;
              VARIANT_BOOL *isWritten);
         END_INTERFACE
     } ISchemaItemVtbl;
-    interface ISchemaItem
+    interface __uuid("50ea08b3-dd1b-4664-9a50-c2f40f4bd79a") ISchemaItem
+
     {
         CONST_VTBL struct ISchemaItemVtbl *lpVtbl;
     };
@@ -10160,7 +10234,8 @@ EXTERN_C const IID IID_ISchema;
              ISchemaStringCollection **schemaLocations);
         END_INTERFACE
     } ISchemaVtbl;
-    interface ISchema
+    interface __uuid("50ea08b4-dd1b-4664-9a50-c2f40f4bd79a") ISchema
+
     {
         CONST_VTBL struct ISchemaVtbl *lpVtbl;
     };
@@ -10279,7 +10354,8 @@ EXTERN_C const IID IID_ISchemaParticle;
              VARIANT *maxOccurs);
         END_INTERFACE
     } ISchemaParticleVtbl;
-    interface ISchemaParticle
+    interface __uuid("50ea08b5-dd1b-4664-9a50-c2f40f4bd79a") ISchemaParticle
+
     {
         CONST_VTBL struct ISchemaParticleVtbl *lpVtbl;
     };
@@ -10396,7 +10472,8 @@ EXTERN_C const IID IID_ISchemaAttribute;
              VARIANT_BOOL *reference);
         END_INTERFACE
     } ISchemaAttributeVtbl;
-    interface ISchemaAttribute
+    interface __uuid("50ea08b6-dd1b-4664-9a50-c2f40f4bd79a") ISchemaAttribute
+
     {
         CONST_VTBL struct ISchemaAttributeVtbl *lpVtbl;
     };
@@ -10542,7 +10619,8 @@ EXTERN_C const IID IID_ISchemaElement;
              VARIANT_BOOL *reference);
         END_INTERFACE
     } ISchemaElementVtbl;
-    interface ISchemaElement
+    interface __uuid("50ea08b7-dd1b-4664-9a50-c2f40f4bd79a") ISchemaElement
+
     {
         CONST_VTBL struct ISchemaElementVtbl *lpVtbl;
     };
@@ -10664,9 +10742,9 @@ EXTERN_C const IID IID_ISchemaType;
          HRESULT ( STDMETHODCALLTYPE *get_baseTypes )( 
             ISchemaType * This,
              ISchemaItemCollection **baseTypes);
-         HRESULT ( STDMETHODCALLTYPE *get_final )( 
+         HRESULT ( STDMETHODCALLTYPE *get_final_ )( 
             ISchemaType * This,
-             SCHEMADERIVATIONMETHOD *finall);
+             SCHEMADERIVATIONMETHOD *final_);
          HRESULT ( STDMETHODCALLTYPE *get_variety )( 
             ISchemaType * This,
              SCHEMATYPEVARIETY *variety);
@@ -10715,7 +10793,8 @@ EXTERN_C const IID IID_ISchemaType;
              ISchemaStringCollection **patterns);
         END_INTERFACE
     } ISchemaTypeVtbl;
-    interface ISchemaType
+    interface __uuid("50ea08b8-dd1b-4664-9a50-c2f40f4bd79a") ISchemaType
+
     {
         CONST_VTBL struct ISchemaTypeVtbl *lpVtbl;
     };
@@ -10750,8 +10829,8 @@ EXTERN_C const IID IID_ISchemaType;
     ( (This)->lpVtbl -> writeAnnotation(This,annotationSink,isWritten) ) 
 #define ISchemaType_get_baseTypes(This,baseTypes)	\
     ( (This)->lpVtbl -> get_baseTypes(This,baseTypes) ) 
-#define ISchemaType_get_final(This,final)	\
-    ( (This)->lpVtbl -> get_final(This,final) ) 
+#define ISchemaType_get_final_(This,final_)	\
+    ( (This)->lpVtbl -> get_final_(This,final_) ) 
 #define ISchemaType_get_variety(This,variety)	\
     ( (This)->lpVtbl -> get_variety(This,variety) ) 
 #define ISchemaType_get_derivedBy(This,derivedBy)	\
@@ -10845,9 +10924,9 @@ EXTERN_C const IID IID_ISchemaComplexType;
          HRESULT ( STDMETHODCALLTYPE *get_baseTypes )( 
             ISchemaComplexType * This,
              ISchemaItemCollection **baseTypes);
-         HRESULT ( STDMETHODCALLTYPE *get_final )( 
+         HRESULT ( STDMETHODCALLTYPE *get_final_ )( 
             ISchemaComplexType * This,
-             SCHEMADERIVATIONMETHOD *finall);
+             SCHEMADERIVATIONMETHOD *final_);
          HRESULT ( STDMETHODCALLTYPE *get_variety )( 
             ISchemaComplexType * This,
              SCHEMATYPEVARIETY *variety);
@@ -10914,7 +10993,8 @@ EXTERN_C const IID IID_ISchemaComplexType;
              SCHEMADERIVATIONMETHOD *prohibited);
         END_INTERFACE
     } ISchemaComplexTypeVtbl;
-    interface ISchemaComplexType
+    interface __uuid("50ea08b9-dd1b-4664-9a50-c2f40f4bd79a") ISchemaComplexType
+
     {
         CONST_VTBL struct ISchemaComplexTypeVtbl *lpVtbl;
     };
@@ -10949,8 +11029,8 @@ EXTERN_C const IID IID_ISchemaComplexType;
     ( (This)->lpVtbl -> writeAnnotation(This,annotationSink,isWritten) ) 
 #define ISchemaComplexType_get_baseTypes(This,baseTypes)	\
     ( (This)->lpVtbl -> get_baseTypes(This,baseTypes) ) 
-#define ISchemaComplexType_get_final(This,final)	\
-    ( (This)->lpVtbl -> get_final(This,final) ) 
+#define ISchemaComplexType_get_final_(This,final_)	\
+    ( (This)->lpVtbl -> get_final_(This,final_) ) 
 #define ISchemaComplexType_get_variety(This,variety)	\
     ( (This)->lpVtbl -> get_variety(This,variety) ) 
 #define ISchemaComplexType_get_derivedBy(This,derivedBy)	\
@@ -11061,7 +11141,8 @@ EXTERN_C const IID IID_ISchemaAttributeGroup;
              ISchemaItemCollection **attributes);
         END_INTERFACE
     } ISchemaAttributeGroupVtbl;
-    interface ISchemaAttributeGroup
+    interface __uuid("50ea08ba-dd1b-4664-9a50-c2f40f4bd79a") ISchemaAttributeGroup
+
     {
         CONST_VTBL struct ISchemaAttributeGroupVtbl *lpVtbl;
     };
@@ -11169,7 +11250,8 @@ EXTERN_C const IID IID_ISchemaModelGroup;
              ISchemaItemCollection **particles);
         END_INTERFACE
     } ISchemaModelGroupVtbl;
-    interface ISchemaModelGroup
+    interface __uuid("50ea08bb-dd1b-4664-9a50-c2f40f4bd79a") ISchemaModelGroup
+
     {
         CONST_VTBL struct ISchemaModelGroupVtbl *lpVtbl;
     };
@@ -11282,7 +11364,8 @@ EXTERN_C const IID IID_ISchemaAny;
              SCHEMAPROCESSCONTENTS *processContents);
         END_INTERFACE
     } ISchemaAnyVtbl;
-    interface ISchemaAny
+    interface __uuid("50ea08bc-dd1b-4664-9a50-c2f40f4bd79a") ISchemaAny
+
     {
         CONST_VTBL struct ISchemaAnyVtbl *lpVtbl;
     };
@@ -11394,7 +11477,8 @@ EXTERN_C const IID IID_ISchemaIdentityConstraint;
              ISchemaIdentityConstraint **key);
         END_INTERFACE
     } ISchemaIdentityConstraintVtbl;
-    interface ISchemaIdentityConstraint
+    interface __uuid("50ea08bd-dd1b-4664-9a50-c2f40f4bd79a") ISchemaIdentityConstraint
+
     {
         CONST_VTBL struct ISchemaIdentityConstraintVtbl *lpVtbl;
     };
@@ -11501,7 +11585,8 @@ EXTERN_C const IID IID_ISchemaNotation;
              BSTR *uri);
         END_INTERFACE
     } ISchemaNotationVtbl;
-    interface ISchemaNotation
+    interface __uuid("50ea08be-dd1b-4664-9a50-c2f40f4bd79a") ISchemaNotation
+
     {
         CONST_VTBL struct ISchemaNotationVtbl *lpVtbl;
     };
@@ -11607,7 +11692,8 @@ EXTERN_C const IID DIID_XMLDOMDocumentEvents;
              UINT *puArgErr);
         END_INTERFACE
     } XMLDOMDocumentEventsVtbl;
-    interface XMLDOMDocumentEvents
+    interface __uuid("3efaa427-272f-11d2-836f-0000f87a7782") XMLDOMDocumentEvents
+
     {
         CONST_VTBL struct XMLDOMDocumentEventsVtbl *lpVtbl;
     };
@@ -11790,7 +11876,8 @@ EXTERN_C const IID IID_IXMLHTTPRequest2Callback;
              HRESULT hrError);
         END_INTERFACE
     } IXMLHTTPRequest2CallbackVtbl;
-    interface IXMLHTTPRequest2Callback
+    interface __uuid("A44A9299-E321-40DE-8866-341B41669162") IXMLHTTPRequest2Callback
+
     {
         CONST_VTBL struct IXMLHTTPRequest2CallbackVtbl *lpVtbl;
     };
@@ -11870,7 +11957,8 @@ EXTERN_C const IID IID_IXMLHTTPRequest2;
              WCHAR **ppwszValue);
         END_INTERFACE
     } IXMLHTTPRequest2Vtbl;
-    interface IXMLHTTPRequest2
+    interface __uuid("E5D37DC0-552A-4D52-9CC0-A14D546FBD04") IXMLHTTPRequest2
+
     {
         CONST_VTBL struct IXMLHTTPRequest2Vtbl *lpVtbl;
     };
@@ -11953,7 +12041,8 @@ EXTERN_C const IID IID_IXMLHTTPRequest3Callback;
              const WCHAR **rgpwszIssuerList);
         END_INTERFACE
     } IXMLHTTPRequest3CallbackVtbl;
-    interface IXMLHTTPRequest3Callback
+    interface __uuid("b9e57830-8c6c-4a6f-9c13-47772bb047bb") IXMLHTTPRequest3Callback
+
     {
         CONST_VTBL struct IXMLHTTPRequest3CallbackVtbl *lpVtbl;
     };
@@ -12042,7 +12131,8 @@ EXTERN_C const IID IID_IXMLHTTPRequest3;
              const WCHAR *pwszPin);
         END_INTERFACE
     } IXMLHTTPRequest3Vtbl;
-    interface IXMLHTTPRequest3
+    interface __uuid("a1c9feee-0617-4f23-9d58-8961ea43567c") IXMLHTTPRequest3
+
     {
         CONST_VTBL struct IXMLHTTPRequest3Vtbl *lpVtbl;
     };
@@ -12076,6 +12166,9 @@ EXTERN_C const IID IID_IXMLHTTPRequest3;
 #define IXMLHTTPRequest3_SetClientCertificate(This,cbClientCertificateHash,pbClientCertificateHash,pwszPin)	\
     ( (This)->lpVtbl -> SetClientCertificate(This,cbClientCertificateHash,pbClientCertificateHash,pwszPin) ) 
 #endif 
+#ifdef __USE_MSXML6_NAMESPACE__
+}
+#endif
 unsigned long             __RPC_USER  BSTR_UserSize(     unsigned long *, unsigned long            , BSTR * ); 
 unsigned char * __RPC_USER  BSTR_UserMarshal(  unsigned long *, unsigned char *, BSTR * ); 
 unsigned char * __RPC_USER  BSTR_UserUnmarshal(unsigned long *, unsigned char *, BSTR * ); 
@@ -12093,6 +12186,5 @@ unsigned char * __RPC_USER  VARIANT_UserMarshal64(  unsigned long *, unsigned ch
 unsigned char * __RPC_USER  VARIANT_UserUnmarshal64(unsigned long *, unsigned char *, VARIANT * ); 
 void                      __RPC_USER  VARIANT_UserFree64(     unsigned long *, VARIANT * ); 
 #ifdef __cplusplus
-}
 #endif
 #endif

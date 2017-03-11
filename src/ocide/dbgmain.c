@@ -439,7 +439,7 @@ static int HandleException(DEBUG_EVENT *info, char *cmd)
         uState = Running;
     PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
     ProcessToTop(info->dwProcessId);
-    return DBG_CONTINUE;
+    return DBG_EXCEPTION_NOT_HANDLED;
 }
 
 
@@ -470,7 +470,7 @@ void GetRegs(DWORD procID)
             while (thread)
             {
                 thread->regs.ContextFlags = CONTEXT_FULL | CONTEXT_FLOATING_POINT |
-                    CONTEXT_DEBUG_REGISTERS;
+                    0;// CONTEXT_DEBUG_REGISTERS;
                 GetThreadContext(thread->hThread, &thread->regs);
                 thread = thread->next;
             }
@@ -1125,7 +1125,8 @@ void StartDebug(char *cmd)
 										GetRegs(0);
 										ClearBreakPoints(stDE.dwProcessId);
 										dwContinueStatus = HandleException(&stDE, cmd);
-										if (dwContinueStatus == DBG_TERMINATE_PROCESS)
+                                        SetBreakPoints(stDE.dwProcessId);
+                                        if (dwContinueStatus == DBG_TERMINATE_PROCESS)
 											goto doterm;
 										SetRegs(0);
 										break;

@@ -1494,8 +1494,8 @@ static LRESULT CALLBACK TabWndProc(HWND hwnd, UINT iMessage,
                         }
                     }
                 }
-                if (!ptr->oldCursor)
-                    ptr->oldCursor = old;
+//                if (!ptr->oldCursor)
+//                    ptr->oldCursor = old;
             }
             ShowCloseButton(hwnd, ptr, tab, TRUE, lParam);
             ShowWindowButton(hwnd, ptr, IsWindowButton(hwnd, ptr,lParam)? BDR_RAISED : 0);

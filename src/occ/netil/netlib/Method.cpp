@@ -272,11 +272,11 @@ namespace DotNetPELib
                     size_t ctor_index = 0;
                     AssemblyDef *assembly = peLib.MSCorLibAssembly();
                     void *result = nullptr;
-                    peLib.Find("System.ParamArrayAttribute.ctor", &result, assembly);
+                    peLib.Find("System.ParamArrayAttribute::.ctor", &result, assembly);
                     if (result)
                     {
                         static_cast<Method *>(result)->PEDump(peLib);
-                        ctor_index = static_cast<Method *>(result)->Signature()->PEIndex();
+                        ctor_index = static_cast<Method *>(result)->Signature()->PEIndexCallSite();
                     }
                     static Byte data[] = { 1, 0, 0, 0 };
                     size_t data_sig = peLib.PEOut().HashBlob(data, sizeof(data));

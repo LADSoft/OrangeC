@@ -49,7 +49,7 @@
 namespace DotNetPELib
 {
 
-    static const std::string DIR_SEP = "\\";
+    std::string DIR_SEP = "\\";
     TableEntryBase *TableEntryFactory::GetEntry(size_t index)
     {
         switch(index)
@@ -455,24 +455,6 @@ namespace DotNetPELib
             }
         }
         delete [] tableMem;
-        return 0;
-    }
-    int PEReader::UnmanagedLoad(std::string name)
-    {
-        DLLExportReader reader(name.c_str());
-        if (reader.Read())
-        {
-            std::string unmanagedDllName_ = reader.Name();
-            unsigned npos = unmanagedDllName_.find_last_of(DIR_SEP);
-            if (npos != std::string::npos && npos != unmanagedDllName_.size()-1)
-            {
-                unmanagedDllName_ = unmanagedDllName_.substr(npos+1);
-            }
-            for (DLLExportReader::iterator it = reader.begin(); it != reader.end(); ++it)
-            {
-                unmanagedRoutines_.insert((*it)->name);
-            }
-        }
         return 0;
     }
 }

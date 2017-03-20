@@ -1,80 +1,29 @@
 #include "compiler.h"
-#include "dllexportreader.h"
+#include "DotNetPELib.h"
 #include <string>
+
+using namespace DotNetPELib;
+
+extern "C" PELib *peLib;
+
 struct data
 {
     char *name;
     char *dllName;
 };
 #define HASHLEN 2048
-static HASHREC *_using_hash[HASHLEN];
 static LIST *_global_using_list;
 static char *DIR_SEP = "\\";
 extern "C" void _using_init()
 {
 }
-static int hashVal(char *name)
-{
-    unsigned hash = 0;
-    while (*name)
-    {
-        hash * 131;
-        hash = (hash << 7 ) + (hash << 1) + hash + (*name++);
-    }
-    return hash % HASHLEN;
-}
-static void hashInsert(struct data *names)
-{
-    int hash = hashVal(names->name);
-    HASHREC *hr  = _using_hash[hash];
-    while (hr)
-    {
-        if (!strcmp(hr->p->name, names->name))
-            return;
-        hr = hr->next;
-    }
-    
-    hr = (HASHREC *)calloc(1, sizeof(HASHREC));
-    hr->p = (HASHREC::_hrintern_ *)names;
-    hr->next = _using_hash[hash];
-    _using_hash[hash] = hr;
-}
 extern "C" BOOLEAN _using_(char *file)
 {
-    DLLExportReader reader(file);
-    if (reader.Read())
-    {
-        std::string rootName = reader.Name();
-        unsigned npos = rootName.find_last_of(DIR_SEP);
-        if (npos != std::string::npos && npos != rootName.size()-1)
-        {
-            rootName = rootName.substr(npos+1);
-        }
-        char *dllName = (char *)calloc(1, rootName.size() + 1);
-        strcpy(dllName, rootName.c_str());
-        for (DLLExportReader::iterator it = reader.begin(); it != reader.end(); ++it)
-        {
-            char *name = (char *)calloc(1, (*it)->name.size() + 1);
-            strcpy(name, (*it)->name.c_str());
-            data *p = (data *)calloc(1, sizeof(data));
-            p->name = name;
-            p->dllName = dllName;
-            hashInsert(p);
-        }
-    }
-    return TRUE;
+    return !peLib->LoadUnmanaged(file);
 }
-extern "C" char *_dll_name(char *name)
+extern "C" std::string _dll_name(char *name)
 {
-    int hash = hashVal(name);
-    HASHREC *hr  = _using_hash[hash];
-    while (hr)
-    {
-        if (!strcmp(hr->p->name, name))
-            return ((struct data *)hr->p)->dllName;
-        hr = hr->next;
-    }
-    return NULL;
+    return peLib->FindUnmanagedName(name);
 }
 // usually from the command line
 extern "C" void _add_global_using(char *str)
@@ -110,5 +59,5 @@ extern "C" BOOLEAN msil_managed(SYMBOL *sp)
 {
     if (sp->linkage2 == lk_msil_rtl)
         return TRUE;
-    return !_dll_name(sp->name);
+    return !_dll_name(sp->name).size();
 }

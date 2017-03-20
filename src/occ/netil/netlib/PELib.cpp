@@ -39,9 +39,11 @@
 */
 #include "DotNetPELib.h"
 #include "PEFile.h"
+#include "DLLExportReader.h"
 
 namespace DotNetPELib
 {
+    extern std::string DIR_SEP;
     PELib::PELib(std::string AssemblyName, int CoreFlags)
         : corFlags_(CoreFlags), peWriter_(nullptr)
     {
@@ -480,5 +482,27 @@ namespace DotNetPELib
         }
         return 0;
     }
-
+    int PELib::LoadUnmanaged(std::string name)
+    {
+        DLLExportReader reader(name.c_str());
+        if (reader.Read())
+        {
+            std::string unmanagedDllName = reader.Name();
+            unsigned npos = unmanagedDllName.find_last_of(DIR_SEP);
+            if (npos != std::string::npos && npos != unmanagedDllName.size()-1)
+            {
+                unmanagedDllName = unmanagedDllName.substr(npos+1);
+            }
+            for (DLLExportReader::iterator it = reader.begin(); it != reader.end(); ++it)
+            {
+                unmanagedRoutines_[(*it)->name] = unmanagedDllName;
+            }
+            return 0;
+        }
+        return 1;
+    }
+    std::string PELib::FindUnmanagedName(std::string name)
+    {
+        return unmanagedRoutines_[name];
+    }
 }

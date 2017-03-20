@@ -492,7 +492,6 @@ namespace DotNetPELib {
         virtual ~PEReader();
 
         int ManagedLoad(std::string fileName);
-        int UnmanagedLoad(std::string fileName);
         int ReadFromString(Byte *buf, size_t len, size_t offset);
         int ReadFromBlob(Byte *buf, size_t len, size_t offset);
         int ReadFromGUID(Byte *buf, size_t len, size_t offset);
@@ -522,8 +521,6 @@ namespace DotNetPELib {
         PEObject *objects_;
         DNLTable tables_[MaxTables];
         size_t sizes_[MaxTables + ExtraIndexes];
-        std::set<std::string> unmanagedRoutines_;
-        std::string unmanagedDllName_;
         std::string libPath_;
     };
     // this class is the base class for index rendering

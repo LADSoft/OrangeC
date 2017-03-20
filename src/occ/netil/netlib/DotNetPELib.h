@@ -1276,6 +1276,10 @@ namespace DotNetPELib
         void AddExternalAssembly(std::string assemblyName, Byte *publicKeyToken = nullptr);
         ///** Load data out of an assembly
         int LoadAssembly(std::string assemblyName);
+        ///* Load data out of an unmanaged DLL
+        int LoadUnmanaged(std::string dllName);
+        ///** find an unmanaged dll name
+        std::string PELib::FindUnmanagedName(std::string name);
         ///** Find an assembly
         AssemblyDef *FindAssembly(std::string assemblyName) const;
         ///** Find a Class
@@ -1319,6 +1323,7 @@ namespace DotNetPELib
         std::string assemblyName_;
         std::fstream *outputStream_;
         std::string fileName_;
+	std::map<std::string, std::string> unmanagedRoutines_;
         int corFlags_;
         PEWriter *peWriter_;
         std::vector<Namespace *> usingList_;

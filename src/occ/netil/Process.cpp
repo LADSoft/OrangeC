@@ -45,6 +45,7 @@
 #include "DotNetpeLib.h"
 
 #include <vector>
+#include <string>
 using namespace DotNetPELib;
 
 extern "C" {
@@ -79,6 +80,8 @@ extern "C" {
         "void __msil_rtl free(void *); "
         "void *__va_start__(); "
         "void *__va_arg__(void *, ...); ";
+    std::string _dll_name(char *name);
+
 }
 static SYMBOL retblocksym;
 
@@ -1262,7 +1265,6 @@ static void CreateExternalCSharpReferences()
 }
 extern "C" BOOLEAN oa_main_preprocess(void)
 {
-    _apply_global_using();
 
     PELib::CorFlags corFlags = PELib::bits32;
     if (namespaceAndClass[0])
@@ -1280,6 +1282,9 @@ extern "C" BOOLEAN oa_main_preprocess(void)
         *p = 0;
     }
     peLib = new PELib(q, corFlags);
+
+    _apply_global_using();
+
     if (peLib->LoadAssembly("mscorlib"))
     {
         fatal("could not load mscorlib.dll");

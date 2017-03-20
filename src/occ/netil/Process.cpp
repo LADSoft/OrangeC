@@ -238,6 +238,7 @@ MethodSignature *GetMethodSignature(TYPE *tp, bool pinvoke)
             if (peLib->Find(buf, &result) == PELib::s_method)
             {
                 rv = static_cast<Method *>(result)->Signature();
+		return rv;
             }
             else
             {

@@ -3114,6 +3114,10 @@ LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc,
 BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams)
 {
     BOOLEAN rv = FALSE;
+    if (total_errors) // in some error conditions nodes can get into a loop
+        // for purposes of this function...  guard against it.   Consider everything
+        // CONST to avoid more errors..
+        return TRUE;
     if (node == 0)
         return rv;
     switch (node->type)

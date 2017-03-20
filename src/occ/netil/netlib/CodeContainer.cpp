@@ -41,6 +41,10 @@
 #include <typeinfo>
 namespace DotNetPELib
 {
+    bool CodeContainer::InAssemblyRef() const 
+    { 
+        return parent_->InAssemblyRef(); 
+    }
     void CodeContainer::AddInstruction(Instruction *instruction)
     {
         instructions_.push_back(instruction);

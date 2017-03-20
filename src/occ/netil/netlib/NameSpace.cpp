@@ -63,9 +63,13 @@ namespace DotNetPELib
     }
     bool Namespace::PEDump(PELib &peLib)
     {
-        std::string fullName = ReverseName(this);
-        peIndex_ = peLib.PEOut().HashString(fullName);
-        DataContainer::PEDump(peLib);
+        if (!InAssemblyRef() || !PEIndex())
+        {
+            std::string fullName = ReverseName(this);
+            peIndex_ = peLib.PEOut().HashString(fullName);
+        }
+        if (!InAssemblyRef())
+            DataContainer::PEDump(peLib);
         return true;
     }
 }

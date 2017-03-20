@@ -42,6 +42,43 @@
 #include <stdio.h>
 namespace DotNetPELib
 {
+    bool MethodSignature::Matches(std::vector<Type *> args)
+    {
+        // this is only designed for managed functions...
+        if (args.size() ==params.size() || params.size() && args.size() >= params.size()-1 && (flags_ & Vararg))
+        {
+            auto it = params.begin();
+            for (int i=0, n=0; i < args.size(); i++)
+            {
+                Type *tpa = args[i];
+                Type *tpp = (*it)->GetType();
+                if (!tpp)
+                {
+                    return false;
+                }
+                else if (tpa->GetBasicType() == tpp ->GetBasicType())
+                {
+                    // this may need to deal with boxed types a little better
+                    if (tpa->GetBasicType() == Type::cls)
+                        if (tpa->GetClass() != tpp->GetClass())
+                            return false;
+                }
+                else if (tpp->GetBasicType() == Type::object || (flags_ & Vararg) && n == params.size()-1 && tpp->GetBasicType() == Type::objectArray)
+                {
+                    if (tpa->GetBasicType() != Type::cls && tpa->GetBasicType() != Type::object)
+                        return false;
+                }
+                else
+                {
+                    return false;
+                }
+                if (n < params.size()-1)
+                    n++, ++it;
+            }            
+            return true;
+        }
+        return false;
+    }
 
     void MethodSignature::AddVarargParam(Param *param)
     {
@@ -57,7 +94,7 @@ namespace DotNetPELib
         {
             peLib.Out() << "vararg ";
         }
-        if (flags_ & Instance)
+        if (flags_ & InstanceFlag)
         {
             peLib.Out() << "instance ";
         }
@@ -73,10 +110,6 @@ namespace DotNetPELib
         if (asType)
         {
             peLib.Out() << " *(";
-        }
-        else if (fullName_.size())
-        {
-            peLib.Out() << fullName_ << "(";
         }
         else if (name_.size())
         {
@@ -98,8 +131,6 @@ namespace DotNetPELib
                 else
                     peLib.Out() << "class ";
             }
-            else if ((*it)->GetType()->FullName().size())
-                peLib.Out() << "class ";
             (*it)->GetType()->ILSrcDump(peLib);
             if (names)
                 (*it)->ILSrcDump(peLib);
@@ -128,37 +159,53 @@ namespace DotNetPELib
         peLib.Out() << ")";
         return true;
     }
+    void MethodSignature::ILSignatureDump(PELib &peLib)
+    {
+        returnType_->ILSrcDump(peLib);
+        peLib.Out() << " ";
+        peLib.Out() << Qualifiers::GetName(name_, container_) << "(";
+        for (std::list<Param *>::const_iterator it = params.begin(); it != params.end();)
+        {
+            if ((*it)->GetType()->GetBasicType() == Type::cls)
+            {
+                if ((*it)->GetType()->GetClass()->Flags().Flags() & Qualifiers::Value)
+                    peLib.Out() << "valuetype ";
+                else
+                    peLib.Out() << "class ";
+            }
+            (*it)->GetType()->ILSrcDump(peLib);
+            ++it;
+            if (it != params.end())
+                peLib.Out() << ", ";
+        }
+        peLib.Out() << ")";
+
+    }
     bool MethodSignature::PEDump(PELib &peLib, bool asType)
     {
-        if (fullName_.size() != 0)
+        if (container_ && container_->InAssemblyRef())
         {
-            char assemblyName[1024], namespaceName[1024], className[1024], functionName[1024];
-            if (sscanf(fullName_.c_str(), "[%[^]]]%[^.].%[^:]::%s", assemblyName, namespaceName, className, functionName) == 4)
+            if (!peIndexCallSite_)
             {
-                AssemblyDef *assembly = peLib.FindAssembly(assemblyName);
-                if (!assembly)
+                container_->PEDump(peLib);
+                if (returnType_ && returnType_->GetBasicType() == Type::cls)
                 {
-                    peLib.AddExternalAssembly(assemblyName);
-                    assembly = peLib.FindAssembly(assemblyName);
-                    assembly->PEDump(peLib);
+                    returnType_->GetClass()->PEDump(peLib);
                 }
-                size_t nmspc = peLib.PEOut().HashString(namespaceName);
-                size_t cls = peLib.PEOut().HashString(className);
-                ResolutionScope rs(ResolutionScope::AssemblyRef, assembly->PEIndex());
-                TableEntryBase *table = new TypeRefTableEntry(rs, cls, nmspc);
-                peIndexCallSite_ = peLib.PEOut().AddTableEntry(table);
+                for (auto param : params)
+                {
+                    if (param && param->GetType()->GetBasicType() == Type::cls)
+                    {
+                        param->GetType()->GetClass()->PEDump(peLib);
+                    }
+                }
                 size_t sz;
                 Byte *sig = SignatureGenerator::MethodRefSig(this, sz);
                 size_t methodSignature = peLib.PEOut().HashBlob(sig, sz);
                 delete[] sig;
-                if (functionName[0] == '\'')
-                {
-                    strcpy(functionName, functionName + 1);
-                    functionName[strlen(functionName) - 1] = 0;
-                }
-                size_t function = peLib.PEOut().HashString(functionName);
-                MemberRefParent memberRef(MemberRefParent::TypeRef, peIndexCallSite_);
-                table = new MemberRefTableEntry(memberRef, function, methodSignature);
+                size_t function = peLib.PEOut().HashString(name_);
+                MemberRefParent memberRef(MemberRefParent::TypeRef, container_->PEIndex());
+                TableEntryBase *table = new MemberRefTableEntry(memberRef, function, methodSignature);
                 peIndexCallSite_ = peLib.PEOut().AddTableEntry(table);
             }
         }
@@ -190,7 +237,7 @@ namespace DotNetPELib
         {
             size_t sz;
             size_t function = peLib.PEOut().HashString(name_);
-            size_t parent = container_ ? container_->ParentClass() : 0;
+            size_t parent = container_ ? container_->ParentClass(peLib) : 0;
             MemberRefParent memberRef(MemberRefParent::TypeRef, parent);
             Byte *sig = SignatureGenerator::MethodRefSig(this, sz);
             size_t methodSignature = peLib.PEOut().HashBlob(sig, sz);
@@ -199,5 +246,19 @@ namespace DotNetPELib
             peIndexCallSite_ = peLib.PEOut().AddTableEntry(table);
         }
         return true;
+    }
+    void MethodSignature::Load(PELib &lib, AssemblyDef &assembly, PEReader &reader, int start, int end)
+    {
+        const DNLTable &table = reader.Table(tParam);
+        if (start != end && start != table.size())
+        {
+            // check if the last attribute is an array...
+            // we are just going to assume if the attribute exists the data is set properly
+            CustomAttribute attribute(CustomAttribute::ParamDef, start + params.size() - 1);
+            if (assembly.CustomAttributes().Has(attribute, "[mscorlib]System.ParamArrayAttribute"))
+            {
+                flags_ |= Vararg;
+            }
+        }
     }
 }

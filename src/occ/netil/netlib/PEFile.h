@@ -8,7 +8,7 @@
     with or without modification, are permitted provided that the following
     conditions are met:
 
-    * Redistributions of source code must retain the above
+    * Redistributions of source code must retaintythe above
       copyright notice, this list of conditions and the
       following disclaimer.
 
@@ -40,6 +40,7 @@
 
 #include <vector>
 #include <string>
+#include <set>
 #include "RSAEncoder.h"
 #include "sha1.h"
 // this is an internal header used to define the various aspects of a PE file
@@ -74,6 +75,7 @@ namespace DotNetPELib {
     class PELib;
 
     class PEMethod;
+    class AssemblyRefTableEntry;
 
     // vector of tables that can appear in a PE file
     // empty tables are elided
@@ -103,21 +105,49 @@ namespace DotNetPELib {
         tField = 4,// definitions of fields
         tMethodDef = 6,// definitions of methods, includes both managed and unmanaged
         tParam = 8,// definitions of parameters
+        tInterfaceImpl = 9,
         tMemberRef = 10,// references to external methods, also the call site references for vararg-style pinvokes
         tConstant = 11,// initialization constants, we use them for enumerations but that is about it
         tCustomAttribute = 12, // custom attributes, we use it for C# style varargs but nothing else
+        tFieldMarshal = 13,
+        tDeclSecurity = 14, // we don't use it
         tClassLayout = 15,// size, packing for classes
         tFieldLayout = 16, // field offsets, we don't use it
         tStandaloneSig = 17, //?? we don't use it
+        tEventMap  = 18,
+        tEvent  = 20,
+        tPropertyMap = 21,
+        tProperty = 23,
+        tMethodSemantics = 24,
+        tMethodImpl = 25,
         tModuleRef = 26, // references to external modules
         tTypeSpec = 27,// we use it for referenced types not found in the typedef table
         tImplMap = 28,// pinvoke DLL information
-        tFieldRVA = 29,// sdata RVAs for field initialized data
+        tFieldRVA = 29,// cildata RVAs for field initialized data
         tAssemblyDef = 32,// our main assembly
         tAssemblyRef = 35,// any external assemblies
+        tFile = 38,
+        tExportedType = 39,
+        tManifestResource = 40,
         tNestedClass = 41,// list of nested classes and their parents
+        tGenericParam = 42,
+        tMethodSpec = 43,
+        tGenericParamConstraint =44
+
     };
 
+    // this is naively ignoring the various CIL tables that aren't supposed to be in the file
+    // may have to revisit that at some point.
+    static const ulonglong tKnownTablesMask = 
+        (1ULL << tModule) | (1ULL << tTypeRef) | (1ULL << tTypeDef) | (1ULL << tField) |
+        (1ULL << tMethodDef) | (1ULL << tParam) | (1ULL << tInterfaceImpl) | (1ULL << tMemberRef) | (1ULL << tConstant) |
+        (1ULL << tCustomAttribute) | (1ULL << tFieldMarshal) | (1ULL << tDeclSecurity) | (1ULL << tClassLayout) | (1ULL << tFieldLayout) |
+        (1ULL << tStandaloneSig) | (1ULL << tEventMap) | (1ULL << tEvent) | (1ULL << tPropertyMap) | 
+        (1ULL << tProperty) | (1ULL << tMethodSemantics) | (1ULL << tMethodImpl) |
+        (1ULL << tModuleRef) | (1ULL << tTypeSpec) | (1ULL << tImplMap) |
+        (1ULL << tFieldRVA) | (1ULL << tAssemblyDef) | (1ULL << tAssemblyRef) | 
+        (1ULL << tFile) | (1ULL << tExportedType) | (1ULL << tManifestResource) |
+        (1ULL << tNestedClass) | (1ULL << tGenericParam) | (1ULL << tMethodSpec) | (1ULL << tGenericParamConstraint) ;
     // these are standard type identifiers uses in signatures
     enum Types
     {
@@ -248,6 +278,7 @@ namespace DotNetPELib {
         static Byte *MethodDefSig(MethodSignature *signature, size_t &sz);
         static Byte *MethodRefSig(MethodSignature *signature, size_t &sz);
         //Byte *MethodSpecSig(Method *method);
+        static Byte *PropertySig(Property *property, size_t &sz);
         static Byte *FieldSig(Field *field, size_t &sz);
         //Byte *PropertySig(Property *property);
         static Byte *LocalVarSig(Method *method, size_t &sz);
@@ -262,9 +293,25 @@ namespace DotNetPELib {
 
         // this function sets the index for the 'object' class entry
         static void SetObjectType(size_t ObjectBase) { objectBase = ObjectBase; }
+
+
+        // get a type from a methodref
+        static void TypeFromMethodRef(PELib& lib, AssemblyDef &assembly, PEReader &reader, MethodSignature *sig, size_t blobIndex);
+        // get a type from a fieldref
+        static void TypeFromFieldRef(PELib& lib, AssemblyDef &assembly, PEReader &reader, Field *field, size_t blobIndex);
+        // get a type from a propertyref
+        static void TypeFromPropertyRef(PELib& lib, AssemblyDef &assembly, PEReader &reader, Property *property, size_t blobIndex);
+        // get a type from a signature
+        static Type *GetType(PELib& lib, AssemblyDef &assembly, PEReader &reader, Byte *data, size_t &pos, size_t &len);
     private:
         // a shared function for the various signatures that put in method signatures
         static size_t CoreMethod(MethodSignature *method, int paramCount, int *buf, int offset);
+        static size_t LoadIndex(Byte *buf, size_t &start, size_t &len);
+        static Type *TypeFromTypeRef(PELib& lib, AssemblyDef &assembly, PEReader &reader, size_t index, int pointerLevel);
+        static Type *BasicType(PELib& lib, int typeIndex, int pointerLevel);
+        static void TypeFromMethod(PELib& lib, AssemblyDef &assembly, PEReader &reader, MethodSignature *method, Byte *data, size_t &start, size_t &len);
+        static std::string LoadClassName(PEReader &reader, size_t index, AssemblyRefTableEntry **assembly, bool isDef);
+        static std::string LoadNameSpaceName(PEReader &reader, size_t index, bool isDef);
         static int workArea[400 * 1024];
         static int basicTypes[];
         static int objectBase;
@@ -275,8 +322,7 @@ namespace DotNetPELib {
     public:
         // the maximum number of PE objects we will generate
         // this includes the following:
-        //   .text
-        //   .sdata (when there is a .DATA declaration for a field)
+        //   .text / cildata
         //   .reloc (for the single necessary reloc entry)
         //   .rsrc (not implemented yet, will hold version info record)
         enum { MAX_PE_OBJECTS = 4 };
@@ -299,8 +345,8 @@ namespace DotNetPELib {
         size_t HashUS(std::wstring str);
         size_t HashGUID(Byte *Guid);
         size_t HashBlob(Byte *blobData, size_t blobLen);
-        // this is the '.sdata' contents.   Again we emit into the .sdata and it returns the offset in
-        // the sdata to use.  It does NOT return the rva immediately, that is calculated later
+        // this is the 'cildata' contents.   Again we emit into the cildata and it returns the offset in
+        // the cildata to use.  It does NOT return the rva immediately, that is calculated later
         size_t RVABytes(Byte *bytes, size_t data);
 
         // Set the indexes of the various classes which can be extended to make new classes
@@ -417,9 +463,9 @@ namespace DotNetPELib {
         struct DotNetMetaTablesHeader *tablesHeader_;
         size_t streamHeaders_[5][2];
         size_t snkLen_;
-	unsigned peBase_;
-	unsigned corBase_;
-	unsigned snkBase_;
+	    unsigned peBase_;
+	    unsigned corBase_;
+	    unsigned snkBase_;
         RSAEncoder rsaEncoder;
         static Byte MZHeader_[];
         static struct DotNetMetaHeader *metaHeader_;
@@ -427,6 +473,59 @@ namespace DotNetPELib {
         static Byte defaultUS_[];
     };
 
+    class TableEntryBase;
+    class TableEntryFactory
+    {
+        public:
+            static TableEntryBase *GetEntry(size_t index);
+    };
+    class PEReader
+    {
+    public:
+        static const int ERR_FILE_NOT_FOUND = 1;
+        static const int ERR_NOT_PE = 2;
+        static const int ERR_NOT_ASSEMBLY = 3;
+        static const int ERR_INVALID_ASSEMBLY = 3;
+        static const int ERR_UNKNOWN_TABLE = 5;
+
+        PEReader() : inputFile_(nullptr), corRVA_(0), num_objects_(0), objects_(0), blobPos_(0), stringPos_(0), GUIDPos_(0), stringData_(nullptr), blobData_(nullptr) { }
+        virtual ~PEReader();
+
+        int ManagedLoad(std::string fileName);
+        int UnmanagedLoad(std::string fileName);
+        int ReadFromString(Byte *buf, size_t len, size_t offset);
+        int ReadFromBlob(Byte *buf, size_t len, size_t offset);
+        int ReadFromGUID(Byte *buf, size_t len, size_t offset);
+        size_t RVAToFileLocation(size_t rva);
+        const DNLTable &Table(int i) const { return tables_[i]; }
+        void LibPath(std::string libPath) { libPath_ = libPath;  }
+
+    protected:
+        std::string PEReader::SearchOnPath(std::string fileName);
+        std::string SearchInGAC(std::string path, std::string fileName);
+        std::string SearchForManagedFile(std::string fileName);
+        void get(void *buffer, size_t offset, size_t len);
+        size_t PELocation();
+        size_t Cor20Location(size_t PEHeader);
+        void GetStream(size_t Cor20, char *streamName, DWord pos[2]);
+        int ReadTables(size_t Cor20);
+
+    private:
+        std::fstream *inputFile_;
+        int num_objects_;
+        size_t corRVA_;
+        size_t blobPos_;
+        size_t stringPos_;
+        Byte *stringData_;
+        Byte *blobData_;
+        size_t GUIDPos_;
+        PEObject *objects_;
+        DNLTable tables_[MaxTables];
+        size_t sizes_[MaxTables + ExtraIndexes];
+        std::set<std::string> unmanagedRoutines_;
+        std::string unmanagedDllName_;
+        std::string libPath_;
+    };
     // this class is the base class for index rendering
     // it defines a tag type (which indicates which table the index belongs with) and an index value
     // Based on the specific type of index being rendered, the index is shifted left by a constant and
@@ -442,7 +541,7 @@ namespace DotNetPELib {
         IndexBase(int Tag, size_t Index) : tag_(Tag), index_(Index) { }
 
         size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const;
-        //size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+        size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
         virtual int GetIndexShift() const = 0;
         virtual bool HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const = 0;
 
@@ -481,6 +580,34 @@ namespace DotNetPELib {
             TypeDef = 0,
             TypeRef = 1,
             TypeSpec = 2,
+        };
+        virtual int GetIndexShift() const override { return TagBits; }
+        virtual bool HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const override;
+    };
+    class TypeOrMethodDef : public IndexBase
+    {
+    public:
+        TypeOrMethodDef() { }
+        TypeOrMethodDef(int tag, int index) : IndexBase(tag, index) { }
+        enum Tags
+        {
+            TagBits = 1,
+            TypeDef = 0,
+            MethodDef = 1,
+        };
+        virtual int GetIndexShift() const override { return TagBits; }
+        virtual bool HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const override;
+    };
+    class MethodDefOrRef : public IndexBase
+    {
+    public:
+        MethodDefOrRef() { }
+        MethodDefOrRef(int tag, int index) : IndexBase(tag, index) { }
+        enum Tags
+        {
+            TagBits = 1,
+            MethodDef = 0,
+            MemberRef = 1,
         };
         virtual int GetIndexShift() const override { return TagBits; }
         virtual bool HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const override;
@@ -576,6 +703,14 @@ namespace DotNetPELib {
         virtual int GetIndexShift() const override { return TagBits; }
         virtual bool HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const override;
     };
+    class EventList : public IndexBase
+    {
+    public:
+        EventList() { }
+        EventList(int index) : IndexBase(index) { }
+        virtual int GetIndexShift() const override { return 0; }
+        virtual bool HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const override;
+    };
     class FieldList : public IndexBase
     {
     public:
@@ -600,6 +735,14 @@ namespace DotNetPELib {
         virtual int GetIndexShift() const override { return 0; }
         virtual bool HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const override;
     };
+    class PropertyList : public IndexBase
+    {
+    public:
+        PropertyList() { }
+        PropertyList(int index) : IndexBase(index) { }
+        virtual int GetIndexShift() const override { return 0; }
+        virtual bool HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const override;
+    };
     class TypeDef : public IndexBase
     {
     public:
@@ -614,6 +757,64 @@ namespace DotNetPELib {
         ModuleRef() { }
         ModuleRef(int index) : IndexBase(index) { }
         virtual int GetIndexShift() const override { return 0; }
+        virtual bool HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const override;
+    };
+    class DeclSecurity : public IndexBase
+    {
+    public:
+        DeclSecurity() { }
+        DeclSecurity(int tag, int index) : IndexBase(tag, index) { }
+        enum Tags {
+            TagBits = 2,
+            TypeDef = 0,
+            MethodDef = 1,
+            Assembly = 2,
+        };
+        virtual int GetIndexShift() const override { return TagBits; }
+        virtual bool HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const override;
+    };
+    class Semantics : public IndexBase
+    {
+    public:
+        Semantics() { }
+        Semantics(int tag, int index) : IndexBase(tag, index) { }
+        enum Tags {
+            TagBits = 1,
+            Event = 0,
+            Property = 1
+        };
+        virtual int GetIndexShift() const override { return TagBits; }
+        virtual bool HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const override;
+    };
+    class FieldMarshal : public IndexBase
+    {
+        enum Tags {
+            TagBits = 1,
+            Field = 0,
+            Param = 1
+        };
+        virtual int GetIndexShift() const override { return TagBits; }
+        virtual bool HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const override;
+    };
+    class GenericRef : public IndexBase
+    {
+    public:
+        GenericRef() { }
+        GenericRef(int index) : IndexBase(index) { }
+        virtual int GetIndexShift() const override { return 0; }
+        virtual bool HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const override;
+    };
+    class Implementation : public IndexBase
+    {
+    public:
+        Implementation() { }
+        Implementation(int tag, int index) : IndexBase(tag, index) { }
+        enum Tags {
+            TagBits = 2,
+            File = 0,
+            AssemblyRef = 1,
+        };
+        virtual int GetIndexShift() const override { return TagBits; }
         virtual bool HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const override;
     };
     // we also have psuedo-indexes for the various streams
@@ -659,7 +860,7 @@ namespace DotNetPELib {
     public:
         virtual int TableIndex() const = 0;
         virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const = 0;
-        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) = 0;
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) = 0;
     };
 
     // following we have the data describing each table
@@ -672,20 +873,20 @@ namespace DotNetPELib {
         String nameIndex_;
         GUID guidIndex_;
         virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
-        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) override;
     };
     class TypeRefTableEntry : public TableEntryBase
     {
     public:
         TypeRefTableEntry() { }
         TypeRefTableEntry(ResolutionScope Resolution, size_t TypeNameIndex, size_t TypeNameSpaceIndex) :
-            resolution(Resolution), typeNameIndex_(TypeNameIndex), typeNameSpaceIndex_(TypeNameSpaceIndex) { }
+            resolution_(Resolution), typeNameIndex_(TypeNameIndex), typeNameSpaceIndex_(TypeNameSpaceIndex) { }
         virtual int TableIndex() const override { return tTypeRef; }
-        ResolutionScope resolution;
+        ResolutionScope resolution_;
         String typeNameIndex_;
         String typeNameSpaceIndex_;
         virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
-        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) override;
     };
     class TypeDefTableEntry : public TableEntryBase
     {
@@ -760,7 +961,7 @@ namespace DotNetPELib {
         FieldList fields_;
         MethodList methods_;
         virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
-        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) override;
     };
 
     class FieldTableEntry : public TableEntryBase
@@ -803,7 +1004,7 @@ namespace DotNetPELib {
         String nameIndex_;
         Blob signatureIndex_;
         virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
-        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) override;
     };
     class MethodDefTableEntry : public TableEntryBase
     {
@@ -816,20 +1017,20 @@ namespace DotNetPELib {
             OPTIL = 0x0002,   // Method impl is OPTIL
             Runtime = 0x0003,   // Method impl is provided by the runtime.
             ManagedMask = 0x0004,   // Flags specifying whether the code is managed
-                                              // or unmanaged.
-                                              Unmanaged = 0x0004,   // Method impl is unmanaged, otherwise managed.
-                                              Managed = 0x0000,   // Method impl is managed.
+            // or unmanaged.
+            Unmanaged = 0x0004,   // Method impl is unmanaged, otherwise managed.
+            Managed = 0x0000,   // Method impl is managed.
+            
+            ForwardRef = 0x0010,   // Indicates method is defined; used primarily
+            // in merge scenarios.
+            PreserveSig = 0x0080,   // Indicates method sig is not to be mangled to
+                                              // do HRESULT conversion.
 
-                                              ForwardRef = 0x0010,   // Indicates method is defined; used primarily
-                                                                                // in merge scenarios.
-                                                                                PreserveSig = 0x0080,   // Indicates method sig is not to be mangled to
-                                                                                                                  // do HRESULT conversion.
-
-                                                                                                                  InternalCall = 0x1000,   // Reserved for internal use.
-
-                                                                                                                  Synchronized = 0x0020,   // Method is single threaded through the body.
-                                                                                                                  NoInlining = 0x0008,   // Method may not be inlined.
-                                                                                                                  MaxMethodImplVal = 0xffff,   // Range check value
+            InternalCall = 0x1000,   // Reserved for internal use.
+            
+            Synchronized = 0x0020,   // Method is single threaded through the body.
+            NoInlining = 0x0008,   // Method may not be inlined.
+            MaxMethodImplVal = 0xffff,   // Range check value
         };
         enum Flags
         {
@@ -863,7 +1064,7 @@ namespace DotNetPELib {
 
             UnmanagedExport = 0x0008,
 
-            // Reserved flags for runtime use only.
+               // Reserved flags for runtime use only.
 
             ReservedMask = 0xd000,
             RTSpecialName = 0x1000,
@@ -871,20 +1072,22 @@ namespace DotNetPELib {
             HasSecurity = 0x4000,
             RequireSecObject = 0x8000,
         };
-        MethodDefTableEntry() : implFlags_(0), flags_(0) { }
+        MethodDefTableEntry() : implFlags_(0), flags_(0), rva_(0), method_(nullptr) { }
         MethodDefTableEntry(PEMethod *Method, int IFlags, int MFlags, size_t NameIndex,
-            size_t SignatureIndex, size_t ParamIndex) : implFlags_(IFlags),
-            flags_(MFlags), nameIndex_(NameIndex), signatureIndex_(SignatureIndex),
+               size_t SignatureIndex, size_t ParamIndex) : implFlags_(IFlags),
+            flags_(MFlags), rva_(0), nameIndex_(NameIndex), signatureIndex_(SignatureIndex),
             paramIndex_(ParamIndex), method_(Method) { }
         virtual int TableIndex() const override { return tMethodDef; }
-        PEMethod *method_; // for rva
+        PEMethod *method_; // write, for rva
+        int rva_; // read only
+        //
         int implFlags_;
         int flags_;
         String nameIndex_;
         Blob signatureIndex_;
         ParamList paramIndex_;
         virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
-        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) override;
     };
     class ParamTableEntry : public TableEntryBase
     {
@@ -913,7 +1116,20 @@ namespace DotNetPELib {
         Word sequenceIndex_;
         String nameIndex_;
         virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
-        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) override;
+    };
+    class InterfaceImplTableEntry : public TableEntryBase
+    {
+
+    public:
+        InterfaceImplTableEntry() { }
+        InterfaceImplTableEntry(size_t cls, TypeDefOrRef interfce) :
+            class_(cls), interface_(interfce) { }
+        virtual int TableIndex() const override { return tInterfaceImpl; }
+        TypeDef class_;
+        TypeDefOrRef interface_;
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) override;
     };
     class MemberRefTableEntry : public TableEntryBase
     {
@@ -926,7 +1142,7 @@ namespace DotNetPELib {
         String nameIndex_;
         Blob signatureIndex_;
         virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
-        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) override;
     };
     class ConstantTableEntry : public TableEntryBase
     {
@@ -939,7 +1155,7 @@ namespace DotNetPELib {
         Constant parentIndex_;
         Blob valueIndex_;
         virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
-        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) override;
     };
     class CustomAttributeTableEntry : public TableEntryBase
     {
@@ -952,7 +1168,34 @@ namespace DotNetPELib {
         CustomAttributeType typeIndex_;
         Blob valueIndex_;
         virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
-        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) override;
+    };
+    class FieldMarshalTableEntry : public TableEntryBase
+    {
+
+    public:
+        FieldMarshalTableEntry() { }
+        FieldMarshalTableEntry(FieldMarshal parent, size_t nativeType) :
+            parent_(parent), nativeType_(nativeType) { }
+        virtual int TableIndex() const override { return tFieldMarshal; }
+        FieldMarshal parent_;
+        Blob nativeType_;
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) override;
+    };
+    class DeclSecurityTableEntry : public TableEntryBase
+    {
+    public:
+        DeclSecurityTableEntry() : action_(0), parent_(0,0), permissionSet_ (0){ }
+        DeclSecurityTableEntry(Word action, DeclSecurity parent, size_t permissionSet) :
+            action_(action), parent_(parent), permissionSet_(permissionSet) { }
+        virtual int TableIndex() const override { return tDeclSecurity; }
+
+        Word action_;
+        DeclSecurity parent_;
+        Blob permissionSet_;
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) override;
     };
     class ClassLayoutTableEntry : public TableEntryBase
     {
@@ -965,7 +1208,7 @@ namespace DotNetPELib {
         size_t size_;
         TypeDef parent_;
         virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
-        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) override;
     };
     class FieldLayoutTableEntry : public TableEntryBase
     {
@@ -976,7 +1219,7 @@ namespace DotNetPELib {
         size_t offset_;
         FieldList parent_;
         virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
-        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) override;
     };
     class StandaloneSigTableEntry : public TableEntryBase
     {
@@ -984,9 +1227,103 @@ namespace DotNetPELib {
         StandaloneSigTableEntry() { }
         StandaloneSigTableEntry(size_t SignatureIndex) : signatureIndex_(SignatureIndex) { }
         virtual int TableIndex() const override { return tStandaloneSig; }
-        Blob signatureIndex_;
+        Blob signatureIndex_;   
         virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
-        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) override;
+    };
+    class EventMapTableEntry : public TableEntryBase
+    {
+    public:
+        EventMapTableEntry() { }
+        EventMapTableEntry(size_t parent, size_t eventList) : parent_(parent), eventList_(eventList) { }
+        TypeDef parent_;
+        EventList eventList_;
+        virtual int TableIndex() const override { return tEventMap; }
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) override;
+    };
+    class EventTableEntry : public TableEntryBase
+    {
+    public:
+        enum Flags{
+            SpecialName = 0x200,
+            ReservedMask = 0x400,
+            RTSpecialName = 0x400,
+        };
+        EventTableEntry() : flags_(0) { }
+        EventTableEntry(Word flags, size_t name, TypeDefOrRef eventType) : 
+                flags_(flags), name_(name), eventType_(eventType) { }
+        Word flags_;
+        String name_;
+        TypeDefOrRef eventType_;
+        virtual int TableIndex() const override { return tEvent; }
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) override;
+    };
+    class PropertyMapTableEntry : public TableEntryBase
+    {
+    public:
+        PropertyMapTableEntry() { }
+        PropertyMapTableEntry(size_t parent, size_t propertyList) : parent_(parent), propertyList_(propertyList) { }
+        TypeDef parent_;
+        PropertyList propertyList_;
+        virtual int TableIndex() const override { return tPropertyMap; }
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) override;
+    };
+    class PropertyTableEntry : public TableEntryBase
+    {
+    public:
+        enum Flags{
+            SpecialName = 0x200,
+            ReservedMask = 0xf400,
+            RTSpecialName = 0x400,
+            HasDefault = 0x1000
+        };
+        PropertyTableEntry() : flags_(0) { }
+        PropertyTableEntry(Word flags, size_t name, size_t propertyType) : 
+                flags_(flags), name_(name), propertyType_(propertyType) { }
+        Word flags_;
+        String name_;
+        Blob propertyType_; // yes this is a signature in the Blob
+        virtual int TableIndex() const override { return tProperty; }
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) override;
+    };
+    class MethodSemanticsTableEntry : public TableEntryBase
+    {
+    public:
+        enum Flags
+        {
+            Setter = 1,
+            Getter = 2,
+            Other = 4,
+            AddOn = 8,
+            RemoveOn = 16,
+            Fire = 32
+        };
+        MethodSemanticsTableEntry() : semantics_(0){ }
+        MethodSemanticsTableEntry(Word semantics, size_t method, Semantics association)
+            : semantics_(semantics), method_(method), association_(association) { }
+        Word semantics_;
+        MethodList method_;
+        Semantics association_;
+        virtual int TableIndex() const override { return tMethodSemantics; }
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) override;
+    };
+    class MethodImplTableEntry : public TableEntryBase
+    {
+    public:
+        MethodImplTableEntry() { }
+        MethodImplTableEntry(size_t cls, MethodDefOrRef methodBody, MethodDefOrRef methodDeclaration)
+                : class_(cls), methodBody_(methodBody), methodDeclaration_(methodDeclaration)             { }
+        TypeDef class_;
+        MethodDefOrRef methodBody_;
+        MethodDefOrRef methodDeclaration_;
+        virtual int TableIndex() const override { return tMethodImpl; }
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) override;
     };
     class ModuleRefTableEntry : public TableEntryBase
     {
@@ -996,7 +1333,7 @@ namespace DotNetPELib {
         String nameIndex_;
         virtual int TableIndex() const override { return tModuleRef; }
         virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
-        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) override;
     };
     class TypeSpecTableEntry : public TableEntryBase
     {
@@ -1006,7 +1343,7 @@ namespace DotNetPELib {
         virtual int TableIndex() const override { return tTypeSpec; }
         Blob signatureIndex_;
         virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
-        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) override;
     };
 
     // note this is necessary for pinvokes, however, there will be one record in the METHODDEF table
@@ -1057,7 +1394,7 @@ namespace DotNetPELib {
         String importNameIndex_;
         ModuleRef moduleIndex_;
         virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
-        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) override;
     };
     class FieldRVATableEntry : public TableEntryBase
     {
@@ -1068,7 +1405,7 @@ namespace DotNetPELib {
         size_t rva_;
         FieldList fieldIndex_;
         virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
-        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) override;
     };
     enum AssemblyFlags
     {
@@ -1111,7 +1448,7 @@ namespace DotNetPELib {
         String nameIndex_;
         String cultureIndex_;
         virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
-        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) override;
     };
     class AssemblyRefTableEntry : public TableEntryBase
     {
@@ -1129,7 +1466,59 @@ namespace DotNetPELib {
         String cultureIndex_;
         Blob hashIndex_;
         virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
-        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) override;
+    };
+    class FileTableEntry : public TableEntryBase
+    {
+    public:
+        enum Flags{
+            ContainsMetaData =0,
+            ContainsNoMetaData = 1
+        };
+        FileTableEntry() : flags_(0) { }
+        FileTableEntry(DWord flags, size_t name, size_t hash) : 
+                flags_(flags), name_(name), hash_(hash) { }
+        DWord flags_;
+        String name_;
+        Blob hash_;
+        virtual int TableIndex() const override { return tFile; }
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) override;
+    };
+    class ExportedTypeTableEntry : public TableEntryBase
+    {
+    public:
+        // flags same as for typedef table
+        ExportedTypeTableEntry() : flags_(0) { }
+        ExportedTypeTableEntry(DWord flags, size_t typeDefId, size_t typeName, size_t typeNameSpace, Implementation implementation)
+            : flags_(flags), typeDefId_(typeDefId), typeName_(typeName), typeNameSpace_(typeNameSpace), implementation_(implementation) { }
+        DWord flags_;
+        TypeDef typeDefId_;
+        String typeName_;
+        String typeNameSpace_;
+        Implementation implementation_;
+        virtual int TableIndex() const override { return tManifestResource; }
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) override;
+    };
+    class ManifestResourceTableEntry : public TableEntryBase
+    {
+    public:
+        enum Flags{
+            VisibilityMask = 7,
+            Public = 1,
+            Private = 2
+        };
+        ManifestResourceTableEntry() : flags_(0) { }
+        ManifestResourceTableEntry(DWord offset, DWord flags, size_t name, Implementation implementation) : 
+                offset_(offset), flags_(flags), name_(name), implementation_(implementation) { }
+        DWord offset_;
+        DWord flags_;
+        String name_;
+        Implementation implementation_;
+        virtual int TableIndex() const override { return tManifestResource; }
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) override;
     };
     class NestedClassTableEntry : public TableEntryBase
     {
@@ -1140,7 +1529,45 @@ namespace DotNetPELib {
         TypeDef nestedIndex_;
         TypeDef enclosingIndex_;
         virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
-        //virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *);
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) override;
+    };
+    class GenericParamTableEntry : public TableEntryBase
+    {
+    public:
+        GenericParamTableEntry() :number_(0), flags_(0) { }
+        GenericParamTableEntry(Word number, Word flags, TypeOrMethodDef owner, size_t name)
+                : number_(number), flags_(flags), owner_(owner), name_(name) { }
+        virtual int TableIndex() const override { return tGenericParam; }
+        Word number_;
+        Word flags_;
+        TypeOrMethodDef owner_;
+        String name_;
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) override;
+    };
+    class MethodSpecTableEntry : public TableEntryBase
+    {
+    public:
+        MethodSpecTableEntry() { }
+        MethodSpecTableEntry(MethodDefOrRef method, size_t instantiation) : 
+                method_(method), instantiation_(instantiation) { }
+        virtual int TableIndex() const override { return tMethodSpec; }
+        MethodDefOrRef method_;
+        Blob instantiation_;
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) override;
+    };
+    class GenericParamConstraintsTableEntry : public TableEntryBase
+    {
+    public:
+        GenericParamConstraintsTableEntry() { }
+        GenericParamConstraintsTableEntry(size_t owner, TypeDefOrRef constraint) : 
+                owner_(owner), constraint_(constraint) { }
+        virtual int TableIndex() const override { return tGenericParam; }
+        GenericRef owner_;
+        TypeDefOrRef constraint_;
+        virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const override;
+        virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) override;
     };
 
     // this class holds the data for a method
@@ -1182,8 +1609,5 @@ namespace DotNetPELib {
         size_t methodDef_;
         size_t Write(size_t sizes[MaxTables + ExtraIndexes], std::fstream &out) const;
     };
-    int LoadStrongNameKeys(const char *file);
-    void GetPublicKeyData(Byte *key, size_t *keySize);
-    void GetStrongNameSignature(Byte *sig, size_t *sigSize, const Byte *hash, size_t hashSize );
 
 } // namespace

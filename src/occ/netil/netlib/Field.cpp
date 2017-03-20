@@ -128,74 +128,88 @@ namespace DotNetPELib
         Byte *sig = SignatureGenerator::FieldSig(this, sz);
         size_t sigindex = peLib.PEOut().HashBlob(sig, sz);
         size_t nameindex = peIndex_ = peLib.PEOut().HashString(Name());
-        int peflags = 0;
-        if (flags_.Flags() & Qualifiers::Public)
-            peflags |= FieldTableEntry::Public;
-        else if (flags_.Flags() & Qualifiers::Private)
-            peflags |= FieldTableEntry::Private;
-
-        if (flags_.Flags() & Qualifiers::Static)
-            peflags |= FieldTableEntry::Static;
-        if (flags_.Flags() & Qualifiers::Literal)
-            peflags |= FieldTableEntry::Literal;
-        switch (mode_)
+        if (InAssemblyRef())
         {
-        case Enum:
-            peflags |= FieldTableEntry::HasDefault; // in the blob;
-            break;
-        case Bytes:
-            if (byteValue_ && byteLength_)
+            parent_->PEDump(peLib);
+            if (type_->GetBasicType() == Type::cls)
             {
-                peflags |= FieldTableEntry::HasFieldRVA; // in separate memory
+                type_->GetClass()->PEDump(peLib);
             }
-            break;
+            MemberRefParent refParent(MemberRefParent::TypeRef, parent_->PEIndex());
+            TableEntryBase *table = new MemberRefTableEntry(refParent, nameindex, sigindex);
+            peIndex_ = peLib.PEOut().AddTableEntry(table);
         }
-        TableEntryBase *table = new FieldTableEntry(peflags, nameindex, sigindex);
-        peIndex_ = peLib.PEOut().AddTableEntry(table);
-        delete[] sig;
-
-        Byte buf[8];
-        *(longlong *)(buf) = enumValue_;
-        int type;
-        switch (mode_)
+        else
         {
-        case Enum:
-        {
-            switch (size_)
+            int peflags = 0;
+            if (flags_.Flags() & Qualifiers::Public)
+                peflags |= FieldTableEntry::Public;
+            else if (flags_.Flags() & Qualifiers::Private)
+                peflags |= FieldTableEntry::Private;
+    
+            if (flags_.Flags() & Qualifiers::Static)
+                peflags |= FieldTableEntry::Static;
+            if (flags_.Flags() & Qualifiers::Literal)
+                peflags |= FieldTableEntry::Literal;
+            switch (mode_)
             {
-            case Field::i8:
-                sz = 1;
-                type = ELEMENT_TYPE_I1;
+            case Enum:
+                peflags |= FieldTableEntry::HasDefault; // in the blob;
                 break;
-            case Field::i16:
-                sz = 2;
-                type = ELEMENT_TYPE_I2;
-                break;
-            case Field::i32:
-            default:
-                sz = 4;
-                type = ELEMENT_TYPE_I4;
-                break;
-            case Field::i64:
-                sz = 8;
-                type = ELEMENT_TYPE_I8;
+            case Bytes:
+                if (byteValue_ && byteLength_)
+                {
+                    peflags |= FieldTableEntry::HasFieldRVA; // in separate memory
+                }
                 break;
             }
-            // this is NOT compressed like the sigs are...
-            size_t valueIndex = peLib.PEOut().HashBlob(&buf[0], sz);
-            Constant constant(Constant::FieldDef, peIndex_);
-            table = new ConstantTableEntry(type, constant, valueIndex);
-            peLib.PEOut().AddTableEntry(table);
-
-        }
-        case Bytes:
-            if (byteValue_ && byteLength_)
+            TableEntryBase *table = new FieldTableEntry(peflags, nameindex, sigindex);
+            peIndex_ = peLib.PEOut().AddTableEntry(table);
+            delete[] sig;
+    
+            Byte buf[8];
+            *(longlong *)(buf) = enumValue_;
+            int type;
+            switch (mode_)
             {
-                size_t valueIndex = peLib.PEOut().RVABytes(byteValue_, byteLength_);
-                table = new FieldRVATableEntry(valueIndex, peIndex_);
+            case Enum:
+            {
+                switch (size_)
+                {
+                case Field::i8:
+                    sz = 1;
+                    type = ELEMENT_TYPE_I1;
+                    break;
+                case Field::i16:
+                    sz = 2;
+                    type = ELEMENT_TYPE_I2;
+                    break;
+                case Field::i32:
+                default:
+                    sz = 4;
+                    type = ELEMENT_TYPE_I4;
+                    break;
+                case Field::i64:
+                    sz = 8;
+                    type = ELEMENT_TYPE_I8;
+                    break;
+                }
+                // this is NOT compressed like the sigs are...
+                size_t valueIndex = peLib.PEOut().HashBlob(&buf[0], sz);
+                Constant constant(Constant::FieldDef, peIndex_);
+                table = new ConstantTableEntry(type, constant, valueIndex);
                 peLib.PEOut().AddTableEntry(table);
+    
             }
-            break;
+            case Bytes:
+                if (byteValue_ && byteLength_)
+                {
+                    size_t valueIndex = peLib.PEOut().RVABytes(byteValue_, byteLength_);
+                    table = new FieldRVATableEntry(valueIndex, peIndex_);
+                    peLib.PEOut().AddTableEntry(table);
+                }
+                break;
+            }
         }
         return true;
     }

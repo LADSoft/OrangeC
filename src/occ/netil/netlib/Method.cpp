@@ -51,7 +51,21 @@ namespace DotNetPELib
         invokeMode_(CIL), pInvokeType_(Stdcall), entryPoint_(entry), rendering_(nullptr)
     {
         if (!(flags_.Flags() & Qualifiers::Static))
-            prototype_->SetInstanceFlag();
+            prototype_->Instance(true);
+    }
+    void Method::Instance(bool instance) {
+        if (instance)
+        {
+            Flags().Flags(Flags().Flags() | Qualifiers::Instance);
+            Flags().Flags(Flags().Flags() & ~Qualifiers::Static);
+        }
+        else
+        {
+            Flags().Flags(Flags().Flags() & ~Qualifiers::Instance);
+            Flags().Flags(Flags().Flags() | Qualifiers::Static);
+        }
+        if (prototype_)
+            prototype_->Instance(instance);
     }
     void Method::AddLocal(Local *local)
     {
@@ -98,10 +112,6 @@ namespace DotNetPELib
                         else
                             peLib.Out() << "class ";
                     }
-                    else if ((*it)->GetType()->FullName().size())
-                    {
-                        peLib.Out() << "class ";
-                    }
                     (*it)->GetType()->ILSrcDump(peLib);
                     peLib.Out() << " ";
                     (*it)->ILSrcDump(peLib);
@@ -127,154 +137,158 @@ namespace DotNetPELib
     }
     bool Method::PEDump(PELib &peLib)
     {
-        Byte *code;
-        size_t sz;
-        size_t methodSignature = 0;
-        Byte *sig = nullptr;
-        TableEntryBase *table;
-        if (prototype_->ParamCount())
+        if (!IsPInvoke() && InAssemblyRef())
         {
-            // assign an index to any params...
+            prototype_->PEDump(peLib, false);
+        }
+        else
+        {
+            Byte *code;
+            size_t sz;
+            size_t methodSignature = 0;
+            Byte *sig = nullptr;
+            TableEntryBase *table;
+            if (prototype_->ParamCount())
+            {
+                // assign an index to any params...
+                for (auto it = prototype_->begin(); it != prototype_->end(); ++it)
+                {
+                    auto param = *it;
+                    Type *tp = param->GetType();
+                    if (tp->GetBasicType() == Type::cls)
+                    {
+                        if (!tp->PEIndex())
+                        {
+                            Byte buf[256];
+                            tp->Render(peLib, buf);
+                        }
+                    }
+    
+                }
+            }
+            if (varList_.size())
+            {
+                // assign type indexes to any types that haven't already been defined
+                for (auto local : varList_)
+                {
+                    Type *tp = local->GetType();
+                    if (tp->GetBasicType() == Type::cls)
+                    {
+                        if (!tp->PEIndex())
+                        {
+                            Byte buf[256];
+                            tp->Render(peLib, buf);
+                        }
+                    }
+                }
+                sig = SignatureGenerator::LocalVarSig(this, sz);
+                methodSignature = peLib.PEOut().HashBlob(sig, sz);
+                table = new StandaloneSigTableEntry(methodSignature);
+                methodSignature = peLib.PEOut().AddTableEntry(table);
+            }
+            Instruction *last = nullptr;
+            if (instructions_.size())
+                last = instructions_.back();
+            rendering_ = new PEMethod((entryPoint_ ? PEMethod::EntryPoint : 0) | (invokeMode_ == CIL ? PEMethod::CIL : 0),
+                peLib.PEOut().NextTableIndex(tMethodDef),
+                maxStack_, varList_.size(),
+                last ? last->Offset() + last->InstructionSize() : 0,
+                methodSignature ? methodSignature | (tStandaloneSig << 24) : 0);
+            if (invokeMode_ == CIL)
+                peLib.PEOut().AddMethod(rendering_);
+            delete[] sig;
+    
+            int implFlags = 0;
+            int MFlags = 0;
+            if (flags_.Flags() & Qualifiers::CIL)
+                implFlags |= MethodDefTableEntry::IL;
+            if (flags_.Flags() & Qualifiers::Managed)
+                implFlags |= MethodDefTableEntry::Managed;
+            if (flags_.Flags() & Qualifiers::PreserveSig)
+                implFlags |= MethodDefTableEntry::PreserveSig;
+            if (flags_.Flags() & Qualifiers::Public)
+                MFlags |= MethodDefTableEntry::Public;
+            else if (flags_.Flags() & Qualifiers::Private)
+                MFlags |= MethodDefTableEntry::Private;
+            if (flags_.Flags() & Qualifiers::Static)
+                MFlags |= MethodDefTableEntry::Static;
+            if (flags_.Flags() & Qualifiers::SpecialName)
+                MFlags |= MethodDefTableEntry::SpecialName;
+            if (flags_.Flags() & Qualifiers::RTSpecialName)
+                MFlags |= MethodDefTableEntry::RTSpecialName;
+            if (flags_.Flags() & Qualifiers::HideBySig)
+                MFlags |= MethodDefTableEntry::HideBySig;
+            if (invokeMode_ == PInvoke)
+            {
+                MFlags |= MethodDefTableEntry::PinvokeImpl;
+            }
+            size_t nameIndex = peLib.PEOut().HashString(prototype_->Name());
+            size_t paramIndex = peLib.PEOut().NextTableIndex(tParam);
+    
+            sig = SignatureGenerator::MethodDefSig(prototype_, sz);
+            methodSignature = peLib.PEOut().HashBlob(sig, sz);
+            delete[] sig;
+    
+            table = new MethodDefTableEntry(rendering_, implFlags, MFlags,
+                nameIndex, methodSignature, paramIndex);
+            prototype_->SetPEIndex(peLib.PEOut().AddTableEntry(table));
+            int i = 1;
+            size_t lastParamIndex = 0;
             for (auto it = prototype_->begin(); it != prototype_->end(); ++it)
             {
-                auto param = *it;
-                Type *tp = param->GetType();
-                if (tp->FullName().size() || tp->GetBasicType() == Type::cls)
+                int flags = 0;
+                size_t nameIndex = peLib.PEOut().HashString((*it)->Name());
+                TableEntryBase *table = new ParamTableEntry(flags, i++, nameIndex);
+                lastParamIndex = peLib.PEOut().AddTableEntry(table);
+            }
+    
+            if (invokeMode_ == PInvoke)
+            {
+                int Flags = 0;
+                //            Flags |= ImplMapTableEntry::CharSetAnsi;
+                if (pInvokeType_ == Cdecl)
+                    Flags |= ImplMapTableEntry::CallConvCdecl;
+                else
+                    Flags |= ImplMapTableEntry::CallConvStdcall;
+                size_t importName = nameIndex;
+                size_t moduleName = peLib.PEOut().HashString(pInvokeName_);
+                size_t moduleRef = peLib.moduleRefs[moduleName];
+                if (moduleRef == 0)
                 {
-                    if (!tp->PEIndex())
-                    {
-                        Byte buf[256];
-                        tp->Render(peLib, buf);
-                    }
+                    TableEntryBase *table = new ModuleRefTableEntry(moduleName);
+                    moduleRef = peLib.PEOut().AddTableEntry(table);
+                    peLib.moduleRefs[moduleName] = moduleRef;
                 }
-
+                MemberForwarded methodIndex(MemberForwarded::MethodDef, prototype_->PEIndex());
+                ImplMapTableEntry *table = new ImplMapTableEntry(Flags, methodIndex, importName, moduleRef);
+                peLib.PEOut().AddTableEntry(table);
             }
-        }
-        if (varList_.size())
-        {
-            // assign type indexes to any types that haven't already been defined
-            for (auto local : varList_)
+            if ((prototype_->Flags() & MethodSignature::Vararg) && (prototype_->Flags() & MethodSignature::Managed))
             {
-                Type *tp = local->GetType();
-                if (tp->FullName().size() || tp->GetBasicType() == Type::cls)
+                size_t attributeType = peLib.PEOut().ParamAttributeType();
+                size_t attributeData = peLib.PEOut().ParamAttributeData();
+                if (!attributeType && !attributeData)
                 {
-                    if (!tp->PEIndex())
+                    size_t ctor_index = 0;
+                    AssemblyDef *assembly = peLib.MSCorLibAssembly();
+                    void *result = nullptr;
+                    peLib.Find("System.ParamArrayAttribute.ctor", &result, assembly);
+                    if (result)
                     {
-                        Byte buf[256];
-                        tp->Render(peLib, buf);
+                        static_cast<Method *>(result)->PEDump(peLib);
+                        ctor_index = static_cast<Method *>(result)->Signature()->PEIndex();
                     }
+                    static Byte data[] = { 1, 0, 0, 0 };
+                    size_t data_sig = peLib.PEOut().HashBlob(data, sizeof(data));
+                    peLib.PEOut().ParamAttribute(ctor_index, data_sig);
+                    attributeType = peLib.PEOut().ParamAttributeType();
+                    attributeData = peLib.PEOut().ParamAttributeData();
                 }
+                CustomAttribute attribute(CustomAttribute::ParamDef, lastParamIndex);
+                CustomAttributeType type(CustomAttributeType::MethodRef, attributeType);
+                TableEntryBase *table = new CustomAttributeTableEntry(attribute, type, attributeData);
+                peLib.PEOut().AddTableEntry(table);
             }
-            sig = SignatureGenerator::LocalVarSig(this, sz);
-            methodSignature = peLib.PEOut().HashBlob(sig, sz);
-            table = new StandaloneSigTableEntry(methodSignature);
-            methodSignature = peLib.PEOut().AddTableEntry(table);
-        }
-        Instruction *last = nullptr;
-        if (instructions_.size())
-            last = instructions_.back();
-        rendering_ = new PEMethod((entryPoint_ ? PEMethod::EntryPoint : 0) | (invokeMode_ == CIL ? PEMethod::CIL : 0),
-            peLib.PEOut().NextTableIndex(tMethodDef),
-            maxStack_, varList_.size(),
-            last ? last->Offset() + last->InstructionSize() : 0,
-            methodSignature ? methodSignature | (tStandaloneSig << 24) : 0);
-        if (invokeMode_ == CIL)
-            peLib.PEOut().AddMethod(rendering_);
-        delete[] sig;
-
-        int implFlags = 0;
-        int MFlags = 0;
-        if (flags_.Flags() & Qualifiers::CIL)
-            implFlags |= MethodDefTableEntry::IL;
-        if (flags_.Flags() & Qualifiers::Managed)
-            implFlags |= MethodDefTableEntry::Managed;
-        if (flags_.Flags() & Qualifiers::PreserveSig)
-            implFlags |= MethodDefTableEntry::PreserveSig;
-        if (flags_.Flags() & Qualifiers::Public)
-            MFlags |= MethodDefTableEntry::Public;
-        else if (flags_.Flags() & Qualifiers::Private)
-            MFlags |= MethodDefTableEntry::Private;
-        if (flags_.Flags() & Qualifiers::Static)
-            MFlags |= MethodDefTableEntry::Static;
-        if (flags_.Flags() & Qualifiers::SpecialName)
-            MFlags |= MethodDefTableEntry::SpecialName;
-        if (flags_.Flags() & Qualifiers::RTSpecialName)
-            MFlags |= MethodDefTableEntry::RTSpecialName;
-        if (flags_.Flags() & Qualifiers::HideBySig)
-            MFlags |= MethodDefTableEntry::HideBySig;
-        if (invokeMode_ == PInvoke)
-        {
-            MFlags |= MethodDefTableEntry::PinvokeImpl;
-        }
-        size_t nameIndex = peLib.PEOut().HashString(prototype_->Name());
-        size_t paramIndex = peLib.PEOut().NextTableIndex(tParam);
-
-        sig = SignatureGenerator::MethodDefSig(prototype_, sz);
-        methodSignature = peLib.PEOut().HashBlob(sig, sz);
-        delete[] sig;
-
-        table = new MethodDefTableEntry(rendering_, implFlags, MFlags,
-            nameIndex, methodSignature, paramIndex);
-        prototype_->SetPEIndex(peLib.PEOut().AddTableEntry(table));
-        int i = 1;
-        size_t lastParamIndex = 0;
-        for (auto it = prototype_->begin(); it != prototype_->end(); ++it)
-        {
-            int flags = 0;
-            size_t nameIndex = peLib.PEOut().HashString((*it)->Name());
-            TableEntryBase *table = new ParamTableEntry(flags, i++, nameIndex);
-            lastParamIndex = peLib.PEOut().AddTableEntry(table);
-        }
-
-        if (invokeMode_ == PInvoke)
-        {
-            int Flags = 0;
-            //            Flags |= ImplMapTableEntry::CharSetAnsi;
-            if (pInvokeType_ == Cdecl)
-                Flags |= ImplMapTableEntry::CallConvCdecl;
-            else
-                Flags |= ImplMapTableEntry::CallConvStdcall;
-            size_t importName = nameIndex;
-            size_t moduleName = peLib.PEOut().HashString(pInvokeName_);
-            size_t moduleRef = peLib.moduleRefs[moduleName];
-            if (moduleRef == 0)
-            {
-                TableEntryBase *table = new ModuleRefTableEntry(moduleName);
-                moduleRef = peLib.PEOut().AddTableEntry(table);
-                peLib.moduleRefs[moduleName] = moduleRef;
-            }
-            MemberForwarded methodIndex(MemberForwarded::MethodDef, prototype_->PEIndex());
-            ImplMapTableEntry *table = new ImplMapTableEntry(Flags, methodIndex, importName, moduleRef);
-            peLib.PEOut().AddTableEntry(table);
-        }
-        if ((prototype_->Flags() & MethodSignature::Vararg) && (prototype_->Flags() & MethodSignature::Managed))
-        {
-            size_t attributeType = peLib.PEOut().ParamAttributeType();
-            size_t attributeData = peLib.PEOut().ParamAttributeData();
-            if (!attributeType && !attributeData)
-            {
-                AssemblyDef *assembly = peLib.MSCorLibAssembly(true);
-                size_t ns = peLib.PEOut().HashString("System");
-                size_t cls = peLib.PEOut().HashString("ParamArrayAttribute");
-                size_t ctor = peLib.PEOut().HashString(".ctor");
-                ResolutionScope rs(ResolutionScope::AssemblyRef, assembly->PEIndex());
-                TableEntryBase *table = new TypeRefTableEntry(rs, cls, ns);
-                size_t typeEntry = peLib.PEOut().AddTableEntry(table);
-                static Byte ctorSig[] = { 0x20, 0, 1 };
-                size_t ctor_sig = peLib.PEOut().HashBlob(ctorSig, sizeof(ctorSig));
-                MemberRefParent parentClass(MemberRefParent::TypeRef, typeEntry);
-                table = new MemberRefTableEntry(parentClass, ctor, ctor_sig);
-                size_t ctor_index = peLib.PEOut().AddTableEntry(table);
-                static Byte data[] = { 1, 0, 0, 0 };
-                size_t data_sig = peLib.PEOut().HashBlob(data, sizeof(data));
-                peLib.PEOut().ParamAttribute(ctor_index, data_sig);
-                attributeType = peLib.PEOut().ParamAttributeType();
-                attributeData = peLib.PEOut().ParamAttributeData();
-            }
-            CustomAttribute attribute(CustomAttribute::ParamDef, lastParamIndex);
-            CustomAttributeType type(CustomAttributeType::MethodRef, attributeType);
-            TableEntryBase *table = new CustomAttributeTableEntry(attribute, type, attributeData);
-            peLib.PEOut().AddTableEntry(table);
         }
         return true;
     }

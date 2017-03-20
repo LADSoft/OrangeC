@@ -148,6 +148,7 @@
     <ClCompile Include="Class.cpp" />
     <ClCompile Include="CodeContainer.cpp" />
     <ClCompile Include="CreateGUID.cpp" />
+    <ClCompile Include="CustomAttributeContainer.cpp" />
     <ClCompile Include="DataContainer.cpp" />
     <ClCompile Include="DLLExportReader.cpp" />
     <ClCompile Include="Enum.cpp" />
@@ -158,9 +159,12 @@
     <ClCompile Include="NameSpace.cpp" />
     <ClCompile Include="NetSignature.cpp" />
     <ClCompile Include="Operand.cpp" />
-    <ClCompile Include="PEFile.cpp" />
+    <ClCompile Include="PECor20Headers.cpp" />
     <ClCompile Include="PELib.cpp" />
     <ClCompile Include="PELibError.cpp" />
+    <ClCompile Include="PEReader.cpp" />
+    <ClCompile Include="PEWriter.cpp" />
+    <ClCompile Include="Property.cpp" />
     <ClCompile Include="Qualifiers.cpp" />
     <ClCompile Include="RSAEncoder.cpp" />
     <ClCompile Include="sha1.cpp" />

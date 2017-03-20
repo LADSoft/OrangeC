@@ -38,6 +38,7 @@
 */
 #include "DotNetPELib.h"
 #include "PEFile.h"
+#include "MZHeader.h"
 #include "PEHeader.h"
 #include <time.h>
 #include <stdio.h>
@@ -76,6 +77,29 @@ namespace DotNetPELib
 
     DWord PEWriter::cildata_rva_;
     Byte PEWriter::defaultUS_[8] = { 0, 3, 0x20, 0, 0 };
+
+    size_t PEMethod::Write(size_t sizes[MaxTables + ExtraIndexes], std::fstream &out) const
+    {
+        Byte dest[512];
+        int n;
+        if ((flags_ & 3) == TinyFormat)
+        {
+            n = 1;
+            *(Byte *)dest = (flags_ & 3) + (codeSize_ << 2);
+        }
+        else
+        {
+            n = 12;
+            *(Word *)dest = 0x3000 + (flags_ & 0xfff);
+            *(Word *)(dest + 2) = maxStack_;
+            *(DWord *)(dest + 4) = codeSize_;
+            *(DWord *)(dest + 8) = signatureToken_;
+        }
+        out.write((char *)dest, n);
+        out.write((char *)code_, codeSize_);
+        n += codeSize_;
+        return n;
+    }
 
     void PEWriter::pool::Ensure(size_t newSize) {
         if (size + newSize > maxSize)
@@ -229,319 +253,7 @@ namespace DotNetPELib
         return rv;
     }
 
-    size_t IndexBase::Render(size_t sizes[MaxTables + ExtraIndexes], Byte *dest) const
-    {
-        size_t rv;
-        DWord val = (index_ << GetIndexShift()) + tag_;
-        if (HasIndexOverflow(sizes))
-        {
-            *(DWord *)dest = val;
-            rv = 4;
-        }
-        else
-        {
-            *(Word *)dest = val;
-            rv = 2;
-        }
-        return rv;
-    }
-    bool ResolutionScope::HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const
-    {
-        return Large(sizes[tModule]) ||
-            Large(sizes[tModuleRef]) ||
-            Large(sizes[tAssemblyRef]) ||
-            Large(sizes[tTypeRef]);
-    }
-    bool TypeDefOrRef::HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const
-    {
-        return Large(sizes[tTypeDef]) ||
-            Large(sizes[tTypeRef]) ||
-            Large(sizes[tTypeSpec]);
-    }
-    bool MemberRefParent::HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const
-    {
-        return Large(sizes[tTypeDef]) ||
-            Large(sizes[tTypeRef]) ||
-            Large(sizes[tModule]) ||
-            Large(sizes[tModuleRef]) ||
-            Large(sizes[tTypeSpec]);
-    }
-    bool Constant::HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const
-    {
-        return Large(sizes[tField]) ||
-            Large(sizes[tParam]);
-    }
-    bool CustomAttribute::HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const
-    {
-        return Large(sizes[tMethodDef]) ||
-            Large(sizes[tField]) ||
-            Large(sizes[tTypeRef]) ||
-            Large(sizes[tTypeDef]) ||
-            Large(sizes[tParam]) ||
-            Large(sizes[tImplMap]) ||
-            Large(sizes[tMemberRef]) ||
-            Large(sizes[tModule]) ||
-            Large(sizes[tStandaloneSig]) ||
-            Large(sizes[tModuleRef]) ||
-            Large(sizes[tTypeSpec]) ||
-            Large(sizes[tAssemblyDef]) ||
-            Large(sizes[tAssemblyRef]);
-    }
-    bool CustomAttributeType::HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const
-    {
-        return Large(sizes[tMethodDef]) ||
-            Large(sizes[tMemberRef]);
-    }
-    bool MemberForwarded::HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const
-    {
-        return Large(sizes[tField]) ||
-            Large(sizes[tMethodDef]);
-    }
-    bool FieldList::HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const
-    {
-        return Large(sizes[tField]);
-    }
-    bool MethodList::HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const
-    {
-        return Large(sizes[tMethodDef]);
-    }
-    bool ParamList::HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const
-    {
-        return Large(sizes[tParam]);
-    }
-    bool TypeDef::HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const
-    {
-        return Large(sizes[tTypeDef]);
-    }
-    bool ModuleRef::HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const
-    {
-        return Large(sizes[tModuleRef]);
-    }
-    bool String::HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const
-    {
-        return Large(sizes[tString]);
-    }
-    bool US::HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const
-    {
-        return Large(sizes[tUS]);
-    }
-    bool GUID::HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const
-    {
-        return Large(sizes[tGUID]);
-    }
-    bool Blob::HasIndexOverflow(size_t sizes[MaxTables + ExtraIndexes]) const
-    {
-        return Large(sizes[tBlob]);
-    }
-    size_t ModuleTableEntry::Render(size_t sizes[MaxTables + ExtraIndexes], Byte *dest) const
-    {
-        *(Word *)dest = 0;
-        size_t n = 2;
-        n += nameIndex_.Render(sizes, dest + n);
-        n += guidIndex_.Render(sizes, dest + n);
-        if (sizes[tGUID] > 65535)
-        {
-            *(DWord *)(dest + n) = 0;
-            n += 4;
-            *(DWord *)(dest + n) = 0;
-            n += 4;
-        }
-        else
-        {
-            *(Word *)(dest + n) = 0;
-            n += 2;
-            *(Word *)(dest + n) = 0;
-            n += 2;
-        }
-        return n;
-    }
-    size_t TypeRefTableEntry::Render(size_t sizes[MaxTables + ExtraIndexes], Byte *dest) const
-    {
-        int n = resolution.Render(sizes, dest);
-        n += typeNameIndex_.Render(sizes, dest + n);
-        n += typeNameSpaceIndex_.Render(sizes, dest + n);
-        return n;
-    }
-    size_t TypeDefTableEntry::Render(size_t sizes[MaxTables + ExtraIndexes], Byte *dest) const
-    {
-        *(DWord *)dest = flags_;
-        int n = 4;
-        n += typeNameIndex_.Render(sizes, dest + n);
-        n += typeNameSpaceIndex_.Render(sizes, dest + n);
-        n += extends_.Render(sizes, dest + n);
-        n += fields_.Render(sizes, dest + n);
-        n += methods_.Render(sizes, dest + n);
-        return n;
-    }
-    size_t FieldTableEntry::Render(size_t sizes[MaxTables + ExtraIndexes], Byte *dest) const
-    {
-        *(Word *)dest = flags_;
-        int n = 2;
-        n += nameIndex_.Render(sizes, dest + n);
-        n += signatureIndex_.Render(sizes, dest + n);
-        return n;
-    }
-    size_t MethodDefTableEntry::Render(size_t sizes[MaxTables + ExtraIndexes], Byte *dest) const
-    {
-        *(DWord *)dest = method_->rva_;
-        int n = 4;
-        *(Word *)(dest + n) = implFlags_;
-        n += 2;
-        *(Word *)(dest + n) = flags_;
-        n += 2;
-        n += nameIndex_.Render(sizes, dest + n);
-        n += signatureIndex_.Render(sizes, dest + n);
-        n += paramIndex_.Render(sizes, dest + n);
-        return n;
-    }
-    size_t ParamTableEntry::Render(size_t sizes[MaxTables + ExtraIndexes], Byte *dest) const
-    {
-        *(Word *)dest = flags_;
-        int n = 2;
-        *(Word *)(dest + n) = sequenceIndex_;
-        n += 2;
-        n += nameIndex_.Render(sizes, dest + n);
 
-        return n;
-    }
-    size_t MemberRefTableEntry::Render(size_t sizes[MaxTables + ExtraIndexes], Byte *dest) const
-    {
-        int n = parentIndex_.Render(sizes, dest);
-        n += nameIndex_.Render(sizes, dest + n);
-        n += signatureIndex_.Render(sizes, dest + n);
-        return n;
-    }
-    size_t ConstantTableEntry::Render(size_t sizes[MaxTables + ExtraIndexes], Byte *dest) const
-    {
-        *(Byte *)dest = type_;
-        *(Byte *)(dest + 1) = 0;
-        int n = 2;
-        n += parentIndex_.Render(sizes, dest + n);
-        n += valueIndex_.Render(sizes, dest + n);
-        return n;
-
-    }
-    size_t CustomAttributeTableEntry::Render(size_t sizes[MaxTables + ExtraIndexes], Byte *dest) const
-    {
-        int n = parentIndex_.Render(sizes, dest);
-        n += typeIndex_.Render(sizes, dest + n);
-        n += valueIndex_.Render(sizes, dest + n);
-        return n;
-    }
-    size_t ClassLayoutTableEntry::Render(size_t sizes[MaxTables + ExtraIndexes], Byte *dest) const
-    {
-        *(Word *)dest = pack_;
-        int n = 2;
-        *(DWord *)(dest + n) = size_;
-        n += 4;
-        n += parent_.Render(sizes, dest + n);
-        return n;
-
-    }
-    size_t FieldLayoutTableEntry::Render(size_t sizes[MaxTables + ExtraIndexes], Byte *dest) const
-    {
-        *(DWord *)dest = offset_;
-        int n = 4;
-        n += parent_.Render(sizes, dest + n);
-        return n;
-    }
-    size_t StandaloneSigTableEntry::Render(size_t sizes[MaxTables + ExtraIndexes], Byte *dest) const
-    {
-        return signatureIndex_.Render(sizes, dest);
-    }
-    size_t ModuleRefTableEntry::Render(size_t sizes[MaxTables + ExtraIndexes], Byte *dest) const
-    {
-        return nameIndex_.Render(sizes, dest);
-    }
-    size_t TypeSpecTableEntry::Render(size_t sizes[MaxTables + ExtraIndexes], Byte *dest) const
-    {
-        return signatureIndex_.Render(sizes, dest);
-    }
-    size_t ImplMapTableEntry::Render(size_t sizes[MaxTables + ExtraIndexes], Byte *dest) const
-    {
-        *(Word *)dest = flags_;
-        int n = 2;
-        n += methodIndex_.Render(sizes, dest + n);
-        n += importNameIndex_.Render(sizes, dest + n);
-        n += moduleIndex_.Render(sizes, dest + n);
-        return n;
-    }
-    size_t FieldRVATableEntry::Render(size_t sizes[MaxTables + ExtraIndexes], Byte *dest) const
-    {
-        *(DWord *)dest = rva_ + PEWriter::cildata_rva_;
-        int n = 4;
-        n += fieldIndex_.Render(sizes, dest + n);
-        return n;
-    }
-    size_t AssemblyDefTableEntry::Render(size_t sizes[MaxTables + ExtraIndexes], Byte *dest) const
-    {
-        *(DWord *)dest = DefaultHashAlgId;
-        int n = 4;
-        // assembly version
-        *(Word *)(dest + n) = 0;
-        n += 2;
-        *(Word *)(dest + n) = 0;
-        n += 2;
-        *(Word *)(dest + n) = 0;
-        n += 2;
-        *(Word *)(dest + n) = 0;
-        n += 2;
-        *(DWord *)(dest + n) = flags_;
-        n += 4;
-        n += publicKeyIndex_.Render(sizes, dest + n);
-        n += nameIndex_.Render(sizes, dest + n);
-        n += cultureIndex_.Render(sizes, dest + n);
-        return n;
-
-    }
-    size_t AssemblyRefTableEntry::Render(size_t sizes[MaxTables + ExtraIndexes], Byte *dest) const
-    {
-        int n = 0;
-        // assembly version
-        *(Word *)(dest + n) = major_;
-        n += 2;
-        *(Word *)(dest + n) = minor_;
-        n += 2;
-        *(Word *)(dest + n) = build_;
-        n += 2;
-        *(Word *)(dest + n) = revision_;
-        n += 2;
-        *(DWord *)(dest + n) = flags_;
-        n += 4;
-        n += publicKeyIndex_.Render(sizes, dest + n);
-        n += nameIndex_.Render(sizes, dest + n);
-        n += cultureIndex_.Render(sizes, dest + n);
-        n += hashIndex_.Render(sizes, dest + n);
-        return n;
-    }
-    size_t NestedClassTableEntry::Render(size_t sizes[MaxTables + ExtraIndexes], Byte *dest) const
-    {
-        int n = nestedIndex_.Render(sizes, dest);
-        n += enclosingIndex_.Render(sizes, dest + n);
-        return n;
-    }
-    size_t PEMethod::Write(size_t sizes[MaxTables + ExtraIndexes], std::fstream &out) const
-    {
-        Byte dest[512];
-        int n;
-        if ((flags_ & 3) == TinyFormat)
-        {
-            n = 1;
-            *(Byte *)dest = (flags_ & 3) + (codeSize_ << 2);
-        }
-        else
-        {
-            n = 12;
-            *(Word *)dest = 0x3000 + (flags_ & 0xfff);
-            *(Word *)(dest + 2) = maxStack_;
-            *(DWord *)(dest + 4) = codeSize_;
-            *(DWord *)(dest + 8) = signatureToken_;
-        }
-        out.write((char *)dest, n);
-        out.write((char *)code_, codeSize_);
-        n += codeSize_;
-        return n;
-    }
     void PEWriter::CalculateObjects(PELib &peLib)
     {
         peHeader_ = new PEHeader;
@@ -1316,5 +1028,4 @@ namespace DotNetPELib
         align(fileAlign_);
         return true;
     }
-
 }

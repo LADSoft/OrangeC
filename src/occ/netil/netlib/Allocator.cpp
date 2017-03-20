@@ -71,6 +71,18 @@ namespace DotNetPELib {
         new (rv) Field(Name, tp, Flags);
         return static_cast<Field *>(rv);
     }
+    Property *Allocator::AllocateProperty()
+    {
+        void *rv = BaseAlloc(sizeof(Property));
+        new (rv) Property();
+        return static_cast<Property *>(rv);
+    }
+    Property *Allocator::AllocateProperty(PELib &peLib, std::string name, Type *type, std::vector<Type *>& indices, bool hasSetter)
+    {
+        void *rv = BaseAlloc(sizeof(Property));
+        new (rv) Property(peLib, name, type, indices, true);
+        return static_cast<Property *>(rv);
+    }
     Enum *Allocator::AllocateEnum(std::string Name, Qualifiers Flags, Field::ValueSize Size)
     {
         void *rv = BaseAlloc(sizeof(Enum));
@@ -143,16 +155,16 @@ namespace DotNetPELib {
         new (rv) Param(Name, Tp);
         return static_cast<Param *>(rv);
     }
-    FieldName *Allocator::AllocateFieldName(Field *F, std::string Name, std::string Path)
+    FieldName *Allocator::AllocateFieldName(Field *F)
     {
         void *rv = BaseAlloc(sizeof(FieldName));
-        new (rv) FieldName(F, Name, Path);
+        new (rv) FieldName(F);
         return static_cast<FieldName *>(rv);
     }
-    MethodName *Allocator::AllocateMethodName(MethodSignature *M, std::string Name, std::string Path)
+    MethodName *Allocator::AllocateMethodName(MethodSignature *M)
     {
         void *rv = BaseAlloc(sizeof(MethodName));
-        new (rv) MethodName(M, Name, Path);
+        new (rv) MethodName(M);
         return static_cast<MethodName *>(rv);
     }
     MethodSignature *Allocator::AllocateMethodSignature(std::string Name, int Flags, DataContainer *Container)

@@ -100,24 +100,24 @@ namespace DotNetPELib
                 peLib.Out() << "class ";
         field_->FieldType()->ILSrcDump(peLib);
         peLib.Out() << " ";
-        if (field_->FullName().size())
-            peLib.Out() << field_->FullName();
-        else
-            peLib.Out() << Qualifiers::GetName(field_->Name(), field_->GetContainer());
+        peLib.Out() << Qualifiers::GetName(field_->Name(), field_->GetContainer());
         return true;
     }
     size_t FieldName::Render(PELib &peLib, int opcode, int operandType, Byte *result)
     {
-        *(DWord *)result = field_->PEIndex() | (tField << 24);
+        if (field_->GetContainer() && field_->GetContainer()->InAssemblyRef())
+        {
+            field_->PEDump(peLib);
+            *(DWord *)result = field_->PEIndex() | (tMemberRef << 24);
+        }
+        else
+        {
+            *(DWord *)result = field_->PEIndex() | (tField << 24);
+        }
         return 4;
     }
-    MethodName::MethodName(MethodSignature *M, std::string Name, std::string Path) : signature_(M), Value("", nullptr)
+    MethodName::MethodName(MethodSignature *M) : signature_(M), Value("", nullptr)
     {
-        if (Name.size())
-            if (Path.size())
-                signature_->FullName(Path + "::'" + Name + "'");
-            else
-                signature_->FullName(std::string("'") + Name + "'");
     }
     bool MethodName::ILSrcDump(PELib &peLib) const
     {

@@ -63,7 +63,7 @@ namespace DotNetPELib
     {
         int peflags = TransferFlags();
         size_t typenameIndex = peLib.PEOut().HashString(Name());
-        size_t namespaceIndex = ParentNamespace();
+        size_t namespaceIndex = ParentNamespace(peLib);
         size_t extends = peLib.PEOut().EnumBaseClass();
         size_t fieldIndex = peLib.PEOut().NextTableIndex(tField);
         size_t methodIndex = peLib.PEOut().NextTableIndex(tMethodDef);
@@ -77,7 +77,7 @@ namespace DotNetPELib
 
         if (parent && typeid(*parent) == typeid(Class))
         {
-            size_t enclosing = ParentClass();
+            size_t enclosing = ParentClass(peLib);
             table = new NestedClassTableEntry(peIndex_, enclosing);
             peLib.PEOut().AddTableEntry(table);
         }

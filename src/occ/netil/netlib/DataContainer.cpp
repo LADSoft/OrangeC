@@ -47,23 +47,55 @@ namespace DotNetPELib
         field->SetContainer(this);
         fields_.push_back(field);
     }
-    size_t DataContainer::ParentNamespace() const
+    size_t DataContainer::ParentNamespace(PELib &peLib) const
     {
         DataContainer *current = this->Parent();
         while (current && typeid(*current) != typeid(Namespace))
             current = current->Parent();
         if (current)
+        {
+            if (current && current->InAssemblyRef())
+                static_cast<Namespace *>(current)->PEDump(peLib);
             return current->PEIndex();
+        }
         return 0;
     }
-    size_t DataContainer::ParentClass() const
+    size_t DataContainer::ParentClass(PELib &peLib) const
     {
         DataContainer *current = Parent();
         if (current && typeid(*current) == typeid(Class))
         {
+            if (current && current->InAssemblyRef())
+                static_cast<Class *>(current)->PEDump(peLib);
             return current->PEIndex();
         }
         return 0;
+    }
+    size_t DataContainer::ParentAssembly(PELib &peLib) const
+    {
+        // the parent assembly is always at top of the datacontainer tree
+        DataContainer *current = Parent();
+        while (current->Parent() && typeid(*current) != typeid(AssemblyDef))
+        {
+            current = current->Parent();
+        }
+        if (current && current->InAssemblyRef())
+            static_cast<AssemblyDef *>(current)->PEDump(peLib);
+        return current->PEIndex();
+    }
+    DataContainer *DataContainer::FindContainer(std::vector<std::string>& split, size_t &n)
+    {
+        n = 0;
+        DataContainer *current = this, *rv = current;
+        for (int i=0; i < split.size(); i++)
+        {
+            current = current->FindContainer(split[i]);
+            if (!current)
+                break;
+            rv = current;
+            n++;
+        }
+        return rv;
     }
     bool DataContainer::ILSrcDump(PELib &peLib) const
     {

@@ -42,7 +42,7 @@ namespace DotNetPELib
 {
     char *Qualifiers::qualifierNames_[] =
     {
-        "public", "private", "static", "explicit", "ansi", "sealed", "enum",
+        "public", "private", "static", "instance", "explicit", "ansi", "sealed", "enum",
         "value", "sequential", "auto", "literal", "hidebysig", "preservesig", "specialname",
         "rtspecialname", "cil", "managed"
     };
@@ -73,6 +73,13 @@ namespace DotNetPELib
                     rv += type ? "\xf8" : "/";
                 else
                     rv += '.';
+            }
+            else if (typeid(*parent) == typeid(AssemblyDef))
+            {
+                if (parent->InAssemblyRef())
+                {                   
+                    rv += std::string("[") + parent->Name() + "]";
+                }
             }
             pos++;
         }

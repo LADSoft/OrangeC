@@ -314,8 +314,10 @@ void load_ind(int sz)
             // check for __va_arg__ on a pointer type
             if (oper && oper->OperandType() == Operand::t_value && typeid(*oper->GetValue()) == typeid(MethodName))
             {
-                if (((MethodName *)oper->GetValue())->Signature()->FullName() == ptrUnbox->FullName())
-                    return;
+                MethodSignature *test = ((MethodName *)oper->GetValue())->Signature();
+                if (test->GetContainer() == ptrUnbox->GetContainer())
+                    if (test->Name() == ptrUnbox->Name())
+                        return;
             }
             op = Instruction::i_ldind_u4;
             break;

@@ -44,22 +44,18 @@ namespace DotNetPELib
 {
 
     char *Type::typeNames_[] = {
-        "", "", "void", "int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "int", "uint",
+        "", "", "void", "bool", "char", "int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "int", "uint",
         "float32", "float64", "object", "object []", "string"
     };
-    char *BoxedType::typeNames_[] = { "", "", "", "Int8", "UInt8",
+    char *BoxedType::typeNames_[] = { "", "", "", "Bool", "Char", "Int8", "UInt8",
         "Int16", "UInt16", "Int32", "UInt32",
         "Int64", "UInt64", "Int", "UInt", "Float", "Double"
     };
     bool Type::ILSrcDump(PELib &peLib) const
     {
-        if (fullName_.size())
+        if (tp_ == cls)
         {
-            peLib.Out() << fullName_;
-        }
-        else if (tp_ == cls)
-        {
-            peLib.Out() << "'" << Qualifiers::GetName("", typeRef_, true) << "'";
+            peLib.Out() << Qualifiers::GetName("", typeRef_, true);
         }
         else if (tp_ == method)
         {
@@ -76,34 +72,18 @@ namespace DotNetPELib
     }
     size_t Type::Render(PELib &peLib, Byte *result)
     {
-        if (fullName_.size())
-        {
-            if (!peIndex_)
-            {
-                char assemblyName[1024], namespaceName[1024], className[1024];
-                if (sscanf(fullName_.c_str(), "[%[^]]]%[^.].%s", assemblyName, namespaceName, className) == 3)
-                {
-                    AssemblyDef *assembly = peLib.FindAssembly(assemblyName);
-                    if (!assembly)
-                    {
-                        peLib.AddExternalAssembly(assemblyName);
-                        assembly = peLib.FindAssembly(assemblyName);
-                        assembly->PEDump(peLib);
-                    }
-                    size_t nmspc = peLib.PEOut().HashString(namespaceName);
-                    size_t cls = peLib.PEOut().HashString(className);
-                    ResolutionScope rs(ResolutionScope::AssemblyRef, assembly->PEIndex());
-                    TableEntryBase *table = new TypeRefTableEntry(rs, cls, nmspc);
-                    peIndex_ = peLib.PEOut().AddTableEntry(table);
-                }
-            }
-            *(int *)result = peIndex_ | (tTypeRef << 24);
-            return 4;
-        }
-        else switch (tp_)
+        switch (tp_)
         {
         case cls:
-            *(int *)result = typeRef_->PEIndex() | (tTypeDef << 24);
+            if (typeRef_->InAssemblyRef())
+            {
+                typeRef_->PEDump(peLib);
+                *(int *)result = typeRef_->PEIndex() | (tTypeRef << 24);
+            }
+            else
+            {
+                *(int *)result = typeRef_->PEIndex() | (tTypeDef << 24);
+            }
             return 4;
             break;
         case method:
@@ -111,6 +91,8 @@ namespace DotNetPELib
         {
             if (!peIndex_)
             {
+                // if rendering a method as a type we are always going to put the sig
+                // in the type spec table
                 size_t sz;
                 Byte *sig = SignatureGenerator::TypeSig(this, sz);
                 size_t signature = peLib.PEOut().HashBlob(sig, sz);
@@ -127,6 +109,7 @@ namespace DotNetPELib
     }
     bool BoxedType::ILSrcDump(PELib &peLib) const
     {
+        // no point in looking up the type name in the assembly for this...
         peLib.Out() << "[mscorlib]System." << typeNames_[tp_];
         return true;
     }
@@ -137,9 +120,13 @@ namespace DotNetPELib
             size_t system = peLib.PEOut().SystemName();
             size_t name = peLib.PEOut().HashString(typeNames_[tp_]);
             AssemblyDef *assembly = peLib.MSCorLibAssembly();
-            ResolutionScope rs(ResolutionScope::AssemblyRef, assembly->PEIndex());
-            TableEntryBase *table = new TypeRefTableEntry(rs, name, system);
-            peIndex_ = peLib.PEOut().AddTableEntry(table);
+            void *result = nullptr;
+            peLib.Find(std::string("System.") + typeNames_[tp_], &result, assembly);
+            if (result)
+            {
+                static_cast<Class *>(result)->PEDump(peLib);
+                peIndex_ =  static_cast<Class *>(result)->PEIndex();
+            }
         }
         *(int *)result = peIndex_ | (tTypeRef << 24);
         return 4;

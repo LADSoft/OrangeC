@@ -1,3 +1,15 @@
+Version 2.0:
+    read public members of assemblies into the internal database - searches the GAC or takes the path of an assembly
+    add support for simple properties
+    cache the custom attribute database for purposes of being able to parse files; 
+        in general you cannot declare custom attributes though
+    add lookup functions to find assembly members of referenced assemblies
+    clean up some duplicate definitions in the API.
+    update demo code to use new APIs.
+    add new demos
+    fix bug: integer constants were being represented in hexadecimal in the .il file
+    fix bug: in the IL src types were quoted in boxing and newarr
+
 Version 1.2:
     remove sdata section; move the data into the CIL data section (fix for avast
         not liking generated files)

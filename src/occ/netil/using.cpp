@@ -19,6 +19,13 @@ extern "C" void _using_init()
 }
 extern "C" BOOLEAN _using_(char *file)
 {
+    char name[260], *p;
+    strcpy(name, file);
+    p = strrchr(name, '.');
+    if (p && p[1] != '\\')
+        *p = 0;
+    if (!peLib->LoadAssembly(name))
+        return true;
     return !peLib->LoadUnmanaged(file);
 }
 extern "C" std::string _dll_name(char *name)

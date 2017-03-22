@@ -58,6 +58,7 @@ extern "C" {
     extern char namespaceAndClass[512];
     extern LIST *temporarySymbols;
     extern char prm_snkKeyFile[260];
+    extern int assemblyVersion[4];
 
     MethodSignature *argsCtor;
     MethodSignature *argsNextArg;
@@ -1316,6 +1317,7 @@ extern "C" BOOLEAN oa_main_preprocess(void)
     {
         mainContainer = peLib->WorkingAssembly();
     }
+    peLib->WorkingAssembly()->SetVersion(assemblyVersion[0], assemblyVersion[1], assemblyVersion[2], assemblyVersion[3]);
     peLib->WorkingAssembly()->SNKFile(prm_snkKeyFile);
     BYTE mscorlibPublicKeytoken[] = { 0xb7, 0x7a, 0x5c, 0x56, 0x19, 0x34, 0xe0, 0x89 };
     peLib->AddExternalAssembly("mscorlib", mscorlibPublicKeytoken);

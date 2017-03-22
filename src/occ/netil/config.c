@@ -56,6 +56,7 @@ int dbgblocknum;
     #endif 
     enum asmTypes prm_assembler;
     char prm_snkKeyFile[260];
+    int assemblyVersion[4]; // will default to 0.0.0.0
 static    char usage_text[] = "[options] [@response file] files\n"
     "\n""/1        - C1x mode                  /9        - C99 mode\n"
         "/c        - compile only              +e        - dump errors to file\n"
@@ -67,7 +68,7 @@ static    char usage_text[] = "[options] [@response file] files\n"
         "/Kfile    - set strong name key       /Lxxx     - set dlls to import from\n"
         "/M        - generate make stubs       /Nns.cls  - set namespace and class\n"
         "/O-       - disable optimizations     +Q        - quiet mode\n"
-        "/T        - translate trigraphs\n"
+        "/T        - translate trigraphs       /Vx.x.x.x - set assembly assemblyVersion\n"
         "Codegen parameters: (/C[+][-][params])\n"
         "  +d   - display diagnostics          -b        - no BSS\n"
         "  +F   - flat model                   -l        - no C source in ASM file\n"
@@ -88,8 +89,11 @@ static CMDLIST args[] =
         'N', ARG_CONCATSTRING, (void (*)(char, char *))parse_param
     },
     {
+        'V', ARG_CONCATSTRING, (void (*)(char, char *))parse_param
+    },
+    {
         'W', ARG_CONCATSTRING, (void (*)(char, char *))parse_param
-    }
+    },
     
 } ;
 static KEYWORD prockeywords[] = 
@@ -375,6 +379,10 @@ static int parse_param(char select, char *string)
             fatal("namesplace/class info in wrong format");
         strcpy(namespaceAndClass, string);
     }
+    if (select == 'V') {
+        if (sscanf(string, "%d.%d.%d.%d", &assemblyVersion[0], &assemblyVersion[1], &assemblyVersion[2], &assemblyVersion[3]) != 4)
+            fatal("invalid Version number");
+    }
     return 0;
 }
 static int parse_codegen(char mode, char *string)
@@ -453,7 +461,7 @@ ARCH_GEN outputfunctions = {
     asm_atomic,             /* atomic primitives */
     asm_goto,               /* unconditional branch */
     asm_gosub,              /* normal gosub to an immediate label or through a var */
-    asm_fargosub,           /* far version of gosub */
+    asm_fargosub,           /* far assemblyVersion of gosub */
     asm_trap,               /* 'trap' instruction - the arg will be an immediate # */
     asm_int,                /* 'int' instruction, calls a labeled function which is an interrupt */
     asm_ret,                /* return from subroutine */

@@ -87,7 +87,7 @@ namespace DotNetPELib
         }
         else
         {
-            table = new AssemblyDefTableEntry(PA_None, 0, 0, 0, 0, nameIndex);
+            table = new AssemblyDefTableEntry(PA_None, major_,minor_,build_, revision_, nameIndex);
         }
         peIndex_ = peLib.PEOut().AddTableEntry(table);
         return true;

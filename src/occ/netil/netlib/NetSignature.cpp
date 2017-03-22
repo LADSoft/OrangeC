@@ -54,7 +54,7 @@ namespace DotNetPELib
         ELEMENT_TYPE_I8, ELEMENT_TYPE_U8,
         ELEMENT_TYPE_I, ELEMENT_TYPE_U,
         ELEMENT_TYPE_R4, ELEMENT_TYPE_R8,
-        0,0,
+        0,
         ELEMENT_TYPE_STRING
     };
 
@@ -65,11 +65,10 @@ namespace DotNetPELib
         int rv = 0;
         for (int i = 0; i < tp->PointerLevel(); i++)
             buf[offset + rv++] = ELEMENT_TYPE_PTR;
+        for (int i=0; i < tp->ArrayLevel(); i++)
+            buf[offset + rv++] = ELEMENT_TYPE_SZARRAY;
         switch (tp->GetBasicType())
         {
-        case Type::objectArray:
-            buf[offset + rv++] = ELEMENT_TYPE_SZARRAY;
-            // fallthrough
         case Type::object:
             buf[offset + rv++] = ELEMENT_TYPE_OBJECT;
             break;
@@ -385,13 +384,19 @@ namespace DotNetPELib
     {
         Type *rv = NULL;
         int pointerLevel = 0;
+        int arrayLevel = 0;
         while (data[start] == ELEMENT_TYPE_PTR)
         {
             pointerLevel++;
             start++;
             len--;
         }
-        len--;
+        while (data[start] == ELEMENT_TYPE_SZARRAY)
+        {
+            arrayLevel++;
+            start++;
+            len--;
+        }
         switch(data[start])
         {
             size_t index;
@@ -404,23 +409,6 @@ namespace DotNetPELib
                 break;
             case ELEMENT_TYPE_TYPEDBYREF: // not supporting this right now...
                 rv = nullptr;
-                break;
-            case ELEMENT_TYPE_SZARRAY:
-                start++;
-                len--;
-                if (data[start] != ELEMENT_TYPE_OBJECT)
-                {
-                    // error condition, we are going to convert to object but meanwhile
-                    // get the type.
-                    if (!GetType(lib, assembly, reader, data, start, len))
-                        return nullptr;
-                }
-                else
-                {
-                    start++;
-                    len--;
-                }
-                rv = lib.AllocateType(Type::objectArray, pointerLevel);
                 break;
             case ELEMENT_TYPE_OBJECT:
                 start++, len--;
@@ -444,6 +432,8 @@ namespace DotNetPELib
                 start++, len--;
                 break;
         }
+        if (rv)
+            rv->ArrayLevel(arrayLevel);
         return rv;
     }
     Byte *SignatureGenerator::ConvertToBlob(int *buf, int size, size_t &sz)

@@ -63,15 +63,12 @@ namespace DotNetPELib
                         if (tpa->GetClass() != tpp->GetClass())
                             return false;
                 }
-                else if (tpp->GetBasicType() == Type::object || (flags_ & Vararg) && n == params.size()-1 && tpp->GetBasicType() == Type::objectArray)
-                {
-                    if (tpa->GetBasicType() != Type::cls && tpa->GetBasicType() != Type::object)
-                        return false;
-                }
                 else
                 {
                     return false;
                 }
+                if (tpa->PointerLevel() != tpp->PointerLevel() || tpa->ArrayLevel() != tpp->ArrayLevel())
+                    return false;
                 if (n < params.size()-1)
                     n++, ++it;
             }            

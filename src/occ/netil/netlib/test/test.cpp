@@ -993,9 +993,10 @@ void test11()
     // add a reference to the assembly
     libEntry.LoadAssembly("mscorlib");
 
-    // create the function refernce to WriteLine
+    // create the function refernece to WriteLine
     Type tp(Type::string, 0);
-    Type tp1(Type::objectArray, 0);
+    Type tp1(Type::object, 0);
+    tp1.ArrayLevel(1);
     std::vector<Type *> typeList;
     typeList.push_back(&tp);
     typeList.push_back(&tp1);

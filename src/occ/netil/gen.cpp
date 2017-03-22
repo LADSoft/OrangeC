@@ -258,7 +258,9 @@ Operand *getOperand(IMODE *oper)
                 {
                     if (oper->offset == objectArray_exp)
                     {
-                        rv = peLib->AllocateOperand(peLib->AllocateValue("", peLib->AllocateType(Type::objectArray, 0)));
+                        Type *oa = peLib->AllocateType(Type::object, 0);
+                        oa->ArrayLevel(1);
+                        rv = peLib->AllocateOperand(peLib->AllocateValue("", oa));
     
                     }
                     else

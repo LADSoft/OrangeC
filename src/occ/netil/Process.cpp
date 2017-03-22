@@ -280,7 +280,9 @@ MethodSignature *GetMethodSignature(TYPE *tp, bool pinvoke)
         {
             if (!pinvoke)
             {
-                Param * p = peLib->AllocateParam("__va_list__", peLib->AllocateType(Type::objectArray, 0));
+                Type *oa = peLib->AllocateType(Type::object, 0);
+                oa->ArrayLevel(1);
+                Param * p = peLib->AllocateParam("__va_list__", oa);
                 rv->AddParam(p);
             }
             break;
@@ -928,7 +930,9 @@ void LoadParams(SYMBOL *sp)
         Param *newParam;
         if (sym->tp->type == bt_ellipse)
         {
-            newParam = peLib->AllocateParam("__va_list__", peLib->AllocateType(Type::objectArray, 0));
+            Type *oa = peLib->AllocateType(Type::object, 0);
+            oa->ArrayLevel(1);
+            newParam = peLib->AllocateParam("__va_list__", oa);
             sym->name = "__va_list__";
         }
         else

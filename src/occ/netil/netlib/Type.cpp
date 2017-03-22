@@ -45,7 +45,7 @@ namespace DotNetPELib
 
     char *Type::typeNames_[] = {
         "", "", "void", "bool", "char", "int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "int", "uint",
-        "float32", "float64", "object", "object []", "string"
+        "float32", "float64", "object", "string"
     };
     char *BoxedType::typeNames_[] = { "", "", "", "Bool", "Char", "Int8", "UInt8",
         "Int16", "UInt16", "Int32", "UInt32",
@@ -66,6 +66,8 @@ namespace DotNetPELib
         {
             peLib.Out() << typeNames_[tp_];
         }
+        for (int i=0; i< arrayLevel_; i++)
+            peLib.Out() << " [ ]";
         for (int i = 0; i < pointerLevel_; i++)
             peLib.Out() << " *";
         return true;

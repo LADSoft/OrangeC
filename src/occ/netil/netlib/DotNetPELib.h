@@ -1118,15 +1118,15 @@ namespace DotNetPELib
             ///** type is a reference to a method signature
             method,
             /* below this is various CIL types*/
-            Void, Bool, Char, i8, u8, i16, u16, i32, u32, i64, u64, inative, unative, r32, r64, object, objectArray, string
+            Void, Bool, Char, i8, u8, i16, u16, i32, u32, i64, u64, inative, unative, r32, r64, object, string
         };
-        Type(BasicType Tp, int PointerLevel) : tp_(Tp), pointerLevel_(PointerLevel), byRef_(false), typeRef_(nullptr), methodRef_(nullptr), peIndex_(0)
+        Type(BasicType Tp, int PointerLevel) : tp_(Tp), pointerLevel_(PointerLevel), arrayLevel_(0), byRef_(false), typeRef_(nullptr), methodRef_(nullptr), peIndex_(0)
         {
         }
-        Type(DataContainer *clsref) : tp_(cls), pointerLevel_(0), byRef_(false), typeRef_(clsref), methodRef_(nullptr), peIndex_(0)
+        Type(DataContainer *clsref) : tp_(cls), pointerLevel_(0), arrayLevel_(0), byRef_(false), typeRef_(clsref), methodRef_(nullptr), peIndex_(0)
         {
         }
-        Type(MethodSignature *methodref) : tp_(method), pointerLevel_(0), byRef_(false), typeRef_(nullptr),
+        Type(MethodSignature *methodref) : tp_(method), pointerLevel_(0), arrayLevel_(0), byRef_(false), typeRef_(nullptr),
             methodRef_(methodref), peIndex_(0)
         {
         }
@@ -1139,6 +1139,8 @@ namespace DotNetPELib
         ///** Get the signature reference for method type objects
         MethodSignature *GetMethod() const { return methodRef_; }
  
+        void ArrayLevel(int arrayLevel) { arrayLevel_ = arrayLevel;  }
+        bool ArrayLevel() const { return arrayLevel_;  }
         ///** Pointer indirection count
         void PointerLevel(int n) { pointerLevel_ = n; }
         ///** Pointer indirection count
@@ -1157,6 +1159,7 @@ namespace DotNetPELib
     protected:
         int pointerLevel_;
         bool byRef_;
+        bool arrayLevel_;
         BasicType tp_;
         DataContainer *typeRef_;
         MethodSignature *methodRef_;

@@ -5,7 +5,7 @@
     All rights reserved.
     
     Redistribution and use of this software in source and binary forms, 
-    with or without modification, are permitted provideinitiad that the following 
+    with or without modification, are permitted provided that the following 
     conditions are met:
     
     * Redistributions of source code must retain the above
@@ -2288,18 +2288,6 @@ static LEXEME *read_strings(LEXEME *lex, INITIALIZER **next,
         
         initInsert(next, btp, exp, (*desc)->offset + (*desc)->reloffset, FALSE); /* NULL=no initializer */
         max = (*desc)->reloffset/btp->size;
-    }
-    for (i=(*desc)->reloffset/btp->size; i < max; i++)
-    {
-        EXPRESSION *exp;
-        if (i == index)
-            exp  = intNode(en_c_i, 0);
-        else
-            exp = NULL;
-        initInsert(next, btp, exp, (*desc)->offset + (*desc)->reloffset, FALSE); /* NULL=no initializer */
-        (*desc)->reloffset += btp->size;
-        next = &(*next)->next;
-        index++;
     }
     if ((*desc)->reloffset < max * btp->size)
     {

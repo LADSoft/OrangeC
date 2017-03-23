@@ -3009,8 +3009,12 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
             rv = ap1 ;
             break;
         case en_void:
-            gen_void(node->left, funcsp);
-            ap1 = gen_expr( funcsp, node->right, flags, size);
+            while (node->type == en_void)
+            {
+                gen_void(node->left, funcsp);
+                node = node->right;
+            }
+            ap1 = gen_expr(funcsp, node, flags, size);
             rv = ap1;
             break;
         case en_literalclass:
@@ -3366,7 +3370,12 @@ int natural_size(EXPRESSION *node)
         case en_literalclass:
             return - ISZ_UINT;
         case en_void:
-            return natural_size(node->right);
+            while (node->type == en_void && node->right)
+                node = node->right;
+            if (node->type == en_void)
+                return 0;
+            else
+                return natural_size(node);
         case en_cond:
             return natural_size(node->right);
         case en_atomic:

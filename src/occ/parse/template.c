@@ -5760,12 +5760,9 @@ SYMBOL *TemplateClassInstantiateInternal(SYMBOL *sym, TEMPLATEPARAMLIST *args, B
             argument_nesting = 0;
             inTemplateArgs = 0;
             expandingParams = 0;
-            if (instantiatingFunction)
-            {
-                localNameSpace->syms = NULL;
-                localNameSpace->tags = NULL;
-                localNameSpace->next = NULL;
-            }
+            localNameSpace->syms = NULL;
+            localNameSpace->tags = NULL;
+            localNameSpace->next = NULL;
             SetAccessibleTemplateArgs(cls->templateParams, TRUE);
             packIndex = -1;
             deferred = NULL;

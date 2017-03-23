@@ -260,10 +260,14 @@ static char *putpointer(char *p, TYPE *tp)
         my_sprintf(p,"far ");
     p = p +strlen(p);
     if (tp->array)
-        if (tp->btp->size)
-            my_sprintf(p,"[%ld]",tp->size/tp->btp->size);
+        if (tp->btp->size && (! tp->esize || tp->esize->type == en_c_i))
+        {
+            my_sprintf(p,"[%d]",tp->size/tp->btp->size);
+        }
         else
+        {
             my_sprintf(p,"[]");
+        }
     else if (tp->vla)
         my_sprintf(p, "[*]");
     else

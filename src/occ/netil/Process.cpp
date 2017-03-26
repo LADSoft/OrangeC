@@ -48,6 +48,8 @@
 #include <string>
 using namespace DotNetPELib;
 
+extern void Import();
+
 extern "C" {
 
     extern SYMBOL *theCurrentFunc;
@@ -65,6 +67,9 @@ extern "C" {
     MethodSignature *argsUnmanaged;
     MethodSignature *ptrBox;
     MethodSignature *ptrUnbox;
+    MethodSignature *concatStr;
+    MethodSignature *concatObj;
+    MethodSignature *toStr;
     Type *systemObject;
     Method *currentMethod;
     PELib *peLib;
@@ -413,6 +418,12 @@ Value *GetStructField(SYMBOL *sp)
 }
 Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg, BOOLEAN pinvoke)
 {
+    BOOLEAN byref = FALSE;
+    if (isref(tp))
+    {
+        byref = TRUE;
+        tp = basetype(tp)->btp;
+    }
     if (isstructured(tp))
     {
         Type *type = NULL;
@@ -455,6 +466,7 @@ Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg, BOOLEAN pinvoke)
                     hr = hr->next;
                 }
             }
+            type->ByRef(byref);
             return type;
         }
         else
@@ -511,6 +523,7 @@ Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg, BOOLEAN pinvoke)
             // declare any structure we are referencing..
             if (isstructured(tp))
                 GetType(tp, true);
+            type->ByRef(byref);
             return type;
         }
         else
@@ -559,18 +572,28 @@ Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg, BOOLEAN pinvoke)
             rv = peLib->AllocateType(rv->GetClass());
         }
         rv->PointerLevel(level);
+        rv->ByRef(byref);
         return rv;
     }
     else if (basetype(tp)->type == bt_void)
     {
         return peLib->AllocateType(Type::Void, 0);
     }
+    else if (ismsil(tp))
+    {
+        if (basetype(tp)->type == bt___string)
+            return peLib->AllocateType(Type::string, 0);
+        else
+            return peLib->AllocateType(Type::object, 0);
+    }
     else
     {
         static Type::BasicType typeNames[] = { Type::i8, Type::i8, Type::i8, Type::i8, Type::u8,
                 Type::i16, Type::i16, Type::u16, Type::u16, Type::i32, Type::i32, Type::i32, Type::u32, Type::i32, Type::u32,
                 Type::i64, Type::u64, Type::r32, Type::r64, Type::r64, Type::r32, Type::r64, Type::r64 };
-        return peLib->AllocateType(typeNames[basetype(tp)->type], 0);
+        Type *rv = peLib->AllocateType(typeNames[basetype(tp)->type], 0);
+        rv->ByRef(byref);
+        return rv;
     }
 }
 void oa_enter_type(SYMBOL *sp)
@@ -949,6 +972,7 @@ void LoadParams(SYMBOL *sp)
 extern "C" void compile_start(char *name)
 {
     _using_init();
+    Import();
     staticList.clear();
 }
 void LoadFuncs(void)
@@ -1267,6 +1291,34 @@ static void CreateExternalCSharpReferences()
 
     systemObject = FindType("System.Object");
 
+    Type stringType(Type::string, 0);
+    Type objectType(Type::object, 0);
+
+    std::vector<Type *> strArgs;
+    strArgs.push_back(&stringType);
+    strArgs.push_back(&stringType);
+    std::vector<Type *> objArgs;
+    objArgs.push_back(&objectType);
+    objArgs.push_back(&objectType);
+
+    std::vector<Type *>toStrArgs;
+    toStrArgs.push_back(&objectType);
+
+    Method *result;
+    if (peLib->Find("System.String::Concat", &result, strArgs) == PELib::s_method)
+    {
+        concatStr =  result->Signature();
+    }
+    if (peLib->Find("System.String::Concat", &result, objArgs) == PELib::s_method)
+    {
+        concatObj =  result->Signature();
+    }
+    if (peLib->Find("System.Convert::ToString", &result, toStrArgs) == PELib::s_method)
+    {
+        toStr =  result->Signature();
+    }
+    if (!concatStr || !concatObj || !toStr)
+        fatal("could not find builtin function");
 }
 extern "C" BOOLEAN oa_main_preprocess(void)
 {
@@ -1288,8 +1340,6 @@ extern "C" BOOLEAN oa_main_preprocess(void)
     }
     peLib = new PELib(q, corFlags);
 
-    _apply_global_using();
-
     if (peLib->LoadAssembly("mscorlib"))
     {
         fatal("could not load mscorlib.dll");
@@ -1298,6 +1348,8 @@ extern "C" BOOLEAN oa_main_preprocess(void)
     {
         fatal("could not load lsmsilcrtl.dll");
     }
+    _apply_global_using();
+
     peLib->AddUsing("System");
     if (p)
     {

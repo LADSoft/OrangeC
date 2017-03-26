@@ -191,6 +191,10 @@ BOOLEAN comparetypes(TYPE *typ1, TYPE *typ2, int exact)
             return comparetypes(typ1->btp, typ2->btp, exact);
         }
     }
+    if (typ1->type == typ2->type && typ1->type == bt___string)
+        return TRUE;
+    if (typ1->type == bt___object) // object matches anything
+        return TRUE;
     if (typ1->type == typ2->type && (isstructured(typ1) || (exact && typ1->type == bt_enum)))
         return typ1->sp == typ2->sp;
     if (typ1->type == typ2->type || (!exact && isarithmetic(typ2) && isarithmetic(typ1)))
@@ -486,6 +490,12 @@ TYPE *typenum(char *buf, TYPE *tp)
             break;
         case bt_void:
             strcpy(buf, tn_void);
+            break;
+        case bt___string:
+            strcpy(buf, "__string");
+            break;
+        case bt___object:
+            strcpy(buf, "__object");
             break;
         case bt_pointer:
             if (tp->nullptrType)

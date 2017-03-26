@@ -1538,6 +1538,10 @@ static BOOLEAN hasPackedTemplate(TYPE *tp)
             break;
         case bt_any:
             break;
+        case bt___string:
+            break;
+        case bt___object:
+            break;
         case bt_class:
             break;
         case bt_struct:

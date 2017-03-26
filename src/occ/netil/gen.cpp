@@ -59,6 +59,9 @@ extern "C" {
 	extern MethodSignature *argsUnmanaged;
 	extern MethodSignature *ptrBox;
 	extern MethodSignature *ptrUnbox;
+    extern MethodSignature *concatStr;
+    extern MethodSignature *concatObj;
+    extern MethodSignature *toStr;
 	extern Type *systemObject;
 	extern Method *currentMethod;
 	extern std::vector<Local *> localList;
@@ -87,6 +90,8 @@ static int switchTreePos;
 static int returnCount;
 static int hookCount;
 static int stackpos = 0;
+
+static void box(IMODE *im);
 
 Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg = false, BOOLEAN pinvoke = false);
 Type * GetStringType(int type);
@@ -147,6 +152,24 @@ Operand *make_constant(int sz, EXPRESSION *exp)
         Value *field = GetStructField(exp->v.sp);
         operand = peLib->AllocateOperand(field);
     }
+    else if (exp->type == en_c_string)
+    {
+        // dotnetpelib currently doesn't support wide characters
+        char value[50000];
+        int pos = 0;
+        int i;
+        exp->string->refCount--;
+        for (i =0; i < exp->string->size && pos < 49999; i++)
+        {
+            SLCHAR *str = exp->string->pointers[i];
+            int j;
+            for (j=0; j < str->count && pos < 49999; j++, pos++)
+                value[pos] = str->str[j];
+        }
+        value[pos] = 0;
+        // operand is a string
+        operand = peLib->AllocateOperand(value, true);
+    }
     else if (exp->type == en_labcon)
     {
         char lbl[256];
@@ -197,9 +220,9 @@ Operand *getCallOperand(QUAD *q)
     if (q->dc.left->mode == i_immed)
     {
         SYMBOL *sp = en->v.sp;
-        sig = GetMethodSignature(sp);
         if (!msil_managed(sp))
         {
+            sig = GetMethodSignature(sp);
             INITLIST *valist = ((FUNCTIONCALL *)q->altdata)->arguments;
             int n = sig->ParamCount();
             while (n-- && valist)
@@ -209,6 +232,13 @@ Operand *getCallOperand(QUAD *q)
                 sig->AddVarargParam(peLib->AllocateParam("", GetType(valist->tp, TRUE, true, true)));
                 valist = valist->next;
             }
+        }
+        else
+        {
+            if (sp->msil)
+                sig = ((Method *)sp->msil)->Signature();
+            else
+                sig = GetMethodSignature(sp);
         }
     }
     else
@@ -505,6 +535,12 @@ void load_constant(int sz, EXPRESSION *exp)
 }
 void gen_load(IMODE *im, Operand *dest)
 {
+    if (dest && dest->OperandType() == Operand::t_string)
+    {
+        gen_code(Instruction::i_ldstr, dest);
+        increment_stack();
+        return;
+    }
     if (im->mode == i_ind)
     {
         if (im->fieldname)
@@ -531,6 +567,7 @@ void gen_load(IMODE *im, Operand *dest)
         return;
     switch(dest->OperandType())
     {
+
         case Operand::t_int:
         case Operand::t_real:
             load_arithmetic_constant(im->size, dest);
@@ -627,7 +664,7 @@ void gen_store(IMODE *im, Operand *dest)
             break;
     }
 }
-void gen_convert(Operand *dest, int sz)
+void gen_convert(Operand *dest, IMODE *im, int sz)
 {
     Instruction::iop op;
     switch(sz)
@@ -686,6 +723,17 @@ void gen_convert(Operand *dest, int sz)
         case ISZ_CDOUBLE:
         case ISZ_CLDOUBLE:
             break;
+        case ISZ_OBJECT:
+            box(im);
+            return;
+        case ISZ_STRING:
+        {
+            box(im);
+            MethodSignature *sig = toStr;
+            Operand *ap = peLib->AllocateOperand(peLib->AllocateMethodName(sig));
+            gen_code(Instruction::i_call, ap);
+            return;
+        }
     }
     gen_code(op, NULL);
 }
@@ -808,6 +856,29 @@ extern "C" void asm_goto(QUAD *q)               /* unconditional branch */
     }
 
 }
+static void box(IMODE *im)
+{
+    static Type::BasicType names[] = { Type::u32, Type::u32, Type::u8, Type::u8,
+        Type::u16, Type::u16, Type::u16, Type::u32, Type::u32, Type::u32,
+        Type::u64, Type::u32, Type::u32, Type::u16, Type::u16, Type::r32, Type::r64,
+        Type::r64, Type::r32, Type::r64, Type::r64,
+    };
+    static Type::BasicType mnames[] = { Type::i32, Type::i32, Type::i8, Type::i8,
+        Type::i16, Type::i16, Type::i16, Type::i32, Type::i32, Type::i32,
+        Type::i64, Type::i32, Type::i32, Type::i16, Type::i16, Type::r32, Type::r64,
+        Type::r64, Type::r32, Type::r64, Type::r64,
+    };
+    if (im->size == ISZ_OBJECT)
+        return;
+    Type::BasicType n;
+    if (im->size == ISZ_STRING)
+        n = Type::string;
+    else
+        n = im->size < 0 ? mnames[-im->size] : names[im->size];
+    BoxedType *type = peLib->AllocateBoxedType(n);
+    Operand *operand = peLib->AllocateOperand(peLib->AllocateValue("", type));
+    gen_code(Instruction::i_box, operand);
+}
 // this implementation won't handle varag functions nested in other varargs...
 extern "C" void asm_parm(QUAD *q)               /* push a parameter*/
 {
@@ -818,23 +889,9 @@ extern "C" void asm_parm(QUAD *q)               /* push a parameter*/
             Operand *operand = peLib->AllocateOperand(peLib->AllocateMethodName(ptrBox));
             gen_code(Instruction::i_call, operand);
         }
-        else
+        else if (q->dc.left->size != ISZ_OBJECT)
         {
-			static Type::BasicType names[] = { Type::u32, Type::u32, Type::u8, Type::u8,
-                Type::u16, Type::u16, Type::u16, Type::u32, Type::u32, Type::u32,
-                Type::u64, Type::u32, Type::u32, Type::u16, Type::u16, Type::r32, Type::r64,
-                Type::r64, Type::r32, Type::r64, Type::r64
-            };
-            static Type::BasicType mnames[] = { Type::i32, Type::i32, Type::i8, Type::i8,
-                Type::i16, Type::i16, Type::i16, Type::i32, Type::i32, Type::i32,
-                Type::i64, Type::i32, Type::i32, Type::i16, Type::i16, Type::r32, Type::r64,
-                Type::r64, Type::r32, Type::r64, Type::r64
-            };
-
-            Type::BasicType n = q->dc.left->size < 0 ? mnames[-q->dc.left->size] : names[q->dc.left->size];
-            BoxedType *type = peLib->AllocateBoxedType(n);
-            Operand *operand = peLib->AllocateOperand(peLib->AllocateValue("", type));
-            gen_code(Instruction::i_box, operand);
+            box(q->dc.left);
         }
         gen_code(Instruction::i_stelem_ref, NULL);
         decrement_stack();
@@ -1003,6 +1060,23 @@ extern "C" void asm_add(QUAD *q)                /* evaluate an addition */
             gen_load(q->dc.right, ap);
         }
 
+    }
+    // only time we generate add for non arithmetic types is for strings
+    else if (q->dc.left->size == ISZ_STRING || q->dc.right->size == ISZ_STRING ||
+            q->dc.left->size == ISZ_OBJECT && q->dc.right->size == ISZ_OBJECT)
+    {
+        MethodSignature *sig;
+        if (q->dc.left->size == q->dc.right->size && q->dc.left->size == ISZ_STRING)
+        {
+            sig = concatStr;
+        }
+        else
+        {
+            sig = concatObj;
+        }
+        Operand *ap = peLib->AllocateOperand(peLib->AllocateMethodName(sig));
+        gen_code(Instruction::i_call, ap);
+        decrement_stack();
     }
     else
     {
@@ -1194,7 +1268,7 @@ extern "C" void asm_assn(QUAD *q)               /* assignment */
     gen_load(q->dc.left, ap);
     if (q->dc.left->size != 0 && q->dc.left->size != q->ans->size)
     {
-        gen_convert(ap, q->ans->size);
+        gen_convert(ap, q->dc.left, q->ans->size);
     }
     ap = getOperand(q->ans);
     gen_store(q->ans, ap);

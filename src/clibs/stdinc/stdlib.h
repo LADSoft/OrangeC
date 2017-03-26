@@ -206,14 +206,14 @@ extern  unsigned char _RTL_DATA    _osminor;
 long double     _RTL_FUNC _IMPORT _atold(const char *__s);
 void            _RTL_FUNC _IMPORT _exit(int __status);
 char     *  _RTL_FUNC _IMPORT _fullpath(char *, const char *, size_t);
-char     *  _RTL_FUNC _IMPORTMM itoa(int __value, char *__string, int __radix);
-char     *  _RTL_FUNC _IMPORTMM _itoa(int __value, char *__string, int __radix);
-char     *  _RTL_FUNC _IMPORTMM _i64toa(__int64 __value, char *__string, int __radix);
-char     *  _RTL_FUNC _IMPORTMM ltoa(long __value, char *__string, int __radix);
-char     *  _RTL_FUNC _IMPORTMM _ltoa(long __value, char *__string, int __radix);
+char     *  _RTL_FUNC _IMPORTMM itoa(int __value, char *__stringValue, int __radix);
+char     *  _RTL_FUNC _IMPORTMM _itoa(int __value, char *__stringValue, int __radix);
+char     *  _RTL_FUNC _IMPORTMM _i64toa(__int64 __value, char *__stringValue, int __radix);
+char     *  _RTL_FUNC _IMPORTMM ltoa(long __value, char *__stringValue, int __radix);
+char     *  _RTL_FUNC _IMPORTMM _ltoa(long __value, char *__stringValue, int __radix);
 #if  __STDC_VERSION__ >= 199901L
-char * _RTL_FUNC _IMPORT lltoa(long long __value, char *__string, int __radix);
-char * _RTL_FUNC _IMPORT _lltoa(long long __value, char *__string, int __radix);
+char * _RTL_FUNC _IMPORT lltoa(long long __value, char *__stringValue, int __radix);
+char * _RTL_FUNC _IMPORT _lltoa(long long __value, char *__stringValue, int __radix);
 #endif
 void        _RTL_FUNC _IMPORT      _makepath( char *__path,
                                  const char *__drive,
@@ -242,18 +242,18 @@ void        _RTL_FUNC _IMPORT _splitpath2(const char *__path, char *__outpath,
                                   char **__ext);
 void        _RTL_FUNC _IMPORT swab(char *__from, char *__to, int __nbytes);
 void        _RTL_FUNC _IMPORT _swab(char *, char *, int);
-char     *  _RTL_FUNC _IMPORT ultoa(unsigned long __value, char *__string,
+char     *  _RTL_FUNC _IMPORT ultoa(unsigned long __value, char *__stringValue,
                                  int __radix);
-char     *  _RTL_FUNC _IMPORT _ultoa(unsigned long __value, char *__string,
+char     *  _RTL_FUNC _IMPORT _ultoa(unsigned long __value, char *__stringValue,
                                  int __radix);
-char     *  _RTL_FUNC _IMPORT _ui64toa(unsigned __int64 __value, char *__string,
+char     *  _RTL_FUNC _IMPORT _ui64toa(unsigned __int64 __value, char *__stringValue,
                                  int __radix);
-char * _RTL_FUNC _IMPORT utoa(unsigned __value, char *__string, int __radix);
-char * _RTL_FUNC _IMPORT _utoa(unsigned __value, char *__string, int __radix);
+char * _RTL_FUNC _IMPORT utoa(unsigned __value, char *__stringValue, int __radix);
+char * _RTL_FUNC _IMPORT _utoa(unsigned __value, char *__stringValue, int __radix);
 #if  __STDC_VERSION__ >= 199901L
-char     *  _RTL_FUNC _IMPORT ulltoa(unsigned __int64 __value, char *__string,
+char     *  _RTL_FUNC _IMPORT ulltoa(unsigned __int64 __value, char *__stringValue,
                                  int __radix);
-char     *  _RTL_FUNC _IMPORT _ulltoa(unsigned __int64 __value, char *__string,
+char     *  _RTL_FUNC _IMPORT _ulltoa(unsigned __int64 __value, char *__stringValue,
                                  int __radix);
 #endif
 char * _RTL_FUNC _IMPORT _ecvt(double, int, int *, int *);

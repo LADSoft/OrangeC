@@ -1457,6 +1457,8 @@ int opt0(EXPRESSION **node)
         case en_l_fc:
         case en_l_dc:
         case en_l_ldc:
+        case en_l_string:
+        case en_l_object:
         case en_x_wc:
         case en_x_c:
         case en_x_uc:
@@ -1482,6 +1484,8 @@ int opt0(EXPRESSION **node)
         case en_x_di:
         case en_x_fi:
         case en_x_ldi:
+        case en_x_string:
+        case en_x_object:
         case en_shiftby:
         case en_bits:
         case en_literalclass:
@@ -2810,6 +2814,8 @@ int fold_const(EXPRESSION *node)
         case en_l_us:
         case en_l_bool:
         case en_l_bit:
+        case en_l_string:
+        case en_l_object:
         case en_uminus:
         case en_compl:
         case en_not:
@@ -2833,6 +2839,8 @@ int fold_const(EXPRESSION *node)
         case en_x_p:
         case en_x_fp:
         case en_x_sp:
+        case en_x_string:
+        case en_x_object:
         case en_trapcall:
         case en_shiftby:
         case en_substack:
@@ -3129,6 +3137,8 @@ int typedconsts(EXPRESSION *node1)
         case en_l_ldc:
         case en_l_ull:
         case en_l_ll:
+        case en_l_string:
+        case en_l_object:
         case en_bits:
             if (node1->left->type == en_global)
             {
@@ -3471,6 +3481,7 @@ static int depth(EXPRESSION *ep)
         case en_c_fi:
         case en_c_di:
         case en_c_ldi:
+        case en_c_string:
         case en_global:
         case en_auto:
         case en_pc:
@@ -3481,6 +3492,7 @@ static int depth(EXPRESSION *ep)
         case en_nullptr:
         case en_atomic:
         case en_structelem:
+         
             return 1;
         case en_funcret:
             return depth(ep->left);
@@ -3520,6 +3532,7 @@ static void rebalance(EXPRESSION *ep)
         case en_c_fi:
         case en_c_di:
         case en_c_ldi:
+        case en_c_string:
         case en_global:
         case en_auto:
         case en_pc:
@@ -3531,6 +3544,8 @@ static void rebalance(EXPRESSION *ep)
         case en_structelem:
             break;
         case en_add:
+            if (!isarithmeticconst(ep->left) || !isarithmeticconst(ep->right))
+                break;
         case en_mul:
         case en_umul:
         case en_arraymul:

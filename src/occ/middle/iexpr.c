@@ -790,6 +790,12 @@ IMODE *gen_deref(EXPRESSION *node, SYMBOL *funcsp, int flags)
         case en_l_bit:
             siz1 = ISZ_BIT;
             break;
+        case en_l_string:
+            siz1 = ISZ_STRING;
+            break;
+        case en_l_object:
+            siz1 = ISZ_OBJECT;
+            break;
         default:
             siz1 = ISZ_UINT;
     }
@@ -2510,7 +2516,6 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
     IMODE *lbarrier, *rbarrier;
     int lab0;
     int siz1;
-    int ctype;
     int store = flags & F_STORE;
 
     flags &= ~F_STORE;
@@ -2556,112 +2561,93 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
             rv = ap1;
             break;
         case en_x_wc:
-            ctype = en_c_wc;
             siz1 =  ISZ_WCHAR;
             goto castjoin;
         case en_x_c:
-            ctype = en_c_c;
             siz1 =  - ISZ_UCHAR;
             goto castjoin;
         case en_x_u16:
-            ctype = en_c_u16;
             siz1 =  ISZ_U16;
             goto castjoin;
         case en_x_u32:
-            ctype = en_c_u32;
             siz1 =  ISZ_U32;
             goto castjoin;
         case en_x_bool:
-            ctype = en_c_bool;
             siz1 = ISZ_BOOLEAN;
             goto castjoin;
         case en_x_bit:
             siz1 = ISZ_BIT;
             goto castjoin;
         case en_x_uc:
-            ctype = en_c_uc;
             siz1 = ISZ_UCHAR;
             goto castjoin;
         case en_x_s:
-            ctype = en_c_i;
             siz1 =  - ISZ_USHORT;
             goto castjoin;
         case en_x_us:
-            ctype = en_c_ui;
             siz1 = ISZ_USHORT;
             goto castjoin;
         case en_x_i:
-            ctype = en_c_i;
             siz1 =  - ISZ_UINT;
             goto castjoin;
         case en_x_ui:
-            ctype = en_c_ui;
             siz1 = ISZ_UINT;
             goto castjoin;
         case en_x_l:
-            ctype = en_c_l;
             siz1 =  - ISZ_ULONG;
             goto castjoin;
         case en_x_ul:
-            ctype = en_c_ul;
             siz1 = ISZ_ULONG;
             goto castjoin;
         case en_x_ll:
-            ctype = en_c_ll;
             siz1 =  - ISZ_ULONGLONG;
             goto castjoin;
         case en_x_ull:
-            ctype = en_c_ull;
             siz1 = ISZ_ULONGLONG;
             goto castjoin;
 
+        case en_x_string:
+            siz1 = ISZ_STRING;
+            goto castjoin;
+        case en_x_object:
+            siz1 = ISZ_OBJECT;
+            goto castjoin;
+
         case en_x_f:
-            ctype = en_c_f;
             siz1 = ISZ_FLOAT;
             goto castjoin;
         case en_x_d:
-            ctype = en_c_d;
             siz1 = ISZ_DOUBLE;
             goto castjoin;
         case en_x_ld:
-            ctype = en_c_ld;
             siz1 = ISZ_LDOUBLE;
             goto castjoin;
         case en_x_fi:
-            ctype = en_c_fi;
             siz1 = ISZ_IFLOAT;
             goto castjoin;
         case en_x_di:
-            ctype = en_c_di;
             siz1 = ISZ_IDOUBLE;
             goto castjoin;
         case en_x_ldi:
-            ctype = en_c_ldi;
             siz1 = ISZ_ILDOUBLE;
             goto castjoin;
         case en_x_fc:
-            ctype = en_c_fc;
             siz1 = ISZ_CFLOAT;
             goto castjoin;
         case en_x_dc:
-            ctype = en_c_dc;
             siz1 = ISZ_CDOUBLE;
             goto castjoin;
         case en_x_ldc:
-            ctype = en_c_ldc;
             siz1 = ISZ_CLDOUBLE;
             goto castjoin;
         case en_x_fp:
-            ctype = en_c_ui;
             siz1 = ISZ_FARPTR;
             goto castjoin;
         case en_x_sp:
-            ctype = en_c_ui;
             siz1 = ISZ_SEG;
             goto castjoin;
         case en_x_p:
             siz1 = ISZ_ADDR;
-            ctype = en_c_ui;
  castjoin: 
              ap3 = gen_expr(funcsp, node->left, flags & ~F_NOVALUE, natural_size(node->left));
             ap1 = LookupLoadTemp(NULL, ap3);
@@ -2816,6 +2802,13 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
             }
             rv = ap1;
             break;
+        case en_c_string:
+            ap1 = (IMODE *)Alloc(sizeof(IMODE));
+            ap1->mode = i_immed;
+            ap1->size = ISZ_STRING;
+            ap1->offset = node;
+            rv = ap1;
+            break;
         case en_c_f:
         case en_c_d:
         case en_c_ld:
@@ -2895,6 +2888,8 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
         case en_l_fp:
         case en_l_sp:
         case en_l_bit:
+        case en_l_string:
+        case en_l_object:
             ap1 = gen_deref(node, funcsp, flags | store);
             rv = ap1;
             break;
@@ -3009,13 +3004,16 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
             rv = ap1 ;
             break;
         case en_void:
-            while (node->type == en_void)
+        {
+            EXPRESSION *search = node;
+            while (search->type == en_void)
             {
-                gen_void(node->left, funcsp);
-                node = node->right;
+                gen_void(search->left, funcsp);
+                search = search->right;
             }
-            ap1 = gen_expr(funcsp, node, flags, size);
+            ap1 = gen_expr(funcsp, search, flags, size);
             rv = ap1;
+        }
             break;
         case en_literalclass:
             gen_void(node->left, funcsp);
@@ -3281,6 +3279,13 @@ int natural_size(EXPRESSION *node)
             return  - ISZ_ULONGLONG;
         case en_imode:
             return ISZ_ADDR;
+        case en_c_string:
+        case en_l_string:
+        case en_x_string:
+            return ISZ_STRING;
+        case en_l_object:
+        case en_x_object:
+            return ISZ_OBJECT;
         case en_trapcall:
         case en_label:
         case en_auto:

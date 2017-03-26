@@ -55,6 +55,7 @@ extern TYPE stdpointer;
 extern char *overloadNameTab[];
 extern LEXCONTEXT *context;
 extern TYPE stdXC;
+extern TYPE std__string;
 extern int currentErrorLine;
 extern int total_errors;
 extern LAMBDA *lambdas;
@@ -1968,11 +1969,23 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 needend = TRUE;
                 lex = getsym();
             }
-            lex = optimized_expression(lex, funcsp, NULL, &tp1, &returnexp, TRUE);
+            lex = optimized_expression(lex, funcsp, tp, &tp1, &returnexp, TRUE);
             if (!tp1)
             {
                 tp1 = &stdint;
                 error(ERR_EXPRESSION_SYNTAX);
+            }
+            if (basetype(tp)->type == bt___string)
+            {
+                if (returnexp->type == en_labcon)
+                    returnexp->type = en_c_string;
+                else if (basetype(tp1)->type != bt___string)
+                    returnexp = exprNode(en_x_string, returnexp, NULL);
+                tp1 = &std__string;
+            }
+            else if (!comparetypes(tp1, tp, TRUE) && ismsil(tp1))
+            {
+                errortype(ERR_CANNOT_CONVERT_TYPE, tp1, tp);
             }
             if (needend)
             {
@@ -1982,6 +1995,9 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                     skip(&lex, end);
                 }
             }
+            if (basetype(tp)->type == bt___object)
+                if (basetype(tp1)->type != bt___object)
+                    returnexp = exprNode(en_x_object, returnexp, NULL);
             if (isstructured(tp1) && isarithmetic(tp))
             {
                 if (cparams.prm_cplusplus)
@@ -3068,31 +3084,6 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
             {
                 funcsp->allocaUsed = TRUE;
             }
-            /*
-            else
-            {
-                EXPRESSION *exp = anonymousVar(sc_auto, &stdpointer);
-                SYMBOL *var = exp->v.sp;
-                deref(&stdpointer, &exp);
-                st = stmtNode(lex, NULL, st_expr);
-                st->select = exprNode(en_savestack, exp, NULL);
-                st->next = blockstmt->head;
-                blockstmt->head = st;
-                if (blockstmt->blockTail)
-                {
-                    st = blockstmt->blockTail;
-                    while (st->next)
-                        st = st->next;
-                    st->next = stmtNode(lex, NULL, st_expr);
-                    st->next->select = exprNode(en_loadstack, exp, NULL);
-                }
-                else
-                {
-                    blockstmt->blockTail = stmtNode(lex, NULL, st_expr);
-                    blockstmt->blockTail->select = exprNode(en_loadstack, exp, NULL);
-                }
-            }
-            */
         }
     }
     if (first && cparams.prm_cplusplus)

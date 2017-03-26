@@ -703,7 +703,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
                     }
                     if (throwaway)
                     {
-                        if (isvoid(throwaway) && !isvoid(*tp))
+                        if (isvoid(throwaway) && !isvoid(*tp) || ismsil(*tp))
                         {
                             error(ERR_NOT_AN_ALLOWED_TYPE);
                         }
@@ -2001,6 +2001,7 @@ static BOOLEAN noexceptExpression(EXPRESSION *node)
         case en_c_wc:
         case en_c_u16:
         case en_c_u32:        
+        case en_c_string:
         case en_nullptr:
         case en_memberptr:
         case en_structelem:
@@ -2041,6 +2042,8 @@ static BOOLEAN noexceptExpression(EXPRESSION *node)
         case en_l_bit:
         case en_l_ll:
         case en_l_ull:
+        case en_l_string:
+        case en_l_object:
         case en_literalclass:
             rv = noexceptExpression(node->left);
             break;
@@ -2074,6 +2077,8 @@ static BOOLEAN noexceptExpression(EXPRESSION *node)
         case en_x_p:
         case en_x_fp:
         case en_x_sp:
+        case en_x_string:
+        case en_x_object:
         case en_trapcall:
         case en_shiftby:
 /*        case en_movebyref: */

@@ -505,4 +505,17 @@ namespace DotNetPELib
     {
         return unmanagedRoutines_[name];
     }
+    void PELib::Traverse(Callback &callback) const
+    {
+        for (auto a : assemblyRefs_)
+        {
+            if (callback.EnterAssembly(a))
+            {
+                if (!a->Traverse(callback))
+                    break;
+                if (!callback.ExitAssembly(a))
+                    break;
+            }
+        }
+    }
 }

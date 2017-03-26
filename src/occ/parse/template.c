@@ -80,6 +80,7 @@ extern LIST *openStructs;
 extern int structLevel;
 extern TYPE stdnullpointer;
 extern TYPE stdvoid;
+extern TYPE std__string, std__object;
 extern int total_errors;
 extern BOOLEAN inMatchOverload;
 extern int codeLabel;
@@ -2475,6 +2476,13 @@ static TYPE *LookupTypeFromExpression(EXPRESSION *exp, TEMPLATEPARAMLIST *enclos
         case en_c_p:
         case en_x_p:
             return &stdpointer;
+        case en_c_string:
+        case en_l_string:
+        case en_x_string:
+            return &std__string;
+        case en_x_object:
+        case en_l_object:
+            return &std__object;
         case en_l_p:
         {
             TYPE *tp = LookupTypeFromExpression(exp->left, enclosing, alt);
@@ -2515,7 +2523,6 @@ static TYPE *LookupTypeFromExpression(EXPRESSION *exp, TEMPLATEPARAMLIST *enclos
         case en_x_ldi:
         case en_l_ldi:
             return &stdlongdoubleimaginary;
-
         case en_nullptr:
             return &stdnullpointer;
         case en_memberptr:

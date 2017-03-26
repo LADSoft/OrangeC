@@ -63,6 +63,8 @@ namespace DotNetPELib
     size_t SignatureGenerator::EmbedType(int *buf, int offset, Type *tp)
     {
         int rv = 0;
+        if (tp->ByRef())
+            buf[offset + rv++] = ELEMENT_TYPE_BYREF;
         for (int i = 0; i < tp->PointerLevel(); i++)
             buf[offset + rv++] = ELEMENT_TYPE_PTR;
         for (int i=0; i < tp->ArrayLevel(); i++)

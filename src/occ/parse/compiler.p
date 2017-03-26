@@ -363,6 +363,7 @@ BOOLEAN isfloat(TYPE *tp);
 BOOLEAN iscomplex(TYPE *tp);
 BOOLEAN isimaginary(TYPE *tp);
 BOOLEAN isarithmetic(TYPE *tp);
+BOOLEAN ismsil(TYPE *tp);
 BOOLEAN isconstraw(TYPE *tp, BOOLEAN useTemplate);
 BOOLEAN isconst(TYPE *tp);
 BOOLEAN isvolatile(TYPE *tp);

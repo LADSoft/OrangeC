@@ -55,7 +55,7 @@ namespace DotNetPELib
     {
         if (tp_ == cls)
         {
-            peLib.Out() << Qualifiers::GetName("", typeRef_, true);
+            peLib.Out() << " '" << Qualifiers::GetName("", typeRef_, true) << "' ";
         }
         else if (tp_ == method)
         {
@@ -66,10 +66,12 @@ namespace DotNetPELib
         {
             peLib.Out() << typeNames_[tp_];
         }
-        for (int i=0; i< arrayLevel_; i++)
-            peLib.Out() << " [ ]";
+        for (int i = 0; i < arrayLevel_; i++)
+            peLib.Out() << " []";
         for (int i = 0; i < pointerLevel_; i++)
             peLib.Out() << " *";
+        if (byRef_)
+            peLib.Out() << "&";
         return true;
     }
     size_t Type::Render(PELib &peLib, Byte *result)

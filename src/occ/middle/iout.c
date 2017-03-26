@@ -1251,6 +1251,20 @@ void putconst(EXPRESSION *offset, int color)
         case en_label:
             oprintf(icdFile, "L_%ld:RAM", offset->v.sp->label);
             break;
+        case en_c_string:
+            if (offset->string)
+            {
+                int i;
+                oputc('"', icdFile);
+                for (i = 0; i < offset->string->size; i++)
+                {
+                    SLCHAR *s = offset->string->pointers[i];
+                    for (int i = 0; i < s->count; i++)
+                        oputc(s->str[i], icdFile);
+                }
+                oputc('"', icdFile);
+            }
+            break;
         case en_labcon:
             oprintf(icdFile, "L_%ld:PC", offset->v.i);
             break;
@@ -1308,6 +1322,12 @@ void putlen(int l)
             break;
         case ISZ_BOOLEAN:
             oprintf(icdFile, ".BOOL");
+            break;
+        case ISZ_STRING:
+            oprintf(icdFile, ".STRING");
+            break;
+        case ISZ_OBJECT:
+            oprintf(icdFile, ".OBJECT");
             break;
         case ISZ_ADDR:
             oprintf(icdFile, ".A");
@@ -1966,75 +1986,79 @@ int genstring(STRING *str)
  * Generate a string literal
  */
 {
-    int size = 1;
-    int i;
-    BOOLEAN instring = FALSE;
-    gentype = nogen;
-    for (i=0; i < str->size; i++)
+    if (str->refCount > 0)
     {
-        LCHAR *p = str->pointers[i]->str;
-        int n = str->pointers[i]->count;
-        size += n;
-        if (str->strtype == l_astr && chosenAssembler->gen->gen_string)
-            chosenAssembler->gen->gen_string(p, n);
-        while (n--)
+        int size = 1;
+        int i;
+        BOOLEAN instring = FALSE;
+        gentype = nogen;
+        for (i=0; i < str->size; i++)
         {
-            switch (str->strtype)
+            LCHAR *p = str->pointers[i]->str;
+            int n = str->pointers[i]->count;
+            size += n;
+            if (str->strtype == l_astr && chosenAssembler->gen->gen_string)
+                chosenAssembler->gen->gen_string(p, n);
+            while (n--)
             {
-                case l_wstr:
-                    genwchar_t(*p++);
-                    break;
-                case l_ustr:
-                    genuint16(*p++);
-                    break;
-                case l_Ustr:
-                    genuint32(*p++);
-                    break;
-                default:
-                    if (p >= 0x20 && p < 0x7f || *p == ' ')
-                    {
-                        if (!instring)
+                switch (str->strtype)
+                {
+                    case l_wstr:
+                        genwchar_t(*p++);
+                        break;
+                    case l_ustr:
+                        genuint16(*p++);
+                        break;
+                    case l_Ustr:
+                        genuint32(*p++);
+                        break;
+                    default:
+                        if (p >= 0x20 && p < 0x7f || *p == ' ')
                         {
-                            gentype = nogen;
-                            nl();
-                            oprintf(icdFile,"\tDC.B\t\"");
-                            instring = TRUE;
+                            if (!instring)
+                            {
+                                gentype = nogen;
+                                nl();
+                                oprintf(icdFile,"\tDC.B\t\"");
+                                instring = TRUE;
+                            }
+                            oputc(*p++, icdFile);
                         }
-                        oputc(*p++, icdFile);
-                    }
-                    else {
-                        if (instring)
-                        {
-                            oprintf(icdFile, "\"\n");
-                            instring = FALSE;
+                        else {
+                            if (instring)
+                            {
+                                oprintf(icdFile, "\"\n");
+                                instring = FALSE;
+                            }
+                            oprintf(icdFile, "\tDB\t$%02X\n", *p++);
                         }
-                        oprintf(icdFile, "\tDB\t$%02X\n", *p++);
-                    }
-                    break;
+                        break;
+                }
             }
         }
+        if (instring)
+            oprintf(icdFile,"\"\n");
+        switch (str->strtype)
+        {
+            case l_wstr:
+                genwchar_t(0);
+                size *= getSize(bt_wchar_t);
+                break;
+            case l_ustr:
+                genuint16(0);
+                size *= 2;
+                break;
+            case l_Ustr:
+                genuint32(0);
+                size *= 4;
+                break;
+            default:
+                genbyte(0);
+                break;
+        }
+        return size;
     }
-    if (instring)
-        oprintf(icdFile,"\"\n");
-    switch (str->strtype)
-    {
-        case l_wstr:
-            genwchar_t(0);
-            size *= getSize(bt_wchar_t);
-            break;
-        case l_ustr:
-            genuint16(0);
-            size *= 2;
-            break;
-        case l_Ustr:
-            genuint32(0);
-            size *= 4;
-            break;
-        default:
-            genbyte(0);
-            break;
-    }
-    return size;
+    return 0;
 }
 /*-------------------------------------------------------------------------*/
 
@@ -2276,8 +2300,10 @@ EXPRESSION *stringlit(STRING *s)
                 if (i >= s->size)
                 {
                     rv = intNode(en_labcon, lp->label);
+                    rv->string = s;
                     rv->size = s->size;
                     rv->altdata = s->strtype;
+                    lp->refCount++;
                     return rv;
                 }
             }
@@ -2288,8 +2314,10 @@ EXPRESSION *stringlit(STRING *s)
     s->next = strtab;
     strtab = s;
     rv = intNode(en_labcon, s->label);
+    rv->string = s;
     rv->size = s->size;
     rv->altdata = s->strtype;
+    s->refCount++;
     return rv;
 }
 

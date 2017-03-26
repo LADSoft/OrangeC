@@ -399,6 +399,7 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOLEAN *fromlval)
         case en_c_wc:
         case en_c_u16:
         case en_c_u32:
+        case en_c_string:
         case en_nullptr:
         case en_structelem:
             break;
@@ -466,6 +467,8 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOLEAN *fromlval)
         case en_l_bit:
         case en_l_ll:
         case en_l_ull:
+        case en_l_string:
+        case en_l_object:
             /*
             if (node->left->type == en_auto)
             {
@@ -521,6 +524,8 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOLEAN *fromlval)
         case en_not_lvalue:
         case en_lvalue:
         case en_literalclass:
+        case en_x_string:
+        case en_x_object:
             temp->left = inlineexpr(node->left, FALSE);
             break;
         case en_autoinc:
@@ -869,6 +874,7 @@ static BOOLEAN sideEffects(EXPRESSION *node)
         case en_c_wc:
         case en_c_u16:
         case en_c_u32:
+        case en_c_string:
         case en_nullptr:
         case en_structelem:
             rv = FALSE;
@@ -911,6 +917,8 @@ static BOOLEAN sideEffects(EXPRESSION *node)
         case en_l_bit:
         case en_l_ll:
         case en_l_ull:
+        case en_l_string:
+        case en_l_object:
         case en_literalclass:
             rv = sideEffects(node->left);
             break;
@@ -945,7 +953,9 @@ static BOOLEAN sideEffects(EXPRESSION *node)
         case en_x_fp:
         case en_x_sp:
         case en_shiftby:
-/*        case en_movebyref: */
+        case en_x_string:
+        case en_x_object:
+            /*        case en_movebyref: */
         case en_not_lvalue:
         case en_lvalue:
             rv = sideEffects(node->left);

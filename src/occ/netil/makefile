@@ -99,7 +99,7 @@ C_DEPENDENCIES= \
     unmangle.c\
     winsystem.c
 CPP_DEPENDENCIES=\
-    using.cpp gen.cpp process.cpp
+    using.cpp gen.cpp process.cpp import.cpp
 LIB_DEPENDENCIES=util netlib
 #determine if we can ignore the banner for a batch compile
 WIN32 = WIN32

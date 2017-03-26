@@ -78,7 +78,7 @@ char *       _RTL_INTRINS _IMPORT strcpy(char *restrict __dest, const char *rest
 size_t       _RTL_INTRINS _IMPORT strlcpy (char * dst, const char * src, size_t n);
 char *       _RTL_INTRINS _IMPORT stpcpy(char *restrict __dest, const char *restrict __src);
 size_t       _RTL_FUNC _IMPORT strcspn(const char *__s1, const char *__s2);
-char *       _RTL_FUNC _IMPORT strdup(const char *__string);
+char *       _RTL_FUNC _IMPORT strdup(const char *__src);
 char *       _RTL_FUNC _IMPORT strerror(int __errnum);
 size_t       _RTL_INTRINS _IMPORT strlen(const char *__s);
 char *       _RTL_INTRINS _IMPORT strncat(char *restrict __dest, const char *restrict __src,

@@ -146,4 +146,33 @@ namespace DotNetPELib
                 else
                     types |= basetypeObject;
     }
+    bool DataContainer::Traverse(Callback &callback) const
+    {
+        for (auto child : children_)
+            if (typeid(*child) == typeid(Class))
+            {
+                if (!callback.EnterClass(static_cast<const Class *>(child)))
+                    continue;
+                if (!child->Traverse(callback))
+                    return true;
+                if (!callback.ExitClass(static_cast<const Class *>(child)))
+                    return false;
+            }
+            else if (typeid(*child) == typeid(Namespace))
+            {
+                if (!callback.EnterNamespace(static_cast<const Namespace *>(child)))
+                    continue;
+                if (!child->Traverse(callback))
+                    return true;
+                if (!callback.ExitNamespace(static_cast<const Namespace *>(child)))
+                    return false;
+            }
+        for (auto field : fields_)
+            if (!callback.EnterField(field))
+                return false;
+        for (auto method : methods_)
+            if (!callback.EnterMethod(static_cast<Method *>(method)))
+                return false;
+        return true;
+    }
 }

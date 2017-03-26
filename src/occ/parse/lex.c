@@ -51,6 +51,7 @@
 #define MAX_LOOKBACK 1024
 
 extern COMPILER_PARAMS cparams ;
+extern ARCH_ASM *chosenAssembler;
 extern INCLUDES *includes;
 extern LINEDATA *linesHead,*linesTail;
 
@@ -93,7 +94,7 @@ KEYWORD keywords[] = {
     { "/", 1,  divide, KW_ASSEMBLER, TT_BINARY | TT_OPERATOR },
     { "/=", 2,  asdivide, 0, TT_ASSIGN | TT_OPERATOR },
     { ":", 1,  colon, KW_ASSEMBLER },
-    { "::", 2,  classsel, KW_CPLUSPLUS, TT_BINARY | TT_SELECTOR },
+    { "::", 2,  classsel, KW_CPLUSPLUS | KW_MSIL, TT_BINARY | TT_SELECTOR },
     { ":>", 2,  closebr, 0, TT_BINARY | TT_POINTER },
     { ";", 1,  semicolon, KW_ASSEMBLER, TT_CONTROL },
     { "<", 1,  lt, 0, TT_RELATION | TT_INEQUALITY },
@@ -215,8 +216,10 @@ KEYWORD keywords[] = {
     { "__int8", 6,  kw_char, KW_NONANSI | KW_386, TT_BASETYPE | TT_INT },
     { "__kill_dependency", 17, kw_atomic_kill_dependency, 0, TT_VAR },
     { "__msil_rtl", 10,  kw__msil_rtl, KW_NONANSI | KW_ALL, TT_LINKAGE},
+    { "__object", 8,  kw___string, KW_MSIL, TT_BASETYPE},
     { "__pascal", 8,  kw__pascal, KW_NONANSI | KW_ALL, TT_LINKAGE},
     { "__stdcall", 9,  kw__stdcall, KW_NONANSI | KW_ALL, TT_LINKAGE},
+    { "__string", 8,  kw___string, KW_MSIL, TT_BASETYPE},
     { "__typeid", 8,  kw___typeid, KW_CPLUSPLUS, 0},
     { "__unmanaged", 11,  kw__unmanaged, KW_NONANSI | KW_ALL, TT_LINKAGE},
     { "__uuid", 6,  kw__uuid, 0, TT_LINKAGE },
@@ -286,7 +289,7 @@ KEYWORD keywords[] = {
     { "int", 3,  kw_int, 0, TT_BASETYPE | TT_INT | TT_BASE },
     { "long", 4,  kw_long, 0, TT_BASETYPE | TT_INT },
     { "mutable", 7,  kw_mutable, KW_CPLUSPLUS, TT_STORAGE_CLASS},
-    { "namespace", 9,  kw_namespace, KW_CPLUSPLUS, 0 },
+    { "namespace", 9,  kw_namespace, KW_CPLUSPLUS | KW_MSIL, 0 },
 //	{ "near", 4,  kw__near, KW_NONANSI | KW_ALL, TT_POINTERQUAL | TT_TYPEQUAL},
     { "new", 3,  kw_new, KW_CPLUSPLUS, TT_OPERATOR | TT_UNARY },
     { "noexcept", 8,  kw_noexcept, KW_CPLUSPLUS, TT_CONTROL},
@@ -324,7 +327,7 @@ KEYWORD keywords[] = {
     { "typeof", 6,  kw_typeof, 0, TT_BASETYPE | TT_OPERATOR },
     { "union", 5,  kw_union, 0, TT_BASETYPE | TT_STRUCT },
     { "unsigned", 8,  kw_unsigned, 0, TT_BASETYPE | TT_INT | TT_BASE },
-    { "using", 5,  kw_using, KW_CPLUSPLUS, TT_CONTROL },
+    { "using", 5,  kw_using, KW_CPLUSPLUS | KW_MSIL, TT_CONTROL },
     { "virtual", 7,  kw_virtual, KW_CPLUSPLUS, TT_STORAGE_CLASS },
     { "void", 4,  kw_void, 0, TT_BASETYPE | TT_VOID },
     { "volatile", 8,  kw_volatile, 0, TT_TYPEQUAL | TT_POINTERQUAL },
@@ -403,7 +406,7 @@ static BOOLEAN kwmatches(KEYWORD *kw)
     else if (!kw->matchFlags || kw->matchFlags == KW_ASSEMBLER)
         return TRUE;
     else if (((kw->matchFlags & KW_CPLUSPLUS) && cparams.prm_cplusplus) ||
-        (kw->matchFlags & (KW_C99 | KW_C1X)) ||
+        (kw->matchFlags & (KW_C99 | KW_C1X)) || ((kw->matchFlags & KW_MSIL) && chosenAssembler->msil) ||
         ((kw->matchFlags & (KW_NONANSI | KW_INLINEASM)) && !cparams.prm_ansi))
     {
             if (kw->matchFlags & KW_NONANSI)

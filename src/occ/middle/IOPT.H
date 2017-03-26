@@ -59,17 +59,20 @@
 #define ISZ_SEG 13
 #define ISZ_REG 14
 /* */
-#define ISZ_FLOAT 15
-#define ISZ_DOUBLE 16
-#define ISZ_LDOUBLE 17
+#define ISZ_STRING 15
+#define ISZ_OBJECT 16
+/* */
+#define ISZ_FLOAT 17
+#define ISZ_DOUBLE 18
+#define ISZ_LDOUBLE 19
 
-#define ISZ_IFLOAT 18
-#define ISZ_IDOUBLE 19
-#define ISZ_ILDOUBLE 20
+#define ISZ_IFLOAT 20
+#define ISZ_IDOUBLE 21
+#define ISZ_ILDOUBLE 22
 
-#define ISZ_CFLOAT 21
-#define ISZ_CDOUBLE 22
-#define ISZ_CLDOUBLE 23
+#define ISZ_CFLOAT 23
+#define ISZ_CDOUBLE 24
+#define ISZ_CLDOUBLE 25
 
 //#define TESTBITS
 #define BITINTBITS (8 * sizeof(BITINT))

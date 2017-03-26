@@ -189,6 +189,13 @@ void put_ty(TYPE *tp)
         case bt_long_double:
             fprintf(listFile, "Long Double");
             break;
+        case bt___string:
+            fprintf(listFile, "__string");
+            break;
+        case bt___object:
+            fprintf(listFile, "__object");
+            break;
+
         case bt_far:
             fprintf(listFile, "Far ");
             /* fall through*/

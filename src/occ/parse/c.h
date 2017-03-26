@@ -126,6 +126,7 @@ enum e_kw
         kw__far, kw_asmreg, kw_asminst, kw__indirect, kw__export, kw__import, kw___func__,
         kw__near, kw__seg, kw___typeid, kw___int64, kw_alloca, kw__msil_rtl,
         kw___va_list__,  kw___va_typeof__, kw__unmanaged,  kw__uuid, kw__uuidof,
+        kw___string, kw___object, 
     /* These next are generic register names */
     kw_D0, kw_D1, kw_D2, kw_D3, kw_D4, kw_D5, kw_D6, kw_D7, kw_D8, kw_D9, kw_DA,
         kw_DB, kw_DC, kw_DD, kw_DE, kw_DF, kw_A0, kw_A1, kw_A2, kw_A3, kw_A4,
@@ -161,11 +162,14 @@ enum e_node
     en_c_u32, en_c_l, en_c_ul, en_c_ll, en_c_ull, en_c_f, en_c_d, en_c_ld,
         en_c_p, en_c_sp, en_c_fp, en_c_fc, en_c_dc, en_c_ldc,
         en_c_fi, en_c_di, en_c_ldi, en_x_bool, en_x_bit, en_x_i, en_x_ui, en_x_l, en_x_ul,
+        en_c_string,
         en_x_ll, en_x_ull, en_x_f, en_x_d, en_x_ld, en_x_fi, en_x_di, en_x_ldi, en_x_fp, en_x_sp,
         en_x_fc, en_x_dc, en_x_ldc,en_x_c, en_x_uc, en_x_wc, en_x_u16, en_x_u32, en_x_s, en_x_us, en_x_label, 
+        en_x_string, en_x_object,
         en_l_bool, en_l_c, en_l_uc, en_l_u16, en_l_u32, en_l_wc, en_l_s, en_l_us, en_l_i, en_l_ui,
         en_l_l, en_l_ul, en_l_ll, en_l_ull, en_l_f, en_l_d, en_l_ld,  en_l_p, en_l_ref,
         en_l_fi, en_l_di, en_l_ldi, en_l_fc, en_l_dc, en_l_ldc, en_l_fp, en_l_sp, en_l_bit,
+        en_l_string, en_l_object,
         en_nullptr, en_memberptr, en_mp_as_bool, en_mp_compare,
         en_trapcall, en_func, en_funcret, en_intcall, en_tempref, 
         en_arraymul, en_arraylsh, en_arraydiv, en_arrayadd, en_structadd, en_structelem,
@@ -212,7 +216,7 @@ enum e_bt
         bt_double_imaginary, bt_long_double_imaginary, bt_float_complex, 
         bt_double_complex, bt_long_double_complex,
     /* end of basic types */
-    bt_void, 
+    bt_void, bt___object, bt___string, 
     /* end of debug needs */
     bt_signed, bt_static, bt_atomic, bt_const, bt_volatile, bt_restrict, bt_far, bt_near, bt_seg,
     bt_aggregate, bt_untyped, bt_typedef, bt_pointer, bt_lref, bt_rref, bt_lrqual, bt_rrqual, bt_struct,
@@ -298,6 +302,7 @@ typedef struct expr
             struct typ *tp;
         } t;
     } v;
+    struct _string *string;
     LIST *destructors; // for &&  and ||
     int xcInit, xcDest;
     int lockOffset;
@@ -349,6 +354,7 @@ typedef    struct typ
         struct typ *rootType; /* pointer to base type of sequence */
         int used:1; /* type has actually been used in a declaration or cast or expression */
         int array:1; /* not a dereferenceable pointer */
+        int msil:1; /* allocate as an MSIL array */
         int vla:1;   /* varriable length array */
         int unsized:1; /* type doesn't need a size */
         int hasbits:1; /* type is a bit type */
@@ -439,6 +445,7 @@ typedef struct init
     struct init *next;
     int offset;
     TYPE *basetp;
+    struct sym *fieldsp;
     EXPRESSION *exp;
     int tag; /* sequence number */
     int noassign : 1;    
@@ -636,6 +643,7 @@ typedef struct sym
     short templateLevel;
     LIST *specializations;
     LIST *instantiations;
+    void *msil; // MSIL data
     struct _templateSelector *templateSelector; // first element is the last valid sym found, second element is the template parameter sym
                                 // following elements are the list of pointers to names
     struct sym *parentTemplate; // could be the parent of a specialization or an instantiation
@@ -879,7 +887,7 @@ typedef struct kwblk
     enum
     {
         KW_NONE = 0, KW_CPLUSPLUS = 1, KW_INLINEASM = 2, KW_NONANSI = 4, KW_C99 = 8, 
-        KW_C1X = 16, KW_ASSEMBLER = 32,
+        KW_C1X = 16, KW_ASSEMBLER = 32, KW_MSIL = 64,
         KW_386 = 128, KW_68K= 256, KW_ALL = 0x40000000
     } matchFlags;
     enum 
@@ -948,6 +956,7 @@ typedef struct _string
     enum e_lexType strtype;
     int size;
     int label;
+    int refCount;
     char *suffix;
     SLCHAR **pointers;
 } STRING;

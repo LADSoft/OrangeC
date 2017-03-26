@@ -2,6 +2,7 @@ Version 2.0:
     read public members of assemblies into the internal database - searches the GAC or takes the path of an assembly
     add support for simple properties
     add support for arrays and remove 'objectarray' type
+    add support for 'ref' argument types
     fully support assembly versions
     cache the custom attribute database for purposes of being able to parse files; 
         in general you cannot declare custom attributes though

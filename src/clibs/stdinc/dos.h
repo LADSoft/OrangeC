@@ -150,7 +150,7 @@ unsigned   _RTL_FUNC _IMPORT _dos_setfileattr(const char *__filename,
                                                 unsigned __attrib);
 int        _RTL_FUNC _IMPORT _dos_setpwd(char *__buf) ;
 unsigned   _RTL_FUNC _IMPORT _dos_settime(struct dostime_t *__timep);
-int        _RTL_FUNC _IMPORT _dos_findfirst(char *__string, int __attr, struct find_t *__buf) ;
+int        _RTL_FUNC _IMPORT _dos_findfirst(char *__stringValue, int __attr, struct find_t *__buf) ;
 int        _RTL_FUNC _IMPORT _dos_findnext(struct find_t *__buf) ;
 unsigned   _RTL_FUNC _IMPORT _dos_open(char *__name,unsigned __mode, int *__fd);
 unsigned   _RTL_FUNC _IMPORT _dos_close(int __fd);

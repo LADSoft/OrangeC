@@ -37,6 +37,7 @@
 #include "compiler.h"
 
 extern COMPILER_PARAMS cparams;
+extern ARCH_ASM *chosenAssembler;
 extern NAMESPACEVALUES *globalNameSpace, *localNameSpace;
 extern HASHTABLE *labelSyms;
 extern TYPE stdint, stdpointer;
@@ -1045,7 +1046,7 @@ LEXEME *id_expression(LEXEME *lex, SYMBOL *funcsp, SYMBOL **sym, SYMBOL **strSym
     
     if (MATCHKW(lex, classsel))
         namespaceOnly = TRUE;
-    if (!cparams.prm_cplusplus)
+    if (!cparams.prm_cplusplus && !chosenAssembler->msil)
     {
         if (ISID(lex))
         {
@@ -2935,7 +2936,21 @@ void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
         if ((isconst(tpax) != isconst(tppx))
             || (isvolatile(tpax) != isvolatile(tppx)))
             seq[(*n)++] = CV_QUALS;
-        if (isstructured(tpa))
+        if (basetype(tpp)->type == bt___string)
+        {
+            if (basetype(tpa)->type == bt___string || expa && expa->type == en_labcon && expa->string)
+                seq[(*n)++] = CV_IDENTITY;
+            else
+                seq[(*n)++] = CV_POINTERCONVERSION;
+        }
+        else if (basetype(tpp)->type == bt___object)
+        {
+            if (basetype(tpa)->type == bt___object)
+                seq[(*n)++] = CV_IDENTITY;
+            else
+                seq[(*n)++] = CV_POINTERCONVERSION;
+        }
+        else if (isstructured(tpa))
         {
             if (isstructured(tpp))
             {
@@ -3833,7 +3848,7 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
         LIST *gather = NULL;
         SYMBOL **flatList;    
         SYMBOL *found1 = NULL, *found2 = NULL;
-        if (!cparams.prm_cplusplus)
+        if (!cparams.prm_cplusplus && (!chosenAssembler->msil || !sp->tp->syms->table[0]->next))
         {
             sp = ((SYMBOL *)sp->tp->syms->table[0]->p);
             if (sp)

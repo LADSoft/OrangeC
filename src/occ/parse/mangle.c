@@ -37,6 +37,7 @@
 */
 #include "compiler.h"
 
+extern ARCH_ASM *chosenAssembler;
 extern INCLUDES *includes;
 extern SYMBOL *theCurrentFunc;
 
@@ -664,6 +665,14 @@ char *mangleType (char *in, TYPE *tp, BOOLEAN first)
                 in = lookupName(in, "bool");
                 while (*in) in++;
                 break;
+            case bt___string:
+                in = lookupName(in, "__string");
+                while (*in) in++;
+                break;
+            case bt___object:
+                in = lookupName(in, "__object");
+                while (*in) in++;
+                break;
             case bt_unsigned_short:
                 *in++ = 'u';
             case bt_short:
@@ -814,7 +823,7 @@ void SetLinkerNames(SYMBOL *sym, enum e_lk linkage)
     mangledNamesCount = 0;
     if (linkage == lk_none || linkage == lk_cdecl)
     {
-        if (cparams.prm_cplusplus)
+        if (cparams.prm_cplusplus || chosenAssembler->msil)
         {
             if (sym->storage_class != sc_label && sym->storage_class != sc_parameter && sym->storage_class != sc_namespace &&
                 sym->storage_class != sc_namespacealias && sym->storage_class != sc_ulabel 

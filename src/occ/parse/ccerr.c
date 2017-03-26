@@ -541,6 +541,7 @@ static struct {
 {"Delegating constructor call must be the only initializer", ERROR },
 {"Mismatch on packed template types", ERROR },
 {"Cannot use new() to allocate a reference", ERROR },
+{"This feature may only be used for imported namespaces", ERROR },
 #endif
 } ;
 
@@ -1588,6 +1589,7 @@ void assignmentUsages(EXPRESSION *node, BOOLEAN first)
         case en_c_wc:
         case en_c_u16:
         case en_c_u32:        
+        case en_c_string:
         case en_nullptr:
         case en_memberptr:
         case en_structelem:
@@ -1628,6 +1630,8 @@ void assignmentUsages(EXPRESSION *node, BOOLEAN first)
         case en_l_bit:
         case en_l_ll:
         case en_l_ull:
+        case en_l_string:
+        case en_l_object:
             if (node->left->type == en_auto)
             {
                 if (!first)
@@ -1668,6 +1672,8 @@ void assignmentUsages(EXPRESSION *node, BOOLEAN first)
         case en_x_p:
         case en_x_fp:
         case en_x_sp:
+        case en_x_string:
+        case en_x_object:
         case en_trapcall:
         case en_shiftby:
 /*        case en_movebyref: */
@@ -1812,6 +1818,7 @@ static int checkDefaultExpression(EXPRESSION *node)
         case en_c_u32:        
         case en_nullptr:
         case en_structelem:
+        case en_c_string:
             break;
         case en_global:
         case en_label:
@@ -1849,6 +1856,8 @@ static int checkDefaultExpression(EXPRESSION *node)
         case en_l_bit:
         case en_l_ll:
         case en_l_ull:
+        case en_l_string:
+        case en_l_object:
         case en_literalclass:
             rv |= checkDefaultExpression(node->left);
             break;
@@ -1882,6 +1891,8 @@ static int checkDefaultExpression(EXPRESSION *node)
         case en_x_p:
         case en_x_fp:
         case en_x_sp:
+        case en_x_string:
+        case en_x_object:
         case en_trapcall:
         case en_shiftby:
 /*        case en_movebyref: */

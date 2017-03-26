@@ -2231,6 +2231,18 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                         break;
                 }
                 break;
+            case kw___object:
+                if (type != bt_none)
+                   flagerror = TRUE;
+                else
+                    type = bt___object;
+                break;
+            case kw___string:
+                if (type != bt_none)
+                   flagerror = TRUE;
+                else
+                    type = bt___string;
+                break;
             case kw_struct:
             case kw_class:
             case kw_union:
@@ -2841,7 +2853,7 @@ exit:
     return lex;
 }
 static LEXEME *getArrayType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_class, 
-                            BOOLEAN *vla, TYPE **quals, BOOLEAN first)
+                            BOOLEAN *vla, TYPE **quals, BOOLEAN first, BOOLEAN msil)
 {
     EXPRESSION *constant = NULL;
     TYPE *tpc = NULL;
@@ -2891,7 +2903,7 @@ static LEXEME *getArrayType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc st
         {
             if (*quals)
                 error(ERR_QUAL_LAST_ARRAY_ELEMENT);
-            lex = getArrayType(lex, funcsp, tp, storage_class, vla, quals, FALSE);
+            lex = getArrayType(lex, funcsp, tp, storage_class, vla, quals, FALSE, msil);
         }
         tpp = (TYPE *)Alloc(sizeof(TYPE));
         tpp->type = bt_pointer;
@@ -2899,6 +2911,7 @@ static LEXEME *getArrayType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc st
         tpp->rootType = tpp;
         tpp->array = TRUE;
         tpp->unsized = unsized;
+        tpp->msil = msil; // only tagged on outermost array element, makes ALL elements msil array.
         if (!unsized)
         {
             if (empty)
@@ -2927,7 +2940,7 @@ static LEXEME *getArrayType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc st
                         error(ERR_VLA_c99);
                     tpp->esize = constant;
                     tpp->etype = tpc;
-                    *vla = !templateNestingCount;
+                    *vla =  !msil && !templateNestingCount;
                 }
             }
             *tp = tpp;
@@ -4018,7 +4031,7 @@ static LEXEME *getAfterType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **sp,
                 }
                 break;
             case openbr:
-                lex = getArrayType(lex, funcsp, tp, (*sp)->storage_class, &isvla, &quals, TRUE);
+                lex = getArrayType(lex, funcsp, tp, (*sp)->storage_class, &isvla, &quals, TRUE, FALSE);
                 if (isvla)
                 {
                     resolveVLAs(*tp);
@@ -4139,6 +4152,25 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
     TYPE *ptype = NULL;
     enum e_bt xtype = bt_none;
     LEXEME *pos = lex;
+    BOOLEAN doneAfter = FALSE;
+
+    if (chosenAssembler->msil && MATCHKW(lex, openbr))
+    {
+        // managed array
+        BOOLEAN isvla = FALSE;
+        TYPE *quals = NULL;
+        lex = getArrayType(lex, funcsp, tp, storage_class, &isvla, &quals, TRUE, TRUE);
+        if (quals)
+        {
+            TYPE *q2 = quals;
+            while (q2->btp)
+                q2 = q2->btp;
+            q2->btp = *tp;
+            *tp = quals;
+        }
+        UpdateRootTypes(*tp);
+        doneAfter = TRUE;
+    }
     if (ISID(lex) || MATCHKW(lex, classsel) || MATCHKW(lex, kw_operator) || (cparams.prm_cplusplus && MATCHKW(lex, ellipse)))
     {
         SYMBOL *strSymX = NULL;
@@ -4308,7 +4340,8 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
             globalNameSpace = nsvX->name->nameSpaceValues;
         }
         ParseAttributeSpecifiers(&lex, funcsp, TRUE);
-        lex = getAfterType(lex, funcsp, tp, spi, inTemplate, storage_class, consdest);
+        if (!doneAfter)
+            lex = getAfterType(lex, funcsp, tp, spi, inTemplate, storage_class, consdest);
         if (nsvX)
         {
             nameSpaceList = nameSpaceList->next;
@@ -4518,7 +4551,8 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
                                     storage_class, linkage, linkage2, linkage3, asFriend, FALSE, beforeOnly, FALSE);
                 break;
             }
-            if (cparams.prm_cplusplus)
+            // using the C++ reference operator as the ref keyword...
+            if (cparams.prm_cplusplus || chosenAssembler->msil && storage_class == sc_parameter && KW(lex) == and)
             {
                 TYPE *tp2;
                 ptype = Alloc(sizeof(TYPE));
@@ -4789,7 +4823,7 @@ static void allocateVLA(LEXEME *lex, SYMBOL *sp, SYMBOL *funcsp, BLOCKDATA *bloc
             deref(&stdpointer, &ep1);
             deref(&stdint, &ep2);
             ep1 = llallocateVLA(sp, ep1, ep2); //exprNode(en_assign, ep1, exprNode(en_alloca, ep2, NULL));
-            *rptr = exprNode(en_void, ep1, NULL);
+            *rptr = chosenAssembler->msil ? ep1 : exprNode(en_void, ep1, NULL);
         }
         st->select = result;
         optimize_for_constants(&st->select);

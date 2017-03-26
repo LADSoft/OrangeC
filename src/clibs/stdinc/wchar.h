@@ -172,10 +172,10 @@ long long int _RTL_FUNC wcstoll (const wchar_t *restrict __nptr, wchar_t **restr
 unsigned long long int _RTL_FUNC wcstoull (const wchar_t *restrict __nptr,
 					    wchar_t **restrict __endptr, int __base);
 #endif
-double  _RTL_FUNC wtof(const wchar_t *__string);
-long double  _RTL_FUNC _wtold(const wchar_t *__string);
-wchar_t * _RTL_FUNC itow(int __value, wchar_t *__string, int __radix);
-wchar_t * _RTL_FUNC ltow(long __value, wchar_t *__string, int __radix);
+double  _RTL_FUNC wtof(const wchar_t *__stringValue);
+long double  _RTL_FUNC _wtold(const wchar_t *__stringValue);
+wchar_t * _RTL_FUNC itow(int __value, wchar_t *__stringValue, int __radix);
+wchar_t * _RTL_FUNC ltow(long __value, wchar_t *__stringValue, int __radix);
 
 size_t _RTL_FUNC wcsftime(wchar_t *restrict __str, size_t __maxsize, 
                 const wchar_t *restrict __format, const struct tm * restrict __t);

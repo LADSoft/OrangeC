@@ -62,6 +62,7 @@ extern TYPE stdlongdouble;
 extern TYPE stdchar;
 extern TYPE stdwidechar;
 extern TYPE std__func__;
+extern TYPE std__string;
 extern TYPE stdchar16tptr;
 extern TYPE stdchar32tptr;
 extern BOOLEAN setjmp_used;
@@ -402,7 +403,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
     LEXEME *placeholder = lex;
     if (ismutable)        
         *ismutable = FALSE;
-    if (cparams.prm_cplusplus)
+    if (cparams.prm_cplusplus || chosenAssembler->msil)
     {
         lex = id_expression(lex, funcsp, &sp, &strSym, &nsv, NULL, FALSE, FALSE, idname);
     }
@@ -1529,7 +1530,7 @@ static LEXEME *expression_bracket(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
                                    funcsp, tp, exp, tp2, expr2, NULL, flags))
             {
             }
-            else if (isvoid(*tp) || isvoid(tp2) || (*tp)->type == bt_aggregate || tp2->type == bt_aggregate)
+            else if (isvoid(*tp) || isvoid(tp2) || (*tp)->type == bt_aggregate || tp2->type == bt_aggregate || ismsil(*tp) || ismsil(tp2))
                 error(ERR_NOT_AN_ALLOWED_TYPE);
             else if (basetype(tp2)->type == bt_memberptr || basetype(*tp)->type == bt_memberptr)
                 error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
@@ -1714,6 +1715,11 @@ static void checkArgs(FUNCTIONCALL *params, SYMBOL *funcsp)
 join:
                         if (!list || !list->tp)
                         {
+                        }
+                        else if (basetype(decl->tp)->type == bt___string)
+                        {
+                            if (list->exp->type == en_labcon)
+                                list->exp->type = en_c_string;
                         }
                         else if (!comparetypes(list->tp, decl->tp, FALSE))
                         {
@@ -2814,6 +2820,75 @@ void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, 
                 }
             }
         }
+        else if (chosenAssembler->msil)
+        {
+            if (isref(sym->tp))
+            {
+                if (comparetypes(sym->tp, p->tp, TRUE))
+                {
+                    if (isarithmeticconst(p->exp) || (basetype(sym->tp)->type != bt_rref && !isconst(basetype(sym->tp)->btp) && isconst(p->tp)))
+                    {
+                        // make numeric temp and perform cast
+                        p->exp = createTemporary(sym->tp, p->exp);
+                    }
+                    else
+                    {
+                        // pass address
+                        EXPRESSION *exp = p->exp;
+                        while (castvalue(exp) || exp->type == en_not_lvalue)
+                            exp = exp->left;
+                        if (exp->type != en_l_ref)
+                        {
+                            if (!isref(sym->tp) || !isfunction(basetype(sym->tp)->btp))
+                            {
+                                if (!lvalue(exp))
+                                {
+                                    // make numeric temp and perform cast
+                                    exp = createTemporary(sym->tp, exp);
+                                }
+                                else
+                                {
+                                    exp = exp->left; // take address
+                                }
+                            }
+                            p->exp = exp;
+                        }
+                        else if (ispointer(p->tp) && isstructured(basetype(p->tp)->btp))
+                        {
+                            // make numeric temp and perform cast
+                            p->exp = createTemporary(sym->tp, exp);
+                        }
+                    }
+                }
+                else
+                {
+                    // make numeric temp and perform cast
+                    p->exp = createTemporary(sym->tp, p->exp);
+                }
+                p->tp = sym->tp;
+            }
+            else
+            {
+                if (basetype(sym->tp)->type == bt___string && (basetype(p->tp)->type == bt___string || p->exp->type == en_labcon && p->exp->string))
+                {
+                    if (p->exp->type == en_labcon)
+                        p->exp->type == en_c_string;
+                }
+                else if (basetype(sym->tp)->type == bt___object)
+                {
+                    if (basetype(p->tp)->type != bt___object)
+                       p->exp = exprNode(en_x_object, p->exp, NULL);
+                }
+                else if (ismsil(p->tp))
+                    ; // error
+                // legacy c language support
+                else if (p && p->tp && isstructured(p->tp))
+                {
+                    p->exp = exprNode(en_stackblock, p->exp, NULL);
+                    p->exp->size = p->tp->size;
+                }
+            }
+        }
         else
         {
             // legacy c language support
@@ -2912,7 +2987,19 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
 //        *exp = exprNode(en_funcret, *exp, NULL);
 //        return lex;
 //    }
-    if (cparams.prm_cplusplus && funcparams->sp)
+    if (chosenAssembler->msil && funcparams->sp)
+    {
+        if (funcparams->sp->storage_class == sc_overloads)
+        {
+            // note at this pointer the arglist does NOT have the this pointer,
+            // it will be added after we select a member function that needs it.
+            funcparams->ascall = TRUE;
+            SYMBOL *sp = GetOverloadedFunction(tp, &funcparams->fcall, funcparams->sp, funcparams, NULL, TRUE, FALSE, TRUE, flags);
+            if (sp)
+                *tp = sp->tp;
+        }
+    }
+    else if (cparams.prm_cplusplus && funcparams->sp)
     {
         SYMBOL *sp = NULL;
         // add this ptr
@@ -4671,7 +4758,7 @@ static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE
         {
             return lex;
         }
-        else if (isvoid(*tp))
+        else if (isvoid(*tp) || ismsil(*tp))
             error(ERR_NOT_AN_ALLOWED_TYPE);
         else if (btp->hasbits)
             error(ERR_CANNOT_TAKE_ADDRESS_OF_BIT_FIELD);
@@ -4825,7 +4912,7 @@ static LEXEME *expression_deref(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSI
     {
         return lex;
     }
-    if (*tp && (isvoid(*tp) || (*tp)->type == bt_aggregate))
+    if (*tp && (isvoid(*tp) || (*tp)->type == bt_aggregate || ismsil(*tp)))
     {
         error(ERR_NOT_AN_ALLOWED_TYPE);
     }
@@ -4998,7 +5085,7 @@ static LEXEME *expression_postfix(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
                         }
                         else
                         {
-                            if (isvoid(*tp) || (*tp)->type == bt_aggregate)
+                            if (isvoid(*tp) || (*tp)->type == bt_aggregate || ismsil(*tp))
                                 error(ERR_NOT_AN_ALLOWED_TYPE);
                             if (basetype(*tp)->scoped)
                                 error(ERR_SCOPED_TYPE_MISMATCH);
@@ -5067,7 +5154,7 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
                     castToArithmetic(FALSE, tp, exp, kw, NULL, TRUE);
                     if (isstructured(*tp))
                         error(ERR_ILL_STRUCTURE_OPERATION);
-                    else if (isvoid(*tp) || (*tp)->type == bt_aggregate)
+                    else if (isvoid(*tp) || (*tp)->type == bt_aggregate || ismsil(*tp))
                         error(ERR_NOT_AN_ALLOWED_TYPE);
                     else if (basetype(*tp)->type == bt_memberptr)
                         error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
@@ -5102,7 +5189,7 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
                     castToArithmetic(FALSE, tp, exp, kw, NULL, TRUE);
                     if (isstructured(*tp))
                         error(ERR_ILL_STRUCTURE_OPERATION);
-                    else if (isvoid(*tp) || (*tp)->type == bt_aggregate)
+                    else if (isvoid(*tp) || (*tp)->type == bt_aggregate || ismsil(*tp))
                         error(ERR_NOT_AN_ALLOWED_TYPE);
                     else if (basetype(*tp)->type == bt_memberptr)
                         error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
@@ -5145,7 +5232,7 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
                     castToArithmetic(FALSE, tp, exp, kw, NULL, TRUE);
                     if (isstructured(*tp))
                         error(ERR_ILL_STRUCTURE_OPERATION);
-                    else if (isvoid(*tp) || (*tp)->type == bt_aggregate)
+                    else if (isvoid(*tp) || (*tp)->type == bt_aggregate || ismsil(*tp))
                         error(ERR_NOT_AN_ALLOWED_TYPE);
                     else if (basetype(*tp)->scoped)
                         error(ERR_SCOPED_TYPE_MISMATCH);
@@ -5193,7 +5280,7 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
                         error(ERR_ILL_USE_OF_FLOATING);
                     else if (ispointer(*tp))
                         error(ERR_ILL_POINTER_OPERATION);
-                    else if (isvoid(*tp) || (*tp)->type == bt_aggregate)
+                    else if (isvoid(*tp) || (*tp)->type == bt_aggregate || ismsil(*tp))
                         error(ERR_NOT_AN_ALLOWED_TYPE);
                     else if (basetype(*tp)->type == bt_memberptr)
                         error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
@@ -5235,7 +5322,7 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
                         error(ERR_ILL_USE_OF_COMPLEX);
                     else if (isconstraw(*tp, TRUE) && !localMutable)
                         error(ERR_CANNOT_MODIFY_CONST_OBJECT);
-                    else if (isvoid(*tp) || (*tp)->type == bt_aggregate)
+                    else if (isvoid(*tp) || (*tp)->type == bt_aggregate || ismsil(*tp))
                         error(ERR_NOT_AN_ALLOWED_TYPE);
                     else if (basetype(*tp)->type == bt_memberptr)
                         error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
@@ -5394,7 +5481,7 @@ LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRE
                                         }
                                         else
                                         {
-                                            if (isvoid(*tp) || (*tp)->type == bt_aggregate)
+                                            if (isvoid(*tp) || (*tp)->type == bt_aggregate || ismsil(*tp))
                                                 error(ERR_NOT_AN_ALLOWED_TYPE);
                                             if (basetype(*tp)->scoped)
                                                 error(ERR_SCOPED_TYPE_MISMATCH);
@@ -5440,7 +5527,14 @@ LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRE
     //                    *exp = (*exp)->v.func->fcall;
                     if (throwaway)
                     {
-                        if (isvoid(throwaway) && !isvoid(*tp))
+                        if (basetype(*tp)->type == bt___string)
+                        {
+                            if ((*exp)->type == en_labcon && (*exp)->string)
+                                (*exp)->type = en_c_string;
+                            else if (basetype(throwaway)->type != bt___string)
+                                *exp = exprNode(en_x_string, *exp, NULL);
+                        }
+                        else if (isvoid(throwaway) && !isvoid(*tp) || ismsil(*tp))
                         {
                             error(ERR_NOT_AN_ALLOWED_TYPE);
                         }
@@ -5632,7 +5726,7 @@ static LEXEME *expression_times(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **t
             castToArithmetic(kw == mod, &tp1, &exp1, (enum e_kw)-1, *tp, TRUE);
             if (isstructured(*tp) || isstructured(tp1))
                 error(ERR_ILL_STRUCTURE_OPERATION);
-            else if (isvoid(*tp) || isvoid(tp1) || (*tp)->type == bt_aggregate  || tp1->type == bt_aggregate)
+            else if (isvoid(*tp) || isvoid(tp1) || (*tp)->type == bt_aggregate  || tp1->type == bt_aggregate || ismsil(*tp) || ismsil(tp1))
                 error(ERR_NOT_AN_ALLOWED_TYPE);
             else if (basetype(*tp)->type == bt_memberptr || basetype(tp1)->type == bt_memberptr)
                 error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
@@ -5672,6 +5766,7 @@ static LEXEME *expression_add(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp,
         return lex;
     while (MATCHKW(lex, plus) || MATCHKW(lex, minus))
     {
+        BOOLEAN msil = FALSE;
         enum e_kw kw = KW(lex);
         TYPE *tp1 = NULL;
         EXPRESSION *exp1 = NULL;
@@ -5693,9 +5788,22 @@ static LEXEME *expression_add(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp,
                 castToArithmetic(FALSE, tp, exp, kw, tp1, TRUE);
                 castToArithmetic(FALSE, &tp1, &exp1, (enum e_kw)-1, *tp, TRUE);
             }
-            if (kw == plus && ispointer(*tp) && ispointer(tp1))
+            if (chosenAssembler->msil && kw == plus && (basetype(*tp)->type == bt___string || basetype(tp1)->type == bt___string || atp&&basetype(atp)->type == bt___string))
+            {
+                msil = TRUE;
+                if ((*exp)->type == en_labcon && (*exp)->string)
+                    (*exp)->type = en_c_string;
+                else if (!ismsil(*tp))
+                    *exp = exprNode(en_x_object, *exp, NULL);
+                if (exp1->type == en_labcon && exp1->string)
+                    exp1->type = en_c_string;
+                else if (!ismsil(tp1))
+                    exp1 = exprNode(en_x_object, exp1, NULL);
+            }
+            else if (kw == plus && ispointer(*tp) && ispointer(tp1))
                 error(ERR_ILL_POINTER_ADDITION);
-            else if (isvoid(*tp) || isvoid(tp1) || (*tp)->type == bt_aggregate || tp1->type == bt_aggregate)
+            else if (isvoid(*tp) || isvoid(tp1) || (*tp)->type == bt_aggregate || tp1->type == bt_aggregate ||
+                    ismsil(*tp) || ismsil(tp1))
                 error(ERR_NOT_AN_ALLOWED_TYPE);
             else if (basetype(*tp)->type == bt_memberptr || basetype(tp1)->type == bt_memberptr)
                 error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
@@ -5722,7 +5830,14 @@ static LEXEME *expression_add(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp,
                     error(ERR_ILL_USE_OF_FLOATING);
             }
         }
-        if (ispointer(*tp))
+        if (msil)
+        {
+            // MSIL back end will take care of figuring out what function to call
+            // to perform the concatenation
+            *exp = exprNode(en_add, *exp, exp1);
+            *tp = &std__string;
+        }
+        else if (ispointer(*tp))
         {
             EXPRESSION *ns;
             if (basetype(basetype(*tp)->btp)->type == bt_void)
@@ -5805,7 +5920,7 @@ static LEXEME *expression_shift(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **t
             castToArithmetic(TRUE, &tp1, &exp1, (enum e_kw)-1, *tp, TRUE);
             if (isstructured(*tp) || isstructured(tp1))
                 error(ERR_ILL_STRUCTURE_OPERATION);
-            else if (isvoid(*tp) || isvoid(tp1) || (*tp)->type == bt_aggregate  || tp1->type == bt_aggregate)
+            else if (isvoid(*tp) || isvoid(tp1) || (*tp)->type == bt_aggregate  || tp1->type == bt_aggregate || ismsil(*tp) || ismsil(tp1))
                 error(ERR_NOT_AN_ALLOWED_TYPE);
             else if (basetype(*tp)->type == bt_memberptr || basetype(tp1)->type == bt_memberptr)
                 error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
@@ -5912,7 +6027,7 @@ static LEXEME *expression_inequality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYP
                     thunkForImportTable(&exp1);
                 if (isstructured(*tp) || isstructured(tp1))
                     error(ERR_ILL_STRUCTURE_OPERATION);
-                else if (isvoid(*tp) || isvoid(tp1) || (*tp)->type == bt_aggregate  || tp1->type == bt_aggregate)
+                else if (isvoid(*tp) || isvoid(tp1) || (*tp)->type == bt_aggregate  || tp1->type == bt_aggregate || ismsil(*tp) || ismsil(tp1))
                     error(ERR_NOT_AN_ALLOWED_TYPE);
                 else if (basetype(*tp)->type == bt_memberptr || basetype(tp1)->type == bt_memberptr)
                     error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
@@ -6041,7 +6156,7 @@ static LEXEME *expression_equality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE 
                 thunkForImportTable(&exp1);
             if (isstructured(*tp) || isstructured(tp1))
                 error(ERR_ILL_STRUCTURE_OPERATION);
-            else if (isvoid(*tp) || isvoid(tp1))
+            else if (isvoid(*tp) || isvoid(tp1) || ismsil(*tp) || ismsil(tp1))
                 error(ERR_NOT_AN_ALLOWED_TYPE);
             if (ispointer(*tp))
             {
@@ -6222,7 +6337,7 @@ static LEXEME *binop(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE ** tp, EXPRESS
         castToArithmetic(kw != land && kw!= lor, &tp1, &exp1, (enum e_kw)-1, *tp, TRUE);
         if (isstructured(*tp) || isstructured(tp1))
             error(ERR_ILL_STRUCTURE_OPERATION);
-        else if (isvoid(*tp) || isvoid(tp1) || (*tp)->type == bt_aggregate  || tp1->type == bt_aggregate)
+        else if (isvoid(*tp) || isvoid(tp1) || (*tp)->type == bt_aggregate  || tp1->type == bt_aggregate || ismsil(*tp) || ismsil(tp1))
             error(ERR_NOT_AN_ALLOWED_TYPE);
         else if (basetype(*tp)->scoped || basetype(tp1)->scoped)
             error(ERR_SCOPED_TYPE_MISMATCH);
@@ -6293,7 +6408,7 @@ static LEXEME *expression_hook(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp
         GetLogicalDestructors(*exp, *exp);
         if (isstructured(*tp))
             error(ERR_ILL_STRUCTURE_OPERATION);
-        else if (isvoid(*tp) || (*tp)->type == bt_aggregate)
+        else if (isvoid(*tp) || (*tp)->type == bt_aggregate || ismsil(*tp))
             error(ERR_NOT_AN_ALLOWED_TYPE);
         lex = getsym();
         if (MATCHKW(lex, colon))
@@ -6670,6 +6785,8 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
             case asxor:
             case asleftshift:
             case asrightshift:
+                if (ismsil(*tp) || ismsil(tp1))
+                    error(ERR_NOT_AN_ALLOWED_TYPE);
                 if (iscomplex(*tp) || iscomplex(tp1))
                     error(ERR_ILL_USE_OF_COMPLEX);
                 if (isfloat(*tp) || isfloat(tp1) || isimaginary(*tp) || isimaginary(tp1))
@@ -6678,6 +6795,8 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
             case astimes:
             case asdivide:
             case asmod:
+                if (ismsil(*tp) || ismsil(tp1))
+                    error(ERR_NOT_AN_ALLOWED_TYPE);
                 if (ispointer(*tp) || ispointer(tp1))
                     error(ERR_ILL_POINTER_OPERATION);
                 if (isstructured(*tp) || isstructured(tp1))
@@ -6686,7 +6805,16 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                     error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
                 break;
             case asplus:
-                if (ispointer(*tp))
+                if ((*tp)->type == bt___string)
+                {
+                    if (exp1->type == en_labcon && exp1->string)
+                        exp1->type == en_c_string;
+                    else if (!ismsil(tp1))
+                        exp1 = exprNode(en_x_object, exp1, NULL);
+                }
+                else if (ismsil(*tp) || ismsil(tp1))
+                    error(ERR_NOT_AN_ALLOWED_TYPE);
+                else if (ispointer(*tp))
                 {
                     if (ispointer(tp1))
                         error(ERR_ILL_POINTER_ADDITION);
@@ -6724,6 +6852,8 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                     error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
                 break;
             case asminus:
+                if (ismsil(*tp) || ismsil(tp1))
+                    error(ERR_NOT_AN_ALLOWED_TYPE);
                 if (isstructured(*tp) || isstructured(tp1))
                     error(ERR_ILL_STRUCTURE_OPERATION);
                 else if (ispointer(tp1))
@@ -6751,6 +6881,18 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                 }
                 break;
             case assign:
+                if (basetype(*tp)->type == bt___string)
+                {
+                    if (exp1->type == en_labcon && exp1->string)
+                        exp1->type == en_c_string;
+                }
+                else if (basetype(*tp)->type == bt___object)
+                {
+                    if (tp1->type != bt___object)
+                        exp1 = exprNode(en_x_object, exp1, NULL);
+                }
+                else if (ismsil(*tp) || ismsil(tp1))
+                    error(ERR_NOT_AN_ALLOWED_TYPE);
                 if (ispointer(*tp))
                 {
                     if (isarithmetic(tp1))
@@ -6938,7 +7080,24 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
             default:
                 break;
         }
-        if (basetype(*tp)->type == bt_memberptr)
+        if (ismsil(*tp))
+        {
+            if (exp1->type == en_labcon && exp1->string)
+                exp1->type = en_c_string;
+            else if (!ismsil(tp1))
+                exp1 = exprNode(en_x_object, exp1, NULL);
+            if (op == en_assign)
+            {
+                *exp = exprNode(op, *exp, exp1);
+            }
+            else
+            {
+                EXPRESSION *dest = *exp;
+                *exp = exprNode(op, *exp, exp1);
+                *exp = exprNode(en_assign, dest, *exp);
+            }
+        }
+        else if (basetype(*tp)->type == bt_memberptr)
         {
             if ((*exp)->type == en_not_lvalue || (*exp)->type == en_func && !(*exp)->v.func->ascall
                 || (*exp)->type == en_void || (*exp)->type == en_memberptr)

@@ -65,7 +65,15 @@ TYPE stdpointer =
 {
     bt_pointer, 4, &stdvoid
 };
-TYPE stdnullpointer = 
+TYPE std__string =
+{
+    bt___string, 4
+};
+TYPE std__object =
+{
+    bt___object, 4
+};
+TYPE stdnullpointer =
 {
     bt_pointer, 4, &stdvoid
 };
@@ -385,6 +393,8 @@ int sizeFromISZ(int isz)
 /*        case ISZ_ENUM:*/
 /*            return p->a_enum;*/
         case ISZ_ADDR:
+        case ISZ_STRING:
+        case ISZ_OBJECT:
             return p->a_addr;
         case ISZ_SEG:
             return p->a_farseg;
@@ -536,6 +546,10 @@ static int basesize(ARCH_SIZING *p, TYPE *tp)
             return (p->a_double + p->a_rcomplexpad) * 2;
         case bt_long_double_complex:
             return (p->a_longdouble + p->a_lrcomplexpad) * 2;
+        case bt___string:
+            return p->a_addr;
+        case bt___object:
+            return p->a_addr;
         case bt_class:
         case bt_struct:
         case bt_union:
@@ -683,6 +697,8 @@ int init_backend(int *argc ,char **argv)
         stdunsignedlong.size = stdlong.size = getSize(bt_long);
         stdconst.size = stdunsigned.size = stdint.size = getSize(bt_unsigned);        
         stdstring.size = getSize(bt_pointer);
+        std__string.size = getSize(bt_pointer);
+        std__object.size = getSize(bt_pointer);
         stdchar.size = getSize(bt_char);
         stdsignedchar.size = getSize(bt_unsigned_char);
         stdunsignedchar.size = getSize(bt_unsigned_char);

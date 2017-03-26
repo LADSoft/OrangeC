@@ -287,4 +287,13 @@ namespace DotNetPELib
             }
         }
     }
+    bool Class::Traverse(Callback &callback) const
+    {
+        if (!DataContainer::Traverse(callback))
+            return true;
+        for (auto property : properties_)
+            if (!callback.EnterProperty(property))
+                return false;
+        return true;
+    }
 }

@@ -148,6 +148,7 @@ namespace DotNetPELib
     class PEMethod;
     class CustomAttribute;
     class MethodSemanticsTableEntry;
+    class Callback;
     /* contains data, types, methods */
 
     ///** Destructor base.
@@ -294,7 +295,7 @@ namespace DotNetPELib
         void ValidateInstructions();
         ///** return flags member
         Qualifiers &Flags() { return flags_; }
-
+        const Qualifiers &Flags() const { return flags_; }
         ///** set parent
         void SetContainer(DataContainer *parent) { parent_ = parent; }
         ///** get parent
@@ -390,6 +391,8 @@ namespace DotNetPELib
         DataContainer *FindContainer(std::vector<std::string>& split, size_t &n);
         const std::list<Field *>&Fields() { return fields_; }
         const std::list<CodeContainer *>&Methods() { return methods_; }
+        ///** Traverse the declaration tree
+        virtual bool Traverse(Callback &callback) const;
         // internal functions
         virtual bool InAssemblyRef() const { return parent_->InAssemblyRef(); }
         virtual bool ILSrcDump(PELib &) const;
@@ -471,6 +474,7 @@ namespace DotNetPELib
         Class *LookupClass(PELib &lib, std::string nameSpace, std::string name);
         ///** Set a public key
         void SetPublicKey(PEReader &reader, size_t index);
+                
         const CustomAttributeContainer &CustomAttributes() const { return customAttributes_;  }
         virtual bool InAssemblyRef() const { return external_; }
         bool IsLoaded() { return loaded; }
@@ -586,6 +590,8 @@ namespace DotNetPELib
             properties_.push_back(property);
         }
         using DataContainer::Add;
+        ///** Traverse the declaration tree
+        virtual bool Traverse(Callback &callback) const override;
         ///** return the list of properties
         const std::vector<Property *>& Properties() const { return properties_;  }
         ///** root for Load assembly from file
@@ -1183,6 +1189,23 @@ namespace DotNetPELib
         static char *typeNames_[];
     };
 
+    ///** The callback structure is passed to 'traverse'... it holds callbacks
+    // called while traversing the tree
+    class Callback
+    {
+    public:
+        virtual ~Callback() { }
+
+        virtual bool EnterAssembly(const AssemblyDef *) { return true; }
+        virtual bool ExitAssembly(const AssemblyDef *) { return true; }
+        virtual bool EnterNamespace(const Namespace *) { return true; }
+        virtual bool ExitNamespace(const Namespace *) { return true; }
+        virtual bool EnterClass(const Class *) { return true; }
+        virtual bool ExitClass(const Class *) { return true; }
+        virtual bool EnterMethod(const Method *) { return true; }
+        virtual bool EnterField(const Field *) { return true; }
+        virtual bool EnterProperty(const Property *) { return true; }
+    };
     ///** The allocator manages memory that various objects get constructed into
     // so that the objects can be cleanly deleted without the application having
     // to keep track of every object.
@@ -1308,6 +1331,9 @@ namespace DotNetPELib
         ///** find a method, with overload matching
         eFindType Find(std::string path, Method **result, std::vector<Type *> args, AssemblyDef *assembly = nullptr);
 
+        ///** Traverse the declaration tree
+        void Traverse(Callback &callback) const;
+                
         ///** internal declarations
         // loads the MSCorLib assembly
         AssemblyDef *MSCorLibAssembly();
@@ -1326,7 +1352,7 @@ namespace DotNetPELib
         std::string assemblyName_;
         std::fstream *outputStream_;
         std::string fileName_;
-	std::map<std::string, std::string> unmanagedRoutines_;
+    	std::map<std::string, std::string> unmanagedRoutines_;
         int corFlags_;
         PEWriter *peWriter_;
         std::vector<Namespace *> usingList_;

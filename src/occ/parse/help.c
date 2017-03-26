@@ -304,6 +304,11 @@ BOOLEAN isarithmetic(TYPE *tp)
     tp = basetype(tp);
     return isint(tp) || isfloat(tp) || iscomplex(tp) || isimaginary(tp);
 }
+BOOLEAN ismsil(TYPE *tp)
+{
+    tp = basetype(tp);
+    return tp->type == bt___string || tp->type == bt___object;
+}
 BOOLEAN isconstraw(TYPE *tp, BOOLEAN useTemplate)
 {
 	BOOLEAN done = FALSE;
@@ -776,6 +781,12 @@ void deref(TYPE *tp, EXPRESSION **exp)
         case bt_long_double_imaginary:
             en = en_l_ldi;
             break;
+        case bt___string:
+            en = en_l_string;
+            break;
+        case bt___object:
+            en = en_l_object;
+            break;
         case bt_pointer:
             if (tp->array || tp->vla)
                 return;
@@ -895,6 +906,12 @@ int sizeFromType(TYPE *tp)
         case bt_aggregate:
             rv = ISZ_ADDR;
             break;
+        case bt___string:
+            rv = ISZ_STRING;
+            break;
+        case bt___object:
+            rv = ISZ_OBJECT;
+            break;
         default:
             diag("sizeFromType error");
             break;
@@ -993,6 +1010,12 @@ void cast(TYPE *tp, EXPRESSION **exp)
         case bt_long_double_imaginary:
             en = en_x_ldi;
             break;
+        case bt___string:
+            en = en_x_string;
+            break;
+        case bt___object:
+            en = en_x_object;
+            break;
         case bt_pointer:
         case bt_aggregate:
             en = en_x_p;
@@ -1038,6 +1061,8 @@ BOOLEAN castvalue(EXPRESSION *exp)
         case en_x_di:
         case en_x_ldi:
         case en_x_p:
+        case en_x_string:
+        case en_x_object:
             return TRUE;
         default:
             return FALSE;
@@ -1081,6 +1106,8 @@ BOOLEAN lvalue(EXPRESSION *exp)
         case en_l_di:
         case en_l_ldi:
         case en_l_p:
+        case en_l_string:
+        case en_l_object:
             return TRUE;
         case en_l_ref:
             return TRUE;
@@ -1164,7 +1191,10 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                 expsym = intNode(en_c_i, 0);
                 diag("convertInitToExpression: no this ptr");
             }
-            expsym = exprNode(en_add, expsym, intNode(en_c_i, sp->offset));
+            if (chosenAssembler->msil)
+                expsym = exprNode(en_structadd, expsym, varNode(en_structelem, sp));
+            else
+                expsym = exprNode(en_add, expsym, intNode(en_c_i, sp->offset));
             break;
         case sc_external:
 /*			expsym = varNode(en_global, sp);
@@ -1355,7 +1385,9 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
             else
             {
                 EXPRESSION *exps = expsym;
-                if (init->offset || (chosenAssembler->arch->denyopts & DO_UNIQUEIND))
+                if (chosenAssembler->msil && init->fieldsp)
+                    exps = exprNode(en_structadd, exps, varNode(en_structelem, init->fieldsp));
+                else if (init->offset || init->next && init->next->basetp && (chosenAssembler->arch->denyopts & DO_UNIQUEIND))
                     exps = exprNode(en_add, exps, intNode(en_c_i, init->offset));
                 deref(init->basetp, &exps);
                 exp = init->exp;
@@ -1615,7 +1647,7 @@ TYPE *destSize(TYPE *tp1, TYPE *tp2, EXPRESSION **exp1, EXPRESSION **exp2, BOOLE
         return tp1;
     if (tp2->type == bt_any)
         return tp2;
-    if (isvoid(tp1) || isvoid(tp2))
+    if (isvoid(tp1) || isvoid(tp2) || ismsil(tp1) || ismsil(tp2))
     {
         error(ERR_NOT_AN_ALLOWED_TYPE);
         return tp1;

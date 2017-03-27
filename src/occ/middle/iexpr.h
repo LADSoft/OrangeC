@@ -101,6 +101,7 @@ typedef struct _imode_
     char restricted; /* TRUE if pointer type is set to restricted */
     char retval;	/* TRUE if this is the value returned by a function */
     char fieldname; /* vararg is an en_structelem field name */
+    char msilObject; /* TRUE if this is an MSIL object that shouldn't be loaded by address */
 } IMODE;
 
 /*-------------------------------------------------------------------------*/

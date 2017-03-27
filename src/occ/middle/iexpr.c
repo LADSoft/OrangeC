@@ -1466,6 +1466,25 @@ IMODE *gen_clearblock(EXPRESSION *node, SYMBOL *funcsp)
 }
 
 /*-------------------------------------------------------------------------*/
+static void PushArrayLimits(SYMBOL *funcsp, TYPE *tp)
+{
+    if (!tp || !isarray(tp))
+        return;
+    int n1 = basetype(tp)->size;
+    int n2 = basetype(basetype(tp)->btp)->size;
+    if (n1 && n2)
+    {
+        IMODE *ap = tempreg(-ISZ_UINT, 0);
+        gen_icode(i_assn, ap, make_immed(-ISZ_UINT, n1 / n2), NULL);
+        gen_icode(i_parm, 0, ap, 0);
+    }
+    else
+    {
+        IMODE* ap = gen_expr(funcsp, basetype(tp)->esize, 0, -ISZ_UINT);
+        gen_icode(i_parm, 0, ap, 0);
+    }
+    PushArrayLimits(funcsp, basetype(tp)->btp);
+}
 
 IMODE *gen_assign(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
 /*
@@ -1476,74 +1495,104 @@ IMODE *gen_assign(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
  */
 {
     IMODE *ap1, *ap2, *ap3, *ap4;
-    EXPRESSION *enode , * temp;
+    EXPRESSION *enode, *temp;
     LIST *l2, *lp;
     (void)flags;
     (void)size;
-    if (chosenAssembler->arch->preferopts & OPT_REVERSESTORE)
+    if (node->right->type == en_msil_array_init)
     {
-        int n = 0, m;
-        ap1 = gen_expr(funcsp, node->left, (flags & ~F_NOVALUE) | F_STORE, natural_size(node->left));
-        if (ap1->bits > 0 && (chosenAssembler->arch->denyopts & DO_MIDDLEBITS))
+        TYPE *base = node->right->v.tp;
+        PushArrayLimits(funcsp, node->right->v.tp);
+        while (isarray(base))
+            base = basetype(base)->btp;
+        ap1 = gen_expr(funcsp, node->left, (flags & ~F_NOVALUE) | F_STORE, sizeFromType(base));
+        ap2 = (IMODE *)Alloc(sizeof(IMODE));
+        ap2->mode = i_immed;
+        ap2->offset = node->right;
+        ap2->size = ap1->size;
+        gen_icode(i_assn, ap1, ap2, NULL);
+    }
+    else if (node->left->type == en_msil_array_access)
+    {
+        TYPE *base = node->left->v.msilArray->tp;
+        while (isarray(base))
+            base = basetype(base)->btp;
+        gen_expr(funcsp, node->left, (flags & ~F_NOVALUE) | F_STORE, sizeFromType(base));
+        ap2 = gen_expr(funcsp, node->right, (flags & ~F_NOVALUE), sizeFromType(base)); 
+        gen_icode(i_parm, 0, ap2, 0);
+        ap1 = (IMODE *)Alloc(sizeof(IMODE));
+        ap1->mode = i_immed;
+        ap1->offset = node->left;
+        ap1->size = ap2->size;
+        gen_icode(i_assn, ap1, ap1, NULL);
+    }
+    else
+    {
+        if (chosenAssembler->arch->preferopts & OPT_REVERSESTORE)
         {
-            n = ap1->startbit;
-            m = ap1->bits;
-            ap1->bits = ap1->startbit = 0;
-            ap3 = gen_expr(funcsp, node->left, (flags & ~F_NOVALUE) | F_STORE, natural_size(node->left));
-            ap4 = LookupLoadTemp(ap3, ap3);
-            if (ap4 != ap3)
+            int n = 0, m;
+            ap1 = gen_expr(funcsp, node->left, (flags & ~F_NOVALUE) | F_STORE, natural_size(node->left));
+            if (ap1->bits > 0 && (chosenAssembler->arch->denyopts & DO_MIDDLEBITS))
             {
-                ap4->bits = ap3->bits;
-                ap4->startbit = ap3->startbit;
-                ap3->bits = ap3->startbit = 0;
-                gen_icode(i_assn, ap4, ap3, NULL);
-            }            
-            ap3 = gen_bit_mask(ap4);
+                n = ap1->startbit;
+                m = ap1->bits;
+                ap1->bits = ap1->startbit = 0;
+                ap3 = gen_expr(funcsp, node->left, (flags & ~F_NOVALUE) | F_STORE, natural_size(node->left));
+                ap4 = LookupLoadTemp(ap3, ap3);
+                if (ap4 != ap3)
+                {
+                    ap4->bits = ap3->bits;
+                    ap4->startbit = ap3->startbit;
+                    ap3->bits = ap3->startbit = 0;
+                    gen_icode(i_assn, ap4, ap3, NULL);
+                }
+                ap3 = gen_bit_mask(ap4);
+            }
+            else
+            {
+                ap3 = NULL;
+            }
+            ap2 = gen_expr(funcsp, node->right, (flags & ~F_NOVALUE), natural_size(node->left));
+            ap4 = LookupLoadTemp(ap2, ap2);
+            if (ap4 != ap2)
+                gen_icode(i_assn, ap4, ap2, NULL);
+            if (ap3)
+            {
+                gen_icode(i_and, ap4, ap4, make_immed(-ISZ_UINT, (1 << m) - 1));
+                if (n)
+                    gen_icode(i_lsl, ap4, ap4, make_immed(-ISZ_UINT, n));
+                gen_icode(i_or, ap4, ap3, ap4);
+            }
         }
-        else 
+        else
         {
-            ap3 = NULL;
+            ap2 = gen_expr(funcsp, node->right, flags & ~F_NOVALUE, natural_size(node->left));
+            ap4 = LookupLoadTemp(ap2, ap2);
+            if (ap4 != ap2)
+                gen_icode(i_assn, ap4, ap2, NULL);
+            ap1 = gen_expr(funcsp, node->left, (flags & ~F_NOVALUE) | F_STORE, natural_size(node->left));
         }
-        ap2 = gen_expr(funcsp, node->right, (flags & ~F_NOVALUE), natural_size(node->left));
-        ap4 = LookupLoadTemp(ap2, ap2);
-        if (ap4 != ap2)
-            gen_icode(i_assn, ap4, ap2, NULL);
-        if (ap3)
-        {
-            gen_icode(i_and, ap4, ap4, make_immed(-ISZ_UINT, (1 << m) - 1));
-            if (n)
-                gen_icode(i_lsl, ap4, ap4, make_immed(-ISZ_UINT, n));
-            gen_icode(i_or, ap4, ap3, ap4);
-        }
-    }
-    else
-    {
-        ap2 = gen_expr(funcsp, node->right, flags & ~F_NOVALUE, natural_size(node->left));
-        ap4 = LookupLoadTemp(ap2, ap2);
-        if (ap4 != ap2)
-            gen_icode(i_assn, ap4, ap2, NULL);
-        ap1 = gen_expr(funcsp, node->left, (flags & ~F_NOVALUE) | F_STORE, natural_size(node->left));
-    }
-    ap1->vol = ap2->vol;
-    ap2->restricted = ap4->restricted;
-    ap1->offset->pragmas = ap4->offset->pragmas;
-    gen_icode(i_assn, ap1, ap4, NULL);
-    /*
-    if (ap1->mode != i_direct || ap1->offset->type != en_tempref)
-    {
-        ap3 = tempreg(ap4->size, FALSE);
-        gen_icode(i_assn, ap3, ap4, NULL);
-        ap4 = ap3;
-    }
-    ap3 = LookupStoreTemp(ap1, ap1);
-    if (ap3 != ap1)
-    {
-        gen_icode(i_assn, ap3, ap4, NULL);
-        gen_icode(i_assn, ap1, ap3, NULL);
-    }
-    else
+        ap1->vol = ap2->vol;
+        ap2->restricted = ap4->restricted;
+        ap1->offset->pragmas = ap4->offset->pragmas;
         gen_icode(i_assn, ap1, ap4, NULL);
-    */
+        /*
+        if (ap1->mode != i_direct || ap1->offset->type != en_tempref)
+        {
+            ap3 = tempreg(ap4->size, FALSE);
+            gen_icode(i_assn, ap3, ap4, NULL);
+            ap4 = ap3;
+        }
+        ap3 = LookupStoreTemp(ap1, ap1);
+        if (ap3 != ap1)
+        {
+            gen_icode(i_assn, ap3, ap4, NULL);
+            gen_icode(i_assn, ap1, ap3, NULL);
+        }
+        else
+            gen_icode(i_assn, ap1, ap4, NULL);
+        */
+    }
     if (!(flags & F_NOVALUE) && (chosenAssembler->arch->preferopts & OPT_REVERSESTORE) && ap1->mode == i_ind)
     {
         ap1 = gen_expr(funcsp, RemoveAutoIncDec(node->left), (flags & ~F_NOVALUE), natural_size(node->left));
@@ -2687,6 +2736,35 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
             }
             rv = ap2;
             break;
+        case en_msil_array_access:
+        {
+            int i;
+            ap1 = gen_expr(funcsp, node->v.msilArray->base, 0, ISZ_ADDR);
+            ap1->msilObject = TRUE;
+            gen_icode(i_parm, 0, ap1, 0);
+            for (i = 0; i < node->v.msilArray->count; i++)
+            {
+                ap1 = gen_expr(funcsp, node->v.msilArray->indices[i], 0, ISZ_ADDR);
+                gen_icode(i_parm, 0, ap1, 0);
+            }
+            if (!(flags & F_STORE))
+            {
+                TYPE *base = node->v.msilArray->tp;
+                while (isarray(base))
+                    base = basetype(base)->btp;
+                rv = tempreg(sizeFromType(base), 0);
+                ap1 = (IMODE *)Alloc(sizeof(IMODE));
+                ap1->size = rv->size;
+                ap1->mode = i_immed;
+                ap1->offset = node;
+                gen_icode(i_assn, rv, ap1, NULL);
+            }
+            else
+            {
+                rv = NULL;
+            }
+            break;
+        }
         case en_substack:
             ap1 = gen_expr(funcsp, node->left, 0, ISZ_UINT );
             gen_icode(i_substack, ap2 = tempreg(ISZ_ADDR, 0), ap1, NULL );
@@ -3161,6 +3239,8 @@ int natural_size(EXPRESSION *node)
     switch (node->type)
     {
         case en_thisshim:
+            return ISZ_ADDR;
+        case en_msil_array_access:
             return ISZ_ADDR;
         case en_stmt:
             return natural_size(node->left);

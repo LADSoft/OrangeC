@@ -1536,6 +1536,40 @@ static LEXEME *expression_bracket(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
                 error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
             else if (basetype(tp2)->scoped || basetype(*tp)->scoped)
                 error(ERR_SCOPED_TYPE_MISMATCH);
+            else if (isarray(*tp) && (*tp)->msil)
+            {
+                if (!isint(tp2) && basetype(tp2)->type != bt_enum)
+                {
+                    if (ispointer(tp2))
+                        error(ERR_NONPORTABLE_POINTER_CONVERSION);
+                    else
+                        error(ERR_NEED_INTEGER_EXPRESSION);
+                }
+                if ((*exp)->type != en_msil_array_access)
+                {
+                    EXPRESSION *expr3 = exprNode(en_msil_array_access, NULL, NULL);
+                    expr3->v.msilArray = (MSIL_ARRAY *)Alloc(sizeof(MSIL_ARRAY) + 9 * sizeof(EXPRESSION *));
+                    expr3->v.msilArray->max = 10;
+                    expr3->v.msilArray->count = 0;
+                    expr3->v.msilArray->base = (*exp);
+                    expr3->v.msilArray->tp = *tp;
+                    (*exp) = expr3;
+                }
+                else if ((*exp)->v.msilArray->count >= (*exp)->v.msilArray->max)
+                {
+                    EXPRESSION *expr3 = exprNode(en_msil_array_access, NULL, NULL);
+                    expr3->v.msilArray = (MSIL_ARRAY *)Alloc(sizeof(MSIL_ARRAY) + ((*exp)->v.msilArray->max * 2 - 1) * sizeof(EXPRESSION *));
+                    expr3->v.msilArray->max = (*exp)->v.msilArray->max * 2;
+                    expr3->v.msilArray->count = (*exp)->v.msilArray->count;
+                    expr3->v.msilArray->base = (*exp)->v.msilArray->base;
+                    expr3->v.msilArray->tp = (*exp)->v.msilArray->tp;
+                    memcpy(expr3->v.msilArray->indices, (*exp)->v.msilArray->indices,
+                          (*exp)->v.msilArray->count * sizeof(EXPRESSION *));
+                    (*exp) = expr3;
+                }
+                (*exp)->v.msilArray->indices[(*exp)->v.msilArray->count++] = expr2;
+                *tp = basetype(*tp)->btp;
+            }
             else if (ispointer(*tp))
             {
                 if (!isint(tp2) && basetype(tp2)->type != bt_enum)
@@ -1573,7 +1607,7 @@ static LEXEME *expression_bracket(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
                 }
                 if (!(*tp)->array && !(*tp)->vla)
                     deref(*tp, exp);
-        }
+            }
             else if (ispointer(tp2))
             {
                 if (!isint(*tp))
@@ -6776,7 +6810,7 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
             error(ERR_CANNOT_MODIFY_CONST_OBJECT);
         else if (isvoid(*tp) || isvoid(tp1) || (*tp)->type == bt_aggregate  || tp1->type == bt_aggregate)
             error(ERR_NOT_AN_ALLOWED_TYPE);
-        else if (!isstructured(*tp) && basetype(*tp)->type != bt_memberptr && basetype(*tp)->type != bt_templateparam && !lvalue(*exp))
+        else if (!isstructured(*tp) && basetype(*tp)->type != bt_memberptr && basetype(*tp)->type != bt_templateparam && !lvalue(*exp) && (*exp)->type != en_msil_array_access)
             error(ERR_LVALUE);
         else switch(kw)
         {
@@ -7156,9 +7190,13 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
         {
             if (kw == assign)
             {
-                int n = natural_size(*exp);
-                if (natural_size(exp1) != n)
-                    cast((*tp), &exp1);
+                if ((*exp)->type != en_msil_array_access)
+                {
+                    int n = natural_size(*exp);
+                    if (natural_size(exp1) != n)
+                        cast((*tp), &exp1);
+                }
+
                 *exp = exprNode(op, *exp, exp1);
             }
             else {

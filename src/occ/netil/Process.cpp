@@ -49,6 +49,7 @@
 using namespace DotNetPELib;
 
 extern void Import();
+BoxedType *boxedType(int isz);
 
 extern "C" {
 
@@ -154,7 +155,45 @@ extern "C"
 }
 static std::map<std::string, Type *> typeList;
 static std::map<SYMBOL *, Value *, byField> fieldList;
+static std::map<std::string, MethodSignature *> arrayMethods;
 
+MethodSignature *LookupArrayMethod(Type *tp, std::string name)
+{
+    char buf[256];
+    sprintf(buf, "$$$%d;%d;%s", tp->ArrayLevel(), tp->GetBasicType(), name.c_str());
+    auto it = arrayMethods.find(buf);
+    if (it != arrayMethods.end())
+       return it->second;
+    Type *tp1 = peLib->AllocateType(Type::i32, 0);
+    int n = tp->ArrayLevel();
+    MethodSignature *sig = peLib->AllocateMethodSignature(name, MethodSignature::Managed | MethodSignature::InstanceFlag, mainContainer);
+    sig->ArrayObject(tp);
+    for (int i = 0; i < n; i++)
+    {
+        char buf[256];
+        sprintf(buf, "p%d", i);
+        sig->AddParam(peLib->AllocateParam(buf, tp1));
+    }
+    if (name == ".ctor")
+    {
+        sig->ReturnType(peLib->AllocateType(Type::Void, 0));
+    }
+    else if (name == "Get")
+    {
+        Type *tp2 = peLib->AllocateType(tp->GetBasicType(), 0); 
+        sig->ReturnType(tp2);
+    }
+    else if (name == "Set")
+    {
+        Type *tp2 = peLib->AllocateType(tp->GetBasicType(), 0); 
+        sig->ReturnType(peLib->AllocateType(Type::Void, 0));
+        char buf[256];
+        sprintf(buf, "p$$");
+        sig->AddParam(peLib->AllocateParam(buf, tp2));
+    }
+    arrayMethods[name] = sig;
+    return sig;
+}
 static MethodSignature * FindMethodSignature(char *name)
 {
     void *result;
@@ -499,6 +538,36 @@ Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg, BOOLEAN pinvoke)
             Type *type = peLib->AllocateType(Type::i32, 0);
             typeList[basetype(tp)->sp->name] = type;
             return type;
+        }
+        else
+        {
+            return peLib->AllocateType((DataContainer *)NULL);
+        }
+    }
+    else if (isarray(tp) && basetype(tp)->msil)
+    {
+        char name[512];
+        TYPE *base = tp;
+        Type *rv;
+        int count = 0;
+        while (isarray(base))
+        {
+            count++;
+            base = basetype(base)->btp;
+        }
+        sprintf(name, "$$$marray%d;%s;%d", base->type, base->sp ? base->sp->name : "", count);
+        std::map<std::string, Type *>::iterator it = typeList.find(name);
+        if (it != typeList.end())
+            return it->second;
+        if (commit)
+        { 
+            rv = GetType(base, TRUE);
+            rv->ArrayLevel(count);
+            typeList[name] = rv;
+            if (isstructured(base))
+                GetType(base, true);
+            rv->ByRef(byref);
+            return rv;
         }
         else
         {
@@ -1369,17 +1438,9 @@ extern "C" BOOLEAN oa_main_preprocess(void)
     {
         mainContainer = peLib->WorkingAssembly();
     }
+    /**/
     peLib->WorkingAssembly()->SetVersion(assemblyVersion[0], assemblyVersion[1], assemblyVersion[2], assemblyVersion[3]);
     peLib->WorkingAssembly()->SNKFile(prm_snkKeyFile);
-    BYTE mscorlibPublicKeytoken[] = { 0xb7, 0x7a, 0x5c, 0x56, 0x19, 0x34, 0xe0, 0x89 };
-    peLib->AddExternalAssembly("mscorlib", mscorlibPublicKeytoken);
-    AssemblyDef *mscorlib = peLib->FindAssembly("mscorlib");
-    mscorlib->SetVersion(4, 0, 0, 0);
-
-    BYTE lsmsilcrtlPublickeytoken[] = { 0xbc, 0x9b,0x11,0x12,0x35,0x64,0x2d,0x7d };
-    peLib->AddExternalAssembly("lsmsilcrtl", lsmsilcrtlPublickeytoken);
-    AssemblyDef *lsmsilcrtl = peLib->FindAssembly("lsmsilcrtl");
-    lsmsilcrtl->SetVersion(1, 0, 0, 0);
 
     CreateExternalCSharpReferences();
     retblocksym.name = "__retblock";

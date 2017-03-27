@@ -93,6 +93,8 @@ static int stackpos = 0;
 
 static void box(IMODE *im);
 
+MethodSignature *LookupArrayMethod(Type *cls, std::string name);
+
 Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg = false, BOOLEAN pinvoke = false);
 Type * GetStringType(int type);
 Value *GetLocalData(SYMBOL *sp);
@@ -256,7 +258,33 @@ Operand *getOperand(IMODE *oper)
     switch(oper->mode)
     {
         case i_immed:
-            rv = make_constant(oper->size, oper->offset);
+            if (oper && oper->mode == i_immed && oper->offset->type == en_msil_array_access)
+            {
+                Type *tp = GetType(oper->offset->v.msilArray->tp, TRUE);
+                if (tp->ArrayLevel() == 1)
+                {
+                    Instruction::iop instructions[] = {
+                            Instruction::i_ldelem, Instruction::i_ldelem, Instruction::i_ldelem, Instruction::i_ldelem_u1, 
+                            Instruction::i_ldelem_u2, Instruction::i_ldelem_i1, Instruction::i_ldelem_u1, Instruction::i_ldelem_i2, Instruction::i_ldelem_u2, Instruction::i_ldelem_i4, Instruction::i_ldelem_u4, Instruction::i_ldelem_i8, Instruction::i_ldelem_u8, Instruction::i_ldelem_i, Instruction::i_ldelem_i,
+                            Instruction::i_ldelem_r4, Instruction::i_ldelem_r8, Instruction::i_ldelem, Instruction::i_ldelem
+                    };
+                    gen_code(instructions[tp->GetBasicType()], NULL);
+                    decrement_stack();
+                }
+                else
+                {
+                    MethodSignature *sig = LookupArrayMethod(tp, "Get");
+                    Operand *operand = peLib->AllocateOperand(peLib->AllocateMethodName(sig));
+                    gen_code(Instruction::i_call, operand);
+                    int n = tp->ArrayLevel();
+                    for (int i=0; i < n; i++)
+                        decrement_stack();
+                }
+            }
+            else
+            {
+                rv = make_constant(oper->size, oper->offset);
+            }
             break;
         case i_direct:
         {
@@ -268,7 +296,7 @@ Operand *getOperand(IMODE *oper)
             else
             {
                 EXPRESSION *en = GetSymRef(oper->offset);
-                SYMBOL *sp;
+                SYMBOL *sp = NULL;
                 if (en)
                 {
                     sp = en->v.sp;
@@ -575,7 +603,7 @@ void gen_load(IMODE *im, Operand *dest)
         case Operand::t_value:
             if (typeid(*dest->GetValue()) == typeid(Local))
             {
-                if (im->mode == i_immed)
+                if (im->mode == i_immed && !im->msilObject)
                     gen_code(Instruction::i_ldloca, dest);
                 else
                     gen_code(Instruction::i_ldloc, dest);
@@ -583,7 +611,7 @@ void gen_load(IMODE *im, Operand *dest)
             }
             else if (typeid(*dest->GetValue()) == typeid(Param))
             {
-                if (im->mode == i_immed)
+                if (im->mode == i_immed && !im->msilObject)
                     gen_code(Instruction::i_ldarga, dest);
                 else
                     gen_code(Instruction::i_ldarg, dest);
@@ -598,14 +626,14 @@ void gen_load(IMODE *im, Operand *dest)
             {
                 if (im->offset->type == en_structelem)
                 {
-                    if (im->mode == i_immed)
+                    if (im->mode == i_immed && !im->msilObject)
                         gen_code(Instruction::i_ldflda, dest);
                     else
                         gen_code(Instruction::i_ldfld, dest);
                 }
                 else
                 {
-                    if (im->mode == i_immed)
+                    if (im->mode == i_immed && !im->msilObject)
                         gen_code(Instruction::i_ldsflda, dest);
                     else
                         gen_code(Instruction::i_ldsfld, dest);
@@ -856,7 +884,7 @@ extern "C" void asm_goto(QUAD *q)               /* unconditional branch */
     }
 
 }
-static void box(IMODE *im)
+BoxedType *boxedType(int isz)
 {
     static Type::BasicType names[] = { Type::u32, Type::u32, Type::u8, Type::u8,
         Type::u16, Type::u16, Type::u16, Type::u32, Type::u32, Type::u32,
@@ -868,16 +896,23 @@ static void box(IMODE *im)
         Type::i64, Type::i32, Type::i32, Type::i16, Type::i16, Type::r32, Type::r64,
         Type::r64, Type::r32, Type::r64, Type::r64,
     };
-    if (im->size == ISZ_OBJECT)
-        return;
+    if (isz == ISZ_OBJECT)
+        return NULL;
     Type::BasicType n;
-    if (im->size == ISZ_STRING)
+    if (isz == ISZ_STRING)
         n = Type::string;
     else
-        n = im->size < 0 ? mnames[-im->size] : names[im->size];
-    BoxedType *type = peLib->AllocateBoxedType(n);
-    Operand *operand = peLib->AllocateOperand(peLib->AllocateValue("", type));
-    gen_code(Instruction::i_box, operand);
+        n = isz < 0 ? mnames[-isz] : names[isz];
+    return peLib->AllocateBoxedType(n);
+}
+void box(IMODE *im)
+{
+    BoxedType *type = boxedType(im->size);
+    if (type)
+    {
+        Operand *operand = peLib->AllocateOperand(peLib->AllocateValue("", type));
+        gen_code(Instruction::i_box, operand);
+    }
 }
 // this implementation won't handle varag functions nested in other varargs...
 extern "C" void asm_parm(QUAD *q)               /* push a parameter*/
@@ -1244,31 +1279,80 @@ extern "C" void asm_assn(QUAD *q)               /* assignment */
 {
     Operand *ap;
 
-    // don't generate if it is a placeholder ind...
-    if (q->ans->mode == i_direct && !(q->temps & TEMP_ANS) && q->ans->offset->type == en_auto)
+    if (q->ans && q->ans->mode == i_immed && q->ans->offset->type == en_msil_array_access)
     {
-        TYPE *tp = q->ans->offset->v.sp->tp;
-        TYPE *tp1 = basetype(tp);
-        while (tp != tp1)
+        Type *tp = GetType(q->ans->offset->v.msilArray->tp, TRUE);
+        if (tp->ArrayLevel() == 1)
         {
-            if (tp->type == bt_objectArray)
-            {
-                // assign to object array, call the ctor here
-                // count is already on the stack
-                Operand *ap = peLib->AllocateOperand(peLib->AllocateValue("", systemObject));
-                gen_code(Instruction::i_newarr, ap);
-                ap = getOperand(q->ans);
-                gen_store(q->ans,ap);
-                return;
-            }
-            tp = tp->btp;
+            Instruction::iop instructions[] = {
+                    Instruction::i_stelem, Instruction::i_stelem, Instruction::i_stelem, Instruction::i_stelem_i1, 
+                    Instruction::i_stelem_i2, Instruction::i_stelem_i1, Instruction::i_stelem_i1, Instruction::i_stelem_i2, Instruction::i_stelem_i2, Instruction::i_stelem_i4, Instruction::i_stelem_i4, Instruction::i_stelem_i8, Instruction::i_stelem_i8, Instruction::i_stelem_i, Instruction::i_stelem_i,
+                    Instruction::i_stelem_r4, Instruction::i_stelem_r8, Instruction::i_stelem, Instruction::i_stelem
+            };
+            gen_code(instructions[tp->GetBasicType()], NULL);
+            decrement_stack();
+            decrement_stack();
+            decrement_stack();
+        }
+        else
+        {
+            MethodSignature *sig = LookupArrayMethod(tp, "Set");
+            Operand *operand = peLib->AllocateOperand(peLib->AllocateMethodName(sig));
+            gen_code(Instruction::i_call, operand);
+            int n = tp->ArrayLevel();
+            for (int i=0; i < n+2; i++)
+                decrement_stack();
+        }
+        return;
+    }
+    else if (q->dc.left && q->dc.left->mode == i_immed && q->dc.left->offset->type == en_msil_array_init)
+    {
+        if (!isarray(basetype(q->dc.left->offset->v.tp)->btp))
+        {
+            Type *tp = boxedType(q->ans->size);
+            Operand *operand = peLib->AllocateOperand(peLib->AllocateValue("", tp));
+            gen_code(Instruction::i_newarr, operand);
+
+        }
+        else
+        {
+            Type *tp = GetType(q->dc.left->offset->v.tp, TRUE);
+            MethodSignature *sig = LookupArrayMethod(tp, ".ctor");
+            Operand *operand = peLib->AllocateOperand(peLib->AllocateMethodName(sig));
+            gen_code(Instruction::i_newobj, operand);
+            int n = tp->ArrayLevel();
+            for (int i=0; i < n-1; i++)
+                decrement_stack();
         }
     }
-    ap = getOperand(q->dc.left);
-    gen_load(q->dc.left, ap);
-    if (q->dc.left->size != 0 && q->dc.left->size != q->ans->size)
+    else
     {
-        gen_convert(ap, q->dc.left, q->ans->size);
+        // don't generate if it is a placeholder ind...
+        if (q->ans->mode == i_direct && !(q->temps & TEMP_ANS) && q->ans->offset->type == en_auto)
+        {
+            TYPE *tp = q->ans->offset->v.sp->tp;
+            TYPE *tp1 = basetype(tp);
+            while (tp != tp1)
+            {
+                if (tp->type == bt_objectArray)
+                {
+                    // assign to object array, call the ctor here
+                    // count is already on the stack
+                    Operand *ap = peLib->AllocateOperand(peLib->AllocateValue("", systemObject));
+                    gen_code(Instruction::i_newarr, ap);
+                    ap = getOperand(q->ans);
+                    gen_store(q->ans, ap);
+                    return;
+                }
+                tp = tp->btp;
+            }
+        }
+        ap = getOperand(q->dc.left);
+        gen_load(q->dc.left, ap);
+        if (q->dc.left->size != 0 && q->dc.left->size != q->ans->size)
+        {
+            gen_convert(ap, q->dc.left, q->ans->size);
+        }
     }
     ap = getOperand(q->ans);
     gen_store(q->ans, ap);

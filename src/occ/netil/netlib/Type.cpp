@@ -66,8 +66,22 @@ namespace DotNetPELib
         {
             peLib.Out() << typeNames_[tp_];
         }
-        for (int i = 0; i < arrayLevel_; i++)
+        if (arrayLevel_ == 1)
+        {
             peLib.Out() << " []";
+        }
+        else if (arrayLevel_)
+        {
+            peLib.Out() << " [";
+            for (int i = 0; i < arrayLevel_; i++)
+            {
+                if (i != 0)
+                    peLib.Out() << ", 0...";
+                else
+                    peLib.Out() << "0...";
+            }
+            peLib.Out() << "]";
+        }
         for (int i = 0; i < pointerLevel_; i++)
             peLib.Out() << " *";
         if (byRef_)

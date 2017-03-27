@@ -1567,6 +1567,7 @@ void assignmentUsages(EXPRESSION *node, BOOLEAN first)
             node->v.sp->used = TRUE;
             break;
         case en_const:
+        case en_msil_array_access:
             break;
         case en_c_ll:
         case en_c_ull:

@@ -923,7 +923,8 @@ BOOLEAN IsConstWithArr(TYPE *tp)
 static void dumpInitGroup(SYMBOL *sp, TYPE *tp)
 {
 #ifndef PARSER_ONLY
-    if (sp->init)
+
+    if (sp->init || isarray(sp->tp) && sp->tp->msil)
     {
         if (chosenAssembler->msil)
         {
@@ -2709,9 +2710,12 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                 SYMBOL *fieldsp;
                 lex = initType(lex, funcsp, desc->offset + desc->reloffset,
                                sc, next, dest, nexttp(desc), base, isarray(itype), flags);
-                fieldsp = ((SYMBOL *)desc->hr->p);
-                if (ismember(fieldsp) && fieldsp->parentClass->tp->type != bt_union)
-                    (*next)->fieldsp = fieldsp;
+                if (desc->hr)
+                {
+                    fieldsp = ((SYMBOL *)desc->hr->p);
+                    if (ismember(fieldsp) && fieldsp->parentClass->tp->type != bt_union)
+                        (*next)->fieldsp = fieldsp;
+                }
             }
             increment_desc(&desc, &cache);
             while (*next)

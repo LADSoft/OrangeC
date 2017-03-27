@@ -67,8 +67,15 @@ namespace DotNetPELib
             buf[offset + rv++] = ELEMENT_TYPE_BYREF;
         for (int i = 0; i < tp->PointerLevel(); i++)
             buf[offset + rv++] = ELEMENT_TYPE_PTR;
-        for (int i=0; i < tp->ArrayLevel(); i++)
-            buf[offset + rv++] = ELEMENT_TYPE_SZARRAY;
+        if (tp->ArrayLevel())
+            if (tp->ArrayLevel() == 1)
+            {
+                buf[offset + rv++] = ELEMENT_TYPE_SZARRAY;
+            }
+            else 
+            {
+                buf[offset + rv++] = ELEMENT_TYPE_ARRAY;
+            }
         switch (tp->GetBasicType())
         {
         case Type::object:
@@ -122,6 +129,14 @@ namespace DotNetPELib
         default:
             buf[offset + rv++] = basicTypes[tp->GetBasicType()];
             break;
+        }
+        if (tp->ArrayLevel() > 1)
+        {
+            buf[offset+rv++] = tp->ArrayLevel(); // rank
+            buf[offset+rv++] = 0; // sizes = unsized
+            buf[offset+rv++] = tp->ArrayLevel(); // lower bounds, set all to always zero for this
+            for (int i=0; i < tp->ArrayLevel(); i++)
+                buf[offset+rv++] = 0;
         }
         return rv;
     }
@@ -398,6 +413,31 @@ namespace DotNetPELib
             arrayLevel++;
             start++;
             len--;
+        }
+        if (data[start] == ELEMENT_TYPE_ARRAY)
+        {
+            start++;
+            len--;
+            rv = GetType(lib, assembly, reader, data, start, len);
+            if (data[start] > 127) // putting a limit on the rank.
+                                    // we are dealing with compressed numbers here by the way
+                return nullptr;
+            rv->ArrayLevel(data[start]);
+            start++, len--;
+            int n = data[start]; // number of sizes
+            start++, len--;
+            if (n) // there are sizes specified, reject it
+                return nullptr;
+            n = data[start]; // get number of low values
+            start++, len--;
+            if (n != rv->ArrayLevel()) // not enough low limites, reject it
+                return nullptr;
+            for (int i=0; i < n; i++)
+            {
+                if (data[start])
+                    return nullptr; // nonzero low limit, reject it
+                start++, len--;
+            }
         }
         switch(data[start])
         {

@@ -1023,7 +1023,7 @@ namespace DotNetPELib
     {
     public:
         enum { Vararg = 1, Managed = 2, InstanceFlag = 4 };
-        MethodSignature(std::string Name, int Flags, DataContainer *Container) : container_(Container), name_(Name), flags_(Flags), returnType_(nullptr), ref_(false), peIndex_(0), peIndexCallSite_(0), peIndexType_(0), methodParent_(nullptr)
+        MethodSignature(std::string Name, int Flags, DataContainer *Container) : container_(Container), name_(Name), flags_(Flags), returnType_(nullptr), ref_(false), peIndex_(0), peIndexCallSite_(0), peIndexType_(0), methodParent_(nullptr), arrayObject_(nullptr)
         {
         }
         ///** Get return type
@@ -1060,6 +1060,8 @@ namespace DotNetPELib
         const std::string &Name() const { return name_; }
         ///** Set name
         void SetName(std::string Name) { name_ = Name; }
+        ///** Set Array object
+        void ArrayObject(Type *tp) { arrayObject_ = tp; }
         // iterate through parameters
         typedef std::list<Param *>::iterator iterator;
         iterator begin() { return params.begin(); }
@@ -1108,6 +1110,7 @@ namespace DotNetPELib
         MethodSignature *methodParent_;
         DataContainer *container_;
         Type *returnType_;
+        Type *arrayObject_;
         std::string name_;
         int flags_;
         std::list<Param *> params, varargParams_;
@@ -1146,7 +1149,7 @@ namespace DotNetPELib
         MethodSignature *GetMethod() const { return methodRef_; }
  
         void ArrayLevel(int arrayLevel) { arrayLevel_ = arrayLevel;  }
-        bool ArrayLevel() const { return arrayLevel_;  }
+        int ArrayLevel() const { return arrayLevel_;  }
         ///** Pointer indirection count
         void PointerLevel(int n) { pointerLevel_ = n; }
         ///** Pointer indirection count
@@ -1165,7 +1168,7 @@ namespace DotNetPELib
     protected:
         int pointerLevel_;
         bool byRef_;
-        bool arrayLevel_;
+        int  arrayLevel_;
         BasicType tp_;
         DataContainer *typeRef_;
         MethodSignature *methodRef_;

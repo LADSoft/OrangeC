@@ -169,7 +169,7 @@ enum e_node
         en_l_bool, en_l_c, en_l_uc, en_l_u16, en_l_u32, en_l_wc, en_l_s, en_l_us, en_l_i, en_l_ui,
         en_l_l, en_l_ul, en_l_ll, en_l_ull, en_l_f, en_l_d, en_l_ld,  en_l_p, en_l_ref,
         en_l_fi, en_l_di, en_l_ldi, en_l_fc, en_l_dc, en_l_ldc, en_l_fp, en_l_sp, en_l_bit,
-        en_l_string, en_l_object,
+        en_l_string, en_l_object, en_msil_array_access, en_msil_array_init,
         en_nullptr, en_memberptr, en_mp_as_bool, en_mp_compare,
         en_trapcall, en_func, en_funcret, en_intcall, en_tempref, 
         en_arraymul, en_arraylsh, en_arraydiv, en_arrayadd, en_structadd, en_structelem,
@@ -295,6 +295,8 @@ typedef struct expr
         struct _imode_ *imode;
         struct _templateSelector *templateSelector;
         struct _templateParamList *templateParam;
+        struct _msilarray *msilArray;
+        struct typ *tp;
         HASHTABLE *syms;
                 
         struct {
@@ -317,6 +319,15 @@ typedef struct expr
     int dest:1; // for thisref
     int noexprerr: 1;
 } EXPRESSION;
+
+typedef struct _msilarray
+{
+    int count;
+    int max;
+    struct typ *tp;
+    EXPRESSION *base;
+    EXPRESSION *indices[1]; // expands
+} MSIL_ARRAY;
 
 typedef struct
 {

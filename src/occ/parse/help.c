@@ -1208,6 +1208,14 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
             expsym = intNode(en_c_i, 0);
             break;
     }	
+    if (isarray(sp->tp) && sp->tp->msil)
+    {
+        exp = intNode(en_msil_array_init, 0);
+        exp->v.tp = sp->tp;
+        // plop in a newarr call
+        *pos = exprNode(en_assign, expsym, exp);
+        noClear = TRUE;
+    }
     while (init)
     {
         exp = NULL;

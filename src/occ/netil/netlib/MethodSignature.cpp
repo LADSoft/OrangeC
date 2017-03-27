@@ -110,7 +110,12 @@ namespace DotNetPELib
         }
         else if (name_.size())
         {
-            if (names)
+            if (arrayObject_)
+            {
+                arrayObject_->ILSrcDump(peLib);
+                peLib.Out() << "::'" << name_ << "'(";
+            }
+            else if (names)
                 peLib.Out() << "'" << name_ << "'(";
             else
                 peLib.Out() << Qualifiers::GetName(name_, container_) << "(";
@@ -232,10 +237,22 @@ namespace DotNetPELib
         }
         else if (!peIndexCallSite_)
         {
+            int methodreftype = MemberRefParent::TypeRef;
             size_t sz;
             size_t function = peLib.PEOut().HashString(name_);
-            size_t parent = container_ ? container_->ParentClass(peLib) : 0;
-            MemberRefParent memberRef(MemberRefParent::TypeRef, parent);
+            size_t parent;
+            if (arrayObject_)
+            {
+                methodreftype = MemberRefParent::TypeSpec;
+                Byte buf[16];
+                arrayObject_->Render(peLib, buf);
+                parent = arrayObject_->PEIndex();
+            }
+            else
+            {
+                parent = container_ ? container_->ParentClass(peLib) : 0;
+            }
+            MemberRefParent memberRef(methodreftype, parent);
             Byte *sig = SignatureGenerator::MethodRefSig(this, sz);
             size_t methodSignature = peLib.PEOut().HashBlob(sig, sz);
             delete[] sig;

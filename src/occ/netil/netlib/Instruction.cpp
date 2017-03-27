@@ -311,6 +311,8 @@ namespace DotNetPELib
             MethodSignature *sig = ((MethodName *)operand_->GetValue())->Signature();
             int n = sig->ReturnType()->IsVoid() ? 0 : 1;
             n -= sig->ParamCount() + sig->VarargParamCount();
+            if (op_ != i_newobj && (sig->Flags() & MethodSignature::InstanceFlag))
+                n--;
             return n + instructions_[op_].stackUsage;
         }
         default:

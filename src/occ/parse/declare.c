@@ -2936,7 +2936,7 @@ static LEXEME *getArrayType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc st
                 }
                 else
                 {
-                    if (!cparams.prm_c99 && !templateNestingCount)
+                    if (!cparams.prm_c99 && !templateNestingCount && !msil)
                         error(ERR_VLA_c99);
                     tpp->esize = constant;
                     tpp->etype = tpc;
@@ -6316,7 +6316,7 @@ doInitialize:
                                         if (!init)
                                             doit = FALSE;
                                     }
-                                    if (doit && sp->init)
+                                    if (doit && (sp->init || isarray(sp->tp) && sp->tp->msil))
                                     {
                                         STATEMENT *st ;
                                         currentLineData(block, hold,0);

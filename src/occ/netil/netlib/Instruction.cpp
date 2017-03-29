@@ -87,7 +87,7 @@ namespace DotNetPELib
         { "brzero.s", 0x2c, -1, 2, o_rel1, -1 },
         { "call", 0x28, -1, 5, o_index4, 0 }, // - args + 1 if rv nonvoid 
         { "calli", 0x29, -1, 5, o_index4, -1 },  // - args + 1 if rv nonvoid 
-        { "callvirt", 0x6f, -1,5, o_index4, -1 }, // - args + 1 if rv nonvoid 
+        { "callvirt", 0x6f, -1,5, o_index4, 0 }, // - args + 1 if rv nonvoid 
         { "castclass", 0x74, -1, 5, o_index4, 0 },
         { "ceq", 0xfe, 1, 2, o_single, -1 },
         { "cgt", 0xfe, 2, 2, o_single, -1 },

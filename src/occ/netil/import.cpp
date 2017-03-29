@@ -67,6 +67,12 @@ public:
     virtual bool ExitNamespace(const Namespace *) override;
     virtual bool EnterClass(const Class *) override;
     virtual bool ExitClass(const Class *) override;
+    virtual bool EnterEnum(const Enum *cls) override {
+        return EnterClass(cls);
+    }
+    virtual bool ExitEnum(const Enum *cls) override {
+        return ExitClass(cls);
+    }
     virtual bool EnterMethod(const Method *) override;
     virtual bool EnterField(const Field *) override;
     virtual bool EnterProperty(const Property *) override;

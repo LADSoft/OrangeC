@@ -86,12 +86,24 @@ namespace DotNetPELib
         flags_.ILSrcDumpBeforeFlags(peLib);
         flags_.ILSrcDumpAfterFlags(peLib);
         if (FieldType()->GetBasicType() == Type::cls)
+        {
             if (FieldType()->GetClass()->Flags().Flags() & Qualifiers::Value)
-                peLib.Out() << " valuetype";
+            {
+                peLib.Out() << " valuetype ";
+                type_->ILSrcDump(peLib);
+            }
             else
-                peLib.Out() << " class";
-        peLib.Out() << " ";
-        type_->ILSrcDump(peLib);
+            {
+                peLib.Out() << " class '";
+                type_->ILSrcDump(peLib);
+                peLib.Out() << "'";
+            }
+        }
+        else
+        {
+            peLib.Out() << " ";
+            type_->ILSrcDump(peLib);
+        }
         peLib.Out() << " '" << name_ << "'";
         switch (mode_)
         {

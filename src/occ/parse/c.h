@@ -457,6 +457,7 @@ typedef struct init
     int offset;
     TYPE *basetp;
     struct sym *fieldsp;
+    int fieldoffs;
     EXPRESSION *exp;
     int tag; /* sequence number */
     int noassign : 1;    

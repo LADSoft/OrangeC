@@ -3544,8 +3544,11 @@ static void rebalance(EXPRESSION *ep)
         case en_structelem:
             break;
         case en_add:
-            if (!isarithmeticconst(ep->left) || !isarithmeticconst(ep->right))
-                break;
+            // fixme : without the chosenAssembler->msil some complex expressions inside loops
+            // get optimized wrong see x264::analyse.c around line 849
+            if (chosenAssembler->msil)
+                if (!isarithmeticconst(ep->left) || !isarithmeticconst(ep->right))
+                    break;
         case en_mul:
         case en_umul:
         case en_arraymul:

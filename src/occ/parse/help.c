@@ -1208,7 +1208,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
             expsym = intNode(en_c_i, 0);
             break;
     }	
-    if (isarray(sp->tp) && sp->tp->msil)
+    if (sp && isarray(sp->tp) && sp->tp->msil)
     {
         exp = intNode(en_msil_array_init, 0);
         exp->v.tp = sp->tp;
@@ -1394,7 +1394,11 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
             {
                 EXPRESSION *exps = expsym;
                 if (chosenAssembler->msil && init->fieldsp)
+                {
+                    if (init->fieldoffs || init->next && init->next->basetp && (chosenAssembler->arch->denyopts & DO_UNIQUEIND))
+                        exps = exprNode(en_add, exps, intNode(en_c_i, init->fieldoffs));
                     exps = exprNode(en_structadd, exps, varNode(en_structelem, init->fieldsp));
+                }
                 else if (init->offset || init->next && init->next->basetp && (chosenAssembler->arch->denyopts & DO_UNIQUEIND))
                     exps = exprNode(en_add, exps, intNode(en_c_i, init->offset));
                 deref(init->basetp, &exps);

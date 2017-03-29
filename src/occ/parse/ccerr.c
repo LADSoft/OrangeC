@@ -542,6 +542,7 @@ static struct {
 {"Mismatch on packed template types", ERROR },
 {"Cannot use new() to allocate a reference", ERROR },
 {"This feature may only be used for imported namespaces", ERROR },
+{"Cannot use the address of a managed object", ERROR },
 #endif
 } ;
 

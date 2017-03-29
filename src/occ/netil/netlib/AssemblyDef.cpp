@@ -262,7 +262,6 @@ namespace DotNetPELib
                 reader.ReadFromString(buf, 256, entry->typeNameIndex_.index_);
                 val += (char *)buf;
                 refClasses.push_back(val);
-
             }
             std::map<std::string, Namespace *> nameSpaces;
             std::vector<Class *> classes;
@@ -322,7 +321,13 @@ namespace DotNetPELib
                     int n = entry->extends_.index_;
                     if (!cls)
                     {
-                        if (n < refClasses.size() && refClasses[n] == "System.Enum")
+                        if (name_ == "mscorlib" && entry->extends_.tag_ == TypeDefOrRef::TypeDef && n < classes.size() && classes[n] && classes[n]->Name() == "Enum")
+                        {
+                            // Assumes namespace system, which is probably safe since we contexted to
+                            // mscorlib.dll
+                            cls = lib.AllocateEnum((char *)buf, entry->flags_, Field::i32);
+                        }
+                        else if (entry->extends_.tag_ == TypeDefOrRef::TypeRef &&  n < refClasses.size() && refClasses[n] == "System.Enum")
                         {
                             cls = lib.AllocateEnum((char *)buf, entry->flags_, Field::i32);
                         }

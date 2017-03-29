@@ -816,7 +816,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                     if (!isstructured(*tp) && basetype(*tp)->type != bt_memberptr && !isfunction(*tp) && 
                         sp->storage_class != sc_constant && sp->storage_class != sc_enumconstant)
                     {
-                        if (!(*tp)->array || (*tp)->vla || sp->storage_class == sc_parameter)
+                        if (!(*tp)->array || (*tp)->vla || !(*tp)->msil && sp->storage_class == sc_parameter)
                             if ((*tp)->vla)
                                 deref(&stdpointer, exp);
                             else
@@ -4796,6 +4796,8 @@ static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE
             error(ERR_NOT_AN_ALLOWED_TYPE);
         else if (btp->hasbits)
             error(ERR_CANNOT_TAKE_ADDRESS_OF_BIT_FIELD);
+        else if (btp->msil)
+            error(ERR_MANAGED_OBJECT_NO_ADDRESS);
         else if (inreg(*exp, TRUE))
                 error(ERR_CANNOT_TAKE_ADDRESS_OF_REGISTER);
         else if ((!ispointer(btp) || !(btp)->array) && !isstructured(btp) &&
@@ -5849,7 +5851,9 @@ static LEXEME *expression_add(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp,
                 error(ERR_ILL_STRUCTURE_OPERATION);
             else if (ispointer(*tp))
             {
-                if (ispointer(tp1) && !comparetypes(*tp, tp1, TRUE) && !comparetypes(tp1, *tp, TRUE))
+                if (isarray(*tp) && (*tp)->msil)
+                    error(ERR_MANAGED_OBJECT_NO_ADDRESS);
+                else if (ispointer(tp1) && !comparetypes(*tp, tp1, TRUE) && !comparetypes(tp1, *tp, TRUE))
                     error(ERR_NONPORTABLE_POINTER_CONVERSION);
                 else if (iscomplex(tp1))
                     error(ERR_ILL_USE_OF_COMPLEX);
@@ -5862,6 +5866,8 @@ static LEXEME *expression_add(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp,
                     error(ERR_ILL_USE_OF_COMPLEX);
                 else if (isfloat(*tp) || isimaginary(*tp))
                     error(ERR_ILL_USE_OF_FLOATING);
+                else if (isarray(tp1) && (tp1)->msil)
+                    error(ERR_MANAGED_OBJECT_NO_ADDRESS);
             }
         }
         if (msil)
@@ -6929,7 +6935,9 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                     error(ERR_NOT_AN_ALLOWED_TYPE);
                 if (ispointer(*tp))
                 {
-                    if (isarithmetic(tp1))
+                    if (isarray(tp1) && (tp1)->msil)
+                        error(ERR_MANAGED_OBJECT_NO_ADDRESS);
+                    else if (isarithmetic(tp1))
                     {
                         if (iscomplex(tp1))
                             error(ERR_ILL_USE_OF_COMPLEX);
@@ -7038,6 +7046,8 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                         error(ERR_ILL_USE_OF_FLOATING);
                     else if (isint(*tp))
                         error(ERR_NONPORTABLE_POINTER_CONVERSION);
+                    else if (isarray(tp1) && (tp1)->msil)
+                        error(ERR_MANAGED_OBJECT_NO_ADDRESS);
                 }
                 if (isstructured(*tp) && (!isstructured(tp1) || !comparetypes(*tp, tp1, TRUE)))
                     error(ERR_ILL_STRUCTURE_ASSIGNMENT);

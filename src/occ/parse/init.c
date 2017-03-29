@@ -1413,7 +1413,9 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
             {
                 errortype(ERR_CANNOT_CONVERT_TYPE, tp, itype);
             }
-            if (isstructured(tp))
+            if (isarray(tp) && (tp)->msil)
+                error(ERR_MANAGED_OBJECT_NO_ADDRESS);
+            else if (isstructured(tp))
                 error(ERR_ILL_STRUCTURE_ASSIGNMENT);
             else if (!ispointer(tp) && !isfunction(tp) && !isint(tp) && tp->type != bt_aggregate)
                 error(ERR_INVALID_POINTER_CONVERSION);
@@ -2713,8 +2715,11 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                 if (desc->hr)
                 {
                     fieldsp = ((SYMBOL *)desc->hr->p);
-                    if (ismember(fieldsp) && fieldsp->parentClass->tp->type != bt_union)
+                    if (ismember(fieldsp) && fieldsp->parentClass->tp->type != bt_union)   
+                    {
                         (*next)->fieldsp = fieldsp;
+                        (*next)->fieldoffs = desc->offset;
+                    }
                 }
             }
             increment_desc(&desc, &cache);

@@ -194,7 +194,7 @@ namespace DotNetPELib
                 if (std::string(data.cFileName) != "." && std::string(data.cFileName) != "..")
                 if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
                 {
-                    rv = SearchInGAC(path + DIR_SEP + data.cFileName, fileName);
+                     rv = SearchInGAC(path + DIR_SEP + data.cFileName, fileName);
                 }
                 else
                 {
@@ -214,7 +214,14 @@ namespace DotNetPELib
         char *windir = getenv("windir");
         if (windir)
         {
-            rv = SearchInGAC(std::string(windir) + DIR_SEP + "Assembly", fileName);
+            // search for pure msil solution (.net v4)
+            rv = SearchInGAC(std::string(windir) + DIR_SEP + "Microsoft.Net" + DIR_SEP + "Assembly" + DIR_SEP + "GAC_MSIL", fileName);
+            // if not search for 32 bit solution (.net v4)
+            if (!rv.size())
+                rv = SearchInGAC(std::string(windir) + DIR_SEP + "Microsoft.Net" + DIR_SEP + "Assembly" + DIR_SEP + "GAC_32", fileName);
+            // if not search the pre-v4 gac and just take anything we find...
+            if (!rv.size())
+                rv = SearchInGAC(std::string(windir) + DIR_SEP + "Assembly", fileName);
         }
         if (!rv.size())
         {

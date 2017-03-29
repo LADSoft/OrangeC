@@ -158,6 +158,15 @@ namespace DotNetPELib
                 if (!callback.ExitClass(static_cast<const Class *>(child)))
                     return false;
             }
+            else if (typeid(*child) == typeid(Enum))
+            {
+                if (!callback.EnterEnum(static_cast<const Enum *>(child)))
+                    continue;
+                if (!child->Traverse(callback))
+                    return true;
+                if (!callback.ExitEnum(static_cast<const Enum *>(child)))
+                    return false;
+            }
             else if (typeid(*child) == typeid(Namespace))
             {
                 if (!callback.EnterNamespace(static_cast<const Namespace *>(child)))

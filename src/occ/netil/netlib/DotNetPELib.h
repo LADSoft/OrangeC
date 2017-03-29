@@ -1205,6 +1205,8 @@ namespace DotNetPELib
         virtual bool ExitNamespace(const Namespace *) { return true; }
         virtual bool EnterClass(const Class *) { return true; }
         virtual bool ExitClass(const Class *) { return true; }
+        virtual bool EnterEnum(const Enum *) { return true; }
+        virtual bool ExitEnum(const Enum *) { return true; }
         virtual bool EnterMethod(const Method *) { return true; }
         virtual bool EnterField(const Field *) { return true; }
         virtual bool EnterProperty(const Property *) { return true; }

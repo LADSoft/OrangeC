@@ -2908,10 +2908,11 @@ static LEXEME *getArrayType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc st
         tpp = (TYPE *)Alloc(sizeof(TYPE));
         tpp->type = bt_pointer;
         tpp->btp = *tp;
+        tpp->btp->msil = msil; // tag the base type as managed, e.g. so we can't take address of it
         tpp->rootType = tpp;
         tpp->array = TRUE;
         tpp->unsized = unsized;
-        tpp->msil = msil; // only tagged on outermost array element, makes ALL elements msil array.
+        tpp->msil = msil;
         if (!unsized)
         {
             if (empty)
@@ -3459,11 +3460,6 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                                 tpn->sp = spi;
                                 tpn = tpn->btp;
                             }
-                        }
-                        else
-                        {
-    //						tpb->array = FALSE;
-    //						tpb->size = getSize(bt_pointer);
                         }
                     }
                     if (tpb->type == bt_void)

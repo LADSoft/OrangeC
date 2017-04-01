@@ -2715,7 +2715,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                 if (desc->hr)
                 {
                     fieldsp = ((SYMBOL *)desc->hr->p);
-                    if (ismember(fieldsp) && fieldsp->parentClass->tp->type != bt_union)   
+                    if (ismember(fieldsp))   
                     {
                         (*next)->fieldsp = fieldsp;
                         (*next)->fieldoffs = desc->offset;

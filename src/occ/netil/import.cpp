@@ -274,17 +274,26 @@ bool Importer::EnterMethod(const Method *method)
     {
         if (!(method->Signature()->Flags() & MethodSignature::InstanceFlag))
         {
-            if (!(method->Signature()->Flags() & MethodSignature::Vararg))
+            int count = method->Signature()->ParamCount();
+            if (method->Signature()->Flags() & MethodSignature::Vararg)
+                count --;
+            // static instance member with no variable length argument list is all we support right now...
+            TYPE *tp = (TYPE *)Alloc(sizeof(TYPE));
+            std::vector<TYPE *>args;
+            std::vector<std::string> names;
+            tp->type = bt_func;
+            tp->btp = TranslateType(method->Signature()->ReturnType());
+            if (tp->btp)
             {
-                // static instance member with no variable length argument list is all we support right now...
-                TYPE *tp = (TYPE *)Alloc(sizeof(TYPE));
-                std::vector<TYPE *>args;
-                std::vector<std::string> names;
-                tp->type = bt_func;
-                tp->btp = TranslateType(method->Signature()->ReturnType());
-                if (tp->btp)
+                for (auto it = method->Signature()->begin(); it != method->Signature()->end(); ++it)
                 {
-                    for (auto it = method->Signature()->begin(); it != method->Signature()->end(); ++it)
+                    if (!count) // vararg
+                    {
+                        if ((*it)->GetType()->GetBasicType() != Type::object || (*it)->GetType()->ArrayLevel() != 1)
+                            tp = NULL;
+                        break;
+                    }
+                    else 
                     {
                         TYPE *tp1 = TranslateType((*it)->GetType());
                         if (tp1)
@@ -298,72 +307,85 @@ bool Importer::EnterMethod(const Method *method)
                             break;
                         }
                     }
+                    count--;
+                }
 
+            }
+            else
+            {
+                tp = NULL;
+            }
+            if (tp)
+            {
+                SYMBOL *sp = (SYMBOL *)Alloc(sizeof(SYMBOL));
+                sp->name = litlate((char *)method->Signature()->Name().c_str());
+                sp->storage_class = sc_static;
+                sp->tp = tp;
+                sp->tp->sp = sp;
+                sp->declfile = sp->origdeclfile = "[import]";
+                sp->access = ac_public;
+                sp->tp->syms = CreateHashTable(1);
+                if (!args.size())
+                {
+                    TYPE *tp1 = (TYPE *)Alloc(sizeof(TYPE));
+                    tp1->type = bt_void;
+                    args.push_back(tp1);
+                    names.push_back("$$void");
+                }
+                for (int i = 0; i < args.size(); i++)
+                {
+                    SYMBOL *sp1 = (SYMBOL *)Alloc(sizeof(SYMBOL));
+                    sp1->name = litlate((char *)names[i].c_str());
+                    sp1->storage_class = sc_parameter;
+                    sp1->tp = args[i];
+                    sp1->declfile = sp1->origdeclfile = "[import]";
+                    sp1->access = ac_public;
+                    SetLinkerNames(sp1, lk_cdecl);
+                    insert(sp1, sp->tp->syms);
+                }
+                if (method->Signature()->Flags() & MethodSignature::Vararg)
+                {
+                    SYMBOL *sp1 = (SYMBOL *)Alloc(sizeof(SYMBOL));
+                    sp1->name = litlate((char *)"$$vararg");
+                    sp1->storage_class = sc_parameter;
+                    sp1->tp = (TYPE *)Alloc(sizeof(TYPE));
+                    sp1->tp->type = bt_ellipse; 
+                    sp1->declfile = sp1->origdeclfile = "[import]";
+                    sp1->access = ac_public;
+                    SetLinkerNames(sp1, lk_cdecl);
+                    insert(sp1, sp->tp->syms);
+                }
+                SetLinkerNames(sp, lk_cdecl);
+
+                HASHREC **hr = LookupName((char *)method->Signature()->Name().c_str(), structures_.back()->tp->syms);
+                SYMBOL *funcs = NULL;
+                if (hr)
+                    funcs = (SYMBOL *)((*hr)->p);
+                if (!funcs)
+                {
+                    TYPE *tp = (TYPE *)Alloc(sizeof(TYPE));
+                    tp->type = bt_aggregate;
+                    tp->rootType = tp;
+                    funcs = makeID(sc_overloads, tp, 0, litlate((char *)method->Signature()->Name().c_str()));
+                    funcs->parentClass = structures_.back();
+                    tp->sp = funcs;
+                    SetLinkerNames(funcs, lk_cdecl);
+                    insert(funcs, structures_.back()->tp->syms);
+                    funcs->parent = sp;
+                    funcs->tp->syms = CreateHashTable(1);
+                    insert(sp, funcs->tp->syms);
+                    sp->overloadName = funcs;
+                }
+                else if (funcs->storage_class == sc_overloads)
+                {
+                    insertOverload(sp, funcs->tp->syms);
+                    sp->overloadName = funcs;
                 }
                 else
                 {
-                    tp = NULL;
+                    fatal("backend: invalid overload tab");
                 }
-                if (tp)
-                {
-                    SYMBOL *sp = (SYMBOL *)Alloc(sizeof(SYMBOL));
-                    sp->name = litlate((char *)method->Signature()->Name().c_str());
-                    sp->storage_class = sc_static;
-                    sp->tp = tp;
-                    sp->tp->sp = sp;
-                    sp->declfile = sp->origdeclfile = "[import]";
-                    sp->access = ac_public;
-                    sp->tp->syms = CreateHashTable(1);
-                    if (!args.size())
-                    {
-                        TYPE *tp1 = (TYPE *)Alloc(sizeof(TYPE));
-                        tp1->type = bt_void;
-                        args.push_back(tp1);
-                        names.push_back("$$void");
-                    }
-                    for (int i = 0; i < args.size(); i++)
-                    {
-                        SYMBOL *sp1 = (SYMBOL *)Alloc(sizeof(SYMBOL));
-                        sp1->name = litlate((char *)names[i].c_str());
-                        sp1->storage_class = sc_parameter;
-                        sp1->tp = args[i];
-                        sp1->declfile = sp1->origdeclfile = "[import]";
-                        sp1->access = ac_public;
-                        SetLinkerNames(sp1, lk_cdecl);
-                        insert(sp1, sp->tp->syms);
-                    }
-                    SetLinkerNames(sp, lk_cdecl);
-
-                    HASHREC **hr = LookupName((char *)method->Signature()->Name().c_str(), structures_.back()->tp->syms);
-                    SYMBOL *funcs = NULL;
-                    if (hr)
-                        funcs = (SYMBOL *)((*hr)->p);
-                    if (!funcs)
-                    {
-                        TYPE *tp = (TYPE *)Alloc(sizeof(TYPE));
-                        tp->type = bt_aggregate;
-                        tp->rootType = tp;
-                        funcs = makeID(sc_overloads, tp, 0, litlate((char *)method->Signature()->Name().c_str()));
-                        funcs->parentClass = structures_.back();
-                        tp->sp = funcs;
-                        SetLinkerNames(funcs, lk_cdecl);
-                        insert(funcs, structures_.back()->tp->syms);
-                        funcs->parent = sp;
-                        funcs->tp->syms = CreateHashTable(1);
-                        insert(sp, funcs->tp->syms);
-                        sp->overloadName = funcs;
-                    }
-                    else if (funcs->storage_class == sc_overloads)
-                    {
-                        insertOverload(sp, funcs->tp->syms);
-                        sp->overloadName = funcs;
-                    }
-                    else
-                    {
-                        fatal("backend: invalid overload tab");
-                    }
-                    sp->msil = (void *)method;
-                }
+                sp->msil = (void *)method;
             }
         }
     }

@@ -83,6 +83,9 @@ namespace DotNetPELib
     bool Field::ILSrcDump(PELib &peLib) const
     {
         peLib.Out() << ".field";
+        if ((parent_->Flags().Flags() & Qualifiers::Explicit)
+           ||(parent_->Flags().Flags() & Qualifiers::Sequential) && explicitOffset_)
+            peLib.Out() << " [" << explicitOffset_ << "]";
         flags_.ILSrcDumpBeforeFlags(peLib);
         flags_.ILSrcDumpAfterFlags(peLib);
         if (FieldType()->GetBasicType() == Type::cls)
@@ -178,7 +181,13 @@ namespace DotNetPELib
             TableEntryBase *table = new FieldTableEntry(peflags, nameindex, sigindex);
             peIndex_ = peLib.PEOut().AddTableEntry(table);
             delete[] sig;
-    
+
+            if ((parent_->Flags().Flags() & Qualifiers::Explicit)
+               ||(parent_->Flags().Flags() & Qualifiers::Sequential) && explicitOffset_)
+            {
+                TableEntryBase *table = new FieldLayoutTableEntry(explicitOffset_, peIndex_);
+                peLib.PEOut().AddTableEntry(table);
+            }    
             Byte buf[8];
             *(longlong *)(buf) = enumValue_;
             int type;

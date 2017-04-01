@@ -1395,8 +1395,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                 EXPRESSION *exps = expsym;
                 if (chosenAssembler->msil && init->fieldsp)
                 {
-                    if (init->fieldoffs || init->next && init->next->basetp && (chosenAssembler->arch->denyopts & DO_UNIQUEIND))
-                        exps = exprNode(en_add, exps, intNode(en_c_i, init->fieldoffs));
+                    exps = exprNode(en_add, exps, intNode(en_c_i, init->fieldoffs));
                     exps = exprNode(en_structadd, exps, varNode(en_structelem, init->fieldsp));
                 }
                 else if (init->offset || init->next && init->next->basetp && (chosenAssembler->arch->denyopts & DO_UNIQUEIND))

@@ -463,13 +463,13 @@ namespace DotNetPELib
         }
         return mscorlibAssembly;
     }
-    int PELib::LoadAssembly(std::string assemblyName)
+    int PELib::LoadAssembly(std::string assemblyName, int major, int minor, int build, int revision)
     {
         AssemblyDef *assembly = FindAssembly(assemblyName);
         if (assembly == nullptr || !assembly->IsLoaded())
         {
             PEReader r;
-            int n = r.ManagedLoad(assemblyName + ".dll");
+            int n = r.ManagedLoad(assemblyName, major, minor, build, revision);
             if (!n)
             {
                 if (!assembly)

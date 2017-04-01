@@ -800,10 +800,13 @@ IMODE *gen_deref(EXPRESSION *node, SYMBOL *funcsp, int flags)
             siz1 = ISZ_UINT;
     }
     /* deref for add nodes */
-    if (node->left->type == en_structadd && node->left->right->type == en_structelem)
+    if (chosenAssembler->msil && (node->left->type == en_bits || node->left->type == en_structadd && node->left->right->type == en_structelem))
     {
         // prepare for the MSIL ldfld instruction
         IMODE *aa1, *aa2;
+        EXPRESSION *bitnode = node->left->type == en_bits ? node->left : NULL;
+        if (bitnode)
+            node = node->left;
         aa1 = gen_expr(funcsp, node->left->left, 0, ISZ_ADDR);
 //        if (!aa1->offset || aa1->mode != i_direct || aa1->offset->type != en_tempref)
         {
@@ -820,6 +823,11 @@ IMODE *gen_deref(EXPRESSION *node, SYMBOL *funcsp, int flags)
         ap1->vararg = node->left->right;
         ap1->vol = node->isvolatile;
         ap1->restricted = node->isrestrict;
+        if (bitnode)
+        {
+            ap1->bits = bitnode->bits;
+            ap1->startbit = bitnode->startbit;
+        }
     }
     else if (node->left->type == en_add || node->left->type == en_arrayadd 
         || node->left->type == en_structadd)

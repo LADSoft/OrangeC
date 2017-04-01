@@ -491,7 +491,7 @@ namespace DotNetPELib {
         PEReader() : inputFile_(nullptr), corRVA_(0), num_objects_(0), objects_(0), blobPos_(0), stringPos_(0), GUIDPos_(0), stringData_(nullptr), blobData_(nullptr) { }
         virtual ~PEReader();
 
-        int ManagedLoad(std::string fileName);
+        int ManagedLoad(std::string assemblyName, int major, int minor, int build, int revision);
         int ReadFromString(Byte *buf, size_t len, size_t offset);
         int ReadFromBlob(Byte *buf, size_t len, size_t offset);
         int ReadFromGUID(Byte *buf, size_t len, size_t offset);
@@ -500,9 +500,9 @@ namespace DotNetPELib {
         void LibPath(std::string libPath) { libPath_ = libPath;  }
 
     protected:
-        std::string PEReader::SearchOnPath(std::string fileName);
-        std::string SearchInGAC(std::string path, std::string fileName);
-        std::string SearchForManagedFile(std::string fileName);
+        std::string PEReader::SearchOnPath(std::string assemblyName);
+        std::string FindGACPath(std::string path, std::string fileName, int major, int minor, int build, int revision);
+        std::string SearchForManagedFile(std::string assemblyName, int major, int minor, int build, int revision);
         void get(void *buffer, size_t offset, size_t len);
         size_t PELocation();
         size_t Cor20Location(size_t PEHeader);

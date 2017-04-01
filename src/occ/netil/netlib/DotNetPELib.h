@@ -50,7 +50,7 @@
 
 // reference changelog.txt to see what the changes are
 //
-#define DOTNETPELIB_VERSION "2.0"
+#define DOTNETPELIB_VERSION "2.1"
 
 // this is the main library header
 // it allows creation of the methods and data that would be dumped into 
@@ -239,6 +239,7 @@ namespace DotNetPELib
             // settings appropriate for occil, e.g. everything is static.  add public/private...
             MainClass = Ansi | Sealed,
             ClassClass = Value | Sequential | Ansi | Sealed,
+            ClassUnion = Value | Explicit | Ansi | Sealed,
             ClassField = 0,
             FieldInitialized = Static,
             EnumClass = Enum | Auto | Ansi | Sealed,
@@ -675,7 +676,7 @@ namespace DotNetPELib
             Bytes
         };
         Field::Field(std::string Name, Type *tp, Qualifiers Flags) : mode_(Field::None), name_(Name), flags_(Flags),
-            type_(tp), enumValue_(0), byteValue_(nullptr), byteLength_(0), ref_(0), peIndex_(0)
+            type_(tp), enumValue_(0), byteValue_(nullptr), byteLength_(0), ref_(0), peIndex_(0), explicitOffset_(0)
         {
         }
         ///** Add an enumeration constant
@@ -695,7 +696,12 @@ namespace DotNetPELib
         const Qualifiers &Flags() const { return flags_; }
         //* Is field referenced
         void Ref(bool Ref) { ref_ = Ref; }
+        //* Is field referenced
         bool IsRef() const { return ref_; }
+        //* field offset for explicit structures
+        void ExplicitOffset(size_t offset) { explicitOffset_ = offset;}
+        //* field offset for explicit structures
+        size_t ExplicitOffset() const { return explicitOffset_; }
         ///** Index in the fielddef table
         size_t PEIndex() const { return peIndex_; }
 
@@ -717,6 +723,7 @@ namespace DotNetPELib
         int byteLength_;
         ValueSize size_;
         size_t peIndex_;
+        size_t explicitOffset_;
         bool ref_;
     };
     ///** A special kind of class: enum
@@ -1306,7 +1313,7 @@ namespace DotNetPELib
         // this is an empty assembly you can put stuff in if you want to
         void AddExternalAssembly(std::string assemblyName, Byte *publicKeyToken = nullptr);
         ///** Load data out of an assembly
-        int LoadAssembly(std::string assemblyName);
+        int LoadAssembly(std::string assemblyName, int major = 0, int minor = 0, int build = 0, int revision = 0);
         ///* Load data out of an unmanaged DLL
         int LoadUnmanaged(std::string dllName);
         ///** find an unmanaged dll name

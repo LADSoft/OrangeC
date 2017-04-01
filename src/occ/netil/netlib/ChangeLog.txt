@@ -1,3 +1,9 @@
+Version 2.1:
+    speed up GAC searches
+    allow searching for a specific version of a DLL in the GAC.
+    add support for 'explicit' classes
+    fix bug: allow boxing of 'string' type
+
 Version 2.0:
     read public members of assemblies into the internal database - searches the GAC or takes the path of an assembly
     add support for simple properties

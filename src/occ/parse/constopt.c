@@ -1546,7 +1546,7 @@ int opt0(EXPRESSION **node)
         case en_sub:
             rv |= opt0(&(ep->left));
             rv |= opt0(&(ep->right));
-            if (ep->right->type == en_structelem)
+            if (ep->right->type == en_structelem || ep->left->type == en_structadd)
                 break;
             mode = getmode(ep->left, ep->right);
             switch (mode)
@@ -2466,7 +2466,7 @@ int fold_const(EXPRESSION *node)
         case en_structadd:
             rv |= fold_const(node->left);
             rv |= fold_const(node->right);
-            if (node->right->type == en_structelem)
+            if (node->right->type == en_structelem || node->left->type == en_structadd)
                 break;
             if (isoptconst(node->right))
             {

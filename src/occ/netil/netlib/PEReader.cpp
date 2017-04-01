@@ -181,59 +181,72 @@ namespace DotNetPELib
         }
         return rv;
     }
-    std::string PEReader::SearchInGAC(std::string path, std::string fileName)
+    std::string PEReader::FindGACPath(std::string path, std::string assemblyName, int major, int minor, int build, int revision)
     {
-        std::string rv;
-        std::string current = path + DIR_SEP + "*";
 #ifdef _WIN32
+        std::string rv;
+        std::string root = path + DIR_SEP + assemblyName + DIR_SEP + "*.*";
         WIN32_FIND_DATA data;
-        HANDLE h = FindFirstFile(current.c_str(), &data);
+        HANDLE h = FindFirstFile(root.c_str(), &data);
         if (h != INVALID_HANDLE_VALUE)
         {
-            do {
-                if (std::string(data.cFileName) != "." && std::string(data.cFileName) != "..")
+            char buf[256];
+            sprintf(buf, "%d.%d.%d.%d__", major, minor, build, revision);
+            std::string match = "";
+            do 
+            {
                 if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
                 {
-                     rv = SearchInGAC(path + DIR_SEP + data.cFileName, fileName);
+                    if (major  == 0 && minor == 0 && build == 0 && revision == 0)
+                    {
+                        if (std::string(data.cFileName) > match)
+                            match = data.cFileName;
+                    }
+                    else
+                    {
+                        if (std::string(data.cFileName).find(buf) != std::string::npos)
+                            match = data.cFileName;
+                    }
                 }
-                else
-                {
-                    if (fileName == data.cFileName)
-                        rv = path + DIR_SEP + data.cFileName;
-                }
-
-            } while (!rv.size() && FindNextFile(h, &data));
+            } while (FindNextFile(h, &data));
             FindClose(h);
+            if (match.size())
+            {
+                rv = path + DIR_SEP + assemblyName + DIR_SEP + match + DIR_SEP + assemblyName + ".dll";
+            }
         }
-#endif        
+#endif
         return rv;
     }
-    std::string PEReader::SearchForManagedFile(std::string fileName)
+    std::string PEReader::SearchForManagedFile(std::string assemblyName, int major, int minor, int build, int revision)
     {
         std::string rv;
         char *windir = getenv("windir");
         if (windir)
         {
             // search for pure msil solution (.net v4)
-            rv = SearchInGAC(std::string(windir) + DIR_SEP + "Microsoft.Net" + DIR_SEP + "Assembly" + DIR_SEP + "GAC_MSIL", fileName);
+            rv = FindGACPath(std::string(windir) + DIR_SEP + "Microsoft.Net" + DIR_SEP + "Assembly" + DIR_SEP + "GAC_MSIL", assemblyName, major, minor, build, revision);
             // if not search for 32 bit solution (.net v4)
             if (!rv.size())
-                rv = SearchInGAC(std::string(windir) + DIR_SEP + "Microsoft.Net" + DIR_SEP + "Assembly" + DIR_SEP + "GAC_32", fileName);
-            // if not search the pre-v4 gac and just take anything we find...
+                rv = FindGACPath(std::string(windir) + DIR_SEP + "Microsoft.Net" + DIR_SEP + "Assembly" + DIR_SEP + "GAC_32", assemblyName, major, minor, build, revision);
+            // now search for msil solution (pre v.4)
             if (!rv.size())
-                rv = SearchInGAC(std::string(windir) + DIR_SEP + "Assembly", fileName);
+                rv = FindGACPath(std::string(windir) + DIR_SEP + "Assembly" + DIR_SEP + "GAC_MSIL", assemblyName, major, minor, build, revision);
+            // now search for 32-bit solution (pre v.4)
+            if (!rv.size())
+                rv = FindGACPath(std::string(windir) + DIR_SEP + "Assembly" + DIR_SEP + "GAC_32", assemblyName, major, minor, build, revision);
         }
         if (!rv.size())
         {
-            rv = SearchOnPath(fileName);
+            rv = SearchOnPath(assemblyName + ".dll");
         }
         return rv;
     }
-    int PEReader::ManagedLoad(std::string fileName)
+    int PEReader::ManagedLoad(std::string assemblyName, int major, int minor, int build, int revision)
 
     {
-        fileName = SearchForManagedFile(fileName);
-        inputFile_ = new std::fstream(fileName.c_str(), std::ios::in | std::ios::binary);
+        assemblyName = SearchForManagedFile(assemblyName, major, minor, build, revision);
+        inputFile_ = new std::fstream(assemblyName.c_str(), std::ios::in | std::ios::binary);
         if (!inputFile_->fail())
         {
             size_t peLoc = PELocation();

@@ -1417,7 +1417,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                     else
                     {
                         EXPRESSION *offset;
-                        if (chosenAssembler->msil)
+                        if (chosenAssembler->msil && !isarray(sp2->tp))
                             offset = varNode(en_structelem, sp2); // prepare for the MSIL ldflda instruction
                         else
                             offset = intNode(en_c_i, sp2->offset);
@@ -2938,6 +2938,11 @@ void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, 
     while (*lptr) // take care of elliptical arguments and arguments without a prototype
     {
         INITLIST *p = *lptr;
+        if (func->msil && p->exp->type == en_labcon && p->exp->string)
+        {
+            p->exp->type = en_c_string;
+            p->tp = &(std__string);
+        }
         if (isstructured(p->tp))
         {
             p->exp = exprNode(en_stackblock, p->exp, NULL);
@@ -3030,7 +3035,10 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
             funcparams->ascall = TRUE;
             SYMBOL *sp = GetOverloadedFunction(tp, &funcparams->fcall, funcparams->sp, funcparams, NULL, TRUE, FALSE, TRUE, flags);
             if (sp)
+            {
+                funcparams->sp = sp;
                 *tp = sp->tp;
+            }
         }
     }
     else if (cparams.prm_cplusplus && funcparams->sp)

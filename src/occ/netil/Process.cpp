@@ -215,15 +215,16 @@ static Type *FindType(char *name)
     return NULL;
 }
 
-// weed out unions, structures with nested structures or bit fields
+// weed out structures with nested structures or bit fields
 BOOLEAN qualifiedStruct(SYMBOL *sp)
 {
-    HASHREC *hr;
+//    HASHREC *hr;
     if (!sp->tp->size)
         return FALSE;
-    hr = basetype(sp->tp)->syms->table[0];
-    if (basetype(sp->tp)->type == bt_union)
+#if 0
+    if (sp->tp->type == bt_union)
         return FALSE;
+    hr = basetype(sp->tp)->syms->table[0];
     while (hr)
     {
         SYMBOL *check = (SYMBOL *)hr->p;
@@ -231,10 +232,11 @@ BOOLEAN qualifiedStruct(SYMBOL *sp)
             return FALSE;
         //        if (isstructured(check->tp))
         //            return FALSE;
-        if (basetype(check->tp)->array)
-            return FALSE;
+//        if (basetype(check->tp)->array)
+//            return FALSE;
         hr = hr->next;
     }
+#endif
     return TRUE;
 
 }
@@ -473,7 +475,7 @@ Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg, BOOLEAN pinvoke)
         {
             if (!type)
             {
-                Class *newClass = peLib->AllocateClass(basetype(tp)->sp->name, Qualifiers::Public | Qualifiers::ClassClass,
+                Class *newClass = peLib->AllocateClass(basetype(tp)->sp->name, Qualifiers::Public | (basetype(tp)->type == bt_union ? Qualifiers::ClassUnion : Qualifiers::ClassClass),
                     basetype(tp)->sp->structAlign, basetype(tp)->size);
                 mainContainer->Add(newClass);
                 type = peLib->AllocateType(newClass);
@@ -491,17 +493,36 @@ Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg, BOOLEAN pinvoke)
                 Class *cls = (Class *)type->GetClass();
                 cls->SetInstantiated();
                 HASHREC *hr = basetype(tp)->syms->table[0];
+                Field *bitField = nullptr;
+                int start = 1000;
                 while (hr)
                 {
                     SYMBOL *sym = (SYMBOL *)hr->p;
-                    Type *newType = GetType(sym->tp, TRUE);
-                    int flags = Qualifiers::ClassField | Qualifiers::Public;
-                    Field *newField = peLib->AllocateField(sym->name, newType, flags);
-                    newField->SetContainer(cls);
-                    cls->Add(newField);
-                    sym = clone(sym);
-                    sym->parentClass = clone(sym->parentClass);
-                    fieldList[sym] = peLib->AllocateFieldName(newField);
+                    if (!sym->tp->bits || sym->tp->startbit < start)
+                    {
+                        Type *newType = GetType(sym->tp, TRUE);
+                        int flags = Qualifiers::ClassField | Qualifiers::Public;
+                        char buf[256];
+                        if (sym->tp->bits)
+                        {
+                            start = sym->tp->startbit;
+                            sprintf(buf, "$$bits%d", sym->offset);
+                        }
+                        Field *newField = peLib->AllocateField(sym->tp->bits ? buf : sym->name, newType, flags);
+                        newField->SetContainer(cls);
+                        cls->Add(newField);
+                        sym = clone(sym);
+                        sym->parentClass = clone(sym->parentClass);
+                        fieldList[sym] = peLib->AllocateFieldName(newField);
+                        bitField = newField;
+                    }
+                    else
+                    {
+                        start = sym->tp->startbit;
+                        sym = clone(sym);
+                        sym->parentClass = clone(sym->parentClass);
+                        fieldList[sym] = peLib->AllocateFieldName(bitField);
+                    }
                     hr = hr->next;
                 }
             }

@@ -4,7 +4,7 @@
 [Setup]
 PrivilegesRequired=admin
 AppName=Orange C MSIL Version
-AppVerName=Orange C MSIL Version 6.12
+AppVerName=Orange C MSIL Version 6.13
 OutputBaseFileName=setup
 AppPublisher=LADSoft
 AppPublisherURL=http:\\members.tripod.com\~ladsoft
@@ -58,6 +58,7 @@ Source: "C:\occil\netlib\test\*.*"; DestDir: "{app}\netlib\test\"; Flags: Ignore
 Source: "C:\occil\examples\*.c"; DestDir: "{app}\examples\"; Flags: IgnoreVersion;
 Source: "C:\occil\examples\cc386\*.*"; DestDir: "{app}\examples\cc386\"; Flags: IgnoreVersion;
 Source: "C:\occil\examples\sqlite3\*.*"; DestDir: "{app}\examples\sqlite3\"; Flags: IgnoreVersion;
+Source: "C:\occil\examples\msil\*.*"; DestDir: "{app}\examples\msil\"; Flags: IgnoreVersion;
 
 [Registry]
 

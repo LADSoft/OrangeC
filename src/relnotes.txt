@@ -1,6 +1,17 @@
 Release notes:
 
-version 6.0.12:
+version 6.0.13: April 1, 2017
+    occ:    assignment to a large string variable on the stack could result in
+            compiler throwing an exception during compile
+    occ:    the following snippet wouldn't compile because 'type' was found as
+            an argument rather than in the context of std::vector:
+                int myfunc(int type, std::vector<int>&a);
+    ocide:	default 'Stop First Chance' to 'no' to help dealing with windows
+                components that send exceptions internally
+    ocide:  don't endlessly grow the code completion database when arrays are
+            used.
+
+version 6.0.12: Mar 11, 2017
     ocide:      allow exception unrolling after first chance exception
     ocide:      reenable breakpoints when continuing after an exception
     occil:      add strong name support

@@ -1,0 +1,58 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>DotNetPELib - CustomAttributeContainer</title>
+  </head>
+  <body>
+    <div align="center"><font size="+3">CustomAttributeContainer<br>
+        <br>
+      </font>
+      <div align="left">A CustomAttributeContainer is associated with
+        each loaded assembly.&nbsp; It contains a list of
+        CustomAttributeDescriptors.&nbsp; The CustomAttributeDescriptor
+        holds information about an attribute and looks as follows:<br>
+        <br>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; class
+          CustomAttributeDescriptor</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; public:</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+          std::string name; // name of custom attribute</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+          Byte *data; // data</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+          size_t sz; // size of data</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };</b><b><br>
+        </b><br>
+        CustomAttributeContainers will never be constructed by a user in
+        this version of the library.&nbsp;&nbsp; <br>
+        <br>
+        Two accessors exist to locate an attribute.&nbsp;&nbsp; They use
+        a class defined by PEFile.h which gives information about&nbsp;
+        the attribute.&nbsp;&nbsp; <br>
+        <br>
+        Lookup is used to get the CustomAttributeDescriptor data.&nbsp;
+        In case you don't need to know the data or want to see if
+        specific data exists, the Has function may be used.<br>
+        <br>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const
+          std::vector&lt;CustomAttributeDescriptor *&gt;&amp;
+          Lookup(CustomAttribute *attribute) const;</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bool
+          Has(CustomAttribute &amp;attribute, std::string name,&nbsp;
+          Byte *data = nullptr, size_t sz = 0) const;</b><b><br>
+        </b><br>
+        Note that on load DotNetPELib will automatically check to see if
+        SystemParamArrayAttribute is set for the last parameter in any
+        parameter list, and if so set the VARARG flag in the associated
+        <a href="MethodSignature.html">MethodSignature</a>.&nbsp;&nbsp;
+        The reverse direction works as well; the attribute will be set
+        for managed methods if the Method flags in include 'vararg'.<br>
+      </div>
+    </div>
+  </body>
+</html>

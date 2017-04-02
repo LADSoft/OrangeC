@@ -1,0 +1,31 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>DotNetPELib - MethodName</title>
+  </head>
+  <body>
+    <div align="center"><font size="+3">MethodName<br>
+      </font>
+      <div align="left"><br>
+      </div>
+    </div>
+    MethodName is a type of <a href="Value.html">Value</a> that may be
+    used in an <a href="Operand.html">Operand</a> to an <a
+      href="Instruction.html">Instruction</a>.&nbsp;&nbsp; It references
+    a <a href="MethodSignature.html">MethodSignature</a>.<br>
+    <br>
+    The MethodName may be constructed either directly or through the <a
+      href="Allocator.html">Allocator</a> object.&nbsp; It requires that
+    a MethodSignature be constructed first.<br>
+    <br>
+    <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      MethodName(MethodSignature *M);</b><b><br>
+    </b><br>
+    It is possible to retrieve the MethodSignature.<br>
+    <br>
+    <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; MethodSignature
+      *Signature() const { return signature_; }</b><b><br>
+    </b><br>
+  </body>
+</html>

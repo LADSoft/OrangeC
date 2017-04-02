@@ -1,0 +1,105 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>DotNetPELib - Instruction</title>
+  </head>
+  <body>
+    <div align="center"><font size="+3">Instruction<br>
+      </font>
+      <div align="left"><br>
+        An Instruction is placed in a <a href="Method.html">Method</a>,
+        as part of the definition of the runtime behavior of the
+        method.&nbsp;&nbsp; Instructions have various types of <a
+          href="Operand.html">Operands</a>, which modify the behavior of
+        the instruction.<br>
+        <br>
+        Each MSIL instruction has an enumerated name, formed by adding
+        i_ at the front and replacing dots with underscores. <br>
+        <br>
+        For example:<br>
+        <br>
+        &nbsp;&nbsp;&nbsp; add becomes i_add<br>
+        &nbsp;&nbsp;&nbsp; ldc.i4.4 becomes i_ldc_i4_4<br>
+        <br>
+        there are two special instructions<br>
+        <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+
+        i_label,&nbsp;&nbsp;&nbsp; // puts a label at this point in the
+        instruction stream<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+
+        i_comment, // puts a comment at this point in the instruction
+        stream<br>
+        <br>
+        The instruction may be constructed either directly or through an
+        <a href="Allocator.html">Allocator</a> object.&nbsp;&nbsp;&nbsp;
+        The first form of the constructor creates a generic instruction,
+        including a label.&nbsp;&nbsp; The second form embeds a comment
+        into the .IL source file.&nbsp; Note that a complete list of
+        instructions as listed in ECMA-335 is available for use.<br>
+        <br>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Instruction(iop
+          Op, Operand *Operand);</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          Instruction(iop Op, std::string Text);</b><b><br>
+        </b><b><br>
+        </b>Access the opcode<br>
+        <br>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; iop OpCode() const
+          { return op_; }</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void
+          OpCode(iop Op) { op_ = Op; }<br>
+          <br>
+        </b>Add a lable to a 'switch' instruction.&nbsp; Labels must be
+        added in order.<br>
+        <br>
+        <b></b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void
+          AddCaseLabel(std::string label);<br>
+          <br>
+        </b>Get the list of switch labels<br>
+        <br>
+        <b></b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          std::list&lt;std::string&gt; * GetSwitches() { return
+          switches_; }<br>
+          <br>
+        </b>Get an operand for instructions that don't require an
+        operand.<br>
+        <b></b><b><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void
+          NullOperand(Allocator &amp;allocator);<br>
+          <br>
+        </b>Retrieve the operand.<br>
+        <br>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Operand
+          *GetOperand() const { return operand_; }<br>
+          <br>
+        </b>Retrieve the comment text.<br>
+        <b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; std::string
+          Text() const { return text_; }</b><b><br>
+          <br>
+        </b>Retrieve any label associated with the
+        instruction.&nbsp;&nbsp; Note that labels are strings in this
+        implementation (they are converted to offsets when generating
+        CIL code).<br>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; std::string
+          Label() const;<br>
+          <br>
+        </b>Retrieve the size of the instruction.<br>
+        <br>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int
+          InstructionSize();<br>
+          <br>
+        </b>Retrieve the stack usage of the instruction.&nbsp;&nbsp; 0 =
+        no effect, &gt;0 = stack grows, &lt;0 = stack shrinks<br>
+        <br>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int StackUsage();</b><b><br>
+        </b><br>
+      </div>
+    </div>
+  </body>
+</html>

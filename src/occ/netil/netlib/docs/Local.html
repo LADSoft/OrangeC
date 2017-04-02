@@ -1,0 +1,32 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>DotNetPELib - Local</title>
+  </head>
+  <body>
+    <div align="center"><font size="+3">Local<br>
+      </font>
+      <div align="left"><br>
+      </div>
+    </div>
+    Local is a type <a href="Value.html">Value</a> that may be used as
+    an <a href="Operand.html">Operand</a>.&nbsp;&nbsp; It describes
+    access to a local variable.&nbsp;&nbsp; Local variables are used
+    inside of <a href="Method.html">Methods</a>.<br>
+    <br>
+    The only useful thing to do with a local is construct it, either
+    directly or through the <a href="Allocator.html">Allocator</a>
+    object.<br>
+    <br>
+    <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Local(std::string
+      Name, Type *Tp);</b><b><br>
+    </b><br>
+    Note that local variables are optimized - they are allocated in the
+    order starting with most used first.&nbsp;&nbsp; This allows more
+    optimal forms of the instructions to be generated for variables that
+    are more heavily used.<br>
+    <br>
+    <br>
+  </body>
+</html>

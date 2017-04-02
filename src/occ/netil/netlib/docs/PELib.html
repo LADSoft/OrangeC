@@ -1,0 +1,192 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>DotNetPELib - PELib</title>
+  </head>
+  <body>
+    <div align="center"><font size="+3">PELib<br>
+      </font>
+      <div align="left">PELib is the main interface class in the
+        DotNetPELib library.&nbsp;&nbsp; Most of the functions available
+        from the library are accessible through this class; because it
+        also inherits from <a href="Allocator.html">Allocator</a>, in
+        practice most constructors for other classes are also accessed
+        using PELib as the interface.<br>
+        <br>
+        PELib is usually constructed directly; there is no corresponding
+        constructor within the Allocator class.&nbsp; AssemblyName is
+        the name of the assembly, and CoreFlags usually has ILONLY set
+        and may have BITS32 set as well.&nbsp;&nbsp; This constructor
+        also creates the main <a href="AssemblyDef.html">AssemblyDef</a>
+        entity, where the generated program will be defined.<br>
+        <br>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; enum CorFlags {</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+
+          ilonly = 1,</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+
+          bits32 = 2</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };</b><b><br>
+        </b><br>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PELib(std::string
+          AssemblyName, int CoreFlags);</b><b><br>
+        </b><b> </b><br>
+        Retrieve the main assembly.&nbsp;&nbsp; Useful for setting
+        things like version information, or strong name key files.<br>
+        <br>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; AssemblyDef
+          *WorkingAssembly() const { return assemblyRefs_.front(); }<br>
+          <br>
+        </b>Add a reference to an external assembly.&nbsp;&nbsp;&nbsp;
+        You can put external references in it if you want.&nbsp;&nbsp;
+        This is a legacy function; as of version 2.0 of the library it
+        is generally more useful just to load the external reference
+        from disk than to create one from scratch.<br>
+        <br>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void
+          AddExternalAssembly(std::string assemblyName, Byte
+          *publicKeyToken = nullptr);<br>
+          <br>
+        </b>Entry point to load an external assembly.&nbsp;&nbsp;
+        Searches GACs in this order:<br>
+        1) v4.0 cache, MSIL<br>
+        2) v4.0 cache, 32-bit<br>
+        3) pre-v4.0 cache, MSIL<br>
+        4) pre-v4.0 cache, 32-bit<br>
+        <br>
+        Currently there is no ability to set a search path however if
+        the assembly is path-qualified it will look for it in an
+        explicit place.&nbsp;&nbsp; The assembly should not have .dll in
+        the name.&nbsp;&nbsp; If the version is left at the default the
+        latest version will be chosen; otherwise the DotNetPELib will
+        look for an exact match to the version.&nbsp;&nbsp; <br>
+        <br>
+        The actual assembly version and the short version of the strong
+        name key( if any) will be embedded with any reference to the
+        loaded assembly.<br>
+        <br>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int
+          LoadAssembly(std::string assemblyName, int major = 0, int
+          minor = 0, int build = 0, int revision = 0);<br>
+          <br>
+        </b>Load the references from an unmanaged DLL.&nbsp;&nbsp; Occil
+        uses this to figure out what should be a PInvoke.&nbsp;&nbsp;
+        Note that you still need to provide MethodSignatures for any
+        reference you use.&nbsp;&nbsp; occil uses the windows header
+        files for this.<br>
+        <br>
+        <b></b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int
+          LoadUnmanaged(std::string dllName);<br>
+          <br>
+        </b>Look up a name in the unmanaged dictionary; return its DLL
+        or an empty string if it doesn't exist<br>
+        <br>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; std::string
+          PELib::FindUnmanagedName(std::string name);<br>
+          <br>
+        </b>Find an assembly by name<br>
+        <b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; AssemblyDef
+          *FindAssembly(std::string assemblyName) const;<br>
+          <br>
+        </b>Add a reference to generate a PInvoke import.&nbsp;&nbsp;
+        Note these ARE added directly to the PELib object, since they
+        aren't associated with any particular assembly.<br>
+        <b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void
+          AddPInvokeReference(MethodSignature *methodsig, std::string
+          dllname, bool iscdecl);<br>
+          <br>
+        </b>Get the core flags value.<br>
+        <b><br>
+        </b><b></b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int
+          GetCorFlags() const { return corFlags_; }</b><b><br>
+        </b><b><br>
+        </b>Write the working assembly to an output file, making it a
+        console or GUI file.&nbsp;&nbsp; Possibilities are a .IL file,
+        an EXE file, or a DLL.<br>
+        <b><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bool
+          DumpOutputFile(std::string fileName, OutputMode mode, bool
+          Gui);</b><b><br>
+        </b><b><br>
+        </b>Add a namespace search path.&nbsp;&nbsp; similar to the
+        'using' directive in C#.<br>
+        <b><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bool
+          AddUsing(std::string path);</b><b><br>
+        </b><b><br>
+        </b>Find something that exists uniquely, return type indicates
+        what was found.&nbsp;&nbsp; Usually one would consult the .NET
+        documentation to know what to search for.<br>
+        <br>
+        This function will not find a method, if the method is
+        overloaded.&nbsp;&nbsp; That would result in multiple matches.<br>
+        <br>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; enum eFindType {<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+
+          s_notFound=0,<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+
+          s_ambiguous=1,<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+
+          s_namespace,<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+
+          s_class,<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+
+          s_enum,<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+
+          s_field,<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+
+          s_property,<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+
+          s_method<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+          <br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eFindType
+          Find(std::string path, void **result, AssemblyDef *assembly =
+          nullptr);</b><b><br>
+        </b><b><br>
+        </b>Find a method, with an explicit overload signature.<br>
+        <br>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eFindType
+          Find(std::string path, Method **result, std::vector&lt;Type
+          *&gt; args, AssemblyDef *assembly = nullptr);</b><b><br>
+        </b><b><br>
+        </b>Traverse the declaration tree.&nbsp;&nbsp; Functions in the
+        Callback instance will be called as namespaces and classes are
+        entered and exited, and to signify fields, methods, and
+        properties.&nbsp;&nbsp; Generally, returning false from one of
+        these functions stops the current phase of traversal and
+        returning true keeps the traversal going.&nbsp; To use this, you
+        would keep track of which container is currently being
+        traversed, then when you get a field, method, or property you
+        would add it to the current container.<br>
+        <br>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void
+          Traverse(Callback &amp;callback) const;</b><b><br>
+        </b><br>
+        <br>
+      </div>
+    </div>
+  </body>
+</html>

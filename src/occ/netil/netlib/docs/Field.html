@@ -1,0 +1,89 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>DotNetPELib - Field</title>
+  </head>
+  <body>
+    <div align="center"><font size="+3">Field<br>
+      </font>
+      <div align="left">A Field is a member of a <a href="Class.html">Class</a>
+        object which holds data.&nbsp;&nbsp; Fields may also be members
+        of <a href="Enum.html">Enum</a> objects, but this is usually
+        handled in the background by DotNetPELib.&nbsp;&nbsp; In some
+        cases, it is possible to generate a field directly into an <a
+          href="AssemblyDef.html">AssemblyDef</a> object, however, such
+        fields cannot be accessed from other assemblies.<br>
+        <br>
+        A Field would be constructed either directly, or through the <a
+          href="Allocator.html">Allocator</a> object.&nbsp;&nbsp; It
+        might also be constructed indirectly, when constructing an
+        enumerated value with functions in the <a href="Enum.html">Enum</a>
+        object.&nbsp;&nbsp; All fields have a <a href="Type.html">Type</a>
+        indicating what sort of data is stored in the Field.<br>
+        <br>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          Field::Field(std::string Name, Type *tp, Qualifiers Flags) ;</b><b><br>
+        </b><br>
+        A field can have a value.&nbsp;&nbsp; Usually, an enumerated
+        value would be added through calls in the Enum
+        object.&nbsp;&nbsp; Other types of binary initializers may be
+        added; for example occil uses initialization values to support
+        constant strings in the C language.&nbsp; Initializer values are
+        currently stored in managed memory (Older versions of the
+        library stored them in unmanaged memory).<br>
+        <br>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; enum ValueSize {
+          i8, i16, i32, i64 };<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void
+          AddEnumValue(longlong Value, ValueSize Size);</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void
+          AddInitializer(Byte *bytes, int len);</b><b><br>
+          <br>
+        </b>Get the name of the field.<br>
+        <b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const
+          std::string &amp;Name() const { return name_; }<br>
+          <br>
+        </b>Get/Set the name of the parent class.&nbsp;&nbsp; It is
+        usually set automatically when the Field is added to the Class.<br>
+        <b></b><b><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void
+          SetContainer(DataContainer *Parent) { parent_ = Parent; }</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DataContainer
+          *GetContainer() const { return parent_; }<br>
+          <br>
+        </b>Get/Set the field's type.<br>
+        <br>
+        <b></b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Type
+          *FieldType() const { return type_; }</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void
+          FieldType(Type *tp) { type_ = tp; }<br>
+          <br>
+        </b>Get the CIL qualifiers<br>
+        <br>
+        <b></b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const
+          Qualifiers &amp;Flags() const { return flags_; }<br>
+          <br>
+        </b>Not currently used.<br>
+        <br>
+        <b></b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void
+          Ref(bool Ref) { ref_ = Ref; }<br>
+        </b><b></b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bool
+          IsRef() const { return ref_; }<br>
+          <br>
+        </b>Get/Set the field's .NET explicit offset.&nbsp;&nbsp; For
+        example set the class qualifiers to 'explicit' and then set all
+        its fields to an explicitOffset of zero to make a
+        union.&nbsp;&nbsp; explicitOffsets may also be used for
+        'sequential' classes.<br>
+        <br>
+        <b></b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void
+          ExplicitOffset(size_t offset) { explicitOffset_ = offset;}</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; size_t
+          ExplicitOffset() const { return explicitOffset_; }</b><b><br>
+        </b><br>
+      </div>
+    </div>
+  </body>
+</html>

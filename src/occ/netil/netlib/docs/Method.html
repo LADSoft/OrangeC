@@ -1,0 +1,82 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>DotNetPELib - Method</title>
+  </head>
+  <body>
+    <div align="center"><font size="+3">Method<br>
+      </font>
+      <div align="left"><br>
+      </div>
+    </div>
+    A Method is the container for code.&nbsp;&nbsp; It inherits from <a
+      href="CodeContainer.html">CodeContainer</a>, to hold the
+    instructions in the function, and holds a <a
+      href="MethodSignature.html">MethodSignature</a> which defines the
+    function's signature.&nbsp;&nbsp; It also holds a list of local
+    variables.&nbsp;&nbsp; A method is usually stored in a class, but
+    can be stored in an <a href="AssemblyDef.html">AssemblyDef</a> as
+    well if it isn't needed outside the assembly.<br>
+    <br>
+    The Method may be constructed either directly or through the <a
+      href="Allocator.html">Allocator</a> object.&nbsp;&nbsp; Prior to
+    constructing it a MethodSignature must be constructed.&nbsp;&nbsp;
+    Note that 'entry' is set to true for the entry point of the
+    module.&nbsp;&nbsp; An entry point is not needed for DLL files.<br>
+    <br>
+    <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Method(MethodSignature
+      *Prototype, Qualifiers flags, bool entry = false);</b><b><br>
+    </b><br>
+    The method may be a PInvoke Method.&nbsp;&nbsp; These methods don't
+    have a body, but reference an external DLL and give a calling
+    convention to call unmanaged code.<br>
+    <br>
+    <b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; enum InvokeType {
+        Cdecl, Stdcall };</b><b><br>
+        <br>
+      </b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void
+      SetPInvoke(std::string name, InvokeType type = Stdcall);</b><b><br>
+    </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bool IsPInvoke()
+      const { return invokeMode_ == PInvoke; }</b><b><br>
+      <br>
+    </b>Add a local variable<br>
+    <br>
+    <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void AddLocal(Local
+      *local);</b><b><br>
+    </b><b><br>
+    </b>Whether the Method needs a this pointer.<br>
+    <br>
+    <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void Instance(bool
+      instance);</b><b><br>
+    </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bool Instance() {
+      return !!(Flags().Value &amp; Qualifiers::Instance); }<br>
+      <br>
+    </b>Method signature<br>
+    <br>
+    <b> </b><b></b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      MethodSignature *Signature() const { return prototype_; }</b><b><br>
+    </b><b><br>
+    </b>Iterate through the local variables<br>
+    <b><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; typedef
+      std::vector&lt;Local *&gt;::iterator iterator;</b><b><br>
+    </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; iterator begin() {
+      return varList_.begin(); }</b><b><br>
+    </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; iterator end() {
+      return varList_.end(); }</b><b><br>
+    </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; size_t size()
+      const { return varList_.size(); }</b><b><br>
+    </b><b><br>
+    </b>Validate and optimize the MSIL code.&nbsp;&nbsp; Throw a <a
+      href="PELibError.html">PELibError</a> exception if any problems
+    are found.<br>
+    <br>
+    <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; virtual void
+      Optimize(PELib &amp;) override;<br>
+      <br>
+    </b><b><br>
+    </b><b><br>
+    </b><br>
+  </body>
+</html>

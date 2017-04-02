@@ -1,0 +1,68 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>DotNetPELib - AssemblyDef</title>
+  </head>
+  <body>
+    <div align="center"><font size="+3">AssemblyDef<br>
+      </font>
+      <div align="left"><br>
+        Usually one would not construct an AssemblyDef object directly
+        either through the AssemblyDef class or with the <a
+          href="Allocator.html">Allocator</a> class.&nbsp;&nbsp; Instead
+        the object would be constructed as part of processing in the <a
+          href="PELib.html">PELib</a> class, or when loading an external
+        assembly's members.&nbsp;&nbsp; But the constructor allows for
+        giving the AssemblyDef a name, indicating whether it is
+        external, and setting the public name token.<br>
+        <br>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          AssemblyDef(std::string Name, bool External, Byte * KeyToken =
+          nullptr) ;<br>
+          <br>
+        </b>It is possible to set version info for an assembly.&nbsp;
+        Usually, one wouldn't explicitly set the version except on the
+        assembly for which code is being generated, as it would be
+        loaded from the assembly's file.<br>
+        <br>
+        <b></b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void
+          SetVersion(int major, int minor, int build, int revision);<br>
+          <br>
+        </b>Assigning an SNK file sets strong name key signing into
+        motion.&nbsp;&nbsp; If the file is valid, the generated assembly
+        will be signed.<br>
+        <b></b></div>
+    </div>
+    <b><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const std::string&amp;
+      SNKFile() const { return snkFile_; }</b><b><br>
+    </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void
+      SNKFile(std::string file) { snkFile_ = file; }<br>
+      <br>
+    </b>If you have a referencer to an assembly, you can look up a class
+    within that assembly<br>
+    <b><br>
+    </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Class
+      *LookupClass(PELib &amp;lib, std::string nameSpace, std::string
+      name);</b><b><br>
+    </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <br>
+    </b>It is possible to get the custom attributes associated with an
+    assembly, in order to examine them if necessary.&nbsp;&nbsp; At
+    present it is not possible to add custom attributes to a generated
+    assembly.<br>
+    <br>
+    <b></b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const
+      CustomAttributeContainer &amp;CustomAttributes() const { return
+      customAttributes_;&nbsp; }<br>
+      <br>
+    </b>The following function returns true if this is an external
+    assembly (usually a loaded assembly such as mscorlib).&nbsp; It
+    returns false if it is the assembly being generated.<br>
+    <br>
+    <b></b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; virtual bool
+      InAssemblyRef() const { return external_; }</b><b><br>
+    </b><br>
+  </body>
+</html>

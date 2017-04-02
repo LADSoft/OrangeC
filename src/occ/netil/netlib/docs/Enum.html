@@ -1,0 +1,36 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>DotNetPELib - Enum</title>
+  </head>
+  <body>
+    <div align="center"><font size="+3">Enum<br>
+      </font>
+      <div align="left"><br>
+      </div>
+    </div>
+    An enum is a helper object which basically handles augmenting a
+    basic class with the elements needed for C# to consider the class as
+    a list of enumeration constants.&nbsp;&nbsp; A field in an
+    enumeration usually has the qualifiers 'static' and 'literal'<br>
+    <br>
+    The enumerator would be constructed either directly or by calling
+    its destructor on the <a href="Allocator.html">Allocator</a>
+    object.&nbsp;&nbsp; Here Size gives the size of the enumeration e.g.
+    8 bits, 16 bits, 32 bits, 64 bits...<br>
+    <br>
+    <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; enum ValueSize { i8,
+      i16, i32, i64 };</b><br>
+    <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Enum::Enum(std::string
+      Name, Qualifiers Flags, Field::ValueSize Size) ;<br>
+      <br>
+    </b>AddValue is a helper which completely generates an enumeration
+    value.<br>
+    <br>
+    <b></b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void
+      AddValue(Allocator &amp;allocator, std::string Name, longlong
+      Value);</b><b><br>
+    </b><br>
+  </body>
+</html>

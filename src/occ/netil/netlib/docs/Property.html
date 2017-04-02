@@ -1,0 +1,94 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>DotNetPELib - Property</title>
+  </head>
+  <body>
+    <div align="center"><font size="+3">Property<br>
+      </font>
+      <div align="left">A Property is similar to a <a href="Field.html">Field.</a>&nbsp;
+
+        However, instead of holding a place to store data, it holds
+        functions that are used to set and retrieve the
+        data.&nbsp;&nbsp; This way, some operation may be performed on
+        the data before it is stored or retrieved, or multiple data
+        fields may be kept in sync automatically simply by referencing
+        the property.&nbsp;&nbsp; A property is always a member of a
+        class; it may not be stored directly in an assembly.<br>
+        <br>
+        While properties can have variably long argument lists which can
+        be used to 'index' the property, the normal case is that the
+        function which 'gets' the value takes no arguments and returns a
+        value of the appropriate type.&nbsp;&nbsp; The function which
+        'sets' the value takes one argument, which is the value to set.<br>
+        <br>
+        Generally, once a property is defined it can be treated like a
+        field, except that instead of using LDFLD/LDSFLD STFLD/STSFLD to
+        store and load the data, one would call the appropriate getter
+        or setter.&nbsp;&nbsp; The Property object will create these
+        calls, and has functions for generating the call instructions.<br>
+        <br>
+        <br>
+        The Property object may be constructed either directly or
+        through an <a href="Allocator.html">Allocator</a>
+        object.&nbsp;&nbsp; In the normal case one would pass an empty
+        vector for the 'indices' parameter.<br>
+        <br>
+        &nbsp;<b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Property(PELib
+          &amp;peLib, std::string name, Type *type, std::vector&lt;Type
+          *&gt;&amp; indices, bool hasSetter = true); </b><b><br>
+        </b><b><br>
+        </b>Set the parent container.&nbsp; Usually done automatically
+        when the Property is added to a class.<br>
+        <b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void
+          SetContainer(DataContainer *parent, bool add = true);<br>
+          <br>
+        </b>Access whether or not this is a static property.<br>
+        <b></b><b><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void Instance(bool
+          instance);</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bool
+          Instance() const { return instance_;&nbsp; }<br>
+          <br>
+        </b>Get the property name.<br>
+        <br>
+        <b></b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const
+          std::string &amp;Name() const { return name_; }<br>
+        </b><br>
+        Access the type of the data the property represents<br>
+        <br>
+        <b></b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void
+          SetType(Type *type) { type_ = type;&nbsp; }</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Type
+          *GetType() const { return type_;&nbsp; }<br>
+          <br>
+        </b>Call the property's getter.&nbsp;&nbsp; One should push the
+        class instance on the stack first if this is not a static
+        property.<br>
+        <br>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void CallGet(PELib
+          &amp;peLib, CodeContainer *code);<br>
+          <br>
+        </b>Call the property's setter.&nbsp;&nbsp; One should
+        optionally push the class instance on the stack, then push the
+        data to be set<br>
+        <b></b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void
+          CallSet(PELib &amp;peLib, CodeContainer *code);</b><b><br>
+        </b><b><br>
+        </b>Retrieve the getter or setter functions.&nbsp;&nbsp; When
+        creating a property this is necessary so that you can add code
+        to these functions.<br>
+        <br>
+        <b>&nbsp;</b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Method
+          *Getter() { return getter_;&nbsp; }</b><b><br>
+        </b><b>&nbsp;</b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Method
+          *Setter() { return setter_;&nbsp; }</b><b><br>
+        </b><b><br>
+        </b><b><br>
+        </b><b>&nbsp;</b><br>
+      </div>
+    </div>
+  </body>
+</html>

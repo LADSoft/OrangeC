@@ -1,0 +1,97 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>DotNetPELib - Allocator</title>
+  </head>
+  <body>
+    <div align="center"><font size="+3">Allocator<br>
+      </font>
+      <div align="left"><br>
+        Allocator allocates and manages memory related to the various
+        constructors used by the objects in DotNetPELib.&nbsp;&nbsp;
+        When the Allocator object is destroyed, all objects allocated
+        through it will be destructed and then destroyed.&nbsp;&nbsp;
+        The main DotNetPELib class <a href="PELib.html">PELib</a>
+        derives from allocator, and may be used interchangeably with it.<br>
+        <br>
+        Following is a summary of the supported allocators.&nbsp;&nbsp;
+        These generally related to constructors on a one to one basis.<br>
+        <br>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; AssemblyDef
+          *AllocateAssemblyDef(std::string Name, bool External, Byte
+          *KeyToken = 0);</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Namespace
+          *AllocateNamespace(std::string Name);</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Class
+          *AllocateClass(std::string Name, Qualifiers Flags, int Pack,
+          int Size);</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Method
+          *AllocateMethod(MethodSignature *Prototype, Qualifiers flags,
+          bool entry = false);</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Field
+          *AllocateField(std::string Name, Type *tp, Qualifiers Flags);</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Property
+          *AllocateProperty(PELib &amp; peLib, std::string name, Type
+          *type, std::vector&lt;Type *&gt;&amp; indices, bool hasSetter
+          = true);</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Property
+          *AllocateProperty();</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Enum
+          *AllocateEnum(std::string Name, Qualifiers Flags,
+          Field::ValueSize Size);</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Operand
+          *AllocateOperand();</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Operand
+          *AllocateOperand(Value *V);</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Operand
+          *AllocateOperand(longlong Value, Operand::OpSize Size);</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Operand
+          *AllocateOperand(int Value, Operand::OpSize Size) {</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          return AllocateOperand((longlong)Value, Size);</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Operand
+          *AllocateOperand(unsigned Value, Operand::OpSize Size) {</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          return AllocateOperand((longlong)Value, Size);</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Operand
+          *AllocateOperand(double Value, Operand::OpSize Size);</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Operand
+          *AllocateOperand(std::string Value, bool);</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Operand
+          *AllocateOperand(std::string Value);</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Instruction
+          *AllocateInstruction(Instruction::iop Op, Operand *Operand =
+          nullptr);</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Instruction
+          *AllocateInstruction(Instruction::iop Op, std::string Text);</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Value
+          *AllocateValue(std::string name, Type *tp);</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Local
+          *AllocateLocal(std::string name, Type *tp);</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Param
+          *AllocateParam(std::string name, Type *tp);</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FieldName
+          *AllocateFieldName(Field *F);</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; MethodName
+          *AllocateMethodName(MethodSignature *M);</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          MethodSignature *AllocateMethodSignature(std::string Name, int
+          Flags, DataContainer *Container);</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Type
+          *AllocateType(Type::BasicType Tp, int PointerLevel);</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Type
+          *AllocateType(DataContainer *clsref);</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Type
+          *AllocateType(MethodSignature *methodref);</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; BoxedType
+          *AllocateBoxedType(Type::BasicType Tp);</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Byte
+          *AllocateBytes(size_t sz);</b><b><br>
+        </b><br>
+      </div>
+    </div>
+  </body>
+</html>

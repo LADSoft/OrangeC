@@ -1,0 +1,81 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>DotNetPELib - Operand</title>
+  </head>
+  <body>
+    <div align="center"><font size="+3">Operand</font><br>
+      <div align="left"><br>
+        An Operand is a qualifier to an instruction.&nbsp;&nbsp; It
+        might hold a numeric or string value, or a reference to some
+        other CIL entity such as a <a href="Type.html">Type</a>, a <a
+          href="FieldName.html">FieldName</a>, or a <a
+          href="Local.html">Local</a> reference.&nbsp;&nbsp; It is
+        usually specified for use in the constructor for an <a
+          href="Instruction.html">Instruction</a>.<br>
+        <br>
+        <br>
+        Literal values need to have a size specified.<br>
+        <br>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; enum OpSize { any,
+          i8, u8, i16, u16, i32, u32, i64, u64, inative, r4, r8 };</b><b><br>
+        </b><br>
+        An operand may be constructed either directly or through an <a
+          href="Allocator.html">Allocator</a> object.&nbsp;&nbsp; There
+        are several constructors to create different types of Operands.<br>
+        <br>
+        Constructor for a null operand<br>
+        <br>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Operand::Operand()
+          ;</b><b><br>
+        </b><br>
+        Constructor for an operand with a value that derives from Value,
+        for example a Local or <a href="Param.html">Param</a><br>
+        <br>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          Operand::Operand(Value *V) :</b><b><br>
+        </b><b><br>
+        </b>Various constructors for integer values<br>
+        <b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          Operand::Operand(longlong Value, OpSize Size) </b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          Operand::Operand(int Value, OpSize Size)</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          Operand::Operand(unsigned Value, OpSize Size) </b><b><br>
+          <br>
+        </b>Constructor for a floating point value.<br>
+        <b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          Operand::Operand(double Value, OpSize Size)</b><b><br>
+          <br>
+        </b>Constructor for a string value.&nbsp; The operand is there
+        purely to distinguish between this and the 'label' constructor.<br>
+        <b>&nbsp;<br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          Operand(std::string Value, bool) <br>
+          <br>
+        </b>Constructor for a label.<br>
+        <br>
+        <b></b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          Operand(std::string Value)</b><b><br>
+        </b><b><br>
+        </b>Various getters to get operand values.<br>
+        <br>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; OpType
+          OperandType() const { return type_; }</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Value *
+          GetValue() const { return type_ == t_value ? refValue_ :
+          nullptr; }</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; longlong
+          IntValue() const { return intValue_; }</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; std::string
+          StringValue() const { return stringValue_; }</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; double
+          FloatValue() const { return floatValue_; }</b><b><br>
+        </b><br>
+      </div>
+    </div>
+  </body>
+</html>

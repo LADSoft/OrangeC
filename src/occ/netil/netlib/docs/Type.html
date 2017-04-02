@@ -1,0 +1,110 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>DotNetPELib - Type</title>
+  </head>
+  <body>
+    <div align="center"><font size="+3">Type<br>
+      </font>
+      <div align="left"><br>
+      </div>
+    </div>
+    A Type is used in various places to qualify an entity, for example
+    it can hold the underlying type of a <a href="Field.html">Field</a>
+    or <a href="Local.html">Local</a>, or the return type or <a
+      href="Param.html">Param</a> types for <a
+      href="MethodSignature.html">MethodSignatures</a>.<br>
+    <br>
+    <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; enum BasicType {</b><b><br>
+    </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+
+      ///** type is a reference to a class</b><b><br>
+    </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+
+      cls,</b><b><br>
+    </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+
+      ///** type is a reference to a method signature</b><b><br>
+    </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+
+      method,</b><b><br>
+    </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+
+      /* below this is various CIL types*/</b><b><br>
+    </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+
+      Void, Bool, Char, i8, u8, i16, u16, i32, u32, i64, u64, inative,
+      unative, r32, r64, object, string</b><b><br>
+    </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };</b><b><br>
+    </b><br>
+    Closely related to Type is <a href="BoxedType.html">BoxedType</a>,
+    which represents the boxed version of basic CIL types.<br>
+    <br>
+    A type may be constructed either directly or through an <a
+      href="Allocator.html">Allocator</a> object.&nbsp;&nbsp; Choose one
+    of several constructors depending on the type being
+    constructed.&nbsp;&nbsp; Additionally, a qualifying function may
+    have to be called for example if the type is an array type.<br>
+    <br>
+    Constructor for a basic type, e.g. integers, floats, strings, and
+    the base object type.<br>
+    <br>
+    <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Type(BasicType Tp, int
+      PointerLevel) ;</b><b><br>
+    </b><br>
+    Constructor for a value of type Class<br>
+    <b><br>
+    </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Type(DataContainer
+      *clsref) ;<br>
+      <br>
+    </b>Constructor for a method pointer<br>
+    <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Type(MethodSignature
+      *methodref) ;<br>
+      <br>
+    </b>Access the basic type<br>
+    <br>
+    <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; enum BasicType
+      GetBasicType() const { return tp_; }</b><b><br>
+    </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void
+      SetBasicType(BasicType type) { tp_ = type; }<br>
+      <br>
+    </b>Access extended types<br>
+    <b></b><b><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DataContainer
+      *GetClass() const { return typeRef_; }</b><b><br>
+    </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; MethodSignature
+      *GetMethod() const { return methodRef_; }</b><b><br>
+    </b><b>&nbsp;<br>
+    </b>Access the array rank (note - arrays of &gt; 1 dimension require
+    use of CIL intrinsics that aren't directly supported by
+    DotNetPELib....&nbsp;&nbsp; occil implements them as an addon
+    though)<br>
+    <b></b><b><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void ArrayLevel(int
+      arrayLevel) { arrayLevel_ = arrayLevel;&nbsp; }</b><b><br>
+    </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int ArrayLevel()
+      const { return arrayLevel_;&nbsp; }</b><b><br>
+    </b><b><br>
+    </b>Access the number of pointer qualifers<br>
+    <b><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void PointerLevel(int
+      n) { pointerLevel_ = n; }</b><b><br>
+    </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int PointerLevel()
+      const { return pointerLevel_; }</b><b><br>
+    </b><b><br>
+    </b>Access the ByRef flag.<br>
+    <b><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void ByRef(bool val) {
+      byRef_ = val; }</b><b><br>
+    </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bool ByRef() {
+      return byRef_; }</b><b><br>
+    </b><br>
+  </body>
+</html>

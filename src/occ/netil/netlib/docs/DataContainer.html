@@ -1,0 +1,97 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>DotNetPELib - DataContainer</title>
+  </head>
+  <body>
+    <div align="center"><font size="+3">DataContainer<br>
+      </font>
+      <div align="left"><br>
+        The data container is the base class for the various classes
+        that can hold other things.&nbsp;&nbsp; It can hold other
+        datacontainers, methods, or fields.&nbsp;&nbsp; Note that
+        depending on the type of DataContainer, there may be limits as
+        to what other DataContainer types may be held.<br>
+        <br>
+        DataContainers will never be directly constructed; the derived
+        class will call it as part of its own construction.&nbsp;&nbsp;
+        However the derived class may be user-generated when
+        constructing an assembly.<br>
+        <br>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          DataContainer(std::string Name, Qualifiers Flags);</b><b><br>
+        </b><br>
+        Add another data container such as a <a href="Class.html">Class</a>
+        or <a href="Namespace.html">Namespace.</a><br>
+        <br>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void
+          Add(DataContainer *item);</b><b><br>
+        </b><br>
+        Add a <a href="Method.html">Method</a> to this data container.<br>
+        <br>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void
+          Add(CodeContainer *item);<br>
+          <br>
+        </b>Add a <a href="Field.html">Field</a> to this data
+        container.<br>
+        <br>
+        <b></b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void
+          Add(Field *field);</b><b><br>
+        </b><b><br>
+        </b>Not currently used.<br>
+        <br>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bool
+          IsInstantiated() const { return instantiated_; }</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void
+          SetInstantiated() { instantiated_ = true; }<br>
+          <br>
+        </b>Get the parent container.&nbsp;&nbsp; A Class, Namespace, or
+        <a href="AssemblyDef.html">AssemblyDef</a> object.<br>
+        <br>
+        <b></b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          DataContainer *Parent() const { return parent_; }<br>
+          <br>
+        </b>Get the name or CIL flags<br>
+        <b></b><b><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const std::string
+          &amp;Name() const { return name_; }</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Qualifiers
+          Flags() const { return flags_; }<br>
+          <br>
+        </b>Utilities to find a subcontainer.&nbsp; Usually called
+        indirectly from the <a href="PELib.html">PELib</a> object.<br>
+        <br>
+        <b></b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          DataContainer *FindContainer(std::string name) { return
+          sortedChildren_[name]; }</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DataContainer
+          *FindContainer(std::vector&lt;std::string&gt;&amp; split,
+          size_t &amp;n);<br>
+          <br>
+        </b>Get a list of fields or methods.<br>
+        <br>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const
+          std::list&lt;Field *&gt;&amp;Fields() { return fields_; }</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const
+          std::list&lt;CodeContainer *&gt;&amp;Methods() { return
+          methods_; }</b><b><br>
+        </b><b><br>
+        </b>Traverse the items in this container.&nbsp; Usually not
+        called directly; calles as a result of calling Traverse on the
+        PELib object.<br>
+        <br>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; virtual bool
+          Traverse(Callback &amp;callback) const;<br>
+          <br>
+        </b>Returns true if this is in an 'extern' assembly (usually
+        loaded)<br>
+        <br>
+        <b></b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; virtual
+          bool InAssemblyRef() const { return
+          parent_-&gt;InAssemblyRef(); }</b><b><br>
+        </b><br>
+      </div>
+    </div>
+  </body>
+</html>

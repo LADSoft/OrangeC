@@ -1,0 +1,36 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>DotNetPELib - FieldName</title>
+  </head>
+  <body>
+    <div align="center"><font size="+3">FieldName<br>
+      </font>
+      <div align="left"><br>
+      </div>
+    </div>
+    A FieldName is a kind of <a href="Value.html">Value</a> that may be
+    used as an <a href="Operand.html">Operand</a> to an <a
+      href="Instruction.html">Instruction</a>.&nbsp; It references a <a
+      href="Field.html">Field</a> definition.&nbsp;&nbsp; It may be used
+    in an <a href="Operand.html">Operand</a> to an <a
+      href="Instruction.html">Instruction</a>.&nbsp;&nbsp; It lets the
+    Instruction reference a member of a <a href="Class.html">Class</a>.&nbsp;&nbsp;
+
+    Note that fields may also be placed directly in an <a
+      href="AssemblyDef.html">AssemblyDef</a>, the FieldName would be
+    used to reference those as well.<br>
+    <br>
+    A FieldName may be constructed either directly or through the <a
+      href="Allocator.html">Allocator</a> object.<br>
+    <br>
+    <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FieldName(Field *F);</b><b><br>
+    </b><b><br>
+    </b>It is possible to get the field reference.<br>
+    <b><br>
+    </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Field *GetField()
+      const { return field_; }</b><b><br>
+    </b><br>
+  </body>
+</html>

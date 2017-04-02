@@ -1,0 +1,52 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>DotNetPELib - Value</title>
+  </head>
+  <body>
+    <div align="center"><font size="+3">Value<br>
+      </font>
+      <div align="left"><br>
+        A Value is the base type for various types of <a
+          href="Operand.html">Operand</a> values, to be used in<a
+          href="Instruction.html"> Instructions</a>.&nbsp;&nbsp; Some
+        things inherited from Value are aditionally used to define <a
+          href="Local.html">Local</a> variables and Method <a
+          href="Param.html">Params.</a><br>
+        <br>
+        Sometimes, the Value object is used directly to denote an
+        Operand which is the name of a type.<br>
+        <br>
+        <br>
+        The following are derived from Value:<br>
+        <br>
+        <a href="Local.html">Local</a><br>
+        <a href="Param.html">Param</a><br>
+        <a href="FieldName.html">FieldName</a><br>
+        <a href="MethodName.html">MethodName</a><br>
+        <br>
+        Value objects may be directly constructed, or constructed
+        through an <a href="Allocator.html">Allocator</a> object.<br>
+        <br>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Value(std::string
+          Name, Type *tp) : name_(Name), type_(tp) { }</b><b><br>
+        </b><br>
+        Access type<br>
+        <br>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Type *GetType()
+          const { return type_; }</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void
+          SetType(Type *tp) { type_ = tp; }</b><b><br>
+        </b><br>
+        Access name<br>
+        <br>
+        &nbsp;<b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const std::string
+          &amp;Name() const { return name_; }</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void
+          Name(const std::string name) { name_ = name; }</b><b><br>
+        </b><br>
+      </div>
+    </div>
+  </body>
+</html>

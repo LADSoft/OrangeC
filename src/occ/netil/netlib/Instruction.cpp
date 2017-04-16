@@ -373,7 +373,7 @@ namespace DotNetPELib
     }
     void Instruction::ObjOut(PELib &peLib, int pass) const
     {
-        peLib.Out() << std::endl << "$ib" << op_;
+        peLib.Out() << std::endl << "$ib" << op_ << "," << offset_;
         if (op_ == i_label)
         {
             peLib.Out() << "," << peLib.FormatName(Label());
@@ -408,6 +408,10 @@ namespace DotNetPELib
         Instruction *rv = nullptr;
         iop op = (iop)peLib.ObjInt();
         char ch;
+        ch = peLib.ObjChar();
+        if (ch != ',')
+            peLib.ObjError(oe_syntax);
+        int offset = peLib.ObjInt();
         ch = peLib.ObjChar();
         if (ch == ',')
         {
@@ -453,6 +457,8 @@ namespace DotNetPELib
         }
         if (peLib.ObjEnd() != 'i')
             peLib.ObjError(oe_syntax);
+        if (rv)
+            rv->Offset(offset);
         return rv;
     }
     size_t Instruction::Render(PELib &peLib, Byte *result, std::map<std::string, Instruction *> &labels)

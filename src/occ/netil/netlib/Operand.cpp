@@ -104,6 +104,141 @@ namespace DotNetPELib
         }
         return true;
     }
+    void Operand::ObjOut(PELib &peLib, int pass) const
+    {
+        peLib.Out() <<  std::endl << "$ob" << type_;
+        switch(type_)
+        {
+            case t_none: // no operand, nothing to display
+            default:
+                break;
+            case t_value:
+                peLib.Out() << ",";
+                refValue_->ObjOut(peLib, -1);
+                break;
+            case t_int:
+                peLib.Out() << "," << sz_ << "," << intValue_;
+                break;
+            case t_real:
+            {
+                Byte buf[8];
+                int sz1, i;
+                if (sz_ == r4)
+                {
+                    sz1 = 4;
+                    *(float *)buf = floatValue_;
+                }
+                else
+                {
+                    sz1 = 8;
+                    *(double *)buf = floatValue_;
+                }
+                peLib.Out() << sz_ << "," << std::hex;
+
+                for (i = 0; i < sz1; i++)
+                {
+                    peLib.Out() << std::setw(2) << std::setfill('0') << (int)buf[i];
+                }
+                peLib.Out() << std::dec;
+            }
+                break;
+            case t_string:
+            case t_label:
+                peLib.Out() << "," << peLib.FormatName(stringValue_);
+                break;
+        }
+        peLib.Out() << std::endl << "$oe";
+    }
+    Operand *Operand::ObjIn(PELib &peLib)
+    {
+        if (peLib.ObjBegin() != 'o')
+            peLib.ObjError(oe_syntax);
+        Operand *rv = nullptr;
+        int type = peLib.ObjInt();
+        char ch;
+        Operand::OpSize sz;
+        switch(type)
+        {
+            case t_none: // no operand, nothing to display
+            default:
+                rv = peLib.AllocateOperand();
+                break;
+            case t_value:
+                ch = peLib.ObjChar();
+                if (ch != ',')
+                    peLib.ObjError(oe_syntax);
+                rv = peLib.AllocateOperand(Value::ObjIn(peLib));
+                break;
+            case t_int:
+                ch = peLib.ObjChar();
+                if (ch != ',')
+                    peLib.ObjError(oe_syntax);
+                sz = (Operand::OpSize)peLib.ObjInt();
+                ch = peLib.ObjChar();
+                if (ch != ',')
+                    peLib.ObjError(oe_syntax);
+                rv = peLib.AllocateOperand(peLib.ObjInt(), sz);
+                break;
+            case t_real:
+            {
+                ch = peLib.ObjChar();
+                if (ch != ',')
+                    peLib.ObjError(oe_syntax);
+                sz = (Operand::OpSize)peLib.ObjInt();
+                ch = peLib.ObjChar();
+                if (ch != ',')
+                    peLib.ObjError(oe_syntax);
+
+                Byte buf[8];
+                int sz1, i;
+                if (sz == r4)
+                {
+                    sz1 = 4;
+                }
+                else
+                {
+                    sz1 = 8;
+                }
+
+                for (i = 0; i < sz1; i++)
+                {
+                    buf[i] = peLib.ObjHex2();
+                }
+                if (sz == r4)
+                {
+                    sz1 = 4;
+                    rv = peLib.AllocateOperand(*(float *)buf, sz);
+                }
+                else
+                {
+                    sz1 = 8;
+                    rv = peLib.AllocateOperand(*(double *)buf, sz);
+                }
+            }
+                break;
+            case t_string:
+            {
+                ch = peLib.ObjChar();
+                if (ch != ',')
+                    peLib.ObjError(oe_syntax);
+                std::string test = peLib.UnformatName();
+                rv = peLib.AllocateOperand(test, true);
+            }
+                break;
+            case t_label:
+            {
+                ch = peLib.ObjChar();
+                if (ch != ',')
+                    peLib.ObjError(oe_syntax);
+                std::string test = peLib.UnformatName();
+                rv = peLib.AllocateOperand(test);
+            }
+                break;
+        }
+        if (peLib.ObjEnd() != 'o')
+            peLib.ObjError(oe_syntax);
+        return rv;
+    }
     size_t Operand::Render(PELib &peLib, int opcode, int operandType, Byte *result)
     {
         int sz = 0;

@@ -91,6 +91,84 @@ namespace DotNetPELib
             peLib.Out() << "&";
         return true;
     }
+    void Type::ObjOut(PELib &peLib, int pass) const
+    {
+        peLib.Out() <<  std::endl << "$tb" << tp_ << "," << byRef_ << "," << arrayLevel_ << "," << pointerLevel_;
+        if (tp_ == cls)
+        {
+            typeRef_->ObjOut(peLib, -1);
+        }
+        else if (tp_ == method)
+        {
+            methodRef_->ObjOut(peLib, -1);
+        }
+        peLib.Out() <<  std::endl << "$te";
+    }
+    Type *Type::ObjIn(PELib &peLib)
+    {
+        if (peLib.ObjBegin() == 'B')
+        {
+            Type *rv = BoxedType::ObjIn(peLib);
+            if (peLib.ObjEnd() != 'B')
+                peLib.ObjError(oe_syntax);
+        }
+        else if (peLib.ObjBegin(false) == 't')
+        {
+
+            BasicType tp = (BasicType)peLib.ObjInt();
+            char ch;
+            ch = peLib.ObjChar();
+            if (ch != ',')
+                peLib.ObjError(oe_syntax);
+            int byRef = peLib.ObjInt();
+            ch = peLib.ObjChar();
+            if (ch != ',')
+                peLib.ObjError(oe_syntax);
+            int arrayLevel = peLib.ObjInt();
+            ch = peLib.ObjChar();
+            if (ch != ',')
+                peLib.ObjError(oe_syntax);
+            int pointerLevel = peLib.ObjInt();
+            Type *rv = nullptr;
+            if (tp == cls)
+            {
+                DataContainer *typeref = nullptr;
+                if (peLib.ObjBegin() == 'c')
+                {
+                    typeref = Class::ObjIn(peLib);
+                }
+                else if (peLib.ObjBegin(false) == 'E')
+                {
+                    typeref = Enum::ObjIn(peLib);
+                }
+                else
+                {
+                    peLib.ObjError(oe_syntax);
+                }
+                rv = peLib.AllocateType(typeref);
+            }
+            else if (tp == method)
+            {
+                MethodSignature *methodRef = MethodSignature::ObjIn(peLib, nullptr);
+                rv = peLib.AllocateType(methodRef);
+            }
+            else
+            {
+                rv = peLib.AllocateType(tp, 0);
+            }
+            rv->PointerLevel(pointerLevel);
+            rv->ArrayLevel(arrayLevel);
+            rv->ByRef(byRef);
+            if (peLib.ObjEnd() != 't')
+                peLib.ObjError(oe_syntax);
+            return rv;
+        }
+        else
+        {
+            peLib.ObjError(oe_syntax);
+        }
+        return nullptr;
+    }
     size_t Type::Render(PELib &peLib, Byte *result)
     {
         switch (tp_)
@@ -133,6 +211,15 @@ namespace DotNetPELib
         // no point in looking up the type name in the assembly for this...
         peLib.Out() << "[mscorlib]System." << typeNames_[tp_];
         return true;
+    }
+    void BoxedType::ObjOut(PELib &peLib, int pass) const
+    {
+        peLib.Out() <<  std::endl << "$Bb" << tp_ <<  std::endl << "$Be";
+    }
+    BoxedType *BoxedType::ObjIn(PELib &peLib)
+    {
+        Type::BasicType type = (Type::BasicType)peLib.ObjInt();
+        return peLib.AllocateBoxedType(type);
     }
     size_t BoxedType::Render(PELib &peLib, Byte *result)
     {

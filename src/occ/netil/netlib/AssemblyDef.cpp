@@ -233,6 +233,61 @@ namespace DotNetPELib
             }
         }
     }
+    void AssemblyDef::ObjOut(PELib &peLib, int pass) const
+    {
+        if (loaded_)
+        {
+            if (pass == 1)
+            {
+                peLib.Out() << std::endl << "$abr" << peLib.FormatName(name_);
+                peLib.Out() << std::endl << "$ae";
+            }
+            return;
+        }
+        else
+        {
+            peLib.Out() << std::endl << "$abb" << peLib.FormatName(name_) << external_;
+            DataContainer::ObjOut(peLib, pass);
+            peLib.Out() << std::endl << "$ae";
+        }
+    }
+    AssemblyDef *AssemblyDef::ObjIn(PELib &peLib, bool definition)
+    {
+        AssemblyDef *a = nullptr;
+        char ch;
+        ch = peLib.ObjChar();
+        if (ch == 'r')
+        {
+            std::string name = peLib.UnformatName();
+            peLib.LoadAssembly(name);
+        }
+        else if (ch == 'b')
+        {
+            std::string name = peLib.UnformatName();
+            int external = peLib.ObjInt();
+            if (!external)
+            {
+                // dump all locally defined assemblies into the working assembly...
+                a = peLib.WorkingAssembly();
+            }
+            else
+            {
+                a = peLib.FindAssembly(name);
+                if (!a)
+                {
+                    a = peLib.AllocateAssemblyDef(name, true);
+                }
+            }
+            ((DataContainer *)a)->ObjIn(peLib);
+        }
+        else
+        {
+            peLib.ObjError(oe_syntax);
+        }
+        if (peLib.ObjEnd() != 'a')
+            peLib.ObjError(oe_syntax);
+        return a;
+    }
     void AssemblyDef::Load(PELib &lib, PEReader &reader)
     {
         customAttributes_.Load(lib, *this, reader);

@@ -147,7 +147,7 @@ namespace DotNetPELib
         { "ldarg.2", 0x04, -1, 1, o_single, 1 },
         { "ldarg.3", 0x05, -1, 1, o_single, 1 },
         { "ldarg.s", 0xe, -1, 2, o_index1, 1  },
-        { "ldarga", 0xfe, 0x0a, 5, o_index2, 1 },
+        { "ldarga", 0xfe, 0x0a, 4, o_index2, 1 },
         { "ldarga.s", 0x0f, -1, 2, o_index1, 1 },
         { "ldc.i4", 0x20, -1, 5, o_immed4, 1 },
         { "ldc.i4.0", 0x16, -1, 1, o_single, 1 },
@@ -370,6 +370,90 @@ namespace DotNetPELib
             }
         }
         return true;
+    }
+    void Instruction::ObjOut(PELib &peLib, int pass) const
+    {
+        peLib.Out() << std::endl << "$ib" << op_;
+        if (op_ == i_label)
+        {
+            peLib.Out() << "," << peLib.FormatName(Label());
+        }
+        else if (op_ == i_comment)
+        {
+            peLib.Out() << "," << peLib.FormatName(Text());
+        }
+        else if (op_ == i_switch)
+        {
+            peLib.Out() << "," << switches_->size();
+            for (auto sw : *switches_)
+            {
+                peLib.Out() << "," << peLib.FormatName(sw);
+            }
+        }
+        else
+        {
+            if (operand_)
+            {
+                peLib.Out() << ",";
+                operand_->ObjOut(peLib, pass);
+            }
+            else peLib.Out() << "$$";
+            {
+            }
+        }
+        peLib.Out() << std::endl << "$ie";
+    }
+    Instruction *Instruction::ObjIn(PELib &peLib)
+    {
+        Instruction *rv = nullptr;
+        iop op = (iop)peLib.ObjInt();
+        char ch;
+        ch = peLib.ObjChar();
+        if (ch == ',')
+        {
+            switch(op)
+            {
+                 case i_label:
+                case i_comment:
+                {
+                    std::string text = peLib.UnformatName();
+                    rv = peLib.AllocateInstruction(op, text);  
+                }
+                    break;
+                case i_switch:
+                {
+                    rv = peLib.AllocateInstruction(op);
+                    int n = peLib.ObjInt();
+                    for (int i=0; i < n; i++)
+                    {
+                        ch = peLib.ObjChar();
+                        if (ch != ',')
+                            peLib.ObjError(oe_syntax);
+                        std::string text = peLib.UnformatName();
+                        rv->AddCaseLabel(text);
+                    }
+                }
+                    break;
+                default:
+                {
+                    Operand *operand = Operand::ObjIn(peLib);
+                    rv = peLib.AllocateInstruction(op, operand);
+                }
+                    break;
+            }
+        }
+        else {
+            rv = peLib.AllocateInstruction(op);
+            if (ch == '$')
+            {
+                ch = peLib.ObjChar();
+            }
+            if (ch != '$')
+                peLib.ObjError(oe_syntax);
+        }
+        if (peLib.ObjEnd() != 'i')
+            peLib.ObjError(oe_syntax);
+        return rv;
     }
     size_t Instruction::Render(PELib &peLib, Byte *result, std::map<std::string, Instruction *> &labels)
     {

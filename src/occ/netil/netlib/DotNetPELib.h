@@ -41,6 +41,7 @@
 #define DOTNETPELIB_H
 #include <list>
 #include <vector>
+#include <deque>
 #include <map>
 #include <string>
 #include <set>
@@ -50,7 +51,7 @@
 
 // reference changelog.txt to see what the changes are
 //
-#define DOTNETPELIB_VERSION "2.1"
+#define DOTNETPELIB_VERSION "2.2"
 
 // this is the main library header
 // it allows creation of the methods and data that would be dumped into 
@@ -208,6 +209,16 @@ namespace DotNetPELib
         ErrorList errnum;
         static char *errorNames[];
     };
+    // an internal enumeration for errors associated with invalidly formatted
+    // object files.   Usually only used for debugging the object file handlers
+    enum {
+        oe_syntax,
+        oe_nonamespace,
+        oe_noclass,
+        oe_noenum,
+        oe_nofield,
+        oe_nomethod,
+    };
     // Qualifiers is a generic class that holds all the 'tags' you would see on various objects in
     // the assembly file.   Where possible things are handled implicitly for example 'nested'
     // will automatically be added when a class is nested in another class.
@@ -247,6 +258,9 @@ namespace DotNetPELib
             PInvokeFunc = HideBySig | Static | PreserveSig,
             ManagedFunc = HideBySig | Static | CIL | Managed
         };
+        Qualifiers::Qualifiers() : flags_(0)
+        {
+        }
         Qualifiers::Qualifiers(int Flags) : flags_(Flags)
         {
         }
@@ -262,6 +276,9 @@ namespace DotNetPELib
         // The main problem is there is a separator character between the first class encountered
         // and its members, which is different depending on whether it is a type or a field
         static std::string GetName(std::string root, DataContainer *parent, bool type = false);
+        static std::string GetObjName(std::string root, DataContainer *parent);
+        virtual void ObjOut(PELib &, int pass) const;
+        void ObjIn(PELib &, bool definition = true);
         int Flags() const { return flags_; }
         void Flags(int flags) { flags_ = flags;  }
     protected:
@@ -309,6 +326,8 @@ namespace DotNetPELib
         virtual bool ILSrcDump(PELib &) const;
         virtual bool PEDump(PELib &) { return false; }
         virtual void Render(PELib&) { }
+        virtual void ObjOut(PELib &, int pass) const;
+        void ObjIn(PELib &);
         Byte *Compile(PELib &, size_t &sz);
         virtual void Compile(PELib&) { }
     protected:
@@ -354,16 +373,22 @@ namespace DotNetPELib
         // This could be an assemblydef, namespace, class, or enumeration
         void Add(DataContainer *item)
         {
-            item->parent_ = this;
-            children_.push_back(item);
-            sortedChildren_[item->name_] = item;
+            if (item)
+            {
+                item->parent_ = this;
+                children_.push_back(item);
+                sortedChildren_[item->name_] = item;
+            }
         }
         ///** Add a code container
         // This is always a Method definition
         void Add(CodeContainer *item)
         {
-            item->SetContainer(this);
-            methods_.push_back(item);
+            if (item)
+            {
+                item->SetContainer(this);
+                methods_.push_back(item);
+            }
         }
         ///** Add a field
         void Add(Field *field);
@@ -399,6 +424,8 @@ namespace DotNetPELib
         virtual bool ILSrcDump(PELib &) const;
         virtual bool PEDump(PELib &);
         virtual void Compile(PELib&);
+        virtual void ObjOut(PELib &, int pass) const;
+        void ObjIn(PELib &, bool definition = true);
         void Number(int &n);
         // sometimes we want to traverse upwards in the tree
         void Render(PELib&);
@@ -450,7 +477,7 @@ namespace DotNetPELib
     {
     public:
         AssemblyDef(std::string Name, bool External, Byte * KeyToken = nullptr) : DataContainer(Name, 0), external_(External),
-            major_(0), minor_(0), build_(0), revision_(0), loaded(false)
+            major_(0), minor_(0), build_(0), revision_(0), loaded_(false)
         {
             if (KeyToken)
                 memcpy(publicKeyToken_, KeyToken, 8);
@@ -478,10 +505,12 @@ namespace DotNetPELib
                 
         const CustomAttributeContainer &CustomAttributes() const { return customAttributes_;  }
         virtual bool InAssemblyRef() const { return external_; }
-        bool IsLoaded() { return loaded; }
-        void SetLoaded() { loaded = true; }
+        bool IsLoaded() { return loaded_; }
+        void SetLoaded() { loaded_ = true; }
         bool ILHeaderDump(PELib &);
         bool PEHeaderDump(PELib &);
+        virtual void ObjOut(PELib &, int pass) const override;
+        static AssemblyDef *ObjIn(PELib &, bool definition = true);
 
     protected:
         Namespace *InsertNameSpaces(PELib &lib, std::map<std::string, Namespace *> &nameSpaces, std::string name);
@@ -492,7 +521,7 @@ namespace DotNetPELib
         bool external_;
         Byte publicKeyToken_[8];
         int major_, minor_, build_, revision_;
-        bool loaded;
+        bool loaded_;
         CustomAttributeContainer customAttributes_;
     };
     ///** a namespace
@@ -506,6 +535,8 @@ namespace DotNetPELib
         std::string ReverseName(DataContainer *child);
         virtual bool ILSrcDump(PELib &) const override;
         virtual bool PEDump(PELib &) override;
+        virtual void ObjOut(PELib &, int pass) const override;
+        static Namespace *ObjIn(PELib &, bool definition = true);
     };
 
     /* a property, note we are only supporting classic properties here, not any
@@ -532,6 +563,8 @@ namespace DotNetPELib
         void Instance(bool instance);
         ///** return whether it is an instance member or static property
         bool Instance() const { return instance_;  }
+        ///** set the name
+        void Name(std::string name) { name_ = name; }
         ///** Get the name
         const std::string &Name() const { return name_; }
         ///* set the type
@@ -550,11 +583,15 @@ namespace DotNetPELib
         ///** Get the setter
         Method *Setter() { return setter_;  }
 
+        void Getter(Method *getter) { getter_ = getter; }
+        void Setter(Method *setter) { setter_ = setter; }
         // internal functions
         ///** root for Load assembly from file
         void Load(PELib &lib, AssemblyDef &assembly, PEReader &reader, size_t propIndex, size_t startIndex, size_t startSemantics, size_t endSemantics, std::vector<Method *>& methods);
         virtual bool ILSrcDump(PELib &) const;
         virtual bool PEDump(PELib &);
+        virtual void ObjOut(PELib &, int pass) const;
+        static Property *ObjIn(PELib &);
     protected:
         void CreateFunctions(PELib &peLib, std::vector<Type *>& indices, bool hasSetter);
     private:
@@ -574,7 +611,7 @@ namespace DotNetPELib
     {
     public:
         Class(std::string Name, Qualifiers Flags, int Pack, int Size) : DataContainer(Name, Flags),
-            pack_(Pack), size_(Size), extendsFrom_(nullptr)
+            pack_(Pack), size_(Size), extendsFrom_(nullptr), external_(false)
         {
         }
         ///** set the structure packing
@@ -584,11 +621,18 @@ namespace DotNetPELib
         ///**set the class we are extending from, if this is unset
         // a system class will be chosen based on whether or not the class is a valuetype
         void Extends(Class *extendsFrom) { extendsFrom_ = extendsFrom; }
+        ///** not locally defined
+        bool External() const { return external_; }
+        ///** not locally defined
+        void External(bool external) { external_ = external; }
         ///** add a property to this container
         void Add(Property *property)
         {
-            property->SetContainer(this);
-            properties_.push_back(property);
+            if (property)
+            {
+                property->SetContainer(this);
+                properties_.push_back(property);
+            }
         }
         using DataContainer::Add;
         ///** Traverse the declaration tree
@@ -600,6 +644,8 @@ namespace DotNetPELib
         virtual bool ILSrcDump(PELib &) const override;
         virtual bool PEDump(PELib &) override;
         void ILSrcDumpClassHeader(PELib &) const;
+        virtual void ObjOut(PELib &, int pass) const override;
+        static Class *ObjIn(PELib &, bool definition = true);
 
     protected:
         int TransferFlags() const;
@@ -607,6 +653,7 @@ namespace DotNetPELib
         int size_;
         Class *extendsFrom_;
         std::vector<Property *>properties_;
+        bool external_;
     };
     ///** A method with code
     // CIL instructions are added with the 'Add' member of code container
@@ -642,10 +689,13 @@ namespace DotNetPELib
         size_t size() const { return varList_.size(); }
 
         // Internal functions
+        void MaxStack(int stack) { maxStack_ = stack;  }
         virtual bool ILSrcDump(PELib &) const override;
         virtual bool PEDump(PELib &) override;
         virtual void Compile(PELib&) override;
         virtual void Optimize(PELib &) override;
+        virtual void ObjOut(PELib &, int pass) const override;
+        static Method *ObjIn(PELib &, bool definition = true);
     protected:
         void OptimizeLocals(PELib &);
         void CalculateMaxStack();
@@ -676,7 +726,7 @@ namespace DotNetPELib
             Bytes
         };
         Field::Field(std::string Name, Type *tp, Qualifiers Flags) : mode_(Field::None), name_(Name), flags_(Flags),
-            type_(tp), enumValue_(0), byteValue_(nullptr), byteLength_(0), ref_(0), peIndex_(0), explicitOffset_(0)
+            type_(tp), enumValue_(0), byteValue_(nullptr), byteLength_(0), ref_(0), peIndex_(0), explicitOffset_(0), external_(false)
         {
         }
         ///** Add an enumeration constant
@@ -698,6 +748,10 @@ namespace DotNetPELib
         void Ref(bool Ref) { ref_ = Ref; }
         //* Is field referenced
         bool IsRef() const { return ref_; }
+        ///** not locally defined
+        bool External() const { return external_; }
+        ///** not locally defined
+        void External(bool external) { external_ = external; }
         //* field offset for explicit structures
         void ExplicitOffset(size_t offset) { explicitOffset_ = offset;}
         //* field offset for explicit structures
@@ -710,6 +764,8 @@ namespace DotNetPELib
         static bool ILSrcDumpTypeName(PELib &peLib, ValueSize size);
         virtual bool ILSrcDump(PELib &) const;
         virtual bool PEDump(PELib &);
+        virtual void ObjOut(PELib &, int pass) const;
+        static Field *ObjIn(PELib &, bool definition = true);
     protected:
         DataContainer *parent_;
         std::string name_;
@@ -725,12 +781,13 @@ namespace DotNetPELib
         size_t peIndex_;
         size_t explicitOffset_;
         bool ref_;
+        bool external_;
     };
     ///** A special kind of class: enum
     class Enum : public Class
     {
     public:
-        Enum::Enum(std::string Name, Qualifiers Flags, Field::ValueSize Size) :
+        Enum(std::string Name, Qualifiers Flags, Field::ValueSize Size) :
             size(Size), Class(Name, Flags, -1, -1)
         {
         }
@@ -741,6 +798,8 @@ namespace DotNetPELib
         // internal functions
         virtual bool ILSrcDump(PELib &) const override;
         virtual bool PEDump(PELib &) override;
+        virtual void ObjOut(PELib &, int pass) const override;
+        static Enum *ObjIn(PELib &, bool definition = true);
     protected:
         Field::ValueSize size;
     };
@@ -795,6 +854,8 @@ namespace DotNetPELib
         ///** Internal functions
         virtual bool ILSrcDump(PELib &) const;
         size_t Render(PELib &peLib, int opcode, int operandType, Byte *);
+        virtual void ObjOut(PELib &, int pass) const;
+        static Operand * ObjIn(PELib &);
     protected:
         OpType type_;
         OpSize sz_;
@@ -868,6 +929,8 @@ namespace DotNetPELib
         void NullOperand(Allocator &allocator);
         ///** Get the operand (CIL instructions have either zero or 1 operands)
         Operand *GetOperand() const { return operand_; }
+        void SetOperand(Operand *operand) { operand_ = operand; }
+
         ///** Get text, e.g. for a comment
         std::string Text() const { return text_; }
         ///** Get the label name associated with the instruction
@@ -905,6 +968,8 @@ namespace DotNetPELib
         // internal methods and structures
         virtual bool ILSrcDump(PELib &) const;
         size_t Render(PELib & peLib, Byte *, std::map<std::string, Instruction *> &labels);
+        virtual void ObjOut(PELib &, int pass) const;
+        static Instruction *ObjIn(PELib &);
         enum ioperand {
             o_none, o_single, o_rel1, o_rel4, o_index1, o_index2, o_index4,
             o_immed1, o_immed4, o_immed8, o_float4, o_float8, o_switch
@@ -945,6 +1010,8 @@ namespace DotNetPELib
         ///** internal functions
         virtual bool ILSrcDump(PELib &) const;
         virtual size_t Render(PELib &peLib, int opcode, int OperandType, Byte *);
+        virtual void ObjOut(PELib &, int pass) const;
+        static Value *ObjIn(PELib &, bool definition = true);
     protected:
         std::string name_;
         Type *type_;
@@ -964,6 +1031,8 @@ namespace DotNetPELib
         void Index(int Index) { index_ = Index; }
         virtual bool ILSrcDump(PELib &) const override;
         virtual size_t Render(PELib &peLib, int opcode, int OperandType, Byte *) override;
+        virtual void ObjOut(PELib &, int pass) const override;
+        static Local *ObjIn(PELib &, bool definition = true);
     private:
         int index_;
         int uses_;
@@ -982,6 +1051,8 @@ namespace DotNetPELib
         int Index() const { return index_; }
         virtual bool ILSrcDump(PELib &) const override;
         virtual size_t Render(PELib &peLib, int opcode, int OperandType, Byte *) override;
+        virtual void ObjOut(PELib &, int pass) const override;
+        static Param *ObjIn(PELib &, bool definition = true);
     private:
         int index_;
     };
@@ -1000,6 +1071,8 @@ namespace DotNetPELib
         // Internal functions
         virtual bool ILSrcDump(PELib &) const override;
         virtual size_t Render(PELib &peLib, int opcode, int OperandType, Byte *) override;
+        virtual void ObjOut(PELib &, int pass) const override;
+        static FieldName *ObjIn(PELib &, bool definition = true);
     protected:
         Field *field_;
     };
@@ -1011,6 +1084,8 @@ namespace DotNetPELib
         MethodSignature *Signature() const { return signature_; }
         virtual bool ILSrcDump(PELib &) const override;
         virtual size_t Render(PELib &peLib, int opcode, int OperandType, Byte *) override;
+        virtual void ObjOut(PELib &, int pass) const override;
+        static MethodName *ObjIn(PELib &, bool definition = true);
     protected:
         MethodSignature *signature_;
     };
@@ -1030,7 +1105,8 @@ namespace DotNetPELib
     {
     public:
         enum { Vararg = 1, Managed = 2, InstanceFlag = 4 };
-        MethodSignature(std::string Name, int Flags, DataContainer *Container) : container_(Container), name_(Name), flags_(Flags), returnType_(nullptr), ref_(false), peIndex_(0), peIndexCallSite_(0), peIndexType_(0), methodParent_(nullptr), arrayObject_(nullptr)
+        MethodSignature(std::string Name, int Flags, DataContainer *Container) : container_(Container), name_(Name), flags_(Flags), returnType_(nullptr), ref_(false), 
+                peIndex_(0), peIndexCallSite_(0), peIndexType_(0), methodParent_(nullptr), arrayObject_(nullptr), external_(false)
         {
         }
         ///** Get return type
@@ -1097,6 +1173,10 @@ namespace DotNetPELib
         size_t ParamCount() const { return params.size(); }
         ///** return vararg parameter count
         size_t VarargParamCount() const { return varargParams_.size(); }
+        ///** not locally defined
+        bool External() const { return external_; }
+        ///** not locally defined
+        void External(bool external) { external_ = external; }
 
         bool Matches(std::vector<Type *> args);
         // various indexes into metadata tables
@@ -1113,6 +1193,8 @@ namespace DotNetPELib
         void ILSignatureDump(PELib &peLib);
         virtual bool ILSrcDump(PELib &, bool names, bool asType, bool PInvoke) const;
         virtual bool PEDump(PELib &, bool asType);
+        virtual void ObjOut(PELib &, int pass) const;
+        static MethodSignature *ObjIn(PELib &, Method **found, bool definition = true);
     protected:
         MethodSignature *methodParent_;
         DataContainer *container_;
@@ -1123,6 +1205,7 @@ namespace DotNetPELib
         std::list<Param *> params, varargParams_;
         bool ref_;
         size_t peIndex_, peIndexCallSite_, peIndexType_;
+        bool external_;
     };
     ///** the type of a field or value
     class Type : public DestructorBase
@@ -1172,6 +1255,8 @@ namespace DotNetPELib
         virtual size_t Render(PELib &, Byte *);
         bool IsVoid() { return tp_ == Void && pointerLevel_ == 0; }
         size_t PEIndex() const { return peIndex_; }
+        virtual void ObjOut(PELib &, int pass) const;
+        static Type *ObjIn(PELib &);
     protected:
         int pointerLevel_;
         bool byRef_;
@@ -1195,6 +1280,8 @@ namespace DotNetPELib
         ///** internal functions
         virtual bool ILSrcDump(PELib &) const override;
         virtual size_t Render(PELib &, Byte *) override;
+        virtual void ObjOut(PELib &, int pass) const override;
+        static BoxedType *ObjIn(PELib &);
     private:
         static char *typeNames_[];
     };
@@ -1232,8 +1319,8 @@ namespace DotNetPELib
         Class *AllocateClass(std::string Name, Qualifiers Flags, int Pack, int Size);
         Method *AllocateMethod(MethodSignature *Prototype, Qualifiers flags, bool entry = false);
         Field *AllocateField(std::string Name, Type *tp, Qualifiers Flags);
-        Property *AllocateProperty(PELib & peLib, std::string name, Type *type, std::vector<Type *>& indices, bool hasSetter = true);
         Property *AllocateProperty();
+        Property *AllocateProperty(PELib & peLib, std::string name, Type *type, std::vector<Type *>& indices, bool hasSetter = true);
         Enum *AllocateEnum(std::string Name, Qualifiers Flags, Field::ValueSize Size);
         Operand *AllocateOperand();
         Operand *AllocateOperand(Value *V);
@@ -1303,7 +1390,7 @@ namespace DotNetPELib
             // for pinvokes
             bits32 = 2
         };
-        enum OutputMode { ilasm, peexe, pedll };
+        enum OutputMode { ilasm, peexe, pedll, object };
         ///** Constructor, creates a working assembly
         PELib(std::string AssemblyName, int CoreFlags);
         ///** Get the working assembly
@@ -1325,6 +1412,7 @@ namespace DotNetPELib
                            size_t keyIndex, std::string nameSpace, std::string name);
         ///** Pinvoke references are always added to this object
         void AddPInvokeReference(MethodSignature *methodsig, std::string dllname, bool iscdecl);
+        Method *FindPInvoke(std::string name) const;
         // get the core flags
         int GetCorFlags() const { return corFlags_; }
 
@@ -1346,28 +1434,53 @@ namespace DotNetPELib
         ///** Traverse the declaration tree
         void Traverse(Callback &callback) const;
                 
+        ///** Load an object file
+        bool LoadObject(std::string name);
+
         ///** internal declarations
         // loads the MSCorLib assembly
         AssemblyDef *MSCorLibAssembly();
 
+        std::string FormatName(std::string name);
+        std::string UnformatName();
         virtual bool ILSrcDump(PELib &) { return ILSrcDumpHeader() && ILSrcDumpFile(); }
+        bool ObjOut();
+        bool ObjIn();
+        longlong ObjInt();
+        int ObjHex2();
+        char ObjBegin(bool next = true);
+        char ObjEnd(bool next = true);
+        char ObjChar();
+        void ObjError(int);
         std::fstream &Out() const { return *outputStream_; }
         PEWriter &PEOut() const { return *peWriter_; }
         std::map<size_t, size_t> moduleRefs;
+        void PushContainer(DataContainer *container) { containerStack_.push_back(container); }
+        DataContainer *GetContainer() { return containerStack_.back(); }
+        void PopContainer() { containerStack_.pop_back(); }
+        void SetCodeContainer(CodeContainer *container) { codeContainer_ = container; }
+        CodeContainer *GetCodeContainer() const { return codeContainer_; }
     protected:
         void SplitPath(std::vector<std::string> & split, std::string path);
         bool ILSrcDumpHeader();
         bool ILSrcDumpFile();
         bool DumpPEFile(std::string name, bool isexe, bool isgui);
         std::list<AssemblyDef *>assemblyRefs_;
-        std::list<Method *>pInvokeSignatures_;
+        std::map<std::string, Method *>pInvokeSignatures_;
         std::string assemblyName_;
         std::fstream *outputStream_;
+        std::fstream *inputStream_;
         std::string fileName_;
     	std::map<std::string, std::string> unmanagedRoutines_;
         int corFlags_;
         PEWriter *peWriter_;
         std::vector<Namespace *> usingList_;
+        std::deque<DataContainer *> containerStack_;
+        CodeContainer *codeContainer_;
+        char *objInputBuf_;
+        int objInputSize_;
+        int objInputPos_;
+        int objInputCache_;
     };
 
 } // namespace

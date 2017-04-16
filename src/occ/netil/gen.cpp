@@ -1330,21 +1330,15 @@ extern "C" void asm_assn(QUAD *q)               /* assignment */
         // don't generate if it is a placeholder ind...
         if (q->ans->mode == i_direct && !(q->temps & TEMP_ANS) && q->ans->offset->type == en_auto)
         {
-            TYPE *tp = q->ans->offset->v.sp->tp;
-            TYPE *tp1 = basetype(tp);
-            while (tp != tp1)
+            if (objectArray_exp && q->ans->offset->v.sp == objectArray_exp->v.sp)
             {
-                if (tp->type == bt_objectArray)
-                {
-                    // assign to object array, call the ctor here
-                    // count is already on the stack
-                    Operand *ap = peLib->AllocateOperand(peLib->AllocateValue("", systemObject));
-                    gen_code(Instruction::i_newarr, ap);
-                    ap = getOperand(q->ans);
-                    gen_store(q->ans, ap);
-                    return;
-                }
-                tp = tp->btp;
+                // assign to object array, call the ctor here
+                // count is already on the stack
+                Operand *ap = peLib->AllocateOperand(peLib->AllocateValue("", systemObject));
+                gen_code(Instruction::i_newarr, ap);
+                ap = getOperand(q->ans);
+                gen_store(q->ans, ap);
+                return;
             }
         }
         ap = getOperand(q->dc.left);

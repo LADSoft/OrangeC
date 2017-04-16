@@ -44,8 +44,11 @@ namespace DotNetPELib
 {
     void DataContainer::Add(Field *field)
     {
-        field->SetContainer(this);
-        fields_.push_back(field);
+        if (field)
+        {
+            field->SetContainer(this);
+            fields_.push_back(field);
+        }
     }
     size_t DataContainer::ParentNamespace(PELib &peLib) const
     {
@@ -106,6 +109,57 @@ namespace DotNetPELib
         for (std::list<DataContainer *>::const_iterator it = children_.begin(); it != children_.end(); ++it)
             (*it)->ILSrcDump(peLib);
         return true;
+    }
+    void DataContainer::ObjOut(PELib &peLib, int pass) const
+    {
+        peLib.Out() << std::endl << "$db";
+        if (pass == 2)
+        {
+            for (auto field : fields_)
+                field->ObjOut(peLib, pass);
+        }
+        if (pass >= 2)
+        {
+            for (auto method : methods_)
+                method->ObjOut(peLib, pass);
+        }
+        for (auto child : children_)
+            child->ObjOut(peLib, pass);
+        peLib.Out() << std::endl << "$de";
+    }
+    void DataContainer::ObjIn(PELib &peLib, bool definition)
+    {
+        peLib.PushContainer(this);
+        if (peLib.ObjBegin() != 'd')
+            peLib.ObjError(oe_syntax);
+        bool done = false;
+        while (!done)
+        {
+            switch (peLib.ObjBegin())
+            {
+                case 'n':
+                    Add(Namespace::ObjIn(peLib));
+                    break;
+                case 'E':
+                    Add(Enum::ObjIn(peLib));
+                    break;
+                case 'c':
+                    Add(Class::ObjIn(peLib));
+                    break;
+                case 'f':
+                    Add(Field::ObjIn(peLib));
+                    break;
+                case 'm':
+                    Add(Method::ObjIn(peLib));
+                    break;
+                default:
+                    done = true;
+                    break;
+            }
+        }
+        if (peLib.ObjEnd(false) != 'd')
+            peLib.ObjError(oe_syntax);
+        peLib.PopContainer();
     }
     bool DataContainer::PEDump(PELib &peLib)
     {

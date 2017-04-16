@@ -134,6 +134,51 @@ bool Property::ILSrcDump(PELib &peLib) const
     peLib.Out() << "}";
     return true;
 }
+void Property::ObjOut(PELib &peLib, int pass) const
+{
+    peLib.Out() <<  std::endl << "$Pb" << peLib.FormatName(name_) << instance_ << ",";
+    peLib.Out() << flags_ << ",";
+    type_->ObjOut(peLib, pass);
+    getter_->ObjOut(peLib, pass);
+    if (setter_)
+    {
+        peLib.Out() <<  std::endl << "$Sb";
+        setter_->ObjOut(peLib, pass);
+        peLib.Out() <<  std::endl << "$Se";
+    }
+    peLib.Out() <<  std::endl << "$Pe";
+}
+Property *Property::ObjIn(PELib &peLib)
+{
+    std::string name =  peLib.UnformatName();
+    int instance = peLib.ObjInt();
+    char ch;
+    ch = peLib.ObjChar();
+    if (ch != ',')
+        peLib.ObjError(oe_syntax);
+    Property *rv = peLib.AllocateProperty();
+    Type *type = Type::ObjIn(peLib);
+    Method *getter = Method::ObjIn(peLib);
+    Method *setter = nullptr;
+    if (peLib.ObjBegin() == 'S')
+    {
+        setter = Method::ObjIn(peLib);
+        if (peLib.ObjEnd() != 'S')
+            peLib.ObjError(oe_syntax);
+        if (peLib.ObjEnd() != 'P')
+            peLib.ObjError(oe_syntax);
+    }
+    else if (peLib.ObjEnd(false) != 'P')
+    {
+        peLib.ObjError(oe_syntax);
+    }
+    rv->Name(name);
+    rv->SetType(type);
+    rv->Instance(instance);
+    rv->Getter(getter);
+    rv->Setter(setter);
+    return rv;
+}
 bool Property::PEDump(PELib &peLib)
 {
     size_t propertyIndex = peLib.PEOut().NextTableIndex(tProperty);

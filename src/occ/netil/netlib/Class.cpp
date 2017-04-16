@@ -196,6 +196,85 @@ namespace DotNetPELib
         flags_.ILSrcDumpAfterFlags(peLib);
         peLib.Out() << " '" << name_ << "'";
     }
+    void Class::ObjOut(PELib &peLib, int pass) const
+    {
+        if (pass == -1)
+        {
+            peLib.Out() << std::endl << "$cb" << peLib.FormatName(Qualifiers::GetObjName(name_, parent_)) << "$cb";
+            peLib.Out() << std::endl << "$ce" << "$ce";
+        }
+        else
+        {
+            peLib.Out() << std::endl << "$cb" << peLib.FormatName(name_) << external_ << ",";
+            peLib.Out() << pack_ << "," << size_ << ",";
+            flags_.ObjOut(peLib, pass);
+            DataContainer::ObjOut(peLib, pass);
+            if (pass == 3)
+            {
+                for (auto p : properties_)
+                    p->ObjOut(peLib, pass);
+            }
+            peLib.Out() << std::endl << "$ce";
+        }
+    }
+    Class *Class::ObjIn(PELib &peLib, bool definition)
+    {
+        Class *rv = nullptr;
+        std::string name = peLib.UnformatName();
+        if (definition)
+        {
+            // here we are doing a definition
+            int external = peLib.ObjInt();
+            char ch;
+            ch = peLib.ObjChar();
+            if (ch != ',')
+                peLib.ObjError(oe_syntax);
+            int pack = peLib.ObjInt();
+            ch = peLib.ObjChar();
+            if (ch != ',')
+                peLib.ObjError(oe_syntax);
+            int size = peLib.ObjInt();
+            ch = peLib.ObjChar();
+            if (ch != ',')
+                peLib.ObjError(oe_syntax);
+            Qualifiers flags;
+            flags.ObjIn(peLib);
+            DataContainer *temp;
+            Class *c;
+            temp = peLib.GetContainer()->FindContainer(name);
+            if (temp && typeid(*temp) != typeid(Class))
+                peLib.ObjError(oe_noclass);
+            if (!temp)
+                rv = c = peLib.AllocateClass(name, flags, pack, size);
+            else
+                c = static_cast<Class *>(temp);
+            if (rv)
+                rv->External(external);
+            ((DataContainer *)c)->ObjIn(peLib);
+            peLib.PushContainer(c);
+            while (peLib.ObjBegin() == 'P')
+                c->Add(Property::ObjIn(peLib));
+            peLib.PopContainer();
+            if (peLib.ObjEnd(false) != 'c')
+                peLib.ObjError(oe_syntax);
+        }
+        else
+        {
+            // if we get here it is as an operand
+            void *result;
+            if (peLib.Find(name,&result) == PELib::s_class)
+            {
+                rv = static_cast<Class *>(result);
+            }
+            else
+            {
+                peLib.ObjError(oe_noclass);
+            }
+            if (peLib.ObjEnd() != 'c')
+                peLib.ObjError(oe_syntax);
+        }
+        return rv;
+    }
     void Class::Load(PELib &lib, AssemblyDef &assembly, PEReader &reader, size_t clsIndex, int startField, int endField, int startMethod, int endMethod, int startSemantics, int endSemantics)
     {
         const DNLTable &table = reader.Table(tField);

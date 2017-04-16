@@ -1933,10 +1933,14 @@ static int gen_parm(INITLIST *a, SYMBOL *funcsp)
         if (!objectArray_exp )
         {
             TYPE *tp = Alloc(sizeof(TYPE));
-            tp->type = bt_objectArray;
-            tp->size = getSize(bt_pointer);
-            tp->btp = &stdpointer;
-            tp->rootType = tp->btp;
+            tp->type = bt_pointer;
+            tp->size = 0;
+            tp->array = tp->msil = TRUE;
+            tp->rootType = tp;
+            tp->btp = Alloc(sizeof(TYPE));
+            tp->btp->type = bt___object;
+            tp->btp->size = getSize(bt_pointer);
+            tp->btp->rootType = tp->btp;
             objectArray_exp = anonymousVar(sc_auto, tp);
         }
         intermed_tail->varargPrev = TRUE;

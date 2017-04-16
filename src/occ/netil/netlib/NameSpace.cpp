@@ -50,6 +50,27 @@ namespace DotNetPELib
         peLib.Out() << "}" << std::endl;
         return true;
     }
+    void Namespace::ObjOut(PELib &peLib, int pass) const
+    {
+        peLib.Out() << std::endl << "$nb" << peLib.FormatName(name_);
+        DataContainer::ObjOut(peLib, pass);
+        peLib.Out() << std::endl << "$ne";
+    }
+    Namespace *Namespace::ObjIn(PELib &peLib, bool definition)
+    {
+        // always a definition (never used as an operand)
+        std::string name = peLib.UnformatName();
+        Namespace *temp, *rv = nullptr;
+        temp = (Namespace *)peLib.GetContainer()->FindContainer(name);
+        if (temp && typeid(*temp) != typeid(Namespace))
+            peLib.ObjError(oe_nonamespace);
+        if (!temp)
+            rv = temp = peLib.AllocateNamespace(name);
+        ((DataContainer *)temp)->ObjIn(peLib);
+        if (peLib.ObjEnd() != 'n')
+            peLib.ObjError(oe_syntax);
+        return rv;
+    }
     std::string Namespace::ReverseName(DataContainer *child)
     {
         std::string rv;

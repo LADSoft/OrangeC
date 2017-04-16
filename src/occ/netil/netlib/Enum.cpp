@@ -59,6 +59,62 @@ namespace DotNetPELib
         peLib.Out() << "}" << std::endl;
         return true;
     }
+    void Enum::ObjOut(PELib &peLib, int pass) const
+    {
+        if (pass == 1)
+        {
+            peLib.Out() << std::endl << "$Eb" << peLib.FormatName(name_) << size_ << "," << flags_.Flags();
+            DataContainer::ObjOut(peLib, pass);
+            peLib.Out() << std::endl << "$Ee";
+        }
+        else if (pass == -1)
+        {
+            peLib.Out() << "std::endl << $Eb" << peLib.FormatName(Qualifiers::GetObjName(name_, parent_)) << "$Eb";
+            peLib.Out() << std::endl << "$Ee" << std::endl << "$Ee";
+        }
+    }
+    Enum* Enum::ObjIn(PELib &peLib, bool definition)
+    {
+        Enum *rv = nullptr;
+        std::string name = peLib.UnformatName();
+        if (definition)
+        {
+            // as a definition
+            Field::ValueSize size = (Field::ValueSize)peLib.ObjInt();
+            char ch;
+            ch = peLib.ObjChar();
+            if (ch != ',')
+                peLib.ObjError(oe_syntax);
+            Qualifiers flags;
+            flags.ObjIn(peLib);
+            DataContainer *temp;
+            Enum *e;
+            temp = peLib.GetContainer()->FindContainer(name);
+            if (temp && typeid(*temp) != typeid(Enum))
+                peLib.ObjError(oe_noenum);
+            if (!temp)
+                rv = e = peLib.AllocateEnum(name, flags, size);
+            else
+                e = static_cast<Enum *>(temp);
+            ((DataContainer *)e)->ObjIn(peLib);
+        }
+        else
+        {
+            // if we get here it is as an operand
+            void *result;
+            if (peLib.Find(name,&result) == PELib::s_enum)
+            {
+                rv = static_cast<Enum *>(result);
+            }
+            else
+            {
+                peLib.ObjError(oe_noenum);
+            }
+        }
+        if (peLib.ObjEnd() != 'E')
+            peLib.ObjError(oe_syntax);
+        return rv;
+    }
     bool Enum::PEDump(PELib &peLib)
     {
         int peflags = TransferFlags();

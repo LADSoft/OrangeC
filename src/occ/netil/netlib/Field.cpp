@@ -137,6 +137,134 @@ namespace DotNetPELib
         peLib.Out() << std::endl;
         return true;
     }
+    void Field::ObjOut(PELib &peLib, int pass) const
+    {
+        if (pass == -1) // as a reference, we have to do a full signature because of overloads
+                        // and here we need the fully qualified name
+        {
+            peLib.Out() << std::endl << "$fb" << peLib.FormatName(Qualifiers::GetObjName(name_, parent_));
+            peLib.Out() << std::endl << "$fe";
+        }
+        else
+        {
+            peLib.Out() << std::endl << "$fb" << peLib.FormatName(name_);
+            peLib.Out() << external_ << ",";
+            flags_.ObjOut(peLib, pass);
+            peLib.Out() << ",";
+            type_->ObjOut(peLib, pass);
+            peLib.Out() << std::endl << "$fe";
+            switch(mode_)
+            {
+            case None:
+                peLib.Out() << std::endl << "$";
+                break;
+            case Enum:
+                peLib.Out() << std::endl << "=";
+                peLib.Out() << (int)size_ << (longlong)enumValue_ << ")";
+    
+                break;
+            case Bytes:
+                peLib.Out() << std::endl << "(";
+                for (int i = 0; i < byteLength_; i++)
+                {
+                    peLib.Out() << std::setw(2) << std::setfill('0') << (int)byteValue_[i] << " ";
+                }
+                peLib.Out() << ")" << std::dec;
+            }
+        }
+    }
+    Field *Field::ObjIn(PELib &peLib, bool definition)
+    {
+        std::string name = peLib.UnformatName();
+
+        Field *f = nullptr, *rv = nullptr;
+        if (definition)
+        {
+            int external = peLib.ObjInt();
+            char ch;
+            ch = peLib.ObjChar();
+            if (ch != ',')
+                peLib.ObjError(oe_syntax);
+            Qualifiers flags;
+            flags.ObjIn(peLib);
+            ch = peLib.ObjChar();
+            if (ch != ',')
+                peLib.ObjError(oe_syntax);
+            Type *type = Type::ObjIn(peLib);
+            for (auto field : peLib.GetContainer()->Fields())
+            {
+                if (field->Name() == name)
+                {
+                    f = field;
+                    break;
+                }
+            }
+            if (!f)
+                rv = f = peLib.AllocateField(name, type, flags);
+            rv->External(external);
+            if (peLib.ObjEnd() != 'f')
+                peLib.ObjError(oe_syntax);
+            Byte *p=nullptr;
+            int len = 0, maxlen = 0;
+            switch(peLib.ObjChar())
+            {
+                case '$':
+                    break;
+                case '=':
+                {
+                    longlong value = peLib.ObjInt();
+                    ch = peLib.ObjChar();
+                    if (ch != ',')
+                        peLib.ObjError(oe_syntax);
+                    ValueSize size = (ValueSize)peLib.ObjInt();
+                    if (rv)
+                        rv->AddEnumValue(value, size);
+                    break;
+                }
+                case '(':
+                {
+                    int n1, n2;
+                    Byte *p = nullptr;
+                    int maxLen = 0, len = 0;
+                    
+                    int val;
+                    while ((val = peLib.ObjHex2()) != -1)
+                    {
+                        if (len >= maxLen)
+                        {
+                            Byte *p1 = peLib.AllocateBytes(maxlen = maxLen ? maxLen * 2 : 10);
+                            memcpy(p1, p, len);
+                            p = p1;
+                        }
+                        p[len++] = val;
+                    }
+                    if (peLib.ObjChar() != ')')
+                        peLib.ObjError(oe_syntax);
+                    if (rv)
+                        rv->AddInitializer(p, len);
+                }
+                    break;
+                default:
+                    peLib.ObjError(oe_syntax);
+                    break;
+            }
+        }
+        else
+        {
+            void *result;
+            if (peLib.Find(name,&result) == PELib::s_field)
+            {
+                rv = f = static_cast<Field *>(result);
+            }
+            else
+            {
+                peLib.ObjError(oe_nofield);
+            }
+            if (peLib.ObjEnd() != 'f')
+                peLib.ObjError(oe_syntax);
+        }
+        return f;
+    }
     bool Field::PEDump(PELib &peLib)
     {
         size_t sz;

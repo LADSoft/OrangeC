@@ -47,6 +47,33 @@ namespace DotNetPELib
         type_->ILSrcDump(peLib);
         return true;
     }
+    void Value::ObjOut(PELib &peLib, int pass) const
+    {
+        type_->ObjOut(peLib, pass);
+    }
+    Value *Value::ObjIn(PELib &peLib, bool definition)
+    {
+    	switch (peLib.ObjBegin())
+        {
+            case 't':
+            {
+                Type *type = Type::ObjIn(peLib);
+                Value *rv = peLib.AllocateValue("", type);
+                return rv;
+            }
+            case 'l':
+                return Local::ObjIn(peLib, false);
+            case 'p':
+                return Param::ObjIn(peLib, false);
+            case 'f':
+                return FieldName::ObjIn(peLib, false);
+            case 's':
+                return MethodName::ObjIn(peLib, false);
+            default:
+                peLib.ObjError(oe_syntax);
+                break;
+        }
+    }
     size_t Value::Render(PELib &peLib, int opcode, int operandType, Byte *result)
     {
         return type_->Render(peLib, result);
@@ -55,6 +82,41 @@ namespace DotNetPELib
     {
         peLib.Out() << "'" << name_ << "/" << index_ << "'";
         return true;
+    }
+    void Local::ObjOut(PELib &peLib, int pass) const
+    {
+        peLib.Out() <<  std::endl << "$lb" << peLib.FormatName(name_) << index_;
+        if (pass != -1)
+        {
+            GetType()->ObjOut(peLib, pass);
+        }
+        peLib.Out() <<  std::endl << "$le";
+    }
+    Local *Local::ObjIn(PELib &peLib, bool definition)
+    {
+        std::string name = peLib.UnformatName();
+        int index = peLib.ObjInt();
+        Type *tp = nullptr;
+        if (peLib.ObjBegin() == 't')
+        {
+            tp = Type::ObjIn(peLib);
+            if (peLib.ObjEnd() != 't')
+            {
+                peLib.ObjError(oe_syntax);
+            }
+            if (peLib.ObjEnd() != 'l')
+            {
+                peLib.ObjError(oe_syntax);
+            }
+
+        }
+        else if (peLib.ObjEnd(false) != 'l')
+        {
+            peLib.ObjError(oe_syntax);
+        }
+        Local *rv = peLib.AllocateLocal(name, tp);
+        rv->Index(index);
+        return rv;
     }
     size_t Local::Render(PELib &peLib, int opcode, int operandType, Byte *result)
     {
@@ -75,6 +137,30 @@ namespace DotNetPELib
     {
         peLib.Out() << "'" << name_ << "'";
         return true;
+    }
+    void Param::ObjOut(PELib &peLib, int pass) const
+    {
+        peLib.Out() <<  std::endl << "$pb" << peLib.FormatName(name_);
+        if (pass != -1)
+        {
+            GetType()->ObjOut(peLib, pass);
+        }
+        peLib.Out() <<  std::endl << "$pe";
+    }
+    Param *Param::ObjIn(PELib &peLib, bool definition)
+    {
+        std::string name = peLib.UnformatName();
+        Type *tp = nullptr;
+        if (definition)
+        {
+            tp = Type::ObjIn(peLib);
+        }
+        if (peLib.ObjEnd() != 'p')
+        {
+            peLib.ObjError(oe_syntax);
+        }
+        Param *rv = peLib.AllocateParam(name, tp);
+        return rv;
     }
     size_t Param::Render(PELib &peLib, int opcode, int operandType, Byte *result)
     {
@@ -103,6 +189,16 @@ namespace DotNetPELib
         peLib.Out() << Qualifiers::GetName(field_->Name(), field_->GetContainer());
         return true;
     }
+    void FieldName::ObjOut(PELib &peLib, int pass) const
+    {
+        field_->ObjOut(peLib, -1);
+    }
+    FieldName *FieldName::ObjIn(PELib &peLib, bool definition)
+    {
+        Field *fld = Field::ObjIn(peLib, false);
+        FieldName *rv = peLib.AllocateFieldName(fld);
+        return rv;
+    }
     size_t FieldName::Render(PELib &peLib, int opcode, int operandType, Byte *result)
     {
         if (field_->GetContainer() && field_->GetContainer()->InAssemblyRef())
@@ -123,6 +219,16 @@ namespace DotNetPELib
     {
         signature_->ILSrcDump(peLib, false, false, false);
         return true;
+    }
+    void MethodName::ObjOut(PELib &peLib, int pass) const
+    {
+        signature_->ObjOut(peLib, -1);
+    }
+    MethodName *MethodName::ObjIn(PELib &peLib, bool defintion)
+    {
+        MethodSignature *sig = MethodSignature::ObjIn(peLib, nullptr, false);
+        MethodName *rv = peLib.AllocateMethodName(sig);
+        return rv;
     }
     size_t MethodName::Render(PELib &peLib, int opcode, int operandType, Byte *result)
     {

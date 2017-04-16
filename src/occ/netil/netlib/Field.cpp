@@ -160,7 +160,7 @@ namespace DotNetPELib
                 break;
             case Enum:
                 peLib.Out() << std::endl << "=";
-                peLib.Out() << (int)size_ << (longlong)enumValue_ << ")";
+                peLib.Out() << (longlong)enumValue_ << "," << (int)size_ << ")";
     
                 break;
             case Bytes:
@@ -201,6 +201,8 @@ namespace DotNetPELib
             }
             if (!f)
                 rv = f = peLib.AllocateField(name, type, flags);
+            else if (!f->FieldType()->Matches(type))
+                peLib.ObjError(oe_typemismatch);
             if (rv)
                 rv->External(external);
             if (peLib.ObjEnd() != 'f')
@@ -218,6 +220,8 @@ namespace DotNetPELib
                     if (ch != ',')
                         peLib.ObjError(oe_syntax);
                     ValueSize size = (ValueSize)peLib.ObjInt();
+                    if (peLib.ObjChar() != ')')
+                        peLib.ObjError(oe_syntax);
                     if (rv)
                         rv->AddEnumValue(value, size);
                     break;

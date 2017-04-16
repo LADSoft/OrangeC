@@ -51,6 +51,22 @@ namespace DotNetPELib
         "Int16", "UInt16", "Int32", "UInt32",
         "Int64", "UInt64", "Int", "UInt", "Single", "Double", "", "String"
     };
+    bool Type::Matches(Type *right) const
+    {
+        if (tp_ != right->tp_)
+            return false;
+        if (arrayLevel_ != right->arrayLevel_)
+            return false;
+        if (pointerLevel_ != right->pointerLevel_)
+            return false;
+        if (byRef_ != right->byRef_)
+            return false;
+        if (tp_ == cls && typeRef_ != right->typeRef_)
+            return false;
+        if (tp_ == method && methodRef_ != right->methodRef_)
+            return false;
+        return true;
+    }
     bool Type::ILSrcDump(PELib &peLib) const
     {
         if (tp_ == cls)

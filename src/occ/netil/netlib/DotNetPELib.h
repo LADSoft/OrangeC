@@ -218,6 +218,7 @@ namespace DotNetPELib
         oe_noenum,
         oe_nofield,
         oe_nomethod,
+        oe_typemismatch,
     };
     // Qualifiers is a generic class that holds all the 'tags' you would see on various objects in
     // the assembly file.   Where possible things are handled implicitly for example 'nested'
@@ -793,7 +794,7 @@ namespace DotNetPELib
         }
         ///** Add an enumeration, give it a name and a value
         // This creates the Field definition for the enumerated value
-        void AddValue(Allocator &allocator, std::string Name, longlong Value);
+        Field *AddValue(Allocator &allocator, std::string Name, longlong Value);
 
         // internal functions
         virtual bool ILSrcDump(PELib &) const override;
@@ -1249,6 +1250,9 @@ namespace DotNetPELib
         void ByRef(bool val) { byRef_ = val; }
         ///** ByRef flag
         bool ByRef() { return byRef_; }
+
+	///** Two types are an exact match
+        bool Matches(Type *right) const;
 
         // internal functions
         virtual bool ILSrcDump(PELib &) const;

@@ -41,12 +41,13 @@
 #include "PEFile.h"
 namespace DotNetPELib
 {
-    void Enum::AddValue(Allocator &allocator, std::string Name, longlong Value)
+    Field *Enum::AddValue(Allocator &allocator, std::string Name, longlong Value)
     {
         Type *type = allocator.AllocateType(this);
         Field *field = allocator.AllocateField(Name, type, Qualifiers(Qualifiers::EnumField));
         field->AddEnumValue(Value, size);
         Add(field);
+        return field;
     }
     bool Enum::ILSrcDump(PELib &peLib) const
     {
@@ -61,16 +62,16 @@ namespace DotNetPELib
     }
     void Enum::ObjOut(PELib &peLib, int pass) const
     {
-        if (pass == 1)
+        if (pass == -1)
+        {
+            peLib.Out() << std::endl << "$Eb" << peLib.FormatName(Qualifiers::GetObjName(name_, parent_));
+            peLib.Out() << std::endl << "$Ee";
+        }
+        else
         {
             peLib.Out() << std::endl << "$Eb" << peLib.FormatName(name_) << size_ << "," << flags_.Flags();
             DataContainer::ObjOut(peLib, pass);
             peLib.Out() << std::endl << "$Ee";
-        }
-        else if (pass == -1)
-        {
-            peLib.Out() << "std::endl << $Eb" << peLib.FormatName(Qualifiers::GetObjName(name_, parent_)) << "$Eb";
-            peLib.Out() << std::endl << "$Ee" << std::endl << "$Ee";
         }
     }
     Enum* Enum::ObjIn(PELib &peLib, bool definition)

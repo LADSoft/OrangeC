@@ -293,6 +293,9 @@ namespace DotNetPELib
                 for (auto v : vargs)
                     rv->AddVarargParam(v);
             }
+            else if (!rv->ReturnType()->Matches(returnType))
+                peLib.ObjError(oe_typemismatch);
+
         }
         else
         {

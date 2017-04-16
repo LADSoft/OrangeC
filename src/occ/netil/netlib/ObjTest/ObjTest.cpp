@@ -20,6 +20,12 @@ void writeq1()
     Field *fld = libEntry.AllocateField("fld", libEntry.AllocateType(Type::i32, 0), Qualifiers::Static);
     cls->Add(fld);
 
+    Enum *enm = libEntry.AllocateEnum("enm", Qualifiers::EnumClass | Qualifiers::Public, Field::i32);
+    cls->Add(enm);
+
+    enm->AddValue(libEntry, "one", 323);
+    Field *two = enm->AddValue(libEntry, "two", 5015);
+
     Class *i8Cls = libEntry.AllocateClass("int8[]", Qualifiers::Public | Qualifiers::Explicit | Qualifiers::Ansi | Qualifiers::Sealed | Qualifiers::Value, 1, 1);
     Field *pS = libEntry.AllocateField("pS", libEntry.AllocateType(i8Cls), Qualifiers::Public | Qualifiers::Static);
     Field *Str = libEntry.AllocateField("Str", libEntry.AllocateType(i8Cls), Qualifiers::Public | Qualifiers::Static);
@@ -139,8 +145,6 @@ void writeq1()
         libEntry.AllocateOperand('A', Operand::i32)));
     start->AddInstruction(libEntry.AllocateInstruction(Instruction::i_call,
         libEntry.AllocateOperand(libEntry.AllocateMethodName(signaturex))));
-    start->AddInstruction(libEntry.AllocateInstruction(Instruction::i_ret, nullptr));
-
 
     start->AddInstruction(libEntry.AllocateInstruction(Instruction::i_ret, nullptr));
 
@@ -241,8 +245,6 @@ void writeq2()
         libEntry.AllocateOperand(libEntry.AllocateMethodName(signaturex))));
     main->AddInstruction(libEntry.AllocateInstruction(Instruction::i_ret, nullptr));
 
-    main->AddInstruction(libEntry.AllocateInstruction(Instruction::i_ret, nullptr));
-
     try
     {
         main->Optimize(libEntry);
@@ -303,11 +305,17 @@ void writeq3()
 void read()
 {
     PELib libEntry("qqq", PELib::ilonly | PELib::bits32);
-    libEntry.LoadObject("q1.ilo");
-    libEntry.LoadObject("q2.ilo");
-    libEntry.LoadObject("q3.ilo");
-    libEntry.DumpOutputFile("qqq.il", PELib::ilasm, false);
-    libEntry.DumpOutputFile("qqq.exe", PELib::peexe, false);
+    if (!libEntry.LoadObject("q1.ilo"))
+        printf("error 1");
+    else if (!libEntry.LoadObject("q2.ilo"))
+        printf("error 2");
+    else if (!libEntry.LoadObject("q3.ilo"))
+        printf("error 3");
+    else
+    {
+        libEntry.DumpOutputFile("qqq.il", PELib::ilasm, false);
+        libEntry.DumpOutputFile("qqq.exe", PELib::peexe, false);
+    }
 }
 
 void main()

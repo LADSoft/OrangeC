@@ -626,11 +626,11 @@ namespace DotNetPELib
         ///** not locally defined
         void External(bool external) { external_ = external; }
         ///** add a property to this container
-        void Add(Property *property)
+        void Add(Property *property, bool add = true)
         {
             if (property)
             {
-                property->SetContainer(this);
+                property->SetContainer(this, add);
                 properties_.push_back(property);
             }
         }
@@ -695,7 +695,7 @@ namespace DotNetPELib
         virtual void Compile(PELib&) override;
         virtual void Optimize(PELib &) override;
         virtual void ObjOut(PELib &, int pass) const override;
-        static Method *ObjIn(PELib &, bool definition = true);
+        static Method *ObjIn(PELib &, bool definition = true, Method **found = nullptr);
     protected:
         void OptimizeLocals(PELib &);
         void CalculateMaxStack();
@@ -1456,7 +1456,7 @@ namespace DotNetPELib
         PEWriter &PEOut() const { return *peWriter_; }
         std::map<size_t, size_t> moduleRefs;
         void PushContainer(DataContainer *container) { containerStack_.push_back(container); }
-        DataContainer *GetContainer() { return containerStack_.back(); }
+        DataContainer *GetContainer() { if (containerStack_.size()) return containerStack_.back(); else return nullptr; }
         void PopContainer() { containerStack_.pop_back(); }
         void SetCodeContainer(CodeContainer *container) { codeContainer_ = container; }
         CodeContainer *GetCodeContainer() const { return codeContainer_; }

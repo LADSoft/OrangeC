@@ -200,8 +200,8 @@ namespace DotNetPELib
     {
         if (pass == -1)
         {
-            peLib.Out() << std::endl << "$cb" << peLib.FormatName(Qualifiers::GetObjName(name_, parent_)) << "$cb";
-            peLib.Out() << std::endl << "$ce" << "$ce";
+            peLib.Out() << std::endl << "$cb" << peLib.FormatName(Qualifiers::GetObjName(name_, parent_));
+            peLib.Out() << std::endl << "$ce";
         }
         else
         {
@@ -253,7 +253,7 @@ namespace DotNetPELib
             ((DataContainer *)c)->ObjIn(peLib);
             peLib.PushContainer(c);
             while (peLib.ObjBegin() == 'P')
-                c->Add(Property::ObjIn(peLib));
+                c->Add(Property::ObjIn(peLib), false);
             peLib.PopContainer();
             if (peLib.ObjEnd(false) != 'c')
                 peLib.ObjError(oe_syntax);

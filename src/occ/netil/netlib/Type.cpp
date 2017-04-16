@@ -135,11 +135,11 @@ namespace DotNetPELib
                 DataContainer *typeref = nullptr;
                 if (peLib.ObjBegin() == 'c')
                 {
-                    typeref = Class::ObjIn(peLib);
+                    typeref = Class::ObjIn(peLib, false);
                 }
                 else if (peLib.ObjBegin(false) == 'E')
                 {
-                    typeref = Enum::ObjIn(peLib);
+                    typeref = Enum::ObjIn(peLib, false);
                 }
                 else
                 {

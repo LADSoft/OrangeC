@@ -164,10 +164,10 @@ namespace DotNetPELib
     
                 break;
             case Bytes:
-                peLib.Out() << std::endl << "(";
+                peLib.Out() << std::endl << "(" << std::hex;
                 for (int i = 0; i < byteLength_; i++)
                 {
-                    peLib.Out() << std::setw(2) << std::setfill('0') << (int)byteValue_[i] << " ";
+                    peLib.Out() << std::setw(2) << std::setfill('0') << (int)byteValue_[i];
                 }
                 peLib.Out() << ")" << std::dec;
             }
@@ -201,7 +201,8 @@ namespace DotNetPELib
             }
             if (!f)
                 rv = f = peLib.AllocateField(name, type, flags);
-            rv->External(external);
+            if (rv)
+                rv->External(external);
             if (peLib.ObjEnd() != 'f')
                 peLib.ObjError(oe_syntax);
             Byte *p=nullptr;
@@ -263,7 +264,7 @@ namespace DotNetPELib
             if (peLib.ObjEnd() != 'f')
                 peLib.ObjError(oe_syntax);
         }
-        return f;
+        return rv;
     }
     bool Field::PEDump(PELib &peLib)
     {

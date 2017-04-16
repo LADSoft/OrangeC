@@ -153,8 +153,10 @@ namespace DotNetPELib
         CodeContainer::ObjOut(peLib, pass);
         peLib.Out() << std::endl << "$me";
     }
-    Method *Method::ObjIn(PELib &peLib, bool definition)
+    Method *Method::ObjIn(PELib &peLib, bool definition, Method **rfound)
     {
+        if (rfound)
+            *rfound = nullptr;
         Method *rv = nullptr;
         Qualifiers flags;
         flags.ObjIn(peLib);
@@ -187,7 +189,7 @@ namespace DotNetPELib
         if (peLib.ObjBegin() != 's')
             peLib.ObjError(oe_syntax);
         Method *found = nullptr;
-        MethodSignature *prototype = MethodSignature::ObjIn(peLib, &found);
+        MethodSignature *prototype = MethodSignature::ObjIn(peLib, &found, definition);
         if (!found)
         {
             rv = found = peLib.AllocateMethod(prototype, flags, entryPoint);
@@ -213,6 +215,8 @@ namespace DotNetPELib
         }
         else if (peLib.ObjEnd(false) != 'm')
             peLib.ObjError(oe_syntax);
+        if (rfound)
+            *rfound = found;
         return rv;
     }
     bool Method::PEDump(PELib &peLib)

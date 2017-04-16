@@ -200,6 +200,7 @@ namespace DotNetPELib {
     Byte *Allocator::AllocateBytes(size_t sz)
     {
         void *rv = BaseAlloc(sz);
+        *((DWord *)rv - 1) |= 1;
         return static_cast<Byte *>(rv);
     }
     void *Allocator::BaseAlloc(size_t size)
@@ -235,8 +236,15 @@ namespace DotNetPELib {
         while (next < (char *)&b->bytes_[b->offset_])
         {
             size_t add = *(size_t *)next;
-            DestructorBase *d = reinterpret_cast<DestructorBase *>(next + sizeof(size_t));
-            d->~DestructorBase();
+            if (add & 1)
+            {
+                add--;
+            }
+            else
+            {
+                DestructorBase *d = reinterpret_cast<DestructorBase *>(next + sizeof(size_t));
+                d->~DestructorBase();
+            }
             next += add;
         }
         free(b);

@@ -14,6 +14,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "testcsc", "test\testcsc.csp
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DumpMSCorLib", "test\DumpMSCorLib.vcxproj", "{3DA57BC3-FB98-4A17-A160-689C75ADF2C3}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ObjTest", "ObjTest\ObjTest.vcxproj", "{10423A13-9AAA-4CCD-8F9F-880AE5BAACA4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -66,6 +68,16 @@ Global
 		{3DA57BC3-FB98-4A17-A160-689C75ADF2C3}.Release|x64.Build.0 = Release|x64
 		{3DA57BC3-FB98-4A17-A160-689C75ADF2C3}.Release|x86.ActiveCfg = Release|Win32
 		{3DA57BC3-FB98-4A17-A160-689C75ADF2C3}.Release|x86.Build.0 = Release|Win32
+		{10423A13-9AAA-4CCD-8F9F-880AE5BAACA4}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{10423A13-9AAA-4CCD-8F9F-880AE5BAACA4}.Debug|x64.ActiveCfg = Debug|x64
+		{10423A13-9AAA-4CCD-8F9F-880AE5BAACA4}.Debug|x64.Build.0 = Debug|x64
+		{10423A13-9AAA-4CCD-8F9F-880AE5BAACA4}.Debug|x86.ActiveCfg = Debug|Win32
+		{10423A13-9AAA-4CCD-8F9F-880AE5BAACA4}.Debug|x86.Build.0 = Debug|Win32
+		{10423A13-9AAA-4CCD-8F9F-880AE5BAACA4}.Release|Any CPU.ActiveCfg = Release|Win32
+		{10423A13-9AAA-4CCD-8F9F-880AE5BAACA4}.Release|x64.ActiveCfg = Release|x64
+		{10423A13-9AAA-4CCD-8F9F-880AE5BAACA4}.Release|x64.Build.0 = Release|x64
+		{10423A13-9AAA-4CCD-8F9F-880AE5BAACA4}.Release|x86.ActiveCfg = Release|Win32
+		{10423A13-9AAA-4CCD-8F9F-880AE5BAACA4}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

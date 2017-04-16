@@ -3,6 +3,7 @@ Version 2.2:
              there are hundreds of arguments
     bug fix: the object[] variable used for setup for calling VARARG functions was declared as void * in the locals,
 		.NET was ok with it but MONO was too restrictive to accept it.
+    bug fix: allocator could call a destructor for unconstructed memory on close
 
 Version 2.1:
     speed up GAC searches

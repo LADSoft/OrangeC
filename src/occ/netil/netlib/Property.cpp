@@ -139,11 +139,11 @@ void Property::ObjOut(PELib &peLib, int pass) const
     peLib.Out() <<  std::endl << "$Pb" << peLib.FormatName(name_) << instance_ << ",";
     peLib.Out() << flags_ << ",";
     type_->ObjOut(peLib, pass);
-    getter_->ObjOut(peLib, pass);
+    getter_->ObjOut(peLib, -1);
     if (setter_)
     {
         peLib.Out() <<  std::endl << "$Sb";
-        setter_->ObjOut(peLib, pass);
+        setter_->ObjOut(peLib, -1);
         peLib.Out() <<  std::endl << "$Se";
     }
     peLib.Out() <<  std::endl << "$Pe";
@@ -156,13 +156,22 @@ Property *Property::ObjIn(PELib &peLib)
     ch = peLib.ObjChar();
     if (ch != ',')
         peLib.ObjError(oe_syntax);
+    int flags = peLib.ObjInt();
+    ch = peLib.ObjChar();
+    if (ch != ',')
+        peLib.ObjError(oe_syntax);
     Property *rv = peLib.AllocateProperty();
     Type *type = Type::ObjIn(peLib);
-    Method *getter = Method::ObjIn(peLib);
+    if (peLib.ObjBegin() != 'm')
+        peLib.ObjError(oe_syntax);
+    Method *getter = nullptr;
+    Method::ObjIn(peLib, false, &getter);
     Method *setter = nullptr;
     if (peLib.ObjBegin() == 'S')
     {
-        setter = Method::ObjIn(peLib);
+        if (peLib.ObjBegin() != 'm')
+            peLib.ObjError(oe_syntax);
+        Method::ObjIn(peLib, false, &setter);
         if (peLib.ObjEnd() != 'S')
             peLib.ObjError(oe_syntax);
         if (peLib.ObjEnd() != 'P')
@@ -173,6 +182,7 @@ Property *Property::ObjIn(PELib &peLib)
         peLib.ObjError(oe_syntax);
     }
     rv->Name(name);
+    rv->flags_ = flags;
     rv->SetType(type);
     rv->Instance(instance);
     rv->Getter(getter);

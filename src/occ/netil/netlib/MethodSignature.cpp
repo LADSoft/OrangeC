@@ -174,8 +174,8 @@ namespace DotNetPELib
             peLib.Out() << std::endl << "$sb" << peLib.FormatName(name_);
             peLib.Out() << external_ << ",";
             peLib.Out() << flags_ << ",";
-            returnType_->ObjOut(peLib, pass);
         }
+        returnType_->ObjOut(peLib, pass);
         for (auto p : params)
         {
             p->ObjOut(peLib, 1);
@@ -198,7 +198,7 @@ namespace DotNetPELib
         std::string name = peLib.UnformatName();
         int external;
         char ch;
-        int flags;
+        int flags=0;
         Type *returnType;
         if (definition)
         {
@@ -210,8 +210,8 @@ namespace DotNetPELib
             ch = peLib.ObjChar();
             if (ch != ',')
                 peLib.ObjError(oe_syntax);
-            returnType = Type::ObjIn(peLib);
         }
+        returnType = Type::ObjIn(peLib);
         std::vector<Param *> args, vargs;
         while (peLib.ObjBegin() == 'p')
         {
@@ -220,12 +220,19 @@ namespace DotNetPELib
         }
         if (peLib.ObjBegin(false) == 'v')
         {
-            while (peLib.ObjBegin() == 'p');
+            while (peLib.ObjBegin() == 'p')
             {
                 Param *p = Param::ObjIn(peLib);
                 vargs.push_back(p);
             }
             if (peLib.ObjEnd(false) != 'v')
+                peLib.ObjError(oe_syntax);
+            if (peLib.ObjEnd() != 's')
+                peLib.ObjError(oe_syntax);
+        }
+        else
+        {
+            if (peLib.ObjEnd(false) != 's')
                 peLib.ObjError(oe_syntax);
         }
         MethodSignature *rv =nullptr;
@@ -245,7 +252,7 @@ namespace DotNetPELib
             }
             else
             {
-                rv = peLib.AllocateMethodSignature(name, flags, nullptr);
+                rv = peLib.AllocateMethodSignature(name, MethodSignature::Vararg, nullptr);
                 rv->SignatureParent(pinvoke->Signature()); // tie it to the parent pinvoke
                 rv->ReturnType(returnType);
                 for (auto p : args)
@@ -253,6 +260,16 @@ namespace DotNetPELib
                 for (auto v : vargs)
                     rv->AddVarargParam(v);
             }
+        }
+        else if (!peLib.GetContainer()) // defining a pinvoke
+        {
+            rv = peLib.AllocateMethodSignature(name, flags, nullptr);
+            rv->ReturnType(returnType);
+            for (auto p : args)
+                rv->AddParam(p);
+            for (auto v : vargs)
+                rv->AddVarargParam(v);
+
         }
         else if (definition)
         {
@@ -291,8 +308,6 @@ namespace DotNetPELib
                 peLib.ObjError(oe_nomethod);
             }
         }
-        if (peLib.ObjEnd(false) != 's')
-            peLib.ObjError(oe_syntax);
         return rv;
     }
     void MethodSignature::ILSignatureDump(PELib &peLib)

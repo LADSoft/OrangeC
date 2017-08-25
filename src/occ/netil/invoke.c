@@ -115,7 +115,7 @@ int InsertExternalFile(char *name)
         InsertFile(&reslist, name, 0);
         return 1;
     }
-    else if (HasExt(name, ".il"))
+    else if (HasExt(name, ".ilo"))
     {
         InsertFile(&objlist, name, 0);
         return 1;
@@ -126,7 +126,7 @@ int InsertExternalFile(char *name)
     else
         p++;
     strcpy(buf, p);
-    InsertFile(&objlist, buf, ".il");
+    InsertFile(&objlist, buf, ".ilo");
     
     return 0; /* compiler should process it*/
 }
@@ -139,17 +139,35 @@ void InsertOutputFileName(char *name)
 }
 
 /*-------------------------------------------------------------------------*/
-void GetOutputFileName(char *name, char *path)
+static LIST *objPosition;
+void GetOutputFileName(char *name, char *path, BOOLEAN obj)
 {
-    path[0] = 0;
-    strcpy(name, outputFileName);
-    if (objlist && name[0] && name[strlen(name)-1] == '\\')
+    if (obj)
     {
-        strcat(name, objlist->data);
-        StripExt(name);
-        strcat(name, ".exe");
-        strcpy(path, outputFileName);
+        if (!objPosition)
+            objPosition = objlist;
+        if (!objPosition)
+            fatal("Cannot get object file name");
+        strcpy(name, objPosition->data);
+        strcpy(path, objPosition->data);
     }
+    else
+    {
+        path[0] = 0;
+        strcpy(name, outputFileName);
+        if (objlist && name[0] && name[strlen(name) - 1] == '\\')
+        {
+            strcat(name, objlist->data);
+            StripExt(name);
+            strcat(name, ".exe");
+            strcpy(path, outputFileName);
+        }
+    }
+}
+void NextOutputFileName()
+{
+    if (objPosition)
+        objPosition = objPosition->next;
 }
 int RunExternalFiles(char *rootPath)
 {
@@ -167,7 +185,7 @@ int RunExternalFiles(char *rootPath)
     else
         p++;
     *p = 0;
-    GetOutputFileName(outName, temp);
+    GetOutputFileName(outName, temp, FALSE);
     StripExt(outName);
     AddExt(outName, ".il");
 //    if (beGetIncludePath)

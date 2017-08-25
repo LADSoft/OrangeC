@@ -140,7 +140,6 @@ void dump_muldivval(void);
 void dump_browsedata(BROWSEINFO *bri);
 void dump_browsefile(BROWSEFILE *brf);
 void oa_enter_type(SYMBOL *sp);
-void oa_header(char *filename, char *compiler_version);
 void oa_trailer(void);
 void oa_adjust_codelab(void *select, int offset);
 void oa_globaldef(SYMBOL *sp);
@@ -151,6 +150,7 @@ void oa_put_extern(SYMBOL *sp, int code);
 void oa_put_impfunc(SYMBOL *sp, char *file);
 void oa_put_expfunc(SYMBOL *sp);
 void oa_output_includelib(char *name);
+void oa_header(char *filename, char *compiler_version);
 void oa_end_generation(void);
 BOOLEAN _using_(char *);
 void _using_init();
@@ -159,7 +159,8 @@ void _apply_global_using(void);
 BOOLEAN msil_managed(SYMBOL *sp);
 BOOLEAN oa_main_preprocess(void);
 void oa_main_postprocess(BOOLEAN errors);
-void GetOutputFileName(char *name, char *temp);
+void GetOutputFileName(char *name, char *temp, BOOLEAN obj);
+void NextOutputFileName();
 void *msil_alloc(size_t size);
 char *msil_strdup(char *s);
 TYPE * clonetp(TYPE *tp, BOOLEAN shallow);
@@ -167,7 +168,6 @@ SYMBOL * clonesp(SYMBOL *sp, BOOLEAN shallow);
 void oa_load_funcs(void);
 TYPE * LookupGlobalArrayType(char *name);
 INITLIST *cloneInitListTypes(INITLIST *in);
-void GetOutputFileName(char *name, char *path);
 
 #ifdef __cplusplus
 }

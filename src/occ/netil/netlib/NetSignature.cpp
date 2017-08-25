@@ -545,10 +545,13 @@ namespace DotNetPELib
         // variable length args... this is the difference from the methoddef
         if ((method->Flags() & MethodSignature::Vararg) && !(method->Flags() & MethodSignature::Managed))
         {
-            workArea[size++] = ELEMENT_TYPE_SENTINEL;
-            for (MethodSignature::viterator it = method->vbegin(); it != method->vend(); ++it)
+            if (method->VarargParamCount())
             {
-                size += EmbedType(workArea, size, (*it)->GetType());
+                workArea[size++] = ELEMENT_TYPE_SENTINEL;
+                for (MethodSignature::viterator it = method->vbegin(); it != method->vend(); ++it)
+                {
+                    size += EmbedType(workArea, size, (*it)->GetType());
+                }
             }
         }
         return ConvertToBlob(workArea, size, sz);

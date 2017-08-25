@@ -46,11 +46,6 @@
 namespace DotNetPELib
 {
 
-    class ObjectError : public std::runtime_error
-    {
-    public:
-        ObjectError(char *a) : runtime_error(a) { }
-    };
     extern std::string DIR_SEP;
     PELib::PELib(std::string AssemblyName, int CoreFlags)
         : corFlags_(CoreFlags), peWriter_(nullptr), inputStream_(nullptr), outputStream_(nullptr)
@@ -60,6 +55,13 @@ namespace DotNetPELib
         AssemblyDef *assemblyRef = AllocateAssemblyDef(AssemblyName, false);
         assemblyRefs_.push_back(assemblyRef);
 
+    }
+    AssemblyDef *PELib::EmptyWorkingAssembly(std::string AssemblyName)
+    {
+        AssemblyDef *assemblyRef = AllocateAssemblyDef(AssemblyName, false);
+        assemblyRefs_.pop_front();
+        assemblyRefs_.push_front(assemblyRef);
+        return assemblyRef;
     }
     bool PELib::DumpOutputFile(std::string file, OutputMode mode, bool gui)
     {
@@ -101,6 +103,28 @@ namespace DotNetPELib
         auto it = pInvokeSignatures_.find(name);
         if (it != pInvokeSignatures_.end())
             return it->second;
+        return nullptr;
+    }
+    MethodSignature *PELib::FindPInvokeWithVarargs(std::string name, std::vector<Param *>& vargs) const
+    {
+        auto range = pInvokeReferences_.equal_range(name);
+        for (auto it = range.first; it != range.second; ++it)
+        {
+            if (vargs.size() == (*it).second->VarargParamCount())
+            {
+                auto it1 = (*it).second->vbegin();
+                auto it2 = vargs.begin();
+                while (it2 != vargs.end())
+                {
+                    if (!(*it2)->GetType()->Matches((*it1)->GetType()))
+                        break;
+                    ++it1;
+                    ++it2;
+                }
+                if (it2 == vargs.end())
+                    return (*it).second;
+            }
+        }
         return nullptr;
     }
     bool PELib::AddUsing(std::string path)
@@ -177,11 +201,11 @@ namespace DotNetPELib
                     DataContainer *dc = a->FindContainer(split, n);
                     if (dc)
                     {
-                        if (n == split.size())
+                          if (n == split.size())
                         {
                             found.push_back(dc);
                         }
-                        else if (n == split.size() - 1 && (typeid(*dc) == typeid(Class) || typeid(*dc) == typeid(Enum)))
+                        else if (n == split.size() - 1 && (typeid(*dc) == typeid(Class) || typeid(*dc) == typeid(Enum) || typeid(*dc) == typeid(AssemblyDef)))
                         {
                             for (auto field : dc->Fields())
                             {
@@ -274,7 +298,7 @@ namespace DotNetPELib
         return s_notFound;
 
     }
-    PELib::eFindType PELib::Find(std::string path, Method **result, std::vector<Type *> args, AssemblyDef *assembly)
+    PELib::eFindType PELib::Find(std::string path, Method **result, std::vector<Type *> args, AssemblyDef *assembly, bool matchArgs)
     {
         if (path.size() && path[0] == '[')
         {
@@ -300,7 +324,7 @@ namespace DotNetPELib
                     DataContainer *dc = a->FindContainer(split, n);
                     if (dc)
                     {
-                        if (n == split.size() - 1 && typeid(*dc) == typeid(Class) || typeid(*dc) == typeid(Enum))
+                        if (n == split.size() - 1 && (typeid(*dc) == typeid(Class) || typeid(*dc) == typeid(Enum) || typeid(*dc) == typeid(AssemblyDef)))
                         {
                             for (auto cc : dc->Methods())
                             {
@@ -330,12 +354,15 @@ namespace DotNetPELib
                 }
             }
         }
-        for (auto it = foundMethod.begin(); it != foundMethod.end() ;)
+        if (matchArgs)
         {
-            if (!(*it)->Signature()->Matches(args))
-                it = foundMethod.erase(it);
-            else
-                ++it;
+            for (auto it = foundMethod.begin(); it != foundMethod.end();)
+            {
+                if (!(*it)->Signature()->Matches(args))
+                    it = foundMethod.erase(it);
+                else
+                    ++it;
+            }
         }
         if (foundMethod.size() > 1)
         {
@@ -349,6 +376,12 @@ namespace DotNetPELib
         }
         if (foundMethod.size() == 0)
         {
+            Method * method = FindPInvoke(path);
+            if (method)
+            {
+                *result = method;
+                return s_method;
+            }
             return s_notFound;
         }
         else if (foundMethod.size() > 1)
@@ -382,7 +415,7 @@ namespace DotNetPELib
     }
     bool PELib::ObjOut()
     {
-        *outputStream_ << "$qb" << OBJECT_FILE_VERSION;
+        *outputStream_ << "$qb" << OBJECT_FILE_VERSION << "," << corFlags_;
         for (auto a : assemblyRefs_)
         {
             // classes and namespaces
@@ -432,6 +465,14 @@ namespace DotNetPELib
             if (ObjBegin() == 'q')
             {
                 int ver = ObjInt();
+                int ch = ObjChar();
+                if (ch != ',')
+                    ObjError(oe_syntax);
+                int corFlags = ObjInt();
+                if (corFlags & PELib::ilonly)
+                    corFlags_ |= PELib::ilonly;
+                if ((corFlags ^ corFlags_) & PELib::bits32)
+                    ObjError(oe_corFlagsMismatch);
                 while (ObjBegin() == 'a')
                 {
                     AssemblyDef::ObjIn(*this);
@@ -441,7 +482,9 @@ namespace DotNetPELib
                     {
                         Method *m = Method::ObjIn(*this);
                         if (m)
+                        {
                             pInvokeSignatures_[m->Signature()->Name()] = m;
+                        }
                     } while (ObjBegin() == 'm');
                     if (ObjBegin(false) == 'a')
                         do
@@ -522,7 +565,7 @@ namespace DotNetPELib
         if (ch == '$')
         {
             if (objInputBuf_[objInputPos_ + 1] == 'b')
-            {            if (objInputBuf_[objInputPos_ + 1] == 'b')
+            {
 
                 objInputPos_ += 2;
                 return objInputBuf_[objInputPos_ - 2];
@@ -556,9 +599,11 @@ namespace DotNetPELib
             return objInputBuf_[objInputPos_++];
         return -1;
     }
-    void PELib::ObjError(int)
+    void PELib::ObjError(int errnum)
     {
-        ObjectError a("");
+        static char buf[256];
+        char *intStr = itoa(errnum,buf, 10);
+        ObjectError a(intStr);
         throw a;
     }
     std::string PELib::UnformatName()
@@ -655,18 +700,30 @@ namespace DotNetPELib
             ResolutionScope rs(ResolutionScope::AssemblyRef, assemblyIndex);
             if (types & DataContainer::basetypeObject)
             {
+                void *result = nullptr;
                 table = new TypeRefTableEntry(rs, objectIndex, systemIndex);
                 objectIndex = peWriter_->AddTableEntry(table);
+                Find("[mscorlib]System::Object", &result);
+                if (result)
+                    static_cast<Class*>(result)->PEIndex(objectIndex);
             }
             if (types & DataContainer::basetypeValue)
             {
+                void *result = nullptr;
                 table = new TypeRefTableEntry(rs, valueIndex, systemIndex);
                 valueIndex = peWriter_->AddTableEntry(table);
+                Find("[mscorlib]System::ValueType", &result);
+                if (result)
+                    static_cast<Class*>(result)->PEIndex(valueIndex);
             }
             if (types & DataContainer::basetypeEnum)
             {
+                void *result = nullptr;
                 table = new TypeRefTableEntry(rs, enumIndex, systemIndex);
                 enumIndex = peWriter_->AddTableEntry(table);
+                Find("[mscorlib]System::Enum", &result);
+                if (result)
+                    static_cast<Class*>(result)->PEIndex(enumIndex);
             }
             peWriter_->SetBaseClasses(objectIndex, valueIndex, enumIndex, systemIndex);
         }
@@ -689,7 +746,7 @@ namespace DotNetPELib
         WorkingAssembly()->Compile(*this);
         peWriter_->WriteFile(*this, *outputStream_);
         delete peWriter_;
-        return false;
+        return rv;
     }
     AssemblyDef *PELib::MSCorLibAssembly()
     {

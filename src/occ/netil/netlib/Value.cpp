@@ -55,8 +55,10 @@ namespace DotNetPELib
     {
     	switch (peLib.ObjBegin())
         {
+            case 'B':
             case 't':
             {
+                peLib.ObjBack();
                 Type *type = Type::ObjIn(peLib);
                 Value *rv = peLib.AllocateValue("", type);
                 return rv;
@@ -97,20 +99,17 @@ namespace DotNetPELib
         std::string name = peLib.UnformatName();
         int index = peLib.ObjInt();
         Type *tp = nullptr;
-        if (peLib.ObjBegin() == 't')
+        bool retry = false;
+        try
         {
+            // type is optional here
             tp = Type::ObjIn(peLib);
-            if (peLib.ObjEnd() != 't')
-            {
-                peLib.ObjError(oe_syntax);
-            }
-            if (peLib.ObjEnd() != 'l')
-            {
-                peLib.ObjError(oe_syntax);
-            }
-
         }
-        else if (peLib.ObjEnd(false) != 'l')
+        catch (ObjectError &)
+        {
+            retry = true;
+        }
+        if (peLib.ObjEnd(!retry) != 'l')
         {
             peLib.ObjError(oe_syntax);
         }
@@ -140,7 +139,7 @@ namespace DotNetPELib
     }
     void Param::ObjOut(PELib &peLib, int pass) const
     {
-        peLib.Out() <<  std::endl << "$pb" << peLib.FormatName(name_);
+        peLib.Out() <<  std::endl << "$pb" << peLib.FormatName(name_) << index_;
         if (pass != -1)
         {
             GetType()->ObjOut(peLib, pass);
@@ -150,6 +149,7 @@ namespace DotNetPELib
     Param *Param::ObjIn(PELib &peLib, bool definition)
     {
         std::string name = peLib.UnformatName();
+        int index = peLib.ObjInt();
         Type *tp = nullptr;
         if (definition)
         {
@@ -160,6 +160,7 @@ namespace DotNetPELib
             peLib.ObjError(oe_syntax);
         }
         Param *rv = peLib.AllocateParam(name, tp);
+        rv->Index(index);
         return rv;
     }
     size_t Param::Render(PELib &peLib, int opcode, int operandType, Byte *result)

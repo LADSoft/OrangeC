@@ -82,6 +82,13 @@
         <b></b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int
           LoadUnmanaged(std::string dllName);<br>
           <br>
+        </b>Load a per-module object file into the working assembly.
+        Will also create entries in other assemblies and pinvokes as
+        needed.  <br>
+        <br>
+        <b></b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int
+          LoadObject(std::string Name);<br>
+          <br>
         </b>Look up a name in the unmanaged dictionary; return its DLL
         or an empty string if it doesn't exist<br>
         <br>
@@ -106,11 +113,20 @@
         </b><b></b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int
           GetCorFlags() const { return corFlags_; }</b><b><br>
         </b><b><br>
+	<br>
         </b>Write the working assembly to an output file, making it a
         console or GUI file.&nbsp;&nbsp; Possibilities are a .IL file,
-        an EXE file, or a DLL.<br>
-        <b><br>
-          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bool
+        an EXE file, a DLL, or a per-module object file.   Note: if
+        writing an object file you need to optimize methods when you 
+        read it back in, rather than before you write it out.<br>
+        <b>
+	<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;enum OutputMode { 
+		<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ilasm, 
+		<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;peexe, 
+		<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pedll, 
+		<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;object 
+	<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;};<br>
+          <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;bool
           DumpOutputFile(std::string fileName, OutputMode mode, bool
           Gui);</b><b><br>
         </b><b><br>
@@ -177,10 +193,10 @@
         entered and exited, and to signify fields, methods, and
         properties.&nbsp;&nbsp; Generally, returning false from one of
         these functions stops the current phase of traversal and
-        returning true keeps the traversal going.&nbsp; To use this, you
-        would keep track of which container is currently being
-        traversed, then when you get a field, method, or property you
-        would add it to the current container.<br>
+        returning true keeps the traversal going.&nbsp;This could be
+        used to check validity of definitions (e.g. for extern/public
+        matching), or to go through the the entire list of definitions 
+        to optimize methods.<br>
         <br>
         <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void
           Traverse(Callback &amp;callback) const;</b><b><br>

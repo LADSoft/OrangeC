@@ -536,7 +536,7 @@ ARCH_ASM assemblerInterface[] = {
     0,                                      /* backend data (compiler ignores) */
      "1",								/* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
    ".il",                                  /* extension for assembly files */
-    ".il",                               /* extension for object files, NULL = has no object mode */
+    ".ilo",                               /* extension for object files, NULL = has no object mode */
     "occil",                               /* name of an environment variable to parse, or 0 */
     "occil",                             /* name of the program, for usage */
     "occil",                              /* name of a config file if you want to use one, or NULL (sans extension) */

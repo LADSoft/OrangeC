@@ -70,10 +70,20 @@ namespace DotNetPELib
     void CodeContainer::ObjIn(PELib &peLib)
     {
         if (instructions_.size())
-            peLib.ObjError(oe_syntax);
-        while (peLib.ObjBegin() == 'i')
         {
-            AddInstruction(Instruction::ObjIn(peLib));
+            // duplicate public..   ignore the second instance
+            //peLib.ObjError(oe_syntax);
+            while (peLib.ObjBegin() == 'i')
+            {
+                Instruction::ObjIn(peLib);
+            }
+        }
+        else
+        {
+            while (peLib.ObjBegin() == 'i')
+            {
+                AddInstruction(Instruction::ObjIn(peLib));
+            }
         }
         if (peLib.ObjEnd(false) != 'I')
             peLib.ObjError(oe_syntax);
@@ -83,7 +93,7 @@ namespace DotNetPELib
         Byte *rv = nullptr;
         CalculateOffsets();
         LoadLabels();
-        Instruction *last = instructions_.back();
+        Instruction *last = instructions_.size() ? instructions_.back() : nullptr;
         if (last)
         {
             sz = last->Offset() + last->InstructionSize();

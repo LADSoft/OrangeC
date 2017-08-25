@@ -252,13 +252,22 @@ namespace DotNetPELib
             }
             else
             {
-                rv = peLib.AllocateMethodSignature(name, MethodSignature::Vararg, nullptr);
-                rv->SignatureParent(pinvoke->Signature()); // tie it to the parent pinvoke
-                rv->ReturnType(returnType);
-                for (auto p : args)
-                    rv->AddParam(p);
-                for (auto v : vargs)
-                    rv->AddVarargParam(v);
+                MethodSignature *sig = peLib.FindPInvokeWithVarargs(name, vargs);
+                if (sig)
+                {
+                    return sig;
+                }
+                else
+                {
+                    rv = peLib.AllocateMethodSignature(name, MethodSignature::Vararg, nullptr);
+                    rv->SignatureParent(pinvoke->Signature()); // tie it to the parent pinvoke
+                    rv->ReturnType(returnType);
+                    for (auto p : args)
+                        rv->AddParam(p);
+                    for (auto v : vargs)
+                        rv->AddVarargParam(v);
+                    peLib.AddPInvokeWithVarargs(rv);
+                }
             }
         }
         else if (!peLib.GetContainer()) // defining a pinvoke
@@ -288,14 +297,43 @@ namespace DotNetPELib
             {
                 rv = peLib.AllocateMethodSignature(name, flags,peLib.GetContainer());
                 rv->ReturnType(returnType);
+                rv->External(external);
                 for (auto p : args)
                     rv->AddParam(p);
                 for (auto v : vargs)
                     rv->AddVarargParam(v);
             }
-            else if (!rv->ReturnType()->Matches(returnType))
-                peLib.ObjError(oe_typemismatch);
-
+            else
+            {
+                if (!external)
+                {
+                    if (rv->External())
+                    {
+                        auto its = args.begin();
+                        auto itd = rv->params.begin();
+                        while (its != args.end() && itd != rv->params.end())
+                        {
+                            (*itd)->Name((*its)->Name());
+                            ++its;
+                            ++itd;
+                        }
+                    }
+                    rv->External(false);
+                }
+                if (!rv->ReturnType()->Matches(returnType))
+                    peLib.ObjError(oe_typemismatch);
+            }
+            if (!external)
+                rv->Definition();
+        }
+        else if (!name.size())
+        {
+            rv = peLib.AllocateMethodSignature(name, flags, peLib.GetContainer());
+            rv->ReturnType(returnType);
+            for (auto p : args)
+                rv->AddParam(p);
+            for (auto v : vargs)
+                rv->AddVarargParam(v);
         }
         else
         {

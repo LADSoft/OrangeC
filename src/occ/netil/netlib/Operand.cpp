@@ -133,7 +133,7 @@ namespace DotNetPELib
                     sz1 = 8;
                     *(double *)buf = floatValue_;
                 }
-                peLib.Out() << sz_ << "," << std::hex;
+                peLib.Out() << "," << sz_ << "," << std::hex;
 
                 for (i = 0; i < sz1; i++)
                 {

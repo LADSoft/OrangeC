@@ -145,7 +145,7 @@ namespace DotNetPELib
         prototype_->ObjOut(peLib, pass);
         for (auto v : varList_)
         {
-            peLib.Out() << std::endl << "$vb" << peLib.FormatName(v->Name());
+            peLib.Out() << std::endl << "$vb";// << peLib.FormatName(v->Name());
             v->GetType()->ObjOut(peLib, pass);
             v->ObjOut(peLib, pass);
             peLib.Out() << std::endl << "$ve";
@@ -199,12 +199,18 @@ namespace DotNetPELib
                 found->SetPInvoke(invokeName, itype);
             }
         }
+        int n = found->size();
         while (peLib.ObjBegin() == 'v')
         {
             Type *type = Type::ObjIn(peLib);
+            if (peLib.ObjBegin() != 'l')
+                peLib.ObjError(oe_syntax);
             Local *v =Local::ObjIn(peLib);
             v->SetType(type);
-            found->AddLocal(v);
+            if (!n)
+                found->AddLocal(v);
+            if (peLib.ObjEnd() != 'v')
+                peLib.ObjError(oe_syntax);
         }
         peLib.SetCodeContainer(rv);
         if (peLib.ObjBegin(false) == 'I')

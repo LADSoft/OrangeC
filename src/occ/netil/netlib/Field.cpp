@@ -148,7 +148,7 @@ namespace DotNetPELib
         else
         {
             peLib.Out() << std::endl << "$fb" << peLib.FormatName(name_);
-            peLib.Out() << external_ << ",";
+            peLib.Out() << external_ << "," << size_ << ",";
             flags_.ObjOut(peLib, pass);
             peLib.Out() << ",";
             type_->ObjOut(peLib, pass);
@@ -185,6 +185,10 @@ namespace DotNetPELib
             ch = peLib.ObjChar();
             if (ch != ',')
                 peLib.ObjError(oe_syntax);
+            int size = peLib.ObjInt();
+            ch = peLib.ObjChar();
+            if (ch != ',')
+                peLib.ObjError(oe_syntax);
             Qualifiers flags;
             flags.ObjIn(peLib);
             ch = peLib.ObjChar();
@@ -204,7 +208,16 @@ namespace DotNetPELib
             else if (!f->FieldType()->Matches(type))
                 peLib.ObjError(oe_typemismatch);
             if (rv)
+            {
                 rv->External(external);
+                rv->size_ = (Field::ValueSize)size;
+            }
+            else if (!external)
+            {
+                f->External(false);
+            }
+            if (!external)
+                f->Definition();
             if (peLib.ObjEnd() != 'f')
                 peLib.ObjError(oe_syntax);
             Byte *p=nullptr;
@@ -237,7 +250,8 @@ namespace DotNetPELib
                     {
                         if (len >= maxLen)
                         {
-                            Byte *p1 = peLib.AllocateBytes(maxlen = maxLen ? maxLen * 2 : 10);
+                            maxLen = (maxLen ? maxLen * 2 : 100);
+                            Byte *p1 = peLib.AllocateBytes(maxLen);
                             memcpy(p1, p, len);
                             p = p1;
                         }

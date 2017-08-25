@@ -1,9 +1,13 @@
 Version 2.2:
+    add routines to read and write object files
+    add a linker to link object files
+    bug fix: add the valuetype flag to the qualifiers on enumerations
     bug fix: ldarg instruction was considered to have five bytes, not 4.   This could mess up branch generation if
              there are hundreds of arguments
     bug fix: the object[] variable used for setup for calling VARARG functions was declared as void * in the locals,
 		.NET was ok with it but MONO was too restrictive to accept it.
     bug fix: allocator could call a destructor for unconstructed memory on close
+    bug fix: fix the 'dump' utility to work with the latest code base
 
 Version 2.1:
     speed up GAC searches

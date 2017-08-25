@@ -51,7 +51,7 @@ namespace DotNetPELib
         "Int16", "UInt16", "Int32", "UInt32",
         "Int64", "UInt64", "Int", "UInt", "Single", "Double", "", "String"
     };
-    bool Type::Matches(Type *right) const
+    bool Type::Matches(Type *right)
     {
         if (tp_ != right->tp_)
             return false;
@@ -62,7 +62,32 @@ namespace DotNetPELib
         if (byRef_ != right->byRef_)
             return false;
         if (tp_ == cls && typeRef_ != right->typeRef_)
-            return false;
+        {
+            int n1, n2;
+            n1 = typeRef_->Name().find("[]");
+            n2 = right->typeRef_->Name().find("[]");
+            if (n1 != std::string::npos || n2 != std::string::npos)
+            {
+                bool transfer = false;
+                if (n1 == std::string::npos)
+                {
+                    n1 = typeRef_->Name().find('[');
+                }
+                else
+                {
+                    transfer = true;
+                    n2 = right->typeRef_->Name().find('[');
+                }
+                if (n1 != n2)
+                    return false;
+                if (typeRef_->Name().substr(0, n1) != right->typeRef_->Name().substr(0, n2))
+                    return false;
+                if (transfer)
+                    typeRef_ = right->typeRef_;
+            }
+            else
+                return false;
+        }
         if (tp_ == method && methodRef_ != right->methodRef_)
             return false;
         return true;
@@ -127,6 +152,7 @@ namespace DotNetPELib
             Type *rv = BoxedType::ObjIn(peLib);
             if (peLib.ObjEnd() != 'B')
                 peLib.ObjError(oe_syntax);
+            return rv;
         }
         else if (peLib.ObjBegin(false) == 't')
         {
@@ -193,6 +219,8 @@ namespace DotNetPELib
             if (typeRef_->InAssemblyRef())
             {
                 typeRef_->PEDump(peLib);
+                if (typeRef_->PEIndex() > 9)
+                    printf("hi");
                 *(int *)result = typeRef_->PEIndex() | (tTypeRef << 24);
             }
             else
@@ -252,6 +280,8 @@ namespace DotNetPELib
                 peIndex_ =  static_cast<Class *>(result)->PEIndex();
             }
         }
+        if (peIndex_ > 9)
+            printf("hi");
         *(int *)result = peIndex_ | (tTypeRef << 24);
         return 4;
     }

@@ -239,13 +239,7 @@ namespace DotNetPELib
     }
     size_t PEWriter::RVABytes(Byte *Bytes, size_t dataLen)
     {
-        // align
-        int align = dataLen;
-        if (align > 8)
-            align = 8;
         int pos = rva_.size;
-        if (pos % align)
-            pos += (align - pos % align);
         rva_.Ensure(dataLen + pos - rva_.size);
         size_t rv = rva_.size;
         rva_.size += pos - rva_.size + dataLen;

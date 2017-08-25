@@ -62,6 +62,7 @@ extern "C" {
     extern LIST *temporarySymbols;
     extern char prm_snkKeyFile[260];
     extern int assemblyVersion[4];
+    extern LIST *objlist;
 
     MethodSignature *argsCtor;
     MethodSignature *argsNextArg;
@@ -83,13 +84,12 @@ extern "C" {
         "int *_errno(); "
         "void *__OCCMSIL_GetProcThunkToManaged(void *proc, void *pdata); "
         "void *__OCCMSIL_GetProcThunkToUnmanaged(void *proc); "
-        "void *__msil_rtl malloc(unsigned); "
-        "void __msil_rtl free(void *); "
         "void *__va_start__(); "
         "void *__va_arg__(void *, ...); ";
     std::string _dll_name(char *name);
 
 }
+int uniqueId;
 static SYMBOL retblocksym;
 
 static Method *mainSym;
@@ -100,6 +100,7 @@ static LIST *deinitializersHead, *deinitializersTail;
 static int dataPos, dataMax;
 static BYTE *dataPointer;
 static Field *initializingField;
+static char objFileName[260];
 
 Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg = false, BOOLEAN pinvoke = false);
 static SYMBOL *clone(SYMBOL *sp, bool ctype = true);
@@ -149,6 +150,7 @@ static std::map<SYMBOL *, Value *, byLabel> staticMethods;
 static std::map<SYMBOL *, Value *, byLabel> staticList;
 static std::map<SYMBOL *, MethodSignature *, byName> pinvokeInstances;
 static std::map<SYMBOL *, Param *, byName> paramList;
+std::multimap<std::string, MethodSignature *> pInvokeReferences;
 extern "C"
 {
     std::vector<Local *> localList;
@@ -257,7 +259,7 @@ Field *GetField(SYMBOL *sp)
     else
     {
         char buf[256];
-        sprintf(buf, "L_%d", sp->label);
+        sprintf(buf, "L_%d_%x", sp->label, uniqueId);
         Field *field = peLib->AllocateField(buf, GetType(sp->tp, TRUE), flags);
         return field;
     }
@@ -303,7 +305,7 @@ MethodSignature *GetMethodSignature(TYPE *tp, bool pinvoke)
     else
     {
         char buf[256];
-        sprintf(buf, "L_%d", sp->label);
+        sprintf(buf, "L_%d_%x", sp->label, uniqueId);
         rv = peLib->AllocateMethodSignature(buf, flags, pinvoke ? NULL : mainContainer);
     }
     if (isstructured(basetype(tp)->btp))
@@ -339,6 +341,28 @@ MethodSignature *GetMethodSignature(TYPE *tp, bool pinvoke)
     }
     return rv;
 }
+MethodSignature *FindPInvokeWithVarargs(std::string name, std::list<Param *>::iterator vbegin, std::list<Param *>::iterator vend, size_t size)
+{
+    auto range = pInvokeReferences.equal_range(name);
+    for (auto it = range.first; it != range.second; ++it)
+    {
+        if (size == (*it).second->VarargParamCount())
+        {
+            auto it1 = (*it).second->vbegin();
+            auto it2 = vbegin;
+            while (it2 != vend)
+            {
+                if (!(*it2)->GetType()->Matches((*it1)->GetType()))
+                    break;
+                ++it1;
+                ++it2;
+            }
+            if (it2 == vend)
+                return (*it).second;
+        }
+    }
+    return nullptr;
+}
 MethodSignature *GetMethodSignature(SYMBOL *sp)
 {
     BOOLEAN pinvoke = false;
@@ -363,8 +387,7 @@ MethodSignature *GetMethodSignature(SYMBOL *sp)
             if (!(it1->second->Flags() & MethodSignature::Vararg))
                 return it1->second;
             // vararg create a new instance
-            // the arguments will likely change.   There is a further chance for merging
-            // here but we aren't currently doing it.
+            // duplicate matching will be done in the caller
             MethodSignature *sig = GetMethodSignature(sp->tp, true);
             sig->SignatureParent(it1->second->SignatureParent());
             return sig;
@@ -452,9 +475,10 @@ std::string GetArrayName(TYPE *tp)
 }
 Value *GetStructField(SYMBOL *sp)
 {
-    // guaranteed to always succeed because the front end would have thrown an error
-    // if the field didn't exist...
-    std::map<SYMBOL *, Value *, byField>::iterator it = fieldList.find(sp);
+    auto it = fieldList.find(sp);
+    if (it == fieldList.end() && sp->parentClass)
+        GetType(sp->parentClass->tp, true);
+    it = fieldList.find(sp);
     return it->second;
 }
 Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg, BOOLEAN pinvoke)
@@ -604,7 +628,7 @@ Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg, BOOLEAN pinvoke)
         if (commit)
         {
             Class *newClass = peLib->AllocateClass(name, Qualifiers::Public | Qualifiers::ClassClass,
-                -1, basetype(tp)->size);
+                -1, basetype(tp)->size == 0 ? 1 : basetype(tp)->size);
             mainContainer->Add(newClass);
             Type *type = peLib->AllocateType(newClass);
             typeList[name] = type;
@@ -1086,24 +1110,19 @@ void LoadFuncs(void)
     sp = gsearch("__GetErrno");
     if (sp)
         ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = FALSE;
-    sp = gsearch("_malloc");
-    if (sp)
-        ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = FALSE;
-    sp = gsearch("_free");
-    if (sp)
-        ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = FALSE;
 }
 extern "C" void flush_peep(SYMBOL *funcsp, QUAD *list)
 {
     LoadFuncs();
-    try
-    {
-        currentMethod->Optimize(*peLib);
-    }
-    catch (PELibError exc)
-    {
-        std::cout << "Optimizer error: (" << funcsp->name << ") " << exc.what() << std::endl;
-    }
+    if (!(cparams.prm_compileonly && !cparams.prm_asmfile))
+        try
+        {
+            currentMethod->Optimize(*peLib);
+        }
+        catch (PELibError exc)
+        {
+            std::cout << "Optimizer error: (" << funcsp->name << ") " << exc.what() << std::endl;
+        }
     currentMethod = NULL;
 }
 //void CreateField(SYMBOL *sp)
@@ -1126,6 +1145,8 @@ void CreateFunction(MethodSignature *sig, SYMBOL *sp)
 
     auto hr = basetype(sp->tp)->syms->table[0];
     auto it = sig->begin();
+    if (isstructured(basetype(sp->tp)->btp))
+        it++;
     while (hr && it != sig->end())
     {
         SYMBOL *sym = (SYMBOL *)hr->p;
@@ -1417,7 +1438,8 @@ extern "C" BOOLEAN oa_main_preprocess(void)
     if (namespaceAndClass[0])
         corFlags = (PELib::CorFlags)((int)corFlags | PELib::ilonly);
     char path[260], fileName[256];
-    GetOutputFileName(fileName, path);
+    GetOutputFileName(fileName, path, cparams.prm_compileonly && !cparams.prm_asmfile);
+    uniqueId = CRC32((unsigned char *)fileName, strlen(fileName));
     char *p = strrchr(fileName, '.');
     char *q = strrchr(fileName, '\\');
     if (!q)
@@ -1428,19 +1450,29 @@ extern "C" BOOLEAN oa_main_preprocess(void)
     {
         *p = 0;
     }
-    peLib = new PELib(q, corFlags);
-
-    if (peLib->LoadAssembly("mscorlib"))
+    bool newFile;
+    if (!peLib)
     {
-        fatal("could not load mscorlib.dll");
-    }
-    if (peLib->LoadAssembly("lsmsilcrtl"))
-    {
-        fatal("could not load lsmsilcrtl.dll");
-    }
-    _apply_global_using();
+        peLib = new PELib(q, corFlags);
 
-    peLib->AddUsing("System");
+        if (peLib->LoadAssembly("mscorlib"))
+        {
+            fatal("could not load mscorlib.dll");
+        }
+        if (peLib->LoadAssembly("lsmsilcrtl"))
+        {
+            fatal("could not load lsmsilcrtl.dll");
+        }
+        _apply_global_using();
+
+        peLib->AddUsing("System");
+        newFile = true;
+    }
+    else
+    {
+        peLib->EmptyWorkingAssembly(q);
+        newFile = false;
+    }
     if (p)
     {
         *p = '.';
@@ -1454,17 +1486,21 @@ extern "C" BOOLEAN oa_main_preprocess(void)
         Class *cls = peLib->AllocateClass(p + 1, Qualifiers::MainClass | Qualifiers::Public, -1, -1);
         nm->Add(cls);
         mainContainer = cls;
+        *p = '.';
     }
     else
     {
         mainContainer = peLib->WorkingAssembly();
     }
     /**/
-    peLib->WorkingAssembly()->SetVersion(assemblyVersion[0], assemblyVersion[1], assemblyVersion[2], assemblyVersion[3]);
-    peLib->WorkingAssembly()->SNKFile(prm_snkKeyFile);
+    if (newFile)
+    {
+        peLib->WorkingAssembly()->SetVersion(assemblyVersion[0], assemblyVersion[1], assemblyVersion[2], assemblyVersion[3]);
+        peLib->WorkingAssembly()->SNKFile(prm_snkKeyFile);
 
-    CreateExternalCSharpReferences();
-    retblocksym.name = "__retblock";
+        CreateExternalCSharpReferences();
+        retblocksym.name = "__retblock";
+    }
     return FALSE;
 }
 static BOOLEAN checkExterns(void)
@@ -1529,63 +1565,116 @@ static BOOLEAN validateGlobalRef(SYMBOL *sp1, SYMBOL *sp2)
 }
 extern "C" void oa_main_postprocess(BOOLEAN errors)
 {
-    AddRTLThunks();
-    if (!errors && prm_targettype != DLL && !mainSym)
+    if (cparams.prm_compileonly && !cparams.prm_asmfile)
     {
-        printf("Error: main not defined\n");
+        // empty
     }
-    errors |= checkExterns() || errCount || prm_targettype != DLL && !mainSym;
-    if (!errors)
+    else
     {
         char path[260];
         char ilName[260];
-        GetOutputFileName(ilName, path);
+        GetOutputFileName(ilName, path, FALSE);
         StripExt(ilName);
-        if (cparams.prm_asmfile)
-            AddExt(ilName, ".il");
-        else if (prm_targettype == DLL)
-            AddExt(ilName, ".dll");
-        else
-            AddExt(ilName, ".exe");
-        peLib->DumpOutputFile(ilName, cparams.prm_asmfile ? PELib::ilasm : (prm_targettype == DLL ? PELib::pedll : PELib::peexe), prm_targettype != CONSOLE);
+        AddRTLThunks();
+        if (!errors && prm_targettype != DLL && !mainSym)
+        {
+            printf("Error: main not defined\n");
+        }
+        errors |= checkExterns() || errCount || prm_targettype != DLL && !mainSym;
+        if (!errors)
+        {
+            if (cparams.prm_asmfile)
+                AddExt(ilName, ".il");
+            else if (prm_targettype == DLL)
+                AddExt(ilName, ".dll");
+            else
+                AddExt(ilName, ".exe");
+            peLib->DumpOutputFile(ilName, cparams.prm_asmfile ? PELib::ilasm : (prm_targettype == DLL ? PELib::pedll : PELib::peexe), prm_targettype != CONSOLE);
+        }
     }
 }
 extern "C" void oa_end_generation(void)
 {
-    SYMBOL *start = NULL, *end = NULL;
-    LIST *externalList;
-    externalList = externals;
-    while (externalList)
+    if (cparams.prm_compileonly && !cparams.prm_asmfile)
     {
-        SYMBOL *sym = (SYMBOL *)externalList->data;
-        if (!strncmp(sym->name, "__DYNAMIC", 9))
+        cseg();
+        for (auto it = externalList.begin(); it != externalList.end(); ++it)
         {
-            if (strstr(sym->name, "STARTUP"))
-                start = sym;
-            else
-                end = sym;
+            Field *f = static_cast<FieldName *>(it->second)->GetField();
+            f->External(true);
+            mainContainer->Add(f);
         }
-        externalList = externalList->next;
+        for (auto it = externalMethods.begin(); it != externalMethods.end(); ++it)
+        {
+            int flags = Qualifiers::ManagedFunc | Qualifiers::Public;
+            MethodSignature *s = static_cast<MethodName *>(it->second)->Signature();
+            if (!s->GetContainer()->InAssemblyRef())
+            {
+                Method *m = peLib->AllocateMethod(s, flags);
+                s->External(true);
+                mainContainer->Add(m);
+            }
+        }
+        char path[260];
+        char ilName[260];
+        GetOutputFileName(ilName, path, TRUE);
+        NextOutputFileName();
+        peLib->DumpOutputFile(ilName, PELib::object, false);
+// needs work        delete peLib;
+        if (objlist->next)
+            oa_main_preprocess();
+
+        initializersHead = initializersTail = NULL;
+        deinitializersHead = deinitializersTail = NULL;
+        externalMethods.clear();
+        externalList.clear();
+        globalMethods.clear();
+        globalList.clear();
+        staticMethods.clear();
+        staticList.clear();
+        pinvokeInstances.clear();
+        typeList.clear();
+        fieldList.clear();
+        arrayMethods.clear();
+        pInvokeReferences.clear();
     }
-    if (start)
+    else
     {
-        LIST *lst = (LIST *)peLib->AllocateBytes(sizeof(LIST));
-        lst->data = peLib->AllocateBytes(strlen(start->name) + 1);
-        strcpy((char *)lst->data, start->name);
-        if (initializersHead)
-            initializersTail = initializersTail->next = lst;
-        else
-            initializersHead = initializersTail = lst;
-    }
-    if (end)
-    {
-        LIST *lst = (LIST *)peLib->AllocateBytes(sizeof(LIST));
-        lst->data = peLib->AllocateBytes(strlen(end->name) + 1);
-        strcpy((char *)lst->data, end->name);
-        if (deinitializersHead)
-            deinitializersTail = deinitializersTail->next = lst;
-        else
-            deinitializersHead = initializersTail = lst;
+        SYMBOL *start = NULL, *end = NULL;
+        LIST *externalList;
+        externalList = externals;
+        while (externalList)
+        {
+            SYMBOL *sym = (SYMBOL *)externalList->data;
+            if (!strncmp(sym->name, "__DYNAMIC", 9))
+            {
+                if (strstr(sym->name, "STARTUP"))
+                    start = sym;
+                else
+                    end = sym;
+            }
+            externalList = externalList->next;
+        }
+        if (start)
+        {
+            LIST *lst = (LIST *)peLib->AllocateBytes(sizeof(LIST));
+            lst->data = peLib->AllocateBytes(strlen(start->name) + 1);
+            strcpy((char *)lst->data, start->name);
+            if (initializersHead)
+                initializersTail = initializersTail->next = lst;
+            else
+                initializersHead = initializersTail = lst;
+        }
+        if (end)
+        {
+            LIST *lst = (LIST *)peLib->AllocateBytes(sizeof(LIST));
+            lst->data = peLib->AllocateBytes(strlen(end->name) + 1);
+            strcpy((char *)lst->data, end->name);
+            if (deinitializersHead)
+                deinitializersTail = deinitializersTail->next = lst;
+            else
+                deinitializersHead = initializersTail = lst;
+        }
     }
 }
 extern "C" void oa_put_extern(SYMBOL *sp, int code)
@@ -1665,7 +1754,7 @@ Value *GetStringFieldData(int lab, int type)
         return it->second;
 
     char buf[256];
-    sprintf(buf, "L_%d", lab);
+    sprintf(buf, "L_%d_%x", lab, uniqueId);
     Field *field = peLib->AllocateField(buf, GetStringType(type), Qualifiers::ClassField | Qualifiers::Private | Qualifiers::Static);
     mainContainer->Add(field);
     sp = clone(sp);

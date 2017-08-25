@@ -418,7 +418,12 @@ namespace DotNetPELib
             switch(op)
             {
                  case i_label:
-                case i_comment:
+                 {
+                     std::string lbl = peLib.UnformatName();
+                     rv = peLib.AllocateInstruction(op, peLib.AllocateOperand(lbl));
+                 }
+                     break;
+                 case i_comment:
                 {
                     std::string text = peLib.UnformatName();
                     rv = peLib.AllocateInstruction(op, text);  

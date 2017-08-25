@@ -209,6 +209,11 @@ namespace DotNetPELib
         ErrorList errnum;
         static char *errorNames[];
     };
+    class ObjectError : public std::runtime_error
+    {
+    public:
+        ObjectError(char *a) : runtime_error(a) { }
+    };
     // an internal enumeration for errors associated with invalidly formatted
     // object files.   Usually only used for debugging the object file handlers
     enum {
@@ -219,6 +224,7 @@ namespace DotNetPELib
         oe_nofield,
         oe_nomethod,
         oe_typemismatch,
+        oe_corFlagsMismatch,
     };
     // Qualifiers is a generic class that holds all the 'tags' you would see on various objects in
     // the assembly file.   Where possible things are handled implicitly for example 'nested'
@@ -412,6 +418,8 @@ namespace DotNetPELib
         Qualifiers Flags() const { return flags_; }
         ///** metatable index in the PE file for this data container
         size_t PEIndex() const { return peIndex_; }
+        ///** metatable index in the PE file for this data container
+        void PEIndex(size_t index) { peIndex_ = index; }
         ///* find a sub-container
         DataContainer *FindContainer(std::string name) { return sortedChildren_[name]; }
         ///** Find a sub- container
@@ -727,7 +735,7 @@ namespace DotNetPELib
             Bytes
         };
         Field::Field(std::string Name, Type *tp, Qualifiers Flags) : mode_(Field::None), name_(Name), flags_(Flags),
-            type_(tp), enumValue_(0), byteValue_(nullptr), byteLength_(0), ref_(0), peIndex_(0), explicitOffset_(0), external_(false)
+            type_(tp), enumValue_(0), byteValue_(nullptr), byteLength_(0), ref_(0), peIndex_(0), explicitOffset_(0), external_(false), definitions_(0)
         {
         }
         ///** Add an enumeration constant
@@ -753,6 +761,10 @@ namespace DotNetPELib
         bool External() const { return external_; }
         ///** not locally defined
         void External(bool external) { external_ = external; }
+        ///** increment definition count
+        void Definition() { definitions_++; }
+        ///** get definition count
+        size_t Definitions() const { return definitions_;  }
         //* field offset for explicit structures
         void ExplicitOffset(size_t offset) { explicitOffset_ = offset;}
         //* field offset for explicit structures
@@ -783,13 +795,14 @@ namespace DotNetPELib
         size_t explicitOffset_;
         bool ref_;
         bool external_;
+        size_t definitions_;
     };
     ///** A special kind of class: enum
     class Enum : public Class
     {
     public:
         Enum(std::string Name, Qualifiers Flags, Field::ValueSize Size) :
-            size(Size), Class(Name, Flags, -1, -1)
+            size(Size), Class(Name, Flags.Flags() | Qualifiers::Value, -1, -1)
         {
         }
         ///** Add an enumeration, give it a name and a value
@@ -1107,7 +1120,7 @@ namespace DotNetPELib
     public:
         enum { Vararg = 1, Managed = 2, InstanceFlag = 4 };
         MethodSignature(std::string Name, int Flags, DataContainer *Container) : container_(Container), name_(Name), flags_(Flags), returnType_(nullptr), ref_(false), 
-                peIndex_(0), peIndexCallSite_(0), peIndexType_(0), methodParent_(nullptr), arrayObject_(nullptr), external_(false)
+                peIndex_(0), peIndexCallSite_(0), peIndexType_(0), methodParent_(nullptr), arrayObject_(nullptr), external_(false), definitions_(0)
         {
         }
         ///** Get return type
@@ -1178,6 +1191,10 @@ namespace DotNetPELib
         bool External() const { return external_; }
         ///** not locally defined
         void External(bool external) { external_ = external; }
+        ///** increment definition count
+        void Definition() { definitions_++; }
+        ///** get definition count
+        size_t Definitions() const { return definitions_/2; }
 
         bool Matches(std::vector<Type *> args);
         // various indexes into metadata tables
@@ -1207,6 +1224,7 @@ namespace DotNetPELib
         bool ref_;
         size_t peIndex_, peIndexCallSite_, peIndexType_;
         bool external_;
+        size_t definitions_;
     };
     ///** the type of a field or value
     class Type : public DestructorBase
@@ -1252,7 +1270,7 @@ namespace DotNetPELib
         bool ByRef() { return byRef_; }
 
 	///** Two types are an exact match
-        bool Matches(Type *right) const;
+        bool Matches(Type *right);
 
         // internal functions
         virtual bool ILSrcDump(PELib &) const;
@@ -1353,7 +1371,7 @@ namespace DotNetPELib
         Byte *AllocateBytes(size_t sz);
         enum
         {
-            AllocationSize = 0x10000,
+            AllocationSize = 0x100000,
         };
     private:
         // heap block
@@ -1400,6 +1418,9 @@ namespace DotNetPELib
         ///** Get the working assembly
         // This is the one with your code and data, that gets written to the output
         AssemblyDef *WorkingAssembly() const { return assemblyRefs_.front(); }
+        ///** replace the working assembly with an empty one.   Data is not deleted and
+        /// still remains a part of the PELib instance.
+        AssemblyDef *EmptyWorkingAssembly(std::string AssemblyName);
         ///** Add a reference to another assembly
         // this is an empty assembly you can put stuff in if you want to
         void AddExternalAssembly(std::string assemblyName, Byte *publicKeyToken = nullptr);
@@ -1407,6 +1428,8 @@ namespace DotNetPELib
         int LoadAssembly(std::string assemblyName, int major = 0, int minor = 0, int build = 0, int revision = 0);
         ///* Load data out of an unmanaged DLL
         int LoadUnmanaged(std::string dllName);
+        ///** Load an object file
+        bool LoadObject(std::string name);
         ///** find an unmanaged dll name
         std::string PELib::FindUnmanagedName(std::string name);
         ///** Find an assembly
@@ -1416,7 +1439,9 @@ namespace DotNetPELib
                            size_t keyIndex, std::string nameSpace, std::string name);
         ///** Pinvoke references are always added to this object
         void AddPInvokeReference(MethodSignature *methodsig, std::string dllname, bool iscdecl);
+        void AddPInvokeWithVarargs(MethodSignature *methodsig) { pInvokeReferences_.insert(std::pair<std::string, MethodSignature *>(methodsig->Name(), methodsig)); }
         Method *FindPInvoke(std::string name) const;
+        MethodSignature *FindPInvokeWithVarargs(std::string name, std::vector<Param *>&vargs) const;
         // get the core flags
         int GetCorFlags() const { return corFlags_; }
 
@@ -1433,14 +1458,11 @@ namespace DotNetPELib
         eFindType Find(std::string path, void **result, AssemblyDef *assembly = nullptr);
 
         ///** find a method, with overload matching
-        eFindType Find(std::string path, Method **result, std::vector<Type *> args, AssemblyDef *assembly = nullptr);
+        eFindType Find(std::string path, Method **result, std::vector<Type *> args, AssemblyDef *assembly = nullptr, bool matchArgs = true);
 
         ///** Traverse the declaration tree
         void Traverse(Callback &callback) const;
                 
-        ///** Load an object file
-        bool LoadObject(std::string name);
-
         ///** internal declarations
         // loads the MSCorLib assembly
         AssemblyDef *MSCorLibAssembly();
@@ -1455,6 +1477,7 @@ namespace DotNetPELib
         char ObjBegin(bool next = true);
         char ObjEnd(bool next = true);
         char ObjChar();
+        void ObjBack() { objInputPos_ -= 3; }
         void ObjError(int);
         std::fstream &Out() const { return *outputStream_; }
         PEWriter &PEOut() const { return *peWriter_; }
@@ -1471,6 +1494,7 @@ namespace DotNetPELib
         bool DumpPEFile(std::string name, bool isexe, bool isgui);
         std::list<AssemblyDef *>assemblyRefs_;
         std::map<std::string, Method *>pInvokeSignatures_;
+        std::multimap<std::string, MethodSignature *> pInvokeReferences_;
         std::string assemblyName_;
         std::fstream *outputStream_;
         std::fstream *inputStream_;

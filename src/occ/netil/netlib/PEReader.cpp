@@ -245,7 +245,11 @@ namespace DotNetPELib
     int PEReader::ManagedLoad(std::string assemblyName, int major, int minor, int build, int revision)
 
     {
-        assemblyName = SearchForManagedFile(assemblyName, major, minor, build, revision);
+    	std::string t = SearchOnPath(assemblyName);
+    	if (t.size())
+            assemblyName = t;
+        else
+	        assemblyName = SearchForManagedFile(assemblyName, major, minor, build, revision);
         inputFile_ = new std::fstream(assemblyName.c_str(), std::ios::in | std::ios::binary);
         if (!inputFile_->fail())
         {

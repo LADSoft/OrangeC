@@ -68,12 +68,15 @@ extern "C" {
 	extern DataContainer *mainContainer;
 }
 #define MAX_ALIGNS 50
+MethodSignature *FindPInvokeWithVarargs(std::string name, std::list<Param *>::iterator begin, std::list<Param *>::iterator end, size_t size);
+extern std::multimap<std::string, MethodSignature *> pInvokeReferences;
 
 struct swlist
 {
     struct swlist *next;
     int lab;
 };
+extern int uniqueId;
 
 static int fstackid;
 static int inframe;
@@ -131,7 +134,7 @@ void oa_gen_label(int labno)
  */
 {
     char buf[256];
-    sprintf(buf, "L_%d", labno);
+    sprintf(buf, "L_%d_%x", labno, uniqueId);
     Instruction *i = peLib->AllocateInstruction(Instruction::i_label, peLib->AllocateOperand(buf));
     currentMethod->AddInstruction(i);
 }
@@ -175,7 +178,7 @@ Operand *make_constant(int sz, EXPRESSION *exp)
     else if (exp->type == en_labcon)
     {
         char lbl[256];
-        sprintf(lbl, "L_%d", exp->v.i);
+        sprintf(lbl, "L_%d_%x", exp->v.i, uniqueId);
         Value *field = GetStringFieldData(exp->v.i, exp->altdata);
         operand = peLib->AllocateOperand(field);
     }
@@ -233,6 +236,15 @@ Operand *getCallOperand(QUAD *q)
             {
                 sig->AddVarargParam(peLib->AllocateParam("", GetType(valist->tp, TRUE, true, true)));
                 valist = valist->next;
+            }
+            MethodSignature *oldsig = FindPInvokeWithVarargs(sig->Name(), sig->vbegin(), sig->vend(), sig->VarargParamCount());
+            if (oldsig)
+            {
+                sig = oldsig;
+            }
+            else
+            {
+                pInvokeReferences.insert(std::pair<std::string, MethodSignature *>(sig->Name(), sig));
             }
         }
         else
@@ -768,7 +780,7 @@ void gen_convert(Operand *dest, IMODE *im, int sz)
 void gen_branch(Instruction::iop op, int label, BOOLEAN decrement)
 {
     char lbl[256];
-    sprintf(lbl, "L_%d", label);
+    sprintf(lbl, "L_%d_%x", label, uniqueId);
     Operand *operand = peLib->AllocateOperand(lbl);
     gen_code(op, operand);
     if (decrement)
@@ -1361,7 +1373,7 @@ extern "C" void asm_genword(QUAD *q)            /* put a byte or word into the c
 void compactgen(Instruction *i, int lab)
 {
     char buf[256];
-    sprintf(buf, "L_%d", lab);
+    sprintf(buf, "L_%d_%x", lab, uniqueId);
     i->AddCaseLabel(buf);
 }
 void bingen(int lower, int avg, int higher)

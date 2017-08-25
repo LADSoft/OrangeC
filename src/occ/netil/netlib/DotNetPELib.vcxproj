@@ -127,6 +127,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <Text Include="ChangeLog.txt" />
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>

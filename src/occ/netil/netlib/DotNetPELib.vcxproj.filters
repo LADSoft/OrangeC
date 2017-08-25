@@ -15,91 +15,127 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
+    <ClInclude Include="DLLExportReader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DotNetPELib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MZHeader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PEFile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PEHeader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="bigdigits.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="bigdtypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sha1.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RSAEncoder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="targetver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\netil\netlib\DLLExportReader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\netil\netlib\DotNetPELib.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\netil\netlib\PEFile.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\netil\netlib\PEHeader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\netil\netlib\MZHeader.h">
-      <Filter>Header Files</Filter>
+      <Filter>Resource Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\netil\netlib\Allocator.cpp">
+    <ClCompile Include="Allocator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\netil\netlib\AssemblyDef.cpp">
+    <ClCompile Include="AssemblyDef.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\netil\netlib\Class.cpp">
+    <ClCompile Include="Class.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\netil\netlib\CodeContainer.cpp">
+    <ClCompile Include="CodeContainer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\netil\netlib\CreateGUID.cpp">
+    <ClCompile Include="CreateGUID.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\netil\netlib\DataContainer.cpp">
+    <ClCompile Include="DataContainer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\netil\netlib\DLLExportReader.cpp">
+    <ClCompile Include="DLLExportReader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\netil\netlib\Enum.cpp">
+    <ClCompile Include="Enum.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\netil\netlib\Field.cpp">
+    <ClCompile Include="Field.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\netil\netlib\Instruction.cpp">
+    <ClCompile Include="Instruction.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\netil\netlib\Method.cpp">
+    <ClCompile Include="Method.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\netil\netlib\MethodSignature.cpp">
+    <ClCompile Include="MethodSignature.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\netil\netlib\NameSpace.cpp">
+    <ClCompile Include="NameSpace.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\netil\netlib\NetSignature.cpp">
+    <ClCompile Include="NetSignature.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\netil\netlib\Operand.cpp">
+    <ClCompile Include="Operand.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\netil\netlib\PEFile.cpp">
+    <ClCompile Include="PELib.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\netil\netlib\PELib.cpp">
+    <ClCompile Include="PELibError.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\netil\netlib\PELibError.cpp">
+    <ClCompile Include="Qualifiers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\netil\netlib\Qualifiers.cpp">
+    <ClCompile Include="Type.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\netil\netlib\Type.cpp">
+    <ClCompile Include="Value.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\netil\netlib\Value.cpp">
+    <ClCompile Include="sha1.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="RSAEncoder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="bigdigits.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PECor20Headers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PEReader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PEWriter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Property.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CustomAttributeContainer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="ChangeLog.txt" />
   </ItemGroup>
 </Project>

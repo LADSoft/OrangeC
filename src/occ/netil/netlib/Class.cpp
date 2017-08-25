@@ -245,9 +245,13 @@ namespace DotNetPELib
             if (temp && typeid(*temp) != typeid(Class))
                 peLib.ObjError(oe_noclass);
             if (!temp)
+            {
                 rv = c = peLib.AllocateClass(name, flags, pack, size);
+            }
             else
+            {
                 c = static_cast<Class *>(temp);
+            }
             if (rv)
                 rv->External(external);
             ((DataContainer *)c)->ObjIn(peLib);

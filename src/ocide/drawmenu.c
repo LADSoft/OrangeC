@@ -1189,6 +1189,23 @@ LRESULT CALLBACK MenuDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 }
                 break;
             }
+            switch (KeyboardToAscii(wParam, lParam, FALSE))
+            {
+                 case '[':
+                    if (GetKeyState(VK_CONTROL) &0x80000000)
+                    {
+                        PopupResFullScreen(hwnd);
+                        return 0;
+                    }
+                    break;
+                case ']':
+                    if (GetKeyState(VK_CONTROL) &0x80000000)
+                    {
+                        ReleaseResFullScreen(hwnd);
+                        return 0;
+                    }
+                    break;
+            }
             break;
         case WM_NCACTIVATE:
              PaintMDITitleBar(hwnd, iMessage, wParam, lParam);

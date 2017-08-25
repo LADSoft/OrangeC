@@ -864,6 +864,23 @@ LRESULT CALLBACK VersionDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                             PostMessage(hwnd, WM_COMMAND, IDM_DELETE, 0);
                             break;
                     }
+                    switch (KeyboardToAscii(((LPNMLVKEYDOWN)lParam)->wVKey, ((LPNMLVKEYDOWN)lParam)->flags, FALSE))
+                    {
+                         case '[':
+                            if (GetKeyState(VK_CONTROL) &0x80000000)
+                            {
+                                PopupResFullScreen(hwnd);
+                                return 0;
+                            }
+                            break;
+                        case ']':
+                            if (GetKeyState(VK_CONTROL) &0x80000000)
+                            {
+                                ReleaseResFullScreen(hwnd);
+                                return 0;
+                            }
+                            break;
+                    }
                     break;
                 }
                 case NM_CUSTOMDRAW:

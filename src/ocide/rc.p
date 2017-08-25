@@ -152,6 +152,8 @@ WCHAR *pstrchr(WCHAR *str, WCHAR ch);
 WCHAR *pstrrchr(WCHAR *str, WCHAR ch);
 int pstrlen(const WCHAR *s);
 WCHAR *pstrstr(WCHAR *str1,const WCHAR *str2);
+void PopupResFullScreen(HWND hwnd);
+void ReleaseResFullScreen(HWND hwnd);
 
                               /* Rcwrite.c */
 

@@ -794,3 +794,26 @@ int PaintMDITitleBar(HWND hwnd, int iMessage, WPARAM wParam, LPARAM lParam)
     return rv;
     
 }
+static RECT ResFSRect;
+void PopupResFullScreen(HWND hwnd)
+{
+        if (!(GetWindowLong(hwnd, GWL_STYLE) & WS_POPUP))
+        {
+            GetWindowRect(hwnd, &ResFSRect);
+            MapWindowPoints(HWND_DESKTOP, hwndClient, (LPPOINT)&ResFSRect, 2);
+            RECT wrect;
+            GetEditPopupFrame(&wrect);
+            SetParent(hwnd, HWND_DESKTOP);
+            SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) | WS_POPUP);
+            SetWindowPos(hwnd, HWND_TOP, wrect.left, wrect.top, wrect.right - wrect.left, wrect.bottom - wrect.top, SWP_SHOWWINDOW);
+        }
+}
+void ReleaseResFullScreen(HWND hwnd)
+{
+        if (GetWindowLong(hwnd, GWL_STYLE) & WS_POPUP)
+        {
+            SetParent(hwnd, hwndClient);
+            SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) & ~WS_POPUP);
+            SetWindowPos(hwnd, 0, ResFSRect.left, ResFSRect.top, ResFSRect.right - ResFSRect.left, ResFSRect.bottom - ResFSRect.top, SWP_SHOWWINDOW);
+        }
+}

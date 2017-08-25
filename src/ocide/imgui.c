@@ -2116,6 +2116,23 @@ LRESULT CALLBACK  DrawAreaWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 }
                 break;
             }
+            switch (KeyboardToAscii(wParam, lParam, FALSE))
+            {
+                 case '[':
+                    if (GetKeyState(VK_CONTROL) &0x80000000)
+                    {
+                        PopupResFullScreen(GetParent(GetParent(GetParent(hwnd))));
+                        return 0;
+                    }
+                    break;
+                case ']':
+                    if (GetKeyState(VK_CONTROL) &0x80000000)
+                    {
+                        ReleaseResFullScreen(GetParent(GetParent(GetParent(hwnd))));
+                        return 0;
+                    }
+                    break;
+            }
             break;
         case WM_CHAR:
             p = (IMGDATA *)GetWindowLong(hwnd, GWL_USERDATA);

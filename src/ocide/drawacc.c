@@ -907,6 +907,24 @@ LRESULT CALLBACK AcceleratorDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                                 PostMessage(hwnd, WM_COMMAND, IDM_DELETE, 0);
                                 return TRUE;
                         }
+                        switch (KeyboardToAscii(((LPNMLVKEYDOWN)lParam)->wVKey, ((LPNMLVKEYDOWN)lParam)->flags, FALSE))
+                        {
+                             case '[':
+                                if (GetKeyState(VK_CONTROL) &0x80000000)
+                                {
+                                    PopupResFullScreen(hwnd);
+                                    return 0;
+                                }
+                                break;
+                            case ']':
+                                if (GetKeyState(VK_CONTROL) &0x80000000)
+                                {
+                                    ReleaseResFullScreen(hwnd);
+                                    return 0;
+                                }
+                                break;
+                        }
+                        break;
                     }
                         break;
                     case NM_CLICK:

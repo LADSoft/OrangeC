@@ -166,7 +166,10 @@ namespace DotNetPELib
         if (pass == -1) // as a reference, we have to do a full signature because of overloads
                         // and here we need the fully qualified name
         {
-            peLib.Out() << std::endl << "$sb" << peLib.FormatName(Qualifiers::GetObjName(name_, container_));
+            if (name_.size())
+                peLib.Out() << std::endl << "$sb" << peLib.FormatName(Qualifiers::GetObjName(name_, container_));
+            else
+                peLib.Out() << std::endl << "$sb" << peLib.FormatName(name_);
         }
         else
         {

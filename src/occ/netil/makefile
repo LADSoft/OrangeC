@@ -101,6 +101,7 @@ C_DEPENDENCIES= \
 CPP_DEPENDENCIES=\
     using.cpp gen.cpp process.cpp import.cpp
 LIB_DEPENDENCIES=util netlib
+
 #determine if we can ignore the banner for a batch compile
 WIN32 = WIN32
 #use long long type
@@ -117,7 +118,7 @@ BACKEND_INCLUDE_PATH=.
 vpath %.c $(SRCPATH);dll
 vpath %.cs $(SRCPATH);dll
 
-compiler: netlib redirect lsmsilcrtl.dll occmsil testsqlite.exe
+compiler: netlib redirect netlink lsmsilcrtl.dll occmsil testsqlite.exe
 
 redirect:
 	@$(MAKE) /T
@@ -131,6 +132,9 @@ lsmsilcrtl.dll: lsmsilcrtl.cs
 
 netlib:
 	@$(MAKE) /Cnetlib
+
+netlink:
+	@$(MAKE) /Cnetlib\netlink
 
 testsqlite.exe: zzz.dll sqlite3.dll sqlite3\testsqlite.cs
 	csc /unsafe /r:lsmsilcrtl.dll;zzz.dll;sqlite3.dll /platform:x86 sqlite3\testsqlite.cs 

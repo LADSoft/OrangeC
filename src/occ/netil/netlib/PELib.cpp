@@ -550,10 +550,16 @@ namespace DotNetPELib
         }
         objInputPos_--;
         *p = 0;
+        longlong value = 0;
+        for (p = buf; *p; ++p)
+        {
+            value *= 10;
+            value += (*p - '0');
+        }
         if (minus)
-            return -atoi(buf);
+            return -value;
         else
-            return atoi(buf);
+            return value;
     }
     char PELib::ObjBegin(bool next)
     {

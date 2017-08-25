@@ -1,3 +1,7 @@
+Version 2.3:
+	bug fix: using namespace.cls in an object file failed for empty method signatures
+	bug fix: integers were being maxed at 2gigs because of use of atoi
+
 Version 2.2:
     add routines to read and write object files
     add a linker to link object files

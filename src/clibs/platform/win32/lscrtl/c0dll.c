@@ -47,6 +47,7 @@ HINSTANCE 	__export __hInstance;
 unsigned	_win32 = 0;
 jmp_buf __exitbranch, __abortbranch;
 static unsigned	dllexists = 0;
+static int msvcrt_compat = 0;
 unsigned _isDLL = 1;
 void (*userRundown)();
 void PASCAL __xceptinit(int *block);
@@ -79,14 +80,14 @@ void __export __stdcall ___lsdllinit(DWORD flags, void (*rundown)(), int *except
     if (flags & GUI)
         _win32 = 1;
     userRundown = rundown;
-    if (!(flags & DLL))
+    if (!(flags & DLL) && !msvcrt_compat)
         __xceptinit(exceptBlock);
 
     if ((rv = setjmp(__abortbranch)) || (rv = setjmp(__exitbranch)))
     {
         // this is only safe because we aren't using the stack any more...
         rv--;
-        if (!(Flags & DLL))
+        if (!(Flags & DLL) && !msvcrt_compat)
         {
             userRundown();
             __xceptrundown();
@@ -99,4 +100,13 @@ void __export __stdcall ___lsdllinit(DWORD flags, void (*rundown)(), int *except
     __hInstance = GetModuleHandle(0);
     _llfpinit();
     __srproc(INITSTART, INITEND);
+}
+void __export __getmainargs(int **pargc, char ***pargv, char ***penviron, int flags, void **newmode)
+{
+	msvcrt_compat = 1;
+	___lsdllinit(0, 0, 0);
+	*pargc = _argc;
+	*pargv = _argv;
+	*penviron = _environ;
+	*newmode = 0;
 }

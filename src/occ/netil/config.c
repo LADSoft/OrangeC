@@ -47,6 +47,7 @@
 extern COMPILER_PARAMS cparams;
 extern char msil_bltins[];
 char namespaceAndClass[512];
+char *pinvoke_dll = "msvcrt.dll";
 
 int dbgblocknum;
     #ifndef WIN32
@@ -339,6 +340,12 @@ static int initnasm(COMPILER_PARAMS *parms, ARCH_ASM *data, ARCH_DEBUG *debug)
                 break;
             default:
                 fatal("Invalid executable type");
+        }
+        if (string[1] == 'l')
+        {
+            defines[1].respect = TRUE;
+            defines[4].respect = FALSE;
+            pinvoke_dll = "lscrtlil.dll";
         }
     }
 static BOOLEAN validatenamespaceAndClass(char *str)

@@ -175,8 +175,16 @@ void PEExportObject::Setup(ObjInt &endVa, ObjInt &endPhys)
     {
         *nameTable++ = (unsigned)((unsigned char *)stringTable - data + virtual_addr);
         *ordinalTable++ = name->GetOrdinal() - minOrd;
-        strcpy((char *)stringTable, name->GetName().c_str());
-        stringTable += name->GetName().size();
+        if (flat && name->GetName()[0] == '_')
+        {
+            strcpy((char *)stringTable, name->GetName().c_str()+1);
+            stringTable += name->GetName().size()-1;
+        }
+        else
+        {
+            strcpy((char *)stringTable, name->GetName().c_str());
+            stringTable += name->GetName().size();
+        }
         *stringTable++ = 0;
     }
     // throw in the DLL name

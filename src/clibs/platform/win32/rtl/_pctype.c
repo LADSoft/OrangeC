@@ -30,59 +30,10 @@
     TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
     ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#include <time.h>
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <wchar.h>
-#include <locale.h>
-#include "libp.h"
 
-extern int __maxfiles;
-extern FILE *_pstreams[] ;
+extern unsigned short const * _pctype ;
 
-static unsigned char inbuf[512];
-
-static struct __file2 _iextended[3] = 
+void *__export __pctype_func()
 {
-{ "CON:" },
-{ "CON:" },
-{ "CON:" },
-};
-FILE _istreams[3] = { 
-   { FILTOK, _F_READ | _F_LBUF | _F_TERM,0, 0,0,512,inbuf,inbuf, &_iextended[0] },
-   { FILTOK, _F_WRIT | _F_LBUF | _F_TERM,0, 1,0,0,0,0,&_iextended[1] },
-   { FILTOK, _F_WRIT | _F_LBUF | _F_TERM,0, 2,0,0,0,0,&_iextended[2] }
-} ;
-
-#undef stdin
-#undef stdout
-#undef stderr
-
-#define stdin (&_istreams[0])
-#define stdout (&_istreams[1])
-#define stderr (&_istreams[2])
-
-void *__export __iob_func() 
-{ 
-    return _istreams; 
-}
-
-extern int __maxfiles;
-
-FILE *_RTL_FUNC __getStream(int stream)
-{
-   return _pstreams[stream] ;
-}
-
-void __ll_init(void)
-{
-   static int done ;
-   if (!done) {
-      _pstreams[0] = &_istreams[0] ;
-      _pstreams[1] = &_istreams[1] ;
-      _pstreams[2] = &_istreams[2] ;
-      __maxfiles = 3;
-      done = 1 ;
-   }
+    return _pctype; 
 }

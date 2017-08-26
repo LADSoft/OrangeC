@@ -230,6 +230,11 @@ MethodSignature *NetLinkMain::LookupSignature(char * name)
     {
         return result->Signature();
     }
+    result = peLib->FindPInvoke(name);
+    if (result)
+    {
+        return result->Signature();
+    }
     return NULL;
 
 }

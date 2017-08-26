@@ -63,6 +63,7 @@ extern "C" {
     extern char prm_snkKeyFile[260];
     extern int assemblyVersion[4];
     extern LIST *objlist;
+    extern char *pinvoke_dll;
 
     MethodSignature *argsCtor;
     MethodSignature *argsNextArg;
@@ -1217,7 +1218,7 @@ static void mainInit(void)
     {
         signature = peLib->AllocateMethodSignature("__pctype_func", 0, NULL);
         signature->ReturnType(peLib->AllocateType(Type::u16, 1));
-        peLib->AddPInvokeReference(signature, "msvcrt.dll", false);
+        peLib->AddPInvokeReference(signature, pinvoke_dll, false);
     }
     currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
 
@@ -1234,7 +1235,7 @@ static void mainInit(void)
     {
         signature = peLib->AllocateMethodSignature("__iob_func", 0, NULL);
         signature->ReturnType(peLib->AllocateType(Type::Void, 1));
-        peLib->AddPInvokeReference(signature, "msvcrt.dll", false);
+        peLib->AddPInvokeReference(signature, pinvoke_dll, false);
     }
     currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
 
@@ -1301,7 +1302,7 @@ static void dumpCallToMain(void)
         signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::Void, 1)));
         signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::i32, 0)));
         signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::Void, 1)));
-        peLib->AddPInvokeReference(signature, "msvcrt.dll", false);
+        peLib->AddPInvokeReference(signature, pinvoke_dll, false);
         currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
 
         if (mainSym)
@@ -1327,7 +1328,7 @@ static void dumpCallToMain(void)
             signature = peLib->AllocateMethodSignature("exit", 0, NULL);
             signature->ReturnType(peLib->AllocateType(Type::Void, 0));
             signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::i32, 0)));
-            peLib->AddPInvokeReference(signature, "msvcrt.dll", false);
+            peLib->AddPInvokeReference(signature, pinvoke_dll, false);
         }
         currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
     }
@@ -1347,7 +1348,7 @@ static void dumpGlobalFuncs()
     {
         signature = peLib->AllocateMethodSignature("_errno", 0, NULL);
         signature->ReturnType(peLib->AllocateType(Type::i32, 1));
-        peLib->AddPInvokeReference(signature, "msvcrt.dll", false);
+        peLib->AddPInvokeReference(signature, pinvoke_dll, false);
     }
     currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
     currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ret));

@@ -64,6 +64,7 @@ CmdSwitchString dlPeMain::stubSwitch(SwitchParser, 's');
 CmdSwitchString dlPeMain::modeSwitch(SwitchParser, 'm');
 CmdSwitchString dlPeMain::outputFileSwitch(SwitchParser, 'o');
 CmdSwitchString dlPeMain::DebugFile(SwitchParser, 'v');
+CmdSwitchBool dlPeMain::FlatExports(SwitchParser, 'f');
 
 int dlPeMain::osMajor = 5;
 int dlPeMain::osMinor = 1;
@@ -101,6 +102,7 @@ int dlPeMain::defaultStubSize = sizeof(defaultStubData);
 
 char *dlPeMain::usageText = "[options] relfile\n"
             "\n"
+            "/f     remove underscore from exports\n"
             "/mxxx  Set output file type\n"
             "/oxxx  Set output file name\n"
             "/sxxx  Set stub file name\n"
@@ -272,7 +274,7 @@ bool dlPeMain::ReadSections(const std::string &path)
             if (file->ImportBegin() != file->ImportEnd())
                 objects.push_back(new PEImportObject(objects));
             if (file->ExportBegin() != file->ExportEnd())
-                objects.push_back(new PEExportObject(outputName));
+                objects.push_back(new PEExportObject(outputName, FlatExports.GetValue()));
             objects.push_back(new PEFixupObject());
             if (resources.size())
                 objects.push_back(new PEResourceObject(resources));

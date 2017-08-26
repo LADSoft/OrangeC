@@ -43,3 +43,7 @@ int *_RTL_FUNC __GetErrno(void)
     struct __rtl_data *rv = __getRtlData();
     return &rv->x_errno ;
 }
+int *_RTL_FUNC _errno()
+{
+    return __GetErrno();
+}

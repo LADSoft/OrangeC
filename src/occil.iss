@@ -4,7 +4,7 @@
 [Setup]
 PrivilegesRequired=admin
 AppName=Orange C MSIL Version
-AppVerName=Orange C MSIL Version 6.13
+AppVerName=Orange C MSIL Version 6.14
 OutputBaseFileName=setup
 AppPublisher=LADSoft
 AppPublisherURL=http:\\members.tripod.com\~ladsoft
@@ -46,7 +46,9 @@ Source: "C:\occil\occil.txt"; DestDir: "{app}\"; Flags: IgnoreVersion;
 Source: "C:\occil\copying"; DestDir: "{app}\"; Flags: IgnoreVersion; 
 Source: "C:\occil\bin\occil.cfg"; DestDir: "{app}\bin\"; Flags: IgnoreVersion;
 Source: "C:\occil\bin\occil.exe"; DestDir: "{app}\bin\"; Flags: IgnoreVersion;
+Source: "C:\occil\bin\netlink.exe"; DestDir: "{app}\bin\"; Flags: IgnoreVersion;
 Source: "C:\occil\bin\occmsil.dll"; DestDir: "{app}\bin\"; Flags: IgnoreVersion;
+Source: "C:\occil\bin\lscrtlil.dll"; DestDir: "{app}\bin\"; Flags: IgnoreVersion;
 Source: "C:\occil\bin\lsmsilcrtl.dll"; DestDir: "{app}\bin\"; Flags: IgnoreVersion gacinstall; StrongAssemblyName: "lsmsilcrtl, Version=1.0.0.0, Culture=neutral, PublicKeyToken=bc9b111235642d7d, ProcessorArchitecture=x86"
 Source: "C:\occil\include\*.*"; DestDir: "{app}\include\"; Flags: IgnoreVersion; 
 Source: "C:\occil\include\sys\*.*"; DestDir: "{app}\include\sys"; Flags: IgnoreVersion; 
@@ -54,6 +56,9 @@ Source: "C:\occil\include\win32\*.*"; DestDir: "{app}\include\win32\"; Flags: Ig
 
 Source: "C:\occil\netlib\*.*"; DestDir: "{app}\netlib\"; Flags: IgnoreVersion;
 Source: "C:\occil\netlib\test\*.*"; DestDir: "{app}\netlib\test\"; Flags: IgnoreVersion;
+Source: "C:\occil\netlib\ObjTest\*.*"; DestDir: "{app}\netlib\ObjTest\"; Flags: IgnoreVersion;
+Source: "C:\occil\netlib\netlink\*.*"; DestDir: "{app}\netlib\netlink\"; Flags: IgnoreVersion;
+Source: "C:\occil\netlib\util\*.*"; DestDir: "{app}\netlib\util\"; Flags: IgnoreVersion;
 
 Source: "C:\occil\examples\*.c"; DestDir: "{app}\examples\"; Flags: IgnoreVersion;
 Source: "C:\occil\examples\cc386\*.*"; DestDir: "{app}\examples\cc386\"; Flags: IgnoreVersion;

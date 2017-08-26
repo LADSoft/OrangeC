@@ -150,7 +150,8 @@ private:
 class PEExportObject : public PEObject
 {
 public:
-    PEExportObject(const std::string &name) : PEObject(".edata"), moduleName(name) { SetFlags(WINF_INITDATA | WINF_READABLE | WINF_NEG_FLAGS); }
+    PEExportObject(const std::string &name, bool Flat) : PEObject(".edata"), moduleName(name), flat(Flat)
+        { SetFlags(WINF_INITDATA | WINF_READABLE | WINF_NEG_FLAGS); }
     virtual void Setup(ObjInt &endVa, ObjInt &endPhys);
 private:
     struct Header
@@ -167,6 +168,7 @@ private:
         int ordinal_rva;
     };
     std::string moduleName;
+    bool flat;
 };
 class PEFixupObject : public PEObject
 {

@@ -78,6 +78,7 @@ private:
     static CmdSwitchString stubSwitch;
     static CmdSwitchString outputFileSwitch;
     static CmdSwitchString DebugFile;
+    static CmdSwitchBool FlatExports;
     static char *usageText;
 
     ObjInt fileAlign;

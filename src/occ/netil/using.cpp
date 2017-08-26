@@ -5,6 +5,7 @@
 using namespace DotNetPELib;
 
 extern "C" PELib *peLib;
+extern "C" char *pinvoke_dll;
 
 struct data
 {
@@ -26,7 +27,20 @@ extern "C" BOOLEAN _using_(char *file)
         *p = 0;
     if (!peLib->LoadAssembly(name))
         return true;
-    return !peLib->LoadUnmanaged(file);
+    if (peLib->LoadUnmanaged(file))
+    {
+        char *a = getenv("OCCIL_ROOT");
+        if (a)
+        {
+            strcpy(name, a);
+            strcat(name, "\\bin\\");
+            strcat (name, file);
+            printf("%s\n", name);
+            if (!peLib->LoadUnmanaged(name))
+                return true;
+        }
+    }
+    return false;
 }
 extern "C" std::string _dll_name(char *name)
 {
@@ -53,7 +67,12 @@ extern "C" void _add_global_using(char *str)
 }
 extern "C" void _apply_global_using(void)
 {
-    _using_("msvcrt");
+    char buf[256];
+    strcpy(buf, pinvoke_dll);
+    char *p = strrchr(buf, '.');
+    if (p)
+        *p = 0;
+    _using_(buf);
     _using_("occmsil");
     LIST *lst = _global_using_list;
     while (lst)

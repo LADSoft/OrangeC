@@ -1492,14 +1492,22 @@ IMODE *gen_clearblock(EXPRESSION *node, SYMBOL *funcsp)
     ap1 = LookupLoadTemp(NULL, ap3);
     if (ap1 != ap3)
         gen_icode(i_assn, ap1, ap3, NULL);
-    ap6 = make_immed(ISZ_UINT, 0);
-    ap7 = LookupLoadTemp(NULL, ap6);
-    if (ap7 != ap6)
-        gen_icode(i_assn, ap7, ap6, NULL);
-    ap8 = (IMODE *)Alloc(sizeof(IMODE));
-    memcpy(ap8, ap7, sizeof(IMODE));
-    ap8->mode = i_ind;
-    gen_icode(i_clrblock, ap8, ap1, ap4);
+    if (chosenAssembler->msil)
+    {
+        ap6 = make_immed(ISZ_UINT, 0);
+        ap7 = LookupLoadTemp(NULL, ap6);
+        if (ap7 != ap6)
+            gen_icode(i_assn, ap7, ap6, NULL);
+        ap8 = (IMODE *)Alloc(sizeof(IMODE));
+        memcpy(ap8, ap7, sizeof(IMODE));
+        ap8->mode = i_ind;
+        gen_icode(i_clrblock, ap8, ap1, ap4);
+    }
+    else
+    {
+        gen_icode(i_clrblock, NULL, ap1, ap4);
+
+    }
     return (ap1);
 }
 IMODE *gen_cpinitblock(EXPRESSION *node, SYMBOL *funcsp, BOOLEAN cp)

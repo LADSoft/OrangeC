@@ -166,6 +166,7 @@
     <ClInclude Include="parse\WINMODE.h" />
     <ClInclude Include="x86\be.h" />
     <ClInclude Include="x86\Cvinfo.h" />
+    <ClInclude Include="x86\x86regs.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

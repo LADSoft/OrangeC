@@ -178,7 +178,7 @@ static unsigned short allDoubleRegsArray[] = { 8, 9, 10, 11, 12, 13, 14, 15 };
 static ARCH_REGCLASS allDoubleRegs = {
     &allDwordRegs, 6, allDoubleRegsArray
 };
-static ARCH_REGCLASS *regClasses[26][2] =
+static ARCH_REGCLASS *regClasses[27][2] =
 {
     { NULL, NULL },
     { NULL, NULL },
@@ -187,6 +187,7 @@ static ARCH_REGCLASS *regClasses[26][2] =
     { &allWordRegs, &pushedWordRegs },
     { &allWordRegs, &pushedWordRegs },
     { &allWordRegs, &pushedWordRegs },
+    { &allDwordRegs, &pushedDwordRegs },
     { &allDwordRegs, &pushedDwordRegs },
     { &allDwordRegs, &pushedDwordRegs },
     { &allDwordRegs, &pushedDwordRegs },
@@ -202,7 +203,8 @@ static ARCH_REGCLASS *regClasses[26][2] =
     { NULL, NULL },	
     { NULL, NULL },	
     { NULL, NULL },	
-    { NULL, NULL },	
+    { NULL, NULL },
+    { NULL, NULL },
     { NULL, NULL }
 };
 static ARCH_REGVERTEX pushedVertex = { &pushedByteRegs, NULL, NULL };

@@ -634,6 +634,32 @@ int dumpMemberPtr(SYMBOL *sp, TYPE *membertp, BOOLEAN make_label)
 #endif
     return lbl;
 }
+static void GetStructData(EXPRESSION *in, EXPRESSION **exp, int *ofs)
+{
+    switch (in->type)
+    {
+    case en_add:
+    case en_arrayadd:
+    case en_structadd:
+        GetStructData(in->left, exp, ofs);
+        GetStructData(in->right, exp, ofs);
+        break;
+    default:
+        if (isintconst(in))
+        {
+            *ofs += in->v.i;
+        }
+        else
+        {
+            while (castvalue(in))
+                in = in->left;
+            if (*exp)
+                diag("GetStructData - multiple sp");
+            *exp = in;
+        }
+        break;
+    }
+}
 int dumpInit(SYMBOL *sp, INITIALIZER *init)
 {
 #ifndef PARSER_ONLY
@@ -772,27 +798,15 @@ int dumpInit(SYMBOL *sp, INITIALIZER *init)
                 case en_arrayadd:
                 case en_structadd:
                 {
-                    EXPRESSION *ep1=NULL, *ep2=NULL;
-                    if (isconstaddress(exp->left))
+                    EXPRESSION *ep1 = NULL;
+                    int offs = 0;
+                    GetStructData(exp, &ep1, &offs);
+                    if (ep1)
                     {
-                        ep1 = exp->left;
-                        ep2 = exp->right;
-                    }
-                    else if (isconstaddress(exp->right))
-                    {
-                        ep2 = exp->left;
-                        ep1 = exp->right;
-                    }
-                    if (ep1 != NULL && ep2 != NULL)
-                    {
-                        while (castvalue(ep1))
-                            ep1 = ep1->left;
-                        while (castvalue(ep2))
-                            ep2 = ep2->left;
                         if (ep1->type == en_pc)
-                            genpcref(ep1->v.sp, ep2->v.i);
+                            genpcref(ep1->v.sp, offs);
                         else
-                            genref(ep1->v.sp, ep2->v.i);
+                            genref(ep1->v.sp, offs);
                         break;
                     }
                 }
@@ -3160,9 +3174,9 @@ LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc,
         case bt_auto:
             return initialize_auto(lex, funcsp, offset, sc, tp, init, dest, sp);
         case bt___string:
-            return initialize___string(lex, funcsp, offset, tp, init, dest, sp);
+            return initialize___string(lex, funcsp, offset, tp, init);
         case bt___object:
-            return initialize___object(lex, funcsp, offset, tp, init, dest, sp);
+            return initialize___object(lex, funcsp, offset, tp, init);
         case bt_struct:
         case bt_union:
         case bt_class:

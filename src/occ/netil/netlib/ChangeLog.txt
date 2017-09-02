@@ -1,6 +1,6 @@
 Version 2.4:
-	bug fix: in System.Runtime.dll parent classes sometimes come AFTER the child classes, which resulted in a crash
-	bug fix: name and box inative and unative properly
+	bug fix: in some assemblies parent classes sometimes are listed AFTER the child classes, which resulted in a crash
+	bug fix: name and box native integers properly
 
 Version 2.3:
 	bug fix: using namespace.cls in an object file failed for empty method signatures

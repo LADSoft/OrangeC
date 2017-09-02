@@ -219,8 +219,6 @@ namespace DotNetPELib
             if (typeRef_->InAssemblyRef())
             {
                 typeRef_->PEDump(peLib);
-                if (typeRef_->PEIndex() > 9)
-                    printf("hi");
                 *(int *)result = typeRef_->PEIndex() | (tTypeRef << 24);
             }
             else
@@ -280,8 +278,6 @@ namespace DotNetPELib
                 peIndex_ =  static_cast<Class *>(result)->PEIndex();
             }
         }
-        if (peIndex_ > 9)
-            printf("hi");
         *(int *)result = peIndex_ | (tTypeRef << 24);
         return 4;
     }

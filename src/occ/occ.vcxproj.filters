@@ -260,5 +260,8 @@
     <ClInclude Include="parse\rtti.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="x86\x86regs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

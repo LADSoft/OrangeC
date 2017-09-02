@@ -1438,7 +1438,7 @@ IMODE *gen_moveblock(EXPRESSION *node, SYMBOL *funcsp)
  * Generate code to copy one structure to another
  */
 {
-    IMODE *ap1,  *ap2, *ap3, *ap6, *ap7, *ap8;
+    IMODE *ap1,  *ap2, *ap3, *ap6, *ap7;
     if (!node->size)
         return (0);
     ap3 = gen_expr(funcsp, node->left, F_VOL, ISZ_UINT);
@@ -1454,10 +1454,7 @@ IMODE *gen_moveblock(EXPRESSION *node, SYMBOL *funcsp)
     if (ap7 != ap6)
         gen_icode(i_assn, ap7, ap6, NULL);
 
-    ap8 = (IMODE *)Alloc(sizeof(IMODE));
-    memcpy(ap8, ap7, sizeof(IMODE));
-    ap8->mode = i_ind;
-    gen_icode(i_assnblock, ap8, ap1, ap2);
+    gen_icode(i_assnblock, ap7, ap1, ap2);
     return (ap1);
 }
 IMODE *gen_clearblock(EXPRESSION *node, SYMBOL *funcsp)

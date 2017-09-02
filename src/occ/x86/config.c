@@ -686,6 +686,9 @@ ARCH_ASM assemblerInterface[] = {
     0,                   /* initialize intrinsic mechanism, compiler startup */
     0,                   /* search for an intrinsic */
     0,                     /* enter a type in the BE */
+    0,                   /* msil - get a boxed version of type*/
+    0,                   /* msil - get an unboxed version of type*/
+    
     },
     {
     "fasm",                                 /* assembler name */

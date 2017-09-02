@@ -710,7 +710,8 @@ SYMBOL *finishSearch(char *name, SYMBOL *encloser, NAMESPACEVALUES *ns, BOOLEAN 
     if (!encloser && !ns && !namespaceOnly)
     {
         SYMBOL *ssp;
-        rv = search(name, localNameSpace->syms);
+        if (cparams.prm_cplusplus || !tagsOnly)
+            rv = search(name, localNameSpace->syms);
         if (!rv)
             rv = search(name, localNameSpace->tags);
         if (lambdas)
@@ -718,7 +719,8 @@ SYMBOL *finishSearch(char *name, SYMBOL *encloser, NAMESPACEVALUES *ns, BOOLEAN 
             LAMBDA *srch = lambdas;
             while (srch && !rv)
             {
-                rv = search(name, srch->oldSyms);
+                if (cparams.prm_cplusplus || !tagsOnly)
+                    rv = search(name, srch->oldSyms);
                 if (!rv)
                     rv = search(name, srch->oldTags);
                 srch = srch->next;
@@ -801,7 +803,7 @@ LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES
     BOOLEAN namespaceOnly = FALSE;
     *sym = NULL;
     
-    if (!cparams.prm_cplusplus)
+    if (!cparams.prm_cplusplus && !chosenAssembler->msil)
     {
         if (ISID(lex))
         {
@@ -3848,7 +3850,7 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
         LIST *gather = NULL;
         SYMBOL **flatList;    
         SYMBOL *found1 = NULL, *found2 = NULL;
-        if (!cparams.prm_cplusplus && (!chosenAssembler->msil || !sp->tp->syms->table[0]->next))
+        if (!cparams.prm_cplusplus && (!chosenAssembler->msil || sp && !sp->tp->syms->table[0]->next))
         {
             sp = ((SYMBOL *)sp->tp->syms->table[0]->p);
             if (sp)

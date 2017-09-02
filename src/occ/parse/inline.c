@@ -461,6 +461,8 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOLEAN *fromlval)
         case en_l_ref:        
         case en_l_i:
         case en_l_ui:
+        case en_l_inative:
+        case en_l_unative:
         case en_l_uc:
         case en_l_us:
         case en_l_bool:
@@ -500,6 +502,8 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOLEAN *fromlval)
         case en_x_ull:
         case en_x_i:
         case en_x_ui:
+        case en_x_inative:
+        case en_x_unative:
         case en_x_c:
         case en_x_uc:
         case en_x_u16:
@@ -572,7 +576,9 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOLEAN *fromlval)
         case en_stackblock:
         case en_blockassign:
         case en_mp_compare:
-/*		case en_array: */
+        case en__initblk:
+        case en__cpblk:
+            /*		case en_array: */
             temp->right = inlineexpr(node->right, FALSE);
         case en_mp_as_bool:
         case en_blockclear:
@@ -911,6 +917,8 @@ static BOOLEAN sideEffects(EXPRESSION *node)
         case en_l_ref:        
         case en_l_i:
         case en_l_ui:
+        case en_l_inative:
+        case en_l_unative:
         case en_l_uc:
         case en_l_us:
         case en_l_bool:
@@ -938,6 +946,8 @@ static BOOLEAN sideEffects(EXPRESSION *node)
         case en_x_ull:
         case en_x_i:
         case en_x_ui:
+        case en_x_inative:
+        case en_x_unative:
         case en_x_c:
         case en_x_uc:
         case en_x_u16:
@@ -968,6 +978,8 @@ static BOOLEAN sideEffects(EXPRESSION *node)
         case en_autoinc:
         case en_autodec:
         case en_trapcall:
+        case en__initblk:
+        case en__cpblk:
             rv = TRUE;
             break;
         case en_add:

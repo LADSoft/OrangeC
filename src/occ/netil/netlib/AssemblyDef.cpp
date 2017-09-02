@@ -328,7 +328,6 @@ namespace DotNetPELib
             properties.push_back(0);
             semantics.push_back(0);
             const DNLTable &table2 = reader.Table(tTypeDef);
-            int i = 0;
             for (auto tentry : table2)
             {
                 Namespace *thisNameSpace = nullptr;
@@ -353,26 +352,6 @@ namespace DotNetPELib
                         if (dc && typeid(*dc) == typeid(Class))
                             cls = static_cast<Class *>(dc);
                     }
-                    else
-                    {
-                        const DNLTable &table3 = reader.Table(tNestedClass);
-                        for (auto tentry : table3)
-                        {
-                            NestedClassTableEntry *entry = static_cast<NestedClassTableEntry *>(tentry);
-                            int child = entry->nestedIndex_.index_;
-                            int parent = entry->enclosingIndex_.index_;
-                            if (child - 1 == i)
-                            {
-                                if (classes[parent])
-                                {
-                                    DataContainer *dc = classes[parent]->FindContainer((char *)buf);
-                                    if (dc && typeid(*dc) == typeid(Class))
-                                        cls = static_cast<Class *>(dc);
-                                }
-                                break;
-                            }
-                        }
-                    }
                     int n = entry->extends_.index_;
                     if (!cls)
                     {
@@ -392,7 +371,7 @@ namespace DotNetPELib
                         }
                     }
                     classes.push_back(cls);
-                    if (thisNameSpace)
+                    if (thisNameSpace && cls)
                         thisNameSpace->Add(cls);
                 }
                 else
@@ -401,7 +380,56 @@ namespace DotNetPELib
                 }
                 fields.push_back(entry->fields_.index_);
                 methods.push_back(entry->methods_.index_);
-                i++;
+            }
+            bool done = false;
+            while (!done)
+            {
+                int i = 0;
+                done = true;
+                for (auto tentry : table2)
+                {
+                    Namespace *thisNameSpace = nullptr;
+                    Byte buf[256];
+                    TypeDefTableEntry *entry = static_cast<TypeDefTableEntry *>(tentry);
+                        int visibility = entry->flags_ & TypeDefTableEntry::VisibilityMask;
+                    if (visibility == TypeDefTableEntry::Public || visibility == TypeDefTableEntry::NestedPublic)
+                    {
+                        reader.ReadFromString(buf, 256, entry->typeNameSpaceIndex_.index_);
+                        std::string val = (char *)buf;
+                        if (val.size())
+                        {
+                            thisNameSpace = InsertNameSpaces(lib, nameSpaces, val);
+                            val += ".";
+                        }
+                        reader.ReadFromString(buf, 256, entry->typeNameIndex_.index_);
+                        val += (char *)buf;
+                        Class *cls = nullptr;
+                        if (!thisNameSpace)
+                        {
+                            const DNLTable &table3 = reader.Table(tNestedClass);
+                            for (auto tentry : table3)
+                            {
+                                NestedClassTableEntry *entry = static_cast<NestedClassTableEntry *>(tentry);
+                                int child = entry->nestedIndex_.index_;
+                                int parent = entry->enclosingIndex_.index_;
+                                if (child - 1 == i)
+                                {
+                                    if (classes[parent])
+                                    {
+                                        DataContainer *dc = classes[parent]->FindContainer((char *)buf);
+                                        if (dc && typeid(*dc) == typeid(Class))
+                                        {
+                                            cls = static_cast<Class *>(dc);
+                                            classes[i] = cls;
+                                        }
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    i++;
+                }
             }
             const DNLTable &table3 = reader.Table(tNestedClass);
             for (auto tentry : table3)
@@ -428,7 +456,7 @@ namespace DotNetPELib
             while (properties.size() < classes.size())
                 properties.push_back(0);
             const DNLTable &table5 = reader.Table(tPropertyMap);
-            i = 0;
+            int i = 0;
             for (auto tentry : table5)
             {
                 PropertyMapTableEntry *entry5 = static_cast<PropertyMapTableEntry *>(tentry);

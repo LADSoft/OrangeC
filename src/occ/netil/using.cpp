@@ -42,7 +42,7 @@ extern "C" BOOLEAN _using_(char *file)
     }
     return false;
 }
-extern "C" std::string _dll_name(char *name)
+std::string _dll_name(char *name)
 {
     return peLib->FindUnmanagedName(name);
 }

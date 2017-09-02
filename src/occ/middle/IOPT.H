@@ -51,28 +51,29 @@
 #define ISZ_WCHAR 5
 #define ISZ_U16 6
 #define ISZ_UINT 7
-#define ISZ_ULONG 8
-#define ISZ_U32 9
-#define ISZ_ULONGLONG 10
-#define ISZ_ADDR 11
-#define ISZ_FARPTR 12
-#define ISZ_SEG 13
-#define ISZ_REG 14
+#define ISZ_UNATIVE 8
+#define ISZ_ULONG 9
+#define ISZ_U32 10
+#define ISZ_ULONGLONG 11
+#define ISZ_ADDR 12
+#define ISZ_FARPTR 13
+#define ISZ_SEG 14
+#define ISZ_REG 15
 /* */
-#define ISZ_STRING 15
-#define ISZ_OBJECT 16
+#define ISZ_STRING 16
+#define ISZ_OBJECT 17
 /* */
-#define ISZ_FLOAT 17
-#define ISZ_DOUBLE 18
-#define ISZ_LDOUBLE 19
+#define ISZ_FLOAT 18
+#define ISZ_DOUBLE 19
+#define ISZ_LDOUBLE 20
 
-#define ISZ_IFLOAT 20
-#define ISZ_IDOUBLE 21
-#define ISZ_ILDOUBLE 22
+#define ISZ_IFLOAT 21
+#define ISZ_IDOUBLE 22
+#define ISZ_ILDOUBLE 23
 
-#define ISZ_CFLOAT 23
-#define ISZ_CDOUBLE 24
-#define ISZ_CLDOUBLE 25
+#define ISZ_CFLOAT 24
+#define ISZ_CDOUBLE 25
+#define ISZ_CLDOUBLE 26
 
 //#define TESTBITS
 #define BITINTBITS (8 * sizeof(BITINT))

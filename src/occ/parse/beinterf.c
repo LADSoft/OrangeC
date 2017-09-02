@@ -117,7 +117,11 @@ TYPE stdunsigned =
 {
     bt_unsigned, 4
 };
-TYPE stdunsignedlong = 
+TYPE stdunative =
+{
+    bt_unative, 4
+};
+TYPE stdunsignedlong =
 {
     bt_unsigned_long, 4,
 };
@@ -185,7 +189,11 @@ TYPE stdint =
 {
     bt_int, 4
 };
-TYPE stdlong = 
+TYPE stdinative =
+{
+    bt_inative, 4
+};
+TYPE stdlong =
 {
     bt_long, 4
 };
@@ -389,6 +397,8 @@ int sizeFromISZ(int isz)
             return p->a_longlong;
         case ISZ_UINT:
         case -ISZ_UINT:
+        case ISZ_UNATIVE:
+        case -ISZ_UNATIVE:
             return p->a_int;
 /*        case ISZ_ENUM:*/
 /*            return p->a_enum;*/
@@ -449,6 +459,8 @@ int needsAtomicLockFromType(TYPE *tp)
             return p->a_longlong;
         case bt_int:
         case bt_unsigned:
+        case bt_inative:
+        case bt_unative:
             return p->a_int;
         case bt_enum:
             return p->a_enum;
@@ -515,6 +527,8 @@ static int basesize(ARCH_SIZING *p, TYPE *tp)
             return p->a_longlong;
         case bt_int:
         case bt_unsigned:
+        case bt_inative:
+        case bt_unative:
             return p->a_int;
         case bt_enum:
             return p->a_enum;
@@ -732,6 +746,8 @@ int init_backend(int *argc ,char **argv)
         stdconst.rootType = &stdconst;
         stdunsigned.rootType = &stdunsigned;
         stdint.rootType = &stdint;        
+        stdunative.rootType = &stdunative;
+        stdinative.rootType = &stdinative;
         stdstring.rootType = &stdstring;
         stdchar.rootType = &stdchar;
         stdsignedchar.rootType = &stdsignedchar;

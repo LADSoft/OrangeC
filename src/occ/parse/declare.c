@@ -939,6 +939,10 @@ static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac cur
             warnCPPWarnings(sp, funcsp != NULL);
         }
     }
+    else
+    {
+        sp->trivialCons = TRUE;
+    }
 	if (cparams.prm_cplusplus)
         createDefaultConstructors(sp);
     resolveAnonymousUnions(sp);
@@ -1977,6 +1981,8 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                     case bt_unsigned_long:
                     case bt_long_long:
                     case bt_unsigned_long_long:
+                    case bt_inative:
+                    case bt_unative:
                         break;
                     case bt_none:
                     case bt_signed:
@@ -1985,6 +1991,14 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                     default:
                         flagerror = TRUE;
                 }
+                break;
+            case kw_native:
+                if (type == bt_unsigned)
+                    type = bt_unative;
+                else if (type == bt_int || type == bt_none)
+                    type = bt_inative;
+                else
+                    flagerror = TRUE;
                 break;
             case kw_char:
                 switch(type)
@@ -2093,6 +2107,9 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                     case bt_none:
                     case bt_int:
                         type = bt_unsigned;
+                        break;
+                    case bt_inative:
+                        type = bt_unative;
                         break;
                     default:
                         flagerror = TRUE;
@@ -2783,6 +2800,17 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
           
     }
 exit:
+    if (chosenAssembler->msil && tn && chosenAssembler->find_unboxed_type)
+    {
+        // select an unboxed variable type for use in compiler
+        // will be converted back to boxed as needed
+        TYPE *tnn = chosenAssembler->find_unboxed_type(tn);
+        if (tnn)
+        {
+            tn = tnn;
+            type = tn->type;
+        }
+    }
     if (!cparams.prm_c99)
         switch(type)
         {
@@ -3496,7 +3524,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                 hrp = &(*hrp)->next;
         }
     }
-    else if (!cparams.prm_cplusplus && ISID(lex))
+    else if (!cparams.prm_cplusplus && !chosenAssembler->msil && ISID(lex))
     {
         SYMBOL *spo;
         sp->oldstyle = TRUE;
@@ -3685,7 +3713,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
         }
         skip(&lex, closepa);
     }
-    else if (cparams.prm_cplusplus)
+    else if (cparams.prm_cplusplus || chosenAssembler->msil && !MATCHKW(lex, closepa) && *spin)
     {
         // () is a function
         if (MATCHKW(lex, closepa))

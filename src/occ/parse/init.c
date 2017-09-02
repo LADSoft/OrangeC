@@ -237,6 +237,8 @@ static int dumpBits(INITIALIZER **init)
             break;
         case bt_int:
         case bt_unsigned:
+        case bt_inative:
+        case bt_unative:
             genint(resolver);
             break;
         case bt_char16_t:
@@ -845,6 +847,8 @@ int dumpInit(SYMBOL *sp, INITIALIZER *init)
             break;
         case bt_int:
         case bt_unsigned:
+        case bt_inative:
+        case bt_unative:
             genint(i);
             break;
         case bt_char16_t:
@@ -1273,7 +1277,9 @@ static LEXEME *initialize_arithmetic_type(LEXEME *lex, SYMBOL *funcsp, int offse
                     castToArithmetic(FALSE, &tp, &exp, (enum e_kw)-1, itype, TRUE);
                 }
                 if (isstructured(tp))
+                {
                     error(ERR_ILL_STRUCTURE_ASSIGNMENT);
+                }
                 else if (ispointer(tp))
                     error(ERR_NONPORTABLE_POINTER_CONVERSION);
                 else if ((!isarithmetic(tp) && basetype(tp)->type != bt_enum) || (sc != sc_auto && sc != sc_register &&
@@ -1592,8 +1598,14 @@ enum e_node referenceTypeError(TYPE *tp, EXPRESSION *exp)
         case bt_int:
             en = en_l_i;
             break;
+        case bt_inative:
+            en = en_l_inative;
+            break;
         case bt_unsigned:
             en = en_l_ui;
+            break;
+        case bt_unative:
+            en = en_l_unative;
             break;
         case bt_char16_t:
             en = en_l_u16;
@@ -1676,6 +1688,19 @@ EXPRESSION *createTemporary(TYPE *tp, EXPRESSION *val)
         deref(tp, &rv);
         cast(tp, &val);
         rv = exprNode(en_void, exprNode(en_assign, rv, val), rv1) ;
+    }
+    errortype(ERR_CREATE_TEMPORARY, tp, tp);
+    return rv;
+}
+EXPRESSION *msilCreateTemporary(TYPE *tp, EXPRESSION *val)
+{
+    EXPRESSION *rv = anonymousVar(sc_auto, tp);
+    if (val)
+    {
+        EXPRESSION *rv1 = rv;
+        deref(tp, &rv);
+        cast(tp, &val);
+        rv = exprNode(en_void, exprNode(en_assign, rv, val), rv1);
     }
     errortype(ERR_CREATE_TEMPORARY, tp, tp);
     return rv;
@@ -2445,7 +2470,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
     BOOLEAN assn = FALSE;
     BOOLEAN implicit = FALSE;
     EXPRESSION *baseexp = NULL;
-    if (cparams.prm_cplusplus && isstructured(itype))
+    if ((cparams.prm_cplusplus || chosenAssembler->msil) && isstructured(itype))
         baseexp = exprNode(en_add, getThisNode(base), intNode(en_c_i, offset));
     allocate_desc(itype, offset, &desc, &cache);
     desc->stopgap = TRUE;
@@ -2455,7 +2480,8 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
         assn = TRUE;
         lex = getsym();
     }
-    if (cparams.prm_cplusplus && isstructured(itype) && (!basetype(itype)->sp->trivialCons || 
+    if ((cparams.prm_cplusplus || chosenAssembler->msil) 
+        && isstructured(itype) && (!basetype(itype)->sp->trivialCons || 
              arrayMember))
     {
         if (base->storage_class != sc_member || MATCHKW(lex, openpa) || assn || MATCHKW(lex, begin))
@@ -3078,6 +3104,8 @@ LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc,
             return lex;
         case bt_bool:
             return initialize_bool_type(lex, funcsp, offset, sc, tp, init);
+        case bt_inative:
+        case bt_unative:
         case bt_char:
         case bt_unsigned_char:
         case bt_signed_char:
@@ -3246,6 +3274,8 @@ BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams)
         case en_l_ref:
         case en_l_i:
         case en_l_ui:
+        case en_l_inative:
+        case en_l_unative:
         case en_l_uc:
         case en_l_us:
         case en_l_bool:
@@ -3283,6 +3313,8 @@ BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams)
         case en_x_ull:
         case en_x_i:
         case en_x_ui:
+        case en_x_inative:
+        case en_x_unative:
         case en_x_c:
         case en_x_u16:
         case en_x_u32:
@@ -3357,7 +3389,9 @@ BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams)
         case en_stackblock:
         case en_blockassign:
         case en_mp_compare:
-/*		case en_array: */
+        case en__initblk:
+        case en__cpblk:
+            /*		case en_array: */
 
             rv = IsConstantExpression(node->left, allowParams);
             rv &= IsConstantExpression(node->right, allowParams);
@@ -3463,7 +3497,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
             errorsym(ERR_STRUCT_NOT_DEFINED, tp->sp);
     }
     // if not in a constructor, any openpa() will be eaten by an expression parser
-    else if (MATCHKW(lex, assign) || (cparams.prm_cplusplus && (MATCHKW(lex, openpa) || MATCHKW(lex, begin))))
+    else if (MATCHKW(lex, assign) || (cparams.prm_cplusplus && (MATCHKW(lex, openpa) || MATCHKW(lex, begin))) || (chosenAssembler->msil && MATCHKW(lex,openpa)))
     {
         INITIALIZER **init;
         sp->assigned = TRUE;
@@ -3550,7 +3584,8 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
             }
         }
     }
-    else if (cparams.prm_cplusplus && sp->storage_class != sc_typedef && sp->storage_class != sc_external && !asExpression)
+    else if ((cparams.prm_cplusplus || chosenAssembler->msil && isstructured(sp->tp) && !basetype(sp->tp)->sp->trivialCons)
+        && sp->storage_class != sc_typedef && sp->storage_class != sc_external && !asExpression)
     {
         if (isstructured(sp->tp) && !basetype(sp->tp)->sp->trivialCons)
         {

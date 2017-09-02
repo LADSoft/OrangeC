@@ -116,7 +116,7 @@ BOOLEAN startOfType(LEXEME *lex, BOOLEAN assumeType)
         LEXEME *placeholder = lex;
         BOOLEAN dest = FALSE;
         nestedSearch(lex, &sp, &strSym, NULL, &dest, NULL, FALSE, sc_global, FALSE, FALSE);
-        if (cparams.prm_cplusplus)
+        if (cparams.prm_cplusplus || chosenAssembler->msil)
             prevsym(placeholder);
         linesHead = oldHead;
         linesTail = oldTail;
@@ -234,6 +234,8 @@ BOOLEAN isint(TYPE *tp)
             case bt_long_long:
             case bt_unsigned_long_long:
             case bt_wchar_t:
+            case bt_inative:
+            case bt_unative:
                 return TRUE;
             case bt_templateparam:
                 if (tp->templateParam->p->type == kw_int)
@@ -792,6 +794,12 @@ void deref(TYPE *tp, EXPRESSION **exp)
                 return;
             en = en_l_p;
             break;
+        case bt_inative:
+            en = en_l_inative;
+            break;
+        case bt_unative:
+            en = en_l_unative;
+            break;
         case bt_struct:
         case bt_class:
         case bt_union:
@@ -855,8 +863,14 @@ int sizeFromType(TYPE *tp)
         case bt_int:
             rv = -ISZ_UINT;
             break;
+        case bt_inative:
+            rv = -ISZ_UNATIVE;
+            break;
         case bt_unsigned:
             rv = ISZ_UINT;
+            break;
+        case bt_unative:
+            rv = ISZ_UNATIVE;
             break;
         case bt_long:
             rv = - ISZ_ULONG;
@@ -968,8 +982,14 @@ void cast(TYPE *tp, EXPRESSION **exp)
         case bt_int:
             en = en_x_i;
             break;
+        case bt_inative:
+            en = en_x_inative;
+            break;
         case bt_unsigned:
             en = en_x_ui;
+            break;
+        case bt_unative:
+            en = en_x_unative;
             break;
         case bt_long:
             en = en_x_l;
@@ -1047,6 +1067,8 @@ BOOLEAN castvalue(EXPRESSION *exp)
         case en_x_us:
         case en_x_i:
         case en_x_ui:
+        case en_x_inative:
+        case en_x_unative:
         case en_x_l:
         case en_x_ul:
         case en_x_ll:
@@ -1092,6 +1114,8 @@ BOOLEAN lvalue(EXPRESSION *exp)
         case en_l_us:
         case en_l_i:
         case en_l_ui:
+        case en_l_inative:
+        case en_l_unative:
         case en_l_l:
         case en_l_ul:
         case en_l_ll:
@@ -1221,7 +1245,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
         exp = NULL;
         if (init->basetp)
         {
-            if (init->noassign)
+            if (init->noassign && init->exp)
             {
                 exp = init->exp;
                 if (exp->type == en_thisref)
@@ -1268,7 +1292,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                         exp = exp2;
                         noClear = TRUE;
                     }
-                    else if (cparams.prm_cplusplus && !basetype(init->basetp)->sp->trivialCons)
+                    else if ((cparams.prm_cplusplus || chosenAssembler->msil) && !basetype(init->basetp)->sp->trivialCons)
                     {
                         TYPE *ctype = init->basetp;
                         FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
@@ -1456,7 +1480,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
         }
     }
     // plop in a clear block if necessary
-    if (sp && !noClear && !isdest && (isarray(tp) || isstructured(tp) && (!cparams.prm_cplusplus || basetype(tp)->sp->trivialCons)))
+    if (sp && !noClear && !isdest && (isarray(tp) || isstructured(tp) && (!cparams.prm_cplusplus && !chosenAssembler->msil || basetype(tp)->sp->trivialCons)))
     {
         EXPRESSION *fexp = expsym;
         EXPRESSION *exp;
@@ -1629,12 +1653,14 @@ static TYPE *inttype(enum e_bt t1)
                return &stdunsignedshort;
         default:
         case bt_int:
+        case bt_inative:
             return &stdint;
         case bt_char16_t:
             return &stdchar16t;
         case bt_char32_t:
             return &stdchar32t;
         case bt_unsigned:
+        case bt_unative:
             return &stdunsigned;
         case bt_long:
             return &stdlong;

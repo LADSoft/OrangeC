@@ -579,6 +579,8 @@ ARCH_ASM assemblerInterface[] = {
     0,                   /* initialize intrinsic mechanism, compiler startup */
     0,                   /* search for an intrinsic */
     oa_enter_type,                     /* enter a type in the BE */
+    oa_get_boxed,                 /* msil - get a boxed version of type*/
+    oa_get_unboxed,                 /* msil - get an unboxed version of type*/
     },
     { 0 }
 } ;

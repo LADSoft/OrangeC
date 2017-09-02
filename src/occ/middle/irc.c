@@ -1986,6 +1986,8 @@ static unsigned lscost(int size)
         case ISZ_UINT:
         case -ISZ_UINT:
         case ISZ_U32:
+        case ISZ_UNATIVE:
+        case -ISZ_UNATIVE:
             return p->a_int;
 /*        case ISZ_ENUM:*/
 /*            return p->a_enum;*/

@@ -1516,6 +1516,9 @@ static BOOLEAN hasPackedTemplate(TYPE *tp)
         case bt_signed_char:
         case bt_char:
             break;
+        case bt_inative:
+        case bt_unative:
+            break;
         case bt_bool:
             break;
         case bt_bit:

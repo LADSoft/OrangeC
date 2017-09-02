@@ -493,6 +493,8 @@ static void XCExpression(EXPRESSION *node, XCLIST ***listPtr)
         case en_l_ref:
         case en_l_i:
         case en_l_ui:
+        case en_l_inative:
+        case en_l_unative:
         case en_l_uc:
         case en_l_us:
         case en_l_bool:
@@ -521,6 +523,8 @@ static void XCExpression(EXPRESSION *node, XCLIST ***listPtr)
         case en_x_ull:
         case en_x_i:
         case en_x_ui:
+        case en_x_inative:
+        case en_x_unative:
         case en_x_c:
         case en_x_u16:
         case en_x_u32:
@@ -547,6 +551,8 @@ static void XCExpression(EXPRESSION *node, XCLIST ***listPtr)
             XCExpression(node->left, listPtr);
             break;
         case en_assign:
+        case en__initblk:
+        case en__cpblk:
             XCExpression(node->right, listPtr);
             XCExpression(node->left, listPtr);
             break;

@@ -584,6 +584,20 @@ static void iop_clrblock(QUAD *q)
     putamode(q, q->dc.right);
     oprintf(icdFile, ")");
 }
+static void iop_initblk(QUAD *q)
+{
+    if (chosenAssembler->gen->asm_clrblock)
+        chosenAssembler->gen->asm_clrblock(q);
+    oputc('\t', icdFile);
+    oprintf(icdFile, "initblk");
+}
+static void iop_cpblk(QUAD *q)
+{
+    if (chosenAssembler->gen->asm_assnblock)
+        chosenAssembler->gen->asm_assnblock(q);
+    oputc('\t', icdFile);
+    oprintf(icdFile, "cpblk");
+}
 /*-------------------------------------------------------------------------*/
 
 static void iop_asmcond(QUAD *q)
@@ -1159,7 +1173,7 @@ static void(*oplst[])(QUAD *q) =
         iop_atomic_flag_test_and_set, iop_atomic_flag_clear, iop_atomic_fence, iop_atomic_flag_fence, iop_cmpswp,
         iop_prologue, iop_epilogue, iop_pushcontext, iop_popcontext, iop_loadcontext, iop_unloadcontext,
         iop_tryblock, iop_substack, iop_substack, iop_loadstack, iop_savestack, iop_functailstart, iop_functailend, 
-        iop_gcsestub, iop_expressiontag, iop_tag,
+        iop_gcsestub, iop_expressiontag, iop_tag, iop_initblk, iop_cpblk
 };
 /*-------------------------------------------------------------------------*/
 void beDecorateSymName(char *buf, SYMBOL *sp)
@@ -1360,6 +1374,12 @@ void putlen(int l)
             break;
         case -ISZ_UINT:
             oprintf(icdFile, ".I");
+            break;
+        case ISZ_UNATIVE:
+            oprintf(icdFile, ".UNATIVE");
+            break;
+        case -ISZ_UNATIVE:
+            oprintf(icdFile, ".INATIVE");
             break;
         case ISZ_ULONG:
             oprintf(icdFile, ".UL");

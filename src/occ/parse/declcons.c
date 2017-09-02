@@ -2997,7 +2997,12 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
             }
         }
         *exp = e1;
-        if (*exp && !pointer)
+        if (chosenAssembler->msil && *exp)
+        {
+            *exp = exprNode(en_assign, params->thisptr, *exp);
+            params->thisptr = NULL;
+        }
+        else if (*exp && !pointer)
         {
             *exp = exprNode(en_thisref, *exp, NULL);
             (*exp)->v.t.thisptr = params->thisptr;

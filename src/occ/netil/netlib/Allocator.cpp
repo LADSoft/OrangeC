@@ -175,6 +175,8 @@ namespace DotNetPELib {
     }
     Type *Allocator::AllocateType(Type::BasicType Tp, int PointerLevel)
     {
+        if ((int)Tp > 1000)
+            printf("hi");
         void *rv = BaseAlloc(sizeof(Type));
         new (rv) Type(Tp, PointerLevel);
         return static_cast<Type *>(rv);

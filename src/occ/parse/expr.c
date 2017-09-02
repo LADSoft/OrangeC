@@ -91,11 +91,14 @@ static EXPRESSION *nodeSizeof(TYPE *tp, EXPRESSION *exp);
 static LEXEME *expression_primary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, int flags);
 LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, int flags);
 static LEXEME *expression_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, int flags);
+static LEXEME *expression_msilfunc(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, int flags);
 
 void expr_init(void)
 {
     packIndex = -1;
     importThunks = NULL;
+    if (chosenAssembler->msil)
+        overloadNameTab[CI_CONSTRUCTOR] = ".ctor";
 }
 void thunkForImportTable(EXPRESSION **exp)
 {
@@ -371,6 +374,14 @@ static BOOLEAN inreg(EXPRESSION *exp, BOOLEAN first)
         return inreg(exp->left,first) || inreg(exp->right, first);
     else
         return FALSE;		
+}
+EXPRESSION *typeNode(TYPE *tp)
+{
+    EXPRESSION *rv = Alloc(sizeof(EXPRESSION));
+    rv->type = en_type;
+    rv->v.tp = tp;
+    return rv;
+
 }
 EXPRESSION *intNode(enum e_node type, LLONG_TYPE val)
 {
@@ -1019,6 +1030,22 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
     BOOLEAN thisptr = (*exp)->type == en_auto && (*exp)->v.sp->thisPtr;
     char *tokenName = lex->kw->name;
     (void)funcsp;
+    // find structured version of arithmetic types for msil member matching
+    if (chosenAssembler->msil && isarithmetic(*tp) && chosenAssembler->find_boxed_type)
+    {
+        // auto-boxing for msil
+        TYPE *tp1 = chosenAssembler->find_boxed_type(basetype(*tp));
+        if (tp1)
+        {
+            while (castvalue(*exp))
+                *exp = (*exp)->left;
+            if (!lvalue(*exp))
+                *exp = msilCreateTemporary(*tp, *exp);
+            else
+                *exp = (*exp)->left;
+            *tp = tp1;
+        }
+    }
     if (MATCHKW(lex, pointsto))
     {
         TYPE *nesting[100];
@@ -3041,7 +3068,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
             }
         }
     }
-    else if (cparams.prm_cplusplus && funcparams->sp)
+    else if ((cparams.prm_cplusplus || chosenAssembler->msil) && funcparams->sp)
     {
         SYMBOL *sp = NULL;
         // add this ptr
@@ -3476,6 +3503,82 @@ static LEXEME *expression_alloca(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
             error(ERR_EXPRESSION_SYNTAX);
             *tp = NULL;
         }
+    }
+    else
+    {
+        errskim(&lex, skim_closepa);
+        skip(&lex, closepa);
+        *tp = NULL;
+    }
+    return lex;
+}
+static LEXEME *expression_msilfunc(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, int flags)
+{
+    enum e_kw kw = lex->kw->key;
+    lex = getsym();
+    if (MATCHKW(lex, openpa))
+    {
+        FUNCTIONCALL funcparams;
+        memset(&funcparams, 0, sizeof(funcparams));
+        lex = getArgs(lex, funcsp, &funcparams, closepa, TRUE, flags);
+        int n = 0;
+        INITLIST *args = funcparams.arguments;
+        for (n = 0; args; args = args->next) n++;
+        if (n > 3)
+            errorstr(ERR_PARAMETER_LIST_TOO_LONG, "__cpblk/__initblk");
+        else if (n < 3)
+            errorstr(ERR_PARAMETER_LIST_TOO_SHORT, "__cpblk/__initblk");
+        switch (kw)
+        {
+            case kw__cpblk:
+                if (!ispointer(funcparams.arguments->tp))
+                {
+                    *exp = intNode(en_c_i, 0);
+                    errorstr2(ERR_TYPE_MISMATCH_IN_ARGUMENT, "__dest", "__cpblk");
+                }
+                else if (!ispointer(funcparams.arguments->next->tp))
+                {
+                    *exp = intNode(en_c_i, 0);
+                    errorstr2(ERR_TYPE_MISMATCH_IN_ARGUMENT, "__src", "__cpblk");
+                }
+                else if (!isint(funcparams.arguments->next->next->tp))
+                {
+                    *exp = intNode(en_c_i, 0);
+                    errorstr2(ERR_TYPE_MISMATCH_IN_ARGUMENT, "__size", "__cpblk");
+                }
+                else
+                {
+                    *exp = exprNode(en_void, funcparams.arguments->exp, funcparams.arguments->next->exp);
+                    *exp = exprNode(en__cpblk, *exp, funcparams.arguments->next->next->exp);
+                }
+                break;
+            case kw__initblk:
+                if (!ispointer(funcparams.arguments->tp))
+                {
+                    *exp = intNode(en_c_i, 0);
+                    errorstr2(ERR_TYPE_MISMATCH_IN_ARGUMENT, "__dest", "__initblk");
+                }
+                else if (!isint(funcparams.arguments->next->tp))
+                {
+                    *exp = intNode(en_c_i, 0);
+                    errorstr2(ERR_TYPE_MISMATCH_IN_ARGUMENT, "__value", "__initblk");
+                }
+                else if (!isint(funcparams.arguments->next->next->tp))
+                {
+                    *exp = intNode(en_c_i, 0);
+                    errorstr2(ERR_TYPE_MISMATCH_IN_ARGUMENT, "__size", "__initblk");
+                }
+                else
+                {
+                    *exp = exprNode(en_void, funcparams.arguments->exp, funcparams.arguments->next->exp);
+                    *exp = exprNode(en__initblk, *exp, funcparams.arguments->next->next->exp);
+                }
+                break;
+            default:
+                *exp = intNode(en_c_i, 0);
+                break;
+        }
+        *tp = &stdvoid;
     }
     else
     {
@@ -4275,6 +4378,10 @@ static LEXEME *expression_primary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
                 case kw_alloca:
                     lex = expression_alloca(lex, funcsp, tp, exp, flags);
                     return lex;
+                case kw__initblk:
+                case kw__cpblk:
+                    lex = expression_msilfunc(lex, funcsp, tp, exp, flags);
+                    break;
                 case openpa:
                     lex = getsym();
                     lex = expression_comma(lex, funcsp, NULL, tp, exp, ismutable, flags & ~(_F_INTEMPLATEPARAMS | _F_SELECTOR));
@@ -5577,6 +5684,11 @@ LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRE
                                 (*exp)->type = en_c_string;
                             else if (basetype(throwaway)->type != bt___string)
                                 *exp = exprNode(en_x_string, *exp, NULL);
+                        }
+                        else if (basetype(*tp)->type == bt___object)
+                        {
+                            if (basetype(throwaway)->type != bt___object)
+                                *exp = exprNode(en_x_object, *exp, NULL);
                         }
                         else if (isvoid(throwaway) && !isvoid(*tp) || ismsil(*tp))
                         {
@@ -7065,7 +7177,9 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                         errorsym(ERR_STRUCT_NOT_DEFINED, basetype(*tp)->sp);
                 }
                 else if (!isstructured(*tp) && isstructured(tp1))
+                {
                     error(ERR_ILL_STRUCTURE_ASSIGNMENT);
+                }
                 else if (basetype(*tp)->type == bt_memberptr)
                 {
                     if (exp1->type == en_memberptr)

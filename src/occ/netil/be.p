@@ -152,6 +152,8 @@ void oa_put_expfunc(SYMBOL *sp);
 void oa_output_includelib(char *name);
 void oa_header(char *filename, char *compiler_version);
 void oa_end_generation(void);
+TYPE *oa_get_boxed(TYPE *);
+TYPE *oa_get_unboxed(TYPE *);
 BOOLEAN _using_(char *);
 void _using_init();
 void _add_global_using(char *str);

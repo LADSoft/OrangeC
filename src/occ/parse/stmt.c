@@ -1925,7 +1925,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 {
                     error(ERR_EXPRESSION_SYNTAX);
                 }
-                else if (!comparetypes(tp, tp1, TRUE))
+                if (!comparetypes(tp, tp1, TRUE))
                 {
                     errortype(ERR_CANNOT_CONVERT_TYPE, tp1, tp);
                 }
@@ -2857,7 +2857,7 @@ static LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent,
             lex = statement_asm(lex, funcsp, parent);
             return lex;
         default:
-            if ((startOfType(lex, FALSE) && (!cparams.prm_cplusplus || resolveToDeclaration(lex)))
+            if ((startOfType(lex, FALSE) && (!cparams.prm_cplusplus && !chosenAssembler->msil || resolveToDeclaration(lex)))
                  || MATCHKW(lex, kw_namespace) || MATCHKW(lex, kw_using) || MATCHKW(lex, kw_decltype) || MATCHKW(lex, kw_static_assert) )
             {
                 if (!cparams.prm_c99 && !cparams.prm_cplusplus)
@@ -2868,7 +2868,8 @@ static LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent,
                 {
                     AllocateLocalContext(parent, funcsp, codeLabel++);
                 }
-                while (startOfType(lex, FALSE) || MATCHKW(lex, kw_namespace) || MATCHKW(lex, kw_using) || MATCHKW(lex, kw_static_assert))
+                while ((startOfType(lex, FALSE) && (!cparams.prm_cplusplus && !chosenAssembler->msil || resolveToDeclaration(lex)))
+                    || MATCHKW(lex, kw_namespace) || MATCHKW(lex, kw_using) || MATCHKW(lex, kw_static_assert))
                 {
                     STATEMENT *current = parent->tail;
                     declareAndInitialize = FALSE;

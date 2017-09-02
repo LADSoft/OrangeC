@@ -50,6 +50,7 @@ void errorqualified(int err, SYMBOL *strSym, NAMESPACEVALUES *nsv, char *name);
 void errorNotMember(SYMBOL *strSym, NAMESPACEVALUES *nsv, char *name);
 void errorint(int err, int val);
 void errorstr(int err, char *val);
+void errorstr2(int err, char *val, char *two);
 void errorstringtype(int err, char *str, TYPE *tp1);
 void errorsym(int err, SYMBOL *sym);
 void errorsym2(int err, SYMBOL *sym1, SYMBOL *sym2);
@@ -278,6 +279,9 @@ LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRE
 EXPRESSION *exprNode(enum e_node type, EXPRESSION *left, EXPRESSION *right);
 EXPRESSION *varNode(enum e_node type, SYMBOL *sp);
 EXPRESSION *intNode(enum e_node type, LLONG_TYPE val);
+EXPRESSION *typeNode(TYPE *tp);
+BOOLEAN doBox(TYPE **tp, EXPRESSION **exp, TYPE *boxed, TYPE *unboxed);
+BOOLEAN doUnbox(TYPE **tp, EXPRESSION **exp, TYPE *boxed, TYPE *unboxed);
 EXPRESSION *baseClassOffset(SYMBOL *base, SYMBOL *derived, EXPRESSION *en);
 LEXEME *getInitList(LEXEME *lex, SYMBOL *funcsp, INITLIST **owner);
 LEXEME *getArgs(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcparams, enum e_kw finish, BOOLEAN allowPack, int flags);
@@ -588,6 +592,7 @@ void insertInitSym(SYMBOL *sp);
 BOOLEAN IsConstWithArr(TYPE *tp);
 enum e_node referenceTypeError(TYPE *tp, EXPRESSION *exp);
 EXPRESSION *createTemporary(TYPE *tp, EXPRESSION *val);
+EXPRESSION *msilCreateTemporary(TYPE *tp, EXPRESSION *val);
 INITIALIZER *initInsert(INITIALIZER **pos, TYPE *tp, EXPRESSION *exp, 
                                int offset, BOOLEAN noassign);
 LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc, 

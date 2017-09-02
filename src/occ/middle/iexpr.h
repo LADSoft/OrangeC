@@ -66,7 +66,9 @@ enum i_ops
         i_prologue, i_epilogue, i_pushcontext, i_popcontext, i_loadcontext, i_unloadcontext,
         i_tryblock, i_substack, i_parmstack, i_loadstack, i_savestack, i_functailstart, i_functailend,
         i_gcsestub, i_expressiontag, i_tag,
-     /* Dag- specific stuff */
+        /* msil */
+        i__initblk, i__cpblk,
+        /* Dag- specific stuff */
         i_var, i_const, i_ptr, i_labcon,
         /* end marker */
         i_endoflist

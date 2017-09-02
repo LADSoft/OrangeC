@@ -488,6 +488,12 @@ TYPE *typenum(char *buf, TYPE *tp)
         case bt_bit:
             strcpy(buf, "bit");
             break;
+        case bt_inative:
+            strcpy(buf, "native int");
+            break;
+        case bt_unative:
+            strcpy(buf, "native unsigned int");
+            break;
         case bt_void:
             strcpy(buf, tn_void);
             break;

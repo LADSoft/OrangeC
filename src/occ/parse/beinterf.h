@@ -379,7 +379,6 @@ typedef struct _arch_gen {
     CGFUNC asm_stackalloc;  /* allocate stack space - positive value = allocate, negative value deallocate */
     CGFUNC asm_loadstack;	/* load the stack pointer */
     CGFUNC asm_savestack;	/* save the stack pointer */
-    
     void (*asm_functail)(QUAD *q, int begin, int size);	/* functail start or end */
 } ARCH_GEN;
 
@@ -443,6 +442,8 @@ typedef struct _arch_asm
     void (*intrinsicInit)(void);                    /* initialize intrinsic mechanism, compiler startup */
     void (*SearchIntrins)(SYMBOL *sp);                 /* search for an intrinsic */
     void (*enter_type)(SYMBOL *sp);                     /* enter a type in the BE */
+    TYPE *(*find_boxed_type)(TYPE *tp);                 /* msil - get a boxed version of type*/
+    TYPE *(*find_unboxed_type)(TYPE *tp);                 /* msil - get an unboxed version of type*/
 } ARCH_ASM ;
 
 enum e_bet { bee_unknown, 

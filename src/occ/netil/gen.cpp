@@ -28,7 +28,7 @@
     PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
     OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
     EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
-    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
+f    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
     OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
     WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
     OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
@@ -368,10 +368,12 @@ void load_ind(int sz)
         case ISZ_UINT:
         case ISZ_ULONG:
         case ISZ_U32:
+        case ISZ_UNATIVE:
             op = Instruction::i_ldind_u4;
             break;
         case -ISZ_UINT:
         case -ISZ_ULONG:
+        case -ISZ_UNATIVE:
             op = Instruction::i_ldind_i4;
             break;
         case ISZ_ULONGLONG:
@@ -438,6 +440,7 @@ void store_ind(int sz)
         case ISZ_UINT:
         case ISZ_ULONG:
         case ISZ_U32:
+        case ISZ_UNATIVE:
             op = Instruction::i_stind_i4;
             break;
         case ISZ_ULONGLONG:
@@ -488,6 +491,7 @@ void load_arithmetic_constant(int sz, Operand *operand)
         case ISZ_UINT:
         case ISZ_ULONG:
         case ISZ_U32:
+        case ISZ_UNATIVE:
             op = Instruction::i_ldc_i4;
             break;
         case ISZ_ULONGLONG:
@@ -540,6 +544,7 @@ void load_constant(int sz, EXPRESSION *exp)
         case ISZ_UINT:
         case ISZ_ULONG:
         case ISZ_U32:
+        case ISZ_UNATIVE:
             op = Instruction::i_ldc_i4;
             break;
         case ISZ_ULONGLONG:
@@ -709,6 +714,11 @@ void gen_convert(Operand *dest, IMODE *im, int sz)
     Instruction::iop op;
     switch(sz)
     {
+        case ISZ_UNATIVE:
+            op = Instruction::i_conv_u;
+        case -ISZ_UNATIVE:
+            op = Instruction::i_conv_i;
+            break;
         case ISZ_BOOLEAN:
         case ISZ_UCHAR:
             op = Instruction::i_conv_u1;
@@ -899,12 +909,12 @@ extern "C" void asm_goto(QUAD *q)               /* unconditional branch */
 BoxedType *boxedType(int isz)
 {
     static Type::BasicType names[] = { Type::u32, Type::u32, Type::u8, Type::u8,
-        Type::u16, Type::u16, Type::u16, Type::u32, Type::u32, Type::u32,
+        Type::u16, Type::u16, Type::u16, Type::u32, Type::unative, Type::u32, Type::u32,
         Type::u64, Type::u32, Type::u32, Type::u16, Type::u16, Type::r32, Type::r64,
         Type::r64, Type::r32, Type::r64, Type::r64,
     };
     static Type::BasicType mnames[] = { Type::i32, Type::i32, Type::i8, Type::i8,
-        Type::i16, Type::i16, Type::i16, Type::i32, Type::i32, Type::i32,
+        Type::i16, Type::i16, Type::i16, Type::i32, Type::inative, Type::i32, Type::i32,
         Type::i64, Type::i32, Type::i32, Type::i16, Type::i16, Type::r32, Type::r64,
         Type::r64, Type::r32, Type::r64, Type::r64,
     };
@@ -925,6 +935,15 @@ void box(IMODE *im)
         Operand *operand = peLib->AllocateOperand(peLib->AllocateValue("", type));
         gen_code(Instruction::i_box, operand);
     }
+}
+void unbox(int val)
+{
+    static Type::BasicType typeNames[] = { Type::i8, Type::i8, Type::i8, Type::i8, Type::u8,
+        Type::i16, Type::i16, Type::u16, Type::u16, Type::i32, Type::i32, Type::inative, Type::i32, Type::u32, Type::unative, Type::i32, Type::u32,
+        Type::i64, Type::u64, Type::r32, Type::r64, Type::r64, Type::r32, Type::r64, Type::r64 };
+    Operand *op1 = peLib->AllocateOperand(peLib->AllocateValue("", peLib->AllocateType(typeNames[val], 0)));
+    if (op1)
+        gen_code(Instruction::i_unbox, op1);
 }
 // this implementation won't handle varag functions nested in other varargs...
 extern "C" void asm_parm(QUAD *q)               /* push a parameter*/
@@ -1029,12 +1048,8 @@ static BOOLEAN bltin_gosub(QUAD *q)
 			}
 			else if (!isstructured(tp) && !isarray(tp))
 			{
-				static Type::BasicType typeNames[] = { Type::i8, Type::i8, Type::i8, Type::i8, Type::u8,
-						Type::i16, Type::i16, Type::u16, Type::u16, Type::i32, Type::i32, Type::i32, Type::u32, Type::i32, Type::u32,
-						Type::i64, Type::u64, Type::r32, Type::r64, Type::r64, Type::r32, Type::r64, Type::r64 };
-				EXPRESSION *exp = func->arguments->next->exp;
-				Operand *op1 = peLib->AllocateOperand(peLib->AllocateValue("", peLib->AllocateType(typeNames[basetype(exp->v.sp->tp)->type], 0)));
-				gen_code(Instruction::i_unbox, op1);
+                EXPRESSION *exp = func->arguments->next->exp;
+                unbox(basetype(exp->v.sp->tp)->type);
 			}
 			return TRUE;
 		}
@@ -1048,7 +1063,15 @@ extern "C" void asm_gosub(QUAD *q)              /* normal gosub to an immediate 
         if (!bltin_gosub(q))
         {
 			Operand *ap = getCallOperand(q);
-			gen_code(Instruction::i_call, ap);
+            if (!strcmp(q->dc.left->offset->v.sp->name, ".ctor"))
+            {
+                gen_code(Instruction::i_newobj, ap);
+                increment_stack();
+            }
+            else
+            {
+                gen_code(Instruction::i_call, ap);
+            }
         }
     }
     else
@@ -1514,8 +1537,6 @@ extern "C" void asm_dc(QUAD *q)                 /* unused */
 }
 extern "C" void asm_assnblock(QUAD *q)          /* copy block of memory*/
 {
-    EXPRESSION *size = q->ans->offset;
-    load_constant(-ISZ_UINT, size);
     gen_code(Instruction::i_cpblk, 0);
     decrement_stack();
     decrement_stack();
@@ -1736,6 +1757,7 @@ int examine_icode(QUAD *head)
                     t = leftInsertionPos(head, head->dc.right);
                 InsertInstruction(t->back, q);
             }
+            /*
             if (head->dc.opcode == i_clrblock)
             {
                 // insert the value to clear it to, e.g. zero
@@ -1750,6 +1772,7 @@ int examine_icode(QUAD *head)
                 q->dc.left->offset = intNode(en_c_i, 0);
                 InsertInstruction(head->back, q);
             }
+            */
             if (head->dc.right && head->dc.right->offset->type == en_structelem)
             {
                 // by definition this is an add node...

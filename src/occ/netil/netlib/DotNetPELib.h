@@ -51,7 +51,7 @@
 
 // reference changelog.txt to see what the changes are
 //
-#define DOTNETPELIB_VERSION "2.3"
+#define DOTNETPELIB_VERSION "2.4"
 
 // this is the main library header
 // it allows creation of the methods and data that would be dumped into 

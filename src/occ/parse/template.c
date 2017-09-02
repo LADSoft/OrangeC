@@ -35,6 +35,7 @@
 
 */
 #include "compiler.h"
+#include "assert.h"
 
 extern int currentErrorLine;
 extern NAMESPACEVALUES *localNameSpace;
@@ -76,6 +77,8 @@ extern TYPE stdlongdoublecomplex;
 extern TYPE stdfloatimaginary;
 extern TYPE stddoubleimaginary;
 extern TYPE stdlongdoubleimaginary;
+extern TYPE stdinative;
+extern TYPE stdunative;
 extern LIST *openStructs;
 extern int structLevel;
 extern TYPE stdnullpointer;
@@ -2441,6 +2444,12 @@ static TYPE *LookupTypeFromExpression(EXPRESSION *exp, TEMPLATEPARAMLIST *enclos
         case en_x_ui:
         case en_l_ui:
             return &stdunsigned;
+        case en_x_inative:
+        case en_l_inative:
+            return &stdinative;
+        case en_x_unative:
+        case en_l_unative:
+            return &stdunative;
         case en_c_u32:
         case en_x_u32:
         case en_l_u32:

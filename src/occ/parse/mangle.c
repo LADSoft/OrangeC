@@ -683,6 +683,11 @@ char *mangleType (char *in, TYPE *tp, BOOLEAN first)
             case bt_int:
                 *in++ = 'i';
                 break;
+            case bt_unative:
+                *in++ = 'u';
+            case bt_inative:
+                *in++ = 'N';
+                break;
             case bt_char16_t:
                 *in++ = 'h';
                 break;

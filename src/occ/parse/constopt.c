@@ -432,6 +432,8 @@ ULLONG_TYPE CastToInt(int size, LLONG_TYPE value)
             break;
         case -ISZ_UINT:
         case ISZ_UINT:
+        case -ISZ_UNATIVE:
+        case ISZ_UNATIVE:
             bits = getSize(bt_int) * 8;
             break ;
         case -ISZ_ULONG:
@@ -1444,6 +1446,8 @@ int opt0(EXPRESSION **node)
         case en_l_ref:
         case en_l_i:
         case en_l_ui:
+        case en_l_inative:
+        case en_l_unative:
         case en_l_l:
         case en_l_ul:
         case en_l_ll:
@@ -1470,6 +1474,8 @@ int opt0(EXPRESSION **node)
         case en_x_ul:
         case en_x_i:
         case en_x_ui:
+        case en_x_inative:
+        case en_x_unative:
         case en_x_ll:
         case en_x_ull:
         case en_x_f:
@@ -2325,6 +2331,8 @@ join_lor:
         case en_stackblock:
         case en_autoinc:
         case en_autodec:
+        case en__initblk:
+        case en__cpblk:
             rv |= opt0(&(ep->right));
         case en_trapcall:
         case en_substack:
@@ -2808,6 +2816,8 @@ int fold_const(EXPRESSION *node)
         case en_l_ref:
         case en_l_i:
         case en_l_ui:
+        case en_l_inative:
+        case en_l_unative:
         case en_l_ul:
         case en_l_l:
         case en_l_uc:
@@ -2836,6 +2846,8 @@ int fold_const(EXPRESSION *node)
         case en_x_ul:
         case en_x_i:
         case en_x_ui:
+        case en_x_inative:
+        case en_x_unative:
         case en_x_p:
         case en_x_fp:
         case en_x_sp:
@@ -2896,6 +2908,8 @@ int fold_const(EXPRESSION *node)
         case en_autoinc:
         case en_autodec:
         case en_mp_compare:
+        case en__initblk:
+        case en__cpblk:
             rv |= fold_const(node->right);
         case en_blockclear:
         case en_argnopush:
@@ -3035,7 +3049,6 @@ int typedconsts(EXPRESSION *node1)
         case en_argnopush:
         case en_not_lvalue:
         case en_lvalue:
-
             rv |= typedconsts(node1->left);
             break;
         case en_cond:
@@ -3092,6 +3105,8 @@ int typedconsts(EXPRESSION *node1)
         case en_autoinc:
         case en_autodec:
         case en_mp_compare:
+        case en__initblk:
+        case en__cpblk:
             rv |= typedconsts(node1->right);
         case en_trapcall:
         case en_shiftby:
@@ -3124,6 +3139,8 @@ int typedconsts(EXPRESSION *node1)
         case en_l_ref:
         case en_l_i:
         case en_l_ui:
+        case en_l_inative:
+        case en_l_unative:
         case en_l_l:
         case en_l_ul:
         case en_l_f:
@@ -3272,6 +3289,7 @@ int typedconsts(EXPRESSION *node1)
             }
             break;
         case en_x_i:
+        case en_x_inative:
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
@@ -3282,6 +3300,7 @@ int typedconsts(EXPRESSION *node1)
             }
             break;
         case en_x_ui:
+        case en_x_unative:
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {

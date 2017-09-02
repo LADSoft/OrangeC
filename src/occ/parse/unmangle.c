@@ -797,7 +797,11 @@ char *unmang1(char *buf, char *name, char *last, BOOLEAN tof)
         case 'u':
             strcpy(buf, "unsigned ");
             buf = buf + 9;
-            switch (*name++)
+            if (*name == 'N')
+            {
+                strcpy(buf, "unative");
+            }
+            else switch (*name++)
             {
             case 'i':
                 strcpy(buf, tn_int);
@@ -813,6 +817,9 @@ char *unmang1(char *buf, char *name, char *last, BOOLEAN tof)
                 break;
             case 'c':
                 strcpy(buf, tn_char);
+                break;
+            case 'N':
+                strcpy(buf, "native int");
                 break;
             }
             break;
@@ -911,6 +918,9 @@ char *unmang1(char *buf, char *name, char *last, BOOLEAN tof)
             break;
         case 'i':
             strcpy(buf, tn_int);
+            break;
+        case 'N':
+            strcpy(buf, "native int");
             break;
         case 'l':
             strcpy(buf, tn_long);

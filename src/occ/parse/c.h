@@ -126,7 +126,7 @@ enum e_kw
         kw__far, kw_asmreg, kw_asminst, kw__indirect, kw__export, kw__import, kw___func__,
         kw__near, kw__seg, kw___typeid, kw___int64, kw_alloca, kw__msil_rtl,
         kw___va_list__,  kw___va_typeof__, kw__unmanaged,  kw__uuid, kw__uuidof,
-        kw___string, kw___object, 
+        kw___string, kw___object,  kw_native, kw__cpblk, kw__initblk,
     /* These next are generic register names */
     kw_D0, kw_D1, kw_D2, kw_D3, kw_D4, kw_D5, kw_D6, kw_D7, kw_D8, kw_D9, kw_DA,
         kw_DB, kw_DC, kw_DD, kw_DE, kw_DF, kw_A0, kw_A1, kw_A2, kw_A3, kw_A4,
@@ -161,12 +161,14 @@ enum e_node
     en_c_bit, en_c_bool, en_c_c, en_c_uc, en_c_wc, en_c_s, en_c_u16, en_c_us, en_c_i, en_c_ui, 
     en_c_u32, en_c_l, en_c_ul, en_c_ll, en_c_ull, en_c_f, en_c_d, en_c_ld,
         en_c_p, en_c_sp, en_c_fp, en_c_fc, en_c_dc, en_c_ldc,
-        en_c_fi, en_c_di, en_c_ldi, en_x_bool, en_x_bit, en_x_i, en_x_ui, en_x_l, en_x_ul,
+        en_c_fi, en_c_di, en_c_ldi, en_x_bool, en_x_bit, 
         en_c_string,
+        en_x_i, en_x_ui, en_x_l, en_x_ul, en_x_inative, en_x_unative,
         en_x_ll, en_x_ull, en_x_f, en_x_d, en_x_ld, en_x_fi, en_x_di, en_x_ldi, en_x_fp, en_x_sp,
         en_x_fc, en_x_dc, en_x_ldc,en_x_c, en_x_uc, en_x_wc, en_x_u16, en_x_u32, en_x_s, en_x_us, en_x_label, 
         en_x_string, en_x_object,
         en_l_bool, en_l_c, en_l_uc, en_l_u16, en_l_u32, en_l_wc, en_l_s, en_l_us, en_l_i, en_l_ui,
+        en_l_inative, en_l_unative,
         en_l_l, en_l_ul, en_l_ll, en_l_ull, en_l_f, en_l_d, en_l_ld,  en_l_p, en_l_ref,
         en_l_fi, en_l_di, en_l_ldi, en_l_fc, en_l_dc, en_l_ldc, en_l_fp, en_l_sp, en_l_bit,
         en_l_string, en_l_object, en_msil_array_access, en_msil_array_init,
@@ -179,9 +181,10 @@ enum e_node
         en_and, en_or, en_land, en_lor, en_xor, en_umul, en_autoinc, en_autodec,
         en_udiv, en_umod, en_ugt, en_uge, en_ule, en_ult, en_blockclear, en_stackblock, 
         en_blockassign, en_rshd, en_bits,
-        en_imode, en_x_p, en_substack, en_alloca,
+        en_imode, en_x_p, en_substack, en_alloca, en__cpblk, en__initblk,
         en_loadstack, en_savestack, en_stmt, en_atomic, en_placeholder, en_thisshim, en_thisref,
-        en_literalclass, en_templateparam, en_templateselector, en_packedempty, en_sizeofellipse
+        en_literalclass, en_templateparam, en_templateselector, en_packedempty, en_sizeofellipse,
+        en_type
 };
 /*      statement node descriptions     */
 
@@ -211,7 +214,7 @@ enum e_bt
      * and the debug info has a table indexed by type
      */
     bt_bit, bt_bool, bt_signed_char, bt_char, bt_unsigned_char, bt_short, bt_char16_t, bt_unsigned_short, 
-    bt_wchar_t, bt_enum, bt_int, bt_char32_t, bt_unsigned, bt_long, bt_unsigned_long, bt_long_long,
+    bt_wchar_t, bt_enum, bt_int, bt_inative, bt_char32_t, bt_unsigned, bt_unative, bt_long, bt_unsigned_long, bt_long_long,
         bt_unsigned_long_long, bt_float, bt_double, bt_long_double, bt_float_imaginary,
         bt_double_imaginary, bt_long_double_imaginary, bt_float_complex, 
         bt_double_complex, bt_long_double_complex,
@@ -296,9 +299,8 @@ typedef struct expr
         struct _templateSelector *templateSelector;
         struct _templateParamList *templateParam;
         struct _msilarray *msilArray;
-        struct typ *tp;
         HASHTABLE *syms;
-                
+        struct typ *tp;
         struct {
             struct expr *thisptr;
             struct typ *tp;

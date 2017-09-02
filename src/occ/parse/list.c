@@ -120,6 +120,12 @@ void put_ty(TYPE *tp)
         case bt_bit:
             fprintf(listFile, "Bit");
             break;
+        case bt_inative:
+            fprintf(listFile, "Native int");
+            break;
+        case bt_unative:
+            fprintf(listFile, "Native unsigned int");
+            break;
         case bt_short:
             fprintf(listFile, "Short");
             break;

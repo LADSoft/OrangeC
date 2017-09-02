@@ -703,6 +703,8 @@ IMODE *gen_deref(EXPRESSION *node, SYMBOL *funcsp, int flags)
         case en_alloca:
         case en_loadstack:
         case en_savestack:
+        case en__initblk:
+        case en__cpblk:
             siz1 = ISZ_ADDR;
             break;
         case en_l_bool:
@@ -729,6 +731,12 @@ IMODE *gen_deref(EXPRESSION *node, SYMBOL *funcsp, int flags)
             break;
         case en_l_i:
             siz1 =  - ISZ_UINT;
+            break;
+        case en_l_inative:
+            siz1 = -ISZ_UNATIVE;
+            break;
+        case en_l_unative:
+            siz1 = ISZ_UNATIVE;
             break;
         case en_l_p:
         case en_l_ref:
@@ -1430,7 +1438,7 @@ IMODE *gen_moveblock(EXPRESSION *node, SYMBOL *funcsp)
  * Generate code to copy one structure to another
  */
 {
-    IMODE *ap1,  *ap2, *ap3;
+    IMODE *ap1,  *ap2, *ap3, *ap6, *ap7, *ap8;
     if (!node->size)
         return (0);
     ap3 = gen_expr(funcsp, node->left, F_VOL, ISZ_UINT);
@@ -1441,7 +1449,15 @@ IMODE *gen_moveblock(EXPRESSION *node, SYMBOL *funcsp)
     ap2 = LookupLoadTemp(NULL, ap3);
     if (ap2 != ap3)
         gen_icode(i_assn, ap2, ap3, NULL);
-    gen_icode(i_assnblock, make_immed(ISZ_UINT,node->size), ap1, ap2);
+    ap6 = make_immed(ISZ_UINT, node->size);
+    ap7 = LookupLoadTemp(NULL, ap6);
+    if (ap7 != ap6)
+        gen_icode(i_assn, ap7, ap6, NULL);
+
+    ap8 = (IMODE *)Alloc(sizeof(IMODE));
+    memcpy(ap8, ap7, sizeof(IMODE));
+    ap8->mode = i_ind;
+    gen_icode(i_assnblock, ap8, ap1, ap2);
     return (ap1);
 }
 IMODE *gen_clearblock(EXPRESSION *node, SYMBOL *funcsp)
@@ -1449,7 +1465,7 @@ IMODE *gen_clearblock(EXPRESSION *node, SYMBOL *funcsp)
  * Generate code to copy one structure to another
  */
 {
-    IMODE *ap1, *ap3, *ap4, *ap5;
+    IMODE *ap1, *ap3, *ap4, *ap5, *ap6, *ap7, *ap8;
     if (node->size)
     {
         ap4 = make_immed(ISZ_UINT,node->size);
@@ -1469,7 +1485,42 @@ IMODE *gen_clearblock(EXPRESSION *node, SYMBOL *funcsp)
     ap1 = LookupLoadTemp(NULL, ap3);
     if (ap1 != ap3)
         gen_icode(i_assn, ap1, ap3, NULL);
-    gen_icode(i_clrblock, 0, ap1, ap4);
+    ap6 = make_immed(ISZ_UINT, 0);
+    ap7 = LookupLoadTemp(NULL, ap6);
+    if (ap7 != ap6)
+        gen_icode(i_assn, ap7, ap6, NULL);
+    ap8 = (IMODE *)Alloc(sizeof(IMODE));
+    memcpy(ap8, ap7, sizeof(IMODE));
+    ap8->mode = i_ind;
+    gen_icode(i_clrblock, ap8, ap1, ap4);
+    return (ap1);
+}
+IMODE *gen_cpinitblock(EXPRESSION *node, SYMBOL *funcsp, BOOLEAN cp)
+/*
+* Generate code to copy one structure to another
+*/
+{
+    IMODE *ap1, *ap3, *ap4, *ap5, *ap6, *ap7, *ap8;
+    ap6 = gen_expr(funcsp, node->left->left, F_VOL, ISZ_UINT);
+    ap7 = LookupLoadTemp(NULL, ap6);
+    if (ap7 != ap6)
+        gen_icode(i_assn, ap7, ap6, NULL);
+    ap8 = (IMODE *)Alloc(sizeof(IMODE));
+    memcpy(ap8, ap7, sizeof(IMODE));
+    ap8->mode = i_ind;
+    ap3 = gen_expr(funcsp, node->left->right, F_VOL, ISZ_UINT);
+    ap1 = LookupLoadTemp(NULL, ap3);
+    if (ap1 != ap3)
+        gen_icode(i_assn, ap1, ap3, NULL);
+    ap5 = gen_expr(funcsp, node->right, F_VOL, ISZ_UINT);
+    ap4 = LookupLoadTemp(NULL, ap5);
+    if (ap5 != ap4)
+        gen_icode(i_assn, ap4, ap5, NULL);
+    if (cp)
+        gen_icode(i__cpblk, ap8, ap1, ap4);
+    else
+        gen_icode(i__initblk, ap8, ap1, ap4);
+    intermed_tail->alwayslive = TRUE;
     return (ap1);
 }
 
@@ -1748,7 +1799,6 @@ IMODE *gen_aincdec(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i
         return ap5;
     }
 }
-
 /*-------------------------------------------------------------------------*/
 static EXPRESSION *getAddress(EXPRESSION *exp)
 {
@@ -2599,10 +2649,13 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
                 case en_autodec:
                 case en_assign:
                 case en_func:
+                case en_thisref:
                 case en_intcall:
                 case en_blockassign:
                 case en_blockclear:
                 case en_void:
+                case en__cpblk:
+                case en__initblk:
                     break;
                 default:
                     gen_nodag(i_expressiontag, 0, 0, 0);
@@ -2653,6 +2706,12 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
             goto castjoin;
         case en_x_ui:
             siz1 = ISZ_UINT;
+            goto castjoin;
+        case en_x_inative:
+            siz1 = -ISZ_UNATIVE;
+            goto castjoin;
+        case en_x_unative:
+            siz1 = ISZ_UNATIVE;
             goto castjoin;
         case en_x_l:
             siz1 =  - ISZ_ULONG;
@@ -2786,6 +2845,12 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
             ap1 = gen_expr(funcsp, node->left, 0, ISZ_UINT );
             gen_icode(i_substack, ap2 = tempreg(ISZ_ADDR, 0), ap1, NULL );
             rv = ap2;
+            break;
+        case en__initblk:
+            rv = gen_cpinitblock(node, funcsp, FALSE);
+            break;
+        case en__cpblk:
+            rv = gen_cpinitblock(node, funcsp, TRUE);
             break;
         case en_loadstack:
             ap1 = gen_expr(funcsp, node->left, 0, ISZ_ADDR );
@@ -2963,6 +3028,8 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
         case en_l_l:
         case en_l_i:
         case en_l_ui:
+        case en_l_inative:
+        case en_l_unative:
         case en_l_p:
         case en_l_ref:
         case en_l_ul:
@@ -3208,10 +3275,13 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
                 case en_autodec:
                 case en_assign:
                 case en_func:
+                case en_thisref:
                 case en_intcall:
                 case en_blockassign:
                 case en_blockclear:
                 case en_void:
+                case en__cpblk:
+                case en__initblk:
                     break;
                 default:
                     gen_nodag(i_expressiontag, 0, 0, 0);
@@ -3275,6 +3345,9 @@ int natural_size(EXPRESSION *node)
         case en_savestack:
         case en_nullptr:        
             return ISZ_ADDR;
+        case en__initblk:
+        case en__cpblk:
+            return ISZ_NONE;
         case en_bits:
         case en_shiftby:
             return natural_size(node->left);
@@ -3323,6 +3396,12 @@ int natural_size(EXPRESSION *node)
         case en_l_ui:
         case en_x_ui:
             return ISZ_UINT;
+        case en_x_inative:
+        case en_l_inative:
+            return -ISZ_UNATIVE;
+        case en_x_unative:
+        case en_l_unative:
+            return ISZ_UNATIVE;
         case en_c_d:
         case en_l_d:
         case en_x_d:

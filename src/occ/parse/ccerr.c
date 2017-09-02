@@ -870,6 +870,10 @@ void errorstr(int err, char *val)
 {
     printerr(err, preprocFile, preprocLine, val);
 }
+void errorstr2(int err, char *val, char *two)
+{
+    printerr(err, preprocFile, preprocLine, val, two);
+}
 void errorsym(int err, SYMBOL *sym)
 {
     char buf[2048];
@@ -1626,6 +1630,8 @@ void assignmentUsages(EXPRESSION *node, BOOLEAN first)
         case en_l_ref:
         case en_l_i:
         case en_l_ui:
+        case en_l_inative:
+        case en_l_unative:
         case en_l_uc:
         case en_l_us:
         case en_l_bool:
@@ -1667,6 +1673,8 @@ void assignmentUsages(EXPRESSION *node, BOOLEAN first)
         case en_x_uc:
         case en_x_bool:
         case en_x_bit:
+        case en_x_inative:
+        case en_x_unative:
         case en_x_s:
         case en_x_us:
         case en_x_l:
@@ -1687,6 +1695,8 @@ void assignmentUsages(EXPRESSION *node, BOOLEAN first)
             assignmentUsages(node->left, FALSE);
             break;
         case en_assign:
+        case en__initblk:
+        case en__cpblk:
             assignmentUsages(node->right, FALSE);
             assignmentUsages(node->left, TRUE);
             assignmentAssign(node->left, TRUE);
@@ -1852,6 +1862,8 @@ static int checkDefaultExpression(EXPRESSION *node)
         case en_l_ref:
         case en_l_i:
         case en_l_ui:
+        case en_l_inative:
+        case en_l_unative:
         case en_l_uc:
         case en_l_us:
         case en_l_bool:
@@ -1879,6 +1891,8 @@ static int checkDefaultExpression(EXPRESSION *node)
         case en_x_ull:
         case en_x_i:
         case en_x_ui:
+        case en_x_inative:
+        case en_x_unative:
         case en_x_c:
         case en_x_u16:
         case en_x_u32:
@@ -1905,6 +1919,8 @@ static int checkDefaultExpression(EXPRESSION *node)
             rv |= checkDefaultExpression(node->left);
             break;
         case en_assign:
+        case en__initblk:
+        case en__cpblk:
             rv |= checkDefaultExpression(node->right);
             rv |= checkDefaultExpression(node->left);
             break;

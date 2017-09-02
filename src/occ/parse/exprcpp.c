@@ -638,7 +638,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
             errskim(&lex, skim_semi);
         }
     }
-    else if (!cparams.prm_cplusplus)
+    else if (!cparams.prm_cplusplus && !chosenAssembler->msil)
     {
         *exp = intNode(en_c_i, 0);
         errortype(ERR_IMPROPER_USE_OF_TYPE, *tp, NULL);
@@ -646,9 +646,20 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
     }
     else
     {
-
+        TYPE *unboxed = NULL;
         if (isref(*tp))
             *tp = basetype(basetype(*tp)->btp);
+        // find structured version of arithmetic types for msil member matching
+        if (chosenAssembler->msil && isarithmetic(*tp) && chosenAssembler->find_boxed_type)
+        {
+            // auto-boxing for msil
+            TYPE *tp1 = chosenAssembler->find_boxed_type(basetype(*tp));
+            if (tp1)
+            {
+                unboxed = *tp;
+                *tp = tp1;
+            }
+        }
         if (isstructured(*tp))
         {
             SYMBOL *sp;
@@ -659,16 +670,27 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
             lex = getArgs(lex, funcsp, funcparams, closepa, TRUE, flags);
             if (!(flags & _F_SIZEOF))
             {
-                exp1 = *exp = anonymousVar(sc_auto, basetype(*tp)->sp->tp);
+                EXPRESSION *exp2;
+                exp2 = exp1 = *exp = anonymousVar(sc_auto, unboxed ? unboxed : basetype(*tp)->sp->tp);
                 sp = exp1->v.sp;
                 callConstructor(&ctype, exp, funcparams, FALSE, NULL, TRUE, TRUE, FALSE, FALSE, FALSE);
                 callDestructor(basetype(*tp)->sp, NULL, &exp1, NULL, TRUE, FALSE, FALSE);
+                if (chosenAssembler->msil)
+                    *exp = exprNode(en_void, *exp, exp2);
                 initInsert(&sp->dest, *tp, exp1, 0, TRUE);
-//                if (flags & _F_SIZEOF)
+                //                if (flags & _F_SIZEOF)
 //                    sp->destructed = TRUE; // in case we don't actually use this instantiation
             }
             else
                 *exp = intNode(en_c_i, 0);
+            if (unboxed)
+                *tp = unboxed;
+        }
+        else if (chosenAssembler->msil)
+        {
+            *exp = intNode(en_c_i, 0);
+            errortype(ERR_IMPROPER_USE_OF_TYPE, *tp, NULL);
+            errskim(&lex, skim_semi);
         }
         else
         {
@@ -2036,6 +2058,8 @@ static BOOLEAN noexceptExpression(EXPRESSION *node)
         case en_l_ref:
         case en_l_i:
         case en_l_ui:
+        case en_l_inative:
+        case en_l_unative:
         case en_l_uc:
         case en_l_us:
         case en_l_bool:
@@ -2063,6 +2087,8 @@ static BOOLEAN noexceptExpression(EXPRESSION *node)
         case en_x_ull:
         case en_x_i:
         case en_x_ui:
+        case en_x_inative:
+        case en_x_unative:
         case en_x_c:
         case en_x_u16:
         case en_x_u32:
@@ -2089,6 +2115,8 @@ static BOOLEAN noexceptExpression(EXPRESSION *node)
             rv = noexceptExpression(node->left);
             break;
         case en_assign:
+        case en__initblk:
+        case en__cpblk:
             rv = noexceptExpression(node->right) && noexceptExpression(node->left);
             break;
         case en_autoinc:

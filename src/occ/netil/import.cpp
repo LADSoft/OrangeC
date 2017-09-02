@@ -55,6 +55,9 @@ extern "C"
     extern NAMESPACEVALUES *globalNameSpace;
     extern LIST *nameSpaceList;
 }
+
+void AddType(SYMBOL *sym, Type *type);
+
 class Importer :public Callback
 {
 public:
@@ -93,6 +96,7 @@ public:
 #endif
 protected:
     TYPE *TranslateType(Type *);
+    TYPE *TranslateStruct(const DataContainer *);
 private:
     std::deque<SYMBOL *> nameSpaces_;
     std::deque<SYMBOL *> structures_;
@@ -119,7 +123,7 @@ e_bt Importer::translatedTypes[] =
     bt_short, bt_unsigned_short,
     bt_int, bt_unsigned ,
     bt_long_long, bt_unsigned_long_long,
-    bt_int, bt_unsigned,
+    bt_inative, bt_unative,
     bt_float, bt_double, bt___object, bt___string
 
 };
@@ -130,14 +134,31 @@ TYPE *Importer::TranslateType(Type *in)
     if (in)
     {
         enum e_bt tp;
-        if (in->ArrayLevel() || in->PointerLevel())
+        if (in->ArrayLevel())
             return NULL;
-        tp = translatedTypes[in->GetBasicType()];
-        if (tp == bt_void && in->GetBasicType() != Type::Void)
-            return NULL;
-        rv = (TYPE *)Alloc(sizeof(TYPE));
-        rv->type = tp;
-        rv->size = 1;
+        if (in->GetBasicType() == Type::cls)
+        {
+            TYPE *tp = TranslateStruct(in->GetClass());
+            if (!tp)
+                return nullptr;
+        }
+        else
+        {
+            tp = translatedTypes[in->GetBasicType()];
+            if (tp == bt_void && in->GetBasicType() != Type::Void)
+                return nullptr;
+            rv = (TYPE *)Alloc(sizeof(TYPE));
+            rv->type = tp;
+            rv->size = 1;
+        }
+        for (int i=0; i < in->PointerLevel(); i++)
+        {
+            TYPE *tp1 = (TYPE *)Alloc(sizeof(TYPE));
+            tp1->type = bt_pointer;
+            tp1->size = getSize(bt_int);
+            tp1->btp = rv;
+            rv = tp1;
+        }
         if (in->ByRef())
         {
             TYPE *tp1 = (TYPE *)Alloc(sizeof(TYPE));
@@ -148,6 +169,51 @@ TYPE *Importer::TranslateType(Type *in)
         }
     }
     return rv;
+}
+TYPE *Importer::TranslateStruct(const DataContainer *in)
+{
+    TYPE *tp = nullptr;
+    const DataContainer *list[100];
+    int count = 0;
+    list[count++] = in;
+    while (in->Parent())
+    {
+        list[count++] = in->Parent();
+        in = in->Parent();
+    }
+    if (count >= 2)
+    {
+        SYMBOL *sp = search((char *)list[count - 2]->Name().c_str(), globalNameSpace->syms);
+        for (int i = count - 3; i >= 0; i--)
+        {
+            if (sp)
+            {
+                if (sp->storage_class == sc_namespace)
+                {
+                    sp = search((char *)list[i]->Name().c_str(), sp->nameSpaceValues->syms);
+                }
+                else if (sp->storage_class == sc_type)
+                {
+                    if (isstructured(sp->tp))
+                    {
+                        sp = search((char *)list[i]->Name().c_str(), sp->tp->syms);
+
+                    }
+                    else
+                    {
+                        sp = nullptr;
+                    }
+                }
+                else
+                {
+                    sp = nullptr;
+                }
+            }
+        }
+        if (sp && isstructured(sp->tp))
+            tp = sp->tp;
+    }
+    return tp;
 }
 
 bool Importer::EnterAssembly(const AssemblyDef *assembly)
@@ -183,13 +249,21 @@ bool Importer::EnterNamespace(const Namespace *nameSpace)
         sp->parentNameSpace = globalNameSpace->name;
         sp->linkage = lk_cdecl;
         sp->msil = (void *)nameSpace;
-        if (nameSpaceList)
+        if (nameSpaces_.size())
         {
-            sp->parentNameSpace = (SYMBOL *)nameSpaceList->data;
+            sp->parentNameSpace = nameSpaces_.back();
         }
         SetLinkerNames(sp, lk_none);
-        insert(sp, globalNameSpace->syms);
-        insert(sp, globalNameSpace->tags);
+        if (nameSpaces_.size() == 0)
+        {
+            insert(sp, globalNameSpace->syms);
+            insert(sp, globalNameSpace->tags);
+        }
+        else
+        {
+            insert(sp, nameSpaces_.back()->nameSpaceValues->syms);
+            insert(sp, nameSpaces_.back()->nameSpaceValues->tags);
+        }
     }
     else
     {
@@ -235,10 +309,12 @@ bool Importer::EnterClass(const Class *cls)
             sp->storage_class = sc_type;
             sp->tp = (TYPE *)Alloc(sizeof(TYPE));
             sp->tp->type = bt_struct;
+            sp->tp->size = 1;// needs to be NZ but we don't really care what is is in the MSIL compiler
             sp->tp->syms = CreateHashTable(1);
             sp->tp->rootType = sp->tp;
             sp->tp->sp = sp;
             sp->declfile = sp->origdeclfile = "[import]";
+            sp->trivialCons = TRUE;
             if (structures_.size())
                 sp->parentClass = structures_.back();
             if (nameSpaces_.size())
@@ -248,6 +324,7 @@ bool Importer::EnterClass(const Class *cls)
 
             insert(sp, structures_.size() ? structures_.back()->tp->syms : nameSpaces_.back()->nameSpaceValues->syms);
             sp->msil = (void *)cls;
+            AddType(sp, peLib->AllocateType(const_cast<Class *>(cls)));
         }
         else
         {
@@ -272,121 +349,139 @@ bool Importer::EnterMethod(const Method *method)
     diag("Method", method->Signature()->Name());
     if (structures_.size())
     {
-        if (!(method->Signature()->Flags() & MethodSignature::InstanceFlag))
+        int count = method->Signature()->ParamCount();
+        if (method->Signature()->Flags() & MethodSignature::Vararg)
+            count --;
+        if (method->Signature()->Name() == ".ctor")
+            structures_.back()->trivialCons = FALSE;
+        // static instance member with no variable length argument list is all we support right now...
+        TYPE *tp = (TYPE *)Alloc(sizeof(TYPE));
+        std::vector<TYPE *>args;
+        std::vector<std::string> names;
+        tp->type = bt_func;
+        tp->btp = TranslateType(method->Signature()->ReturnType());
+        if (tp->btp)
         {
-            int count = method->Signature()->ParamCount();
-            if (method->Signature()->Flags() & MethodSignature::Vararg)
-                count --;
-            // static instance member with no variable length argument list is all we support right now...
-            TYPE *tp = (TYPE *)Alloc(sizeof(TYPE));
-            std::vector<TYPE *>args;
-            std::vector<std::string> names;
-            tp->type = bt_func;
-            tp->btp = TranslateType(method->Signature()->ReturnType());
-            if (tp->btp)
+            for (auto it = method->Signature()->begin(); it != method->Signature()->end(); ++it)
             {
-                for (auto it = method->Signature()->begin(); it != method->Signature()->end(); ++it)
+                if (!count) // vararg
                 {
-                    if (!count) // vararg
+                    if ((*it)->GetType()->GetBasicType() != Type::object || (*it)->GetType()->ArrayLevel() != 1)
+                        tp = NULL;
+                    break;
+                }
+                else 
+                {
+                    TYPE *tp1 = TranslateType((*it)->GetType());
+                    if (tp1)
                     {
-                        if ((*it)->GetType()->GetBasicType() != Type::object || (*it)->GetType()->ArrayLevel() != 1)
-                            tp = NULL;
+                        args.push_back(tp1);
+                        names.push_back("$$unknown");
+                    }
+                    else
+                    {
+                        tp = NULL;
                         break;
                     }
-                    else 
-                    {
-                        TYPE *tp1 = TranslateType((*it)->GetType());
-                        if (tp1)
-                        {
-                            args.push_back(tp1);
-                            names.push_back((*it)->Name());
-                        }
-                        else
-                        {
-                            tp = NULL;
-                            break;
-                        }
-                    }
-                    count--;
                 }
+                count--;
+            }
 
+        }
+        else
+        {
+            tp = NULL;
+        }
+        if (tp)
+        {
+            SYMBOL *sp = (SYMBOL *)Alloc(sizeof(SYMBOL));
+            sp->name = litlate((char *)method->Signature()->Name().c_str());
+            if (!(method->Signature()->Flags() & MethodSignature::InstanceFlag))
+                sp->storage_class = sc_static;
+            else
+                sp->storage_class = sc_member;
+            sp->tp = tp;
+            sp->tp->sp = sp;
+            sp->parentClass = structures_.back();
+            sp->declfile = sp->origdeclfile = "[import]";
+            sp->access = ac_public;
+            sp->tp->syms = CreateHashTable(1);
+            if (!args.size())
+            {
+                TYPE *tp1 = (TYPE *)Alloc(sizeof(TYPE));
+                tp1->type = bt_void;
+                args.push_back(tp1);
+                names.push_back("$$void");
+            }
+            if (sp->storage_class == sc_member)
+            {
+                SYMBOL *sp1 = (SYMBOL *)Alloc(sizeof(SYMBOL));
+                sp1->name = litlate("$$this");
+                sp1->storage_class = sc_parameter;
+                sp1->thisPtr = true;
+                sp1->tp = (TYPE *)Alloc(sizeof(TYPE));
+                sp1->tp->type = bt_lref;
+                sp1->tp->size = getSize(bt_int);
+                sp1->tp->btp = structures_.back()->tp;
+                sp1->declfile = sp1->origdeclfile = "[import]";
+                sp1->access = ac_public;
+                SetLinkerNames(sp1, lk_cdecl);
+                insert(sp1, sp->tp->syms);
+            }
+            for (int i = 0; i < args.size(); i++)
+            {
+                SYMBOL *sp1 = (SYMBOL *)Alloc(sizeof(SYMBOL));
+                sp1->name = litlate((char *)names[i].c_str());
+                sp1->storage_class = sc_parameter;
+                sp1->tp = args[i];
+                sp1->declfile = sp1->origdeclfile = "[import]";
+                sp1->access = ac_public;
+                SetLinkerNames(sp1, lk_cdecl);
+                insert(sp1, sp->tp->syms);
+            }
+            if (method->Signature()->Flags() & MethodSignature::Vararg)
+            {
+                SYMBOL *sp1 = (SYMBOL *)Alloc(sizeof(SYMBOL));
+                sp1->name = litlate((char *)"$$vararg");
+                sp1->storage_class = sc_parameter;
+                sp1->tp = (TYPE *)Alloc(sizeof(TYPE));
+                sp1->tp->type = bt_ellipse; 
+                sp1->declfile = sp1->origdeclfile = "[import]";
+                sp1->access = ac_public;
+                SetLinkerNames(sp1, lk_cdecl);
+                insert(sp1, sp->tp->syms);
+            }
+            SetLinkerNames(sp, lk_cdecl);
+
+            HASHREC **hr = LookupName((char *)method->Signature()->Name().c_str(), structures_.back()->tp->syms);
+            SYMBOL *funcs = NULL;
+            if (hr)
+                funcs = (SYMBOL *)((*hr)->p);
+            if (!funcs)
+            {
+                TYPE *tp = (TYPE *)Alloc(sizeof(TYPE));
+                tp->type = bt_aggregate;
+                tp->rootType = tp;
+                funcs = makeID(sc_overloads, tp, 0, litlate((char *)method->Signature()->Name().c_str()));
+                funcs->parentClass = structures_.back();
+                tp->sp = funcs;
+                SetLinkerNames(funcs, lk_cdecl);
+                insert(funcs, structures_.back()->tp->syms);
+                funcs->parent = sp;
+                funcs->tp->syms = CreateHashTable(1);
+                insert(sp, funcs->tp->syms);
+                sp->overloadName = funcs;
+            }
+            else if (funcs->storage_class == sc_overloads)
+            {
+                insertOverload(sp, funcs->tp->syms);
+                sp->overloadName = funcs;
             }
             else
             {
-                tp = NULL;
+                fatal("backend: invalid overload tab");
             }
-            if (tp)
-            {
-                SYMBOL *sp = (SYMBOL *)Alloc(sizeof(SYMBOL));
-                sp->name = litlate((char *)method->Signature()->Name().c_str());
-                sp->storage_class = sc_static;
-                sp->tp = tp;
-                sp->tp->sp = sp;
-                sp->declfile = sp->origdeclfile = "[import]";
-                sp->access = ac_public;
-                sp->tp->syms = CreateHashTable(1);
-                if (!args.size())
-                {
-                    TYPE *tp1 = (TYPE *)Alloc(sizeof(TYPE));
-                    tp1->type = bt_void;
-                    args.push_back(tp1);
-                    names.push_back("$$void");
-                }
-                for (int i = 0; i < args.size(); i++)
-                {
-                    SYMBOL *sp1 = (SYMBOL *)Alloc(sizeof(SYMBOL));
-                    sp1->name = litlate((char *)names[i].c_str());
-                    sp1->storage_class = sc_parameter;
-                    sp1->tp = args[i];
-                    sp1->declfile = sp1->origdeclfile = "[import]";
-                    sp1->access = ac_public;
-                    SetLinkerNames(sp1, lk_cdecl);
-                    insert(sp1, sp->tp->syms);
-                }
-                if (method->Signature()->Flags() & MethodSignature::Vararg)
-                {
-                    SYMBOL *sp1 = (SYMBOL *)Alloc(sizeof(SYMBOL));
-                    sp1->name = litlate((char *)"$$vararg");
-                    sp1->storage_class = sc_parameter;
-                    sp1->tp = (TYPE *)Alloc(sizeof(TYPE));
-                    sp1->tp->type = bt_ellipse; 
-                    sp1->declfile = sp1->origdeclfile = "[import]";
-                    sp1->access = ac_public;
-                    SetLinkerNames(sp1, lk_cdecl);
-                    insert(sp1, sp->tp->syms);
-                }
-                SetLinkerNames(sp, lk_cdecl);
-
-                HASHREC **hr = LookupName((char *)method->Signature()->Name().c_str(), structures_.back()->tp->syms);
-                SYMBOL *funcs = NULL;
-                if (hr)
-                    funcs = (SYMBOL *)((*hr)->p);
-                if (!funcs)
-                {
-                    TYPE *tp = (TYPE *)Alloc(sizeof(TYPE));
-                    tp->type = bt_aggregate;
-                    tp->rootType = tp;
-                    funcs = makeID(sc_overloads, tp, 0, litlate((char *)method->Signature()->Name().c_str()));
-                    funcs->parentClass = structures_.back();
-                    tp->sp = funcs;
-                    SetLinkerNames(funcs, lk_cdecl);
-                    insert(funcs, structures_.back()->tp->syms);
-                    funcs->parent = sp;
-                    funcs->tp->syms = CreateHashTable(1);
-                    insert(sp, funcs->tp->syms);
-                    sp->overloadName = funcs;
-                }
-                else if (funcs->storage_class == sc_overloads)
-                {
-                    insertOverload(sp, funcs->tp->syms);
-                    sp->overloadName = funcs;
-                }
-                else
-                {
-                    fatal("backend: invalid overload tab");
-                }
-                sp->msil = (void *)method;
-            }
+            sp->msil = (void *)method;
         }
     }
     return true;

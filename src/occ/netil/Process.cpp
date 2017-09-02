@@ -55,7 +55,8 @@ extern "C" {
 
     extern SYMBOL *theCurrentFunc;
     extern COMPILER_PARAMS cparams;
-    extern TYPE stdchar, stdshort, stdint;
+    extern TYPE stdbool, stdchar, stdunsignedchar, stdshort, stdunsignedshort, stdint, stdunsigned;
+    extern TYPE stdlonglong, stdunsignedlonglong, stdinative, stdunative, stdfloat, stddouble, stdstring;
     extern LIST *externals;
     extern int prm_targettype;
     extern char namespaceAndClass[512];
@@ -64,6 +65,7 @@ extern "C" {
     extern int assemblyVersion[4];
     extern LIST *objlist;
     extern char *pinvoke_dll;
+    extern NAMESPACEVALUES *globalNameSpace;
 
     MethodSignature *argsCtor;
     MethodSignature *argsNextArg;
@@ -87,9 +89,9 @@ extern "C" {
         "void *__OCCMSIL_GetProcThunkToUnmanaged(void *proc); "
         "void *__va_start__(); "
         "void *__va_arg__(void *, ...); ";
-    std::string _dll_name(char *name);
 
 }
+std::string _dll_name(char *name);
 int uniqueId;
 static SYMBOL retblocksym;
 
@@ -469,7 +471,7 @@ std::string GetArrayName(TYPE *tp)
     else
     {
         static char * typeNames[] = { "int8", "int8", "int8", "int8", "uint8",
-                "int16", "int16", "uint16", "uint16", "int32", "int32", "uint32", "int32", "uint32",
+                "int16", "int16", "uint16", "uint16", "int32", "native int", "int32", "uint32", "native unsigned int", "uint32",
                 "int64", "uint64", "float32", "float64", "float64", "float32", "float64", "float64" };
         return std::string(typeNames[basetype(tp)->type]) + end;
     }
@@ -482,6 +484,51 @@ Value *GetStructField(SYMBOL *sp)
     it = fieldList.find(sp);
     return it->second;
 }
+TYPE *oa_get_boxed(TYPE *in)
+{
+    static char * typeNames[] = { "int8", "Bool", "Int8", "Int8", "UInt8",
+        "Int16", "Int16", "UInt16", "UInt16", "Int32", "Int32", "IntPtr", "Int32", "UInt32", "UIntPtr", "UInt32",
+        "Int64", "UInt64", "Single", "Double", "Double", "Single", "Double", "Double" };
+    if (basetype(in)->type < sizeof(typeNames) / sizeof(typeNames[0]))
+    {
+        SYMBOL *sym = search("System", globalNameSpace->syms);
+        if (sym && sym->storage_class == sc_namespace)
+        {
+            SYMBOL *sym2 = search(typeNames[basetype(in)->type], sym->nameSpaceValues->syms);
+            if (sym2)
+                return sym2->tp;
+        }
+    }
+    return nullptr;
+}
+TYPE *oa_get_unboxed(TYPE *in)
+{
+    if (isstructured(in))
+    {
+        in = basetype(in);
+        if (in->sp->parentNameSpace && !in->sp->parentClass && !strcmp(in->sp->parentNameSpace->name, "System"))
+        {
+            char *name = in->sp->name;
+            static char *typeNames[] = { "Bool", "Char", "Int8", "UInt8",
+                "Int16", "UInt16", "Int32", "UInt32",
+                "Int64", "UInt64", "IntPtr", "UIntPtr", "Single", "Double", "String"
+            };
+            static TYPE *typeVals[] = { &stdbool, &stdchar, &stdchar, &stdunsignedchar,
+                &stdshort, &stdunsignedshort, &stdint, &stdunsigned,
+                &stdlonglong, &stdunsignedlonglong, &stdinative, &stdunative, &stdfloat, &stddouble, &stdstring };
+            for (int i = 0; i < sizeof(typeNames) / sizeof(typeNames[0]); i++)
+                if (!strcmp(typeNames[i], name))
+                {
+                    return typeVals[i];
+                }
+        }
+    }
+    return nullptr;
+}
+void AddType(SYMBOL *sym, Type *type)
+{
+    typeList[sym->decoratedName] = type;
+}
 Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg, BOOLEAN pinvoke)
 {
     BOOLEAN byref = FALSE;
@@ -493,7 +540,7 @@ Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg, BOOLEAN pinvoke)
     if (isstructured(tp))
     {
         Type *type = NULL;
-        std::map<std::string, Type *>::iterator it = typeList.find(basetype(tp)->sp->name);
+        std::map<std::string, Type *>::iterator it = typeList.find(basetype(tp)->sp->decoratedName);
         if (it != typeList.end())
             type = it->second;
         if (commit)
@@ -504,51 +551,58 @@ Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg, BOOLEAN pinvoke)
                     basetype(tp)->sp->structAlign, basetype(tp)->size);
                 mainContainer->Add(newClass);
                 type = peLib->AllocateType(newClass);
-                typeList[basetype(tp)->sp->name] = type;
+                typeList[basetype(tp)->sp->decoratedName] = type;
             }
-            if (basetype(tp)->size != 0)
+            else
             {
-                Class *cls = (Class *)type->GetClass();
-                cls->size(basetype(tp)->size);
-                cls->pack(basetype(tp)->sp->structAlign);
+                type = peLib->AllocateType(type->GetClass());
             }
-            if (qualifiedStruct(basetype(tp)->sp) && !type->GetClass()->IsInstantiated())
+            if (!type->GetClass()->InAssemblyRef())
             {
-
-                Class *cls = (Class *)type->GetClass();
-                cls->SetInstantiated();
-                HASHREC *hr = basetype(tp)->syms->table[0];
-                Field *bitField = nullptr;
-                int start = 1000;
-                while (hr)
+                if (basetype(tp)->size != 0)
                 {
-                    SYMBOL *sym = (SYMBOL *)hr->p;
-                    if (!sym->tp->bits || sym->tp->startbit < start)
+                    Class *cls = (Class *)type->GetClass();
+                    cls->size(basetype(tp)->size);
+                    cls->pack(basetype(tp)->sp->structAlign);
+                }
+                if (qualifiedStruct(basetype(tp)->sp) && !type->GetClass()->IsInstantiated())
+                {
+
+                    Class *cls = (Class *)type->GetClass();
+                    cls->SetInstantiated();
+                    HASHREC *hr = basetype(tp)->syms->table[0];
+                    Field *bitField = nullptr;
+                    int start = 1000;
+                    while (hr)
                     {
-                        Type *newType = GetType(sym->tp, TRUE);
-                        int flags = Qualifiers::ClassField | Qualifiers::Public;
-                        char buf[256];
-                        if (sym->tp->bits)
+                        SYMBOL *sym = (SYMBOL *)hr->p;
+                        if (!sym->tp->bits || sym->tp->startbit < start)
+                        {
+                            Type *newType = GetType(sym->tp, TRUE);
+                            int flags = Qualifiers::ClassField | Qualifiers::Public;
+                            char buf[256];
+                            if (sym->tp->bits)
+                            {
+                                start = sym->tp->startbit;
+                                sprintf(buf, "$$bits%d", sym->offset);
+                            }
+                            Field *newField = peLib->AllocateField(sym->tp->bits ? buf : sym->name, newType, flags);
+                            newField->SetContainer(cls);
+                            cls->Add(newField);
+                            sym = clone(sym);
+                            sym->parentClass = clone(sym->parentClass);
+                            fieldList[sym] = peLib->AllocateFieldName(newField);
+                            bitField = newField;
+                        }
+                        else
                         {
                             start = sym->tp->startbit;
-                            sprintf(buf, "$$bits%d", sym->offset);
+                            sym = clone(sym);
+                            sym->parentClass = clone(sym->parentClass);
+                            fieldList[sym] = peLib->AllocateFieldName(bitField);
                         }
-                        Field *newField = peLib->AllocateField(sym->tp->bits ? buf : sym->name, newType, flags);
-                        newField->SetContainer(cls);
-                        cls->Add(newField);
-                        sym = clone(sym);
-                        sym->parentClass = clone(sym->parentClass);
-                        fieldList[sym] = peLib->AllocateFieldName(newField);
-                        bitField = newField;
+                        hr = hr->next;
                     }
-                    else
-                    {
-                        start = sym->tp->startbit;
-                        sym = clone(sym);
-                        sym->parentClass = clone(sym->parentClass);
-                        fieldList[sym] = peLib->AllocateFieldName(bitField);
-                    }
-                    hr = hr->next;
                 }
             }
             type->ByRef(byref);
@@ -561,7 +615,7 @@ Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg, BOOLEAN pinvoke)
     }
     else if (basetype(tp)->type == bt_enum)
     {
-        std::map<std::string, Type *>::iterator it = typeList.find(basetype(tp)->sp->name);
+        std::map<std::string, Type *>::iterator it = typeList.find(basetype(tp)->sp->decoratedName);
         if (it != typeList.end())
             return it->second;
         if (commit)
@@ -582,7 +636,7 @@ Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg, BOOLEAN pinvoke)
             // note we make enums ints in the file
             // this is because pinvokes with enums doesn't work...
             Type *type = peLib->AllocateType(Type::i32, 0);
-            typeList[basetype(tp)->sp->name] = type;
+            typeList[basetype(tp)->sp->decoratedName] = type;
             return type;
         }
         else
@@ -704,7 +758,7 @@ Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg, BOOLEAN pinvoke)
     else
     {
         static Type::BasicType typeNames[] = { Type::i8, Type::i8, Type::i8, Type::i8, Type::u8,
-                Type::i16, Type::i16, Type::u16, Type::u16, Type::i32, Type::i32, Type::i32, Type::u32, Type::i32, Type::u32,
+                Type::i16, Type::i16, Type::u16, Type::u16, Type::i32, Type::i32, Type::inative, Type::i32, Type::u32, Type::unative, Type::i32, Type::u32,
                 Type::i64, Type::u64, Type::r32, Type::r64, Type::r64, Type::r32, Type::r64, Type::r64 };
         Type *rv = peLib->AllocateType(typeNames[basetype(tp)->type], 0);
         rv->ByRef(byref);

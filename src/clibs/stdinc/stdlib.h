@@ -281,11 +281,19 @@ unsigned long _RTL_FUNC _IMPORT _lrotr(unsigned long, int);
 
 #define atoi(s)     ((int) atol(s))
 
+#if defined(__MSIL__)
+int *_RTL_FUNC _IMPORT _errno(void);
+#else
 int  *_RTL_FUNC _IMPORT __GetErrno(void);
+#endif
 int  *_RTL_FUNC _IMPORT __GetDosErrno(void);
 
 #ifndef __cplusplus
+#if defined(__MSIL__)
+#define errno (*_errno())
+#else
 #define errno (*__GetErrno())
+#endif
 #define _dos_errno (*__GetDosErrno())
 #endif
 #define sys_nerr _sys_nerr

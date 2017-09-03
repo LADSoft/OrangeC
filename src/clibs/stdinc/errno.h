@@ -140,10 +140,18 @@ namespace __STD_NS__ {
 extern "C" {
 #endif
 
+#if defined(__MSIL__)
+int *_RTL_FUNC _IMPORT _errno(void);
+#else
 int  *_RTL_FUNC _IMPORT __GetErrno(void);
+#endif
 int  *_RTL_FUNC _IMPORT __GetDosErrno(void);
 
+#if defined(__MSIL__)
+#define errno (*_errno())
+#else
 #define errno (*__GetErrno())
+#endif
 #define _dos_errno (*__GetDosErrno())
 
 #define sys_nerr _sys_nerr

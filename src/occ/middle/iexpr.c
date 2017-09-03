@@ -2273,7 +2273,7 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
         {
             if (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr)
             {
-                if (f->returnEXP)
+                if (f->returnEXP && (!chosenAssembler->msil || !basetype(f->functp)->sp->msilStructRet))
                     push_param(f->returnEXP, funcsp, FALSE, FALSE);
             }
             if (f->thisptr)
@@ -2382,7 +2382,7 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
             n++;
             args = args->next;
         }
-        if (f->returnEXP)
+        if (f->returnEXP && (!chosenAssembler->msil || !basetype(f->functp)->sp->msilStructRet))
             n++;
         gen_nodag(i_parmadj, 0, make_parmadj(n), make_parmadj(!isvoid(basetype(f->functp)->btp)));
     }

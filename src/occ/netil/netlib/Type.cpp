@@ -96,10 +96,10 @@ namespace DotNetPELib
     {
         if (tp_ == cls)
         {
-            if (typeRef_->Flags().Flags() & Qualifiers::Value)
-                peLib.Out() << "'" << Qualifiers::GetName("", typeRef_, true) << "'";
-            else
-                peLib.Out() << Qualifiers::GetName("", typeRef_, true);
+            std::string name = Qualifiers::GetName("", typeRef_, true);
+            if ((typeRef_->Flags().Flags() & Qualifiers::Value) && name[0] != '[')
+                name = "'" + name + "'";
+            peLib.Out() << name;
         }
         else if (tp_ == method)
         {

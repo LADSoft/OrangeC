@@ -1784,7 +1784,14 @@ join:
                         }
                         else if (!comparetypes(list->tp, decl->tp, FALSE))
                         {
-                            if (basetype(decl->tp)->type != bt_memberptr)
+                            if (basetype(decl->tp)->type == bt___object)
+                            {
+                                if (!isstructured(list->tp))
+                                {
+                                    list->exp = exprNode(en_x_object, list->exp, NULL);
+                                }
+                            }
+                            else if (basetype(decl->tp)->type != bt_memberptr)
                                 errorarg(ERR_TYPE_MISMATCH_IN_ARGUMENT, argnum, decl, params->sp);
                         }
                         else if (assignDiscardsConst(decl->tp, list->tp))

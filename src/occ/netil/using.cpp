@@ -23,7 +23,7 @@ extern "C" BOOLEAN _using_(char *file)
     char name[260], *p;
     strcpy(name, file);
     p = strrchr(name, '.');
-    if (p && p[1] != '\\')
+    if (p && !_stricmp(p, ".dll"))
         *p = 0;
     if (!peLib->LoadAssembly(name))
         return true;

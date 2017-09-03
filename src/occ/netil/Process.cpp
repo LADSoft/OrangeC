@@ -57,6 +57,7 @@ extern "C" {
     extern COMPILER_PARAMS cparams;
     extern TYPE stdbool, stdchar, stdunsignedchar, stdshort, stdunsignedshort, stdint, stdunsigned;
     extern TYPE stdlonglong, stdunsignedlonglong, stdinative, stdunative, stdfloat, stddouble, stdstring;
+    extern TYPE std__string;
     extern LIST *externals;
     extern int prm_targettype;
     extern char namespaceAndClass[512];
@@ -487,8 +488,8 @@ Value *GetStructField(SYMBOL *sp)
 TYPE *oa_get_boxed(TYPE *in)
 {
     static char * typeNames[] = { "int8", "Bool", "Int8", "Int8", "UInt8",
-        "Int16", "Int16", "UInt16", "UInt16", "Int32", "Int32", "IntPtr", "Int32", "UInt32", "UIntPtr", "UInt32",
-        "Int64", "UInt64", "Single", "Double", "Double", "Single", "Double", "Double" };
+        "Int16", "Int16", "UInt16", "UInt16", "Int32", "Int32", "IntPtr", "Int32", "UInt32", "UIntPtr", "Int32", "UInt32",
+        "Int64", "UInt64", "Single", "Double", "Double", "Single", "Double", "Double", "", "", "", "", "", "String" };
     if (basetype(in)->type < sizeof(typeNames) / sizeof(typeNames[0]))
     {
         SYMBOL *sym = search("System", globalNameSpace->syms);
@@ -515,7 +516,7 @@ TYPE *oa_get_unboxed(TYPE *in)
             };
             static TYPE *typeVals[] = { &stdbool, &stdchar, &stdchar, &stdunsignedchar,
                 &stdshort, &stdunsignedshort, &stdint, &stdunsigned,
-                &stdlonglong, &stdunsignedlonglong, &stdinative, &stdunative, &stdfloat, &stddouble, &stdstring };
+                &stdlonglong, &stdunsignedlonglong, &stdinative, &stdunative, &stdfloat, &stddouble, &std__string };
             for (int i = 0; i < sizeof(typeNames) / sizeof(typeNames[0]); i++)
                 if (!strcmp(typeNames[i], name))
                 {
@@ -1162,9 +1163,6 @@ void LoadFuncs(void)
     sp = gsearch("_errno");
     if (sp)
         ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = TRUE;
-    sp = gsearch("__GetErrno");
-    if (sp)
-        ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = FALSE;
 }
 extern "C" void flush_peep(SYMBOL *funcsp, QUAD *list)
 {
@@ -1389,24 +1387,6 @@ static void dumpCallToMain(void)
 }
 static void dumpGlobalFuncs()
 {
-    std::string name = "__GetErrno";
-    int flags = Qualifiers::Private | Qualifiers::HideBySig | Qualifiers::Static | Qualifiers::CIL | Qualifiers::Managed;
-
-    MethodSignature *signature = peLib->AllocateMethodSignature(name, MethodSignature::Managed, mainContainer);
-    signature->ReturnType(peLib->AllocateType(Type::i32, 1));
-    currentMethod = peLib->AllocateMethod(signature, flags);
-    mainContainer->Add(currentMethod);
-
-    signature = LookupSignature("_errno");
-    if (!signature)
-    {
-        signature = peLib->AllocateMethodSignature("_errno", 0, NULL);
-        signature->ReturnType(peLib->AllocateType(Type::i32, 1));
-        peLib->AddPInvokeReference(signature, pinvoke_dll, false);
-    }
-    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
-    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ret));
-    currentMethod->Optimize(*peLib);
 }
 
 static void AddRTLThunks()

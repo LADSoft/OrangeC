@@ -1,3 +1,8 @@
+Version 2.5:
+	bug fix: escape control characters when writing strings to the .il file...
+	bug fix: don't quote types from external assemblies
+	bug fix: fix crash when System.Windows.dll is loaded
+
 Version 2.4:
 	bug fix: in some assemblies parent classes sometimes are listed AFTER the child classes, which resulted in a crash
 	bug fix: name and box native integers properly

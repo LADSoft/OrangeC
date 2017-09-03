@@ -620,6 +620,7 @@ typedef struct sym
         unsigned initializer_list:1; // constructor with initializer_list parameter
         unsigned va_typeof:1; // MSIL: a va_typeof symbol
         unsigned retemp:1; // retemp has already been performed on this SP
+        unsigned msilStructRet : 1; // structured return value follows C# semantics
         int __func__label; /* label number for the __func__ keyword */
         int ipointerindx; /* pointer index for pointer opts */
     int labelCount; /* number of code labels within a function body */ 

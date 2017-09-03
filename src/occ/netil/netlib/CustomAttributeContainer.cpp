@@ -102,107 +102,110 @@ namespace DotNetPELib
         TableEntryBase *last = nullptr;
         std::vector<TypeDefTableEntry *> indices;
         int end = reader.Table(tMethodDef).size();
-        for (int i = 0; i < end; i++)
-            indices.push_back(static_cast<TypeDefTableEntry *>(table2[table2.size() - 1]));
-        TypeDefTableEntry *entry = static_cast<TypeDefTableEntry *>(table2[0]);
-        for (int i = 0; i < entry->methods_.index_; i++)
-            indices[i] = 0;
-        for (int i=0; i < table2.size()-1; i++)
+        if (end != 0)
         {
-            TypeDefTableEntry *entry2 = static_cast<TypeDefTableEntry *>(table2[i]);
-            TypeDefTableEntry *entry2a = static_cast<TypeDefTableEntry *>(table2[i+1]);
-            for (int i = entry2->methods_.index_; i < entry2a->methods_.index_; i++)
-                indices[i-1] = entry2;
-        }
-        const DNLTable &table = reader.Table(tCustomAttribute);
-        for (auto tentry : table)
-        {
-            CustomAttributeTableEntry *entry = static_cast<CustomAttributeTableEntry *>(tentry);
-            CustomAttribute attribute = entry->parentIndex_;
-            int n = entry->typeIndex_.index_, s, as;
-            int nname, nnamespace;
-            bool def = false;
-            Byte name[256], nameSpace[256], assemblyName[256];
-            // this won't work too well if the property is in a nested class..
-            if (entry->typeIndex_.tag_ == CustomAttributeType::MethodDef)
+            for (int i = 0; i < end; i++)
+                indices.push_back(static_cast<TypeDefTableEntry *>(table2[table2.size() - 1]));
+            TypeDefTableEntry *entry = static_cast<TypeDefTableEntry *>(table2[0]);
+            for (int i = 0; i < entry->methods_.index_; i++)
+                indices[i] = 0;
+            for (int i = 0; i < table2.size() - 1; i++)
             {
-                TypeDefTableEntry *entry3 = static_cast<TypeDefTableEntry *>(indices[entry->typeIndex_.index_-1]);
-                if (!entry3)
-                    continue;
-                n = entry3->typeNameIndex_.index_;
-                s = entry3->typeNameSpaceIndex_.index_;
-                as = 0;
+                TypeDefTableEntry *entry2 = static_cast<TypeDefTableEntry *>(table2[i]);
+                TypeDefTableEntry *entry2a = static_cast<TypeDefTableEntry *>(table2[i + 1]);
+                for (int i = entry2->methods_.index_; i < entry2a->methods_.index_; i++)
+                    indices[i - 1] = entry2;
             }
-            else // methodref
+            const DNLTable &table = reader.Table(tCustomAttribute);
+            for (auto tentry : table)
             {
-                MemberRefTableEntry *entry2 = static_cast<MemberRefTableEntry *>(reader.Table(tMemberRef)[n - 1]);
-                if (entry2->parentIndex_.tag_ == MemberRefParent::TypeRef)
+                CustomAttributeTableEntry *entry = static_cast<CustomAttributeTableEntry *>(tentry);
+                CustomAttribute attribute = entry->parentIndex_;
+                int n = entry->typeIndex_.index_, s, as;
+                int nname, nnamespace;
+                bool def = false;
+                Byte name[256], nameSpace[256], assemblyName[256];
+                // this won't work too well if the property is in a nested class..
+                if (entry->typeIndex_.tag_ == CustomAttributeType::MethodDef)
                 {
-                    TypeRefTableEntry *entry3 = static_cast<TypeRefTableEntry *>(reader.Table(tTypeRef)[entry2->parentIndex_.index_ - 1]);
+                    TypeDefTableEntry *entry3 = static_cast<TypeDefTableEntry *>(indices[entry->typeIndex_.index_ - 1]);
+                    if (!entry3)
+                        continue;
                     n = entry3->typeNameIndex_.index_;
                     s = entry3->typeNameSpaceIndex_.index_;
-                    if (entry3->resolution_.tag_ == ResolutionScope::AssemblyRef)
-                        as = entry3->resolution_.index_;
-                    else
-                        as = 0;
+                    as = 0;
                 }
-                else
+                else // methodref
                 {
-                    continue;
-                }
-            }
-            reader.ReadFromString(name, sizeof(name), n);
-            reader.ReadFromString(nameSpace, sizeof(nameSpace), s);
-            CustomAttributeDescriptor a;
-            if (as)
-            {
-                reader.ReadFromString(assemblyName, sizeof(assemblyName), as);
-            }
-            else
-            {
-                strncpy((char *)assemblyName, assembly.Name().c_str(), sizeof(assemblyName));
-                assemblyName[sizeof(assemblyName) - 1] = 0;
-            }
-            a.name = std::string((char *)"[") + (char *)assemblyName + "]" + (char *)nameSpace + "." + (char *)name;
-
-            if (entry->valueIndex_.index_)
-            {
-                Byte buf[256];
-                int n = reader.ReadFromBlob(buf, sizeof(buf), entry->valueIndex_.index_);
-                if (n)
-                {
-                    a.data = buf;
-                    a.sz = n;
-                }
-                auto it = descriptors.find(&a);
-                if (it == descriptors.end())
-                {
-                    CustomAttributeDescriptor *cad = new CustomAttributeDescriptor;
-                    cad->name = a.name;
-                    if (a.sz)
+                    MemberRefTableEntry *entry2 = static_cast<MemberRefTableEntry *>(reader.Table(tMemberRef)[n - 1]);
+                    if (entry2->parentIndex_.tag_ == MemberRefParent::TypeRef)
                     {
-                        cad->data = new Byte[a.sz];
-                        memcpy(cad->data, a.data, a.sz);
-                        cad->sz = a.sz;
+                        TypeRefTableEntry *entry3 = static_cast<TypeRefTableEntry *>(reader.Table(tTypeRef)[entry2->parentIndex_.index_ - 1]);
+                        n = entry3->typeNameIndex_.index_;
+                        s = entry3->typeNameSpaceIndex_.index_;
+                        if (entry3->resolution_.tag_ == ResolutionScope::AssemblyRef)
+                            as = entry3->resolution_.index_;
+                        else
+                            as = 0;
                     }
-                    descriptors.insert(cad);
+                    else
+                    {
+                        continue;
+                    }
                 }
-                // should succeed now
-                it = descriptors.find(&a);
-                auto ita = attributes.find(&attribute);
-                if (ita == attributes.end())
+                reader.ReadFromString(name, sizeof(name), n);
+                reader.ReadFromString(nameSpace, sizeof(nameSpace), s);
+                CustomAttributeDescriptor a;
+                if (as)
                 {
-                    CustomAttribute *newAttribute = new CustomAttribute(attribute.tag_, attribute.index_);
-                    std::vector< CustomAttributeDescriptor *>desc = { *it };
-                    attributes[newAttribute] = desc;
+                    reader.ReadFromString(assemblyName, sizeof(assemblyName), as);
                 }
                 else
                 {
-                    ita->second.push_back(*it);
+                    strncpy((char *)assemblyName, assembly.Name().c_str(), sizeof(assemblyName));
+                    assemblyName[sizeof(assemblyName) - 1] = 0;
                 }
-                // for the destructor at the end of the block...
-                a.data = nullptr;
-                a.sz = 0;
+                a.name = std::string((char *)"[") + (char *)assemblyName + "]" + (char *)nameSpace + "." + (char *)name;
+
+                if (entry->valueIndex_.index_)
+                {
+                    Byte buf[256];
+                    int n = reader.ReadFromBlob(buf, sizeof(buf), entry->valueIndex_.index_);
+                    if (n)
+                    {
+                        a.data = buf;
+                        a.sz = n;
+                    }
+                    auto it = descriptors.find(&a);
+                    if (it == descriptors.end())
+                    {
+                        CustomAttributeDescriptor *cad = new CustomAttributeDescriptor;
+                        cad->name = a.name;
+                        if (a.sz)
+                        {
+                            cad->data = new Byte[a.sz];
+                            memcpy(cad->data, a.data, a.sz);
+                            cad->sz = a.sz;
+                        }
+                        descriptors.insert(cad);
+                    }
+                    // should succeed now
+                    it = descriptors.find(&a);
+                    auto ita = attributes.find(&attribute);
+                    if (ita == attributes.end())
+                    {
+                        CustomAttribute *newAttribute = new CustomAttribute(attribute.tag_, attribute.index_);
+                        std::vector< CustomAttributeDescriptor *>desc = { *it };
+                        attributes[newAttribute] = desc;
+                    }
+                    else
+                    {
+                        ita->second.push_back(*it);
+                    }
+                    // for the destructor at the end of the block...
+                    a.data = nullptr;
+                    a.sz = 0;
+                }
             }
         }
     }

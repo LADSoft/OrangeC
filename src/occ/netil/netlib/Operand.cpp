@@ -43,6 +43,78 @@
 
 namespace DotNetPELib
 {
+    std::string Operand::EscapedString() const
+    {
+        bool doit = false;
+        for (unsigned i : stringValue_)
+            if (i < 32 || i > 126)
+            {
+                doit = true;
+                break;
+            }
+        if (doit)
+        {
+            std::string retVal;
+            for (unsigned i : stringValue_)
+            {
+                i &= 0xff;
+                if (i < 32)
+                {
+                    switch (i)
+                    {
+
+                    case '\a':
+                        i = 'a';
+                        break;
+                    case '\b':
+                        i = 'b';
+                        break;
+                    case '\f':
+                        i = 'f';
+                        break;
+                    case '\n':
+                        i = 'n';
+                        break;
+                    case '\r':
+                        i = 'r';
+                        break;
+                    case '\v':
+                        i = 'v';
+                        break;
+                    case '\t':
+                        i = 't';
+                        break;
+                    default:
+                        break;
+                    }
+                    if (i < 32)
+                    {
+
+                        retVal += "\\0";
+                        retVal += ((i / 8) + '0');
+                        retVal += ((i & 7) + '0');
+
+                    }
+                    else
+                    {
+                        retVal += "\\";
+                        retVal += (char)i;
+                    }
+                }
+                else if (i > 126)
+                {
+                    retVal += "\\";
+                    retVal += ((i / 64) + '0');
+                    retVal += (((i / 8) & 7) + '0');
+                    retVal += ((i & 7) + '0');
+                }
+                else
+                    retVal += i;
+            }
+            return retVal;
+        }
+        return stringValue_;
+    }
     bool Operand::isnanorinf() const
     {
         // little endian architectures only
@@ -96,7 +168,7 @@ namespace DotNetPELib
             }
             break;
         case t_string:
-            peLib.Out() << "\"" << stringValue_ << "\"";
+            peLib.Out() << "\"" << EscapedString() << "\"";
             break;
         case t_label:
             peLib.Out() << stringValue_;

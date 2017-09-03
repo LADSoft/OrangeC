@@ -404,24 +404,6 @@ void NetLinkMain::dumpCallToMain(void)
 }
 void NetLinkMain::dumpGlobalFuncs()
 {
-    std::string name = "__GetErrno";
-    int flags = Qualifiers::Private | Qualifiers::HideBySig | Qualifiers::Static | Qualifiers::CIL | Qualifiers::Managed;
-
-    MethodSignature *signature = peLib->AllocateMethodSignature(name, MethodSignature::Managed, mainContainer);
-    signature->ReturnType(peLib->AllocateType(Type::i32, 1));
-    currentMethod = peLib->AllocateMethod(signature, flags);
-    mainContainer->Add(currentMethod);
-
-    signature = LookupSignature("_errno");
-    if (!signature)
-    {
-        signature = peLib->AllocateMethodSignature("_errno", 0, NULL);
-        signature->ReturnType(peLib->AllocateType(Type::i32, 1));
-        peLib->AddPInvokeReference(signature, "msvcrt.dll", false);
-    }
-    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
-    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ret));
-    currentMethod->Optimize(*peLib);
 }
 
 bool NetLinkMain::EnterNamespace(const Namespace *nmspc)

@@ -3514,6 +3514,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
     else if (MATCHKW(lex, assign) || (cparams.prm_cplusplus && (MATCHKW(lex, openpa) || MATCHKW(lex, begin))) || (chosenAssembler->msil && MATCHKW(lex,openpa)))
     {
         INITIALIZER **init;
+        BOOLEAN isassign = MATCHKW(lex, assign);
         sp->assigned = TRUE;
         if (sp->init)
             errorsym(ERR_MULTIPLE_INITIALIZATION, sp);
@@ -3574,14 +3575,17 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                 sp->storage_class = sc_global;
             {
                 BOOLEAN assigned = FALSE;
+                TYPE *t = !isassign && chosenAssembler->msil ? chosenAssembler->find_boxed_type(sp->tp) : 0;
+                if (!t)
+                    t = sp->tp;
                 if (MATCHKW(lex, assign))
                 {
-                    if (!isstructured(sp->tp))
+                    if (!isstructured(t))
                         lex = getsym(); /* past = */
                     else
                         assigned = TRUE;
                 }
-                lex = initType(lex, funcsp, 0, sp->storage_class, &sp->init, &sp->dest, sp->tp, sp, FALSE, flags);
+                lex = initType(lex, funcsp, 0, sp->storage_class, &sp->init, &sp->dest, t, sp, FALSE, flags);
                 /* set up an end tag */
                 if (sp->init || assigned)
                 {
@@ -3593,7 +3597,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                         init = &(*init)->next;
                     }
                     if (!*init)
-                        initInsert(init, NULL, NULL, sp->tp->size, FALSE);
+                        initInsert(init, NULL, NULL, t->size, FALSE);
                 }
             }
         }
@@ -3601,10 +3605,13 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
     else if ((cparams.prm_cplusplus || chosenAssembler->msil && isstructured(sp->tp) && !basetype(sp->tp)->sp->trivialCons)
         && sp->storage_class != sc_typedef && sp->storage_class != sc_external && !asExpression)
     {
-        if (isstructured(sp->tp) && !basetype(sp->tp)->sp->trivialCons)
+        TYPE *t = chosenAssembler->msil ? chosenAssembler->find_boxed_type(sp->tp) : 0;
+        if (!t)
+            t = sp->tp;
+        if (isstructured(t) && !basetype(t)->sp->trivialCons)
         {
             // default constructor without (), or array of structures without an initialization list
-            lex = initType(lex, funcsp, 0, sp->storage_class, &sp->init, &sp->dest, sp->tp, sp, FALSE, flags);
+            lex = initType(lex, funcsp, 0, sp->storage_class, &sp->init, &sp->dest, t, sp, FALSE, flags);
             /* set up an end tag */
             if (sp->init)
             {
@@ -3616,13 +3623,15 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                     init = &(*init)->next;
                 }
                 if (!*init)
-                    initInsert(init, NULL, NULL, sp->tp->size, FALSE);
+                    initInsert(init, NULL, NULL, t->size, FALSE);
             }
         }
         else if (isarray(sp->tp))
         {
             // constructors for uninitialized array
             TYPE *z = sp->tp;
+            if (!z)
+                z = sp->tp;
             while (isarray(z))
                 z = basetype(z)->btp;
             z= basetype(z);

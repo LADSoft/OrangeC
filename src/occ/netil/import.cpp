@@ -96,10 +96,10 @@ public:
 #endif
 protected:
     TYPE *TranslateType(Type *);
-    TYPE *TranslateStruct(const DataContainer *);
 private:
     std::deque<SYMBOL *> nameSpaces_;
     std::deque<SYMBOL *> structures_;
+    std::map<std::string, SYMBOL *> cachedClasses;
     int level_;
 
     static e_bt translatedTypes[];
@@ -138,9 +138,10 @@ TYPE *Importer::TranslateType(Type *in)
             return NULL;
         if (in->GetBasicType() == Type::cls)
         {
-            TYPE *tp = TranslateStruct(in->GetClass());
-            if (!tp)
+            SYMBOL *sp = cachedClasses[in->GetClass()->Name()];
+            if (!sp)
                 return nullptr;
+            rv = sp->tp;
         }
         else
         {
@@ -169,51 +170,6 @@ TYPE *Importer::TranslateType(Type *in)
         }
     }
     return rv;
-}
-TYPE *Importer::TranslateStruct(const DataContainer *in)
-{
-    TYPE *tp = nullptr;
-    const DataContainer *list[100];
-    int count = 0;
-    list[count++] = in;
-    while (in->Parent())
-    {
-        list[count++] = in->Parent();
-        in = in->Parent();
-    }
-    if (count >= 2)
-    {
-        SYMBOL *sp = search((char *)list[count - 2]->Name().c_str(), globalNameSpace->syms);
-        for (int i = count - 3; i >= 0; i--)
-        {
-            if (sp)
-            {
-                if (sp->storage_class == sc_namespace)
-                {
-                    sp = search((char *)list[i]->Name().c_str(), sp->nameSpaceValues->syms);
-                }
-                else if (sp->storage_class == sc_type)
-                {
-                    if (isstructured(sp->tp))
-                    {
-                        sp = search((char *)list[i]->Name().c_str(), sp->tp->syms);
-
-                    }
-                    else
-                    {
-                        sp = nullptr;
-                    }
-                }
-                else
-                {
-                    sp = nullptr;
-                }
-            }
-        }
-        if (sp && isstructured(sp->tp))
-            tp = sp->tp;
-    }
-    return tp;
 }
 
 bool Importer::EnterAssembly(const AssemblyDef *assembly)
@@ -325,6 +281,7 @@ bool Importer::EnterClass(const Class *cls)
             insert(sp, structures_.size() ? structures_.back()->tp->syms : nameSpaces_.back()->nameSpaceValues->syms);
             sp->msil = (void *)cls;
             AddType(sp, peLib->AllocateType(const_cast<Class *>(cls)));
+            cachedClasses[sp->name] = sp;
         }
         else
         {
@@ -349,11 +306,15 @@ bool Importer::EnterMethod(const Method *method)
     diag("Method", method->Signature()->Name());
     if (structures_.size())
     {
+        bool ctor = false;
         int count = method->Signature()->ParamCount();
         if (method->Signature()->Flags() & MethodSignature::Vararg)
             count --;
         if (method->Signature()->Name() == ".ctor")
+        {
+            ctor = TRUE;
             structures_.back()->trivialCons = FALSE;
+        }
         // static instance member with no variable length argument list is all we support right now...
         TYPE *tp = (TYPE *)Alloc(sizeof(TYPE));
         std::vector<TYPE *>args;
@@ -362,6 +323,7 @@ bool Importer::EnterMethod(const Method *method)
         tp->btp = TranslateType(method->Signature()->ReturnType());
         if (tp->btp)
         {
+            int n = 0;
             for (auto it = method->Signature()->begin(); it != method->Signature()->end(); ++it)
             {
                 if (!count) // vararg
@@ -375,8 +337,10 @@ bool Importer::EnterMethod(const Method *method)
                     TYPE *tp1 = TranslateType((*it)->GetType());
                     if (tp1)
                     {
+                        char name[256];
+                        sprintf(name, "$$Arg%d", n++);
                         args.push_back(tp1);
-                        names.push_back("$$unknown");
+                        names.push_back(name);
                     }
                     else
                     {
@@ -406,6 +370,9 @@ bool Importer::EnterMethod(const Method *method)
             sp->declfile = sp->origdeclfile = "[import]";
             sp->access = ac_public;
             sp->tp->syms = CreateHashTable(1);
+            sp->isConstructor = ctor;
+            if (isstructured(basetype(sp->tp)->btp)) // C structures will be void *...
+                sp->msilStructRet = TRUE;
             if (!args.size())
             {
                 TYPE *tp1 = (TYPE *)Alloc(sizeof(TYPE));
@@ -420,7 +387,7 @@ bool Importer::EnterMethod(const Method *method)
                 sp1->storage_class = sc_parameter;
                 sp1->thisPtr = true;
                 sp1->tp = (TYPE *)Alloc(sizeof(TYPE));
-                sp1->tp->type = bt_lref;
+                sp1->tp->type = bt_pointer;
                 sp1->tp->size = getSize(bt_int);
                 sp1->tp->btp = structures_.back()->tp;
                 sp1->declfile = sp1->origdeclfile = "[import]";

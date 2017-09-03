@@ -2999,7 +2999,11 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
         *exp = e1;
         if (chosenAssembler->msil && *exp)
         {
-            *exp = exprNode(en_assign, params->thisptr, *exp);
+            // this needs work, won't work for structures as members of other structures...
+            EXPRESSION *exp1 = params->thisptr;
+            if (exp1->type == en_add && isconstzero(&stdint, exp1->right))
+                exp1 = exp1->left;
+            *exp = exprNode(en_assign, exp1, *exp);
             params->thisptr = NULL;
         }
         else if (*exp && !pointer)

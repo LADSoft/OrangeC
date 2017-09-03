@@ -312,7 +312,7 @@ MethodSignature *GetMethodSignature(TYPE *tp, bool pinvoke)
         sprintf(buf, "L_%d_%x", sp->label, uniqueId);
         rv = peLib->AllocateMethodSignature(buf, flags, pinvoke ? NULL : mainContainer);
     }
-    if (isstructured(basetype(tp)->btp))
+    if (isstructured(basetype(tp)->btp) && (sp->linkage2 == lk_unmanaged || !msil_managed(sp)))
     {
         rv->ReturnType(peLib->AllocateType(Type::Void, 1));
         Param * p = peLib->AllocateParam("__retblock", peLib->AllocateType(Type::Void, 1));
@@ -1109,7 +1109,7 @@ void LoadParams(SYMBOL *sp)
 {
     int count = 0;
     paramList.clear();
-    if (isstructured(basetype(sp->tp)->btp))
+    if (isstructured(basetype(sp->tp)->btp) && (sp->linkage2 == lk_unmanaged || !msil_managed(sp)))
     {
         Param * newParam = peLib->AllocateParam("__retblock", peLib->AllocateType(Type::Void, 1));
         newParam->Index(count++);
@@ -1198,7 +1198,7 @@ void CreateFunction(MethodSignature *sig, SYMBOL *sp)
 
     auto hr = basetype(sp->tp)->syms->table[0];
     auto it = sig->begin();
-    if (isstructured(basetype(sp->tp)->btp))
+    if (isstructured(basetype(sp->tp)->btp) && (sp->linkage2 == lk_unmanaged || !msil_managed(sp)))
         it++;
     while (hr && it != sig->end())
     {

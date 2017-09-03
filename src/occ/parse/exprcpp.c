@@ -654,7 +654,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
         {
             // auto-boxing for msil
             TYPE *tp1 = chosenAssembler->find_boxed_type(basetype(*tp));
-            if (tp1)
+            if (tp1 && search(overloadNameTab[CI_CONSTRUCTOR], basetype(tp1)->syms))
             {
                 unboxed = *tp;
                 *tp = tp1;

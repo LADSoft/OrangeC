@@ -63,6 +63,7 @@ extern int templateNestingCount;
 extern int codeLabel;
 extern INCLUDES *includes;
 extern int cppprio;
+extern char *overloadNameTab[];
 
 typedef struct _startups_
 {
@@ -3576,7 +3577,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
             {
                 BOOLEAN assigned = FALSE;
                 TYPE *t = !isassign && chosenAssembler->msil ? chosenAssembler->find_boxed_type(sp->tp) : 0;
-                if (!t)
+                if (!t || !search(overloadNameTab[CI_CONSTRUCTOR], basetype(t)->syms))
                     t = sp->tp;
                 if (MATCHKW(lex, assign))
                 {
@@ -3606,7 +3607,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
         && sp->storage_class != sc_typedef && sp->storage_class != sc_external && !asExpression)
     {
         TYPE *t = chosenAssembler->msil ? chosenAssembler->find_boxed_type(sp->tp) : 0;
-        if (!t)
+        if (!t || !search(overloadNameTab[CI_CONSTRUCTOR], basetype(t)->syms))
             t = sp->tp;
         if (isstructured(t) && !basetype(t)->sp->trivialCons)
         {

@@ -1848,7 +1848,7 @@ static EXPRESSION *getFunc(EXPRESSION *exp)
     }
     return rv;
 }
-int push_param(EXPRESSION *ep, SYMBOL *funcsp, BOOLEAN vararg, EXPRESSION *valist)
+int push_param(EXPRESSION *ep, SYMBOL *funcsp, BOOLEAN vararg, EXPRESSION *valist, int flags)
 /*
  *      push the operand expression onto the stack.
  */
@@ -1912,7 +1912,7 @@ int push_param(EXPRESSION *ep, SYMBOL *funcsp, BOOLEAN vararg, EXPRESSION *valis
                     gen_expr( funcsp, ep->left, 0, ISZ_UINT);
                     ep = ep->right;
                 }
-                push_param(ep, funcsp, vararg, valist);
+                push_param(ep, funcsp, vararg, valist, flags);
                 break;
             case en_argnopush:
                 gen_expr( funcsp, ep->left, 0, ISZ_UINT);
@@ -1926,7 +1926,7 @@ int push_param(EXPRESSION *ep, SYMBOL *funcsp, BOOLEAN vararg, EXPRESSION *valis
                 break;
             default:
                 temp = natural_size(ep);
-                ap3 = gen_expr( funcsp, ep, 0, temp);
+                ap3 = gen_expr( funcsp, ep, flags, temp);
                 if (ap3->bits > 0)
                     ap3 = gen_bit_load(ap3);
                 ap = LookupLoadTemp(NULL, ap3);
@@ -2058,7 +2058,7 @@ static int gen_parm(INITLIST *a, SYMBOL *funcsp)
     }
     else
     {
-        rv = push_param(a->exp, funcsp, a->vararg, a->valist ? a->exp : NULL);
+        rv = push_param(a->exp, funcsp, a->vararg, a->valist ? a->exp : NULL, 0);
     }
     DumpIncDec(funcsp);
     push_nesting += rv;
@@ -2182,7 +2182,8 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
 {
     IMODE *ap3;
     FUNCTIONCALL *f = node->v.func;
-    
+    BOOLEAN managed = FALSE;
+    IMODE *stobj = NULL;
     IMODE *ap;
     int adjust = 0 ;
     int adjust2 = 0;
@@ -2208,6 +2209,24 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
             ap = gen_inline(funcsp, node, flags);
             if (ap)
                 return ap;
+        }
+    }
+    if (chosenAssembler->msil && (f->sp->linkage2 != lk_unmanaged && chosenAssembler->msil->managed(f->sp)))
+        managed = TRUE;
+    if (f->returnEXP && managed && isstructured(basetype(f->functp)->btp))
+    {
+        switch (f->returnEXP->type)
+        {
+        case en_label:
+        case en_auto:
+        case en_pc:
+        case en_global:
+        case en_tempref:
+        case en_threadlocal:
+            break;
+        default:
+            stobj = gen_expr(funcsp, f->returnEXP, 0, ISZ_UINT);
+            break;
         }
     }
     {
@@ -2244,7 +2263,7 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
         if (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr)
         {
             if (f->returnEXP)
-                push_param(f->returnEXP, funcsp, FALSE, FALSE);
+                push_param(f->returnEXP, funcsp, FALSE, FALSE, F_OBJECT);
         }
         genPascalArgs(f->arguments, funcsp);
     }
@@ -2273,12 +2292,12 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
         {
             if (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr)
             {
-                if (f->returnEXP && (!chosenAssembler->msil || !basetype(f->functp)->sp->msilStructRet))
-                    push_param(f->returnEXP, funcsp, FALSE, FALSE);
+                if (f->returnEXP && !managed)
+                    push_param(f->returnEXP, funcsp, FALSE, FALSE, 0);
             }
             if (f->thisptr)
             {
-                push_param(f->thisptr, funcsp, FALSE, FALSE);
+                push_param(f->thisptr, funcsp, FALSE, FALSE, F_OBJECT);
             }
             genPascalArgs(f->arguments, funcsp);
         }
@@ -2287,7 +2306,7 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
             genCdeclArgs(f->arguments, funcsp);
             if (f->thisptr)
             {
-                push_param(f->thisptr, funcsp, FALSE, FALSE);
+                push_param(f->thisptr, funcsp, FALSE, FALSE, F_OBJECT);
             }
         }
         if (f->callLab == -1)
@@ -2295,14 +2314,14 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
             f->callLab = ++consIndex;
             genCallLab(f->arguments, f->callLab);
         }
-        if (!(chosenAssembler->arch->preferopts & OPT_REVERSEPARAM))
-        {
-            if (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr)
-            {
-                if (f->returnEXP)
-                    push_param(f->returnEXP, funcsp, FALSE, FALSE);
-            }
-        }
+if (!(chosenAssembler->arch->preferopts & OPT_REVERSEPARAM))
+{
+    if (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr)
+    {
+        if (f->returnEXP && !managed)
+            push_param(f->returnEXP, funcsp, FALSE, FALSE, 0);
+    }
+}
     }
     gen_icode(i_tag, NULL, NULL, NULL);
     intermed_tail->beforeGosub = TRUE;
@@ -2323,10 +2342,10 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
         enum i_ops type = i_gosub;
         if (node->type == en_intcall)
             type = i_int;
-        ap = ap3 = gen_expr( funcsp, f->fcall, 0, ISZ_UINT);
-//		ap = LookupLoadTemp(NULL, ap3);
-//		if (ap != ap3)
-//			gen_icode(i_assn, ap, ap3, NULL);
+        ap = ap3 = gen_expr(funcsp, f->fcall, 0, ISZ_UINT);
+        //		ap = LookupLoadTemp(NULL, ap3);
+        //		if (ap != ap3)
+        //			gen_icode(i_assn, ap, ap3, NULL);
         if (ap->mode == i_immed && ap->offset->type == en_pc) {
             if (f->sp && f->sp->linkage2 == lk_import && (!chosenAssembler->msil)) {
                 IMODE *ap1 = (IMODE *)Alloc(sizeof(IMODE));
@@ -2345,7 +2364,7 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
             ap1->retval = FALSE;
             ap = ap1;
             ap->mode = i_ind;
-        }            
+        }
         if (f->callLab && xcexp)
         {
             xcexp->right->v.i = f->callLab;
@@ -2363,7 +2382,7 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
     }
     else if (isstructured(basetype(f->functp)->btp))
     {
-        if (flags & F_NOVALUE)
+        if ((flags & F_NOVALUE) && !managed)
             gosub->novalue = -2;
         else
             gosub->novalue = 0;
@@ -2382,7 +2401,7 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
             n++;
             args = args->next;
         }
-        if (f->returnEXP && (!chosenAssembler->msil || !basetype(f->functp)->sp->msilStructRet))
+        if (f->returnEXP && !managed)
             n++;
         gen_nodag(i_parmadj, 0, make_parmadj(n), make_parmadj(!isvoid(basetype(f->functp)->btp)));
     }
@@ -2394,7 +2413,35 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
             gen_nodag(i_parmadj, 0, make_parmadj(adjust2), make_parmadj(adjust));
     }
     push_nesting -= adjust;
-    if (!(flags &F_NOVALUE) && !isvoid(basetype(f->functp)->btp)) {
+    if (f->returnEXP && managed && isstructured(basetype(f->functp)->btp))
+    {
+        if (!(flags & F_INRETURN))
+        {
+            IMODE *ap1;
+            int siz1;
+            if (stobj)
+            {
+                ap1 = Alloc(sizeof(IMODE));
+                *ap1 = *stobj;
+                ap1->mode = i_ind;
+                ap1->size = ISZ_OBJECT;
+                ap1->offset->v.sp->tp = basetype(f->returnSP->tp);
+            }
+            else
+            {
+                ap1 = gen_expr(funcsp, f->returnEXP, F_OBJECT, ISZ_OBJECT);
+            }
+            ap = tempreg(ISZ_OBJECT, 0);
+            ap->retval = TRUE;
+            gen_icode(i_assn, ap1, ap, 0);
+        }
+        else
+        {
+            gosub->novalue = -3;
+            ap = NULL;
+        }
+    }
+    else if (!(flags &F_NOVALUE) && !isvoid(basetype(f->functp)->btp)) {
         /* structures handled by callee... */
         if (!isstructured(basetype(f->functp)->btp) && basetype(f->functp)->btp->type != bt_memberptr)
         {
@@ -2902,7 +2949,7 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
         case en_absolute:
         case en_label:
             GENREF(node->v.sp);
-            if (node->v.sp->imaddress)
+            if (node->v.sp->imaddress && !chosenAssembler->msil)
             {
                ap1 = node->v.sp->imaddress;
             }
@@ -2911,6 +2958,8 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
                 ap1 = (IMODE *)Alloc(sizeof(IMODE));
                 ap1->offset = node;
                 ap1->mode = i_immed;
+                if (flags & F_OBJECT)
+                    ap1->msilObject = TRUE;
                 ap1->size = size;
             }
             ap2 = LookupImmedTemp(ap1, ap1);

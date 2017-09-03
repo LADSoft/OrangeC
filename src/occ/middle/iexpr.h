@@ -47,6 +47,9 @@
 #define F_COMPARE 8
 #define F_STORE 16
 #define F_SWITCHVALUE 32
+#define F_OBJECT 64
+#define F_INRETURN 128
+
 /* icode innstruction opcodes */
 enum i_ops
 {

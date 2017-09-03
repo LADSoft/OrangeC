@@ -1954,8 +1954,11 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                     {
                         returnexp = intNode(en_labcon, dumpMemberPtr(returnexp->v.sp, tp, TRUE));
                     }
-                    returnexp = exprNode(en_blockassign, en, returnexp);
-                    returnexp->size = basetype(tp)->size;
+                    if (!chosenAssembler->msil || funcsp->linkage2 == lk_unmanaged || !chosenAssembler->msil->managed(funcsp))
+                    { 
+                        returnexp = exprNode(en_blockassign, en, returnexp);
+                        returnexp->size = basetype(tp)->size;
+                    }
                     returntype = tp;
                 }
             }
@@ -3264,7 +3267,10 @@ static void assignParameterSizes(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *block)
         {
             // handle structured return values
             if (chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE)
-                base++;
+            {
+                if (funcsp->linkage2 == lk_unmanaged || ! chosenAssembler->msil || !chosenAssembler->msil->managed(funcsp))
+                    base++;
+            }
             else
             {
                 base += getSize(bt_pointer);

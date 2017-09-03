@@ -421,9 +421,11 @@ void load_ind(int sz)
     gen_code(op, NULL);
 
 }
-void store_ind(int sz)
+void store_ind(IMODE *im)
 {
+    int sz = im->size;
     Instruction::iop op;
+    Operand *operand = nullptr;
     if (sz < 0)
         sz = - sz;
     switch(sz)
@@ -470,8 +472,12 @@ void store_ind(int sz)
         case ISZ_CDOUBLE:
         case ISZ_CLDOUBLE:
             break;
+        case ISZ_OBJECT:
+            op = Instruction::i_stobj;
+            operand = peLib->AllocateOperand(peLib->AllocateValue("", GetType(im->offset->v.sp->tp, TRUE, 0, 0)));
+            break;
     }
-    gen_code(op, NULL);
+    gen_code(op, operand);
     decrement_stack();
     decrement_stack();
 
@@ -677,12 +683,12 @@ void gen_store(IMODE *im, Operand *dest)
             }
             else
             {
-                store_ind(im->size);
+                store_ind(im);
             }
         }
         else
         {
-            store_ind(im->size);
+            store_ind(im);
         }
         return;
     }
@@ -1080,7 +1086,11 @@ extern "C" void asm_gosub(QUAD *q)              /* normal gosub to an immediate 
 		gen_code(Instruction::i_calli, ap);
         decrement_stack();
     }
-    if (q->novalue && q->novalue != -1)
+    if (q->novalue == -3)
+    {
+        returnCount++;
+    }
+    else if (q->novalue && q->novalue != -1)
     {
         gen_code(Instruction::i_pop, NULL);
         decrement_stack();

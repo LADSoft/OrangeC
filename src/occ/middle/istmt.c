@@ -447,19 +447,27 @@ void genreturn(STATEMENT *stmt, SYMBOL *funcsp, int flag, int noepilogue, IMODE 
         if (basetype(funcsp->tp)->btp && (isstructured(basetype(funcsp->tp)->btp) ||
                                           basetype(basetype(funcsp->tp)->btp)->type == bt_memberptr))
         {
-            EXPRESSION *en = anonymousVar(sc_parameter, &stdpointer);
-            SYMBOL *sp = en->v.sp;
-            gen_expr(funcsp, stmt->select, 0, ISZ_ADDR);
-            DumpIncDec(funcsp);
-            sp->offset = chosenAssembler->arch->retblocksize;
-            sp->name = "__retblock";
-            sp->allocate = FALSE;
-            if ((funcsp->linkage == lk_pascal) &&
-                    basetype(funcsp->tp)->syms->table[0] && 
+            if (chosenAssembler->msil)
+            {
+                ap = gen_expr(funcsp, stmt->select, F_OBJECT | F_INRETURN, ISZ_ADDR);
+                DumpIncDec(funcsp);
+            }
+            else
+            {
+                EXPRESSION *en = anonymousVar(sc_parameter, &stdpointer);
+                SYMBOL *sp = en->v.sp;
+                ap = gen_expr(funcsp, stmt->select, 0, ISZ_ADDR);
+                DumpIncDec(funcsp);
+                sp->offset = chosenAssembler->arch->retblocksize;
+                sp->name = "__retblock";
+                sp->allocate = FALSE;
+                if ((funcsp->linkage == lk_pascal) &&
+                    basetype(funcsp->tp)->syms->table[0] &&
                     ((SYMBOL *)basetype(funcsp->tp)->syms->table[0])->tp->type != bt_void)
-                sp->offset = funcsp->paramsize;
-            deref(&stdpointer, &en);
-            ap = gen_expr(funcsp, en, 0, ISZ_ADDR);
+                    sp->offset = funcsp->paramsize;
+                deref(&stdpointer, &en);
+                ap = gen_expr(funcsp, en, 0, ISZ_ADDR);
+            }
             size = ISZ_ADDR;
         }
         else
@@ -499,7 +507,7 @@ void genreturn(STATEMENT *stmt, SYMBOL *funcsp, int flag, int noepilogue, IMODE 
             ap1 = returnImode;
         else
         {
-            ap1 = tempreg(size, 0);
+            ap1 = tempreg(ap->size, 0);
             if (!inlinesym_count)
                 ap1->retval = TRUE;
             else
@@ -562,7 +570,7 @@ void genreturn(STATEMENT *stmt, SYMBOL *funcsp, int flag, int noepilogue, IMODE 
                     gen_icode(i_rett, 0, make_immed(ISZ_UINT,funcsp->linkage == lk_interrupt), 0);
                 } else
                 {
-                    gen_icode(i_ret, 0, make_immed(ISZ_UINT,retsize), 0);
+                    gen_icode(i_ret, 0, make_immed(ISZ_UINT,retsize), NULL);
                 }
             }
         }

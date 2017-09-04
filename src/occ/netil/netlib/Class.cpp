@@ -290,7 +290,7 @@ namespace DotNetPELib
             if ((entry->flags_ & FieldTableEntry::FieldAccessMask) == FieldTableEntry::Public)
             {
                 reader.ReadFromString(buf, sizeof(buf), entry->nameIndex_.index_);
-                Field *field = lib.AllocateField((char *)buf, nullptr, entry->flags_);
+                Field *field = lib.AllocateField((char *)buf, nullptr, (entry->flags_ & FieldTableEntry::Static) ? Qualifiers::Static : 0);
                 Add(field);
                 SignatureGenerator::TypeFromFieldRef(lib, assembly, reader, field, entry->signatureIndex_.index_);
             }

@@ -154,8 +154,17 @@ Operand *make_constant(int sz, EXPRESSION *exp)
     }
     else if (exp->type == en_structelem)
     {
-        Value *field = GetStructField(exp->v.sp);
-        operand = peLib->AllocateOperand(field);
+        if (exp->v.sp->msilProperty)
+        {
+            operand = peLib->AllocateOperand(GetFieldData(exp->v.sp));
+            if (exp->v.sp->msilProperty)
+                operand->Property(true);
+        }
+        else
+        {
+            Value *field = GetStructField(exp->v.sp);
+            operand = peLib->AllocateOperand(field);
+        }
     }
     else if (exp->type == en_c_string)
     {
@@ -193,6 +202,8 @@ Operand *make_constant(int sz, EXPRESSION *exp)
     else
     {
         operand = peLib->AllocateOperand(GetFieldData(exp->v.sp));
+        if (exp->v.sp->msilProperty)
+            operand->Property(true);
     }
     return operand;
 } 
@@ -302,8 +313,17 @@ Operand *getOperand(IMODE *oper)
         {
             if (oper->offset->type == en_structelem)
             {
-                Value *field = GetStructField(oper->offset->v.sp);
-                rv = peLib->AllocateOperand(field);
+                if (oper->offset->v.sp->msilProperty)
+                {
+                    rv = peLib->AllocateOperand(GetFieldData(oper->offset->v.sp));
+                    if (oper->offset->v.sp->msilProperty)
+                        rv->Property(true);
+                }
+                else
+                {
+                    Value *field = GetStructField(oper->offset->v.sp);
+                    rv = peLib->AllocateOperand(field);
+                }
             }
             else
             {
@@ -320,9 +340,15 @@ Operand *getOperand(IMODE *oper)
                 if (sp)
                 {
                     if (sp->storage_class == sc_auto || sp->storage_class == sc_register || sp->storage_class == sc_parameter)
+                    {
                         rv = peLib->AllocateOperand(GetLocalData(sp));
+                    }
                     else
+                    {
                         rv = peLib->AllocateOperand(GetFieldData(sp));
+                        if (sp->msilProperty)
+                            rv->Property(true);
+                    }
                 }
                 else if (oper->offset->type != en_tempref)
                 {
@@ -599,9 +625,17 @@ void gen_load(IMODE *im, Operand *dest)
             EXPRESSION *offset = (EXPRESSION *)im->vararg;
             if (qualifiedStruct(offset->v.sp->parentClass))
             {
-                Value *field = GetStructField(offset->v.sp);
-                Operand *operand = peLib->AllocateOperand(field);
-                gen_code(Instruction::i_ldfld, operand);
+                if (offset->v.sp->msilProperty)
+                {
+                    Property *p = static_cast<Property *>(offset->v.sp->msil);
+                    p->CallGet(*peLib, currentMethod);
+                }
+                else
+                {
+                    Value *field = GetStructField(offset->v.sp);
+                    Operand *operand = peLib->AllocateOperand(field);
+                    gen_code(Instruction::i_ldfld, operand);
+                }
             }
             else
             {
@@ -626,7 +660,10 @@ void gen_load(IMODE *im, Operand *dest)
         case Operand::t_value:
             if (typeid(*dest->GetValue()) == typeid(Local))
             {
-                if (im->mode == i_immed && !im->msilObject)
+                Local *l = static_cast<Local *>(dest->GetValue());
+                Type *t = l->GetType();
+                bool address = t->GetBasicType() == Type::cls && (t->GetClass()->Flags().Flags() & Qualifiers::Value);
+                if (im->mode == i_immed && (!im->msilObject || address))
                     gen_code(Instruction::i_ldloca, dest);
                 else
                     gen_code(Instruction::i_ldloc, dest);
@@ -634,7 +671,10 @@ void gen_load(IMODE *im, Operand *dest)
             }
             else if (typeid(*dest->GetValue()) == typeid(Param))
             {
-                if (im->mode == i_immed && !im->msilObject)
+                Param *p = static_cast<Param *>(dest->GetValue());
+                Type *t = p->GetType();
+                bool address = t->GetBasicType() == Type::cls && (t->GetClass()->Flags().Flags() & Qualifiers::Value);
+                if (im->mode == i_immed && (!im->msilObject || address))
                     gen_code(Instruction::i_ldarga, dest);
                 else
                     gen_code(Instruction::i_ldarg, dest);
@@ -647,16 +687,28 @@ void gen_load(IMODE *im, Operand *dest)
             }
             else // fieldname
             {
-                if (im->offset->type == en_structelem)
+                if (dest->Property())
                 {
-                    if (im->mode == i_immed && !im->msilObject)
+                    Property *p = reinterpret_cast<Property *>(static_cast<FieldName *>(dest->GetValue())->GetField());
+                    p->CallGet(*peLib, currentMethod);
+                    increment_stack();
+                }
+                else if (im->offset->type == en_structelem)
+                {
+                    FieldName *f = static_cast<FieldName *>(dest->GetValue());
+                    Type *t = f->GetField()->FieldType();
+                    bool address = t->GetBasicType() == Type::cls && (t->GetClass()->Flags().Flags() & Qualifiers::Value);
+                    if (im->mode == i_immed && (!im->msilObject || address))
                         gen_code(Instruction::i_ldflda, dest);
                     else
                         gen_code(Instruction::i_ldfld, dest);
                 }
                 else
                 {
-                    if (im->mode == i_immed && !im->msilObject)
+                    FieldName *f = static_cast<FieldName *>(dest->GetValue());
+                    Type *t = f->GetField()->FieldType();
+                    bool address = t->GetBasicType() == Type::cls && (t->GetClass()->Flags().Flags() & Qualifiers::Value);
+                    if (im->mode == i_immed && (!im->msilObject || address))
                         gen_code(Instruction::i_ldsflda, dest);
                     else
                         gen_code(Instruction::i_ldsfld, dest);
@@ -675,11 +727,21 @@ void gen_store(IMODE *im, Operand *dest)
             EXPRESSION *offset = (EXPRESSION *)im->vararg;
             if (qualifiedStruct(offset->v.sp->parentClass))
             {
-                Value *field = GetStructField(offset->v.sp);
-                Operand *operand = peLib->AllocateOperand(field);
-                gen_code(Instruction::i_stfld, operand);
-                decrement_stack();
-                decrement_stack();
+                if (offset->v.sp->msilProperty)
+                {
+                    Property *p = static_cast<Property *>(offset->v.sp->msil);
+                    p->CallSet(*peLib, currentMethod);
+                    decrement_stack();
+                    decrement_stack();
+                }
+                else
+                {
+                    Value *field = GetStructField(offset->v.sp);
+                    Operand *operand = peLib->AllocateOperand(field);
+                    gen_code(Instruction::i_stfld, operand);
+                    decrement_stack();
+                    decrement_stack();
+                }
             }
             else
             {
@@ -694,25 +756,34 @@ void gen_store(IMODE *im, Operand *dest)
     }
     if (!dest)
         return;
-    switch(dest->OperandType())
+    switch (dest->OperandType())
     {
-        case Operand::t_value:
-            if (typeid(*dest->GetValue()) == typeid(Local))
+    case Operand::t_value:
+        if (typeid(*dest->GetValue()) == typeid(Local))
+        {
+            gen_code(Instruction::i_stloc, dest);
+            decrement_stack();
+        }
+        else if (typeid(*dest->GetValue()) == typeid(Param))
+        {
+            gen_code(Instruction::i_starg, dest);
+            decrement_stack();
+        }
+        else // fieldname
+        {
+            if (dest->Property())
             {
-                gen_code(Instruction::i_stloc, dest);
+                Property *p = reinterpret_cast<Property *>(static_cast<FieldName *>(dest->GetValue())->GetField());
+                p->CallSet(*peLib, currentMethod);
                 decrement_stack();
             }
-            else if (typeid(*dest->GetValue()) == typeid(Param))
-            {
-                gen_code(Instruction::i_starg, dest);
-                decrement_stack();
-            }
-            else // fieldname
+            else
             {
                 gen_code(Instruction::i_stsfld, dest);
                 decrement_stack();
             }
-            break;
+        }
+        break;
     }
 }
 void gen_convert(Operand *dest, IMODE *im, int sz)

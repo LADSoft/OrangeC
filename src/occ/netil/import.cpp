@@ -371,8 +371,6 @@ bool Importer::EnterMethod(const Method *method)
             sp->access = ac_public;
             sp->tp->syms = CreateHashTable(1);
             sp->isConstructor = ctor;
-            if (isstructured(basetype(sp->tp)->btp)) // C structures will be void *...
-                sp->msilStructRet = TRUE;
             if (!args.size())
             {
                 TYPE *tp1 = (TYPE *)Alloc(sizeof(TYPE));
@@ -456,13 +454,51 @@ bool Importer::EnterMethod(const Method *method)
 bool Importer::EnterField(const Field *field)
 {
     diag("Field", field->Name());
-    if (field->Flags().Flags() & Qualifiers::Static)
+    if (structures_.size())
     {
+        TYPE *tp = TranslateType(field->FieldType());
+        if (tp)
+        {
+            SYMBOL *sp = (SYMBOL *)Alloc(sizeof(SYMBOL));
+            sp->name = litlate((char *)field->Name().c_str());
+            if (field->Flags().Flags() & Qualifiers::Static)
+                sp->storage_class = sc_static;
+            else
+                sp->storage_class = sc_member;
+            sp->tp = tp;
+            sp->parentClass = structures_.back();
+            sp->declfile = sp->origdeclfile = "[import]";
+            sp->access = ac_public;
+            sp->msil = (void *)field;
+            SetLinkerNames(sp, lk_cdecl);
+            insert(sp, structures_.back()->tp->syms);
+        }
     }
     return true;
 }
 bool Importer::EnterProperty(const Property *property)
 {
     diag("Property", property->Name());
+    if (structures_.size())
+    {
+        TYPE *tp = TranslateType(property->GetType());
+        if (tp)
+        {
+            SYMBOL *sp = (SYMBOL *)Alloc(sizeof(SYMBOL));
+            sp->name = litlate((char *)property->Name().c_str());
+            if (!property->Instance())
+                sp->storage_class = sc_static;
+            else
+                sp->storage_class = sc_member;
+            sp->tp = tp;
+            sp->parentClass = structures_.back();
+            sp->declfile = sp->origdeclfile = "[import]";
+            sp->access = ac_public;
+            sp->msil = (void *)property;
+            sp->msilProperty = TRUE;
+            SetLinkerNames(sp, lk_cdecl);
+            insert(sp, structures_.back()->tp->syms);
+        }
+    }
     return true;
 }

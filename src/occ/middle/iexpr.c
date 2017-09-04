@@ -816,6 +816,7 @@ IMODE *gen_deref(EXPRESSION *node, SYMBOL *funcsp, int flags)
         if (bitnode)
             node = node->left;
         aa1 = gen_expr(funcsp, node->left->left, 0, ISZ_ADDR);
+        aa1->msilObject = TRUE;
 //        if (!aa1->offset || aa1->mode != i_direct || aa1->offset->type != en_tempref)
         {
             aa2 = tempreg(aa1->size, 0);
@@ -1510,7 +1511,7 @@ IMODE *gen_clearblock(EXPRESSION *node, SYMBOL *funcsp)
     }
     return (ap1);
 }
-IMODE *gen_cpinitblock(EXPRESSION *node, SYMBOL *funcsp, BOOLEAN cp)
+IMODE *gen_cpinitblock(EXPRESSION *node, SYMBOL *funcsp, BOOLEAN cp, int flags)
 /*
 * Generate code to copy one structure to another
 */
@@ -1536,7 +1537,16 @@ IMODE *gen_cpinitblock(EXPRESSION *node, SYMBOL *funcsp, BOOLEAN cp)
     else
         gen_icode(i__initblk, ap8, ap1, ap4);
     intermed_tail->alwayslive = TRUE;
-    return (ap1);
+
+    if (!(flags & F_NOVALUE))
+    {
+
+        ap6 = gen_expr(funcsp, node->left->left, F_VOL, ISZ_UINT);
+        ap7 = LookupLoadTemp(NULL, ap6);
+        if (ap7 != ap6)
+            gen_icode(i_assn, ap7, ap6, NULL);
+    }
+    return (ap7);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -2909,11 +2919,11 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
             rv = ap2;
             break;
         case en__initblk:
-            rv = gen_cpinitblock(node, funcsp, FALSE);
+            rv = gen_cpinitblock(node, funcsp, FALSE,flags);
             break;
         case en__cpblk:
-            rv = gen_cpinitblock(node, funcsp, TRUE);
-            break;
+            rv = gen_cpinitblock(node, funcsp, TRUE, flags);
+            break; 
         case en_loadstack:
             ap1 = gen_expr(funcsp, node->left, 0, ISZ_ADDR );
             gen_icode(i_loadstack, 0, ap1,0 );
@@ -3271,6 +3281,7 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
                 // prepare for the MSIL ldflda instruction
                 IMODE *aa1, *aa2;
                 aa1 = gen_expr(funcsp, node->left, 0, ISZ_ADDR);
+                aa1->msilObject = TRUE;
 //                if (!aa1->offset || aa1->mode != i_direct || aa1->offset->type != en_tempref)
                 {
                     aa2 = tempreg(aa1->size, 0);

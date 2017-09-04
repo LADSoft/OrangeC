@@ -51,7 +51,7 @@
 
 // reference changelog.txt to see what the changes are
 //
-#define DOTNETPELIB_VERSION "2.5"
+#define DOTNETPELIB_VERSION "2.6"
 
 // this is the main library header
 // it allows creation of the methods and data that would be dumped into 
@@ -831,7 +831,7 @@ namespace DotNetPELib
         {
         }
         ///** Operand is a complex value
-        Operand::Operand(Value *V) : type_(t_value), refValue_(V)
+        Operand::Operand(Value *V) : type_(t_value), refValue_(V), property_(false)
         {
         }
         ///** Operand is an integer constant
@@ -864,7 +864,11 @@ namespace DotNetPELib
         std::string StringValue() const { return stringValue_; }
         ///** return the float value
         double FloatValue() const { return floatValue_; }
-
+        ///** return the is-a-property flag
+        ///** only has meaning for 'value' operands
+        bool Property() const { return property_;  }
+        ///** set the is-a-property flag
+        void Property(bool state) { property_ = state;  }
         ///** Internal functions
         virtual bool ILSrcDump(PELib &) const;
         size_t Render(PELib &peLib, int opcode, int operandType, Byte *);
@@ -878,6 +882,7 @@ namespace DotNetPELib
         std::string stringValue_;
         longlong intValue_;
         double floatValue_;
+        bool property_;
         bool isnanorinf() const;
     };
     /* a CIL instruction */

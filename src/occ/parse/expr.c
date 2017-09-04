@@ -1438,8 +1438,15 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                     }
                     else if (sp2->storage_class == sc_static || sp2->storage_class == sc_external)
                     {
-                        EXPRESSION *exp2 = varNode(en_global, sp2);
-                        *exp = exprNode(en_void, *exp, exp2);
+                        if (chosenAssembler->msil)
+                        {
+                            *exp = varNode(en_global, sp2);
+                        }
+                        else
+                        {
+                            EXPRESSION *exp2 = varNode(en_global, sp2);
+                            *exp = exprNode(en_void, *exp, exp2);
+                        }
                     }
                     else
                     {
@@ -3585,7 +3592,7 @@ static LEXEME *expression_msilfunc(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRE
                 *exp = intNode(en_c_i, 0);
                 break;
         }
-        *tp = &stdvoid;
+        *tp = &stdpointer;
     }
     else
     {

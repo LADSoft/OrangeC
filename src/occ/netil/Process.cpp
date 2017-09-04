@@ -479,6 +479,8 @@ std::string GetArrayName(TYPE *tp)
 }
 Value *GetStructField(SYMBOL *sp)
 {
+    if (sp->msil)
+        return peLib->AllocateFieldName(static_cast<Field *>(sp->msil));
     auto it = fieldList.find(sp);
     if (it == fieldList.end() && sp->parentClass)
         GetType(sp->parentClass->tp, true);
@@ -950,6 +952,8 @@ Value *GetLocalData(SYMBOL *sp)
 }
 Value *GetFieldData(SYMBOL *sp)
 {
+    if (sp->msil)
+        return peLib->AllocateFieldName(static_cast<Field *>(sp->msil));
     if (isfunction(sp->tp))
     {
         if (sp->storage_class != sc_localstatic && sp->storage_class != sc_const && sp->storage_class != sc_static)

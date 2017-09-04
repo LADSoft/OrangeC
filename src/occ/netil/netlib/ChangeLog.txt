@@ -1,3 +1,6 @@
+Version 2.6:
+	bug fix: search for assembly on path failed
+
 Version 2.5:
 	bug fix: escape control characters when writing strings to the .il file...
 	bug fix: don't quote types from external assemblies

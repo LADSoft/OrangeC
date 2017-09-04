@@ -236,16 +236,12 @@ namespace DotNetPELib
             if (!rv.size())
                 rv = FindGACPath(std::string(windir) + DIR_SEP + "Assembly" + DIR_SEP + "GAC_32", assemblyName, major, minor, build, revision);
         }
-        if (!rv.size())
-        {
-            rv = SearchOnPath(assemblyName + ".dll");
-        }
         return rv;
     }
     int PEReader::ManagedLoad(std::string assemblyName, int major, int minor, int build, int revision)
 
     {
-    	std::string t = SearchOnPath(assemblyName);
+    	std::string t = SearchOnPath(assemblyName + ".dll");
     	if (t.size())
             assemblyName = t;
         else

@@ -7,7 +7,7 @@
     Redistribution and use of this software in source and binary forms, with or without modification, are
     permitted provided that the following conditions are met:
     
-    * Redistributions of source code must retain the above
+    * Redistributions of source code must retaxin the above
       copyright notice, this list of conditions and the
       following disclaimer.
     
@@ -33,19 +33,19 @@
 #include <stdlib.h>
 #include <wchar.h>
 
-wchar_t * _RTL_FUNC ltow(long __value, wchar_t *__string, int __radix)
+wchar_t * _RTL_FUNC ltow(long __value, wchar_t *__stringValue, int __radix)
 {
    char buf2[36] ;
    int len = 0, pos = 0 ;
    if (__value < 0) {
-      __string[pos++] = '-' ;
+      __stringValue[pos++] = '-' ;
       __value = - __value ;
    }
    if (__radix < 2 || __radix > 36)
-      __string[pos] = 0 ;
+      __stringValue[pos] = 0 ;
    else if (!__value) {
-         __string[pos++] = '0' ;
-         __string[pos] = 0 ;
+         __stringValue[pos++] = '0' ;
+         __stringValue[pos] = 0 ;
    } else {
       while (__value) {
          buf2[len++] = __value % __radix ;
@@ -56,13 +56,13 @@ wchar_t * _RTL_FUNC ltow(long __value, wchar_t *__string, int __radix)
          ch+= '0' ;
          if (ch > '9')
             ch += 7 ;
-         __string[pos++] = ch ;
+         __stringValue[pos++] = ch ;
       }
-      __string[pos] = 0 ;
+      __stringValue[pos] = 0 ;
    }
-   return __string ;
+   return __stringValue ;
 }
-wchar_t * _RTL_FUNC itow(int __value, wchar_t *__string, int __radix)
+wchar_t * _RTL_FUNC itow(int __value, wchar_t *__stringValue, int __radix)
 {
-    return ltow(__value,__string,__radix);
+    return ltow(__value,__stringValue,__radix);
 }

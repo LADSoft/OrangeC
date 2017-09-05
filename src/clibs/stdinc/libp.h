@@ -113,6 +113,13 @@ void __ll_assertfail( const char *__who, const char *__file,
 int __ll_enter_critical(void) ;
 int __ll_exit_critical(void) ;
 
+/* threads */
+#ifdef __THREADS_H
+int __ll_thrdstart(struct ithrd **thr, thrd_start_t *func, void *arglist );
+void __ll_thrdexit(unsigned retval);
+void __ll_thrdsleep(unsigned ms);
+#endif
+
 /* stat */
 int __ll_stat(int handle, void *__statbuf) ;
 int __ll_namedstat(const char *name, void *__statbuf) ;
@@ -232,6 +239,7 @@ int __ll_shflags(int mode) ;
 void __ll_findclose(void *buf) ;
 int __uiohandle(int __handle) ;
 int __uinewhandpos(void) ;
+void __uio_clearerr(int __handle);
 
 #define UIF_EOF 1
 #define UIF_RO  2

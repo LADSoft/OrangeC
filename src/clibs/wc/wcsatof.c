@@ -40,6 +40,7 @@
 #include <time.h>
 #include <locale.h>
 #include <float.h>
+#include <ctype.h>
 #include "_locale.h"
 #include "libp.h"
 #include "_lfloat.h"

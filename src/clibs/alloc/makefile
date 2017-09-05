@@ -36,6 +36,8 @@
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
 C_DEPENDENCIES = $(wildcard *.c)
+CIL_DEPENDENCIES = $(wildcard cil\*.c)
+
 EXCLUDE = lea.o farmems.o farmem.o
 
 all: $(DEPENDENCIES)

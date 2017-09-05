@@ -36,6 +36,7 @@
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
 C_DEPENDENCIES = $(wildcard *.c)
+CIL_DEPENDENCIES = $(wildcard *.c) $(wildcard cil\*.c)
 
 all: $(DEPENDENCIES)
 

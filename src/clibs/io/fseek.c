@@ -36,6 +36,7 @@
 #include <locale.h>
 #include <wchar.h>
 #include <io.h>
+#include <string.h>
 #include "libp.h"
 
 int _RTL_FUNC fseek (FILE *stream, long offset, int origin)

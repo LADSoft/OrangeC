@@ -32,15 +32,15 @@
 */
 #include <stdlib.h>
 
-char * _RTL_FUNC _ui64toa(unsigned __int64 __value, char *__string, int __radix)
+char * _RTL_FUNC _ui64toa(unsigned __int64 __value, char *__stringValue, int __radix)
 {
    char buf2[68] ;
    int len = 0, pos = 0 ;
    if (__radix < 2 || __radix > 36)
-      __string[pos] = 0 ;
+      __stringValue[pos] = 0 ;
    else if (!__value) {
-         __string[pos++] = '0' ;
-         __string[pos] = 0 ;
+         __stringValue[pos++] = '0' ;
+         __stringValue[pos] = 0 ;
    } else {
       while (__value) {
          buf2[len++] = __value % __radix ;
@@ -51,19 +51,19 @@ char * _RTL_FUNC _ui64toa(unsigned __int64 __value, char *__string, int __radix)
          ch+= '0' ;
          if (ch > '9')
             ch += 7+'a'-'A' ;
-         __string[pos++] = ch ;
+         __stringValue[pos++] = ch ;
       }
-      __string[pos] = 0 ;
+      __stringValue[pos] = 0 ;
    }
-   return __string ;
+   return __stringValue ;
 }
 #if  __STDC_VERSION__ >= 199901L
-char * _RTL_FUNC _ulltoa(unsigned long long __value, char *__string, int __radix)
+char * _RTL_FUNC _ulltoa(unsigned long long __value, char *__stringValue, int __radix)
 {
-  return _ui64toa((unsigned __int64)__value, __string, __radix);
+  return _ui64toa((unsigned __int64)__value, __stringValue, __radix);
 }
-char * _RTL_FUNC ulltoa(unsigned long long __value, char *__string, int __radix)
+char * _RTL_FUNC ulltoa(unsigned long long __value, char *__stringValue, int __radix)
 {
-  return _ui64toa((unsigned __int64)__value, __string, __radix);
+  return _ui64toa((unsigned __int64)__value, __stringValue, __radix);
 }
 #endif

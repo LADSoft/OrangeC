@@ -32,7 +32,10 @@
 */
 #include <stdio.h>
 #include <string.h>
-
+#include <locale.h>
+#include <time.h>
+#include "wchar.h"
+#include "libp.h"
 int _RTL_FUNC fsetpos(FILE *restrict stream, const fpos_t *restrict currentpos)
 {
     if (stream->token == FILTOK) {

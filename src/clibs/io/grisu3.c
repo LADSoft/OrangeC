@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <string.h>
 #pragma pack(0)
 typedef struct FP
 {

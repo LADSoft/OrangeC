@@ -87,13 +87,20 @@ typedef struct  __file__{
 #define stdprn  __stdprn
 
 #if defined(__MSIL__)
+#if defined(__MANAGED__)
+extern __STD_NS_QUALIFIER FILE _RTL_DATA * __stdin ;
+extern __STD_NS_QUALIFIER FILE _RTL_DATA * __stdout ;
+extern __STD_NS_QUALIFIER FILE _RTL_DATA * __stderr ;
+extern __STD_NS_QUALIFIER FILE _RTL_DATA * __stdaux ;
+extern __STD_NS_QUALIFIER FILE _RTL_DATA * __stdprn ;
+#else
 extern __STD_NS_QUALIFIER void * __stdin ;
 extern __STD_NS_QUALIFIER void * __stdout ;
 extern __STD_NS_QUALIFIER void * __stderr ;
 extern __STD_NS_QUALIFIER void * __stdaux ;
 extern __STD_NS_QUALIFIER void * __stdprn ;
-
-#elif defined(__MSVCRT_DLL) || defined(__CRTDLL_DLL) || defined(__MSIL__)
+#endif
+#elif defined(__MSVCRT_DLL) || defined(__CRTDLL_DLL)
 extern __STD_NS_QUALIFIER FILE * __stdin ;
 extern __STD_NS_QUALIFIER FILE * __stdout ;
 extern __STD_NS_QUALIFIER FILE * __stderr ;

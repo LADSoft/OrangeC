@@ -46,12 +46,12 @@ all: crtdll.l
 	$(CC) /c $(CFLAGS) -Wcl -o$@ $^
 
 crtdll.l: .\crtdmain.o .\c0.o
-	del $(SYSOBJECT)\$@
-	$(LIB) $(LIBFLAGS) $(SYSOBJECT)\$@ + .\c0.o .\crtdmain.o
-	$(LIB) $(LIBFLAGS) $(SYSOBJECT)\$@ + @&&|
+	del $@
+	$(LIB) $(LIBFLAGS) $@ + .\c0.o .\crtdmain.o
+	$(LIB) $(LIBFLAGS) $@ + @&&|
 $(CLIBOBJECT)\srproc.o $(CLIBOBJECT)\lxsar.o $(CLIBOBJECT)\lxshr.o $(CLIBOBJECT)\lxshl.o $(CLIBOBJECT)\lxmul.o $(CLIBOBJECT)\lxdiv.o $(CLIBOBJECT)\substk.o $(CLIBOBJECT)\stkchk.o $(OBJECT)\vsconio.o
 |
-	$(IMPLIB) $(SYSOBJECT)\$@ .\crtdll.def
+	$(IMPLIB) $@ .\crtdll.def
 
 DISTRIBUTE:
 	copy *.c $(DISTSTARTUPWIN)

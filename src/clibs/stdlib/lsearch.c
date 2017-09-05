@@ -31,6 +31,7 @@
     ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <stdlib.h>
+#include <string.h>
 
 void *_RTL_FUNC lfind(const void *key, void *base, size_t *num, size_t width,
             int (*compare)(const void *elem1, const void *elem2))

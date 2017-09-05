@@ -37,6 +37,8 @@
 #include <locale.h>
 #include "libp.h"
 
+void __procexit(void);
+void __removealltemps(void);
 void _RTL_FUNC _cexit(void) 
 {
    int i; 

@@ -44,10 +44,11 @@
 #endif
 
 #define STP 1
-
+// not thread safe!
 static wchar_t *__wfil2strd (FILE *restrict fil, int width, int *restrict ch, int *restrict chars)
 {
-  wchar_t buf[256], *p = buf;
+  static wchar_t buf[256];
+  wchar_t *p = buf;
   int radix = 10;
 
   if (*ch != EOF && width && (*ch == '+' || *ch == '-')) {

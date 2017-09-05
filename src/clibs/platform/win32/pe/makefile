@@ -45,20 +45,20 @@ c0.o: c0.c
 	$(CC) /I$(STDINCLUDE) /c $(CFLAGS) /s16 -o$(WINOBJECT)\$@F $^
 
 c0pe.o: c0pe.nas
-	$(ASM) $(ASMFLAGS) -o$(SYSOBJECT)\$@F $^
+	$(ASM) $(ASMFLAGS) -o$@F $^
 c0xpe.o: c0xpe.nas
-	$(ASM) $(ASMFLAGS) -o$(SYSOBJECT)\$@F $^
+	$(ASM) $(ASMFLAGS) -o$@F $^
 c0dpe.o: c0dpe.nas
-	$(ASM) $(ASMFLAGS) -o$(SYSOBJECT)\$@F $^
+	$(ASM) $(ASMFLAGS) -o$@F $^
 
 wildargsw.o: wildargsw.c
-	$(CC) /c /I$(STDINCLUDE) $(CFLAGS) -o$(SYSOBJECT)\$@F $^
+	$(CC) /c /I$(STDINCLUDE) $(CFLAGS) -o$@F $^
 
 .\dfstb32.o: dfstb32.nas
 	$(ASM) $(ASMFLAGS) -o$@ $^
 
 dfstb32.exe: .\dfstb32.o
-	$(LINK) $(LINKFLAGS) /T:REAL -o$(SYSOBJECT)\dfstb32 $^
+	$(LINK) $(LINKFLAGS) /T:REAL -odfstb32 $^
 
 DISTRIBUTE:
 	copy *.nas $(DISTSTARTUPWIN)

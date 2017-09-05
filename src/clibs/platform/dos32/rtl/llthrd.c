@@ -54,6 +54,7 @@ extern char _TLSINITSTART[], _TLSINITEND[];
 // the arg came from, because, the compiler has to put the return value into some
 // arbitrary register based on how the register allocator decided to do it
 // limiting the functionality beyond that will put a major crimp in optimizations...
+#if !defined(__MSIL__)
 void _RTL_FUNC __tlsaddr(int n)
 {
     asm push eax
@@ -65,6 +66,7 @@ void _RTL_FUNC __tlsaddr(int n)
     asm pop ecx
     asm pop eax
 }
+#endif
 static void load_local_data(void)
 {
     struct __rtl_data *r = __getRtlData();

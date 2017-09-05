@@ -37,6 +37,7 @@
 #include <wchar.h>
 #include <locale.h>
 #include <dir.h>
+#include "io.h"
 #include "libp.h"
 
 char *_RTL_FUNC tmpnam(char *buf)

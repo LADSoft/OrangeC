@@ -31,7 +31,7 @@
     ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <string.h>
-#include <ctype.h>
+#include <wctype.h>
 
 int _RTL_FUNC wcsnicmp(wchar_t *__s1, wchar_t *__s2, size_t __n)
 {

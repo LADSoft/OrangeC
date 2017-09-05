@@ -83,11 +83,14 @@ export DLLOBJECT
 CLIBOBJECT :=$(realpath object\clib)
 export CLIBOBJECT
 
+CILOBJECT :=$(realpath object\cil)
+export CILOBJECT
+
 LIBOBJS = $(shell dir /b $(CLIBOBJECT)\*.o)
 DOSOBJS1 = $(shell dir /b $(DOSOBJECT)\*.o)
 DOSOBJS = $(DOSOBJS1:.OBJ=.o)
 WINOBJS = $(shell dir /b $(WINOBJECT)\*.o)
-
+CILOBJS = $(shell dir /b $(CILOBJECT)\*.ilo)
 define clibdef
 clib:
 	-mkdir object
@@ -96,6 +99,7 @@ clib:
 	-mkdir $(SYSOBJECT)
 	-mkdir $(DLLOBJECT)
 	-mkdir $(LSCRTLOBJECT)
+	-mkdir $(CILOBJECT)
 	-mkdir object\clib
 $(foreach dir, $(DIRS), $(CLIB))
 #	$(MAKE) /CMSDOS "/DOBJECT=$(DOSOBJECT)"

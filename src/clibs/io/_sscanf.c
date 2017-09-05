@@ -45,9 +45,11 @@
 
 #define STP 1
 
+// not thread safe!
 static char *__fil2strd (FILE *restrict fil, int width, int *restrict ch, int *restrict chars)
 {
-  char buf[256], *p = buf;
+  static char buf[256];
+  char *p = buf;
   int radix = 10;
 
   if (*ch != EOF && width && (*ch == '+' || *ch == '-')) {

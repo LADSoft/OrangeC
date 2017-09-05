@@ -37,13 +37,20 @@
 #		email: TouchStone222@runbox.com <David Lindauer>
 CC=occ
 CFLAGS = $(C_FLAGS) $(DEFINES)
+CILCFLAGS = $(CIL_C_FLAGS) $(DEFINES)
+
+ifndef OCCIL_CLASS
+OCCIL_CLASS=lsmscrtl.rtl
+endif
 
 LINK=olink
 LINKFLAGS= -c+
 
-vpath %.o $(OBJECT) $(SYSOBJECT)
-vpath %.nas .\386\
+vpath %.c .\cil\ #
+vpath %.ilo $(CILOBJECT)
 vpath %.l $(SYSOBJECT)
+vpath %.nas .\386\ #
+vpath %.o $(OBJECT) $(SYSOBJECT)
 
 ASM=oasm
 ASMFLAGS=
@@ -75,11 +82,16 @@ endif
 %.o: %.nas
 	$(ASM) $(ASMFLAGS) $(BUILDING_DLL) -o$(OBJECT)\$@F $^
 
+%.ilo: %.c
+	occil -N$(OCCIL_CLASS) /1 /c $(CILCFLAGS) -I$(STDINCLUDE) /D__MANAGED__ -o$(CILOBJECT)\$@F $^
+
 C_deps = $(notdir $(C_DEPENDENCIES:.c=.o))
 ASM_deps = $(notdir $(ASM_DEPENDENCIES:.nas=.o))
 CPP_deps = $(notdir $(CPP_DEPENDENCIES:.cpp=.o))
-
-DEPENDENCIES = $(filter-out $(EXCLUDE), $(C_deps) $(ASM_deps) $(CPP_deps))
+ifdef LSMSILCRTL
+CIL_DEPS = $(notdir $(CIL_DEPENDENCIES:.c=.ilo))
+endif
+DEPENDENCIES = $(filter-out $(EXCLUDE), $(C_deps) $(ASM_deps) $(CPP_deps) $(CIL_DEPS))
 
 define CALLDIR
 	$(MAKE) /C$(dir)

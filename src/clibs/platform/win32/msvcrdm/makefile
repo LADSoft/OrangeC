@@ -46,9 +46,9 @@ all: $(DEPENDENCIES) msvcrt.l
 	$(CC) /c $(CFLAGS) -Wcl -o$@ $^
 
 msvcrt.l: .\msvcrdm.o .\c0.o
-	del $(SYSOBJECT)\$@
-	$(LIB) $(LIBFLAGS) $(SYSOBJECT)\$@ + .\c0.o .\msvcrdm.o
-	$(LIB) $(LIBFLAGS) $(SYSOBJECT)\$@ + @&&|
+	del $@
+	$(LIB) $(LIBFLAGS) $@ + .\c0.o .\msvcrdm.o
+	$(LIB) $(LIBFLAGS) $@ + @&&|
 $(CLIBOBJECT)\srproc.o $(CLIBOBJECT)\lxsar.o $(CLIBOBJECT)\lxshr.o $(CLIBOBJECT)\lxshl.o $(CLIBOBJECT)\lxmul.o $(CLIBOBJECT)\lxdiv.o $(CLIBOBJECT)\substk.o $(CLIBOBJECT)\stkchk.o $(WINOBJECT)\vsconio.o
 $(CLIBOBJECT)\nan.o $(CLIBOBJECT)\signbit.o $(CLIBOBJECT)\nancomp.o $(CLIBOBJECT)\acosh.o $(CLIBOBJECT)\asinh.o
 $(CLIBOBJECT)\atanh.o $(CLIBOBJECT)\cbrt.o $(CLIBOBJECT)\copysign.o $(CLIBOBJECT)\erf.o $(CLIBOBJECT)\exp2.o
@@ -68,7 +68,7 @@ $(CLIBOBJECT)\_ixb.o $(CLIBOBJECT)\cpphandler.o $(CLIBOBJECT)\_term.o $(CLIBOBJE
 $(CLIBOBJECT)\bad_alloc.o
 $(WINOBJECT)\secure.o
 |
-	$(IMPLIB) $(SYSOBJECT)\$@ .\msvcrt.def
+	$(IMPLIB) $@ .\msvcrt.def
 
 DISTRIBUTE:
 	copy *.c $(DISTSTARTUPWIN)

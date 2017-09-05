@@ -31,8 +31,9 @@
     ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <stdlib.h>
+#include <string.h>
 
-char *strnset(char *p, int n, int len)
+char *strnset(char *p, int n, size_t len)
 {
     int l = strlen(p);
     if (l > len)
@@ -40,7 +41,7 @@ char *strnset(char *p, int n, int len)
     memset(p, n, l);
     return p;
 }
-char *_strnset(char *p, int n, int len)
+char *_strnset(char *p, int n, size_t len)
 {
     return strnset(p, n, len);
 }

@@ -32,19 +32,19 @@
 */
 #include <stdlib.h>
 
-char * _RTL_FUNC ltoa(long __value, char *__string, int __radix)
+char * _RTL_FUNC ltoa(long __value, char *__stringValue, int __radix)
 {
    char buf2[36] ;
    int len = 0, pos = 0 ;
    if (__radix < 2 || __radix > 36)
-      __string[pos] = 0 ;
+      __stringValue[pos] = 0 ;
    else if (!__value) {
-         __string[pos++] = '0' ;
-         __string[pos] = 0 ;
+         __stringValue[pos++] = '0' ;
+         __stringValue[pos] = 0 ;
    } else {
       unsigned t;
       if (__value < 0 && __radix == 10) {
-        __string[pos++] = '-' ;
+        __stringValue[pos++] = '-' ;
         __value = - __value ;
       }
       t = __value;
@@ -57,21 +57,21 @@ char * _RTL_FUNC ltoa(long __value, char *__string, int __radix)
          ch+= '0' ;
          if (ch > '9')
             ch += 7+'a'-'A' ;
-         __string[pos++] = ch ;
+         __stringValue[pos++] = ch ;
       }
-      __string[pos] = 0 ;
+      __stringValue[pos] = 0 ;
    }
-   return __string ;
+   return __stringValue ;
 }
-char * _RTL_FUNC itoa(int __value, char *__string, int __radix)
+char * _RTL_FUNC itoa(int __value, char *__stringValue, int __radix)
 {
-    return ltoa(__value, __string, __radix);
+    return ltoa(__value, __stringValue, __radix);
 }
-char * _RTL_FUNC _itoa(int __value, char *__string, int __radix)
+char * _RTL_FUNC _itoa(int __value, char *__stringValue, int __radix)
 {
-    return ltoa(__value, __string, __radix);
+    return ltoa(__value, __stringValue, __radix);
 }
-char * _RTL_FUNC _ltoa(long __value, char *__string, int __radix)
+char * _RTL_FUNC _ltoa(long __value, char *__stringValue, int __radix)
 {
-    return ltoa(__value, __string, __radix);
+    return ltoa(__value, __stringValue, __radix);
 }

@@ -32,6 +32,7 @@
 */
 #include <setjmp.h>
 #include <string.h>
+#include <stdio.h>
 
 #ifdef XXXXX
 static unsigned CRCtab[256];

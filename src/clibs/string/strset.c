@@ -31,6 +31,7 @@
     ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <stdlib.h>
+#include <string.h>
 
 char *strset(char *p, int n)
 {

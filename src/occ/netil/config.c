@@ -72,9 +72,8 @@ static    char usage_text[] = "[options] [@response file] files\n"
         "/T        - translate trigraphs       /Vx.x.x.x - set assembly assemblyVersion\n"
         "Codegen parameters: (/C[+][-][params])\n"
         "  +d   - display diagnostics          -b        - no BSS\n"
-        "  +F   - flat model                   -l        - no C source in ASM file\n"
-        "  -m   - no leading underscores       +r        - reverse order of bit ops\n"
-        "  +R   - honor FAR keyword            +u        - 'char' type is unsigned\n"
+        "  -l        - no C source in ASM file -m        -  no leading underscores\n"
+        "  +u        - 'char' type is unsigned\n"
         "Time: " __TIME__ "  Date: " __DATE__;
 
 static int parse_param(char mode, char *string);
@@ -535,8 +534,11 @@ ARCH_GEN outputfunctions = {
     asm_functail,			/* function tail (e.g. destructor) start/end */
 } ;  
 ARCH_MSIL msilData = {
-    msil_managed           /* return TRUE if the function is a managed function, FALSE otherwise */
-};     
+    msil_managed,           /* return TRUE if the function is a managed function, FALSE otherwise */
+    oa_get_boxed,                 /* msil - get a boxed version of type*/
+    oa_get_unboxed,                 /* msil - get an unboxed version of type*/
+    msil_create_property,   /* create a property instance */
+};
 ARCH_ASM assemblerInterface[] = {
     {
     "ilasm",                                 /* assembler name */
@@ -579,8 +581,6 @@ ARCH_ASM assemblerInterface[] = {
     0,                   /* initialize intrinsic mechanism, compiler startup */
     0,                   /* search for an intrinsic */
     oa_enter_type,                     /* enter a type in the BE */
-    oa_get_boxed,                 /* msil - get a boxed version of type*/
-    oa_get_unboxed,                 /* msil - get an unboxed version of type*/
     },
     { 0 }
 } ;

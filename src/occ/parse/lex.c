@@ -220,6 +220,7 @@ KEYWORD keywords[] = {
     { "__msil_rtl", 10,  kw__msil_rtl, KW_NONANSI | KW_ALL, TT_LINKAGE},
     { "__object", 8,  kw___object, KW_MSIL, TT_BASETYPE},
     { "__pascal", 8,  kw__pascal, KW_NONANSI | KW_ALL, TT_LINKAGE},
+    { "__property", 10,  kw__property, KW_MSIL, TT_LINKAGE },
     { "__stdcall", 9,  kw__stdcall, KW_NONANSI | KW_ALL, TT_LINKAGE},
     { "__string", 8,  kw___string, KW_MSIL, TT_BASETYPE},
     { "__typeid", 8,  kw___typeid, KW_CPLUSPLUS, 0},

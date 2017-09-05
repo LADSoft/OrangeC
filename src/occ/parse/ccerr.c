@@ -543,6 +543,11 @@ static struct {
 {"Cannot use new() to allocate a reference", ERROR },
 {"This feature may only be used for imported namespaces", ERROR },
 {"Cannot use the address of a managed object", ERROR },
+{"__property qualifier not allowed on functions", ERROR },
+{ "Getter for property '%s' already exists", ERROR },
+{ "Setter for property '%s' already exists", ERROR },
+{ "Only simple property declarations are supported", ERROR },
+{ "Property cannot be declared inside function", ERROR },
 #endif
 } ;
 

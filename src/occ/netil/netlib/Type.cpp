@@ -97,8 +97,20 @@ namespace DotNetPELib
         if (tp_ == cls)
         {
             std::string name = Qualifiers::GetName("", typeRef_, true);
-            if ((typeRef_->Flags().Flags() & Qualifiers::Value) && name[0] != '[')
+            if (name[0] != '[')
+            {
                 name = "'" + name + "'";
+            }
+            else
+            {
+                int npos = name.find_first_of("]");
+                if (npos != std::string::npos && npos != name.size() - 1)
+                {
+                    name = name.substr(0, npos + 1) + "'" + name.substr(npos+1) + "'";
+                }
+
+            }
+
             peLib.Out() << name;
         }
         else if (tp_ == method)

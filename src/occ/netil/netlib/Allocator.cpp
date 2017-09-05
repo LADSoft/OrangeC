@@ -77,10 +77,10 @@ namespace DotNetPELib {
         new (rv) Property();
         return static_cast<Property *>(rv);
     }
-    Property *Allocator::AllocateProperty(PELib &peLib, std::string name, Type *type, std::vector<Type *>& indices, bool hasSetter)
+    Property *Allocator::AllocateProperty(PELib &peLib, std::string name, Type *type, std::vector<Type *>& indices, bool hasSetter, DataContainer *parent)
     {
         void *rv = BaseAlloc(sizeof(Property));
-        new (rv) Property(peLib, name, type, indices, true);
+        new (rv) Property(peLib, name, type, indices, hasSetter, parent);
         return static_cast<Property *>(rv);
     }
     Enum *Allocator::AllocateEnum(std::string Name, Qualifiers Flags, Field::ValueSize Size)

@@ -70,6 +70,7 @@ C_DEPENDENCIES= \
     osutil.c \
     output.c \
     preproc.c \
+    property.c \
     ppexpr.c \
     rtti.c \
     stmt.c \

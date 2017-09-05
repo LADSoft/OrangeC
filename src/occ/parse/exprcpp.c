@@ -650,10 +650,10 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
         if (isref(*tp))
             *tp = basetype(basetype(*tp)->btp);
         // find structured version of arithmetic types for msil member matching
-        if (chosenAssembler->msil && isarithmetic(*tp) && chosenAssembler->find_boxed_type)
+        if (chosenAssembler->msil && isarithmetic(*tp) && chosenAssembler->msil->find_boxed_type)
         {
             // auto-boxing for msil
-            TYPE *tp1 = chosenAssembler->find_boxed_type(basetype(*tp));
+            TYPE *tp1 = chosenAssembler->msil->find_boxed_type(basetype(*tp));
             if (tp1 && search(overloadNameTab[CI_CONSTRUCTOR], basetype(tp1)->syms))
             {
                 unboxed = *tp;

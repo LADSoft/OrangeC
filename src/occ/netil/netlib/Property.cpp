@@ -70,31 +70,62 @@ void Property::SetContainer(DataContainer *parent, bool add) {
 }
 void Property::CreateFunctions(PELib &peLib, std::vector<Type *>& indices, bool hasSetter)
 {
+    bool found = false;
+    MethodSignature *prototype;
     std::string getter_name = "get_" + name_;
-    MethodSignature *prototype = peLib.AllocateMethodSignature(getter_name, MethodSignature::Managed, parent_);
-    getter_ = peLib.AllocateMethod(prototype, Qualifiers::Public | (instance_ ? Qualifiers::Instance : Qualifiers::Static));
+    if (parent_)
+        for (auto m : parent_->Methods())
+        {
+            if (static_cast<Method *>(m)->Signature()->Name() == getter_name)
+            {
+                found = true;
+                getter_ = static_cast<Method *>(m);
+                break;
+            }
+        }
+    if (!getter_)
+    {
+        prototype = peLib.AllocateMethodSignature(getter_name, MethodSignature::Managed, parent_);
+        getter_ = peLib.AllocateMethod(prototype, Qualifiers::Public | (instance_ ? Qualifiers::Instance : Qualifiers::Static));
+    }
     if (hasSetter)
     {
         std::string setter_name = "set_" + name_;
-        MethodSignature *prototype = peLib.AllocateMethodSignature(setter_name, MethodSignature::Managed, parent_);
-        setter_ = peLib.AllocateMethod(prototype, Qualifiers::Public | (instance_ ? Qualifiers::Instance : Qualifiers::Static));
+        if (parent_)
+            for (auto m : parent_->Methods())
+            {
+                if (static_cast<Method *>(m)->Signature()->Name() == setter_name)
+                {
+                    found = true;
+                    setter_ = static_cast<Method *>(m);
+                    break;
+                }
+            }
+        if (!setter_)
+        {
+            prototype = peLib.AllocateMethodSignature(setter_name, MethodSignature::Managed, parent_);
+            setter_ = peLib.AllocateMethod(prototype, Qualifiers::Public | (instance_ ? Qualifiers::Instance : Qualifiers::Static));
+        }
     }
-    int counter = 1;
-    for (auto i : indices)
+    if (!found)
     {
-        std::stringstream stream;
-        stream << "P" << counter++;
-        char cbuf[256];
-        stream.getline(cbuf, sizeof(cbuf));
-        getter_->Signature()->AddParam(peLib.AllocateParam(cbuf, i));
+        int counter = 1;
+        for (auto i : indices)
+        {
+            std::stringstream stream;
+            stream << "P" << counter++;
+            char cbuf[256];
+            stream.getline(cbuf, sizeof(cbuf));
+            getter_->Signature()->AddParam(peLib.AllocateParam(cbuf, i));
+            if (setter_)
+                setter_->Signature()->AddParam(peLib.AllocateParam(cbuf, i));
+        }
+        getter_->Signature()->ReturnType(type_);
         if (setter_)
-            setter_->Signature()->AddParam(peLib.AllocateParam(cbuf, i));
-    }
-    getter_->Signature()->ReturnType(type_);
-    if (setter_)
-    {
-        setter_->Signature()->AddParam(peLib.AllocateParam("Value", type_));
-        setter_->Signature()->ReturnType(peLib.AllocateType(Type::Void, 0));
+        {
+            setter_->Signature()->AddParam(peLib.AllocateParam("Value", type_));
+            setter_->Signature()->ReturnType(peLib.AllocateType(Type::Void, 0));
+        }
     }
 }
 void Property::CallGet(PELib &peLib, CodeContainer *code)

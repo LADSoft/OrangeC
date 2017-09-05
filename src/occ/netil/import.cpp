@@ -495,7 +495,7 @@ bool Importer::EnterProperty(const Property *property)
             sp->declfile = sp->origdeclfile = "[import]";
             sp->access = ac_public;
             sp->msil = (void *)property;
-            sp->msilProperty = TRUE;
+            sp->linkage2 = lk_property;
             SetLinkerNames(sp, lk_cdecl);
             insert(sp, structures_.back()->tp->syms);
         }

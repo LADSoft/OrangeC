@@ -159,6 +159,7 @@ void _using_init();
 void _add_global_using(char *str);
 void _apply_global_using(void);
 BOOLEAN msil_managed(SYMBOL *sp);
+void msil_create_property(SYMBOL *property, SYMBOL *getter, SYMBOL *setter);
 BOOLEAN oa_main_preprocess(void);
 void oa_main_postprocess(BOOLEAN errors);
 void GetOutputFileName(char *name, char *temp, BOOLEAN obj);

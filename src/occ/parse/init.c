@@ -3453,6 +3453,9 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
     inittag = 0;
     browse_variable(sp);
     IncGlobalFlag();
+    // MSIL property
+    if (sp->linkage2 == lk_property)
+        return initialize_property(lex, funcsp, sp, storage_class_in, asExpression, flags);
     switch(sp->storage_class)
     {
         case sc_parameter:
@@ -3576,7 +3579,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                 sp->storage_class = sc_global;
             {
                 BOOLEAN assigned = FALSE;
-                TYPE *t = !isassign && chosenAssembler->msil ? chosenAssembler->find_boxed_type(sp->tp) : 0;
+                TYPE *t = !isassign && chosenAssembler->msil ? chosenAssembler->msil->find_boxed_type(sp->tp) : 0;
                 if (!t || !search(overloadNameTab[CI_CONSTRUCTOR], basetype(t)->syms))
                     t = sp->tp;
                 if (MATCHKW(lex, assign))
@@ -3606,7 +3609,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
     else if ((cparams.prm_cplusplus || chosenAssembler->msil && isstructured(sp->tp) && !basetype(sp->tp)->sp->trivialCons)
         && sp->storage_class != sc_typedef && sp->storage_class != sc_external && !asExpression)
     {
-        TYPE *t = chosenAssembler->msil ? chosenAssembler->find_boxed_type(sp->tp) : 0;
+        TYPE *t = chosenAssembler->msil ? chosenAssembler->msil->find_boxed_type(sp->tp) : 0;
         if (!t || !search(overloadNameTab[CI_CONSTRUCTOR], basetype(t)->syms))
             t = sp->tp;
         if (isstructured(t) && !basetype(t)->sp->trivialCons)

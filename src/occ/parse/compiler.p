@@ -600,6 +600,7 @@ LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc,
 BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams);
 EXPRESSION *getThisNode(SYMBOL *sp);
 LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_class_in, BOOLEAN uninitconst, int flags);
+LEXEME *initialize_property(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_class_in, BOOLEAN asExpression, int flags);
 
                               /* Inline.c */
 

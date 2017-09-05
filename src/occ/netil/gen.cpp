@@ -154,11 +154,10 @@ Operand *make_constant(int sz, EXPRESSION *exp)
     }
     else if (exp->type == en_structelem)
     {
-        if (exp->v.sp->msilProperty)
+        if (exp->v.sp->linkage2 == lk_property)
         {
             operand = peLib->AllocateOperand(GetFieldData(exp->v.sp));
-            if (exp->v.sp->msilProperty)
-                operand->Property(true);
+            operand->Property(true);
         }
         else
         {
@@ -202,7 +201,7 @@ Operand *make_constant(int sz, EXPRESSION *exp)
     else
     {
         operand = peLib->AllocateOperand(GetFieldData(exp->v.sp));
-        if (exp->v.sp->msilProperty)
+        if (exp->v.sp->linkage2 == lk_property)
             operand->Property(true);
     }
     return operand;
@@ -313,11 +312,10 @@ Operand *getOperand(IMODE *oper)
         {
             if (oper->offset->type == en_structelem)
             {
-                if (oper->offset->v.sp->msilProperty)
+                if (oper->offset->v.sp->linkage2 == lk_property)
                 {
                     rv = peLib->AllocateOperand(GetFieldData(oper->offset->v.sp));
-                    if (oper->offset->v.sp->msilProperty)
-                        rv->Property(true);
+                    rv->Property(true);
                 }
                 else
                 {
@@ -346,7 +344,7 @@ Operand *getOperand(IMODE *oper)
                     else
                     {
                         rv = peLib->AllocateOperand(GetFieldData(sp));
-                        if (sp->msilProperty)
+                        if (sp->linkage2 == lk_property)
                             rv->Property(true);
                     }
                 }
@@ -625,7 +623,7 @@ void gen_load(IMODE *im, Operand *dest)
             EXPRESSION *offset = (EXPRESSION *)im->vararg;
             if (qualifiedStruct(offset->v.sp->parentClass))
             {
-                if (offset->v.sp->msilProperty)
+                if (offset->v.sp->linkage2 == lk_property)
                 {
                     Property *p = static_cast<Property *>(offset->v.sp->msil);
                     p->CallGet(*peLib, currentMethod);
@@ -727,7 +725,7 @@ void gen_store(IMODE *im, Operand *dest)
             EXPRESSION *offset = (EXPRESSION *)im->vararg;
             if (qualifiedStruct(offset->v.sp->parentClass))
             {
-                if (offset->v.sp->msilProperty)
+                if (offset->v.sp->linkage2 == lk_property)
                 {
                     Property *p = static_cast<Property *>(offset->v.sp->msil);
                     p->CallSet(*peLib, currentMethod);

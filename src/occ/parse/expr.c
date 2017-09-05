@@ -1031,10 +1031,10 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
     char *tokenName = lex->kw->name;
     (void)funcsp;
     // find structured version of arithmetic types for msil member matching
-    if (chosenAssembler->msil && (isarithmetic(*tp) || (*tp)->type == bt___string) && chosenAssembler->find_boxed_type)
+    if (chosenAssembler->msil && (isarithmetic(*tp) || (*tp)->type == bt___string) && chosenAssembler->msil->find_boxed_type)
     {
         // auto-boxing for msil
-        TYPE *tp1 = chosenAssembler->find_boxed_type(basetype(*tp));
+        TYPE *tp1 = chosenAssembler->msil->find_boxed_type(basetype(*tp));
         if (tp1)
         {
             while (castvalue(*exp))

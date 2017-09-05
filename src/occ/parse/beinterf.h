@@ -399,6 +399,9 @@ typedef struct
 
 typedef struct {
     BOOLEAN (*managed)(SYMBOL *sp);           /* return TRUE if the function is a managed function, FALSE otherwise */
+    TYPE *(*find_boxed_type)(TYPE *tp);                 /* msil - get a boxed version of type*/
+    TYPE *(*find_unboxed_type)(TYPE *tp);                 /* msil - get an unboxed version of type*/
+    void (*create_property)(SYMBOL *property, SYMBOL *getter, SYMBOL *setter); // create a property instance
 } ARCH_MSIL;
 typedef struct _arch_asm 
 {
@@ -442,8 +445,6 @@ typedef struct _arch_asm
     void (*intrinsicInit)(void);                    /* initialize intrinsic mechanism, compiler startup */
     void (*SearchIntrins)(SYMBOL *sp);                 /* search for an intrinsic */
     void (*enter_type)(SYMBOL *sp);                     /* enter a type in the BE */
-    TYPE *(*find_boxed_type)(TYPE *tp);                 /* msil - get a boxed version of type*/
-    TYPE *(*find_unboxed_type)(TYPE *tp);                 /* msil - get an unboxed version of type*/
 } ARCH_ASM ;
 
 enum e_bet { bee_unknown, 

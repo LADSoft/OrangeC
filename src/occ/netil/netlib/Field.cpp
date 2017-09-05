@@ -97,9 +97,8 @@ namespace DotNetPELib
             }
             else
             {
-                peLib.Out() << " class '";
+                peLib.Out() << " class ";
                 type_->ILSrcDump(peLib);
-                peLib.Out() << "'";
             }
         }
         else

@@ -1858,6 +1858,11 @@ static LEXEME *getLinkageQualifiers(LEXEME *lex, enum e_lk *linkage, enum e_lk *
                     error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
                 *linkage2 = lk_export;
                 break;
+            case kw__property:
+                if (*linkage2 != lk_none)
+                    error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                *linkage2 = lk_property;
+                break;
             case kw__msil_rtl:
                 if (*linkage2 != lk_none)
                     error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
@@ -2800,11 +2805,11 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
           
     }
 exit:
-    if (chosenAssembler->msil && tn && chosenAssembler->find_unboxed_type)
+    if (chosenAssembler->msil && tn && chosenAssembler->msil->find_unboxed_type)
     {
         // select an unboxed variable type for use in compiler
         // will be converted back to boxed as needed
-        TYPE *tnn = chosenAssembler->find_unboxed_type(tn);
+        TYPE *tnn = chosenAssembler->msil->find_unboxed_type(tn);
         if (tnn)
         {
             tn = tnn;
@@ -5520,6 +5525,8 @@ jointemplate:
                             if (isfunction(tp1) || (ispointer(tp1) && basetype(tp1)->array))
                                 error(ERR_ATOMIC_NO_FUNCTION_OR_ARRAY);
                         }
+                        if (sp->linkage2 == lk_property && isfunction(tp1))
+                            error(ERR_PROPERTY_QUALIFIER_NOT_ALLOWED_ON_FUNCTIONS);
                         if (storage_class != sc_typedef && isstructured(tp1) && basetype(tp1)->sp->isabstract)
                             errorabstract(ERR_CANNOT_CREATE_INSTANCE_ABSTRACT, basetype(tp1)->sp);
                         if (sp->packed)

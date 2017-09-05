@@ -51,7 +51,7 @@
 
 // reference changelog.txt to see what the changes are
 //
-#define DOTNETPELIB_VERSION "2.6"
+#define DOTNETPELIB_VERSION "2.7"
 
 // this is the main library header
 // it allows creation of the methods and data that would be dumped into 
@@ -559,8 +559,8 @@ namespace DotNetPELib
             RTSpecialName = 0x400,
             HasDefault = 0x1000
         };
-        Property(PELib &peLib, std::string name, Type *type, std::vector<Type *>& indices, bool hasSetter = true) 
-            : name_(name), parent_(NULL), type_(type), flags_(SpecialName), instance_(true)
+        Property(PELib &peLib, std::string name, Type *type, std::vector<Type *>& indices, bool hasSetter = true, DataContainer *parent = nullptr)
+            : name_(name), parent_(parent), type_(type), flags_(SpecialName), instance_(true), getter_(nullptr), setter_(nullptr)
         {
             CreateFunctions(peLib, indices, hasSetter);
         }    
@@ -1348,7 +1348,7 @@ namespace DotNetPELib
         Method *AllocateMethod(MethodSignature *Prototype, Qualifiers flags, bool entry = false);
         Field *AllocateField(std::string Name, Type *tp, Qualifiers Flags);
         Property *AllocateProperty();
-        Property *AllocateProperty(PELib & peLib, std::string name, Type *type, std::vector<Type *>& indices, bool hasSetter = true);
+        Property *AllocateProperty(PELib & peLib, std::string name, Type *type, std::vector<Type *>& indices, bool hasSetter = true, DataContainer *parent = nullptr);
         Enum *AllocateEnum(std::string Name, Qualifiers Flags, Field::ValueSize Size);
         Operand *AllocateOperand();
         Operand *AllocateOperand(Value *V);

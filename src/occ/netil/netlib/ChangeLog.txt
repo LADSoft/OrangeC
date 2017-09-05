@@ -1,3 +1,7 @@
+Version 2.7:
+	various improvements to property creation
+	bug fix: fix the problem with quoted types in external assemblies in a better way
+
 Version 2.6:
 	bug fix: search for assembly on path failed
 

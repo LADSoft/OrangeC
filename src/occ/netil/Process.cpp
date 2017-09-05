@@ -528,6 +528,20 @@ TYPE *oa_get_unboxed(TYPE *in)
     }
     return nullptr;
 }
+void msil_create_property(SYMBOL *property, SYMBOL *getter, SYMBOL *setter)
+{
+    if (typeid(*mainContainer) == typeid(Class))
+    {
+        Property *p = peLib->AllocateProperty(*peLib, property->name, GetType(property->tp, TRUE, FALSE, FALSE), std::vector<Type*> {}, !!setter, mainContainer);
+        p->Instance(false); // only doing statics for now...
+        static_cast<Class *>(mainContainer)->Add(p);
+        property->msil = (void *)p;
+    }
+    else
+    {
+        fatal("Cannot add property at non-class level");
+    }
+}
 void AddType(SYMBOL *sym, Type *type)
 {
     typeList[sym->decoratedName] = type;

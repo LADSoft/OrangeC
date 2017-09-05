@@ -90,6 +90,7 @@ C_DEPENDENCIES= \
     output.c \
     preproc.c \
     process.c \
+    property.c \
     ppexpr.c \
     rtti.c \
     stmt.c \

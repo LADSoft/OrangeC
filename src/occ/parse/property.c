@@ -162,7 +162,7 @@ LEXEME *initialize_property(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc s
 {
     if (isstructured(sp->tp))
         error(ERR_ONLY_SIMPLE_PROPERTIES_SUPPORTED);
-    if (funcsp)
+    if (funcsp || sp->storage_class == sc_parameter)
         error(ERR_NO_PROPERTY_IN_FUNCTION);
     if (sp->storage_class != sc_external)
     {
@@ -219,6 +219,10 @@ LEXEME *initialize_property(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc s
                     insertfunc(prototype, globalNameSpace->syms);
                 }
             }
+            if (!get)
+                errorsym(ERR_MUST_DECLARE_PROPERTY_GETTER, sp);
+            if (set)
+                sp->has_property_setter = TRUE;
             chosenAssembler->msil->create_property(sp, get, set);
             needkw(&lex, end);
         }
@@ -255,6 +259,7 @@ LEXEME *initialize_property(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc s
             }
             insertInitSym(backing);
             chosenAssembler->msil->create_property(sp, getter, setter);
+            sp->has_property_setter = TRUE;
         }
     }
     return lex;

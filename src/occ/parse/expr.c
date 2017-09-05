@@ -4910,14 +4910,15 @@ static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE
     if (*tp)
     {
         TYPE *btp, *tp1;
-        EXPRESSION *exp1 = *exp;
+        EXPRESSION *exp1 = *exp, *symRef;
         while (exp1->type == en_void && exp1->right)
             exp1 = exp1->right;
         if (exp1->type == en_void)
             exp1 = exp1->left;
+        symRef = chosenAssembler->msil ? GetSymRef(exp1) : NULL;
         btp = basetype(*tp);
         if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_unary_any, and,
-                               funcsp, tp, exp, NULL,NULL, NULL, flags))
+            funcsp, tp, exp, NULL, NULL, NULL, flags))
         {
             return lex;
         }
@@ -4927,6 +4928,8 @@ static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE
             error(ERR_CANNOT_TAKE_ADDRESS_OF_BIT_FIELD);
         else if (btp->msil)
             error(ERR_MANAGED_OBJECT_NO_ADDRESS);
+        else if (symRef && symRef->v.sp->linkage2 == lk_property)
+            errorsym(ERR_CANNOT_TAKE_ADDRESS_OF_PROPERTY, symRef->v.sp);
         else if (inreg(*exp, TRUE))
                 error(ERR_CANNOT_TAKE_ADDRESS_OF_REGISTER);
         else if ((!ispointer(btp) || !(btp)->array) && !isstructured(btp) &&
@@ -6802,6 +6805,7 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
         enum e_node op;
         enum ovcl selovcl;
         TYPE *tp1 = NULL;
+        EXPRESSION *symRef;
         switch(kw)
         {
             case asand:
@@ -6946,12 +6950,15 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                 ValidateMSILFuncPtr(*tp, tp1, &exp1);
             }
         }
+        symRef = chosenAssembler->msil ? GetSymRef(*exp) : NULL;
         if (isconstraw(*tp, TRUE) && !localMutable)
             error(ERR_CANNOT_MODIFY_CONST_OBJECT);
-        else if (isvoid(*tp) || isvoid(tp1) || (*tp)->type == bt_aggregate  || tp1->type == bt_aggregate)
+        else if (isvoid(*tp) || isvoid(tp1) || (*tp)->type == bt_aggregate || tp1->type == bt_aggregate)
             error(ERR_NOT_AN_ALLOWED_TYPE);
         else if (!isstructured(*tp) && basetype(*tp)->type != bt_memberptr && basetype(*tp)->type != bt_templateparam && !lvalue(*exp) && (*exp)->type != en_msil_array_access)
             error(ERR_LVALUE);
+        else if (symRef && symRef->v.sp->linkage2 == lk_property && !symRef->v.sp->has_property_setter)
+            errorsym(ERR_CANNOT_MODIFY_PROPERTY_WITHOUT_SETTER, symRef->v.sp);
         else switch(kw)
         {
             case asand:

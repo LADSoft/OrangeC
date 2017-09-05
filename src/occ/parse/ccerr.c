@@ -544,10 +544,13 @@ static struct {
 {"This feature may only be used for imported namespaces", ERROR },
 {"Cannot use the address of a managed object", ERROR },
 {"__property qualifier not allowed on functions", ERROR },
-{ "Getter for property '%s' already exists", ERROR },
-{ "Setter for property '%s' already exists", ERROR },
+{ "Getter for property '%s' already defined", ERROR },
+{ "Setter for property '%s' already defined", ERROR },
 { "Only simple property declarations are supported", ERROR },
 { "Property cannot be declared inside function", ERROR },
+{ "Must define getter for property '%s'", ERROR },
+{ "Cannot modify property '%s' because there is no setter", ERROR },
+{ "Cannot take address of property '%s'", ERROR },
 #endif
 } ;
 

@@ -496,6 +496,8 @@ bool Importer::EnterProperty(const Property *property)
             sp->access = ac_public;
             sp->msil = (void *)property;
             sp->linkage2 = lk_property;
+            if (const_cast<Property *>(property)->Setter())
+                sp->has_property_setter = TRUE;
             SetLinkerNames(sp, lk_cdecl);
             insert(sp, structures_.back()->tp->syms);
         }

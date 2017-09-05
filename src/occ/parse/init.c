@@ -3454,8 +3454,10 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
     browse_variable(sp);
     IncGlobalFlag();
     // MSIL property
+#ifndef PARSER_ONLY
     if (sp->linkage2 == lk_property)
         return initialize_property(lex, funcsp, sp, storage_class_in, asExpression, flags);
+#endif
     switch(sp->storage_class)
     {
         case sc_parameter:

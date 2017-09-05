@@ -144,12 +144,19 @@ void GetOutputFileName(char *name, char *path, BOOLEAN obj)
 {
     if (obj)
     {
+        char *p;
         if (!objPosition)
             objPosition = objlist;
         if (!objPosition)
             fatal("Cannot get object file name");
-        strcpy(name, objPosition->data);
-        strcpy(path, objPosition->data);
+        strcpy(name, outputFileName);
+        p = strrchr(name, '\\');
+        if (!p)
+            p = name;
+        else
+            p++;
+        strcpy(p, objPosition->data);
+        strcpy(path, name);
     }
     else
     {

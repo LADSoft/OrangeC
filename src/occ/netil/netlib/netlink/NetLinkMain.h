@@ -60,6 +60,8 @@ protected:
 
     DotNetPELib::MethodSignature *LookupSignature(char * name);
     DotNetPELib::Field *LookupField(char *name);
+    DotNetPELib::MethodSignature *NetLinkMain::LookupManagedSignature(char *name);
+    DotNetPELib::Field *NetLinkMain::LookupManagedField(char *name);
     void MainLocals(void);
     void MainInit(void);
     void dumpInitializerCalls(std::list<DotNetPELib::MethodSignature *>&);
@@ -80,8 +82,8 @@ private:
     const DotNetPELib::Namespace *mainNameSpace;
     const DotNetPELib::Class *mainClass;
     DotNetPELib::DataContainer *mainContainer;
-    std::list<DotNetPELib::MethodSignature *> initializers;
-    std::list<DotNetPELib::MethodSignature *> destructors;
+    std::list<DotNetPELib::MethodSignature *> initializers, startups;
+    std::list<DotNetPELib::MethodSignature *> destructors, rundowns;
 
     std::string namespaceAndClass;
     bool hasEntryPoint;
@@ -95,6 +97,7 @@ private:
     static CmdSwitchOutput AssemblyName;
     static CmdSwitchString AssemblyVersion;
     static CmdSwitchFile File;
+    static CmdSwitchBool CManaged;
 
     static char *usageText;
 };

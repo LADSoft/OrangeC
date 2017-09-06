@@ -2480,7 +2480,7 @@ void oa_genaddress(ULLONG_TYPE val)
 }
 /*-------------------------------------------------------------------------*/
 
-void oa_gensrref(SYMBOL *sp, int val)
+void oa_gensrref(SYMBOL *sp, int val, int type)
 {
     char buf[4096];
     if (cparams.prm_asmfile)

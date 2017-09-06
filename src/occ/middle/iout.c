@@ -2107,13 +2107,13 @@ void genaddress(ULLONG_TYPE address)
 
 /*-------------------------------------------------------------------------*/
 
-void gensrref(SYMBOL *sp, int val)
+void gensrref(SYMBOL *sp, int val, int type)
 /*
  * Output a startup/rundown reference
  */
 {
     if (chosenAssembler->gen->gen_srref)
-        chosenAssembler->gen->gen_srref(sp,val);
+        chosenAssembler->gen->gen_srref(sp,val, type);
     if (!icdFile)
         return;
     if (gentype == srrefgen && outcol < 56)

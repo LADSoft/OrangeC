@@ -281,7 +281,7 @@ typedef struct _arch_gen {
     void (*gen_string)(LCHAR *string, int len); /* initialize a string */
     void (*gen_ref) (SYMBOL *sp, int offset); /* put a reference to a variable */
     void (*gen_pcref)(SYMBOL *sp, int offset); /* put a reference to something in the code segment */
-    void (*gen_srref) (SYMBOL *sp, int val); /* put a reference to the startup.rundown */
+    void (*gen_srref) (SYMBOL *sp, int val, int type); /* put a reference to the startup.rundown */
     void (*gen_labref) (int label); /* put a reference to a label */
     void (*gen_labdifref)(int left, int right); /* put the difference of two labels */
     void (*gen_virtual)(SYMBOL *sp, int data);       /* start a virtual segment */
@@ -479,6 +479,11 @@ typedef struct {
         int labelNum;
     } u ;
 } BE_IMODEDATA ;
+
+#define STARTUP_TYPE_STARTUP 1
+#define STARTUP_TYPE_RUNDOWN 2
+#define STARTUP_TYPE_TLS_STARTUP 3
+#define STARTUP_TYPE_TLS_RUNDOWN 4
 
 
 #define beGetIcon(x) ((x)->offset->v.i)

@@ -51,7 +51,7 @@ CmdSwitchBool NetLinkMain::GUIApp(SwitchParser, 'g');
 CmdSwitchOutput NetLinkMain::AssemblyName(SwitchParser, 'o', "");
 CmdSwitchString NetLinkMain::AssemblyVersion(SwitchParser, 'v');
 CmdSwitchFile NetLinkMain::File(SwitchParser, '@');
-
+CmdSwitchBool NetLinkMain::CManaged(SwitchParser, 'M');
 
 char *NetLinkMain::usageText = "[options] inputfiles\n"
         "\n"
@@ -238,6 +238,14 @@ MethodSignature *NetLinkMain::LookupSignature(char * name)
     return NULL;
 
 }
+MethodSignature *NetLinkMain::LookupManagedSignature(char *name)
+{
+    Method *rv = nullptr;
+    peLib->Find(std::string("lsmsilcrtl.rtl::") + name, &rv, std::vector<Type *> {}, nullptr, false);
+    if (rv)
+        return rv->Signature();
+    return nullptr;
+}
 Field *NetLinkMain::LookupField(char *name)
 {
     void *result;
@@ -248,13 +256,25 @@ Field *NetLinkMain::LookupField(char *name)
     }
     return NULL;
 }
+Field *NetLinkMain::LookupManagedField(char *name)
+{
+    void *rv = nullptr;
+    if (peLib->Find(std::string("lsmsilcrtl.rtl::") + name, &rv, false) == PELib::s_field)
+    {
+        return static_cast<Field *>(rv);
+    }
+    return nullptr;
+}
 void NetLinkMain::MainLocals(void)
 {
     localList.clear();
-    localList.push_back(peLib->AllocateLocal("argc", peLib->AllocateType(Type::i32, 0)));
-    localList.push_back(peLib->AllocateLocal("argv", peLib->AllocateType(Type::Void, 1)));
-    localList.push_back(peLib->AllocateLocal("environ", peLib->AllocateType(Type::Void, 1)));
-    localList.push_back(peLib->AllocateLocal("newmode", peLib->AllocateType(Type::Void, 1)));
+    if (!CManaged.GetValue())
+    {
+        localList.push_back(peLib->AllocateLocal("argc", peLib->AllocateType(Type::i32, 0)));
+        localList.push_back(peLib->AllocateLocal("argv", peLib->AllocateType(Type::Void, 1)));
+        localList.push_back(peLib->AllocateLocal("environ", peLib->AllocateType(Type::Void, 1)));
+        localList.push_back(peLib->AllocateLocal("newmode", peLib->AllocateType(Type::Void, 1)));
+    }
 }
 void NetLinkMain::MainInit(void)
 {
@@ -270,136 +290,169 @@ void NetLinkMain::MainInit(void)
     currentMethod = peLib->AllocateMethod(signature, flags, !LibraryFile.GetValue());
     mainContainer->Add(currentMethod);
 
-    signature = LookupSignature("__pctype_func");
-    if (!signature)
+    if (CManaged.GetValue())
     {
-        signature = peLib->AllocateMethodSignature("__pctype_func", 0, NULL);
-        signature->ReturnType(peLib->AllocateType(Type::u16, 1));
-        peLib->AddPInvokeReference(signature, "msvcrt.dll", false);
-    }
-    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
-
-    Field *field = LookupField("_pctype");
-    if (!field)
-    {
-        field = peLib->AllocateField("_pctype", peLib->AllocateType(Type::u16, 1), Qualifiers::Public | Qualifiers::Static);
-        mainContainer->Add(field);
+        signature = LookupManagedSignature("__initialize_managed_library");
+        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
     }
     else
     {
-        field->External(false);
-    }
-    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_stsfld, peLib->AllocateOperand(peLib->AllocateFieldName(field))));
+        signature = LookupSignature("__pctype_func");
+        if (!signature)
+        {
+            signature = peLib->AllocateMethodSignature("__pctype_func", 0, NULL);
+            signature->ReturnType(peLib->AllocateType(Type::u16, 1));
+            peLib->AddPInvokeReference(signature, "msvcrt.dll", false);
+        }
+        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
 
-    signature = LookupSignature("__iob_func");
-    if (!signature)
-    {
-        signature = peLib->AllocateMethodSignature("__iob_func", 0, NULL);
-        signature->ReturnType(peLib->AllocateType(Type::Void, 1));
-        peLib->AddPInvokeReference(signature, "msvcrt.dll", false);
-    }
-    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
+        Field *field = LookupField("_pctype");
+        if (!field)
+        {
+            field = peLib->AllocateField("_pctype", peLib->AllocateType(Type::u16, 1), Qualifiers::Public | Qualifiers::Static);
+            mainContainer->Add(field);
+        }
+        else
+        {
+            field->External(false);
+        }
+        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_stsfld, peLib->AllocateOperand(peLib->AllocateFieldName(field))));
 
-    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_dup));
-    field = LookupField("__stdin");
-    if (!field)
-    {
-        field = peLib->AllocateField("__stdin", peLib->AllocateType(Type::Void, 1), Qualifiers::Public | Qualifiers::Static);
-        mainContainer->Add(field);
-    }
-    else
-    {
-        field->External(false);
-    }
-    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_stsfld, peLib->AllocateOperand(peLib->AllocateFieldName(field))));
+        signature = LookupSignature("__iob_func");
+        if (!signature)
+        {
+            signature = peLib->AllocateMethodSignature("__iob_func", 0, NULL);
+            signature->ReturnType(peLib->AllocateType(Type::Void, 1));
+            peLib->AddPInvokeReference(signature, "msvcrt.dll", false);
+        }
+        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
 
-    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_dup));
-    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)32, Operand::any)));
-    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_add));
+        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_dup));
+        field = LookupField("__stdin");
+        if (!field)
+        {
+            field = peLib->AllocateField("__stdin", peLib->AllocateType(Type::Void, 1), Qualifiers::Public | Qualifiers::Static);
+            mainContainer->Add(field);
+        }
+        else
+        {
+            field->External(false);
+        }
+        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_stsfld, peLib->AllocateOperand(peLib->AllocateFieldName(field))));
 
-    field = LookupField("__stdout");
-    if (!field)
-    {
-        field = peLib->AllocateField("__stdout", peLib->AllocateType(Type::Void, 1), Qualifiers::Public | Qualifiers::Static);
-        mainContainer->Add(field);
-    }
-    else
-    {
-        field->External(false);
-    }
-    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_stsfld, peLib->AllocateOperand(peLib->AllocateFieldName(field))));
+        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_dup));
+        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)32, Operand::any)));
+        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_add));
 
-    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)64, Operand::any)));
-    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_add));
+        field = LookupField("__stdout");
+        if (!field)
+        {
+            field = peLib->AllocateField("__stdout", peLib->AllocateType(Type::Void, 1), Qualifiers::Public | Qualifiers::Static);
+            mainContainer->Add(field);
+        }
+        else
+        {
+            field->External(false);
+        }
+        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_stsfld, peLib->AllocateOperand(peLib->AllocateFieldName(field))));
 
-    field = LookupField("__stderr");
-    if (!field)
-    {
-        field = peLib->AllocateField("__stderr", peLib->AllocateType(Type::Void, 1), Qualifiers::Public | Qualifiers::Static);
-        mainContainer->Add(field);
-    }
-    else
-    {
-        field->External(false);
-    }
-    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_stsfld, peLib->AllocateOperand(peLib->AllocateFieldName(field))));
+        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)64, Operand::any)));
+        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_add));
 
+        field = LookupField("__stderr");
+        if (!field)
+        {
+            field = peLib->AllocateField("__stderr", peLib->AllocateType(Type::Void, 1), Qualifiers::Public | Qualifiers::Static);
+            mainContainer->Add(field);
+        }
+        else
+        {
+            field->External(false);
+        }
+        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_stsfld, peLib->AllocateOperand(peLib->AllocateFieldName(field))));
+    }
 }
 void NetLinkMain::dumpInitializerCalls(std::list<MethodSignature *> &lst)
 {
-    for (std::list<MethodSignature *>::iterator it = lst.begin(); it != lst.end(); ++it)
-    {
-        MethodSignature *signature = *it;
+    for (auto signature : lst)
         currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
-    }
 }
 void NetLinkMain::dumpCallToMain(void)
 {
     if (!LibraryFile.GetValue())
     {
-        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloca, peLib->AllocateOperand(localList[0]))); // load argc
-        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloca, peLib->AllocateOperand(localList[1]))); // load argcv
-        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloca, peLib->AllocateOperand(localList[2]))); // load environ
-        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)0, Operand::i32)));
-        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloca, peLib->AllocateOperand(localList[3]))); // load newmode
-
-
-        MethodSignature *signature = peLib->AllocateMethodSignature("__getmainargs", 0, NULL);
-        signature->ReturnType(peLib->AllocateType(Type::Void, 0));
-        signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::Void, 1)));
-        signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::Void, 1)));
-        signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::Void, 1)));
-        signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::i32, 0)));
-        signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::Void, 1)));
-        peLib->AddPInvokeReference(signature, "msvcrt.dll", false);
-        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
-
-        if (mainSym)
+        if (CManaged.GetValue())
         {
-            int n = mainSym->ParamCount();
-            if (n >= 1)
-                currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloc, peLib->AllocateOperand(localList[0]))); // load argc
-            if (n >= 2)
-                currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloc, peLib->AllocateOperand(localList[1]))); // load argcv
-            for (int i = 2; i < n; i++)
-                currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldnull, NULL)); // load a spare arg
-            signature = peLib->AllocateMethodSignature("main", MethodSignature::Managed, mainContainer);
-            currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(mainSym))));
+            if (mainSym)
+            {
+                int n = mainSym->ParamCount();
+                if (n >= 1)
+                    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldsfld, peLib->AllocateOperand(peLib->AllocateFieldName(LookupManagedField("__argc"))))); // load argc
+                if (n >= 2)
+                    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldsfld, peLib->AllocateOperand(peLib->AllocateFieldName(LookupManagedField("__argv"))))); // load argcv
+                if (n >= 3)
+                    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldsfld, peLib->AllocateOperand(peLib->AllocateFieldName(LookupManagedField("__env"))))); // load env
+                for (int i = 3; i < n; i++)
+                    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldnull, NULL)); // load a spare arg
+                MethodSignature *signature = peLib->AllocateMethodSignature("main", MethodSignature::Managed, mainContainer);
+                currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(mainSym))));
+            }
+
+        }
+        else
+        {
+            currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloca, peLib->AllocateOperand(localList[0]))); // load argc
+            currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloca, peLib->AllocateOperand(localList[1]))); // load argcv
+            currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloca, peLib->AllocateOperand(localList[2]))); // load environ
+            currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)0, Operand::i32)));
+            currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloca, peLib->AllocateOperand(localList[3]))); // load newmode
+
+
+            MethodSignature *signature = peLib->AllocateMethodSignature("__getmainargs", 0, NULL);
+            signature->ReturnType(peLib->AllocateType(Type::Void, 0));
+            signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::Void, 1)));
+            signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::Void, 1)));
+            signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::Void, 1)));
+            signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::i32, 0)));
+            signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::Void, 1)));
+            peLib->AddPInvokeReference(signature, "msvcrt.dll", false);
+            currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
+            if (mainSym)
+            {
+                int n = mainSym->ParamCount();
+                if (n >= 1)
+                    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloc, peLib->AllocateOperand(localList[0]))); // load argc0
+                if (n >= 2)
+                    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloc, peLib->AllocateOperand(localList[1]))); // load argcv
+                for (int i = 2; i < n; i++)
+                    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldnull, NULL)); // load a spare arg
+                signature = peLib->AllocateMethodSignature("main", MethodSignature::Managed, mainContainer);
+                currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(mainSym))));
+            }
         }
         dumpInitializerCalls(destructors);
+        dumpInitializerCalls(rundowns);
 
         if (!mainSym || mainSym && mainSym->ReturnType()->IsVoid())
             currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)0, Operand::i32)));
-        signature = LookupSignature("exit");
-        if (!signature)
+        if (CManaged.GetValue())
         {
-
-            signature = peLib->AllocateMethodSignature("exit", 0, NULL);
-            signature->ReturnType(peLib->AllocateType(Type::Void, 0));
-            signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::i32, 0)));
-            peLib->AddPInvokeReference(signature, "msvcrt.dll", false);
+            MethodSignature *signature = LookupManagedSignature("exit");
+            currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
         }
-        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
+        else
+        {
+            MethodSignature *signature = LookupSignature("exit");
+            if (!signature)
+            {
+
+                signature = peLib->AllocateMethodSignature("exit", 0, NULL);
+                signature->ReturnType(peLib->AllocateType(Type::Void, 0));
+                signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::i32, 0)));
+                peLib->AddPInvokeReference(signature, "msvcrt.dll", false);
+            }
+            currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
+        }
     }
 }
 void NetLinkMain::dumpGlobalFuncs()
@@ -436,6 +489,11 @@ bool NetLinkMain::EnterMethod(const Method *method)
         else
             destructors.push_back(method->Signature());
     }
+    else if (!strncmp(method->Signature()->Name().c_str(), "$$STARTUP", 9))
+        startups.push_back(method->Signature());
+    else if (!strncmp(method->Signature()->Name().c_str(), "$$RUNDOWN", 9))
+        rundowns.push_back(method->Signature());
+
     if (method->HasEntryPoint())
     {
         if (hasEntryPoint)
@@ -468,8 +526,13 @@ bool NetLinkMain::AddRTLThunks()
                 mainSym->AddParam(param);
             }
         }
+        startups.sort();
+        startups.reverse();
+        rundowns.sort();
+        rundowns.reverse();
 
         MainInit();
+        dumpInitializerCalls(startups);
         dumpInitializerCalls(initializers);
         MainLocals();
         dumpCallToMain();
@@ -517,6 +580,12 @@ int NetLinkMain::Run(int argc, char **argv)
     if (File.GetValue())
         files.Add(File.GetValue() + 1);
     peLib = new PELib(GetAssemblyName(files), PELib::bits32); // ilonly set by dotnetpelib 
+    if (CManaged.GetValue())
+        if (peLib->LoadAssembly("lsmsilcrtl", 0, 0, 0, 0))
+        {
+            std::cout << "Cannot load assembly lsmsilcrtl";
+            return 1;
+        }
     int assemblyVersion[4] = { 0 };
     if (AssemblyVersion.GetValue().size())
     {

@@ -441,7 +441,7 @@ ARCH_GEN outputfunctions = {
     oa_genstring,              /* initialize a string */
     NULL,                 /* put a reference to a variable */
     NULL,               /* put a reference to something in the code segment */
-    NULL,               /* put a reference to the startup.rundown */
+    oa_gensrref,         /* put a reference to the startup.rundown */
     NULL,             /* put a reference to a label */
     NULL,          /* put the difference of two labels */
     NULL,        /* start a virtual segment */

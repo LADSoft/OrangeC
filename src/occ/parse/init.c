@@ -123,7 +123,7 @@ void dumpStartups(void)
             else
             {
                 s = search(startupList->name, s->tp->syms);
-                gensrref(s, startupList->prio);
+                gensrref(s, startupList->prio, STARTUP_TYPE_STARTUP);
                   s->used = TRUE;
             }
             startupList = startupList->next;
@@ -140,7 +140,7 @@ void dumpStartups(void)
             else
             {
                 s = search(rundownList->name, s->tp->syms);
-                gensrref(s, rundownList->prio);
+                gensrref(s, rundownList->prio, STARTUP_TYPE_RUNDOWN);
                 s->used = TRUE;
             }
             rundownList = rundownList->next;
@@ -389,7 +389,7 @@ static void dumpDynamicInitializers(void)
         if (!(chosenAssembler->arch->denyopts & DO_NOADDRESSINIT))
         {
             startupseg();
-            gensrref(funcsp, 32+cppprio);
+            gensrref(funcsp, 32+cppprio, STARTUP_TYPE_STARTUP);
         }
         else
         {
@@ -437,7 +437,7 @@ static void dumpTLSInitializers(void)
         genfunc(funcsp, TRUE);
         startlab = retlab = 0;
         tlsstartupseg();
-        gensrref(funcsp, 32);
+        gensrref(funcsp, 32, STARTUP_TYPE_TLS_STARTUP);
     }
 #endif
 }
@@ -477,7 +477,7 @@ static void dumpDynamicDestructors(void)
         if (!(chosenAssembler->arch->denyopts & DO_NOADDRESSINIT))
         {
             rundownseg();
-            gensrref(funcsp, 32);
+            gensrref(funcsp, 32, STARTUP_TYPE_RUNDOWN);
         }
         else
         {
@@ -523,7 +523,7 @@ static void dumpTLSDestructors(void)
         genfunc(funcsp, TRUE);
         startlab = retlab = 0;
         tlsrundownseg();
-        gensrref(funcsp, 32);
+        gensrref(funcsp, 32, STARTUP_TYPE_TLS_RUNDOWN);
     }
 #endif
 }

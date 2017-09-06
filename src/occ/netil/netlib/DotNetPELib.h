@@ -1231,7 +1231,7 @@ namespace DotNetPELib
         DataContainer *container_;
         Type *returnType_;
         Type *arrayObject_;
-        std::string name_;
+        std::string name_, display_name;
         int flags_;
         std::list<Param *> params, varargParams_;
         bool ref_;

@@ -44,6 +44,13 @@
 #include "winmode.h"
 #include "DotNetpeLib.h"
 
+#define STARTUP_TYPE_STARTUP 1
+#define STARTUP_TYPE_RUNDOWN 2
+#define STARTUP_TYPE_TLS_STARTUP 3
+#define STARTUP_TYPE_TLS_RUNDOWN 4
+
+
+
 #include <vector>
 #include <string>
 using namespace DotNetPELib;
@@ -157,6 +164,9 @@ static std::map<SYMBOL *, Value *, byLabel> staticList;
 static std::map<SYMBOL *, MethodSignature *, byName> pinvokeInstances;
 static std::map<SYMBOL *, Param *, byName> paramList;
 std::multimap<std::string, MethodSignature *> pInvokeReferences;
+
+std::map<std::string, Value *> startups, rundowns, tlsstartups, tlsrundowns;
+
 extern "C"
 {
     std::vector<Local *> localList;
@@ -1392,11 +1402,13 @@ static void dumpInitializerCalls(LIST *lst)
 {
     while (lst)
     {
-        static SYMBOL sp;
-        sp.name = (char *)lst->data;
-        std::map<SYMBOL *, Value *, byName>::iterator it = globalMethods.find(&sp);
-        MethodSignature *signature = static_cast<MethodName *>(it->second)->Signature();
-        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
+        MethodName *m = static_cast<MethodName *>(lst->data);
+        if (m->Signature()->ParamCount() || !m->Signature()->ReturnType()->IsVoid() || m->Signature()->ReturnType()->PointerLevel())
+        {
+            errCount++;
+            printf("startup/rundown function must be function with no arguments, with no return value\n");
+        }
+        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(static_cast<MethodName *>(lst->data))));
         lst = lst->next;
     }
 }
@@ -1500,6 +1512,22 @@ static void AddRTLThunks()
             }
         }
         oa_enterseg();
+        for (auto ri = startups.begin(); ri != startups.end(); ++ri)
+        {
+            LIST *lst = (LIST *)peLib->AllocateBytes(sizeof(LIST));
+            lst->data = (void *)ri->second;
+            lst->next = initializersHead;
+            initializersHead = lst;
+        }
+        for (auto ri = rundowns.rbegin(); ri != rundowns.rend(); ++ri)
+        {
+            LIST *lst = (LIST *)peLib->AllocateBytes(sizeof(LIST));
+            if (deinitializersHead)
+                deinitializersTail = deinitializersTail->next = lst;
+            else
+                deinitializersHead = deinitializersTail = lst;
+
+        }
 
         mainInit();
         dumpInitializerCalls(initializersHead);
@@ -1560,6 +1588,45 @@ static void CreateExternalCSharpReferences()
     }
     if (!concatStr || !concatObj || !toStr)
         fatal("could not find builtin function");
+}
+void ReplaceName(std::map<std::string, Value *> &list, Value *v, char *name)
+{
+    MethodName *n = static_cast<MethodName *>(v);
+    n->Signature()->SetName(name);
+    list[name] = v;
+}
+extern "C" void oa_gensrref(SYMBOL *sp, int val, int type)
+{
+    static int count = 1;
+    Value *v = globalMethods[sp];
+    if (v)
+    {
+        switch (type)
+        {
+            MethodName *n;
+            char name[256];
+            case STARTUP_TYPE_STARTUP:
+                sprintf(name, "$$STARTUP_%d_%d_%x", val, count, uniqueId);
+                ReplaceName(startups, v, name);
+                break;
+            case STARTUP_TYPE_RUNDOWN:
+                sprintf(name, "$$RUNDOWN_%d_%d_%x", val, count, uniqueId);
+                ReplaceName(rundowns, v, name);
+                break;
+            case STARTUP_TYPE_TLS_STARTUP:
+                sprintf(name, "$$TLSSTARTUP_%d_%d_%x", val, count, uniqueId);
+                ReplaceName(tlsstartups, v, name);
+                break;
+            case STARTUP_TYPE_TLS_RUNDOWN:
+                sprintf(name, "$$TLSRUNDOWN_%d_%d_%x", val, count, uniqueId);
+                ReplaceName(tlsrundowns, v, name);
+                break;
+        }
+    }
+    else
+    {
+        diag("oa_startup: function not found");
+    }
 }
 extern "C" BOOLEAN oa_main_preprocess(void)
 {
@@ -1767,6 +1834,10 @@ extern "C" void oa_end_generation(void)
         fieldList.clear();
         arrayMethods.clear();
         pInvokeReferences.clear();
+        startups.clear();
+        rundowns.clear();
+        tlsstartups.clear();
+        tlsrundowns.clear();
     }
     else
     {
@@ -1788,8 +1859,11 @@ extern "C" void oa_end_generation(void)
         if (start)
         {
             LIST *lst = (LIST *)peLib->AllocateBytes(sizeof(LIST));
-            lst->data = peLib->AllocateBytes(strlen(start->name) + 1);
-            strcpy((char *)lst->data, start->name);
+            static SYMBOL sp;
+            sp.name = (char *)start->name;
+            std::map<SYMBOL *, Value *, byName>::iterator it = globalMethods.find(&sp);
+            MethodSignature *signature = static_cast<MethodName *>(it->second)->Signature();
+            lst->data = (void *)peLib->AllocateMethodName(signature);
             if (initializersHead)
                 initializersTail = initializersTail->next = lst;
             else
@@ -1798,8 +1872,11 @@ extern "C" void oa_end_generation(void)
         if (end)
         {
             LIST *lst = (LIST *)peLib->AllocateBytes(sizeof(LIST));
-            lst->data = peLib->AllocateBytes(strlen(end->name) + 1);
-            strcpy((char *)lst->data, end->name);
+            static SYMBOL sp;
+            sp.name = (char *)end->name;
+            std::map<SYMBOL *, Value *, byName>::iterator it = globalMethods.find(&sp);
+            MethodSignature *signature = static_cast<MethodName *>(it->second)->Signature();
+            lst->data = (void *)peLib->AllocateMethodName(signature);
             if (deinitializersHead)
                 deinitializersTail = deinitializersTail->next = lst;
             else

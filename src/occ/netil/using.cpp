@@ -6,6 +6,7 @@ using namespace DotNetPELib;
 
 extern "C" PELib *peLib;
 extern "C" char *pinvoke_dll;
+extern "C" BOOLEAN managed_library;
 
 struct data
 {
@@ -67,12 +68,15 @@ extern "C" void _add_global_using(char *str)
 }
 extern "C" void _apply_global_using(void)
 {
-    char buf[256];
-    strcpy(buf, pinvoke_dll);
-    char *p = strrchr(buf, '.');
-    if (p)
-        *p = 0;
-    _using_(buf);
+    if (!managed_library)
+    {
+        char buf[256];
+        strcpy(buf, pinvoke_dll);
+        char *p = strrchr(buf, '.');
+        if (p)
+            *p = 0;
+        _using_(buf);
+    }
     _using_("occmsil");
     LIST *lst = _global_using_list;
     while (lst)

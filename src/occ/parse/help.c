@@ -1292,7 +1292,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                         exp = exp2;
                         noClear = TRUE;
                     }
-                    else if ((cparams.prm_cplusplus || chosenAssembler->msil) && !basetype(init->basetp)->sp->trivialCons)
+                    else if ((cparams.prm_cplusplus) && !basetype(init->basetp)->sp->trivialCons)
                     {
                         TYPE *ctype = init->basetp;
                         FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
@@ -1306,6 +1306,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                     {
                         exp = exprNode(en_blockassign, expsym, exp2);
                         exp->size = init->basetp->size;
+                        exp->altdata = (long)(init->basetp);
                         noClear = TRUE;
                     }
                 }
@@ -1387,6 +1388,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                             {
                                 exp = exprNode(en_blockassign, expsym, exp);
                                 exp->size = init->basetp->size;
+                                exp->altdata = (long)(init->basetp);
                             }
                         }
                     }
@@ -1412,6 +1414,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                     }
                     exp = exprNode(en_blockassign, expsym, exp2);
                     exp->size = init->basetp->size;
+                    exp->altdata = (long)(init->basetp);
                 }
             }
             else

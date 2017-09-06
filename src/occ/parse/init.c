@@ -1837,6 +1837,7 @@ static LEXEME *initialize_reference_type(LEXEME *lex, SYMBOL *funcsp, int offset
                         exp1 = createTemporary(itype1, NULL);
                     exp = exprNode(en_blockassign, exp1, exp);
                     exp->size = getSize(bt_memberptr);
+                    exp->altdata = (long)(&stdpointer);
                     exp = exprNode(en_void, exp, exp1);
                 }                
                 
@@ -2495,7 +2496,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
         assn = TRUE;
         lex = getsym();
     }
-    if ((cparams.prm_cplusplus || chosenAssembler->msil) 
+    if ((cparams.prm_cplusplus || chosenAssembler->msil && !assn) 
         && isstructured(itype) && (!basetype(itype)->sp->trivialCons || 
              arrayMember))
     {
@@ -3614,7 +3615,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
         TYPE *t = chosenAssembler->msil ? chosenAssembler->msil->find_boxed_type(sp->tp) : 0;
         if (!t || !search(overloadNameTab[CI_CONSTRUCTOR], basetype(t)->syms))
             t = sp->tp;
-        if (isstructured(t) && !basetype(t)->sp->trivialCons)
+        if (isstructured(t) && !chosenAssembler->msil && !basetype(t)->sp->trivialCons)
         {
             // default constructor without (), or array of structures without an initialization list
             lex = initType(lex, funcsp, 0, sp->storage_class, &sp->init, &sp->dest, t, sp, FALSE, flags);

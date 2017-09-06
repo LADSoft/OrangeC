@@ -57,7 +57,7 @@ namespace DotNetPELib
             peLib.Out() << std::endl;
             if (pack_ > 0)
                 peLib.Out() << " .pack " << pack_;
-            if (size_ > 0)
+            if (size_ >= 0)
                 peLib.Out() << " .size " << size_;
         }
         peLib.Out() << std::endl;

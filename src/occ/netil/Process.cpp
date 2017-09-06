@@ -67,6 +67,7 @@ extern "C" {
     extern LIST *objlist;
     extern char *pinvoke_dll;
     extern NAMESPACEVALUES *globalNameSpace;
+    extern BOOLEAN managed_library;
 
     MethodSignature *argsCtor;
     MethodSignature *argsNextArg;
@@ -98,6 +99,7 @@ static SYMBOL retblocksym;
 
 static Method *mainSym;
 
+static int hasEntryPoint;
 static int errCount;
 static LIST *initializersHead, *initializersTail;
 static LIST *deinitializersHead, *deinitializersTail;
@@ -569,9 +571,11 @@ Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg, BOOLEAN pinvoke)
                 mainContainer->Add(newClass);
                 type = peLib->AllocateType(newClass);
                 typeList[basetype(tp)->sp->decoratedName] = type;
+                basetype(tp)->sp->msil = (void *)newClass;
             }
             else
             {
+                basetype(tp)->sp->msil = (void *)type->GetClass();
                 type = peLib->AllocateType(type->GetClass());
             }
             if (!type->GetClass()->InAssemblyRef())
@@ -1165,22 +1169,25 @@ extern "C" void compile_start(char *name)
 }
 void LoadFuncs(void)
 {
-    SYMBOL *sp;
-    sp = gsearch("exit");
-    if (sp)
-        ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = TRUE;
-    sp = gsearch("__getmainargs");
-    if (sp)
-        ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = TRUE;
-    sp = gsearch("__pctype_func");
-    if (sp)
-        ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = TRUE;
-    sp = gsearch("__iob_func");
-    if (sp)
-        ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = TRUE;
-    sp = gsearch("_errno");
-    if (sp)
-        ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = TRUE;
+    if (!managed_library)
+    {
+        SYMBOL *sp;
+        sp = gsearch("exit");
+        if (sp)
+            ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = TRUE;
+        sp = gsearch("__getmainargs");
+        if (sp)
+            ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = TRUE;
+        sp = gsearch("__pctype_func");
+        if (sp)
+            ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = TRUE;
+        sp = gsearch("__iob_func");
+        if (sp)
+            ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = TRUE;
+        sp = gsearch("_errno");
+        if (sp)
+            ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = TRUE;
+    }
 }
 extern "C" void flush_peep(SYMBOL *funcsp, QUAD *list)
 {
@@ -1208,7 +1215,18 @@ void CreateFunction(MethodSignature *sig, SYMBOL *sp)
         flags |= Qualifiers::Private;
     else
         flags |= Qualifiers::Public;
-    currentMethod = peLib->AllocateMethod(sig, flags);
+    if (!cparams.prm_compileonly || cparams.prm_asmfile)
+        if (sp->linkage3 == lk_entrypoint)
+            if (hasEntryPoint)
+            {
+                printf("multiple entry points detected");
+                errCount++;
+            }
+            else
+            {
+                hasEntryPoint = TRUE;
+            }
+    currentMethod = peLib->AllocateMethod(sig, flags,sp->linkage3 == lk_entrypoint);
     mainContainer->Add(currentMethod);
     if (!strcmp(sp->name, "main"))
         if (!theCurrentFunc->parentClass && !theCurrentFunc->parentNameSpace)
@@ -1235,10 +1253,13 @@ static void mainLocals(void)
 {
     localList.clear();
     paramList.clear();
-    localList.push_back(peLib->AllocateLocal("argc", peLib->AllocateType(Type::i32, 0)));
-    localList.push_back(peLib->AllocateLocal("argv", peLib->AllocateType(Type::Void, 1)));
-    localList.push_back(peLib->AllocateLocal("environ", peLib->AllocateType(Type::Void, 1)));
-    localList.push_back(peLib->AllocateLocal("newmode", peLib->AllocateType(Type::Void, 1)));
+    if (!managed_library)
+    {
+        localList.push_back(peLib->AllocateLocal("argc", peLib->AllocateType(Type::i32, 0)));
+        localList.push_back(peLib->AllocateLocal("argv", peLib->AllocateType(Type::Void, 1)));
+        localList.push_back(peLib->AllocateLocal("environ", peLib->AllocateType(Type::Void, 1)));
+        localList.push_back(peLib->AllocateLocal("newmode", peLib->AllocateType(Type::Void, 1)));
+    }
 }
 static MethodSignature *LookupSignature(char * name)
 {
@@ -1248,6 +1269,14 @@ static MethodSignature *LookupSignature(char * name)
     if (it != pinvokeInstances.end())
         return it->second;
     return NULL;
+}
+static MethodSignature *LookupManagedSignature(char *name)
+{
+    Method *rv = nullptr;
+    peLib->Find(std::string("lsmsilcrtl.rtl::") + name, &rv, std::vector<Type *> {}, nullptr, false);
+    if (rv)
+        return rv->Signature();
+    return nullptr;
 }
 static Field *LookupField(char *name)
 {
@@ -1269,6 +1298,15 @@ static Field *LookupField(char *name)
 
     return NULL;
 }
+static Field *LookupManagedField(char *name)
+{
+    void *rv = nullptr;
+    if (peLib->Find(std::string("lsmsilcrtl.rtl::") + name, &rv, false) == PELib::s_field)
+    {
+        return static_cast<Field *>(rv);
+    }
+    return nullptr;
+}
 static void mainInit(void)
 {
     std::string name = "$Main";
@@ -1283,64 +1321,72 @@ static void mainInit(void)
     currentMethod = peLib->AllocateMethod(signature, flags, prm_targettype != DLL);
     mainContainer->Add(currentMethod);
 
-    signature = LookupSignature("__pctype_func");
-    if (!signature)
+    if (managed_library)
     {
-        signature = peLib->AllocateMethodSignature("__pctype_func", 0, NULL);
-        signature->ReturnType(peLib->AllocateType(Type::u16, 1));
-        peLib->AddPInvokeReference(signature, pinvoke_dll, false);
-    }
-    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
+        signature = LookupManagedSignature("__initialize_managed_library");
+        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
 
-    Field *field = LookupField("_pctype");
-    if (!field)
+    }
+    else
     {
-        field = peLib->AllocateField("_pctype", peLib->AllocateType(Type::u16, 1), Qualifiers::Public | Qualifiers::Static);
-        peLib->WorkingAssembly()->Add(field);
+        signature = LookupSignature("__pctype_func");
+        if (!signature)
+        {
+            signature = peLib->AllocateMethodSignature("__pctype_func", 0, NULL);
+            signature->ReturnType(peLib->AllocateType(Type::u16, 1));
+            peLib->AddPInvokeReference(signature, pinvoke_dll, false);
+        }
+        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
+
+        Field *field = LookupField("_pctype");
+        if (!field)
+        {
+            field = peLib->AllocateField("_pctype", peLib->AllocateType(Type::u16, 1), Qualifiers::Public | Qualifiers::Static);
+            peLib->WorkingAssembly()->Add(field);
+        }
+        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_stsfld, peLib->AllocateOperand(peLib->AllocateFieldName(field))));
+
+        signature = LookupSignature("__iob_func");
+        if (!signature)
+        {
+            signature = peLib->AllocateMethodSignature("__iob_func", 0, NULL);
+            signature->ReturnType(peLib->AllocateType(Type::Void, 1));
+            peLib->AddPInvokeReference(signature, pinvoke_dll, false);
+        }
+        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
+
+        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_dup));
+        field = LookupField("__stdin");
+        if (!field)
+        {
+            field = peLib->AllocateField("__stdin", peLib->AllocateType(Type::Void, 1), Qualifiers::Public | Qualifiers::Static);
+            peLib->WorkingAssembly()->Add(field);
+        }
+        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_stsfld, peLib->AllocateOperand(peLib->AllocateFieldName(field))));
+
+        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_dup));
+        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)32, Operand::any)));
+        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_add));
+
+        field = LookupField("__stdout");
+        if (!field)
+        {
+            field = peLib->AllocateField("__stdout", peLib->AllocateType(Type::Void, 1), Qualifiers::Public | Qualifiers::Static);
+            peLib->WorkingAssembly()->Add(field);
+        }
+        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_stsfld, peLib->AllocateOperand(peLib->AllocateFieldName(field))));
+
+        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)64, Operand::any)));
+        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_add));
+
+        field = LookupField("__stderr");
+        if (!field)
+        {
+            field = peLib->AllocateField("__stderr", peLib->AllocateType(Type::Void, 1), Qualifiers::Public | Qualifiers::Static);
+            peLib->WorkingAssembly()->Add(field);
+        }
+        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_stsfld, peLib->AllocateOperand(peLib->AllocateFieldName(field))));
     }
-    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_stsfld, peLib->AllocateOperand(peLib->AllocateFieldName(field))));
-
-    signature = LookupSignature("__iob_func");
-    if (!signature)
-    {
-        signature = peLib->AllocateMethodSignature("__iob_func", 0, NULL);
-        signature->ReturnType(peLib->AllocateType(Type::Void, 1));
-        peLib->AddPInvokeReference(signature, pinvoke_dll, false);
-    }
-    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
-
-    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_dup));
-    field = LookupField("__stdin");
-    if (!field)
-    {
-        field = peLib->AllocateField("__stdin", peLib->AllocateType(Type::Void, 1), Qualifiers::Public | Qualifiers::Static);
-        peLib->WorkingAssembly()->Add(field);
-    }
-    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_stsfld, peLib->AllocateOperand(peLib->AllocateFieldName(field))));
-
-    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_dup));
-    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)32, Operand::any)));
-    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_add));
-
-    field = LookupField("__stdout");
-    if (!field)
-    {
-        field = peLib->AllocateField("__stdout", peLib->AllocateType(Type::Void, 1), Qualifiers::Public | Qualifiers::Static);
-        peLib->WorkingAssembly()->Add(field);
-    }
-    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_stsfld, peLib->AllocateOperand(peLib->AllocateFieldName(field))));
-
-    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)64, Operand::any)));
-    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_add));
-
-    field = LookupField("__stderr");
-    if (!field)
-    {
-        field = peLib->AllocateField("__stderr", peLib->AllocateType(Type::Void, 1), Qualifiers::Public | Qualifiers::Static);
-        peLib->WorkingAssembly()->Add(field);
-    }
-    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_stsfld, peLib->AllocateOperand(peLib->AllocateFieldName(field))));
-
 }
 static void dumpInitializerCalls(LIST *lst)
 {
@@ -1358,49 +1404,77 @@ static void dumpCallToMain(void)
 {
     if (prm_targettype != DLL)
     {
-        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloca, peLib->AllocateOperand(localList[0]))); // load argc
-        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloca, peLib->AllocateOperand(localList[1]))); // load argcv
-        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloca, peLib->AllocateOperand(localList[2]))); // load environ
-        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)0, Operand::i32)));
-        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloca, peLib->AllocateOperand(localList[3]))); // load newmode
-
-
-        MethodSignature *signature = peLib->AllocateMethodSignature("__getmainargs", 0, NULL);
-        signature->ReturnType(peLib->AllocateType(Type::Void, 0));
-        signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::Void, 1)));
-        signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::Void, 1)));
-        signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::Void, 1)));
-        signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::i32, 0)));
-        signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::Void, 1)));
-        peLib->AddPInvokeReference(signature, pinvoke_dll, false);
-        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
-
-        if (mainSym)
+        if (managed_library)
         {
-            int n = mainSym->Signature()->ParamCount();
-            if (n >= 1)
-                currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloc, peLib->AllocateOperand(localList[0]))); // load argc
-            if (n >= 2)
-                currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloc, peLib->AllocateOperand(localList[1]))); // load argcv
-            for (int i = 2; i < n; i++)
-                currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldnull, NULL)); // load a spare arg
-            signature = peLib->AllocateMethodSignature("main", MethodSignature::Managed, mainContainer);
-            currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(mainSym->Signature()))));
+            if (mainSym)
+            {
+                int n = mainSym->Signature()->ParamCount();
+                if (n >= 1)
+                    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldsfld, peLib->AllocateOperand(peLib->AllocateFieldName(LookupManagedField("__argc"))))); // load argc
+                if (n >= 2)
+                    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldsfld, peLib->AllocateOperand(peLib->AllocateFieldName(LookupManagedField("__argv"))))); // load argcv
+                if (n >= 3)
+                    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldsfld, peLib->AllocateOperand(peLib->AllocateFieldName(LookupManagedField("__env"))))); // load env
+                for (int i = 3; i < n; i++)
+                    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldnull, NULL)); // load a spare arg
+                MethodSignature *signature = peLib->AllocateMethodSignature("main", MethodSignature::Managed, mainContainer);
+                currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(mainSym->Signature()))));
+            }
+
+        }
+        else
+        {
+            currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloca, peLib->AllocateOperand(localList[0]))); // load argc
+            currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloca, peLib->AllocateOperand(localList[1]))); // load argcv
+            currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloca, peLib->AllocateOperand(localList[2]))); // load environ
+            currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)0, Operand::i32)));
+            currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloca, peLib->AllocateOperand(localList[3]))); // load newmode
+
+
+            MethodSignature *signature = peLib->AllocateMethodSignature("__getmainargs", 0, NULL);
+            signature->ReturnType(peLib->AllocateType(Type::Void, 0));
+            signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::Void, 1)));
+            signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::Void, 1)));
+            signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::Void, 1)));
+            signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::i32, 0)));
+            signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::Void, 1)));
+            peLib->AddPInvokeReference(signature, pinvoke_dll, false);
+            currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
+
+            if (mainSym)
+            {
+                int n = mainSym->Signature()->ParamCount();
+                if (n >= 1)
+                    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloc, peLib->AllocateOperand(localList[0]))); // load argc
+                if (n >= 2)
+                    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloc, peLib->AllocateOperand(localList[1]))); // load argcv
+                for (int i = 2; i < n; i++)
+                    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldnull, NULL)); // load a spare arg
+                signature = peLib->AllocateMethodSignature("main", MethodSignature::Managed, mainContainer);
+                currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(mainSym->Signature()))));
+            }
         }
         dumpInitializerCalls(deinitializersHead);
-
         if (!mainSym || mainSym && mainSym->Signature()->ReturnType()->IsVoid())
             currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)0, Operand::i32)));
-        signature = LookupSignature("exit");
-        if (!signature)
+        if (managed_library)
         {
-
-            signature = peLib->AllocateMethodSignature("exit", 0, NULL);
-            signature->ReturnType(peLib->AllocateType(Type::Void, 0));
-            signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::i32, 0)));
-            peLib->AddPInvokeReference(signature, pinvoke_dll, false);
+            MethodSignature *signature = LookupManagedSignature("exit");
+            currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
         }
-        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
+        else
+        {
+            MethodSignature *signature = LookupSignature("exit");
+            if (!signature)
+            {
+
+                signature = peLib->AllocateMethodSignature("exit", 0, NULL);
+                signature->ReturnType(peLib->AllocateType(Type::Void, 0));
+                signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::i32, 0)));
+                peLib->AddPInvokeReference(signature, pinvoke_dll, false);
+            }
+            currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
+        }
     }
 }
 static void dumpGlobalFuncs()
@@ -1410,40 +1484,43 @@ static void dumpGlobalFuncs()
 static void AddRTLThunks()
 {
     Param *param;
-    if (mainSym)
+    if (!hasEntryPoint)
     {
-        if (mainSym->Signature()->ParamCount() < 1)
+        if (mainSym)
         {
-            param = peLib->AllocateParam("argc", peLib->AllocateType(Type::i32, 0));
-            mainSym->Signature()->AddParam(param);
+            if (mainSym->Signature()->ParamCount() < 1)
+            {
+                param = peLib->AllocateParam("argc", peLib->AllocateType(Type::i32, 0));
+                mainSym->Signature()->AddParam(param);
+            }
+            if (mainSym->Signature()->ParamCount() < 2)
+            {
+                param = peLib->AllocateParam("argv", peLib->AllocateType(Type::Void, 1));
+                mainSym->Signature()->AddParam(param);
+            }
         }
-        if (mainSym->Signature()->ParamCount() < 2)
+        oa_enterseg();
+
+        mainInit();
+        dumpInitializerCalls(initializersHead);
+        mainLocals();
+        dumpCallToMain();
+
+        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ret));
+        for (int i = 0; i < localList.size(); i++)
+            currentMethod->AddLocal(localList[i]);
+
+        try
         {
-            param = peLib->AllocateParam("argv", peLib->AllocateType(Type::Void, 1));
-            mainSym->Signature()->AddParam(param);
+            currentMethod->Optimize(*peLib);
         }
+        catch (PELibError exc)
+        {
+            std::cout << "Optimizer error: ( $Main ) " << exc.what() << std::endl;
+        }
+
+        dumpGlobalFuncs();
     }
-    oa_enterseg();
-
-    mainInit();
-    dumpInitializerCalls(initializersHead);
-    mainLocals();
-    dumpCallToMain();
-
-    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ret));
-    for (int i = 0; i < localList.size(); i++)
-        currentMethod->AddLocal(localList[i]);
-
-    try
-    {
-        currentMethod->Optimize(*peLib);
-    }
-    catch (PELibError exc)
-    {
-        std::cout << "Optimizer error: ( $Main ) " << exc.what() << std::endl;
-    }
-
-    dumpGlobalFuncs();
 }
 static void CreateExternalCSharpReferences()
 {
@@ -1629,11 +1706,11 @@ extern "C" void oa_main_postprocess(BOOLEAN errors)
         GetOutputFileName(ilName, path, FALSE);
         StripExt(ilName);
         AddRTLThunks();
-        if (!errors && prm_targettype != DLL && !mainSym)
+        if (!errors && prm_targettype != DLL && !mainSym && !hasEntryPoint)
         {
             printf("Error: main not defined\n");
         }
-        errors |= checkExterns() || errCount || prm_targettype != DLL && !mainSym;
+        errors |= checkExterns() || errCount || prm_targettype != DLL && !mainSym && !hasEntryPoint;
         if (!errors)
         {
             if (cparams.prm_asmfile)

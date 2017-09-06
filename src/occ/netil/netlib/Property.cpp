@@ -254,11 +254,11 @@ void Property::Load(PELib &lib, AssemblyDef &assembly, PEReader &reader, size_t 
         MethodSemanticsTableEntry *entry2 = static_cast<MethodSemanticsTableEntry *>(table[i]);
         if (entry2->association_.index_ == propIndex)
         {
-            if (entry2->semantics_ == MethodSemanticsTableEntry::Getter)
+            if (entry2->semantics_ & MethodSemanticsTableEntry::Getter)
             {
                 getter_ = methods[entry2->method_.index_ - startIndex];
             }
-            else if (entry2->semantics_ == MethodSemanticsTableEntry::Setter)
+            else if (entry2->semantics_ & MethodSemanticsTableEntry::Setter)
             {
                 setter_ = methods[entry2->method_.index_ - startIndex];
             }

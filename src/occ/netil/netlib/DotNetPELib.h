@@ -51,7 +51,7 @@
 
 // reference changelog.txt to see what the changes are
 //
-#define DOTNETPELIB_VERSION "2.7"
+#define DOTNETPELIB_VERSION "2.8"
 
 // this is the main library header
 // it allows creation of the methods and data that would be dumped into 
@@ -687,9 +687,12 @@ namespace DotNetPELib
         void AddLocal(Local *local);
 
         void Instance(bool instance);
-        bool Instance() { return !!(Flags().Value & Qualifiers::Instance); }
+        bool Instance() const { return !!(Flags().Value & Qualifiers::Instance); }
         ///** return the signature
         MethodSignature *Signature() const { return prototype_; }
+
+        ///** is it an entry point function
+        bool HasEntryPoint() const { return entryPoint_; }
 
         ///** Iterate through local variables
         typedef std::vector<Local *>::iterator iterator;
@@ -979,6 +982,10 @@ namespace DotNetPELib
         int IsBranch() const { return IsRel1() || IsRel4(); }
         ///** Convert a 4-byte branch to a 1-byte branch
         void Rel4To1() { op_ = (iop)((int)op_ + 1); }
+        ///** Is it any kind of call
+        int IsCall() const {
+            return op_ == i_call || op_ == i_calli || op_ == i_callvirt;
+        }
         ///** Set the live flag.   We are checking for live because sometimes
         // dead code sequences can confuse the stack checking routine
         void Live(bool val) { live_ = val; }

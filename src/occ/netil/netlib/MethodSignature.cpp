@@ -461,7 +461,7 @@ namespace DotNetPELib
         {
             // check if the last attribute is an array...
             // we are just going to assume if the attribute exists the data is set properly
-            CustomAttribute attribute(CustomAttribute::ParamDef, start + params.size() - 1);
+            CustomAttribute attribute(CustomAttribute::ParamDef, start + params.size()-1);
             if (assembly.CustomAttributes().Has(attribute, "[mscorlib]System.ParamArrayAttribute"))
             {
                 flags_ |= Vararg;

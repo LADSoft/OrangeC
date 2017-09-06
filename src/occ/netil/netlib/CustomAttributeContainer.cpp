@@ -158,7 +158,8 @@ namespace DotNetPELib
                 CustomAttributeDescriptor a;
                 if (as)
                 {
-                    reader.ReadFromString(assemblyName, sizeof(assemblyName), as);
+                    AssemblyRefTableEntry *ar = static_cast<AssemblyRefTableEntry *>(reader.Table(tAssemblyRef)[as - 1]);
+                    reader.ReadFromString(assemblyName, sizeof(assemblyName), ar->nameIndex_.index_);
                 }
                 else
                 {

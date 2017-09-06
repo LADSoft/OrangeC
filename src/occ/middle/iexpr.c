@@ -1442,28 +1442,35 @@ IMODE *gen_moveblock(EXPRESSION *node, SYMBOL *funcsp)
     IMODE *ap1,  *ap2, *ap3, *ap6, *ap7, *ap8;
     if (!node->size)
         return (0);
-    ap3 = gen_expr(funcsp, node->left, F_VOL, ISZ_UINT);
-    ap1 = LookupLoadTemp(NULL, ap3);
-    if (ap1 != ap3)
-        gen_icode(i_assn, ap1, ap3, NULL);
-    ap3 = gen_expr(funcsp, node->right, F_VOL, ISZ_UINT);
-    ap2 = LookupLoadTemp(NULL, ap3);
-    if (ap2 != ap3)
-        gen_icode(i_assn, ap2, ap3, NULL);
-    ap6 = make_immed(ISZ_UINT, node->size);
     if (chosenAssembler->msil)
     {
-        ap7 = LookupLoadTemp(NULL, ap6);
-        if (ap7 != ap6)
-            gen_icode(i_assn, ap7, ap6, NULL);
-
-        ap8 = (IMODE *)Alloc(sizeof(IMODE));
-        memcpy(ap8, ap7, sizeof(IMODE));
-        ap8->mode = i_ind;
-        gen_icode(i_assnblock, ap8, ap1, ap2);
+        int mode;
+        ap1 = gen_expr(funcsp, node->left, 0, ISZ_UINT);
+        mode = ap1->mode;
+        ap7 = tempreg(ISZ_UINT, 0);
+        *ap7 = *ap1;
+        ap1 = ap7;
+        ap1->mode = i_ind;
+        ap3 = gen_expr(funcsp, node->right, F_VOL, ISZ_UINT);
+        ap2 = LookupLoadTemp(NULL, ap3);
+        if (ap2 != ap3)
+            gen_icode(i_assn, ap2, ap3, NULL);
+        gen_icode(i_assn, ap1, ap2, NULL);
+        intermed_tail->altdata = (TYPE *)node->altdata;
+        intermed_tail->blockassign = TRUE;
+        intermed_tail->oldmode = mode;
     }
     else
     {
+        ap3 = gen_expr(funcsp, node->left, F_VOL, ISZ_UINT);
+        ap1 = LookupLoadTemp(NULL, ap3);
+        if (ap1 != ap3)
+            gen_icode(i_assn, ap1, ap3, NULL);
+        ap3 = gen_expr(funcsp, node->right, F_VOL, ISZ_UINT);
+        ap2 = LookupLoadTemp(NULL, ap3);
+        if (ap2 != ap3)
+            gen_icode(i_assn, ap2, ap3, NULL);
+        ap6 = make_immed(ISZ_UINT, node->size);
         gen_icode(i_assnblock, ap6, ap1, ap2);
     }
     return (ap1);

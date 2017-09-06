@@ -551,6 +551,8 @@ static struct {
 { "Must define getter for property '%s'", ERROR },
 { "Cannot modify property '%s' because there is no setter", ERROR },
 { "Cannot take address of property '%s'", ERROR },
+{ "__entrypoint cannot be used on non-function '%s'", ERROR },
+
 #endif
 } ;
 

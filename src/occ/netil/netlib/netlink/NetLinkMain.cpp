@@ -436,51 +436,60 @@ bool NetLinkMain::EnterMethod(const Method *method)
         else
             destructors.push_back(method->Signature());
     }
+    if (method->HasEntryPoint())
+    {
+        if (hasEntryPoint)
+            std::cout << "Multiple entry points encountered ";
+        hasEntryPoint = true;
+    }
     return true;
 }
 bool NetLinkMain::AddRTLThunks()
 {
     Param *param;
     peLib->Traverse(*this);
-    if (mainClass)
-        mainContainer = const_cast<DataContainer*>(static_cast<const DataContainer *>(mainClass));
-    else
-        mainContainer = peLib->WorkingAssembly();
-    mainSym = LookupSignature("main");
-    if (mainSym)
+    if (!hasEntryPoint)
     {
-        if (mainSym->ParamCount() < 1)
+        if (mainClass)
+            mainContainer = const_cast<DataContainer*>(static_cast<const DataContainer *>(mainClass));
+        else
+            mainContainer = peLib->WorkingAssembly();
+        mainSym = LookupSignature("main");
+        if (mainSym)
         {
-            param = peLib->AllocateParam("argc", peLib->AllocateType(Type::i32, 0));
-            mainSym->AddParam(param);
+            if (mainSym->ParamCount() < 1)
+            {
+                param = peLib->AllocateParam("argc", peLib->AllocateType(Type::i32, 0));
+                mainSym->AddParam(param);
+            }
+            if (mainSym->ParamCount() < 2)
+            {
+                param = peLib->AllocateParam("argv", peLib->AllocateType(Type::Void, 1));
+                mainSym->AddParam(param);
+            }
         }
-        if (mainSym->ParamCount() < 2)
+
+        MainInit();
+        dumpInitializerCalls(initializers);
+        MainLocals();
+        dumpCallToMain();
+
+        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ret));
+        for (int i = 0; i < localList.size(); i++)
+            currentMethod->AddLocal(localList[i]);
+
+        try
         {
-            param = peLib->AllocateParam("argv", peLib->AllocateType(Type::Void, 1));
-            mainSym->AddParam(param);
+            currentMethod->Optimize(*peLib);
         }
+        catch (PELibError exc)
+        {
+            std::cout << "Optimizer error: ( $Main ) " << exc.what() << std::endl;
+            return false;
+        }
+
+        dumpGlobalFuncs();
     }
-
-    MainInit();
-    dumpInitializerCalls(initializers);
-    MainLocals();
-    dumpCallToMain();
-
-    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ret));
-    for (int i = 0; i < localList.size(); i++)
-        currentMethod->AddLocal(localList[i]);
-
-    try
-    {
-        currentMethod->Optimize(*peLib);
-    }
-    catch (PELibError exc)
-    {
-        std::cout << "Optimizer error: ( $Main ) " << exc.what() << std::endl;
-        return false;
-    }
-
-    dumpGlobalFuncs();
     return true;
 }
 bool NetLinkMain::CreateExecutable(CmdFiles &files)

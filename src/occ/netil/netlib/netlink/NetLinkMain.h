@@ -47,7 +47,7 @@ email: TouchStone222@runbox.com <David Lindauer>
 class NetLinkMain : public DotNetPELib::Callback
 {
 public:
-    NetLinkMain() : mainNameSpace(nullptr), mainClass(nullptr) { }
+    NetLinkMain() : mainNameSpace(nullptr), mainClass(nullptr), hasEntryPoint(false) { }
 
     int Run(int argc, char **argv);
 protected:
@@ -84,6 +84,7 @@ private:
     std::list<DotNetPELib::MethodSignature *> destructors;
 
     std::string namespaceAndClass;
+    bool hasEntryPoint;
 
     static CmdSwitchParser SwitchParser;
     static CmdSwitchString StrongName;

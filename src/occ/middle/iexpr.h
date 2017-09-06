@@ -102,11 +102,11 @@ typedef struct _imode_
     char ptrsize; /* ptr indirection size, either ISZ_ADDR or ISZ_FARPTR */
     char startbit, bits; /* bit width  for i_Bf*/
     char seg;	/* seg reg  for segmented architectures */
-    char vol; /* TRUE if is a node for a volatile var */
-    char restricted; /* TRUE if pointer type is set to restricted */
-    char retval;	/* TRUE if this is the value returned by a function */
-    char fieldname; /* vararg is an en_structelem field name */
-    char msilObject; /* TRUE if this is an MSIL object that shouldn't be loaded by address */
+    unsigned char vol:1; /* TRUE if is a node for a volatile var */
+    unsigned char restricted:1; /* TRUE if pointer type is set to restricted */
+    unsigned char retval:1;	/* TRUE if this is the value returned by a function */
+    unsigned char fieldname:1; /* vararg is an en_structelem field name */
+    unsigned char msilObject:1; /* TRUE if this is an MSIL object that shouldn't be loaded by address */
 } IMODE;
 
 /*-------------------------------------------------------------------------*/
@@ -201,6 +201,8 @@ typedef struct quad
     int varargPrev:1; /* right before the vararg is genned */
     int beforeGosub:1;
     int nullvararg:1;
+    int blockassign : 1;
+    char oldmode;
     char novalue;
     char temps;
     char precolored;

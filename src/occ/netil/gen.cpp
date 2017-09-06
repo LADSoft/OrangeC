@@ -369,9 +369,11 @@ Operand *getOperand(IMODE *oper)
     return rv;
 }
 
-void load_ind(int sz)
+void load_ind(IMODE *im)
 {
+    int sz = im->size;
     Instruction::iop op;
+    Operand *operand = nullptr;
     switch(sz)
     {
         case ISZ_BOOLEAN:
@@ -441,8 +443,12 @@ void load_ind(int sz)
         case ISZ_CDOUBLE:
         case ISZ_CLDOUBLE:
             break;
+        case ISZ_OBJECT:
+            op = Instruction::i_ldobj;
+            operand = peLib->AllocateOperand(peLib->AllocateValue("", GetType(im->offset->v.sp->tp, TRUE, 0, 0)));
+            break;
     }
-    gen_code(op, NULL);
+    gen_code(op, operand);
 
 }
 void store_ind(IMODE *im)
@@ -637,12 +643,12 @@ void gen_load(IMODE *im, Operand *dest)
             }
             else
             {
-                load_ind(im->size);
+                load_ind(im);
             }
         }
         else
         {
-            load_ind(im->size);
+            load_ind(im);
         }
         return;
     }
@@ -1441,6 +1447,7 @@ extern "C" void asm_assn(QUAD *q)               /* assignment */
     }
     else
     {
+        TYPE *tp;
         // don't generate if it is a placeholder ind...
         if (q->ans->mode == i_direct && !(q->temps & TEMP_ANS) && q->ans->offset->type == en_auto)
         {
@@ -1456,10 +1463,41 @@ extern "C" void asm_assn(QUAD *q)               /* assignment */
             }
         }
         ap = getOperand(q->dc.left);
-        gen_load(q->dc.left, ap);
-        if (q->dc.left->size != 0 && q->dc.left->size != q->ans->size)
+        if (q->blockassign)
         {
-            gen_convert(ap, q->dc.left, q->ans->size);
+            tp = (TYPE *)q->altdata;
+            GetType(tp, TRUE, FALSE, FALSE);
+            if (basetype(tp)->sp->msil)
+            {
+                Class *c = static_cast<Class *>(basetype(tp)->sp->msil);
+                if (c->Flags().Flags() & Qualifiers::Value)
+                    if (!currentMethod->LastInstruction()->IsCall())
+                        gen_code(Instruction::i_ldobj, peLib->AllocateOperand(peLib->AllocateValue("", GetType(tp, TRUE, FALSE, FALSE))));
+                switch (q->ans->offset->type)
+                {
+                case en_global:
+                case en_auto:
+                case en_pc:
+                case en_label:
+                    q->ans->mode = (enum i_adr)q->oldmode;
+                    break;
+                default:
+                    gen_code(Instruction::i_stobj, peLib->AllocateOperand(peLib->AllocateValue("", GetType(tp, TRUE, FALSE, FALSE))));
+                    decrement_stack();
+                    decrement_stack();
+                    if (q->hook)
+                        hookCount++;
+                    return;
+                }
+            }
+        }
+        else
+        {
+            gen_load(q->dc.left, ap);
+            if (q->dc.left->size != 0 && q->dc.left->size != q->ans->size)
+            {
+                gen_convert(ap, q->dc.left, q->ans->size);
+            }
         }
     }
     ap = getOperand(q->ans);

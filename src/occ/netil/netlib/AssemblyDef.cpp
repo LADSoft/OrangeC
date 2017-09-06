@@ -469,13 +469,13 @@ namespace DotNetPELib
                 else
                     n = properties[i];
 
-            for (int i = 1; i < classes.size(); i++)
+            for (int i = 0; i < classes.size(); i++)
                 semantics.push_back(0);
             const DNLTable &table6 = reader.Table(tMethodSemantics);
             int j = 0;
-            for (int i=1;  i < properties.size()-1; i++)
+            for (int i=1;  i < properties.size(); i++)
             {
-                if (properties[i] != properties[i + 1])
+                if (properties[i-1] != properties[i])
                 {
                     bool done = false;
                     while (j < table6.size())
@@ -486,6 +486,7 @@ namespace DotNetPELib
                         j++;
                     }
                     semantics[i] = j;
+                    /*
                     while (j < table6.size())
                     {
                         MethodSemanticsTableEntry *entry6 = static_cast<MethodSemanticsTableEntry *>(table6[j]);
@@ -494,8 +495,10 @@ namespace DotNetPELib
                         j++;
                     }
                     semantics[i + 1] = j;
+                    */
                 }
             }
+            semantics[classes.size() - 1] = properties.size();
             // load the namespaces.
             // Note: classes fields and functions not in a namespace will NOT
             // be imported, as per the C# rules.

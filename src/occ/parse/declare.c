@@ -1858,6 +1858,12 @@ static LEXEME *getLinkageQualifiers(LEXEME *lex, enum e_lk *linkage, enum e_lk *
                     error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
                 *linkage2 = lk_export;
                 break;
+            case kw__entrypoint:
+                if (*linkage3 != lk_none)
+                    error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                *linkage3 = lk_entrypoint;
+                break;
+
             case kw__property:
                 if (*linkage2 != lk_none)
                     error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
@@ -4819,6 +4825,7 @@ static void allocateVLA(LEXEME *lex, SYMBOL *sp, SYMBOL *funcsp, BLOCKDATA *bloc
         result->left = exprNode(en_blockassign, varNode(en_auto, dest),
                            varNode(en_auto, src));
         result->left->size = dest->tp->size = src->tp->size;
+        result->altdata = (long)src->tp;
     }
     else
     {
@@ -6265,7 +6272,7 @@ jointemplate:
                                 {
                                     error(ERR_CONSTEXPR_REQUIRES_INITIALIZER);
                                 }
-                                else if (sp->parentClass && !sp->templateParams)
+                                else if (sp->parentClass && !sp->templateParams && !chosenAssembler->msil)
                                     if (!asFriend && storage_class_in != sc_member && storage_class_in != sc_mutable && !sp->templateLevel)
                                         errorsym(ERR_CANNOT_REDECLARE_OUTSIDE_CLASS, sp);
                             }
@@ -6276,6 +6283,10 @@ jointemplate:
                             BOOLEAN structuredArray = FALSE;
                             if (notype)
                                 error(ERR_MISSING_TYPE_SPECIFIER);
+                            if (linkage3 == lk_entrypoint)
+                            {
+                                errorsym(ERR_ENTRYPOINT_FUNC_ONLY, sp);
+                            }
                             if (sp->storage_class == sc_virtual)
                             {
                                 errorsym(ERR_NONFUNCTION_CANNOT_BE_DECLARED_VIRTUAL, sp);

@@ -48,6 +48,7 @@ extern COMPILER_PARAMS cparams;
 extern char msil_bltins[];
 char namespaceAndClass[512];
 char *pinvoke_dll = "msvcrt.dll";
+BOOLEAN managed_library;
 
 int dbgblocknum;
     #ifndef WIN32
@@ -165,7 +166,7 @@ static KEYWORD prockeywords[] =
         0, 0, 0
     }
 };
-static ARCH_DEFINES defines[] = { 
+static ARCH_DEFINES defines[] = {
     /* must come first in this order */
     {"__WIN32__","1",TRUE, TRUE },
     {"__LSCRTL_DLL","1",FALSE, TRUE },
@@ -174,6 +175,7 @@ static ARCH_DEFINES defines[] = {
     {"__MSVCRT_DLL","1",FALSE, TRUE },
     {"__CRTDLL_DLL","1",FALSE, TRUE },
     {"__RAW_IMAGE__","1",FALSE, TRUE },
+    {"__MANAGED__","1", FALSE, TRUE },
     /* end ordered */
     {"__MSIL__","1",TRUE,TRUE },
     {"__386__","1",TRUE,TRUE },
@@ -345,6 +347,12 @@ static int initnasm(COMPILER_PARAMS *parms, ARCH_ASM *data, ARCH_DEBUG *debug)
             defines[1].respect = TRUE;
             defines[4].respect = FALSE;
             pinvoke_dll = "lscrtlil.dll";
+        }
+        else if (string[1] == 'M')
+        {
+            managed_library = TRUE;
+            defines[4].respect = FALSE;
+            defines[7].respect = TRUE;
         }
     }
 static BOOLEAN validatenamespaceAndClass(char *str)

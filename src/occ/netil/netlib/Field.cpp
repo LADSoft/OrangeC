@@ -286,16 +286,17 @@ namespace DotNetPELib
     bool Field::PEDump(PELib &peLib)
     {
         size_t sz;
+        if (type_->GetBasicType() == Type::cls)
+        {
+            if (type_->GetClass()->InAssemblyRef())
+                type_->GetClass()->PEDump(peLib);
+        }
         Byte *sig = SignatureGenerator::FieldSig(this, sz);
         size_t sigindex = peLib.PEOut().HashBlob(sig, sz);
         size_t nameindex = peIndex_ = peLib.PEOut().HashString(Name());
         if (InAssemblyRef())
         {
             parent_->PEDump(peLib);
-            if (type_->GetBasicType() == Type::cls)
-            {
-                type_->GetClass()->PEDump(peLib);
-            }
             MemberRefParent refParent(MemberRefParent::TypeRef, parent_->PEIndex());
             TableEntryBase *table = new MemberRefTableEntry(refParent, nameindex, sigindex);
             peIndex_ = peLib.PEOut().AddTableEntry(table);

@@ -1,3 +1,10 @@
+Version 2.8:
+	bug fix:  if a global field is of type class and the class is from an external assembly ref,
+			  the IL file wass correct but the PE file had a bad signature for the field's type
+	bug fix:  last property in a long list of properties could be loaded incorrectly
+	netlink:  don't thunk C-style entry point if the incoming program has an entry point
+	bug fix:  custom attributes not registered correctly
+
 Version 2.7:
 	various improvements to property creation
 	bug fix: fix the problem with quoted types in external assemblies in a better way

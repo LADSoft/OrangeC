@@ -207,6 +207,7 @@ KEYWORD keywords[] = {
     { "__char16_t", 10,  kw_char16_t, KW_CPLUSPLUS | KW_C1X, TT_BASETYPE | TT_INT },
     { "__char32_t", 10,  kw_char32_t, KW_CPLUSPLUS | KW_C1X, TT_BASETYPE | TT_INT },
     { "__cpblk", 7, kw__cpblk, KW_MSIL, TT_OPERATOR | TT_UNARY },
+    { "__entrypoint", 12,  kw__entrypoint, KW_MSIL, TT_LINKAGE },
     { "__export", 8,  kw__export, KW_NONANSI | KW_ALL, TT_LINKAGE},
     { "__func__", 8,  kw___func__, KW_C99 | KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR },
     { "__import", 8,  kw__import, KW_NONANSI | KW_ALL, TT_LINKAGE},

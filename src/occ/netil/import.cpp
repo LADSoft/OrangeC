@@ -54,6 +54,7 @@ extern "C"
     extern PELib *peLib;
     extern NAMESPACEVALUES *globalNameSpace;
     extern LIST *nameSpaceList;
+    extern BOOLEAN managed_library;
 }
 
 void AddType(SYMBOL *sym, Type *type);
@@ -61,7 +62,7 @@ void AddType(SYMBOL *sym, Type *type);
 class Importer :public Callback
 {
 public:
-    Importer() : level_(0) { }
+    Importer() : level_(0), inlsmsilcrtl(0) { }
     virtual ~Importer() { }
 
     virtual bool EnterAssembly(const AssemblyDef *) override;
@@ -96,12 +97,13 @@ public:
 #endif
 protected:
     TYPE *TranslateType(Type *);
+    bool useGlobal() const { return managed_library && inlsmsilcrtl && structures_.size() == 1; }
 private:
     std::deque<SYMBOL *> nameSpaces_;
     std::deque<SYMBOL *> structures_;
     std::map<std::string, SYMBOL *> cachedClasses;
     int level_;
-
+    bool inlsmsilcrtl;
     static e_bt translatedTypes[];
 };
 
@@ -244,6 +246,10 @@ bool Importer::EnterClass(const Class *cls)
 {
     diag("Class", cls->Name());
     level_++;
+    if (structures_.size() == 0 && nameSpaces_.size() == 1)
+    {
+        inlsmsilcrtl = cls->Name() == "rtl" && !strcmp(nameSpaces_.back()->name, "lsmsilcrtl");
+    }
     if (nameSpaces_.size())
     {
         SYMBOL *sp = NULL;
@@ -278,7 +284,10 @@ bool Importer::EnterClass(const Class *cls)
             sp->access = ac_public;
             SetLinkerNames(sp, lk_cdecl);
 
-            insert(sp, structures_.size() ? structures_.back()->tp->syms : nameSpaces_.back()->nameSpaceValues->syms);
+            if (useGlobal())
+                insert(sp, globalNameSpace->syms);
+            else
+                insert(sp, structures_.size() ? structures_.back()->tp->syms : nameSpaces_.back()->nameSpaceValues->syms);
             sp->msil = (void *)cls;
             AddType(sp, peLib->AllocateType(const_cast<Class *>(cls)));
             cachedClasses[sp->name] = sp;
@@ -299,6 +308,8 @@ bool Importer::ExitClass(const Class *cls)
     level_--;
     diag("Exit Class", cls->Name());
     structures_.pop_back();
+    if (!structures_.size())
+        inlsmsilcrtl = FALSE;
     return true;
 }
 bool Importer::EnterMethod(const Method *method)
@@ -315,7 +326,6 @@ bool Importer::EnterMethod(const Method *method)
             ctor = TRUE;
             structures_.back()->trivialCons = FALSE;
         }
-        // static instance member with no variable length argument list is all we support right now...
         TYPE *tp = (TYPE *)Alloc(sizeof(TYPE));
         std::vector<TYPE *>args;
         std::vector<std::string> names;
@@ -431,7 +441,10 @@ bool Importer::EnterMethod(const Method *method)
                 funcs->parentClass = structures_.back();
                 tp->sp = funcs;
                 SetLinkerNames(funcs, lk_cdecl);
-                insert(funcs, structures_.back()->tp->syms);
+                if (useGlobal())
+                    insert(sp, globalNameSpace->syms);
+                else
+                    insert(funcs, structures_.back()->tp->syms);
                 funcs->parent = sp;
                 funcs->tp->syms = CreateHashTable(1);
                 insert(sp, funcs->tp->syms);
@@ -471,7 +484,10 @@ bool Importer::EnterField(const Field *field)
             sp->access = ac_public;
             sp->msil = (void *)field;
             SetLinkerNames(sp, lk_cdecl);
-            insert(sp, structures_.back()->tp->syms);
+            if (useGlobal())
+                insert(sp, globalNameSpace->syms);
+            else
+                insert(sp, structures_.back()->tp->syms);
         }
     }
     return true;
@@ -499,7 +515,10 @@ bool Importer::EnterProperty(const Property *property)
             if (const_cast<Property *>(property)->Setter())
                 sp->has_property_setter = TRUE;
             SetLinkerNames(sp, lk_cdecl);
-            insert(sp, structures_.back()->tp->syms);
+            if (useGlobal())
+                insert(sp, globalNameSpace->syms);
+            else
+                insert(sp, structures_.back()->tp->syms);
         }
     }
     return true;

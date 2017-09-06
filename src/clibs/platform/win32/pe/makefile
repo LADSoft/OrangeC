@@ -45,14 +45,14 @@ c0.o: c0.c
 	$(CC) /I$(STDINCLUDE) /c $(CFLAGS) /s16 -o$(WINOBJECT)\$@F $^
 
 c0pe.o: c0pe.nas
-	$(ASM) $(ASMFLAGS) -o$@F $^
+	$(ASM) $(ASMFLAGS) -o$(SYSOBJECT)\$@F $^
 c0xpe.o: c0xpe.nas
-	$(ASM) $(ASMFLAGS) -o$@F $^
+	$(ASM) $(ASMFLAGS) -o$(SYSOBJECT)\$@F $^
 c0dpe.o: c0dpe.nas
-	$(ASM) $(ASMFLAGS) -o$@F $^
+	$(ASM) $(ASMFLAGS) -o$(SYSOBJECT)\$@F $^
 
 wildargsw.o: wildargsw.c
-	$(CC) /c /I$(STDINCLUDE) $(CFLAGS) -o$@F $^
+	$(CC) /c /I$(STDINCLUDE) $(CFLAGS) -o$(SYSOBJECT)\$@F $^
 
 .\dfstb32.o: dfstb32.nas
 	$(ASM) $(ASMFLAGS) -o$@ $^

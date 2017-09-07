@@ -83,7 +83,7 @@ endif
 	$(ASM) $(ASMFLAGS) $(BUILDING_DLL) -o$(OBJECT)\$@F $^
 
 %.ilo: %.c
-	occil -N$(OCCIL_CLASS) /1 /c $(CILCFLAGS) -I$(STDINCLUDE) /D__MANAGED__ -o$(CILOBJECT)\$@F $^
+	occil -N$(OCCIL_CLASS) /1 /c /WcMn $(CILCFLAGS) -I$(STDINCLUDE) -o$(CILOBJECT)\$@F $^
 
 C_deps = $(notdir $(C_DEPENDENCIES:.c=.o))
 ASM_deps = $(notdir $(ASM_DEPENDENCIES:.nas=.o))

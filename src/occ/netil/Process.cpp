@@ -75,6 +75,7 @@ extern "C" {
     extern char *pinvoke_dll;
     extern NAMESPACEVALUES *globalNameSpace;
     extern BOOLEAN managed_library;
+    extern BOOLEAN no_default_libs;
 
     MethodSignature *argsCtor;
     MethodSignature *argsNextArg;

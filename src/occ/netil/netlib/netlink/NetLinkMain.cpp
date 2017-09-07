@@ -52,6 +52,7 @@ CmdSwitchOutput NetLinkMain::AssemblyName(SwitchParser, 'o', "");
 CmdSwitchString NetLinkMain::AssemblyVersion(SwitchParser, 'v');
 CmdSwitchFile NetLinkMain::File(SwitchParser, '@');
 CmdSwitchBool NetLinkMain::CManaged(SwitchParser, 'M');
+CmdSwitchBool NetLinkMain::NoDefaultlibs(SwitchParser, 'n');
 
 char *NetLinkMain::usageText = "[options] inputfiles\n"
         "\n"
@@ -580,7 +581,7 @@ int NetLinkMain::Run(int argc, char **argv)
     if (File.GetValue())
         files.Add(File.GetValue() + 1);
     peLib = new PELib(GetAssemblyName(files), PELib::bits32); // ilonly set by dotnetpelib 
-    if (CManaged.GetValue())
+    if (CManaged.GetValue() && !NoDefaultlibs.GetValue())
         if (peLib->LoadAssembly("lsmsilcrtl", 0, 0, 0, 0))
         {
             std::cout << "Cannot load assembly lsmsilcrtl";

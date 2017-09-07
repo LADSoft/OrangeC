@@ -49,6 +49,7 @@ extern char msil_bltins[];
 char namespaceAndClass[512];
 char *pinvoke_dll = "msvcrt.dll";
 BOOLEAN managed_library;
+BOOLEAN no_default_libs;
 
 int dbgblocknum;
     #ifndef WIN32
@@ -348,12 +349,20 @@ static int initnasm(COMPILER_PARAMS *parms, ARCH_ASM *data, ARCH_DEBUG *debug)
             defines[4].respect = FALSE;
             pinvoke_dll = "lscrtlil.dll";
         }
+        else if (string[1] == 'm')
+        {
+            defines[1].respect = FALSE;
+            defines[4].respect = TRUE;
+            pinvoke_dll = "msvcrt.dll";
+        }
         else if (string[1] == 'M')
         {
             managed_library = TRUE;
             defines[4].respect = FALSE;
             defines[7].respect = TRUE;
         }
+        if (string[2] == 'n')
+            no_default_libs = TRUE;
     }
 static BOOLEAN validatenamespaceAndClass(char *str)
 {

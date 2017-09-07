@@ -98,6 +98,7 @@ private:
     static CmdSwitchString AssemblyVersion;
     static CmdSwitchFile File;
     static CmdSwitchBool CManaged;
+    static CmdSwitchBool NoDefaultlibs;
 
     static char *usageText;
 };

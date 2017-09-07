@@ -223,14 +223,15 @@ static MethodSignature * FindMethodSignature(char *name)
     fatal("could not find built in method %s", name);
     return NULL;
 }
-static Type *FindType(char *name)
+static Type *FindType(char *name, bool toErr)
 {
     void *result;
     if (peLib->Find(name, &result) == PELib::s_class)
     {
         return peLib->AllocateType(static_cast<Class *>(result));
     }
-    fatal("could not find built in type %s", name);
+    if (toErr)
+        fatal("could not find built in type %s", name);
     return NULL;
 }
 
@@ -298,7 +299,7 @@ MethodSignature *GetMethodSignature(TYPE *tp, bool pinvoke)
     MethodSignature *rv;
     if (sp->storage_class != sc_localstatic && sp->storage_class != sc_constant && sp->storage_class != sc_static)
     {
-        if (sp->linkage2 == lk_msil_rtl)
+        if (sp->linkage2 == lk_msil_rtl && !no_default_libs)
         {            
             char buf[1024];
             void *result;
@@ -750,7 +751,7 @@ Type * GetType(TYPE *tp, BOOLEAN commit, BOOLEAN funcarg, BOOLEAN pinvoke)
         {
             if (tp1->type == bt_va_list)
             {
-                Type *rv = FindType("lsmsilcrtl.args");
+                Type *rv = FindType("lsmsilcrtl.args", TRUE);
                 rv->PointerLevel(level);
                 return rv;
             }
@@ -1318,6 +1319,10 @@ static Field *LookupManagedField(char *name)
     }
     return nullptr;
 }
+static void LoadLibraryIntrinsics()
+{
+
+}
 static void mainInit(void)
 {
     std::string name = "$Main";
@@ -1553,13 +1558,64 @@ static void AddRTLThunks()
 }
 static void CreateExternalCSharpReferences()
 {
+    if (no_default_libs)
+    {
+        // have to create various function signatures if not loading the library
+        Namespace *ns = nullptr;
+        if (peLib->Find("lsmsilcrtl", (void **)&ns, 0) != PELib::s_namespace)
+            fatal("namespace lsmsilcrtl does not exist");
+        Type *argstype = FindType("lsmsilcrtl.args", FALSE);
+        Class *args = nullptr;
+        if (argstype)
+        {
+            args = static_cast<Class *>(argstype->GetClass());
+        }
+        else
+        {
+            args = peLib->AllocateClass("args", Qualifiers::Public, -1, -1);
+            ns->Add(args);
+        }
+        Type *pointertype = FindType("lsmsilcrtl.pointer", FALSE);
+        Class *pointer = nullptr;
+        if (pointertype)
+        {
+            pointer = static_cast<Class *>(pointertype->GetClass());
+        }
+        else
+        {
+            pointer = peLib->AllocateClass("pointer", Qualifiers::Public, -1, -1);
+            ns->Add(pointer);
+        }
+        Type *object = peLib->AllocateType(Type::object, 0);
+        Type *voidPtr = peLib->AllocateType(Type::Void, 1);
+        Type *objectArray = peLib->AllocateType(Type::object, 0);
+        objectArray->ArrayLevel(1);
+        MethodSignature *sig = peLib->AllocateMethodSignature(".ctor", MethodSignature::Managed | MethodSignature::InstanceFlag, args);
+        sig->ReturnType(objectArray);
+        args->Add(peLib->AllocateMethod(sig, Qualifiers::Public));
+        sig = peLib->AllocateMethodSignature("GetNextArg", MethodSignature::Managed | MethodSignature::InstanceFlag, args);
+        sig->ReturnType(object);
+        args->Add(peLib->AllocateMethod(sig, Qualifiers::Public));
+        sig = peLib->AllocateMethodSignature("GetUnmanaged", MethodSignature::Managed | MethodSignature::InstanceFlag, args);
+        sig->ReturnType(voidPtr);
+        args->Add(peLib->AllocateMethod(sig, Qualifiers::Public));
+        sig = peLib->AllocateMethodSignature("box", MethodSignature::Managed | MethodSignature::InstanceFlag, pointer);
+        sig->ReturnType(object);
+        sig->AddParam(peLib->AllocateParam("param", voidPtr));
+        pointer->Add(peLib->AllocateMethod(sig, Qualifiers::Public | Qualifiers::Static));
+        sig = peLib->AllocateMethodSignature("unbox", MethodSignature::Managed | MethodSignature::InstanceFlag, pointer);
+        sig->ReturnType(voidPtr);
+        sig->AddParam(peLib->AllocateParam("param", object));
+        pointer->Add(peLib->AllocateMethod(sig, Qualifiers::Public | Qualifiers::Static));
+    }
+
     argsCtor = FindMethodSignature("lsmsilcrtl.args::.ctor");
     argsNextArg = FindMethodSignature("lsmsilcrtl.args::GetNextArg");
     argsUnmanaged = FindMethodSignature("lsmsilcrtl.args::GetUnmanaged");
     ptrBox = FindMethodSignature("lsmsilcrtl.pointer::box");
     ptrUnbox = FindMethodSignature("lsmsilcrtl.pointer::unbox");
 
-    systemObject = FindType("System.Object");
+    systemObject = FindType("System.Object", TRUE);
 
     Type stringType(Type::string, 0);
     Type objectType(Type::object, 0);
@@ -1657,7 +1713,7 @@ extern "C" BOOLEAN oa_main_preprocess(void)
         {
             fatal("could not load mscorlib.dll");
         }
-        if (peLib->LoadAssembly("lsmsilcrtl"))
+        if (!no_default_libs && peLib->LoadAssembly("lsmsilcrtl"))
         {
             fatal("could not load lsmsilcrtl.dll");
         }

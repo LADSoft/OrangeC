@@ -39,9 +39,7 @@ CC=occ
 CFLAGS = $(C_FLAGS) $(DEFINES)
 CILCFLAGS = $(CIL_C_FLAGS) $(DEFINES)
 
-ifndef OCCIL_CLASS
-OCCIL_CLASS=lsmscrtl.rtl
-endif
+OCCIL_CLASS=lsmsilcrtl.rtl
 
 LINK=olink
 LINKFLAGS= -c+

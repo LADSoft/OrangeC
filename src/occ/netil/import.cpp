@@ -55,7 +55,6 @@ extern "C"
     extern NAMESPACEVALUES *globalNameSpace;
     extern LIST *nameSpaceList;
     extern BOOLEAN managed_library;
-    extern BOOLEAN no_default_libs;
 }
 
 void AddType(SYMBOL *sym, Type *type);
@@ -98,7 +97,7 @@ public:
 #endif
 protected:
     TYPE *TranslateType(Type *);
-    bool useGlobal() const { return managed_library && !no_default_libs && inlsmsilcrtl && structures_.size() == 1; }
+    bool useGlobal() const { return managed_library && inlsmsilcrtl && structures_.size() == 1; }
 private:
     std::deque<SYMBOL *> nameSpaces_;
     std::deque<SYMBOL *> structures_;

@@ -103,6 +103,7 @@ Type * GetStringType(int type);
 Value *GetLocalData(SYMBOL *sp);
 Value *GetParamData(std::string name);
 Value *GetFieldData(SYMBOL *sp);
+MethodSignature *GetMethodSignature(TYPE *tp, bool);
 MethodSignature *GetMethodSignature(SYMBOL *sp);
 void LoadLocals(SYMBOL *sp);
 void LoadParams(SYMBOL *sp);
@@ -268,7 +269,7 @@ Operand *getCallOperand(QUAD *q)
     else
     {
         SYMBOL *sp = ((FUNCTIONCALL *)q->altdata)->sp;
-       sig = GetMethodSignature(sp);
+       sig = GetMethodSignature(sp->tp, FALSE);
         sig->SetName(""); // for calli instruction
     }
     operand = peLib->AllocateOperand(peLib->AllocateMethodName(sig));

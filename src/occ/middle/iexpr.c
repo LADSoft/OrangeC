@@ -2470,8 +2470,10 @@ if (!(chosenAssembler->arch->preferopts & OPT_REVERSEPARAM))
         }
         else
         {
-             ap = tempreg(ISZ_ADDR, 0);
-            ap->retval = TRUE;
+            IMODE *ap1;
+             ap1 = tempreg(ISZ_ADDR, 0);
+            ap1->retval = TRUE;
+            gen_icode(i_assn, ap = tempreg(ISZ_ADDR, 0), ap1, 0);
         }
             
     }

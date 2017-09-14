@@ -74,7 +74,6 @@ extern SYMBOL *enumSyms;
 extern LAMBDA *lambdas;
 extern int currentErrorLine;
 extern int templateNestingCount;
-extern LAMBDA *lambdas;
 extern BOOLEAN functionCanThrow;
 /* lvaule */
 /* handling of const int */
@@ -413,7 +412,17 @@ BOOLEAN castToPointer(TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other)
             {
                 FUNCTIONCALL *params = Alloc(sizeof(FUNCTIONCALL));
                 EXPRESSION *e1;
-                
+                if (isfuncptr(basetype(cst->tp)->btp) && isfuncptr(other))
+                {
+                    TYPE **tpx = &basetype(cst->tp)->btp, **tpy = &other;
+                    while ((*tpx) && (*tpy) && (*tpx)->type != bt_auto)
+                    {
+                        tpx = &(*tpx)->btp;
+                        tpy = &(*tpy)->btp;
+                    }
+                    if (*tpx && *tpy)
+                        *tpx = *tpy;
+                }
                 *exp = DerivedToBase(cst->parentClass->tp, *tp, *exp, 0);
                 params->fcall = varNode(en_pc, cst);
                 params->thisptr = *exp;
@@ -715,7 +724,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
                         funcParams.arguments = funcParams.arguments->next;
                     throwaway = funcParams.arguments->tp;
                     *exp = funcParams.arguments->exp;
-                    if (throwaway && (*tp)->type == bt_auto)
+                    if (throwaway && isautotype(*tp))
                         *tp = throwaway;
                     if ((*exp)->type == en_func)
                     {
@@ -1756,8 +1765,8 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
                 else
                 {
                     exp1 = initializers->arguments->exp;
-                    if ((*tp)->type == bt_auto)
-                        *tp = initializers->arguments->tp;
+                    *tp = assignauto(*tp, initializers->arguments->tp);
+                    UpdateRootTypes(*tp);
                     if (exp1 && val)
                     {
                         EXPRESSION *pval = val;
@@ -2257,4 +2266,50 @@ LEXEME *expression_noexcept(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION *
         needkw(&lex, closepa);
     }
     return lex;
+}
+void ResolveTemplateVariable(TYPE **ttype, EXPRESSION **texpr, TYPE *rtype, TYPE *atype)
+{
+    EXPRESSION *exp = *texpr;
+    BOOLEAN lval = FALSE;
+    if (lvalue(exp))
+    {
+        exp = exp->left;
+        lval = TRUE;
+    }
+    if (exp->type == en_templateparam)
+    {
+        if (exp->v.sp->templateLevel && !exp->v.sp->instantiated)
+        {
+            SYMBOL *sym;
+            TYPE *type;
+            TEMPLATEPARAMLIST *params;
+            if (atype)
+                if (rtype)
+                    if (atype->type > rtype->type)
+                        type = atype;
+                    else
+                        type = rtype;
+                else
+                    type = atype;
+            else
+                type = rtype;
+            params = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+            params->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
+
+            params->p->type = kw_typename;
+            params->p->byClass.dflt = type;
+            sym = GetVariableTemplate(exp->v.sp, params);
+            if (sym)
+            {
+                *texpr = varNode(en_global, sym);
+                *ttype = type;
+                if (lval)
+                     deref(type, texpr);
+            }
+            else
+            {
+                diag("ResolveTemplateVariables no var");
+            }
+        }
+    }
 }

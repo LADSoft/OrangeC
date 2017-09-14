@@ -65,6 +65,7 @@ extern BOOLEAN functionCanThrow;
 extern LINEDATA *linesHead, *linesTail;
 extern BOOLEAN inTemplateType;
 extern STRUCTSYM *structSyms;
+extern char *deprecationText;
 
 LIST *nameSpaceList;
 char anonymousNameSpaceName[512];
@@ -2746,7 +2747,7 @@ static void InsertTag(SYMBOL *sp, enum e_sc storage_class, BOOLEAN allowDups)
     if (!allowDups || !sp1 || (sp != sp1 && sp->mainsym && sp->mainsym != sp1->mainsym))
         insert(sp, table);
 }
-LEXEME *insertUsing(LEXEME *lex, enum e_ac access, enum e_sc storage_class, BOOLEAN hasAttributes)
+LEXEME *insertUsing(LEXEME *lex, SYMBOL **sp_out, enum e_ac access, enum e_sc storage_class, BOOLEAN inTemplate, BOOLEAN hasAttributes)
 {
     SYMBOL *sp;
     if (MATCHKW(lex, kw_namespace))
@@ -2815,14 +2816,29 @@ LEXEME *insertUsing(LEXEME *lex, enum e_ac access, enum e_sc storage_class, BOOL
             error(ERR_NO_ATTRIBUTE_SPECIFIERS_HERE);
         if (!isTypename && ISID(lex))
         {
+            LEXEME *idsym = lex;
             lex = getsym();
             ParseAttributeSpecifiers(&lex, NULL, TRUE);
             if (MATCHKW(lex, assign))
             {
                 TYPE *tp = NULL;
+                SYMBOL *sp;
                 lex = getsym();
                 lex = get_type_id(lex, &tp, NULL, sc_cast, FALSE, TRUE);
-                checkauto(tp);
+                if (!tp)
+                    tp = &stdint;
+                checkauto(tp, ERR_AUTO_NOT_ALLOWED_IN_USING_STATEMENT);
+                sp = makeID(sc_typedef, tp, NULL, litlate(idsym->value.s.a));
+                if (inTemplate)
+                {
+                    sp->templateLevel = templateNestingCount;
+                    sp->templateParams = TemplateGetParams(sp);
+                }
+                if (storage_class == sc_member)
+                    sp->parentClass = getStructureDeclaration();
+                InsertSymbol(sp, storage_class, lk_cdecl, FALSE);
+                if (sp_out)
+                    *sp_out = sp;
                 return lex;
             }
             else
@@ -3013,6 +3029,8 @@ BOOLEAN ParseAttributeSpecifiers(LEXEME **lex, SYMBOL *funcsp, BOOLEAN always)
                                 }
                                 else
                                 {
+                                    if (!strcmp((*lex)->value.s.a, "deprecated"))
+                                        deprecationText = (char *)-1;
                                     *lex = getsym();
                                     if (MATCHKW(*lex, classsel))
                                     {
@@ -3028,7 +3046,22 @@ BOOLEAN ParseAttributeSpecifiers(LEXEME **lex, SYMBOL *funcsp, BOOLEAN always)
                                 if (special)
                                     error(ERR_NO_ATTRIBUTE_ARGUMENT_CLAUSE_HERE);
                                 *lex = getsym();
-                                while (*lex && !MATCHKW(*lex, closepa))
+                                if (deprecationText)
+                                {
+                                    if ((*lex)->type == l_astr)
+                                    {
+                                        char buf[1024]; 
+                                        int i;
+                                        SLCHAR *xx = (SLCHAR *)(*lex)->value.s.w;
+                                        for (i = 0; i < 1024 && i < xx->count; i++)
+                                            buf[i] = (char)xx->str[i];
+                                        buf[i] = 0;
+                                        deprecationText = litlate(buf);
+                                        *lex = getsym();
+                                    }
+                                }
+
+                                else while (*lex && !MATCHKW(*lex, closepa))
                                 {
                                     balancedAttributeParameter(lex);
                                 }

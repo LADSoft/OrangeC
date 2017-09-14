@@ -1379,6 +1379,7 @@ void createDefaultConstructors(SYMBOL *sp)
     SYMBOL *cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(sp->tp)->syms);
     SYMBOL *dest = search(overloadNameTab[CI_DESTRUCTOR], basetype(sp->tp)->syms);
     SYMBOL *asgn = search(overloadNameTab[assign - kw_new + CI_NEW], basetype(sp->tp)->syms);
+    SYMBOL *newcons = NULL;
     if (!dest)
         declareDestructor(sp);
     else
@@ -1390,47 +1391,65 @@ void createDefaultConstructors(SYMBOL *sp)
     }
     else
     {
-        SYMBOL *newcons;
-        // first see if the default constructor could be trivial
-        if (!hasVTab(sp) && sp->vbaseEntries == NULL && !dest)
-        {
-            BASECLASS *base = sp->baseClasses;
-            while (base)
-            {
-                if (!base->cls->trivialCons)
-                    break;
-                base = base->next;
-            }
-            if (!base)
-            {
-                HASHREC *p = basetype(sp->tp)->syms->table[0];
-                while (p)
-                {
-                    SYMBOL *pcls = (SYMBOL *)p->p;
-                    if (pcls->storage_class == sc_member || pcls->storage_class == sc_mutable)
-                    {
-                        if (isstructured(pcls->tp))
-                        {
-                            if (!basetype(pcls->tp)->sp->trivialCons)
-                                break;
-                        }
-                        else if (pcls->init) // brace or equal initializer goes here
-                            break;       
-                    }
-                    p = p->next;
-                }
-                if (!p)
-                {
-                    sp->trivialCons = TRUE;
-                }
-            }
-        }
-        // now create the default constructor
+        // create the default constructor
         newcons = declareConstructor(sp, TRUE, FALSE);
-        newcons->trivialCons = sp->trivialCons;
         cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(sp->tp)->syms);
         conditionallyDeleteDefaultConstructor(cons);
+
     }
+    // see if the default constructor could be trivial
+    if (!hasVTab(sp) && sp->vbaseEntries == NULL && !dest)
+    {
+        BASECLASS *base = sp->baseClasses;
+        while (base)
+        {
+            if (!base->cls->trivialCons || base->accessLevel != ac_public)
+                break;
+            base = base->next;
+        }
+        if (!base)
+        {
+            HASHREC *p = basetype(sp->tp)->syms->table[0];
+            while (p)
+            {
+                SYMBOL *pcls = (SYMBOL *)p->p;
+                if (pcls->storage_class == sc_member || pcls->storage_class == sc_mutable || pcls->storage_class == sc_overloads)
+                {
+                    if (isstructured(pcls->tp))
+                    {
+                        if (!basetype(pcls->tp)->sp->trivialCons)
+                            break;
+                    }
+                    else if (pcls->storage_class == sc_overloads)
+                    {
+                        BOOLEAN err = FALSE;
+                        HASHREC *p = basetype(pcls->tp)->syms->table[0];
+                        while (p && !err)
+                        {
+                            SYMBOL *s = (SYMBOL *)p->p;
+                            if (s->storage_class != sc_static)
+                            {
+                                err |= s->isConstructor && !s->defaulted && !s->deleted;
+                                err |= s->access != ac_public;
+                            }
+                            p = p->next;
+                        }
+                        if (err)
+                            break;
+                    }
+                    else if (pcls->access != ac_public)
+                        break;
+                }
+                p = p->next;
+            }
+            if (!p)
+            {
+                sp->trivialCons = TRUE;
+            }
+        }
+    }
+    if (newcons)
+        newcons->trivialCons = TRUE;
     // now if there is no copy constructor or assignment operator declare them
     if (!hasCopy(cons, FALSE))
     {

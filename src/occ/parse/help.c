@@ -69,6 +69,14 @@ void helpinit()
 {
     anonymousNotAlloc = 0;
 }
+void deprecateMessage(SYMBOL *sp)
+{
+    char buf[1024];
+    my_sprintf(buf, "%s deprecated", sp->name);
+    if (sp->deprecationText && sp->deprecationText != (char *)-1)
+        my_sprintf(buf + strlen(buf), "; %s", sp->deprecationText);
+    errorstr(ERR_WARNING, buf);
+}
 // well this is really only nonstatic data members...
 BOOLEAN ismember(SYMBOL *sym)
 {
@@ -190,6 +198,12 @@ BOOLEAN isDerivedFromTemplate(TYPE *tp)
         tp = tp->btp;
     }
     return FALSE;
+}
+BOOLEAN isautotype(TYPE *tp)
+{
+    if (isref(tp))
+        tp = basetype(tp)->btp;
+    return basetype(tp)->type == bt_auto;
 }
 BOOLEAN isunsigned(TYPE *tp)
 {
@@ -521,6 +535,39 @@ BOOLEAN isunion(TYPE *tp)
     if (tp)
         return tp->type == bt_union;
     return FALSE;
+}
+TYPE *assignauto(TYPE *pat, TYPE *nt)
+{
+    if (isautotype(pat))
+    {
+        if (isref(pat))
+        {
+            if (isref(nt))
+                basetype(pat)->btp = basetype(nt)->btp;
+            else
+                basetype(pat)->btp = nt;
+        }
+        else
+        {
+            if (pat->decltypeauto)
+                if (pat->decltypeautoextended)
+                {
+                    pat = (TYPE *)Alloc(sizeof(TYPE));
+                    pat->type = bt_lref;
+                    pat->size = getSize(bt_pointer);
+                    pat->btp = nt;
+                }
+                else
+                {
+                    pat = nt;
+                }
+            else if (isref(nt))
+                pat = basetype(nt)->btp;
+            else
+                pat = nt;
+        }
+    }
+    return pat;
 }
 SYMBOL *getFunctionSP(TYPE **tp)
 {
@@ -1045,7 +1092,7 @@ void cast(TYPE *tp, EXPRESSION **exp)
         case bt_templateparam:
         case bt_templateselector:
         case bt_templatedecltype:
-            break;
+            return;
         default:
             diag("cast error");
             break;

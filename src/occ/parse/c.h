@@ -118,7 +118,7 @@ enum e_kw
         kw_typeid, kw_typename, kw_explicit, kw_decltype,
         kw_export, kw_static_assert, kw_alignas, kw_alignof, kw_char16_t,
         kw_char32_t, kw_mutable, kw_nullptr, kw_noexcept, kw_thread_local, kw_constexpr,
-        kw_final, kw_override, kw_rangefor, 
+        kw_rangefor, 
     /* Extended */
     kw_atomic_flag_test_set, kw_atomic_flag_clear, kw_atomic_fence, kw_atomic_kill_dependency,
         kw_atomic_load, kw_atomic_store, kw_atomic_modify, kw_atomic_cmpswp, kw_atomic_var_init,
@@ -226,6 +226,7 @@ enum e_bt
         bt_union, bt_func, bt_class, bt_ifunc, bt_any, bt_auto,
         bt_match_none, bt_ellipse, bt_memberptr, bt_cond, bt_va_list, bt_objectArray,
         bt_consplaceholder, bt_templateparam, bt_templateselector, bt_templatedecltype, bt_derivedfromtemplate, bt_string, 
+        bt_templateholder,
         /* last */
         bt_none
 };
@@ -381,6 +382,8 @@ typedef    struct typ
         int enumConst:1; /* is an enumeration constant */
         int lref:1;
         int rref:1;
+        int decltypeauto : 1;
+        int decltypeautoextended : 1;
         char bits; /* -1 for not a bit val, else bit field len */
         char startbit; /* start of bit field */
         struct sym *sp; /* pointer to a symbol which describes the type */
@@ -492,7 +495,7 @@ struct _ccNamespaceData
     int endline;
 };
 #endif
-enum e_cm { cmNone, cmValue, cmRef, cmThis };
+enum e_cm { cmNone, cmValue, cmRef, cmThis, cmExplicitValue };
 /* symbols */
 typedef struct sym
 {
@@ -589,7 +592,6 @@ typedef struct sym
         unsigned internallyGenned : 1; /* constructor declaration was made by the compiler */
         unsigned stackblock : 1; // stacked structure in C++ mode
         unsigned islambda : 1; // lambda closure struct
-        unsigned omitFrame : 1; // true if should omit the frame pointer
         unsigned noinline :1; // don't inline an inline qualified function
         unsigned didinline :1; // already genned an inline func for this symbol
         unsigned hasTry : 1; // function surrounded by try statement
@@ -621,6 +623,8 @@ typedef struct sym
         unsigned va_typeof:1; // MSIL: a va_typeof symbol
         unsigned retemp:1; // retemp has already been performed on this SP
         unsigned has_property_setter : 1; // a property has a setter
+        unsigned nonConstVariableUsed : 1; // a non-const variable was used or assigned to in this function's body
+        char *deprecationText; // C++ declaration was deprecated
         int __func__label; /* label number for the __func__ keyword */
         int ipointerindx; /* pointer index for pointer opts */
     int labelCount; /* number of code labels within a function body */ 
@@ -683,8 +687,6 @@ typedef struct __lambda
 {
     struct __lambda *prev, *next;
     enum e_cm captureMode;
-    BOOLEAN isMutable;
-    BOOLEAN captureThis;
     HASHTABLE *captured;
     SYMBOL *cls;
     SYMBOL *func;
@@ -696,6 +698,9 @@ typedef struct __lambda
     HASHTABLE *oldTags;
     TYPE *rv;
     int index;
+    int isMutable : 1;
+    int captureThis : 1;
+    int templateFunctions : 1;
 } LAMBDA;
 
 typedef struct __lambdasp

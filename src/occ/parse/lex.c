@@ -283,7 +283,6 @@ KEYWORD keywords[] = {
     { "extern", 6,  kw_extern, KW_ASSEMBLER, TT_STORAGE_CLASS },
     { "false", 5, kw_false, KW_CPLUSPLUS, TT_VAR },
 //	{ "far", 3,  kw__far, KW_NONANSI | KW_ALL, TT_POINTERQUAL | TT_TYPEQUAL},
-    { "final", 5, kw_final, KW_CPLUSPLUS, 0 },
     { "float", 5,  kw_float, 0, TT_BASETYPE | TT_FLOAT },
     { "for", 3,  kw_for, 0, TT_CONTROL },
     { "friend", 6,  kw_friend, KW_CPLUSPLUS, TT_DECLARE },
@@ -304,7 +303,6 @@ KEYWORD keywords[] = {
     { "operator", 8,  kw_operator, KW_CPLUSPLUS, TT_OPERATOR },
     { "or", 2,  lor, KW_CPLUSPLUS, TT_BINARY | TT_OPERATOR },
     { "or_eq", 5,  asor, KW_CPLUSPLUS, TT_ASSIGN | TT_OPERATOR },
-    { "override", 8, kw_override, KW_CPLUSPLUS, 0 },
     { "private", 7,  kw_private, KW_CPLUSPLUS, TT_CLASS },
     { "protected", 9,  kw_protected, KW_CPLUSPLUS, TT_CLASS },
     { "public", 6,  kw_public, KW_CPLUSPLUS | KW_ASSEMBLER, TT_CLASS },
@@ -951,17 +949,25 @@ int getNumber(unsigned char **ptr, unsigned char **end, unsigned char *suffix, F
             (*ptr)++;
             radix = 16;
         }
+        else if ((cparams.prm_cplusplus || !cparams.prm_ansi) &&( **ptr == 'b' || **ptr == 'B'))
+        {
+            (*ptr)++;
+            radix = 2;
+        }
         else
+        {
             radix = 8;
+        }
     }
     else if (cparams.prm_assemble && **ptr == '$')
     {
         radix = 16;
         (*ptr)++;
     }
-    while (radix36(**ptr) < radix || (cparams.prm_assemble && radix36(**ptr) < 16))
+    while (cparams.prm_cplusplus && **ptr == '\'' || radix36(**ptr) < radix || (cparams.prm_assemble && radix36(**ptr) < 16))
     {
-        *p++ = **ptr;
+        if (**ptr != '\'')
+            *p++ = **ptr;
         (*ptr)++;
     }
     if (**ptr == '.')

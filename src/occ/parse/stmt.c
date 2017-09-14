@@ -55,10 +55,11 @@ extern TYPE stdpointer;
 extern char *overloadNameTab[];
 extern LEXCONTEXT *context;
 extern TYPE stdXC;
-extern TYPE std__string;
+extern TYPE std__string, stdbool;
 extern int currentErrorLine;
 extern int total_errors;
-extern LAMBDA *lambdas;
+
+extern int templateNestingCount;
 
 int funcNesting;
 
@@ -73,6 +74,7 @@ BOOLEAN functionCanThrow;
 
 LINEDATA *linesHead, *linesTail;
 
+static int matchReturnTypes;
 static int endline;
 
 static LEXEME *autodeclare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, 
@@ -92,6 +94,7 @@ void statement_ini(BOOLEAN global)
     functionCanThrow = FALSE;
     funcNesting = 0;
     caseDestructBlock = NULL;
+    matchReturnTypes = FALSE;
 }
 void InsertLineData(int lineno, int fileindex, char *fname, char *line)
 {
@@ -241,9 +244,10 @@ static LEXEME *selection_expression(LEXEME *lex, BLOCKDATA *parent, EXPRESSION *
         
     if (cparams.prm_cplusplus && tp && isstructured(tp) && kw != kw_for && kw != kw_rangefor)
     {
-        if (!castToArithmeticInternal(FALSE, &tp, exp, (enum e_kw)-1, &stdint, TRUE))
-            if (!castToPointer(&tp, exp, (enum e_kw)-1, &stdpointer))
-                errortype(ERR_CANNOT_CONVERT_TYPE, tp, &stdint);
+        if (!castToArithmeticInternal(FALSE, &tp, exp, (enum e_kw) - 1, &stdbool, FALSE))
+            if (!castToArithmeticInternal(FALSE, &tp, exp, (enum e_kw)-1, &stdint, FALSE))
+                if (!castToPointer(&tp, exp, (enum e_kw)-1, &stdpointer))
+                    errortype(ERR_CANNOT_CONVERT_TYPE, tp, &stdint);
 
     }
     if (!tp)
@@ -1048,8 +1052,8 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                 tp = &(*tp)->btp;
                             while (isconst(*tp) || isvolatile(*tp))
                                 tp = &(*tp)->btp;
-                            if ((*tp)->type == bt_auto && basetype(selectTP)->btp)
-                                (*tp) = basetype(selectTP)->btp;
+                            *tp = assignauto(*tp, basetype(selectTP)->btp);
+                            UpdateRootTypes(declSP->tp);
                             if (isarray(selectTP) && !comparetypes(declSP->tp, basetype(selectTP)->btp, TRUE))
                             {
                                 error(ERR_OPERATOR_STAR_FORRANGE_WRONG_TYPE);
@@ -1089,8 +1093,8 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                     tp = &(*tp)->btp;
                                 while (isconst(*tp) || isvolatile(*tp))
                                     tp = &(*tp)->btp;
-                                if ((*tp)->type == bt_auto && basetype(iteratorType)->btp)
-                                    (*tp) = basetype(iteratorType)->btp;
+                                *tp = assignauto(*tp, basetype(iteratorType)->btp);
+                                UpdateRootTypes(declSP->tp);
                                 if (!comparetypes(declSP->tp, basetype(iteratorType)->btp, TRUE))
                                 {
                                     error(ERR_OPERATOR_STAR_FORRANGE_WRONG_TYPE);
@@ -1135,13 +1139,11 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                 }
                                 while (isconst(*tp) || isvolatile(*tp))
                                     tp = &(*tp)->btp;
-                                if ((*tp)->type == bt_auto && starType)
-                                {
-                                    (*tp) = starType;
-                                    UpdateRootTypes(declSP->tp);
-                                }
+                                *tp = assignauto(*tp, starType);
+                                UpdateRootTypes(declSP->tp);
                                 if (!comparetypes(declSP->tp, starType, TRUE))
                                 {
+                                    comparetypes(declSP->tp, starType, TRUE);
                                     error(ERR_OPERATOR_STAR_FORRANGE_WRONG_TYPE);
                                 }
                                 else if (!isstructured(declSP->tp))
@@ -1614,6 +1616,8 @@ static LEXEME *statement_goto(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         errskim(&lex, skim_semi);
         skip(&lex, semicolon);
     }
+    if (funcsp->constexpression)
+        error(ERR_CONSTEXPR_FUNC_NO_GOTO);
     return lex;
 }
 static LEXEME *statement_label(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
@@ -1757,6 +1761,32 @@ static SYMBOL *baseNode(EXPRESSION *node)
             return 0;
     }
 }
+static void MatchReturnTypes(SYMBOL *funcsp, TYPE *tp1, TYPE *tp2)
+{
+    if (matchReturnTypes)
+    {
+        BOOLEAN err = FALSE;
+        if (isref(tp1))
+            tp1 = basetype(tp1)->btp;
+        if (isref(tp2))
+            tp2 = basetype(tp2)->btp;
+        while (tp1 && tp2 && !err)
+        {
+            //if (isconst(tp1) != isconst(tp2) || isvolatile(tp1) != isvolatile(tp2))
+            //    err = TRUE;
+            tp1 = basetype(tp1);
+            tp2 = basetype(tp2);
+            if (tp1->type != tp2->type)
+                err = TRUE;
+            tp1 = tp1->btp;
+            tp2 = tp2->btp;
+        }
+        if (tp1 || tp2 || err)
+        {
+            errorsym(ERR_RETURN_TYPE_MISMATCH_FOR_AUTO_FUNCTION, funcsp);
+        }
+    }
+}
 static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
 {
     STATEMENT *st;
@@ -1781,26 +1811,20 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     else
     {   
         tp = basetype(funcsp->tp)->btp;
-        if (tp->type == bt_auto && lambdas)
+        
+        if (isautotype(tp))
         {
-            LEXEME *placeholder = lex;
-            TYPE *tp1 = NULL;
+            TYPE *tp1;
             EXPRESSION *exp1;
-            lex = expression_no_check(lex, funcsp, NULL, &tp1, &exp1, _F_TYPETEST);
-            lex = prevsym(placeholder);
-            if (tp1)
-            {
-                tp = tp1;
-                if (lambdas->functp->type == bt_auto)
-                {
-                    lambdas->functp = tp1;
-                }
-                else
-                {
-                    if (!comparetypes(lambdas->functp, tp1, TRUE) && !sameTemplate(lambdas->functp, tp1))
-                        errortype(ERR_MISMATCHED_INFERRED_LAMBDA_TYPES, lambdas->functp, tp1);
-                }
-            }
+            LEXEME *current = lex;
+            lex = expression(lex, funcsp, NULL, &tp1, &exp1, 0);
+            lex = prevsym(current);
+            while (tp1->type == bt_typedef)
+                tp1 = tp1->btp;
+            basetype(funcsp->tp)->btp = tp = assignauto(basetype(funcsp->tp)->btp, tp1);
+            UpdateRootTypes(funcsp->tp);
+            SetLinkerNames(funcsp, funcsp->linkage);
+            matchReturnTypes = TRUE;
         }
         if (isstructured(tp) || basetype(tp)->type == bt_memberptr)
         {
@@ -1847,6 +1871,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                     EXPRESSION *exp1 = NULL, *exp2, *exp3 = NULL;
                     TYPE *tp1 = NULL;
                     lex = expression_no_comma(lex, funcsp, NULL, &tp1, &exp1, NULL, 0);
+                    MatchReturnTypes(funcsp, tp, tp1);
                     if (tp1 && isstructured(tp1))
                     {
                         if (basetype(tp1)->sp->templateLevel && basetype(tp1)->sp->templateParams && !basetype(tp1)->sp->instantiated)
@@ -1925,6 +1950,8 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 {
                     error(ERR_EXPRESSION_SYNTAX);
                 }
+                else
+                    MatchReturnTypes(funcsp, tp, tp1);
                 if (!comparetypes(tp, tp1, TRUE))
                 {
                     errortype(ERR_CANNOT_CONVERT_TYPE, tp1, tp);
@@ -1979,6 +2006,8 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 tp1 = &stdint;
                 error(ERR_EXPRESSION_SYNTAX);
             }
+            else
+                MatchReturnTypes(funcsp, tp, tp1);
             if (basetype(tp)->type == bt___string)
             {
                 if (returnexp->type == en_labcon)
@@ -2017,8 +2046,6 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 returntype = tp = tp1;
             else
             {
-//                if (!comparetypes(tp, tp1, TRUE))
-//                    errortype(ERR_CANNOT_CONVERT_TYPE, tp1, tp);
                 returntype = tp;
             }
             if (returnexp->type == en_func)
@@ -2063,8 +2090,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     st->select = returnexp;
     st->destexp = destexp;
     thunkCatchCleanup(st, funcsp, parent, NULL); // to top level
-    // for infering the return type of lambda functions
-    if (returnexp && returntype && returntype->type != bt_auto)
+    if (returnexp && returntype && !isautotype(returntype) && !matchReturnTypes)
     {
         if (!tp) // some error...
             tp = &stdint;
@@ -2352,6 +2378,8 @@ static void checkNoEffect(EXPRESSION *exp)
             case en_atomic:
             case en_voidnz:
             case en_void:
+            case en__initblk:
+            case en__cpblk:
                 break;                
             case en_not_lvalue:
             case en_lvalue:
@@ -2854,7 +2882,7 @@ static LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent,
             lex = statement_return(lex, funcsp, parent);
             if (cparams.prm_cplusplus)
                 HandleEndOfCase(parent);
-            break;
+             break;
         case semicolon:
             break;
         case kw_asm:
@@ -2873,7 +2901,7 @@ static LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent,
                     AllocateLocalContext(parent, funcsp, codeLabel++);
                 }
                 while ((startOfType(lex, FALSE) && (!cparams.prm_cplusplus && !chosenAssembler->msil || resolveToDeclaration(lex)))
-                    || MATCHKW(lex, kw_namespace) || MATCHKW(lex, kw_using) || MATCHKW(lex, kw_static_assert))
+                    || MATCHKW(lex, kw_namespace) || MATCHKW(lex, kw_using) || MATCHKW(lex, kw_decltype) || MATCHKW(lex, kw_static_assert))
                 {
                     STATEMENT *current = parent->tail;
                     declareAndInitialize = FALSE;
@@ -3439,6 +3467,7 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     STATEMENT *startStmt;
     SYMBOL *spt = funcsp;
     int oldCodeLabel = codeLabel;
+    int oldMatchReturnTypes = matchReturnTypes;
     funcNesting++;
     functionCanThrow = FALSE;
     codeLabel = INT_MIN;
@@ -3465,6 +3494,13 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     lex = compound(lex, funcsp, block, TRUE);
     checkUnlabeledReferences(block);
     checkGotoPastVLA(block->head, TRUE);
+    if (isautotype(basetype(funcsp->tp)->btp) && !templateNestingCount)
+        basetype(funcsp->tp)->btp = &stdvoid; // return value for auto function without return statements
+    if (cparams.prm_cplusplus)
+        if (!funcsp->constexpression)
+            funcsp->nonConstVariableUsed = TRUE;
+        else
+            funcsp->nonConstVariableUsed |= !MatchesConstFunction(funcsp);
     funcsp->labelCount = codeLabel - INT_MIN;
     n1 = codeLabel;
     if (!funcsp->templateLevel || funcsp->instantiated || funcsp->instantiated2)
@@ -3535,6 +3571,7 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     labelSyms = oldLabelSyms;
     codeLabel = oldCodeLabel;
     functionCanThrow = oldFunctionCanThrow;
+    matchReturnTypes = oldMatchReturnTypes;
     funcNesting--;
     return lex;
 }

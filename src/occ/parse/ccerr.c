@@ -306,7 +306,7 @@ static struct {
 {"'main' may not be declared as static", ERROR },
 {"'main' may not be declared as constexpr", ERROR },
 {"constexpr expression is not const", ERROR },
-{"constexpr function does not evaluate to const", ERROR },
+{"constexpr function '%s' does not evaluate to const", ERROR },
 {"constexpr declaration requires initializer or function body", ERROR },
 {"Variable style constexpr declaration needs simple type", ERROR },
 {"Function returning reference must return a value", ERROR },
@@ -488,7 +488,7 @@ static struct {
 {"Missing default values in template declaration after '%s'", ERROR },
 {"Redefinition of default value for '%s' in template redeclaration", ERROR },
 {"'Template' template parameter must name a class", ERROR },
-{"Templates must be classes or functions", ERROR },
+{"Templates must be classes, functions or data", ERROR },
 {"Cannot partially specialize a function template", ERROR },
 {"Partial specialization missing parameter from template header", ERROR },
 {"Specialization of '%s' cannot be declared before primary template", ERROR },
@@ -552,7 +552,14 @@ static struct {
 { "Cannot modify property '%s' because there is no setter", ERROR },
 { "Cannot take address of property '%s'", ERROR },
 { "__entrypoint cannot be used on non-function '%s'", ERROR },
-
+{ "Mismatched return types for function '%s' with auto return type", ERROR },
+{ "Function '%s' with auto return type not fully defined yet", ERROR },
+{ "Cannot use referenced auto as decltype argument", ERROR },
+{ "constexpr function uses goto statement", ERROR },
+{ "%s", WARNING },
+{ "'auto' not allowed in 'using =' declaration", ERROR },
+{ "'auto' not allowed in parameter declaration", ERROR },
+{ "'auto' not allowed as a conversion function type", ERROR },
 #endif
 } ;
 
@@ -705,7 +712,7 @@ BOOLEAN printerrinternal(int err, char *file, int line, va_list args)
         || (cparams.prm_cplusplus && (errors[err].level & CPLUSPLUSERROR)))
     {
         if (!cparams.prm_quiet)
-            printf("Error   ");
+            printf("Error(%3d)   ", err);
 #ifndef CPREPROCESSOR
         if (cparams.prm_errfile)
             fprintf(errFile, "Error   ");
@@ -723,7 +730,7 @@ BOOLEAN printerrinternal(int err, char *file, int line, va_list args)
             if (!cparams.prm_extwarning)
                 return FALSE;
         if (!cparams.prm_quiet)
-            printf("Warning ");
+            printf("Warning(%3d) ", err);
 #ifndef CPREPROCESSOR
         if (cparams.prm_errfile)
             fprintf(errFile, "Warning ");
@@ -1508,7 +1515,7 @@ void findUnusedStatics(NAMESPACEVALUES *nameSpace)
                         if (sp->storage_class == sc_global || sp->storage_class == sc_static
                             || sp->storage_class == sc_localstatic)
                             /* void will be caught earlier */
-                            if (!isfunction(sp->tp) && !isarray(sp->tp) && sp->tp->size == 0 && !isvoid(sp->tp) && sp->tp->type != bt_any)
+                            if (!isfunction(sp->tp) && !isarray(sp->tp) && sp->tp->size == 0 && !isvoid(sp->tp) && sp->tp->type != bt_any && !sp->templateLevel)
                                 errorsym(ERR_UNSIZED, sp);
                     }
                 }

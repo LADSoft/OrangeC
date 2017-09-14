@@ -668,6 +668,8 @@ int dumpInit(SYMBOL *sp, INITIALIZER *init)
     int rv;
     LLONG_TYPE i;
     FPF f, im;
+    if (tp->type == bt_templateparam)
+        tp = tp->templateParam->p->byClass.val;
     if (isstructured(tp))
     {
         rv = tp->size + tp->sp->structAlign;
@@ -939,7 +941,7 @@ BOOLEAN IsConstWithArr(TYPE *tp)
     }
     return isconst(tp);
 }
-static void dumpInitGroup(SYMBOL *sp, TYPE *tp)
+void dumpInitGroup(SYMBOL *sp, TYPE *tp)
 {
 #ifndef PARSER_ONLY
 
@@ -1221,6 +1223,8 @@ static LEXEME *initialize_bool_type(LEXEME *lex, SYMBOL *funcsp, int offset,
         }
         else
         {
+            ResolveTemplateVariable(&tp, &exp, itype, NULL);
+            castToArithmetic(FALSE, &tp, &exp, (enum e_kw) - 1, itype, TRUE);
             if (sc != sc_auto && sc != sc_register && !cparams.prm_cplusplus)
             {
                 if (isstructured(tp))
@@ -1273,6 +1277,7 @@ static LEXEME *initialize_arithmetic_type(LEXEME *lex, SYMBOL *funcsp, int offse
         }
         else
         {
+            ResolveTemplateVariable(&tp, &exp, itype, NULL);
             if (itype->type != bt_templateparam && !templateNestingCount)
             {
                 EXPRESSION **exp2;
@@ -1397,12 +1402,17 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
             {
                 error(ERR_EXPRESSION_SYNTAX);
             }
+            else
+            {
+                ResolveTemplateVariable(&tp, &exp, itype, NULL);
+            }
         }
         else
         {
             lex = initialize_string(lex, funcsp, &tp, &exp);
         }
-        
+        castToPointer(&tp, &exp, (enum e_kw)-1, itype);
+
         if (sc != sc_auto && sc != sc_register)
         {
             if (!isarithmeticconst(exp) && !isconstaddress(exp) && !cparams.prm_cplusplus)
@@ -1510,6 +1520,7 @@ static LEXEME *initialize_memberptr(LEXEME *lex, SYMBOL *funcsp, int offset,
     else
     {
         lex = init_expression(lex, funcsp, NULL, &tp, &exp, FALSE);
+        ResolveTemplateVariable(&tp, &exp, itype, NULL);
         if (!isconstzero(tp, exp) && exp->type != en_nullptr)
         {
             EXPRESSION **exp2;
@@ -1744,7 +1755,7 @@ static EXPRESSION *ConvertInitToRef(EXPRESSION *exp, TYPE *tp, TYPE*boundTP, enu
     }
     return exp;
 }
-static LEXEME *initialize_reference_type(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc, TYPE *itype, INITIALIZER **init, int flags)
+static LEXEME *initialize_reference_type(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc, TYPE *itype, INITIALIZER **init, int flags, SYMBOL *sp)
 {
     TYPE *tp;
     EXPRESSION *exp;
@@ -1766,6 +1777,11 @@ static LEXEME *initialize_reference_type(LEXEME *lex, SYMBOL *funcsp, int offset
         error(ERR_EXPRESSION_SYNTAX);
     if (tp)
     {
+        ResolveTemplateVariable(&tp, &exp, basetype(itype)->btp, NULL);
+        basetype(itype)->btp = assignauto(basetype(itype)->btp, tp);
+        basetype(sp->tp)->btp = assignauto(basetype(sp->tp)->btp, tp);
+        UpdateRootTypes(itype);
+        UpdateRootTypes(sp->tp);
         if (!isref(tp) && ((isconst(tp) && !isconst(basetype(itype)->btp)) || (isvolatile(tp) && !isvolatile(basetype(itype)->btp))))
             error(ERR_REF_INITIALIZATION_DISCARDS_QUALIFIERS);
         else if (basetype(basetype(itype)->btp)->type == bt_memberptr)
@@ -1904,12 +1920,15 @@ static LEXEME *initialize_reference_type(LEXEME *lex, SYMBOL *funcsp, int offset
 typedef struct _aggregate_descriptor {
     struct _aggregate_descriptor *next;
     int stopgap : 1;
+    int inbase : 1;
     int offset ;
     int reloffset;
     int max;
     HASHREC *hr;
     TYPE *tp;
+    BASECLASS *currentBase;
 } AGGREGATE_DESCRIPTOR ;
+static void increment_desc(AGGREGATE_DESCRIPTOR **desc, AGGREGATE_DESCRIPTOR **cache);
 
 static void free_desc(AGGREGATE_DESCRIPTOR **descin, AGGREGATE_DESCRIPTOR **cache)
 {
@@ -1928,11 +1947,41 @@ static void free_desc(AGGREGATE_DESCRIPTOR **descin, AGGREGATE_DESCRIPTOR **cach
         *cache = temp;
     }
 }
-static void unwrap_desc(AGGREGATE_DESCRIPTOR **descin, AGGREGATE_DESCRIPTOR **cache)
+static void unwrap_desc(AGGREGATE_DESCRIPTOR **descin, AGGREGATE_DESCRIPTOR **cache, INITIALIZER **dest)
 {
-    while (*descin && !(*descin)->stopgap)
+    if (!cparams.prm_cplusplus)
+        dest = NULL;
+    while (*descin && (!(*descin)->stopgap || dest && (*descin)->hr))
     {
-        free_desc(descin, cache);
+        // this won't work with the declarator syntax in C++20
+        if (cparams.prm_cplusplus && dest)
+        {
+            SYMBOL *sym = ((SYMBOL *)((*descin)->hr->p));
+            if (sym->init)
+            {
+                INITIALIZER *list = sym->init;
+                while (list)
+                {
+                    if (list->basetp && list->exp)
+                    {
+                        SYMBOL *fieldsp;
+                        initInsert(dest, list->basetp, list->exp, list->offset + (*descin)->offset + (*descin)->reloffset, FALSE);
+                        if (ismember(sym))
+                        {
+                            (*dest)->fieldsp = sym;
+                            (*dest)->fieldoffs = (*descin)->offset;
+                        }
+                        dest = &(*dest)->next;
+                    }
+                    list = list->next;
+                }
+            }
+            increment_desc(descin, cache);
+        }
+        else
+        {
+            free_desc(descin, cache);
+        }
     }
 }
 static void allocate_desc(TYPE *tp, int offset,
@@ -1957,11 +2006,21 @@ static void allocate_desc(TYPE *tp, int offset,
         desc->offset = offset;
     }
     desc->reloffset = 0;
-    if (isstructured(tp))
-        desc->hr = basetype(tp)->syms->table[0];
     desc->next = *descin;
     desc->stopgap = FALSE;
     *descin = desc;
+    if (isstructured(tp))
+    {
+        BASECLASS *bc = basetype(tp)->sp->baseClasses;
+        desc->hr = basetype(tp)->syms->table[0];
+        if (bc)
+        {
+            desc->currentBase = bc;
+            desc->inbase = TRUE;
+            tp = bc->cls->tp;
+            allocate_desc(tp, offset + bc->offset, descin, cache);
+        }
+    }
 }	
 static enum e_bt str_candidate(LEXEME *lex, TYPE *tp)
 {
@@ -1984,7 +2043,7 @@ static BOOLEAN designator(LEXEME **lex, SYMBOL *funcsp, AGGREGATE_DESCRIPTOR **d
     if (MATCHKW(*lex, openbr) || MATCHKW(*lex, dot))
     {
         BOOLEAN done = FALSE;
-        unwrap_desc(desc, cache);
+        unwrap_desc(desc, cache, NULL);
         (*desc)->reloffset = 0;
         while (!done && (MATCHKW(*lex, openbr) || MATCHKW(*lex, dot)))
         {
@@ -2077,26 +2136,44 @@ static BOOLEAN atend(AGGREGATE_DESCRIPTOR *desc)
 }
 static void increment_desc(AGGREGATE_DESCRIPTOR **desc, AGGREGATE_DESCRIPTOR **cache)
 {
-    while (1)
+    while (*desc)
     {
         if (isstructured((*desc)->tp))
         {
-            int offset = (*desc)->reloffset;
+            int offset = (*desc)->reloffset + (*desc)->offset;
             if (isunion((*desc)->tp))
                 (*desc)->hr = NULL;
             else while (TRUE)
             {
                 (*desc)->hr = (*desc)->hr->next;
                 if (!(*desc)->hr)
-                    break;
-                if (((SYMBOL *)((*desc)->hr->p))->tp->hasbits)
                 {
-                    if (!((SYMBOL *)((*desc)->hr->p))->anonymous)
+                    if ((*desc)->next && (*desc)->next->inbase)
+                    {
+                        free_desc(desc, cache);
+                        (*desc)->currentBase = (*desc)->currentBase->next;
+                        if ((*desc)->currentBase)
+                        {
+                            allocate_desc((*desc)->currentBase->cls->tp, (*desc)->offset + (*desc)->currentBase->offset, desc, cache);
+                        }
+                        offset = -1;
+                    }
+                    else
+                    {
                         break;
+                    }
                 }
-                else if (((SYMBOL *)((*desc)->hr->p))->offset != offset)
+                if (((SYMBOL *)((*desc)->hr->p))->storage_class != sc_overloads)
                 {
-                    break;
+                    if (((SYMBOL *)((*desc)->hr->p))->tp->hasbits)
+                    {
+                        if (!((SYMBOL *)((*desc)->hr->p))->anonymous)
+                            break;
+                    }
+                    else if (((SYMBOL *)((*desc)->hr->p))->offset + (*desc)->offset != offset)
+                    {
+                        break;
+                    }
                 }
             }
             if ((*desc)->hr)
@@ -2488,8 +2565,6 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
     EXPRESSION *baseexp = NULL;
     if ((cparams.prm_cplusplus || chosenAssembler->msil) && isstructured(itype))
         baseexp = exprNode(en_add, getThisNode(base), intNode(en_c_i, offset));
-    allocate_desc(itype, offset, &desc, &cache);
-    desc->stopgap = TRUE;
 
     if (MATCHKW(lex, assign))
     {
@@ -2520,7 +2595,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                     TYPE *tp1 = NULL;
                     EXPRESSION *exp1;
                     lex = init_expression(lex, funcsp, NULL, &tp1, &exp1, FALSE);
-                    if (tp1->type == bt_auto)
+                    if (isautotype(tp1))
                         tp1 = itype;
                     if (!tp1 || !comparetypes(basetype(tp1), basetype(itype), TRUE))
                     {
@@ -2710,10 +2785,16 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
     {
         // empty braces
         lex = getsym();
-        initInsert(init, NULL, NULL, itype->size, FALSE);
+        allocate_desc(itype, offset, &desc, &cache);
+        desc->stopgap = TRUE;
+        unwrap_desc(&desc, &cache, next);
+        free_desc(&desc, &cache);
+        *init = data = sort_aggregate_initializers(data);
     }
     else
     {
+        allocate_desc(itype, offset, &desc, &cache);
+        desc->stopgap = TRUE;
         while (lex)
         {
             BOOLEAN gotcomma = FALSE;
@@ -2721,23 +2802,30 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
             c99 |= designator(&lex, funcsp, &desc, &cache);
             tp2 = nexttp(desc);
             
-            while (tp2 && (isarray(tp2) || (isstructured(tp2) && (!cparams.prm_cplusplus || basetype(tp2)->sp->trivialCons))))
+            while (tp2 && (tp2->type == bt_aggregate || isarray(tp2) || (isstructured(tp2) && (!cparams.prm_cplusplus || basetype(tp2)->sp->trivialCons))))
             {
-                if (MATCHKW(lex, begin))
+                if (tp2->type == bt_aggregate)
                 {
-                    lex = getsym();
-                    allocate_desc(tp2, desc->offset + desc->reloffset, 
-                              &desc, &cache);
-                    desc->stopgap = TRUE;
-                    c99 |= designator(&lex, funcsp, &desc, &cache);
+                    increment_desc(&desc, &cache);
                 }
                 else
                 {
-                    if (!atend(desc))
-                        allocate_desc(tp2, desc->offset + desc->reloffset, 
-                                  &desc, &cache);
+                    if (MATCHKW(lex, begin))
+                    {
+                        lex = getsym();
+                        allocate_desc(tp2, desc->offset + desc->reloffset,
+                            &desc, &cache);
+                        desc->stopgap = TRUE;
+                        c99 |= designator(&lex, funcsp, &desc, &cache);
+                    }
                     else
-                        break;
+                    {
+                        if (!atend(desc))
+                            allocate_desc(tp2, desc->offset + desc->reloffset,
+                                &desc, &cache);
+                        else
+                            break;
+                    }
                 }
                 tp2 = nexttp(desc);
             }
@@ -2781,8 +2869,9 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                 {
                     gotcomma = FALSE;
                     lex = getsym();
-                    unwrap_desc(&desc, &cache);
+                    unwrap_desc(&desc, &cache, next);
                     free_desc(&desc, &cache);
+
                     if (!desc)
                     {
                         if (!needend)
@@ -2810,7 +2899,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
             error(ERR_TOO_MANY_INITIALIZERS);
         if (desc)
         {
-            unwrap_desc(&desc, &cache);
+            unwrap_desc(&desc, &cache, next);
             if (needend || desc->next)
             {
                 error(ERR_DECLARE_SYNTAX);
@@ -2820,7 +2909,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
         /* theoretically desc will be NULL if there are no errors */
         while (desc)
         {
-            unwrap_desc(&desc, &cache);
+            unwrap_desc(&desc, &cache, next);
             free_desc(&desc, &cache);
         }
         set_array_sizes(cache);
@@ -3150,7 +3239,7 @@ LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc,
             return initialize_arithmetic_type(lex, funcsp, offset, sc, tp, init);
         case bt_lref:
         case bt_rref:
-            return initialize_reference_type(lex, funcsp, offset, sc, tp, init, flags);
+            return initialize_reference_type(lex, funcsp, offset, sc, tp, init, flags, sp);
         case bt_pointer:
             if (tp->array)
             {
@@ -3448,6 +3537,86 @@ static BOOLEAN hasData(TYPE *tp)
     }
     return FALSE;
 }
+BOOLEAN InitVariableMatches(SYMBOL *left, SYMBOL *right)
+{
+    while (left && right)
+    {
+        if (strcmp(left->name, right->name))
+            break;
+        left = left->parentClass;
+        right = right->parentClass;
+    }
+
+    return (!left && !right);
+}
+void RecalculateVariableTemplateInitializers(INITIALIZER **in, INITIALIZER ***out, TYPE *tp, int offset)
+{
+    if (isstructured(tp))
+    {
+        int bcoffset = offset;
+        SYMBOL *sym;
+        BASECLASS *base = basetype(tp)->sp->baseClasses;
+        AGGREGATE_DESCRIPTOR *desc = NULL, *cache = NULL;
+        allocate_desc(tp, offset, &desc, &cache);
+        while (base)
+        {
+            RecalculateVariableTemplateInitializers(in, out, base->cls->tp, bcoffset);
+            bcoffset += base->cls->tp->size;
+        }
+        while (desc)
+        {
+            sym = (SYMBOL *)desc->hr->p;
+            if (ismember(sym))
+            {
+                if (InitVariableMatches(sym, (*in)->fieldsp))
+                    RecalculateVariableTemplateInitializers(in, out, sym->tp, offset + sym->offset);
+            }
+            increment_desc(&desc, &cache);
+        }
+        if ((*in)->basetp == 0)
+        {
+            **out = (INITIALIZER *)Alloc(sizeof(INITIALIZER));
+            ***out = **in;
+            (**out)->offset = tp->size;
+            *out = &(**out)->next;
+        }
+    }
+    else if (isarray(tp))
+    {
+        if (tp->size)
+        {
+            int i;
+            int n = tp->size / tp->btp->size;
+            TYPE *base = basetype(basetype(tp)->btp);
+            for (i = 0; i < n; i++)
+                if (!(*in)->basetp)
+                {
+                    break;
+                }
+                else
+                {
+                    RecalculateVariableTemplateInitializers(in, out, base, offset);
+                    offset += tp->btp->size;
+                }
+        }
+        if ((*in)->basetp == 0)
+        {
+            **out = (INITIALIZER *)Alloc(sizeof(INITIALIZER));
+            ***out = **in;
+            (**out)->offset = tp->size;
+            *out = &(**out)->next;
+        }
+    }
+    else
+    {
+        **out = (INITIALIZER *)Alloc(sizeof(INITIALIZER));
+        ***out = **in;
+        *in = (*in)->next;
+        (**out)->basetp = tp;
+        (**out)->offset = offset;
+        (*out) = &(**out)->next;
+    }
+}
 LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_class_in, BOOLEAN asExpression, int flags)
 {
     TYPE *tp;
@@ -3534,7 +3703,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
         }
         else
         {
-            if (sp->tp->type == bt_auto && MATCHKW(lex, assign))
+            if (isautotype(sp->tp) && MATCHKW(lex, assign))
             {
                 LEXEME *placeholder = lex;
                 TYPE *tp1 = NULL;
@@ -3604,7 +3773,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                         init = &(*init)->next;
                     }
                     if (!*init)
-                        initInsert(init, NULL, NULL, t->size, FALSE);
+                        initInsert(init, NULL, NULL, isautotype(t) ? sp->tp->size : t->size, FALSE);
                 }
             }
         }
@@ -3615,22 +3784,48 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
         TYPE *t = chosenAssembler->msil ? chosenAssembler->msil->find_boxed_type(sp->tp) : 0;
         if (!t || !search(overloadNameTab[CI_CONSTRUCTOR], basetype(t)->syms))
             t = sp->tp;
-        if (isstructured(t) && !chosenAssembler->msil && !basetype(t)->sp->trivialCons)
+        if (isstructured(t) && !chosenAssembler->msil)
         {
-            // default constructor without (), or array of structures without an initialization list
-            lex = initType(lex, funcsp, 0, sp->storage_class, &sp->init, &sp->dest, t, sp, FALSE, flags);
-            /* set up an end tag */
-            if (sp->init)
+            if (!basetype(tp)->sp->trivialCons)
             {
-                INITIALIZER **init = &sp->init;
-                while (*init)
+                // default constructor without (), or array of structures without an initialization list
+                lex = initType(lex, funcsp, 0, sp->storage_class, &sp->init, &sp->dest, t, sp, FALSE, flags);
+                /* set up an end tag */
+                if (sp->init)
                 {
-                    if (!(*init)->basetp)
-                        break;
-                    init = &(*init)->next;
+                    INITIALIZER **init = &sp->init;
+                    while (*init)
+                    {
+                        if (!(*init)->basetp)
+                            break;
+                        init = &(*init)->next;
+                    }
+                    if (!*init)
+                        initInsert(init, NULL, NULL, t->size, FALSE);
                 }
-                if (!*init)
-                    initInsert(init, NULL, NULL, t->size, FALSE);
+            }
+            else if (cparams.prm_cplusplus)
+            {
+                AGGREGATE_DESCRIPTOR *desc = NULL, *cache = NULL;
+                INITLIST *data = NULL, **next = &data;
+                allocate_desc(basetype(tp), 0, &desc, &cache);
+                desc->stopgap = TRUE;
+                unwrap_desc(&desc, &cache, next);
+                free_desc(&desc, &cache);
+                if (data)
+                {
+                    INITIALIZER **init = &sp->init;
+                    *init = data = sort_aggregate_initializers(data);
+                    while (*init)
+                    {
+                        if (!(*init)->basetp)
+                            break;
+                        init = &(*init)->next;
+                    }
+                    if (!*init)
+                        initInsert(init, NULL, NULL, t->size, FALSE);
+                }
+
             }
         }
         else if (isarray(sp->tp))
@@ -3686,7 +3881,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
             }   
         }
     }
-    if (sp->tp->type == bt_auto && !MATCHKW(lex, colon))
+    if (isautotype(sp->tp) && !MATCHKW(lex, colon))
     {
         errorsym(ERR_AUTO_NEEDS_INITIALIZATION, sp);
         sp->tp = &stdint;

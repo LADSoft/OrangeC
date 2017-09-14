@@ -4226,8 +4226,6 @@ void asm_cppini(QUAD *q)             /* cplusplus initialization (historic)*/
  */
 void asm_prologue(QUAD *q)           /* function prologue */
 {
-    if (theCurrentFunc->omitFrame)
-        return;
     inframe = !!(beGetIcon(q->dc.left) & FRAME_FLAG_NEEDS_FRAME) 
             || cparams.prm_debug || cparams.prm_stackalign;
     if (inframe)
@@ -4315,8 +4313,6 @@ void asm_epilogue(QUAD *q)           /* function epilogue */
 {
     if (pushlevel != 0 && usingEsp)
         diag("asm_epilogue: pushlevel not aligned");
-    if (theCurrentFunc->omitFrame)
-        return;
     if (beGetIcon(q->dc.left) != 0)
     {
         int mask=0x80, compare;

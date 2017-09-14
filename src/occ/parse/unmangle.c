@@ -1043,6 +1043,9 @@ char *unmang1(char *buf, char *name, char *last, BOOLEAN tof)
             buf += strlen(buf);
             name = unmangTemplate(buf, name-1, last);
             break;
+        case 'a':
+            strcpy(buf, "auto");
+            break;
     }
     return name;
 }

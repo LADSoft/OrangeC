@@ -245,9 +245,7 @@ void dumpInlines(void)
                     gen_virtual(sym, TRUE);
                     if (sym->init)
                     {
-                        int n = dumpInit(sym, sym->init);
-                        if (n < basetype(sym->tp)->size)
-                            genstorage(basetype(sym->tp)->size - n);
+                        dumpInitGroup(sym, sym->tp);
                     }
                     else
                     {
@@ -271,7 +269,9 @@ void dumpInlines(void)
                         inInsert(sym);
                         gen_virtual(sym, TRUE);
                         if (sym->init)
-                            dumpInit(sym, sym->init);
+                        {
+                            dumpInitGroup(sym, sym->tp);
+                        }
                         else
                             genstorage(basetype(sym->tp)->size);
                         gen_endvirtual(sym);

@@ -159,7 +159,7 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
                     BOOLEAN maybeConversion, BOOLEAN implicit, BOOLEAN pointer,
                     BOOLEAN usesInitList);
 LEXEME *insertNamespace(LEXEME *lex, enum e_lk linkage, enum e_sc storage_class, BOOLEAN *linked);
-LEXEME *insertUsing(LEXEME *lex, enum e_ac access, enum e_sc storage_class, BOOLEAN hasAttribs);
+LEXEME *insertUsing(LEXEME *lex, SYMBOL **sp, enum e_ac access, enum e_sc storage_class, BOOLEAN inTemplate, BOOLEAN hasAttribs);
 LEXEME *handleStaticAssert(LEXEME *lex);
 void InsertExtern(SYMBOL *sp);
 void InsertGlobal(SYMBOL *sp);
@@ -232,6 +232,8 @@ void HandleDeferredFunctionInstantiate(void);
 SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExtern);
 BOOLEAN allTemplateArgsSpecified(SYMBOL *sym, TEMPLATEPARAMLIST *args);
 SYMBOL *GetClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *args, BOOLEAN noErr);
+SYMBOL *GetVariableTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *args);
+SYMBOL *GetTypedefSpecialization(SYMBOL *sp, TEMPLATEPARAMLIST *args);
 void DoInstantiateTemplateFunction(TYPE *tp, SYMBOL **sp, NAMESPACEVALUES *nsv, SYMBOL *strSym, TEMPLATEPARAMLIST *templateParams, BOOLEAN isExtern);
 void DoDefaultSpecialization(SYMBOL *sp2);
 TEMPLATEPARAMLIST *getCurrentSpecialization(SYMBOL *sp);
@@ -248,7 +250,7 @@ void libcxx_init(void);
 BOOLEAN parseBuiltInTypelistFunc(LEXEME **lex, SYMBOL *funcsp, SYMBOL *sym, TYPE **tp, EXPRESSION **exp);
 void thunkForImportTable(EXPRESSION **exp);
 void checkscope(TYPE *tp1, TYPE *tp2);
-void checkauto(TYPE *tp);
+void checkauto(TYPE *tp, int err);
 void qualifyForFunc(SYMBOL *sym, TYPE **tp, BOOLEAN isMutable);
 void getThisType(SYMBOL *sym, TYPE **tp);
 SYMBOL *lambda_capture(SYMBOL *sym, enum e_cm mode, BOOLEAN isExplicit);
@@ -275,6 +277,7 @@ BOOLEAN insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
 LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOLEAN global, int flags);
 LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOLEAN global, int flags);
 LEXEME *expression_noexcept(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp);
+void ResolveTemplateVariable(TYPE **ttype, EXPRESSION **texpr, TYPE *atype, TYPE *rtype);
 LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, int flags);
 EXPRESSION *exprNode(enum e_node type, EXPRESSION *left, EXPRESSION *right);
 EXPRESSION *varNode(enum e_node type, SYMBOL *sp);
@@ -355,12 +358,14 @@ int FPFToLongDouble(unsigned char *dest, FPF *src);
 void FPFTruncate(FPF *value, int bits, int maxexp, int minexp);
 
                                /* Help.c */
+void deprecateMessage(SYMBOL *sp);
 BOOLEAN ismember(SYMBOL *sym);
 BOOLEAN istype(SYMBOL *sym);
 BOOLEAN ismemberdata(SYMBOL *sp);
 BOOLEAN startOfType(LEXEME *lex, BOOLEAN assumeType);
 void UpdateRootTypes(TYPE *tp);
 BOOLEAN isDerivedFromTemplate(TYPE *tp);
+BOOLEAN isautotype(TYPE *tp);
 BOOLEAN isunsigned(TYPE *tp);
 BOOLEAN isint(TYPE *tp);
 BOOLEAN isfloat(TYPE *tp);
@@ -379,6 +384,7 @@ BOOLEAN isvoid(TYPE *tp);
 BOOLEAN isvoidptr(TYPE *tp);
 BOOLEAN isarray(TYPE *tp);
 BOOLEAN isunion(TYPE *tp);
+TYPE *assignauto(TYPE *pat, TYPE *nt);
 SYMBOL *getFunctionSP(TYPE **tp);
 LEXEME *concatStringsInternal(LEXEME *lex, STRING **str, int *elems);
 LEXEME *concatStrings(LEXEME *lex, EXPRESSION **exp, enum e_lexType *tp, int *elems);
@@ -586,6 +592,7 @@ void insertDynamicDestructor(SYMBOL *sp, INITIALIZER *init);
 int dumpMemberPtr(SYMBOL *sp, TYPE *membertp, BOOLEAN make_label);
 void dumpTemplateInitializers(void);
 int dumpInit(SYMBOL *sp, INITIALIZER *init);
+void dumpInitGroup(SYMBOL *sp, TYPE *tp);
 void dumpInitializers(void);
 void dumpVTab(SYMBOL *sym);
 void insertInitSym(SYMBOL *sp);
@@ -599,6 +606,7 @@ LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc,
 				 INITIALIZER **init, INITIALIZER **dest, TYPE *itype, SYMBOL *sp, BOOLEAN arrayMember, int flags);
 BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams);
 EXPRESSION *getThisNode(SYMBOL *sp);
+void RecalculateVariableTemplateInitializers(INITIALIZER **in, INITIALIZER ***out, TYPE *tp, int ioffset);
 LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_class_in, BOOLEAN uninitconst, int flags);
 LEXEME *initialize_property(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_class_in, BOOLEAN asExpression, int flags);
 

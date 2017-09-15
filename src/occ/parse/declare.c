@@ -5788,7 +5788,7 @@ jointemplate:
                         if ((!spi || (spi->storage_class != sc_member && spi->storage_class != sc_mutable))
                              && sp->storage_class == sc_global && sp->isInline && !sp->promotedToInline)
                             sp->storage_class = sc_static;
-                        if (spi && !isfunction(spi->tp) && spi->storage_class != sc_type && sp->templateLevel)
+                        if (spi && !sp->parentClass && !isfunction(spi->tp) && spi->storage_class != sc_type && sp->templateLevel)
                         {
                             SYMBOL *special = FindSpecialization(spi, sp->templateParams);
                             if (!special)

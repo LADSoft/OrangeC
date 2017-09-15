@@ -672,7 +672,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                     *exp = varNode(en_auto, sp);
                     break;
                 case sc_parameter:
-                    tagNonConst(funcsp, sp->tp);
+ //                   tagNonConst(funcsp, sp->tp);
                     if (sp->packed)
                     {
                         if (!(flags & _F_PACKABLE))
@@ -5460,7 +5460,7 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
                 }
                 else 
                 {
-                    castToArithmetic(FALSE, tp, exp, kw, NULL, TRUE);
+                    castToArithmetic(FALSE, tp, exp, kw, NULL, FALSE);
                     if (isstructured(*tp))
                         error(ERR_ILL_STRUCTURE_OPERATION);
                     else if (isvoid(*tp) || (*tp)->type == bt_aggregate || ismsil(*tp))
@@ -6583,8 +6583,8 @@ static LEXEME *binop(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE ** tp, EXPRESS
         {
             continue;
         }
-        castToArithmetic(kw != land && kw!= lor, tp, exp, kw, tp1, TRUE);
-        castToArithmetic(kw != land && kw!= lor, &tp1, &exp1, (enum e_kw)-1, *tp, TRUE);
+        castToArithmetic(kw != land && kw!= lor, tp, exp, kw, tp1, kw != land && kw != lor);
+        castToArithmetic(kw != land && kw!= lor, &tp1, &exp1, (enum e_kw)-1, *tp, kw != land && kw != lor);
         if (isstructured(*tp) || isstructured(tp1))
             error(ERR_ILL_STRUCTURE_OPERATION);
         else if (isvoid(*tp) || isvoid(tp1) || (*tp)->type == bt_aggregate  || tp1->type == bt_aggregate || ismsil(*tp) || ismsil(tp1))

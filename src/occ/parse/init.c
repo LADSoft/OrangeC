@@ -3784,7 +3784,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
         TYPE *t = chosenAssembler->msil ? chosenAssembler->msil->find_boxed_type(sp->tp) : 0;
         if (!t || !search(overloadNameTab[CI_CONSTRUCTOR], basetype(t)->syms))
             t = sp->tp;
-        if (isstructured(t) && !chosenAssembler->msil)
+        if (isstructured(t))
         {
             if (!basetype(tp)->sp->trivialCons)
             {

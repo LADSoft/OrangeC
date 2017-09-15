@@ -9,7 +9,7 @@ Orange C is released under a Berkely-style license.
 
 This compiler comes in an install package with an IDE suitable for developing WIN32 programs.  Help files are included; the source format for the help files is HELPSCRIBBLE's HSC format.
 
-The compiler can be built with various C++11 compilers, however, by default it is configured to use the Visual Studio 2015 community edition.   A solution exists which will build all files in the project, or you can use the project's omake program to build it from the command line (you can also use MSBUILD if so inclined)
+The compiler can be built with various C++11 compilers, however, by default it is configured to use the Visual Studio 2017 community edition.   A solution exists which will build all files in the project, or you can use the project's omake program to build it from the command line (you can also use MSBUILD if so inclined)
 
 The compiler uses a text-based output format, a variant of the IEEE-695 OMF.   I've preferred this since it is easier to debug…  at one point I did try turning it into a binary format but once I got far enough to prototype it there didn't seem to be enough gain to complete the work.  And I really like text files a lot lol!
 

@@ -192,7 +192,7 @@ bool Importer::EnterNamespace(const Namespace *nameSpace)
 {
     diag("Namespace", nameSpace->Name());
     level_++;
-    HASHREC **hr = LookupName((char *)nameSpace->Name().c_str(), globalNameSpace->syms);
+    HASHREC **hr = LookupName((char *)nameSpace->Name().c_str(), nameSpaces_.size() == 0 ? globalNameSpace->syms : nameSpaces_.back()->nameSpaceValues->syms);
     SYMBOL *sp;
     if (!hr)
     {

@@ -1564,6 +1564,10 @@ static void CreateExternalCSharpReferences()
         Namespace *ns = nullptr;
         if (peLib->Find("lsmsilcrtl", (void **)&ns, 0) != PELib::s_namespace)
             fatal("namespace lsmsilcrtl does not exist");
+        Type *object = peLib->AllocateType(Type::object, 0);
+        Type *voidPtr = peLib->AllocateType(Type::Void, 1);
+        Type *objectArray = peLib->AllocateType(Type::object, 0);
+        objectArray->ArrayLevel(1);
         Type *argstype = FindType("lsmsilcrtl.args", FALSE);
         Class *args = nullptr;
         if (argstype)
@@ -1574,6 +1578,15 @@ static void CreateExternalCSharpReferences()
         {
             args = peLib->AllocateClass("args", Qualifiers::Public, -1, -1);
             ns->Add(args);
+            MethodSignature *sig = peLib->AllocateMethodSignature(".ctor", MethodSignature::Managed | MethodSignature::InstanceFlag, args);
+            sig->ReturnType(objectArray);
+            args->Add(peLib->AllocateMethod(sig, Qualifiers::Public));
+            sig = peLib->AllocateMethodSignature("GetNextArg", MethodSignature::Managed | MethodSignature::InstanceFlag, args);
+            sig->ReturnType(object);
+            args->Add(peLib->AllocateMethod(sig, Qualifiers::Public));
+            sig = peLib->AllocateMethodSignature("GetUnmanaged", MethodSignature::Managed | MethodSignature::InstanceFlag, args);
+            sig->ReturnType(voidPtr);
+            args->Add(peLib->AllocateMethod(sig, Qualifiers::Public));
         }
         Type *pointertype = FindType("lsmsilcrtl.pointer", FALSE);
         Class *pointer = nullptr;
@@ -1585,28 +1598,15 @@ static void CreateExternalCSharpReferences()
         {
             pointer = peLib->AllocateClass("pointer", Qualifiers::Public, -1, -1);
             ns->Add(pointer);
+            MethodSignature *sig = peLib->AllocateMethodSignature("box", MethodSignature::Managed | MethodSignature::InstanceFlag, pointer);
+            sig->ReturnType(object);
+            sig->AddParam(peLib->AllocateParam("param", voidPtr));
+            pointer->Add(peLib->AllocateMethod(sig, Qualifiers::Public | Qualifiers::Static));
+            sig = peLib->AllocateMethodSignature("unbox", MethodSignature::Managed | MethodSignature::InstanceFlag, pointer);
+            sig->ReturnType(voidPtr);
+            sig->AddParam(peLib->AllocateParam("param", object));
+            pointer->Add(peLib->AllocateMethod(sig, Qualifiers::Public | Qualifiers::Static));
         }
-        Type *object = peLib->AllocateType(Type::object, 0);
-        Type *voidPtr = peLib->AllocateType(Type::Void, 1);
-        Type *objectArray = peLib->AllocateType(Type::object, 0);
-        objectArray->ArrayLevel(1);
-        MethodSignature *sig = peLib->AllocateMethodSignature(".ctor", MethodSignature::Managed | MethodSignature::InstanceFlag, args);
-        sig->ReturnType(objectArray);
-        args->Add(peLib->AllocateMethod(sig, Qualifiers::Public));
-        sig = peLib->AllocateMethodSignature("GetNextArg", MethodSignature::Managed | MethodSignature::InstanceFlag, args);
-        sig->ReturnType(object);
-        args->Add(peLib->AllocateMethod(sig, Qualifiers::Public));
-        sig = peLib->AllocateMethodSignature("GetUnmanaged", MethodSignature::Managed | MethodSignature::InstanceFlag, args);
-        sig->ReturnType(voidPtr);
-        args->Add(peLib->AllocateMethod(sig, Qualifiers::Public));
-        sig = peLib->AllocateMethodSignature("box", MethodSignature::Managed | MethodSignature::InstanceFlag, pointer);
-        sig->ReturnType(object);
-        sig->AddParam(peLib->AllocateParam("param", voidPtr));
-        pointer->Add(peLib->AllocateMethod(sig, Qualifiers::Public | Qualifiers::Static));
-        sig = peLib->AllocateMethodSignature("unbox", MethodSignature::Managed | MethodSignature::InstanceFlag, pointer);
-        sig->ReturnType(voidPtr);
-        sig->AddParam(peLib->AllocateParam("param", object));
-        pointer->Add(peLib->AllocateMethod(sig, Qualifiers::Public | Qualifiers::Static));
     }
 
     argsCtor = FindMethodSignature("lsmsilcrtl.args::.ctor");

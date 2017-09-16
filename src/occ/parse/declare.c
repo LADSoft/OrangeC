@@ -2523,7 +2523,7 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
             LEXEME *placeholder = lex;
             BOOLEAN inTemplate = FALSE;
             lex = nestedSearch(lex, &sp, &strSym, &nsv, &destructor, &inTemplate, FALSE, storage_class, FALSE, TRUE);
-            if (sp && (istype(sp) || (sp->storage_class == sc_type && inTemplate)))
+            if (sp && (istype(sp) || (sp->storage_class == sc_type && inTemplate) || sp->storage_class == sc_typedef && sp->templateLevel) )
             {
                 if (sp->deprecationText)
                     deprecateMessage(sp);
@@ -2694,7 +2694,7 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                         {
                             tn = sp->tp;
                         }
-                        if (tpx->sp->templateSelector->next->next && !strcmp(tpx->sp->templateSelector->next->sym->name, tpx->sp->templateSelector->next->next->name))
+                        if (tpx->sp->templateSelector->next->next && tpx->sp->templateSelector->next->sym && !strcmp(tpx->sp->templateSelector->next->sym->name, tpx->sp->templateSelector->next->next->name))
                         {
                             if (destructor)
                             {
@@ -2804,7 +2804,14 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
             }
             else if (strSym && basetype(strSym->tp)->type == bt_templateselector)
             {
-                tn = strSym->tp;
+                if (!templateNestingCount && allTemplateArgsSpecified(strSym, strSym->templateParams))
+                    tn = SynthesizeType(strSym->tp, NULL, FALSE);
+                else
+                    tn = NULL;
+                if (!tn || tn->type == bt_any || basetype(tn)->type == bt_templateparam)
+                    tn = strSym->tp;
+                else
+                    tn = PerformDeferredInitialization(tn, funcsp);
                 foundsomething = TRUE;
                 lex = getsym();
             }
@@ -5226,7 +5233,7 @@ jointemplate:
             int consdest = CT_NONE;
 
 			IncGlobalFlag(); /* in case we have to initialize a func level static */
-            lex = getStorageAndType(lex, funcsp, &strSym, inTemplate, FALSE, &storage_class, &storage_class_in, 
+            lex = getStorageAndType(lex, funcsp, &strSym, inTemplate, FALSE, &storage_class, &storage_class_in,
                                     &address, &blocked, &isExplicit, &constexpression, &tp, &linkage, &linkage2, &linkage3, access, &notype, &defd, &consdest, &templateArg);
             if (blocked)
             {

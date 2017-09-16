@@ -6683,6 +6683,8 @@ static BOOLEAN checkArgType(TYPE *tp)
     }
     else if (isstructured(tp))
     {
+        if (basetype(tp)->sp->instantiated)
+            return TRUE;
         if (basetype(tp)->sp->templateLevel)
         {
             return allTemplateArgsSpecified(basetype(tp)->sp, basetype(tp)->sp->templateParams->next);

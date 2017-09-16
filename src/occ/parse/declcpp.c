@@ -1210,6 +1210,7 @@ restart:
                             {
                                 TEMPLATEPARAMLIST *workingList = NULL, **workingListPtr = &workingList;
                                 SYMBOL *temp;
+                                BOOLEAN packed = FALSE;
                                 dest = bcsym->templateParams->next;
                                 src = lst;
                                 while (src && dest)
@@ -1219,6 +1220,7 @@ restart:
                                     if (src->p->packed)
                                     {
                                         TEMPLATEPARAMLIST *p = src->p->byPack.pack; 
+                                        packed = TRUE;
                                         for (i=0; i < n && p; i++)
                                         {
                                             p = p->next;
@@ -1255,6 +1257,8 @@ restart:
                                     }
                                     n++;
                                 }
+                                if (!packed)
+                                    break;
                             }
                             dest = bcsym->templateParams->next;
                             src = lst;

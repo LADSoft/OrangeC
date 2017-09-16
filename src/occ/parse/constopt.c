@@ -2382,6 +2382,13 @@ join_lor:
                     TEMPLATEPARAMLIST *current = tsl->next->templateParams;
                     sp = GetClassTemplate(ts, current, TRUE);
                 }
+                if (sp && sp->tp->type == bt_templateselector)
+                {
+                    TYPE *tp = sp->tp;
+                    tp = SynthesizeType(tp, NULL, FALSE);
+                    if (tp && isstructured(tp))
+                        sp = basetype(tp)->sp;
+                }
                 if (sp)
                 {
                     sp = basetype(PerformDeferredInitialization (sp->tp, NULL))->sp;

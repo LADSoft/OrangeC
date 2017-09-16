@@ -357,7 +357,7 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
                         sp = namespacesearch(buf, nssym, qualified, FALSE);
                     }
                 }
-                if (sp && sp->tp->type == bt_typedef)
+                if (sp && sp->storage_class == sc_typedef)
                 {
                     SYMBOL *typedefSym = sp;
                     istypedef = TRUE;
@@ -447,7 +447,7 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
                         deferred = TRUE;
                     }
                 }
-                else if (inTemplateType)
+                else if (inTemplateType || sp && sp->tp->type == bt_templateselector)
                 {
                     deferred = TRUE;
                 }
@@ -468,25 +468,32 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
                     }
                     if (!deferred)
                     {
-                        TEMPLATEPARAMLIST *p = current;
-                        while (p)
+                        if (basetype(sp->tp)->type == bt_templateselector)
                         {
-                            if (p->p->usedAsUnpacked)
-                                break;
-
-                            p = p->next;
-                        }
-                        if (p)
                             deferred = TRUE;
-                        if (!deferred)
+                        }
+                        else
                         {
-                            SYMBOL *sp1 = sp;
-                            sp = GetClassTemplate(sp, current, FALSE);
-                            if (!sp)
-                                if (templateNestingCount)
-                                {
-                                    sp = sp1;
-                                }
+                            TEMPLATEPARAMLIST *p = current;
+                            while (p)
+                            {
+                                if (p->p->usedAsUnpacked)
+                                    break;
+
+                                p = p->next;
+                            }
+                            if (p)
+                                deferred = TRUE;
+                            if (!deferred)
+                            {
+                                SYMBOL *sp1 = sp;
+                                sp = GetClassTemplate(sp, current, FALSE);
+                                if (!sp)
+                                    if (templateNestingCount)
+                                    {
+                                        sp = sp1;
+                                    }
+                            }
                         }
                     }
                 }
@@ -497,14 +504,30 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
             finalPos = lex;
             if (deferred)
             {
-                *last = Alloc(sizeof(TEMPLATESELECTOR));
-                (*last)->sym = strSym;
-                last = &(*last)->next;
-                *last = Alloc(sizeof(TEMPLATESELECTOR));
-                (*last)->sym = sp;
-                (*last)->templateParams = current;
-                (*last)->isTemplate = TRUE;
-                last = &(*last)->next;
+                if (sp && sp->tp->type == bt_templateselector)
+                {
+                    TEMPLATESELECTOR *s = basetype(sp->tp)->sp->templateSelector;
+                    while (s)
+                    {
+                        *last = (TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
+                        **last = *s;
+                        last = &(*last)->next;
+                        s = s->next;
+                    }
+                    templateSelector->next->templateParams = current;
+                    templateSelector->next->isTemplate = TRUE;
+                }
+                else
+                {
+                    *last = (TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
+                    (*last)->sym = strSym;
+                    last = &(*last)->next;
+                    *last = (TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
+                    (*last)->sym = sp;
+                    (*last)->templateParams = current;
+                    (*last)->isTemplate = TRUE;
+                    last = &(*last)->next;
+                }
             }
             else if (sp && isstructured(sp->tp))
             {

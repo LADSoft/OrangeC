@@ -28,7 +28,7 @@
 #define __has_feature(__x)   __x
 #define address_sanitizer 0
 #define cxx_access_control_sfinae 0
-#define cxx_alias_templates 0
+#define cxx_alias_templates 1
 #define cxx_alignas 1
 #define cxx_atomic 0
 #define cxx_attributes 1
@@ -44,11 +44,11 @@
 #define cxx_noexcept 1
 #define cxx_nullptr 1
 #define cxx_reference_qualified_functions 1
-#define cxx_relaxed_constexpr 0
+#define cxx_relaxed_constexpr 1
 #define cxx_rtti 1
 #define cxx_rvalue_references 1
 #define cxx_static_assert 1
-#define cxx_strong_enums 0
+#define cxx_strong_enums 1
 #define cxx_trailing_return 1
 #define cxx_variadic_templates 1
 #define has_nothrow_assign 0

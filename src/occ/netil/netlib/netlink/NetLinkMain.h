@@ -99,6 +99,7 @@ private:
     static CmdSwitchFile File;
     static CmdSwitchBool CManaged;
     static CmdSwitchBool NoDefaultlibs;
+    static CmdSwitchBool WeedPInvokes;
 
     static char *usageText;
 };

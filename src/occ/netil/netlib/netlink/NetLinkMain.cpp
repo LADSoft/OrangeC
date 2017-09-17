@@ -53,12 +53,15 @@ CmdSwitchString NetLinkMain::AssemblyVersion(SwitchParser, 'v');
 CmdSwitchFile NetLinkMain::File(SwitchParser, '@');
 CmdSwitchBool NetLinkMain::CManaged(SwitchParser, 'M');
 CmdSwitchBool NetLinkMain::NoDefaultlibs(SwitchParser, 'n');
+CmdSwitchBool NetLinkMain::WeedPInvokes(SwitchParser, 'P');
 
 char *NetLinkMain::usageText = "[options] inputfiles\n"
         "\n"
         "/L         generate library          /S         generate .IL file\n"
         "/g         WIN32 GUI application     /kxxx      set strong name key\n"
-        "/oxxx      specify assembly name     /vx.x.x.x  set assembly version\n"
+        "/n         no default libs           /oxxx      specify assembly name\n"
+        "/vx.x.x.x  set assembly version      /M         managed mode\n"
+        "/P         replace pinvokes\n"
         "@xxx       Read commands from file\n"
         "\nTime: " __TIME__ "  Date: " __DATE__;
 
@@ -214,8 +217,104 @@ private:
     PELib &peLib;
     bool error;
 };
+class PInvokeWeeder : public Callback
+{
+public:
+    PInvokeWeeder(PELib &PELib) : peLib(PELib), scanning(true)
+    {
+
+    }
+    void SetOptimize()
+    {
+        scanning = false;
+    }
+    virtual bool EnterMethod(const Method *method) override
+    {
+        if (scanning)
+        {
+            for (auto ins : *static_cast<CodeContainer *>(const_cast<Method *>(method)))
+            {
+                Operand *op = ins->GetOperand();
+                if (op)
+                {
+                    Value *v = op->GetValue();
+                    if (v)
+                    {
+                        if (typeid(*v) == typeid(MethodName))
+                        {
+                            MethodSignature *ms = static_cast<MethodName *>(v)->Signature();
+                            if (!ms->Flags() && MethodSignature::Managed) // pinvoke
+                            {
+                                pinvokeCounters[ms->Name()] ++;
+                                for (auto m : method->GetContainer()->Methods())
+                                {
+                                    if (static_cast<Method *>(m)->Signature()->Name() == ms->Name())
+                                    {
+                                        pinvokeCounters[ms->Name()] --;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            for (auto ins : *static_cast<CodeContainer *>(const_cast<Method *>(method)))
+            {
+                Operand *op = ins->GetOperand();
+                if (op)
+                {
+                    Value *v = op->GetValue();
+                    if (v)
+                    {
+                        if (typeid(*v) == typeid(MethodName))
+                        {
+                            MethodSignature *ms = static_cast<MethodName *>(v)->Signature();
+                            if (!ms->Flags() && MethodSignature::Managed) // pinvoke
+                            {
+                                if (pinvokeCounters[ms->Name()] == 0)
+                                {
+                                    for (auto m : method->GetContainer()->Methods())
+                                    {
+                                        if (static_cast<Method *>(m)->Signature()->Name() == ms->Name())
+                                        {
+                                            ins->SetOperand(peLib.AllocateOperand(peLib.AllocateMethodName(static_cast<Method *>(m)->Signature())));
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            for (auto p : pinvokeCounters)
+            {
+                if (!p.second)
+                {
+                    peLib.RemovePInvokeReference(p.first);
+                }
+            }
+        }
+        return true;
+    };
+private:
+    PELib &peLib;
+    bool scanning;
+    std::map<std::string, int> pinvokeCounters;
+};
 bool NetLinkMain::Validate()
 {
+    if (WeedPInvokes.GetValue())
+    {
+        PInvokeWeeder weeder(*peLib);
+        peLib->Traverse(weeder);
+        weeder.SetOptimize();
+        peLib->Traverse(weeder);
+    }
     Validator validator(mainContainer);
     Optimizer optimizer(*peLib);
     peLib->Traverse(validator);

@@ -337,6 +337,10 @@ namespace DotNetPELib
         void ObjIn(PELib &);
         Byte *Compile(PELib &, size_t &sz);
         virtual void Compile(PELib&) { }
+
+        std::list<Instruction *>::iterator begin() { return instructions_.begin(); }
+        std::list<Instruction *>::iterator end() { return instructions_.end(); }
+
     protected:
         std::map<std::string, Instruction *> labels;
         void LoadLabels();
@@ -424,8 +428,8 @@ namespace DotNetPELib
         DataContainer *FindContainer(std::string name) { return sortedChildren_[name]; }
         ///** Find a sub- container
         DataContainer *FindContainer(std::vector<std::string>& split, size_t &n);
-        const std::list<Field *>&Fields() { return fields_; }
-        const std::list<CodeContainer *>&Methods() { return methods_; }
+        const std::list<Field *>&Fields() const { return fields_; }
+        const std::list<CodeContainer *>&Methods() const { return methods_; }
         ///** Traverse the declaration tree
         virtual bool Traverse(Callback &callback) const;
         // internal functions
@@ -1453,6 +1457,9 @@ namespace DotNetPELib
         ///** Pinvoke references are always added to this object
         void AddPInvokeReference(MethodSignature *methodsig, std::string dllname, bool iscdecl);
         void AddPInvokeWithVarargs(MethodSignature *methodsig) { pInvokeReferences_.insert(std::pair<std::string, MethodSignature *>(methodsig->Name(), methodsig)); }
+        void RemovePInvokeReference(std::string name) {
+            pInvokeSignatures_.erase(name);
+        }
         Method *FindPInvoke(std::string name) const;
         MethodSignature *FindPInvokeWithVarargs(std::string name, std::vector<Param *>&vargs) const;
         // get the core flags

@@ -245,7 +245,7 @@ namespace DotNetPELib
             targs.push_back(p->GetType());
         }
         Method *pinvoke = peLib.FindPInvoke(name);
-        if (pinvoke)
+        if (pinvoke && !(flags & Managed))
         {
             if (!vargs.size())
             {

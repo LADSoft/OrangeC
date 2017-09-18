@@ -3514,7 +3514,7 @@ BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams)
             rv = IsConstantExpression(node->left, allowParams);
             break;
         case en_func:
-            return !node->v.func->ascall || node->v.func->sp->constexpression;
+            return !node->v.func->ascall;
             break;
         case en_stmt:
             rv = FALSE;
@@ -3620,6 +3620,7 @@ void RecalculateVariableTemplateInitializers(INITIALIZER **in, INITIALIZER ***ou
 LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_class_in, BOOLEAN asExpression, int flags)
 {
     TYPE *tp;
+    BOOLEAN initialized = MATCHKW(lex, assign) || MATCHKW(lex, begin) || MATCHKW(lex, openpa);
     inittag = 0;
     browse_variable(sp);
     IncGlobalFlag();
@@ -3899,13 +3900,13 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
     }
     if (sp->constexpression && !templateNestingCount)
     {
-        if (!ispointer(tp) && !isarithmetic(tp) && basetype(tp)->type != bt_enum && (!isstructured(tp) || !basetype(tp)->sp->trivialCons))
+        if (!ispointer(tp) && !isarithmetic(tp) && basetype(tp)->type != bt_enum && (!isstructured(tp) /*|| !basetype(tp)->sp->trivialCons*/))
         {
             error(ERR_CONSTEXPR_SIMPLE_TYPE);
         }
         else if (!sp->init)
         {
-            if (sp->storage_class != sc_external)
+            if (sp->storage_class != sc_external && !initialized)
                 error(ERR_CONSTEXPR_REQUIRES_INITIALIZER);
         }
         else if (isstructured(tp))

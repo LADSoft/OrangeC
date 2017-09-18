@@ -3383,7 +3383,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                 {
                     LEXEME *cur = lex;
                     lex = getsym();
-                    if (!MATCHKW(lex, star) && !startOfType(lex, TRUE))
+                    if (!MATCHKW(lex, star) && !MATCHKW(lex, and) && !startOfType(lex, TRUE))
                     {
                         if (*spin)
                         {
@@ -6347,7 +6347,7 @@ jointemplate:
                                     if (MATCHKW(lex, kw_delete))
                                     {
                                         sp->deleted = TRUE;
-                                        if (sp->redeclared)
+                                        if (sp->redeclared && !templateNestingCount)
                                         {
                                             errorsym(ERR_DELETE_ON_REDECLARATION, sp);
                                         }
@@ -6424,7 +6424,7 @@ jointemplate:
                             if (cparams.prm_cplusplus && sp->storage_class != sc_type && sp->storage_class != sc_typedef && structLevel && (!instantiatingTemplate) && (MATCHKW(lex,assign) || MATCHKW(lex, begin) || structuredArray))
                             {
                                 if ((MATCHKW(lex, assign) || MATCHKW(lex, begin)) && storage_class_in == sc_member && (sp->storage_class == sc_static ||sp->storage_class == sc_external))
-                                    if (isconst(sp->tp))
+                                    if (isconst(sp->tp) || sp->constexpression)
                                     {
                                         if (isint(sp->tp))
                                            goto doInitialize;

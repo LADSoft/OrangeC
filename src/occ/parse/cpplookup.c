@@ -376,6 +376,38 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
                 addStructureDeclaration(&s);
                 sp = classsearch(buf, FALSE, FALSE);
                 dropStructureDeclaration();
+                if (!sp && templateNestingCount)
+                {
+                    *last = (TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
+                    (*last)->sym = NULL;
+                    last = &(*last)->next;
+                    *last = (TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
+                    (*last)->sym = strSym;
+                    (*last)->templateParams = current;
+                    (*last)->isTemplate = TRUE;
+                    last = &(*last)->next;
+
+                    *last = Alloc(sizeof(TEMPLATESELECTOR));
+                    (*last)->name = litlate(buf);
+                    if (hasTemplate)
+                    {
+                        (*last)->isTemplate = TRUE;
+                        if (MATCHKW(lex, lt))
+                        {
+                            lex = GetTemplateArguments(lex, NULL, NULL, &(*last)->templateParams);
+                        }
+                        else if (MATCHKW(lex, classsel))
+                        {
+                            errorstr(ERR_NEED_SPECIALIZATION_PARAMETERS, buf);
+                        }
+                    }
+                    last = &(*last)->next;
+                    if (!MATCHKW(lex, classsel))
+                        break;
+                    lex = getsym();
+                    finalPos = lex;
+
+                }
             }
             if (sp && basetype(sp->tp)->type == bt_enum)
             {
@@ -489,10 +521,12 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
                                 SYMBOL *sp1 = sp;
                                 sp = GetClassTemplate(sp, current, FALSE);
                                 if (!sp)
+                                {
                                     if (templateNestingCount)
                                     {
                                         sp = sp1;
                                     }
+                                }
                             }
                         }
                     }

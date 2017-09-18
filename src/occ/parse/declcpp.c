@@ -1174,7 +1174,19 @@ LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defa
             }
             lex = getsym();
 restart:
-            if (bcsym && bcsym->templateLevel)
+            if (bcsym && bcsym->tp->type == bt_templateselector)
+            {
+                if (!templateNestingCount)
+                    error(ERR_STRUCTURED_TYPE_EXPECTED_IN_TEMPLATE_PARAMETER);
+                if (MATCHKW(lex, lt))
+                {
+                    inTemplateSpecialization++;
+                    lex = GetTemplateArguments(lex, funcsp, bcsym, &lst);
+                    inTemplateSpecialization--;
+                }
+                bcsym = NULL;
+            }
+            else if (bcsym && bcsym->templateLevel)
             {
                 TEMPLATEPARAMLIST *lst = NULL;
                 if (MATCHKW(lex, lt))

@@ -19,6 +19,13 @@ struct timezone {
 };
 #endif /* _TIMEVAL_DEFINED */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int _RTL_FUNC _IMPORT gettimeofday (struct timeval * tv, struct timezone * tz);
 
+#ifdef __cplusplus
+}
+#endif
 #endif

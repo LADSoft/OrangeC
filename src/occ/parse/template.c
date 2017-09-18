@@ -6030,6 +6030,7 @@ SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExte
             sym->linkage = lk_virtual;
             sym->xc = NULL;
             sym->maintemplate = orig;
+            sym->redeclared = FALSE;
             instantiatingTemplate++;
 
             lex = SetAlternateLex(sym->deferredCompile);

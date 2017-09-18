@@ -192,6 +192,7 @@ static void inlineBindArgs(SYMBOL *funcsp, HASHREC *hr, INITLIST *args)
                     deref(sym->tp, &dest);
                 }
                 list[cnt++] = dest;
+                sym->inlineFunc.stmt = dest;
                 idest = gen_expr(funcsp, dest, F_STORE, natural_size(dest));
                 src = gen_expr(funcsp, args->exp, 0, natural_size(args->exp));
                 ap1 = LookupLoadTemp(NULL, src);

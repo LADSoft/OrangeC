@@ -640,7 +640,7 @@ void setglbdefs(void)
     glbdefine("__CHAR_BIT__", "8", TRUE);
     if (cparams.prm_cplusplus)
     {
-        glbdefine("__cplusplus", "201103",TRUE);
+        glbdefine("__cplusplus", "201402",TRUE);
         if (cparams.prm_xcept)
             glbdefine("__RTTI__", "1",TRUE);
     }

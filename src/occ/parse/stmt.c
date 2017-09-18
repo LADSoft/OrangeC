@@ -1912,6 +1912,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                     else
                     */
                     {
+                        BOOLEAN nonconst = funcsp->nonConstVariableUsed;
                         funcparams->arguments = Alloc(sizeof(INITLIST));
                         funcparams->arguments->tp = tp1;
                         funcparams->arguments->exp = exp1;
@@ -1923,6 +1924,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         returntype = tp;
                         implicit = TRUE;
                         callConstructor(&ctype, &en, funcparams, FALSE, NULL, TRUE, maybeConversion, FALSE, FALSE, FALSE); 
+                        funcsp->nonConstVariableUsed = nonconst;
                         returnexp = en;
                         basetype(tp1)->rref = oldrref;
                         basetype(tp1)->lref = oldlref;

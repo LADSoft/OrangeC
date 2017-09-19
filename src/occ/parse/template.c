@@ -6572,7 +6572,7 @@ static SYMBOL *ValidateClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *unspecialize
                             {
                                 EXPRESSION *exp = copy_expression(params->p->byNonType.val);
                                 optimize_for_constants(&exp);
-                                if (params->p->byNonType.dflt && !equalTemplateIntNode(exp, params->p->byClass.dflt))
+                                if (params->p->byNonType.dflt && !equalTemplateIntNode(exp, params->p->byNonType.dflt))
                                     rv = NULL;
                             }
     //#endif
@@ -7449,8 +7449,87 @@ SYMBOL *GetVariableTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *args)
     restoreParams(spList, n);
     return found1;
 }
+static TEMPLATEPARAMLIST *GetUsingArgs(SYMBOL *sp, TEMPLATEPARAMLIST *find)
+{
+    TEMPLATEPARAMLIST *args1 = NULL, **last = &args1;
+    while (find)
+    {
+        *last = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+        (*last)->argsym = find->argsym;
+        (*last)->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
+        *(*last)->p = *(find->p);
+
+        if (!(*last)->p->byClass.val)
+        {
+            switch (find->p->type)
+            {
+            case kw_typename:
+                if (find->p->byClass.dflt->type == bt_templateparam)
+                {
+                    TEMPLATEPARAMLIST *srch = sp->templateParams->next;
+                    while (srch)
+                    {
+                        if (srch->argsym && !strcmp(srch->argsym->name, find->p->byClass.dflt->templateParam->argsym->name))
+                        {
+                            (*last)->p->byClass.val = srch->p->byClass.val;
+                            break;
+                        }
+                        srch = srch->next;
+                    }
+                }
+                else
+                {
+                    (*last)->p->byClass.val = (*last)->p->byClass.dflt;
+                }
+                break;
+            case kw_int:
+                if (find->p->byNonType.dflt->type == en_templateparam)
+                {
+                    TEMPLATEPARAMLIST *srch = sp->templateParams->next;
+                    while (srch)
+                    {
+                        if (srch->argsym && !strcmp(srch->argsym->name, find->p->byNonType.dflt->v.sp->name))
+                        {
+                            (*last)->p->byClass.val = srch->p->byNonType.val;
+                            break;
+                        }
+                        srch = srch->next;
+                    }
+                }
+                else
+                {
+                    (*last)->p->byNonType.val = (*last)->p->byNonType.dflt;
+                }
+                break;
+            case kw_template:
+                if (find->p->byTemplate.dflt->templateLevel)
+                {
+                    TEMPLATEPARAMLIST *srch = sp->templateParams->next;
+                    while (srch)
+                    {
+                        if (srch->argsym && !strcmp(srch->argsym->name, find->p->byTemplate.dflt->name))
+                        {
+                            (*last)->p->byTemplate.val = srch->p->byTemplate.val;
+                            break;
+                        }
+                        srch = srch->next;
+                    }
+                }
+                else
+                {
+                    (*last)->p->byTemplate.val = (*last)->p->byTemplate.dflt;
+                }
+                break;
+            }
+        }
+        find = find->next;
+        last = &(*last)->next;
+    }
+    return args1;
+}
 SYMBOL *GetTypedefSpecialization(SYMBOL *sp, TEMPLATEPARAMLIST *args)
 {
+    SYMBOL *basesym = NULL;
     SYMBOL *found1 = sp;
     TYPE **tpi;
     TEMPLATEPARAMLIST *ans = sp->templateParams->next, *left = args;
@@ -7464,14 +7543,33 @@ SYMBOL *GetTypedefSpecialization(SYMBOL *sp, TEMPLATEPARAMLIST *args)
     if (!found1)
         return sp;
     tpi = &found1->tp;
-    while (isref(*tpi) || ispointer(*tpi))
-        tpi = &basetype(*tpi)->btp;
-    if (isstructured(*tpi) && basetype(*tpi)->sp->templateLevel)
+    if (!templateNestingCount)
     {
-        SYMBOL *sym = GetClassTemplate(basetype(*tpi)->sp, args, TRUE);
-        if (sym)
+        if ((*tpi)->type == bt_typedef)
+            tpi = &(*tpi)->btp;
+        if ((*tpi)->type == bt_typedef && (*tpi)->sp->templateLevel)
         {
-            *tpi = TemplateClassInstantiate(sym, args, FALSE, sc_global)->tp;
+            TEMPLATEPARAMLIST *args1 = (*tpi)->sp->templateParams->next;
+            while (args1)
+            {
+                args1->p->byClass.dflt = args1->p->byClass.val;
+                args1 = args1->next;
+            }
+            args1 = GetUsingArgs((*tpi)->sp, found1->templateParams->next);
+            return GetTypedefSpecialization(sp->tp->btp->sp, args1);
+        }
+        while (isref(*tpi) || ispointer(*tpi))
+            tpi = &basetype(*tpi)->btp;
+        if (isstructured(*tpi) && basetype(*tpi)->sp->templateLevel)
+        {
+            SYMBOL *sym;
+            TEMPLATEPARAMLIST *args1 = GetUsingArgs(sp, basetype(*tpi)->sp->templateParams->next);
+
+            sym = GetClassTemplate(basetype(*tpi)->sp, args1, TRUE);
+            if (sym)
+            {
+                *tpi = TemplateClassInstantiate(sym, args1, FALSE, sc_global)->tp;
+            }
         }
     }
     if (allTemplateArgsSpecified(found1, found1->templateParams->next))
@@ -7542,11 +7640,12 @@ SYMBOL *GetTypedefSpecialization(SYMBOL *sp, TEMPLATEPARAMLIST *args)
         found1->tp = Alloc(sizeof(TYPE));
         *found1->tp = *sp->tp;
         UpdateRootTypes(found1->tp);
+        /*
         tpi = &found1->tp;
         while (isref(*tpi) || ispointer(*tpi))
             tpi = &(*tpi)->btp;
         basetype(*tpi)->sp = found1;
-
+*/  
         found1->mainsym = sp;
         found1->templateParams = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
         found1->templateParams->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));

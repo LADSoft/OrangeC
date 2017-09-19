@@ -2847,6 +2847,12 @@ LEXEME *insertUsing(LEXEME *lex, SYMBOL **sp_out, enum e_ac access, enum e_sc st
                 sp = makeID(sc_typedef, tp, NULL, litlate(idsym->value.s.a));
                 if (inTemplate)
                 {
+                    TYPE *tp1 = (TYPE *)Alloc(sizeof(TYPE));
+                    tp1->type = bt_typedef;
+                    tp1->btp = tp;
+                    tp1->sp = sp;
+                    UpdateRootTypes(tp1);
+                    sp->tp = tp1;
                     sp->templateLevel = templateNestingCount;
                     sp->templateParams = TemplateGetParams(sp);
                 }

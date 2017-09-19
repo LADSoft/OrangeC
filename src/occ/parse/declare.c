@@ -2534,7 +2534,7 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                     {
                         // throwaway
                         TEMPLATEPARAMLIST *lst = NULL;
-                        SYMBOL *sp1 =
+                        SYMBOL *sp1;
                         lex = GetTemplateArguments(lex, funcsp, NULL, &lst);
                         sp1 = GetTypedefSpecialization(sp, lst);
                         if (sp1 && sp1->instantiated)
@@ -4985,7 +4985,7 @@ static LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, SYMBOL ** strSym, 
     BOOLEAN first = TRUE;
     *blocked = FALSE;
     *constexpression = FALSE;
-    
+
     while (KWTYPE(lex, TT_STORAGE_CLASS | TT_POINTERQUAL | TT_LINKAGE | TT_DECLARE) 
            || (!foundType && startOfType(lex, assumeType))  || MATCHKW(lex, compl) || (*storage_class == sc_typedef && !foundType))
     {

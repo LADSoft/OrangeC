@@ -361,11 +361,18 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
                 {
                     SYMBOL *typedefSym = sp;
                     istypedef = TRUE;
-                    if (isstructured(sp->tp) && throughClass)
+                    if (isstructured(sp->tp) && !sp->templateLevel && throughClass)
                     {
                         sp = basetype(sp->tp)->sp;
                         sp->typedefSym = typedefSym;
                         *throughClass = TRUE;
+                    }
+                    else if (sp->tp->type == bt_typedef)
+                    {
+                        SYMBOL *sp1 = clonesym(sp);
+                        sp1->mainsym = sp;
+                        sp1->tp = sp->tp->btp;
+                        sp = sp1;
                     }
                 }
             }
@@ -1055,7 +1062,7 @@ LEXEME *getIdName(LEXEME *lex, SYMBOL *funcsp, char *buf, int *ov, TYPE **castTy
         {
             TYPE *tp = NULL;
             noSpecializationError++;
-            lex = get_type_id(lex, &tp, funcsp, sc_cast, TRUE, TRUE);
+            lex = get_type_id(lex, &tp, funcsp, sc_cast, TRUE, FALSE, TRUE);
             noSpecializationError--;
             if (!tp)
             {

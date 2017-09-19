@@ -96,7 +96,7 @@ BOOLEAN istype(SYMBOL *sym)
     {
         return sym->tp->templateParam->p->type == kw_typename || sym->tp->templateParam->p->type == kw_template;
     }
-    return sym->tp->type != bt_templateselector && (sym->storage_class == sc_type || sym->storage_class == sc_typedef);
+    return sym->tp->type != bt_templateselector && sym->storage_class == sc_type || sym->storage_class == sc_typedef;
 }
 BOOLEAN ismemberdata(SYMBOL *sp)
 {

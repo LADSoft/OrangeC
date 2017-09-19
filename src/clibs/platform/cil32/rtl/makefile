@@ -35,13 +35,8 @@
 
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
-all:
-	$(MAKE) /CCOMMON
-	$(MAKE) /CWIN32 "/DOBJECT=$(WINOBJECT)"
-	$(MAKE) /CDOS32 "/DOBJECT=$(DOSOBJECT)"
-	$(MAKE) /CCIL32
 
-DISTRIBUTE:
-	$(MAKE) /CCOMMON DISTRIBUTE
-	$(MAKE) /CWIN32 DISTRIBUTE
-	$(MAKE) /CDOS32 DISTRIBUTE
+CIL_DEPENDENCIES = $(wildcard *.c)
+
+all: $(DEPENDENCIES)
+

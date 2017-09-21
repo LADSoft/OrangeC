@@ -442,7 +442,7 @@ bool Importer::EnterMethod(const Method *method)
                 tp->sp = funcs;
                 SetLinkerNames(funcs, lk_cdecl);
                 if (useGlobal())
-                    insert(sp, globalNameSpace->syms);
+                    insert(funcs, globalNameSpace->syms);
                 else
                     insert(funcs, structures_.back()->tp->syms);
                 funcs->parent = sp;

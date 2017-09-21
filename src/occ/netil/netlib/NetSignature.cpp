@@ -176,18 +176,22 @@ namespace DotNetPELib
                 done = true;
                 TypeDefTableEntry *entry = static_cast<TypeDefTableEntry *>(table1[index-1]);
                 Byte buf[256];
-                reader.ReadFromString(buf, sizeof(buf), entry->typeNameIndex_.index_);
-                if (rv.size())
-                    rv = std::string(".") + rv;
-                rv = std::string((char *)buf) + rv;
-                for (auto tentry : table)
+                int visibility = entry->flags_ & TypeDefTableEntry::VisibilityMask;
+                if (visibility == TypeDefTableEntry::Public || visibility == TypeDefTableEntry::NestedPublic)
                 {
-                    NestedClassTableEntry *entry = static_cast<NestedClassTableEntry *>(tentry);
-                    if (entry->nestedIndex_.index_ == index)
+                    reader.ReadFromString(buf, sizeof(buf), entry->typeNameIndex_.index_);
+                    if (rv.size())
+                        rv = std::string(".") + rv;
+                    rv = std::string((char *)buf) + rv;
+                    for (auto tentry : table)
                     {
-                        index = entry->enclosingIndex_.index_;
-                        done = false;
-                        break;
+                        NestedClassTableEntry *entry = static_cast<NestedClassTableEntry *>(tentry);
+                        if (entry->nestedIndex_.index_ == index)
+                        {
+                            index = entry->enclosingIndex_.index_;
+                            done = false;
+                            break;
+                        }
                     }
                 }
             }
@@ -225,17 +229,24 @@ namespace DotNetPELib
         {
             bool done = false;
             const DNLTable &table = reader.Table(tNestedClass);
+            int nextindex = index;
             while (!done)
             {
                 done = true;
-                for (auto tentry : table)
+                TypeDefTableEntry *entry1 = static_cast<TypeDefTableEntry *>(reader.Table(tTypeDef)[nextindex - 1]);
+                int visibility = entry1->flags_ & TypeDefTableEntry::VisibilityMask;
+                if (visibility == TypeDefTableEntry::Public || visibility == TypeDefTableEntry::NestedPublic)
                 {
-                    NestedClassTableEntry *entry = static_cast<NestedClassTableEntry *>(tentry);
-                    if (entry->nestedIndex_.index_ == index)
+                    index = nextindex;
+                    for (auto tentry : table)
                     {
-                        index = entry->enclosingIndex_.index_;
-                        done = false;
-                        break;
+                        NestedClassTableEntry *entry = static_cast<NestedClassTableEntry *>(tentry);
+                        if (entry->nestedIndex_.index_ == index)
+                        {
+                            nextindex = entry->enclosingIndex_.index_;
+                            done = false;
+                            break;
+                        }
                     }
                 }
             }

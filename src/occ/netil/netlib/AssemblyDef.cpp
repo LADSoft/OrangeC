@@ -391,7 +391,7 @@ namespace DotNetPELib
                     Namespace *thisNameSpace = nullptr;
                     Byte buf[256];
                     TypeDefTableEntry *entry = static_cast<TypeDefTableEntry *>(tentry);
-                        int visibility = entry->flags_ & TypeDefTableEntry::VisibilityMask;
+                    int visibility = entry->flags_ & TypeDefTableEntry::VisibilityMask;
                     if (visibility == TypeDefTableEntry::Public || visibility == TypeDefTableEntry::NestedPublic)
                     {
                         reader.ReadFromString(buf, 256, entry->typeNameSpaceIndex_.index_);
@@ -437,10 +437,11 @@ namespace DotNetPELib
                 NestedClassTableEntry *entry = static_cast<NestedClassTableEntry *>(tentry);
                 int child = entry->nestedIndex_.index_;
                 int parent = entry->enclosingIndex_.index_;
-                if (!classes[parent])
-                    classes[child] = nullptr;
-                else if (classes[child])
-                    classes[parent]->Add(classes[child]);
+//                if (!classes[parent])
+//                    classes[child] = nullptr;
+//                else 
+                    if (classes[parent] && classes[child])
+                        classes[parent]->Add(classes[child]);
             }
             const DNLTable &table4 = reader.Table(tClassLayout);
             for (auto tentry : table4)

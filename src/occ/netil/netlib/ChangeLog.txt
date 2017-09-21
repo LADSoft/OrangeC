@@ -1,3 +1,6 @@
+Version 2.9:
+	bug fix:  allow System.Diagnostics.Process to load
+
 Version 2.8:
 	bug fix:  if a global field is of type class and the class is from an external assembly ref,
 			  the IL file wass correct but the PE file had a bad signature for the field's type

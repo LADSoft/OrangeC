@@ -120,8 +120,8 @@ namespace DotNetPELib
 {
 
     // definitions for some common types
-    typedef __int64 longlong;
-    typedef unsigned __int64 ulonglong;
+    typedef long long longlong;
+    typedef unsigned long long ulonglong;
     typedef unsigned char Byte; /* 1 byte */
     typedef unsigned short Word; /* two bytes */
     typedef unsigned DWord; /* four bytes */
@@ -741,7 +741,7 @@ namespace DotNetPELib
             ///** Byte stream, goes into the sdata
             Bytes
         };
-        Field::Field(std::string Name, Type *tp, Qualifiers Flags) : mode_(Field::None), name_(Name), flags_(Flags),
+        Field(std::string Name, Type *tp, Qualifiers Flags) : mode_(Field::None), name_(Name), flags_(Flags),
             type_(tp), enumValue_(0), byteValue_(nullptr), byteLength_(0), ref_(0), peIndex_(0), explicitOffset_(0), external_(false), definitions_(0)
         {
         }

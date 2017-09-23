@@ -1286,7 +1286,7 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
     return lex;
 }
 static LEXEME *enumbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *spi, 
-                        enum e_sc storage_class, TYPE *fixedType, BOOLEAN scoped)
+                        enum e_sc storage_class, enum e_ac access, TYPE *fixedType, BOOLEAN scoped)
 {
     LLONG_TYPE enumval = 0;
     TYPE *unfixedType;
@@ -1334,6 +1334,7 @@ static LEXEME *enumbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *spi,
             sp->declfile = sp->origdeclfile = lex->file;
             sp->declfilenum = lex->filenum;
             sp->parentClass = spi->parentClass;
+            sp->access = access;
             browse_variable(sp);
             if (cparams.prm_cplusplus)
             {
@@ -1491,7 +1492,6 @@ static LEXEME *declenum(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storag
 
     strcpy(newName, tagname);
     lex = tagsearch(lex, newName, &sp, &table, &strSym, &nsv, storage_class);
-
     if (cparams.prm_cplusplus && KW(lex) == colon)
     {
         lex = getsym();
@@ -1571,7 +1571,7 @@ static LEXEME *declenum(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storag
     {
         if (scoped)
             enumSyms = sp;
-        lex = enumbody(lex, funcsp, sp, storage_class, fixedType, scoped);
+        lex = enumbody(lex, funcsp, sp, storage_class, access, fixedType, scoped);
         enumSyms = NULL;
         *defd = TRUE;
     }

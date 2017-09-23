@@ -735,7 +735,7 @@ EXPRESSION *anonymousVar(enum e_sc storage_class, TYPE *tp)
     my_sprintf(buf,"$anontemp%d", anonct++);
     rv->name = litlate(buf);
     tp->size = basetype(tp)->size;
-    if (theCurrentFunc && !inDefaultParam && !anonymousNotAlloc)
+    if (theCurrentFunc && localNameSpace->syms && !inDefaultParam && !anonymousNotAlloc)
         InsertSymbol(rv, storage_class, FALSE, FALSE);
     SetLinkerNames(rv, lk_none);
     return varNode(storage_class == sc_auto || storage_class == sc_parameter ? en_auto : storage_class == sc_localstatic ? en_label : en_global, rv);

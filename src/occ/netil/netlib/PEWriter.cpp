@@ -993,7 +993,7 @@ namespace DotNetPELib
         n1 = 1; // type text
         put(&n1, sizeof(n1));
         wchar_t buf[256];
-        swprintf(buf, L"%08x", language_);
+        swprintf(buf, 256, L"%08x", language_);
         put(buf, 18);
         align(4);
         VersionString(L"FileDescription", " ");

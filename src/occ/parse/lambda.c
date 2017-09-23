@@ -953,7 +953,7 @@ LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                             error(ERR_CAPTURE_ITEM_LISTED_MULTIPLE_TIMES);
                         }
                         self->captureThis = TRUE;
-                        lambda_capture(NULL, cmThis, TRUE, NULL);
+                        lambda_capture(NULL, cmThis, TRUE);
                     }
                     continue;
                 }

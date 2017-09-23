@@ -1141,9 +1141,8 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                     tp = &(*tp)->btp;
                                 *tp = assignauto(*tp, starType);
                                 UpdateRootTypes(declSP->tp);
-                                if (!comparetypes(declSP->tp, starType, TRUE))
+                                if (!comparetypes(declSP->tp, starType, TRUE) && (!isarithmetic(declSP->tp) || !isarithmetic(starType)))
                                 {
-                                    comparetypes(declSP->tp, starType, TRUE);
                                     error(ERR_OPERATOR_STAR_FORRANGE_WRONG_TYPE);
                                 }
                                 else if (!isstructured(declSP->tp))
@@ -2709,6 +2708,7 @@ BOOLEAN resolveToDeclaration(LEXEME * lex)
             case kw_struct:
             case kw_union:
             case kw_class:
+            case kw_decltype:
                 return TRUE;
         }
     lex = getsym();
@@ -2717,7 +2717,6 @@ BOOLEAN resolveToDeclaration(LEXEME * lex)
         prevsym(placeholder);
         return FALSE;
     }
-
     while (MATCHKW(lex, classsel))
     {
         lex = getsym();

@@ -1679,7 +1679,7 @@ LEXEME *TemplateArgGetDefault(LEXEME **lex, BOOLEAN isExpression)
         TYPE *tp;
         end = get_type_id(current, &tp, NULL, sc_cast, FALSE, TRUE);
     }
-    while (current != end)
+    while (current && current != end)
     {
         *cur = Alloc(sizeof(LEXEME));
         **cur = *current;
@@ -3118,8 +3118,34 @@ TYPE *SynthesizeType(TYPE *tp, TEMPLATEPARAMLIST *enclosing, BOOLEAN alt)
                     }
                     else
                     {
-                        *last = Alloc(sizeof(TYPE));
-                        **last = *tp;
+                        if (!templateNestingCount && tpa->argsym)
+                        {
+                            STRUCTSYM *p = structSyms;
+                            while (p)
+                            {
+                                if (p->tmpl)
+                                {
+                                    SYMBOL *s = templatesearch(tpa->argsym->name, p->tmpl);
+                                    if (s)
+                                    {
+                                        *last = Alloc(sizeof(TYPE));
+                                        **last = *s->tp->templateParam->p->byClass.val;
+                                        break;
+                                    }
+                                }
+                                p = p->next;
+                            }
+                            if (!p)
+                            {
+                                *last = Alloc(sizeof(TYPE));
+                                **last = *tp;
+                            }
+                        }
+                        else
+                        {
+                            *last = Alloc(sizeof(TYPE));
+                            **last = *tp;
+                        }
                     }
                     UpdateRootTypes(rv);
                     return rv;
@@ -5798,9 +5824,9 @@ SYMBOL *TemplateClassInstantiateInternal(SYMBOL *sym, TEMPLATEPARAMLIST *args, B
             argument_nesting = 0;
             inTemplateArgs = 0;
             expandingParams = 0;
-//            localNameSpace->syms = NULL;
-//            localNameSpace->tags = NULL;
-//            localNameSpace->next = NULL;
+            localNameSpace->syms = NULL;
+            localNameSpace->tags = NULL;
+            localNameSpace->next = NULL;
             SetAccessibleTemplateArgs(cls->templateParams, TRUE);
             packIndex = -1;
             deferred = NULL;

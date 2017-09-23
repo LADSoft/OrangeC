@@ -1062,7 +1062,7 @@ LEXEME *getIdName(LEXEME *lex, SYMBOL *funcsp, char *buf, int *ov, TYPE **castTy
         {
             TYPE *tp = NULL;
             noSpecializationError++;
-            lex = get_type_id(lex, &tp, funcsp, sc_cast, TRUE, FALSE, TRUE);
+            lex = get_type_id(lex, &tp, funcsp, sc_cast, TRUE, TRUE);
             noSpecializationError--;
             if (!tp)
             {

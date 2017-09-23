@@ -1,5 +1,28 @@
 Release notes:
 
+version 6.0.20:
+    occ:    support C++ 2014
+    occ:    c++11 compatibility: handle reference-to-auto properly
+    occ:    c++11 compatibility: 'final' and 'override' are not counted as reserved words any more (but still function)
+    occ:    c++11 compatibility: allow scoped use of strongly typed enumerations
+    occ:    c++11 compatibility: fix problems with assignments and initializations
+            that use structured type cast operators with and without 'explicit'
+    occ:    c++11 compatibility: implement 'using typename =' for both templates and non-templates
+    occ:    c++11 compatibility: allow taking sizeof a nonstatic class member
+    occ:    c++11 compatibility: aggregates can have explicitly defaulted or deleted constructors
+    occ:    c++11 compatibility: optimize lambda code generator by getting rid of calls to RTL helper functions
+    occ:    fix problem with generating object files from sources that had
+            the addresses of structure members as initialization data
+    occ:    fix problem where initialization of basic types from a structured type did not search the class
+		for a suitable conversion function
+    occ:    fix problem where implicit cast from a structured type to a basic type during an initialization
+		generated bad code
+    occ:    fix bug where printf("%d\n", zz().r); generates bad code.   zz() is a function returning struct
+    occ:    using decltype in an explict cast failed
+    occ:    various bug fixes for access checks
+    occ:    enumeration constants inside classes needed to have their access level set
+    stl:    enable strong enums, relaxed constexpr, using=
+
 version 6.0.13: April 1, 2017
     occ:    assignment to a large string variable on the stack could result in
             compiler throwing an exception during compile

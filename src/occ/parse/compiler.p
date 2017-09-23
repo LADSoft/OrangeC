@@ -675,7 +675,7 @@ void genuint32(int val);
 void genenum(int val);
 int genstring(STRING *str);
 void genaddress(ULLONG_TYPE address);
-void gensrref(SYMBOL *sp, int val);
+void gensrref(SYMBOL *sp, int val, int prio);
 void genlabref(int label);
 void genref(SYMBOL *sp, int offset);
 void genpcref(SYMBOL *sp, int offset);

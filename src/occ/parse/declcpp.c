@@ -235,6 +235,10 @@ void internalClassRefCount (SYMBOL *base, SYMBOL *derived, int *vcount, int *cco
 int classRefCount(SYMBOL *base, SYMBOL *derived)
 {
     int vcount =0, ccount = 0;
+    if (base && base->mainsym)
+        base = base->mainsym;
+    if (derived && derived->mainsym)
+        derived = derived->mainsym;
     internalClassRefCount (base, derived, &vcount, &ccount, FALSE);
     if (vcount)
         ccount++;
@@ -2886,7 +2890,7 @@ LEXEME *insertUsing(LEXEME *lex, SYMBOL **sp_out, enum e_ac access, enum e_sc st
                         if (ssp && ismember(sp1))
                             sp1->parentClass = ssp;
                         sp1->mainsym = sym;
-                        while (sp1->mainsym)
+                        while (sp1->mainsym->mainsym)
                             sp1->mainsym = sp1->mainsym->mainsym;
                         sp1->access = access;
                         InsertSymbol(sp1, storage_class, sp1->linkage, TRUE);

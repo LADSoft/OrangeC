@@ -412,6 +412,7 @@ static int parse_codegen(char mode, char *string)
 {
     return 0; /* illegal */
 }
+void parse_pragma(char *kw, char *tag);
 ARCH_DEBUG dbgStruct [] = {
     {
     "LS",                       /* name of debug format */
@@ -587,7 +588,7 @@ ARCH_ASM assemblerInterface[] = {
     InsertExternalFile,      /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
     parse_param,     /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
     parse_codegen,   /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-    0,         /* parse a pragma directive, or null */
+    parse_pragma,         /* parse a pragma directive, or null */
     compile_start,    /* signal start of compile on a per file basis */
     include_start,		/* signal switching to a new source file */
     NULL,      /* write the object file (for native object formats) */

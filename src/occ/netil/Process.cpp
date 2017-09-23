@@ -176,6 +176,21 @@ static std::map<std::string, Type *> typeList;
 static std::map<SYMBOL *, Value *, byField> fieldList;
 static std::map<std::string, MethodSignature *> arrayMethods;
 
+extern "C" void parse_pragma(char *kw, char *tag)
+{
+	if (!stricmp(kw,"netlib"))
+	{
+		while (isspace(*tag)) tag++;
+		if (*tag)
+		{
+			char *p = tag + strlen(tag)-1;
+			while (isspace(*p)) *p-- = 0;
+			peLib->LoadAssembly(tag);
+			Import();
+		}
+	}
+}
+
 MethodSignature *LookupArrayMethod(Type *tp, std::string name)
 {
     char buf[256];

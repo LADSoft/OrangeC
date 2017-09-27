@@ -560,6 +560,7 @@ static struct {
 { "'auto' not allowed in 'using =' declaration", ERROR },
 { "'auto' not allowed in parameter declaration", ERROR },
 { "'auto' not allowed as a conversion function type", ERROR },
+{ "Only base elements of an MSIL array may be assigned", ERROR },
 #endif
 } ;
 

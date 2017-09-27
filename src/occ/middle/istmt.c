@@ -444,7 +444,8 @@ void genreturn(STATEMENT *stmt, SYMBOL *funcsp, int flag, int noepilogue, IMODE 
     /* returns a value? */
     if (stmt != 0 && stmt->select != 0)
     {
-        if (basetype(funcsp->tp)->btp && (isstructured(basetype(funcsp->tp)->btp) ||
+        // the return type should NOT be an array at this point unless it is a managed one...
+        if (basetype(funcsp->tp)->btp && (isstructured(basetype(funcsp->tp)->btp) || isarray(basetype(funcsp->tp)->btp) ||
                                           basetype(basetype(funcsp->tp)->btp)->type == bt_memberptr))
         {
             if (chosenAssembler->msil)

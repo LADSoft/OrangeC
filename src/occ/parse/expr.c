@@ -65,6 +65,7 @@ extern TYPE std__func__;
 extern TYPE std__string;
 extern TYPE stdchar16tptr;
 extern TYPE stdchar32tptr;
+extern TYPE stdobject;
 extern BOOLEAN setjmp_used;
 extern char *overloadNameTab[];
 extern NAMESPACEVALUES *localNameSpace;
@@ -1082,13 +1083,13 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
 }
 static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, int flags)
 {
-    TYPE *typein = *tp;
+    TYPE *typein = *tp , *typein2 = isarray(typein) ? typein : NULL;
     BOOLEAN points = FALSE;
     BOOLEAN thisptr = (*exp)->type == en_auto && (*exp)->v.sp->thisPtr;
     char *tokenName = lex->kw->name;
     (void)funcsp;
     // find structured version of arithmetic types for msil member matching
-    if (chosenAssembler->msil && (isarithmetic(*tp) || (*tp)->type == bt___string) && chosenAssembler->msil->find_boxed_type)
+    if (chosenAssembler->msil && (isarithmetic(*tp) || (*tp)->type == bt___string || isarray(*tp) && basetype(*tp)->msil) && chosenAssembler->msil->find_boxed_type)
     {
         // auto-boxing for msil
         TYPE *tp1 = chosenAssembler->msil->find_boxed_type(basetype(*tp));
@@ -1101,6 +1102,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
             else
                 *exp = (*exp)->left;
             *tp = tp1;
+            typein = tp1;
         }
     }
     if (MATCHKW(lex, pointsto))
@@ -1514,11 +1516,13 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                             offset = varNode(en_structelem, sp2); // prepare for the MSIL ldflda instruction
                         else
                             offset = intNode(en_c_i, sp2->offset);
-                        if (sp2->parentClass != basetype(typ2)->sp)
+                        if (!typein2 && sp2->parentClass != basetype(typ2)->sp)
                         {
                             *exp = baseClassOffset(sp2->parentClass, basetype(typ2)->sp, *exp);
                         }
                         *exp = exprNode(en_structadd, *exp, offset);
+                        if (typein2)
+                            deref(typein2, exp);
                         if (sp3)
                         {
                             do
@@ -1641,27 +1645,34 @@ static LEXEME *expression_bracket(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
                 if ((*exp)->type != en_msil_array_access)
                 {
                     EXPRESSION *expr3 = exprNode(en_msil_array_access, NULL, NULL);
-                    expr3->v.msilArray = (MSIL_ARRAY *)Alloc(sizeof(MSIL_ARRAY) + 9 * sizeof(EXPRESSION *));
-                    expr3->v.msilArray->max = 10;
+                    TYPE *btp = *tp;
+                    int count = 0;
+                    while (isarray(btp) && btp->msil)
+                    {
+                        count++;
+                        btp = btp->btp;
+                    }
+                    expr3->v.msilArray = (MSIL_ARRAY *)Alloc(sizeof(MSIL_ARRAY) + count-1 * sizeof(EXPRESSION *));
+                    expr3->v.msilArray->max = count;
                     expr3->v.msilArray->count = 0;
                     expr3->v.msilArray->base = (*exp);
                     expr3->v.msilArray->tp = *tp;
                     (*exp) = expr3;
                 }
-                else if ((*exp)->v.msilArray->count >= (*exp)->v.msilArray->max)
-                {
-                    EXPRESSION *expr3 = exprNode(en_msil_array_access, NULL, NULL);
-                    expr3->v.msilArray = (MSIL_ARRAY *)Alloc(sizeof(MSIL_ARRAY) + ((*exp)->v.msilArray->max * 2 - 1) * sizeof(EXPRESSION *));
-                    expr3->v.msilArray->max = (*exp)->v.msilArray->max * 2;
-                    expr3->v.msilArray->count = (*exp)->v.msilArray->count;
-                    expr3->v.msilArray->base = (*exp)->v.msilArray->base;
-                    expr3->v.msilArray->tp = (*exp)->v.msilArray->tp;
-                    memcpy(expr3->v.msilArray->indices, (*exp)->v.msilArray->indices,
-                          (*exp)->v.msilArray->count * sizeof(EXPRESSION *));
-                    (*exp) = expr3;
-                }
                 (*exp)->v.msilArray->indices[(*exp)->v.msilArray->count++] = expr2;
                 *tp = basetype(*tp)->btp;
+                if (!MATCHKW(lex, closebr))
+                {
+                    error(ERR_ARRAY_NEED_CLOSEBRACKET);
+                    errskim(&lex, skim_closebr);
+                }
+                skip(&lex, closebr);
+                if ((*exp)->v.msilArray->count < (*exp)->v.msilArray->max && !MATCHKW(lex, openbr))
+                {
+                    error(ERR_ASSIGN_ONLY_MSIL_ARRAY_ELEMENTS);
+                }
+                *tp = PerformDeferredInitialization(*tp, funcsp);
+                return lex;
             }
             else if (ispointer(*tp))
             {
@@ -3689,6 +3700,9 @@ static LEXEME *expression_string(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
             case l_wstr:
                 tpb = stdwcharptr.btp->type;
                 break;
+            case l_msilstr:
+                tpb = std__string.type;
+                break;
             case l_ustr:
                 tpb = stdchar16tptr.btp->type;
                 break;
@@ -3734,12 +3748,16 @@ static LEXEME *expression_string(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
         errorstr(ERR_COULD_NOT_FIND_A_MATCH_FOR_LITERAL_SUFFIX, data->suffix);
     }
     *tp = Alloc(sizeof(TYPE));
-    (*tp)->type = bt_pointer;
-    (*tp)->array = TRUE;
-    (*tp)->rootType = (*tp);
-    (*tp)->esize = intNode( en_c_i, elems +1);
-    switch(data->strtype)
+    if (data->strtype == l_msilstr)
+        **tp = std__string;
+    else
     {
+        (*tp)->type = bt_pointer;
+        (*tp)->array = TRUE;
+        (*tp)->rootType = (*tp);
+        (*tp)->esize = intNode(en_c_i, elems + 1);
+        switch (data->strtype)
+        {
         default:
         case l_astr:
             (*tp)->btp = stdcharptr.btp;
@@ -3753,9 +3771,13 @@ static LEXEME *expression_string(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
         case l_Ustr:
             (*tp)->btp = stdchar32tptr.btp;
             break;
+        }
     }
     (*tp)->rootType = (*tp);
-    (*tp)->size = (elems + 1) * (*tp)->btp->size;
+    if ((*tp)->type == bt___string)
+        (*tp)->size = 1;
+    else
+        (*tp)->size = (elems + 1) * (*tp)->btp->size;
     return lex;	
 }
 static LEXEME *expression_generic(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, int flags)
@@ -4665,6 +4687,7 @@ static LEXEME *expression_primary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
         case l_wstr:
         case l_ustr:
         case l_Ustr:
+        case l_msilstr:
             lex = expression_string(lex, funcsp, tp, exp);
             break;
         case l_wchr:
@@ -6739,8 +6762,29 @@ static LEXEME *expression_hook(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp
                     *tp = tpc;
                 else if (!isvoid(tpc))
                     *tp = destSize(tpc,tph,&epc,&eph, FALSE, NULL);
-                else 
+                else
+                {
+                    if (chosenAssembler->msil)
+                    {
+                        EXPRESSION *exp1 = eph;
+                        while (castvalue(exp1))
+                            exp1 = exp1->left;
+                        if (exp1->type == en_thisref)
+                            exp1 = exp1->left;
+                        if (exp1->type == en_func)
+                            if (isvoid(basetype(exp1->v.func->sp->tp)->btp))
+                                eph = exprNode(en_void, eph, intNode(en_c_i, 0));
+                        exp1 = epc;
+                        while (castvalue(exp1))
+                            exp1 = exp1->left;
+                        if (exp1->type == en_thisref)
+                            exp1 = exp1->left;
+                        if (exp1->type == en_func)
+                            if (isvoid(basetype(exp1->v.func->sp->tp)->btp))
+                                epc = exprNode(en_void, epc, intNode(en_c_i, 0));
+                    }
                     *tp = tpc;
+                }
                 *exp = exprNode(en_cond, *exp, exprNode(en_void, eph, epc));
                 if (isstructured(*tp))
                     *exp = exprNode(en_not_lvalue, *exp, NULL);
@@ -7034,7 +7078,7 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
             error(ERR_CANNOT_MODIFY_CONST_OBJECT);
         else if (isvoid(*tp) || isvoid(tp1) || (*tp)->type == bt_aggregate || tp1->type == bt_aggregate)
             error(ERR_NOT_AN_ALLOWED_TYPE);
-        else if (!isstructured(*tp) && basetype(*tp)->type != bt_memberptr && basetype(*tp)->type != bt_templateparam && !lvalue(*exp) && (*exp)->type != en_msil_array_access)
+        else if (!isstructured(*tp) && (!isarray(*tp) || !basetype(*tp)->msil) && basetype(*tp)->type != bt_memberptr && basetype(*tp)->type != bt_templateparam && !lvalue(*exp) && (*exp)->type != en_msil_array_access)
             error(ERR_LVALUE);
         else if (symRef && symRef->v.sp->linkage2 == lk_property && !symRef->v.sp->has_property_setter)
             errorsym(ERR_CANNOT_MODIFY_PROPERTY_WITHOUT_SETTER, symRef->v.sp);
@@ -7155,9 +7199,18 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                     error(ERR_NOT_AN_ALLOWED_TYPE);
                 if (ispointer(*tp))
                 {
-                    if (isarray(tp1) && (tp1)->msil)
-                        error(ERR_MANAGED_OBJECT_NO_ADDRESS);
-                    else if (isarithmetic(tp1))
+                    if (isarray(tp1) && (tp1)->msil && natural_size(exp1) != ISZ_OBJECT)
+                    {
+                        exp1 = exprNode(en_l_object, exp1, NULL);
+                        exp1->v.tp = tp1;
+                    }
+                    if (isarray(*tp) && (*tp)->msil && natural_size(*exp) != ISZ_OBJECT)
+                    {
+                        *exp = exprNode(en_l_object, *exp, NULL);
+                        (*exp)->v.tp = tp1;
+
+                    }
+                    if (isarithmetic(tp1))
                     {
                         if (iscomplex(tp1))
                             error(ERR_ILL_USE_OF_COMPLEX);

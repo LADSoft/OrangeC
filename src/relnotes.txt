@@ -1,5 +1,9 @@
 Release notes:
 
+version 6.0.21:
+    occ:    fix crash when generating debug information
+    occ:    set C language default to C11 instead of C89; add switch /8 to get back to C89
+
 version 6.0.20:
     occ:    support C++ 2014
     occ:    c++11 compatibility: handle reference-to-auto properly

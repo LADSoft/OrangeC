@@ -61,20 +61,20 @@ int dbgblocknum;
     char prm_snkKeyFile[260];
     int assemblyVersion[4]; // will default to 0.0.0.0
 static    char usage_text[] = "[options] [@response file] files\n"
-    "\n""/1        - C1x mode                  /9        - C99 mode\n"
-        "/c        - compile only              +e        - dump errors to file\n"
-        "+i        - dump preprocessed file    +l        - dump listing file\n"
-        "/oname    - specify output file name  /snn      - align stack\n"
-        "+v        - enable debug symbols\n"
+    "\n""/1        - C1x mode                  /8        - c89 mode\n"
+        "/9        - C99 mode                  /c        - compile only\n"
+        "+e        - dump errors to file       +i        - dump preprocessed file\n"
+        "+l        - dump listing file         -m        - disable language extensions\n"
+        "/oname    - specify output file name\n"
         "+A        - disable extensions        /Dxxx     - define something\n"
         "/E[+]nn   - max number of errors      /Ipath    - specify include path\n"
         "/Kfile    - set strong name key       /Lxxx     - set dlls to import from\n"
         "/M        - generate make stubs       /Nns.cls  - set namespace and class\n"
         "/O-       - disable optimizations     +Q        - quiet mode\n"
-        "/T        - translate trigraphs       /Vx.x.x.x - set assembly assemblyVersion\n"
+        "/T        - translate trigraphs       /Vx.x.x.x - set assembly version\n"
         "Codegen parameters: (/C[+][-][params])\n"
         "  +d   - display diagnostics          -b        - no BSS\n"
-        "  -l        - no C source in ASM file -m        -  no leading underscores\n"
+        "  -l        - no C source in ASM file -m        - no leading underscores\n"
         "  +u        - 'char' type is unsigned\n"
         "Time: " __TIME__ "  Date: " __DATE__;
 
@@ -303,6 +303,12 @@ static ARCH_CHARACTERISTICS architecture = {
     FALSE,		  /* library functions should bes genned as import calls */
 } ;
 extern ARCH_GEN outputfunctions ;
+ARCH_MSIL msilData = {
+    msil_managed,           /* return TRUE if the function is a managed function, FALSE otherwise */
+    oa_get_boxed,                 /* msil - get a boxed version of type*/
+    oa_get_unboxed,                 /* msil - get an unboxed version of type*/
+    msil_create_property,   /* create a property instance */
+};
 ARCH_GEN outputfunctions ;
 
 static void WinmodeSetup(char select, char *string);
@@ -551,12 +557,6 @@ ARCH_GEN outputfunctions = {
     asm_savestack,			/* save the stack pointer to a var */
     asm_functail,			/* function tail (e.g. destructor) start/end */
 } ;  
-ARCH_MSIL msilData = {
-    msil_managed,           /* return TRUE if the function is a managed function, FALSE otherwise */
-    oa_get_boxed,                 /* msil - get a boxed version of type*/
-    oa_get_unboxed,                 /* msil - get an unboxed version of type*/
-    msil_create_property,   /* create a property instance */
-};
 ARCH_ASM assemblerInterface[] = {
     {
     "ilasm",                                 /* assembler name */

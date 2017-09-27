@@ -83,8 +83,8 @@ COMPILER_PARAMS cparams = {
     FALSE, /* char prm_diag;*/
     FALSE, /* char prm_ansi;*/
     TRUE,  /* char prm_cmangle;*/
-    FALSE, /* char prm_c99;*/
-    FALSE, /* char prm_c1x;*/
+    TRUE, /* char prm_c99;*/
+    TRUE,  /* char prm_c1x;*/
     FALSE, /* char prm_cplusplus;*/
     TRUE,  /* char prm_xcept;*/
     FALSE, /* char prm_icdfile;*/
@@ -123,6 +123,10 @@ void stackalign_setup(char select, char *string);
 /* setup for ARGS.C */
 static CMDLIST Args[] = 
 {
+    {
+        '8', ARG_BOOL, bool_setup
+    }
+    ,
     {
         '9', ARG_BOOL, bool_setup
     }
@@ -232,6 +236,8 @@ void bool_setup(char select, char *string)
         cparams.prm_c99 = cparams.prm_c1x = v;
     if (select == '9')
         cparams.prm_c99 = v;
+    if (select == '8')
+        cparams.prm_c99 = cparams.prm_c1x = !v;
     if (select == 'M')
         cparams.prm_makestubs = v;
     if (select == 'A')
@@ -637,6 +643,8 @@ int main(int argc, char *argv[])
                 }
             }
         }
+        if (cparams.prm_cplusplus)
+            cparams.prm_c99 = cparams.prm_c1x = FALSE;
         if (cparams.prm_cplusplus && chosenAssembler->msil)
             fatal("MSIL compiler does not compile C++ files at this time");
         inputFile = SrchPth2(buffer, "", "r");

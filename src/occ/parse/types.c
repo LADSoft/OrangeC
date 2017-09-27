@@ -132,7 +132,9 @@ BOOLEAN comparetypes(TYPE *typ1, TYPE *typ2, int exact)
                 typ2 = basetype(typ2);
                 if (typ1->type != typ2->type)
                     return FALSE;
-                if (arr && typ1->array != typ2->array)	
+                if (typ1->msil != typ2->msil)
+                    return FALSE;
+                if (arr && (typ1->array != typ2->array))	
                     return FALSE;
                 if (arr && typ1->size != typ2->size)
                     return FALSE;

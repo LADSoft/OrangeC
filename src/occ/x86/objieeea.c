@@ -60,6 +60,7 @@ extern LIST *libincludes;
 extern HASHREC **gsyms;
 extern LIST *localfuncs,  *localdata;
 extern int prm_bss;
+extern TYPE stdvoid;
 extern int outcode_base_address;
 extern LIST *includedFiles;
 
@@ -433,13 +434,14 @@ void emit_type_name(int n, char *nm)
 }
 int link_BasicType(TYPE *tp)
 {
+
     static int basicTypes[] = 
     {
-        35,34,40,40,48,41,46,49,45,0,42,47,50,43,51,44,52,72,73,74,80,81,82,88,89,90,32
+        35,34,40,40,48,41,46,49,45,0,42,42,47,50,50,43,51,44,52,72,73,74,80,81,82,88,89,90,32
     } ;
     static int pointedTypes[] =
     {
-        0,0,40+16,40+16,48+16,41+16,46+16,49+16,45+16,0,42+16,47+16,50+16,43+16,51+16,44+16,52+16,72+16,73+16,74+16,80+16,81+16,82+16,88+16,89+16,90+16,33
+        0,0,40+16,40+16,48+16,41+16,46+16,49+16,45+16,0,42+16,42+16,47+16,50+16,50+16,43+16,51+16,44+16,52+16,72+16,73+16,74+16,80+16,81+16,82+16,88+16,89+16,90+16,33
     };
     int n = 0;
     TYPE *tp1 = basetype(tp);
@@ -672,6 +674,10 @@ void link_extendedtype(TYPE *tp1)
         {
            // ellipse results in no debug info
         }
+        else if (tp->type == bt_templateselector)
+        {
+            link_BasicType(&stdvoid);
+        }
         else // enum
         {
             int m;
@@ -702,13 +708,16 @@ int link_puttype(TYPE *tp)
         }
         else if (tp->type == bt_typedef)
         {
-            if (!tp->btp->dbgindex)
-                link_puttype(tp->btp);
-            if (tp->btp->dbgindex)
+            if (!tp->sp->templateLevel)
             {
-                tp->dbgindex = typeIndex++;
-                emit_record_ieee("ATT%X,TA,T%X.\r\n", tp->dbgindex, tp->btp->dbgindex);
-                emit_type_name(tp->dbgindex, tp->sp->decoratedName);
+                if (!tp->btp->dbgindex)
+                    link_puttype(tp->btp);
+                if (tp->btp->dbgindex)
+                {
+                    tp->dbgindex = typeIndex++;
+                    emit_record_ieee("ATT%X,TA,T%X.\r\n", tp->dbgindex, tp->btp->dbgindex);
+                    emit_type_name(tp->dbgindex, tp->sp->decoratedName);
+                }
             }
         }
         else

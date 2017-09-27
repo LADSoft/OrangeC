@@ -598,14 +598,15 @@ LEXEME *concatStringsInternal(LEXEME *lex, STRING **str, int *elems)
     STRING *string;
     IncGlobalFlag();
     list = (SLCHAR **)Alloc(sizeof(SLCHAR *) * count);
-    while (lex && (lex->type == l_astr || lex->type == l_wstr || lex->type == l_ustr || lex->type == l_Ustr))
+    while (lex && (lex->type == l_astr || lex->type == l_wstr || lex->type == l_ustr || lex->type == l_Ustr || lex->type == l_msilstr))
     {
-        
-        if (lex->type == l_Ustr)
+        if (lex->type == l_msilstr)
+            type = l_msilstr;
+        else if (lex->type == l_Ustr)
             type = l_Ustr;
-        else if (type != l_Ustr && lex->type == l_ustr)
+        else if (type != l_Ustr && type != l_msilstr && lex->type == l_ustr)
             type = l_ustr;
-        else if (type != l_Ustr && type != l_ustr && lex->type == l_wstr)
+        else if (type != l_Ustr && type != l_ustr && type != l_msilstr && lex->type == l_wstr)
             type = l_wstr;
         if (lex->suffix)
         {
@@ -864,6 +865,8 @@ void deref(TYPE *tp, EXPRESSION **exp)
             break;
     }
     *exp = exprNode(en, *exp, NULL);
+    if (en == en_l_object)
+        (*exp)->v.tp = tp;
 }
 int sizeFromType(TYPE *tp)
 {
@@ -1279,7 +1282,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
             expsym = intNode(en_c_i, 0);
             break;
     }	
-    if (sp && isarray(sp->tp) && sp->tp->msil)
+    if (sp && isarray(sp->tp) && sp->tp->msil && !init->noassign)
     {
         exp = intNode(en_msil_array_init, 0);
         exp->v.tp = sp->tp;
@@ -1410,15 +1413,15 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                     else
                     {
                         /* constant expression */
-                        SYMBOL *spc ;
+                        SYMBOL *spc;
                         IncGlobalFlag();
                         exp = anonymousVar(sc_localstatic, init->basetp);
                         spc = exp->v.sp;
-                        spc->init = init ;
+                        spc->init = init;
                         insertInitSym(spc);
                         insert(spc, localNameSpace->syms);
                         DecGlobalFlag();
-                        spc->label =nextLabel++;
+                        spc->label = nextLabel++;
                         if (expsym)
                         {
                             if (cparams.prm_cplusplus && isstructured(init->basetp) && !init->basetp->sp->trivialCons)
@@ -1428,7 +1431,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                                 funcparams->arguments = Alloc(sizeof(INITLIST));
                                 funcparams->arguments->tp = ctype;
                                 funcparams->arguments->exp = exp;
-                                callConstructor(&ctype, &expsym, funcparams, FALSE, NULL, TRUE, FALSE, FALSE, FALSE, FALSE); 
+                                callConstructor(&ctype, &expsym, funcparams, FALSE, NULL, TRUE, FALSE, FALSE, FALSE, FALSE);
                                 exp = expsym;
                             }
                             else
@@ -1467,14 +1470,41 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
             else
             {
                 EXPRESSION *exps = expsym;
-                if (chosenAssembler->msil && init->fieldsp)
+                if (isarray(tp) && tp->msil)
+                {
+                    TYPE *btp = tp;
+                    exps = exprNode(en_msil_array_access, NULL, NULL);
+                    int count = 0, i;
+                    int q = init->offset;
+                    while (isarray(btp) && btp->msil)
+                    {
+                        count++;
+                        btp = btp->btp;
+                    }
+                    exps->v.msilArray = (MSIL_ARRAY *)Alloc(sizeof(MSIL_ARRAY) + count * sizeof(EXPRESSION *));
+                    exps->v.msilArray->max = count;
+                    exps->v.msilArray->count = count;
+                    exps->v.msilArray->base = expsym;
+                    exps->v.msilArray->tp = tp;
+                    btp = tp->btp;
+                    for (i = 0; i < count; i++)
+                    {
+                        int n = q / btp->size;
+                        exps->v.msilArray->indices[i] = intNode(en_c_i, n);
+                        q = q - n * btp->size;
+
+                        btp = btp->btp;
+                    }
+                }
+                else if (chosenAssembler->msil && init->fieldsp)
                 {
                     exps = exprNode(en_add, exps, intNode(en_c_i, init->fieldoffs));
                     exps = exprNode(en_structadd, exps, varNode(en_structelem, init->fieldsp));
                 }
                 else if (init->offset || init->next && init->next->basetp && (chosenAssembler->arch->denyopts & DO_UNIQUEIND))
                     exps = exprNode(en_add, exps, intNode(en_c_i, init->offset));
-                deref(init->basetp, &exps);
+                if (exps->type != en_msil_array_access)
+                    deref(init->basetp, &exps);
                 exp = init->exp;
                 if (exp->type == en_void)
                 {

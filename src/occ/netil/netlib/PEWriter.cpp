@@ -149,7 +149,6 @@ namespace DotNetPELib
     }
     size_t PEWriter::HashString(std::string utf8)
     {
-
         auto it = stringMap_.find(utf8);
         if (it != stringMap_.end())
             return it->second;

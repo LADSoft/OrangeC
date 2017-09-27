@@ -2080,7 +2080,8 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         {
             if (!isstructured(basetype(funcsp->tp)->btp) && 
                 basetype(basetype(funcsp->tp)->btp)->type != bt_memberptr)
-                error(ERR_FUNCTION_RETURNING_ADDRESS_STACK_VARIABLE);
+                if (!isarray(basetype(funcsp->tp)->btp) || !basetype(funcsp->tp)->btp->msil)
+                    error(ERR_FUNCTION_RETURNING_ADDRESS_STACK_VARIABLE);
         }
         if (!returnexp)
             returnexp = intNode(en_c_i, 0); // errors

@@ -62,11 +62,11 @@ extern ASMREG reglst[] ;
     int prm_useesp = TRUE;
     int usingEsp = FALSE;
 static    char usage_text[] = "[options] [@response file] files\n"
-    "\n""/1        - C1x mode                  /9        - C99 mode\n"
-        "/c        - compile only              +e        - dump errors to file\n"
-        "+i        - dump preprocessed file    +l        - dump listing file\n"
-        "/oname    - specify output file name  /snn      - align stack\n"
-        "+v        - enable debug symbols\n"
+    "\n""/1        - C1x mode                  /8        - c89 mode\n"
+        "/9        - C99 mode                  /c        - compile only\n"
+        "+e        - dump errors to file       +i        - dump preprocessed file\n"
+        "+l        - dump listing file         /oname    - specify output file name\n"
+        "/snn      - align stack               +v        - enable debug symbols\n"
         "+A        - disable extensions        /Dxxx     - define something\n"
         "/E[+]nn   - max number of errors      /Ipath    - specify include path\n"
         "/M        - generate make stubs       /O-       - disable optimizations\n"

@@ -521,7 +521,18 @@ TYPE *oa_get_boxed(TYPE *in)
     static char * typeNames[] = { "int8", "Bool", "Int8", "Int8", "UInt8",
         "Int16", "Int16", "UInt16", "UInt16", "Int32", "Int32", "IntPtr", "Int32", "UInt32", "UIntPtr", "Int32", "UInt32",
         "Int64", "UInt64", "Single", "Double", "Double", "Single", "Double", "Double", "", "", "", "", "", "String" };
-    if (basetype(in)->type < sizeof(typeNames) / sizeof(typeNames[0]))
+    if (isarray(basetype(in)) && basetype(in)->msil)
+    {
+        SYMBOL *sym = search("System", globalNameSpace->syms);
+        if (sym && sym->storage_class == sc_namespace)
+        {
+            SYMBOL *sym2 = search("Array", sym->nameSpaceValues->syms);
+            if (sym2)
+                return sym2->tp;
+        }
+
+    }
+    else if (basetype(in)->type < sizeof(typeNames) / sizeof(typeNames[0]))
     {
         SYMBOL *sym = search("System", globalNameSpace->syms);
         if (sym && sym->storage_class == sc_namespace)

@@ -141,10 +141,10 @@ testsqlite.exe: zzz.dll sqlite3.dll sqlite3\testsqlite.cs
 	csc /unsafe /r:lsmsilcrtl.dll;zzz.dll;sqlite3.dll /platform:x86 sqlite3\testsqlite.cs 
 
 zzz.dll: sqlite3\zzz.c
-	occil /c /Wd sqlite3\zzz.c /Nzzz.ar
+	occil /Wd sqlite3\zzz.c /Nzzz.ar
 
 sqlite3.dll: sqlite3\sqlite3.c
-	occil /c /9 /Wd /Lkernel32 sqlite3\sqlite3.c /Nsqlite3.sqlite
+	occil /9 /Wd /Lkernel32 sqlite3\sqlite3.c /Nsqlite3.sqlite
 
 DISTRIBUTE: copyexe
 	copy target.cfg $(DISTBIN)\occ.cfg

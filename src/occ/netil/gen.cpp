@@ -286,12 +286,17 @@ Operand *getOperand(IMODE *oper)
                 Type *tp = GetType(oper->offset->v.msilArray->tp, TRUE);
                 if (tp->ArrayLevel() == 1)
                 {
+                    Operand *operand = NULL;
                     Instruction::iop instructions[] = {
                             Instruction::i_ldelem, Instruction::i_ldelem, Instruction::i_ldelem, Instruction::i_ldelem_u1, 
                             Instruction::i_ldelem_u2, Instruction::i_ldelem_i1, Instruction::i_ldelem_u1, Instruction::i_ldelem_i2, Instruction::i_ldelem_u2, Instruction::i_ldelem_i4, Instruction::i_ldelem_u4, Instruction::i_ldelem_i8, Instruction::i_ldelem_u8, Instruction::i_ldelem_i, Instruction::i_ldelem_i,
                             Instruction::i_ldelem_r4, Instruction::i_ldelem_r8, Instruction::i_ldelem, Instruction::i_ldelem
                     };
-                    gen_code(instructions[tp->GetBasicType()], NULL);
+                    if (instructions[tp->GetBasicType()] = Instruction::i_ldelem)
+                    {
+                        operand = peLib->AllocateOperand(peLib->AllocateValue("", GetType(basetype(oper->offset->v.msilArray->tp)->btp, TRUE)));
+                    }
+                    gen_code(instructions[tp->GetBasicType()], operand);
                     decrement_stack();
                 }
                 else
@@ -503,6 +508,10 @@ void store_ind(IMODE *im)
         case ISZ_CDOUBLE:
         case ISZ_CLDOUBLE:
             break;
+        case ISZ_STRING:
+            op = Instruction::i_stobj;
+            operand = peLib->AllocateOperand(peLib->AllocateValue("", peLib->AllocateType(Type::string, 0)));
+            break;
         case ISZ_OBJECT:
             op = Instruction::i_stobj;
             operand = peLib->AllocateOperand(peLib->AllocateValue("", GetType(im->offset->v.sp->tp, TRUE, 0, 0)));
@@ -667,7 +676,7 @@ void gen_load(IMODE *im, Operand *dest)
             {
                 Local *l = static_cast<Local *>(dest->GetValue());
                 Type *t = l->GetType();
-                bool address = t->GetBasicType() == Type::cls && (t->GetClass()->Flags().Flags() & Qualifiers::Value);
+                bool address = t->GetBasicType() == Type::cls && (t->GetClass()->Flags().Flags() & Qualifiers::Value) && !t->ArrayLevel();
                 if (im->mode == i_immed && (!im->msilObject || address))
                     gen_code(Instruction::i_ldloca, dest);
                 else
@@ -678,7 +687,7 @@ void gen_load(IMODE *im, Operand *dest)
             {
                 Param *p = static_cast<Param *>(dest->GetValue());
                 Type *t = p->GetType();
-                bool address = t->GetBasicType() == Type::cls && (t->GetClass()->Flags().Flags() & Qualifiers::Value);
+                bool address = t->GetBasicType() == Type::cls && (t->GetClass()->Flags().Flags() & Qualifiers::Value) && !t->ArrayLevel();
                 if (im->mode == i_immed && (!im->msilObject || address))
                     gen_code(Instruction::i_ldarga, dest);
                 else
@@ -702,7 +711,7 @@ void gen_load(IMODE *im, Operand *dest)
                 {
                     FieldName *f = static_cast<FieldName *>(dest->GetValue());
                     Type *t = f->GetField()->FieldType();
-                    bool address = t->GetBasicType() == Type::cls && (t->GetClass()->Flags().Flags() & Qualifiers::Value);
+                    bool address = t->GetBasicType() == Type::cls && (t->GetClass()->Flags().Flags() & Qualifiers::Value) && !t->ArrayLevel();
                     if (im->mode == i_immed && (!im->msilObject || address))
                         gen_code(Instruction::i_ldflda, dest);
                     else
@@ -712,7 +721,7 @@ void gen_load(IMODE *im, Operand *dest)
                 {
                     FieldName *f = static_cast<FieldName *>(dest->GetValue());
                     Type *t = f->GetField()->FieldType();
-                    bool address = t->GetBasicType() == Type::cls && (t->GetClass()->Flags().Flags() & Qualifiers::Value);
+                    bool address = t->GetBasicType() == Type::cls && (t->GetClass()->Flags().Flags() & Qualifiers::Value) && !t->ArrayLevel();
                     if (im->mode == i_immed && (!im->msilObject || address))
                         gen_code(Instruction::i_ldsflda, dest);
                     else
@@ -1405,12 +1414,17 @@ extern "C" void asm_assn(QUAD *q)               /* assignment */
         Type *tp = GetType(q->ans->offset->v.msilArray->tp, TRUE);
         if (tp->ArrayLevel() == 1)
         {
+            Operand *operand = NULL;
             Instruction::iop instructions[] = {
                     Instruction::i_stelem, Instruction::i_stelem, Instruction::i_stelem, Instruction::i_stelem_i1, 
                     Instruction::i_stelem_i2, Instruction::i_stelem_i1, Instruction::i_stelem_i1, Instruction::i_stelem_i2, Instruction::i_stelem_i2, Instruction::i_stelem_i4, Instruction::i_stelem_i4, Instruction::i_stelem_i8, Instruction::i_stelem_i8, Instruction::i_stelem_i, Instruction::i_stelem_i,
                     Instruction::i_stelem_r4, Instruction::i_stelem_r8, Instruction::i_stelem, Instruction::i_stelem
             };
-            gen_code(instructions[tp->GetBasicType()], NULL);
+            if (instructions[tp->GetBasicType()] == Instruction::i_stelem)
+            {
+                operand = peLib->AllocateOperand(peLib->AllocateValue("", GetType(basetype(q->ans->offset->v.msilArray->tp)->btp, TRUE)));
+            }
+            gen_code(instructions[tp->GetBasicType()], operand);
             decrement_stack();
             decrement_stack();
             decrement_stack();
@@ -1472,7 +1486,7 @@ extern "C" void asm_assn(QUAD *q)               /* assignment */
             {
                 Class *c = static_cast<Class *>(basetype(tp)->sp->msil);
                 if (c->Flags().Flags() & Qualifiers::Value)
-                    if (!currentMethod->LastInstruction()->IsCall())
+                    if (!currentMethod->LastInstruction()->IsCall() || static_cast<MethodName *>(currentMethod->LastInstruction()->GetOperand()->GetValue())->Signature()->ReturnType()->PointerLevel())
                         gen_code(Instruction::i_ldobj, peLib->AllocateOperand(peLib->AllocateValue("", GetType(tp, TRUE, FALSE, FALSE))));
                 switch (q->ans->offset->type)
                 {

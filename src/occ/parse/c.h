@@ -938,7 +938,7 @@ typedef struct lexeme
     struct lexeme *next, *prev;
     enum e_lexType { l_none, l_i, l_ui, l_l, l_ul, l_ll, l_ull, l_f, l_d, l_ld, l_I, 
             l_id, l_kw, 
-            l_astr, l_wstr,  l_ustr, l_Ustr, l_u8str, 
+            l_astr, l_wstr,  l_ustr, l_Ustr, l_u8str, l_msilstr, 
             l_achr, l_wchr, l_uchr, l_Uchr, 
             l_qualifiedname, l_asminst, l_asmreg
          } type;

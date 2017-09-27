@@ -47,7 +47,7 @@ namespace DotNetPELib
     {
         bool doit = false;
         for (unsigned i : stringValue_)
-            if (i < 32 || i > 126)
+            if (i < 32 || i > 126 || i == '\\' || i == '"')
             {
                 doit = true;
                 break;
@@ -100,6 +100,11 @@ namespace DotNetPELib
                         retVal += "\\";
                         retVal += (char)i;
                     }
+                }
+                else if (i == '"' || i == '\\')
+                {
+                    retVal += "\\";
+                    retVal += (char)i;
                 }
                 else if (i > 126)
                 {

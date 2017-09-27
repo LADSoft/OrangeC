@@ -355,19 +355,30 @@ namespace DotNetPELib
                     int n = entry->extends_.index_;
                     if (!cls)
                     {
+                        int flags = Qualifiers::Public;
+                        int peflags = TypeDefTableEntry::Class;
+                        DataContainer *parent = Parent();
+                        if (entry->flags_ & TypeDefTableEntry::SequentialLayout)
+                            flags |= Qualifiers::Sequential;
+                        if (entry->flags_ & TypeDefTableEntry::ExplicitLayout)
+                            flags |= Qualifiers::Explicit;
+                        if (entry->flags_ & TypeDefTableEntry::Sealed)
+                            flags |= Qualifiers::Sealed;
+                        if (entry->flags_ & TypeDefTableEntry::AnsiClass)
+                            flags |= Qualifiers::Ansi;
                         if (name_ == "mscorlib" && entry->extends_.tag_ == TypeDefOrRef::TypeDef && n < classes.size() && classes[n] && classes[n]->Name() == "Enum")
                         {
                             // Assumes namespace system, which is probably safe since we contexted to
                             // mscorlib.dll
-                            cls = lib.AllocateEnum((char *)buf, entry->flags_, Field::i32);
+                            cls = lib.AllocateEnum((char *)buf, flags, Field::i32);
                         }
                         else if (entry->extends_.tag_ == TypeDefOrRef::TypeRef &&  n < refClasses.size() && refClasses[n] == "System.Enum")
                         {
-                            cls = lib.AllocateEnum((char *)buf, entry->flags_, Field::i32);
+                            cls = lib.AllocateEnum((char *)buf, flags, Field::i32);
                         }
                         else
                         {
-                            cls = lib.AllocateClass((char *)buf, entry->flags_, -1, -1);
+                            cls = lib.AllocateClass((char *)buf, flags, -1, -1);
                         }
                     }
                     classes.push_back(cls);

@@ -856,7 +856,7 @@ IMODE *gen_deref(EXPRESSION *node, SYMBOL *funcsp, int flags)
         }
     }
     else if ((chosenAssembler->arch->denyopts & DO_UNIQUEIND) && (node->left->type == en_global || node->left->type == en_label || node->left->type == en_auto) &&
-            (isarray(node->left->v.sp->tp) || isstructured(node->left->v.sp->tp)))
+            ((isarray(node->left->v.sp->tp) && !basetype(node->left->v.sp->tp)->msil) || isstructured(node->left->v.sp->tp)))
     {
         ap1 = gen_expr(funcsp, node->left, 0, ISZ_ADDR);
         ap2 = LookupLoadTemp(NULL, ap1);
@@ -1571,7 +1571,11 @@ static void PushArrayLimits(SYMBOL *funcsp, TYPE *tp)
     }
     else
     {
-        IMODE* ap = gen_expr(funcsp, basetype(tp)->esize, 0, -ISZ_UINT);
+        IMODE* ap;
+        if (basetype(tp)->esize)
+            ap = gen_expr(funcsp, basetype(tp)->esize, 0, -ISZ_UINT);
+        else
+            ap = make_immed(-ISZ_UINT, 1); // not really creating something, but give it a size so we can proceed.
         gen_icode(i_parm, 0, ap, 0);
     }
     PushArrayLimits(funcsp, basetype(tp)->btp);
@@ -2331,14 +2335,14 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
             f->callLab = ++consIndex;
             genCallLab(f->arguments, f->callLab);
         }
-if (!(chosenAssembler->arch->preferopts & OPT_REVERSEPARAM))
-{
-    if (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr)
-    {
-        if (f->returnEXP && !managed)
-            push_param(f->returnEXP, funcsp, FALSE, FALSE, 0);
-    }
-}
+        if (!(chosenAssembler->arch->preferopts & OPT_REVERSEPARAM))
+        {
+            if (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr)
+            {
+                if (f->returnEXP && !managed)
+                    push_param(f->returnEXP, funcsp, FALSE, FALSE, 0);
+            }
+        }
     }
     gen_icode(i_tag, NULL, NULL, NULL);
     intermed_tail->beforeGosub = TRUE;
@@ -2451,12 +2455,35 @@ if (!(chosenAssembler->arch->preferopts & OPT_REVERSEPARAM))
             ap = tempreg(ISZ_OBJECT, 0);
             ap->retval = TRUE;
             gen_icode(i_assn, ap1, ap, 0);
+            ap = ap1;
         }
         else
         {
             gosub->novalue = -3;
             ap = NULL;
         }
+    }
+    else if (!(flags & F_NOVALUE) && isarray(basetype(f->functp)->btp))
+    {
+        IMODE *ap1;
+        int siz1;
+        if (stobj)
+        {
+            ap1 = Alloc(sizeof(IMODE));
+            *ap1 = *stobj;
+            ap1->mode = i_ind;
+            ap1->size = ISZ_OBJECT;
+        }
+        else
+        {
+            ap1 = tempreg(ISZ_OBJECT, 0);
+        }
+        ap1->offset->v.sp->tp = basetype(basetype(f->functp)->btp);
+        ap = tempreg(ISZ_OBJECT, 0);
+        ap->retval = TRUE;
+        gen_icode(i_assn, ap1, ap, 0);
+        ap = ap1;
+
     }
     else if (!(flags &F_NOVALUE) && !isvoid(basetype(f->functp)->btp)) {
         /* structures handled by callee... */
@@ -2981,6 +3008,8 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
                     ap1->msilObject = TRUE;
                 ap1->size = size;
             }
+            if (isarray(node->v.sp->tp) && basetype(node->v.sp->tp)->msil && !store)
+                ap1->msilObject = TRUE;
             ap2 = LookupImmedTemp(ap1, ap1);
             if (ap1 != ap2)
             {
@@ -3129,8 +3158,12 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
         case en_l_sp:
         case en_l_bit:
         case en_l_string:
+            ap1 = gen_deref(node, funcsp, flags | store);
+            rv = ap1;
+            break;
         case en_l_object:
             ap1 = gen_deref(node, funcsp, flags | store);
+            ap1->offset->v.sp->tp = node->v.tp;
             rv = ap1;
             break;
         case en_bits:
@@ -3420,7 +3453,11 @@ int natural_size(EXPRESSION *node)
             if (isstructured(basetype(node->v.func->functp)->btp) || basetype(node->v.func->functp)->btp->type == bt_memberptr)
                 return ISZ_ADDR;
             else if (node->v.func->ascall)
+            {
+                if (isarray(basetype(node->v.func->sp->tp)->btp))
+                    return ISZ_OBJECT;
                 return sizeFromType(basetype(node->v.func->functp)->btp);
+            }
             else
                 return ISZ_ADDR;
         case en_substack:

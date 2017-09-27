@@ -74,10 +74,13 @@ void displayLexeme(LEXEME *lex)
                     break ;
                 case l_astr:
                     printf("ascii string: ");
-                    
+                case l_msilstr:
+
                 case l_wstr:
                     if (lex->type == l_wstr)
                         printf("wide string: ");
+                    else if (lex->type == l_msilstr)
+                        printf("msil string: ");
                     w = lex->value.s.w;
                     while (*w)
                         fputc(*w++, stdout);

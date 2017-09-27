@@ -45,6 +45,10 @@
  
 extern int packdata[], packlevel;
 
+TYPE stdobject =
+{
+    bt___object ,0
+} ;
 TYPE stdvoid =
 {
     bt_void, 0

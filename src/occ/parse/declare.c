@@ -3315,6 +3315,8 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
     HASHTABLE *locals = localNameSpace->syms;
     LEXEME *placeholder = lex;
     STRUCTSYM s;
+    if (lex->line == 7)
+        printf("hi");
     s.tmpl = NULL;
     lex = getsym();
     IncGlobalFlag();
@@ -4283,7 +4285,7 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
             *tp = quals;
         }
         UpdateRootTypes(*tp);
-        doneAfter = TRUE;
+//        doneAfter = TRUE;
     }
     if (ISID(lex) || MATCHKW(lex, classsel) || MATCHKW(lex, kw_operator) || (cparams.prm_cplusplus && MATCHKW(lex, ellipse)))
     {
@@ -4759,7 +4761,7 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
         if (isfunction(ptype))
         {
             if (ptype->btp->type == bt_func || (ptype->btp->type == bt_pointer &&
-                ptype->btp->array))
+                ptype->btp->array && !ptype->btp->msil) )
                 error(ERR_FUNCTION_NO_RETURN_FUNCTION_ARRAY);
         }
         if (*spi)

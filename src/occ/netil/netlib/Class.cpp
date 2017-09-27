@@ -293,6 +293,20 @@ namespace DotNetPELib
                 Field *field = lib.AllocateField((char *)buf, nullptr, (entry->flags_ & FieldTableEntry::Static) ? Qualifiers::Static : 0);
                 Add(field);
                 SignatureGenerator::TypeFromFieldRef(lib, assembly, reader, field, entry->signatureIndex_.index_);
+                if (entry->flags_ & FieldTableEntry::HasDefault)
+                {
+                    const DNLTable &table = reader.Table(tConstant);
+                    for (auto tentry : table)
+                    {
+                        ConstantTableEntry *tentry2 = static_cast<ConstantTableEntry *>(tentry);
+                        if (tentry2->parentIndex_.tag_ == Constant::FieldDef && tentry2->parentIndex_.index_ == i)
+                        {
+                            int value = 0;
+                            reader.ReadFromBlob((Byte *)&value, sizeof(value), tentry2->valueIndex_.index_);
+                            field->AddEnumValue(value, (Field::ValueSize)tentry2->type_);
+                        }
+                    }
+                }
             }
         }
         std::vector<int> paramIndexes;

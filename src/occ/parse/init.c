@@ -3727,7 +3727,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
             errorsym(ERR_STRUCT_NOT_DEFINED, tp->sp);
     }
     // if not in a constructor, any openpa() will be eaten by an expression parser
-    else if (MATCHKW(lex, assign) || (cparams.prm_cplusplus && (MATCHKW(lex, openpa) || MATCHKW(lex, begin))) || (chosenAssembler->msil && MATCHKW(lex,openpa)))
+    else if (MATCHKW(lex, assign) || (cparams.prm_cplusplus && (MATCHKW(lex, openpa) || MATCHKW(lex, begin))) || (chosenAssembler->msil && chosenAssembler->msil->allowExtensions && MATCHKW(lex,openpa)))
     {
         INITIALIZER **init;
         BOOLEAN isassign = MATCHKW(lex, assign);
@@ -3821,7 +3821,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
     else if ((cparams.prm_cplusplus || chosenAssembler->msil && isstructured(sp->tp) && !basetype(sp->tp)->sp->trivialCons)
         && sp->storage_class != sc_typedef && sp->storage_class != sc_external && !asExpression)
     {
-        TYPE *t = chosenAssembler->msil ? chosenAssembler->msil->find_boxed_type(sp->tp) : 0;
+        TYPE *t = (chosenAssembler->msil && chosenAssembler->msil->allowExtensions) ? chosenAssembler->msil->find_boxed_type(sp->tp) : 0;
         if (!t || !search(overloadNameTab[CI_CONSTRUCTOR], basetype(t)->syms))
             t = sp->tp;
         if (isstructured(t))

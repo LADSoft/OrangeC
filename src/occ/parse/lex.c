@@ -409,7 +409,7 @@ static BOOLEAN kwmatches(KEYWORD *kw)
     else if (!kw->matchFlags || kw->matchFlags == KW_ASSEMBLER)
         return TRUE;
     else if (((kw->matchFlags & KW_CPLUSPLUS) && cparams.prm_cplusplus) ||
-        (kw->matchFlags & (KW_C99 | KW_C1X)) || ((kw->matchFlags & KW_MSIL) && chosenAssembler->msil) ||
+        (kw->matchFlags & (KW_C99 | KW_C1X)) || ((kw->matchFlags & KW_MSIL) && chosenAssembler->msil && chosenAssembler->msil->allowExtensions) ||
         ((kw->matchFlags & (KW_NONANSI | KW_INLINEASM)) && !cparams.prm_ansi))
     {
             if (kw->matchFlags & KW_NONANSI)
@@ -590,7 +590,7 @@ SLCHAR *getString(unsigned char **source, enum e_lexType *tp)
         v = l_wstr;
         do p++; while (*p == MACRO_PLACEHOLDER);
     }
-    else if (*p == '@')
+    else if (*p == '@' && chosenAssembler->msil && chosenAssembler->msil->allowExtensions)
     {
         v = l_msilstr;
         do p++; while (*p == MACRO_PLACEHOLDER);

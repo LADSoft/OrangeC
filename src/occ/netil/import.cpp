@@ -55,6 +55,7 @@ extern "C"
     extern NAMESPACEVALUES *globalNameSpace;
     extern LIST *nameSpaceList;
     extern BOOLEAN managed_library;
+    extern TYPE stdint;
 }
 
 void AddType(SYMBOL *sym, Type *type);
@@ -296,13 +297,22 @@ bool Importer::EnterClass(const Class *cls)
             sp->name = litlate((char *)cls->Name().c_str());
             sp->storage_class = sc_type;
             sp->tp = (TYPE *)Alloc(sizeof(TYPE));
-            sp->tp->type = bt_struct;
-            sp->tp->size = 1;// needs to be NZ but we don't really care what is is in the MSIL compiler
+            if (typeid(*cls) == typeid(Enum))
+            {
+                sp->tp->type = bt_enum;
+                sp->tp->size = getSize(bt_int);
+                sp->tp->btp = &stdint;
+            }
+            else
+            {
+                sp->tp->type = bt_struct;
+                sp->tp->size = 1;// needs to be NZ but we don't really care what is is in the MSIL compiler
+                sp->trivialCons = TRUE;
+            }
             sp->tp->syms = CreateHashTable(1);
             sp->tp->rootType = sp->tp;
             sp->tp->sp = sp;
             sp->declfile = sp->origdeclfile = "[import]";
-            sp->trivialCons = TRUE;
             if (structures_.size())
                 sp->parentClass = structures_.back();
             if (nameSpaces_.size())
@@ -320,7 +330,7 @@ bool Importer::EnterClass(const Class *cls)
         }
         else
         {
-            if (!isstructured(sp->tp))
+            if (!isstructured(sp->tp) && sp->tp->type != bt_enum)
             {
                 fatal("internal error: misuse of class");
             }
@@ -500,15 +510,24 @@ bool Importer::EnterField(const Field *field)
         {
             SYMBOL *sp = (SYMBOL *)Alloc(sizeof(SYMBOL));
             sp->name = litlate((char *)field->Name().c_str());
-            if (field->Flags().Flags() & Qualifiers::Static)
-                sp->storage_class = sc_static;
+            if (structures_.back()->tp->type == bt_enum)
+            {
+                sp->storage_class = sc_enumconstant;
+                tp->scoped = tp->enumConst = TRUE;
+                sp->value.i = field->EnumValue();
+            }
             else
-                sp->storage_class = sc_member;
+            {
+                if (field->Flags().Flags() & Qualifiers::Static)
+                    sp->storage_class = sc_static;
+                else
+                    sp->storage_class = sc_member;
+                sp->msil = (void *)field;
+            }
             sp->tp = tp;
             sp->parentClass = structures_.back();
             sp->declfile = sp->origdeclfile = "[import]";
             sp->access = ac_public;
-            sp->msil = (void *)field;
             SetLinkerNames(sp, lk_cdecl);
             if (useGlobal())
                 insert(sp, globalNameSpace->syms);

@@ -2891,7 +2891,7 @@ static LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent,
             lex = statement_asm(lex, funcsp, parent);
             return lex;
         default:
-            if ((startOfType(lex, FALSE) && (!cparams.prm_cplusplus && !chosenAssembler->msil || resolveToDeclaration(lex)))
+            if ((startOfType(lex, FALSE) && (!cparams.prm_cplusplus && (!chosenAssembler->msil || !chosenAssembler->msil->allowExtensions) || resolveToDeclaration(lex)))
                  || MATCHKW(lex, kw_namespace) || MATCHKW(lex, kw_using) || MATCHKW(lex, kw_decltype) || MATCHKW(lex, kw_static_assert) )
             {
                 if (!cparams.prm_c99 && !cparams.prm_cplusplus)

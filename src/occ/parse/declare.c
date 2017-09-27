@@ -2881,7 +2881,7 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
           
     }
 exit:
-    if (chosenAssembler->msil && tn && chosenAssembler->msil->find_unboxed_type)
+    if (chosenAssembler->msil && chosenAssembler->msil->allowExtensions && tn && chosenAssembler->msil->find_unboxed_type)
     {
         // select an unboxed variable type for use in compiler
         // will be converted back to boxed as needed
@@ -3796,7 +3796,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
         }
         skip(&lex, closepa);
     }
-    else if (cparams.prm_cplusplus || chosenAssembler->msil && !MATCHKW(lex, closepa) && *spin)
+    else if (cparams.prm_cplusplus || chosenAssembler->msil && chosenAssembler->msil->allowExtensions && !MATCHKW(lex, closepa) && *spin)
     {
         // () is a function
         if (MATCHKW(lex, closepa))
@@ -4268,7 +4268,7 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
     LEXEME *pos = lex;
     BOOLEAN doneAfter = FALSE;
 
-    if (chosenAssembler->msil && MATCHKW(lex, openbr))
+    if (chosenAssembler->msil && chosenAssembler->msil->allowExtensions && MATCHKW(lex, openbr))
     {
         // managed array
         BOOLEAN isvla = FALSE;
@@ -4666,7 +4666,7 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
                 break;
             }
             // using the C++ reference operator as the ref keyword...
-            if (cparams.prm_cplusplus || chosenAssembler->msil && storage_class == sc_parameter && KW(lex) == and)
+            if (cparams.prm_cplusplus || chosenAssembler->msil && chosenAssembler->msil->allowExtensions && storage_class == sc_parameter && KW(lex) == and)
             {
                 TYPE *tp2;
                 ptype = Alloc(sizeof(TYPE));

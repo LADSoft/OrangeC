@@ -118,7 +118,7 @@ namespace DotNetPELib
     }
     bool Enum::PEDump(PELib &peLib)
     {
-        if (!peIndex_)
+        if (!InAssemblyRef())
         {
             int peflags = TransferFlags();
             size_t typenameIndex = peLib.PEOut().HashString(Name());
@@ -168,6 +168,26 @@ namespace DotNetPELib
             table = new FieldTableEntry(FieldTableEntry::Public | FieldTableEntry::SpecialName | FieldTableEntry::RTSpecialName, nameindex, sigindex);
             peIndex_ = peLib.PEOut().AddTableEntry(table);
             delete[] sig;
+        }
+        else if (!peIndex_)
+        {
+            if (typeid(*parent_) == typeid(Class))
+            {
+                parent_->PEDump(peLib);
+                ResolutionScope resolution(ResolutionScope::TypeRef, parent_->PEIndex());
+                size_t typenameIndex = peLib.PEOut().HashString(Name());
+                TableEntryBase *table = new TypeRefTableEntry(resolution, typenameIndex, 0);
+                peIndex_ = peLib.PEOut().AddTableEntry(table);
+            }
+            else
+            {
+                ResolutionScope resolution(ResolutionScope::AssemblyRef, ParentAssembly(peLib));
+                size_t typenameIndex = peLib.PEOut().HashString(Name());
+                size_t namespaceIndex = ParentNamespace(peLib);
+                TableEntryBase *table = new TypeRefTableEntry(resolution, typenameIndex, namespaceIndex);
+                peIndex_ = peLib.PEOut().AddTableEntry(table);
+            }
+
         }
         return true;
     }

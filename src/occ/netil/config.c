@@ -63,24 +63,28 @@ int dbgblocknum;
 static    char usage_text[] = "[options] [@response file] files\n"
     "\n""/1        - C1x mode                  /8        - c89 mode\n"
         "/9        - C99 mode                  /c        - compile only\n"
-        "+e        - dump errors to file       +i        - dump preprocessed file\n"
-        "+l        - dump listing file         -m        - disable language extensions\n"
+        "-d        - don't allow extensions    +e        - dump errors to file\n"
+        "+i        - dump preprocessed file    +l        - dump listing file\n"
         "/oname    - specify output file name\n"
         "+A        - disable extensions        /Dxxx     - define something\n"
         "/E[+]nn   - max number of errors      /Ipath    - specify include path\n"
         "/Kfile    - set strong name key       /Lxxx     - set dlls to import from\n"
         "/M        - generate make stubs       /Nns.cls  - set namespace and class\n"
         "/O-       - disable optimizations     +Q        - quiet mode\n"
-        "/T        - translate trigraphs       /Vx.x.x.x - set assembly version\n"
+        "/T        - translate trigraphs       /Vx.x.x.x - set assembly assembVersion\n"
         "Codegen parameters: (/C[+][-][params])\n"
         "  +d   - display diagnostics          -b        - no BSS\n"
-        "  -l        - no C source in ASM file -m        - no leading underscores\n"
+        "  -l        - no C source in ASM file -m        -  no leading underscores\n"
         "  +u        - 'char' type is unsigned\n"
         "Time: " __TIME__ "  Date: " __DATE__;
 
 static int parse_param(char mode, char *string);
 static CMDLIST args[] = 
 {
+    {
+        'd', ARG_BOOL, (void(*)(char, char *))parse_param 
+    }
+    ,
     {
         'K', ARG_CONCATSTRING, (void (*)(char, char *))parse_param
     },
@@ -304,6 +308,7 @@ static ARCH_CHARACTERISTICS architecture = {
 } ;
 extern ARCH_GEN outputfunctions ;
 ARCH_MSIL msilData = {
+    TRUE,                   /* True if allowing language extensions */
     msil_managed,           /* return TRUE if the function is a managed function, FALSE otherwise */
     oa_get_boxed,                 /* msil - get a boxed version of type*/
     oa_get_unboxed,                 /* msil - get an unboxed version of type*/
@@ -394,6 +399,8 @@ static BOOLEAN validatenamespaceAndClass(char *str)
 }
 static int parse_param(char select, char *string)
 {
+    if (select == 'd')
+        msilData.allowExtensions = !!string;
     if (select == 'K') {
         strcpy(prm_snkKeyFile, string);
     }

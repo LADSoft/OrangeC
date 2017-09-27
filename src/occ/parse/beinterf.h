@@ -398,6 +398,7 @@ typedef struct
 } ASMREG;
 
 typedef struct {
+    BOOLEAN allowExtensions;                  /* True if allowing language extensions */
     BOOLEAN (*managed)(SYMBOL *sp);           /* return TRUE if the function is a managed function, FALSE otherwise */
     TYPE *(*find_boxed_type)(TYPE *tp);                 /* msil - get a boxed version of type*/
     TYPE *(*find_unboxed_type)(TYPE *tp);                 /* msil - get an unboxed version of type*/

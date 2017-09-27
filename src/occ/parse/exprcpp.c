@@ -647,7 +647,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
             errskim(&lex, skim_semi);
         }
     }
-    else if (!cparams.prm_cplusplus && !chosenAssembler->msil)
+    else if (!cparams.prm_cplusplus && (!chosenAssembler->msil || !chosenAssembler->msil->allowExtensions))
     {
         *exp = intNode(en_c_i, 0);
         errortype(ERR_IMPROPER_USE_OF_TYPE, *tp, NULL);

@@ -424,7 +424,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
     LEXEME *placeholder = lex;
     if (ismutable)        
         *ismutable = FALSE;
-    if (cparams.prm_cplusplus || chosenAssembler->msil)
+    if (cparams.prm_cplusplus || chosenAssembler->msil && chosenAssembler->msil->allowExtensions)
     {
         lex = id_expression(lex, funcsp, &sp, &strSym, &nsv, NULL, FALSE, FALSE, idname);
     }
@@ -1089,7 +1089,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
     char *tokenName = lex->kw->name;
     (void)funcsp;
     // find structured version of arithmetic types for msil member matching
-    if (chosenAssembler->msil && (isarithmetic(*tp) || (*tp)->type == bt___string || isarray(*tp) && basetype(*tp)->msil) && chosenAssembler->msil->find_boxed_type)
+    if (chosenAssembler->msil && chosenAssembler->msil->allowExtensions && (isarithmetic(*tp) || (*tp)->type == bt___string || isarray(*tp) && basetype(*tp)->msil) && chosenAssembler->msil->find_boxed_type)
     {
         // auto-boxing for msil
         TYPE *tp1 = chosenAssembler->msil->find_boxed_type(basetype(*tp));
@@ -6051,7 +6051,7 @@ static LEXEME *expression_add(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp,
                 castToArithmetic(FALSE, tp, exp, kw, tp1, TRUE);
                 castToArithmetic(FALSE, &tp1, &exp1, (enum e_kw)-1, *tp, TRUE);
             }
-            if (chosenAssembler->msil && kw == plus && (basetype(*tp)->type == bt___string || basetype(tp1)->type == bt___string || atp&&basetype(atp)->type == bt___string))
+            if (chosenAssembler->msil && chosenAssembler->msil->allowExtensions && kw == plus && (basetype(*tp)->type == bt___string || basetype(tp1)->type == bt___string || atp&&basetype(atp)->type == bt___string))
             {
                 msil = TRUE;
                 if ((*exp)->type == en_labcon && (*exp)->string)

@@ -748,6 +748,7 @@ namespace DotNetPELib
         ///** Add an enumeration constant
         // Note that the field does need to be part of an enumeration
         void AddEnumValue(longlong Value, ValueSize Size);
+        longlong EnumValue() const { return enumValue_;  }
         ///** Add an SDATA initializer
         void AddInitializer(Byte *bytes, int len); // this will be readonly in ILONLY assemblies
         ///** Field Name

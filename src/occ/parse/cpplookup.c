@@ -877,7 +877,7 @@ LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES
     BOOLEAN namespaceOnly = FALSE;
     *sym = NULL;
     
-    if (!cparams.prm_cplusplus && !chosenAssembler->msil)
+    if (!cparams.prm_cplusplus && (!chosenAssembler->msil || !chosenAssembler->msil->allowExtensions))
     {
         if (ISID(lex))
         {
@@ -4001,7 +4001,7 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
         LIST *gather = NULL;
         SYMBOL **flatList;    
         SYMBOL *found1 = NULL, *found2 = NULL;
-        if (!cparams.prm_cplusplus && (!chosenAssembler->msil || sp && !sp->tp->syms->table[0]->next))
+        if (!cparams.prm_cplusplus && (!chosenAssembler->msil || !chosenAssembler->msil->allowExtensions || sp && !sp->tp->syms->table[0]->next))
         {
             sp = ((SYMBOL *)sp->tp->syms->table[0]->p);
             if (sp)

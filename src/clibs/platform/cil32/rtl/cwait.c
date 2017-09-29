@@ -31,7 +31,10 @@
 	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <errno.h>
+#pragma netlib System
+
 using namespace System::Diagnostics;
+
 int cwait(int *status, int pid, int action)
 {
   Process process = Process::GetProcessById(pid);

@@ -38,6 +38,7 @@
 #include <process.h>
 #include <wchar.h>
 #include <locale.h>
+#include <ctype.h>
 #include "libp.h"
 #include <dir.h>
 
@@ -49,9 +50,9 @@ int _RTL_FUNC system(const char *string)
 	{
 		while (isspace(*string))
 			string++;
-		if (!strnicmp(string, "cd ", 3))
+		if (!_strnicmp(string, "cd ", 3))
 		{
-			return chdir(string + 3);
+			return _chdir(string + 3);
 		}
 
 	}
@@ -78,5 +79,5 @@ int _RTL_FUNC system(const char *string)
     buf[2] = 'C';
     buf[3] = ' ';
     strcpy(buf+4,string);
-	return spawnlp(P_WAIT,a,a,buf,0);
+	return _spawnlp(P_WAIT,a,a,buf,0);
 }

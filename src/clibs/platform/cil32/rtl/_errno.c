@@ -30,39 +30,20 @@
     TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
     ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-/*
-    assert.h
-*/
+#include <stdio.h>
+#include <time.h>
+#include <stdlib.h>
+#undef errno
+#include <wchar.h>
+#include <locale.h>
+#include "libp.h"
 
-#if !defined( __ASSERT_H__ )
-#define __ASSERT_H__
-
-#ifndef __STDDEF_H
-#include <stddef.h>
-#endif
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-void _RTL_FUNC _IMPORT __assertfail( const char *__who, const char *__file, 
-                            int __line, const char *__func, const char *__msg );
-#ifdef __cplusplus
-};
-#endif
-
-
-#undef assert
-#if !defined( NDEBUG ) && (!defined(__MSIL_) || defined(__MANAGED__))
-#if  __STDC_VERSION__ >= 199901L
-#  define assert(p) ( (p) ? (void)0 : (void)__assertfail( \
-                    "Assertion failed", __FILE__, __LINE__, __func__, #p ) )
-#else
-#  define assert(p) ( (p) ? (void)0 : (void)__assertfail( \
-                    "Assertion failed", __FILE__, __LINE__, 0, #p ) )
-#endif
-#else
-#  define assert(p) ((void)0)
-#endif
-
-#endif /* __ASSERT_H__ */
+int *_RTL_FUNC __GetErrno(void)
+{
+    struct __rtl_data *rv = __getRtlData();
+    return &rv->x_errno ;
+}
+int *_RTL_FUNC _errno()
+{
+    return __GetErrno();
+}

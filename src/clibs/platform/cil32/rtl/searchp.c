@@ -30,39 +30,24 @@
     TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
     ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-/*
-    assert.h
-*/
+#include <errno.h>
+#include <windows.h>
+#include <dos.h>
+#include <dir.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <memory.h>
 
-#if !defined( __ASSERT_H__ )
-#define __ASSERT_H__
+char  *_RTL_FUNC      searchpath( const char  *__file )
+{
+    static char buf[256];
+        LPTSTR xx ;
+        buf[0] = 0 ;
+        if (!SearchPath(NULL,__file,NULL,256,buf, &xx))
+            return 0;
+        if (!buf[0])
+               return 0 ;
+        return buf ;
 
-#ifndef __STDDEF_H
-#include <stddef.h>
-#endif
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-void _RTL_FUNC _IMPORT __assertfail( const char *__who, const char *__file, 
-                            int __line, const char *__func, const char *__msg );
-#ifdef __cplusplus
-};
-#endif
-
-
-#undef assert
-#if !defined( NDEBUG ) && (!defined(__MSIL_) || defined(__MANAGED__))
-#if  __STDC_VERSION__ >= 199901L
-#  define assert(p) ( (p) ? (void)0 : (void)__assertfail( \
-                    "Assertion failed", __FILE__, __LINE__, __func__, #p ) )
-#else
-#  define assert(p) ( (p) ? (void)0 : (void)__assertfail( \
-                    "Assertion failed", __FILE__, __LINE__, 0, #p ) )
-#endif
-#else
-#  define assert(p) ((void)0)
-#endif
-
-#endif /* __ASSERT_H__ */
+}

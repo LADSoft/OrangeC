@@ -1,3 +1,6 @@
+Version 2.11:
+    support extends for classes
+
 Version 2.10:
 	bug fix:  escape '"' and '\' in ldstr operand
 	bug fix:  fix a crash

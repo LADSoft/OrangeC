@@ -1902,6 +1902,14 @@ TYPE *destSize(TYPE *tp1, TYPE *tp2, EXPRESSION **exp1, EXPRESSION **exp2, BOOLE
          cast(rv, exp1);
        if (rv->type != tp2->type && exp2)
          cast(rv,exp2);
+       if (chosenAssembler->msil && chosenAssembler->msil->allowExtensions)
+       {
+           if (tp1->type == bt_enum)
+               return tp1;
+           else if (tp2->type == bt_enum)
+               return tp2;
+
+       }
        return rv;
     } else { /* have a pointer or other exceptional case*/
         if (tp1->type == bt_void && tp2->type == bt_void)

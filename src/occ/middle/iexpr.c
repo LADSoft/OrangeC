@@ -68,6 +68,8 @@ extern int inlinesym_count;
 extern EXPRESSION *inlinesym_thisptr[MAX_INLINE_NESTING];
 extern LIST *temporarySymbols;
 extern TYPE stdpointer;
+extern TYPE stdint;
+
 int calling_inline;
 
 EXPRESSION *objectArray_exp;
@@ -2042,9 +2044,31 @@ static int gen_parm(INITLIST *a, SYMBOL *funcsp)
             return rv;
         }
     }
-    if (!cparams.prm_cplusplus && isstructured(a->tp))
+    if (!cparams.prm_cplusplus && isstructured(a->tp) || chosenAssembler->msil && isarray(a->tp) && basetype(a->tp)->msil)
     {
-        rv = push_stackblock(a->tp, a->exp->left, funcsp, a->exp->size, a->vararg, a->valist ? a->exp : NULL);
+        if (a->exp->type != en_stackblock && chosenAssembler->msil)
+        {
+            EXPRESSION *exp1 = a->exp;
+            while (castvalue(exp1))
+                exp1 = exp1->left;
+
+            if (isconstzero(&stdint, exp1))
+            {
+                IMODE *ap4 = tempreg(-ISZ_UINT, 0), *ap3 = gen_expr(funcsp, exp1, 0, -ISZ_UINT);
+                ap3->size = ISZ_OBJECT; // only time we will set the OBJECT size for an int constant is if it is to be an LDNULL
+                gen_icode(i_assn, ap4, ap3, NULL);
+                gen_nodag(i_parm, 0, ap3, 0);
+                rv = 1;
+            }
+            else
+            {
+                rv = push_param(a->exp, funcsp, a->vararg, a->valist ? a->exp : NULL, F_OBJECT);
+            }
+        }
+        else
+        {
+            rv = push_stackblock(a->tp, a->exp->left, funcsp, a->exp->size, a->vararg, a->valist ? a->exp : NULL);
+        }
     }
     else if (a->exp->type == en_stackblock)
     {

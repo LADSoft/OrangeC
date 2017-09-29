@@ -198,6 +198,7 @@ TYPE *Importer::TranslateType(Type *in)
             rv = tp1;
         }
     }
+    UpdateRootTypes(rv);
     return rv;
 }
 
@@ -309,12 +310,12 @@ bool Importer::EnterClass(const Class *cls)
                 sp->tp->size = 1;// needs to be NZ but we don't really care what is is in the MSIL compiler
                 sp->trivialCons = TRUE;
             }
+            if (structures_.size())
+                sp->parentClass = structures_.back();
             sp->tp->syms = CreateHashTable(1);
             sp->tp->rootType = sp->tp;
             sp->tp->sp = sp;
             sp->declfile = sp->origdeclfile = "[import]";
-            if (structures_.size())
-                sp->parentClass = structures_.back();
             if (nameSpaces_.size())
                 sp->parentNameSpace = nameSpaces_.back();
             sp->access = ac_public;
@@ -336,6 +337,18 @@ bool Importer::EnterClass(const Class *cls)
             }
         }
         structures_.push_back(sp);
+        if (cls->Extends() && !sp->baseClasses && isstructured(sp->tp))
+        {
+            Class *Extends = cls->Extends();
+            SYMBOL *parent = cachedClasses_[Extends->Name()];
+            if (parent != sp) // object is parent to itself
+            {
+                BASECLASS *cl = (BASECLASS *)Alloc(sizeof(BASECLASS));
+                cl->accessLevel = ac_public;
+                cl->cls = parent;
+                sp->baseClasses = cl;
+            }
+        }
     }
     return true;
 }

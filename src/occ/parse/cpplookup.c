@@ -3124,6 +3124,13 @@ void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
                     seq[(*n)++] = CV_NONE;
             }
         }
+        else if (chosenAssembler->msil && (isstructured(tpp) || isarray(tpp) && basetype(tpp)->msil))
+        {
+            if (basetype(tpa)->nullptrType || expa && isconstzero(tpa, expa))
+                seq[(*n)++] = CV_POINTERCONVERSION;
+            else
+                seq[(*n)++] = CV_NONE;
+        }
         else if (isstructured(tpp))
         {
             if (allowUser)

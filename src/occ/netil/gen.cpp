@@ -66,6 +66,7 @@ extern "C" {
 	extern Method *currentMethod;
 	extern std::vector<Local *> localList;
 	extern DataContainer *mainContainer;
+    extern TYPE stdint;
 }
 #define MAX_ALIGNS 50
 MethodSignature *FindPInvokeWithVarargs(std::string name, std::list<Param *>::iterator begin, std::list<Param *>::iterator end, size_t size);
@@ -1459,6 +1460,11 @@ extern "C" void asm_assn(QUAD *q)               /* assignment */
             for (int i=0; i < n-1; i++)
                 decrement_stack();
         }
+    }
+    else if (q->dc.left && q->dc.left->mode == i_immed && q->dc.left->size == ISZ_OBJECT && isconstzero(&stdint, q->dc.left->offset))
+    {
+        gen_code(Instruction::i_ldnull, NULL);
+        increment_stack();
     }
     else
     {

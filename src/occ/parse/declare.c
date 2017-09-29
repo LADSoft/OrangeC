@@ -3315,8 +3315,6 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
     HASHTABLE *locals = localNameSpace->syms;
     LEXEME *placeholder = lex;
     STRUCTSYM s;
-    if (lex->line == 7)
-        printf("hi");
     s.tmpl = NULL;
     lex = getsym();
     IncGlobalFlag();

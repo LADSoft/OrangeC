@@ -51,7 +51,7 @@
 
 // reference changelog.txt to see what the changes are
 //
-#define DOTNETPELIB_VERSION "2.10"
+#define DOTNETPELIB_VERSION "2.11"
 
 // this is the main library header
 // it allows creation of the methods and data that would be dumped into 
@@ -275,6 +275,11 @@ namespace DotNetPELib
         {
             flags_ = old.flags_;
         }
+        Qualifiers &operator |=(int flags)
+        {
+            flags_ |= flags;
+            return *this;
+        }
         ///** most qualifiers come before the name of the item
         void ILSrcDumpBeforeFlags(PELib &) const;
         ///** but a couple of the method qualifiers come after the method definition
@@ -419,7 +424,7 @@ namespace DotNetPELib
         ///** The name
         const std::string &Name() const { return name_; }
         ///** The qualifiers
-        Qualifiers Flags() const { return flags_; }
+        Qualifiers &Flags() { return flags_; }
         ///** metatable index in the PE file for this data container
         size_t PEIndex() const { return peIndex_; }
         ///** metatable index in the PE file for this data container
@@ -634,6 +639,7 @@ namespace DotNetPELib
         ///**set the class we are extending from, if this is unset
         // a system class will be chosen based on whether or not the class is a valuetype
         void Extends(Class *extendsFrom) { extendsFrom_ = extendsFrom; }
+        Class *Extends() const { return extendsFrom_;  }
         ///** not locally defined
         bool External() const { return external_; }
         ///** not locally defined

@@ -1861,14 +1861,29 @@ join:
                         }
                         else if (!comparetypes(list->tp, decl->tp, FALSE))
                         {
-                            if (basetype(decl->tp)->type == bt___object)
+                            if (!chosenAssembler->msil || !isstructured(decl->tp))
                             {
-                                if (!isstructured(list->tp))
+                                if (basetype(decl->tp)->type == bt___object)
                                 {
-                                    list->exp = exprNode(en_x_object, list->exp, NULL);
+                                    if (!isstructured(list->tp))
+                                    {
+                                        list->exp = exprNode(en_x_object, list->exp, NULL);
+                                    }
                                 }
+                                else if (basetype(decl->tp)->type != bt_memberptr)
+                                    errorarg(ERR_TYPE_MISMATCH_IN_ARGUMENT, argnum, decl, params->sp);
                             }
-                            else if (basetype(decl->tp)->type != bt_memberptr)
+                            else if (isstructured(list->tp))
+                            {
+                                SYMBOL *base = basetype(decl->tp)->sp;
+                                SYMBOL *derived = basetype(list->tp)->sp;
+                                if (base != derived && classRefCount(base, derived) != 1)
+                                    errortype(ERR_CANNOT_CONVERT_TYPE, list->tp, decl->tp);
+                                if (base != derived && !isAccessible(derived, derived, base, funcsp, ac_public, FALSE))
+                                    errorsym(ERR_CANNOT_ACCESS, base);
+
+                            }
+                            else if (!isconstzero(list->tp, list->exp))
                                 errorarg(ERR_TYPE_MISMATCH_IN_ARGUMENT, argnum, decl, params->sp);
                         }
                         else if (assignDiscardsConst(decl->tp, list->tp))
@@ -1941,7 +1956,8 @@ join:
             }
             if (dest && list && list->tp && basetype(dest)->type != bt_memberptr && !comparetypes(dest, list->tp, TRUE))
             {
-                cast(basetype(dest), &list->exp);
+                if (!chosenAssembler->msil || !isstructured(dest) && (!isarray(dest) || !basetype(dest)->msil))
+                    cast(basetype(dest), &list->exp);
                 list->tp = dest;
             }
             else if (dest && list && basetype(dest)->type == bt_enum)
@@ -2522,7 +2538,7 @@ void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, 
                 dropStructureDeclaration();
             }
             PopTemplateNamespace(tns);
-        }            
+        }
         if (!*lptr)
         {
             EXPRESSION *q = sym->init->exp;
@@ -3014,10 +3030,10 @@ void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, 
             }
             else
             {
-                if (basetype(sym->tp)->type == bt___string && (basetype(p->tp)->type == bt___string || p->exp->type == en_labcon && p->exp->string))
+                if ((basetype(sym->tp)->type == bt___string) && ((basetype(p->tp)->type == bt___string) || (p->exp->type == en_labcon && p->exp->string)))
                 {
                     if (p->exp->type == en_labcon)
-                        p->exp->type == en_c_string;
+                        p->exp->type = en_c_string;
                 }
                 else if (basetype(sym->tp)->type == bt___object)
                 {
@@ -3027,7 +3043,7 @@ void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, 
                 else if (ismsil(p->tp))
                     ; // error
                 // legacy c language support
-                else if (p && p->tp && isstructured(p->tp))
+                else if (p && p->tp && isstructured(p->tp) && (!basetype(p->tp)->sp->msil || !isconstzero(p->tp, p->exp)))
                 {
                     p->exp = exprNode(en_stackblock, p->exp, NULL);
                     p->exp->size = p->tp->size;
@@ -6612,7 +6628,7 @@ static LEXEME *binop(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE ** tp, EXPRESS
             error(ERR_ILL_STRUCTURE_OPERATION);
         else if (isvoid(*tp) || isvoid(tp1) || (*tp)->type == bt_aggregate  || tp1->type == bt_aggregate || ismsil(*tp) || ismsil(tp1))
             error(ERR_NOT_AN_ALLOWED_TYPE);
-        else if (basetype(*tp)->scoped || basetype(tp1)->scoped)
+        else if ((basetype(*tp)->scoped || basetype(tp1)->scoped) && (!chosenAssembler->msil || !chosenAssembler->msil->allowExtensions))
             error(ERR_SCOPED_TYPE_MISMATCH);
         if (type != en_lor && type != en_land)
         {

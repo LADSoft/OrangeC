@@ -304,7 +304,9 @@ namespace DotNetPELib
                 SetPublicKey(reader, entry->publicKeyIndex_.index_);
             }
             std::vector<std::string>refClasses;
-            const DNLTable &table1 = reader.Table(tTypeDef);
+            refClasses.push_back("");
+            std::vector<std::string>typerefClasses;
+            const DNLTable &table1 = reader.Table(tTypeRef);
             for (auto tentry : table1)
             {
                 Byte buf[256];
@@ -366,6 +368,7 @@ namespace DotNetPELib
                             flags |= Qualifiers::Sealed;
                         if (entry->flags_ & TypeDefTableEntry::AnsiClass)
                             flags |= Qualifiers::Ansi;
+
                         if (name_ == "mscorlib" && entry->extends_.tag_ == TypeDefOrRef::TypeDef && n < classes.size() && classes[n] && classes[n]->Name() == "Enum")
                         {
                             // Assumes namespace system, which is probably safe since we contexted to
@@ -442,6 +445,71 @@ namespace DotNetPELib
                     i++;
                 }
             }
+            int i = 1;
+            for (auto tentry : table2)
+            {
+                if (classes[i])
+                {
+                    TypeDefTableEntry *entry = static_cast<TypeDefTableEntry *>(tentry);
+                    if (entry->extends_.index_)
+                    {
+                        switch (entry->extends_.tag_)
+                        {
+                            case TypeDefOrRef::TypeDef:
+                            {
+                                classes[i]->Extends(classes[entry->extends_.index_]);
+                            }
+                                break;
+                            case TypeDefOrRef::TypeRef:
+                                break;
+                        }
+                        bool done = false;
+                        int index = -1;
+                        while (!done)
+                        {
+                            done = true;
+                            switch (entry->extends_.tag_)
+                            {
+                                case TypeDefOrRef::TypeDef:
+                                {
+                                    if (entry->extends_.index_ == 0)
+                                    {
+
+                                    }
+                                    else if (entry->extends_.index_ == index)
+                                    {
+                                        // hit bottom
+                                    }
+                                    else
+                                    {
+                                        index = entry->extends_.index_;
+                                        entry = static_cast<TypeDefTableEntry *>(table2[index]);
+                                        if (!classes[index])
+                                        {
+                                            done = true;
+                                        }
+                                        else if (classes[index]->Name() == "Object" || classes[index]->Name() == "Enum")
+                                        {
+                                            done = false;
+                                        }
+                                        else if (classes[index]->Name() == "ValueType")
+                                        {
+                                            classes[i]->Flags() |= Qualifiers::Value;
+                                            done = false;
+                                        }
+                                    }
+                                }
+                                break;
+                                case TypeDefOrRef::TypeRef:
+                                    if (refClasses[entry->extends_.index_] == "System.ValueType")
+                                        classes[i]->Flags() |= Qualifiers::Value;
+                                    break;
+                            }
+                        };
+                    }
+                }
+                i++;
+            }
             const DNLTable &table3 = reader.Table(tNestedClass);
             for (auto tentry : table3)
             {
@@ -468,7 +536,7 @@ namespace DotNetPELib
             while (properties.size() < classes.size())
                 properties.push_back(0);
             const DNLTable &table5 = reader.Table(tPropertyMap);
-            int i = 0;
+            i = 0;
             for (auto tentry : table5)
             {
                 PropertyMapTableEntry *entry5 = static_cast<PropertyMapTableEntry *>(tentry);

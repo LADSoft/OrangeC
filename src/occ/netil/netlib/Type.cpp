@@ -49,7 +49,7 @@ namespace DotNetPELib
     };
     char *BoxedType::typeNames_[] = { "", "", "", "Bool", "Char", "Int8", "UInt8",
         "Int16", "UInt16", "Int32", "UInt32",
-        "Int64", "UInt64", "IntPtr", "UIntPtr", "Single", "Double", "", "String"
+        "Int64", "UInt64", "IntPtr", "UIntPtr", "Single", "Double", "Object", "String"
     };
     bool Type::Matches(Type *right)
     {

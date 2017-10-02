@@ -70,6 +70,6 @@ struct tm *_RTL_FUNC gmtime(const time_t *time)
 	while (temp1 >=0)
 		temp1-=_monthdays[++rv->tm_mon];
 	rv->tm_mday = temp1 + _monthdays[rv->tm_mon]+1;
-        rv->tm_isdst = _daylight;
+	rv->tm_isdst = 0;
    return rv;
 }

@@ -31,6 +31,9 @@
 	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <time.h>
+#include <wchar.h>
+#include <locale.h>
+#include "libp.h"
 
 struct tm * _RTL_FUNC localtime(const time_t *time)
 {
@@ -44,5 +47,6 @@ struct tm * _RTL_FUNC localtime(const time_t *time)
    if (t1 > 0x7fffffff)
 	   return NULL;
     t = gmtime(&t1);
-	return t;
+    t->tm_isdst = _daylight;
+    return t;
 }

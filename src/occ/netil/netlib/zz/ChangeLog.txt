@@ -1,13 +1,6 @@
-Version 2.12:
-	allow boxing of 'object' and creation of arrays of objects
-
-Version 2.11:
-    support extends for classes
-
 Version 2.10:
 	bug fix:  escape '"' and '\' in ldstr operand
 	bug fix:  fix a crash
-	bug fix:  handle enum references properly and load enum values
 
 Version 2.9:
 	bug fix:  allow System.Diagnostics.Process to load

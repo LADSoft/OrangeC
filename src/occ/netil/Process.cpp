@@ -501,7 +501,7 @@ std::string GetArrayName(TYPE *tp)
     else
     {
         static char * typeNames[] = { "int8", "int8", "int8", "int8", "uint8",
-                "int16", "int16", "uint16", "uint16", "int32", "native int", "int32", "uint32", "native unsigned int", "uint32",
+                "int16", "int16", "uint16", "uint16", "int32", "int32", "native int", "int32", "uint32", "native unsigned int", "int32", "uint32",
                 "int64", "uint64", "float32", "float64", "float64", "float32", "float64", "float64" };
         return std::string(typeNames[basetype(tp)->type]) + end;
     }

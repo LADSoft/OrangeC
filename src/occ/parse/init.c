@@ -327,7 +327,7 @@ static void dumpDynamicInitializers(void)
         EXPRESSION *exp = NULL, **next = &exp, *exp1;
         STATEMENT *stmt= NULL, **stmtp = &stmt;
         int i=0;
-        exp = convertInitToExpression(dynamicInitializers->init->basetp, dynamicInitializers->sp, NULL, dynamicInitializers->init, NULL, FALSE);
+        exp = convertInitToExpression(dynamicInitializers->init ? dynamicInitializers->init->basetp : dynamicInitializers->sp->tp, dynamicInitializers->sp, NULL, dynamicInitializers->init, NULL, FALSE);
 
         while (*next && (*next)->type == en_void)
         {
@@ -2474,7 +2474,7 @@ static LEXEME *initialize___object(LEXEME *lex, SYMBOL *funcsp, int offset,
     {
         cast(tp, &expr);
     }
-    initInsert(init, tp, expr, offset, FALSE);
+    initInsert(init, itype, expr, offset, FALSE);
     return lex;
 }
 static LEXEME *initialize___string(LEXEME *lex, SYMBOL *funcsp, int offset,

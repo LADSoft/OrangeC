@@ -454,6 +454,10 @@ void load_ind(IMODE *im)
             op = Instruction::i_ldobj;
             operand = peLib->AllocateOperand(peLib->AllocateValue("", GetType(im->offset->v.sp->tp, TRUE, 0, 0)));
             break;
+        case ISZ_STRING:
+            op = Instruction::i_ldobj;
+            operand = peLib->AllocateOperand(peLib->AllocateValue("", peLib->AllocateType(Type::string, 0)));
+            break;
     }
     gen_code(op, operand);
 
@@ -1010,10 +1014,10 @@ BoxedType *boxedType(int isz)
         Type::i64, Type::i32, Type::i32, Type::i16, Type::i16, Type::r32, Type::r64,
         Type::r64, Type::r32, Type::r64, Type::r64,
     };
-    if (isz == ISZ_OBJECT)
-        return NULL;
     Type::BasicType n;
-    if (isz == ISZ_STRING)
+    if (isz == ISZ_OBJECT)
+        n = Type::object; // to support newarr object[]
+    else if (isz == ISZ_STRING)
         n = Type::string;
     else
         n = isz < 0 ? mnames[-isz] : names[isz];
@@ -1461,7 +1465,7 @@ extern "C" void asm_assn(QUAD *q)               /* assignment */
                 decrement_stack();
         }
     }
-    else if (q->dc.left && q->dc.left->mode == i_immed && q->dc.left->size == ISZ_OBJECT && isconstzero(&stdint, q->dc.left->offset))
+    else if (q->dc.left && q->dc.left->mode == i_immed && (q->dc.left->size == ISZ_OBJECT || q->dc.left->size == ISZ_STRING) && isconstzero(&stdint, q->dc.left->offset))
     {
         gen_code(Instruction::i_ldnull, NULL);
         increment_stack();

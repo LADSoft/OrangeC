@@ -1621,12 +1621,13 @@ IMODE *gen_assign(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
         ap1->mode = i_immed;
         ap1->offset = node->left;
         ap1->size = ap2->size;
-        gen_icode(i_assn, ap1, ap1, NULL);
+        gen_icode(i_assn, ap1, ap2, NULL);
     }
     else
     {
         if (chosenAssembler->arch->preferopts & OPT_REVERSESTORE)
         {
+            EXPRESSION *ex = node->right;
             int n = 0, m;
             ap1 = gen_expr(funcsp, node->left, (flags & ~F_NOVALUE) | F_STORE, natural_size(node->left));
             if (ap1->bits > 0 && (chosenAssembler->arch->denyopts & DO_MIDDLEBITS))
@@ -1649,7 +1650,16 @@ IMODE *gen_assign(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
             {
                 ap3 = NULL;
             }
-            ap2 = gen_expr(funcsp, node->right, (flags & ~F_NOVALUE), natural_size(node->left));
+            while (castvalue(ex))
+                ex = ex->left;
+            if ((ap1->size == ISZ_OBJECT || ap1->size == ISZ_STRING) && isconstzero(&stdint, ex))
+            {
+                ap2 = make_immed(ISZ_OBJECT, 0); // LDNULL
+            }
+            else
+            {
+                ap2 = gen_expr(funcsp, node->right, (flags & ~F_NOVALUE), natural_size(node->left));
+            }
             ap4 = LookupLoadTemp(ap2, ap2);
             if (ap4 != ap2)
                 gen_icode(i_assn, ap4, ap2, NULL);
@@ -3464,7 +3474,7 @@ int natural_size(EXPRESSION *node)
         case en_thisshim:
             return ISZ_ADDR;
         case en_msil_array_access:
-            return ISZ_ADDR;
+            return sizeFromType(node->v.msilArray->tp);
         case en_stmt:
             return natural_size(node->left);
         case en_funcret:

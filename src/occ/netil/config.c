@@ -4,7 +4,7 @@
     Copyright (c) 1997-2011, David Lindauer, (LADSoft).
     All rights reserved.
     
-    Redistribution and se of this software in source and binary forms, 
+    Redistribution and use of this software in source and binary forms, 
     with or without modification, are permitted provided that the following 
     conditions are met:
     

@@ -896,7 +896,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                 }
             }
     
-            if (lvalue(*exp))
+            if (lvalue(*exp) && (*exp)->type != en_l_object)
                 (*exp)->v.sp = sp; // catch for constexpr
             (*exp)->pragmas = stdpragmas;
             if (isvolatile(*tp))
@@ -3030,10 +3030,28 @@ void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, 
             }
             else
             {
-                if ((basetype(sym->tp)->type == bt___string) && ((basetype(p->tp)->type == bt___string) || (p->exp->type == en_labcon && p->exp->string)))
+                if (basetype(sym->tp)->type == bt___string)
                 {
-                    if (p->exp->type == en_labcon)
-                        p->exp->type = en_c_string;
+                    if ((basetype(p->tp)->type == bt___string) || (p->exp->type == en_labcon && p->exp->string))
+                    {
+                        if (p->exp->type == en_labcon)
+                            p->exp->type = en_c_string;
+                    }
+                    else if ((isarray(p->tp) || ispointer(p->tp)) && !basetype(p->tp)->msil && basetype(basetype(p->tp)->btp)->type == bt_char)
+                    {
+                        // make a 'string' object and initialize it with the string
+                        TYPE *ctype = chosenAssembler->msil->find_boxed_type(basetype(sym->tp));
+                        FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
+                        EXPRESSION *exp1, *exp2;
+                        exp1 = exp2 = anonymousVar(sc_auto, &std__string);
+                        funcparams->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
+                        funcparams->arguments->tp = p->tp;
+                        funcparams->arguments->exp = p->exp;
+                        callConstructor(&ctype, &exp2, funcparams, FALSE, NULL, TRUE, TRUE, FALSE, FALSE, FALSE);
+                        exp2 = exprNode(en_l_string, exp2, NULL);
+                        p->exp = exp2;
+                        p->tp = &std__string;
+                    }
                 }
                 else if (basetype(sym->tp)->type == bt___object)
                 {
@@ -5807,6 +5825,7 @@ LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRE
                         else if (basetype(*tp)->type == bt___object)
                         {
                             if (basetype(throwaway)->type != bt___object)
+                                if (!isarray(throwaway) && !isstructured(throwaway) || !basetype(throwaway) ->msil)
                                 *exp = exprNode(en_x_object, *exp, NULL);
                         }
                         else if (isvoid(throwaway) && !isvoid(*tp) || ismsil(*tp))
@@ -5827,7 +5846,7 @@ LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRE
                                 cast(*tp, exp);
                             }
                         }
-                        else
+                        else if (!isarray(*tp) || !basetype(*tp)->msil)
                         {
                             cast(*tp, exp);
                         }
@@ -7215,12 +7234,7 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                     error(ERR_NOT_AN_ALLOWED_TYPE);
                 if (ispointer(*tp))
                 {
-                    if (isarray(tp1) && (tp1)->msil && natural_size(exp1) != ISZ_OBJECT)
-                    {
-                        exp1 = exprNode(en_l_object, exp1, NULL);
-                        exp1->v.tp = tp1;
-                    }
-                    if (isarray(*tp) && (*tp)->msil && natural_size(*exp) != ISZ_OBJECT)
+                    if (isarray(*tp) && (*tp)->msil && !comparetypes(*tp, tp1, TRUE) && natural_size(*exp) != ISZ_OBJECT)
                     {
                         *exp = exprNode(en_l_object, *exp, NULL);
                         (*exp)->v.tp = tp1;
@@ -7494,7 +7508,7 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
         {
             if (kw == assign)
             {
-                if ((*exp)->type != en_msil_array_access)
+                if ((*exp)->type != en_msil_array_access &&exp1->type != en_msil_array_access)
                 {
                     int n = natural_size(*exp);
                     if (natural_size(exp1) != n)

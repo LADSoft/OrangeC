@@ -962,6 +962,11 @@ int sizeFromType(TYPE *tp)
             rv = ISZ_ILDOUBLE;
             break;
         case bt_pointer:
+            if (isarray(tp) && basetype(tp)->msil)
+            {
+                rv = ISZ_OBJECT;
+                break;
+            }
         case bt_func:
         case bt_ifunc:
         case bt_lref:

@@ -450,7 +450,13 @@ void genreturn(STATEMENT *stmt, SYMBOL *funcsp, int flag, int noepilogue, IMODE 
         {
             if (chosenAssembler->msil)
             {
-                ap = gen_expr(funcsp, stmt->select, F_OBJECT | F_INRETURN, ISZ_ADDR);
+                EXPRESSION *exp = stmt->select;
+                while (castvalue(exp))
+                    exp = exp->left;
+                if (isconstzero(&stdint, exp))
+                    ap = make_immed(ISZ_OBJECT, 0); // LDNULL
+                else
+                    ap = gen_expr(funcsp, stmt->select, F_OBJECT | F_INRETURN, ISZ_ADDR);
                 DumpIncDec(funcsp);
             }
             else
@@ -473,8 +479,14 @@ void genreturn(STATEMENT *stmt, SYMBOL *funcsp, int flag, int noepilogue, IMODE 
         }
         else
         {
+            EXPRESSION *exp = stmt->select;
+            while (castvalue(exp))
+                exp = exp->left;
             size = natural_size(stmt->select);
-            ap3 = gen_expr(funcsp, stmt->select, 0, size);
+            if (size == ISZ_OBJECT && isconstzero(&stdint, exp))
+                ap3 = make_immed(ISZ_OBJECT, 0); // LDNULL
+            else
+                ap3 = gen_expr(funcsp, stmt->select, 0, size);
             DumpIncDec(funcsp);
             ap = LookupLoadTemp(NULL, ap3);
             if (ap != ap3)

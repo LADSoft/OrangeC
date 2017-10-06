@@ -1953,7 +1953,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 }
                 else
                     MatchReturnTypes(funcsp, tp, tp1);
-                if (!comparetypes(tp, tp1, TRUE))
+                if (!comparetypes(tp, tp1, TRUE) && (!chosenAssembler->msil || !isstructured(tp) || !isconstzero(&stdint, returnexp)))
                 {
                     errortype(ERR_CANNOT_CONVERT_TYPE, tp1, tp);
                 }
@@ -2030,7 +2030,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 }
             }
             if (basetype(tp)->type == bt___object)
-                if (basetype(tp1)->type != bt___object)
+                if (basetype(tp1)->type != bt___object && !isstructured(tp1) && (!isarray(tp1) || !basetype(tp1)->msil))
                     returnexp = exprNode(en_x_object, returnexp, NULL);
             if (isstructured(tp1) && isarithmetic(tp))
             {
@@ -2080,7 +2080,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         {
             if (!isstructured(basetype(funcsp->tp)->btp) && 
                 basetype(basetype(funcsp->tp)->btp)->type != bt_memberptr)
-                if (!isarray(basetype(funcsp->tp)->btp) || !basetype(funcsp->tp)->btp->msil)
+                if (basetype(basetype(funcsp->tp)->btp)->type != bt___object && ( !isarray(basetype(funcsp->tp)->btp) || !basetype(funcsp->tp)->btp->msil))
                     error(ERR_FUNCTION_RETURNING_ADDRESS_STACK_VARIABLE);
         }
         if (!returnexp)
@@ -2134,7 +2134,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             }
             else 
             {
-                if (!isref(basetype(funcsp->tp)->btp))
+                if (!isref(basetype(funcsp->tp)->btp) && (isarithmetic(basetype(funcsp->tp)->btp) || ispointer(basetype(funcsp->tp)->btp) && !isarray(basetype(funcsp->tp)->btp)))
                     cast(returntype, &st->select);
                 if (ispointer(returntype))
                 {

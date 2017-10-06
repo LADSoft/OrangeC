@@ -1519,7 +1519,8 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                 }
                 else
                 {
-                    cast(init->basetp, &exp);
+                    if (isarithmetic(init->basetp) || ispointer(init->basetp))
+                        cast(init->basetp, &exp);
                     if (exps)
                         exp = exprNode(en_assign, exps, exp);
                 }

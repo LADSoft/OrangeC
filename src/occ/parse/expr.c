@@ -1865,7 +1865,7 @@ join:
                             {
                                 if (basetype(decl->tp)->type == bt___object)
                                 {
-                                    if (!isstructured(list->tp))
+                                    if (!isstructured(list->tp) && (!isarray(list->tp) || !basetype(list->tp)->msil))
                                     {
                                         list->exp = exprNode(en_x_object, list->exp, NULL);
                                     }
@@ -3055,7 +3055,7 @@ void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, 
                 }
                 else if (basetype(sym->tp)->type == bt___object)
                 {
-                    if (basetype(p->tp)->type != bt___object)
+                    if (basetype(p->tp)->type != bt___object && !isstructured(p->tp) && (!isarray(p->tp) || !basetype(p->tp)->msil))
                        p->exp = exprNode(en_x_object, p->exp, NULL);
                 }
                 else if (ismsil(p->tp))
@@ -5825,8 +5825,8 @@ LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRE
                         else if (basetype(*tp)->type == bt___object)
                         {
                             if (basetype(throwaway)->type != bt___object)
-                                if (!isarray(throwaway) && !isstructured(throwaway) || !basetype(throwaway) ->msil)
-                                *exp = exprNode(en_x_object, *exp, NULL);
+                                if (!isstructured(throwaway) &&( !isarray(throwaway)  || !basetype(throwaway) ->msil))
+                                    *exp = exprNode(en_x_object, *exp, NULL);
                         }
                         else if (isvoid(throwaway) && !isvoid(*tp) || ismsil(*tp))
                         {
@@ -5846,7 +5846,7 @@ LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRE
                                 cast(*tp, exp);
                             }
                         }
-                        else if (!isarray(*tp) || !basetype(*tp)->msil)
+                        else if (!isstructured(*tp) && (!isarray(*tp) || !basetype(*tp)->msil))
                         {
                             cast(*tp, exp);
                         }
@@ -7227,7 +7227,7 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                 }
                 else if (basetype(*tp)->type == bt___object)
                 {
-                    if (tp1->type != bt___object)
+                    if (tp1->type != bt___object && !isstructured(tp1) && (!isarray(tp1) || !basetype(tp1)->msil))
                         exp1 = exprNode(en_x_object, exp1, NULL);
                 }
                 else if (ismsil(*tp) || ismsil(tp1))
@@ -7433,7 +7433,7 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
         {
             if (exp1->type == en_labcon && exp1->string)
                 exp1->type = en_c_string;
-            else if (!ismsil(tp1))
+            else if (!ismsil(tp1) && !isstructured(tp1) && (!isarray(tp1) || !basetype(tp1)->msil))
                 exp1 = exprNode(en_x_object, exp1, NULL);
             if (op == en_assign)
             {
@@ -7510,9 +7510,18 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
             {
                 if ((*exp)->type != en_msil_array_access &&exp1->type != en_msil_array_access)
                 {
-                    int n = natural_size(*exp);
-                    if (natural_size(exp1) != n)
-                        cast((*tp), &exp1);
+                    if (isarithmetic(*tp) || isarithmetic(tp1) || ispointer(*tp) && (!isarray(*tp) || !basetype(*tp)->msil)
+                        || ispointer(tp1) && (!isarray(tp1) || !basetype(tp1)->msil))
+                    {
+                        int n = natural_size(*exp);
+                        if (natural_size(exp1) != n)
+                            cast((*tp), &exp1);
+                    }
+                    else if (isarray(*tp) && basetype(*tp)->msil)
+                    {
+                        *exp = exprNode(en_l_object, *exp, NULL);
+                        (*exp)->v.tp = *tp;
+                    }
                 }
 
                 *exp = exprNode(op, *exp, exp1);

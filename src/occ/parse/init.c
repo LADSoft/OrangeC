@@ -2470,7 +2470,7 @@ static LEXEME *initialize___object(LEXEME *lex, SYMBOL *funcsp, int offset,
     {
         error(ERR_EXPRESSION_SYNTAX);
     }
-    else if (isarithmetic(tp) || ispointer(tp))
+    else if (isarithmetic(tp) || ispointer(tp) && (!isarray(tp) || !tp->msil))
     {
         cast(tp, &expr);
     }

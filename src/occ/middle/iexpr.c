@@ -1658,7 +1658,22 @@ IMODE *gen_assign(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
             }
             else
             {
-                ap2 = gen_expr(funcsp, node->right, (flags & ~F_NOVALUE), natural_size(node->left));
+                switch (node->right->type)
+                {
+                    case en_auto:
+                    case en_global:
+                    case en_pc:
+                    case en_label:
+                    case en_threadlocal:
+                        if (isstructured(node->right->v.sp->tp))
+                        {
+                            ap2 = gen_expr(funcsp, node->right, (flags & ~F_NOVALUE) | F_OBJECT, natural_size(node->left));
+                            break;
+                        }
+                    default:
+                        ap2 = gen_expr(funcsp, node->right, (flags & ~F_NOVALUE), natural_size(node->left));
+                        break;
+                }
             }
             ap4 = LookupLoadTemp(ap2, ap2);
             if (ap4 != ap2)
@@ -1937,6 +1952,7 @@ int push_param(EXPRESSION *ep, SYMBOL *funcsp, BOOLEAN vararg, EXPRESSION *valis
     }
     else
     {
+        EXPRESSION *exp1 = ep;
         switch (ep->type)
         {
             case en_void:
@@ -1958,8 +1974,13 @@ int push_param(EXPRESSION *ep, SYMBOL *funcsp, BOOLEAN vararg, EXPRESSION *valis
                 rv = sizeFromISZ(ap->size);
                 break;
             default:
+                while (castvalue(exp1))
+                    exp1 = exp1->left;
                 temp = natural_size(ep);
-                ap3 = gen_expr( funcsp, ep, flags, temp);
+                if (temp == ISZ_OBJECT && isconstzero(&stdint, exp1))   
+                    ap3 = make_immed(ISZ_OBJECT, 0); // LDNULL
+                else
+                    ap3 = gen_expr( funcsp, ep, flags, temp);
                 if (ap3->bits > 0)
                     ap3 = gen_bit_load(ap3);
                 ap = LookupLoadTemp(NULL, ap3);

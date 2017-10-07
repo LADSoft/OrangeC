@@ -1447,20 +1447,37 @@ IMODE *gen_moveblock(EXPRESSION *node, SYMBOL *funcsp)
     if (chosenAssembler->msil)
     {
         int mode;
-        ap1 = gen_expr(funcsp, node->left, 0, ISZ_UINT);
-        mode = ap1->mode;
-        ap7 = tempreg(ISZ_UINT, 0);
-        *ap7 = *ap1;
-        ap1 = ap7;
-        ap1->mode = i_ind;
-        ap3 = gen_expr(funcsp, node->right, F_VOL, ISZ_UINT);
-        ap2 = LookupLoadTemp(NULL, ap3);
-        if (ap2 != ap3)
-            gen_icode(i_assn, ap2, ap3, NULL);
-        gen_icode(i_assn, ap1, ap2, NULL);
-        intermed_tail->altdata = (TYPE *)node->altdata;
-        intermed_tail->blockassign = TRUE;
-        intermed_tail->oldmode = mode;
+        if (node->left->type == en_msil_array_access)
+        {
+            TYPE *base = node->left->v.msilArray->tp;
+            while (isarray(base))
+                base = basetype(base)->btp;
+            gen_expr(funcsp, node->left, F_STORE, ISZ_OBJECT);
+            ap2 = gen_expr(funcsp, node->right, F_OBJECT, ISZ_OBJECT);
+            gen_icode(i_parm, 0, ap2, 0);
+            ap1 = (IMODE *)Alloc(sizeof(IMODE));
+            ap1->mode = i_immed;
+            ap1->offset = node->left;
+            ap1->size = ap2->size;
+            gen_icode(i_assn, ap1, ap2, NULL);
+        }
+        else
+        {
+            ap1 = gen_expr(funcsp, node->left, 0, ISZ_UINT);
+            mode = ap1->mode;
+            ap7 = tempreg(ISZ_UINT, 0);
+            *ap7 = *ap1;
+            ap1 = ap7;
+            ap1->mode = i_ind;
+            ap3 = gen_expr(funcsp, node->right, F_VOL, ISZ_UINT);
+            ap2 = LookupLoadTemp(NULL, ap3);
+            if (ap2 != ap3)
+                gen_icode(i_assn, ap2, ap3, NULL);
+            gen_icode(i_assn, ap1, ap2, NULL);
+            intermed_tail->altdata = (TYPE *)node->altdata;
+            intermed_tail->blockassign = TRUE;
+            intermed_tail->oldmode = mode;
+        }
     }
     else
     {
@@ -1602,7 +1619,7 @@ IMODE *gen_assign(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
         PushArrayLimits(funcsp, node->right->v.tp);
         while (isarray(base))
             base = basetype(base)->btp;
-        ap1 = gen_expr(funcsp, node->left, (flags & ~F_NOVALUE) | F_STORE, sizeFromType(base));
+        ap1 = gen_expr(funcsp, node->left, (flags & ~F_NOVALUE) | F_STORE, isstructured(base)?ISZ_OBJECT :sizeFromType(base));
         ap2 = (IMODE *)Alloc(sizeof(IMODE));
         ap2->mode = i_immed;
         ap2->offset = node->right;
@@ -1616,7 +1633,7 @@ IMODE *gen_assign(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
             base = basetype(base)->btp;
         gen_expr(funcsp, node->left, (flags & ~F_NOVALUE) | F_STORE, sizeFromType(base));
         ap2 = gen_expr(funcsp, node->right, (flags & ~F_NOVALUE), sizeFromType(base)); 
-        gen_icode(i_parm, 0, ap2, 0);
+        //gen_icode(i_parm, 0, ap2, 0);
         ap1 = (IMODE *)Alloc(sizeof(IMODE));
         ap1->mode = i_immed;
         ap1->offset = node->left;
@@ -2986,7 +3003,7 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
                 TYPE *base = node->v.msilArray->tp;
                 while (isarray(base))
                     base = basetype(base)->btp;
-                rv = tempreg(sizeFromType(base), 0);
+                rv = tempreg(isstructured(base) ? ISZ_OBJECT : sizeFromType(base), 0);
                 ap1 = (IMODE *)Alloc(sizeof(IMODE));
                 ap1->size = rv->size;
                 ap1->mode = i_immed;

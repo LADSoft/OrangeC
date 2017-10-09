@@ -90,7 +90,7 @@ namespace DotNetPELib
         else
         {
             n = 12;
-            *(Word *)dest = 0x3000 + (flags_ & 0xfff);
+            *(Word *)dest = 0x3000 + (flags_ & 0xfff) + (sehData_.size() ? (int)MoreSects : 0);
             *(Word *)(dest + 2) = maxStack_;
             *(DWord *)(dest + 4) = codeSize_;
             *(DWord *)(dest + 8) = signatureToken_;
@@ -98,6 +98,119 @@ namespace DotNetPELib
         out.write((char *)dest, n);
         out.write((char *)code_, codeSize_);
         n += codeSize_;
+        if (sehData_.size())
+        {
+            if (n % 4)
+            {
+                char align[4];
+                memset(align, 0, sizeof(align));
+                out.write((char *)align, 4 - n % 4);
+                n = n + 3;
+                n = n & ~3;
+            }
+            int end = 0;
+            while (end < sehData_.size())
+            {
+                const CodeContainer::SEHData &edata = sehData_[end];
+                bool etiny = edata.tryOffset < 65536 && edata.tryLength < 256 && edata.handlerOffset < 65536 && edata.handlerLength < 256;
+                if (!etiny)
+                    break;
+                end++;
+            }
+            if (end >= sehData_.size() && sehData_.size() < 21)
+            {
+                Byte header[4];
+                header[0] = EHTable;
+                header[1] = sehData_.size() * 12 + 4;
+                header[2] = 0;
+                header[3] = 0;
+                out.write((char *)header, 4);
+                n += 4;
+                for (int i = 0; i < sehData_.size(); i++)
+                {
+                    const CodeContainer::SEHData &data = sehData_[i];
+                    Byte bytes[12];
+                    bytes[0] = data.flags;
+                    bytes[1] = 0;
+                    bytes[2] = data.tryOffset & 0xff;
+                    bytes[3] = (data.tryOffset >> 8) & 0xff;
+                    bytes[4] = data.tryLength;
+                    bytes[5] = data.handlerOffset & 0xff;
+                    bytes[6] = (data.handlerOffset >> 8) & 0xff;
+                    bytes[7] = data.handlerLength;
+                    if (data.flags & CodeContainer::SEHData::Filter)
+                    {
+                        bytes[8] = data.filterOffset & 0xff;
+                        bytes[9] = (data.filterOffset >> 8) & 0xff;
+                        bytes[10] = (data.filterOffset >> 16) & 0xff;
+                        bytes[11] = (data.filterOffset >> 24) & 0xff;
+                    }
+                    else
+                    {
+                        bytes[8] = data.classToken & 0xff;
+                        bytes[9] = (data.classToken >> 8) & 0xff;
+                        bytes[10] = (data.classToken >> 16) & 0xff;
+                        bytes[11] = (data.classToken >> 24) & 0xff;
+
+                    }
+                    out.write((char *)bytes, 12);
+                    n += 12;
+                }
+            }
+            else
+            {
+                Byte header[4];
+                header[0] = EHTable | EHFatFormat;
+                int q = sehData_.size() * 24 + 4;
+                header[1] = q & 0xff;
+                header[2] = (q >> 8) & 0xff;
+                header[3] = (q >> 16) & 0xff;
+                out.write((char *)header, 4);
+                n += 4;
+                for (int i = 0; i < sehData_.size(); i++)
+                {
+                    const CodeContainer::SEHData &data = sehData_[i];
+                    Byte bytes[24];
+                    bytes[0] = data.flags;
+                    bytes[1] = 0;
+                    bytes[2] = 0;
+                    bytes[3] = 0;
+                    bytes[4] = data.tryOffset & 0xff;
+                    bytes[5] = (data.tryOffset >> 8) & 0xff;
+                    bytes[6] = (data.tryOffset >> 16) & 0xff;
+                    bytes[7] = (data.tryOffset >> 24) & 0xff;
+                    bytes[8] = data.tryLength & 0xff;
+                    bytes[9] = (data.tryLength >> 8) & 0xff;
+                    bytes[10] = (data.tryLength >> 16) & 0xff;
+                    bytes[11] = (data.tryLength >> 24) & 0xff;
+                    bytes[12] = data.handlerOffset & 0xff;
+                    bytes[13] = (data.handlerOffset >> 8) & 0xff;
+                    bytes[14] = (data.handlerOffset >> 16) & 0xff;
+                    bytes[15] = (data.handlerOffset >> 24) & 0xff;
+                    bytes[16] = data.handlerLength & 0xff;
+                    bytes[17] = (data.handlerLength >> 8) & 0xff;
+                    bytes[18] = (data.handlerLength >> 16) & 0xff;
+                    bytes[19] = (data.handlerLength >> 24) & 0xff;
+                    if (data.flags & CodeContainer::SEHData::Filter)
+                    {
+                        bytes[20] = data.filterOffset & 0xff;
+                        bytes[21] = (data.filterOffset >> 8) & 0xff;
+                        bytes[22] = (data.filterOffset >> 16) & 0xff;
+                        bytes[23] = (data.filterOffset >> 24) & 0xff;
+                    }
+                    else
+                    {
+                        bytes[20] = data.classToken & 0xff;
+                        bytes[21] = (data.classToken >> 8) & 0xff;
+                        bytes[22] = (data.classToken >> 16) & 0xff;
+                        bytes[23] = (data.classToken >> 24) & 0xff;
+
+                    }
+                    out.write((char *)bytes, 24);
+                    n += 24;
+                }
+            }
+        }
         return n;
     }
 
@@ -362,6 +475,29 @@ namespace DotNetPELib
                     currentRVA += 12;
                 }
                 currentRVA += method->codeSize_;
+                if (method->sehData_.size())
+                {
+                    if (currentRVA % 4)
+                        currentRVA += 4 - currentRVA % 4;
+                    int end = 0;
+                    const CodeContainer::SEHData &data = method->sehData_[end];
+                    while (end < method->sehData_.size())
+                    {
+                        const CodeContainer::SEHData &edata = method->sehData_[end];
+                        bool etiny = edata.tryOffset < 65536 && edata.tryLength < 256 && edata.handlerOffset < 65536 && edata.handlerLength < 256;
+                        if (!etiny)
+                            break;
+                        end++;
+                    }
+                    if (end >= method->sehData_.size() && method->sehData_.size() < 21)
+                    {
+                        currentRVA += 4 + method->sehData_.size() * 12;
+                    }
+                    else
+                    {
+                        currentRVA += 4 + method->sehData_.size() * 24;
+                    }
+                }
             }
             else
             {

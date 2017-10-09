@@ -1810,6 +1810,90 @@ extern "C" void asm_unloadcontext(QUAD *q)        /* load register context (e.g.
 extern "C" void asm_tryblock(QUAD *q)			 /* try/catch */
 {
 }
+extern "C" void asm_seh(QUAD *q)                /* windows seh */
+{
+    BOOLEAN begin = !!(q->sehMode & 0x80);
+    Instruction::iseh mode;
+    switch (q->sehMode & 15)
+    {
+    case 1:
+        mode = Instruction::seh_try;
+        break;
+    case 2:
+        mode = Instruction::seh_catch;
+        break;
+    case 3:
+        mode = Instruction::seh_fault;
+        break;
+    case 4:
+        mode = Instruction::seh_finally;
+        break;
+    default:
+        return;
+    }
+    if (begin)
+        if (mode == Instruction::seh_catch)
+        {
+            if (q->dc.left)
+            {
+                Instruction *i = peLib->AllocateInstruction(mode, true, GetType(q->dc.left->offset->v.sp->tp, TRUE));
+                currentMethod->AddInstruction(i);
+            }
+            else
+            {
+                Instruction *i = peLib->AllocateInstruction(mode, true, systemObject);
+                currentMethod->AddInstruction(i);
+            }
+
+        }
+        else
+        {
+            Instruction *i = peLib->AllocateInstruction(mode, true);
+            currentMethod->AddInstruction(i);
+
+        }
+    switch (mode)
+    {
+    case Instruction::seh_try:
+        if (!begin)
+            gen_branch(Instruction::i_leave, q->dc.v.label, FALSE);
+        break;
+    case Instruction::seh_catch:
+        if (!begin)
+        {
+            if (q->dc.left)
+            {
+                gen_code(Instruction::i_ldnull, NULL);
+                gen_code(Instruction::i_stloc, getOperand(q->dc.left));
+            }
+            gen_branch(Instruction::i_leave, q->dc.v.label, FALSE);
+        }
+        else
+        {
+            if (q->dc.left)
+                gen_code(Instruction::i_stloc, getOperand(q->dc.left));
+            else
+                gen_code(Instruction::i_pop, NULL);
+        }
+        break;
+    case Instruction::seh_fault:
+        if (!begin)
+            gen_code(Instruction::i_endfault, NULL);
+        break;
+    case Instruction::seh_finally:
+        if (!begin)
+            gen_code(Instruction::i_endfinally, NULL);
+        break;
+    default:
+        return;
+    }
+    if (!begin)
+    {
+        Instruction *i = peLib->AllocateInstruction(mode, false);
+        currentMethod->AddInstruction(i);
+
+    }
+}
 extern "C" void asm_stackalloc(QUAD *q)         /* allocate stack space - positive value = allocate(QUAD *q) negative value deallocate */
 {
 }

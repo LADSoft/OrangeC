@@ -201,6 +201,9 @@
     <ClCompile Include="..\parse\property.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\parse\wseh.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\parse\beinterf.h">

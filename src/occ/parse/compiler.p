@@ -945,6 +945,10 @@ void rtti_init(void);
 SYMBOL * RTTIDumpType(TYPE *tp);
 void XTDumpTab(SYMBOL *funcsp);
 
+				/* seh.c */
+
+LEXEME *statement_SEH(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent);
+
                                /* Stmt.c */
 
 void statement_ini(BOOLEAN global);
@@ -956,6 +960,10 @@ int insertLabel(BLOCKDATA *parent);
 LEXEME *statement_asm(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent);
 void assignParam(SYMBOL *funcsp, int *base, SYMBOL *param);
 BOOLEAN resolveToDeclaration(LEXEME *lex);
+LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent, 
+                           BOOLEAN viacontrol);
+LEXEME *compound(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent,   
+                        BOOLEAN first);
 LEXEME *body (LEXEME *lex, SYMBOL *funcsp);
 
                               /* Symtab.c */

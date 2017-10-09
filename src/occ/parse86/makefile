@@ -77,7 +77,8 @@ C_DEPENDENCIES= \
     symtab.c \
     template.c \
     types.c \
-    unmangle.c
+    unmangle.c \
+    wseh.c
 LIB_DEPENDENCIES=sqlite3
 #determine if we can ignore the banner for a batch compile
 WIN32 = WIN32

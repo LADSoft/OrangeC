@@ -93,6 +93,7 @@ void asm_loadstack(QUAD *q)			;
 void asm_savestack(QUAD *q)			;
 void asm_blockstart(QUAD *q)         ;
 void asm_blockend(QUAD *q)           ;
+void asm_seh(QUAD *q);              ;
 void asm_functail(QUAD *q, int begin, int size);
 void asm_atomic(QUAD *q);
                               /* Invoke.c */

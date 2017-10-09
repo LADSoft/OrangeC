@@ -2214,6 +2214,10 @@ static BOOLEAN noexceptStmt(STATEMENT *block)
                 break;
             case st_catch:
             case st_try:
+            case st___try:
+            case st___catch:
+            case st___finally:
+            case st___fault:
                 rv &= noexceptStmt(block->lower);
                 break;
             case st_return:

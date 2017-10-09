@@ -1095,7 +1095,13 @@ static void iop_tag(QUAD *q)
 {
     if (chosenAssembler->gen->asm_tag)
         chosenAssembler->gen->asm_tag(q);
-    oprintf(icdFile, "TAG");
+    oprintf(icdFile, "\tTAG");
+}
+static void iop_seh(QUAD *q)
+{
+    if (chosenAssembler->gen->asm_seh)
+        chosenAssembler->gen->asm_seh(q);
+    oprintf(icdFile, "\tSEH %d", q->sehMode);
 }
 static void iop_atomic_fence(QUAD *q)
 {
@@ -1157,23 +1163,23 @@ static void iop_cmpswp(QUAD *q)
 /* List of opcodes
  * This list MUST be in the same order as the op_ enums 
  */
-static void(*oplst[])(QUAD *q) = 
+static void(*oplst[])(QUAD *q) =
 {
-     /* NOPROTO */
-        iop_nop, iop_phi, iop_line, iop_passthrough, iop_datapassthrough, iop_skipcompare,
-        iop_label, iop_asmgoto, iop_goto, iop_directbranch,
-        iop_gosub, iop_fargosub, iop_trap, iop_int, iop_ret,
-        iop_fret, iop_rett, iop_add, iop_sub, iop_udiv, iop_umod, iop_sdiv, iop_smod, iop_muluh, iop_mulsh, iop_mul,
-        iop_lsl, iop_lsr, iop_asr, iop_neg, iop_not, iop_and, iop_or, iop_eor, 
-        iop_setne, iop_sete, iop_setc, iop_seta, iop_setnc, iop_setbe, iop_setl, iop_setg, iop_setle, iop_setge,
-        iop_asmcond, iop_jne, iop_je, iop_jc, iop_ja, iop_jnc, iop_jbe, iop_jl, iop_jg, iop_jle, iop_jge,  
-        iop_assn, iop_genword, iop_coswitch, iop_swbranch, iop_assnblock, iop_clrblock, iop_parmadj, iop_parmblock, iop_parm,
-        iop_array, iop_arrayindex, iop_arraylsh, iop_struct, iop_cppini, iop_block, iop_blockend, 
-        iop_dbgblock, iop_dbgblockend, iop_varstart, iop_func, iop_livein, iop_icon, iop_fcon, iop_imcon, iop_cxcon, 
-        iop_atomic_flag_test_and_set, iop_atomic_flag_clear, iop_atomic_fence, iop_atomic_flag_fence, iop_cmpswp,
-        iop_prologue, iop_epilogue, iop_pushcontext, iop_popcontext, iop_loadcontext, iop_unloadcontext,
-        iop_tryblock, iop_substack, iop_substack, iop_loadstack, iop_savestack, iop_functailstart, iop_functailend, 
-        iop_gcsestub, iop_expressiontag, iop_tag, iop_initblk, iop_cpblk
+    /* NOPROTO */
+       iop_nop, iop_phi, iop_line, iop_passthrough, iop_datapassthrough, iop_skipcompare,
+       iop_label, iop_asmgoto, iop_goto, iop_directbranch,
+       iop_gosub, iop_fargosub, iop_trap, iop_int, iop_ret,
+       iop_fret, iop_rett, iop_add, iop_sub, iop_udiv, iop_umod, iop_sdiv, iop_smod, iop_muluh, iop_mulsh, iop_mul,
+       iop_lsl, iop_lsr, iop_asr, iop_neg, iop_not, iop_and, iop_or, iop_eor,
+       iop_setne, iop_sete, iop_setc, iop_seta, iop_setnc, iop_setbe, iop_setl, iop_setg, iop_setle, iop_setge,
+       iop_asmcond, iop_jne, iop_je, iop_jc, iop_ja, iop_jnc, iop_jbe, iop_jl, iop_jg, iop_jle, iop_jge,
+       iop_assn, iop_genword, iop_coswitch, iop_swbranch, iop_assnblock, iop_clrblock, iop_parmadj, iop_parmblock, iop_parm,
+       iop_array, iop_arrayindex, iop_arraylsh, iop_struct, iop_cppini, iop_block, iop_blockend,
+       iop_dbgblock, iop_dbgblockend, iop_varstart, iop_func, iop_livein, iop_icon, iop_fcon, iop_imcon, iop_cxcon,
+       iop_atomic_flag_test_and_set, iop_atomic_flag_clear, iop_atomic_fence, iop_atomic_flag_fence, iop_cmpswp,
+       iop_prologue, iop_epilogue, iop_pushcontext, iop_popcontext, iop_loadcontext, iop_unloadcontext,
+       iop_tryblock, iop_substack, iop_substack, iop_loadstack, iop_savestack, iop_functailstart, iop_functailend,
+       iop_gcsestub, iop_expressiontag, iop_tag, iop_seh, iop_initblk, iop_cpblk
 };
 /*-------------------------------------------------------------------------*/
 void beDecorateSymName(char *buf, SYMBOL *sp)

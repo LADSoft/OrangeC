@@ -38,12 +38,13 @@
         email: TouchStone222@runbox.com <David Lindauer>
 */
 #include "DotNetPELib.h"
+#include "PEFile.h"
 #include <typeinfo>
 namespace DotNetPELib
 {
-    bool CodeContainer::InAssemblyRef() const 
-    { 
-        return parent_->InAssemblyRef(); 
+    bool CodeContainer::InAssemblyRef() const
+    {
+        return parent_->InAssemblyRef();
     }
     void CodeContainer::AddInstruction(Instruction *instruction)
     {
@@ -113,6 +114,83 @@ namespace DotNetPELib
         }
         labels.clear();
         return rv;
+    }
+    int CodeContainer::CompileSEH(std::vector<Instruction *>tags, int offset, std::vector<SEHData> &sehData)
+    {
+        if (!tags[offset]->SEHBegin() || tags[offset]->SEHType() != Instruction::seh_try)
+            return 1;
+        SEHData current;
+        memset(&current, 0, sizeof(current));
+        current.tryOffset = tags[offset++]->Offset();
+        while (offset < tags.size() && tags[offset]->SEHBegin())
+            offset = CompileSEH(tags, offset, sehData);
+        if (offset < tags.size() && tags[offset]->SEHType() == Instruction::seh_try)
+        {
+            current.tryLength = tags[offset]->Offset() - current.tryOffset;
+            offset++;
+        }
+        else
+        {
+            // error
+            return offset + 1;
+        }
+        do
+        {
+            if (!tags[offset]->SEHBegin())
+                return offset;
+            switch (tags[offset]->SEHType())
+            {
+                case Instruction::seh_try:
+                    return CompileSEH(tags, offset, sehData);
+                case Instruction::seh_filter:
+                    // assumes there are no try catch block within a filter expression
+                    current.filterOffset = tags[offset]->Offset();
+                    offset += 2;
+                    current.flags = SEHData::Filter;
+                    break;
+                case Instruction::seh_catch:
+                    if (tags[offset]->SEHCatchType()->GetClass()->InAssemblyRef())
+                        current.classToken = tags[offset]->SEHCatchType()->GetClass()->PEIndex() + (tTypeRef << 24);
+                    else
+                        current.classToken = tags[offset]->SEHCatchType()->GetClass()->PEIndex() + (tTypeDef << 24);
+                    current.flags = SEHData::Exception;
+                    break;
+                case Instruction::seh_fault:
+                    current.flags = SEHData::Fault;
+                    break;
+                case Instruction::seh_finally:
+                    current.flags = SEHData::Finally;
+                    break;
+            }
+            if (offset < tags.size())
+            {
+                current.handlerOffset = tags[offset]->Offset();
+                offset++;
+                while (offset < tags.size() && tags[offset]->SEHBegin())
+                    offset = CompileSEH(tags, offset, sehData);
+                if (offset < tags.size())
+                {
+                    current.handlerLength = tags[offset]->Offset() - current.handlerOffset;
+                    sehData.push_back(current);
+                }
+                offset++;
+            }
+        } while (offset < tags.size());
+    }
+    void CodeContainer::CompileSEH(PELib &, std::vector<SEHData> &sehData)
+    {
+        std::vector<Instruction *> tags;
+        for (auto instruction : instructions_)
+        {
+            if (instruction->OpCode() == Instruction::i_SEH)
+            {
+                tags.push_back(instruction);
+            }
+        }
+        if (tags.size())
+        {
+            CompileSEH(tags, 0, sehData);
+        }
     }
     void CodeContainer::BaseTypes(int &types) const
     {
@@ -394,9 +472,137 @@ namespace DotNetPELib
             }
         }
     }
+    int CodeContainer::ValidateSEHTags(std::vector<Instruction *>&tags, int offset)
+    {
+        int offset_in = offset;
+        Instruction *start = tags[offset++];
+        if (start->SEHType() != Instruction::seh_try)
+            throw PELibError(PELibError::ExpectedSEHTry);
+        if (!start->SEHBegin())
+            throw PELibError(PELibError::ExpectedSEHTry);
+        while (offset < tags.size() && tags[offset]->SEHBegin())
+            offset = ValidateSEHTags(tags, offset);
+        if (offset >= tags.size())
+            throw PELibError(PELibError::OrphanedSEHTag);
+        if (tags[offset]->SEHType() != Instruction::seh_try)
+            throw PELibError(PELibError::MismatchedSEHTag);
+        if (tags[offset]->SEHBegin())
+            throw PELibError(PELibError::MismatchedSEHTag);
+        offset++;
+        if (!tags[offset]->SEHBegin() || tags[offset]->SEHType() == Instruction::seh_try)
+            throw PELibError(PELibError::ExpectedSEHHandler);
+        Instruction::iseh type;
+        while (offset < tags.size())
+        {
+            if (!tags[offset]->SEHBegin())
+                return offset;
+            type = (Instruction::iseh)tags[offset]->SEHType();
+            offset++;
+            while (offset < tags.size() && tags[offset]->SEHBegin())
+                offset = ValidateSEHTags(tags, offset);
+            if (offset >= tags.size())
+                throw PELibError(PELibError::OrphanedSEHTag);
+            if ((Instruction::iseh)tags[offset]->SEHType() != type)
+                throw PELibError(PELibError::MismatchedSEHTag);
+            offset++;
+        }
+        return offset;
+    }
+    void CodeContainer::ValidateSEHFilters(std::vector<Instruction *>&tags)
+    {
+        bool check = false;
+        for (auto tag : tags)
+        {
+            if (!tag->SEHBegin() && tag->SEHType() == Instruction::seh_filter)
+            {
+                check = true;
+            }
+            if (check)
+            {
+                check = false;
+                if (!tag->SEHBegin() || tag->SEHType() != Instruction::seh_filter_handler)
+                {
+                    throw PELibError(PELibError::InvalidSEHFilter);
+                }
+            }
+        }
+    }
+    void CodeContainer::ValidateSEHEpilogues()
+    {
+        // we aren't checking the 'pop' here as it is up to the user when to handle that
+        // but it will be caught in the normal process of level matching...
+        Instruction *old = nullptr , * old1 = nullptr;
+        for (auto instruction : instructions_)
+        {
+            if (instruction->OpCode() == Instruction::i_SEH)
+            {
+                if (!instruction->SEHBegin())
+                {
+                    switch (instruction->SEHType())
+                    {
+                        case Instruction::seh_try:
+                            if (!old || old->OpCode() != Instruction::i_leave && old->OpCode() != Instruction::i_leave_s)
+                            {
+                                throw PELibError(PELibError::InvalidSEHEpilogue);
+                            }
+                            break;
+                        case Instruction::seh_catch:
+                        case Instruction::seh_filter_handler:
+                            if (!old || old->OpCode() != Instruction::i_leave && old->OpCode() != Instruction::i_leave_s)
+                            {
+                                throw PELibError(PELibError::InvalidSEHEpilogue);
+                            }
+                            break;
+                        case Instruction::seh_filter:
+                            if (!old || old->OpCode() != Instruction::i_endfilter)
+                            {
+                                throw PELibError(PELibError::InvalidSEHEpilogue);
+                            }
+                            break;
+                        case Instruction::seh_fault:
+                            if (!old || old->OpCode() != Instruction::i_endfault)
+                            {
+                                throw PELibError(PELibError::InvalidSEHEpilogue);
+                            }
+                            break;
+                        case Instruction::seh_finally:
+                            if (!old || old->OpCode() != Instruction::i_endfinally)
+                            {
+                                throw PELibError(PELibError::InvalidSEHEpilogue);
+                            }
+                            break;
+                    }
+                }
+            }
+            else if (instruction->OpCode() != Instruction::i_label && instruction->OpCode() != Instruction::i_comment)
+            {
+                old1 = old;
+                old = instruction;
+            }
+        }
+    }
+    void CodeContainer::ValidateSEH()
+    {
+        std::vector<Instruction *> tags;
+        for (auto instruction : instructions_)
+        {
+            if (instruction->OpCode() == Instruction::i_SEH)
+            {
+                tags.push_back(instruction);
+            }
+        }
+        if (tags.size())
+        {
+            hasSEH_ = true;
+            ValidateSEHTags(tags, 0);
+            ValidateSEHFilters(tags);
+            ValidateSEHEpilogues();
+        }
+    }
     void CodeContainer::OptimizeBranch(PELib &peLib)
     {
         bool done = false;
+        ValidateSEH();
         while (!done)
         {
             CalculateOffsets();

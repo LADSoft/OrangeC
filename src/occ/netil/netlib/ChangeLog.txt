@@ -1,3 +1,6 @@
+Version 3.00:
+	support SEH
+
 Version 2.12:
 	allow boxing of 'object' and creation of arrays of objects
 

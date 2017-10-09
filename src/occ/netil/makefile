@@ -98,7 +98,8 @@ C_DEPENDENCIES= \
     template.c \
     types.c \
     unmangle.c\
-    winsystem.c
+    winsystem.c \
+    wseh.c
 CPP_DEPENDENCIES=\
     using.cpp gen.cpp process.cpp import.cpp
 LIB_DEPENDENCIES=util netlib

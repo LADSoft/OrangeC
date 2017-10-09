@@ -51,7 +51,7 @@
 
 // reference changelog.txt to see what the changes are
 //
-#define DOTNETPELIB_VERSION "2.12"
+#define DOTNETPELIB_VERSION "3.00"
 
 // this is the main library header
 // it allows creation of the methods and data that would be dumped into 
@@ -198,7 +198,19 @@ namespace DotNetPELib
             ///** There are multiple entry points
             MultipleEntryPoints,
             ///** There is no entry point (note that if it is a DLL an entry point isn't needed)
-            MissingEntryPoint
+            MissingEntryPoint,
+            ///** Expected an SEH Try block
+            ExpectedSEHTry,
+            ///** Expected an SEH handler
+            ExpectedSEHHandler,
+            ///** Mismatched SEH end tag
+            MismatchedSEHTag,
+            ///** SEH tag is orphaned
+            OrphanedSEHTag,
+            ///** Invalid SEH Filter
+            InvalidSEHFilter,
+            ///** Seh section not correctly ended
+            InvalidSEHEpilogue,
         };
         PELibError(ErrorList err, const std::string &Name = "") : errnum(err), std::runtime_error(std::string(errorNames[err]) + " " + Name)
         {
@@ -307,7 +319,7 @@ namespace DotNetPELib
     class CodeContainer : public DestructorBase
     {
     public:
-        CodeContainer(Qualifiers Flags) :flags_(Flags) { }
+        CodeContainer(Qualifiers Flags) :flags_(Flags), hasSEH_(false) { }
         ///** This is the interface to add a single CIL instruction
         void AddInstruction(Instruction *instruction);
 
@@ -323,6 +335,14 @@ namespace DotNetPELib
         }
         ///** Validate instructions
         void ValidateInstructions();
+        ///** Validate SEH tags, e.g. make sure there are matching begin and end tags and that filters are organized properly
+        void ValidateSEH();
+        ///** Validate one level of tags (recursive)
+        int ValidateSEHTags(std::vector<Instruction *>&tags, int offset);
+        ///** Validate that SEH filter expressions are in the proper place
+        void ValidateSEHFilters(std::vector<Instruction *>&tags);
+        ///** Validate the epilogue for each SEH section
+        void ValidateSEHEpilogues();
         ///** return flags member
         Qualifiers &Flags() { return flags_; }
         const Qualifiers &Flags() const { return flags_; }
@@ -331,6 +351,24 @@ namespace DotNetPELib
         ///** get parent
         DataContainer *GetContainer() const { return parent_; }
 
+        struct SEHData
+        {
+            enum {
+                Exception = 0,
+                Filter = 1,
+                Finally = 2,
+                Fault = 4
+            } flags;
+            size_t tryOffset;
+            size_t tryLength;
+            size_t handlerOffset;
+            size_t handlerLength;
+            union
+            {
+                size_t filterOffset;
+                size_t classToken;
+            };
+        };
         // some internal functions
         bool InAssemblyRef() const;
         void BaseTypes(int &types) const;
@@ -341,6 +379,8 @@ namespace DotNetPELib
         virtual void ObjOut(PELib &, int pass) const;
         void ObjIn(PELib &);
         Byte *Compile(PELib &, size_t &sz);
+        int CompileSEH(std::vector<Instruction *>tags, int offset, std::vector<SEHData> &sehData);
+        void CompileSEH(PELib &, std::vector<SEHData> &sehData);
         virtual void Compile(PELib&) { }
 
         std::list<Instruction *>::iterator begin() { return instructions_.begin(); }
@@ -358,6 +398,7 @@ namespace DotNetPELib
         std::list<Instruction *> instructions_;
         Qualifiers flags_;
         DataContainer *parent_;
+        bool hasSEH_;
     };
     ///** base class that contains other datacontainers or codecontainers
     // that means it can contain namespaces, classes, methods, or fields
@@ -913,6 +954,8 @@ namespace DotNetPELib
             i_label,
             ///** This instruction is a placeholder for a comment
             i_comment,
+            ///** This instruction is an SEH specifier
+            i_SEH,
             ///** actual CIL instructions start here
             i_add, i_add_ovf, i_add_ovf_un, i_and, i_arglist, i_beq, i_beq_s, i_bge,
             i_bge_s, i_bge_un, i_bge_un_s, i_bgt, i_bgt_s, i_bgt_un, i_bgt_un_s, i_ble,
@@ -944,9 +987,13 @@ namespace DotNetPELib
             i_stobj, i_stsfld, i_sub, i_sub_ovf, i_sub_ovf_un, i_switch, i_tail_, i_throw,
             i_unaligned_, i_unbox, i_unbox_any, i_volatile_, i_xor
         };
+        enum iseh { seh_try, seh_catch, seh_finally, seh_fault, seh_filter, seh_filter_handler };
+
         Instruction(iop Op, Operand *Operand);
         // for now only do comments and labels and branches...
-        Instruction(iop Op, std::string Text) : op_(Op), text_(Text), switches_(nullptr), operand_(nullptr), live_(false) { }
+        Instruction(iop Op, std::string Text) : op_(Op), text_(Text), switches_(nullptr), live_(false), sehType_(seh_try), sehBegin_(false), sehCatchType_(nullptr) { }
+
+        Instruction(iseh type, bool begin, Type *catchType = NULL) : op_(i_SEH), switches_(nullptr), live_(false), sehType_(type), sehBegin_(begin), sehCatchType_(catchType) { }
 
         virtual ~Instruction() { if (switches_) delete switches_; }
 
@@ -954,6 +1001,12 @@ namespace DotNetPELib
         iop OpCode() const { return op_; }
         ///** Set the opcode
         void OpCode(iop Op) { op_ = Op; }
+        ///** Get the SEH Type
+        int SEHType() const { return sehType_;  }
+        ///** return true if it is a begin tag
+        bool SEHBegin() const { return sehBegin_;  }
+        ///** return the catch type
+        Type *SEHCatchType() const { return sehCatchType_; }
         ///** Add a label for a SWITCH instruction
         ///** Labels MUST be added in order
         void AddCaseLabel(std::string label);
@@ -1024,7 +1077,12 @@ namespace DotNetPELib
         std::list<std::string> *switches_;
         iop op_;
         int offset_;
-        Operand *operand_; // for non-labels
+        int sehType_;
+        bool sehBegin_;
+        union {
+            Operand *operand_; // for non-labels
+            Type *sehCatchType_;
+        };
         std::string text_; // for comments
         bool live_;
         static InstructionName instructions_[];
@@ -1382,6 +1440,7 @@ namespace DotNetPELib
         Operand *AllocateOperand(std::string Value);
         Instruction *AllocateInstruction(Instruction::iop Op, Operand *Operand = nullptr);
         Instruction *AllocateInstruction(Instruction::iop Op, std::string Text);
+        Instruction *AllocateInstruction(Instruction::iseh type, bool begin, Type *catchType = NULL);
         Value *AllocateValue(std::string name, Type *tp);
         Local *AllocateLocal(std::string name, Type *tp);
         Param *AllocateParam(std::string name, Type *tp);

@@ -433,6 +433,56 @@ static void gen_catch(SYMBOL *funcsp, STATEMENT *stmt, int startLab, int transfe
     stmt->tryStart = tryStart;
     stmt->tryEnd = tryEnd;
 }
+static STATEMENT * gen___try(SYMBOL *funcsp, STATEMENT *stmt)
+{
+    int label = nextLabel++;
+    while (stmt)
+    {
+        int mode = 0;
+        IMODE *left = NULL;
+        switch (stmt->type)
+        {
+        case st___try:
+            mode = 1;
+            break;
+        case st___catch:
+            mode = 2;
+            if (stmt->sym)
+            {
+                left = (IMODE *)Alloc(sizeof(IMODE));
+                left->mode = i_direct;
+                left->size = ISZ_OBJECT;
+                left->offset = (EXPRESSION *)Alloc(sizeof(EXPRESSION));
+                left->offset->type = en_auto;
+                left->offset->v.sp = stmt->sym;
+            }
+            break;
+        case st___fault:
+            mode = 3;
+            break;
+        case st___finally:
+            mode = 4;
+            break;
+        default:
+            gen_label(label);
+            return stmt;
+
+        }
+        gen_icode(i_seh, NULL, left, NULL);
+        intermed_tail->alwayslive = TRUE;
+        intermed_tail->sehMode = mode | 0x80;
+        intermed_tail->dc.v.label = label;
+        genstmt(stmt->lower, funcsp);
+        gen_icode(i_seh, NULL, left, NULL);
+        intermed_tail->sehMode = mode;
+        intermed_tail->dc.v.label = label;
+        stmt = stmt->next;
+        if (stmt && stmt->type == st___try)
+            break;
+    }
+    gen_label(label);
+    return stmt;
+}
 /*
  *      generate a return statement.
  */
@@ -676,6 +726,16 @@ IMODE *genstmt(STATEMENT *stmt, SYMBOL *funcsp)
                 gen_label(stmt->breaklabel + codeLabelOffset);
             }
                 break;
+            case st___try:
+            case st___catch:
+            case st___finally:
+            case st___fault:
+                stmt = gen___try(funcsp, stmt);
+                if (last->type != st_return && last->type != st_goto && last->destexp)
+                {
+                    gen_expr(funcsp, last->destexp, F_NOVALUE, ISZ_ADDR);
+                }
+                continue;
             case st_expr:
             case st_declare:
                 if (stmt->select)

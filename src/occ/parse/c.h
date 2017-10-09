@@ -127,6 +127,7 @@ enum e_kw
         kw__near, kw__seg, kw___typeid, kw___int64, kw_alloca, kw__msil_rtl,
         kw___va_list__,  kw___va_typeof__, kw__unmanaged,  kw__uuid, kw__uuidof,
         kw___string, kw___object,  kw_native, kw__cpblk, kw__initblk, kw__property,  kw__entrypoint,
+        kw___try, kw___catch, kw___finally, kw___fault,
     /* These next are generic register names */
     kw_D0, kw_D1, kw_D2, kw_D3, kw_D4, kw_D5, kw_D6, kw_D7, kw_D8, kw_D9, kw_DA,
         kw_DB, kw_DC, kw_DD, kw_DE, kw_DF, kw_A0, kw_A1, kw_A2, kw_A3, kw_A4,
@@ -193,7 +194,8 @@ enum e_stmt
     st_line, st_nop, st_expr, st_declare, st_goto, st_asmgoto, st_asmcond, 
     st_loopgoto, st_select, st_notselect, st_varstart, st_dbgblock,
     st_switch, st_return, st_block, st_throw, st_try, st_catch,
-    st__genword, st_passthrough, st_datapassthrough, st_abs, st_label
+    st__genword, st_passthrough, st_datapassthrough, st_abs, st_label,
+    st___try, st___catch, st___finally, st___fault
 };
 
 /* storage classes */

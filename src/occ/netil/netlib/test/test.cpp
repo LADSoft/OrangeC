@@ -1132,6 +1132,181 @@ void test11()
     libEntry.DumpOutputFile("test11.il", PELib::ilasm, false);
     libEntry.DumpOutputFile("test11.exe", PELib::peexe, false);
 }
+void test12()
+{
+    PELib libEntry("test12", PELib::ilonly | PELib::bits32);
+
+    DataContainer *working = libEntry.WorkingAssembly();
+
+    Namespace *nmspc = libEntry.AllocateNamespace("nmspc");
+    working->Add(nmspc);
+    Class *cls = libEntry.AllocateClass("cls", Qualifiers::Ansi | Qualifiers::Sealed, -1, -1);
+    nmspc->Add(cls);
+
+
+    // add a reference to the assembly
+    libEntry.LoadAssembly("mscorlib");
+
+    // look up some system objects for arrays and boxing
+    void *temp;
+    Class *objectClass;
+    if (libEntry.Find("System.Object", &temp) == PELib::s_class)
+    {
+        objectClass = static_cast<Class *>(temp);
+    }
+    else
+    {
+        std::cout << "error" << std::endl;
+        exit(1);
+    }
+    Class *int32Class;
+    if (libEntry.Find("System.Int32", &temp) == PELib::s_class)
+    {
+        int32Class = static_cast<Class *>(temp);
+    }
+    else
+    {
+        std::cout << "error" << std::endl;
+        exit(1);
+    }
+    Class *stringClass;
+    if (libEntry.Find("System.String", &temp) == PELib::s_class)
+    {
+        stringClass = static_cast<Class *>(temp);
+    }
+    else
+    {
+        std::cout << "error" << std::endl;
+        exit(1);
+    }
+    Class *fileModeClass;
+    if (libEntry.Find("System.IO.FileMode", &temp) == PELib::s_enum)
+    {
+        fileModeClass = static_cast<Class *>(temp);
+    }
+    else
+    {
+        std::cout << "error" << std::endl;
+        exit(1);
+    }
+    Field *fileModeOpen;
+    if (libEntry.Find("System.IO.FileMode.Open", &temp) == PELib::s_field)
+    {
+        fileModeOpen = static_cast<Field *>(temp);
+    }
+    else
+    {
+        std::cout << "error" << std::endl;
+        exit(1);
+    }
+
+
+
+    // create the function refernece to WriteLine
+    Type tp(Type::string, 0);
+    std::vector<Type *> typeList;
+    typeList.push_back(&tp);
+    Method *result = nullptr;
+    MethodSignature *signaturep;
+    if (libEntry.Find("System.Console.WriteLine", &result, typeList) == PELib::s_method)
+    {
+        signaturep = result->Signature();
+    }
+    else
+    {
+        std::cout << "error" << std::endl;
+        exit(1);
+    }
+
+    // create the function reference to open()
+    Type tp2(fileModeClass);
+    typeList.clear();
+    typeList.push_back(&tp);
+    typeList.push_back(&tp2);
+    MethodSignature *signatureo;
+    if (libEntry.Find("System.IO.File.Open", &result, typeList) == PELib::s_method)
+    {
+        signatureo = result->Signature();
+    }
+    else
+    {
+        std::cout << "error" << std::endl;
+        exit(1);
+    }
+
+    // routine to hold our exception stuff
+    MethodSignature *signaturem = libEntry.AllocateMethodSignature("$Main", MethodSignature::Managed, working);
+    signaturem->ReturnType(libEntry.AllocateType(Type::Void, 0));
+    Method *main = libEntry.AllocateMethod(signaturem, Qualifiers::Private |
+        Qualifiers::Static |
+        Qualifiers::HideBySig |
+        Qualifiers::CIL |
+        Qualifiers::Managed, true);
+    cls->Add(main);
+
+    auto tryLabel = libEntry.AllocateOperand("endTry");
+    auto try2Label = libEntry.AllocateOperand("endTry2");
+    // there will be two try blocks - the inner try block is associated with a catch block
+    // and the outer try block is associated with a finally block
+    // we do it this way because we can't associate both a catch and finally block with the same protected area
+    main->AddInstruction(libEntry.AllocateInstruction(Instruction::seh_try, true));
+    // inner try block
+    main->AddInstruction(libEntry.AllocateInstruction(Instruction::seh_try, true));
+
+    // the code we are guarding, basically tries to open a nonexistant file
+    main->AddInstruction(libEntry.AllocateInstruction(Instruction::i_ldstr,
+        libEntry.AllocateOperand("unfoundfile", true)));
+    main->AddInstruction(libEntry.AllocateInstruction(Instruction::i_ldc_i4, libEntry.AllocateOperand(fileModeOpen->EnumValue(), Operand::i32)));
+    main->AddInstruction(libEntry.AllocateInstruction(Instruction::i_call,
+        libEntry.AllocateOperand(libEntry.AllocateMethodName(signatureo))));
+    main->AddInstruction(libEntry.AllocateInstruction(Instruction::i_pop));
+    // epilogue for the guarded code
+    main->AddInstruction(libEntry.AllocateInstruction(Instruction::i_leave, tryLabel));
+    main->AddInstruction(libEntry.AllocateInstruction(Instruction::seh_try, false));
+
+    // the catch block, just print something saying we got here
+    main->AddInstruction(libEntry.AllocateInstruction(Instruction::seh_catch, true, libEntry.AllocateType(objectClass)));
+    main->AddInstruction(libEntry.AllocateInstruction(Instruction::i_ldstr,
+        libEntry.AllocateOperand("catch block", true)));
+    main->AddInstruction(libEntry.AllocateInstruction(Instruction::i_call,
+        libEntry.AllocateOperand(libEntry.AllocateMethodName(signaturep))));
+    // epilogue for the catch block
+    main->AddInstruction(libEntry.AllocateInstruction(Instruction::i_pop));
+    main->AddInstruction(libEntry.AllocateInstruction(Instruction::i_leave, tryLabel));
+    main->AddInstruction(libEntry.AllocateInstruction(Instruction::seh_catch, false));
+    // inner try block comes here after processing
+    main->AddInstruction(libEntry.AllocateInstruction(Instruction::i_label, tryLabel));
+    // epilogue for the outer try block
+    main->AddInstruction(libEntry.AllocateInstruction(Instruction::i_leave, try2Label));
+    main->AddInstruction(libEntry.AllocateInstruction(Instruction::seh_try, false));
+    // now make the finally block
+    main->AddInstruction(libEntry.AllocateInstruction(Instruction::seh_finally, true));
+    // print a message saying we got here
+    main->AddInstruction(libEntry.AllocateInstruction(Instruction::i_ldstr,
+        libEntry.AllocateOperand("finally block", true)));
+    main->AddInstruction(libEntry.AllocateInstruction(Instruction::i_call,
+        libEntry.AllocateOperand(libEntry.AllocateMethodName(signaturep))));
+    // epilogue for the finally block
+    main->AddInstruction(libEntry.AllocateInstruction(Instruction::i_endfinally, 0));
+    main->AddInstruction(libEntry.AllocateInstruction(Instruction::seh_finally, false));
+    // after processing outer try block comes here
+    main->AddInstruction(libEntry.AllocateInstruction(Instruction::i_label, try2Label));
+    // exit function
+    main->AddInstruction(libEntry.AllocateInstruction(Instruction::i_ret, nullptr));
+
+    try
+    {
+        main->Optimize(libEntry);
+    }
+    catch (PELibError exc)
+    {
+        std::cout << "Optimizer error: " << exc.what() << std::endl;
+    }
+
+    libEntry.DumpOutputFile("test12.il", PELib::ilasm, false);
+    libEntry.DumpOutputFile("test12.exe", PELib::peexe, false);
+
+}
 int main()
 {
     test1();
@@ -1145,4 +1320,5 @@ int main()
     test9();
     test10();
     test11();
+    test12();
 }

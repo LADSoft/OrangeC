@@ -561,6 +561,9 @@ static struct {
 { "'auto' not allowed in parameter declaration", ERROR },
 { "'auto' not allowed as a conversion function type", ERROR },
 { "Only base elements of an MSIL array may be assigned", ERROR },
+{ "Use of __catch or __fault or __finally must be preceded by __try", ERROR },
+{ "Expected __catch or __fault or __finally", ERROR },
+{ "__fault or __finally can appear only once per __try block", ERROR },
 #endif
 } ;
 
@@ -1130,6 +1133,10 @@ static BOOLEAN hasGoto(STATEMENT *stmt)
             case st_switch:
             case st_try:
             case st_catch:
+            case st___try:
+            case st___catch:
+            case st___finally:
+            case st___fault:
                 if (hasGoto(stmt->lower))
                     return TRUE;
                 break;
@@ -1169,6 +1176,10 @@ static BOOLEAN findVLAs(STATEMENT *stmt)
             case st_switch:
             case st_try:
             case st_catch:
+            case st___try:
+            case st___catch:
+            case st___finally:
+            case st___fault:
                 if (findVLAs(stmt->lower))
                     return TRUE;
                 break;
@@ -1220,6 +1231,10 @@ static void getVLAList(STATEMENT *stmt, VLASHIM ***shims, VLASHIM **prev, int le
             case st_switch:
             case st_try:
             case st_catch:
+            case st___try:
+            case st___catch:
+            case st___finally:
+            case st___fault:
                 **shims = Alloc(sizeof(VLASHIM));
                 (**shims)->prev = *prev;
                 (**shims)->type = v_blockstart;

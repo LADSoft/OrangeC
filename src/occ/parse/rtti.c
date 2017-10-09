@@ -651,11 +651,15 @@ static void XCStmt(STATEMENT *block, XCLIST ***listPtr)
             case st__genword:
                 break;
             case st_catch:
+            case st___catch:
+            case st___finally:
+            case st___fault:
                 **listPtr = Alloc(sizeof(XCLIST));
                 (**listPtr)->stmt = block;
                 (**listPtr)->byStmt = TRUE;
                 (*listPtr) = &(**listPtr)->next;
             case st_try:
+            case st___try:
                 XCStmt(block->lower, listPtr);
                 break;
             case st_return:

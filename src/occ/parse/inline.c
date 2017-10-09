@@ -673,6 +673,10 @@ STATEMENT *inlinestmt(STATEMENT *block)
                 break;
             case st_try:
             case st_catch:
+            case st___try:
+            case st___catch:
+            case st___finally:
+            case st___fault:
                 (*outptr)->lower = inlinestmt(block->lower);
                 (*outptr)->blockTail = inlinestmt(block->blockTail);
                 break;
@@ -757,6 +761,10 @@ static void reduceReturns(STATEMENT *block, TYPE *rettp, EXPRESSION *retnode)
                 break;
             case st_try:
             case st_catch:
+            case st___try:
+            case st___catch:
+            case st___finally:
+            case st___fault:
                 reduceReturns(block->lower, rettp, retnode);
                 break;
             case st_return:
@@ -805,6 +813,10 @@ static EXPRESSION *scanReturn(STATEMENT *block, TYPE *rettp)
                 break;
             case st_try:
             case st_catch:
+            case st___try:
+            case st___catch:
+            case st___finally:
+            case st___fault:
                 rv = scanReturn(block->lower, rettp);
                 break;
             case st_return:
@@ -1233,6 +1245,10 @@ static BOOLEAN IsEmptyBlocks(STATEMENT *block)
             case st__genword:
             case st_try:
             case st_catch:
+            case st___try:
+            case st___catch:
+            case st___finally:
+            case st___fault:
             case st_return:
             case st_goto:
             case st_expr:

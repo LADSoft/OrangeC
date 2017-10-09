@@ -1793,6 +1793,10 @@ static STATEMENT * unshimstmt(STATEMENT *block, EXPRESSION *ths)
                 break;
             case st_try:
             case st_catch:
+            case st___try:
+            case st___catch:
+            case st___finally:
+            case st___fault:
                 block->lower = unshimstmt(block->lower, ths);
                 block->blockTail = unshimstmt(block->blockTail, ths);
                 break;

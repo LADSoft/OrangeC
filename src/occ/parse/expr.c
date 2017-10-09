@@ -2212,6 +2212,10 @@ BOOLEAN cloneTempStmt(STATEMENT **block, SYMBOL **found, SYMBOL **replace)
                 break;
             case st_try:
             case st_catch:
+            case st___try:
+            case st___catch:
+            case st___finally:
+            case st___fault:
                 rv |= cloneTempStmt(&(*block)->lower, found, replace);
                 rv |= cloneTempStmt(&(*block)->blockTail, found, replace);
                 break;

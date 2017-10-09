@@ -379,6 +379,7 @@ typedef struct _arch_gen {
     CGFUNC asm_stackalloc;  /* allocate stack space - positive value = allocate, negative value deallocate */
     CGFUNC asm_loadstack;	/* load the stack pointer */
     CGFUNC asm_savestack;	/* save the stack pointer */
+    CGFUNC asm_seh;         /* seh */
     void (*asm_functail)(QUAD *q, int begin, int size);	/* functail start or end */
 } ARCH_GEN;
 

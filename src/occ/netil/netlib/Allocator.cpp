@@ -137,6 +137,12 @@ namespace DotNetPELib {
         new (rv) Instruction(Op, Text);
         return static_cast<Instruction *>(rv);
     }
+    Instruction *Allocator::AllocateInstruction(Instruction::iseh type, bool begin, Type *catchType)
+    {
+        void *rv = BaseAlloc(sizeof(Instruction));
+        new (rv) Instruction(type, begin, catchType);
+        return static_cast<Instruction *>(rv);
+    }
     Value *Allocator::AllocateValue(std::string Name, Type *Tp)
     {
         void *rv = BaseAlloc(sizeof(Value));

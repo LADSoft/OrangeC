@@ -51,6 +51,12 @@ namespace DotNetPELib
         "Short branch out of range",
         "Index out of range",
         "Multiple Entry Points",
-        "Missing Entry Point"
+        "Missing Entry Point",
+        "Expected SEH Try block",
+        "Expected SEH Handler",
+        "SEH Tag Mismatch",
+        "Orphaned SEH Tag",
+        "Invalid SEH Filter",
+        "Invalid epilogue of SEH section",
     };
 }

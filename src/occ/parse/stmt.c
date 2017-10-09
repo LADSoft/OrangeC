@@ -79,10 +79,6 @@ static int endline;
 
 static LEXEME *autodeclare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, 
                            BLOCKDATA *parent, BOOLEAN asExpression);
-static LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent, 
-                           BOOLEAN viacontrol);
-static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent,   
-                        BOOLEAN first);
 
 static BLOCKDATA *caseDestructBlock;
 
@@ -2774,7 +2770,7 @@ BOOLEAN resolveToDeclaration(LEXEME * lex)
     prevsym(placeholder);
     return TRUE;
 }
-static LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent, 
+LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent, 
                          BOOLEAN viacontrol)
 {
     ParseAttributeSpecifiers(&lex, funcsp, TRUE);
@@ -2890,6 +2886,15 @@ static LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent,
         case kw_asm:
             lex = statement_asm(lex, funcsp, parent);
             return lex;
+        case kw___try:
+             lex = statement_SEH(lex, funcsp, parent);
+             break;
+        case kw___catch:
+        case kw___finally:
+        case kw___fault:
+             error(ERR_SEH_HANDLER_WITHOUT_TRY);
+             lex = statement_SEH(lex, funcsp, parent);
+             break;
         default:
             if ((startOfType(lex, FALSE) && (!cparams.prm_cplusplus && (!chosenAssembler->msil || !chosenAssembler->msil->allowExtensions) || resolveToDeclaration(lex)))
                  || MATCHKW(lex, kw_namespace) || MATCHKW(lex, kw_using) || MATCHKW(lex, kw_decltype) || MATCHKW(lex, kw_static_assert) )
@@ -3011,7 +3016,7 @@ static void insertXCInfo(SYMBOL *funcsp)
         }
     }
 }
-static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
+LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
                         BLOCKDATA *parent,   
                         BOOLEAN first)
 {
@@ -3360,6 +3365,10 @@ static int inlineStatementCount(STATEMENT *block)
                 break;
             case st_try:
             case st_catch:
+            case st___try:
+            case st___catch:
+            case st___finally:
+            case st___fault:
                 rv += 1000;
                 break;
             case st_return:

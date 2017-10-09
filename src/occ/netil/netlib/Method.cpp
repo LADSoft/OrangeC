@@ -279,7 +279,7 @@ namespace DotNetPELib
             Instruction *last = nullptr;
             if (instructions_.size())
                 last = instructions_.back();
-            rendering_ = new PEMethod((entryPoint_ ? PEMethod::EntryPoint : 0) | (invokeMode_ == CIL ? PEMethod::CIL : 0),
+            rendering_ = new PEMethod(hasSEH_, (entryPoint_ ? PEMethod::EntryPoint : 0) | (invokeMode_ == CIL ? PEMethod::CIL : 0),
                 peLib.PEOut().NextTableIndex(tMethodDef),
                 maxStack_, varList_.size(),
                 last ? last->Offset() + last->InstructionSize() : 0,
@@ -385,6 +385,7 @@ namespace DotNetPELib
     void Method::Compile(PELib &peLib)
     {
         rendering_->code_ = CodeContainer::Compile(peLib, rendering_->codeSize_);
+        CodeContainer::CompileSEH(peLib, rendering_->sehData_);
     }
     void Method::Optimize(PELib &peLib)
     {
@@ -403,7 +404,12 @@ namespace DotNetPELib
             done = true;
             for (auto instruction : instructions_)
             {
-                if (!skipping)
+                if (instruction->OpCode() == Instruction::i_SEH && instruction->SEHBegin()) // all SEH blocks are always live
+                {
+                    instruction->Live(true);
+                    skipping = false;
+                }
+                else if (!skipping)
                 {
                     instruction->Live(true);
                     if (instruction->IsBranch())

@@ -207,6 +207,7 @@
     <ClCompile Include="..\parse\template.c" />
     <ClCompile Include="..\parse\types.c" />
     <ClCompile Include="..\parse\unmangle.c" />
+    <ClCompile Include="..\parse\wseh.c" />
     <ClCompile Include="..\preproc\ppexpr.c" />
     <ClCompile Include="..\preproc\preproc.c" />
   </ItemGroup>

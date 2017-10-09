@@ -1583,11 +1583,11 @@ namespace DotNetPELib {
             CIL = 0x4000, // not a real flag either
             EntryPoint = 0x8000 // not a real flag that goes in the PE file
         };
-        PEMethod(int Flags, size_t MethodDef, int MaxStack, int localCount, int CodeSize, size_t signature)
+        PEMethod(bool hasSEH, int Flags, size_t MethodDef, int MaxStack, int localCount, int CodeSize, size_t signature)
             : flags_(Flags), hdrSize_(3), maxStack_(MaxStack), codeSize_(CodeSize), code_(nullptr), signatureToken_(signature), rva_(0), methodDef_(MethodDef)
         {
             if ((flags_ & 0xfff) == 0)
-                if (maxStack_ <= 8 && codeSize_ < 64 && localCount == 0)
+                if (maxStack_ <= 8 && codeSize_ < 64 && localCount == 0 && !hasSEH)
                 {
                     flags_ = flags_ | (int)TinyFormat;
                 }
@@ -1596,6 +1596,13 @@ namespace DotNetPELib {
                     flags_ = flags_ | (int)FatFormat;
                 }
         }
+        enum {
+            EHTable = 1,
+            OptILTable = 2,
+            EHFatFormat = 0x40,
+            EHMoreSects = 0x80,
+        };
+        std::vector<CodeContainer::SEHData> sehData_;
         int flags_;
         int hdrSize_; /* = 3 */
         Word maxStack_;

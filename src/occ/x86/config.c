@@ -642,6 +642,7 @@ ARCH_GEN outputfunctions = {
     asm_stackalloc,         /* allocate stack space - positive value = allocate, negative value deallocate */
     asm_loadstack,			/* load the stack pointer from a var */
     asm_savestack,			/* save the stack pointer to a var */
+    NULL,                   /* seh */
     asm_functail,			/* function tail (e.g. destructor) start/end */
 } ;       
 ARCH_ASM assemblerInterface[] = {

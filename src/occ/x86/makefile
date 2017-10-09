@@ -96,7 +96,8 @@ C_DEPENDENCIES= \
     template.c \
     types.c \
     unmangle.c\
-    winsystem.c
+    winsystem.c \
+    wseh.c
 #LIB_DEPENDENCIES=util.lib objlib.lib
 #determine if we can ignore the banner for a batch compile
 WIN32 = WIN32

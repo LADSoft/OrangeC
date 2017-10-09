@@ -46,6 +46,7 @@ namespace DotNetPELib
         { "<unknown>", 0, -1, 0, o_none, 0 },
         { ".label", 0, -1, 0, o_none, 0 },
         { ".comment", 0, -1, 0, o_none, 0},
+        { ".SEH", 0, -1, 0, o_none, 0},
         { "add", 0x58, -1, 1, o_single, -1 },
         { "add.ovf", 0xd6, -1, 1, o_single, -1},
         { "add.ovf.un", 0xd7, -1, 1, o_single, -1},
@@ -300,9 +301,17 @@ namespace DotNetPELib
     {
         switch (op_)
         {
+        case i_SEH:
+            if (sehBegin_ && (sehType_ == seh_filter  || sehType_ == seh_filter_handler || sehType_ == seh_catch))
+                return 1; // for the object
+            return 0;
         case i_leave:
         case i_leave_s:
-            return -127; // return to zero
+        case i_endfinally:
+        case i_endfault:
+            return 0; // at this point the eval stack should be empty
+        case i_endfilter:
+            return -1; // after this pop the eval stack should be empty
         case i_call:
         case i_calli:
         case i_callvirt:
@@ -327,7 +336,44 @@ namespace DotNetPELib
     }
     bool Instruction::ILSrcDump(PELib &peLib) const
     {
-        if (op_ == i_label)
+        if (op_ == i_SEH)
+        {
+            if (sehBegin_)
+            {
+                switch (sehType_)
+                {
+                    case seh_try:
+                        peLib.Out() << ".try {" << std::endl;
+                        break;
+                    case seh_catch:
+                        peLib.Out() << "catch ";
+                        if (sehCatchType_)
+                            sehCatchType_->ILSrcDump(peLib);
+                        else
+                            peLib.Out() << " [mscorlib]System.Object";
+                        peLib.Out() << " {" << std::endl;
+                        break;
+                    case seh_filter:
+                        peLib.Out() << "filter {" << std::endl;
+                        break;
+                    case seh_filter_handler:
+                        peLib.Out() << "{" << std::endl;
+                        break;
+                    case seh_fault:
+                        peLib.Out() << "fault {" << std::endl;
+                        break;
+                    case seh_finally:
+                        peLib.Out() << "finally {" << std::endl;
+                        break;
+                }
+            }
+            else
+            {
+                peLib.Out() << "}" << std::endl;
+            }
+
+        }
+        else if (op_ == i_label)
         {
             peLib.Out() << Label() << ":" << std::endl;
         }
@@ -374,7 +420,20 @@ namespace DotNetPELib
     void Instruction::ObjOut(PELib &peLib, int pass) const
     {
         peLib.Out() << std::endl << "$ib" << op_ << "," << offset_;
-        if (op_ == i_label)
+        if (op_ == i_SEH)
+        {
+            peLib.Out() << "," << sehType_ << "," << sehBegin_;
+            if (sehCatchType_)
+            {
+                peLib.Out() << ",";
+                sehCatchType_->ObjOut(peLib, pass);
+            }
+            else
+            {
+                peLib.Out() << "@";
+            }
+        }
+        else if (op_ == i_label)
         {
             peLib.Out() << "," << peLib.FormatName(Label());
         }
@@ -417,6 +476,26 @@ namespace DotNetPELib
         {
             switch(op)
             {
+                int sehType;
+                bool sehBegin;
+                Type *sehCatchType;
+                case i_SEH:
+                    sehType = peLib.ObjInt();
+                    ch = peLib.ObjChar();
+                    if (ch != ',')
+                        peLib.ObjError(oe_syntax);
+                    sehBegin = peLib.ObjInt();
+                    ch = peLib.ObjChar();
+                    if (ch == ',')
+                    {
+                        sehCatchType = Type::ObjIn(peLib);
+                    }
+                    else
+                    {
+                        sehCatchType = nullptr;
+                    }
+                    rv = peLib.AllocateInstruction((Instruction::iseh) sehType, sehBegin, sehCatchType);
+                    break;
                  case i_label:
                  {
                      std::string lbl = peLib.UnformatName();
@@ -470,7 +549,13 @@ namespace DotNetPELib
     {
 
         int sz = 0;
-        if (op_ != i_label && op_ != i_comment)
+        if (op_ == i_SEH && sehType_ == seh_catch)
+        {
+            Byte data[4];
+            if (sehCatchType_)
+                sehCatchType_->Render(peLib, data);
+        }
+        if (op_ != i_label && op_ != i_comment && op_ != i_SEH)
         {
             result[sz++] = instructions_[op_].op1;
             if (instructions_[op_].op2 != 0xff)

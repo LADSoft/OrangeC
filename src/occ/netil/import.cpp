@@ -341,7 +341,7 @@ bool Importer::EnterClass(const Class *cls)
         {
             Class *Extends = cls->Extends();
             SYMBOL *parent = cachedClasses_[Extends->Name()];
-            if (parent != sp) // object is parent to itself
+            if (parent != sp && parent != NULL) // object is parent to itself
             {
                 BASECLASS *cl = (BASECLASS *)Alloc(sizeof(BASECLASS));
                 cl->accessLevel = ac_public;

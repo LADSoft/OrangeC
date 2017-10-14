@@ -96,7 +96,7 @@ enum e_kw
         asmod, asleftshift, asrightshift, asand, asor, asxor, autoinc, autodec,
         openbr, openpa, pointstar, pointsto, comma, lor, land, not, or, and, uparrow,
         compl, kw_newa, kw_dela, quot,
-        
+        plus_unary, minus_unary, star_unary, and_unary,
     /* then generic stuff that isn't overloadable or is internal */
     id, hook, colon, begin, end, dot,
         closebr, closepa, ellipse, semicolon, hash, classsel,

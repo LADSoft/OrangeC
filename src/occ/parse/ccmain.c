@@ -445,6 +445,7 @@ void compile(BOOLEAN global)
     LEXEME *lex = NULL ;
     SetGlobalFlag(TRUE);
     helpinit();
+    mangleInit();
     errorinit();
     constoptinit();
     declare_init();

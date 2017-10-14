@@ -800,6 +800,7 @@ void list_table(HASHTABLE *t, int j);
 
                               /* Mangle.c */
 
+void mangleInit();
 char *mangleNameSpaces(char *in, SYMBOL *sp);
 char *mangleType (char *in, TYPE *tp, BOOLEAN first);
 void SetLinkerNames(SYMBOL *sym, enum e_lk linkage);

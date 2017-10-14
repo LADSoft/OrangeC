@@ -98,8 +98,6 @@ void expr_init(void)
 {
     packIndex = -1;
     importThunks = NULL;
-    if (chosenAssembler->msil)
-        overloadNameTab[CI_CONSTRUCTOR] = ".ctor";
 }
 void thunkForImportTable(EXPRESSION **exp)
 {
@@ -1128,7 +1126,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                 }
             }
         }
-        while (cparams.prm_cplusplus && insertOperatorFunc(ovcl_pointsto, pointsto,
+        while ((cparams.prm_cplusplus || chosenAssembler->msil) && insertOperatorFunc(ovcl_pointsto, pointsto,
                                funcsp, tp, exp, NULL,NULL, NULL, flags));
         typein = *tp;
         if (ispointer(*tp))
@@ -1608,7 +1606,7 @@ static LEXEME *expression_bracket(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
     {
         INITLIST *args = NULL;
         lex = getInitList(lex, funcsp, &args);
-        if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_openbr, openbr,
+        if ((cparams.prm_cplusplus || chosenAssembler->msil) && insertOperatorFunc(ovcl_openbr, openbr,
                                funcsp, tp, exp, NULL, NULL, args, flags))
         {
         }
@@ -1623,7 +1621,7 @@ static LEXEME *expression_bracket(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
         lex = expression_comma(lex, funcsp, NULL, &tp2, &expr2, NULL, flags);
         if (tp2)
         {
-            if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_openbr, openbr,
+            if ((cparams.prm_cplusplus || chosenAssembler->msil) && insertOperatorFunc(ovcl_openbr, openbr,
                                    funcsp, tp, exp, tp2, expr2, NULL, flags))
             {
             }
@@ -5040,7 +5038,7 @@ static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE
             exp1 = exp1->left;
         symRef = chosenAssembler->msil ? GetSymRef(exp1) : NULL;
         btp = basetype(*tp);
-        if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_unary_any, and,
+        if ((cparams.prm_cplusplus || chosenAssembler->msil) && insertOperatorFunc(ovcl_unary_any, and_unary,
             funcsp, tp, exp, NULL, NULL, NULL, flags))
         {
             return lex;
@@ -5198,7 +5196,7 @@ static LEXEME *expression_deref(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSI
 {
     lex = getsym();
     lex = expression_cast(lex, funcsp, NULL, tp, exp, NULL, flags);
-    if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_unary_pointer, star,
+    if ((cparams.prm_cplusplus || chosenAssembler->msil) && insertOperatorFunc(ovcl_unary_pointer, star_unary,
                            funcsp, tp, exp, NULL,NULL, NULL, flags))
     {
         return lex;
@@ -5335,7 +5333,7 @@ static LEXEME *expression_postfix(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
 
                 kw = KW(lex);
                 lex = getsym();
-                if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_unary_postfix, kw,
+                if ((cparams.prm_cplusplus || chosenAssembler->msil) && insertOperatorFunc(ovcl_unary_postfix, kw,
                                        funcsp, tp, exp, NULL,NULL, NULL, flags))
                 {
                 }
@@ -5437,7 +5435,7 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
             lex = expression_cast(lex, funcsp, atp, tp, exp, NULL, flags);
             if (*tp)
             {
-                if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_unary_numeric, plus,
+                if ((cparams.prm_cplusplus || chosenAssembler->msil) && insertOperatorFunc(ovcl_unary_numeric, plus_unary,
                                        funcsp, tp, exp, NULL,NULL, NULL, flags))
                 {
                 }                                       
@@ -5473,7 +5471,7 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
             lex = expression_cast(lex, funcsp, atp, tp, exp, NULL, flags);
             if (*tp)
             {
-                if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_unary_numeric, minus,
+                if ((cparams.prm_cplusplus || chosenAssembler->msil) && insertOperatorFunc(ovcl_unary_numeric, minus_unary,
                                        funcsp, tp, exp, NULL,NULL, NULL, flags))
                 {
                 }
@@ -5515,7 +5513,7 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
             lex = expression_cast(lex, funcsp, atp, tp, exp, NULL, flags);
             if (*tp)
             {
-                if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_unary_numericptr, not,
+                if ((cparams.prm_cplusplus || chosenAssembler->msil) && insertOperatorFunc(ovcl_unary_numericptr, not,
                                        funcsp, tp, exp, NULL,NULL, NULL, flags))
                 {
                 }
@@ -5558,7 +5556,7 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
             lex = expression_cast(lex, funcsp, atp, tp, exp, NULL, flags);
             if (*tp)
             {
-                if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_unary_int, compl,
+                if ((cparams.prm_cplusplus || chosenAssembler->msil) && insertOperatorFunc(ovcl_unary_int, compl,
                                        funcsp, tp, exp, NULL,NULL, NULL, flags))
                 {
                 }
@@ -5599,7 +5597,7 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
                lex = expression_cast(lex, funcsp, atp, tp, exp, &localMutable, flags);
             if (*tp)
             {
-                if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_unary_prefix, kw,
+                if ((cparams.prm_cplusplus || chosenAssembler->msil) && insertOperatorFunc(ovcl_unary_prefix, kw,
                                        funcsp, tp, exp, NULL,NULL, NULL, flags))
                 {
                 }
@@ -5752,7 +5750,7 @@ LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRE
                 
                                 kw = KW(lex);
                                 lex = getsym();
-                                if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_unary_postfix, kw,
+                                if ((cparams.prm_cplusplus || chosenAssembler->msil) && insertOperatorFunc(ovcl_unary_postfix, kw,
                                                        funcsp, tp, exp, NULL,NULL, NULL, flags))
                                 {
                                 }
@@ -6079,7 +6077,7 @@ static LEXEME *expression_add(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp,
         }
         ResolveTemplateVariable(tp, exp, tp1, atp);
         ResolveTemplateVariable(&tp1, &exp1, *tp, atp);
-        if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_binary_numericptr, kw,
+        if ((cparams.prm_cplusplus || chosenAssembler->msil) && insertOperatorFunc(ovcl_binary_numericptr, kw,
                                funcsp, tp, exp, tp1, exp1, NULL, flags))
         {
             continue;
@@ -6219,7 +6217,7 @@ static LEXEME *expression_shift(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **t
         }
         ResolveTemplateVariable(tp, exp, tp1, atp);
         ResolveTemplateVariable(&tp1, &exp1, *tp, atp);
-        if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_binary_int, kw,
+        if ((cparams.prm_cplusplus || chosenAssembler->msil) && insertOperatorFunc(ovcl_binary_int, kw,
                                funcsp, tp, exp, tp1, exp1, NULL, flags))
         {
         }
@@ -6301,7 +6299,7 @@ static LEXEME *expression_inequality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYP
             }
             ResolveTemplateVariable(tp, exp, tp1, atp);
             ResolveTemplateVariable(&tp1, &exp1, *tp, atp);
-            if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_binary_numericptr, kw,
+            if ((cparams.prm_cplusplus || chosenAssembler->msil) && insertOperatorFunc(ovcl_binary_numericptr, kw,
                                    funcsp, tp, exp, tp1, exp1, NULL, flags))
             {
             }
@@ -6426,7 +6424,7 @@ static LEXEME *expression_equality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE 
         }
         ResolveTemplateVariable(tp, exp, tp1, atp);
         ResolveTemplateVariable(&tp1, &exp1, *tp, atp);
-        if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_binary_numericptr, kw,
+        if ((cparams.prm_cplusplus || chosenAssembler->msil) && insertOperatorFunc(ovcl_binary_numericptr, kw,
                                funcsp, tp, exp, tp1, exp1, NULL, flags))
         {
         }
@@ -7045,7 +7043,7 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
         }
         ResolveTemplateVariable(tp, exp, tp1, NULL);
         ResolveTemplateVariable(&tp1, &exp1, *tp, NULL);
-        if (cparams.prm_cplusplus && insertOperatorFunc(selovcl, kw,
+        if ((cparams.prm_cplusplus || chosenAssembler->msil) && insertOperatorFunc(selovcl, kw,
                                funcsp, tp, exp, tp1, exp1, NULL, flags))
         {
             // unallocated var for destructor
@@ -7585,7 +7583,7 @@ static LEXEME *expression_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **t
         {
             break;
         }
-        if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_comma, comma,
+        if ((cparams.prm_cplusplus || chosenAssembler->msil) && insertOperatorFunc(ovcl_comma, comma,
                                funcsp, tp, exp, tp1, exp1, NULL, flags))
         {
             continue; 

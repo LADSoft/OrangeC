@@ -2150,6 +2150,24 @@ void checkOperatorArgs(SYMBOL *sp, BOOLEAN asFriend)
                     {
                         errorstr(ERR_OPERATOR_NEEDS_ZERO_OR_ONE_PARAMETER, overloadXlateTab[sp->operatorId]);                        
                     }
+                    if (!hr)
+                    {
+                        switch((enum e_kw)(sp->operatorId - CI_NEW))
+                        {
+                            case plus:
+                                sp->operatorId = plus_unary;
+                                break;
+                            case minus:
+                                sp->operatorId = minus_unary;
+                                break;
+                            case star:
+                                sp->operatorId = star_unary;
+                                break;
+                            case and:
+                                sp->operatorId = and_unary;
+                                break;
+                        }
+                    }
                     break;
                 case not:
                 case compl:

@@ -74,7 +74,7 @@ extern char anonymousNameSpaceName[512];
             "$basdiv", "$basmod", "$basshl", "$bsasshr", "$basand", "$basor", 
             "$basxor", "$binc", "$bdec", "$barray", "$bcall", "$bstar", 
             "$barrow", "$bcomma", "$blor", "$bland", "$bnot", "$bor", "$band", "$bxor", 
-            "$bcpl", "$bnwa", "$bdla", "$blit", 0
+            "$bcpl", "$bnwa", "$bdla", "$blit", "$badd", "$bsub", "$bmul", "$band", 0
 
     };
     char *xlate_tab[] = 
@@ -82,7 +82,7 @@ extern char anonymousNameSpaceName[512];
         0, 0, 0, "new", "delete", "+", "-", "*", "/", "<<", ">>", "%", "==", "!=",
             "<", "<=", ">", ">=", "=", "+=", "-=", "*=", "/=", "%=", "<<=", 
             ">>=", "&=", "|=", "^=", "++", "--", "[]", "()", "->*", "->", ",", "||",
-            "&&", "!", "|", "&", "^", "~", "new[]", "delete[]", "\"\" ", 0
+            "&&", "!", "|", "&", "^", "~", "new[]", "delete[]", "\"\" ","+", "-", "*", "&",0
     };
 #define IT_THRESHOLD 3
 #define IT_OV_THRESHOLD 5

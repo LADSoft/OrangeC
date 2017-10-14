@@ -40,6 +40,7 @@
 extern ARCH_ASM *chosenAssembler;
 extern INCLUDES *includes;
 extern SYMBOL *theCurrentFunc;
+extern char *cpp_funcname_tab[];
 
     char *overloadNameTab[] = 
     {
@@ -49,15 +50,25 @@ extern SYMBOL *theCurrentFunc;
             "$basdiv", "$basmod", "$basshl", "$bsasshr", "$basand", "$basor", 
             "$basxor", "$binc", "$bdec", "$barray", "$bcall", "$bstar", 
             "$barrow", "$bcomma", "$blor", "$bland", "$bnot", "$bor", "$band", "$bxor", 
-            "$bcpl", "$bnwa", "$bdla", "$blit"
+            "$bcpl", "$bnwa", "$bdla", "$blit", "$badd", "$bsub", "$bmul", "$band"
 
+    };
+    char *msiloverloadNameTab[] = 
+    {
+        ".ctor", ".dtor", ".bcast", ".new", ".delete", "op_Addition", "op_Subtraction", "op_Multiply", "op_Division",
+        "op_LeftShift", "op_RightShift", "op_Modulus", "op_Equality", "op_Inequality", "op_LessThan", "op_LessThanOrEqual",
+        "op_GreaterThan", "op_GreaterThanOrEqual", "$basn", "op_AdditionAssignment", "op_SubtractionAssignment", "op_MultiplicationAssignment",
+        "op_DivisionAssignment", "op_ModulusAssignment", "op_LeftShiftAssignment", "op_RightShiftAssignment", "op_BitwiseAndAssignment", "op_BitwiseOrAssignment",
+        "op_ExclusiveOrAssignment", "$binc", "$bdec", "$barray", "$bcall", "$bstar",
+        "op_MemberSelection", "op_Comma", "op_LogicalOr", "op_LogicalAnd", "op_LogicalNot", "op_BitwiseOr", "op_BitwiseAnd", "op_ExclusiveOr",
+        "op_OnesComplement", "$bnwa", "$bdla", "$blit", "op_UnaryPlus", "op_UnaryMinus", "op_PointerDereference", "op_AddressOf"
     };
     char *overloadXlateTab[] = 
     {
         0, 0, 0, "new", "delete", "+", "-", "*", "/", "<<", ">>", "%", "==", "!=",
             "<", "<=", ">", ">=", "=", "+=", "-=", "*=", "/=", "%=", "<<=", 
             ">>=", "&=", "|=", "^=", "++", "--", "[]", "()", "->*", "->", ",", "||",
-            "&&", "!", "|", "&", "^", "~", "new[]", "delete[]", "\"\""
+            "&&", "!", "|", "&", "^", "~", "new[]", "delete[]", "\"\"", "+", "-", "*", "&",
     };
     #define IT_THRESHOLD 2
     #define IT_OV_THRESHOLD 2
@@ -70,6 +81,15 @@ int mangledNamesCount ;
 
 static int declTypeIndex;
 static char *lookupName(char *in, char *name);
+
+void mangleInit()
+{
+    if (chosenAssembler->msil)
+    {
+        memcpy(overloadNameTab, msiloverloadNameTab, sizeof(msiloverloadNameTab));
+        memcpy(cpp_funcname_tab, msiloverloadNameTab, sizeof(msiloverloadNameTab));
+    }
+}
 char *mangleNameSpaces(char *in, SYMBOL *sp)
 {
     if (!sp)

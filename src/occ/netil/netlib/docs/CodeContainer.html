@@ -46,11 +46,14 @@
           of labels, and <a href="Param.html">Param</a> and <a
             href="Local.html">Local</a> object indexes out of range for
           the instruction in use.&nbsp;&nbsp; Method::Optimize will also
-          check stack usage though.<br>
+          check that the stack remains balanced though.<br>
           <br>
         </div>
         <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void
           ValidateInstructions();<br>
+	</b>
+        <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void
+          ValidateSEH();<br>
           <br>
         </b>The CIL qualifiers may be examined or modified.<br>
         <br>

@@ -57,10 +57,18 @@
           std::vector&lt;Property *&gt;&amp; Properties() const { return
           properties_;&nbsp; }</b><b><br>
           <br>
-        </b>It is possible to traverse the members of a
+        </b>To set the fact that a class reference is to be an external reference
+        for purpose of the object file, use<br>
+        <b></b><b><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bool External() const;
+          </b><b><br></b>
+        <b></b><b>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void External(bool external);
+          </b><b><br></b><br>
+	It is possible to traverse the members of a
         class.&nbsp;&nbsp; Normally though, one would start the
         traversal process by calling the related <a href="PELib.html">PELib</a>
-        function, which would traverse every object known to the
+        traverse function, which would traverse every object known to the
         library.<br>
         <br>
         <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; virtual bool

@@ -2,10 +2,10 @@
 <html>
   <head>
     <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-    <title>DotNETPELib 2.1 Documentation</title>
+    <title>DotNETPELib 3.0 Documentation</title>
   </head>
   <body>
-    <div align="center"><font size="+3">DotNetPELib 2.1 Documentation<br>
+    <div align="center"><font size="+3">DotNetPELib 3.0 Documentation<br>
       </font>
       <div align="left"><br>
         DotNETPELib is an unmanaged library written in C++, which allows
@@ -35,7 +35,7 @@
         assemblies into its own symbol table then allows one to access
         them in C code using standard C++ semantics.<br>
         <br>
-        DotNetPELib 2.1 also allows signing an assembly, if one has a
+        DotNetPELib 3.0 also allows signing an assembly, if one has a
         strong name key file describing the signing keys.<br>
         <br>
         As an output format, DotNETPELib currently supports .NET
@@ -43,12 +43,17 @@
         read and write them.&nbsp;&nbsp; It will also generate a .IL
         formatted file which can be further compiled with the standard
         .NET ILASM program to generate an assembly.<br>
+	<br>
+	There is also support for a simple object file format, and the
+        library comes with a linker called 'netlink' which will read object
+        files and create an output file, similar to how module-based languages
+        such as C link object files into an executable.</br>
         <br>
         A reference implementation of a C compiler called 'occil' makes
         use of this library to generate managed assemblies.<br>
         <br>
         This documentation will consider the available APIs in
-        DotNetPELib 2.1.<br>
+        DotNetPELib 3.0.<br>
         <br>
         <div align="center"><font size="+2">Overview</font><br>
         </div>
@@ -138,6 +143,12 @@
         object, which can hold a native object such as a number, string
         or label, or a reference to a variable, type, or method
         signature.<br>
+        <br>
+        A special type of instruction object is used to create boundaries for 
+        regions to be considered for <a href="SEH.html">SEH</a>.   A try block 
+        can be defined with a beginning and ending, and immediately following 
+        that would be a catch block.   Finally, Fault, and Filter blocks are
+        also supported.<br>
         <br>
         Many Operand objects hold an instance of something derived from
         the <a href="Value.html">Value</a> class.&nbsp;&nbsp;&nbsp; The

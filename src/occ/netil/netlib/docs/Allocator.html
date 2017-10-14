@@ -34,7 +34,7 @@
         </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Property
           *AllocateProperty(PELib &amp; peLib, std::string name, Type
           *type, std::vector&lt;Type *&gt;&amp; indices, bool hasSetter
-          = true);</b><b><br>
+          = true, DataContainer *parent = nullptr);</b><b><br>
         </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Property
           *AllocateProperty();</b><b><br>
         </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Enum
@@ -67,6 +67,8 @@
           nullptr);</b><b><br>
         </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Instruction
           *AllocateInstruction(Instruction::iop Op, std::string Text);</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Instruction
+          *AllocateInstruction(Instruction::iseh type, bool begin, Type *catchType=nullptr);</b><b><br>
         </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Value
           *AllocateValue(std::string name, Type *tp);</b><b><br>
         </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Local

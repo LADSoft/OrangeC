@@ -72,6 +72,13 @@
         </b><b></b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bool
           IsRef() const { return ref_; }<br>
           <br>
+	</b>Get/set the 'external' flag (used by the linker)<br>
+        <br>
+        <b></b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void
+          External(bool external) { external_ = External; }<br>
+        </b><b></b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bool
+          External() const { return external_; }<br>
+          <br>
         </b>Get/Set the field's .NET explicit offset.&nbsp;&nbsp; For
         example set the class qualifiers to 'explicit' and then set all
         its fields to an explicitOffset of zero to make a

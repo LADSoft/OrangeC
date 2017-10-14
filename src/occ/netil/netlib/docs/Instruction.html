@@ -22,7 +22,7 @@
         &nbsp;&nbsp;&nbsp; add becomes i_add<br>
         &nbsp;&nbsp;&nbsp; ldc.i4.4 becomes i_ldc_i4_4<br>
         <br>
-        there are two special instructions<br>
+        there are three special instructions<br>
         <br>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 
@@ -34,18 +34,26 @@
 
         i_comment, // puts a comment at this point in the instruction
         stream<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+
+        i_seh,&nbsp;&nbsp;&nbsp; // puts an SEH region boundary at his point
+        in the module code.<br>
         <br>
         The instruction may be constructed either directly or through an
         <a href="Allocator.html">Allocator</a> object.&nbsp;&nbsp;&nbsp;
         The first form of the constructor creates a generic instruction,
         including a label.&nbsp;&nbsp; The second form embeds a comment
-        into the .IL source file.&nbsp; Note that a complete list of
-        instructions as listed in ECMA-335 is available for use.<br>
+        into the .IL source file.&nbsp; The third form embeds an <a href="SEH.html">SEH</a> boundary.
+        Note that the complete list of instructions as listed in ECMA-335 
+        is available for use.<br>
         <br>
         <b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Instruction(iop
           Op, Operand *Operand);</b><b><br>
         </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
           Instruction(iop Op, std::string Text);</b><b><br>
+        </b><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          Instruction(iseh type, bool begin, Type *catchType);</b><b><br>
         </b><b><br>
         </b>Access the opcode<br>
         <br>

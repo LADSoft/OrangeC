@@ -64,12 +64,13 @@ int          _RTL_INTRINS _IMPORT strcasecmp(const char *, const char *);
 
 int          _RTL_INTRINS _IMPORT strncasecmp(const char *, const char *, size_t);
 
+/*
 #define 	bzero(s,n) memset(s,0,n)
 #define 	bcopy(src,dest,n) memmove(dest,src,n)
 #define 	bcmp(a,b,n) memcmp(a,b,n)
 #define 	index(a,b) strchr(a,b)
 #define 	rindex(a,b) strrchr(a,b)
-
+*/
 #ifdef __cplusplus
 };
 };

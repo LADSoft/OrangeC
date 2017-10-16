@@ -4,7 +4,7 @@
 [Setup]
 PrivilegesRequired=admin
 AppName=Orange C MSIL Version
-AppVerName=Orange C MSIL Version 6.14
+AppVerName=Orange C MSIL Version 6.21
 OutputBaseFileName=setup
 AppPublisher=LADSoft
 AppPublisherURL=http:\\members.tripod.com\~ladsoft
@@ -41,7 +41,7 @@ Name: "addtopath"; Description: "Add Orange C MSIL to the path"; GroupDescriptio
 [Files]
 Source: "C:\occil\license.txt"; DestDir: "{app}\"; Flags: IgnoreVersion; 
 Source: "C:\occil\berkely.lic"; DestDir: "{app}\"; Flags: IgnoreVersion; 
-Source: "C:\occil\netlib.txt"; DestDir: "{app}\"; Flags: IgnoreVersion; 
+Source: "C:\occil\DotNetPELib.txt"; DestDir: "{app}\"; Flags: IgnoreVersion; 
 Source: "C:\occil\occil.txt"; DestDir: "{app}\"; Flags: IgnoreVersion; 
 Source: "C:\occil\copying"; DestDir: "{app}\"; Flags: IgnoreVersion; 
 Source: "C:\occil\bin\occil.cfg"; DestDir: "{app}\bin\"; Flags: IgnoreVersion;
@@ -54,11 +54,12 @@ Source: "C:\occil\include\*.*"; DestDir: "{app}\include\"; Flags: IgnoreVersion;
 Source: "C:\occil\include\sys\*.*"; DestDir: "{app}\include\sys"; Flags: IgnoreVersion; 
 Source: "C:\occil\include\win32\*.*"; DestDir: "{app}\include\win32\"; Flags: IgnoreVersion; 
 
-Source: "C:\occil\netlib\*.*"; DestDir: "{app}\netlib\"; Flags: IgnoreVersion;
-Source: "C:\occil\netlib\test\*.*"; DestDir: "{app}\netlib\test\"; Flags: IgnoreVersion;
-Source: "C:\occil\netlib\ObjTest\*.*"; DestDir: "{app}\netlib\ObjTest\"; Flags: IgnoreVersion;
-Source: "C:\occil\netlib\netlink\*.*"; DestDir: "{app}\netlib\netlink\"; Flags: IgnoreVersion;
-Source: "C:\occil\netlib\util\*.*"; DestDir: "{app}\netlib\util\"; Flags: IgnoreVersion;
+Source: "C:\occil\DotNetPELib\*.*"; DestDir: "{app}\DotNetPELib\"; Flags: IgnoreVersion;
+Source: "C:\occil\DotNetPELib\test\*.*"; DestDir: "{app}\DotNetPELib\test\"; Flags: IgnoreVersion;
+Source: "C:\occil\DotNetPELib\ObjTest\*.*"; DestDir: "{app}\DotNetPELib\ObjTest\"; Flags: IgnoreVersion;
+Source: "C:\occil\DotNetPELib\netlink\*.*"; DestDir: "{app}\DotNetPELib\netlink\"; Flags: IgnoreVersion;
+Source: "C:\occil\DotNetPELib\util\*.*"; DestDir: "{app}\DotNetPELib\util\"; Flags: IgnoreVersion;
+Source: "C:\occil\DotNetPELib\docs\*.*"; DestDir: "{app}\DotNetPELib\docs\"; Flags: IgnoreVersion;
 
 Source: "C:\occil\examples\*.c"; DestDir: "{app}\examples\"; Flags: IgnoreVersion;
 Source: "C:\occil\examples\cc386\*.*"; DestDir: "{app}\examples\cc386\"; Flags: IgnoreVersion;

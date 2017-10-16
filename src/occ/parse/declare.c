@@ -73,6 +73,7 @@ extern SYMBOL *instantiatingMemberFuncClass;
 extern BOOLEAN parsingSpecializationDeclaration;
 extern int anonymousNotAlloc;
 extern LINEDATA *linesHead, *linesTail;
+extern int alignas_value;
 
 int inDefaultParam;
 LIST *externals, *globalCache;
@@ -547,7 +548,10 @@ void calculateStructOffsets(SYMBOL *sp)
             }
             else
             {
-                align = getAlign(sc_member, tp);
+                if (p->structAlign)
+                    align = p->structAlign;
+                else
+                    align = getAlign(sc_member, tp);
                 
             }
             totalAlign = imax(totalAlign, align);
@@ -5127,6 +5131,9 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
     TYPE *tp = NULL;
     BOOLEAN hasAttributes;
     char *oldDeprecationText = deprecationText;
+    int oldalignas_value = alignas_value;
+
+    alignas_value = 0;
     hasAttributes = ParseAttributeSpecifiers(&lex, funcsp, TRUE);
 
     if (!MATCHKW(lex, semicolon))
@@ -5299,6 +5306,8 @@ jointemplate:
                     lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3);
                     lex = getBeforeType(lex, funcsp, &tp1, &sp, &strSym, &nsv, inTemplate,
                                     storage_class, &linkage, &linkage2, &linkage3, asFriend, consdest, FALSE, FALSE);
+                    if (sp)
+                        sp->structAlign = alignas_value;
                     inTemplateType = FALSE;
                     if (isfunction(tp1))
                         sizeQualifiers(basetype(tp1)->btp);
@@ -6543,5 +6552,6 @@ doInitialize:
         skip(&lex, semicolon);
     }
     deprecationText = oldDeprecationText;
+    alignas_value = oldalignas_value;
     return lex;
 }

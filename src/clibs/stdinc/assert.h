@@ -65,4 +65,8 @@ void _RTL_FUNC _IMPORT __assertfail( const char *__who, const char *__file,
 #  define assert(p) ((void)0)
 #endif
 
+#if !defined(__cplusplus) && __STDC_VERSION__ >= 201112
+#  define static_assert _Static_assert
+#endif
+
 #endif /* __ASSERT_H__ */

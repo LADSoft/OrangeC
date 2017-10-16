@@ -837,6 +837,7 @@ static IMODE *GetBucket(IMODE *mem)
 void optimize(SYMBOL *funcsp)
 {
             //printf("optimization start\n");
+    weed_goto();
     if (chosenAssembler->gen->pre_gcse)
         chosenAssembler->gen->pre_gcse(intermed_head);
     #ifdef DUMP_GCSE_INFO

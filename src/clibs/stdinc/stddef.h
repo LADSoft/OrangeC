@@ -50,6 +50,10 @@ typedef decltype(nullptr) nullptr_t;
    
 #endif
 
+#if defined(__cplusplus) || __STDC_VERSION__ >= 201112L
+typedef long double max_align_t;
+#endif
+
 #ifndef _PTRDIFF_T
 #define _PTRDIFF_T
 typedef int    ptrdiff_t;

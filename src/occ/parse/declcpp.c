@@ -69,6 +69,7 @@ extern char *deprecationText;
 
 LIST *nameSpaceList;
 char anonymousNameSpaceName[512];
+int alignas_value;
 
 static LIST *deferred;
 
@@ -2973,9 +2974,9 @@ static void balancedAttributeParameter(LEXEME **lex)
 BOOLEAN ParseAttributeSpecifiers(LEXEME **lex, SYMBOL *funcsp, BOOLEAN always)
 {
     BOOLEAN rv = FALSE;
-    if (cparams.prm_cplusplus)
+    if (cparams.prm_cplusplus || cparams.prm_c1x)
     {
-        while (MATCHKW(*lex, kw_alignas) || MATCHKW(*lex, openbr))
+        while (MATCHKW(*lex, kw_alignas) || cparams.prm_cplusplus && MATCHKW(*lex, openbr))
         {
             if (MATCHKW(*lex, kw_alignas))
             {
@@ -3045,6 +3046,7 @@ BOOLEAN ParseAttributeSpecifiers(LEXEME **lex, SYMBOL *funcsp, BOOLEAN always)
                         align = exp->v.i;
                     }
                     needkw(lex, closepa);
+                    alignas_value = align;
                 }
             }
             else if (MATCHKW(*lex, openbr))

@@ -1632,6 +1632,8 @@ char *fullqualify(char *string)
             q += 3;
             while (p > buf &&  *p != '\\')
                 p--;
+            if (p > buf)
+                p--;
         }
         *p++ = '\\';
         strcpy(p, q);

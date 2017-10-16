@@ -645,11 +645,19 @@ void setglbdefs(void)
             glbdefine("__RTTI__", "1",TRUE);
     }
     glbdefine("__STDC__", "1",TRUE);
-    if (cparams.prm_c99)
+   
+    if (cparams.prm_c99 || cparams.prm_c1x)
     {
 #ifndef CPREPROCESSOR
         glbdefine("__STDC_HOSTED__", chosenAssembler->hosted,TRUE); // hosted compiler, not embedded
 #endif
+    }
+    if (cparams.prm_c1x)
+    {
+        glbdefine("__STDC_VERSION__", "201112L",TRUE);
+    } 
+    else if (cparams.prm_c99)
+    {
         glbdefine("__STDC_VERSION__", "199901L",TRUE);
     }
     /*   glbdefine("__STDC_IEC_599__","1");*/

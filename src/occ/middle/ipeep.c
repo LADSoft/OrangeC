@@ -204,6 +204,31 @@ static void kill_dupgoto(BLOCK *b, QUAD *head)
         head = head->fwd;
     }
 }
+void weed_goto(void)
+{
+    BOOLEAN killing = FALSE;
+    QUAD *head = intermed_head;
+    BLOCK *b = head->block;
+    while (head)
+    {
+        QUAD *next = head->fwd;
+        if (head->block != b)
+        {
+            killing = FALSE;
+            b = head->block;
+        }
+        if (killing)
+        {
+            if (head->dc.opcode != i_block && head->dc.opcode != i_blockend
+                && head->dc.opcode != i_dbgblock && head->dc.opcode != i_dbgblockend && head->dc.opcode != i_var
+                && head->dc.opcode != i_label && !head->ignoreMe)
+                RemoveInstruction(head);
+        }
+        else if (head->dc.opcode == i_goto)
+            killing = TRUE;
+        head = next;
+    }
+}
 /*-------------------------------------------------------------------------*/
 
 void kill_labeledgoto(BLOCK *b, QUAD *head)

@@ -1045,7 +1045,10 @@ static void dumpStaticInitializers(void)
                 bssseg();
                 sizep = &bss;
             }
-            al = getAlign(sc_global, basetype(tp));
+            if (sp->structAlign)
+                al = sp->structAlign;
+            else
+                al = getAlign(sc_global, basetype(tp));
             if (*sizep % al)
             {
                 int n = al - *sizep % al;

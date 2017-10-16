@@ -710,6 +710,7 @@ void putexterns(void);
                                /* Ipeep.c */
 
 void peepini(void);
+void weed_goto(void);
 void peep_icode(BOOLEAN branches);
 
 								/*irc.c */

@@ -30,8 +30,8 @@
     TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
     ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef __STDBOOL_H
-#define __STDBOOL_H
+#ifndef __STDNORETURN_H
+#define __STDNORETURN_H
 
 #ifndef __STDDEF_H
 #include <stddef.h>
@@ -39,4 +39,4 @@
 
 #define noreturn _Noreturn
 
-#endif /* __STDBOOL_H */
+#endif /* __STDNORETURN_H */

@@ -1,6 +1,18 @@
 Release notes:
 
-version 6.0.21:
+version 6.0.22:
+    occ:    set __STDC_VERSION__ properly in c1x mode
+    occ:    handle the /9 flag properly
+    occ:    enable _Alignas (C11) and fix so that alignas/_Alignas do something useful
+    occ:    when a relative file name in an error was processed, there could be duplicates of intermediate directories
+    occ:    problem was introduced when inlining a function with a return statement from an if block (generated bad code)
+    rtl:    in strings.h, various macros collided with string.h definitions
+    rtl:    stdnoreturn.h had include guards that collided with stdbool.h
+    rtl:    struct tm:  isdst should be 'false' after a call to gmtime
+    rtl:    add definition of max_align_t to stddef.h (C11/ C++)
+    rtl:    add definition of static_assert to assert.h (C11)
+
+version 6.0.21: Sep 23, 2017
     occ:    fix crash when generating debug information
     occ:    set C language default to C11 instead of C89; add switch /8 to get back to C89
 

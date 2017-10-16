@@ -2773,6 +2773,7 @@ BOOLEAN resolveToDeclaration(LEXEME * lex)
 LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent, 
                          BOOLEAN viacontrol)
 {
+    LEXEME *start = lex;
     ParseAttributeSpecifiers(&lex, funcsp, TRUE);
     if (ISID(lex))
     {
@@ -2912,6 +2913,11 @@ LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent,
                 {
                     STATEMENT *current = parent->tail;
                     declareAndInitialize = FALSE;
+                    if (start)
+                    {
+                        lex = prevsym(start);
+                        start = NULL;
+                    }
                     lex = declare(lex, funcsp, NULL, sc_auto, lk_none, parent, FALSE, FALSE, FALSE, FALSE, ac_public);
                     markInitializers(current);
                     if (MATCHKW(lex, semicolon))

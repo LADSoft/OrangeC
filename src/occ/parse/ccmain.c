@@ -235,7 +235,10 @@ void bool_setup(char select, char *string)
     if (select == '1')
         cparams.prm_c99 = cparams.prm_c1x = v;
     if (select == '9')
+    {
         cparams.prm_c99 = v;
+        cparams.prm_c1x = !v;
+    }
     if (select == '8')
         cparams.prm_c99 = cparams.prm_c1x = !v;
     if (select == 'M')

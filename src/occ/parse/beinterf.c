@@ -759,8 +759,9 @@ int init_backend(int *argc ,char **argv)
         stdshort.rootType = &stdshort;
         stdunsignedshort.rootType = &stdunsignedshort;
         stdcharptr.rootType = &stdcharptr;
-        std__func__.rootType = &std__func__;
-        std__func__nc.rootType = &std__func__nc;
+        UpdateRootTypes(&std__func__);
+        UpdateRootTypes(&std__func__c);
+        UpdateRootTypes(&std__func__nc);
         stdbool.rootType = &stdbool;
         stdwidechar.rootType = &stdwidechar;
         stdwcharptr.rootType = &stdwcharptr;

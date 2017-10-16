@@ -1,6 +1,10 @@
 Release notes:
 
-version 6.0.22:
+version 6.0.23:
+    occ:    fix various internal definitions include __func__ so they would be properly processed in type comparisons
+    occ:    when a relative file name in an error was processed, an intermediate directory might have the last character chopped off
+
+version 6.0.22: Oct 16, 2017
     occ:    set __STDC_VERSION__ properly in c1x mode
     occ:    handle the /9 flag properly
     occ:    enable _Alignas (C11) and fix so that alignas/_Alignas do something useful

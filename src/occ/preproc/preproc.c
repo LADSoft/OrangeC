@@ -1627,6 +1627,7 @@ char *fullqualify(char *string)
         p = buf + strlen(buf);
         if (!strncmp(q, ".\\", 2))
             q += 2;
+        p--;
         while (!strncmp(q, "..\\", 3))
         {
             q += 3;
@@ -1635,6 +1636,7 @@ char *fullqualify(char *string)
             if (p > buf)
                 p--;
         }
+	p++;
         *p++ = '\\';
         strcpy(p, q);
         return buf;

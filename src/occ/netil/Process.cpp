@@ -62,6 +62,7 @@ extern "C" {
 
     extern SYMBOL *theCurrentFunc;
     extern COMPILER_PARAMS cparams;
+    extern BOOLEAN replacePInvoke;
     extern TYPE stdbool, stdchar, stdunsignedchar, stdshort, stdunsignedshort, stdint, stdunsigned;
     extern TYPE stdlonglong, stdunsignedlonglong, stdinative, stdunative, stdfloat, stddouble, stdstring;
     extern TYPE std__string;
@@ -1843,6 +1844,95 @@ static BOOLEAN validateGlobalRef(SYMBOL *sp1, SYMBOL *sp2)
     }
     return FALSE;
 }
+class PInvokeWeeder : public Callback
+{
+public:
+    PInvokeWeeder(PELib &PELib) : peLib(PELib), scanning(true)
+    {
+
+    }
+    void SetOptimize()
+    {
+        scanning = false;
+    }
+    virtual bool EnterMethod(const Method *method) override
+    {
+        if (scanning)
+        {
+            for (auto ins : *static_cast<CodeContainer *>(const_cast<Method *>(method)))
+            {
+                Operand *op = ins->GetOperand();
+                if (op)
+                {
+                    Value *v = op->GetValue();
+                    if (v)
+                    {
+                        if (typeid(*v) == typeid(MethodName))
+                        {
+                            MethodSignature *ms = static_cast<MethodName *>(v)->Signature();
+                            if (!ms->Flags() && MethodSignature::Managed) // pinvoke
+                            {
+                                pinvokeCounters[ms->Name()] ++;
+                                for (auto m : method->GetContainer()->Methods())
+                                {
+                                    if (static_cast<Method *>(m)->Signature()->Name() == ms->Name())
+                                    {
+                                        pinvokeCounters[ms->Name()] --;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            for (auto ins : *static_cast<CodeContainer *>(const_cast<Method *>(method)))
+            {
+                Operand *op = ins->GetOperand();
+                if (op)
+                {
+                    Value *v = op->GetValue();
+                    if (v)
+                    {
+                        if (typeid(*v) == typeid(MethodName))
+                        {
+                            MethodSignature *ms = static_cast<MethodName *>(v)->Signature();
+                            if (!ms->Flags() && MethodSignature::Managed) // pinvoke
+                            {
+                                if (pinvokeCounters[ms->Name()] == 0)
+                                {
+                                    for (auto m : method->GetContainer()->Methods())
+                                    {
+                                        if (static_cast<Method *>(m)->Signature()->Name() == ms->Name())
+                                        {
+                                            ins->SetOperand(peLib.AllocateOperand(peLib.AllocateMethodName(static_cast<Method *>(m)->Signature())));
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            for (auto p : pinvokeCounters)
+            {
+                if (!p.second)
+                {
+                    peLib.RemovePInvokeReference(p.first);
+                }
+            }
+        }
+        return true;
+    };
+private:
+    PELib &peLib;
+    bool scanning;
+    std::map<std::string, int> pinvokeCounters;
+};
 extern "C" void oa_main_postprocess(BOOLEAN errors)
 {
     if (cparams.prm_compileonly && !cparams.prm_asmfile)
@@ -1863,6 +1953,14 @@ extern "C" void oa_main_postprocess(BOOLEAN errors)
         errors |= checkExterns() || errCount || prm_targettype != DLL && !mainSym && !hasEntryPoint;
         if (!errors)
         {
+            if (replacePInvoke)
+            {
+                PInvokeWeeder weeder(*peLib);
+                peLib->Traverse(weeder);
+                weeder.SetOptimize();
+                peLib->Traverse(weeder);
+            }
+
             if (cparams.prm_asmfile)
                 AddExt(ilName, ".il");
             else if (prm_targettype == DLL)

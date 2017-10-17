@@ -50,6 +50,7 @@ char namespaceAndClass[512];
 char *pinvoke_dll = "msvcrt.dll";
 BOOLEAN managed_library;
 BOOLEAN no_default_libs;
+BOOLEAN replacePInvoke;
 
 int dbgblocknum;
     #ifndef WIN32
@@ -70,8 +71,9 @@ static    char usage_text[] = "[options] [@response file] files\n"
         "/E[+]nn   - max number of errors      /Ipath    - specify include path\n"
         "/Kfile    - set strong name key       /Lxxx     - set dlls to import from\n"
         "/M        - generate make stubs       /Nns.cls  - set namespace and class\n"
-        "/O-       - disable optimizations     +Q        - quiet mode\n"
-        "/T        - translate trigraphs       /Vx.x.x.x - set assembly assembVersion\n"
+        "/O-       - disable optimizations     /P        - replace PInvokes\n"
+        "+Q        - quiet mode                /T        - translate trigraphs\n"
+        "/Vx.x.x.x - set assembly version\n"
         "Codegen parameters: (/C[+][-][params])\n"
         "  +d   - display diagnostics          -b        - no BSS\n"
         "  -l        - no C source in ASM file -m        -  no leading underscores\n"
@@ -83,6 +85,10 @@ static CMDLIST args[] =
 {
     {
         'd', ARG_BOOL, (void(*)(char, char *))parse_param 
+    }
+    ,
+    {
+        'P', ARG_BOOL, (void(*)(char, char *))parse_param
     }
     ,
     {
@@ -401,6 +407,9 @@ static int parse_param(char select, char *string)
 {
     if (select == 'd')
         msilData.allowExtensions = !!string;
+    if (select == 'P')
+        replacePInvoke = !!string;
+
     if (select == 'K') {
         strcpy(prm_snkKeyFile, string);
     }

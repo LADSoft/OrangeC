@@ -227,7 +227,7 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpszCmdLine,
     wc.hInstance = hInst;
     wc.hIcon = NULL;
     wc.hCursor = LoadCursor(0, IDC_ARROW);
-    wc.hbrBackground = COLOR_WINDOW + 1 ;
+    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1) ;
     wc.lpszMenuName = 0;
     wc.lpszClassName = szClassName;
     RegisterClass(&wc);

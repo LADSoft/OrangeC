@@ -1,6 +1,10 @@
 Release notes:
 
-Version 6.0.24:
+Version 6.0.25:
+    occ:    fix problem where functions defined outside class specializations wouldn't be instantiated
+    rtl:    more fixes for nl_types.h
+
+Version 6.0.24: 10/21/2017
     ocide:  fix problem with IDE crashing during a build, when there are errors or warnings out of the C compiler
     ocide:  fix random crash due to uninitialized buffer
     occ:    fix problem with templated return values sometimes having size calculated wrong (atc example would not run in DEBUG mode)

@@ -150,7 +150,7 @@ int _RTL_FUNC _IMPORTMM __fpclassifyf(float __x);
 int _RTL_FUNC _IMPORTMM __fpclassify(double __x);
 int _RTL_FUNC _IMPORTMM __fpclassifyl(long double __x);
 
-#if  __STDC_VERSION__ >= 199901L
+#if  __STDC_VERSION__ >= 199901L || defined(__cplusplus)
 float _RTL_FUNC _IMPORTMM nanf(const char *tagp);
 double _RTL_FUNC _IMPORTMM nan(const char *tagp);
 long double _RTL_FUNC _IMPORTMM nanl(const char *tagp);
@@ -258,7 +258,7 @@ long double _RTL_FUNC _IMPORTMM tanl   (long double __x);
 
 double      _RTL_FUNC _IMPORTMM _copysign(double __x, double __y);
 
-#if  __STDC_VERSION__ >= 199901L
+#if  __STDC_VERSION__ >= 199901L || defined(__cplusplus)
 
 float _RTL_FUNC _IMPORTMM acoshf  (float __x);
 float _RTL_FUNC _IMPORTMM asinhf  (float __x);
@@ -369,7 +369,7 @@ long double _RTL_FUNC _IMPORTMM truncl (long double __x);
 
 int         _RTL_FUNC _matherr (struct _exception *__e);
 
-#if  __STDC_VERSION__ >= 199901L
+#if  __STDC_VERSION__ >= 199901L || defined(__cplusplus)
 float       _RTL_FUNC _IMPORTMM hypotf (float __x, float __y);
 float       _RTL_FUNC _IMPORTMM p1evlf  (float __x, float *__coeffs, int __degree);
 float       _RTL_FUNC _IMPORTMM polevlf  (float __x, float *__coeffs, int __degree);
@@ -389,12 +389,14 @@ long double _RTL_FUNC _IMPORTMM polevll  (long double __x, long double *__coeffs
 long double _RTL_FUNC _IMPORTMM polyl  (long double __x, int __degree, long double *__coeffs);
 long double _RTL_FUNC _IMPORTMM pow10l (int __p);
 
+#ifndef __cplusplus
 #if !defined(__ABS_DEFINED)
 #define __ABS_DEFINED
 int         _RTL_INTRINS _IMPORTMM abs(int __x);
 long        _RTL_INTRINS _IMPORTMM labs(long __x);
 #if  __STDC_VERSION__ >= 199901L
 long long   _RTL_FUNC _IMPORTMM llabs(long long __x);
+#endif
 #endif
 
 #endif /* __ABS_DEFINED */
@@ -445,7 +447,18 @@ long double  _RTL_FUNC _IMPORT ynl(int, long double);
 */
 #endif
 #ifdef __cplusplus
+
 };
+
+namespace __1
+{
+inline float abs(float f) { return fabsf(f); }
+inline double abs(double f) { return fabs(f); }
+inline long double abs(long double f) { return fabsl(f); }
+inline int abs(int f) { return fabs(f); }
+inline long abs(long f) { return fabs(f); }
+inline long long abs(long long f) { return fabs(f); }
+}
 };
 #endif
 
@@ -457,7 +470,6 @@ long double  _RTL_FUNC _IMPORT ynl(int, long double);
         using __STD_NS_QUALIFIER __fpclassifyf;
         using __STD_NS_QUALIFIER __fpclassify;
         using __STD_NS_QUALIFIER __fpclassifyl;
-#if  __STDC_VERSION__ >= 199901L
         using __STD_NS_QUALIFIER __signbitf;
         using __STD_NS_QUALIFIER __signbit;
         using __STD_NS_QUALIFIER __signbitl;
@@ -483,7 +495,6 @@ long double  _RTL_FUNC _IMPORT ynl(int, long double);
         using __STD_NS_QUALIFIER sqrtf;
         using __STD_NS_QUALIFIER tanhf;
         using __STD_NS_QUALIFIER tanf;
-#endif
         using __STD_NS_QUALIFIER acos;
         using __STD_NS_QUALIFIER asin;
         using __STD_NS_QUALIFIER atan2;
@@ -529,8 +540,6 @@ long double  _RTL_FUNC _IMPORT ynl(int, long double);
         using __STD_NS_QUALIFIER tanhl;
         using __STD_NS_QUALIFIER tanl;
         using __STD_NS_QUALIFIER _copysign;
-#if  __STDC_VERSION__ >= 199901L
-
         using __STD_NS_QUALIFIER acoshf;
         using __STD_NS_QUALIFIER asinhf;
         using __STD_NS_QUALIFIER atanhf;
@@ -626,7 +635,7 @@ long double  _RTL_FUNC _IMPORT ynl(int, long double);
         using __STD_NS_QUALIFIER nextafterl;
         using __STD_NS_QUALIFIER nexttowardl;
         using __STD_NS_QUALIFIER remainderl;
-        using __STD_NS_QUALIFIER remquol;
+            using __STD_NS_QUALIFIER remquol;
         using __STD_NS_QUALIFIER rintl;
         using __STD_NS_QUALIFIER roundl;
         using __STD_NS_QUALIFIER scalbnl;
@@ -634,13 +643,10 @@ long double  _RTL_FUNC _IMPORT ynl(int, long double);
     using __STD_NS_QUALIFIER significandl;
         using __STD_NS_QUALIFIER tgammal;
         using __STD_NS_QUALIFIER truncl;
-#endif
         using __STD_NS_QUALIFIER _matherr;
-#if  __STDC_VERSION__ >= 199901L
         using __STD_NS_QUALIFIER hypotf;
         using __STD_NS_QUALIFIER polyf;
         using __STD_NS_QUALIFIER pow10f;
-#endif
         using __STD_NS_QUALIFIER hypot;
         using __STD_NS_QUALIFIER poly;
         using __STD_NS_QUALIFIER pow10;
@@ -648,10 +654,7 @@ long double  _RTL_FUNC _IMPORT ynl(int, long double);
         using __STD_NS_QUALIFIER polyl;
         using __STD_NS_QUALIFIER pow10l;
         using __STD_NS_QUALIFIER abs;
-        using __STD_NS_QUALIFIER labs;
-#if  __STDC_VERSION__ >= 199901L
-        using __STD_NS_QUALIFIER llabs;
-#endif
+                
         using __STD_NS_QUALIFIER atof;
         using __STD_NS_QUALIFIER _matherrl;
         using __STD_NS_QUALIFIER _atold;

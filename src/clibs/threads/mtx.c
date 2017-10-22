@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include "libp.h"
 
-extern int __thrd_rel_delay(const xtime *xt);
+extern int __thrd_rel_delay(const timespec *xt);
 
 typedef struct _tlist {
     struct _tlist *next;
@@ -150,7 +150,7 @@ static int isAvailable(imtx *mtx)
     }
     return 1;
 }
-int     _RTL_FUNC mtx_timedlock(mtx_t *mtx, const xtime *xt)
+int     _RTL_FUNC mtx_timedlock(mtx_t *mtx, const timespec *xt)
 {
     imtx *p = (imtx *)*mtx;
     int n = p->mode & ~mtx_recursive;

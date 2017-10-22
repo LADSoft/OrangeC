@@ -53,4 +53,7 @@ proftmw.o: proftmw.c
 vsconio.o: vsconio.c
 	$(CC) /c /I$(STDINCLUDE) $(CFLAGS) /DVSDLL -o$(OBJECT)\$@F $^
 
+llthrd.o: llthrd.c
+	$(CC) /c /C-E /I$(STDINCLUDE) /9 -o$(OBJECT)\$@F $^
+
 DISTRIBUTE:

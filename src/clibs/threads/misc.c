@@ -24,7 +24,7 @@ void    _RTL_FUNC call_once(once_flag *flag, void (*func)(void))
         __ll_exit_critical();
     }
 }
-int     _RTL_FUNC xtime_get(xtime *xt, int base)
+int     _RTL_FUNC timespec_get(timespec *xt, int base)
 {
     if (base == TIME_UTC)
     {

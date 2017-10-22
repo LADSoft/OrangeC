@@ -41,7 +41,7 @@ typedef struct
 typedef struct {
     time_t sec;
     long nsec;
-} xtime;
+} timespec;
 
 enum mtx_e
 {
@@ -67,13 +67,13 @@ int     _RTL_FUNC _IMPORT cnd_broadcast(cnd_t *cond);
 void    _RTL_FUNC _IMPORT cnd_destroy(cnd_t *cond);
 int     _RTL_FUNC _IMPORT cnd_init(cnd_t *cond);
 int     _RTL_FUNC _IMPORT cnd_signal(cnd_t *cond);
-int     _RTL_FUNC _IMPORT cnd_timedwait(cnd_t *cond, mtx_t *mtx, const xtime *xt);
+int     _RTL_FUNC _IMPORT cnd_timedwait(cnd_t *cond, mtx_t *mtx, const timespec *xt);
 int     _RTL_FUNC _IMPORT cnd_wait(cnd_t *cond, mtx_t *mtx);
 
 void    _RTL_FUNC _IMPORT mtx_destroy(mtx_t *mtx);
 int     _RTL_FUNC _IMPORT mtx_init(mtx_t *mtx, int type);
 int     _RTL_FUNC _IMPORT mtx_lock(mtx_t *mtx);
-int     _RTL_FUNC _IMPORT mtx_timedlock(mtx_t *mtx, const xtime *xt);
+int     _RTL_FUNC _IMPORT mtx_timedlock(mtx_t *mtx, const timespec *xt);
 int     _RTL_FUNC _IMPORT mtx_trylock(mtx_t *mtx);
 int     _RTL_FUNC _IMPORT mtx_unlock(mtx_t *mtx);
 
@@ -83,7 +83,7 @@ int     _RTL_FUNC _IMPORT thrd_detach(thrd_t thr);
 int     _RTL_FUNC _IMPORT thrd_equal(thrd_t thr0, thrd_t thr1);
 void    _RTL_FUNC _IMPORT thrd_exit(int res);
 int     _RTL_FUNC _IMPORT thrd_join(thrd_t thr, int *res);
-void    _RTL_FUNC _IMPORT thrd_sleep(const xtime *xt);
+void    _RTL_FUNC _IMPORT thrd_sleep(const timespec *duration, timespec *remaining);
 void    _RTL_FUNC _IMPORT thrd_yield(void);
 
 int     _RTL_FUNC _IMPORT tss_create(tss_t *key, tss_dtor_t dtor);
@@ -91,7 +91,7 @@ void    _RTL_FUNC _IMPORT tss_delete(tss_t key);
 void    *_RTL_FUNC _IMPORT tss_get(tss_t key);
 int     _RTL_FUNC _IMPORT tss_set(tss_t key, void *val);
 
-int     _RTL_FUNC _IMPORT xtime_get(xtime *xt, int base);
+int     _RTL_FUNC _IMPORT timespec_get(timespec *xt, int base);
 #ifdef __cplusplus
 }
 }

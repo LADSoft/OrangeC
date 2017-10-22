@@ -13,11 +13,11 @@
 
 #define THRD_SIG 0x44524854 // 'THRD'
 
-int __thrd_rel_delay(const xtime *xt)
+int __thrd_rel_delay(const timespec *xt)
 {
-    xtime xt2, xt3;
+    timespec xt2, xt3;
     xt3 = *xt;
-    xtime_get(&xt2, TIME_UTC);
+    timespec_get(&xt2, TIME_UTC);
     xt3.sec -= xt2.sec;
     xt3.nsec -= xt2.nsec;
     while (xt3.nsec < 0)
@@ -85,12 +85,26 @@ int     _RTL_FUNC thrd_join(thrd_t thr, int *res)
     }
     return thrd_error;
 }
-void    _RTL_FUNC thrd_sleep(const xtime *xt)
+void    _RTL_FUNC thrd_sleep(const timespec *xt, timespec *rv)
 {
     int t = __thrd_rel_delay(xt);
     if (t >= 0)
     {
         __ll_thrdsleep(t);
+    }
+    if (rv)
+    {
+        int t = __thrd_rel_delay(xt);
+        if (t < 0)
+        {
+            rv->sec = 0;
+            rv->nsec = 0;
+        }
+        else
+        {
+            rv->sec = t / 1000;
+            rv->nsec = (t % 1000) * 1000000;
+        }
     }
 }
 void    _RTL_FUNC thrd_yield(void)

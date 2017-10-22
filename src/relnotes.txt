@@ -1,6 +1,22 @@
 Release notes:
 
-version 6.0.23:
+Version 6.0.24:
+    ocide:  fix problem with IDE crashing during a build, when there are errors or warnings out of the C compiler
+    ocide:  fix random crash due to uninitialized buffer
+    occ:    fix problem with templated return values sometimes having size calculated wrong (atc example would not run in DEBUG mode)
+    occ:    fix '... = &(struct myStruct) { ... }' to compile properly (the ampersand had broken it)
+    occ:    fix variable length arrays to compile properly
+    occ:    when a VLA is passed to a function which is unprototyped, treat it as a pointer to its first element
+    occ:    enable variable length arrays in C++
+    occ:    result of a hook involving nullptr was calculated incorrectly (for example unordered_set insert crashed at runtime)
+    rtl:    define thrd_sleep properly and change 'xtime' declarations in threads.h to say 'timespec' to match standard
+    rtl:    compile the TLS helper function properly so TLS accesses would work
+    rtl:    math.h: define abs() properly for C++11
+    rtl:    math.h: define some C99 functions and macros such as isinf in C++ mode
+    rtl:    clean up nl_types.h so it can be included alone
+    rtl:    clean up nl_types.h so it doesn't collide with wctype.h
+
+version 6.0.23: Oct 16, 2017
     occ:    fix various internal definitions include __func__ so they would be properly processed in type comparisons
     occ:    when a relative file name in an error was processed, an intermediate directory might have the last character chopped off
 

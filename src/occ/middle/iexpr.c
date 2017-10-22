@@ -3351,7 +3351,7 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
         case en_void:
         {
             EXPRESSION *search = node;
-            while (search->type == en_void)
+            while (search && search->type == en_void)
             {
                 gen_void(search->left, funcsp);
                 search = search->right;

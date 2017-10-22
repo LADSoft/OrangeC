@@ -2977,7 +2977,7 @@ static LEXEME *getArrayType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc st
     *tp = PerformDeferredInitialization(*tp, funcsp);
     if (MATCHKW(lex, star))
     {
-        if (!cparams.prm_c99)
+        if (!cparams.prm_c99 && !cparams.prm_cplusplus)
             error(ERR_VLA_c99);
         if (storage_class != sc_parameter)
             error(ERR_UNSIZED_VLA_PARAMETER);
@@ -3050,7 +3050,7 @@ static LEXEME *getArrayType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc st
                 }
                 else
                 {
-                    if (!cparams.prm_c99 && !templateNestingCount && !msil)
+                    if (!cparams.prm_c99 && !cparams.prm_cplusplus && !templateNestingCount && !msil)
                         error(ERR_VLA_c99);
                     tpp->esize = constant;
                     tpp->etype = tpc;
@@ -4943,6 +4943,7 @@ static void allocateVLA(LEXEME *lex, SYMBOL *sp, SYMBOL *funcsp, BLOCKDATA *bloc
             deref(&stdint, &ep2);
             ep1 = llallocateVLA(sp, ep1, ep2); //exprNode(en_assign, ep1, exprNode(en_alloca, ep2, NULL));
             *rptr = chosenAssembler->msil ? ep1 : exprNode(en_void, ep1, NULL);
+            sp->assigned = TRUE;
         }
         st->select = result;
         optimize_for_constants(&st->select);

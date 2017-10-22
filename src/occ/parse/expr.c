@@ -1938,6 +1938,17 @@ join:
                       dest = decl->tp;
                 }
             }
+            else if (list->tp->vla)
+            {
+                // cast to a regular pointer if there is no declared param
+                TYPE *tpx = (TYPE *)Alloc(sizeof(TYPE));
+                tpx->type = bt_pointer;
+                tpx->size = getSize(bt_pointer);
+                tpx->btp = list->tp;
+                while (tpx->btp->vla)
+                    tpx->btp = tpx->btp->btp;
+                list->tp = tpx;
+            }
             else if (isint(list->tp))
             {
                 if (basetype(list->tp)->type <= bt_int)
@@ -5071,7 +5082,7 @@ static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE
                 case en_absolute:
                 case en_threadlocal:
                 {
-                    SYMBOL *sp = (*exp)->v.sp;
+                    SYMBOL *sp = exp1->v.sp;
                     if (sp->isConstructor || sp->isDestructor)
                         error(ERR_CANNOT_TAKE_ADDRESS_OF_CONSTRUCTOR_OR_DESTRUCTOR);
                     break;
@@ -5144,7 +5155,7 @@ static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE
         }	
         else if (!isfunction(*tp) && (*tp)->type != bt_aggregate)
         {
-            EXPRESSION *expasn = NULL;
+            EXPRESSION *expasn = NULL, **exp2;
             while(castvalue(exp1))
                 exp1 = (exp1)->left;
             if (exp1->type == en_assign)
@@ -5175,6 +5186,11 @@ static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE
                 default:
                     break;
             }
+            exp2 = exp;
+            while ((*exp2)->type == en_void && (*exp2)->right)
+                exp2 = &(*exp2)->right;
+            if ((*exp2)->type == en_void)
+                exp2 = &(*exp2)->left;
             if (basetype(btp)->type != bt_memberptr)
             {
                 tp1 = Alloc(sizeof(TYPE));
@@ -5184,9 +5200,9 @@ static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE
                 tp1->rootType = tp1;
                 *tp = tp1;
                 if (expasn)
-                    *exp = exprNode(en_void, expasn, exp1);
+                    *exp2 = exprNode(en_void, expasn, exp1);
                 else
-                    *exp = exp1;
+                    *exp2 = exp1;
             }
         }
     }
@@ -6774,9 +6790,9 @@ static LEXEME *expression_hook(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp
                     {
                         if ((isvoidptr(tpc) && ispointer(tph)) || (isvoidptr(tph) &&ispointer(tpc)))
                         {
-                            if (tpc->nullptrType)
+                            if (tph->nullptrType)
                                 tph = tpc;
-                            else if (tph->nullptrType)
+                            else if (tpc->nullptrType)
                                 tpc = tph;
                             else
                                 tpc = tph = &stdpointer;

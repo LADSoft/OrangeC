@@ -1083,17 +1083,25 @@ LEXEME *getIdName(LEXEME *lex, SYMBOL *funcsp, char *buf, int *ov, TYPE **castTy
             SLCHAR *xx = (SLCHAR *)lex->value.s.w;
             if (xx->count)
                 error(ERR_OPERATOR_LITERAL_EMPTY_STRING);
-            lex = getsym();
-            
-            if (ISID(lex))
+            if (lex->suffix)
             {
-                my_sprintf(buf, "%s@%s", overloadNameTab[CI_LIT], lex->value.s.a);
+                my_sprintf(buf, "%s@%s", overloadNameTab[CI_LIT], lex->suffix);
                 *ov = CI_LIT;
             }
             else
             {
-                error(ERR_OPERATOR_LITERAL_NEEDS_ID); 
-                prevsym(placeholder);
+                lex = getsym();
+
+                if (ISID(lex))
+                {
+                    my_sprintf(buf, "%s@%s", overloadNameTab[CI_LIT], lex->value.s.a);
+                    *ov = CI_LIT;
+                }
+                else
+                {
+                    error(ERR_OPERATOR_LITERAL_NEEDS_ID);
+                    prevsym(placeholder);
+                }
             }
         }
         else
@@ -4326,6 +4334,12 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
                         {
                             found1 = detemplate(found1, args, atp) ;
                         }
+                    }
+                    if (isstructured(basetype(found1->tp)->btp))
+                    {
+                        TYPE **tp1 = &basetype(found1->tp)->btp;
+                        while ((*tp1)->rootType != *tp1) tp1 = &(*tp1)->btp;
+                        *tp1 = (*tp1)->sp->tp;
                     }
                     GENREF(found1);
                     if (found1->templateLevel && !templateNestingCount && found1->templateParams)

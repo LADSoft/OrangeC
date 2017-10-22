@@ -370,6 +370,10 @@ BOOLEAN exactMatchOnTemplateArgs(TEMPLATEPARAMLIST *old, TEMPLATEPARAMLIST *sym)
     {
         if (old->p->type != sym->p->type)
             return FALSE;
+        if (old->p->packed)
+        {
+            return FALSE;
+        }
         switch (old->p->type)
         {
             case kw_typename:

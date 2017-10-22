@@ -5166,7 +5166,7 @@ jointemplate:
             }
             if (hasAttributes)
                 error(ERR_NO_ATTRIBUTE_SPECIFIERS_HERE);
-                
+             
             lex = TemplateDeclaration(lex, funcsp, access, storage_class, isExtern);
             needsemi = FALSE;
         }            
@@ -5678,8 +5678,12 @@ jointemplate:
                                 else 
                                 {
                                     ssp = getStructureDeclaration();
-                                    if (ssp && !ssp->tp->syms && ssp->templateLevel)
-                                        ssp = FindSpecialization(ssp, ssp->templateParams);
+                                    if (ssp && /*!ssp->tp->syms &&*/ ssp->templateLevel)
+                                    {
+                                        SYMBOL *ssp2 = FindSpecialization(ssp, ssp->templateParams);
+                                        if (ssp2)
+                                            ssp = ssp2;
+                                    }
                                     if (ssp && ssp->tp->syms && (strSym || !asFriend))
                                     {
                                         p = LookupName(sp->name, ssp->tp->syms);				

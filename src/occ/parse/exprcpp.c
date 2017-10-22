@@ -634,8 +634,10 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
             if (sp)
             {
                 EXPRESSION **e1 = exp;
-                while ((*e1)->type == en_void)
+                 while ((*e1)->type == en_void && (*e1)->right)
                     e1 = &(*e1)->right;
+                 if ((*e1)->type == en_void)
+                     e1 = &(*e1)->left;
                 *e1 = exprNode(en_void, *e1, varNode(en_auto, sp));
                 sp->dest = dest;
             }

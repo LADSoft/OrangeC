@@ -8,24 +8,16 @@
 #include <stdlib.h>
 #include <time.h>
 #include <locale.h>
+#include <wctype.h>
 
 #define MB_CUR_MAX_L(a) MB_CUR_MAX
 
 #ifdef __cplusplus
-extern "C" {
-#endif
-#ifdef __cplusplus
 namespace __STD_NS__
 {
-#endif
-struct lconv *  _RTL_FUNC _IMPORT localeconv( void );
-int _RTL_FUNC _IMPORT (iswcntrl)(unsigned int);
-int _RTL_FUNC _IMPORT (iswgraph)(unsigned int);
-int _RTL_FUNC _IMPORT (iswpunct)(unsigned int);
-int _RTL_FUNC _IMPORT (iswspace)(unsigned int);
-int _RTL_FUNC _IMPORT (iswblank)(unsigned int);
-#ifdef __cplusplus
-}
+
+extern "C" 
+{
 #endif
 inline void * newlocale(int category_mask, const char *locale,
                           void *base) { return 0; }
@@ -101,21 +93,21 @@ inline int      toupper_l(int __ch, locale_t larg)
     return __ch;
 }
 inline int iswcntrl_l (wint_t __wc, locale_t larg)
-{ return __STD_NS_QUALIFIER iswcntrl(__wc); }
+{ return iswcntrl(__wc); }
 inline int iswdigit_l (wint_t __wc, locale_t larg)
 { return __wc >= '0' && __wc <= '9'; }
 inline int iswgraph_l (wint_t __wc, locale_t larg)
-{ return __STD_NS_QUALIFIER iswgraph(__wc); }
+{ return iswgraph(__wc); }
 inline int iswlower_l (wint_t __wc, locale_t larg)
 { return __wc >= 'a' && __wc <= 'z'; }
 inline int iswprint_l (wint_t __wc, locale_t larg)
 { return __wc >= ' ' && __wc <= '~'; }
 inline int iswpunct_l (wint_t __wc, locale_t larg)
-{ return __STD_NS_QUALIFIER iswpunct(__wc); }
+{ return iswpunct(__wc); }
 inline int iswspace_l (wint_t __wc, locale_t larg)
-{ return  __STD_NS_QUALIFIER iswspace(__wc); }
+{ return  iswspace(__wc); }
 inline int iswblank_l (wint_t __wc, locale_t larg)
-{ return  __STD_NS_QUALIFIER iswblank(__wc); }
+{ return  iswblank(__wc); }
 inline int iswupper_l (wint_t __wc, locale_t larg)
 { return __wc >= 'A' && __wc <= 'Z'; }
 inline int iswxdigit_l (wint_t __wc, locale_t larg)
@@ -165,6 +157,54 @@ inline struct lconv *  localeconv_l(locale_t larg)
 { return localeconv(); }
 #ifdef __cplusplus
 }
+}
 #endif
 
+#endif
+#if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__NLTYPES_H_USING_LIST)
+#define __NLTYPES_H_USING_LIST
+	using __STD_NS_QUALIFIER newlocale;
+	using __STD_NS_QUALIFIER freelocale;
+	using __STD_NS_QUALIFIER snprintf_l;
+	using __STD_NS_QUALIFIER asprintf_l;
+	using __STD_NS_QUALIFIER isdigit_l;
+	using __STD_NS_QUALIFIER isxdigit_l;
+	using __STD_NS_QUALIFIER strtoll_l;
+	using __STD_NS_QUALIFIER strtoull_l;
+	using __STD_NS_QUALIFIER strtold_l;
+	using __STD_NS_QUALIFIER sscanf_l;
+	using __STD_NS_QUALIFIER strcoll_l;
+	using __STD_NS_QUALIFIER strxfrm_l;
+	using __STD_NS_QUALIFIER wcscoll_l;
+	using __STD_NS_QUALIFIER wcsxfrm_l;
+	using __STD_NS_QUALIFIER islower_l;
+	using __STD_NS_QUALIFIER isupper_l;
+	using __STD_NS_QUALIFIER tolower_l;
+	using __STD_NS_QUALIFIER toupper_l;
+	using __STD_NS_QUALIFIER iswcntrl_l;
+	using __STD_NS_QUALIFIER iswdigit_l;
+	using __STD_NS_QUALIFIER iswgraph_l;
+	using __STD_NS_QUALIFIER iswlower_l;
+	using __STD_NS_QUALIFIER iswprint_l;
+	using __STD_NS_QUALIFIER iswpunct_l;
+	using __STD_NS_QUALIFIER iswspace_l;
+	using __STD_NS_QUALIFIER iswblank_l;
+	using __STD_NS_QUALIFIER iswupper_l;
+	using __STD_NS_QUALIFIER iswxdigit_l;
+	using __STD_NS_QUALIFIER iswalpha_l;
+	using __STD_NS_QUALIFIER iswalnum_l;
+	using __STD_NS_QUALIFIER towlower_l;
+	using __STD_NS_QUALIFIER towupper_l;
+	using __STD_NS_QUALIFIER btowc_l;
+	using __STD_NS_QUALIFIER wctob_l;
+	using __STD_NS_QUALIFIER mbrtowc_l;
+	using __STD_NS_QUALIFIER mbtowc_l;
+	using __STD_NS_QUALIFIER wcrtomb_l;
+	using __STD_NS_QUALIFIER mbrlen_l;
+	using __STD_NS_QUALIFIER mbsrtowcs_l;
+	using __STD_NS_QUALIFIER wcsrtombs_l;
+	using __STD_NS_QUALIFIER wcsnrtombs_l;
+	using __STD_NS_QUALIFIER mbsnrtowcs_l;
+	using __STD_NS_QUALIFIER strftime_l;
+	using __STD_NS_QUALIFIER localeconv_l;
 #endif

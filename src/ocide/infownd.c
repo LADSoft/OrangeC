@@ -294,7 +294,7 @@ BOOL bump(HWND hwnd, char *buffer)
     int lineno;
     int start;
     lineno =  - 1;
-    if ((t = strchr(buffer, '(')) && isdigit(*(t + 1)))
+    if ((t = strrchr(buffer, '(')) && isdigit(*(t + 1)))
     {
         lineno = getfile(buffer, t, ')', &info);
     }
@@ -399,7 +399,7 @@ static void BumpToErrorWnd(char *buffer)
     char  *t, *q, *err = NULL;
     int lineno = -1;
     int start;
-    if ((t = strchr(buffer, '(')) && isdigit(*(t + 1)))
+    if ((t = strrchr(buffer, '(')) && isdigit(*(t + 1)))
     {
         lineno = getfile(buffer, t, ')', &info);
         err = strchr(t, ')');

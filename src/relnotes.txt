@@ -1,6 +1,10 @@
 Release notes:
 
-Version 6.0.25:
+Version 6.0.26:
+    occ:    remove spurious errors with iostream access when <complex> is #included
+    occ:    fix a crash under certain error conditions.
+
+Version 6.0.25: 10/22/2017
     occ:    fix problem where functions defined outside class specializations wouldn't be instantiated
     rtl:    more fixes for nl_types.h
 

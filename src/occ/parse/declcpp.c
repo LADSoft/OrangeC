@@ -3199,6 +3199,7 @@ static BOOLEAN constArgValid(TYPE *tp)
         tp = basetype(tp);
         if (sym->trivialCons)
             return TRUE;
+        tp = PerformDeferredInitialization(tp, NULL);
         sym1 = search(overloadNameTab[CI_DESTRUCTOR], tp->syms);
         if (sym1 && !((SYMBOL *)sym1->tp->syms->table[0]->p)->defaulted)
             return FALSE;

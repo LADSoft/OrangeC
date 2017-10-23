@@ -2345,8 +2345,6 @@ static TYPE * SynthesizeStructure(TYPE *tp_in, TEMPLATEPARAMLIST *enclosing)
                 sp = sp1;
                 sp = GetClassTemplate(sp, params, FALSE);
             }
-            if (sp)
-                sp = TemplateClassInstantiate(sp, sp->templateParams, FALSE, sc_global);
                
             if (sp)
             {

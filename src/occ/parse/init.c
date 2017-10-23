@@ -2614,6 +2614,13 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                         errskim(&lex, skim_semi);
                         return lex;
                     }
+                    else if (exp1->type != en_thisref)
+                    {
+                        // might get here if there was an error upstream...
+                        exp = exp1;
+                        itype = tp1;
+
+                    }
                     else
                     {
                         EXPRESSION *exp3 = exp1;

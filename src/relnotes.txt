@@ -1,5 +1,12 @@
 Release notes:
 
+Version 6.0.27:
+    occ:    enable debug line information from declarations in C++ headers, takes care of a linker crash
+    occ:    functions returning type 'auto' would not return the correct value when returning a c-style string constant
+    occ:    functions returning type 'auto' would create an extra instance of return values when the return type is structured, and destroy but not create them
+    occ:    if an error occurred while processing a lambda function, occ would abort while printing the error
+    occ:    if a template instantiation instantiates changes to base classes, recalculate the structure size
+
 Version 6.0.26:
     occ:    remove spurious errors with iostream access when <complex> is #included
     occ:    fix a crash under certain error conditions.

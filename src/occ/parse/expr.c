@@ -3240,6 +3240,15 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
             // it will be added after we select a member function that needs it.
             funcparams->ascall = TRUE;
             sp = GetOverloadedFunction(tp, &funcparams->fcall, funcparams->sp, funcparams, NULL, TRUE, FALSE, TRUE, flags);
+            if (isfunction(*tp))
+            {
+                if (isstructured(basetype(*tp)->btp))
+                {
+                    // get rid of any invalid sizing
+                    TYPE *tpx = basetype(basetype(*tp)->btp);
+                    tpx->size = tpx->sp->tp->size;
+                }
+            }
             tp1 = *tp;
             while (tp1->btp && tp1->type != bt_bit)
                 tp1 = tp1->btp;

@@ -1812,7 +1812,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             TYPE *tp1;
             EXPRESSION *exp1;
             LEXEME *current = lex;
-            lex = expression(lex, funcsp, NULL, &tp1, &exp1, 0);
+            lex = expression(lex, funcsp, NULL, &tp1, &exp1, _F_SIZEOF);
             lex = prevsym(current);
             while (tp1->type == bt_typedef)
                 tp1 = tp1->btp;

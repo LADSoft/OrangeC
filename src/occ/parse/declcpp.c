@@ -1219,7 +1219,6 @@ restart:
                         {
                             int n =0;
                             BOOLEAN done = FALSE;
-                            
                             BOOLEAN failed = FALSE;
                             TEMPLATEPARAMLIST *dest;
                             TEMPLATEPARAMLIST *src;
@@ -1270,7 +1269,9 @@ restart:
                                     {
                                         *bc = innerBaseClass(declsym, temp, isvirtual, currentAccess);
                                         if (*bc)
+                                        {
                                             bc = &(*bc)->next;
+                                        }
                                     }
                                     n++;
                                 }

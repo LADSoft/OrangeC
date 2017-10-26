@@ -1157,6 +1157,7 @@ LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
         if (!lambdas->templateFunctions)
         {
             LEXEME *lex1 = SetAlternateLex(self->func->deferredCompile);
+            SetLinkerNames(self->func, lk_cdecl);
             body(lex1, self->func);
             lex1 = self->func->deferredCompile;
             while (lex1)

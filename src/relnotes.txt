@@ -1,5 +1,10 @@
 Release notes:
 
+Version 6.0.28:
+    occ:    fix bug with 'using namespace' inside a function
+    occ:    fix problem with not being able to resolve the difference between an lref and an rref
+    occ:    fix crash in 'dom' routines
+
 Version 6.0.27:
     occ:    enable debug line information from declarations in C++ headers, takes care of a linker crash
     occ:    functions returning type 'auto' would not return the correct value when returning a c-style string constant

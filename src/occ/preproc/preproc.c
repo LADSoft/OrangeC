@@ -501,10 +501,7 @@ BOOLEAN getline(void)
             stripcomment(includes->inputline + rvc);
             /* for the back end*/
 #ifndef CPREPROCESSOR
-            if (!includes->sys_inc)
-            {
-                InsertLineData(includes->line, includes->fileindex, includes->fname, (char *)includes->inputline + rvc);
-            }
+            InsertLineData(includes->line, includes->fileindex, includes->fname, (char *)includes->inputline + rvc);
 #endif
             rvc = strlen((char *)includes->inputline);
             while (rvc && isspace((unsigned char)includes->inputline[rvc - 1]))

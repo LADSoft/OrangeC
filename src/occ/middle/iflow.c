@@ -714,6 +714,9 @@ static void Dominators(void)
 {
     int w, i;
     domCount = 0;
+    for (i = 0; i < blockCount; i++)
+        if (blockArray[i])
+            blockArray[i]->dfstOrder = 0;
     WalkFlowgraph(blockArray[0], domNumber, TRUE);
     vectorData = tAlloc(sizeof(struct _tarjan *) * (domCount + 1));
     for (i=0; i <= domCount; i++)

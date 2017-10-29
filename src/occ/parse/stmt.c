@@ -62,6 +62,7 @@ extern int total_errors;
 extern int templateNestingCount;
 
 int funcNesting;
+int funcLevel;
 
 BOOLEAN hasXCInfo;
 int startlab, retlab;
@@ -89,6 +90,7 @@ void statement_ini(BOOLEAN global)
     linesHead = linesTail = NULL;
     functionCanThrow = FALSE;
     funcNesting = 0;
+    funcLevel = 0;
     caseDestructBlock = NULL;
     matchReturnTypes = FALSE;
 }
@@ -3486,6 +3488,7 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     int oldCodeLabel = codeLabel;
     int oldMatchReturnTypes = matchReturnTypes;
     funcNesting++;
+    funcLevel++;
     functionCanThrow = FALSE;
     codeLabel = INT_MIN;
     hasXCInfo = FALSE;
@@ -3589,6 +3592,7 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     codeLabel = oldCodeLabel;
     functionCanThrow = oldFunctionCanThrow;
     matchReturnTypes = oldMatchReturnTypes;
+    funcLevel--;
     funcNesting--;
     return lex;
 }

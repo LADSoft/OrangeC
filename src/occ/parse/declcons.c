@@ -2481,9 +2481,15 @@ static void genAsnCall(BLOCKDATA *b, SYMBOL *cls, SYMBOL *base, int offset, EXPR
         tp = base->tp;
     }
     if (move)
+    {
         tp->rref = TRUE;
+        tp->lref = FALSE;
+    }
     else
+    {
         tp->lref = TRUE;
+        tp->rref = FALSE;
+    }
     params->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
     params->arguments->tp = tp;
     params->arguments->exp = right;

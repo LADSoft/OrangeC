@@ -4176,15 +4176,18 @@ static LEXEME *getAfterType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **sp,
                 else if (*sp && ((*sp)->storage_class == sc_member  || (*sp)->storage_class == sc_mutable))
                 {
                     //error(ERR_BIT_STRUCT_MEMBER);
-                    if (cparams.prm_ansi)
+                    if ((*sp)->tp)
                     {
-                        if ((*sp)->tp->type != bt_int 
-                            && (*sp)->tp->type != bt_unsigned
-                            && (*sp)->tp->type != bt_bool)
-                            error(ERR_ANSI_INT_BIT);
+                        if (cparams.prm_ansi)
+                        {
+                            if ((*sp)->tp->type != bt_int
+                                && (*sp)->tp->type != bt_unsigned
+                                && (*sp)->tp->type != bt_bool)
+                                error(ERR_ANSI_INT_BIT);
+                        }
+                        else if (!isint((*sp)->tp) && basetype((*sp)->tp)->type != bt_enum)
+                            error(ERR_BIT_FIELD_INTEGER_TYPE);
                     }
-                    else if (!isint((*sp)->tp) && basetype((*sp)->tp)->type != bt_enum)
-                        error(ERR_BIT_FIELD_INTEGER_TYPE);
                     lex = getsym();
                     lex = optimized_expression(lex, funcsp, NULL, &tp1, &exp, FALSE);
                     if (tp1 && exp && isintconst(exp))

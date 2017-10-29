@@ -91,6 +91,7 @@ extern LAMBDA *lambdas;
 extern int argument_nesting;
 extern LINEDATA *linesHead, *linesTail;
 extern int noSpecializationError;
+extern int funcLevel;
 
 int dontRegisterTemplate;
 int instantiatingTemplate;
@@ -874,9 +875,15 @@ LEXEME *GetTemplateArguments(LEXEME *lex, SYMBOL *funcsp, SYMBOL *templ, TEMPLAT
                             (*lst)->p = tp->templateParam->p;
                             if (isref(tp1))
                                 if (basetype(tp1)->type == bt_lref)
+                                {
                                     (*lst)->p->lref = TRUE;
+                                    (*lst)->p->rref = FALSE;
+                                }
                                 else
+                                {
                                     (*lst)->p->rref = TRUE;
+                                    (*lst)->p->lref = FALSE;
+                                }
                             if (inTemplateSpecialization && !tp->templateParam->p->packed)
                                 error(ERR_PACK_SPECIFIER_REQUIRES_PACKED_TEMPLATE_PARAMETER);
                         }
@@ -5823,6 +5830,8 @@ SYMBOL *TemplateClassInstantiateInternal(SYMBOL *sym, TEMPLATEPARAMLIST *args, B
             HASHTABLE *oldTags = localNameSpace->tags;
             int oldInArgs = inTemplateArgs;
             int oldArgumentNesting = argument_nesting;
+            int oldFuncLevel = funcLevel;
+            funcLevel = 0;
             argument_nesting = 0;
             inTemplateArgs = 0;
             expandingParams = 0;
@@ -5895,6 +5904,7 @@ SYMBOL *TemplateClassInstantiateInternal(SYMBOL *sym, TEMPLATEPARAMLIST *args, B
             inTemplateArgs = oldInArgs;
             argument_nesting = oldArgumentNesting;
             expandingParams = oldExpandingParams;
+            funcLevel = oldFuncLevel;
             GENREF(cls);
 			templateHeaderCount = oldHeaderCount;
             while (pushCount--)

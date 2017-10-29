@@ -57,6 +57,7 @@ extern int instantiatingTemplate;
 extern INCLUDES *includes;
 extern BOOLEAN inTemplateType;
 extern LIST *nameSpaceList;
+extern int funcLevel;
 
 static int insertFuncs(SYMBOL **spList, SYMBOL **spFilterList, LIST *gather, FUNCTIONCALL *args, TYPE *atp);
 
@@ -783,25 +784,28 @@ SYMBOL *finishSearch(char *name, SYMBOL *encloser, NAMESPACEVALUES *ns, BOOLEAN 
     SYMBOL *rv = NULL;
     if (!encloser && !ns && !namespaceOnly)
     {
-        SYMBOL *ssp;
-        if (cparams.prm_cplusplus || !tagsOnly)
-            rv = search(name, localNameSpace->syms);
-        if (!rv)
-            rv = search(name, localNameSpace->tags);
-        if (lambdas)
+        SYMBOL *ssp = getStructureDeclaration();
+        if (funcLevel || !ssp)
         {
-            LAMBDA *srch = lambdas;
-            while (srch && !rv)
+            if (cparams.prm_cplusplus || !tagsOnly)
+                rv = search(name, localNameSpace->syms);
+            if (!rv)
+                rv = search(name, localNameSpace->tags);
+            if (lambdas)
             {
-                if (cparams.prm_cplusplus || !tagsOnly)
-                    rv = search(name, srch->oldSyms);
-                if (!rv)
-                    rv = search(name, srch->oldTags);
-                srch = srch->next;
+                LAMBDA *srch = lambdas;
+                while (srch && !rv)
+                {
+                    if (cparams.prm_cplusplus || !tagsOnly)
+                        rv = search(name, srch->oldSyms);
+                    if (!rv)
+                        rv = search(name, srch->oldTags);
+                    srch = srch->next;
+                }
             }
+            if (!rv)
+                rv = namespacesearch(name, localNameSpace, FALSE, tagsOnly);
         }
-        if (!rv)
-            rv = namespacesearch(name, localNameSpace, FALSE, tagsOnly);
         if (!rv && enumSyms)
             rv = search(name, enumSyms->tp->syms);
         if (!rv)
@@ -826,7 +830,6 @@ SYMBOL *finishSearch(char *name, SYMBOL *encloser, NAMESPACEVALUES *ns, BOOLEAN 
         {
             rv->throughClass = FALSE;
         }
-        ssp = getStructureDeclaration();
         if (!rv && (!ssp || ssp->nameSpaceValues != globalNameSpace))
         {
             rv = namespacesearch(name, globalNameSpace, FALSE, tagsOnly);

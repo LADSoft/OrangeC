@@ -1626,6 +1626,8 @@ BOOLEAN hasPackedExpression(EXPRESSION *exp, BOOLEAN useAuto)
                 return TRUE;
             il = il->next;
         }
+        if (exp->v.func->thisptr && hasPackedExpression(exp->v.func->thisptr, useAuto))
+            return TRUE;
     }
     return FALSE;
 }
@@ -1767,19 +1769,21 @@ INITLIST **expandPackedInitList(INITLIST **lptr, SYMBOL *funcsp, LEXEME *start, 
 				}
 			}
             */
-			for (i=0; i < n; i++)
-			{
-				INITLIST *p = Alloc(sizeof(INITLIST));
-				LEXEME *lex = SetAlternateLex(start);
-				packIndex = i;
-				expression_assign(lex, funcsp, NULL, &p->tp, &p->exp, NULL, _F_PACKABLE);
-				SetAlternateLex(NULL);
-				if (p->tp)
-				{
-					*lptr = p;
-					lptr = &(*lptr)->next;
-				}
-			}
+            if (n > 1 || !packedExp->v.func->arguments || packedExp->v.func->arguments->tp->type != bt_void)
+			    for (i=0; i < n; i++)
+			    {
+				    INITLIST *p = Alloc(sizeof(INITLIST));
+				    LEXEME *lex = SetAlternateLex(start);
+				    packIndex = i;
+				    expression_assign(lex, funcsp, NULL, &p->tp, &p->exp, NULL, _F_PACKABLE);
+				    SetAlternateLex(NULL);
+                    if (p->tp->type != bt_void)
+				        if (p->tp)
+				        {
+					        *lptr = p;
+					        lptr = &(*lptr)->next;
+				        }
+			    }
 		}
     }
     expandingParams--;

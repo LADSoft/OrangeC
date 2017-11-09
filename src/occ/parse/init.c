@@ -1748,7 +1748,7 @@ static EXPRESSION *ConvertInitToRef(EXPRESSION *exp, TYPE *tp, TYPE*boundTP, enu
         EXPRESSION *exp1 = exp;
         if (!templateNestingCount && (referenceTypeError(tp, exp) != exp->type || (tp->type == bt_rref && lvalue(exp))) && (!isstructured(basetype(tp)->btp) || exp->type != en_lvalue) && (!ispointer(basetype(tp)->btp) || exp->type != en_l_p))
         {
-            if (!isarithmeticconst(exp) && exp->type != en_thisref && exp->type != en_func && basetype(basetype(tp)->btp)->type != bt_memberptr)
+            if (!isarithmeticconst(exp) && exp->type != en_thisref && exp->type != en_func && basetype(basetype(tp)->btp)->type != bt_memberptr && !boundTP->rref)
                 errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, tp, boundTP);
             if (sc != sc_parameter)
                 exp = createTemporary(tp, exp);

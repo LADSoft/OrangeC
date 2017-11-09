@@ -1871,6 +1871,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                     MatchReturnTypes(funcsp, tp, tp1);
                     if (tp1 && isstructured(tp1))
                     {
+                        ctype = tp1;
                         if (basetype(tp1)->sp->templateLevel && basetype(tp1)->sp->templateParams && !basetype(tp1)->sp->instantiated)
                         {
                             SYMBOL * sp = basetype(tp1)->sp;
@@ -1920,7 +1921,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         maybeConversion = FALSE;
                         returntype = tp;
                         implicit = TRUE;
-                        callConstructor(&ctype, &en, funcparams, FALSE, NULL, TRUE, maybeConversion, FALSE, FALSE, FALSE); 
+                        callConstructor(&ctype, &en, funcparams, FALSE, NULL, TRUE, maybeConversion, FALSE, FALSE, FALSE);
                         funcsp->nonConstVariableUsed = nonconst;
                         returnexp = en;
                         basetype(tp1)->rref = oldrref;

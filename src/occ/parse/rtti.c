@@ -47,8 +47,8 @@ extern int mangledNamesCount ;
 HASHTABLE *rttiSyms;
 
 // in enum e_bt order
-static char *typeNames[] = { "bit", "bool", "char", "unsigned char", "short", "char16_t", "unsigned short",
-    "wchar_t",  NULL, "int", "char32_t", "unsigned", "long", "unsigned long", "long long",
+static char *typeNames[] = { "bit", "bool", "signed char", "char", "unsigned char", "short", "char16_t", "unsigned short",
+    "wchar_t",  NULL, "int", "inative", "char32_t", "unsigned", "unative", "long", "unsigned long", "long long",
     "unsigned long long", "float", "double", "long double", "float imaginary", "double imaginary",
     "long double imaginary", "float complex", "double complex", "long double complex", "void",
     "__object", "__string" };

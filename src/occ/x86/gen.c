@@ -1383,9 +1383,9 @@ void gen_xset(QUAD *q, enum e_op pos, enum e_op neg, enum e_op flt)
             gen_codes(op_and, ISZ_UINT, apal, aimmed(1));
     }
 }
-void gen_goto(QUAD* q, enum e_op pos, enum e_op neg, enum e_op llpos, enum e_op llneg, enum e_op llinterm, enum e_op flt)
+void gen_goto(QUAD* q, enum e_op pos, enum e_op neg, enum e_op llpos, enum e_op llneg, enum e_op llintermpos, enum e_op llintermneg, enum e_op flt)
 {
-    enum e_op sop = pos, sop1 = llpos, top = llneg, opa;
+    enum e_op sop = pos, sop1 = llpos, top = llneg, top1 = llintermpos, opa;
     IMODE *left = q->dc.left;
     IMODE *right = q->dc.right;
     AMODE *apll, *aplh, *aprl, *aprh;
@@ -1399,6 +1399,7 @@ void gen_goto(QUAD* q, enum e_op pos, enum e_op neg, enum e_op llpos, enum e_op 
             sop = neg;
             sop1 = llneg;
             top = llpos;
+            top1 = llintermneg;
         }
     }
     if (left->bits && right->mode == i_immed && isintconst(right->offset))
@@ -1503,7 +1504,6 @@ void gen_goto(QUAD* q, enum e_op pos, enum e_op neg, enum e_op llpos, enum e_op 
         if (left->size == ISZ_ULONGLONG || left->size == -ISZ_ULONGLONG)
         {
             int lab = beGetLabel;
-            sop = llinterm;
             gen_codes(op_cmp, ISZ_UINT, aplh, aprh);
             peep_tail->oper1->liveRegs = -1;
             if (top != op_jne)
@@ -1512,7 +1512,7 @@ void gen_goto(QUAD* q, enum e_op pos, enum e_op neg, enum e_op llpos, enum e_op 
                 gen_branch(top, lab);
             gen_codes(op_cmp, ISZ_UINT, apll, aprl);
             peep_tail->oper1->liveRegs = -1;
-            gen_branch(sop, q->dc.v.label);
+            gen_branch(top1, q->dc.v.label);
             oa_gen_label(lab);		
         }
         else
@@ -4165,52 +4165,52 @@ void asm_clrblock(QUAD *q)           /* clear block of memory */
 }
 void asm_jc(QUAD *q)                 /* branch if a U< b */
 {
-    gen_goto(q, op_jc, op_ja, op_jc, op_ja, op_jb, op_jb);
+    gen_goto(q, op_jc, op_ja, op_jc, op_ja, op_jb, op_ja, op_jb);
     
 }
 void asm_ja(QUAD *q)                 /* branch if a U> b */
 {
-    gen_goto(q, op_ja, op_jc, op_ja, op_jc, op_ja, op_ja);
+    gen_goto(q, op_ja, op_jc, op_ja, op_jc, op_ja, op_jb, op_ja);
     
 }
 void asm_je(QUAD *q)                 /* branch if a == b */
 {
-    gen_goto(q, op_je, op_jne, op_je, op_jne, op_je, op_je);
+    gen_goto(q, op_je, op_jne, op_je, op_jne, op_je, op_jne, op_je);
     
 }
 void asm_jnc(QUAD *q)                /* branch if a U>= b */
 {
-    gen_goto(q, op_jnc, op_jbe, op_ja, op_jc, op_jae, op_jae);
+    gen_goto(q, op_jnc, op_jbe, op_ja, op_jc, op_jae, op_jbe, op_jae);
     
 }
 void asm_jbe(QUAD *q)                /* branch if a U<= b */
 {
-    gen_goto(q, op_jbe, op_jnc, op_jc, op_ja, op_jbe, op_jbe);
+    gen_goto(q, op_jbe, op_jnc, op_jc, op_ja, op_jbe, op_jnc, op_jbe);
     
 }
 void asm_jne(QUAD *q)                /* branch if a != b */
 {
-    gen_goto(q, op_jne, op_je, op_jne, op_je, op_jne, op_jne);
+    gen_goto(q, op_jne, op_je, op_jne, op_je, op_jne, op_je, op_jne);
     
 }
 void asm_jl(QUAD *q)                 /* branch if a S< b */
 {
-    gen_goto(q, op_jl, op_jg, op_jl, op_jg, op_jb, op_jb);
+    gen_goto(q, op_jl, op_jg, op_jl, op_jg, op_jb, op_ja, op_jb);
 
 }
 void asm_jg(QUAD *q)                 /* branch if a S> b */
 {
-       gen_goto(q, op_jg, op_jl, op_jg, op_jl, op_ja, op_ja);
+       gen_goto(q, op_jg, op_jl, op_jg, op_jl, op_ja, op_jb, op_ja);
 
 }
 void asm_jle(QUAD *q)                /* branch if a S<= b */
 {
-    gen_goto(q, op_jle, op_jge, op_jl, op_jg, op_jbe, op_jbe);
+    gen_goto(q, op_jle, op_jge, op_jl, op_jg, op_jbe, op_jae, op_jbe);
     
 }
 void asm_jge(QUAD *q)                /* branch if a S>= b */
 {
-    gen_goto(q, op_jge, op_jle, op_jg, op_jl, op_jae, op_jae);
+    gen_goto(q, op_jge, op_jle, op_jg, op_jl, op_jae, op_jbe, op_jae);
     
 }
 void asm_cppini(QUAD *q)             /* cplusplus initialization (historic)*/

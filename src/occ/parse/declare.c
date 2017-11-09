@@ -654,7 +654,7 @@ void calculateStructOffsets(SYMBOL *sp)
         }
     }
     sp->tp->size = size ;
-    sp->structAlign = totalAlign;
+    sp->structAlign = totalAlign == -1 ? 1 : totalAlign;
 //    if (cparams.prm_cplusplus)
     {
         // align the size of the structure to make the structure alignable when used as an array element
@@ -3422,7 +3422,9 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                 {
                     spi->packed = TRUE;
                     if (spi->anonymous && MATCHKW(lex, ellipse))
+                    {
                         lex = getsym();
+                    }
                 }
                 spi->tp = tp1;
                 spi->linkage = linkage;
@@ -4482,7 +4484,7 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
             start = lex;
             lex = getsym();
             /* in a parameter, open paren followed by a type is an  unnamed function */
-            if (storage_class == sc_parameter && startOfType(lex,FALSE) && (!ISKW(lex) || !(lex->kw->tokenTypes & TT_LINKAGE) ))
+            if (storage_class == sc_parameter && (MATCHKW(lex, closepa) || startOfType(lex,FALSE) && (!ISKW(lex) || !(lex->kw->tokenTypes & TT_LINKAGE) )))
             {
                 TYPE *tp1;
                 if (!*spi)

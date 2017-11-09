@@ -487,7 +487,7 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
                         deferred = TRUE;
                     }
                 }
-                else if (inTemplateType || sp && sp->tp->type == bt_templateselector)
+                else if (inTemplateType)// || sp && sp->tp->type == bt_templateselector)
                 {
                     deferred = TRUE;
                 }
@@ -510,7 +510,18 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
                     {
                         if (basetype(sp->tp)->type == bt_templateselector)
                         {
-                            deferred = TRUE;
+                            if (sp->mainsym && sp->mainsym->storage_class == sc_typedef && sp->mainsym->templateLevel)
+                            {
+                                SYMBOL *sp1 = GetTypedefSpecialization(sp->mainsym, current);
+                                if (sp1 && sp1->instantiated)
+                                    sp = sp1;
+                                else
+                                    deferred = TRUE;
+                            }
+                            else
+                            {
+                                deferred = TRUE;
+                            }
                         }
                         else
                         {
@@ -859,10 +870,9 @@ SYMBOL *finishSearch(char *name, SYMBOL *encloser, NAMESPACEVALUES *ns, BOOLEAN 
         {
             LIST *rvl;
             unvisitUsingDirectives(ns);
-            rvl = tablesearchinline(name, ns, tagsOnly);
-            if (rvl)
+            rv = namespacesearch(name, ns, FALSE, tagsOnly);
+            if (rv)
             {
-                rv = rvl->data;
                 rv->throughClass = FALSE;
             }
         }

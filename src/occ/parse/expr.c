@@ -881,7 +881,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                 if (sp->storage_class != sc_overloads)
                 {
                     if (!isstructured(*tp) && basetype(*tp)->type != bt_memberptr && !isfunction(*tp) && 
-                        sp->storage_class != sc_constant && sp->storage_class != sc_enumconstant)
+                        sp->storage_class != sc_constant && sp->storage_class != sc_enumconstant && sp->tp->type != bt_void)
                     {
                         if (!(*tp)->array || (*tp)->vla || !(*tp)->msil && sp->storage_class == sc_parameter)
                             if ((*tp)->vla)
@@ -2035,7 +2035,7 @@ static LEXEME *getInitInternal(LEXEME *lex, SYMBOL *funcsp, INITLIST **lptr, enu
         {
             LEXEME *start = lex;
             lex = expression_assign(lex, funcsp, NULL, &p->tp, &p->exp, NULL, _F_PACKABLE | (finish == closepa ? _F_INARGS : 0) | (flags & _F_SIZEOF));
-            if (p->tp && isvoid(p->tp))
+            if (p->tp && isvoid(p->tp) && finish != closepa)
                 error(ERR_NOT_AN_ALLOWED_TYPE);
             optimize_for_constants(&p->exp);
             if (finish != closepa)
@@ -2068,7 +2068,8 @@ static LEXEME *getInitInternal(LEXEME *lex, SYMBOL *funcsp, INITLIST **lptr, enu
                     }
                     else if (p->exp && p->exp->type != en_packedempty)
                     {
-                        checkPackedExpression(p->exp);  
+                        if (!isstructured(p->tp) && !p->tp->templateParam)
+                            checkPackedExpression(p->exp);  
                         // this is going to presume that the expression involved
                         // is not too long to be cached by the LEXEME mechanism.          
                         lptr = expandPackedInitList(lptr, funcsp, start, p->exp);
@@ -3131,11 +3132,54 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
     {
         TYPE *tpx = *tp;
         SYMBOL *sym;
-        funcparams = Alloc(sizeof(FUNCTIONCALL));
-        if (ispointer(tpx))
-            tpx = basetype(tpx)->btp;
-        sym = basetype(tpx)->sp;
+        if (exp_in->type == en_templateselector)
+        {
+            TEMPLATESELECTOR *tsl = exp_in->v.templateSelector;
+            SYMBOL *ts = tsl->next->sym;
+            SYMBOL *sp = ts;
+            TEMPLATESELECTOR *find = tsl->next->next;
+            if (!sp->instantiated && tsl->next->isTemplate)
+            {
+                TEMPLATEPARAMLIST *current = tsl->next->templateParams;
+                sp = GetClassTemplate(ts, current, TRUE);
+            }
+            if (sp && sp->tp->type == bt_templateselector)
+            {
+                TYPE *tp = sp->tp;
+                tp = SynthesizeType(tp, NULL, FALSE);
+                if (tp && isstructured(tp))
+                    sp = basetype(tp)->sp;
+            }
+            sym = NULL;
+            if (sp)
+            {
+                sp = basetype(PerformDeferredInitialization(sp->tp, NULL))->sp;
+                while (find && sp)
+                {
+                    SYMBOL *spo = sp;
+                    if (!isstructured(spo->tp))
+                        break;
 
+                    sp = search(find->name, spo->tp->syms);
+                    if (!sp)
+                    {
+                        sp = classdata(find->name, spo, NULL, FALSE, FALSE);
+                        if (sp == (SYMBOL *)-1)
+                            sp = NULL;
+                    }
+                    find = find->next;
+                }
+                if (!find)
+                    sym = sp;
+            }
+        }
+        else
+        {
+            if (ispointer(tpx))
+                tpx = basetype(tpx)->btp;
+            sym = basetype(tpx)->sp;
+        }
+        funcparams = Alloc(sizeof(FUNCTIONCALL));
         if (sym)
         {
             funcparams->sp = sym;

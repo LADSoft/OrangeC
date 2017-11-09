@@ -1,18 +1,37 @@
 Release notes:
+Version 6.0.31:
+    occ:    fix problem compiling if (0 > n) where n is a long long
+    occ:    alignment of a structure with no data members was calculated as -1
+    occ:    std::cref did not work
+    occ:    std::ratio_divide<> was not being handled correctly to to a fix to a bug for bind() - fixed both problems
+    occ:    using a namespace which was using a namespace inside it, led to not being able to access the 
+		identifiers from the inner namespace when the identifiers were qualified with the outer namespace
 
-Version 6.0.28:
+Version 6.0.30:
+    occ:    fix various bugs that prevented initializing a std::function with a std::bind() expression
+
+Version 6.0.29:
+    occ:    templatename<int()> now resolves the int() to a function declaration rather than an initialization
+    occ:    function<int(void)> = func now works
+    occ:    function<int(...)> = func now works when there is more than one parameter
+    occ:    bind<function, ...> now works when there is more than one argument being bound
+    occ:    sometimes when searching for a template, it would match a 'reference' version of an instantiation to a
+            non-reference version of the template
+    occ:    typeinfo::name() returns more accurate symbolic representations of basic types
+
+Version 6.0.28: 10/29/2017
     occ:    fix bug with 'using namespace' inside a function
     occ:    fix problem with not being able to resolve the difference between an lref and an rref
     occ:    fix crash in 'dom' routines
 
-Version 6.0.27:
+Version 6.0.27: 10/26/2017
     occ:    enable debug line information from declarations in C++ headers, takes care of a linker crash
     occ:    functions returning type 'auto' would not return the correct value when returning a c-style string constant
     occ:    functions returning type 'auto' would create an extra instance of return values when the return type is structured, and destroy but not create them
     occ:    if an error occurred while processing a lambda function, occ would abort while printing the error
     occ:    if a template instantiation instantiates changes to base classes, recalculate the structure size
 
-Version 6.0.26:
+Version 6.0.26: 10/23/2017
     occ:    remove spurious errors with iostream access when <complex> is #included
     occ:    fix a crash under certain error conditions.
 

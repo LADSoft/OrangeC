@@ -1,5 +1,19 @@
 Release notes:
-Version 6.0.31:
+Version 6.0.32: 11/24/2017
+    occ:    alignment of a structure with no data members but with virtual functions
+            should be sizeof(void*)
+    occ:    std::cref<int>(...) worked if assigned to auto, but not to an variable
+            explicitly declared with std::reference_wrapper<int const>
+    occ:    a usage of std::mem_fn would not compile
+    occ:    fix various small bugs related to handling member functions in templates
+    occ:    fix expression evaluation of decltype(&struct::member) to return a pointer to member
+	    as the type instead of just a standard pointer
+    occ:    fix compiling of is_member_function_pointer
+    occ:    fix .* and ->* when used with an immediate function name
+    occ:    generated copy constructors do not copy variables declared as member pointers
+    occ:    fix problem with calling __invoke directly with normal functions
+
+Version 6.0.31: 11/09/2017
     occ:    fix problem compiling if (0 > n) where n is a long long
     occ:    alignment of a structure with no data members was calculated as -1
     occ:    std::cref did not work
@@ -7,10 +21,10 @@ Version 6.0.31:
     occ:    using a namespace which was using a namespace inside it, led to not being able to access the 
 		identifiers from the inner namespace when the identifiers were qualified with the outer namespace
 
-Version 6.0.30:
+Version 6.0.30: 11/04/2017
     occ:    fix various bugs that prevented initializing a std::function with a std::bind() expression
 
-Version 6.0.29:
+Version 6.0.29: 11/02/2017
     occ:    templatename<int()> now resolves the int() to a function declaration rather than an initialization
     occ:    function<int(void)> = func now works
     occ:    function<int(...)> = func now works when there is more than one parameter

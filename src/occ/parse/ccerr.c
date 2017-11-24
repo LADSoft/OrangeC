@@ -64,6 +64,7 @@ extern char *preprocFile;
 extern LEXCONTEXT *context;
 extern int templateNestingCount;
 extern LIST *externals;
+extern int inDeduceArgs;
 
 int currentErrorLine;
 SYMBOL *theCurrentFunc;
@@ -675,7 +676,7 @@ BOOLEAN printerrinternal(int err, char *file, int line, va_list args)
     char infunc[2048];
     char *listerr;
     char nameb[265], *name = nameb;
-    if (cparams.prm_makestubs || templateNestingCount && ignoreErrtemplateNestingCount(err))
+    if (cparams.prm_makestubs || inDeduceArgs || templateNestingCount && ignoreErrtemplateNestingCount(err))
         return FALSE;
     if (!file)
     {

@@ -58,7 +58,7 @@ extern INCLUDES *includes;
 extern BOOLEAN inTemplateType;
 extern LIST *nameSpaceList;
 extern int funcLevel;
-
+extern int inDeduceArgs;
 static int insertFuncs(SYMBOL **spList, SYMBOL **spFilterList, LIST *gather, FUNCTIONCALL *args, TYPE *atp);
 
 #define DEBUG
@@ -3174,7 +3174,7 @@ void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
             {
                 seq[(*n)++] = CV_IDENTITY;
             }
-            else if (isint(tpa) && expa && (isconstzero(tpa, expa) || expa->type == en_nullptr))
+            else if (isint(tpa) && expa && (isconstzero(tpa, expa) || expa->type == en_nullptr) || tpa->type == bt_pointer && tpa->nullptrType)
             {
                 seq[(*n)++] = CV_POINTERCONVERSION;
             }
@@ -3811,6 +3811,7 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp,
 }
 SYMBOL *detemplate(SYMBOL *sym, FUNCTIONCALL *args, TYPE *atp)
 {
+    inDeduceArgs++;
     if (sym->templateLevel)
     {
         if (atp || args)
@@ -3852,6 +3853,7 @@ SYMBOL *detemplate(SYMBOL *sym, FUNCTIONCALL *args, TYPE *atp)
             sym = NULL;
         }
     }
+    inDeduceArgs--;
     return sym;
 }
 static void WeedTemplates(SYMBOL **table, int count, FUNCTIONCALL *args, TYPE *atp)

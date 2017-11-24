@@ -580,8 +580,8 @@ SYMBOL *searchOverloads(SYMBOL *sp, HASHTABLE *table)
                             break;
                         if (tpr->p->type == kw_int && tpr->p->byNonType.tp->type == bt_templateselector)
                             break;
-                        if (tpl->argsym->compilerDeclared || tpr->argsym->compilerDeclared)
-                            break;
+                    //    if (tpl->argsym->compilerDeclared || tpr->argsym->compilerDeclared)
+                    //        break;
                         tpl = tpl->next;
                         tpr = tpr->next;
                     }

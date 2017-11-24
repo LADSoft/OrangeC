@@ -113,9 +113,22 @@ BOOLEAN startOfType(LEXEME *lex, BOOLEAN assumeType)
         TEMPLATEPARAMLIST *tparam = TemplateLookupSpecializationParam(lex->value.s.a);
         if (tparam)
         {
-            linesHead = oldHead;
-            linesTail = oldTail;
-            return tparam->p->type == kw_typename || tparam->p->type == kw_template;
+            LEXEME *placeHolder = lex;
+            BOOLEAN member;
+            lex = getsym();
+            member = MATCHKW(lex, classsel);
+            if (member)
+            {
+                lex = getsym();
+                member = MATCHKW(lex, star);
+            }
+            lex = prevsym(placeHolder);
+            if (!member)
+            {
+                linesHead = oldHead;
+                linesTail = oldTail;
+                return tparam->p->type == kw_typename || tparam->p->type == kw_template;
+            }
         }
     }
     if (lex->type == l_id || MATCHKW(lex, classsel))

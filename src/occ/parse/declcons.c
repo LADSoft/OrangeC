@@ -1552,11 +1552,11 @@ static void genConsData(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi,
     {
         thisptr = exprNode(en_add, thisptr, intNode(en_c_i, offset));
         otherptr = exprNode(en_add, otherptr, intNode(en_c_i, offset));
-        if (isstructured(member->tp) || isarray(member->tp) || member->tp->type == bt_memberptr)
+        if (isstructured(member->tp) || isarray(member->tp) || basetype(member->tp)->type == bt_memberptr)
         {
             EXPRESSION *exp = exprNode(en_blockassign, thisptr,otherptr);
             STATEMENT *st = stmtNode(NULL,b, st_expr);
-            exp->size = member->tp->size;
+            exp->size = member->tp->size;   
             exp->altdata = (long)member->tp;
             optimize_for_constants(&exp);
             st->select = exp;

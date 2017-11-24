@@ -580,11 +580,13 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                     if (ismutable)
                         *ismutable = TRUE;
                 case sc_member:
+                    /*
                     if (flags & _F_SIZEOF)
                     {
                         *exp = intNode(en_c_i, 0);
                     }
                     else
+                    */
                         if (cparams.prm_cplusplus && (flags & _F_AMPERSAND) && strSym)
                         {
                             *exp = getMemberPtr(sp, strSym, tp, funcsp);
@@ -3195,6 +3197,8 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
         SYMBOL *ss = getStructureDeclaration();
         funcparams = exp_in->v.func;
         hasThisPtr = funcparams->thisptr != NULL;
+        if (basetype(*tp)->sp)
+            funcparams->sp = basetype(*tp)->sp;
         if (ss)
         {
             funcparams->functp = ss->tp;
@@ -3364,7 +3368,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
             if (!isExpressionAccessible(funcparams->thistp ? basetype(basetype(funcparams->thistp)->btp)->sp : NULL, funcparams->sp, funcsp, funcparams->thisptr, FALSE))
                 if (!isExpressionAccessible(funcparams->thistp ? basetype(basetype(funcparams->thistp)->btp)->sp : NULL, funcparams->sp, funcsp, funcparams->thisptr, FALSE))
                     errorsym(ERR_CANNOT_ACCESS, funcparams->sp);		
-        }
+            }
         if (sp)
         {
             BOOLEAN test;
@@ -5979,6 +5983,11 @@ static LEXEME *expression_pm(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, 
         else if (!isstructured(*tp))
         {
             errorstr(ERR_STRUCTURED_TYPE_EXPECTED, lex->kw->name);
+        }
+        if (isfunction(tp1) && isstructured(*tp))
+        {
+            exp1 = getMemberPtr(basetype(tp1)->sp, basetype(*tp)->sp, &tp1, funcsp);
+
         }
         if (basetype(tp1)->type != bt_memberptr)
         {

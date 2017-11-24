@@ -511,7 +511,10 @@ void calculateStructOffsets(SYMBOL *sp)
             bases->offset = 0;
     }
     if (sp->hasvtab && (!sp->baseClasses || !sp->baseClasses->cls->hasvtab || sp->baseClasses->isvirtual))
+    {
         size += getSize(bt_pointer);
+        totalAlign = getAlign(sc_member, &stdpointer);
+    }
     while (bases)
     {
         SYMBOL *sym = bases->cls;
@@ -2352,8 +2355,16 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                             if (hasAmpersand)
                             {
                                 tn = (TYPE *)Alloc(sizeof(TYPE));
-                                tn->type = bt_pointer;
-                                tn->size = getSize(bt_pointer);
+                                if (ismember(exp->v.func->sp))
+                                {
+                                    tn->type = bt_memberptr;
+                                    tn->sp = exp->v.func->sp->parentClass;
+                                }
+                                else
+                                {
+                                    tn->type = bt_pointer;
+                                    tn->size = getSize(bt_pointer);
+                                }
                                 tn->btp = exp->v.func->functp = exp->v.func->sp->tp;
                                 tn->rootType = tn;
                             }
@@ -3144,6 +3155,8 @@ static void matchFunctionDeclaration(LEXEME *lex, SYMBOL *sp, SYMBOL *spo, BOOLE
                         hr1 = basetype(sp->tp)->syms->table[0];
                         if (hro1 && ((SYMBOL *)(hro1->p))->thisPtr)
                             hro1 = hro1->next;
+                        if (hr1 && ((SYMBOL *)(hr1->p))->thisPtr)
+                            hr1 = hr1->next;
                         while (hro1 && hr1)
                         {
                             SYMBOL *so = (SYMBOL *)hro1->p;
@@ -4338,7 +4351,10 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
                 ptype = Alloc(sizeof(TYPE));
                 ptype->type = bt_memberptr;
                 ptype->rootType = ptype;
-                ptype->sp = strSymX;
+                if (strSymX->tp->type == bt_templateselector)
+                    ptype->sp = strSymX->templateSelector->next->sym;
+                else
+                    ptype->sp = strSymX;
                 ptype->btp = *tp;
                 UpdateRootTypes(*tp);
                 *tp = ptype;
@@ -6465,7 +6481,7 @@ doInitialize:
                                         if (!allTemplateArgsSpecified(sp1, sp1->templateParams))
                                             sp1 = GetClassTemplate(sp1, sp1->templateParams->next, FALSE);
                                         if (sp1)
-                                            sp->tp = TemplateClassInstantiate(sp1, sp1->templateParams, FALSE, sc_global)->tp;
+                                            sp->tp = PerformDeferredInitialization(sp1->tp, funcsp);// TemplateClassInstantiate(sp1, sp1->templateParams, FALSE, sc_global)->tp;
                                     }
                                 }
                                 lex = initialize(lex, funcsp, sp, storage_class_in, asExpression, 0); /* also reserves space */

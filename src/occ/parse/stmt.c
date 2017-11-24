@@ -1784,6 +1784,7 @@ static void MatchReturnTypes(SYMBOL *funcsp, TYPE *tp1, TYPE *tp2)
         }
     }
 }
+static int aa;
 static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
 {
     STATEMENT *st;
@@ -1871,6 +1872,8 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                     MatchReturnTypes(funcsp, tp, tp1);
                     if (tp1 && isstructured(tp1))
                     {
+                        if (sameTemplate(tp, tp1))
+                            basetype(funcsp->tp)->btp = tp1;
                         ctype = tp1;
                         if (basetype(tp1)->sp->templateLevel && basetype(tp1)->sp->templateParams && !basetype(tp1)->sp->instantiated)
                         {
@@ -1878,7 +1881,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                             if (!allTemplateArgsSpecified(sp, sp->templateParams))
                                 sp = GetClassTemplate(sp, sp->templateParams->next, FALSE);
                             if (sp)
-                                tp1 = TemplateClassInstantiate(sp, sp->templateParams, FALSE, sc_global)->tp;
+                                ctype = tp1 = TemplateClassInstantiate(sp, sp->templateParams, FALSE, sc_global)->tp;
                         }
                         optimize_for_constants(&exp1);
                     }

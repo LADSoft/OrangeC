@@ -6543,7 +6543,10 @@ static LEXEME *expression_equality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE 
             if (exp1->type == en_pc || exp1->type == en_func && !exp1->v.func->ascall)
                 thunkForImportTable(&exp1);
             if (isstructured(*tp) || isstructured(tp1))
-                error(ERR_ILL_STRUCTURE_OPERATION);
+            {
+                if (!chosenAssembler->msil || (!isconstzero(*tp, *exp) && !isconstzero(tp1, exp1)))
+                    error(ERR_ILL_STRUCTURE_OPERATION);
+            }
             else if (isvoid(*tp) || isvoid(tp1) || ismsil(*tp) || ismsil(tp1))
                 error(ERR_NOT_AN_ALLOWED_TYPE);
             if (ispointer(*tp))
@@ -6643,7 +6646,8 @@ static LEXEME *expression_equality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE 
                 if (!(chosenAssembler->arch->preferopts & OPT_BYTECOMPARE)
                     || (!fittedConst(*tp, *exp) && !fittedConst(tp1, exp1))
                     || !isint(*tp) || !isint(tp1))
-                    destSize(*tp, tp1, exp, &exp1, TRUE, NULL);
+                    if (!isstructured(*tp) && !isstructured(tp1))
+                        destSize(*tp, tp1, exp, &exp1, TRUE, NULL);
                 *exp = exprNode(kw == eq ? en_eq : en_ne, *exp, exp1);
             }
             if (cparams.prm_cplusplus)
@@ -7433,7 +7437,10 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                         error(ERR_MANAGED_OBJECT_NO_ADDRESS);
                 }
                 if (isstructured(*tp) && (!isstructured(tp1) || !comparetypes(*tp, tp1, TRUE)))
-                    error(ERR_ILL_STRUCTURE_ASSIGNMENT);
+                {
+                    if (!(chosenAssembler->msil && basetype(*tp)->sp->msil && (isconstzero(tp1, exp1) || basetype(tp1)->nullptrType)))
+                        error(ERR_ILL_STRUCTURE_ASSIGNMENT);
+                }
                 else if (isstructured(*tp) && !(*tp)->size)
                 {
                     if (!(flags & _F_SIZEOF))

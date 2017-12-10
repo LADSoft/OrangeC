@@ -565,6 +565,7 @@ static struct {
 { "Use of __catch or __fault or __finally must be preceded by __try", ERROR },
 { "Expected __catch or __fault or __finally", ERROR },
 { "__fault or __finally can appear only once per __try block", ERROR },
+{ "static function '%s' is undefined", ERROR },
 #endif
 } ;
 
@@ -1520,6 +1521,8 @@ void findUnusedStatics(NAMESPACEVALUES *nameSpace)
                             {
                                 errorsym(ERR_UNDEFINED_IDENTIFIER, sp);
                             }
+                            else if (sp->storage_class == sc_static && !sp->inlineFunc.stmt && !(sp->templateLevel || sp->instantiated))
+                                errorsym(ERR_UNDEFINED_STATIC_FUNCTION, sp);
                             hr = hr->next;
                         }
                     }

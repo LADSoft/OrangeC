@@ -2512,7 +2512,10 @@ static LEXEME *initialize_auto_struct(LEXEME *lex, SYMBOL *funcsp, int offset,
     }
     else if (!comparetypes(itype, tp, TRUE))
     {
-        error(ERR_ILL_STRUCTURE_ASSIGNMENT);
+        if (chosenAssembler->msil && isstructured(itype) && basetype(itype)->sp->msil && (isconstzero(tp, expr) || basetype(tp)->nullptrType))
+            initInsert(init, itype, expr, offset, FALSE);
+        else
+            error(ERR_ILL_STRUCTURE_ASSIGNMENT);
     }
     else
     {

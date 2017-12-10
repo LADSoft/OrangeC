@@ -1053,7 +1053,7 @@ IMODE *gen_binary(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i_
     IMODE *ap,  *ap1,  *ap2, *ap3;
     int vol,rest, pragmas;
     (void)flags;
-    ap3 = gen_expr(funcsp, node->left, 0, natural_size(node->left));
+    ap3 = gen_expr(funcsp, node->left, flags, natural_size(node->left));
     ap1 = LookupLoadTemp(NULL, ap3);
     if (ap1 != ap3)
         gen_icode(i_assn, ap1, ap3, NULL);
@@ -1061,7 +1061,7 @@ IMODE *gen_binary(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i_
     if (op == i_lsl || op == i_lsr || op == i_asr)
         flush_dag();
 
-    ap3 = gen_expr(funcsp, node->right, 0, natural_size(node->right));
+    ap3 = gen_expr(funcsp, node->right, flags, natural_size(node->right));
     ap2 = LookupLoadTemp(NULL, ap3);
     if (ap2 != ap3)
         gen_icode(i_assn, ap2, ap3, NULL);
@@ -1469,7 +1469,12 @@ IMODE *gen_moveblock(EXPRESSION *node, SYMBOL *funcsp)
             *ap7 = *ap1;
             ap1 = ap7;
             ap1->mode = i_ind;
-            ap3 = gen_expr(funcsp, node->right, F_VOL, ISZ_UINT);
+            if (isconstzero(&stdpointer, node->right))
+            {
+                ap3 = make_immed(ISZ_OBJECT, 0); // LDNULL
+            }
+            else
+                ap3 = gen_expr(funcsp, node->right, F_VOL, ISZ_UINT);
             ap2 = LookupLoadTemp(NULL, ap3);
             if (ap2 != ap3)
                 gen_icode(i_assn, ap2, ap3, NULL);
@@ -2034,7 +2039,7 @@ static int push_stackblock(TYPE *tp, EXPRESSION *ep, SYMBOL *funcsp, int sz, BOO
             break;
         default:
             ap3 = gen_expr( funcsp, ep, F_ADDR, ISZ_UINT);
-            if (chosenAssembler->arch->preferopts & OPT_ARGSTRUCTREF)
+            if (ap3->mode != i_direct && (chosenAssembler->arch->preferopts & OPT_ARGSTRUCTREF))
             {
                 ap = oAlloc(sizeof(IMODE));
                 *ap = *ap3;
@@ -3782,9 +3787,9 @@ void gen_compare(EXPRESSION *node, SYMBOL *funcsp, int btype, int label)
         size = siz0;
     // the ordering here is to accomodate the x86 FP stack
     if (chosenAssembler->arch->preferopts & OPT_REVERSESTORE)
-        ap3 = gen_expr( funcsp, node->left, F_COMPARE, size);
+        ap3 = gen_expr( funcsp, node->left, F_COMPARE | F_OBJECT, size);
     else
-        ap3 = gen_expr( funcsp, node->right, F_COMPARE, size);
+        ap3 = gen_expr( funcsp, node->right, F_COMPARE | F_OBJECT, size);
     ap2 = LookupLoadTemp(NULL, ap3);
     if (ap2 != ap3)
     {

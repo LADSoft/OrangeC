@@ -2609,7 +2609,7 @@ static SYMBOL *getUserConversion(int flags,
                         m1 = n2 + n3;
                         while (m1 && seq3[m1 - 1] == CV_IDENTITY)
                             m1--;
-                        if (j >= n2 + n3 && m1 <= 4)
+                        if (j >= n2 + n3 && m1 <= 7)
                         {
                             lenList[i] = Alloc(sizeof(int) * 2);
                             icsList[i] = Alloc(sizeof(enum e_cvsrn) * (n2 + n3));
@@ -3145,10 +3145,19 @@ void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
                     seq[(*n)++] = CV_NONE;
             }
         }
-        else if (chosenAssembler->msil && (isstructured(tpp) || isarray(tpp) && basetype(tpp)->msil))
+        else if (chosenAssembler->msil && isstructured(tpp))
         {
             if (basetype(tpa)->nullptrType || expa && isconstzero(tpa, expa))
                 seq[(*n)++] = CV_POINTERCONVERSION;
+            else
+                seq[(*n)++] = CV_NONE;
+        }
+        else if (isarray(tpp) && basetype(tpp)->msil)
+        {
+            if (basetype(tpa)->nullptrType || expa && isconstzero(tpa, expa))
+                seq[(*n)++] = CV_POINTERCONVERSION;
+            else if (isarray(tpa) && basetype(tpa)->msil)
+                getSingleConversion(basetype(tpp)->btp, basetype(tpa)->btp, NULL, n, seq, candidate, userFunc, allowUser);
             else
                 seq[(*n)++] = CV_NONE;
         }

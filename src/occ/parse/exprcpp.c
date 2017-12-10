@@ -398,6 +398,15 @@ void castToArithmetic(BOOLEAN integer, TYPE **tp, EXPRESSION **exp, enum e_kw kw
                 errortype(ERR_CANNOT_CONVERT_TYPE, *tp, other);
             }
         }
+        else
+        {
+            if (isref(*tp))
+            {
+                *tp = basetype(*tp)->btp;
+                deref(*tp, exp);
+
+            }
+        }
     }
 }
 BOOLEAN castToPointer(TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other)

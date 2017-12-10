@@ -1,4 +1,9 @@
 Release notes:
+Version 6.0.33: 12/10/2017
+    occ:    fix problem where cast operators might not be resolved if they are cast to const arithmetic type
+    occ:    when a cast operator that returns a reference type is used in an expression, the return value is not dereferenced
+    occ:    flag undefined static functions instead of letting calls to them silently compile
+
 Version 6.0.32: 11/24/2017
     occ:    alignment of a structure with no data members but with virtual functions
             should be sizeof(void*)

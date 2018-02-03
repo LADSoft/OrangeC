@@ -175,7 +175,7 @@ void dumpVTab(SYMBOL *sym)
     char buf[256];
     THUNK thunks[1000];
     SYMBOL *localsp;
-    SYMBOL *xtSym = RTTIDumpType(sym->tp);
+    SYMBOL *xtSym = RTTIDumpType(basetype(sym->tp));
     int count = 0;
 
     dseg();

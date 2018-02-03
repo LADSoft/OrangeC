@@ -155,8 +155,9 @@ void GetDefaultProjectsPath(LPSTR pszPath)
         FindClose(hndl);
         CreateDirectory(pszPath, NULL);
     }
-    else if (SHGetFolderPath(NULL, CSIDL_PERSONAL, NULL, 0, pszPath) == S_OK)
+    else if (getenv("PUBLIC"))
     {
+	strcpy(pszPath, getenv("PUBLIC"));
         strcat(pszPath,"\\Orange C Projects");
     }
     else
@@ -169,7 +170,7 @@ static int CALLBACK selectionProc(HWND hwnd, UINT iMessage, LPARAM wParam, LPARA
     switch (iMessage)
     {
         case BFFM_INITIALIZED:
-            SendMessage(hwnd, BFFM_SETSELECTION, TRUE, (LPARAM)selPath);
+ 	           SendMessage(hwnd, BFFM_SETSELECTION, TRUE, (LPARAM)selPath);
             break;
         case BFFM_VALIDATEFAILED:
             ExtendedMessageBox("Invalid selection",0,"Please select a folder");

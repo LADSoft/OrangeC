@@ -818,13 +818,13 @@ void XTDumpTab(SYMBOL *funcsp)
             if (p->byStmt)
             {
                 if (p->stmt->tp)
-                    p->xtSym = RTTIDumpType(p->stmt->tp);
+                    p->xtSym = RTTIDumpType(basetype(p->stmt->tp));
             }
             else
             {
                 // en_thisref
                 if (basetype(p->exp->v.t.tp)->sp->hasDest)
-                    p->xtSym = RTTIDumpType(p->exp->v.t.tp);
+                    p->xtSym = RTTIDumpType(basetype(p->exp->v.t.tp));
                 
             }
             p = p->next;

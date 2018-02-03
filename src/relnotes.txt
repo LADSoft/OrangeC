@@ -1,4 +1,10 @@
 Release notes:
+
+Version 6.0.34: 02/02/2018
+    occ:    fix problems with precision/width in printf string specifiers
+    occ:    fix recently introduced problems with C++ object file generation
+    install: move examples and default project into the public documents folder
+
 Version 6.0.33: 12/10/2017
     occ:    fix problem where cast operators might not be resolved if they are cast to const arithmetic type
     occ:    when a cast operator that returns a reference type is used in an expression, the return value is not dereferenced

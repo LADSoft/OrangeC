@@ -4,7 +4,7 @@
 [Setup]
 PrivilegesRequired=admin
 AppName=Orange C
-AppVerName=Orange C Version 6.0.33.1
+AppVerName=Orange C Version 6.0.34.1
 OutputBaseFileName=setup
 AppPublisher=LADSoft
 AppPublisherURL=http:\\members.tripod.com\~ladsoft
@@ -18,7 +18,7 @@ LicenseFile=License.txt
 ;BackColor=clRed
 ;BackColor2=clAqua
 ;WindowVisible= yes
-AppCopyright=Copyright(C) LADSoft 1994-2016, All Rights Reserved.
+AppCopyright=Copyright(C) LADSoft 1994-2018, All Rights Reserved.
 WizardSmallImageFile=ladsoft1.bmp
 WizardImageFile=ladsoftl.bmp
 WizardImageBackColor=clAqua
@@ -34,7 +34,7 @@ ChangesEnvironment=yes
 ; MinVersion=4,3.51
 
 [Messages]
-BeveledLabel=Orange C, Copyright (C) LADSoft, 1994-2016
+BeveledLabel=Orange C, Copyright (C) LADSoft, 1994-2018
 
 [Types]
 Name: "desktop"; Description: "Desktop Installation"
@@ -52,7 +52,7 @@ Name: "fileassociation"; Description: "Add file association for .C, .CPP, .H fil
 Name: "addtopath"; Description: "Add Orange C to the path"; GroupDescription: "General:"; Flags: checkedonce;  Components: main\desktop
 
 [Dirs]
-Name: "{userdocs}\Orange C Projects"; Components: main\desktop
+Name: "{%PUBLIC}\Orange C Projects"; Components: main\desktop
 Name: "{app}\appdata"; Components: main\memstick
 
 [Files]
@@ -80,14 +80,14 @@ Source: "C:\orangec\doc\omake\*.*"; DestDir: "{app}\doc\omake\"; Flags: IgnoreVe
 
 Source: "C:\orangec\bin\lscrtl.dll"; DestDir: "{sys}"; Components: main\desktop
 
-Source: "C:\orangec\examples\*.*"; DestDir: "{userdocs}\Orange C Projects\examples\"; Flags: IgnoreVersion; Components: main\desktop
-Source: "C:\orangec\examples\msdos\*.*"; DestDir: "{userdocs}\Orange C Projects\examples\msdos\"; Flags: IgnoreVersion; Components: main\desktop
-Source: "C:\orangec\examples\win32\*.*"; DestDir: "{userdocs}\Orange C Projects\examples\windows examples\"; Flags: IgnoreVersion; Components: main\desktop
-Source: "C:\orangec\examples\win32\atc\*.*"; DestDir: "{userdocs}\Orange C Projects\examples\windows examples\atc"; Flags: IgnoreVersion; Components: main\desktop
-Source: "C:\orangec\examples\win32\listview\*.*"; DestDir: "{userdocs}\Orange C Projects\examples\windows examples\listview"; Flags: IgnoreVersion; Components: main\desktop
-Source: "C:\orangec\examples\win32\xmlview\*.*"; DestDir: "{userdocs}\Orange C Projects\examples\windows examples\xmlview"; Flags: IgnoreVersion; Components: main\desktop
-Source: "C:\orangec\examples\win32\RCDemo\*.*"; DestDir: "{userdocs}\Orange C Projects\examples\windows examples\RCDemo"; Flags: IgnoreVersion; Components: main\desktop
-Source: "C:\orangec\examples\win32\huff\*.*"; DestDir: "{userdocs}\Orange C Projects\examples\windows examples\huff"; Flags: IgnoreVersion; Components: main\desktop
+Source: "C:\orangec\examples\*.*"; DestDir: "{%PUBLIC}\Orange C Projects\examples\"; Flags: IgnoreVersion; Components: main\desktop
+Source: "C:\orangec\examples\msdos\*.*"; DestDir: "{%PUBLIC}\Orange C Projects\examples\msdos\"; Flags: IgnoreVersion; Components: main\desktop
+Source: "C:\orangec\examples\win32\*.*"; DestDir: "{%PUBLIC}\Orange C Projects\examples\windows examples\"; Flags: IgnoreVersion; Components: main\desktop
+Source: "C:\orangec\examples\win32\atc\*.*"; DestDir: "{%PUBLIC}\Orange C Projects\examples\windows examples\atc"; Flags: IgnoreVersion; Components: main\desktop
+Source: "C:\orangec\examples\win32\listview\*.*"; DestDir: "{%PUBLIC}\Orange C Projects\examples\windows examples\listview"; Flags: IgnoreVersion; Components: main\desktop
+Source: "C:\orangec\examples\win32\xmlview\*.*"; DestDir: "{%PUBLIC}\Orange C Projects\examples\windows examples\xmlview"; Flags: IgnoreVersion; Components: main\desktop
+Source: "C:\orangec\examples\win32\RCDemo\*.*"; DestDir: "{%PUBLIC}\Orange C Projects\examples\windows examples\RCDemo"; Flags: IgnoreVersion; Components: main\desktop
+Source: "C:\orangec\examples\win32\huff\*.*"; DestDir: "{%PUBLIC}\Orange C Projects\examples\windows examples\huff"; Flags: IgnoreVersion; Components: main\desktop
 
 Source: "C:\orangec\examples\*.*"; DestDir: "{app}\Orange C Projects\examples\"; Flags: IgnoreVersion; Components: main\memstick
 Source: "C:\orangec\examples\msdos\*.*"; DestDir: "{app}\Orange C Projects\examples\msdos\"; Flags: IgnoreVersion; Components: main\memstick
@@ -185,8 +185,8 @@ Root: HKCR; Subkey: "cppfile.cppfile\Shell\Open\command"; valuetype: string; Val
 
 
 [UninstallDelete]
-type: filesandordirs; Name: "{userdocs}\Orange C Projects\default.cwa"; Components: main\desktop;
-type: filesandordirs; Name: "{userdocs}\Orange C Projects\default.ods"; Components: main\desktop;
+type: filesandordirs; Name: "{%PUBLIC}\Orange C Projects\default.cwa"; Components: main\desktop;
+type: filesandordirs; Name: "{%PUBLIC}\Orange C Projects\default.ods"; Components: main\desktop;
 type: filesandordirs; Name: "{userappdata}\Orange C\ocide.ini"; Components: main\desktop;
 type: filesandordirs; Name: "{userappdata}\Orange C"; Components: main\desktop;
 

@@ -6059,6 +6059,9 @@ jointemplate:
                             spi->isInline |= sp->isInline;
                             spi->dumpInlineToFile |= sp->dumpInlineToFile;
                             spi->promotedToInline |= sp->promotedToInline;
+
+                            sp->mainsym = spi;
+
                             sp = spi;
                             sp->redeclared = TRUE;
                         }

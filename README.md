@@ -24,3 +24,4 @@ There is some support for retargeting the assembler;  the instruction set may be
 There has been some thought as to eventually making this an x64 compiler, however, that would take a bit of effort as it wasn't well-supported while developing the code.  Mostly, there are a lot of place that long-long values need to be passed around in the tools, where only ints are being passed around.
 
 See the file `build.md` for instructions on how to build the project.
+[![Current Build Status](https://img.shields.io/appveyor/ci/LADSoft/OrangeC.svg)](https://ci.appveyor.com/project/LADSoft/OrangeC)

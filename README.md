@@ -3,6 +3,8 @@
 
 OrangeC Compiler And Tool Chain
 
+Project Build Status: [![Current Build status](https://ci.appveyor.com/api/projects/status/4ts7bsgas67osyht?svg=true)](https://ci.appveyor.com/project/LADSoft/orangec)
+
 The Orange C compiler is going to be a retargetable optimizing compiler and toolchain.  Work over the last few years has resulted in an optimizing compiler than generates working WIN32 programs.  The optimizations in the compiler follow some of the standard optimizations, and also perform some optimizations from the literature.
 
 Orange C is released under a Berkely-style license.
@@ -24,11 +26,3 @@ There is some support for retargeting the assembler;  the instruction set may be
 There has been some thought as to eventually making this an x64 compiler, however, that would take a bit of effort as it wasn't well-supported while developing the code.  Mostly, there are a lot of place that long-long values need to be passed around in the tools, where only ints are being passed around.
 
 See the file `build.md` for instructions on how to build the project.
-
-Current Build Status:
-[![Current Build Status](https://img.shields.io/appveyor/ci/LADSoft/OrangeC.svg)](https://ci.appveyor.com/project/LADSoft/OrangeC)
-
-Project Build Status: [![Build status](https://ci.appveyor.com/api/projects/status/4ts7bsgas67osyht?svg=true)](https://ci.appveyor.com/project/LADSoft/orangec)
-
-Master Branch Build Status: [![Build status](https://ci.appveyor.com/api/projects/status/4ts7bsgas67osyht/branch/master?svg=true)](https://ci.appveyor.com/project/LADSoft/orangec/branch/master)
-

@@ -247,7 +247,7 @@ version 5.72.1: Jun 23, 2016
 * ocide:      in memory window, specifying an expression with '&' should be superfluous
 * ocide:      in disassembly window, prefix all constants with 0x to show they are hexadecimal
 * ocide:      properly evaluate a selection when adding to the watch window via right-click
-    olink:      fix debug info:  ocide call stack, threads windows showed invalid function names
+* olink:      fix debug info:  ocide call stack, threads windows showed invalid function names
                 and global variables were off as well (this was introduced with the C++ debugging info)
 
 version 5.71.1: Jun 9, 2016
@@ -261,7 +261,7 @@ version 5.71.1: Jun 9, 2016
 * ocide:      fix bug where opening multiple resource windows then trying to close them would hang the ide
 
 version 5.70.1: Jun 6, 2016
-    help, examples: clarify that creating new resources creates them in the style that requires
+* help, examples: clarify that creating new resources creates them in the style that requires
                 MAKEINTRESOURCE
 * ocide:      fix problem with not being able to resize images that had been zoomed  in the icon editor
 * ocide:      fix problem with select all in the icon editor not selecting the entire image
@@ -321,7 +321,7 @@ version 5.66.1: 5/11/2016
 * ocide:      fix problems with undo not working during a long edit session
  
 version 5.64.1: 5/1/2016
-    Add MSDN library help
+* Add MSDN library help
 
 version 5.63.1: 3/19/2016
 * occ:        fix problem with crash when a close brace was missing at the end of the file
@@ -337,8 +337,8 @@ version 5.63.1: 3/19/2016
 * occ:        fix problems with csmith output: there is heavy inlining in these files and too many
                 were running the compiler out of memory
 * occ:        fix a problem where a bit operation was attempted to be generated with an inequality
-    setup:      access ORANGEC environment variable off of HKEY_CURRENT_USER instead of HKEY_LOCAL_MACHINE
-    setup:      propagate registry changes before running the IDE from the setup program
+* setup:      access ORANGEC environment variable off of HKEY_CURRENT_USER instead of HKEY_LOCAL_MACHINE
+* setup:      propagate registry changes before running the IDE from the setup program
 
 version 5.62.1: 3/3/2016
 * occ:        add support for more C++ intrinsics (to increase compilation speed)
@@ -372,19 +372,19 @@ version 5.61.1: 2/27/2016
                 inline expanded (incorrectly)
 * occ:        fix problem where returning a boolean by reference crashed the program
 * ocide:      fix problem with crashing while typing in a return statement;
-    oasm:       fix problems assembling some C++ code
+* oasm:       fix problems assembling some C++ code
 * ocide:      clean up shutdown, fix problem where it hangs in memory after shutdown sometimes
 * ocide:      fix build so build with self works on OCIDE
-    olink:      update the name unmangling to match current compiler
+* olink:      update the name unmangling to match current compiler
 * omake:      add option to keep response files
-    dlpe:       when you specified a .def file, it wouldn't generate an output file
-    examples:   add delegate.cpp
-    demos:      properly compiles sqlite3 now
+* dlpe:       when you specified a .def file, it wouldn't generate an output file
+* examples:   add delegate.cpp
+* demos:      properly compiles sqlite3 now
 
 version 5.60.1: 2/6/16
 * occ:        package compiles itself now, and the results can be used to build other files
 * occ:        speed up aliasing code; compiles itself faster now
-    olink:      speed up processing of C++ files by an order of magnitude
+* olink:      speed up processing of C++ files by an order of magnitude
 
 * occ:        exception table pointers were not being placed in the vtab. (typeid failed)
 * occ:        address of structures could get an extra dereference when accessed as a reference member
@@ -409,9 +409,9 @@ version 5.60.1: 2/6/16
 * occ:        fix problems with internally generated qualifiers on class assigners causing a crash
 * occ:        remove some test code that performed an infinite loop
 * occ:        if a pointer to a structure was returned from a function, the copy by rvalue would be done instead of copy by lvalue
-    olink:      virtual sections were not matched to externals in the same file, so they would be dragged
+* olink:      virtual sections were not matched to externals in the same file, so they would be dragged
                 out of a library if they existed in the library and this could cause collisions
-    oasm:       virtual sections were sent to the object file with the wrong attributes, so link failed
+* oasm::       virtual sections were sent to the object file with the wrong attributes, so link failed
 * ocide:      fix problem with 'flashing' gui
 * ocide:      fix database problems: colorization and hints were broken
 * ocide:      fix ctrl-f and ctrl-h to do the expected thing when the find/replace window has focus
@@ -421,7 +421,7 @@ version 5.60.1: 2/6/16
 * ocide:      call stack window function name list doesn;t work for static functions
 * ocide:      call stack window can correlate last line of a function to first line of next function
 * ocide:      when bringing up find/replace window, fetch word under cursor (or word in toolbar)
-    occpr:      fix crash condition
+* occpr:      fix crash condition
 * clibs:      couldn't throw a non-structured type without it crashing.
 * clibs:      fix profiler to work with orange c; fix problems in profiler code; Use QueryPerformanceCounter
 * clibs:      set_unexpected would set the unexpected handler but return the terminate handler
@@ -454,7 +454,7 @@ version 5.52.1: 1/22/16
 * occ:        when objects that have to be constructed are default parameters, the
                 space for the objects does not get allocated if they are used.
 * occ:        fix bug when using function arguments as function arguments to an inline function.
-    libcxx:     fix problem with not enough space being allocated for locale in ios structure
+* libcxx:     fix problem with not enough space being allocated for locale in ios structure
 * clibs:      fix malloc/free to detect doubly freed pointers with more alacrity
 Version 5.51.1: 1/16/16
 * occ:        fix a compiler crash when compiling boolinq.h
@@ -527,7 +527,7 @@ Version 5.50.1: 12/27/15
 * occ:        problems when a variadic template argument varied in both type and value
 * ocide:      adjust sources to compile with OCC
 * occ:        adjust sources to compile with OCC
-    orc:        add switch to specify default language settings
+* orc:        add switch to specify default language settings
 * clibs:      add WIN32 support for TCC
 * clibs:      if a memory block was freed twice, a subsequent malloc might enter an infinite loop
 
@@ -577,14 +577,11 @@ Version 5.40.1:  8/9/15
                 as dead code were later processed again
 * occ:        returning 0 from a function returning long long was broken
 * occ:        don't allow inlining of functions with variadic parameter lists
-    oasm:       fix problem with fixed up values not being displayed correctly in the listing file
+* oasm::       fix problem with fixed up values not being displayed correctly in the listing file
 
 version 5.39.1: 8/4/15
 
-in this version, the name mangling for C++ has changed, and the object library file format has changed.
-Please completely rebuild your projects.
-
-    system:     recompile with various compilers
+* system:     recompile with various compilers
 * occ:        fix name unmangling of references and pointers to template names
 * occ:        fix __inline keyword to work properly
 * occ:        C99 inlines didn't inline
@@ -605,8 +602,8 @@ Please completely rebuild your projects.
 * occ:        various variadic template fixes
 * ocide:      fix problems with the code completion compiler crashing
 * ocide:      fix annoying problem where focus could be 'stolen' while code completion compiler is running
-    olib, oimplib, olink: rewrite dictionary handling
-    coff2ieee:  rewrite dictionary handling
+* olib, oimplib, olink: rewrite dictionary handling
+* coff2ieee:  rewrite dictionary handling
 
 version 5.38.1: 05/14/2015
 * occ:        when a structure or union is inside another structure or union, the
@@ -664,35 +661,35 @@ version 5.34.1: 4/19/2015
 version 5.33.1: 4/11/2015
 	general:	fix errors when compiling the package with various compilers
 * occ:        C++ fixes
-	* ocide:		don't colorize #if #else #endif blocks if colorizing is turned off
-	* ocide:		if an edit window is resized that has line numbers, redraw the line numbers
-	* ocide:		fix problem where #if #else #endif block processing could result in
+* ocide:		don't colorize #if #else #endif blocks if colorizing is turned off
+* ocide:		if an edit window is resized that has line numbers, redraw the line numbers
+* ocide:		fix problem where #if #else #endif block processing could result in
 				random lines becoming grey
-    olink:      speed up linker
-    olink:      optimize C++ programs for size
+* olink:      speed up linker
+* olink:      optimize C++ programs for size
 * rtl:        C++ fixes
 * rtl:        fix scanf("%c", &c); it would look ahead one character which required that something be typed at 
                 the console if processing the '\n' character at the end of a line.
 
 version 5.32.1: 03/24/2015
-    olink:      add the system library path to the front of the include path list, instead of replacing it
+* olink:      add the system library path to the front of the include path list, instead of replacing it
 * ocide:      fix potential crash condition when switching projects
 * ocide:      fix several compiler properties that would show as blanks when the IDE was reopened
-    coff2ieee:  handle unique COMDATS like normal sections, and define their symbols
+* coff2ieee:  handle unique COMDATS like normal sections, and define their symbols
 * rtl:        add __alloca_probe and friends; add security stuff to msvcrt.l
 
 version 5.31.1: 03/21/2015
 * occ:        if a multiply of two constants made it to the back end (e.g. when not optimizing), 
                 code generation would be incorrect
-    occ/occpr:  could crash if a return statement was incomplete, e.g. for 'return( }'
+* occ/occpr:  could crash if a return statement was incomplete, e.g. for 'return( }'
 * occ:        using __cdecl on a function in an extern "C" block turned it into a C++ function
-    olink:      default case sensitivity to TRUE
-    coff2ieee:  automatically rename _WinMain@16 to WinMain to handle the difference in name mangling
+* olink:      default case sensitivity to TRUE
+* coff2ieee:  automatically rename _WinMain@16 to WinMain to handle the difference in name mangling
 * ocide:      took care of an allocation error that could cause project settings to change randomly
 * ocide:      disable code completion inside strings
 * ocide:      add an option to allow automatic variables to be bolded or italicized
 * ocide:      cause a project to be rebuilt if files have been removed from it
-    oimplib:    allow '@' to be inside names in the def file.   But not at the beginning...
+* oimplib:    allow '@' to be inside names in the def file.   But not at the beginning...
 * rtl:        global_unwind was in the data segment
 * rtl:        add many C99 and C++ functions to msvcrt.l
 * rtl:        added more imports from msvcrt.dll, kernel32.dll and user32.dll to allow linking with microsoft files
@@ -702,9 +699,9 @@ version 5.30.1: 3/12/2015
 
 version 5.29.1: 03/12/2015
     create new program 'coff2ieee' to convert msvc object files to ieee format
-    occ/dlpe:   minimize import thunking to support the import format in microsoft object files
-    olib/olink: debug information in a library was sometimes parsed incorrectly
-    olink:      optimized library searches, much faster when parsing libraries now
+* occ/dlpe:   minimize import thunking to support the import format in microsoft object files
+* olib/olink: debug information in a library was sometimes parsed incorrectly
+* olink:      optimized library searches, much faster when parsing libraries now
 * ocide:      add CTL-F1 to navigate to the help documentation for a windows function
 * ocide:      add more colorization options
 	* ocide:		fix problem with sometimes crashing when selecting text backwards in the editor and deleting it
@@ -767,8 +764,8 @@ version 5.25.1: 2/10/2015
 
 version 5.24.1:  2/2/2015
 * ocide:  'make' of a project wouldn't work unless a full make had been done first.
-    ocl:    wouldn't run on DOS properly
-    dlpe:   wouldn't find dpmist32.bin
+* ocl:    wouldn't run on DOS properly
+* dlpe:   wouldn't find dpmist32.bin
 
 version 5.23.1: 1/25/2015
 * ocide: new feature: project auto dependencies and calculate build order
@@ -824,10 +821,10 @@ version 5.22.1: 01/19/15
 * occ:    more work done on C++ STL compatibility (work in progress)
 * omake:  exit if the dependency nesting is too deep, as it is likely due to recursive rules
 * omake:  support quotes on rules and dependencies - the quotes are part of the name
-    olink:  fix bug where a ".l" inside a file name (not at the end) would cause a crash
-    olib:   fix bug where debug info of structures inside a library would cause 
+* olink:  fix bug where a ".l" inside a file name (not at the end) would cause a crash
+* olib:   fix bug where debug info of structures inside a library would cause 
             the link stage to fail
-    olib:   fix bug where +- with fully specified paths could fail
+* olib:   fix bug where +- with fully specified paths could fail
 * clibs:  make adjustments for having changed 'alloca' to a #define    
     documentation:  document predefined preprocessor definitions in various places
 
@@ -838,16 +835,16 @@ version 5.21.1: 01/14/15
             (compiles lpng now)
 * occ:    allow #defines to be utilized properly inside the quotes on #includes
 * occ:    make some improvements that speed up the comparison part of generated loops
-    olib:   fix 'replace' mode to add a file if it doesn't already exist
+* olib:   fix 'replace' mode to add a file if it doesn't already exist
 * ocide:  fix problems with building static libraries
-    oasm:   update preprocessor
-    orc:    update preprocessor
+* oasm::   update preprocessor
+* orc:    update preprocessor
 * clibs:  add InterlockedCompareExchange
     
 version 5.20.1: 12/7/14
-    general: use fflush() liberally throughout to speed disk access
-    general: fix sources to compile with OPENWATCOM & MINGW compilers
-    general: switch to #include <sstream> instead of #include <strstream> when 
+* general: use fflush() liberally throughout to speed disk access
+* general: fix sources to compile with OPENWATCOM & MINGW compilers
+* general: switch to #include <sstream> instead of #include <strstream> when 
              possible (e.g. except when utilizing OPENWATCOM)
 * occ:    defining the same typedef inside of multiple functions resulted in 
             an error
@@ -887,12 +884,12 @@ version 5.20.1: 12/7/14
 * ocide:  fix problem when specifying the \0 at the end of a version resource string
 * ocide:  fix problem parsing generated versioninfo structures
 * ocide:  fix problem when changing a resource id from the property window
-    dlpe/orc/* ocide: fix problems where version information wouldn't be displayed 
+* dlpe/orc/* ocide: fix problems where version information wouldn't be displayed 
             in OS file details window
-    occ/* ocide: allow looking at variables declared in for statements (c99)
-    occ/* ocide: allow looking at variables declared in 'static' functions 
-    occ/* ocide: improve debugging of control statements
-    olink/* ocide: fix debug type information
+* occ/ocide: allow looking at variables declared in for statements (c99)
+* occ/ocide: allow looking at variables declared in 'static' functions 
+* occ/ocide: improve debugging of control statements
+* olink/ocide: fix debug type information
 * ocide:  set debugger's 'stop on exception' to default to 'yes'
 * ocide:  debugger: adjust the search for lines matching an address to use the next lower
             line if the PC isn't parked exactly on a line's first address.
@@ -914,21 +911,21 @@ version 5.20.1: 12/7/14
 * ocide:  when selecting an error from the information window, the cursor
             might move to the wrong line if lines were inserted or deleted
 * ocide:  fix backups of project and workspace files
-    ogrep:  when the -d option was used with an explicit filename, ogrep would
+* ogrep:  when the -d option was used with an explicit filename, ogrep would
             complain 'file not found' in any directory that didn't have the file
-    orc:    allow specifying extended font parameters on the DIALOGEX FONT line            
-    orc:    allow path specifications in file names
-    oasm:   __db was considered same as 'db' and so forth...
+* orc:    allow specifying extended font parameters on the DIALOGEX FONT line            
+* orc:    allow path specifications in file names
+* oasm::   __db was considered same as 'db' and so forth...
 * omake:  add support for common TREE builds
 * clibs:   fix _beginthreadex to return the thread id properly
 * clibs:  add a #define for the more or less standard variable 'environ'
 * clibs:  add a bunch of C++ templates and support functions
 * clibs:  no longer distributing lscrtl.dll
-    examples: fix xmlview example
+* examples: fix xmlview example
 
 version 5.0.10: 3/29/14
-    misc:   various code cleanup and improvements suggested by Kirill Joss
-    misc:   include dlea allocator in most C++ apps (borland compile only)  this helps speed it up
+* misc:   various code cleanup and improvements suggested by Kirill Joss
+* misc:   include dlea allocator in most C++ apps (borland compile only)  this helps speed it up
 * occ:    inlining functions that took the address of parameters was broken
 * occ:    fixed bug with optimizing of inlined functions generating incorrect code
 * occ:    fix so that external references will show up in the output file when included with a C++ using directive
@@ -937,9 +934,9 @@ version 5.0.10: 3/29/14
 * occ:    fix bug in register allocation that may speed up the compile
 * occ:    fix problem with generating DOUBLE sized constants for negative FLOAT constants
 * occ:    fix some error messages
-    ogrep:  fix crash under some circumstances
-    olib:   fix bug that caused libraries to be generated incorrectly, this will probably also speed up links
-    olink:  fix bug where a debug info table that didn't exist was referenced
+* ogrep:  fix crash under some circumstances
+* olib:   fix bug that caused libraries to be generated incorrectly, this will probably also speed up links
+* olink:  fix bug where a debug info table that didn't exist was referenced
 * ocide:  fix find dialog to not crash when invoked
 * ocide:  after debugging, a build would not work (said file in relative format)
 * ocide:  show types in watch window correctly
@@ -988,11 +985,11 @@ version 5.0.6: 06/05/2013
 * occ:    predefine _WIN32 again
 * occ:    compiles itself properly again
 * occ:    fix problems with pushing 16-bit values on stack
-    infopad: fix funky array and page keys behavior
+* infopad: fix funky array and page keys behavior
 
 version 5.0.5: 06/04/2013
 
-            fixes as per Franck Uberto
+*            fixes as per Franck Uberto
 * occ:    improve handling of trigraphs and digraphs
 * occ:    improve #define processing
 * occ:    improve search order for #includes

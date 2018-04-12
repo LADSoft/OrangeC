@@ -22,10 +22,10 @@ artifacts:
     name: obrc
   - path: "src\\Release\\ogrep.exe"
     name: ogrep
-  - path: "src\\Release\\dplm.exe"
-    name: dplm
-  - path: "src\\Release\\dple.exe"
-    name: dple
+  - path: "src\\Release\\dlpm.exe"
+    name: dlpm
+  - path: "src\\Release\\dlpe.exe"
+    name: dlpe
   - path: "src\\Release\\dlmz.exe"
     name: dlmz
   - path: "src\\Release\\dlle.exe"

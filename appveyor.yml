@@ -1,3 +1,5 @@
+image: Visual Studio 2017
+
 build_script:
         - ps: "cd ..\\..; move projects\\orangec .; cd orangec\\src; .\\ms; cd ..\\..; move orangec projects"
 

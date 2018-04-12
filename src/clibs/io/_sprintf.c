@@ -828,18 +828,17 @@ doinf:
                 xxx = *(char **)arg ;
                 if (xxx == NULL)
                     xxx = "(null)";
-    			fxs = strlen(xxx);
-    			if (prec > 0 && prec < fxs)
-				{
-					hold = xxx[fxs];
-					xxx[fxs] = 0;
-    				fxs = prec;
-				}
-                if (width < fxs)
-                    width = fxs ;
+		if (width == 0)
+			if (prec >= 0)
+				width = prec;
+			else
+				width = strlen(xxx);
+		if (prec < 0 || prec > width)
+			prec = width;
+					hold = xxx[prec];
+					xxx[prec] = 0;
 				justifiedOutput(__stream, xxx, ljustify, width, ' ', written);
-				if (hold)
-					xxx[fxs] = hold;
+					xxx[prec] = hold;
             }
 			break;
         case 'p':

@@ -1206,12 +1206,11 @@ version 4.1.12
 version 4.1.11
 * occ: remove import record from ASM file, when DLL name not specified
 * occ: fix problems with statements such as:
-			typedef void AA(int b);
-			AA ss,*tt;
-			ss(4);
-			tt(4);
-
-			the typedef wasn't processed right and it resulted in errors
+>			typedef void AA(int b);
+>			AA ss,*tt;
+>			ss(4);
+>			tt(4);
+	the typedef wasn't processed right and it resulted in errors
 * occ: add __int8, __int16, __int32
 *occ, dlpe, rtl: adjust for optimized imports
 * rtl:	work with RTL DLLs

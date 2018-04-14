@@ -28,5 +28,5 @@ There has been some thought as to eventually making this an x64 compiler, howeve
 
 See the file [`build.md`](build.md) for instructions on how to build the project.
 
-Project history is in the file ['history.md'](history.md).
+Project history is in the file [`history.md`](HISTORY.md).
 

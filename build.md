@@ -3,7 +3,7 @@ Building Orange C
 
 These instructions are for building on WIN32.  I actually build on Windows 7 64-bit.
 
-There is an [appveyor CI project](https://ci.appveyor.com/project/LADSoft/orangec) which performs builds on each checkin.   The builds use the 'omake fullbuild' syntax described below.
+There is an [Appveyor CI project](https://ci.appveyor.com/project/LADSoft/orangec) which performs builds on each checkin.   The builds use the 'omake fullbuild' syntax described below.
 
 You will need either Visual Studio 2017, OpenWatcom, or MINGW to compile this set of applications.   For help support, C# tools version 4.0 and .NET framework 4.5 need to be installed.  Additionally, with the exception of the C# code this package currently will compile and link itself.
 

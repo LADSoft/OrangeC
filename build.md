@@ -3,7 +3,9 @@ Building Orange C
 
 These instructions are for building on WIN32.  I actually build on Windows 7 64-bit.
 
-You will need either Visual Studio 2015, OpenWatcom, or MINGW to compile this set of applications.   For help support, C# tools version 4.0 and .NET framework 4.5 need to be installed.  Additionally, with the exception of the C# code this package currently will compile and link itself.
+There is an [appveyor CI project](https://ci.appveyor.com/project/LADSoft/orangec) which performs builds on each checkin.   The builds use the 'omake fullbuild' syntax described below.
+
+You will need either Visual Studio 2017, OpenWatcom, or MINGW to compile this set of applications.   For help support, C# tools version 4.0 and .NET framework 4.5 need to be installed.  Additionally, with the exception of the C# code this package currently will compile and link itself.
 
 You will also need 7-zip and inno setup, to do a complete build including making the distribution files.
 
@@ -21,7 +23,7 @@ You can change the version number by editing `SRC\VERSION.H` then rebuilding eve
 
 Building orange C happens in three steps.  First, the executables are built.  Then, the C Runtime library is built.  After that, the distribution release files are built.
 
-To build the executables the easiest thing to do is install Visual studio 2015.  Then you can either build the release version from the IDE, or from the command line.
+To build the executables the easiest thing to do is install Visual studio 2017.  Then you can either build the release version from the IDE, or from the command line.
 
 If you want to use VC to compile the executables, install the command line build environment (using VCVARS32.bat) and type:
 
@@ -31,15 +33,11 @@ or alternately
 
     ms.bat
 
-If you want to include the help programs into the built project, make sure the .NET prerequisets are installed and type:
-
-    mshelp.bat
-
 The first time you build various steps have to be taken to bootstrap the build.   For a first time build or if you want to make sure the entire thing gets built, cd to the source directory and type:
 
     omake fullbuild
 
-Note: on a first time build it can take a while to compile all the programs and libraries so get a cup of coffee!
+This builds the tool chain, then builds the run time library, then creates an installer and a couple of zip files used for releases.  Note: on a first time build it can take a while to compile all the programs and libraries so get a cup of coffee!
 
 In general if you want to build the tools you would cd to the src directory and type:
 

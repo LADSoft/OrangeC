@@ -60,7 +60,7 @@ $(foreach dir, $(filter-out c0.o c0lsstartup.o, $(DLLOBJS)), $(DLLOBJECT)\$(dir)
 $(RCFILE).res
 |
 	dlpe /f /mDLL /olscrtlil.dll lscrtl.
-	move lscrtlil.dll \occil\bin
+#	move lscrtlil.dll \occil\bin
 
 .\lscrtl.o: lscrtl.nas
 	$(ASM) $(ASMFLAGS) -o$@ $^

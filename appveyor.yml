@@ -2,7 +2,8 @@ image: Visual Studio 2017
 
 install:
     - choco install InnoSetup
-    - set PATH=%PATH%;C:\Program Files (x86)\Inno Setup 5
+    - set PATH=%PATH%;C:\Program Files (x86)\Inno Setup 5;c:\orangec\bin
+    - set ORANGEC=c:\ORANGEC
 
 build_script:
         - cd ..\..

@@ -5,7 +5,7 @@ install:
     - set PATH=%PATH%;"C:\Program Files (x86)\Inno Setup 5"
 
 build_script:
-        - ps: "cd ..\\..; move projects\\orangec .; cd orangec\\src; omake fullbuild; cd ..\\..; move orangec projects"
+        - ps: "cd ..\\..; move projects\\orangec .; cd orangec\\src; .\\omake fullbuild; cd ..\\..; move orangec projects"
 
 artifacts:
   - path: "src\\Release\\ocpp.exe"

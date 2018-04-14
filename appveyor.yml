@@ -15,41 +15,41 @@ build_script:
         - move orangec projects
 
 artifacts:
-  - path: "src\\Release\\ocpp.exe"
+  - path: "bin\\ocpp.exe"
     name: ocpp
-  - path: "src\\Release\\ocide.exe"
+  - path: "bin\\ocide.exe"
     name: ocide
-  - path: "src\\Release\\occpr.exe"
+  - path: "bin\\occpr.exe"
     name: occpr
-  - path: "src\\Release\\occ.exe"
+  - path: "bin\\occ.exe"
     name: occ
-  - path: "src\\Release\\coff2ieee.exe"
+  - path: "bin\\coff2ieee.exe"
     name: coff2ieee
-  - path: "src\\Release\\omake.exe"
+  - path: "bin\\omake.exe"
     name: omake
-  - path: "src\\Release\\oimplib.exe"
+  - path: "bin\\oimplib.exe"
     name: oimplib
-  - path: "src\\Release\\obrc.exe"
+  - path: "bin\\obrc.exe"
     name: obrc
-  - path: "src\\Release\\ogrep.exe"
+  - path: "bin\\ogrep.exe"
     name: ogrep
-  - path: "src\\Release\\dlpm.exe"
+  - path: "bin\\dlpm.exe"
     name: dlpm
-  - path: "src\\Release\\dlpe.exe"
+  - path: "bin\\dlpe.exe"
     name: dlpe
-  - path: "src\\Release\\dlmz.exe"
+  - path: "bin\\dlmz.exe"
     name: dlmz
-  - path: "src\\Release\\dlle.exe"
+  - path: "bin\\dlle.exe"
     name: dlle
-  - path: "src\\Release\\dlhex.exe"
+  - path: "bin\\dlhex.exe"
     name: dlhex
-  - path: "src\\Release\\olib.exe"
+  - path: "bin\\olib.exe"
     name: olib
-  - path: "src\\Release\\olink.exe"
+  - path: "bin\\olink.exe"
     name: olink
-  - path: "src\\Release\\oasm.exe"
+  - path: "bin\\oasm.exe"
     name: oasm
-  - path: "src\\Release\\ocl.exe"
+  - path: "bin\\ocl.exe"
     name: ocl
   - path: "dist\\*.*"
     name: releasefiles

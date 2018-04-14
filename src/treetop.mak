@@ -113,10 +113,10 @@ export _STARTED
 export _TREEROOT
 DISTBIN=$(DISTROOT)\bin
 export DISTBIN
-DISTBIN_7=$(DISTROOT)\bin_7
-export DISTBIN_7
-DISTBIN_8=$(DISTROOT)\bin_8
-export DISTBIN_8
+#DISTBIN_7=$(DISTROOT)\bin_7
+#export DISTBIN_7
+#DISTBIN_8=$(DISTROOT)\bin_8
+#export DISTBIN_8
 DISTHELP=$(DISTROOT)\help
 export DISTHELP
 DISTINC=$(DISTROOT)\include
@@ -179,14 +179,14 @@ cleanDISTRIBUTE: copydir.exe restub.exe renseg.exe pepatch.exe
 	-del /Q $(DISTROOT)\rule >> $(NULLDEV)
 	-mkdir $(DISTBIN) >> $(NULLDEV)
 	-del /Q $(DISTBIN) >> $(NULLDEV)
-	-mkdir $(DISTBIN_8) >> $(NULLDEV)
-	-del /Q $(DISTBIN_8) >> $(NULLDEV)
-	-mkdir $(DISTBIN_8)\branding >> $(NULLDEV)
-	-del /Q $(DISTBIN_8)\branding >> $(NULLDEV)
-	-mkdir $(DISTBIN_7) >> $(NULLDEV)
-	-del /Q $(DISTBIN_7) >> $(NULLDEV)
-	-mkdir $(DISTBIN_7)\branding >> $(NULLDEV)
-	-del /Q $(DISTBIN_7)\branding >> $(NULLDEV)
+#	-mkdir $(DISTBIN_8) >> $(NULLDEV)
+#	-del /Q $(DISTBIN_8) >> $(NULLDEV)
+#	-mkdir $(DISTBIN_8)\branding >> $(NULLDEV)
+#	-del /Q $(DISTBIN_8)\branding >> $(NULLDEV)
+#	-mkdir $(DISTBIN_7) >> $(NULLDEV)
+#	-del /Q $(DISTBIN_7) >> $(NULLDEV)
+#	-mkdir $(DISTBIN_7)\branding >> $(NULLDEV)
+#	-del /Q $(DISTBIN_7)\branding >> $(NULLDEV)
 	-mkdir $(DISTHELP) >> $(NULLDEV)
 	-del /Q $(DISTHELP) >> $(NULLDEV)
 	-mkdir $(DISTINC) >> $(NULLDEV)

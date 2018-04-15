@@ -1216,7 +1216,7 @@ static void FindStringFromFiles(int mode, int flags, char *search, char *specifi
 
 static void GetReplaceText(char *dest, char *replace, char *dta, int len, int flags, RE_CONTEXT *context)
 {
-    if (flags & F_REGULAR)
+    if (replaceflags & F_REGULAR)
     {
         while (*replace)
         {
@@ -1331,8 +1331,8 @@ static void ReplaceInDocuments(int mode, int flags, char *search, char *replace,
     int offset = 0, lastoffset = 0;
     int vis;
     int linepos;
-    CHARRANGE lastReplacePos;
-    CHARRANGE selection;
+    CHARRANGE lastReplacePos = { 0, 0 };
+    CHARRANGE selection = { 0, 0 };
     
     // to guard against the EN_LINECHANGE message which does an EndFind();
     do

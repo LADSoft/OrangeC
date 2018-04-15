@@ -11,8 +11,8 @@ build_script:
         - cd orangec\src
         - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars32.bat"
         - .\omake fullbuild 
-        - .\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
-        - .\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
+        - c:\orangec\bin\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
+        - c:\orangec\bin\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
         - cd ..\.. 
         - move orangec projects
 

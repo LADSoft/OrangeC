@@ -26,6 +26,7 @@ Version 6.0.35: 4/15/2018
     omake:  don't treat various GNU and BSD special targets we added as candidates for the first found target
     omake:  fix '.PHONY' special target; omake would crash when it was used
     build:  fix build with MINGW-32 to work again
+    build:  fix 'omake fullbuild' to work cleanly again
 
 Version 6.0.34: 02/02/2018
     occ:    fix problems with precision/width in printf string specifiers

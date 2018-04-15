@@ -38,6 +38,7 @@
 #ifndef LINKREGION_H
 #define LINKREGION_H
 
+#include <string.h>
 #include <vector>
 #include <vector>
 #include <map>

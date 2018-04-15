@@ -173,6 +173,7 @@ export DISTMAKE
 define filesdef
 
 cleanDISTRIBUTE: copydir.exe restub.exe renseg.exe pepatch.exe
+ifndef NOMAKEDIR
 	-mkdir $(DISTROOT) >> $(NULLDEV)
 #	-del /Q $(DISTROOT) >> $(NULLDEV)
 	-mkdir $(DISTROOT)\rule >> $(NULLDEV)
@@ -253,6 +254,8 @@ cleanDISTRIBUTE: copydir.exe restub.exe renseg.exe pepatch.exe
 	-mkdir $(DISTEXAM)\win32\huff >> $(NULLDEV)
 	-del /Q $(DISTEXAM)\win32\huff >> $(NULLDEV)
 	-mkdir $(DISTDIST) >> $(NULLDEV)
+endif
+
 innerFiles:
 	-mkdir  $(_LIBDIR) >> $(NULLDEV)
 	$(foreach dir, $(DIRS), $(DOLIB))

@@ -50,6 +50,13 @@
 #include "rcgui.h"
 #include <ctype.h>
 
+#ifndef CCHILDREN_TITLEBAR
+#define CCHILDREN_TITLEBAR 5
+#endif
+
+#ifndef STATE_SYSTEM_PRESSED
+#define STATE_SYSTEM_PRESSED 8
+#endif
 extern DWINFO *editWindows;
 extern PROJECTITEM *workArea;
 extern HINSTANCE hInstance;

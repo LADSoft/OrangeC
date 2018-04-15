@@ -1279,8 +1279,9 @@ void putconst(EXPRESSION *offset, int color)
                 for (i = 0; i < offset->string->size; i++)
                 {
                     SLCHAR *s = offset->string->pointers[i];
-                    for (int i = 0; i < s->count; i++)
-                        oputc(s->str[i], icdFile);
+                    int j;
+                    for (j = 0; j < s->count; j++)
+                        oputc(s->str[j], icdFile);
                 }
                 oputc('"', icdFile);
             }

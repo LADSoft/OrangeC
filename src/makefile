@@ -43,6 +43,8 @@ ifndef _TREEROOT
 #
 # beware - I haven't got dependency checking for include files implemented yet
 #
+export NOMAKEDIR
+
 tools: 
 	@$(MAKE) /T
 

@@ -46,6 +46,7 @@
 #include "Listing.h"
 #include "UTF8.h"
 #include <stdlib.h>
+#include <io.h>
 
 CmdSwitchParser AsmMain::SwitchParser;
 CmdSwitchBool AsmMain::CaseInsensitive(SwitchParser, 'i');
@@ -239,7 +240,7 @@ int AsmMain::Run(int argc, char *argv[])
                 rv = 1;
             }
         if (rv)
-            unlink(outName.c_str());
+            _unlink(outName.c_str());
         }
     }
     return rv;

@@ -45,6 +45,7 @@
 #include <list>
 #include <vector>
 #include <stdlib.h>
+#include <limits.h>
 #include "AsmExpr.h"
 
 class Instruction;

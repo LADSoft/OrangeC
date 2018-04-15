@@ -56,7 +56,7 @@ LLIB_DEPENDENCIES = $(notdir $(filter-out $(EXCLUDE) $(MAIN_DEPENDENCIES), $(CPP
 
 
 CC=$(COMPILER_PATH)\bin\mingw32-gcc
-CCFLAGS = -c
+CCFLAGS = -c -std=c++11 -D__MSVCRT__ -U__STRICT_ANSI__
 
 LINK=$(COMPILER_PATH)\bin\ld
 LFLAGS=-L$(_LIBDIR)

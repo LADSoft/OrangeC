@@ -1,5 +1,32 @@
 Release notes:
 
+Version 6.0.35: 04/15/2018
+* ocide:  search with replace to '\' actually replaced to ']' when in 'direct' replace mode
+* ocide:  fix uninitialized variables in the replace function
+* omake:  support both '\' and '/' in filenames
+* omake:  support .IGNORE and .SILENT without any prerequisites
+* omake:  fix bug where lines other than commands couldn't begin with the tab character
+* omake:  when :: is used as a rule separator, mark the target as precious
+* omake:  turn a suffix rule with prerequisites into a normal rule (used to generate an error)
+* omake:  when a command in a recipe fails and '.POSIX' is not specified, keep going until the end of the recipe
+* omake:  add '.LOW_RESOLUTION_TIME' special target
+* omake:  add '.NOTPARALLEL' special target (displays a warning since omake won't run things in parallel)
+* omake:  add '.ONESHELL' special target
+* omake:  add '.POSIX' special target
+* omake:  add '.RECURSIVE' special target
+* omake:  add '.MFLAGS' and '.MAKEFLAGS' special targets
+* omake:  add '.MAIN' special target
+* omake:  add '.SILENT' target attribute
+* omake:  add '.IGNORE' target attribute
+* omake:  add '.DONTCARE' target attribute
+* omake:  add '.MAKE' target attribute
+* omake:  add '.PRECIOUS' target attribute
+* omake:  add '.NOTMAIN' target attribute
+* omake:  add warnings for other BSD target attributes we aren't supporting
+* omake:  don't treat various GNU and BSD special targets we added as candidates for the first found target
+* omake:  fix '.PHONY' special target; omake would crash when it was used
+* build:  fix build with MINGW-32 to work again
+
 Version 6.0.34: 02/02/2018
 * occ:    fix problems with precision/width in printf string specifiers
 * occ:    fix recently introduced problems with C++ object file generation

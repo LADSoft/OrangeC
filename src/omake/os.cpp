@@ -257,3 +257,32 @@ void OS::RemoveFile(const std::string name)
 {
     unlink(name.c_str());
 }
+std::string OS::NormalizeFileName(const std::string file)
+{
+    std::string name = file;
+    // slash at the beginning of a word could be a command line switch so we don't replace it, otherwise replace '/'
+    // with '\\' when not in a string
+    int stringchar = 0;
+    bool escape = false;
+    for (size_t i=0; i < name.size(); i++)
+    {
+        if (stringchar)
+        {
+             if (name[i] == stringchar && !escape)
+                  stringchar = 0;
+             else if (escape)
+                  escape = false;
+             else if (name[i] == '\\')
+                  escape = true;
+        }
+        else if (name[i] == '\'' || name[i] == '"')
+        {
+            stringchar = name[i];
+        }
+        else if (name[i] == '/' && i > 0 && !isspace(name[i-1]))
+        {
+            name[i] = '\\';
+        }
+    }
+    return name;
+}

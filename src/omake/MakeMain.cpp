@@ -501,6 +501,19 @@ int MakeMain::Run(int argc, char **argv)
         if (!done)
             restarts++;
     }
+    // now low for .MAKEFLAGS || .MFLAGS
+    RuleList *rl = nullptr;
+    if ((rl = RuleContainer::Instance()->Lookup(".MAKEFLAGS")) || (rl = RuleContainer::Instance()->Lookup(".MFLAGS")))
+    {
+        for (auto rule : *rl)
+        {
+            std::string v = rule->GetPrerequisites();
+            Eval r(v, false);
+            std::string cmdLine = r.Evaluate();
+            Dispatch(cmdLine.c_str());
+        }
+        SetMakeFlags();
+    }
     if (showDatabase.GetValue())
         ShowDatabase();
     int rv = 0;
@@ -516,10 +529,48 @@ int MakeMain::Run(int argc, char **argv)
         bool xtouch = touch.GetValue();
         xdontrun |= xtouch || query.GetValue();
         xsilent |= xtouch || query.GetValue();
+        if (RuleContainer::Instance()->Lookup(".NOTPARALLEL") || RuleContainer::Instance()->Lookup(".NO_PARALLEL"))
+            Eval::warning("omake serializes builds, .NOTPARALLEL special target ignored");
+        if (RuleContainer::Instance()->Lookup(".BEGIN") || RuleContainer::Instance()->Lookup(".END"))
+            Eval::warning(".BEGIN and .END special targets ignored");
+        if (RuleContainer::Instance()->Lookup(".INCLUDES") || RuleContainer::Instance()->Lookup(".LIBS"))
+            Eval::warning(".INCLUDES and .LIBS special targets ignored");
+        if (RuleContainer::Instance()->Lookup(".INTERRUPT"))
+            Eval::warning(".INTERRUPT special target ignored");
+        if (RuleContainer::Instance()->Lookup(".MAKEFILEDPES"))
+            Eval::warning(".MAKEFILEDEPS special target ignored");
+        if (RuleContainer::Instance()->Lookup(".ORDER"))
+            Eval::warning(".ORDER special target ignored");
+        if (RuleContainer::Instance()->Lookup(".SHELL"))
+            Eval::warning(".SHELL special target ignored");
+        if (RuleContainer::Instance()->Lookup(".WARN"))
+            Eval::warning(".WARN special target ignored");
         Maker maker(xsilent, xdontrun, xignore, xtouch, rebuild.GetValue(), keepResponseFiles.GetValue(), newFiles.GetValue(), oldFiles.GetValue());
-        for (int i = 1; i < argc; i++)
+        if (argc <= 1)
         {
-            maker.AddGoal(argv[i]);
+            auto r = RuleContainer::Instance()->Lookup(".MAIN");
+            if (r)
+            {
+                for (auto r1 : *r)
+                {
+                    auto p = r1->GetPrerequisites();
+                    while (p.size())
+                    {
+                        auto s = Eval::ExtractFirst(p, " ");
+                        if (s.size())
+                        {
+                            maker.AddGoal(s);
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            for (int i = 1; i < argc; i++)
+            {
+                maker.AddGoal(argv[i]);
+            }
         }
         if (maker.CreateDependencyTree())
         {

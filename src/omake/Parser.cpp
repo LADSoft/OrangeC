@@ -96,7 +96,7 @@ std::string Parser::GetLine(bool inCommand)
 {
     lineno++;
     std::string rv = Eval::ExtractFirst(remaining,"\n");
-    if (rv[0] == '\t')
+    if (rv[0] == '\t' && lastCommand)
         inCommand = true;
         
     // concatenate lines
@@ -235,7 +235,7 @@ std::string Parser::FirstWord(const std::string &line, size_t &n)
 bool Parser::ParseLine(const std::string &line)
 {
     bool rv = false;
-    if (line[0] == '\t')
+    if (line[0] == '\t' && lastCommand)
     {
         rv = ParseCommand(line.substr(1));
     }
@@ -512,6 +512,12 @@ bool Parser::ParseRule(const std::string &left, const std::string &line)
     std::string orderPrereqs;
     std::string command;
     bool Double = false;
+    bool dontCare = false;
+    bool ignore = false;
+    bool silent = false;
+    bool make = false;
+    bool notMain = false;
+    bool precious = false;
     std::string iline;
     bool hasCmd = false;
     if (line[0] == ':')
@@ -584,7 +590,7 @@ bool Parser::ParseRule(const std::string &left, const std::string &line)
     else
     {
         size_t m = ls.find_first_not_of(' ');
-        if (ls[m] == '.')
+        if (m != std::string::npos && ls[m] == '.')
         {
             RuleList *ruleList = RuleContainer::Instance()->Lookup(".SUFFIXES");
             bool found1 = false, found2 = false;
@@ -622,12 +628,12 @@ bool Parser::ParseRule(const std::string &left, const std::string &line)
             if (!found1 || !found2)
                 goto join;
             // suffix rule, should not have any characters other than a possible double colon
-            // in line
+            // in line - if it does treat it as a normal rule
             if (line.size() && line[0] != ':')
             {
                 m = line.find_first_not_of(' ');
                 if (m != std::string::npos && line[m] != ';')
-                    Eval::error("Suffix rule should have no prerequisites");
+                    goto join;
             }
             if (two.size() == 0)
             {
@@ -654,6 +660,32 @@ join:
                 targetPattern = iline.substr(0, n);
                 iline = line.substr(n + 1);
             }
+            std::string iparsed;
+            precious = Double;
+            while (iline.size())
+            {
+                std::string cur = Eval::ExtractFirst(iline, std::string(" "));
+                if (cur[0] != '.')
+                    iparsed += cur + " ";
+                else if (cur == ".DONTCARE" || cur == ".OPTIONAL")
+                    dontCare = true;
+                else if (cur == ".SILENT")
+                    silent = true;
+                else if (cur == ".IGNORE")
+                    ignore = true;
+                else if (cur == ".NOTMAIN")
+                    notMain = true;
+                else if (cur == ".MAKE")
+                    make = true;
+                else if (cur == ".PRECIOUS")
+                    precious = true;
+                else if (cur == ".EXEC" || cur == ".EXPORT" || cur == ".EXPORTSAME" ||
+                    cur == ".INVISIBLE" || cur == ".JOIN" || cur == ".NOEXPORT" || cur == ".USE" || cur == ".WAIT")
+                    Eval::warning(std::string("Target Attribute '") + cur + "' ignored");
+                else
+                    iparsed += cur + " ";
+            }
+            iline = iparsed;
             n = iline.find_first_of('|');
             if (n != std::string::npos)
             {
@@ -700,7 +732,7 @@ join:
         if (ls.find_first_of('%') != std::string::npos)
             related = ls;
         else
-            if (!ignoreFirstGoal)
+            if (!ignoreFirstGoal && !notMain)
             {
                 size_t n;
                 std::string aa = ls;
@@ -735,7 +767,8 @@ join:
                         ps2 = ReplaceAllStems(stem, ps2);
                         std::string os1 = os;
                         os1 = ReplaceAllStems(stem, os1);
-                        rule = new Rule(cur, ps2, os1, lastCommand, file, lineno, secondaryExpansionEnabled);	
+                        rule = new Rule(cur, ps2, os1, lastCommand, file, lineno, 
+                                       dontCare, ignore, silent, make, precious, secondaryExpansionEnabled);	
                     }
                     else
                     {
@@ -744,7 +777,8 @@ join:
                 }
                 else
                 {
-                    rule = new Rule(cur, ps1, os, lastCommand, file, lineno, secondaryExpansionEnabled);	
+                    rule = new Rule(cur, ps1, os, lastCommand, file, lineno, 
+                                   dontCare, ignore, silent, make, precious, secondaryExpansionEnabled);	
                 }
                 RuleList *ruleList = RuleContainer::Instance()->Lookup(cur);		
                 if (!ruleList)

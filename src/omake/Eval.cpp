@@ -549,15 +549,6 @@ size_t Eval::FindPercent(const std::string &name, size_t pos)
 {
         pos = name.find_first_of('%', pos);
         return pos;
-        /*
-    while (true)
-    {
-        pos = name.find_first_of('%', pos);
-        if (pos == std::string::npos || pos == 0 || name[pos-1] != '\\' || (pos > 1 && name[pos-2] == '\\')) //  Priority of the '&&' operation is higher than that of the '||' operation
-            return pos;
-        pos++;
-    }
-    */
 }
 std::string Eval::FindStem(const std::string &name, const std::string &pattern)
 {
@@ -1060,7 +1051,7 @@ std::string Eval::suffix(const std::string &names)
     {
         std::string p = ExtractFirst(working, " ");
         size_t n = p.find_last_of('.');
-        if (n != std::string::npos && (n == p.size()-1 || p[n+1] != '\\'))
+        if (n != std::string::npos && (n == p.size()-1 || p[n+1] != '\\' && p[n+1] != '/'))
         {
             if (rv.size())
                 rv += " ";
@@ -1082,7 +1073,7 @@ std::string Eval::basename(const std::string &names)
         size_t n = p.find_last_of('.');
         if (rv.size())
             rv += " ";
-        if (n != std::string::npos && (n == p.size()-1 || p[n+1] != '\\'))
+        if (n != std::string::npos && (n == p.size()-1 || p[n+1] != '\\' && p[n+1] != '/'))
         {
             rv += p.substr(0,n);
         }
@@ -1465,7 +1456,7 @@ std::string Eval::shell(const std::string &arglist)
 {
     Eval a(arglist, false, ruleList, rule);
     EnvironmentStrings empty;
-    Spawner sp (empty, true, true, false, false);
+    Spawner sp (empty, true, true, false, false, false, false);
     return sp.shell(a.Evaluate());
 }
 

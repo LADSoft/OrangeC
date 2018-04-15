@@ -65,7 +65,7 @@ class RuleList;
 class Rule
 {
 public:
-    Rule(const std::string &targets, const std::string &Prerequisites, const std::string &OrderPrerequisites, Command *Commands, const std::string &file, int lineno, bool secondExpansion = false);
+    Rule(const std::string &targets, const std::string &Prerequisites, const std::string &OrderPrerequisites, Command *Commands, const std::string &file, int lineno, bool dontCare = false, bool ignore = false, bool silent = false, bool make = false, bool precious = false, bool secondExpansion = false);
     
     Command *GetCommands() { return commands; }
     std::string &GetPrerequisites() { return prerequisites; }
@@ -74,6 +74,11 @@ public:
     void SetUpToDate(bool flag) { uptodate = flag; }
     void SecondaryEval(RuleList *ruleList);
     bool HasCommands() { return commands && commands->size() != 0; }
+    bool IsDontCare() const { return dontCare; }
+    bool IsIgnore() const { return ignore; }
+    bool IsSilent() const { return silent; }
+    bool IsMake() const { return make; }
+    bool IsPrecious() const { return precious; }
 private:
     std::string target;
     std::string prerequisites;
@@ -83,6 +88,11 @@ private:
     int lineno;
     bool uptodate;
     bool secondExpansion;
+    bool dontCare;
+    bool ignore;
+    bool silent;
+    bool make;
+    bool precious;
 };
 class RuleList
 {

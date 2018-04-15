@@ -82,6 +82,7 @@ class Maker
         typedef std::list<Depends *>::iterator iterator;
         const iterator begin() { return subgoals.begin(); }
         const iterator end() { return subgoals.end(); }
+        void Precious() { toDelete = false; }
         
     private:
         std::string goal;
@@ -112,14 +113,15 @@ public:
     void SetIgnoreFailed(const std::string &name) { ignoreFailedTargets.insert(name); }
     static std::string GetFullName(std::string name);
 protected:
-    Depends *Dependencies(const std::string &goal, const std::string &preferredPath, Time &timeval);
+    Depends *Dependencies(const std::string &goal, const std::string &preferredPath, Time &timeval, bool err);
     bool ExistsOrMentioned(const std::string &stem, RuleList *ruleList, const std::string &preferredPath, const std::string &dir, bool implicit, bool outerMost);
-    bool SearchImplicitRules(const std::string &goal, const std::string &preferredPath, bool outerMost, bool err, Time &timeval);
+    bool SearchImplicitRules(const std::string &goal, const std::string &preferredPath, bool outerMost, Time &timeval);
     void EnterSpecificRule(RuleList *l, const std::string &stem, const std::string &preferredPath, bool outerMost);
     void EnterDefaultRule(const std::string &goal, RuleList *dflt);
     std::string GetFileTime(const std::string &goal, const std::string &preferredPath, Time &timeval);
     bool ScanList(const std::string &v, const std::string &goal);
     bool OnList(const std::string &goal, char *what);
+    bool NoList(char *what);
     void GetEnvironment(EnvironmentStrings &env);
     void DeleteOne(Depends *depend);
     int RunOne(Depends *depend, EnvironmentStrings &env, bool keepGoing);
@@ -137,6 +139,7 @@ private:
     bool touch;
     bool rebuildAll;
     bool keepResponseFiles;
+    bool lowResolutionTime;
     std::string newFiles;
     std::string oldFiles;
     std::set<std::string> ignoreFailedTargets;

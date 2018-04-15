@@ -76,5 +76,6 @@ public:
     static std::string GetWorkingDir();
     static bool SetWorkingDir(const std::string name);
     static void RemoveFile(const std::string name);
+    static std::string NormalizeFileName(const std::string name);
 } ;
 #endif

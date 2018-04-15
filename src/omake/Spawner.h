@@ -69,8 +69,10 @@ class Spawner
 {
     public:
         Spawner(const EnvironmentStrings &Environ, bool IgnoreErrors, bool Silent,
-            bool DontRun, bool KeepResponseFiles) : environment(Environ),
-            ignoreErrors(IgnoreErrors), silent(Silent), dontRun(DontRun), keepResponseFiles(KeepResponseFiles), tempNum(1) { }
+             bool OneShell, bool Posix, bool DontRun, bool KeepResponseFiles) 
+	: environment(Environ), oneShell(OneShell), posix(Posix),
+            ignoreErrors(IgnoreErrors), silent(Silent), dontRun(DontRun), keepResponseFiles(KeepResponseFiles), tempNum(1)
+        { }
         ~Spawner() { }
         int Run(Command &commands, RuleList *ruleList = nullptr, Rule *rule= nullptr);
         std::string shell(const std::string &command);
@@ -89,6 +91,8 @@ class Spawner
         EnvironmentStrings environment;
         bool ignoreErrors;
         bool silent;
+        bool oneShell;
+        bool posix;
         bool dontRun;
         bool keepResponseFiles;
         int tempNum;

@@ -61,9 +61,12 @@ void CommandContainer::Clear()
 
 Rule::Rule(const std::string &Target, const std::string &Prerequisites, 
            const std::string &OrderPrerequisites, Command *Commands, 
-           const std::string &File, int Lineno, bool SecondExpansion)
+           const std::string &File, int Lineno, 
+           bool DontCare, bool Ignore, bool Silent, bool Make, bool Precious,
+           bool SecondExpansion)
     : target(Target), prerequisites(Prerequisites), orderPrerequisites(OrderPrerequisites),
-    commands(Commands), file(File), lineno(Lineno), secondExpansion(SecondExpansion), uptodate(false)
+    commands(Commands), file(File), lineno(Lineno), secondExpansion(SecondExpansion), uptodate(false),
+    dontCare(DontCare), ignore(Ignore), silent(Silent), make(Make), precious(Precious)
 {
 }
 void Rule::SecondaryEval(RuleList *ruleList)

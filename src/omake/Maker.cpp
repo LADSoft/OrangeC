@@ -77,7 +77,16 @@ void Maker::SetFirstGoal(const std::string &name)
             if (name != ".INTERMEDIATE" && name != ".PRECIOUS" && name != ".SECONDARY")
                 if (name != ".SILENT" && name != ".IGNORE" && name != ".SECONDEXPANSION")
                     if (name != ".PHONY" && name != ".DELETE_ON_ERROR")
-                        firstGoal = name;
+			if (name != ".LOW_RESOLUTION_TIME" && name != ".NOTPARALLEL")
+			    if (name != ".ONESHELL" && name != ".POSIX")
+                    if (name != ".RECURSIVE" && name != ".MAIN")
+                        if (name == ".BEGIN" || name == ".END" || 
+                            name != ".INCLUDES" || name != ".INTERRUPT" || 
+                            name != ".LIBS" || name != ".MAKEFILEDEPS" || 
+                            name != ".MAKEFLAGS" || name != ".MFLAGS" || 
+                            name != ".NOPARALLEL" || name != ".ORDER" || 
+                            name != ".SHELL" || name != ".WARN")
+          	            firstGoal = name;
     }
 }
 bool Maker::CreateDependencyTree()
@@ -113,14 +122,17 @@ bool Maker::CreateDependencyTree()
     for (auto goal : goals)
     {
         Time tv1, tv2;
-        dependsNesting = 0;        
-        Depends *t = Dependencies(goal, "", tv1);
-        if (t || OnList(goal,".PHONY"))
-        {
-            depends.push_back(t);
-        }
-        else if (t)
-            delete t;
+        dependsNesting = 0;
+        if (goal != ".MAKEFLAGS" && goal != ".MFLAGS")
+	{
+	        Depends *t = Dependencies(goal, "", tv1, true);
+        	if (t)
+        	{
+            		depends.push_back(t);
+        	}
+        	else if (t)
+            		delete t;
+	}
     }
     v = VariableContainer::Instance()->Lookup(".INTERMEDIATE");
     if (v)
@@ -129,7 +141,7 @@ bool Maker::CreateDependencyTree()
     }
     return !missingTarget;
 }
-Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &preferredPath, Time &timeval)
+Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &preferredPath, Time &timeval, bool err)
 {
     if (++dependsNesting > 200)
     {
@@ -142,6 +154,7 @@ Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &
     bool intermediate = OnList(goal, ".INTERMEDIATE");
     bool secondary = OnList(goal, ".SECONDARY");
     bool precious = OnList(goal, ".PRECIOUS");
+    lowResolutionTime = OnList(goal, ".LOW_RESOLUTION_TIME");
     if (!rv)
     {
         Time xx;
@@ -158,7 +171,7 @@ Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &
             if (it == ruleList->end())
             {
                 Time xx;
-                SearchImplicitRules(goal, preferredPath, true, false, xx);
+                SearchImplicitRules(goal, preferredPath, true, xx);
             }
             std::string foundPath = GetFileTime(goal ,preferredPath, goalTime);
             bool exists = ! !goalTime;
@@ -173,7 +186,7 @@ Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &
                 {
                     Time current;
                     std::string thisOne = Eval::ExtractFirst(working, " ");
-                    Depends *dp = Dependencies(thisOne, foundPath, current);
+                    Depends *dp = Dependencies(thisOne, foundPath, current, err && !rule->IsDontCare());
                     if (current > dependsTime)
                     {
                         dependsTime = current;
@@ -195,7 +208,7 @@ Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &
                 {
                     Time current;
                     std::string thisOne = Eval::ExtractFirst(working, " ");
-                    Depends *dp = Dependencies(thisOne, preferredPath, current);
+                    Depends *dp = Dependencies(thisOne, preferredPath, current, err && !rule->IsDontCare());
                     if (dp)
                     {
                         dp->SetOrdered(true);
@@ -216,6 +229,7 @@ Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &
                 rv->SetRuleList(ruleList);
                 rv->SetRule(executionRule);
                 ruleList->SetNewerPrerequisites(newerPrereqs);
+
             }
             else
             {
@@ -224,13 +238,31 @@ Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &
         }
         else
         {
-            if (SearchImplicitRules(goal, preferredPath, true, true, timeval))
-                rv = Dependencies(goal, preferredPath, timeval);
+            if (SearchImplicitRules(goal, preferredPath, true, timeval))
+            {
+                rv = Dependencies(goal, preferredPath, timeval, err);
+            }
+            else if (err)
+            {
+                auto it = ignoreFailedTargets.find(goal);
+                if (it == ignoreFailedTargets.end())
+                {
+                    Time time;
+                    GetFileTime(goal, preferredPath, time);
+                    if (!time)
+                    {
+                        missingTarget = true;
+                        Eval::error("No rule to make target '" + goal + "'");
+                    }
+                    else if (time > timeval)
+                        timeval = time;
+                }
+            }
         }
     }
     if (rv && !rebuildAll)
     {
-        if (goalTime > dependsTime)
+        if (goalTime > dependsTime && !OnList(goal, ".PHONY"))
         {
             if (!rv->size())
             {
@@ -323,6 +355,10 @@ std::string Maker::GetFileTime(const std::string &goal, const std::string &prefe
     {
         timeval.Clear();
     }
+    if (lowResolutionTime)
+    {
+        timeval.ms = 0;
+    }
     return rv;
 }
 bool Maker::ExistsOrMentioned(const std::string &stem, RuleList *ruleList, const std::string &preferredPath, const std::string &dir, bool implicit, bool outerMost)
@@ -352,7 +388,7 @@ bool Maker::ExistsOrMentioned(const std::string &stem, RuleList *ruleList, const
                         Time time;
                         // this rule may still match if we can recursively find
                         // other implicit rules that match the prerequisites
-                        found = SearchImplicitRules(thisOne, preferredPath, false, false, time);
+                        found = SearchImplicitRules(thisOne, preferredPath, false, time);
                     }
                     else
                     {
@@ -440,7 +476,7 @@ void Maker::EnterDefaultRule(const std::string &goal, RuleList *dflt)
         }
     }
 }
-bool Maker::SearchImplicitRules(const std::string &goal, const std::string &preferredPath, bool outerMost, bool err, Time &timeval)
+bool Maker::SearchImplicitRules(const std::string &goal, const std::string &preferredPath, bool outerMost, Time &timeval)
 {
     std::list<RuleList *>matchedRules;
     size_t n = goal.find_last_of(CmdFiles::DIR_SEP);
@@ -526,22 +562,6 @@ bool Maker::SearchImplicitRules(const std::string &goal, const std::string &pref
         EnterDefaultRule(goal, dflt);
         return true;
     }
-    if (outerMost && err)
-    {
-        auto it = ignoreFailedTargets.find(goal);
-        if (it == ignoreFailedTargets.end())
-        {
-            Time time;
-            GetFileTime(goal, preferredPath, time);
-            if (!time)
-            {
-                missingTarget = true;
-                Eval::error("No rule to make target '" + goal + "'");
-            }
-            else if (time > timeval)
-                timeval = time;
-        }
-    }
     return false;
 }
 bool Maker::ScanList(const std::string &v, const std::string &goal)
@@ -583,6 +603,23 @@ bool Maker::OnList(const std::string &goal, char *what)
         {
             std::string value = (*it)->GetPrerequisites();	
             rv = ScanList(value, goal);
+        }
+    }
+    return rv;
+}
+bool Maker::NoList(char *what)
+{
+    bool rv = false;
+    RuleList *rl = RuleContainer::Instance()->Lookup(what);
+    if (rl)
+    {
+        rv = true;
+        for (RuleList::iterator it = rl->begin(); rv && it != rl->end(); ++it)
+        {
+            if (Eval::ExtractFirst((*it)->GetPrerequisites(), " ") != "")
+            {
+                rv = false;
+            }
         }
     }
     return rv;
@@ -680,11 +717,24 @@ int Maker::RunOne(Depends *depend, EnvironmentStrings &env, bool keepGoing)
     }
     bool sil = silent;
     bool ig = ignoreResults;
+    bool precious = false;
+    bool make = OnList(depend->GetGoal(), ".RECURSIVE");
+    bool oneShell = RuleContainer::Instance()->Lookup(".ONESHELL") != nullptr;
+    bool posix = RuleContainer::Instance()->Lookup(".POSIX") != nullptr;
     if (!sil)
-        sil = OnList(depend->GetGoal(), ".SILENT");
+        sil = OnList(depend->GetGoal(), ".SILENT") || NoList(".SILENT");
     if (!ig)
-        ig = OnList(depend->GetGoal(), ".IGNORE");
-    Spawner sp(env, ig, sil, displayOnly, keepResponseFiles);
+        ig = OnList(depend->GetGoal(), ".IGNORE") || NoList(".IGNORE");
+    if (depend->GetRule())
+    {
+        ig |= depend->GetRule()->IsIgnore();
+        sil |= depend->GetRule()->IsSilent();
+        precious = depend->GetRule()->IsPrecious();
+        make |= depend->GetRule()->IsMake();
+        if (precious)
+            depend->Precious();
+    }
+    Spawner sp(env, ig, sil, oneShell, posix, displayOnly && !make, keepResponseFiles);
     if (depend->GetRule() && depend->GetRule()->GetCommands())
         rv = sp.Run(*depend->GetRule()->GetCommands(), rl, nullptr);
     if (rv)

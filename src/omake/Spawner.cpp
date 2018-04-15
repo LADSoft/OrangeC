@@ -43,6 +43,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <deque>
 #include "utils.h"
 
 const char Spawner::escapeStart = '\x1';
@@ -53,7 +54,9 @@ std::list<std::string> Spawner::cmdList;
 int Spawner::Run(Command &commands, RuleList *ruleList, Rule *rule)
 {
     int rv = 0;
-    for (Command::iterator it = commands.begin(); it != commands.end() && !rv ; ++it)
+    std::string longstr;
+    std::deque<std::string> tempFiles;
+    for (Command::iterator it = commands.begin(); it != commands.end() && (!rv || !posix) ; ++it)
     {
         bool curSilent = silent;
         bool curIgnore = ignoreErrors;
@@ -88,6 +91,8 @@ int Spawner::Run(Command &commands, RuleList *ruleList, Rule *rule)
             else
                 makeName = makeName + Utils::NumberToString(tempNum);
             tempNum++;
+            if (!keepResponseFiles && makeName.size())
+                tempFiles.push_back(makeName);
             std::fstream fil(makeName.c_str(), std::ios::out);
             bool done = false;
             std::string tail;
@@ -110,36 +115,51 @@ int Spawner::Run(Command &commands, RuleList *ruleList, Rule *rule)
             cmd += makeName + tail;
         }
         cmd = QualifyFiles(cmd);
-        rv = Run(cmd, curIgnore, curSilent, curDontRun);
+        if (oneShell)
+             longstr += cmd;
+        else
+             rv = Run(cmd, curIgnore, curSilent, curDontRun);
         if (curIgnore)
             rv = 0;
-        if (!keepResponseFiles && makeName.size())
-            OS::RemoveFile(makeName);
+        if (rv && posix)
+            break;
     }
+    if (oneShell)
+        rv = Run(longstr, ignoreErrors, silent, dontRun);
+    for (auto f : tempFiles)
+        OS::RemoveFile(f);
     return rv;
 }
-int Spawner::Run(const std::string &cmd, bool ignoreErrors, bool silent, bool dontrun)
+int Spawner::Run(const std::string &cmdin, bool ignoreErrors, bool silent, bool dontrun)
 {
-    if (!split(cmd))
+    std::string cmd = OS::NormalizeFileName(cmdin);
+    if (oneShell)
+    {
+        return OS::Spawn(cmd, environment);
+    }
+    else if (!split(cmd))
     {
         Eval::error(std::string ("Command line too long:\n") + cmd);
         return 0xff;
     }
     else
     {
+        int rv = 0;
         for (auto command : cmdList)
         {
             if (!silent)
                 std::cout << "\t" << command.c_str() << std::endl;
-            int rv = 0;
+            int rv1;
             if (!dontrun)
-                rv = OS::Spawn(command, environment);
-//			if (!silent)
-//				std::cout << std::endl;
-            if (!ignoreErrors && rv != 0)
-                return rv;
+            {
+                rv1 = OS::Spawn(command, environment);
+                if (!rv)
+                     rv = rv1;
+                if (rv && posix)
+                     return rv;
+            }
         }
-        return 0;
+        return rv;
     }
 }
 bool Spawner::split(const std::string &cmd)

@@ -13,6 +13,7 @@ build_script:
         - c:\orangec\src\omake fullbuild 
         - c:\orangec\bin\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
         - c:\orangec\bin\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
+        - c:\orangec\bin\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
         - cd ..\.. 
         - move orangec projects
 

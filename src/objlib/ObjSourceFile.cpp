@@ -37,7 +37,6 @@
     contact information:
         email: TouchStone222@runbox.com <David Lindauer>
 */
-#define _USE_32BIT_TIME_T
 #include "ObjSourceFile.h"
 #include <io.h>
 #include <fcntl.h>

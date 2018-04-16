@@ -215,64 +215,104 @@ static REGDATA regs[] =
         {
              &xst0, &st0buf
         }
+#ifdef __MINGW64__
+        , &oldContext.FloatSave.FloatRegisters[0],
+            &regContext.FloatSave.FloatRegisters[0], 0, editable | floating
+#else
         , &oldContext.FloatSave.RegisterArea[0],
             &regContext.FloatSave.RegisterArea[0], 0, editable | floating
+#endif
     }
     , 
     {
         {
              &xst1, &st1buf
         }
+#ifdef __MINGW64__
+        , &oldContext.FloatSave.FloatRegisters[1],
+            &regContext.FloatSave.FloatRegisters[1], 0, editable | floating
+#else
         , &oldContext.FloatSave.RegisterArea[10],
             &regContext.FloatSave.RegisterArea[10], 0, editable | floating
+#endif
     }
     , 
     {
         {
              &xst2, &st2buf
         }
+#ifdef __MINGW64__
+        , &oldContext.FloatSave.FloatRegisters[2],
+            &regContext.FloatSave.FloatRegisters[2], 0, editable | floating
+#else
         , &oldContext.FloatSave.RegisterArea[20],
             &regContext.FloatSave.RegisterArea[20], 0, editable | floating
+#endif
     }
     , 
     {
         {
              &xst3, &st3buf
         }
+#ifdef __MINGW64__
+        , &oldContext.FloatSave.FloatRegisters[3],
+            &regContext.FloatSave.FloatRegisters[3], 0, editable | floating
+#else
         , &oldContext.FloatSave.RegisterArea[30],
             &regContext.FloatSave.RegisterArea[30], 0, editable | floating
+#endif
     }
     , 
     {
         {
              &xst4, &st4buf
         }
+#ifdef __MINGW64__
+        , &oldContext.FloatSave.FloatRegisters[4],
+            &regContext.FloatSave.FloatRegisters[4], 0, editable | floating
+#else
         , &oldContext.FloatSave.RegisterArea[40],
             &regContext.FloatSave.RegisterArea[40], 0, editable | floating
+#endif
     }
     , 
     {
         {
              &xst5, &st5buf
         }
+#ifdef __MINGW64__
+        , &oldContext.FloatSave.FloatRegisters[5],
+            &regContext.FloatSave.FloatRegisters[5], 0, editable | floating
+#else
         , &oldContext.FloatSave.RegisterArea[50],
             &regContext.FloatSave.RegisterArea[50], 0, editable | floating
+#endif
     }
     , 
     {
         {
              &xst6, &st6buf
         }
+#ifdef __MINGW64__
+        , &oldContext.FloatSave.FloatRegisters[6],
+            &regContext.FloatSave.FloatRegisters[6], 0, editable | floating
+#else
         , &oldContext.FloatSave.RegisterArea[60],
             &regContext.FloatSave.RegisterArea[60], 0, editable | floating
+#endif
     }
     , 
     {
         {
              &xst7, &st7buf
         }
+#ifdef __MINGW64__
+        , &oldContext.FloatSave.FloatRegisters[7],
+            &regContext.FloatSave.FloatRegisters[7], 0, editable | floating
+#else
         , &oldContext.FloatSave.RegisterArea[70],
             &regContext.FloatSave.RegisterArea[70], 0, editable | floating
+#endif
     }
     , 
 };

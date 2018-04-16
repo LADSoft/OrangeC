@@ -37,12 +37,13 @@
 #		email: TouchStone222@runbox.com <David Lindauer>
 
 #
-# MS    - microsoft 32 bit compiler         VS2015
-# MINGW - mingw32 compiler                  4.8.1
-# OWC   - open watcom compiler              1.9
-# CLANG - clang compiler, using MS linker   3.5.0
-# BCC32 - embarcadero C++                   Package 18.0, compiler 7.20
-# OCC   - Orange C
+# MS      - microsoft 32 bit compiler         VS2015
+# MINGW   - mingw32 compiler                  4.8.1
+# MINGW64 - mingw x86_w64                     7.3.0
+# OWC     - open watcom compiler              1.9
+# CLANG   - clang compiler, using MS linker   3.5.0
+# BCC32   - embarcadero C++                   Package 18.0, compiler 7.20
+# OCC     - Orange C
 #
 ifndef COMPILER
 COMPILER := MS
@@ -51,6 +52,7 @@ endif
 include $(TREETOP)\bcc32.mak
 include $(TREETOP)\ms.mak
 include $(TREETOP)\mingw.mak
+include $(TREETOP)\mingw64.mak
 include $(TREETOP)\owc.mak
 include $(TREETOP)\clang.mak
 include $(TREETOP)\occ.mak

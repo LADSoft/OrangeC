@@ -10,7 +10,7 @@
     
     * Redistributions of source code must retain the above
       copyright notice, this list of conditions and the
-      following disclaimer.
+      following disclaimer.Rip
     
     * Redistributions in binary form must reproduce the above
       copyright notice, this list of conditions and the
@@ -50,6 +50,8 @@
 #include "..\version.h"
 #include <sys\stat.h>
 #include <stdlib.h>
+
+
 /* timer identifiers
  *
  * note that the current timer implementation assumes only one timer
@@ -1747,7 +1749,7 @@ void ProcessMessage(MSG *msg)
             {
                 if (IsWindow(hwndFind))
                 {
-                       DLGHDR *pHdr = (DLGHDR *) GetWindowLong(hwndFind, GWL_USERDATA);
+                       DLGHDR *pHdr = (DLGHDR *) GetWindowLong(hwndFind, GWLP_USERDATA);
                     if (IsDialogMessage(pHdr->hwndDisplay, msg))
                         return;
                     if (IsDialogMessage(hwndFind, msg))
@@ -1830,7 +1832,11 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpszCmdLine,
 //		return 0;
 //	}
     // so we don't get problems reading unused FP reg values
+#ifdef __MINGW64__
+    _control87(_MCW_EM, _MCW_EM); 
+#else
     _control87(MCW_EM, MCW_EM); 
+#endif
     hCursArrow = LoadCursor(0, IDC_ARROW);
     hCursHourglass = LoadCursor(0, IDC_WAIT);
     hwnd = FindWindow(szFrameClassName, NULL);

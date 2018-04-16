@@ -141,7 +141,7 @@ static EXPRESSION *ieprimary(void)
     EXPRESSION *temp = 0;
     SYM *sp;
     int needclose;
-    if (lastst == eol)
+    if (lastst == rceol)
         getsym();
     if (lastst == iconst || lastst == lconst || lastst == iuconst || lastst == luconst)
     {

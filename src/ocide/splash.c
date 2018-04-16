@@ -51,6 +51,9 @@
 #include <windows.h>
 #include <process.h>
 #include "splash.h"
+#include <commctrl.h>
+#include <stdio.h>
+#include "header.h"
 
 #define SPLASH_CLASS    "AbSplashScreenWndClass"
 

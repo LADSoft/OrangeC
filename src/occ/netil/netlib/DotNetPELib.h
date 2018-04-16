@@ -1,6 +1,6 @@
 /*
     Software License Agreement (BSD License)
-
+-
     Copyright (c) 2016, David Lindauer, (LADSoft).
     All rights reserved.
 
@@ -51,7 +51,7 @@
 
 // reference changelog.txt to see what the changes are
 //
-#define DOTNETPELIB_VERSION "3.00"
+#define DOTNETPELIB_VERSION "3.01"
 
 // this is the main library header
 // it allows creation of the methods and data that would be dumped into 
@@ -679,8 +679,11 @@ namespace DotNetPELib
         void size(int sz) { size_ = sz; }
         ///**set the class we are extending from, if this is unset
         // a system class will be chosen based on whether or not the class is a valuetype
+        // this may be unset when reading in an assembly, in that case ExtendsName may give the name of a class which is being extended from
         void Extends(Class *extendsFrom) { extendsFrom_ = extendsFrom; }
         Class *Extends() const { return extendsFrom_;  }
+        void ExtendsName(std::string &name) { extendsName_ = name; }
+        std::string ExtendsName() const { return extendsName_;  }
         ///** not locally defined
         bool External() const { return external_; }
         ///** not locally defined
@@ -712,6 +715,7 @@ namespace DotNetPELib
         int pack_;
         int size_;
         Class *extendsFrom_;
+        std::string extendsName_;
         std::vector<Property *>properties_;
         bool external_;
     };
@@ -1200,7 +1204,7 @@ namespace DotNetPELib
     class MethodSignature : public DestructorBase
     {
     public:
-        enum { Vararg = 1, Managed = 2, InstanceFlag = 4 };
+        enum { Vararg = 1, Managed = 2, InstanceFlag = 4, VirtualFlag = 8 };
         MethodSignature(std::string Name, int Flags, DataContainer *Container) : container_(Container), name_(Name), flags_(Flags), returnType_(nullptr), ref_(false), 
                 peIndex_(0), peIndexCallSite_(0), peIndexType_(0), methodParent_(nullptr), arrayObject_(nullptr), external_(false), definitions_(0)
         {
@@ -1260,6 +1264,17 @@ namespace DotNetPELib
                 flags_ &= ~InstanceFlag;
         }
         bool Instance() const { return !!(flags_ & InstanceFlag); }
+
+        // make it virtual
+        void Virtual(bool virt) {
+            if (virt)
+            {
+                flags_ |= VirtualFlag;
+            }
+            else
+                flags_ &= ~VirtualFlag;
+        }
+        bool Virtual() const { return !!(flags_ & VirtualFlag); }
         ///** make it a vararg signature
         void SetVarargFlag() { flags_ |= Vararg; }
 

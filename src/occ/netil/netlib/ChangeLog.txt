@@ -1,3 +1,7 @@
+Version 3.01:
+	support virtual functions
+	use correct boxed types 'Byte and SByte' for the 8-bit values
+
 Version 3.00:
 	support SEH
 

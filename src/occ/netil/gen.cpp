@@ -228,7 +228,7 @@ void oa_gen_vc1(SYMBOL *func)
 void oa_gen_importThunk(SYMBOL *func)
 {
 }
-Operand *getCallOperand(QUAD *q)
+Operand *getCallOperand(QUAD *q, bool &virt)
 {
     EXPRESSION *en = GetSymRef(q->dc.left->offset);
 
@@ -261,6 +261,8 @@ Operand *getCallOperand(QUAD *q)
         }
         else
         {
+            if (sp->storage_class == sc_virtual)
+                virt = true;
             if (sp->msil)
                 sig = ((Method *)sp->msil)->Signature();
             else
@@ -710,7 +712,6 @@ void gen_load(IMODE *im, Operand *dest)
                 {
                     Property *p = reinterpret_cast<Property *>(static_cast<FieldName *>(dest->GetValue())->GetField());
                     p->CallGet(*peLib, currentMethod);
-                    increment_stack();
                 }
                 else if (im->offset->type == en_structelem)
                 {
@@ -1091,6 +1092,10 @@ extern "C" void asm_parmblock(QUAD *q)          /* push a block of memory */
         {
             return;
         }
+        if (i->OpCode() == Instruction::i_call || i->OpCode() == Instruction::i_calli || i->OpCode() == Instruction::i_callvirt)
+        {
+            return;
+        }
         // no it is a member of a structure, we have to load it
         Type *tp = GetType((TYPE *)q->altdata, TRUE);
         gen_code(Instruction::i_ldobj, peLib->AllocateOperand(peLib->AllocateValue("", tp)));
@@ -1158,11 +1163,16 @@ extern "C" void asm_gosub(QUAD *q)              /* normal gosub to an immediate 
     {
         if (!bltin_gosub(q))
         {
-			Operand *ap = getCallOperand(q);
+            bool virt = false;
+			Operand *ap = getCallOperand(q, virt);
             if (!strcmp(q->dc.left->offset->v.sp->name, ".ctor"))
             {
                 gen_code(Instruction::i_newobj, ap);
                 increment_stack();
+            }
+            else if (virt)
+            {
+                gen_code(Instruction::i_callvirt, ap);
             }
             else
             {
@@ -1172,7 +1182,8 @@ extern "C" void asm_gosub(QUAD *q)              /* normal gosub to an immediate 
     }
     else
     {
-		Operand *ap = getCallOperand(q);
+        bool virt = false;
+		Operand *ap = getCallOperand(q, virt);
 		gen_code(Instruction::i_calli, ap);
         decrement_stack();
     }
@@ -1778,8 +1789,8 @@ extern "C" void asm_epilogue(QUAD *q)           /* function epilogue */
     if (returnCount)
         stackpos -= returnCount -1;
     stackpos -= hookCount/2;
-    if (stackpos != 0)
-        diag("asm_epilogue: stack mismatch");
+    //if (stackpos != 0)
+    //    diag("asm_epilogue: stack mismatch");
 }
 /*
  * in an interrupt handler, push the current context

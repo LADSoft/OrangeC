@@ -326,6 +326,8 @@ namespace DotNetPELib
                     lib.AllocateMethodSignature((char *)buf, 
                                                MethodSignature::Managed, this);
                 SignatureGenerator::TypeFromMethodRef(lib, assembly, reader, sig, entry->signatureIndex_.index_);
+                if (entry->flags_ & MethodDefTableEntry::Virtual)
+                    sig->Virtual(true);
                 Method *method = lib.AllocateMethod(sig, entry->flags_, false);
                 Add(method);
                 sigs.push_back(sig);

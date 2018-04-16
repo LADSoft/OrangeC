@@ -99,6 +99,9 @@ public:
 protected:
     TYPE *TranslateType(Type *);
     bool useGlobal() const { return managed_library && inlsmsilcrtl_ && structures_.size() == 1; }
+    void InsertBaseClassTree(SYMBOL *sp, const Class *cls);
+    void InsertBaseClass(SYMBOL *sp, Class *cls);
+    void InsertFuncs(SYMBOL *sp, SYMBOL *base);
 private:
     std::deque<SYMBOL *> nameSpaces_;
     std::deque<SYMBOL *> structures_;
@@ -115,6 +118,8 @@ void Import()
     importer.Pass(1);
     peLib->Traverse(importer);
     importer.Pass(2);
+    peLib->Traverse(importer);
+    importer.Pass(3);
     peLib->Traverse(importer);
 }
 
@@ -337,18 +342,19 @@ bool Importer::EnterClass(const Class *cls)
             }
         }
         structures_.push_back(sp);
-        if (cls->Extends() && !sp->baseClasses && isstructured(sp->tp))
+        if (!cls->Extends())
         {
-            Class *Extends = cls->Extends();
-            SYMBOL *parent = cachedClasses_[Extends->Name()];
-            if (parent != sp && parent != NULL) // object is parent to itself
+            if (cls->ExtendsName().size())
             {
-                BASECLASS *cl = (BASECLASS *)Alloc(sizeof(BASECLASS));
-                cl->accessLevel = ac_public;
-                cl->cls = parent;
-                sp->baseClasses = cl;
+                void *extends = nullptr;
+                if (PELib::s_class == peLib->Find(cls->ExtendsName(), &extends, nullptr))
+                {
+                    const_cast<Class *>(cls)->Extends(static_cast<Class *>(extends));
+                }
             }
         }
+        if (pass_ == 3)
+            InsertBaseClassTree(sp, cls);
     }
     return true;
 }
@@ -360,6 +366,70 @@ bool Importer::ExitClass(const Class *cls)
     if (!structures_.size())
         inlsmsilcrtl_ = FALSE;
     return true;
+}
+void Importer::InsertBaseClassTree(SYMBOL *sp, const Class *cls)
+{
+    bool done = false;
+    while (!done)
+    {
+        done = true;
+        if (isstructured(sp->tp))
+        {
+            if (cls->Extends())
+            {
+                Class *extends = cls->Extends();
+                InsertBaseClass(sp, extends);
+                if (extends != cls)
+                    done = false;
+                cls = extends;
+            }
+        }
+    }
+}
+void Importer::InsertBaseClass(SYMBOL *sp, Class *cls)
+{   
+    SYMBOL *parent = cachedClasses_[cls->Name()];
+    if (parent != sp && parent != NULL) // object is parent to itself
+    {
+        BASECLASS *srch = sp->baseClasses;
+        while (srch)
+        {
+            if (srch->cls && !strcmp(srch->cls->name, parent->name))
+                return;
+            srch = srch->next;
+        }
+        BASECLASS *cl = (BASECLASS *)Alloc(sizeof(BASECLASS));
+        cl->accessLevel = ac_public;
+        cl->cls = parent;
+        cl->next = sp->baseClasses;
+        sp->baseClasses = cl;
+        InsertFuncs(sp, parent);
+    }
+
+}
+void Importer::InsertFuncs(SYMBOL *sp, SYMBOL *base)
+{
+    HASHREC *hr = base->tp->syms->table[0];
+    while (hr)
+    {
+        SYMBOL *sym = (SYMBOL *)hr->p;
+        // inserts an overload list, if there is not already an overload list for this func
+        if (sym->storage_class == sc_overloads)
+        {
+            HASHREC *hrc = sp->tp->syms->table[0];
+            while (hrc)
+            {
+                if (!strcmp(hrc->p->name, sym->name))
+                    break;
+                hrc = hrc->next;
+            }
+            if (!hrc)
+            {
+                insert(sym, sp->tp->syms);
+            }
+        }
+        hr = hr->next;
+    }
 }
 bool Importer::EnterMethod(const Method *method)
 {
@@ -419,7 +489,9 @@ bool Importer::EnterMethod(const Method *method)
         {
             SYMBOL *sp = (SYMBOL *)Alloc(sizeof(SYMBOL));
             sp->name = litlate((char *)method->Signature()->Name().c_str());
-            if (!(method->Signature()->Flags() & MethodSignature::InstanceFlag))
+            if (method->Signature()->Flags() & MethodSignature::VirtualFlag)
+                sp->storage_class = sc_virtual;
+            else if (!(method->Signature()->Flags() & MethodSignature::InstanceFlag))
                 sp->storage_class = sc_static;
             else
                 sp->storage_class = sc_member;
@@ -437,7 +509,7 @@ bool Importer::EnterMethod(const Method *method)
                 args.push_back(tp1);
                 names.push_back("$$void");
             }
-            if (sp->storage_class == sc_member)
+            if (sp->storage_class == sc_member || sp->storage_class == sc_virtual)
             {
                 SYMBOL *sp1 = (SYMBOL *)Alloc(sizeof(SYMBOL));
                 sp1->name = litlate("$$this");

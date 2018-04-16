@@ -70,6 +70,27 @@ namespace lsmsilcrtl
             }
             return rv;
         }
+	public static void __initialize_managed_library()
+	{
+		CString aa = new CString("hello");
+		printf(aa.ToPointer());
+	}
+	public static void __uninitialize_managed_library()
+	{
+	}
+	public static int __argc = 1;
+	public static SByte **__argv;
+	public static SByte **__env;
+	public static int printf(SByte *fmt, params object[] list)
+	{
+		System.String ss = new System.String(fmt);
+		Console.WriteLine(ss);
+return 0;
+	}
+	public static void exit(int aa)
+	{
+		System.Environment.Exit(aa);
+	}
     }
     public static unsafe class pointer
     {

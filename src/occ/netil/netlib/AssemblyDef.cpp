@@ -310,15 +310,27 @@ namespace DotNetPELib
             for (auto tentry : table1)
             {
                 Byte buf[256];
+                std::string val;
                 TypeRefTableEntry *entry = static_cast<TypeRefTableEntry *>(tentry);
-                reader.ReadFromString(buf, 256, entry->typeNameSpaceIndex_.index_);
-
-                std::string val = (char *)buf;
-                if (val.size())
-                    val += ".";
-                reader.ReadFromString(buf, 256, entry->typeNameIndex_.index_);
-                val += (char *)buf;
-                refClasses.push_back(val);
+                while (entry->resolution_.tag_ == ResolutionScope::TypeRef)
+                {
+                    reader.ReadFromString(buf, 256, entry->resolution_.index_);
+                    val = val + std::string((char *)buf) + ".";
+                    TypeRefTableEntry *newEntry = static_cast<TypeRefTableEntry *>(table1[entry->resolution_.index_]);
+                    if (newEntry == entry)
+                        break;
+                    entry = newEntry;
+                }
+                if (entry->resolution_.tag_ == ResolutionScope::AssemblyRef)
+                {
+                    reader.ReadFromString(buf, 256, entry->typeNameSpaceIndex_.index_);
+                    std::string n = (char *)buf;
+                    if (n.size())
+                        val = n + "." + val;
+                    reader.ReadFromString(buf, 256, entry->typeNameIndex_.index_);
+                    val += (char *)buf;
+                    refClasses.push_back(val);
+                }
             }
             std::map<std::string, Namespace *> nameSpaces;
             std::vector<Class *> classes;
@@ -503,6 +515,7 @@ namespace DotNetPELib
                                 case TypeDefOrRef::TypeRef:
                                     if (refClasses[entry->extends_.index_] == "System.ValueType")
                                         classes[i]->Flags() |= Qualifiers::Value;
+                                    classes[i]->ExtendsName(refClasses[entry->extends_.index_]);
                                     break;
                             }
                         };

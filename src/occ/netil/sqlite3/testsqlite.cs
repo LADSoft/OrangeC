@@ -16,6 +16,7 @@ namespace HelloWorld
                 string query = "SELECT name FROM names;";
                 sqlite.sqlite3_stmt *handle;
                 int rc = sqlite.sqlite3_prepare_v2(db, CString.ToPointer(query), query.Length+1, &handle, null);
+
                 if (rc == 0)
                 {
                     bool done = false;

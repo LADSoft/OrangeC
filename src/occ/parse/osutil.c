@@ -79,6 +79,7 @@ char version[256];
 char copyright[256];
 LIST *clist = 0;
 int showBanner = TRUE;
+int showVersion = FALSE;
 
 static BOOLEAN has_output_file;
 static LIST *deflist = 0, *undeflist = 0;
@@ -133,6 +134,7 @@ void usage(char *prog_name)
         printf("   long long not supported");
     #endif 
 #endif
+
     exit(1);
 }
 #ifndef __MINGW64__
@@ -370,6 +372,7 @@ static int cmatch(char t1, char t2)
 static int scan_args(char *string, int index, char *arg)
 {
     int i =  - 1;
+    BOOLEAN legacyArguments = !!getenv("OCC_LEGACY_OPTIONS");
     while (ArgList[++i].id)
     {
         switch (ArgList[i].mode)
@@ -391,7 +394,7 @@ static int scan_args(char *string, int index, char *arg)
             case ARG_BOOL:
                 if (cmatch(string[index], ArgList[i].id))
                 {
-                    if (string[0] == ARG_SEPTRUE || string[0] == '/')
+                    if (!legacyArguments || string[0] == ARG_SEPTRUE || string[0] == '/')
                         (*ArgList[i].routine)(string[index], (char*)TRUE);
                     else
                         (*ArgList[i].routine)(string[index], (char*)FALSE);
@@ -412,6 +415,24 @@ static int scan_args(char *string, int index, char *arg)
                         return (ARG_NOARG);
                     (*ArgList[i].routine)(string[index], arg);
                     return (ARG_NEXTNOCAT);
+                }
+                break;
+            case ARG_COMBINESTRING:
+                if (cmatch(string[index], ArgList[i].id))
+                {
+                    if (string[index+1])
+                    {
+                        (*ArgList[i].routine)(string[index], string + index + 1);
+                        return (ARG_NEXTARG);
+                    }
+                    else
+                    {
+                        if (!arg)
+                            return (ARG_NOARG);
+                        (*ArgList[i].routine)(string[index], arg);
+                        return (ARG_NEXTNOCAT);
+                    }
+
                 }
                 break;
         }
@@ -759,6 +780,8 @@ void setfile(char *buf, char *orgbuf, char *ext)
 {
     char *p = strrchr(orgbuf, '\\');
     if (!p)
+        p = strrchr(orgbuf, '/');
+    if (!p)
         p = orgbuf;
     else
         p++;
@@ -1020,13 +1043,23 @@ void ccinit(int argc, char *argv[])
             {
                 showBanner = FALSE;
             }
-    if (showBanner)
+            else if (argv[i][1] == 'V' && argv[i][2] == 0)
+            {
+                showVersion = TRUE;
+            }
+    
+    if (showBanner || showVersion)
     {
 #ifdef CPREPROCESSOR
         banner("CPP Version %s %s", version, copyright);
 #else
         banner("%s Version %s %s", chosenAssembler->progname, version, copyright);
 #endif
+    }
+    if (showVersion)
+    {
+        printf("Compile date: " __DATE__ ", time: " __TIME__ "\n");
+        exit(0);
     }
     /* parse the environment and command line */
 #ifndef CPREPROCESSOR

@@ -65,8 +65,10 @@ CmdSwitchOutput ImpLibMain::OutputFile(SwitchParser, 'o', ".a");
 CmdSwitchFile ImpLibMain::File(SwitchParser, '@');
 char *ImpLibMain::usageText = "[options] outputfile [+ files] [- files] [* files]\n"
             "\n"
-            "/c-   Case insensitive library\n"
-            "@xxx  Read commands from file\n"
+            "/c-    Case insensitive library\n"
+            "/oxxx  Set output file name\n"
+            "/V     Show version and date\n"
+            "@xxx   Read commands from file\n"
             "\n"
             "outputfile can be a library, object, or def file\n"
             "the input files can be objects, def files, or dll files\n"

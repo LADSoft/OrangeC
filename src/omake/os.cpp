@@ -157,8 +157,12 @@ std::string OS::SpawnWithRedirect(const std::string command)
         char *buffer = new char[1024 * 1024];
 //        if (buffer)
         {
-            DWORD readlen;
-            ReadFile(pipeRead,buffer, 1024 * 1024, &readlen, nullptr);
+            DWORD readlen = 0;
+            DWORD avail = 0;
+            PeekNamedPipe(pipeRead, NULL, 1024 * 1024, NULL, &avail, NULL);
+
+            if (avail > 0)
+                ReadFile(pipeRead,buffer, 1024 * 1024, &readlen, nullptr);
             buffer[readlen] = 0;
             rv = buffer;
         }

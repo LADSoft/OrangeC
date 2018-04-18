@@ -90,7 +90,7 @@ public:
     int GetMapMode();
     bool InterceptFile(const std::string &file);
     int RunApp(const std::string &path, const std::string &file, 
-               const std::string &debugFile);
+               const std::string &debugFile, bool verbose);
     std::string GetSpecFile();
     virtual bool VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData);
     virtual bool VisitNode(xmlNode &node, xmlNode *child, void *userData);

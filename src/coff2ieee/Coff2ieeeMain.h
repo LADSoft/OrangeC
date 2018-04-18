@@ -64,7 +64,7 @@ protected:
 private:
     enum { unknown = 0, obj=1, lib = 2 } mode;
     static CmdSwitchParser SwitchParser;
-    static CmdSwitchString outputFileSwitch;
+    static CmdSwitchCombineString outputFileSwitch;
     static char *usageText;
 
     std::string outputName;

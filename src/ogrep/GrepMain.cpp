@@ -76,7 +76,7 @@ char *GrepMain::helpText = "[options] searchstring file[s]"
                     "   -n  Show Line Numbers            -o  UNIX Output Format\n"
                     "   -r- No Regular Expressions       -v  Non Matching Lines\n"
                     "   -w  Complete Words Only          -z  Verbose\n"
-                    "   -?  This help\n"
+                    "   -V  Show version and date        -?  This help\n"
                     "\n"
                     "Regular expressions special characters:\n"
                     "   .  Match any character   \\  Quote next character\n"
@@ -268,6 +268,14 @@ void GrepMain::OneFile(RegExpContext &regexp, const std::string &fileName, int &
 }
 int GrepMain::Run(int argc, char **argv)
 {
+    // handle /V switch
+    for (int i = 1; i < __argc; i++)
+        if (__argv[i] && (__argv[i][0] == '/' || __argv[i][0] == '-'))
+            if (__argv[i][1] == 'V' && __argv[i][2] == 0)
+            {
+                Utils::banner(argv[0]);
+                exit(0);
+            }
     if (!SwitchParser.Parse(&argc, argv))
     {
         Utils::usage(argv[0], usageText);

@@ -59,7 +59,7 @@ private:
     static CmdSwitchBool Boolv;
     static CmdSwitchOutput OutputFile;
     static CmdSwitchDefine Defines;
-    static CmdSwitchString includePath;
+    static CmdSwitchCombineString includePath;
     static CmdSwitchString Language;
         
     static char *usageText;

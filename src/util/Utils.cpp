@@ -84,7 +84,16 @@ void Utils::banner(char *progName)
         if (__argv[i] && (__argv[i][0] == '/' || __argv[i][0] == '-'))
             if (__argv[i][1] == '!')
                 return;
-       printf("%s Version " STRING_VERSION " " COPYRIGHT "\n", ShortName(progName));
+    printf("%s Version " STRING_VERSION " " COPYRIGHT "\n", ShortName(progName));
+
+    // handle /V switch
+    for (int i = 1; i < __argc; i++)
+        if (__argv[i] && (__argv[i][0] == '/' || __argv[i][0] == '-'))
+            if (__argv[i][1] == 'V' && __argv[i][2] == 0)
+            {
+                printf("\nCompile date: " __DATE__ " time: " __TIME__ "\n");
+                exit(0);
+            }
 }
 void Utils::usage(char *prog_name, char *text)
 {

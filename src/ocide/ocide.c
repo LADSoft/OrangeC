@@ -1828,7 +1828,7 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpszCmdLine,
     lpszCmdLine = GetCommandLineA();
     threadMain = GetCurrentThreadId();
     hInstance = hInst;
-//    if (FindWindow(szFrameClassName,0)) {
+    //    if (FindWindow(szFrameClassName,0)) {
 //		return 0;
 //	}
     // so we don't get problems reading unused FP reg values
@@ -1895,7 +1895,21 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpszCmdLine,
 
         RegisterAllWindows();
     }
-    
+    // handle /V switch
+    for (int i = 1; i < __argc; i++)
+        if (__argv[i] && (__argv[i][0] == '/' || __argv[i][0] == '-'))
+            if (__argv[i][1] == 'V' && __argv[i][2] == 0)
+            {
+                doSplash();
+                Sleep(4000);
+                CoUninitialize();
+                EditorRundown();
+                StopInstanceComms();
+                FreeLibrary(editLib);
+                InitFont(FALSE);
+                exit(0);
+            }
+
     GetSystemDialogFont();
     
     hMenuMain = LoadMenuGeneric(hInstance, "MAINMENU");

@@ -48,7 +48,9 @@
 #include <ctype.h>
 #include <iostream>
 #include <fstream>
+#include <algorithm>
 #include "Utils.h"
+
 std::map<const std::string, Eval::StringFunc> Eval::builtins;
 std::string Eval::VPath;
 std::map<std::string, std::string> Eval::vpaths;
@@ -265,13 +267,18 @@ bool Eval::AutomaticVar(const std::string &name, std::string &rv)
         else if (name[0] == '<') // first prereq of first rule
         {
             auto it = ruleList->begin();
-            if (!rule || *it != rule)
+            while (it != ruleList->end() && (*it)->GetCommands()->size() == 0)
+                ++it;
+            if (it != ruleList->end())
             {
-                extra = (*it)->GetPrerequisites();
-                rv = ExtractFirst(extra, " ");
-                rv = Maker::GetFullName(rv);
+                if (!rule || *it != rule)
+                {
+                    extra = (*it)->GetPrerequisites();
+                    rv = ExtractFirst(extra, " ");
+                    rv = Maker::GetFullName(rv);
+                }
+                found = true;
             }
-            found = true;
         }
         else if (name[0] == '^') // all prereq or prereq of rules that have appeared
         {
@@ -385,7 +392,7 @@ bool Eval::AutomaticVar(const std::string &name, std::string &rv)
                 while (extra.size())
                 {
                     std::string temp = ExtractFirst(extra, " ");
-                    size_t n = temp.find_last_of(CmdFiles::DIR_SEP);
+                    size_t n = temp.find_last_of("/\\");
                     if (rv.size())
                         rv += " ";
                     if (n != std::string::npos)
@@ -405,7 +412,7 @@ bool Eval::AutomaticVar(const std::string &name, std::string &rv)
                 while (extra.size())
                 {
                     std::string temp = ExtractFirst(extra, " ");
-                    size_t n = temp.find_last_of(CmdFiles::DIR_SEP);
+                    size_t n = temp.find_last_of("/\\");
                     if (rv.size())
                         rv += " ";
                     if (n != std::string::npos)
@@ -783,16 +790,16 @@ std::string Eval::strip(const std::string &arglist)
     std::string rv;
     Eval e(arglist, false, ruleList, rule);
     std::string a = e.Evaluate();
-    size_t m = a.find_first_not_of(' ');
-    size_t n = a.find_first_of(' ', m);
+    size_t m = a.find_first_not_of("\t ");
+    size_t n = a.find_first_of("\t ", m);
     while (n != std::string::npos)
     {
         rv += a.substr(m, n-m);
-        n = a.find_first_not_of(' ', n);
+        n = a.find_first_not_of("\t ", n);
         m = n;
         if (n != std::string::npos)
             rv += " ";
-        n = a.find_first_of(' ',n);
+        n = a.find_first_of("\t ",n);
     }
     if (m != std::string::npos)
         rv += a.substr(m);
@@ -1008,7 +1015,7 @@ std::string Eval::dir(const std::string &names)
     while (working.size())
     {
         std::string p = ExtractFirst(working, " ");
-        size_t n = p.find_last_of(CmdFiles::DIR_SEP);
+        size_t n = p.find_last_of("/\\");
         if (rv.size())
             rv += " ";
         if (n != std::string::npos)
@@ -1028,7 +1035,7 @@ std::string Eval::notdir(const std::string &names)
     while (working.size())
     {
         std::string p = ExtractFirst(working, " ");
-        size_t n = p.find_last_of(CmdFiles::DIR_SEP);
+        size_t n = p.find_last_of("/\\");
         std::string intermed;
         if (n != std::string::npos)
             intermed = p.substr(n+1);
@@ -1137,7 +1144,6 @@ std::string Eval::addprefix(const std::string &arglist)
 
 std::string Eval::wildcard(const std::string &arglist)
 {
-    CmdFiles files;
     std::string names = strip(arglist);
     return wildcardinternal(names);
 }
@@ -1145,7 +1151,11 @@ std::string Eval::wildcardinternal(std::string &names)
 {
     CmdFiles files;
     while (names.size())
-        files.Add(ExtractFirst(names, " "));
+    {
+        std::string current = ExtractFirst(names, " ");
+        std::replace(current.begin(), current.end(), '/', '\\');
+        files.Add(current);
+    }
     std::string rv;
     for (CmdFiles::FileNameIterator it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
     {
@@ -1187,7 +1197,7 @@ std::string Eval::realpath(const std::string &arglist)
     while (text.size())
     {
         std::string thisOne = ExtractFirst(text, " ");
-        if (thisOne[0] != CmdFiles::DIR_SEP[0] && thisOne[1] != ':') // windows specific
+        if (thisOne[0] != '\\' && thisOne[1] != ':' && thisOne[0] != '/') // windows specific
             thisOne = OS::GetWorkingDir() + CmdFiles::DIR_SEP + thisOne;
         if (rv.size())
             rv += " ";

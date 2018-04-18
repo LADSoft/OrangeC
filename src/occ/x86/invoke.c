@@ -50,6 +50,7 @@ extern int prm_crtdll;
 extern int prm_lscrtdll;
 extern int prm_msvcrt;
 extern int showBanner;
+extern int verbosity;
 
 char *winflags[] = 
 {
@@ -145,6 +146,8 @@ int InsertExternalFile(char *name)
     }
     p = strrchr(name, '\\');
     if (!p)
+         p = strrchr(name, '/');
+    if (!p)
         p = name;
     else
         p++;
@@ -176,8 +179,18 @@ int RunExternalFiles(char *rootPath)
     char outName[260] ,*p;
     int rv;
     char temp[260];
+    int i;
+    char verbosityString[20];
+    memset(verbosityString, 0, sizeof(verbosityString));
+    if (verbosity > 1)
+    {
+        verbosityString[0] = '-';
+        memset(verbosityString + 1, 'y', verbosity > sizeof(verbosityString) - 2 ? sizeof(verbosityString) - 2 : verbosity);
+    }
     strcpy(root, rootPath);
     p = strrchr(root, '\\');
+    if (!p)
+         p = strrchr(root, '/');
     if (!p)
         p = root;
     else
@@ -198,6 +211,8 @@ int RunExternalFiles(char *rootPath)
     while (asmlist)
     {
         sprintf(spname, "\"%soasm.exe\" %s \"%s\"", root, !showBanner ? "-!" : "", asmlist->data);
+        if (verbosity)
+            printf("%s\n", spname);
         rv = system(spname);
         if (rv)
             return rv;
@@ -210,6 +225,8 @@ int RunExternalFiles(char *rootPath)
     while (rclist)
     {
         sprintf(spname, "\"%sorc.exe\" -r %s %s \"%s\"", root, !showBanner ? "-!" : "", args, rclist->data);
+        if (verbosity)
+            printf("%s\n", spname);
         rv = system(spname);
         if (rv)
             return rv;
@@ -265,7 +282,20 @@ int RunExternalFiles(char *rootPath)
             reslist = reslist->next;
         }
         fclose(fil);
-        sprintf(spname, "\"%solink.exe\" %s /mx /c+ %s @"TEMPFILE, root, !showBanner ? "-!" : "", args);
+        sprintf(spname, "\"%solink.exe\" %s /mx /c+ %s %s @"TEMPFILE, root, !showBanner ? "-!" : "", args, verbosityString);
+        if (verbosity) {
+            FILE *fil = fopen(TEMPFILE, "r");
+            printf("%s\n", spname);
+            if (fil)
+            {
+                char buffer[8192];
+                int len;
+                printf("with " TEMPFILE "=\n");
+                while ((len = fread(buffer, 1, 8192, fil)) > 0)
+                    fwrite(buffer, 1, len, stdout);
+                fclose(fil);
+            }
+        }
         rv = system(spname);
         unlink(TEMPFILE);
 
@@ -274,7 +304,9 @@ int RunExternalFiles(char *rootPath)
        if (prm_targettype == WHXDOS)
        {
                sprintf(spname, "\"%spatchpe\" %s", root, outputFileName);
-            rv = system(spname);
+               if (verbosity)
+                   printf("%s\n", spname);
+               rv = system(spname);
             if (rv)
             {
                 printf("Could not spawn patchpe.exe\n");

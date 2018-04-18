@@ -60,7 +60,8 @@ CmdSwitchParser BRCMain::SwitchParser;
 CmdSwitchFile BRCMain::File(SwitchParser, '@');
 char *BRCMain::usageText = "[options] outputfile filelist \n"
             "\n"
-            "@xxx  Read commands from file\n"
+            "/V     Show version and date\n"
+            "@xxx   Read commands from file\n"
             "\n"
             "Time: " __TIME__ "  Date: " __DATE__;
 

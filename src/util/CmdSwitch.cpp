@@ -44,8 +44,9 @@
 #include "Utils.h"
 #include <ctype.h>
 #include <fstream>
+#include <limits.h>
 
-CmdSwitchBase::CmdSwitchBase(CmdSwitchParser &parser, char SwitchChar) : switchChar(SwitchChar)
+CmdSwitchBase::CmdSwitchBase(CmdSwitchParser &parser, char SwitchChar) : exists(false), switchChar(SwitchChar)
 {
     parser += this;
 }
@@ -110,6 +111,12 @@ int CmdSwitchString::Parse(const char *data)
     }
     return rv;
 }
+int CmdSwitchCombineString::Parse(const char *data)
+{
+    if (data[0] == 0)
+        return INT_MAX; // go on to next arg
+    return CmdSwitchString::Parse(data);
+}
 int CmdSwitchCombo::Parse(const char *data)
 {
     int rv = CmdSwitchString::Parse(data);
@@ -121,11 +128,14 @@ int CmdSwitchCombo::Parse(const char *data)
 }
 int CmdSwitchOutput::Parse(const char *data)
 {
-    int rv = CmdSwitchString::Parse(data);
-    const char *p = value.c_str();
-    const char *q = strrchr(p, '.');
-    if (!q || q[-1] == '.')
-        value += extension;
+    int rv = CmdSwitchCombineString::Parse(data);
+    if (rv != INT_MAX)
+    {
+        const char *p = value.c_str();
+        const char *q = strrchr(p, '.');
+        if (!q || q[-1] == '.')
+            value += extension;
+    }
     return rv;
 }
 CmdSwitchDefine::~CmdSwitchDefine()
@@ -305,11 +315,20 @@ bool CmdSwitchParser::Parse(int *argc, char *argv[])
                         return false;
                     data++;
                     int n = (*it)->Parse(data);
+                    while (n == INT_MAX && argv[1])
+                    {
+                        // use next arg as the value
+                        memcpy(argv, argv+1, (*argc + 1 -i) * sizeof(char *));
+                        (*argc)--;
+                        data = &argv[0][0];
+                        n = (*it)->Parse(data);
+                    }
                     if (n < 0)
                         return false;
                     int t = strlen(data);
                     if (t < n)
                         return false;
+                    (*it)->SetExists();
                     data += n;
                 }
             }

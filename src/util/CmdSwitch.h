@@ -48,19 +48,26 @@
 #include <set>
 #include <vector>
 #include <fstream>
+#include <iostream>
 class CmdSwitchParser;
 
 class CmdSwitchBase
 {
     public:
-        CmdSwitchBase() : switchChar(-1) { }
+        CmdSwitchBase() : switchChar(-1), exists(false) { }
         CmdSwitchBase(CmdSwitchParser &parser, char SwitchChar) ;
-        CmdSwitchBase(char SwitchChar) : switchChar(SwitchChar) { }
-        CmdSwitchBase(const CmdSwitchBase &orig) { switchChar = orig.switchChar; }
+        CmdSwitchBase(char SwitchChar) : switchChar(SwitchChar), exists(false) { }
+        CmdSwitchBase(const CmdSwitchBase &orig) { 
+            switchChar = orig.switchChar; 
+            exists = orig.exists;
+        }
         virtual int Parse(const char *data) { return 0; } 
         
         char GetSwitchChar() const { return switchChar; }
+        void SetExists() { exists = true; }
+        bool GetExists() const { return exists; }
     private:
+        bool exists;
         char switchChar;
 } ;
 
@@ -126,6 +133,14 @@ class CmdSwitchString : public CmdSwitchBase
     private:
         char concat;
 };
+class CmdSwitchCombineString : public CmdSwitchString
+{
+    public:
+        CmdSwitchCombineString(CmdSwitchParser &parser, char SwitchChar, char Concat = '\0') 
+            : CmdSwitchString(parser, SwitchChar, Concat) { }
+        CmdSwitchCombineString() { }
+        virtual int Parse(const char *data);
+};
 class CmdSwitchCombo : public CmdSwitchString
 {
     public:
@@ -139,11 +154,11 @@ class CmdSwitchCombo : public CmdSwitchString
         bool selected;
         std::string valid;
 } ;
-class CmdSwitchOutput : public CmdSwitchString
+class CmdSwitchOutput : public CmdSwitchCombineString
 {
     public:
-        CmdSwitchOutput(CmdSwitchParser &parser, char SwitchChar, const char *Extension, bool concat = false) : CmdSwitchString(parser, SwitchChar, concat), extension(Extension) {}
-        CmdSwitchOutput(const CmdSwitchOutput &orig) : CmdSwitchString(orig) { extension = orig.extension;}
+        CmdSwitchOutput(CmdSwitchParser &parser, char SwitchChar, const char *Extension, bool concat = false) : CmdSwitchCombineString(parser, SwitchChar, concat), extension(Extension) {}
+        CmdSwitchOutput(const CmdSwitchOutput &orig) : CmdSwitchCombineString(orig) { extension = orig.extension;}
         virtual int Parse(const char *data);
     private:
         const char *extension;

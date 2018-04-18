@@ -36,13 +36,13 @@
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
 CC=occ
-CFLAGS = $(C_FLAGS) $(DEFINES)
+CFLAGS = /! $(C_FLAGS) $(DEFINES)
 CILCFLAGS = $(CIL_C_FLAGS) $(DEFINES)
 
 OCCIL_CLASS=lsmsilcrtl.rtl
 
 LINK=olink
-LINKFLAGS= -c+
+LINKFLAGS= -c+ -!
 
 vpath %.c .\cil\ #
 vpath %.ilo $(CILOBJECT)
@@ -51,7 +51,7 @@ vpath %.nas .\386\ #
 vpath %.o $(OBJECT) $(SYSOBJECT)
 
 ASM=oasm
-ASMFLAGS=
+ASMFLAGS= -!
 
 LIB=olib
 LIBFLAGS=

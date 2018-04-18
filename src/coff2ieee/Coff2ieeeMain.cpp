@@ -53,11 +53,12 @@
 #include <fstream>
 
 CmdSwitchParser Coff2ieeeMain::SwitchParser;
-CmdSwitchString Coff2ieeeMain::outputFileSwitch(SwitchParser, 'o');
+CmdSwitchCombineString Coff2ieeeMain::outputFileSwitch(SwitchParser, 'o');
 
 char *Coff2ieeeMain::usageText = "[options] <coff file>\n"
             "\n"
             "/oxxx  Set output file name\n"
+            "/V     Show version and date\n"
             "\n"
             "\nTime: " __TIME__ "  Date: " __DATE__;
             

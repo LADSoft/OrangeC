@@ -60,7 +60,7 @@ namespace std
 }
 #endif
 CmdSwitchParser MakeMain::switchParser;
-CmdSwitchString MakeMain::specifiedFiles(switchParser, 'f', ' ');
+CmdSwitchCombineString MakeMain::specifiedFiles(switchParser, 'f', ' ');
 CmdSwitchBool MakeMain::displayOnly(switchParser, 'n');
 CmdSwitchBool MakeMain::touch(switchParser, 't');
 CmdSwitchBool MakeMain::query(switchParser, 'q');
@@ -68,14 +68,14 @@ CmdSwitchBool MakeMain::keepGoing(switchParser, 'k');
 CmdSwitchBool MakeMain::ignoreErrors(switchParser, 'i');	
 CmdSwitchDefine MakeMain::defines(switchParser, 'D');
 CmdSwitchBool MakeMain::rebuild(switchParser, 'B');
-CmdSwitchString MakeMain::newFiles(switchParser, 'W', ' ');
-CmdSwitchString MakeMain::oldFiles(switchParser, 'o', ' ');
-CmdSwitchString MakeMain::dir(switchParser, 'C', '+');
+CmdSwitchCombineString MakeMain::newFiles(switchParser, 'W', ' ');
+CmdSwitchCombineString MakeMain::oldFiles(switchParser, 'o', ' ');
+CmdSwitchCombineString MakeMain::dir(switchParser, 'C', '+');
 CmdSwitchBool MakeMain::debug(switchParser, 'd');	// not implemented
 CmdSwitchBool MakeMain::environOverride(switchParser, 'e');
 CmdSwitchBool MakeMain::help(switchParser, 'h');
 CmdSwitchBool MakeMain::help2(switchParser, '?');
-CmdSwitchString MakeMain::includes(switchParser, 'I', ';');
+CmdSwitchCombineString MakeMain::includes(switchParser, 'I', ';');
 CmdSwitchBool MakeMain::showDatabase(switchParser, 'p');
 CmdSwitchBool MakeMain::noBuiltinRules(switchParser, 'r');
 CmdSwitchBool MakeMain::noBuiltinVars(switchParser, 'R');
@@ -92,14 +92,15 @@ char *MakeMain::usageText = "[options] goals\n"
                     "/Dxxx Define something        /Ixxx Set include path\n"
                     "/K    Keep response files     /R    Ignore builtin vars\n"
                     "/S    Cancel keepgoing        /T    Tree Build\n"
-                    "/Wxxx WhatIf                  /d    Reserved\n"
-                    "/e    Environment overrides   /fxxx Specify make file\n"
-                    "/h    This text               /i    Ignore errors\n"
-                    "/k    Keep going              /n    Display only\n"
-                    "/oxxx Specify old goals       /p    Print database\n"
-                    "/q    Query                   /r    Ignore builtin rules\n"
-                    "/s    Don't print commands    /t    Touch\n"
-                    "/u    Debug warnings          /w    Print directory\n"
+                    "/V    Show version and date   /Wxxx WhatIf\n"
+                    "/d    Reserved                /e    Environment overrides\n"
+                    "/fxxx Specify make file       /h    This text\n"
+                    "/i    Ignore errors           /k    Keep going\n"
+                    "/n    Display only            /oxxx Specify old goals\n"
+                    "/p    Print database          /q    Query\n"
+                    "/r    Ignore builtin rules    /s    Don't print commands\n"
+                    "/t    Touch                   /u    Debug warnings\n"
+                    "/w    Print directory\n"
                     "\nTime: " __TIME__ "  Date: " __DATE__;
 char *MakeMain::builtinVars = "";
 char *MakeMain::builtinRules = "";
@@ -345,7 +346,7 @@ void MakeMain::SetTreePath(std::string &files)
 {
     // will get the working dir possibly modified by a 'C' command
     std::string wd = OS::GetWorkingDir() + CmdFiles::DIR_SEP;
-    int pos = wd.find_last_of(CmdFiles::DIR_SEP);
+    int pos = wd.find_last_of("/\\");
     if (pos != std::string::npos)
     {
         bool found = false;
@@ -359,9 +360,9 @@ void MakeMain::SetTreePath(std::string &files)
             }
             else
             {
-                pos = wd.find_last_of(CmdFiles::DIR_SEP);
+                pos = wd.find_last_of("/\\");
                 wd = wd.substr(0, pos);
-                pos = wd.find_last_of(CmdFiles::DIR_SEP);
+                pos = wd.find_last_of("/\\");
                 if (pos == std::string::npos)
                     path = "";
             }

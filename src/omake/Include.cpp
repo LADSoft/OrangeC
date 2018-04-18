@@ -47,6 +47,7 @@
 #include <fstream>
 #include <iostream>
 #include <string.h>
+#include <algorithm>
 
 Include *Include::instance = nullptr;
 
@@ -126,9 +127,11 @@ bool Include::AddFileList(const std::string &name, bool ignoreOk, bool MakeFile)
             includeDirs = r.Evaluate();
         }
     }
+    std::replace(includeDirs.begin(), includeDirs.end(), '/','\\');
     while (iname.size())
     {
         std::string current = Eval::ExtractFirst(iname, seps);
+        std::replace(current.begin(), current.end(), '/','\\');
         cmdFiles.AddFromPath(current, includeDirs);
     }
     for (CmdFiles::FileNameIterator it = cmdFiles.FileNameBegin(); rv && it != cmdFiles.FileNameEnd(); ++it)

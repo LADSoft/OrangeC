@@ -64,22 +64,22 @@ protected:
 private:
     int restarts;
     static CmdSwitchParser switchParser;
-    static CmdSwitchString specifiedFiles;
+    static CmdSwitchCombineString specifiedFiles;
     static CmdSwitchBool displayOnly;
     static CmdSwitchBool touch;
     static CmdSwitchBool query;
-    static CmdSwitchString newFiles;
+    static CmdSwitchCombineString newFiles;
     static CmdSwitchBool keepGoing;
     static CmdSwitchBool ignoreErrors;	
     static CmdSwitchDefine defines;
     static CmdSwitchBool rebuild;
-    static CmdSwitchString dir;
+    static CmdSwitchCombineString dir;
     static CmdSwitchBool debug;
     static CmdSwitchBool environOverride;
     static CmdSwitchBool help;
     static CmdSwitchBool help2;
-    static CmdSwitchString includes;
-    static CmdSwitchString oldFiles;
+    static CmdSwitchCombineString includes;
+    static CmdSwitchCombineString oldFiles;
     static CmdSwitchBool showDatabase;
     static CmdSwitchBool noBuiltinRules;
     static CmdSwitchBool noBuiltinVars;

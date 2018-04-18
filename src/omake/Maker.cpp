@@ -309,7 +309,7 @@ std::string Maker::GetFileTime(const std::string &goal, const std::string &prefe
     {
         internalGoal = internalGoal.substr(1, internalGoal.size()-2);
     }
-    if (internalGoal.find_first_of(CmdFiles::DIR_SEP) != std::string::npos)
+    if (internalGoal.find_first_of("/\\") != std::string::npos)
     {
         std::fstream fil(internalGoal.c_str(), std::ios::in);
         if (!fil.fail())
@@ -325,10 +325,10 @@ std::string Maker::GetFileTime(const std::string &goal, const std::string &prefe
         while (vpath.size())
         {
             std::string cur = Eval::ExtractFirst(vpath, sep);
-            if (cur[cur.size() -1] != CmdFiles::DIR_SEP[0])
+            if (cur[cur.size() -1] != '/' && cur[cur.size() -1] != '\\')
                 cur += CmdFiles::DIR_SEP;
             std::string name ;
-            if (internalGoal[0] != CmdFiles::DIR_SEP[0] && internalGoal[1] != ':')
+            if (internalGoal[0] != '/' && internalGoal[0] != '\\' && internalGoal[1] != ':')
                 name = cur + internalGoal;
             else
                 name = internalGoal;
@@ -370,7 +370,7 @@ bool Maker::ExistsOrMentioned(const std::string &stem, RuleList *ruleList, const
         while (working.size() && found)
         {
             std::string thisOne = Eval::ExtractFirst(working, " ");
-            if (thisOne.find_first_of(CmdFiles::DIR_SEP) == std::string::npos)
+            if (thisOne.find_first_of("/\\") == std::string::npos)
                 thisOne = dir + thisOne;
             thisOne = Eval::ReplaceStem(stem, thisOne);
             Time theTime;
@@ -479,7 +479,7 @@ void Maker::EnterDefaultRule(const std::string &goal, RuleList *dflt)
 bool Maker::SearchImplicitRules(const std::string &goal, const std::string &preferredPath, bool outerMost, Time &timeval)
 {
     std::list<RuleList *>matchedRules;
-    size_t n = goal.find_last_of(CmdFiles::DIR_SEP);
+    size_t n = goal.find_last_of("/\\");
     std::string dir;
     std::string name;
     if (n != std::string::npos)
@@ -495,7 +495,7 @@ bool Maker::SearchImplicitRules(const std::string &goal, const std::string &pref
     for (RuleContainer::ImplicitIterator it = RuleContainer::Instance()->ImplicitBegin();
              it != RuleContainer::Instance()->ImplicitEnd(); ++it)
     {
-        if ((*it)->GetTarget().find_first_of(CmdFiles::DIR_SEP) != std::string::npos)
+        if ((*it)->GetTarget().find_first_of("/\\") != std::string::npos)
         {
             size_t start;
             n = Eval::MatchesPattern(goal, (*it)->GetTarget(), start);
@@ -580,7 +580,7 @@ bool Maker::ScanList(const std::string &v, const std::string &goal)
             rv = true;
             break;
         }
-        if (aa[aa.size()-1] != CmdFiles::DIR_SEP[0])
+        if (aa[aa.size()-1] != '/' && aa[aa.size()-1] != '\\')
         {
             aa += CmdFiles::DIR_SEP;
             span = Eval::MatchesPattern(goal, aa, start, 0);

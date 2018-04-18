@@ -127,6 +127,8 @@ std::string Parser::GetLine(bool inCommand)
         rv = RemoveComment(rv);
     }
     UnTab(rv);
+    if (rv.find_first_not_of("\t ") == std::string::npos)
+        rv = "";
     return rv;
 }
 std::string Parser::RemoveComment(const std::string &line)
@@ -427,7 +429,7 @@ bool Parser::ParsePlusAssign(const std::string &left, const std::string &right, 
     std::string ls = l.Evaluate();
     ls = l.strip(ls);
     std::string rs = right;
-    Eval::StripLeadingSpaces(rs);
+//    Eval::StripLeadingSpaces(rs);
     Variable *v;
     if (ruleList)
         v = ruleList->Lookup(ls);
@@ -469,7 +471,7 @@ bool Parser::ParseQuestionAssign(const std::string &left, const std::string &rig
     if (!v)
     {
         std::string rs = right;
-        Eval::StripLeadingSpaces(rs);
+//        Eval::StripLeadingSpaces(rs);
         v = new Variable(ls, rs, Variable::f_simple, ruleList ? Variable::o_automatic : origin);
         if (ruleList)
             *ruleList += v;

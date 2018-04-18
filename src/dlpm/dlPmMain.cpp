@@ -54,7 +54,8 @@ CmdSwitchString dlPmMain::DebugFile(SwitchParser, 'v');
 
 char *dlPmMain::usageText = "[options] relfile\n"
             "\n"
-            "/oxxx Set ouput file name\n"
+            "/oxxx  Set ouput file name\n"
+            "/V     Show version and date\n"
             "\n"
             "\nTime: " __TIME__ "  Date: " __DATE__;
             

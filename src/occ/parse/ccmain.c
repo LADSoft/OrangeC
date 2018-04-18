@@ -61,6 +61,8 @@ void ccCloseFile(FILE *handle);
 int ccDBOpen(char *name);
 #endif
 
+int verbosity = 0;
+
 int maxBlocks, maxTemps, maxAllocationSpills, maxAllocationPasses, maxAllocationAccesses;
 char cppfile[256];
 FILE *cppFile, *browseFile;
@@ -120,6 +122,7 @@ void optimize_setup(char select, char *string);
 void parsefile(char select, char *string);
 void output_setup(char select, char *string);
 void stackalign_setup(char select, char *string);
+void verbose_setup(char select, char *string);
 /* setup for ARGS.C */
 static CMDLIST Args[] = 
 {
@@ -144,7 +147,7 @@ static CMDLIST Args[] =
     }
     , 
     {
-        'I', ARG_CONCATSTRING, incl_setup
+        'I', ARG_COMBINESTRING, incl_setup
     }
     , 
     {
@@ -200,7 +203,7 @@ static CMDLIST Args[] =
     }
     , 
     {
-        'o', ARG_CONCATSTRING, output_setup
+        'o', ARG_COMBINESTRING, output_setup
     }
     , 
     {
@@ -217,6 +220,10 @@ static CMDLIST Args[] =
     ,
     {
         '#', ARG_BOOL, bool_setup
+    }
+    , 
+    {
+        'y', ARG_CONCATSTRING, verbose_setup
     }
     , 
     {
@@ -282,6 +289,10 @@ void bool_setup(char select, char *string)
     {
         cparams.prm_xcept = v;
     }
+}
+void verbose_setup(char select, char *string)
+{
+	verbosity = 1 + strlen(string);
 }
 void optimize_setup(char select, char *string)
 {

@@ -43,6 +43,7 @@
     #define ARG_BOOL 3
     #define ARG_SWITCH 4
     #define ARG_SWITCHSTRING 5
+    #define ARG_COMBINESTRING 6
 
     /* Valid arg separators */
     #define ARG_SEPSWITCH '/'

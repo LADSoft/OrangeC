@@ -68,18 +68,20 @@ CmdSwitchBool LinkerMain::DebugInfo(SwitchParser, 'v', false);
 CmdSwitchBool LinkerMain::LinkOnly(SwitchParser, 'l', false);
 CmdSwitchBool LinkerMain::RelFile(SwitchParser, 'r', false);
 CmdSwitchFile LinkerMain::File(SwitchParser, '@');
-CmdSwitchString LinkerMain::Specification(SwitchParser, 's');
+CmdSwitchCombineString LinkerMain::Specification(SwitchParser, 's');
 CmdSwitchDefine LinkerMain::Defines(SwitchParser, 'D');
-CmdSwitchString LinkerMain::LibPath(SwitchParser, 'L',';');
+CmdSwitchCombineString LinkerMain::LibPath(SwitchParser, 'L',';');
 CmdSwitchOutput LinkerMain::OutputFile(SwitchParser, 'o', ".rel");
+CmdSwitchBool LinkerMain::Verbosity(SwitchParser, 'y');
 SwitchConfig LinkerMain::TargetConfig(SwitchParser, 'T');
 char *LinkerMain::usageText = "[options] inputfiles\n"
             "\n"
             "/Dxxx=val Define something           /Lpath    Set Library Path\n"
-            "/T:xxx    Target configuration       /c+       Case sensitive link\n"
-            "/l        link only                  /m[x]     Generate Map file\n"
-            "/oxxx     Set output file            /r+       Relative output file\n"
-            "/sxxx     Read specification file    /v        Pass debug info\n"
+            "/T:xxx    Target configuration       /V        Show version and date\n"
+            "/c+       Case sensitive link        /l        link only\n"
+            "/m[x]     Generate Map file          /oxxx     Set output file\n"
+            "/r+       Relative output file       /sxxx     Read specification file\n"
+            "/v        Pass debug info            /y[...]   Verbose\n"
             "@xxx      Read commands from file\n"
             "\nTime: " __TIME__ "  Date: " __DATE__;
 
@@ -270,7 +272,7 @@ int LinkerMain::Run(int argc, char **argv)
                 path = "";
             else
                 path.erase(n+1);
-            int rv = TargetConfig.RunApp(path, outputFile, debugFile);
+            int rv = TargetConfig.RunApp(path, outputFile, debugFile, Verbosity.GetExists());
             return rv;
         }
     }

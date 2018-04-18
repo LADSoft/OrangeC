@@ -63,12 +63,13 @@ private:
     static CmdSwitchCombo Map;
     static CmdSwitchBool DebugInfo;
     static CmdSwitchFile File;
-    static CmdSwitchString Specification;
+    static CmdSwitchCombineString Specification;
     static CmdSwitchDefine Defines;
-    static CmdSwitchString LibPath;
+    static CmdSwitchCombineString LibPath;
     static CmdSwitchOutput OutputFile;
     static CmdSwitchBool LinkOnly;
     static CmdSwitchBool RelFile;
+    static CmdSwitchBool Verbosity;
     static SwitchConfig TargetConfig;
     static char *usageText;
 } ;

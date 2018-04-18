@@ -56,10 +56,10 @@ LLIB_DEPENDENCIES = $(notdir $(filter-out $(addsuffix .o,$(EXCLUDE)) $(MAIN_DEPE
 
 
 CC=$(COMPILER_PATH)\bin\occ
-CCFLAGS = /c /E-
+CCFLAGS = /c /E- /!
 
 LINK=$(COMPILER_PATH)\bin\olink
-LFLAGS=-c -mx /L$(_LIBDIR)
+LFLAGS=-c -mx /L$(_LIBDIR) /!
 
 LIB=$(COMPILER_PATH)\bin\olib
 LIB_EXT:=.l
@@ -71,7 +71,7 @@ ASMFLAGS=
 
 RC=$(COMPILER_PATH)\bin\orc
 RCINCLUDE=$(DISTROOT)\include
-RCFLAGS = -r
+RCFLAGS = -r /!
 
 ifneq "$(INCLUDES)" ""
 CINCLUDES:=$(addprefix /I,$(INCLUDES))

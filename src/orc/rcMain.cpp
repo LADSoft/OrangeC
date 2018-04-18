@@ -54,7 +54,7 @@ CmdSwitchBool rcMain::Boolt(SwitchParser, 't');
 CmdSwitchBool rcMain::Boolv(SwitchParser, 'v');
 CmdSwitchOutput rcMain::OutputFile(SwitchParser, 'o', ".res");
 CmdSwitchDefine rcMain::Defines(SwitchParser, 'D');
-CmdSwitchString rcMain::includePath(SwitchParser, 'i', ';');
+CmdSwitchCombineString rcMain::includePath(SwitchParser, 'i', ';');
 CmdSwitchString rcMain::Language(SwitchParser, 'L');
 
 char *rcMain::usageText = "[options] file"
@@ -63,7 +63,7 @@ char *rcMain::usageText = "[options] file"
 "  /Dxxx  Define something             /ixxx  Set include file path\n"
 "  /Lxx   Set default language id      /oxxx  Set output file name\n"
 "  /r     reserved for compatability   /t     reserved for compatability\n"
-"  /v     reserved for compatability\n"
+"  /v     reserved for compatability   /V     Show version and date\n"
 "\n"
 "Time: " __TIME__ "  Date: " __DATE__;
 

@@ -107,9 +107,8 @@ vpath %.res $(_OUTPUTDIR)
 
 $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT): $(LLIB_DEPENDENCIES)
 #	-del $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT) >> $(NULLDEV)
-	$(LIB) $(LIBFLAGS) $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT) @&&|
- $(addprefix $(subst \,/,$(_OUTPUTDIR)\),$(LLIB_DEPENDENCIES))
-|
+	$(LIB) $(LIBFLAGS) $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT) $(addprefix $(subst \,/,$(_OUTPUTDIR)\),$(LLIB_DEPENDENCIES))
+
 LDEPS := $(addprefix -l,$(NAME) $(LIB_DEPENDENCIES))
 LDEPS := $(subst \,/,$(LDEPS))
 
@@ -120,9 +119,8 @@ LMAIN := $(addprefix $(_OUTPUTDIR)\,$(MAIN_DEPENDENCIES) $(RES_deps))
 LMAIN := $(subst \,/,$(LMAIN))
 
 $(NAME).exe: $(MAIN_DEPENDENCIES) $(LDEPS2) $(RES_deps)
-	$(CC) $(LFLAGS) -o $(NAME).exe @&&|
-$(LMAIN) $(LDEPS) $(COMPLIB) $(DEF_DEPENDENCIES)
-|
+	$(CC) $(LFLAGS) -o $(NAME).exe $(LMAIN) $(LDEPS) $(COMPLIB) $(DEF_DEPENDENCIES)
+
 
 %.exe: %.c
 	$(CC) $(LFLAGS) -o $@ $^ $(COMPLIB)

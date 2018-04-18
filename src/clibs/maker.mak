@@ -92,7 +92,7 @@ endif
 DEPENDENCIES = $(filter-out $(EXCLUDE), $(C_deps) $(ASM_deps) $(CPP_deps) $(CIL_DEPS))
 
 define CALLDIR
-	$(MAKE) /C$(dir)
+	$(MAKE) -C$(dir)
 endef
 
 define ALLDIRS

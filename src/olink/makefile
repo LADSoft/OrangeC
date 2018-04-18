@@ -42,8 +42,7 @@ CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=sqlite3 util objlib olib
 DEFINES=SQLITE_THREADSAFE=0
 
-redirect:
-	@$(MAKE) /T
+include ..\redirect.mak
 
 DISTRIBUTE: copyexe
 	copy *.app $(DISTBIN)

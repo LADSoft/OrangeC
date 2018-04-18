@@ -64,11 +64,11 @@ endif
 export STDINCLUDE
 
 define CLIB
-	$$(MAKE) /C$(dir) "/DOBJECT=$(CLIBOBJECT)"
+	$$(MAKE) -C$(dir) "-DOBJECT=$(CLIBOBJECT)"
 endef
 
 define DLL
-	$$(MAKE) /C$(dir) "/DOBJECT=$(DLLOBJECT)" "$(BUILDING_DLL)"
+	$$(MAKE) -C$(dir) "-DOBJECT=$(DLLOBJECT)" "$(BUILDING_DLL)"
 endef
 
 SYSOBJECT :=$(realpath object\startup)
@@ -102,8 +102,8 @@ clib:
 	-mkdir $(CILOBJECT)
 	-mkdir object\clib
 $(foreach dir, $(DIRS), $(CLIB))
-#	$(MAKE) /CMSDOS "/DOBJECT=$(DOSOBJECT)"
-#	$(MAKE) /CWIN32 "/DOBJECT=$(WINOBJECT)"
+#	$(MAKE) -CMSDOS "-DOBJECT=$(DOSOBJECT)"
+#	$(MAKE) -CWIN32 "-DOBJECT=$(WINOBJECT)"
 	del $(SYSOBJECT)\cldos.l
 	$(LIB) $(LIBFLAGS) $(SYSOBJECT)\cldos.l @&&|
 $$(foreach dir, $(LIBOBJS), $(CLIBOBJECT)\$(dir)) $$(foreach dir, $(DOSOBJS), $(DOSOBJECT)\$(dir))
@@ -160,6 +160,6 @@ ifndef BUILDENV
 	$(COPYDIR) object\startup\%.o $(DISTLIB)
 	$(COPYDIR) object\startup\%.exe $(DISTLIB)
 	$(COPYDIR) object\startup\%.dll $(DISTBIN)
-	$(MAKE) /Cplatform DISTRIBUTE
+	$(MAKE) -Cplatform DISTRIBUTE
 endif
 endif

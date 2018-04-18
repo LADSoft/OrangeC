@@ -35,13 +35,14 @@
 
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
-NAME=obrc
-MAIN_FILE=BRCMain.cpp
-INCLUDES=..\util ..\ocpp ..\objlib ..\sqlite3
-CPP_DEPENDENCIES=$(wildcard *.cpp) 
-LIB_DEPENDENCIES=sqlite3 util ocpplib objlib
-DEFINES=L_INT=__int64 SQLITE_THREADSAFE=0
 
-include ..\redirect.mak
+ifndef _TREEROOT
+CURRENT := $(subst /,\,$(CURDIR))
+_TREEROOT := $(CURRENT)\..\treetop.mak
+_TREETARGET := $(CURRENT)
+export _TREEROOT
+export _TREETARGET
 
-DISTRIBUTE: copyexe
+redirect:
+	@$(MAKE) -f$(_TREEROOT)
+endif

@@ -36,12 +36,10 @@
 #	contact information:
 #		email: TouchStone222runbox.com <David Lindauer>
 
-TREETOP :=$(dir $(_TREEROOT))
+TREETOP := $(subst /,\,$(dir $(_TREEROOT)))
 DISTROOT := $(TREETOP)..
 
 export DISTROOT
-
-
 
 all: files
 
@@ -58,17 +56,17 @@ rmdir:
 _TARGETDIR:= $(_TREETARGET)
 
 define DOLIB
-	$(MAKE) /C$(dir) /f$(_TREEROOT) /D_TREETARGET=$(_TARGETDIR)\$(dir) /DLIBRARY
+	$(MAKE) -C$(dir) -f$(_TREEROOT) -D_TREETARGET=$(_TARGETDIR)\$(dir) -DLIBRARY
 endef
 define DOEXE
-	$(MAKE) /C$(dir) /f$(_TREEROOT) /D_TREETARGET=$(_TARGETDIR)\$(dir) /DEXEFILE
+	$(MAKE) -C$(dir) -f$(_TREEROOT) -D_TREETARGET=$(_TARGETDIR)\$(dir) -DEXEFILE
 endef
 
 define DODISTRIBUTE
-	$(MAKE) distribute /C$(dir) /f$(_TREEROOT) /D_TREETARGET=$(_TARGETDIR)\$(dir)
+	$(MAKE) distribute -C$(dir) -f$(_TREEROOT) -D_TREETARGET=$(_TARGETDIR)\$(dir)
 endef
 define DOCLEAN
-	$(MAKE) clean /C$(dir) /f$(_TREEROOT) /D_TREETARGET=$(_TARGETDIR)\$(dir)
+	$(MAKE) clean -C$(dir) -f$(_TREEROOT) -D_TREETARGET=$(_TARGETDIR)\$(dir)
 endef
 
 ifeq "$(exists $(_TARGETDIR)\dirs.mak)" "1"

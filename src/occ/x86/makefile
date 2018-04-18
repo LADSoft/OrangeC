@@ -114,8 +114,15 @@ BACKEND_INCLUDE_PATH=.
 
 vpath %.c $(SRCPATH)
 
+ifndef _TREEROOT
+_TREEROOT := $(CURDIR)\..\..\treetop.mak
+_TREETARGET := $(CURDIR)
+export _TREEROOT
+export _TREETARGET
+
 redirect:
-	@$(MAKE) /T
+	@$(MAKE) /f$(_TREEROOT)
+endif
 
 DISTRIBUTE: copyexe
 	copy target.cfg $(DISTBIN)\occ.cfg

@@ -48,8 +48,7 @@ DEFINES=GUI
 
 vpath %.c ..\util
 
-redirect:
-	@$(MAKE) /T
+include ..\redirect.mak
 
 DISTRIBUTE: copyexe
 	copy rule\*.rul $(DISTROOT)\rule

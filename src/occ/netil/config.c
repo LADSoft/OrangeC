@@ -78,6 +78,7 @@ static    char usage_text[] = "[options] [@response file] files\n"
         "  +d   - display diagnostics          -b        - no BSS\n"
         "  -l        - no C source in ASM file -m        -  no leading underscores\n"
         "  +u        - 'char' type is unsigned\n"
+        "\nCommand line behavior has changed.  Use environment var OCC_LEGACY_OPTIONS for old behavior\n\n"
         "Time: " __TIME__ "  Date: " __DATE__;
 
 static int parse_param(char mode, char *string);

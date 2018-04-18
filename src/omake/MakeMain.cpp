@@ -445,6 +445,8 @@ int MakeMain::Run(int argc, char **argv)
                 SetVariable("SHELL", val, Variable::o_environ, true);
             }
         }
+        std::string wd = OS::GetWorkingDir();
+        SetVariable("CURDIR", wd, Variable::o_environ, false);
         std::string goals;
         for (int i=1; i < argc; i++)
         {

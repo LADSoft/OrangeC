@@ -54,10 +54,10 @@ ASM=oasm
 ASMFLAGS= -!
 
 LIB=olib
-LIBFLAGS=
+LIBFLAGS= -!
 
 IMPLIB=oimplib
-IMPLIBFLAGS=
+IMPLIBFLAGS= -!
 
 ifdef OLDSGL
 else

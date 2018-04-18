@@ -1,5 +1,26 @@
 Release notes:
 
+Version 6.0.36: 4/18/2018
+* omake:  support '/' better
+* omake:  strip leading tabs when necessary
+* omake:  for += and ?= don't strip leading spaces from the RHS
+* omake:  handle comment preceded by only a tab
+* omake:  $< variable could find a prerequisite unassociated with a command
+* occ: handle unix-style paths when deciding to strip a path for purposes of putting output in the current directory
+* occ: change the /I and /o switches to (optionally) allow a space between the switch and the value
+* occ: change command line behavior so that switch starting with - works the normal way, add environment variable OCC_LEGACY_OPTIONS to force old behavior
+* occ: add /y and /yy for verbosity
+* olink:  add /y for verbosity
+* olink:  change /L and and /o and /s switches to (optionally) allow a space between the switch and the value
+* orc: change the /i and /o switches to (optionally) allow a space between the switch and the value
+* oasm:   change the /I and /o switches to (optionally) allow a space between the switch and the value
+* oimplib:   change the /o switch to (optionally) allow a space between the switch and the value
+* olib:   change the /o switch to (optionally) allow a space between the switch and the value
+* omake:  change the /I and /f and /C and /W and /o switches to (optionally) allow a space between the switch and the value);
+* all: add /V switch to show logo and date/time of build
+* build:  don't show compiler & linker logo
+
+
 Version 6.0.35: 04/15/2018
 * ocide:  search with replace to '\' actually replaced to ']' when in 'direct' replace mode
 * ocide:  fix uninitialized variables in the replace function

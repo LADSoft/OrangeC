@@ -55,7 +55,7 @@ CmdSwitchFile AsmMain::File(SwitchParser, '@');
 CmdSwitchBool AsmMain::PreprocessOnly(SwitchParser, 'e');
 CmdSwitchOutput AsmMain::OutputFile(SwitchParser, 'o', ".res");
 CmdSwitchDefine AsmMain::Defines(SwitchParser, 'D');
-CmdSwitchString AsmMain::includePath(SwitchParser, 'I', ';');
+CmdSwitchCombineString AsmMain::includePath(SwitchParser, 'I', ';');
 
 char *AsmMain::usageText = "[options] file"
 "\n"
@@ -63,6 +63,7 @@ char *AsmMain::usageText = "[options] file"
 "  /e     Preprocess only                  /i     Case Insensitive Labels\n"
 "  /l[m]  Listing file [macro expansions]  /oxxx  Set output file name\n"
 "  /Dxxx  Define something                 /Ixxx  Set include file path\n"
+"  /V     Show version and date\n"
 "\n"
 "Time: " __TIME__ "  Date: " __DATE__;
 

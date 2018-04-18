@@ -62,7 +62,7 @@ private:
     static CmdSwitchBool PreprocessOnly;
     static CmdSwitchOutput OutputFile;
     static CmdSwitchDefine Defines;
-    static CmdSwitchString includePath;
+    static CmdSwitchCombineString includePath;
     
     static char *usageText;
 } ;

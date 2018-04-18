@@ -69,11 +69,13 @@ define DOCLEAN
 	$(MAKE) clean -C$(dir) -f$(_TREEROOT) -D_TREETARGET=$(_TARGETDIR)\$(dir)
 endef
 
-ifeq "$(exists $(_TARGETDIR)\dirs.mak)" "1"
+TEST := $(shell dir /b "$(_TARGETDIR)\dirs.mak")
+ifeq "$(TEST)" "dirs.mak"
 include $(_TARGETDIR)\dirs.mak
 endif
 
-ifeq "$(exists $(_TARGETDIR)\makefile)" "1"
+TEST := $(shell dir /b "$(_TARGETDIR)\makefile")
+ifeq "$(TEST)" "makefile"
 include $(_TARGETDIR)\makefile
 include $(DISTROOT)\src\dist.mak
 else

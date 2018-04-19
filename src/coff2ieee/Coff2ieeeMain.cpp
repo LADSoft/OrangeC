@@ -59,6 +59,7 @@ char *Coff2ieeeMain::usageText = "[options] <coff file>\n"
             "\n"
             "/oxxx  Set output file name\n"
             "/V     Show version and date\n"
+            "/!     No logo\n"
             "\n"
             "\nTime: " __TIME__ "  Date: " __DATE__;
             

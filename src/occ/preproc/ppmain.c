@@ -91,6 +91,7 @@ char *getUsageText(void)
         "+A     - disable extensions           /Dxxx  - define something\n"
         "/E[+]nn- max number of errors         /Ipath - specify include path\n"
         "/Uxxx  - undefine something           /V     - Show version and date\n"
+        "/!     - No logo\n"
         "\n"
         "Time: " __TIME__ "  Date: " __DATE__;
 }

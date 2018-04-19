@@ -60,6 +60,7 @@ char *ppMain::usageText = "[options] files\n"
         "/A      - Disable extensions        /Dxxx   - Define something\n"
         "/E[+]nn - Max number of errors      /Ipath  - Specify include path\n"
         "/T      - translate trigraphs       /Uxxx   - Undefine something\n"
+        "/!      - No logo\n"
         "\n"
         "Time: " __TIME__ "  Date: " __DATE__;
 

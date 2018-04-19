@@ -64,6 +64,7 @@ char *LibMain::usageText = "[options] libfile [+ files] [- files] [* files]\n"
             "/c-    Case insensitive library\n"
             "/oxxx  Set output file name\n"
             "/V     Show version and date\n"
+            "/!     No logo\n"
             "@xxx   Read commands from file\n"
             "\n"
             "Time: " __TIME__ "  Date: " __DATE__;

@@ -101,6 +101,7 @@ char *MakeMain::usageText = "[options] goals\n"
                     "/r    Ignore builtin rules    /s    Don't print commands\n"
                     "/t    Touch                   /u    Debug warnings\n"
                     "/w    Print directory\n"
+                    "/!    No logo\n"
                     "\nTime: " __TIME__ "  Date: " __DATE__;
 char *MakeMain::builtinVars = "";
 char *MakeMain::builtinRules = "";

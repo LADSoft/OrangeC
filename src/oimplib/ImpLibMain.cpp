@@ -68,6 +68,7 @@ char *ImpLibMain::usageText = "[options] outputfile [+ files] [- files] [* files
             "/c-    Case insensitive library\n"
             "/oxxx  Set output file name\n"
             "/V     Show version and date\n"
+            "/!     No logo\n"
             "@xxx   Read commands from file\n"
             "\n"
             "outputfile can be a library, object, or def file\n"

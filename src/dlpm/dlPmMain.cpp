@@ -56,6 +56,7 @@ char *dlPmMain::usageText = "[options] relfile\n"
             "\n"
             "/oxxx  Set ouput file name\n"
             "/V     Show version and date\n"
+            "/!     No logo\n"
             "\n"
             "\nTime: " __TIME__ "  Date: " __DATE__;
             

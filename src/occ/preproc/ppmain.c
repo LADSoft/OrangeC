@@ -133,6 +133,10 @@ static CMDLIST Args[] =
     }
     , 
     {
+        '!', ARG_BOOL, bool_setup
+    }
+    , 
+    {
         0, 0, 0
     }
 };

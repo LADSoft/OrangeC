@@ -80,14 +80,14 @@ void Utils::banner(char *progName)
 {
     // no banner if they specify -!, this is also caught in the cmd switch module
     // so it is transparent to the proggy
-    for (int i=1; i < __argc; i++)
+    for (int i=1; i < __argc && __argv[i]; i++)
         if (__argv[i] && (__argv[i][0] == '/' || __argv[i][0] == '-'))
             if (__argv[i][1] == '!')
                 return;
     printf("%s Version " STRING_VERSION " " COPYRIGHT "\n", ShortName(progName));
 
     // handle /V switch
-    for (int i = 1; i < __argc; i++)
+    for (int i = 1; i < __argc && __argv[i]; i++)
         if (__argv[i] && (__argv[i][0] == '/' || __argv[i][0] == '-'))
             if (__argv[i][1] == 'V' && __argv[i][2] == 0)
             {

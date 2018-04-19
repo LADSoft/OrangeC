@@ -1,3 +1,7 @@
+# curdir0
+# call with args
+# vpath doesn't set output path?
+# warn if suffix doesn't match on  $(t) : %.x: 
 #	Software License Agreement (BSD License)
 #	
 #	Copyright (c) 1997-2009, David Lindauer, (LADSoft).
@@ -41,6 +45,23 @@ DISTROOT := $(TREETOP)..
 
 export DISTROOT
 
+_TARGETDIR:= $(subst /,\,$(CURDIR))
+
+TEST := $(shell dir /b "$(_TARGETDIR)\dirs.mak")
+ifeq "$(TEST)" "dirs.mak"
+include $(_TARGETDIR)\dirs.mak
+endif
+
+define SUFFIXDIRS =
+	$(foreach dir, $(1), $(dir)$(2))
+endef
+
+
+LIBS:= $(call SUFFIXDIRS,$(DIRS),.lib)
+EXES:= $(call SUFFIXDIRS,$(DIRS),.exe)
+CLEANS:= $(call SUFFIXDIRS,$(DIRS),.clean)
+DISTS:= $(call SUFFIXDIRS,$(DIRS),.dist)
+
 all: files
 
 NULLDEV := NUL
@@ -53,26 +74,6 @@ mkdir:
 rmdir:
 	-rmdir  $(_OUTPUTDIR) >> $(NULLDEV)
 
-_TARGETDIR:= $(_TREETARGET)
-
-define DOLIB
-	$(MAKE) -C$(dir) -f$(_TREEROOT) -D_TREETARGET=$(_TARGETDIR)\$(dir) -DLIBRARY
-endef
-define DOEXE
-	$(MAKE) -C$(dir) -f$(_TREEROOT) -D_TREETARGET=$(_TARGETDIR)\$(dir) -DEXEFILE
-endef
-
-define DODISTRIBUTE
-	$(MAKE) distribute -C$(dir) -f$(_TREEROOT) -D_TREETARGET=$(_TARGETDIR)\$(dir)
-endef
-define DOCLEAN
-	$(MAKE) clean -C$(dir) -f$(_TREEROOT) -D_TREETARGET=$(_TARGETDIR)\$(dir)
-endef
-
-TEST := $(shell dir /b "$(_TARGETDIR)\dirs.mak")
-ifeq "$(TEST)" "dirs.mak"
-include $(_TARGETDIR)\dirs.mak
-endif
 
 TEST := $(shell dir /b "$(_TARGETDIR)\makefile")
 ifeq "$(TEST)" "makefile"
@@ -97,11 +98,11 @@ export _LIBDIR
 
 include $(TREETOP)config.mak
 
+$(info $(_OUTPUTDIR))
 export LIB_EXT
 export LIB_PREFIX
 
-
-ifndef NAME
+ifeq "$(NAME)" ""
 compile:
 else
 compile: $(LLIB_DEPENDENCIES) $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT)
@@ -169,8 +170,6 @@ export STUB
 
 DISTMAKE := $(realpath $(DISTROOT)\src\dist.mak)
 export DISTMAKE
-
-define filesdef
 
 cleanDISTRIBUTE: copydir.exe restub.exe renseg.exe pepatch.exe
 ifndef NOMAKEDIR
@@ -256,53 +255,57 @@ ifndef NOMAKEDIR
 	-mkdir $(DISTDIST) >> $(NULLDEV)
 endif
 
-innerFiles:
+makelibdir:
 	-mkdir  $(_LIBDIR) >> $(NULLDEV)
-	$(foreach dir, $(DIRS), $(DOLIB))
-	$(foreach dir, $(DIRS), $(DOEXE))
 
-files: innerFiles compile link
-endef
 
-define cleandef
-clean:
+$(LIBS): %.lib :
+	$(MAKE) library -C$* -f$(_TREEROOT)
+$(EXES): %.exe :
+	$(MAKE) exefile -C$* -f$(_TREEROOT)
+
+
+files: makelibdir $(LIBS) $(EXES) compile link
+
+library: $(LIBS)
+
+exefile: $(EXES)
+
+cleanstart:
 	-del /Q $(_LIBDIR)
 	-rmdir $(_LIBDIR)
-	$(foreach dir, $(DIRS), $(DOCLEAN))
-endef
+
+$(CLEANS): %.clean :
+	$(MAKE) clean -C$* -f$(_TREEROOT)
+
+clean: cleanstart $(CLEANS)
 
 else
 
-define filesdef
-ifdef LIBRARY
-files: mkdir compile
-	$(foreach dir, $(DIRS), $(DOLIB))
-endif
-ifdef EXEFILE
-files: mkdir link
-	$(foreach dir, $(DIRS), $(DOEXE))
-endif
+$(LIBS): %.lib : 
+	$(MAKE) library -C$* -f$(_TREEROOT)
+
+$(EXES): %.exe : 
+	$(MAKE) exefile -C$* -f$(_TREEROOT)
+
+library: mkdir compile $(LIBS)
+
+exefile: mkdir link $(EXES)
+
 
 cleanDISTRIBUTE:
 
-endef
-define cleandef
-clean: del rmdir
-	$(foreach dir, $(DIRS), $(DOCLEAN))
-endef
-endif
+$(CLEANS): %.clean :
+	$(MAKE) clean -C$* -f$(_TREEROOT)
+clean: del rmdir $(CLEANS)
 
-define distdef
+endif
 
 exeDISTRIBUTE:
 ifndef BUILDENV
-	$(foreach dir, $(DIRS), $(DODISTRIBUTE))
+$(DISTS): %.dist :
+	$(MAKE) distribute -C$(dir) -f$(_TREEROOT)
 endif
 
 distribute: cleanDISTRIBUTE exeDISTRIBUTE DISTRIBUTE   
-endef
 
-
-$(eval $(filesdef))
-$(eval $(distdef))
-$(eval $(cleandef))

@@ -96,16 +96,16 @@ vpath %$(LIB_EXT) $(DISTROOT)\lib $(_LIBDIR)
 vpath %.res $(_OUTPUTDIR)
 
 %.o: %.cpp
-	$(CC) $(CCFLAGS) -o$@ $^
+	$(CC) $(CCFLAGS) -o$(_OUTPUTDIR)/$@ $^
 
 %.o: %.c
-	$(CC) /9 $(CCFLAGS) -o$@ $^
+	$(CC) /9 $(CCFLAGS) -o$(_OUTPUTDIR)/$@ $^
 
 %.o: %.nas
-	$(ASM) $(ASMFLAGS) -o$@ $^
+	$(ASM) $(ASMFLAGS) -o$(_OUTPUTDIR)/$@ $^
 
 %.res: %.rc
-	$(RC) -i$(RCINCLUDE) $(RCFLAGS) -o$@ $^
+	$(RC) -i$(RCINCLUDE) $(RCFLAGS) -o$(_OUTPUTDIR)/$@ $^
 
 $(_LIBDIR)\$(NAME)$(LIB_EXT): $(LLIB_DEPENDENCIES)
 #	-del $(_LIBDIR)\$(NAME)$(LIB_EXT) >> $(NULLDEV)

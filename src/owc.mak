@@ -99,19 +99,19 @@ vpath %$(LIB_EXT) c:\bcc55\lib c:\bcc55\lib\psdk $(_LIBDIR)
 vpath %.res $(_OUTPUTDIR)
 
 %.obj: %.cpp
-	$(CC) $(CCFLAGS) -Fo$@ $^
+	$(CC) $(CCFLAGS) -Fo$(_OUTPUTDIR)/$@ $^
 
 %.obj: %.c
-	$(CC) $(CCFLAGS) -Fo$@ $^
+	$(CC) $(CCFLAGS) -Fo$(_OUTPUTDIR)/$@ $^
 
 %.obj: %.asm
-	$(TASM) /ml /zi /i$(INCLUDE) $(ADEFINES) $^, $@
+	$(TASM) /ml /zi /i$(INCLUDE) $(ADEFINES) $^, $(_OUTPUTDIR)/$@
 
 %.obj: %.nas
-	$(ASM) $(ASMFLAGS) -o$@ $^
+	$(ASM) $(ASMFLAGS) -o$(_OUTPUTDIR)/$@ $^
 
 %.res: %.rc
-	$(RC) -i$(RCINCLUDE) $(RCFLAGS) -fo$@ $^
+	$(RC) -i$(RCINCLUDE) $(RCFLAGS) -fo$(_OUTPUTDIR)/$@ $^
 
 $(_LIBDIR)\$(NAME)$(LIB_EXT): $(LLIB_DEPENDENCIES)
 #	-del $(_LIBDIR)\$(NAME)$(LIB_EXT) >> $(NULLDEV)

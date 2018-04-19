@@ -512,7 +512,7 @@ join:
                 rv = "";
                 if (internalWarnings)
                 {
-                    warning("'" + rv + "' is undefined.");
+                    warning("'" + fw + "' is undefined.");
                 }
             }
         }

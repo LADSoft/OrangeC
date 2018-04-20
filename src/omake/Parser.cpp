@@ -1,5 +1,6 @@
 /*
-    Software License Agreement (BSD License)
+# call with args
+Software License Agreement (BSD License)
     
     Copyright (c) 1997-2016, David Lindauer, (LADSoft).
     All rights reserved.
@@ -762,7 +763,7 @@ join:
                 if (targetPattern.size())
                 {
                     size_t start;
-                    if (Eval::MatchesPattern(cur, targetPattern, start))
+                    if (Eval::MatchesPattern(cur, targetPattern, start) != std::string::npos)
                     {
                         stem = Eval::FindStem(cur, targetPattern);
                         std::string ps2 = ps1;
@@ -814,7 +815,7 @@ bool Parser::ParseDefine(const std::string &line, bool dooverride)
             found = true;
             break;
         }
-        rs = rs + l + std::string("\n");
+        rs = rs + l + "\n";
     }
     if (!found)
     {
@@ -823,6 +824,8 @@ bool Parser::ParseDefine(const std::string &line, bool dooverride)
     }
     size_t n = ls.find_first_not_of(' ');
     ls = ls.substr(n);
+    while (ls.size() && ls[ls.size() - 1] == '=' || isspace(ls[ls.size() - 1]))
+        ls = ls.substr(0, ls.size() - 1);
     Variable *v = VariableContainer::Instance()->Lookup(ls);
     if (v)
     {

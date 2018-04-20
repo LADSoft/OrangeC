@@ -57,7 +57,7 @@ public:
     std::string Evaluate();
     void PushCallArg(std::string arg)
     {
-        args.push_back(arg);
+        callArgs.push_back(arg);
     }
     static void Clear();
     static std::string GetVPATH(const std::string &name);
@@ -133,7 +133,6 @@ public:
     std::string info(const std::string &arglist);
     std::string exists(const std::string &arglist);
     // internal
-    static void Init();
     static int GetErrCount() { return errcount; }
 private:
     typedef std::string (Eval::*StringFunc)(const std::string &arglist);
@@ -147,7 +146,7 @@ private:
     static std::list<Variable *> foreachVars;
     static std::set<std::string> macroset;
     static std::string GPath;
-    std::vector<std::string> args;
+    static std::vector<std::string> callArgs;
     std::string str;
     Rule *rule;
     RuleList *ruleList;

@@ -51,7 +51,6 @@
 #include <algorithm>
 #include "Utils.h"
 
-std::map<const std::string, Eval::StringFunc> Eval::builtins;
 std::string Eval::VPath;
 std::map<std::string, std::string> Eval::vpaths;
 bool Eval::internalWarnings;
@@ -62,6 +61,47 @@ std::list<Variable *> Eval::foreachVars;
 std::set<std::string> Eval::macroset;
 std::string Eval::GPath;
 int Eval::errcount;
+std::vector<std::string> Eval::callArgs;
+
+std::map<const std::string, Eval::StringFunc> Eval::builtins =
+{
+    { "subst", &Eval::subst },
+    { "patsubst", &Eval::patsubst },
+    { "strip", &Eval::strip },
+    { "findstring", &Eval::findstring },
+    { "filter", &Eval::filter },
+    { "filter-out", &Eval::filterout },
+    { "sort", &Eval::sort },
+    { "word", &Eval::word },
+    { "wordlist", &Eval::wordlist },
+    { "words", &Eval::words },
+    { "firstword", &Eval::firstword },
+    { "lastword", &Eval::lastword },
+    { "dir", &Eval::dir },
+    { "notdir", &Eval::notdir },
+    { "suffix", &Eval::suffix },
+    { "basename", &Eval::basename },
+    { "addsuffix", &Eval::addsuffix },
+    { "addprefix", &Eval::addprefix },
+    { "wildcard", &Eval::wildcard },
+    { "join", &Eval::join },
+    { "realpath", &Eval::realpath },
+    { "abspath", &Eval::abspath },
+    { "if", &Eval::condIf },
+    { "or", &Eval::condOr },
+    { "and", &Eval::condAnd },
+    { "foreach", &Eval::foreach },
+    { "call", &Eval::call },
+    { "value", &Eval::value },
+    { "eval", &Eval::eval },
+    { "origin", &Eval::origin },
+    { "flavor", &Eval::flavor },
+    { "shell", &Eval::shell },
+    { "error", &Eval::errorx },
+    { "warning", &Eval::warningx },
+    { "info", &Eval::info },
+    { "exists", &Eval::exists },
+};
 
 Eval::Eval(const std::string name, bool ExpandWildcards, RuleList *RuleList, Rule *Rule)
     : str(name), expandWildcards(ExpandWildcards), ruleList(RuleList), rule(Rule)
@@ -477,8 +517,8 @@ std::string Eval::ExpandMacro(const std::string &name)
         else if (isdigit(name[0]))
         {
             int index = GetNumber(name);
-            if (index < args.size())
-                rv = args[index];
+            if (index < callArgs.size())
+                rv = callArgs[index];
         }
         else
         {
@@ -550,6 +590,8 @@ join:
             }
         }
     }
+    std::replace(rv.begin(), rv.end(), '\t', ' ');
+    std::replace(rv.begin(), rv.end(), '\n', ' ');
     return rv;
 }
 size_t Eval::FindPercent(const std::string &name, size_t pos)
@@ -726,7 +768,7 @@ int Eval::GetNumber(const std::string &line)
         error("Numeric value expected");
     else
     {
-        rv = Utils::StringToNumber(line);
+        rv = Utils::StringToNumber(line.substr(n, m-n));
     }
     return rv;
 }
@@ -1346,6 +1388,7 @@ std::string Eval::call(const std::string &arglist)
         }
         else
         {
+            sub = "$(" + sub + ")";
             Eval l(sub, false, ruleList, rule);
             rv = l.Evaluate();
         }
@@ -1361,6 +1404,9 @@ std::string Eval::call(const std::string &arglist)
         }
         else
         {
+            auto oldArgs = callArgs;
+            callArgs.clear();
+            sub = "$(" + sub + ")";
             Eval l(sub, false, ruleList, rule);
             l.PushCallArg(sub);
             n = args.find_first_of(',');
@@ -1376,6 +1422,7 @@ std::string Eval::call(const std::string &arglist)
             if (args.size())
                 l.PushCallArg(args);
             rv = l.Evaluate();
+            callArgs = oldArgs;
         }
     }
     return rv;
@@ -1518,43 +1565,3 @@ std::string Eval::exists(const std::string &arglist)
     else
         return "0";
 }
-void Eval::Init()
-{
-    builtins["subst"] = &Eval::subst;
-    builtins["patsubst"] = &Eval::patsubst;
-    builtins["strip"] = &Eval::strip;
-    builtins["findstring"] = &Eval::findstring;
-    builtins["filter"] = &Eval::filter;
-    builtins["filter-out"] = &Eval::filterout;
-    builtins["sort"] = &Eval::sort;
-    builtins["word"] = &Eval::word;
-    builtins["wordlist"] = &Eval::wordlist;
-    builtins["words"] = &Eval::words;
-    builtins["firstword"] = &Eval::firstword;
-    builtins["lastword"] = &Eval::lastword;
-    builtins["dir"] = &Eval::dir;
-    builtins["notdir"] = &Eval::notdir;
-    builtins["suffix"] = &Eval::suffix;
-    builtins["basename"] = &Eval::basename;
-    builtins["addsuffix"] = &Eval::addsuffix;
-    builtins["addprefix"] = &Eval::addprefix;
-    builtins["wildcard"] = &Eval::wildcard;
-    builtins["join"] = &Eval::join;
-    builtins["realpath"] = &Eval::realpath;
-    builtins["abspath"] = &Eval::abspath;
-    builtins["if"] = &Eval::condIf;
-    builtins["or"] = &Eval::condOr;
-    builtins["and"] = &Eval::condAnd;
-    builtins["foreach"] = &Eval::foreach;
-    builtins["call"] = &Eval::call;
-    builtins["value"] = &Eval::value;
-    builtins["eval"] = &Eval::eval;
-    builtins["origin"] = &Eval::origin;
-    builtins["flavor"] = &Eval::flavor;
-    builtins["shell"] = &Eval::shell;
-    builtins["error"] = &Eval::errorx;
-    builtins["warning"] = &Eval::warningx;
-    builtins["info"] = &Eval::info;
-    builtins["exists"] = &Eval::exists;
-}
-

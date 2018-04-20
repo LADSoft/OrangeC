@@ -424,7 +424,6 @@ int MakeMain::Run(int argc, char **argv)
     }
     
     bool done = false;
-    Eval::Init();
     Eval::SetWarnings(warnUndef.GetValue());
     while (!done && !Eval::GetErrCount())
     {

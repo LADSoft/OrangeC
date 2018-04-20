@@ -72,6 +72,7 @@ char version[256];
 char copyright[256];
 LIST *clist = 0;
 
+static int showBanner = TRUE, showVersion;
 static BOOLEAN has_output_file;
 static LIST *deflist = 0, *undeflist = 0;
 static jmp_buf ctrlcreturn;
@@ -932,22 +933,42 @@ void internalError(int a)
 /*-------------------------------------------------------------------------*/
 void ccinit(int argc, char *argv[])
 {
+    int i;
     char buffer[260];
     strcpy(copyright, COPYRIGHT);
     strcpy(version, STRING_VERSION);
 
     outfile[0] = 0;
 
+    for (i = 1; i < argc; i++)
+        if (argv[i][0] == '-' || argv[i][0] == '/')
+            if (argv[i][1] == '!')
+            {
+                showBanner = FALSE;
+            }
+            else if (argv[i][1] == 'V' && argv[i][2] == 0)
+            {
+                showVersion = TRUE;
+            }
+    
+    if (showBanner || showVersion)
+    {
 #ifdef CPREPROCESSOR
-    banner("ocpp Version %s %s", version, copyright);
+        banner("CPP Version %s %s", version, copyright);
 #else
-
-    banner("%s Version %s %s", chosenAssembler->progname, version, copyright);
+        banner("%s Version %s %s", chosenAssembler->progname, version, copyright);
 
     /* parse the environment and command line */
     if (chosenAssembler->envname && !parseenv(chosenAssembler->envname))
         usage(argv[0]);
 #endif
+    }
+    if (showVersion)
+    {
+        printf("Compile date: " __DATE__ ", time: " __TIME__ "\n");
+        exit(0);
+    }
+
 #if defined(WIN32) || defined(MICROSOFT)
     GetModuleFileNameA(NULL, buffer, sizeof(buffer));
 #else

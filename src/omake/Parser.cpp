@@ -721,7 +721,7 @@ join:
                 }
             }
         }
-        lastCommand = new Command(file, lineno);
+        lastCommand = new Command(file, lineno+1);
         *CommandContainer::Instance() += lastCommand;
         if (hasCmd)
             *lastCommand += command;
@@ -936,7 +936,7 @@ bool Parser::ParseCond(const std::string &line, bool eq)
             int m = line.find_last_not_of(' ');
             if (line[m] == ')')
             {
-                if (!Eval::TwoArgs(line.substr(n+1, m-1), left, right))
+                if (!Eval::TwoArgs(line.substr(n+1, m-1-n), left, right))
                 {
                     rv = false;
                 }

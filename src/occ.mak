@@ -64,10 +64,12 @@ LFLAGS=-c -mx /L$(_LIBDIR) /!
 LIB=$(COMPILER_PATH)\bin\olib
 LIB_EXT:=.l
 LIB_PREFIX:=
+LIBFLAGS= /!
+
 ASM=$(COMPILER_PATH)\bin\\oasm
 
 ASM=oasm
-ASMFLAGS=
+ASMFLAGS= /!
 
 RC=$(COMPILER_PATH)\bin\orc
 RCINCLUDE=$(DISTROOT)\include

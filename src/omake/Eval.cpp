@@ -512,7 +512,7 @@ join:
                 rv = "";
                 if (internalWarnings)
                 {
-                    warning("'" + rv + "' is undefined.");
+                    warning("'" + fw + "' is undefined.");
                 }
             }
         }
@@ -1470,9 +1470,16 @@ std::string Eval::shell(const std::string &arglist)
     return sp.shell(a.Evaluate());
 }
 
-std::string Eval::error(const std::string &arglist)
+std::string Eval::error(const std::string &arglist, const std::string& fileOverride , int lineOverride)
 {
-    std::cout << "Error " << file.c_str() << "(" << lineno << "): " << arglist.c_str() << std::endl;
+    if (fileOverride.size())
+    {
+        std::cout << "Error " << fileOverride.c_str() << "(" << lineOverride << "): " << arglist.c_str() << std::endl;
+    }
+    else
+    {
+        std::cout << "Error " << file.c_str() << "(" << lineno << "): " << arglist.c_str() << std::endl;
+    }
     errcount++;
     return "";
 }

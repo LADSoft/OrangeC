@@ -275,7 +275,7 @@ bool Eval::AutomaticVar(const std::string &name, std::string &rv)
                 {
                     extra = (*it)->GetPrerequisites();
                     rv = ExtractFirst(extra, " ");
-                    rv = Maker::GetFullName(rv);
+//                    rv = Maker::GetFullName(rv);
                 }
                 found = true;
             }

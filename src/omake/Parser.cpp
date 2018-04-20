@@ -1,5 +1,8 @@
 /*
-    Software License Agreement (BSD License)
+# call with args
+# vpath doesn't set output path?
+# warn if suffix doesn't match on  $(t) : %.x:
+Software License Agreement (BSD License)
     
     Copyright (c) 1997-2016, David Lindauer, (LADSoft).
     All rights reserved.

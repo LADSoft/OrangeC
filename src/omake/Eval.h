@@ -126,7 +126,7 @@ public:
     std::string origin(const std::string &arglist);
     std::string flavor(const std::string &arglist);
     std::string shell(const std::string &arglist);
-    static std::string error(const std::string &arglist);
+    static std::string error(const std::string &arglist, const std::string & fileOverride= "", int lineOverride = 0);
     std::string errorx(const std::string &arglist);
     static std::string warning(const std::string &arglist);
     std::string warningx(const std::string &arglist);

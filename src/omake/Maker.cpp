@@ -744,12 +744,12 @@ int Maker::RunOne(Depends *depend, EnvironmentStrings &env, bool keepGoing)
         {
             OS::RemoveFile(depend->GetGoal());
             std::cout << std::endl;
-            Eval::error("commands returned error code " + b + " '" + depend->GetGoal()  + "' removed");
+            Eval::error("commands returned error code " + b + " '" + depend->GetGoal()  + "' removed", depend->GetRule()->GetCommands()->GetFile(), depend->GetRule()->GetCommands()->GetLine());
         }
         else
         {
             std::cout << std::endl;
-            Eval::error("commands returned error code " + b);
+            Eval::error("commands returned error code " + b, depend->GetRule()->GetCommands()->GetFile(), depend->GetRule()->GetCommands()->GetLine());
         }
     }
     Eval::PopruleStack();

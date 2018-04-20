@@ -57,7 +57,8 @@ public:
     typedef std::list<std::string>::const_iterator const_iterator;
     iterator begin() { return commands.begin(); }
     iterator end() { return commands.end(); }
-
+    std::string GetFile() const { return file; }
+    int GetLine() const { return lineno; }
 private:
     std::list<std::string> commands;
     std::string file;

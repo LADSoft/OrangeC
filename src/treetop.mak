@@ -1,7 +1,3 @@
-# curdir0
-# call with args
-# vpath doesn't set output path?
-# warn if suffix doesn't match on  $(t) : %.x: 
 #	Software License Agreement (BSD License)
 #	
 #	Copyright (c) 1997-2009, David Lindauer, (LADSoft).

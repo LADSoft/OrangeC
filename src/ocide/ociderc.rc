@@ -624,6 +624,7 @@ BEGIN
 	0x50, IDM_SCROLLTOBP, VIRTKEY, CONTROL 
 END
 
+1 ICON "res\\prj.ico"
 101 ICON "res\\prj.ico"
 102 ICON "res\\prj.ico"
 103 ICON "res\\ocide.ico"

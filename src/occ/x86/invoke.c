@@ -116,8 +116,7 @@ static void InsertFile(LIST **r, char *name, char *ext)
 int InsertExternalFile(char *name)
 {
     char buf[260], *p;
-    
-    if (HasExt(name, ".asm") || HasExt(name,".nas"))
+    if (HasExt(name, ".asm") || HasExt(name,".nas") || HasExt(name, ".s"))
     {
         InsertFile(&objlist, name, ".o");
         InsertFile(&asmlist, name, 0);
@@ -181,6 +180,7 @@ int RunExternalFiles(char *rootPath)
     char temp[260];
     int i;
     char verbosityString[20];
+
     memset(verbosityString, 0, sizeof(verbosityString));
     if (verbosity > 1)
     {

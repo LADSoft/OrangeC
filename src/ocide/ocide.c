@@ -1749,7 +1749,7 @@ void ProcessMessage(MSG *msg)
             {
                 if (IsWindow(hwndFind))
                 {
-                       DLGHDR *pHdr = (DLGHDR *) GetWindowLong(hwndFind, GWLP_USERDATA);
+                       DLGHDR *pHdr = (DLGHDR *) GetWindowLong(hwndFind, GWL_USERDATA);
                     if (IsDialogMessage(pHdr->hwndDisplay, msg))
                         return;
                     if (IsDialogMessage(hwndFind, msg))

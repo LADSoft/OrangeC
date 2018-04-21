@@ -428,7 +428,7 @@ static int scan_args(char *string, int index, char *arg)
                     else
                     {
                         if (!arg)
-                            return (ARG_NOARG);
+                            return (ARG_NEXTARG);
                         (*ArgList[i].routine)(string[index], arg);
                         return (ARG_NEXTNOCAT);
                     }

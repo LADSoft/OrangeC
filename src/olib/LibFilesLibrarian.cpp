@@ -147,7 +147,6 @@ void LibFiles::Replace(const ObjString &Name)
             return;
         }
     }
-    std::cout << "Warning: Module '" << Name.c_str() << "' not in library and will be added" << std::endl;
     Add(Name);        
 }
 void LibFiles::WriteData(FILE *stream, ObjFile *file, const ObjString &name)

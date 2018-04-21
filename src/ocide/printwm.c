@@ -717,6 +717,10 @@ static WMSG array[] =
     }
     , 
     {
+        "WM_SYSTIMER", 280
+    }
+    , 
+    {
         "WM_TCARD", 82
     }
     , 
@@ -767,12 +771,14 @@ static WMSG array[] =
 };
 
 static FILE *out;
-
+static unsigned first;
 void printwmsg(HWND hwnd, int message, WPARAM wParam, LPARAM lParam)
 {
     int i;
     char buf[256];
     char buf2[256];
+    if (!first)
+         first = GetTickCount();
     memset(buf,0, sizeof(buf));
     memset(buf2, 0, sizeof(buf2));
     SendMessage(hwnd, WM_GETTEXT, 256, (LPARAM)buf);
@@ -781,7 +787,7 @@ void printwmsg(HWND hwnd, int message, WPARAM wParam, LPARAM lParam)
         out = fopen("wlog.log", "w");
     if (!out)
         return ;
-    fprintf(out,"%s:", buf2);
+    fprintf(out,"%d, %s:", GetTickCount() - first, buf2);
     for (i = 0; i < sizeof(array) / sizeof(WMSG); i++)
     if (array[i].id == message)
     {

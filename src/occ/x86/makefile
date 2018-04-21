@@ -112,6 +112,7 @@ BACKEND_FILES = config.c dbgieee.c gen.c inasm.c invoke.c objieeea.c outasm.c ou
 
 BACKEND_INCLUDE_PATH=.
 
+
 vpath %.c $(SRCPATH)
 
 ifndef _TREEROOT
@@ -121,7 +122,7 @@ export _TREEROOT
 export _TREETARGET
 
 redirect:
-	@$(MAKE) /f$(_TREEROOT)
+	@$(MAKE) -f$(_TREEROOT)
 endif
 
 DISTRIBUTE: copyexe

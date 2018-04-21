@@ -47,11 +47,11 @@ c0lsstartup.o: c0lsstartup.c
 	$(CC) /c $(CFLAGS) /s16 /o$* $^
 
 c0ls.o: c0ls.nas
-	$(ASM) $(ASMFLAGS) -o$(LSCRTLOBJECT)\$@F $^
+	$(ASM) $(ASMFLAGS) -o$(LSCRTLOBJECT)\$@ $^
 c0xls.o: c0xls.nas
-	$(ASM) $(ASMFLAGS) -o$(LSCRTLOBJECT)\$@F $^
+	$(ASM) $(ASMFLAGS) -o$(LSCRTLOBJECT)\$@ $^
 c0dls.o: c0dls.nas
-	$(ASM) $(ASMFLAGS) -o$(LSCRTLOBJECT)\$@F $^
+	$(ASM) $(ASMFLAGS) -o$(LSCRTLOBJECT)\$@ $^
 
 DISTRIBUTE:
 	copy *.nas $(LSCRTLOBJECT)

@@ -84,7 +84,7 @@ endif
 DEFINES := $(addprefix -D,$(DEFINES))
 DEFINES := $(subst -D","-D,$(DEFINES))
 DEFINES := $(subst @, ,$(DEFINES))
-LIB_DEPENDENCIES := $(addsuffix .lib,$(LIB_DEPENDENCIES))
+LIB_DEPENDENCIES := $(foreach file, $(addsuffix .lib,$(LIB_DEPENDENCIES)), $(_LIBDIR)\$(file))
 
 CCFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) -DOPENWATCOM -DWIN32 -D_WIN32
 ifeq "$(TARGET)" "GUI"

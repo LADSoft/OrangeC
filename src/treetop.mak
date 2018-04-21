@@ -36,12 +36,16 @@
 #	contact information:
 #		email: TouchStone222runbox.com <David Lindauer>
 
-TREETOP := $(subst /,\,$(dir $(_TREEROOT)))
+PATHSWAP = $(subst /,\,$(1))
+export PATHSWAP
+
+TREETOP := $(call PATHSWAP,$(dir $(_TREEROOT)))
+
 DISTROOT := $(TREETOP)..
 
 export DISTROOT
 
-_TARGETDIR:= $(subst /,\,$(CURDIR))
+_TARGETDIR:= $(call PATHSWAP,$(CURDIR))
 
 TEST := $(shell dir /b "$(_TARGETDIR)\dirs.mak")
 ifeq "$(TEST)" "dirs.mak"
@@ -53,8 +57,8 @@ define SUFFIXDIRS =
 endef
 
 
-LIBS:= $(call SUFFIXDIRS,$(DIRS),.lib)
-EXES:= $(call SUFFIXDIRS,$(DIRS),.exe)
+LIBS:= $(call SUFFIXDIRS,$(DIRS),.library)
+EXES:= $(call SUFFIXDIRS,$(DIRS),.exefile)
 CLEANS:= $(call SUFFIXDIRS,$(DIRS),.clean)
 DISTS:= $(call SUFFIXDIRS,$(DIRS),.dist)
 
@@ -94,7 +98,6 @@ export _LIBDIR
 
 include $(TREETOP)config.mak
 
-$(info $(_OUTPUTDIR))
 export LIB_EXT
 export LIB_PREFIX
 
@@ -255,9 +258,9 @@ makelibdir:
 	-mkdir  $(_LIBDIR) >> $(NULLDEV)
 
 
-$(LIBS): %.lib :
+$(LIBS): %.library :
 	$(MAKE) library -C$* -f$(_TREEROOT)
-$(EXES): %.exe :
+$(EXES): %.exefile :
 	$(MAKE) exefile -C$* -f$(_TREEROOT)
 
 
@@ -278,10 +281,10 @@ clean: cleanstart $(CLEANS)
 
 else
 
-$(LIBS): %.lib : 
+$(LIBS): %.library : 
 	$(MAKE) library -C$* -f$(_TREEROOT)
 
-$(EXES): %.exe : 
+$(EXES): %.exefile : 
 	$(MAKE) exefile -C$* -f$(_TREEROOT)
 
 library: mkdir compile $(LIBS)
@@ -289,7 +292,7 @@ library: mkdir compile $(LIBS)
 exefile: mkdir link $(EXES)
 
 
-cleanDISTRIBUTE:
+cleanDISTRIBUTE: $(CLEANS)
 
 $(CLEANS): %.clean :
 	$(MAKE) clean -C$* -f$(_TREEROOT)
@@ -297,11 +300,10 @@ clean: del rmdir $(CLEANS)
 
 endif
 
-exeDISTRIBUTE:
+exeDISTRIBUTE: $(DISTS)
 ifndef BUILDENV
 $(DISTS): %.dist :
-	$(MAKE) distribute -C$(dir) -f$(_TREEROOT)
+	$(MAKE) distribute -C$* -f$(_TREEROOT)
 endif
 
 distribute: cleanDISTRIBUTE exeDISTRIBUTE DISTRIBUTE   
-

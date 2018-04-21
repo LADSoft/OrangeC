@@ -41,15 +41,15 @@ BUILDING_DLL = /DBUILDING_DLL=-D__BUILDING_LSCRTL_DLL
 all: lscrtl_objs alldirs
 
 lscrtl_objs:
-	$(MAKE) -Crtl "/DOBJECT=$(DLLOBJECT)" "$(BUILDING_DLL)"
+	$(MAKE) -Crtl --eval="OBJECT=$(DLLOBJECT)" --eval="$(BUILDING_DLL)"
 
 $(eval $(ALLDIRS))
 
 DISTRIBUTE:
-	$(MAKE) /Cpe DISTRIBUTE
-	$(MAKE) /Cpels DISTRIBUTE
-	$(MAKE) /Cmsvcrdm DISTRIBUTE
-	$(MAKE) /Ccrtdmain DISTRIBUTE
+	$(MAKE) -Cpe DISTRIBUTE
+	$(MAKE) -Cpels DISTRIBUTE
+	$(MAKE) -Cmsvcrdm DISTRIBUTE
+	$(MAKE) -Ccrtdmain DISTRIBUTE
 	$(COPYDIR) wininc\%.h $(DISTINC)
 	$(COPYDIR) wininc\win32\%.h $(DISTINCWIN)
-#	$(MAKE) /Clscrtl DISTRIBUTE
+#	$(MAKE) -Clscrtl DISTRIBUTE

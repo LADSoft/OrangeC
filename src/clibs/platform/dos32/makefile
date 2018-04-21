@@ -35,11 +35,11 @@
 
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
-DIRS=le pm debug rtl
+DIRS:=le pm debug rtl
 
 $(eval $(ALLDIRS))
 
 DISTRIBUTE:
-	$(MAKE) /Cle DISTRIBUTE
-	$(MAKE) /Cpm DISTRIBUTE
-	$(MAKE) /Cextender DISTRIBUTE
+	$(MAKE) -Cle DISTRIBUTE
+	$(MAKE) -Cpm DISTRIBUTE
+	$(MAKE) -Cextender DISTRIBUTE

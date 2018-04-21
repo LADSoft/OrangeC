@@ -36,13 +36,13 @@
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
 all:
-	$(MAKE) /CCOMPLIB
+	$(MAKE) -CCOMPLIB
 ifdef OLDSGL
-	$(MAKE) /CSGISRC
+	$(MAKE) -CSGISRC
 else
 ifdef STLPORT
-	$(MAKE) /CSTLPort-5.2.1/src
+	$(MAKE) -CSTLPort-5.2.1/src
 else
-	$(MAKE) /Clibcxx/src
+	$(MAKE) -Clibcxx/src
 endif
 endif

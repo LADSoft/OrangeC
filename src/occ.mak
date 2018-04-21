@@ -73,14 +73,16 @@ ASMFLAGS= /!
 
 RC=$(COMPILER_PATH)\bin\orc
 RCINCLUDE=$(DISTROOT)\include
-RCFLAGS = -r /!
+	RCFLAGS = -r /!
 
 ifneq "$(INCLUDES)" ""
 CINCLUDES:=$(addprefix /I,$(INCLUDES))
 endif
 DEFINES := $(addprefix /D,$(DEFINES))
 DEFINES := $(subst @, ,$(DEFINES))
-LIB_DEPENDENCIES := $(addsuffix .l,$(LIB_DEPENDENCIES))
+LIB_DEPENDENCIES := $(foreach file, $(addsuffix .l,$(LIB_DEPENDENCIES)), $(file))
+
+$(info $(LIB_DEPENDENCIES))
 
 CCFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) /DMICROSOFT /DBORLAND /DWIN32
 ifeq "$(TARGET)" "GUI"

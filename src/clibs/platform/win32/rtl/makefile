@@ -35,7 +35,7 @@
 
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
-ASM_DEPENDENCIES = $(wildcard 386\*.nas)
+ASM_DEPENDENCIES = $(wildcard 386/*.nas)
 C_DEPENDENCIES = $(wildcard *.c)
 
 ifdef BUILDING_DLL
@@ -45,15 +45,15 @@ endif
 all: $(DEPENDENCIES)
 
 profilew.o: profilew.c
-	$(CC) /c /I$(STDINCLUDE) /9 -o$(OBJECT)\$@F $^
+	$(CC) /c /I$(STDINCLUDE) /9 -o$(OBJECT)\$@ $^
 
 proftmw.o: proftmw.c
-	$(CC) /c /I$(STDINCLUDE) /9 -o$(OBJECT)\$@F $^
+	$(CC) /c /I$(STDINCLUDE) /9 -o$(OBJECT)\$@ $^
 
 vsconio.o: vsconio.c
-	$(CC) /c /I$(STDINCLUDE) $(CFLAGS) /DVSDLL -o$(OBJECT)\$@F $^
+	$(CC) /c /I$(STDINCLUDE) $(CFLAGS) /DVSDLL -o$(OBJECT)\$@ $^
 
 llthrd.o: llthrd.c
-	$(CC) /c /C-E /I$(STDINCLUDE) /9 -o$(OBJECT)\$@F $^
+	$(CC) /c /C-E /I$(STDINCLUDE) /9 -o$(OBJECT)\$@ $^
 
 DISTRIBUTE:

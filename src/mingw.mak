@@ -41,6 +41,8 @@ ifeq "$(COMPILER)" "MINGW"
 COMPILER_PATH := c:\mingw
 OBJ_IND_PATH := mingw
 
+PATHSWAP2 := $(subst \,/,$(1))
+
 CPP_deps = $(notdir $(CPP_DEPENDENCIES:.cpp=.o))
 C_deps = $(notdir $(C_DEPENDENCIES:.c=.o))
 ASM_deps = $(notdir $(ASM_DEPENDENCIES:.nas=.o))
@@ -108,16 +110,16 @@ vpath %.res $(_OUTPUTDIR)
 $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT): $(LLIB_DEPENDENCIES)
 #	-del $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT) >> $(NULLDEV)
 	$(LIB) $(LIBFLAGS) $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT) @&&|
- $(addprefix $(subst \,/,$(_OUTPUTDIR)\),$(LLIB_DEPENDENCIES))
+ $(addprefix $(call PATHSWAP2,$(_OUTPUTDIR)\),$(LLIB_DEPENDENCIES))
 |
 LDEPS := $(addprefix -l,$(NAME) $(LIB_DEPENDENCIES))
-LDEPS := $(subst \,/,$(LDEPS))
+LDEPS := $(call PATHSWAP2,$(LDEPS))
 
 LDEPS2 := $(addprefix $(_LIBDIR)\$(LIB_PREFIX),$(NAME) $(LIB_DEPENDENCIES))
 LDEPS2 := $(addsuffix .a, $(LDEPS2))
 
 LMAIN := $(addprefix $(_OUTPUTDIR)\,$(MAIN_DEPENDENCIES) $(RES_deps))
-LMAIN := $(subst \,/,$(LMAIN))
+LMAIN := $(call PATHSWAP,$(LMAIN))
 
 $(NAME).exe: $(MAIN_DEPENDENCIES) $(LDEPS2) $(RES_deps)
 	$(CC) $(LFLAGS) -o $(NAME).exe @&&|

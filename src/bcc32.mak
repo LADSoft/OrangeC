@@ -87,7 +87,7 @@ CINCLUDES:=$(addprefix /I,$(INCLUDES))
 endif
 DEFINES := $(addprefix /D,$(DEFINES))
 DEFINES := $(subst @, ,$(DEFINES))
-LIB_DEPENDENCIES := $(addsuffix .lib,$(LIB_DEPENDENCIES))
+LIB_DEPENDENCIES := $(foreach file, $(addsuffix .lib,$(LIB_DEPENDENCIES)), $(_LIBDIR)\$(file))
 
 CCFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) /DMICROSOFT /DBORLAND 
 ifeq "$(TARGET)" "GUI"

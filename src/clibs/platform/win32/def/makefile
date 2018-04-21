@@ -39,6 +39,6 @@ EXCLUDE = climp.l
 
 climp.l: *.def impdefs.lst
 	del $@
-	$(IMPLIB) $(IMPLIBFLAGS) $@ @impdefs.lst
+	$(IMPLIB) $(IMPLIBFLAGS) $(SYSOBJECT)\$@ @impdefs.lst
 
 DISTRIBUTE:

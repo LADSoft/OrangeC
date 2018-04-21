@@ -1478,8 +1478,8 @@ LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
         // using an OPENFILEDIALOG create weird timing conditions that don't
         // change the focus...
         case WM_TIMER:
-            KillTimer(hwnd, 1000);
             ptr = (DWINFO*)GetWindowLong(hwnd, 0);
+            KillTimer(hwnd, ptr->timerId);
             ptr->timing = FALSE;
             if ((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwnd)
                     PostMessage(hwnd, WM_COMMAND, EN_NEEDFOCUS, 0);
@@ -1507,7 +1507,7 @@ LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             editWindows = ptr;
             SetEvent(ewSem);
             ptr->timing = TRUE;
-            SetTimer(hwnd, 1000, 100, NULL);
+            ptr->timerId = SetTimer(hwnd, 1000, 100, NULL);
             doMaximize();
             break;
         case WM_SETFOCUS:

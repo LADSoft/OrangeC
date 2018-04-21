@@ -1819,6 +1819,7 @@ void InitFont(BOOL up)
 int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpszCmdLine,
     int nCmdShow)
 {
+    int i;
     INITCOMMONCONTROLSEX ccEx;
     char buf[260], buf2[260], *p;
     HWND hwnd;
@@ -1896,7 +1897,7 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpszCmdLine,
         RegisterAllWindows();
     }
     // handle /V switch
-    for (int i = 1; i < __argc; i++)
+    for (i = 1; i < __argc; i++)
         if (__argv[i] && (__argv[i][0] == '/' || __argv[i][0] == '-'))
             if (__argv[i][1] == 'V' && __argv[i][2] == 0)
             {

@@ -38,8 +38,6 @@
 
 ifeq "$(COMPILER)" "MINGW64"
 
-PATHSWAP2 := $(subst \,/,$(1))
-
 COMPILER_PATH := c:\mingw64
 OBJ_IND_PATH := mingw64
 
@@ -58,7 +56,7 @@ LLIB_DEPENDENCIES = $(notdir $(filter-out $(EXCLUDE) $(MAIN_DEPENDENCIES), $(CPP
 
 
 CC=$(COMPILER_PATH)\bin\x86_64-w64-mingw32-gcc
-CCFLAGS = -c -std=c++11 -D__MSVCRT__ -U__STRICT_ANSI__
+CCFLAGS = -c -D__MSVCRT__ -U__STRICT_ANSI__
 
 LINK=$(COMPILER_PATH)\bin\ld
 LFLAGS=-L$(_LIBDIR)
@@ -96,7 +94,7 @@ vpath %$(LIB_EXT) c:\bcc55\lib c:\bcc55\lib\psdk $(_LIBDIR)
 vpath %.res $(_OUTPUTDIR)
 
 %.o: %.cpp
-	$(CC) $(CCFLAGS) -o$(_OUTPUTDIR)/$@ $^
+	$(CC) -std=c++11 $(CCFLAGS) -o$(_OUTPUTDIR)/$@ $^
 
 %.o: %.c
 	$(CC) $(CCFLAGS) -o$(_OUTPUTDIR)/$@ $^
@@ -109,16 +107,14 @@ vpath %.res $(_OUTPUTDIR)
 
 $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT): $(LLIB_DEPENDENCIES)
 #	-del $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT) >> $(NULLDEV)
-	$(LIB) $(LIBFLAGS) $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT) $(addprefix $(call PATHSWAP2,$(_OUTPUTDIR)/),$(LLIB_DEPENDENCIES))
+	$(LIB) $(LIBFLAGS) $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT) $(addprefix $(_OUTPUTDIR)/,$(LLIB_DEPENDENCIES))
 
 LDEPS := $(addprefix -l,$(NAME) $(LIB_DEPENDENCIES))
-LDEPS := $(call PATHSWAP2,$(LDEPS))
 
 LDEPS2 := $(addprefix $(_LIBDIR)\$(LIB_PREFIX),$(NAME) $(LIB_DEPENDENCIES))
 LDEPS2 := $(addsuffix .a, $(LDEPS2))
 
 LMAIN := $(addprefix $(_OUTPUTDIR)\,$(MAIN_DEPENDENCIES) $(RES_deps))
-LMAIN := $(call PATHSWAP2, $(LMAIN))
 
 $(NAME).exe: $(MAIN_DEPENDENCIES) $(LDEPS2) $(RES_deps)
 	$(CC) $(LFLAGS) -o $(NAME).exe $(LMAIN) $(LDEPS) $(COMPLIB) $(DEF_DEPENDENCIES)

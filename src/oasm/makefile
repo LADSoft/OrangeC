@@ -42,7 +42,6 @@ CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=ocpplib objlib util
 DEFINES=L_INT=__int64
 
-redirect:
-	@$(MAKE) /T
+include ..\redirect.mak
 
 DISTRIBUTE: copyexe

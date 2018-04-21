@@ -41,7 +41,6 @@ INCLUDES=
 C_DEPENDENCIES=sqlite3.c
 LIB_DEPENDENCIES=
 
-redirect:
-	@$(MAKE) /T
+include ..\redirect.mak
 
 DISTRIBUTE:

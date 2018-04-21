@@ -161,7 +161,7 @@ static int WriteStructMembers(SYMBOL *sym, sqlite3_int64 struct_id, sqlite3_int6
             BASECLASS *bases = sym->baseClasses;
             while (bases)
             {
-                order = WriteStructMembers(bases->cls, struct_id, file_id, order, TRUE, min(bases->cls->access, access));
+                order = WriteStructMembers(bases->cls, struct_id, file_id, order, TRUE, imin(bases->cls->access, access));
                 bases = bases->next;
             }
         }
@@ -179,7 +179,7 @@ static int WriteStructMembers(SYMBOL *sym, sqlite3_int64 struct_id, sqlite3_int6
                 int rel_id = 0;
                 TYPE *tp = st->tp;
                 sqlite3_int64 id;
-                int flags = min(st->access, access) & 15;
+                int flags = imin(st->access, access) & 15;
                 if (st->storage_class == sc_static || st->storage_class == sc_external)
                     flags |= 16;
                 if (ismemberdata(st))

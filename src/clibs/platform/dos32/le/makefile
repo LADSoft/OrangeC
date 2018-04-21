@@ -41,22 +41,22 @@ ASM_DEPENDENCIES = $(wildcard c0*.nas) c0watd.o c0hxd.o
 all: $(DEPENDENCIES)
 
 c0.o: c0.c
-	$(CC) /c /I$(STDINCLUDE) $(CFLAGS) /s16 -o$(DOSOBJECT)\$@F $^
+	$(CC) /c /I$(STDINCLUDE) $(CFLAGS) /s16 -o$(DOSOBJECT)\$@ $^
 
 c0wat.o: c0wat.nas
-	$(ASM) $(ASMFLAGS) -o$(SYSOBJECT)\$@F $^
+	$(ASM) $(ASMFLAGS) -o$(SYSOBJECT)\$@ $^
 
 c0watd.o: c0wat.nas
-	$(ASM) $(ASMFLAGS) -DDEBUG -o$(SYSOBJECT)\$@F $^
+	$(ASM) $(ASMFLAGS) -DDEBUG -o$(SYSOBJECT)\$@ $^
 
 c0hx.o: c0hx.nas
-	$(ASM) $(ASMFLAGS) -o$(SYSOBJECT)\$@F $^
+	$(ASM) $(ASMFLAGS) -o$(SYSOBJECT)\$@ $^
 
 c0hxd.o: c0hx.nas
-	$(ASM) $(ASMFLAGS) -DDEBUG -o$(SYSOBJECT)\$@F $^
+	$(ASM) $(ASMFLAGS) -DDEBUG -o$(SYSOBJECT)\$@ $^
 
 wildargs.o: wildargs.c
-	$(CC) /c /I$(STDINCLUDE) $(CFLAGS) -o$(SYSOBJECT)\$@F $^
+	$(CC) /c /I$(STDINCLUDE) $(CFLAGS) -o$(SYSOBJECT)\$@ $^
 
 DISTRIBUTE:
 	copy *.nas $(DISTSTARTUPDOS)

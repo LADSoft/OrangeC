@@ -6,8 +6,7 @@ LIB_DEPENDENCIES=
 
 vpath %.c ..\util
 
-redirect:
-	@$(MAKE) /T
+include ..\redirect.mak
 
 DISTRIBUTE: copyexe
 	copy ocl.cfg $(DISTBIN)

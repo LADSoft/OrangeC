@@ -36,11 +36,10 @@
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
 
-ifeq "$(COMPILER)" "CLANG"
+ifeq "$(COMPILER)" "MINGW64"
 
-CLANG_PATH := c:\program files (x86)\llvm
-COMPILER_PATH := c:\mingw
-OBJ_IND_PATH := clang
+COMPILER_PATH := c:\mingw64
+OBJ_IND_PATH := mingw64
 
 CPP_deps = $(notdir $(CPP_DEPENDENCIES:.cpp=.o))
 C_deps = $(notdir $(C_DEPENDENCIES:.c=.o))
@@ -56,9 +55,8 @@ endif
 LLIB_DEPENDENCIES = $(notdir $(filter-out $(EXCLUDE) $(MAIN_DEPENDENCIES), $(CPP_deps) $(C_deps) $(ASM_deps) $(TASM_deps)))
 
 
-CC="$(CLANG_PATH)\bin\clang"
-PCC="$(CLANG_PATH)\bin\clang++"
-CCFLAGS = -c
+CC=$(COMPILER_PATH)\bin\x86_64-w64-mingw32-gcc
+CCFLAGS = -c -D__MSVCRT__ -U__STRICT_ANSI__
 
 LINK=$(COMPILER_PATH)\bin\ld
 LFLAGS=-L$(_LIBDIR)
@@ -88,7 +86,7 @@ ifeq "$(TARGET)" "GUI"
 LFLAGS := $(LFLAGS) -s -Wl,--subsystem,windows
 endif
 
-COMPLIB=-lstdc++ -lcomctl32 -lgdi32 -lcomdlg32 -lole32 -luxtheme -lkernel32 -lmsimg32
+COMPLIB=-lstdc++ -lcomctl32 -lgdi32 -lcomdlg32 -lole32 -luxtheme -lkernel32 -lmsimg32 -luuid
 
 
 vpath %.o $(_OUTPUTDIR)
@@ -96,7 +94,7 @@ vpath %$(LIB_EXT) c:\bcc55\lib c:\bcc55\lib\psdk $(_LIBDIR)
 vpath %.res $(_OUTPUTDIR)
 
 %.o: %.cpp
-	$(PCC) $(CCFLAGS) -o$(_OUTPUTDIR)/$@ $^
+	$(CC) -std=c++11 $(CCFLAGS) -o$(_OUTPUTDIR)/$@ $^
 
 %.o: %.c
 	$(CC) $(CCFLAGS) -o$(_OUTPUTDIR)/$@ $^
@@ -109,27 +107,23 @@ vpath %.res $(_OUTPUTDIR)
 
 $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT): $(LLIB_DEPENDENCIES)
 #	-del $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT) >> $(NULLDEV)
-	$(LIB) $(LIBFLAGS) $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT) @&&|
- $(addprefix $(subst \,/,$(_OUTPUTDIR)\),$(LLIB_DEPENDENCIES))
-|
+	$(LIB) $(LIBFLAGS) $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT) $(addprefix $(_OUTPUTDIR)/,$(LLIB_DEPENDENCIES))
+
 LDEPS := $(addprefix -l,$(NAME) $(LIB_DEPENDENCIES))
-LDEPS := $(subst \,/,$(LDEPS))
 
 LDEPS2 := $(addprefix $(_LIBDIR)\$(LIB_PREFIX),$(NAME) $(LIB_DEPENDENCIES))
 LDEPS2 := $(addsuffix .a, $(LDEPS2))
 
 LMAIN := $(addprefix $(_OUTPUTDIR)\,$(MAIN_DEPENDENCIES) $(RES_deps))
-LMAIN := $(subst \,/,$(LMAIN))
 
 $(NAME).exe: $(MAIN_DEPENDENCIES) $(LDEPS2) $(RES_deps)
-	$(CC) $(LFLAGS) -o $(NAME).exe @&&|
-$(LMAIN) $(LDEPS) $(COMPLIB) $(DEF_DEPENDENCIES)
-|
+	$(CC) $(LFLAGS) -o $(NAME).exe $(LMAIN) $(LDEPS) $(COMPLIB) $(DEF_DEPENDENCIES)
+
 
 %.exe: %.c
-	$(CC) -o $@ $^ $(COMPLIB)
+	$(CC) $(LFLAGS) -o $@ $^ $(COMPLIB)
 
 %.exe: %.cpp
-	$(CC) -o $@ $^ $(COMPLIB)
+	$(CC) $(LFLAGS) -o $@ $^ $(COMPLIB)
 
 endif

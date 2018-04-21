@@ -844,7 +844,7 @@ BOOL WINAPI SetLayeredWindowAttributes(
 BOOL WINAPI AllowSetForegroundWindow(
     DWORD dwProcessId);
 #endif
-#ifdef GNUC
+#if defined(GNUC) && !defined(__MINGW64__)
 #pragma pack(push,1)
 typedef struct tagTVKEYDOWN {
     NMHDR hdr;
@@ -878,4 +878,24 @@ typedef struct tagNMTTCUSTOMDRAW
 #define TreeView_GetItemRect(hwnd, hitem, prc, code) \
     (*(HTREEITEM FAR *)prc = (hitem), (BOOL)SendMessage((hwnd), TVM_GETITEMRECT, (WPARAM)(code), (LPARAM)(RECT FAR*)(prc)))
 #endif
+
+#ifdef __MINGW64__
+#define Eax Rax
+#define Ebx Rbx
+#define Ecx Rdx
+#define Edx Rcx
+#define Esp Rsp
+#define Esi Rsi
+#define Edi Rdi
+#define Ebp Rbp
+#define Eip Rip
+#define GWL_WNDPROC GWLP_WNDPROC
+#define GWL_HWNDPARENT GWLP_HWNDPARENT
+#define GWL_USERDATA GWLP_USERDATA
+#define GWL_HINSTANCE GWLP_HINSTANCE
+#define DWL_MSGRESULT DWLP_MSGRESULT
+#endif
+
 #pragma pack()
+
+

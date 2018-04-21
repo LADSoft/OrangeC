@@ -137,6 +137,7 @@ void usage(char *prog_name)
 
     exit(1);
 }
+#ifndef __MINGW64__
 int strcasecmp(const char *left, const char *right)
 {
     while (*left && *right)
@@ -147,6 +148,7 @@ int strcasecmp(const char *left, const char *right)
     }
     return *left != *right;
 }
+#endif
 /*
  * If no extension, add the one specified
  */

@@ -10,7 +10,7 @@
     
     * Redistributions of source code must retain the above
       copyright notice, this list of conditions and the
-      following disclaimer.
+      following disclaimer.Rip
     
     * Redistributions in binary form must reproduce the above
       copyright notice, this list of conditions and the
@@ -50,6 +50,8 @@
 #include "..\version.h"
 #include <sys\stat.h>
 #include <stdlib.h>
+
+
 /* timer identifiers
  *
  * note that the current timer implementation assumes only one timer
@@ -1817,6 +1819,7 @@ void InitFont(BOOL up)
 int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpszCmdLine,
     int nCmdShow)
 {
+    int i;
     INITCOMMONCONTROLSEX ccEx;
     char buf[260], buf2[260], *p;
     HWND hwnd;
@@ -1830,7 +1833,11 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpszCmdLine,
 //		return 0;
 //	}
     // so we don't get problems reading unused FP reg values
+#ifdef __MINGW64__
+    _control87(_MCW_EM, _MCW_EM); 
+#else
     _control87(MCW_EM, MCW_EM); 
+#endif
     hCursArrow = LoadCursor(0, IDC_ARROW);
     hCursHourglass = LoadCursor(0, IDC_WAIT);
     hwnd = FindWindow(szFrameClassName, NULL);
@@ -1890,7 +1897,7 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpszCmdLine,
         RegisterAllWindows();
     }
     // handle /V switch
-    for (int i = 1; i < __argc; i++)
+    for (i = 1; i < __argc; i++)
         if (__argv[i] && (__argv[i][0] == '/' || __argv[i][0] == '-'))
             if (__argv[i][1] == 'V' && __argv[i][2] == 0)
             {

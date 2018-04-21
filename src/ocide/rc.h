@@ -94,7 +94,7 @@ enum e_sym
     //	kw_public, kw_private, kw_protected, kw_class, kw_friend,
     //	kw_namespace, kw_this, kw_operator, kw_inline, kw_virtual,
     //	kw_try,kw_throw,kw_catch, kw_template, kw_bool, kw_true, kw_false,
-    eol, eof
+    rceol, rceof
 };
 
 

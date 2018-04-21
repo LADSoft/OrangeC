@@ -35,8 +35,8 @@
 
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
-ASM_DEPENDENCIES = $(wildcard 386\*.nas)
-CIL_DEPENDENCIES = $(wildcard cil\*.c)
+ASM_DEPENDENCIES = $(wildcard 386/*.nas)
+CIL_DEPENDENCIES = $(wildcard cil/*.c)
 
 all: $(DEPENDENCIES)
 

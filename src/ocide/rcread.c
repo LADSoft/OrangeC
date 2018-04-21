@@ -808,7 +808,7 @@ static void ReadSecondaryCharacteristics(COMPILEDATA *cd, CHARACTERISTICS *info)
     info->language_low = 0;
     while (!done)
     {
-        while (lastst == eol)
+        while (lastst == rceol)
             getsym();
         switch (lastst)
         {
@@ -1021,7 +1021,7 @@ static void ReadDialogSettings(COMPILEDATA *cd, DIALOG *dlg, CHARACTERISTICS *in
     info->language_low = 0;
     while (!done)
     {
-        while (lastst == eol)
+        while (lastst == rceol)
             getsym();
         switch (lastst)
         {
@@ -1060,15 +1060,15 @@ static void ReadDialogSettings(COMPILEDATA *cd, DIALOG *dlg, CHARACTERISTICS *in
                 if (extended)
                 {
                     skip_comma();
-                    if (lastst != eol)
+                    if (lastst != rceol)
                     {
                         dlg->ex.weight = ReadExp();
                         skip_comma();
-                        if (lastst != eol)
+                        if (lastst != rceol)
                         {
                             dlg->ex.italic = ReadExp();
                             skip_comma();
-                            if (lastst != eol)
+                            if (lastst != rceol)
                             {
                                 dlg->ex.charset = ReadExp();
                             }
@@ -1116,11 +1116,11 @@ static void ReadDialogSettings(COMPILEDATA *cd, DIALOG *dlg, CHARACTERISTICS *in
 
 static void ParseExtendedControl(CONTROL *c, int extended)
 {
-        if (lastst != eol)
+        if (lastst != rceol)
         {
                 c->exstyle = ReadExp();
                 skip_comma();
-        } if (lastst != eol)
+        } if (lastst != rceol)
         {
                 c->help = ReadExp();
                 skip_comma();
@@ -1311,7 +1311,7 @@ static void ParseStandardControl(CONTROL *c, int class , int style,
         skip_comma();
         c->height = ReadExp();
         skip_comma();
-        if (lastst != eol)
+        if (lastst != rceol)
         {
                 c->style = ReadExp();
                 skip_comma();
@@ -1528,7 +1528,7 @@ static void ReadMenuFlags(MENUITEM *m)
                 else
                 {
                     skip_comma();
-                    if (lastst != eol)
+                    if (lastst != rceol)
                     {
                         m->state = ReadExp();
                         skip_comma();
@@ -1565,20 +1565,20 @@ static void ReadMenuList(MENUITEM * * * i, int extended)
                 skip_comma();
                 if (!extended)
                     ReadMenuFlags(m);
-                else if (lastst != eol)
+                else if (lastst != rceol)
                 {
                     if( is_number())
                         m->type = ReadExp();
                     if (Eval(m->type) & MFT_SEPARATOR)
                         m->text = NULL;
                     skip_comma();
-                    if (lastst != eol)
+                    if (lastst != rceol)
                     {
                         if (is_number())
                             m->state = ReadExp();
                         skip_comma();
                     }
-                    if (lastst != eol)
+                    if (lastst != rceol)
                     {
                         if (is_number())
                             m->help = ReadExp();
@@ -1604,17 +1604,17 @@ static void ReadMenuList(MENUITEM * * * i, int extended)
                     ReadMenuFlags(m);
                 else
                 {
-                    if (lastst != eol)
+                    if (lastst != rceol)
                     {
                         m->type = ReadExp();
                         skip_comma();
                     }
-                    if (lastst != eol)
+                    if (lastst != rceol)
                     {
                         m->state = ReadExp();
                         skip_comma();
                     }
-                    if (lastst != eol)
+                    if (lastst != rceol)
                     {
                         m->help = ReadExp();
                         skip_comma();
@@ -1689,7 +1689,7 @@ static void ParseRC(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
                 *p = CreateRCDataResourceNumber(ival, TRUE);
                 getsym();
                 break;
-            case eol:
+            case rceol:
                 getsym();
                 continue;
             default:
@@ -1821,7 +1821,7 @@ static void ParseVersionInfo(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
                 getsym();
                 fixedverinfo->file_subtype = ReadExp();
                 break;
-            case eol:
+            case rceol:
                 getsym();
                 break;
                 //         case kw_filedate:
@@ -1963,9 +1963,9 @@ static void Parse(COMPILEDATA *cd)
     getsym();
     cd->lines = GetCachedLines();
     CreatePlaceholderResource(cd);
-    while (lastst != eof)
+    while (lastst != rceof)
     {
-        while (lastst == eol)
+        while (lastst == rceol)
             getsym();
         memset(&id, 0, sizeof(id));
         if (lastst == kw_stringtable)
@@ -1981,9 +1981,9 @@ static void Parse(COMPILEDATA *cd)
             {
                 int st = lastst;
                 getsym();
-                if (lastst >= kw_accelerator && lastst < eol)
+                if (lastst >= kw_accelerator && lastst < rceol)
                 {
-                    if (st >= kw_accelerator && st < eol)
+                    if (st >= kw_accelerator && st < rceol)
                     {
                         char *s = namefromkw(st);
                         id.symbolic = 1;

@@ -107,7 +107,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings &environment)
 //    {
 //        return -1;
 //    }
-    if (CreateProcess(nullptr, (char *)cmd.c_str(), nullptr, nullptr, true, 0, env,
+    if (CreateProcess(nullptr, (char *)command.c_str(), nullptr, nullptr, true, 0, env,
                       nullptr, &startup, &pi))
     {
         WaitForSingleObject(pi.hProcess, INFINITE);
@@ -119,7 +119,20 @@ int OS::Spawn(const std::string command, EnvironmentStrings &environment)
     }
     else
     {
-        rv = -1;
+        if (CreateProcess(nullptr, (char *)cmd.c_str(), nullptr, nullptr, true, 0, env,
+                      nullptr, &startup, &pi))
+        {
+            WaitForSingleObject(pi.hProcess, INFINITE);
+            DWORD x;
+            GetExitCodeProcess(pi.hProcess, &x);
+            rv = x;
+            CloseHandle(pi.hProcess);
+            CloseHandle(pi.hThread);
+        }
+        else
+        {
+            rv = -1;
+        }
     }
     delete[] env;
     return rv;

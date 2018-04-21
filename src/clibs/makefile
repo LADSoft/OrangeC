@@ -44,46 +44,47 @@ CLIBDIRS = $(BASEDIRS) cpp
 DLLDIRS = $(BASEDIRS)
 DIRS= $(CLIBDIRS) platform
 
-MAKEFILES := $(MAKEFILES) $(realpath maker.mak)
+PATHSWAP = $(subst /,\,$(1))
+
+define SUFFIXDIRS =
+	$(foreach dir, $(1), $(dir)$(2))
+endef
+
+C_CLIBS:= $(call SUFFIXDIRS,$(DIRS),.clibs)
+C_DLLS:= $(call SUFFIXDIRS,$(DLLDIRS),.dlls)
+
+MAKEFILES := $(MAKEFILES) $(call PATHSWAP,$(realpath maker.mak))
 export MAKEFILES
 include maker.mak
 
-DOSOBJECT:=$(realpath object\dos)
+DOSOBJECT:=$(call PATHSWAP,$(realpath object\dos))
 export DOSOBJECT
-WINOBJECT:=$(realpath object\windows)
+WINOBJECT:=$(call PATHSWAP,$(realpath object\windows))
 export WINOBJECT
 ifdef OLDSGL
-STDINCLUDE:=$(realpath cpp\stdinc);$(realpath stdinc)
+STDINCLUDE:=$(call PATHSWAP,$(realpath cpp\stdinc));$(call PATHSWAP,$(realpath stdinc))
 else
 ifdef STLPORT
-STDINCLUDE:=$(realpath cpp\stlport\stl);$(realpath cpp\stdinc);$(realpath stdinc)
+STDINCLUDE:=$(call PATHSWAP,$(realpath cpp\stlport\stl));$(call PATHSWAP,$(realpath cpp\stdinc));$(call PATHSWAP,$(realpath stdinc))
 else
-STDINCLUDE:=$(realpath cpp\stdinc_libcxx);$(realpath stdinc);$(realpath cpp\libcxx\include);$(realpath platform\win32\wininc);$(realpath platform\win32\wininc\win32)
+STDINCLUDE:=$(call PATHSWAP,$(realpath cpp\stdinc_libcxx));$(call PATHSWAP,$(realpath stdinc));$(call PATHSWAP,$(realpath cpp\libcxx\include));$(call PATHSWAP,$(realpath platform\win32\wininc));$(call PATHSWAP,$(realpath platform\win32\wininc\win32))
 endif
 endif
 export STDINCLUDE
 
-define CLIB
-	$$(MAKE) /C$(dir) "/DOBJECT=$(CLIBOBJECT)"
-endef
-
-define DLL
-	$$(MAKE) /C$(dir) "/DOBJECT=$(DLLOBJECT)" "$(BUILDING_DLL)"
-endef
-
-SYSOBJECT :=$(realpath object\startup)
+SYSOBJECT :=$(call PATHSWAP,$(realpath object\startup))
 export SYSOBJECT
 
-LSCRTLOBJECT :=$(realpath object\startup)
+LSCRTLOBJECT :=$(call PATHSWAP,$(realpath object\startup))
 export LSCRTLOBJECT
 
-DLLOBJECT :=$(realpath object\dll)
+DLLOBJECT :=$(call PATHSWAP,$(realpath object\dll))
 export DLLOBJECT
 
-CLIBOBJECT :=$(realpath object\clib)
+CLIBOBJECT :=$(call PATHSWAP,$(realpath object\clib))
 export CLIBOBJECT
 
-CILOBJECT :=$(realpath object\cil)
+CILOBJECT :=$(call PATHSWAP,$(realpath object\cil))
 export CILOBJECT
 
 LIBOBJS = $(shell dir /b $(CLIBOBJECT)\*.o)
@@ -91,8 +92,8 @@ DOSOBJS1 = $(shell dir /b $(DOSOBJECT)\*.o)
 DOSOBJS = $(DOSOBJS1:.OBJ=.o)
 WINOBJS = $(shell dir /b $(WINOBJECT)\*.o)
 CILOBJS = $(shell dir /b $(CILOBJECT)\*.ilo)
-define clibdef
-clib:
+
+mkdir:
 	-mkdir object
 	-mkdir $(DOSOBJECT)
 	-mkdir $(WINOBJECT)
@@ -101,28 +102,28 @@ clib:
 	-mkdir $(LSCRTLOBJECT)
 	-mkdir $(CILOBJECT)
 	-mkdir object\clib
-$(foreach dir, $(DIRS), $(CLIB))
-#	$(MAKE) /CMSDOS "/DOBJECT=$(DOSOBJECT)"
-#	$(MAKE) /CWIN32 "/DOBJECT=$(WINOBJECT)"
+
+mklibs:
 	del $(SYSOBJECT)\cldos.l
-	$(LIB) $(LIBFLAGS) $(SYSOBJECT)\cldos.l @&&|
-$$(foreach dir, $(LIBOBJS), $(CLIBOBJECT)\$(dir)) $$(foreach dir, $(DOSOBJS), $(DOSOBJECT)\$(dir))
-|
+
+	$(LIB) $(LIBFLAGS) $(SYSOBJECT)\cldos.l $(foreach dir, $(LIBOBJS), $(CLIBOBJECT)\$(dir)) $(foreach dir, $(DOSOBJS), $(DOSOBJECT)\$(dir))
 	del $(SYSOBJECT)\clwin.l
-	$(LIB) $(LIBFLAGS) $(SYSOBJECT)\clwin.l @&&|
-$$(foreach dir, $(LIBOBJS), $(CLIBOBJECT)\$(dir)) $$(foreach dir, $(WINOBJS), $(WINOBJECT)\$(dir))
-|
-endef
+	$(LIB) $(LIBFLAGS) $(SYSOBJECT)\clwin.l $(foreach dir, $(LIBOBJS), $(CLIBOBJECT)\$(dir)) $(foreach dir, $(WINOBJS), $(WINOBJECT)\$(dir))
 
-BUILDING_DLL = /DBUILDING_DLL=-D__BUILDING_LSCRTL_DLL
-define dlldef
-dll:
+$(C_CLIBS) : %.clibs :
+	$(MAKE) -C$* --eval="OBJECT=$(CLIBOBJECT)"
+
+clib: mkdir $(C_CLIBS) mklibs
+
+BUILDING_DLL = BUILDING_DLL=-D__BUILDING_LSCRTL_DLL
+
+mkdirdll:
 	-mkdir object\dll
-	$(foreach dir, $(DLLDIRS), $(DLL))
-endef
+$(C_DLLS) : %.dlls : 
+	$(MAKE) -C$* --eval="OBJECT=$(DLLOBJECT)" --eval="$(BUILDING_DLL)"
 
-$(eval $(clibdef))
-$(eval $(dlldef))
+dll: mkdirdll $(C_DLLS)
+
 
 ifdef DISTMAKE
 include $(DISTMAKE)
@@ -160,6 +161,6 @@ ifndef BUILDENV
 	$(COPYDIR) object\startup\%.o $(DISTLIB)
 	$(COPYDIR) object\startup\%.exe $(DISTLIB)
 	$(COPYDIR) object\startup\%.dll $(DISTBIN)
-	$(MAKE) /Cplatform DISTRIBUTE
+	$(MAKE) -Cplatform DISTRIBUTE
 endif
 endif

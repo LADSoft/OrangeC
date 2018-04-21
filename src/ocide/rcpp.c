@@ -454,7 +454,7 @@ void getdefsym(void)
     while (iswhitespacechar(lastch))
         getch();
     if (lastch ==  - 1)
-        lastst = eof;
+        lastst = rceof;
     else if (isdigit(lastch))
         getnum();
     else if (isstartchar(lastch))

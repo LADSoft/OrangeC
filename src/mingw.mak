@@ -56,7 +56,7 @@ LLIB_DEPENDENCIES = $(notdir $(filter-out $(EXCLUDE) $(MAIN_DEPENDENCIES), $(CPP
 
 
 CC=$(COMPILER_PATH)\bin\mingw32-gcc
-CCFLAGS = -c -std=c++11 -D__MSVCRT__ -U__STRICT_ANSI__
+CCFLAGS = -c -D__MSVCRT__ -U__STRICT_ANSI__
 
 LINK=$(COMPILER_PATH)\bin\ld
 LFLAGS=-L$(_LIBDIR)
@@ -94,21 +94,21 @@ vpath %$(LIB_EXT) c:\bcc55\lib c:\bcc55\lib\psdk $(_LIBDIR)
 vpath %.res $(_OUTPUTDIR)
 
 %.o: %.cpp
-	$(CC) $(CCFLAGS) -o$@ $^
+	$(CC) -std=c++11 $(CCFLAGS) -o$(_OUTPUTDIR)/$@ $^
 
 %.o: %.c
-	$(CC) $(CCFLAGS) -o$@ $^
+	$(CC) $(CCFLAGS) -o$(_OUTPUTDIR)/$@ $^
 
 %.o: %.s
-	$(ASM) $(ASMFLAGS) -o$@ $^
+	$(ASM) $(ASMFLAGS) -o$(_OUTPUTDIR)/$@ $^
 
 %.o: %.rc
-	$(RC) $(RCFLAGS) -i $^ -o $@
+	$(RC) $(RCFLAGS) -i $^ -o $(_OUTPUTDIR)/$@
 
 $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT): $(LLIB_DEPENDENCIES)
 #	-del $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT) >> $(NULLDEV)
 	$(LIB) $(LIBFLAGS) $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT) @&&|
- $(addprefix $(subst \,/,$(_OUTPUTDIR)\),$(LLIB_DEPENDENCIES))
+ $(addprefix $(subst \,/,$(_OUTPUTDIR)/),$(LLIB_DEPENDENCIES))
 |
 LDEPS := $(addprefix -l,$(NAME) $(LIB_DEPENDENCIES))
 LDEPS := $(subst \,/,$(LDEPS))

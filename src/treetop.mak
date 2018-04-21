@@ -36,12 +36,31 @@
 #	contact information:
 #		email: TouchStone222runbox.com <David Lindauer>
 
-TREETOP :=$(dir $(_TREEROOT))
+PATHSWAP = $(subst /,\,$(1))
+export PATHSWAP
+
+TREETOP := $(call PATHSWAP,$(dir $(_TREEROOT)))
+
 DISTROOT := $(TREETOP)..
 
 export DISTROOT
 
+_TARGETDIR:= $(call PATHSWAP,$(CURDIR))
 
+TEST := $(shell dir /b "$(_TARGETDIR)\dirs.mak")
+ifeq "$(TEST)" "dirs.mak"
+include $(_TARGETDIR)\dirs.mak
+endif
+
+define SUFFIXDIRS =
+	$(foreach dir, $(1), $(dir)$(2))
+endef
+
+
+LIBS:= $(call SUFFIXDIRS,$(DIRS),.library)
+EXES:= $(call SUFFIXDIRS,$(DIRS),.exefile)
+CLEANS:= $(call SUFFIXDIRS,$(DIRS),.clean)
+DISTS:= $(call SUFFIXDIRS,$(DIRS),.dist)
 
 all: files
 
@@ -55,27 +74,9 @@ mkdir:
 rmdir:
 	-rmdir  $(_OUTPUTDIR) >> $(NULLDEV)
 
-_TARGETDIR:= $(_TREETARGET)
 
-define DOLIB
-	$(MAKE) /C$(dir) /f$(_TREEROOT) /D_TREETARGET=$(_TARGETDIR)\$(dir) /DLIBRARY
-endef
-define DOEXE
-	$(MAKE) /C$(dir) /f$(_TREEROOT) /D_TREETARGET=$(_TARGETDIR)\$(dir) /DEXEFILE
-endef
-
-define DODISTRIBUTE
-	$(MAKE) distribute /C$(dir) /f$(_TREEROOT) /D_TREETARGET=$(_TARGETDIR)\$(dir)
-endef
-define DOCLEAN
-	$(MAKE) clean /C$(dir) /f$(_TREEROOT) /D_TREETARGET=$(_TARGETDIR)\$(dir)
-endef
-
-ifeq "$(exists $(_TARGETDIR)\dirs.mak)" "1"
-include $(_TARGETDIR)\dirs.mak
-endif
-
-ifeq "$(exists $(_TARGETDIR)\makefile)" "1"
+TEST := $(shell dir /b "$(_TARGETDIR)\makefile")
+ifeq "$(TEST)" "makefile"
 include $(_TARGETDIR)\makefile
 include $(DISTROOT)\src\dist.mak
 else
@@ -100,8 +101,7 @@ include $(TREETOP)config.mak
 export LIB_EXT
 export LIB_PREFIX
 
-
-ifndef NAME
+ifeq "$(NAME)" ""
 compile:
 else
 compile: $(LLIB_DEPENDENCIES) $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT)
@@ -169,8 +169,6 @@ export STUB
 
 DISTMAKE := $(realpath $(DISTROOT)\src\dist.mak)
 export DISTMAKE
-
-define filesdef
 
 cleanDISTRIBUTE: copydir.exe restub.exe renseg.exe pepatch.exe
 ifndef NOMAKEDIR
@@ -256,53 +254,56 @@ ifndef NOMAKEDIR
 	-mkdir $(DISTDIST) >> $(NULLDEV)
 endif
 
-innerFiles:
+makelibdir:
 	-mkdir  $(_LIBDIR) >> $(NULLDEV)
-	$(foreach dir, $(DIRS), $(DOLIB))
-	$(foreach dir, $(DIRS), $(DOEXE))
 
-files: innerFiles compile link
-endef
 
-define cleandef
-clean:
+$(LIBS): %.library :
+	$(MAKE) library -C$* -f$(_TREEROOT)
+$(EXES): %.exefile :
+	$(MAKE) exefile -C$* -f$(_TREEROOT)
+
+
+files: makelibdir $(LIBS) $(EXES) compile link
+
+library: $(LIBS)
+
+exefile: $(EXES)
+
+cleanstart:
 	-del /Q $(_LIBDIR)
 	-rmdir $(_LIBDIR)
-	$(foreach dir, $(DIRS), $(DOCLEAN))
-endef
+
+$(CLEANS): %.clean :
+	$(MAKE) clean -C$* -f$(_TREEROOT)
+
+clean: cleanstart $(CLEANS)
 
 else
 
-define filesdef
-ifdef LIBRARY
-files: mkdir compile
-	$(foreach dir, $(DIRS), $(DOLIB))
+$(LIBS): %.library : 
+	$(MAKE) library -C$* -f$(_TREEROOT)
+
+$(EXES): %.exefile : 
+	$(MAKE) exefile -C$* -f$(_TREEROOT)
+
+library: mkdir compile $(LIBS)
+
+exefile: mkdir link $(EXES)
+
+
+cleanDISTRIBUTE: $(CLEANS)
+
+$(CLEANS): %.clean :
+	$(MAKE) clean -C$* -f$(_TREEROOT)
+clean: del rmdir $(CLEANS)
+
 endif
-ifdef EXEFILE
-files: mkdir link
-	$(foreach dir, $(DIRS), $(DOEXE))
-endif
 
-cleanDISTRIBUTE:
-
-endef
-define cleandef
-clean: del rmdir
-	$(foreach dir, $(DIRS), $(DOCLEAN))
-endef
-endif
-
-define distdef
-
-exeDISTRIBUTE:
+exeDISTRIBUTE: $(DISTS)
 ifndef BUILDENV
-	$(foreach dir, $(DIRS), $(DODISTRIBUTE))
+$(DISTS): %.dist :
+	$(MAKE) distribute -C$* -f$(_TREEROOT)
 endif
 
 distribute: cleanDISTRIBUTE exeDISTRIBUTE DISTRIBUTE   
-endef
-
-
-$(eval $(filesdef))
-$(eval $(distdef))
-$(eval $(cleandef))

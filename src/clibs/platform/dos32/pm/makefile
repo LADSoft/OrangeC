@@ -39,10 +39,10 @@ ASM_DEPENDENCIES = $(wildcard c0*.nas) c0pmd.o
 all: $(DEPENDENCIES) pmstb.exe
 
 c0pm.o: c0pm.nas
-	$(ASM) $(ASMFLAGS) -o$(SYSOBJECT)\$@F $^
+	$(ASM) $(ASMFLAGS) -o$(SYSOBJECT)\$@ $^
 
 c0pmd.o: c0pm.nas
-	$(ASM) $(ASMFLAGS) -DDEBUG -o$(SYSOBJECT)\$@F $^
+	$(ASM) $(ASMFLAGS) -DDEBUG -o$(SYSOBJECT)\$@ $^
 
 .\pmstb.o: pmstb.nas
 	$(ASM) $(ASMFLAGS) -o$@ $^

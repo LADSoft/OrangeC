@@ -41,13 +41,15 @@ CILCFLAGS = $(CIL_C_FLAGS) $(DEFINES)
 
 OCCIL_CLASS=lsmsilcrtl.rtl
 
+PATHSWAP = $(subst /,\,$(1))
+
 LINK=olink
 LINKFLAGS= -c+ -!
 
-vpath %.c .\cil\ #
+vpath %.c ./cil/ #
 vpath %.ilo $(CILOBJECT)
 vpath %.l $(SYSOBJECT)
-vpath %.nas .\386\ #
+vpath %.nas ./386/ #
 vpath %.o $(OBJECT) $(SYSOBJECT)
 
 ASM=oasm
@@ -68,20 +70,19 @@ endif
 endif
 
 %.o: %.cpp
-	$(CC) /c $(CFLAGS) $(BUILDING_DLL) -I$(STDINCLUDE) -o$(OBJECT)\$@F $^
+	$(CC) /c $(CFLAGS) $(BUILDING_DLL) -I$(STDINCLUDE) -o$(OBJECT)\$@ $^
 #	$(CC) /S $(CFLAGS) $(BUILDING_DLL) -I$(STDINCLUDE) $^
-#	$(ASM) $(ASMFLAGS) $(BUILDING_DLL) -o$(OBJECT)\$@F $*
+#	$(ASM) $(ASMFLAGS) $(BUILDING_DLL) -o$(OBJECT)\$@ $*
 
 %.o: %.c
-	$(CC) /1 /c $(CFLAGS) $(BUILDING_DLL) -I$(STDINCLUDE) -o$(OBJECT)\$@F $^
+	$(CC) /1 /c $(CFLAGS) $(BUILDING_DLL) -I$(STDINCLUDE) -o$(OBJECT)\$@ $^
 #	$(CC) /S $(CFLAGS) $(BUILDING_DLL) -I$(STDINCLUDE) $^
-#	$(ASM) $(ASMFLAGS) $(BUILDING_DLL) -o$(OBJECT)\$@F $*
-
+#	$(ASM) $(ASMFLAGS) $(BUILDING_DLL) -o$(OBJECT)\$@ $*
 %.o: %.nas
-	$(ASM) $(ASMFLAGS) $(BUILDING_DLL) -o$(OBJECT)\$@F $^
+	$(ASM) $(ASMFLAGS) $(BUILDING_DLL) -o$(OBJECT)\$@ $(call PATHSWAP,$^)
 
 %.ilo: %.c
-	occil -N$(OCCIL_CLASS) /1 /c /WcMn $(CILCFLAGS) -I$(STDINCLUDE) -o$(CILOBJECT)\$@F $^
+	occil -N$(OCCIL_CLASS) /1 /c /WcMn $(CILCFLAGS) -I$(STDINCLUDE) -o$(CILOBJECT)\$@ $(call PATHSWAP,$^)
 
 C_deps = $(notdir $(C_DEPENDENCIES:.c=.o))
 ASM_deps = $(notdir $(ASM_DEPENDENCIES:.nas=.o))
@@ -91,11 +92,15 @@ CIL_DEPS = $(notdir $(CIL_DEPENDENCIES:.c=.ilo))
 endif
 DEPENDENCIES = $(filter-out $(EXCLUDE), $(C_deps) $(ASM_deps) $(CPP_deps) $(CIL_DEPS))
 
-define CALLDIR
-	$(MAKE) /C$(dir)
+define SUFFIXDIRS =
+        $(foreach dir, $(1), $(dir)$(2))
 endef
 
-define ALLDIRS
-alldirs:
-	$(foreach dir, $(DIRS), $(CALLDIR))
+
+define ALLDIRS =
+C_DIRS = $$(call SUFFIXDIRS,$(DIRS),.dirs)
+alldirs: $$(C_DIRS)
+$$(C_DIRS) : %.dirs :
+	$$(MAKE) -C$$*
 endef
+export ALLDIRS

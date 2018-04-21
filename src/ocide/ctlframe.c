@@ -40,6 +40,7 @@
 #include <windows.h>
 #include <commctrl.h>
 #include <stdio.h>
+#include "header.h"
 
 static char *szFrameClassName = "ladSoftFrameWindow";
 static HCURSOR hcurs, vcurs;

@@ -37,6 +37,11 @@
 #		email: TouchStone222@runbox.com <David Lindauer>
 
 ifndef _TREEROOT
+_TREEROOT := $(CURDIR)\treetop.mak
+_TREETARGET := $(CURDIR)
+export _TREEROOT
+export _TREETARGET
+
 # by default this makefile just switches omake to 'TREE' mode
 # That will load TREETOP.MAK which will eventually load CONFIG.MAK to 
 # load compiler scripts
@@ -46,26 +51,26 @@ ifndef _TREEROOT
 export NOMAKEDIR
 
 tools: 
-	@$(MAKE) /T
+	@$(MAKE) -f$(_TREEROOT)
 
 distribute:
-	@$(MAKE) /T distribute
+	@$(MAKE) -f$(_TREEROOT) distribute
 
 fullbuild: buildenv tools copyexes library distribute
 
 clean:  
-	@$(MAKE) /T clean
+	@$(MAKE) -f$(_TREEROOT) clean
 
 library:
-	@$(MAKE) /Cclibs
+	@$(MAKE) -Cclibs
 
 copyexes:
-	@$(MAKE) /T exeDISTRIBUTE
+	@$(MAKE) -f$(_TREEROOT) exeDISTRIBUTE
 
 buildenv:
-	@$(MAKE) /T -DBUILDENV distribute
+	@$(MAKE) -f$(_TREEROOT) --eval="BUILDENV:=" distribute
 	-copy orc.exe ..\bin
-
+	-copy omake.exe ..\bin
 else
 # when called from TREETOP.MAK do the below
 
@@ -95,15 +100,15 @@ DISTRIBUTE:
 	copy ocl.lic $(DISTLIC)
 	copy addon.txt $(DISTADDON)
 ifdef BUILDENV
-	@$(MAKE) /C$(DISTROOT)\src\clibs DISTRIBUTE /DBUILDENV
+	@$(MAKE) -C$(DISTROOT)\src\clibs DISTRIBUTE -DBUILDENV
 else
-	@$(MAKE) /C$(DISTROOT)\src\clibs DISTRIBUTE
+	@$(MAKE) -C$(DISTROOT)\src\clibs DISTRIBUTE
 ifdef WITHMSDOS
 # this requires CC386 be installed since it relies on far pointer support
 # so I don't make it a part of the default install
-	@$(MAKE) /C$(DISTROOT)\src\..\ -f$(realpath .\doszip.mak)
-	@$(MAKE) /C$(DISTROOT)\src\dos\install -fmakefile.le
+	@$(MAKE) -C$(DISTROOT)\src\..\ -f$(realpath .\doszip.mak)
+	@$(MAKE) -C$(DISTROOT)\src\dos\install -fmakefile.le
 endif
-	@$(MAKE) /Cc:\ -f$(realpath .\zip.mak)
+	@$(MAKE) -Cc:\ -f$(realpath .\zip.mak)
 endif
 endif

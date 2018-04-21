@@ -50,6 +50,7 @@ class Parser
 {
 public:
     Parser(const std::string &string, const std::string &file, int lineno, bool incrementLineno = true, Variable::Origin oOrigin = Variable::o_file);
+	void SetAutoExport() { autoExport = true; }
     ~Parser() { }
     bool Parse();
     void SetIgnoreFirstGoal() { ignoreFirstGoal = true; }
@@ -57,9 +58,9 @@ protected:
     bool AlwaysEval(const std::string &line);
     void UnTab(std::string &value);
     std::string GetLine(bool inCommand);
+    bool ParseLine(const std::string &line);
     size_t UnfetteredChar(const std::string &line, char ch) const;
     std::string FirstWord(const std::string &line, size_t &n);
-    bool ParseLine(const std::string &line);
     std::string RemoveComment(const std::string &line);
     bool ParseAssign(const std::string &left, const std::string &right, bool dooverride, RuleList *ruleList = nullptr);
     bool ParseRecursiveAssign(const std::string &left, const std::string &right, bool dooverride, RuleList *ruleList = nullptr);
@@ -89,5 +90,6 @@ private:
     bool incrementLineno;
     Variable::Origin origin;
     bool ignoreFirstGoal;
+	bool autoExport;
 };
 #endif

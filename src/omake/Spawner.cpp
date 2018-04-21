@@ -45,10 +45,11 @@
 #include <iostream>
 #include <deque>
 #include "utils.h"
+#include <algorithm>
 
 const char Spawner::escapeStart = '\x1';
 const char Spawner::escapeEnd = '\x2';
-int Spawner::lineLength = 8100; // os limitation on XP and later is 8191
+int Spawner::lineLength = 1024 * 1024; // os limitation on XP and later is 8191
 std::list<std::string> Spawner::cmdList;
 
 int Spawner::Run(Command &commands, RuleList *ruleList, Rule *rule)
@@ -213,18 +214,12 @@ bool Spawner::split(const std::string &cmd)
 std::string Spawner::shell(const std::string &cmd)
 {
     std::string rv = OS::SpawnWithRedirect(cmd);
-    size_t n = rv.find_first_of('\n');
-    while (n != std::string::npos)
-    {
-        rv.replace(n, 1, " ");
-        n = rv.find_first_of('\n', n);
-    }
-    n = rv.find_first_of('\r');
-    while (n != std::string::npos)
-    {
-        rv.replace(n, 1, "");
-        n = rv.find_first_of('\r', n);
-    }
+    int n = rv.size();
+    while (n && rv[n - 1] == '\r' || rv[n - 1] == '\n')
+        n--;
+    rv = rv.substr(0, n);
+    std::replace(rv.begin(), rv.end(), '\r', ' ');
+    std::replace(rv.begin(), rv.end(), '\n', ' ');
     return rv;
 }
 std::string Spawner::QualifyFiles(const std::string &cmd)

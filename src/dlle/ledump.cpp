@@ -256,7 +256,7 @@ int main(int argc, char **argv)
         exit(1);
     }
     std::fstream in(argv[1], std::ios::in | std::ios::binary);
-    if (in == NULL)
+    if (!in.is_open())
     {
         std::cout << "Invalid input file";
         exit(1);

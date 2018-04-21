@@ -35,8 +35,14 @@
 
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
-C_DEPENDENCIES = $(wildcard *.c)
-CIL_DEPENDENCIES = $(wildcard *.c) $(wildcard cil/*.c)
 
-all: $(DEPENDENCIES)
+ifndef _TREEROOT
+CURRENT := $(subst /,\,$(CURDIR))
+_TREEROOT := $(CURRENT)\..\treetop.mak
+_TREETARGET := $(CURRENT)
+export _TREEROOT
+export _TREETARGET
 
+redirect:
+	@$(MAKE) -f$(_TREEROOT)
+endif

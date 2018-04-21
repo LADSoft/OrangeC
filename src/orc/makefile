@@ -42,8 +42,7 @@ CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=ocpplib util
 DEFINES=L_INT=__int64
 
-redirect:
-	@$(MAKE) /T
+include ..\redirect.mak
 
 DISTRIBUTE: copyexe
 	copy target.cfg $(DISTBIN)\orc.cfg

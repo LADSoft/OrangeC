@@ -67,6 +67,7 @@ CmdSwitchBool MakeMain::query(switchParser, 'q');
 CmdSwitchBool MakeMain::keepGoing(switchParser, 'k');
 CmdSwitchBool MakeMain::ignoreErrors(switchParser, 'i');	
 CmdSwitchDefine MakeMain::defines(switchParser, 'D');
+CmdSwitchDefine MakeMain::evals(switchParser, '-');
 CmdSwitchBool MakeMain::rebuild(switchParser, 'B');
 CmdSwitchCombineString MakeMain::newFiles(switchParser, 'W', ' ');
 CmdSwitchCombineString MakeMain::oldFiles(switchParser, 'o', ' ');
@@ -100,7 +101,7 @@ char *MakeMain::usageText = "[options] goals\n"
                     "/p    Print database          /q    Query\n"
                     "/r    Ignore builtin rules    /s    Don't print commands\n"
                     "/t    Touch                   /u    Debug warnings\n"
-                    "/w    Print directory\n"
+                    "/w    Print directory         --eval=STRING evaluate a statement\n"     
                     "/!    No logo\n"
                     "\nTime: " __TIME__ "  Date: " __DATE__;
 char *MakeMain::builtinVars = "";
@@ -275,6 +276,19 @@ void MakeMain::LoadCmdDefines()
         const CmdSwitchDefine::define *def = defines.GetValue(i);
         SetVariable(def->name, def->value, Variable::o_command_line, false);
     }
+    for (int i=0; i < evals.GetCount(); i++)
+	{
+        const CmdSwitchDefine::define *def = evals.GetValue(i);
+		if (std::string(def->name) != "eval")
+		{
+			Eval::error(std::string("Invalid switch --") + def->name);
+		    exit (1);
+		}
+        Parser p(def->value, "<eval>", 1, false, Variable::o_default);
+		p.SetAutoExport();
+        p.Parse();
+		
+	}
 }
 void MakeMain::SetInternalVars()
 {
@@ -446,6 +460,8 @@ int MakeMain::Run(int argc, char **argv)
                 SetVariable("SHELL", val, Variable::o_environ, true);
             }
         }
+        std::string wd = OS::GetWorkingDir();
+        SetVariable("CURDIR", wd, Variable::o_environ, false);
         std::string goals;
         for (int i=1; i < argc; i++)
         {

@@ -41,10 +41,6 @@ INCLUDES=..\util ..\objlib ..\exefmt ..\olib
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=util objlib olib
 
-redirect:
-	@$(MAKE) /T
-
-redirect:
-	@$(MAKE) /T
+include ..\redirect.mak
 
 DISTRIBUTE: copyexe

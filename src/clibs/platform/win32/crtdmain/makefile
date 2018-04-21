@@ -48,9 +48,7 @@ all: crtdll.l
 crtdll.l: .\crtdmain.o .\c0.o
 	del $@
 	$(LIB) $(LIBFLAGS) $@ + .\c0.o .\crtdmain.o
-	$(LIB) $(LIBFLAGS) $@ + @&&|
-$(CLIBOBJECT)\srproc.o $(CLIBOBJECT)\lxsar.o $(CLIBOBJECT)\lxshr.o $(CLIBOBJECT)\lxshl.o $(CLIBOBJECT)\lxmul.o $(CLIBOBJECT)\lxdiv.o $(CLIBOBJECT)\substk.o $(CLIBOBJECT)\stkchk.o $(OBJECT)\vsconio.o
-|
+	$(LIB) $(LIBFLAGS) $@ + $(CLIBOBJECT)\srproc.o $(CLIBOBJECT)\lxsar.o $(CLIBOBJECT)\lxshr.o $(CLIBOBJECT)\lxshl.o$(CLIBOBJECT)\lxmul.o $(CLIBOBJECT)\lxdiv.o $(CLIBOBJECT)\substk.o $(CLIBOBJECT)\stkchk.o $(OBJECT)\vsconio.o
 	$(IMPLIB) $@ .\crtdll.def
 
 DISTRIBUTE:

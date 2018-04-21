@@ -1,5 +1,20 @@
 Release notes:
 
+Version 6.0.37:
+    olib:   remove extraneous warning
+    ocpp:   support /! and /V
+    omake:  fix crash when using help in conjunction with change to /f switch to allow space
+    omake:  change text of "warning: '' is undefined" to say what is undefined
+    omake:  fix "if ($(LEFT),$(RIGHT))" to evaluate properly 
+    omake:  fix 'commands returned error code' error to use the right line and file
+    omake:  don't use .vpath to figure out path for $@
+    omake:  error if target specifiers do not match target suffix (e.g. x1.o x2.o: %.p : %.c)   
+    omake:  replace '\t' and '\n' with ' ' after macro replacement
+    omake:  $shell:  strip trailing line feeds
+    omake:  macro substitue last argument of $(call ...)
+    omake:  add --eval switch
+    omake:  spawn directly when possible
+
 Version 6.0.36: 4/18/2018
     omake:  support '/' better
     omake:  strip leading tabs when necessary

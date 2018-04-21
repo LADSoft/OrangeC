@@ -46,7 +46,7 @@ char *_passed_name ;
 static void argset(void)
 {
         char buf[260];
-        char *bufp[300], *ocl ;
+        char *bufp[10000], *ocl ;
         char *_cmdline = _oscmd ;
   int inquote = 0 ;
         _argc = 0;

@@ -100,7 +100,7 @@ std::map<const std::string, Eval::StringFunc> Eval::builtins =
     { "error", &Eval::errorx },
     { "warning", &Eval::warningx },
     { "info", &Eval::info },
-    { "exists", &Eval::exists },
+    { "exists", &Eval::exists }
 };
 
 Eval::Eval(const std::string name, bool ExpandWildcards, RuleList *RuleList, Rule *Rule)
@@ -179,15 +179,16 @@ std::string Eval::ExtractFirst(std::string &value, const std::string &seps)
     }
     else
     {
-        for (int i =0; i < seps.size(); i++)
-        {
-            int m = value.find_first_of(seps[i]);
-            if (m != std::string::npos && m < n)
-                n = m;
-        }
+        int m;
+        if (seps == " ")
+            m = value.find_first_of(" \t\n");
+	    else
+            m = value.find_first_of(seps);
+        if (m != std::string::npos)
+            n = m;
     }
     std::string rv = value.substr(0, n);
-    if (value.find_first_not_of(' ') == std::string::npos)
+    if (value.find_first_not_of(" \t", n) == std::string::npos)
         value.replace(0,value.size(),"");
     else
         value.replace(0,n+1,"");
@@ -296,7 +297,8 @@ bool Eval::AutomaticVar(const std::string &name, std::string &rv)
         std::string extra;
         if (name[0] == '@') // target file name
         {
-            rv = Maker::GetFullName(ruleList->GetTarget());
+//            rv = Maker::GetFullName(ruleList->GetTarget());
+            rv = ruleList->GetTarget();
             found = true;
         }
         else if (name[0] == '%') // empty
@@ -590,8 +592,8 @@ join:
             }
         }
     }
-    std::replace(rv.begin(), rv.end(), '\t', ' ');
-    std::replace(rv.begin(), rv.end(), '\n', ' ');
+ //   std::replace(rv.begin(), rv.end(), '\t', ' ');
+//    std::replace(rv.begin(), rv.end(), '\n', ' ');
     return rv;
 }
 size_t Eval::FindPercent(const std::string &name, size_t pos)
@@ -1420,7 +1422,11 @@ std::string Eval::call(const std::string &arglist)
                 n = args.find_first_of(',');
             }
             if (args.size())
+			{
+                Eval l1(args, false, ruleList, rule);
+                args = l1.Evaluate();
                 l.PushCallArg(args);
+			}
             rv = l.Evaluate();
             callArgs = oldArgs;
         }

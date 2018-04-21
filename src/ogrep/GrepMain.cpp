@@ -40,6 +40,7 @@
 #include "GrepMain.h"
 #include "CmdFiles.h"
 #include "Utils.h"
+#include <stdlib.h>
 #include <fstream>
 #include <iomanip>
 #include <iostream>

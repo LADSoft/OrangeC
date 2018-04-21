@@ -365,10 +365,10 @@ int getline(int listflag)
             listflag = preprocess();
             inpreprocess--;
             prepping = TRUE;
-            lastst = eol;
+            lastst = rceol;
         }
         if (incldepth)
-            lastst = eol;
+            lastst = rceol;
     }
     while (ifskip || prepping || (inhfile && !inpreprocess))
         ;
@@ -1115,10 +1115,10 @@ void getsym(void)
     }
     if (! *lptr)
     {
-        if ((lastst == eol && lastch ==  - 1) || lastst == eof)
-            lastst = eof;
+        if ((lastst == rceol && lastch ==  - 1) || lastst == rceof)
+            lastst = rceof;
         else
-            lastst = eol;
+            lastst = rceol;
         getch();
         return ;
     }
@@ -1127,13 +1127,13 @@ void getsym(void)
         getch();
         if (! *lptr)
         {
-            lastst = eol;
+            lastst = rceol;
             getch();
             return ;
         }
     }
     if (lastch ==  - 1)
-        lastst = eof;
+        lastst = rceof;
     else if (isdigit(lastch))
         getnum();
     else if (isstartchar(lastch))
@@ -1152,7 +1152,7 @@ void skip_comma(void)
     if (lastst == comma)
     {
         getsym();
-        if (lastst == eol)
+        if (lastst == rceol)
             getsym();
     }
 }
@@ -1161,7 +1161,7 @@ void skip_comma(void)
 
 void need_eol(void)
 {
-    if (lastst != eol)
+    if (lastst != rceol)
         generror(ERR_EXTRA_DATA_ON_LINE, 0);
     getsym();
 }

@@ -67,7 +67,7 @@ DISTRIBUTE:
 	$(ZIP) -r0 a $(DISTSRC) orangec\src\*.vcxproj orangec\src\*.vcxproj.filters orangec\src\*.sln
 	$(ZIP) a $(DISTSRC) orangec\src\ocide\fonts\ttf-bitstream-vera-1.10\*.* orangec\src\ocide\res\*.* orangec\src\ocide\rule\*.rul orangec\src\ocide\rule\*.props
 	$(ZIP) a $(DISTSRC) orangec\src\*.exe orangec\src\*.iss orangec\src\*.bmp orangec\src\config.bat orangec\src\ocidehld.bat
-	$(ZIP) a $(DISTSRC) orangec\src\license.txt  orangec\src\readme.txt orangec\src\relnotes.txt orangec\src\berkely.lic
+	$(ZIP) a $(DISTSRC) orangec\src\LICENSE.TXT orangec\license\*.* orangec\src\readme.txt orangec\src\relnotes.txt orangec\src\berkely.lic
 	$(ZIP) a $(DISTSRC) orangec\src\clibs\repobj.bat orangec\src\copying orangec\src\ocl.lic orangec\src\addon.txt
 	"\program files (x86)\inno setup 5\iscc" /Focc$(VERNAME) /O\orangec\dist orangec\src\occ.iss
 	-rmdir $(DISTROOT)\appdata

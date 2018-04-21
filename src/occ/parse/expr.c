@@ -2099,7 +2099,7 @@ static LEXEME *getInitInternal(LEXEME *lex, SYMBOL *funcsp, INITLIST **lptr, enu
         }
         lex = getsym();
         if (MATCHKW(lex, finish))
-            error(ERR_IDENTIFIER_EXPECTED);
+            break;
     }
     if (!needkw(&lex, finish))
     {

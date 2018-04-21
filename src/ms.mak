@@ -116,7 +116,7 @@ vpath %.res $(_OUTPUTDIR)
 	$(RC) -i$(RCINCLUDE) $(RCFLAGS) -fo$(_OUTPUTDIR)/$@ $^
 
 $(_LIBDIR)\$(NAME)$(LIB_EXT): $(LLIB_DEPENDENCIES)
-#	-del $()_LIBDIR)\$(NAME)$(LIB_EXT) >> $(NULLDEV)
+#	-del $()_LIBDIR)\$(NAME)$(LIB_EXT) 2> $(NULLDEV)
 	$(LIBEXE) $(LIBFLAGS) /OUT:$(_LIBDIR)\$(NAME)$(LIB_EXT) $(addprefix $(_OUTPUTDIR)\,$(LLIB_DEPENDENCIES)) 
 
 

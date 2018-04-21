@@ -106,7 +106,7 @@ vpath %.res $(_OUTPUTDIR)
 	$(RC) $(RCFLAGS) -i $^ -o $(_OUTPUTDIR)/$@
 
 $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT): $(LLIB_DEPENDENCIES)
-#	-del $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT) >> $(NULLDEV)
+#	-del $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT) 2> $(NULLDEV)
 	$(LIB) $(LIBFLAGS) $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT) $(addprefix $(_OUTPUTDIR)/,$(LLIB_DEPENDENCIES))
 
 LDEPS := $(addprefix -l,$(NAME) $(LIB_DEPENDENCIES))

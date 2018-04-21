@@ -119,9 +119,9 @@ $(NAME).exe: $(MAIN_DEPENDENCIES) $(addprefix $(_LIBDIR)\,$(LIB_DEPENDENCIES)) $
 	$(LINK) /o$(NAME).exe $(TYPE) $(LFLAGS) $(STARTUP) $(addprefix $(_OUTPUTDIR)\,$(MAIN_DEPENDENCIES)) $(_LIBDIR)\$(NAME)$(LIB_EXT) $(LIB_DEPENDENCIES) $(COMPLIB) $(DEF_DEPENDENCIES) $(addprefix $(_OUTPUTDIR)\,$(RES_deps))
 
 %.exe: %.c
-	$(CC) -o$@ $^
+	$(CC) -! -o$@ $^
 
 %.exe: %.cpp
-	$(CC) -o$@ $^
+	$(CC) -! -o$@ $^
 
 endif

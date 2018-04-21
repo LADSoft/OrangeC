@@ -125,9 +125,9 @@ $(NAME).exe: $(MAIN_DEPENDENCIES) $(LIB_DEPENDENCIES) $(_LIBDIR)\$(NAME)$(LIB_EX
 
 
 %.exe: %.c
-	$(CC) $^
+	$(CC) -nologo $^
 
 %.exe: %.cpp
-	$(CC) $^
+	$(CC) -nologo $^
 
 endif

@@ -59,7 +59,7 @@ $(RCFILE).res
 $(foreach dir, $(filter-out c0.o c0lsstartup.o, $(DLLOBJS)), $(DLLOBJECT)\$(dir)) $(SYSOBJECT)\climp.l
 $(RCFILE).res
 |
-	dlpe /f /mDLL /olscrtlil.dll lscrtl.
+	dlpe /! /f /mDLL /olscrtlil.dll lscrtl.
 #	move lscrtlil.dll \occil\bin
 
 .\lscrtl.o: lscrtl.nas

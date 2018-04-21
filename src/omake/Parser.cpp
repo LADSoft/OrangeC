@@ -1,5 +1,4 @@
 /*
-# call with args
 Software License Agreement (BSD License)
     
     Copyright (c) 1997-2016, David Lindauer, (LADSoft).
@@ -49,8 +48,10 @@ Software License Agreement (BSD License)
 #include <ctype.h>
 #include <fstream>
 #include <iostream>
+#include <algorithm>
+
 Parser::Parser(const std::string &string, const std::string &File, int Lineno, bool IncrementLineno, Variable::Origin oOrigin)
-        : file(File), remaining(string), lineno(Lineno-1), incrementLineno(IncrementLineno), lastCommand(nullptr),
+        : file(File), remaining(string), lineno(Lineno-1), incrementLineno(IncrementLineno), lastCommand(nullptr), autoExport(false),
                secondaryExpansionEnabled(false), origin(oOrigin), ignoreFirstGoal(false)
 {
 }
@@ -388,7 +389,7 @@ bool Parser::ParseAssign(const std::string &left, const std::string &right, bool
         else
             *VariableContainer::Instance() += v;
     }
-    if (v && !ruleList && left == "MAKEFILES")
+    if (v && !ruleList && (left == "MAKEFILES" || autoExport))
         v->SetExport(true);
     return true;	
 }
@@ -418,7 +419,7 @@ bool Parser::ParseRecursiveAssign(const std::string &left, const std::string &ri
         else
             *VariableContainer::Instance() += v;
     }
-    if (v && !ruleList && left == "MAKEFILES")
+     if (v && !ruleList && (left == "MAKEFILES" || autoExport))
         v->SetExport(true);
     return true;
 }
@@ -453,7 +454,7 @@ bool Parser::ParsePlusAssign(const std::string &left, const std::string &right, 
         else
             *VariableContainer::Instance() += v;
     }
-    if (v && !ruleList && left == "MAKEFILES")
+    if (v && !ruleList && (left == "MAKEFILES" || autoExport))
         v->SetExport(true);
     return true;
 }
@@ -479,7 +480,7 @@ bool Parser::ParseQuestionAssign(const std::string &left, const std::string &rig
         else
             *VariableContainer::Instance() += v;
     }
-    if (v && !ruleList && left == "MAKEFILES")
+    if (v && !ruleList && (left == "MAKEFILES" || autoExport))
         v->SetExport(true);
     return true;
 }
@@ -662,7 +663,8 @@ join:
             {
                 targetPattern = iline.substr(0, n);
                 iline = line.substr(n + 1);
-            }
+				std::replace(targetPattern.begin(), targetPattern.end(), '\n', ' ');
+			}
             std::string iparsed;
             precious = Double;
             while (iline.size())

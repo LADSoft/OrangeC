@@ -72,6 +72,7 @@ private:
     static CmdSwitchBool keepGoing;
     static CmdSwitchBool ignoreErrors;	
     static CmdSwitchDefine defines;
+    static CmdSwitchDefine evals;
     static CmdSwitchBool rebuild;
     static CmdSwitchCombineString dir;
     static CmdSwitchBool debug;

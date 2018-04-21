@@ -68,7 +68,7 @@ static HIMAGELIST tagImageList;
 static char *szErrorTitle = "Error List";
 
 static ERRWNDDATA *errlist[1000];
-static int errcount;
+static int errcount, lasterrcount;
 static int errors, warnings;
 static void CopyText(HWND hwnd)
 {
@@ -256,7 +256,7 @@ LRESULT CALLBACK ErrorProc(HWND hwnd, UINT iMessage, WPARAM
                     warnings++;
                 else
                     errors++;
-                SendMessage(hwnd, WM_USER, 0, 0);
+                PostMessage(hwnd, WM_USER, 0, 0);
             }
             break;
         case WM_CLEARERRDATA:
@@ -278,20 +278,24 @@ LRESULT CALLBACK ErrorProc(HWND hwnd, UINT iMessage, WPARAM
             sprintf(buf, "%d warnings", warnings);
             SetWindowText(hwndWarnButton, buf);
             
-            ListView_DeleteAllItems(hwndLV);
-            memset(&item, 0, sizeof(item));
-            for (i=0; i < errcount; i++)
+            if (errcount != lasterrcount)
             {
-                if (errlist[i]->isWarning && (errorButtons & ERR_WARNINGS)
-                    || !errlist[i]->isWarning && (errorButtons & ERR_ERRORS))
+                lasterrcount = errcount;
+                ListView_DeleteAllItems(hwndLV);
+                memset(&item, 0, sizeof(item));
+                for (i = 0; i < errcount; i++)
                 {
-                    item.iItem = k++;
-                    item.iSubItem = 0;
-                    item.mask = LVIF_IMAGE | LVIF_PARAM;
-                    item.lParam = i;
-                    item.iImage = errlist[i]->isWarning ? 1 : 0;
-                    ListView_InsertItem(hwndLV, &item);
-                }            
+                    if (errlist[i]->isWarning && (errorButtons & ERR_WARNINGS)
+                        || !errlist[i]->isWarning && (errorButtons & ERR_ERRORS))
+                    {
+                        item.iItem = k++;
+                        item.iSubItem = 0;
+                        item.mask = LVIF_IMAGE | LVIF_PARAM;
+                        item.lParam = i;
+                        item.iImage = errlist[i]->isWarning ? 1 : 0;
+                        ListView_InsertItem(hwndLV, &item);
+                    }
+                }
             }
         }
             break;

@@ -220,7 +220,7 @@ void CmdSwitchFile::Dispatch(char *data)
         if (argc == max)
         {
             max += 10;
-            char **p = new char *[max];
+            char **p = new char *[max+1];
             memcpy(p, argv, argc * sizeof(char *));
             delete [] argv;
             argv = p;

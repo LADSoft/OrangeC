@@ -155,7 +155,7 @@ static int qualify(char *name)
 static void argset(void)
 {
         char buf[256];
-   char *bufp[100], *ocl ;
+   char *bufp[10000], *ocl ;
         char *_cmdline = _oscmd ;
   int inquote = 0 ;
     char *dir;

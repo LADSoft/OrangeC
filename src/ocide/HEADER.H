@@ -633,6 +633,7 @@ typedef struct dwinfo
     int jumplistLineno;
     int lineNumberDigits;
     DWORD temp;
+    unsigned timerId;
     int logMRU: 1;
     int newFile : 1;
 	int timing : 1;

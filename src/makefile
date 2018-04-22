@@ -70,7 +70,8 @@ copyexes:
 buildenv:
 	@$(MAKE) -f$(_TREEROOT) --eval="BUILDENV:=" distribute
 	-copy orc.exe ..\bin
-	-copy omake.exe ..\bin
+	-mkdir ..\temp;
+	-copy omake.exe ..\temp
 else
 # when called from TREETOP.MAK do the below
 

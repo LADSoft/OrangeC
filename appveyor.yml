@@ -2,7 +2,7 @@ image: Visual Studio 2017
 
 install:
     - choco install InnoSetup
-    - set PATH=%PATH%;C:\Program Files (x86)\Inno Setup 5;c:\orangec\bin
+    - set PATH=c:\orangec\temp;c:\orangec\bin;%PATH%;C:\Program Files (x86)\Inno Setup 5
     - set ORANGEC=c:\ORANGEC
 
 build_script:
@@ -12,11 +12,11 @@ build_script:
         - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars32.bat"
         - c:\orangec\src\omake fullbuild 
         - c:\orangec\bin\occ /V
-        - c:\orangec\bin\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
+        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
         - c:\orangec\bin\occ /V
-        - c:\orangec\bin\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
+        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
         - c:\orangec\bin\occ /V
-        - c:\orangec\bin\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
+        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
         - cd ..\.. 
         - move orangec projects
 

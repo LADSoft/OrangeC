@@ -49,6 +49,7 @@
 #include "Variable.h"
 #include "Eval.h"
 #include "os.h"
+#include <algorithm>
 
 bool Time::operator >(const Time &last)
 {
@@ -61,6 +62,13 @@ bool Time::operator >(const Time &last)
 }
 int OS::Spawn(const std::string command, EnvironmentStrings &environment)
 {
+    static std::string names = "ASSOC ATTRIB BREAK BCDEDIT CACLS CALL CD CHCP CHDIR CHKDSK CHKNTFS CLS CMD COLOR COMP COMPACT CONVERT COPY DATE DEL DIR DISKPART DOSKEY DRIVERQUERY ECHO ENDLOCAL ERASE EXIT FC FIND FINDSTR FOR FORMAT FSUTIL FTYPE GOTO GPRESULT GRAFTABL HELP ICACLS IF LABEL MD MKDIR MKLINK MODE MORE MOVE OPENFILES PATH PAUSE POPD PRINT PROMPT PUSHD RD RECOVER REM REN RENAME REPLACE RMDIR ROBOCOPY SET SETLOCAL SC SCHTASKS SHIFT SHUTDOWN SORT START SUBST SYSTEMINFO TASKLIST TASKKILL TIME TITLE TREE TYPE VER VERIFY VOL XCOPY WMIC ";
+    std::string command1 = command;
+    std::string aa = Eval::ExtractFirst(command1, " ");
+    aa += " ";
+    std::transform(aa.begin(), aa.end(), aa.begin(), ::toupper);
+    bool isCmd = names.find(aa) != std::string::npos;
+    
     Variable *v = VariableContainer::Instance()->Lookup("SHELL");
     if (!v)
         return -1;
@@ -107,7 +115,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings &environment)
 //    {
 //        return -1;
 //    }
-    if (CreateProcess(nullptr, (char *)command.c_str(), nullptr, nullptr, true, 0, env,
+    if (!isCmd && CreateProcess(nullptr, (char *)command.c_str(), nullptr, nullptr, true, 0, env,
                       nullptr, &startup, &pi))
     {
         WaitForSingleObject(pi.hProcess, INFINITE);

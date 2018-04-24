@@ -81,6 +81,8 @@ void LibFiles::ReadOffsets(FILE *stream, int count)
 }
 ObjFile *LibFiles::LoadModule(FILE *stream, ObjInt FileIndex, ObjFactory *factory)
 {
+    if (FileIndex >= files.size())
+        return nullptr;
     const FileDescriptor *a = files[FileIndex];
     if (!a->offset)
         return nullptr;

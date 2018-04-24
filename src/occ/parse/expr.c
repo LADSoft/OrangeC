@@ -1849,7 +1849,6 @@ static void checkArgs(FUNCTIONCALL *params, SYMBOL *funcsp)
                     }
                     else
                     {
-                        assignmentUsages(list->exp, FALSE);
 join:
                         if (!list || !list->tp)
                         {

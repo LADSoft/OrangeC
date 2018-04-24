@@ -5,7 +5,7 @@
    			<ITEM NAME="Command Line" ID="__COMMAND_LINE" TYPE="TEXT">
 	    			"$$(LSINSTALLBIN)\occ.exe" -! "@&amp;&amp;|
 $$(CFLAGS) "-o%.o" $$(UNICODE) 
-"/I$$(INCLUDE)"
+"/I$$(INCLUDE);"
 $$(DEFINE)
 "%.c%.cc%.cpp%.cxx" 
 |"
@@ -14,7 +14,7 @@ $$(DEFINE)
 	    			"$$(LSINSTALLBIN)\occpr.exe" "@&amp;&amp;|
 $$(CFLAGS) -! "-o$(__CODE_COMPLETION_FILE)" $$(UNICODE) 
 /P$(__CODE_COMPLETION_PIPE)
-"/I$$(INCLUDE)"
+"/I$$(INCLUDE);"
 $$(DEFINE)
 "%.c%.cc%.cpp%.cxx%.h" 
 |"           

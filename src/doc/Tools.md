@@ -9,18 +9,18 @@
  
  General tools compile or assemble code, and manage the resulting object files.
  
-     [OCC](occ/OCC.html) is an optimizing x86 C compiler.
-     [OAsm](oasm/OAsm.html) is an x86 assembler.  It uses a syntax that is very similar to the Netwide Assembler (NASM)
-     [OLib](general/OLib.html) documentation is an object file librarian.
-     [OLink](olink/OLink.html) documentation - object file linker.
+   [OCC](occ/OCC.html) is an optimizing x86 C compiler.
+   [OAsm](oasm/OAsm.html) is an x86 assembler.  It uses a syntax that is very similar to the Netwide Assembler (NASM)
+   [OLib](general/OLib.html) documentation is an object file librarian.
+   [OLink](olink/OLink.html) documentation - object file linker.
 
 
-##Linker Postprocessing Tools
+## Linker Postprocessing Tools
  
 
  Linker postprocessing tools take the linker output, and make some sort of device or OS-specific binary image that serves as the final executable image.
  
-     [DLHex](general/DLHex.html) is the utility to make hex and binary files, for ROM-based images
+   [DLHex](general/DLHex.html) is the utility to make hex and binary files, for ROM-based images
      [DLMZ](general/DLMZ.html) is the utility to make 16-bit MSDOS executables.
      [DLLE](general/DLLE.html) is the utility to make 32-bit MSDOS executables that aren't windows compatible.
      [DLPE](general/DLPE.html) is the utility to make Windows 32-bit executables.

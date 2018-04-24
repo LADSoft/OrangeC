@@ -69,6 +69,7 @@ static char *extensionMap[][2] =
     ".cc", "Source Files",
     ".asm", "Source Files",
     ".nas", "Source Files",
+    ".s", "Source Files",
     ".def", "Source Files",
     ".h", "Include Files",
     ".hpp", "Include Files",

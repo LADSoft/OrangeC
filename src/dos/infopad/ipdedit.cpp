@@ -666,7 +666,8 @@ void recolorize(DWINFO *ptr)
         - 4 || stristr(ptr->dwName, ".asi") == ptr->dwName + strlen(ptr->dwName)
         - 4 || stristr(ptr->dwName, ".inc") == ptr->dwName + strlen(ptr->dwName)
         - 4 || stristr(ptr->dwName, ".nas") == ptr->dwName + strlen(ptr->dwName)
-        - 4)
+        - 4 || stristr(ptr->dwName, ".s") == ptr->dwName + strlen(ptr->dwName)
+        - 2)
         language = LANGUAGE_ASM;
     else if (stristr(ptr->dwName, ".rc") == ptr->dwName + strlen(ptr->dwName) - 3)
         language = LANGUAGE_RC;

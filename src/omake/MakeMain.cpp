@@ -497,7 +497,7 @@ int MakeMain::Run(int argc, char **argv)
             v->SetExport(true);
             Include::Instance()->AddFileList(v->GetValue(), true, true);
         }
-        Rule *rule = new Rule(".SUFFIXES", ".c .o .cpp .nas .asm", "", new Command("", 0), "", 0, false);
+        Rule *rule = new Rule(".SUFFIXES", ".c .o .cpp .nas .asm .s", "", new Command("", 0), "", 0, false);
         RuleList *ruleList = new RuleList(".SUFFIXES");
         ruleList->Add(rule, false);
         *RuleContainer::Instance() += ruleList;

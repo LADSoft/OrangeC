@@ -752,7 +752,7 @@ void InsertAnyFile(char *filename, char *path, int drive)
     char drv[256],dir[256],name[256],ext[256];
 #if defined(_MSC_VER) || defined(BORLAND) || defined(__ORANGEC__)
     struct _finddata_t findbuf;
-    int n;
+    intptr_t n;
     _splitpath(filename, drv, dir, name, ext);
     n = _findfirst(filename, &findbuf);
     if (n != -1)

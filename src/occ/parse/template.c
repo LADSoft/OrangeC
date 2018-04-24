@@ -6127,8 +6127,8 @@ SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExte
         lex = sym->deferredCompile;
         if (lex)
         {
-            int oldLinesHead = linesHead;
-            int oldLinesTail = linesTail;
+            LINEDATA* oldLinesHead = linesHead;
+            LINEDATA* oldLinesTail = linesTail;
 			int oldHeaderCount = templateHeaderCount;
             BOOLEAN oldTemplateType = inTemplateType;
             int oldPackIndex = packIndex;

@@ -759,7 +759,7 @@ char *mangleType (char *in, TYPE *tp, BOOLEAN first)
                 {
                     in = lookupName(in, "nullptr_t");
                     while (*in) in++;
-                    return;
+                    return in;
                 }
                 else
                 {

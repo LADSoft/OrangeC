@@ -1,7 +1,7 @@
-##Numbers and Expressions
+## Numbers and Expressions
 
 
-###Integers
+### Integers
  
 
  
@@ -15,7 +15,7 @@
 >     012h ; hexadecimal for the decimal value 18
 
 
-###Floating point values
+### Floating point values
 
  Floating point values are specified similarly as to a C compiler.  For example:
  
@@ -26,7 +26,7 @@
  Note that floating point values must start with a digit in **OAsm**.  .003 is not a valid floating point value because character sequences starting with a dot are interpreted as local labels.
 
 
-###Characters and Strings
+### Characters and Strings
 
  **OAsm** makes no real distinction between single characters and sequences of characters.  Single quotes (') and double quotes (")  may be used interchangeably.  But the interpretation of characters and strings depends on context.
  
@@ -56,7 +56,7 @@
  On the other hand, data areas may be initialized with strings with various directives.  There are three types of values that can be initialized this way; bytes (1byte), words(2 bytes), and double-words(4 bytes).  For ASCII characters, the encoding is just the character, with enough leading zeros to pad to the appropriate size.
 
 
-###Program Counter
+### Program Counter
 
  The symbol '$', by itself, means the current program counter.  This is an absolute program counter, and if passed through to the linker will result in an absolute offset being compiled into the program.  But sometimes it doesn't need to be used as an absolute value, for example it can be used to find the length of a section of data:
  
@@ -66,13 +66,13 @@
  where the EQU statement assigns the value of the expression '$-mylabel' to the label hellosize.
 
 
-###Beginning of section
+### Beginning of section
 
  
  The symbol '$$' means the beginning of the current section.  For example the expression $-$$ gives the offset into the current section.
 
 
-###Expressions
+### Expressions
 
  
  Usually wherever a number may be specified, a more complex expression consisting perhaps of numbers, labels, special symbols, and operators may be substituted.  **OAsm** uses operators similar to the ones found in a C compiler, with precedence similar to the C compiler, and introduces some new operators as well.  See table 1 for a listing of operators, and table 2 for a listing of operator precedences.

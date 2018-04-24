@@ -1,4 +1,4 @@
-###Multiline Macro Extensions
+### Multiline Macro Extensions
 
  
  Multiline macro extensions allow definition of types of macros that are more familiar to assembly language programmers.  Such macros may contain an arbitrary number of assembly language statements and preprocessor directives.  These macros have three parts:  the macro header, the macro body, and the macro invocation.
@@ -169,22 +169,22 @@
  if the context identifier for the current macro invocation is 54.  non-local labels fitting this general format should not appear in the source code, as there is a chance they will conflict with label names chosen by the preprocessor.
 
 
-###%macro
+#### %macro
 
  **%macro** starts a macro definition.  The name of the macro is case-sensitive.
 
 
-###%imacro
+#### %imacro
 
  **%imacro** starts a macro definition.  The name of the macro is not case-sensitive.
 
 
-###%endmacro
+#### %endmacro
 
  **%endmacro** ends a macro definition.
 
 
-###%rotate
+#### %rotate
 
 > **%rotate** rotates the macro argument list for the current invocation a number of times specified in the argument.  If the number of times is positive, the arguments are rotated left, with the leftmost arguments going to the end of the list.  If the number of times is negative, the arguments are rotated right, with the rightmost arguments going to the beginning of the list.
  

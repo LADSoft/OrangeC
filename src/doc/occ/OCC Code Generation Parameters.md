@@ -1,4 +1,4 @@
-##OCC Code Generation Parameters
+## OCC Code Generation Parameters
 
  /Cparams specifies code generation parameters
  

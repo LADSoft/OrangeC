@@ -1,4 +1,4 @@
-##OCC Translating Trigraphs
+## OCC Translating Trigraphs
 
  /T    Translate trigraphs
  

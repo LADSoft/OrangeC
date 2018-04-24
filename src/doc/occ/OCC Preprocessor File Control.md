@@ -1,4 +1,4 @@
-##OCC Preprocessor File Control
+## OCC Preprocessor File Control
 
  +i    create a file with preprocessed text.  
  

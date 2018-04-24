@@ -1,10 +1,10 @@
-###C-Style Preprocessor Directives
+### C-Style Preprocessor Directives
 
  
  The C-Style preprocessor directives are compatible with similar directives that are existant in preprocessors for C compilers.  OAsm does not change the behavior of these directives other than to change the initial character which introduces the directive from '\#' to '%'.
 
 
-###%define
+#### %define
 
  **%define** introduces a method to perform textual substitutions.  In its simplest form it will just replace an identifier with some text:
  
@@ -139,7 +139,7 @@
  For convenience OAsm allows **%define** definitions on the command line, which are useful for tailoring build behavior either directly or through the conditional processing facility.
 
 
-###%undef
+#### %undef
 
 > **%undef** undoes a previous definition, so that it will not be considered for further substitutions (unless defined again).  For example:
  
@@ -150,7 +150,7 @@
  results in no substitution occurring for the use of REG\_EBX.
 
 
-###%error
+#### %error
 
  **%error** displays an error, causing the assembler to not generate code.  For example:
  
@@ -163,7 +163,7 @@
  When the file is assembled.
 
 
-###%line
+#### %line
 
  **%line** is used to change the file and line number listed in the error reporting.  By default the error reporting indicates the file and line an error occur on.  Sometimes in generated source code files, it is useful to refer to the line number in the original source code rather than in the file that is currently being assembled.  **%line** accomplishes this by updating internal tables to indicate to the preprocessor that it should use alternate information when reporting an error.  For example inserting the following at line 443 of test.asm:
  
@@ -185,7 +185,7 @@
  Note that once **%line** is used to change the line number and file name, **OAsm** remembers the new information and continues to increment the new line number each time it processes a line of source code.
 
 
-###%include
+#### %include
 
  **%include** is used to start the interpretation of another source file.  The current source file is suspended, and the new source file is loaded and assembled.  Once the assembler is done with the new source file (and anything it also **%includes**) assembly resumes beginning where it left off in the current source file.
  
@@ -202,7 +202,7 @@
  For convenience, an include path may be specified on the command line, and **OAsm** will search for included files both in the current directory, and in directories specified on that path.
 
 
-###%if
+#### %if
 
  **%if** is a _%if-style conditional _that takes a numeric expression as an argument.  If the numeric expression evaluates to a non-zero value, the result of the evaluation will be true, otherwise it will be false.   Note that for purposes of this conditional, expressions are always evaluated; if an undefined identifier is used in a **%if** expression it is replaced with '0' and evaluation continues.   Subsequent blocks of code will either be assembled if the result of the evaluation is non-zero, or ignored if the result of the evaluation is zero.
  
@@ -223,10 +223,10 @@
  
  results in nothing being assembled because the value of 'ZERO' is zero.
  
- See the section on [Conditional Processing](Conditional%20Processing.html) for more on _%if-style conditionals_.
+ See the section on [Conditional Processing](Conditional%20Processing.md) for more on _%if-style conditionals_.
 
 
-###%elif
+#### %elif
 
   **%elif **is a _%elif-style conditional_ that takes a numeric expression as an argument.  If the numeric expression evaluates to a non-zero value, the next block will be assembled, otherwise it will be ignored.  As with _%if_, undefined symbols will be replaced with '0' for purposes of the evaulation.
  
@@ -241,10 +241,10 @@
  
  will result in the mov statement being ignored and the inc statement being assembled because the result of the **%if** argument evaluation is zero, and the result of the **%elif **argument evaluation is nonzero.
  
- See the section on [Conditional Processing](Conditional%20Processing.html) for more on %elif-style conditionals.
+ See the section on [Conditional Processing](Conditional%20Processing.md) for more on %elif-style conditionals.
 
 
-###%ifdef
+#### %ifdef
 
   **%ifdef** is a _%if-style_ conditional that takes an identifer as an argument.  If the identifier has been defined with a previous **%define** or **%assign** statement, the next block will be assembled, otherwise it will be ignored.
  
@@ -259,10 +259,10 @@
  
  Note that a definition declared with **%define** or **%assign** must match the argument exactly, whereas a definition declared with **%idefine** or **%iassign** can differ in case and still match.  **%ifdef** will not match identifiers declared with **%macro** or **%imacro**.
  
- See the section on [Conditional Processing](Conditional%20Processing.html) for more on _%if-style conditionals_.
+ See the section on [Conditional Processing](Conditional%20Processing.md) for more on _%if-style conditionals_.
 
 
-###%ifndef
+#### %ifndef
 
    **%ifndef** is a _%if-style conditional_ that takes an identifer as an argument.  If the identifier has not been defined with a previous **%define** or **%assign** statement, the next block will be assembled, otherwise it will be ignored.
  
@@ -284,10 +284,10 @@
  
  Note that a definition declared with **%define** or **%assign** can have any difference from the argument and trigger assembly of the block, whereas a definition declared with **%idefine** or **%iassign** must differ in some way other than in case.  **%ifndef** will assemble the following block for identifiers declared with **%macro** or **%imacro**.
  
- See the section on [Conditional Processing](Conditional%20Processing.html) for more on _%if-style conditionals_.
+ See the section on [Conditional Processing](Conditional%20Processing.md) for more on _%if-style conditionals_.
 
 
-###%else
+#### %else
 
  **%else** is used to select a block for assembly, when all previous _%if-style conditionals_ and _%elif-style conditionals_ in the same sequence have had their arguments evaluate to false.  For example:
  
@@ -300,13 +300,13 @@
  
  will result in the mov being ignored, but the inc being assembled, because the evaluation of the **%if** argument is false.
  
- See the section on [Conditional Processing](Conditional%20Processing.html) for more on _%else_.
+ See the section on [Conditional Processing](Conditional%20Processing.md) for more on _%else_.
 
 
-###%endif
+#### %endif
 
   
  **%endif**  is used to end a  conditional sequence. Once a conditional sequence is ended, code assembly proceeds as normal, unless the conditional sequence was itself nested within a block of a higher-level conditional sequence that is not being assembled.
  
- See the section on [Conditional Processing](Conditional%20Processing.html) for more on _%endif_.
+ See the section on [Conditional Processing](Conditional%20Processing.md) for more on _%endif_.
   

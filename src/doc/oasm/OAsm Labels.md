@@ -1,4 +1,4 @@
-##OAsm Labels
+## OAsm Labels
 
  
  Labels may begin with any alphabetic character, or with any of the characters '\_', '?', or '.'.  Within a label, alphabetic characters, digits, or any of the characters '\_', '$', '\#', '@', '~', '?', '.' may occur.
@@ -48,7 +48,7 @@
  **OAsm** generates two forms such labels within macro invocations, and within 'contexts' as shown in other sections.  In these cases the label starts with '..@', has a sequence of digits, then has a '.' or '@' character followed by user-specified text.  When using the nonlocal label format, these forms should be avoided to avoid clashing with assembler-generated labels.
 
 
-###Special Labels
+### Special Labels
 
  **OAsm** defines one special label, '..start'.  This label, if used, indicates that this particular position in the code space is the first code that should be executed when the program runs.
  

@@ -1,4 +1,4 @@
-##OCC Compilation Modes
+## OCC Compilation Modes
 
  +A    disable non-ansi extensions
  

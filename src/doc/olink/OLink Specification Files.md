@@ -1,4 +1,4 @@
-##OLink Specification Files
+## OLink Specification Files
 
  
  A specification file indicates the combination and ordering of sections of code and data.  The specification file consists of one or more **Partitions**, which are independent units of code and/or data.  
@@ -11,7 +11,7 @@
  
  You can also define labels within partitions and overlays similar to assignment statements in a high-level-language.  Each label has an associated expression, which is calculated and then used as a value for the label.  These values become globals to the linker, and are treated the same as the address obtained when declaring a global variable in the assembler and compiler.  Code in the object files can reference these labels as if they were externals.  
  
- Further, expressions used in defining a label or attribute could use another label which is not defined in the specification file; this might be defined for example somewhere in the code, or in a [command-line definition](OLink%20Command%20Line%20Options.html).  It is especially useful to define such labels in a command line definition, as a way to customize the specification file without rewriting it.  For example, if two peices of hardware share the same source code but are linked at different base addresses, one might write a single linker specification file, referencing the base address as a label.  Then a linker command-line definition could be used to resolve the specific address the code is linked for.
+ Further, expressions used in defining a label or attribute could use another label which is not defined in the specification file; this might be defined for example somewhere in the code, or in a [command-line definition](OLink%20Command%20Line%20Options.md).  It is especially useful to define such labels in a command line definition, as a way to customize the specification file without rewriting it.  For example, if two peices of hardware share the same source code but are linked at different base addresses, one might write a single linker specification file, referencing the base address as a label.  Then a linker command-line definition could be used to resolve the specific address the code is linked for.
  
  The following will be used as an example:
  
@@ -140,7 +140,7 @@
 >>
 
 
-###Attributes
+### Attributes
 
  Partitions, overlays, and regions can be attributed with one or more attributes.  The attributes are comma delimited, and enclosed in braces.  They occur after the name of the partition or overlay, or after the section specified by a region.
  
@@ -160,7 +160,7 @@
 |VIRTUAL|base address for linking the region, when base address does not match the  ADDR attribute|unassigned|partition virtual attribute|virtual address of overlay, or end of previous region|
 
 
-###Complex region specifiers
+### Complex region specifiers
 
  Usually the region statement is used to specify a specific section name such as code:
  

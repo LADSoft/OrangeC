@@ -1,4 +1,4 @@
-##OASM Directives
+## OASM Directives
 
  
  Directives are used to indicate the assembler should interpret the statement as something other than an instruction to the processor.  For example they can be used to define data, or to create seperate sections for grouping code and/or data.  
@@ -7,7 +7,7 @@
  
 > myvar \[db   44\]
  
- However, the directives are redefined with default [multiline macros](Multiline%20Macro%20Extensions.html), so that the brackets are not necessary when typing code:
+ However, the directives are redefined with default [multiline macros](Multiline%20Macro%20Extensions.md), so that the brackets are not necessary when typing code:
  
 > myvar db 44
  
@@ -34,7 +34,7 @@
 * Psuedo-structure directives allow you to define structured data in a very basic way.
 
 
-###Data Definition Directives
+### Data Definition Directives
 
  Data Definition directives define the value of a variable.  There are several types of values that can be defined.  The first is a number.  The number can sometimes be an integer, other times floating point, depending on the directive.  Another type is a character or string.  Another type of value is use of a label, or the difference between labels.  Another type sometimes useful in real mode programming is a segment, which is very loosely a reference to a section.  The reference can be made either by saying the section name, or using the SEG operator on a label to extract its section.
  
@@ -85,7 +85,7 @@
 >     dq   44.7,33,2.19.8
 
 
-###Data Reservation Directives
+### Data Reservation Directives
 
  Data Reservation directives reserve space for data, and optionally give an initial value to load the space with.  For example:
  
@@ -118,7 +118,7 @@
  Generally, the type of data that can be defined in the optional argument to one of the Data Reservation directives is the same as for the corresponding Data Definition directive.
 
 
-###Label Directives
+### Label Directives
 
  Label Directives bestow some type of attribute to a label.  Generally these attributes center around visibility of the label - is it visible to some entity outside the current OAsm assembly session or not?  For example the 'global' and 'extern' directives bestow attributes that allow the linker to resolve references to a label when the references are made in one source code file but the label is defined in a different source code file.  Some of these directives require the label to be defined in the same file as the directive occurs; and others require the label to be defined elsewhere.
  
@@ -133,7 +133,7 @@
 * import - the label is not defined in this file, it will be imported from some other DLL or EXE file by windows
 
 
-###Global Directive
+#### Global Directive
 
  Each use of the global directive can assign the 'global' attribute to one or more labels.  When a label is global, it has a presence that extends beyond the current file, and the linker may resolve references to the variable to it, when those references are made in other files.  Those references would typically have been made by use of the 'extern' directive.  For example:
  
@@ -153,7 +153,7 @@
 >     global mylab, strput
 
 
-###Extern Directive
+#### Extern Directive
 
  Each use of the extern directive can assign the 'external' attribute to one or more labels.  When a label is external, the definition is not found in the file currently being assembled.  The purpose of the directive is to give the assembler and linker a hint that it should search elsewhere for the definition.
  
@@ -183,7 +183,7 @@
 > errmsg   db   "this is error number: ",0
 
 
-###Export Directive
+#### Export Directive
 
  The export directive defines a symbol that can be used by the windows operating system during program load.  For example a DLL might use it to declare a function that is to be available to other executable files.  Unlike the global and external directives, 'export' can only be used to change the attributes of one variable at a time.  For example in the above examples adding the line:
  
@@ -196,7 +196,7 @@
  would export the function puterror, but other executables would see it as being named Error.
 
 
-###Import Directive
+#### Import Directive
  
 
  The import directive is used to signify that the label is exported from some other executable or DLL file, and that windows should load that executable or DLL so that the label can be resolved.  As with export there are two versions of the directive:
@@ -218,7 +218,7 @@
 >     ...
 
 
-###Section Directives
+### Section Directives
 
  Section directives help arrange data and code.  In 16-bit code they are often essential, as a section in **OAsm** maps more or less directly to a segment in the real-mode architecture (depending on the exact definitions given in the linker specification file); and large programs simply won't fit within a single section.  The section directive would then be used to partition the various code and data into segments some way that makes sense based on the application.
  
@@ -233,7 +233,7 @@
 * align - align code or data to a specific boundary
 
 
-###Section Directive
+#### Section Directive
 
  The Section directive switches to a new section.  If this is the first time the section is used, the section directive may also specify attributes for the section.  For example:
  
@@ -269,7 +269,7 @@
  to start a section named code, if you prefer.
 
 
-###Absolute Directive
+#### Absolute Directive
 
  The absolute directive is used to switch out of sections where data can be emitted, into an **absolute** section with the specified origin.  It is called absolute because these labels never get relocated by the linker; they are essentially constants.  Labels defined in an absolute section will get the value of the program counter within the section, at the time the section is defined.  But these labels get a constant value, that is not relocated by the linker.  For example:
  
@@ -290,7 +290,7 @@
  Note that in the definition of this section, we did not attempt to create data or code, we only reserved space.  In general attempting to generate code or data in an absolute section will cause an error.
 
 
-###Align Directive
+#### Align Directive
  
 
   The Align directive aligns data to a specific boundary.  For example:
@@ -300,7 +300,7 @@
  inserts enough zeroed bytes of data to align the current section to the beginning of a four-byte boundary.  Note that the section attributes still need to be set to have the same alignment or better, either in the section directive or in the linker specification file, so that the linker will honor the alignment when relocating the section.
 
 
-###The EQU Directive
+### The EQU Directive
 
  The EQU directive allows a label to be given some value.  This value must be calculable at the time the EQU directive is encountered and must resolve to a constant.  However, the value itself can involve the differences between relative constructs, e.g. the difference between the current program counter and a label defined earlier in the section is a valid expression for EQU.
  
@@ -313,7 +313,7 @@
 > size     EQU $-mylab   ; value of the label 'size' is 64
 
 
-###The TIMES Directive
+### The TIMES Directive
 
  The Times directive is a primitive form of repetitive programming.  It takes as operands an instruction or directive, and a count of the number of times to repeat the instruction or directive.  As such its functionality can often be performed more efficiently with a Data Reservation directive.  It is also much more limited than the %rep group of preprocessor directives.  Times is available primarily for nasm compatibility.
  
@@ -332,7 +332,7 @@
 >     times ($$-$)%4 \[db 0\]
 
 
-###The INCBIN Directive
+### The INCBIN Directive
  
 
  The Incbin directive allows the import of a binary file into the current section.  For example it could be used to copy a graphics resource such as a bitmap or font verbatim into the current section.  Other uses include things like importing help text from a text file, or importing a table such as a CRC table that has been pre-generated by some other program.
@@ -352,7 +352,7 @@
  imports 16 bytes, starting at offset 96 within the file.
 
 
-###Psuedo-Structures
+### Psuedo-Structures
  
 
  Structures aren't really a construct supported by the assembler, however, clever macro definitions allow definition of structure-like entities.  For example, consider the following:

@@ -1,4 +1,4 @@
-##OAsm Command Line
+## OAsm Command Line
 
  The general format of an **OAsm** command line is:
  
@@ -19,7 +19,7 @@
  assembles all the files in the curent directory.
 
 
-###Response Files
+### Response Files
 
  Response files can be used as an alternate to specifying input on the command line.  For example:
  
@@ -28,21 +28,21 @@
  will take command line options from **myresp.lst**>   Response files aren't particularly useful with the assembler, but they are supported.
 
 
-###Case Insensitivity
+### Case Insensitivity
 
- if the **-i **switch is specified on the command line, [labels](OAsm%20Labels.html) will be treated as case insensitive.  This can allow easier linkage between modules which use different case.  Note that case insensitivity only extends to labels; preprocessor symbols are always case-sensitive in OAsm.
-
-
-###Using the assembler as a preprocessor
+ if the **-i **switch is specified on the command line, [labels](OAsm%20Labels.md) will be treated as case insensitive.  This can allow easier linkage between modules which use different case.  Note that case insensitivity only extends to labels; preprocessor symbols are always case-sensitive in OAsm.
 
 
-###
+### Using the assembler as a preprocessor
+
+
+### 
  
 
  If the **-e** switch is specified on the assembler command line, **OAsm **will act as a preprocessor and not perform the actual assembly phase.  This operation is equivalent to using **OCPP** in assembly-language mode.  In preprocessor mode, the full functionality of the preprocessor is available, when it does not rely on information that would only be available while assemblying the file.  Specifically, the preprocessor is fully functional, except that expressions that refer to labels or program counter locations will result in an error when used for example with the **%assign** preprocessor statement.
 
 
-###Specifying the output file name
+### Specifying the output file name
  
 
  
@@ -55,12 +55,12 @@
  makes an object file called **myfile.o**.>
 
 
-###Specifying include file path
+### Specifying include file path
 
  By default, **OAsm** will search for include paths in the current directory.  If there are other paths **OAsm** should search, the **/I** switch can be specified to have it search them.
 
 
-###Defining variables
+### Defining variables
 
  If it is necessary to define a variable on the command line, use the switch **/D**.
  
@@ -77,7 +77,7 @@
  might be used to specify preprocessing based on the program looking for the word MSDOS in \#ifdef statements.
 
 
-###Listing File
+### Listing File
 
  When the command line switch **-l** is specified, **OAsm** will product a listing file correlating the output byte stream with input lines of the file.  Note the listing file is not available in preprocessor mode as no assembly is done.  
  

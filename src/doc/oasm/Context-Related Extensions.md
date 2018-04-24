@@ -1,4 +1,4 @@
-###Context-Related Extensions
+### Context-Related Extensions
 
  
  The Context Related extensions are used to define preprocessor contexts.  A preprocessor context can be used to create a memory of state information, between different invocations of multiline macros.  For example, a set of macros could be defined to mimic high-level control functions such as loops and if statements.
@@ -49,7 +49,7 @@
  by the preprocessor.  Non-local labels of this general form should be avoided as they may collide with labels defined locally within a context.  This also applies to locally defined **%define** statements.
 
 
-###%push
+#### %push
 
  **%push** creates a new context and pushes it on the top of the context stack:
  
@@ -67,7 +67,7 @@
  is valid, because the two labels are named locally to the context and are in different context instances.  When the label is used, it will be matched to the context currently on top of the context stack.
 
 
-###%pop
+#### %pop
 
  **%pop** removes the context at the top of the context stack:
  
@@ -77,7 +77,7 @@
  results in MY\_CONTEXT no longer being active, and the context that was below it on the context-stack becomes active.  Note, you should use any labels or definitions that are specific to a context before it is popped.  Once a context is popped off the stack, its state is never recoverable.
 
 
-###%repl
+#### %repl
 
  **%repl** changes the name of the context at the top of the context-stack.  For example:
  
@@ -90,7 +90,7 @@
  the context will now be called NEW\_NAME.  When a context is renamed this way, all previous local definitions and labels are still accessible while that context is on top of the context stack.  The only affect of renaming the context is that conditionals which act on context names will be matched against the new name instead of the old one.
 
 
-###%ifctx
+#### %ifctx
 
  **%ifctx** is a _%if-style conditional_ that takes a context name as an argument.  If the context name matches the name of the context on top of the context stack, the next block is assembled, otherwise it is not.
  
@@ -110,10 +110,10 @@
  
  will result in nothing being assembled because the name of the top of the context stack does not match the argument to **%ifctx**.
  
- See the section on [Conditional Processing](Conditional%20Processing.html) for more on _%if-style conditionals_.
+ See the section on [Conditional Processing](Conditional%20Processing.md) for more on _%if-style conditionals_.
 
 
-###%ifnctx
+#### %ifnctx
 
  **%ifnctx** is a _%if-style conditional_ that takes a context name as an argument.  If the context name does not match the name of the context on top of the context stack, the next block is assembled, otherwise it is not.
  
@@ -133,10 +133,10 @@
  
  will result in the mov being assembled because the names do not match.
  
- See the section on [Conditional Processing](Conditional%20Processing.html) for more on _%if-style conditionals_.
+ See the section on [Conditional Processing](Conditional%20Processing.md) for more on _%if-style conditionals_.
 
 
-###%elfictx
+#### %elfictx
 
  **%elifctx** is a _%elif-style conditional_ that takes a context name as an argument.  If the context name matches the name of the context on top of the context stack, the next block is assembled, otherwise it is not.
  
@@ -150,10 +150,10 @@
  
  will result in the mov statement being assembled because the top of the context stack is named MY\_NAME.
  
- See the section on [Conditional Processing](Conditional%20Processing.html) for more on _%elif-style conditionals_.
+ See the section on [Conditional Processing](Conditional%20Processing.md) for more on _%elif-style conditionals_.
 
 
-###%elifnctx
+#### %elifnctx
 
  
  **%elifnctx** is a _%elif-style conditional_ that takes a context name as an argument.  If the context name does not match the name of the context on top of the context stack, the next block is assembled, otherwise it is not.
@@ -168,7 +168,7 @@
  
  will result in nothing being assembled because the names match.
  
- See the section on [Conditional Processing](Conditional%20Processing.html) for more on _%elif-style conditionals_.
+ See the section on [Conditional Processing](Conditional%20Processing.md) for more on _%elif-style conditionals_.
   
  
  

@@ -1,4 +1,4 @@
-##OCC Error Control
+## OCC Error Control
 
  
  This section deals with compiler parameters related to error messages.

@@ -1,10 +1,10 @@
-##OCC Extended Keywords
+## OCC Extended Keywords
 
  
  Extended keywords extend ANSI C in a variety of ways that are sometimes useful for example to add new functionality (such as alloca or typeof) or to ease integration with operating systems and programming languages (for example \_stdcall or \_pascal).
 
 
-###\_absolute
+### \_absolute
 
   
      create a variable at an absolute address.  For example:
@@ -14,7 +14,7 @@
      places the variable 'a' at address 0x4c21.  No storage is generated for such variables and no relocation is done.
 
 
-###alloca
+### alloca
 
   
      Allocate memory from automatic storage (the processor stack).  The primary motivation for using this function is that it is much faster than the malloc() function.
@@ -35,7 +35,7 @@
      Memory allocated by alloca is normally freed at the end of the function it appears in, which makes it possible to allocate a lot of data in a loop.   However, if a block has both a call to alloca and uses variable length arrays, at the end of the block the variable length arrays will be freed, which will also result in freeing the memory allocated by alloca.
 
 
-###\_cdecl
+### \_cdecl
 
  
      use standard C language linking mechanism (here for compatibility with other compilers).  In this linking mechanism, a leading underscore is prepended to the name, which is case sensitive.  The caller is responsible for cleaning up the stack.  For example:
@@ -45,7 +45,7 @@
      creates a function myfunc with standard linkage.
 
 
-###\_export
+### \_export
 
  
      make an export record for the linker to process.  The current record becomes an entry in the EXE files export table.  For example:
@@ -55,7 +55,7 @@
      will cause myfunc to be an exported function.
 
 
-###\_genbyte
+### \_genbyte
 
  
  
@@ -75,7 +75,7 @@
      puts a NOP into the code stream.
 
 
-###\_import
+### \_import
 
  
      This can be used for one of two purposes.  First it can make import record for the linker to process, which will result in the appropriate DLL being loaded at run-time.  Second, it can be used to declare a variable from a DLL so that the compiled code can access it.  For example:
@@ -89,7 +89,7 @@
      declares myvariable as being imported from mylib.dll.
 
 
-###\_interrupt & \_fault
+### \_interrupt & \_fault
 
  
      Create an interrupt function.  Pushes registers and uses an IRET to return from the function.  For example:
@@ -103,7 +103,7 @@
      \_fault is similar to \_interrupt, but also pops the exception word from the stack.  Used when returning from certain processor fault vectors
 
 
-###\_loadds
+### \_loadds
 
   
      For an Interrupt function, force DS to be loaded at the beginning of the interrupt. This will be done by adding 0x10 to the CS selector to make a new DS selector.  For example:
@@ -115,7 +115,7 @@
      will create an interrupt function that loads DS
 
 
-###\_pascal
+### \_pascal
 
           
      use PASCAL linking mechanism.  This linking mechanism converts the function name to upper case, removes the leading underscore, pushes arguments in reverse order from standard functions, and uses callee stack cleanup.  For example:
@@ -125,7 +125,7 @@
      Creates a function myfunc with pascal linkage.
 
 
-###\_stdcall
+### \_stdcall
 
   
      Use STDCALL linking mechanism.  This linking mechanism removes the leading underscore and uses callee stack cleanup.  For example:
@@ -135,7 +135,7 @@
      Creates a function myfunc with pascal linkage.
 
 
-###typeof
+### typeof
 
   
      the typeof operator may be used anywhere a type declaration is used, e.g. as the base type for a variable or in a cast expression.  It allows you to access the variable's type without explicitly knowing what that type is.  For example:

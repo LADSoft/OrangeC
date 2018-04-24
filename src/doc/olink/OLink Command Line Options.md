@@ -1,4 +1,4 @@
-##OLink Command Line Options
+## OLink Command Line Options
 
  The general format of an **OLink** command line is:
  
@@ -19,7 +19,7 @@
   links all the files in the curent directory, and the results are put in **test.rel** because the **/o** command line switch is specified.
 
 
-###Response Files
+### Response Files
 
  Response files can be used as an alternate to specifying input on the command line.  For example:
  
@@ -28,12 +28,12 @@
  will take command line options from **myresp.lst**.  This is useful for example when there are many **.o** or **.l** files being merged and it is not convenient to specify them on the command line.
 
 
-###Case Sensitivity
+### Case Sensitivity
 
  By default **OLink** treats symbols as case-insensitive.  If the **-c+** switch is specified on the command line, labels will be treated as case sensitive.  This supports certain language compilers that do allow the user to type the same word in different case, and have it mean different things.
 
 
-###Specifying the output file name
+### Specifying the output file name
  
 
  
@@ -46,7 +46,7 @@
  makes an object file called **myfile.rel**> .
 
 
-###Specifying Lib File Path
+### Specifying Lib File Path
  
 
  By default, **OLink** will search for library files in the C Compiler library file path, and in the current directory.  The **/L** option may be used to specify additional directories to search for lib files:
@@ -56,9 +56,9 @@
  will find **floating.l **either in the C compiler library directory, the current directory, or the directory ..\\mylibs.
 
 
-###Defining variables
+### Defining variables
 
- **OLink** allows definition of global variables on the command line, and gives them an absolute address.  This facility can be used either to set the location of a function or data, or to provide a constant value to a [specification file](OLink%20Specification%20Files.html) entry or user code.  If it is necessary to define a variable on the command line, use the switch **/D**.  
+ **OLink** allows definition of global variables on the command line, and gives them an absolute address.  This facility can be used either to set the location of a function or data, or to provide a constant value to a [specification file](OLink%20Specification%20Files.md) entry or user code.  If it is necessary to define a variable on the command line, use the switch **/D**.  
  
  For example
  
@@ -69,23 +69,23 @@
  Decimal values for addresses may be provided by omitting the **0x** prefix.
 
 
-###Complete Link
+### Complete Link
 
  By default, **OLink** performs a partial link.  ****In a partial link, some global definitions may remain unresolved, and libraries are ignored.  The output file may be further linked with more object files or with the result of other partial links.  However, a partial link cannot be used to generate a rom image or executable file, because not all the information required for such binaries has been generated; specifically there may be some addresses that haven't been defined yet.
  
- Usually, a complete link happens automatically when the **/T** switch is used to specify a [target configuration](OLink%20Target%20Configurations.html).  However in some cases it is desirable to indicate to the linker that a complete link is desired without specifying a target configuration.  Use **/r+** for this purpose.
+ Usually, a complete link happens automatically when the **/T** switch is used to specify a [target configuration](OLink%20Target%20Configurations.md).  However in some cases it is desirable to indicate to the linker that a complete link is desired without specifying a target configuration.  Use **/r+** for this purpose.
 
 
-###Map File
+### Map File
 
  To generate a map file, use the **/m **switch.  The map file name will be the same as the name of the **.rel** file, with the extension replaced by **.map**.  The standard map file summarizes the partitions the program is contained in, and then lists publics in both alphabetic and numeric order.  
  
  A more detailed map file may be obtained by using **/mx**.  This gives a list of partitions, overlays, regions, and files that went into making up the program, in the order they were included.  It also includes details of the attributes used to place the sections.
 
 
-###Specification file
+### Specification file
 
- Sometimes a default [specification file](OLink%20Specification%20Files.html) will be selected automatically with the **/T** [target configuration](OLink%20Target%20Configurations.html) switch.  This specification file may be overridden with the **/s** switch; or if the **/T** switch is not specified the **/s** switch may be used to select a specification file.  For example:
+ Sometimes a default [specification file](OLink%20Specification%20Files.md) will be selected automatically with the **/T** [target configuration](OLink%20Target%20Configurations.md) switch.  This specification file may be overridden with the **/s** switch; or if the **/T** switch is not specified the **/s** switch may be used to select a specification file.  For example:
  
 > OLink /smyprog.spc myprog.o
 
@@ -93,9 +93,9 @@
 ###>
 
 
-###Target Configuration
+### Target Configuration
 
- The [target configuration](OLink%20Target%20Configurations.html) switch specifies that a specific profile be used to build the target.  The profile includes a [specification file](OLink%20Specification%20Files.html), default definitions, a post-processing program to run, and some other information.  The link will be done with the given parameters, and then the post-processing program will be run to generate the final ROM image or executable file.
+ The [target configuration](OLink%20Target%20Configurations.md) switch specifies that a specific profile be used to build the target.  The profile includes a [specification file](OLink%20Specification%20Files.md), default definitions, a post-processing program to run, and some other information.  The link will be done with the given parameters, and then the post-processing program will be run to generate the final ROM image or executable file.
  
  For example:
  
@@ -104,8 +104,8 @@
  selects the specification profile that builds a Motorola Hex file with four-byte addresses.
 
 
-###Link Only
+### Link Only
 
- Sometimes when a [target configuration](OLink%20Target%20Configurations.html) has been specified, it is desirable to stop after generating the **.rel** file instead of going on to build the ROM Image or Executable.  This may be done by specifying the **/l** switch on the command line.
+ Sometimes when a [target configuration](OLink%20Target%20Configurations.md) has been specified, it is desirable to stop after generating the **.rel** file instead of going on to build the ROM Image or Executable.  This may be done by specifying the **/l** switch on the command line.
  
    

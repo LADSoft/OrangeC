@@ -1,4 +1,4 @@
-##OCC Optimizer parameters
+## OCC Optimizer parameters
 
  /O-   turn off optimizer
  

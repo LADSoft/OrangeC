@@ -1,4 +1,4 @@
-###Repeat Block Extensions
+### Repeat Block Extensions
 
  
  The Repeat Block Extensions allow a method for replicating lines of code.  In the simplest case, a sequence of instructions or data can be literally repeated a fixed number of times:
@@ -51,18 +51,18 @@
 > %endrep
 
 
-###%rep
+#### %rep
 
  **%rep** is used to start a repeat block.  It takes one argument:  the number of repetitions to go through.
 
 
-###%endrep
+#### %endrep
 
  
  **%endrep** is used to end a repeat block.  It takes no arguments
 
 
-###%exitrep
+#### %exitrep
 
  **%exitrep** is used to exit a repeat block prematurely.
   

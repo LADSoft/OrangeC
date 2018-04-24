@@ -1,7 +1,7 @@
-##OLink Target Configurations
+## OLink Target Configurations
  
 
-  OLink has several default target configurations, that associate the various data needed for post-processing the linker output together.  Each target configuration includes a linker [specification file](OLink%20Specification%20Files.html), default definitions for items used but not declared in the specification file, and a reference to a post-processing tool that will take an image linked against the specification file and generate some final binary image, such as a ROM image or an Operating System executable.  
+  OLink has several default target configurations, that associate the various data needed for post-processing the linker output together.  Each target configuration includes a linker [specification file](OLink%20Specification%20Files.md), default definitions for items used but not declared in the specification file, and a reference to a post-processing tool that will take an image linked against the specification file and generate some final binary image, such as a ROM image or an Operating System executable.  
  
  Each target configuration is accessible via the **/T** linker switch.  For example:
  
@@ -12,7 +12,7 @@
  The remainder of this section will discuss the default target configurations.
 
 
-###Rom-based images
+### Rom-based images
 
  There are several output file formats for generating a rom-based image.  However, they all use a common specification file and post-processing tool.  This section will briefly touch on the available output formats then touch on the specification file in more detail.
  
@@ -42,7 +42,7 @@
   Table 1 - Hex.spc details
 
 
-##WIN32 (PE) Images
+## WIN32 (PE) Images
 
  Several types of WIN32 images may be generated.  These include:
  

@@ -1,9 +1,9 @@
-##OCC \#pragma directives
+## OCC \#pragma directives
 
  \#pragma preprocessor directives control the interpretation of source code, or extend the functionality of the compiler in some way.
 
 
-###\#pragma error
+### \#pragma error
 
   
  \#pragma error  <text>    allows conditional generation of errors.  For example:
@@ -15,7 +15,7 @@
      generates a compile time error if the WIN32 macro is not defined.
 
 
-###\#pragma warning
+### \#pragma warning
 
  
  \#pragma warning <text>    allows conditional generation of errors.  For example:
@@ -27,7 +27,7 @@
      generates a compile time warning if the LONG macro is not defined.
 
 
-###\#pragma aux
+### \#pragma aux
 
   
  \#pragma aux <funcname> = <alias>
@@ -38,7 +38,7 @@
      causes the linker to see the function as being called 'mynewname'.
 
 
-###\#pragma pack
+### \#pragma pack
 
   
  \#pragma pack(n)    Sets the alignment for structure members and global variables.  The default alignment is 1. Changing the alignment can increase performance by causing variable and structure alignment to optimal sizes, at the expense of using extra memory.  However, altered alignment can sometimes cause problems, for example when a structure is used directly in a network packet or as the contents of a file.
@@ -48,7 +48,7 @@
  \#pragma pack()    Resets the alignment to the last selection, or to the default.
 
 
-###Startup and rundown pragmas
+### Startup and rundown pragmas
 
   
  \#pragma startup <function> <priority>

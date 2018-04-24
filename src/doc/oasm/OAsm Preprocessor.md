@@ -1,11 +1,11 @@
-##OAsm Preprocessor
+## OAsm Preprocessor
  
 
  The OAsm preprocessor is a C preprocessor, with extensions.  The preprocessor can be considered to be a set of routines which go through the code before it is assembled, making certain types of textual transformations to the source code.  The transformations range from simple substitution of text or lines of text when a keyword is encountered, to inclusion of text from another file, to selectively ignoring some lines based on compile-time settings.  The main difference from a C preprocessor, other than the extensions, is that instead of starting a preprocessor directive with a hash ('\#') preprocessor directives are started with a percent ('%').
  
- Many of these directives involve [Conditional Processing](Conditional%20Processing.html), which is a way to selectively choose what lines of code to assemble and what lines to ignore based on previous declarations.
+ Many of these directives involve [Conditional Processing](Conditional%20Processing.md), which is a way to selectively choose what lines of code to assemble and what lines to ignore based on previous declarations.
  
- Table 1 shows the [C-style preprocessor directives](C-Style%20Preprocessor%20Directives.html).  These directives are compatible with similar directives in a C Compiler's preprocessor.
+ Table 1 shows the [C-style preprocessor directives](C-Style%20Preprocessor%20Directives.md).  These directives are compatible with similar directives in a C Compiler's preprocessor.
  
      
 
@@ -25,7 +25,7 @@
 
   Table 1 - C lanuage style preprocessor directives
  
- Table 2 shows [basic extensions to the C preprocessor](Basic%20Extensions%20to%20C%20Preprocessor.html) that are similar to directives already found in the preprocessor.  This includes a new directive **%assign** which is like **%define** except it evaluates the macro value on the assumption it is a numeric expression.  It also includes case insensitive macro definition directives, and the beginning of an extensive set of extensions to condtionals that are similar to the %elif mechanism.
+ Table 2 shows [basic extensions to the C preprocessor](Basic%20Extensions%20to%20C%20Preprocessor.md) that are similar to directives already found in the preprocessor.  This includes a new directive **%assign** which is like **%define** except it evaluates the macro value on the assumption it is a numeric expression.  It also includes case insensitive macro definition directives, and the beginning of an extensive set of extensions to condtionals that are similar to the %elif mechanism.
  
       
 
@@ -39,7 +39,7 @@
 
   Table 2 - Basic extensions to C style preprocessor
    
- Table 3 shows extensions to the conditional mechanism that allow [text comparisons](Text%20Comparison%20Conditionals.html).  There are both case sensitive and case insensitive forms of these directives.
+ Table 3 shows extensions to the conditional mechanism that allow [text comparisons](Text%20Comparison%20Conditionals.md).  There are both case sensitive and case insensitive forms of these directives.
  
       
 
@@ -56,7 +56,7 @@
 
   Table 3 - Text Comparison Conditionals
  
- Table 4 shows various extensions to the conditional mechanism that allow [classification of a token's type](Token%20Type%20Classification%20Conditionals.html).  They can be used for example in [multiline macros](Multiline%20Macro%20Extensions.html), to allow a single macro to have different behaviors based on the type of a macro argument.
+ Table 4 shows various extensions to the conditional mechanism that allow [classification of a token's type](Token%20Type%20Classification%20Conditionals.md).  They can be used for example in [multiline macros](Multiline%20Macro%20Extensions.md), to allow a single macro to have different behaviors based on the type of a macro argument.
  
       
 
@@ -77,7 +77,7 @@
 
   Table 4 - Token Type Classification Conditionals
  
- Table 5 shows the [Multiline Macro Extensions](Multiline%20Macro%20Extensions.html). and the [Repeat Block Extensions](Repeat%20Block%20Extensions.html).  These extentions include multiline macros, as well as a powerful facility for using the preprocessor to repeat sections of code or data.
+ Table 5 shows the [Multiline Macro Extensions](Multiline%20Macro%20Extensions.md). and the [Repeat Block Extensions](Repeat%20Block%20Extensions.md).  These extentions include multiline macros, as well as a powerful facility for using the preprocessor to repeat sections of code or data.
  
       
 
@@ -93,7 +93,7 @@
 
   Table 5 - Multiline Macro and Repeat Block Extensions
   
- Table 6 shows the [Context-Related Extensions](Context-Related%20Extensions.html).  Preprocessor contexts are a powerful mechanism that can be used to 'remember' data between successive macro invocations, and for example could be used to construct a high-level representation of control constructs in the assembler.
+ Table 6 shows the [Context-Related Extensions](Context-Related%20Extensions.md).  Preprocessor contexts are a powerful mechanism that can be used to 'remember' data between successive macro invocations, and for example could be used to construct a high-level representation of control constructs in the assembler.
  
       
 

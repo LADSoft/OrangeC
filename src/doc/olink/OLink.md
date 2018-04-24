@@ -1,4 +1,4 @@
-#OLink
+# OLink
 
  
  **OLink** takes the output files from compilers and assemblers, and merges them together.  This merging is necessary because often a single source file will either declare 'global' code or data that is accessible from other source files, or reference such global data from another file.  Each output file from a compiler or assembler will have a list of these kinds of declarations, and the linker has two tasks:  to combine the actual code and data from different files, and to resolve these global references between files.
@@ -7,12 +7,12 @@
  
  It should be stressed that OLink does not generate actual ROM images or executable files; all it does is combine code and data, and resolve the global references.  Another post-processing program is used to generate the ROM image or executable file, based on the output of **OLink**.
  
- The output of **OLink** can be guided through use of a [specification file](OLink%20Specification%20Files.html) and through command-line defines.  The specification file indicates the ordering and grouping of sections, and gives default addresses and other attributes to the groupings.  Command-line defines can be used to taylor the specifics of how the specification file is used; in OLink the command line defines generally act in terms of giving an absolute address to a variable which has been referenced elsewhere.
+ The output of **OLink** can be guided through use of a [specification file](OLink%20Specification%20Files.md) and through command-line defines.  The specification file indicates the ordering and grouping of sections, and gives default addresses and other attributes to the groupings.  Command-line defines can be used to taylor the specifics of how the specification file is used; in OLink the command line defines generally act in terms of giving an absolute address to a variable which has been referenced elsewhere.
 
 
-##Command Line Options
+## Command Line Options
 
- The general form of an **OLink **[Command Line](OLink%20Command%20Line%20Options.html) is:
+ The general form of an **OLink **[Command Line](OLink%20Command%20Line%20Options.md) is:
  
 > OLink \[options\] filename-list
  
@@ -21,9 +21,9 @@
  **Olink** takes the files in _filename-list_, and produces an output file with a **.rel **extension.
 
 
-##Specification Files
+## Specification Files
 
- [Specification files](OLink%20Specification%20Files.html) give a flexible method for specifying how to merge sections from the various input files.  They can specify what code and data be combined together, in what order, and what the address of code and data should be.  A specification file uses three basic constructs, and each construct can be further clarified with attributes.  
+ [Specification files](OLink%20Specification%20Files.md) give a flexible method for specifying how to merge sections from the various input files.  They can specify what code and data be combined together, in what order, and what the address of code and data should be.  A specification file uses three basic constructs, and each construct can be further clarified with attributes.  
  
  At the top level there can be one or more **Partitions**.   Each partition can be relocated independently of other partitions.  
  
@@ -32,10 +32,10 @@
  An overlay contains **Regions**, which simply specify the names of sections that should be combined together.  The regions can be actual section names, or expressions containing section names.  Normally a region would contain all sections matching the section name from all input files, but, a Region can be further clarified with a list of files that should be considered for inclusion.  In this way different files with the same section can be combined into different overlays.
 
 
-##Target Configurations
+## Target Configurations
 
  
-  [Target configurations](OLink%20Target%20Configurations.html) specify the default mechanism for taking the linker output and creating a ROM image or executable file.  Each target configuration specifies a linker specification file, a list of default definitions, and the name of a post-processing program such as **DLHex** to run to create the final output file.  The specification files used with default target configurations are generic in nature, and make certain assumptions about the program; however some of the identifiers in such specification filse may refer to definitions made elsewhere.  Those definitions are generally part of the target configuration, and may be modified through command-line options to make minor changes to the configuration.  For example, in WIN32 DLLs, the base address of the DLL may be redefined via the command line to not collide with other DLLs and thus improve load time.
+  [Target configurations](OLink%20Target%20Configurations.md) specify the default mechanism for taking the linker output and creating a ROM image or executable file.  Each target configuration specifies a linker specification file, a list of default definitions, and the name of a post-processing program such as **DLHex** to run to create the final output file.  The specification files used with default target configurations are generic in nature, and make certain assumptions about the program; however some of the identifiers in such specification filse may refer to definitions made elsewhere.  Those definitions are generally part of the target configuration, and may be modified through command-line options to make minor changes to the configuration.  For example, in WIN32 DLLs, the base address of the DLL may be redefined via the command line to not collide with other DLLs and thus improve load time.
  
  
    

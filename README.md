@@ -29,3 +29,5 @@ There has been some thought as to eventually making this an x64 compiler, howeve
 The [Appveyor CI](https://ci.appveyor.com/project/LADSoft/orangec) project for this repository builds a setup file after each checking.   It uses `omake fullbuild` to do this. See the file [`build.md`](build.md) for instructions on how to build the project.
 
 For the project's history see the file [`HISTORY.md`](HISTORY.md).
+
+(link to test documentation) [documentation](src/doc/Tools.md)

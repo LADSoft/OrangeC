@@ -9,10 +9,10 @@
  
  General tools compile or assemble code, and manage the resulting object files.
  
-   [OCC](occ/OCC.html) is an optimizing x86 C compiler.
-   [OAsm](oasm/OAsm.html) is an x86 assembler.  It uses a syntax that is very similar to the Netwide Assembler (NASM)
-   [OLib](general/OLib.html) documentation is an object file librarian.
-   [OLink](olink/OLink.html) documentation - object file linker.
+ * [OCC](occ/OCC.html) is an optimizing x86 C compiler.
+ * [OAsm](oasm/OAsm.html) is an x86 assembler.  It uses a syntax that is very similar to the Netwide Assembler (NASM)
+ * [OLib](general/OLib.html) documentation is an object file librarian.
+ * [OLink](olink/OLink.html) documentation - object file linker.
 
 
 ## Linker Postprocessing Tools

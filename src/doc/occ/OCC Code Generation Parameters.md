@@ -1,6 +1,6 @@
 ## OCC Code Generation Parameters
 
- /Cparams specifies code generation parameters
+### /Cparams specifies code generation parameters
  
 Params is a list of parameters, seperated by + and - symbols.  Use the + symbol to indicate a parameter is to be turned on, 
 the minus symbol that the parameter is to be turned off.  The default states of the various parameters are opposite what is 
@@ -73,9 +73,10 @@ compatibility; the WIN32 profiler module does not exist at present.
  
 for example:
 
-OCC /C+NX+Z myfile.c
+    OCC /C+NX+Z myfile.c
 
 generates generic NASM assembler module, with profiler calls inserted.
 
   
   
+ 

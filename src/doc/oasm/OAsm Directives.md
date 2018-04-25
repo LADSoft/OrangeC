@@ -137,15 +137,20 @@
 
  Each use of the global directive can assign the 'global' attribute to one or more labels.  When a label is global, it has a presence that extends beyond the current file, and the linker may resolve references to the variable to it, when those references are made in other files.  Those references would typically have been made by use of the 'extern' directive.  For example:
  
->     global puterror
+> global puterror
 >    
 > puterror:
->     mov   eax,errmsg
->     call strput
->     ret
+>
+>  mov   eax,errmsg
+>
+>  call strput
+>
+>  ret
+>
 > errmsg   db   "this is an error",0
- 
+ >
 > strput:
+>
 >     ....
  
  creates a function 'puterror' which is visible to other files during linkage.  Global may be used with multiple labels:

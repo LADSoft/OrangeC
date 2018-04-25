@@ -9,7 +9,7 @@
  
      
 
-|colheader |colheader |
+|Directive |Usage |
 |--- |--- |
 |%define|define a constant or function-style macro|
 |%undef|undefine a macro|
@@ -29,7 +29,7 @@
  
       
 
-|colheader |colheader |
+|Directive |Usage |
 |--- |--- |
 |%assign|Like %define, but evaluates an expression and sets the value to the result|
 |%iassign|%assign with a case-insensitive name|
@@ -43,7 +43,7 @@
  
       
 
-|colheader |colheader |
+|Conditional Directive |Usage |
 |--- |--- |
 |%ifidn|Case sensitive test for string matching|
 |%ifnidn|Case sensitive test for string not matching|
@@ -60,7 +60,7 @@
  
       
 
-|colheader |colheader |
+|Conditional Directive |Usage |
 |--- |--- |
 |%ifid|test to see if argument is an identifier|
 |%ifnid|test to see if argument is not an identifier|
@@ -81,7 +81,7 @@
  
       
 
-|colheader |colheader |
+|Directive |Usage |
 |--- |--- |
 |%macro|start a multiline macro|
 |%imacro|start a multiline macro, case insensitive name|
@@ -97,7 +97,7 @@
  
       
 
-|colheader |colheader |
+|Directive |Usage |
 |--- |--- |
 |%push|start a new context|
 |%pop|end a new context|

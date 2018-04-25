@@ -4,7 +4,7 @@
  
  This section deals with compiler parameters related to controlling the type of output.
  
- /c    generate object file only
+### /c    generate object file only
  
   Causes OCC to not generate an EXE file automatically.  Useful when compiling many files prior to a later link stage.
  
@@ -12,7 +12,7 @@
  
   generates a file hello.obj instead of generating hello.exe
  
- /o      set output file name
+### /o      set output file name
  
   Causes OCC to rename the output file. If generating an EXE output, OCC will rename the exe file.  If generating an object (OBJ) file, OCC will rename the obj file.  Note that you cannot set the output file name for a group of files unless you are generating an EXE file.
  
@@ -26,7 +26,7 @@
 
  compiles all C language files in the current directory and places the output files in a directory 'output' at the same level.
  
- /S    generate assembly language file only
+### /S    generate assembly language file only
  
   Causes OCC to generate an assembly language file in NASM format, but no object or EXE files
  
@@ -34,7 +34,7 @@
  
   generates a file hello.asm
  
- /s    generate intermediate assembly language file
+### /s    generate intermediate assembly language file
  
   OCC will generate an executable file by compiling via assembly.  The intermediate assembly language file will remain after compilation.
  
@@ -42,7 +42,7 @@
      
   generates the files hello.asm and hello.exe.
  
- /W     set exe file type
+### /W     set exe file type
  
   When OCC is generating an EXE file, several formats are possible.  These are as follows:
  

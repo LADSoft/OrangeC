@@ -164,14 +164,13 @@
  
  In the above example, if 'strput' was defined in a different file from the definition of puterror you might write the following:
  
->     global puterror
->     extern strput
-   
-> puterror:
->     mov   eax,errmsg
->     call strput
->     ret
-> errmsg   db   "this is an error",0
+>         global puterror
+>         extern strput
+>     puterror:
+>         mov   eax,errmsg
+>         call strput
+>         ret
+>     errmsg   db   "this is an error",0
  
  As with the global directive, extern can be used with multiple symbols:
  

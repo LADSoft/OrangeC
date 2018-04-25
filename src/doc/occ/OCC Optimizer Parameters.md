@@ -1,6 +1,6 @@
 ## OCC Optimizer parameters
 
- /O-   turn off optimizer
+### /O-   turn off optimizer
  
   This switch disables the OCC optimizer.  For example:
  

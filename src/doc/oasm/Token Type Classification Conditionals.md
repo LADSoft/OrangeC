@@ -8,7 +8,7 @@
 
   **%ifid** is a _%if-style conditional_ that detects if the token could be a label, and processes the following block if it is.
  
->>     %ifid  myLabel
+>     %ifid  myLabel
 >         mov eax,3
 >     %endif
  
@@ -36,7 +36,7 @@
   **%elifid** is a _%elif-style conditional_ that detects if the token could be a label, and processes the following block if it is.
  
 >     %if 1 == 2
->>     %elifid  myLabel
+>     %elifid  myLabel
 >         mov eax,3
 >     %endif
  
@@ -51,7 +51,7 @@
   **%elifnid** is a _%elif-style conditional_ that detects if the token could be a label, and processes the following block if it is not.
  
 >     %if 1 == 2
->>     %elifnid  5
+>     %elifnid  5
 >         mov eax,3
 >     %endif
  
@@ -65,7 +65,7 @@
  
   **%ifnum** is a _%if-style conditional_ that detects if the token is a number, and processes the following block if it is.
  
->>     %ifnum  5
+>     %ifnum  5
 >         mov eax,3
 >     %endif
  
@@ -78,7 +78,7 @@
 
  **%ifnnum** is a _%if-style conditional_ that detects if the token is a number, and processes the following block if it is not.
  
->>     %ifnnum  5
+>     %ifnnum  5
 >         mov eax,3
 >     %endif
  
@@ -93,7 +93,7 @@
   **%elifnum** is a _%elif-style conditional_ that detects if the token could be a label, and processes the following block if it is.
  
 >     %if 1 == 2
->>     %elifnum 5
+>     %elifnum 5
 >         mov eax,3
 >     %endif
  
@@ -107,7 +107,7 @@
  **%elifnum** is a _%elif-style conditional_ that detects if the token is a number and processes the following block if it is not.
  
 >     %if 1 == 2
->>     %elifnnum  hi
+>     %elifnnum  hi
 >         mov eax,3
 >     %endif
  
@@ -121,7 +121,7 @@
  
   **%ifstr** is a _%if-style conditional_ that detects if the token is a string, and processes the following block if it is.
  
->>     %ifstr  "This is a string"
+>     %ifstr  "This is a string"
 >         mov eax,3
 >     %endif
  
@@ -135,7 +135,7 @@
  
   **%ifnstr** is a _%if-style conditional_ that detects if the token is a string, and processes the following block if it is not.
  
->>     %ifnstr  "This is a string"
+>     %ifnstr  "This is a string"
 >         mov eax,3
 >     %endif
  

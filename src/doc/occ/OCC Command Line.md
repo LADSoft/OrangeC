@@ -20,15 +20,15 @@ The list of files can also include wild cards.
  
  There are a variety of parameters that can be set.  Help is available for the following:
  
-     [Output Control](OCC%20Output%20Control.md)
-     [Error Control](OCC%20Error%20Control.md)
-     [List File Control](OCC%20List%20File%20Control.md)
-     [Preprocessor File Control](OCC%20Preprocessor%20File%20Control.md)
-     [Compilation Modes](OCC%20Compilation%20Modes.md)
-     [Defining Macros](OCC%20Defining%20Macros.md)
-     [Specifying Include Paths](OCC%20Specifying%20Include%20Paths.md)
-     [Translating Trigraphs](OCC%20Translating%20Trigraphs.md)
-     [Code Generation Parameters](OCC%20Code%20Generation%20Parameters.md)
-     [Optimizer Parameters](OCC%20Optimizer%20Parameters.md)
- 
+* [Output Control](OCC%20Output%20Control.md)
+* [Error Control](OCC%20Error%20Control.md)
+* [List File Control](OCC%20List%20File%20Control.md)
+* [Preprocessor File Control](OCC%20Preprocessor%20File%20Control.md)
+* [Compilation Modes](OCC%20Compilation%20Modes.md)
+* [Defining Macros](OCC%20Defining%20Macros.md)
+* [Specifying Include Paths](OCC%20Specifying%20Include%20Paths.md)
+* [Translating Trigraphs](OCC%20Translating%20Trigraphs.md)
+* [Code Generation Parameters](OCC%20Code%20Generation%20Parameters.md)
+* [Optimizer Parameters](OCC%20Optimizer%20Parameters.md)
+
  

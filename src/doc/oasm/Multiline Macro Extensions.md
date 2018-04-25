@@ -78,7 +78,7 @@
  
  Occasionaly it is beneficial to specify that you need some arguments, then you want the rest of the command line:
  
->     %define STRINGIZE(s) \s
+>     %define STRINGIZE(s) #s
 >     %macro MY_MSG 1+
 >     db %1,STRINGIZE(%2)
 >     %endmacro

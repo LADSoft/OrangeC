@@ -49,7 +49,7 @@
  
  will search in the C language system include directory to find windows.h.  Whereas:
  
->     OCPP /I.\\include test.c
+>     OCPP /I.\include test.c
  
  will create a file test.i, which will additionally search the path **.\\include** for any include files specified in preprocessor directives.
 

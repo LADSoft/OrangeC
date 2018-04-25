@@ -26,7 +26,7 @@ Allocate memory from automatic storage (the processor stack).  The primary motiv
   For example:
  
      int size = 24;
-     int \*p = alloca(size \* sizeof(int));
+     int *p = alloca(size * sizeof(int));
  
   will allocate enough space to store an array of 24 integers.
  

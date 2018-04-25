@@ -7,7 +7,7 @@
  
  Where \[options\] are command line options, and the _match-string_ is searched for within the _list-of-files_.  Matches are listed with file and optionally line number.  The files in the _list-of-files_ may contain wildcards, for example:
  
->     OGrep "while" \*.c
+>     OGrep "while" *.c
  
  Looks through all C language source files in the current directory for the word **while**.
  
@@ -35,7 +35,7 @@
 
  In some cases it can be useful to search through some subset of files within a directory tree.  The **-d** switch can be used to specify that **OGrep** should search through the current directory and all subdirectories when trying to find files to match against.  For example:
  
->     OGrep -d "while" \*.c
+>     OGrep -d "while" *.c
  
  searches for the word **while** in all files ending in **.c**, in the current directory as well as all its subdirectories.
 

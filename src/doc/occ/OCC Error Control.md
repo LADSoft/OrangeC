@@ -3,7 +3,7 @@
  
  This section deals with compiler parameters related to error messages.
  
- +e     put the compiler errors in a file.  
+### +e     put the compiler errors in a file.  
  
 For each file processed, OCC will create a file with the same name as the original source with the extension.  '.err'.  The contents of this file will be a listing of any errors or warnings which occurred during the compile.  For example:
  
@@ -12,7 +12,7 @@ For each file processed, OCC will create a file with the same name as the origin
  
 results in myfile.err
  
- +Q    Quiet mode
+### +Q    Quiet mode
  
 Don't display errors or warnings on the console.  Generally this is used in conjunction with the +e switch.  For example:
  

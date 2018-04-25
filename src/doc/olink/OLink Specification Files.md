@@ -19,9 +19,9 @@
 >     partition
 >     {
 >         overlay {
->            region {} data \[align=4\];
+>            region {} data [align=4];
 >            region {} bss.
->         } RAM \[addr=0x0000, size=0x4000\];
+>         } RAM [addr=0x0000, size=0x4000];
 >     } DATA;
  
 >     partition
@@ -30,7 +30,7 @@
 >            region {} code;
 >            region {} const;
 >         } ROM;
->     } CODE \[addr=0xf000, size=0x1000\];
+>     } CODE [addr=0xf000, size=0x1000];
  
 This defines two partitions, in this case one is for data nad one is for code.  The first partition is named DATA and consists of two groups of sections.   First all sections named **data** are concatenated together, then all sections named **bss** follow after that.  This partition is defined with attributes to start address 0, and extend for 16K.  If the actual size of the partition is greater than 16K, an error will be generated.  In this case the overlay is named RAM; this overlay name is what is visible to ROM-generation tools such as **DLHEX**.
  
@@ -52,7 +52,7 @@ This defines two partitions, in this case one is for data nad one is for code.  
 >        overlay {
 >            region { bank3a.o bank3b.o bank3c.o } code;
 >        } BANK3;
->     } CODE \[addr = 0xe000, size = 0x1000\];
+>     } CODE [addr = 0xe000, size = 0x1000];
  
  Three banks of code have been defined, each of which starts at address 0xe000 and extends for 4K.  Each region references sections named **code**, however, file names are specifically specified for each region, so that only **code** sections from specific files will be included while processing the region.  For example in the overlay BANK1, only files **bank1a.o**, **bank1b.o**, and **bank1c.o** will contributed to the contents of the region.
  
@@ -61,15 +61,15 @@ This defines two partitions, in this case one is for data nad one is for code.  
 >     partition
 >     {
 >         overlay {
->            region { bank1\*.o } code;
+>            region { bank1*.o } code;
 >        } BANK1;
 >        overlay {
->            region { bank2\*.o } code;
+>            region { bank2*.o } code;
 >        } BANK2;
 >         overlay {
->            region { bank3\*.o } code;
+>            region { bank3*.o } code;
 >        } BANK3;
->     } CODE \[addr = 0xe000, size = 0x1000\];
+>     } CODE [addr = 0xe000, size = 0x1000];
  
  
  
@@ -79,10 +79,10 @@ This defines two partitions, in this case one is for data nad one is for code.  
 >     {
 >         overlay {
 >            RAMSTART=$
->            region {} data \[align=4\];
+>            region {} data [align=4];
 >            region {} bss;
 >            RAMEND=$
->         } RAM \[addr=0x0000, size=0x4000\];
+>         } RAM [addr=0x0000, size=0x4000];
 >     } DATA;
  
  The labels RAMSTART and RAMEND have been defined.  The '$' in the expression indicates to use the address at the location the label is specified, so these definitions effectively define labels at the beginning and ending of the overlay.  As indicated before these define global variables, so an x86 assembler program such as the following could be used to set all data in these regions to zero:
@@ -101,10 +101,10 @@ This defines two partitions, in this case one is for data nad one is for code.  
 >     {
 >         overlay {
 >            RAMSTART=$
->            region {} data \[align=4\];
+>            region {} data [align=4];
 >            region {} bss;
 >            RAMSIZE = $-RAMSTART
->         } RAM \[addr=0x0000, size=0x4000\];
+>         } RAM [addr=0x0000, size=0x4000];
 >     } DATA;
  
  
@@ -115,10 +115,10 @@ This defines two partitions, in this case one is for data nad one is for code.  
 >     {
 >         overlay {
 >            RAMSTART=$
->            region {} data \[align=4\];
+>            region {} data [align=4];
 >            region {} bss.
 >            RAMSIZE = $-RAMSTART
->         } RAM \[addr=RAMBASE, size=0x4000\];
+>         } RAM [addr=RAMBASE, size=0x4000];
 >     } DATA;
  
  Here the base address is defined in terms of a label RAMBASE.  But RAMBASE is not defined anywhere in the specification file, so it has to be pulled from the linker's table of globals.  In this case we might define it on the linker command line as follows:
@@ -170,19 +170,19 @@ This defines two partitions, in this case one is for data nad one is for code.  
  
  Wildcards may be used in the region name:
  
->     region {} code\*
+>     region {} code*
  
  matches the sections name code1, code2, code123, and so forth.
  
  And for example
  
->     region {} \*
+>     region {} *
  
  matches ALL sections.  There are two wildcard characters:  **\*** matches a sequence of characters, whereas **?** matches a single character.
  
  Other times you want to do a catch all which gets all sections except for a select section or group of sections.
  
->     region {} \* & !(code\*)
+>     region {} * & !(code*)
  
  This uses the **and** operator and the **not** operator to select all sections which do not start with the four letters 'code'.
  

@@ -9,7 +9,7 @@
  
  In comparison to standard Intel assemblers, **OAsm** shares some features.  But unlike most other Intel assemblers, which keep track of the type of variables, **OAsm** is typeless.  Which means any time a variable is used in an ambiguous context, type information has to be provided.  Another major difference is the interpretation of brackets...  in an Intel assembler brackets around simple variable names are often optional, with the assembler interpreting:
  
->         mov ax,\[myvar\]
+>         mov ax,[myvar]
  
  and
  

@@ -37,7 +37,7 @@
  The operand will be constructed in such a way that storing it to memory will result in the characters being stored in the same order they were typed.  In other words, the sequence:
  
 >     mov    ax,"TO"
->     mov    \[label\],ax
+>     mov    [label],ax
  
  will result in the value at label being the same as if the assembler directive db were used to initialize the value:
  
@@ -79,7 +79,7 @@
  
     
 
-|colheader |colheader |
+|Operator |Meaning |
 |--- |--- |
 |( )|specify evaluation order of sub-expressions|
 |SEG|refers to segment of a variable (16-bit only)|
@@ -105,16 +105,16 @@
 |!=|not equal to|
 |&|binary and|
 |^|binary exclusive or|
-|||binary or|
+|\||binary or|
 |&&|logical and|
-||||logical or|   
+|\|\||logical or|   
 
   
   Table 1, Operator meanings
   
      
 
-|colheader |colheader |
+|Operator |Meaning |
 |--- |--- |
 |( )|parenthesis|
 |SEG, -, +, ~, !|unary operators|
@@ -125,9 +125,9 @@
 |==, !=|equality operators|
 |&|bitwise and|
 |^|bitwise exclusive or|
-|||bitwise or|
+|\||bitwise or|
 |&&|logical and|
-||||logical or|   
+|\|\||logical or|   
 
   
   

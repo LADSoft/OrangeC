@@ -23,33 +23,33 @@
  
  Various examples follow, for the _%if-style conditional_ that evaluates expressions:
  
-> %if COLOR == 4
->     mov eax,4
-> %endif
+>     ace;">%if COLOR == 4
+>     ace;">    mov eax,4
+>     ace;">%endif
  
-> %if COLOR == 4
->     mov eax,4
-> %else
->     mov eax,1
-> %endif
+>     ace;">%if COLOR == 4
+>     ace;">    mov eax,4
+>     ace;">%else
+>     ace;">    mov eax,1
+>     ace;">%endif
  
-> %if COLOR == 4
->     mov eax,4
-> %elif COLOR == 3
->     mov eax,3
-> %elif COLOR == 2
->     mov eax,2
-> %endif
+>     ace;">%if COLOR == 4
+>     ace;">    mov eax,4
+>     ace;">%elif COLOR == 3
+>     ace;">    mov eax,3
+>     ace;">%elif COLOR == 2
+>     ace;">    mov eax,2
+>     ace;">%endif
  
-> %if COLOR == 4
->     mov eax,4
-> %elif COLOR == 3
->     mov eax,3
-> %elif COLOR == 2
->     mov eax,2
-> %else
->     mov eax,1
-> %endif
+>     ace;">%if COLOR == 4
+>     ace;">    mov eax,4
+>     ace;">%elif COLOR == 3
+>     ace;">    mov eax,3
+>     ace;">%elif COLOR == 2
+>     ace;">    mov eax,2
+>     ace;">%else
+>     ace;">    mov eax,1
+>     ace;">%endif
  
  
  Note that when a conditional block is not being assembled, no preprocessor directives within that block will be evaluated either (other than to allow **OAsm's** preprocessor to reevaluate the state of conditional processing).

@@ -8,11 +8,11 @@
 
  **%define** introduces a method to perform textual substitutions.  In its simplest form it will just replace an identifier with some text:
  
-> %define HELLO\_WORLD "Hello World"
+>     ace;">%define HELLO\_WORLD "Hello World"
  
  replaces all instances of the identifier HELLO\_WORLD with the indicated string.  For example after this definition the following statement:
  
-> db HELLO\_WORLD
+>     ace;">db HELLO\_WORLD
  
  will result in the string "Hello World" being compiled into the program.
  
@@ -20,67 +20,67 @@
  
  In the below:
  
-> %define ARRAY\_MAX 4
-> mov eax,ARRAY\_MAX
+>     ace;">%define ARRAY\_MAX 4
+>     ace;">mov eax,ARRAY\_MAX
  
  the text "4" gets substituted for ARRAY\_MAX prior to assembling the mov instruction, so what the assembler sees is:
  
-> mov eax,4
+>     ace;">mov eax,4
  
  Note that definitions are also processed for substitution:
  
-> %define ONE 1
-> %define TWO (ONE + 1)
-> %define THREE (TWO + 1)
-> mov eax,THREE
+>     ace;">%define ONE 1
+>     ace;">%define TWO (ONE + 1)
+>     ace;">%define THREE (TWO + 1)
+>     ace;">mov eax,THREE
  
  is substituted multiple times during processing, with the final result being:
  
-> mov eax,((1 + 1) + 1)
+>     ace;">mov eax,((1 + 1) + 1)
  
  OAsm will detect recursive substitutions and halt the substitution process, so things like:
  
-> %define ONE TWO
-> %define TWO ONE
+>     ace;">%define ONE TWO
+>     ace;">%define TWO ONE
  
  will halt after detecting the recursion.
  
  Also, the substitution text can be empty:
  
-> %define EMPTY
-> mov eax, EMPTY
+>     ace;">%define EMPTY
+>     ace;">mov eax, EMPTY
  
  results in the translated text:
  
-> mov eax,
+>     ace;">mov eax,
  
  which cannot be assembled and will result in a syntax error during assembly.
  
  
  **%define** can also be used in its functional form for more advanced text replacement activities.  In this form, the identifier is parameterized.  During substitutions, arguments are also specified; and the original parameters are replaced with the arguments while substitution is occurring.  For example:
  
-> %define mul(a,b)  a \* b
-> mov eax,mul(4,7)
+>     ace;">%define mul(a,b)  a \* b
+>     ace;">mov eax,mul(4,7)
  
  is changed to:
  
-> mov eax,4 \* 7
+>     ace;">mov eax,4 \* 7
  
  prior to assembly.  It is usually not a good idea to write this quite the way it was done however.  The user may elect to put any text they want in the invocation, so one thing that can happen is they write:
  
-> mov eax, mul(4+3, 7+2)
+>     ace;">mov eax, mul(4+3, 7+2)
  
  This gets translated to:
  
-> mov eax, 4 + 3 \* 7 + 2
+>     ace;">mov eax, 4 + 3 \* 7 + 2
  
  which was probably not the intent.  Below is what was probably desired:
  
-> mov eax, (4+3) \* (7+2)
+>     ace;">mov eax, (4+3) \* (7+2)
  
  For this reason it is a good idea to fully parenthesize the parameters used in the original definition:
  
-> %define mul(a,b) ((a) \* (b))
+>     ace;">%define mul(a,b) ((a) \* (b))
  
  so that the mov with mul gets translated to:
  
@@ -93,23 +93,23 @@
  
  Within a definition, there are a couple of special-case substitutions that can occur with function-style definitions.  In Stringizing, a parameter can be turned into a string.  For example if you write:
  
-> %define STRINGIZE(str) \#str
-> db   STRINGIZE(Hello World)
+>     ace;">%define STRINGIZE(str) \#str
+>     ace;">db   STRINGIZE(Hello World)
  
  quotes will be placed around the substituted parameter.  So this translates to:
  
-> db   "Hello World"
+>     ace;">db   "Hello World"
  
  prior to assembly.
  
  In Tokenizing, new identifiers may be produced.  For example:
  
-> %define Tokenizing(prefix, postfix) (prefix \#\# postfix + 4)
-> mov eax,Tokenizing(Hello,World)
+>     ace;">%define Tokenizing(prefix, postfix) (prefix \#\# postfix + 4)
+>     ace;">mov eax,Tokenizing(Hello,World)
  
  would be translated to:
  
-> mov eax,HelloWorld + 4
+>     ace;">mov eax,HelloWorld + 4
  
  prior to assembly.
  
@@ -118,13 +118,13 @@
  
  Finally, **OAsm** supports the C99 extension to function-style definitions, which allows variable-length argument lists.  For example:
  
-> %define mylist(first, ...)  dw first, \_\_VA\_ARGS\_\_
+>     ace;">%define mylist(first, ...)  dw first, \_\_VA\_ARGS\_\_
  
  where \_\_VA\_ARGS\_\_ means append all remaining arguments that are specified, could be used like this:
  
-> mylist(1)
-> mylist(1,2)
-> mylist(1,2,3,4,5)
+>     ace;">mylist(1)
+>     ace;">mylist(1,2)
+>     ace;">mylist(1,2,3,4,5)
  
  and so on.  These would expand to:
  
@@ -141,11 +141,11 @@
 
 #### %undef
 
-> **%undef** undoes a previous definition, so that it will not be considered for further substitutions (unless defined again).  For example:
+>     ace;">**%undef** undoes a previous definition, so that it will not be considered for further substitutions (unless defined again).  For example:
  
-> %define REG\_EBX 3
-> %undef REG\_EBX
-> mov eax, REG\_EBX
+>     ace;">%define REG\_EBX 3
+>     ace;">%undef REG\_EBX
+>     ace;">mov eax, REG\_EBX
  
  results in no substitution occurring for the use of REG\_EBX.
 
@@ -154,11 +154,11 @@
 
  **%error** displays an error, causing the assembler to not generate code.  For example:
  
-> %error my new error
+>     ace;">%error my new error
  
  might display something like:
  
-> Error errdemo.asm(1): Error Directive: my new error
+>     ace;">Error errdemo.asm(1): Error Directive: my new error
  
  When the file is assembled.
 
@@ -167,20 +167,20 @@
 
  **%line** is used to change the file and line number listed in the error reporting.  By default the error reporting indicates the file and line an error occur on.  Sometimes in generated source code files, it is useful to refer to the line number in the original source code rather than in the file that is currently being assembled.  **%line** accomplishes this by updating internal tables to indicate to the preprocessor that it should use alternate information when reporting an error.  For example inserting the following at line 443 of test.asm:
  
->     mov eax,^4
+>     ace;">    mov eax,^4
  
  produces a syntax error when the code is assembled:
  
-> Error test.asm(443): Syntax Error.
+>     ace;">Error test.asm(443): Syntax Error.
  
  If an additional %line directive is inserted:
  
->     %line 10, "demo.c"
->     mov eax,^4
+>     ace;">    %line 10, "demo.c"
+>     ace;">    mov eax,^4
  
  the error changes to:
  
-> Error demo.c(10): Syntax Error
+>     ace;">Error demo.c(10): Syntax Error
  
  Note that once **%line** is used to change the line number and file name, **OAsm** remembers the new information and continues to increment the new line number each time it processes a line of source code.
 
@@ -193,7 +193,7 @@
  
  For example if **test.asm** is being assembled and the statement:
  
-> %include "test1.asm"
+>     ace;">%include "test1.asm"
  
  is encountered, the assembly of **test.asm** will temporarily be suspended while **OAsm** goes off to assemble **test1.asm**.  After it is done with **test1.asm,** **OAsm** remembers that it was previously assembling** test.asm** and picks up in that file where it left off (e.g. at the line after the **%include** statement).
  
@@ -208,18 +208,18 @@
  
  For example:
  
-> %define COLOR 3
-> %if  COLOR == 3
->     mov eax,4
-> %endif
+>     ace;">%define COLOR 3
+>     ace;">%if  COLOR == 3
+>     ace;">    mov eax,4
+>     ace;">%endif
  
  will result in the mov statement being assembled because the result of the argument evaluation is a nonzero value.
  
  On the other hand:
  
->> %if ZERO
->     mov eax,4
-> %endif
+>     ace;">>     ace;">%if ZERO
+>     ace;">    mov eax,4
+>     ace;">%endif
  
  results in nothing being assembled because the value of 'ZERO' is zero.
  
@@ -232,12 +232,12 @@
  
  For example:
  
-> %define COLOR 3
-> %if  COLOR == 2
->     mov eax,4
-> %elif COLOR == 3
->     inc eax
-> %endif
+>     ace;">%define COLOR 3
+>     ace;">%if  COLOR == 2
+>     ace;">    mov eax,4
+>     ace;">%elif COLOR == 3
+>     ace;">    inc eax
+>     ace;">%endif
  
  will result in the mov statement being ignored and the inc statement being assembled because the result of the **%if** argument evaluation is zero, and the result of the **%elif **argument evaluation is nonzero.
  
@@ -250,10 +250,10 @@
  
  For example:
  
-> %define COLOR 3
-> %ifdef COLOR
->     mov eax,4
-> %endif
+>     ace;">%define COLOR 3
+>     ace;">%ifdef COLOR
+>     ace;">    mov eax,4
+>     ace;">%endif
  
  will result in the mov statement being assembled because COLOR has been defined.
  
@@ -268,17 +268,17 @@
  
  For example:
  
-> %define COLOR 3
-> %ifndef COLOR
->     mov eax,4
-> %endif
+>     ace;">%define COLOR 3
+>     ace;">%ifndef COLOR
+>     ace;">    mov eax,4
+>     ace;">%endif
  
  will result in the mov statement being ignored because COLOR has been defined.  Alternatively:
  
-> %undef COLOR
-> %ifndef COLOR
->     mov eax,4
-> %endif
+>     ace;">%undef COLOR
+>     ace;">%ifndef COLOR
+>     ace;">    mov eax,4
+>     ace;">%endif
  
  will result in the mov statement being assembled because COLOR is not currently defined.
  
@@ -291,12 +291,12 @@
 
  **%else** is used to select a block for assembly, when all previous _%if-style conditionals_ and _%elif-style conditionals_ in the same sequence have had their arguments evaluate to false.  For example:
  
-> %define COLOR = 3
-> %if COLOR ==4
->     mov eax,3
-> %else
->     inc eax
-> %endif
+>     ace;">%define COLOR = 3
+>     ace;">%if COLOR ==4
+>     ace;">    mov eax,3
+>     ace;">%else
+>     ace;">    inc eax
+>     ace;">%endif
  
  will result in the mov being ignored, but the inc being assembled, because the evaluation of the **%if** argument is false.
  

@@ -1,16 +1,16 @@
 ### Token Type Classification Conditionals
 
  
-> The Token Type Classification conditionals are used in [Conditional Processing](Conditional%20Processing.md).  They take a character stream, and determine what kind of token the assembler will think it would be if it were to assemble the stream as part of processing an instruction or directive.  This is useful for example within multiline macro definitions, to change the behavior of a macro based on the type of data in one or more of the arguments.  Token Type classification directives can detect one of three types of token:  labels, numbers, and strings.
+>     ace;">The Token Type Classification conditionals are used in [Conditional Processing](Conditional%20Processing.md).  They take a character stream, and determine what kind of token the assembler will think it would be if it were to assemble the stream as part of processing an instruction or directive.  This is useful for example within multiline macro definitions, to change the behavior of a macro based on the type of data in one or more of the arguments.  Token Type classification directives can detect one of three types of token:  labels, numbers, and strings.
 
 
 #### %ifid
 
   **%ifid** is a _%if-style conditional_ that detects if the token could be a label, and processes the following block if it is.
  
->> %ifid  myLabel
->     mov eax,3
-> %endif
+>     ace;">>     ace;">%ifid  myLabel
+>     ace;">    mov eax,3
+>     ace;">%endif
  
  would result in the mov statement being assembled because myLabel matches a character sequence that could be used in a label.  It does not matter if myLabel has actually been defined; the fact that it could be assembled as a label is all that is needed.
  
@@ -21,9 +21,9 @@
 
   **%ifnid** is a _%if-style conditional_ that detects if the token could be a label, and processes the following block if it is not.
  
-> %ifnid 5
->     mov eax,3
-> %endif
+>     ace;">%ifnid 5
+>     ace;">    mov eax,3
+>     ace;">%endif
  
  would result in the mov statement being assembled because 5 is a number, and does not match the character sequence required for a label.
  
@@ -35,10 +35,10 @@
  
   **%elifid** is a _%elif-style conditional_ that detects if the token could be a label, and processes the following block if it is.
  
-> %if 1 == 2
->> %elifid  myLabel
->     mov eax,3
-> %endif
+>     ace;">%if 1 == 2
+>     ace;">>     ace;">%elifid  myLabel
+>     ace;">    mov eax,3
+>     ace;">%endif
  
  would result in the mov statement being assembled because myLabel matches a character sequence that could be used in a label.  It does not matter if myLabel has actually been defined; the fact that it could be assembled as a label is all that is needed.
  
@@ -50,10 +50,10 @@
  
   **%elifnid** is a _%elif-style conditional_ that detects if the token could be a label, and processes the following block if it is not.
  
-> %if 1 == 2
->> %elifnid  5
->     mov eax,3
-> %endif
+>     ace;">%if 1 == 2
+>     ace;">>     ace;">%elifnid  5
+>     ace;">    mov eax,3
+>     ace;">%endif
  
   would result in the mov statement being assembled because 5 is a number, and does not match the character sequence required for a label.
  
@@ -65,9 +65,9 @@
  
   **%ifnum** is a _%if-style conditional_ that detects if the token is a number, and processes the following block if it is.
  
->> %ifnum  5
->     mov eax,3
-> %endif
+>     ace;">>     ace;">%ifnum  5
+>     ace;">    mov eax,3
+>     ace;">%endif
  
  would result in the mov statement being assembled because 5 is a number.
  
@@ -78,9 +78,9 @@
 
  **%ifnnum** is a _%if-style conditional_ that detects if the token is a number, and processes the following block if it is not.
  
->> %ifnnum  5
->     mov eax,3
-> %endif
+>     ace;">>     ace;">%ifnnum  5
+>     ace;">    mov eax,3
+>     ace;">%endif
  
  would result in the mov statement not being assembled because 5 is a number.
  
@@ -92,10 +92,10 @@
  
   **%elifnum** is a _%elif-style conditional_ that detects if the token could be a label, and processes the following block if it is.
  
-> %if 1 == 2
->> %elifnum 5
->     mov eax,3
-> %endif
+>     ace;">%if 1 == 2
+>     ace;">>     ace;">%elifnum 5
+>     ace;">    mov eax,3
+>     ace;">%endif
  
  would result in the mov statement being assembled because 5 is a number.
  
@@ -106,10 +106,10 @@
 
  **%elifnum** is a _%elif-style conditional_ that detects if the token is a number and processes the following block if it is not.
  
-> %if 1 == 2
->> %elifnnum  hi
->     mov eax,3
-> %endif
+>     ace;">%if 1 == 2
+>     ace;">>     ace;">%elifnnum  hi
+>     ace;">    mov eax,3
+>     ace;">%endif
  
  would result in the mov statement being assembled because 'hi' is not a number, it matches the format for a label.
  
@@ -121,9 +121,9 @@
  
   **%ifstr** is a _%if-style conditional_ that detects if the token is a string, and processes the following block if it is.
  
->> %ifstr  "This is a string"
->     mov eax,3
-> %endif
+>     ace;">>     ace;">%ifstr  "This is a string"
+>     ace;">    mov eax,3
+>     ace;">%endif
  
  would result in the mov statement being assembled because the argument is a string.
  
@@ -135,15 +135,15 @@
  
   **%ifnstr** is a _%if-style conditional_ that detects if the token is a string, and processes the following block if it is not.
  
->> %ifnstr  "This is a string"
->     mov eax,3
-> %endif
+>     ace;">>     ace;">%ifnstr  "This is a string"
+>     ace;">    mov eax,3
+>     ace;">%endif
  
  would result in nothing being assembled because the argument is a string.  But:
  
-> %ifnstr 5
->     mov eax,3
-> %endif
+>     ace;">%ifnstr 5
+>     ace;">    mov eax,3
+>     ace;">%endif
  
  would result in the mov being assembled, because 5 is a number not a string.
  
@@ -155,10 +155,10 @@
  
   **%elifstr** is a _%elif-style conditional_ that detects if the token is a string, and processes the following block if it is.
  
-> %if 1 == 2
-> %elifstr  "This is a string"
->     mov eax,3
-> %endif
+>     ace;">%if 1 == 2
+>     ace;">%elifstr  "This is a string"
+>     ace;">    mov eax,3
+>     ace;">%endif
  
  would result in the mov statement being assembled because the argument is a string.
  
@@ -170,10 +170,10 @@
   
   **%elifnstr** is a _%elif-style conditional_ that detects if the token is a string, and processes the following block if it is.
  
-> %if 1 == 2
-> %elifnstr 5
->     mov eax,3
-> %endif
+>     ace;">%if 1 == 2
+>     ace;">%elifnstr 5
+>     ace;">    mov eax,3
+>     ace;">%endif
  
  would result in the mov statement being assembled because 5 is a number, not a string.
  

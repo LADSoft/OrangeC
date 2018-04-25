@@ -5,7 +5,7 @@
  
  Each target configuration is accessible via the **/T** linker switch.  For example:
  
-> OLink /T:BIN test.o
+>     ace;">OLink /T:BIN test.o
  
  invokes the target configuration associated with the name BIN.  In the case of BIN the file is linked into three partitions; code, data and stack using the specification file **hex.spc**; and the results are dumped to a binary file using **DLHex**.
  

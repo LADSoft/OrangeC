@@ -8,7 +8,7 @@
 
  The general format of an **OGrep** [command line](OGrep%20Command%20Line%20Options.md) is as follows:
  
-> OGrep \[options\] match-string list-of-files
+>     ace;">OGrep \[options\] match-string list-of-files
  
  **OGrep** will search in the _list-of-files_ for text that matches the _match-string_, and list file and optionally line number information for each match found.  In simple cases the match string does not need to be surrounded by quotes, but in more complex cases involving spacing characters and special symbols it may be necessary to quote the _match-string_.
 

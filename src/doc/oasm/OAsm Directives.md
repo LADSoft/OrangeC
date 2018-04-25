@@ -5,11 +5,11 @@
  
  Natively, directives are always enclosed in brackets, for example to define a byte of data:
  
-> myvar \[db   44\]
+>     ace;">myvar \[db   44\]
  
  However, the directives are redefined with default [multiline macros](Multiline%20Macro%20Extensions.md), so that the brackets are not necessary when typing code:
  
-> myvar db 44
+>     ace;">myvar db 44
  
  This documentation describes the macro version of the directives.
  
@@ -69,31 +69,31 @@
  
  Some examples follow:
  
-> mylab:
+>     ace;">mylab:
      db 44
      dw   0234h
      dd  9999
      dd  43.72
      dd   mylab
->>     dq   19.21e17
->     dt  0.001 ;
+>     ace;">>     ace;">    dq   19.21e17
+>     ace;">    dt  0.001 ;
  
  Multiple values may be specified per line for these directives; for example:
  
-> mylab:
->     db   "hello world",13, 10, 0
->     dq   44.7,33,2.19.8
+>     ace;">mylab:
+>     ace;">    db   "hello world",13, 10, 0
+>     ace;">    dq   44.7,33,2.19.8
 
 
 ### Data Reservation Directives
 
  Data Reservation directives reserve space for data, and optionally give an initial value to load the space with.  For example:
  
->     resb   64
+>     ace;">    resb   64
  
  reserves space for 64 bytes of data.  This data will default to zeros in the section it is defined it.  However, an alternative form of the directive specifies an initial value.  Thus:
  
->     resb   64,'a'
+>     ace;">    resb   64,'a'
  
  fills the space with lower case 'a' values.
  
@@ -110,8 +110,8 @@
 * rest - reserve tbytes
   As an example:
  
-> mylab   db   "hello world"
->         resb mylab + 80 - $, '.'
+>     ace;">mylab   db   "hello world"
+>     ace;">        resb mylab + 80 - $, '.'
  
  defines the string "hello world", then adds enough dots on the end to make up an 80-character buffer.
  
@@ -137,25 +137,20 @@
 
  Each use of the global directive can assign the 'global' attribute to one or more labels.  When a label is global, it has a presence that extends beyond the current file, and the linker may resolve references to the variable to it, when those references are made in other files.  Those references would typically have been made by use of the 'extern' directive.  For example:
  
-> global puterror
->    
-> puterror:
->
->  mov   eax,errmsg
->
->  call strput
->
->  ret
->
-> errmsg   db   "this is an error",0
- >
-> strput:
->
->     ....
+>     ace;">    global puterror
+>     ace;">   
+>     ace;">puterror:
+>     ace;">    mov   eax,errmsg
+>     ace;">    call strput
+>     ace;">    ret
+>     ace;">errmsg   db   "this is an error",0
+ 
+>     ace;">strput:
+>     ace;">    ....
  
  creates a function 'puterror' which is visible to other files during linkage.  Global may be used with multiple labels:
  
->     global mylab, strput
+>     ace;">    global mylab, strput
 
 
 #### Extern Directive
@@ -164,38 +159,39 @@
  
  In the above example, if 'strput' was defined in a different file from the definition of puterror you might write the following:
  
->         global puterror
->         extern strput
->     puterror:
->         mov   eax,errmsg
->         call strput
->         ret
->     errmsg   db   "this is an error",0
+>     ace;">    global puterror
+>     ace;">    extern strput
+   
+>     ace;">puterror:
+>     ace;">    mov   eax,errmsg
+>     ace;">    call strput
+>     ace;">    ret
+>     ace;">errmsg   db   "this is an error",0
  
  As with the global directive, extern can be used with multiple symbols:
  
->     global puterror
->     extern strput, numberput
+>     ace;">    global puterror
+>     ace;">    extern strput, numberput
    
-> puterror:
->     push eax
+>     ace;">puterror:
+>     ace;">    push eax
      mov   eax,errmsg
->     call strput
+>     ace;">    call strput
      pop eax
      call numberput
->     ret
-> errmsg   db   "this is error number: ",0
+>     ace;">    ret
+>     ace;">errmsg   db   "this is error number: ",0
 
 
 #### Export Directive
 
  The export directive defines a symbol that can be used by the windows operating system during program load.  For example a DLL might use it to declare a function that is to be available to other executable files.  Unlike the global and external directives, 'export' can only be used to change the attributes of one variable at a time.  For example in the above examples adding the line:
  
->     export puterror
+>     ace;">    export puterror
  
  would create an export symbol named 'puterror' which windows could then resolve to an import reference in another executable file at load time.  Another form of the export directive can be used to change the visible name of the exported function:
  
->     export puterror Error
+>     ace;">    export puterror Error
  
  would export the function puterror, but other executables would see it as being named Error.
 
@@ -205,21 +201,21 @@
 
  The import directive is used to signify that the label is exported from some other executable or DLL file, and that windows should load that executable or DLL so that the label can be resolved.  As with export there are two versions of the directive:
  
->     import   ExitProcess Kernel32.dll
+>     ace;">    import   ExitProcess Kernel32.dll
  
->     ...
+>     ace;">    ...
      push    0
->     call    ExitProcess
->     ...
+>     ace;">    call    ExitProcess
+>     ace;">    ...
  
  indicates that the DLL kernel32.dll should be loaded so that a reference to the ExitProcess API call can be resolved.  It might be useful to rename ExitProcess to Quit if that is easier to remember and type:
  
->     import ExitProcess Kernel32.dll Quit
+>     ace;">    import ExitProcess Kernel32.dll Quit
  
->     ...
+>     ace;">    ...
      push   0
->     call   Quit
->     ...
+>     ace;">    call   Quit
+>     ace;">    ...
 
 
 ### Section Directives
@@ -241,7 +237,7 @@
 
  The Section directive switches to a new section.  If this is the first time the section is used, the section directive may also specify attributes for the section.  For example:
  
-> section code
+>     ace;">section code
  
  switches to a section named code.  Various attributes may be specified, such as section alignment and word size of section.  Some other attributes are parsed for compatibility with x86 assemblers, but are not currently used.  The attributes are:
  
@@ -256,19 +252,19 @@
 * USE32 - this section uses 32-bit addressing modes and data
   As an example of a simple 32-bit program
  
-> section code ALIGN=2 USE32
-> extern Print
-> ..start:
->     mov eax,helloWorld
->     call Print
->     ret
+>     ace;">section code ALIGN=2 USE32
+>     ace;">extern Print
+>     ace;">..start:
+>     ace;">    mov eax,helloWorld
+>     ace;">    call Print
+>     ace;">    ret
  
-> section data ALIGN=4 USE32
-> helloWorld   db   "Hello World",0
+>     ace;">section data ALIGN=4 USE32
+>     ace;">helloWorld   db   "Hello World",0
  
  Note that for convenience, 'segment' is defined as an alias for 'section'.  So you could write:
  
-> segment code USE32
+>     ace;">segment code USE32
  
  to start a section named code, if you prefer.
 
@@ -277,19 +273,19 @@
 
  The absolute directive is used to switch out of sections where data can be emitted, into an **absolute** section with the specified origin.  It is called absolute because these labels never get relocated by the linker; they are essentially constants.  Labels defined in an absolute section will get the value of the program counter within the section, at the time the section is defined.  But these labels get a constant value, that is not relocated by the linker.  For example:
  
-> absolute 0
+>     ace;">absolute 0
  
-> lbl1:
->     resb   4
-> lbl2:
->     resw 3
-> lbl3:
+>     ace;">lbl1:
+>     ace;">    resb   4
+>     ace;">lbl2:
+>     ace;">    resw 3
+>     ace;">lbl3:
  
  creates an absolute section based at absolute zero, and defines three labels.  These labels will have the following values based on the space that has been reserved:
  
-> lbl1:   0
-> lbl2:   4 \* 1 = 4
-> lbl3:   4 + 3 \* 2 = 10
+>     ace;">lbl1:   0
+>     ace;">lbl2:   4 \* 1 = 4
+>     ace;">lbl3:   4 + 3 \* 2 = 10
  
  Note that in the definition of this section, we did not attempt to create data or code, we only reserved space.  In general attempting to generate code or data in an absolute section will cause an error.
 
@@ -299,7 +295,7 @@
 
   The Align directive aligns data to a specific boundary.  For example:
  
-> align 4
+>     ace;">align 4
  
  inserts enough zeroed bytes of data to align the current section to the beginning of a four-byte boundary.  Note that the section attributes still need to be set to have the same alignment or better, either in the section directive or in the linker specification file, so that the linker will honor the alignment when relocating the section.
 
@@ -312,9 +308,9 @@
  
  For example:
  
-> four     EQU 4         ; value of the label 'four' is 4
-> mylab    resb   64
-> size     EQU $-mylab   ; value of the label 'size' is 64
+>     ace;">four     EQU 4         ; value of the label 'four' is 4
+>     ace;">mylab    resb   64
+>     ace;">size     EQU $-mylab   ; value of the label 'size' is 64
 
 
 ### The TIMES Directive
@@ -324,16 +320,16 @@
  For example the earlier example from the Data Reservation section could be alternatively written:
  
  
-> mylab   db   "hello world"\n
->         times mylab + 80 - $ \[db '.'\]
+>     ace;">mylab   db   "hello world"
+>     ace;">        times mylab + 80 - $ \[db '.'\]
  
  Here the native form of the db directive is used, since macro substitution is not available in this context.  Times could also be used for timing:
  
->     times 4 NOP
+>     ace;">    times 4 NOP
  
  another use for times sometimes found in NASM programs is to align data:
  
->     times ($$-$)%4 \[db 0\]
+>     ace;">    times ($$-$)%4 \[db 0\]
 
 
 ### The INCBIN Directive
@@ -343,15 +339,15 @@
  
  The basic form of incbin is:
  
-> incbin "filename"
+>     ace;">incbin "filename"
  
  where filename is the name of the file to import.  In this form, all data from the beginning to the end of the file will be imported.  Another form starts importing at a specific offset and goes to the end:
  
-> incbin "Filename", 100
+>     ace;">incbin "Filename", 100
  
  starts importing at the 100th byte in the file.  Still another form lets you specify the length of data to import:
  
-> incbin "Filename", 96, 16
+>     ace;">incbin "Filename", 96, 16
  
  imports 16 bytes, starting at offset 96 within the file.
 
@@ -361,47 +357,47 @@
 
  Structures aren't really a construct supported by the assembler, however, clever macro definitions allow definition of structure-like entities.  For example, consider the following:
  
-> struc   astruc
-> s1   resb 4
-> s2   resw 3
-> s3   resd 5
-> s4   resb 1
-> endstruc
+>     ace;">struc   astruc
+>     ace;">s1   resb 4
+>     ace;">s2   resw 3
+>     ace;">s3   resd 5
+>     ace;">s4   resb 1
+>     ace;">endstruc
  
  This defines the following label values similar to how they were defined in an absolute section:
  
-> s1: 0
-> s2: 4 \* 1 = 4
-> s3: 4 + 3 \* 2 = 10
-> s4: 10 + 5 \* 4 = 30
+>     ace;">s1: 0
+>     ace;">s2: 4 \* 1 = 4
+>     ace;">s3: 4 + 3 \* 2 = 10
+>     ace;">s4: 10 + 5 \* 4 = 30
  
  The structure mechanism also defines astruc as 0, and it defines the size of the struct 'astruc\_size' as 30 + 1 = 31.
  
  To access the member of a structure one might use something like:
  
-> mov   eax,\[ebx + s3\]
+>     ace;">mov   eax,\[ebx + s3\]
  
  The structure mechanism could just as well be done with absolute sections or EQU statements (except that a side effect of the structure mechanism is to define a size).  But a little more more interestingly, if you introduce local labels and remember that a local label can be accessed from anywhere if its fully qualified name is specified you might write:
  
-> struct astruc
-> .s1   resb 4
-> .s2   resw 3
-> .s3   resd 5
-> .s4   resb 1
-> endstruc
+>     ace;">struct astruc
+>     ace;">.s1   resb 4
+>     ace;">.s2   resw 3
+>     ace;">.s3   resd 5
+>     ace;">.s4   resb 1
+>     ace;">endstruc
  
  This lets you qualify the name and use:
  
-> mov    eax,\[ebx + astruc.s3\]
+>     ace;">mov    eax,\[ebx + astruc.s3\]
  
  However you need to be careful with this.  Structures aren't really part of the assembler, but are instead an extension provided by built-in macros.  So you can't make an instance of a structure and then use a period to qualify the instance name with a structure member.  For example:
  
-> mystruc   resb   astruc\_size,0
-> mov       eax,\[mystruc.s3\]
+>     ace;">mystruc   resb   astruc\_size,0
+>     ace;">mov       eax,\[mystruc.s3\]
  
  is not valid, because the label 'mystruc.s3' does not exist.  The move would have to be changed to something like:
  
-> mov eax,\[mystruc + astruc.s3\]
+>     ace;">mov eax,\[mystruc + astruc.s3\]
  
  
  

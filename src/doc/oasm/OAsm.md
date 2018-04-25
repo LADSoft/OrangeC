@@ -9,15 +9,15 @@
  
  In comparison to standard Intel assemblers, **OAsm** shares some features.  But unlike most other Intel assemblers, which keep track of the type of variables, **OAsm** is typeless.  Which means any time a variable is used in an ambiguous context, type information has to be provided.  Another major difference is the interpretation of brackets...  in an Intel assembler brackets around simple variable names are often optional, with the assembler interpreting:
  
->     mov ax,\[myvar\]
+>     ace;">    mov ax,\[myvar\]
  
  and
  
->     mov ax,myvar
+>     ace;">    mov ax,myvar
  
- in the same way.  In these assemblers, an additional keyword **offset **> is used to refer to a variable's address:
+ in the same way.  In these assemblers, an additional keyword **offset **>     ace;">is used to refer to a variable's address:
  
->     mov ax,offset myvar
+>     ace;">    mov ax,offset myvar
  
  However in OAsm,  the **offset **keyword is done away with.  Instead, the brackets are given a more concrete meaning.   When they exist, they indicate the value of a variable; absence of the brackets denotes the address of the variable.
 
@@ -26,27 +26,27 @@
 
  **OAsm** understands the usual comment syntax starting with a ';' and extending to the end of the line.  For example in:
  
->     sub   eax,edx   ; normalize
+>     ace;">    sub   eax,edx   ; normalize
  
  everything after the semicolon is a comment and is ignored.
  
  Additionally OAsm understands C and C++ style comments since it uses an extended C language preprocessor.  For example to write a block of comments use /\* and \*/:
  
-> /\*
->     Everything between the /\* and the \*/ is a comment
+>     ace;">/\*
+>     ace;">    Everything between the /\* and the \*/ is a comment
      Multiple lines may be typed.
-> \*/
+>     ace;">\*/
  
  The final commenting style is the C++ double slash style, which is similar to ';' except uses a '//' sequence to delimit the beginning of the comment:
  
->     sub eax,edx   // normalize
+>     ace;">    sub eax,edx   // normalize
 
 
 ## Command Line Options
 
  The general form of an **OAsm** [Command Line](OAsm%20Command%20Line.md) is:
  
-> OAsm \[options\] filename-list
+>     ace;">OAsm \[options\] filename-list
  
  Where _filename-list_ gives a list of files to assemble.
 
@@ -72,11 +72,11 @@
  
  Natively, directives are always enclosed in brackets, for example to define a byte of data:
  
-> myvar \[db   44\]
+>     ace;">myvar \[db   44\]
  
  However, the directives are redefined with default macros, so that the brackets are not necessary when typing code:
  
-> myvar db 44
+>     ace;">myvar db 44
  
  Macros are described further in the section on the [preprocessor](OAsm%20Preprocessor.md).
  

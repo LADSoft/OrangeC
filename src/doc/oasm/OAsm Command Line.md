@@ -2,19 +2,19 @@
 
  The general format of an **OAsm** command line is:
  
-> OAsm \[options\] file-list
+>     ace;">OAsm \[options\] file-list
  
  where the _file-list_ is an arbitrary list of input files.
  
  For example:
  
-> OAsm one.asm two.asm three.asm
+>     ace;">OAsm one.asm two.asm three.asm
  
  assembles several files, and makes output files called one.o, two.o and three.o.
  
  The file list can have wildcards:
  
-> OAsm \*.asm
+>     ace;">OAsm \*.asm
  
  assembles all the files in the curent directory.
 
@@ -23,9 +23,9 @@
 
  Response files can be used as an alternate to specifying input on the command line.  For example:
  
-> OAsm @myresp.lst
+>     ace;">OAsm @myresp.lst
  
- will take command line options from **myresp.lst**>   Response files aren't particularly useful with the assembler, but they are supported.
+ will take command line options from **myresp.lst**>     ace;">  Response files aren't particularly useful with the assembler, but they are supported.
 
 
 ### Case Insensitivity
@@ -49,10 +49,10 @@
  By default, **OAsm** will take the input file name, and replace the extension with the extension **.o**.
  
  However in some cases it is useful to be able to specify the output file name.  The specified name can have its extension specified, or it can be typed without an extension to allow **OAsm** to add the **.o** extension.  **OAsm** is only capable of producing object files.
-> 
-> OAsm /omyfile test.asm
+>     ace;">
+>     ace;">OAsm /omyfile test.asm
  
- makes an object file called **myfile.o**.>
+ makes an object file called **myfile.o**.>     ace;">
 
 
 ### Specifying include file path
@@ -66,13 +66,13 @@
  
  For example:
  
-> OAsm /DMYINT=4 test.c
+>     ace;">OAsm /DMYINT=4 test.c
  
  defines the variable MYINT and gives it a value of 4. 
  
  A variable doesn't have to be defined with a value:
  
-> OAsm /DMSDOS test.c
+>     ace;">OAsm /DMSDOS test.c
  
  might be used to specify preprocessing based on the program looking for the word MSDOS in \#ifdef statements.
 

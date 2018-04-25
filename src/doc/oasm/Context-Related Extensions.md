@@ -13,30 +13,30 @@
  
  could be used in a context-specific definition or label, and would signify that that label goes with the current context.  As an example consider the two macros
  
-> %macro BEGIN 0
-> %push MyBegin
-> %$HelloWorld:
-> %endmacro
+>     ace;">%macro BEGIN 0
+>     ace;">%push MyBegin
+>     ace;">%$HelloWorld:
+>     ace;">%endmacro
  
-> %macro FOREVER 0
-> %ifctx MyBegin
->     jmp %$HelloWorld
-> %pop
-> %else
-> %error FOREVER loop without matching BEGIN
-> %endif
-> %endmacro
-> 
+>     ace;">%macro FOREVER 0
+>     ace;">%ifctx MyBegin
+>     ace;">    jmp %$HelloWorld
+>     ace;">%pop
+>     ace;">%else
+>     ace;">%error FOREVER loop without matching BEGIN
+>     ace;">%endif
+>     ace;">%endmacro
+>     ace;">
  could be used to implement an infinite loop as follows, if the macros are used in a pair.  
  
->     BEGIN
->     inc EAX
->     FOREVER
+>     ace;">    BEGIN
+>     ace;">    inc EAX
+>     ace;">    FOREVER
  
  Contexts can also have 'local' definitions:
  
-> %push  MY\_CONTEXT
-> %define %$four 4
+>     ace;">%push  MY\_CONTEXT
+>     ace;">%define %$four 4
  
  results in a definition that will only be valid while this instance of MY\_CONTEXT is on top of the context stack.
  
@@ -44,7 +44,7 @@
  
  Note:  **OAsm** does not separate context-specific label names into different namespaces.  Instead, a prefix is inserted before the symbol's name and the symbol is entered in the global symbol table.  The prefix takes the form of a non-local label, with context-instance identifying information.  This identifying information is simply an integer followed by the character '$'.  For example if the context instance number is 54, the label %$Hello would be translated to:
  
-> ..@54$Hello
+>     ace;">..@54$Hello
  
  by the preprocessor.  Non-local labels of this general form should be avoided as they may collide with labels defined locally within a context.  This also applies to locally defined **%define** statements.
 
@@ -53,16 +53,16 @@
 
  **%push** creates a new context and pushes it on the top of the context stack:
  
-> %push CONTEXT\_NAME
+>     ace;">%push CONTEXT\_NAME
  
  'local' definitions can be made within this context as indicated in the introduction.
  
  If %push is used multiple times with the same context name, each context is unique even though the names are the same.  So for example:
  
-> %push MY\_CONTEXT
-> %$contextLabel:
-> %push MY\_CONTEXT
-> %$contextLabel:
+>     ace;">%push MY\_CONTEXT
+>     ace;">%$contextLabel:
+>     ace;">%push MY\_CONTEXT
+>     ace;">%$contextLabel:
  
  is valid, because the two labels are named locally to the context and are in different context instances.  When the label is used, it will be matched to the context currently on top of the context stack.
 
@@ -71,8 +71,8 @@
 
  **%pop** removes the context at the top of the context stack:
  
-> %push MY\_CONTEXT
-> %pop 
+>     ace;">%push MY\_CONTEXT
+>     ace;">%pop 
  
  results in MY\_CONTEXT no longer being active, and the context that was below it on the context-stack becomes active.  Note, you should use any labels or definitions that are specific to a context before it is popped.  Once a context is popped off the stack, its state is never recoverable.
 
@@ -81,11 +81,11 @@
 
  **%repl** changes the name of the context at the top of the context-stack.  For example:
  
-> %push MY\_CONTEXT
+>     ace;">%push MY\_CONTEXT
  
  creates a context called MY\_CONTEXT.  If that is followed by:
  
-> %repl  NEW\_NAME
+>     ace;">%repl  NEW\_NAME
  
  the context will now be called NEW\_NAME.  When a context is renamed this way, all previous local definitions and labels are still accessible while that context is on top of the context stack.  The only affect of renaming the context is that conditionals which act on context names will be matched against the new name instead of the old one.
 
@@ -96,17 +96,17 @@
  
  For example:
  
-> %push MY\_NAME
-> %ifctx MY\_NAME
->     mov eax,4
-> %endif
+>     ace;">%push MY\_NAME
+>     ace;">%ifctx MY\_NAME
+>     ace;">    mov eax,4
+>     ace;">%endif
  
  will result in the mov statement being assembled because the top of the context stack is named MY\_NAME, whereas:
  
-> %push MY\_NAME
-> %ifctx  ANOTHER\_NAME
->     mov eax,4
-> %endif
+>     ace;">%push MY\_NAME
+>     ace;">%ifctx  ANOTHER\_NAME
+>     ace;">    mov eax,4
+>     ace;">%endif
  
  will result in nothing being assembled because the name of the top of the context stack does not match the argument to **%ifctx**.
  
@@ -119,17 +119,17 @@
  
  For example:
  
-> %push MY\_NAME
-> %ifnctx MY\_NAME
->     mov eax,4
-> %endif
+>     ace;">%push MY\_NAME
+>     ace;">%ifnctx MY\_NAME
+>     ace;">    mov eax,4
+>     ace;">%endif
  
  will result in nothing being assembled because the name of the context on top of the stack matches the argument.
  
-> %push MY\_NAME
-> %ifnctx  ANOTHER\_NAME
->     mov eax,4
-> %endif
+>     ace;">%push MY\_NAME
+>     ace;">%ifnctx  ANOTHER\_NAME
+>     ace;">    mov eax,4
+>     ace;">%endif
  
  will result in the mov being assembled because the names do not match.
  
@@ -142,11 +142,11 @@
  
  For example:
  
-> %push MY\_NAME
+>     ace;">%push MY\_NAME
  %if 44
-> %elifctx MY\_NAME
->     mov eax,4
-> %endif
+>     ace;">%elifctx MY\_NAME
+>     ace;">    mov eax,4
+>     ace;">%endif
  
  will result in the mov statement being assembled because the top of the context stack is named MY\_NAME.
  
@@ -160,11 +160,11 @@
  
  For example:
  
-> %push MY\_NAME
+>     ace;">%push MY\_NAME
  %if 44
-> %elifctx MY\_NAME
->     mov eax,4
-> %endif
+>     ace;">%elifctx MY\_NAME
+>     ace;">    mov eax,4
+>     ace;">%endif
  
  will result in nothing being assembled because the names match.
  

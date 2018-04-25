@@ -9,19 +9,19 @@
  
  For example:
  
->     012   ; octal for the decimal value 10
->     12   ; the decimal value 12
->     0x12 ; hexadecimal for the decimal value 18
->     012h ; hexadecimal for the decimal value 18
+>     ace;">    012   ; octal for the decimal value 10
+>     ace;">    12   ; the decimal value 12
+>     ace;">    0x12 ; hexadecimal for the decimal value 18
+>     ace;">    012h ; hexadecimal for the decimal value 18
 
 
 ### Floating point values
 
  Floating point values are specified similarly as to a C compiler.  For example:
  
->     1.03
->     17.93e27
->     10000.4e-27
+>     ace;">    1.03
+>     ace;">    17.93e27
+>     ace;">    10000.4e-27
  
  Note that floating point values must start with a digit in **OAsm**.  .003 is not a valid floating point value because character sequences starting with a dot are interpreted as local labels.
 
@@ -32,24 +32,24 @@
  
  When used in an instruction:
  
-> mov    ax,"TO"
+>     ace;">mov    ax,"TO"
  
  The operand will be constructed in such a way that storing it to memory will result in the characters being stored in the same order they were typed.  In other words, the sequence:
  
-> mov    ax,"TO"
-> mov    \[label\],ax
+>     ace;">mov    ax,"TO"
+>     ace;">mov    \[label\],ax
  
  will result in the value at label being the same as if the assembler directive db were used to initialize the value:
  
-> label    db "TO"
+>     ace;">label    db "TO"
  
  Characters at the end of a string that cannot be encoded in the instruction will be lost, thus:
  
-> mov    ax,"hi roger"
+>     ace;">mov    ax,"hi roger"
  
  is the same as:
  
-> mov    ax,"hi"
+>     ace;">mov    ax,"hi"
  
  because the register ax only holds the equivalent of two characters. 
  
@@ -60,8 +60,8 @@
 
  The symbol '$', by itself, means the current program counter.  This is an absolute program counter, and if passed through to the linker will result in an absolute offset being compiled into the program.  But sometimes it doesn't need to be used as an absolute value, for example it can be used to find the length of a section of data:
  
-> mylabel   db   "hello world",10,13
-> hellosize EQU $-mylabel
+>     ace;">mylabel   db   "hello world",10,13
+>     ace;">hellosize EQU $-mylabel
  
  where the EQU statement assigns the value of the expression '$-mylabel' to the label hellosize.
 
@@ -137,21 +137,21 @@
  
  Note that **OAsm** mimics a multipass assembler, and will attempt to optimize branches to the smallest available form.  This is normally not a problem as after each optimization pass OAsm will reevaluate expressions found in the code or data.  However, some assembler directives such as EQU and TIMES evaluate their operands immediately, when the instruction is encountered.  And all branches start out at the largest possible size.  That means that a sequence like:
  
-> section code USE32
-> label:
->     cmp eax,1
->     jz  forward
->     inc eax
-> forward:
-> size EQU forward - label
+>     ace;">section code USE32
+>     ace;">label:
+>     ace;">    cmp eax,1
+>     ace;">    jz  forward
+>     ace;">    inc eax
+>     ace;">forward:
+>     ace;">size EQU forward - label
  
  will result in 'size' being evaluated with the jz being a 6-byte instruction, but the final code will have the jz being a two-byte instruction.  This disparity between the calculated value and the actual value can introduce subtle bugs in a program.  To get around this explicitly clarify any jumps in a region that is going to be sized with 'short' or 'near':
  
-> label:
->     cmp eax,1
->     jz  short forward
->     inc eax
-> forward:
+>     ace;">label:
+>     ace;">    cmp eax,1
+>     ace;">    jz  short forward
+>     ace;">    inc eax
+>     ace;">forward:
  
  
  Data directives aren't subject to size optimizations, so in the usual case of taking the size of a data region this isn't an issue.

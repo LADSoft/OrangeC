@@ -16,23 +16,23 @@
  The following will be used as an example:
  
  
-> partition
-> {
->     overlay {
->        region {} data \[align=4\];
->        region {} bss.
->     } RAM \[addr=0x0000, size=0x4000\];
-> } DATA;
+>     ace;">partition
+>     ace;">{
+>     ace;">    overlay {
+>     ace;">       region {} data \[align=4\];
+>     ace;">       region {} bss.
+>     ace;">    } RAM \[addr=0x0000, size=0x4000\];
+>     ace;">} DATA;
  
-> partition
-> {
->     overlay {
->        region {} code;
->        region {} const;
->     } ROM;
-> } CODE \[addr=0xf000, size=0x1000\];
+>     ace;">partition
+>     ace;">{
+>     ace;">    overlay {
+>     ace;">       region {} code;
+>     ace;">       region {} const;
+>     ace;">    } ROM;
+>     ace;">} CODE \[addr=0xf000, size=0x1000\];
  
-> This defines two partitions, in this case one is for data nad one is for code.  The first partition is named DATA and consists of two groups of sections.   First all sections named **data** are concatenated together, then all sections named **bss** follow after that.  This partition is defined with attributes to start address 0, and extend for 16K.  If the actual size of the partition is greater than 16K, an error will be generated.  In this case the overlay is named RAM; this overlay name is what is visible to ROM-generation tools such as **DLHEX**.
+>     ace;">This defines two partitions, in this case one is for data nad one is for code.  The first partition is named DATA and consists of two groups of sections.   First all sections named **data** are concatenated together, then all sections named **bss** follow after that.  This partition is defined with attributes to start address 0, and extend for 16K.  If the actual size of the partition is greater than 16K, an error will be generated.  In this case the overlay is named RAM; this overlay name is what is visible to ROM-generation tools such as **DLHEX**.
  
  The second partition is named CODE and also consists of two groups of sections; first all sections named **code** are concatenated together, followed by all sections named **const**.  This partition starts at address 0xf000, and extends for 4K.  In this case the overlay name visible to **DLHEX** or other executable-generation tools is ROM.
  
@@ -41,103 +41,103 @@
  
  In the following:
  
-> partition
-> {
->    overlay {
->        region { bank1a.o bank1b.o bank1c.o } code;
->    } BANK1;
->    overlay {
->        region { bank2a.o bank2b.o bank2c.o } code;
->    } BANK2;
->    overlay {
->        region { bank3a.o bank3b.o bank3c.o } code;
->    } BANK3;
-> } CODE \[addr = 0xe000, size = 0x1000\];
+>     ace;">partition
+>     ace;">{
+>     ace;">   overlay {
+>     ace;">       region { bank1a.o bank1b.o bank1c.o } code;
+>     ace;">   } BANK1;
+>     ace;">   overlay {
+>     ace;">       region { bank2a.o bank2b.o bank2c.o } code;
+>     ace;">   } BANK2;
+>     ace;">   overlay {
+>     ace;">       region { bank3a.o bank3b.o bank3c.o } code;
+>     ace;">   } BANK3;
+>     ace;">} CODE \[addr = 0xe000, size = 0x1000\];
  
  Three banks of code have been defined, each of which starts at address 0xe000 and extends for 4K.  Each region references sections named **code**, however, file names are specifically specified for each region, so that only **code** sections from specific files will be included while processing the region.  For example in the overlay BANK1, only files **bank1a.o**, **bank1b.o**, and **bank1c.o** will contributed to the contents of the region.
  
  Wildcards may be used in the file specification, so that the above could be written:
  
-> partition
-> {
->     overlay {
->        region { bank1\*.o } code;
->    } BANK1;
->    overlay {
->        region { bank2\*.o } code;
->    } BANK2;
->     overlay {
->        region { bank3\*.o } code;
->    } BANK3;
-> } CODE \[addr = 0xe000, size = 0x1000\];
+>     ace;">partition
+>     ace;">{
+>     ace;">    overlay {
+>     ace;">       region { bank1\*.o } code;
+>     ace;">   } BANK1;
+>     ace;">   overlay {
+>     ace;">       region { bank2\*.o } code;
+>     ace;">   } BANK2;
+>     ace;">    overlay {
+>     ace;">       region { bank3\*.o } code;
+>     ace;">   } BANK3;
+>     ace;">} CODE \[addr = 0xe000, size = 0x1000\];
  
  
  
  In the following:
  
-> partition
-> {
->     overlay {
->        RAMSTART=$
->        region {} data \[align=4\];
->        region {} bss;
+>     ace;">partition
+>     ace;">{
+>     ace;">    overlay {
+>     ace;">       RAMSTART=$
+>     ace;">       region {} data \[align=4\];
+>     ace;">       region {} bss;
         RAMEND=$
      } RAM \[addr=0x0000, size=0x4000\];
-> } DATA;
+>     ace;">} DATA;
  
  The labels RAMSTART and RAMEND have been defined.  The '$' in the expression indicates to use the address at the location the label is specified, so these definitions effectively define labels at the beginning and ending of the overlay.  As indicated before these define global variables, so an x86 assembler program such as the following could be used to set all data in these regions to zero:
  
-> extern RAMSTART, RAMEND
->     mov edi, RAMSTART
->     mov ecx,RAMEND-RAMSTART
->     mov al, 0
->     cld
->     rep stosb
+>     ace;">extern RAMSTART, RAMEND
+>     ace;">    mov edi, RAMSTART
+>     ace;">    mov ecx,RAMEND-RAMSTART
+>     ace;">    mov al, 0
+>     ace;">    cld
+>     ace;">    rep stosb
  
  
  Expressions may be more complex, consisting of add, subtract, multiply, divide and parenthesis.  As a simple example the above example can be rewritten to define a size:
  
-> partition
-> {
->     overlay {
->        RAMSTART=$
->        region {} data \[align=4\];
->        region {} bss;
+>     ace;">partition
+>     ace;">{
+>     ace;">    overlay {
+>     ace;">       RAMSTART=$
+>     ace;">       region {} data \[align=4\];
+>     ace;">       region {} bss;
         RAMSIZE = $-RAMSTART
      } RAM \[addr=0x0000, size=0x4000\];
-> } DATA;
+>     ace;">} DATA;
  
  
  
  Labels or expressions may be used in attributes, for example:
  
-> partition
-> {
->     overlay {
->        RAMSTART=$
->        region {} data \[align=4\];
->        region {} bss.
+>     ace;">partition
+>     ace;">{
+>     ace;">    overlay {
+>     ace;">       RAMSTART=$
+>     ace;">       region {} data \[align=4\];
+>     ace;">       region {} bss.
         RAMSIZE = $-RAMSTART
      } RAM \[addr=RAMBASE, size=0x4000\];
-> } DATA;
+>     ace;">} DATA;
  
  Here the base address is defined in terms of a label RAMBASE.  But RAMBASE is not defined anywhere in the specification file, so it has to be pulled from the linker's table of globals.  In this case we might define it on the linker command line as follows:
  
-> OLink /DRAMBASE=0x7000 /smyspec.spc ...
+>     ace;">OLink /DRAMBASE=0x7000 /smyspec.spc ...
  
  
  Labels don't have to include '$' in the expression, although it is often useful.  For example:
  
-> MYLABEL=0x44000+2000
+>     ace;">MYLABEL=0x44000+2000
  
  is valid.
  
  Note that when using target configurations, the default specification files use these types of declarations, but the target configuration gives default values to use.  For example the default value for RAMBASE in a hex file is 0x10000, when used with the default linker specification file that is used for binary and hex file output.  But such values can be overridden on the command line; if it is desirable to use the default specification file but RAMBASE is 0x8000 for the specific hardware in question one might use OLink as follows:
  
-> OLink /T:M3 /DRAMBASE=0x8000 ...
+>     ace;">OLink /T:M3 /DRAMBASE=0x8000 ...
  
  
->>
+>     ace;">>     ace;">
 
 
 ### Attributes
@@ -164,30 +164,30 @@
 
  Usually the region statement is used to specify a specific section name such as code:
  
-> region { } code;
+>     ace;">region { } code;
  
  But sometimes it is useful to be able to combine multiple sections in a single region with the **or** operator
  
-> region {} code | const;
+>     ace;">region {} code | const;
  
  However this is different making two regions, one for **code** and one for **const**.  The difference is that in this case code and const regions may be intermixed; whereas in the other case all the code sections would be combined together, separately from all the const regions.
  
  
  Wildcards may be used in the region name:
  
-> region {} code\*
+>     ace;">region {} code\*
  
  matches the sections name code1, code2, code123, and so forth.
  
  And for example
  
-> region {} \*
+>     ace;">region {} \*
  
  matches ALL sections.  There are two wildcard characters:  **\*** matches a sequence of characters, whereas **?** matches a single character.
  
  Other times you want to do a catch all which gets all sections except for a select section or group of sections.
  
-> region {} \* & !(code\*)
+>     ace;">region {} \* & !(code\*)
  
  This uses the **and** operator and the **not** operator to select all sections which do not start with the four letters 'code'.
  

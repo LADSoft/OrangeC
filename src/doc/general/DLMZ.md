@@ -9,7 +9,7 @@
 
  The general form of a **DLMZ** command line is:
  
->     dlmz \[options\] relffile
+>     dlmz [options] relffile
  
  Here the  _relfile_ is the linker generated file that  holds the linked code.  For example:
  

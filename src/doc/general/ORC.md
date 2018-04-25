@@ -8,7 +8,7 @@
 
  The general format of an **ORC** command line is:
  
->     ORC \[options\] rcfile.rc
+>     ORC [options] rcfile.rc
  
  where rcfile.rc is the resource file to compile.
 
@@ -27,11 +27,11 @@
 
  By default, **ORC** will use the C language header include path as an include path to search for files specified in preprocessor INCLUDE directives.  For example the statement:
  
->     \#include <windows.h>
+>     #include <windows.h>
  
  will result in windows.h being found in the compiler include directory, and included in the file.  If there are other paths that should be searched, they may be specified on the command line with the /i switch.  For example:
  
->     ORC /i.\\include test.rc
+>     ORC /i.\include test.rc
  
  Searches in the directory **.\\include** as well as in the C language include directory.
  

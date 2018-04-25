@@ -9,7 +9,7 @@
  
  The general format of an **OImpLib** command line is:
  
->     OImpLib \[options\] source dest
+>     OImpLib [options] source dest
  
  where source and dest specify files to use, and further, by parsing the extensions of source and dest **OImpLib** is able to act in one of several modes
 

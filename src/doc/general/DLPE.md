@@ -9,7 +9,7 @@
 
  The general form of a **DLPE** command line is:
  
->     dlpe \[options\] relfile \[resourcefile\]
+>     dlpe [options] relfile [resourcefile]
  
  Here the  _relfile_ is the linker generated file that  holds the linked code, and the optional _resourcefile_ can be used to add resources to an executable.
  
@@ -26,21 +26,20 @@
  
 
  
- By default, **DLPE** will take the input file name, and replace the extension with the extension .EXE to form an output file name.
+By default, **DLPE** will take the input file name, and replace the extension with the extension .EXE to form an output file 
+name.
  
- However in some cases it is useful to be able to specify the output file name.  The specified name can have its extension specified, or it can be typed without an extension to allow dlhex to add one of the default extensions.  The output file name is specified with the **/o** switch.  For example:
->     
+However in some cases it is useful to be able to specify the output file name.  The specified name can have its extension 
+specified, or it can be typed without an extension to allow dlhex to add one of the default extensions.  The output file name 
+is specified with the **/o** switch.  For example:     
+
 >     dlpe /mGUI /omyfile test.rel
  
  makes a windowing executable called>      **myfile.exe**.
- 
- 
->
-
 
 ### Specifying the output file format
 
- **DLPE** supports several types of WIN32 Executables with the **/m** switch.  the switch is followed by one of the folowing:
+**DLPE** supports several types of WIN32 Executables with the **/m** switch.  the switch is followed by one of the folowing:
  
 * CON - a console application
 * GUI - a windowing application
@@ -51,11 +50,11 @@
 
 ### Specifying a stub file
 
->     By default **DLPE** will add an MSDOS stub file which simply says that the program requires WIN32, if someone happens to run it on MSDOS.  However, with the **/s** switch a specific stub can be specified.  This might be useful for example with certain MSDOS DPMI extenders that mimic the WIN32 API for console mode programs.  The **/s** switch is used to change the stub file name.  For example:
+By default **DLPE** will add an MSDOS stub file which simply says that the program requires WIN32, if someone happens to run it 
+on MSDOS.  However, with the **/s** switch a specific stub can be specified.  This might be useful for example with certain 
+MSDOS DPMI extenders that mimic the WIN32 API for console mode programs.  The **/s** switch is used to change the stub file 
+name.  For example:
  
 >     dlpe /smystub.exe test.rel
  
  makes an output file **test.exe** which has the 16-bit program **mystub.exe** as its MSDOS stub.
- 
- 
- 

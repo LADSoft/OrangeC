@@ -7,42 +7,42 @@
 ### \_absolute
 
   
-     create a variable at an absolute address.  For example:
+  create a variable at an absolute address.  For example:
  
-     \_absolute(0x4c21) int a ;
+     _absolute(0x4c21) int a ;
  
-     places the variable 'a' at address 0x4c21.  No storage is generated for such variables and no relocation is done.
+  places the variable 'a' at address 0x4c21.  No storage is generated for such variables and no relocation is done.
 
 
 ### alloca
 
   
-     Allocate memory from automatic storage (the processor stack).  The primary motivation for using this function is that it is much faster than the malloc() function.
+Allocate memory from automatic storage (the processor stack).  The primary motivation for using this function is that it is much faster than the malloc() function.
  
-     alloca is implicitly defined by the compiler as follows:
+  alloca is implicitly defined by the compiler as follows:
  
-     void \*alloca(size\_t size);
+     void *alloca(size_t size);
  
-     For example:
+  For example:
  
      int size = 24;
      int \*p = alloca(size \* sizeof(int));
  
-     will allocate enough space to store an array of 24 integers.
+  will allocate enough space to store an array of 24 integers.
  
-     alloca allocates space without checking there is enough.  If the space used by calls to this pseudo-function plus the space used by lower level functions and their data exceeds the stack size, the program will probably crash.  
+  alloca allocates space without checking there is enough.  If the space used by calls to this pseudo-function plus the space used by lower level functions and their data exceeds the stack size, the program will probably crash.  
  
-     Memory allocated by alloca is normally freed at the end of the function it appears in, which makes it possible to allocate a lot of data in a loop.   However, if a block has both a call to alloca and uses variable length arrays, at the end of the block the variable length arrays will be freed, which will also result in freeing the memory allocated by alloca.
+  Memory allocated by alloca is normally freed at the end of the function it appears in, which makes it possible to allocate a lot of data in a loop.   However, if a block has both a call to alloca and uses variable length arrays, at the end of the block the variable length arrays will be freed, which will also result in freeing the memory allocated by alloca.
 
 
 ### \_cdecl
 
  
-     use standard C language linking mechanism (here for compatibility with other compilers).  In this linking mechanism, a leading underscore is prepended to the name, which is case sensitive.  The caller is responsible for cleaning up the stack.  For example:
+  use standard C language linking mechanism (here for compatibility with other compilers).  In this linking mechanism, a leading underscore is prepended to the name, which is case sensitive.  The caller is responsible for cleaning up the stack.  For example:
  
-     void \_cdecl myfunc() ;
+     void _cdecl myfunc() ;
  
-     creates a function myfunc with standard linkage.
+  creates a function myfunc with standard linkage.
 
 
 ### \_export

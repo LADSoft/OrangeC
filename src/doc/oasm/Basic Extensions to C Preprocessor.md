@@ -9,21 +9,21 @@
 
  **%assign** is similar to the non-functional form of **%define**, in that it defines text to be substituted for an identifier.  Where **%assign** differs is that the text to be substituted is evaluated as if it were an expression at the time the **%assign** is encountered.  This is useful for example in **%rep** loops.  For example the following code makes a data structure that consists of the integers from 1 to 100, in ascending order:
  
->     ace;">%assign WORKING 1
->     ace;">%rep 100
->     ace;">    db WORKING
->     ace;">%assign WORKING WORKING + 1
->     ace;">%endrep
+>     %assign WORKING 1
+>     %rep 100
+>         db WORKING
+>     %assign WORKING WORKING + 1
+>     %endrep
  
  But there is another difference with **%assign**.  It is the only preprocessor directive that interacts with data structures in the assembler; so for example the **%assign** expression can contain expressions involving labels and the program counter.  Thus:
  
->     ace;">helloWorld db "hello world"
->     ace;">%assign COUNTER 64 - ($-helloWorld)
->     ace;">%assign PADDING ($-helloWorld)
->     ace;">%rep COUNTER
->     ace;">    db PADDING
->     ace;">    %assign PADDING PADDING + 1
->     ace;">%endrep
+>     helloWorld db "hello world"
+>     %assign COUNTER 64 - ($-helloWorld)
+>     %assign PADDING ($-helloWorld)
+>     %rep COUNTER
+>         db PADDING
+>         %assign PADDING PADDING + 1
+>     %endrep
  
  puts the string "hello world" in the text, followed by the byte for 11, the byte for 12, etc... up to the byte for 63.
  
@@ -34,10 +34,10 @@
 
  **%iassign** is a form of **%assign** where the identifier is considered to be case insensitive.  So for example:
  
->     ace;">%iassign COUNTER 63
->     ace;">%rep Counter
->     ace;">    ...
->     ace;">%endrep
+>     %iassign COUNTER 63
+>     %rep Counter
+>         ...
+>     %endrep
  
  and similar case variants on the word counter would still result in a loop that executes 63 times.
 
@@ -46,9 +46,9 @@
 
  **%idefine** is a form of **%define** where the identifier is assumed to be case insensitive.  So for example:
  
->     ace;">%idefine COUNTER 4
->     ace;">%idefine counter 4
->     ace;">%idefine Counter 4
+>     %idefine COUNTER 4
+>     %idefine counter 4
+>     %idefine Counter 4
  
  are equivalent statements, and any case variant of the word COUNTER will match for substitution.  Note that this case sensitivity only extends to the identifier; any parameters specified in a function-style **%idefine** are still case-sensitive for purposes of substitution.
 
@@ -59,12 +59,12 @@
  
  For example:
  
->     ace;">%define COLOR 3
->     ace;">%if COLOR == 2
->     ace;">    mov eax,4
+>     %define COLOR 3
+>     %if COLOR == 2
+>         mov eax,4
  %elifdef COLOR
      inc eax
->     ace;">%endif
+>     %endif
  
  will result in the mov statement being ignored and the inc statement being assembled because COLOR has been defined but is not 2.
  
@@ -80,12 +80,12 @@
  
  For example:
  
->     ace;">%define COLOR 3
->     ace;">%if COLOR == 2
->     ace;">    mov eax,4
+>     %define COLOR 3
+>     %if COLOR == 2
+>         mov eax,4
  %elifndef COLOR
      inc eax
->     ace;"> %endif
+>      %endif
  
  will result in nothing being assembled because COLOR is defined but not equal to 2.
  

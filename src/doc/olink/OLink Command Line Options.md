@@ -2,19 +2,19 @@
 
  The general format of an **OLink** command line is:
  
->     ace;">OLink \[options\] file-list
+>     OLink \[options\] file-list
  
  where _file-list_ is an arbitrary list of input files.
  
  For example:
  
->     ace;">OAsm one.o two.o three.o
+>     OAsm one.o two.o three.o
  
  links several object files and makes an output file called **one.rel**.  By default **OLink** takes the name of the first file on the command line, and replaces it with the extension **.rel**, to decide on an output file name.
  
  The file list can have wildcards:
  
->     ace;">OLink /otest.rel \*.o
+>     OLink /otest.rel \*.o
  
   links all the files in the curent directory, and the results are put in **test.rel** because the **/o** command line switch is specified.
 
@@ -23,7 +23,7 @@
 
  Response files can be used as an alternate to specifying input on the command line.  For example:
  
->     ace;">OLink @myresp.lst
+>     OLink @myresp.lst
  
  will take command line options from **myresp.lst**.  This is useful for example when there are many **.o** or **.l** files being merged and it is not convenient to specify them on the command line.
 
@@ -40,10 +40,10 @@
  By default, **OLink** will take the first input file name, and replace the extension with the extension **.rel **to create the name of the output file.
  
  However in some cases it is useful to be able to specify the output file name.  The specified name can have its extension specified, or it can be typed without an extension to allow **OLink** to add the **.rel** extension.
->     ace;">
->     ace;">OLink /r+ /omyfile test1.o test2.o test3.o cl.l
+>     
+>     OLink /r+ /omyfile test1.o test2.o test3.o cl.l
  
- makes an object file called **myfile.rel**>     ace;">.
+ makes an object file called **myfile.rel**>     .
 
 
 ### Specifying Lib File Path
@@ -51,7 +51,7 @@
 
  By default, **OLink** will search for library files in the C Compiler library file path, and in the current directory.  The **/L** option may be used to specify additional directories to search for lib files:
  
->     ace;">OLink /L..\\mylibs test.o floating.l
+>     OLink /L..\\mylibs test.o floating.l
  
  will find **floating.l **either in the C compiler library directory, the current directory, or the directory ..\\mylibs.
 
@@ -62,7 +62,7 @@
  
  For example
  
->     ace;">OLink /DRAM=0x80000000 myprog.o
+>     OLink /DRAM=0x80000000 myprog.o
  
  Defines a global variable RAM which has the address 80000000 hex.  This variable may be accessed externally from either the program code, or the specification file.  It might be used for example to relocate code or data, to specify the address of some hardware, and so forth.
  
@@ -87,10 +87,10 @@
 
  Sometimes a default [specification file](OLink%20Specification%20Files.md) will be selected automatically with the **/T** [target configuration](OLink%20Target%20Configurations.md) switch.  This specification file may be overridden with the **/s** switch; or if the **/T** switch is not specified the **/s** switch may be used to select a specification file.  For example:
  
->     ace;">OLink /smyprog.spc myprog.o
+>     OLink /smyprog.spc myprog.o
 
 
-###>     ace;">
+###>
 
 
 ### Target Configuration
@@ -99,7 +99,7 @@
  
  For example:
  
->     ace;">OLink /T:M3 myprog.o
+>     OLink /T:M3 myprog.o
  
  selects the specification profile that builds a Motorola Hex file with four-byte addresses.
 

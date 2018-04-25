@@ -3,40 +3,40 @@
  
  The Repeat Block Extensions allow a method for replicating lines of code.  In the simplest case, a sequence of instructions or data can be literally repeated a fixed number of times:
  
->     ace;">%rep 10
->     ace;">    nop
->     ace;">%endrep
+>     %rep 10
+>         nop
+>     %endrep
  
  causes the preprocessor to present 10 nop instructions to the assembler.  In a more complex case, **%assign** can be used to define a function that varies with each loop iteration, allowing easy development of lookup tables:
  
->     ace;">%assign i 20
->     ace;">%rep 10
->     ace;">    db   i
->     ace;">    %assign i i - 1
->     ace;">%endrep
+>     %assign i 20
+>     %rep 10
+>         db   i
+>         %assign i i - 1
+>     %endrep
  
  puts the numbers from 20 to 11 in a table, in decreasing order.  This type of functionality could be used with more complex functions, for example **%rep** would be one way a CRC lookup table could be developed with OAsm.
  
  In another case the loop count could be made to vary based on previous declarations:
  
->     ace;">hello   db   "Hello World"
->     ace;">%assign count 64 - ($-Hello)
->     ace;">%rep count
->     ace;">    db   ' '
->     ace;">%endrep
+>     hello   db   "Hello World"
+>     %assign count 64 - ($-Hello)
+>     %rep count
+>         db   ' '
+>     %endrep
  
  While the latter example is not too exciting and could be done other ways, e.g. with the resb or times directives, more complex functions could be integrated into this type of loop to generate different kinds of data.
  
  Repeat blocks may be nested.  For example:
  
->     ace;">%assign i 10
->     ace;">%rep 3
->     ace;">%rep 3
->     ace;">    db i
->     ace;">    %assign i i + 1
->     ace;">%endrep
->     ace;">%assign i i - 6
->     ace;">%endrep
+>     %assign i 10
+>     %rep 3
+>     %rep 3
+>         db i
+>         %assign i i + 1
+>     %endrep
+>     %assign i i - 6
+>     %endrep
  
  generates enough db statements to define the following sequence:
  
@@ -44,11 +44,11 @@
  
  Repeat blocks can be exited prematurely.  If a **%exitrep** directive is parsed while a repeat block is being processed, the innermost repeat block exits immediately.  Generally, one would use preprocessor conditionals to prevent the **%exitrep** directive from being processed, until some condition occurs.  For example to pop all contexts named "MY\_CONTEXT" from the top of the context stack:
  
->     ace;">%repeat 1000                      // 1000 is an arbitrary value
->     ace;">%ifnctx MY\_CONTEXT
->     ace;">%exitrep
->     ace;">%endif
->     ace;">%endrep
+>     %repeat 1000                      // 1000 is an arbitrary value
+>     %ifnctx MY\_CONTEXT
+>     %exitrep
+>     %endif
+>     %endrep
 
 
 #### %rep

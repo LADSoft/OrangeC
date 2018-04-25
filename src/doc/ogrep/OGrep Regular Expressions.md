@@ -41,42 +41,42 @@
 
  Some of the basic pattern matching such as '+' can match multiple occurances of a character.  Range Matching is a more general statement on the number of occurances of a character, for example you can match a bounded range, say from two to four 'a' characters by doing the following:
  
->     ace;">OGrep "a\\{2,4\\}"  \*.c
+>     OGrep "a\\{2,4\\}"  \*.c
  
->     ace;">
+>
 
 
 ### Matching set members
 
  Brackets \[\] can be used to delimit a set of characters.  Then the bracketed sequence will match any character in the set.  For example
  
->     ace;">OGrep "\[abc\]" \*.c
+>     OGrep "\[abc\]" \*.c
  
  matches any of the characters a,b,c.  A range of characters can be specified:
  
->     ace;">OGrep "\[a-m\]"  \*.c
+>     OGrep "\[a-m\]"  \*.c
  
  matches any characters in the range a-m.
  
  Set negation is possible:
  
->     ace;">OGrep "\[^a-z\]" \*.c
+>     OGrep "\[^a-z\]" \*.c
  
  matches anything but a lowercase letter.
  
  Sets can be more complex:
  
->     ace;">OGrep "\[A-Za-z0-9\]" \*.c
+>     OGrep "\[A-Za-z0-9\]" \*.c
  
  matches any alphanumeric value.
  
  Sets can be combined with more basic pattern matching:
  
->     ace;">OGrep "\[A-Z\]?" \*.c
+>     OGrep "\[A-Z\]?" \*.c
  
   matches zero or one upper case characters.
  
->     ace;">Ogrep "\[0-9\]\\{2,4\\}"
+>     Ogrep "\[0-9\]\\{2,4\\}"
  
  matches from two to four digits.
 
@@ -86,11 +86,11 @@
 
  Sometimes, it is desirable to match the same sub-pattern multiple times before having grep declare the pattern as a match for the text.  In a simple case:
  
->     ace;">OGrep "\\(myword\\)|\\0" \*.c
+>     OGrep "\\(myword\\)|\\0" \*.c
  
  matches the string:
  
->     ace;">myword|myword
+>     myword|myword
  
  In this case the quoted parenthesis surround the region to match, and the \\0 says match that region again.  This is not a very interesting case, but when combined with other pattern matching it becomes more powerful, because the \\0 doesn't reapply the pattern but instead matches exactly the same pattern as before.  For example to combine it with a set:
  

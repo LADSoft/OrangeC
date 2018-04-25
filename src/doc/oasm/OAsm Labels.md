@@ -9,41 +9,41 @@
  
  For example in the fragment
  
->     ace;">routine1:
->     ace;">    test ax,1
->     ace;">    jnz  .exit
->     ace;">    ; do something
->     ace;">.exit:
->     ace;">    ret
+>     routine1:
+>         test ax,1
+>         jnz  .exit
+>         ; do something
+>     .exit:
+>         ret
  
->     ace;">routine2:
->     ace;">    cmp bx,ax
->     ace;">    jc   .exit
->     ace;">    ; do something
->     ace;">.exit:
->     ace;">    clc
->     ace;">    ret
+>     routine2:
+>         cmp bx,ax
+>         jc   .exit
+>         ; do something
+>     .exit:
+>         clc
+>         ret
  
->     ace;">.exit is defined twice, however, each definition follows a different standard label so the two definitions are actually different labels.
+>     .exit is defined twice, however, each definition follows a different standard label so the two definitions are actually different labels.
  
- Internally, each use of a local label does have a unique name, made up by concatenating the most recent standard label name with the local label name.  In the above example the internal names of the two labels are thus>     ace;">routine1.exit and>     ace;">routine2.exit.  It is possible to branch to the fully qualified name from within another context.
+ Internally, each use of a local label does have a unique name, made up by concatenating the most recent standard label name with the local label name.  In the above example the internal names of the two labels are thus>     routine1.exit and>     routine2.exit.  It is possible to branch to the fully qualified name from within another context.
  
  The context for local labels changes each time a new standard label is defined.  It is sometimes desirable to define a kind of label which is neither a standard label, that would change the local label context, or a local label, which is useful only within that context.  This is done by prepending the label name with '..@'.  For example in the below:
  
  
->     ace;">routine3:
->     ace;">    text ax,1
->     ace;">    jnz .exit
->     ace;">..@go3:
->     ace;">    ; do something
->     ace;">.exit:
->     ace;">    ret
+>     routine3:
+>         text ax,1
+>         jnz .exit
+>     ..@go3:
+>         ; do something
+>     .exit:
+>         ret
  
->     ace;">main:
->     ace;">    call ..@go3
->     ace;">    ret
+>     main:
+>         call ..@go3
+>         ret
  
- the label>     ace;">..@go3 is not qualified by the local label context of routine 3, nor does it start a new local label context, so>     ace;">.exit is still a local label within the context of>     ace;">routine3.
+ the label>     ..@go3 is not qualified by the local label context of routine 3, nor does it start a new local label context, so>     .exit is still a local label within the context of>     routine3.
  
  **OAsm** generates two forms such labels within macro invocations, and within 'contexts' as shown in other sections.  In these cases the label starts with '..@', has a sequence of digits, then has a '.' or '@' character followed by user-specified text.  When using the nonlocal label format, these forms should be avoided to avoid clashing with assembler-generated labels.
 

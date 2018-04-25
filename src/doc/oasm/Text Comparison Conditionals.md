@@ -12,10 +12,10 @@
 
  **%ifidn** is a _%if-style conditional_ that compares the two peices of textual data in a case-sensitive manner, and the accompanying code block is assembled if the two peices of data match.  For example:
  
->     ace;">%define HELLO goodbye
->     ace;">%ifidn HELLO , goodbye
->     ace;">    mov eax,3
->     ace;">%endif
+>     %define HELLO goodbye
+>     %ifidn HELLO , goodbye
+>         mov eax,3
+>     %endif
  
  would result in the mov statement being assembled because the substitution for HELLO matches the text goodbye.
  
@@ -26,17 +26,17 @@
 
   **%ifnidn** is a _%if-style conditional_ that compares the two peices of textual data in a case-sensitive manner, and the accompanying code block is assembled if the two peices of data do not match.  For example:
  
->     ace;">%define HELLO goodbye
->     ace;">%ifnidn HELLO , goodbye
->     ace;">    mov eax,3
->     ace;">%endif
+>     %define HELLO goodbye
+>     %ifnidn HELLO , goodbye
+>         mov eax,3
+>     %endif
  
  would result in nothing being assembled because the substitution for HELLO matches the text goodbye.  Alternatively:
  
->     ace;">%define HELLO goodbye
->     ace;">%ifnidn HELLO , hello
->     ace;">    mov eax,3
->     ace;">%endif
+>     %define HELLO goodbye
+>     %ifnidn HELLO , hello
+>         mov eax,3
+>     %endif
  
  would result in the the mov instruction being assembled.
  
@@ -47,11 +47,11 @@
 
  **%elifidn** is a _%elif-style conditional_ that compares the two peices of textual data in a case-sensitive manner, and the accompanying code block is assembled if the two peices of data match.  For example:
  
->     ace;">%define HELLO goodbye
+>     %define HELLO goodbye
  %if HELLO = 1
->     ace;">%elifidn HELLO , goodbye
->     ace;">    mov eax,3
->     ace;">%endif
+>     %elifidn HELLO , goodbye
+>         mov eax,3
+>     %endif
  
  would result in the mov statement being assembled because the substitution for HELLO matches the text goodbye.
  
@@ -65,11 +65,11 @@
 
   **%elifnidn** is a _%elif-style conditional_ that compares the two peices of textual data in a case-sensitive manner, and the accompanying code block is assembled if the two peices of data do not match.  For example:
  
->     ace;">%define HELLO goodbye
+>     %define HELLO goodbye
  %if HELLO = 1
->     ace;">%elifnidn goodbye , HELLO
->     ace;">    mov eax,3
->     ace;">%endif
+>     %elifnidn goodbye , HELLO
+>         mov eax,3
+>     %endif
  
  would result in nothing being assembled because the substitution for HELLO matches the text goodbye.
  
@@ -80,10 +80,10 @@
 
   **%ifidni** is a _%if-style conditional_ that compares the two peices of textual data in a case-insensitive manner, and the accompanying code block is assembled if the two peices of data match.  For example:
  
->     ace;">%define HELLO goodbye
->     ace;">%ifidni HELLO , GOODBYE
->     ace;">    mov eax,3
->     ace;">%endif
+>     %define HELLO goodbye
+>     %ifidni HELLO , GOODBYE
+>         mov eax,3
+>     %endif
  
  would result in the mov statement being assembled because the substitution for HELLO matches the text GOODBYE, when considered in a case-insensitive fashion.
  
@@ -94,17 +94,17 @@
 
    **%ifnidni** is a _%if-style conditional_ that compares the two peices of textual data in a case-insensitive manner, and the accompanying code block is assembled if the two peices of data do not match.  For example:
  
->     ace;">%define HELLO goodbye
->     ace;">%ifnidni HELLO , GOODBYE
->     ace;">    mov eax,3
->     ace;">%endif
+>     %define HELLO goodbye
+>     %ifnidni HELLO , GOODBYE
+>         mov eax,3
+>     %endif
  
  would result in nothing being assembled because the substitution for HELLO matches the text GOODBYE when considered in a case-insensitive manner.  Alternatively:
  
->     ace;">%define HELLO goodbye
->     ace;">%ifnidni HELLO , hello
->     ace;">    mov eax,3
->     ace;">%endif
+>     %define HELLO goodbye
+>     %ifnidni HELLO , hello
+>         mov eax,3
+>     %endif
  
  would result in the the mov instruction being assembled.
  
@@ -115,11 +115,11 @@
 
   **%elifidni** is a _%elif-style conditional_ that compares the two peices of textual data in a case-insensitive manner, and the accompanying code block is assembled if the two peices of data match.  For example:
  
->     ace;">%define HELLO goodbye
+>     %define HELLO goodbye
  %if HELLO = 1
->     ace;">%elifidni HELLO , GOODBYE
->     ace;">    mov eax,3
->     ace;">%endif
+>     %elifidni HELLO , GOODBYE
+>         mov eax,3
+>     %endif
  
  would result in the mov statement being assembled because the substitution for HELLO matches the text GOODBYE when considered in a case-insensitive manner.
  
@@ -131,11 +131,11 @@
   
   **%elifnidni** is a _%elif-style conditional_ that compares the two peices of textual data in a case-insensitive manner, and the accompanying code block is assembled if the two peices of data do not match.  For example:
  
->     ace;">%define HELLO goodbye
+>     %define HELLO goodbye
  %if HELLO = 1
->     ace;">%elifnidn GOODBYE , HELLO
->     ace;">    mov eax,3
->     ace;">%endif
+>     %elifnidn GOODBYE , HELLO
+>         mov eax,3
+>     %endif
  
  would result in nothing being assembled because the substitution for HELLO does matches the text GOODBYE, when considered in a case-insensitive manner.
  

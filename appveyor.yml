@@ -5,18 +5,17 @@ install:
     - set PATH=c:\orangec\temp;c:\orangec\bin;%PATH%;C:\Program Files (x86)\Inno Setup 5
     - set ORANGEC=c:\ORANGEC
 
+environment:
+    - BUILD_TYPE: MS
+    - BUILD_TYPE: MINGW64
+
 build_script:
         - cd ..\..
         - move projects\orangec .
         - cd orangec\src
         - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars32.bat"
-        - c:\orangec\src\omake fullbuild 
+        - c:\orangec\src\omake -DCOMPILER=%BUILD_TYPE% 
         - c:\orangec\bin\occ /V
-        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
-        - c:\orangec\bin\occ /V
-        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
-        - c:\orangec\bin\occ /V
-        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
         - cd ..\.. 
         - move orangec projects
 

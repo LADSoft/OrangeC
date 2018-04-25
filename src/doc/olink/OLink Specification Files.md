@@ -32,7 +32,7 @@
 >         } ROM;
 >     } CODE \[addr=0xf000, size=0x1000\];
  
->     This defines two partitions, in this case one is for data nad one is for code.  The first partition is named DATA and consists of two groups of sections.   First all sections named **data** are concatenated together, then all sections named **bss** follow after that.  This partition is defined with attributes to start address 0, and extend for 16K.  If the actual size of the partition is greater than 16K, an error will be generated.  In this case the overlay is named RAM; this overlay name is what is visible to ROM-generation tools such as **DLHEX**.
+This defines two partitions, in this case one is for data nad one is for code.  The first partition is named DATA and consists of two groups of sections.   First all sections named **data** are concatenated together, then all sections named **bss** follow after that.  This partition is defined with attributes to start address 0, and extend for 16K.  If the actual size of the partition is greater than 16K, an error will be generated.  In this case the overlay is named RAM; this overlay name is what is visible to ROM-generation tools such as **DLHEX**.
  
  The second partition is named CODE and also consists of two groups of sections; first all sections named **code** are concatenated together, followed by all sections named **const**.  This partition starts at address 0xf000, and extends for 4K.  In this case the overlay name visible to **DLHEX** or other executable-generation tools is ROM.
  
@@ -81,8 +81,8 @@
 >            RAMSTART=$
 >            region {} data \[align=4\];
 >            region {} bss;
-        RAMEND=$
-     } RAM \[addr=0x0000, size=0x4000\];
+>            RAMEND=$
+>         } RAM \[addr=0x0000, size=0x4000\];
 >     } DATA;
  
  The labels RAMSTART and RAMEND have been defined.  The '$' in the expression indicates to use the address at the location the label is specified, so these definitions effectively define labels at the beginning and ending of the overlay.  As indicated before these define global variables, so an x86 assembler program such as the following could be used to set all data in these regions to zero:
@@ -103,8 +103,8 @@
 >            RAMSTART=$
 >            region {} data \[align=4\];
 >            region {} bss;
-        RAMSIZE = $-RAMSTART
-     } RAM \[addr=0x0000, size=0x4000\];
+>            RAMSIZE = $-RAMSTART
+>         } RAM \[addr=0x0000, size=0x4000\];
 >     } DATA;
  
  
@@ -117,8 +117,8 @@
 >            RAMSTART=$
 >            region {} data \[align=4\];
 >            region {} bss.
-        RAMSIZE = $-RAMSTART
-     } RAM \[addr=RAMBASE, size=0x4000\];
+>            RAMSIZE = $-RAMSTART
+>         } RAM \[addr=RAMBASE, size=0x4000\];
 >     } DATA;
  
  Here the base address is defined in terms of a label RAMBASE.  But RAMBASE is not defined anywhere in the specification file, so it has to be pulled from the linker's table of globals.  In this case we might define it on the linker command line as follows:
@@ -135,10 +135,6 @@
  Note that when using target configurations, the default specification files use these types of declarations, but the target configuration gives default values to use.  For example the default value for RAMBASE in a hex file is 0x10000, when used with the default linker specification file that is used for binary and hex file output.  But such values can be overridden on the command line; if it is desirable to use the default specification file but RAMBASE is 0x8000 for the specific hardware in question one might use OLink as follows:
  
 >     OLink /T:M3 /DRAMBASE=0x8000 ...
- 
- 
->>
-
 
 ### Attributes
 
@@ -148,9 +144,8 @@
  
     
 
-|colheader |colheader |colheader |colheader |colheader |
-|--- |--- |--- |--- |--- |
 |Attribute|Meaning|Default Value for Partitions|Default Value for Overlays|Default Value for Regions|
+|--- |--- |--- |--- |--- |
 |ADDR|Address|0, or end of previous partition|partition address|overlay address or end of previous region|
 |SIZE|Absolute size|unassigned|partition size|unassigned|
 |MAXSIZE|absolute size may vary up to this amount|unassigned|partition maxsize|unassigned|

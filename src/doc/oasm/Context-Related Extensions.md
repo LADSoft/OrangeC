@@ -35,10 +35,10 @@
  
  Contexts can also have 'local' definitions:
  
->     %push  MY\_CONTEXT
+>     %push  MY_CONTEXT
 >     %define %$four 4
  
- results in a definition that will only be valid while this instance of MY\_CONTEXT is on top of the context stack.
+ results in a definition that will only be valid while this instance of MY_CONTEXT is on top of the context stack.
  
  When contexts are used, they don't have to appear within a multiline macro definition, but it is often useful to use them this way.
  
@@ -59,9 +59,9 @@
  
  If %push is used multiple times with the same context name, each context is unique even though the names are the same.  So for example:
  
->     %push MY\_CONTEXT
+>     %push MY_CONTEXT
 >     %$contextLabel:
->     %push MY\_CONTEXT
+>     %push MY_CONTEXT
 >     %$contextLabel:
  
  is valid, because the two labels are named locally to the context and are in different context instances.  When the label is used, it will be matched to the context currently on top of the context stack.
@@ -71,19 +71,19 @@
 
  **%pop** removes the context at the top of the context stack:
  
->     %push MY\_CONTEXT
+>     %push MY_CONTEXT
 >     %pop 
  
- results in MY\_CONTEXT no longer being active, and the context that was below it on the context-stack becomes active.  Note, you should use any labels or definitions that are specific to a context before it is popped.  Once a context is popped off the stack, its state is never recoverable.
+ results in MY_CONTEXT no longer being active, and the context that was below it on the context-stack becomes active.  Note, you should use any labels or definitions that are specific to a context before it is popped.  Once a context is popped off the stack, its state is never recoverable.
 
 
 #### %repl
 
  **%repl** changes the name of the context at the top of the context-stack.  For example:
  
->     %push MY\_CONTEXT
+>     %push MY_CONTEXT
  
- creates a context called MY\_CONTEXT.  If that is followed by:
+ creates a context called MY_CONTEXT.  If that is followed by:
  
 >     %repl  NEW\_NAME
  
@@ -96,14 +96,14 @@
  
  For example:
  
->     %push MY\_NAME
->     %ifctx MY\_NAME
+>     %push MY_NAME
+>     %ifctx MY_NAME
 >         mov eax,4
 >     %endif
  
- will result in the mov statement being assembled because the top of the context stack is named MY\_NAME, whereas:
+ will result in the mov statement being assembled because the top of the context stack is named MY_NAME, whereas:
  
->     %push MY\_NAME
+>     %push MY_NAME
 >     %ifctx  ANOTHER\_NAME
 >         mov eax,4
 >     %endif
@@ -119,14 +119,14 @@
  
  For example:
  
->     %push MY\_NAME
->     %ifnctx MY\_NAME
+>     %push MY_NAME
+>     %ifnctx MY_NAME
 >         mov eax,4
 >     %endif
  
  will result in nothing being assembled because the name of the context on top of the stack matches the argument.
  
->     %push MY\_NAME
+>     %push MY_NAME
 >     %ifnctx  ANOTHER\_NAME
 >         mov eax,4
 >     %endif
@@ -142,13 +142,13 @@
  
  For example:
  
->     %push MY\_NAME
+>     %push MY_NAME
  %if 44
->     %elifctx MY\_NAME
+>     %elifctx MY_NAME
 >         mov eax,4
 >     %endif
  
- will result in the mov statement being assembled because the top of the context stack is named MY\_NAME.
+ will result in the mov statement being assembled because the top of the context stack is named MY_NAME.
  
  See the section on [Conditional Processing](Conditional%20Processing.md) for more on _%elif-style conditionals_.
 
@@ -160,9 +160,9 @@
  
  For example:
  
->     %push MY\_NAME
+>     %push MY_NAME
  %if 44
->     %elifctx MY\_NAME
+>     %elifctx MY_NAME
 >         mov eax,4
 >     %endif
  

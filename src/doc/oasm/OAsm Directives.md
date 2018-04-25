@@ -325,7 +325,7 @@
  For example the earlier example from the Data Reservation section could be alternatively written:
  
  
-> mylab   db   "hello world"
+> mylab   db   "hello world"\n
 >         times mylab + 80 - $ \[db '.'\]
  
  Here the native form of the db directive is used, since macro substitution is not available in this context.  Times could also be used for timing:

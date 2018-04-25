@@ -42,10 +42,10 @@
  
  10, 11, 12,  7, 8, 9, 4, 5, 6
  
- Repeat blocks can be exited prematurely.  If a **%exitrep** directive is parsed while a repeat block is being processed, the innermost repeat block exits immediately.  Generally, one would use preprocessor conditionals to prevent the **%exitrep** directive from being processed, until some condition occurs.  For example to pop all contexts named "MY\_CONTEXT" from the top of the context stack:
+ Repeat blocks can be exited prematurely.  If a **%exitrep** directive is parsed while a repeat block is being processed, the innermost repeat block exits immediately.  Generally, one would use preprocessor conditionals to prevent the **%exitrep** directive from being processed, until some condition occurs.  For example to pop all contexts named "MY_CONTEXT" from the top of the context stack:
  
 >     %repeat 1000                      // 1000 is an arbitrary value
->     %ifnctx MY\_CONTEXT
+>     %ifnctx MY_CONTEXT
 >     %exitrep
 >     %endif
 >     %endrep

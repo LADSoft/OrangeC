@@ -5,28 +5,28 @@
  
  The macro header and macro body are used when defining the macro.  For example a simple multiline macro that gives a new name to NOP might look as follows:
  
->     %macro MY\_NOP 0
+>     %macro MY_NOP 0
 >         nop
 >     %endmacro
  
- here MY\_NOP is the name of the macro, which is case-sensitive since %macro was used rather than %imacro.  The zero in the header following MY\_NOP indicates this macro has no parameters.  The body of the macro is the 'nop' statement, and the macro definition ends with %endmacro.
+ here MY_NOP is the name of the macro, which is case-sensitive since %macro was used rather than %imacro.  The zero in the header following MY_NOP indicates this macro has no parameters.  The body of the macro is the 'nop' statement, and the macro definition ends with %endmacro.
  
  After the macro is defined, it can be invoked as many times as necessary.  For example:
  
->     MY\_NOP
->     MY\_NOP
+>     MY_NOP
+>     MY_NOP
  
  causes the assembler to assemble two 'nop' statements based on the above definition.
  
  A macro can have parameters:
  
->     %macro MY\_MOV 2
+>     %macro MY_MOV 2
 >         mov   %1, %2
 >     %endmacro
  
  In this macro, the 2 in the header signifies the macro takes exactly two arguments.  Specifying more arguments, or less, during and invocation, will result in an error.  The %1 and %2 are substituted with the first and second arguments.  For example:
  
->     MY\_MOV eax,ebx
+>     MY_MOV eax,ebx
  
  gets translated to:
  
@@ -35,7 +35,7 @@
  
  Macros can have a variable number of parameters.  In:
  
->     %macro MY\_PUSH 1-4
+>     %macro MY_PUSH 1-4
 >     %rep %0
 >         push %1
 >         %rotate 1
@@ -46,7 +46,7 @@
  
  Invoking this macro as follows:
  
->     MY\_PUSH eax,ebx,ecx
+>     MY_PUSH eax,ebx,ecx
  
  results in the preprocessor generating the following instructions:
  
@@ -56,7 +56,7 @@
  
  This can be made just a little bit better through the use of the infinite argument list specifier:
  
->     %macro MY\_PUSH 1-\*
+>     %macro MY_PUSH 1-*
 >     %rep %0
 >         push %1
 >         %rotate 1
@@ -65,9 +65,9 @@
  
  where the \* in the header means there is no practical limit to the number of arguments (there is a limit, but it wouldn't be realistic to type that many arguments even with a code-generating program).  Now the macro isn't limited to four push statements; it can push as many things as are listed in the macro invocation.
  
- A corresponding MY\_POP can be created with minor changes:
+ A corresponding MY_POP can be created with minor changes:
  
->     %macro MY\_POP 1-\*
+>     %macro MY_POP 1-*
 >     %rep %0
 >         %rotate -1
 >         pop %1
@@ -78,14 +78,14 @@
  
  Occasionaly it is beneficial to specify that you need some arguments, then you want the rest of the command line:
  
->     %define STRINGIZE(s) \#s
->     %macro MY\_MSG 1+
+>     %define STRINGIZE(s) \s
+>     %macro MY_MSG 1+
 >     db %1,STRINGIZE(%2)
 >     %endmacro
  
  Where the + symbol means anything beyond the first argument should be gathered together and make another argument.  This does include comma characters; after the first argument's separating comma commas will no longer be processed with this syntax.  As an example invocation:
  
->     MY\_MSG 44, hello there, world
+>     MY_MSG 44, hello there, world
  
  would translate to:
  
@@ -93,21 +93,21 @@
  
  Of course the + symbol may be combined with specifying variable length argument lists as shown in the following header:
  
->     %macro do\_something 1-4+
+>     %macro do_something 1-4+
  
  Another use for the + symbol is to get the entire argument list of a macro invocation, unparsed, as shown in the following header:
  
->     %macro do\_something 0+
+>     %macro do_something 0+
  
  Sometimes it is useful to include the comma character in the argument for a macro invocation:
  
->     %macro define\_numbers 3
+>     %macro define_numbers 3
 >     db   %1,%2,%3
 >     %endmacro
  
  can be invoked with:
  
->     define\_numbers {1,2},3,4
+>     define_numbers {1,2},3,4
  
  to result in:
  
@@ -115,7 +115,7 @@
  
  When variable length argument lists are used, everything starting with the first variable argument can have a default value.  For example with the macro header:
  
->     %macro define\_strings 1-4 "hello", "there"
+>     %macro define_strings 1-4 "hello", "there"
 >     %rep %0
 >         db   %1
 >         %rotate 1
@@ -124,7 +124,7 @@
  
  defaults the second and third arguments to "hello" and "there" respectively, if they are not specified in the invocation.  For example:
  
->     define\_strings "one"
+>     define_strings "one"
  
  results in:
  
@@ -132,7 +132,7 @@
 >     db "hello"
 >     db "there"
  
- whereas define\_strings "one", "two"
+ whereas define_strings "one", "two"
  
  results in:
  
@@ -186,6 +186,6 @@
 
 #### %rotate
 
->     **%rotate** rotates the macro argument list for the current invocation a number of times specified in the argument.  If the number of times is positive, the arguments are rotated left, with the leftmost arguments going to the end of the list.  If the number of times is negative, the arguments are rotated right, with the rightmost arguments going to the beginning of the list.
+ **%rotate** rotates the macro argument list for the current invocation a number of times specified in the argument.  If the number of times is positive, the arguments are rotated left, with the leftmost arguments going to the end of the list.  If the number of times is negative, the arguments are rotated right, with the rightmost arguments going to the beginning of the list.
  
    

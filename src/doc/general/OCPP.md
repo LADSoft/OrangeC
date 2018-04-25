@@ -15,7 +15,7 @@
 
  The general form of an OCPP command line is:
  
->     OCPP \[options\] file
+>     OCPP [options] file
  
  Here the_ file_ is the file to preprocess.  (multiple files may be specified on the command line if you choose).
  
@@ -34,7 +34,7 @@
  
  is used instead of the normal
  
->     \#define MYINT 4
+>     #define MYINT 4
  
  used by C compilers.
 
@@ -43,7 +43,7 @@
 
  By default, **OCPP** will use the C language system include path to search for include files specified in the source file.  If there are other include paths **OCPP** should search, the **/I** switch can be specified to have it search them.  For example by default the statement:
  
->     \#include <windows.h>
+>     #include <windows.h>
  
 >     (or %include <windows.h>)
  

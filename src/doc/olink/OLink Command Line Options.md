@@ -109,3 +109,8 @@
  Sometimes when a [target configuration](OLink%20Target%20Configurations.md) has been specified, it is desirable to stop after generating the **.rel** file instead of going on to build the ROM Image or Executable.  This may be done by specifying the **/l** switch on the command line.
  
    
+### Alternative display options
+
+ The **/V** switch shows version information, and the compile date
+ The **/!** switch is 'nologo'
+

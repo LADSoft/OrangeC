@@ -96,5 +96,10 @@
  
  enables trivial errors but stops after three errors.
  
+### Alternative display options
+
+ The **/V** switch shows version information, and the compile date
+ The **/!** switch is 'nologo'
+
  
  

@@ -57,5 +57,10 @@
 * **-v** lines nonmatching lines instead of matching lines
 * **-z** list the file names matched, line numbers, and matched lines
    
+### Alternative display options
+
+ The **/V** switch shows version information, and the compile date
+ The **/!** switch is 'nologo'
+
   
  

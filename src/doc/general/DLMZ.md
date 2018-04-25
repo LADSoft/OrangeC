@@ -43,6 +43,10 @@
    
   The default output format if no **/m** switch is specified is REAL.
 
+### Alternative display options
+
+ The **/V** switch shows version information, and the compile date
+ The **/!** switch is 'nologo'
 
 ## General Considerations
 

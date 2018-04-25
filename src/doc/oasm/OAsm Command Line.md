@@ -78,6 +78,12 @@
  When the command line switch **-l** is specified, **OAsm** will product a listing file correlating the output byte stream with input lines of the file.  Note the listing file is not available in preprocessor mode as no assembly is done.  
  
  By default the listing file will not show macro expansions.  To get a listing file where macros are shown in expanded form, use **-ml**.  This will also expand preprocessor repeat statements.  Note that there is a special qualifier used in a macro definition, **.nolist**, which can be used on a macro-by-macro basis.  When used, it prevents macros from being expanded in the listing file even when **-ml** is used.  This is useful for example to prevent cluttering the the listing file with expansions of often-used macros or macros that are composed largely of preprocessor statements.  In fact the builtin macros that map preprocessor directives to native form all use this qualifier.
+
  
+### Alternative display options
+
+ The **/V** switch shows version information, and the compile date
+ The **/!** switch is 'nologo'
+
  
  

@@ -6,9 +6,10 @@ install:
     - set ORANGEC=c:\ORANGEC
 
 environment:
-    - BUILD_TYPE: MS
-    - BUILD_TYPE: MINGW64
-
+    matrix:
+        - BUILD_TYPE: MS
+        - BUILD_TYPE: MINGW64
+ 
 build_script:
         - cd ..\..
         - move projects\orangec .

@@ -21,7 +21,7 @@
  
  The object file list can have wildcards:
  
->     OLib test.l + \*.o
+>     OLib test.l + *.o
  
  adds all the object files from the current directory.
 

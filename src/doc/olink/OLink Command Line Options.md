@@ -2,7 +2,7 @@
 
  The general format of an **OLink** command line is:
  
->     OLink \[options\] file-list
+>     OLink [options] file-list
  
  where _file-list_ is an arbitrary list of input files.
  
@@ -51,7 +51,7 @@
 
  By default, **OLink** will search for library files in the C Compiler library file path, and in the current directory.  The **/L** option may be used to specify additional directories to search for lib files:
  
->     OLink /L..\\mylibs test.o floating.l
+>     OLink /L..\mylibs test.o floating.l
  
  will find **floating.l **either in the C compiler library directory, the current directory, or the directory ..\\mylibs.
 

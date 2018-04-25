@@ -2,7 +2,7 @@
 
  The general format of an **OAsm** command line is:
  
->     OAsm \[options\] file-list
+>     OAsm [options] file-list
  
  where the _file-list_ is an arbitrary list of input files.
  
@@ -14,7 +14,7 @@
  
  The file list can have wildcards:
  
->     OAsm \*.asm
+>     OAsm *.asm
  
  assembles all the files in the curent directory.
 
@@ -35,11 +35,7 @@
 
 ### Using the assembler as a preprocessor
 
-
-### 
- 
-
- If the **-e** switch is specified on the assembler command line, **OAsm **will act as a preprocessor and not perform the actual assembly phase.  This operation is equivalent to using **OCPP** in assembly-language mode.  In preprocessor mode, the full functionality of the preprocessor is available, when it does not rely on information that would only be available while assemblying the file.  Specifically, the preprocessor is fully functional, except that expressions that refer to labels or program counter locations will result in an error when used for example with the **%assign** preprocessor statement.
+ If the **-e** switch is specified on the assembler command line, **OAsm** will act as a preprocessor and not perform the actual assembly phase.  This operation is equivalent to using **OCPP** in assembly-language mode.  In preprocessor mode, the full functionality of the preprocessor is available, when it does not rely on information that would only be available while assemblying the file.  Specifically, the preprocessor is fully functional, except that expressions that refer to labels or program counter locations will result in an error when used for example with the **%assign** preprocessor statement.
 
 
 ### Specifying the output file name
@@ -52,7 +48,7 @@
 >     
 >     OAsm /omyfile test.asm
  
- makes an object file called **myfile.o**.>
+ makes an object file called **myfile.o**.
 
 
 ### Specifying include file path

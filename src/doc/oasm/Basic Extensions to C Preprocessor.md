@@ -62,8 +62,8 @@
 >     %define COLOR 3
 >     %if COLOR == 2
 >         mov eax,4
- %elifdef COLOR
-     inc eax
+>     %elifdef COLOR
+>         inc eax
 >     %endif
  
  will result in the mov statement being ignored and the inc statement being assembled because COLOR has been defined but is not 2.
@@ -83,9 +83,9 @@
 >     %define COLOR 3
 >     %if COLOR == 2
 >         mov eax,4
- %elifndef COLOR
-     inc eax
->      %endif
+>     %elifndef COLOR
+>         inc eax
+>     %endif
  
  will result in nothing being assembled because COLOR is defined but not equal to 2.
  

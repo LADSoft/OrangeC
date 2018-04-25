@@ -137,15 +137,20 @@
 
  Each use of the global directive can assign the 'global' attribute to one or more labels.  When a label is global, it has a presence that extends beyond the current file, and the linker may resolve references to the variable to it, when those references are made in other files.  Those references would typically have been made by use of the 'extern' directive.  For example:
  
->     global puterror
+> global puterror
 >    
 > puterror:
->     mov   eax,errmsg
->     call strput
->     ret
+>
+>  mov   eax,errmsg
+>
+>  call strput
+>
+>  ret
+>
 > errmsg   db   "this is an error",0
- 
+ >
 > strput:
+>
 >     ....
  
  creates a function 'puterror' which is visible to other files during linkage.  Global may be used with multiple labels:
@@ -159,14 +164,13 @@
  
  In the above example, if 'strput' was defined in a different file from the definition of puterror you might write the following:
  
->     global puterror
->     extern strput
-   
-> puterror:
->     mov   eax,errmsg
->     call strput
->     ret
-> errmsg   db   "this is an error",0
+>         global puterror
+>         extern strput
+>     puterror:
+>         mov   eax,errmsg
+>         call strput
+>         ret
+>     errmsg   db   "this is an error",0
  
  As with the global directive, extern can be used with multiple symbols:
  
@@ -320,7 +324,7 @@
  For example the earlier example from the Data Reservation section could be alternatively written:
  
  
-> mylab   db   "hello world"
+> mylab   db   "hello world"\n
 >         times mylab + 80 - $ \[db '.'\]
  
  Here the native form of the db directive is used, since macro substitution is not available in this context.  Times could also be used for timing:

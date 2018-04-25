@@ -67,7 +67,7 @@ bool CmdFiles::RecurseDirs(const std::string &path, const std::string &name, boo
     bool rv = false;
     struct _finddata_t find;
     std::string q = path + "*.*";
-    long handle;
+    size_t handle;
     // borland does not define the char * as const...
     if ((handle = _findfirst(const_cast<char *>(q.c_str()), &find)) != -1)
     {
@@ -111,7 +111,7 @@ bool CmdFiles::Add(const std::string &name, bool recurseDirs)
             lname = name;
         }
     }
-    long handle;
+    size_t handle;
     // borland does not define the char * as const...
     if ((handle = _findfirst(const_cast<char *>(name.c_str()), &find)) != -1)
     {

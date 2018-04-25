@@ -2,20 +2,20 @@
 
  /Dxxx    define a macro
  
-     This switch defines a macro as if a \#define statement had been used somewhere in the source.  It is useful for building different versions of a program without modifying the source files between compiles.  Note that you may not give macros defined this way a value.  For example:
+This switch defines a macro as if a \#define statement had been used somewhere in the source.  It is useful for building different versions of a program without modifying the source files between compiles.  Note that you may not give macros defined this way a value.  For example:
  
      OCC /DORANGE myfunc.c
  
-     is equivalent to placing the following statement in the file and compiling it.
+is equivalent to placing the following statement in the file and compiling it.
  
-     \#define ORANGE 
+     #define ORANGE 
 
 The following macros are predefined by the compiler:
 
 
  
 
-|colheader |colheader |
+|Macro |Usage |
 |--- |--- |
 |\_\_ORANGEC\_\_|always defined|
 |\_\_RTTI\_\_|defined when C++ rtti/exception handling info is present|

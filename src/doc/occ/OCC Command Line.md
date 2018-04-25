@@ -8,7 +8,7 @@
  
  The general format of the command line is as follows:
  
- OCC \[parameters\]  list of files
+    OCC [parameters]  list of files
  
  The list of files can be a list of one or more C language files.  C++ language files are supported as well.  If you don't specify an extension on the command line it will default to .C; it will detect a .CPP extension and activate C++ mode as required.
 
@@ -16,7 +16,7 @@ The list of files can also include wild cards.
  
  OCC will accept response files with a list of command line options.  To use a response file, prefix its name with '@':
  
- OCC \[parameters\] @resp.cc
+    OCC [parameters] @resp.cc
  
  There are a variety of parameters that can be set.  Help is available for the following:
  

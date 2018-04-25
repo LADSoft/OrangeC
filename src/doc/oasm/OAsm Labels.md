@@ -24,7 +24,7 @@
 >         clc
 >         ret
  
->     .exit is defined twice, however, each definition follows a different standard label so the two definitions are actually different labels.
+.exit is defined twice, however, each definition follows a different standard label so the two definitions are actually different labels.
  
  Internally, each use of a local label does have a unique name, made up by concatenating the most recent standard label name with the local label name.  In the above example the internal names of the two labels are thus>     routine1.exit and>     routine2.exit.  It is possible to branch to the fully qualified name from within another context.
  

@@ -48,101 +48,100 @@ Allocate memory from automatic storage (the processor stack).  The primary motiv
 ### \_export
 
  
-     make an export record for the linker to process.  The current record becomes an entry in the EXE files export table.  For example:
+   make an export record for the linker to process.  The current record becomes an entry in the EXE files export table.  For example:
  
-     void \_export myfunc() ;
+     void _export myfunc() ;
      
-     will cause myfunc to be an exported function.
+  will cause myfunc to be an exported function.
 
 
 ### \_genbyte
 
  
  
-     Generate a byte of data into the code segment associated with the current function.  For example:
+  Generate a byte of data into the code segment associated with the current function.  For example:
  
      void myfunc()
      {
      .
      .
      .
-     \_genbyte(0x90) ;
+     _genbyte(0x90) ;
      .
      .
      .
      }
  
-     puts a NOP into the code stream.
-
+  puts a NOP into the code stream.
 
 ### \_import
 
  
-     This can be used for one of two purposes.  First it can make import record for the linker to process, which will result in the appropriate DLL being loaded at run-time.  Second, it can be used to declare a variable from a DLL so that the compiled code can access it.  For example:
+  This can be used for one of two purposes.  First it can make import record for the linker to process, which will result in the appropriate DLL being loaded at run-time.  Second, it can be used to declare a variable from a DLL so that the compiled code can access it.  For example:
  
-     int \_import myvariable ;
+     int _import myvariable ;
  
-     declares myvariable as being imported.  While
+  declares myvariable as being imported.  While
  
-     int \_import("mylib.dll") myvariable ;
+     int _import("mylib.dll") myvariable ;
  
-     declares myvariable as being imported from mylib.dll.
+  declares myvariable as being imported from mylib.dll.
 
 
 ### \_interrupt & \_fault
 
  
-     Create an interrupt function.  Pushes registers and uses an IRET to return from the function.  For example:
+  Create an interrupt function.  Pushes registers and uses an IRET to return from the function.  For example:
  
-     \_interrupt void myfunc() 
+     _interrupt void myfunc() 
      {
      }
  
-     Creates a function myfunc which can be used as an interrupt handler.
+  Creates a function myfunc which can be used as an interrupt handler.
  
-     \_fault is similar to \_interrupt, but also pops the exception word from the stack.  Used when returning from certain processor fault vectors
+  \_fault is similar to \_interrupt, but also pops the exception word from the stack.  Used when returning from certain processor fault vectors
 
 
 ### \_loadds
 
   
-     For an Interrupt function, force DS to be loaded at the beginning of the interrupt. This will be done by adding 0x10 to the CS selector to make a new DS selector.  For example:
+  For an Interrupt function, force DS to be loaded at the beginning of the interrupt. This will be done by adding 0x10 to the CS selector to make a new DS selector.  For example:
  
-     \_loadds \_interrupt void myfunc() 
+     _loadds _interrupt void myfunc() 
      {
      }
  
-     will create an interrupt function that loads DS
+  will create an interrupt function that loads DS
 
 
 ### \_pascal
 
           
-     use PASCAL linking mechanism.  This linking mechanism converts the function name to upper case, removes the leading underscore, pushes arguments in reverse order from standard functions, and uses callee stack cleanup.  For example:
+  use PASCAL linking mechanism.  This linking mechanism converts the function name to upper case, removes the leading underscore, pushes arguments in reverse order from standard functions, and uses callee stack cleanup.  For example:
  
-     void \_pascal myfunc() ;
+     void _pascal myfunc() ;
  
-     Creates a function myfunc with pascal linkage.
+  Creates a function myfunc with pascal linkage.
 
 
 ### \_stdcall
 
   
-     Use STDCALL linking mechanism.  This linking mechanism removes the leading underscore and uses callee stack cleanup.  For example:
+  Use STDCALL linking mechanism.  This linking mechanism removes the leading underscore and uses callee stack cleanup.  For example:
  
-     void \_stdcall myfunc() ;
+     void _stdcall myfunc() ;
  
-     Creates a function myfunc with pascal linkage.
+  Creates a function myfunc with pascal linkage.
 
 
 ### typeof
 
   
-     the typeof operator may be used anywhere a type declaration is used, e.g. as the base type for a variable or in a cast expression.  It allows you to access the variable's type without explicitly knowing what that type is.  For example:
+  the typeof operator may be used anywhere a type declaration is used, e.g. as the base type for a variable or in a cast expression.  It allows you to access the variable's type without explicitly knowing what that type is.  For example:
  
      long double aa ;
      typeof(aa) bb;
  
-     declares bb as long double type.
+  declares bb as long double type.
  
    

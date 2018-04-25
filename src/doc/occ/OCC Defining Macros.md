@@ -1,6 +1,6 @@
 ## OCC Defining Macros
 
- /Dxxx    define a macro
+### /Dxxx    define a macro
  
 This switch defines a macro as if a \#define statement had been used somewhere in the source.  It is useful for building different versions of a program without modifying the source files between compiles.  Note that you may not give macros defined this way a value.  For example:
  

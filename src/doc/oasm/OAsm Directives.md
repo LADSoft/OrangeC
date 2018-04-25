@@ -5,7 +5,7 @@
  
  Natively, directives are always enclosed in brackets, for example to define a byte of data:
  
->     myvar \[db   44\]
+>     myvar [db   44]
  
  However, the directives are redefined with default [multiline macros](Multiline%20Macro%20Extensions.md), so that the brackets are not necessary when typing code:
  
@@ -53,9 +53,8 @@
  
      
 
-|colheader |colheader |colheader |colheader |colheader |colheader |
-|--- |--- |--- |--- |--- |--- |
 ||integer|floating point|character/string|label|segment|
+|--- |--- |--- |--- |--- |--- |
 |db|yes|no|yes|no|no|
 |dw|yes|no|yes|yes|yes|
 |dd|yes|yes|yes|yes|no|
@@ -144,7 +143,7 @@
 >         call strput
 >         ret
 >     errmsg   db   "this is an error",0
- 
+> 
 >     strput:
 >         ....
  
@@ -161,7 +160,7 @@
  
 >         global puterror
 >         extern strput
-   
+>   
 >     puterror:
 >         mov   eax,errmsg
 >         call strput
@@ -172,13 +171,13 @@
  
 >         global puterror
 >         extern strput, numberput
-   
+?   
 >     puterror:
 >         push eax
-     mov   eax,errmsg
+>         mov   eax,errmsg
 >         call strput
-     pop eax
-     call numberput
+>         pop eax
+>         call numberput
 >         ret
 >     errmsg   db   "this is error number: ",0
 
@@ -367,15 +366,15 @@
  This defines the following label values similar to how they were defined in an absolute section:
  
 >     s1: 0
->     s2: 4 \* 1 = 4
->     s3: 4 + 3 \* 2 = 10
->     s4: 10 + 5 \* 4 = 30
+>     s2: 4 * 1 = 4
+>     s3: 4 + 3 * 2 = 10
+>     s4: 10 + 5 * 4 = 30
  
  The structure mechanism also defines astruc as 0, and it defines the size of the struct 'astruc\_size' as 30 + 1 = 31.
  
  To access the member of a structure one might use something like:
  
->     mov   eax,\[ebx + s3\]
+>     mov   eax,[ebx + s3]
  
  The structure mechanism could just as well be done with absolute sections or EQU statements (except that a side effect of the structure mechanism is to define a size).  But a little more more interestingly, if you introduce local labels and remember that a local label can be accessed from anywhere if its fully qualified name is specified you might write:
  
@@ -388,16 +387,16 @@
  
  This lets you qualify the name and use:
  
->     mov    eax,\[ebx + astruc.s3\]
+>     mov    eax,[ebx + astruc.s3]
  
  However you need to be careful with this.  Structures aren't really part of the assembler, but are instead an extension provided by built-in macros.  So you can't make an instance of a structure and then use a period to qualify the instance name with a structure member.  For example:
  
->     mystruc   resb   astruc\_size,0
->     mov       eax,\[mystruc.s3\]
+>     mystruc   resb   astruc_size,0
+>     mov       eax,[mystruc.s3]
  
  is not valid, because the label 'mystruc.s3' does not exist.  The move would have to be changed to something like:
  
->     mov eax,\[mystruc + astruc.s3\]
+>     mov eax,[mystruc + astruc.s3]
  
  
  

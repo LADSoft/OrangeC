@@ -69,12 +69,12 @@
  Some examples follow:
  
 >     mylab:
-     db 44
-     dw   0234h
-     dd  9999
-     dd  43.72
-     dd   mylab
->>         dq   19.21e17
+>         db 44
+>         dw   0234h
+>         dd  9999
+>         dd  43.72
+>         dd   mylab
+>         dq   19.21e17
 >         dt  0.001 ;
  
  Multiple values may be specified per line for these directives; for example:
@@ -147,7 +147,7 @@
 >     strput:
 >         ....
  
- creates a function 'puterror' which is visible to other files during linkage.  Global may be used with multiple labels:
+creates a function 'puterror' which is visible to other files during linkage.  Global may be used with multiple labels:
  
 >         global mylab, strput
 
@@ -201,18 +201,18 @@
  The import directive is used to signify that the label is exported from some other executable or DLL file, and that windows should load that executable or DLL so that the label can be resolved.  As with export there are two versions of the directive:
  
 >         import   ExitProcess Kernel32.dll
- 
+> 
 >         ...
-     push    0
+>         push    0
 >         call    ExitProcess
 >         ...
  
  indicates that the DLL kernel32.dll should be loaded so that a reference to the ExitProcess API call can be resolved.  It might be useful to rename ExitProcess to Quit if that is easier to remember and type:
  
 >         import ExitProcess Kernel32.dll Quit
- 
+> 
 >         ...
-     push   0
+>         push   0
 >         call   Quit
 >         ...
 
@@ -273,7 +273,7 @@
  The absolute directive is used to switch out of sections where data can be emitted, into an **absolute** section with the specified origin.  It is called absolute because these labels never get relocated by the linker; they are essentially constants.  Labels defined in an absolute section will get the value of the program counter within the section, at the time the section is defined.  But these labels get a constant value, that is not relocated by the linker.  For example:
  
 >     absolute 0
- 
+> 
 >     lbl1:
 >         resb   4
 >     lbl2:

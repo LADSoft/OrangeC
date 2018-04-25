@@ -53,7 +53,7 @@
 
  **%push** creates a new context and pushes it on the top of the context stack:
  
->     %push CONTEXT\_NAME
+>     %push CONTEXT_NAME
  
  'local' definitions can be made within this context as indicated in the introduction.
  
@@ -85,7 +85,7 @@
  
  creates a context called MY_CONTEXT.  If that is followed by:
  
->     %repl  NEW\_NAME
+>     %repl  NEW_NAME
  
  the context will now be called NEW\_NAME.  When a context is renamed this way, all previous local definitions and labels are still accessible while that context is on top of the context stack.  The only affect of renaming the context is that conditionals which act on context names will be matched against the new name instead of the old one.
 
@@ -104,7 +104,7 @@
  will result in the mov statement being assembled because the top of the context stack is named MY_NAME, whereas:
  
 >     %push MY_NAME
->     %ifctx  ANOTHER\_NAME
+>     %ifctx  ANOTHER_NAME
 >         mov eax,4
 >     %endif
  
@@ -127,7 +127,7 @@
  will result in nothing being assembled because the name of the context on top of the stack matches the argument.
  
 >     %push MY_NAME
->     %ifnctx  ANOTHER\_NAME
+>     %ifnctx  ANOTHER_NAME
 >         mov eax,4
 >     %endif
  

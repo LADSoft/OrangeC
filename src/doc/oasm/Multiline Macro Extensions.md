@@ -163,8 +163,8 @@
  
  As with context-specific labels, the assembler does not implement multiple symbol tables but instead uses a non-local label name.  The non-local label name consists of ..@ followed by a context id followed by a period followed by the label name.  For example, the labels in the above example would be translated to:
  
- ..@54.local
- ..@54.noop
+>     ..@54.local
+>     ..@54.noop
  
  if the context identifier for the current macro invocation is 54.  non-local labels fitting this general format should not appear in the source code, as there is a chance they will conflict with label names chosen by the preprocessor.
 

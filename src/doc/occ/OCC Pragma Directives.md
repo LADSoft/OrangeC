@@ -41,18 +41,24 @@
 ### \#pragma pack
 
   
- \#pragma pack(n)    Sets the alignment for structure members and global variables.  The default alignment is 1. Changing the alignment can increase performance by causing variable and structure alignment to optimal sizes, at the expense of using extra memory.  However, altered alignment can sometimes cause problems, for example when a structure is used directly in a network packet or as the contents of a file.
+ \#pragma pack(n)    
+ 
+ Sets the alignment for structure members and global variables.  The default alignment is 1. Changing the alignment can increase performance by causing variable and structure alignment to optimal sizes, at the expense of using extra memory.  However, altered alignment can sometimes cause problems, for example when a structure is used directly in a network packet or as the contents of a file.
  
  The actual alignment of any given variable depends both on the value of 'n' and on the size of the variable.  CC386 will pick the minimum of the two values for the alignment of any given variable; for example if n is 2 characters will be aligned on byte boundaries and everything else will be aligned on two byte boundaries.  If n is 4 characters will be on byte boundaries, words (short quantities) on two-byte boundaries, and dwords (ints) on four byte boundaries.
  
- \#pragma pack()    Resets the alignment to the last selection, or to the default.
+ \#pragma pack()    
+ 
+ Resets the alignment to the last selection, or to the default.
 
 
 ### Startup and rundown pragmas
 
   
  \#pragma startup <function> <priority>
+ 
  \#pragma rundown <function> <priority>
+ 
  These two directives allow you to specify functions that are automatically executed by the RTL before and after the main program is executed.  The priority scheme allows you to order functions in a priority order.  When the RTL is executing startup or rundown functions it executes all functions at priority 1, then all functions at priority 2, then all functions at priority 3, and so forth.  To have a function executed before your program runs, use \#pragma startup, or to have it execute after the program exits, use \#pragma rundown.  You should use priorities in the range 50-200, as priorities outside that range are used by RTL functions and their execution (or lack thereof) may prevent some functions in the RTL from working properly.  For example:
  
      \#pragma startup myfunc 100

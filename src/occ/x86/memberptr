@@ -1,9 +1,0 @@
-class ss
-{
-    int a,b,c;
-} ;
-
-int ss::*q()
-{
-    return 0;
-}

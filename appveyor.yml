@@ -3,9 +3,9 @@ image: Visual Studio 2017
 install:
     - choco install InnoSetup
     - set PATH=c:\orangec\temp;c:\orangec\bin;%PATH%;C:\Program Files (x86)\Inno Setup 5
-    - set PATH= C:\mingw-w64\x86_64-7.2.0-posix-seh-rt_v5-rev1;%PATH%
     - set ORANGEC=c:\ORANGEC
     - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars32.bat"
+    - call "C:\mingw-w64\x86_64-7.2.0-posix-seh-rt_v5-rev1\mingw-w64.bat"
 
 max_jobs: 1
 
@@ -15,7 +15,6 @@ environment:
     - BUILD_PROFILE: MINGW64
  
 build_script:
-        - dir C:\mingw-w64\x86_64-7.2.0-posix-seh-rt_v5-rev1
         - cd ..\..
         - move projects\orangec .
         - cd orangec\src

@@ -125,7 +125,7 @@ bool Maker::CreateDependencyTree()
         dependsNesting = 0;
         if (goal != ".MAKEFLAGS" && goal != ".MFLAGS")
 	{
-	        Depends *t = Dependencies(goal, "", tv1, true);
+	        Depends *t = Dependencies(goal, "", tv1, true, "", -1);
         	if (t)
         	{
             		depends.push_back(t);
@@ -141,11 +141,11 @@ bool Maker::CreateDependencyTree()
     }
     return !missingTarget;
 }
-Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &preferredPath, Time &timeval, bool err)
+Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &preferredPath, Time &timeval, bool err, std::string file, int line)
 {
     if (++dependsNesting > 200)
     {
-        Eval::error("depency nesting is too deep: possible recursive rule");
+        Eval::error("depency nesting is too deep: possible recursive rule", "", -1);
         exit(1);
     }
     Time goalTime;
@@ -186,7 +186,7 @@ Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &
                 {
                     Time current;
                     std::string thisOne = Eval::ExtractFirst(working, " ");
-                    Depends *dp = Dependencies(thisOne, foundPath, current, err && !rule->IsDontCare());
+                    Depends *dp = Dependencies(thisOne, foundPath, current, err && !rule->IsDontCare(), rule->File(), rule->Line());
                     if (current > dependsTime)
                     {
                         dependsTime = current;
@@ -208,7 +208,7 @@ Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &
                 {
                     Time current;
                     std::string thisOne = Eval::ExtractFirst(working, " ");
-                    Depends *dp = Dependencies(thisOne, preferredPath, current, err && !rule->IsDontCare());
+                    Depends *dp = Dependencies(thisOne, preferredPath, current, err && !rule->IsDontCare(), rule->File(), rule->Line());
                     if (dp)
                     {
                         dp->SetOrdered(true);
@@ -219,7 +219,7 @@ Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &
                     if ((ruleList->GetDoubleColon() && remakeThis) || !ruleList->GetDoubleColon())
                     {
                         if (executionRule)
-                            Eval::warning("Conflicting command lists for goal '" + goal + "'");
+                            Eval::warning("Conflicting command lists for goal '" + goal + "'", rule->File(), rule->Line());
                         else
                             executionRule = rule;
                     }
@@ -240,7 +240,7 @@ Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &
         {
             if (SearchImplicitRules(goal, preferredPath, true, timeval))
             {
-                rv = Dependencies(goal, preferredPath, timeval, err);
+                rv = Dependencies(goal, preferredPath, timeval, err, file, line);
             }
             else if (err)
             {
@@ -252,7 +252,7 @@ Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &
                     if (!time)
                     {
                         missingTarget = true;
-                        Eval::error("No rule to make target '" + goal + "'");
+                        Eval::error("No rule to make target '" + goal + "'", file, line);
                     }
                     else if (time > timeval)
                         timeval = time;

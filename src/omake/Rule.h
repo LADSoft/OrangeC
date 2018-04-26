@@ -79,12 +79,14 @@ public:
     bool IsSilent() const { return silent; }
     bool IsMake() const { return make; }
     bool IsPrecious() const { return precious; }
+    std::string File() const { return file; }
+    int Line() const { return lineno; }
 private:
     std::string target;
     std::string prerequisites;
     std::string orderPrerequisites;
     Command *commands;
-    const std::string &file;
+    const std::string file;
     int lineno;
     bool uptodate;
     bool secondExpansion;

@@ -1523,15 +1523,19 @@ std::string Eval::shell(const std::string &arglist)
     return sp.shell(a.Evaluate());
 }
 
-std::string Eval::error(const std::string &arglist, const std::string& fileOverride , int lineOverride)
+std::string Eval::error(const std::string &arglist, const std::string fileOverride , int lineOverride)
 {
     if (fileOverride.size())
     {
         std::cout << "Error " << fileOverride.c_str() << "(" << lineOverride << "): " << arglist.c_str() << std::endl;
     }
-    else
+    else if (lineOverride != -1)
     {
         std::cout << "Error " << file.c_str() << "(" << lineno << "): " << arglist.c_str() << std::endl;
+    }
+    else
+    {
+        std::cout << "Error: " << arglist.c_str() << std::endl;
     }
     errcount++;
     return "";
@@ -1543,9 +1547,20 @@ std::string Eval::errorx(const std::string &arglist)
     errcount++;
     return "";
 }
-std::string Eval::warning(const std::string &arglist)
+std::string Eval::warning(const std::string &arglist, const std::string fileOverride , int lineOverride)
 {
-    std::cout << "Warning " << file.c_str() << "(" << lineno << "): " << arglist.c_str() << std::endl;
+    if (fileOverride.size())
+    {
+        std::cout << "Warning " << fileOverride.c_str() << "(" << lineOverride << "): " << arglist.c_str() << std::endl;
+    }
+    else if (lineOverride != -1)
+    {
+        std::cout << "Warning " << file.c_str() << "(" << lineno << "): " << arglist.c_str() << std::endl;
+    }
+    else
+    {
+        std::cout << "Warning: " << arglist.c_str() << std::endl;
+    }
     return "";
 }
 std::string Eval::warningx(const std::string &arglist)

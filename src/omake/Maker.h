@@ -113,7 +113,7 @@ public:
     void SetIgnoreFailed(const std::string &name) { ignoreFailedTargets.insert(name); }
     static std::string GetFullName(std::string name);
 protected:
-    Depends *Dependencies(const std::string &goal, const std::string &preferredPath, Time &timeval, bool err);
+    Depends *Dependencies(const std::string &goal, const std::string &preferredPath, Time &timeval, bool err, std::string file, int line);
     bool ExistsOrMentioned(const std::string &stem, RuleList *ruleList, const std::string &preferredPath, const std::string &dir, bool implicit, bool outerMost);
     bool SearchImplicitRules(const std::string &goal, const std::string &preferredPath, bool outerMost, Time &timeval);
     void EnterSpecificRule(RuleList *l, const std::string &stem, const std::string &preferredPath, bool outerMost);

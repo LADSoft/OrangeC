@@ -62,5 +62,11 @@
  will create a definition file from the export records in **user32.dll**.
  
  
+### Alternative display options
+
+ The **/V** switch shows version information, and the compile date
+
+ The **/!** switch is 'nologo'
+
  
  

@@ -58,3 +58,10 @@ name.  For example:
 >     dlpe /smystub.exe test.rel
  
  makes an output file **test.exe** which has the 16-bit program **mystub.exe** as its MSDOS stub.
+
+### Alternative display options
+
+ The **/V** switch shows version information, and the compile date
+
+ The **/!** switch is 'nologo'
+

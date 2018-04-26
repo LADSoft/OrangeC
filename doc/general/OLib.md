@@ -60,4 +60,9 @@
  adds the files add1.o and add2.o, removes the files rem1.o and rem2.o, and extracts the file ext1.o.  The order of the modifiers in this example is arbitrary, and modifiers can occur more than once on the command line or in the response file.
  
  
- 
+### Alternative display options
+
+ The **/V** switch shows version information, and the compile date
+
+ The **/!** switch is 'nologo'
+

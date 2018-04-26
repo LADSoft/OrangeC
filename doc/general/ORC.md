@@ -55,4 +55,10 @@
  
  might be used to specify preprocessing based on the program looking for the word WIN32 in \#ifdef statements.
  
- 
+
+### Alternative display options
+
+ The **/V** switch shows version information, and the compile date
+
+ The **/!** switch is 'nologo'
+

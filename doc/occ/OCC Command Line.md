@@ -31,4 +31,10 @@ The list of files can also include wild cards.
 * [Code Generation Parameters](OCC%20Code%20Generation%20Parameters.md)
 * [Optimizer Parameters](OCC%20Optimizer%20Parameters.md)
 
- 
+### Additional generic options
+
+ The **/V** switch shows version information, and the compile date
+
+ The **/!** switch is 'nologo'
+
+

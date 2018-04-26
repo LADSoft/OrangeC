@@ -37,7 +37,7 @@
 #		email: TouchStone222@runbox.com <David Lindauer>
 
 ifndef _TREEROOT
-_TREEROOT := $(CURDIR)\treetop.mak
+_TREEROOT := $(CURDIR)/treetop.mak
 _TREETARGET := $(CURDIR)
 export _TREEROOT
 export _TREETARGET

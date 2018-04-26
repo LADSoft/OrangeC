@@ -5,6 +5,8 @@ install:
     - set PATH=c:\orangec\temp;c:\orangec\bin;%PATH%;C:\Program Files (x86)\Inno Setup 5
     - set ORANGEC=c:\ORANGEC
 
+max_jobs: 1
+
 environment:
   matrix:
     - BUILD_PROFILE: MS

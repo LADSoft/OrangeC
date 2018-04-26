@@ -9,17 +9,11 @@ install:
 
 max_jobs: 1
 
-environment:
-  matrix:
-    - BUILD_PROFILE: MS
-    - BUILD_PROFILE: MINGW64
- 
 build_script:
         - cd ..\..
         - move projects\orangec .
         - cd orangec\src
-        - mingw32-make errorcatch & exit 0
-        - mingw32-make --eval="COMPILER=%BUILD_PROFILE%" fullbuild
+        - omake -DCOMPILER=MS fullbuild
         - c:\orangec\bin\occ /V
         - copy omake\omake.exe .\
         - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 

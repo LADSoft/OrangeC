@@ -50,6 +50,7 @@
 #include "Eval.h"
 #include "os.h"
 #include <algorithm>
+#include <iostream>
 
 bool Time::operator >(const Time &last)
 {
@@ -68,7 +69,29 @@ int OS::Spawn(const std::string command, EnvironmentStrings &environment)
     aa += " ";
     std::transform(aa.begin(), aa.end(), aa.begin(), ::toupper);
     bool isCmd = names.find(aa) != std::string::npos;
-    
+
+    if (!isCmd)
+    {
+        size_t n = 0;
+        size_t nextQuote = command1.find('"');
+        while (n < command1.size())
+        {
+            while (n < command1.size() && command1[n] != '"')
+            {
+                if (command1[n] == '>' || command1[n] == '<' || command1[n] == '|')
+                {
+                     n = command1.size();
+                     isCmd = true;
+                     break;
+                }
+                n++;
+            }
+            do
+            {
+                n++;
+            } while (n < command1.size() && command1[n] != '"');
+        }
+    }
     Variable *v = VariableContainer::Instance()->Lookup("SHELL");
     if (!v)
         return -1;

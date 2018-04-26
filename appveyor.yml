@@ -15,8 +15,16 @@ build_script:
         - move projects\orangec .
         - cd orangec\src
         - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars32.bat"
-        - c:\orangec\src\omake -DCOMPILER=%BUILD_TYPE% 
+        - mingw32-make --eval="COMPILER=%BUILD_TYPE%" fullbuild
         - c:\orangec\bin\occ /V
+        - copy omake\omake.exe ..\bin
+        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
+        - c:\orangec\bin\occ /V
+        - copy omake\omake.exe ..\bin
+        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
+        - c:\orangec\bin\occ /V
+        - copy omake\omake.exe ..\bin
+        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
         - cd ..\.. 
         - move orangec projects
 

@@ -5,7 +5,7 @@ vpath %.c ..\..\libogg-1.2.0
 all: ogg.l
 
 ogg.l: bitwise.o framing.o
-	del ogg.l
+	del ogg.l 2> NUL
 	olib ogg.l bitwise.o framing.o
 
 bitwise.o: bitwise.c

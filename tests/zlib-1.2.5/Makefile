@@ -15,11 +15,10 @@ RFLAGS = /r
 
 
 test: $(EXE)
-	copy minigzip.map.cmp minigzip.map
-	minigzip minigzip.map
-	fc /b minigzip.map.gz.cmp minigzip.map.gz
-	minigzip -d minigzip.map.gz
-	fc /b minigzip.map.cmp minigzip.map
+	minigzip minigzip.test
+	fc /b minigzip.test.gz.cmpx minigzip.test.gz
+	minigzip -d minigzip.test.gz
+	fc /b minigzip.test.cmpx minigzip.test
     
 
 CC = c:\orangec\bin\occ

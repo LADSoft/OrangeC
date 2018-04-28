@@ -15,7 +15,7 @@ syntax_node_base.o \
 
 test: cs.exe
 	cs -G q1.pas > q1.out
-	fc /b test.cmp q1.out
+	fc /b test.cmpx q1.out
 
 cs.exe: $(FILES)
 	olink /c /T:CON32 /mx /o$@ @&&|

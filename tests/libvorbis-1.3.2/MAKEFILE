@@ -15,7 +15,7 @@ all: $(EXE) test
 
 test:
 	test > test.out
-	fc /b test.cmp test.out
+	fc /b test.cmpx test.out
 
 
 CC = \orangec\bin\occ

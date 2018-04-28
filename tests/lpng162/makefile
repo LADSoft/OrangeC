@@ -55,4 +55,4 @@ pngtest.exe: pnglibconf.h pngtest$(O) $(LIB)
 
 test: pngtest.exe
 	pngtest > test.out
-	fc /b test.out test.cmp
+	fc /b test.out test.cmpx

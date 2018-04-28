@@ -10,18 +10,18 @@
 
 test: bzip2.exe parsecsv.exe stlcontainers.exe label.exe delegate.exe
 	bzip2 bzip2.test
-	fc /b bzip2.test.bz2 bzip2.test.bz2.cmp
+	fc /b bzip2.test.bz2 bzip2.test.bz2.cmpx
 	bzip2 -d bzip2.test.bz2
-	fc /b bzip2.test bzip2.test.cmp
+	fc /b bzip2.test bzip2.test.cmpx
 	del out.pcl
 	parsecsv
 	fc /b text.pcl out.pcl
 	stlcontainers > stlcontainers.out
-	fc /b stlcontainers.cmp stlcontainers.out
+	fc /b stlcontainers.cmpx stlcontainers.out
 	del label1.exe
 	label
 	label1 > label1.out
-	fc /b label1.cmp label1.out
+	fc /b label1.cmpx label1.out
 	delegate > delegate.out
-	fc /b delegate.cmp delegate.out
+	fc /b delegate.cmpx delegate.out
 	

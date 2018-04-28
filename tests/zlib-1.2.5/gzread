@@ -1,0 +1,8 @@
+Warning  C:\orangec\tests\zlib-1.2.5\gzread.c(170):  Expression has no effect in function gz_head
+Warning  C:\orangec\tests\zlib-1.2.5\gzread.c(171):  Expression has no effect in function gz_head
+Warning  C:\orangec\tests\zlib-1.2.5\gzread.c(172):  Expression has no effect in function gz_head
+Warning  C:\orangec\tests\zlib-1.2.5\gzread.c(173):  Expression has no effect in function gz_head
+Warning  C:\orangec\tests\zlib-1.2.5\gzread.c(174):  Expression has no effect in function gz_head
+Warning  C:\orangec\tests\zlib-1.2.5\gzread.c(175):  Expression has no effect in function gz_head
+Warning  C:\orangec\tests\zlib-1.2.5\gzread.c(190):  Expression has no effect in function gz_head
+Warning  C:\orangec\tests\zlib-1.2.5\gzread.c(191):  Expression has no effect in function gz_head

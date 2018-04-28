@@ -8,7 +8,7 @@ install:
 
 environment:
   - ORANGEC=c:\ORANGEC
-  - SHELL=c:\windows\system32\cmd.exe
+  - SHELL=/c/windows/system32/cmd.exe
   matrix:
     - BUILD_PROFILE: MS
     - BUILD_PROFILE: MINGW64
@@ -27,6 +27,17 @@ build_script:
         - c:\orangec\bin\occ /V
         - copy omake\omake.exe .\
         - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
+        - cd ..\.. 
+        - move orangec projects
+
+before-test:
+        - set PATH=c:\orangec\bin;%PATH%
+
+test-script:
+        - cd ..\..
+        - move projects\orangec .
+        - cd orangec\tests
+        - omake
         - cd ..\.. 
         - move orangec projects
 

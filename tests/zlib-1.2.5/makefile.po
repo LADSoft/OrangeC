@@ -1,0 +1,43 @@
+O = .obj
+
+EXE = minigzip.exe
+OBJ = minigzip.obj \
+	adler32.obj compress.obj crc32.obj deflate.obj gzclose.obj gzlib.obj gzread.obj \
+	gzwrite.obj infback.obj inffast.obj inflate.obj inftrees.obj trees.obj uncompr.obj zutil.obj
+INC =
+
+LIB = ..\msvcrt.lib
+
+CFLAGS = /c +e /C-E /9 /D_WIN32
+AFLAGS = -fwin32
+LFLAGS = /LIBPATH:..\.
+RFLAGS = /r
+
+
+all: $(EXE)
+
+
+CC = c:\orangec\bin\w32cc
+AS = c:\orangec\bin\nasm
+LD = c:\orangec\bin\polink
+RC = c:\orangec\bin\xrc
+
+.SUFFIXES:
+.SUFFIXES: .c .obj
+
+$(EXE): $(OBJ)
+	$(LD) $(LFLAGS) /OUT:$(EXE) $(OBJ) $(LIB)
+
+$(OBJ): $(INC)
+
+%.obj: %.c
+	@$(CC) $(CFLAGS) $<
+
+.asm.obj:
+	@$(AS) $(AFLAGS) $<
+
+.nas.obj:
+	@$(AS) $(AFLAGS) $<
+
+.rc.res:
+	$(RC) $(RFLAGS) $<

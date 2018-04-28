@@ -1,0 +1,37 @@
+1) symbol table
+
+	symbol	   'foreign to names table'
+	type	   'foreign to names table'
+	file	   'foreign to files table'
+	instance id id of symbol instance, autoincrement
+	start line
+	end line
+
+2) names table (for symbol and type elaborations)
+	name		varchar
+	id		primary, autoincrement
+
+3) filenames table
+	name		varchar
+	id		primary, autoincrement
+	date		date
+
+4) arg name table	// for global funcs
+	arg id		id of symbol instance
+	type id		foreign to types table
+	order		int
+5) arg table 2		// for methods
+	arg id
+	type id
+	order
+6) struct name table
+	struct id	id of symbol instance
+	symbol id	foreign to names table
+	type id		foreign to types table
+	args id		foreign to arg table2 [future use]
+	order		int	
+
+7) prop bag
+	name		varchar
+	value		varchar
+	

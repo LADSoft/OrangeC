@@ -10,4 +10,3 @@ include ..\redirect.mak
 
 DISTRIBUTE: copyexe
 	copy ocl.cfg $(DISTBIN)
-	copy ocl.lic $(DISTLIC)

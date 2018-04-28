@@ -42,7 +42,7 @@ $(OBJ): $(INC)
 	$(RC) $(RFLAGS) $<
 
 libogg\ogg.l:
-	$(MAKE) /Clibogg
+	$(MAKE) -Clibogg
 
 lib\vorbis.l:
-	$(MAKE) /Clib
+	$(MAKE) -Clib

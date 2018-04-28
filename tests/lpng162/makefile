@@ -48,7 +48,7 @@ $(OBJ): $(INC)
 	$(RC) $(RFLAGS) $<
 
 zlib\zlib.l:
-	$(MAKE) /Czlib
+	$(MAKE) -Czlib
 
 pngtest.exe: pnglibconf.h pngtest$(O) $(LIB)
 	$(CC) $(LFLAGS) /o$@ pngtest$(O) $(LIB)

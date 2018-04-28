@@ -1,42 +1,5 @@
-/*
-    Software License Agreement (BSD License)
-    
-    Copyright (c) 1997-2016, David Lindauer, (LADSoft).
-    All rights reserved.
-    
-    Redistribution and use of this software in source and binary forms, 
-    with or without modification, are permitted provided that the following 
-    conditions are met:
-    
-    * Redistributions of source code must retain the above
-      copyright notice, this list of conditions and the
-      following disclaimer.
-    
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the
-      following disclaimer in the documentation and/or other
-      materials provided with the distribution.
-    
-    * Neither the name of LADSoft nor the names of its
-      contributors may be used to endorse or promote products
-      derived from this software without specific prior
-      written permission of LADSoft.
-    
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
-    THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
-    PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
-    OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
-    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
-    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
-    OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-    WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
-    OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-    ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+/* (null) */
 
-    contact information:
-        email: TouchStone222@runbox.com <David Lindauer>
-*/
 #include "Eval.h"
 #include "Rule.h"
 #include "CmdFiles.h"
@@ -48,8 +11,9 @@
 #include <ctype.h>
 #include <iostream>
 #include <fstream>
+#include <algorithm>
 #include "Utils.h"
-std::map<const std::string, Eval::StringFunc> Eval::builtins;
+
 std::string Eval::VPath;
 std::map<std::string, std::string> Eval::vpaths;
 bool Eval::internalWarnings;
@@ -60,6 +24,47 @@ std::list<Variable *> Eval::foreachVars;
 std::set<std::string> Eval::macroset;
 std::string Eval::GPath;
 int Eval::errcount;
+std::vector<std::string> Eval::callArgs;
+
+std::map<const std::string, Eval::StringFunc> Eval::builtins =
+{
+    { "subst", &Eval::subst },
+    { "patsubst", &Eval::patsubst },
+    { "strip", &Eval::strip },
+    { "findstring", &Eval::findstring },
+    { "filter", &Eval::filter },
+    { "filter-out", &Eval::filterout },
+    { "sort", &Eval::sort },
+    { "word", &Eval::word },
+    { "wordlist", &Eval::wordlist },
+    { "words", &Eval::words },
+    { "firstword", &Eval::firstword },
+    { "lastword", &Eval::lastword },
+    { "dir", &Eval::dir },
+    { "notdir", &Eval::notdir },
+    { "suffix", &Eval::suffix },
+    { "basename", &Eval::basename },
+    { "addsuffix", &Eval::addsuffix },
+    { "addprefix", &Eval::addprefix },
+    { "wildcard", &Eval::wildcard },
+    { "join", &Eval::join },
+    { "realpath", &Eval::realpath },
+    { "abspath", &Eval::abspath },
+    { "if", &Eval::condIf },
+    { "or", &Eval::condOr },
+    { "and", &Eval::condAnd },
+    { "foreach", &Eval::foreach },
+    { "call", &Eval::call },
+    { "value", &Eval::value },
+    { "eval", &Eval::eval },
+    { "origin", &Eval::origin },
+    { "flavor", &Eval::flavor },
+    { "shell", &Eval::shell },
+    { "error", &Eval::errorx },
+    { "warning", &Eval::warningx },
+    { "info", &Eval::info },
+    { "exists", &Eval::exists }
+};
 
 Eval::Eval(const std::string name, bool ExpandWildcards, RuleList *RuleList, Rule *Rule)
     : str(name), expandWildcards(ExpandWildcards), ruleList(RuleList), rule(Rule)
@@ -137,15 +142,16 @@ std::string Eval::ExtractFirst(std::string &value, const std::string &seps)
     }
     else
     {
-        for (int i =0; i < seps.size(); i++)
-        {
-            int m = value.find_first_of(seps[i]);
-            if (m != std::string::npos && m < n)
-                n = m;
-        }
+        int m;
+        if (seps == " ")
+            m = value.find_first_of(" \t\n");
+	    else
+            m = value.find_first_of(seps);
+        if (m != std::string::npos)
+            n = m;
     }
     std::string rv = value.substr(0, n);
-    if (value.find_first_not_of(' ') == std::string::npos)
+    if (value.find_first_not_of(" \t", n) == std::string::npos)
         value.replace(0,value.size(),"");
     else
         value.replace(0,n+1,"");
@@ -254,7 +260,8 @@ bool Eval::AutomaticVar(const std::string &name, std::string &rv)
         std::string extra;
         if (name[0] == '@') // target file name
         {
-            rv = Maker::GetFullName(ruleList->GetTarget());
+//            rv = Maker::GetFullName(ruleList->GetTarget());
+            rv = ruleList->GetTarget();
             found = true;
         }
         else if (name[0] == '%') // empty
@@ -265,13 +272,18 @@ bool Eval::AutomaticVar(const std::string &name, std::string &rv)
         else if (name[0] == '<') // first prereq of first rule
         {
             auto it = ruleList->begin();
-            if (!rule || *it != rule)
+            while (it != ruleList->end() && (*it)->GetCommands()->size() == 0)
+                ++it;
+            if (it != ruleList->end())
             {
-                extra = (*it)->GetPrerequisites();
-                rv = ExtractFirst(extra, " ");
-                rv = Maker::GetFullName(rv);
+                if (!rule || *it != rule)
+                {
+                    extra = (*it)->GetPrerequisites();
+                    rv = ExtractFirst(extra, " ");
+//                    rv = Maker::GetFullName(rv);
+                }
+                found = true;
             }
-            found = true;
         }
         else if (name[0] == '^') // all prereq or prereq of rules that have appeared
         {
@@ -385,7 +397,7 @@ bool Eval::AutomaticVar(const std::string &name, std::string &rv)
                 while (extra.size())
                 {
                     std::string temp = ExtractFirst(extra, " ");
-                    size_t n = temp.find_last_of(CmdFiles::DIR_SEP);
+                    size_t n = temp.find_last_of("/\\");
                     if (rv.size())
                         rv += " ";
                     if (n != std::string::npos)
@@ -405,7 +417,7 @@ bool Eval::AutomaticVar(const std::string &name, std::string &rv)
                 while (extra.size())
                 {
                     std::string temp = ExtractFirst(extra, " ");
-                    size_t n = temp.find_last_of(CmdFiles::DIR_SEP);
+                    size_t n = temp.find_last_of("/\\");
                     if (rv.size())
                         rv += " ";
                     if (n != std::string::npos)
@@ -470,8 +482,8 @@ std::string Eval::ExpandMacro(const std::string &name)
         else if (isdigit(name[0]))
         {
             int index = GetNumber(name);
-            if (index < args.size())
-                rv = args[index];
+            if (index < callArgs.size())
+                rv = callArgs[index];
         }
         else
         {
@@ -505,7 +517,7 @@ join:
                 rv = "";
                 if (internalWarnings)
                 {
-                    warning("'" + rv + "' is undefined.");
+                    warning("'" + fw + "' is undefined.");
                 }
             }
         }
@@ -543,6 +555,8 @@ join:
             }
         }
     }
+ //   std::replace(rv.begin(), rv.end(), '\t', ' ');
+//    std::replace(rv.begin(), rv.end(), '\n', ' ');
     return rv;
 }
 size_t Eval::FindPercent(const std::string &name, size_t pos)
@@ -719,7 +733,7 @@ int Eval::GetNumber(const std::string &line)
         error("Numeric value expected");
     else
     {
-        rv = Utils::StringToNumber(line);
+        rv = Utils::StringToNumber(line.substr(n, m-n));
     }
     return rv;
 }
@@ -783,16 +797,16 @@ std::string Eval::strip(const std::string &arglist)
     std::string rv;
     Eval e(arglist, false, ruleList, rule);
     std::string a = e.Evaluate();
-    size_t m = a.find_first_not_of(' ');
-    size_t n = a.find_first_of(' ', m);
+    size_t m = a.find_first_not_of("\t ");
+    size_t n = a.find_first_of("\t ", m);
     while (n != std::string::npos)
     {
         rv += a.substr(m, n-m);
-        n = a.find_first_not_of(' ', n);
+        n = a.find_first_not_of("\t ", n);
         m = n;
         if (n != std::string::npos)
             rv += " ";
-        n = a.find_first_of(' ',n);
+        n = a.find_first_of("\t ",n);
     }
     if (m != std::string::npos)
         rv += a.substr(m);
@@ -1008,7 +1022,7 @@ std::string Eval::dir(const std::string &names)
     while (working.size())
     {
         std::string p = ExtractFirst(working, " ");
-        size_t n = p.find_last_of(CmdFiles::DIR_SEP);
+        size_t n = p.find_last_of("/\\");
         if (rv.size())
             rv += " ";
         if (n != std::string::npos)
@@ -1028,7 +1042,7 @@ std::string Eval::notdir(const std::string &names)
     while (working.size())
     {
         std::string p = ExtractFirst(working, " ");
-        size_t n = p.find_last_of(CmdFiles::DIR_SEP);
+        size_t n = p.find_last_of("/\\");
         std::string intermed;
         if (n != std::string::npos)
             intermed = p.substr(n+1);
@@ -1137,7 +1151,6 @@ std::string Eval::addprefix(const std::string &arglist)
 
 std::string Eval::wildcard(const std::string &arglist)
 {
-    CmdFiles files;
     std::string names = strip(arglist);
     return wildcardinternal(names);
 }
@@ -1145,7 +1158,11 @@ std::string Eval::wildcardinternal(std::string &names)
 {
     CmdFiles files;
     while (names.size())
-        files.Add(ExtractFirst(names, " "));
+    {
+        std::string current = ExtractFirst(names, " ");
+        std::replace(current.begin(), current.end(), '/', '\\');
+        files.Add(current);
+    }
     std::string rv;
     for (CmdFiles::FileNameIterator it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
     {
@@ -1187,7 +1204,7 @@ std::string Eval::realpath(const std::string &arglist)
     while (text.size())
     {
         std::string thisOne = ExtractFirst(text, " ");
-        if (thisOne[0] != CmdFiles::DIR_SEP[0] && thisOne[1] != ':') // windows specific
+        if (thisOne[0] != '\\' && thisOne[1] != ':' && thisOne[0] != '/') // windows specific
             thisOne = OS::GetWorkingDir() + CmdFiles::DIR_SEP + thisOne;
         if (rv.size())
             rv += " ";
@@ -1336,6 +1353,7 @@ std::string Eval::call(const std::string &arglist)
         }
         else
         {
+            sub = "$(" + sub + ")";
             Eval l(sub, false, ruleList, rule);
             rv = l.Evaluate();
         }
@@ -1351,6 +1369,9 @@ std::string Eval::call(const std::string &arglist)
         }
         else
         {
+            auto oldArgs = callArgs;
+            callArgs.clear();
+            sub = "$(" + sub + ")";
             Eval l(sub, false, ruleList, rule);
             l.PushCallArg(sub);
             n = args.find_first_of(',');
@@ -1364,8 +1385,13 @@ std::string Eval::call(const std::string &arglist)
                 n = args.find_first_of(',');
             }
             if (args.size())
+			{
+                Eval l1(args, false, ruleList, rule);
+                args = l1.Evaluate();
                 l.PushCallArg(args);
+			}
             rv = l.Evaluate();
+            callArgs = oldArgs;
         }
     }
     return rv;
@@ -1460,9 +1486,20 @@ std::string Eval::shell(const std::string &arglist)
     return sp.shell(a.Evaluate());
 }
 
-std::string Eval::error(const std::string &arglist)
+std::string Eval::error(const std::string &arglist, const std::string fileOverride , int lineOverride)
 {
-    std::cout << "Error " << file.c_str() << "(" << lineno << "): " << arglist.c_str() << std::endl;
+    if (fileOverride.size())
+    {
+        std::cout << "Error " << fileOverride.c_str() << "(" << lineOverride << "): " << arglist.c_str() << std::endl;
+    }
+    else if (lineOverride != -1)
+    {
+        std::cout << "Error " << file.c_str() << "(" << lineno << "): " << arglist.c_str() << std::endl;
+    }
+    else
+    {
+        std::cout << "Error: " << arglist.c_str() << std::endl;
+    }
     errcount++;
     return "";
 }
@@ -1473,9 +1510,20 @@ std::string Eval::errorx(const std::string &arglist)
     errcount++;
     return "";
 }
-std::string Eval::warning(const std::string &arglist)
+std::string Eval::warning(const std::string &arglist, const std::string fileOverride , int lineOverride)
 {
-    std::cout << "Warning " << file.c_str() << "(" << lineno << "): " << arglist.c_str() << std::endl;
+    if (fileOverride.size())
+    {
+        std::cout << "Warning " << fileOverride.c_str() << "(" << lineOverride << "): " << arglist.c_str() << std::endl;
+    }
+    else if (lineOverride != -1)
+    {
+        std::cout << "Warning " << file.c_str() << "(" << lineno << "): " << arglist.c_str() << std::endl;
+    }
+    else
+    {
+        std::cout << "Warning: " << arglist.c_str() << std::endl;
+    }
     return "";
 }
 std::string Eval::warningx(const std::string &arglist)
@@ -1501,43 +1549,3 @@ std::string Eval::exists(const std::string &arglist)
     else
         return "0";
 }
-void Eval::Init()
-{
-    builtins["subst"] = &Eval::subst;
-    builtins["patsubst"] = &Eval::patsubst;
-    builtins["strip"] = &Eval::strip;
-    builtins["findstring"] = &Eval::findstring;
-    builtins["filter"] = &Eval::filter;
-    builtins["filter-out"] = &Eval::filterout;
-    builtins["sort"] = &Eval::sort;
-    builtins["word"] = &Eval::word;
-    builtins["wordlist"] = &Eval::wordlist;
-    builtins["words"] = &Eval::words;
-    builtins["firstword"] = &Eval::firstword;
-    builtins["lastword"] = &Eval::lastword;
-    builtins["dir"] = &Eval::dir;
-    builtins["notdir"] = &Eval::notdir;
-    builtins["suffix"] = &Eval::suffix;
-    builtins["basename"] = &Eval::basename;
-    builtins["addsuffix"] = &Eval::addsuffix;
-    builtins["addprefix"] = &Eval::addprefix;
-    builtins["wildcard"] = &Eval::wildcard;
-    builtins["join"] = &Eval::join;
-    builtins["realpath"] = &Eval::realpath;
-    builtins["abspath"] = &Eval::abspath;
-    builtins["if"] = &Eval::condIf;
-    builtins["or"] = &Eval::condOr;
-    builtins["and"] = &Eval::condAnd;
-    builtins["foreach"] = &Eval::foreach;
-    builtins["call"] = &Eval::call;
-    builtins["value"] = &Eval::value;
-    builtins["eval"] = &Eval::eval;
-    builtins["origin"] = &Eval::origin;
-    builtins["flavor"] = &Eval::flavor;
-    builtins["shell"] = &Eval::shell;
-    builtins["error"] = &Eval::errorx;
-    builtins["warning"] = &Eval::warningx;
-    builtins["info"] = &Eval::info;
-    builtins["exists"] = &Eval::exists;
-}
-

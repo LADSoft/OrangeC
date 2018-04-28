@@ -1,0 +1,13 @@
+digraph G {
+ size ="4,4";
+ inputfile->preproc;
+ main [shape=box];
+ main -> parse [weight=8];
+ preproc->parse;
+ parse->intermediate[label ="intermediate code gen"];
+ intermediate->backend[label="code gen" color="red"];
+ backend->intermediate[label="data lookup" color="blue"];
+ backend->intermediate[label="register allocation" color="green"];
+ backend->parse[label="data lookup" color="blue"];
+ backend->outputfile
+}

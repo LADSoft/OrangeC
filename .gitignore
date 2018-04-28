@@ -35,13 +35,14 @@ q
 q.*
 q1.*
 q2.*
+/src/MSDNHelp/
 /src/occ/ideprj/*.*
 /src/occ/ideprj/win32
 /src/occ/x86/*.cpp
 /src/occ/x86/q*.h
 /src/debug
 /src/release
-/addon/
+/addon/e
 /bin/
 /dist/
 /doc/tools.htm
@@ -50,7 +51,6 @@ q2.*
 /help/
 /include/
 /lib/
-/license/
 /rule/
 /src/clibs/object/
 /src/clibs/platform/win32/lscrtl/lscrtl
@@ -76,6 +76,7 @@ q2.*
 /src/omake/Release/
 /src/orc/Release/
 /src/util/Release/
+/src/occ/occil/Release/
 
 /src/dlhex/Debug/
 /src/dlle/Debug/
@@ -96,6 +97,9 @@ q2.*
 /src/omake/Debug/
 /src/orc/Debug/
 /src/util/Debug/
+/src/occ/occil/Debug/
+/src/occ/netil/cc386/
+/src/occ/netil/lsmsilcrtl/
 /
 
 /test/

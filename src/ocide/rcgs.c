@@ -1,42 +1,27 @@
-/*
-    Software License Agreement (BSD License)
-    
-    Copyright (c) 1997-2012, David Lindauer, (LADSoft).
-    All rights reserved.
-    
-    Redistribution and use of this software in source and binary forms, 
-    with or without modification, are permitted provided that the following 
-    conditions are met:
-    
-    * Redistributions of source code must retain the above
-      copyright notice, this list of conditions and the
-      following disclaimer.
-    
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the
-      following disclaimer in the documentation and/or other
-      materials provided with the distribution.
-    
-    * Neither the name of LADSoft nor the names of its
-      contributors may be used to endorse or promote products
-      derived from this software without specific prior
-      written permission of LADSoft.
-    
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
-    THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
-    PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
-    OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
-    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
-    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
-    OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-    WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
-    OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-    ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+/* Software License Agreement
+ * 
+ *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
+ * 
+ *     This file is part of the Orange C Compiler package.
+ * 
+ *     The Orange C Compiler package is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version, with the addition of the 
+ *     Orange C "Target Code" exception.
+ * 
+ *     The Orange C Compiler package is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ * 
+ *     You should have received a copy of the GNU General Public License
+ *     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ *     contact information:
+ *         email: TouchStone222@runbox.com <David Lindauer>
+ */
 
-    contact information:
-        email: TouchStone222@runbox.com <David Lindauer>
-*/
 /* scanner
  */
 /* Trigraphs implemented, won't work for token pasting though */
@@ -365,10 +350,10 @@ int getline(int listflag)
             listflag = preprocess();
             inpreprocess--;
             prepping = TRUE;
-            lastst = eol;
+            lastst = rceol;
         }
         if (incldepth)
-            lastst = eol;
+            lastst = rceol;
     }
     while (ifskip || prepping || (inhfile && !inpreprocess))
         ;
@@ -1115,10 +1100,10 @@ void getsym(void)
     }
     if (! *lptr)
     {
-        if ((lastst == eol && lastch ==  - 1) || lastst == eof)
-            lastst = eof;
+        if ((lastst == rceol && lastch ==  - 1) || lastst == rceof)
+            lastst = rceof;
         else
-            lastst = eol;
+            lastst = rceol;
         getch();
         return ;
     }
@@ -1127,13 +1112,13 @@ void getsym(void)
         getch();
         if (! *lptr)
         {
-            lastst = eol;
+            lastst = rceol;
             getch();
             return ;
         }
     }
     if (lastch ==  - 1)
-        lastst = eof;
+        lastst = rceof;
     else if (isdigit(lastch))
         getnum();
     else if (isstartchar(lastch))
@@ -1152,7 +1137,7 @@ void skip_comma(void)
     if (lastst == comma)
     {
         getsym();
-        if (lastst == eol)
+        if (lastst == rceol)
             getsym();
     }
 }
@@ -1161,7 +1146,7 @@ void skip_comma(void)
 
 void need_eol(void)
 {
-    if (lastst != eol)
+    if (lastst != rceol)
         generror(ERR_EXTRA_DATA_ON_LINE, 0);
     getsym();
 }

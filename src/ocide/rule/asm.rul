@@ -7,10 +7,10 @@
                 <ASSIGN ID="DEFINE">$(__ASMDEFINE)</ASSIGN>
             </ASSIGNMENTS>
 			<ITEM NAME="Command Line" ID="__COMMAND_LINE" TYPE="TEXT">
-    			"$$(LSINSTALLBIN)\oasm.exe" -! -fobj $$(AFLAGS) "/o%.o" $$(DEFINE) "/I$$(INCLUDE)" "$(INPUTFILE)"
+    			"$$(LSINSTALLBIN)\oasm.exe" -! $$(AFLAGS) "/o%.o" $$(DEFINE) "/I$$(INCLUDE);" "$(INPUTFILE)"
 	    	</ITEM>
 			<ITEM NAME="Source Extension" ID="__SOURCE_EXTENSION" TYPE="TEXT">
-				%.asm %.nas
+				%.asm %.nas %.s
 			</ITEM>
 			<ITEM NAME="Target Extension" ID="__TARGET_EXTENSION" TYPE="TEXT">
 				%.o

@@ -1,6 +1,6 @@
-New work in this project is licensed under the new berkely license.  That includes
+New work in this project is licensed under the GNU GPL, Version 3.  That includes
 most of the executable files in the tool chain, and the run-time library.  See the
-file 'license\berkely.lic' for details.
+file 'license\copying_with_exception' for details.
 
 An exception is that the WIN32 header files were derived from GNU sources, and
 are covered under the GNU lesser public license.  Since these files are header

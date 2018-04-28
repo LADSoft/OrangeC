@@ -1,42 +1,5 @@
-/*
-    Software License Agreement (BSD License)
-    
-    Copyright (c) 1997-2016, David Lindauer, (LADSoft).
-    All rights reserved.
-    
-    Redistribution and use of this software in source and binary forms, 
-    with or without modification, are permitted provided that the following 
-    conditions are met:
-    
-    * Redistributions of source code must retain the above
-      copyright notice, this list of conditions and the
-      following disclaimer.
-    
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the
-      following disclaimer in the documentation and/or other
-      materials provided with the distribution.
-    
-    * Neither the name of LADSoft nor the names of its
-      contributors may be used to endorse or promote products
-      derived from this software without specific prior
-      written permission of LADSoft.
-    
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
-    THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
-    PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
-    OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
-    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
-    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
-    OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-    WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
-    OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-    ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+/* (null) */
 
-    contact information:
-        email: TouchStone222@runbox.com <David Lindauer>
-*/
 #define _CRT_SECURE_NO_WARNINGS  
 
 #include "MakeMain.h"
@@ -60,22 +23,23 @@ namespace std
 }
 #endif
 CmdSwitchParser MakeMain::switchParser;
-CmdSwitchString MakeMain::specifiedFiles(switchParser, 'f', ' ');
+CmdSwitchCombineString MakeMain::specifiedFiles(switchParser, 'f', ' ');
 CmdSwitchBool MakeMain::displayOnly(switchParser, 'n');
 CmdSwitchBool MakeMain::touch(switchParser, 't');
 CmdSwitchBool MakeMain::query(switchParser, 'q');
 CmdSwitchBool MakeMain::keepGoing(switchParser, 'k');
 CmdSwitchBool MakeMain::ignoreErrors(switchParser, 'i');	
 CmdSwitchDefine MakeMain::defines(switchParser, 'D');
+CmdSwitchDefine MakeMain::evals(switchParser, '-');
 CmdSwitchBool MakeMain::rebuild(switchParser, 'B');
-CmdSwitchString MakeMain::newFiles(switchParser, 'W', ' ');
-CmdSwitchString MakeMain::oldFiles(switchParser, 'o', ' ');
-CmdSwitchString MakeMain::dir(switchParser, 'C', '+');
+CmdSwitchCombineString MakeMain::newFiles(switchParser, 'W', ' ');
+CmdSwitchCombineString MakeMain::oldFiles(switchParser, 'o', ' ');
+CmdSwitchCombineString MakeMain::dir(switchParser, 'C', '+');
 CmdSwitchBool MakeMain::debug(switchParser, 'd');	// not implemented
 CmdSwitchBool MakeMain::environOverride(switchParser, 'e');
 CmdSwitchBool MakeMain::help(switchParser, 'h');
 CmdSwitchBool MakeMain::help2(switchParser, '?');
-CmdSwitchString MakeMain::includes(switchParser, 'I', ';');
+CmdSwitchCombineString MakeMain::includes(switchParser, 'I', ';');
 CmdSwitchBool MakeMain::showDatabase(switchParser, 'p');
 CmdSwitchBool MakeMain::noBuiltinRules(switchParser, 'r');
 CmdSwitchBool MakeMain::noBuiltinVars(switchParser, 'R');
@@ -92,14 +56,16 @@ char *MakeMain::usageText = "[options] goals\n"
                     "/Dxxx Define something        /Ixxx Set include path\n"
                     "/K    Keep response files     /R    Ignore builtin vars\n"
                     "/S    Cancel keepgoing        /T    Tree Build\n"
-                    "/Wxxx WhatIf                  /d    Reserved\n"
-                    "/e    Environment overrides   /fxxx Specify make file\n"
-                    "/h    This text               /i    Ignore errors\n"
-                    "/k    Keep going              /n    Display only\n"
-                    "/oxxx Specify old goals       /p    Print database\n"
-                    "/q    Query                   /r    Ignore builtin rules\n"
-                    "/s    Don't print commands    /t    Touch\n"
-                    "/u    Debug warnings          /w    Print directory\n"
+                    "/V    Show version and date   /Wxxx WhatIf\n"
+                    "/d    Reserved                /e    Environment overrides\n"
+                    "/fxxx Specify make file       /h    This text\n"
+                    "/i    Ignore errors           /k    Keep going\n"
+                    "/n    Display only            /oxxx Specify old goals\n"
+                    "/p    Print database          /q    Query\n"
+                    "/r    Ignore builtin rules    /s    Don't print commands\n"
+                    "/t    Touch                   /u    Debug warnings\n"
+                    "/w    Print directory         --eval=STRING evaluate a statement\n"     
+                    "/!    No logo\n"
                     "\nTime: " __TIME__ "  Date: " __DATE__;
 char *MakeMain::builtinVars = "";
 char *MakeMain::builtinRules = "";
@@ -273,6 +239,19 @@ void MakeMain::LoadCmdDefines()
         const CmdSwitchDefine::define *def = defines.GetValue(i);
         SetVariable(def->name, def->value, Variable::o_command_line, false);
     }
+    for (int i=0; i < evals.GetCount(); i++)
+	{
+        const CmdSwitchDefine::define *def = evals.GetValue(i);
+		if (std::string(def->name) != "eval")
+		{
+			Eval::error(std::string("Invalid switch --") + def->name);
+		    exit (1);
+		}
+        Parser p(def->value, "<eval>", 1, false, Variable::o_default);
+		p.SetAutoExport();
+        p.Parse();
+		
+	}
 }
 void MakeMain::SetInternalVars()
 {
@@ -345,7 +324,7 @@ void MakeMain::SetTreePath(std::string &files)
 {
     // will get the working dir possibly modified by a 'C' command
     std::string wd = OS::GetWorkingDir() + CmdFiles::DIR_SEP;
-    int pos = wd.find_last_of(CmdFiles::DIR_SEP);
+    int pos = wd.find_last_of("/\\");
     if (pos != std::string::npos)
     {
         bool found = false;
@@ -359,9 +338,9 @@ void MakeMain::SetTreePath(std::string &files)
             }
             else
             {
-                pos = wd.find_last_of(CmdFiles::DIR_SEP);
+                pos = wd.find_last_of("/\\");
                 wd = wd.substr(0, pos);
-                pos = wd.find_last_of(CmdFiles::DIR_SEP);
+                pos = wd.find_last_of("/\\");
                 if (pos == std::string::npos)
                     path = "";
             }
@@ -422,7 +401,6 @@ int MakeMain::Run(int argc, char **argv)
     }
     
     bool done = false;
-    Eval::Init();
     Eval::SetWarnings(warnUndef.GetValue());
     while (!done && !Eval::GetErrCount())
     {
@@ -445,6 +423,8 @@ int MakeMain::Run(int argc, char **argv)
                 SetVariable("SHELL", val, Variable::o_environ, true);
             }
         }
+        std::string wd = OS::GetWorkingDir();
+        SetVariable("CURDIR", wd, Variable::o_environ, false);
         std::string goals;
         for (int i=1; i < argc; i++)
         {
@@ -480,7 +460,7 @@ int MakeMain::Run(int argc, char **argv)
             v->SetExport(true);
             Include::Instance()->AddFileList(v->GetValue(), true, true);
         }
-        Rule *rule = new Rule(".SUFFIXES", ".c .o .cpp .nas .asm", "", new Command("", 0), "", 0, false);
+        Rule *rule = new Rule(".SUFFIXES", ".c .o .cpp .nas .asm .s", "", new Command("", 0), "", 0, false);
         RuleList *ruleList = new RuleList(".SUFFIXES");
         ruleList->Add(rule, false);
         *RuleContainer::Instance() += ruleList;

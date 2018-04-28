@@ -8,7 +8,7 @@
             </ASSIGNMENTS>
     		<ITEM NAME="Command Line" ID="__COMMAND_LINE" TYPE="TEXT">
 	    		"$$(LSINSTALLBIN)\orc.exe" -! "@&amp;&amp;|
-$$(RCFLAGS) "-i$$(INCLUDE)" $$(UNICODE) $$(RCDEFINE)
+$$(RCFLAGS) "-i$$(INCLUDE);" $$(UNICODE) $$(RCDEFINE)
 -r 
 "-o%.res" 
 |" "%.rc"

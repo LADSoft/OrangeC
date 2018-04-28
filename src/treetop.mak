@@ -1,47 +1,51 @@
-#	Software License Agreement (BSD License)
-#	
-#	Copyright (c) 1997-2009, David Lindauer, (LADSoft).
-#	All rights reserved.
-#	
-#	Redistribution and use of this software in source and binary forms, 
-#	with or without modification, are permitted provided that the following 
-#	conditions are met:
+# Software License Agreement
+# 
+#     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
+# 
+#     This file is part of the Orange C Compiler package.
+# 
+#     The Orange C Compiler package is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version, with the addition of the 
+#     Orange C "Target Code" exception.
+# 
+#     The Orange C Compiler package is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+# 
+#     You should have received a copy of the GNU General Public License
+#     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+# 
+#     contact information:
+#         email: TouchStone222@runbox.com <David Lindauer>
 
-#	* Redistributions of source code must retain the above
-#	  copyright notice, this list of conditions and the
-#	  following disclaimer.
+PATHSWAP = $(subst /,\,$(1))
+export PATHSWAP
 
-#	* Redistributions in binary form must reproduce the above
-#	  copyright notice, this list of conditions and the
-#	  following disclaimer in the documentation and/or other
-#	  materials provided with the distribution.
+TREETOP := $(call PATHSWAP,$(dir $(_TREEROOT)))
 
-#	* Neither the name of LADSoft nor the names of its
-#	  contributors may be used to endorse or promote products
-#	  derived from this software without specific prior
-#	  written permission of LADSoft.
-
-#	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-#	AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
-#	THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
-#	PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
-#	OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
-#	EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
-#	PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
-#	OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-#	WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
-#	OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-#	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-#	contact information:
-#		email: TouchStone222runbox.com <David Lindauer>
-
-TREETOP :=$(dir $(_TREEROOT))
 DISTROOT := $(TREETOP)..
 
 export DISTROOT
 
+_TARGETDIR:= $(call PATHSWAP,$(CURDIR))
 
+TEST := $(shell dir /b "$(_TARGETDIR)\dirs.mak")
+ifeq "$(TEST)" "dirs.mak"
+include $(_TARGETDIR)\dirs.mak
+endif
+
+define SUFFIXDIRS =
+	$(foreach dir, $(1), $(dir)$(2))
+endef
+
+
+LIBS:= $(call SUFFIXDIRS,$(DIRS),.library)
+EXES:= $(call SUFFIXDIRS,$(DIRS),.exefile)
+CLEANS:= $(call SUFFIXDIRS,$(DIRS),.clean)
+DISTS:= $(call SUFFIXDIRS,$(DIRS),.dist)
 
 all: files
 
@@ -49,33 +53,15 @@ NULLDEV := NUL
 
 
 del:
-	-del /Q  $(_OUTPUTDIR)\*.* >> $(NULLDEV)
+	-del /Q  $(_OUTPUTDIR)\*.* 2> $(NULLDEV)
 mkdir:
-	-mkdir  $(_OUTPUTDIR) >> $(NULLDEV)
+	-mkdir  $(_OUTPUTDIR) 2> $(NULLDEV)
 rmdir:
-	-rmdir  $(_OUTPUTDIR) >> $(NULLDEV)
+	-rmdir  $(_OUTPUTDIR) 2> $(NULLDEV)
 
-_TARGETDIR:= $(_TREETARGET)
 
-define DOLIB
-	$(MAKE) /C$(dir) /f$(_TREEROOT) /D_TREETARGET=$(_TARGETDIR)\$(dir) /DLIBRARY
-endef
-define DOEXE
-	$(MAKE) /C$(dir) /f$(_TREEROOT) /D_TREETARGET=$(_TARGETDIR)\$(dir) /DEXEFILE
-endef
-
-define DODISTRIBUTE
-	$(MAKE) distribute /C$(dir) /f$(_TREEROOT) /D_TREETARGET=$(_TARGETDIR)\$(dir)
-endef
-define DOCLEAN
-	$(MAKE) clean /C$(dir) /f$(_TREEROOT) /D_TREETARGET=$(_TARGETDIR)\$(dir)
-endef
-
-ifeq "$(exists $(_TARGETDIR)\dirs.mak)" "1"
-include $(_TARGETDIR)\dirs.mak
-endif
-
-ifeq "$(exists $(_TARGETDIR)\makefile)" "1"
+TEST := $(shell dir /b "$(_TARGETDIR)\makefile")
+ifeq "$(TEST)" "makefile"
 include $(_TARGETDIR)\makefile
 include $(DISTROOT)\src\dist.mak
 else
@@ -100,8 +86,7 @@ include $(TREETOP)config.mak
 export LIB_EXT
 export LIB_PREFIX
 
-
-ifndef NAME
+ifeq "$(NAME)" ""
 compile:
 else
 compile: $(LLIB_DEPENDENCIES) $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT)
@@ -137,8 +122,6 @@ DISTADDON=$(DISTROOT)\addon
 export DISTADDON
 DISTDOC=$(DISTROOT)\doc
 export DISTDOC
-DISTLIC=$(DISTROOT)\license
-export DISTLIC
 DISTEXAM=$(DISTROOT)\examples
 export DISTEXAM
 DISTDIST=$(DISTROOT)\dist
@@ -170,139 +153,140 @@ export STUB
 DISTMAKE := $(realpath $(DISTROOT)\src\dist.mak)
 export DISTMAKE
 
-define filesdef
-
 cleanDISTRIBUTE: copydir.exe restub.exe renseg.exe pepatch.exe
 ifndef NOMAKEDIR
-	-mkdir $(DISTROOT) >> $(NULLDEV)
-#	-del /Q $(DISTROOT) >> $(NULLDEV)
-	-mkdir $(DISTROOT)\rule >> $(NULLDEV)
-	-del /Q $(DISTROOT)\rule >> $(NULLDEV)
-	-mkdir $(DISTBIN) >> $(NULLDEV)
-	-del /Q $(DISTBIN) >> $(NULLDEV)
-#	-mkdir $(DISTBIN_8) >> $(NULLDEV)
-#	-del /Q $(DISTBIN_8) >> $(NULLDEV)
-#	-mkdir $(DISTBIN_8)\branding >> $(NULLDEV)
-#	-del /Q $(DISTBIN_8)\branding >> $(NULLDEV)
-#	-mkdir $(DISTBIN_7) >> $(NULLDEV)
-#	-del /Q $(DISTBIN_7) >> $(NULLDEV)
-#	-mkdir $(DISTBIN_7)\branding >> $(NULLDEV)
-#	-del /Q $(DISTBIN_7)\branding >> $(NULLDEV)
-	-mkdir $(DISTHELP) >> $(NULLDEV)
-	-del /Q $(DISTHELP) >> $(NULLDEV)
-	-mkdir $(DISTINC) >> $(NULLDEV)
-	-del /Q $(DISTINC) >> $(NULLDEV)
-	-mkdir $(DISTINC)\sys >> $(NULLDEV)
-	-del /Q $(DISTINC)\sys >> $(NULLDEV)
-	-mkdir $(DISTINCWIN) >> $(NULLDEV)
-	-del /Q $(DISTINCWIN) >> $(NULLDEV)
-	-mkdir $(DISTINCSTL) >> $(NULLDEV)
-	-del /Q $(DISTINCSTL) >> $(NULLDEV)
-	-mkdir $(DISTINCSTL)\stlport >> $(NULLDEV)
-	-del /Q $(DISTINCSTL)\stlport >> $(NULLDEV)
-	-mkdir $(DISTINCSTL)\stlport\config >> $(NULLDEV)
-	-del /Q $(DISTINCSTL)\stlport\config >> $(NULLDEV)
-	-mkdir $(DISTINCSTL)\stlport\debug >> $(NULLDEV)
-	-del /Q $(DISTINCSTL)\stlport\debug >> $(NULLDEV)
-	-mkdir $(DISTINCSTL)\stlport\pointers >> $(NULLDEV)
-	-del /Q $(DISTINCSTL)\stlport\pointers >> $(NULLDEV)
-	-mkdir $(DISTINCSTL)\using >> $(NULLDEV)
-	-del /Q $(DISTINCSTL)\using >> $(NULLDEV)
-	-mkdir $(DISTINC)\stl >> $(NULLDEV)
-	-del /Q $(DISTINC)\stl >> $(NULLDEV)
-	-del /Q $(DISTLIB) >> $(NULLDEV)
-	-mkdir $(DISTSTARTUP) >> $(NULLDEV)
-	-del /Q $(DISTSTARTUP) >> $(NULLDEV)
-	-mkdir $(DISTSTARTUPDOS) >> $(NULLDEV)
-	-del /Q $(DISTSTARTUPDOS) >> $(NULLDEV)
-	-mkdir $(DISTSTARTUPWIN) >> $(NULLDEV)
-	-del /Q $(DISTSTARTUPWIN) >> $(NULLDEV)
-	-mkdir $(DISTADDON) >> $(NULLDEV)
-	-del /Q $(DISTADDON) >> $(NULLDEV)
-	-mkdir $(DISTDOC) >> $(NULLDEV)
-	-del /Q $(DISTDOC) >> $(NULLDEV)	
-	-mkdir $(DISTDOC)\general >> $(NULLDEV)
-	-del /Q $(DISTDOC)\general >> $(NULLDEV)
-	-mkdir $(DISTDOC)\oasm >> $(NULLDEV)
-	-del /Q $(DISTDOC)\oasm >> $(NULLDEV)
-	-mkdir $(DISTDOC)\occ >> $(NULLDEV)
-	-del /Q $(DISTDOC)\occ >> $(NULLDEV)
-	-mkdir $(DISTDOC)\ogrep >> $(NULLDEV)
-	-del /Q $(DISTDOC)\ogrep >> $(NULLDEV)
-	-mkdir $(DISTDOC)\olink >> $(NULLDEV)
-	-del /Q $(DISTDOC)\olink >> $(NULLDEV)
-	-mkdir $(DISTDOC)\omake >> $(NULLDEV)
-	-del /Q $(DISTDOC)\omake >> $(NULLDEV)
-	-mkdir $(DISTLIC) >> $(NULLDEV)
-	-del /Q $(DISTLIC) >> $(NULLDEV)
-	-mkdir $(DISTEXAM) >> $(NULLDEV)
-	-del /Q $(DISTEXAM) >> $(NULLDEV)
-	-mkdir $(DISTEXAM)\msdos >> $(NULLDEV)
-	-del /Q $(DISTEXAM)\msdos >> $(NULLDEV)
-	-mkdir $(DISTEXAM)\system >> $(NULLDEV)
-	-del /Q $(DISTEXAM)\system >> $(NULLDEV)
-	-mkdir $(DISTEXAM)\win32 >> $(NULLDEV)
-	-del /Q $(DISTEXAM)\win32 >> $(NULLDEV)
-	-mkdir $(DISTEXAM)\win32\atc >> $(NULLDEV)
-	-del /Q $(DISTEXAM)\win32\atc >> $(NULLDEV)
-	-mkdir $(DISTEXAM)\win32\listview >> $(NULLDEV)
-	-del /Q $(DISTEXAM)\win32\listview >> $(NULLDEV)
-	-mkdir $(DISTEXAM)\win32\xmlview >> $(NULLDEV)
-	-del /Q $(DISTEXAM)\win32\xmlview >> $(NULLDEV)
-	-mkdir $(DISTEXAM)\win32\RCDemo >> $(NULLDEV)
-	-del /Q $(DISTEXAM)\win32\RCDemo >> $(NULLDEV)
-	-mkdir $(DISTEXAM)\win32\huff >> $(NULLDEV)
-	-del /Q $(DISTEXAM)\win32\huff >> $(NULLDEV)
-	-mkdir $(DISTDIST) >> $(NULLDEV)
+	-mkdir $(DISTROOT) 2> $(NULLDEV)
+#	-del /Q $(DISTROOT) 2> $(NULLDEV)
+	-mkdir $(DISTROOT)\rule 2> $(NULLDEV)
+	-del /Q $(DISTROOT)\rule 2> $(NULLDEV)
+	-mkdir $(DISTBIN) 2> $(NULLDEV)
+	-del /Q $(DISTBIN) 2> $(NULLDEV)
+#	-mkdir $(DISTBIN_8) 2> $(NULLDEV)
+#	-del /Q $(DISTBIN_8) 2> $(NULLDEV)
+#	-mkdir $(DISTBIN_8)\branding 2> $(NULLDEV)
+#	-del /Q $(DISTBIN_8)\branding 2> $(NULLDEV)
+#	-mkdir $(DISTBIN_7) 2> $(NULLDEV)
+#	-del /Q $(DISTBIN_7) 2> $(NULLDEV)
+#	-mkdir $(DISTBIN_7)\branding 2> $(NULLDEV)
+#	-del /Q $(DISTBIN_7)\branding 2> $(NULLDEV)
+	-mkdir $(DISTHELP) 2> $(NULLDEV)
+	-del /Q $(DISTHELP) 2> $(NULLDEV)
+	-mkdir $(DISTINC) 2> $(NULLDEV)
+	-del /Q $(DISTINC) 2> $(NULLDEV)
+	-mkdir $(DISTINC)\sys 2> $(NULLDEV)
+	-del /Q $(DISTINC)\sys 2> $(NULLDEV)
+	-mkdir $(DISTINCWIN) 2> $(NULLDEV)
+	-del /Q $(DISTINCWIN) 2> $(NULLDEV)
+	-mkdir $(DISTINCSTL) 2> $(NULLDEV)
+	-del /Q $(DISTINCSTL) 2> $(NULLDEV)
+	-mkdir $(DISTINCSTL)\stlport 2> $(NULLDEV)
+	-del /Q $(DISTINCSTL)\stlport 2> $(NULLDEV)
+	-mkdir $(DISTINCSTL)\stlport\config 2> $(NULLDEV)
+	-del /Q $(DISTINCSTL)\stlport\config 2> $(NULLDEV)
+	-mkdir $(DISTINCSTL)\stlport\debug 2> $(NULLDEV)
+	-del /Q $(DISTINCSTL)\stlport\debug 2> $(NULLDEV)
+	-mkdir $(DISTINCSTL)\stlport\pointers 2> $(NULLDEV)
+	-del /Q $(DISTINCSTL)\stlport\pointers 2> $(NULLDEV)
+	-mkdir $(DISTINCSTL)\using 2> $(NULLDEV)
+	-del /Q $(DISTINCSTL)\using 2> $(NULLDEV)
+	-mkdir $(DISTINC)\stl 2> $(NULLDEV)
+	-del /Q $(DISTINC)\stl 2> $(NULLDEV)
+	-del /Q $(DISTLIB) 2> $(NULLDEV)
+	-mkdir $(DISTSTARTUP) 2> $(NULLDEV)
+	-del /Q $(DISTSTARTUP) 2> $(NULLDEV)
+	-mkdir $(DISTSTARTUPDOS) 2> $(NULLDEV)
+	-del /Q $(DISTSTARTUPDOS) 2> $(NULLDEV)
+	-mkdir $(DISTSTARTUPWIN) 2> $(NULLDEV)
+	-del /Q $(DISTSTARTUPWIN) 2> $(NULLDEV)
+	-mkdir $(DISTADDON) 2> $(NULLDEV)
+	-del /Q $(DISTADDON) 2> $(NULLDEV)
+	-mkdir $(DISTDOC) 2> $(NULLDEV)
+	-del /Q $(DISTDOC) 2> $(NULLDEV)	
+	-mkdir $(DISTDOC)\general 2> $(NULLDEV)
+	-del /Q $(DISTDOC)\general 2> $(NULLDEV)
+	-mkdir $(DISTDOC)\oasm 2> $(NULLDEV)
+	-del /Q $(DISTDOC)\oasm 2> $(NULLDEV)
+	-mkdir $(DISTDOC)\occ 2> $(NULLDEV)
+	-del /Q $(DISTDOC)\occ 2> $(NULLDEV)
+	-mkdir $(DISTDOC)\ogrep 2> $(NULLDEV)
+	-del /Q $(DISTDOC)\ogrep 2> $(NULLDEV)
+	-mkdir $(DISTDOC)\olink 2> $(NULLDEV)
+	-del /Q $(DISTDOC)\olink 2> $(NULLDEV)
+	-mkdir $(DISTDOC)\omake 2> $(NULLDEV)
+	-del /Q $(DISTDOC)\omake 2> $(NULLDEV)
+	-mkdir $(DISTEXAM) 2> $(NULLDEV)
+	-del /Q $(DISTEXAM) 2> $(NULLDEV)
+	-mkdir $(DISTEXAM)\msdos 2> $(NULLDEV)
+	-del /Q $(DISTEXAM)\msdos 2> $(NULLDEV)
+	-mkdir $(DISTEXAM)\system 2> $(NULLDEV)
+	-del /Q $(DISTEXAM)\system 2> $(NULLDEV)
+	-mkdir $(DISTEXAM)\win32 2> $(NULLDEV)
+	-del /Q $(DISTEXAM)\win32 2> $(NULLDEV)
+	-mkdir $(DISTEXAM)\win32\atc 2> $(NULLDEV)
+	-del /Q $(DISTEXAM)\win32\atc 2> $(NULLDEV)
+	-mkdir $(DISTEXAM)\win32\listview 2> $(NULLDEV)
+	-del /Q $(DISTEXAM)\win32\listview 2> $(NULLDEV)
+	-mkdir $(DISTEXAM)\win32\xmlview 2> $(NULLDEV)
+	-del /Q $(DISTEXAM)\win32\xmlview 2> $(NULLDEV)
+	-mkdir $(DISTEXAM)\win32\RCDemo 2> $(NULLDEV)
+	-del /Q $(DISTEXAM)\win32\RCDemo 2> $(NULLDEV)
+	-mkdir $(DISTEXAM)\win32\huff 2> $(NULLDEV)
+	-del /Q $(DISTEXAM)\win32\huff 2> $(NULLDEV)
+	-mkdir $(DISTDIST) 2> $(NULLDEV)
 endif
 
-innerFiles:
-	-mkdir  $(_LIBDIR) >> $(NULLDEV)
-	$(foreach dir, $(DIRS), $(DOLIB))
-	$(foreach dir, $(DIRS), $(DOEXE))
+makelibdir:
+	-mkdir  $(_LIBDIR) 2> $(NULLDEV)
 
-files: innerFiles compile link
-endef
 
-define cleandef
-clean:
+$(LIBS): %.library :
+	$(MAKE) library -C$* -f$(_TREEROOT)
+$(EXES): %.exefile :
+	$(MAKE) exefile -C$* -f$(_TREEROOT)
+
+
+files: makelibdir $(LIBS) $(EXES) compile link
+
+library: $(LIBS)
+
+exefile: $(EXES)
+
+cleanstart:
 	-del /Q $(_LIBDIR)
 	-rmdir $(_LIBDIR)
-	$(foreach dir, $(DIRS), $(DOCLEAN))
-endef
+
+$(CLEANS): %.clean :
+	$(MAKE) clean -C$* -f$(_TREEROOT)
+
+clean: cleanstart $(CLEANS)
 
 else
 
-define filesdef
-ifdef LIBRARY
-files: mkdir compile
-	$(foreach dir, $(DIRS), $(DOLIB))
+$(LIBS): %.library : 
+	$(MAKE) library -C$* -f$(_TREEROOT)
+
+$(EXES): %.exefile : 
+	$(MAKE) exefile -C$* -f$(_TREEROOT)
+
+library: mkdir compile $(LIBS)
+
+exefile: mkdir link $(EXES)
+
+
+cleanDISTRIBUTE: $(CLEANS)
+
+$(CLEANS): %.clean :
+	$(MAKE) clean -C$* -f$(_TREEROOT)
+clean: del rmdir $(CLEANS)
+
 endif
-ifdef EXEFILE
-files: mkdir link
-	$(foreach dir, $(DIRS), $(DOEXE))
-endif
 
-cleanDISTRIBUTE:
-
-endef
-define cleandef
-clean: del rmdir
-	$(foreach dir, $(DIRS), $(DOCLEAN))
-endef
-endif
-
-define distdef
-
-exeDISTRIBUTE:
 ifndef BUILDENV
-	$(foreach dir, $(DIRS), $(DODISTRIBUTE))
+exeDISTRIBUTE: $(DISTS)
+$(DISTS): %.dist :
+	$(MAKE) distribute -C$* -f$(_TREEROOT)
+else
+exeDISTRIBUTE:
 endif
 
 distribute: cleanDISTRIBUTE exeDISTRIBUTE DISTRIBUTE   
-endef
-
-
-$(eval $(filesdef))
-$(eval $(distdef))
-$(eval $(cleandef))

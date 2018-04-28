@@ -1,1 +1,0 @@
-line numbers on errors (return value, multiple declaration,object error on invalid array ref)

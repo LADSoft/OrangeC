@@ -1,42 +1,5 @@
-/*
-    Software License Agreement (BSD License)
-    
-    Copyright (c) 1997-2016, David Lindauer, (LADSoft).
-    All rights reserved.
-    
-    Redistribution and use of this software in source and binary forms, 
-    with or without modification, are permitted provided that the following 
-    conditions are met:
-    
-    * Redistributions of source code must retain the above
-      copyright notice, this list of conditions and the
-      following disclaimer.
-    
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the
-      following disclaimer in the documentation and/or other
-      materials provided with the distribution.
-    
-    * Neither the name of LADSoft nor the names of its
-      contributors may be used to endorse or promote products
-      derived from this software without specific prior
-      written permission of LADSoft.
-    
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
-    THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
-    PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
-    OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
-    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
-    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
-    OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-    WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
-    OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-    ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+/* (null) */
 
-    contact information:
-        email: TouchStone222@runbox.com <David Lindauer>
-*/
 #include "Parser.h"
 #include "Rule.h"
 #include "Variable.h"
@@ -48,8 +11,10 @@
 #include <ctype.h>
 #include <fstream>
 #include <iostream>
+#include <algorithm>
+
 Parser::Parser(const std::string &string, const std::string &File, int Lineno, bool IncrementLineno, Variable::Origin oOrigin)
-        : file(File), remaining(string), lineno(Lineno-1), incrementLineno(IncrementLineno), lastCommand(nullptr),
+        : file(File), remaining(string), lineno(Lineno-1), incrementLineno(IncrementLineno), lastCommand(nullptr), autoExport(false),
                secondaryExpansionEnabled(false), origin(oOrigin), ignoreFirstGoal(false)
 {
 }
@@ -127,6 +92,8 @@ std::string Parser::GetLine(bool inCommand)
         rv = RemoveComment(rv);
     }
     UnTab(rv);
+    if (rv.find_first_not_of("\t ") == std::string::npos)
+        rv = "";
     return rv;
 }
 std::string Parser::RemoveComment(const std::string &line)
@@ -385,7 +352,7 @@ bool Parser::ParseAssign(const std::string &left, const std::string &right, bool
         else
             *VariableContainer::Instance() += v;
     }
-    if (v && !ruleList && left == "MAKEFILES")
+    if (v && !ruleList && (left == "MAKEFILES" || autoExport))
         v->SetExport(true);
     return true;	
 }
@@ -415,7 +382,7 @@ bool Parser::ParseRecursiveAssign(const std::string &left, const std::string &ri
         else
             *VariableContainer::Instance() += v;
     }
-    if (v && !ruleList && left == "MAKEFILES")
+     if (v && !ruleList && (left == "MAKEFILES" || autoExport))
         v->SetExport(true);
     return true;
 }
@@ -427,7 +394,7 @@ bool Parser::ParsePlusAssign(const std::string &left, const std::string &right, 
     std::string ls = l.Evaluate();
     ls = l.strip(ls);
     std::string rs = right;
-    Eval::StripLeadingSpaces(rs);
+//    Eval::StripLeadingSpaces(rs);
     Variable *v;
     if (ruleList)
         v = ruleList->Lookup(ls);
@@ -450,7 +417,7 @@ bool Parser::ParsePlusAssign(const std::string &left, const std::string &right, 
         else
             *VariableContainer::Instance() += v;
     }
-    if (v && !ruleList && left == "MAKEFILES")
+    if (v && !ruleList && (left == "MAKEFILES" || autoExport))
         v->SetExport(true);
     return true;
 }
@@ -469,14 +436,14 @@ bool Parser::ParseQuestionAssign(const std::string &left, const std::string &rig
     if (!v)
     {
         std::string rs = right;
-        Eval::StripLeadingSpaces(rs);
+//        Eval::StripLeadingSpaces(rs);
         v = new Variable(ls, rs, Variable::f_simple, ruleList ? Variable::o_automatic : origin);
         if (ruleList)
             *ruleList += v;
         else
             *VariableContainer::Instance() += v;
     }
-    if (v && !ruleList && left == "MAKEFILES")
+    if (v && !ruleList && (left == "MAKEFILES" || autoExport))
         v->SetExport(true);
     return true;
 }
@@ -659,7 +626,8 @@ join:
             {
                 targetPattern = iline.substr(0, n);
                 iline = line.substr(n + 1);
-            }
+				std::replace(targetPattern.begin(), targetPattern.end(), '\n', ' ');
+			}
             std::string iparsed;
             precious = Double;
             while (iline.size())
@@ -719,7 +687,7 @@ join:
                 }
             }
         }
-        lastCommand = new Command(file, lineno);
+        lastCommand = new Command(file, lineno+1);
         *CommandContainer::Instance() += lastCommand;
         if (hasCmd)
             *lastCommand += command;
@@ -760,7 +728,7 @@ join:
                 if (targetPattern.size())
                 {
                     size_t start;
-                    if (Eval::MatchesPattern(cur, targetPattern, start))
+                    if (Eval::MatchesPattern(cur, targetPattern, start) != std::string::npos)
                     {
                         stem = Eval::FindStem(cur, targetPattern);
                         std::string ps2 = ps1;
@@ -812,7 +780,7 @@ bool Parser::ParseDefine(const std::string &line, bool dooverride)
             found = true;
             break;
         }
-        rs = rs + l + std::string("\n");
+        rs = rs + l + "\n";
     }
     if (!found)
     {
@@ -821,6 +789,8 @@ bool Parser::ParseDefine(const std::string &line, bool dooverride)
     }
     size_t n = ls.find_first_not_of(' ');
     ls = ls.substr(n);
+    while (ls.size() && ls[ls.size() - 1] == '=' || isspace(ls[ls.size() - 1]))
+        ls = ls.substr(0, ls.size() - 1);
     Variable *v = VariableContainer::Instance()->Lookup(ls);
     if (v)
     {
@@ -934,7 +904,7 @@ bool Parser::ParseCond(const std::string &line, bool eq)
             int m = line.find_last_not_of(' ');
             if (line[m] == ')')
             {
-                if (!Eval::TwoArgs(line.substr(n+1, m-1), left, right))
+                if (!Eval::TwoArgs(line.substr(n+1, m-1-n), left, right))
                 {
                     rv = false;
                 }

@@ -1,42 +1,27 @@
-/*
-    Software License Agreement (BSD License)
-    
-    Copyright (c) 1997-2012, David Lindauer, (LADSoft).
-    All rights reserved.
-    
-    Redistribution and use of this software in source and binary forms, 
-    with or without modification, are permitted provided that the following 
-    conditions are met:
-    
-    * Redistributions of source code must retain the above
-      copyright notice, this list of conditions and the
-      following disclaimer.
-    
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the
-      following disclaimer in the documentation and/or other
-      materials provided with the distribution.
-    
-    * Neither the name of LADSoft nor the names of its
-      contributors may be used to endorse or promote products
-      derived from this software without specific prior
-      written permission of LADSoft.
-    
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
-    THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
-    PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
-    OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
-    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
-    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
-    OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-    WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
-    OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-    ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+/* Software License Agreement
+ * 
+ *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
+ * 
+ *     This file is part of the Orange C Compiler package.
+ * 
+ *     The Orange C Compiler package is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version, with the addition of the 
+ *     Orange C "Target Code" exception.
+ * 
+ *     The Orange C Compiler package is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ * 
+ *     You should have received a copy of the GNU General Public License
+ *     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ *     contact information:
+ *         email: TouchStone222@runbox.com <David Lindauer>
+ */
 
-    contact information:
-        email: TouchStone222@runbox.com <David Lindauer>
-*/
 #include <windows.h>
 #include <commctrl.h>
 #include <commdlg.h>
@@ -215,64 +200,104 @@ static REGDATA regs[] =
         {
              &xst0, &st0buf
         }
+#ifdef __MINGW64__
+        , &oldContext.FloatSave.FloatRegisters[0],
+            &regContext.FloatSave.FloatRegisters[0], 0, editable | floating
+#else
         , &oldContext.FloatSave.RegisterArea[0],
             &regContext.FloatSave.RegisterArea[0], 0, editable | floating
+#endif
     }
     , 
     {
         {
              &xst1, &st1buf
         }
+#ifdef __MINGW64__
+        , &oldContext.FloatSave.FloatRegisters[1],
+            &regContext.FloatSave.FloatRegisters[1], 0, editable | floating
+#else
         , &oldContext.FloatSave.RegisterArea[10],
             &regContext.FloatSave.RegisterArea[10], 0, editable | floating
+#endif
     }
     , 
     {
         {
              &xst2, &st2buf
         }
+#ifdef __MINGW64__
+        , &oldContext.FloatSave.FloatRegisters[2],
+            &regContext.FloatSave.FloatRegisters[2], 0, editable | floating
+#else
         , &oldContext.FloatSave.RegisterArea[20],
             &regContext.FloatSave.RegisterArea[20], 0, editable | floating
+#endif
     }
     , 
     {
         {
              &xst3, &st3buf
         }
+#ifdef __MINGW64__
+        , &oldContext.FloatSave.FloatRegisters[3],
+            &regContext.FloatSave.FloatRegisters[3], 0, editable | floating
+#else
         , &oldContext.FloatSave.RegisterArea[30],
             &regContext.FloatSave.RegisterArea[30], 0, editable | floating
+#endif
     }
     , 
     {
         {
              &xst4, &st4buf
         }
+#ifdef __MINGW64__
+        , &oldContext.FloatSave.FloatRegisters[4],
+            &regContext.FloatSave.FloatRegisters[4], 0, editable | floating
+#else
         , &oldContext.FloatSave.RegisterArea[40],
             &regContext.FloatSave.RegisterArea[40], 0, editable | floating
+#endif
     }
     , 
     {
         {
              &xst5, &st5buf
         }
+#ifdef __MINGW64__
+        , &oldContext.FloatSave.FloatRegisters[5],
+            &regContext.FloatSave.FloatRegisters[5], 0, editable | floating
+#else
         , &oldContext.FloatSave.RegisterArea[50],
             &regContext.FloatSave.RegisterArea[50], 0, editable | floating
+#endif
     }
     , 
     {
         {
              &xst6, &st6buf
         }
+#ifdef __MINGW64__
+        , &oldContext.FloatSave.FloatRegisters[6],
+            &regContext.FloatSave.FloatRegisters[6], 0, editable | floating
+#else
         , &oldContext.FloatSave.RegisterArea[60],
             &regContext.FloatSave.RegisterArea[60], 0, editable | floating
+#endif
     }
     , 
     {
         {
              &xst7, &st7buf
         }
+#ifdef __MINGW64__
+        , &oldContext.FloatSave.FloatRegisters[7],
+            &regContext.FloatSave.FloatRegisters[7], 0, editable | floating
+#else
         , &oldContext.FloatSave.RegisterArea[70],
             &regContext.FloatSave.RegisterArea[70], 0, editable | floating
+#endif
     }
     , 
 };

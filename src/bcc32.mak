@@ -1,43 +1,26 @@
-#	Software License Agreement (BSD License)
-#	
-#	Copyright (c) 1997-2009, David Lindauer, (LADSoft).
-#	All rights reserved.
-#	
-#	Redistribution and use of this software in source and binary forms, 
-#	with or without modification, are permitted provided that the following 
-#	conditions are met:
+# Software License Agreement
+# 
+#     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
+# 
+#     This file is part of the Orange C Compiler package.
+# 
+#     The Orange C Compiler package is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version, with the addition of the 
+#     Orange C "Target Code" exception.
+# 
+#     The Orange C Compiler package is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+# 
+#     You should have received a copy of the GNU General Public License
+#     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+# 
+#     contact information:
+#         email: TouchStone222@runbox.com <David Lindauer>
 
-#	* Redistributions of source code must retain the above
-#	  copyright notice, this list of conditions and the
-#	  following disclaimer.
-
-#	* Redistributions in binary form must reproduce the above
-#	  copyright notice, this list of conditions and the
-#	  following disclaimer in the documentation and/or other
-#	  materials provided with the distribution.
-
-#	* Neither the name of LADSoft nor the names of its
-#	  contributors may be used to endorse or promote products
-#	  derived from this software without specific prior
-#	  written permission of LADSoft.
-
-#	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-#	AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
-#	THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
-#	PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
-#	OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
-#	EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
-#	PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
-#	OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-#	WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
-#	OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-#	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-#	contact information:
-#		email: TouchStone222@runbox.com <David Lindauer>
-
-# this file for the embarcadero version. it won't work with BCC55 because of
-# use of C++11 constructs in the sources.
 ifeq "$(COMPILER)" "BCC32"
 
 RADSTUDIO_BASE := c:\program files (x86)\Embarcadero\Studio
@@ -87,9 +70,9 @@ CINCLUDES:=$(addprefix /I,$(INCLUDES))
 endif
 DEFINES := $(addprefix /D,$(DEFINES))
 DEFINES := $(subst @, ,$(DEFINES))
-LIB_DEPENDENCIES := $(addsuffix .lib,$(LIB_DEPENDENCIES))
+LIB_DEPENDENCIES := $(foreach file, $(addsuffix .lib,$(LIB_DEPENDENCIES)), $(_LIBDIR)\$(file))
 
-CCFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) /DMICROSOFT /DBORLAND /DWIN32
+CCFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) /DMICROSOFT /DBORLAND 
 ifeq "$(TARGET)" "GUI"
 STARTUP=C0W32.obj
 TYPE=/Tpe/aa
@@ -106,22 +89,22 @@ vpath %$(LIB_EXT) c:\bcc55\lib c:\bcc55\lib\psdk $(_LIBDIR)
 vpath %.res $(_OUTPUTDIR)
 
 %.obj: %.cpp
-	$(CC) $(CCFLAGS) -o$@ $^
+	$(CC) $(CCFLAGS) -o$(_OUTPUTDIR)/$@ $^
 
 %.obj: %.c
-	$(CC) $(CCFLAGS) -o$@ $^
+	$(CC) $(CCFLAGS) -o$(_OUTPUTDIR)/$@ $^
 
 %.obj: %.asm
-	$(TASM) /ml /zi /i$(INCLUDE) $(ADEFINES) $^, $@
+	$(TASM) /ml /zi /i$(INCLUDE) $(ADEFINES) $^, $(_OUTPUTDIR)/$@
 
 %.obj: %.nas
-	$(ASM) $(ASMFLAGS) -o$@ $^
+	$(ASM) $(ASMFLAGS) -o$(_OUTPUTDIR)/$@ $^
 
 %.res: %.rc
-	$(RC) -i$(RCINCLUDE) $(RCFLAGS) -o$@ $^
+	$(RC) -i$(RCINCLUDE) $(RCFLAGS) -o$(_OUTPUTDIR)/$@ $^
 
 $(_LIBDIR)\$(NAME)$(LIB_EXT): $(LLIB_DEPENDENCIES)
-#	-del $(_LIBDIR)\$(NAME)$(LIB_EXT) >> $(NULLDEV)
+#	-del $(_LIBDIR)\$(NAME)$(LIB_EXT) 2> $(NULLDEV)
 	$(LIB) $(LIBFLAGS) $(_LIBDIR)\$(NAME)$(LIB_EXT) @&&|
  $(addprefix -+$(_OUTPUTDIR)\,$(LLIB_DEPENDENCIES))
 |

@@ -1,42 +1,4 @@
-/*
-    Software License Agreement (BSD License)
-    
-    Copyright (c) 1997-2016, David Lindauer, (LADSoft).
-    All rights reserved.
-    
-    Redistribution and use of this software in source and binary forms, 
-    with or without modification, are permitted provided that the following 
-    conditions are met:
-    
-    * Redistributions of source code must retain the above
-      copyright notice, this list of conditions and the
-      following disclaimer.
-    
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the
-      following disclaimer in the documentation and/or other
-      materials provided with the distribution.
-    
-    * Neither the name of LADSoft nor the names of its
-      contributors may be used to endorse or promote products
-      derived from this software without specific prior
-      written permission of LADSoft.
-    
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
-    THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
-    PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
-    OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
-    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
-    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
-    OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-    WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
-    OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-    ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-    contact information:
-        email: TouchStone222@runbox.com <David Lindauer>
-*/
+/* (null) */
 
 #define _CRT_SECURE_NO_WARNINGS  
 
@@ -49,6 +11,8 @@
 #include "Variable.h"
 #include "Eval.h"
 #include "os.h"
+#include <algorithm>
+#include <iostream>
 
 bool Time::operator >(const Time &last)
 {
@@ -61,6 +25,35 @@ bool Time::operator >(const Time &last)
 }
 int OS::Spawn(const std::string command, EnvironmentStrings &environment)
 {
+    static std::string names = "ASSOC ATTRIB BREAK BCDEDIT CACLS CALL CD CHCP CHDIR CHKDSK CHKNTFS CLS CMD COLOR COMP COMPACT CONVERT COPY DATE DEL DIR DISKPART DOSKEY DRIVERQUERY ECHO ENDLOCAL ERASE EXIT FC FIND FINDSTR FOR FORMAT FSUTIL FTYPE GOTO GPRESULT GRAFTABL HELP ICACLS IF LABEL MD MKDIR MKLINK MODE MORE MOVE OPENFILES PATH PAUSE POPD PRINT PROMPT PUSHD RD RECOVER REM REN RENAME REPLACE RMDIR ROBOCOPY SET SETLOCAL SC SCHTASKS SHIFT SHUTDOWN SORT START SUBST SYSTEMINFO TASKLIST TASKKILL TIME TITLE TREE TYPE VER VERIFY VOL XCOPY WMIC ";
+    std::string command1 = command;
+    std::string aa = Eval::ExtractFirst(command1, " ");
+    aa += " ";
+    std::transform(aa.begin(), aa.end(), aa.begin(), ::toupper);
+    bool isCmd = names.find(aa) != std::string::npos;
+
+    if (!isCmd)
+    {
+        size_t n = 0;
+        size_t nextQuote = command1.find('"');
+        while (n < command1.size())
+        {
+            while (n < command1.size() && command1[n] != '"')
+            {
+                if (command1[n] == '>' || command1[n] == '<' || command1[n] == '|')
+                {
+                     n = command1.size();
+                     isCmd = true;
+                     break;
+                }
+                n++;
+            }
+            do
+            {
+                n++;
+            } while (n < command1.size() && command1[n] != '"');
+        }
+    }
     Variable *v = VariableContainer::Instance()->Lookup("SHELL");
     if (!v)
         return -1;
@@ -107,7 +100,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings &environment)
 //    {
 //        return -1;
 //    }
-    if (CreateProcess(nullptr, (char *)cmd.c_str(), nullptr, nullptr, true, 0, env,
+    if (!isCmd && CreateProcess(nullptr, (char *)command.c_str(), nullptr, nullptr, true, 0, env,
                       nullptr, &startup, &pi))
     {
         WaitForSingleObject(pi.hProcess, INFINITE);
@@ -119,7 +112,20 @@ int OS::Spawn(const std::string command, EnvironmentStrings &environment)
     }
     else
     {
-        rv = -1;
+        if (CreateProcess(nullptr, (char *)cmd.c_str(), nullptr, nullptr, true, 0, env,
+                      nullptr, &startup, &pi))
+        {
+            WaitForSingleObject(pi.hProcess, INFINITE);
+            DWORD x;
+            GetExitCodeProcess(pi.hProcess, &x);
+            rv = x;
+            CloseHandle(pi.hProcess);
+            CloseHandle(pi.hThread);
+        }
+        else
+        {
+            rv = -1;
+        }
     }
     delete[] env;
     return rv;
@@ -157,8 +163,12 @@ std::string OS::SpawnWithRedirect(const std::string command)
         char *buffer = new char[1024 * 1024];
 //        if (buffer)
         {
-            DWORD readlen;
-            ReadFile(pipeRead,buffer, 1024 * 1024, &readlen, nullptr);
+            DWORD readlen = 0;
+            DWORD avail = 0;
+            PeekNamedPipe(pipeRead, NULL, 1024 * 1024, NULL, &avail, NULL);
+
+            if (avail > 0)
+                ReadFile(pipeRead,buffer, 1024 * 1024, &readlen, nullptr);
             buffer[readlen] = 0;
             rv = buffer;
         }

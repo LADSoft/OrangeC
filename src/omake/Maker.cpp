@@ -1,42 +1,5 @@
-/*
-    Software License Agreement (BSD License)
-    
-    Copyright (c) 1997-2016, David Lindauer, (LADSoft).
-    All rights reserved.
-    
-    Redistribution and use of this software in source and binary forms, 
-    with or without modification, are permitted provided that the following 
-    conditions are met:
-    
-    * Redistributions of source code must retain the above
-      copyright notice, this list of conditions and the
-      following disclaimer.
-    
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the
-      following disclaimer in the documentation and/or other
-      materials provided with the distribution.
-    
-    * Neither the name of LADSoft nor the names of its
-      contributors may be used to endorse or promote products
-      derived from this software without specific prior
-      written permission of LADSoft.
-    
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
-    THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
-    PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
-    OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
-    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
-    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
-    OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-    WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
-    OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-    ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+/* (null) */
 
-    contact information:
-        email: TouchStone222@runbox.com <David Lindauer>
-*/
 #include "Maker.h"
 #include "Variable.h"
 #include "Rule.h"
@@ -125,7 +88,7 @@ bool Maker::CreateDependencyTree()
         dependsNesting = 0;
         if (goal != ".MAKEFLAGS" && goal != ".MFLAGS")
 	{
-	        Depends *t = Dependencies(goal, "", tv1, true);
+	        Depends *t = Dependencies(goal, "", tv1, true, "", -1);
         	if (t)
         	{
             		depends.push_back(t);
@@ -141,11 +104,11 @@ bool Maker::CreateDependencyTree()
     }
     return !missingTarget;
 }
-Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &preferredPath, Time &timeval, bool err)
+Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &preferredPath, Time &timeval, bool err, std::string file, int line)
 {
     if (++dependsNesting > 200)
     {
-        Eval::error("depency nesting is too deep: possible recursive rule");
+        Eval::error("depency nesting is too deep: possible recursive rule", "", -1);
         exit(1);
     }
     Time goalTime;
@@ -186,7 +149,7 @@ Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &
                 {
                     Time current;
                     std::string thisOne = Eval::ExtractFirst(working, " ");
-                    Depends *dp = Dependencies(thisOne, foundPath, current, err && !rule->IsDontCare());
+                    Depends *dp = Dependencies(thisOne, foundPath, current, err && !rule->IsDontCare(), rule->File(), rule->Line());
                     if (current > dependsTime)
                     {
                         dependsTime = current;
@@ -208,7 +171,7 @@ Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &
                 {
                     Time current;
                     std::string thisOne = Eval::ExtractFirst(working, " ");
-                    Depends *dp = Dependencies(thisOne, preferredPath, current, err && !rule->IsDontCare());
+                    Depends *dp = Dependencies(thisOne, preferredPath, current, err && !rule->IsDontCare(), rule->File(), rule->Line());
                     if (dp)
                     {
                         dp->SetOrdered(true);
@@ -219,7 +182,7 @@ Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &
                     if ((ruleList->GetDoubleColon() && remakeThis) || !ruleList->GetDoubleColon())
                     {
                         if (executionRule)
-                            Eval::warning("Conflicting command lists for goal '" + goal + "'");
+                            Eval::warning("Conflicting command lists for goal '" + goal + "'", rule->File(), rule->Line());
                         else
                             executionRule = rule;
                     }
@@ -240,7 +203,7 @@ Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &
         {
             if (SearchImplicitRules(goal, preferredPath, true, timeval))
             {
-                rv = Dependencies(goal, preferredPath, timeval, err);
+                rv = Dependencies(goal, preferredPath, timeval, err, file, line);
             }
             else if (err)
             {
@@ -252,7 +215,7 @@ Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &
                     if (!time)
                     {
                         missingTarget = true;
-                        Eval::error("No rule to make target '" + goal + "'");
+                        Eval::error("No rule to make target '" + goal + "'", file, line);
                     }
                     else if (time > timeval)
                         timeval = time;
@@ -309,7 +272,7 @@ std::string Maker::GetFileTime(const std::string &goal, const std::string &prefe
     {
         internalGoal = internalGoal.substr(1, internalGoal.size()-2);
     }
-    if (internalGoal.find_first_of(CmdFiles::DIR_SEP) != std::string::npos)
+    if (internalGoal.find_first_of("/\\") != std::string::npos)
     {
         std::fstream fil(internalGoal.c_str(), std::ios::in);
         if (!fil.fail())
@@ -325,10 +288,10 @@ std::string Maker::GetFileTime(const std::string &goal, const std::string &prefe
         while (vpath.size())
         {
             std::string cur = Eval::ExtractFirst(vpath, sep);
-            if (cur[cur.size() -1] != CmdFiles::DIR_SEP[0])
+            if (cur[cur.size() -1] != '/' && cur[cur.size() -1] != '\\')
                 cur += CmdFiles::DIR_SEP;
             std::string name ;
-            if (internalGoal[0] != CmdFiles::DIR_SEP[0] && internalGoal[1] != ':')
+            if (internalGoal[0] != '/' && internalGoal[0] != '\\' && internalGoal[1] != ':')
                 name = cur + internalGoal;
             else
                 name = internalGoal;
@@ -370,7 +333,7 @@ bool Maker::ExistsOrMentioned(const std::string &stem, RuleList *ruleList, const
         while (working.size() && found)
         {
             std::string thisOne = Eval::ExtractFirst(working, " ");
-            if (thisOne.find_first_of(CmdFiles::DIR_SEP) == std::string::npos)
+            if (thisOne.find_first_of("/\\") == std::string::npos)
                 thisOne = dir + thisOne;
             thisOne = Eval::ReplaceStem(stem, thisOne);
             Time theTime;
@@ -479,7 +442,7 @@ void Maker::EnterDefaultRule(const std::string &goal, RuleList *dflt)
 bool Maker::SearchImplicitRules(const std::string &goal, const std::string &preferredPath, bool outerMost, Time &timeval)
 {
     std::list<RuleList *>matchedRules;
-    size_t n = goal.find_last_of(CmdFiles::DIR_SEP);
+    size_t n = goal.find_last_of("/\\");
     std::string dir;
     std::string name;
     if (n != std::string::npos)
@@ -495,7 +458,7 @@ bool Maker::SearchImplicitRules(const std::string &goal, const std::string &pref
     for (RuleContainer::ImplicitIterator it = RuleContainer::Instance()->ImplicitBegin();
              it != RuleContainer::Instance()->ImplicitEnd(); ++it)
     {
-        if ((*it)->GetTarget().find_first_of(CmdFiles::DIR_SEP) != std::string::npos)
+        if ((*it)->GetTarget().find_first_of("/\\") != std::string::npos)
         {
             size_t start;
             n = Eval::MatchesPattern(goal, (*it)->GetTarget(), start);
@@ -580,7 +543,7 @@ bool Maker::ScanList(const std::string &v, const std::string &goal)
             rv = true;
             break;
         }
-        if (aa[aa.size()-1] != CmdFiles::DIR_SEP[0])
+        if (aa[aa.size()-1] != '/' && aa[aa.size()-1] != '\\')
         {
             aa += CmdFiles::DIR_SEP;
             span = Eval::MatchesPattern(goal, aa, start, 0);
@@ -744,12 +707,12 @@ int Maker::RunOne(Depends *depend, EnvironmentStrings &env, bool keepGoing)
         {
             OS::RemoveFile(depend->GetGoal());
             std::cout << std::endl;
-            Eval::error("commands returned error code " + b + " '" + depend->GetGoal()  + "' removed");
+            Eval::error("commands returned error code " + b + " '" + depend->GetGoal()  + "' removed", depend->GetRule()->GetCommands()->GetFile(), depend->GetRule()->GetCommands()->GetLine());
         }
         else
         {
             std::cout << std::endl;
-            Eval::error("commands returned error code " + b);
+            Eval::error("commands returned error code " + b, depend->GetRule()->GetCommands()->GetFile(), depend->GetRule()->GetCommands()->GetLine());
         }
     }
     Eval::PopruleStack();

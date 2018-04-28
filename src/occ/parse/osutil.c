@@ -1,40 +1,27 @@
-/*
-    Software License Agreement (BSD License)
-    
-    Copyright (c) 1997-2011, David Lindauer, (LADSoft).
-    All rights reserved.
-    
-    Redistribution and use of this software in source and binary forms, 
-    with or without modification, are permitted provided that the following 
-    conditions are met:
-    
-    * Redistributions of source code must retain the above
-      copyright notice, this list of conditions and the
-      following disclaimer.
-    
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the
-      following disclaimer in the documentation and/or other
-      materials provided with the distribution.
-    
-    * Neither the name of LADSoft nor the names of its
-      contributors may be used to endorse or promote products
-      derived from this software without specific prior
-      written permission of LADSoft.
-    
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
-    THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
-    PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
-    OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
-    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
-    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
-    OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-    WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
-    OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-    ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+/* Software License Agreement
+ * 
+ *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
+ * 
+ *     This file is part of the Orange C Compiler package.
+ * 
+ *     The Orange C Compiler package is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version, with the addition of the 
+ *     Orange C "Target Code" exception.
+ * 
+ *     The Orange C Compiler package is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ * 
+ *     You should have received a copy of the GNU General Public License
+ *     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ *     contact information:
+ *         email: TouchStone222@runbox.com <David Lindauer>
+ */
 
-*/
 #include "compiler.h"
 #include <signal.h>
 #include <setjmp.h>
@@ -79,6 +66,7 @@ char version[256];
 char copyright[256];
 LIST *clist = 0;
 int showBanner = TRUE;
+int showVersion = FALSE;
 
 static BOOLEAN has_output_file;
 static LIST *deflist = 0, *undeflist = 0;
@@ -133,8 +121,10 @@ void usage(char *prog_name)
         printf("   long long not supported");
     #endif 
 #endif
+
     exit(1);
 }
+#ifndef __MINGW64__
 int strcasecmp(const char *left, const char *right)
 {
     while (*left && *right)
@@ -145,6 +135,7 @@ int strcasecmp(const char *left, const char *right)
     }
     return *left != *right;
 }
+#endif
 /*
  * If no extension, add the one specified
  */
@@ -368,6 +359,7 @@ static int cmatch(char t1, char t2)
 static int scan_args(char *string, int index, char *arg)
 {
     int i =  - 1;
+    BOOLEAN legacyArguments = !!getenv("OCC_LEGACY_OPTIONS");
     while (ArgList[++i].id)
     {
         switch (ArgList[i].mode)
@@ -389,7 +381,7 @@ static int scan_args(char *string, int index, char *arg)
             case ARG_BOOL:
                 if (cmatch(string[index], ArgList[i].id))
                 {
-                    if (string[0] == ARG_SEPTRUE || string[0] == '/')
+                    if (!legacyArguments || string[0] == ARG_SEPTRUE || string[0] == '/')
                         (*ArgList[i].routine)(string[index], (char*)TRUE);
                     else
                         (*ArgList[i].routine)(string[index], (char*)FALSE);
@@ -410,6 +402,24 @@ static int scan_args(char *string, int index, char *arg)
                         return (ARG_NOARG);
                     (*ArgList[i].routine)(string[index], arg);
                     return (ARG_NEXTNOCAT);
+                }
+                break;
+            case ARG_COMBINESTRING:
+                if (cmatch(string[index], ArgList[i].id))
+                {
+                    if (string[index+1])
+                    {
+                        (*ArgList[i].routine)(string[index], string + index + 1);
+                        return (ARG_NEXTARG);
+                    }
+                    else
+                    {
+                        if (!arg)
+                            return (ARG_NEXTARG);
+                        (*ArgList[i].routine)(string[index], arg);
+                        return (ARG_NEXTNOCAT);
+                    }
+
                 }
                 break;
         }
@@ -729,7 +739,7 @@ void InsertAnyFile(char *filename, char *path, int drive)
     char drv[256],dir[256],name[256],ext[256];
 #if defined(_MSC_VER) || defined(BORLAND) || defined(__ORANGEC__)
     struct _finddata_t findbuf;
-    int n;
+    size_t n;
     _splitpath(filename, drv, dir, name, ext);
     n = _findfirst(filename, &findbuf);
     if (n != -1)
@@ -756,6 +766,8 @@ void setfile(char *buf, char *orgbuf, char *ext)
  */
 {
     char *p = strrchr(orgbuf, '\\');
+    if (!p)
+        p = strrchr(orgbuf, '/');
     if (!p)
         p = orgbuf;
     else
@@ -1018,13 +1030,23 @@ void ccinit(int argc, char *argv[])
             {
                 showBanner = FALSE;
             }
-    if (showBanner)
+            else if (argv[i][1] == 'V' && argv[i][2] == 0)
+            {
+                showVersion = TRUE;
+            }
+    
+    if (showBanner || showVersion)
     {
 #ifdef CPREPROCESSOR
         banner("CPP Version %s %s", version, copyright);
 #else
         banner("%s Version %s %s", chosenAssembler->progname, version, copyright);
 #endif
+    }
+    if (showVersion)
+    {
+        printf("Compile date: " __DATE__ ", time: " __TIME__ "\n");
+        exit(0);
     }
     /* parse the environment and command line */
 #ifndef CPREPROCESSOR

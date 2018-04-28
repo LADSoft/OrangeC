@@ -15,7 +15,7 @@ test: bzip2.exe parsecsv.exe stlcontainers.exe label.exe delegate.exe
 	fc /b bzip2.test bzip2.test.cmpx
 	del out.pcl
 	parsecsv
-	fc /b text.pcl out.pcl
+	fc /b test.cmpx out.pcl
 	stlcontainers > stlcontainers.out
 	fc /b stlcontainers.cmpx stlcontainers.out
 	del label1.exe

@@ -14,7 +14,7 @@ syntax_node_base.o \
 	occ /c -o$@ $^
 
 test: cs.exe
-	cs -G q1.pas > q1.out
+	cs -G test.pas > q1.out
 	fc /b test.cmpx q1.out
 
 cs.exe: $(FILES)

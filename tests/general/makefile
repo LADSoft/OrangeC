@@ -9,11 +9,10 @@
 	olink /c /T:CON32 /o$@ c0xpe.o $^ clwin.l climp.l
 
 test: bzip2.exe parsecsv.exe stlcontainers.exe label.exe delegate.exe
-	copy bzip2.map.cmp bzip2.map
-	bzip2 bzip2.map
-	fc /b bzip2.map.bz2 bzip2.map.bz2.cmp
-	bzip2 -d bzip2.map.bz2
-	fc /b bzip2.map bzip2.map.bz2
+	bzip2 bzip2.test
+	fc /b bzip2.test.bz2 bzip2.test.bz2.cmp
+	bzip2 -d bzip2.test.bz2
+	fc /b bzip2.test bzip2.test.cmp
 	del out.pcl
 	parsecsv
 	fc /b text.pcl out.pcl

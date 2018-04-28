@@ -40,7 +40,7 @@ FILES =\
 
 test: lame.exe
 	lame -h air_raid.wav q.mp3
-	fc /b q.cmp q.mp3
+	fc /b test.cmp q.mp3
 
 lame.exe: $(FILES)
 	olink /c /T:CON32 /o$@ @&&|

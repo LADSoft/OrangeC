@@ -55,7 +55,7 @@ FILES=\
 
 test: x264.exe
 	x264 claire_qcif.y4m -o q.mkv
-	fc /b q.cmp q.mkv
+	fc /b test.cmp q.mkv
 
 x264.exe: $(FILES)
 	olink /T:CON32 /c /m /o$@ @&&|

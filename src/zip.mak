@@ -25,7 +25,7 @@
 
 ZIP:="c:/program files/7-zip/7z" -tzip 
 
-VERNAME := $(word 3, $(shell type,/orangec/src/version.h))
+VERNAME := $(word 3, $(shell type,\orangec\src\version.h))
 VERNAME := $(subst ",,$(VERNAME))
 VERNAME := $(subst .,,$(VERNAME))
 
@@ -33,7 +33,6 @@ DISTEXE=/orangec/dist/occ$(VERNAME)e.zip
 DISTSRC=/orangec/dist/occ$(VERNAME)s.zip
 
 DISTRIBUTE:
-	dir
 	-del $(DISTEXE)
 	-del $(DISTSRC)
 	-mkdir $(DISTROOT)/appdata

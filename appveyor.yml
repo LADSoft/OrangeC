@@ -8,10 +8,10 @@ install:
     - set ORIGPATH=%PATH%
     - set ORANGEC=c:\ORANGEC
 
-environment:
-  matrix:
-    - BUILD_PROFILE: MS
-    - BUILD_PROFILE: MINGW64
+#environment:
+#  matrix:
+#    - BUILD_PROFILE: MS
+#    - BUILD_PROFILE: MINGW64
  
  
 build_script:
@@ -20,7 +20,9 @@ build_script:
         - move projects\orangec .
         - mkdir \orangec\temp
         - cd orangec\src
-        - mingw32-make fullbuild --eval="COMPILER=$(BUILD_PROFILE)"
+        - copy omake\omake.exe \orangec\temp
+        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=MS -B fullbuild 
+ #       - mingw32-make fullbuild --eval="COMPILER=$(BUILD_PROFILE)"
         - c:\orangec\bin\occ /V
         - copy omake\omake.exe \orangec\temp
         - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 

@@ -20,7 +20,7 @@ build_script:
         - move projects\orangec .
         - mkdir \orangec\temp
         - cd orangec\src
-        - copy omake\omake.exe \orangec\temp
+        - copy omake.exe \orangec\temp
         - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=MS -B fullbuild 
  #       - mingw32-make fullbuild --eval="COMPILER=$(BUILD_PROFILE)"
         - c:\orangec\bin\occ /V

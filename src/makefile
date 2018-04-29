@@ -35,8 +35,6 @@ export _TREETARGET
 #
 export NOMAKEDIR
 
-$(info "aa=$(realpath clibs\makefile)")
-$(info "bb=$(realpath clibs/makefile)")
 tools: 
 	@$(MAKE) -f $(_TREEROOT)
 

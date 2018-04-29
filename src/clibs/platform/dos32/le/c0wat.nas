@@ -56,12 +56,4 @@ real_start:
     global monitor_init
 monitor_init:
     ret
-%endifdx				; pmode/w or a variant
-    call ___startup
-    mov	ah,04ch
-    int 21h
-%ifndef DEBUG
-    global monitor_init
-monitor_init:
-    ret
 %endif

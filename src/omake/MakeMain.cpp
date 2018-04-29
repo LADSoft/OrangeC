@@ -442,7 +442,8 @@ int MakeMain::Run(int argc, char **argv)
             if (v)
             {
                 std::string val = v->GetValue();
-                SetVariable("SHELL", val, Variable::o_environ, true);
+                SetVariable("SHELL", val, Variable::o_environ, false);
+                SetVariable(".SHELLFLAGS", "-c", Variable::o_environ, false);
             }
         }
         std::string wd = OS::GetWorkingDir();

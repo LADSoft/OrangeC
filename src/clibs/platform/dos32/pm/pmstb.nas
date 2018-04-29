@@ -562,37 +562,3 @@ get_filename:
     jnz .lp2
     pop ds
     ret
-sh    bx
-    add     bx,ax
-    sub bx,[psp]
-    mov es,[psp]
-    mov ah,4ah
-    int 21h
-    pop es
-    ret
-get_filename:
-    mov	es,[psp]
-    mov	es,[es:2ch]
-    mov	di,0
-    cld
-.lp1:
-    mov	cx,-1
-    mov	al,0
-    repnz scasb
-    test	byte [es:di],0ffh
-    jnz	.lp1
-    add	di,3
-    mov	si,di
-    mov	di,eop + BUFFERSIZE
-    push ds
-    push ds
-    push es
-    pop ds
-    pop es
-.lp2:
-    lodsb
-    stosb
-    or al,al
-    jnz .lp2
-    pop ds
-    ret

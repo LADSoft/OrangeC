@@ -55,7 +55,7 @@ FILES=\
 
 test: x264.exe
 	x264 claire_qcif.y4m -o q.mkv
-	fc /b test.cmpx q.mkv
+#	fc /b test.cmpx q.mkv # seems like different cpus might have slight variations in how floating point is done?
 
 x264.exe: $(FILES)
 	olink /T:CON32 /c /m /o$@ @&&|

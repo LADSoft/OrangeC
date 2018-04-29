@@ -36,24 +36,24 @@ export _TREETARGET
 export NOMAKEDIR
 
 tools: 
-	@$(MAKE) -f$(_TREEROOT)
+	@$(MAKE) -f $(_TREEROOT)
 
 distribute:
-	@$(MAKE) -f$(_TREEROOT) distribute
+	@$(MAKE) -f $(_TREEROOT) distribute
 
 fullbuild: buildenv tools copyexes library distribute
 
 clean:  
-	@$(MAKE) -f$(_TREEROOT) clean
+	@$(MAKE) -f $(_TREEROOT) clean
 
 library:
 	@$(MAKE) -Cclibs
 
 copyexes:
-	@$(MAKE) -f$(_TREEROOT) exeDISTRIBUTE
+	@$(MAKE) -f $(_TREEROOT) exeDISTRIBUTE
 
 buildenv:
-	@$(MAKE) -f$(_TREEROOT) --eval="BUILDENV:=" distribute
+	@$(MAKE) -f $(_TREEROOT) --eval="BUILDENV:=1" distribute
 	-copy orc.exe ..\bin
 else
 # when called from TREETOP.MAK do the below
@@ -80,15 +80,15 @@ DISTRIBUTE:
 	copy relnotes.txt $(DISTROOT)
 	copy addon.txt $(DISTADDON)
 ifdef BUILDENV
-	@$(MAKE) -C$(DISTROOT)\src\clibs DISTRIBUTE -DBUILDENV
+	@$(MAKE) -C$(DISTROOT)\src\clibs DISTRIBUTE --eval="BUILDENV:=1"
 else
 	@$(MAKE) -C$(DISTROOT)\src\clibs DISTRIBUTE
 ifdef WITHMSDOS
 # this requires CC386 be installed since it relies on far pointer support
 # so I don't make it a part of the default install
-	@$(MAKE) -C$(DISTROOT)\src\..\ -f$(realpath .\doszip.mak)
-	@$(MAKE) -C$(DISTROOT)\src\dos\install -fmakefile.le
+	@$(MAKE) -C$(DISTROOT)\src\..\ -f $(realpath .\doszip.mak)
+	@$(MAKE) -f makefile.le -C$(DISTROOT)\src\dos\install
 endif
-	@$(MAKE) -Cc:\ -f$(realpath .\zip.mak)
+	@$(MAKE) -C\ -f $(realpath .\zip.mak)
 endif
 endif

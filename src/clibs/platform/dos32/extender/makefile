@@ -24,16 +24,9 @@
 DISTRIBUTE:
 	$(COPYDIR) 4g\%.exe $(DISTLIB)
 	$(COPYDIR) cw\%.exe $(DISTLIB)
-	copy cw\read.me $(DISTLIC)\cwstub.lic
 	copy d3x\bin\d3xw.exe $(DISTLIB)
-	copy d3x\doc\d3x.txt $(DISTLIC)\d3x.lic
 	$(COPYDIR) dos32a\%.exe $(DISTLIB)
-	copy dos32a\dos32a.lic $(DISTLIC)
 	$(COPYDIR) hx\%.zip $(DISTADDON)
-	copy hx\hxrt.txt $(DISTLIC)\hxrt.lic
 	$(COPYDIR) pmodew\%.exe $(DISTLIB)
-	copy pmodew\pmodew.txt $(DISTLIC)\pmodew.lic
 	$(COPYDIR) wdos\%.% $(DISTLIB)
-	copy wdos\license.txt $(DISTLIC)\wdosx.lic
 	$(COPYDIR) zrdx\%.exe $(DISTLIB)
-	copy zrdx\readme.txt $(DISTLIC)\zrdx.lic

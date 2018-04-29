@@ -41,9 +41,9 @@ MAKEFILES := $(MAKEFILES) $(subst /,\,$(realpath maker.mak))
 export MAKEFILES
 include maker.mak
 
-DOSOBJECT:=$(subst /,\,$(realpath object\dos))
+DOSOBJECT:=$(realpath object\dos)
 export DOSOBJECT
-WINOBJECT:=$(subst /,\,$(realpath object\windows))
+WINOBJECT:=$(realpath object\windows)
 export WINOBJECT
 ifdef OLDSGL
 STDINCLUDE:=-I$(subst /,\,$(realpath cpp\stdinc)) -I$(subst /,\,$(realpath stdinc))
@@ -56,19 +56,19 @@ endif
 endif
 export STDINCLUDE
 
-SYSOBJECT=$(realpath object\startup)
+SYSOBJECT:=$(realpath object\startup)
 export SYSOBJECT
 
-LSCRTLOBJECT=$(realpath object\startup)
+LSCRTLOBJECT:=$(realpath object\startup)
 export LSCRTLOBJECT
 
-DLLOBJECT=$(realpath object\dll)
+DLLOBJECT:=$(realpath object\dll)
 export DLLOBJECT
 
-CLIBOBJECT=$(realpath object\clib)
+CLIBOBJECT:=$(realpath object\clib)
 export CLIBOBJECT
 
-CILOBJECT=$(realpath object\cil)
+CILOBJECT:=$(realpath object\cil)
 export CILOBJECT
 
 LIBOBJS = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(CLIBOBJECT)\*.o))

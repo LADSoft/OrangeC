@@ -2221,7 +2221,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                 {
                     case '[':
                     case ']':
-                        if (!(GetKeyState(VK_CONTROL) &0x80000000))
+                        if (!(GetKeyState(VK_CONTROL) &0x80000000) && (GetKeyState(VK_SHIFT) &0x80000000))
                             if (lParam &0x20000000) {// alt key
                                 return 0;
                             }
@@ -2236,7 +2236,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                 {
                     case '[':
                     case ']':
-                        if (!(GetKeyState(VK_CONTROL) &0x80000000))
+                        if (!(GetKeyState(VK_CONTROL) &0x80000000) && (GetKeyState(VK_SHIFT) &0x80000000))
                             if (lParam &0x20000000) {// alt key
                                 FindBraceMatch(hwnd, p, wParam == '[' ? '{' : '}');
                                 return 0;

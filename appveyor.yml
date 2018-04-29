@@ -35,7 +35,6 @@ build_script:
         - path=%ORIGPATH%
         - cd ..\tests
         - omake -B
-        - dir x264
         - cd ..\.. 
         - move orangec projects
 

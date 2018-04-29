@@ -14,6 +14,7 @@ Version 6.0.37:
     omake:  macro substitue last argument of $(call ...)
     omake:  add --eval switch
     omake:  spawn directly when possible
+    occ:    change the brace matching to SHIFT-ALT-BRACE to allow for keyboards that use ALT-BRACE to mean the brace key
 
 Version 6.0.36: 4/18/2018
     omake:  support '/' better

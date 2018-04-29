@@ -28,8 +28,7 @@ build_script:
         - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
         - path=%ORIGPATH%
         - cd ..\tests
-        - omake
-        - dir x264
+        - omake -B
         - cd ..\.. 
         - move orangec projects
 

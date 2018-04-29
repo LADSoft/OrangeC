@@ -56,19 +56,19 @@ endif
 endif
 export STDINCLUDE
 
-SYSOBJECT =$(subst /,\,$(realpath object\startup))
+SYSOBJECT =$(realpath object\startup)
 export SYSOBJECT
 
-LSCRTLOBJECT =$(subst /,\,$(realpath object\startup))
+LSCRTLOBJECT =$(realpath object\startup)
 export LSCRTLOBJECT
 
-DLLOBJECT =$(subst /,\,$(realpath object\dll))
+DLLOBJECT =$(realpath object\dll)
 export DLLOBJECT
 
-CLIBOBJECT =$(subst /,\,$(realpath object\clib))
+CLIBOBJECT =$(realpath object\clib)
 export CLIBOBJECT
 
-CILOBJECT =$(subst /,\,$(realpath object\cil))
+CILOBJECT =$(realpath object\cil)
 export CILOBJECT
 
 LIBOBJS = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(CLIBOBJECT)\*.o))

@@ -83,8 +83,8 @@ WINOBJS = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(WINOBJECT)\*.o))
 CILOBJS = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(CILOBJECT)\*.ilo))
 
 mkdir:
-	-mkdir object 2> NUL
-	-mkdir $(DOSOBJECT) 2> NUL
+	-mkdir $(THISPATH)object
+	-mkdir $(DOSOBJECT)
 	-mkdir $(WINOBJECT) 2> NUL
 	-mkdir $(SYSOBJECT) 2> NUL
 	-mkdir $(DLLOBJECT) 2> NUL

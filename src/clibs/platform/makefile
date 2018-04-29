@@ -20,7 +20,6 @@
 # 
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
-
 all:
 	$(MAKE) -CCOMMON
 	$(MAKE) -CWIN32 --eval="OBJECT=$(WINOBJECT)"

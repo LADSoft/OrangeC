@@ -25,14 +25,13 @@ RCFILE=lscrtl
 
 all: .\c0dll.o .\lscrtl.dll .\lscrtlil.dll
 
-ifeq ($(findstring sh.exe,$(SHELL)),)
+ifneq ($(shell type makefile),)
 B = /b
 endif
 
-$(info "DLLOBJECT=$(DLLOBJECT)")
 WINOBJS = $(shell dir $(B) $(WINOBJECT)\*.o)
 DLLOBJS = $(shell dir $(B) $(DLLOBJECT)\*.o)
-$(info "DLLOBJS= $(DLLOBJS)")
+
 .\lscrtl.dll: .\lscrtl.o .\c0dll.o $(RCFILE).res
 	-del $@
 	$(LINK) $(LINKFLAGS) /T:DLL32 -o.\lscrtl .\lscrtl.o .\c0dll.o $(CLIBOBJECT)\srproc.o $(foreach dir, $(filter-out c0.o c0lsstartup.o, $(DLLOBJS)), $(DLLOBJECT)\$(dir)) $(SYSOBJECT)\climp.l $(RCFILE).res

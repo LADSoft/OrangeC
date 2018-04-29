@@ -21,7 +21,6 @@
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
 
-
 all: dll clib 
 
 BASEDIRS= ALLOC cmath COMPLIB IO locale MATH PROCONT stdlib STRING strings \
@@ -41,9 +40,11 @@ MAKEFILES := $(MAKEFILES) $(subst /,\,$(realpath maker.mak))
 export MAKEFILES
 include maker.mak
 
-DOSOBJECT:=$(realpath object\dos)
+THISPATH:=$(strip $(subst /,\,$(shell cd)\))
+
+DOSOBJECT:=$(THISPATH)object\dos
 export DOSOBJECT
-WINOBJECT:=$(realpath object\windows)
+WINOBJECT:=$(THISPATH)object\windows
 export WINOBJECT
 ifdef OLDSGL
 STDINCLUDE:=-I$(subst /,\,$(realpath cpp\stdinc)) -I$(subst /,\,$(realpath stdinc))
@@ -56,42 +57,45 @@ endif
 endif
 export STDINCLUDE
 
-SYSOBJECT:=$(realpath object\startup)
+SYSOBJECT:=$(THISPATH)object\startup
 export SYSOBJECT
 
-LSCRTLOBJECT:=$(realpath object\startup)
+LSCRTLOBJECT:=$(THISPATH)object\startup
 export LSCRTLOBJECT
 
-DLLOBJECT:=$(realpath object\dll)
+DLLOBJECT:=$(THISPATH)object\dll
 export DLLOBJECT
 
-CLIBOBJECT:=$(realpath object\clib)
+CLIBOBJECT:=$(THISPATH)object\clib
 export CLIBOBJECT
 
-CILOBJECT:=$(realpath object\cil)
+CILOBJECT:=$(THISPATH)object\cil
 export CILOBJECT
 
+ifneq ($(shell type makefile),)
+B = /b
+endif
+
 LIBOBJS = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(CLIBOBJECT)\*.o))
-DOSOBJS1 = $(subst $(DOSOBJECT)\,,$(shell dir $(B) $(DOSOBJECT)\*.o))
+DOSOBJS1 = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(DOSOBJECT)\*.o))
 DOSOBJS = $(DOSOBJS1:.OBJ=.o)
-WINOBJS = $(subst $(WINOBJECT)\,,$(shell dir $(B) $(WINOBJECT)\*.o))
-CILOBJS = $(subst $(CILOBJECT)\,,$(shell dir $(B) $(CILOBJECT)\*.ilo))
+WINOBJS = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(WINOBJECT)\*.o))
+CILOBJS = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(CILOBJECT)\*.ilo))
 
 mkdir:
-	-mkdir object
-	-mkdir $(DOSOBJECT)
-	-mkdir $(WINOBJECT)
-	-mkdir $(SYSOBJECT)
-	-mkdir $(DLLOBJECT)
-	-mkdir $(LSCRTLOBJECT)
-	-mkdir $(CILOBJECT)
-	-mkdir object\clib
+	-mkdir object 2> NUL
+	-mkdir $(DOSOBJECT) 2> NUL
+	-mkdir $(WINOBJECT) 2> NUL
+	-mkdir $(SYSOBJECT) 2> NUL
+	-mkdir $(DLLOBJECT) 2> NUL
+	-mkdir $(CILOBJECT) 2> NUL
+	-mkdir $(CLIBOBJECT) 2> NUL
 
 mklibs:
-	del $(SYSOBJECT)\cldos.l
+	-del $(SYSOBJECT)\cldos.l
 
 	$(LIB) $(LIBFLAGS) $(SYSOBJECT)\cldos.l $(foreach dir, $(LIBOBJS), $(CLIBOBJECT)\$(dir)) $(foreach dir, $(DOSOBJS), $(DOSOBJECT)\$(dir))
-	del $(SYSOBJECT)\clwin.l
+	-del $(SYSOBJECT)\clwin.l
 	$(LIB) $(LIBFLAGS) $(SYSOBJECT)\clwin.l $(foreach dir, $(LIBOBJS), $(CLIBOBJECT)\$(dir)) $(foreach dir, $(WINOBJS), $(WINOBJECT)\$(dir))
 
 $(C_CLIBS) : %.clibs :
@@ -101,12 +105,10 @@ clib: mkdir $(C_CLIBS) mklibs
 
 BUILDING_DLL = BUILDING_DLL=-D__BUILDING_LSCRTL_DLL
 
-mkdirdll:
-	-mkdir object\dll
 $(C_DLLS) : %.dlls : 
 	$(MAKE) -C$* --eval="OBJECT=$(DLLOBJECT)" --eval="$(BUILDING_DLL)"
 
-dll: mkdirdll $(C_DLLS)
+dll: mkdir $(C_DLLS)
 
 
 ifdef DISTMAKE
@@ -148,3 +150,18 @@ ifndef BUILDENV
 	$(MAKE) -Cplatform DISTRIBUTE
 endif
 endif
+
+clean:
+	-del /Q $(DOSOBJECT) 2> NUL
+	-del /Q $(WINOBJECT) 2> NUL
+	-del /Q $(SYSOBJECT) 2> NUL
+	-del /Q $(DLLOBJECT) 2> NUL
+	-del /Q $(CILOBJECT) 2> NUL
+	-del /Q$(CLIBOBJECT) 2> NUL
+	-rmdir $(DOSOBJECT) 2> NUL
+	-rmdir $(WINOBJECT) 2> NUL
+	-rmdir $(SYSOBJECT) 2> NUL
+	-rmdir $(DLLOBJECT) 2> NUL
+	-rmdir $(CILOBJECT) 2> NUL
+	-rmdir $(CLIBOBJECT) 2> NUL
+	-rmdir object 2> NUL

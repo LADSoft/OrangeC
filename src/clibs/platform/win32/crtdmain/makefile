@@ -28,6 +28,7 @@ all: crtdll.l
 .\crtdmain.o: crtdmain.c
 	$(CC) /c $(CFLAGS) -o$@ $^
 
+.PHONY: .\c0.o
 .\c0.o: ..\pe\c0.c
 	$(CC) /c $(CFLAGS) -Wcl -o$@ $^
 

@@ -33,11 +33,6 @@ export _TREETARGET
 #
 # beware - I haven't got dependency checking for include files implemented yet
 #
-aa = $(realpath omake)
-bb = $(shell dir $(aa)/*.h)
-cc = $(shell ls $(aa)/*.h)
-$(info "aa=$(aa) bb= $(bb) cc= $(cc));
-
 export NOMAKEDIR
 
 tools: 

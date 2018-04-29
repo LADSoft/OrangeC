@@ -34,17 +34,9 @@ export _TREETARGET
 # beware - I haven't got dependency checking for include files implemented yet
 #
 aa = $(realpath omake)
-bb = $(shell dir $(aa))
-cc = $(shell ls $(aa))
-dd = $(shell dir $(subst \,/,$(aa)))
-ee = $(shell ls $(subst \,/,$(aa)))
-$(info "aa=$(aa) bb= $(bb) cc= $(cc) dd= $(dd) ee = $(ee)");
-aa1 = $(subst C:,,$(aa))
-bb1 = $(shell dir $(aa1))
-cc1 = $(shell ls $(aa1))
-dd1 = $(shell dir $(subst \,/,$(aa1)))
-ee1 = $(shell ls $(subst \,/,$(aa1)))
-$(info "aa=$(aa1) bb= $(bb1) cc= $(cc1) dd= $(dd1) ee = $(ee1)");
+bb = $(shell dir $(aa)/*.h)
+cc = $(shell ls $(aa)/*.h)
+$(info "aa=$(aa) bb= $(bb) cc= $(cc));
 
 export NOMAKEDIR
 

@@ -26,7 +26,7 @@ C_DEPENDENCIES = $(wildcard *.c)
 all: $(DEPENDENCIES)
 
 srproc.o: srproc.c
-	$(CC) /c /I$(STDINCLUDE) $(CFLAGS) /s16 -o$(CLIBOBJECT)\$@ $^
+	$(CC) /c $(STDINCLUDE) $(CFLAGS) /s16 -o$(CLIBOBJECT)\$@ $^
 
 DISTRIBUTE:
 	copy srproc.c $(DISTSTARTUP)

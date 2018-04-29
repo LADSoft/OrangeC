@@ -28,9 +28,9 @@ C_FLAGS=/C-E #forces stack frames for this part of the RTL
 all: $(DEPENDENCIES)
 
 profile.o: profile.c
-	$(CC) /c /I$(STDINCLUDE) -o$(OBJECT)\$@F $^
+	$(CC) /c $(STDINCLUDE) -o$(OBJECT)\$@F $^
 
 proftime.o: proftime.c
-	$(CC) /c /I$(STDINCLUDE) -o$(OBJECT)\$@F $^
+	$(CC) /c $(STDINCLUDE) -o$(OBJECT)\$@F $^
 
 DISTRIBUTE:

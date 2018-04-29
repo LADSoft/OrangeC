@@ -56,19 +56,19 @@ endif
 endif
 
 %.o: %.cpp
-	$(CC) /c $(CFLAGS) $(BUILDING_DLL) -I$(STDINCLUDE) -o$(OBJECT)\$@ $^
-#	$(CC) /S $(CFLAGS) $(BUILDING_DLL) -I$(STDINCLUDE) $^
+	$(CC) /c $(CFLAGS) $(BUILDING_DLL) $(STDINCLUDE) -o$(OBJECT)\$@ $^
+#	$(CC) /S $(CFLAGS) $(BUILDING_DLL) $(STDINCLUDE) $^
 #	$(ASM) $(ASMFLAGS) $(BUILDING_DLL) -o$(OBJECT)\$@ $*
 
 %.o: %.c
-	$(CC) /1 /c $(CFLAGS) $(BUILDING_DLL) -I$(STDINCLUDE) -o$(OBJECT)\$@ $^
-#	$(CC) /S $(CFLAGS) $(BUILDING_DLL) -I$(STDINCLUDE) $^
+	$(CC) /1 /c $(CFLAGS) $(BUILDING_DLL) $(STDINCLUDE) -o$(OBJECT)\$@ $^
+#	$(CC) /S $(CFLAGS) $(BUILDING_DLL) $(STDINCLUDE) $^
 #	$(ASM) $(ASMFLAGS) $(BUILDING_DLL) -o$(OBJECT)\$@ $*
 %.o: %.nas
 	$(ASM) $(ASMFLAGS) $(BUILDING_DLL) -o$(OBJECT)\$@ $(call PATHSWAP,$^)
 
 %.ilo: %.c
-	occil -N$(OCCIL_CLASS) /1 /c /WcMn $(CILCFLAGS) -I$(STDINCLUDE) -o$(CILOBJECT)\$@ $(call PATHSWAP,$^)
+	occil -N$(OCCIL_CLASS) /1 /c /WcMn $(CILCFLAGS) $(STDINCLUDE) -o$(CILOBJECT)\$@ $(call PATHSWAP,$^)
 
 C_deps = $(notdir $(C_DEPENDENCIES:.c=.o))
 ASM_deps = $(notdir $(ASM_DEPENDENCIES:.nas=.o))

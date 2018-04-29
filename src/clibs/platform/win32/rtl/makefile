@@ -31,15 +31,15 @@ endif
 all: $(DEPENDENCIES)
 
 profilew.o: profilew.c
-	$(CC) /! /c /I$(STDINCLUDE) /9 -o$(OBJECT)\$@ $^
+	$(CC) /! /c $(STDINCLUDE) /9 -o$(OBJECT)\$@ $^
 
 proftmw.o: proftmw.c
-	$(CC) /! /c /I$(STDINCLUDE) /9 -o$(OBJECT)\$@ $^
+	$(CC) /! /c $(STDINCLUDE) /9 -o$(OBJECT)\$@ $^
 
 vsconio.o: vsconio.c
-	$(CC) /! /c /I$(STDINCLUDE) $(CFLAGS) /DVSDLL -o$(OBJECT)\$@ $^
+	$(CC) /! /c $(STDINCLUDE) $(CFLAGS) /DVSDLL -o$(OBJECT)\$@ $^
 
 llthrd.o: llthrd.c
-	$(CC) /! /c /C-E /I$(STDINCLUDE) /9 -o$(OBJECT)\$@ $^
+	$(CC) /! /c /C-E $(STDINCLUDE) /9 -o$(OBJECT)\$@ $^
 
 DISTRIBUTE:

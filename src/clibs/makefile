@@ -21,8 +21,6 @@
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
 
-SHELL:=/windows/system32/cmd.exe
-export SHELL
 
 all: dll clib 
 
@@ -50,12 +48,12 @@ export DOSOBJECT
 WINOBJECT:=$(call PATHSWAP,$(realpath object\windows))
 export WINOBJECT
 ifdef OLDSGL
-STDINCLUDE:=$(call PATHSWAP,$(realpath cpp\stdinc));$(call PATHSWAP,$(realpath stdinc))
+STDINCLUDE:=-I$(call PATHSWAP,$(realpath cpp\stdinc)) -I$(call PATHSWAP,$(realpath stdinc))
 else
 ifdef STLPORT
-STDINCLUDE:=$(call PATHSWAP,$(realpath cpp\stlport\stl));$(call PATHSWAP,$(realpath cpp\stdinc));$(call PATHSWAP,$(realpath stdinc))
+STDINCLUDE:=-I$(call PATHSWAP,$(realpath cpp\stlport\stl)) -I$(call PATHSWAP,$(realpath cpp\stdinc)) -I$(call PATHSWAP,$(realpath stdinc))
 else
-STDINCLUDE:=$(call PATHSWAP,$(realpath cpp\stdinc_libcxx));$(call PATHSWAP,$(realpath stdinc));$(call PATHSWAP,$(realpath cpp\libcxx\include));$(call PATHSWAP,$(realpath platform\win32\wininc));$(call PATHSWAP,$(realpath platform\win32\wininc\win32))
+STDINCLUDE:=-I$(call PATHSWAP,$(realpath cpp\stdinc_libcxx)) -I$(call PATHSWAP,$(realpath stdinc)) -I$(call PATHSWAP,$(realpath cpp\libcxx\include)) -I$(call PATHSWAP,$(realpath platform\win32\wininc)) -I$(call PATHSWAP,$(realpath platform\win32\wininc\win32))
 endif
 endif
 export STDINCLUDE

@@ -29,13 +29,13 @@ WINOBJS := $(shell dir /b $(WINOBJECT)\*.o)
 DLLOBJS := $(shell dir /b $(DLLOBJECT)\*.o)
 
 .\lscrtl.dll: .\lscrtl.o .\c0dll.o $(RCFILE).res
-	del $@
+	-del $@
 	$(LINK) $(LINKFLAGS) /T:DLL32 -o.\lscrtl .\lscrtl.o .\c0dll.o $(CLIBOBJECT)\srproc.o $(foreach dir, $(filter-out c0.o c0lsstartup.o, $(DLLOBJS)), $(DLLOBJECT)\$(dir)) $(SYSOBJECT)\climp.l $(RCFILE).res
 	move lscrtl.dll $(LSCRTLOBJECT)
 	move lscrtl.l $(LSCRTLOBJECT)
 
 .\lscrtlil.dll: .\lscrtl.o .\c0dll.o $(RCFILE).res
-	del $@
+	-del $@
 	$(LINK) $(LINKFLAGS) /l /T:DLL32 -o.\lscrtlil.rel .\lscrtl.o .\c0dll.o $(CLIBOBJECT)\srproc.o $(foreach dir, $(filter-out c0.o c0lsstartup.o, $(DLLOBJS)), $(DLLOBJECT)\$(dir)) $(SYSOBJECT)\climp.l $(RCFILE).res
 	dlpe /! /f /mDLL /olscrtlil.dll lscrtl.
 #	move lscrtlil.dll \occil\bin

@@ -22,7 +22,7 @@
 #         email: TouchStone222@runbox.com <David Lindauer>
 SHELL=c:\windows\system32\cmd.exe
 export SHELL
-s
+
 all: dll clib 
 
 BASEDIRS= ALLOC cmath COMPLIB IO locale MATH PROCONT stdlib STRING strings \

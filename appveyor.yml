@@ -12,23 +12,19 @@ build_script:
         
         - cd ..\..
         - move projects\orangec .
-        - mkdir \orangec\temp1
-        - mkdir \orangec\temp2
+        - mkdir \orangec\temp
         - cd orangec\src
-        - copy omake.exe \orangec\temp1
-        - path=\orangec\temp1;%ORIGPATH%
-        - omake fullbuild
+        - path=\orangec\temp;%ORIGPATH%
+        - copy omake.exe \orangec\temp
+        - c:\orangec\temp\omake fullbuild
         - c:\orangec\bin\occ /V
-        - copy omake\omake.exe \orangec\temp2
-        - path=\orangec\temp2;%ORIGPATH%
+        - copy omake\omake.exe \orangec\temp
         - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
         - c:\orangec\bin\occ /V
-        - copy omake\omake.exe \orangec\temp1
-        - path=\orangec\temp1;%ORIGPATH%
+        - copy omake\omake.exe \orangec\temp
         - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
         - c:\orangec\bin\occ /V
-        - copy omake\omake.exe \orangec\temp2
-        - path=\orangec\temp2;%ORIGPATH%
+        - copy omake\omake.exe \orangec\temp
         - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
         - path=%ORIGPATH%
         - cd ..\tests

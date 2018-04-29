@@ -31,8 +31,10 @@ ifeq (SHNAME,"")
 WINOBJS := $(shell dir /b $(WINOBJECT)\*.o)
 DLLOBJS := $(shell dir /b $(DLLOBJECT)\*.o)
 else
-WINOBJS := $(shell dir /b $(WINOBJECT)/*.o)
-DLLOBJS := $(shell dir /b $(DLLOBJECT)/*.o)
+WINOBJECT := $(subst C:,,$(WINOBJECT))
+DLLOBJS := $(subst C:,,$(DLLOBJS))
+WINOBJS := $(shell ls $(WINOBJECT)/*.o)
+DLLOBJS := $(shell ls $(DLLOBJECT)/*.o)
 endif
 
 .\lscrtl.dll: .\lscrtl.o .\c0dll.o $(RCFILE).res

@@ -90,6 +90,8 @@ mkdir:
 	-mkdir object\dll 2> NUL
 	-mkdir object\cil 2> NUL
 	-mkdir object\clib 2> NUL
+	dir object
+	dir object\dll
 
 mklibs:
 	-del $(SYSOBJECT)\cldos.l

@@ -32,13 +32,7 @@
 
 int _RTL_FUNC         chdir( const char  *__path )
 {
-    if (__path[1] == ':')
-    {
-        if (setdisk(__path[0] - '@'))
-            return 1;
-        __path += 2;
-    }
-	return _dos_setpwd(__path);
+	return _dos_setpwd(__path) * -1;
 }
 int _RTL_FUNC         _chdir( const char  *__path )
 {

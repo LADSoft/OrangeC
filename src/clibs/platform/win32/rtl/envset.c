@@ -43,6 +43,9 @@ static void envset(void)
        int n = __ll_getenvsize(i-1);
        char *p = (char *)malloc(n+1);
        __ll_getenv(p,i-1);
-       _environ[j++] = p;
+       if (p[0] != '=')
+           _environ[j++] = p;
+       else
+           free(p);
    }
 }

@@ -71,11 +71,11 @@ export CLIBOBJECT
 CILOBJECT =$(subst /,\,$(realpath object\cil))
 export CILOBJECT
 
-LIBOBJS = $(subst $(CLIBOBJECT)\,,$(shell dir /b $(CLIBOBJECT)\*.o))
-DOSOBJS1 = $(subst $(DOSOBJECT)\,,$(shell dir /b $(DOSOBJECT)\*.o))
+LIBOBJS = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(CLIBOBJECT)\*.o))
+DOSOBJS1 = $(subst $(DOSOBJECT)\,,$(shell dir $(B) $(DOSOBJECT)\*.o))
 DOSOBJS = $(DOSOBJS1:.OBJ=.o)
-WINOBJS = $(subst $(WINOBJECT)\,,$(shell dir /b $(WINOBJECT)\*.o))
-CILOBJS = $(subst $(CILOBJECT)\,,$(shell dir /b $(CILOBJECT)\*.ilo))
+WINOBJS = $(subst $(WINOBJECT)\,,$(shell dir $(B) $(WINOBJECT)\*.o))
+CILOBJS = $(subst $(CILOBJECT)\,,$(shell dir $(B) $(CILOBJECT)\*.ilo))
 
 mkdir:
 	-mkdir object

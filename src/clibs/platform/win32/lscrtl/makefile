@@ -25,8 +25,15 @@ RCFILE=lscrtl
 
 all: .\c0dll.o .\lscrtl.dll .\lscrtlil.dll
 
+SHNAME := $(findstring sh.exe,$(SHELL))
+
+ifeq (SHNAME,"")
 WINOBJS := $(shell dir /b $(WINOBJECT)\*.o)
 DLLOBJS := $(shell dir /b $(DLLOBJECT)\*.o)
+else
+WINOBJS := $(shell dir /b $(WINOBJECT)/*.o)
+DLLOBJS := $(shell dir /b $(DLLOBJECT)/*.o)
+endif
 
 .\lscrtl.dll: .\lscrtl.o .\c0dll.o $(RCFILE).res
 	-del $@

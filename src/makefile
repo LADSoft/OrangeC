@@ -41,9 +41,7 @@ tools:
 distribute:
 	@$(MAKE) -f $(_TREEROOT) distribute
 
-qq: 
-	$(info "SHELL=$(SHELL)")
-fullbuild: qq buildenv tools copyexes library distribute
+fullbuild: buildenv tools copyexes library distribute
 
 clean:  
 	@$(MAKE) -f $(_TREEROOT) clean

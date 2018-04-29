@@ -39,7 +39,7 @@ extern int optflags;
 extern LIST *nonSysIncludeFiles;
 
 #ifdef MICROSOFT
-char * __stdcall GetModuleFileNameA(int handle, char *buf, int size);
+//char * __stdcall GetModuleFileNameA(int handle, char *buf, int size);
 #endif
 
 #ifdef PARSER_ONLY

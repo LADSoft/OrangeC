@@ -34,7 +34,6 @@
 * [OCPP](general/OCPP.md) is a C and assembly language preprocessor.  It understands C89, C99, and OAsm preprocessor directive syntaxes.
 * [OGrep](ogrep/OGrep.md) looks for regular expressions within source code files.
 * [OMake](omake/OMake.md) is a make utility similar to GNU make.
-* [Coff2IEEE](general/Coff2IEEE.md) converts import libraries from the COFF format to the Orange C format.
 
 ## WIN32 Specific tools
  
@@ -44,6 +43,7 @@
  
 * [OImpLib](general/OImpLib.md) is a WIN32 import librarian.
 * [ORC](general/ORC.md) is a WIN32 resource compiler.
+* [Coff2IEEE](general/Coff2IEEE.md) converts import libraries from the COFF format to the Orange C format.
 
 
 ## Tools Setup

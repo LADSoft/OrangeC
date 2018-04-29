@@ -291,6 +291,7 @@ void DefFile::ReadExports()
             }
             else
             {
+                oneExport->entry = oneExport->id;
                 if (token->IsIdentifier())
                 {
                     oneExport->entry = token->GetId();
@@ -511,6 +512,8 @@ void DefFile::WriteExports()
             *stream << "EXPORTS" << std::endl;
             first = false;
         }
+        if (cdll && !exp->byOrd)
+            *stream << "\t_" << exp->id.c_str();
         *stream << "\t" << exp->id.c_str();
         if ((exp->entry.size() && exp->entry != exp->id) || exp->module.size())
         {
@@ -518,7 +521,7 @@ void DefFile::WriteExports()
             if (exp->module.size())
                 *stream << "." << exp->module.c_str();
         }
-        if (exp->ord != -1)
+        if ((!cdll || exp->byOrd) && exp->ord != -1)
             *stream << " @" << exp->ord;
         if (exp->byOrd)
             *stream << " " << "NONAME";

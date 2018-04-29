@@ -59,8 +59,8 @@ enum {
 class DefFile
 {
 public:
-    DefFile(const std::string &fname) : fileName(fname), tokenizer("", &keywords), lineno(0), imageBase(-1),
-        stackSize(-1), heapSize(-1), token(nullptr)
+    DefFile(const std::string &fname, bool CDLL) : fileName(fname), tokenizer("", &keywords), lineno(0), imageBase(-1),
+        stackSize(-1), heapSize(-1), token(nullptr), cdll(CDLL)
         { Init(); }
     virtual ~DefFile();
     bool Read();
@@ -132,6 +132,7 @@ private:
     const Token *token;
     std::fstream *stream;
     int lineno;
+    bool cdll;
     std::map<std::string, unsigned> sectionMap;
     std::deque<Export *> exports;
     std::deque<Import *> imports;

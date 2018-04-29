@@ -29,12 +29,12 @@
 ## Utilities
 
  
- Utilities are external utilites that aren't really needed for developing programs, but are somewhat useful.
+ Utilities are external utilites that aren't generally needed for developing programs, but are somewhat useful.
  
 * [OCPP](general/OCPP.md) is a C and assembly language preprocessor.  It understands C89, C99, and OAsm preprocessor directive syntaxes.
 * [OGrep](ogrep/OGrep.md) looks for regular expressions within source code files.
 * [OMake](omake/OMake.md) is a make utility similar to GNU make.
-
+* [Coff2IEEE](general/Coff2IEEE.md) converts import libraries from the COFF format to the Orange C format.
 
 ## WIN32 Specific tools
  

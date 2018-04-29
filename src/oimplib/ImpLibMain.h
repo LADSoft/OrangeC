@@ -73,6 +73,7 @@ private:
     static CmdSwitchBool caseSensitiveSwitch;
     static CmdSwitchOutput OutputFile;
     static CmdSwitchFile File;
+    static CmdSwitchBool CDLLSwitch;
 
     static char *usageText;
 };

@@ -21,8 +21,8 @@
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
 
-SHELL:=/windows/system32/cmd.exe
-export SHELL
+#SHELL:=/windows/system32/cmd.exe
+#export SHELL
 
 PATHSWAP = $(subst /,\,$(1))
 export PATHSWAP

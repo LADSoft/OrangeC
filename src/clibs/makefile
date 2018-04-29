@@ -20,7 +20,8 @@
 # 
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
-SHELL=c:\windows\system32\cmd.exe
+
+SHELL:=c:\windows\system32\cmd.exe
 export SHELL
 
 all: dll clib 

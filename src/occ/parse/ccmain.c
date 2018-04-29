@@ -21,8 +21,6 @@
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
  */
-#include <windows.h>
-
 #include "compiler.h"
 #include <setjmp.h>
 extern ARCH_DEBUG *chosenDebugger;
@@ -39,7 +37,7 @@ extern int optflags;
 extern LIST *nonSysIncludeFiles;
 
 #ifdef MICROSOFT
-//char * __stdcall GetModuleFileNameA(int handle, char *buf, int size);
+char * __stdcall GetModuleFileNameA(int handle, char *buf, int size);
 #endif
 
 #ifdef PARSER_ONLY
@@ -671,7 +669,6 @@ int main(int argc, char *argv[])
                 outputFile = fopen(realOutFile, cparams.prm_asmfile ? "w" : "wb");
                 if (!outputFile)
                 {
-printf("last error %d %d\n", GetLastError(), errno);
                     fclose(inputFile);
                     fatal("Cannot open output file %s", realOutFile);
                 }

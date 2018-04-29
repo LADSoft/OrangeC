@@ -27,8 +27,6 @@ CILCFLAGS = $(CIL_C_FLAGS) $(DEFINES)
 
 OCCIL_CLASS=lsmsilcrtl.rtl
 
-PATHSWAP = $(subst /,\,$(1))
-
 LINK=olink
 LINKFLAGS= -c+ -!
 
@@ -65,10 +63,10 @@ endif
 #	$(CC) /S $(CFLAGS) $(BUILDING_DLL) $(STDINCLUDE) $^
 #	$(ASM) $(ASMFLAGS) $(BUILDING_DLL) -o$(OBJECT)\$@ $*
 %.o: %.nas
-	$(ASM) $(ASMFLAGS) $(BUILDING_DLL) -o$(OBJECT)\$@ $(call PATHSWAP,$^)
+	$(ASM) $(ASMFLAGS) $(BUILDING_DLL) -o$(OBJECT)\$@ $(subst /,\,$^)
 
 %.ilo: %.c
-	occil -N$(OCCIL_CLASS) /1 /c /WcMn $(CILCFLAGS) $(STDINCLUDE) -o$(CILOBJECT)\$@ $(call PATHSWAP,$^)
+	occil -N$(OCCIL_CLASS) /1 /c /WcMn $(CILCFLAGS) $(STDINCLUDE) -o$(CILOBJECT)\$@ $(subst /,\,$^)
 
 C_deps = $(notdir $(C_DEPENDENCIES:.c=.o))
 ASM_deps = $(notdir $(ASM_DEPENDENCIES:.nas=.o))

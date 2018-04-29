@@ -30,8 +30,6 @@ CLIBDIRS = $(BASEDIRS) cpp
 DLLDIRS = $(BASEDIRS)
 DIRS= $(CLIBDIRS) platform
 
-PATHSWAP = $(subst /,\,$(1))
-
 define SUFFIXDIRS =
 	$(foreach dir, $(1), $(dir)$(2))
 endef
@@ -39,38 +37,38 @@ endef
 C_CLIBS:= $(call SUFFIXDIRS,$(DIRS),.clibs)
 C_DLLS:= $(call SUFFIXDIRS,$(DLLDIRS),.dlls)
 
-MAKEFILES := $(MAKEFILES) $(call PATHSWAP,$(realpath maker.mak))
+MAKEFILES := $(MAKEFILES) $(subst /,\,$(realpath maker.mak))
 export MAKEFILES
 include maker.mak
 
-DOSOBJECT:=$(call PATHSWAP,$(realpath object\dos))
+DOSOBJECT:=$(subst /,\,$(realpath object\dos))
 export DOSOBJECT
-WINOBJECT:=$(call PATHSWAP,$(realpath object\windows))
+WINOBJECT:=$(subst /,\,$(realpath object\windows))
 export WINOBJECT
 ifdef OLDSGL
-STDINCLUDE:=-I$(call PATHSWAP,$(realpath cpp\stdinc)) -I$(call PATHSWAP,$(realpath stdinc))
+STDINCLUDE:=-I$(subst /,\,$(realpath cpp\stdinc)) -I$(subst /,\,$(realpath stdinc))
 else
 ifdef STLPORT
-STDINCLUDE:=-I$(call PATHSWAP,$(realpath cpp\stlport\stl)) -I$(call PATHSWAP,$(realpath cpp\stdinc)) -I$(call PATHSWAP,$(realpath stdinc))
+STDINCLUDE:=-I$(subst /,\,$(realpath cpp\stlport\stl)) -I$(subst /,\,$(realpath cpp\stdinc)) -I$(subst /,\,$(realpath stdinc))
 else
-STDINCLUDE:=-I$(call PATHSWAP,$(realpath cpp\stdinc_libcxx)) -I$(call PATHSWAP,$(realpath stdinc)) -I$(call PATHSWAP,$(realpath cpp\libcxx\include)) -I$(call PATHSWAP,$(realpath platform\win32\wininc)) -I$(call PATHSWAP,$(realpath platform\win32\wininc\win32))
+STDINCLUDE:=-I$(subst /,\,$(realpath cpp\stdinc_libcxx)) -I$(subst /,\,$(realpath stdinc)) -I$(subst /,\,$(realpath cpp\libcxx\include)) -I$(subst /,\,$(realpath platform\win32\wininc)) -I$(subst /,\,$(realpath platform\win32\wininc\win32))
 endif
 endif
 export STDINCLUDE
 
-SYSOBJECT :=$(call PATHSWAP,$(realpath object\startup))
+SYSOBJECT :=$(subst /,\,$(realpath object\startup))
 export SYSOBJECT
 
-LSCRTLOBJECT :=$(call PATHSWAP,$(realpath object\startup))
+LSCRTLOBJECT :=$(subst /,\,$(realpath object\startup))
 export LSCRTLOBJECT
 
-DLLOBJECT :=$(call PATHSWAP,$(realpath object\dll))
+DLLOBJECT :=$(subst /,\,$(realpath object\dll))
 export DLLOBJECT
 
-CLIBOBJECT :=$(call PATHSWAP,$(realpath object\clib))
+CLIBOBJECT :=$(subst /,\,$(realpath object\clib))
 export CLIBOBJECT
 
-CILOBJECT :=$(call PATHSWAP,$(realpath object\cil))
+CILOBJECT :=$(subst /,\,$(realpath object\cil))
 export CILOBJECT
 
 LIBOBJS = $(shell dir /b $(CLIBOBJECT)\*.o)

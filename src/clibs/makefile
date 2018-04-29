@@ -40,7 +40,11 @@ MAKEFILES := $(MAKEFILES) $(subst /,\,$(realpath maker.mak))
 export MAKEFILES
 include maker.mak
 
-THISPATH:=$(strip $(subst /,\,$(shell cd)\))
+ifneq ($(shell type makefile),)
+B = /b
+endif
+
+THISPATH:=$(subst /,\,$(CURDIR)\)
 
 DOSOBJECT:=$(THISPATH)object\dos
 export DOSOBJECT
@@ -71,10 +75,6 @@ export CLIBOBJECT
 
 CILOBJECT:=$(THISPATH)object\cil
 export CILOBJECT
-
-ifneq ($(shell type makefile),)
-B = /b
-endif
 
 LIBOBJS = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(CLIBOBJECT)\*.o))
 DOSOBJS1 = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(DOSOBJECT)\*.o))

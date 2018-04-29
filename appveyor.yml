@@ -5,8 +5,14 @@ install:
     - set PATH=c:\orangec\bin;%PATH%;C:\Program Files (x86)\Inno Setup 5
     - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars32.bat"
     - set PATH=C:\mingw-w64\x86_64-7.2.0-posix-seh-rt_v5-rev1\mingw64\bin;%PATH%
-    - set ORANGEC=c:\ORANGEC
     - set ORIGPATH=%PATH%
+
+environment:
+  - ORANGEC=c:\ORANGEC
+  matrix:
+    - BUILD_PROFILE: MS
+    - BUILD_PROFILE: MINGW64
+ 
  
 build_script:
         
@@ -14,9 +20,7 @@ build_script:
         - move projects\orangec .
         - mkdir \orangec\temp
         - cd orangec\src
-        - path=\orangec\temp;%ORIGPATH%
-        - copy omake.exe \orangec\temp
-        - c:\orangec\temp\omake fullbuild
+        - mingw32-make --eval="COMPILER=$(BUILD_PROFILE)"
         - c:\orangec\bin\occ /V
         - copy omake\omake.exe \orangec\temp
         - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
@@ -29,6 +33,7 @@ build_script:
         - path=%ORIGPATH%
         - cd ..\tests
         - omake -B
+        - dir x264
         - cd ..\.. 
         - move orangec projects
 

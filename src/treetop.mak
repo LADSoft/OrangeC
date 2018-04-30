@@ -57,7 +57,7 @@ NULLDEV := NUL
 
 del:
 	-del /Q  $(_OUTPUTDIR)\*.* 2> $(NULLDEV)
-	-del /Q *.exe
+	-del /Q *.exe 2> $(NULLDEV)
 mkdir:
 	-mkdir  $(_OUTPUTDIR) 2> $(NULLDEV)
 rmdir:

@@ -163,6 +163,9 @@ public:
     const ImplicitIterator ImplicitEnd() { return implicitRules.end(); }
     void Clear();
     void SecondaryEval();	
+    bool OnList(const std::string &goal, char *what);
+    bool NoList(char *what);
+    bool ScanList(const std::string &v, const std::string &goal);
 protected:
     RuleContainer() { }
 private:

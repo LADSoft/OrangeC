@@ -30,20 +30,22 @@
 #include <list>
 #include <set>
 #include "Spawner.h"
+#include "Maker.h"
 
 class Depends;
 class Variable;
 class Runner
 {
 public:
-    Runner(bool Silent, bool DisplayOnly, bool IgnoreResults, bool Touch, bool KeepResponseFiles,
+    Runner(bool Silent, bool DisplayOnly, bool IgnoreResults, bool Touch, OutputType Type, bool KeepResponseFiles,
 	std::string& FirstGoal, std::map<std::string, std::string>& FilePaths) :
         silent(Silent), displayOnly(DisplayOnly), ignoreResults(IgnoreResults), touch(Touch),
-        keepResponseFiles(KeepResponseFiles), firstGoal(FirstGoal), filePaths(FilePaths)  { }
+        keepResponseFiles(KeepResponseFiles), firstGoal(FirstGoal), filePaths(FilePaths), outputType(Type)  { }
     void DeleteOne(Depends *depend);
     int RunOne(Depends *depend, EnvironmentStrings &env, bool keepGoing);
     void CancelOne(Depends *depend);
 private:
+    OutputType outputType;
     bool silent;
     bool displayOnly;
     bool ignoreResults;

@@ -38,10 +38,11 @@ std::map<std::string, Depends *> Depends::all;
 std::string Maker::firstGoal;
 std::map<std::string, std::string> Maker::filePaths;
 
-Maker::Maker(bool Silent, bool DisplayOnly, bool IgnoreResults, bool Touch, bool RebuildAll,
+Maker::Maker(bool Silent, bool DisplayOnly, bool IgnoreResults, bool Touch, OutputType Type, bool RebuildAll,
              bool KeepResponseFiles, std::string NewFiles, std::string OldFiles) : silent(Silent),
     displayOnly(DisplayOnly), ignoreResults(IgnoreResults), missingTarget(false), touch(Touch),
-    rebuildAll(RebuildAll), keepResponseFiles(KeepResponseFiles), newFiles(NewFiles), oldFiles(OldFiles)
+    rebuildAll(RebuildAll), keepResponseFiles(KeepResponseFiles), newFiles(NewFiles), oldFiles(OldFiles),
+    outputType(Type)
     {
     }
 Maker::~Maker()
@@ -586,27 +587,39 @@ void Maker::GetEnvironment(EnvironmentStrings &env)
 }
 int Maker::RunCommands(bool keepGoing)
 {
-    int rv =0 ;
+    if (RuleContainer::Instance()->Lookup(".NOTPARALLEL") || RuleContainer::Instance()->Lookup(".NO_PARALLEL"))
+        OS::PushJobCount(1);
     bool stop = false;
     EnvironmentStrings env;
     GetEnvironment(env);
     int count;
-    Runner runner(silent, displayOnly, ignoreResults, touch, keepResponseFiles, firstGoal, filePaths);
+    Runner runner(silent, displayOnly, ignoreResults, touch, outputType, keepResponseFiles, firstGoal, filePaths);
 
-    for (std::list<Depends *>::iterator it = depends.begin(); (rv == 0 || keepGoing) && it != depends.end(); ++it)
+    for (std::list<Depends *>::iterator it = depends.begin(); it != depends.end(); ++it)
     {
         runner.CancelOne(*it);
     }
-    for (std::list<Depends *>::iterator it = depends.begin(); (rv == 0 || keepGoing) && it != depends.end(); ++it)
+
+    int rv;
+    do
     {
-        rv = runner.RunOne(*it, env, keepGoing);
-        if (rv)
-            stop = true;
-    }
+        rv = 0;
+        for (std::list<Depends *>::iterator it = depends.begin(); (rv <= 0 || keepGoing) && it != depends.end(); ++it)
+        {
+            int rv1 = runner.RunOne(*it, env, keepGoing);
+            if (rv <= 0 && rv1 != 0)
+                rv = rv1;
+            if (rv > 0)
+                stop = true;
+        }
+        OS::Yield();
+    } while (rv < 0);
     for (auto d : depends)
     {
         runner.DeleteOne(d);
     }
+    if (RuleContainer::Instance()->Lookup(".NOTPARALLEL") || RuleContainer::Instance()->Lookup(".NO_PARALLEL"))
+        OS::PopJobCount();
     if (stop)
         return 2;
     else

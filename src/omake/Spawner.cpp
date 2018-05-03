@@ -34,15 +34,29 @@
 
 const char Spawner::escapeStart = '\x1';
 const char Spawner::escapeEnd = '\x2';
-int Spawner::lineLength = 1024 * 1024; // os limitation on XP and later is 8191
-std::list<std::string> Spawner::cmdList;
 
-int Spawner::Run(Command &commands, RuleList *ruleList, Rule *rule)
+unsigned WINFUNC Spawner::Thread(void *cls)
+{
+    Spawner *ths = (Spawner *)cls;
+    ths->RetVal(ths->InternalRun());
+    ths->done = true;
+    return 0;
+}
+void Spawner::Run(Command &Commands, OutputType Type, RuleList *RuleListx, Rule *Rulex)
+{
+    commands = &Commands;
+    outputType = Type;
+    ruleList = RuleListx;
+    rule = Rulex;
+    OS::CreateThread(&Spawner::Thread, this);
+}
+int Spawner::InternalRun()
 {
     int rv = 0;
     std::string longstr;
     std::deque<std::string> tempFiles;
-    for (Command::iterator it = commands.begin(); it != commands.end() && (!rv || !posix) ; ++it)
+    bool make = false;
+    for (Command::iterator it = commands->begin(); it != commands->end() && (!rv || !posix) ; ++it)
     {
         bool curSilent = silent;
         bool curIgnore = ignoreErrors;
@@ -59,7 +73,11 @@ int Spawner::Run(Command &commands, RuleList *ruleList, Rule *rule)
             else
                 break;
         if (a.find("$(MAKE)") != std::string::npos || a.find("${MAKE}") != std::string::npos)
+        {
+            make = true;
             curDontRun = false;
+        }
+        OS::Take();
         std::string cmd = a.substr(i);
         Eval c(cmd, false, ruleList, rule);
         cmd = c.Evaluate(); // deferred evaluation
@@ -101,27 +119,36 @@ int Spawner::Run(Command &commands, RuleList *ruleList, Rule *rule)
             cmd += makeName + tail;
         }
         cmd = QualifyFiles(cmd);
+        OS::Give();
         if (oneShell)
+        {
              longstr += cmd;
+        }
         else
-             rv = Run(cmd, curIgnore, curSilent, curDontRun);
+        {
+             rv = Run(cmd, curIgnore, curSilent, curDontRun, make);
+             make = false;
+        }
+        if (outputType == o_line)
+            OS::ToConsole(output);
         if (curIgnore)
             rv = 0;
         if (rv && posix)
             break;
     }
     if (oneShell)
-        rv = Run(longstr, ignoreErrors, silent, dontRun);
+        rv = Run(longstr, ignoreErrors, silent, dontRun, false);
+    OS::ToConsole(output);
     for (auto f : tempFiles)
         OS::RemoveFile(f);
     return rv;
 }
-int Spawner::Run(const std::string &cmdin, bool ignoreErrors, bool silent, bool dontrun)
+int Spawner::Run(const std::string &cmdin, bool ignoreErrors, bool silent, bool dontrun, bool make)
 {
     std::string cmd = OS::NormalizeFileName(cmdin);
     if (oneShell)
     {
-        return OS::Spawn(cmd, environment);
+        return OS::Spawn(cmd, environment, nullptr);
     }
     else if (!split(cmd))
     {
@@ -134,11 +161,14 @@ int Spawner::Run(const std::string &cmdin, bool ignoreErrors, bool silent, bool 
         for (auto command : cmdList)
         {
             if (!silent)
-                std::cout << "\t" << command.c_str() << std::endl;
+                OS::WriteConsole(std::string("\t") + command.c_str() + "\n");
             int rv1;
             if (!dontrun)
             {
-                rv1 = OS::Spawn(command, environment);
+                std::string str;
+                rv1 = OS::Spawn(command, environment, outputType != o_none && (outputType != o_recurse || !make) ? &str : nullptr);
+                if (outputType != o_none && str.size())
+                    output.push_back(str);
                 if (!rv)
                      rv = rv1;
                 if (rv && posix)

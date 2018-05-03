@@ -29,6 +29,11 @@
 #include <list>
 
 #include "os.h"
+#ifdef _WIN32
+#define WINFUNC __stdcall
+#endif
+
+enum OutputType { o_none, o_line, o_target, o_recurse };
 
 class Command
 {
@@ -57,23 +62,35 @@ class Spawner
         Spawner(const EnvironmentStrings &Environ, bool IgnoreErrors, bool Silent,
              bool OneShell, bool Posix, bool DontRun, bool KeepResponseFiles) 
 	: environment(Environ), oneShell(OneShell), posix(Posix),
-            ignoreErrors(IgnoreErrors), silent(Silent), dontRun(DontRun), keepResponseFiles(KeepResponseFiles), tempNum(1)
+            ignoreErrors(IgnoreErrors), silent(Silent), dontRun(DontRun), keepResponseFiles(KeepResponseFiles), tempNum(1), 
+            done(false), lineLength(1024 * 1024), outputType(o_none)
         { }
         ~Spawner() { }
-        int Run(Command &commands, RuleList *ruleList = nullptr, Rule *rule= nullptr);
+        static unsigned WINFUNC Thread(void *cls);
+        int InternalRun();
+        void Run(Command &Commands, OutputType Type, RuleList *RuleList = nullptr, Rule *Rule= nullptr);
         std::string shell(const std::string &command);
         void SetLineLength(int length) { lineLength = length; }
         bool GetLineLength() const { return lineLength; }
+
+        bool IsDone() const { return done; }
+
+        int RetVal() const { return retVal; }
         
         static const char escapeStart;
         static const char escapeEnd;
     protected:
-        int Run(const std::string &cmd, bool ignoreErrors, bool silent, bool dontrun);
+        int Run(const std::string &cmd, bool ignoreErrors, bool silent, bool dontrun, bool make = false);
         bool split(const std::string &cmd);
         std::string QualifyFiles(const std::string &cmd);
+        void RetVal(int val) { retVal = val; }
     private:
-        static int lineLength;
-        static std::list<std::string> cmdList;
+        std::deque<std::string> output;
+        Command* commands;
+        RuleList* ruleList;
+        Rule* rule;
+        int lineLength;
+        std::list<std::string> cmdList;
         EnvironmentStrings environment;
         bool ignoreErrors;
         bool silent;
@@ -82,5 +99,8 @@ class Spawner
         bool dontRun;
         bool keepResponseFiles;
         int tempNum;
+        bool done;
+        int retVal;
+        OutputType outputType;
 };
 #endif

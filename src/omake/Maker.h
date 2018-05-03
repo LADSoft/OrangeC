@@ -33,10 +33,11 @@
 #include "Depends.h"
 
 class Variable;
+
 class Maker
 {
 public:
-    Maker(bool Silent, bool DisplayOnly, bool IgnoreResults, bool Touch,
+    Maker(bool Silent, bool DisplayOnly, bool IgnoreResults, bool Touch, OutputType Type,
           bool rebuildAll = false, bool keepResponseFiles = false, std::string newFiles = "", std::string oldFiles = "");
     ~Maker();
     static void SetFirstGoal(const std::string &name);
@@ -64,6 +65,7 @@ private:
     Goals goals;
     static std::string firstGoal;
     std::list<Depends *> depends;
+    OutputType outputType;
     bool silent;
     bool displayOnly;
     bool ignoreResults;

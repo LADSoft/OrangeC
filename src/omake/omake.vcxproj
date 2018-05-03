@@ -155,6 +155,7 @@
     <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Depends.cpp" />
     <ClCompile Include="Eval.cpp" />
     <ClCompile Include="Include.cpp" />
     <ClCompile Include="MakeMain.cpp" />
@@ -162,6 +163,7 @@
     <ClCompile Include="os.cpp" />
     <ClCompile Include="Parser.cpp" />
     <ClCompile Include="Rule.cpp" />
+    <ClCompile Include="Runner.cpp" />
     <ClCompile Include="Spawner.cpp" />
     <ClCompile Include="Variable.cpp" />
   </ItemGroup>

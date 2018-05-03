@@ -25,6 +25,8 @@
 #define _CRT_SECURE_NO_WARNINGS  
 
 #include <windows.h>
+#undef WriteConsole
+#include <process.h>
 #include <direct.h>
 #include <stdio.h>
 #include <time.h>
@@ -36,6 +38,11 @@
 #include <algorithm>
 #include <iostream>
 
+
+static CRITICAL_SECTION consoleSync;
+int OS::jobsLeft;
+std::deque<int> OS::jobCounts;
+
 bool Time::operator >(const Time &last)
 {
     if (this->seconds > last.seconds)
@@ -45,7 +52,65 @@ bool Time::operator >(const Time &last)
             return true;
     return false;
 }
-int OS::Spawn(const std::string command, EnvironmentStrings &environment)
+void OS::Init()
+{
+    InitializeCriticalSection(&consoleSync);
+}
+void OS::WriteConsole(std::string &string)
+{
+    DWORD written; 
+    EnterCriticalSection(&consoleSync);
+    WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), string.c_str(), string.size(), &written, nullptr);
+    LeaveCriticalSection(&consoleSync);
+}
+void OS::ToConsole(std::deque<std::string>& strings)
+{
+    EnterCriticalSection(&consoleSync);
+    for (auto s : strings)
+    {
+	WriteConsole(s);
+    }
+    strings.clear();
+    LeaveCriticalSection(&consoleSync);
+}
+void OS::AddConsole(std::deque<std::string>& strings, std::string string)
+{
+    EnterCriticalSection(&consoleSync);
+    strings.push_back(string);
+    LeaveCriticalSection(&consoleSync);
+}
+void OS::PushJobCount(int jobs)
+{
+    jobsLeft = jobs;
+    jobCounts.push_back(jobs);
+}
+void OS::PopJobCount()
+{
+    jobCounts.pop_back();
+    jobsLeft = jobCounts.back();
+}
+bool OS::TakeJob()
+{
+    if (jobsLeft-- <= 0)
+    {
+        jobsLeft++;
+        return false;
+    }
+    return true;
+}
+void OS::GiveJob()
+{
+    jobsLeft++;
+}
+void OS::Take()
+{
+   EnterCriticalSection(&consoleSync);
+ }
+void OS::Give()
+{
+   LeaveCriticalSection(&consoleSync);
+}
+int OS::Spawn(const std::string command, EnvironmentStrings &environment, std::string *output)
 {
     static std::string names = "ASSOC ATTRIB BREAK BCDEDIT CACLS CALL CD CHCP CHDIR CHKDSK CHKNTFS CLS CMD COLOR COMP COMPACT CONVERT COPY DATE DEL DIR DISKPART DOSKEY DRIVERQUERY ECHO ENDLOCAL ERASE EXIT FC FIND FINDSTR FOR FORMAT FSUTIL FTYPE GOTO GPRESULT GRAFTABL HELP ICACLS IF LABEL MD MKDIR MKLINK MODE MORE MOVE OPENFILES PATH PAUSE POPD PRINT PROMPT PUSHD RD RECOVER REM REN RENAME REPLACE RMDIR ROBOCOPY SET SETLOCAL SC SCHTASKS SHIFT SHUTDOWN SORT START SUBST SYSTEMINFO TASKLIST TASKKILL TIME TITLE TREE TYPE VER VERIFY VOL XCOPY WMIC ";
     std::string command1 = command;
@@ -89,13 +154,28 @@ int OS::Spawn(const std::string command, EnvironmentStrings &environment)
     cmd += std::string("\"") + command + "\"";
     STARTUPINFO startup;
     PROCESS_INFORMATION pi;
+    HANDLE pipeRead, pipeWrite, pipeWriteDuplicate;
+    if (output)
+    {
+        CreatePipe(&pipeRead, &pipeWrite, nullptr, 4 * 1024 * 1024);
+        DuplicateHandle(GetCurrentProcess(),pipeWrite, GetCurrentProcess(), &pipeWriteDuplicate, 0, TRUE, DUPLICATE_SAME_ACCESS);
+        CloseHandle(pipeWrite);
+    }
     int rv;
     memset(&startup, 0, sizeof(startup));
     startup.cb = sizeof(STARTUPINFO);
     startup.dwFlags = STARTF_USESTDHANDLES;
     startup.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
-    startup.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
-    startup.hStdError = GetStdHandle(STD_ERROR_HANDLE);
+    if (output)
+    {
+        startup.hStdOutput = pipeWriteDuplicate;
+        startup.hStdError = pipeWriteDuplicate;
+    }
+    else
+    {
+        startup.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+        startup.hStdError = GetStdHandle(STD_ERROR_HANDLE);
+    }
     int n = 0;
     for (auto env : environment)
     {
@@ -103,29 +183,37 @@ int OS::Spawn(const std::string command, EnvironmentStrings &environment)
     }
     n++;
     char *env = new char[n];
-//    if (env)
+    memset(env, 0, sizeof(char)*n); // !!!
+    char *p = env;
+    for (auto env : environment)
     {
-        memset(env, 0, sizeof(char)*n); // !!!
-        char *p = env;
-        for (auto env : environment)
-        {
-            memcpy(p, env.name.c_str(), env.name.size());
-            p+= env.name.size();
-            *p++ = '=';
-            memcpy(p, env.value.c_str(), env.value.size());
-            p+= env.value.size();
-            *p++ = '\0';
-        }
+        memcpy(p, env.name.c_str(), env.name.size());
+        p+= env.name.size();
+        *p++ = '=';
+        memcpy(p, env.value.c_str(), env.value.size());
+        p+= env.value.size();
         *p++ = '\0';
     }
-//    else
-//    {
-//        return -1;
-//    }
+    *p++ = '\0';
     if (!isCmd && CreateProcess(nullptr, (char *)command.c_str(), nullptr, nullptr, true, 0, env,
                       nullptr, &startup, &pi))
     {
         WaitForSingleObject(pi.hProcess, INFINITE);
+        if (output)
+        {
+            DWORD avail = 0;
+            PeekNamedPipe(pipeRead, NULL, 0, NULL, &avail, NULL);
+            if (avail > 0)
+            {
+                char *buffer = new char[avail+1];
+                DWORD readlen = 0;
+
+                ReadFile(pipeRead,buffer, avail, &readlen, nullptr);
+                buffer[readlen] = 0;
+                *output = buffer;
+                delete [] buffer;
+             }
+        }
         DWORD x;
         GetExitCodeProcess(pi.hProcess, &x);
         rv = x;
@@ -138,6 +226,21 @@ int OS::Spawn(const std::string command, EnvironmentStrings &environment)
                       nullptr, &startup, &pi))
         {
             WaitForSingleObject(pi.hProcess, INFINITE);
+            if (output)
+            {
+                DWORD avail = 0;
+                PeekNamedPipe(pipeRead, NULL, 0, NULL, &avail, NULL);
+                if (avail > 0)
+                {
+                    char *buffer = new char[avail+1];
+                    DWORD readlen = 0;
+
+                    ReadFile(pipeRead,buffer, avail, &readlen, nullptr);
+                    buffer[readlen] = 0;
+                    *output = buffer;
+                    delete [] buffer;
+                }
+            }
             DWORD x;
             GetExitCodeProcess(pi.hProcess, &x);
             rv = x;
@@ -148,6 +251,11 @@ int OS::Spawn(const std::string command, EnvironmentStrings &environment)
         {
             rv = -1;
         }
+    }
+    if (output)
+    {
+        CloseHandle(pipeRead);
+        CloseHandle(pipeWriteDuplicate);
     }
     delete[] env;
     return rv;
@@ -182,17 +290,16 @@ std::string OS::SpawnWithRedirect(const std::string command)
                       nullptr, &startup, &pi))
     {
         WaitForSingleObject(pi.hProcess, INFINITE);
-        char *buffer = new char[1024 * 1024];
-//        if (buffer)
+        DWORD avail = 0;
+        PeekNamedPipe(pipeRead, NULL, 0, NULL, &avail, NULL);
+        if (avail > 0)
         {
+            char *buffer = new char[avail+1];
             DWORD readlen = 0;
-            DWORD avail = 0;
-            PeekNamedPipe(pipeRead, NULL, 1024 * 1024, NULL, &avail, NULL);
-
-            if (avail > 0)
-                ReadFile(pipeRead,buffer, 1024 * 1024, &readlen, nullptr);
+            ReadFile(pipeRead,buffer, avail, &readlen, nullptr);
             buffer[readlen] = 0;
             rv = buffer;
+            delete [] buffer;
         }
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
@@ -317,4 +424,12 @@ std::string OS::NormalizeFileName(const std::string file)
         }
     }
     return name;
+}
+void OS::CreateThread(void *func, void *data)
+{
+    CloseHandle((HANDLE)_beginthreadex(nullptr, 0, (unsigned (CALLBACK *)(void *))func, data, 0, NULL));
+}
+void OS::Yield()
+{
+    ::Sleep(10);
 }

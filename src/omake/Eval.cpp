@@ -34,6 +34,7 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
+#include <sstream>
 #include "Utils.h"
 
 std::string Eval::VPath;
@@ -1510,55 +1511,65 @@ std::string Eval::shell(const std::string &arglist)
 
 std::string Eval::error(const std::string &arglist, const std::string fileOverride , int lineOverride)
 {
+    std::ostringstream os;
     if (fileOverride.size())
     {
-        std::cout << "Error " << fileOverride.c_str() << "(" << lineOverride << "): " << arglist.c_str() << std::endl;
+        os << "Error " << fileOverride.c_str() << "(" << lineOverride << "): " << arglist.c_str() << std::endl;
     }
     else if (lineOverride != -1)
     {
-        std::cout << "Error " << file.c_str() << "(" << lineno << "): " << arglist.c_str() << std::endl;
+        os << "Error " << file.c_str() << "(" << lineno << "): " << arglist.c_str() << std::endl;
     }
     else
     {
-        std::cout << "Error: " << arglist.c_str() << std::endl;
+        os << "Error: " << arglist.c_str() << std::endl;
     }
+    OS::WriteConsole(os.str());
     errcount++;
     return "";
 }
 std::string Eval::errorx(const std::string &arglist)
 {
     Eval a(arglist, false, nullptr, nullptr);
+    std::ostringstream os;
     std::cout << "Error " << file.c_str() << "(" << lineno << "): " << a.Evaluate().c_str() << std::endl;
+    OS::WriteConsole(os.str());
     errcount++;
     return "";
 }
 std::string Eval::warning(const std::string &arglist, const std::string fileOverride , int lineOverride)
 {
+    std::ostringstream os;
     if (fileOverride.size())
     {
-        std::cout << "Warning " << fileOverride.c_str() << "(" << lineOverride << "): " << arglist.c_str() << std::endl;
+        os << "Warning " << fileOverride.c_str() << "(" << lineOverride << "): " << arglist.c_str() << std::endl;
     }
     else if (lineOverride != -1)
     {
-        std::cout << "Warning " << file.c_str() << "(" << lineno << "): " << arglist.c_str() << std::endl;
+        os << "Warning " << file.c_str() << "(" << lineno << "): " << arglist.c_str() << std::endl;
     }
     else
     {
-        std::cout << "Warning: " << arglist.c_str() << std::endl;
+        os << "Warning: " << arglist.c_str() << std::endl;
     }
+    OS::WriteConsole(os.str());
     return "";
 }
 std::string Eval::warningx(const std::string &arglist)
 {
     Eval a(arglist, false, nullptr, nullptr);
-    std::cout << "Warning " << file.c_str() << "(" << lineno << "): " << a.Evaluate().c_str() << std::endl;
+    std::ostringstream os;
+    os << "Warning " << file.c_str() << "(" << lineno << "): " << a.Evaluate().c_str() << std::endl;
+    OS::WriteConsole(os.str());
     return "";
 }
 
 std::string Eval::info(const std::string &arglist)
 {
     Eval a(arglist, false, ruleList, rule);
-    std::cout << a.Evaluate().c_str() << std::endl;
+    std::ostringstream os;
+    os << a.Evaluate().c_str() << std::endl;
+    OS::WriteConsole(os.str());
     return "";
 }
 std::string Eval::exists(const std::string &arglist)

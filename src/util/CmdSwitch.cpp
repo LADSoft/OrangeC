@@ -47,7 +47,7 @@ int CmdSwitchInt::Parse(const char *data)
 {
     char number[256];
     if (data[0] != ':')
-        return -1;
+        return 0;
     strncpy(number, data+1, 255);
     number[255] = 0;
     
@@ -59,13 +59,13 @@ int CmdSwitchInt::Parse(const char *data)
     value = Utils::StringToNumber(number);
     if (value < lowLimit || value > hiLimit)
         return -1;
-    return p - number;
+    return p - number + 1;
 }
 int CmdSwitchHex::Parse(const char *data)
 {
     char number[256];
     if (data[0] != ':')
-        return -1;
+        return 0;
     strncpy(number, data+1, 255);
     number[255] = 0;
     

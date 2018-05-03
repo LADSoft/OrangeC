@@ -31,11 +31,13 @@
 #include <set>
 #include "Rule.h"
 
+class Spawner;
 class Depends
 {
 public:
 	Depends(const std::string &Goal, Time &xx, bool ToDelete)
-	: goal(Goal), time(xx), toDelete(ToDelete), ordered(false), isSecondary(false), rule(nullptr), ruleList(nullptr) { }
+	: goal(Goal), time(xx), toDelete(ToDelete), ordered(false), isSecondary(false), 
+    rule(nullptr), ruleList(nullptr), spawner(nullptr) { }
 	~Depends();
 	
 	void operator +=(Depends *depend) { subgoals.push_back(depend); }
@@ -65,7 +67,8 @@ public:
 	const iterator begin() { return subgoals.begin(); }
 	const iterator end() { return subgoals.end(); }
 	void Precious() { toDelete = false; }
-	
+	Spawner *GetSpawner() { return spawner; }
+	void SetSpawner(Spawner *spawner) { this->spawner = spawner; }
 private:
 	std::string goal;
 	std::string foundName;
@@ -78,6 +81,7 @@ private:
 	bool toDelete;
 	bool ordered;
 	bool isSecondary;
+	Spawner *spawner;
 	std::list<Depends *> subgoals;		
 	static std::map<std::string, Depends *> all;
 };

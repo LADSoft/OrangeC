@@ -51,12 +51,12 @@ CmdSwitchString dlPeMain::outputFileSwitch(SwitchParser, 'o');
 CmdSwitchString dlPeMain::DebugFile(SwitchParser, 'v');
 CmdSwitchBool dlPeMain::FlatExports(SwitchParser, 'f');
 
-int dlPeMain::osMajor = 5;
-int dlPeMain::osMinor = 1;
+int dlPeMain::osMajor = 4;
+int dlPeMain::osMinor = 0;
 int dlPeMain::userMajor = 0;
 int dlPeMain::userMinor = 0;
-int dlPeMain::subsysMajor = 5;
-int dlPeMain::subsysMinor = 1;
+int dlPeMain::subsysMajor = 4;
+int dlPeMain::subsysMinor = 0;
 
 int dlPeMain::dllFlags = 0;//0x8140; 
 

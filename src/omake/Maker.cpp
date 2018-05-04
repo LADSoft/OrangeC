@@ -601,6 +601,7 @@ int Maker::RunCommands(bool keepGoing)
     }
 
     int rv;
+    OS::JobInit();
     do
     {
         rv = 0;
@@ -614,6 +615,7 @@ int Maker::RunCommands(bool keepGoing)
         }
         OS::Yield();
     } while (rv < 0);
+    OS::JobRundown();
     for (auto d : depends)
     {
         runner.DeleteOne(d);

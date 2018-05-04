@@ -58,6 +58,8 @@ public:
     static void Init();
     static void PushJobCount(int jobs);
     static void PopJobCount();
+    static void JobInit();
+    static void JobRundown();
     static bool TakeJob();
     static void GiveJob();
     static void Take();

@@ -1698,8 +1698,9 @@ enum e_node referenceTypeError(TYPE *tp, EXPRESSION *exp)
 }
 EXPRESSION *createTemporary(TYPE *tp, EXPRESSION *val)
 {
-    EXPRESSION *rv = anonymousVar(sc_auto, tp);
+    EXPRESSION *rv;
     tp = basetype(tp)->btp;
+    rv  = anonymousVar(sc_auto, tp);
     if (val)
     {
         EXPRESSION *rv1 = rv;

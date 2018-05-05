@@ -619,7 +619,7 @@ void setglbdefs(void)
 #endif
     LIST *l = deflist;
     char buf[256] ;
-    int major, minor;
+    int major, temp, minor, build;
     while (l)
     {
         char *s = l->data;
@@ -645,9 +645,15 @@ void setglbdefs(void)
         glbUndefine(n);
         l = l->next;
     }
-    sscanf(STRING_VERSION, "%d.%d", &major, &minor);
+    sscanf(STRING_VERSION, "%d.%d.%d.%d", &major, &temp, &minor, &build);
     my_sprintf(buf, "%d", major *100+minor);
     glbdefine("__ORANGEC__", buf, TRUE);
+    my_sprintf(buf, "%d", major);
+    glbdefine("__ORANGEC_MAJOR__", buf, TRUE);
+    my_sprintf(buf, "%d", minor);
+    glbdefine("__ORANGEC_MINOR__", buf, TRUE);
+    my_sprintf(buf, "%d", build);
+    glbdefine("__ORANGEC_PATCHLEVEL__", buf, TRUE);
     glbdefine("__CHAR_BIT__", "8", TRUE);
     if (cparams.prm_cplusplus)
     {

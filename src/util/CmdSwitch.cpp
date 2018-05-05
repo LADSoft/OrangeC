@@ -307,7 +307,7 @@ std::cout << "__" << data[-1] << "__" << n << "__" << argv[1] << std::endl;
                     {
                         // use next arg as the value
 std::cout << "##" << argv[0] << std::endl;
-                        memcpy(argv, argv+1, (*argc + 1 -i) * sizeof(char *));
+                        memcpy(argv, argv+1, (*argc -i) * sizeof(char *));
                         (*argc)--;
                         data = &argv[0][0];
                         n = (*it)->Parse(data);
@@ -323,7 +323,7 @@ std::cout << "__" << n << "__" << t << std::endl;
                     data += n;
                 }
             }
-            memcpy(argv, argv+1, (*argc + 1 -i) * sizeof(char *));
+            memcpy(argv, argv+1, (*argc -i) * sizeof(char *));
             (*argc)--;
         }
         else

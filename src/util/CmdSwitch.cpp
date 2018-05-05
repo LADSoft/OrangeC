@@ -310,6 +310,7 @@ std::cout << "##" << argv[0] << std::endl;
                         memcpy(argv, argv+1, (*argc -i) * sizeof(char *));
                         (*argc)--;
                         data = &argv[0][0];
+                        end = data + strlen(data);
                         n = (*it)->Parse(data);
                     }
 std::cout << "__" << n << std::endl;

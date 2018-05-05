@@ -380,11 +380,15 @@ void MakeMain::SetTreePath(std::string &files)
 int MakeMain::Run(int argc, char **argv)
 {
     for (int i=0; i < argc; i++)
+    {
+	std::cout << "$$" << argv[i] << std::endl;
         if (!strcmp(argv[i], "--version"))
         {
             Utils::banner(argv[0]);
             exit(0);
         }
+    }
+    std::cout << "&&" << std::endl;
     char *p = getenv("MAKEFLAGS");
     if (p)
     {

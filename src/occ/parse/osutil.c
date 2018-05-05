@@ -716,7 +716,7 @@ void InsertOneFile(char *filename, char *path, int drive)
 #ifndef CPREPROCESSOR
     inserted = chosenAssembler->insert_noncompile_file 
         && chosenAssembler->insert_noncompile_file(buffer);
-    if (cparams.prm_compileonly || !inserted)
+    if (!inserted)
 #endif
     {
         AddExt(buffer, ".C");

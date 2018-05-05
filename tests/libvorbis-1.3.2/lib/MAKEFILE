@@ -11,10 +11,10 @@ INC =
 
 LIB =
 
-CFLAGS = /c +e /9 /I ../include /D__inline=inline /D__inline__=inline
+CFLAGS = /c +e /! /9 /I ../include /D__inline=inline /D__inline__=inline
 XXXXX = -D__inline -Dinline
 AFLAGS = -fobj
-LFLAGS = /Wc
+LFLAGS = /Wc /!
 RFLAGS =
 
 

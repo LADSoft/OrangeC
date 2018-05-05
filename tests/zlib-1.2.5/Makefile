@@ -8,10 +8,10 @@ INC =
 
 LIB =
 
-CFLAGS = /c +e /C-E /9 /D_WIN32
+CFLAGS = /c +e /! /C-E /9 /D_WIN32
 AFLAGS = -fobj
-LFLAGS = /Wc
-RFLAGS = /r
+LFLAGS = /Wc /! 
+RFLAGS = /r /!
 
 
 test: $(EXE)

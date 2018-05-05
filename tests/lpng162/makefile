@@ -15,10 +15,10 @@ pnglibconf.h: scripts\pnglibconf.h.prebuilt
 	copy scripts\pnglibconf.h.prebuilt $@
 
 
-CFLAGS = /c +e /9 -I..\zlib-1.2.5
+CFLAGS = /c /! +e /9 -I..\zlib-1.2.5
 AFLAGS = -fobj
-LFLAGS = /Wc
-RFLAGS = /r
+LFLAGS = /Wc /!
+RFLAGS = /r /!
 
 
 
@@ -33,8 +33,7 @@ AR = $(CCDIR)\olib
 
 
 $(OUT): $(OBJ)
-	del $(OUT)
-	$(AR) $(OUT) + $(OBJ)
+	$(AR) /! $(OUT) +- $(OBJ)
 
 $(OBJ): $(INC)
 
@@ -56,3 +55,6 @@ pngtest.exe: pnglibconf.h pngtest$(O) $(LIB)
 test: pngtest.exe
 	pngtest > test.out
 	fc /b test.out test.cmpx
+
+clean:
+	-del $(OUT) 2> NUL

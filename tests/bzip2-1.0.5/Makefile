@@ -17,26 +17,25 @@ vpath %.res $(RESDIR)
 
 
 .c.o:
-	occ /D_WIN32 /Wc /c -o$@ $<
+	occ /D_WIN32 /Wc /c /! -o$@ $<
 
 .rc.res:
-	orc -i.\;$(RESDIR) $<
+	orc /! -i.\;$(RESDIR) $<
 
 all: bzip2 bzip2recover test
 
 bzip2: libbz2.l bzip2.o bzip2-res.res
-	occ /Wc /obzip2.exe bzip2.o bzip2-res.res libbz2.l
+	occ /Wc /! /obzip2.exe bzip2.o bzip2-res.res libbz2.l
 
 bzip2recover: bzip2recover.o bzip2recover-res.res
-	occ /Wc /obzip2recover.exe bzip2recover.o bzip2recover-res.res libbz2.l
+	occ /Wc /! /obzip2recover.exe bzip2recover.o bzip2recover-res.res libbz2.l
 
 libbz2.l: $(OBJS)
-	-del libbz2.l
-	olib /c libbz2 + $(OBJS)
+	olib /c /! libbz2 +- $(OBJS)
 
 bzip2.dll: libbz2.l $(DLL_OBJS)
 	-del bzip2.def
-	occ /Wd /o$@ $(DLL_OBJS) libbz2.l  
+	occ /Wd /! /o$@ $(DLL_OBJS) libbz2.l  
 
 check: test
 test: bzip2

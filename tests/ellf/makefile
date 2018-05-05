@@ -4,7 +4,7 @@ DEPENDENCIES = $(filter-out $(EXCLUDE), $(C_DEPENDENCIES))
 O_DEPENDENCIES = $(DEPENDENCIES:.c=.o)
 
 %.o: %.c
-	occ /9 /c $^
+	occ /9 /c /! $^
 #	oasm $*.asm
 
 test:   ellf.exe

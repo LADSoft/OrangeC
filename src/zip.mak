@@ -16,12 +16,11 @@
 #     GNU General Public License for more details.
 # 
 #     You should have received a copy of the GNU General Public License
-#     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+#     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
 # 
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
-#	$(ZIP) -r0 a $(DISTEXE) orangec/bin_7/*.exe orangec/bin_7/*.dll orangec/bin_7/*.config orangec/bin_7/branding/*.*
-#	$(ZIP) -r0 a $(DISTEXE) orangec/bin_8/*.exe orangec/bin_8/*.dll orangec/bin_8/*.config orangec/bin_8/branding/*.*
+# 
 
 ZIP:="c:/program files/7-zip/7z" -tzip 
 

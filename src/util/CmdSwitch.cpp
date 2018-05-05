@@ -295,6 +295,7 @@ bool CmdSwitchParser::Parse(int *argc, char *argv[])
                 const char *end = data + strlen(data);
                 while (data < end)
                 {
+std::cout << "##" << data << std::endl;
                     CmdSwitchBase temp(*data);
                     auto it = switches.find(&temp);
                     if (it == switches.end())
@@ -305,6 +306,7 @@ std::cout << "__" << data[-1] << "__" << n << "__" << argv[1] << std::endl;
                     while (n == INT_MAX && argv[1])
                     {
                         // use next arg as the value
+std::cout << "##" << argv[0] << std::endl;
                         memcpy(argv, argv+1, (*argc + 1 -i) * sizeof(char *));
                         (*argc)--;
                         data = &argv[0][0];

@@ -22,6 +22,8 @@
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
 
+SHELL=cmd.exe
+
 ASM_DEPENDENCIES = $(wildcard c0*.nas) c0pmd.o
 all: $(DEPENDENCIES) pmstb.exe
 

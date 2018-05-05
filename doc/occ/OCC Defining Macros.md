@@ -30,7 +30,10 @@ The following non-standard macros are predefined by the compiler:
 
 |Macro |Usage |
 |--- |--- |
-|\_\_ORANGEC\_\_|always defined|
+|\_\_ORANGEC\_\_|always defined, value is "major version * 100 + minor version"|
+|\_\_ORANGEC\_MAJOR\_\_|always defined, value is "major version"|
+|\_\_ORANGEC\_MINOR\_\_|always defined, value is "minor version"|
+|\_\_ORANGEC\_PATCHLEVEL\_\_|always defined, value is "build number"|
 |\_\_RTTI\_\_|defined when C++ rtti/exception handling info is present|
 |\_\_386\_\_|always defined|
 |\_\_i386\_\_|always defined|

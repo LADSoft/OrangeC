@@ -46,10 +46,10 @@ CmdSwitchCombineString AsmMain::includePath(SwitchParser, 'I', ';');
 char *AsmMain::usageText = "[options] file"
 "\n"
 "  @filename  use response file\n"
-"  /e     Preprocess only                  /i     Case Insensitive Labels\n"
-"  /l[m]  Listing file [macro expansions]  /oxxx  Set output file name\n"
-"  /Dxxx  Define something                 /Ixxx  Set include file path\n"
-"  /V     Show version and date            /!     No logo\n"
+"  /e              Preprocess only                  /i     Case Insensitive Labels\n"
+"  /l[m]           Listing file [macro expansions]  /oxxx  Set output file name\n"
+"  /Dxxx           Define something                 /Ixxx  Set include file path\n"
+"  /V, --version   Show version and date            /!     No logo\n"
 "\n"
 "Time: " __TIME__ "  Date: " __DATE__;
 

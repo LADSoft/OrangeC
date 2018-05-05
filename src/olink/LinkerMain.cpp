@@ -62,12 +62,12 @@ CmdSwitchBool LinkerMain::Verbosity(SwitchParser, 'y');
 SwitchConfig LinkerMain::TargetConfig(SwitchParser, 'T');
 char *LinkerMain::usageText = "[options] inputfiles\n"
             "\n"
-            "/Dxxx=val Define something           /Lpath    Set Library Path\n"
-            "/T:xxx    Target configuration       /V        Show version and date\n"
-            "/c+       Case sensitive link        /l        link only\n"
-            "/m[x]     Generate Map file          /oxxx     Set output file\n"
-            "/r+       Relative output file       /sxxx     Read specification file\n"
-            "/v        Pass debug info            /y[...]   Verbose\n"
+            "/Dxxx=val Define something           /Lpath         Set Library Path\n"
+            "/T:xxx    Target configuration       /V, --version  Show version and date\n"
+            "/c+       Case sensitive link        /l             link only\n"
+            "/m[x]     Generate Map file          /oxxx          Set output file\n"
+            "/r+       Relative output file       /sxxx          Read specification file\n"
+            "/v        Pass debug info            /y[...]        Verbose\n"
             "/!        No logo\n"
             "@xxx      Read commands from file\n"
             "\nTime: " __TIME__ "  Date: " __DATE__;

@@ -1885,7 +1885,7 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpszCmdLine,
     // handle /V switch
     for (i = 1; i < __argc; i++)
         if (__argv[i] && (__argv[i][0] == '/' || __argv[i][0] == '-'))
-            if (__argv[i][1] == 'V' && __argv[i][2] == 0)
+            if (__argv[i][1] == 'V' && __argv[i][2] == 0 || !strcmp(__argv[i], "--version"))
             {
                 doSplash();
                 Sleep(4000);

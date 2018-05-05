@@ -22,6 +22,8 @@
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
 
+SHELL=cmd.exe
+
 ZIP:="c:/program files/7-zip/7z" -tzip 
 
 VERNAME := $(word 3, $(shell type,\orangec\src\version.h))
@@ -34,7 +36,7 @@ DISTSRC=/orangec/dist/occ$(VERNAME)s.zip
 DISTRIBUTE:
 	-del $(DISTEXE)
 	-del $(DISTSRC)
-	-mkdir $(DISTROOT)/appdata
+	-mkdir $(DISTROOT)\appdata
 	$(ZIP) -r0 a $(DISTEXE) orangec/bin/*.exe orangec/bin/*.app orangec/bin/*.spc orangec/bin/*.dll orangec/bin/*.cfg  orangec/bin/general.props
 	$(ZIP) a $(DISTEXE) orangec/lib/*.* orangec/include/*.* orangec/examples/*.* orangec/doc/*.* orangec/license/*.* 
 	$(ZIP) a $(DISTEXE) orangec/lib/* orangec/include/* orangec/examples/* orangec/doc/* orangec/license/*
@@ -50,4 +52,4 @@ DISTRIBUTE:
 	$(ZIP) a $(DISTSRC) orangec/src/LICENSE.TXT orangec/license/*.* orangec/src/readme.txt orangec/src/relnotes.txt
 	$(ZIP) a $(DISTSRC) orangec/src/clibs/repobj.bat orangec/src/copying orangec/src/ocl.lic orangec/src/addon.txt
 	"/program files (x86)/inno setup 5/iscc" /Focc$(VERNAME) /O/orangec/dist orangec/src/occ.iss
-	-rmdir $(DISTROOT)/appdata
+	-rmdir $(DISTROOT)\appdata

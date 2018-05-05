@@ -22,6 +22,10 @@
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
 
+SHELL=cmd.exe
+export SHELL
+
+
 PATHSWAP = $(subst /,\,$(1))
 export PATHSWAP
 

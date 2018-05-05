@@ -22,6 +22,8 @@
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
 
+SHELL=cmd.exe
+
 ifndef _TREEROOT
 _TREEROOT := $(CURDIR)/treetop.mak
 _TREETARGET := $(CURDIR)

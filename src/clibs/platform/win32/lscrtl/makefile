@@ -22,6 +22,8 @@
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
 
+SHELL=cmd.exe
+
 RCFILE=lscrtl
 
 all: .\c0dll.o .\lscrtl.dll .\lscrtlil.dll
@@ -30,9 +32,10 @@ ifneq ($(shell type makefile),)
 B = /b
 endif
 
-WINOBJS = $(shell dir $(B) $(WINOBJECT)\*.o)
-DLLOBJS = $(shell dir $(B) $(DLLOBJECT)\*.o)
+WINOBJS = $(shell dir $(B) $(WINOBJECT)\\*.o)
+DLLOBJS = $(shell dir $(B) $(DLLOBJECT)\\*.o)
 
+$(info hi $(DLLOBJS))
 .\lscrtl.dll: .\lscrtl.o .\c0dll.o $(RCFILE).res
 	-del $@
 	$(LINK) $(LINKFLAGS) /T:DLL32 -o.\lscrtl .\lscrtl.o .\c0dll.o $(CLIBOBJECT)\srproc.o $(foreach dir, $(filter-out c0.o c0lsstartup.o, $(DLLOBJS)), $(DLLOBJECT)\$(dir)) $(SYSOBJECT)\climp.l $(RCFILE).res

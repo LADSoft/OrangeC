@@ -22,6 +22,8 @@
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
 
+SHELL=cmd.exe
+
 all:
 	$(MAKE) -CCOMMON
 	$(MAKE) -CWIN32 --eval="OBJECT=$(WINOBJECT)"

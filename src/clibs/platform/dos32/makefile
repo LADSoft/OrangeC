@@ -24,6 +24,9 @@
 
 DIRS:=le pm debug rtl
 
+SHELL=cmd.exe
+export SHELL
+
 $(eval $(ALLDIRS))
 
 DISTRIBUTE:

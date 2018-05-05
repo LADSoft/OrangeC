@@ -22,6 +22,8 @@
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
 
+SHELL=cmd.exe
+
 C_DEPENDENCIES = $(wildcard *.c)
 ASM_DEPENDENCIES = $(wildcard c0*.nas)
 

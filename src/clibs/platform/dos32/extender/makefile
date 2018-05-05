@@ -22,6 +22,8 @@
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
 
+SHELL=cmd.exe
+
 DISTRIBUTE:
 	$(COPYDIR) 4g\%.exe $(DISTLIB)
 	$(COPYDIR) cw\%.exe $(DISTLIB)

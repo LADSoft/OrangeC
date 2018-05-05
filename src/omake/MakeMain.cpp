@@ -413,6 +413,10 @@ int MakeMain::Run(int argc, char **argv)
         Utils::banner(argv[0]);
         Utils::usage(argv[0], usageText);
     }
+    for (int i=0; argv[i]; i++)
+    {
+	std::cout << "@@" << argv[i] << std::endl;
+    }
     if (dir.GetValue().size())
     {
         cwd = OS::GetWorkingDir();

@@ -301,6 +301,7 @@ bool CmdSwitchParser::Parse(int *argc, char *argv[])
                         return false;
                     data++;
                     int n = (*it)->Parse(data);
+std::cout << "__" << data[-1] << "__" << n << "__" << argv[1] << std::endl;
                     while (n == INT_MAX && argv[1])
                     {
                         // use next arg as the value
@@ -309,9 +310,11 @@ bool CmdSwitchParser::Parse(int *argc, char *argv[])
                         data = &argv[0][0];
                         n = (*it)->Parse(data);
                     }
+std::cout << "__" << n << std::endl;
                     if (n < 0)
                         return false;
                     int t = strlen(data);
+std::cout << "__" << n << "__" << t << std::endl;
                     if (t < n)
                         return false;
                     (*it)->SetExists();

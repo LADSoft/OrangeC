@@ -1,7 +1,9 @@
 Release notes:
 
 Version 6.0.37:
+    all programs:    add --version
     occ:    when a temporary was created for a long long value, the temporary could overwrite other variables
+    occ:    add new macros for OCC version number and update documentation
     olib:   remove extraneous warning
     ocpp:   support /! and /V
     omake:  fix crash when using help in conjunction with change to /f switch to allow space

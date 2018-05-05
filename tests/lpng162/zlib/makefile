@@ -9,10 +9,10 @@ INC =
 
 LIB =
 
-CFLAGS = /c +e /9 /D_lseeki64=lseek /D_wopen=open /I$(INCLUDE)
+CFLAGS = /c +e /! /9 /D_lseeki64=lseek /D_wopen=open /I$(INCLUDE)
 AFLAGS = -fobj
-LFLAGS = /Wc
-RFLAGS = /r
+LFLAGS = /Wc /!
+RFLAGS = /r /!
 
 
 all: $(OUT)
@@ -28,8 +28,7 @@ AR = $(CCDIR)\olib
 
 
 $(OUT): $(OBJ)
-	@del $(OUT)
-	$(AR) $(OUT) $(OBJ)
+	$(AR) /! $(OUT) +- $(OBJ)
 
 $(OBJ): $(INC)
 

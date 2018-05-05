@@ -1,12 +1,12 @@
 %.o: %.cpp
-	occ $^
+	occ /! $^
 
 
 %.o: %.c
-	occ /9 $^
+	occ /9 /! $^
 
 %.exe: %.o
-	olink /c /T:CON32 /o$@ c0xpe.o $^ clwin.l climp.l
+	olink /c /! /T:CON32 /o$@ c0xpe.o $^ clwin.l climp.l
 
 test: bzip2.exe parsecsv.exe stlcontainers.exe label.exe delegate.exe
 	bzip2 bzip2.test

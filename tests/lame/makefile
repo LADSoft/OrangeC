@@ -36,13 +36,13 @@ FILES =\
     vorbis_interface.o
 
 %.o: %.c
-	occ /c -o$@ $^
+	occ /c /! -o$@ $^
 
 test: lame.exe
 	lame -h air_raid.wav q.mp3
 	fc /b test.cmp q.mp3
 
 lame.exe: $(FILES)
-	olink /c /T:CON32 /o$@ @&&|
+	olink /c /! /T:CON32 /o$@ @&&|
 c0xpe.o $(FILES) clwin.l climp.l
 |

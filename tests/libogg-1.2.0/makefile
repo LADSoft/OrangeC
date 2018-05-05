@@ -8,19 +8,16 @@ all: $(EXE)
 	fc /b framing.out framing.cmpx	
 
 ogg.l: bitwise.o framing.o
-	del ogg.l
-	olib ogg.l bitwise.o framing.o
+	olib /! ogg.l +- bitwise.o framing.o
 
-bitwise.o:
-	occ /c /9 /I$(INCLUDE) /D_WIN32 /DNDEBUG /D_WINDOWS /D_USRDLL /DLIBOGG_EXPORTS bitwise.c
-framing.o:
-	occ /c /9 /I$(INCLUDE) /D_WIN32 /DNDEBUG /D_WINDOWS /D_USRDLL /DLIBOGG_EXPORTS framing.c
+bitwise.o: bitwise.c
+	occ /c /! /9 /I$(INCLUDE) /D_WIN32 /DNDEBUG /D_WINDOWS /D_USRDLL /DLIBOGG_EXPORTS bitwise.c
+framing.o: framing.c
+	occ /c /! /9 /I$(INCLUDE) /D_WIN32 /DNDEBUG /D_WINDOWS /D_USRDLL /DLIBOGG_EXPORTS framing.c
 
-bitwise.exe:
-	occ /9 /I$(INCLUDE) /D_V_SELFTEST /D_WIN32 /DNDEBUG /D_WINDOWS /D_USRDLL /DLIBOGG_EXPORTS bitwise.c
-	del bitwise.o
+bitwise.exe: bitwise.c
+	occ /9 /! /I$(INCLUDE) /D_V_SELFTEST /D_WIN32 /DNDEBUG /D_WINDOWS /D_USRDLL /DLIBOGG_EXPORTS bitwise.c
 
-framing.exe:
-	occ /9 /I$(INCLUDE) /D_V_SELFTEST /D_WIN32 /DNDEBUG /D_WINDOWS /D_USRDLL /DLIBOGG_EXPORTS framing.c
-	del framing.o
+framing.exe: framing.c
+	occ /9 /! /I$(INCLUDE) /D_V_SELFTEST /D_WIN32 /DNDEBUG /D_WINDOWS /D_USRDLL /DLIBOGG_EXPORTS framing.c
 

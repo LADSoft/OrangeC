@@ -379,7 +379,7 @@ void MakeMain::SetTreePath(std::string &files)
 }
 int MakeMain::Run(int argc, char **argv)
 {
-    for (int i=0; i < argc; i++)
+    for (int i=0; argv[i]; i++)
     {
 	std::cout << "$$" << argv[i] << std::endl;
         if (!strcmp(argv[i], "--version"))
@@ -406,6 +406,10 @@ int MakeMain::Run(int argc, char **argv)
     }
     if (!switchParser.Parse(&argc, argv) || help.GetValue() || help2.GetValue())
     {
+    for (int i=0; argv[i]; i++)
+    {
+	std::cout << "@@" << argv[i] << std::endl;
+    }
         Utils::banner(argv[0]);
         Utils::usage(argv[0], usageText);
     }

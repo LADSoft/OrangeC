@@ -934,7 +934,7 @@ void ccinit(int argc, char *argv[])
             {
                 showBanner = FALSE;
             }
-            else if (argv[i][1] == 'V' && argv[i][2] == 0)
+            else if (argv[i][1] == 'V' && argv[i][2] == 0 || !strcmp(argv[i], "--version"))
             {
                 showVersion = TRUE;
             }

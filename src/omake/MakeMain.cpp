@@ -89,6 +89,7 @@ char *MakeMain::usageText = "[options] goals\n"
                     "/t    Touch                   /u    Debug warnings\n"
                     "/w    Print directory         --eval=STRING evaluate a statement\n"     
                     "/!    No logo\n"
+                    "--version show version info\n"
                     "\nTime: " __TIME__ "  Date: " __DATE__;
 char *MakeMain::builtinVars = "";
 char *MakeMain::builtinRules = "";
@@ -264,7 +265,7 @@ void MakeMain::LoadCmdDefines()
     }
     for (int i=0; i < evals.GetCount(); i++)
 	{
-        const CmdSwitchDefine::define *def = evals.GetValue(i);
+                const CmdSwitchDefine::define *def = evals.GetValue(i);
 		if (std::string(def->name) != "eval")
 		{
 			Eval::error(std::string("Invalid switch --") + def->name);
@@ -378,6 +379,12 @@ void MakeMain::SetTreePath(std::string &files)
 }
 int MakeMain::Run(int argc, char **argv)
 {
+    for (int i=0; i < argc; i++)
+        if (!strcmp(argv[i], "--version"))
+        {
+            Utils::banner(argv[0]);
+            exit(0);
+        }
     char *p = getenv("MAKEFLAGS");
     if (p)
     {

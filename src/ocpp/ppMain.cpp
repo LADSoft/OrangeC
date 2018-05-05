@@ -42,11 +42,11 @@ CmdSwitchFile ppMain::File(SwitchParser, '@');
     
 char *ppMain::usageText = "[options] files\n"
         "\n"
-        "/9      - C99 mode                  /a      - Assembler mode\n"
-        "/A      - Disable extensions        /Dxxx   - Define something\n"
-        "/E[+]nn - Max number of errors      /Ipath  - Specify include path\n"
-        "/T      - translate trigraphs       /Uxxx   - Undefine something\n"
-        "/!      - No logo\n"
+        "/9             - C99 mode                  /a      - Assembler mode\n"
+        "/A             - Disable extensions        /Dxxx   - Define something\n"
+        "/E[+]nn        - Max number of errors      /Ipath  - Specify include path\n"
+        "/T             - translate trigraphs       /Uxxx   - Undefine something\n"
+        "/V, --version  - Show version and date     /!      - No logo\n"
         "\n"
         "Time: " __TIME__ "  Date: " __DATE__;
 

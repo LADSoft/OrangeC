@@ -104,7 +104,7 @@ void MakeMain::Dispatch(const char *data)
 {
     int max = 10;
     argcx = 1;
-    argvx = new char *[max];
+    argvx = new char *[max + 1];
     argvx[0] = "";
     while (*data)
     {
@@ -112,7 +112,7 @@ void MakeMain::Dispatch(const char *data)
         if (argcx == max)
         {
             max += 10;
-            char **p = new char *[max];
+            char **p = new char *[max + 1];
             memcpy(p, argvx, argcx * sizeof(char *));
             delete [] argvx;
             argvx = p;
@@ -120,6 +120,7 @@ void MakeMain::Dispatch(const char *data)
     }
     argvx[argcx] = 0;
     switchParser.Parse(&argcx, argvx);
+    delete[] argvx;	
 }
 const char * MakeMain::GetStr(const char *data)
 {
@@ -381,14 +382,12 @@ int MakeMain::Run(int argc, char **argv)
 {
     for (int i=0; argv[i]; i++)
     {
-	std::cout << "$$" << argv[i] << std::endl;
         if (!strcmp(argv[i], "--version"))
         {
             Utils::banner(argv[0]);
             exit(0);
         }
     }
-    std::cout << "&&" << std::endl;
     char *p = getenv("MAKEFLAGS");
     if (p)
     {
@@ -406,16 +405,8 @@ int MakeMain::Run(int argc, char **argv)
     }
     if (!switchParser.Parse(&argc, argv) || help.GetValue() || help2.GetValue())
     {
-    for (int i=0; argv[i]; i++)
-    {
-	std::cout << "@@" << argv[i] << std::endl;
-    }
         Utils::banner(argv[0]);
         Utils::usage(argv[0], usageText);
-    }
-    for (int i=0; argv[i]; i++)
-    {
-	std::cout << "@@" << argv[i] << std::endl;
     }
     if (dir.GetValue().size())
     {

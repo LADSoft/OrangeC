@@ -6,6 +6,7 @@ Version 6.0.37:
     occ:    add new macros for OCC version number and update documentation
     olib:   remove extraneous warning
     ocpp:   support /! and /V
+    omake:  when compiled for 64-bit mode could sometimes randomly show the usage instead of doing its job
     omake:  fix crash when using help in conjunction with change to /f switch to allow space
     omake:  change text of "warning: '' is undefined" to say what is undefined
     omake:  fix "if ($(LEFT),$(RIGHT))" to evaluate properly 

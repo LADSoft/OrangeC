@@ -3033,7 +3033,7 @@ static LEXEME *getArrayType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc st
             {
                 if (!isint(tpc))
                     error(ERR_ARRAY_INDEX_INTEGER_TYPE);
-                else if (tpc->type != bt_templateparam && isintconst(constant) && constant->v.i <= 0)
+                else if (tpc->type != bt_templateparam && isintconst(constant) && constant->v.i <= 0-!!getStructureDeclaration())
                     if (!templateNestingCount)
                         error(ERR_ARRAY_INVALID_INDEX);
                 if (tpc->type == bt_templateparam)
@@ -6415,7 +6415,7 @@ jointemplate:
                             LEXEME *hold = lex;
                             BOOLEAN structuredArray = FALSE;
                             if (notype)
-                                error(ERR_MISSING_TYPE_SPECIFIER);
+                                errorsym(ERR_UNDEFINED_IDENTIFIER_EXPECTING_TYPE, sp);
                             if (linkage3 == lk_entrypoint)
                             {
                                 errorsym(ERR_ENTRYPOINT_FUNC_ONLY, sp);

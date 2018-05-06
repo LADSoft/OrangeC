@@ -106,6 +106,8 @@ bool CoffLibrary::LoadNames()
                 {
                     m = it->second;
                 }
+                if (!strncmp(strings, "__imp", 5))
+                    strings += 5;
                 m->aliases.insert(strings);
             }
         }
@@ -152,7 +154,7 @@ bool CoffLibrary::ScanIntegrity()
             bool found = false;
             if (*(unsigned short *)buf ==IMAGE_FILE_MACHINE_UNKNOWN)
                if (*(unsigned short *)(buf+2) == 0xffff)
-                   if (*(unsigned short *)(buf+6) == IMAGE_FILE_MACHINE_I386)
+//                   if (*(unsigned short *)(buf+6) == IMAGE_FILE_MACHINE_I386)
                        module.second->import = found = true;
             if (!found)
             {

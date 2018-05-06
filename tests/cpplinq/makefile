@@ -6,6 +6,8 @@ FILES = cpplinqtest.o
 test: cpplinqtest.exe
 	cpplinqtest > cpplinqtest.out
 	fc /b cpplinqtest.cmpx cpplinqtest.out
+	$(MAKE) /Cfwdslash
+	$(MAKE) /Cbackslash
 
 cpplinqtest.exe: $(FILES)
 	olink /c /! /T:CON32 /mx /o$@ @&&|

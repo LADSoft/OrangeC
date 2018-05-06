@@ -654,6 +654,8 @@ void setglbdefs(void)
     glbdefine("__ORANGEC_MINOR__", buf, TRUE);
     my_sprintf(buf, "%d", build);
     glbdefine("__ORANGEC_PATCHLEVEL__", buf, TRUE);
+    sprintf(buf,"\"%s\"", STRING_VERSION);
+    glbdefine("__VERSION__", buf, TRUE);
     glbdefine("__CHAR_BIT__", "8", TRUE);
     if (cparams.prm_cplusplus)
     {

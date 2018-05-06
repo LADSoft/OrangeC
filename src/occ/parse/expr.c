@@ -5774,27 +5774,35 @@ LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRE
             {
                 BOOLEAN done = FALSE;
                 lex = get_type_id(lex, tp, funcsp, sc_cast, FALSE, TRUE);
-                (*tp)->used = TRUE;
-                needkw(&lex, closepa);
-                checkauto(*tp, ERR_AUTO_NOT_ALLOWED);
-                if (MATCHKW(lex, begin))
+                if (!*tp)
                 {
-                    INITIALIZER *init = NULL;
-                    SYMBOL *sp = NULL;
-                    if (!cparams.prm_c99 && !cparams.prm_cplusplus)
-                        error(ERR_C99_STYLE_INITIALIZATION_USED);
-                    if (cparams.prm_cplusplus)
+                    error(ERR_TYPE_NAME_EXPECTED);
+                    *tp = &stdint;
+                    *exp = intNode(en_c_i, 0);
+                }
+                else
+                {
+                    (*tp)->used = TRUE;
+                    needkw(&lex, closepa);
+                    checkauto(*tp, ERR_AUTO_NOT_ALLOWED);
+                    if (MATCHKW(lex, begin))
                     {
-                        sp = makeID(sc_auto, *tp, NULL, AnonymousName());
-                        insert(sp, localNameSpace->syms);
-                    }
-                    lex = initType(lex, funcsp, 0, sc_auto, &init, NULL, *tp, sp, FALSE, flags );
-                    *exp = convertInitToExpression(*tp, NULL, funcsp, init, NULL, FALSE);
-                    while (!done && lex)
-                    {
-                        enum e_kw kw;
-                        switch(KW(lex))
+                        INITIALIZER *init = NULL;
+                        SYMBOL *sp = NULL;
+                        if (!cparams.prm_c99 && !cparams.prm_cplusplus)
+                            error(ERR_C99_STYLE_INITIALIZATION_USED);
+                        if (cparams.prm_cplusplus)
                         {
+                            sp = makeID(sc_auto, *tp, NULL, AnonymousName());
+                            insert(sp, localNameSpace->syms);
+                        }
+                        lex = initType(lex, funcsp, 0, sc_auto, &init, NULL, *tp, sp, FALSE, flags);
+                        *exp = convertInitToExpression(*tp, NULL, funcsp, init, NULL, FALSE);
+                        while (!done && lex)
+                        {
+                            enum e_kw kw;
+                            switch (KW(lex))
+                            {
                             case openbr:
                                 lex = expression_bracket(lex, funcsp, tp, exp, flags);
                                 break;
@@ -5807,11 +5815,11 @@ LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRE
                                 break;
                             case autoinc:
                             case autodec:
-                
+
                                 kw = KW(lex);
                                 lex = getsym();
                                 if ((cparams.prm_cplusplus || chosenAssembler->msil) && insertOperatorFunc(ovcl_unary_postfix, kw,
-                                                       funcsp, tp, exp, NULL,NULL, NULL, flags))
+                                    funcsp, tp, exp, NULL, NULL, NULL, flags))
                                 {
                                 }
                                 else
@@ -5845,7 +5853,7 @@ LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRE
                                              * these aren't spelled out in the C99 standard, we are
                                              * following the C++ standard here
                                              */
-                                            if (kw== autodec)
+                                            if (kw == autodec)
                                                 error(ERR_CANNOT_USE_BOOLEAN_HERE);
                                             *exp = exprNode(en_assign, *exp, intNode(en_c_bool, 1));
                                         }
@@ -5853,7 +5861,7 @@ LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRE
                                         {
                                             cast(*tp, &exp1);
                                             *exp = exprNode(kw == autoinc ? en_autoinc : en_autodec,
-                                                        *exp, exp1);
+                                                *exp, exp1);
                                         }
                                         while (lvalue(exp1))
                                             exp1 = exp1->left;
@@ -5865,52 +5873,53 @@ LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRE
                             default:
                                 done = TRUE;
                                 break;
+                            }
                         }
                     }
-                }
-                else
-                { 
-                    lex = expression_cast(lex, funcsp, NULL, &throwaway, exp, ismutable, flags);
-                    if ((*exp)->type == en_pc || (*exp)->type == en_func && !(*exp)->v.func->ascall)
-                        thunkForImportTable(exp);
-    //                if ((*exp)->type == en_func)
-    //                    *exp = (*exp)->v.func->fcall;
-                    if (throwaway)
+                    else
                     {
-                        if (basetype(*tp)->type == bt___string)
+                        lex = expression_cast(lex, funcsp, NULL, &throwaway, exp, ismutable, flags);
+                        if ((*exp)->type == en_pc || (*exp)->type == en_func && !(*exp)->v.func->ascall)
+                            thunkForImportTable(exp);
+                        //                if ((*exp)->type == en_func)
+                        //                    *exp = (*exp)->v.func->fcall;
+                        if (throwaway)
                         {
-                            if ((*exp)->type == en_labcon && (*exp)->string)
-                                (*exp)->type = en_c_string;
-                            else if (basetype(throwaway)->type != bt___string)
-                                *exp = exprNode(en_x_string, *exp, NULL);
-                        }
-                        else if (basetype(*tp)->type == bt___object)
-                        {
-                            if (basetype(throwaway)->type != bt___object)
-                                if (!isstructured(throwaway) &&( !isarray(throwaway)  || !basetype(throwaway) ->msil))
-                                    *exp = exprNode(en_x_object, *exp, NULL);
-                        }
-                        else if (isvoid(throwaway) && !isvoid(*tp) || ismsil(*tp))
-                        {
-                            error(ERR_NOT_AN_ALLOWED_TYPE);
-                        }
-                        else if (!cparams.prm_cplusplus && ((isstructured(throwaway) && !isvoid(*tp)) 
-                                  || basetype(throwaway)->type == bt_memberptr || basetype(*tp)->type == bt_memberptr)
-                                  && !comparetypes(throwaway, *tp, TRUE))
-                        {
-                            error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
-                        }
-                        else if (cparams.prm_cplusplus)
-                        {
-                            if (!doStaticCast(tp, throwaway, exp, funcsp, FALSE) 
-                                && !doReinterpretCast(tp, throwaway, exp, funcsp, FALSE))
+                            if (basetype(*tp)->type == bt___string)
+                            {
+                                if ((*exp)->type == en_labcon && (*exp)->string)
+                                    (*exp)->type = en_c_string;
+                                else if (basetype(throwaway)->type != bt___string)
+                                    *exp = exprNode(en_x_string, *exp, NULL);
+                            }
+                            else if (basetype(*tp)->type == bt___object)
+                            {
+                                if (basetype(throwaway)->type != bt___object)
+                                    if (!isstructured(throwaway) && (!isarray(throwaway) || !basetype(throwaway)->msil))
+                                        *exp = exprNode(en_x_object, *exp, NULL);
+                            }
+                            else if (isvoid(throwaway) && !isvoid(*tp) || ismsil(*tp))
+                            {
+                                error(ERR_NOT_AN_ALLOWED_TYPE);
+                            }
+                            else if (!cparams.prm_cplusplus && ((isstructured(throwaway) && !isvoid(*tp))
+                                || basetype(throwaway)->type == bt_memberptr || basetype(*tp)->type == bt_memberptr)
+                                && !comparetypes(throwaway, *tp, TRUE))
+                            {
+                                error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
+                            }
+                            else if (cparams.prm_cplusplus)
+                            {
+                                if (!doStaticCast(tp, throwaway, exp, funcsp, FALSE)
+                                    && !doReinterpretCast(tp, throwaway, exp, funcsp, FALSE))
+                                {
+                                    cast(*tp, exp);
+                                }
+                            }
+                            else if (!isstructured(*tp) && (!isarray(*tp) || !basetype(*tp)->msil))
                             {
                                 cast(*tp, exp);
                             }
-                        }
-                        else if (!isstructured(*tp) && (!isarray(*tp) || !basetype(*tp)->msil))
-                        {
-                            cast(*tp, exp);
                         }
                     }
                 }

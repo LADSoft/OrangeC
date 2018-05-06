@@ -33,4 +33,6 @@ For project documentation see the file ['Tools.md'](doc/Tools.md).
 
 The [Appveyor CI](https://ci.appveyor.com/project/LADSoft/orangec) project for this repository builds a setup file after each checkin.   It uses `omake fullbuild` to do this. See the file [`build.md`](build.md) for instructions on how to build the project.
 
+The [Read The Docs](http://orangec.readthedocs.io/en/latest/Tools/) project for this repository verifies the documentation after each checkin.
+
 For the project's history see the file [`HISTORY.md`](HISTORY.md).

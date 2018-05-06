@@ -98,6 +98,7 @@ else
 compile: $(LLIB_DEPENDENCIES) $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT)
 endif
 
+
 ifndef _STARTED
 _STARTED = 1
 export _STARTED
@@ -244,19 +245,6 @@ endif
 makelibdir:
 	-mkdir  $(_LIBDIR) 2> $(NULLDEV)
 
-
-$(LIBS): %.library :
-	$(MAKE) library -f $(_TREEROOT) -C$*
-$(EXES): %.exefile :
-	$(MAKE) exefile -f $(_TREEROOT) -C$*
-
-
-files: makelibdir $(LIBS) $(EXES) compile link
-
-library: $(LIBS)
-
-exefile: $(EXES)
-
 cleanstart:
 	-del /Q $(_LIBDIR)
 	-rmdir $(_LIBDIR)
@@ -267,17 +255,6 @@ $(CLEANS): %.clean :
 clean: cleanstart $(CLEANS)
 
 else
-
-$(LIBS): %.library : 
-	$(MAKE) library -f $(_TREEROOT) -C$*
-
-$(EXES): %.exefile : 
-	$(MAKE) exefile -f $(_TREEROOT) -C$*
-
-library: mkdir compile $(LIBS)
-
-exefile: mkdir link $(EXES)
-
 
 cleanDISTRIBUTE:
 
@@ -296,3 +273,14 @@ exeDISTRIBUTE:
 endif
 
 distribute: cleanDISTRIBUTE exeDISTRIBUTE DISTRIBUTE   
+
+$(LIBS): %.library :
+	$(MAKE) mkdir library compile -f $(_TREEROOT) -C$*
+$(EXES): %.exefile : $(LIBS)
+	$(MAKE) exefile link -f $(_TREEROOT) -C$*
+
+files: makelibdir $(EXES)
+
+library: $(LIBS)
+
+exefile: $(EXES)

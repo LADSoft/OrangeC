@@ -44,7 +44,6 @@ tools:
 distribute:
 	@$(MAKE) -f $(_TREEROOT) distribute
 
-fullbuild: buildenv tools copyexes library distribute
 
 clean:  
 	@$(MAKE) -f $(_TREEROOT) clean
@@ -58,6 +57,21 @@ copyexes:
 buildenv:
 	@$(MAKE) -f $(_TREEROOT) --eval="BUILDENV:=1" distribute
 	-copy orc.exe ..\bin
+
+buildenv1:
+	@$(MAKE) -f $(_TREEROOT) --eval="BUILDENV:=1" distribute
+	-copy orc.exe ..\bin
+tools1: buildenv1 
+	@$(MAKE) -f $(_TREEROOT)
+copyexes1: tools1
+	@$(MAKE) -f $(_TREEROOT) exeDISTRIBUTE
+library1: copyexes1
+	@$(MAKE) -Cclibs
+distribute1: library1
+	@$(MAKE) -f $(_TREEROOT) distribute
+
+fullbuild: distribute1
+
 else
 # when called from TREETOP.MAK do the below
 

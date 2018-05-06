@@ -25,13 +25,13 @@
 SHELL=cmd.exe
 export SHELL
 
-all: dll clib 
+all: mklibs
 
 BASEDIRS= ALLOC cmath COMPLIB IO locale MATH PROCONT stdlib STRING strings \
 	threads TIME uio wc uchar
 CLIBDIRS = $(BASEDIRS) cpp
 DLLDIRS = $(BASEDIRS)
-DIRS= $(CLIBDIRS) platform
+DIRS= $(CLIBDIRS)
 
 define SUFFIXDIRS =
 	$(foreach dir, $(1), $(dir)$(2))
@@ -95,28 +95,27 @@ mkdir:
 	-mkdir object\cil 2> NUL
 	-mkdir object\clib 2> NUL
 
-mklibs:
-	-del $(SYSOBJECT)\cldos.l
+$(C_DLLS) : %.dlls : mkdir
+	$(MAKE) -C$* --eval="OBJECT=$(DLLOBJECT)" --eval="$(BUILDING_DLL)"
 
+$(C_CLIBS) : %.clibs : $(C_DLLS)
+	$(MAKE) -C$* --eval="OBJECT=$(CLIBOBJECT)"
+
+platform: $(C_CLIBS)
+	$(MAKE) -Cplatform --eval="OBJECT=$(CLIBOBJECT)"
+
+mklibs: platform
+	-del $(SYSOBJECT)\cldos.l
 	$(LIB) $(LIBFLAGS) $(SYSOBJECT)\cldos.l $(foreach dir, $(LIBOBJS), $(CLIBOBJECT)\$(dir)) $(foreach dir, $(DOSOBJS), $(DOSOBJECT)\$(dir))
 	-del $(SYSOBJECT)\clwin.l
 	$(LIB) $(LIBFLAGS) $(SYSOBJECT)\clwin.l $(foreach dir, $(LIBOBJS), $(CLIBOBJECT)\$(dir)) $(foreach dir, $(WINOBJS), $(WINOBJECT)\$(dir))
 
-$(C_CLIBS) : %.clibs :
-	$(MAKE) -C$* --eval="OBJECT=$(CLIBOBJECT)"
-
-clib: mkdir $(C_CLIBS) mklibs
-
 BUILDING_DLL = BUILDING_DLL=-D__BUILDING_LSCRTL_DLL
 
-$(C_DLLS) : %.dlls : 
-	$(MAKE) -C$* --eval="OBJECT=$(DLLOBJECT)" --eval="$(BUILDING_DLL)"
-
-dll: mkdir $(C_DLLS)
 
 
 ifdef DISTMAKE
-include $(DISTMAKE)
+	 	include $(DISTMAKE)
 
 DISTRIBUTE:
 ifdef OLDSGL
@@ -161,7 +160,7 @@ clean:
 	-del /Q $(SYSOBJECT) 2> NUL
 	-del /Q $(DLLOBJECT) 2> NUL
 	-del /Q $(CILOBJECT) 2> NUL
-	-del /Q$(CLIBOBJECT) 2> NUL
+	-del /Q $(CLIBOBJECT) 2> NUL
 	-rmdir $(DOSOBJECT) 2> NUL
 	-rmdir $(WINOBJECT) 2> NUL
 	-rmdir $(SYSOBJECT) 2> NUL

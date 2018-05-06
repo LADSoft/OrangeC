@@ -73,8 +73,13 @@
 |HEAPSIZE|Size of local heap|0x100000|
 |IMAGEBASE|Base address for the image (used to resolve DLL Address collisions)|0x400000|
 |OBJECTALIGN|Object alignment in memory|0x1000|
+|OSMAJOR|Set the OS Major version|4|
+|OSMINOR|Set the OS Minor version|0|
 |STACKCOMMIT|Amount of stack to commit at program start|0x2000|
 |STACKSIZE|Size of stack for default thread|0x100000|   
+|SUBSYSTEM|Set the subsystem to a specific value|Normally the subsystem is derived from command line switches|
+|SUBSYSMAJOR|Set the Subsystem Major Version|4|
+|SUBSYSMINOR|Set the Subsystem Minor Version|0|
 
   Table 3 - PE.SPC adjustable parameters
  

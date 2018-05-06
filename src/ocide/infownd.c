@@ -218,6 +218,8 @@ int getfile(char *start, char *buffer, char end, DWINFO *info)
                 }
             }
         }
+        if (t -q > sizeof(info->dwName) - 1)
+            t = q + sizeof(info->dwName) - 1;
         strncpy(info->dwName, q, t - q);
         info->dwName[t - q] = 0;
         q = strrchr(info->dwName, '\\');
@@ -273,7 +275,7 @@ void TextToClipBoard(HWND hwnd, char *text)
 }
 //-------------------------------------------------------------------------
 
-BOOL bump(HWND hwnd, char *buffer)
+static BOOL bump(HWND hwnd, char *buffer)
 {
     DWINFO info;
     char  *t, *q;
@@ -369,7 +371,7 @@ static void Next(HWND hwnd)
 }
 static void BumpToEditor(HWND hwnd)
 {
-    char   buffer[512];
+    char   buffer[1024];
     int lineno;
     int start;
     SendMessage(hwnd, EM_GETSEL, (WPARAM) &start, 0);
@@ -415,7 +417,8 @@ static void BumpToErrorWnd(char *buffer)
     {
         if (strstr(buffer, "in module"))
         {
-            strcpy(info.dwName, strstr(buffer, "in module" +  10));
+            strncpy(info.dwName, strstr(buffer, "in module" + 9), sizeof(info.dwName)-1);
+            info.dwName[sizeof(info.dwName) - 1] = 0;
             strstr(buffer, "in module")[0] = 0;
             err = strchr(buffer, ':' );
             lineno = -2;

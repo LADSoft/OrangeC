@@ -957,10 +957,9 @@ int ParsePipeData(HANDLE handle, int window, HANDLE hProcess)
                 SendInfoMessage(window, buf);
             }
             *p = s;
-            memcpy(buf, p, 512-(p - buf));
-            pos -= p - buf;
-            buf[pos] = 0;
+            strcpy(buf, p);
         }
+        pos = strlen(buf);
         if (pos == 512 || (!rv && pos))
         {
             int wc = warncount, ec = errcount;

@@ -733,7 +733,7 @@ join:
         {
             std::string cur = Eval::ExtractFirst(ls, std::string(" "));
             std::string stem;
-            Rule *rule;
+            Rule *rule = NULL;
             std::string ps1;
             if ((cur == ".SECONDARY" || cur == ".IGNORE") && ps =="" && os == "")
                 ps1 = "%";

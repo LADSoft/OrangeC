@@ -28,6 +28,7 @@
 #include <commctrl.h>
 #include <stdio.h>
 #include <float.h>
+#include <stdlib.h>
 #include "helpid.h"
 #include "header.h"
 //#include <dir.h>
@@ -1805,6 +1806,25 @@ void InitFont(BOOL up)
 int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpszCmdLine,
     int nCmdShow)
 {
+
+    if (!getenv("ORANGEC"))
+    {
+        char buffer[MAX_PATH];
+        GetModuleFileNameA(NULL, buffer, sizeof(buffer));    
+        char *p = strrchr(buffer, '\\');
+        if (p)
+        {
+             *p =0 ;
+             char *q = strrchr(buffer,'\\');
+             if (q)
+             {
+                  *q = 0;
+                 _putenv_s("ORANGEC", buffer);
+                 *q = '\\';
+             }
+             *p = '\\';
+        }
+    }
     int i;
     INITCOMMONCONTROLSEX ccEx;
     char buf[260], buf2[260], *p;

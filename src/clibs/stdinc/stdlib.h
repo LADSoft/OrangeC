@@ -215,6 +215,7 @@ void        _RTL_FUNC _IMPORT      _makepath( char *__path,
                                  const char *__ext );
 int         _RTL_FUNC _IMPORT      putenv(const char *__name);
 int         _RTL_FUNC _IMPORT      _putenv(const char *__name);
+int         _RTL_FUNC _IMPORT      _putenv_s(const char *__name, const char *value);
 
 
 void        _RTL_FUNC _IMPORT _searchenv(const char *__file,
@@ -430,6 +431,7 @@ void _RTL_FUNC _IMPORT _seterrormode(int);
     using __STD_NS_QUALIFIER _fullpath;
     using __STD_NS_QUALIFIER putenv;
     using __STD_NS_QUALIFIER _putenv;
+    using __STD_NS_QUALIFIER _putenv_s;
     using __STD_NS_QUALIFIER _rotl;
     using __STD_NS_QUALIFIER _rotr;
     using __STD_NS_QUALIFIER _lrotl;

@@ -107,6 +107,25 @@ char *Utils::GetModuleName()
 #endif
     return buf;
 }
+void Utils::SetEnvironmentToPathParent(char *name)
+{
+     if (!getenv(name))
+     {
+         char buf[512];
+         strcpy(buf, GetModuleName());
+         char *p = strrchr(buf, '\\');
+         if (p)
+         {
+             *p = 0;
+             p = strrchr(buf, '\\');
+             if (p)
+             {
+                 *p = 0;
+                 _putenv_s(name, buf);
+             }
+         }
+     }
+}
 std::string Utils::FullPath(const std::string &path, const std::string &name)
 {
     std::fstream in(name.c_str(), std::ios::in);

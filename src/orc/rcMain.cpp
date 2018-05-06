@@ -65,6 +65,7 @@ int rcMain::Run(int argc, char *argv[])
     int rv = 0;
     int language = LANG_ENGLISH + (SUBLANG_ENGLISH_US << 10);
     Utils::banner(argv[0]);
+    Utils::SetEnvironmentToPathParent("ORANGEC");
     CmdSwitchFile internalConfig(SwitchParser);
     std::string configName = Utils::QualifiedFile(Utils::GetModuleName(), ".cfg");
     std::fstream configTest(configName.c_str(), std::ios::in);

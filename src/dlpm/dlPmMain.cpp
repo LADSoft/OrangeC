@@ -275,6 +275,7 @@ bool dlPmMain::LoadStub(const std::string &exeName)
 int dlPmMain::Run(int argc, char **argv)
 {
     Utils::banner(argv[0]);
+    Utils::SetEnvironmentToPathParent("ORANGEC");
     CmdSwitchFile internalConfig(SwitchParser);
     std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
     std::fstream configTest(configName.c_str(), std::ios::in);

@@ -428,6 +428,7 @@ int MakeMain::Run(int argc, char **argv)
             exit(0);
         }
     }
+    Utils::SetEnvironmentToPathParent("ORANGEC");
     char *p = getenv("MAKEFLAGS");
     if (p)
     {

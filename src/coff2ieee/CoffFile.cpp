@@ -153,7 +153,7 @@ bool CoffFile::AddComdefs()
 }
 std::string CoffFile::GetSectionName(int sect)
 {
-    if (((CoffSectionAux *)&sectionSymbols[sect][1])->Selection > 1)
+    if (sectionSymbols[sect] && ((CoffSectionAux *)&sectionSymbols[sect][1])->Selection > 1)
     {
         std::string name;
         CoffSymbol *sym = sectionSymbols[sect] + sectionSymbols[sect]->NumberOfAuxSymbols + 1;
@@ -207,7 +207,7 @@ std::string CoffFile::GetSectionName(int sect)
 }
 ObjInt CoffFile::GetSectionQualifiers(int sect)
 {
-    if (((CoffSectionAux *)&sectionSymbols[sect][1])->Selection > 1)
+    if (sectionSymbols[sect] && ((CoffSectionAux *)&sectionSymbols[sect][1])->Selection > 1)
     {
         ObjInt sel = 0;
         switch(((CoffSectionAux *)&sectionSymbols[sect][1])->Selection)
@@ -268,8 +268,11 @@ ObjFile *CoffFile::ConvertToObject(std::string outputName, ObjFactory &factory)
         {
             std::string sectname = GetSectionName(i);
             ObjSection * sect = factory.MakeSection(sectname);
-            CoffSectionAux *aux = (CoffSectionAux *)& sectionSymbols[i][1];
-            sect->SetSize(new ObjExpression(aux->Length));
+            if (sectionSymbols[i])
+            {
+                CoffSectionAux *aux = (CoffSectionAux *)& sectionSymbols[i][1];
+                sect->SetSize(new ObjExpression(aux->Length));
+            }
             sect->SetAlignment(IMAGE_SCN_ALIGN(sections[i].Characteristics));
             sect->SetQuals(GetSectionQualifiers(i));
             fil->Add(sect);
@@ -311,7 +314,7 @@ ObjFile *CoffFile::ConvertToObject(std::string outputName, ObjFactory &factory)
     {
         if (symbols[i].StorageClass == IMAGE_SYM_CLASS_EXTERNAL && symbols[i].SectionNumber <= header.NumberOfSections)
         {
-            if (symbols[i].SectionNumber <= 0 || (((CoffSectionAux *)&sectionSymbols[symbols[i].SectionNumber-1][1])->Selection <= 1))
+            if (symbols[i].SectionNumber <= 0 || sectionSymbols[i] && (((CoffSectionAux *)&sectionSymbols[symbols[i].SectionNumber-1][1])->Selection <= 1))
             {
                 char *sname = symbols[i].Name;
                 std::string symbolName;

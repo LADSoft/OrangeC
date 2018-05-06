@@ -59,6 +59,8 @@ int dlPeMain::userMinor = 0;
 int dlPeMain::subsysMajor = 4;
 int dlPeMain::subsysMinor = 0;
 
+int dlPeMain::subsysOverride = 0;
+
 int dlPeMain::dllFlags = 0;//0x8140; 
 
 unsigned char dlPeMain::defaultStubData[] =
@@ -205,6 +207,26 @@ void dlPeMain::ReadValues()
         {
             stackSize = p->GetValue();
         }
+        else if (p->GetName() == "SUBSYSTEM")
+        {
+            subsysOverride = p->GetValue();
+        }
+        else if (p->GetName() == "OSMAJOR")
+        {
+            osMajor = p->GetValue();
+        }
+        else if (p->GetName() == "OSMINOR")
+        {
+            osMinor = p->GetValue();
+        }
+        else if (p->GetName() == "SUBSYSMAJOR")
+        {
+            subsysMajor = p->GetValue();
+        }
+        else if (p->GetName() == "SUBSYSMINOR")
+        {
+            subsysMinor = p->GetValue();
+        }
     }
 }
 bool dlPeMain::LoadImports(ObjFile *file)
@@ -323,27 +345,16 @@ void dlPeMain::InitHeader(unsigned headerSize, ObjInt endVa)
     header.image_base = imageBase ;
     header.file_align = fileAlign ;
     header.object_align = objectAlign ;
-
-    if (mode == DLL)
-    {
-        header.os_major_version = 4 ;
-        header.os_minor_version = 0 ;
-        header.user_major_version = userMajor ;
-        header.user_minor_version = userMinor ;
-        header.subsys_major_version = 4 ;
-        header.subsys_minor_version = 0 ;
-    }
+    header.os_major_version = osMajor ;
+    header.os_minor_version = osMinor ;
+    header.user_major_version = userMajor ;
+    header.user_minor_version = userMinor ;
+    header.subsys_major_version = subsysMajor ;
+    header.subsys_minor_version = subsysMinor ;
+    if (subsysOverride != 0)
+        header.subsystem = subsysOverride;
     else
-    {
-        header.os_major_version = osMajor ;
-        header.os_minor_version = osMinor ;
-        header.user_major_version = userMajor ;
-        header.user_minor_version = userMinor ;
-        header.subsys_major_version = subsysMajor ;
-        header.subsys_minor_version = subsysMinor ;
-    }    
-    header.subsystem = mode == GUI ? PE_SUBSYS_WINDOWS : PE_SUBSYS_CONSOLE ;
-
+        header.subsystem = mode == GUI ? PE_SUBSYS_WINDOWS : PE_SUBSYS_CONSOLE ;
     header.num_rvas = PE_NUM_VAS ;
     header.header_size = headerSize;
     header.heap_size = heapSize ;
@@ -524,6 +535,7 @@ void dlPeMain::PadHeader(std::fstream &out)
 int dlPeMain::Run(int argc, char **argv)
 {
     Utils::banner(argv[0]);
+    Utils::SetEnvironmentToPathParent("ORANGEC");
     char *modName = Utils::GetModuleName();
     CmdSwitchFile internalConfig(SwitchParser);
     std::string configName = Utils::QualifiedFile(argv[0], ".cfg");

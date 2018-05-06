@@ -554,6 +554,7 @@ static struct {
 { "Expected __catch or __fault or __finally", ERROR },
 { "__fault or __finally can appear only once per __try block", ERROR },
 { "static function '%s' is undefined", ERROR },
+{ "Missing type specifier for identifier '%s'", WARNING },
 #endif
 } ;
 

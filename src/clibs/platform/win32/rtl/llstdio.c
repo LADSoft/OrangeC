@@ -56,7 +56,7 @@ FILE _istreams[3] = {
 #define stdout (&_istreams[1])
 #define stderr (&_istreams[2])
 
-void *__export __iob_func() 
+void *_RTL_FUNC __iob_func() 
 { 
     return _istreams; 
 }

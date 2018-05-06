@@ -2,8 +2,15 @@ Release notes:
 
 Version 6.0.37:
     all programs:    add --version
+    all programs:    default 'ORANGEC' environment variable to a sensible value if not defined
+    clibs:  don't export iob_func from generated executables
     occ:    when a temporary was created for a long long value, the temporary could overwrite other variables
     occ:    add new macros for OCC version number and update documentation
+    occ:    fix bug with array length = 0 not allowed at end of structure;
+    occ:    fix crash on certain types of error conditions
+    occ:    fix 'missing type' warning so that it will display the associated identifier when it can
+    occ:    following a defined macro name with a preprocessor directive 
+            (on the next line) resulted in an error
     olib:   remove extraneous warning
     ocpp:   support /! and /V
     omake:  when compiled for 64-bit mode could sometimes randomly show the usage instead of doing its job
@@ -19,8 +26,10 @@ Version 6.0.37:
     omake:  add --eval switch
     omake:  spawn directly when possible
     ocide:    change the brace matching to SHIFT-ALT-BRACE to allow for keyboards that use ALT-BRACE to mean the brace key
-    olink/dlpe:  change the subsystem versions back to 4.0 for compatibility with older versions of windows.
+    olink/dlpe:  change the default subsystem versions back to 4.0 for compatibility with older versions of windows.
+    olink/dple:  Allow setting the OS and SUBSYSTEM versions, allow overriding the SUBSYSTEM
     olink:  when toolset was compiled with itself, olink would crash when -v was used
+    coff2ieee:  fix incompatibilities with latest microsoft libraries
 
 Version 6.0.36: 4/18/2018
     omake:  support '/' better

@@ -447,7 +447,7 @@ BOOLEAN getline(void)
 {
     BOOLEAN rv, prepping;
     BOOLEAN prepped = FALSE;
-    int rvc;
+    int rvc, lastTop;
     do
     {
         rv = FALSE;
@@ -456,7 +456,8 @@ BOOLEAN getline(void)
 #ifndef CPREPROCESSOR
         ErrorsToListFile();
 #endif
-        add:
+    add:
+        lastTop = rvc;
         while (rvc + 131 < MACRO_REPLACE_SIZE && !rv)
         {
             int temp;
@@ -552,7 +553,7 @@ BOOLEAN getline(void)
         }
         if (rv)
             return 1;
-        includes->lptr = includes->inputline;
+        includes->lptr = includes->inputline + lastTop;
 
         while (*includes->lptr != '\n' && isspace((unsigned char)*includes->lptr))
             includes->lptr++;
@@ -565,6 +566,13 @@ BOOLEAN getline(void)
                 preprocess();
                 prepping = TRUE;
             }
+        }
+        else if (lastTop)
+        {
+            includes->lptr = includes->inputline;
+            while (*includes->lptr != '\n' && isspace((unsigned char)*includes->lptr))
+                includes->lptr++;
+
         }
     }
     while (includes->ifskip || prepping)

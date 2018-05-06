@@ -28,6 +28,8 @@
 #include <setjmp.h>
 #include <stdarg.h>
 #include <ctype.h>
+#include <stdlib.h>
+
 #ifdef MSIL
 #include "..\version.h"
 #else
@@ -36,6 +38,8 @@
 #if defined(_MSC_VER) || defined(BORLAND) || defined(__ORANGEC__)
 #include <io.h>
 #endif
+
+#define putenv(x, y) _putenv_s(x,y)
 
 #ifdef __CCDL__
     int _stklen = 100 * 1024;
@@ -654,6 +658,8 @@ void setglbdefs(void)
     glbdefine("__ORANGEC_MINOR__", buf, TRUE);
     my_sprintf(buf, "%d", build);
     glbdefine("__ORANGEC_PATCHLEVEL__", buf, TRUE);
+    sprintf(buf,"\"%s\"", STRING_VERSION);
+    glbdefine("__VERSION__", buf, TRUE);
     glbdefine("__CHAR_BIT__", "8", TRUE);
     if (cparams.prm_cplusplus)
     {
@@ -1055,17 +1061,34 @@ void ccinit(int argc, char *argv[])
         printf("Compile date: " __DATE__ ", time: " __TIME__ "\n");
         exit(0);
     }
+#if defined(WIN32) || defined(MICROSOFT)
+    GetModuleFileNameA(NULL, buffer, sizeof(buffer));    
+#else
+    strcpy(buffer, argv[0]);
+#endif
+
+    if (!getenv("ORANGEC"))
+    {
+        char *p = strrchr(buffer, '\\');
+        if (p)
+        {
+             *p =0 ;
+             char *q = strrchr(buffer,'\\');
+             if (q)
+             {
+                  *q = 0;
+                 putenv("ORANGEC", buffer);
+                 *q = '\\';
+             }
+             *p = '\\';
+        }
+    }
     /* parse the environment and command line */
 #ifndef CPREPROCESSOR
     if (chosenAssembler->envname && !parseenv(chosenAssembler->envname))
         usage(argv[0]);
 #endif
         
-#if defined(WIN32) || defined(MICROSOFT)
-    GetModuleFileNameA(NULL, buffer, sizeof(buffer));    
-#else
-    strcpy(buffer, argv[0]);
-#endif
 
     parseconfigfile(buffer);
     if (!parse_args(&argc, argv, TRUE) || (!clist && argc == 1))

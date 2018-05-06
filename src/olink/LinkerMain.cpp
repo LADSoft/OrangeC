@@ -165,6 +165,7 @@ std::string LinkerMain::SpecFileContents(const std::string &specFile)
 int LinkerMain::Run(int argc, char **argv)
 {
     Utils::banner(argv[0]);
+    Utils::SetEnvironmentToPathParent("ORANGEC");
     char *modName = Utils::GetModuleName();
     std::string appName = Utils::QualifiedFile(modName, ".app");
     if (!TargetConfig.ReadConfigFile(appName))

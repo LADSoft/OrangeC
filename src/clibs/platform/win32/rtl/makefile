@@ -16,30 +16,31 @@
 #     GNU General Public License for more details.
 # 
 #     You should have received a copy of the GNU General Public License
-#     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+#     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
 # 
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
+# 
 
 ASM_DEPENDENCIES = $(wildcard 386/*.nas)
 C_DEPENDENCIES = $(wildcard *.c)
 
 ifdef BUILDING_DLL
-EXCLUDE = $(EXCLUDE) profilew.o proftmw.o profile.o
+EXCLUDE = profilew.o proftmw.o profile.o
 endif
 
 all: $(DEPENDENCIES)
 
 profilew.o: profilew.c
-	$(CC) /! /c /I$(STDINCLUDE) /9 -o$(OBJECT)\$@ $^
+	$(CC) /! /c $(STDINCLUDE) /9 -o$(OBJECT)\$@ $^
 
 proftmw.o: proftmw.c
-	$(CC) /! /c /I$(STDINCLUDE) /9 -o$(OBJECT)\$@ $^
+	$(CC) /! /c $(STDINCLUDE) /9 -o$(OBJECT)\$@ $^
 
 vsconio.o: vsconio.c
-	$(CC) /! /c /I$(STDINCLUDE) $(CFLAGS) /DVSDLL -o$(OBJECT)\$@ $^
+	$(CC) /! /c $(STDINCLUDE) $(CFLAGS) /DVSDLL -o$(OBJECT)\$@ $^
 
 llthrd.o: llthrd.c
-	$(CC) /! /c /C-E /I$(STDINCLUDE) /9 -o$(OBJECT)\$@ $^
+	$(CC) /! /c /C-E $(STDINCLUDE) /9 -o$(OBJECT)\$@ $^
 
 DISTRIBUTE:

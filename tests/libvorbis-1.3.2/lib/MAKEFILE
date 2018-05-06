@@ -1,0 +1,53 @@
+
+.path.c = ../test
+
+OUT = vorbis.l
+OBJ = mdct.o smallft.o block.o envelope.o window.o lsp.o \
+      lpc.o analysis.o synthesis.o psy.o info.o \
+      floor1.o floor0.o \
+      res0.o mapping0.o registry.o codebook.o sharedbook.o \
+      lookup.o bitrate.o vorbisfile.o vorbisenc.o
+INC =
+
+LIB =
+
+CFLAGS = /c +e /! /9 /I ../include /D__inline=inline /D__inline__=inline
+XXXXX = -D__inline -Dinline
+AFLAGS = -fobj
+LFLAGS = /Wc /!
+RFLAGS =
+
+
+all: $(OUT)
+
+
+CC = \orangec\bin\occ
+AS = d:\ccdl\bin\nasm
+LD = d:\ccdl\bin\valx
+RC = d:\ccdl\bin\xrc
+
+
+$(OUT): $(OBJ)
+	@del $(OUT)
+	\orangec\bin\olib $(OUT) $(OBJ)
+
+$(OBJ): $(INC)
+
+.c.o:
+	@$(CC) $(CFLAGS) $(LFLAGS) $<
+
+.asm.o:
+	@$(AS) $(AFLAGS) $<
+
+.nas.o:
+	@$(AS) $(AFLAGS) $<
+
+.rc.res:
+	$(RC) $(RFLAGS) $<
+
+
+test.exe: vorbis.l test.o util.o write_read.o
+	$(CC) /o$@ test.o util.o write_read.o vorbis.l ..\ogg.l
+
+test: test.exe
+	test.exe

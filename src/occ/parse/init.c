@@ -16,10 +16,11 @@
  *     GNU General Public License for more details.
  * 
  *     You should have received a copy of the GNU General Public License
- *     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+ *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
  * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
+ * 
  */
 
 #include "compiler.h"
@@ -1698,8 +1699,9 @@ enum e_node referenceTypeError(TYPE *tp, EXPRESSION *exp)
 }
 EXPRESSION *createTemporary(TYPE *tp, EXPRESSION *val)
 {
-    EXPRESSION *rv = anonymousVar(sc_auto, tp);
+    EXPRESSION *rv;
     tp = basetype(tp)->btp;
+    rv  = anonymousVar(sc_auto, tp);
     if (val)
     {
         EXPRESSION *rv1 = rv;

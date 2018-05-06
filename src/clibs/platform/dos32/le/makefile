@@ -16,10 +16,13 @@
 #     GNU General Public License for more details.
 # 
 #     You should have received a copy of the GNU General Public License
-#     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+#     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
 # 
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
+# 
+
+SHELL=cmd.exe
 
 C_DEPENDENCIES = $(wildcard *.c)
 C_FLAGS=/O-E
@@ -27,7 +30,7 @@ ASM_DEPENDENCIES = $(wildcard c0*.nas) c0watd.o c0hxd.o
 all: $(DEPENDENCIES)
 
 c0.o: c0.c
-	$(CC) /c /I$(STDINCLUDE) $(CFLAGS) /s16 -o$(DOSOBJECT)\$@ $^
+	$(CC) /c $(STDINCLUDE) $(CFLAGS) /s16 -o$(DOSOBJECT)\$@ $^
 
 c0wat.o: c0wat.nas
 	$(ASM) $(ASMFLAGS) -o$(SYSOBJECT)\$@ $^
@@ -42,7 +45,7 @@ c0hxd.o: c0hx.nas
 	$(ASM) $(ASMFLAGS) -DDEBUG -o$(SYSOBJECT)\$@ $^
 
 wildargs.o: wildargs.c
-	$(CC) /c /I$(STDINCLUDE) $(CFLAGS) -o$(SYSOBJECT)\$@ $^
+	$(CC) /c $(STDINCLUDE) $(CFLAGS) -o$(SYSOBJECT)\$@ $^
 
 DISTRIBUTE:
 	copy *.nas $(DISTSTARTUPDOS)

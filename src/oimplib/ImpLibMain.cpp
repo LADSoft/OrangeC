@@ -16,10 +16,11 @@
  *     GNU General Public License for more details.
  * 
  *     You should have received a copy of the GNU General Public License
- *     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+ *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
  * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
+ * 
  */
 
 #include "ObjTypes.h"
@@ -46,15 +47,17 @@ int main(int argc, char **argv)
 CmdSwitchParser ImpLibMain::SwitchParser;
 
 CmdSwitchBool ImpLibMain::caseSensitiveSwitch(SwitchParser, 'c', true);
+CmdSwitchBool ImpLibMain::CDLLSwitch(SwitchParser, 'C');
 CmdSwitchOutput ImpLibMain::OutputFile(SwitchParser, 'o', ".a");
 CmdSwitchFile ImpLibMain::File(SwitchParser, '@');
 char *ImpLibMain::usageText = "[options] outputfile [+ files] [- files] [* files]\n"
             "\n"
-            "/c-    Case insensitive library\n"
-            "/oxxx  Set output file name\n"
-            "/V     Show version and date\n"
-            "/!     No logo\n"
-            "@xxx   Read commands from file\n"
+            "/c-            Case insensitive library\n"
+            "/oxxx          Set output file name\n"
+            "/C             C language compatibility\n"
+            "/V, --version  Show version and date\n"
+            "/!             No logo\n"
+            "@xxx           Read commands from file\n"
             "\n"
             "outputfile can be a library, object, or def file\n"
             "the input files can be objects, def files, or dll files\n"
@@ -120,7 +123,7 @@ void ImpLibMain::AddFile(LibManager &librarian, const char *arg)
                         }
                         if (ext == ".def")
                         {
-                            DefFile defFile(inputFile);
+                            DefFile defFile(inputFile, CDLLSwitch.GetValue());
                             if (!defFile.Read())
                             {
                                 std::cout << "Def file '" << inputFile.c_str() << "' is missing or in wrong format" << std::endl;
@@ -215,7 +218,7 @@ int ImpLibMain::HandleDefFile(const std::string &outputFile, int argc, char **ar
     {
         // def to def is basically a copy operation lol...  but it will reformat
         // the file :)
-        DefFile defFile(inputFile);
+        DefFile defFile(inputFile, CDLLSwitch.GetValue());
         if (!defFile.Read())
             return 1;
         defFile.SetFileName(outputFile);
@@ -226,7 +229,7 @@ int ImpLibMain::HandleDefFile(const std::string &outputFile, int argc, char **ar
         DLLExportReader dllFile(inputFile);
         if (!dllFile.Read())
             return 1;
-        DefFile defFile(outputFile);
+        DefFile defFile(outputFile, CDLLSwitch.GetValue());
         int npos = inputFile.find_last_of(CmdFiles::DIR_SEP);
         if (npos == std::string::npos)
             npos = 0;
@@ -251,7 +254,7 @@ ObjFile *ImpLibMain::DefFileToObjFile(DefFile &def)
     ObjFile *obj = new ObjFile(def.GetLibraryName());
     for (DefFile::ExportIterator it = def.ExportBegin(); it != def.ExportEnd(); ++it)
     {
-        ObjImportSymbol *p = od->factory.MakeImportSymbol((*it)->id);
+        ObjImportSymbol *p = od->factory.MakeImportSymbol((CDLLSwitch.GetValue() ? "_" : "") + (*it)->id);
         p->SetExternalName((*it)->entry);
         p->SetByOrdinal((*it)->byOrd);
         p->SetOrdinal((*it)->ord);
@@ -273,7 +276,7 @@ ObjFile *ImpLibMain::DllFileToObjFile(DLLExportReader &dll)
     ObjFile *obj = new ObjFile(name);
     for (auto exp : dll)
     {
-        ObjImportSymbol *p = od->factory.MakeImportSymbol(exp->name);
+        ObjImportSymbol *p = od->factory.MakeImportSymbol((CDLLSwitch.GetValue() ? "_" : "" ) + exp->name);
         p->SetExternalName(exp->name);
         p->SetByOrdinal(exp->byOrd);
         p->SetOrdinal(exp->ordinal);
@@ -291,7 +294,7 @@ int ImpLibMain::HandleObjFile(const std::string &outputFile, int argc, char **ar
         return 1;
     if (def)
     {
-        DefFile defFile(inputFile);
+        DefFile defFile(inputFile, CDLLSwitch.GetValue());
         if (!defFile.Read())
             return 1;
         obj = DefFileToObjFile(defFile);

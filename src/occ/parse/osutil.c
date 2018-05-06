@@ -16,10 +16,11 @@
  *     GNU General Public License for more details.
  * 
  *     You should have received a copy of the GNU General Public License
- *     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+ *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
  * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
+ * 
  */
 
 #include "compiler.h"
@@ -618,7 +619,7 @@ void setglbdefs(void)
 #endif
     LIST *l = deflist;
     char buf[256] ;
-    int major, minor;
+    int major, temp, minor, build;
     while (l)
     {
         char *s = l->data;
@@ -644,9 +645,15 @@ void setglbdefs(void)
         glbUndefine(n);
         l = l->next;
     }
-    sscanf(STRING_VERSION, "%d.%d", &major, &minor);
+    sscanf(STRING_VERSION, "%d.%d.%d.%d", &major, &temp, &minor, &build);
     my_sprintf(buf, "%d", major *100+minor);
     glbdefine("__ORANGEC__", buf, TRUE);
+    my_sprintf(buf, "%d", major);
+    glbdefine("__ORANGEC_MAJOR__", buf, TRUE);
+    my_sprintf(buf, "%d", minor);
+    glbdefine("__ORANGEC_MINOR__", buf, TRUE);
+    my_sprintf(buf, "%d", build);
+    glbdefine("__ORANGEC_PATCHLEVEL__", buf, TRUE);
     glbdefine("__CHAR_BIT__", "8", TRUE);
     if (cparams.prm_cplusplus)
     {
@@ -715,7 +722,7 @@ void InsertOneFile(char *filename, char *path, int drive)
 #ifndef CPREPROCESSOR
     inserted = chosenAssembler->insert_noncompile_file 
         && chosenAssembler->insert_noncompile_file(buffer);
-    if (cparams.prm_compileonly || !inserted)
+    if (!inserted)
 #endif
     {
         AddExt(buffer, ".C");
@@ -1030,7 +1037,7 @@ void ccinit(int argc, char *argv[])
             {
                 showBanner = FALSE;
             }
-            else if (argv[i][1] == 'V' && argv[i][2] == 0)
+            else if (argv[i][1] == 'V' && argv[i][2] == 0 || !strcmp(argv[i], "--version"))
             {
                 showVersion = TRUE;
             }

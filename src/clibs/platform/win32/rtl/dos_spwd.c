@@ -16,10 +16,11 @@
  *     GNU General Public License for more details.
  * 
  *     You should have received a copy of the GNU General Public License
- *     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+ *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
  * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
+ * 
  */
 
 #include <errno.h>
@@ -34,24 +35,23 @@
 
 int _RTL_FUNC _dos_setpwd(char *buf)
 {
-    char dir[256],name[6];
-   int drv ;
-   _dos_getdrive(&drv) ;
-   dir[0] = drv + '@';
-    dir[1] = ':' ;
-   dir[2] = '\\' ;
-   if (buf[0] != '\\') {
-      _dos_getpwd(dir+3, dir[0] - '@');
-      strcat(dir,"\\") ;
-   } else {
-      dir[2] = 0;
+    char dir[MAX_PATH],name[6];
+      if (!GetCurrentDirectory(sizeof(dir), dir))
+	return 1;
+    if (buf[1] == ':')
+       strcpy(dir, buf);
+    else if (buf[0] == '\\') {
+       strcpy(dir+2, buf); 
+    } else {
+       strcat(dir, "\\");
+       strcat(dir, buf);
     }
-    strcat(dir,buf);
     name[0] = '=' ;      
     name[1] = dir[0] ;
     name[2] = ':' ;
     name[3] = '\\' ;
     name[4] = 0;
+
     SetEnvironmentVariable(name,dir) ;
     return !SetCurrentDirectory(dir) ;
 }

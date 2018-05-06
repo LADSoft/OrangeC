@@ -16,10 +16,11 @@
  *     GNU General Public License for more details.
  * 
  *     You should have received a copy of the GNU General Public License
- *     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+ *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
  * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
+ * 
  */
 
 #include "dlLeMain.h"
@@ -49,11 +50,11 @@ unsigned dlLeMain::fileVersion = 0;
 
 char *dlLeMain::usageText = "[options] relfile\n"
             "\n"
-            "/mxxx  Set output file type\n"
-            "/oxxx  Set output file name\n"
-            "/sxxx  Set stub file name\n"
-            "/V     Show version and date\n"
-            "/!     No logo\n"
+            "/mxxx          Set output file type\n"
+            "/oxxx          Set output file name\n"
+            "/sxxx          Set stub file name\n"
+            "/V, --version  Show version and date\n"
+            "/!             No logo\n"
             "\n"
             "Available output file types:\n"
             "   LE (default)\n"

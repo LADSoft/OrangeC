@@ -16,10 +16,11 @@
  *     GNU General Public License for more details.
  * 
  *     You should have received a copy of the GNU General Public License
- *     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+ *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
  * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
+ * 
  */
 
 #include "ObjTypes.h"
@@ -46,11 +47,11 @@ CmdSwitchOutput LibMain::OutputFile(SwitchParser, 'o', ".a");
 CmdSwitchFile LibMain::File(SwitchParser, '@');
 char *LibMain::usageText = "[options] libfile [+ files] [- files] [* files]\n"
             "\n"
-            "/c-    Case insensitive library\n"
-            "/oxxx  Set output file name\n"
-            "/V     Show version and date\n"
-            "/!     No logo\n"
-            "@xxx   Read commands from file\n"
+            "/c-            Case insensitive library\n"
+            "/oxxx          Set output file name\n"
+            "/V, --version  Show version and date\n"
+            "/!             No logo\n"
+            "@xxx           Read commands from file\n"
             "\n"
             "Time: " __TIME__ "  Date: " __DATE__;
 

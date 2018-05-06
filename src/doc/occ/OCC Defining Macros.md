@@ -10,14 +10,30 @@ is equivalent to placing the following statement in the file and compiling it.
  
      #define ORANGE 
 
-The following macros are predefined by the compiler:
+## Standard Predefined Macros
 
-
- 
+The following standard macros are predefined by the compiler:
 
 |Macro |Usage |
 |--- |--- |
-|\_\_ORANGEC\_\_|always defined|
+|\_\_FILE\_\_| name of source file|
+|\_\_DATE\_\_| the current date|
+|\_\_DATEISO\_\_| the current date (ISO format)| 
+|\_\_TIME\_\_| the current time|
+|\_\_LINE\_\_| the current line number|
+
+
+
+## Non-standard predefined macros
+
+The following non-standard macros are predefined by the compiler:
+
+|Macro |Usage |
+|--- |--- |
+|\_\_ORANGEC\_\_|always defined, value is "major version * 100 + minor version"|
+|\_\_ORANGEC\_MAJOR\_\_|always defined, value is "major version"|
+|\_\_ORANGEC\_MINOR\_\_|always defined, value is "minor version"|
+|\_\_ORANGEC\_PATCHLEVEL\_\_|always defined, value is "build number"|
 |\_\_RTTI\_\_|defined when C++ rtti/exception handling info is present|
 |\_\_386\_\_|always defined|
 |\_\_i386\_\_|always defined|

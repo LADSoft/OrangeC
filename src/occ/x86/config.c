@@ -16,10 +16,11 @@
  *     GNU General Public License for more details.
  * 
  *     You should have received a copy of the GNU General Public License
- *     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+ *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
  * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
+ * 
  */
 
 /*
@@ -59,7 +60,7 @@ static    char usage_text[] = "[options] [@response file] files\n"
         "/Ipath    - specify include path      /M        - generate make stubs\n"
         "/O-       - disable optimizations     +Q        - quiet mode\n"
         "/Sasm;dbg - make ASM source file      /T        - translate trigraphs\n"
-        "/V        - show version and date     /Wxx      - set executable type\n"
+        "/V,--version - show version and date  /Wxx      - set executable type\n"
         "/!        - No logo\n"
         "Codegen parameters: (/C[+][-][params])\n"
         "  +d   - display diagnostics          -b        - no BSS\n"

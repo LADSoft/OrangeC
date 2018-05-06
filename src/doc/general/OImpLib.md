@@ -60,7 +60,14 @@
 >     OImpLib user32.def user32.dll
  
  will create a definition file from the export records in **user32.dll**.
- 
+
+
+### C language compatibility
+
+ Microsoft compilers make DLL exports slightly incompatible with C language naming conventions.
+If a DLL is known to export C language functions, the **/C** switch can be used to restore compatibility
+with the Orange C compiler.   However, if the DLL is a mix of C language and STDCALL functions, this simple
+switch cannot tell the difference.   In such cases it is better to use the [Coff2IEEE](Coff2IEEE.md) program on the COFF import library.
  
 ### Alternative display options
 

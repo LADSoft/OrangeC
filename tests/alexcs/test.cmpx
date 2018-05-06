@@ -1,0 +1,21 @@
+.data
+    str_1: .string "Hello, world."
+    format_str_s: .string "%s"
+    format_str_new_line: .string "\n"
+.text
+.globl main
+main:
+
+    movl	%esp, %ebp
+    pushl	$str_1
+    pushl	$format_str_s
+    calll	(printf)
+    addl	$8, %esp
+    pushl	$format_str_new_line
+    calll	(printf)
+    addl	$4, %esp
+    addl	$0, %esp
+  exit_0:
+    movl	%ebp, %esp
+    movl	$0, %eax
+    retl

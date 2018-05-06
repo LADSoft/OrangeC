@@ -8,7 +8,7 @@ it is incomplete, especially the MAKE section has not been written.
 Set up is simple; extract the EXE file to the place of your choice, then
 set environment variables like this:
 
-set PATH=<your path>\organgec\bin;%PATH%
+set PATH=<your path>\orangec\bin;%PATH%
 set ORANGEC=<your path>\orangec
 
 This needs to be done either for MSDOS or WIN32

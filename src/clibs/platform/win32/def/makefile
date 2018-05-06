@@ -16,15 +16,16 @@
 #     GNU General Public License for more details.
 # 
 #     You should have received a copy of the GNU General Public License
-#     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+#     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
 # 
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
+# 
 
 EXCLUDE = climp.l
 
 climp.l: *.def impdefs.lst
-	del $@
+	-del $@
 	$(IMPLIB) $(IMPLIBFLAGS) $(SYSOBJECT)\$@ @impdefs.lst
 
 DISTRIBUTE:

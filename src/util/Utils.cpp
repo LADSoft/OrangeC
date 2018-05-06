@@ -16,10 +16,11 @@
  *     GNU General Public License for more details.
  * 
  *     You should have received a copy of the GNU General Public License
- *     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+ *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
  * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
+ * 
  */
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -74,7 +75,7 @@ void Utils::banner(char *progName)
     // handle /V switch
     for (int i = 1; i < __argc && __argv[i]; i++)
         if (__argv[i] && (__argv[i][0] == '/' || __argv[i][0] == '-'))
-            if (__argv[i][1] == 'V' && __argv[i][2] == 0)
+            if (__argv[i][1] == 'V' && __argv[i][2] == 0 || !strcmp(__argv[i], "--version"))
             {
                 printf("\nCompile date: " __DATE__ " time: " __TIME__ "\n");
                 exit(0);

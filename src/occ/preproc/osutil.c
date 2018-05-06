@@ -16,10 +16,11 @@
  *     GNU General Public License for more details.
  * 
  *     You should have received a copy of the GNU General Public License
- *     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+ *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
  * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
+ * 
  */
 
 #include "compiler.h"
@@ -933,7 +934,7 @@ void ccinit(int argc, char *argv[])
             {
                 showBanner = FALSE;
             }
-            else if (argv[i][1] == 'V' && argv[i][2] == 0)
+            else if (argv[i][1] == 'V' && argv[i][2] == 0 || !strcmp(argv[i], "--version"))
             {
                 showVersion = TRUE;
             }

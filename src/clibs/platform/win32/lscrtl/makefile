@@ -16,26 +16,34 @@
 #     GNU General Public License for more details.
 # 
 #     You should have received a copy of the GNU General Public License
-#     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+#     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
 # 
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
+# 
+
+SHELL=cmd.exe
 
 RCFILE=lscrtl
 
 all: .\c0dll.o .\lscrtl.dll .\lscrtlil.dll
 
-WINOBJS := $(shell dir /b $(WINOBJECT)\*.o)
-DLLOBJS := $(shell dir /b $(DLLOBJECT)\*.o)
+ifneq ($(shell type makefile),)
+B = /b
+endif
 
+WINOBJS = $(shell dir $(B) $(WINOBJECT)\\*.o)
+DLLOBJS = $(shell dir $(B) $(DLLOBJECT)\\*.o)
+
+$(info hi $(DLLOBJS))
 .\lscrtl.dll: .\lscrtl.o .\c0dll.o $(RCFILE).res
-	del $@
+	-del $@
 	$(LINK) $(LINKFLAGS) /T:DLL32 -o.\lscrtl .\lscrtl.o .\c0dll.o $(CLIBOBJECT)\srproc.o $(foreach dir, $(filter-out c0.o c0lsstartup.o, $(DLLOBJS)), $(DLLOBJECT)\$(dir)) $(SYSOBJECT)\climp.l $(RCFILE).res
 	move lscrtl.dll $(LSCRTLOBJECT)
 	move lscrtl.l $(LSCRTLOBJECT)
 
 .\lscrtlil.dll: .\lscrtl.o .\c0dll.o $(RCFILE).res
-	del $@
+	-del $@
 	$(LINK) $(LINKFLAGS) /l /T:DLL32 -o.\lscrtlil.rel .\lscrtl.o .\c0dll.o $(CLIBOBJECT)\srproc.o $(foreach dir, $(filter-out c0.o c0lsstartup.o, $(DLLOBJS)), $(DLLOBJECT)\$(dir)) $(SYSOBJECT)\climp.l $(RCFILE).res
 	dlpe /! /f /mDLL /olscrtlil.dll lscrtl.
 #	move lscrtlil.dll \occil\bin

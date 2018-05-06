@@ -16,14 +16,14 @@
 #     GNU General Public License for more details.
 # 
 #     You should have received a copy of the GNU General Public License
-#     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+#     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
 # 
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
+# 
 
 ifeq "$(COMPILER)" "MINGW64"
 
-COMPILER_PATH := c:\mingw64
 OBJ_IND_PATH := mingw64
 
 CPP_deps = $(notdir $(CPP_DEPENDENCIES:.cpp=.o))
@@ -40,21 +40,21 @@ endif
 LLIB_DEPENDENCIES = $(notdir $(filter-out $(EXCLUDE) $(MAIN_DEPENDENCIES), $(CPP_deps) $(C_deps) $(ASM_deps) $(TASM_deps)))
 
 
-CC=$(COMPILER_PATH)\bin\x86_64-w64-mingw32-gcc
+CC=x86_64-w64-mingw32-gcc
 CCFLAGS = -c -D__MSVCRT__ -U__STRICT_ANSI__
 
-LINK=$(COMPILER_PATH)\bin\ld
+LINK=ld
 LFLAGS=-L$(_LIBDIR)
 
-LIB=$(COMPILER_PATH)\bin\ar
+LIB=ar
 LIBFLAGS=-r -s
 LIB_EXT:=.a
 LIB_PREFIX:=lib
 
-ASM=$(COMPILER_PATH)\bin\as
+ASM=as
 ASMFLAGS=
 
-RC=$(COMPILER_PATH)\bin\windres
+RC=windres
 RCFLAGS=-DWINVER=0x400
 
 ifneq "$(INCLUDES)" ""

@@ -1,4 +1,27 @@
-/* (null) */
+/* Software License Agreement
+ * 
+ *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
+ * 
+ *     This file is part of the Orange C Compiler package.
+ * 
+ *     The Orange C Compiler package is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version, with the addition of the 
+ *     Orange C "Target Code" exception.
+ * 
+ *     The Orange C Compiler package is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ * 
+ *     You should have received a copy of the GNU General Public License
+ *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ *     contact information:
+ *         email: TouchStone222@runbox.com <David Lindauer>
+ * 
+ */
 
 #define _CRT_SECURE_NO_WARNINGS  
 
@@ -66,6 +89,7 @@ char *MakeMain::usageText = "[options] goals\n"
                     "/t    Touch                   /u    Debug warnings\n"
                     "/w    Print directory         --eval=STRING evaluate a statement\n"     
                     "/!    No logo\n"
+                    "--version show version info\n"
                     "\nTime: " __TIME__ "  Date: " __DATE__;
 char *MakeMain::builtinVars = "";
 char *MakeMain::builtinRules = "";
@@ -80,7 +104,7 @@ void MakeMain::Dispatch(const char *data)
 {
     int max = 10;
     argcx = 1;
-    argvx = new char *[max];
+    argvx = new char *[max + 1];
     argvx[0] = "";
     while (*data)
     {
@@ -88,7 +112,7 @@ void MakeMain::Dispatch(const char *data)
         if (argcx == max)
         {
             max += 10;
-            char **p = new char *[max];
+            char **p = new char *[max + 1];
             memcpy(p, argvx, argcx * sizeof(char *));
             delete [] argvx;
             argvx = p;
@@ -96,6 +120,7 @@ void MakeMain::Dispatch(const char *data)
     }
     argvx[argcx] = 0;
     switchParser.Parse(&argcx, argvx);
+    delete[] argvx;	
 }
 const char * MakeMain::GetStr(const char *data)
 {
@@ -241,7 +266,7 @@ void MakeMain::LoadCmdDefines()
     }
     for (int i=0; i < evals.GetCount(); i++)
 	{
-        const CmdSwitchDefine::define *def = evals.GetValue(i);
+                const CmdSwitchDefine::define *def = evals.GetValue(i);
 		if (std::string(def->name) != "eval")
 		{
 			Eval::error(std::string("Invalid switch --") + def->name);
@@ -355,6 +380,14 @@ void MakeMain::SetTreePath(std::string &files)
 }
 int MakeMain::Run(int argc, char **argv)
 {
+    for (int i=0; argv[i]; i++)
+    {
+        if (!strcmp(argv[i], "--version"))
+        {
+            Utils::banner(argv[0]);
+            exit(0);
+        }
+    }
     char *p = getenv("MAKEFLAGS");
     if (p)
     {
@@ -420,7 +453,8 @@ int MakeMain::Run(int argc, char **argv)
             if (v)
             {
                 std::string val = v->GetValue();
-                SetVariable("SHELL", val, Variable::o_environ, true);
+                SetVariable("SHELL", val, Variable::o_environ, false);
+                SetVariable(".SHELLFLAGS", "-c", Variable::o_environ, false);
             }
         }
         std::string wd = OS::GetWorkingDir();

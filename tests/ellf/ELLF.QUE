@@ -1,0 +1,46 @@
+3 ; elliptic
+1 ; low pass
+8 ; order
+0.5 ; passband ripple
+10000 ; sampling rate
+2000 ; pass band
+2200 ; stop band
+3
+1
+8
+0.5
+10000
+2000
+-60.0
+3
+3
+5
+0.3
+6500
+2000
+-40.0
+3
+2
+5
+0.1
+10000
+3000
+4000
+-60.0
+3
+4
+4
+2.0
+10000
+2000
+1000
+1100
+0
+0
+; This is a file of commands that can be redirected in place of
+; keyboard input to ellf.exe in order to produce the sample results
+; contained in ellf.ans.  Run from MSDOS by the command line:
+;      ellf <ellf.que >temp.ans
+; and verify that temp.ans is substantially the same as
+; ellf.ans.
+

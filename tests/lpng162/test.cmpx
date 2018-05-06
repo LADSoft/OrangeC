@@ -1,0 +1,30 @@
+
+ Testing libpng version 1.6.2
+   with zlib   version 1.2.5
+
+libpng version 1.6.2 - April 25, 2013
+Copyright (c) 1998-2013 Glenn Randers-Pehrson
+Copyright (c) 1996-1997 Andreas Dilger
+Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc.
+ library (10602): libpng version 1.6.2 - April 25, 2013
+
+ pngtest (10602): libpng version 1.6.2 - April 25, 2013
+
+ Testing pngtest.png:
+ Pass 0: rwrwrwrwrwrwrwrwrw
+ Pass 1: rwrwrwrwrwrwrwrwrw
+ Pass 2: rwrwrwrwrwrwrwrw
+ Pass 3: rwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrw
+ Pass 4: rwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrw
+ Pass 5: rwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrw
+         rwrwrwrw
+ Pass 6: rwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrwrw
+         rwrwrwrwrw
+ PASS (9782 zero samples)
+ Filter 0 was used 21 times
+ Filter 1 was used 15 times
+ Filter 2 was used 52 times
+ Filter 3 was used 10 times
+ Filter 4 was used 33 times
+ tIME = 7 Jun 1996 17:58:08 +0000
+ libpng passes test

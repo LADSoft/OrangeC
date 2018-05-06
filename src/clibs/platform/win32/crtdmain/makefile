@@ -16,10 +16,13 @@
 #     GNU General Public License for more details.
 # 
 #     You should have received a copy of the GNU General Public License
-#     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+#     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
 # 
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
+# 
+
+SHELL=cmd.exe
 
 EXCLUDE = $(EXCLUDE) crtdll.l
 
@@ -28,13 +31,14 @@ all: crtdll.l
 .\crtdmain.o: crtdmain.c
 	$(CC) /c $(CFLAGS) -o$@ $^
 
+.PHONY: .\c0.o
 .\c0.o: ..\pe\c0.c
 	$(CC) /c $(CFLAGS) -Wcl -o$@ $^
 
 crtdll.l: .\crtdmain.o .\c0.o
-	del $@
-	$(LIB) $(LIBFLAGS) $@ + .\c0.o .\crtdmain.o
-	$(LIB) $(LIBFLAGS) $@ + $(CLIBOBJECT)\srproc.o $(CLIBOBJECT)\lxsar.o $(CLIBOBJECT)\lxshr.o $(CLIBOBJECT)\lxshl.o$(CLIBOBJECT)\lxmul.o $(CLIBOBJECT)\lxdiv.o $(CLIBOBJECT)\substk.o $(CLIBOBJECT)\stkchk.o $(OBJECT)\vsconio.o
+	-del $@
+	$(LIB) $(LIBFLAGS) $@ +- .\c0.o .\crtdmain.o
+	$(LIB) $(LIBFLAGS) $@ +- $(CLIBOBJECT)\srproc.o $(CLIBOBJECT)\lxsar.o $(CLIBOBJECT)\lxshr.o $(CLIBOBJECT)\lxshl.o $(CLIBOBJECT)\lxmul.o $(CLIBOBJECT)\lxdiv.o $(CLIBOBJECT)\substk.o $(CLIBOBJECT)\stkchk.o $(OBJECT)\vsconio.o
 	$(IMPLIB) $@ .\crtdll.def
 
 DISTRIBUTE:

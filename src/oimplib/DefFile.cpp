@@ -16,10 +16,11 @@
  *     GNU General Public License for more details.
  * 
  *     You should have received a copy of the GNU General Public License
- *     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+ *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
  * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
+ * 
  */
 
 #include "ppExpr.h"
@@ -291,6 +292,7 @@ void DefFile::ReadExports()
             }
             else
             {
+                oneExport->entry = oneExport->id;
                 if (token->IsIdentifier())
                 {
                     oneExport->entry = token->GetId();
@@ -511,6 +513,8 @@ void DefFile::WriteExports()
             *stream << "EXPORTS" << std::endl;
             first = false;
         }
+        if (cdll && !exp->byOrd)
+            *stream << "\t_" << exp->id.c_str();
         *stream << "\t" << exp->id.c_str();
         if ((exp->entry.size() && exp->entry != exp->id) || exp->module.size())
         {
@@ -518,7 +522,7 @@ void DefFile::WriteExports()
             if (exp->module.size())
                 *stream << "." << exp->module.c_str();
         }
-        if (exp->ord != -1)
+        if ((!cdll || exp->byOrd) && exp->ord != -1)
             *stream << " @" << exp->ord;
         if (exp->byOrd)
             *stream << " " << "NONAME";

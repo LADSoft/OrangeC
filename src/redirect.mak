@@ -16,10 +16,11 @@
 #     GNU General Public License for more details.
 # 
 #     You should have received a copy of the GNU General Public License
-#     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+#     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
 # 
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
+# 
 
 ifndef _TREEROOT
 CURRENT := $(subst /,\,$(CURDIR))
@@ -29,5 +30,7 @@ export _TREEROOT
 export _TREETARGET
 
 redirect:
-	@$(MAKE) -f$(_TREEROOT)
+	@$(MAKE) -f $(_TREEROOT)
+
 endif
+

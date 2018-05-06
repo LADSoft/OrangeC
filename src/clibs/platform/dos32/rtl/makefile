@@ -16,10 +16,11 @@
 #     GNU General Public License for more details.
 # 
 #     You should have received a copy of the GNU General Public License
-#     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+#     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
 # 
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
+# 
 
 ASM_DEPENDENCIES = $(wildcard 386\*.nas)
 C_DEPENDENCIES = $(wildcard *.c)
@@ -28,9 +29,9 @@ C_FLAGS=/C-E #forces stack frames for this part of the RTL
 all: $(DEPENDENCIES)
 
 profile.o: profile.c
-	$(CC) /c /I$(STDINCLUDE) -o$(OBJECT)\$@F $^
+	$(CC) /c $(STDINCLUDE) -o$(OBJECT)\$@F $^
 
 proftime.o: proftime.c
-	$(CC) /c /I$(STDINCLUDE) -o$(OBJECT)\$@F $^
+	$(CC) /c $(STDINCLUDE) -o$(OBJECT)\$@F $^
 
 DISTRIBUTE:

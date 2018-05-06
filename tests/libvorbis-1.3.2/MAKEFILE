@@ -1,0 +1,48 @@
+
+EXE = test.exe
+OBJ = test.o util.o write_read.o
+INC =
+
+LIB = libogg\ogg.l lib\vorbis.l
+
+CFLAGS = /c /! +e /9 -Iinclude;include/vorbis
+AFLAGS = -fobj
+LFLAGS = /Wc /!
+RFLAGS =
+
+
+all: $(EXE) test
+
+test:
+	test > test.out
+	fc /b test.cmpx test.out
+
+
+CC = \orangec\bin\occ
+AS = d:\ccdl\bin\nasm
+LD = d:\ccdl\bin\valx
+RC = d:\ccdl\bin\xrc
+
+
+$(EXE): $(LIB) $(OBJ)
+	$(CC) $(LFLAGS) /o$(EXE) $(OBJ) $(LIB)
+
+$(OBJ): $(INC)
+
+.c.o:
+	@$(CC) $(CFLAGS) $(LFLAGS) $<
+
+.asm.o:
+	@$(AS) $(AFLAGS) $<
+
+.nas.o:
+	@$(AS) $(AFLAGS) $<
+
+.rc.res:
+	$(RC) $(RFLAGS) $<
+
+libogg\ogg.l:
+	$(MAKE) -Clibogg
+
+lib\vorbis.l:
+	$(MAKE) -Clib

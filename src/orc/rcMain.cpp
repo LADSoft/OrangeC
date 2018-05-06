@@ -16,10 +16,11 @@
  *     GNU General Public License for more details.
  * 
  *     You should have received a copy of the GNU General Public License
- *     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+ *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
  * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
+ * 
  */
 
 #include "rcMain.h"
@@ -45,10 +46,10 @@ CmdSwitchString rcMain::Language(SwitchParser, 'L');
 char *rcMain::usageText = "[options] file"
 "\n"
 "  @filename  use response file\n"
-"  /Dxxx  Define something             /ixxx  Set include file path\n"
-"  /Lxx   Set default language id      /oxxx  Set output file name\n"
-"  /r     reserved for compatability   /t     reserved for compatability\n"
-"  /v     reserved for compatability   /V     Show version and date\n"
+"  /Dxxx  Define something             /ixxx             Set include file path\n"
+"  /Lxx   Set default language id      /oxxx             Set output file name\n"
+"  /r     reserved for compatability   /t                reserved for compatability\n"
+"  /v     reserved for compatability   /V, --version     Show version and date\n"
 "  /!     No logo\n"
 "\n"
 "Time: " __TIME__ "  Date: " __DATE__;

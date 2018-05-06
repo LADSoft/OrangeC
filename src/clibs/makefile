@@ -16,10 +16,14 @@
 #     GNU General Public License for more details.
 # 
 #     You should have received a copy of the GNU General Public License
-#     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+#     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
 # 
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
+# 
+
+SHELL=cmd.exe
+export SHELL
 
 all: dll clib 
 
@@ -29,8 +33,6 @@ CLIBDIRS = $(BASEDIRS) cpp
 DLLDIRS = $(BASEDIRS)
 DIRS= $(CLIBDIRS) platform
 
-PATHSWAP = $(subst /,\,$(1))
-
 define SUFFIXDIRS =
 	$(foreach dir, $(1), $(dir)$(2))
 endef
@@ -38,61 +40,66 @@ endef
 C_CLIBS:= $(call SUFFIXDIRS,$(DIRS),.clibs)
 C_DLLS:= $(call SUFFIXDIRS,$(DLLDIRS),.dlls)
 
-MAKEFILES := $(MAKEFILES) $(call PATHSWAP,$(realpath maker.mak))
+MAKEFILES := $(MAKEFILES) $(subst /,\,$(realpath maker.mak))
 export MAKEFILES
 include maker.mak
 
-DOSOBJECT:=$(call PATHSWAP,$(realpath object\dos))
+ifneq ($(shell type makefile),)
+B = /b
+endif
+
+THISPATH:=$(subst /,\,$(CURDIR)\)
+
+DOSOBJECT:=$(THISPATH)object\dos
 export DOSOBJECT
-WINOBJECT:=$(call PATHSWAP,$(realpath object\windows))
+WINOBJECT:=$(THISPATH)object\windows
 export WINOBJECT
 ifdef OLDSGL
-STDINCLUDE:=$(call PATHSWAP,$(realpath cpp\stdinc));$(call PATHSWAP,$(realpath stdinc))
+STDINCLUDE:=-I$(subst /,\,$(realpath cpp\stdinc)) -I$(subst /,\,$(realpath stdinc))
 else
 ifdef STLPORT
-STDINCLUDE:=$(call PATHSWAP,$(realpath cpp\stlport\stl));$(call PATHSWAP,$(realpath cpp\stdinc));$(call PATHSWAP,$(realpath stdinc))
+STDINCLUDE:=-I$(subst /,\,$(realpath cpp\stlport\stl)) -I$(subst /,\,$(realpath cpp\stdinc)) -I$(subst /,\,$(realpath stdinc))
 else
-STDINCLUDE:=$(call PATHSWAP,$(realpath cpp\stdinc_libcxx));$(call PATHSWAP,$(realpath stdinc));$(call PATHSWAP,$(realpath cpp\libcxx\include));$(call PATHSWAP,$(realpath platform\win32\wininc));$(call PATHSWAP,$(realpath platform\win32\wininc\win32))
+STDINCLUDE:=-I$(subst /,\,$(realpath cpp\stdinc_libcxx)) -I$(subst /,\,$(realpath stdinc)) -I$(subst /,\,$(realpath cpp\libcxx\include)) -I$(subst /,\,$(realpath platform\win32\wininc)) -I$(subst /,\,$(realpath platform\win32\wininc\win32))
 endif
 endif
 export STDINCLUDE
 
-SYSOBJECT :=$(call PATHSWAP,$(realpath object\startup))
+SYSOBJECT:=$(THISPATH)object\startup
 export SYSOBJECT
 
-LSCRTLOBJECT :=$(call PATHSWAP,$(realpath object\startup))
+LSCRTLOBJECT:=$(THISPATH)object\startup
 export LSCRTLOBJECT
 
-DLLOBJECT :=$(call PATHSWAP,$(realpath object\dll))
+DLLOBJECT:=$(THISPATH)object\dll
 export DLLOBJECT
 
-CLIBOBJECT :=$(call PATHSWAP,$(realpath object\clib))
+CLIBOBJECT:=$(THISPATH)object\clib
 export CLIBOBJECT
 
-CILOBJECT :=$(call PATHSWAP,$(realpath object\cil))
+CILOBJECT:=$(THISPATH)object\cil
 export CILOBJECT
 
-LIBOBJS = $(shell dir /b $(CLIBOBJECT)\*.o)
-DOSOBJS1 = $(shell dir /b $(DOSOBJECT)\*.o)
+LIBOBJS = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(CLIBOBJECT)\*.o))
+DOSOBJS1 = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(DOSOBJECT)\*.o))
 DOSOBJS = $(DOSOBJS1:.OBJ=.o)
-WINOBJS = $(shell dir /b $(WINOBJECT)\*.o)
-CILOBJS = $(shell dir /b $(CILOBJECT)\*.ilo)
+WINOBJS = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(WINOBJECT)\*.o))
+CILOBJS = $(subst $(CLIBOBJECT)\,,$(shell dir $(B) $(CILOBJECT)\*.ilo))
 
 mkdir:
-	-mkdir object
-	-mkdir $(DOSOBJECT)
-	-mkdir $(WINOBJECT)
-	-mkdir $(SYSOBJECT)
-	-mkdir $(DLLOBJECT)
-	-mkdir $(LSCRTLOBJECT)
-	-mkdir $(CILOBJECT)
-	-mkdir object\clib
+	-mkdir object 2> NUL
+	-mkdir object\dos 2> NUL
+	-mkdir object\windows 2> NUL
+	-mkdir object\startup 2> NUL
+	-mkdir object\dll 2> NUL
+	-mkdir object\cil 2> NUL
+	-mkdir object\clib 2> NUL
 
 mklibs:
-	del $(SYSOBJECT)\cldos.l
+	-del $(SYSOBJECT)\cldos.l
 
 	$(LIB) $(LIBFLAGS) $(SYSOBJECT)\cldos.l $(foreach dir, $(LIBOBJS), $(CLIBOBJECT)\$(dir)) $(foreach dir, $(DOSOBJS), $(DOSOBJECT)\$(dir))
-	del $(SYSOBJECT)\clwin.l
+	-del $(SYSOBJECT)\clwin.l
 	$(LIB) $(LIBFLAGS) $(SYSOBJECT)\clwin.l $(foreach dir, $(LIBOBJS), $(CLIBOBJECT)\$(dir)) $(foreach dir, $(WINOBJS), $(WINOBJECT)\$(dir))
 
 $(C_CLIBS) : %.clibs :
@@ -102,12 +109,10 @@ clib: mkdir $(C_CLIBS) mklibs
 
 BUILDING_DLL = BUILDING_DLL=-D__BUILDING_LSCRTL_DLL
 
-mkdirdll:
-	-mkdir object\dll
 $(C_DLLS) : %.dlls : 
 	$(MAKE) -C$* --eval="OBJECT=$(DLLOBJECT)" --eval="$(BUILDING_DLL)"
 
-dll: mkdirdll $(C_DLLS)
+dll: mkdir $(C_DLLS)
 
 
 ifdef DISTMAKE
@@ -149,3 +154,18 @@ ifndef BUILDENV
 	$(MAKE) -Cplatform DISTRIBUTE
 endif
 endif
+
+clean:
+	-del /Q $(DOSOBJECT) 2> NUL
+	-del /Q $(WINOBJECT) 2> NUL
+	-del /Q $(SYSOBJECT) 2> NUL
+	-del /Q $(DLLOBJECT) 2> NUL
+	-del /Q $(CILOBJECT) 2> NUL
+	-del /Q$(CLIBOBJECT) 2> NUL
+	-rmdir $(DOSOBJECT) 2> NUL
+	-rmdir $(WINOBJECT) 2> NUL
+	-rmdir $(SYSOBJECT) 2> NUL
+	-rmdir $(DLLOBJECT) 2> NUL
+	-rmdir $(CILOBJECT) 2> NUL
+	-rmdir $(CLIBOBJECT) 2> NUL
+	-rmdir object 2> NUL

@@ -16,17 +16,20 @@
 #     GNU General Public License for more details.
 # 
 #     You should have received a copy of the GNU General Public License
-#     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+#     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
 # 
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
+# 
+
+SHELL=cmd.exe
 
 C_DEPENDENCIES = $(wildcard *.c)
 
 all: $(DEPENDENCIES)
 
 srproc.o: srproc.c
-	$(CC) /c /I$(STDINCLUDE) $(CFLAGS) /s16 -o$(CLIBOBJECT)\$@ $^
+	$(CC) /c $(STDINCLUDE) $(CFLAGS) /s16 -o$(CLIBOBJECT)\$@ $^
 
 DISTRIBUTE:
 	copy srproc.c $(DISTSTARTUP)

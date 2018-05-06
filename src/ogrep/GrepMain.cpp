@@ -16,10 +16,11 @@
  *     GNU General Public License for more details.
  * 
  *     You should have received a copy of the GNU General Public License
- *     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+ *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
  * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
+ * 
  */
 
 #include "GrepMain.h"
@@ -57,12 +58,12 @@ CmdSwitchBool GrepMain::displayHeaderFileName(SwitchParser,'#');
 char *GrepMain::usageText = "[-rxlcnvidzwo?] searchstring file[s]\n";
 char *GrepMain::helpText = "[options] searchstring file[s]"
                     "\n"
-                    "   -c  Show Match Count only        -d  Recurse Subdirectories\n"
-                    "   -i  Case Insensitive             -l  Show File Names only\n"
-                    "   -n  Show Line Numbers            -o  UNIX Output Format\n"
-                    "   -r- No Regular Expressions       -v  Non Matching Lines\n"
-                    "   -w  Complete Words Only          -z  Verbose\n"
-                    "   -V  Show version and date        -?  This help\n"
+                    "   -c             Show Match Count only        -d  Recurse Subdirectories\n"
+                    "   -i             Case Insensitive             -l  Show File Names only\n"
+                    "   -n             Show Line Numbers            -o  UNIX Output Format\n"
+                    "   -r-            No Regular Expressions       -v  Non Matching Lines\n"
+                    "   -w             Complete Words Only          -z  Verbose\n"
+                    "   -V, --version  Show version and date        -?  This help\n"
                     "\n"
                     "Regular expressions special characters:\n"
                     "   .  Match any character   \\  Quote next character\n"
@@ -257,7 +258,7 @@ int GrepMain::Run(int argc, char **argv)
     // handle /V switch
     for (int i = 1; i < __argc; i++)
         if (__argv[i] && (__argv[i][0] == '/' || __argv[i][0] == '-'))
-            if (__argv[i][1] == 'V' && __argv[i][2] == 0)
+            if (__argv[i][1] == 'V' && __argv[i][2] == 0 || !strcmp(__argv[i], "--version"))
             {
                 Utils::banner(argv[0]);
                 exit(0);

@@ -16,10 +16,11 @@
  *     GNU General Public License for more details.
  * 
  *     You should have received a copy of the GNU General Public License
- *     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+ *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
  * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
+ * 
  */
 
 #include "dlHexMain.h"
@@ -44,12 +45,12 @@ CmdSwitchString dlHexMain::DebugFile(SwitchParser, 'v');
 
 char *dlHexMain::usageText = "[options] relfile\n"
             "\n"
-            "/cxxx Specify sections\n"
-            "/mxxx Set output file type\n"
-            "/oxxx Set ouput file name\n"
-            "/p:xx Set pad value\n"
-            "/V     Show version and date\n"
-            "/!     No logo\n"
+            "/cxxx          Specify sections\n"
+            "/mxxx          Set output file type\n"
+            "/oxxx          Set ouput file name\n"
+            "/p:xx          Set pad value\n"
+            "/V, --version  Show version and date\n"
+            "/!             No logo\n"
             "\n"
             "Available output file types:\n"
             "   M# Motorola Hex (# = 1,2,3 sets srecord type)\n"

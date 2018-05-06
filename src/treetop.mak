@@ -16,10 +16,15 @@
 #     GNU General Public License for more details.
 # 
 #     You should have received a copy of the GNU General Public License
-#     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+#     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
 # 
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
+# 
+
+SHELL=cmd.exe
+export SHELL
+
 
 PATHSWAP = $(subst /,\,$(1))
 export PATHSWAP
@@ -54,6 +59,7 @@ NULLDEV := NUL
 
 del:
 	-del /Q  $(_OUTPUTDIR)\*.* 2> $(NULLDEV)
+	-del /Q *.exe
 mkdir:
 	-mkdir  $(_OUTPUTDIR) 2> $(NULLDEV)
 rmdir:
@@ -240,9 +246,9 @@ makelibdir:
 
 
 $(LIBS): %.library :
-	$(MAKE) library -C$* -f$(_TREEROOT)
+	$(MAKE) library -f $(_TREEROOT) -C$*
 $(EXES): %.exefile :
-	$(MAKE) exefile -C$* -f$(_TREEROOT)
+	$(MAKE) exefile -f $(_TREEROOT) -C$*
 
 
 files: makelibdir $(LIBS) $(EXES) compile link
@@ -256,27 +262,27 @@ cleanstart:
 	-rmdir $(_LIBDIR)
 
 $(CLEANS): %.clean :
-	$(MAKE) clean -C$* -f$(_TREEROOT)
+	$(MAKE) clean -f $(_TREEROOT) -C$*
 
 clean: cleanstart $(CLEANS)
 
 else
 
 $(LIBS): %.library : 
-	$(MAKE) library -C$* -f$(_TREEROOT)
+	$(MAKE) library -f $(_TREEROOT) -C$*
 
 $(EXES): %.exefile : 
-	$(MAKE) exefile -C$* -f$(_TREEROOT)
+	$(MAKE) exefile -f $(_TREEROOT) -C$*
 
 library: mkdir compile $(LIBS)
 
 exefile: mkdir link $(EXES)
 
 
-cleanDISTRIBUTE: $(CLEANS)
+cleanDISTRIBUTE:
 
 $(CLEANS): %.clean :
-	$(MAKE) clean -C$* -f$(_TREEROOT)
+	$(MAKE) clean -f $(_TREEROOT) -C$*
 clean: del rmdir $(CLEANS)
 
 endif
@@ -284,7 +290,7 @@ endif
 ifndef BUILDENV
 exeDISTRIBUTE: $(DISTS)
 $(DISTS): %.dist :
-	$(MAKE) distribute -C$* -f$(_TREEROOT)
+	$(MAKE) distribute -f $(_TREEROOT) -C$*
 else
 exeDISTRIBUTE:
 endif

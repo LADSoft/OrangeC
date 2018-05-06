@@ -2,31 +2,39 @@ image: Visual Studio 2017
 
 install:
     - choco install InnoSetup
-    - set PATH=c:\orangec\temp;c:\orangec\bin;%PATH%;C:\Program Files (x86)\Inno Setup 5
+    - set PATH=c:\orangec\bin;%PATH%;C:\Program Files (x86)\Inno Setup 5
     - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars32.bat"
     - set PATH=C:\mingw-w64\x86_64-7.2.0-posix-seh-rt_v5-rev1\mingw64\bin;%PATH%
+    - set ORIGPATH=%PATH%
+    - set ORANGEC=c:\ORANGEC
 
 environment:
-  - ORANGEC=c:\ORANGEC
-  - SHELL=c:\windows\system32\cmd.exe
   matrix:
-    - BUILD_PROFILE: MS
     - BUILD_PROFILE: MINGW64
+    - BUILD_PROFILE: MS
+ 
  
 build_script:
+        
         - cd ..\..
         - move projects\orangec .
+        - mkdir \orangec\temp
         - cd orangec\src
-        - mingw32-make --eval="COMPILER=%BUILD_PROFILE%" fullbuild
+        - copy omake.exe \orangec\temp
+#        - c:\orangec\temp\omake -DCOMPILER=MS -B fullbuild 
+        - mingw32-make fullbuild --eval="COMPILER=$(BUILD_PROFILE)"
         - c:\orangec\bin\occ /V
-        - copy omake\omake.exe .\
+        - copy omake\omake.exe \orangec\temp
         - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
         - c:\orangec\bin\occ /V
-        - copy omake\omake.exe .\
+        - copy omake\omake.exe \orangec\temp
         - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
         - c:\orangec\bin\occ /V
-        - copy omake\omake.exe .\
+        - copy omake\omake.exe \orangec\temp
         - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
+        - path=%ORIGPATH%
+        - cd ..\tests
+        - omake -B
         - cd ..\.. 
         - move orangec projects
 

@@ -16,10 +16,11 @@
 ;     GNU General Public License for more details.
 ; 
 ;     You should have received a copy of the GNU General Public License
-;     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+;     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
 ; 
 ;     contact information:
 ;         email: TouchStone222@runbox.com <David Lindauer>
+; 
 
 section data USE32
 %include "..\..\copyrght.asm"
@@ -56,14 +57,6 @@ real_start:
     and esp, -16
     mov	[__stacktop], esp
     sub	edx,edx				; pmode/w or a variant
-    call ___startup
-    mov	ah,04ch
-    int 21h
-%ifndef DEBUG
-    global monitor_init
-monitor_init:
-    ret
-%endifdx				; pmode/w or a variant
     call ___startup
     mov	ah,04ch
     int 21h

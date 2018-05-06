@@ -16,10 +16,11 @@
  *     GNU General Public License for more details.
  * 
  *     You should have received a copy of the GNU General Public License
- *     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+ *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
  * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
+ * 
  */
 
 #include "dlPeMain.h"
@@ -51,12 +52,12 @@ CmdSwitchString dlPeMain::outputFileSwitch(SwitchParser, 'o');
 CmdSwitchString dlPeMain::DebugFile(SwitchParser, 'v');
 CmdSwitchBool dlPeMain::FlatExports(SwitchParser, 'f');
 
-int dlPeMain::osMajor = 5;
-int dlPeMain::osMinor = 1;
+int dlPeMain::osMajor = 4;
+int dlPeMain::osMinor = 0;
 int dlPeMain::userMajor = 0;
 int dlPeMain::userMinor = 0;
-int dlPeMain::subsysMajor = 5;
-int dlPeMain::subsysMinor = 1;
+int dlPeMain::subsysMajor = 4;
+int dlPeMain::subsysMinor = 0;
 
 int dlPeMain::dllFlags = 0;//0x8140; 
 
@@ -88,11 +89,11 @@ int dlPeMain::defaultStubSize = sizeof(defaultStubData);
 char *dlPeMain::usageText = "[options] relfile\n"
             "\n"
             "/f     remove underscore from exports\n"
-            "/mxxx  Set output file type\n"
-            "/oxxx  Set output file name\n"
-            "/sxxx  Set stub file name\n"
-            "/V     Show version and date\n"
-            "/!     No logo\n"
+            "/mxxx          Set output file type\n"
+            "/oxxx          Set output file name\n"
+            "/sxxx          Set stub file name\n"
+            "/V, --version  Show version and date\n"
+            "/!             No logo\n"
             "\n"
             "Available output file types:\n"
             "   CON - Windows console (default)\n"

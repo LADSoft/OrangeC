@@ -16,10 +16,11 @@
  *     GNU General Public License for more details.
  * 
  *     You should have received a copy of the GNU General Public License
- *     along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+ *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
  * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
+ * 
  */
 
 #include "compiler.h"
@@ -77,7 +78,7 @@ char *getUsageText(void)
     "\n""/1     - C11 mode                     /9     - C99 mode\n"
         "+A     - disable extensions           /Dxxx  - define something\n"
         "/E[+]nn- max number of errors         /Ipath - specify include path\n"
-        "/Uxxx  - undefine something           /V     - Show version and date\n"
+        "/Uxxx  - undefine something           /V, --version - Show version and date\n"
         "/!     - No logo\n"
         "\n"
         "Time: " __TIME__ "  Date: " __DATE__;

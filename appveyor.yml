@@ -10,8 +10,8 @@ install:
 
 environment:
   matrix:
-    - BUILD_PROFILE: MS
     - BUILD_PROFILE: MINGW64
+    - BUILD_PROFILE: MS
  
  
 build_script:

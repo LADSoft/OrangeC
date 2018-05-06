@@ -304,9 +304,10 @@ bool CmdSwitchParser::Parse(int *argc, char *argv[])
                     while (n == INT_MAX && argv[1])
                     {
                         // use next arg as the value
-                        memcpy(argv, argv+1, (*argc + 1 -i) * sizeof(char *));
+                        memcpy(argv, argv+1, (*argc -i) * sizeof(char *));
                         (*argc)--;
                         data = &argv[0][0];
+                        end = data + strlen(data);
                         n = (*it)->Parse(data);
                     }
                     if (n < 0)
@@ -318,7 +319,7 @@ bool CmdSwitchParser::Parse(int *argc, char *argv[])
                     data += n;
                 }
             }
-            memcpy(argv, argv+1, (*argc + 1 -i) * sizeof(char *));
+            memcpy(argv, argv+1, (*argc -i) * sizeof(char *));
             (*argc)--;
         }
         else

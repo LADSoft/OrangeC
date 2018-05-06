@@ -6,6 +6,9 @@ OrangeC Compiler And Tool Chain
 Project Build Status: 
 [![Build status](https://ci.appveyor.com/api/projects/status/4ts7bsgas67osyht?svg=true)](https://ci.appveyor.com/project/LADSoft/orangec)
 
+Documentation status: 
+[![Documentation Status](https://readthedocs.org/projects/orangec/badge/?version=latest)](http://orangec.readthedocs.io/en/latest/Tools/)
+
 The Orange C compiler is going to be a retargetable optimizing compiler and toolchain.  Work over the last few years has resulted in an optimizing compiler than generates working WIN32 programs.  The optimizations in the compiler follow some of the standard optimizations, and also perform some optimizations from the literature.
 
 Orange C is released under the GNU license version 3.
@@ -26,8 +29,8 @@ There is some support for retargeting the assembler;  the instruction set may be
 
 There has been some thought as to eventually making this an x64 compiler, however, that would take a bit of effort as it wasn't well-supported while developing the code.  Mostly, there are a lot of place that long-long values need to be passed around in the tools, where only int values are being passed around.
 
-For project documentation see the file ['Tools.md'](doc/Tools.md).
-
 The [Appveyor CI](https://ci.appveyor.com/project/LADSoft/orangec) project for this repository builds a setup file after each checkin.   It uses `omake fullbuild` to do this. See the file [`build.md`](build.md) for instructions on how to build the project.
+
+The [Read The Docs](http://orangec.readthedocs.io/en/latest/Tools/) project for this repository verifies the documentation after each checkin.
 
 For the project's history see the file [`HISTORY.md`](HISTORY.md).

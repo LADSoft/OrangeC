@@ -94,6 +94,7 @@ private:
     static int userMinor;
     static int subsysMajor;
     static int subsysMinor;
+    static int subsysOverride;
     static int dllFlags;
 } ;
 #endif

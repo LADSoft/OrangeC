@@ -65,6 +65,11 @@
 	<Define Name="STACKCOMMIT" Value="0x2000" />
 	<Define Name="HEAPSIZE" Value="0x100000" />
 	<Define Name="HEAPCOMMIT" Value="0x0" />
+	<Define Name="OSMAJOR" Value="0x4" />
+        <Define Name="OSMINOR" Value="0x0" />
+	<Define Name="SUBSYSMAJOR" Value="0x4" />
+        <Define Name="SUBSYSMINOR" Value="0x0" />
+        <Define Name="SUBSYSTEM" Value="0x0" />
 </Switch>
 <Switch Application="dlpe.exe" Flags="/mGUI" Name="GUI32" SpecFile="pe.spc" Rel="0" MapMode="0">
 	<Extension Value=".res" />
@@ -76,6 +81,11 @@
 	<Define Name="STACKCOMMIT" Value="0x2000" />
 	<Define Name="HEAPSIZE" Value="0x100000" />
 	<Define Name="HEAPCOMMIT" Value="0x0" />
+	<Define Name="OSMAJOR" Value="0x4" />
+        <Define Name="OSMINOR" Value="0x0" />
+	<Define Name="SUBSYSMAJOR" Value="0x4" />
+        <Define Name="SUBSYSMINOR" Value="0x0" />
+        <Define Name="SUBSYSTEM" Value="0x0" />
 </Switch>
 <Switch Application="dlpe.exe" Flags="/mDLL" Name="DLL32" SpecFile="pe.spc" Rel="0" MapMode="0">
 	<Extension Value=".res" />
@@ -87,6 +97,11 @@
 	<Define Name="STACKCOMMIT" Value="0x2000" />
 	<Define Name="HEAPSIZE" Value="0x100000" />
 	<Define Name="HEAPCOMMIT" Value="0x0" />
+	<Define Name="OSMAJOR" Value="0x4" />
+        <Define Name="OSMINOR" Value="0x0" />
+	<Define Name="SUBSYSMAJOR" Value="0x4" />
+        <Define Name="SUBSYSMINOR" Value="0x0" />
+        <Define Name="SUBSYSTEM" Value="0x0" />
 </Switch>
 <Switch Application="dlpm.exe" Flags="" Name="PM" SpecFile="pm.spc" Rel="0" MapMode="0">
 	<Define Name="STACKSIZE" Value="0x100000" />

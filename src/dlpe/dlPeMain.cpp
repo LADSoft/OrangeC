@@ -524,6 +524,7 @@ void dlPeMain::PadHeader(std::fstream &out)
 int dlPeMain::Run(int argc, char **argv)
 {
     Utils::banner(argv[0]);
+    Utils::SetEnvironmentToPathParent("ORANGEC");
     char *modName = Utils::GetModuleName();
     CmdSwitchFile internalConfig(SwitchParser);
     std::string configName = Utils::QualifiedFile(argv[0], ".cfg");

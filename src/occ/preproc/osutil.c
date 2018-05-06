@@ -28,12 +28,18 @@
 #include <setjmp.h>
 #include <stdarg.h>
 #include <ctype.h>
+#include <stdlib.h>
 #include "..\..\version.h" 
 
 #if defined(WIN32) || defined(MICROSOFT)
 char * __stdcall GetModuleFileNameA(void * handle, char *buf, int size);
 #endif
 
+#ifdef _MSC_VER
+#define putenv(x, y) _putenv(x,y)
+#else
+#define putenv(x, y), setenv(x,y,0)
+#endif
 
 #ifdef __CCDL__
     int _stklen = 100 * 1024;
@@ -962,6 +968,22 @@ void ccinit(int argc, char *argv[])
 #else
     strcpy(buffer, argv[0]);
 #endif
+    if (!getenv("ORANGEC"))
+    {
+        char *p = strrchr(buffer, '\\');
+        if (p)
+        {
+             *p =0 ;
+             char *q = strrchr(buffer,'\\');
+             if (q)
+             {
+                  *q = 0;
+                 putenv("ORANGEC", buffer);
+                 *q = '\\';
+             }
+             *p = '\\';
+        }
+    }
     parseconfigfile(buffer);
     if (!parse_args(&argc, argv, TRUE) || (!clist && argc == 1))
         usage(argv[0]);

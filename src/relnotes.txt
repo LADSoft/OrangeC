@@ -2,6 +2,7 @@ Release notes:
 
 Version 6.0.37:
     all programs:    add --version
+    all programs:    default 'ORANGEC' environment variable to a sensible value if not defined
     occ:    when a temporary was created for a long long value, the temporary could overwrite other variables
     occ:    add new macros for OCC version number and update documentation
     occ:    fix bug with array length = 0 inside structure;
@@ -27,6 +28,7 @@ Version 6.0.37:
     olink/dlpe:  change the subsystem versions back to 4.0 for compatibility with older versions of windows.
     olink:  when toolset was compiled with itself, olink would crash when -v was used
     coff2ieee:  fix incompatibilities with latest microsoft libraries
+
 Version 6.0.36: 4/18/2018
     omake:  support '/' better
     omake:  strip leading tabs when necessary

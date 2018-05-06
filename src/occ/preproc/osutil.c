@@ -35,7 +35,7 @@
 char * __stdcall GetModuleFileNameA(void * handle, char *buf, int size);
 #endif
 
-#define putenv(x, y) _putenv(x,y)
+#define putenv(x, y) _putenv_s(x,y)
 
 #ifdef __CCDL__
     int _stklen = 100 * 1024;

@@ -20,7 +20,7 @@
  * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+- * 
  */
 
 #include <stdlib.h>
@@ -81,4 +81,16 @@ int _RTL_FUNC putenv(const char *name)
 int _RTL_FUNC _putenv(const char *name)
 {
     return putenv(name);
+}
+int _RTL_FUNC _putenv_s(const char *name, const char *value)
+{
+    char *buf = calloc(strlen(name) + strlen(value) + 2, 1);
+    if (!buf)
+         return -1;
+    strcpy(buf, name);
+    buf[strlen(buf)] = '=';
+    strcat(buf, value);
+    int rv = putenv(buf);
+    free(buf);
+    return rv;
 }

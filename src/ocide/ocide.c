@@ -1819,7 +1819,7 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpszCmdLine,
              if (q)
              {
                   *q = 0;
-                 _putenv("ORANGEC", buffer);
+                 _putenv_s("ORANGEC", buffer);
                  *q = '\\';
              }
              *p = '\\';

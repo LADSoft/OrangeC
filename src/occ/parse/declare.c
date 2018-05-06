@@ -6415,7 +6415,7 @@ jointemplate:
                             LEXEME *hold = lex;
                             BOOLEAN structuredArray = FALSE;
                             if (notype)
-                                error(ERR_MISSING_TYPE_SPECIFIER);
+                                errorsym(ERR_UNDEFINED_IDENTIFIER_EXPECTING_TYPE, sp);
                             if (linkage3 == lk_entrypoint)
                             {
                                 errorsym(ERR_ENTRYPOINT_FUNC_ONLY, sp);

@@ -275,7 +275,7 @@ void TextToClipBoard(HWND hwnd, char *text)
 }
 //-------------------------------------------------------------------------
 
-BOOL bump(HWND hwnd, char *buffer)
+static BOOL bump(HWND hwnd, char *buffer)
 {
     DWINFO info;
     char  *t, *q;
@@ -315,7 +315,7 @@ BOOL bump(HWND hwnd, char *buffer)
     }
     return FALSE;
 }
-void Prev(HWND hwnd)
+static void Prev(HWND hwnd)
 {
     char   buffer[512];
     int lineno;
@@ -342,7 +342,7 @@ void Prev(HWND hwnd)
         SendMessage(hwnd, EM_EXSETSEL, 0, (LPARAM)&a);
     }
 }
-void Next(HWND hwnd)
+static void Next(HWND hwnd)
 {
     char   buffer[512];
     int lineno;
@@ -369,9 +369,9 @@ void Next(HWND hwnd)
         SendMessage(hwnd, EM_EXSETSEL, 0, (LPARAM)&a);
     }
 }
-void BumpToEditor(HWND hwnd)
+static void BumpToEditor(HWND hwnd)
 {
-    char   buffer[512];
+    char   buffer[1024];
     int lineno;
     int start;
     SendMessage(hwnd, EM_GETSEL, (WPARAM) &start, 0);
@@ -381,7 +381,7 @@ void BumpToEditor(HWND hwnd)
     buffer[lineno] = 0;
     bump(hwnd, buffer);
 }
-void BumpToErrorWnd(char *buffer)
+static void BumpToErrorWnd(char *buffer)
 {
     DWINFO info;
     char  *t, *q, *err = NULL;

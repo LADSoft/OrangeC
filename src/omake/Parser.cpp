@@ -44,7 +44,9 @@ Parser::Parser(const std::string &string, const std::string &File, int Lineno, b
 bool Parser::AlwaysEval(const std::string &line)
 {
     size_t n;
-    std::string firstWord = FirstWord(line, n);
+    std::string line1 = line;
+    std::replace(line1.begin(), line1.end(), '\t', ' ');
+    std::string firstWord = FirstWord(line1, n);
     return firstWord == "ifeq" || firstWord == "ifneq" || firstWord == "else" || firstWord == "endif" ||
         firstWord == "ifdef" || firstWord == "ifndef";
 }
@@ -56,7 +58,7 @@ bool Parser::Parse()
         std::string line = GetLine(false);
         if (!skips.size() || !skips.front() || AlwaysEval(line))
         {
-            if (line.find_first_not_of(' ') != std::string::npos)
+            if (line.find_first_not_of(" \t") != std::string::npos)
             {
                 Eval::SetFile(file);
                 Eval::SetLine(lineno);
@@ -92,6 +94,10 @@ std::string Parser::GetLine(bool inCommand)
     {
         while (rv[rv.size() - 1] == '\\')
         {
+            if (rv.size() > 1 && rv[rv.size() -2] == '\\')
+            {
+                break;
+            }
             if (!remaining.size())
             {
                 Eval::error("backslash-newline at end of input stream");
@@ -217,7 +223,7 @@ std::string Parser::FirstWord(const std::string &line, size_t &n)
             for (int i = 0; i < v && t < line.size(); i++)
                 t++;
         }
-        rv = line.substr(s, t);
+        rv = line.substr(s, t-s);
         n = t;
     }
     return rv;
@@ -231,9 +237,11 @@ bool Parser::ParseLine(const std::string &line)
     }
     else
     {
-        size_t n;
+        size_t n = 0;
         bool dooverride = false;
-        std::string firstWord = FirstWord(line, n);
+        std::string line1 = line;
+        std::replace(line1.begin(), line1.end(), '\t', ' ');
+        std::string firstWord = FirstWord(line1, n);
         if (firstWord == "-include")
         {
             return ParseInclude(line.substr(n), true);

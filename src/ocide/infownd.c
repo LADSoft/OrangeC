@@ -218,6 +218,8 @@ int getfile(char *start, char *buffer, char end, DWINFO *info)
                 }
             }
         }
+        if (t -q > sizeof(info->dwName) - 1)
+            t = q + sizeof(info->dwName) - 1;
         strncpy(info->dwName, q, t - q);
         info->dwName[t - q] = 0;
         q = strrchr(info->dwName, '\\');
@@ -313,7 +315,7 @@ BOOL bump(HWND hwnd, char *buffer)
     }
     return FALSE;
 }
-static void Prev(HWND hwnd)
+void Prev(HWND hwnd)
 {
     char   buffer[512];
     int lineno;
@@ -340,7 +342,7 @@ static void Prev(HWND hwnd)
         SendMessage(hwnd, EM_EXSETSEL, 0, (LPARAM)&a);
     }
 }
-static void Next(HWND hwnd)
+void Next(HWND hwnd)
 {
     char   buffer[512];
     int lineno;
@@ -367,7 +369,7 @@ static void Next(HWND hwnd)
         SendMessage(hwnd, EM_EXSETSEL, 0, (LPARAM)&a);
     }
 }
-static void BumpToEditor(HWND hwnd)
+void BumpToEditor(HWND hwnd)
 {
     char   buffer[512];
     int lineno;
@@ -379,7 +381,7 @@ static void BumpToEditor(HWND hwnd)
     buffer[lineno] = 0;
     bump(hwnd, buffer);
 }
-static void BumpToErrorWnd(char *buffer)
+void BumpToErrorWnd(char *buffer)
 {
     DWINFO info;
     char  *t, *q, *err = NULL;
@@ -415,7 +417,8 @@ static void BumpToErrorWnd(char *buffer)
     {
         if (strstr(buffer, "in module"))
         {
-            strcpy(info.dwName, strstr(buffer, "in module" +  10));
+            strncpy(info.dwName, strstr(buffer, "in module" + 9), sizeof(info.dwName)-1);
+            info.dwName[sizeof(info.dwName) - 1] = 0;
             strstr(buffer, "in module")[0] = 0;
             err = strchr(buffer, ':' );
             lineno = -2;

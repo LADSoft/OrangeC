@@ -284,3 +284,5 @@ files: makelibdir $(EXES)
 library: $(LIBS)
 
 exefile: $(EXES)
+
+localfiles: makelibdir mkdir compile library link

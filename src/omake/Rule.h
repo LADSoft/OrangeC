@@ -124,6 +124,8 @@ public:
     bool IsUpToDate();
     bool IsBuilt() { return isBuilt; }
     void SetBuilt();
+    Spawner *GetSpawner() { return spawner; }
+    void SetSpawner(Spawner *spawner) { this->spawner = spawner; }
 private:
     std::string targetPatternStem;
     std::string target;
@@ -131,6 +133,7 @@ private:
     std::list<Rule *> rules;
     std::map<const std::string *, Variable *, rllt> specificVariables;
     std::string newerPrerequisites;
+    Spawner *spawner;
     bool doubleColon;
     bool intermediate;
     bool keep;

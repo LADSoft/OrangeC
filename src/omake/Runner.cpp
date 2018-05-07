@@ -47,7 +47,7 @@ int Runner::RunOne(Depends *depend, EnvironmentStrings &env, bool keepGoing)
     int rv = 0;
     RuleList *rl = depend->GetRuleList();
     Eval::PushruleStack(rl);
-    if (!depend->GetSpawner())
+    if (!rl->GetSpawner())
     {
         bool stop = false;
         bool cantbuild = false;
@@ -86,7 +86,6 @@ int Runner::RunOne(Depends *depend, EnvironmentStrings &env, bool keepGoing)
         }
         if (OS::TakeJob())
         {
-            rl->SetBuilt();
             if (touch)
             {
                 rl->Touch(OS::GetCurrentTime());
@@ -113,14 +112,15 @@ int Runner::RunOne(Depends *depend, EnvironmentStrings &env, bool keepGoing)
             if (depend->GetRule() && depend->GetRule()->GetCommands())
             {
                 Spawner *sp = new Spawner(env, ig, sil, oneShell, posix, displayOnly && !make, keepResponseFiles);
-                depend->SetSpawner(sp);
+                rl->SetSpawner(sp);
                 sp->Run(*depend->GetRule()->GetCommands(), outputType, rl, nullptr);
                 rv = -1;
             }
             else
             {
                 OS::GiveJob();
-                depend->SetSpawner((Spawner *)-1);
+                rl->SetSpawner((Spawner *)-1);
+                rl->SetBuilt();
                 rv = 0;
             }        
         }
@@ -129,18 +129,20 @@ int Runner::RunOne(Depends *depend, EnvironmentStrings &env, bool keepGoing)
             rv = -1;
         }
     }
-    else if (depend->GetSpawner() == (Spawner *)-1)
+    else if (rl->GetSpawner() == (Spawner *)-1)
     {
         rv = 0;
+        rl->SetBuilt();
     }
-    else if (!depend->GetSpawner()->IsDone())
+    else if (!rl->GetSpawner()->IsDone())
     {
         rv = -1;
     }
     else
     {
+        rl->SetBuilt();
         OS::GiveJob();
-        rv = depend->GetSpawner()->RetVal();
+        rv = rl->GetSpawner()->RetVal();
         if (rv)
         {
             std::string b = Utils::NumberToString(rv);
@@ -156,8 +158,8 @@ int Runner::RunOne(Depends *depend, EnvironmentStrings &env, bool keepGoing)
                 Eval::error("commands returned error code " + b, depend->GetRule()->GetCommands()->GetFile(), depend->GetRule()->GetCommands()->GetLine());
             }
         }
-        delete depend->GetSpawner();
-        depend->SetSpawner((Spawner *)-1);
+        delete rl->GetSpawner();
+        rl->SetSpawner((Spawner *)-1);
     }
     Eval::PopruleStack();
     return rv;	

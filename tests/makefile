@@ -1,14 +1,9 @@
 
-all:
-	$(MAKE) -Calexcs
-	$(MAKE) -Cbzip2-1.0.5
-	$(MAKE) -Ccpplinq
-	$(MAKE) -Cellf
-	$(MAKE) -Cgeneral
-	$(MAKE) -Clame
-	$(MAKE) -Clibogg-1.2.0
-	$(MAKE) -Clibvorbis-1.3.2
-	$(MAKE) -Clpng162
-	$(MAKE) -Csqlite3
-	$(MAKE) -Cx264
-	$(MAKE) -Czlib-1.2.5
+DIRS = alexcs bzip2-1.0.5 cpplinq ellf general lame libogg-1.2.0 libvorbis-1.3.2 lpng162 sqlite3 x264 zlib-1.2.5
+
+CDIRS = $(addsuffix .dir, $(DIRS))
+
+all: $(CDIRS)
+
+$(CDIRS): %.dir :
+	$(MAKE) /C$*

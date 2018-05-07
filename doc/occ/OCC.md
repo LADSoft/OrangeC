@@ -15,9 +15,9 @@
  
  The general form of an **OCC** [Command Line](OCC%20Command%20Line.md) is:
  
->     OAsm [options] filename-list
+>     OCC [options] filename-list
  
- Where _filename-list_ gives a list of files to assemble.
+ Where _filename-list_ gives a list of files to compile and, depending on the given options link.
 
 
 ## Extended Keywords
@@ -31,6 +31,4 @@
  
  **OCC** supports a range of [#pragma preprocessor directives](OCC%20Pragma%20Directives.md) to allow some level of control over the generated code.  Such directives include support for structure alignment, having the CRTL run routines
  as part of its normal startup and shutdown process, and so forth.
- 
- 
  

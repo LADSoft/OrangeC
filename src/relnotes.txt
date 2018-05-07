@@ -25,7 +25,10 @@ Version 6.0.37:
     omake:  macro substitue last argument of $(call ...)
     omake:  add --eval switch
     omake:  spawn directly when possible
+    omake:  \\ at end of line doesn't match the line continuation character now
+    omake:  tab before a conditional statement is honored as spaces now
     ocide:    change the brace matching to SHIFT-ALT-BRACE to allow for keyboards that use ALT-BRACE to mean the brace key
+    ocide:    fix several crashes if there were a large number of link errors
     olink/dlpe:  change the default subsystem versions back to 4.0 for compatibility with older versions of windows.
     olink/dple:  Allow setting the OS and SUBSYSTEM versions, allow overriding the SUBSYSTEM
     olink:  when toolset was compiled with itself, olink would crash when -v was used

@@ -36,34 +36,18 @@ extern char _RTL_DATA **_environ;
 int _RTL_FUNC putenv(const char *name)
 {
    char **q = _environ, **p ;
-   int len = 0, has = 0,count = 0 ;
+   int len = 0, count = 0 ;
+   char *z = strchr(name, '=');
+   if (!z)
+       return -1;
+   len = z - name;
    __ll_enter_critical() ;
-   if (!strchr(name,'=')) {
-      __ll_exit_critical() ;
-      return -1 ;
-   }
-   while (name[len] && name[len] != '=') {
-      if ((*q)[len] == '=') {
-         if ((*q)[len] != 0)
-            has = 1 ;
-      }   
-      len++ ;
-   }
     while (*q) {
       count++ ;
-      if (!strnicmp(name,*q,len)) {
-         if (has) {
-            *q = name ;
+      if (!strnicmp(name,*q,len) && (*q)[len] == '=') {
+            *q = strdup(name) ;
             __ll_exit_critical() ;
             return 0 ;
-         } else {
-            while (*q) {
-               *q = *(q+1) ;
-               q++ ;
-            }
-            __ll_exit_critical() ;
-            return 0 ;
-         }
       }
         q++;
     }
@@ -73,7 +57,7 @@ int _RTL_FUNC putenv(const char *name)
       return -1 ;
    }
    p[count-1] = NULL ;
-   p[count-2] = name ;
+   p[count-2] = strdup(name) ;
    _environ = p ;
    __ll_exit_critical() ;
     return 0;

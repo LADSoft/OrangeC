@@ -8,35 +8,34 @@ install:
     - set ORIGPATH=%PATH%
     - set ORANGEC=c:\ORANGEC
 
-environment:
-  matrix:
-    - BUILD_PROFILE: MINGW64
-    - BUILD_PROFILE: MS
+#environment:
+#  matrix:
+#    - BUILD_PROFILE: MINGW64
+#    - BUILD_PROFILE: MS
  
  
 build_script:
-        
-        - cd ..\..
-        - move projects\orangec .
-        - mkdir \orangec\temp
-        - cd orangec\src
-        - copy omake.exe \orangec\temp
-#        - c:\orangec\temp\omake -DCOMPILER=MS -B fullbuild 
-        - mingw32-make fullbuild --eval="COMPILER=$(BUILD_PROFILE)"
-        - c:\orangec\bin\occ /V
-        - copy omake\omake.exe \orangec\temp
-        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
-        - c:\orangec\bin\occ /V
-        - copy omake\omake.exe \orangec\temp
-        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
-        - c:\orangec\bin\occ /V
-        - copy omake\omake.exe \orangec\temp
-        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
-        - path=%ORIGPATH%
-        - cd ..\tests
-        - omake -B
-        - cd ..\.. 
-        - move orangec projects
+       - set NUMBER_OF_PROCESSORS        
+#        - cd ..\..
+#        - move projects\orangec .
+#        - mkdir \orangec\temp
+#        - cd orangec\src
+#        - copy omake.exe \orangec\temp
+#        - mingw32-make fullbuild --eval="COMPILER=$(BUILD_PROFILE)"
+#        - c:\orangec\bin\occ /V
+#        - copy omake\omake.exe \orangec\temp
+#        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
+#        - c:\orangec\bin\occ /V
+#        - copy omake\omake.exe \orangec\temp
+#        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
+#        - c:\orangec\bin\occ /V
+#        - copy omake\omake.exe \orangec\temp
+#        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
+#        - path=%ORIGPATH%
+#        - cd ..\tests
+#        - omake -B
+#        - cd ..\.. 
+#        - move orangec projects
 
 artifacts:
   - path: "bin\\ocpp.exe"

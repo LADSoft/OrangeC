@@ -13,24 +13,23 @@ environment:
     - BUILD_PROFILE: MINGW64
     - BUILD_PROFILE: MS
  
- 
-build_script:        
+build_script:
+# the appveyor virtual machine reported two processors, so, lets try running parallel compile!
         - cd ..\..
         - move projects\orangec .
         - mkdir \orangec\temp
         - cd orangec\src
         - copy omake.exe \orangec\temp
-#        - c:\orangec\temp\omake -DCOMPILER=MS -B fullbuild 
-        - mingw32-make fullbuild --eval="COMPILER=$(BUILD_PROFILE)"
+        - mingw32-make -j 4 fullbuild --eval="COMPILER=$(BUILD_PROFILE)"
         - c:\orangec\bin\occ /V
         - copy omake\omake.exe \orangec\temp
-        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
+        - c:\orangec\temp\omake -j:4 -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
         - c:\orangec\bin\occ /V
         - copy omake\omake.exe \orangec\temp
-        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
+        - c:\orangec\temp\omake -j:4 -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
         - c:\orangec\bin\occ /V
         - copy omake\omake.exe \orangec\temp
-        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
+        - c:\orangec\temp\omake -j:4 -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
         - path=%ORIGPATH%
         - cd ..\tests
         - omake -B

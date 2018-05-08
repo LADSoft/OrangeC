@@ -29,11 +29,11 @@ EXCLUDE = $(EXCLUDE) crtdll.l
 all: crtdll.l
 
 .\crtdmain.o: crtdmain.c
-	$(CC) /c $(CFLAGS) -o$@ $^
+	$(CC) /c $(CFLAGS) $(STDINCLUDE) -o$@ $^
 
 .PHONY: .\c0.o
 .\c0.o: ..\pe\c0.c
-	$(CC) /c $(CFLAGS) -Wcl -o$@ $^
+	$(CC) /c $(CFLAGS) $(STDINCLUDE) -Wcl -o$@ $^
 
 crtdll.l: .\crtdmain.o .\c0.o
 	-del $@

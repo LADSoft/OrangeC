@@ -48,7 +48,7 @@ unsigned WINFUNC Spawner::Thread(void *cls)
 }
 void Spawner::WaitForDone()
 {
-    int count = 30 *10;
+    int count = 30 *100;
     while (runningProcesses > 0 && -- count > 0)
         OS::Yield();
 }

@@ -42,15 +42,12 @@ ifeq "$(TEST)" "dirs.mak"
 include $(_TARGETDIR)\dirs.mak
 endif
 
-define SUFFIXDIRS =
-	$(foreach dir, $(1), $(dir)$(2))
-endef
 
-
-LIBS:= $(call SUFFIXDIRS,$(DIRS),.library)
-EXES:= $(call SUFFIXDIRS,$(DIRS),.exefile)
-CLEANS:= $(call SUFFIXDIRS,$(DIRS),.clean)
-DISTS:= $(call SUFFIXDIRS,$(DIRS),.dist)
+LIBS:= $(addsuffix .library,$(DIRS))
+EXES:= $(addsuffix .exefile,$(DIRS))
+CLEANS:= $(addsuffix .clean,$(DIRS))
+DISTS:= $(addsuffix .dist,$(DIRS))
+CDIRS:= $(addsuffix .dirs,$(DIRS))
 
 all: files
 
@@ -274,15 +271,18 @@ endif
 
 distribute: cleanDISTRIBUTE exeDISTRIBUTE DISTRIBUTE   
 
-$(LIBS): %.library :
-	$(MAKE) mkdir library compile -f $(_TREEROOT) -C$*
+$(CDIRS): %.dirs :
+	-mkdir $*\obj\$(OBJ_IND_PATH) 2> $(NULLDEV)
+
+$(LIBS): %.library : $(CDIRS)
+	$(MAKE) library compile -f $(_TREEROOT) -C$*
 $(EXES): %.exefile : $(LIBS)
 	$(MAKE) exefile link -f $(_TREEROOT) -C$*
 
-files: makelibdir $(EXES)
 
 library: $(LIBS)
 
 exefile: $(EXES)
 
+files: makelibdir $(EXES)
 localfiles: makelibdir mkdir compile library link

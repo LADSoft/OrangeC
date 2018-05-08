@@ -33,7 +33,7 @@ mklib: c0lsstartup.o
 	$(LIB) $(LIBFLAGS) $(LSCRTLOBJECT)\lscrtl.l + .\c0lsstartup.o $(CLIBOBJECT)\srproc.o
 
 c0lsstartup.o: c0lsstartup.c
-	$(CC) /c $(CFLAGS) /s16 /o$* $^
+	$(CC) /c $(CFLAGS) $(STDINCLUDE) /s16 /o$* $^
 
 c0ls.o: c0ls.nas
 	$(ASM) $(ASMFLAGS) -o$(LSCRTLOBJECT)\$@ $^

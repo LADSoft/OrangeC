@@ -13,7 +13,6 @@ environment:
     - BUILD_PROFILE: MINGW64
     - BUILD_PROFILE: MS
  
- 
 build_script:
 # the appveyor virtual machine reported two processors, so, lets try running parallel compile!
         - cd ..\..
@@ -38,41 +37,5 @@ build_script:
         - move orangec projects
 
 artifacts:
-  - path: "bin\\ocpp.exe"
-    name: ocpp
-  - path: "bin\\ocide.exe"
-    name: ocide
-  - path: "bin\\occpr.exe"
-    name: occpr
-  - path: "bin\\occ.exe"
-    name: occ
-  - path: "bin\\coff2ieee.exe"
-    name: coff2ieee
-  - path: "bin\\omake.exe"
-    name: omake
-  - path: "bin\\oimplib.exe"
-    name: oimplib
-  - path: "bin\\obrc.exe"
-    name: obrc
-  - path: "bin\\ogrep.exe"
-    name: ogrep
-  - path: "bin\\dlpm.exe"
-    name: dlpm
-  - path: "bin\\dlpe.exe"
-    name: dlpe
-  - path: "bin\\dlmz.exe"
-    name: dlmz
-  - path: "bin\\dlle.exe"
-    name: dlle
-  - path: "bin\\dlhex.exe"
-    name: dlhex
-  - path: "bin\\olib.exe"
-    name: olib
-  - path: "bin\\olink.exe"
-    name: olink
-  - path: "bin\\oasm.exe"
-    name: oasm
-  - path: "bin\\ocl.exe"
-    name: ocl
   - path: "dist\\*.*"
     name: releasefiles

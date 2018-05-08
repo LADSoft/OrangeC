@@ -51,7 +51,7 @@ DLLOBJS = $(shell dir $(B) $(DLLOBJECT)\\*.o)
 	$(ASM) $(ASMFLAGS) -o$@ $^
 
 .\c0dll.o: c0dll.c
-	$(CC) /c $(CFLAGS) -o$@ $^
+	$(CC) /c $(CFLAGS) $(STDINCLUDE) -o$@ $^
 
 $(RCFILE).res: $(RCFILE).rc ..\..\..\..\version.h
 	orc -i$(ORANGEC)\include $(RCFILE).rc

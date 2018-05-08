@@ -59,7 +59,7 @@ void OS::Init()
 {
     InitializeCriticalSection(&consoleSync);
 }
-void OS::WriteConsole(std::string &string)
+void OS::WriteConsole(std::string string)
 {
     DWORD written; 
     EnterCriticalSection(&consoleSync);

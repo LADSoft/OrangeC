@@ -35,13 +35,22 @@
 
 const char Spawner::escapeStart = '\x1';
 const char Spawner::escapeEnd = '\x2';
+int Spawner::runningProcesses;
 
 unsigned WINFUNC Spawner::Thread(void *cls)
 {
     Spawner *ths = (Spawner *)cls;
+    ++runningProcesses;
     ths->RetVal(ths->InternalRun());
+    --runningProcesses;
     ths->done = true;
     return 0;
+}
+void Spawner::WaitForDone()
+{
+    int count = 30 *10;
+    while (runningProcesses > 0 && -- count > 0)
+        OS::Yield();
 }
 void Spawner::Run(Command &Commands, OutputType Type, RuleList *RuleListx, Rule *Rulex)
 {
@@ -49,7 +58,7 @@ void Spawner::Run(Command &Commands, OutputType Type, RuleList *RuleListx, Rule 
     outputType = Type;
     ruleList = RuleListx;
     rule = Rulex;
-    OS::CreateThread(&Spawner::Thread, this);
+    OS::CreateThread((void *)&Spawner::Thread, this);
 }
 int Spawner::InternalRun()
 {

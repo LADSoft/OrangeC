@@ -65,7 +65,7 @@ public:
     static void GiveJob();
     static void Take();
     static void Give();
-    static void WriteConsole(std::string &string);
+    static void WriteConsole(std::string string);
     static void ToConsole(std::deque<std::string>& strings);
     static void AddConsole(std::deque<std::string>& strings, std::string string);
     static int Spawn(const std::string command, EnvironmentStrings &environment, std::string* output);

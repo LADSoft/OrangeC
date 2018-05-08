@@ -616,6 +616,7 @@ int Maker::RunCommands(bool keepGoing)
         }
         OS::Yield();
     } while (rv < 0);
+//    Spawner::WaitForDone();
     OS::JobRundown();
     for (auto d : depends)
     {

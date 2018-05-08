@@ -77,7 +77,8 @@ class Spawner
         bool IsDone() const { return done; }
 
         int RetVal() const { return retVal; }
-        
+
+        static void WaitForDone();        
         static const char escapeStart;
         static const char escapeEnd;
     protected:
@@ -103,5 +104,6 @@ class Spawner
         bool done;
         int retVal;
         OutputType outputType;
+        static int runningProcesses;
 };
 #endif

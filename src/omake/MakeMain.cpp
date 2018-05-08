@@ -652,5 +652,6 @@ int MakeMain::Run(int argc, char **argv)
         std::cout << std::endl;
     }
 #endif
+    Spawner::WaitForDone();
     return rv;
 }

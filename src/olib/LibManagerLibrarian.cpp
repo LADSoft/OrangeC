@@ -41,6 +41,8 @@ bool LibManager::SaveLibrary()
     header.filesInModule = files.size();
     FILE * ostr = fopen(name.c_str(), "wb");
     fwrite(&header, sizeof(header), 1, ostr);
+    if (!ostr)
+        return false;
     Align(ostr,16);
     header.namesOffset = ftell(ostr);
     files.WriteNames(ostr);

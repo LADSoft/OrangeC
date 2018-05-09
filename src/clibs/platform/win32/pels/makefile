@@ -30,7 +30,7 @@ ASM_DEPENDENCIES = $(wildcard c0*.nas)
 all: $(DEPENDENCIES) mklib
 
 mklib: c0lsstartup.o
-	$(LIB) $(LIBFLAGS) $(LSCRTLOBJECT)\lscrtl.l + .\c0lsstartup.o $(CLIBOBJECT)\srproc.o
+	$(LIB) $(LIBFLAGS) $(LSCRTLOBJECT)\lscrtl.l +- .\c0lsstartup.o $(CLIBOBJECT)\srproc.o $(WINOBJECT)\dllmain.o
 
 c0lsstartup.o: c0lsstartup.c
 	$(CC) /c $(CFLAGS) $(STDINCLUDE) /s16 /o$* $^

@@ -152,7 +152,7 @@ void Colorize(INTERNAL_CHAR *buf, int start, int len, int color, int
  **********************************************************************/
 int keysym(char x)
 {
-    return isalnum(x) || x == '_';
+    return x >= '0' && x <= '9' || x >= 'A' && x <= 'Z' || x >= 'a' && x <= 'z' || x == '_';
 }
 
 /**********************************************************************
@@ -440,8 +440,8 @@ static void SearchKeywords(COLORIZE_HASH_ENTRY *entries[], INTERNAL_CHAR *buf,
                             binflg = oc == '0' && (ch == 'b' || ch == 'B');
                             if (hexflg || binflg)
                                 ch = buf [start + ++i].ch;
-                            while (ch == '.' || (!binflg && isdigit(ch)) || (binflg && (ch == '0' || ch == '1'))
-                                || (hexflg && (isxdigit(ch) || ch =='p' || ch == 'P')) ||
+                            while (ch == '.' || (!binflg && ch >= '0' && ch <= '9') || (binflg && (ch == '0' || ch == '1'))
+                                || (hexflg && (ch >= '0' && ch <= '9' || ch >= 'a' && ch <= 'f' || ch >= 'A' && ch <= 'F' || ch =='p' || ch == 'P')) ||
                                   (!hexflg && (ch == 'e' || ch== 'E')))
                             {
                                     i++;

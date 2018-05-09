@@ -1897,11 +1897,11 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                 case VK_INSERT:
                     if (!p->cd->readonly)
                     {
-                        if (GetKeyState(VK_SHIFT) &0x80000000)
+                        if (GetKeyState(VK_SHIFT) & 0x80000000)
                         {
                             SendMessage(hwnd, WM_PASTE, 0, 0);
                         }
-                        else if (GetKeyState(VK_CONTROL) &0x80000000)
+                        else if (GetKeyState(VK_CONTROL) & 0x80000000)
                         {
                             SendMessage(hwnd, WM_COPY, 0, 0);
                         }
@@ -1930,7 +1930,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                 case VK_DELETE:
                     if (!p->cd->readonly)
                     {
-                        if (GetKeyState(VK_SHIFT) &0x80000000)
+                        if (GetKeyState(VK_SHIFT) & 0x80000000)
                         {
                             SendMessage(hwnd, WM_CUT, 0, 0);
                         }
@@ -1959,11 +1959,11 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                         setcurcol(p);
                         if (IsWindowVisible(hwndShowFunc))
                             scrollup(hwnd, p, 1);
-                        }
-                    
+                    }
+
                     break;
                 case VK_TAB:
-                    if (GetKeyState(VK_SHIFT) &0x80000000)
+                    if (GetKeyState(VK_SHIFT) & 0x80000000)
                     {
                         if (!p->cd->readonly)
                         {
@@ -2004,11 +2004,11 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     SendMessage(GetParent(hwnd), EN_SETCURSOR, 0, 0);
                     break;
                 case VK_UP:
-                    upline(hwnd, p,  - 1);
+                    upline(hwnd, p, -1);
                     SendMessage(GetParent(hwnd), EN_SETCURSOR, 0, 0);
                     break;
                 case VK_PRIOR:
-                    if (GetKeyState(VK_CONTROL) &0x80000000)
+                    if (GetKeyState(VK_CONTROL) & 0x80000000)
                     {
                         VScrollPos(hwnd, 0, TRUE);
                         p->textshowncharpos = p->selendcharpos = 0;
@@ -2021,14 +2021,14 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     {
                         ClientArea(hwnd, p, &r);
                         i = r.bottom / p->cd->txtFontHeight;
-                        upline(hwnd, p, 2-i);
+                        upline(hwnd, p, 2 - i);
                     }
                     SendMessage(GetParent(hwnd), EN_SETCURSOR, 0, 0);
 
                     break;
                 case VK_NEXT:
                     ClientArea(hwnd, p, &r);
-                    if (GetKeyState(VK_CONTROL) &0x80000000)
+                    if (GetKeyState(VK_CONTROL) & 0x80000000)
                     {
                         i = lfchars(p->cd->text, p->textshowncharpos, p->cd->textlen);
                         upline(hwnd, p, i);
@@ -2041,7 +2041,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     SendMessage(GetParent(hwnd), EN_SETCURSOR, 0, 0);
                     break;
                 case VK_END:
-                    if (GetKeyState(VK_CONTROL) &0x80000000)
+                    if (GetKeyState(VK_CONTROL) & 0x80000000)
                     {
                         i = lfchars(p->cd->text, p->textshowncharpos, p->cd->textlen);
                         upline(hwnd, p, i);
@@ -2054,7 +2054,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     SendMessage(GetParent(hwnd), EN_SETCURSOR, 0, 0);
                     break;
                 case VK_HOME:
-                    if (GetKeyState(VK_CONTROL) &0x80000000)
+                    if (GetKeyState(VK_CONTROL) & 0x80000000)
                     {
                         VScrollPos(hwnd, 0, TRUE);
                         p->textshowncharpos = 0;
@@ -2074,7 +2074,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     SendMessage(GetParent(hwnd), EN_SETCURSOR, 0, 0);
                     break;
                 case VK_LEFT:
-                    if (GetKeyState(VK_CONTROL) &0x80000000)
+                    if (GetKeyState(VK_CONTROL) & 0x80000000)
                         leftword(hwnd, p);
                     else
                         left(hwnd, p);
@@ -2082,7 +2082,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     SendMessage(GetParent(hwnd), EN_SETCURSOR, 0, 0);
                     break;
                 case VK_RIGHT:
-                    if (GetKeyState(VK_CONTROL) &0x80000000)
+                    if (GetKeyState(VK_CONTROL) & 0x80000000)
                         rightword(hwnd, p);
                     else
                         right(hwnd, p);
@@ -2090,7 +2090,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     SendMessage(GetParent(hwnd), EN_SETCURSOR, 0, 0);
                     break;
                 case 'A':
-                    if (GetKeyState(VK_CONTROL) &0x80000000)
+                    if (GetKeyState(VK_CONTROL) & 0x80000000)
                     {
                         p->selstartcharpos = 0;
                         p->selendcharpos = p->cd->textlen;
@@ -2098,48 +2098,48 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     }
                     break;
                 case 'X':
-                    if (!p->cd->readonly && GetKeyState(VK_CONTROL) &0x80000000)
+                    if (!p->cd->readonly && GetKeyState(VK_CONTROL) & 0x80000000)
                     {
                         SendMessage(hwnd, WM_CUT, 0, 0);
                     }
                     break;
                 case 'C':
-                    if (GetKeyState(VK_CONTROL) &0x80000000)
+                    if (GetKeyState(VK_CONTROL) & 0x80000000)
                     {
                         SendMessage(hwnd, WM_COPY, 0, 0);
                     }
                     break;
                 case 'V':
-                    if (!p->cd->readonly && GetKeyState(VK_CONTROL) &0x80000000)
+                    if (!p->cd->readonly && GetKeyState(VK_CONTROL) & 0x80000000)
                     {
                         SendMessage(hwnd, WM_PASTE, 0, 0);
                     }
                     break;
                 case 'Y':
-                    if (!p->cd->readonly && GetKeyState(VK_CONTROL) &0x80000000)
+                    if (!p->cd->readonly && GetKeyState(VK_CONTROL) & 0x80000000)
                     {
                         RemoveCurrentLine(hwnd, p);
                         return 0;
                     }
                     break;
                 case 'T':
-                    if (!p->cd->readonly && GetKeyState(VK_CONTROL) &0x80000000)
+                    if (!p->cd->readonly && GetKeyState(VK_CONTROL) & 0x80000000)
                     {
                         RemoveNextWord(hwnd, p);
                     }
                     break;
                 case 'R':
                     if (!p->cd->readonly)
-                        if (GetKeyState(VK_CONTROL) &0x80000000)
+                        if (GetKeyState(VK_CONTROL) & 0x80000000)
                         {
-                                SendMessage(hwnd, WM_REDO, 0, 0);
-                                if (IsWindowVisible(hwndShowFunc))
-                                    ShowWindow(hwndShowFunc, SW_HIDE);
+                            SendMessage(hwnd, WM_REDO, 0, 0);
+                            if (IsWindowVisible(hwndShowFunc))
+                                ShowWindow(hwndShowFunc, SW_HIDE);
                         }
                     break;
                 case 'Z':
                     if (!p->cd->readonly)
-                        if (GetKeyState(VK_CONTROL) &0x80000000)
+                        if (GetKeyState(VK_CONTROL) & 0x80000000)
                         {
                             SendMessage(hwnd, WM_UNDO, 0, 0);
                             if (IsWindowVisible(hwndShowFunc))
@@ -2147,7 +2147,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                         }
                     break;
                 case 'S':
-                    if (!p->cd->readonly && GetKeyState(VK_CONTROL) &0x80000000)
+                    if (!p->cd->readonly && GetKeyState(VK_CONTROL) & 0x80000000)
                     {
                         if (p->cd->modified)
                             SendMessage(GetParent(hwnd), WM_COMMAND, IDM_SAVE,
@@ -2155,58 +2155,81 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     }
                     break;
                 case 'L':
-                    if (!(GetKeyState(VK_CONTROL) &0x80000000))
+                    if (!(GetKeyState(VK_CONTROL) & 0x80000000))
                         break;
                     if (!p->cd->readonly && p->cd->inserting)
                     {
                         insertautoundo(hwnd, p, UNDO_AUTOEND);
-                        insertchar(hwnd,p , '\f');
-                        insertcr(hwnd,p,FALSE);	
+                        insertchar(hwnd, p, '\f');
+                        insertcr(hwnd, p, FALSE);
                         insertautoundo(hwnd, p, UNDO_AUTOBEGIN);
                     }
                     break;
                 case 'W':
-                    if (!(GetKeyState(VK_CONTROL) &0x80000000))
+                    if (!(GetKeyState(VK_CONTROL) & 0x80000000))
                         break;
                     InstallForParse(GetParent(hwnd));
-                    break ;
-                                        
+                    break;
+
                 case VK_SHIFT:
                     p->cd->selecting = TRUE;
                     break;
                 default:
-                    if (wParam >= '1' && wParam <= '9') // I couldn't get shift-ctrl-0 to return any value on my computer
+                    if (GetKeyState(VK_CONTROL) & 0x80000000)
                     {
-                        if (GetKeyState(VK_CONTROL) &0x80000000)
+                        switch (KeyboardToAscii(wParam, lParam, FALSE))
                         {
-                            MarkOrGoto(hwnd, p , wParam-'0', !!(GetKeyState(VK_SHIFT) &0x80000000));
+                        case '[':
+                            PopupFullScreen(hwnd, p);
+                            return 0;
+                        case ']':
+                            ReleaseFullScreen(hwnd, p);
+                            return 0;
+                        case '\\':
+                            verticalCenter(hwnd, p);
+                            break;
+                        case '1':
+                        case '2':
+                        case '3':
+                        case '4':
+                        case '5':
+                        case '6':
+                        case '7':
+                        case '8':
+                        case '9':
+                            // on german keyboards still honor the rcontrol
+                            switch (KeyboardToAscii(wParam, lParam, TRUE))
+                            {
+                            case '[':
+                                if (GetKeyState(VK_RCONTROL) & 0x80000000)
+                                {
+                                    PopupFullScreen(hwnd, p);
+                                    return 0;
+                                }
+                                break;
+                            case ']':
+                                if (GetKeyState(VK_RCONTROL) & 0x80000000)
+                                {
+                                    ReleaseFullScreen(hwnd, p);
+                                    return 0;
+                                }
+                                break;
+                            case '{':
+                            case '}':
+                                break;
+                            case '\\':
+                                if (GetKeyState(VK_RCONTROL) & 0x80000000)
+                                {
+                                    verticalCenter(hwnd, p);
+                                }
+                                break;
+                            default:
+                                MarkOrGoto(hwnd, p, wParam - '0', !!(GetKeyState(VK_SHIFT) & 0x80000000));
+                                break;
+                            }
                             break;
                         }
                     }
-                    switch (KeyboardToAscii(wParam, lParam, FALSE))
-                    {
-                         case '[':
-                            if (GetKeyState(VK_CONTROL) &0x80000000)
-                            {
-                                PopupFullScreen(hwnd, p);
-                                return 0;
-                            }
-                            break;
-                        case ']':
-                            if (GetKeyState(VK_CONTROL) &0x80000000)
-                            {
-                                ReleaseFullScreen(hwnd, p);
-                                return 0;
-                            }
-                            break;
-                        case '\\':
-                            if (GetKeyState(VK_CONTROL) &0x80000000)
-                            {
-                                verticalCenter(hwnd, p);
-                            }
-                            break;
-                    }
-                    break;
                 }
                 if (p->cd->selecting)
                     InvalidateRect(hwnd, 0, 0);
@@ -2254,7 +2277,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                 }
                 break;
             case WM_CHAR:
-                if (wParam >= ' ' && wParam < 256)
+                if ((wParam >= ' ' && wParam < 256) && !(GetKeyState(VK_RCONTROL) & 0x80000000))//german kb support
                 {
                     p = (EDITDATA*)GetWindowLong(hwnd, 0);
                     if (p->insertcursorcolumn)

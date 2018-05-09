@@ -216,7 +216,8 @@ void        _RTL_FUNC _IMPORT      _makepath( char *__path,
 int         _RTL_FUNC _IMPORT      putenv(const char *__name);
 int         _RTL_FUNC _IMPORT      _putenv(const char *__name);
 int         _RTL_FUNC _IMPORT      _putenv_s(const char *__name, const char *value);
-
+int         _RTL_FUNC _IMPORT    setenv(const char *name, const char *value, int overwrite);
+int         _RTL_FUNC _IMPORT    unsetenv(const char *name);
 
 void        _RTL_FUNC _IMPORT _searchenv(const char *__file,
                                  const char *__varname,

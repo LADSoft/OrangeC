@@ -5816,8 +5816,13 @@ jointemplate:
                                 sp->storage_class = sc_global;
                         }
                         if ((!spi || (spi->storage_class != sc_member && spi->storage_class != sc_mutable))
-                             && sp->storage_class == sc_global && sp->isInline && !sp->promotedToInline)
-                            sp->storage_class = sc_static;
+                            && sp->storage_class == sc_global && sp->isInline && !sp->promotedToInline)
+                        {
+                            if (spi && spi->storage_class == sc_external)
+                                sp->dumpInlineToFile = TRUE;
+                            else
+                                sp->storage_class = sc_static;
+                        }
                         if (spi && !sp->parentClass && !isfunction(spi->tp) && spi->storage_class != sc_type && sp->templateLevel)
                         {
                             SYMBOL *special = FindSpecialization(spi, sp->templateParams);

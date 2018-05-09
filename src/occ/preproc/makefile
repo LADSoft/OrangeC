@@ -33,3 +33,4 @@ redirect:
 	@$(MAKE) /T
 
 DISTRIBUTE: copyexe
+	copy target.cfg $(DISTBIN)\ocpp.cfg

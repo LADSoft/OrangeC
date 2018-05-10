@@ -135,7 +135,7 @@ static int ParseNewProjectData(HWND hwnd)
                     break;
                 case BT_DLL:
                     if (strlen(newName) < 5 || stricmp(newName + strlen(newName)-4, ".dll") != 0)
-                       strcat(newName, ".exe");
+                       strcat(newName, ".dll");
                     break;
                 case BT_LIBRARY:
                     if (strlen(newName) < 3 || stricmp(newName + strlen(newName)-2, ".l") != 0)

@@ -30,8 +30,6 @@
 #include "be.h"
 #include "winmode.h"
  
-#define TEMPFILE "$$$OCC.TMP"
-
 extern COMPILER_PARAMS cparams;
 extern int prm_targettype;
 extern int prm_crtdll;
@@ -222,7 +220,9 @@ int RunExternalFiles(char *rootPath)
     }
     if (objlist)
     {
-        FILE *fil = fopen(TEMPFILE, "w");
+        char tempFile[260];
+        tmpnam(tempFile);
+        FILE *fil = fopen(tempFile, "w");
         if (!fil)
             return 1;
         
@@ -270,22 +270,22 @@ int RunExternalFiles(char *rootPath)
             reslist = reslist->next;
         }
         fclose(fil);
-        sprintf(spname, "\"%solink.exe\" %s /mx /c+ %s %s @"TEMPFILE, root, !showBanner ? "-!" : "", args, verbosityString);
+        sprintf(spname, "\"%solink.exe\" %s /mx /c+ %s %s @%s", root, !showBanner ? "-!" : "", args, verbosityString, tempFile);
         if (verbosity) {
-            FILE *fil = fopen(TEMPFILE, "r");
+            FILE *fil = fopen(tempFile, "r");
             printf("%s\n", spname);
             if (fil)
             {
                 char buffer[8192];
                 int len;
-                printf("with " TEMPFILE "=\n");
+                printf("with %s=\n", tempFile);
                 while ((len = fread(buffer, 1, 8192, fil)) > 0)
                     fwrite(buffer, 1, len, stdout);
                 fclose(fil);
             }
         }
         rv = system(spname);
-        unlink(TEMPFILE);
+        unlink(tempFile);
 
         if (rv)
             return rv;

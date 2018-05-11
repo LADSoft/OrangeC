@@ -32,7 +32,7 @@ build_script:
         - c:\orangec\temp\omake -j:4 -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
         - path=%ORIGPATH%
         - cd ..\tests
-        - omake -B
+        - omake -B -j:4
         - cd ..\.. 
         - move orangec projects
 

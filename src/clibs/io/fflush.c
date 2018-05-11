@@ -61,12 +61,6 @@ static int __flushone(FILE *stream)
                 if (eof(fileno(stream)))
                     stream->flags |= _F_EOF;
                 stream->level = 0;
-                if (__flush(fileno(stream)) < 0)
-                {
-                    stream->flags |= _F_ERR;
-                    errno = ENOSPC;
-                    rv = EOF;
-                }
             }
             else if (stream->flags & _F_READ) {
                 if (stream->level > 0) {

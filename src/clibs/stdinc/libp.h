@@ -68,6 +68,7 @@ int __ll_flags(int __oldflags);
 int __ll_write(int __fd,void *__buf,size_t __size);
 int __ll_read(int __fd,void *__buf,size_t __len);
 int __appendedwrite(FILE *stream, char *buf, int len);
+int __ll_flush(int __fd);
 
 /* File positioning */
 size_t __ll_getpos(int __fd);

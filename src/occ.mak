@@ -68,8 +68,6 @@ DEFINES := $(addprefix /D,$(DEFINES))
 DEFINES := $(subst @, ,$(DEFINES))
 LIB_DEPENDENCIES := $(foreach file, $(addsuffix .l,$(LIB_DEPENDENCIES)), $(file))
 
-$(info $(LIB_DEPENDENCIES))
-
 CCFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) /DMICROSOFT /DBORLAND /DWIN32
 ifeq "$(TARGET)" "GUI"
 STARTUP=C0pe.o

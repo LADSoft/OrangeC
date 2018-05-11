@@ -77,6 +77,14 @@ struct tm
   int   tm_isdst;
 };
 
+#ifndef _TIMESPEC_DEFINED
+#define _TIMESPEC_DEFINED
+typedef struct {
+    time_t sec;
+    long nsec;
+} timespec;
+#endif
+
 char *       _RTL_FUNC asctime(const struct tm *__tblock);
 char *       _RTL_FUNC ctime(const time_t *__time);
 double       _RTL_FUNC difftime(time_t __time2, time_t __time1);

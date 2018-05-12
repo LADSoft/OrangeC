@@ -452,6 +452,10 @@ BOOLEAN parse_args(int *argc, char *argv[], BOOLEAN case_sensitive)
             {
                 // skip the silence arg
             }
+            else if (argv[pos][0] == ARG_SEPFALSE && !argv[pos][1])
+            {
+                continue;
+            }
             else
             {
                 int argmode;
@@ -707,6 +711,7 @@ void InsertOneFile(char *filename, char *path, int drive)
  */
 
 {
+    char a = 0;
     char *newbuffer, buffer[260],  *p = buffer;
     BOOLEAN inserted;
     LIST **r = &clist, *s;
@@ -726,8 +731,15 @@ void InsertOneFile(char *filename, char *path, int drive)
     /* Allocate buffer and make .C if no extension */
     strcat(buffer, filename);
 #ifndef CPREPROCESSOR
+    if (buffer[0] == '-')
+    {
+        a = buffer[0];
+        buffer[0] = 'a';
+    }
     inserted = chosenAssembler->insert_noncompile_file 
         && chosenAssembler->insert_noncompile_file(buffer);
+    if (a)
+        buffer[0] = a;
     if (!inserted)
 #endif
     {

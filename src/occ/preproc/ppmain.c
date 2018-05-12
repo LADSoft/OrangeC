@@ -163,6 +163,8 @@ int main(int argc, char *argv[])
     {
         cparams.prm_cplusplus = FALSE;
         strcpy(buffer, clist->data);
+        if (buffer[0] == '-')
+            buffer[0] = 'a';
         if (getenv("OCC_LEGACY_OPTIONS") && !outfile[0])
             outputfile(outfile, buffer, ".i");
         AddExt(buffer, ".C");
@@ -192,7 +194,10 @@ int main(int argc, char *argv[])
                     }
                 }
             }
-        inputFile = SrchPth2(buffer, "", "r");
+        if (*(char *)clist->data == '-')
+            inputFile = stdin;
+        else
+            inputFile = SrchPth2(buffer, "", "r");
         if (!inputFile)
             fatal("Cannot open input file %s", buffer);
         strcpy(infile, buffer);
@@ -203,7 +208,8 @@ int main(int argc, char *argv[])
             cppFile = stdout;
         if (!cppFile)
         {
-            fclose(inputFile);
+            if (inputFile != stdin)
+                fclose(inputFile);
             fatal("Cannot open output file %s", outfile);
         }
         preprocini(infile, inputFile);
@@ -211,7 +217,8 @@ int main(int argc, char *argv[])
         while(!getline()) ;
 
         dumperrs(stdout);
-        fclose(inputFile);
+        if (inputFile != stdin)
+            fclose(inputFile);
         fclose(cppFile);
         clist = clist->next;
 

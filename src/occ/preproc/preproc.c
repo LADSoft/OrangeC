@@ -431,11 +431,22 @@ int getstring(unsigned char *s, int len, FILE *file)
             else
                 includes->ibufPtr++;
         }
+        if (file == stdin)
+        {
+            char *p = fgets(includes->inputbuffer, sizeof(includes->inputbuffer), file);
+            if (p)
+                includes->inputlen = strlen(p);
+            else
+                includes->inputlen = 0;
+        }
+        else
+        {
 #ifdef PARSER_ONLY
-        includes->inputlen = ccReadFile(includes->inputbuffer, 1, sizeof(includes->inputbuffer), file);
+            includes->inputlen = ccReadFile(includes->inputbuffer, 1, sizeof(includes->inputbuffer), file);
 #else
-        includes->inputlen = fread(includes->inputbuffer, 1, sizeof(includes->inputbuffer), file);
+            includes->inputlen = fread(includes->inputbuffer, 1, sizeof(includes->inputbuffer), file);
 #endif
+        }
         includes->ibufPtr = includes->inputbuffer;
         if (includes->inputlen <= 0)
         {

@@ -602,11 +602,17 @@ int main(int argc, char *argv[])
         cparams.prm_cplusplus = FALSE;
         strcpy(buffer, clist->data);
 #ifndef PARSER_ONLY
+        if (buffer[0] == '-')
+            strcpy(buffer, "a.c");
         strcpy(realOutFile, outfile);
         if (cparams.prm_asmfile)
+        {
             outputfile(realOutFile, buffer, chosenAssembler->asmext);
+        }
         else
+        {
             outputfile(realOutFile, buffer, chosenAssembler->objext);
+        }
         strcpy(oldOutFile, realOutFile);
         StripExt(oldOutFile);
         AddExt(oldOutFile, ".tmp");
@@ -650,7 +656,10 @@ int main(int argc, char *argv[])
             cparams.prm_c99 = cparams.prm_c1x = FALSE;
         if (cparams.prm_cplusplus && chosenAssembler->msil)
             fatal("MSIL compiler does not compile C++ files at this time");
-        inputFile = SrchPth2(buffer, "", "r");
+        if (*(char *)clist->data == '-')
+            inputFile = stdin;
+        else
+            inputFile = SrchPth2(buffer, "", "r");
         if (!inputFile)
             fatal("Cannot open input file %s", buffer);
         strcpy(infile, buffer);
@@ -671,7 +680,8 @@ int main(int argc, char *argv[])
                 outputFile = fopen(realOutFile, cparams.prm_asmfile ? "w" : "wb");
                 if (!outputFile)
                 {
-                    fclose(inputFile);
+                    if (inputFile != stdin)
+                       fclose(inputFile);
                     fatal("Cannot open output file %s", realOutFile);
                 }
                 setvbuf(outputFile,0,_IOFBF,32768);
@@ -685,7 +695,8 @@ int main(int argc, char *argv[])
                 cppFile = fopen(buffer, "w");
                 if (!cppFile)
                 {
-                    fclose(inputFile);
+                    if (inputFile != stdin)
+                        fclose(inputFile);
                     fclose(outputFile);
                     fatal("Cannot open preprocessor output file %s", buffer);
                 }
@@ -697,7 +708,8 @@ int main(int argc, char *argv[])
                 listFile = fopen(buffer, "w");
                 if (!listFile)
                 {
-                    fclose(inputFile);
+                    if (inputFile != stdin)
+                        fclose(inputFile);
                     fclose(cppFile);
                     fclose(outputFile);
                     fatal("Cannot open list file %s", buffer);
@@ -710,7 +722,8 @@ int main(int argc, char *argv[])
                 errFile = fopen(buffer, "w");
                 if (!errFile)
                 {
-                    fclose(inputFile);
+                    if (inputFile != stdin)
+                        fclose(inputFile);
                     fclose(cppFile);
                     fclose(listFile);
                     fclose(outputFile);
@@ -727,7 +740,8 @@ int main(int argc, char *argv[])
                 if (!browseFile)
                 {   
                     fclose(errFile);
-                    fclose(inputFile);
+                    if (inputFile != stdin)
+                        fclose(inputFile);
                     fclose(cppFile);
                     fclose(listFile);
                     fclose(outputFile);
@@ -744,7 +758,8 @@ int main(int argc, char *argv[])
                 {   
                     fclose(browseFile);
                     fclose(errFile);
-                    fclose(inputFile);
+                    if (inputFile != stdin)
+                        fclose(inputFile);
                     fclose(cppFile);
                     fclose(listFile);
                     fclose(outputFile);
@@ -774,10 +789,11 @@ int main(int argc, char *argv[])
                printf("  Allocation Accesses: %d\n", maxAllocationAccesses);
         }
         maxBlocks = maxTemps = maxAllocationSpills = maxAllocationPasses = maxAllocationAccesses = 0;
+        if (inputFile != stdin)
 #ifdef PARSER_ONLY
-        ccCloseFile(inputFile);
+            ccCloseFile(inputFile);
 #else
-        fclose(inputFile);
+            fclose(inputFile);
 #endif
         if (outputFile && openOutput)
             fclose(outputFile);

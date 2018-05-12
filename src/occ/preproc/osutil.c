@@ -414,6 +414,10 @@ BOOLEAN parse_args(int *argc, char *argv[], BOOLEAN case_sensitive)
             int argmode;
             int index = 1;
             BOOLEAN done = FALSE;
+            if (argv[pos][0] == ARG_SEPFALSE && !argv[pos][1])
+            {
+                continue;
+            }
             do
             {
                 /* Scan the present arg */

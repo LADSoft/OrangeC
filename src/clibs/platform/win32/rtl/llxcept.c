@@ -28,12 +28,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 extern int _win32 ;
+extern char **_argv;
+
 static int *_xceptblkptr;
 /*static*/ PCONTEXT xxctxt;
 /*static*/ void regdump(char *text, PCONTEXT p)
 {
    char buf[1024] ;
-      sprintf(buf,"\n%s\n\n",text);
+      sprintf(buf,"\n%s:(%s)\n",text, _argv[0]);
       sprintf(buf+strlen(buf),"CS:EIP %04X:%08X  SS:ESP %04X:%08X\n",p->SegCs,p->Eip,p->SegSs,p->Esp);
       sprintf(buf+strlen(buf),"EAX: %08X  EBX: %08X  ECX: %08X  EDX: %08X  flags: %08X\n",
             p->Eax, p->Ebx, p->Ecx, p->Edx, p->EFlags);

@@ -39,6 +39,8 @@
 #include <stdlib.h>
 #include <ios>
 #include <stdio.h>
+#include <algorithm>
+
 #ifdef OPENWATCOM
 namespace std
 {
@@ -490,7 +492,9 @@ int MakeMain::Run(int argc, char **argv)
         Variable *v = VariableContainer::Instance()->Lookup("SHELL");
         if (!v)
         {
-            v = VariableContainer::Instance()->Lookup("COMSPEC");
+            v = VariableContainer::Instance()->Lookup("MSYSCON"); // detect MSYS version of comspec
+            if (!v)
+                v = VariableContainer::Instance()->Lookup("COMSPEC");
             if (!v)
                 v = VariableContainer::Instance()->Lookup("ComSpec");
             if (v)
@@ -500,6 +504,7 @@ int MakeMain::Run(int argc, char **argv)
                 SetVariable(".SHELLFLAGS", "-c", Variable::o_environ, false);
             }
         }
+
         std::string wd = OS::GetWorkingDir();
         SetVariable("CURDIR", wd, Variable::o_environ, false);
         std::string goals;

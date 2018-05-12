@@ -45,6 +45,7 @@ static HANDLE jobsSemaphore;
 static CRITICAL_SECTION consoleSync;
 int OS::jobsLeft;
 std::deque<int> OS::jobCounts;
+bool OS::isSHEXE;
 
 bool Time::operator >(const Time &last)
 {
@@ -147,35 +148,8 @@ void OS::Give()
 }
 int OS::Spawn(const std::string command, EnvironmentStrings &environment, std::string *output)
 {
-    static std::string names = "ASSOC ATTRIB BREAK BCDEDIT CACLS CALL CD CHCP CHDIR CHKDSK CHKNTFS CLS CMD COLOR COMP COMPACT CONVERT COPY DATE DEL DIR DISKPART DOSKEY DRIVERQUERY ECHO ENDLOCAL ERASE EXIT FC FIND FINDSTR FOR FORMAT FSUTIL FTYPE GOTO GPRESULT GRAFTABL HELP ICACLS IF LABEL MD MKDIR MKLINK MODE MORE MOVE OPENFILES PATH PAUSE POPD PRINT PROMPT PUSHD RD RECOVER REM REN RENAME REPLACE RMDIR ROBOCOPY SET SETLOCAL SC SCHTASKS SHIFT SHUTDOWN SORT START SUBST SYSTEMINFO TASKLIST TASKKILL TIME TITLE TREE TYPE VER VERIFY VOL XCOPY WMIC ";
     std::string command1 = command;
-    std::string aa = Eval::ExtractFirst(command1, " ");
-    aa += " ";
-    std::transform(aa.begin(), aa.end(), aa.begin(), ::toupper);
-    bool isCmd = names.find(aa) != std::string::npos;
 
-    if (!isCmd)
-    {
-        size_t n = 0;
-        size_t nextQuote = command1.find('"');
-        while (n < command1.size())
-        {
-            while (n < command1.size() && command1[n] != '"')
-            {
-                if (command1[n] == '>' || command1[n] == '<' || command1[n] == '|')
-                {
-                     n = command1.size();
-                     isCmd = true;
-                     break;
-                }
-                n++;
-            }
-            do
-            {
-                n++;
-            } while (n < command1.size() && command1[n] != '"');
-        }
-    }
     Variable *v = VariableContainer::Instance()->Lookup("SHELL");
     if (!v)
         return -1;
@@ -230,7 +204,8 @@ int OS::Spawn(const std::string command, EnvironmentStrings &environment, std::s
         *p++ = '\0';
     }
     *p++ = '\0';
-    if (!isCmd && CreateProcess(nullptr, (char *)command.c_str(), nullptr, nullptr, true, 0, env,
+    // try as an app first
+    if (CreateProcess(nullptr, (char *)command.c_str(), nullptr, nullptr, true, 0, env,
                       nullptr, &startup, &pi))
     {
         WaitForSingleObject(pi.hProcess, INFINITE);
@@ -257,6 +232,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings &environment, std::s
     }
     else
     {
+        // not found, try running a shell to handle it...
         if (CreateProcess(nullptr, (char *)cmd.c_str(), nullptr, nullptr, true, 0, env,
                       nullptr, &startup, &pi))
         {
@@ -456,6 +432,11 @@ std::string OS::NormalizeFileName(const std::string file)
         else if (name[i] == '\'' || name[i] == '"')
         {
             stringchar = name[i];
+        }
+        else if (isSHEXE)
+        {
+            if (name[i] == '\\')
+                name[i] = '/';
         }
         else if (name[i] == '/' && i > 0 && !isspace(name[i-1]))
         {

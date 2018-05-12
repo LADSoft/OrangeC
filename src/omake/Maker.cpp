@@ -35,6 +35,7 @@
 #include <list>
 #include <stdlib.h>
 #include <iostream>
+#include <algorithm>
 std::map<std::string, Depends *> Depends::all;
 std::string Maker::firstGoal;
 std::map<std::string, std::string> Maker::filePaths;
@@ -45,6 +46,10 @@ Maker::Maker(bool Silent, bool DisplayOnly, bool IgnoreResults, bool Touch, Outp
     rebuildAll(RebuildAll), keepResponseFiles(KeepResponseFiles), newFiles(NewFiles), oldFiles(OldFiles),
     outputType(Type)
     {
+        Variable *v = VariableContainer::Instance()->Lookup("SHELL");
+        std::string shtest = v->GetValue();
+        std::transform(shtest.begin(), shtest.end(), shtest.begin(), ::toupper);
+        OS::SetSHEXE(shtest.find("SH.EXE") != std::string::npos);
     }
 Maker::~Maker()
 {

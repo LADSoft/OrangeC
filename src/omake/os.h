@@ -57,6 +57,7 @@ class OS
 {
 public:
     static void Init();
+    static void SetSHEXE(bool flag) { isSHEXE = flag; }
     static void PushJobCount(int jobs);
     static void PopJobCount();
     static void JobInit();
@@ -82,5 +83,6 @@ public:
 private:
     static int jobsLeft;
     static std::deque<int> jobCounts;
+    static bool isSHEXE;
 } ;
 #endif

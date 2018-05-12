@@ -1045,9 +1045,9 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
     SETTING *lastSetting;
     LPCREATESTRUCT cs;
     RECT r;
-    SIZE acceptSz;
-    SIZE cancelSz;
-    SIZE helpSz;
+    static SIZE acceptSz;
+    static SIZE cancelSz;
+    static SIZE helpSz;
     static POINT pt;
     static SIZE sz;
     HDC dc;
@@ -1452,6 +1452,8 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
                 sz.cx = helpSz.cx;
             if (helpSz.cy > sz.cy)
                 sz.cy = helpSz.cy;
+            pt.x = sz.cx;
+            pt.y = sz.cy;
             hAcceptBtn = CreateWindowEx(0, "button", szAccept, WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 
                                         r.right - 1 * (sz.cx + 32), r.bottom -sz.cy - 12, sz.cx+24, sz.cy + 8,
                                         hwnd, (HMENU)IDOK, hInstance, NULL);

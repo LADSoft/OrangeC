@@ -204,8 +204,27 @@ int OS::Spawn(const std::string command, EnvironmentStrings &environment, std::s
         *p++ = '\0';
     }
     *p++ = '\0';
+    bool asapp = true;
+    bool instr = false;
+    // need a shell for any kind of I/O redirection
+    for (auto c : command)
+    {
+        if (instr)
+        {
+            instr = c != '"';
+        }
+        else if (c == '"')
+        {
+            instr = true;
+        }
+        else if (c == '|' || c == '&' || c == '<' || c == '>')
+        {
+            asapp = false;
+            break;
+        }
+    }
     // try as an app first
-    if (CreateProcess(nullptr, (char *)command.c_str(), nullptr, nullptr, true, 0, env,
+    if (asapp && CreateProcess(nullptr, (char *)command.c_str(), nullptr, nullptr, true, 0, env,
                       nullptr, &startup, &pi))
     {
         WaitForSingleObject(pi.hProcess, INFINITE);

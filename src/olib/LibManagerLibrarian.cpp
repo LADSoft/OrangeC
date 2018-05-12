@@ -41,7 +41,9 @@ bool LibManager::SaveLibrary()
     header.filesInModule = files.size();
     FILE * ostr = fopen(name.c_str(), "wb");
     if (!ostr)
+    {
         return false;
+    }
     fwrite(&header, sizeof(header), 1, ostr);
     Align(ostr,16);
     header.namesOffset = ftell(ostr);

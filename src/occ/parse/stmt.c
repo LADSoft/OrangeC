@@ -611,7 +611,7 @@ static LEXEME *statement_do(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             currentLineData(dostmt, lex, 0);
             st = stmtNode(lex, dostmt, st_select);
             st->select = select;
-            if (!dostmt->hasbreak && isselecttrue(st->select))
+            if (!dostmt->hasbreak && (dostmt->needlabel || isselecttrue(st->select)))
                 parent->needlabel = TRUE;
             st->label = loopLabel;
             st = stmtNode(lex, dostmt, st_label);
@@ -3104,7 +3104,7 @@ LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
     }
     browse_blockend(endline = lex->line);
     currentLineData(blockstmt, lex, -!first);
-    if (parent->type == begin || parent->type == kw_switch || parent->type == kw_try || parent->type == kw_catch)
+    if (parent->type == begin || parent->type == kw_switch || parent->type == kw_try || parent->type == kw_catch || parent->type == kw_do)
         parent->needlabel = blockstmt->needlabel;
     if (!blockstmt->hassemi && (!blockstmt->nosemi || blockstmt->lastcaseordefault))
     {

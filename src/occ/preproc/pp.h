@@ -70,6 +70,7 @@ typedef struct _includes_
     int		current;
     int 	ifskip;
     int		skiplevel;
+    long        filesize;
     BOOLEAN	elsetaken;
     char	*data;
     unsigned char *lptr;

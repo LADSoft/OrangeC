@@ -24,6 +24,7 @@
  */
 
 #include "compiler.h"
+#include "sys/stat.h"
 //#include "dir.h"
   
 char *getcwd(char *, int);
@@ -77,6 +78,20 @@ static int instr = 0;
 static int commentlevel, commentline;
 static char defkw[] = "defined";
 static int currentfile;
+
+#ifndef CPREPROCESSOR
+#define ONCE_BUCKETS 32
+typedef struct _once
+{
+    struct _once *next;
+    long filesize;
+    time_t filetime;
+    unsigned crc;
+} ONCE	;
+static ONCE *onceLists[ONCE_BUCKETS];
+static int once;
+#endif
+
 /* List of standard macros */
 #define INGROWNMACROS 5
 
@@ -125,6 +140,7 @@ void preprocini(char *name, FILE *fil)
     defsyms = CreateHashTable(GLOBALHASHSIZE);
     macroBuffers = NULL;
 #ifndef CPREPROCESSOR
+    once = 0;
     packlevel  = 0;
     packdata[0] = chosenAssembler->arch->packSize;
     cppprio = 0;
@@ -469,8 +485,16 @@ BOOLEAN getline(void)
                 ccSetFileLine(includes->fname, includes->line);
 #endif
             rv = getstring(includes->inputline + rvc, MACRO_REPLACE_SIZE-132-rvc, includes->handle);
+#ifndef CPREPROCESSOR
+            if (rv || once)
+#else
             if (rv)
+#endif
             {
+#ifndef CPREPROCESSOR
+                once = FALSE;
+                rv = TRUE;
+#endif
                 break;
             }
             temp = strlen((char *)includes->inputline);
@@ -684,7 +708,49 @@ unsigned char *getauxname(unsigned char *ptr, char **bufp)
     DecGlobalFlag();
     return ptr;
 }
-
+#ifndef CPREPROCESSOR
+unsigned onceCRC(FILE *handle)
+{
+    unsigned crc =0 ;
+    unsigned PartialCRC32(unsigned crc, unsigned char *data, size_t len);
+    int hnd = dup(fileno(handle));
+    unsigned char buf[8192];
+    int n;
+    lseek(hnd, 0, SEEK_END);
+    while ((n = read(hnd, buf, sizeof(buf))) > 0)
+        crc = PartialCRC32(crc, buf, n);
+    close(hnd);
+    return crc;
+}
+void pragonce(void)
+{
+    time_t filetime = 0;
+    struct stat statbuf;
+    stat(includes->fname, &statbuf);
+    filetime = statbuf.st_mtime;
+    int bucket = ((includes->filesize >> 8) + (includes->filesize)) & (ONCE_BUCKETS-1);
+    ONCE *oncePos = onceLists[bucket];
+    for (; oncePos; oncePos = oncePos->next)
+        if (oncePos->filesize == includes->filesize)
+            break;
+    if (oncePos && filetime == oncePos->filetime)
+    {
+        if (oncePos->crc == onceCRC(includes->handle))
+        {
+            once = TRUE;
+            return;
+        }
+    }
+    IncGlobalFlag();
+    oncePos = Alloc(sizeof(ONCE));
+    DecGlobalFlag();
+    oncePos->filesize = includes->filesize;
+    oncePos->filetime = filetime;
+    oncePos->crc = onceCRC(includes->handle);
+    oncePos->next = onceLists[bucket];
+    onceLists[bucket] = oncePos;
+}
+#endif
 /*-------------------------------------------------------------------------*/
 
 static void pragerror(int error)
@@ -746,6 +812,13 @@ void dopragma(void)
             stdpragmas &= ~val;
         return ;
     }
+#ifndef CPREPROCESSOR
+    else if (!strcmp(name, "once"))
+    {
+         pragonce();
+         return;
+    }
+#endif
     else if (!strcmp(name, "error"))
     {
         pragerror(ERR_PRAGERROR);
@@ -1119,6 +1192,9 @@ void doinclude(void)
         inc->linesTail = linesTail;
         
         linesHead = linesTail = NULL;
+        fseek(inc->handle, 0, SEEK_END);
+        inc->filesize = ftell(inc->handle);
+        fseek(inc->handle, 0, SEEK_SET);
 #endif
         inc->fileindex = i;
 #ifndef CPREPROCESSOR

@@ -3,21 +3,10 @@
     	<COMMAND>
 
    			<ITEM NAME="Command Line" ID="__COMMAND_LINE" TYPE="TEXT">
-	    			"$$(LSINSTALLBIN)\occ.exe" -! "@&amp;&amp;|
-$$(CFLAGS) "-o%.o" $$(UNICODE) 
-"/I$$(INCLUDE);"
-$$(DEFINE)
-"%.c%.cc%.cpp%.cxx" 
-|"
+	    			"$$(LSINSTALLBIN)\occ.exe" -! $$(CFLAGS) "-o%.o" $$(UNICODE) "/I$$(INCLUDE);" $$(DEFINE) "%.c%.cc%.cpp%.cxx"
 			</ITEM>
    			<ITEM NAME="Code Completion" ID="__CODE_COMPLETION" TYPE="TEXT">
-	    			"$$(LSINSTALLBIN)\occpr.exe" "@&amp;&amp;|
-$$(CFLAGS) -! "-o$(__CODE_COMPLETION_FILE)" $$(UNICODE) 
-/P$(__CODE_COMPLETION_PIPE)
-"/I$$(INCLUDE);"
-$$(DEFINE)
-"%.c%.cc%.cpp%.cxx%.h" 
-|"           
+	    			"$$(LSINSTALLBIN)\occpr.exe" $$(CFLAGS) -! "-o$(__CODE_COMPLETION_FILE)" $$(UNICODE) /P$(__CODE_COMPLETION_PIPE) "/I$$(INCLUDE); $$(DEFINE) "%.c%.cc%.cpp%.cxx%.h"
             </ITEM>
 			<ITEM NAME="Source Extension" ID="__SOURCE_EXTENSION" TYPE="TEXT">
 				%.c %.cpp %.cxx %.cc

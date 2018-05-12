@@ -318,6 +318,11 @@ static int GenCommand(PROJECTITEM *pj, BOOL always)
             if (banner)
                 MakeMessage(banner, pj->realName);
             free(banner);
+            char *dtl = Lookup("DETAILBUILD", pj, NULL);
+            if (dtl && dtl[0] == '1')
+            {
+                SendInfoMessage(ERR_BUILD_WINDOW, cmd);
+            }
             
             rv = !Execute(cmd, project->realName, ERR_BUILD_WINDOW);
             free(cmd);

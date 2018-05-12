@@ -43,6 +43,10 @@
 					<SETTING NAME="No" VALUE=""/>
 					<SETTING NAME="Yes" VALUE=" /DUNICODE"/>
 				</ITEM>
+				<ITEM NAME="Show detailed build info" ID="DETAILBUILD" TYPE="COMBO" DEFAULT="0">
+					<SETTING NAME="No" VALUE="0"/>
+					<SETTING NAME="Yes" VALUE="1"/>
+				</ITEM>
 			</PROPS>
 			<PROPS NAME="Debugging" HELPID="570">
 				<ITEM NAME="Debug Program" TYPE="COMBO" ID="__DEBUG" DEFAULT="1" MODE="DEBUG">

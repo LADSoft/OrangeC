@@ -2,9 +2,7 @@
     <PROPGROUP VERSION="10" CLASS="EXTENDED" SELECT="LIB" NAME="Librarian Settings" ORDER="20">
         <COMMAND TYPE="NORMAL">
    			<ITEM NAME="Command Line" ID="__COMMAND_LINE" TYPE="TEXT">
-    			"$$(LSINSTALLBIN)\olib.exe" -! "$(OUTPUTFILE)" "@&amp;&amp;|
-+- "%.o"
-|"
+    			"$$(LSINSTALLBIN)\olib.exe" -! "$(OUTPUTFILE)" +- "%.o"
    			</ITEM>
             <ITEM NAME="Make Banner" ID="__MAKEBANNER" TYPE="TEXT">Creating Library</ITEM>
     	</COMMAND>	

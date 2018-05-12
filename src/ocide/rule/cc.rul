@@ -91,7 +91,7 @@ $$(DEFINE)
 				$(OUTPUTDIR)\$(OUTPUTNAME)$(OUTPUTEXT)
 			</ITEM>
 			<ITEM NAME="Compatibility" TYPE="COMBO" EXT="%.c" ID="__C99" DEFAULT="/9">
-				<SETTING NAME="C89" VALUE=""/>
+				<SETTING NAME="C89" VALUE="/8"/>
 				<SETTING NAME="C99" VALUE="/9"/>
 				<SETTING NAME="C11" VALUE="/1"/>
 			</ITEM>

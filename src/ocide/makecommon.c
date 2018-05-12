@@ -675,6 +675,8 @@ void AddSymbolTable(PROJECTITEM *fi, BOOL rel)
         newTable->next = tables;
         newTable->pj = fi;
         tables = newTable;
+        if (fi->type == PJ_WS)
+            AddRuleSymbols(fi);
         settings = GetSettings(fi->profiles);
         if (settings)
             RecursiveAddSymbols(settings, FALSE);
@@ -682,7 +684,6 @@ void AddSymbolTable(PROJECTITEM *fi, BOOL rel)
         switch (fi->type)
         {
             case PJ_WS:
-                AddRuleSymbols(fi);
                 CreateBuiltinWorkspaceMacros(fi);
                 break;
             case PJ_PROJ:

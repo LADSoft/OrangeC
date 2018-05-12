@@ -93,7 +93,7 @@ void SetOutputNames(PROJECTITEM *pj, BOOL first)
             if (p)
             {
                 strcpy(pj->outputName, p);
-        free(p);
+                free(p);
             }
             if (pj->type == PJ_FILE && first)
             {

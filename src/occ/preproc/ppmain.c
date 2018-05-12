@@ -79,7 +79,7 @@ char *getUsageText(void)
         "+A     - disable extensions           /Dxxx  - define something\n"
         "/E[+]nn- max number of errors         /Ipath - specify include path\n"
         "/Uxxx  - undefine something           /V, --version - Show version and date\n"
-        "/!     - No logo\n"
+        "/o     - specify output file          /!     - No logo\n"
         "\n"
         "Time: " __TIME__ "  Date: " __DATE__;
 }
@@ -125,6 +125,10 @@ static CMDLIST Args[] =
     }
     , 
     {
+        'o', ARG_CONCATSTRING, output_setup
+    }
+    , 
+    {
         0, 0, 0
     }
 };
@@ -159,7 +163,8 @@ int main(int argc, char *argv[])
     {
         cparams.prm_cplusplus = FALSE;
         strcpy(buffer, clist->data);
-        outputfile(outfile, buffer, ".i");
+        if (getenv("OCC_LEGACY_OPTIONS") && !outfile[0])
+            outputfile(outfile, buffer, ".i");
         AddExt(buffer, ".C");
             p = strrchr(buffer, '.');
             if (*(p - 1) != '.')
@@ -192,7 +197,10 @@ int main(int argc, char *argv[])
             fatal("Cannot open input file %s", buffer);
         strcpy(infile, buffer);
         strcpy(cppfile, outfile);
-        cppFile = fopen(outfile, "w");
+        if (outfile[0])
+            cppFile = fopen(outfile, "w");
+        else
+            cppFile = stdout;
         if (!cppFile)
         {
             fclose(inputFile);

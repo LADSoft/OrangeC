@@ -39,6 +39,7 @@ CmdSwitchString ppMain::undefines(SwitchParser, 'U',';');
 CmdSwitchString ppMain::includePath(SwitchParser, 'I', ';');
 CmdSwitchString ppMain::errorMax(SwitchParser, 'E');
 CmdSwitchFile ppMain::File(SwitchParser, '@');
+CmdSwitchString ppMain::outputPath(SwitchParser, 'o');
     
 char *ppMain::usageText = "[options] files\n"
         "\n"
@@ -47,7 +48,7 @@ char *ppMain::usageText = "[options] files\n"
         "/E[+]nn        - Max number of errors      /Ipath  - Specify include path\n"
         "/T             - translate trigraphs       /Uxxx   - Undefine something\n"
         "/V, --version  - Show version and date     /!      - No logo\n"
-        "\n"
+        "/o             - set output file\n"
         "Time: " __TIME__ "  Date: " __DATE__;
 
 int main(int argc, char *argv[])
@@ -139,8 +140,16 @@ int ppMain::Run(int argc, char *argv[])
                 Errors::SetMaxErrors(n);
             }
         }
-        working = Utils::QualifiedFile((*it)->c_str(), ".i");
-        std::fstream out(working.c_str(), std::ios::out);
+        if (outputPath.GetValue().size())
+            working = outputPath.GetValue();
+        else if (getenv("OCC_LEGACY_OPTIONS"))
+            working = Utils::QualifiedFile((*it)->c_str(), ".i");
+
+        std::ostream *outstream = nullptr;
+        if (working.size())
+            outstream = new std::fstream(working.c_str(), std::ios::out);
+        else
+            outstream = &std::cout;
         while (pp.GetLine(working))
         {
             if (assembly.GetValue())
@@ -208,9 +217,14 @@ int ppMain::Run(int argc, char *argv[])
                     }
                 }
             }
-            out << working.c_str() << std::endl;
+            (*outstream) << working.c_str() << std::endl;
         }
-        out.close();
+        if (outstream != &std::cout) 
+        {
+	    std::fstream *f = static_cast<std::fstream *>(outstream);
+            f->close();
+            delete f;
+        }
     }
     return 0;
 }

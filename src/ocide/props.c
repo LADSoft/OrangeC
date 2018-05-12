@@ -68,6 +68,10 @@ static char *szClose = "Close";
 static char *szHelp = "Help";
 static HBITMAP menuButtonBM, comboButtonBM;
 static CRITICAL_SECTION propsMutex;
+static SETTING *current;
+static HWND hwndTree;
+static HWND hwndLV;
+static BOOL populating;
 
 static struct _propsData generalProps =
 {
@@ -78,6 +82,7 @@ static struct _propsData generalProps =
 } ;
 
 static SETTING *PropFindAll(PROFILE **list, int count, char *id);
+static void PopulateItems(HWND parent, HWND hwnd, SETTING *settings);
 
 char *LookupProfileName(char *name)
 {
@@ -500,15 +505,16 @@ static SETTING *FindSetting(SETTING *settings, SETTING *old)
     return rv;
     
 }
-static void PopulateTree(HWND hwnd, HTREEITEM hParent, SETTING *settings)
+static void PopulateTree(HWND hwnd, HTREEITEM hParent, SETTING *settings, int *first)
 {
     while (settings)
     {
         if (settings->type == e_tree)
         {
+            int xx = first ? *first : 0;
             TV_INSERTSTRUCT t;
             memset(&t, 0, sizeof(t));
-            t.hParent = hParent;
+            t.hParent = hParent;    
             t.hInsertAfter = TVI_LAST;
             t.UNNAMED_UNION item.mask = TVIF_TEXT | TVIF_PARAM;
             t.UNNAMED_UNION item.hItem = 0;
@@ -516,7 +522,20 @@ static void PopulateTree(HWND hwnd, HTREEITEM hParent, SETTING *settings)
             t.UNNAMED_UNION item.cchTextMax = strlen(settings->displayName);
             t.UNNAMED_UNION item.lParam = (LPARAM)settings ;
             settings->hTreeItem = TreeView_InsertItem(hwnd, &t);
-            PopulateTree(hwnd, settings->hTreeItem, settings->children);
+            PopulateTree(hwnd, settings->hTreeItem, settings->children, first);
+            if (first && *first && settings->children && settings->children->type != e_tree)
+            {
+                *first = FALSE;
+                current = settings;
+                populating = TRUE;
+                PopulateItems(hwnd, hwndLV, current);
+                populating = FALSE;
+
+            }
+            else if (xx)
+            {
+                TreeView_Expand(hwnd, settings->hTreeItem, TVE_EXPAND);
+            }
         }
         settings = settings->next;
     }
@@ -1007,9 +1026,6 @@ static BOOL GetNewProfileName(HWND hwndCombo, char *name)
 static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
     WPARAM wParam, LPARAM lParam)
 {
-    static HWND hwndTree;
-    static HWND hwndLV;
-    static SETTING *current;
     static HWND hStaticProfile;
     static HWND hStaticReleaseType;
     static HWND hProfileCombo;
@@ -1040,6 +1056,7 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
     
     switch (iMessage)
     {
+        int first;
         case WM_CTLCOLORSTATIC:
 //        case WM_CTLCOLORLISTBOX:
 //        case WM_CTLCOLORMSGBOX:
@@ -1209,6 +1226,10 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
                     EnableWindow(hAcceptBtn, FALSE);
                     EnableWindow(hApplyBtn, FALSE);
                     break;
+                case IDM_CLOSEWINDOW:
+                    if (SendMessage(hwnd, WM_COMMAND, ID_QUERYSAVE, 0) != IDCANCEL)
+                        SendMessage(hwnd, WM_CLOSE, 0, 0);
+                    break;
                 case ID_QUERYSAVE:
                     if (IsWindowEnabled(hAcceptBtn))
                     {
@@ -1250,7 +1271,7 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
                     for (i=0;i < pd->protocount; i++)
                     {
                         SETTING *set = GetSettings(pd->prototype[i]);
-                        PopulateTree(hwndTree, TVI_ROOT, set->children);
+                        PopulateTree(hwndTree, TVI_ROOT, set->children, NULL);
                     }
                     if (lastSetting)
                     {
@@ -1454,10 +1475,11 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
             for (i=0;i < pd->protocount; i++)
                 SetupCurrentValues(oldSettings[i] = GetSettings(pd->prototype[i]), pd->saveTo);
             CreateLVColumns(hwndLV, (r.right - r.left)*7/10);
+            first = TRUE;
             for (i=0;i < pd->protocount; i++)
             {
                 SETTING *set = GetSettings(pd->prototype[i]);
-                PopulateTree(hwndTree, TVI_ROOT, set->children);
+                PopulateTree(hwndTree, TVI_ROOT, set->children, &first);
             }
             return 0;
         case WM_CLOSE:
@@ -1914,7 +1936,7 @@ void RegisterPropWindows(HINSTANCE hInstance)
     wc.cbClsExtra = 0;
     wc.cbWndExtra = sizeof(LPVOID);
     wc.hInstance = hInstance;
-    wc.hIcon = 0; //LoadIcon(0, IDI_APPLICATION);
+    wc.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(1));
     wc.hCursor = LoadCursor(0, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
     wc.lpszMenuName = 0;
@@ -1943,9 +1965,9 @@ void ShowGeneralProperties(void)
     if (!hwndGeneralProps)
     {
         hwndGeneralProps = CreateWindow(szGeneralPropsClassName, generalProps.title, 
-                 WS_VISIBLE | WS_POPUPWINDOW | WS_CAPTION | WS_SYSMENU | WS_DLGFRAME | WS_CHILD,
+                 WS_VISIBLE | WS_POPUPWINDOW | WS_CAPTION | WS_SYSMENU | WS_DLGFRAME,
                              0,0,700,500,
-                             hwndFrame, 0, hInstance, (LPVOID)&generalProps);
+                             0, 0, hInstance, (LPVOID)&generalProps);
     }
 }
 void ShowBuildProperties(PROJECTITEM *projectItem)
@@ -1969,9 +1991,9 @@ void ShowBuildProperties(PROJECTITEM *projectItem)
                 sprintf(title, "Build properties for %s", projectItem->displayName);
             }
             hwndGeneralProps = CreateWindow(szGeneralPropsClassName, data->title, 
-                     WS_VISIBLE | WS_POPUPWINDOW | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_CHILD,
+                     WS_VISIBLE | WS_POPUPWINDOW | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME,
                                  0,0,724,500,
-                                 hwndFrame, 0, hInstance, (LPVOID)data);
+                                 0, 0, hInstance, (LPVOID)data);
         }
     }
 }

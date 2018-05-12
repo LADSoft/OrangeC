@@ -71,6 +71,7 @@ extern THREAD *activeThread, *stoppedThread;
 extern enum DebugState uState;
 extern PROJECTITEM *workArea;
 extern BOOL stopCCThread;
+extern HWND hwndGeneralProps;
 
 void ApplyDialogFont(HWND hwnd);
 char *getcwd( char *__buf, int __buflen ); // can't include dir.h because it defines eof...
@@ -1750,11 +1751,15 @@ void ProcessMessage(MSG *msg)
                         case WM_LBUTTONDOWN:
                         case WM_RBUTTONDOWN:
                         case WM_MBUTTONDOWN:
-                        case WM_KEYDOWN:
                         case WM_VSCROLL: // for thumb tracking
                             PropsWndClearEditBox(msg);
                             break;
-                    } 
+                        case WM_KEYDOWN:
+                            PropsWndClearEditBox(msg);
+                            if (hwndGeneralProps && msg->wParam == VK_ESCAPE)
+                                PostMessage(hwndGeneralProps, WM_COMMAND, ID_CLOSEWINDOW, 0); // close window
+                            break;
+                    }
                     TranslateMessage(msg);
                     DispatchMessage(msg);
                 }

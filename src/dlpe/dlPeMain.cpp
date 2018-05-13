@@ -41,7 +41,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#ifdef MICROSOFT
+#if defined( MICROSOFT) || defined __MINGW64__
 #define system(x) winsystem(x)
 extern "C" int winsystem(const char *);
 #endif

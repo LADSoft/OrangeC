@@ -254,9 +254,6 @@ clean: cleanstart $(CLEANS)
 distribute1: $(DISTS1)
 	$(MAKE) DISTRIBUTE
 distribute: distribute1
-distribute_no_self: $(DISTS1)
-distribute_no_exe: $(DISTS)
-
 else
 
 cleanDISTRIBUTE:
@@ -266,8 +263,6 @@ $(CLEANS): %.clean :
 clean: del rmdir $(CLEANS)
 
 distribute: $(DISTS1)
-distribute_no_self: $(DISTS1)
-distribute_no_exe: $(DISTS)
 
 endif
 
@@ -286,6 +281,14 @@ $(LIBS): %.library : $(CDIRS)
 $(EXES): %.exefile : $(LIBS)
 	$(MAKE) exefile link -f $(_TREEROOT) -C$*
 
+distribute_self: 
+	$(MAKE) DISTRIBUTE
+distribute_exe: $(DISTS1)
+
+distribute_clibs_no_binary:
+	@$(MAKE) -Cclibs DISTRIBUTE --eval="BUILDENV:=1"
+distribute_clibs:
+	@$(MAKE) -Cclibs DISTRIBUTE
 
 library: $(LIBS)
 

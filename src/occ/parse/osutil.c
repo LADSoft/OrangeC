@@ -67,6 +67,7 @@ FILE *listFile;
 char outfile[256];
 char *prm_searchpath = 0;
 char *sys_searchpath = 0;
+char *prm_libpath = 0;
 char version[256];
 char copyright[256];
 LIST *clist = 0;
@@ -77,7 +78,7 @@ static BOOLEAN has_output_file;
 static LIST *deflist = 0, *undeflist = 0;
 static jmp_buf ctrlcreturn;
 static char **set_searchpath = &prm_searchpath;
-
+static char **set_libpath = &prm_libpath;
 void fatal(char *fmt, ...)
 {
     va_list argptr;
@@ -576,7 +577,30 @@ void incl_setup(char select, char *string)
     fflush(stdout);
     strcat(*set_searchpath, string);
 }
-
+void libpath_setup(char select, char *string)
+{
+    (void) select;
+    if (*set_libpath)
+    {
+        *set_libpath = realloc(*set_libpath, strlen(string) + strlen
+            (*set_libpath) + 2);
+        strcat(*set_libpath, ";");
+    }
+    else
+    {
+        *set_libpath = malloc(strlen(string) + 1);
+        *set_libpath[0] = 0;
+    }
+    fflush(stdout);
+    strcat(*set_libpath, string);
+}
+void tool_setup(char select, char *string)
+{
+    char buf[2048];
+    buf[0] = '$';
+    strcpy(buf+1, string);
+    InsertAnyFile(buf, 0, -1);
+}
 /*-------------------------------------------------------------------------*/
 
 void def_setup(char select, char *string)

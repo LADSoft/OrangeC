@@ -37,6 +37,7 @@ extern int prm_lscrtdll;
 extern int prm_msvcrt;
 extern int showBanner;
 extern int verbosity;
+extern char *prm_libpath;
 
 char *winflags[] = 
 {
@@ -53,16 +54,41 @@ char *winc0[] =
 
 LIST *objlist,  *asmlist,  *liblist,  *reslist,  *rclist;
 static char outputFileName[256];
-
+static char *asm_params, *rc_params, *link_params;
 #ifdef MICROSOFT
 #define system(x) winsystem(x)
 extern int winsystem(const char *);
 #endif
+static BOOLEAN InsertOption(char *name)
+{
+    char **p;
+    switch (name[0])
+    {
+        case 'a':
+            p = &asm_params;
+            break;
+        case 'r':
+            p = &rc_params;
+            break;
+        case 'l':
+            p = &link_params;
+            break;
+        default:
+            return FALSE;
+    }
+    int len = 0;
+    if (*p)
+        len = strlen(*p);
+    *p = realloc(*p, 2 + len + strlen(name+1));
+    (*p)[len] = 0;
+    strcat(*p, " ");
+    strcat(*p, name + 1);    
+    return TRUE;
+}
 static void InsertFile(LIST **r, char *name, char *ext)
 {
-
-    char buf[256],  *newbuffer;
     LIST *lst;
+    char buf[256],  *newbuffer;
     strcpy(buf, name);
     if (!outputFileName[0])
     {
@@ -102,6 +128,12 @@ static void InsertFile(LIST **r, char *name, char *ext)
 int InsertExternalFile(char *name)
 {
     char buf[260], *p;
+    if (name[0] == '$')
+    {
+        if (!InsertOption(name + 1))
+            fatal("invalid parameter: /p%s", name + 1);
+        return TRUE;
+    }
     if (HasExt(name, ".asm") || HasExt(name,".nas") || HasExt(name, ".s"))
     {
         InsertFile(&objlist, name, ".o");
@@ -196,7 +228,7 @@ int RunExternalFiles(char *rootPath)
 //        *p = 0;
     while (asmlist)
     {
-        sprintf(spname, "\"%soasm.exe\" %s \"%s\"", root, !showBanner ? "-!" : "", asmlist->data);
+        sprintf(spname, "\"%soasm.exe\" %s %s \"%s\"", root, asm_params ? asm_params : "", !showBanner ? "-!" : "", asmlist->data);
         if (verbosity)
             printf("%s\n", spname);
         rv = system(spname);
@@ -210,7 +242,7 @@ int RunExternalFiles(char *rootPath)
         args[0] = 0;
     while (rclist)
     {
-        sprintf(spname, "\"%sorc.exe\" -r %s %s \"%s\"", root, !showBanner ? "-!" : "", args, rclist->data);
+        sprintf(spname, "\"%sorc.exe\" -r %s %s %s \"%s\"", root, rc_params ? rc_params : "", !showBanner ? "-!" : "", args, rclist->data);
         if (verbosity)
             printf("%s\n", spname);
         rv = system(spname);
@@ -225,6 +257,10 @@ int RunExternalFiles(char *rootPath)
         FILE *fil = fopen(tempFile, "w");
         if (!fil)
             return 1;
+        if (prm_libpath)
+        {
+            fprintf(fil, "\"/L%s\" ", prm_libpath);
+        }
         
         strcpy(args, winflags[prm_targettype]);
             
@@ -270,7 +306,7 @@ int RunExternalFiles(char *rootPath)
             reslist = reslist->next;
         }
         fclose(fil);
-        sprintf(spname, "\"%solink.exe\" %s /mx /c+ %s %s @%s", root, !showBanner ? "-!" : "", args, verbosityString, tempFile);
+        sprintf(spname, "\"%solink.exe\" %s %s /c+ %s %s @%s", root, link_params ? link_params : "", !showBanner ? "-!" : "", args, verbosityString, tempFile);
         if (verbosity) {
             FILE *fil = fopen(tempFile, "r");
             printf("%s\n", spname);

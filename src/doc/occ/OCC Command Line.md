@@ -32,6 +32,7 @@ A special file name '-' means take input from the console.
 * [Translating Trigraphs](OCC%20Translating%20Trigraphs.md)
 * [Code Generation Parameters](OCC%20Code%20Generation%20Parameters.md)
 * [Optimizer Parameters](OCC%20Optimizer%20Parameters.md)
+* [Passthrough Parameters](OCC%20Passthrough%20Parameters.md)
 
 ### Additional generic options
 

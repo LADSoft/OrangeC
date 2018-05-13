@@ -103,6 +103,7 @@ COMPILER_PARAMS cparams = {
 void bool_setup(char select, char *string);
 void err_setup(char select, char *string);
 void incl_setup(char select, char *string);
+void libpath_setup(char select, char *string);
 void def_setup(char select, char *string);
 void codegen_setup(char select, char *string);
 void optimize_setup(char select, char *string);
@@ -111,6 +112,8 @@ void parsefile(char select, char *string);
 void output_setup(char select, char *string);
 void stackalign_setup(char select, char *string);
 void verbose_setup(char select, char *string);
+void library_setup(char select, char *string);
+void tool_setup(char select, char *string);
 /* setup for ARGS.C */
 static CMDLIST Args[] = 
 {
@@ -139,6 +142,10 @@ static CMDLIST Args[] =
     }
     , 
     {
+        'L', ARG_COMBINESTRING, libpath_setup
+    }
+    , 
+    {
         'D', ARG_CONCATSTRING, def_setup
     }
     , 
@@ -151,7 +158,7 @@ static CMDLIST Args[] =
     }
     , 
     {
-        'l', ARG_BOOL, bool_setup
+        'l', ARG_CONCATSTRING, library_setup
     }
     , 
     {
@@ -215,12 +222,31 @@ static CMDLIST Args[] =
     }
     , 
     {
+        'p', ARG_CONCATSTRING, tool_setup
+    }
+    , 
+    {
         0, 0, 0
     }
 };
 
 CMDLIST *ArgList = &Args[0];
 
+void library_setup(char select, char *string)
+{
+    if (string[0] == 0)
+    {
+        cparams.prm_listfile = TRUE;
+    }
+    else
+    {
+        char buf[260];
+        strcpy(buf, string);
+        StripExt(buf);
+        AddExt(buf, ".l");
+        InsertAnyFile(buf, 0,  - 1);
+    }
+}
 void bool_setup(char select, char *string)
 /*
  * activation routine (callback) for boolean command line arguments
@@ -242,8 +268,8 @@ void bool_setup(char select, char *string)
         cparams.prm_ansi = v;
     if (select == 'e')
         cparams.prm_errfile = v;
-    if (select == 'l')
-        cparams.prm_listfile = v;
+//    if (select == 'l')
+//        cparams.prm_listfile = v;
     if (select == 'i')
         cparams.prm_cppfile = v;
     if (select == 'Q')

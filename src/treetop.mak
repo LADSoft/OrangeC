@@ -271,6 +271,14 @@ $(DISTS): %.dist : cleanDISTRIBUTE
 $(DISTS1): %.dist1 : $(DISTS)
 	$(MAKE) distribute -f $(_TREEROOT) -C$*
 
+zip:
+ifdef WITHMSDOS
+# this requires CC386 be installed since it relies on far pointer support
+# so I don't make it a part of the default install
+	@$(MAKE) -C$(DISTROOT)\src\..\ -f $(realpath .\doszip.mak)
+	@$(MAKE) -C$(DISTROOT)\src\dos\install -fmakefile.le
+endif
+	@$(MAKE) -C\ -f $(realpath .\zip.mak)
 
 $(CDIRS): %.dirs :
 	-mkdir $*\obj\$(OBJ_IND_PATH) 2> $(NULLDEV)

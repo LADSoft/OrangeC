@@ -74,13 +74,7 @@ distribute1: library1
 	@$(MAKE) -f $(_TREEROOT) distribute_clibs
 
 zip: distribute1
-ifdef WITHMSDOS
-# this requires CC386 be installed since it relies on far pointer support
-# so I don't make it a part of the default install
-	@$(MAKE) -C$(DISTROOT)\src\..\ -f $(realpath .\doszip.mak)
-	@$(MAKE) -C$(DISTROOT)\src\dos\install -fmakefile.le
-endif
-	@$(MAKE) -C\ -f $(realpath .\zip.mak)
+	@$(MAKE) -f $(_TREEROOT) zip
 
 fullbuild: zip
 

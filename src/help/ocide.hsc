@@ -2383,7 +2383,7 @@ Writing
 
 
 FALSE
-45
+46
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}{\f2\fnil\fcharset0 Courier New;}}
 {\colortbl ;\red0\green0\blue255;\red0\green128\blue0;\red128\green0\blue0;}
 \viewkind4\uc1\pard\cf1\b\fs32 General Project Configuration Properties\cf0\b0\f1\fs20 
@@ -2419,6 +2419,7 @@ FALSE
 \par 
 \par \pard Unicode \b0 when set to Yes, the UNICODE version of the windowing functions will be selected.  Otherwise, the ASCII version will be selected.  This does not affect functions like \f2 printf\f0  which are in the C language runtime library.\b 
 \par \b0 
+\par \b Show detailed build info\b0 , when set to YES, displays the commands used during the build process, as the project is being built.
 \par 
 \par \b Apply\b0  saves changes but leaves the dialog open
 \par 

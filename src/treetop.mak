@@ -251,9 +251,8 @@ $(CLEANS): %.clean :
 	$(MAKE) clean -f $(_TREEROOT) -C$*
 
 clean: cleanstart $(CLEANS)
-distribute1: $(DISTS1)
+distribute: $(DISTS1)
 	$(MAKE) DISTRIBUTE
-distribute: distribute1
 else
 
 cleanDISTRIBUTE:
@@ -281,7 +280,7 @@ $(LIBS): %.library : $(CDIRS)
 $(EXES): %.exefile : $(LIBS)
 	$(MAKE) exefile link -f $(_TREEROOT) -C$*
 
-distribute_self: 
+distribute_self:  cleanDISTRIBUTE
 	$(MAKE) DISTRIBUTE
 distribute_exe: $(DISTS1)
 

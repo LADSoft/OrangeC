@@ -107,7 +107,7 @@ char *Utils::GetModuleName()
 #endif
     return buf;
 }
-void Utils::SetEnvironmentToPathParent(char *name)
+void Utils::SetEnvironmentToPathParent(const char *name)
 {
      if (!getenv(name))
      {

@@ -43,7 +43,7 @@
 #endif
 #include "..\version.h"
 
-char *Utils::ShortName(char *v)
+char *Utils::ShortName(const char *v)
 {
     static char prog_name[MAX_PATH], *short_name, *extension;
     strcpy(prog_name, v);
@@ -62,7 +62,7 @@ char *Utils::ShortName(char *v)
         *extension = '\0';
     return short_name;
 }
-void Utils::banner(char *progName)
+void Utils::banner(const char *progName)
 {
     // no banner if they specify -!, this is also caught in the cmd switch module
     // so it is transparent to the proggy
@@ -81,7 +81,7 @@ void Utils::banner(char *progName)
                 exit(0);
             }
 }
-void Utils::usage(char *prog_name, char *text)
+void Utils::usage(const char *prog_name, const char *text)
 {
     printf("\nUsage: %s %s", ShortName(prog_name), text);
     exit(1);

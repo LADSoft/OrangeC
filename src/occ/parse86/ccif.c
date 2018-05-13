@@ -133,9 +133,13 @@ char *GetSymName(SYMBOL *sp)
     {
         sprintf(buf, "_%s", sp->name);   
     }
-    else
+    else if (sp->decoratedName)
     {
         return sp->decoratedName;
+    }
+    else
+    {
+        return sp->name;
     }
     return buf;
 }
@@ -162,7 +166,8 @@ static int WriteStructMembers(SYMBOL *sym, sqlite3_int64 struct_id, sqlite3_int6
             }
             else
             {
-                char type_name[100000];
+                static char type_name[100000];
+                memset(type_name, 0, strlen(type_name));
                 int indirectCount = 0;
                 int rel_id = 0;
                 TYPE *tp = st->tp;
@@ -219,7 +224,7 @@ static int WriteStructMembers(SYMBOL *sym, sqlite3_int64 struct_id, sqlite3_int6
                     strcat(type_name, "enum ");
                 }
                 typenum(type_name+strlen(type_name), st->tp);
-                type_name[40] = 0;
+
                 ccWriteStructField(struct_id, GetSymName(st), litlate(type_name), 
                                    indirectCount, rel_id,
                                    file_id, main_id, flags, &order, &id);

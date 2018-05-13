@@ -60,7 +60,15 @@ void Spawner::Run(Command &Commands, OutputType Type, RuleList *RuleListx, Rule 
     outputType = Type;
     ruleList = RuleListx;
     rule = Rulex;
-    OS::CreateThread((void *)&Spawner::Thread, this);
+    if (OS::JobCount() == 1)
+    {
+        // make sure we go in order if this isn't a parallel job...
+        Thread(this);
+    }
+    else
+    {
+        OS::CreateThread((void *)&Spawner::Thread, this);
+    }
 }
 int Spawner::InternalRun()
 {

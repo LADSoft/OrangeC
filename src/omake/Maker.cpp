@@ -70,7 +70,7 @@ void Maker::SetFirstGoal(const std::string &name)
                             name != ".INCLUDES" || name != ".INTERRUPT" || 
                             name != ".LIBS" || name != ".MAKEFILEDEPS" || 
                             name != ".MAKEFLAGS" || name != ".MFLAGS" || 
-                            name != ".NOPARALLEL" || name != ".ORDER" || 
+                            name != ".NOTPARALLEL" || name != ".ORDER" || 
                             name != ".SHELL" || name != ".WARN")
           	            firstGoal = name;
     }

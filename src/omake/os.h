@@ -80,6 +80,7 @@ public:
     static std::string NormalizeFileName(const std::string name);
     static void CreateThread(void *func, void *data);
     static void Yield();
+    static int JobCount() { return jobsLeft; }
 private:
     static int jobsLeft;
     static std::deque<int> jobCounts;

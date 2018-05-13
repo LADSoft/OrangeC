@@ -112,6 +112,8 @@ int Runner::RunOne(Depends *depend, EnvironmentStrings &env, bool keepGoing)
             Spawner *sp = new Spawner(env, ig, sil, oneShell, posix, displayOnly && !make, keepResponseFiles);
             rl->SetSpawner(sp);
             sp->Run(*depend->GetRule()->GetCommands(), outputType, rl, nullptr);
+            if (sp->IsDone())
+                goto join;
             rv = -1;
         }
         else
@@ -132,6 +134,7 @@ int Runner::RunOne(Depends *depend, EnvironmentStrings &env, bool keepGoing)
     }
     else
     {
+join:
         rl->SetBuilt();
         rv = rl->GetSpawner()->RetVal();
         if (rv)

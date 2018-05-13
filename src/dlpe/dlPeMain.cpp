@@ -616,13 +616,6 @@ int dlPeMain::Run(int argc, char **argv)
                     path.erase(n+1);
                 std::string implibName = Utils::QualifiedFile(outputName.c_str(), ".l");
 	                std::string cmd = std::string("\"") + path + "oimplib" + "\" \"" + implibName + "\" \"" + outputName + "\"";
-std::cout << std::endl << std::endl << std::endl << "::::" << cmd << std::endl << std::endl << std::endl;
-{
-char buf[260];
-buf[0] = 0;
-GetCurrentDirectory(260, buf);
-std::cout << buf << std::endl;
-}
                 return system(cmd.c_str());
             }
             return 0;

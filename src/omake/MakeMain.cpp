@@ -234,7 +234,7 @@ void MakeMain::SetMakeFlags()
             sprintf(buf, "%d", jobs.GetValue());
         else
             buf[0] = 0;;
-        vals += std::string(" -j") + buf;
+        vals += std::string(" -j:") + buf;
     }
     if (jobOutputMode.GetExists())
     {

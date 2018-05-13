@@ -56,7 +56,7 @@ CmdSwitchBool GrepMain::displayFileNames(SwitchParser,'#');
 CmdSwitchBool GrepMain::displayHeaderFileName(SwitchParser,'#');
 
 
-char *GrepMain::usageText = "[-rxlcnvidzwo?] searchstring file[s]\n";
+const char *GrepMain::usageText = "[-rxlcnvidzwo?] searchstring file[s]\n";
 char *GrepMain::helpText = "[options] searchstring file[s]"
                     "\n"
                     "   -c             Show Match Count only        -d  Recurse Subdirectories\n"

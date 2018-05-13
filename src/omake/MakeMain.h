@@ -81,7 +81,7 @@ private:
     static CmdSwitchBool keepResponseFiles;
     static CmdSwitchInt  jobs;
     static CmdSwitchCombineString jobOutputMode;
-    static char *usageText;
+    static const char *usageText;
     static char *builtinVars;
     static char *builtinRules;
     

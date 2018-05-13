@@ -40,7 +40,7 @@ CmdSwitchString dlMzMain::outputFileSwitch(SwitchParser, 'o');
 CmdSwitchString dlMzMain::modeSwitch(SwitchParser, 'm');
 CmdSwitchString dlMzMain::DebugFile(SwitchParser, 'v');
 
-char *dlMzMain::usageText = "[options] relfile\n"
+const char *dlMzMain::usageText = "[options] relfile\n"
             "\n"
             "/oxxx          Set output file name\n"
             "/mxxx          Set output file type\n"

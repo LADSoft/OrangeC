@@ -38,7 +38,7 @@ CmdSwitchParser dlPmMain::SwitchParser;
 CmdSwitchString dlPmMain::outputFileSwitch(SwitchParser, 'o');
 CmdSwitchString dlPmMain::DebugFile(SwitchParser, 'v');
 
-char *dlPmMain::usageText = "[options] relfile\n"
+const char *dlPmMain::usageText = "[options] relfile\n"
             "\n"
             "/oxxx          Set ouput file name\n"
             "/V, --version  Show version and date\n"

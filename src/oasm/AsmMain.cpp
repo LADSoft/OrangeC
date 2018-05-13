@@ -43,7 +43,7 @@ CmdSwitchOutput AsmMain::OutputFile(SwitchParser, 'o', ".res");
 CmdSwitchDefine AsmMain::Defines(SwitchParser, 'D');
 CmdSwitchCombineString AsmMain::includePath(SwitchParser, 'I', ';');
 
-char *AsmMain::usageText = "[options] file"
+const char *AsmMain::usageText = "[options] file"
 "\n"
 "  @filename  use response file\n"
 "  /e              Preprocess only                  /i     Case Insensitive Labels\n"

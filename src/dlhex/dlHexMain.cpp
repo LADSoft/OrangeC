@@ -43,7 +43,7 @@ CmdSwitchHex dlHexMain::padSwitch(SwitchParser,'p', -1, 0, 0x100);
 CmdSwitchString dlHexMain::outputFileSwitch(SwitchParser, 'o');
 CmdSwitchString dlHexMain::DebugFile(SwitchParser, 'v');
 
-char *dlHexMain::usageText = "[options] relfile\n"
+const char *dlHexMain::usageText = "[options] relfile\n"
             "\n"
             "/cxxx          Specify sections\n"
             "/mxxx          Set output file type\n"

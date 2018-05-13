@@ -50,7 +50,7 @@ CmdSwitchBool ImpLibMain::caseSensitiveSwitch(SwitchParser, 'c', true);
 CmdSwitchBool ImpLibMain::CDLLSwitch(SwitchParser, 'C');
 CmdSwitchOutput ImpLibMain::OutputFile(SwitchParser, 'o', ".a");
 CmdSwitchFile ImpLibMain::File(SwitchParser, '@');
-char *ImpLibMain::usageText = "[options] outputfile [+ files] [- files] [* files]\n"
+const char *ImpLibMain::usageText = "[options] outputfile [+ files] [- files] [* files]\n"
             "\n"
             "/c-            Case insensitive library\n"
             "/oxxx          Set output file name\n"

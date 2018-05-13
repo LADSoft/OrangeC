@@ -50,6 +50,6 @@ private:
     static CmdSwitchDefine Defines;
     static CmdSwitchCombineString includePath;
     
-    static char *usageText;
+    static const char *usageText;
 } ;
 #endif

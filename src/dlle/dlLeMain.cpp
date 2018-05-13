@@ -48,7 +48,7 @@ CmdSwitchString dlLeMain::DebugFile(SwitchParser, 'v');
 
 unsigned dlLeMain::fileVersion = 0;
 
-char *dlLeMain::usageText = "[options] relfile\n"
+const char *dlLeMain::usageText = "[options] relfile\n"
             "\n"
             "/mxxx          Set output file type\n"
             "/oxxx          Set output file name\n"

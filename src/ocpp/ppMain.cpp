@@ -41,7 +41,7 @@ CmdSwitchString ppMain::errorMax(SwitchParser, 'E');
 CmdSwitchFile ppMain::File(SwitchParser, '@');
 CmdSwitchString ppMain::outputPath(SwitchParser, 'o');
     
-char *ppMain::usageText = "[options] files\n"
+const char *ppMain::usageText = "[options] files\n"
         "\n"
         "/9             - C99 mode                  /a      - Assembler mode\n"
         "/A             - Disable extensions        /Dxxx   - Define something\n"

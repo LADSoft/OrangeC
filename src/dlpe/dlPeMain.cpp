@@ -89,7 +89,7 @@ unsigned char dlPeMain::defaultStubData[] =
 } ;	
 int dlPeMain::defaultStubSize = sizeof(defaultStubData);
 
-char *dlPeMain::usageText = "[options] relfile\n"
+const char *dlPeMain::usageText = "[options] relfile\n"
             "\n"
             "/f     remove underscore from exports\n"
             "/mxxx          Set output file type\n"

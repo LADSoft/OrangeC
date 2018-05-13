@@ -77,7 +77,7 @@ CmdSwitchBool MakeMain::keepResponseFiles(switchParser, 'K');
 CmdSwitchInt  MakeMain::jobs(switchParser, 'j', INT_MAX, 1, INT_MAX);
 CmdSwitchCombineString MakeMain::jobOutputMode(switchParser, 'O');
 
-char *MakeMain::usageText = "[options] goals\n"
+const char *MakeMain::usageText = "[options] goals\n"
                     "\n"
                     "/B    Rebuild all             /C    Set directory\n"
                     "/Dxxx Define something        /Ixxx Set include path\n"

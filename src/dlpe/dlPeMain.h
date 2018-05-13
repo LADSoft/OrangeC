@@ -65,7 +65,7 @@ private:
     static CmdSwitchString outputFileSwitch;
     static CmdSwitchString DebugFile;
     static CmdSwitchBool FlatExports;
-    static char *usageText;
+    static const char *usageText;
 
     ObjInt fileAlign;
     ObjInt objectAlign;

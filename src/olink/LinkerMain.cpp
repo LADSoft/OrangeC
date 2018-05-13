@@ -60,7 +60,7 @@ CmdSwitchCombineString LinkerMain::LibPath(SwitchParser, 'L',';');
 CmdSwitchOutput LinkerMain::OutputFile(SwitchParser, 'o', ".rel");
 CmdSwitchBool LinkerMain::Verbosity(SwitchParser, 'y');
 SwitchConfig LinkerMain::TargetConfig(SwitchParser, 'T');
-char *LinkerMain::usageText = "[options] inputfiles\n"
+const char *LinkerMain::usageText = "[options] inputfiles\n"
             "\n"
             "/Dxxx=val Define something           /Lpath         Set Library Path\n"
             "/T:xxx    Target configuration       /V, --version  Show version and date\n"

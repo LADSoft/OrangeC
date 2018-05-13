@@ -43,7 +43,7 @@ CmdSwitchDefine rcMain::Defines(SwitchParser, 'D');
 CmdSwitchCombineString rcMain::includePath(SwitchParser, 'i', ';');
 CmdSwitchString rcMain::Language(SwitchParser, 'L');
 
-char *rcMain::usageText = "[options] file"
+const char *rcMain::usageText = "[options] file"
 "\n"
 "  @filename  use response file\n"
 "  /Dxxx  Define something             /ixxx             Set include file path\n"

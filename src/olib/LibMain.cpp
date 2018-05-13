@@ -45,7 +45,7 @@ CmdSwitchParser LibMain::SwitchParser;
 CmdSwitchBool LibMain::caseSensitiveSwitch(SwitchParser, 'c', true);
 CmdSwitchOutput LibMain::OutputFile(SwitchParser, 'o', ".a");
 CmdSwitchFile LibMain::File(SwitchParser, '@');
-char *LibMain::usageText = "[options] libfile [+ files] [- files] [* files]\n"
+const char *LibMain::usageText = "[options] libfile [+ files] [- files] [* files]\n"
             "\n"
             "/c-            Case insensitive library\n"
             "/oxxx          Set output file name\n"

@@ -57,6 +57,6 @@ private:
     static CmdSwitchBool RelFile;
     static CmdSwitchBool Verbosity;
     static SwitchConfig TargetConfig;
-    static char *usageText;
+    static const char *usageText;
 } ;
 #endif

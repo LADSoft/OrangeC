@@ -56,7 +56,7 @@ private:
     static CmdSwitchBool displayFileNames;
     static CmdSwitchBool displayHeaderFileName;
     
-    static char *usageText;
+    static const char *usageText;
     static char *helpText;
 } ;
 #endif

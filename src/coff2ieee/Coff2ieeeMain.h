@@ -51,7 +51,7 @@ private:
     enum { unknown = 0, obj=1, lib = 2 } mode;
     static CmdSwitchParser SwitchParser;
     static CmdSwitchCombineString outputFileSwitch;
-    static char *usageText;
+    static const char *usageText;
 
     std::string outputName;
 } ;

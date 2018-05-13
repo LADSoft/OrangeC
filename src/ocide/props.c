@@ -1226,7 +1226,7 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
                     EnableWindow(hAcceptBtn, FALSE);
                     EnableWindow(hApplyBtn, FALSE);
                     break;
-                case IDM_CLOSEWINDOW:
+                case ID_CLOSEWINDOW:
                     if (SendMessage(hwnd, WM_COMMAND, ID_QUERYSAVE, 0) != IDCANCEL)
                         SendMessage(hwnd, WM_CLOSE, 0, 0);
                     break;
@@ -1532,7 +1532,9 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
                 MoveWindow(hApplyBtn, x - 1 * (pt.x + 20), y -pt.y - 12, pt.x+12, pt.y + 8, 1);
                 CreateLVColumns(hwndLV, x*7/10);
                 DestroyItemWindows(current);
+                populating = TRUE;
                 PopulateItems(hwnd, hwndLV, current);
+                populating = FALSE;
             }
             break;
     }

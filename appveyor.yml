@@ -20,16 +20,16 @@ build_script:
         - mkdir \orangec\temp
         - cd orangec\src
         - copy omake.exe \orangec\temp
-        - mingw32-make fullbuild --eval="COMPILER=$(BUILD_PROFILE)"
+        - mingw32-make fullbuild --eval="COMPILER=$(BUILD_PROFILE)" -j 4
         - c:\orangec\bin\occ /V
         - copy omake\omake.exe \orangec\temp
-        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
+        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild -j:4
         - c:\orangec\bin\occ /V
         - copy omake\omake.exe \orangec\temp
-        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
+        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild -j:4 
         - c:\orangec\bin\occ /V
         - copy omake\omake.exe \orangec\temp
-        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild 
+        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild -j:4 
         - path=%ORIGPATH%
         - cd ..\tests
         - omake -B

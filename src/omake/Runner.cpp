@@ -84,50 +84,42 @@ int Runner::RunOne(Depends *depend, EnvironmentStrings &env, bool keepGoing)
             Eval::PopruleStack();
             return 0;
         }
-        if (OS::TakeJob())
+        if (touch)
         {
-            if (touch)
-            {
-                rl->Touch(OS::GetCurrentTime());
-            }
-            bool sil = silent;
-            bool ig = ignoreResults;
-            bool precious = false;
-            bool make = RuleContainer::Instance()->OnList(depend->GetGoal(), ".RECURSIVE");
-            bool oneShell = RuleContainer::Instance()->Lookup(".ONESHELL") != nullptr;
-            bool posix = RuleContainer::Instance()->Lookup(".POSIX") != nullptr;
-            if (!sil)
-                sil = RuleContainer::Instance()->OnList(depend->GetGoal(), ".SILENT") || RuleContainer::Instance()->NoList(".SILENT");
-            if (!ig)
-                ig = RuleContainer::Instance()->OnList(depend->GetGoal(), ".IGNORE") || RuleContainer::Instance()->NoList(".IGNORE");
-            if (depend->GetRule())
-            {
-                ig |= depend->GetRule()->IsIgnore();
-                sil |= depend->GetRule()->IsSilent();
-                precious = depend->GetRule()->IsPrecious();
-                make |= depend->GetRule()->IsMake();
-                if (precious)
-                    depend->Precious();
-            }
-            if (depend->GetRule() && depend->GetRule()->GetCommands())
-            {
-                Spawner *sp = new Spawner(env, ig, sil, oneShell, posix, displayOnly && !make, keepResponseFiles);
-                rl->SetSpawner(sp);
-                sp->Run(*depend->GetRule()->GetCommands(), outputType, rl, nullptr);
-                rv = -1;
-            }
-            else
-            {
-                OS::GiveJob();
-                rl->SetSpawner((Spawner *)-1);
-                rl->SetBuilt();
-                rv = 0;
-            }        
+            rl->Touch(OS::GetCurrentTime());
+        }
+        bool sil = silent;
+        bool ig = ignoreResults;
+        bool precious = false;
+        bool make = RuleContainer::Instance()->OnList(depend->GetGoal(), ".RECURSIVE");
+        bool oneShell = RuleContainer::Instance()->Lookup(".ONESHELL") != nullptr;
+        bool posix = RuleContainer::Instance()->Lookup(".POSIX") != nullptr;
+        if (!sil)
+            sil = RuleContainer::Instance()->OnList(depend->GetGoal(), ".SILENT") || RuleContainer::Instance()->NoList(".SILENT");
+        if (!ig)
+            ig = RuleContainer::Instance()->OnList(depend->GetGoal(), ".IGNORE") || RuleContainer::Instance()->NoList(".IGNORE");
+        if (depend->GetRule())
+        {
+            ig |= depend->GetRule()->IsIgnore();
+            sil |= depend->GetRule()->IsSilent();
+            precious = depend->GetRule()->IsPrecious();
+            make |= depend->GetRule()->IsMake();
+            if (precious)
+                depend->Precious();
+        }
+        if (depend->GetRule() && depend->GetRule()->GetCommands())
+        {
+            Spawner *sp = new Spawner(env, ig, sil, oneShell, posix, displayOnly && !make, keepResponseFiles);
+            rl->SetSpawner(sp);
+            sp->Run(*depend->GetRule()->GetCommands(), outputType, rl, nullptr);
+            rv = -1;
         }
         else
         {
-            rv = -1;
-        }
+            rl->SetSpawner((Spawner *)-1);
+            rl->SetBuilt();
+            rv = 0;
+        }        
     }
     else if (rl->GetSpawner() == (Spawner *)-1)
     {
@@ -141,7 +133,6 @@ int Runner::RunOne(Depends *depend, EnvironmentStrings &env, bool keepGoing)
     else
     {
         rl->SetBuilt();
-        OS::GiveJob();
         rv = rl->GetSpawner()->RetVal();
         if (rv)
         {

@@ -55,16 +55,16 @@ copyexes:
 	@$(MAKE) -f $(_TREEROOT) exeDISTRIBUTE
 
 buildenv:
-	@$(MAKE) -f $(_TREEROOT) --eval="BUILDENV:=1" distribute
+	@$(MAKE) -f $(_TREEROOT) distribute_no_exe
 	-copy orc.exe ..\bin
 
 buildenv1:
-	@$(MAKE) -f $(_TREEROOT) --eval="BUILDENV:=1" distribute
+	@$(MAKE) -f $(_TREEROOT) distribute_no_exe
 	-copy orc.exe ..\bin
 tools1: buildenv1 
 	@$(MAKE) -f $(_TREEROOT)
 copyexes1: tools1
-	@$(MAKE) -f $(_TREEROOT) exeDISTRIBUTE
+	@$(MAKE) -f $(_TREEROOT) distribute_no_self
 library1: copyexes1
 	@$(MAKE) -Cclibs
 distribute1: library1

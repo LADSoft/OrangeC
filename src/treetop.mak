@@ -47,6 +47,7 @@ LIBS:= $(addsuffix .library,$(DIRS))
 EXES:= $(addsuffix .exefile,$(DIRS))
 CLEANS:= $(addsuffix .clean,$(DIRS))
 DISTS:= $(addsuffix .dist,$(DIRS))
+DISTS1:= $(addsuffix .dist1,$(DIRS))
 CDIRS:= $(addsuffix .dirs,$(DIRS))
 
 all: files
@@ -250,6 +251,11 @@ $(CLEANS): %.clean :
 	$(MAKE) clean -f $(_TREEROOT) -C$*
 
 clean: cleanstart $(CLEANS)
+distribute1: $(DISTS1)
+	$(MAKE) DISTRIBUTE
+distribute: distribute1
+distribute_no_self: $(DISTS1)
+distribute_no_exe: $(DISTS)
 
 else
 
@@ -259,17 +265,18 @@ $(CLEANS): %.clean :
 	$(MAKE) clean -f $(_TREEROOT) -C$*
 clean: del rmdir $(CLEANS)
 
+distribute: $(DISTS1)
+distribute_no_self: $(DISTS1)
+distribute_no_exe: $(DISTS)
+
 endif
 
-ifndef BUILDENV
-exeDISTRIBUTE: $(DISTS)
-$(DISTS): %.dist :
+$(DISTS): %.dist : cleanDISTRIBUTE
+	$(MAKE) DISTRIBUTE -f $(_TREEROOT) -C$*
+
+$(DISTS1): %.dist1 : $(DISTS)
 	$(MAKE) distribute -f $(_TREEROOT) -C$*
-else
-exeDISTRIBUTE:
-endif
 
-distribute: cleanDISTRIBUTE exeDISTRIBUTE DISTRIBUTE   
 
 $(CDIRS): %.dirs :
 	-mkdir $*\obj\$(OBJ_IND_PATH) 2> $(NULLDEV)

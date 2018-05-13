@@ -43,9 +43,9 @@
 static HANDLE jobsSemaphore;
 
 static CRITICAL_SECTION consoleSync;
-int OS::jobsLeft;
 std::deque<int> OS::jobCounts;
 bool OS::isSHEXE;
+int OS::jobsLeft;
 
 bool Time::operator >(const Time &last)
 {
@@ -95,19 +95,11 @@ void OS::PopJobCount()
 }
 bool OS::TakeJob()
 {
-    if (--jobsLeft < 0)
-    {
-        jobsLeft++;
-        return false;
-    }
-    if (WaitForSingleObject(jobsSemaphore, 0) == WAIT_OBJECT_0)
-        return true;
-    jobsLeft++;
+    WaitForSingleObject(jobsSemaphore, INFINITE);
     return false;
 }
 void OS::GiveJob()
 {
-    jobsLeft++;
     ReleaseSemaphore(jobsSemaphore, 1, nullptr);
 }
 void OS::JobInit()
@@ -130,12 +122,9 @@ void OS::JobInit()
     v->SetExport(true);
     name = std::string("OMAKE") + name;
     jobsSemaphore = CreateSemaphore(nullptr, jobsLeft, jobsLeft, name.c_str());
-    if (GetLastError() == ERROR_ALREADY_EXISTS)
-        ReleaseSemaphore(jobsSemaphore, 1, nullptr);
 }
 void OS::JobRundown()
 {
-    WaitForSingleObject(jobsSemaphore, INFINITE);
     CloseHandle(jobsSemaphore);
 }
 void OS::Take()

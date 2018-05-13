@@ -9,8 +9,9 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LocalDebuggerCommandArguments>..\parse\broken.c</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>nmmain.cpp</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerWorkingDirectory>\orangec\src\onm</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LocalDebuggerCommandArguments>..\parse\broken.c</LocalDebuggerCommandArguments>

@@ -50,7 +50,9 @@ void Spawner::WaitForDone()
 {
     int count = 30 *100;
     while (runningProcesses > 0 && -- count > 0)
+    {
         OS::Yield();
+    }
 }
 void Spawner::Run(Command &Commands, OutputType Type, RuleList *RuleListx, Rule *Rulex)
 {
@@ -158,7 +160,12 @@ int Spawner::Run(const std::string &cmdin, bool ignoreErrors, bool silent, bool 
     std::string cmd = OS::NormalizeFileName(cmdin);
     if (oneShell)
     {
-        return OS::Spawn(cmd, environment, nullptr);
+        if (!make)
+            OS::TakeJob();
+        int rv = OS::Spawn(cmd, environment, nullptr);
+        if (!make)
+            OS::GiveJob();
+        return rv;
     }
     else if (!split(cmd))
     {
@@ -170,6 +177,8 @@ int Spawner::Run(const std::string &cmdin, bool ignoreErrors, bool silent, bool 
         int rv = 0;
         for (auto command : cmdList)
         {
+            if (!make)
+                OS::TakeJob();
             if (!silent)
                 OS::WriteConsole(std::string("\t") + command.c_str() + "\n");
             int rv1;
@@ -181,9 +190,11 @@ int Spawner::Run(const std::string &cmdin, bool ignoreErrors, bool silent, bool 
                     output.push_back(str);
                 if (!rv)
                      rv = rv1;
-                if (rv && posix)
-                     return rv;
             }
+            if (!make)
+                OS::GiveJob();
+            if (rv && posix)
+                return rv;
         }
         return rv;
     }

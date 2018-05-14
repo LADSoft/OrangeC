@@ -2934,7 +2934,7 @@ void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
          return;
     }
     lref = (basetype(tpa)->type == bt_lref || isstructured(tpa) && (!expa || expa->type != en_not_lvalue) || expa && (lvalue(expa) || isarithmeticconst(expa))) && (!expa || expa->type != en_func && expa->type != en_thisref) && !tpa->rref || tpa->lref ;
-    rref = (basetype(tpa)->type == bt_rref || (isstructured(tpa) && expa && expa->type == en_not_lvalue) || expa && !lvalue(expa) && !ismem(expa) ) && !tpa->lref || tpa->rref;
+    rref = (basetype(tpa)->type == bt_rref || (isstructured(tpa) && expa && expa->type == en_not_lvalue) || expa && !lvalue(expa) && !ismem(expa) ) && !lref && !tpa->lref || tpa->rref;
     if (exp && exp->type == en_thisref)
         exp = exp->left;
     if (exp && exp->type == en_func)

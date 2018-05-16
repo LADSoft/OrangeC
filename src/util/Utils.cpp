@@ -121,7 +121,13 @@ void Utils::SetEnvironmentToPathParent(const char *name)
              if (p)
              {
                  *p = 0;
+#ifdef __MINGW32__
+		char *buf = (char *)calloc(1,strlen(name) + strlen(buf) + 2);
+		strcpy(buf, name);
+		strcat(buf,"=");
+#else
                  _putenv_s(name, buf);
+#endif
              }
          }
      }

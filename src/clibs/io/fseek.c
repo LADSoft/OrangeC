@@ -57,6 +57,8 @@ int _RTL_FUNC fseek (FILE *stream, long offset, int origin)
             memset(stream->extended->mbstate,0,sizeof(stream->extended->mbstate));
             stream->level = 0;
             stream->flags &= ~(_F_EOF | _F_XEOF | _F_IN | _F_OUT) ;            
+            if (origin == SEEK_END && offset >= 0)
+                stream->flags |= _F_EOF | _F_XEOF;
             __uio_clearerr(fileno(stream));
             break;
         default:

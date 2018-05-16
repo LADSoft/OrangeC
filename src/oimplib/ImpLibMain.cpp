@@ -346,7 +346,7 @@ int ImpLibMain::HandleLibrary(const std::string &outputFile, int argc, char **ar
     if (modified)
         if (!librarian.SaveLibrary())
         {
-	    FILE *fil = fopen(outputFile.c_str(), "w");
+	    FILE *fil = fopen((outputFile + "probe").c_str(), "w");
 	    if (!fil)
                 std::cout << "Cannot create library file" << std::endl;
             else 
@@ -354,7 +354,7 @@ int ImpLibMain::HandleLibrary(const std::string &outputFile, int argc, char **ar
             if (fil)
             {
                 fclose(fil);
-                remove(outputFile.c_str());
+                remove((outputFile + "probe").c_str());
             }
             return 1;
         }

@@ -25,6 +25,7 @@
 SHELL=cmd.exe
 export SHELL
 
+all:
 
 PATHSWAP = $(subst /,\,$(1))
 export PATHSWAP
@@ -49,8 +50,6 @@ CLEANS:= $(addsuffix .clean,$(DIRS))
 DISTS:= $(addsuffix .dist,$(DIRS))
 DISTS1:= $(addsuffix .dist1,$(DIRS))
 CDIRS:= $(addsuffix .dirs,$(DIRS))
-
-all: files
 
 NULLDEV := NUL
 
@@ -93,7 +92,7 @@ export LIB_PREFIX
 ifeq "$(NAME)" ""
 compile:
 else
-compile: $(LLIB_DEPENDENCIES) $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT)
+compile: $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT)
 endif
 
 
@@ -240,8 +239,6 @@ ifndef NOMAKEDIR
 	-mkdir $(DISTDIST) 2> $(NULLDEV)
 endif
 
-makelibdir:
-	-mkdir  $(_LIBDIR) 2> $(NULLDEV)
 
 cleanstart:
 	-del /Q $(_LIBDIR)
@@ -285,7 +282,7 @@ $(CDIRS): %.dirs :
 
 $(LIBS): %.library : $(CDIRS)
 	$(MAKE) library compile -f $(_TREEROOT) -C$*
-$(EXES): %.exefile : $(LIBS)
+$(EXES): %.exefile :
 	$(MAKE) exefile link -f $(_TREEROOT) -C$*
 
 distribute_self:  cleanDISTRIBUTE
@@ -297,9 +294,11 @@ distribute_clibs_no_binary:
 distribute_clibs:
 	@$(MAKE) -Cclibs DISTRIBUTE
 
-library: $(LIBS)
+makelibdir:
+	-mkdir  $(_LIBDIR) 2> $(NULLDEV)
 
-exefile: $(EXES)
+library: makelibdir $(LIBS)
 
-files: makelibdir $(EXES)
+exefile: makelibdir $(EXES)
+
 localfiles: makelibdir mkdir compile library link

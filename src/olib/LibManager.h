@@ -40,6 +40,13 @@ class ObjFactory;
 class LibManager
 {
     public:
+	enum
+	{
+		CANNOT_CREATE = -1,
+		CANNOT_READ = -2,
+                CANNOT_WRITE = -3,
+		SUCCESS = 0
+        };
         LibManager(const ObjString &Name, bool CaseSensitive = true) 
             : dictionary(CaseSensitive), name(Name), files(CaseSensitive)
         {
@@ -56,7 +63,7 @@ class LibManager
         ObjInt Lookup(const ObjString &name);
         ObjFile *LoadModule(ObjInt index, ObjFactory *factory) { return files.LoadModule(stream, index, factory); }
         bool LoadLibrary();
-        bool SaveLibrary();
+        int SaveLibrary();
         bool fail() const { return false; } //stream.fail(); }
         bool IsOpen() const { return stream != nullptr; }
         void Close() { if (stream) fclose(stream); }

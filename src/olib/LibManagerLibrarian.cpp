@@ -28,13 +28,13 @@
 #include "Objfactory.h"
 #include <string.h>
 
-bool LibManager::SaveLibrary()
+int LibManager::SaveLibrary()
 {
     InitHeader();
     ObjIeeeIndexManager im1;
     ObjFactory fact1(&im1);
     if (!files.ReadFiles(stream, &fact1))
-        return false;
+        return CANNOT_READ;
     dictionary.CreateDictionary(files);
     // can't do more reading
     Close();
@@ -42,7 +42,7 @@ bool LibManager::SaveLibrary()
     FILE * ostr = fopen(name.c_str(), "wb");
     if (!ostr)
     {
-        return false;
+        return CANNOT_CREATE;
     }
     fwrite(&header, sizeof(header), 1, ostr);
     Align(ostr,16);
@@ -60,8 +60,9 @@ bool LibManager::SaveLibrary()
     dictionary.Write(ostr);
     fseek(ostr, 0, SEEK_SET);
     fwrite(&header, sizeof(header), 1, ostr);
-    return true;
-//    return !ostr.fail();
+    int rv = ferror(ostr) ? CANNOT_WRITE : SUCCESS;
+    fclose(ostr);
+    return rv;
 }
 void LibManager::Align(FILE *ostr, ObjInt align)
 {

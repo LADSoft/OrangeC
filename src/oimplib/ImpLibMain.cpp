@@ -344,19 +344,19 @@ int ImpLibMain::HandleLibrary(const std::string &outputFile, int argc, char **ar
         librarian.ReplaceFile(*(*it));
     }
     if (modified)
-        if (!librarian.SaveLibrary())
+        switch (librarian.SaveLibrary())
         {
-	    FILE *fil = fopen((outputFile + "probe").c_str(), "w");
-	    if (!fil)
-                std::cout << "Cannot create library file" << std::endl;
-            else 
-                std::cout << "Error writing library file" << std::endl;
-            if (fil)
-            {
-                fclose(fil);
-                remove((outputFile + "probe").c_str());
-            }
-            return 1;
+             case LibManager::CANNOT_CREATE:
+                std::cout << "Cannot open library file for 'write' access" << std::endl;
+                return 1;
+             case LibManager::CANNOT_WRITE:
+                std::cout << "Error while writing library file" << std::endl;
+                return 1;
+             case LibManager::CANNOT_READ:
+                std::cout << "Error while reading input files" << std::endl;
+                return 1;
+             default:
+                break;
         }
     return 0;
 }

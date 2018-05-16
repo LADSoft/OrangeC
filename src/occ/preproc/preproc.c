@@ -143,6 +143,7 @@ void preprocini(char *name, FILE *fil)
     once = 0;
     packlevel  = 0;
     packdata[0] = chosenAssembler->arch->packSize;
+    memset(onceLists, 0, sizeof(onceLists));
     cppprio = 0;
 #endif
     
@@ -727,9 +728,11 @@ unsigned onceCRC(FILE *handle)
     int hnd = dup(fileno(handle));
     unsigned char buf[8192];
     int n;
-    lseek(hnd, 0, SEEK_END);
+    lseek(hnd, 0, SEEK_SET);
     while ((n = read(hnd, buf, sizeof(buf))) > 0)
+    {
         crc = PartialCRC32(crc, buf, n);
+    }
     close(hnd);
     return crc;
 }

@@ -43,6 +43,4 @@ test: lame.exe
 	fc /b test.cmp q.mp3
 
 lame.exe: $(FILES)
-	olink /c /! /T:CON32 /o$@ @&&|
-c0xpe.o $(FILES) clwin.l climp.l
-|
+	olink /c /! /T:CON32 /o$@ c0xpe.o $(FILES) clwin.l climp.l

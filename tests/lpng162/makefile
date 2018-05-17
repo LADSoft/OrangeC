@@ -9,7 +9,7 @@ OBJS3 = pngtrans$(O) pngwio$(O) pngwrite$(O) pngwtran$(O) pngwutil$(O)
 OBJ = $(OBJS1) $(OBJS2) $(OBJS3)
 INC =
 
-all: pnglibconf.h $(OUT) pngtest.exe test
+all: test
 
 pnglibconf.h: scripts\pnglibconf.h.prebuilt
 	copy scripts\pnglibconf.h.prebuilt $@

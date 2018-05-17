@@ -46,6 +46,7 @@ Version 6.0.37:
     ocide:  fix problem where 'DLL' projects were given an extension '.exe'
     ocide:  add option to view the commands being sent to the tools during a build 
     ocide:  fix problems with building DLLs.
+    ocide:  fix access violation when files with no extension were added to a project
     olink/dlpe:  change the default subsystem versions back to 4.0 for compatibility with older versions of windows.
     olink/dple:  Allow setting the OS and SUBSYSTEM versions, allow overriding the SUBSYSTEM
     olink:  when toolset was compiled with itself, olink would crash when -v was used
@@ -56,6 +57,7 @@ Version 6.0.37:
     rtl:   make 'DLLMain' optional for DLLs
     rtl:   implement setenv, unsetenv
     rtl:   don't lock up if seek to end of file is followed by a read from file
+    rtl:   fix fdopen to set binary mode if necessary
 Version 6.0.36: 4/18/2018
     omake:  support '/' better
     omake:  strip leading tabs when necessary

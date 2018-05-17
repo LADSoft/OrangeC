@@ -374,7 +374,7 @@ void DoParse(char *name)
             ReleaseSymbolTables();
             ReleaseSemaphore(makeSem, 1, NULL);
         }
-        if (db == NULL && !vacuuming)
+        if (workArea == pj && db == NULL && !vacuuming)
             ccDBSetDB(ccDBOpen(pj));
         ReloadLineData(name);
     }

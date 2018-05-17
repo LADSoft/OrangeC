@@ -975,17 +975,23 @@ unsigned __stdcall ScanParse(void *aa)
     {
         if (codeCompList)
         {
-            struct _ccList *list;
+            struct _ccList *list = NULL;
             WaitForSingleObject(ccThreadGuard, INFINITE);
-            list = codeCompList;
-            codeCompList = codeCompList->next;
+            if (codeCompList)
+            {
+                list = codeCompList;
+                codeCompList = codeCompList->next;
+            }
             SetEvent(ccThreadGuard);
-            if (list->remove)
-                deleteFileData(list->name);
-            else
-                DoParse(list->name);
-            free(list->name);
-            free(list);
+            if (list)
+            {
+                if (list->remove)
+                    deleteFileData(list->name);
+                else
+                    DoParse(list->name);
+                free(list->name);
+                free(list);
+            }
         }
         if (stopCCThread)
             break;

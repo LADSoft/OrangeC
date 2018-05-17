@@ -44,7 +44,7 @@
 * [OImpLib](general/OImpLib.md) is a WIN32 import librarian.
 * [ORC](general/ORC.md) is a WIN32 resource compiler.
 * [Coff2IEEE](general/Coff2IEEE.md) converts import libraries from the COFF format to the Orange C format.
-
+* [OCIDE](general/Ocide.md) Orange C Integrated Development Environment
 
 ## Tools Setup
 

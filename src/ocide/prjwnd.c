@@ -92,7 +92,7 @@ int imageof(PROJECTITEM *data, char *name)
     if (data->type == PJ_FOLDER)
         return ilfolderClose;
     name = strrchr(name, '.');
-    if (data->type == PJ_PROJ)
+    if (name && data->type == PJ_PROJ)
     {
         if (!xstricmpz(name, ".exe"))
         {

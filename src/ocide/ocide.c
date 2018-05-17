@@ -116,9 +116,14 @@ static LOGFONT NormalFontData =
 static int bCmdLineWS, bCmdLineProj;
 static char szNewWS[256], szNewProj[256];
 static char browseToText[256];
+static BOOL showHelp;
+static BOOL clearFiles;
+static BOOL clearWA;
 
 void ProjSetup(char select, char *string);
 void WorkAreaSetup(char select, char *string);
+void ClearSetup(char select, char *string);
+void HelpSetup(char select, char *string);
 ARGLIST ArgList[] = 
 {
     {
@@ -129,6 +134,19 @@ ARGLIST ArgList[] =
         'w', ARG_CONCATSTRING, WorkAreaSetup
     }
     , 
+    {
+        'c', ARG_CONCATSTRING, ClearSetup
+    }
+    ,
+    {
+        'h', ARG_BOOL, HelpSetup
+    }
+    ,
+    {
+        '?', ARG_BOOL, HelpSetup
+    }
+    ,
+    
     {
         0, 0, 0
     }
@@ -219,6 +237,20 @@ void WorkAreaSetup(char select, char *string)
     abspath(szNewWS, 0);
     if (!strrchr(szNewWS, '.'))
         strcat(szNewWS,".cwa");
+}
+void ClearSetup(char select, char *string)
+{
+    if (string[0] == 0)
+       clearFiles = TRUE;
+    else for (int i=0; i < strlen(string); i++)
+       if (string[i] == 'f')
+           clearFiles = TRUE;
+       else if (string[i] == 'w')
+           clearWA = TRUE;
+}
+void HelpSetup(char select, char *string)
+{
+    showHelp = TRUE;
 }
 
 //-------------------------------------------------------------------------
@@ -415,18 +447,26 @@ static DWORD LoadFirstWorkArea(void *v)
     if (argv)
     {
         int todo = parse_args(&argc, argv, 1) && argc > 1 ;
-        CloseWorkArea();
-        if (!bCmdLineWS)
+        if (showHelp)
         {
-            if (bCmdLineProj)
-            {
-                LoadProject(szNewProj);
-                SelectWindow(DID_PROJWND);
-            }
+           ExtendedMessageBox("Command Line Help", 0, "usage: ocide [-c[fw]] [-wworkspacename] [-pprojectname] [list of files]");
+           exit(0);
         }
-        else
-        {
+        CloseWorkArea();
+        if (bCmdLineWS)
             LoadWorkArea(szNewWS, TRUE);
+        if (bCmdLineProj)
+        {
+            LoadProject(szNewProj);
+            SelectWindow(DID_PROJWND);
+        }
+        if (clearFiles)
+        {
+            CloseAll();
+        }
+        if (clearWA)
+        {
+            ProjectRemoveAll();
         }
         if (todo)
         {
@@ -1921,7 +1961,6 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpszCmdLine,
                 InitFont(FALSE);
                 exit(0);
             }
-
     GetSystemDialogFont();
     
     hMenuMain = LoadMenuGeneric(hInstance, "MAINMENU");

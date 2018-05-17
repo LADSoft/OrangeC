@@ -864,6 +864,7 @@ void IndirectProjectWindow(DWINFO *info);
 
 void MoveChildrenUp(PROJECTITEM *data);
 void FreeSubTree(PROJECTITEM *data, BOOL save);
+void ProjectRemoveAll(void);
 void ProjectRemove(void);
 void ProjectRename(void);
 void DoneRenaming(void);

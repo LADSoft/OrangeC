@@ -892,7 +892,7 @@ DWORD MsgWait(HANDLE event, DWORD timeout)
         }
     }
 }
-static void removeAllparse()
+void RemoveAllParse()
 {
     WaitForSingleObject(ccThreadGuard, INFINITE);
     while (codeCompList)

@@ -303,24 +303,27 @@ void InitProps(void)
 BOOL MatchesExt(char *name, char *exts)
 {
     char *p = strrchr(name, '.');
-    int n =strlen(p);
-    if (p && p[1] != '\\')
+    if (p) 
     {
-        char *q = exts;
-        while (q && *q)
+        int n =strlen(p);
+        if (p && p[1] != '\\')
         {
-            char *r = strchr(q, '.');
-            if (r)
+            char *q = exts;
+            while (q && *q)
             {
-                if (!strnicmp(r,p,n) && (r[n] == 0 || r[n] == ' '))
+                char *r = strchr(q, '.');
+                if (r)
                 {
-                    return TRUE;
+                    if (!strnicmp(r,p,n) && (r[n] == 0 || r[n] == ' '))
+                    {
+                        return TRUE;
+                    }
                 }
+                q = strchr(q, ' ');
+                if (q)
+                    while (isspace(*q))
+                        q++;
             }
-            q = strchr(q, ' ');
-            if (q)
-                while (isspace(*q))
-                    q++;
         }
     }
     return FALSE;

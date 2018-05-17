@@ -119,6 +119,7 @@ void LoadWorkArea(char *name, BOOL existing)
         SaveAllProjects(workArea, TRUE);
     }
     EnterCriticalSection(&projectMutex);
+    RemoveAllParse();
     ResetInternalAutoDepends();
     TreeView_DeleteAllItems(prjTreeWindow);
     ResDeleteAllItems();

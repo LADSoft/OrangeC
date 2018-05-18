@@ -829,7 +829,7 @@ static void baseFinishDeclareStruct(SYMBOL *funcsp)
     LIST *lst = openStructs;
     SYMBOL ** syms;
     while (lst) n++, lst = lst->next;
-    syms = (SYMBOL *)Alloc(sizeof(SYMBOL *)*n); 
+    syms = (SYMBOL **)Alloc(sizeof(SYMBOL *)*n); 
     n = 0;
     lst = openStructs;
     openStructs = NULL;
@@ -1855,6 +1855,23 @@ static LEXEME *getLinkageQualifiers(LEXEME *lex, enum e_lk *linkage, enum e_lk *
                 if (*linkage2 != lk_none)
                     error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
                 *linkage2 = lk_export;
+                break;
+            case kw__declspec:
+                if (*linkage2 != lk_none)
+                    error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                if (needkw(&lex, openpa))
+                {
+                    if (ISID(lex))
+                    {
+                        if (!strcmp(lex->value.s.a, "dllimport") || !strcmp(lex->value.s.a, "__dllimport__"))
+                            *linkage2 = lk_import;
+                        else if (!strcmp(lex->value.s.a, "dllexport") || !strcmp(lex->value.s.a, "__dllexport__"))
+                            *linkage2 = lk_export;
+                        lex = getsym();
+                    }
+                    needkw(&lex, closepa);
+                }
+                
                 break;
             case kw__entrypoint:
                 if (*linkage3 != lk_none)

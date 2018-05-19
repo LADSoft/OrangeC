@@ -36,7 +36,7 @@ int __ll_read(int fd, void *buf, size_t size)
 {
     int read ;
     int rv = ReadFile((HANDLE)fd,buf,size,&read,0) ;
-   if (!rv)
+    if (!rv)
       errno = GetLastError() ;
     return read ;
 }

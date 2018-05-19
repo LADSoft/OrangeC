@@ -37,7 +37,7 @@
 int _RTL_FUNC system(const char *string)
 {
 	FILE *f;
-    char buf[1024],*a;
+    char buf[4096],*a;
 	if (*string)
 	{
 		while (isspace(*string))

@@ -61,7 +61,9 @@ int _RTL_FUNC read(int __handle, void *__buf, unsigned __len)
    if (__uimodes[ohand] & O_BINARY) {
       int i ;
       for (i=0 ; i < 3; i++) {
+         __ll_exit_critical();
          readlen = __ll_read(__handle,dest,__len) ;
+         __ll_enter_critical();
          if (readlen >= 0)
             break ;
          sleep(1) ;
@@ -71,7 +73,8 @@ int _RTL_FUNC read(int __handle, void *__buf, unsigned __len)
          return -1 ;
       }
       if (readlen < __len && !__ll_isatty(__handle)) 
-         __uiflags[ohand] |= UIF_EOF ;
+         if (!(__uimodes[ohand] & 0x80000000) || readlen == 0) // Not a pipe
+             __uiflags[ohand] |= UIF_EOF ;
       __ll_exit_critical() ;
       return readlen ;
          
@@ -80,7 +83,9 @@ int _RTL_FUNC read(int __handle, void *__buf, unsigned __len)
       do
       {
       for (i=0 ; i < 3; i++) {
+         __ll_exit_critical();
          readlen = __ll_read(__handle,dest,__len) ;
+         __ll_enter_critical();
          if (readlen >= 0)
             break ;
          sleep(1) ;
@@ -89,8 +94,9 @@ int _RTL_FUNC read(int __handle, void *__buf, unsigned __len)
          __ll_exit_critical() ;
          return -1 ;
       }
-      if (readlen < __len && !__ll_isatty(__handle))
-         __uiflags[ohand] |= UIF_EOF ;
+      if (readlen < __len && !__ll_isatty(__handle)) 
+         if (!(__uimodes[ohand] & 0x80000000) || readlen == 0)//not a pipe
+             __uiflags[ohand] |= UIF_EOF ;
       pos = __buf;
       for (i=0; i < readlen; i++) {
          switch (*pos) {
@@ -107,7 +113,7 @@ int _RTL_FUNC read(int __handle, void *__buf, unsigned __len)
                 break ;
          }
       }
-      } while (dest - __buf == 0);
+      } while (dest - __buf == 0 && !(__uiflags[ohand] & UIF_EOF));
       __ll_exit_critical() ;
       return dest - __buf ;
    }

@@ -108,6 +108,7 @@ static int WINAPI thrdstart(struct ithrd *h)
     struct __rtl_data *r = __getRtlData(); // allocate the local storage
     r->thrd_id = h;
     load_local_data();
+    SetEvent((HANDLE)h->stevent);
     rv = ((unsigned (*)(void *))h->start)(h->arglist);
     __ll_thrdexit(rv);
     return 0;
@@ -121,15 +122,19 @@ int __ll_thrdstart(struct ithrd **thr, thrd_start_t *func, void *arglist )
     if (mem) {
         mem->start = func ;
         mem->arglist = arglist;
+        mem->stevent = (void *)CreateEvent(0,0,0,0);
         __ll_enter_critical();
         mem->handle = CreateThread(0,0,(LPTHREAD_START_ROUTINE)thrdstart,mem,0,&id);
         __ll_exit_critical();
         if (mem->handle != NULL) {
+            WaitForSingleObject((HANDLE)mem->stevent, INFINITE);
+            CloseHandle((HANDLE)mem->stevent);
             *thr = mem;
             return thrd_success;
         }
         else
         {
+            CloseHandle((HANDLE)mem->stevent);
             free(mem);
             return thrd_error;
         }

@@ -59,6 +59,7 @@ void __ll_init(void);
 /* File open close */
 int __ll_open(const char *__name, int flags, int shflags);
 int __ll_creat(const char *__name, int flags, int shflags);
+int __ll_openpipe(int *read, int *write, unsigned int size);
 int __ll_close(int __fd);
 
 /* Convert C-style open flags to os-style open flags */
@@ -86,7 +87,6 @@ void __ll_free(void *__blk);
 /* System stuff */
 int __ll_getenvsize(int id);
 int __ll_getenv(char *buf, int id);
-int __ll_system(const char *string);
 void __ll_gettempdir(char *buf);
 
 /* Time & date stuff */
@@ -98,6 +98,7 @@ void __ll_xtime (struct _timeb * buf);
 
 /* Spawn function */
 int __ll_spawn(char *name, char *parms, char **env, int mode);
+int __ll_system(char *string, int in, int out);
 
 /* assert */
 void __ll_assertfail( const char *__who, const char *__file, 
@@ -255,6 +256,7 @@ struct ithrd
     void *start;
     void *arglist;
     void *handle;
+    void *stevent;
     struct itsslst {
         struct itsslst *next;
         void *tss;

@@ -26,12 +26,37 @@
 #include <io.h>
 #include <sys/stat.h>
 #include <errno.h>
+#include <string.h>
 int   _RTL_FUNC access(const char *__file, int __level)
 {
+        char buf[260];
 	struct stat stat_st;
 	int mode = 0;
 	if (stat(__file, &stat_st) == -1)
-		return -1;
+        {
+                errno = EACCES;
+                // at this point we MAY have an invalid path, so, check the directory.
+                // we are going backwards until nothing is left or we encounter an error,
+                // possible errors are ENOENT (path does not exist) or ENOTDIR) path exists
+                // but is not a directory
+                strcpy(buf, __file);
+                char *p;
+                do
+                {
+                    p = strrchr(buf, '\\');
+                    if (!p)
+                        p = strrchr(buf, '/');
+                    if (p)
+                    {
+                        *p = 0;
+                        if (stat(buf, &stat_st) == -1)
+                            errno = ENOENT;
+                        else if (!S_ISDIR(stat_st.st_mode))
+                            errno = ENOTDIR;
+                    }
+                } while (p && errno != ENOTDIR);
+                return -1;
+        }
 	if (__level == F_OK || S_ISDIR(stat_st.st_mode))
 		return 0;
 	if (__level & R_OK)

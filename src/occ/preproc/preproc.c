@@ -1074,7 +1074,7 @@ void doline(void)
     if (*includes->lptr)
     {
         expectstring(buf, &includes->lptr, TRUE);
-        includes->fname = litlate(buf);
+        includes->linename = litlate(buf);
     }
 }
 

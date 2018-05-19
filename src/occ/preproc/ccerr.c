@@ -36,6 +36,7 @@ extern COMPILER_PARAMS cparams ;
 extern char infile[256];
 extern int preprocLine;
 extern char *preprocFile;
+extern INCLUDES *includes;
 
 SYMBOL *theCurrentFunc;
 
@@ -106,6 +107,8 @@ static void printerr(int err, char *file, int line, ...)
     
     if (!file)
         file = "unknown";
+    if (file == includes->fname && includes->linename)
+        file = includes->linename;
     strcpy(nameb, file);
     if (strchr(infile, '\\') != 0 || strchr(infile, ':') != 0)
     {

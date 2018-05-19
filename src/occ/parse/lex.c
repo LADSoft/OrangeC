@@ -1324,7 +1324,7 @@ LEXEME *getsym(void)
         } while (*includes->lptr == 0);
         lex->charindex = includes->lptr - includes->inputline;
         lex->line = includes->line;
-        lex->file = includes->fname;
+        lex->file = includes->linename ? includes->linename : includes->fname;
         lex->filenum = includes->fileindex;
         if ((cval = getChar(&includes->lptr, &tp)) != INT_MIN)
         {

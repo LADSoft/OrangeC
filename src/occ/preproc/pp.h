@@ -81,6 +81,7 @@ typedef struct _includes_
     unsigned char 	*ibufPtr;
     int		inputlen;
     char	*fname;
+    char    *linename;
     void    *linesHead, *linesTail;
     int     first:1;
     unsigned char inputline[MACRO_REPLACE_SIZE];

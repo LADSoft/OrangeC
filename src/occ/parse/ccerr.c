@@ -685,6 +685,8 @@ BOOLEAN printerrinternal(int err, char *file, int line, va_list args)
         file = "unknown";
 #endif
     }
+    if (file == includes->fname && includes->linename)
+        file = includes->linename;
     strcpy(nameb, file);
     if (strchr(infile, '\\') != 0 || strchr(infile, ':') != 0)
     {

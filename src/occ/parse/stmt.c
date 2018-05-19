@@ -1304,10 +1304,14 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 if (!MATCHKW(lex, closepa))
                 {
                     TYPE *tp = NULL;
-                    lex = optimized_expression(lex, funcsp, NULL, &tp, &before, TRUE);
+                    lex = expression_comma(lex, funcsp, NULL, &tp, &before, NULL, 0);
                     if (!tp)
                     {
                         error(ERR_EXPRESSION_SYNTAX);
+                    }
+                    else
+                    {
+                        optimize_for_constants(&before);
                     }
                 }
                 if (!MATCHKW(lex, closepa))
@@ -1354,6 +1358,8 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         addedBlock--;
                         FreeLocalContext(forstmt, funcsp, codeLabel++);
                     }
+                    if (before)
+                        assignmentUsages(before, FALSE);
                     st = stmtNode(lex, forstmt, st_label);
                     st->label = forstmt->continuelabel;
                     st = stmtNode(lex, forstmt, st_expr);

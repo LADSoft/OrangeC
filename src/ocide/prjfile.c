@@ -246,7 +246,7 @@ static int CreateNewFileData(HWND hwnd)
     item.mask = LVIF_TEXT | LVIF_IMAGE | LVIF_PARAM;
     item.iImage = IL_H;
     item.pszText = "Header File";
-    item.lParam = 7;
+    item.lParam = 8;
     ListView_InsertItem(hwndLV, &item);
     
     item.iItem = items++;
@@ -254,7 +254,7 @@ static int CreateNewFileData(HWND hwnd)
     item.mask = LVIF_TEXT | LVIF_IMAGE | LVIF_PARAM;
     item.iImage = IL_RES;
     item.pszText = "Resource File";
-    item.lParam = 12;
+    item.lParam = 13;
     ListView_InsertItem(hwndLV, &item);
     
     item.iItem = items++;
@@ -262,7 +262,7 @@ static int CreateNewFileData(HWND hwnd)
     item.mask = LVIF_TEXT | LVIF_IMAGE | LVIF_PARAM;
     item.iImage = IL_FILES;
     item.pszText = "Module Definition File";
-    item.lParam = 6;
+    item.lParam = 7;
     ListView_InsertItem(hwndLV, &item);
     
     item.iItem = items++;
@@ -278,7 +278,7 @@ static int CreateNewFileData(HWND hwnd)
     item.mask = LVIF_TEXT | LVIF_IMAGE | LVIF_PARAM;
     item.iImage = IL_FILES;
     item.pszText = "Text File";
-    item.lParam = 17;
+    item.lParam = 18;
     ListView_InsertItem(hwndLV, &item);
     
     ListView_SetSelectionMark(hwndLV, 0);

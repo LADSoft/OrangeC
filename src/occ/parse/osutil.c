@@ -660,7 +660,19 @@ void setglbdefs(void)
             s++;
         if (*s == '=')
             *s++ = 0;
-        glbdefine(n, s,FALSE);
+        if (*s)
+        {
+            char *q = calloc(1, strlen(s) + 3);
+            q[0] = MACRO_PLACEHOLDER;
+            strcpy(q + 1, s);
+            q[strlen(s) + 1] = MACRO_PLACEHOLDER;
+            glbdefine(n, q, FALSE);
+            free(q);
+        }
+        else
+        {
+            glbdefine(n, s, FALSE);
+        }
         if (*s)
             s[-1] = '=';
         l = l->next;

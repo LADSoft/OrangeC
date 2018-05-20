@@ -239,6 +239,13 @@ typedef struct _aliaslist
 	ALIASADDRESS *address;
 } ALIASLIST;
 
+typedef struct _addrByName
+{
+        struct _addrByName *next;
+        ALIASNAME *name;
+        ALIASLIST *addresses;
+} ADDRBYNAME;
+
 typedef struct _normlist
 {
 	struct _normlist *next;

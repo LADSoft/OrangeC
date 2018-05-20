@@ -77,6 +77,7 @@ struct UIVHash
 static ALIASADDRESS *addresses[DAGSIZE];
 static ALIASNAME *mem[DAGSIZE];
 static struct UIVHash *names[DAGSIZE];
+static ADDRBYNAME *addrNames[DAGSIZE];
 static void ResetProcessed(void);
 static void GatherInds(BITINT *p, int n, ALIASLIST *al);
 void AliasInit(void)
@@ -90,6 +91,7 @@ void AliasInit(void)
     memset(addresses, 0, sizeof(addresses));
     memset(names, 0, sizeof(names));
     memset(mem, 0, sizeof(mem));
+    memset(addrNames, 0, sizeof(addrNames));
     parmList = NULL;
     uivBytes= NULL;
     cachedTempCount = tempCount;
@@ -397,6 +399,25 @@ static ALIASADDRESS *LookupAddress(ALIASNAME *name, int offset)
     li->data = addr;
     li->next = name->addresses;
     name->addresses = li;
+    hash = dhash(&name, sizeof(name));
+    ADDRBYNAME *q = addrNames[hash];
+    while (q)
+    {
+        if (q->name == name)
+            break;
+        q = q->next;
+    }
+    if (!q)
+    {
+        q = (ADDRBYNAME *)aAlloc(sizeof(ADDRBYNAME));
+        q->next = addrNames[hash];
+        addrNames[hash] = q;
+        q->name = name;
+    }
+    ALIASLIST *ali = aAlloc(sizeof(ALIASLIST));
+    ali->address = addr;
+    ali->next = q->addresses;
+    q->addresses = ali;
     return addr;
 }
 static ALIASADDRESS *GetAddress(ALIASNAME *name, int offset)
@@ -725,35 +746,47 @@ static int InferStride(IMODE *im)
 }
 static void SetStride(ALIASADDRESS *addr, int stride)
 {
-    int i;
-    for (i=0; i < DAGSIZE; i++)
+    int hash = dhash(&addr->name, sizeof(addr->name));
+    ADDRBYNAME *q = addrNames[hash];
+    while (q)
     {
-        ALIASADDRESS *scan = addresses[i];
-        while (scan)
+        if (q->name == addr->name)
+            break;
+        q = q->next;
+    }
+    if (q)
+    {
+        ALIASLIST *addresses = q->addresses;
+        while (addresses)
         {
-            if (addr != scan && addr->name == scan->name)
+            ALIASADDRESS *scan = addresses->address;
+            while (scan)
             {
-                if (addr->offset < scan->offset)
+                if (addr != scan && addr->name == scan->name)
                 {
-                    int o2 = addr->offset + (scan->offset - addr->offset) % stride;
-                    if (addr->offset == o2)
+                    if (addr->offset < scan->offset)
                     {
-                        AliasUnion(&addr->pointsto, scan->pointsto);
-                        scan->merge = addr;
-                    }
-                    else
-                    {
-                        ALIASADDRESS *sc2 = LookupAddress(addr->name, o2);
-                        if (sc2 && sc2 != scan)
+                        int o2 = addr->offset + (scan->offset - addr->offset) % stride;
+                        if (addr->offset == o2)
                         {
-                            AliasUnion(&sc2->pointsto, scan->pointsto);
-                            scan->merge = sc2;
+                            AliasUnion(&addr->pointsto, scan->pointsto);
+                            scan->merge = addr;
                         }
+                        else
+                        {
+                            ALIASADDRESS *sc2 = LookupAddress(addr->name, o2);
+                            if (sc2 && sc2 != scan)
+                            {
+                                AliasUnion(&sc2->pointsto, scan->pointsto);
+                                scan->merge = sc2;
+                            }
+                        }
+
                     }
-                    
                 }
+                scan = scan->next;
             }
-            scan = scan->next;
+            addresses = addresses->next;
         }
     }
 }

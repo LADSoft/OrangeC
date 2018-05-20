@@ -243,10 +243,17 @@ static void AliasUnion(ALIASLIST **dest, ALIASLIST *src)
     while (src)
     {
         ALIASLIST **q = dest;
-        while (*q)
+        ALIASNAME *nm2 = src->address->name;
+        IMODE *im2;
+        if (nm2->byUIV)
+            im2 = nm2->v.uiv->im;
+        else
+            im2 = nm2->v.name;
+        ALIASLIST *q1 = *q;
+        while (q1)
         {
-            ALIASNAME *nm1 = (*q)->address->name, *nm2 = src->address->name;
-            IMODE *im1, *im2;
+            ALIASNAME *nm1 = q1->address->name;
+            IMODE *im1;
             // we don't check the offset here because of the rule if the same
             // name is used with different offsets it is assumed to be an array.
             if (nm1 == nm2)
@@ -255,13 +262,9 @@ static void AliasUnion(ALIASLIST **dest, ALIASLIST *src)
                 im1 = nm1->v.uiv->im;
             else
                 im1 = nm1->v.name;
-            if (nm2->byUIV)
-                im2 = nm2->v.uiv->im;
-            else
-                im2 = nm2->v.name;
             if (im1 == im2)
                 break;
-            q = &(*q)->next;
+            q1 = q1->next;
         }
         if (!*q)
         {

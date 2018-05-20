@@ -54,7 +54,8 @@ class LibManager
             InitHeader();
         }
         ~LibManager() { Close(); }
-        
+
+        LibFiles &Files() { return files; }        
         void AddFile(const ObjString &name) {files.Add(name); }
         void AddFile(ObjFile &obj) { files.Add(obj); }
         void RemoveFile(const ObjString &name) {files.Remove(name); }

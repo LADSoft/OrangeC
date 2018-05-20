@@ -301,4 +301,4 @@ library: makelibdir $(LIBS)
 
 exefile: makelibdir $(EXES)
 
-localfiles: makelibdir mkdir compile library link
+localfiles: makelibdir mkdir compile library exefile

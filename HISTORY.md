@@ -2,28 +2,26 @@ Release notes:
 
 Version 6.0.37: 5/20/2018
 * documentation:   various upgrades
-* all programs:* add --version
-* all programs:* default 'ORANGEC' environment variable to a sensible value if not defined
+* all programs: add --version
+* all programs: default 'ORANGEC' environment variable to a sensible value if not defined
 * add tool to dump object files and libraries (onm.exe)
 * occ, ocide: allow '.s' file extension to mean an assembly language file
-* occ:* when a temporary was created for a long long value, the temporary could overwrite other variables
-* occ:* add new macros for OCC version number and update documentation
-* occ:* fix bug with array length = 0 not allowed at end of structure;
-* occ:* fix crash on certain types of error conditions and bad input
-* occ:* fix 'missing type' warning so that it will display the associated identifier when it can
-* occ:* following a defined macro name with a preprocessor directive 
-* * * (on the next line) resulted in an error
-* occ:* Add various predefined macros with compiler version information
-* occ:* improve several error messages
-* occ:* add various parameters to set options for spawned processes
-* occ:* C compilation: fix problem with 'external' functions later declared as 'inline' not appearing in the output file
-* occ:* allow preprocessing from stdin
-* occ:* add support for #pragma once
-* occ:* fix problem where defining something on the command line could result in a 'redefinition' error later even if the definitions were the same.
-* occ/ocpp: fix problem where using #line directive to change a file name would change the relative path from which
-* * * include files were located.
-* occ:* speed up compiles of certain problematic files
-* occ:* add __declspec(noreturn), __declspec(dllimport), __declspec(dllexport), and parsing of __declspec(...) in general
+* occ: when a temporary was created for a long long value, the temporary could overwrite other variables
+* occ: add new macros for OCC version number and update documentation
+* occ: fix bug with array length = 0 not allowed at end of structure;
+* occ: fix crash on certain types of error conditions and bad input
+* occ: fix 'missing type' warning so that it will display the associated identifier when it can
+* occ: following a defined macro name with a preprocessor directive (on the next line) resulted in an error
+* occ: Add various predefined macros with compiler version information
+* occ: improve several error messages
+* occ: add various parameters to set options for spawned processes
+* occ: C compilation: fix problem with 'external' functions later declared as 'inline' not appearing in the output file
+* occ: allow preprocessing from stdin
+* occ: add support for #pragma once
+* occ: fix problem where defining something on the command line could result in a 'redefinition' error later even if the definitions were the same.
+* occ/ocpp: fix problem where using #line directive to change a file name would change the relative path from which include files were located.
+* occ: speed up compiles of certain problematic files
+* occ: add __declspec(noreturn), __declspec(dllimport), __declspec(dllexport), and parsing of __declspec(...) in general
 * olib:   remove extraneous warning
 * ocpp:   support /! and /V
 * ocpp:   allow preprocessing from stdin
@@ -45,8 +43,8 @@ Version 6.0.37: 5/20/2018
 * omake:  tab before a conditional statement is honored as spaces now
 * omake:  fix crash with bad input
 * omake:  add multithreading support
-* ocide:* change the brace matching to SHIFT-ALT-BRACE to allow for keyboards that use ALT-BRACE to mean the brace key
-* ocide:* fix several crashes if there were a large number of link errors
+* ocide: change the brace matching to SHIFT-ALT-BRACE to allow for keyboards that use ALT-BRACE to mean the brace key
+* ocide: fix several crashes if there were a large number of link errors
 * ocide:  fix problems with german keyboard
 * ocide:  fix problem where 'DLL' projects were given an extension '.exe'
 * ocide:  add option to view the commands being sent to the tools during a build 

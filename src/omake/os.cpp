@@ -27,6 +27,7 @@
 
 #include <windows.h>
 #undef WriteConsole
+#define __MT__ // BCC55 support
 #include <process.h>
 #include <direct.h>
 #include <stdio.h>

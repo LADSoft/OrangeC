@@ -28,6 +28,7 @@
 #include "CmdFiles.h"
 #include "PreProcessor.h"
 #include "Errors.h"
+#include <stdlib.h>
 
 CmdSwitchParser ppMain::SwitchParser;
 CmdSwitchBool ppMain::assembly(SwitchParser, 'a', false);

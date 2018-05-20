@@ -35,7 +35,6 @@
 char * __stdcall GetModuleFileNameA(void * handle, char *buf, int size);
 #endif
 
-#define putenv(x, y) _putenv_s(x,y)
 
 #ifdef __CCDL__
     int _stklen = 100 * 1024;
@@ -978,7 +977,11 @@ void ccinit(int argc, char *argv[])
              if (q)
              {
                   *q = 0;
-                 putenv("ORANGEC", buffer);
+		char *buf1 = (char *)calloc(1,strlen("ORANGEC") + strlen(buffer) + 2);
+		strcpy(buf1, "ORANGEC");
+		strcat(buf1,"=");
+                strcat(buf1, buffer);
+                putenv(buf1);
                  *q = '\\';
              }
              *p = '\\';

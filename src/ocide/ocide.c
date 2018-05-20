@@ -1864,7 +1864,11 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpszCmdLine,
              if (q)
              {
                   *q = 0;
-                 _putenv_s("ORANGEC", buffer);
+		char *buf1 = (char *)calloc(1,strlen("ORANGEC") + strlen(buffer) + 2);
+		strcpy(buf1, "ORANGEC");
+		strcat(buf1,"=");
+                strcat(buf1, buffer);
+                putenv(buf1);
                  *q = '\\';
              }
              *p = '\\';

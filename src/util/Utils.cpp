@@ -42,6 +42,7 @@
 #include <sstream>
 #endif
 #include "..\version.h"
+#include <iostream>
 
 char *Utils::ShortName(const char *v)
 {
@@ -121,13 +122,11 @@ void Utils::SetEnvironmentToPathParent(const char *name)
              if (p)
              {
                  *p = 0;
-#ifdef __MINGW32__
-		char *buf = (char *)calloc(1,strlen(name) + strlen(buf) + 2);
-		strcpy(buf, name);
-		strcat(buf,"=");
-#else
-                 _putenv_s(name, buf);
-#endif
+		char *buf1 = (char *)calloc(1,strlen(name) + strlen(buf) + 2);
+		strcpy(buf1, name);
+		strcat(buf1,"=");
+                strcat(buf1, buf);
+                putenv(buf1);
              }
          }
      }

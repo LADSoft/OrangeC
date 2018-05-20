@@ -1808,6 +1808,42 @@ static LEXEME *getPointerQualifiers(LEXEME *lex, TYPE **tp, BOOLEAN allowstatic)
     }
     return lex;
 }
+static LEXEME *parse_declspec(LEXEME *lex, enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3)
+{
+	if (needkw(&lex, openpa))
+	{
+		if (ISID(lex))
+		{
+			if (!strcmp(lex->value.s.a, "noreturn"))
+			{
+				if (*linkage3 != lk_none)
+					error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+				*linkage3 = lk_noreturn;
+			}
+			else if (!strcmp(lex->value.s.a, "dllimport") || !strcmp(lex->value.s.a, "__dllimport__"))
+			{
+				if (*linkage2 != lk_none)
+					error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+				*linkage2 = lk_import;
+			}
+			else if (!strcmp(lex->value.s.a, "dllexport") || !strcmp(lex->value.s.a, "__dllexport__"))
+			{
+				 if (*linkage2 != lk_none)
+					error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+				*linkage2 = lk_export;
+			}
+			lex = getsym();
+		}
+		else if (MATCHKW(lex, kw_noreturn))
+		{
+			if (*linkage3 != lk_none)
+				error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+			*linkage3 = lk_noreturn;
+		}
+		needkw(&lex, closepa);
+	}
+        return lex;
+}
 static LEXEME *getLinkageQualifiers(LEXEME *lex, enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3)
 {
     while (KWTYPE(lex, TT_LINKAGE))
@@ -1857,21 +1893,7 @@ static LEXEME *getLinkageQualifiers(LEXEME *lex, enum e_lk *linkage, enum e_lk *
                 *linkage2 = lk_export;
                 break;
             case kw__declspec:
-                if (*linkage2 != lk_none)
-                    error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
-                if (needkw(&lex, openpa))
-                {
-                    if (ISID(lex))
-                    {
-                        if (!strcmp(lex->value.s.a, "dllimport") || !strcmp(lex->value.s.a, "__dllimport__"))
-                            *linkage2 = lk_import;
-                        else if (!strcmp(lex->value.s.a, "dllexport") || !strcmp(lex->value.s.a, "__dllexport__"))
-                            *linkage2 = lk_export;
-                        lex = getsym();
-                    }
-                    needkw(&lex, closepa);
-                }
-                
+                lex = parse_declspec(lex, linkage, linkage2, linkage3);
                 break;
             case kw__entrypoint:
                 if (*linkage3 != lk_none)

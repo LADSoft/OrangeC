@@ -1,5 +1,75 @@
 Release notes:
 
+Version 6.0.37: 5/20/2018
+* documentation:   various upgrades
+* all programs:* add --version
+* all programs:* default 'ORANGEC' environment variable to a sensible value if not defined
+* add tool to dump object files and libraries (onm.exe)
+* occ, ocide: allow '.s' file extension to mean an assembly language file
+* occ:* when a temporary was created for a long long value, the temporary could overwrite other variables
+* occ:* add new macros for OCC version number and update documentation
+* occ:* fix bug with array length = 0 not allowed at end of structure;
+* occ:* fix crash on certain types of error conditions and bad input
+* occ:* fix 'missing type' warning so that it will display the associated identifier when it can
+* occ:* following a defined macro name with a preprocessor directive 
+* * * (on the next line) resulted in an error
+* occ:* Add various predefined macros with compiler version information
+* occ:* improve several error messages
+* occ:* add various parameters to set options for spawned processes
+* occ:* C compilation: fix problem with 'external' functions later declared as 'inline' not appearing in the output file
+* occ:* allow preprocessing from stdin
+* occ:* add support for #pragma once
+* occ:* fix problem where defining something on the command line could result in a 'redefinition' error later even if the definitions were the same.
+* occ/ocpp: fix problem where using #line directive to change a file name would change the relative path from which
+* * * include files were located.
+* occ:* speed up compiles of certain problematic files
+* occ:* add __declspec(noreturn), __declspec(dllimport), __declspec(dllexport), and parsing of __declspec(...) in general
+* olib:   remove extraneous warning
+* ocpp:   support /! and /V
+* ocpp:   allow preprocessing from stdin
+* ocpp:   add switch to specify output file; otherwise default to sending output to stdout.   Work as before if ORANGEC_LEGACY_OPTIONS set in environment
+* ogrep:  allow searching from stdin
+* omake:  when compiled for 64-bit mode could sometimes randomly show the usage instead of doing its job
+* omake:  fix crash when using help in conjunction with change to /f switch to allow space
+* omake:  change text of "warning: '' is undefined" to say what is undefined
+* omake:  fix "if ($(LEFT),$(RIGHT))" to evaluate properly 
+* omake:  fix 'commands returned error code' error to use the right line and file
+* omake:  don't use .vpath to figure out path for $@
+* omake:  error if target specifiers do not match target suffix (e.g. x1.o x2.o: %.p : %.c)   
+* omake:  replace '\t' and '\n' with ' ' after macro replacement
+* omake:  $shell:  strip trailing line feeds
+* omake:  macro substitue last argument of $(call ...)
+* omake:  add --eval switch
+* omake:  spawn directly when possible
+* omake:  \\ at end of line doesn't match the line continuation character now
+* omake:  tab before a conditional statement is honored as spaces now
+* omake:  fix crash with bad input
+* omake:  add multithreading support
+* ocide:* change the brace matching to SHIFT-ALT-BRACE to allow for keyboards that use ALT-BRACE to mean the brace key
+* ocide:* fix several crashes if there were a large number of link errors
+* ocide:  fix problems with german keyboard
+* ocide:  fix problem where 'DLL' projects were given an extension '.exe'
+* ocide:  add option to view the commands being sent to the tools during a build 
+* ocide:  fix problems with building DLLs.
+* ocide:  fix access violation when files with no extension were added to a project
+* ocide:  add specific setting for module definition files, to avoid collisions with source code of projects
+* ocide: close files when creating a new work area
+* ocide:  add documentation outside the chm (.md, .pdf) and fix command line switches
+* olink/dlpe:  change the default subsystem versions back to 4.0 for compatibility with older versions of windows.
+* olink/dple:  Allow setting the OS and SUBSYSTEM versions, allow overriding the SUBSYSTEM
+* olink:  when toolset was compiled with itself, olink would crash when -v was used
+* olink:   fix access violation when linking against a file with invalid format
+* oimplib:  add /C switch to change the name mangling on imported functions to C style
+* coff2ieee:  fix incompatibilities with latest microsoft libraries
+* coff2ieee:  fix access violation
+* rtl:   don't export iob_func from generated executables
+* rtl:   make 'DLLMain' optional for DLLs
+* rtl:   implement setenv, unsetenv
+* rtl:   don't lock up if seek to end of file is followed by a read from file
+* rtl:   fix fdopen to set binary mode if necessary
+* rtl:   add popen/pclose
+* rtl:   change 'access' to support errnos: ENOENT and ENOTDIR
+
 Version 6.0.36: 4/18/2018
 * omake:  support '/' better
 * omake:  strip leading tabs when necessary

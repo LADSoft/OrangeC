@@ -45,7 +45,7 @@ tools:
 distribute:
 	@$(MAKE) -f $(_TREEROOT) distribute
 	@$(MAKE) -f $(_TREEROOT) distribute_clibs
-
+	@$(MAKE) -f $(_TREEROOT) zip
 
 clean:  
 	@$(MAKE) -f $(_TREEROOT) clean

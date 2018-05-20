@@ -34,6 +34,7 @@
 * [OCPP](general/OCPP.md) is a C and assembly language preprocessor.  It understands C89, C99, and OAsm preprocessor directive syntaxes.
 * [OGrep](ogrep/OGrep.md) looks for regular expressions within source code files.
 * [OMake](omake/OMake.md) is a make utility similar to GNU make.
+* [onm](general/onm.md) dumps the symbols from object files
 
 ## WIN32 Specific tools
  

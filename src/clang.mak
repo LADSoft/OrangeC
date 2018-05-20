@@ -24,7 +24,7 @@
 
 ifeq "$(COMPILER)" "CLANG"
 
-CLANG_PATH := c:\program files (x86)\llvm
+CLANG_PATH := c:\program files\llvm
 COMPILER_PATH := c:\mingw
 OBJ_IND_PATH := clang
 
@@ -78,7 +78,7 @@ COMPLIB=-lstdc++ -lcomctl32 -lgdi32 -lcomdlg32 -lole32 -luxtheme -lkernel32 -lms
 
 
 vpath %.o $(_OUTPUTDIR)
-vpath %$(LIB_EXT) c:\bcc55\lib c:\bcc55\lib\psdk $(_LIBDIR)
+vpath %$(LIB_EXT) $(_LIBDIR)
 vpath %.res $(_OUTPUTDIR)
 
 %.o: %.cpp

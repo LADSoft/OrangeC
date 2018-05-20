@@ -829,7 +829,7 @@ BOOL WINAPI SetLayeredWindowAttributes(
 BOOL WINAPI AllowSetForegroundWindow(
     DWORD dwProcessId);
 #endif
-#if defined(GNUC) && !defined(__MINGW64__)
+#if defined(GNUC) && !defined(__MINGW64__) && !defined(__clang__)
 #pragma pack(push,1)
 typedef struct tagTVKEYDOWN {
     NMHDR hdr;
@@ -864,7 +864,7 @@ typedef struct tagNMTTCUSTOMDRAW
     (*(HTREEITEM FAR *)prc = (hitem), (BOOL)SendMessage((hwnd), TVM_GETITEMRECT, (WPARAM)(code), (LPARAM)(RECT FAR*)(prc)))
 #endif
 
-#ifdef __MINGW64__
+#if defined(__MINGW64__) || defined(__clang__)
 #define Eax Rax
 #define Ebx Rbx
 #define Ecx Rdx

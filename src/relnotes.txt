@@ -1,5 +1,8 @@
 Release notes:
 
+version 6.0.38:
+    occ: speed up slow symbol table searches in classes with a lot of members
+
 Version 6.0.37: 5/20/2018
     documentation:   various upgrades
     all programs:    add --version

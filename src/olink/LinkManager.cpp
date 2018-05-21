@@ -457,7 +457,7 @@ void LinkManager::LoadLibraries()
         }
         else
         {
-            LinkWarning("Library '" + (**it) + "' does not exist");
+            LinkError("Library '" + (**it) + "' does not exist");
         }
     }
 }

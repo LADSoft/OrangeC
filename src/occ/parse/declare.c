@@ -871,6 +871,20 @@ static void baseFinishDeclareStruct(SYMBOL *funcsp)
         }
     }
 }
+static void makeFastTable(SYMBOL *sp)
+{
+    int n = 0;
+    HASHREC *hr = sp->tp->syms->table[0];
+    for (;hr; hr=hr->next, n++);
+    n /= 5;
+    if (n > 1)
+    {
+        sp->tp->syms->fast = CreateHashTable(n+1);
+        hr = sp->tp->syms->table[0];
+        for (;hr;hr=hr->next) 
+            insert((SYMBOL *)hr->p, sp->tp->syms->fast);
+    }
+}
 static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac currentAccess)
 {
     STRUCTSYM sl;
@@ -941,9 +955,10 @@ static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac cur
     {
         sp->trivialCons = TRUE;
     }
-	if (cparams.prm_cplusplus)
+    if (cparams.prm_cplusplus)
         createDefaultConstructors(sp);
     resolveAnonymousUnions(sp);
+    makeFastTable(sp);
     if (cparams.prm_cplusplus)
         deferredInitializeStructMembers(sp);
     if (!cparams.prm_cplusplus || structLevel == 1)

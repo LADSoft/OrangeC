@@ -252,6 +252,10 @@ HASHREC *AddOverloadName(SYMBOL *item, HASHTABLE *table)
  */
 HASHREC **LookupName(char *name, HASHTABLE *table)
 {
+    if (table->fast)
+    {
+        table = table->fast;
+    }
     HASHREC **p = GetHashLink(table, name);
 
     while (*p)

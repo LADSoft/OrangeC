@@ -978,52 +978,49 @@ static BOOLEAN declaringTemplate(SYMBOL *sp)
 }
 TYPE *PerformDeferredInitialization (TYPE *tp, SYMBOL *funcsp)
 {
-    if (!inTemplateSpecialization)
+    TYPE **tpx = &tp;
+    if (isref(*tpx))
+        tpx = &basetype(*tpx)->btp;
+    while ((*tpx)->btp && !isfunction(*tpx))
+        tpx = &(*tpx)->btp;
+    if (cparams.prm_cplusplus && !inTemplateType && isstructured(*tpx))
     {
-        TYPE **tpx = &tp;
-        if (isref(*tpx))
-            tpx = &basetype(*tpx)->btp;
-        while ((*tpx)->btp && !isfunction(*tpx))
-            tpx = &(*tpx)->btp;
-        if (cparams.prm_cplusplus && !inTemplateType && isstructured(*tpx))
+        SYMBOL *sp = basetype(*tpx)->sp;
+        TEMPLATEPARAMLIST *tpl = sp->templateParams;
+        while (tpl)
         {
-            SYMBOL *sp = basetype(*tpx)->sp;
-            TEMPLATEPARAMLIST *tpl = sp->templateParams;
-            while (tpl)
-            {
-                if (tpl->p->usedAsUnpacked)
-                    return tp;
-                tpl = tpl->next;
-            }
-            if (declaringTemplate(sp))
-            {
-                if (sp->instantiated)
-                {
-                    *tpx = sp->tp;
-                }
-            }
-            else if (sp->templateLevel && (!sp->instantiated || sp->linkage != lk_virtual)
-                && sp->templateParams && allTemplateArgsSpecified(sp, sp->templateParams->next))
-            {
-                sp = TemplateClassInstantiateInternal(sp, NULL, FALSE);
-                if (sp)
-                    *tpx = sp->tp;
-            }
-            else if (!sp->templateLevel && sp->parentClass && sp->parentClass->templateLevel
-                && (!sp->instantiated || sp->linkage != lk_virtual)
-                && sp->parentClass->templateParams && allTemplateArgsSpecified(sp->parentClass, sp->parentClass->templateParams->next))
-            {
-                TEMPLATEPARAMLIST *tpl = sp->parentClass->templateParams;
-                sp->templateParams = tpl;
-                sp = TemplateClassInstantiateInternal(sp, NULL, FALSE);
-                sp->templateParams = NULL;
-                if (sp)
-                    *tpx = sp->tp;
-            }
-            else if (sp->instantiated)
+            if (tpl->p->usedAsUnpacked)
+                return tp;
+            tpl = tpl->next;
+        }
+        if (declaringTemplate(sp))
+        {
+            if (sp->instantiated)
             {
                 *tpx = sp->tp;
             }
+        }
+        else if (sp->templateLevel && (!sp->instantiated || sp->linkage != lk_virtual)
+            && sp->templateParams && allTemplateArgsSpecified(sp, sp->templateParams->next))
+        {
+            sp = TemplateClassInstantiateInternal(sp, NULL, FALSE);
+            if (sp)
+                *tpx = sp->tp;
+        }
+        else if (!sp->templateLevel && sp->parentClass && sp->parentClass->templateLevel
+            && (!sp->instantiated || sp->linkage != lk_virtual)
+            && sp->parentClass->templateParams && allTemplateArgsSpecified(sp->parentClass, sp->parentClass->templateParams->next))
+        {
+            TEMPLATEPARAMLIST *tpl = sp->parentClass->templateParams;
+            sp->templateParams = tpl;
+            sp = TemplateClassInstantiateInternal(sp, NULL, FALSE);
+            sp->templateParams = NULL;
+            if (sp)
+                *tpx = sp->tp;
+        }
+        else if (sp->instantiated)
+        {
+            *tpx = sp->tp;
         }
     }
     return tp;

@@ -593,6 +593,7 @@ typedef struct sym
         unsigned xtEntry:1; // is an exception table label
         unsigned isExplicit:1; // explicit constructor or conversion function
         unsigned specialized:1; // is a template specialization
+        unsigned specialized2 : 1; // specialization of a template class nontemplate func
         unsigned packed:1; // packed template param instance
         unsigned instantiated:1; // instantiated template
         unsigned instantiated2:1; // instantiated template
@@ -614,6 +615,7 @@ typedef struct sym
         unsigned retemp:1; // retemp has already been performed on this SP
         unsigned has_property_setter : 1; // a property has a setter
         unsigned nonConstVariableUsed : 1; // a non-const variable was used or assigned to in this function's body
+        unsigned cpplocalstatic : 1; // local static that has been promoted to static
         char *deprecationText; // C++ declaration was deprecated
         int __func__label; /* label number for the __func__ keyword */
         int ipointerindx; /* pointer index for pointer opts */

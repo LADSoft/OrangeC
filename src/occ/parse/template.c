@@ -2307,7 +2307,21 @@ static TEMPLATEPARAMLIST **addStructParam(TEMPLATEPARAMLIST **pt, TEMPLATEPARAML
             find = find->next;
         }
         if (!find)
-            return NULL;
+        {
+            SYMBOL *sym = NULL;
+            STRUCTSYM *s = structSyms;
+            while (s && !sym)
+            {
+                if (s->tmpl)
+                    sym = templatesearch(search->argsym->name, s->tmpl);
+                s = s->next;
+            }
+            if (!sym)
+                return NULL;
+            if (sym->tp->type != bt_templateparam || sym->tp->templateParam->p->type != kw_typename)
+                return NULL;
+            find = sym->tp->templateParam;
+        }
         *pt = Alloc(sizeof(TEMPLATEPARAMLIST));
         (*pt)->p = find->p;
     }
@@ -6129,7 +6143,7 @@ SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExte
 			argument_nesting = 0;
             packIndex = -1;
             linesHead = linesTail = NULL;
-            if (sym->storage_class != sc_member && sym->storage_class != sc_mutable)
+            if (sym->storage_class != sc_member && sym->storage_class != sc_mutable&& sym->storage_class != sc_virtual)
                 sym->storage_class = sc_global;
             sym->linkage = lk_virtual;
             sym->xc = NULL;

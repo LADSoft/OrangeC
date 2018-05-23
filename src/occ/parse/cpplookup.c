@@ -3974,7 +3974,7 @@ static int insertFuncs(SYMBOL **spList, SYMBOL **spFilterList, LIST *gather, FUN
                     matchOverload(sym->tp, spFilterList[i]->tp, FALSE) && sym->overlayIndex == spFilterList[i]->overlayIndex)
                     break;
 
-            if (i >= n && (!args || !args->astemplate || sym->templateLevel) && (!sym->instantiated || sym->isDestructor))
+            if (i >= n && (!args || !args->astemplate || sym->templateLevel) && (!sym->instantiated || sym->specialized2 || sym->isDestructor))
             {
                 if (sym->templateLevel && (sym->templateParams || sym->isDestructor))
                 {
@@ -4183,7 +4183,7 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
                 funcList = (struct sym ***)Alloc(sizeof(SYMBOL **) * n);
 
                 n = insertFuncs(spList, spFilterList, gather, args, atp);
-                if (n != 1 || (spList[0] && !spList[0]->isDestructor))
+                if (n != 1 || (spList[0] && !spList[0]->isDestructor && !spList[0]->specialized2))
                 {
                     if (atp || args->ascall)
                     {
@@ -4363,7 +4363,15 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
                     {
                         if (toInstantiate && found1->deferredCompile && !found1->inlineFunc.stmt)
                         {
+                            if (found1->templateParams)
+                                instantiatingTemplate++;
                             deferredCompileOne(found1);
+                            if (found1->templateParams)
+                                instantiatingTemplate--;
+                        }
+                        else
+                        {
+                            InsertInline(found1);
                         }
                     }
                 }

@@ -2661,7 +2661,7 @@ void putexterns(void)
         {
             SYMBOL *sp = externList->data;
             if (!sp->ispure && (sp->dontinstantiate && sp->genreffed || !sp->inlineFunc.stmt && !sp->init && 
-                                (sp->parentClass || sp->genreffed && sp->storage_class == sc_external)) & !sp->noextern)
+                                (sp->parentClass && sp->genreffed || sp->genreffed && sp->storage_class == sc_external)) & !sp->noextern)
             {
                 notyet = put_exfunc(sp, notyet);
                 sp->genreffed = FALSE;

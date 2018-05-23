@@ -884,8 +884,17 @@ void SetLinkerNames(SYMBOL *sym, enum e_lk linkage)
             break;
         case lk_c:
         default:
-            errbuf[0] = '_';
-            strcpy(errbuf+1, sym->name);
+            if ((sym->cpplocalstatic || cparams.prm_cplusplus && sym->storage_class == sc_localstatic) && sym->parent)
+            {
+                strcpy(errbuf, sym->parent->decoratedName);
+                strcat(errbuf, "_");
+                strcat(errbuf, sym->name);
+            }
+            else
+            {
+                errbuf[0] = '_';
+                strcpy(errbuf + 1, sym->name);
+            }
             break;
         case lk_cpp:
             lastParent = sym;
@@ -894,7 +903,7 @@ void SetLinkerNames(SYMBOL *sym, enum e_lk linkage)
             p = mangleNameSpaces(p, lastParent->parentNameSpace);
             p = mangleClasses(p, sym->parentClass);
             *p++ = '@';
-            if (sym->templateLevel && sym->templateParams)
+            if (sym->templateLevel && sym->templateParams && sym->templateParams)
             {
                 p = mangleTemplate(p, sym, sym->templateParams);
             }

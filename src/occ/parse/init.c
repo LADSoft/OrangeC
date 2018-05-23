@@ -3698,13 +3698,8 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
     }
     if (funcsp && funcsp->isInline && sp->storage_class == sc_static)
     {
-        if (funcsp->templateLevel)
+        if (cparams.prm_cplusplus)
         {
-            char buf[1024];
-            strcpy(buf, funcsp->decoratedName);
-            strcat(buf, "@");
-            strcat(buf, sp->name);
-            sp->decoratedName = litlate(buf);
             sp->isInline = TRUE;
         }
         else

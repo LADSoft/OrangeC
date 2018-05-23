@@ -2861,7 +2861,7 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
             }
             else if (strSym && basetype(strSym->tp)->type == bt_templateselector)
             {
-                if (!templateNestingCount && allTemplateArgsSpecified(strSym, strSym->templateParams))
+                if (!templateNestingCount && !inTemplateSpecialization && allTemplateArgsSpecified(strSym, strSym->templateParams))
                     tn = SynthesizeType(strSym->tp, NULL, FALSE);
                 else
                     tn = NULL;
@@ -6107,6 +6107,8 @@ jointemplate:
                             spi->dumpInlineToFile |= sp->dumpInlineToFile;
                             spi->promotedToInline |= sp->promotedToInline;
 
+                            spi->parentClass = sp->parentClass;
+
                             sp->mainsym = spi;
 
                             sp = spi;
@@ -6404,6 +6406,17 @@ jointemplate:
                                         sp->linedata = startStmt->lineData;
                                     lex = getDeferredData(lex, sp, TRUE);
                                     InsertInline(sp);
+                                    if (sp->parentClass && (sp->storage_class == sc_virtual || sp->storage_class == sc_global))
+                                    {
+                                        if (sp->templateParams && !sp->templateParams->next)
+                                        {
+                                            sp->templateLevel = 0;
+                                            sp->tp = SynthesizeType(sp->tp, sp->parentClass->templateParams, FALSE);
+                                            sp = TemplateFunctionInstantiate(sp, FALSE, FALSE);
+                                            sp->specialized2 = TRUE;
+                                            GENREF(sp);
+                                        }
+                                    }
                                 }
                                 else
                                 {
@@ -6492,10 +6505,15 @@ jointemplate:
                             }
                             if (sp->storage_class == sc_localstatic)
                             {
-                                if (instantiatingTemplate)
-                                    sp->storage_class = sc_static;                                
+                                if (cparams.prm_cplusplus)
+                                {
+                                    sp->storage_class = sc_static;
+                                    sp->cpplocalstatic = TRUE;
+                                }
                                 else if (!sp->label)
+                                {
                                     sp->label = nextLabel++;
+                                }
                             }
                             if (!sp->label && sp->storage_class == sc_static && chosenAssembler->msil)
                                 sp->label = nextLabel++;
@@ -6535,6 +6553,14 @@ doInitialize:
                                     }
                                 }
                                 lex = initialize(lex, funcsp, sp, storage_class_in, asExpression, 0); /* also reserves space */
+                                if (sp->parentClass && sp->storage_class == sc_global)
+                                {
+                                    if (sp->templateParams && !sp->templateParams->next)
+                                    {
+                                        SetLinkerNames(sp, lk_cdecl);
+                                        InsertInlineData(sp);
+                                    }
+                                }
                                 if (sp->storage_class == sc_auto || sp->storage_class == sc_register || (sp->storage_class == sc_localstatic && sp->init))
                                 {
                                     BOOLEAN doit = TRUE;

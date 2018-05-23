@@ -2,6 +2,11 @@ Release notes:
 
 version 6.0.38:
     occ: speed up slow symbol table searches in classes with a lot of members
+    occ: fix problems compiling C++ regex header
+    occ: fix various problems where template specializations *should* have been instantantiated even though they weren't
+         used in the current source file
+    occ: fix problems with linking template functions with static variables
+    occ: remove unreferenced external declarations from the object file
 
 Version 6.0.37: 5/20/2018
     documentation:   various upgrades

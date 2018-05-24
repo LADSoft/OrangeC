@@ -48,6 +48,15 @@ std::deque<int> OS::jobCounts;
 bool OS::isSHEXE;
 int OS::jobsLeft;
 
+static void replaceall(std::string& str, const std::string& from, const std::string& to) {
+    size_t start_pos = str.find(from);
+    while(start_pos != std::string::npos)
+    {
+        str.replace(start_pos, from.length(), to);
+        start_pos = str.find(from, start_pos + to.length());
+    }
+}
+
 bool Time::operator >(const Time &last)
 {
     if (this->seconds > last.seconds)
@@ -149,8 +158,17 @@ int OS::Spawn(const std::string command, EnvironmentStrings &environment, std::s
         Eval r(cmd, false);
         cmd = r.Evaluate();
     }
-    cmd += " /c ";
-    cmd += std::string("\"") + command + "\"";
+    if (cmd == "/bin/sh")
+    {
+        cmd += " -c ";
+        replaceall(command1, "\\", "\\\\");
+        replaceall(command1, "\"", "\\\"");
+    }
+    else
+    {
+        cmd += " /c ";
+    }
+    cmd += std::string("\"") + command1 + "\"";
     STARTUPINFO startup;
     PROCESS_INFORMATION pi;
     HANDLE pipeRead, pipeWrite, pipeWriteDuplicate;
@@ -213,6 +231,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings &environment, std::s
             break;
         }
     }
+
     // try as an app first
     if (asapp && CreateProcess(nullptr, (char *)command.c_str(), nullptr, nullptr, true, 0, env,
                       nullptr, &startup, &pi))

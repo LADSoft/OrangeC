@@ -244,7 +244,7 @@ void library_setup(char select, char *string)
         strcpy(buf, string);
         StripExt(buf);
         AddExt(buf, ".l");
-        InsertAnyFile(buf, 0,  - 1);
+        InsertAnyFile(buf, 0,  - 1, FALSE);
     }
 }
 void bool_setup(char select, char *string)
@@ -856,7 +856,7 @@ int main(int argc, char *argv[])
     rv = !!stoponerr ;
     if (!cparams.prm_makestubs)
     {
-        if (!cparams.prm_compileonly && !stoponerr) {
+        if (!stoponerr) {
             rv = 0 ;
             if (chosenAssembler->compiler_postprocess)
             {

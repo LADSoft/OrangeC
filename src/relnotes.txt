@@ -7,6 +7,19 @@ version 6.0.38:
          used in the current source file
     occ: fix problems with linking template functions with static variables
     occ: remove unreferenced external declarations from the object file
+    occ: extend range of things you can reference with a __declspec declaration
+    occ: call assembler even if -c was specified on the command line
+    occ: the -lxxx switch set xxx as the output file name
+    occpr (symbol table parser): fix crash
+    ocide: could not step into a dll function
+    ocide & docs: add step functions to the debug menu
+    oimplib, olib, olink: fix more problems when '/' was used as a path separator
+    olink: bail with an error if a library cannot be found
+    omake: fix compatibility issues with /bin/sh
+    rtl:  sprintf could try to modify input strings, didn't work if string is in readonly memory
+    rtl: remove definition of __declspec in the _defs.h
+    rtl: fix C++ check in stdbool.h
+    rtl: fix strncat to work as per the standard
 
 Version 6.0.37: 5/20/2018
     documentation:   various upgrades

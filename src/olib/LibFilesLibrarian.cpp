@@ -148,6 +148,8 @@ void LibFiles::WriteNames(FILE *stream)
     {
         const char *p = (*it)->name.c_str();
         const char *q = strrchr(p, '\\');
+        if (!q)
+            q = strrchr(p, '/');
         if (q)
             q++;
         else

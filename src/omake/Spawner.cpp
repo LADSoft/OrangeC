@@ -30,6 +30,7 @@
 #include <iomanip>
 #include <iostream>
 #include <deque>
+#include "Variable.h"
 #include "utils.h"
 #include <algorithm>
 
@@ -165,7 +166,15 @@ int Spawner::InternalRun()
 }
 int Spawner::Run(const std::string &cmdin, bool ignoreErrors, bool silent, bool dontrun, bool make)
 {
-    std::string cmd = OS::NormalizeFileName(cmdin);
+
+    std::string cmd = cmdin;
+    Variable *v = VariableContainer::Instance()->Lookup("SHELL");
+    if (v)
+    {
+        std::string shell = v->GetValue();
+        if (shell != "/bin/sh")
+           OS::NormalizeFileName(cmdin);
+    }
     if (oneShell)
     {
         if (!make)

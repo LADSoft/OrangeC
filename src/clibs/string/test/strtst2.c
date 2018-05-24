@@ -36,6 +36,10 @@ int main()
 	buf1[5]='$';
 	printf("%s\n", buf1);
 	strcpy(buf1,"hello dave");
+	buf1[3] = 0;
+	strncat(buf1,"hi dave", 4);
+	printf("%s\n", buf1);
+	strcpy(buf1,"hello dave");
 	strncat(buf1,"peter rabbit", 5);
 	printf("%s\n", buf1);
 	

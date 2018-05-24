@@ -94,10 +94,4 @@
 #define __restrict restrict
 #endif
 
-#if defined(_WIN32)
-#define __declspec(x) x
-#define dllexport _export
-#define dllimport _import
-#endif
-
 #endif

@@ -98,7 +98,7 @@ void asm_functail(QUAD *q, int begin, int size);
 void asm_atomic(QUAD *q);
                               /* Invoke.c */
 
-int InsertExternalFile(char *name);
+int InsertExternalFile(char *name, BOOLEAN primary);
 void InsertOutputFileName(char *name);
 int RunExternalFiles(char *);
 

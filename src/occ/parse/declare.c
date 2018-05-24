@@ -1827,34 +1827,48 @@ static LEXEME *parse_declspec(LEXEME *lex, enum e_lk *linkage, enum e_lk *linkag
 {
 	if (needkw(&lex, openpa))
 	{
-		if (ISID(lex))
-		{
-			if (!strcmp(lex->value.s.a, "noreturn"))
-			{
-				if (*linkage3 != lk_none)
-					error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
-				*linkage3 = lk_noreturn;
-			}
-			else if (!strcmp(lex->value.s.a, "dllimport") || !strcmp(lex->value.s.a, "__dllimport__"))
-			{
-				if (*linkage2 != lk_none)
-					error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
-				*linkage2 = lk_import;
-			}
-			else if (!strcmp(lex->value.s.a, "dllexport") || !strcmp(lex->value.s.a, "__dllexport__"))
-			{
-				 if (*linkage2 != lk_none)
-					error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
-				*linkage2 = lk_export;
-			}
-			lex = getsym();
-		}
-		else if (MATCHKW(lex, kw_noreturn))
-		{
-			if (*linkage3 != lk_none)
-				error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
-			*linkage3 = lk_noreturn;
-		}
+        while (1)
+        {
+            if (ISID(lex))
+            {
+                if (!strcmp(lex->value.s.a, "noreturn"))
+                {
+                    if (*linkage3 != lk_none)
+                        error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                    *linkage3 = lk_noreturn;
+                }
+                else if (!strcmp(lex->value.s.a, "dllimport") || !strcmp(lex->value.s.a, "__dllimport__"))
+                {
+                    if (*linkage2 != lk_none)
+                        error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                    *linkage2 = lk_import;
+                }
+                else if (!strcmp(lex->value.s.a, "dllexport") || !strcmp(lex->value.s.a, "__dllexport__"))
+                {
+                    if (*linkage2 != lk_none)
+                        error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                    *linkage2 = lk_export;
+                }
+            }
+            else if (MATCHKW(lex, kw_noreturn))
+            {
+                if (*linkage3 != lk_none)
+                    error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                *linkage3 = lk_noreturn;
+            }
+            else
+            {
+                break;
+            }
+            lex = getsym();
+            if (MATCHKW(lex, openpa))
+            {
+                errskim(&lex, skim_closepa);
+            }
+            if (!MATCHKW(lex, comma))
+                break;
+            lex = getsym();
+        }
 		needkw(&lex, closepa);
 	}
         return lex;

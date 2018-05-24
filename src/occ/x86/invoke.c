@@ -85,12 +85,12 @@ static BOOLEAN InsertOption(char *name)
     strcat(*p, name + 1);    
     return TRUE;
 }
-static void InsertFile(LIST **r, char *name, char *ext)
+static void InsertFile(LIST **r, char *name, char *ext, BOOLEAN primary)
 {
     LIST *lst;
     char buf[256],  *newbuffer;
     strcpy(buf, name);
-    if (!outputFileName[0])
+    if (primary && !outputFileName[0])
     {
         strcpy(outputFileName, name);
         StripExt(outputFileName);
@@ -125,7 +125,7 @@ static void InsertFile(LIST **r, char *name, char *ext)
 
 /*-------------------------------------------------------------------------*/
 
-int InsertExternalFile(char *name)
+int InsertExternalFile(char *name, BOOLEAN primary)
 {
     char buf[260], *p;
     if (name[0] == '$')
@@ -136,29 +136,29 @@ int InsertExternalFile(char *name)
     }
     if (HasExt(name, ".asm") || HasExt(name,".nas") || HasExt(name, ".s"))
     {
-        InsertFile(&objlist, name, ".o");
-        InsertFile(&asmlist, name, 0);
+        InsertFile(&objlist, name, ".o", primary);
+        InsertFile(&asmlist, name, 0, primary);
         return 1; /* compiler shouldn't process it*/
     }
     else if (HasExt(name, ".l"))
     {
-        InsertFile(&liblist, name, 0);
+        InsertFile(&liblist, name, 0, primary);
         return 1;
     }
     else if (HasExt(name, ".rc"))
     {
-        InsertFile(&reslist, name, ".res");
-        InsertFile(&rclist, name, 0);
+        InsertFile(&reslist, name, ".res", primary);
+        InsertFile(&rclist, name, 0, primary);
         return 1;
     }
     else if (HasExt(name, ".res"))
     {
-        InsertFile(&reslist, name, 0);
+        InsertFile(&reslist, name, 0, primary);
         return 1;
     }
     else if (HasExt(name, ".o"))
     {
-        InsertFile(&objlist, name, 0);
+        InsertFile(&objlist, name, 0, primary);
         return 1;
     }
     p = strrchr(name, '\\');
@@ -169,12 +169,12 @@ int InsertExternalFile(char *name)
     else
         p++;
     strcpy(buf, p);
-    InsertFile(&objlist, buf, ".o");
+    InsertFile(&objlist, buf, ".o", primary);
     
     // compiling via assembly
     if (cparams.prm_asmfile && !cparams.prm_compileonly)
     {
-        InsertFile(&asmlist, buf, ".asm");
+        InsertFile(&asmlist, buf, ".asm", primary);
     }
     return 0; /* compiler should process it*/
 }
@@ -250,7 +250,7 @@ int RunExternalFiles(char *rootPath)
             return rv;
         rclist = rclist->next;
     }
-    if (objlist)
+    if (!cparams.prm_compileonly && objlist)
     {
         char tempFile[260];
         tmpnam(tempFile);

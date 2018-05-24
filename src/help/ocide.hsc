@@ -1956,7 +1956,7 @@ Writing
 
 
 FALSE
-51
+59
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
 {\colortbl ;\red0\green0\blue255;\red0\green0\blue0;\red128\green0\blue0;\red0\green128\blue0;}
 \viewkind4\uc1\pard\cf1\b\fs32 Debug Menu\cf2\b0\f1\fs20 
@@ -1965,13 +1965,17 @@ FALSE
 \par 
 \par \pard\qc\cf3\{bmc mdebug.png\}\cf2 
 \par \pard\f1 
-\par \b\f0 Run/Continue \b0 starts the debugger if it isn't running, at the active project.  \cf4\strike Debugging Windows\cf3\strike0\{linkID=320\}\cf2  are opened at this point.  The program will stop at the first break point it encounters, or at the start of the \i main()\i0  or \i WinMain() \i0 function if no breakpoints exist.\b 
+\par \b\f0 Run/Continue \b0 starts the debugger if it isn't running, at the active project.  \cf4\strike Debugging Windows\cf3\strike0\{linkID=320\}\cf2  are opened at this point.  The program will stop at the first break point it encounters, or at the start of the \i main()\i0  or \i WinMain() \i0 function if no breakpoints exist.   If the debugger is stopped in the bugger program execution is resumed.\b 
 \par 
 \par Stop Debugging\b0  stops the debugger and closes Debugging Windows.\b 
 \par 
-\par Run \b0 starts the program if it is stopped.
+\par \pard\ri1440 Run To Cursor\b0  \cf0 runs the program.  It will stop at the next break point encountered, when the program exits, or when the program flow reaches the cursor position in the current active edit window.
 \par 
-\par \pard\ri1440\b Run To Cursor\b0  \cf0 runs the program.  It will stop at the next break point encountered, when the program exits, or when the program flow reaches the cursor position in the current active edit window.
+\par \b Step Over\b0  steps over the current statement.   If the current statement is a function call the entire function is run; breakpoints in the function may still be hit though.
+\par 
+\par \b Step In\b0  steps into a function, if the current statement has one.   Otherwise it steps over the statement.
+\par 
+\par \b Step Out\b0  runs until the current function exits, or until a breakpoint is hit.
 \par \pard\cf2\b 
 \par Stop\b0  stops the program if it is running.\b 
 \par 
@@ -1981,11 +1985,15 @@ FALSE
 \par 
 \par Hardware Breakpoints\b0  opens the \cf4\strike Hardware Breakpoints\cf3\strike0\{linkID=730\}\cf2  dialog.\b 
 \par 
-\par \pard\ri1440\tx660\tx2820\cf0 Data Breakpoint\b0  opens the \cf4\strike Data Breakpoint\cf3\strike0\{linkID=890\}\cf0  dialog to allow adding a data breakpoint on the word under the cursor.
+\par \pard\ri1440\tx660\tx2820\cf0 Data Breakpoints\b0  opens the \cf4\strike Data Breakpoint\cf3\strike0\{linkID=890\}\cf0  dialog to allow adding a data breakpoint on the word under the cursor.
+\par 
+\par \b Add Function Breakpoint\b0  prompts for a function name, then sets a breakpoint there.'
 \par 
 \par \b Toggle Breakpoint\b0  toggles the break point setting for the current line.  See \cf4\strike Breakpoints\cf3\strike0\{linkID=410\}\cf0  for further information about breakpoints.
 \par 
 \par \pard\cf2\b Remove All Breakpoints\b0  removes all breakpoints from the break point list.
+\par \b\f1 
+\par \f0 Disable All Breakpoints\b0  disables all active breakpoints, but leaves the lines marked as breakpoints.
 \par \b\f1 
 \par \pard\ri1440\tx660\tx2820\cf0\f0 Return To Origin\b0  opens the window the current breakpoint is associated with and navigates to the breakpoint line.\cf2 
 \par \pard 

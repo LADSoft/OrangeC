@@ -26,15 +26,12 @@
 [export _strncat]
 %endif
 [global _strncat]
-[extern strncat_fin]
-
+[extern _strncpy]
 SECTION code CLASS=CODE USE32
 
 _strncat:
 		mov	ah,3
 		mov	edx,[esp+4]	;	str1
-        mov ecx,[esp+12]
-        jecxz exit
 TestEdx:
 		test	dl,ah
 		jnz	DoAlign
@@ -43,49 +40,44 @@ TestEdx:
 		; do multiple of 4 bytes at a time
 		;
 QuadLoop:
-        cmp ecx,4
-        jc  exit
 		mov	eax,[edx]	;	Load the bytes
 		test	al,al	;	Look for null
 		jz	CpyDone
-        dec ecx
-        jecxz exit
         inc edx
 		test	ah,ah
 		jz	CpyDone
-        dec ecx
-        jecxz exit
         inc edx
 		test eax,0xFF0000
 		jz	CpyDone
-        dec ecx
-        jecxz exit
         inc edx
 		test eax,0xFF000000
         jz  CpyDone
-        dec ecx
-        jecxz exit
         inc edx
         jmp QuadLoop
     
 CpyDone:
-        mov [esp+12],ecx
         mov ecx,edx
-		Jmp strncat_fin
+        jmp short fin
 
 
 DoAlign:
-        dec ecx
-        jecxz   exit
 		mov	al,[edx]
 		inc	edx
 		test	al,al
 		jnz	TestEdx
-        inc ecx
-        mov [esp+12],ecx
         mov ecx,edx
         dec ecx
-		Jmp strncat_fin
+fin:
+        push dword [esp+12]
+        push dword [esp + 12]
+        push ecx
+	call _strncpy
+        add esp, 12
+        cmp byte [ecx-1], 0
+        jz xit
+	mov byte [ecx], 0
+xit:
+	ret
 exit:
         mov eax,[esp+4]
         ret

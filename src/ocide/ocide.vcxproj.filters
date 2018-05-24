@@ -40,9 +40,6 @@
     <ClCompile Include="brkstep.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="browse.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="buildrul.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -332,9 +329,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="findwnd.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="memwnd.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="prjdepends.c">

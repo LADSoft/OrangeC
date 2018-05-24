@@ -26,12 +26,10 @@
 [export _strncpy]
 %endif
 [global _strncpy]
-[global strncat_fin]
 SECTION code CLASS=CODE USE32
 
 _strncpy:
 		mov	ecx,[esp+4]	;	str1
-strncat_fin:
 		mov	ah,3
 		mov	edx,[esp+8]	;  str2
         cmp dword [esp+12],0
@@ -71,11 +69,14 @@ CpyDone:
 
 CpyDoneLoLo:
 		mov	[ecx],al	; this is a zero
+                inc     ecx;
 		mov	eax,[esp+4]
 		ret
 
 CpyDoneLoHi:
 		mov	[ecx],ax
+                inc     ecx
+                inc     ecx
 		mov	eax,[esp+4]
 		ret
 
@@ -83,6 +84,7 @@ CpyDoneHiLo:
         mov [ecx],ax
         shr eax,16
         mov [ecx+2],al
+        add ecx,3
 		mov	eax,[esp+4]
 		ret
 

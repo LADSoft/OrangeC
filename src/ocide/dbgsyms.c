@@ -171,11 +171,15 @@ int GetBreakpointLine(int Address, char *module, int *linenum, BOOL next)
     if (!dbg)
         return 0;
         
+    int rv = 0;
     Address = Address - dbg->loadbase + dbg->linkbase;
     if (next)
-        return GetHigherBreakpoint(dbg, Address, module, linenum);
+        rv = GetHigherBreakpoint(dbg, Address, module, linenum);
     else
-        return GetEqualsBreakpoint(dbg, Address, module, linenum);
+        rv = GetEqualsBreakpoint(dbg, Address, module, linenum);
+    if (rv)
+        rv += dbg->loadbase - dbg->linkbase;
+    return rv;
 }
 
 

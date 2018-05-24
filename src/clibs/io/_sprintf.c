@@ -227,33 +227,28 @@ static char * getnum(char *string, LLONG_TYPE num,int radix,int lc,int unsign)
         
 	return &string[i+1];
 }
-static void justifiedOutput(FILE *__stream, char *buf, int ljustify, int width, 
+static void justifiedOutput(FILE *__stream, char *buf, int ljustify, int swidth, int width, 
 							int pad, int *restrict written)
 {
 	int xx = 0;
 	(*written) += width;
-	if (strlen(buf) > width)
-	{
-		xx = buf[width];
-		buf[width] = 0;
-	}
+        if (swidth > width)
+           swidth = width;
 	if (ljustify)
 	{
 		int l;
-		PUTSTR(buf);
-		for (l=strlen(buf); l < width; l++)
+		for (l=0; l < swidth; l++)
+			PUTCH(buf[l]);
+		for (l=swidth; l < width; l++)
 			PUTCH(pad);
 	}
 	else
 	{
 		int l;
-		for (l=strlen(buf); l < width; l++)
+		for (l=swidth; l < width; l++)
 			PUTCH(pad);
-		PUTSTR(buf);
-	}
-	if (xx)
-	{
-		buf[width] = xx;
+		for (l=0; l < swidth; l++)
+			PUTCH(buf[l]);
 	}
 }
 char *__onetostr(FILE *__stream, const char *restrict format, void *restrict arg,
@@ -382,18 +377,18 @@ char *__onetostr(FILE *__stream, const char *restrict format, void *restrict arg
                 if (width <l)
                     width = l;
                 fbuf[l] = 0;
-				justifiedOutput(__stream, fbuf, ljustify, width, ' ', written);
+				justifiedOutput(__stream, fbuf, ljustify, strlen(fbuf), width, ' ', written);
             } else {
                 if (width < 1)
                     width = 1;
 		    	(*count)++;
                 ch = *(int *)arg;
 				if (!ljustify && width > 1)
-					justifiedOutput(__stream, "", 0, width-1, ' ', written);
+					justifiedOutput(__stream, "", 0, 0, width-1, ' ', written);
 				PUTCH(ch);
 				(*written)++;
 				if (ljustify && width > 1)
-					justifiedOutput(__stream, "", 1, width-1, ' ', written);
+					justifiedOutput(__stream, "", 1, 0, width-1, ' ', written);
             }
 			break;
         case 'a':
@@ -486,7 +481,7 @@ char *__onetostr(FILE *__stream, const char *restrict format, void *restrict arg
             if (width < i)
                 width = i;
                 
-			justifiedOutput(__stream, fbuf, ljustify, width, ' ', written);
+			justifiedOutput(__stream, fbuf, ljustify, strlen(fbuf), width, ' ', written);
             break ;            
 		case 'g':
 			isg = 1;
@@ -756,7 +751,7 @@ doinf:
 			i = strlen(fbuf);
             if (width < i)
                 width = i;
-			justifiedOutput(__stream, fbuf, ljustify, width, ' ', written);
+			justifiedOutput(__stream, fbuf, ljustify, strlen(fbuf), width, ' ', written);
                
 #endif
         }
@@ -803,7 +798,7 @@ doinf:
 				if (l)
 				{
 					if (!ljustify)
-						justifiedOutput(__stream, "", 0, width-l, ' ', written);
+						justifiedOutput(__stream, "", 0, 0, width-l, ' ', written);
 		            memset(&st,0,sizeof(st));
                         ss = p;
         	        for (i=0; i < inc; i++) {
@@ -813,7 +808,7 @@ doinf:
 						(*written) += strlen(fbuf);
                 	}
 					if (ljustify)
-						justifiedOutput(__stream, "", 1, width-l, ' ', written);
+						justifiedOutput(__stream, "", 1, 0, width-l, ' ', written);
 				}
             } else {
 				int hold = 0;
@@ -828,10 +823,10 @@ doinf:
 				width = strlen(xxx);
 		if (prec < 0 || prec > width)
 			prec = width;
-					hold = xxx[prec];
-					xxx[prec] = 0;
-				justifiedOutput(__stream, xxx, ljustify, width, ' ', written);
-					xxx[prec] = hold;
+                hold = strlen(xxx);
+                if (hold < prec)
+                    prec = hold;
+				justifiedOutput(__stream, xxx, ljustify, prec, width, ' ', written);
             }
 			break;
         case 'p':
@@ -930,7 +925,7 @@ doinf:
 					PUTCH('X');
 					(*written)+=2;
 				}
-			justifiedOutput(__stream, sz, ljustify, width, leadzero ? '0' : ' ', written);
+			justifiedOutput(__stream, sz, ljustify, strlen(sz), width, leadzero ? '0' : ' ', written);
 			break;
 		default:
 			PUTCH(format[-1]);

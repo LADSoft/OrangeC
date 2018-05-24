@@ -159,11 +159,15 @@ int OS::Spawn(const std::string command, EnvironmentStrings &environment, std::s
         cmd = r.Evaluate();
     }
     if (cmd == "/bin/sh")
+    {
         cmd += " -c ";
+        replaceall(command1, "\\", "\\\\");
+        replaceall(command1, "\"", "\\\"");
+    }
     else
+    {
         cmd += " /c ";
-    replaceall(command1, "\\", "\\\\");
-    replaceall(command1, "\"", "\\\"");
+    }
     cmd += std::string("\"") + command1 + "\"";
     STARTUPINFO startup;
     PROCESS_INFORMATION pi;
@@ -256,7 +260,6 @@ int OS::Spawn(const std::string command, EnvironmentStrings &environment, std::s
     }
     else
     {
-std::cout << std::endl << "$$" << cmd << std::endl << std::endl;
         // not found, try running a shell to handle it...
         if (CreateProcess(nullptr, (char *)cmd.c_str(), nullptr, nullptr, true, 0, env,
                       nullptr, &startup, &pi))

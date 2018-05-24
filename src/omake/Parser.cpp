@@ -103,11 +103,8 @@ std::string Parser::GetLine(bool inCommand)
                 Eval::error("backslash-newline at end of input stream");
                 break;
             }
-            if (!inCommand)
-            {
-                rv.replace(rv.size() - 1, 1, "");
-                rv = rv + " ";
-            }
+            rv.replace(rv.size() - 1, 1, "");
+            rv = rv + " ";
             lineno++;
             std::string next = Eval::ExtractFirst(remaining, "\n");
             rv += next;

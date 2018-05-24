@@ -9,9 +9,9 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LocalDebuggerCommandArguments>nmmain.cpp</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>spawner.cpp</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerWorkingDirectory>\orangec\src\onm</LocalDebuggerWorkingDirectory>
+    <LocalDebuggerWorkingDirectory>\orangec\src\omake</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LocalDebuggerCommandArguments>..\parse\broken.c</LocalDebuggerCommandArguments>

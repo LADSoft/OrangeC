@@ -394,7 +394,6 @@ static void DumpSymbol(SYMBOL *sym)
                 HASHREC *hr = sym->tp->syms->table[0];
                 while (hr && ((SYMBOL *)hr->p)->storage_class == sc_parameter)
                 {
-                    char type_name[100000];
                     SYMBOL *st = (SYMBOL *)hr->p;
                     char *argName = GetSymName(st);
                     if (strstr(argName, "++"))

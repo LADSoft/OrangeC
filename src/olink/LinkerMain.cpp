@@ -205,6 +205,8 @@ int LinkerMain::Run(int argc, char **argv)
         {
             std::string prefix = modName;
             size_t n = prefix.find_last_of('\\');
+            if (n == std::string::npos)
+            	n = prefix.find_last_of('/');
             if (n != std::string::npos)
             {
                 prefix.replace(n+1, prefix.size()-n, "");

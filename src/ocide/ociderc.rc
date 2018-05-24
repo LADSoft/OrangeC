@@ -442,6 +442,9 @@ BEGIN
 		MENUITEM "&Run/Continue\tF5", IDM_RUN
 		MENUITEM "S&top Debugging\tShift+F5", IDM_STOPDEBUGGING
 		MENUITEM "Run to &Cursor\tCtl+F5", IDM_RUNTO
+                MENUITEM "Step Over\tF10", IDM_STEPOVER
+                MENUITEM "Step In\tF11", IDM_STEPIN
+                MENUITEM "Step Out\tAlt+F11", IDM_STEPOUT
 		MENUITEM "Sto&p\tAlt+F5", IDM_STOP
 		MENUITEM "Run &without debugger", IDM_RUNNODEBUG
 		MENUITEM "", 0, MFT_SEPARATOR

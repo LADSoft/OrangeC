@@ -709,6 +709,9 @@ void InitMenuPopup(HMENU menu)
 
     mf_state = (uState != notDebugging && (uState == atException || uState == atBreakpoint)  && !making && activeProject) ? MF_ENABLED : MF_GRAYED;
     EnableMenuItem(menu, IDM_STOPDEBUGGING, mf_state);
+    EnableMenuItem(menu, IDM_STEPIN, mf_state);
+    EnableMenuItem(menu, IDM_STEPOUT, mf_state);
+    EnableMenuItem(menu, IDM_STEPOVER, mf_state);
     EnableMenuItem(menu, IDM_RUNTO, mf_state);
     EnableMenuItem(menu, IDM_SCROLLTOBP, mf_state);
 //    EnableMenuItem(menu, IDM_VIEWBP, mf_state);

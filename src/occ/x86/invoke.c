@@ -250,7 +250,7 @@ int RunExternalFiles(char *rootPath)
             return rv;
         rclist = rclist->next;
     }
-    if (objlist)
+    if (!cparams.prm_compileonly && objlist)
     {
         char tempFile[260];
         tmpnam(tempFile);

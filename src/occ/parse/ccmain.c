@@ -856,7 +856,7 @@ int main(int argc, char *argv[])
     rv = !!stoponerr ;
     if (!cparams.prm_makestubs)
     {
-        if (!cparams.prm_compileonly && !stoponerr) {
+        if (!stoponerr) {
             rv = 0 ;
             if (chosenAssembler->compiler_postprocess)
             {

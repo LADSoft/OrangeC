@@ -421,7 +421,7 @@ typedef struct _arch_asm
     int (*compiler_postprocess)(char *);              /* postprocess function, or NULL */
     int (*rundown)(void);                           /* compiler rundown */
     void (*insert_output_file)(char *name);          /* insert the output (executable name) into the backend */
-    int (*insert_noncompile_file)(char *name);      /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
+    int (*insert_noncompile_file)(char *name, BOOLEAN primary);      /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
     int (*parse_param)(char mode, char *string); /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
     int (*parse_codegen)(char mode, char *string); /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
     void (*doPragma)(char *kw, char *tag);         /* parse a pragma directive, or null */

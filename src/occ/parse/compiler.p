@@ -856,7 +856,7 @@ void def_setup(char select, char *string);
 void undef_setup(char select, char *string);
 void output_setup(char select, char *string);
 void setglbdefs(void);
-void InsertAnyFile(char *filename, char *path, int drive);
+void InsertAnyFile(char *filename, char *path, int drive, BOOLEAN primary);
 void setfile(char *buf, char *orgbuf, char *ext);
 void outputfile(char *buf, char *orgbuf, char *ext);
 void scan_env(char *output, char *string);

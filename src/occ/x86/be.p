@@ -110,7 +110,7 @@ LEXEME *inasm_statement(LEXEME *inlex, BLOCKDATA *parent);
 void *inlineAsmStmt(void *);
                               /* Invoke.c */
 
-int InsertExternalFile(char *name);
+int InsertExternalFile(char *name, BOOLEAN primary);
 void InsertOutputFileName(char *name);
 int RunExternalFiles(char *);
 

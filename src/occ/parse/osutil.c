@@ -597,7 +597,7 @@ void tool_setup(char select, char *string)
     char buf[2048];
     buf[0] = '$';
     strcpy(buf+1, string);
-    InsertAnyFile(buf, 0, -1);
+    InsertAnyFile(buf, 0, -1, FALSE);
 }
 /*-------------------------------------------------------------------------*/
 
@@ -739,7 +739,7 @@ void setglbdefs(void)
 
 /*-------------------------------------------------------------------------*/
 
-void InsertOneFile(char *filename, char *path, int drive)
+void InsertOneFile(char *filename, char *path, int drive, BOOLEAN primary)
 /*
  * Insert a file name onto the list of files to process
  */
@@ -771,13 +771,13 @@ void InsertOneFile(char *filename, char *path, int drive)
         buffer[0] = 'a';
     }
     inserted = chosenAssembler->insert_noncompile_file 
-        && chosenAssembler->insert_noncompile_file(buffer);
+        && chosenAssembler->insert_noncompile_file(buffer, primary);
     if (a)
         buffer[0] = a;
     if (!inserted)
 #endif
     {
-        AddExt(buffer, ".C");
+        AddExt(buffer, ".c");
         newbuffer = (char*)malloc(strlen(buffer) + 1);
         if (!newbuffer)
             return ;
@@ -793,7 +793,7 @@ void InsertOneFile(char *filename, char *path, int drive)
         s->data = newbuffer;
     }
 }
-void InsertAnyFile(char *filename, char *path, int drive)
+void InsertAnyFile(char *filename, char *path, int drive, BOOLEAN primary)
 {
     char drv[256],dir[256],name[256],ext[256];
 #if defined(_MSC_VER) || defined(BORLAND) || defined(__ORANGEC__)
@@ -804,16 +804,16 @@ void InsertAnyFile(char *filename, char *path, int drive)
     if (n != -1)
     {
         do {
-            InsertOneFile(findbuf.name, dir[0] ? dir : 0, drv[0] ? tolower(drv[0])-'a' : -1);
+            InsertOneFile(findbuf.name, dir[0] ? dir : 0, drv[0] ? tolower(drv[0])-'a' : -1, primary);
         } while (_findnext(n, &findbuf) != -1);
         _findclose(n);
     }
     else
     {
-        InsertOneFile(filename, path, drive);
+        InsertOneFile(filename, path, drive, primary);
     }
 #else
-    InsertOneFile(filename, path, drive);
+    InsertOneFile(filename, path, drive, primary);
 #endif
 }
 /*-------------------------------------------------------------------------*/
@@ -927,7 +927,7 @@ int parse_arbitrary(char *string)
     }
     rv = parse_args(&argc, argv, TRUE);
     for (i = 1; i < argc; i++)
-        InsertAnyFile(argv[i], 0,  - 1);
+        InsertAnyFile(argv[i], 0,  - 1, TRUE);
     return rv;
 }
 
@@ -1154,7 +1154,7 @@ void ccinit(int argc, char *argv[])
             if (argv[i][0] == '@')
                 parsefile(0, argv[i] + 1);
             else
-                InsertAnyFile(argv[i], 0,  - 1);
+                InsertAnyFile(argv[i], 0,  - 1, TRUE);
     }
 
 #ifndef PARSER_ONLY

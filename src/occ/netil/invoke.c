@@ -88,7 +88,7 @@ static void InsertFile(LIST **r, char *name, char *ext)
 
 /*-------------------------------------------------------------------------*/
 
-int InsertExternalFile(char *name)
+int InsertExternalFile(char *name, BOOLEAN primary)
 {
     char buf[260], *p;
     

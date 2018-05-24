@@ -244,7 +244,7 @@ void library_setup(char select, char *string)
         strcpy(buf, string);
         StripExt(buf);
         AddExt(buf, ".l");
-        InsertAnyFile(buf, 0,  - 1);
+        InsertAnyFile(buf, 0,  - 1, FALSE);
     }
 }
 void bool_setup(char select, char *string)

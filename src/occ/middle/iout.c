@@ -1254,9 +1254,6 @@ void putconst(EXPRESSION *offset, int color)
         case en_structelem:
             oprintf(icdFile, "%s:STRUCTELEM(%d)", ((SYMBOL*)offset->v.sp)->decoratedName, offset->v.sp->offset);
             break;
-        case en_label:
-            oprintf(icdFile, "L_%ld:RAM", offset->v.sp->label);
-            break;
         case en_c_string:
             if (offset->string)
             {

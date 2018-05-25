@@ -2004,7 +2004,6 @@ int opt0(EXPRESSION **node)
             }
             else switch(ep->left->type)
             {
-                case en_label:
                 case en_pc:
                 case en_threadlocal:
                 case en_global:
@@ -2020,7 +2019,6 @@ join_land:
                     }
                     else switch(ep->right->type)
                     {
-                        case en_label:
                         case en_pc:
                         case en_threadlocal:
                         case en_global:
@@ -2056,7 +2054,6 @@ join_land:
             }
             else switch(ep->left->type)
             {
-                case en_label:
                 case en_pc:
                 case en_threadlocal:
                 case en_global:
@@ -2085,7 +2082,6 @@ join_lor:
                     }
                     else switch(ep->right->type)
                     {
-                        case en_label:
                         case en_pc:
                         case en_threadlocal:
                         case en_global:
@@ -3501,7 +3497,6 @@ static int depth(EXPRESSION *ep)
         case en_pc:
         case en_threadlocal:
         case en_labcon:
-        case en_label:
         case en_absolute:
         case en_nullptr:
         case en_atomic:
@@ -3552,7 +3547,6 @@ static void rebalance(EXPRESSION *ep)
         case en_pc:
         case en_threadlocal:
         case en_labcon:
-        case en_label:
         case en_absolute:
         case en_nullptr:
         case en_structelem:

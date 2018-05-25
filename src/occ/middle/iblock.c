@@ -77,7 +77,6 @@ int equalnode(EXPRESSION *node1, EXPRESSION *node2)
     switch (node1->type)
     {
         case en_const:
-        case en_label:
         case en_pc:
         case en_global:
         case en_auto:
@@ -329,7 +328,6 @@ BOOLEAN usesAddress(IMODE *im)
             case en_pc:
             case en_absolute:
             case en_global:
-            case en_label:
             case en_threadlocal:
                 return TRUE ;
             default:

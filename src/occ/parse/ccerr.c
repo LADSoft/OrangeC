@@ -1550,7 +1550,6 @@ static SYMBOL *getAssignSP(EXPRESSION *exp)
     SYMBOL *sp;
     switch(exp->type)
     {
-        case en_label:
         case en_global:
         case en_auto:
             return exp->v.sp;
@@ -1629,7 +1628,6 @@ void assignmentUsages(EXPRESSION *node, BOOLEAN first)
         case en_structelem:
             break;
         case en_global:
-        case en_label:
         case en_pc:
         case en_labcon:
         case en_absolute:
@@ -1861,7 +1859,6 @@ static int checkDefaultExpression(EXPRESSION *node)
         case en_c_string:
             break;
         case en_global:
-        case en_label:
         case en_pc:
         case en_labcon:
         case en_absolute:

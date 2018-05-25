@@ -482,8 +482,6 @@ static BOOLEAN MatchesConst(EXPRESSION *one, EXPRESSION *two)
         case en_labcon:
         case en_threadlocal:
             return one->v.sp == two->v.sp;
-        case en_label:
-            return (one->v.i == two->v.i);
         default:
             return FALSE;		
     }

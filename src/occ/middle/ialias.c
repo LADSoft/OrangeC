@@ -201,7 +201,6 @@ static ALIASNAME *LookupMem(IMODE *im)
     switch (im->offset->type)
     {
         case en_global:
-        case en_label:
         case en_pc:
         case en_auto:
         case en_threadlocal:
@@ -227,7 +226,6 @@ static ALIASNAME *LookupMem(IMODE *im)
     switch(im->offset->type)
     {
         case en_auto:
-        case en_label:
         case en_global:
             (*p)->v.uiv = aAlloc(sizeof(UIV));
             (*p)->v.uiv->im = im;		
@@ -467,7 +465,7 @@ static void CreateMem(IMODE *im)
             p = LookupMem(im);
             p = LookupAliasName(p, 0);
         }
-        if (im->size == ISZ_ADDR || im->offset->type == en_label || im->offset->type == en_global)
+        if (im->size == ISZ_ADDR || im->offset->type == en_global)
         {
             ALIASADDRESS *aa;
             aa = LookupAddress(p, 0);
@@ -1009,7 +1007,6 @@ static void HandleParm(QUAD *head)
             {
                 case en_labcon:
                 case en_global:
-                case en_label:
                 case en_pc:
                 case en_threadlocal:
                     return;
@@ -1319,7 +1316,6 @@ static void ScanUIVs(void)
             {
                 case en_auto:
                 case en_global:
-                case en_label:
                 case en_pc:
                 case en_threadlocal:
                     im = GetLoadTemp(im);

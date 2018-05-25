@@ -146,7 +146,7 @@ enum e_node
 {
 
     en_void, en_not_lvalue, en_lvalue, en_argnopush, en_voidnz, en_shiftby, 
-    en_global, en_auto, en_labcon, en_absolute, en_pc, en_label, en_const, en_threadlocal,
+    en_global, en_auto, en_labcon, en_absolute, en_pc, en_const, en_threadlocal,
     en_c_bit, en_c_bool, en_c_c, en_c_uc, en_c_wc, en_c_s, en_c_u16, en_c_us, en_c_i, en_c_ui, 
     en_c_u32, en_c_l, en_c_ul, en_c_ll, en_c_ull, en_c_f, en_c_d, en_c_ld,
         en_c_p, en_c_sp, en_c_fp, en_c_fc, en_c_dc, en_c_ldc,

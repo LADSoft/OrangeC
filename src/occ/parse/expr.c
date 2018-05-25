@@ -2133,7 +2133,6 @@ static int simpleDerivation(EXPRESSION *exp)
         case en_global:
         case en_auto:
         case en_absolute:
-        case en_label:
         case en_pc:
         case en_threadlocal:
             rv |= 2;
@@ -5119,7 +5118,6 @@ static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE
             {
                 case en_pc:
                 case en_auto:
-                case en_label:
                 case en_global:
                 case en_absolute:
                 case en_threadlocal:
@@ -5213,7 +5211,6 @@ static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE
             {
                 case en_pc:
                 case en_auto:
-                case en_label:
                 case en_global:
                 case en_absolute:
                 case en_threadlocal:

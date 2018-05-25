@@ -725,7 +725,6 @@ int dumpInit(SYMBOL *sp, INITIALIZER *init)
                     // fall through
                 case en_pc:
                 case en_global:
-                case en_label:
                 case en_labcon:
                 case en_add:
                 case en_arrayadd:
@@ -775,9 +774,6 @@ int dumpInit(SYMBOL *sp, INITIALIZER *init)
                     break;
                 case en_global:
                     genref(exp->v.sp, 0);
-                    break;
-                case en_label:
-                    gen_labref(exp->v.sp->label);
                     break;
                 case en_labcon:
                     gen_labref(exp->v.i);
@@ -1363,7 +1359,6 @@ static void refExp(EXPRESSION *exp)
             refExp(exp->right);
             break;
         case en_global:
-        case en_label:
         case en_pc:
         case en_threadlocal:
             GENREF(exp->v.sp);
@@ -3387,7 +3382,6 @@ BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams)
             rv = TRUE;
             break;
         case en_global:
-        case en_label:
         case en_pc:
         case en_labcon:
         case en_absolute:
@@ -3435,7 +3429,6 @@ BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams)
             else switch (node->left->type)
             {
                 case en_global:
-                case en_label:
                 case en_pc:
                 case en_labcon:
                 case en_absolute:

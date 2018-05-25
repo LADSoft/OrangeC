@@ -1244,7 +1244,6 @@ static BOOLEAN eval(QUAD *q)
                     }
                     switch (q->dc.left->offset->type)
                     {
-                        case en_label:
                         case en_pc:
                         case en_global:
                         case en_auto:

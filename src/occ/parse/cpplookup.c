@@ -1597,7 +1597,6 @@ static BOOLEAN ismem(EXPRESSION *exp)
     switch (exp->type)
     {
         case en_global:
-        case en_label:
         case en_pc:
         case en_auto:
         case en_threadlocal:

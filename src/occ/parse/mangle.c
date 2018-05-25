@@ -382,7 +382,6 @@ static char * mangleExpressionInternal (char *buf, EXPRESSION *exp)
                 break;
 			case en_pc:
 			case en_global:
-			case en_label:
             case en_const:
 				if (isfunction(exp->v.sp->tp))
 				{

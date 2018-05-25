@@ -318,10 +318,6 @@ BE_IMODEDATA *beArgType(IMODE *in)
                             break;
                     }
                     break ;
-                case en_label:
-                    rv->mode = bee_label;
-                    rv->u.labelNum = node->v.sp->label;
-                    break ;
                 case en_labcon:
                     rv->mode = bee_label;
                     rv->u.labelNum = node->v.i;

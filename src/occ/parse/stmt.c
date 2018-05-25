@@ -1735,7 +1735,6 @@ static SYMBOL *baseNode(EXPRESSION *node)
         return 0;
     switch (node->type)
     {
-        case en_label:
         case en_auto:
         case en_pc:
         case en_global:
@@ -1929,7 +1928,6 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                             switch (exp1->type)
                             {
                                 case en_global:
-                                case en_label:
                                 case en_auto:
                                 case en_threadlocal:
                                     exp1->v.sp->dest = NULL;

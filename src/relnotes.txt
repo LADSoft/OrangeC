@@ -21,6 +21,8 @@ version 6.0.38:
     rtl: fix C++ check in stdbool.h
     rtl: fix strncat to work as per the standard
     rtl: uncaught throw will now result in abnormal program termination
+    rtl: fix definition of 'bad_cast' to inherit from 'exception'
+    rtl: fix the definition of __sync_add_and_fetch provided for locale.cpp to add to the result
 
 Version 6.0.37: 5/20/2018
     documentation:   various upgrades

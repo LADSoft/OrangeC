@@ -332,7 +332,6 @@ SYMBOL *varsp(EXPRESSION *node)
         return 0;
     switch (node->type)
     {
-        case en_label:
         case en_auto:
         case en_pc:
         case en_global:
@@ -845,7 +844,7 @@ IMODE *gen_deref(EXPRESSION *node, SYMBOL *funcsp, int flags)
             ap1->restricted = node->isrestrict;
         }
     }
-    else if ((chosenAssembler->arch->denyopts & DO_UNIQUEIND) && (node->left->type == en_global || node->left->type == en_label || node->left->type == en_auto) &&
+    else if ((chosenAssembler->arch->denyopts & DO_UNIQUEIND) && (node->left->type == en_global || node->left->type == en_auto) &&
             ((isarray(node->left->v.sp->tp) && !basetype(node->left->v.sp->tp)->msil) || isstructured(node->left->v.sp->tp)))
     {
         ap1 = gen_expr(funcsp, node->left, 0, ISZ_ADDR);
@@ -915,7 +914,6 @@ IMODE *gen_deref(EXPRESSION *node, SYMBOL *funcsp, int flags)
                     break;
                 }
                 // fall through
-            case en_label:
             case en_global:
             case en_pc:
             
@@ -1673,7 +1671,6 @@ IMODE *gen_assign(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
                     case en_auto:
                     case en_global:
                     case en_pc:
-                    case en_label:
                     case en_threadlocal:
                         if (isstructured(node->right->v.sp->tp))
                         {
@@ -2303,7 +2300,6 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
     {
         switch (f->returnEXP->type)
         {
-        case en_label:
         case en_auto:
         case en_pc:
         case en_global:
@@ -3058,7 +3054,6 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
         case en_pc:
         case en_global:
         case en_absolute:
-        case en_label:
             GENREF(node->v.sp);
             if (node->v.sp->imaddress && !chosenAssembler->msil)
             {
@@ -3644,7 +3639,6 @@ int natural_size(EXPRESSION *node)
         case en_x_object:
             return ISZ_OBJECT;
         case en_trapcall:
-        case en_label:
         case en_auto:
         case en_pc:
         case en_threadlocal:

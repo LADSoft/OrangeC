@@ -129,7 +129,6 @@ EXPRESSION *GetSymRef(EXPRESSION *n)
         case en_global:
         case en_auto:
         case en_absolute:
-        case en_label:
         case en_pc:
         case en_threadlocal:
             return n;
@@ -172,8 +171,6 @@ BOOLEAN templatecompareexpressions(EXPRESSION *exp1, EXPRESSION *exp2)
         case en_const:
         case en_threadlocal:
             return exp1->v.sp == exp2->v.sp;
-        case en_label:
-            return exp1->v.i == exp2->v.i;
         case en_func:
             return exp1->v.func->sp == exp2->v.func->sp;
         case en_templateselector:
@@ -2440,7 +2437,6 @@ static TYPE *LookupTypeFromExpression(EXPRESSION *exp, TEMPLATEPARAMLIST *enclos
         case en_pc:
         case en_const:
         case en_threadlocal:
-        case en_label:
             return &stdpointer;
         case en_x_label:
         case en_l_ref:
@@ -6876,7 +6872,6 @@ static BOOLEAN checkArgSpecified(TEMPLATEPARAMLIST *args)
                         {
                             case en_pc:
                             case en_global:
-                            case en_label:
                             case en_func:
                                 return TRUE;
                             default:
@@ -7968,7 +7963,6 @@ static BOOLEAN fullySpecialized(TEMPLATEPARAMLIST *tpl)
                     {
                         case en_pc:
                         case en_global:
-                        case en_label:
                         case en_func:
                             return TRUE;
                         default:

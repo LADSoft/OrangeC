@@ -4476,7 +4476,6 @@ int resolveoffset(OCODE *ins, EXPRESSION *n, int *resolved)
                 break;
             case en_labcon:
             case en_global:
-            case en_label:
             case en_pc:
             case en_threadlocal:
                 *resolved = 0;
@@ -6481,10 +6480,6 @@ void outcode_dumpIns(OCODE *peeplist)
                     gen_label_fixup(peeplist->branched ? fm_rellabel : fm_label,
                         oa_currentSeg, peeplist->address + peeplist->addroffset, node->v.i)
                         ;
-                else if (node->type == en_label)
-                    gen_label_fixup(peeplist->branched ? fm_rellabel : fm_label,
-                        oa_currentSeg, peeplist->address + peeplist->addroffset, node
-                        ->v.sp->label);
                 else 
                     gen_symbol_fixup(peeplist->branched ? fm_relsymbol : fm_symbol,
                         oa_currentSeg, peeplist->address + peeplist->addroffset, node
@@ -6501,10 +6496,6 @@ void outcode_dumpIns(OCODE *peeplist)
                     gen_label_fixup(peeplist->branched ? fm_rellabel : fm_label,
                         oa_currentSeg, peeplist->address + peeplist->addroffset + 4,
                         node->v.i);
-                else if (node->type == en_label)
-                    gen_label_fixup(peeplist->branched ? fm_rellabel : fm_label,
-                        oa_currentSeg, peeplist->address + peeplist->addroffset + 4, node
-                        ->v.sp->label);
                 else
                     gen_symbol_fixup(peeplist->branched ? fm_relsymbol :
                         fm_symbol, oa_currentSeg, peeplist->address + peeplist

@@ -1387,7 +1387,7 @@ static OCODE *ope_call(void)
             ap1->length = ap2->length = ISZ_UINT;
             return make_ocode(ap1, ap2, 0);
         }
-        else if ((ap1->offset->type != en_label && ap1->offset->type
+        else if ((ap1->offset->type
             != en_labcon && ap1->offset->type != en_pc) || ap1->seg)
             return (OCODE*) - 1;
     }
@@ -1513,8 +1513,7 @@ static OCODE *ope_relbra(void)
     ap1->length = ISZ_NONE;
     if (ap1->mode != am_immed)
         return (OCODE*) - 1;
-    if (ap1->offset->type != en_label && ap1->offset->type !=
-        en_labcon)
+    if (ap1->offset->type != en_labcon)
         return (OCODE*) - 1;
     return make_ocode(ap1, 0, 0);
 }

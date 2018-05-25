@@ -1705,7 +1705,6 @@ BOOLEAN isconstaddress(EXPRESSION *exp)
             return (isconstaddress(exp->left) || isintconst(exp->left))
                     && (isconstaddress(exp->right) || isintconst(exp->right));
         case en_global:
-        case en_label:
         case en_pc:
         case en_labcon:
             return TRUE;

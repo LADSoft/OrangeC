@@ -147,8 +147,10 @@ int Spawner::InternalRun()
         }
         else
         {
-             rv = Run(cmd, curIgnore, curSilent, curDontRun, make);
+             int rv1 = Run(cmd, curIgnore, curSilent, curDontRun, make);
              make = false;
+             if (!rv)
+                 rv = rv1;
         }
         if (outputType == o_line)
             OS::ToConsole(output);

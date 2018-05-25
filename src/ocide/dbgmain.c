@@ -785,7 +785,7 @@ void StartDebug(char *cmd)
                             char buf[512];
                             DWORD exitCode;
                             GetExitCodeProcess(pr->hProcess, &exitCode);
-                            sprintf(buf, "Process Unloading: %s with exitCode %d\r\n", pr->name, exitCode) ;
+                            sprintf(buf, "Process Unloading: %s with exit code %d\r\n", pr->name, exitCode) ;
                             SendInfoMessage(ERR_DEBUG_WINDOW, buf);
                             DeleteProcess(pr->idProcess);
                         }
@@ -909,8 +909,13 @@ void StartDebug(char *cmd)
                         THREAD *th = GetThread(stDE.dwProcessId, stDE.dwThreadId);
                         if (th)
                         {
-                            sprintf(buf, "Thread exit: %d %s with exit code %d\r\n", th
-                                ->idThread, th->name, stDE.u.ExitProcess.dwExitCode);
+                            if (th->name && th->name[0]) {
+  			       sprintf(buf, "Thread exit: %d %s with exit code %d\r\n",
+                                  th->idThread, th->name, stDE.u.ExitProcess.dwExitCode);
+                            } else {
+  			       sprintf(buf, "Thread exit: %d with exit code %d\r\n",
+                                  th->idThread, stDE.u.ExitProcess.dwExitCode);
+                            }
                             SendInfoMessage(ERR_DEBUG_WINDOW, buf);
                             DeleteThread(stDE.dwProcessId, stDE.dwThreadId);
                         }

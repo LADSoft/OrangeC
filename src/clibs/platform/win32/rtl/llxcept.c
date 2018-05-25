@@ -66,8 +66,10 @@ LONG ___xceptionhandle(PEXCEPTION_RECORD p, void *record, PCONTEXT context, void
    if (p->ExceptionFlags == 2) // unwinding
    		return 1 ;
    // if we get a C++ exception here, it is a 'loose' throw that needs an abort...
+#ifndef __BUILDING_LSCRTL_DLL
    if (p->ExceptionCode == OUR_CPP_EXC_CODE) 
        __call_terminate();
+#endif
    switch(p->ExceptionCode) {
 		case EXCEPTION_ACCESS_VIOLATION:
 		case EXCEPTION_DATATYPE_MISALIGNMENT:

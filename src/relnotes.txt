@@ -20,6 +20,7 @@ version 6.0.38:
     rtl: remove definition of __declspec in the _defs.h
     rtl: fix C++ check in stdbool.h
     rtl: fix strncat to work as per the standard
+    rtl: uncaught throw will now result in abnormal program termination
 
 Version 6.0.37: 5/20/2018
     documentation:   various upgrades

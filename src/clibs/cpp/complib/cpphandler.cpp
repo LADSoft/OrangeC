@@ -27,8 +27,11 @@
 #include <stdlib.h>
 #include "_rtti.h"
 #include <stdio.h>
-
-#define OUR_CPP_EXC_CODE 0xEEFABCD
+#include <time.h>
+#undef errno
+#include <wchar.h>
+#include <locale.h>
+#include "libp.h"
 
 extern "C" void __global_unwind(void *, void *);
 extern "C" void __call_terminate() ;

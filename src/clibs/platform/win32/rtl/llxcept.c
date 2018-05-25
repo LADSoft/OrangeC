@@ -25,8 +25,13 @@
 
 #include <windows.h>
 #include <signal.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
+#include <stdlib.h>
+#undef errno
+#include <wchar.h>
+#include <locale.h>
+#include <libp.h>
 extern int _win32 ;
 extern char **_argv;
 
@@ -44,6 +49,7 @@ static int *_xceptblkptr;
          p->SegDs,p->SegEs,p->SegFs,p->SegGs);
    if (!_win32) {
       fprintf(stderr,buf) ;
+      fflush(stderr);
    } else {
       MessageBox(0,buf,text,0) ;
    }
@@ -59,6 +65,9 @@ LONG ___xceptionhandle(PEXCEPTION_RECORD p, void *record, PCONTEXT context, void
    int signum = -1,rv = 1;
    if (p->ExceptionFlags == 2) // unwinding
    		return 1 ;
+   // if we get a C++ exception here, it is a 'loose' throw that needs an abort...
+   if (p->ExceptionCode == OUR_CPP_EXC_CODE) 
+       __call_terminate();
    switch(p->ExceptionCode) {
 		case EXCEPTION_ACCESS_VIOLATION:
 		case EXCEPTION_DATATYPE_MISALIGNMENT:

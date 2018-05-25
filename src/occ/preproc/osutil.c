@@ -642,7 +642,7 @@ void setglbdefs(void)
 
 /*-------------------------------------------------------------------------*/
 
-void InsertAnyFile(char *filename, char *path, int drive)
+void InsertAnyFile(char *filename, char *path, int drive, BOOLEAN primary)
 /*
  * Insert a file name onto the list of files to process
  */
@@ -780,7 +780,7 @@ int parse_arbitrary(char *string)
     }
     rv = parse_args(&argc, argv, TRUE);
     for (i = 1; i < argc; i++)
-        InsertAnyFile(argv[i], 0,  - 1);
+        InsertAnyFile(argv[i], 0,  - 1, TRUE);
     return rv;
 }
 
@@ -1001,7 +1001,7 @@ void ccinit(int argc, char *argv[])
             if (argv[i][0] == '@')
                 parsefile(0, argv[i] + 1);
             else
-                InsertAnyFile(argv[i], 0,  - 1);
+                InsertAnyFile(argv[i], 0,  - 1, TRUE);
     }
 
     if ((clist && clist->next) && has_output_file)

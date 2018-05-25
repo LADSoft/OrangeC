@@ -74,7 +74,6 @@ int showVersion = FALSE;
 
 static BOOLEAN has_output_file;
 static LIST *deflist = 0, *undeflist = 0;
-static jmp_buf ctrlcreturn;
 static char **set_searchpath = &prm_searchpath;
 static char **set_libpath = &prm_libpath;
 void fatal(char *fmt, ...)

@@ -506,7 +506,7 @@ static EXPRESSION *inasm_ident(void)
                         break;
                 case sc_localstatic:
                         sp->genreffed = TRUE;
-                        node = varNode(en_label, sp);
+                        node = varNode(en_global, sp);
                         break;
                 case sc_global:
                 case sc_external:

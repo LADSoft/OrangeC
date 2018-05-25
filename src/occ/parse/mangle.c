@@ -884,7 +884,7 @@ void SetLinkerNames(SYMBOL *sym, enum e_lk linkage)
             break;
         case lk_c:
         default:
-            if ((sym->cpplocalstatic || cparams.prm_cplusplus && sym->storage_class == sc_localstatic) && sym->parent)
+            if (sym->storage_class == sc_localstatic && sym->parent)
             {
                 strcpy(errbuf, sym->parent->decoratedName);
                 strcat(errbuf, "_");

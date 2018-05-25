@@ -745,10 +745,9 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                     tagNonConst(funcsp, sp->tp);
                     if (!(flags & _F_SIZEOF))
                         GENREF(sp);
-                    if (funcsp && funcsp->isInline 
-                        && funcsp->storage_class == sc_global)
+                    if (funcsp && funcsp->isInline)
                     {
-                        if (funcsp->promotedToInline)
+                        if (funcsp->promotedToInline || cparams.prm_cplusplus)
                         {
                             funcsp->isInline = funcsp->dumpInlineToFile = funcsp->promotedToInline = FALSE;
                         }
@@ -764,7 +763,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                     }
                     else
                     {
-                        *exp = varNode(en_label, sp);
+                        *exp = varNode(en_global, sp);
                     }
                     sp->used = TRUE;
                     break;
@@ -5177,17 +5176,11 @@ static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE
                 }
                 if (!sp->parent)
                     sp->parent = funcsp; // this promotion of a global to local is necessary to not make it linkable
-//                if (sp->parent)
-                    *exp = varNode(en_label, sp);
-//                else
-//                    *exp = varNode(en_global, sp);
+                *exp = varNode(en_global, sp);
             }
             else
             {
-//                if (sp->parent)
-                    *exp = varNode(en_label, sp);
-//                else
-//                    *exp = varNode(en_global, sp);
+                *exp = varNode(en_global, sp);
             }
             tp1 = Alloc(sizeof(TYPE));
             tp1->type = bt_pointer;

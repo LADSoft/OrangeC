@@ -719,11 +719,6 @@ EXPRESSION *anonymousVar(enum e_sc storage_class, TYPE *tp)
     static int anonct = 1;
     char buf[256];
     SYMBOL *rv = (SYMBOL *)Alloc(sizeof(SYMBOL));
-//    if ((storage_class == sc_localstatic || storage_class == sc_auto) && !theCurrentFunc)
-//    {
-//        storage_class = sc_static;
-//        insertInitSym(rv);
-//    }
     if (tp->size == 0 && isstructured(tp))
         tp = basetype(tp)->sp->tp;
     rv->storage_class = storage_class;
@@ -740,7 +735,7 @@ EXPRESSION *anonymousVar(enum e_sc storage_class, TYPE *tp)
     if (theCurrentFunc && localNameSpace->syms && !inDefaultParam && !anonymousNotAlloc)
         InsertSymbol(rv, storage_class, FALSE, FALSE);
     SetLinkerNames(rv, lk_none);
-    return varNode(storage_class == sc_auto || storage_class == sc_parameter ? en_auto : storage_class == sc_localstatic ? en_label : en_global, rv);
+    return varNode(storage_class == sc_auto || storage_class == sc_parameter ? en_auto : en_global, rv);
 }
 void deref(TYPE *tp, EXPRESSION **exp)
 {
@@ -1245,7 +1240,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
             else
             {
                 local = TRUE;
-                expsym = varNode(en_label, sp);
+                expsym = varNode(en_global, sp);
             }
             break;
         case sc_static:

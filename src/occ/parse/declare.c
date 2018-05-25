@@ -6517,18 +6517,6 @@ jointemplate:
                                 STATEMENT *s = stmtNode(lex, block, st_varstart);
                                 s->select = varNode(en_auto, sp);
                             }
-                            if (sp->storage_class == sc_localstatic)
-                            {
-                                if (cparams.prm_cplusplus)
-                                {
-                                    sp->storage_class = sc_static;
-                                    sp->cpplocalstatic = TRUE;
-                                }
-                                else if (!sp->label)
-                                {
-                                    sp->label = nextLabel++;
-                                }
-                            }
                             if (!sp->label && sp->storage_class == sc_static && chosenAssembler->msil)
                                 sp->label = nextLabel++;
                             if (cparams.prm_cplusplus)

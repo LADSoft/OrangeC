@@ -2230,24 +2230,17 @@ void oa_gen_strlab(SYMBOL *sp)
  */
 {
     char buf[4096];
-    if (sp->storage_class == sc_localstatic)
+    beDecorateSymName(buf, sp);
+    if (cparams.prm_asmfile)
     {
-        oa_put_label(sp->label);
-    }
-    else
-    {
-        beDecorateSymName(buf, sp);
-        if (cparams.prm_asmfile)
+        if (oa_currentSeg == dataseg || oa_currentSeg == bssxseg)
         {
-            if (oa_currentSeg == dataseg || oa_currentSeg == bssxseg)
-            {
-                newlabel = TRUE;
-                bePrintf( "\n%s", buf);
-                oa_outcol = strlen(buf) + 1;
-            }
-            else
-                bePrintf( "%s:\n", buf);
+            newlabel = TRUE;
+            bePrintf( "\n%s", buf);
+            oa_outcol = strlen(buf) + 1;
         }
+        else
+            bePrintf( "%s:\n", buf);
     }
 }
 

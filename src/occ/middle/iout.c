@@ -1176,8 +1176,6 @@ void beDecorateSymName(char *buf, SYMBOL *sp)
     q = lookupAlias(sp->name);
     if (q)
         strcpy(buf, q);
-    else if (sp->storage_class == sc_localstatic)
-        sprintf(buf, "L_%d", sp->label);
     else
     {
         strcpy(buf, sp->decoratedName);

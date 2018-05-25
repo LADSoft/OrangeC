@@ -2535,7 +2535,7 @@ EXPRESSION *getThisNode(SYMBOL *sp)
             if (sp->linkage3 == lk_threadlocal)
                 exp = varNode(en_threadlocal, sp);
             else
-                exp = varNode(en_label, sp);
+                exp = varNode(en_global, sp);
             break;
         case sc_absolute:
             exp = varNode(en_absolute, sp);
@@ -4033,17 +4033,10 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                     tmpl = tmpl->parentClass;
             if (!tmpl)
             {
-                if (cparams.prm_cplusplus && sp->init && sp->storage_class == sc_localstatic && !IsConstantExpression(sp->init->exp, FALSE))
-                    sp->init = NULL;
                 insertInitSym(sp);
             }
         }       
     }
-//    else if (sp->storage_class == sc_external && instantiatingTemplate)
-//    {
-//        sp->linkage = lk_virtual;
-//        InsertInlineData(sp);
-//    } 
     if (sp->init)
     {
         declareAndInitialize = TRUE;

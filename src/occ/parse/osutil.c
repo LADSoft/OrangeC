@@ -74,7 +74,6 @@ int showVersion = FALSE;
 
 static BOOLEAN has_output_file;
 static LIST *deflist = 0, *undeflist = 0;
-static jmp_buf ctrlcreturn;
 static char **set_searchpath = &prm_searchpath;
 static char **set_libpath = &prm_libpath;
 void fatal(char *fmt, ...)
@@ -1058,8 +1057,8 @@ void dumperrs(FILE *file)
 
 void ctrlchandler(int aa)
 {
-    (void) aa;
-    longjmp(ctrlcreturn, 1);
+    printf("^C");
+    exit(1);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -1186,8 +1185,6 @@ void ccinit(int argc, char *argv[])
     }
     #endif
             
-    /* Set up a ctrl-C handler so we can exit the prog */
+    /* Set up a ctrl-C handler so we can exit the prog with cleanup */
     signal(SIGINT, ctrlchandler);
-    if (setjmp(ctrlcreturn))
-        exit(1);
 }

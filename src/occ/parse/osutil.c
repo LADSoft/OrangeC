@@ -1058,8 +1058,8 @@ void dumperrs(FILE *file)
 
 void ctrlchandler(int aa)
 {
-    (void) aa;
-    longjmp(ctrlcreturn, 1);
+    printf("^C");
+    exit(1);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -1186,8 +1186,6 @@ void ccinit(int argc, char *argv[])
     }
     #endif
             
-    /* Set up a ctrl-C handler so we can exit the prog */
+    /* Set up a ctrl-C handler so we can exit the prog with cleanup */
     signal(SIGINT, ctrlchandler);
-    if (setjmp(ctrlcreturn))
-        exit(1);
 }

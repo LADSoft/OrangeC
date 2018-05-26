@@ -79,6 +79,9 @@ bool CmdFiles::Add(const std::string &name, bool recurseDirs)
     struct _finddata_t find;
     std::string path, lname;
     size_t n = name.find_last_of(DIR_SEP[0]);
+    if (n == std::string::npos)
+    	n = name.find_last_of('/');
+
     if (n != std::string::npos)
     {
         path = name.substr(0,n+1);
@@ -136,6 +139,8 @@ bool CmdFiles::AddFromPath(const std::string &name, const std::string &path)
     if (!rv)
     {
         size_t x = name.find_last_of(DIR_SEP[0]);
+        if (x == std::string::npos)
+            x = name.find_last_of('/');
         if (x != std::string::npos)
         {
             x++ ;

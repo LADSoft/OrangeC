@@ -28,4 +28,4 @@ EXEFILE:
 
 DISTRIBUTE:
 	copy *.chm $(DISTHELP)
-	copy tools.htm $(DISTDOC)
+	copy tools.htm $(DISTROOT)\doc

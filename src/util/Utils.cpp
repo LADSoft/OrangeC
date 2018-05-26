@@ -69,7 +69,7 @@ void Utils::banner(const char *progName)
     // so it is transparent to the proggy
     for (int i=1; i < __argc && __argv[i]; i++)
         if (__argv[i] && (__argv[i][0] == '/' || __argv[i][0] == '-'))
-            if (__argv[i][1] == '!')
+            if (__argv[i][1] == '!' || !strcmp(__argv[i], "--nologo"))
                 return;
     printf("%s Version " STRING_VERSION " " COPYRIGHT "\n", ShortName(progName));
 

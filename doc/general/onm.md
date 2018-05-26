@@ -47,3 +47,10 @@ S - section symbol
 T - Text (functions), global
 t - Text (functions), local
 U - Unknown
+
+### Alternative display options
+
+ The **/V** switch shows version information, and the compile date
+
+ The **/!** or **--nologo** switch is 'nologo'
+

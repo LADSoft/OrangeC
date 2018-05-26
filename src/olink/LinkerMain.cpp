@@ -68,7 +68,7 @@ const char *LinkerMain::usageText = "[options] inputfiles\n"
             "/m[x]     Generate Map file          /oxxx          Set output file\n"
             "/r+       Relative output file       /sxxx          Read specification file\n"
             "/v        Pass debug info            /y[...]        Verbose\n"
-            "/!        No logo\n"
+            "/!, --nologo   No logo\n"
             "@xxx      Read commands from file\n"
             "\nTime: " __TIME__ "  Date: " __DATE__;
 

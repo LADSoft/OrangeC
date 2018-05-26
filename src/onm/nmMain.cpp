@@ -68,7 +68,7 @@ const char *nmMain::usageText = "[options] inputfile\n"
             "/S             reserved\n"
             "/X             reserved\n"
             "/V, --version  Show version and date\n"
-            "/!             No logo\n"
+            "/!, --nologo   No logo\n"
             "\nTime: " __TIME__ "  Date: " __DATE__;
             
 

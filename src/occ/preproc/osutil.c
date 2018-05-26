@@ -401,6 +401,7 @@ static int scan_args(char *string, int index, char *arg)
  */
 BOOLEAN parse_args(int *argc, char *argv[], BOOLEAN case_sensitive)
 {
+
     int pos = 0;
     BOOLEAN retval = TRUE;
     use_case = case_sensitive;
@@ -410,72 +411,79 @@ BOOLEAN parse_args(int *argc, char *argv[], BOOLEAN case_sensitive)
         if ((argv[pos][0] == ARG_SEPSWITCH) || (argv[pos][0] == ARG_SEPFALSE) 
             || (argv[pos][0] == ARG_SEPTRUE))
         {
-            int argmode;
-            int index = 1;
-            BOOLEAN done = FALSE;
-            if (argv[pos][0] == ARG_SEPFALSE && !argv[pos][1])
+            if (argv[pos][1] == '!' || !strcmp(argv[pos], "--nologo"))
+            {
+                // skip the silence arg
+            }
+            else if (argv[pos][0] == ARG_SEPFALSE && !argv[pos][1])
             {
                 continue;
             }
-            do
+            else
             {
-                /* Scan the present arg */
-                if (pos <  *argc - 1)
-                    argmode = scan_args(argv[pos], index, argv[pos + 1]);
-                else
-                    argmode = scan_args(argv[pos], index, 0);
-
-                switch (argmode)
+                int argmode;
+                int index = 1;
+                BOOLEAN done = FALSE;
+                do
                 {
-                    case ARG_NEXTCHAR:
-                        /* If it was a char, go to the next one */
-                        if (!argv[pos][++index])
+                    /* Scan the present arg */
+                    if (pos <  *argc - 1)
+                        argmode = scan_args(argv[pos], index, argv[pos + 1]);
+                    else
+                        argmode = scan_args(argv[pos], index, 0);
+    
+                    switch (argmode)
+                    {
+                        case ARG_NEXTCHAR:
+                            /* If it was a char, go to the next one */
+                            if (!argv[pos][++index])
+                                done = TRUE;
+                            break;
+                        case ARG_NEXTNOCAT:
+                            /* Otherwise if it was a nocat, remove the extra arg */
+                            remove_arg(pos, argc, argv);
+                            /* Fall through to NEXTARG */
+                        case ARG_NEXTARG:
+                            /* Just a next arg, go do it */
                             done = TRUE;
-                        break;
-                    case ARG_NEXTNOCAT:
-                        /* Otherwise if it was a nocat, remove the extra arg */
-                        remove_arg(pos, argc, argv);
-                        /* Fall through to NEXTARG */
-                    case ARG_NEXTARG:
-                        /* Just a next arg, go do it */
-                        done = TRUE;
-                        break;
-                    case ARG_NOMATCH:
-                        /* No such arg, spit an error  */
-#ifndef CPREPROCESSOR
-#ifdef XXXXX
-                        switch( parseParam(argv[pos][index] != ARG_SEPFALSE, &argv[pos][index + 1])) {
-                            case 0:
-#endif
-#endif
-                                fprintf(stderr, "Invalid Arg: %s\n", argv[pos]);
-                                retval = FALSE;
-                                done = TRUE;
-#ifndef CPREPROCESSORXX
-#ifdef XXXXX
-                                break ;
-                            case 1:
-                                if (!argv[pos][++index])
+                            break;
+                        case ARG_NOMATCH:
+                            /* No such arg, spit an error  */
+    #ifndef CPREPROCESSOR
+    #ifdef XXXXX
+                            switch( parseParam(argv[pos][index] != ARG_SEPFALSE, &argv[pos][index + 1])) {
+                                case 0:
+    #endif
+    #endif
+                                    fprintf(stderr, "Invalid Arg: %s\n", argv[pos]);
+                                    retval = FALSE;
                                     done = TRUE;
-                                break ;
-                            case 2:
-                                done = TRUE;
-                                break;
-                        }
-#endif
-#endif
-                        break;
-                    case ARG_NOARG:
-                        /* Missing the arg for a CONCAT type, spit the error */
-                        fprintf(stderr, "Missing string for Arg %s\n",
-                            argv[pos]);
-                        done = TRUE;
-                        retval = FALSE;
-                        break;
-                };
+    #ifndef CPREPROCESSORXX
+    #ifdef XXXXX
+                                    break ;
+                                case 1:
+                                    if (!argv[pos][++index])
+                                        done = TRUE;
+                                    break ;
+                                case 2:
+                                    done = TRUE;
+                                    break;
+                            }
+    #endif
+    #endif
+                            break;
+                        case ARG_NOARG:
+                            /* Missing the arg for a CONCAT type, spit the error */
+                            fprintf(stderr, "Missing string for Arg %s\n",
+                                argv[pos]);
+                            done = TRUE;
+                            retval = FALSE;
+                            break;
+                    };
 
+                }
+                while (!done);
             }
-            while (!done);
             /* We'll always get rid of the present arg
              * And back up one
              */
@@ -935,7 +943,7 @@ void ccinit(int argc, char *argv[])
 
     for (i = 1; i < argc; i++)
         if (argv[i][0] == '-' || argv[i][0] == '/')
-            if (argv[i][1] == '!')
+            if (argv[i][1] == '!' || !strcmp(argv[i], "--nologo"))
             {
                 showBanner = FALSE;
             }

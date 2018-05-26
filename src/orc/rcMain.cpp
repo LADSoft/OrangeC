@@ -50,7 +50,7 @@ const char *rcMain::usageText = "[options] file"
 "  /Lxx   Set default language id      /oxxx             Set output file name\n"
 "  /r     reserved for compatability   /t                reserved for compatability\n"
 "  /v     reserved for compatability   /V, --version     Show version and date\n"
-"  /!     No logo\n"
+"  /!, --nologo   No logo\n"
 "\n"
 "Time: " __TIME__ "  Date: " __DATE__;
 

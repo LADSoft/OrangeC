@@ -285,7 +285,7 @@ bool CmdSwitchParser::Parse(int *argc, char *argv[])
         }
         else if ((argv[0][0] == '-' || argv[0][0] == '/') && argv[0][1])
         {
-            if (argv[0][1] == '!')
+            if (argv[0][1] == '!' || !strcmp(argv[0], "--nologo"))
             {
                 // skip the banner nondisplay arg
             }

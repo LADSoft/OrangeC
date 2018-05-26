@@ -56,7 +56,7 @@ const char *ImpLibMain::usageText = "[options] outputfile [+ files] [- files] [*
             "/oxxx          Set output file name\n"
             "/C             C language compatibility\n"
             "/V, --version  Show version and date\n"
-            "/!             No logo\n"
+            "/!, --nologo   No logo\n"
             "@xxx           Read commands from file\n"
             "\n"
             "outputfile can be a library, object, or def file\n"

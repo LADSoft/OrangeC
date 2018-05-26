@@ -446,7 +446,7 @@ BOOLEAN parse_args(int *argc, char *argv[], BOOLEAN case_sensitive)
         if ((argv[pos][0] == ARG_SEPSWITCH) || (argv[pos][0] == ARG_SEPFALSE) 
             || (argv[pos][0] == ARG_SEPTRUE))
         {
-            if (argv[pos][1] == '!')
+            if (argv[pos][1] == '!' || !strcmp(argv[pos], "--nologo"))
             {
                 // skip the silence arg
             }
@@ -1084,7 +1084,7 @@ void ccinit(int argc, char *argv[])
     outfile[0] = 0;
     for (i = 1; i < argc; i++)
         if (argv[i][0] == '-' || argv[i][0] == '/')
-            if (argv[i][1] == '!')
+            if (argv[i][1] == '!' || !strcmp(argv[i], "--nologo"))
             {
                 showBanner = FALSE;
             }

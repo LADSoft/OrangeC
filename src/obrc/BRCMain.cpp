@@ -47,7 +47,7 @@ CmdSwitchFile BRCMain::File(SwitchParser, '@');
 const char *BRCMain::usageText = "[options] outputfile filelist \n"
             "\n"
             "/V, --version  Show version and date\n"
-            "/!             No logo\n"
+            "/!, --nologo   No logo\n"
             "@xxx           Read commands from file\n"
             "\n"
             "Time: " __TIME__ "  Date: " __DATE__;

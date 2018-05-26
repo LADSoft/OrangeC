@@ -48,7 +48,7 @@ const char *ppMain::usageText = "[options] files\n"
         "/A             - Disable extensions        /Dxxx   - Define something\n"
         "/E[+]nn        - Max number of errors      /Ipath  - Specify include path\n"
         "/T             - translate trigraphs       /Uxxx   - Undefine something\n"
-        "/V, --version  - Show version and date     /!      - No logo\n"
+        "/V, --version  - Show version and date     /!,--nologo - No logo\n"
         "/o             - set output file\n"
         "Time: " __TIME__ "  Date: " __DATE__;
 

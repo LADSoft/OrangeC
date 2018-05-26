@@ -79,7 +79,7 @@ char *getUsageText(void)
         "+A     - disable extensions           /Dxxx  - define something\n"
         "/E[+]nn- max number of errors         /Ipath - specify include path\n"
         "/Uxxx  - undefine something           /V, --version - Show version and date\n"
-        "/o     - specify output file          /!     - No logo\n"
+        "/o     - specify output file          /!, --nologo - No logo\n"
         "\n"
         "Time: " __TIME__ "  Date: " __DATE__;
 }

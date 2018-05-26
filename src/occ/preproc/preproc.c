@@ -725,6 +725,9 @@ unsigned onceCRC(FILE *handle)
 {
     unsigned crc =0 ;
     unsigned PartialCRC32(unsigned crc, unsigned char *data, size_t len);
+#ifdef PARSER_ONLY
+    crc = PartialCRC32(crc, includes->handle, includes->filesize);
+#else
     int hnd = dup(fileno(handle));
     unsigned char buf[8192];
     int n;
@@ -734,6 +737,7 @@ unsigned onceCRC(FILE *handle)
         crc = PartialCRC32(crc, buf, n);
     }
     close(hnd);
+#endif
     return crc;
 }
 void pragonce(void)
@@ -1206,9 +1210,13 @@ void doinclude(void)
         inc->linesTail = linesTail;
         
         linesHead = linesTail = NULL;
+#ifdef PARSER_ONLY
+        inc->filesize = strlen(inc->handle);
+#else
         fseek(inc->handle, 0, SEEK_END);
         inc->filesize = ftell(inc->handle);
         fseek(inc->handle, 0, SEEK_SET);
+#endif
 #endif
         inc->fileindex = i;
 #ifndef CPREPROCESSOR

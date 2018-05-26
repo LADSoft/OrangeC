@@ -124,8 +124,6 @@ DISTSTARTUPWIN=$(DISTROOT)\lib\startup\win32
 export DISTSTARTUPWIN
 DISTADDON=$(DISTROOT)\addon
 export DISTADDON
-DISTDOC=$(DISTROOT)\doc
-export DISTDOC
 DISTEXAM=$(DISTROOT)\examples
 export DISTEXAM
 DISTDIST=$(DISTROOT)\dist
@@ -204,20 +202,6 @@ ifndef NOMAKEDIR
 	-del /Q $(DISTSTARTUPWIN) 2> $(NULLDEV)
 	-mkdir $(DISTADDON) 2> $(NULLDEV)
 	-del /Q $(DISTADDON) 2> $(NULLDEV)
-	-mkdir $(DISTDOC) 2> $(NULLDEV)
-	-del /Q $(DISTDOC) 2> $(NULLDEV)	
-	-mkdir $(DISTDOC)\general 2> $(NULLDEV)
-	-del /Q $(DISTDOC)\general 2> $(NULLDEV)
-	-mkdir $(DISTDOC)\oasm 2> $(NULLDEV)
-	-del /Q $(DISTDOC)\oasm 2> $(NULLDEV)
-	-mkdir $(DISTDOC)\occ 2> $(NULLDEV)
-	-del /Q $(DISTDOC)\occ 2> $(NULLDEV)
-	-mkdir $(DISTDOC)\ogrep 2> $(NULLDEV)
-	-del /Q $(DISTDOC)\ogrep 2> $(NULLDEV)
-	-mkdir $(DISTDOC)\olink 2> $(NULLDEV)
-	-del /Q $(DISTDOC)\olink 2> $(NULLDEV)
-	-mkdir $(DISTDOC)\omake 2> $(NULLDEV)
-	-del /Q $(DISTDOC)\omake 2> $(NULLDEV)
 	-mkdir $(DISTEXAM) 2> $(NULLDEV)
 	-del /Q $(DISTEXAM) 2> $(NULLDEV)
 	-mkdir $(DISTEXAM)\msdos 2> $(NULLDEV)

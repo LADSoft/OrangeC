@@ -95,13 +95,6 @@ DISTRIBUTE:
 	$(COPYDIR) examples\win32\xmlview\%.% $(DISTEXAM)\win32\xmlview
 	$(COPYDIR) examples\win32\RCDemo\%.% $(DISTEXAM)\win32\RCDemo
 	$(COPYDIR) examples\win32\Huff\%.% $(DISTEXAM)\win32\Huff
-	$(COPYDIR) doc\%.% $(DISTDOC)
-	$(COPYDIR) doc\general\%.% $(DISTDOC)\general
-	$(COPYDIR) doc\oasm\%.% $(DISTDOC)\oasm
-	$(COPYDIR) doc\occ\%.% $(DISTDOC)\occ
-	$(COPYDIR) doc\ogrep\%.% $(DISTDOC)\ogrep
-	$(COPYDIR) doc\olink\%.% $(DISTDOC)\olink
-	$(COPYDIR) doc\omake\%.% $(DISTDOC)\omake    
 	copy license.txt $(DISTROOT)
 	copy readme.txt $(DISTROOT)
 	copy relnotes.txt $(DISTROOT)

@@ -5179,7 +5179,7 @@ static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE
             }
             else
             {
-                *exp = varNode(en_global, sp);
+                    *exp = varNode(en_global, sp);
             }
             tp1 = Alloc(sizeof(TYPE));
             tp1->type = bt_pointer;

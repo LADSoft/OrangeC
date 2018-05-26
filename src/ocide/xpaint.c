@@ -102,7 +102,7 @@ void xdrawline(HWND hwnd, EDITDATA *p, int chpos)
         int selecting;
         int start, end;
         int matched = FALSE;
-        int taboffs = p->leftshownindex % p->cd->tabs;
+        int taboffs = p->leftshownindex % (p->cd->tabs==0?2 : p->cd->tabs);
         int parsed = !colorizing || lineParsed(p, line);
         if (p->cd->nosel)
             start = end = 0;
@@ -158,7 +158,7 @@ void xdrawline(HWND hwnd, EDITDATA *p, int chpos)
             }
             if (p->cd->text[pos].ch == '\t')
             {
-                int newpos = ((*col + p->cd->tabs) / p->cd->tabs) *p->cd->tabs;
+                int newpos = ((*col + p->cd->tabs) / (p->cd->tabs? p->cd->tabs : 2)) *p->cd->tabs;
                 int i;
                 for (i =  *col; i < newpos; i++)
                     buf[count++] = ' ';

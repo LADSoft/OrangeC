@@ -51,7 +51,7 @@ static HWND combo;
 static HWND label;
 static char *nameTags[] = 
 {
-    "Build", "Debug"
+    "Build", "Extended Build", "Debug"
 };
 TBBUTTON infoButtons[] = 
 {
@@ -638,7 +638,7 @@ LRESULT CALLBACK buildEditProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 LRESULT CALLBACK infoProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam)
 {
-    static HWND hsubwnds[2]; // build, debug, find1, find2
+    static HWND hsubwnds[3]; // build, extended build, debug
     CHARFORMAT cfm;
     NMHDR *h;
     RECT r;
@@ -671,6 +671,7 @@ LRESULT CALLBACK infoProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                         index = newindex;
                         ShowWindow(hsubwnds[index], SW_SHOW);
                     }
+                    return 0;
                     break;
                     
                 }
@@ -743,7 +744,7 @@ LRESULT CALLBACK infoProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             label = CreateWindow("STATIC", "Select information to view:", WS_CHILD | WS_VISIBLE,
                                  5,7, 150,16,hwnd, 0, hInstance, 0);
             combo = CreateWindowEx(WS_EX_NOACTIVATE, "COMBOBOX",  0, WS_CHILD | WS_VISIBLE | WS_BORDER | CBS_DROPDOWN | CBS_AUTOHSCROLL,
-                                160, 4, 100, 20, hwnd, 0, hInstance, 0);
+                                160, 4, 100, 100, hwnd, 0, hInstance, 0);
             toolbar = CreateToolBarWindow(-1, hwnd, hwnd,
                 ID_INFOTB, 5, infoButtons, infoHints, "Info Tools", 0/*IDH_ help hint */, TRUE);
             SendMessage(toolbar, LCF_FLOATINGTOOL, 0, 0);
@@ -756,7 +757,11 @@ LRESULT CALLBACK infoProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 WS_VISIBLE + WS_VSCROLL + ES_NOHIDESEL + ES_LEFT + 
                 ES_MULTILINE + ES_READONLY, r.left, r.top, r.right - r.left, r.bottom - r.top,
                 hwnd, (HMENU)ID_EDITCHILD, hInstance, 0);
-            hsubwnds[1] = CreateWindowEx(0, "XBUILDEDIT", 0, WS_CHILD + 
+            hsubwnds[1] = CreateWindowEx(0, "XBUILDEDIT", 0, WS_CHILD +
+                WS_VSCROLL + ES_NOHIDESEL + ES_LEFT + 
+                ES_MULTILINE + ES_READONLY, r.left, r.top, r.right - r.left, r.bottom - r.top,
+                hwnd, (HMENU)ID_EDITCHILD, hInstance, 0);
+            hsubwnds[2] = CreateWindowEx(0, "XBUILDEDIT", 0, WS_CHILD + 
                 WS_VSCROLL + ES_NOHIDESEL + ES_LEFT + ES_MULTILINE + ES_READONLY,
                 r.left, r.top, r.right - r.left, r.bottom - r.top, hwnd,
                 (HMENU)ID_EDITCHILD, hInstance, 0);
@@ -765,7 +770,7 @@ LRESULT CALLBACK infoProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             SendMessage(hsubwnds[1], EM_LIMITTEXT, 4 *65536, 0);
             ApplyDialogFont(hsubwnds[0]);
             ApplyDialogFont(hsubwnds[1]);
-            for (i=0; i < 2 ; i++)
+            for (i=0; i < 3 ; i++)
                 SendMessage(combo, CB_ADDSTRING, 0, (LPARAM)nameTags[i]);
             SendMessage(combo, CB_SETCURSEL, index, 0);
             colors[0] = colors[1] = RetrieveSysColor(COLOR_WINDOWTEXT);
@@ -795,6 +800,7 @@ LRESULT CALLBACK infoProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             DestroyWindow(toolbar);
             DestroyWindow(hsubwnds[0]);
             DestroyWindow(hsubwnds[1]);
+            DestroyWindow(hsubwnds[2]);
             DestroyWindow(hwndCtrl);
             break;
         case WM_SELERRWINDOW:
@@ -815,6 +821,8 @@ LRESULT CALLBACK infoProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             MoveWindow(hsubwnds[0], r.left, r.top, r.right - r.left, r.bottom -
                 r.top, 1);
             MoveWindow(hsubwnds[1], r.left, r.top, r.right - r.left, r.bottom -
+                r.top, 1);
+            MoveWindow(hsubwnds[2], r.left, r.top, r.right - r.left, r.bottom -
                 r.top, 1);
             return 0;
         default:

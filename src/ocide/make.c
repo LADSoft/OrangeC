@@ -318,11 +318,11 @@ static int GenCommand(PROJECTITEM *pj, BOOL always)
             if (banner)
                 MakeMessage(banner, pj->realName);
             free(banner);
-            char *dtl = Lookup("DETAILBUILD", pj, NULL);
-            if (dtl && dtl[0] == '1')
-            {
-                SendInfoMessage(ERR_BUILD_WINDOW, cmd);
-            }
+
+            char echoCmd[4096];
+            strcpy(echoCmd, cmd);
+            strcat(echoCmd, "\n");
+            SendInfoMessage(ERR_EXTENDED_BUILD_WINDOW, echoCmd);
             
             rv = !Execute(cmd, project->realName, ERR_BUILD_WINDOW);
             free(cmd);
@@ -546,6 +546,8 @@ static DWORD MakerThread(void *p)
     {
         SetInfoColor(ERR_BUILD_WINDOW, 0x0000ff); // red
         SendInfoMessage(ERR_BUILD_WINDOW, "The build was canceled");
+        SetInfoColor(ERR_EXTENDED_BUILD_WINDOW, 0x0000ff); // red
+        SendInfoMessage(ERR_EXTENDED_BUILD_WINDOW, "The build was canceled");
     }
     else
    {

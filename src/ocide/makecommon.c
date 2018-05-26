@@ -956,6 +956,11 @@ int ParsePipeData(HANDLE handle, int window, HANDLE hProcess)
                 else if (wc != warncount)
                     SetInfoColor(window, 0xff0000); // blue
                 SendInfoMessage(window, buf);
+                if (ec != errcount)
+                    SetInfoColor(ERR_EXTENDED_BUILD_WINDOW, 0x0000ff); // red
+                else if (wc != warncount)
+                    SetInfoColor(ERR_EXTENDED_BUILD_WINDOW, 0xff0000); // blue
+                SendInfoMessage(ERR_EXTENDED_BUILD_WINDOW, buf);
             }
             *p = s;
             strcpy(buf, p);
@@ -973,6 +978,11 @@ int ParsePipeData(HANDLE handle, int window, HANDLE hProcess)
                 else if (wc != warncount)
                     SetInfoColor(window, 0xff0000); // blue
                 SendInfoMessage(window, buf);
+                if (ec != errcount)
+                    SetInfoColor(ERR_EXTENDED_BUILD_WINDOW, 0x0000ff); // red
+                else if (wc != warncount)
+                    SetInfoColor(ERR_EXTENDED_BUILD_WINDOW, 0xff0000); // blue
+                SendInfoMessage(ERR_EXTENDED_BUILD_WINDOW, buf);
             }
             pos = 0;
         }
@@ -986,7 +996,6 @@ int ParsePipeData(HANDLE handle, int window, HANDLE hProcess)
 
 int Execute(char *cmd, char *wdp, int window)
 {
-    char filename[260];
     char path[260], *p;
     DWORD retcode;
     HANDLE stdoutWr, stdinRd;
@@ -1049,7 +1058,7 @@ int Execute(char *cmd, char *wdp, int window)
     }
     else if (window != ERR_NO_WINDOW)
     {
-        sprintf(buf, "\r\n%d: Can't spawn %s\r\n", GetLastError(), filename);
+        sprintf(buf, "\r\n%d: Can't spawn %s\r\n", GetLastError(), cmd);
         SendInfoMessage(window, buf);
     }
 
@@ -1082,6 +1091,7 @@ void MakeMessage(char *title, char *name)
     sprintf(buf1, title, name);
     sprintf(buf, ";============ %s ============\r\n", buf1);
     SendInfoMessage(ERR_BUILD_WINDOW, buf);
+    SendInfoMessage(ERR_EXTENDED_BUILD_WINDOW, buf);
 }
 void ErrWarnCounts()
 {
@@ -1093,6 +1103,11 @@ void ErrWarnCounts()
     else if (0 != warncount)
         SetInfoColor(ERR_BUILD_WINDOW, 0xff0000); // blue
     SendInfoMessage(ERR_BUILD_WINDOW, buf);
+    if (0 != errcount)
+        SetInfoColor(ERR_EXTENDED_BUILD_WINDOW, 0x0000ff); // red
+    else if (0 != warncount)
+        SetInfoColor(ERR_EXTENDED_BUILD_WINDOW, 0xff0000); // blue
+    SendInfoMessage(ERR_EXTENDED_BUILD_WINDOW, buf);
 }
 /*---------------------------------------------------------------------------------------------------*/
 void ResetErrorCounts(void)

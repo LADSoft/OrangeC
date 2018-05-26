@@ -358,7 +358,7 @@ void DoParse(char *name)
             char cwd[MAX_PATH];
             getcwd(cwd, MAX_PATH);
             strcat(cwd,"\\xx");
-            sprintf(cmd, "\"%s\\bin\\occpr.exe\" /1 \"-o%s\" /P%s %s", szInstallPath, dbName, pipeName, name);
+            sprintf(cmd, "\"%s\\bin\\occpr.exe\" /1 \"-o%s\" /P%s \"%s\"", szInstallPath, dbName, pipeName, name);
             Execute(cmd, cwd, ERR_NO_WINDOW);
         }
         else

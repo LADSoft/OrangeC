@@ -5163,6 +5163,7 @@ static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE
                             done = TRUE;
                     } while (!done);
                     sp->tp = tpn;
+                    sp->storage_class = sc_static;
                     insertInitSym(sp);
                     DecGlobalFlag();
                 }

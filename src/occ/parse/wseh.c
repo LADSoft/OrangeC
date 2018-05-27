@@ -23,7 +23,7 @@
  * 
  */
 
-#include "compiler.h"
+#include "common.h"
 
 extern ARCH_ASM *chosenAssembler;
 extern enum e_kw skim_end[];
@@ -108,7 +108,7 @@ static LEXEME *SEH_catch(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         needkw(&lex, openpa);
         lex = declare(lex, funcsp, &tp, sc_auto, lk_none, catchstmt, FALSE, TRUE, FALSE, FALSE, ac_public);
         needkw(&lex, closepa);
-        sym = localNameSpace->syms->table[0]->p;
+        sym = SYMTABBEGIN(localNameSpace)->p;
     }
     else
     {

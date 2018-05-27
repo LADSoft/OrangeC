@@ -23,7 +23,7 @@
  * 
  */
 
-#include "compiler.h"
+#include "common.h"
 
 extern ARCH_ASM *chosenAssembler;
 extern INCLUDES *includes;
@@ -629,7 +629,7 @@ char *mangleType (char *in, TYPE *tp, BOOLEAN first)
                     while (*in) in++;
                 }
                 *in++ = 'q';
-                hr = tp->syms->table[0];
+                hr = SYMTABBEGIN(tp);
                 while (hr)
                 {
                     SYMBOL *sp = (SYMBOL *)hr->p;
@@ -646,7 +646,7 @@ char *mangleType (char *in, TYPE *tp, BOOLEAN first)
                 if (isfunction(tp->btp))
                 {
                     *in++ = 'q';
-                    hr = basetype(tp->btp)->syms->table[0];
+                    hr = SYMTABBEGIN(basetype(tp->btp));
                     while (hr)
                     {
                         SYMBOL *sp = (SYMBOL *)hr->p;

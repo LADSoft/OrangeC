@@ -23,7 +23,7 @@
  * 
  */
 
-#include "compiler.h"
+#include "common.h"
 
 extern ARCH_ASM *chosenAssembler;
 extern enum e_kw skim_end[];
@@ -70,7 +70,6 @@ static SYMBOL *CreateGetterPrototype(SYMBOL *sp)
     insert(nullparam, rv->tp->syms);
     SetLinkerNames(rv, lk_cdecl);
     return rv;
-
 }
 static void insertfunc(SYMBOL *in, HASHTABLE *syms)
 {
@@ -119,7 +118,7 @@ static SYMBOL *CreateBackingSetter(SYMBOL *sp, SYMBOL *backing)
     STATEMENT *st;
     BLOCKDATA b;
     EXPRESSION *left = varNode(en_global, backing);
-    EXPRESSION *right = varNode(en_global, (SYMBOL *)p->tp->syms->table[0]->p);
+    EXPRESSION *right = varNode(en_global, (SYMBOL *)SYMTABBEGIN(p->tp)->p);
     p->tp->type = bt_ifunc;
     memset(&b, 0, sizeof(b));
     deref(sp->tp, &left);

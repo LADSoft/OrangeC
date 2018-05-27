@@ -23,7 +23,7 @@
  * 
  */
 
-#include "compiler.h"
+#include "common.h"
 
 extern int codeLabel;
 
@@ -128,7 +128,7 @@ void FreeLocalContext(BLOCKDATA *block, SYMBOL *sp, int label)
     checkUnused(localNameSpace->syms);
     if (sp && listFile)
     {
-        if (localNameSpace->syms->table[0])
+        if (SYMTABBEGIN(localNameSpace))
         {
             fprintf(listFile, "******** Local Symbols ********\n");
             list_table(sp->inlineFunc.syms,0);
@@ -145,7 +145,7 @@ void FreeLocalContext(BLOCKDATA *block, SYMBOL *sp, int label)
         sp->value.i--;
 
     st = stmtNode(NULL, block, st_expr);
-    destructBlock(&st->select, localNameSpace->syms->table[0], TRUE);    
+    destructBlock(&st->select, SYMTABBEGIN(localNameSpace), TRUE);    
     localNameSpace->syms = localNameSpace->syms->next;
     localNameSpace->tags = localNameSpace->tags->next;
 
@@ -281,8 +281,8 @@ SYMBOL *search(char *name, HASHTABLE *table)
 }
 BOOLEAN matchOverload(TYPE *tnew, TYPE *told, BOOLEAN argsOnly)
 {
-    HASHREC *hnew = basetype(tnew)->syms->table[0];
-    HASHREC *hold = basetype(told)->syms->table[0];
+    HASHREC *hnew = SYMTABBEGIN(basetype(tnew));
+    HASHREC *hold = SYMTABBEGIN(basetype(told));
     unsigned tableOld[100], tableNew[100];
     int tCount = 0;
     if (!cparams.prm_cplusplus)

@@ -1,4 +1,5 @@
 #include <stdlib.h>
+// clang-format off
 unsigned crctab[256] = {
 0xd202ef8d, 0xa505df1b, 0x3c0c8ea1, 0x4b0bbe37, 
 0xd56f2b94, 0xa2681b02, 0x3b614ab8, 0x4c667a2e, 
@@ -65,12 +66,12 @@ unsigned crctab[256] = {
 0x616495a3, 0x1663a535, 0x8f6af48f, 0xf86dc419, 
 0x660951ba, 0x110e612c, 0x88073096, 0xff000000, 
 };
-
+// clang-format on
 unsigned PartialCRC32(unsigned crc, unsigned char *data, size_t len)
 {
     size_t i;
-    for(i = 0; i < len; ++i)
-        crc = crctab[(unsigned char) crc ^ data[i]] ^ crc >> 8;
+    for (i = 0; i < len; ++i)
+        crc = crctab[(unsigned char)crc ^ data[i]] ^ crc >> 8;
     return crc;
 }
 unsigned CRC32(unsigned char *data, size_t len)

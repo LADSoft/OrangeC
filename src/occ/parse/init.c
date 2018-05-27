@@ -23,7 +23,7 @@
  * 
  */
 
-#include "compiler.h"
+#include "common.h"
 #include <assert.h>
 /* initializers, local... can do w/out c99 */
 
@@ -69,12 +69,12 @@ typedef struct _alias_
 
 typedef struct _dyninit_
 {
-    struct _dyninit_ * next;
+    struct _dyninit_ *next;
     SYMBOL *sp;
     INITIALIZER *init;
 } DYNAMIC_INITIALIZER;
 
-BOOLEAN initializingGlobalVar ;
+BOOLEAN initializingGlobalVar;
 int ignore_global_init;
 
 static DYNAMIC_INITIALIZER *dynamicInitializers, *TLSInitializers;
@@ -84,7 +84,7 @@ static LIST *symListHead, *symListTail;
 static HASHTABLE *aliasHash;
 static int inittag = 0;
 
-LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc, 
+LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc,
                  INITIALIZER **init, INITIALIZER **dest, TYPE *itype, SYMBOL *sp, BOOLEAN arrayMember, int flags);
 
 void init_init(void)
@@ -112,7 +112,7 @@ void dumpStartups(void)
             {
                 s = search(startupList->name, s->tp->syms);
                 gensrref(s, startupList->prio, STARTUP_TYPE_STARTUP);
-                  s->used = TRUE;
+                s->used = TRUE;
             }
             startupList = startupList->next;
         }
@@ -138,13 +138,13 @@ void dumpStartups(void)
 }
 void insertStartup(BOOLEAN startupFlag, char *name, int prio)
 {
-    STARTUP *startup ;
-    
+    STARTUP *startup;
+
     IncGlobalFlag();
     startup = (STARTUP *)Alloc(sizeof(STARTUP));
     startup->name = litlate(name);
     DecGlobalFlag();
-    
+
     startup->prio = prio;
     if (startupFlag)
     {
@@ -166,13 +166,13 @@ char *lookupAlias(char *name)
 }
 void insertAlias(char *name, char *alias)
 {
-    ALIAS *newAlias ;
+    ALIAS *newAlias;
     IncGlobalFlag();
     newAlias = (ALIAS *)Alloc(sizeof(ALIAS));
     newAlias->name = name;
     newAlias->alias = alias;
     insert((SYMBOL *)newAlias, aliasHash);
-    DecGlobalFlag();	
+    DecGlobalFlag();
 }
 static int dumpBits(INITIALIZER **init)
 {
@@ -180,7 +180,8 @@ static int dumpBits(INITIALIZER **init)
     int offset = (*init)->offset;
     LLONG_TYPE resolver = 0;
     TYPE *base = basetype((*init)->basetp);
-    do {
+    do
+    {
         LLONG_TYPE i = 0;
         TYPE *tp = basetype((*init)->basetp);
         if (tp->anonymousbits)
@@ -213,40 +214,40 @@ static int dumpBits(INITIALIZER **init)
         resolver |= i << tp->startbit;
         *init = (*init)->next;
     } while ((*init) && (*init)->offset == offset);
-    switch(base->type)
+    switch (base->type)
     {
-        case bt_char:
-        case bt_unsigned_char:
-        case bt_signed_char:
-            genbyte(resolver);
-            break;
-        case bt_short:
-        case bt_unsigned_short:
-            genshort(resolver);
-            break;
-        case bt_int:
-        case bt_unsigned:
-        case bt_inative:
-        case bt_unative:
-            genint(resolver);
-            break;
-        case bt_char16_t:
-            genuint16(resolver);
-            break;
-        case bt_char32_t:
-            genuint32(resolver);
-            break;
-        case bt_long:
-        case bt_unsigned_long:
-            genlong(resolver);
-            break;
-        case bt_long_long:
-        case bt_unsigned_long_long:
-            genlonglong(resolver);
-            break;
-        default:
-            diag("dumpBits: unknown bit size");
-            break;
+    case bt_char:
+    case bt_unsigned_char:
+    case bt_signed_char:
+        genbyte(resolver);
+        break;
+    case bt_short:
+    case bt_unsigned_short:
+        genshort(resolver);
+        break;
+    case bt_int:
+    case bt_unsigned:
+    case bt_inative:
+    case bt_unative:
+        genint(resolver);
+        break;
+    case bt_char16_t:
+        genuint16(resolver);
+        break;
+    case bt_char32_t:
+        genuint32(resolver);
+        break;
+    case bt_long:
+    case bt_unsigned_long:
+        genlong(resolver);
+        break;
+    case bt_long_long:
+    case bt_unsigned_long_long:
+        genlonglong(resolver);
+        break;
+    default:
+        diag("dumpBits: unknown bit size");
+        break;
     }
     if (isatomic((*init)->basetp) && needsAtomicLockFromType((*init)->basetp))
         genstorage(ATOMIC_FLAG_SPACE);
@@ -273,7 +274,6 @@ void insertDynamicInitializer(SYMBOL *sp, INITIALIZER *init)
             dynamicInitializers = di;
         }
     }
-    
 }
 static void insertTLSInitializer(SYMBOL *sp, INITIALIZER *init)
 {
@@ -282,8 +282,7 @@ static void insertTLSInitializer(SYMBOL *sp, INITIALIZER *init)
     di->init = init;
     di->next = TLSInitializers;
     TLSInitializers = di;
-//	genstorage(sp->tp->size);
-    
+    //	genstorage(sp->tp->size);
 }
 void insertDynamicDestructor(SYMBOL *sp, INITIALIZER *init)
 {
@@ -302,8 +301,8 @@ void insertDynamicDestructor(SYMBOL *sp, INITIALIZER *init)
             di->next = dynamicDestructors;
             dynamicDestructors = di;
         }
-    //	genstorage(sp->tp->size);
-    }    
+        //	genstorage(sp->tp->size);
+    }
 }
 static void dumpDynamicInitializers(void)
 {
@@ -313,8 +312,8 @@ static void dumpDynamicInitializers(void)
     while (dynamicInitializers)
     {
         EXPRESSION *exp = NULL, **next = &exp, *exp1;
-        STATEMENT *stmt= NULL, **stmtp = &stmt;
-        int i=0;
+        STATEMENT *stmt = NULL, **stmtp = &stmt;
+        int i = 0;
         exp = convertInitToExpression(dynamicInitializers->init ? dynamicInitializers->init->basetp : dynamicInitializers->sp->tp, dynamicInitializers->sp, NULL, dynamicInitializers->init, NULL, FALSE);
 
         while (*next && (*next)->type == en_void)
@@ -322,7 +321,7 @@ static void dumpDynamicInitializers(void)
             if (++i == 10)
             {
                 exp1 = *next;
-                *next = intNode(en_c_i, 0); // fill in the final right with a value 
+                *next = intNode(en_c_i, 0); // fill in the final right with a value
                 (*stmtp) = stmtNode(NULL, NULL, st_expr);
                 (*stmtp)->select = exp;
                 stmtp = &(*stmtp)->next;
@@ -353,11 +352,11 @@ static void dumpDynamicInitializers(void)
             *stmtp = st;
             st = stmt;
         }
-        dynamicInitializers = dynamicInitializers->next;	
+        dynamicInitializers = dynamicInitializers->next;
     }
     if (st)
     {
-        SYMBOL *funcsp ;
+        SYMBOL *funcsp;
         TYPE *tp = Alloc(sizeof(TYPE));
         tp->type = bt_ifunc;
         tp->btp = Alloc(sizeof(TYPE));
@@ -365,7 +364,7 @@ static void dumpDynamicInitializers(void)
         tp->rootType = tp;
         tp->btp->rootType = tp->btp;
         tp->syms = CreateHashTable(1);
-        funcsp = makeUniqueID(chosenAssembler->msil ? sc_global : sc_static, tp, NULL,"__DYNAMIC_STARTUP__");
+        funcsp = makeUniqueID(chosenAssembler->msil ? sc_global : sc_static, tp, NULL, "__DYNAMIC_STARTUP__");
         funcsp->inlineFunc.stmt = stmtNode(NULL, NULL, st_block);
         funcsp->inlineFunc.stmt->lower = st;
         tp->sp = funcsp;
@@ -377,7 +376,7 @@ static void dumpDynamicInitializers(void)
         if (!(chosenAssembler->arch->denyopts & DO_NOADDRESSINIT))
         {
             startupseg();
-            gensrref(funcsp, 32+cppprio, STARTUP_TYPE_STARTUP);
+            gensrref(funcsp, 32 + cppprio, STARTUP_TYPE_STARTUP);
         }
         else
         {
@@ -392,7 +391,7 @@ static void dumpTLSInitializers(void)
     if (TLSInitializers)
     {
         STATEMENT *st = NULL, **stp = &st;
-        SYMBOL *funcsp ;
+        SYMBOL *funcsp;
         TYPE *tp = Alloc(sizeof(TYPE));
         tp->type = bt_ifunc;
         tp->btp = Alloc(sizeof(TYPE));
@@ -400,7 +399,7 @@ static void dumpTLSInitializers(void)
         tp->rootType = tp;
         tp->btp->rootType = tp->btp;
         tp->syms = CreateHashTable(1);
-        funcsp = makeUniqueID(chosenAssembler->msil ? sc_global : sc_static, tp, NULL,"__TLS_DYNAMIC_STARTUP__");
+        funcsp = makeUniqueID(chosenAssembler->msil ? sc_global : sc_static, tp, NULL, "__TLS_DYNAMIC_STARTUP__");
         funcsp->inlineFunc.stmt = stmtNode(NULL, NULL, st_block);
         funcsp->inlineFunc.stmt->lower = st;
         tp->sp = funcsp;
@@ -416,7 +415,7 @@ static void dumpTLSInitializers(void)
             stmt->select = exp;
             stmt->next = st;
             st = stmt;
-            TLSInitializers = TLSInitializers->next;	
+            TLSInitializers = TLSInitializers->next;
         }
         funcsp->inlineFunc.stmt = stmtNode(NULL, NULL, st_block);
         funcsp->inlineFunc.stmt->lower = st;
@@ -445,7 +444,7 @@ static void dumpDynamicDestructors(void)
     }
     if (st)
     {
-        SYMBOL *funcsp ;
+        SYMBOL *funcsp;
         TYPE *tp = Alloc(sizeof(TYPE));
         tp->type = bt_ifunc;
         tp->btp = Alloc(sizeof(TYPE));
@@ -453,7 +452,7 @@ static void dumpDynamicDestructors(void)
         tp->rootType = tp;
         tp->btp->rootType = tp->btp;
         tp->syms = CreateHashTable(1);
-        funcsp = makeUniqueID(chosenAssembler->msil ? sc_global : sc_static, tp, NULL,"__DYNAMIC_RUNDOWN__");
+        funcsp = makeUniqueID(chosenAssembler->msil ? sc_global : sc_static, tp, NULL, "__DYNAMIC_RUNDOWN__");
         funcsp->inlineFunc.stmt = stmtNode(NULL, NULL, st_block);
         funcsp->inlineFunc.stmt->lower = st;
         tp->sp = funcsp;
@@ -480,7 +479,7 @@ static void dumpTLSDestructors(void)
     if (TLSDestructors)
     {
         STATEMENT *st = NULL, **stp = &st;
-        SYMBOL *funcsp ;
+        SYMBOL *funcsp;
         TYPE *tp = Alloc(sizeof(TYPE));
         tp->type = bt_ifunc;
         tp->btp = Alloc(sizeof(TYPE));
@@ -488,7 +487,7 @@ static void dumpTLSDestructors(void)
         tp->rootType = tp;
         tp->btp->rootType = tp->btp;
         tp->syms = CreateHashTable(1);
-        funcsp = makeUniqueID(chosenAssembler->msil ? sc_global : sc_static, tp, NULL,"__TLS_DYNAMIC_RUNDOWN__");
+        funcsp = makeUniqueID(chosenAssembler->msil ? sc_global : sc_static, tp, NULL, "__TLS_DYNAMIC_RUNDOWN__");
         funcsp->inlineFunc.stmt = stmtNode(NULL, NULL, st_block);
         funcsp->inlineFunc.stmt->lower = st;
         tp->sp = funcsp;
@@ -558,7 +557,7 @@ int dumpMemberPtr(SYMBOL *sp, TYPE *membertp, BOOLEAN make_label)
         if (isfunction(sp->tp))
         {
             SYMBOL *genned;
-            if (sp->storage_class == sc_virtual)            
+            if (sp->storage_class == sc_virtual)
                 genned = getvc1Thunk(sp->vtaboffset);
             else
                 genned = sp;
@@ -567,7 +566,7 @@ int dumpMemberPtr(SYMBOL *sp, TYPE *membertp, BOOLEAN make_label)
             {
                 if (exp->left->type == en_l_p)
                 {
-                    genint(exp->right->v.i+1);
+                    genint(exp->right->v.i + 1);
                     genint(exp->left->left->v.i + 1);
                 }
                 else
@@ -598,12 +597,12 @@ int dumpMemberPtr(SYMBOL *sp, TYPE *membertp, BOOLEAN make_label)
             {
                 if (exp->left->type == en_l_p)
                 {
-                    genint(exp->right->v.i+sp->offset+1);
+                    genint(exp->right->v.i + sp->offset + 1);
                     genint(exp->left->left->v.i + 1);
                 }
                 else
                 {
-                    genint(exp->left->v.i+sp->offset+1);
+                    genint(exp->left->v.i + sp->offset + 1);
                     genint(exp->right->left->v.i + 1);
                 }
             }
@@ -614,7 +613,7 @@ int dumpMemberPtr(SYMBOL *sp, TYPE *membertp, BOOLEAN make_label)
             }
             else
             {
-                genint(exp->v.i+sp->offset+1);
+                genint(exp->v.i + sp->offset + 1);
                 genint(0);
             }
             genint(0); // padding
@@ -671,12 +670,11 @@ int dumpInit(SYMBOL *sp, INITIALIZER *init)
         f = init->exp->v.f;
         i = FPFToLongLong(&f);
         SetFPFZero(&im, 0);
-            
     }
     else if (isintconst(init->exp))
     {
         i = init->exp->v.i;
-        LongLongToFPF(&f, i);	
+        LongLongToFPF(&f, i);
         SetFPFZero(&im, 0);
     }
     else if (isimaginaryconst(init->exp))
@@ -698,7 +696,7 @@ int dumpInit(SYMBOL *sp, INITIALIZER *init)
         else
             diag("dumpsym: unknown constant type");
     }
-    else 
+    else
     {
         EXPRESSION *exp = init->exp;
         while (castvalue(exp))
@@ -718,103 +716,103 @@ int dumpInit(SYMBOL *sp, INITIALIZER *init)
         }
         else if (chosenAssembler->arch->denyopts & DO_NOADDRESSINIT)
         {
-            switch(exp->type)
+            switch (exp->type)
             {
-                case en_memberptr:
-                    dumpMemberPtr(NULL, tp, FALSE);
-                    // fall through
-                case en_pc:
-                case en_global:
-                case en_labcon:
-                case en_add:
-                case en_arrayadd:
-                case en_structadd:
-                    if (exp->type != en_memberptr)
-                        genaddress(0);
-                    if (!cparams.prm_cplusplus || sp->storage_class != sc_localstatic)
+            case en_memberptr:
+                dumpMemberPtr(NULL, tp, FALSE);
+                // fall through
+            case en_pc:
+            case en_global:
+            case en_labcon:
+            case en_add:
+            case en_arrayadd:
+            case en_structadd:
+                if (exp->type != en_memberptr)
+                    genaddress(0);
+                if (!cparams.prm_cplusplus || sp->storage_class != sc_localstatic)
+                {
+                    INITIALIZER *shim = Alloc(sizeof(INITIALIZER));
+                    *shim = *init;
+                    shim->next = NULL;
+                    insertDynamicInitializer(sp, shim);
+                }
+                break;
+            /* fall through */
+            default:
+                if (isintconst(exp))
+                {
+                    genint(exp->v.i);
+                }
+                else if (cparams.prm_cplusplus)
+                {
+                    if (sp->storage_class != sc_localstatic)
                     {
                         INITIALIZER *shim = Alloc(sizeof(INITIALIZER));
                         *shim = *init;
                         shim->next = NULL;
                         insertDynamicInitializer(sp, shim);
                     }
-                    break;
-                /* fall through */
-                default:
-                    if (isintconst(exp))
-                    {
-                        genint(exp->v.i);
-                    }
-                    else if (cparams.prm_cplusplus)
-                    {
-                        if (sp->storage_class != sc_localstatic)
-                        {
-                            INITIALIZER *shim = Alloc(sizeof(INITIALIZER));
-                            *shim = *init;
-                            shim->next = NULL;
-                            insertDynamicInitializer(sp, shim);
-                        }
-                        return 0;
-                    }
-                    else
-                    {
-                        diag("unknown pointer type in initSym");
-                        genaddress(0);
-                    }
-                    break;
+                    return 0;
+                }
+                else
+                {
+                    diag("unknown pointer type in initSym");
+                    genaddress(0);
+                }
+                break;
             }
             return rv;
         }
         else
         {
-            switch(exp->type)
+            switch (exp->type)
             {
-                case en_pc:
-                    genpcref(exp->v.sp, 0);
-                    break;
-                case en_global:
-                    genref(exp->v.sp, 0);
-                    break;
-                case en_labcon:
-                    gen_labref(exp->v.i);
-                    break;
-                case en_memberptr:
-                    dumpMemberPtr(exp->v.sp, tp, FALSE);
-                    break;
-                case en_add:
-                case en_arrayadd:
-                case en_structadd:
+            case en_pc:
+                genpcref(exp->v.sp, 0);
+                break;
+            case en_global:
+                genref(exp->v.sp, 0);
+                break;
+            case en_labcon:
+                gen_labref(exp->v.i);
+                break;
+            case en_memberptr:
+                dumpMemberPtr(exp->v.sp, tp, FALSE);
+                break;
+            case en_add:
+            case en_arrayadd:
+            case en_structadd:
+            {
+                EXPRESSION *ep1 = NULL;
+                int offs = 0;
+                GetStructData(exp, &ep1, &offs);
+                if (ep1)
                 {
-                    EXPRESSION *ep1 = NULL;
-                    int offs = 0;
-                    GetStructData(exp, &ep1, &offs);
-                    if (ep1)
-                    {
-                        if (ep1->type == en_pc)
-                            genpcref(ep1->v.sp, offs);
-                        else
-                            genref(ep1->v.sp, offs);
-                        break;
-                    }
-                }
-                /* fall through */
-                default:
-                    if (isintconst(exp))
-                    {
-                        genint(exp->v.i);
-                    }
-                    else if (cparams.prm_cplusplus)
-                    {
-                        if (sp->storage_class != sc_localstatic)
-                            insertDynamicInitializer(sp, init);
-                        return 0;
-                    }
+                    if (ep1->type == en_pc)
+                        genpcref(ep1->v.sp, offs);
                     else
-                    {
-                        diag("unknown pointer type in initSym");
-                        genaddress(0);
-                    }
+                        genref(ep1->v.sp, offs);
                     break;
+                }
+            }
+            /* fall through */
+            default:
+                if (isintconst(exp))
+                {
+                    genint(exp->v.i);
+                }
+                else if (cparams.prm_cplusplus)
+                {
+                    if (sp->storage_class != sc_localstatic)
+                        insertDynamicInitializer(sp, init);
+                    return 0;
+                }
+                else
+                {
+                    diag("unknown pointer type in initSym");
+                    genaddress(0);
+                }
+                break;
             }
         }
         /* we are reserving enough space for the entire pointer
@@ -825,87 +823,87 @@ int dumpInit(SYMBOL *sp, INITIALIZER *init)
          */
         if (rv < getSize(bt_pointer))
             return getSize(bt_pointer);
-        else 
+        else
             return rv;
     }
-        
-    switch(tp->type == bt_enum ? tp->btp->type : tp->type)
+
+    switch (tp->type == bt_enum ? tp->btp->type : tp->type)
     {
-        case bt_bool:
-            genbool(i);
-            break;
-        case bt_char:
-        case bt_unsigned_char:
-        case bt_signed_char:
-            genbyte(i);
-            break;
-        case bt_short:
-        case bt_unsigned_short:
-            genshort(i);
-            break;
-        case bt_wchar_t:
-            genwchar_t(i);
-            break;
-        case bt_int:
-        case bt_unsigned:
-        case bt_inative:
-        case bt_unative:
-            genint(i);
-            break;
-        case bt_char16_t:
-            genuint16(i);
-            break;
-        case bt_char32_t:
-            genuint32(i);
-            break;
-        case bt_long:
-        case bt_unsigned_long:
-            genlong(i);
-            break;
-        case bt_long_long:
-        case bt_unsigned_long_long:
-            genlonglong(i);
-            break;
-        case bt_float:
-            genfloat(&f);
-            break;
-        case bt_double:
-            gendouble(&f);
-            break;
-        case bt_long_double:
-            genlongdouble(&f);
-            break;
-        case bt_float_imaginary:
-            genfloat(&im);
-            break;
-        case bt_double_imaginary:
-            gendouble(&im);
-            break;
-        case bt_long_double_imaginary:
-            genlongdouble(&im);
-            break;
-        case bt_float_complex:
-            genfloat(&f);
-            genfloat(&im);
-            break;
-        case bt_double_complex:
-            gendouble(&f);
-            gendouble(&im);
-            break;
-        case bt_long_double_complex:
-            genlongdouble(&f);
-            genlongdouble(&im);
-            break;
-        
-        case bt_pointer:
-            genaddress(i);
-            break;
-        case bt_far:
-        case bt_seg:
-        case bt_bit:
-        default:
-            diag("dumpInit: unknown type");
-            break;
+    case bt_bool:
+        genbool(i);
+        break;
+    case bt_char:
+    case bt_unsigned_char:
+    case bt_signed_char:
+        genbyte(i);
+        break;
+    case bt_short:
+    case bt_unsigned_short:
+        genshort(i);
+        break;
+    case bt_wchar_t:
+        genwchar_t(i);
+        break;
+    case bt_int:
+    case bt_unsigned:
+    case bt_inative:
+    case bt_unative:
+        genint(i);
+        break;
+    case bt_char16_t:
+        genuint16(i);
+        break;
+    case bt_char32_t:
+        genuint32(i);
+        break;
+    case bt_long:
+    case bt_unsigned_long:
+        genlong(i);
+        break;
+    case bt_long_long:
+    case bt_unsigned_long_long:
+        genlonglong(i);
+        break;
+    case bt_float:
+        genfloat(&f);
+        break;
+    case bt_double:
+        gendouble(&f);
+        break;
+    case bt_long_double:
+        genlongdouble(&f);
+        break;
+    case bt_float_imaginary:
+        genfloat(&im);
+        break;
+    case bt_double_imaginary:
+        gendouble(&im);
+        break;
+    case bt_long_double_imaginary:
+        genlongdouble(&im);
+        break;
+    case bt_float_complex:
+        genfloat(&f);
+        genfloat(&im);
+        break;
+    case bt_double_complex:
+        gendouble(&f);
+        gendouble(&im);
+        break;
+    case bt_long_double_complex:
+        genlongdouble(&f);
+        genlongdouble(&im);
+        break;
+
+    case bt_pointer:
+        genaddress(i);
+        break;
+    case bt_far:
+    case bt_seg:
+    case bt_bit:
+    default:
+        diag("dumpInit: unknown type");
+        break;
     }
 #else
     int rv = 4;
@@ -955,7 +953,8 @@ void dumpInitGroup(SYMBOL *sp, TYPE *tp)
                     {
                         pos += dumpBits(&init);
                     }
-                    else {
+                    else
+                    {
                         INITIALIZER *next = init->next;
                         if (init->basetp && init->exp)
                         {
@@ -964,7 +963,7 @@ void dumpInitGroup(SYMBOL *sp, TYPE *tp)
                             s = dumpInit(sp, init);
                             if (s < init->basetp->size)
                             {
-                                
+
                                 genstorage(init->basetp->size - s);
                                 s = init->basetp->size;
                             }
@@ -979,7 +978,7 @@ void dumpInitGroup(SYMBOL *sp, TYPE *tp)
                 int s = dumpInit(sp, sp->init);
                 if (s < sp->init->basetp->size)
                 {
-                    
+
                     genstorage(sp->init->basetp->size - s);
                 }
             }
@@ -1001,12 +1000,11 @@ static void dumpStaticInitializers(void)
     while (symListTail)
     {
         SYMBOL *sp = (SYMBOL *)symListTail->data;
-         if (sp->storage_class == sc_global || sp->storage_class == sc_static
-            || sp->storage_class == sc_localstatic || sp->storage_class == sc_constant)
+        if (sp->storage_class == sc_global || sp->storage_class == sc_static || sp->storage_class == sc_localstatic || sp->storage_class == sc_constant)
         {
             TYPE *tp = sp->tp;
             TYPE *stp = tp;
-            int al ;
+            int al;
             while (isarray(stp))
                 stp = basetype(stp)->btp;
             if (IsConstWithArr(sp->tp) && !isvolatile(sp->tp) || sp->storage_class == sc_constant)
@@ -1055,7 +1053,7 @@ static void dumpStaticInitializers(void)
                     {
                         genint(basetype(tp)->size);
                         *sizep += getSize(bt_int);
-                    }   
+                    }
                 }
             }
             sp->offset = *sizep;
@@ -1068,7 +1066,7 @@ static void dumpStaticInitializers(void)
             {
                 localstaticdef(sp); // for debug info
                 gen_strlab(sp);
-//                    put_label(sp->label);
+                //                    put_label(sp->label);
             }
             else
             {
@@ -1112,8 +1110,8 @@ void insertInitSym(SYMBOL *sp)
         sp->indecltable = TRUE;
     }
 }
-INITIALIZER *initInsert(INITIALIZER **pos, TYPE *tp, EXPRESSION *exp, 
-                               int offset, BOOLEAN noassign)
+INITIALIZER *initInsert(INITIALIZER **pos, TYPE *tp, EXPRESSION *exp,
+                        int offset, BOOLEAN noassign)
 {
     INITIALIZER *pos1 = Alloc(sizeof(INITIALIZER));
 
@@ -1135,13 +1133,12 @@ static LEXEME *init_expression(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp
     if (*tp && (isvoid(*tp) || ismsil(*tp)))
         error(ERR_NOT_AN_ALLOWED_TYPE);
     optimize_for_constants(expr);
-	if (*tp)
-	{
-        if (*expr && (*expr)->type == en_func && 
+    if (*tp)
+    {
+        if (*expr && (*expr)->type == en_func &&
             (*expr)->v.func->sp->parentClass && !(*expr)->v.func->ascall && !(*expr)->v.func->asaddress)
         {
-            HASHREC *hr = basetype((*expr)->v.func->functp)->syms->table[0];
-            while (hr)
+            NITERSYMTAB(hr, basetype((*expr)->v.func->functp))
             {
                 SYMBOL *sym = (SYMBOL *)hr->p;
                 if (sym->storage_class == sc_member || sym->storage_class == sc_mutable)
@@ -1149,7 +1146,6 @@ static LEXEME *init_expression(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp
                     error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
                     break;
                 }
-                hr = hr->next;
             }
         }
         if (MATCHKW(lex, ellipse))
@@ -1158,24 +1154,25 @@ static LEXEME *init_expression(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp
             lex = getsym();
             if (*expr && (*expr)->type != en_packedempty)
             {
-				INITLIST *shim = NULL;
-				INITLIST **lptr = &shim;
-                checkPackedExpression(*expr);  
+                INITLIST *shim = NULL;
+                INITLIST **lptr = &shim;
+                checkPackedExpression(*expr);
                 // this is going to presume that the expression involved
-                // is not too long to be cached by the LEXEME mechanism.          
+                // is not too long to be cached by the LEXEME mechanism.
                 lptr = expandPackedInitList(lptr, funcsp, start, *expr);
-				if (!shim)
-				{
-					*expr = intNode(en_c_i, 0);
-				}
-				else {
-					if (shim->next)
-					{
-						error(ERR_TOO_MANY_INITIALIZERS);
-					}
-					*expr = shim->exp;
-					*tp = shim->tp;
-				}
+                if (!shim)
+                {
+                    *expr = intNode(en_c_i, 0);
+                }
+                else
+                {
+                    if (shim->next)
+                    {
+                        error(ERR_TOO_MANY_INITIALIZERS);
+                    }
+                    *expr = shim->exp;
+                    *tp = shim->tp;
+                }
             }
         }
         else
@@ -1183,7 +1180,7 @@ static LEXEME *init_expression(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp
             checkUnpackedExpression(*expr);
         }
     }
-	return lex;
+    return lex;
 }
 
 static LEXEME *initialize_bool_type(LEXEME *lex, SYMBOL *funcsp, int offset,
@@ -1219,7 +1216,7 @@ static LEXEME *initialize_bool_type(LEXEME *lex, SYMBOL *funcsp, int offset,
                 else if (!isarithmeticconst(exp))
                     error(ERR_CONSTANT_VALUE_EXPECTED);
             }
-        /*	exp = exprNode(en_not, exp, NULL);
+            /*	exp = exprNode(en_not, exp, NULL);
             exp = exprNode(en_not, exp, NULL);
             */
             if (!comparetypes(itype, tp, TRUE))
@@ -1271,17 +1268,17 @@ static LEXEME *initialize_arithmetic_type(LEXEME *lex, SYMBOL *funcsp, int offse
                 exp2 = &exp;
                 while (castvalue(*exp2))
                     exp2 = &(*exp2)->left;
-                if ((*exp2)->type == en_func && (*exp2)->v.func->sp->storage_class == sc_overloads && (*exp2)->v.func->sp->tp->syms->table[0])
+                if ((*exp2)->type == en_func && (*exp2)->v.func->sp->storage_class == sc_overloads && SYMTABBEGIN((*exp2)->v.func->sp->tp))
                 {
                     SYMBOL *sp2;
                     TYPE *tp1 = NULL;
                     sp2 = MatchOverloadedFunction((*exp2)->v.func->sp->tp, &tp1, (*exp2)->v.func->sp, exp2, 0);
                     if (sp2)
-                        sp2->genreffed = TRUE;                    
+                        sp2->genreffed = TRUE;
                 }
                 if (cparams.prm_cplusplus && (isarithmetic(itype) || basetype(itype)->type == bt_enum) && isstructured(tp))
                 {
-                    castToArithmetic(FALSE, &tp, &exp, (enum e_kw)-1, itype, TRUE);
+                    castToArithmetic(FALSE, &tp, &exp, (enum e_kw) - 1, itype, TRUE);
                 }
                 if (isstructured(tp))
                 {
@@ -1290,14 +1287,14 @@ static LEXEME *initialize_arithmetic_type(LEXEME *lex, SYMBOL *funcsp, int offse
                 else if (ispointer(tp))
                     error(ERR_NONPORTABLE_POINTER_CONVERSION);
                 else if ((!isarithmetic(tp) && basetype(tp)->type != bt_enum) || (sc != sc_auto && sc != sc_register &&
-                         !isarithmeticconst(exp)&& !cparams.prm_cplusplus))
+                                                                                  !isarithmeticconst(exp) && !cparams.prm_cplusplus))
                     error(ERR_CONSTANT_VALUE_EXPECTED);
-                else 
+                else
                     checkscope(tp, itype);
                 if (!comparetypes(itype, tp, TRUE))
                 {
                     if (cparams.prm_cplusplus && needend && basetype(tp)->type > bt_int)
-                        if (basetype(itype)->type < basetype(tp)->type)        
+                        if (basetype(itype)->type < basetype(tp)->type)
                             error(ERR_INIT_NARROWING);
                     cast(itype, &exp);
                     optimize_for_constants(&exp);
@@ -1315,29 +1312,29 @@ static LEXEME *initialize_arithmetic_type(LEXEME *lex, SYMBOL *funcsp, int offse
         }
     }
     return lex;
-}	
+}
 static LEXEME *initialize_string(LEXEME *lex, SYMBOL *funcsp, TYPE **rtype, EXPRESSION **exp)
 {
     enum e_lexType tp;
     (void)funcsp;
-    lex = concatStrings(lex, exp, &tp,0);
+    lex = concatStrings(lex, exp, &tp, 0);
     switch (tp)
     {
-        default:
-        case l_astr:
-            *rtype = &stdstring;
-            break;
-        case l_wstr:
-            *rtype = &stdwcharptr;
-            break;
-        case l_msilstr:
-            *rtype = &std__string;
-        case l_ustr:        
-            *rtype = &stdchar16tptr;
-            break;
-        case l_Ustr:        
-            *rtype = &stdchar32tptr;
-            break;
+    default:
+    case l_astr:
+        *rtype = &stdstring;
+        break;
+    case l_wstr:
+        *rtype = &stdwcharptr;
+        break;
+    case l_msilstr:
+        *rtype = &std__string;
+    case l_ustr:
+        *rtype = &stdchar16tptr;
+        break;
+    case l_Ustr:
+        *rtype = &stdchar32tptr;
+        break;
     }
     return lex;
 }
@@ -1347,24 +1344,24 @@ static void refExp(EXPRESSION *exp)
         return;
     while (castvalue(exp))
         exp = exp->left;
-    switch(exp->type)
+    switch (exp->type)
     {
-        case en_func:
-            refExp(exp->v.func->fcall);
-            break;
-        case en_add:
-        case en_arrayadd:
-        case en_structadd:
-            refExp(exp->left);
-            refExp(exp->right);
-            break;
-        case en_global:
-        case en_pc:
-        case en_threadlocal:
-            GENREF(exp->v.sp);
-            break;
-        default:
-            break;
+    case en_func:
+        refExp(exp->v.func->fcall);
+        break;
+    case en_add:
+    case en_arrayadd:
+    case en_structadd:
+        refExp(exp->left);
+        refExp(exp->right);
+        break;
+    case en_global:
+    case en_pc:
+    case en_threadlocal:
+        GENREF(exp->v.sp);
+        break;
+    default:
+        break;
     }
 }
 static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc, TYPE *itype, INITIALIZER **init)
@@ -1399,7 +1396,7 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
         {
             lex = initialize_string(lex, funcsp, &tp, &exp);
         }
-        castToPointer(&tp, &exp, (enum e_kw)-1, itype);
+        castToPointer(&tp, &exp, (enum e_kw) - 1, itype);
 
         if (sc != sc_auto && sc != sc_register)
         {
@@ -1411,7 +1408,7 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
             EXPRESSION **exp2;
             if (cparams.prm_cplusplus && isstructured(tp))
             {
-                castToPointer(&tp, &exp, (enum e_kw)-1, itype);
+                castToPointer(&tp, &exp, (enum e_kw) - 1, itype);
             }
             exp2 = &exp;
             while (castvalue(*exp2))
@@ -1420,7 +1417,7 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
             {
                 TYPE *tp1 = NULL;
                 SYMBOL *sp2;
-                sp2 = MatchOverloadedFunction(itype, ispointer(itype)? &tp : &tp1, (*exp2)->v.func->sp, exp2, 0);
+                sp2 = MatchOverloadedFunction(itype, ispointer(itype) ? &tp : &tp1, (*exp2)->v.func->sp, exp2, 0);
                 if (sp2)
                 {
                     sp2->genreffed = TRUE;
@@ -1448,7 +1445,7 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
                                 errortype(ERR_CANNOT_CONVERT_TYPE, tp, itype);
                     }
                     else if (!isvoidptr(tp) && !isvoidptr(itype))
-                            error(ERR_SUSPICIOUS_POINTER_CONVERSION);
+                        error(ERR_SUSPICIOUS_POINTER_CONVERSION);
             }
             else if (!comparetypes(itype, tp, TRUE))
             {
@@ -1487,11 +1484,12 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
         {
             errskim(&lex, skim_end);
             skip(&lex, closebr);
-        }    }
+        }
+    }
     return lex;
 }
 static LEXEME *initialize_memberptr(LEXEME *lex, SYMBOL *funcsp, int offset,
-                                     enum e_sc sc, TYPE *itype, INITIALIZER **init)
+                                    enum e_sc sc, TYPE *itype, INITIALIZER **init)
 {
     TYPE *tp = NULL;
     EXPRESSION *exp = NULL;
@@ -1514,7 +1512,7 @@ static LEXEME *initialize_memberptr(LEXEME *lex, SYMBOL *funcsp, int offset,
             EXPRESSION **exp2;
             if (cparams.prm_cplusplus && isstructured(tp))
             {
-                castToPointer(&tp, &exp, (enum e_kw)-1, itype);
+                castToPointer(&tp, &exp, (enum e_kw) - 1, itype);
             }
             exp2 = &exp;
             while (castvalue(*exp2))
@@ -1536,19 +1534,15 @@ static LEXEME *initialize_memberptr(LEXEME *lex, SYMBOL *funcsp, int offset,
             }
             else if (exp->type == en_memberptr)
             {
-                if (exp->v.sp->parentClass != basetype(itype)->sp 
-                    && exp->v.sp->parentClass != basetype(itype)->sp->mainsym 
-                    && !sameTemplate(itype, exp->v.sp->parentClass->tp)
-                    ||!comparetypes(basetype(itype)->btp, basetype(exp->v.sp->tp), TRUE))
+                if (exp->v.sp->parentClass != basetype(itype)->sp && exp->v.sp->parentClass != basetype(itype)->sp->mainsym && !sameTemplate(itype, exp->v.sp->parentClass->tp) || !comparetypes(basetype(itype)->btp, basetype(exp->v.sp->tp), TRUE))
 
                     errortype(ERR_CANNOT_CONVERT_TYPE, tp, itype);
-    
             }
-            else 
+            else
             {
                 if (cparams.prm_cplusplus && isstructured(tp))
                 {
-                    castToPointer(&tp, &exp, (enum e_kw)-1, itype);
+                    castToPointer(&tp, &exp, (enum e_kw) - 1, itype);
                 }
                 if (!comparetypes(itype, tp, TRUE))
                 {
@@ -1578,131 +1572,130 @@ enum e_node referenceTypeError(TYPE *tp, EXPRESSION *exp)
     tp = basetype(basetype(tp)->btp);
     switch (tp->type == bt_enum ? tp->btp->type : tp->type)
     {
-        case bt_lref: /* only used during initialization */
-        case bt_rref: /* only used during initialization */
-            en = en_l_ref;
-            break;
-        case bt_bit:
-            en = -1;
-            break;
-        case bt_bool:
-            en = en_l_bool;
-            break;
-        case bt_char:
-            if (cparams.prm_charisunsigned)
-                en = en_l_uc;
-            else
-                en = en_l_c;
-            break;
-        case bt_signed_char:
-            en = en_l_c;
-            break;
-        case bt_unsigned_char:
+    case bt_lref: /* only used during initialization */
+    case bt_rref: /* only used during initialization */
+        en = en_l_ref;
+        break;
+    case bt_bit:
+        en = -1;
+        break;
+    case bt_bool:
+        en = en_l_bool;
+        break;
+    case bt_char:
+        if (cparams.prm_charisunsigned)
             en = en_l_uc;
-            break;
-        case bt_short:
-            en = en_l_s;
-            break;
-        case bt_unsigned_short:
-            en = en_l_us;
-            break;
-        case bt_wchar_t:
-            en = en_l_wc;
-            break;
-        case bt_int:
-            en = en_l_i;
-            break;
-        case bt_inative:
-            en = en_l_inative;
-            break;
-        case bt_unsigned:
-            en = en_l_ui;
-            break;
-        case bt_unative:
-            en = en_l_unative;
-            break;
-        case bt_char16_t:
-            en = en_l_u16;
-            break;
-        case bt_char32_t:
-            en = en_l_u32;
-            break;
-        case bt_long:
-            en = en_l_l;
-            break;
-        case bt_unsigned_long:
-            en = en_l_ul;
-            break;
-        case bt_long_long:
-            en = en_l_ll;
-            break;
-        case bt_unsigned_long_long:
-            en = en_l_ull;
-            break;
-        case bt_float:
-            en = en_l_f;
-            break;
-        case bt_double:
-            en = en_l_d;
-            break;
-        case bt_long_double:
-            en = en_l_ld;
-            break;
-        case bt_float_complex:
-            en = en_l_fc;
-            break;
-        case bt_double_complex:
-            en = en_l_dc;
-            break;
-        case bt_long_double_complex:
-            en = en_l_ldc;
-            break;
-        case bt_float_imaginary:
-            en = en_l_fi;
-            break;
-        case bt_double_imaginary:
-            en = en_l_di;
-            break;
-        case bt_long_double_imaginary:
-            en = en_l_ldi;
-            break;
-        case bt___string:
-            en = en_l_string;
-            break;
-        case bt___object:
-            en = en_l_object;
-            break;
-        case bt_pointer:
-            if (tp->array || tp->vla)
-                return en_void;
-            en = en_l_p;
-            break;
-        case bt_class:
-        case bt_struct:
-        case bt_union:
-        case bt_func:
-        case bt_ifunc:
-            if (exp->type == en_l_ref)
-                return exp->type;
-            return en_l_p;
-        default:
-            diag("ref reference error");
-            break;
+        else
+            en = en_l_c;
+        break;
+    case bt_signed_char:
+        en = en_l_c;
+        break;
+    case bt_unsigned_char:
+        en = en_l_uc;
+        break;
+    case bt_short:
+        en = en_l_s;
+        break;
+    case bt_unsigned_short:
+        en = en_l_us;
+        break;
+    case bt_wchar_t:
+        en = en_l_wc;
+        break;
+    case bt_int:
+        en = en_l_i;
+        break;
+    case bt_inative:
+        en = en_l_inative;
+        break;
+    case bt_unsigned:
+        en = en_l_ui;
+        break;
+    case bt_unative:
+        en = en_l_unative;
+        break;
+    case bt_char16_t:
+        en = en_l_u16;
+        break;
+    case bt_char32_t:
+        en = en_l_u32;
+        break;
+    case bt_long:
+        en = en_l_l;
+        break;
+    case bt_unsigned_long:
+        en = en_l_ul;
+        break;
+    case bt_long_long:
+        en = en_l_ll;
+        break;
+    case bt_unsigned_long_long:
+        en = en_l_ull;
+        break;
+    case bt_float:
+        en = en_l_f;
+        break;
+    case bt_double:
+        en = en_l_d;
+        break;
+    case bt_long_double:
+        en = en_l_ld;
+        break;
+    case bt_float_complex:
+        en = en_l_fc;
+        break;
+    case bt_double_complex:
+        en = en_l_dc;
+        break;
+    case bt_long_double_complex:
+        en = en_l_ldc;
+        break;
+    case bt_float_imaginary:
+        en = en_l_fi;
+        break;
+    case bt_double_imaginary:
+        en = en_l_di;
+        break;
+    case bt_long_double_imaginary:
+        en = en_l_ldi;
+        break;
+    case bt___string:
+        en = en_l_string;
+        break;
+    case bt___object:
+        en = en_l_object;
+        break;
+    case bt_pointer:
+        if (tp->array || tp->vla)
+            return en_void;
+        en = en_l_p;
+        break;
+    case bt_class:
+    case bt_struct:
+    case bt_union:
+    case bt_func:
+    case bt_ifunc:
+        if (exp->type == en_l_ref)
+            return exp->type;
+        return en_l_p;
+    default:
+        diag("ref reference error");
+        break;
     }
-    return en;		
-        
+    return en;
 }
 EXPRESSION *createTemporary(TYPE *tp, EXPRESSION *val)
 {
     EXPRESSION *rv;
     tp = basetype(tp)->btp;
-    rv  = anonymousVar(sc_auto, tp);
+    rv = anonymousVar(sc_auto, tp);
     if (val)
     {
         EXPRESSION *rv1 = rv;
         deref(tp, &rv);
         cast(tp, &val);
-        rv = exprNode(en_void, exprNode(en_assign, rv, val), rv1) ;
+        rv = exprNode(en_void, exprNode(en_assign, rv, val), rv1);
     }
     errortype(ERR_CREATE_TEMPORARY, tp, tp);
     return rv;
@@ -1720,7 +1713,7 @@ EXPRESSION *msilCreateTemporary(TYPE *tp, EXPRESSION *val)
     errortype(ERR_CREATE_TEMPORARY, tp, tp);
     return rv;
 }
-static EXPRESSION *ConvertInitToRef(EXPRESSION *exp, TYPE *tp, TYPE*boundTP, enum e_sc sc)
+static EXPRESSION *ConvertInitToRef(EXPRESSION *exp, TYPE *tp, TYPE *boundTP, enum e_sc sc)
 {
     if (exp->type == en_cond)
     {
@@ -1786,7 +1779,7 @@ static LEXEME *initialize_reference_type(LEXEME *lex, SYMBOL *funcsp, int offset
             }
             else
             {
-                if (basetype(tp)->nullptrType || isint(tp) && isconstzero(tp,exp))
+                if (basetype(tp)->nullptrType || isint(tp) && isconstzero(tp, exp))
                 {
                     int lbl = dumpMemberPtr(NULL, itype1, TRUE);
                     exp = intNode(en_labcon, lbl);
@@ -1802,16 +1795,15 @@ static LEXEME *initialize_reference_type(LEXEME *lex, SYMBOL *funcsp, int offset
                             int lbl = dumpMemberPtr(funcsp, tp, TRUE);
                             exp = intNode(en_labcon, lbl);
                         }
-                        else 
+                        else
                         {
-                            exp = intNode(en_c_i, 0);   
+                            exp = intNode(en_c_i, 0);
                         }
                     }
                     else
                     {
-                        errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, itype1, tp);                        
+                        errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, itype1, tp);
                     }
-                   
                 }
                 else if (isfunction(tp))
                 {
@@ -1825,16 +1817,16 @@ static LEXEME *initialize_reference_type(LEXEME *lex, SYMBOL *funcsp, int offset
                             int lbl = dumpMemberPtr(funcsp, tp, TRUE);
                             exp = intNode(en_labcon, lbl);
                         }
-                        else 
+                        else
                         {
-                            exp = intNode(en_c_i, 0);   
+                            exp = intNode(en_c_i, 0);
                         }
                     }
                 }
                 else
                 {
                     if (!comparetypes(itype1, tp, TRUE))
-                        errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, itype, tp);                        
+                        errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, itype, tp);
                 }
                 if (exp->type == en_labcon)
                 {
@@ -1844,35 +1836,31 @@ static LEXEME *initialize_reference_type(LEXEME *lex, SYMBOL *funcsp, int offset
                     exp->size = getSize(bt_memberptr);
                     exp->altdata = (long)(&stdpointer);
                     exp = exprNode(en_void, exp, exp1);
-                }                
-                
+                }
             }
         }
-        else if (((!isarithmetic(basetype(itype)->btp) && basetype(itype)->type != bt_enum) 
-             || (!isarithmetic(tp) && basetype(tp)->type == bt_enum)) 
-            && !comparetypes(itype, tp, TRUE) 
-            && (!isstructured(itype->btp) || !isstructured(tp) || classRefCount(basetype(itype->btp)->sp, basetype(tp)->sp) != 1)) {
-                if (isstructured(itype->btp))
-                {
-                    FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
-                    EXPRESSION *ths = anonymousVar(sc_auto, tp);
-                    TYPE *ctype = basetype(itype->btp);
-                    funcparams->arguments = Alloc(sizeof(INITLIST));
-                    funcparams->arguments->tp = tp;
-                    funcparams->arguments->exp = exp;
-                    exp = ths;
-                    callConstructor(&ctype, &exp, funcparams, FALSE, NULL, TRUE, FALSE, FALSE, FALSE, FALSE); 
-                }
-                else
-                {
-                    errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, itype->btp, tp);
-                }
-            }
-        else if (!isref(tp) && !isstructured(tp) && !isfunction(tp) && (!ispointer(tp) || !tp->array))
+        else if (((!isarithmetic(basetype(itype)->btp) && basetype(itype)->type != bt_enum) || (!isarithmetic(tp) && basetype(tp)->type == bt_enum)) && !comparetypes(itype, tp, TRUE) && (!isstructured(itype->btp) || !isstructured(tp) || classRefCount(basetype(itype->btp)->sp, basetype(tp)->sp) != 1))
+        {
+            if (isstructured(itype->btp))
             {
-                exp = ConvertInitToRef(exp, itype, tp, sc);
-                
+                FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
+                EXPRESSION *ths = anonymousVar(sc_auto, tp);
+                TYPE *ctype = basetype(itype->btp);
+                funcparams->arguments = Alloc(sizeof(INITLIST));
+                funcparams->arguments->tp = tp;
+                funcparams->arguments->exp = exp;
+                exp = ths;
+                callConstructor(&ctype, &exp, funcparams, FALSE, NULL, TRUE, FALSE, FALSE, FALSE, FALSE);
             }
+            else
+            {
+                errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, itype->btp, tp);
+            }
+        }
+        else if (!isref(tp) && !isstructured(tp) && !isfunction(tp) && (!ispointer(tp) || !tp->array))
+        {
+            exp = ConvertInitToRef(exp, itype, tp, sc);
+        }
         else if (itype->type == bt_rref && isstructured(itype->btp) && exp->type != en_lvalue)
         {
             EXPRESSION *expx = exp;
@@ -1906,17 +1894,18 @@ static LEXEME *initialize_reference_type(LEXEME *lex, SYMBOL *funcsp, int offset
     }
     return lex;
 }
-typedef struct _aggregate_descriptor {
+typedef struct _aggregate_descriptor
+{
     struct _aggregate_descriptor *next;
     int stopgap : 1;
     int inbase : 1;
-    int offset ;
+    int offset;
     int reloffset;
     int max;
     HASHREC *hr;
     TYPE *tp;
     BASECLASS *currentBase;
-} AGGREGATE_DESCRIPTOR ;
+} AGGREGATE_DESCRIPTOR;
 static void increment_desc(AGGREGATE_DESCRIPTOR **desc, AGGREGATE_DESCRIPTOR **cache);
 
 static void free_desc(AGGREGATE_DESCRIPTOR **descin, AGGREGATE_DESCRIPTOR **cache)
@@ -1974,10 +1963,10 @@ static void unwrap_desc(AGGREGATE_DESCRIPTOR **descin, AGGREGATE_DESCRIPTOR **ca
     }
 }
 static void allocate_desc(TYPE *tp, int offset,
-                   AGGREGATE_DESCRIPTOR **descin, AGGREGATE_DESCRIPTOR **cache)
+                          AGGREGATE_DESCRIPTOR **descin, AGGREGATE_DESCRIPTOR **cache)
 {
     AGGREGATE_DESCRIPTOR **temp = cache, *desc = NULL;
-    
+
     while (*temp)
     {
         if ((*temp)->offset == offset)
@@ -2001,7 +1990,7 @@ static void allocate_desc(TYPE *tp, int offset,
     if (isstructured(tp))
     {
         BASECLASS *bc = basetype(tp)->sp->baseClasses;
-        desc->hr = basetype(tp)->syms->table[0];
+        desc->hr = SYMTABBEGIN(basetype(tp));
         if (bc)
         {
             desc->currentBase = bc;
@@ -2010,7 +1999,7 @@ static void allocate_desc(TYPE *tp, int offset,
             allocate_desc(tp, offset + bc->offset, descin, cache);
         }
     }
-}	
+}
 static enum e_bt str_candidate(LEXEME *lex, TYPE *tp)
 {
     TYPE *bt;
@@ -2021,9 +2010,7 @@ static enum e_bt str_candidate(LEXEME *lex, TYPE *tp)
         if (lex->type == l_astr || lex->type == l_wstr || lex->type == l_ustr || lex->type == l_Ustr)
         {
             bt = basetype(bt->btp);
-            if ( bt->type == bt_short || bt->type == bt_unsigned_short || bt->type == bt_wchar_t 
-                || bt->type == bt_char || bt->type == bt_unsigned_char || bt->type == bt_signed_char
-                || bt->type == bt_char16_t || bt->type == bt_char32_t)
+            if (bt->type == bt_short || bt->type == bt_unsigned_short || bt->type == bt_wchar_t || bt->type == bt_char || bt->type == bt_unsigned_char || bt->type == bt_signed_char || bt->type == bt_char16_t || bt->type == bt_char32_t)
                 return bt->type;
         }
     return 0;
@@ -2040,8 +2027,8 @@ static BOOLEAN designator(LEXEME **lex, SYMBOL *funcsp, AGGREGATE_DESCRIPTOR **d
         {
             if (MATCHKW(*lex, openbr))
             {
-                TYPE *tp=NULL;
-                EXPRESSION *enode=NULL;
+                TYPE *tp = NULL;
+                EXPRESSION *enode = NULL;
                 int index;
                 *lex = getsym();
                 *lex = init_expression(*lex, funcsp, NULL, &tp, &enode, FALSE);
@@ -2060,7 +2047,7 @@ static BOOLEAN designator(LEXEME **lex, SYMBOL *funcsp, AGGREGATE_DESCRIPTOR **d
                     tp = basetype((*desc)->tp);
                     if (tp->size)
                     {
-                        if ( index >= tp->size / tp->btp->size)
+                        if (index >= tp->size / tp->btp->size)
                         {
                             error(ERR_ARRAY_INDEX_OUT_OF_RANGE);
                             index = 0;
@@ -2070,18 +2057,18 @@ static BOOLEAN designator(LEXEME **lex, SYMBOL *funcsp, AGGREGATE_DESCRIPTOR **d
                     (*desc)->reloffset = index * tp->size;
                     if ((isarray(tp) && MATCHKW(*lex, openbr)) || (isstructured(tp) && MATCHKW(*lex, dot)))
                         allocate_desc(tp, (*desc)->reloffset + (*desc)->offset, desc, cache);
-                    else 
+                    else
                         done = TRUE;
-                }				
+                }
             }
-            else 
+            else
             {
                 *lex = getsym();
                 if (ISID(*lex))
                 {
                     if (isstructured((*desc)->tp))
                     {
-                        HASHREC *hr2 = basetype((*desc)->tp)->syms->table[0];
+                        HASHREC *hr2 = SYMTABBEGIN(basetype((*desc)->tp));
                         while (hr2 && strcmp(((SYMBOL *)(hr2->p))->name, (*lex)->value.s.a) != 0)
                         {
                             hr2 = hr2->next;
@@ -2121,7 +2108,7 @@ static BOOLEAN designator(LEXEME **lex, SYMBOL *funcsp, AGGREGATE_DESCRIPTOR **d
 static BOOLEAN atend(AGGREGATE_DESCRIPTOR *desc)
 {
     if (isstructured(desc->tp))
-            return !desc->hr;
+        return !desc->hr;
     else
         return desc->tp->size && desc->reloffset >= desc->tp->size;
 }
@@ -2134,39 +2121,40 @@ static void increment_desc(AGGREGATE_DESCRIPTOR **desc, AGGREGATE_DESCRIPTOR **c
             int offset = (*desc)->reloffset + (*desc)->offset;
             if (isunion((*desc)->tp))
                 (*desc)->hr = NULL;
-            else while (TRUE)
-            {
-                (*desc)->hr = (*desc)->hr->next;
-                if (!(*desc)->hr)
+            else
+                while (TRUE)
                 {
-                    if ((*desc)->next && (*desc)->next->inbase)
+                    (*desc)->hr = (*desc)->hr->next;
+                    if (!(*desc)->hr)
                     {
-                        free_desc(desc, cache);
-                        (*desc)->currentBase = (*desc)->currentBase->next;
-                        if ((*desc)->currentBase)
+                        if ((*desc)->next && (*desc)->next->inbase)
                         {
-                            allocate_desc((*desc)->currentBase->cls->tp, (*desc)->offset + (*desc)->currentBase->offset, desc, cache);
+                            free_desc(desc, cache);
+                            (*desc)->currentBase = (*desc)->currentBase->next;
+                            if ((*desc)->currentBase)
+                            {
+                                allocate_desc((*desc)->currentBase->cls->tp, (*desc)->offset + (*desc)->currentBase->offset, desc, cache);
+                            }
+                            offset = -1;
                         }
-                        offset = -1;
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-                if (((SYMBOL *)((*desc)->hr->p))->storage_class != sc_overloads)
-                {
-                    if (((SYMBOL *)((*desc)->hr->p))->tp->hasbits)
-                    {
-                        if (!((SYMBOL *)((*desc)->hr->p))->anonymous)
+                        else
+                        {
                             break;
+                        }
                     }
-                    else if (((SYMBOL *)((*desc)->hr->p))->offset + (*desc)->offset != offset)
+                    if (((SYMBOL *)((*desc)->hr->p))->storage_class != sc_overloads)
                     {
-                        break;
+                        if (((SYMBOL *)((*desc)->hr->p))->tp->hasbits)
+                        {
+                            if (!((SYMBOL *)((*desc)->hr->p))->anonymous)
+                                break;
+                        }
+                        else if (((SYMBOL *)((*desc)->hr->p))->offset + (*desc)->offset != offset)
+                        {
+                            break;
+                        }
                     }
                 }
-            }
             if ((*desc)->hr)
                 (*desc)->reloffset = ((SYMBOL *)((*desc)->hr->p))->offset;
             else
@@ -2191,7 +2179,7 @@ static void increment_desc(AGGREGATE_DESCRIPTOR **desc, AGGREGATE_DESCRIPTOR **c
         }
     }
 }
-static int ascomp(const void*left, const void*right)
+static int ascomp(const void *left, const void *right)
 {
     const INITIALIZER **lleft = (const INITIALIZER **)left;
     const INITIALIZER **rright = (const INITIALIZER **)right;
@@ -2202,49 +2190,55 @@ static int ascomp(const void*left, const void*right)
     return lofs != rofs;
 }
 static void quicksort(const void *base, int lo, int hi, size_t width,
-                        int (*compare)(const void *elem1, const void *elem2), char *buf)
+                      int (*compare)(const void *elem1, const void *elem2), char *buf)
 {
 
-    if (hi > lo) {
-        int i=lo, j=hi;
-        char * celem = buf + width;
-        memcpy(celem,((char *)base) + width * ((lo + hi) / 2),width) ;
+    if (hi > lo)
+    {
+        int i = lo, j = hi;
+        char *celem = buf + width;
+        memcpy(celem, ((char *)base) + width * ((lo + hi) / 2), width);
 
         while (i <= j)
         {
-            while (i <= hi && (*compare)((char *)base + i * width, celem) <0) i++; 
-            while (j >= lo && (*compare)((char *)base + j * width, celem) >0) j--; 
-            if (i<=j)
+            while (i <= hi && (*compare)((char *)base + i * width, celem) < 0)
+                i++;
+            while (j >= lo && (*compare)((char *)base + j * width, celem) > 0)
+                j--;
+            if (i <= j)
             {
-                memcpy(buf, (char *)base + i * width, width) ;
-                memcpy((char *)base + i * width, (char *)base + j * width, width) ;
-                memcpy((char *)base + j * width, buf, width) ;
-                i++; j--;
+                memcpy(buf, (char *)base + i * width, width);
+                memcpy((char *)base + i * width, (char *)base + j * width, width);
+                memcpy((char *)base + j * width, buf, width);
+                i++;
+                j--;
             }
         }
-        if (lo<j) quicksort(base, lo, j,width,compare,buf);
-        if (i<hi) quicksort(base, i, hi,width,compare,buf);
-    } 
-
+        if (lo < j)
+            quicksort(base, lo, j, width, compare, buf);
+        if (i < hi)
+            quicksort(base, i, hi, width, compare, buf);
+    }
 }
 static void qxsort(void *base, size_t num, size_t width,
-                        int (*compare)(const void *elem1, const void *elem2))
+                   int (*compare)(const void *elem1, const void *elem2))
 {
     char data[512];
-    char *buf ;
+    char *buf;
 
-    if (width <= sizeof(data)/2)
+    if (width <= sizeof(data) / 2)
         buf = data;
-    else {
-        buf = (char *)malloc(width) ;
+    else
+    {
+        buf = (char *)malloc(width);
         if (!buf)
-            return ;
+            return;
     }
-    
-    quicksort(base,0,num-1,width, compare,buf) ;
+
+    quicksort(base, 0, num - 1, width, compare, buf);
 
     if (buf != data)
-        free(buf) ;
+        free(buf);
 }
 static INITIALIZER *sort_aggregate_initializers(INITIALIZER *data)
 {
@@ -2261,7 +2255,7 @@ static INITIALIZER *sort_aggregate_initializers(INITIALIZER *data)
      */
     while (*left && (*left)->next)
     {
-        int offsetRight ;
+        int offsetRight;
         right = &(*left)->next;
         offsetRight = ((*right)->offset << 7) + basetype((*right)->basetp)->startbit;
         if (offsetRight < offsetLeft)
@@ -2277,19 +2271,19 @@ static INITIALIZER *sort_aggregate_initializers(INITIALIZER *data)
         int i;
         // this uses the qxsort routine out of the RTL, but it is
         // embedded in the compiler since it is non-standard.
-        // a lot of this code does runup and rundown to get things in the 
+        // a lot of this code does runup and rundown to get things in the
         // right format for qxsort...
         INITIALIZER **base = localAlloc(sizeof(INITIALIZER *) * items);
         INITIALIZER *find = data;
         INITIALIZER **rv = &data;
-        
-        for (i=0; i < items; i++)
+
+        for (i = 0; i < items; i++)
         {
             base[i] = find;
             find = find->next;
         }
         qxsort(base, items, sizeof(INITIALIZER *), ascomp);
-        for (i=0; i < items; i++)
+        for (i = 0; i < items; i++)
         {
             *rv = base[i];
             rv = &(*rv)->next;
@@ -2302,7 +2296,7 @@ static INITIALIZER *sort_aggregate_initializers(INITIALIZER *data)
     {
         INITIALIZER **hold = NULL;
         right = &(*left)->next;
-        while (*right && (*left)->offset == (*right)->offset && 
+        while (*right && (*left)->offset == (*right)->offset &&
                basetype((*left)->basetp)->startbit == basetype((*right)->basetp)->startbit)
         {
             if (!hold)
@@ -2322,7 +2316,7 @@ static INITIALIZER *sort_aggregate_initializers(INITIALIZER *data)
 }
 static void set_array_sizes(AGGREGATE_DESCRIPTOR *cache)
 {
-    while(cache)
+    while (cache)
     {
         if (!isstructured(cache->tp))
         {
@@ -2331,15 +2325,15 @@ static void set_array_sizes(AGGREGATE_DESCRIPTOR *cache)
                 int size = cache->max;
                 int base = basetype(cache->tp)->btp->size;
                 TYPE *temp = cache->tp;
-                if (base ==0)
-                    base = 1;				
+                if (base == 0)
+                    base = 1;
                 size = size + base - 1;
                 size = (size / base) * base;
                 while (temp && temp->size == 0)
                 {
-                     temp->size = size;
-                     temp->esize = intNode(en_c_i, size/base);
-                     temp = temp->btp;
+                    temp->size = size;
+                    temp->esize = intNode(en_c_i, size / base);
+                    temp = temp->btp;
                 }
             }
         }
@@ -2347,7 +2341,7 @@ static void set_array_sizes(AGGREGATE_DESCRIPTOR *cache)
     }
 }
 static LEXEME *read_strings(LEXEME *lex, INITIALIZER **next,
-                                 AGGREGATE_DESCRIPTOR **desc)
+                            AGGREGATE_DESCRIPTOR **desc)
 {
     TYPE *tp = basetype((*desc)->tp);
     TYPE *btp = basetype(tp->btp);
@@ -2359,34 +2353,34 @@ static LEXEME *read_strings(LEXEME *lex, INITIALIZER **next,
     int i;
     /* this assumes the sizeof(short) & sizeof(wchar_t) < 16 */
     if (max == 0)
-        max = INT_MAX/16;
-    lex = concatStringsInternal(lex, &string,0);
-    switch(string->strtype)
+        max = INT_MAX / 16;
+    lex = concatStringsInternal(lex, &string, 0);
+    switch (string->strtype)
     {
-        case l_astr:
-            if (btp->type != bt_char && btp->type != bt_unsigned_char && btp->type != bt_signed_char)
-                error(ERR_STRING_TYPE_MISMATCH_IN_INITIALIZATION);
-            break;
-        case l_wstr:
-            if (btp->type != bt_wchar_t && btp->type != bt_short && btp->type != bt_unsigned_short)
-                error(ERR_STRING_TYPE_MISMATCH_IN_INITIALIZATION);
-            break;
-        case l_msilstr:
-            if (tp->type != bt_string && btp->type != bt_wchar_t && btp->type != bt_short && btp->type != bt_unsigned_short)
-                error(ERR_STRING_TYPE_MISMATCH_IN_INITIALIZATION);
-            break;
-        case l_ustr:
-            if (btp->type != bt_char16_t)
-                error(ERR_STRING_TYPE_MISMATCH_IN_INITIALIZATION);
-            break;
-        case l_Ustr:
-            if (btp->type != bt_char32_t)
-                error(ERR_STRING_TYPE_MISMATCH_IN_INITIALIZATION);
-            break;
-        default:
-            break;
+    case l_astr:
+        if (btp->type != bt_char && btp->type != bt_unsigned_char && btp->type != bt_signed_char)
+            error(ERR_STRING_TYPE_MISMATCH_IN_INITIALIZATION);
+        break;
+    case l_wstr:
+        if (btp->type != bt_wchar_t && btp->type != bt_short && btp->type != bt_unsigned_short)
+            error(ERR_STRING_TYPE_MISMATCH_IN_INITIALIZATION);
+        break;
+    case l_msilstr:
+        if (tp->type != bt_string && btp->type != bt_wchar_t && btp->type != bt_short && btp->type != bt_unsigned_short)
+            error(ERR_STRING_TYPE_MISMATCH_IN_INITIALIZATION);
+        break;
+    case l_ustr:
+        if (btp->type != bt_char16_t)
+            error(ERR_STRING_TYPE_MISMATCH_IN_INITIALIZATION);
+        break;
+    case l_Ustr:
+        if (btp->type != bt_char32_t)
+            error(ERR_STRING_TYPE_MISMATCH_IN_INITIALIZATION);
+        break;
+    default:
+        break;
     }
-    for (j=0; j < string->size; j++)
+    for (j = 0; j < string->size; j++)
     {
         int len = string->pointers[j]->count;
         if (len + index > max)
@@ -2396,7 +2390,7 @@ static LEXEME *read_strings(LEXEME *lex, INITIALIZER **next,
         else
         {
             int i;
-            for (i=0; i < len; i++)
+            for (i = 0; i < len; i++)
             {
                 EXPRESSION *exp = intNode(en_c_i, string->pointers[j]->str[i]);
                 initInsert(next, btp, exp, (*desc)->offset + (*desc)->reloffset, FALSE); /* NULL=no initializer */
@@ -2406,12 +2400,12 @@ static LEXEME *read_strings(LEXEME *lex, INITIALIZER **next,
             }
         }
     }
-    if (max == INT_MAX/16)
+    if (max == INT_MAX / 16)
     {
         EXPRESSION *exp = intNode(en_c_i, 0);
-        
+
         initInsert(next, btp, exp, (*desc)->offset + (*desc)->reloffset, FALSE); /* NULL=no initializer */
-        max = (*desc)->reloffset/btp->size;
+        max = (*desc)->reloffset / btp->size;
     }
     for (i = (*desc)->reloffset / btp->size; i < max; i++)
     {
@@ -2420,7 +2414,7 @@ static LEXEME *read_strings(LEXEME *lex, INITIALIZER **next,
     if ((*desc)->reloffset < max * btp->size)
     {
         EXPRESSION *exp = intNode(en_c_i, 0);
-        
+
         initInsert(next, btp, exp, (*desc)->offset + (*desc)->reloffset, FALSE); /* NULL=no initializer */
         (*desc)->reloffset += btp->size;
     }
@@ -2431,7 +2425,7 @@ static TYPE *nexttp(AGGREGATE_DESCRIPTOR *desc)
     TYPE *rv;
     if (isstructured(desc->tp))
     {
-        if (!cparams.prm_cplusplus  || basetype(desc->tp)->sp->trivialCons)
+        if (!cparams.prm_cplusplus || basetype(desc->tp)->sp->trivialCons)
         {
             HASHREC *hr = desc->hr;
             if (!hr)
@@ -2448,7 +2442,7 @@ static TYPE *nexttp(AGGREGATE_DESCRIPTOR *desc)
     return rv;
 }
 static LEXEME *initialize___object(LEXEME *lex, SYMBOL *funcsp, int offset,
-    TYPE *itype, INITIALIZER **init)
+                                   TYPE *itype, INITIALIZER **init)
 {
     EXPRESSION *expr = NULL;
     TYPE *tp = NULL;
@@ -2465,7 +2459,7 @@ static LEXEME *initialize___object(LEXEME *lex, SYMBOL *funcsp, int offset,
     return lex;
 }
 static LEXEME *initialize___string(LEXEME *lex, SYMBOL *funcsp, int offset,
-    TYPE *itype, INITIALIZER **init)
+                                   TYPE *itype, INITIALIZER **init)
 {
     EXPRESSION *expr = NULL;
     TYPE *tp = NULL;
@@ -2485,9 +2479,9 @@ static LEXEME *initialize___string(LEXEME *lex, SYMBOL *funcsp, int offset,
     return lex;
 }
 static LEXEME *initialize_auto_struct(LEXEME *lex, SYMBOL *funcsp, int offset,
-                                    TYPE *itype, INITIALIZER **init)
+                                      TYPE *itype, INITIALIZER **init)
 {
-    EXPRESSION *expr = NULL ;
+    EXPRESSION *expr = NULL;
     TYPE *tp = NULL;
     lex = expression_assign(lex, funcsp, NULL, &tp, &expr, NULL, 0);
     if (!tp || !lex)
@@ -2512,49 +2506,49 @@ EXPRESSION *getThisNode(SYMBOL *sp)
     EXPRESSION *exp;
     switch (sp->storage_class)
     {
-        case sc_member:
-        case sc_mutable:
-            exp = exprNode(en_add, varNode(en_thisshim, NULL), intNode(en_c_i, sp->offset));
-            break;
-        case sc_auto:
-        case sc_parameter:
-        case sc_register:	/* register variables are treated as 
+    case sc_member:
+    case sc_mutable:
+        exp = exprNode(en_add, varNode(en_thisshim, NULL), intNode(en_c_i, sp->offset));
+        break;
+    case sc_auto:
+    case sc_parameter:
+    case sc_register: /* register variables are treated as 
                              * auto variables in this compiler
                              * of course the usage restraints of the
                              * register keyword are enforced elsewhere
                              */
-            exp = varNode(en_auto, sp);
-            break;
-        
-        case sc_localstatic:
-            if (sp->linkage3 == lk_threadlocal)
-                exp = varNode(en_threadlocal, sp);
-            else
-                exp = varNode(en_global, sp);
-            break;
-        case sc_absolute:
-            exp = varNode(en_absolute, sp);
-            break;				
-        case sc_static:
-        case sc_global:
-        case sc_external:
-            if (sp->linkage3 == lk_threadlocal)
-                exp = varNode(en_threadlocal, sp);
-            else
-                exp = varNode(en_global, sp);
-            break;
-        default:
-            diag("getThisNode: unknown storage class");
-            exp = intNode(en_c_i, 0);
-            break;
+        exp = varNode(en_auto, sp);
+        break;
+
+    case sc_localstatic:
+        if (sp->linkage3 == lk_threadlocal)
+            exp = varNode(en_threadlocal, sp);
+        else
+            exp = varNode(en_global, sp);
+        break;
+    case sc_absolute:
+        exp = varNode(en_absolute, sp);
+        break;
+    case sc_static:
+    case sc_global:
+    case sc_external:
+        if (sp->linkage3 == lk_threadlocal)
+            exp = varNode(en_threadlocal, sp);
+        else
+            exp = varNode(en_global, sp);
+        break;
+    default:
+        diag("getThisNode: unknown storage class");
+        exp = intNode(en_c_i, 0);
+        break;
     }
     return exp;
 }
 static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *base, int offset,
-                                     enum e_sc sc, TYPE *itype, INITIALIZER **init, INITIALIZER **dest, BOOLEAN arrayMember, int flags)
+                                         enum e_sc sc, TYPE *itype, INITIALIZER **init, INITIALIZER **dest, BOOLEAN arrayMember, int flags)
 {
-    INITIALIZER *data = NULL, **next=&data;
-    AGGREGATE_DESCRIPTOR *desc= NULL, *cache = NULL;
+    INITIALIZER *data = NULL, **next = &data;
+    AGGREGATE_DESCRIPTOR *desc = NULL, *cache = NULL;
     BOOLEAN c99 = FALSE;
     BOOLEAN toomany = FALSE;
     BOOLEAN needend = FALSE;
@@ -2569,9 +2563,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
         assn = TRUE;
         lex = getsym();
     }
-    if ((cparams.prm_cplusplus || chosenAssembler->msil && !assn) 
-        && isstructured(itype) && (!basetype(itype)->sp->trivialCons || 
-             arrayMember))
+    if ((cparams.prm_cplusplus || chosenAssembler->msil && !assn) && isstructured(itype) && (!basetype(itype)->sp->trivialCons || arrayMember))
     {
         if (base->storage_class != sc_member || MATCHKW(lex, openpa) || assn || MATCHKW(lex, begin))
         {
@@ -2606,7 +2598,6 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                         // might get here if there was an error upstream...
                         exp = exp1;
                         itype = tp1;
-
                     }
                     else
                     {
@@ -2624,7 +2615,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                                     exp2->v.sp->dest = NULL;
                                 }
                             }
-                                
+
                             exp1->left->v.func->thisptr = exp;
                         }
                         else
@@ -2650,7 +2641,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                     implicit = TRUE;
                     if (MATCHKW(lex, begin))
                     {
-                        lex = getArgs(lex, funcsp, funcparams, end, TRUE,0);
+                        lex = getArgs(lex, funcsp, funcparams, end, TRUE, 0);
                         maybeConversion = FALSE;
                     }
                     else
@@ -2668,7 +2659,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
             else if (MATCHKW(lex, openpa) || MATCHKW(lex, begin))
             {
                 // conversion constructor params
-                lex = getArgs(lex, funcsp, funcparams,MATCHKW(lex, openpa) ? closepa : end, TRUE, 0);
+                lex = getArgs(lex, funcsp, funcparams, MATCHKW(lex, openpa) ? closepa : end, TRUE, 0);
             }
             else
             {
@@ -2705,7 +2696,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
     }
     if (isarray(itype) && itype->msil && lex && !MATCHKW(lex, begin))
     {
-        EXPRESSION *exp =NULL;
+        EXPRESSION *exp = NULL;
         TYPE *tp = NULL;
         lex = expression(lex, funcsp, NULL, &tp, &exp, 0);
         if (!tp)
@@ -2730,7 +2721,6 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
             {
                 *init = it;
             }
-
         }
         return lex;
     }
@@ -2787,7 +2777,6 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                 {
                     *init = it;
                 }
-
             }
             else
             {
@@ -2837,7 +2826,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
             TYPE *tp2;
             c99 |= designator(&lex, funcsp, &desc, &cache);
             tp2 = nexttp(desc);
-            
+
             while (tp2 && (tp2->type == bt_aggregate || isarray(tp2) || (isstructured(tp2) && (!cparams.prm_cplusplus || basetype(tp2)->sp->trivialCons))))
             {
                 if (tp2->type == bt_aggregate)
@@ -2850,7 +2839,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                     {
                         lex = getsym();
                         allocate_desc(tp2, desc->offset + desc->reloffset,
-                            &desc, &cache);
+                                      &desc, &cache);
                         desc->stopgap = TRUE;
                         c99 |= designator(&lex, funcsp, &desc, &cache);
                     }
@@ -2858,7 +2847,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                     {
                         if (!atend(desc))
                             allocate_desc(tp2, desc->offset + desc->reloffset,
-                                &desc, &cache);
+                                          &desc, &cache);
                         else
                             break;
                     }
@@ -2885,7 +2874,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                 if (desc->hr)
                 {
                     fieldsp = ((SYMBOL *)desc->hr->p);
-                    if (ismember(fieldsp))   
+                    if (ismember(fieldsp))
                     {
                         (*next)->fieldsp = fieldsp;
                         (*next)->fieldoffs = desc->offset;
@@ -2895,8 +2884,9 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
             increment_desc(&desc, &cache);
             while (*next)
                 next = &(*next)->next;
-            if ((((sc != sc_auto && sc != sc_register) || needend) && 
-                MATCHKW(lex, comma)) || MATCHKW(lex, end))
+            if ((((sc != sc_auto && sc != sc_register) || needend) &&
+                 MATCHKW(lex, comma)) ||
+                MATCHKW(lex, end))
             {
                 gotcomma = MATCHKW(lex, comma);
                 if (gotcomma && needend)
@@ -2949,7 +2939,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
             free_desc(&desc, &cache);
         }
         set_array_sizes(cache);
-        
+
         *init = data = sort_aggregate_initializers(data);
     }
     // have to fill in unused array elements with C++ constructors
@@ -2967,14 +2957,14 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
             INITIALIZER *testd = *dest;
             INITIALIZER *first = NULL, **push = &first;
             int last = 0, i;
-            for ( ;test || last < itype->size; )
+            for (; test || last < itype->size;)
             {
                 if ((test && last < test->offset) || (!test && last < itype->size))
                 {
                     int n = (test ? test->offset - last : itype->size - last) / s;
                     EXPRESSION *sz = NULL;
                     TYPE *ctype = btp, *tn = btp;
-                    EXPRESSION *exp ;
+                    EXPRESSION *exp;
                     if (last)
                         exp = exprNode(en_add, getThisNode(base), intNode(en_c_i, last));
                     else
@@ -3046,7 +3036,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                 }
             }
         }
-    }   
+    }
     return lex;
 }
 static LEXEME *initialize_bit(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc, TYPE *itype, INITIALIZER **init)
@@ -3061,8 +3051,8 @@ static LEXEME *initialize_bit(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc
     return lex;
 }
 static LEXEME *initialize_auto(LEXEME *lex, SYMBOL *funcsp, int offset,
-                                     enum e_sc sc, TYPE *itype, 
-                                     INITIALIZER **init, INITIALIZER **dest, SYMBOL *sp)
+                               enum e_sc sc, TYPE *itype,
+                               INITIALIZER **init, INITIALIZER **dest, SYMBOL *sp)
 {
     TYPE *tp;
     EXPRESSION *exp;
@@ -3113,7 +3103,6 @@ static LEXEME *initialize_auto(LEXEME *lex, SYMBOL *funcsp, int offset,
                     itp = itp1;
                 }
                 tp = itp;
-                
             }
             if (isconst(sp->tp) && !isconst(tp))
             {
@@ -3138,7 +3127,7 @@ static LEXEME *initialize_auto(LEXEME *lex, SYMBOL *funcsp, int offset,
         if (cparams.prm_cplusplus && isstructured(sp->tp))
         {
 
-            INITIALIZER *dest = NULL, *it ;
+            INITIALIZER *dest = NULL, *it;
             EXPRESSION *expl = getThisNode(sp);
             initInsert(init, sp->tp, exp, offset, FALSE);
             if (sp->storage_class != sc_auto && sp->storage_class != sc_parameter && sp->storage_class != sc_member && sp->storage_class != sc_mutable)
@@ -3175,11 +3164,11 @@ static LEXEME *initialize_auto(LEXEME *lex, SYMBOL *funcsp, int offset,
  * initialization...  for aggregate types it completely handles all initialization
  * for the aggregate and any sub-aggregates with a single call of the function
  */
-LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc, 
+LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc,
                  INITIALIZER **init, INITIALIZER **dest, TYPE *itype, SYMBOL *sp, BOOLEAN arrayMember, int flags)
 {
     TYPE *tp;
-    tp  = basetype(itype);
+    tp = basetype(itype);
     if (tp->type == bt_templateselector)
     {
         SYMBOL *ts = tp->sp->templateSelector->next->sym;
@@ -3207,13 +3196,13 @@ LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc,
         }
         if (sp)
         {
-            sp = basetype(PerformDeferredInitialization (sp->tp, NULL))->sp;
+            sp = basetype(PerformDeferredInitialization(sp->tp, NULL))->sp;
             while (find && sp)
             {
                 SYMBOL *spo = sp;
                 if (!isstructured(spo->tp))
                     break;
-                
+
                 sp = search(find->name, spo->tp->syms);
                 if (!sp)
                 {
@@ -3239,98 +3228,98 @@ LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc,
         }
         return lex;
     }
-    switch(tp->type)
+    switch (tp->type)
     {
-        case bt_aggregate:
-            return lex;
-        case bt_bool:
-            return initialize_bool_type(lex, funcsp, offset, sc, tp, init);
-        case bt_inative:
-        case bt_unative:
-        case bt_char:
-        case bt_unsigned_char:
-        case bt_signed_char:
-        case bt_short:
-        case bt_unsigned_short:
-        case bt_int:
-        case bt_unsigned:
-        case bt_char16_t:
-        case bt_char32_t:
-        case bt_long:
-        case bt_unsigned_long:
-        case bt_long_long:
-        case bt_unsigned_long_long:
-        case bt_float:
-        case bt_double:
-        case bt_long_double:
-        case bt_float_imaginary:
-        case bt_double_imaginary:
-        case bt_long_double_imaginary:
-        case bt_float_complex:
-        case bt_double_complex:
-        case bt_long_double_complex:
-        case bt_enum:
-        case bt_templateparam:
-        case bt_wchar_t:
-            return initialize_arithmetic_type(lex, funcsp, offset, sc, tp, init);
-        case bt_lref:
-        case bt_rref:
-            return initialize_reference_type(lex, funcsp, offset, sc, tp, init, flags, sp);
-        case bt_pointer:
-            if (tp->array)
+    case bt_aggregate:
+        return lex;
+    case bt_bool:
+        return initialize_bool_type(lex, funcsp, offset, sc, tp, init);
+    case bt_inative:
+    case bt_unative:
+    case bt_char:
+    case bt_unsigned_char:
+    case bt_signed_char:
+    case bt_short:
+    case bt_unsigned_short:
+    case bt_int:
+    case bt_unsigned:
+    case bt_char16_t:
+    case bt_char32_t:
+    case bt_long:
+    case bt_unsigned_long:
+    case bt_long_long:
+    case bt_unsigned_long_long:
+    case bt_float:
+    case bt_double:
+    case bt_long_double:
+    case bt_float_imaginary:
+    case bt_double_imaginary:
+    case bt_long_double_imaginary:
+    case bt_float_complex:
+    case bt_double_complex:
+    case bt_long_double_complex:
+    case bt_enum:
+    case bt_templateparam:
+    case bt_wchar_t:
+        return initialize_arithmetic_type(lex, funcsp, offset, sc, tp, init);
+    case bt_lref:
+    case bt_rref:
+        return initialize_reference_type(lex, funcsp, offset, sc, tp, init, flags, sp);
+    case bt_pointer:
+        if (tp->array)
+        {
+            if (tp->vla)
             {
-                if (tp->vla)
+                error(ERR_VLA_NO_INIT);
+                errskim(&lex, skim_semi);
+                return lex;
+            }
+            else
+            {
+                return initialize_aggregate_type(lex, funcsp, sp, offset, sc, tp, init, dest, arrayMember, flags);
+            }
+        }
+        else
+        {
+            return initialize_pointer_type(lex, funcsp, offset, sc, tp, init);
+        }
+    case bt_memberptr:
+        return initialize_memberptr(lex, funcsp, offset, sc, tp, init);
+    case bt_bit:
+        return initialize_bit(lex, funcsp, offset, sc, tp, init);
+    case bt_auto:
+        return initialize_auto(lex, funcsp, offset, sc, tp, init, dest, sp);
+    case bt___string:
+        return initialize___string(lex, funcsp, offset, tp, init);
+    case bt___object:
+        return initialize___object(lex, funcsp, offset, tp, init);
+    case bt_struct:
+    case bt_union:
+    case bt_class:
+        if (tp->syms)
+        {
+            if (!cparams.prm_cplusplus && MATCHKW(lex, assign) && (sc == sc_auto || sc == sc_register))
+            {
+                lex = getsym();
+                if (MATCHKW(lex, begin))
                 {
-                    error(ERR_VLA_NO_INIT);
-                    errskim(&lex, skim_semi);
-                    return lex;
+                    return initialize_aggregate_type(lex, funcsp, sp, offset, sc, tp, init, dest, arrayMember, flags);
                 }
                 else
                 {
-                    return initialize_aggregate_type(lex, funcsp, sp, offset, sc, tp, init, dest, arrayMember, flags);
+                    return initialize_auto_struct(lex, funcsp, offset, tp, init);
                 }
             }
             else
             {
-                return initialize_pointer_type(lex, funcsp, offset, sc, tp, init);
+                return initialize_aggregate_type(lex, funcsp, sp, offset, sc, tp, init, dest, arrayMember, flags);
             }
-        case bt_memberptr:
-            return initialize_memberptr(lex, funcsp, offset, sc, tp, init);
-        case bt_bit:
-            return initialize_bit(lex, funcsp, offset, sc, tp, init);
-        case bt_auto:
-            return initialize_auto(lex, funcsp, offset, sc, tp, init, dest, sp);
-        case bt___string:
-            return initialize___string(lex, funcsp, offset, tp, init);
-        case bt___object:
-            return initialize___object(lex, funcsp, offset, tp, init);
-        case bt_struct:
-        case bt_union:
-        case bt_class:
-            if (tp->syms)
-            {
-                if (!cparams.prm_cplusplus && MATCHKW(lex, assign) && (sc == sc_auto || sc == sc_register))
-                {
-                    lex = getsym();
-                    if (MATCHKW(lex, begin))
-                    {
-                        return initialize_aggregate_type(lex, funcsp, sp, offset, sc, tp, init, dest, arrayMember, flags);
-                    }
-                    else
-                    {
-                        return initialize_auto_struct(lex, funcsp, offset, tp, init);
-                    }
-                }
-                else
-                {
-                    return initialize_aggregate_type(lex, funcsp, sp, offset, sc, tp, init, dest, arrayMember, flags);
-                }
-            }
-            /* fallthrough */
-        default:
-            if (!templateNestingCount)
-                errortype(ERR_CANNOT_INITIALIZE, tp, NULL);
-            break;
+        }
+        /* fallthrough */
+    default:
+        if (!templateNestingCount)
+            errortype(ERR_CANNOT_INITIALIZE, tp, NULL);
+        break;
     }
     return lex;
 }
@@ -3345,229 +3334,228 @@ BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams)
         return rv;
     switch (node->type)
     {
-        case en_const:
-            rv = TRUE;
-            break;
-        case en_memberptr:
-            rv = TRUE;
-            break;
-        case en_templateparam:
-        case en_templateselector:
-            rv = TRUE;
-            break;
-        case en_c_ll:
-        case en_c_ull:
-        case en_c_d:
-        case en_c_ld:
-        case en_c_f:
-        case en_c_dc:
-        case en_c_ldc:
-        case en_c_fc:
-        case en_c_di:
-        case en_c_ldi:
-        case en_c_fi:
-        case en_c_i:
-        case en_c_l:
-        case en_c_ui:
-        case en_c_ul:
-        case en_c_c:
-        case en_c_bool:
-        case en_c_uc:
-        case en_c_wc:
-        case en_c_u16:
-        case en_c_u32:
-        case en_c_string:
-        case en_nullptr:
-        case en_structelem:
-            rv = TRUE;
-            break;
-        case en_global:
-        case en_pc:
-        case en_labcon:
-        case en_absolute:
-        case en_threadlocal:
-            rv = TRUE;
-            break;
-        case en_auto:
-            rv = FALSE;
-            break;
-        case en_l_sp:
-        case en_l_fp:
-        case en_bits:
-        case en_l_f:
-        case en_l_d:
-        case en_l_ld:
-        case en_l_fi:
-        case en_l_di:
-        case en_l_ldi:
-        case en_l_fc:
-        case en_l_dc:
-        case en_l_ldc:
-        case en_l_c:
-        case en_l_wc:
-        case en_l_u16:
-        case en_l_u32:
-        case en_l_s:
-        case en_l_ul:
-        case en_l_l:
-        case en_l_p:
-        case en_l_ref:
-        case en_l_i:
-        case en_l_ui:
-        case en_l_inative:
-        case en_l_unative:
-        case en_l_uc:
-        case en_l_us:
-        case en_l_bool:
-        case en_l_bit:
-        case en_l_ll:
-        case en_l_ull:
-        case en_l_string:
-        case en_l_object:
-            if (node->left->type == en_auto)
-                rv = allowParams && node->left->v.sp->storage_class == sc_parameter;
-            else switch (node->left->type)
+    case en_const:
+        rv = TRUE;
+        break;
+    case en_memberptr:
+        rv = TRUE;
+        break;
+    case en_templateparam:
+    case en_templateselector:
+        rv = TRUE;
+        break;
+    case en_c_ll:
+    case en_c_ull:
+    case en_c_d:
+    case en_c_ld:
+    case en_c_f:
+    case en_c_dc:
+    case en_c_ldc:
+    case en_c_fc:
+    case en_c_di:
+    case en_c_ldi:
+    case en_c_fi:
+    case en_c_i:
+    case en_c_l:
+    case en_c_ui:
+    case en_c_ul:
+    case en_c_c:
+    case en_c_bool:
+    case en_c_uc:
+    case en_c_wc:
+    case en_c_u16:
+    case en_c_u32:
+    case en_c_string:
+    case en_nullptr:
+    case en_structelem:
+        rv = TRUE;
+        break;
+    case en_global:
+    case en_pc:
+    case en_labcon:
+    case en_absolute:
+    case en_threadlocal:
+        rv = TRUE;
+        break;
+    case en_auto:
+        rv = FALSE;
+        break;
+    case en_l_sp:
+    case en_l_fp:
+    case en_bits:
+    case en_l_f:
+    case en_l_d:
+    case en_l_ld:
+    case en_l_fi:
+    case en_l_di:
+    case en_l_ldi:
+    case en_l_fc:
+    case en_l_dc:
+    case en_l_ldc:
+    case en_l_c:
+    case en_l_wc:
+    case en_l_u16:
+    case en_l_u32:
+    case en_l_s:
+    case en_l_ul:
+    case en_l_l:
+    case en_l_p:
+    case en_l_ref:
+    case en_l_i:
+    case en_l_ui:
+    case en_l_inative:
+    case en_l_unative:
+    case en_l_uc:
+    case en_l_us:
+    case en_l_bool:
+    case en_l_bit:
+    case en_l_ll:
+    case en_l_ull:
+    case en_l_string:
+    case en_l_object:
+        if (node->left->type == en_auto)
+            rv = allowParams && node->left->v.sp->storage_class == sc_parameter;
+        else
+            switch (node->left->type)
             {
-                case en_global:
-                case en_pc:
-                case en_labcon:
-                case en_absolute:
-                case en_threadlocal:
-                    return node->left->v.sp->constexpression || node->left->v.sp->init && IsConstantExpression(node->left->v.sp->init->exp, allowParams);
+            case en_global:
+            case en_pc:
+            case en_labcon:
+            case en_absolute:
+            case en_threadlocal:
+                return node->left->v.sp->constexpression || node->left->v.sp->init && IsConstantExpression(node->left->v.sp->init->exp, allowParams);
             }
-            break;
-        case en_uminus:
-        case en_compl:
-        case en_not:
-        case en_x_f:
-        case en_x_d:
-        case en_x_ld:
-        case en_x_fi:
-        case en_x_di:
-        case en_x_ldi:
-        case en_x_fc:
-        case en_x_dc:
-        case en_x_ldc:
-        case en_x_ll:
-        case en_x_ull:
-        case en_x_i:
-        case en_x_ui:
-        case en_x_inative:
-        case en_x_unative:
-        case en_x_c:
-        case en_x_u16:
-        case en_x_u32:
-        case en_x_wc:
-        case en_x_uc:
-        case en_x_bool:
-        case en_x_bit:
-        case en_x_s:
-        case en_x_us:
-        case en_x_l:
-        case en_x_ul:
-        case en_x_p:
-        case en_x_fp:
-        case en_x_sp:
-        case en_x_string:
-        case en_x_object:
-        case en_trapcall:
-        case en_shiftby:
-/*        case en_movebyref: */
-        case en_substack:
-        case en_alloca:
-        case en_loadstack:
-        case en_savestack:
-        case en_literalclass:
-            rv = IsConstantExpression(node->left, allowParams);
-            break;
-        case en_assign:
-            rv = FALSE;
-            break;
-        case en_autoinc:
-        case en_autodec:
-            rv = IsConstantExpression(node->left, allowParams);
-            break; 
-        case en_add:
-        case en_sub:
-/*        case en_addcast: */
-        case en_lsh:
-        case en_arraylsh:
-        case en_rsh:
-        case en_rshd:
-        case en_void:
-        case en_voidnz:
-/*        case en_dvoid: */
-        case en_arraymul:
-        case en_arrayadd:
-        case en_arraydiv:
-        case en_structadd:
-        case en_mul:
-        case en_div:
-        case en_umul:
-        case en_udiv:
-        case en_umod:
-        case en_ursh:
-        case en_mod:
-        case en_and:
-        case en_or:
-        case en_xor:
-        case en_lor:
-        case en_land:
-        case en_eq:
-        case en_ne:
-        case en_gt:
-        case en_ge:
-        case en_lt:
-        case en_le:
-        case en_ugt:
-        case en_uge:
-        case en_ult:
-        case en_ule:
-        case en_cond:
-        case en_intcall:
-        case en_stackblock:
-        case en_blockassign:
-        case en_mp_compare:
-        case en__initblk:
-        case en__cpblk:
-            /*		case en_array: */
+        break;
+    case en_uminus:
+    case en_compl:
+    case en_not:
+    case en_x_f:
+    case en_x_d:
+    case en_x_ld:
+    case en_x_fi:
+    case en_x_di:
+    case en_x_ldi:
+    case en_x_fc:
+    case en_x_dc:
+    case en_x_ldc:
+    case en_x_ll:
+    case en_x_ull:
+    case en_x_i:
+    case en_x_ui:
+    case en_x_inative:
+    case en_x_unative:
+    case en_x_c:
+    case en_x_u16:
+    case en_x_u32:
+    case en_x_wc:
+    case en_x_uc:
+    case en_x_bool:
+    case en_x_bit:
+    case en_x_s:
+    case en_x_us:
+    case en_x_l:
+    case en_x_ul:
+    case en_x_p:
+    case en_x_fp:
+    case en_x_sp:
+    case en_x_string:
+    case en_x_object:
+    case en_trapcall:
+    case en_shiftby:
+        /*        case en_movebyref: */
+    case en_substack:
+    case en_alloca:
+    case en_loadstack:
+    case en_savestack:
+    case en_literalclass:
+        rv = IsConstantExpression(node->left, allowParams);
+        break;
+    case en_assign:
+        rv = FALSE;
+        break;
+    case en_autoinc:
+    case en_autodec:
+        rv = IsConstantExpression(node->left, allowParams);
+        break;
+    case en_add:
+    case en_sub:
+        /*        case en_addcast: */
+    case en_lsh:
+    case en_arraylsh:
+    case en_rsh:
+    case en_rshd:
+    case en_void:
+    case en_voidnz:
+        /*        case en_dvoid: */
+    case en_arraymul:
+    case en_arrayadd:
+    case en_arraydiv:
+    case en_structadd:
+    case en_mul:
+    case en_div:
+    case en_umul:
+    case en_udiv:
+    case en_umod:
+    case en_ursh:
+    case en_mod:
+    case en_and:
+    case en_or:
+    case en_xor:
+    case en_lor:
+    case en_land:
+    case en_eq:
+    case en_ne:
+    case en_gt:
+    case en_ge:
+    case en_lt:
+    case en_le:
+    case en_ugt:
+    case en_uge:
+    case en_ult:
+    case en_ule:
+    case en_cond:
+    case en_intcall:
+    case en_stackblock:
+    case en_blockassign:
+    case en_mp_compare:
+    case en__initblk:
+    case en__cpblk:
+        /*		case en_array: */
 
-            rv = IsConstantExpression(node->left, allowParams);
-            rv &= IsConstantExpression(node->right, allowParams);
-            break;
-        case en_atomic:
-            rv = FALSE;
-            break;
-        case en_blockclear:
-        case en_argnopush:
-        case en_not_lvalue:
-        case en_mp_as_bool:
-        case en_thisref:
-        case en_lvalue:
-        case en_funcret:
-            rv = IsConstantExpression(node->left, allowParams);
-            break;
-        case en_func:
-            return !node->v.func->ascall;
-            break;
-        case en_stmt:
-            rv = FALSE;
-            break;
-        default:
-            rv = FALSE;
-            diag("IsConstantExpression");
-            break;
+        rv = IsConstantExpression(node->left, allowParams);
+        rv &= IsConstantExpression(node->right, allowParams);
+        break;
+    case en_atomic:
+        rv = FALSE;
+        break;
+    case en_blockclear:
+    case en_argnopush:
+    case en_not_lvalue:
+    case en_mp_as_bool:
+    case en_thisref:
+    case en_lvalue:
+    case en_funcret:
+        rv = IsConstantExpression(node->left, allowParams);
+        break;
+    case en_func:
+        return !node->v.func->ascall;
+        break;
+    case en_stmt:
+        rv = FALSE;
+        break;
+    default:
+        rv = FALSE;
+        diag("IsConstantExpression");
+        break;
     }
     return rv;
 }
 static BOOLEAN hasData(TYPE *tp)
 {
-    HASHREC *hr = basetype(tp)->syms->table[0];
-    while (hr)
+    NITERSYMTAB(hr, basetype(tp))
     {
         if (((SYMBOL *)hr->p)->tp->size)
             return TRUE;
-        hr = hr->next;
     }
     return FALSE;
 }
@@ -3663,31 +3651,31 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
     if (sp->linkage2 == lk_property)
         return initialize_property(lex, funcsp, sp, storage_class_in, asExpression, flags);
 #endif
-    switch(sp->storage_class)
+    switch (sp->storage_class)
     {
-        case sc_parameter:
-            sp->assigned = TRUE;
-            break;
-        case sc_global:
-        case sc_external:
-            initializingGlobalVar = TRUE;
-            sp->assigned = TRUE;
-            sp->used = TRUE;
-            break;
-        case sc_static:
-        case sc_localstatic:
-            initializingGlobalVar = TRUE;
-            sp->assigned = TRUE;
-            break;
-        case sc_auto:
-        case sc_register:
-            sp->allocate = TRUE;
-            break;
-        case sc_type:
-        case sc_typedef:
-            break;
-        default:
-            break;
+    case sc_parameter:
+        sp->assigned = TRUE;
+        break;
+    case sc_global:
+    case sc_external:
+        initializingGlobalVar = TRUE;
+        sp->assigned = TRUE;
+        sp->used = TRUE;
+        break;
+    case sc_static:
+    case sc_localstatic:
+        initializingGlobalVar = TRUE;
+        sp->assigned = TRUE;
+        break;
+    case sc_auto:
+    case sc_register:
+        sp->allocate = TRUE;
+        break;
+    case sc_type:
+    case sc_typedef:
+        break;
+    default:
+        break;
     }
     if (funcsp && funcsp->isInline && sp->storage_class == sc_static)
     {
@@ -3697,7 +3685,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
         }
         else
         {
-            errorsym(ERR_INLINE_NO_STATIC, sp);	
+            errorsym(ERR_INLINE_NO_STATIC, sp);
         }
     }
     // check for attempt to use an undefined struct
@@ -3705,10 +3693,10 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
     if ((ispointer(tp) && tp->array) || isref(tp))
         tp = basetype(basetype(tp)->btp);
     if (sp->storage_class != sc_typedef && sp->storage_class != sc_external && isstructured(tp) && !isref(sp->tp) && !tp->syms)
-	{
+    {
         tp = PerformDeferredInitialization(tp, funcsp);
-		sp->tp = tp = tp->sp->tp;
-	}
+        sp->tp = tp = tp->sp->tp;
+    }
     if (sp->storage_class != sc_typedef && sp->storage_class != sc_external && isstructured(tp) && !isref(sp->tp) && !tp->syms)
     {
         if (MATCHKW(lex, assign))
@@ -3717,7 +3705,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
             errorsym(ERR_STRUCT_NOT_DEFINED, tp->sp);
     }
     // if not in a constructor, any openpa() will be eaten by an expression parser
-    else if (MATCHKW(lex, assign) || (cparams.prm_cplusplus && (MATCHKW(lex, openpa) || MATCHKW(lex, begin))) || (chosenAssembler->msil && chosenAssembler->msil->allowExtensions && MATCHKW(lex,openpa)))
+    else if (MATCHKW(lex, assign) || (cparams.prm_cplusplus && (MATCHKW(lex, openpa) || MATCHKW(lex, begin))) || (chosenAssembler->msil && chosenAssembler->msil->allowExtensions && MATCHKW(lex, openpa)))
     {
         INITIALIZER **init;
         BOOLEAN isassign = MATCHKW(lex, assign);
@@ -3749,12 +3737,12 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                             tp2 = &basetype(*tp2)->btp;
                         if (isstructured(*tp2))
                             *tp2 = (*tp2)->sp->tp;
-                            
+
                         if (sp->storage_class != sc_typedef && sp->storage_class != sc_external && isstructured(*tp2) && !isref(sp->tp) && !(*tp2)->syms)
-                    	{
+                        {
                             *tp2 = PerformDeferredInitialization((*tp2), funcsp);
-                    	}
-                    }                        
+                        }
+                    }
                 }
                 lex = prevsym(placeholder);
             }
@@ -3795,7 +3783,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                 /* set up an end tag */
                 if (sp->init || assigned)
                 {
-                    init = &sp->init;			
+                    init = &sp->init;
                     while (*init)
                     {
                         if (!(*init)->basetp)
@@ -3808,8 +3796,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
             }
         }
     }
-    else if ((cparams.prm_cplusplus || chosenAssembler->msil && isstructured(sp->tp) && !basetype(sp->tp)->sp->trivialCons)
-        && sp->storage_class != sc_typedef && sp->storage_class != sc_external && !asExpression)
+    else if ((cparams.prm_cplusplus || chosenAssembler->msil && isstructured(sp->tp) && !basetype(sp->tp)->sp->trivialCons) && sp->storage_class != sc_typedef && sp->storage_class != sc_external && !asExpression)
     {
         TYPE *t = (chosenAssembler->msil && chosenAssembler->msil->allowExtensions) ? chosenAssembler->msil->find_boxed_type(sp->tp) : 0;
         if (!t || !search(overloadNameTab[CI_CONSTRUCTOR], basetype(t)->syms))
@@ -3855,7 +3842,6 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                     if (!*init)
                         initInsert(init, NULL, NULL, t->size, FALSE);
                 }
-
             }
         }
         else if (isarray(sp->tp))
@@ -3866,11 +3852,11 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                 z = sp->tp;
             while (isarray(z))
                 z = basetype(z)->btp;
-            z= basetype(z);
+            z = basetype(z);
             if (isstructured(z) && !z->sp->trivialCons)
             {
                 INITIALIZER *init = NULL, *it = NULL;
-                int n = sp->tp->size/(z->size);
+                int n = sp->tp->size / (z->size);
                 TYPE *ctype = z;
                 EXPRESSION *sz = n > 1 ? intNode(en_c_i, n) : NULL;
                 EXPRESSION *baseexp = getThisNode(sp);
@@ -3908,7 +3894,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                     if (!*init)
                         initInsert(init, NULL, NULL, sp->tp->size, FALSE);
                 }
-            }   
+            }
         }
     }
     if (isautotype(sp->tp) && !MATCHKW(lex, colon))
@@ -3941,7 +3927,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
         else if (isstructured(tp))
         {
             INITLIST *l = sp->init;
-            while (l)
+            for (INITLIST *l = sp->init; l; l = l->next)
             {
                 if (l->next || l->exp)
                     if (!IsConstantExpression(sp->init->exp, FALSE))
@@ -3949,7 +3935,6 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                         error(ERR_CONSTANT_EXPRESSION_EXPECTED);
                         break;
                     }
-                l = l->next;
             }
         }
         else
@@ -3965,14 +3950,14 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
     {
         if (!templateNestingCount)
         {
-            if  (!sp->init)
+            if (!sp->init)
             {
                 if (!asExpression)
                 {
                     if (sp->storage_class != sc_external && sp->storage_class != sc_typedef && sp->storage_class != sc_member && sp->storage_class != sc_mutable)
                     {
                         if (!isstructured(tp) || !cparams.prm_cplusplus || (basetype(tp)->sp->trivialCons && hasData(tp)))
-                           errorsym(ERR_CONSTANT_MUST_BE_INITIALIZED, sp);
+                            errorsym(ERR_CONSTANT_MUST_BE_INITIALIZED, sp);
                     }
                 }
             }
@@ -3988,11 +3973,11 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
             }
         }
         else if (sp->init && sp->init->exp && (isint(sp->tp) || basetype(sp->tp)->type == bt_enum))
-            {
-                if (sp->storage_class != sc_static && !cparams.prm_cplusplus && !funcsp)
-                    insertInitSym(sp);
-                sp->storage_class = sc_constant;
-            }
+        {
+            if (sp->storage_class != sc_static && !cparams.prm_cplusplus && !funcsp)
+                insertInitSym(sp);
+            sp->storage_class = sc_constant;
+        }
     }
     if (isref(sp->tp) && sp->storage_class != sc_typedef)
     {
@@ -4001,8 +3986,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
             errorsym(ERR_REF_MUST_INITIALIZE, sp);
         }
     }
-    if (sp->storage_class == sc_static || sp->storage_class == sc_global 
-        || sp->storage_class == sc_localstatic)
+    if (sp->storage_class == sc_static || sp->storage_class == sc_global || sp->storage_class == sc_localstatic)
     {
         if (instantiatingTemplate)
         {
@@ -4013,7 +3997,8 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                 InsertInlineData(sp);
             }
         }
-        else {
+        else
+        {
             SYMBOL *tmpl;
 //            if (storage_class_in == sc_auto || storage_class_in == sc_register)
 //                sp = clonesym(sp);
@@ -4028,14 +4013,14 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
             {
                 insertInitSym(sp);
             }
-        }       
+        }
     }
     if (sp->init)
     {
         declareAndInitialize = TRUE;
     }
 
-    DecGlobalFlag();    
+    DecGlobalFlag();
     initializingGlobalVar = FALSE;
     if (chosenAssembler->enter_type)
         chosenAssembler->enter_type(sp);

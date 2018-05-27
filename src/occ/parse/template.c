@@ -23,7 +23,7 @@
  * 
  */
 
-#include "compiler.h"
+#include "common.h"
 #include "assert.h"
 
 extern int currentErrorLine;
@@ -652,16 +652,13 @@ BOOLEAN typeHasTemplateArg(TYPE *t)
             t = t->btp;
         if (isfunction(t))
         {
-            HASHREC *hr;
             t = basetype(t);
             if (typeHasTemplateArg(t->btp))
                 return TRUE;
-            hr = t->syms->table[0];
-            while (hr)
+            NITERSYMTAB(hr, t)
             {
                 if (typeHasTemplateArg(((SYMBOL *)hr->p)->tp))
                     return TRUE;
-                hr = hr->next;
             }            
         }
         else if (basetype(t)->type == bt_templateparam)
@@ -1487,8 +1484,8 @@ static BOOLEAN matchTemplatedType(TYPE *old, TYPE *sym, BOOLEAN strict)
                         if (!matchTemplatedType(old->btp, sym->btp, strict))
                             return FALSE;
                         {
-                            HASHREC *hro = old->syms->table[0];
-                            HASHREC *hrs = sym->syms->table[0];
+                            HASHREC *hro = SYMTABBEGIN(old);
+                            HASHREC *hrs = SYMTABBEGIN(sym);
                             if (((SYMBOL *)hro->p)->thisPtr)
                                 hro = hro->next;
                             if (((SYMBOL *)hrs->p)->thisPtr)
@@ -1569,21 +1566,19 @@ static void restoreParams(SYMBOL **table, int count)
 SYMBOL *LookupFunctionSpecialization(SYMBOL *overloads, SYMBOL *sp)
 {
     SYMBOL *found1 = NULL;
-    SYMBOL *sym = (SYMBOL *)overloads->tp->syms->table[0]->p;
+    SYMBOL *sym = (SYMBOL *)SYMTABBEGIN(overloads->tp)->p;
     SYMBOL *sd = getStructureDeclaration();
     saveParams(&sd, 1);
 	if (sym->templateLevel && !sym->instantiated && (!sym->parentClass || sym->parentClass->templateLevel != sym->templateLevel))
     {
-        found1 = detemplate(overloads->tp->syms->table[0]->p, NULL, sp->tp);
+        found1 = detemplate(SYMTABBEGIN(overloads->tp)->p, NULL, sp->tp);
     	if (found1 && allTemplateArgsSpecified(found1, found1->templateParams->next))
         {
             TEMPLATEPARAMLIST *tpl;
-            HASHREC *hr = overloads->tp->syms->table[0]->next;
-            while (hr)
+            for(HASHREC* hr = SYMTABBEGIN(overloads->tp)->next; hr; hr = hr->next)
             {
                 if (exactMatchOnTemplateArgs(found1->templateParams, ((SYMBOL *)hr->p)->templateParams))
                     return (SYMBOL *)hr->p;
-                hr = hr->next;
             }
     		sp->templateParams->p->bySpecialization.types = copyParams(found1->templateParams->next, FALSE);
             tpl = sp->templateParams->p->bySpecialization.types;
@@ -3014,7 +3009,7 @@ TYPE *SynthesizeType(TYPE *tp, TEMPLATEPARAMLIST *enclosing, BOOLEAN alt)
             case bt_func:
             {
                 TYPE *func;
-                HASHREC *hr = tp->syms->table[0], **store;
+                HASHREC *hr = SYMTABBEGIN(tp), **store;
                 *last = Alloc(sizeof(TYPE));
                 **last = *tp;
                 (*last)->syms = CreateHashTable(1);
@@ -3284,7 +3279,7 @@ static BOOLEAN hasPack(TYPE *tp)
         tp = tp->btp;
     if (isfunction(tp))
     {
-        HASHREC *hr = tp->syms->table[0];
+        HASHREC *hr = SYMTABBEGIN(tp);
         while (hr && !rv)
         {
             SYMBOL *sym = (SYMBOL *)hr->p;
@@ -3446,7 +3441,6 @@ static void clearoutDeduction(TYPE *tp)
                 {
                     clearoutDeduction(tp->etype);
                 }
-                tp = tp->btp;
                 break;
             case bt_templateselector:
                 clearoutDeduction(tp->sp->templateSelector->next->sym->tp);
@@ -3462,30 +3456,26 @@ static void clearoutDeduction(TYPE *tp)
             case bt_lrqual:
             case bt_rrqual:
             case bt_derivedfromtemplate:
-                tp = tp->btp;
                 break;
             case bt_memberptr:
                 clearoutDeduction(tp->sp->tp);
-                tp = tp->btp;
                 break;
             case bt_func:
             case bt_ifunc:
             {
-                HASHREC *hr = tp->syms->table[0];
-                while (hr)
+                NITERSYMTAB(hr, tp)
                 {
                     clearoutDeduction(((SYMBOL *)hr->p)->tp);
-                    hr = hr->next;
                 }
-                tp = tp->btp;
                 break;
             }
             case bt_templateparam:
                 tp->templateParam->p->byClass.temp = NULL;
-                return ;
+                return;
             default:
                 return;
         }
+        tp = tp->btp; // every one that breaks did this
     }
 }
 static void ClearArgValues(TEMPLATEPARAMLIST *params, BOOLEAN specialized)
@@ -3563,11 +3553,10 @@ static BOOLEAN DeduceFromTemplates(TYPE *P, TYPE *A, BOOLEAN change, BOOLEAN byC
             if (isspecialized && TP->argsym)
             {
                 TEMPLATEPARAMLIST *search = isspecialized;
-                while (search)
+                for(; search; search = search->next)
                 {
                     if (search->argsym && !strcmp(search->argsym->name, TP->argsym->name))
                         break;
-                    search = search->next;
                 }
                 if (search)
                     to = search;
@@ -3987,8 +3976,8 @@ static BOOLEAN Deduce(TYPE *P, TYPE *A, BOOLEAN change, BOOLEAN byClass, BOOLEAN
             case bt_func:
             case bt_ifunc:
             {
-                HASHREC *hrp = Pb->syms->table[0];
-                HASHREC *hra = Ab->syms->table[0];
+                HASHREC *hrp = SYMTABBEGIN(Pb);
+                HASHREC *hra = SYMTABBEGIN(Ab);
                 if (islrqual(Pin) != islrqual(A) || isrrqual(Pin) != isrrqual(Ain))
                     return FALSE;
                 if (isconst(Pin) != isconst(Ain) || isvolatile(Pin) != isvolatile(Ain))
@@ -4213,12 +4202,10 @@ static BOOLEAN ValidArg(TYPE *tp)
             case bt_func:
             case bt_ifunc:
             {
-                HASHREC *hr = tp->syms->table[0];
-                while (hr)
+                NITERSYMTAB(hr, tp)
                 {
                     if (!ValidArg(((SYMBOL *)hr->p)->tp))
                         return FALSE;
-                    hr = hr->next;
                 }
                 tp = tp->btp;
                 if (tp->type == bt_templateparam)
@@ -4326,7 +4313,7 @@ static BOOLEAN ValidateArgsSpecified(TEMPLATEPARAMLIST *params, SYMBOL *func, IN
 {
     BOOLEAN usesParams = !!args;
     INITLIST *check = args;
-    HASHREC *hr = basetype(func->tp)->syms->table[0];
+    HASHREC *hr = SYMTABBEGIN(basetype(func->tp));
     STRUCTSYM s,s1;
     inDefaultParam++;
     if (!valFromDefault(params, usesParams, &args))
@@ -4413,8 +4400,7 @@ static BOOLEAN ValidateArgsSpecified(TEMPLATEPARAMLIST *params, SYMBOL *func, IN
     addTemplateDeclaration(&s);
 //    if (!ValidArg(basetype(func->tp)->btp))
 //        return FALSE;
-    hr = basetype(func->tp)->syms->table[0];
-    while (hr)// && (!usesParams || check))
+    ITERSYMTAB(hr, basetype(func->tp))// && (!usesParams || check))
     {
         if (!ValidArg(((SYMBOL *)hr->p)->tp))
         {
@@ -4424,7 +4410,6 @@ static BOOLEAN ValidateArgsSpecified(TEMPLATEPARAMLIST *params, SYMBOL *func, IN
         }
         if (check)
             check = check->next;
-        hr = hr->next;
     }
     if (!ValidArg(basetype(func->tp)->btp))
     {
@@ -4471,18 +4456,16 @@ static BOOLEAN TemplateDeduceFromArg(TYPE *orig, TYPE *sym, EXPRESSION *exp, BOO
         {
             if (exp->v.func->sp->storage_class == sc_overloads)
             {
-                HASHREC *hr = basetype(exp->v.func->sp->tp)->syms->table[0];
+                HASHREC *hr;
                 SYMBOL *candidate = FALSE;
-                while (hr)
+                ITERSYMTAB(hr, basetype(exp->v.func->sp->tp))
                 {
                     SYMBOL *sym = (SYMBOL *)hr->p;
                     if (sym->templateLevel)
                         return FALSE;
-                    hr = hr->next;
                 }
                 // no templates, we can try each function one at a time
-                hr = basetype(exp->v.func->sp->tp)->syms->table[0];
-                while (hr)
+                ITERSYMTAB(hr, basetype(exp->v.func->sp->tp))
                 {
                     SYMBOL *sym = (SYMBOL *)hr->p;
                     clearoutDeduction(P);
@@ -4493,7 +4476,6 @@ static BOOLEAN TemplateDeduceFromArg(TYPE *orig, TYPE *sym, EXPRESSION *exp, BOO
                         else
                             candidate = sym;
                     }
-                    hr = hr->next;
                 }
                 if (candidate)
                     return Deduce(P, candidate->tp, TRUE, byClass, allowSelectors);
@@ -4785,7 +4767,7 @@ SYMBOL *TemplateDeduceArgsFromArgs(SYMBOL *sym, FUNCTIONCALL *args)
     if (nparams)
     {
         TEMPLATEPARAMLIST *params = nparams->next;
-        HASHREC *templateArgs = basetype(sym->tp)->syms->table[0], *temp;
+        HASHREC *templateArgs = SYMTABBEGIN(basetype(sym->tp)), *temp;
         INITLIST *symArgs = arguments;
         TEMPLATEPARAMLIST *initial = args->templateParams;
         ClearArgValues(params, sym->specialized);
@@ -4798,7 +4780,7 @@ SYMBOL *TemplateDeduceArgsFromArgs(SYMBOL *sym, FUNCTIONCALL *args)
                 ClearArgValues(basetype(tp)->sp->templateParams, basetype(tp)->sp->specialized);
             templateArgs = templateArgs->next;
         }
-        templateArgs = basetype(sym->tp)->syms->table[0];
+        templateArgs = SYMTABBEGIN(basetype(sym->tp));
         // fill in params that have been initialized in the arg list
         while (initial && params)
         {
@@ -4917,7 +4899,7 @@ SYMBOL *TemplateDeduceArgsFromArgs(SYMBOL *sym, FUNCTIONCALL *args)
         }
         else
         {
-            BOOLEAN rv = TemplateDeduceArgList(basetype(sym->tp)->syms->table[0], templateArgs, symArgs, FALSE);
+            BOOLEAN rv = TemplateDeduceArgList(SYMTABBEGIN(basetype(sym->tp)), templateArgs, symArgs, FALSE);
             if (!rv)
             {
                 params = nparams->next;
@@ -4930,8 +4912,7 @@ SYMBOL *TemplateDeduceArgsFromArgs(SYMBOL *sym, FUNCTIONCALL *args)
             }
 //            else
             {
-                HASHREC *hr = basetype(sym->tp)->syms->table[0];
-                while (hr)
+                NITERSYMTAB(hr, basetype(sym->tp))
                 {
                     SYMBOL *sp = (SYMBOL *)hr->p;
                     TYPE *tp = sp->tp;
@@ -4944,7 +4925,6 @@ SYMBOL *TemplateDeduceArgsFromArgs(SYMBOL *sym, FUNCTIONCALL *args)
                         if (special)
                             TransferClassTemplates(special, special, sym->templateParams->next);
                     }
-                    hr = hr->next;                    
                 }
             }
         }
@@ -5022,8 +5002,8 @@ SYMBOL *TemplateDeduceArgsFromType(SYMBOL *sym, TYPE *tp)
     }
     else
     {
-        HASHREC *templateArgs = basetype(tp)->syms->table[0];
-        HASHREC *symArgs = basetype(sym->tp)->syms->table[0];
+        HASHREC *templateArgs = SYMTABBEGIN(basetype(tp));
+        HASHREC *symArgs = SYMTABBEGIN(basetype(sym->tp));
         TEMPLATEPARAMLIST *params;
         while (templateArgs && symArgs)
         {
@@ -5159,10 +5139,10 @@ int TemplatePartialDeduceArgsFromType(SYMBOL *syml, SYMBOL *symr, TYPE *tpl, TYP
     else
     {
         int i;
-        HASHREC *tArgsl = basetype(tpl)->syms->table[0];
-        HASHREC *sArgsl = basetype(syml->tp)->syms->table[0];
-        HASHREC *tArgsr = basetype(tpr)->syms->table[0];
-        HASHREC *sArgsr = basetype(symr->tp)->syms->table[0];
+        HASHREC *tArgsl = SYMTABBEGIN(basetype(tpl));
+        HASHREC *sArgsl = SYMTABBEGIN(basetype(syml->tp));
+        HASHREC *tArgsr = SYMTABBEGIN(basetype(tpr));
+        HASHREC *sArgsr = SYMTABBEGIN(basetype(symr->tp));
         BOOLEAN usingargs = fcall && fcall->ascall;
         INITLIST *args = fcall ? fcall->arguments : NULL;
         if (fcall && fcall->thisptr)
@@ -5523,8 +5503,8 @@ static void TemplateTransferClassDeferred(SYMBOL *newCls, SYMBOL *tmpl)
     SYMBOL *sym = newCls;
     if (newCls->tp->syms && (!newCls->templateParams || !newCls->templateParams->p->bySpecialization.types))
     {
-        HASHREC *ns = newCls->tp->syms->table[0];
-        HASHREC *os = tmpl->tp->syms->table[0];
+        HASHREC *ns = SYMTABBEGIN(newCls->tp);
+        HASHREC *os = SYMTABBEGIN(tmpl->tp);
         while (ns && os)
         {
             SYMBOL *ss = (SYMBOL *)ns->p;
@@ -5539,8 +5519,8 @@ static void TemplateTransferClassDeferred(SYMBOL *newCls, SYMBOL *tmpl)
             {
                 if (ss->tp->type == bt_aggregate && ts->tp->type == bt_aggregate)
                 {
-                    HASHREC *os2 = ts->tp->syms->table[0];
-                    HASHREC *ns2 = ss->tp->syms->table[0];
+                    HASHREC *os2 = SYMTABBEGIN(ts->tp);
+                    HASHREC *ns2 = SYMTABBEGIN(ss->tp);
                     // these lists may be mismatched, in particular the old symbol table
                     // may have partial specializations for templates added after the class was defined...
                     while (ns2 && os2)
@@ -5552,10 +5532,10 @@ static void TemplateTransferClassDeferred(SYMBOL *newCls, SYMBOL *tmpl)
                         ss2->copiedTemplateFunction = TRUE;
                         if (os2)
                         {
-                            HASHREC *tsf = basetype(ts2->tp)->syms->table[0];
+                            HASHREC *tsf = SYMTABBEGIN(basetype(ts2->tp));
                             if (ts2->deferredCompile && !ss2->deferredCompile)
                             {
-                                HASHREC *ssf = basetype(ss2->tp)->syms->table[0];
+                                HASHREC *ssf = SYMTABBEGIN(basetype(ss2->tp));
                                 while (tsf && ssf)
                                 {
                                     ssf->p->name = tsf->p->name;
@@ -6001,15 +5981,14 @@ SYMBOL *TemplateClassInstantiate(SYMBOL *sym, TEMPLATEPARAMLIST *args, BOOLEAN i
         if (sym1 && (storage_class == sc_parameter || !inTemplateBody))
         {
             TEMPLATEPARAMLIST *tpm;
-            TYPE **tpx, *tp = sym1->tp;
             tpm = Alloc(sizeof(TEMPLATEPARAMLIST));
             tpm->p = Alloc(sizeof(TEMPLATEPARAM));
             tpm->p->type = kw_new;
             tpm->next = args;
             sym1 = clonesym(sym1);
             sym1->templateParams = tpm;
-            tpx = &sym1->tp;
-            while (tp)
+            TYPE* tp = sym1->tp;
+            for(TYPE** tpx = &sym1->tp; tp; tp = tp->btp)
             {
                 *tpx = Alloc(sizeof(TYPE));
                 **tpx = *tp;
@@ -6023,7 +6002,6 @@ SYMBOL *TemplateClassInstantiate(SYMBOL *sym, TEMPLATEPARAMLIST *args, BOOLEAN i
                 {
                     tpx = &(*tpx)->btp;
                 }
-                tp = tp->btp;
             }
         }
         return sym1;
@@ -6059,8 +6037,7 @@ SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExte
     STRUCTSYM s;
     LAMBDA *oldLambdas;
 
-    hr = sym->overloadName->tp->syms->table[0];
-    while (hr)
+    NITERSYMTAB(hr, sym->overloadName->tp)
     {
         SYMBOL *data = (SYMBOL *)hr->p;
         if (data->instantiated && TemplateInstantiationMatch(data, sym) && matchOverload(sym->tp, data->tp, TRUE))
@@ -6071,7 +6048,6 @@ SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExte
             found = TRUE;
             break;
         }
-        hr = hr->next;
     }
     oldLambdas = lambdas;
     lambdas = NULL;
@@ -6091,19 +6067,17 @@ SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExte
     if (!found)
     {
         BOOLEAN ok = TRUE;
-        HASHREC *hr = sym->overloadName->tp->syms->table[0];
-        while (hr)
+        NITERSYMTAB(hr, sym->overloadName->tp)
         {
             if (matchOverload(sym->tp, ((SYMBOL *)hr->p)->tp, TRUE))
             {
                 ok = FALSE;
                 break;
             }
-            hr = hr->next;
         }
         if (ok)
         {
-            HASHREC *hr = sym->overloadName->tp->syms->table[0];
+            HASHREC *hr = SYMTABBEGIN(sym->overloadName->tp);
             insertOverload(sym, sym->overloadName->tp->syms);
             while (hr)
             {
@@ -6468,8 +6442,8 @@ static void TransferClassTemplates(TEMPLATEPARAMLIST *dflt, TEMPLATEPARAMLIST *v
 					find->p->byClass.val = tpv->type == bt_templateparam ? tpv->templateParam->p->byClass.val : tpv;
 			}
 		}
-		hrd = basetype(val->p->byClass.dflt)->syms->table[0];
-		hrv = basetype(val->p->byClass.val)->syms->table[0];
+		hrd = SYMTABBEGIN(basetype(val->p->byClass.dflt));
+		hrv = SYMTABBEGIN(basetype(val->p->byClass.val));
 		while (hrd && hrv)
 		{
 			tpd = ((SYMBOL *)hrd->p)->tp;
@@ -6808,18 +6782,15 @@ static BOOLEAN checkArgType(TYPE *tp)
         tp = basetype(tp)->btp;
     if (isfunction(tp))
     {
-        HASHREC *hr;
         SYMBOL *sym = basetype(tp)->sp;
         if (!checkArgType(basetype(tp)->btp))
             return FALSE;
         if (sym->tp->syms)
         {
-            hr = sym->tp->syms->table[0];
-            while (hr)
+            NITERSYMTAB(hr, sym->tp)
             {
                 if (!checkArgType(((SYMBOL *)hr->p)->tp))
                     return FALSE;
-                hr = hr->next;
             }
         }
     }
@@ -7841,7 +7812,7 @@ void DoInstantiateTemplateFunction(TYPE *tp, SYMBOL **sp, NAMESPACEVALUES *nsv, 
         {
             FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
             SYMBOL *instance;
-            HASHREC *hr = basetype(tp)->syms->table[0];
+            HASHREC *hr = SYMTABBEGIN(basetype(tp));
             INITLIST **init = &funcparams->arguments;
             funcparams->templateParams = templateParams->p->bySpecialization.types;
             funcparams->ascall = TRUE;
@@ -7888,7 +7859,7 @@ static void referenceInstanceMembers(SYMBOL *cls)
         RTTIDumpType(cls->tp);
     if (cls->tp->syms)
     {
-        HASHREC *hr = cls->tp->syms->table[0];
+        HASHREC *hr = SYMTABBEGIN(cls->tp);
         BASECLASS *lst;
         SYMBOL *sym;
         while (hr)
@@ -7896,7 +7867,7 @@ static void referenceInstanceMembers(SYMBOL *cls)
             SYMBOL *sym = (SYMBOL *) hr->p;
             if (sym->storage_class == sc_overloads)
             {
-                HASHREC *hr2 = sym->tp->syms->table[0];
+                HASHREC *hr2 = SYMTABBEGIN(sym->tp);
                 while (hr2)
                 {
                     sym = (SYMBOL *)hr2->p;
@@ -7916,13 +7887,11 @@ static void referenceInstanceMembers(SYMBOL *cls)
                 GENREF(sym);
             hr = hr->next;
         }
-        hr = cls->tp->tags->table[0]->next; // past the definition of self
-        while (hr)
+        for(hr = cls->tp->tags->table[0]->next /*grabs past def of self*/; hr; hr = hr->next)
         {
             SYMBOL *sym = (SYMBOL *) hr->p;
             if (isstructured(sym->tp))
                 referenceInstanceMembers(sym);
-            hr = hr->next;
         }
         lst = cls->baseClasses;
         while(lst)
@@ -8076,9 +8045,7 @@ void propagateTemplateDefinition(SYMBOL *sym)
                 HASHREC **p = LookupName(sym->name, old->tp->syms);				
                 if (p)
                 {
-                    HASHREC *hr;
-                    hr = basetype(((SYMBOL *)(*p)->p)->tp)->syms->table[0];
-                    while (hr)
+                    NITERSYMTAB(hr, basetype(((SYMBOL *)(*p)->p)->tp))
                     {
                         SYMBOL *cur = (SYMBOL *)hr->p;
                         //                        if (sym->maintemplate && !strcmp(sym->maintemplate->decoratedName, cur->decoratedName) && cur->parentClass && cur->deferredCompile)// && matchTemplateFunc(cur, sym))
@@ -8091,8 +8058,8 @@ void propagateTemplateDefinition(SYMBOL *sym)
                                 sym->pushedTemplateSpecializationDefinition = 1;
                                 if (basetype(sym->tp)->syms && basetype(cur->tp)->syms)
                                 {
-                                    HASHREC *src = basetype(cur->tp)->syms->table[0];
-                                    HASHREC *dest = basetype(sym->tp)->syms->table[0];
+                                    HASHREC *src = SYMTABBEGIN(basetype(cur->tp));
+                                    HASHREC *dest = SYMTABBEGIN(basetype(sym->tp));
                                     while (src && dest)
                                     {
                                         dest->p->name = src->p->name;
@@ -8102,7 +8069,7 @@ void propagateTemplateDefinition(SYMBOL *sym)
                                 }
                                 {
                                     STRUCTSYM t, s,r;
-                                    SYMBOL *thsprospect = (SYMBOL *)basetype(sym->tp)->syms->table[0]->p;
+                                    SYMBOL *thsprospect = (SYMBOL *)SYMTABBEGIN(basetype(sym->tp))->p;
                                     t.tmpl = NULL;
                                     r.tmpl = NULL;
                                     if (cur->templateParams)
@@ -8128,7 +8095,6 @@ void propagateTemplateDefinition(SYMBOL *sym)
                                 }
                             }
                         }
-                        hr = hr->next;
                     }
                 }
             }
@@ -8141,7 +8107,7 @@ void propagateTemplateDefinition(SYMBOL *sym)
             if (old)
             {
                 HASHREC *hr;
-                hr = basetype(old->tp)->syms->table[0];
+                hr = SYMTABBEGIN(basetype(old->tp));
                 while (hr)
                 {
                     SYMBOL *cur = (SYMBOL *)hr->p;
@@ -8152,8 +8118,8 @@ void propagateTemplateDefinition(SYMBOL *sym)
                         cur->pushedTemplateSpecializationDefinition = 1;
                         if (basetype(sym->tp)->syms && basetype(cur->tp)->syms)
                         {
-                            HASHREC *src = basetype(cur->tp)->syms->table[0];
-                            HASHREC *dest = basetype(sym->tp)->syms->table[0];
+                            HASHREC *src = SYMTABBEGIN(basetype(cur->tp));
+                            HASHREC *dest = SYMTABBEGIN(basetype(sym->tp));
                             while (src && dest)
                             {
                                 dest->p->name = src->p->name;
@@ -8163,7 +8129,7 @@ void propagateTemplateDefinition(SYMBOL *sym)
                         }
                         {
                             STRUCTSYM t;
-                            SYMBOL *thsprospect = (SYMBOL *)basetype(sym->tp)->syms->table[0]->p;
+                            SYMBOL *thsprospect = (SYMBOL *)SYMTABBEGIN(basetype(sym->tp))->p;
                             t.tmpl = NULL;
                             if (thsprospect && thsprospect->thisPtr)
                             {

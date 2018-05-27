@@ -38,7 +38,7 @@ static MEMBLK *conflicts;
 static int globalFlag;
 static int globalPeak, localPeak, optPeak, tempsPeak, aliasPeak, livePeak, templatePeak, conflictPeak;
 
-#define MINALLOC (128 *1024)
+#define MINALLOC (128 * 1024)
 #define MALIGN (4)
 
 #ifdef _WIN32
@@ -48,20 +48,20 @@ static int globalPeak, localPeak, optPeak, tempsPeak, aliasPeak, livePeak, templ
 void mem_summary(void)
 {
     printf("Memory used:\n");
-    printf("\tGlobal Peak %dK\n", (globalPeak + 1023)/1024);
-    printf("\tLocal peak %dK\n", (localPeak+1023)/1024);
-    printf("\tTemplate peak %dK\n", (templatePeak + 1023)/1024);
-    printf("\tOptimizer peak %dK\n", (optPeak+ 1023)/1024);
-    printf("\tTemporary peak %dK\n", (tempsPeak+ 1023)/1024);
-    printf("\tAlias peak %dK\n", (aliasPeak + 1023)/1024);
-    printf("\tLive peak %dK\n", (livePeak + 1023)/1024);
-    printf("\tConflict peak %dK\n", (conflictPeak + 1023)/1024);
+    printf("\tGlobal Peak %dK\n", (globalPeak + 1023) / 1024);
+    printf("\tLocal peak %dK\n", (localPeak + 1023) / 1024);
+    printf("\tTemplate peak %dK\n", (templatePeak + 1023) / 1024);
+    printf("\tOptimizer peak %dK\n", (optPeak + 1023) / 1024);
+    printf("\tTemporary peak %dK\n", (tempsPeak + 1023) / 1024);
+    printf("\tAlias peak %dK\n", (aliasPeak + 1023) / 1024);
+    printf("\tLive peak %dK\n", (livePeak + 1023) / 1024);
+    printf("\tConflict peak %dK\n", (conflictPeak + 1023) / 1024);
     globalPeak = localPeak = optPeak = tempsPeak = aliasPeak = livePeak = conflictPeak = 0;
 }
 static MEMBLK *galloc(MEMBLK **arena, int size)
 {
     MEMBLK *selected;
-    int allocsize = size <= MINALLOC ? MINALLOC : (size + (MINALLOC-1)) & -MINALLOC;
+    int allocsize = size <= MINALLOC ? MINALLOC : (size + (MINALLOC - 1)) & -MINALLOC;
     selected = NULL;
     if (allocsize == MINALLOC)
     {
@@ -75,9 +75,9 @@ static MEMBLK *galloc(MEMBLK **arena, int size)
     {
 #ifdef _WIN32
         static HANDLE heap;
-        if (!heap)  
+        if (!heap)
             heap = HeapCreate(HEAP_NO_SERIALIZE, 0, 0);
-        selected = HeapAlloc(heap,  0 , allocsize + sizeof(MEMBLK) - 1);
+        selected = HeapAlloc(heap, 0, allocsize + sizeof(MEMBLK) - 1);
 #else
         selected = (MEMBLK *)malloc(allocsize + sizeof(MEMBLK) - 1);
 #endif
@@ -93,7 +93,7 @@ static MEMBLK *galloc(MEMBLK **arena, int size)
 #endif
     selected->next = *arena;
     *arena = selected;
-//    printf("%d %d\n", count1, count2);
+    //    printf("%d %d\n", count1, count2);
     return selected;
 }
 void *memAlloc(MEMBLK **arena, int size)
@@ -104,10 +104,10 @@ void *memAlloc(MEMBLK **arena, int size)
     {
         selected = galloc(arena, size);
     }
-    rv = (void *)(selected->m + selected->size -selected->left);
-//#ifdef DEBUG
+    rv = (void *)(selected->m + selected->size - selected->left);
+    //#ifdef DEBUG
     memset(rv, 0, size);
-//#endif
+    //#endif
     selected->left = selected->left - ((size + MALIGN - 1) & -MALIGN);
     return rv;
 }
@@ -117,7 +117,7 @@ void memFree(MEMBLK **arena, int *peak)
     long size = 0;
     if (!freefind)
         return;
-    while(freefind)
+    while (freefind)
     {
         MEMBLK *next = freefind->next;
 #ifdef DEBUG
@@ -134,7 +134,7 @@ void memFree(MEMBLK **arena, int *peak)
 #ifndef _WIN32
             free(freefind);
 #endif
-        }		
+        }
         freefind = next;
     }
     *arena = 0;
@@ -156,9 +156,9 @@ void *localAlloc(int size)
 }
 void localFree(void)
 {
-    memFree(&locals,  &localPeak);
+    memFree(&locals, &localPeak);
 }
-void *Alloc( int size)
+void *Alloc(int size)
 {
 #ifndef PARSER_ONLY
     if (!globalFlag)
@@ -209,11 +209,11 @@ void sFree(void)
 }
 void IncGlobalFlag(void)
 {
-    globalFlag ++;
+    globalFlag++;
 }
 void DecGlobalFlag(void)
 {
-    globalFlag --;
+    globalFlag--;
 }
 void SetGlobalFlag(int flag)
 {
@@ -226,14 +226,14 @@ int GetGlobalFlag(void)
 char *litlate(char *name)
 {
     int l;
-    char *rv = Alloc((l=strlen(name)) + 1);
+    char *rv = Alloc((l = strlen(name)) + 1);
     memcpy(rv, name, l);
     return rv;
 }
 LCHAR *wlitlate(LCHAR *name)
 {
     LCHAR *p = name;
-    int count=0;
+    int count = 0;
     LCHAR *rv;
     while (*p)
         p++, count++;

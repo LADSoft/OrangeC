@@ -27,7 +27,7 @@
 #define PEHeader_H
 
 #define PESIG 'PE'
-
+// clang-format off
 #define PE_BASE_HEADER_SIZE     0x18
 #define PE_OPTIONAL_HEADER_SIZE 0xe0
 #define PE_OBJECTENTRY_SIZE     0x28
@@ -103,7 +103,7 @@
 #define PE_FIXUP_LOW 2
 #define PE_FIXUP_HIGHLOW 3
 #define PE_FIXUP HIGHADJUST 4
-
+// clang-format on
 struct PEHeader
 {
     int signature;
@@ -174,12 +174,13 @@ struct PEHeader
     int res2_rva, res2_size;
     int res3_rva, res3_size;
 };
-struct PEImport {
-    unsigned thunkPos2 ;
-    unsigned time ;
-    unsigned version ;
-    unsigned dllName ;
-    unsigned thunkPos ;
-} ;
+struct PEImport
+{
+    unsigned thunkPos2;
+    unsigned time;
+    unsigned version;
+    unsigned dllName;
+    unsigned thunkPos;
+};
 
 #endif

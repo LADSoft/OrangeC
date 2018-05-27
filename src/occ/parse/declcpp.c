@@ -23,7 +23,7 @@
  * 
  */
 
-#include "compiler.h"
+#include "common.h"
 extern ARCH_ASM *chosenAssembler;
 extern NAMESPACEVALUES *globalNameSpace, *localNameSpace;
 extern INCLUDES *includes;
@@ -91,9 +91,8 @@ static int dumpVTabEntries(int count, THUNK *thunks, SYMBOL *sym, VTABENTRY *ent
                     EXPRESSION *exp = intNode(en_c_i, 0);
                     SYMBOL *sp = vf->func->overloadName;
                     INITLIST **args = &fcall.arguments;
-                    HASHREC *hr = basetype(vf->func->tp)->syms->table[0];
                     memset(&fcall, 0, sizeof(fcall));
-                    while (hr)
+                    NITERSYMTAB(hr, basetype(vf->func->tp))
                     {
                         SYMBOL *sym = (SYMBOL *)hr->p;
                         if (sym->thisPtr)
@@ -109,7 +108,6 @@ static int dumpVTabEntries(int count, THUNK *thunks, SYMBOL *sym, VTABENTRY *ent
                             args = &(*args)->next;
                             
                         }
-                        hr = hr->next;
                     }
                     fcall.ascall = TRUE;
                     sp = GetOverloadedFunction(&tp, &exp, sp, &fcall, NULL, TRUE, FALSE, TRUE, 0);
@@ -152,7 +150,7 @@ static int dumpVTabEntries(int count, THUNK *thunks, SYMBOL *sym, VTABENTRY *ent
         entry = entry->next;
     }
 #else
-    count  =0 ;
+    count = 0;
 #endif
     return count;
 }
@@ -196,8 +194,7 @@ void internalClassRefCount (SYMBOL *base, SYMBOL *derived, int *vcount, int *cco
     {
         if (base && derived)
         {
-            BASECLASS *lst = derived->baseClasses;
-            while(lst)
+            NITERBASECLASS(lst, derived)
             {
                 SYMBOL *sym = lst->cls;
                 if (sym->tp->type == bt_typedef)
@@ -215,7 +212,6 @@ void internalClassRefCount (SYMBOL *base, SYMBOL *derived, int *vcount, int *cco
                 {
                     internalClassRefCount(base, sym, vcount, ccount, isVirtual | lst->isvirtual);
                 }
-                lst = lst->next;
             }
         }
     }
@@ -286,8 +282,7 @@ static BOOLEAN backpatchVirtualFunc(SYMBOL *sym, VTABENTRY *entry, SYMBOL *func)
     BOOLEAN rv = FALSE;
     while (entry)
     {
-        VIRTUALFUNC *vf = entry->virtuals;
-        while (vf)
+        NITERVIRTFUNC(vf,entry)
         { 
             if (vfMatch(sym, vf->func, func))
             {
@@ -299,7 +294,6 @@ static BOOLEAN backpatchVirtualFunc(SYMBOL *sym, VTABENTRY *entry, SYMBOL *func)
                 vf->func = func;
                 rv = TRUE;
             }
-            vf = vf->next;
         }
         backpatchVirtualFunc(sym, entry->children, func);
         entry = entry->next;
@@ -430,14 +424,12 @@ static void checkXT(SYMBOL *sym1, SYMBOL *sym2, BOOLEAN func)
 }
 static void checkExceptionSpecification(SYMBOL *sp)
 {
-    HASHREC *hr = basetype(sp->tp)->syms->table[0];
-    while (hr)
+    NITERSYMTAB(hr, basetype(sp->tp))
     {
         SYMBOL *sym = (SYMBOL *)hr->p;
         if (sym->storage_class == sc_overloads)
         {
-            HASHREC *hr1 = basetype(sym->tp)->syms->table[0];
-            while (hr1)
+            NITERSYMTAB(hr1, basetype(sym->tp))
             {
                 SYMBOL *sym1 = (SYMBOL *)hr1->p;
                 if (sym1->storage_class == sc_virtual)
@@ -449,8 +441,7 @@ static void checkExceptionSpecification(SYMBOL *sp)
                         SYMBOL *sym2 = search(sym->name, basetype(bc->cls->tp)->syms);
                         if (sym2)
                         {
-                            HASHREC *hr3 = basetype(sym2->tp)->syms->table[0];
-                            while (hr3)
+                            NITERSYMTAB(hr3, basetype(sym2->tp))
                             {
                                 SYMBOL *sym3 = (SYMBOL *)hr3->p;
                                 char *f2 = strrchr(sym3->decoratedName, '@');
@@ -458,16 +449,13 @@ static void checkExceptionSpecification(SYMBOL *sp)
                                 {
                                     checkXT(sym1, sym3, FALSE);
                                 }
-                                hr3 = hr3->next;
                             }
                         }
                         bc = bc->next;
                     }
                 }
-                hr1 = hr1->next;
             }
         }
-        hr = hr->next;
     }
 }
 void CheckCalledException(SYMBOL *cst, EXPRESSION *exp)
@@ -478,8 +466,7 @@ void CheckCalledException(SYMBOL *cst, EXPRESSION *exp)
 void calculateVTabEntries(SYMBOL *sp, SYMBOL *base, VTABENTRY **pos, int offset)
 {
     BASECLASS *lst = base->baseClasses;
-    VBASEENTRY *vb = sp->vbaseEntries;
-    HASHREC *hr = sp->tp->syms->table[0];
+    HASHREC *hr = SYMTABBEGIN(sp->tp);
     if (sp->hasvtab && (!lst || lst->isvirtual || !lst->cls->vtabEntries))
     {
         VTABENTRY *vt = (VTABENTRY *)Alloc(sizeof(VTABENTRY));
@@ -491,7 +478,7 @@ void calculateVTabEntries(SYMBOL *sp, SYMBOL *base, VTABENTRY **pos, int offset)
         pos = &(*pos)->next;
         
     }
-    while (lst)
+    ITERBASECLASS(lst, base)
     {
         VTABENTRY *vt = (VTABENTRY *)Alloc(sizeof(VTABENTRY));
         vt->cls = lst->cls;
@@ -516,43 +503,12 @@ void calculateVTabEntries(SYMBOL *sp, SYMBOL *base, VTABENTRY **pos, int offset)
         }
         lst = lst->next;
     }
-    /*
-    while (vb)
-    {
-        if (vb->alloc)
-        {
-            VTABENTRY *vt = (VTABENTRY *)Alloc(sizeof(VTABENTRY));
-            VIRTUALFUNC *vf, **vfc;
-            vt->cls = vb->cls;
-            vt->isvirtual = TRUE;
-            vt->isdead = FALSE;
-            vt->dataOffset = vb->structOffset;
-            *pos = vt;
-            pos = &(*pos)->next;
-            if (vb->cls->vtabEntries)
-            {
-                vf = vb->cls->vtabEntries->virtuals;
-                vfc = &vt->virtuals;
-                while (vf)
-                {
-                    *vfc = Alloc(sizeof(VIRTUALFUNC));
-                    (*vfc)->func = vf->func;
-                    vfc = &(*vfc)->next;
-                    vf = vf->next;
-                }
-            }
-            copyVTabEntries(vb->cls->vtabEntries, &vt->children, sp->tp->size, FALSE);
-        }
-        vb = vb->next;
-    }
-    */
     while (hr && sp->vtabEntries)
     {
         SYMBOL *cur = (SYMBOL *)hr->p;
         if (cur->storage_class == sc_overloads)
         {
-            HASHREC *hrf = cur->tp->syms->table[0];
-            while (hrf)
+            NITERSYMTAB(hrf, cur->tp)
             {
                 SYMBOL *cur = (SYMBOL *)hrf->p;
                 VTABENTRY *hold, *hold2;
@@ -586,20 +542,17 @@ void calculateVTabEntries(SYMBOL *sp, SYMBOL *base, VTABENTRY **pos, int offset)
                 {
                     errorsym(ERR_FUNCTION_DOES_NOT_OVERRIDE, cur);
                 }
-                hrf = hrf->next;
             }
         }
         hr = hr->next;
     }
-    vb = sp->vbaseEntries;
-    while (vb)
+    NITERVBASEENT(vb, sp)
     {
         if (vb->alloc)
         {
             VTABENTRY *match = NULL;
             checkAmbiguousVirtualFunc(vb->cls, &match, sp->vtabEntries);
         }
-        vb = vb->next;
     }
     checkExceptionSpecification(sp);
     allocVTabSpace(sp->vtabEntries, 0);
@@ -620,10 +573,10 @@ void calculateVTabEntries(SYMBOL *sp, SYMBOL *base, VTABENTRY **pos, int offset)
 }
 void calculateVirtualBaseOffsets(SYMBOL *sp)
 {
-    BASECLASS *lst = sp->baseClasses;
+    BASECLASS *lst;
     VBASEENTRY **pos = &sp->vbaseEntries, *vbase;
     // copy all virtual base classes of direct base classes
-    while (lst)
+    ITERBASECLASS(lst, sp)
     {
         VBASEENTRY *cur = lst->cls->vbaseEntries;
         while (cur)
@@ -657,11 +610,9 @@ void calculateVirtualBaseOffsets(SYMBOL *sp)
             }            
             cur = cur->next;
         }
-        lst = lst->next;
     }
     // now add any new base classes for this derived class
-    lst = sp->baseClasses;
-    while (lst)
+    ITERBASECLASS(lst, sp)
     {
         if (lst->isvirtual)
         {
@@ -683,11 +634,9 @@ void calculateVirtualBaseOffsets(SYMBOL *sp)
                 pos = &(*pos)->next;
             }
         }
-        lst = lst->next;
     }
     // modify virtual base thunks for self
-    vbase = sp->vbaseEntries;
-    while (vbase)
+    ITERVBASEENT(vbase, sp)
     {
         if (vbase->alloc)
         {
@@ -717,12 +666,10 @@ void calculateVirtualBaseOffsets(SYMBOL *sp)
             vbase->pointerOffset = sp->tp->size;
             sp->tp->size += getSize(bt_pointer);
         }
-        vbase = vbase->next;
     }
     sp->sizeNoVirtual = sp->tp->size;
-    vbase = sp->vbaseEntries;
     // now add space for virtual base classes
-    while (vbase)
+    ITERVBASEENT(vbase, sp)
     {
         if (vbase->alloc)
         {
@@ -754,7 +701,6 @@ void calculateVirtualBaseOffsets(SYMBOL *sp)
                 n = vbase->cls->sizeNoVirtual;
             sp->tp->size += n;
         }
-        vbase = vbase->next;
     }
 }
 void deferredCompileOne(SYMBOL *cur)
@@ -825,8 +771,6 @@ static void RecalcArraySize(TYPE *tp)
 }
 void deferredInitializeStructFunctions(SYMBOL *cur)
 {
-    HASHREC *hr;
-    SYMBOL *sp;
     LEXEME *lex;
     STRUCTSYM l,m, n;
     int count = 0;
@@ -842,22 +786,19 @@ void deferredInitializeStructFunctions(SYMBOL *cur)
         count++;
     }
 //    dontRegisterTemplate++;
-    hr = cur->tp->syms->table[0];
-    while (hr)
+    NITERSYMTAB(hr, cur->tp)
     {
         SYMBOL *sp = (SYMBOL *)hr->p;
         if (sp->storage_class == sc_overloads)
         {
             if (templateNestingCount != 1 || instantiatingTemplate)
             {
-                HASHREC *hr1 = sp->tp->syms->table[0];
-                while (hr1)
+                NITERSYMTAB(hr1, sp->tp)
                 {
                     SYMBOL *sp1 = (SYMBOL *)hr1->p;
                     if (!sp1->templateLevel)
                     {
-                        HASHREC *hr2 = basetype(sp1->tp)->syms->table[0];
-                        while (hr2)
+                        NITERSYMTAB(hr2, basetype(sp1->tp))
                         {
                             SYMBOL *sp2 = (SYMBOL *)hr2->p;
                             sp2->tp = PerformDeferredInitialization(sp2->tp, NULL);
@@ -891,14 +832,11 @@ void deferredInitializeStructFunctions(SYMBOL *cur)
                                 SetAlternateLex(NULL);
                                 sp2->deferredCompile = NULL;
                             }
-                            hr2 = hr2->next;
                         }
                     }
-                    hr1 = hr1->next;
                 }
             }
         }
-        hr = hr->next;
     }
 //    dontRegisterTemplate--;
     while (count--)
@@ -910,7 +848,6 @@ void deferredInitializeStructFunctions(SYMBOL *cur)
 void deferredInitializeStructMembers(SYMBOL *cur)
 {
     LIST *staticAssert;
-    HASHREC *hr;
     SYMBOL *sp;
     LEXEME *lex;
     STRUCTSYM l,m, n;
@@ -927,8 +864,7 @@ void deferredInitializeStructMembers(SYMBOL *cur)
         count++;
     }
     dontRegisterTemplate++;
-    hr = cur->tp->syms->table[0];
-    while (hr)
+    NITERSYMTAB(hr, cur->tp)
     {
         SYMBOL *sp = (SYMBOL *)hr->p;
         if (isarray(sp->tp) && sp->tp->esize)
@@ -945,7 +881,6 @@ void deferredInitializeStructMembers(SYMBOL *cur)
             lex = initialize(lex, theCurrentFunc, sp, sc_member, FALSE, 0);
             SetAlternateLex(NULL);
         }
-        hr = hr->next;
     }
     staticAssert = cur->staticAsserts;
     while (staticAssert)
@@ -964,15 +899,13 @@ void deferredInitializeStructMembers(SYMBOL *cur)
 }
 static BOOLEAN declaringTemplate(SYMBOL *sp)
 {
-    STRUCTSYM *l = structSyms;
-    while (l)
+    for(STRUCTSYM* l = structSyms; l; l = l->next)
     {
         if (l->str && l->str->templateLevel)
         {
             if (!strcmp(sp->decoratedName, l->str->decoratedName))
                 return TRUE;
         }
-        l = l->next;
     }
     return FALSE;
 }
@@ -1027,9 +960,7 @@ TYPE *PerformDeferredInitialization (TYPE *tp, SYMBOL *funcsp)
 }
 void warnCPPWarnings(SYMBOL *sym, BOOLEAN localClassWarnings)
 {
-    HASHREC *hr = sym->tp->syms->table[0];
-    hr = sym->tp->syms->table[0];
-    while (hr)
+    NITERSYMTAB(hr, sym->tp)
     {
         SYMBOL *cur = (SYMBOL *)hr->p;
         if (cur->storage_class == sc_static && (cur->tp->hasbits || localClassWarnings))
@@ -1045,8 +976,7 @@ void warnCPPWarnings(SYMBOL *sym, BOOLEAN localClassWarnings)
         }
         if (cur->storage_class == sc_overloads)
         {
-            HASHREC *hrf = cur->tp->syms->table[0];
-            while (hrf)
+            NITERSYMTAB(hrf, cur->tp)
             {
                 cur = (SYMBOL *)hrf->p;
                 if (localClassWarnings)
@@ -1058,54 +988,42 @@ void warnCPPWarnings(SYMBOL *sym, BOOLEAN localClassWarnings)
                 if (cur->isfinal || cur->isoverride || cur->ispure)
                     if (cur->storage_class != sc_virtual)
                         error(ERR_SPECIFIER_VIRTUAL_FUNC);
-                hrf = hrf->next;
             }
         }
-        hr = hr->next;
     }
 }
 BOOLEAN usesVTab(SYMBOL *sym)
 {
-    HASHREC *hr;
-    BASECLASS *base;
-    VTABENTRY *vt;
-    hr = sym->tp->syms->table[0];
-    while (hr)
+    NITERSYMTAB(hr, sym->tp)
     {
         SYMBOL *cur = (SYMBOL *)hr->p;
         if (cur->storage_class == sc_overloads)
         {
-            HASHREC *hrf = cur->tp->syms->table[0];
-            while (hrf)
+            NITERSYMTAB(hrf, cur->tp)
             {
                 if (((SYMBOL *)(hrf->p))->storage_class == sc_virtual)
                     return TRUE;
-                hrf = hrf->next;
             }
         }
-        hr = hr->next;
     }
-    base = sym->baseClasses;
-    while (base)
+    NITERBASECLASS(base, sym)
     {
         if (base->cls->hasvtab)
             return TRUE;
-        base = base->next;
     }
     return FALSE;
 }
 BASECLASS *innerBaseClass(SYMBOL *declsym, SYMBOL *bcsym, BOOLEAN isvirtual, enum e_ac currentAccess)
 {
     BASECLASS *bc;
-    BASECLASS *t = declsym->baseClasses;
-    while (t)
+    BASECLASS *t;
+    ITERBASECLASS(t, declsym)
     {
         if (t->cls == bcsym)
         {
             errorsym(ERR_BASE_CLASS_INCLUDED_MORE_THAN_ONCE, bcsym);
             break;
         }
-        t = t->next;
     }
     if (basetype(bcsym->tp)->type == bt_union)
         error(ERR_UNION_CANNOT_BE_BASE_CLASS);       
@@ -1428,14 +1346,12 @@ restart:
             ParseAttributeSpecifiers(&lex, funcsp, TRUE);
     } while (!done);
     dropStructureDeclaration();
-    lst = declsym->baseClasses;
-    while (lst)
+    ITERBASECLASS(lst, declsym)
     {
         if (!isExpressionAccessible(NULL, lst->cls, NULL, NULL, FALSE))
         {
             BOOLEAN err = TRUE;
-            BASECLASS *lst2 = declsym->baseClasses;
-            while (lst2)
+            NITERBASECLASS(lst2, declsym)
             {
                 if (lst2 != lst)
                 {
@@ -1445,12 +1361,10 @@ restart:
                         break;
                     }
                 }
-                lst2 = lst2->next;
             }
             if (err)
                 errorsym(ERR_CANNOT_ACCESS, lst->cls);
         }
-        lst = lst->next;
     }
     return lex;    
 }
@@ -1464,7 +1378,7 @@ static BOOLEAN hasPackedTemplate(TYPE *tp)
         case bt_typedef:
             break;
         case bt_aggregate:
-            hr = tp->syms->table[0];
+            hr = SYMTABBEGIN(tp);
             sp = (SYMBOL *)hr->p;
             tp = sp->tp;
             /* fall through */
@@ -1474,39 +1388,28 @@ static BOOLEAN hasPackedTemplate(TYPE *tp)
                 return TRUE;
             if (tp->syms)
             {
-                hr = tp->syms->table[0];
-                while (hr)
+                ITERSYMTAB(hr, tp)
                 {
                     sp = (SYMBOL *)hr->p;
                     if (hasPackedTemplate(sp->tp))
                         return TRUE;
-                    hr = hr->next;
                 }
             }
             break;
         case bt_float_complex:
-            break;
         case bt_double_complex:
-            break;
         case bt_long_double_complex:
-            break;
         case bt_float_imaginary:
-            break;
         case bt_double_imaginary:
-            break;
         case bt_long_double_imaginary:
-            break;
         case bt_float:
-            break;
         case bt_double:
-            break;
         case bt_long_double:
             break;
         case bt_unsigned:
         case bt_int:
             break;
         case bt_char16_t:
-            break;
         case bt_char32_t:
             break;
         case bt_unsigned_long_long:
@@ -1526,11 +1429,9 @@ static BOOLEAN hasPackedTemplate(TYPE *tp)
             break;
         case bt_inative:
         case bt_unative:
-            break;
+            break; 
         case bt_bool:
-            break;
         case bt_bit:
-            break;
         case bt_void:
             break;
         case bt_pointer:
@@ -1544,21 +1445,13 @@ static BOOLEAN hasPackedTemplate(TYPE *tp)
         case bt_derivedfromtemplate:
             return hasPackedTemplate(tp->btp);
         case bt_seg:
-            break;
         case bt_ellipse:
-            break;
         case bt_any:
-            break;
         case bt___string:
-            break;
         case bt___object:
-            break;
         case bt_class:
-            break;
         case bt_struct:
-            break;
         case bt_union:
-            break;
         case bt_enum:
             break;
         case bt_templateparam:
@@ -1715,7 +1608,7 @@ INITLIST **expandPackedInitList(INITLIST **lptr, SYMBOL *funcsp, LEXEME *start, 
     {
 		if (arg[0]->packed && arg[0]->parent)
 		{
-			HASHREC *hr = basetype(arg[0]->parent->tp)->syms->table[0];
+			HASHREC *hr = SYMTABBEGIN(basetype(arg[0]->parent->tp));
 			while (hr->p && hr->p != arg[0])
 				hr = hr->next;
 			if (hr)
@@ -2114,7 +2007,7 @@ void checkOperatorArgs(SYMBOL *sp, BOOLEAN asFriend)
     }
     else
     {
-        HASHREC *hr = basetype(sp->tp)->syms->table[0];
+        HASHREC *hr = SYMTABBEGIN(basetype(sp->tp));
         if (!hr)
             return;
         if (!asFriend && getStructureDeclaration()) // nonstatic member
@@ -3145,13 +3038,11 @@ static BOOLEAN hasNoBody(STATEMENT *stmt)
 }
 static BOOLEAN isConstexprConstructor(SYMBOL *sym)
 {
-    HASHREC *hr;
     if (sym->constexpression)
         return TRUE;
     if (!sym->deleted && !sym->defaulted && !hasNoBody(sym->inlineFunc.stmt))
         return FALSE;
-    hr = sym->parentClass->tp->syms->table[0];
-    while (hr)
+    NITERSYMTAB(hr, sym->parentClass->tp)
     {
         SYMBOL *sp = (SYMBOL *)hr->p;
         if (ismemberdata(sp) && !sp->init)
@@ -3166,7 +3057,6 @@ static BOOLEAN isConstexprConstructor(SYMBOL *sym)
             if (!memberInit)
                 return FALSE;
         }
-        hr = hr->next;
     }
     return TRUE;
 }
@@ -3185,42 +3075,35 @@ static BOOLEAN constArgValid(TYPE *tp)
         SYMBOL *sym = basetype(tp)->sp, *sym1;
         HASHREC *hr;
         SYMBOL *cpy, *mv;
-        BASECLASS *bc;
         tp = basetype(tp);
         if (sym->trivialCons)
             return TRUE;
         tp = PerformDeferredInitialization(tp, NULL);
         sym1 = search(overloadNameTab[CI_DESTRUCTOR], tp->syms);
-        if (sym1 && !((SYMBOL *)sym1->tp->syms->table[0]->p)->defaulted)
+        if (sym1 && !((SYMBOL *)SYMTABBEGIN(sym1->tp)->p)->defaulted)
             return FALSE;
         sym1 = search(overloadNameTab[CI_CONSTRUCTOR], tp->syms);
         cpy = getCopyCons(sym, FALSE); 
         mv = getCopyCons(sym, TRUE);
-        hr = sym1->tp->syms->table[0];
-        while (hr)
+        ITERSYMTAB(hr, sym1->tp)
         {
             sym1 = (SYMBOL *)hr->p;
             if (sym1 != cpy && sym1 != mv && isConstexprConstructor(sym1))
                 break;
-            hr = hr->next;
         }
         if (!hr)
             return FALSE;
-        hr = tp->syms->table[0];
-        while (hr)
+        ITERSYMTAB(hr, tp)
         {
             sym1 = (SYMBOL *)hr->p;
             if (sym1->storage_class == sc_member && !isfunction(sym1->tp))
                 if (!constArgValid(sym1->tp))
                     return FALSE;
-            hr = hr->next;
         }
-        bc = sym->baseClasses;
-        while (bc)
+        NITERBASECLASS(bc, sym)
         {
             if (!constArgValid(bc->cls->tp))
                 return FALSE;
-            bc = bc->next;
         }
         return TRUE;
     }
@@ -3228,18 +3111,15 @@ static BOOLEAN constArgValid(TYPE *tp)
 }
 BOOLEAN MatchesConstFunction(SYMBOL *sp)
 {
-    HASHREC *hr;
     if (sp->storage_class == sc_virtual)
         return FALSE;
     if (!constArgValid(basetype(sp->tp)->btp))
         return FALSE;
-    hr = basetype(sp->tp)->syms->table[0];
-    while (hr)
+    NITERSYMTAB(hr, basetype(sp->tp))
     {
         SYMBOL *sym = (SYMBOL *)hr->p;
         if (sym->tp->type != bt_void && !constArgValid(sym->tp))
             return FALSE;
-        hr = hr->next;
     }
     return TRUE;
 }

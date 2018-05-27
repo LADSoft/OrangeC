@@ -29,7 +29,7 @@
 #define BRS_VARIABLE 1
 #define BRS_STARTFILE 2
 #define BRS_STARTFUNC 3
-#define BRS_ENDFUNC  4
+#define BRS_ENDFUNC 4
 #define BRS_BLOCKSTART 5
 #define BRS_BLOCKEND 6
 #define BRS_PROTOTYPE 7
@@ -53,6 +53,6 @@ typedef struct browseInfo
     int filenum;
     int lineno;
     int charpos;
-    int flags;  
+    int flags;
 } BROWSEINFO;
 #endif //_BROWSE_H

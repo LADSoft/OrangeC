@@ -23,7 +23,7 @@
  * 
  */
 
-#include "compiler.h"
+#include "common.h"
  
 extern ARCH_ASM *chosenAssembler;
 extern TYPE stdint;
@@ -58,13 +58,11 @@ void inlineinit(void)
 }
 static SYMBOL *inSearch(SYMBOL *sp)
 {
-    HASHREC **hr = GetHashLink(didInlines, sp->decoratedName);
-    while (*hr)
+    for(HASHREC** hr = GetHashLink(didInlines, sp->decoratedName); *hr; hr = &(*hr)->next)
     {
         SYMBOL *sym = (SYMBOL *)(*hr)->p;
         if (!strcmp(sym->decoratedName, sp->decoratedName))
             return sym;
-        hr = &(*hr)->next;
     }
     return NULL;
 }
@@ -80,18 +78,14 @@ static void inInsert(SYMBOL *sp)
 }
 static void UndoPreviousCodegen(SYMBOL *sym)
 {
-    HASHTABLE *syms = sym->inlineFunc.syms;
-    while (syms)
+    for(HASHTABLE* syms = sym->inlineFunc.syms; syms; syms = syms->next)
     {
-        HASHREC *hr = syms->table[0];
-        while (hr)
+        for(HASHREC* hr = syms->table[0]; hr; hr = hr->next)
         {
             SYMBOL *sx = (SYMBOL *)hr->p;
             sx->imaddress = sx->imvalue = NULL;
             sx->imind = NULL;
-            hr = hr->next;
         }
-        syms = syms->next;
     }
     
 }
@@ -151,7 +145,7 @@ void dumpInlines(void)
             }
             startlab = retlab = 0;
             vtabList = inlineVTabHead;
-            while (vtabList)
+            for(vtabList = inlineVTabHead; vtabList; vtabList = vtabList->next)
             {
                 SYMBOL *sym = (SYMBOL *)vtabList->data;
                 if (sym->vtabsp->genreffed && hasVTab(sym) && !sym->vtabsp->didinline)
@@ -171,8 +165,6 @@ void dumpInlines(void)
                         done = FALSE;
                     }
                 }
-                vtabList = vtabList->next;
-                
             }
         } while (!done);
         dataList = inlineDataHead;
@@ -184,15 +176,13 @@ void dumpInlines(void)
             {
                 SYMBOL *parentTemplate = sym->parentClass->parentTemplate;
                 SYMBOL *origsym;
-                LIST *instants = parentTemplate->instantiations;
-                while (instants)
+                for(LIST* instants = parentTemplate->instantiations; instants; instants = instants->next)
                 {
                     if (TemplateInstantiationMatch(instants->data, sym->parentClass))
                     {
                         parentTemplate = (SYMBOL *)instants->data;
                         break;
                     }
-                    instants = instants->next;
                 }
                 origsym = search(sym->name, parentTemplate->tp->syms);
     //            printf("%s\n", origsym->decoratedName);
@@ -274,28 +264,23 @@ void dumpInlines(void)
 void dumpImportThunks(void)
 {
 #ifndef PARSER_ONLY
-    LIST *l = importThunks;
-    while (l)
+    for(LIST* l = importThunks; l; l = l->next)
     {
         gen_virtual((SYMBOL *)l->data, FALSE);
         gen_importThunk((SYMBOL *)l->data);
         gen_endvirtual((SYMBOL *)l->data);
-        l = l->next;
     }
 #endif
 }
 void dumpvc1Thunks(void)
 {
 #ifndef PARSER_ONLY
-    HASHREC *hr;
     cseg();
-    hr = vc1Thunks->table[0];
-    while (hr)
+    for(HASHREC* hr = vc1Thunks->table[0]; hr; hr = hr->next)
     {
         gen_virtual((SYMBOL *)hr->p, FALSE);
         gen_vc1((SYMBOL *)hr->p);
         gen_endvirtual((SYMBOL *)hr->p);
-        hr = hr->next;
     }
 #endif
 }
@@ -1077,7 +1062,7 @@ static STATEMENT *SetupArguments(FUNCTIONCALL *params)
         
     STATEMENT *st = NULL, **stp = &st;
     INITLIST *al = params->arguments;
-    HASHREC *hr = basetype(params->sp->tp)->syms->table[0];
+    HASHREC *hr = SYMTABBEGIN(basetype(params->sp->tp));
     if (ismember(params->sp))
     {
         SYMBOL *sx = (SYMBOL *)hr->p;
@@ -1100,11 +1085,9 @@ void SetupVariables(SYMBOL *sp)
  * This copies the function parameters twice...
  */
 {
-    HASHTABLE *syms = sp->inlineFunc.syms;
-    while (syms)
+    for(HASHTABLE* syms = sp->inlineFunc.syms; syms; syms = syms->next)
     {
-        HASHREC *hr = syms->table[0];
-        while (hr)
+        for(HASHREC* hr = syms->table[0]; hr; hr = hr->next)
         {
             SYMBOL *sx = (SYMBOL *)hr->p;
             if (sx->storage_class == sc_auto)
@@ -1113,9 +1096,7 @@ void SetupVariables(SYMBOL *sp)
                 deref(sx->tp, &ev);
                 sx->inlineFunc.stmt = (STATEMENT *)ev;
             }
-            hr = hr->next;
         }
-        syms = syms->next;
     }
 }
 /*-------------------------------------------------------------------------*/

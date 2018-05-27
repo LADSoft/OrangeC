@@ -41,10 +41,10 @@ HASHTABLE *CreateHashTable(int size)
 HASHREC **GetHashLink(HASHTABLE *t, char *string)
 {
     unsigned i;
-    if ( t->size == 1)
+    if (t->size == 1)
         return &t->table[0];
-    for (i = 0;  *string; string++)
-        i = ((i << 7) + (i << 1) +i )  ^ *string;
+    for (i = 0; *string; string++)
+        i = ((i << 7) + (i << 1) + i) ^ *string;
     return &t->table[i % t->size];
 }
 /* Add a hash item to the table */
@@ -55,7 +55,7 @@ HASHREC *AddName(SYMBOL *item, HASHTABLE *table)
 
     if (*p)
     {
-        HASHREC *q =  *p,  *r =  *p;
+        HASHREC *q = *p, *r = *p;
         while (q)
         {
             r = q;
@@ -87,7 +87,7 @@ HASHREC **LookupName(char *name, HASHTABLE *table)
     {
         if (!strcmp((*p)->p->name, name))
             return p;
-        p =  (HASHREC **)*p;
+        p = (HASHREC **)*p;
     }
     return (0);
 }
@@ -109,4 +109,3 @@ void insert(SYMBOL *in, HASHTABLE *table)
         pperrorstr(ERR_DUPLICATE_IDENTIFIER, in->name);
     }
 }
-

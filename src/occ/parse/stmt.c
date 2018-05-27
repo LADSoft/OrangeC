@@ -24,7 +24,7 @@
  */
 
 /* declare in select has multiple vars */
-#include "compiler.h"
+#include "common.h"
 #include <limits.h>
 #include <assert.h>
 extern TYPE stdint;
@@ -296,7 +296,7 @@ static void thunkCatchCleanup(STATEMENT *st, SYMBOL *funcsp, BLOCKDATA *src, BLO
                 STATEMENT **find = &src->head;
                 INITLIST *arg1 = Alloc(sizeof(INITLIST)); // exception table
                 makeXCTab(funcsp);
-                sp = (SYMBOL *)basetype(sp->tp)->syms->table[0]->p;
+                sp = (SYMBOL *)SYMTABBEGIN(basetype(sp->tp))->p;
                 funcparams->ascall = TRUE;
                 funcparams->sp = sp;
                 funcparams->functp = sp->tp;
@@ -333,12 +333,9 @@ static void thunkCatchCleanup(STATEMENT *st, SYMBOL *funcsp, BLOCKDATA *src, BLO
 }
 static void ThunkUndestructSyms(HASHTABLE *syms)
 {
-    HASHREC *hr = syms->table[0];
-    while (hr)
+    for(HASHREC* hr = syms->table[0]; hr; hr = hr->next)
     {
-        SYMBOL *sp = (SYMBOL *)hr->p;
-        sp->destructed = TRUE;
-        hr = hr->next;
+        ((SYMBOL*)hr->p)->destructed = TRUE;
     }
 }
 static void thunkRetDestructors(EXPRESSION **exp, HASHTABLE *top, HASHTABLE *syms)
@@ -386,7 +383,7 @@ static void HandleEndOfCase(BLOCKDATA *parent)
         EXPRESSION *exp = NULL;
         STATEMENT *st;
         // the destruct is only used for endin
-        destructBlock(&exp, localNameSpace->syms->table[0], FALSE);
+        destructBlock(&exp, SYMTABBEGIN(localNameSpace), FALSE);
         if (exp)
         {
             st = stmtNode(NULL, parent, st_nop);
@@ -419,7 +416,7 @@ static LEXEME *statement_break(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         error(ERR_BREAK_NO_LOOP);
     else
     {
-        STATEMENT *st ;
+        STATEMENT *st;
         currentLineData(parent, lex, 0);
         if (last)
             thunkRetDestructors(&exp, last->table, localNameSpace->syms);
@@ -679,7 +676,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 // range based for statement
                 // we will ignore 'init'.
                 TYPE *selectTP;
-                SYMBOL *declSP = (SYMBOL *)localNameSpace->syms->table[0]->p;
+                SYMBOL *declSP = (SYMBOL *)SYMTABBEGIN(localNameSpace)->p;
                 EXPRESSION *declExp;
                 if (!declSP)
                 {
@@ -910,7 +907,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                         fc->ascall = TRUE;
                                         fc->arguments = Alloc(sizeof(INITLIST));                                        
                                         *fc->arguments = *fcb.arguments;
-                                        if (isstructured(it2) && isstructured(((SYMBOL *)(it2->syms->table[0]->p))->tp))
+                                        if (isstructured(it2) && isstructured(((SYMBOL *)(SYMTABBEGIN(it2)->p))->tp))
                                         {
                                             EXPRESSION *consexp = anonymousVar(sc_auto, basetype(rangeSP->tp)->btp); // sc_parameter to push it...
                                             SYMBOL *esp = consexp->v.sp;
@@ -939,7 +936,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                         fc->ascall = TRUE;
                                         fc->arguments = Alloc(sizeof(INITLIST));
                                         *fc->arguments = *fce.arguments;
-                                        if (isstructured(it2) && isstructured(((SYMBOL *)(it2->syms->table[0]->p))->tp))
+                                        if (isstructured(it2) && isstructured(((SYMBOL *)(SYMTABBEGIN(it2)->p))->tp))
                                         {
                                             EXPRESSION *consexp = anonymousVar(sc_auto, basetype(rangeSP->tp)->btp); // sc_parameter to push it...
                                             SYMBOL *esp = consexp->v.sp;
@@ -1116,7 +1113,8 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                 error(ERR_MISSING_OPERATOR_STAR_FORRANGE_ITERATOR);
                                 
                             }
-                            else {
+                            else 
+                            {
                                 TYPE **tp = &declSP->tp;
                                 BOOLEAN ref = FALSE;
                                 if (isref(*tp))
@@ -1250,7 +1248,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             {
                 if (declaration && cparams.prm_cplusplus)
                 {
-                    HASHREC *hr = localNameSpace->syms->table[0];
+                    HASHREC *hr = SYMTABBEGIN(localNameSpace);
                     while (hr && ((SYMBOL *)hr->p)->anonymous)
                         hr = hr->next;
                     if (!hr)
@@ -1654,10 +1652,9 @@ static EXPRESSION *ConvertReturnToRef(EXPRESSION *exp, TYPE *tp, TYPE *boundTP)
 {
     if (lvalue(exp))
     {
-        EXPRESSION *exp2;
         while (castvalue(exp))
             exp = exp->left;
-        exp2 = exp;
+        EXPRESSION* exp2 = exp;
         if (!isstructured(basetype(tp)->btp))
         {
             if (isref(basetype(tp)->btp))
@@ -1828,8 +1825,8 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             sp->structuredReturn = TRUE;
             sp->name = "__retblock";
             if ((funcsp->linkage == lk_pascal) &&
-                    basetype(funcsp->tp)->syms->table[0] && 
-                    ((SYMBOL *)basetype(funcsp->tp)->syms->table[0])->tp->type != bt_void)
+                    SYMTABBEGIN(basetype(funcsp->tp)) && 
+                    ((SYMBOL *)SYMTABBEGIN(basetype(funcsp->tp)))->tp->type != bt_void)
                 sp->offset = funcsp->paramsize;
             deref(&stdpointer, &en);
             if (cparams.prm_cplusplus && isstructured(tp))
@@ -2990,7 +2987,7 @@ static void insertXCInfo(SYMBOL *funcsp)
         INITLIST *arg1 = Alloc(sizeof(INITLIST));
         INITLIST *arg2 = Alloc(sizeof(INITLIST));
         EXPRESSION *exp;
-        sp = (SYMBOL *)basetype(sp->tp)->syms->table[0]->p;
+        sp = (SYMBOL *)SYMTABBEGIN(basetype(sp->tp))->p;
         funcparams->functp = sp->tp;
         funcparams->sp = sp;
         funcparams->fcall = varNode(en_pc, sp);
@@ -3009,7 +3006,7 @@ static void insertXCInfo(SYMBOL *funcsp)
         sp = namespacesearch("_RundownException", globalNameSpace, FALSE, FALSE);
         if (sp)
         {
-            sp = (SYMBOL *)basetype(sp->tp)->syms->table[0]->p;
+            sp = (SYMBOL *)SYMTABBEGIN(basetype(sp->tp))->p;
             funcparams = Alloc(sizeof(FUNCTIONCALL));
             funcparams->functp = sp->tp;
             funcparams->sp = sp;
@@ -3040,7 +3037,7 @@ LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
     parent->needlabel = FALSE;
     if (first)
     {
-        HASHREC *hr = basetype(funcsp->tp)->syms->table[0];
+        HASHREC *hr = SYMTABBEGIN(basetype(funcsp->tp));
         int n = 1;
         browse_startfunc(funcsp, funcsp->declline);
         while (hr)
@@ -3208,7 +3205,7 @@ LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
             STATEMENT *st = stmtNode(lex, blockstmt, st_expr);
             INITLIST *arg1 = Alloc(sizeof(INITLIST)); // exception table
             makeXCTab(funcsp);
-            sp = (SYMBOL *)basetype(sp->tp)->syms->table[0]->p;
+            sp = (SYMBOL *)SYMTABBEGIN(basetype(sp->tp))->p;
             funcparams->ascall = TRUE;
             funcparams->sp = sp;
             funcparams->functp = sp->tp;
@@ -3292,7 +3289,7 @@ static void assignPascalParams(LEXEME *lex, SYMBOL *funcsp, int *base, HASHREC *
 }
 static void assignParameterSizes(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *block)
 {
-    HASHREC *params = basetype(funcsp->tp)->syms->table[0];
+    HASHREC *params = SYMTABBEGIN(basetype(funcsp->tp));
     int base;
     if (chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE)
         base = 0;
@@ -3342,7 +3339,7 @@ static void checkUndefinedStructures(SYMBOL *funcsp)
             errorsym(ERR_STRUCT_NOT_DEFINED, basetype(tp)->sp);
         }
     }
-    hr = basetype(funcsp->tp)->syms->table[0];
+    hr = SYMTABBEGIN(basetype(funcsp->tp));
     while (hr)
     {
         SYMBOL *sp = (SYMBOL *)hr->p;
@@ -3449,7 +3446,7 @@ static void handleInlines(SYMBOL *funcsp)
         if (funcsp->linkage == lk_virtual)
         {
             
-            HASHREC *hr = basetype(funcsp->tp)->syms->table[0];
+            HASHREC *hr = SYMTABBEGIN(basetype(funcsp->tp));
             SYMBOL *head;
             while (hr)
             {
@@ -3531,7 +3528,7 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
         // if it is variadic don't allow it to be inline
         if (funcsp->isInline)
         {
-            HASHREC *hr = basetype(funcsp->tp)->syms->table[0];
+            HASHREC *hr = SYMTABBEGIN(basetype(funcsp->tp));
             if (hr)
             {
                 while (hr->next)

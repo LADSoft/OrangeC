@@ -751,10 +751,6 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                         {
                             funcsp->isInline = funcsp->dumpInlineToFile = funcsp->promotedToInline = FALSE;
                         }
-                        else
-                        {
-                            errorsym(ERR_INLINE_CANNOT_REFER_TO_STATIC, sp);
-                        }
                     }
                     if (sp->linkage3 == lk_threadlocal)
                     {

@@ -2423,6 +2423,14 @@ static LEXEME *statement_expr(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             }
         }
     }
+    else
+    {
+        if (select->type == en_func && select->v.func->sp && select->v.func->sp->linkage3 == lk_noreturn)
+        {
+            parent->needlabel = TRUE;
+        }
+
+    }
     return lex;
 }
 static LEXEME *asm_declare(LEXEME *lex)

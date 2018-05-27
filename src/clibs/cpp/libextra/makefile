@@ -22,15 +22,8 @@
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
 
-all:
-	$(MAKE) -CCOMPLIB
-	$(MAKE) -CLIBEXTRA
-ifdef OLDSGL
-	$(MAKE) -CSGISRC
-else
-ifdef STLPORT
-	$(MAKE) -CSTLPort-5.2.1/src
-else
-	$(MAKE) -Clibcxx/src
-endif
-endif
+ASM_DEPENDENCIES = $(wildcard 386/*.nas)
+CPP_DEPENDENCIES = $(wildcard *.cpp)
+
+all: $(DEPENDENCIES)
+

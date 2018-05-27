@@ -32,8 +32,6 @@
 #ifndef __REGEX_H
 #define __REGEX_H
 
-#pragma pack(1)
-
 #ifndef __STDDEF_H
 #include <stddef.h>
 #endif
@@ -59,16 +57,17 @@ extern "C" {
 #define REG_EESCAPE 5
 #define REG_ESUBREG 6
 #define REG_EBRACK 7
-#define REG_EPAREN 8
-#define REG_EBRACE 9
-#define REG_BADBR 10
-#define REG_ERANGE 11
-#define REG_ESPACE 12
-#define REG_BADRPT 13
-#define REG_ENOSYS 14
+#define REG_ENOSYS 8
+#define REG_EPAREN 9
+#define REG_EBRACE 10
+#define REG_BADBR 11
+#define REG_ERANGE 12
+#define REG_ESPACE 13
+#define REG_BADRPT 14
 
 typedef struct _regex {
     size_t    re_nsub;
+    void     *re_innerctx;
 } regex_t;
 
 typedef int regoff_t;
@@ -79,7 +78,7 @@ typedef struct _regmatch {
 } regmatch_t;
 
 int    _RTL_FUNC regcomp(regex_t *, const char *, int);
-int    _RTL_FUNC regexec(const regex_t *, const char *, size_t, regmatch_t[], int);
+int    _RTL_FUNC regexec(regex_t *, const char *, size_t, regmatch_t[], int);
 size_t _RTL_FUNC regerror(int, const regex_t *, char *, size_t);
 void   _RTL_FUNC regfree(regex_t *);
 
@@ -92,10 +91,13 @@ void   _RTL_FUNC regfree(regex_t *);
 #pragma pack()
 
 #endif  /* __REGEX_H */
-#if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__TIME_H_USING_LIST)
-#define __TIME_H_USING_LIST
+#if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__REGEX_H_USING_LIST)
+#define __REGEX_H_USING_LIST
     using __STD_NS_QUALIFIER regcomp;
     using __STD_NS_QUALIFIER regexec;
     using __STD_NS_QUALIFIER regerror;
     using __STD_NS_QUALIFIER regfree;
+    using __STD_NS_QUALIFIER regex_t;
+    using __STD_NS_QUALIFIER regoff_t;
+    using __STD_NS_QUALIFIER regmatch_t;
 #endif

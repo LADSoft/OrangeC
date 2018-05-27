@@ -496,7 +496,7 @@ LRESULT CALLBACK ASMProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 SetCaretPos(caretX, caretY);
             }
             SetFocus(hwnd);
-            if (iMessage == WM_LBUTTONDOWN)
+            if (iMessage == WM_LBUTTONDOWN && activeProcess)
             {
                 int n ;
 setBreakPoint:

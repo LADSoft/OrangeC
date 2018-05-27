@@ -4015,8 +4015,6 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
         }
         else {
             SYMBOL *tmpl;
-//            if (storage_class_in == sc_auto || storage_class_in == sc_register)
-//                sp = clonesym(sp);
             tmpl = sp;
             while (tmpl)
                 if (tmpl->templateLevel)

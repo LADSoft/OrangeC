@@ -493,7 +493,7 @@ typedef struct sym
     char *decoratedName; /* symbol name with decorations, as used in output format */
     char *errname; /* name to be used in errors */
     char *declfile, *origdeclfile ; /* file symbol was declared in */
-    int  declline, origdeclline ; /* line number symbol was declared at */
+    int  declline, origdeclline, realdeclline ; /* line number symbol was declared at */
     short declcharpos ; /* character position symbol was declared at */
     short declfilenum; /* the file number */
     int sizeNoVirtual; /* size without virtual classes and thunks */
@@ -940,6 +940,7 @@ typedef struct lexeme
     char *file;
     LINEDATA *linedata;
     int line;
+    int realline;
     int charindex;
     int filenum;
     KEYWORD *kw;

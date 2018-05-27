@@ -490,6 +490,7 @@ BOOLEAN getline(void)
         {
             int temp;
             ++includes->line;
+            ++includes->realline;
             preprocLine = includes->line;
             preprocFile = includes->fname;
 #ifdef PARSER_ONLY
@@ -526,7 +527,7 @@ BOOLEAN getline(void)
             stripcomment(includes->inputline + rvc);
             /* for the back end*/
 #ifndef CPREPROCESSOR
-            InsertLineData(includes->line, includes->fileindex, includes->fname, (char *)includes->inputline + rvc);
+            InsertLineData(includes->realline, includes->fileindex, includes->fname, (char *)includes->inputline + rvc);
 #endif
             rvc = strlen((char *)includes->inputline);
             while (rvc && isspace((unsigned char)includes->inputline[rvc - 1]))

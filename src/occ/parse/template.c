@@ -1461,6 +1461,7 @@ SYMBOL *LookupSpecialization(SYMBOL *sym, TEMPLATEPARAMLIST *templateParams)
     candidate->tp->tags = NULL;
     candidate->baseClasses = NULL;
     candidate->declline = candidate->origdeclline = includes->line;
+    candidate->realdeclline = includes->realline;
     candidate->declfile = candidate->origdeclfile = includes->fname;
     candidate->trivialCons = FALSE;
     SetLinkerNames(candidate, lk_cdecl);

@@ -480,6 +480,7 @@ static EXPRESSION *inasm_ident(void)
             sp->name = litlate(nm);
             sp->declfile = sp->origdeclfile = lex->file;
             sp->declline = sp->origdeclline = lex->line;
+            sp->realdeclline = lex->realline;
             sp->declfilenum = lex->filenum;
             sp->used = TRUE;
             sp->tp = beLocalAlloc(sizeof(TYPE));
@@ -562,6 +563,7 @@ static EXPRESSION *inasm_label(void)
         sp->name = litlate(lex->value.s.a);
         sp->declfile = sp->origdeclfile = lex->file;
         sp->declline = sp->origdeclline = lex->line;
+        sp->realdeclline = lex->realline;
         sp->declfilenum = lex->filenum;
         sp->tp = beLocalAlloc(sizeof(TYPE));
         sp->tp->type = bt_unsigned;

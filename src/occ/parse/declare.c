@@ -152,6 +152,7 @@ SYMBOL *makeID(enum e_sc storage_class, TYPE *tp, SYMBOL *spi, char *name)
     sp->tp = tp;
     sp->declfile = sp->origdeclfile = lex->file;
     sp->declline = sp->origdeclline = lex->line;
+    sp->realdeclline = lex->realline;
     sp->declfilenum = lex->filenum;
     if (spi)
     {
@@ -901,7 +902,7 @@ static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac cur
     addStructureDeclaration(&sl);
     while (lex && KW(lex) != end)
     {
-        FlushLineData(lex->file, lex->line);
+        FlushLineData(lex->file, lex->realline);
         switch(KW(lex))
         {
             case kw_private:
@@ -1113,6 +1114,7 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
     enum e_ac defaultAccess;
     BOOLEAN addedNew = FALSE;
     int declline = lex->line;
+    int realdeclline = lex->realline;
     BOOLEAN anonymous = FALSE;
     unsigned char *uuid;
     *defd = FALSE;
@@ -1177,6 +1179,7 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
         sp->tp->sp = sp;
         sp->declcharpos = charindex;
         sp->declline = sp->origdeclline = declline;
+        sp->realdeclline = realdeclline;
         sp->declfile = sp->origdeclfile = lex->file;
         sp->declfilenum = lex->filenum;
         if ((storage_class == sc_member || storage_class == sc_mutable) && (MATCHKW(lex, begin) || MATCHKW(lex, colon) || MATCHKW(lex, kw_try) || MATCHKW(lex, semicolon)))
@@ -1341,6 +1344,7 @@ static LEXEME *enumbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *spi,
             sp->name = sp->errname = sp->decoratedName = litlate(lex->value.s.a);
             sp->declcharpos = lex->charindex;
             sp->declline = sp->origdeclline = lex->line;
+            sp->realdeclline = lex->realline;
             sp->declfile = sp->origdeclfile = lex->file;
             sp->declfilenum = lex->filenum;
             sp->parentClass = spi->parentClass;
@@ -1476,6 +1480,7 @@ static LEXEME *declenum(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storag
     NAMESPACEVALUES *nsv;
     SYMBOL *strSym;
     int declline = lex->line;
+    int realdeclline = lex->realline;
     BOOLEAN anonymous = FALSE;
     *defd = FALSE;
     lex = getsym();
@@ -1554,6 +1559,7 @@ static LEXEME *declenum(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storag
         sp->tp->size = sp->tp->btp->size;
         sp->declcharpos = charindex;
         sp->declline = sp->origdeclline = declline;
+        sp->realdeclline = realdeclline;
         sp->declfile = sp->origdeclfile = lex->file;
         sp->declfilenum = lex->filenum;
         if (storage_class == sc_member || storage_class == sc_mutable)
@@ -6026,6 +6032,7 @@ jointemplate:
                                         {
                                             spi->declfile = sp->declfile;
                                             spi->declline = sp->declline;
+                                            spi->realdeclline = sp->realdeclline;
                                             spi->declfilenum = sp->declfilenum;
                                             spi->storage_class = sc_global;
                                         }
@@ -6112,6 +6119,7 @@ jointemplate:
                             {
                                 spi->declfile = sp->declfile;
                                 spi->declline = sp->declline;
+                                spi->realdeclline = sp->realdeclline;
                                 spi->declfilenum = sp->declfilenum;
                             }
                             spi->memberInitializers = sp->memberInitializers;
@@ -6649,7 +6657,7 @@ doInitialize:
             }
         }
     }
-    FlushLineData(includes->fname, includes->line);
+    FlushLineData(includes->fname, includes->realline);
     if (needsemi && !asExpression && !needkw(&lex, semicolon))
     {
         errskim(&lex, skim_semi_declare);

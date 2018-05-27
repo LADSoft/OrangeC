@@ -811,7 +811,8 @@ bool LinkDebugFile::WriteAutosTable()
                         case ObjDebugTag::eFunctionEnd:
                         {
                             int end = currentLine->GetLineNumber();
-                            int fileId = currentContext->startLine->GetFile()->GetIndex();
+                            // this next line is a safety, used to use start line
+                            int fileId = currentLine->GetFile()->GetIndex();
                             for (auto obj : currentContext->vars)
                             {
                                 ObjSymbol *s = obj.first;

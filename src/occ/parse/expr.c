@@ -920,6 +920,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
         sp->used = TRUE;
         sp->declfile = sp->origdeclfile = lex->file;
         sp->declline = sp->origdeclline = lex->line;
+        sp->realdeclline = lex->realline;
         sp->declfilenum = lex->filenum;
         lex = getsym();
         if (MATCHKW(lex, openpa))

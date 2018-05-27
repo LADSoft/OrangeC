@@ -67,6 +67,7 @@ typedef struct _includes_
     int     anonymousid;
     int 	fileindex;
     int		line;
+    int     realline;
     int		current;
     int 	ifskip;
     int		skiplevel;

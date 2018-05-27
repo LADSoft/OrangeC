@@ -1586,6 +1586,7 @@ static LEXEME *statement_goto(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             spx = makeID(sc_ulabel, NULL, NULL, litlate(lex->value.s.a));
             spx->declfile = spx->origdeclfile = lex->file;
             spx->declline = spx->origdeclline = lex->line;
+            spx->realdeclline = lex->realline;
             spx->declfilenum = lex->filenum;
             SetLinkerNames(spx, lk_none);
             spx->offset = codeLabel++;
@@ -3497,7 +3498,7 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     theCurrentFunc = funcsp;
 
     checkUndefinedStructures(funcsp);
-    FlushLineData(funcsp->declfile, funcsp->declline);
+    FlushLineData(funcsp->declfile, funcsp->realdeclline);
     if (!funcsp->linedata)
     {
         startStmt = currentLineData(NULL, lex, 0);

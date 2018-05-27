@@ -12,6 +12,7 @@ environment:
   matrix:
     - BUILD_PROFILE: MINGW64
     - BUILD_PROFILE: MS
+    - BUILD_PROFILE: CLANG
  
 build_script:
 # the appveyor virtual machine reported two processors, so, lets try running parallel compile!

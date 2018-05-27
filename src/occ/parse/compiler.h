@@ -30,25 +30,24 @@
  */
 #ifdef USE_LONGLONG
 #ifdef BORLAND
-    #define ULLONG_TYPE unsigned __int64
-    #define LLONG_TYPE __int64
-    #define LLONG_MIN _I64_MIN
-    #define LLONG_MAX _I64_MAX
-    #define ULLONG_MAX ((_I64_MAX << 1) + 1)
+#define ULLONG_TYPE unsigned __int64
+#define LLONG_TYPE __int64
+#define LLONG_MIN _I64_MIN
+#define LLONG_MAX _I64_MAX
+#define ULLONG_MAX ((_I64_MAX << 1) + 1)
 #else
-    #define ULLONG_TYPE unsigned long long
-    #define LLONG_TYPE long long
+#define ULLONG_TYPE unsigned long long
+#define LLONG_TYPE long long
 #endif
-    #define LLONG_FORMAT_SPECIFIER "%lld"
-#else 
-    #define ULLONG_TYPE unsigned long 
-    #define LLONG_TYPE long
-    #define ULLONG_MAX ULONG_MAX
-    #define LLONG_FORMAT_SPECIFIER "%ld"
-#endif 
+#define LLONG_FORMAT_SPECIFIER "%lld"
+#else
+#define ULLONG_TYPE unsigned long
+#define LLONG_TYPE long
+#define ULLONG_MAX ULONG_MAX
+#define LLONG_FORMAT_SPECIFIER "%ld"
+#endif
 
 typedef unsigned BITINT;
-
 
 typedef unsigned long ADDRESS;
 typedef unsigned LCHAR;
@@ -67,11 +66,11 @@ typedef unsigned char UBYTE;
 #include "osutil.h"
 #include "pp.h"
 #include "iexpr.h"
-#include "c.h" 
+#include "c.h"
 #include "iopt.h"
 #include "beinterf.h"
 
 #include "compiler.p"
 
-#define M_LN2       0.693147180559945309417
-#define M_LN10      2.30258509299404568402
+#define M_LN2 0.693147180559945309417
+#define M_LN10 2.30258509299404568402

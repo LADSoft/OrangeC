@@ -1,7 +1,7 @@
 #include <windows.h>
 #include <stdio.h>
 
-void fatal(char *,...);
+void fatal(char *, ...);
 char pipeName[260];
 
 struct data
@@ -28,14 +28,14 @@ static void WaitForPipeData(HANDLE hPipe, int size)
     }
     fatal("Broken pipe");
 }
-static struct data * readFileFromPipe(char *filname)
+static struct data *readFileFromPipe(char *filname)
 {
     char pipe[260];
     struct data *rv = NULL;
     HANDLE handle;
-    sprintf(pipe,"\\\\.\\pipe\\%s", pipeName);
-    handle = CreateFile(pipe, GENERIC_READ | GENERIC_WRITE, 0,0, OPEN_EXISTING,
-                               FILE_ATTRIBUTE_NORMAL, NULL);
+    sprintf(pipe, "\\\\.\\pipe\\%s", pipeName);
+    handle = CreateFile(pipe, GENERIC_READ | GENERIC_WRITE, 0, 0, OPEN_EXISTING,
+                        FILE_ATTRIBUTE_NORMAL, NULL);
     if (handle != INVALID_HANDLE_VALUE)
     {
         DWORD n = strlen(filname);
@@ -47,7 +47,7 @@ static struct data * readFileFromPipe(char *filname)
             {
                 if (n != 0)
                 {
-                    char *buf = malloc(n+1);
+                    char *buf = malloc(n + 1);
                     buf[n] = 0;
                     WaitForPipeData(handle, n);
                     if (ReadFile(handle, buf, n, &read, NULL) && read == n)
@@ -60,7 +60,7 @@ static struct data * readFileFromPipe(char *filname)
                     else
                     {
                         free(buf);
-                    }                    
+                    }
                 }
             }
         }
@@ -75,7 +75,7 @@ void ccCloseFile(FILE *handle)
     if (pipeName[0])
     {
         struct data *v = (struct data *)handle;
-        free (v->buf);
+        free(v->buf);
         free(v);
     }
     else
@@ -84,7 +84,7 @@ void ccCloseFile(FILE *handle)
     }
 }
 size_t ccReadFile(void *__ptr, size_t __size, size_t __n,
-                     FILE *__stream)
+                  FILE *__stream)
 {
     if (pipeName[0])
     {
@@ -98,7 +98,7 @@ size_t ccReadFile(void *__ptr, size_t __size, size_t __n,
     }
     else
     {
-        return fread(__ptr, __size, __n ,__stream);
+        return fread(__ptr, __size, __n, __stream);
     }
 }
 

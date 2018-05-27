@@ -23,7 +23,7 @@
  * 
  */
 
-#include "compiler.h"
+#include "common.h"
 #include "rtti.h"
 
 extern COMPILER_PARAMS cparams;
@@ -112,13 +112,12 @@ static char *RTTIGetDisplayName(char *buf, TYPE *tp)
     }
     else if (isfunction(tp))
     {
-        HASHREC *hr = basetype(tp)->syms->table[0];
         buf = RTTIGetDisplayName(buf, tp->btp);
         *buf++ = '(';
         *buf++ = '*';
         *buf++ = ') ';
         *buf++ = '( ';
-        while (hr)
+        NITERSYMTAB(hr, basetype(tp))
         {
             buf = RTTIGetDisplayName(buf, ((SYMBOL *)hr->p)->tp);
             if (hr->next)
@@ -126,7 +125,6 @@ static char *RTTIGetDisplayName(char *buf, TYPE *tp)
                 *buf++ = ',';
                 *buf++ = ' ';
             }
-            hr = hr->next;
         }
         *buf++ = ') ';
         *buf = 0;
@@ -182,7 +180,7 @@ static void RTTIDumpHeader(SYMBOL *xtSym, TYPE *tp, int flags)
             }
             else
             {
-                sp = (SYMBOL *)basetype(sp->tp)->syms->table[0]->p;
+                sp = (SYMBOL *)SYMTABBEGIN(basetype(sp->tp))->p;
             }
             GENREF(sp);
         }
@@ -208,67 +206,55 @@ static void RTTIDumpHeader(SYMBOL *xtSym, TYPE *tp, int flags)
 static void DumpEnclosedStructs(TYPE *tp, BOOLEAN genXT)
 {
     SYMBOL *sym = basetype(tp)->sp;
-    HASHREC *hr;
     tp = PerformDeferredInitialization(tp,  NULL);
-    if (sym->vbaseEntries)
+    NITERVBASEENT(entries, sym)
     {
-        VBASEENTRY *entries = sym->vbaseEntries;
-        while (entries)
+        if (entries->alloc)
         {
-            if (entries->alloc)
+            if (genXT)
             {
-                if (genXT)
+                RTTIDumpType(entries->cls->tp);
+            }
+            else
+            {
+                SYMBOL *xtSym;
+                char name[4096];
+                RTTIGetName(name, entries->cls->tp);
+                xtSym = search(name, rttiSyms);
+                if (!xtSym)
                 {
                     RTTIDumpType(entries->cls->tp);
-                }
-                else
-                {
-                    SYMBOL *xtSym;
-                    char name[4096];
-                    RTTIGetName(name, entries->cls->tp);
                     xtSym = search(name, rttiSyms);
-                    if (!xtSym)
-                    {
-                        RTTIDumpType(entries->cls->tp);
-                        xtSym = search(name, rttiSyms);
-                    }
-                    genint(XD_CL_VIRTUAL);
-                    genref(xtSym , 0);
-                    genint(entries->structOffset);
                 }
+                genint(XD_CL_VIRTUAL);
+                genref(xtSym, 0);
+                genint(entries->structOffset);
             }
-            entries = entries->next;
         }
     }
-    if (sym->baseClasses)
+    NITERBASECLASS(bc, sym)
     {
-        BASECLASS *bc = sym->baseClasses;
-        while (bc)
+        if (!bc->isvirtual)
         {
-            if (!bc->isvirtual)
+            if (genXT)
             {
-                if (genXT)
-                {
-                    RTTIDumpType(bc->cls->tp);
-                }
-                else
-                {
-                    SYMBOL *xtSym;
-                    char name[4096];
-                    RTTIGetName(name, bc->cls->tp);
-                    xtSym = search(name, rttiSyms);
-                    genint(XD_CL_BASE);
-                    genref(xtSym , 0);
-                    genint(bc->offset);
-                }
+                RTTIDumpType(bc->cls->tp);
             }
-            bc = bc->next;
+            else
+            {
+                SYMBOL *xtSym;
+                char name[4096];
+                RTTIGetName(name, bc->cls->tp);
+                xtSym = search(name, rttiSyms);
+                genint(XD_CL_BASE);
+                genref(xtSym, 0);
+                genint(bc->offset);
+            }
         }
     }
     if (sym->tp->syms)
     {
-        hr = sym->tp->syms->table[0];
-        while (hr)
+        NITERSYMTAB(hr, sym->tp)
         {
             SYMBOL *member = (SYMBOL *)hr->p;
             TYPE *tp = member->tp;
@@ -301,7 +287,6 @@ static void DumpEnclosedStructs(TYPE *tp, BOOLEAN genXT)
                 }
                 */
             }
-            hr = hr->next;
         }
     }
 }
@@ -609,11 +594,9 @@ static void XCExpression(EXPRESSION *node, XCLIST ***listPtr)
         case en_func:
             fp = node->v.func;
             {
-                INITLIST *args = fp->arguments;
-                while (args)
+                for(INITLIST* args = fp->arguments; args; args = args->next)
                 {
                     XCExpression(args->exp, listPtr);
-                    args = args->next;
                 }
                 if (fp->thisptr)
                     XCExpression(fp->thisptr, listPtr);
@@ -695,19 +678,16 @@ static SYMBOL *DumpXCSpecifiers(SYMBOL *funcsp)
         int count = 0, i;
         if (funcsp->xcMode == xc_dynamic)
         {
-            LIST *p = funcsp->xc->xcDynamic;
-            while (p)
+            for(LIST* p = funcsp->xc->xcDynamic; p; p = p->next)
             {
                 TYPE *tp = (TYPE *)p->data;
                 if (tp->type == bt_templateparam && tp->templateParam->p->packed)
                 {
                     if (tp->templateParam->p->type == kw_typename)
                     {
-                        TEMPLATEPARAMLIST *pack = tp->templateParam->p->byPack.pack;
-                        while (pack)
+                        for(TEMPLATEPARAMLIST *pack = tp->templateParam->p->byPack.pack; pack; pack = pack->next)
                         {
                             list[count++] = RTTIDumpType((TYPE *)pack->p->byClass.val);
-                            pack = pack->next;
                         }
                     }
                 }
@@ -715,7 +695,6 @@ static SYMBOL *DumpXCSpecifiers(SYMBOL *funcsp)
                 {
                     list[count++] = RTTIDumpType((TYPE *)p->data);
                 }
-                p = p->next;
             }
         }
         my_sprintf(name, "@$xct%s", funcsp->decoratedName);
@@ -796,11 +775,10 @@ void XTDumpTab(SYMBOL *funcsp)
 {
     if (funcsp->xc && funcsp->xc->xctab && cparams.prm_xcept)
     {
-        XCLIST *list = NULL, **listPtr = &list, *p;
+        XCLIST *list = NULL, **listPtr = &list;
         SYMBOL *throwSym;
         XCStmt(funcsp->inlineFunc.stmt, &listPtr);
-        p = list;
-        while (p)
+        for(XCLIST* p = list; p; p = p->next)
         {
             if (p->byStmt)
             {
@@ -814,7 +792,6 @@ void XTDumpTab(SYMBOL *funcsp)
                     p->xtSym = RTTIDumpType(basetype(p->exp->v.t.tp));
                 
             }
-            p = p->next;
         }
         throwSym = DumpXCSpecifiers(funcsp);
         gen_virtual(funcsp->xc->xclab, FALSE);
@@ -827,8 +804,7 @@ void XTDumpTab(SYMBOL *funcsp)
             genaddress(0);
         }
         genint(funcsp->xc->xctab->offset);
-        p = list;
-        while (p)
+        for(XCLIST* p = list; p; p = p->next)
         {
             if (p->byStmt)
             {
@@ -851,15 +827,14 @@ void XTDumpTab(SYMBOL *funcsp)
             {
                 if (p->xtSym && !p->exp->dest && allocatedXC(p->exp->v.t.thisptr))
                 {
-                    XCLIST *q = p;
-                    while (q)
+                    XCLIST *q;
+                    for(q = p; q; q = q->next)
                     {
                         if (!q->byStmt && q->exp->dest)
                         {
                             if (equalnode(p->exp->v.t.thisptr, q->exp->v.t.thisptr))
                                 break;
                         }
-                        q = q->next;
                     }
                     if (q)
                         q->used = TRUE;
@@ -870,11 +845,9 @@ void XTDumpTab(SYMBOL *funcsp)
                     genint(p->exp->v.t.thisptr->xcDest);
                 }
             }
-            p = p->next;
         }
         // for arguments which are destructed
-        p = list;
-        while (p)
+        for(XCLIST* p = list; p; p = p->next)
         {
             if (!p->byStmt && p->xtSym && p->exp->dest && !p->used)
             {
@@ -885,7 +858,6 @@ void XTDumpTab(SYMBOL *funcsp)
                 genint(0);
                 genint(p->exp->v.t.thisptr->xcDest);
             }
-            p = p->next;
         }
         genint(0);
         gen_endvirtual(funcsp->xc->xclab);

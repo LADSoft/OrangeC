@@ -23,25 +23,24 @@
  * 
  */
 
-#define XD_X_MASK 0x3f           /* a count for extension bytes */
-#define XD_ARRAY   0x40
+#define XD_X_MASK 0x3f /* a count for extension bytes */
+#define XD_ARRAY 0x40
 #define XD_POINTER 0x80
-#define XD_REF     0x100
+#define XD_REF 0x100
 #define XD_CL_PRIMARY 0x400
-#define XD_CL_BASE    0x800
+#define XD_CL_BASE 0x800
 #define XD_CL_VIRTUAL 0x1000
 #define XD_CL_ENCLOSED 0x2000
 #define XD_CL_BASETYPE 0x4000
 #define XD_CL_VTAB 0x8000
 #define XD_CL_TRYBLOCK 0x10000
-#define XD_CL_CONST    0x20000
-#define XD_CL_BYREF	   0x40000
+#define XD_CL_CONST 0x20000
+#define XD_CL_BYREF 0x40000
 #define XD_CM_SYM (XD_CL_PRIMARY | XD_CL_BASE | XD_CL_ENCLOSED | XD_CL_VIRTUAL)
-#define XD_THIS     0x80000
-#define XD_VARARRAY	0x100000
+#define XD_THIS 0x80000
+#define XD_VARARRAY 0x100000
 #define XD_INUSE 0x200000
-#define VTAB_XT_OFFS  12  /* VTAB offset - pointer to exception data offset */
-
+#define VTAB_XT_OFFS 12 /* VTAB offset - pointer to exception data offset */
 
 typedef struct _rttiArray
 {
@@ -55,9 +54,9 @@ typedef struct _rttiStruct
 } RTTISTRUCT;
 typedef struct _rtti
 {
-    union {  
-        void(*destructor)(void *); /* void * = the this pointer */
-        struct _rtti *base; /* the base type declarator for pointer types */
+    union {
+        void (*destructor)(void *); /* void * = the this pointer */
+        struct _rtti *base;         /* the base type declarator for pointer types */
     };
     int size; // total size of type
     int flags;
@@ -73,14 +72,14 @@ typedef struct _rtti
 #define XD_DYNAMICXC 4
 typedef struct
 {
-    
-    int flags;  // 0 = no specification 1= noexcept(FALSE), 2 = noexcept(TRUE);
+
+    int flags;             // 0 = no specification 1= noexcept(FALSE), 2 = noexcept(TRUE);
     RTTI thrownClasses[1]; // list of thrown classes, followed by a zero
 } THROWREC;
 typedef struct
 {
-    THROWREC *throwRecord;  // exception specification
-    int frameOffs;      //offset from xception table to frame
+    THROWREC *throwRecord; // exception specification
+    int frameOffs;         //offset from xception table to frame
 } XCEPTHEAD;
 
 // things in xcept block
@@ -88,14 +87,13 @@ typedef struct _xcept
 {
     int flags; // can be XD_CL_PRIMARY or XD_CL_TRYBLOCK
     struct _rtti *xt;
-    union
-    {
-        
-        int ebpoffs; /* symbol offset from exception block */
+    union {
+
+        int ebpoffs;  /* symbol offset from exception block */
         int trylabel; /* catch block label */
-    } ;
+    };
     int startOffs; // offset from function where item comes in scope
-    int endOffs; // offset from function item leaves scope
+    int endOffs;   // offset from function item leaves scope
 } XCEPT;
 
 #define XC_SIG 0x4c41445a
@@ -103,29 +101,29 @@ typedef struct _xcept
 // on stack for func
 typedef struct _xctab
 {
-    struct _xctab *next; /* link to next exception higher function */
-    void *_xceptfunc; /* windows exception handler */
-    int esp; /* esp at start of try block; code gen generates for this, don't
+    struct _xctab *next;   /* link to next exception higher function */
+    void *_xceptfunc;      /* windows exception handler */
+    int esp;               /* esp at start of try block; code gen generates for this, don't
         move*/
-    int ebp; /* ebp of this function */
+    int ebp;               /* ebp of this function */
     XCEPTHEAD *xceptBlock; /* pointer to the function's xception block */
-    int funcIndex; /* index of constructors/destructors, roughly follows EIP */
+    int funcIndex;         /* index of constructors/destructors, roughly follows EIP */
     // things beyond this are used by throw()
-    int flags; /* reserved */
-    int eip; /* eip this function where the catch occurred */
-    void *instance; /* instance pointer to thrown class or reference to a base class */
+    int flags;            /* reserved */
+    int eip;              /* eip this function where the catch occurred */
+    void *instance;       /* instance pointer to thrown class or reference to a base class */
     void *throwninstance; /* instance point to current thrown class */
-    void *baseinstance; /* instance pointer to orig version of thrown class */
-    void *cons; /* constructor */
-    int elems; /* number of array elements thrown */
-    RTTI *thrownxt; /* xt that was thrown */
-    XCEPT *thisxt; /* pointer to this XT table list in case of throws
+    void *baseinstance;   /* instance pointer to orig version of thrown class */
+    void *cons;           /* constructor */
+    int elems;            /* number of array elements thrown */
+    RTTI *thrownxt;       /* xt that was thrown */
+    XCEPT *thisxt;        /* pointer to this XT table list in case of throws
         through nested tries */
 } XCTAB;
 
 // FS:[4] - 4
 typedef struct _cppdata
 {
-    void(*term)();
-    void(*unexpected)();
+    void (*term)();
+    void (*unexpected)();
 } CPPDATA;

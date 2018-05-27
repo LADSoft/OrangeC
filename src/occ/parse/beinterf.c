@@ -30,25 +30,25 @@
 #include <string.h>
 #include <ctype.h>
 #include "compiler.h"
- 
-extern int packdata[], packlevel;
 
+extern int packdata[], packlevel;
+// clang-format off
 TYPE stdobject =
 {
     bt___object ,0
-} ;
+};
 TYPE stdvoid =
 {
     bt_void, 0
-} ;
+};
 TYPE stdany =
 {
     bt_any, 1
-} ;
+};
 TYPE stdauto =
 {
     bt_auto, 0
-} ;
+};
 TYPE stdfunc =
 {
     bt_func, 0, &stdvoid
@@ -209,7 +209,7 @@ TYPE stdcharptr =
 {
     bt_pointer, 0, &stdchar
 };
-
+// clang-format on
 extern ARCH_ASM assemblerInterface[];
 extern COMPILER_PARAMS cparams;
 
@@ -218,39 +218,36 @@ ARCH_DEBUG *chosenDebugger;
 
 static int recurseNode(EXPRESSION *node, EXPRESSION **type, EXPRESSION **bits)
 {
-            switch(node->type)
-            {
-                case en_tempref:
-                    *type = node;
-                    return 0;
-                case en_bits:
-                    *bits = node;
-                    return recurseNode(node->left, type, bits);
-                case en_absolute:
-                case en_auto:
-                case en_global:
-                case en_pc:
-                case en_threadlocal:
-                    *type = node;
-                    return 0;
-                case en_add:
-                case en_arrayadd:
-                case en_structadd:
-                    return(recurseNode(node->left, type, bits)
-                            + recurseNode(node->right, type, bits));
-                default:
-                    if (isintconst(node))
-                        return node->v.i;
-                    if (isfloatconst(node) 
-                        || isimaginaryconst(node)
-                        || iscomplexconst(node))
-                    {
-                        *type = node;
-                        return 0;
-                    }
-                    diag("recurseNode: unknown node");
-                    break;
-            }
+    switch (node->type)
+    {
+    case en_tempref:
+        *type = node;
+        return 0;
+    case en_bits:
+        *bits = node;
+        return recurseNode(node->left, type, bits);
+    case en_absolute:
+    case en_auto:
+    case en_global:
+    case en_pc:
+    case en_threadlocal:
+        *type = node;
+        return 0;
+    case en_add:
+    case en_arrayadd:
+    case en_structadd:
+        return (recurseNode(node->left, type, bits) + recurseNode(node->right, type, bits));
+    default:
+        if (isintconst(node))
+            return node->v.i;
+        if (isfloatconst(node) || isimaginaryconst(node) || iscomplexconst(node))
+        {
+            *type = node;
+            return 0;
+        }
+        diag("recurseNode: unknown node");
+        break;
+    }
     return 0;
 }
 
@@ -262,97 +259,97 @@ BE_IMODEDATA *beArgType(IMODE *in)
     rv->size = in->size;
     rv->u.sym.startBit = BIT_NO_BITS;
     rv->m = in;
-    switch(in->mode)
+    switch (in->mode)
     {
-        case i_none:
-        default:
-            rv->mode = bee_unknown;
+    case i_none:
+    default:
+        rv->mode = bee_unknown;
+        break;
+    case i_ind:
+        rv->ind = TRUE;
+    case i_immed:
+        if (in->mode == i_immed)
+            rv->immed = TRUE;
+    case i_direct:
+        if (in->retval)
+        {
+            rv->mode = bee_rv;
             break;
-        case i_ind:
-            rv->ind = TRUE;
-        case i_immed:
-            if (in->mode == i_immed)
-                rv->immed = TRUE;
-        case i_direct:
-            if (in->retval)
+        }
+        ofs = recurseNode(in->offset, &node, &bits);
+        switch (node->type)
+        {
+        case en_tempref:
+            rv->mode = bee_temp;
+            rv->u.sym.sp = node->v.sp;
+            rv->u.tempRegNum = node->v.sp->offset;
+            break;
+        case en_auto:
+        case en_absolute:
+            rv->u.sym.localOffset = node->v.sp->offset;
+        case en_global:
+        case en_pc:
+            rv->u.sym.symOffset = ofs;
+            rv->u.sym.sp = node->v.sp;
+            rv->u.sym.name = node->v.sp->decoratedName;
+            if (bits)
             {
-                rv->mode = bee_rv;
+                rv->u.sym.startBit = bits->startbit;
+                rv->u.sym.bits = bits->bits;
+            }
+            switch (node->type)
+            {
+            case en_auto:
+                rv->mode = bee_local;
+                break;
+            case en_absolute:
+                rv->mode = bee_abs;
+                break;
+            case en_global:
+                rv->mode = bee_global_data;
+                break;
+            case en_pc:
+                rv->mode = bee_global_pc;
+                break;
+            default:
                 break;
             }
-            ofs  = recurseNode(in->offset, &node, &bits);
-            switch(node->type)
+            break;
+        case en_labcon:
+            rv->mode = bee_label;
+            rv->u.labelNum = node->v.i;
+            break;
+        case en_threadlocal:
+            rv->mode = bee_threadlocal;
+            break;
+        default:
+            if (isintconst(node))
             {
-                case en_tempref:
-                    rv->mode = bee_temp;
-                    rv->u.sym.sp = node->v.sp;
-                    rv->u.tempRegNum = node->v.sp->offset;
-                    break;
-                case en_auto:
-                case en_absolute:
-                    rv->u.sym.localOffset = node->v.sp->offset;
-                case en_global:
-                case en_pc:
-                    rv->u.sym.symOffset = ofs;
-                    rv->u.sym.sp = node->v.sp ;
-                    rv->u.sym.name = node->v.sp->decoratedName;
-                    if (bits)
-                    {
-                        rv->u.sym.startBit = bits->startbit;
-                        rv->u.sym.bits = bits->bits;
-                    }
-                    switch(node->type)
-                    {
-                        case en_auto:
-                            rv->mode = bee_local;
-                            break;
-                        case en_absolute:
-                            rv->mode = bee_abs;
-                            break;
-                        case en_global:
-                            rv->mode = bee_global_data;
-                            break;
-                        case en_pc:
-                            rv->mode = bee_global_pc;
-                            break;
-                        default:
-                            break;
-                    }
-                    break ;
-                case en_labcon:
-                    rv->mode = bee_label;
-                    rv->u.labelNum = node->v.i;
-                    break ;
-                case en_threadlocal:
-                    rv->mode = bee_threadlocal;
-                    break;
-                default:
-                    if (isintconst(node))
-                    {
-                        rv->mode = bee_icon;
-                        rv->u.i = ofs;
-                        break;
-                    }
-                    if (isfloatconst(node))
-                    {
-                        rv->mode = bee_float;
-                        rv->u.f.r = &node->v.f;
-                        break ;
-                    }
-                    if (isimaginaryconst(node))
-                    {
-                        rv->mode = bee_imaginary;
-                        rv->u.f.r = &node->v.f;
-                        break ;
-                    }
-                    if (iscomplexconst(node))
-                    {
-                        rv->mode = bee_complex;
-                        rv->u.f.r = &node->v.c.r;
-                        rv->u.f.i = &node->v.c.i;
-                    }
-                    break ;
+                rv->mode = bee_icon;
+                rv->u.i = ofs;
+                break;
+            }
+            if (isfloatconst(node))
+            {
+                rv->mode = bee_float;
+                rv->u.f.r = &node->v.f;
+                break;
+            }
+            if (isimaginaryconst(node))
+            {
+                rv->mode = bee_imaginary;
+                rv->u.f.r = &node->v.f;
+                break;
+            }
+            if (iscomplexconst(node))
+            {
+                rv->mode = bee_complex;
+                rv->u.f.r = &node->v.c.r;
+                rv->u.f.i = &node->v.c.i;
             }
             break;
+        }
+        break;
     }
     return rv;
 }
@@ -361,60 +358,60 @@ int sizeFromISZ(int isz)
     ARCH_SIZING *p = chosenAssembler->arch->type_sizes;
     switch (isz)
     {
-        case ISZ_U16:
-            return 2;
-        case ISZ_U32:
-            return 4;
-        case ISZ_BIT:
-            return 0;
-        case ISZ_UCHAR:
-        case -ISZ_UCHAR:
-            return p->a_char;
-        case ISZ_BOOLEAN:
-            return p->a_bool;
-        case ISZ_USHORT:
-        case -ISZ_USHORT:
-            return p->a_short;
-/*        case ISZ_:*/
-/*            return p->a_wchar_t;*/
-        case ISZ_ULONG:
-        case -ISZ_ULONG:
-            return p->a_long;
-        case ISZ_ULONGLONG:
-        case -ISZ_ULONGLONG:
-            return p->a_longlong;
-        case ISZ_UINT:
-        case -ISZ_UINT:
-        case ISZ_UNATIVE:
-        case -ISZ_UNATIVE:
-            return p->a_int;
-/*        case ISZ_ENUM:*/
-/*            return p->a_enum;*/
-        case ISZ_ADDR:
-        case ISZ_STRING:
-        case ISZ_OBJECT:
-            return p->a_addr;
-        case ISZ_SEG:
-            return p->a_farseg;
-        case ISZ_FARPTR:
-            return p->a_farptr;
-        case ISZ_FLOAT:
-        case ISZ_IFLOAT:
-            return p->a_float;
-        case ISZ_DOUBLE:
-        case ISZ_IDOUBLE:
-            return p->a_double;
-        case ISZ_LDOUBLE:
-        case ISZ_ILDOUBLE:
-            return p->a_longdouble;
-        case ISZ_CFLOAT:
-            return (p->a_float + p->a_fcomplexpad) * 2;
-        case ISZ_CDOUBLE:
-            return (p->a_double + p->a_rcomplexpad) * 2;
-        case ISZ_CLDOUBLE:
-            return (p->a_longdouble + p->a_lrcomplexpad) * 2;
-        default:
-            return 1;
+    case ISZ_U16:
+        return 2;
+    case ISZ_U32:
+        return 4;
+    case ISZ_BIT:
+        return 0;
+    case ISZ_UCHAR:
+    case -ISZ_UCHAR:
+        return p->a_char;
+    case ISZ_BOOLEAN:
+        return p->a_bool;
+    case ISZ_USHORT:
+    case -ISZ_USHORT:
+        return p->a_short;
+        /*        case ISZ_:*/
+        /*            return p->a_wchar_t;*/
+    case ISZ_ULONG:
+    case -ISZ_ULONG:
+        return p->a_long;
+    case ISZ_ULONGLONG:
+    case -ISZ_ULONGLONG:
+        return p->a_longlong;
+    case ISZ_UINT:
+    case -ISZ_UINT:
+    case ISZ_UNATIVE:
+    case -ISZ_UNATIVE:
+        return p->a_int;
+        /*        case ISZ_ENUM:*/
+        /*            return p->a_enum;*/
+    case ISZ_ADDR:
+    case ISZ_STRING:
+    case ISZ_OBJECT:
+        return p->a_addr;
+    case ISZ_SEG:
+        return p->a_farseg;
+    case ISZ_FARPTR:
+        return p->a_farptr;
+    case ISZ_FLOAT:
+    case ISZ_IFLOAT:
+        return p->a_float;
+    case ISZ_DOUBLE:
+    case ISZ_IDOUBLE:
+        return p->a_double;
+    case ISZ_LDOUBLE:
+    case ISZ_ILDOUBLE:
+        return p->a_longdouble;
+    case ISZ_CFLOAT:
+        return (p->a_float + p->a_fcomplexpad) * 2;
+    case ISZ_CDOUBLE:
+        return (p->a_double + p->a_rcomplexpad) * 2;
+    case ISZ_CLDOUBLE:
+        return (p->a_longdouble + p->a_lrcomplexpad) * 2;
+    default:
+        return 1;
     }
 }
 int needsAtomicLockFromType(TYPE *tp)
@@ -422,66 +419,66 @@ int needsAtomicLockFromType(TYPE *tp)
     ARCH_SIZING *p = chosenAssembler->arch->type_needsLock;
     switch (basetype(tp)->type)
     {
-        case bt_char16_t:
-            return 0;
-        case bt_char32_t:
-            return 0;
-        case bt_bit:
-        case bt_void:
-            return 0;
-        case bt_char:
-        case bt_unsigned_char:
-            return p->a_char;
-        case bt_bool:
-            return p->a_bool;
-        case bt_short:
-        case bt_unsigned_short:
-            return p->a_short;
-        case bt_wchar_t:
-            return p->a_wchar_t;
-        case bt_long:
-        case bt_unsigned_long:
-            return p->a_long;
-        case bt_long_long:
-        case bt_unsigned_long_long:
-            return p->a_longlong;
-        case bt_int:
-        case bt_unsigned:
-        case bt_inative:
-        case bt_unative:
-            return p->a_int;
-        case bt_enum:
-            return p->a_enum;
-        case bt_pointer:
-            return p->a_addr;
-        case bt_any:
-            return p->a_addr;
-        case bt_seg:
-            return p->a_farseg;
-        case bt_far:
-            return p->a_farptr;
-        case bt_memberptr:
-            return p->a_memberptr;
-        case bt_float:
-        case bt_float_imaginary:
-            return p->a_float;
-        case bt_double:
-        case bt_double_imaginary:
-            return p->a_double;
-        case bt_long_double:
-        case bt_long_double_imaginary:
-            return p->a_longdouble;
-        case bt_float_complex:
-            return 1;
-        case bt_double_complex:
-            return 1;
-        case bt_long_double_complex:
-            return 1;
-        case bt_class:
-        case bt_struct:
-        case bt_union:
-        default:
-            return 1;
+    case bt_char16_t:
+        return 0;
+    case bt_char32_t:
+        return 0;
+    case bt_bit:
+    case bt_void:
+        return 0;
+    case bt_char:
+    case bt_unsigned_char:
+        return p->a_char;
+    case bt_bool:
+        return p->a_bool;
+    case bt_short:
+    case bt_unsigned_short:
+        return p->a_short;
+    case bt_wchar_t:
+        return p->a_wchar_t;
+    case bt_long:
+    case bt_unsigned_long:
+        return p->a_long;
+    case bt_long_long:
+    case bt_unsigned_long_long:
+        return p->a_longlong;
+    case bt_int:
+    case bt_unsigned:
+    case bt_inative:
+    case bt_unative:
+        return p->a_int;
+    case bt_enum:
+        return p->a_enum;
+    case bt_pointer:
+        return p->a_addr;
+    case bt_any:
+        return p->a_addr;
+    case bt_seg:
+        return p->a_farseg;
+    case bt_far:
+        return p->a_farptr;
+    case bt_memberptr:
+        return p->a_memberptr;
+    case bt_float:
+    case bt_float_imaginary:
+        return p->a_float;
+    case bt_double:
+    case bt_double_imaginary:
+        return p->a_double;
+    case bt_long_double:
+    case bt_long_double_imaginary:
+        return p->a_longdouble;
+    case bt_float_complex:
+        return 1;
+    case bt_double_complex:
+        return 1;
+    case bt_long_double_complex:
+        return 1;
+    case bt_class:
+    case bt_struct:
+    case bt_union:
+    default:
+        return 1;
     }
 }
 static int basesize(ARCH_SIZING *p, TYPE *tp)
@@ -489,99 +486,99 @@ static int basesize(ARCH_SIZING *p, TYPE *tp)
     tp = basetype(tp);
     switch (tp->type)
     {
-        case bt_char16_t:
-            return 2;
-        case bt_char32_t:
-            return 4;
-        case bt_bit:
-        case bt_void:
-            return 0;
-        case bt_char:
-        case bt_unsigned_char:
-        case bt_signed_char:
-            return p->a_char;
-        case bt_bool:
-            return p->a_bool;
-        case bt_short:
-        case bt_unsigned_short:
-            return p->a_short;
-        case bt_wchar_t:
-            return p->a_wchar_t;
-        case bt_long:
-        case bt_unsigned_long:
-            return p->a_long;
-        case bt_long_long:
-        case bt_unsigned_long_long:
-            return p->a_longlong;
-        case bt_int:
-        case bt_unsigned:
-        case bt_inative:
-        case bt_unative:
-            return p->a_int;
-        case bt_enum:
-            return p->a_enum;
-        case bt_pointer:
-            if (tp->array && !tp->vla)
-                return basesize(p, tp->btp);
-            else
-                return p->a_addr;
-        case bt_any:
+    case bt_char16_t:
+        return 2;
+    case bt_char32_t:
+        return 4;
+    case bt_bit:
+    case bt_void:
+        return 0;
+    case bt_char:
+    case bt_unsigned_char:
+    case bt_signed_char:
+        return p->a_char;
+    case bt_bool:
+        return p->a_bool;
+    case bt_short:
+    case bt_unsigned_short:
+        return p->a_short;
+    case bt_wchar_t:
+        return p->a_wchar_t;
+    case bt_long:
+    case bt_unsigned_long:
+        return p->a_long;
+    case bt_long_long:
+    case bt_unsigned_long_long:
+        return p->a_longlong;
+    case bt_int:
+    case bt_unsigned:
+    case bt_inative:
+    case bt_unative:
+        return p->a_int;
+    case bt_enum:
+        return p->a_enum;
+    case bt_pointer:
+        if (tp->array && !tp->vla)
+            return basesize(p, tp->btp);
+        else
             return p->a_addr;
-        case bt_seg:
-            return p->a_farseg;
-        case bt_far:
-            return p->a_farptr;
-        case bt_memberptr:
-            return p->a_memberptr;
-        case bt_float:
-        case bt_float_imaginary:
-            return p->a_float;
-        case bt_double:
-        case bt_double_imaginary:
-            return p->a_double;
-        case bt_long_double:
-        case bt_long_double_imaginary:
-            return p->a_longdouble;
-        case bt_float_complex:
-            return (p->a_float + p->a_fcomplexpad) * 2;
-        case bt_double_complex:
-            return (p->a_double + p->a_rcomplexpad) * 2;
-        case bt_long_double_complex:
-            return (p->a_longdouble + p->a_lrcomplexpad) * 2;
-        case bt___string:
-            return p->a_addr;
-        case bt___object:
-            return p->a_addr;
-        case bt_class:
-        case bt_struct:
-        case bt_union:
-            if (p->a_struct)
-                return p->a_struct;
-            else if (tp->alignment)
-                return tp->alignment;
-            else
-                return tp->sp->structAlign?  tp->sp->structAlign : 1;
-        default:
-/*            diag("basesize: unknown type");*/
-            return 1;
+    case bt_any:
+        return p->a_addr;
+    case bt_seg:
+        return p->a_farseg;
+    case bt_far:
+        return p->a_farptr;
+    case bt_memberptr:
+        return p->a_memberptr;
+    case bt_float:
+    case bt_float_imaginary:
+        return p->a_float;
+    case bt_double:
+    case bt_double_imaginary:
+        return p->a_double;
+    case bt_long_double:
+    case bt_long_double_imaginary:
+        return p->a_longdouble;
+    case bt_float_complex:
+        return (p->a_float + p->a_fcomplexpad) * 2;
+    case bt_double_complex:
+        return (p->a_double + p->a_rcomplexpad) * 2;
+    case bt_long_double_complex:
+        return (p->a_longdouble + p->a_lrcomplexpad) * 2;
+    case bt___string:
+        return p->a_addr;
+    case bt___object:
+        return p->a_addr;
+    case bt_class:
+    case bt_struct:
+    case bt_union:
+        if (p->a_struct)
+            return p->a_struct;
+        else if (tp->alignment)
+            return tp->alignment;
+        else
+            return tp->sp->structAlign ? tp->sp->structAlign : 1;
+    default:
+        /*            diag("basesize: unknown type");*/
+        return 1;
     }
 }
 int getSize(enum e_bt type)
 {
-    TYPE tp ;
+    TYPE tp;
     memset(&tp, 0, sizeof(tp));
     tp.type = type; /* other fields don't matter, we never call this for structured types*/
-    return basesize(chosenAssembler->arch->type_sizes, &tp);    
+    return basesize(chosenAssembler->arch->type_sizes, &tp);
 }
 int getBaseAlign(enum e_bt type)
 {
-    TYPE tp ;
+    TYPE tp;
     if (type == bt_auto)
         type = bt_struct;
     tp.type = type; /* other fields don't matter, we never call this for structured types*/
     tp.array = tp.vla = FALSE;
     tp.rootType = &tp;
-    return basesize(chosenAssembler->arch->type_align, &tp);    
+    return basesize(chosenAssembler->arch->type_align, &tp);
 }
 long getautoval(long val)
 {
@@ -593,7 +590,7 @@ long getautoval(long val)
 int funcvaluesize(int val)
 {
     if (chosenAssembler->arch->param_offs)
-        return(chosenAssembler->arch->param_offs(val));
+        return (chosenAssembler->arch->param_offs(val));
     return 0;
 }
 int alignment(int sc, TYPE *tp)
@@ -625,22 +622,24 @@ KEYWORD *GetProcKeywords(void)
 {
     return chosenAssembler->keywords;
 }
-int init_backend(int *argc ,char **argv)
+int init_backend(int *argc, char **argv)
 {
     char assembler[100], debugger[100];
-    int i,rv;
+    int i, rv;
     assembler[0] = debugger[0] = 0;
     cparams.prm_asmfile = cparams.prm_compileonly = FALSE;
-    for (i=0; i < *argc; i++)
-        if (!strncmp(argv[i],"/S",2)) {
-            char *p = argv[i]+2,*q = assembler;
+    for (i = 0; i < *argc; i++)
+        if (!strncmp(argv[i], "/S", 2))
+        {
+            char *p = argv[i] + 2, *q = assembler;
             cparams.prm_asmfile = TRUE;
             if (argv[i][1] == 'S')
                 cparams.prm_compileonly = TRUE;
             while (*p && !isspace(*p) && *p != ';')
                 *q++ = *p++;
             *q = 0;
-            if (*p == ';') {
+            if (*p == ';')
+            {
                 q = debugger;
                 p++;
                 while (*p && !isspace(*p))
@@ -651,41 +650,52 @@ int init_backend(int *argc ,char **argv)
             (*argc)--;
             break;
         }
-    if (assembler[0]) {
-        ARCH_ASM *a = assemblerInterface ;
-        while (a->name) {
-            if (!strcmp(a->name, assembler)) {
+    if (assembler[0])
+    {
+        ARCH_ASM *a = assemblerInterface;
+        while (a->name)
+        {
+            if (!strcmp(a->name, assembler))
+            {
                 chosenAssembler = a;
-                break ;
+                break;
             }
             a++;
-                
         }
         if (!a->name)
             fatal("Chosen assembler format '%s' not found", assembler);
-    } else {
+    }
+    else
+    {
         chosenAssembler = assemblerInterface;
     }
     if (!chosenAssembler->objext)
         cparams.prm_asmfile = TRUE;
-    if (debugger[0]) {
+    if (debugger[0])
+    {
         ARCH_DEBUG *d = chosenAssembler->debug;
-        if (d) {
-            while (d->name) {
-                if (!strcmp(d->name, debugger)) {
+        if (d)
+        {
+            while (d->name)
+            {
+                if (!strcmp(d->name, debugger))
+                {
                     chosenDebugger = d;
-                    break ;
+                    break;
                 }
                 d++;
             }
         }
-        if (!d || !d->name) {
+        if (!d || !d->name)
+        {
             fatal("Chosen debugger format '%s' not found", debugger);
         }
-    } else
+    }
+    else
         chosenDebugger = chosenAssembler->debug;
     rv = !chosenAssembler->init || (*chosenAssembler->init)(&cparams, chosenAssembler, chosenDebugger);
-    if (rv ) {
+    if (rv)
+    {
         stdpointer.size = getSize(bt_pointer);
         stdnullpointer.size = getSize(bt_pointer);
         stdnullpointer.nullptrType = TRUE;
@@ -697,7 +707,7 @@ int init_backend(int *argc ,char **argv)
         stdlongdoublecomplex.size = getSize(bt_float_complex);
         stdunsignedlonglong.size = stdlonglong.size = getSize(bt_long_long);
         stdunsignedlong.size = stdlong.size = getSize(bt_long);
-        stdconst.size = stdunsigned.size = stdint.size = getSize(bt_unsigned);        
+        stdconst.size = stdunsigned.size = stdint.size = getSize(bt_unsigned);
         stdstring.size = getSize(bt_pointer);
         std__string.size = getSize(bt_pointer);
         std__object.size = getSize(bt_pointer);
@@ -721,9 +731,9 @@ int init_backend(int *argc ,char **argv)
         stdfloatimaginary.rootType = &stdfloatimaginary;
         stdfloat.rootType = &stdfloat;
         stddouble.rootType = &stddouble;
-        stddoubleimaginary.rootType = &stddoubleimaginary;;
+        stddoubleimaginary.rootType = &stddoubleimaginary;
         stdlongdouble.rootType = &stdlongdouble;
-        stdlongdoubleimaginary.rootType = &stdlongdoubleimaginary;;
+        stdlongdoubleimaginary.rootType = &stdlongdoubleimaginary;
         stdfloatcomplex.rootType = &stdfloatcomplex;
         stddoublecomplex.rootType = &stddoublecomplex;
         stdlongdoublecomplex.rootType = &stdlongdoublecomplex;
@@ -733,7 +743,7 @@ int init_backend(int *argc ,char **argv)
         stdlong.rootType = &stdlong;
         stdconst.rootType = &stdconst;
         stdunsigned.rootType = &stdunsigned;
-        stdint.rootType = &stdint;        
+        stdint.rootType = &stdint;
         stdunative.rootType = &stdunative;
         stdinative.rootType = &stdinative;
         stdstring.rootType = &stdstring;
@@ -751,7 +761,6 @@ int init_backend(int *argc ,char **argv)
         stdwcharptr.rootType = &stdwcharptr;
         stdchar16tptr.rootType = &stdchar16tptr;
         stdchar32tptr.rootType = &stdchar32tptr;
-
     }
-    return rv ;
+    return rv;
 }

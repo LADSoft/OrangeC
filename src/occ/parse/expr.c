@@ -23,7 +23,7 @@
  * 
  */
 
-#include "compiler.h"
+#include "common.h"
 #include "rtti.h"
 
 extern COMPILER_PARAMS cparams;
@@ -175,7 +175,7 @@ static EXPRESSION *GetManagedFuncData(TYPE *tp)
     *save ++ = 0; // space for the number of dwords
     *save ++ = 0;
     *save++ =  sp->linkage == lk_stdcall;
-    hr = basetype(tp)->syms->table[0];
+    hr = SYMTABBEGIN(basetype(tp));
     if (hr &&  ((SYMBOL *)hr->p)->tp->type != bt_void)
     {
         sz ++;
@@ -183,8 +183,7 @@ static EXPRESSION *GetManagedFuncData(TYPE *tp)
         if (hr)
         {
             sz++;
-            hr = hr->next;
-            while (hr)
+            for(hr = hr->next; hr; hr = hr->next) // for loops check if the initializer meets the actual requirement
             {
                 int n = ((SYMBOL *)hr->p)->tp->size;
                 n += 3;
@@ -201,7 +200,6 @@ static EXPRESSION *GetManagedFuncData(TYPE *tp)
                     *save++ = n;
                 }
                 sz += n;
-                hr = hr->next;
             }
         }
     }
@@ -266,23 +264,19 @@ void ValidateMSILFuncPtr(TYPE *dest, TYPE *src, EXPRESSION **exp)
             if(sp)
             {
                 int n = 0;
-                HASHREC *hr;
                 char buf[512], *save = buf;
                 FUNCTIONCALL *functionCall = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
                 TYPE *tp1 = src;
                 if (ispointer(tp1))
                     tp1 = basetype(tp1)->btp;
-
-                hr = basetype(tp1)->syms->table[0];
-                while (hr)
+                NITERSYMTAB(hr, basetype(tp1))
                 {
                     int m = ((SYMBOL *)hr->p)->tp->size;
                     m += 3;
                     m /= 4;
                     n += m;
-                     hr = hr->next;
                 }
-                sp = (SYMBOL *)basetype(sp->tp)->syms->table[0]->p;
+                sp = (SYMBOL *)SYMTABBEGIN(basetype(sp->tp))->p;
                 functionCall->sp = sp;
                 functionCall->functp = sp->tp;
                 functionCall->fcall = varNode(en_pc, sp);
@@ -592,7 +586,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                 case sc_overloads:
                     if (!strcmp(sp->name, "setjmp") && sp->parentClass == NULL && sp->parentNameSpace == NULL)
                         setjmp_used = TRUE;
-                    hr = basetype(sp->tp)->syms->table[0];
+                    hr = SYMTABBEGIN(basetype(sp->tp));
                     funcparams = Alloc(sizeof(FUNCTIONCALL));
                     if (cparams.prm_cplusplus && MATCHKW(lex, lt))
                     {
@@ -692,17 +686,13 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                             else
                             {
                                 HASHREC *found = NULL;
-                                HASHTABLE *tables = localNameSpace->syms;
-                                while (tables && !found)
+                                for(HASHTABLE* tables = localNameSpace->syms; tables && !found; tables = tables->next) // iterate all symbols in local namespace until we find the one with a thing
                                 {
-                                    HASHREC *hr = tables->table[0];
-                                    while (hr && !found)
+                                    for(HASHREC* hr = tables->table[0]; hr && !found; hr = hr->next)
                                     {
                                         if (hr->p == sp)
                                             found = hr;
-                                        hr = hr->next;
                                     }
-                                    tables = tables->next;
                                 }
                                 if (found)
                                 {
@@ -774,12 +764,11 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                     tagNonConst(funcsp, sp->tp);
                     if (strSym)
                     {
-                        SYMBOL *tpl = sp;
-                        while (tpl)
+                        SYMBOL *tpl;
+                        for(tpl = sp; tpl; tpl = tpl->parentClass) // goes up until template level exists
                         {
                             if (tpl->templateLevel)
                                 break;
-                            tpl = tpl->parentClass;
                         }
                         if (tpl && tpl->instantiated)
                         {
@@ -1365,7 +1354,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                     FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
                     if (cparams.prm_cplusplus && MATCHKW(lex, lt))
                     {
-                        HASHREC *hr1 = basetype(sp2->tp)->syms->table[0];
+                        HASHREC *hr1 = SYMTABBEGIN(basetype(sp2->tp));
                         BOOLEAN isdest = ((SYMBOL *)hr1->p)->isDestructor;
                         while (hr1)
                         {
@@ -1746,7 +1735,7 @@ static LEXEME *expression_bracket(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
 }
 static void checkArgs(FUNCTIONCALL *params, SYMBOL *funcsp)
 {
-    HASHREC *hr = basetype(params->functp)->syms->table[0];
+    HASHREC *hr = SYMTABBEGIN(basetype(params->functp));
     INITLIST *list = params->arguments;
     BOOLEAN matching = TRUE;
     BOOLEAN tooshort = FALSE;
@@ -2028,8 +2017,7 @@ static LEXEME *getInitInternal(LEXEME *lex, SYMBOL *funcsp, INITLIST **lptr, enu
                 if (p->exp && p->exp->type == en_func && 
                     p->exp->v.func->sp->parentClass && !p->exp->v.func->ascall && !p->exp->v.func->asaddress)
                 {
-                    HASHREC *hr = basetype(p->exp->v.func->functp)->syms->table[0];
-                    while (hr)
+                    NITERSYMTAB(hr, basetype(p->exp->v.func->functp))
                     {
                         SYMBOL *sym = (SYMBOL *)hr->p;
                         if (sym->storage_class == sc_member || sym->storage_class == sc_mutable)
@@ -2037,7 +2025,6 @@ static LEXEME *getInitInternal(LEXEME *lex, SYMBOL *funcsp, INITLIST **lptr, enu
                             error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
                             break;
                         }
-                        hr = hr->next;
                     }
                 }
                 if (allowPack && cparams.prm_cplusplus && MATCHKW(lex, ellipse))
@@ -2597,8 +2584,7 @@ void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, 
                     if (stype->sp->trivialCons)
                     {
                         INITIALIZER *init = NULL, **it = &init;
-                        HASHREC *hr = stype->syms->table[0];
-                        while (pinit && hr)
+                        for(HASHREC* hr = SYMTABBEGIN(stype); hr && pinit; hr = hr->next)
                         {
                             SYMBOL *shr = (SYMBOL *)hr->p;
                             if (ismemberdata(shr))
@@ -2607,7 +2593,6 @@ void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, 
                                 it = &(*it)->next;
                                 pinit = pinit->next;
                             }
-                            hr = hr->next;
                         }
                         p->exp = convertInitToExpression(stype, NULL, theCurrentFunc, init, thisptr, FALSE);
                         if (!isref(sym->tp))
@@ -2908,7 +2893,7 @@ void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, 
                 }
                 else if (isvoidptr(sym->tp) && p->tp->type == bt_aggregate)
                 {
-                    HASHREC *hr = p->tp->syms->table[0];
+                    HASHREC *hr = SYMTABBEGIN(p->tp);
                     p->exp = varNode(en_pc, (SYMBOL *)hr->p);
                 }
                 else if (ispointer(sym->tp) && ispointer(p->tp))
@@ -3427,7 +3412,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
                     tp1 = basetype(tp1)->btp;
                 if (isfunction(tp1))
                 {
-                    hr = basetype(tp1)->syms->table[0];
+                    hr = SYMTABBEGIN(basetype(tp1));
                     if (hr)
                     {
                         if (((SYMBOL *)hr->p)->thisPtr)
@@ -3798,17 +3783,16 @@ static LEXEME *expression_string(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
         sym = LookupSym(name);
         if (sym)
         {
-            HASHREC *hr = sym->tp->syms->table[0], *hr1;
+            HASHREC *hr, *hr1;
             SYMBOL *sym1, *sym2;
-            while (hr)
+            ITERSYMTAB(hr, sym->tp)
             {
                 sym1 = (SYMBOL *)hr->p;
-                hr1 = sym1->tp->syms->table[0];
+                hr1 = SYMTABBEGIN(sym1->tp);
                 sym2 = (SYMBOL *)hr1->p;
                 if (hr1->next && ispointer(sym2->tp))
                     if (isconst(sym2->tp->btp) && basetype(sym2->tp->btp)->type == tpb)
-                        break;                
-                hr = hr->next;
+                        break;
             }
             if (hr)
             {
@@ -3998,16 +3982,15 @@ static BOOLEAN getSuffixedChar(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSIO
     sym = LookupSym(name);
     if (sym)
     {
-        HASHREC *hr = sym->tp->syms->table[0], *hr1;
+        HASHREC *hr, *hr1;
         SYMBOL *sym1, *sym2;
-        while (hr)
+        ITERSYMTAB(hr, sym->tp)
         {
             sym1 = (SYMBOL *)hr->p;
-            hr1 = sym1->tp->syms->table[0];
+            hr1 = SYMTABBEGIN(sym1->tp);
             sym2 = (SYMBOL *)hr1->p;
             if (!hr1->next && sym2->tp->type == tpb)
-                break;                
-            hr = hr->next;
+                break;
         }
         if (hr)
         {
@@ -4042,16 +4025,15 @@ static BOOLEAN getSuffixedNumber(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
     if (sym)
     {
         // look for parameter of type unsigned long long or long double
-        HASHREC *hr = sym->tp->syms->table[0], *hr1;
+        HASHREC *hr, *hr1;
         SYMBOL *sym1, *sym2;
-        while (hr)
+        ITERSYMTAB(hr, sym->tp)
         {
             sym1 = (SYMBOL *)hr->p;
-            hr1 = sym1->tp->syms->table[0];
+            hr1 = SYMTABBEGIN(sym1->tp);
             sym2 = (SYMBOL *)hr1->p;
             if (!hr1->next && sym2->tp->type == tpb)
-                break;                
-            hr = hr->next;
+                break;
         }
         if (hr)
         {
@@ -4080,12 +4062,11 @@ static BOOLEAN getSuffixedNumber(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
         else
         {
             // not found, look for parameter of type const char *
-            hr = sym->tp->syms->table[0];
-            while (hr)
+            ITERSYMTAB(hr, sym->tp)
             {
                 TYPE *tpx;
                 sym1 = (SYMBOL *)hr->p;
-                hr1 = sym1->tp->syms->table[0];
+                hr1 = SYMTABBEGIN(sym1->tp);
                 sym2 = (SYMBOL *)hr1->p;
                 tpx = sym2->tp;
                 if (!hr1->next && ispointer(tpx))
@@ -4094,7 +4075,6 @@ static BOOLEAN getSuffixedNumber(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                     if (isconst(tpx) && basetype(tpx)->type == bt_char)
                         break;
                 }
-                hr = hr->next;
             }
             if (hr)
             {
@@ -4854,19 +4834,16 @@ static EXPRESSION *nodeSizeof(TYPE *tp, EXPRESSION *exp)
         {
             if (basetype(tp)->syms)
             {
-                HASHREC *hr = basetype(tp)->syms->table[0];
                 SYMBOL *cache = NULL;
-                TYPE *tpx;
-                while (hr)
+                NITERSYMTAB(hr, basetype(tp))
                 {
                     SYMBOL *sp = (SYMBOL *)hr->p;
                     if (ismemberdata(sp))
                         cache = sp;
-                    hr = hr->next;
                 }
                 if (cache)
                 {
-                    tpx = basetype(cache->tp);
+                    TYPE* tpx = basetype(cache->tp);
                     if (tpx->size == 0) /* if the last element of a structure is unsized */
                                         /* sizeof doesn't add the size of the padding element */
                         exp = intNode(en_c_i, cache->offset);
@@ -6373,17 +6350,17 @@ static LEXEME *expression_inequality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYP
                     SYMBOL *funcsp= NULL;
                     if ((ispointer(*tp) || basetype(*tp)->type == bt_memberptr) && tp1->type == bt_aggregate)
                     {
-                        if (tp1->syms->table[0]->next)
+                        if (SYMTABBEGIN(tp1)->next)
                             errorstr(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, ((SYMBOL *)tp1->syms->table[0]->p)->name);
-                        exp1 = varNode(en_pc, tp1->syms->table[0]->p);
+                        exp1 = varNode(en_pc, SYMTABBEGIN(tp1)->p);
                         tp1 = ((SYMBOL *)tp1->syms->table[0]->p)->tp;
                             
                     }
                     else if ((ispointer(tp1) || basetype(tp1)->type == bt_memberptr) && (*tp)->type == bt_aggregate)
                     {
-                        if ((*tp)->syms->table[0]->next)
+                        if (SYMTABBEGIN((*tp))->next)
                             errorstr(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, ((SYMBOL *)(*tp)->syms->table[0]->p)->name);
-                        (*exp) = varNode(en_pc, (*tp)->syms->table[0]->p);
+                        (*exp) = varNode(en_pc, SYMTABBEGIN((*tp))->p);
                         (*tp) = ((SYMBOL *)(*tp)->syms->table[0]->p)->tp;
                     }
                     if (funcsp)
@@ -6504,18 +6481,18 @@ static LEXEME *expression_equality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE 
                 SYMBOL *funcsp= NULL;
                 if ((ispointer(*tp) || basetype(*tp)->type == bt_memberptr) && tp1->type == bt_aggregate)
                 {
-                    if (tp1->syms->table[0]->next)
+                    if (SYMTABBEGIN((tp1))->next)
                         errorstr(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, ((SYMBOL *)tp1->syms->table[0]->p)->name);
-                    exp1 = varNode(en_pc, tp1->syms->table[0]->p);
-                   tp1 = ((SYMBOL *)tp1->syms->table[0]->p)->tp;
+                    exp1 = varNode(en_pc, SYMTABBEGIN(tp1)->p);
+                   tp1 = ((SYMBOL *)SYMTABBEGIN(tp1)->p)->tp;
                         
                 }
                 else if ((ispointer(tp1) || basetype(tp1)->type == bt_memberptr) && (*tp)->type == bt_aggregate)
                 {
-                    if ((*tp)->syms->table[0]->next)
+                    if (SYMTABBEGIN((*tp))->next)
                         errorstr(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, ((SYMBOL *)(*tp)->syms->table[0]->p)->name);
-                    (*exp) = varNode(en_pc, (*tp)->syms->table[0]->p);
-                    (*tp) = ((SYMBOL *)(*tp)->syms->table[0]->p)->tp;
+                    (*exp) = varNode(en_pc, SYMTABBEGIN((*tp))->p);
+                    (*tp) = ((SYMBOL *)SYMTABBEGIN((*tp))->p)->tp;
                 }
                 if (funcsp)
                     funcsp->genreffed = TRUE;
@@ -6901,12 +6878,10 @@ static LEXEME *expression_hook(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp
 }
 static BOOLEAN isTemplatedPointer(TYPE *tp)
 {
-    TYPE *tpb = basetype(tp)->btp;
-    while (tp != tpb)
+    for(TYPE* tpb = basetype(tp)->btp; tp != tpb; tp = tp->btp)
     {
         if (tp->templateTop)
             return TRUE;
-        tp = tp->btp;
     }
     return FALSE;
 }
@@ -7009,9 +6984,8 @@ LEXEME *expression_throw(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **ex
 LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, int flags)
 {
     BOOLEAN done = FALSE;
-    EXPRESSION *exp1=NULL, **exp2;
+    EXPRESSION *exp1 = NULL, **exp2;
     EXPRESSION *asndest = NULL;
-    
     BOOLEAN localMutable = FALSE;
     TYPE *tp2;
     if (MATCHKW(lex, kw_throw))

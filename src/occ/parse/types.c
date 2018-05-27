@@ -23,7 +23,7 @@
  * 
  */
 
-#include "compiler.h"
+#include "common.h"
 
 extern int templateNestingCount;
 extern TYPE stdvoid;
@@ -343,7 +343,7 @@ TYPE *typenum(char *buf, TYPE *tp)
         case bt_aggregate:
             if (!tp->syms)
                 break;
-            hr = tp->syms->table[0];
+            hr = SYMTABBEGIN(tp);
             sp = (SYMBOL *)hr->p;
             if (hr->next || !strcmp(sp->name, tp->sp->name)) // the tail is to prevent a problem when there are a lot of errors
             {
@@ -358,7 +358,7 @@ TYPE *typenum(char *buf, TYPE *tp)
             buf = buf + strlen(buf);
             if (tp->syms)
             {
-                hr = tp->syms->table[0];
+                hr = SYMTABBEGIN(tp);
                 if (hr && hr->p)
                 {
                     if (((SYMBOL *)hr->p)->thisPtr)
@@ -516,7 +516,7 @@ TYPE *typenum(char *buf, TYPE *tp)
                 buf += strlen(buf);
                 if (basetype(func)->syms)
                 {
-                    hr = basetype(func)->syms->table[0];
+                    hr = SYMTABBEGIN(basetype(func));
                     while (hr)
                     {
                         sp = (SYMBOL *)hr->p;

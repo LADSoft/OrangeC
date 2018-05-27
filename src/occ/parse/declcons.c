@@ -23,7 +23,7 @@
  * 
  */
 
-#include "compiler.h"
+#include "common.h"
 #include "rtti.h"
 extern ARCH_ASM *chosenAssembler;
 extern BOOLEAN hasXCInfo;
@@ -66,20 +66,20 @@ void ConsDestDeclarationErrors(SYMBOL *sp, BOOLEAN notype)
     else if (sp->parentClass && !strcmp(sp->name, sp->parentClass->name))
     {
         error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_NO_TYPE);
-    }        
+    }
 }
 MEMBERINITIALIZERS *GetMemberInitializers(LEXEME **lex2, SYMBOL *funcsp, SYMBOL *sym)
 {
     LEXEME *lex = *lex2, *last = NULL;
     MEMBERINITIALIZERS *first = NULL, **cur = &first;
-//    if (sym->name != overloadNameTab[CI_CONSTRUCTOR])
-//        error(ERR_INITIALIZER_LIST_REQUIRES_CONSTRUCTOR);
+    //    if (sym->name != overloadNameTab[CI_CONSTRUCTOR])
+    //        error(ERR_INITIALIZER_LIST_REQUIRES_CONSTRUCTOR);
     while (lex != NULL)
     {
         if (ISID(lex) || MATCHKW(lex, classsel))
         {
             LEXEME **mylex;
-            char name[ 1024];
+            char name[1024];
             *cur = Alloc(sizeof(MEMBERINITIALIZERS));
             (*cur)->line = lex->line;
             (*cur)->file = lex->file;
@@ -188,7 +188,7 @@ MEMBERINITIALIZERS *GetMemberInitializers(LEXEME **lex2, SYMBOL *funcsp, SYMBOL 
                     (*cur)->packed = TRUE;
                     lex = getsym();
                 }
-                (*mylex)= NULL;
+                (*mylex) = NULL;
             }
             else
             {
@@ -196,7 +196,7 @@ MEMBERINITIALIZERS *GetMemberInitializers(LEXEME **lex2, SYMBOL *funcsp, SYMBOL 
                 skip(&lex, closepa);
                 break;
             }
-            cur = &(*cur)->next;            
+            cur = &(*cur)->next;
         }
         else
         {
@@ -212,7 +212,7 @@ MEMBERINITIALIZERS *GetMemberInitializers(LEXEME **lex2, SYMBOL *funcsp, SYMBOL 
 void SetParams(SYMBOL *cons)
 {
     // c style only
-    HASHREC *params = basetype(cons->tp)->syms->table[0];
+    HASHREC *params = SYMTABBEGIN(basetype(cons->tp));
     int base = chosenAssembler->arch->retblocksize;
     if (isstructured(basetype(cons->tp)->btp) || basetype(basetype(cons->tp)->btp)->type == bt_memberptr)
     {
@@ -250,7 +250,7 @@ SYMBOL *insertFunc(SYMBOL *sp, SYMBOL *ovl)
         TYPE *tp = (TYPE *)Alloc(sizeof(TYPE));
         tp->type = bt_aggregate;
         tp->rootType = tp;
-        funcs = makeID(sc_overloads, tp, 0, ovl->name) ;
+        funcs = makeID(sc_overloads, tp, 0, ovl->name);
         funcs->parentClass = sp;
         tp->sp = funcs;
         SetLinkerNames(funcs, lk_cdecl);
@@ -265,7 +265,7 @@ SYMBOL *insertFunc(SYMBOL *sp, SYMBOL *ovl)
         insertOverload(ovl, funcs->tp->syms);
         ovl->overloadName = funcs;
     }
-    else 
+    else
     {
         diag("insertFunc: invalid overload tab");
     }
@@ -281,7 +281,6 @@ static SYMBOL *declareDestructor(SYMBOL *sp)
     TYPE *tp1;
     VBASEENTRY *e;
     BASECLASS *b;
-    HASHREC *hr;
     tp->type = bt_func;
     tp->size = getSize(bt_pointer);
     tp->btp = (TYPE *)Alloc(sizeof(TYPE));
@@ -290,23 +289,21 @@ static SYMBOL *declareDestructor(SYMBOL *sp)
     tp->btp->rootType = tp->btp;
     func = makeID(sc_member, tp, NULL, overloadNameTab[CI_DESTRUCTOR]);
     func->xcMode = xc_none;
-    tp->syms = CreateHashTable(1);        
+    tp->syms = CreateHashTable(1);
     sp1 = makeID(sc_parameter, tp->btp, NULL, AnonymousName());
     insert(sp1, tp->syms);
     if (sp->vbaseEntries)
     {
-        sp1= makeID(sc_parameter, &stdint, NULL, AnonymousName());
+        sp1 = makeID(sc_parameter, &stdint, NULL, AnonymousName());
         sp1->isDestructor = TRUE;
         insert(sp1, tp->syms);
     }
     rv = insertFunc(sp, func);
     rv->isDestructor = TRUE;
-    b = sp->baseClasses;
-    while (b)
+    ITERBASECLASS(b, sp)
     {
         if (!b->cls->pureDest)
             break;
-        b = b->next;
     }
     if (!b)
     {
@@ -319,8 +316,8 @@ static SYMBOL *declareDestructor(SYMBOL *sp)
         }
         if (!e)
         {
-            hr = basetype(sp->tp)->syms->table[0];
-            while (hr)
+            HASHREC *hr;
+            ITERSYMTAB(hr, basetype(sp->tp))
             {
                 SYMBOL *cls = (SYMBOL *)hr->p;
                 TYPE *tp = cls->tp;
@@ -328,13 +325,12 @@ static SYMBOL *declareDestructor(SYMBOL *sp)
                     tp = basetype(tp)->btp;
                 if (isstructured(tp) && !basetype(tp)->sp->pureDest)
                     break;
-                hr = hr->next;
             }
             if (!hr)
                 sp->pureDest = TRUE;
         }
     }
-    
+
     return rv;
 }
 static BOOLEAN hasConstFunc(SYMBOL *sp, int type, BOOLEAN move)
@@ -344,11 +340,10 @@ static BOOLEAN hasConstFunc(SYMBOL *sp, int type, BOOLEAN move)
     SYMBOL *ovl = search(overloadNameTab[type], basetype(sp->tp)->syms);
     if (ovl)
     {
-        HASHREC *hr = basetype(ovl->tp)->syms->table[0];
-        while (hr)
+        NITERSYMTAB(hr, basetype(ovl->tp))
         {
             SYMBOL *func = (SYMBOL *)hr->p;
-            HASHREC *hra = basetype(func->tp)->syms->table[0]->next;
+            HASHREC *hra = SYMTABBEGIN(basetype(func->tp))->next;
             if (hra && (!hra->next || ((SYMBOL *)hra->next->p)->init))
             {
                 SYMBOL *arg = (SYMBOL *)hra->p;
@@ -366,40 +361,30 @@ static BOOLEAN hasConstFunc(SYMBOL *sp, int type, BOOLEAN move)
                     }
                 }
             }
-            hr = hr->next;
         }
     }
     return FALSE;
 }
 static BOOLEAN constCopyConstructor(SYMBOL *sp)
 {
-    VBASEENTRY *e;
-    BASECLASS *b;
-    HASHREC *hr;
-    b = sp->baseClasses;
-    while (b)
+    NITERBASECLASS(b, sp)
     {
         if (!b->isvirtual && !hasConstFunc(b->cls, CI_CONSTRUCTOR, FALSE))
             return FALSE;
-        b = b->next;
     }
-    e = sp->vbaseEntries;
-    while (e)
+    NITERVBASEENT(e, sp)
     {
         if (e->alloc && !hasConstFunc(e->cls, CI_CONSTRUCTOR, FALSE))
             return FALSE;
-        e = e->next;
     }
-    hr = basetype(sp->tp)->syms->table[0];
-    while (hr)
+    NITERSYMTAB(hr, basetype(sp->tp))
     {
         SYMBOL *cls = (SYMBOL *)hr->p;
         if (isstructured(cls->tp) && cls->storage_class != sc_typedef && !cls->trivialCons)
             if (!hasConstFunc(basetype(cls->tp)->sp, CI_CONSTRUCTOR, FALSE))
                 return FALSE;
-        hr = hr->next;
     }
-    
+
     return TRUE;
 }
 static SYMBOL *declareConstructor(SYMBOL *sp, BOOLEAN deflt, BOOLEAN move)
@@ -415,10 +400,10 @@ static SYMBOL *declareConstructor(SYMBOL *sp, BOOLEAN deflt, BOOLEAN move)
     tp->btp->rootType = tp->btp;
     func = makeID(sc_member, tp, NULL, overloadNameTab[CI_CONSTRUCTOR]);
     func->isConstructor = TRUE;
-    sp1= makeID(sc_parameter, NULL, NULL, AnonymousName());
-    tp->syms = CreateHashTable(1);        
-    tp->syms->table[0] = (HASHREC *)Alloc(sizeof(HASHREC));
-    tp->syms->table[0]->p = (struct _hrintern_ *)sp1;
+    sp1 = makeID(sc_parameter, NULL, NULL, AnonymousName());
+    tp->syms = CreateHashTable(1);
+    SYMTABBEGIN(tp) = (HASHREC *)Alloc(sizeof(HASHREC));
+    SYMTABBEGIN(tp)->p = (struct _hrintern_ *)sp1;
     sp1->tp = (TYPE *)Alloc(sizeof(TYPE));
     if (deflt)
     {
@@ -446,33 +431,23 @@ static SYMBOL *declareConstructor(SYMBOL *sp, BOOLEAN deflt, BOOLEAN move)
 }
 static BOOLEAN constAssignmentOp(SYMBOL *sp, BOOLEAN move)
 {
-    VBASEENTRY *e;
-    BASECLASS *b;
-    HASHREC *hr;
-    b = sp->baseClasses;
-    while (b)
+    NITERBASECLASS(b, sp)
     {
         if (!b->isvirtual && !hasConstFunc(b->cls, assign - kw_new + CI_NEW, move))
             return FALSE;
-        b = b->next;
     }
-    e = sp->vbaseEntries;
-    while (e)
+    NITERVBASEENT(e, sp)
     {
         if (e->alloc && !hasConstFunc(e->cls, assign - kw_new + CI_NEW, move))
             return FALSE;
-        e = e->next;
     }
-    hr = basetype(sp->tp)->syms->table[0];
-    while (hr)
+    NITERSYMTAB(hr, basetype(sp->tp))
     {
         SYMBOL *cls = (SYMBOL *)hr->p;
         if (isstructured(cls->tp) && cls->storage_class != sc_typedef && !cls->trivialCons)
             if (!hasConstFunc(cls, assign - kw_new + CI_NEW, move))
                 return FALSE;
-        hr = hr->next;
     }
-    
     return TRUE;
 }
 static SYMBOL *declareAssignmentOp(SYMBOL *sp, BOOLEAN move)
@@ -493,10 +468,10 @@ static SYMBOL *declareAssignmentOp(SYMBOL *sp, BOOLEAN move)
     *(tpx) = *basetype(sp->tp);
     UpdateRootTypes(tp);
     func = makeID(sc_member, tp, NULL, overloadNameTab[assign - kw_new + CI_NEW]);
-    sp1= makeID(sc_parameter, NULL, NULL, AnonymousName());
+    sp1 = makeID(sc_parameter, NULL, NULL, AnonymousName());
     tp->syms = CreateHashTable(1);
-    tp->syms->table[0] = (HASHREC *)Alloc(sizeof(HASHREC));
-    tp->syms->table[0]->p = (struct _hrintern_ *)sp1;
+    SYMTABBEGIN(tp) = (HASHREC *)Alloc(sizeof(HASHREC));
+    SYMTABBEGIN(tp)->p = (struct _hrintern_ *)sp1;
     sp1->tp = (TYPE *)Alloc(sizeof(TYPE));
     tpx = sp1->tp;
     tpx->type = move ? bt_rref : bt_lref;
@@ -515,7 +490,7 @@ static SYMBOL *declareAssignmentOp(SYMBOL *sp, BOOLEAN move)
 }
 static BOOLEAN matchesDefaultConstructor(SYMBOL *sp)
 {
-    HASHREC *hr = basetype(sp->tp)->syms->table[0]->next;
+    HASHREC *hr = SYMTABBEGIN(basetype(sp->tp))->next;
     if (hr)
     {
         SYMBOL *arg1 = (SYMBOL *)hr->p;
@@ -526,7 +501,7 @@ static BOOLEAN matchesDefaultConstructor(SYMBOL *sp)
 }
 BOOLEAN matchesCopy(SYMBOL *sp, BOOLEAN move)
 {
-    HASHREC *hr = basetype(sp->tp)->syms->table[0]->next;
+    HASHREC *hr = SYMTABBEGIN(basetype(sp->tp))->next;
     if (hr)
     {
         SYMBOL *arg1 = (SYMBOL *)hr->p;
@@ -534,10 +509,10 @@ BOOLEAN matchesCopy(SYMBOL *sp, BOOLEAN move)
         {
             if (basetype(arg1->tp)->type == (move ? bt_rref : bt_lref))
             {
-                TYPE *tp  = basetype(arg1->tp)->btp;
+                TYPE *tp = basetype(arg1->tp)->btp;
                 if (isstructured(tp))
-                    if (basetype(tp)->sp == sp->parentClass || 
-                        basetype(tp)->sp == sp->parentClass->mainsym || 
+                    if (basetype(tp)->sp == sp->parentClass ||
+                        basetype(tp)->sp == sp->parentClass->mainsym ||
                         basetype(tp)->sp->mainsym == sp->parentClass ||
                         sameTemplate(tp, sp->parentClass->tp))
                         return TRUE;
@@ -548,13 +523,11 @@ BOOLEAN matchesCopy(SYMBOL *sp, BOOLEAN move)
 }
 static BOOLEAN hasCopy(SYMBOL *func, BOOLEAN move)
 {
-    HASHREC *hr = basetype(func->tp)->syms->table[0];
-    while (hr)
+    NITERSYMTAB(hr, basetype(func->tp))
     {
         SYMBOL *sp = (SYMBOL *)hr->p;
         if (!sp->internallyGenned && matchesCopy(sp, move))
             return TRUE;
-        hr = hr->next;
     }
     return FALSE;
 }
@@ -578,8 +551,7 @@ static BOOLEAN checkDefaultCons(SYMBOL *sp, HASHTABLE *syms, enum e_ac access)
     if (cons)
     {
         SYMBOL *dflt = NULL;
-        HASHREC *hr = basetype(cons->tp)->syms->table[0];
-        while (hr)
+        NITERSYMTAB(hr, basetype(cons->tp))
         {
             SYMBOL *cur = (SYMBOL *)hr->p;
             if (matchesDefaultConstructor(cur))
@@ -588,7 +560,6 @@ static BOOLEAN checkDefaultCons(SYMBOL *sp, HASHTABLE *syms, enum e_ac access)
                     return TRUE; // ambiguity
                 dflt = cur;
             }
-            hr = hr->next;
         }
         if (dflt)
         {
@@ -605,11 +576,10 @@ SYMBOL *getCopyCons(SYMBOL *base, BOOLEAN move)
     SYMBOL *ovl = search(overloadNameTab[CI_CONSTRUCTOR], basetype(base->tp)->syms);
     if (ovl)
     {
-        HASHREC *hr = basetype(ovl->tp)->syms->table[0];
-        while (hr)
+        NITERSYMTAB(hr, basetype(ovl->tp))
         {
             SYMBOL *sym = (SYMBOL *)hr->p, *sym1 = NULL;
-            HASHREC *hrArgs = basetype(sym->tp)->syms->table[0];
+            HASHREC *hrArgs = SYMTABBEGIN(basetype(sym->tp));
             sym = (SYMBOL *)hrArgs->p;
             if (sym->thisPtr)
             {
@@ -629,8 +599,8 @@ SYMBOL *getCopyCons(SYMBOL *base, BOOLEAN move)
                     tp = basetype(tp->btp);
                     if (isstructured(tp))
                     {
-                        if (tp->sp == base->tp->sp || 
-                            tp->sp == base->tp->sp->mainsym || 
+                        if (tp->sp == base->tp->sp ||
+                            tp->sp == base->tp->sp->mainsym ||
                             sameTemplate(tp, base->tp))
                         {
                             return (SYMBOL *)hr->p;
@@ -638,21 +608,19 @@ SYMBOL *getCopyCons(SYMBOL *base, BOOLEAN move)
                     }
                 }
             }
-            hr = hr->next;
         }
     }
     return NULL;
 }
 static SYMBOL *GetCopyAssign(SYMBOL *base, BOOLEAN move)
 {
-    SYMBOL *ovl = search(overloadNameTab[assign - kw_new + CI_NEW ], basetype(base->tp)->syms);
+    SYMBOL *ovl = search(overloadNameTab[assign - kw_new + CI_NEW], basetype(base->tp)->syms);
     if (ovl)
     {
-        HASHREC *hr = basetype(ovl->tp)->syms->table[0];
-        while (hr)
+        NITERSYMTAB(hr, basetype(ovl->tp))
         {
             SYMBOL *sym = (SYMBOL *)hr->p, *sym1 = NULL;
-            HASHREC *hrArgs = basetype(sym->tp)->syms->table[0];
+            HASHREC *hrArgs = SYMTABBEGIN(basetype(sym->tp));
             sym = (SYMBOL *)hrArgs->p;
             if (sym->thisPtr)
             {
@@ -679,7 +647,6 @@ static SYMBOL *GetCopyAssign(SYMBOL *base, BOOLEAN move)
                     }
                 }
             }
-            hr = hr->next;
         }
     }
     return NULL;
@@ -687,7 +654,7 @@ static SYMBOL *GetCopyAssign(SYMBOL *base, BOOLEAN move)
 BOOLEAN hasVTab(SYMBOL *sp)
 {
     VTABENTRY *vt = sp->vtabEntries;
-    while( vt)
+    while (vt)
     {
         if (vt->virtuals)
             return TRUE;
@@ -697,23 +664,18 @@ BOOLEAN hasVTab(SYMBOL *sp)
 }
 static BOOLEAN hasTrivialCopy(SYMBOL *sp, BOOLEAN move)
 {
-    HASHREC *hr;
     SYMBOL *dflt;
-    BASECLASS * base;
     if (sp->vbaseEntries || hasVTab(sp))
         return FALSE;
-    base = sp->baseClasses;
-    while (base)
+    NITERBASECLASS(base, sp)
     {
         dflt = getCopyCons(base->cls, move);
         if (!dflt)
             return FALSE;
         if (!dflt->trivialCons)
             return FALSE;
-        base = base->next;
     }
-    hr = basetype(sp->tp)->syms->table[0];
-    while (hr)
+    NITERSYMTAB(hr, basetype(sp->tp))
     {
         SYMBOL *cls = (SYMBOL *)hr->p;
         if (isstructured(cls->tp))
@@ -724,29 +686,23 @@ static BOOLEAN hasTrivialCopy(SYMBOL *sp, BOOLEAN move)
             if (!dflt->trivialCons)
                 return FALSE;
         }
-        hr = hr->next;
     }
     return TRUE;
 }
 static BOOLEAN hasTrivialAssign(SYMBOL *sp, BOOLEAN move)
 {
-    HASHREC *hr;
     SYMBOL *dflt;
-    BASECLASS * base;
     if (sp->vbaseEntries || hasVTab(sp))
         return FALSE;
-    base = sp->baseClasses;
-    while (base)
+    NITERBASECLASS(base, sp)
     {
         dflt = GetCopyAssign(base->cls, move);
         if (!dflt)
             return FALSE;
         if (!dflt->trivialCons)
             return FALSE;
-        base = base->next;
     }
-    hr = basetype(sp->tp)->syms->table[0];
-    while (hr)
+    NITERSYMTAB(hr, basetype(sp->tp))
     {
         SYMBOL *cls = (SYMBOL *)hr->p;
         if (isstructured(cls->tp))
@@ -757,7 +713,6 @@ static BOOLEAN hasTrivialAssign(SYMBOL *sp, BOOLEAN move)
             if (!dflt->trivialCons)
                 return FALSE;
         }
-        hr = hr->next;
     }
     return TRUE;
 }
@@ -816,14 +771,10 @@ static BOOLEAN checkMoveAssign(SYMBOL *sp, SYMBOL *base, enum e_ac access)
 }
 static BOOLEAN isDefaultDeleted(SYMBOL *sp)
 {
-    HASHREC *hr;
-    BASECLASS *base;
-    VBASEENTRY *vbase;
     if (basetype(sp->tp)->type == bt_union)
     {
         BOOLEAN allconst = TRUE;
-        hr = basetype(sp->tp)->syms->table[0];
-        while (hr)
+        NITERSYMTAB(hr, basetype(sp->tp))
         {
             SYMBOL *sp = (SYMBOL *)hr->p;
             if (!isconst(sp->tp) && sp->tp->type != bt_aggregate)
@@ -831,23 +782,19 @@ static BOOLEAN isDefaultDeleted(SYMBOL *sp)
             if (isstructured(sp->tp))
             {
                 SYMBOL *cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(sp->tp)->syms);
-                HASHREC *hr1 = basetype(cons->tp)->syms->table[0];
-                while (hr1)
+                NITERSYMTAB(hr1, basetype(cons->tp))
                 {
                     cons = (SYMBOL *)hr1->p;
                     if (matchesDefaultConstructor(cons))
                         if (!cons->trivialCons)
                             return TRUE;
-                    hr1 = hr1->next;
                 }
             }
-            hr = hr->next;
         }
         if (allconst)
             return TRUE;
     }
-    hr = basetype(sp->tp)->syms->table[0];
-    while (hr)
+    NITERSYMTAB(hr, basetype(sp->tp))
     {
         SYMBOL *sp1 = (SYMBOL *)hr->p;
         TYPE *m;
@@ -858,7 +805,7 @@ static BOOLEAN isDefaultDeleted(SYMBOL *sp)
                     return TRUE;
             if (basetype(sp1->tp)->type == bt_union)
             {
-                HASHREC *hr1 = basetype(sp1->tp)->syms->table[0];
+                HASHREC *hr1 = SYMTABBEGIN(basetype(sp1->tp));
                 while (hr1)
                 {
                     SYMBOL *member = (SYMBOL *)hr1->p;
@@ -886,21 +833,16 @@ static BOOLEAN isDefaultDeleted(SYMBOL *sp)
                 if (checkDefaultCons(sp, basetype(tp->sp->tp)->syms, ac_public))
                     return TRUE;
             }
-        }        
-        hr = hr->next;
+        }
     }
-    
-    base = sp->baseClasses;
-    while (base)
+    NITERBASECLASS(base, sp)
     {
         if (checkDest(sp, basetype(base->cls->tp)->syms, ac_protected))
             return TRUE;
         if (checkDefaultCons(sp, basetype(base->cls->tp)->syms, ac_protected))
             return TRUE;
-        base = base->next;
     }
-    vbase = sp->vbaseEntries;
-    while (vbase)
+    NITERVBASEENT(vbase, sp)
     {
         if (vbase->alloc)
         {
@@ -909,39 +851,30 @@ static BOOLEAN isDefaultDeleted(SYMBOL *sp)
             if (checkDefaultCons(sp, basetype(vbase->cls->tp)->syms, ac_protected))
                 return TRUE;
         }
-        vbase = vbase->next;
     }
     return FALSE;
 }
 static BOOLEAN isCopyConstructorDeleted(SYMBOL *sp)
 {
-    HASHREC *hr;
-    BASECLASS *base;
-    VBASEENTRY *vbase;
     if (basetype(sp->tp)->type == bt_union)
     {
-        hr = basetype(sp->tp)->syms->table[0];
-        while (hr)
+        NITERSYMTAB(hr, basetype(sp->tp))
         {
             SYMBOL *sp = (SYMBOL *)hr->p;
             if (isstructured(sp->tp))
             {
                 SYMBOL *cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(sp->tp)->syms);
-                HASHREC *hr1 = basetype(cons->tp)->syms->table[0];
-                while (hr1)
+                NITERSYMTAB(hr1, basetype(cons->tp))
                 {
                     cons = (SYMBOL *)hr1->p;
                     if (matchesCopy(cons, FALSE))
                         if (!cons->trivialCons)
                             return TRUE;
-                    hr1 = hr1->next;
                 }
             }
-            hr = hr->next;
         }
     }
-    hr = basetype(sp->tp)->syms->table[0];
-    while (hr)
+    NITERSYMTAB(hr, basetype(sp->tp))
     {
         SYMBOL *sp1 = (SYMBOL *)hr->p;
         TYPE *m;
@@ -963,21 +896,16 @@ static BOOLEAN isCopyConstructorDeleted(SYMBOL *sp)
                 if (checkCopyCons(sp, basetype(m)->sp, ac_public))
                     return TRUE;
             }
-        }        
-        hr = hr->next;
+        }
     }
-    
-    base = sp->baseClasses;
-    while (base)
+    NITERBASECLASS(base, sp)
     {
         if (checkDest(sp, basetype(base->cls->tp)->syms, ac_protected))
             return TRUE;
         if (checkCopyCons(sp, base->cls, ac_protected))
             return TRUE;
-        base = base->next;
     }
-    vbase = sp->vbaseEntries;
-    while (vbase)
+    NITERVBASEENT(vbase, sp)
     {
         if (vbase->alloc)
         {
@@ -986,40 +914,30 @@ static BOOLEAN isCopyConstructorDeleted(SYMBOL *sp)
             if (checkCopyCons(sp, vbase->cls, ac_protected))
                 return TRUE;
         }
-        vbase = vbase->next;
     }
     return FALSE;
-    
 }
 static BOOLEAN isCopyAssignmentDeleted(SYMBOL *sp)
 {
-    HASHREC *hr;
-    BASECLASS *base;
-    VBASEENTRY *vbase;
     if (basetype(sp->tp)->type == bt_union)
     {
-        hr = basetype(sp->tp)->syms->table[0];
-        while (hr)
+        NITERSYMTAB(hr, basetype(sp->tp))
         {
             SYMBOL *sp = (SYMBOL *)hr->p;
             if (isstructured(sp->tp))
             {
                 SYMBOL *cons = search(overloadNameTab[assign - kw_new + CI_NEW], basetype(sp->tp)->syms);
-                HASHREC *hr1 = basetype(cons->tp)->syms->table[0];
-                while (hr1)
+                NITERSYMTAB(hr1, basetype(cons->tp))
                 {
                     cons = (SYMBOL *)hr1->p;
                     if (matchesCopy(cons, FALSE))
                         if (!cons->trivialCons)
                             return TRUE;
-                    hr1 = hr1->next;
                 }
             }
-            hr = hr->next;
         }
     }
-    hr = basetype(sp->tp)->syms->table[0];
-    while (hr)
+    NITERSYMTAB(hr, basetype(sp->tp))
     {
         SYMBOL *sp1 = (SYMBOL *)hr->p;
         TYPE *m;
@@ -1037,56 +955,41 @@ static BOOLEAN isCopyAssignmentDeleted(SYMBOL *sp)
                 if (checkCopyAssign(sp, basetype(m)->sp, ac_public))
                     return TRUE;
             }
-        }        
-        hr = hr->next;
+        }
     }
-    
-    base = sp->baseClasses;
-    while (base)
+    NITERBASECLASS(base, sp)
     {
         if (checkCopyAssign(sp, base->cls, ac_protected))
             return TRUE;
-        base = base->next;
     }
-    vbase = sp->vbaseEntries;
-    while (vbase)
+    NITERVBASEENT(vbase, sp)
     {
         if (vbase->alloc && checkCopyAssign(sp, vbase->cls, ac_protected))
             return TRUE;
-        vbase = vbase->next;
     }
     return FALSE;
-    
 }
 static BOOLEAN isMoveConstructorDeleted(SYMBOL *sp)
 {
-    HASHREC *hr;
-    BASECLASS *base;
-    VBASEENTRY *vbase;
     if (basetype(sp->tp)->type == bt_union)
     {
-        hr = basetype(sp->tp)->syms->table[0];
-        while (hr)
+        NITERSYMTAB(hr, basetype(sp->tp))
         {
             SYMBOL *sp = (SYMBOL *)hr->p;
             if (isstructured(sp->tp))
             {
                 SYMBOL *cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(sp->tp)->syms);
-                HASHREC *hr1 = basetype(cons->tp)->syms->table[0];
-                while (hr1)
+                NITERSYMTAB(hr1, basetype(cons->tp))
                 {
                     cons = (SYMBOL *)hr1->p;
                     if (matchesCopy(cons, TRUE))
                         if (!cons->trivialCons)
                             return TRUE;
-                    hr1 = hr1->next;
                 }
             }
-            hr = hr->next;
         }
     }
-    hr = basetype(sp->tp)->syms->table[0];
-    while (hr)
+    NITERSYMTAB(hr, basetype(sp->tp))
     {
         SYMBOL *sp1 = (SYMBOL *)hr->p;
         TYPE *m;
@@ -1108,21 +1011,17 @@ static BOOLEAN isMoveConstructorDeleted(SYMBOL *sp)
                 if (checkMoveCons(sp, basetype(m)->sp, ac_public))
                     return TRUE;
             }
-        }        
-        hr = hr->next;
+        }
     }
-    
-    base = sp->baseClasses;
-    while (base)
+
+    NITERBASECLASS(base, sp)
     {
         if (checkDest(sp, basetype(base->cls->tp)->syms, ac_protected))
             return TRUE;
         if (checkMoveCons(sp, base->cls, ac_protected))
             return TRUE;
-        base = base->next;
     }
-    vbase = sp->vbaseEntries;
-    while (vbase)
+    NITERVBASEENT(vbase, sp)
     {
         if (vbase->alloc)
         {
@@ -1131,40 +1030,30 @@ static BOOLEAN isMoveConstructorDeleted(SYMBOL *sp)
             if (checkMoveCons(sp, vbase->cls, ac_protected))
                 return TRUE;
         }
-        vbase = vbase->next;
     }
     return FALSE;
-    
 }
 static BOOLEAN isMoveAssignmentDeleted(SYMBOL *sp)
 {
-    HASHREC *hr;
-    BASECLASS *base;
-    VBASEENTRY *vbase;
     if (basetype(sp->tp)->type == bt_union)
     {
-        hr = basetype(sp->tp)->syms->table[0];
-        while (hr)
+        NITERSYMTAB(hr, basetype(sp->tp))
         {
             SYMBOL *sp = (SYMBOL *)hr->p;
             if (isstructured(sp->tp))
             {
                 SYMBOL *cons = search(overloadNameTab[assign - kw_new + CI_NEW], basetype(sp->tp)->syms);
-                HASHREC *hr1 = basetype(cons->tp)->syms->table[0];
-                while (hr1)
+                NITERSYMTAB(hr1, basetype(cons->tp))
                 {
                     cons = (SYMBOL *)hr1->p;
                     if (matchesCopy(cons, TRUE))
                         if (!cons->trivialCons)
                             return TRUE;
-                    hr1 = hr1->next;
                 }
             }
-            hr = hr->next;
         }
     }
-    hr = basetype(sp->tp)->syms->table[0];
-    while (hr)
+    NITERSYMTAB(hr, basetype(sp->tp))
     {
         SYMBOL *sp1 = (SYMBOL *)hr->p;
         TYPE *m;
@@ -1182,31 +1071,24 @@ static BOOLEAN isMoveAssignmentDeleted(SYMBOL *sp)
                 if (checkMoveAssign(sp, basetype(m)->sp, ac_public))
                     return TRUE;
             }
-        }        
-        hr = hr->next;
+        }
     }
-    
-    base = sp->baseClasses;
-    while (base)
+
+    NITERBASECLASS(base, sp)
     {
         if (checkMoveAssign(sp, base->cls, ac_protected))
             return TRUE;
-        base = base->next;
     }
-    vbase = sp->vbaseEntries;
-    while (vbase)
+    NITERVBASEENT(vbase, sp)
     {
         if (vbase->alloc && checkMoveAssign(sp, vbase->cls, ac_protected))
             return TRUE;
-        vbase = vbase->next;
     }
     return FALSE;
-    
 }
 static void conditionallyDeleteDefaultConstructor(SYMBOL *func)
 {
-    HASHREC *hr = basetype(func->tp)->syms->table[0];
-    while (hr)
+    NITERSYMTAB(hr, basetype(func->tp))
     {
         SYMBOL *sp = (SYMBOL *)hr->p;
         if (sp->defaulted && matchesDefaultConstructor(sp))
@@ -1216,13 +1098,11 @@ static void conditionallyDeleteDefaultConstructor(SYMBOL *func)
                 sp->deleted = TRUE;
             }
         }
-        hr = hr->next;
     }
 }
 static BOOLEAN conditionallyDeleteCopyConstructor(SYMBOL *func, BOOLEAN move)
 {
-    HASHREC *hr = basetype(func->tp)->syms->table[0];
-    while (hr)
+    NITERSYMTAB(hr, basetype(func->tp))
     {
         SYMBOL *sp = (SYMBOL *)hr->p;
         if (sp->defaulted && matchesCopy(sp, move))
@@ -1230,14 +1110,12 @@ static BOOLEAN conditionallyDeleteCopyConstructor(SYMBOL *func, BOOLEAN move)
             if (isCopyConstructorDeleted(sp->parentClass))
                 sp->deleted = TRUE;
         }
-        hr = hr->next;
     }
     return FALSE;
 }
 static BOOLEAN conditionallyDeleteCopyAssignment(SYMBOL *func, BOOLEAN move)
 {
-    HASHREC *hr = basetype(func->tp)->syms->table[0];
-    while (hr)
+    NITERSYMTAB(hr, basetype(func->tp))
     {
         SYMBOL *sp = (SYMBOL *)hr->p;
         if (sp->defaulted && matchesCopy(sp, move))
@@ -1245,7 +1123,6 @@ static BOOLEAN conditionallyDeleteCopyAssignment(SYMBOL *func, BOOLEAN move)
             if (isCopyAssignmentDeleted(sp->parentClass))
                 sp->deleted = TRUE;
         }
-        hr = hr->next;
     }
     return FALSE;
 }
@@ -1262,7 +1139,7 @@ void createConstructorsForLambda(SYMBOL *sp)
     if (!isMoveConstructorDeleted(sp))
     {
         newcons = declareConstructor(sp, FALSE, TRUE);
-//        newcons->deleted = isMoveAssignmentDeleted(sp);
+        //        newcons->deleted = isMoveAssignmentDeleted(sp);
     }
 }
 // if there is a constructor with defaulted args that would match the
@@ -1271,8 +1148,7 @@ void createConstructorsForLambda(SYMBOL *sp)
 static void shimDefaultConstructor(SYMBOL *sp, SYMBOL *cons)
 {
     SYMBOL *match = NULL;
-    HASHREC *hr = basetype(cons->tp)->syms->table[0];
-    while (hr)
+    NITERSYMTAB(hr, basetype(cons->tp))
     {
         SYMBOL *sym = (SYMBOL *)hr->p;
         if (matchesDefaultConstructor(sym))
@@ -1281,12 +1157,11 @@ static void shimDefaultConstructor(SYMBOL *sp, SYMBOL *cons)
                 return; // will get an error elsewhere because of the duplicate
             match = sym;
         }
-        hr = hr->next;
     }
     if (match)
     {
-        hr = basetype(match->tp)->syms->table[0];
-        if (hr->next && hr->next && ((struct sym *)hr->next->p)->init)
+        HASHREC *hr = SYMTABBEGIN(basetype(match->tp));
+        if (hr->next && ((struct sym *)hr->next->p)->init)
         {
             // will match a default constructor but has defaulted args
             SYMBOL *consfunc = declareConstructor(sp, TRUE, FALSE); // default
@@ -1313,7 +1188,7 @@ static void shimDefaultConstructor(SYMBOL *sp, SYMBOL *cons)
             params->functp = match->tp;
             params->sp = match;
             params->ascall = TRUE;
-            AdjustParams(match, basetype(match->tp)->syms->table[0], &params->arguments, FALSE, TRUE);
+            AdjustParams(match, SYMTABBEGIN(basetype(match->tp)), &params->arguments, FALSE, TRUE);
             if (sp->vbaseEntries)
             {
                 INITLIST *x = (INITLIST *)Alloc(sizeof(INITLIST)), **p;
@@ -1323,14 +1198,15 @@ static void shimDefaultConstructor(SYMBOL *sp, SYMBOL *cons)
                 x->tp->size = getSize(bt_int);
                 x->exp = intNode(en_c_i, 1);
                 p = &params->arguments;
-                while (*p) p = &(*p)->next;
+                while (*p)
+                    p = &(*p)->next;
                 *p = x;
             }
             e1 = varNode(en_func, NULL);
             e1->v.func = params;
             if (e1)
             {
-                e1= exprNode(en_thisref, e1, NULL);
+                e1 = exprNode(en_thisref, e1, NULL);
                 e1->v.t.thisptr = params->thisptr;
                 e1->v.t.tp = sp->tp;
                 //hasXCInfo = TRUE;
@@ -1339,27 +1215,24 @@ static void shimDefaultConstructor(SYMBOL *sp, SYMBOL *cons)
             st->select = e1;
             consfunc->xcMode = cons->xcMode;
             consfunc->xc->xcDynamic = cons->xc->xcDynamic;
-            consfunc->inlineFunc.stmt = stmtNode(NULL,NULL, st_block);
+            consfunc->inlineFunc.stmt = stmtNode(NULL, NULL, st_block);
             consfunc->inlineFunc.stmt->lower = b.head;
             consfunc->inlineFunc.syms = basetype(consfunc->tp)->syms;
             consfunc->retcount = 1;
             consfunc->isInline = TRUE;
-        //    consfunc->inlineFunc.stmt->blockTail = b.tail;
+            //    consfunc->inlineFunc.stmt->blockTail = b.tail;
             InsertInline(consfunc);
-//            match->genreffed;
+            //            match->genreffed;
             // now get rid of the first default arg
             // leave others so the old constructor can be considered
             // under other circumstances
             hr = hr->next;
-            ((SYMBOL*)hr->p)->init = NULL;
+            ((SYMBOL *)hr->p)->init = NULL;
 
             if (match->deferredCompile && !match->inlineFunc.stmt)
                 deferredCompileOne(match);
             localNameSpace->syms = syms;
-                    
-            
         }
-        
     }
 }
 void createDefaultConstructors(SYMBOL *sp)
@@ -1383,22 +1256,20 @@ void createDefaultConstructors(SYMBOL *sp)
         newcons = declareConstructor(sp, TRUE, FALSE);
         cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(sp->tp)->syms);
         conditionallyDeleteDefaultConstructor(cons);
-
     }
     // see if the default constructor could be trivial
     if (!hasVTab(sp) && sp->vbaseEntries == NULL && !dest)
     {
-        BASECLASS *base = sp->baseClasses;
-        while (base)
+        BASECLASS *base;
+        ITERBASECLASS(base, sp)
         {
             if (!base->cls->trivialCons || base->accessLevel != ac_public)
                 break;
-            base = base->next;
         }
         if (!base)
         {
-            HASHREC *p = basetype(sp->tp)->syms->table[0];
-            while (p)
+            HASHREC *p;
+            ITERSYMTAB(p, basetype(sp->tp))
             {
                 SYMBOL *pcls = (SYMBOL *)p->p;
                 if (pcls->storage_class == sc_member || pcls->storage_class == sc_mutable || pcls->storage_class == sc_overloads)
@@ -1411,7 +1282,7 @@ void createDefaultConstructors(SYMBOL *sp)
                     else if (pcls->storage_class == sc_overloads)
                     {
                         BOOLEAN err = FALSE;
-                        HASHREC *p = basetype(pcls->tp)->syms->table[0];
+                        HASHREC *p = SYMTABBEGIN(basetype(pcls->tp));
                         while (p && !err)
                         {
                             SYMBOL *s = (SYMBOL *)p->p;
@@ -1428,7 +1299,6 @@ void createDefaultConstructors(SYMBOL *sp)
                     else if (pcls->access != ac_public)
                         break;
                 }
-                p = p->next;
             }
             if (!p)
             {
@@ -1454,16 +1324,16 @@ void createDefaultConstructors(SYMBOL *sp)
         SYMBOL *newsp = declareAssignmentOp(sp, FALSE);
         newsp->trivialCons = hasTrivialAssign(sp, FALSE);
         if (hasCopy(cons, TRUE) || (asgn && hasCopy(asgn, TRUE)))
-            newsp->deleted = TRUE;            
+            newsp->deleted = TRUE;
         if (!asgn)
             asgn = search(overloadNameTab[assign - kw_new + CI_NEW], basetype(sp->tp)->syms);
-        conditionallyDeleteCopyAssignment(asgn,FALSE);
+        conditionallyDeleteCopyAssignment(asgn, FALSE);
     }
     // now if there is no move constructor, no copy constructor,
-        // no copy assignment, no move assignment, no destructor
-        // and wouldn't be defined as deleted
-        // declare a move constructor and assignment operator
-    if (!dest && !hasCopy(cons,FALSE ) && !hasCopy(cons,TRUE) &&
+    // no copy assignment, no move assignment, no destructor
+    // and wouldn't be defined as deleted
+    // declare a move constructor and assignment operator
+    if (!dest && !hasCopy(cons, FALSE) && !hasCopy(cons, TRUE) &&
         !hasCopy(asgn, FALSE) && (!asgn || !hasCopy(asgn, TRUE)))
     {
         BOOLEAN b = isMoveConstructorDeleted(sp);
@@ -1479,14 +1349,14 @@ void createDefaultConstructors(SYMBOL *sp)
     }
     else
     {
-        conditionallyDeleteCopyConstructor(cons,TRUE);
-        conditionallyDeleteCopyAssignment(asgn,TRUE);
+        conditionallyDeleteCopyConstructor(cons, TRUE);
+        conditionallyDeleteCopyAssignment(asgn, TRUE);
     }
 }
 void destructBlock(EXPRESSION **exp, HASHREC *hr, BOOLEAN mainDestruct)
 {
-//    if (!cparams.prm_cplusplus)
-//        return;
+    //    if (!cparams.prm_cplusplus)
+    //        return;
     while (hr)
     {
         SYMBOL *sp = (SYMBOL *)hr->p;
@@ -1498,12 +1368,12 @@ void destructBlock(EXPRESSION **exp, HASHREC *hr, BOOLEAN mainDestruct)
                 if (isstructured(sp->tp))
                 {
                     EXPRESSION *iexp = getThisNode(sp);
-//                    iexp = exprNode(en_add, iexp, intNode(en_c_i, chosenAssembler->arch->retblocksize));
+                    //                    iexp = exprNode(en_add, iexp, intNode(en_c_i, chosenAssembler->arch->retblocksize));
                     callDestructor(basetype(sp->tp)->sp, NULL, &iexp, NULL, TRUE, FALSE, FALSE);
                     optimize_for_constants(&iexp);
                     if (*exp)
                     {
-                        *exp = exprNode(en_void, iexp, *exp);                    
+                        *exp = exprNode(en_void, iexp, *exp);
                     }
                     else
                     {
@@ -1513,14 +1383,14 @@ void destructBlock(EXPRESSION **exp, HASHREC *hr, BOOLEAN mainDestruct)
             }
             else if (sp->storage_class != sc_localstatic && sp->dest)
             {
-                
-                EXPRESSION *iexp = sp->dest->exp; 
+
+                EXPRESSION *iexp = sp->dest->exp;
                 if (iexp)
                 {
                     optimize_for_constants(&iexp);
                     if (*exp)
                     {
-                        *exp = exprNode(en_void, iexp, *exp);                    
+                        *exp = exprNode(en_void, iexp, *exp);
                     }
                     else
                     {
@@ -1532,8 +1402,8 @@ void destructBlock(EXPRESSION **exp, HASHREC *hr, BOOLEAN mainDestruct)
         hr = hr->next;
     }
 }
-static void genConsData(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi, 
-                        SYMBOL *member, int offset, 
+static void genConsData(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi,
+                        SYMBOL *member, int offset,
                         EXPRESSION *thisptr, EXPRESSION *otherptr, SYMBOL *parentCons, BOOLEAN doCopy)
 {
     if (doCopy && (matchesCopy(parentCons, FALSE) || matchesCopy(parentCons, TRUE)))
@@ -1542,16 +1412,16 @@ static void genConsData(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi,
         otherptr = exprNode(en_add, otherptr, intNode(en_c_i, offset));
         if (isstructured(member->tp) || isarray(member->tp) || basetype(member->tp)->type == bt_memberptr)
         {
-            EXPRESSION *exp = exprNode(en_blockassign, thisptr,otherptr);
-            STATEMENT *st = stmtNode(NULL,b, st_expr);
-            exp->size = member->tp->size;   
+            EXPRESSION *exp = exprNode(en_blockassign, thisptr, otherptr);
+            STATEMENT *st = stmtNode(NULL, b, st_expr);
+            exp->size = member->tp->size;
             exp->altdata = (long)member->tp;
             optimize_for_constants(&exp);
             st->select = exp;
         }
         else
         {
-            STATEMENT *st = stmtNode(NULL,b, st_expr);
+            STATEMENT *st = stmtNode(NULL, b, st_expr);
             EXPRESSION *exp;
             deref(member->tp, &thisptr);
             deref(member->tp, &otherptr);
@@ -1563,7 +1433,7 @@ static void genConsData(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi,
     else if (member->init)
     {
         EXPRESSION *exp;
-        STATEMENT *st = stmtNode(NULL,b, st_expr);
+        STATEMENT *st = stmtNode(NULL, b, st_expr);
         exp = convertInitToExpression(member->tp, member, NULL, member->init, thisptr, FALSE);
         optimize_for_constants(&exp);
         st->select = exp;
@@ -1572,7 +1442,7 @@ static void genConsData(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi,
 static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi, SYMBOL *member, int memberOffs, BOOLEAN top, EXPRESSION *thisptr, EXPRESSION *otherptr, SYMBOL *parentCons, BOOLEAN baseClass, BOOLEAN doCopy)
 {
     STATEMENT *st = NULL;
-    if (cls !=member && member->init)
+    if (cls != member && member->init)
     {
         EXPRESSION *exp;
         if (member->init->exp)
@@ -1585,11 +1455,11 @@ static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi
             exp = exprNode(en_blockclear, exp, 0);
             exp->size = member->tp->size;
         }
-        st = stmtNode(NULL,b, st_expr);
+        st = stmtNode(NULL, b, st_expr);
         optimize_for_constants(&exp);
         st->select = exp;
     }
-    else 
+    else
     {
         TYPE *ctype = member->tp;
         EXPRESSION *exp = exprNode(en_add, thisptr, intNode(en_c_i, memberOffs));
@@ -1609,15 +1479,15 @@ static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi
             }
             else
             {
-                tp=member->tp;
+                tp = member->tp;
             }
             params->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
             params->arguments->tp = tp;
             params->arguments->exp = other;
-//			member->tp->lref = TRUE;
+            //			member->tp->lref = TRUE;
             if (!callConstructor(&ctype, &exp, params, FALSE, NULL, top, FALSE, FALSE, FALSE, FALSE))
                 errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, member);
-//			member->tp->lref = FALSE;
+            //			member->tp->lref = FALSE;
         }
         else if (doCopy && matchesCopy(parentCons, TRUE))
         {
@@ -1640,10 +1510,10 @@ static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi
             params->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
             params->arguments->tp = tp;
             params->arguments->exp = other;
-//			member->tp->rref = TRUE;
+            //			member->tp->rref = TRUE;
             if (!callConstructor(&ctype, &exp, params, FALSE, NULL, top, FALSE, FALSE, FALSE, FALSE))
                 errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, member);
-//			member->tp->rref = FALSE;
+            //			member->tp->rref = FALSE;
         }
         else
         {
@@ -1666,7 +1536,7 @@ static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi
             {
                 INITIALIZER *init = mi->init;
                 FUNCTIONCALL *funcparams = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
-                INITLIST **args = & funcparams->arguments;
+                INITLIST **args = &funcparams->arguments;
                 while (init && init->exp)
                 {
                     *args = (INITLIST *)Alloc(sizeof(INITLIST));
@@ -1685,7 +1555,7 @@ static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi
             }
             matchesCopy(parentCons, FALSE);
         }
-        st = stmtNode(NULL,b, st_expr);
+        st = stmtNode(NULL, b, st_expr);
         optimize_for_constants(&exp);
         st->select = exp;
     }
@@ -1716,19 +1586,18 @@ static void virtualBaseThunks(BLOCKDATA *b, SYMBOL *sp, EXPRESSION *thisptr)
     }
     if (first)
     {
-        st = stmtNode(NULL,b, st_expr);
+        st = stmtNode(NULL, b, st_expr);
         optimize_for_constants(&first);
         st->select = first;
     }
 }
 static void dovtabThunks(BLOCKDATA *b, SYMBOL *sym, EXPRESSION *thisptr, BOOLEAN isvirtual)
 {
-    VTABENTRY *entries = sym->vtabEntries;
     EXPRESSION *first = NULL, **pos = &first;
     STATEMENT *st;
     SYMBOL *localsp;
     localsp = sym->vtabsp;
-    while (entries)
+    for (VTABENTRY *entries = sym->vtabEntries; entries; entries = entries->next)
     {
         if (!entries->isdead && entries->isvirtual == isvirtual && hasVTab(entries->cls))
         {
@@ -1745,30 +1614,29 @@ static void dovtabThunks(BLOCKDATA *b, SYMBOL *sym, EXPRESSION *thisptr, BOOLEAN
             {
                 *pos = exprNode(en_void, *pos, asn);
                 pos = &(*pos)->right;
-            }            
+            }
         }
-        entries = entries->next;
     }
     if (first)
     {
-        st = stmtNode(NULL,b, st_expr);
+        st = stmtNode(NULL, b, st_expr);
         optimize_for_constants(&first);
         st->select = first;
     }
 }
 static void doVirtualBases(BLOCKDATA *b, SYMBOL *sp, MEMBERINITIALIZERS *mi, VBASEENTRY *vbe, EXPRESSION *thisptr, EXPRESSION *otherptr, SYMBOL *parentCons, BOOLEAN doCopy)
 {
-	if (vbe)
-	{
-	    doVirtualBases(b, sp, mi, vbe->next, thisptr, otherptr, parentCons, doCopy);
+    if (vbe)
+    {
+        doVirtualBases(b, sp, mi, vbe->next, thisptr, otherptr, parentCons, doCopy);
         if (vbe->alloc)
-    		genConstructorCall(b, sp, mi, vbe->cls, vbe->structOffset, FALSE, thisptr, otherptr, parentCons, TRUE, doCopy);
-	}
+            genConstructorCall(b, sp, mi, vbe->cls, vbe->structOffset, FALSE, thisptr, otherptr, parentCons, TRUE, doCopy);
+    }
 }
 static EXPRESSION *unshim(EXPRESSION *exp, EXPRESSION *ths);
-static STATEMENT * unshimstmt(STATEMENT *block, EXPRESSION *ths)
+static STATEMENT *unshimstmt(STATEMENT *block, EXPRESSION *ths)
 {
-    STATEMENT *rv = NULL , **last = &rv;
+    STATEMENT *rv = NULL, **last = &rv;
     while (block != NULL)
     {
         *last = Alloc(sizeof(STATEMENT));
@@ -1777,50 +1645,50 @@ static STATEMENT * unshimstmt(STATEMENT *block, EXPRESSION *ths)
         last = &(*last)->next;
         switch (block->type)
         {
-            case st__genword:
-                break;
-            case st_try:
-            case st_catch:
-            case st___try:
-            case st___catch:
-            case st___finally:
-            case st___fault:
-                block->lower = unshimstmt(block->lower, ths);
-                block->blockTail = unshimstmt(block->blockTail, ths);
-                break;
-            case st_return:
-            case st_expr:
-            case st_declare:
-                block->select = unshim(block->select, ths);
-                break;
-            case st_goto:
-            case st_label:
-                break;
-            case st_select:
-            case st_notselect:
-                block->select = unshim(block->select, ths);
-                break;
-            case st_switch:
-                block->select = unshim(block->select, ths);
-                block->lower = unshimstmt(block->lower, ths);
-                break;
-            case st_block:
-                block->lower = unshimstmt(block->lower, ths);
-                block->blockTail = unshimstmt(block->blockTail, ths);
-                break;
-            case st_passthrough:
-                break;
-            case st_datapassthrough:
-                break;
-            case st_nop:
-                break;
-            case st_line:
-            case st_varstart:
-            case st_dbgblock:
-                break;
-            default:
-                diag("Invalid block type in unshimstmt");
-                break;
+        case st__genword:
+            break;
+        case st_try:
+        case st_catch:
+        case st___try:
+        case st___catch:
+        case st___finally:
+        case st___fault:
+            block->lower = unshimstmt(block->lower, ths);
+            block->blockTail = unshimstmt(block->blockTail, ths);
+            break;
+        case st_return:
+        case st_expr:
+        case st_declare:
+            block->select = unshim(block->select, ths);
+            break;
+        case st_goto:
+        case st_label:
+            break;
+        case st_select:
+        case st_notselect:
+            block->select = unshim(block->select, ths);
+            break;
+        case st_switch:
+            block->select = unshim(block->select, ths);
+            block->lower = unshimstmt(block->lower, ths);
+            break;
+        case st_block:
+            block->lower = unshimstmt(block->lower, ths);
+            block->blockTail = unshimstmt(block->blockTail, ths);
+            break;
+        case st_passthrough:
+            break;
+        case st_datapassthrough:
+            break;
+        case st_nop:
+            break;
+        case st_line:
+        case st_varstart:
+        case st_dbgblock:
+            break;
+        default:
+            diag("Invalid block type in unshimstmt");
+            break;
         }
         block = block->next;
     }
@@ -1842,7 +1710,7 @@ static EXPRESSION *unshim(EXPRESSION *exp, EXPRESSION *ths)
     {
         nw->v.stmt = unshimstmt(nw->v.stmt, ths);
     }
-    return nw;    
+    return nw;
 }
 SYMBOL *findClassName(char *name, SYMBOL *cls, BASECLASS *bc, VBASEENTRY *vbase, int *offset)
 {
@@ -1861,8 +1729,7 @@ SYMBOL *findClassName(char *name, SYMBOL *cls, BASECLASS *bc, VBASEENTRY *vbase,
         p += 2;
     }
     clslst[n++] = p;
-        
-    while (bc)
+    for (; bc; bc = bc->next)
     {
         if (!bc->isvirtual)
         {
@@ -1870,7 +1737,7 @@ SYMBOL *findClassName(char *name, SYMBOL *cls, BASECLASS *bc, VBASEENTRY *vbase,
             int i;
             if (parent->tp->type == bt_typedef)
                 parent = basetype(parent->tp)->sp;
-            for (i=n-1;i >=0 && parent; i--, parent = parent->parentClass ? parent->parentClass : parent->parentNameSpace)
+            for (i = n - 1; i >= 0 && parent; i--, parent = parent->parentClass ? parent->parentClass : parent->parentNameSpace)
                 if (strcmp(parent->name, clslst[i]))
                     break;
             if (i < 0 || i == 0 && parent == NULL && clslst[0][0] == '\0')
@@ -1880,15 +1747,14 @@ SYMBOL *findClassName(char *name, SYMBOL *cls, BASECLASS *bc, VBASEENTRY *vbase,
                 *offset = bc->offset;
             }
         }
-        bc = bc->next;
     }
-    while (vbase)
+    for (; vbase; vbase = vbase->next)
     {
         SYMBOL *parent = vbase->cls;
         int i;
         if (parent->tp->type == bt_typedef)
             parent = basetype(parent->tp)->sp;
-        for (i=n-1;i >=0 && parent; i--, parent = parent->parentClass ? parent->parentClass : parent->parentNameSpace)
+        for (i = n - 1; i >= 0 && parent; i--, parent = parent->parentClass ? parent->parentClass : parent->parentNameSpace)
             if (strcmp(parent->name, clslst[i]))
                 break;
         if (i < 0 || i == 0 && parent == NULL && clslst[0][0] == '\0')
@@ -1897,7 +1763,6 @@ SYMBOL *findClassName(char *name, SYMBOL *cls, BASECLASS *bc, VBASEENTRY *vbase,
             sp = vbase->cls;
             *offset = vbase->structOffset;
         }
-        vbase = vbase->next;
     }
     if ((ccount && vcount) || ccount > 1)
     {
@@ -1956,8 +1821,8 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                 }
                 if (!isstructured(init->sp->tp))
                 {
-					if (MATCHKW(lex, openpa)) 
-					{
+                    if (MATCHKW(lex, openpa))
+                    {
                         if (MATCHKW(lex, openpa))
                         {
                             lex = getsym();
@@ -1985,10 +1850,10 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                         }
                     }
                 }
-				else
-				{
-					if (MATCHKW(lex, openpa) && basetype(init->sp->tp)->sp->trivialCons)
-					{
+                else
+                {
+                    if (MATCHKW(lex, openpa) && basetype(init->sp->tp)->sp->trivialCons)
+                    {
                         init->init = NULL;
                         argument_nesting++;
                         lex = initType(lex, cons, 0, sc_auto, &init->init, NULL, init->sp->tp, init->sp, FALSE, 0);
@@ -1997,10 +1862,10 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                         if (init->packed || MATCHKW(lex, ellipse))
                             error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
                     }
-					else
-					{
-						init->init = NULL;
-						lex = initType(lex, cons, 0, sc_auto, &init->init,  NULL, init->sp->tp, init->sp, FALSE, 0);
+                    else
+                    {
+                        init->init = NULL;
+                        lex = initType(lex, cons, 0, sc_auto, &init->init, NULL, init->sp->tp, init->sp, FALSE, 0);
                         if (init->packed)
                             error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
                     }
@@ -2026,14 +1891,14 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                             error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
                         SetAlternateLex(NULL);
                         expandPackedMemberInitializers(cls, cons, sp->tp->templateParam->p->byPack.pack, p,
-                                                        init->initData, shim.arguments);
+                                                       init->initData, shim.arguments);
                         init->sp = cls;
                     }
                     else if (sp->tp->templateParam->p->byClass.val && isstructured(sp->tp->templateParam->p->byClass.val))
                     {
                         TYPE *tp = sp->tp->templateParam->p->byClass.val;
                         int offset = 0;
-                        int vcount =0, ccount = 0;
+                        int vcount = 0, ccount = 0;
                         init->name = basetype(tp)->sp->name;
                         while (bc)
                         {
@@ -2072,14 +1937,14 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                                 (*xinit)->exp = shim.arguments->exp;
                                 xinit = &(*xinit)->next;
                                 shim.arguments = shim.arguments->next;
-                            }                
+                            }
                         }
                         else
                         {
                             init->sp = NULL;
                         }
                     }
-                    else 
+                    else
                     {
                         error(ERR_STRUCTURED_TYPE_EXPECTED_IN_TEMPLATE_PARAMETER);
                     }
@@ -2088,12 +1953,11 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                 {
                     error(ERR_CLASS_TEMPLATE_PARAMETER_EXPECTED);
                 }
-                
             }
             else if (init->packed)
             {
                 init = expandPackedBaseClasses(cls, cons, init == cons->memberInitializers ? &cons->memberInitializers : &init, bc, vbase);
-                continue;   
+                continue;
             }
             else
             {
@@ -2147,7 +2011,7 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                         (*xinit)->exp = shim.arguments->exp;
                         xinit = &(*xinit)->next;
                         shim.arguments = shim.arguments->next;
-                    }                
+                    }
                 }
             }
         }
@@ -2162,12 +2026,11 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                 tp = basetype(tp);
                 if (isstructured(tp))
                 {
-                    BASECLASS *bc = cls->baseClasses;
-                    while (bc)
+                    BASECLASS *bc;
+                    ITERBASECLASS(bc, cls)
                     {
                         if (!comparetypes(bc->cls->tp, init->sp->tp, TRUE) || sameTemplate(bc->cls->tp, init->sp->tp))
                             break;
-                        bc = bc->next;
                     }
                     if (bc)
                     {
@@ -2205,9 +2068,9 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                             (*xinit)->exp = shim.arguments->exp;
                             xinit = &(*xinit)->next;
                             shim.arguments = shim.arguments->next;
-                        }                
+                        }
                     }
-                }    
+                }
                 else
                 {
                     init->sp = NULL;
@@ -2230,9 +2093,8 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
 }
 static void allocInitializers(SYMBOL *cls, SYMBOL *cons, EXPRESSION *ths)
 {
-    HASHREC *hr = basetype(cls->tp)->syms->table[0];
-    MEMBERINITIALIZERS *init = cons->memberInitializers;
-    while (hr)
+    HASHREC *hr;
+    ITERSYMTAB(hr, basetype(cls->tp))
     {
         SYMBOL *sp = (SYMBOL *)hr->p;
         if (sp->storage_class == sc_member || sp->storage_class == sc_mutable)
@@ -2245,9 +2107,8 @@ static void allocInitializers(SYMBOL *cls, SYMBOL *cons, EXPRESSION *ths)
                 sp->init->exp = unshim(sp->init->exp, ths);
             }
         }
-        hr = hr->next;
     }
-    while (init)
+    for (MEMBERINITIALIZERS *init = cons->memberInitializers; init; init = init->next)
     {
         if (init->init)
         {
@@ -2255,10 +2116,8 @@ static void allocInitializers(SYMBOL *cls, SYMBOL *cons, EXPRESSION *ths)
             if (init->init->exp)
                 init->init->exp = unshim(init->init->exp, ths);
         }
-        init = init->next;
     }
-    hr = basetype(cls->tp)->syms->table[0];
-    while (hr)
+    ITERSYMTAB(hr, basetype(cls->tp))
     {
         SYMBOL *sp = (SYMBOL *)hr->p;
         if (!sp->init && ismember(sp))
@@ -2268,24 +2127,20 @@ static void allocInitializers(SYMBOL *cls, SYMBOL *cons, EXPRESSION *ths)
             else if (isconst(sp->tp))
                 errorsym(ERR_CONSTANT_MEMBER_MUST_BE_INITIALIZED, sp);
         }
-        hr = hr->next;
     }
 }
 static void releaseInitializers(SYMBOL *cls, SYMBOL *cons)
 {
-    HASHREC *hr = basetype(cls->tp)->syms->table[0];
-    while (hr)
+    NITERSYMTAB(hr, basetype(cls->tp))
     {
         SYMBOL *sp = (SYMBOL *)hr->p;
         if (sp->storage_class == sc_member || sp->storage_class == sc_mutable)
             sp->init = sp->lastInit;
-        hr = hr->next;
     }
 }
-EXPRESSION *thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTABLE *syms, 
+EXPRESSION *thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTABLE *syms,
                                  BOOLEAN parseInitializers, BOOLEAN doCopy)
 {
-    BASECLASS *bc;
     HASHREC *hr = syms->table[0];
     EXPRESSION *thisptr = varNode(en_auto, (SYMBOL *)hr->p);
     EXPRESSION *otherptr = NULL;
@@ -2306,8 +2161,7 @@ EXPRESSION *thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTA
         if (sym->tp->type == bt_union)
         {
             AllocateLocalContext(NULL, cons, codeLabel++);
-            hr = sym->tp->syms->table[0];
-            while (hr)
+            ITERSYMTAB(hr, sym->tp)
             {
                 SYMBOL *sp = (SYMBOL *)hr->p;
                 if ((sp->storage_class == sc_member || sp->storage_class == sc_mutable) && sp->tp->type != bt_aggregate)
@@ -2324,7 +2178,6 @@ EXPRESSION *thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTA
                         }
                     }
                 }
-                hr = hr->next;
             }
             FreeLocalContext(NULL, cons, codeLabel++);
         }
@@ -2354,17 +2207,14 @@ EXPRESSION *thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTA
                 st->label = lbl;
             }
             AllocateLocalContext(NULL, cons, codeLabel++);
-            bc = sym->baseClasses;
-            while (bc)
+            NITERBASECLASS(bc, sym)
             {
                 if (!bc->isvirtual)
                     genConstructorCall(b, sym, cons->memberInitializers, bc->cls, bc->offset, FALSE, thisptr, otherptr, cons, TRUE, doCopy || !cons->memberInitializers);
-                bc = bc->next;
             }
             if (hasVTab(sym))
                 dovtabThunks(b, sym, thisptr, FALSE);
-            hr = sym->tp->syms->table[0];
-            while (hr)
+            ITERSYMTAB(hr, sym->tp)
             {
                 SYMBOL *sp = (SYMBOL *)hr->p;
                 if ((sp->storage_class == sc_member || sp->storage_class == sc_mutable) && sp->tp->type != bt_aggregate)
@@ -2378,7 +2228,6 @@ EXPRESSION *thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTA
                         genConsData(b, sym, cons->memberInitializers, sp, sp->offset, thisptr, otherptr, cons, doCopy);
                     }
                 }
-                hr = hr->next;
             }
             FreeLocalContext(NULL, cons, codeLabel++);
         }
@@ -2402,24 +2251,24 @@ void createConstructor(SYMBOL *sp, SYMBOL *consfunc)
     thisptr = thunkConstructorHead(&b, sp, consfunc, basetype(consfunc->tp)->syms, FALSE, TRUE);
     st = stmtNode(NULL, &b, st_return);
     st->select = thisptr;
-    consfunc->inlineFunc.stmt = stmtNode(NULL,NULL, st_block);
+    consfunc->inlineFunc.stmt = stmtNode(NULL, NULL, st_block);
     consfunc->inlineFunc.stmt->lower = b.head;
     consfunc->inlineFunc.syms = basetype(consfunc->tp)->syms;
     consfunc->retcount = 1;
     consfunc->isInline = TRUE;
-//    consfunc->inlineFunc.stmt->blockTail = b.tail;
+    //    consfunc->inlineFunc.stmt->blockTail = b.tail;
     InsertInline(consfunc);
     localNameSpace->syms = syms;
 }
-void asnVirtualBases(BLOCKDATA *b, SYMBOL *sp, VBASEENTRY *vbe, 
-                            EXPRESSION *thisptr, EXPRESSION *other, BOOLEAN move, BOOLEAN isconst)
+void asnVirtualBases(BLOCKDATA *b, SYMBOL *sp, VBASEENTRY *vbe,
+                     EXPRESSION *thisptr, EXPRESSION *other, BOOLEAN move, BOOLEAN isconst)
 {
-	if (vbe)
-	{
-	    asnVirtualBases(b, sp, vbe->next, thisptr, other, move, isconst);
+    if (vbe)
+    {
+        asnVirtualBases(b, sp, vbe->next, thisptr, other, move, isconst);
         if (vbe->alloc)
-    		genAsnCall(b, sp, vbe->cls, vbe->structOffset, thisptr, other, move, isconst);
-	}
+            genAsnCall(b, sp, vbe->cls, vbe->structOffset, thisptr, other, move, isconst);
+    }
 }
 static void genAsnData(BLOCKDATA *b, SYMBOL *cls, SYMBOL *member, int offset, EXPRESSION *thisptr, EXPRESSION *other)
 {
@@ -2439,7 +2288,7 @@ static void genAsnData(BLOCKDATA *b, SYMBOL *cls, SYMBOL *member, int offset, EX
         deref(member->tp, &right);
         left = exprNode(en_assign, left, right);
     }
-    st = stmtNode(NULL,b, st_expr);
+    st = stmtNode(NULL, b, st_expr);
     optimize_for_constants(&left);
     st->select = left;
 }
@@ -2489,11 +2338,11 @@ static void genAsnCall(BLOCKDATA *b, SYMBOL *cls, SYMBOL *base, int offset, EXPR
     params->thistp->rootType = params->thistp;
     params->ascall = TRUE;
     asn1 = GetOverloadedFunction(&tp, &params->fcall, cons, params, NULL, TRUE, FALSE, TRUE, 0);
-        
+
     if (asn1)
     {
         SYMBOL *parm;
-        AdjustParams(asn1, basetype(asn1->tp)->syms->table[0], &params->arguments, FALSE, TRUE);
+        AdjustParams(asn1, SYMTABBEGIN(basetype(asn1->tp)), &params->arguments, FALSE, TRUE);
         parm = (SYMBOL *)basetype(asn1->tp)->syms->table[0]->next->p;
         if (parm && isref(parm->tp))
         {
@@ -2504,7 +2353,7 @@ static void genAsnCall(BLOCKDATA *b, SYMBOL *cls, SYMBOL *base, int offset, EXPR
             tp1->rootType = tp1;
             params->arguments->tp = tp1;
         }
-        if (!isAccessible(base,base, asn1, NULL, ac_protected, FALSE))
+        if (!isAccessible(base, base, asn1, NULL, ac_protected, FALSE))
         {
             errorsym(ERR_CANNOT_ACCESS, asn1);
         }
@@ -2516,7 +2365,7 @@ static void genAsnCall(BLOCKDATA *b, SYMBOL *cls, SYMBOL *base, int offset, EXPR
         exp = varNode(en_func, NULL);
         exp->v.func = params;
     }
-    st = stmtNode(NULL,b, st_expr);
+    st = stmtNode(NULL, b, st_expr);
     optimize_for_constants(&exp);
     st->select = exp;
 }
@@ -2525,7 +2374,6 @@ static void thunkAssignments(BLOCKDATA *b, SYMBOL *sym, SYMBOL *asnfunc, HASHTAB
     HASHREC *hr = syms->table[0];
     EXPRESSION *thisptr = varNode(en_auto, (SYMBOL *)hr->p);
     EXPRESSION *other = NULL;
-    BASECLASS *base;
     int oldCodeLabel = codeLabel;
     codeLabel = INT_MIN;
     if (hr->next) // this had better be true
@@ -2542,17 +2390,14 @@ static void thunkAssignments(BLOCKDATA *b, SYMBOL *sym, SYMBOL *asnfunc, HASHTAB
         {
             asnVirtualBases(b, sym, sym->vbaseEntries, thisptr, other, move, isconst);
         }
-        base = sym->baseClasses;
-        while (base)
+        NITERBASECLASS(base, sym)
         {
             if (!base->isvirtual)
             {
                 genAsnCall(b, sym, base->cls, base->offset, thisptr, other, move, isconst);
             }
-            base = base->next;
         }
-        hr = sym->tp->syms->table[0];
-        while (hr)
+        ITERSYMTAB(hr, sym->tp)
         {
             SYMBOL *sp = (SYMBOL *)hr->p;
             if ((sp->storage_class == sc_member || sp->storage_class == sc_mutable) && sp->tp->type != bt_aggregate)
@@ -2566,7 +2411,6 @@ static void thunkAssignments(BLOCKDATA *b, SYMBOL *sym, SYMBOL *asnfunc, HASHTAB
                     genAsnData(b, sym, sp, sp->offset, thisptr, other);
                 }
             }
-            hr = hr->next;
         }
     }
     asnfunc->labelCount = codeLabel - INT_MIN;
@@ -2579,16 +2423,16 @@ void createAssignment(SYMBOL *sym, SYMBOL *asnfunc)
     // that can be defaulted...
     HASHTABLE *syms;
     BLOCKDATA b;
-    BOOLEAN move = basetype(((SYMBOL *)basetype(asnfunc->tp)->syms->table[0]->next->p)->tp)->type == bt_rref;
-    BOOLEAN isConst = isconst(((SYMBOL *)basetype(asnfunc->tp)->syms->table[0]->next->p)->tp);
+    BOOLEAN move = basetype(((SYMBOL *)SYMTABBEGIN(basetype(asnfunc->tp))->next->p)->tp)->type == bt_rref;
+    BOOLEAN isConst = isconst(((SYMBOL *)SYMTABBEGIN(basetype(asnfunc->tp))->next->p)->tp);
     memset(&b, 0, sizeof(BLOCKDATA));
     b.type = begin;
     syms = localNameSpace->syms;
     localNameSpace->syms = basetype(asnfunc->tp)->syms;
     thunkAssignments(&b, sym, asnfunc, basetype(asnfunc->tp)->syms, move, isConst);
-    asnfunc->inlineFunc.stmt = stmtNode(NULL,NULL, st_block);
+    asnfunc->inlineFunc.stmt = stmtNode(NULL, NULL, st_block);
     asnfunc->inlineFunc.stmt->lower = b.head;
-//    asnfunc->inlineFunc.stmt->blockTail = b.tail;
+    //    asnfunc->inlineFunc.stmt->blockTail = b.tail;
     InsertInline(asnfunc);
     localNameSpace->syms = syms;
 }
@@ -2602,30 +2446,30 @@ static void genDestructorCall(BLOCKDATA *b, SYMBOL *sp, SYMBOL *against, EXPRESS
     dest = search(overloadNameTab[CI_DESTRUCTOR], basetype(sp->tp)->syms);
     if (!dest) // error handling
         return;
-    exp = base ;
+    exp = base;
     deref(&stdpointer, &exp);
-    exp = exprNode(en_add, exp, intNode(en_c_i, offset)) ;
+    exp = exprNode(en_add, exp, intNode(en_c_i, offset));
     dest = (SYMBOL *)basetype(dest->tp)->syms->table[0]->p;
     if (dest->defaulted && !dest->inlineFunc.stmt)
     {
         createDestructor(sp);
     }
     callDestructor(sp, against, &exp, arrayElms, top, TRUE, FALSE);
-    st = stmtNode(NULL,b, st_expr);
+    st = stmtNode(NULL, b, st_expr);
     optimize_for_constants(&exp);
     st->select = exp;
 }
 static void undoVars(BLOCKDATA *b, HASHREC *vars, EXPRESSION *base)
 {
-	if (vars)
-	{
-		SYMBOL *s = (SYMBOL *)vars->p;
-		undoVars(b, vars->next, base);
-		if ((s->storage_class == sc_member || s->storage_class == sc_mutable))
+    if (vars)
+    {
+        SYMBOL *s = (SYMBOL *)vars->p;
+        undoVars(b, vars->next, base);
+        if ((s->storage_class == sc_member || s->storage_class == sc_mutable))
         {
             if (isstructured(s->tp))
             {
-    			genDestructorCall(b, (SYMBOL *)basetype(s->tp)->sp, NULL, base, NULL, s->offset, TRUE);
+                genDestructorCall(b, (SYMBOL *)basetype(s->tp)->sp, NULL, base, NULL, s->offset, TRUE);
             }
             else if (isarray(s->tp))
             {
@@ -2633,33 +2477,33 @@ static void undoVars(BLOCKDATA *b, HASHREC *vars, EXPRESSION *base)
                 while (isarray(tp))
                     tp = basetype(tp)->btp;
                 tp = basetype(tp);
-                if (isstructured(tp))            
-        			genDestructorCall(b, tp->sp, NULL, base, intNode(en_c_i, s->tp->size/ tp->size), s->offset, TRUE);
+                if (isstructured(tp))
+                    genDestructorCall(b, tp->sp, NULL, base, intNode(en_c_i, s->tp->size / tp->size), s->offset, TRUE);
             }
         }
-	}
+    }
 }
 static void undoBases(BLOCKDATA *b, SYMBOL *against, BASECLASS *bc, EXPRESSION *base)
 {
-	if (bc)
-	{
-		undoBases(b, against, bc->next, base);
-		if (!bc->isvirtual)
-		{
-			genDestructorCall(b, bc->cls, against, base, NULL, bc->offset, FALSE);
-		}
-	}
+    if (bc)
+    {
+        undoBases(b, against, bc->next, base);
+        if (!bc->isvirtual)
+        {
+            genDestructorCall(b, bc->cls, against, base, NULL, bc->offset, FALSE);
+        }
+    }
 }
 void thunkDestructorTail(BLOCKDATA *b, SYMBOL *sp, SYMBOL *dest, HASHTABLE *syms)
 {
     EXPRESSION *thisptr;
-    VBASEENTRY *vbe = sp->vbaseEntries;    
+    VBASEENTRY *vbe = sp->vbaseEntries;
     int oldCodeLabel = codeLabel;
     if (templateNestingCount)
         return;
     codeLabel = INT_MIN;
     thisptr = varNode(en_auto, (SYMBOL *)syms->table[0]->p);
-    undoVars(b, basetype(sp->tp)->syms->table[0], thisptr);
+    undoVars(b, SYMTABBEGIN(basetype(sp->tp)), thisptr);
     undoBases(b, sp, sp->baseClasses, thisptr);
     if (vbe)
     {
@@ -2670,7 +2514,7 @@ void thunkDestructorTail(BLOCKDATA *b, SYMBOL *sp, SYMBOL *dest, HASHTABLE *syms
         sp->decoratedName = sp->errname = sp->name;
         sp->offset = chosenAssembler->arch->retblocksize + getSize(bt_pointer);
         deref(&stdint, &val);
-        st = stmtNode(NULL,b, st_notselect);
+        st = stmtNode(NULL, b, st_notselect);
         optimize_for_constants(&val);
         st->select = val;
         st->label = lbl;
@@ -2680,7 +2524,7 @@ void thunkDestructorTail(BLOCKDATA *b, SYMBOL *sp, SYMBOL *dest, HASHTABLE *syms
                 genDestructorCall(b, vbe->cls, sp, thisptr, NULL, vbe->structOffset, FALSE);
             vbe = vbe->next;
         }
-        st = stmtNode(NULL,b, st_label);
+        st = stmtNode(NULL, b, st_label);
         st->label = lbl;
     }
     dest->labelCount = codeLabel - INT_MIN;
@@ -2693,16 +2537,16 @@ static void createDestructor(SYMBOL *sp)
     BLOCKDATA b;
     memset(&b, 0, sizeof(BLOCKDATA));
     b.type = begin;
-    dest = (SYMBOL *)basetype(dest->tp)->syms->table[0]->p;
+    dest = (SYMBOL *)SYMTABBEGIN(basetype(dest->tp))->p;
     syms = localNameSpace->syms;
     localNameSpace->syms = basetype(dest->tp)->syms;
     thunkDestructorTail(&b, sp, dest, basetype(dest->tp)->syms);
-    dest->inlineFunc.stmt = stmtNode(NULL,NULL, st_block);
+    dest->inlineFunc.stmt = stmtNode(NULL, NULL, st_block);
     dest->inlineFunc.stmt->lower = b.head;
     dest->inlineFunc.syms = basetype(dest->tp)->syms;
     dest->retcount = 1;
     dest->isInline = TRUE;
-//    dest->inlineFunc.stmt->blockTail = b.tail;
+    //    dest->inlineFunc.stmt->blockTail = b.tail;
     InsertInline(dest);
     InsertExtern(dest);
     localNameSpace->syms = syms;
@@ -2724,7 +2568,7 @@ void makeArrayConsDest(TYPE **tp, EXPRESSION **exp, SYMBOL *cons, SYMBOL *dest, 
     arg1->next = arg2;
     arg2->next = arg3;
     arg3->next = arg4;
-  
+
     arg0->exp = *exp;
     arg0->tp = &stdpointer;
     arg1->exp = econs ? econs : intNode(en_c_i, 0);
@@ -2735,7 +2579,7 @@ void makeArrayConsDest(TYPE **tp, EXPRESSION **exp, SYMBOL *cons, SYMBOL *dest, 
     arg3->tp = &stdint;
     arg4->exp = size;
     arg4->tp = &stdint;
-    
+
     params->ascall = TRUE;
     asn1 = GetOverloadedFunction(tp, &params->fcall, ovl, params, NULL, TRUE, FALSE, TRUE, 0);
     if (!asn1)
@@ -2751,12 +2595,11 @@ void makeArrayConsDest(TYPE **tp, EXPRESSION **exp, SYMBOL *cons, SYMBOL *dest, 
         (*exp)->v.func = params;
         //asn1->genreffed = TRUE;
         //if (cons)
-            //cons->genreffed = TRUE;
+        //cons->genreffed = TRUE;
         //dest->genreffed = TRUE;
     }
-    
 }
-void callDestructor(SYMBOL *sp, SYMBOL *against, EXPRESSION **exp, EXPRESSION *arrayElms, BOOLEAN top, 
+void callDestructor(SYMBOL *sp, SYMBOL *against, EXPRESSION **exp, EXPRESSION *arrayElms, BOOLEAN top,
                     BOOLEAN pointer, BOOLEAN skipAccess)
 {
     SYMBOL *dest;
@@ -2765,7 +2608,7 @@ void callDestructor(SYMBOL *sp, SYMBOL *against, EXPRESSION **exp, EXPRESSION *a
     FUNCTIONCALL *params = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
     SYMBOL *sym;
     if (!against)
-       against = sp;
+        against = sp;
     if (sp->tp->size == 0)
         sp = PerformDeferredInitialization(sp->tp, NULL)->sp;
     stp = sp->tp;
@@ -2778,22 +2621,22 @@ void callDestructor(SYMBOL *sp, SYMBOL *against, EXPRESSION **exp, EXPRESSION *a
     {
         diag("callDestructor: no this pointer");
     }
-    params->thisptr= *exp;
+    params->thisptr = *exp;
     params->thistp = Alloc(sizeof(TYPE));
     params->thistp->type = bt_pointer;
     params->thistp->size = getSize(bt_pointer);
     params->thistp->btp = sp->tp;
     params->thistp->rootType = params->thistp;
     params->ascall = TRUE;
-    dest1 = basetype(dest->tp)->syms->table[0]->p;
-    if (!dest1 || ! dest1->defaulted)
+    dest1 = SYMTABBEGIN(basetype(dest->tp))->p;
+    if (!dest1 || !dest1->defaulted)
         dest1 = GetOverloadedFunction(&tp, &params->fcall, dest, params, NULL, TRUE, FALSE, TRUE, 0);
     else
         params->fcall = varNode(en_pc, dest1);
     if (dest1)
     {
         CheckCalledException(dest1, params->thisptr);
-        if (!skipAccess && dest1 && !isAccessible(against,sp, dest1, theCurrentFunc, top ? (theCurrentFunc && theCurrentFunc->parentClass == sp ? ac_protected : ac_public) : ac_protected, FALSE))
+        if (!skipAccess && dest1 && !isAccessible(against, sp, dest1, theCurrentFunc, top ? (theCurrentFunc && theCurrentFunc->parentClass == sp ? ac_protected : ac_public) : ac_protected, FALSE))
         {
             errorsym(ERR_CANNOT_ACCESS, dest1);
         }
@@ -2807,7 +2650,8 @@ void callDestructor(SYMBOL *sp, SYMBOL *against, EXPRESSION **exp, EXPRESSION *a
             makeArrayConsDest(&stp, exp, NULL, dest1, arrayElms);
             //dest1->genreffed = TRUE;
         }
-        else {
+        else
+        {
             if (sp->vbaseEntries)
             {
                 INITLIST *x = (INITLIST *)Alloc(sizeof(INITLIST)), **p;
@@ -2817,7 +2661,8 @@ void callDestructor(SYMBOL *sp, SYMBOL *against, EXPRESSION **exp, EXPRESSION *a
                 x->tp->rootType = x->tp;
                 x->exp = intNode(en_c_i, top);
                 p = &params->arguments;
-                while (*p) p = &(*p)->next;
+                while (*p)
+                    p = &(*p)->next;
                 *p = x;
                 params->sp->noinline = TRUE;
             }
@@ -2832,14 +2677,14 @@ void callDestructor(SYMBOL *sp, SYMBOL *against, EXPRESSION **exp, EXPRESSION *a
             (*exp)->v.t.tp = sp->tp;
             sp->hasDest = TRUE;
             if (!sp->pureDest)
-               hasXCInfo = TRUE;
+                hasXCInfo = TRUE;
         }
     }
 }
-BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params, 
-                     BOOLEAN checkcopy, EXPRESSION *arrayElms, BOOLEAN top, 
-                     BOOLEAN maybeConversion, BOOLEAN implicit, BOOLEAN pointer, 
-                     BOOLEAN flags)
+BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
+                        BOOLEAN checkcopy, EXPRESSION *arrayElms, BOOLEAN top,
+                        BOOLEAN maybeConversion, BOOLEAN implicit, BOOLEAN pointer,
+                        BOOLEAN flags)
 {
     TYPE *stp = *tp;
     SYMBOL *sp;
@@ -2861,8 +2706,7 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
     }
     else
     {
-        INITLIST *list = params->arguments;
-        while (list)
+        for (INITLIST *list = params->arguments; list; list = list->next)
         {
             if (!list->nested && isstructured(list->tp))
             {
@@ -2875,7 +2719,6 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
                         list->tp = TemplateClassInstantiate(sp1, sp1->templateParams, FALSE, sc_global)->tp;
                 }
             }
-            list = list->next;
         }
     }
     params->thisptr = *exp;
@@ -2885,17 +2728,17 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
     params->thistp->rootType = params->thistp;
     params->thistp->size = getSize(bt_pointer);
     params->ascall = TRUE;
-    cons1 = GetOverloadedFunction(tp, &params->fcall, cons, params, NULL, TRUE, 
+    cons1 = GetOverloadedFunction(tp, &params->fcall, cons, params, NULL, TRUE,
                                   maybeConversion, TRUE, flags);
-        
+
     if (cons1 && isfunction(cons1->tp))
     {
         CheckCalledException(cons1, params->thisptr);
-        
+
         if (cons1->castoperator)
         {
             FUNCTIONCALL *oparams = Alloc(sizeof(FUNCTIONCALL));
-            if (!isAccessible(cons1->parentClass,cons1->parentClass, cons1, NULL, ac_public, FALSE))
+            if (!isAccessible(cons1->parentClass, cons1->parentClass, cons1, NULL, ac_public, FALSE))
             {
                 errorsym(ERR_CANNOT_ACCESS, cons1);
             }
@@ -2920,19 +2763,19 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
             e1 = varNode(en_func, NULL);
             e1->v.func = oparams;
         }
-        else 
+        else
         {
-            if (!isAccessible(against,sp, cons1, NULL, top ? (theCurrentFunc && theCurrentFunc->parentClass == sp ? ac_protected : ac_public) : ac_protected, FALSE))
+            if (!isAccessible(against, sp, cons1, NULL, top ? (theCurrentFunc && theCurrentFunc->parentClass == sp ? ac_protected : ac_public) : ac_protected, FALSE))
             {
                 errorsym(ERR_CANNOT_ACCESS, cons1);
             }
             if (cons1->isExplicit && implicit)
                 error(ERR_IMPLICIT_USE_OF_EXPLICIT_CONVERSION);
             {
-                HASHREC *hr = basetype(cons1->tp)->syms->table[0];
+                HASHREC *hr = SYMTABBEGIN(basetype(cons1->tp));
                 if (((SYMBOL *)hr->p)->thisPtr)
                     hr = hr->next;
-                if (!hr->next ||  ((SYMBOL *)hr->next->p)->init)
+                if (!hr->next || ((SYMBOL *)hr->next->p)->init)
                 {
                     TYPE *tp = ((SYMBOL *)hr->p)->tp;
                     if (isref(tp))
@@ -2943,7 +2786,7 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
                     if (isstructured(tp))
                     {
                         SYMBOL *sym = (basetype(tp)->sp);
-                        if (sym->parentNameSpace && !strcmp(sym->parentNameSpace->name , "std")) 
+                        if (sym->parentNameSpace && !strcmp(sym->parentNameSpace->name, "std"))
                         {
                             if (!strcmp(sym->name, "initializer_list") && sym->templateLevel)
                             {
@@ -2956,13 +2799,13 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
             }
             if (initializerListType)
             {
-                CreateInitializerList(initializerListTemplate, initializerListType, &params->arguments, FALSE, initializerRef); 
-                if (basetype(cons1->tp)->syms->table[0]->next->next)
-                   AdjustParams(cons1, basetype(cons1->tp)->syms->table[0]->next->next, &params->arguments->next, FALSE, implicit && !cons1->isExplicit);
+                CreateInitializerList(initializerListTemplate, initializerListType, &params->arguments, FALSE, initializerRef);
+                if (SYMTABBEGIN(basetype(cons1->tp))->next->next)
+                    AdjustParams(cons1, SYMTABBEGIN(basetype(cons1->tp))->next->next, &params->arguments->next, FALSE, implicit && !cons1->isExplicit);
             }
             else
             {
-                AdjustParams(cons1, basetype(cons1->tp)->syms->table[0], &params->arguments, FALSE, implicit && !cons1->isExplicit);
+                AdjustParams(cons1, SYMTABBEGIN(basetype(cons1->tp)), &params->arguments, FALSE, implicit && !cons1->isExplicit);
             }
             params->functp = cons1->tp;
             params->sp = cons1;
@@ -2980,7 +2823,7 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
                 {
                     diag("callDestructor: no this pointer");
                 }
-                params->thisptr= *exp;
+                params->thisptr = *exp;
                 params->thistp = Alloc(sizeof(TYPE));
                 params->thistp->type = bt_pointer;
                 params->thistp->size = getSize(bt_pointer);
@@ -2988,7 +2831,7 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
                 params->thistp->rootType = params->thistp;
                 params->ascall = TRUE;
                 dest1 = GetOverloadedFunction(&tp, &params->fcall, dest, params, NULL, TRUE, FALSE, TRUE, 0);
-                if (dest1 && !isAccessible(against,sp, dest1, NULL, top ? (theCurrentFunc && theCurrentFunc->parentClass == sp ? ac_protected : ac_public) : ac_protected, FALSE))
+                if (dest1 && !isAccessible(against, sp, dest1, NULL, top ? (theCurrentFunc && theCurrentFunc->parentClass == sp ? ac_protected : ac_public) : ac_protected, FALSE))
                 {
                     errorsym(ERR_CANNOT_ACCESS, dest1);
                 }
@@ -2997,7 +2840,8 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
                 makeArrayConsDest(&stp, exp, cons1, dest1, arrayElms);
                 e1 = *exp;
             }
-            else {
+            else
+            {
                 if (sp->vbaseEntries)
                 {
                     INITLIST *x = (INITLIST *)Alloc(sizeof(INITLIST)), **p;
@@ -3007,7 +2851,8 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
                     x->tp->size = getSize(bt_int);
                     x->exp = intNode(en_c_i, top);
                     p = &params->arguments;
-                    while (*p) p = &(*p)->next;
+                    while (*p)
+                        p = &(*p)->next;
                     *p = x;
                     params->sp->noinline = TRUE;
                 }
@@ -3032,7 +2877,7 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
             (*exp)->v.t.tp = sp->tp;
             //hasXCInfo = TRUE;
         }
-        
+
         return TRUE;
     }
     return FALSE;

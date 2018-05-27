@@ -675,7 +675,7 @@ void InsertAnyFile(char *filename, char *path, int drive, BOOLEAN primary)
     strcat(buffer, filename);
 #ifndef CPREPROCESSOR
     if (cparams.prm_compileonly || !chosenAssembler->insert_noncompile_file 
-        || !chosenAssembler->insert_noncompile_file(buffer))
+        || !chosenAssembler->insert_noncompile_file(buffer, TRUE))
 #endif
     {
         AddExt(buffer, ".C");
@@ -1019,7 +1019,7 @@ void ccinit(int argc, char *argv[])
     {
 #ifndef CPREPROCESSOR
         if (chosenAssembler->insert_noncompile_file)
-            chosenAssembler->insert_noncompile_file(outfile);
+            chosenAssembler->insert_noncompile_file(outfile, TRUE);
 #endif
         has_output_file = FALSE;
     }

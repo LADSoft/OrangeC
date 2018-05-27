@@ -38,7 +38,7 @@ typedef ULLONG_TYPE PPUINT;
 #define STRINGIZING_PLACEHOLDER ((unsigned char)-78)
 #define REPLACED_ALREADY ((unsigned char)-77)
 #define MACRO_PLACEHOLDER ((unsigned char)-76)
- 
+
 #define issymchar(x) (((x) >= 0) && (isalnum(x) || (x) == '_'))
 #define isstartchar(x) (((x) >= 0) && (isalpha(x) || (x) == '_'))
 
@@ -63,27 +63,27 @@ typedef struct ifstruct
 typedef struct _includes_
 {
     struct _includes_ *next;
-    FILE	*handle;
-    int     anonymousid;
-    int 	fileindex;
-    int		line;
-    int		current;
-    int 	ifskip;
-    int		skiplevel;
-    long        filesize;
-    BOOLEAN	elsetaken;
-    char	*data;
+    FILE *handle;
+    int anonymousid;
+    int fileindex;
+    int line;
+    int current;
+    int ifskip;
+    int skiplevel;
+    long filesize;
+    BOOLEAN elsetaken;
+    char *data;
     unsigned char *lptr;
-    int		pos;
-    int		sysflags;
-    BOOLEAN	sys_inc;
+    int pos;
+    int sysflags;
+    BOOLEAN sys_inc;
     IFSTRUCT *ifs;
-    unsigned char 	*ibufPtr;
-    int		inputlen;
-    char	*fname;
-    char    *linename;
-    void    *linesHead, *linesTail;
-    int     first:1;
+    unsigned char *ibufPtr;
+    int inputlen;
+    char *fname;
+    char *linename;
+    void *linesHead, *linesTail;
+    int first : 1;
     unsigned char inputline[MACRO_REPLACE_SIZE];
     unsigned char inputbuffer[32768];
 } INCLUDES;
@@ -96,10 +96,10 @@ typedef struct _defstruct
     int line;
     char *file;
     char **args;
-    int varargs: 1;
-    int permanent: 1;
-    int undefined : 1 ;
-    int preprocessing: 1; /* true if is currently not a candidate for preprocessing (macros only( */
+    int varargs : 1;
+    int permanent : 1;
+    int undefined : 1;
+    int preprocessing : 1; /* true if is currently not a candidate for preprocessing (macros only( */
 } DEFSTRUCT;
 
 typedef struct _filelist

@@ -24,11 +24,10 @@
  */
 
 #define CONSOLE 0 /* windows console, sets _WIN32 */
-#define GUI 1 /* windows GUI, sets _WIN32 */
-#define DLL 2 /* windows DLL, sets _WIN32 */
-#define DOS 3 /* tran's pmode, no compatible file format, sets __DOS__ */
-#define DOS32A 4 /* watcom/le style, use DOS32A as the extender, sets __DOS__ */
-#define RAW 5 /* just a binary dump of the fixed up data, sets __RAW_IMAGE__ */
-#define HXDOS 6 /* windows console, with HXDOS stub, sets __DOS__ && _WIN32 */
-#define WHXDOS 7 /* dos/dpmi, using HXDOS , sets __DOS__ */
- 
+#define GUI 1     /* windows GUI, sets _WIN32 */
+#define DLL 2     /* windows DLL, sets _WIN32 */
+#define DOS 3     /* tran's pmode, no compatible file format, sets __DOS__ */
+#define DOS32A 4  /* watcom/le style, use DOS32A as the extender, sets __DOS__ */
+#define RAW 5     /* just a binary dump of the fixed up data, sets __RAW_IMAGE__ */
+#define HXDOS 6   /* windows console, with HXDOS stub, sets __DOS__ && _WIN32 */
+#define WHXDOS 7  /* dos/dpmi, using HXDOS , sets __DOS__ */

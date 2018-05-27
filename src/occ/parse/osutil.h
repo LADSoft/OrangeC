@@ -26,32 +26,32 @@
 #ifndef OSUTIL_H
 #define OSUTIL_H
 
-    /* Mode values for ARGLIST */
-    #define ARG_CONCATSTRING 1
-    #define ARG_NOCONCATSTRING 2
-    #define ARG_BOOL 3
-    #define ARG_SWITCH 4
-    #define ARG_SWITCHSTRING 5
-    #define ARG_COMBINESTRING 6
+/* Mode values for ARGLIST */
+#define ARG_CONCATSTRING 1
+#define ARG_NOCONCATSTRING 2
+#define ARG_BOOL 3
+#define ARG_SWITCH 4
+#define ARG_SWITCHSTRING 5
+#define ARG_COMBINESTRING 6
 
-    /* Valid arg separators */
-    #define ARG_SEPSWITCH '/'
-    #define ARG_SEPFALSE '-'
-    #define ARG_SEPTRUE '+'
+/* Valid arg separators */
+#define ARG_SEPSWITCH '/'
+#define ARG_SEPFALSE '-'
+#define ARG_SEPTRUE '+'
 
-    /* Return values for dispatch routine */
-    #define ARG_NEXTCHAR 1
-    #define ARG_NEXTARG 2
-    #define ARG_NEXTNOCAT 3
-    #define ARG_NOMATCH 4
-    #define ARG_NOARG 5
+/* Return values for dispatch routine */
+#define ARG_NEXTCHAR 1
+#define ARG_NEXTARG 2
+#define ARG_NEXTNOCAT 3
+#define ARG_NOMATCH 4
+#define ARG_NOARG 5
 
-    typedef struct
-    {
-        char id;
-        UBYTE mode;
-        void(*routine)(char, char*);
-    } CMDLIST;
+typedef struct
+{
+    char id;
+    UBYTE mode;
+    void (*routine)(char, char *);
+} CMDLIST;
 
 typedef struct _list_
 {
@@ -74,9 +74,10 @@ typedef struct _memblk_
 typedef struct _hashrec_
 {
     struct _hashrec_ *next; /* next to next element in list */
-    struct _hrintern_{
+    struct _hrintern_
+    {
         char *name;
-    } *p;
+    } * p;
 } HASHREC;
 
 typedef struct _hashtable_
@@ -87,13 +88,14 @@ typedef struct _hashtable_
     int blockLevel;
     int blocknum; /* debugger block number */
     HASHREC **table;
-    
+
 } HASHTABLE;
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
-extern char *getUsageText(void);
+    extern char *getUsageText(void);
 #ifdef __cplusplus
 }
 #endif

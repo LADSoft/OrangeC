@@ -40,9 +40,9 @@ void process(char *name)
         printf("\n");
         while (!feof(fil))
         {
-            char buf[BUFSIZE], *p, data[BUFSIZE], *q ;
+            char buf[BUFSIZE], *p, data[BUFSIZE], *q;
             buf[0] = 0;
-            fgets(buf,BUFSIZE,fil);
+            fgets(buf, BUFSIZE, fil);
             p = buf;
             while ((p = strstr(p, "ERR_")))
             {
@@ -59,7 +59,7 @@ void process(char *name)
 int main(int argc, char **argv)
 {
     int i;
-    for (i=1; i < argc; i++)
+    for (i = 1; i < argc; i++)
         process(argv[i]);
     return 0;
 }

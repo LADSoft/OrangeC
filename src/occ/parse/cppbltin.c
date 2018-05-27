@@ -29,7 +29,7 @@
 extern INCLUDES *includes;
 extern TYPE stdint;
 extern ARCH_ASM *chosenAssembler;
-
+// clang-format off
 static unsigned char *cppbuiltin = (unsigned char *)"void * operator new(unsigned size); "
     "void * operator new[](unsigned size); " 
     "void * operator new(unsigned size, void *ptr) noexcept; " 
@@ -75,9 +75,10 @@ static unsigned char *cppbuiltin = (unsigned char *)"void * operator new(unsigne
     "long double __builtin_nansl(const char *x);"
     "}"
     ;
-TYPE stdXC = { 
+// clang-format on
+TYPE stdXC = {
     bt_struct, sizeof(XCTAB)
-};
+    };
 void ParseBuiltins(void)
 {
     LEXEME *lex;
@@ -90,7 +91,8 @@ void ParseBuiltins(void)
         lex = getsym();
         if (lex)
         {
-            while ((lex = declare(lex, NULL, NULL, sc_global, lk_none, NULL, TRUE, FALSE, FALSE, FALSE, ac_public)) != NULL) ;
+            while ((lex = declare(lex, NULL, NULL, sc_global, lk_none, NULL, TRUE, FALSE, FALSE, FALSE, ac_public)) != NULL)
+                ;
         }
     }
     if (chosenAssembler->bltins)
@@ -99,7 +101,8 @@ void ParseBuiltins(void)
         lex = getsym();
         if (lex)
         {
-            while ((lex = declare(lex, NULL, NULL, sc_global, lk_none, NULL, TRUE, FALSE, FALSE, FALSE, ac_public)) != NULL) ;
+            while ((lex = declare(lex, NULL, NULL, sc_global, lk_none, NULL, TRUE, FALSE, FALSE, FALSE, ac_public)) != NULL)
+                ;
         }
     }
     includes->handle = handle;

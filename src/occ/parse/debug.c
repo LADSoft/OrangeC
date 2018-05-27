@@ -26,69 +26,69 @@
 #include "compiler.h"
 void displayLexeme(LEXEME *lex)
 {
-            char buf[256];
-            LCHAR *w;
-            switch(lex->type)
-            {
-                case l_i:
-                    printf("int constant: " LLONG_FORMAT_SPECIFIER"\n", lex->value.i);
-                    break;
-                case l_ui:
-                    printf("unsigned int constant: " LLONG_FORMAT_SPECIFIER"\n", lex->value.i);
-                    break;
-                case l_l:
-                    printf("long constant: " LLONG_FORMAT_SPECIFIER"\n", lex->value.i);
-                    break;
-                case l_ul:
-                    printf("unsigned long constant: " LLONG_FORMAT_SPECIFIER"\n", lex->value.i);
-                    break;
-                case l_ll:
-                    printf("long long constant: " LLONG_FORMAT_SPECIFIER"\n", lex->value.i);
-                    break;
-                case l_ull:
-                    printf("unsigned long long constant: " LLONG_FORMAT_SPECIFIER"\n", lex->value.i);
-                    break;
-                case l_f:
-                    FPFToString(buf, &lex->value.f);
-                    printf("float constant: %s\n", buf);
-                    break;
-                case l_d:
-                    FPFToString(buf, &lex->value.f);
-                    printf("double constant: %s\n", buf);
-                    break;
-                case l_ld:
-                    FPFToString(buf, &lex->value.f);
-                    printf("long double constant: %s\n", buf);
-                    break ;
-                case l_astr:
-                    printf("ascii string: ");
-                case l_msilstr:
+    char buf[256];
+    LCHAR *w;
+    switch (lex->type)
+    {
+    case l_i:
+        printf("int constant: " LLONG_FORMAT_SPECIFIER "\n", lex->value.i);
+        break;
+    case l_ui:
+        printf("unsigned int constant: " LLONG_FORMAT_SPECIFIER "\n", lex->value.i);
+        break;
+    case l_l:
+        printf("long constant: " LLONG_FORMAT_SPECIFIER "\n", lex->value.i);
+        break;
+    case l_ul:
+        printf("unsigned long constant: " LLONG_FORMAT_SPECIFIER "\n", lex->value.i);
+        break;
+    case l_ll:
+        printf("long long constant: " LLONG_FORMAT_SPECIFIER "\n", lex->value.i);
+        break;
+    case l_ull:
+        printf("unsigned long long constant: " LLONG_FORMAT_SPECIFIER "\n", lex->value.i);
+        break;
+    case l_f:
+        FPFToString(buf, &lex->value.f);
+        printf("float constant: %s\n", buf);
+        break;
+    case l_d:
+        FPFToString(buf, &lex->value.f);
+        printf("double constant: %s\n", buf);
+        break;
+    case l_ld:
+        FPFToString(buf, &lex->value.f);
+        printf("long double constant: %s\n", buf);
+        break;
+    case l_astr:
+        printf("ascii string: ");
+    case l_msilstr:
 
-                case l_wstr:
-                    if (lex->type == l_wstr)
-                        printf("wide string: ");
-                    else if (lex->type == l_msilstr)
-                        printf("msil string: ");
-                    w = lex->value.s.w;
-                    while (*w)
-                        fputc(*w++, stdout);
-                    fputc('\n', stdout);
-                    break;
-                case l_achr:
-                    printf("ascii char: ");
-                case l_wchr:
-                    if (lex->type == l_wchr)
-                        printf("wide char: ");
-                    fputc((int)lex->value.i, stdout);
-                    break;
-                case l_id:
-                    printf("id: %s\n", lex->value.s.a);
-                    break;
-                case l_kw:
-                    printf("kw: %s\n", lex->kw->name);
-                    break;
-                default:
-                    printf("***** unknown token\n");
-                    break;
-            }
+    case l_wstr:
+        if (lex->type == l_wstr)
+            printf("wide string: ");
+        else if (lex->type == l_msilstr)
+            printf("msil string: ");
+        w = lex->value.s.w;
+        while (*w)
+            fputc(*w++, stdout);
+        fputc('\n', stdout);
+        break;
+    case l_achr:
+        printf("ascii char: ");
+    case l_wchr:
+        if (lex->type == l_wchr)
+            printf("wide char: ");
+        fputc((int)lex->value.i, stdout);
+        break;
+    case l_id:
+        printf("id: %s\n", lex->value.s.a);
+        break;
+    case l_kw:
+        printf("kw: %s\n", lex->kw->name);
+        break;
+    default:
+        printf("***** unknown token\n");
+        break;
+    }
 }

@@ -26,13 +26,13 @@
 #include "compiler.h"
 #include <stdarg.h>
 
-#define ERROR			1
-#define WARNING			2
-#define TRIVIALWARNING	4
-#define ANSIERROR 	8
+#define ERROR 1
+#define WARNING 2
+#define TRIVIALWARNING 4
+#define ANSIERROR 8
 #define ANSIWARNING 16
 
-extern COMPILER_PARAMS cparams ;
+extern COMPILER_PARAMS cparams;
 extern char infile[256];
 extern int preprocLine;
 extern char *preprocFile;
@@ -44,53 +44,54 @@ static LIST *listErrors;
 int currentpreprocLine;
 static char *currentpreprocFile;
 
-static struct {
+static struct
+{
     char *name;
-    int	level;
+    int level;
 } errors[] = {
-{ "Unknown error", ERROR },
-{"Too many errors or warnings", ERROR },
-{ "Constant too large",  ERROR },
-{"Expected constant", ERROR },
-{"Invalid constant", ERROR },
-{"Invalid floating point constant", ERROR },
-{"Invalid character constant", ERROR },
-{"Unterminated character constant", ERROR },
-{"Invalid string constant", ERROR },
-{"Unterminated string constant", ERROR },
-{"String constant too long", ERROR },
-{"Syntax error: %c expected", ERROR },
-{"Syntax error: string constant expected", ERROR},
-{"Expected constant or address", ERROR},
-{"Expected integer type", ERROR },
-{"Expected integer expression", ERROR },
-{"Identifier expected", ERROR},
-{"Multiple declaration of '%s'", ERROR },
-{"Undefined identifier '%s'", ERROR },
-{"Too many identififiers in type", ERROR },
-{"Unexpected end of file", ERROR },
-{"File not terminated with End Of Line character", TRIVIALWARNING},
-{"Nested Comments", TRIVIALWARNING},
-{"Non-terminated comment in file started at line %d", WARNING},
-{"Non-terminated preprocessor conditional in include file started at line %d", ERROR},
-{"#elif without #if", ERROR},
-{"#else without #if", ERROR},
-{"#endif without #if", ERROR},
-{"Macro substitution error", ERROR},
-{"Incorrect macro argument in call to %s", ERROR},
-{"Unexpected end of line in directive", ERROR},
-{"Unknown preprocessor directive %s", ERROR},
-{"#error: %s", ERROR},
-{"Expected include file name", ERROR},
-{"Cannot open include file \"%s\"", ERROR},
-{"Invalid macro definition", ERROR},
-{"Redefinition of macro '%s' changes value", ANSIWARNING},
-{"#error: %s", ERROR},
-{"#warning: %s", WARNING},
-{"Previous declaration of '%s' here", WARNING},
-} ;
+    {"Unknown error", ERROR},
+    {"Too many errors or warnings", ERROR},
+    {"Constant too large", ERROR},
+    {"Expected constant", ERROR},
+    {"Invalid constant", ERROR},
+    {"Invalid floating point constant", ERROR},
+    {"Invalid character constant", ERROR},
+    {"Unterminated character constant", ERROR},
+    {"Invalid string constant", ERROR},
+    {"Unterminated string constant", ERROR},
+    {"String constant too long", ERROR},
+    {"Syntax error: %c expected", ERROR},
+    {"Syntax error: string constant expected", ERROR},
+    {"Expected constant or address", ERROR},
+    {"Expected integer type", ERROR},
+    {"Expected integer expression", ERROR},
+    {"Identifier expected", ERROR},
+    {"Multiple declaration of '%s'", ERROR},
+    {"Undefined identifier '%s'", ERROR},
+    {"Too many identififiers in type", ERROR},
+    {"Unexpected end of file", ERROR},
+    {"File not terminated with End Of Line character", TRIVIALWARNING},
+    {"Nested Comments", TRIVIALWARNING},
+    {"Non-terminated comment in file started at line %d", WARNING},
+    {"Non-terminated preprocessor conditional in include file started at line %d", ERROR},
+    {"#elif without #if", ERROR},
+    {"#else without #if", ERROR},
+    {"#endif without #if", ERROR},
+    {"Macro substitution error", ERROR},
+    {"Incorrect macro argument in call to %s", ERROR},
+    {"Unexpected end of line in directive", ERROR},
+    {"Unknown preprocessor directive %s", ERROR},
+    {"#error: %s", ERROR},
+    {"Expected include file name", ERROR},
+    {"Cannot open include file \"%s\"", ERROR},
+    {"Invalid macro definition", ERROR},
+    {"Redefinition of macro '%s' changes value", ANSIWARNING},
+    {"#error: %s", ERROR},
+    {"#warning: %s", WARNING},
+    {"Previous declaration of '%s' here", WARNING},
+};
 int total_errors;
-int diagcount ;
+int diagcount;
 
 void errorinit(void)
 {
@@ -104,7 +105,7 @@ static void printerr(int err, char *file, int line, ...)
     char infunc[256];
     char *listerr;
     char nameb[265], *name = nameb;
-    
+
     if (!file)
         file = "unknown";
     if (file == includes->fname && includes->linename)
@@ -117,16 +118,16 @@ static void printerr(int err, char *file, int line, ...)
     if (total_errors > cparams.prm_maxerr)
         return;
     if (err != ERR_TOO_MANY_ERRORS && err != ERR_UNDEFINED_IDENTIFIER &&
-        currentpreprocFile && !strcmp(currentpreprocFile, file) && 
+        currentpreprocFile && !strcmp(currentpreprocFile, file) &&
         line == currentpreprocLine)
         return;
-    if (err >= sizeof(errors)/sizeof(errors[0]))
+    if (err >= sizeof(errors) / sizeof(errors[0]))
     {
         sprintf(buf, "Error %d", err);
     }
     else
     {
-        va_list arg;	
+        va_list arg;
         va_start(arg, line);
         vsprintf(buf, errors[err].name, arg);
         va_end(arg);
@@ -151,7 +152,7 @@ static void printerr(int err, char *file, int line, ...)
             printf("Warning ");
         listerr = "WARNING";
     }
-        infunc[0] = 0;
+    infunc[0] = 0;
     if (!cparams.prm_quiet)
         printf(" %s(%d):  %s%s\n", name, line, buf, infunc);
 }

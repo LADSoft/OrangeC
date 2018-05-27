@@ -70,12 +70,12 @@ BOOLEAN ismember(SYMBOL *sym)
 {
     switch (sym->storage_class)
     {
-        case sc_member:
-        case sc_mutable:
-        case sc_virtual:
-            return TRUE;
-        default:
-            return FALSE;
+    case sc_member:
+    case sc_mutable:
+    case sc_virtual:
+        return TRUE;
+    default:
+        return FALSE;
     }
 }
 BOOLEAN istype(SYMBOL *sym)
@@ -92,12 +92,12 @@ BOOLEAN ismemberdata(SYMBOL *sp)
 }
 BOOLEAN startOfType(LEXEME *lex, BOOLEAN assumeType)
 {
-    LINEDATA *oldHead = linesHead, *oldTail = linesTail; 
+    LINEDATA *oldHead = linesHead, *oldTail = linesTail;
     if (!lex)
         return FALSE;
-       
+
     if (lex->type == l_id)
-    { 
+    {
         TEMPLATEPARAMLIST *tparam = TemplateLookupSpecializationParam(lex->value.s.a);
         if (tparam)
         {
@@ -131,37 +131,36 @@ BOOLEAN startOfType(LEXEME *lex, BOOLEAN assumeType)
         linesTail = oldTail;
         return (sp && istype(sp)) || (assumeType && strSym && (strSym->tp->type == bt_templateselector || strSym->tp->type == bt_templatedecltype));
     }
-    else 
+    else
     {
         linesHead = oldHead;
         linesTail = oldTail;
         return KWTYPE(lex, TT_POINTERQUAL | TT_LINKAGE | TT_BASETYPE | TT_STORAGE_CLASS | TT_TYPENAME);
     }
-    
 }
 static TYPE *rootType(TYPE *tp)
 {
-    while(tp) 
+    while (tp)
     {
-        switch(tp->type)
+        switch (tp->type)
         {
-            case bt_far:
-            case bt_near:
-            case bt_const:
-            case bt_va_list:
-            case bt_objectArray:
-            case bt_volatile:
-            case bt_restrict:
-            case bt_static:
-            case bt_atomic:
-            case bt_typedef:
-            case bt_lrqual:
-            case bt_rrqual:
-            case bt_derivedfromtemplate:
-                tp = tp->btp;
-                break;
-            default:
-                return tp;
+        case bt_far:
+        case bt_near:
+        case bt_const:
+        case bt_va_list:
+        case bt_objectArray:
+        case bt_volatile:
+        case bt_restrict:
+        case bt_static:
+        case bt_atomic:
+        case bt_typedef:
+        case bt_lrqual:
+        case bt_rrqual:
+        case bt_derivedfromtemplate:
+            tp = tp->btp;
+            break;
+        default:
+            return tp;
         }
     }
     return NULL;
@@ -187,14 +186,14 @@ BOOLEAN isDerivedFromTemplate(TYPE *tp)
 {
     while (tp)
     {
-        switch(tp->type)
+        switch (tp->type)
         {
-            case bt_pointer:
-            case bt_func:
-            case bt_ifunc:
-                return FALSE;
-            case bt_derivedfromtemplate:
-                return TRUE;
+        case bt_pointer:
+        case bt_func:
+        case bt_ifunc:
+            return FALSE;
+        case bt_derivedfromtemplate:
+            return TRUE;
         }
         tp = tp->btp;
     }
@@ -213,17 +212,17 @@ BOOLEAN isunsigned(TYPE *tp)
     {
         switch (tp->type)
         {
-            case bt_bool:
-            case bt_unsigned:
-            case bt_unsigned_short:
-            case bt_unsigned_char:
-            case bt_unsigned_long:
-            case bt_unsigned_long_long:
-            case bt_wchar_t:
-                return TRUE;
-            default:
-                return FALSE;
-        }	
+        case bt_bool:
+        case bt_unsigned:
+        case bt_unsigned_short:
+        case bt_unsigned_char:
+        case bt_unsigned_long:
+        case bt_unsigned_long_long:
+        case bt_wchar_t:
+            return TRUE;
+        default:
+            return FALSE;
+        }
     }
     return FALSE;
 }
@@ -232,35 +231,35 @@ BOOLEAN isint(TYPE *tp)
     tp = basetype(tp);
     if (tp)
     {
-        switch(tp->type)
+        switch (tp->type)
         {
-            case bt_bool:
-            case bt_int:
-            case bt_char16_t:
-            case bt_char32_t:
-            case bt_unsigned:
-            case bt_short:
-            case bt_unsigned_short:
-            case bt_char:
-            case bt_unsigned_char:
-            case bt_signed_char:
-            case bt_long:
-            case bt_unsigned_long:
-            case bt_long_long:
-            case bt_unsigned_long_long:
-            case bt_wchar_t:
-            case bt_inative:
-            case bt_unative:
+        case bt_bool:
+        case bt_int:
+        case bt_char16_t:
+        case bt_char32_t:
+        case bt_unsigned:
+        case bt_short:
+        case bt_unsigned_short:
+        case bt_char:
+        case bt_unsigned_char:
+        case bt_signed_char:
+        case bt_long:
+        case bt_unsigned_long:
+        case bt_long_long:
+        case bt_unsigned_long_long:
+        case bt_wchar_t:
+        case bt_inative:
+        case bt_unative:
+            return TRUE;
+        case bt_templateparam:
+            if (tp->templateParam->p->type == kw_int)
+                return isint(tp->templateParam->p->byNonType.tp);
+            return FALSE;
+        default:
+            if (tp->type == bt_enum && !cparams.prm_cplusplus)
                 return TRUE;
-            case bt_templateparam:
-                if (tp->templateParam->p->type == kw_int)
-                    return isint(tp->templateParam->p->byNonType.tp);
-                return FALSE;
-            default:
-                if (tp->type == bt_enum && !cparams.prm_cplusplus)
-                    return TRUE;
-    
-                return FALSE;
+
+            return FALSE;
         }
     }
     return FALSE;
@@ -272,12 +271,12 @@ BOOLEAN isfloat(TYPE *tp)
     {
         switch (tp->type)
         {
-            case bt_float:
-            case bt_double:
-            case bt_long_double:
-                return TRUE;
-            default:
-                return FALSE;
+        case bt_float:
+        case bt_double:
+        case bt_long_double:
+            return TRUE;
+        default:
+            return FALSE;
         }
     }
     return FALSE;
@@ -289,12 +288,12 @@ BOOLEAN iscomplex(TYPE *tp)
     {
         switch (tp->type)
         {
-            case bt_float_complex:
-            case bt_double_complex:
-            case bt_long_double_complex:
-                return TRUE;
-            default:
-                return FALSE;
+        case bt_float_complex:
+        case bt_double_complex:
+        case bt_long_double_complex:
+            return TRUE;
+        default:
+            return FALSE;
         }
     }
     return FALSE;
@@ -306,12 +305,12 @@ BOOLEAN isimaginary(TYPE *tp)
     {
         switch (tp->type)
         {
-            case bt_float_imaginary:
-            case bt_double_imaginary:
-            case bt_long_double_imaginary:
-                return TRUE;
-            default:
-                return FALSE;
+        case bt_float_imaginary:
+        case bt_double_imaginary:
+        case bt_long_double_imaginary:
+            return TRUE;
+        default:
+            return FALSE;
         }
     }
     return FALSE;
@@ -328,44 +327,44 @@ BOOLEAN ismsil(TYPE *tp)
 }
 BOOLEAN isconstraw(TYPE *tp, BOOLEAN useTemplate)
 {
-	BOOLEAN done = FALSE;
-	BOOLEAN rv = FALSE;
+    BOOLEAN done = FALSE;
+    BOOLEAN rv = FALSE;
     while (!done && tp)
     {
         if (useTemplate)
         {
             if (tp->templateConst)
-			{
-				rv = TRUE;
-				done = TRUE;
-			}
+            {
+                rv = TRUE;
+                done = TRUE;
+            }
         }
-        switch(tp->type)
+        switch (tp->type)
         {
-            case bt_restrict:
-            case bt_volatile:
-            case bt_static:
-            case bt_atomic:
-            case bt_typedef:
-            case bt_far:
-            case bt_near:
-            case bt_lrqual:
-            case bt_rrqual:
-            case bt_derivedfromtemplate:
-            case bt_va_list:
-            case bt_objectArray:
-                tp = tp->btp;
-                break;
-            case bt_const:
-				rv = TRUE;
-				done = TRUE;
-				break;
-            default:
-				done = TRUE;
-				break;
+        case bt_restrict:
+        case bt_volatile:
+        case bt_static:
+        case bt_atomic:
+        case bt_typedef:
+        case bt_far:
+        case bt_near:
+        case bt_lrqual:
+        case bt_rrqual:
+        case bt_derivedfromtemplate:
+        case bt_va_list:
+        case bt_objectArray:
+            tp = tp->btp;
+            break;
+        case bt_const:
+            rv = TRUE;
+            done = TRUE;
+            break;
+        default:
+            done = TRUE;
+            break;
         }
     }
-	return rv;
+    return rv;
 }
 BOOLEAN isconst(TYPE *tp)
 {
@@ -375,26 +374,26 @@ BOOLEAN isvolatile(TYPE *tp)
 {
     while (tp)
     {
-        switch(tp->type)
+        switch (tp->type)
         {
-            case bt_restrict:
-            case bt_const:
-            case bt_va_list:
-            case bt_objectArray:
-            case bt_static:
-            case bt_atomic:
-            case bt_typedef:
-            case bt_far:
-            case bt_near:
-            case bt_lrqual:
-            case bt_rrqual:
-            case bt_derivedfromtemplate:
-                tp = tp->btp;
-                break;
-            case bt_volatile:
-                return TRUE;
-            default:
-                return FALSE;
+        case bt_restrict:
+        case bt_const:
+        case bt_va_list:
+        case bt_objectArray:
+        case bt_static:
+        case bt_atomic:
+        case bt_typedef:
+        case bt_far:
+        case bt_near:
+        case bt_lrqual:
+        case bt_rrqual:
+        case bt_derivedfromtemplate:
+            tp = tp->btp;
+            break;
+        case bt_volatile:
+            return TRUE;
+        default:
+            return FALSE;
         }
     }
     return FALSE;
@@ -403,26 +402,26 @@ BOOLEAN islrqual(TYPE *tp)
 {
     while (tp)
     {
-        switch(tp->type)
+        switch (tp->type)
         {
-            case bt_volatile:
-            case bt_const:
-            case bt_va_list:
-            case bt_objectArray:
-            case bt_static:
-            case bt_atomic:
-            case bt_typedef:
-            case bt_far:
-            case bt_near:
-            case bt_rrqual:
-            case bt_restrict:
-            case bt_derivedfromtemplate:
-                tp = tp->btp;
-                break;
-            case bt_lrqual:
-                return TRUE;
-            default:
-                return FALSE;
+        case bt_volatile:
+        case bt_const:
+        case bt_va_list:
+        case bt_objectArray:
+        case bt_static:
+        case bt_atomic:
+        case bt_typedef:
+        case bt_far:
+        case bt_near:
+        case bt_rrqual:
+        case bt_restrict:
+        case bt_derivedfromtemplate:
+            tp = tp->btp;
+            break;
+        case bt_lrqual:
+            return TRUE;
+        default:
+            return FALSE;
         }
     }
     return FALSE;
@@ -431,26 +430,26 @@ BOOLEAN isrrqual(TYPE *tp)
 {
     while (tp)
     {
-        switch(tp->type)
+        switch (tp->type)
         {
-            case bt_volatile:
-            case bt_const:
-            case bt_va_list:
-            case bt_objectArray:
-            case bt_static:
-            case bt_atomic:
-            case bt_typedef:
-            case bt_far:
-            case bt_near:
-            case bt_lrqual:
-            case bt_restrict:
-            case bt_derivedfromtemplate:
-                tp = tp->btp;
-                break;
-            case bt_rrqual:
-                return TRUE;
-            default:
-                return FALSE;
+        case bt_volatile:
+        case bt_const:
+        case bt_va_list:
+        case bt_objectArray:
+        case bt_static:
+        case bt_atomic:
+        case bt_typedef:
+        case bt_far:
+        case bt_near:
+        case bt_lrqual:
+        case bt_restrict:
+        case bt_derivedfromtemplate:
+            tp = tp->btp;
+            break;
+        case bt_rrqual:
+            return TRUE;
+        default:
+            return FALSE;
         }
     }
     return FALSE;
@@ -459,26 +458,26 @@ BOOLEAN isrestrict(TYPE *tp)
 {
     while (tp)
     {
-        switch(tp->type)
+        switch (tp->type)
         {
-            case bt_volatile:
-            case bt_const:
-            case bt_va_list:
-            case bt_objectArray:
-            case bt_static:
-            case bt_atomic:
-            case bt_typedef:
-            case bt_far:
-            case bt_near:
-            case bt_lrqual:
-            case bt_rrqual:
-            case bt_derivedfromtemplate:
-                tp = tp->btp;
-                break;
-            case bt_restrict:
-                return TRUE;
-            default:
-                return FALSE;
+        case bt_volatile:
+        case bt_const:
+        case bt_va_list:
+        case bt_objectArray:
+        case bt_static:
+        case bt_atomic:
+        case bt_typedef:
+        case bt_far:
+        case bt_near:
+        case bt_lrqual:
+        case bt_rrqual:
+        case bt_derivedfromtemplate:
+            tp = tp->btp;
+            break;
+        case bt_restrict:
+            return TRUE;
+        default:
+            return FALSE;
         }
     }
     return FALSE;
@@ -487,26 +486,26 @@ BOOLEAN isatomic(TYPE *tp)
 {
     while (tp)
     {
-        switch(tp->type)
+        switch (tp->type)
         {
-            case bt_volatile:
-            case bt_const:
-            case bt_va_list:
-            case bt_objectArray:
-            case bt_static:
-            case bt_restrict:
-            case bt_typedef:
-            case bt_far:
-            case bt_near:
-            case bt_lrqual:
-            case bt_rrqual:
-            case bt_derivedfromtemplate:
-                tp = tp->btp;
-                break;
-            case bt_atomic:
-                return TRUE;
-            default:
-                return FALSE;
+        case bt_volatile:
+        case bt_const:
+        case bt_va_list:
+        case bt_objectArray:
+        case bt_static:
+        case bt_restrict:
+        case bt_typedef:
+        case bt_far:
+        case bt_near:
+        case bt_lrqual:
+        case bt_rrqual:
+        case bt_derivedfromtemplate:
+            tp = tp->btp;
+            break;
+        case bt_atomic:
+            return TRUE;
+        default:
+            return FALSE;
         }
     }
     return FALSE;
@@ -527,7 +526,7 @@ BOOLEAN isarray(TYPE *tp)
 {
     tp = basetype(tp);
     if (tp)
-        return ispointer(tp) && tp->array;		
+        return ispointer(tp) && tp->array;
     return FALSE;
 }
 BOOLEAN isunion(TYPE *tp)
@@ -594,7 +593,7 @@ LEXEME *concatStringsInternal(LEXEME *lex, STRING **str, int *elems)
     SLCHAR **list;
     char *suffix = NULL;
     int count = 3;
-    int pos = 0 ;
+    int pos = 0;
     enum e_lexType type = l_astr;
     STRING *string;
     IncGlobalFlag();
@@ -636,7 +635,7 @@ LEXEME *concatStringsInternal(LEXEME *lex, STRING **str, int *elems)
     string = (STRING *)Alloc(sizeof(STRING));
     string->strtype = type;
     string->size = pos;
-    string->pointers = Alloc(pos * sizeof(SLCHAR * ));
+    string->pointers = Alloc(pos * sizeof(SLCHAR *));
     string->suffix = suffix;
     memcpy(string->pointers, list, pos * sizeof(SLCHAR *));
     *str = string;
@@ -657,61 +656,61 @@ BOOLEAN isintconst(EXPRESSION *exp)
 {
     switch (exp->type)
     {
-        case en_c_u16:
-        case en_c_u32:
-        case en_c_c:
-        case en_c_wc:
-        case en_c_uc:
-        case en_c_s:
-        case en_c_us:
-        case en_c_i:
-        case en_c_ui:
-        case en_c_l:
-        case en_c_ul:
-        case en_c_ll:
-        case en_c_ull:
-        case en_c_bit:
-        case en_c_bool:
-        case en_const:
-            return TRUE;
-        default:
-            return FALSE;
+    case en_c_u16:
+    case en_c_u32:
+    case en_c_c:
+    case en_c_wc:
+    case en_c_uc:
+    case en_c_s:
+    case en_c_us:
+    case en_c_i:
+    case en_c_ui:
+    case en_c_l:
+    case en_c_ul:
+    case en_c_ll:
+    case en_c_ull:
+    case en_c_bit:
+    case en_c_bool:
+    case en_const:
+        return TRUE;
+    default:
+        return FALSE;
     }
 }
 BOOLEAN isfloatconst(EXPRESSION *exp)
 {
-    switch(exp->type)
+    switch (exp->type)
     {
-        case en_c_f:
-        case en_c_d:
-        case en_c_ld:
-            return TRUE;
-        default:
-            return FALSE;
+    case en_c_f:
+    case en_c_d:
+    case en_c_ld:
+        return TRUE;
+    default:
+        return FALSE;
     }
 }
 BOOLEAN isimaginaryconst(EXPRESSION *exp)
 {
-    switch(exp->type)
+    switch (exp->type)
     {
-        case en_c_fi:
-        case en_c_di:
-        case en_c_ldi:
-            return TRUE;
-        default:
-            return FALSE;
+    case en_c_fi:
+    case en_c_di:
+    case en_c_ldi:
+        return TRUE;
+    default:
+        return FALSE;
     }
 }
 BOOLEAN iscomplexconst(EXPRESSION *exp)
 {
-    switch(exp->type)
+    switch (exp->type)
     {
-        case en_c_fc:
-        case en_c_dc:
-        case en_c_ldc:
-            return TRUE;
-        default:
-            return FALSE;
+    case en_c_fc:
+    case en_c_dc:
+    case en_c_ldc:
+        return TRUE;
+    default:
+        return FALSE;
     }
 }
 EXPRESSION *anonymousVar(enum e_sc storage_class, TYPE *tp)
@@ -729,7 +728,7 @@ EXPRESSION *anonymousVar(enum e_sc storage_class, TYPE *tp)
     rv->used = TRUE;
     if (theCurrentFunc)
         rv->value.i = theCurrentFunc->value.i;
-    my_sprintf(buf,"$anontemp%d", anonct++);
+    my_sprintf(buf, "$anontemp%d", anonct++);
     rv->name = litlate(buf);
     tp->size = basetype(tp)->size;
     if (theCurrentFunc && localNameSpace->syms && !inDefaultParam && !anonymousNotAlloc)
@@ -741,124 +740,124 @@ void deref(TYPE *tp, EXPRESSION **exp)
 {
     enum e_node en = en_l_i;
     tp = basetype(tp);
-    switch ((tp->type == bt_enum && tp->btp ) ? tp->btp->type : tp->type)
+    switch ((tp->type == bt_enum && tp->btp) ? tp->btp->type : tp->type)
     {
-        case bt_lref: /* only used during initialization */
-            en = en_l_ref;
-            break;
-        case bt_rref: /* only used during initialization */
-            en = en_l_ref;
-            break;
-        case bt_bit:
-            en = en_l_bit;
-            break;
-        case bt_bool:
-            en = en_l_bool;
-            break;
-        case bt_char:
-            if (cparams.prm_charisunsigned)
-                en = en_l_uc;
-            else
-                en = en_l_c;
-            break;
-        case bt_signed_char:
-            en = en_l_c;
-            break;
-        case bt_char16_t:
-            en = en_l_u16;
-            break;
-        case bt_char32_t:
-            en = en_l_u32;
-            break;
-        case bt_unsigned_char:
+    case bt_lref: /* only used during initialization */
+        en = en_l_ref;
+        break;
+    case bt_rref: /* only used during initialization */
+        en = en_l_ref;
+        break;
+    case bt_bit:
+        en = en_l_bit;
+        break;
+    case bt_bool:
+        en = en_l_bool;
+        break;
+    case bt_char:
+        if (cparams.prm_charisunsigned)
             en = en_l_uc;
-            break;
-        case bt_short:
-            en = en_l_s;
-            break;
-        case bt_unsigned_short:
-            en = en_l_us;
-            break;
-        case bt_wchar_t:
-            en = en_l_wc;
-            break;
-        case bt_int:
-            en = en_l_i;
-            break;
-        case bt_unsigned:
-            en = en_l_ui;
-            break;
-        case bt_long:
-            en = en_l_l;
-            break;
-        case bt_unsigned_long:
-            en = en_l_ul;
-            break;
-        case bt_long_long:
-            en = en_l_ll;
-            break;
-        case bt_unsigned_long_long:
-            en = en_l_ull;
-            break;
-        case bt_float:
-            en = en_l_f;
-            break;
-        case bt_double:
-            en = en_l_d;
-            break;
-        case bt_long_double:
-            en = en_l_ld;
-            break;
-        case bt_float_complex:
-            en = en_l_fc;
-            break;
-        case bt_double_complex:
-            en = en_l_dc;
-            break;
-        case bt_long_double_complex:
-            en = en_l_ldc;
-            break;
-        case bt_float_imaginary:
-            en = en_l_fi;
-            break;
-        case bt_double_imaginary:
-            en = en_l_di;
-            break;
-        case bt_long_double_imaginary:
-            en = en_l_ldi;
-            break;
-        case bt___string:
-            en = en_l_string;
-            break;
-        case bt___object:
-            en = en_l_object;
-            break;
-        case bt_pointer:
-            if (tp->array || tp->vla)
-                return;
-            en = en_l_p;
-            break;
-        case bt_inative:
-            en = en_l_inative;
-            break;
-        case bt_unative:
-            en = en_l_unative;
-            break;
-        case bt_struct:
-        case bt_class:
-        case bt_union:
-        case bt_func:
-        case bt_ifunc:
-        case bt_any:
-        case bt_templateparam:
-        case bt_templateselector:
-        case bt_templatedecltype:
-        case bt_memberptr:
-        case bt_aggregate:
+        else
+            en = en_l_c;
+        break;
+    case bt_signed_char:
+        en = en_l_c;
+        break;
+    case bt_char16_t:
+        en = en_l_u16;
+        break;
+    case bt_char32_t:
+        en = en_l_u32;
+        break;
+    case bt_unsigned_char:
+        en = en_l_uc;
+        break;
+    case bt_short:
+        en = en_l_s;
+        break;
+    case bt_unsigned_short:
+        en = en_l_us;
+        break;
+    case bt_wchar_t:
+        en = en_l_wc;
+        break;
+    case bt_int:
+        en = en_l_i;
+        break;
+    case bt_unsigned:
+        en = en_l_ui;
+        break;
+    case bt_long:
+        en = en_l_l;
+        break;
+    case bt_unsigned_long:
+        en = en_l_ul;
+        break;
+    case bt_long_long:
+        en = en_l_ll;
+        break;
+    case bt_unsigned_long_long:
+        en = en_l_ull;
+        break;
+    case bt_float:
+        en = en_l_f;
+        break;
+    case bt_double:
+        en = en_l_d;
+        break;
+    case bt_long_double:
+        en = en_l_ld;
+        break;
+    case bt_float_complex:
+        en = en_l_fc;
+        break;
+    case bt_double_complex:
+        en = en_l_dc;
+        break;
+    case bt_long_double_complex:
+        en = en_l_ldc;
+        break;
+    case bt_float_imaginary:
+        en = en_l_fi;
+        break;
+    case bt_double_imaginary:
+        en = en_l_di;
+        break;
+    case bt_long_double_imaginary:
+        en = en_l_ldi;
+        break;
+    case bt___string:
+        en = en_l_string;
+        break;
+    case bt___object:
+        en = en_l_object;
+        break;
+    case bt_pointer:
+        if (tp->array || tp->vla)
             return;
-        default:
-            diag("deref error");
-            break;
+        en = en_l_p;
+        break;
+    case bt_inative:
+        en = en_l_inative;
+        break;
+    case bt_unative:
+        en = en_l_unative;
+        break;
+    case bt_struct:
+    case bt_class:
+    case bt_union:
+    case bt_func:
+    case bt_ifunc:
+    case bt_any:
+    case bt_templateparam:
+    case bt_templateselector:
+    case bt_templatedecltype:
+    case bt_memberptr:
+    case bt_aggregate:
+        return;
+    default:
+        diag("deref error");
+        break;
     }
     *exp = exprNode(en, *exp, NULL);
     if (en == en_l_object)
@@ -870,116 +869,116 @@ int sizeFromType(TYPE *tp)
     tp = basetype(tp);
     switch (tp->type == bt_enum ? tp->btp->type : tp->type)
     {
-        case bt_void:
-        case bt_templateparam:
-        case bt_templateselector:
-        case bt_templatedecltype:
-            rv = ISZ_UINT;
-            break;
-        case bt_bool:
-            rv = ISZ_BOOLEAN;
-            break;
-        case bt_char:
-            if (cparams.prm_charisunsigned)
-                rv = ISZ_UCHAR;
-            else
-                rv = - ISZ_UCHAR;
-            break;
-        case bt_signed_char:
-            rv = -ISZ_UCHAR;
-            break;
-        case bt_char16_t:
-            rv = ISZ_U16;
-            break;
-        case bt_char32_t:
-            rv = ISZ_U32;
-            break;
-        case bt_unsigned_char:
+    case bt_void:
+    case bt_templateparam:
+    case bt_templateselector:
+    case bt_templatedecltype:
+        rv = ISZ_UINT;
+        break;
+    case bt_bool:
+        rv = ISZ_BOOLEAN;
+        break;
+    case bt_char:
+        if (cparams.prm_charisunsigned)
             rv = ISZ_UCHAR;
-            break;
-        case bt_short:
-            rv = -ISZ_USHORT;
-            break;
-        case bt_unsigned_short:
-            rv = ISZ_USHORT;
-            break;
-        case bt_wchar_t:
-            rv = ISZ_WCHAR;
-            break;
-        case bt_int:
-            rv = -ISZ_UINT;
-            break;
-        case bt_inative:
-            rv = -ISZ_UNATIVE;
-            break;
-        case bt_unsigned:
-            rv = ISZ_UINT;
-            break;
-        case bt_unative:
-            rv = ISZ_UNATIVE;
-            break;
-        case bt_long:
-            rv = - ISZ_ULONG;
-            break;
-        case bt_unsigned_long:
-            rv = ISZ_ULONG;
-            break;
-        case bt_long_long:
-            rv = - ISZ_ULONGLONG;
-            break;
-        case bt_unsigned_long_long:
-            rv = ISZ_ULONGLONG;
-            break;
-        case bt_float:
-            rv = ISZ_FLOAT;
-            break;
-        case bt_double:
-            rv = ISZ_DOUBLE;
-            break;
-        case bt_long_double:
-            rv = ISZ_LDOUBLE;
-            break;
-        case bt_float_complex:
-            rv = ISZ_CFLOAT;
-            break;
-        case bt_double_complex:
-            rv = ISZ_CDOUBLE;
-            break;
-        case bt_long_double_complex:
-            rv = ISZ_CLDOUBLE;
-            break;
-        case bt_float_imaginary:
-            rv = ISZ_IFLOAT;
-            break;
-        case bt_double_imaginary:
-            rv = ISZ_IDOUBLE;
-            break;
-        case bt_long_double_imaginary:
-            rv = ISZ_ILDOUBLE;
-            break;
-        case bt_pointer:
-            if (isarray(tp) && basetype(tp)->msil)
-            {
-                rv = ISZ_OBJECT;
-                break;
-            }
-        case bt_func:
-        case bt_ifunc:
-        case bt_lref:
-        case bt_rref:
-        case bt_memberptr:
-        case bt_aggregate:
-            rv = ISZ_ADDR;
-            break;
-        case bt___string:
-            rv = ISZ_STRING;
-            break;
-        case bt___object:
+        else
+            rv = -ISZ_UCHAR;
+        break;
+    case bt_signed_char:
+        rv = -ISZ_UCHAR;
+        break;
+    case bt_char16_t:
+        rv = ISZ_U16;
+        break;
+    case bt_char32_t:
+        rv = ISZ_U32;
+        break;
+    case bt_unsigned_char:
+        rv = ISZ_UCHAR;
+        break;
+    case bt_short:
+        rv = -ISZ_USHORT;
+        break;
+    case bt_unsigned_short:
+        rv = ISZ_USHORT;
+        break;
+    case bt_wchar_t:
+        rv = ISZ_WCHAR;
+        break;
+    case bt_int:
+        rv = -ISZ_UINT;
+        break;
+    case bt_inative:
+        rv = -ISZ_UNATIVE;
+        break;
+    case bt_unsigned:
+        rv = ISZ_UINT;
+        break;
+    case bt_unative:
+        rv = ISZ_UNATIVE;
+        break;
+    case bt_long:
+        rv = -ISZ_ULONG;
+        break;
+    case bt_unsigned_long:
+        rv = ISZ_ULONG;
+        break;
+    case bt_long_long:
+        rv = -ISZ_ULONGLONG;
+        break;
+    case bt_unsigned_long_long:
+        rv = ISZ_ULONGLONG;
+        break;
+    case bt_float:
+        rv = ISZ_FLOAT;
+        break;
+    case bt_double:
+        rv = ISZ_DOUBLE;
+        break;
+    case bt_long_double:
+        rv = ISZ_LDOUBLE;
+        break;
+    case bt_float_complex:
+        rv = ISZ_CFLOAT;
+        break;
+    case bt_double_complex:
+        rv = ISZ_CDOUBLE;
+        break;
+    case bt_long_double_complex:
+        rv = ISZ_CLDOUBLE;
+        break;
+    case bt_float_imaginary:
+        rv = ISZ_IFLOAT;
+        break;
+    case bt_double_imaginary:
+        rv = ISZ_IDOUBLE;
+        break;
+    case bt_long_double_imaginary:
+        rv = ISZ_ILDOUBLE;
+        break;
+    case bt_pointer:
+        if (isarray(tp) && basetype(tp)->msil)
+        {
             rv = ISZ_OBJECT;
             break;
-        default:
-            diag("sizeFromType error");
-            break;
+        }
+    case bt_func:
+    case bt_ifunc:
+    case bt_lref:
+    case bt_rref:
+    case bt_memberptr:
+    case bt_aggregate:
+        rv = ISZ_ADDR;
+        break;
+    case bt___string:
+        rv = ISZ_STRING;
+        break;
+    case bt___object:
+        rv = ISZ_OBJECT;
+        break;
+    default:
+        diag("sizeFromType error");
+        break;
     }
     return rv;
 }
@@ -989,117 +988,117 @@ void cast(TYPE *tp, EXPRESSION **exp)
     tp = basetype(tp);
     switch (tp->type == bt_enum ? tp->btp->type : tp->type)
     {
-        case bt_lref:
-        case bt_rref:
-            en = en_x_p;
-            break;
-        case bt_func:
-        case bt_ifunc:
-            en = en_x_p;
-            break;
-        case bt_bit:
-            en = en_x_bit;
-            break;
-        case bt_bool:
-            en = en_x_bool;
-            break;
-        case bt_char:
-            if (cparams.prm_charisunsigned)
-                en = en_x_uc;
-            else
-                en = en_x_c;
-            break;
-        case bt_signed_char:
-            en = en_x_c;
-            break;
-        case bt_unsigned_char:
+    case bt_lref:
+    case bt_rref:
+        en = en_x_p;
+        break;
+    case bt_func:
+    case bt_ifunc:
+        en = en_x_p;
+        break;
+    case bt_bit:
+        en = en_x_bit;
+        break;
+    case bt_bool:
+        en = en_x_bool;
+        break;
+    case bt_char:
+        if (cparams.prm_charisunsigned)
             en = en_x_uc;
-            break;
-        case bt_char16_t:
-            en = en_x_u16;
-            break;
-        case bt_char32_t:
-            en = en_x_u32;
-            break;
-        case bt_short:
-            en = en_x_s;
-            break;
-        case bt_unsigned_short:
-            en = en_x_us;
-            break;
-        case bt_wchar_t:
-            en = en_x_wc;
-            break;
-        case bt_int:
-            en = en_x_i;
-            break;
-        case bt_inative:
-            en = en_x_inative;
-            break;
-        case bt_unsigned:
-            en = en_x_ui;
-            break;
-        case bt_unative:
-            en = en_x_unative;
-            break;
-        case bt_long:
-            en = en_x_l;
-            break;
-        case bt_unsigned_long:
-            en = en_x_ul;
-            break;
-        case bt_long_long:
-            en = en_x_ll;
-            break;
-        case bt_unsigned_long_long:
-            en = en_x_ull;
-            break;
-        case bt_float:
-            en = en_x_f;
-            break;
-        case bt_double:
-            en = en_x_d;
-            break;
-        case bt_long_double:
-            en = en_x_ld;
-            break;
-        case bt_float_complex:
-            en = en_x_fc;
-            break;
-        case bt_double_complex:
-            en = en_x_dc;
-            break;
-        case bt_long_double_complex:
-            en = en_x_ldc;
-            break;
-        case bt_float_imaginary:
-            en = en_x_fi;
-            break;
-        case bt_double_imaginary:
-            en = en_x_di;
-            break;
-        case bt_long_double_imaginary:
-            en = en_x_ldi;
-            break;
-        case bt___string:
-            en = en_x_string;
-            break;
-        case bt___object:
-            en = en_x_object;
-            break;
-        case bt_pointer:
-        case bt_aggregate:
-            en = en_x_p;
-            break;
-        case bt_void:
-            return;
-        case bt_templateparam:
-        case bt_templateselector:
-        case bt_templatedecltype:
-            return;
-        default:
-            diag("cast error");
-            break;
+        else
+            en = en_x_c;
+        break;
+    case bt_signed_char:
+        en = en_x_c;
+        break;
+    case bt_unsigned_char:
+        en = en_x_uc;
+        break;
+    case bt_char16_t:
+        en = en_x_u16;
+        break;
+    case bt_char32_t:
+        en = en_x_u32;
+        break;
+    case bt_short:
+        en = en_x_s;
+        break;
+    case bt_unsigned_short:
+        en = en_x_us;
+        break;
+    case bt_wchar_t:
+        en = en_x_wc;
+        break;
+    case bt_int:
+        en = en_x_i;
+        break;
+    case bt_inative:
+        en = en_x_inative;
+        break;
+    case bt_unsigned:
+        en = en_x_ui;
+        break;
+    case bt_unative:
+        en = en_x_unative;
+        break;
+    case bt_long:
+        en = en_x_l;
+        break;
+    case bt_unsigned_long:
+        en = en_x_ul;
+        break;
+    case bt_long_long:
+        en = en_x_ll;
+        break;
+    case bt_unsigned_long_long:
+        en = en_x_ull;
+        break;
+    case bt_float:
+        en = en_x_f;
+        break;
+    case bt_double:
+        en = en_x_d;
+        break;
+    case bt_long_double:
+        en = en_x_ld;
+        break;
+    case bt_float_complex:
+        en = en_x_fc;
+        break;
+    case bt_double_complex:
+        en = en_x_dc;
+        break;
+    case bt_long_double_complex:
+        en = en_x_ldc;
+        break;
+    case bt_float_imaginary:
+        en = en_x_fi;
+        break;
+    case bt_double_imaginary:
+        en = en_x_di;
+        break;
+    case bt_long_double_imaginary:
+        en = en_x_ldi;
+        break;
+    case bt___string:
+        en = en_x_string;
+        break;
+    case bt___object:
+        en = en_x_object;
+        break;
+    case bt_pointer:
+    case bt_aggregate:
+        en = en_x_p;
+        break;
+    case bt_void:
+        return;
+    case bt_templateparam:
+    case bt_templateselector:
+    case bt_templatedecltype:
+        return;
+    default:
+        diag("cast error");
+        break;
     }
     *exp = exprNode(en, *exp, NULL);
 }
@@ -1107,38 +1106,38 @@ BOOLEAN castvalue(EXPRESSION *exp)
 {
     switch (exp->type)
     {
-        case en_x_bit:
-        case en_x_bool:
-        case en_x_wc:
-        case en_x_c:
-        case en_x_uc:
-        case en_x_u16:
-        case en_x_u32:
-        case en_x_s:
-        case en_x_us:
-        case en_x_i:
-        case en_x_ui:
-        case en_x_inative:
-        case en_x_unative:
-        case en_x_l:
-        case en_x_ul:
-        case en_x_ll:
-        case en_x_ull:
-        case en_x_f:
-        case en_x_d:
-        case en_x_ld:
-        case en_x_fc:
-        case en_x_dc:
-        case en_x_ldc:
-        case en_x_fi:
-        case en_x_di:
-        case en_x_ldi:
-        case en_x_p:
-        case en_x_string:
-        case en_x_object:
-            return TRUE;
-        default:
-            return FALSE;
+    case en_x_bit:
+    case en_x_bool:
+    case en_x_wc:
+    case en_x_c:
+    case en_x_uc:
+    case en_x_u16:
+    case en_x_u32:
+    case en_x_s:
+    case en_x_us:
+    case en_x_i:
+    case en_x_ui:
+    case en_x_inative:
+    case en_x_unative:
+    case en_x_l:
+    case en_x_ul:
+    case en_x_ll:
+    case en_x_ull:
+    case en_x_f:
+    case en_x_d:
+    case en_x_ld:
+    case en_x_fc:
+    case en_x_dc:
+    case en_x_ldc:
+    case en_x_fi:
+    case en_x_di:
+    case en_x_ldi:
+    case en_x_p:
+    case en_x_string:
+    case en_x_object:
+        return TRUE;
+    default:
+        return FALSE;
     }
 }
 BOOLEAN xvalue(EXPRESSION *exp)
@@ -1153,41 +1152,41 @@ BOOLEAN lvalue(EXPRESSION *exp)
             exp = exp->left;
     switch (exp->type)
     {
-        case en_lvalue:
-        case en_l_bit:
-        case en_l_bool:
-        case en_l_wc:
-        case en_l_u16:
-        case en_l_u32:
-        case en_l_c:
-        case en_l_uc:
-        case en_l_s:
-        case en_l_us:
-        case en_l_i:
-        case en_l_ui:
-        case en_l_inative:
-        case en_l_unative:
-        case en_l_l:
-        case en_l_ul:
-        case en_l_ll:
-        case en_l_ull:
-        case en_l_f:
-        case en_l_d:
-        case en_l_ld:
-        case en_l_fc:
-        case en_l_dc:
-        case en_l_ldc:
-        case en_l_fi:
-        case en_l_di:
-        case en_l_ldi:
-        case en_l_p:
-        case en_l_string:
-        case en_l_object:
-            return TRUE;
-        case en_l_ref:
-            return TRUE;
-        default:
-            return FALSE;
+    case en_lvalue:
+    case en_l_bit:
+    case en_l_bool:
+    case en_l_wc:
+    case en_l_u16:
+    case en_l_u32:
+    case en_l_c:
+    case en_l_uc:
+    case en_l_s:
+    case en_l_us:
+    case en_l_i:
+    case en_l_ui:
+    case en_l_inative:
+    case en_l_unative:
+    case en_l_l:
+    case en_l_ul:
+    case en_l_ll:
+    case en_l_ull:
+    case en_l_f:
+    case en_l_d:
+    case en_l_ld:
+    case en_l_fc:
+    case en_l_dc:
+    case en_l_ldc:
+    case en_l_fi:
+    case en_l_di:
+    case en_l_ldi:
+    case en_l_p:
+    case en_l_string:
+    case en_l_object:
+        return TRUE;
+    case en_l_ref:
+        return TRUE;
+    default:
+        return FALSE;
     }
 }
 EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIALIZER *init, EXPRESSION *thisptr, BOOLEAN isdest)
@@ -1214,7 +1213,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
         {
             SYMBOL *sp = (SYMBOL *)basetype(funcsp->tp)->syms->table[0] ? (SYMBOL *)basetype(funcsp->tp)->syms->table[0]->p : NULL;
             if (sp && sp->thisPtr)
-                expsym = varNode(en_auto, sp ); // this ptr
+                expsym = varNode(en_auto, sp); // this ptr
             else
                 expsym = anonymousVar(sc_auto, tp);
         }
@@ -1224,8 +1223,9 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
             diag("convertInitToExpression: no this ptr");
         }
     }
-    else switch (sp->storage_class)
-    {
+    else
+        switch (sp->storage_class)
+        {
         case sc_auto:
         case sc_register:
         case sc_parameter:
@@ -1272,7 +1272,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                 expsym = exprNode(en_add, expsym, intNode(en_c_i, sp->offset));
             break;
         case sc_external:
-/*			expsym = varNode(en_global, sp);
+            /*			expsym = varNode(en_global, sp);
             local = TRUE;
             break;
 */
@@ -1282,7 +1282,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
             diag("convertInitToExpression: unknown sym type");
             expsym = intNode(en_c_i, 0);
             break;
-    }	
+        }
     if (sp && isarray(sp->tp) && sp->tp->msil && !init->noassign)
     {
         exp = intNode(en_msil_array_init, 0);
@@ -1303,7 +1303,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                     exp = exp->left;
                 if (thisptr && exp->type == en_func)
                 {
-                    EXPRESSION *exp1 = init->offset  || (chosenAssembler->arch->denyopts & DO_UNIQUEIND) ? exprNode(en_add, expsym, intNode(en_c_i, init->offset)) : expsym;
+                    EXPRESSION *exp1 = init->offset || (chosenAssembler->arch->denyopts & DO_UNIQUEIND) ? exprNode(en_add, expsym, intNode(en_c_i, init->offset)) : expsym;
                     if (isarray(tp))
                     {
                         exp->v.func->arguments->exp = exp1;
@@ -1327,7 +1327,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                 if (isstructured(temp->basetp))
                 {
                     EXPRESSION *exp2 = init->exp;
-                    while(exp2->type == en_not_lvalue)
+                    while (exp2->type == en_not_lvalue)
                         exp2 = exp2->left;
                     if (exp2->type == en_func && exp2->v.func->returnSP)
                     {
@@ -1350,10 +1350,10 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                         funcparams->arguments = Alloc(sizeof(INITLIST));
                         funcparams->arguments->tp = ctype;
                         funcparams->arguments->exp = exp2;
-                        callConstructor(&ctype, &expsym, funcparams, FALSE, NULL, TRUE, FALSE, FALSE, FALSE, FALSE); 
+                        callConstructor(&ctype, &expsym, funcparams, FALSE, NULL, TRUE, FALSE, FALSE, FALSE, FALSE);
                         exp = expsym;
                     }
-                    else 
+                    else
                     {
                         exp = exprNode(en_blockassign, expsym, exp2);
                         exp->size = init->basetp->size;
@@ -1364,7 +1364,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                 else
                 {
                     TYPE *btp = init->basetp;
-                    while(isarray(btp))
+                    while (isarray(btp))
                         btp = basetype(btp)->btp;
                     btp = basetype(btp);
                     while (temp)
@@ -1447,8 +1447,9 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
             }
             else if (basetype(init->basetp)->type == bt_memberptr)
             {
-                EXPRESSION *exp2 = init->exp;;
-                while(exp2->type == en_not_lvalue)
+                EXPRESSION *exp2 = init->exp;
+                ;
+                while (exp2->type == en_not_lvalue)
                     exp2 = exp2->left;
                 if (exp2->type == en_func && exp2->v.func->returnSP)
                 {
@@ -1547,7 +1548,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
     {
         if (isdest)
         {
-            rv = exprNode(en_voidnz, exprNode(en_void, sp->localInitGuard, rv), intNode(en_c_i, 0));        
+            rv = exprNode(en_voidnz, exprNode(en_void, sp->localInitGuard, rv), intNode(en_c_i, 0));
         }
         else
         {
@@ -1555,9 +1556,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
             insertInitSym(guard->v.sp);
             deref(&stdpointer, &guard);
             optimize_for_constants(&rv);
-            rv = exprNode(en_voidnz, exprNode(en_void, 
-                                              exprNode(en_not, guard, NULL), 
-                                              exprNode(en_void, rv, exprNode(en_autoinc, guard, intNode(en_c_i, 1)))), intNode(en_c_i, 0));        
+            rv = exprNode(en_voidnz, exprNode(en_void, exprNode(en_not, guard, NULL), exprNode(en_void, rv, exprNode(en_autoinc, guard, intNode(en_c_i, 1)))), intNode(en_c_i, 0));
             sp->localInitGuard = guard;
         }
     }
@@ -1568,7 +1567,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
         EXPRESSION *exp;
         if (fexp->type == en_thisref)
             fexp = fexp->left->v.func->thisptr;
-        exp = exprNode(en_blockclear, fexp, NULL); 
+        exp = exprNode(en_blockclear, fexp, NULL);
         exp->size = sp->tp->size;
         rv = exprNode(en_void, exp, rv);
     }
@@ -1599,46 +1598,46 @@ BOOLEAN assignDiscardsConst(TYPE *dest, TYPE *source)
         BOOLEAN done = FALSE;
         while (!done)
         {
-            switch(dest->type)
+            switch (dest->type)
             {
-                case bt_const:
-                    destc = TRUE;
-                case bt_va_list:
-                case bt_objectArray:
-                case bt_restrict:
-                case bt_volatile:
-                case bt_static:
-                case bt_typedef:
-                case bt_lrqual:
-                case bt_rrqual:
-                case bt_derivedfromtemplate:
-                    dest = dest->btp;
-                    break;
-                default:
-                    done = TRUE;
-                    break;
+            case bt_const:
+                destc = TRUE;
+            case bt_va_list:
+            case bt_objectArray:
+            case bt_restrict:
+            case bt_volatile:
+            case bt_static:
+            case bt_typedef:
+            case bt_lrqual:
+            case bt_rrqual:
+            case bt_derivedfromtemplate:
+                dest = dest->btp;
+                break;
+            default:
+                done = TRUE;
+                break;
             }
         }
         done = FALSE;
         while (!done)
         {
-            switch(source->type)
+            switch (source->type)
             {
-                case bt_const:
-                    sourcc = TRUE;
-                case bt_va_list:
-                case bt_objectArray:
-                case bt_restrict:
-                case bt_volatile:
-                case bt_static:
-                case bt_typedef:
-                case bt_lrqual:
-                case bt_rrqual:
-                    source = source->btp;
-                    break;
-                default:
-                    done = TRUE;
-                    break;
+            case bt_const:
+                sourcc = TRUE;
+            case bt_va_list:
+            case bt_objectArray:
+            case bt_restrict:
+            case bt_volatile:
+            case bt_static:
+            case bt_typedef:
+            case bt_lrqual:
+            case bt_rrqual:
+                source = source->btp;
+                break;
+            default:
+                done = TRUE;
+                break;
             }
         }
         if (sourcc && !destc)
@@ -1662,57 +1661,56 @@ BOOLEAN fittedConst(TYPE *tp, EXPRESSION *exp)
     n = getSize(basetype(tp)->type);
     switch (n)
     {
-        case 8:
-            if (isunsigned(tp))
-            {
-                if (exp->v.i < 0 || exp->v.i > 255)
-                    return FALSE;
-            }
-            else
-            {
-                if (exp->v.i < - 128 || exp->v.i > 127)
-                    return FALSE;
-            }
-            break;
-        case 16:
-            if (isunsigned(tp))
-            {
-                if (exp->v.i < 0 || exp->v.i > 65535)
-                    return FALSE;
-            }
-            else
-            {
-                if (exp->v.i < - 32768 || exp->v.i > 32767)
-                    return FALSE;
-            }
-            break;
-        default:
-            return TRUE;
+    case 8:
+        if (isunsigned(tp))
+        {
+            if (exp->v.i < 0 || exp->v.i > 255)
+                return FALSE;
+        }
+        else
+        {
+            if (exp->v.i < -128 || exp->v.i > 127)
+                return FALSE;
+        }
+        break;
+    case 16:
+        if (isunsigned(tp))
+        {
+            if (exp->v.i < 0 || exp->v.i > 65535)
+                return FALSE;
+        }
+        else
+        {
+            if (exp->v.i < -32768 || exp->v.i > 32767)
+                return FALSE;
+        }
+        break;
+    default:
+        return TRUE;
     }
 }
 BOOLEAN isarithmeticconst(EXPRESSION *exp)
 {
     return isintconst(exp) || isfloatconst(exp) || isimaginaryconst(exp) ||
-        iscomplexconst(exp);
+           iscomplexconst(exp);
 }
 BOOLEAN isconstaddress(EXPRESSION *exp)
 {
-    switch(exp->type)
+    switch (exp->type)
     {
-        case en_add:
-        case en_arrayadd:
-        case en_structadd:
-            return (isconstaddress(exp->left) || isintconst(exp->left))
-                    && (isconstaddress(exp->right) || isintconst(exp->right));
-        case en_global:
-        case en_pc:
-        case en_labcon:
-            return TRUE;
-        case en_func:
-            return !exp->v.func->ascall;
-        case en_threadlocal:
-        default:
-            return FALSE;
+    case en_add:
+    case en_arrayadd:
+    case en_structadd:
+        return (isconstaddress(exp->left) || isintconst(exp->left)) && (isconstaddress(exp->right) || isintconst(exp->right));
+    case en_global:
+    case en_pc:
+    case en_labcon:
+        return TRUE;
+    case en_func:
+        return !exp->v.func->ascall;
+    case en_threadlocal:
+    default:
+        return FALSE;
     }
 }
 SYMBOL *clonesym(SYMBOL *sym)
@@ -1723,35 +1721,36 @@ SYMBOL *clonesym(SYMBOL *sym)
 }
 static TYPE *inttype(enum e_bt t1)
 {
-       switch(t1) {
-       case bt_char:
-               return &stdchar;
-       case bt_unsigned_char:
-               return &stdunsignedchar;
-       case bt_short:
-               return &stdshort;
-       case bt_unsigned_short:
-               return &stdunsignedshort;
-        default:
-        case bt_int:
-        case bt_inative:
-            return &stdint;
-        case bt_char16_t:
-            return &stdchar16t;
-        case bt_char32_t:
-            return &stdchar32t;
-        case bt_unsigned:
-        case bt_unative:
-            return &stdunsigned;
-        case bt_long:
-            return &stdlong;
-        case bt_unsigned_long:
-            return &stdunsignedlong;
-        case bt_long_long:
-            return &stdlonglong;
-        case bt_unsigned_long_long:
-            return &stdunsignedlonglong;
-       }
+    switch (t1)
+    {
+    case bt_char:
+        return &stdchar;
+    case bt_unsigned_char:
+        return &stdunsignedchar;
+    case bt_short:
+        return &stdshort;
+    case bt_unsigned_short:
+        return &stdunsignedshort;
+    default:
+    case bt_int:
+    case bt_inative:
+        return &stdint;
+    case bt_char16_t:
+        return &stdchar16t;
+    case bt_char32_t:
+        return &stdchar32t;
+    case bt_unsigned:
+    case bt_unative:
+        return &stdunsigned;
+    case bt_long:
+        return &stdlong;
+    case bt_unsigned_long:
+        return &stdunsignedlong;
+    case bt_long_long:
+        return &stdlonglong;
+    case bt_unsigned_long_long:
+        return &stdunsignedlonglong;
+    }
 }
 TYPE *destSize(TYPE *tp1, TYPE *tp2, EXPRESSION **exp1, EXPRESSION **exp2, BOOLEAN minimizeInt, TYPE *atp)
 /*
@@ -1778,50 +1777,49 @@ TYPE *destSize(TYPE *tp1, TYPE *tp2, EXPRESSION **exp1, EXPRESSION **exp2, BOOLE
     tp2 = basetype(tp2);
     isctp1 = isarithmetic(tp1);
     isctp2 = isarithmetic(tp2);
-    
-/*    if (isctp1 && isctp2 && tp1->type == tp2->type)
+
+    /*    if (isctp1 && isctp2 && tp1->type == tp2->type)
         return tp1 ;
 */
-    if (tp1->type >= bt_float || tp2->type >= bt_float) {
-    
+    if (tp1->type >= bt_float || tp2->type >= bt_float)
+    {
+
         int isim1 = tp1->type >= bt_float_imaginary && tp1->type <= bt_long_double_imaginary;
         int isim2 = tp2->type >= bt_float_imaginary && tp2->type <= bt_long_double_imaginary;
         if (isim1 && !isim2 && tp2->type < bt_float_imaginary)
         {
-            TYPE *tp ;
+            TYPE *tp;
             if (tp1->type == bt_long_double_imaginary || tp2->type == bt_long_double)
                 tp = &stdlongdoublecomplex;
-            else if (tp1->type == bt_double_imaginary || tp2->type == bt_double
-                || tp1->type == bt_long_long || tp1->type == bt_unsigned_long_long)
+            else if (tp1->type == bt_double_imaginary || tp2->type == bt_double || tp1->type == bt_long_long || tp1->type == bt_unsigned_long_long)
                 tp = &stddoublecomplex;
             else
                 tp = &stdfloatcomplex;
             if (exp1)
-                 cast(tp, exp1);
+                cast(tp, exp1);
             if (exp2)
-                 cast(tp, exp2);
+                cast(tp, exp2);
             return tp;
         }
         else if (isim2 && !isim1 && tp1->type < bt_float_imaginary)
         {
-            TYPE *tp ;
+            TYPE *tp;
             if (tp2->type == bt_long_double_imaginary || tp1->type == bt_long_double)
                 tp = &stdlongdoublecomplex;
-            else if (tp2->type == bt_double_imaginary || tp1->type == bt_double 
-                || tp1->type == bt_long_long || tp1->type == bt_unsigned_long_long)
+            else if (tp2->type == bt_double_imaginary || tp1->type == bt_double || tp1->type == bt_long_long || tp1->type == bt_unsigned_long_long)
                 tp = &stddoublecomplex;
             else
                 tp = &stdfloatcomplex;
             if (exp1)
-                 cast(tp, exp1);
+                cast(tp, exp1);
             if (exp2)
-                 cast(tp, exp2);
+                cast(tp, exp2);
             return tp;
         }
         else if (tp1->type > tp2->type)
         {
             if (exp2)
-                   cast(tp1, exp2);
+                cast(tp1, exp2);
         }
         else if (tp1->type < tp2->type)
         {
@@ -1833,7 +1831,7 @@ TYPE *destSize(TYPE *tp1, TYPE *tp2, EXPRESSION **exp1, EXPRESSION **exp2, BOOLE
             return tp1;
         if (tp2->type == bt_long_double_complex && isctp1)
             return tp2;
-        
+
         if (tp1->type == bt_long_double_imaginary && isim2)
             return tp1;
         if (tp2->type == bt_long_double_imaginary && isim1)
@@ -1867,12 +1865,13 @@ TYPE *destSize(TYPE *tp1, TYPE *tp2, EXPRESSION **exp1, EXPRESSION **exp2, BOOLE
         if (tp2->type == bt_float && isctp1)
             return tp2;
     }
-    if (isctp1 && isctp2) {
-        TYPE *rv ;
-       enum e_bt t1, t2;
-       t1 = tp1->type;
-       t2 = tp2->type;
-       /*
+    if (isctp1 && isctp2)
+    {
+        TYPE *rv;
+        enum e_bt t1, t2;
+        t1 = tp1->type;
+        t2 = tp2->type;
+        /*
        if (cparams.prm_cplusplus && (t1 == bt_enum || t2 == bt_enum))
        {
            if (t1 == t2)
@@ -1886,33 +1885,34 @@ TYPE *destSize(TYPE *tp1, TYPE *tp2, EXPRESSION **exp1, EXPRESSION **exp2, BOOLE
        }
        */
         if (t1 == bt_enum)
-            t1= bt_int;
+            t1 = bt_int;
         if (t2 == bt_enum)
-            t2= bt_int;
+            t2 = bt_int;
         if (t1 == bt_wchar_t)
             t1 = bt_unsigned;
         if (t2 == bt_wchar_t)
             t2 = bt_unsigned;
         if (t1 < bt_int)
-            t1= bt_int;
+            t1 = bt_int;
         if (t2 < bt_int)
-            t2= bt_int;
+            t2 = bt_int;
         t1 = imax(t1, t2);
-       rv = inttype(t1);
-       if (rv->type != tp1->type && exp1)
-         cast(rv, exp1);
-       if (rv->type != tp2->type && exp2)
-         cast(rv,exp2);
-       if (chosenAssembler->msil && chosenAssembler->msil->allowExtensions)
-       {
-           if (tp1->type == bt_enum)
-               return tp1;
-           else if (tp2->type == bt_enum)
-               return tp2;
-
-       }
-       return rv;
-    } else { /* have a pointer or other exceptional case*/
+        rv = inttype(t1);
+        if (rv->type != tp1->type && exp1)
+            cast(rv, exp1);
+        if (rv->type != tp2->type && exp2)
+            cast(rv, exp2);
+        if (chosenAssembler->msil && chosenAssembler->msil->allowExtensions)
+        {
+            if (tp1->type == bt_enum)
+                return tp1;
+            else if (tp2->type == bt_enum)
+                return tp2;
+        }
+        return rv;
+    }
+    else
+    { /* have a pointer or other exceptional case*/
         if (tp1->type == bt_void && tp2->type == bt_void)
             return tp1;
         if (tp1->type <= bt_unsigned_long_long && ispointer(tp2))
@@ -1927,9 +1927,10 @@ TYPE *destSize(TYPE *tp1, TYPE *tp2, EXPRESSION **exp1, EXPRESSION **exp2, BOOLE
                 cast(tp1, exp2);
             return tp1;
         }
-        if (isstructured(tp1)) {
+        if (isstructured(tp1))
+        {
             return tp2;
-/*
+            /*
             if (comparetypes(tp1, tp2, FALSE))
                 return tp1;
             if (cparams.prm_cplusplus) {
@@ -1940,9 +1941,10 @@ TYPE *destSize(TYPE *tp1, TYPE *tp2, EXPRESSION **exp1, EXPRESSION **exp2, BOOLE
             return tp2;
 */
         }
-        if (isstructured(tp2)) {
+        if (isstructured(tp2))
+        {
             return tp1;
-/*			
+            /*			
             if (comparetypes(tp1, tp2, FALSE))
                 return tp2;
             if (cparams.prm_cplusplus) {
@@ -1963,10 +1965,10 @@ TYPE *destSize(TYPE *tp1, TYPE *tp2, EXPRESSION **exp1, EXPRESSION **exp2, BOOLE
         if (ispointer(tp1))
             if (ispointer(tp2))
             {
-/*				if (tp1->type != tp2->type || !comparetypes(tp1->btp, tp2->btp, TRUE))
+                /*				if (tp1->type != tp2->type || !comparetypes(tp1->btp, tp2->btp, TRUE))
                     generror(ERR_SUSPICIOUS, 0, 0);
 */
-                 return tp1;
+                return tp1;
             }
     }
     return tp1;
@@ -2052,32 +2054,31 @@ void my_sprintf(char *dest, const char *fmt, ...)
                 ULLONG_TYPE val;
                 unsigned val1;
                 char *str;
-                case 'l':
-                    while (*fmt == 'd' || *fmt == 'l')
-                        fmt ++;
-                    val = va_arg(aa, ULLONG_TYPE);
-                    dest = write_llong(dest, val);
-                    break;
-                case 'd':
-                case 'u':
-                    val1 = va_arg(aa, unsigned);
-                    dest = write_int(dest, val1);
-                    break;
-                case 'c':
-                    val1 = va_arg(aa, unsigned);
-                    *dest++ = val1;
-                    break;
-                case 's':
-                    str = va_arg(aa, char *);
-                    strcpy(dest, str);
-                    dest += strlen(dest);
-                    break;
-                default:
+            case 'l':
+                while (*fmt == 'd' || *fmt == 'l')
                     fmt++;
-                    break;
+                val = va_arg(aa, ULLONG_TYPE);
+                dest = write_llong(dest, val);
+                break;
+            case 'd':
+            case 'u':
+                val1 = va_arg(aa, unsigned);
+                dest = write_int(dest, val1);
+                break;
+            case 'c':
+                val1 = va_arg(aa, unsigned);
+                *dest++ = val1;
+                break;
+            case 's':
+                str = va_arg(aa, char *);
+                strcpy(dest, str);
+                dest += strlen(dest);
+                break;
+            default:
+                fmt++;
+                break;
             }
         }
     }
     *dest = 0;
 }
-

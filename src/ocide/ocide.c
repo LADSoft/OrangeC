@@ -105,6 +105,7 @@ char *watchhist[MAX_COMBO_HISTORY];
 
 LOGFONT systemDialogFont, systemMenuFont, systemCaptionFont;
 
+static BOOL StepFromASM;
 static char szFrameClassName[] = "ocideFrame";
 static LOGFONT NormalFontData = 
 {
@@ -677,12 +678,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             return 1;
         case WM_EXCEPTION:
             dbe = (DEBUG_EVENT*)lParam;
-            if (!GetBreakpointLine((DWORD)dbe
+            if (StepFromASM || !GetBreakpointLine((DWORD)dbe
                 ->u.Exception.ExceptionRecord.ExceptionAddress, &module[0],
                 &linenum, FALSE))
                 CreateASMWindow();
             else
                 ApplyBreakAddress(module, linenum);
+            StepFromASM = FALSE;
             if (hwndASM)
                 SendMessage(hwndASM, WM_COMMAND, ID_SETADDRESS, (LPARAM)
                             dbe->u.Exception.ExceptionRecord.ExceptionAddress);
@@ -713,12 +715,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             if (uState != notDebugging)
             {
                 
-                if (!GetBreakpointLine((DWORD)dbe
+                if (StepFromASM || !GetBreakpointLine((DWORD)dbe
                     ->u.Exception.ExceptionRecord.ExceptionAddress, &module[0],
                     &linenum, FALSE))
                     CreateASMWindow();
                 else
                     ApplyBreakAddress(module, linenum);
+                StepFromASM = FALSE;
                 if (hwndASM)
                     SendMessage(hwndASM, WM_COMMAND, ID_SETADDRESS, (LPARAM)
                                 dbe->u.Exception.ExceptionRecord.ExceptionAddress);
@@ -862,12 +865,15 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     dbgRebuildMain(wParam);
                 else if (uState != notDebugging && uState != Running)
                 {
+                    if ((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwndASM)
+                        StepFromASM = TRUE;
                     StepIn(dbe);
                     if (hwndASM)
                         InvalidateRect(hwndASM, 0, 1);
                 }
                 return 0;
             case IDM_RUN:
+                StepFromASM = FALSE;
                 if (uState != notDebugging && uState != Running)
                 {
                     SaveRegisterContext();
@@ -894,6 +900,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     dbgRebuildMain(wParam);
                 else if (uState != notDebugging && uState != Running)
                 {
+                    if ((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwndASM)
+                        StepFromASM = TRUE;
                     StepOver(dbe);
                     if (hwndASM)
                         InvalidateRect(hwndASM, 0, 1);
@@ -904,6 +912,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     dbgRebuildMain(wParam);
                 else if (uState != notDebugging && uState != Running)
                 {
+                    if ((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwndASM)
+                        StepFromASM = TRUE;
                     StepOut(dbe);
                     if (hwndASM)
                         InvalidateRect(hwndASM, 0, 1);

@@ -14,7 +14,8 @@ version 6.0.38:
     occ: fix problems with member initializers not being set up correctly
     occ: use 'real' line number in debug info
     olink: fix a crash if occ failed to output line information properly
-    occpr (symbol table parser): fix crash
+    dlpe: fix the fixup of relative branch to import thunks, to allow the thunks to be relocated
+    occpr (symbol table parser): fix two crashes
     ocide: could not step into a dll function
     ocide & docs: add step functions to the debug menu
     ocide: fix crash when starting program with 'stop in dll' set

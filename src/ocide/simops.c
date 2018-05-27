@@ -90,7 +90,7 @@ void FormatValue(char *buffer, OPERAND *record, uint segs, uint type)
             sprintf(buffer, "0x%x", (BYTE)record->address);
             break;
         case SY_RETURN:
-            sprintf(buffer, "0x%x", (uint)record->address);
+            sprintf(buffer, "0x%x", (ushort)record->address);
             break;
         case SY_ABSBRANCH:
             if (buf[0])

@@ -100,6 +100,7 @@ DWORD GetMainAddress(DEBUG_INFO *dbg)
         rv = GetSymbolAddress(dbg, "WinMain");
     if (!rv)
         rv = GetSymbolAddress(dbg, "DllMain");
+    rv = rv - dbg->linkbase + dbg->loadbase;
     return rv;
 }
 DEBUG_INFO *findDebug(int Address)

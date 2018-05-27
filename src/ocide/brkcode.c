@@ -342,7 +342,38 @@ int dbgSetBreakPoint(char *name, int linenum, char *extra)
 }
 
 //-------------------------------------------------------------------------
-
+void dbgClearBreakpointsForModule(DLL_INFO *dllinfo)
+{
+    // this doesn't actually unwrite the breakpoint.
+    // it is meant to be called at DLL unload time, when the DLL is already gone...
+    BREAKPOINT **p = &activeProcess->breakpoints.next;
+    if (uState == notDebugging)
+        return;
+    while (*p)
+    {
+        int *t;
+        BOOL found = FALSE;
+        for (t = (*p)->addresses; t && *t != 0; ++t)
+        {
+            if (*t >= dllinfo->base && (
+                dllinfo->next && *t < dllinfo->next->base || 
+                    !dllinfo->next && dllinfo->base > activeProcess->base) &&
+                (dllinfo->base > activeProcess->base || *t < activeProcess->base))
+            {
+                BREAKPOINT *q = *p;
+                found = TRUE;
+                *p = (*p)->next;
+                free(q->addresses);
+                free(q->tempvals);
+                free(q->extra);
+                free(q);
+                break;
+            }
+        }
+        if (!found)
+            p = &(*p)->next;
+    }
+}
 void dbgClearBreakPoint(char *name, int linenum)
 {
     BREAKPOINT **p = &activeProcess->breakpoints.next;

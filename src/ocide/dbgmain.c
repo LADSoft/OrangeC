@@ -843,9 +843,9 @@ void StartDebug(char *cmd)
                                             DWINFO *ptr = editWindows;
                                             int *q = calloc(2, sizeof(int));
                                             q[0] = addr;
+                                            (*p)->addresses = q;
                                             GetBreakpointLine(addr, &(*p)->module[0],
                                                 &(*p)->linenum, FALSE);
-                                            (*p)->addresses = q;
                                             dllInfo->breakpoint = addr;
                                             while (ptr)
                                             {
@@ -872,9 +872,14 @@ void StartDebug(char *cmd)
                         DLL_INFO *info = GetDLLInfo(stDE.dwProcessId, (DWORD)stDE.u.UnloadDll.lpBaseOfDll);
                         if (info)
                         {
+                            GetRegs(0);
+                            dbgClearBreakpointsForModule(info);
+                            ClearBreakPoints(stDE.dwProcessId);
+                            DeleteDLLInfo(stDE.dwProcessId, info);
+                            SetBreakPoints(stDE.dwProcessId);
+                            SetRegs(0);
                             sprintf(buf, "DLL Unloading: %s\r\n", info->name) ;
                             SendInfoMessage(ERR_DEBUG_WINDOW, buf);
-                            DeleteDLLInfo(stDE.dwProcessId, info);
                         }
                         dwContinueStatus = DBG_CONTINUE;
                     }

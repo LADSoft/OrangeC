@@ -130,7 +130,7 @@ void ImpLibMain::AddFile(LibManager &librarian, const char *arg)
                                 return;
                             }
                             defFile.SetFileName(inputFile);
-                            librarian.AddFile(*DefFileToObjFile(defFile));
+                            librarian.ReplaceFile(*DefFileToObjFile(defFile));
                         }
                         else if (ext == ".dll")
                         {
@@ -140,7 +140,7 @@ void ImpLibMain::AddFile(LibManager &librarian, const char *arg)
                                 std::cout << "Dll file '" << inputFile.c_str() << "' is missing or in wrong format" << std::endl;
                                 return;
                             }
-                            librarian.AddFile(*DllFileToObjFile(dllFile));
+                            librarian.ReplaceFile(*DllFileToObjFile(dllFile));
                         }
                         else
                         {

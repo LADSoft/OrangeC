@@ -15,7 +15,9 @@ version 6.0.38:
     occ: use 'real' line number in debug info
     olink: fix a crash if occ failed to output line information properly
     dlpe: fix the fixup of relative branch to import thunks, to allow the thunks to be relocated
+    dlpe: use --nologo when invokeing oimplib
     occpr (symbol table parser): fix two crashes
+    oimplib: 'replace' dll modules in library, instead of 'adding' them, so they don't go stale
     ocide: could not step into a dll function
     ocide & docs: add step functions to the debug menu
     ocide: fix crash when starting program with 'stop in dll' set

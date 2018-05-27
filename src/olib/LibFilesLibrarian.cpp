@@ -113,6 +113,30 @@ void LibFiles::Extract(FILE *stream, const ObjString &Name)
     }
     std::cout << "Warning: Module '" << Name.c_str() << "' not in library and could not be extracted" << std::endl;
 }
+void LibFiles::Replace(ObjFile &obj)
+{
+    std::string Name = obj.GetName();
+    unsigned npos = Name.find_last_of(CmdFiles::DIR_SEP);
+    std::string internalName = Name;
+    if (npos != std::string::npos)
+        internalName = Name.substr(npos+1);
+    for (FileIterator it = FileBegin(); it != FileEnd(); ++it)
+    {
+        if ((*it)->name == internalName)
+        {
+            if ((*it)->data)
+            {
+                delete (*it)->data;
+                (*it)->data = nullptr;
+            }
+            (*it)->data = &obj;
+            (*it)->name = Name;
+            (*it)->offset = 0;
+            return;
+        }
+    }
+    Add(obj);        
+}
 void LibFiles::Replace(const ObjString &Name)
 {
     unsigned npos = Name.find_last_of(CmdFiles::DIR_SEP);

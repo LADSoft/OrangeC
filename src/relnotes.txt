@@ -19,6 +19,7 @@ version 6.0.38:
     ocide & docs: add step functions to the debug menu
     ocide: fix crash when starting program with 'stop in dll' set
     ocide: fix various problems with 'stop in dll' including problems with invalid breakpoints
+    ocide: detect end of file boundary properly when trying to find a breakpoint line
     oimplib, olib, olink: fix more problems when '/' was used as a path separator
     olink: bail with an error if a library cannot be found
     omake: fix compatibility issues with /bin/sh

@@ -383,7 +383,7 @@ void GetStringValue(VARINFO *info, char *buf, int len, int address)
         *buf++ = '\"';
         p = buf2;
         for (i = 0; i < len &&  *p; i++)
-            if (isprint(*p))
+            if (*p >= 0x20 && *p < 0x7f)
                 *buf++ =  *p++;
             else
         {

@@ -158,7 +158,7 @@ int GetBreakpointLine(int Address, char *module, int *linenum, BOOL next)
     {
         for (p = &b->addresses[0]; *p; p++)
         {
-            if (*p == Address)
+            if (*p == Address && b->linenum)
             {
                 strcpy(module, b->module);
                 *linenum = b->linenum;                

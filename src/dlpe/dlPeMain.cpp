@@ -188,6 +188,10 @@ void dlPeMain::ReadValues()
         {
             importThunkVA = p->GetValue();
         }
+        else if (p->GetName() == "IMPORTCOUNT")
+        {
+            importCount = p->GetValue();
+        }
         else if (p->GetName() == "OBJECTALIGN")
         {
             objectAlign = p->GetValue();

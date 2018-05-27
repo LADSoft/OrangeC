@@ -71,6 +71,7 @@ private:
     ObjInt objectAlign;
     ObjInt imageBase;
     ObjInt importThunkVA;
+    ObjInt importCount;
     ObjInt heapCommit;
     ObjInt heapSize;
     ObjInt stackCommit;

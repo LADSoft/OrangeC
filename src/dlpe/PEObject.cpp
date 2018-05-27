@@ -35,6 +35,7 @@ unsigned PEObject::fileAlign = 0x200;
 unsigned PEObject::imageBase = 0x400000;
 unsigned PEObject::dataInitSize;
 unsigned PEObject::importThunkVA;
+unsigned PEObject::importCount;
 
 ObjFile *PEObject::file;
 
@@ -89,6 +90,10 @@ void PEObject::SetFile(ObjFile *File)
         else if (p->GetName() == "IMPORTTHUNKS")
         {
             importThunkVA = p->GetValue();
+        }
+        else if (p->GetName() == "IMPORTCOUNT")
+        {
+            importCount = p->GetValue();
         }
         else if (p->GetName() == "INITSIZE")
         {

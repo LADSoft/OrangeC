@@ -83,6 +83,7 @@ protected:
     static unsigned imageBase;
     static unsigned dataInitSize;
     static unsigned importThunkVA;
+    static unsigned importCount;
     static ObjFile *file;
 private:
 };

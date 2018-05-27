@@ -1247,7 +1247,7 @@ int TagEnableAllBreakpoints(BOOL enableState);
 int Tag(int type, char *name, int drawnLineno, int charpos, void *extra, int
     freeextra, int alwaysadd);
 void TagRemoveAll(int type);
-void TagRegenBreakPoints(void);
+void TagRegenBreakPoints(BOOL toerror);
 int TagOldLine(char *name, int lineno);
 int TagNewLine(char *name, int lineno);
 void TagRemoveOld(struct tagfile *l);

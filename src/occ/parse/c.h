@@ -707,6 +707,7 @@ typedef struct _memberInitializers
     struct _memberInitializers *next;
     char *name;
     SYMBOL *sp;
+    SYMBOL *basesym;
     INITIALIZER *init;
     int line;
     char *file;

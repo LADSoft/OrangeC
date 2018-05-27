@@ -10,6 +10,8 @@ version 6.0.38:
     occ: extend range of things you can reference with a __declspec declaration
     occ: call assembler even if -c was specified on the command line
     occ: the -lxxx switch set xxx as the output file name
+    occ: fix problems when using namespace qualifiers on member initializer names for base classes
+    occ: fix problems with member initializers not being set up correctly
     occpr (symbol table parser): fix crash
     ocide: could not step into a dll function
     ocide & docs: add step functions to the debug menu

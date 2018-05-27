@@ -68,6 +68,29 @@ void ConsDestDeclarationErrors(SYMBOL *sp, BOOLEAN notype)
         error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_NO_TYPE);
     }        
 }
+LEXEME *FindClass(LEXEME *lex, SYMBOL *funcsp, SYMBOL **sym)
+{
+    SYMBOL *encloser = NULL;
+    NAMESPACEVALUES *ns = NULL;
+    BOOLEAN throughClass = FALSE;
+    TYPE *castType = NULL;
+    char buf[512];
+    int ov = 0;
+    BOOLEAN hasTemplate = FALSE;
+    BOOLEAN namespaceOnly = FALSE;
+
+    *sym = NULL;
+
+    if (MATCHKW(lex, classsel))
+        namespaceOnly = TRUE;
+    lex = nestedPath(lex, &encloser, &ns, &throughClass, TRUE, sc_global, FALSE);
+    lex = getIdName(lex, funcsp, buf, &ov, &castType);
+    if (buf[0])
+    {
+        *sym = finishSearch(buf, encloser, ns, FALSE, throughClass, namespaceOnly);
+    }
+    return lex;
+}
 MEMBERINITIALIZERS *GetMemberInitializers(LEXEME **lex2, SYMBOL *funcsp, SYMBOL *sym)
 {
     LEXEME *lex = *lex2, *last = NULL;
@@ -78,6 +101,8 @@ MEMBERINITIALIZERS *GetMemberInitializers(LEXEME **lex2, SYMBOL *funcsp, SYMBOL 
     {
         if (ISID(lex) || MATCHKW(lex, classsel))
         {
+            SYMBOL *sym = NULL;
+            lex = FindClass(lex, funcsp, &sym);
             LEXEME **mylex;
             char name[ 1024];
             *cur = Alloc(sizeof(MEMBERINITIALIZERS));
@@ -90,19 +115,9 @@ MEMBERINITIALIZERS *GetMemberInitializers(LEXEME **lex2, SYMBOL *funcsp, SYMBOL 
                 strcpy(name, lex->value.s.a);
                 lex = getsym();
             }
-            while (MATCHKW(lex, classsel))
-            {
-                strcat(name, "::");
-                lex = getsym();
-                if (!ISID(lex))
-                {
-                    error(ERR_IDENTIFIER_EXPECTED);
-                    break;
-                }
-                strcat(name, lex->value.s.a);
-                lex = getsym();
-            }
             (*cur)->name = litlate(name);
+            if (sym && istype(sym)) 
+                (*cur)->basesym = sym;
             if (MATCHKW(lex, lt))
             {
                 int paren = 0, tmpl = 0;
@@ -1919,7 +1934,7 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
         if (!first && hasDelegate)
             error(ERR_DELEGATING_CONSTRUCTOR_ONLY_INITIALIZER);
         init->sp = search(init->name, basetype(cls->tp)->syms);
-        if (init->sp)
+        if (init->sp && !init->basesym)
         {
             if (init->sp->storage_class == sc_typedef)
             {
@@ -1931,7 +1946,7 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                 }
             }
         }
-        if (init->sp)
+        if (init->sp && !init->basesym)
         {
             if (init->sp != cls && init->sp->storage_class != sc_member && init->sp->storage_class != sc_mutable)
             {
@@ -1965,7 +1980,7 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                             {
                                 lex = getsym();
                                 init->init = NULL;
-                                initInsert(&init->init, init->sp->tp, intNode(en_c_i, 0), init->sp->offset, FALSE);
+                                initInsert(&init->init, init->sp->tp, intNode(en_c_i, 0), 0/*init->sp->offset*/, FALSE);
                                 done = TRUE;
                             }
                             else
@@ -2010,7 +2025,11 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
         }
         else
         {
-            SYMBOL *sp = classsearch(init->name, FALSE, TRUE);
+            SYMBOL *sp = init->basesym;
+            if (!sp)
+                sp = classsearch(init->name, FALSE, TRUE);
+            else
+                init->sp = sp;
             if (sp && sp->tp->type == bt_templateparam)
             {
                 if (sp->tp->templateParam->p->type == kw_typename)
@@ -2220,8 +2239,6 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
         }
         if (!init->sp)
         {
-            int offset;
-            SYMBOL *sp = findClassName(init->name, cls, bc, vbase, &offset);
             errorstrsym(ERR_NOT_A_MEMBER_OR_BASE_CLASS, init->name, cls);
         }
         first = FALSE;

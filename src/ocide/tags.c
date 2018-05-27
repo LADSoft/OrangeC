@@ -294,7 +294,7 @@ void TagRemoveAll(int type)
     }
 }
 // used after BP are restored from data file
-void TagRegenBreakPoints(void)
+void TagRegenBreakPoints(BOOL mark)
 {
     struct tagfile *l = tagFileList;
     struct tag *t;
@@ -310,9 +310,12 @@ void TagRegenBreakPoints(void)
                 tl = GetBreakpointNearestLine(l->name, t->debugLineno, TRUE);
                 if (!dbgSetBreakPoint(l->name,tl, t->extra))
                 {
-                    flag = TRUE;
-                    t->enabled |= TAGF_GRAYED;
-                    InvalidateByName(l->name);
+                    if (mark)
+                    {
+                        flag = TRUE;
+                        t->enabled |= TAGF_GRAYED;
+                        InvalidateByName(l->name);
+                    }
                 } 
             }
             t = t->next;

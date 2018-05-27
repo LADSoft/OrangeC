@@ -197,7 +197,7 @@ int *GetBreakpointAddresses(char *module, int *linenum)
     {
         if (dll->dbg_info)
         {
-            GetBreakpointAddressesInternal(dbg, module, linenum, &p, &max, &count);
+            GetBreakpointAddressesInternal(dll->dbg_info, module, linenum, &p, &max, &count);
         }
         dll = dll->next;
     }

@@ -759,7 +759,7 @@ void StartDebug(char *cmd)
                             SendInfoMessage(ERR_DEBUG_WINDOW, buf);
                         }
                         /* next line has to be deferred to the init bp */
-                        TagRegenBreakPoints();
+                        TagRegenBreakPoints(FALSE);
                         GetRegs(0);
                         thread->regs.Dr7 = 0;
                         SetBreakPoints(stDE.dwProcessId);
@@ -858,7 +858,7 @@ void StartDebug(char *cmd)
                                 }
                             }
                             // set breakpoints for recently loaded DLL.
-                            TagRegenBreakPoints();
+                            TagRegenBreakPoints(FALSE);
                             GetRegs(0);
                             SetBreakPoints(stDE.dwProcessId);
                             SetRegs(0);
@@ -1052,6 +1052,7 @@ void StartDebug(char *cmd)
                                         }
                                     }
                                     SendDIDMessage(DID_BREAKWND, WM_RESTACK, 0, 0);
+                                    TagRegenBreakPoints(TRUE);
                                     dwContinueStatus = DBG_CONTINUE;
                                 }
                                 isSteppingOut(&stDE);

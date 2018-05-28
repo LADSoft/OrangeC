@@ -676,8 +676,6 @@ void InitMenuPopup(HMENU menu)
     
     if (!activeProject)
         mf_state = MF_GRAYED;
-    EnableMenuItem(menu, IDM_ACTIVEPROJECTPROPERTIES, mf_state);
-    EnableMenuItem(menu, IDM_PROJECTPROPERTIES, mf_state);
     EnableMenuItem(menu, IDM_PROJECTDEPENDS, mf_state);
     EnableMenuItem(menu, IDM_RUNNODEBUG, mf_state);
     if (making)

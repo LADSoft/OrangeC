@@ -25,6 +25,8 @@ version 6.0.38:
     ocide: detect end of file boundary properly when trying to find a breakpoint line
     ocide: fix problems with single stepping and setting breakpoints in dll
     ocide: fix problems with DLL breakpoints not being reset after program is restarted
+    ocide: fix perenial crash if closing windows while the colorization is updating
+    ocide: fix problems with browsing (F12)
     oimplib, olib, olink: fix more problems when '/' was used as a path separator
     olink: bail with an error if a library cannot be found
     omake: fix compatibility issues with /bin/sh

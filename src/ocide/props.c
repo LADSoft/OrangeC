@@ -1528,8 +1528,8 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
             {
                 int x = LOWORD(lParam);
                 int y = HIWORD(lParam);
-                MoveWindow(hwndTree, 0, 0, x*3/10, y-32, 1);
-                MoveWindow(hwndLV, x*3/10, 0, x*7/10, y-32, 1);
+                MoveWindow(hwndTree, 0, 20, x*3/10, y-32, 1);
+                MoveWindow(hwndLV, x*3/10, 20, x*7/10, y-32, 1);
                 MoveWindow(hAcceptBtn, x - 3 * (pt.x + 20), y -pt.y - 12, pt.x+12, pt.y + 8, 1);
                 MoveWindow(hCancelBtn, x - 2 * (pt.x + 20), y -pt.y - 12, pt.x+12, pt.y + 8, 1);
                 MoveWindow(hApplyBtn, x - 1 * (pt.x + 20), y -pt.y - 12, pt.x+12, pt.y + 8, 1);
@@ -1979,6 +1979,8 @@ void ShowGeneralProperties(void)
 }
 void ShowBuildProperties(PROJECTITEM *projectItem)
 {
+    if (hwndGeneralProps)
+        SendMessage(hwndGeneralProps, WM_COMMAND, ID_CLOSEWINDOW, 0);
     if (!hwndGeneralProps)
     {
         PROFILE **arr = calloc(sizeof(PROFILE *), 100);

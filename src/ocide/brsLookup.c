@@ -560,6 +560,14 @@ static BROWSELIST *GetBrowseList(sqlite3 *db, char *name, char *filename, int cu
             strcpy(next->name, name+1);
             next->id = id;
         }
+        else if (id = LookupSymbolBrowse(db, name+1)) // might be a #define
+        {
+            BROWSELIST *next = calloc(sizeof(BROWSELIST), 1);
+            next->next = rv ;
+            rv = next;
+            strcpy(next->name, name+1);
+            next->id = id;
+        }
         rv = LookupCPPNamesBrowse(db, name , rv);
         name[0] = '@';
     }

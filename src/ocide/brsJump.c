@@ -127,7 +127,7 @@ void LoadJumpSymbols(void)
     {
         PROJECTITEM *pj = workArea->children;
 
-        if (!PropGetBool(NULL, "BROWSE_INFORMATION") || defaultWorkArea || !pj || jumpSymbols)
+        if (!PropGetBool(NULL, "BROWSE_INFORMATION") || !pj || jumpSymbols)
             return;
         jumpListTail = &jumpList;
         jumpListCount = 0;
@@ -245,7 +245,7 @@ static int JumpTo(void)
 {
     int rv = 0;
     JUMPLIST *jl;
-    if (!PropGetBool(NULL, "BROWSE_INFORMATION") || defaultWorkArea)
+    if (!PropGetBool(NULL, "BROWSE_INFORMATION"))
         return 0;
 
     jl = GetJumpList();
@@ -259,8 +259,8 @@ static int JumpTo(void)
                 "SELECT FileNames.Name, lineNumbers.startLine FROM LineNumbers "
                 "    JOIN FileNames ON FileNames.id = LineNumbers.fileId "
                 "    JOIN Names ON Names.id = LineNumbers.symbolId"
-                "    WHERE Names.name = ?"
-                "       AND (names.type & 64) AND (lineNumbers.qual & 2) = 0;"
+                "    WHERE Names.name = ?;"
+//                "       AND (names.type & 64) AND (lineNumbers.qual & 2) = 0;"
             };
             int rc = SQLITE_OK;
             sqlite3_stmt *handle;
@@ -317,7 +317,7 @@ void SetJumplistPos(HWND hwnd, int linepos)
     char *p, *q=name;
     PROJECTITEM *pj;
 
-    if (!PropGetBool(NULL, "BROWSE_INFORMATION") || defaultWorkArea || !workArea)
+    if (!PropGetBool(NULL, "BROWSE_INFORMATION") || !workArea)
         return;
     p = (char *)SendMessage(hwnd, WM_FILENAME, 0, 0);
     pj = HasFile(workArea, p);

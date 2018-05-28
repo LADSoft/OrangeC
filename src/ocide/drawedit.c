@@ -573,7 +573,7 @@ void SetTitle(HWND hwnd)
         strcat(dir,"\\hithere");
         strcpy(buf, relpath2(buf, dir));
     }
-    if (dt->id)
+    if (dt && dt->id)
         sprintf(buf + strlen(buf), " (%d)", dt->id + 1);
     if (mod)
         strcat(buf, " *");

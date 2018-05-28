@@ -586,6 +586,12 @@ void Maker(PROJECTITEM *pj, BOOL clean)
 }
 void dbgRebuildMainThread(int cmd)
 {
+    static int sem;
+    if (++sem != 1)
+    {
+        --sem;
+        return;
+    }
     cmd &= 0xffff;
     if (!activeProject)
     {
@@ -607,12 +613,14 @@ void dbgRebuildMainThread(int cmd)
                     stopBuild = FALSE;
                     if (!MakerThread(workArea))
                         return ;
+                    break;
                 case IDCANCEL:
                     return;
             }
         }
         initiateDebug(!TagAnyBreakpoints() || cmd == IDM_STEPIN || cmd == IDM_STEPOUT || cmd == IDM_STEPOVER);
     }
+    --sem;
 }
 
 //-------------------------------------------------------------------------

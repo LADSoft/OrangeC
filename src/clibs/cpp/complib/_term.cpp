@@ -30,6 +30,9 @@
 
 extern int ___xcflags;
 
+
+static CPPDATA * dataCache;
+
 #pragma startup __init_cppdata 119
 #pragma rundown __rundown_cppdata 6
 
@@ -56,11 +59,7 @@ void _RTL_FUNC std::terminate()
 }
 static CPPDATA * getCPPData()
 {
-    CPPDATA *rv;
-    asm mov eax,fs:[4]
-    asm mov eax,[eax-4]
-    asm mov [rv], eax;
-    return rv;
+    return dataCache;
 }
 extern "C" void _RTL_FUNC __call_terminate()
 {
@@ -109,9 +108,7 @@ extern "C" void _RTL_FUNC __init_cppdata()
    block = (CPPDATA *)malloc(sizeof(CPPDATA)) ;
    if (!block)
       exit(1) ;
-   asm mov eax,fs:[4]
-   asm mov edx,[block]
-   asm mov [eax-4],edx
+   dataCache = block;
    block->term = std::terminate ;
    block->unexpected = std::unexpected ;
 }

@@ -117,7 +117,8 @@ int __stdcall ___startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvReserved)
     else
         jumped++;
     rv--;
-    __xceptrundown();
+    if (!jumped)
+        __xceptrundown();
     if (jumped || !(startupStruct.flags & DLL))
     {
         __crtexit(rv);	// never returns if linked to CRTDLL

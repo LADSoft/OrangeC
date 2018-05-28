@@ -873,7 +873,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 }
                 return 0;
             case IDM_RUN:
-                StepFromASM = FALSE;
+                if ((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwndASM)
+                    StepFromASM = TRUE;
+                else
+                    StepFromASM = FALSE;
                 if (uState != notDebugging && uState != Running)
                 {
                     SaveRegisterContext();
@@ -920,6 +923,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 }
                 return 0;
             case IDM_RUNTO:
+                if ((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwndASM)
+                    StepFromASM = TRUE;
                 if (RunTo(dbe))
                 {
                     if (hwndASM)

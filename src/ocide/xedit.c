@@ -2422,7 +2422,13 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                             {
                                 HWND t = GetParent(hwnd);
                                 DWINFO *x = (DWINFO *)GetWindowLong(t, 0);
-                                p->cd->lineData = ccGetLineData(x->dwName, &p->cd->lineDataMax);
+                                BYTE *ld = ccGetLineData(x->dwName, &p->cd->lineDataMax);
+                                // the above call call takes a while and meanwhile they may
+                                // have closed the window... if they did 'p' is invalid now
+                                // so bail..
+                                if (!IsWindow(hwnd))
+                                    return 0;
+                                p->cd->lineData = ld;
                             }
                        }
                         FreeColorizeEntries(p->colorizeEntries);

@@ -35,6 +35,9 @@
 #include <iostream>
 char *Lexer::preData = 
 "%define __SECT__\n"
+"%imacro	data1	0+ .native\n"
+"	[db %1]\n"
+"%endmacro\n"
 "%imacro	db	0+ .native\n"
 "	[db %1]\n"
 "%endmacro\n"

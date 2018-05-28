@@ -199,14 +199,12 @@ void CalculateDisassembly(int moving)
                 }
                 lastlineno = lineno;
             }
-            /*
-            if (FindGlobalSymbol(&dbg, code_address, buffer, NULL))
+            else if (FindGlobalSymbol(&dbg, code_address, buffer, NULL))
             {
                 addrs[i] = code_address;
                 strcat(buffer, ":");
                 strcpy(lines[i++], buffer);
             }
-            */
             addrs[i] = code_address;
             GetCodeLine(lines[i++]);
         }

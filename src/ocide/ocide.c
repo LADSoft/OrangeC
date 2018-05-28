@@ -1344,7 +1344,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 FileBrowseLeft();
                 break;
             case IDM_SAVEALL:
-            case IDM_SAVEALL2:
                 SaveDrawAll();
                 ResSaveAll();
                 break;                

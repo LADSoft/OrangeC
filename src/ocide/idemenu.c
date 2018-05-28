@@ -655,7 +655,6 @@ void InitMenuPopup(HMENU menu)
     EnableMenuItem(menu, IDM_TILEVERT, mf_state);
     EnableMenuItem(menu, IDM_ARRANGE, mf_state);
     EnableMenuItem(menu, IDM_SAVEALL, mf_state);
-    EnableMenuItem(menu, IDM_SAVEALL2, mf_state);
 
     EnableMenuItem(menu, IDM_NEWPROJECT, MF_ENABLED);
     EnableMenuItem(menu, IDM_VIEWPROJECT, MF_ENABLED);

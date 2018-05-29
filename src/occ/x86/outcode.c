@@ -4259,16 +4259,8 @@ void outcode_genref(SYMBOL *sp, int offset)
     EMIT_TAB *seg = gettab(oa_currentSeg);
     emit(oa_currentSeg, &offset, 4);
 
-    if (sp->storage_class == sc_localstatic)
-    {
-        gen_label_fixup(fm_label, oa_currentSeg, seg->last->address + seg->last
-            ->lastfilled, sp->label);
-    }
-    else
-    {
-        gen_symbol_fixup(fm_symbol, oa_currentSeg, seg->last->address + seg->last
+    gen_symbol_fixup(fm_symbol, oa_currentSeg, seg->last->address + seg->last
             ->lastfilled, sp);
-    }
 }
 
 /*-------------------------------------------------------------------------*/

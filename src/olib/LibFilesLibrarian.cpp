@@ -172,8 +172,9 @@ void LibFiles::WriteNames(FILE *stream)
     {
         const char *p = (*it)->name.c_str();
         const char *q = strrchr(p, '\\');
-        if (!q)
-            q = strrchr(p, '/');
+        const char *q1 = strrchr(p, '/');
+        if (q && q1)
+            q = q > q1 ? q : q1;
         if (q)
             q++;
         else

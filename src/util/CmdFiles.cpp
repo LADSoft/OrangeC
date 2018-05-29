@@ -79,8 +79,9 @@ bool CmdFiles::Add(const std::string &name, bool recurseDirs)
     struct _finddata_t find;
     std::string path, lname;
     size_t n = name.find_last_of(DIR_SEP[0]);
-    if (n == std::string::npos)
-    	n = name.find_last_of('/');
+    size_t n1 = name.find_last_of('/');
+    if (n1 != std::string::npos && n != std::string::npos)
+    	n = n1 > n ? n1 : n;
 
     if (n != std::string::npos)
     {
@@ -138,24 +139,24 @@ bool CmdFiles::AddFromPath(const std::string &name, const std::string &path)
     rv = Add(name, false);
     if (!rv)
     {
-        size_t x = name.find_last_of(DIR_SEP[0]);
-        if (x == std::string::npos)
-            x = name.find_last_of('/');
-        if (x != std::string::npos)
+        size_t n = name.find_last_of(DIR_SEP[0]);
+        size_t n1 = name.find_last_of('/');
+        if (n1 != std::string::npos && n != std::string::npos)
+    	    n = n1 > n ? n1 : n;
+        if (n != std::string::npos)
         {
-            x++ ;
+            n++ ;
         }
         else
         {
-            x = name.find_first_of(":");
-            if (x != std::string::npos)
-                x++;
+            n = name.find_first_of(":");
+            if (n != std::string::npos)
+                n++;
             else
-                x = 0;
+                n = 0;
         }
-        std::string internalName = name.substr(x, name.size());
-        size_t n = 0;
-        //size_t m = 0;
+        std::string internalName = name.substr(n, name.size());
+        n = 0;
         bool done = false;
         while (!done)
         {

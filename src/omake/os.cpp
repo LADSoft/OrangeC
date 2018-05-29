@@ -191,16 +191,20 @@ int OS::Spawn(const std::string command, EnvironmentStrings &environment, std::s
         Eval r(cmd, false);
         cmd = r.Evaluate();
     }
+    bool asapp = true;
     if (cmd == "/bin/sh")
     {
         cmd = "sh.exe -c ";
         // we couldn't simply set MAKE properly because they may change the shell in the script
     	v = VariableContainer::Instance()->Lookup("MAKE");
-        if (v->GetValue() == command.substr(0, v->GetValue().size()))
+        if (v->GetValue().find_first_of("\\") != std::string::npos)
         {
-            command1 = v->GetValue();
-            std::replace(command1.begin(), command1.end(), '\\', '/');
-            command1 += command.substr(command1.size());
+            size_t n = command1.find(v->GetValue());
+            while (n != std::string::npos)
+            {
+                std::replace(command1.begin() + n, command1.begin() + n + v->GetValue().size(), '\\', '/');
+                n = command1.find(v->GetValue());
+            }
         }
     }
     else
@@ -251,7 +255,6 @@ int OS::Spawn(const std::string command, EnvironmentStrings &environment, std::s
         *p++ = '\0';
     }
     *p++ = '\0';
-    bool asapp = true;
     bool instr = false;
     // need a shell for any kind of I/O redirection
     for (auto c : command)

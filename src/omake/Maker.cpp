@@ -318,10 +318,6 @@ std::string Maker::GetFileTime(const std::string &goal, const std::string &prefe
                 name = cur + internalGoal;
             else
                 name = internalGoal;
-            if (cur != "./")
-                filePaths[internalGoal] = cur; // tentatively enter this as the goal path
-                                    // this will collide if there are multiple paths and no file exists
-                                    // and choose the last one
             std::fstream fil(name.c_str(), std::ios::in);
             if (!fil.fail())
             {
@@ -401,11 +397,8 @@ void Maker::EnterSpecificRule(RuleList *l, const std::string &stem,
     if (!ruleList)
     {
         ruleList = new RuleList(target);
-//        if (ruleList)
-        {
-            *RuleContainer::Instance() += ruleList;
-            ruleList->SetTargetPatternStem(stem);
-        }
+        *RuleContainer::Instance() += ruleList;
+        ruleList->SetTargetPatternStem(stem);
     }
     std::string orderPrereq;
     std::string prereq;
@@ -434,16 +427,12 @@ void Maker::EnterSpecificRule(RuleList *l, const std::string &stem,
         }
     }
     Rule *rule = new Rule(target, prereq, orderPrereq, commands, "<implicitbuild>", 1);
-//    if (rule)
-        ruleList->InsertFirst(rule);
+    ruleList->InsertFirst(rule);
     if (!outerMost)
     {
         Parser p(".INTERMEDIATE: " + target, "<implicitbuild>", 1, false);
         p.Parse();
     }
-//	Time tv;
-    // for vpaths...
-//	GetFileTime(target, preferredPath, tv);
 }
 void Maker::EnterDefaultRule(const std::string &goal, RuleList *dflt)
 {
@@ -453,13 +442,9 @@ void Maker::EnterDefaultRule(const std::string &goal, RuleList *dflt)
         for (RuleList::iterator it = dflt->begin(); !commands && it != dflt->end(); ++it)
             commands = (*it)->GetCommands();
         RuleList *ruleList = new RuleList(goal);
-//        if (ruleList)
-        {
-            *RuleContainer::Instance() += ruleList;
-            Rule *rule = new Rule(goal, "", "", commands, "<implicitbuild>", 1);
-//            if (rule)
-                ruleList->Add(rule);
-        }
+        *RuleContainer::Instance() += ruleList;
+        Rule *rule = new Rule(goal, "", "", commands, "<implicitbuild>", 1);
+        ruleList->Add(rule);
     }
 }
 bool Maker::SearchImplicitRules(const std::string &goal, const std::string &preferredPath, bool outerMost, Time &timeval)
@@ -565,12 +550,8 @@ void Maker::EnterSuffixTerminals()
                 if (!ruleList)
                 {
                     ruleList = new RuleList(target);
-                    //if (ruleList)
-                    {
-                        Rule *rule = new Rule(target, "", "", nullptr, "<implicitbuild>", 1);
-                        //if (rule)
-                            ruleList->Add(rule);
-                    }
+                    Rule *rule = new Rule(target, "", "", nullptr, "<implicitbuild>", 1);
+                    ruleList->Add(rule);
                 }
             }
         }

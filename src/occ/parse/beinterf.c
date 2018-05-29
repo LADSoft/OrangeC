@@ -632,7 +632,7 @@ int init_backend(int *argc ,char **argv)
     assembler[0] = debugger[0] = 0;
     cparams.prm_asmfile = cparams.prm_compileonly = FALSE;
     for (i=0; i < *argc; i++)
-        if (!strncmp(argv[i],"/S",2)) {
+        if (!strncmp(argv[i],"/S",2) || !strncmp(argv[i], "-S", 2)) {
             char *p = argv[i]+2,*q = assembler;
             cparams.prm_asmfile = TRUE;
             if (argv[i][1] == 'S')

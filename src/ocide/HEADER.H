@@ -865,7 +865,7 @@ typedef struct tagNMTTCUSTOMDRAW
     (*(HTREEITEM FAR *)prc = (hitem), (BOOL)SendMessage((hwnd), TVM_GETITEMRECT, (WPARAM)(code), (LPARAM)(RECT FAR*)(prc)))
 #endif
 
-#if defined(__MINGW64__) || defined(__clang__)
+#if defined(__MINGW64__)
 #define Eax Rax
 #define Ebx Rbx
 #define Ecx Rdx

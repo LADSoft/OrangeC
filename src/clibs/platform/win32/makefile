@@ -35,13 +35,16 @@ rtl_objs: lscrtl_objs
 	$(MAKE) -Crtl
 
 alldirs: rtl_objs
+ifdef FINAL
+	$(MAKE) -Clsdbghelper
+else
 	$(MAKE) -Cpe
 	$(MAKE) -Cdef
 	$(MAKE) -Cmsvcrdm
 	$(MAKE) -Ccrtdmain
 	$(MAKE) -Clscrtl
-	$(MAKE) -Clsdbghelper
 	$(MAKE) -Cpels
+endif
 
 DISTRIBUTE:
 	$(MAKE) -Cpe DISTRIBUTE

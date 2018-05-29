@@ -827,6 +827,8 @@ void setfile(char *buf, char *orgbuf, char *ext)
     char *p1 = strrchr(orgbuf, '/');
     if (p1 > p)
         p = p1;
+    else if (!p)
+        p = p1;
     if (!p)
         p = orgbuf;
     else

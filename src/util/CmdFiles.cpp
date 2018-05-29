@@ -82,7 +82,8 @@ bool CmdFiles::Add(const std::string &name, bool recurseDirs)
     size_t n1 = name.find_last_of('/');
     if (n1 != std::string::npos && n != std::string::npos)
     	n = n1 > n ? n1 : n;
-
+    else if (n == std::string::npos)
+        n = n1;
     if (n != std::string::npos)
     {
         path = name.substr(0,n+1);

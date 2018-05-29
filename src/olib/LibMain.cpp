@@ -135,7 +135,14 @@ int LibMain::Run(int argc, char **argv)
     {
         Utils::usage(argv[0], usageText);
     }
-        
+
+    // automake/ar compatibility, this means you can't have a library named cru unless you specifically give an extension
+    if (!strcmp(argv[1], "cru"))
+    {
+        mode = REPLACE;
+        memcpy(argv+1, argv+2, (argc-1) * sizeof(char *));
+        --argc;
+    }
     // setup
     ObjString outputFile = argv[1];
     size_t n = outputFile.find_last_of('.');

@@ -47,6 +47,11 @@ void LibFiles::Add(ObjFile &obj)
 void LibFiles::Add(const ObjString &Name)
 {
     unsigned npos = Name.find_last_of(CmdFiles::DIR_SEP);
+    unsigned npos1 = Name.find_last_of('/');
+    if (npos != std::string::npos && npos1 != std::string::npos && npos1 > npos)
+        npos = npos1;
+    else if (npos == std::string::npos)
+        npos = npos;
     std::string internalName = Name;
     if (npos != std::string::npos)
         internalName = Name.substr(npos+1);
@@ -175,6 +180,8 @@ void LibFiles::WriteNames(FILE *stream)
         const char *q1 = strrchr(p, '/');
         if (q && q1)
             q = q > q1 ? q : q1;
+        else if (q == 0)
+            q = q1;
         if (q)
             q++;
         else

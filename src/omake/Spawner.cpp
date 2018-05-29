@@ -175,7 +175,9 @@ int Spawner::Run(const std::string &cmdin, bool ignoreErrors, bool silent, bool 
     {
         std::string shell = v->GetValue();
         if (shell != "/bin/sh")
+        {
            OS::NormalizeFileName(cmdin);
+        }
     }
     if (oneShell)
     {

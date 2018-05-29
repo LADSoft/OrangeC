@@ -306,19 +306,19 @@ std::string Maker::GetFileTime(const std::string &goal, const std::string &prefe
     }
     else
     {
-        std::string vpath = preferredPath + std::string(" .\\ ") + Eval::GetVPATH(internalGoal);
+        std::string vpath = preferredPath + std::string(" ./ ") + Eval::GetVPATH(internalGoal);
         std::string sep = std::string(" ") + CmdFiles::PATH_SEP;
         while (vpath.size())
         {
             std::string cur = Eval::ExtractFirst(vpath, sep);
             if (cur[cur.size() -1] != '/' && cur[cur.size() -1] != '\\')
-                cur += CmdFiles::DIR_SEP;
+                cur += '/';
             std::string name ;
             if (internalGoal[0] != '/' && internalGoal[0] != '\\' && internalGoal[1] != ':')
                 name = cur + internalGoal;
             else
                 name = internalGoal;
-            if (cur != ".\\")
+            if (cur != "./")
                 filePaths[internalGoal] = cur; // tentatively enter this as the goal path
                                     // this will collide if there are multiple paths and no file exists
                                     // and choose the last one

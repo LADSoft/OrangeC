@@ -41,6 +41,8 @@
 #include <iostream>
 #include <sstream>
 
+//#define DEBUG
+
 static HANDLE jobsSemaphore;
 
 static CRITICAL_SECTION consoleSync;
@@ -48,15 +50,46 @@ std::deque<int> OS::jobCounts;
 bool OS::isSHEXE;
 int OS::jobsLeft;
 
-static void replaceall(std::string& str, const std::string& from, const std::string& to) {
-    size_t start_pos = str.find(from);
-    while(start_pos != std::string::npos)
-    {
-        str.replace(start_pos, from.length(), to);
-        start_pos = str.find(from, start_pos + to.length());
-    }
-}
 
+static std::string QuoteCommand(std::string command)
+{
+    std::string rv;
+    if (command.empty () == false &&
+        command.find_first_of (" \t\n\v\"") == command.npos)
+    {
+        rv = command;
+    }
+    else {
+        rv.push_back (L'"');
+
+        for (auto it = command.begin(); it != command.end(); ++it)
+        {
+            unsigned slashcount = 0;
+            while (it != command.end () && *it == L'\\') {
+                ++it;
+                ++slashcount;
+            }
+        
+            if (it == command.end ()) {
+                // escape all the backslashes
+                rv.append (slashcount * 2, L'\\');
+                break;
+            }
+            else if (*it == L'"') {
+                // escape all the backslashes and add a \"
+                rv.append (slashcount * 2 + 1, L'\\');
+                rv.push_back ('"');
+            }
+            else {
+                // no escape
+                rv.append (slashcount, L'\\');
+                rv.push_back (*it);
+            }
+        }
+        rv.push_back (L'"');
+    }
+    return rv;
+}
 bool Time::operator >(const Time &last)
 {
     if (this->seconds > last.seconds)
@@ -160,15 +193,21 @@ int OS::Spawn(const std::string command, EnvironmentStrings &environment, std::s
     }
     if (cmd == "/bin/sh")
     {
-        cmd += " -c ";
-        replaceall(command1, "\\", "\\\\");
-        replaceall(command1, "\"", "\\\"");
+        cmd = "sh.exe -c ";
+        // we couldn't simply set MAKE properly because they may change the shell in the script
+    	v = VariableContainer::Instance()->Lookup("MAKE");
+        if (v->GetValue() == command.substr(0, v->GetValue().size()))
+        {
+            command1 = v->GetValue();
+            std::replace(command1.begin(), command1.end(), '\\', '/');
+            command1 += command.substr(command1.size());
+        }
     }
     else
     {
         cmd += " /c ";
     }
-    cmd += std::string("\"") + command1 + "\"";
+    cmd += QuoteCommand(command1);
     STARTUPINFO startup;
     PROCESS_INFORMATION pi;
     HANDLE pipeRead, pipeWrite, pipeWriteDuplicate;
@@ -233,7 +272,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings &environment, std::s
     }
 
     // try as an app first
-    if (asapp && CreateProcess(nullptr, (char *)command.c_str(), nullptr, nullptr, true, 0, env,
+    if (asapp && CreateProcess(nullptr, (char *)command1.c_str(), nullptr, nullptr, true, 0, env,
                       nullptr, &startup, &pi))
     {
         WaitForSingleObject(pi.hProcess, INFINITE);
@@ -297,6 +336,9 @@ int OS::Spawn(const std::string command, EnvironmentStrings &environment, std::s
         CloseHandle(pipeWriteDuplicate);
     }
     delete[] env;
+#ifdef DEBUG
+std::cout << rv << ":" << cmd << std::endl;
+#endif
     return rv;
 }
 std::string OS::SpawnWithRedirect(const std::string command)

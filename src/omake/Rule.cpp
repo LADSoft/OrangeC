@@ -250,7 +250,7 @@ bool RuleContainer::ScanList(const std::string &v, const std::string &goal)
         }
         if (aa[aa.size()-1] != '/' && aa[aa.size()-1] != '\\')
         {
-            aa += CmdFiles::DIR_SEP;
+            aa += "/";
             span = Eval::MatchesPattern(goal, aa, start, 0);
             if (span == goal.size())
             {

@@ -169,7 +169,7 @@ std::string Eval::ExtractFirst(std::string &value, const std::string &seps)
         int m;
         if (seps == " ")
             m = value.find_first_of(" \t\n");
-	    else
+	else
             m = value.find_first_of(seps);
         if (m != std::string::npos)
             n = m;
@@ -177,7 +177,7 @@ std::string Eval::ExtractFirst(std::string &value, const std::string &seps)
     std::string rv = value.substr(0, n);
     if (value.find_first_not_of(" \t", n) == std::string::npos)
         value.replace(0,value.size(),"");
-    else if (value[0] == '"')
+    else if (value[0] == '"' && seps == " ")
         value.replace(0, n, "");
     else
         value.replace(0,n+1,"");
@@ -1054,7 +1054,7 @@ std::string Eval::dir(const std::string &names)
         if (n != std::string::npos)
             rv += p.substr(0,n+1);
         else
-            rv += std::string(".") + CmdFiles::DIR_SEP;
+            rv += std::string("./");
     }
     return rv;
 }
@@ -1231,7 +1231,7 @@ std::string Eval::realpath(const std::string &arglist)
     {
         std::string thisOne = ExtractFirst(text, " ");
         if (thisOne[0] != '\\' && thisOne[1] != ':' && thisOne[0] != '/') // windows specific
-            thisOne = OS::GetWorkingDir() + CmdFiles::DIR_SEP + thisOne;
+            thisOne = OS::GetWorkingDir() + '/' + thisOne;
         if (rv.size())
             rv += " ";
         rv += thisOne;

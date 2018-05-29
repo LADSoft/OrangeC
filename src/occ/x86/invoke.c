@@ -140,7 +140,7 @@ int InsertExternalFile(char *name, BOOLEAN primary)
         InsertFile(&asmlist, name, 0, primary);
         return 1; /* compiler shouldn't process it*/
     }
-    else if (HasExt(name, ".l"))
+    else if (HasExt(name, ".l") || HasExt(name, ".a") || HasExt(name, ".lib"))
     {
         InsertFile(&liblist, name, 0, primary);
         return 1;

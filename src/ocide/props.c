@@ -1433,10 +1433,10 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
             }
             hwndTree = CreateWindowEx(0, WC_TREEVIEW, "", WS_VISIBLE | WS_BORDER | 
                 WS_CHILD | TVS_HASLINES | TVS_LINESATROOT | TVS_HASBUTTONS | TVS_TRACKSELECT,
-                0, y, (r.right - r.left)*3/10, r.bottom - r.top-32-y, hwnd, 0, hInstance, NULL);
+                0, y, (r.right - r.left)*3/10, r.bottom - r.top-32-24-y, hwnd, 0, hInstance, NULL);
             hwndLV = CreateWindowEx(0, WC_LISTVIEW, "", WS_VISIBLE | WS_BORDER |
                 LVS_REPORT | LVS_SINGLESEL | WS_CHILD,
-                (r.right - r.left)*3/10, y, (r.right - r.left)*7/10, r.bottom - r.top-32-y, hwnd, 0, hInstance, NULL);
+                (r.right - r.left)*3/10, y, (r.right - r.left)*7/10, r.bottom - r.top-32-24-y, hwnd, 0, hInstance, NULL);
             dc = GetDC(hwnd);
             GetTextExtentPoint32(dc, szAccept, strlen(szAccept), &acceptSz);
             GetTextExtentPoint32(dc, szClose, strlen(szClose), &cancelSz);
@@ -1528,8 +1528,8 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
             {
                 int x = LOWORD(lParam);
                 int y = HIWORD(lParam);
-                MoveWindow(hwndTree, 0, 20, x*3/10, y-32, 1);
-                MoveWindow(hwndLV, x*3/10, 20, x*7/10, y-32, 1);
+                MoveWindow(hwndTree, 0, 24, x*3/10, y-32-24, 1);
+                MoveWindow(hwndLV, x*3/10, 24, x*7/10, y-32-24, 1);
                 MoveWindow(hAcceptBtn, x - 3 * (pt.x + 20), y -pt.y - 12, pt.x+12, pt.y + 8, 1);
                 MoveWindow(hCancelBtn, x - 2 * (pt.x + 20), y -pt.y - 12, pt.x+12, pt.y + 8, 1);
                 MoveWindow(hApplyBtn, x - 1 * (pt.x + 20), y -pt.y - 12, pt.x+12, pt.y + 8, 1);

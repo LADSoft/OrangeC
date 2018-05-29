@@ -73,6 +73,12 @@ void Spawner::Run(Command &Commands, OutputType Type, RuleList *RuleListx, Rule 
 }
 int Spawner::InternalRun()
 {
+    std::string shell;
+    Variable *v = VariableContainer::Instance()->Lookup("SHELL");
+    if (v)
+    {
+        shell = v->GetValue();
+    }
     int rv = 0;
     std::string longstr;
     std::deque<std::string> tempFiles;
@@ -104,7 +110,7 @@ int Spawner::InternalRun()
         cmd = c.Evaluate(); // deferred evaluation
         size_t n = cmd.find("&&");
         std::string makeName;
-        if (n != std::string::npos && n == cmd.size() - 3)
+        if (shell != "/bin/sh" && n != std::string::npos && n == cmd.size() - 3)
         {
             char match = cmd[n+2];
             cmd.erase(n);
@@ -176,7 +182,7 @@ int Spawner::Run(const std::string &cmdin, bool ignoreErrors, bool silent, bool 
         std::string shell = v->GetValue();
         if (shell != "/bin/sh")
         {
-           OS::NormalizeFileName(cmdin);
+           cmd = OS::NormalizeFileName(cmdin);
         }
     }
     if (oneShell)

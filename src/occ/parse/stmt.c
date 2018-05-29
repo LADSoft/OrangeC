@@ -2360,7 +2360,7 @@ static LEXEME *statement_while(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     AddBlock(lex, parent, whilestmt);
     return lex;
 }
-static void checkNoEffect(EXPRESSION *exp)
+static BOOLEAN checkNoEffect(EXPRESSION *exp)
 {
     if (exp->noexprerr)
         return;
@@ -2378,17 +2378,18 @@ static void checkNoEffect(EXPRESSION *exp)
             case en_void:
             case en__initblk:
             case en__cpblk:
+		return FALSE;
                 break;                
             case en_not_lvalue:
             case en_lvalue:
             case en_thisref:
             case en_literalclass:
             case en_funcret:
-                checkNoEffect(exp->left);
-                break;
+                return checkNoEffect(exp->left);
+            case en_cond:
+                return checkNoEffect(exp->right->left) | checkNoEffect(exp->right->right);
             default:
-                error(ERR_EXPRESSION_HAS_NO_EFFECT);
-                break;
+                return TRUE;
         }
 }
 static LEXEME *statement_expr(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
@@ -2409,7 +2410,8 @@ static LEXEME *statement_expr(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         error(ERR_EXPRESSION_SYNTAX);
     else if (tp->type != bt_void && tp->type != bt_any)
     {
-        checkNoEffect(st->select);
+        if (checkNoEffect(st->select))
+            error(ERR_EXPRESSION_HAS_NO_EFFECT);
         if (cparams.prm_cplusplus && isstructured(tp) && select->type == en_func)
         {
             SYMBOL *sp = select->v.func->returnSP;

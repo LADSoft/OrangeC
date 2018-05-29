@@ -2363,7 +2363,7 @@ static LEXEME *statement_while(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
 static BOOLEAN checkNoEffect(EXPRESSION *exp)
 {
     if (exp->noexprerr)
-        return;
+        return FALSE;
         switch(exp->type)
         {
             case en_func:

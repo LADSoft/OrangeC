@@ -34,11 +34,23 @@
 #include <libp.h>
 extern int _win32 ;
 extern char **_argv;
+extern DWORD __unaligned_stacktop;
+extern HINSTANCE __hInstance;
+typedef void CALLBACK trace_func(char *text, char *filename, PCONTEXT p, void *hInstance, void *stacktop);
+
 
 static int *_xceptblkptr;
 /*static*/ PCONTEXT xxctxt;
 /*static*/ void regdump(char *text, PCONTEXT p)
 {
+   HMODULE hmod = LoadLibrary("lsdbghelper");
+   if (hmod)
+   {
+       trace_func *f = (trace_func *)GetProcAddress(hmod, "StackTrace");
+       if (f) f(text, _argv[0], p, (void *)__hInstance, (void *)__unaligned_stacktop);
+       FreeLibrary(hmod);
+       if(f) return;
+   }
    char buf[1024] ;
       sprintf(buf,"\n%s:(%s)\n",text, _argv[0]);
       sprintf(buf+strlen(buf),"CS:EIP %04X:%08X  SS:ESP %04X:%08X\n",p->SegCs,p->Eip,p->SegSs,p->Esp);

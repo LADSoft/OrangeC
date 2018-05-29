@@ -60,6 +60,7 @@ COMPILER_PARAMS cparams = {
     TRUE,  /* char prm_trigraph;*/
     FALSE, /* char prm_oldfor;*/
     FALSE, /* char prm_stackcheck;*/
+    TRUE, /* char prm_allowinline;*/
     FALSE, /* char prm_profiler;*/
     TRUE,  /* char prm_mergstrings;*/
     FALSE, /* char prm_revbits;*/

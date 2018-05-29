@@ -3537,6 +3537,8 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
         funcsp->declaring = FALSE;
         if (funcsp->isInline && (functionHasAssembly || funcsp->linkage2 == lk_export))
             funcsp->isInline = funcsp->dumpInlineToFile = funcsp->promotedToInline = FALSE;
+        if (!cparams.prm_allowinline)
+            funcsp->isInline = funcsp->dumpInlineToFile = funcsp->promotedToInline = FALSE;
         // if it is variadic don't allow it to be inline
         if (funcsp->isInline)
         {

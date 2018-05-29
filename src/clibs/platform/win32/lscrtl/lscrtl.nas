@@ -25,13 +25,14 @@
 section data USE32
 %include "..\..\copyrght.asm"
 align 4
-unalignedstack dd 0
+global ___unaligned_stacktop
+___unaligned_stacktop dd 0
 section code USE32
 extern ___startup
 ..start:
     push ebp
     mov ebp,esp
-    mov [unalignedstack], esp
+    mov [___unaligned_stacktop], esp
     mov	edx, 2
     and esp,-16
     sub esp, 12
@@ -39,6 +40,6 @@ extern ___startup
     push dword [ebp + 12]
     push dword [ebp + 8]
     call ___startup
-    mov	esp,[unalignedstack]
+    mov	esp,[___unaligned_stacktop]
     pop ebp
     ret 12

@@ -59,6 +59,7 @@ typedef struct {
     BOOLEAN prm_trigraph;      /* parse trigraphs */
     BOOLEAN prm_oldfor;        /* old C++ for scoping */
     BOOLEAN prm_stackcheck;    /* generate stack check code */
+    BOOLEAN prm_allowinline;   /* enable inlining of functions */
     BOOLEAN prm_profiler;      /* generate profiler insets */
     BOOLEAN prm_mergestrings;  /* merge strings and other constants */
     BOOLEAN prm_revbits;       /* use reverse of the default bit ordering */

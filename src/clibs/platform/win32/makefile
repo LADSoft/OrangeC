@@ -40,6 +40,7 @@ alldirs: rtl_objs
 	$(MAKE) -Cmsvcrdm
 	$(MAKE) -Ccrtdmain
 	$(MAKE) -Clscrtl
+	$(MAKE) -Clsdbghelper
 	$(MAKE) -Cpels
 
 DISTRIBUTE:

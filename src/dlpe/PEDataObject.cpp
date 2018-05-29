@@ -46,7 +46,7 @@ void PEDataObject::Setup(ObjInt &endVa, ObjInt &endPhys)
     raw_addr = endPhys;
     endVa = ObjectAlign(objectAlign, endVa + size);
     endPhys = ObjectAlign(fileAlign, endPhys + initSize);
-    data = new unsigned char[initSize];
+    data = new unsigned char[initSize+importCount *6];
 }
 bool PEDataObject::hasPC(ObjExpression *exp)
 {

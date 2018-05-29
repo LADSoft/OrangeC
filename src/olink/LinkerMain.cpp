@@ -114,10 +114,12 @@ void LinkerMain::AddFile(LinkManager &linker, std::string &name)
     if (!TargetConfig.InterceptFile(name))
     {
         bool found = false;
-        if (name.size() > 1 && name.find(".l")== name.size()-2)
-            found = true;
-        else if (name.size() > 1 && name.find(".L")== name.size()-2)
-            found = true;
+        size_t n = name.find_last_of(".");
+        if (n != std::string::npos)
+        {
+            ObjString match = name.substr(n);
+            found = match == ".l" || match == ".L" || match == ".a" || match == ".lib";
+        }
         if (found)
             linker.AddLibrary(name);
         else

@@ -422,7 +422,7 @@ int ImpLibMain::Run(int argc, char **argv)
                 return 0;
             }
         }
-        else if (ext != ".l")
+        else if (ext != ".l" && ext != ".a" && ext != ".lib")
         {
             std::cout << outputFile.c_str() << " is an invalid output file type" << std::endl;
             return 1;

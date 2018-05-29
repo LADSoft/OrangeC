@@ -139,9 +139,15 @@ int LibMain::Run(int argc, char **argv)
     // setup
     ObjString outputFile = argv[1];
     size_t n = outputFile.find_last_of('.');
-    if (n == std::string::npos || (n != outputFile.size()-1 && outputFile[n+1] != 'l'))
+    if (n == std::string::npos)
     {
         outputFile += ".l";
+    }
+    else
+    {
+        ObjString ext = outputFile.substr(n);
+        if (ext != ".l" && ext != ".a" && ext != ".lib")
+            outputFile += ".l";
     }
     
     LibManager librarian(outputFile, caseSensitiveSwitch.GetValue());

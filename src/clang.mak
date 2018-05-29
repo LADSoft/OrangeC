@@ -24,98 +24,93 @@
 
 ifeq "$(COMPILER)" "CLANG"
 
+UCRTPATH=C:\Program Files (x86)\Windows Kits\10\Lib\10.0.10240.0\ucrt\x86
 CLANG_PATH := c:\program files\llvm
-COMPILER_PATH := c:\mingw
 OBJ_IND_PATH := clang
 
-CPP_deps = $(notdir $(CPP_DEPENDENCIES:.cpp=.o))
-C_deps = $(notdir $(C_DEPENDENCIES:.c=.o))
-ASM_deps = $(notdir $(ASM_DEPENDENCIES:.nas=.o))
-TASM_deps = $(notdir $(TASM_DEPENDENCIES:.asm=.o))
-RES_deps = $(notdir $(RC_DEPENDENCIES:.rc=.o))
+CPP_deps = $(notdir $(CPP_DEPENDENCIES:.cpp=.obj))
+C_deps = $(notdir $(C_DEPENDENCIES:.c=.obj))
+ASM_deps = $(notdir $(ASM_DEPENDENCIES:.nas=.obj))
+TASM_deps = $(notdir $(TASM_DEPENDENCIES:.asm=.obj))
+RES_deps = $(notdir $(RC_DEPENDENCIES:.rc=.res))
 
-MAIN_DEPENDENCIES = $(MAIN_FILE:.cpp=.o)
+MAIN_DEPENDENCIES = $(MAIN_FILE:.cpp=.obj)
 ifeq "$(MAIN_DEPENDENCIES)" "$(MAIN_FILE)"
-MAIN_DEPENDENCIES = $(MAIN_FILE:.c=.o)
+MAIN_DEPENDENCIES = $(MAIN_FILE:.c=.obj)
 endif
 
-LLIB_DEPENDENCIES = $(notdir $(filter-out $(EXCLUDE) $(MAIN_DEPENDENCIES), $(CPP_deps) $(C_deps) $(ASM_deps) $(TASM_deps)))
+LLIB_DEPENDENCIES := $(notdir $(filter-out $(addsuffix .obj,$(EXCLUDE)) $(MAIN_DEPENDENCIES), $(CPP_deps) $(C_deps) $(ASM_deps) $(TASM_deps)))
 
 
-CC="$(CLANG_PATH)\bin\clang"
+
+CC="$(CLANG_PATH)\bin\clang-cl"
 PCC="$(CLANG_PATH)\bin\clang++"
-CCFLAGS = -c
+CCFLAGS = /O2 /EHs /c /nologo -m32 /std:c++11 -Wno-deprecated-declarations
 
-LINK=$(COMPILER_PATH)\bin\ld
-LFLAGS=-L$(_LIBDIR)
+LINK=link.exe
+LFLAGS=/LTCG:incremental /nologo /NXCOMPAT /DYNAMICBASE /MACHINE:x86 /OPT:REF /SAFESEH  /OPT:ICF /TLBID:1
 
-LIB=$(COMPILER_PATH)\bin\ar
-LIBFLAGS=-r -s
-LIB_EXT:=.a
-LIB_PREFIX:=lib
+LIBEXE=lib.exe
+LIBFLAGS=/MACHINE:x86 /LTCG /nologo
+LIB_EXT:=.lib
+LIB_PREFIX:=
+TASM=$(COMPILER_PATH)\bin\\tasm32
 
-ASM=$(COMPILER_PATH)\bin\as
-ASMFLAGS=
+ASM=nasm
+ASMFLAGS = -fwin32
 
-RC=$(COMPILER_PATH)\bin\windres
-RCFLAGS=-DWINVER=0x400
+RC=rc.exe
+RCFLAGS = ./r
 
 ifneq "$(INCLUDES)" ""
-CINCLUDES:=$(addprefix -I,$(INCLUDES))
+CINCLUDES:=$(addprefix /I,$(INCLUDES))
 endif
+DEFINES := $(addprefix /D,$(DEFINES))
+DEFINES := $(subst @, ,$(DEFINES))
+LIB_DEPENDENCIES := $(foreach file,$(addsuffix $(LIB_EXT),$(LIB_DEPENDENCIES)), $(_LIBDIR)\$(file))
 
-DEFINES:=$(addprefix -D,$(DEFINES))
-DEFINES:=$(subst @, ,$(DEFINES))
-
-CCFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES)\
-    -DGNUC -DWIN32 -D_WIN32_IE=0x600 -D_WIN32_WINNT=0x500 -DWINVER=0x500
+CCFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) /DMICROSOFT /DWIN32
 
 ifeq "$(TARGET)" "GUI"
-LFLAGS := $(LFLAGS) -s -Wl,--subsystem,windows
+LFLAGS:= $(LFLAGS) /SUBSYSTEM:WINDOWS
+else
+LFLAGS:= $(LFLAGS) /MANIFEST /SUBSYSTEM:CONSOLE /MANIFESTUAC:"level='asInvoker' uiAccess = 'false'"
 endif
 
-COMPLIB=-lstdc++ -lcomctl32 -lgdi32 -lcomdlg32 -lole32 -luxtheme -lkernel32 -lmsimg32
+COMPLIB:=$(COMPLIB) "kernel32.lib" "user32.lib" "gdi32.lib" "winspool.lib" "comdlg32.lib" "advapi32.lib" "shell32.lib" "ole32.lib" "oleaut32.lib" "odbc32.lib" "odbccp32.lib" "uxtheme.lib" "comctl32.lib" "msimg32.lib"
 
-
-vpath %.o $(_OUTPUTDIR)
-vpath %$(LIB_EXT) $(_LIBDIR)
+vpath %.obj $(_OUTPUTDIR)
+vpath %.lib $(_LIBDIR)
 vpath %.res $(_OUTPUTDIR)
 
-%.o: %.cpp
-	$(PCC) $(CCFLAGS) -o$(_OUTPUTDIR)/$@ $^
+%.obj: %.cpp
+	$(CC) $(CCFLAGS) -Fo$(_OUTPUTDIR)/$@ $^
 
-%.o: %.c
-	$(CC) $(CCFLAGS) -o$(_OUTPUTDIR)/$@ $^
+%.obj: %.c
+	$(CC) $(CCFLAGS) -Fo$(_OUTPUTDIR)/$@ $^
 
-%.o: %.s
+%.obj: %.asm
+	$(TASM) /ml /zi /i$(INCLUDE) $(ADEFINES) $^, $(_OUTPUTDIR)/$@
+
+%.obj: %.nas
 	$(ASM) $(ASMFLAGS) -o$(_OUTPUTDIR)/$@ $^
 
-%.o: %.rc
-	$(RC) $(RCFLAGS) -i $^ -o $(_OUTPUTDIR)/$@
+%.res: %.rc
+	$(RC) -i$(RCINCLUDE) $(RCFLAGS) -fo$(_OUTPUTDIR)/$@ $^
 
-$(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT): $(LLIB_DEPENDENCIES)
-#	-del $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT) 2> $(NULLDEV)
-	$(LIB) $(LIBFLAGS) $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT) @&&|
- $(addprefix $(subst \,/,$(_OUTPUTDIR)\),$(LLIB_DEPENDENCIES))
-|
-LDEPS := $(addprefix -l,$(NAME) $(LIB_DEPENDENCIES))
-LDEPS := $(subst \,/,$(LDEPS))
+$(_LIBDIR)\$(NAME)$(LIB_EXT): $(LLIB_DEPENDENCIES)
+#	-del $()_LIBDIR)\$(NAME)$(LIB_EXT) 2> $(NULLDEV)
+	$(LIBEXE) $(LIBFLAGS) /OUT:$(_LIBDIR)\$(NAME)$(LIB_EXT) $(addprefix $(_OUTPUTDIR)\,$(LLIB_DEPENDENCIES)) 
 
-LDEPS2 := $(addprefix $(_LIBDIR)\$(LIB_PREFIX),$(NAME) $(LIB_DEPENDENCIES))
-LDEPS2 := $(addsuffix .a, $(LDEPS2))
 
-LMAIN := $(addprefix $(_OUTPUTDIR)\,$(MAIN_DEPENDENCIES) $(RES_deps))
-LMAIN := $(subst \,/,$(LMAIN))
+$(NAME).exe: $(MAIN_DEPENDENCIES) $(LIB_DEPENDENCIES) $(NAME)$(LIB_EXT) $(RES_deps)
+	$(LINK) $(TYPE) $(LFLAGS) $(COMPLIB) /LIBPATH:"$(UCRTPATH)" /LIBPATH:"$(VCINSTALLDIR)\lib" /OUT:$@ $(_LIBDIR)\$(NAME)$(LIB_EXT) $(LIB_DEPENDENCIES) $(addprefix /DEF:,$(DEF_DEPENDENCIES)) $(addprefix $(_OUTPUTDIR)\,$(RES_deps)) $(addprefix $(_OUTPUTDIR)\,$(MAIN_DEPENDENCIES))
 
-$(NAME).exe: $(MAIN_DEPENDENCIES) $(LDEPS2) $(RES_deps)
-	$(CC) $(LFLAGS) -o $(NAME).exe @&&|
-$(LMAIN) $(LDEPS) $(COMPLIB) $(DEF_DEPENDENCIES)
-|
 
 %.exe: %.c
-	$(CC) -o $@ $^ $(COMPLIB)
+	$(CC) $(CCFLAGS) -nologo $^
 
 %.exe: %.cpp
-	$(CC) -o $@ $^ $(COMPLIB)
+	$(CC) $(CCFLAGS) -nologo $^
 
 endif

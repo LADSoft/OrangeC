@@ -49,7 +49,6 @@ PROCESS *debugProcessList;
 static int Semaphores;
 static int stopWinMain;
 static HANDLE abortEvent;
-
 static void DeleteDLLInfo(DWORD procId, DLL_INFO *info);
 // this code sorta has the beginning of multiprocess debugging, but, the symbol
 // table stuff needs to be revamped to handle it properly.  For right now,
@@ -772,6 +771,7 @@ void StartDebug(char *cmd)
 
                 case EXIT_PROCESS_DEBUG_EVENT:
                     {
+                        activeProcess = 0; // tells the edit window painter to abstain from drawing line data
                         PROCESS *pr = GetProcess(stDE.dwProcessId);
                         PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
 

@@ -383,10 +383,10 @@ LRESULT CALLBACK RegisterProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 SaveRegisterContext();
                 break;
             case ID_SETADDRESS:
-                regContext = activeThread->regs;
                 registerHandle = (HANDLE)lParam;
                 if (lParam)
                 {
+                    regContext = activeThread->regs;
                     int i;
                     for (i = 0; i < sizeof(regs) / sizeof(REGDATA); i++)
                     if (regs[i].currentdataptr)

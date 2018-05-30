@@ -43,8 +43,7 @@ DLLOBJS = $(shell dir $(B) $(DLLOBJECT)\\*.o)
 
 .\lscrtlil.dll: .\lscrtl.o .\c0dll.o $(RCFILE).res
 	-del $@
-	$(LINK) $(LINKFLAGS) /l /T:DLL32 -o.\lscrtlil.rel .\lscrtl.o .\c0dll.o $(CLIBOBJECT)\srproc.o $(foreach dir, $(filter-out c0.o c0lsstartup.o, $(DLLOBJS)), $(DLLOBJECT)\$(dir)) $(SYSOBJECT)\climp.l $(RCFILE).res
-	dlpe /! /f /mDLL /olscrtlil.dll lscrtl.
+	$(LINK) $(LINKFLAGS) /l /T:DLL32 -o.\lscrtlil .\lscrtl.o .\c0dll.o $(CLIBOBJECT)\srproc.o $(foreach dir, $(filter-out c0.o c0lsstartup.o, $(DLLOBJS)), $(DLLOBJECT)\$(dir)) $(SYSOBJECT)\climp.l $(RCFILE).res
 #	move lscrtlil.dll \occil\bin
 
 .\lscrtl.o: lscrtl.nas

@@ -292,7 +292,7 @@ bool BRCLoader::load()
             }
             else
             {
-                std::string temp = std::string("Invalid object file ") + name.c_str(); 
+                std::string temp = std::string("Invalid browse information file ") + name.c_str(); 
                 std::cout << temp.c_str() << std::endl;
             }
         }

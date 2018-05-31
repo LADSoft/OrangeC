@@ -494,8 +494,12 @@ void reflowConditional(BLOCK *src, BLOCK *dst)
         crit->succ = crit->pred = NULL;
         blockArray[crit->blocknum] = NULL;	
     }
-    src->succ->block = dst;
-    src->succ->next = NULL;
+    // it may have died in the above code..
+    if (!src->dead)
+    {
+        src->succ->block = dst;
+        src->succ->next = NULL;
+    }
 }
 /* not even thinking about assert() or longjmp() */
 static int RemoveCriticalEdges(enum e_fgtype type, BLOCK *parent, BLOCK *in)

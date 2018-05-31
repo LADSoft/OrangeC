@@ -13,9 +13,16 @@ version 6.0.38:
     occ: fix problems when using namespace qualifiers on member initializer names for base classes
     occ: fix problems with member initializers not being set up correctly
     occ: use 'real' line number in debug info
+    occ: add common options to emit data.
+    occ, olink, olib: allow '.a' and '.lib' to be used as extensions for libraries
+    occ: fix /S switch so you can use -S as well.
+    occ: remove 'expression has no effect' warning when both paths of a ?: expression are void values
+    occ: fix a newly introduced problem where sometimes it could generate bad output files for static data
+    occ: fix a crash if an intermediate code block became dead while it was still being used...
     olink: fix a crash if occ failed to output line information properly
     dlpe: fix the fixup of relative branch to import thunks, to allow the thunks to be relocated
     dlpe: use --nologo when invokeing oimplib
+    dlpe: fix a rare problem where a write past the end of allocated memory could cause a crash
     occpr (symbol table parser): fix two crashes
     oimplib: 'replace' dll modules in library, instead of 'adding' them, so they don't go stale
     ocide: could not step into a dll function
@@ -26,7 +33,11 @@ version 6.0.38:
     ocide: fix problems with single stepping and setting breakpoints in dll
     ocide: fix problems with DLL breakpoints not being reset after program is restarted
     ocide: fix perenial crash if closing windows while the colorization is updating
-    ocide: fix problems with browsing (F12)
+    ocide: clean up menus related to file close options
+    ocide: fix problem with 'browseto' (F12) - it wouldn't browse to macro definitions
+    ocide: fix various crashes that could occur during database fetches, while editing or opening/closeing debugger
+    ocide: fix various display problems with 'build properties' window
+    ocide: fix so that build properties window can be refreshed with new data, if left open.
     oimplib, olib, olink: fix more problems when '/' was used as a path separator
     olink: bail with an error if a library cannot be found
     omake: fix compatibility issues with /bin/sh
@@ -37,7 +48,8 @@ version 6.0.38:
     rtl: uncaught throw will now result in abnormal program termination
     rtl: fix definition of 'bad_cast' to inherit from 'exception'
     rtl: fix the definition of __sync_add_and_fetch provided for locale.cpp to add to the result
-
+    rtl: add a 'helper' dll which can output a stack trace if a program crashes
+    all: add 'clang' to continuous integration builds
 Version 6.0.37: 5/20/2018
     documentation:   various upgrades
     all programs:    add --version

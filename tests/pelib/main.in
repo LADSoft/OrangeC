@@ -1,0 +1,5 @@
+function main():
+	basic'println("Ola mundo")
+	basic'getline()
+	return 0
+

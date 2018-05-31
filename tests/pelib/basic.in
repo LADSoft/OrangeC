@@ -1,0 +1,6 @@
+class basic:
+	function println(arg):
+		puts(arg)
+
+	function getline():
+		getchar()

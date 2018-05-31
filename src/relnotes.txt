@@ -38,9 +38,11 @@ version 6.0.38:
     ocide: fix various crashes that could occur during database fetches, while editing or opening/closeing debugger
     ocide: fix various display problems with 'build properties' window
     ocide: fix so that build properties window can be refreshed with new data, if left open.
+    ocide: be explicit about errors when can't debug a program , especially the 'invalid workding directory' error.
     oimplib, olib, olink: fix more problems when '/' was used as a path separator
     olink: bail with an error if a library cannot be found
     omake: fix compatibility issues with /bin/sh
+    obrc: tweak error message to not mention object files
     rtl:  sprintf could try to modify input strings, didn't work if string is in readonly memory
     rtl: remove definition of __declspec in the _defs.h
     rtl: fix C++ check in stdbool.h
@@ -49,7 +51,9 @@ version 6.0.38:
     rtl: fix definition of 'bad_cast' to inherit from 'exception'
     rtl: fix the definition of __sync_add_and_fetch provided for locale.cpp to add to the result
     rtl: add a 'helper' dll which can output a stack trace if a program crashes
+    rtl: fix the definition of 'TryEnterCriticalSection'
     all: add 'clang' to continuous integration builds
+    documentation: add minimal documentation for ancilliary projects
 Version 6.0.37: 5/20/2018
     documentation:   various upgrades
     all programs:    add --version

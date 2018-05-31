@@ -27,6 +27,7 @@
 #include <commctrl.h>
 #include <stdio.h>
 #include <richedit.h>
+#include <winerror.h>
 
 #include "header.h"
 #include <process.h>
@@ -703,8 +704,31 @@ void StartDebug(char *cmd)
     if (!bRet)
     {
         ReleaseSemaphore(StartupSem, 1, 0);
-        ExtendedMessageBox("Debugger", MB_SETFOREGROUND | MB_SYSTEMMODAL, 
-            "Could not execute %s. %d", cmd,  GetLastError());
+	LPVOID msg;
+        DWORD le = GetLastError(); 
+
+        if (le == ERROR_DIRECTORY)
+        {
+            ExtendedMessageBox("Debugger", MB_SETFOREGROUND | MB_SYSTEMMODAL, 
+                "Could not execute %s:\n\n The specified working directory is invalid", cmd);
+        }
+        else
+        {
+            FormatMessage(
+                FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+                FORMAT_MESSAGE_FROM_SYSTEM |
+                FORMAT_MESSAGE_IGNORE_INSERTS,
+                NULL,
+                le,
+                MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                (LPTSTR) &msg,
+                0, NULL );
+
+            ExtendedMessageBox("Debugger", MB_SETFOREGROUND | MB_SYSTEMMODAL, 
+                "Could not execute %s:\n\n %s", cmd,  msg);
+
+            LocalFree(msg);
+        }
         return ;
     }
     Sleep(500); /* Needed to make things happy */

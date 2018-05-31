@@ -760,7 +760,7 @@ extern VOID
 		     LPCRITICAL_SECTION lpCriticalSection
 		     );
 
-extern VOID
+extern BOOL
  PASCAL WINBASEAPI TryEnterCriticalSection(
 		     LPCRITICAL_SECTION lpCriticalSection
 		     );

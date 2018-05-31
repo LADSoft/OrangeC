@@ -217,7 +217,7 @@ static struct {
 {"'%s' unused", TRIVIALWARNING },
 {"static object '%s' is unused", TRIVIALWARNING },
 {"'%s' hides declaration at outer scope", WARNING },
-{"Not an allowed type", ERROR },
+{"Cannot use 'void' value here", ERROR },
 {"Cannot modify a const object", ERROR },
 {"Expression syntax error", ERROR },
 {"signed/unsigned mismatch in '%s' comparison", TRIVIALWARNING },

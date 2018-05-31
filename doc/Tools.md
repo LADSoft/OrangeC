@@ -46,6 +46,8 @@
 * [ORC](general/ORC.md) is a WIN32 resource compiler.
 * [Coff2IEEE](general/Coff2IEEE.md) converts import libraries from the COFF format to the Orange C format.
 * [OCIDE](general/Ocide.md) Orange C Integrated Development Environment
+* [OBRC](general/Obrc.md) Orange C Browse Compiler
+* [OCCPR](general/Occpr.md) Orange C Code Completion compiler
 
 ## Tools Setup
 

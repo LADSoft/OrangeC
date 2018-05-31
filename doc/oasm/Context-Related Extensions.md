@@ -169,6 +169,3 @@
  will result in nothing being assembled because the names match.
  
  See the section on [Conditional Processing](Conditional%20Processing.md) for more on _%elif-style conditionals_.
-  
- 
- 

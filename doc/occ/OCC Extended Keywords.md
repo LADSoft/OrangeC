@@ -143,5 +143,3 @@ Allocate memory from automatic storage (the processor stack).  The primary motiv
      typeof(aa) bb;
  
   declares bb as long double type.
- 
-   

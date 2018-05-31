@@ -74,8 +74,4 @@ runs the function 'myfunc' after the RTL functions have initialized.  Myfunc wou
  
      void myfunc(void) ;
  
-Note that \#pragma rundown is equivalent to atexit.  
- 
- 
- 
-   
+Note that \#pragma rundown is equivalent to atexit.

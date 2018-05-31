@@ -59,5 +59,3 @@ For example, if the tools are installed in c:\\orangec, the following command li
 
 >     set ORANGEC=c:\\orangec
 >     PATH=c:\\orangec\\bin;%PATH%
-
- 

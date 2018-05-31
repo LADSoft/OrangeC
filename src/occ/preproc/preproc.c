@@ -73,6 +73,7 @@ void datemac(char *string);
 void dateisomac(char *string);
 void timemac(char *string);
 void linemac(char *string);
+void countermac(char *string);
 
 static int instr = 0;
 static int commentlevel, commentline;
@@ -93,7 +94,7 @@ static int once;
 #endif
 
 /* List of standard macros */
-#define INGROWNMACROS 5
+#define INGROWNMACROS 6
 
 struct inmac
 {
@@ -119,6 +120,9 @@ struct inmac
     , 
     {
         "__LINE__", linemac
+    },
+    {
+        "__COUNTER__", countermac
     }
 };
 
@@ -1791,7 +1795,17 @@ void timemac(char *string)
 void linemac(char *string)
 {
     sprintf(string, "%d", includes->line);
-} 
+}
+
+/*-------------------------------------------------------------------------*/
+
+static int counter = 0;
+void countermac(char *string)
+{
+    sprintf(string, "%d", counter);
+    counter++;
+}
+
 /* Scan for default macros and replace them */
 void defmacroreplace(char *macro, char *name)
 {

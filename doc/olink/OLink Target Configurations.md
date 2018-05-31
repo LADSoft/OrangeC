@@ -82,7 +82,3 @@
 |SUBSYSMINOR|Set the Subsystem Minor Version|0|
 
   Table 3 - PE.SPC adjustable parameters
- 
- 
- 
-     

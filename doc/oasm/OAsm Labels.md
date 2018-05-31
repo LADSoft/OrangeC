@@ -51,6 +51,3 @@
 ### Special Labels
 
  **OAsm** defines one special label, '..start'.  This label, if used, indicates that this particular position in the code space is the first code that should be executed when the program runs.
- 
- 
- 

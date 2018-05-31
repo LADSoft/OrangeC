@@ -12,5 +12,3 @@ This toolchain is mostly standard C/C++, with some windows specific code in the 
 The toolchain handles up to the C11 standard and C++2014.
 
 Orange C is released under the GNU license version 3.
-
-

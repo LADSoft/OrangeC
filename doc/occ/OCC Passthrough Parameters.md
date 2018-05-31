@@ -24,4 +24,3 @@ This switch strips any extension from 'xxx' and adds '.l'.   Then when the linke
 ### /Lxxx      set library path
 
 This switch adds to the library path.   The library path is passed to the linker so that it can search for libraries.
-

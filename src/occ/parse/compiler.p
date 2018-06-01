@@ -239,6 +239,7 @@ void DoDefaultSpecialization(SYMBOL *sp2);
 TEMPLATEPARAMLIST *getCurrentSpecialization(SYMBOL *sp);
 BOOLEAN TemplateFullySpecialized(SYMBOL *sp);
 LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum e_sc storage_class, BOOLEAN isextern);
+BOOLEAN isConstexprConstructor(SYMBOL *sym);
 BOOLEAN MatchesConstFunction(SYMBOL *sp);
 LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_class, enum e_lk defaultLinkage,
 					   BLOCKDATA *parent, BOOLEAN needsemi, int asExpression, BOOLEAN asfriend, BOOLEAN isTemplate, enum e_ac access );
@@ -605,7 +606,7 @@ INITIALIZER *initInsert(INITIALIZER **pos, TYPE *tp, EXPRESSION *exp,
                                int offset, BOOLEAN noassign);
 LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc, 
 				 INITIALIZER **init, INITIALIZER **dest, TYPE *itype, SYMBOL *sp, BOOLEAN arrayMember, int flags);
-BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams);
+BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams, BOOLEAN allowFunc);
 EXPRESSION *getThisNode(SYMBOL *sp);
 void RecalculateVariableTemplateInitializers(INITIALIZER **in, INITIALIZER ***out, TYPE *tp, int ioffset);
 LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_class_in, BOOLEAN uninitconst, int flags);

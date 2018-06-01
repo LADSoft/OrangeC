@@ -333,7 +333,7 @@ BOOLEAN castToArithmeticInternal(BOOLEAN integer, TYPE **tp, EXPRESSION **exp, e
             {
                 *exp = substitute_params_for_function(params, (*exp)->v.syms);
                 optimize_for_constants(exp);
-                if (!cst->constexpression || !IsConstantExpression(*exp, TRUE))
+                if (!cst->constexpression || !IsConstantExpression(*exp, TRUE, FALSE))
                     error(ERR_CONSTANT_FUNCTION_EXPECTED);
             }
             else

@@ -705,7 +705,7 @@ int dumpInit(SYMBOL *sp, INITIALIZER *init)
             exp = exp->left;
         if (exp->type == en_func && !exp->v.func->ascall)
             exp = exp->v.func->fcall;
-        if (!IsConstantExpression(exp, FALSE))
+        if (!IsConstantExpression(exp, FALSE, FALSE))
         {
             if (cparams.prm_cplusplus)
             {
@@ -3334,7 +3334,17 @@ LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc,
     }
     return lex;
 }
-BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams)
+BOOLEAN checkconstexprfunc(EXPRESSION *node)
+{
+    if (node->type == en_thisref)
+        node = node->left;
+    if (node->type == en_func && node->v.func->sp)
+    {
+        return node->v.func->sp->constexpression;
+    }
+    return FALSE;
+}
+BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams, BOOLEAN allowFunc)
 {
     BOOLEAN rv = FALSE;
     if (total_errors) // in some error conditions nodes can get into a loop
@@ -3433,7 +3443,7 @@ BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams)
                 case en_labcon:
                 case en_absolute:
                 case en_threadlocal:
-                    return node->left->v.sp->constexpression || node->left->v.sp->init && IsConstantExpression(node->left->v.sp->init->exp, allowParams);
+                    return node->left->v.sp->constexpression || node->left->v.sp->init && IsConstantExpression(node->left->v.sp->init->exp, allowParams, allowFunc);
             }
             break;
         case en_uminus:
@@ -3478,14 +3488,14 @@ BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams)
         case en_loadstack:
         case en_savestack:
         case en_literalclass:
-            rv = IsConstantExpression(node->left, allowParams);
+            rv = IsConstantExpression(node->left, allowParams, allowFunc);
             break;
         case en_assign:
             rv = FALSE;
             break;
         case en_autoinc:
         case en_autodec:
-            rv = IsConstantExpression(node->left, allowParams);
+            rv = IsConstantExpression(node->left, allowParams, allowFunc);
             break; 
         case en_add:
         case en_sub:
@@ -3532,8 +3542,8 @@ BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams)
         case en__cpblk:
             /*		case en_array: */
 
-            rv = IsConstantExpression(node->left, allowParams);
-            rv &= IsConstantExpression(node->right, allowParams);
+            rv = IsConstantExpression(node->left, allowParams, allowFunc);
+            rv &= IsConstantExpression(node->right, allowParams, allowFunc);
             break;
         case en_atomic:
             rv = FALSE;
@@ -3545,10 +3555,10 @@ BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams)
         case en_thisref:
         case en_lvalue:
         case en_funcret:
-            rv = IsConstantExpression(node->left, allowParams);
+            rv = IsConstantExpression(node->left, allowParams, allowFunc);
             break;
         case en_func:
-            return !node->v.func->ascall;
+            return !node->v.func->ascall || (allowFunc && checkconstexprfunc(node));
             break;
         case en_stmt:
             rv = FALSE;
@@ -3944,7 +3954,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
             while (l)
             {
                 if (l->next || l->exp)
-                    if (!IsConstantExpression(sp->init->exp, FALSE))
+                    if (!IsConstantExpression(sp->init->exp, FALSE, TRUE))
                     {
                         error(ERR_CONSTANT_EXPRESSION_EXPECTED);
                         break;
@@ -3954,7 +3964,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
         }
         else
         {
-            if (!IsConstantExpression(sp->init->exp, FALSE))
+            if (!IsConstantExpression(sp->init->exp, FALSE, TRUE))
             {
                 sp->init->exp = intNode(en_c_i, 0);
                 error(ERR_CONSTANT_EXPRESSION_EXPECTED);

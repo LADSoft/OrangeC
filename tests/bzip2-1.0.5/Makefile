@@ -22,13 +22,12 @@ vpath %.res $(RESDIR)
 $(RESDIR)\%.res: %.rc	
 	orc /! -i.\;$(RESDIR) $<
 
-
 all: bzip2 bzip2recover test
 
 bzip2: libbz2.l bzip2.o $(RESDIR)\bzip2-res.res
 	occ /Wc /! /obzip2.exe bzip2.o $(RESDIR)\bzip2-res.res libbz2.l
 
-bzip2recover: bzip2recover.o $(RESDIR)\bzip2recover-res.res
+bzip2recover: libbz2.l bzip2recover.o $(RESDIR)\bzip2recover-res.res
 	occ /Wc /! /obzip2recover.exe bzip2recover.o $(RESDIR)\bzip2recover-res.res libbz2.l
 
 libbz2.l: $(OBJS)

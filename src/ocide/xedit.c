@@ -3078,7 +3078,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                 SelectObject(dc, xfont);
 
                 ReleaseDC(hwnd, dc);
-                p->cd->txtFontHeight = t.tmHeight;
+                p->cd->txtFontHeight = t.tmHeight+ 1; // the +1 is necessary for italic underline to be visible on some fonts...
                 p->cd->txtFontWidth = t.tmAveCharWidth;
                 GetObject(p->cd->hFont, sizeof(LOGFONT), &lf);
                 lf.lfWidth = t.tmAveCharWidth-1;

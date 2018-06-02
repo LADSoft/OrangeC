@@ -347,9 +347,14 @@ void xdrawline(HWND hwnd, EDITDATA *p, int chpos)
                     {
                         dx[j] = p->cd->txtFontWidth; 
                     }
-                    if (col > 1 && font == p->cd->hItalicFont)
-                        z = -1;
-                    ExtTextOut(dc, col+z, r.top, ETO_OPAQUE, NULL, buf, n,dx);
+                    // I am not sure why this is necessary...
+                    if (font == p->cd->hItalicFont)
+                    {
+                        if (col > 1)
+                            z = -1;
+                    }
+                    r.left = col-z;
+                    ExtTextOut(dc, col+z, r.top, ETO_OPAQUE, &r, buf, n,dx);
                     col += (p->cd->txtFontWidth) * n;
                 }
             }

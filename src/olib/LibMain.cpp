@@ -131,20 +131,20 @@ int LibMain::Run(int argc, char **argv)
     {
         Utils::usage(argv[0], usageText);
     }
-    if (argc < 2 && File.GetCount() < 3)
+    int fileCount = argc -1 + File.GetCount() + !!OutputFile.GetValue().size();
+    if (fileCount < 2)
     {
         Utils::usage(argv[0], usageText);
     }
 
-    // automake/ar compatibility, this means you can't have a library named cru unless you specifically give an extension
-    if (!strcmp(argv[1], "cru"))
+    ObjString outputFile = OutputFile.GetValue();
+    if (!outputFile.size())
     {
-        mode = REPLACE;
+       outputFile = argv[1];
         memcpy(argv+1, argv+2, (argc-1) * sizeof(char *));
         --argc;
     }
     // setup
-    ObjString outputFile = argv[1];
     size_t n = outputFile.find_last_of('.');
     if (n == std::string::npos)
     {
@@ -164,7 +164,7 @@ int LibMain::Run(int argc, char **argv)
             std::cout << outputFile.c_str() << " is not a library" << std::endl;
             return 1;
         }
-    for (int i= 2; i < argc; i++)
+    for (int i= 1; i < argc; i++)
         AddFile(librarian, argv[i]);
     for (int i = 1; i < File.GetCount(); i++)
         AddFile(librarian, File.GetValue()[i]);

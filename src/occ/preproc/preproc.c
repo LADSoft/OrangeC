@@ -79,7 +79,7 @@ static int instr = 0;
 static int commentlevel, commentline;
 static char defkw[] = "defined";
 static int currentfile;
-
+static int counter;
 #ifndef CPREPROCESSOR
 #define ONCE_BUCKETS 32
 typedef struct _once
@@ -143,6 +143,7 @@ void preprocini(char *name, FILE *fil)
     stdpragmas = STD_PRAGMA_FCONTRACT ;
     defsyms = CreateHashTable(GLOBALHASHSIZE);
     macroBuffers = NULL;
+    counter = 0;
 #ifndef CPREPROCESSOR
     once = 0;
     packlevel  = 0;
@@ -1799,7 +1800,6 @@ void linemac(char *string)
 
 /*-------------------------------------------------------------------------*/
 
-static int counter = 0;
 void countermac(char *string)
 {
     sprintf(string, "%d", counter);

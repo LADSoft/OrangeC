@@ -4051,7 +4051,7 @@ static BOOLEAN Deduce(TYPE *P, TYPE *A, BOOLEAN change, BOOLEAN byClass, BOOLEAN
 static int eval(EXPRESSION *exp)
 {
     optimize_for_constants(&exp);
-    if (IsConstantExpression(exp, FALSE))
+    if (IsConstantExpression(exp, FALSE, FALSE))
         return exp->v.i;
     return 0;
 }

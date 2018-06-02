@@ -4022,7 +4022,7 @@ LEXEME *getExceptionSpecifiers(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_s
                 lex = getsym();
                 lex = optimized_expression(lex, funcsp, NULL, &tp, &exp, FALSE);
                 FreeLocalContext(NULL, NULL, 0);
-                if (!IsConstantExpression(exp, FALSE))
+                if (!IsConstantExpression(exp, FALSE, FALSE))
                 {
                     if (!templateNestingCount)
                         error(ERR_CONSTANT_VALUE_EXPECTED);
@@ -6579,7 +6579,7 @@ doInitialize:
                                         INITIALIZER *init = sp->init;
                                         while (init)
                                         {
-                                            if (init->exp && !IsConstantExpression(init->exp, FALSE))
+                                            if (init->exp && !IsConstantExpression(init->exp, FALSE, FALSE))
                                                 break;
                                             init = init->next;
                                         }

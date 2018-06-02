@@ -3143,7 +3143,7 @@ static BOOLEAN hasNoBody(STATEMENT *stmt)
     }
     return TRUE;
 }
-static BOOLEAN isConstexprConstructor(SYMBOL *sym)
+BOOLEAN isConstexprConstructor(SYMBOL *sym)
 {
     HASHREC *hr;
     if (sym->constexpression)

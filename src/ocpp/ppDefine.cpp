@@ -528,23 +528,31 @@ int ppDefine::InsertReplacementString(std::string &macro, int end, int begin, st
     }
     else
     {
-        q = begin-1;
-        while (q > 0 && isspace(macro[q])) q--;
-        if (macro[q] == REPLACED_TOKENIZING)
-        {
-            if (!text.size())
-            {
-                text = nullptrTOKEN;
-            }
-        }
-        else if (macro[q] == '#')
-        {
-            stringizing = true;
-        }
-        else
+        if (begin == 0)
         {
             text = etext;
         }
+        else
+        {
+            q = begin - 1;
+
+            while (q > 0 && isspace(macro[q])) q--;
+            if (macro[q] == REPLACED_TOKENIZING)
+            {
+                if (!text.size())
+                {
+                    text = nullptrTOKEN;
+                }
+            }
+            else if (macro[q] == '#')
+            {
+                stringizing = true;
+            }
+            else
+            {
+                text = etext;
+            }
+        }   
     }
     if (stringizing)
         text = text + STRINGIZERTOKEN;

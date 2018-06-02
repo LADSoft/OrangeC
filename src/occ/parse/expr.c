@@ -1301,7 +1301,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                             *exp = substitute_params_for_function(funcparams, (*exp)->v.syms);
                             optimize_for_constants(exp);
                             *tp = basetype(match->tp)->btp;
-                            if (!match->constexpression || !IsConstantExpression(*exp, TRUE))
+                            if (!match->constexpression || !IsConstantExpression(*exp, TRUE, FALSE))
                                 error(ERR_CONSTANT_FUNCTION_EXPECTED);
                         }
                         else

@@ -1,0 +1,2 @@
+import "msvcrt.dll" cdecl puts
+import "msvcrt.dll" cdecl getchar

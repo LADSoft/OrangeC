@@ -806,18 +806,27 @@ ObjFile *AsmFile::MakeFile(ObjFactory &factory, std::string &name)
             for (int i=0; i < numericLabels.size(); ++i)
             {
                 Label *l = numericLabels[i];
-                l->SetObjectSection(objSections[l->GetSect()]);
-                if (l->IsPublic())
+                if (l->GetSect() != 0xffffffff)
                 {
-                    ObjSymbol *s1 = factory.MakePublicSymbol(l->GetName());
-                    ObjExpression *left = factory.MakeExpression(objSections[l->GetSect()]);
-                    ObjExpression *right = factory.MakeExpression(l->GetOffset()->ival);
-                    ObjExpression *sum = factory.MakeExpression(ObjExpression::eAdd, left, right);
-                    s1->SetOffset(sum);
-                    fi->Add(s1);
-                    l->SetObjSymbol(s1);
+                    l->SetObjectSection(objSections[l->GetSect()]);
+                    if (l->IsPublic())
+                    {
+                        ObjSymbol *s1 = factory.MakePublicSymbol(l->GetName());
+                        ObjExpression *left = factory.MakeExpression(objSections[l->GetSect()]);
+                        ObjExpression *right = factory.MakeExpression(l->GetOffset()->ival);
+                        ObjExpression *sum = factory.MakeExpression(ObjExpression::eAdd, left, right);
+                        s1->SetOffset(sum);
+                        fi->Add(s1);
+                        l->SetObjSymbol(s1);
+                    }
+                    else if (l->IsExtern())
+                    {
+                        ObjSymbol *s1 = factory.MakeExternalSymbol(l->GetName());
+                        fi->Add(s1);
+                        l->SetObjSymbol(s1);
+                    }
                 }
-                else if (l->IsExtern())
+                else
                 {
                     ObjSymbol *s1 = factory.MakeExternalSymbol(l->GetName());
                     fi->Add(s1);

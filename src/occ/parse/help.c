@@ -562,7 +562,7 @@ TYPE *assignauto(TYPE *pat, TYPE *nt)
                 {
                     pat = nt;
                 }
-            else if (isref(nt))
+            else if (isref(nt) || ispointer(nt))
                 pat = basetype(nt)->btp;
             else
                 pat = nt;

@@ -1401,6 +1401,7 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
             lex = initialize_string(lex, funcsp, &tp, &exp);
         }
         castToPointer(&tp, &exp, (enum e_kw)-1, itype);
+        basetype(itype)->btp = assignauto(basetype(itype)->btp, tp);
 
         if (sc != sc_auto && sc != sc_register)
         {

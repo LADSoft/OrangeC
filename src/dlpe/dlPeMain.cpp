@@ -91,7 +91,7 @@ int dlPeMain::defaultStubSize = sizeof(defaultStubData);
 
 const char *dlPeMain::usageText = "[options] relfile\n"
             "\n"
-            "/f     remove underscore from exports\n"
+            "/f             remove underscore from exports\n"
             "/mxxx          Set output file type\n"
             "/oxxx          Set output file name\n"
             "/sxxx          Set stub file name\n"

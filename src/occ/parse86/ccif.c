@@ -203,8 +203,6 @@ static int WriteStructMembers(SYMBOL *sym, SYMBOL *parent, sqlite3_int64 struct_
                     tp = basetype(tp)->btp;
                 while (ispointer(tp))
                     tp = basetype(tp)->btp, indirectCount++;
-                if (!strcmp(st->name, "position"))
-                    printf("hi");
                 if (isstructured(tp) && isstructured(basetype(tp)->sp->tp))
                 {
                     rel_id = basetype(tp)->sp->tp->sp->ccStructId;

@@ -55,7 +55,7 @@
 	<Define Name="STACKBASE" Value="0x20000" />
 	<Define Name="STACKSIZE" Value="0x400" />
 </Switch>
-<Switch Application="dlpe.exe" Flags="/mCON" Name="CON32" SpecFile="pe.spc" Rel="0" MapMode="0">
+<Switch Application="dlpe.exe" Flags="/mCON /f" Name="CON32" SpecFile="pe.spc" Rel="0" MapMode="0">
 	<Extension Value=".res" />
 	<Extension Value=".def" />
 	<Define Name="IMAGEBASE" Value="0x400000" />
@@ -71,7 +71,7 @@
         <Define Name="SUBSYSMINOR" Value="0x0" />
         <Define Name="SUBSYSTEM" Value="0x0" />
 </Switch>
-<Switch Application="dlpe.exe" Flags="/mGUI" Name="GUI32" SpecFile="pe.spc" Rel="0" MapMode="0">
+<Switch Application="dlpe.exe" Flags="/mGUI /f" Name="GUI32" SpecFile="pe.spc" Rel="0" MapMode="0">
 	<Extension Value=".res" />
 	<Extension Value=".def" />
 	<Define Name="IMAGEBASE" Value="0x400000" />
@@ -87,7 +87,7 @@
         <Define Name="SUBSYSMINOR" Value="0x0" />
         <Define Name="SUBSYSTEM" Value="0x0" />
 </Switch>
-<Switch Application="dlpe.exe" Flags="/mDLL" Name="DLL32" SpecFile="pe.spc" Rel="0" MapMode="0">
+<Switch Application="dlpe.exe" Flags="/mDLL /f" Name="DLL32" SpecFile="pe.spc" Rel="0" MapMode="0">
 	<Extension Value=".res" />
 	<Extension Value=".def" />
 	<Define Name="IMAGEBASE" Value="0x400000" />

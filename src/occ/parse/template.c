@@ -3174,7 +3174,7 @@ TYPE *SynthesizeType(TYPE *tp, TEMPLATEPARAMLIST *enclosing, BOOLEAN alt)
                                 if (p->tmpl)
                                 {
                                     SYMBOL *s = templatesearch(tpa->argsym->name, p->tmpl);
-                                    if (s)
+                                    if (s && s->tp->templateParam->p->byClass.val)
                                     {
                                         *last = Alloc(sizeof(TYPE));
                                         **last = *s->tp->templateParam->p->byClass.val;

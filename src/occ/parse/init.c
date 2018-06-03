@@ -1389,6 +1389,7 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
             if (!tp)
             {
                 error(ERR_EXPRESSION_SYNTAX);
+                tp = &stdint;
             }
             else
             {

@@ -89,25 +89,26 @@ int Spawner::InternalRun()
         bool curIgnore = ignoreErrors;
         bool curDontRun = dontRun;
         const std::string &a = (*it);
-        int i;
-        for (i=0; i < a.size(); i++)
-            if (a[i] == '+')
-                curDontRun = false;
-            else if (a[i] == '@')
-                curSilent = true;
-            else if (a[i] == '-')
-                curIgnore = true;
-            else
-                break;
         if (a.find("$(MAKE)") != std::string::npos || a.find("${MAKE}") != std::string::npos)
         {
             make = true;
             curDontRun = false;
         }
         OS::Take();
-        std::string cmd = a.substr(i);
+        std::string cmd = a;
         Eval c(cmd, false, ruleList, rule);
         cmd = c.Evaluate(); // deferred evaluation
+        int i;
+        for (i=0; i < cmd.size(); i++)
+            if (cmd[i] == '+')
+                curDontRun = false;
+            else if (cmd[i] == '@')
+                curSilent = true;
+            else if (cmd[i] == '-')
+                curIgnore = true;
+            else
+                break;
+        cmd = cmd.substr(i);
         size_t n = cmd.find("&&");
         std::string makeName;
         if (shell != "/bin/sh" && n != std::string::npos && n == cmd.size() - 3)

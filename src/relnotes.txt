@@ -20,6 +20,7 @@ version 6.0.38:
     occ: fix a newly introduced problem where sometimes it could generate bad output files for static data
     occ: fix a crash if an intermediate code block became dead while it was still being used...
     occ: fix problem where constexpr static variable initializations failed for constexpr functions and constructors
+    occ: fix some crashes while errors were occurring
     olink: fix a crash if occ failed to output line information properly
     dlpe: fix the fixup of relative branch to import thunks, to allow the thunks to be relocated
     dlpe: use --nologo when invokeing oimplib
@@ -27,6 +28,7 @@ version 6.0.38:
     occpr (symbol table parser): fix two crashes
     oimplib: 'replace' dll modules in library, instead of 'adding' them, so they don't go stale
     olib: fix '/o' switch
+    omake: fix some problems interacting with autoconf-generated make systems
     ocide: could not step into a dll function
     ocide & docs: add step functions to the debug menu
     ocide: fix crash when starting program with 'stop in dll' set

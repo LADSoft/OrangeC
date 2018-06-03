@@ -9,9 +9,9 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LocalDebuggerCommandArguments>/1 "-oc:\orangec\Orange C Projects\default.ods" /P431663444 "c:\orangec\src\occ\x86\q99d.c"</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>displayobjects.cpp /I\orangec\include</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerWorkingDirectory>\orangec\src\omake</LocalDebuggerWorkingDirectory>
+    <LocalDebuggerWorkingDirectory>\users\public\orange c projects\examples\win32\atc</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LocalDebuggerCommandArguments>..\parse\broken.c</LocalDebuggerCommandArguments>

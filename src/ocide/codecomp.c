@@ -338,6 +338,8 @@ static BOOL changed(char *name)
 }
 void DoParse(char *name)
 {
+
+    return;
     if (vacuuming)
         return;
     if (workArea && changed(name))
@@ -972,9 +974,9 @@ int ccLookupStructId(char *name, char *module, int line, sqlite3_int64 *structId
 }
 int ccLookupMemberType(char *name, char *module, int line, sqlite3_int64 *structId, int *indir)
 {
-    char *query = "SELECT typeid, indir From structfields"
-                  "  join names on names.id = structfields.symbolid"
-                  "    where names.name = ?;";
+    char *query = "SELECT structid, indirectCount From structfields"
+                  "  join membernames on membernames.id = structfields.symbolid"
+                  "    where membernames.name = ?;";
     int rc = SQLITE_OK;
     sqlite3_stmt *handle;
     rc = prepare(db, query, strlen(query)+1, &handle, NULL);
@@ -1566,8 +1568,7 @@ CCFUNCDATA *ccLookupFunctionList(int lineno, char *file, char *name)
             "    Join FileNames on fileNames.id = linenumbers.mainid"
             "    JOIN cppNameMapping ON cppnamemapping.complexId = linenumbers.symbolid "
             "           and cppnamemapping.mainid = filenames.id"
-            "    WHERE CPPNameMapping.simpleId = ? AND FileNames.name= ? and "
-            "        LineNumbers.mainId != LineNumbers.fileId;"
+            "    WHERE CPPNameMapping.simpleId = ? AND FileNames.name= ?;"
         };  
         sqlite_int64 id, baseid;
         int i, l = strlen(file);
@@ -1679,10 +1680,6 @@ CCFUNCDATA *ccLookupFunctionList(int lineno, char *file, char *name)
                                 {
                                     CCFUNCDATA *next = calloc(1, sizeof(CCFUNCDATA));
                                     ids[count] = -1;
-//                                    scan = &funcs;
-//                                    while (*scan)
-//                                        scan = &(*scan)->next;
-//                                    *scan = next;
                                     next->next = funcs;
                                     funcs = next;
                                     next->fullname = strdup(sqlite3_column_text(handle, 0));

@@ -26,6 +26,7 @@ version 6.0.38:
     dlpe: fix a rare problem where a write past the end of allocated memory could cause a crash
     occpr (symbol table parser): fix two crashes
     oimplib: 'replace' dll modules in library, instead of 'adding' them, so they don't go stale
+    olib: fix '/o' switch
     ocide: could not step into a dll function
     ocide & docs: add step functions to the debug menu
     ocide: fix crash when starting program with 'stop in dll' set
@@ -40,6 +41,8 @@ version 6.0.38:
     ocide: fix various display problems with 'build properties' window
     ocide: fix so that build properties window can be refreshed with new data, if left open.
     ocide: be explicit about errors when can't debug a program , especially the 'invalid workding directory' error.
+    ocide: find 'stdcall' functions in the code completion
+    ocide: fix various other problems with code completion
     oimplib, olib, olink: fix more problems when '/' was used as a path separator
     olink: bail with an error if a library cannot be found
     omake: fix compatibility issues with /bin/sh

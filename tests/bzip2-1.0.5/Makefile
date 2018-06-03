@@ -19,7 +19,7 @@ vpath %.res $(RESDIR)
 .c.o:
 	occ /D_WIN32 /Wc /c /! -o$@ $<
 
-$(RESDIR)\%.res: %.rc	
+%.res: %.rc	
 	orc /! -i.\;$(RESDIR) $<
 
 all: bzip2 bzip2recover test

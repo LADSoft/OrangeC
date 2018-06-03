@@ -1401,8 +1401,14 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
             lex = initialize_string(lex, funcsp, &tp, &exp);
         }
         castToPointer(&tp, &exp, (enum e_kw)-1, itype);
-        basetype(itype)->btp = assignauto(basetype(itype)->btp, tp);
-
+        if (basetype(basetype(itype)->btp)->type == bt_auto)
+        {
+            TYPE **tpq = &itype;
+            tpq = &(basetype(*tpq)->btp);
+            while (*tpq && (*tpq)->type != bt_auto)
+                tpq = &(*tpq)->btp;
+            *tpq = basetype(tp)->btp;
+        }
         if (sc != sc_auto && sc != sc_register)
         {
             if (!isarithmeticconst(exp) && !isconstaddress(exp) && !cparams.prm_cplusplus)

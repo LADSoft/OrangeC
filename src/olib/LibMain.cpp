@@ -137,6 +137,13 @@ int LibMain::Run(int argc, char **argv)
         Utils::usage(argv[0], usageText);
     }
 
+    // ar-like behavior for autoconf support
+    if (!strcmp(argv[1], "cru"))
+    {
+         mode = REPLACE;
+        memcpy(argv+1, argv+2, (argc-1) * sizeof(char *));
+        --argc;
+    }
     ObjString outputFile = OutputFile.GetValue();
     if (!outputFile.size())
     {

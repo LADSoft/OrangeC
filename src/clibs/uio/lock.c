@@ -40,7 +40,7 @@ int _RTL_FUNC lock(int __handle, long __offset, long __length)
       __ll_exit_critical() ;
       return -1 ;
    }
-   i= __ll_lock(__handle, __offset, __length) ;
+   i= __ll_lock(__handle, __offset, __length, 1, 1) ;
    __ll_exit_critical() ;
    return i ;
 }

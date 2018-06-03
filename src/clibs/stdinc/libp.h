@@ -230,7 +230,7 @@ int __ll_setftime(int handle,void *ftimep) ;
 int __ll_getftime(int handle,void *ftimep) ;
 int __ll_utime(int handle, struct tm *access, struct tm * modify);
 int __ll_isatty(int handle) ;
-int __ll_lock(int handle, int offset, int length) ;
+int __ll_lock(int handle, int offset, int length, int exclusive, int wait) ;
 int __ll_unlock(int handle, int offset, int length) ;
 int __ll_uioflags(int flags) ;
 int __ll_shflags(int mode) ;

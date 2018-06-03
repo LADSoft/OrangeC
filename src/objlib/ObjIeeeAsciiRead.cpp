@@ -248,7 +248,7 @@ bool ObjIeeeAscii::Parse(const char *buffer, eParseType ParseType)
 void ObjIeeeAscii::getline(char *buf, size_t size)
 {
     // no point in optimizing this, it doesn't get any faster...
-    if (fgets(buf, size - 1, sfile) > 0)
+    if (fgets(buf, size - 1, sfile) != NULL)
     {
         int l = strlen(buf);
         if (size > 10000 || l > size - 100)

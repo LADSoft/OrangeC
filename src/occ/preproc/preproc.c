@@ -203,11 +203,20 @@ BOOLEAN expectstring(char *buf, unsigned char **in, BOOLEAN angle)
 }
 PPINT expectnum(BOOLEAN *uns)
 {
+    BOOLEAN minus = FALSE;
+    while (isspace(*includes->lptr)) includes->lptr++;
+    if (*includes->lptr == '-')
+    {
+        includes->lptr++;
+        minus = TRUE;
+    }
 #ifdef USE_LONGLONG
-    LLONG_TYPE rv = strtoll((char *)includes->lptr, (char **)&includes->lptr, 0);
+    LLONG_TYPE rv = strtoull((char *)includes->lptr, (char **)&includes->lptr, 0);
 #else
-    LLONG_TYPE rv = strtol((char *)includes->lptr, (char **)&includes->lptr, 0);
+    LLONG_TYPE rv = strtoul((char *)includes->lptr, (char **)&includes->lptr, 0);
 #endif
+    if (minus)
+        rv = -rv;
     if (uns)
     {
         *uns = FALSE;

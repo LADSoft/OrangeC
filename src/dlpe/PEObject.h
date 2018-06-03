@@ -140,6 +140,7 @@ public:
     PEExportObject(const std::string &name, bool Flat) : PEObject(".edata"), moduleName(name), flat(Flat)
         { SetFlags(WINF_INITDATA | WINF_READABLE | WINF_NEG_FLAGS); }
     virtual void Setup(ObjInt &endVa, ObjInt &endPhys);
+    bool ImportsNeedUnderscore() const { return flat && appliedFlat; }
 private:
     struct Header
     {
@@ -156,6 +157,7 @@ private:
     };
     std::string moduleName;
     bool flat;
+    bool appliedFlat;
 };
 class PEFixupObject : public PEObject
 {

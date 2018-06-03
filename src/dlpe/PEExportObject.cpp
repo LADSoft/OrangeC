@@ -165,6 +165,7 @@ void PEExportObject::Setup(ObjInt &endVa, ObjInt &endPhys)
         {
             strcpy((char *)stringTable, name->GetName().c_str()+1);
             stringTable += name->GetName().size()-1;
+            appliedFlat = true;
         }
         else
         {

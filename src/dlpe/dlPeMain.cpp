@@ -289,7 +289,7 @@ bool dlPeMain::ReadSections(const std::string &path)
             if (file->ImportBegin() != file->ImportEnd())
                 objects.push_back(new PEImportObject(objects));
             if (file->ExportBegin() != file->ExportEnd())
-                objects.push_back(new PEExportObject(outputName, FlatExports.GetValue()));
+                objects.push_back(exportObject = new PEExportObject(outputName, FlatExports.GetValue()));
             objects.push_back(new PEFixupObject());
             if (resources.size())
                 objects.push_back(new PEResourceObject(resources));
@@ -618,8 +618,9 @@ int dlPeMain::Run(int argc, char **argv)
                     path = "";
                 else
                     path.erase(n+1);
+                std::string usesC = exportObject->ImportsNeedUnderscore() ? "/C " : "";
                 std::string implibName = Utils::QualifiedFile(outputName.c_str(), ".l");
-	                std::string cmd = std::string("\"") + path + "oimplib" + "\" /! \"" + implibName + "\" \"" + outputName + "\"";
+	                std::string cmd = std::string("\"") + path + "oimplib" + "\" /! " + usesC + "\"" + implibName + "\" \"" + outputName + "\"";
                 return system(cmd.c_str());
             }
             return 0;

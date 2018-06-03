@@ -37,11 +37,12 @@
 class ObjFile;
 class ObjFactory;
 class PEObject;
+class PEExportObject;
 
 class dlPeMain
 {
 public:
-    dlPeMain() : mode(CONSOLE) { }
+    dlPeMain() : mode(CONSOLE), exportObject(nullptr) { }
     ~dlPeMain();
     
     int Run(int argc, char **argv);
@@ -87,6 +88,7 @@ private:
     PEHeader header;
     ObjInt startAddress;
     ObjFactory *factory;
+    PEExportObject *exportObject;
     static unsigned char defaultStubData[];
     static int defaultStubSize;
     static int osMajor;

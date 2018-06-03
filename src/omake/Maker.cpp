@@ -295,38 +295,29 @@ std::string Maker::GetFileTime(const std::string &goal, const std::string &prefe
     {
         internalGoal = internalGoal.substr(1, internalGoal.size()-2);
     }
-    if (internalGoal.find_first_of("/\\") != std::string::npos)
+    std::string vpath = preferredPath + std::string(" ./ ") + Eval::GetVPATH(internalGoal);
+    std::string sep = std::string(" ") + CmdFiles::PATH_SEP;
+    while (vpath.size())
     {
-        std::fstream fil(internalGoal.c_str(), std::ios::in);
+        std::string cur = Eval::ExtractFirst(vpath, sep);
+        if (cur[cur.size() -1] != '/' && cur[cur.size() -1] != '\\')
+            cur += '/';
+        std::string name ;
+        if (internalGoal[0] != '/' && internalGoal[0] != '\\' && internalGoal[1] != ':')
+            name = cur + internalGoal;
+        else
+            name = internalGoal;
+        std::fstream fil(name.c_str(), std::ios::in);
         if (!fil.fail())
         {
             fil.close();
-            timeval = OS::GetFileTime(internalGoal);
-        }
-    }
-    else
-    {
-        std::string vpath = preferredPath + std::string(" ./ ") + Eval::GetVPATH(internalGoal);
-        std::string sep = std::string(" ") + CmdFiles::PATH_SEP;
-        while (vpath.size())
-        {
-            std::string cur = Eval::ExtractFirst(vpath, sep);
-            if (cur[cur.size() -1] != '/' && cur[cur.size() -1] != '\\')
-                cur += '/';
-            std::string name ;
-            if (internalGoal[0] != '/' && internalGoal[0] != '\\' && internalGoal[1] != ':')
-                name = cur + internalGoal;
-            else
-                name = internalGoal;
-            std::fstream fil(name.c_str(), std::ios::in);
-            if (!fil.fail())
-            {
-                fil.close();
-                rv = cur; // return value is the path, with a slash on the end
-                timeval = OS::GetFileTime(name);
+            rv = cur; // return value is the path, with a slash on the end
+            if (rv == "./")
+                rv = "";
+            timeval = OS::GetFileTime(name);
+            if (rv != "")
                 filePaths[internalGoal] = cur;
-                break;
-            }
+            break;
         }
     }
     if (RuleContainer::Instance()->ScanList(newFiles, goal) || RuleContainer::Instance()->ScanList(newFiles, rv + goal))
@@ -351,9 +342,7 @@ bool Maker::ExistsOrMentioned(const std::string &stem, RuleList *ruleList, const
         std::string working = (*itr)->GetPrerequisites();
         while (working.size() && found)
         {
-            std::string thisOne = Eval::ExtractFirst(working, " ");
-            if (thisOne.find_first_of("/\\") == std::string::npos)
-                thisOne = dir + thisOne;
+            std::string thisOne = dir + Eval::ExtractFirst(working, " ");
             thisOne = Eval::ReplaceStem(stem, thisOne);
             Time theTime;
             if (RuleContainer::Instance()->find(&thisOne) != RuleContainer::Instance()->end())
@@ -385,14 +374,15 @@ bool Maker::ExistsOrMentioned(const std::string &stem, RuleList *ruleList, const
     if (found)
     {
         // ok this is a match...
-        EnterSpecificRule(ruleList, stem, preferredPath, outerMost);
+        EnterSpecificRule(ruleList, stem, preferredPath, dir, outerMost);
     }
     return found;
 }
 void Maker::EnterSpecificRule(RuleList *l, const std::string &stem, 
-                              const std::string &preferredPath, bool outerMost)
+                              const std::string &preferredPath, const std::string &dir, bool outerMost)
 {
-    std::string target = Eval::ReplaceStem(stem, l->GetTarget());
+    Time theTime;
+    std::string target = dir + Eval::ReplaceStem(stem, l->GetTarget());
     RuleList *ruleList = RuleContainer::Instance()->Lookup(target);
     if (!ruleList)
     {
@@ -410,20 +400,22 @@ void Maker::EnterSpecificRule(RuleList *l, const std::string &stem,
         std::string working = rule->GetPrerequisites();
         while (working.size())
         {
-            std::string temp = Eval::ExtractFirst(working, " ");
-            temp = Eval::ReplaceStem(stem, temp);
+            std::string thisOne = dir + Eval::ExtractFirst(working, " ");
+            thisOne = Eval::ReplaceStem(stem, thisOne);
+            thisOne = GetFileTime(thisOne, preferredPath, theTime) + thisOne;
             if (prereq.size())
                 prereq += " ";
-            prereq += temp;
+            prereq += thisOne;
         }
         working = rule->GetOrderPrerequisites();
         while (working.size())
         {
-            std::string temp = Eval::ExtractFirst(working, " ");
-            temp = Eval::ReplaceStem(stem, temp);
+            std::string thisOne = dir + Eval::ExtractFirst(working, " ");
+            thisOne = Eval::ReplaceStem(stem, thisOne);
+            thisOne = GetFileTime(thisOne, preferredPath, theTime) + thisOne;
             if (orderPrereq.size())
                 orderPrereq += " ";
-            orderPrereq += temp;
+            orderPrereq += thisOne;
         }
     }
     Rule *rule = new Rule(target, prereq, orderPrereq, commands, "<implicitbuild>", 1);
@@ -512,7 +504,7 @@ bool Maker::SearchImplicitRules(const std::string &goal, const std::string &pref
     for (auto rule : matchedRules)
     {
         
-        std::string stem = Eval::FindStem(goal, rule->GetTarget());
+        std::string stem = Eval::FindStem(name, rule->GetTarget());
         if (ExistsOrMentioned(stem, rule, preferredPath, dir, false, outerMost))
             return true;
     }
@@ -521,7 +513,7 @@ bool Maker::SearchImplicitRules(const std::string &goal, const std::string &pref
     {
         if (rule->GetTarget() != "%" || !rule->GetDoubleColon())
         {
-            std::string stem = Eval::FindStem(goal, rule->GetTarget());		
+            std::string stem = Eval::FindStem(name, rule->GetTarget());		
             if (ExistsOrMentioned(stem, rule, preferredPath, dir, true, outerMost))
                 return true;
         }

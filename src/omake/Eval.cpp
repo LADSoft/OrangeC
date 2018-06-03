@@ -1186,7 +1186,6 @@ std::string Eval::wildcardinternal(std::string &names)
     while (names.size())
     {
         std::string current = ExtractFirst(names, " ");
-        std::replace(current.begin(), current.end(), '/', '\\');
         files.Add(current);
     }
     std::string rv;

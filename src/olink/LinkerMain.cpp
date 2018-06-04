@@ -76,7 +76,11 @@ const ObjString &LinkerMain::GetOutputFile(CmdFiles &files)
 {
     static ObjString outputFile;
     if (OutputFile.GetValue().size() != 0)
-        return OutputFile.GetValue();
+    {
+        outputFile = OutputFile.GetValue();
+        if (outputFile.find(".rel") == std::string::npos)
+           outputFile = Utils::QualifiedFile(outputFile.c_str(), ".rel");
+    }
     else if (files.GetSize())
     {
         CmdFiles::FileNameIterator it = files.FileNameBegin();

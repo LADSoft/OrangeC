@@ -29,6 +29,7 @@
 #include <string>
 #include <vector>
 #include <set>
+#include <time.h>
 #include "utils.h"
 #include "SymbolTable.h"
 #include "Token.h"
@@ -142,5 +143,6 @@ private:
     ppCtx *ctx;
     ppMacro *macro;
     bool asmpp;
+    time_t source_date_epoch;
 } ;
 #endif

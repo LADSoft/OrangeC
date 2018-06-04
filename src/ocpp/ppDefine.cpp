@@ -39,8 +39,11 @@
 static const int ellipses = 100;
 
 ppDefine::ppDefine(bool UseExtensions, ppInclude *Include, bool C89, bool Asmpp) : 
-        expr(false), include(Include), c89(C89), asmpp(Asmpp), ctx(nullptr), macro(nullptr)
+        expr(false), include(Include), c89(C89), asmpp(Asmpp), ctx(nullptr), macro(nullptr), source_date_epoch((time_t)-1)
 { 
+    char *sde = getenv("SOURCE_DATE_EPOCH");
+    if (sde)
+        source_date_epoch = (time_t)strtoul(sde, NULL, 10); 
     SetDefaults(); 
     InitHash(); 
     expr.SetDefine(this); 
@@ -343,7 +346,10 @@ void ppDefine::SetDefaults()
     char string[256];
     struct tm *t1;
     time_t t2;
-    t2 = ::time(0);
+    if (source_date_epoch != (time_t)-1)
+        t2 = source_date_epoch;
+    else
+        t2 = ::time(0);
     t1 = localtime(&t2);
     if (t1)
     {

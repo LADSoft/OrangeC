@@ -61,6 +61,7 @@ void ppdefcheck(unsigned char *line);
 
 MACROLIST *macroBuffers = NULL;
 
+
 int cppprio;
 int packdata[MAX_PACK_DATA] = 
 {
@@ -78,6 +79,7 @@ static int instr = 0;
 static int commentlevel, commentline;
 static char defkw[] = "defined";
 static int currentfile;
+static time_t source_date_epoch = (time_t)-1;
 
 #ifndef CPREPROCESSOR
 #define ONCE_BUCKETS 32
@@ -146,7 +148,9 @@ void preprocini(char *name, FILE *fil)
     memset(onceLists, 0, sizeof(onceLists));
     cppprio = 0;
 #endif
-    
+    char *sde = getenv("SOURCE_DATE_EPOCH");
+    if (sde)
+        source_date_epoch = (time_t)strtoul(sde, NULL, 10);    
 }
 int defid(char *name, unsigned char **p)
 /*
@@ -1768,7 +1772,10 @@ void datemac(char *string)
 {
     struct tm *t1;
     time_t t2;
-    time(&t2);
+    if (source_date_epoch != (time_t)-1)
+        t2 = source_date_epoch;
+    else
+        time(&t2);
     t1 = localtime(&t2);
     strftime(string, 40, "\"%b %d %Y\"", t1);
     if (string[5] == '0')
@@ -1779,7 +1786,10 @@ void dateisomac(char *string)
 {
     struct tm *t1;
     time_t t2;
-    time(&t2);
+    if (source_date_epoch != (time_t)-1)
+        t2 = source_date_epoch;
+    else
+        time(&t2);
     t1 = localtime(&t2);
     strftime(string, 40, "\"%Y-%m-%d\"", t1);
 }
@@ -1790,7 +1800,10 @@ void timemac(char *string)
 {
     struct tm *t1;
     time_t t2;
-    time(&t2);
+    if (source_date_epoch != (time_t)-1)
+        t2 = source_date_epoch;
+    else
+        time(&t2);
     t1 = localtime(&t2);
     strftime(string, 40, "\"%H:%M:%S\"", t1);
 }

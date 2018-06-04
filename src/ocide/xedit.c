@@ -1723,8 +1723,11 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
             }
             else
             {
-                p->selstartcharpos = p->selendcharpos = p->marks[index];
-                ScrollCaretIntoView(hwnd, p, TRUE);
+                if (p->marks[index] >= 0)
+                {
+                    p->selstartcharpos = p->selendcharpos = p->marks[index];
+                    ScrollCaretIntoView(hwnd, p, TRUE);
+                }
             }
         }
     }
@@ -2216,6 +2219,8 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                                 break;
                             case '{':
                             case '}':
+                            case 0xb3: // superscript 3
+                            case 0xb2: // superscript 2
                                 break;
                             case '\\':
                                 if (GetKeyState(VK_RCONTROL) & 0x80000000)
@@ -2481,6 +2486,8 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     p->cd->tabs = PropGetInt(NULL, "TAB_INDENT");
                     p->cd->leftmargin = EC_LEFTMARGIN;
                     
+                    for (int i = 0; i < 10; i++)
+                        p->marks[i] = -1;
                     getPageSize() ;
                     if (allocmem(p, page_size * 20) && commitmem(p, page_size))
                     {

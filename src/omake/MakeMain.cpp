@@ -451,6 +451,13 @@ int MakeMain::Run(int argc, char **argv)
         Utils::banner(argv[0]);
         Utils::usage(argv[0], usageText);
     }
+    char *cpath=getenv("CPATH");
+    if (cpath)
+    {
+        if (includes.GetValue().size())
+            includes += ";";
+        includes += cpath;
+    }
     if (dir.GetValue().size())
     {
         cwd = OS::GetWorkingDir();

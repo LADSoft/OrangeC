@@ -842,6 +842,20 @@ void addinclude(void)
         *set_searchpath = malloc(strlen(temp) + 1);
         strcpy(*set_searchpath, temp);
     }
+    string = getenv("CPATH");
+    if (string && string[0])
+    {
+        char temp[1000];
+        strcpy(temp, string);
+        if (*set_searchpath)
+        {
+            strcat(temp, ";");
+            strcat(temp,  *set_searchpath);
+            free(*set_searchpath);
+        }
+        *set_searchpath = malloc(strlen(temp) + 1);
+        strcpy(*set_searchpath, temp);
+    }
 }
 
 /*-------------------------------------------------------------------------*/

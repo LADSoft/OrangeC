@@ -164,6 +164,13 @@ int AsmMain::Run(int argc, char *argv[])
             srchPth = includePath.GetValue().substr(n+1);
         }
     }
+    char *cpath=getenv("CPATH");
+    if (cpath)
+    {
+        if (srchPth.size())
+            srchPth += ";";
+        srchPth += cpath;
+    }
     for (CmdFiles::FileNameIterator it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
     {
         std::string inName = (*it)->c_str();

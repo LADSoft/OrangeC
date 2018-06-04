@@ -99,6 +99,13 @@ int rcMain::Run(int argc, char *argv[])
             srchPth = includePath.GetValue().substr(n+1);
         }
     }
+    char *cpath=getenv("CPATH");
+    if (cpath)
+    {
+        if (srchPth.size())
+            srchPth += ";";
+        srchPth += cpath;
+    }
     if (Language.GetValue().size())
     {
         sscanf(Language.GetValue().c_str(), "%d", &language);

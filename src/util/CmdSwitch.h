@@ -114,6 +114,7 @@ class CmdSwitchString : public CmdSwitchBase
         CmdSwitchString() : value(""), concat(0) { }
         virtual int Parse(const char *data);
         const std::string &GetValue() const {return value; }
+        std::string operator+=(const char *c) { value += c; return value;}
     protected:
         std::string value;
     private:

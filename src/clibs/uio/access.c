@@ -34,7 +34,7 @@ int   _RTL_FUNC access(const char *__file, int __level)
 	int mode = 0;
 	if (stat(__file, &stat_st) == -1)
         {
-                errno = EACCES;
+                errno = ENOFILE;
                 // at this point we MAY have an invalid path, so, check the directory.
                 // we are going backwards until nothing is left or we encounter an error,
                 // possible errors are ENOENT (path does not exist) or ENOTDIR) path exists
@@ -67,7 +67,7 @@ int   _RTL_FUNC access(const char *__file, int __level)
 		mode |= S_IXUSR;
 	if (stat_st.st_mode & mode)
 		return 0;
-	errno = EACCES;
+	errno = ENOFILE;
 	return -1;
 }
 int   _RTL_FUNC _access(const char *__file, int __level)

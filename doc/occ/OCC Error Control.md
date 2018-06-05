@@ -35,6 +35,3 @@ nn is the maximum number of errors before the compile fails; if + is specified e
      OCC /E+44 myfile.c
  
 enables extended warnings and limits the number of errors to 44.  By default only 25 errors will be shown and then the compiler will abort.
- 
- 
- 

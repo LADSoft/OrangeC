@@ -140,6 +140,3 @@
  would result in nothing being assembled because the substitution for HELLO does matches the text GOODBYE, when considered in a case-insensitive manner.
  
  See the section on [Conditional Processing](Conditional%20Processing.md) for more on _%elif-style conditionals_.
-  
-   
- 

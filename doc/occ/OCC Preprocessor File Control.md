@@ -7,6 +7,3 @@
      OCC +i myfile.c
  
  results in myfile.i
- 
-  
-  

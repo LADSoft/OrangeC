@@ -7,5 +7,3 @@
      OCC /O- myfile.c
  
   compiles a program without optimization.
-  
-  

@@ -7,5 +7,3 @@
      OCC /T myfile.c
  
  Translates any trigraphs in the text.
-  
-  

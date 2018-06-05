@@ -76,7 +76,3 @@ for example:
     OCC /C+NX+Z myfile.c
 
 generates generic NASM assembler module, with profiler calls inserted.
-
-  
-  
- 

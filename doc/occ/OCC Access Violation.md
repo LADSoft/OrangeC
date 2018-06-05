@@ -15,4 +15,3 @@ The first interesting switch is **+v**.   This switch enables debug information.
 The next interesting switch is **/C-E**.   This switch enables using EBP as a link register, but does not otherwise affect the compile.   in this case a stack trace is shown, although without symbol information.
 
 The latter so switch is just a little confusing because with **/C-E** inlining of functions is still enabled.   To get a clearer view it might be useful to use **/C-i** in conjunction with **/C-E**.   That will expand the call stack properly.  Do note though that doing this does not generate the same code as useing **+v** as it does not turn off optimizations.
-

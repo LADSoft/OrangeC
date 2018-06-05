@@ -7,6 +7,3 @@
      OCC +l myfile.c
  
    results in myfile.lst
- 
-  
-  

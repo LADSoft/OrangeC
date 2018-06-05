@@ -73,12 +73,13 @@ void datemac(char *string);
 void dateisomac(char *string);
 void timemac(char *string);
 void linemac(char *string);
+void countermac(char *string);
 
 static int instr = 0;
 static int commentlevel, commentline;
 static char defkw[] = "defined";
 static int currentfile;
-
+static int counter;
 #ifndef CPREPROCESSOR
 #define ONCE_BUCKETS 32
 typedef struct _once
@@ -93,7 +94,7 @@ static int once;
 #endif
 
 /* List of standard macros */
-#define INGROWNMACROS 5
+#define INGROWNMACROS 6
 
 struct inmac
 {
@@ -119,6 +120,9 @@ struct inmac
     , 
     {
         "__LINE__", linemac
+    },
+    {
+        "__COUNTER__", countermac
     }
 };
 
@@ -139,6 +143,7 @@ void preprocini(char *name, FILE *fil)
     stdpragmas = STD_PRAGMA_FCONTRACT ;
     defsyms = CreateHashTable(GLOBALHASHSIZE);
     macroBuffers = NULL;
+    counter = 0;
 #ifndef CPREPROCESSOR
     once = 0;
     packlevel  = 0;
@@ -1800,7 +1805,16 @@ void timemac(char *string)
 void linemac(char *string)
 {
     sprintf(string, "%d", includes->line);
-} 
+}
+
+/*-------------------------------------------------------------------------*/
+
+void countermac(char *string)
+{
+    sprintf(string, "%d", counter);
+    counter++;
+}
+
 /* Scan for default macros and replace them */
 void defmacroreplace(char *macro, char *name)
 {

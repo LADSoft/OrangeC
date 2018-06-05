@@ -25,4 +25,3 @@ By default **Coff2IEEE** will take the name of the input file, and replace the e
  The **/V** switch shows version information, and the compile date
 
  The **/!** or **--nologo** switch is 'nologo'
-

@@ -187,5 +187,3 @@
 #### %rotate
 
  **%rotate** rotates the macro argument list for the current invocation a number of times specified in the argument.  If the number of times is positive, the arguments are rotated left, with the leftmost arguments going to the end of the list.  If the number of times is negative, the arguments are rotated right, with the rightmost arguments going to the beginning of the list.
- 
-   

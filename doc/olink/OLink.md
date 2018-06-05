@@ -36,6 +36,3 @@
 
  
   [Target configurations](OLink%20Target%20Configurations.md) specify the default mechanism for taking the linker output and creating a ROM image or executable file.  Each target configuration specifies a linker specification file, a list of default definitions, and the name of a post-processing program such as **DLHex** to run to create the final output file.  The specification files used with default target configurations are generic in nature, and make certain assumptions about the program; however some of the identifiers in such specification filse may refer to definitions made elsewhere.  Those definitions are generally part of the target configuration, and may be modified through command-line options to make minor changes to the configuration.  For example, in WIN32 DLLs, the base address of the DLL may be redefined via the command line to not collide with other DLLs and thus improve load time.
- 
- 
-   

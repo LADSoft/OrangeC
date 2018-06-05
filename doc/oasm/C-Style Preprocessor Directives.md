@@ -309,4 +309,3 @@
  **%endif**  is used to end a  conditional sequence. Once a conditional sequence is ended, code assembly proceeds as normal, unless the conditional sequence was itself nested within a block of a higher-level conditional sequence that is not being assembled.
  
  See the section on [Conditional Processing](Conditional%20Processing.md) for more on _%endif_.
-  

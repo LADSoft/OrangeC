@@ -1039,7 +1039,20 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                 tp = &(*tp)->btp;
                             while (isconst(*tp) || isvolatile(*tp))
                                 tp = &(*tp)->btp;
-                            *tp = assignauto(*tp, basetype(selectTP)->btp);
+                            if (ispointer(*tp))
+                            {
+                                if (basetype(basetype(*tp)->btp)->type == bt_auto)
+                                {
+                                    TYPE **tp1 = &basetype(*tp)->btp;
+                                    while (*tp1 && (*tp1)->type != bt_auto)
+                                        tp1 = &(*tp1)->btp;
+                                    *tp1 = basetype(basetype(selectTP)->btp)->btp;    
+                                }
+                            }
+                            else
+                            {
+                                *tp = assignauto(*tp, basetype(selectTP)->btp);
+                            }
                             UpdateRootTypes(declSP->tp);
                             if (isarray(selectTP) && !comparetypes(declSP->tp, basetype(selectTP)->btp, TRUE))
                             {
@@ -1080,7 +1093,20 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                     tp = &(*tp)->btp;
                                 while (isconst(*tp) || isvolatile(*tp))
                                     tp = &(*tp)->btp;
-                                *tp = assignauto(*tp, basetype(iteratorType)->btp);
+                                if (ispointer(*tp))
+                                {
+                                    if (basetype(basetype(*tp)->btp)->type == bt_auto)
+                                    {
+                                        TYPE **tp1 = &basetype(*tp)->btp;
+                                        while (*tp1 && (*tp1)->type != bt_auto)
+                                            tp1 = &(*tp1)->btp;
+                                        *tp1 = basetype(basetype(iteratorType)->btp)->btp;    
+                                    }
+                                }
+                                else
+                                {
+                                    *tp = assignauto(*tp, basetype(iteratorType)->btp);
+                                }
                                 UpdateRootTypes(declSP->tp);
                                 if (!comparetypes(declSP->tp, basetype(iteratorType)->btp, TRUE))
                                 {
@@ -1126,7 +1152,20 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                 }
                                 while (isconst(*tp) || isvolatile(*tp))
                                     tp = &(*tp)->btp;
-                                *tp = assignauto(*tp, starType);
+                                if (ispointer(*tp))
+                                {
+                                    if (basetype(basetype(*tp)->btp)->type == bt_auto)
+                                    {
+                                        TYPE **tp1 = &basetype(*tp)->btp;
+                                        while (*tp1 && (*tp1)->type != bt_auto)
+                                            tp1 = &(*tp1)->btp;
+                                        *tp1 = basetype(basetype(starType)->btp)->btp;    
+                                    }
+                                }
+                                else
+                                {
+                                    *tp = assignauto(*tp, starType);
+                                }
                                 UpdateRootTypes(declSP->tp);
                                 if (!comparetypes(declSP->tp, starType, TRUE) && (!isarithmetic(declSP->tp) || !isarithmetic(starType)))
                                 {

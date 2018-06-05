@@ -21,6 +21,10 @@ version 6.0.38:
     occ: fix a crash if an intermediate code block became dead while it was still being used...
     occ: fix problem where constexpr static variable initializations failed for constexpr functions and constructors
     occ: fix some crashes while errors were occurring
+    occ: implement CPATH and SOURCE_DATE_EPOCH environment variables
+    occ: pass specified /o switch to assembler or RC compiler, if /c is also specified
+    occ: fix problems with auto pointers
+    occ: fix problems with the preprocessor not being able to handle maxed out 64-bit unsigned numbers
     olink: fix a crash if occ failed to output line information properly
     dlpe: fix the fixup of relative branch to import thunks, to allow the thunks to be relocated
     dlpe: use --nologo when invokeing oimplib
@@ -28,6 +32,7 @@ version 6.0.38:
     occpr (symbol table parser): fix two crashes
     oimplib: 'replace' dll modules in library, instead of 'adding' them, so they don't go stale
     olib: fix '/o' switch
+    olib: implement LIBRARY_PATH environment variable
     omake: fix some problems interacting with autoconf-generated make systems
     ocide: could not step into a dll function
     ocide & docs: add step functions to the debug menu
@@ -47,6 +52,7 @@ version 6.0.38:
     ocide: fix various other problems with code completion
     oimplib, olib, olink: fix more problems when '/' was used as a path separator
     olink: bail with an error if a library cannot be found
+    olink: make sure intermediate file always has a .rel extension
     omake: fix compatibility issues with /bin/sh
     obrc: tweak error message to not mention object files
     rtl:  sprintf could try to modify input strings, didn't work if string is in readonly memory
@@ -58,6 +64,9 @@ version 6.0.38:
     rtl: fix the definition of __sync_add_and_fetch provided for locale.cpp to add to the result
     rtl: add a 'helper' dll which can output a stack trace if a program crashes
     rtl: fix the definition of 'TryEnterCriticalSection'
+    rtl: access() set errno to EACCESS instead of ENOENT on failure.
+    rtl: open/sopen would set errno to ENOENT if they were successfully creating an output file
+    rtl: implement fcntl
     all: add 'clang' to continuous integration builds
     documentation: add minimal documentation for ancilliary projects
 Version 6.0.37: 5/20/2018

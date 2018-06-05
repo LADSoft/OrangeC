@@ -226,9 +226,14 @@ int RunExternalFiles(char *rootPath)
 //    p = strrchr(outName, '.');
 //    if (p && p[1] != '\\')
 //        *p = 0;
+    BOOLEAN first = FALSE;
     while (asmlist)
     {
-        sprintf(spname, "\"%soasm.exe\" %s %s \"%s\"", root, asm_params ? asm_params : "", !showBanner ? "-!" : "", asmlist->data);
+        if (cparams.prm_compileonly && outputFileName[0] && !first)
+            sprintf(spname, "\"%soasm.exe\" \"-o%s\" %s %s \"%s\"", root, outputFileName, asm_params ? asm_params : "", !showBanner ? "-!" : "", asmlist->data);
+        else 
+            sprintf(spname, "\"%soasm.exe\" %s %s \"%s\"", root, asm_params ? asm_params : "", !showBanner ? "-!" : "", asmlist->data);
+        first = TRUE;
         if (verbosity)
             printf("%s\n", spname);
         rv = system(spname);
@@ -242,7 +247,11 @@ int RunExternalFiles(char *rootPath)
         args[0] = 0;
     while (rclist)
     {
-        sprintf(spname, "\"%sorc.exe\" -r %s %s %s \"%s\"", root, rc_params ? rc_params : "", !showBanner ? "-!" : "", args, rclist->data);
+        if (cparams.prm_compileonly && outputFileName[0] && !first)
+            sprintf(spname, "\"%sorc.exe\" \"-o%s\" -r %s %s %s \"%s\"", root, outputFileName, rc_params ? rc_params : "", !showBanner ? "-!" : "", args, rclist->data);
+        else
+            sprintf(spname, "\"%sorc.exe\" -r %s %s %s \"%s\"", root, rc_params ? rc_params : "", !showBanner ? "-!" : "", args, rclist->data);
+        first = TRUE;
         if (verbosity)
             printf("%s\n", spname);
         rv = system(spname);

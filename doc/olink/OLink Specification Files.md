@@ -187,5 +187,3 @@ This defines two partitions, in this case one is for data nad one is for code.  
  This uses the **and** operator and the **not** operator to select all sections which do not start with the four letters 'code'.
  
  A region can be named with any potentially complex expression involving section names and these operators, to match various combinations of sections.
- 
-   

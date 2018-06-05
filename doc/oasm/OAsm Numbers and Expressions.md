@@ -155,5 +155,3 @@
  
  
  Data directives aren't subject to size optimizations, so in the usual case of taking the size of a data region this isn't an issue.
- 
-    

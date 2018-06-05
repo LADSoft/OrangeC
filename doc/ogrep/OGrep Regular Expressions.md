@@ -93,5 +93,3 @@
  matches any lower-case word twice, as long as it is separated from itself by two | characters.  This pattern would match 'ab||ab' but not 'ab||xy'.
  
  Up to ten such regions may be specified in the pattern; to access them use \\0 \\1 \\2 ... \\9  where the digit gives the order the region is encountered within the pattern.
- 
-  

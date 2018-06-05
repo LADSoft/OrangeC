@@ -178,6 +178,3 @@
  would result in the mov statement being assembled because 5 is a number, not a string.
  
  See the section on [Conditional Processing](Conditional%20Processing.md) for more on _%elif-style conditionals_.
-  
-   
- 

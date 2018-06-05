@@ -74,6 +74,3 @@ switch cannot tell the difference.   In such cases it is better to use the [Coff
  The **/V** switch shows version information, and the compile date
 
  The **/!** or **--nologo** switch is 'nologo'
-
- 
- 

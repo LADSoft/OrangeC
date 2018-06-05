@@ -39,5 +39,3 @@ A special file name '-' means take input from the console.
  The **/V** switch shows version information, and the compile date
 
  The **/!** or **--nologo** switch is 'nologo'
-
-

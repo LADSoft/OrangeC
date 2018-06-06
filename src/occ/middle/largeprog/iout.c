@@ -1,28 +1,40 @@
-/* Software License Agreement
- * 
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
- *     This file is part of the Orange C Compiler package.
- * 
- *     The Orange C Compiler package is free software: you can redistribute it and/or modify
- *     it under the terms of the GNU General Public License as published by
- *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
- *     Orange C "Target Code" exception.
- * 
- *     The Orange C Compiler package is distributed in the hope that it will be useful,
- *     but WITHOUT ANY WARRANTY; without even the implied warranty of
- *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *     GNU General Public License for more details.
- * 
- *     You should have received a copy of the GNU General Public License
- *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
- *     contact information:
- *         email: TouchStone222@runbox.com <David Lindauer>
- * 
- */
+/*
+    Software License Agreement (BSD License)
 
+    Copyright (c) 1997-2016, David Lindauer, (LADSoft).
+    All rights reserved.
+    
+    Redistribution and use of this software in source and binary forms, 
+    with or without modification, are permitted provided that the following 
+    conditions are met:
+    
+    * Redistributions of source code must retain the above
+      copyright notice, this list of conditions and the
+      following disclaimer.
+    
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the
+      following disclaimer in the documentation and/or other
+      materials provided with the distribution.
+    
+    * Neither the name of LADSoft nor the names of its
+      contributors may be used to endorse or promote products
+      derived from this software without specific prior
+      written permission of LADSoft.
+    
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
+    THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+    PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+    OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
+    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
+    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
+    OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
+    WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
+    OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+    ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+*/
 /*
  * iout.c
  *
@@ -572,20 +584,6 @@ static void iop_clrblock(QUAD *q)
     putamode(q, q->dc.right);
     oprintf(icdFile, ")");
 }
-static void iop_initblk(QUAD *q)
-{
-    if (chosenAssembler->gen->asm_clrblock)
-        chosenAssembler->gen->asm_clrblock(q);
-    oputc('\t', icdFile);
-    oprintf(icdFile, "initblk");
-}
-static void iop_cpblk(QUAD *q)
-{
-    if (chosenAssembler->gen->asm_assnblock)
-        chosenAssembler->gen->asm_assnblock(q);
-    oputc('\t', icdFile);
-    oprintf(icdFile, "cpblk");
-}
 /*-------------------------------------------------------------------------*/
 
 static void iop_asmcond(QUAD *q)
@@ -876,17 +874,16 @@ static void iop_block(QUAD *q)
 static void iop_blockend(QUAD *q)
 {
     oprintf(icdFile, "\tBLOCK END");
-    if (q->dc.v.data)
+    if (0 && q->dc.v.data)
     {
         int i,j;
         BITINT *p;
         oprintf(icdFile, "\n;\tLive: ");
         p = q->dc.v.data;
-
-        for (i=0; i < (tempCount+BITINTBITS-1)/BITINTBITS; i++, p++)
+        for (i=0; i < (tempCount+BITINTBITS-1)/BITINTBITS; i++)
             if (*p)
                 for (j=0; j < BITINTBITS; j++)
-                    if ((*p) & (1 << j))
+                    if ((*p) && (1 << j))
                         oprintf(icdFile,"TEMP%d, ", i * BITINTBITS + j);
     }
 }
@@ -1084,13 +1081,7 @@ static void iop_tag(QUAD *q)
 {
     if (chosenAssembler->gen->asm_tag)
         chosenAssembler->gen->asm_tag(q);
-    oprintf(icdFile, "\tTAG");
-}
-static void iop_seh(QUAD *q)
-{
-    if (chosenAssembler->gen->asm_seh)
-        chosenAssembler->gen->asm_seh(q);
-    oprintf(icdFile, "\tSEH %d", q->sehMode);
+    oprintf(icdFile, "TAG");
 }
 static void iop_atomic_fence(QUAD *q)
 {
@@ -1152,23 +1143,23 @@ static void iop_cmpswp(QUAD *q)
 /* List of opcodes
  * This list MUST be in the same order as the op_ enums 
  */
-static void(*oplst[])(QUAD *q) =
+static void(*oplst[])(QUAD *q) = 
 {
-    /* NOPROTO */
-       iop_nop, iop_phi, iop_line, iop_passthrough, iop_datapassthrough, iop_skipcompare,
-       iop_label, iop_asmgoto, iop_goto, iop_directbranch,
-       iop_gosub, iop_fargosub, iop_trap, iop_int, iop_ret,
-       iop_fret, iop_rett, iop_add, iop_sub, iop_udiv, iop_umod, iop_sdiv, iop_smod, iop_muluh, iop_mulsh, iop_mul,
-       iop_lsl, iop_lsr, iop_asr, iop_neg, iop_not, iop_and, iop_or, iop_eor,
-       iop_setne, iop_sete, iop_setc, iop_seta, iop_setnc, iop_setbe, iop_setl, iop_setg, iop_setle, iop_setge,
-       iop_asmcond, iop_jne, iop_je, iop_jc, iop_ja, iop_jnc, iop_jbe, iop_jl, iop_jg, iop_jle, iop_jge,
-       iop_assn, iop_genword, iop_coswitch, iop_swbranch, iop_assnblock, iop_clrblock, iop_parmadj, iop_parmblock, iop_parm,
-       iop_array, iop_arrayindex, iop_arraylsh, iop_struct, iop_cppini, iop_block, iop_blockend,
-       iop_dbgblock, iop_dbgblockend, iop_varstart, iop_func, iop_livein, iop_icon, iop_fcon, iop_imcon, iop_cxcon,
-       iop_atomic_flag_test_and_set, iop_atomic_flag_clear, iop_atomic_fence, iop_atomic_flag_fence, iop_cmpswp,
-       iop_prologue, iop_epilogue, iop_pushcontext, iop_popcontext, iop_loadcontext, iop_unloadcontext,
-       iop_tryblock, iop_substack, iop_substack, iop_loadstack, iop_savestack, iop_functailstart, iop_functailend,
-       iop_gcsestub, iop_expressiontag, iop_tag, iop_seh, iop_initblk, iop_cpblk
+     /* NOPROTO */
+        iop_nop, iop_phi, iop_line, iop_passthrough, iop_datapassthrough, iop_skipcompare,
+        iop_label, iop_asmgoto, iop_goto, iop_directbranch,
+        iop_gosub, iop_fargosub, iop_trap, iop_int, iop_ret,
+        iop_fret, iop_rett, iop_add, iop_sub, iop_udiv, iop_umod, iop_sdiv, iop_smod, iop_muluh, iop_mulsh, iop_mul,
+        iop_lsl, iop_lsr, iop_asr, iop_neg, iop_not, iop_and, iop_or, iop_eor, 
+        iop_setne, iop_sete, iop_setc, iop_seta, iop_setnc, iop_setbe, iop_setl, iop_setg, iop_setle, iop_setge,
+        iop_asmcond, iop_jne, iop_je, iop_jc, iop_ja, iop_jnc, iop_jbe, iop_jl, iop_jg, iop_jle, iop_jge,  
+        iop_assn, iop_genword, iop_coswitch, iop_swbranch, iop_assnblock, iop_clrblock, iop_parmadj, iop_parmblock, iop_parm,
+        iop_array, iop_arrayindex, iop_arraylsh, iop_struct, iop_cppini, iop_block, iop_blockend, 
+        iop_dbgblock, iop_dbgblockend, iop_varstart, iop_func, iop_livein, iop_icon, iop_fcon, iop_imcon, iop_cxcon, 
+        iop_atomic_flag_test_and_set, iop_atomic_flag_clear, iop_atomic_fence, iop_atomic_flag_fence, iop_cmpswp,
+        iop_prologue, iop_epilogue, iop_pushcontext, iop_popcontext, iop_loadcontext, iop_unloadcontext,
+        iop_tryblock, iop_substack, iop_substack, iop_loadstack, iop_savestack, iop_functailstart, iop_functailend, 
+        iop_gcsestub, iop_expressiontag, iop_tag,
 };
 /*-------------------------------------------------------------------------*/
 void beDecorateSymName(char *buf, SYMBOL *sp)
@@ -1177,6 +1168,8 @@ void beDecorateSymName(char *buf, SYMBOL *sp)
     q = lookupAlias(sp->name);
     if (q)
         strcpy(buf, q);
+    else if (sp->storage_class == sc_localstatic)
+        sprintf(buf, "L_%d", sp->label);
     else
     {
         strcpy(buf, sp->decoratedName);
@@ -1255,6 +1248,9 @@ void putconst(EXPRESSION *offset, int color)
         case en_structelem:
             oprintf(icdFile, "%s:STRUCTELEM(%d)", ((SYMBOL*)offset->v.sp)->decoratedName, offset->v.sp->offset);
             break;
+        case en_label:
+            oprintf(icdFile, "L_%ld:RAM", offset->v.sp->label);
+            break;
         case en_c_string:
             if (offset->string)
             {
@@ -1263,9 +1259,8 @@ void putconst(EXPRESSION *offset, int color)
                 for (i = 0; i < offset->string->size; i++)
                 {
                     SLCHAR *s = offset->string->pointers[i];
-                    int j;
-                    for (j = 0; j < s->count; j++)
-                        oputc(s->str[j], icdFile);
+                    for (int i = 0; i < s->count; i++)
+                        oputc(s->str[i], icdFile);
                 }
                 oputc('"', icdFile);
             }
@@ -1365,12 +1360,6 @@ void putlen(int l)
             break;
         case -ISZ_UINT:
             oprintf(icdFile, ".I");
-            break;
-        case ISZ_UNATIVE:
-            oprintf(icdFile, ".UNATIVE");
-            break;
-        case -ISZ_UNATIVE:
-            oprintf(icdFile, ".INATIVE");
             break;
         case ISZ_ULONG:
             oprintf(icdFile, ".UL");
@@ -2098,13 +2087,13 @@ void genaddress(ULLONG_TYPE address)
 
 /*-------------------------------------------------------------------------*/
 
-void gensrref(SYMBOL *sp, int val, int type)
+void gensrref(SYMBOL *sp, int val)
 /*
  * Output a startup/rundown reference
  */
 {
     if (chosenAssembler->gen->gen_srref)
-        chosenAssembler->gen->gen_srref(sp,val, type);
+        chosenAssembler->gen->gen_srref(sp,val);
     if (!icdFile)
         return;
     if (gentype == srrefgen && outcol < 56)
@@ -2657,7 +2646,7 @@ void putexterns(void)
         {
             SYMBOL *sp = externList->data;
             if (!sp->ispure && (sp->dontinstantiate && sp->genreffed || !sp->inlineFunc.stmt && !sp->init && 
-                                (sp->parentClass && sp->genreffed || sp->genreffed && sp->storage_class == sc_external)) & !sp->noextern)
+                                (sp->parentClass || sp->genreffed && sp->storage_class == sc_external)) & !sp->noextern)
             {
                 notyet = put_exfunc(sp, notyet);
                 sp->genreffed = FALSE;

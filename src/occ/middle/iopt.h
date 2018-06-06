@@ -309,6 +309,7 @@ typedef struct
 	int inductionLoop; /* 0 = none, else outermost enclosing loop */
 	int oldInductionVar;
 	unsigned spilled:1;
+    unsigned triedSpill:1;
 	unsigned spillTemp:1;
 	unsigned onstack:1;
 	unsigned usedAsAddress:1 ;

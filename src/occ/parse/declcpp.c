@@ -54,6 +54,7 @@ extern LINEDATA *linesHead, *linesTail;
 extern BOOLEAN inTemplateType;
 extern STRUCTSYM *structSyms;
 extern char *deprecationText;
+extern TYPE stdany;
 
 LIST *nameSpaceList;
 char anonymousNameSpaceName[512];
@@ -978,6 +979,8 @@ static BOOLEAN declaringTemplate(SYMBOL *sp)
 }
 TYPE *PerformDeferredInitialization (TYPE *tp, SYMBOL *funcsp)
 {
+    if (!tp)
+        return &stdany;
     TYPE **tpx = &tp;
     if (isref(*tpx))
         tpx = &basetype(*tpx)->btp;

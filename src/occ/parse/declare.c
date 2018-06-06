@@ -62,6 +62,7 @@ extern BOOLEAN parsingSpecializationDeclaration;
 extern int anonymousNotAlloc;
 extern LINEDATA *linesHead, *linesTail;
 extern int alignas_value;
+extern int funcLevel;
 
 int inDefaultParam;
 LIST *externals, *globalCache;
@@ -4158,8 +4159,11 @@ static LEXEME *getAfterType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **sp,
                                 *tp = tp1;   
                             }
                             if (cparams.prm_cplusplus && *sp)
+                            {
+                                funcLevel++;
                                 lex = getExceptionSpecifiers(lex, funcsp, *sp, storage_class);
-
+                                funcLevel--;
+                            }
                             ParseAttributeSpecifiers(&lex, funcsp, TRUE);
                             if (MATCHKW(lex, pointsto))
                             {
@@ -4169,6 +4173,7 @@ static LEXEME *getAfterType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **sp,
                                     noSpecializationError++;
                                 localNameSpace->syms = basetype(*tp)->syms;
                                 IncGlobalFlag();
+                                funcLevel++;
                                 lex = getsym();
                                 ParseAttributeSpecifiers(&lex, funcsp, TRUE);
                                 lex  = get_type_id(lex, &tpx, funcsp, sc_cast, FALSE, TRUE);
@@ -4212,6 +4217,7 @@ static LEXEME *getAfterType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **sp,
                                     }
                                 }
                                 localNameSpace->syms = locals;
+                                funcLevel--;
                                 DecGlobalFlag();
                                 if (inTemplate && templateNestingCount == 1)
                                     noSpecializationError--;

@@ -750,7 +750,10 @@ BOOLEAN printerrinternal(int err, char *file, int line, va_list args)
         fprintf(errFile, " %s(%d):  %s%s\n", name, line, buf, infunc);
     AddErrorToList(listerr, buf);
     if (total_errors == cparams.prm_maxerr)
+    {
         error(ERR_TOO_MANY_ERRORS);
+        exit(1);
+    }
 #endif
     return TRUE;
 }

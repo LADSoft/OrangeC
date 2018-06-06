@@ -2951,6 +2951,8 @@ TYPE *SynthesizeType(TYPE *tp, TEMPLATEPARAMLIST *enclosing, BOOLEAN alt)
                     if (tp->type == bt_templateparam)
                     {
                         *last = tp->templateParam->p->byClass.dflt;
+                        if (!*last)
+                            *last = &stdany;
                     }
                     else
                     {

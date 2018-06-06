@@ -149,8 +149,6 @@ char *GetSymName(SYMBOL *sp, SYMBOL *parent)
 }
 static int WriteStructMembers(SYMBOL *sym, SYMBOL *parent, sqlite3_int64 struct_id, sqlite3_int64 file_id, int order,BOOLEAN base, enum e_ac access)
 {
-    if (!strcmp(sym->name, "Plane"))
-        printf("hi");
     if (basetype(sym->tp)->syms)
     {    
         HASHREC *hr = basetype(sym->tp)->syms->table[0];

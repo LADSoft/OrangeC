@@ -401,7 +401,6 @@ HWND hwndShowFunc;
                 EndPaint(hwnd, &ps);
                 return 0;
             case WM_CLOSE:
-                printf("hi");
                 break;
         }
         return DefWindowProc(hwnd, iMessage, wParam, lParam);

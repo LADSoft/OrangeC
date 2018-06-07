@@ -4327,14 +4327,14 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
             }
             if (found1)
             {
-                if (theCurrentFunc && !found1->constexpression)
-                {
-                    theCurrentFunc->nonConstVariableUsed = TRUE;
-                }
                 if (found1->deprecationText)
                     deprecateMessage(found1);
                 if (!(flags & _F_SIZEOF))
                 {
+                    if (theCurrentFunc && !found1->constexpression)
+                    {
+                        theCurrentFunc->nonConstVariableUsed = TRUE;
+                    }
                     if (found1->templateLevel && (found1->templateParams || found1->isDestructor))
                     {
                         found1 = found1->mainsym;

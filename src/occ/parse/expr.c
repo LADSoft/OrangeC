@@ -7395,7 +7395,7 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                     else if (isfunction(tp1))
                     {
                         if (!isvoidptr(*tp) && 
-                            (!isfunction(basetype(*tp)->btp) || !comparetypes(basetype(*tp)->btp, tp1, TRUE)))
+                            (!isfunction(basetype(*tp)->btp) || !comparetypes(basetype(basetype(*tp)->btp)->btp, basetype(tp1)->btp, TRUE)))
                             error(ERR_SUSPICIOUS_POINTER_CONVERSION);
                     }
                     else 

@@ -55,23 +55,26 @@ void Include::Clear()
 bool Include::Parse(const std::string &name, bool ignoreOk, bool MakeFiles)
 {
     bool rv = false;
-    std::string includeDirs;
-    Variable *id = VariableContainer::Instance()->Lookup(".INCLUDE_DIRS");
-    if (id)
-    {
-        includeDirs = id->GetValue();
-        if (id->GetFlavor() == Variable::f_recursive)
-        {
-            Eval r(includeDirs, false);
-            includeDirs = r.Evaluate();
-        }
-    }
     std::string current = name;
-    while (includeDirs.size())
+    if (access(current.c_str(), 0) == -1)
     {
-        current = Eval::ExtractFirst(includeDirs, ";") + "\\" + name;
-        if (access(current.c_str(), 0) != -1)
-            break;
+        std::string includeDirs;
+        Variable *id = VariableContainer::Instance()->Lookup(".INCLUDE_DIRS");
+        if (id)
+        {
+            includeDirs = id->GetValue();
+            if (id->GetFlavor() == Variable::f_recursive)
+            {
+                Eval r(includeDirs, false);
+                includeDirs = r.Evaluate();
+            }
+        }
+        while (includeDirs.size())
+        {
+            current = Eval::ExtractFirst(includeDirs, ";") + "\\" + name;
+            if (access(current.c_str(), 0) != -1)
+                break;
+        }
     }
     std::fstream in(current.c_str(), std::ios::in | std::ios::binary);
     if (!in.fail())

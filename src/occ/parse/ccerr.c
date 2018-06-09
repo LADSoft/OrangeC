@@ -59,6 +59,8 @@ SYMBOL *theCurrentFunc;
 
 static LIST *listErrors;
 static char *currentErrorFile;
+static LIST *warningStack;
+
 enum e_kw skim_end[] = { end, 0 };
 enum e_kw skim_closepa[] = { closepa, semicolon, end, 0 };
 enum e_kw skim_semi[] = { semicolon, end, 0 };
@@ -603,6 +605,35 @@ void AllWarningsDisable()
    for (int i=0; i < sizeof(warningFlags); i++)
        warningFlags[i] |= WARNING_DISABLE;
 }
+void PushWarnings()
+{
+    LIST *lst = calloc(1, sizeof(LIST));
+    if (lst)
+    {
+        lst->data = calloc(1, sizeof(warningFlags));
+        if (lst->data)
+        {
+            memcpy(lst->data, warningFlags, sizeof(warningFlags));
+            lst->next = warningStack;
+            warningStack = lst;
+        }
+        else
+        {
+            free(lst);
+        }
+    }
+}
+void PopWarnings()
+{
+    if (warningStack)
+    {
+        memcpy(warningFlags, warningStack->data, sizeof(warningFlags));
+        LIST *old = warningStack;
+        warningStack = warningStack->next;
+        free(old->data);
+        free(old);
+    }
+}
 void DisableTrivialWarnings()
 {
     memset(warningFlags, 0, sizeof(warningFlags));
@@ -621,6 +652,7 @@ void errorinit(void)
 {
     total_errors = diagcount = 0;
     currentErrorFile = NULL;
+    warningStack = NULL;
 }
 
 static char kwtosym(enum e_kw kw)

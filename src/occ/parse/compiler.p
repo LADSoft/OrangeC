@@ -39,6 +39,8 @@ void WarningOnlyOnce(int num);
 void WarningAsError(int num);
 void AllWarningsAsError();
 void AllWarningsDisable();
+void PushWarnings();
+void PopWarnings();
 void DisableTrivialWarnings();
 void errorinit(void);
 void errskim(LEXEME **lex, enum e_kw *skimlist);

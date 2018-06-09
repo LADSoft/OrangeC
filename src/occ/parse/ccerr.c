@@ -751,6 +751,8 @@ BOOLEAN printerrinternal(int err, char *file, int line, va_list args)
     AddErrorToList(listerr, buf);
     if (total_errors == cparams.prm_maxerr)
     {
+        extern void Cleanup();
+        Cleanup();
         error(ERR_TOO_MANY_ERRORS);
         exit(1);
     }

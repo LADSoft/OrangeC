@@ -84,6 +84,8 @@ void fatal(char *fmt, ...)
     printf("Fatal error: ");
     vprintf(fmt, argptr);
     va_end(argptr);
+    extern void Cleanup();
+    Cleanup();
     exit(1);
 }
 void banner(char *fmt, ...)
@@ -1075,6 +1077,8 @@ void dumperrs(FILE *file)
 void ctrlchandler(int aa)
 {
     printf("^C");
+    extern void Cleanup();
+    Cleanup();
     exit(1);
 }
 
@@ -1083,6 +1087,8 @@ void ctrlchandler(int aa)
 void internalError(int a)
 {
     (void) a;
+    extern void Cleanup();
+    Cleanup();
     printf("Internal Error - Aborting compile");
     exit(1);
 }
@@ -1204,4 +1210,5 @@ void ccinit(int argc, char *argv[])
             
     /* Set up a ctrl-C handler so we can exit the prog with cleanup */
     signal(SIGINT, ctrlchandler);
+    signal(SIGSEGV, internalError);
 }

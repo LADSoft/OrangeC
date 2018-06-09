@@ -58,6 +58,10 @@ FILE *cppFile, *browseFile;
 FILE *errFile, *icdFile;
 char infile[256];
 
+static char tempOutFile[260];
+static char realOutFile[260];
+static char oldOutFile[260];
+
 static FILE *inputFile = 0;
 static int stoponerr = 0;
 
@@ -580,6 +584,13 @@ void compile(BOOLEAN global)
 }
 /*-------------------------------------------------------------------------*/
 
+void Cleanup()
+{
+    fclose(outputFile);
+    unlink(realOutFile);
+    unlink(tempOutFile);
+    rename(oldOutFile, realOutFile);
+}
 int main(int argc, char *argv[])
 {
     char buffer[256];
@@ -587,6 +598,7 @@ int main(int argc, char *argv[])
     BOOLEAN multipleFiles = FALSE;
     BOOLEAN openOutput = TRUE;
     int rv;
+    char tempOutFile[260];
     char realOutFile[260];
     char oldOutFile[260];
     srand(time(0));
@@ -635,6 +647,8 @@ int main(int argc, char *argv[])
         if (buffer[0] == '-')
             strcpy(buffer, "a.c");
         strcpy(realOutFile, outfile);
+        strcpy(tempOutFile, outfile);
+        outputfile(tempOutFile, buffer, ".oo");
         if (cparams.prm_asmfile)
         {
             outputfile(realOutFile, buffer, chosenAssembler->asmext);
@@ -707,12 +721,12 @@ int main(int argc, char *argv[])
             {
                 unlink(oldOutFile);
                 rename(realOutFile, oldOutFile);
-                outputFile = fopen(realOutFile, cparams.prm_asmfile ? "w" : "wb");
+                outputFile = fopen(tempOutFile, cparams.prm_asmfile ? "w" : "wb");
                 if (!outputFile)
                 {
                     if (inputFile != stdin)
                        fclose(inputFile);
-                    fatal("Cannot open output file %s", realOutFile);
+                    fatal("Cannot open output file %s", tempOutFile);
                 }
                 setvbuf(outputFile,0,_IOFBF,32768);
             }
@@ -842,12 +856,12 @@ int main(int argc, char *argv[])
         {
             if (total_errors)
             {
-                unlink(realOutFile);
-                rename(oldOutFile, realOutFile);
+                Cleanup();
             }
             else
             {
                 unlink (oldOutFile);
+                rename (tempOutFile, realOutFile);
             }
         }
         /* Flag to stop if there are any errors */

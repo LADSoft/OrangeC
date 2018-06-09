@@ -1802,7 +1802,8 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             lex = prevsym(current);
             while (tp1->type == bt_typedef)
                 tp1 = tp1->btp;
-            DeduceAuto(&funcsp->tp, tp1);
+            DeduceAuto(&basetype(funcsp->tp)->btp, tp1);
+            tp = basetype(funcsp->tp)->btp;
             UpdateRootTypes(funcsp->tp);
             SetLinkerNames(funcsp, funcsp->linkage);
             matchReturnTypes = TRUE;

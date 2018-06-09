@@ -15,9 +15,13 @@
  
  The general form of an **OCC** [Command Line](OCC%20Command%20Line.md) is:
  
->     OAsm [options] filename-list
+>     OCC [options] filename-list
  
  Where _filename-list_ gives a list of files to assemble.
+
+## Environment Variables
+
+ OCC parses several [Environment Variables](OCC%20Environment%20Variables.md) to set the environment.
 
 
 ## Extended Keywords

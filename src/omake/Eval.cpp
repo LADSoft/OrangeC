@@ -232,6 +232,27 @@ std::string Eval::ParseMacroLine(const std::string &in)
             m = MacroSpan(in, n);
             if (m == std::string::npos)
                 m = 1;
+            if (in[n+1] == '(' && m >= 3)
+            {
+                rv += "$(";
+                std::string temp = in.substr(n+2, m-3);
+                for (int q = 0; q < temp.size()-1; q++)
+                {
+                    if (temp[q] == '$')
+                    {
+                        std::string temp1 = temp.substr(q+1, 1), temp2;
+                        if (AutomaticVar(temp1, temp2))
+                        {
+                            temp = temp.substr(0, q)+temp2 + (q < temp.size()-2 ? temp.substr(q+2) : "");
+                            q+= temp2.size() - 2;
+                        }
+                    }
+                }
+                rv += temp;
+                rv += ")";
+                n = m + n;
+                m = 0;
+            }
             m = in.find_first_of('$', n + m);
         }
         else
@@ -469,6 +490,7 @@ std::string Eval::ExpandMacro(const std::string &name)
 {
     std::string rv;
     std::string extra;
+
     if (AutomaticVar(name, rv))
         return rv;
     if (name == ".VARIABLES")
@@ -487,8 +509,6 @@ std::string Eval::ExpandMacro(const std::string &name)
         extra = std::string(name.substr(n+1));
         Eval a(rv, false, ruleList, rule);
         rv = a.Evaluate();
-        Eval a1(rv, false, ruleList, rule);
-        rv = a1.Evaluate();
     }
     else
     {

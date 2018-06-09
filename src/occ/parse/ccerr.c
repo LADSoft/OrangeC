@@ -558,6 +558,62 @@ static struct {
 #endif
 } ;
 
+#define WARNING_DISABLE 1
+#define WARNING_AS_ERROR 2
+#define WARNING_ONLY_ONCE 4
+#define WARNING_EMITTED 8
+
+unsigned char warningFlags[sizeof(errors)/sizeof(errors[0])];
+
+void DisableWarning(int num)
+{
+   if (num && num < sizeof(warningFlags))
+   {
+       warningFlags[num] |= WARNING_DISABLE;
+   }
+}
+void EnableWarning(int num)
+{
+   if (num && num < sizeof(warningFlags))
+   {
+       warningFlags[num] &= ~WARNING_DISABLE;
+   }
+}
+void WarningOnlyOnce(int num)
+{
+   if (num && num < sizeof(warningFlags))
+   {
+       warningFlags[num] |= WARNING_ONLY_ONCE;
+   }
+}
+void WarningAsError(int num)
+{
+   if (num && num < sizeof(warningFlags))
+   {
+       warningFlags[num] |= WARNING_AS_ERROR;
+   }
+}
+void AllWarningsAsError()
+{
+   for (int i=0; i < sizeof(warningFlags); i++)
+       warningFlags[i] |= WARNING_AS_ERROR;
+}
+void AllWarningsDisable()
+{
+   for (int i=0; i < sizeof(warningFlags); i++)
+       warningFlags[i] |= WARNING_DISABLE;
+}
+void DisableTrivialWarnings()
+{
+    memset(warningFlags, 0, sizeof(warningFlags));
+    if (!cparams.prm_warning)
+       for (int i=0; i < sizeof(warningFlags); i++)
+            warningFlags[i] |= WARNING_DISABLE;
+   if (!cparams.prm_extwarning)
+       for (int i=0; i < sizeof(warningFlags); i++)
+            if (errors[i].level & TRIVIALWARNING)
+                warningFlags[i] |= WARNING_DISABLE;
+}
 int total_errors;
 int diagcount ;
 
@@ -721,18 +777,35 @@ BOOLEAN printerrinternal(int err, char *file, int line, va_list args)
     }
     else
     {
-        if (!cparams.prm_warning)
+        if (warningFlags[err] & WARNING_DISABLE)
             return FALSE;
-        if (errors[err].level & TRIVIALWARNING)
-            if (!cparams.prm_extwarning)
-                return FALSE;
-        if (!cparams.prm_quiet)
-            printf("Warning(%3d) ", err);
+        if ((warningFlags[err] & (WARNING_ONLY_ONCE | WARNING_EMITTED))== (WARNING_ONLY_ONCE | WARNING_EMITTED))
+            return FALSE;
+        warningFlags[err] |= WARNING_EMITTED;
+        if (warningFlags[err] & WARNING_AS_ERROR)
+        {
+            if (!cparams.prm_quiet)
+                printf("Error(%3d)   ", err);
 #ifndef CPREPROCESSOR
-        if (cparams.prm_errfile)
-            fprintf(errFile, "Warning ");
+            if (cparams.prm_errfile)
+                fprintf(errFile, "Error   ");
 #endif
-        listerr = "WARNING";
+            listerr = "ERROR";
+            total_errors++;
+            currentErrorFile = file;
+            currentErrorLine = line;
+        }
+       
+        else 
+        {
+            if (!cparams.prm_quiet)
+                printf("Warning(%3d) ", err);
+#ifndef CPREPROCESSOR
+            if (cparams.prm_errfile)
+                fprintf(errFile, "Warning ");
+#endif
+            listerr = "WARNING";
+         }
     }
 #ifndef CPREPROCESSOR
     if (theCurrentFunc && err != ERR_TOO_MANY_ERRORS && err != ERR_PREVIOUS && err != ERR_TEMPLATE_INSTANTIATION_STARTED_IN)

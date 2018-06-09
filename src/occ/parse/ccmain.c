@@ -112,13 +112,13 @@ void libpath_setup(char select, char *string);
 void def_setup(char select, char *string);
 void codegen_setup(char select, char *string);
 void optimize_setup(char select, char *string);
-/*void warning_setup(char select, char *string); */
 void parsefile(char select, char *string);
 void output_setup(char select, char *string);
 void stackalign_setup(char select, char *string);
 void verbose_setup(char select, char *string);
 void library_setup(char select, char *string);
 void tool_setup(char select, char *string);
+void warning_setup(char select, char *string);
 /* setup for ARGS.C */
 static CMDLIST Args[] = 
 {
@@ -231,11 +231,16 @@ static CMDLIST Args[] =
     }
     , 
     {
+        'w', ARG_CONCATSTRING, warning_setup
+    }
+    , 
+    {
         0, 0, 0
     }
 };
 
 CMDLIST *ArgList = &Args[0];
+
 
 void library_setup(char select, char *string)
 {

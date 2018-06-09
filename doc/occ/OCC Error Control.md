@@ -19,16 +19,8 @@ Don't display errors or warnings on the console.  Generally this is used in conj
      OCC +e +Q myfile.c
  
 puts the errors in a file, without displaying them on the console.
- 
- /w-xxx    disable warnings
- 
-you use this once for each warning you want to disable, xxx is a three character warning code.  These are presently undocumented, except for /W-all which disables all warnings.  For example:
- 
-     OCC /w-all myfile.c
- 
-disables all warnings
- 
- /E\[+\]nn    error control
+  
+### /E\[+\]nn    error control
  
 nn is the maximum number of errors before the compile fails; if + is specified extended warnings will be shown that are normally disabled by default.  For example:
  

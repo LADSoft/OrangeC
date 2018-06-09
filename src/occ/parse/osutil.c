@@ -552,6 +552,34 @@ void err_setup(char select, char *string)
     n = atoi(string);
     if (n > 0)
         cparams.prm_maxerr = n ;
+    DisableTrivialWarnings();
+}
+void warning_setup(char select, char *string)
+{
+    if (string[0] == 0)
+        AllWarningsDisable();
+    else switch (string[0])
+    {
+        case 'd':
+            DisableWarning(atoi(string+1));
+            break;
+        case 'o':
+            WarningOnlyOnce(atoi(string+1));
+            break;
+        case 'x':
+            AllWarningsAsError();
+            break;
+        case 'e':
+            if (!strcmp(string, "error"))
+                AllWarningsAsError();
+            else
+                WarningAsError(atoi(string + 1));
+            break;
+        default:
+            EnableWarning(atoi(string));
+            break;
+            
+    }
 }
 
 /*-------------------------------------------------------------------------*/
@@ -1155,6 +1183,7 @@ void ccinit(int argc, char *argv[])
              *p = '\\';
         }
     }
+    DisableTrivialWarnings();
     /* parse the environment and command line */
 #ifndef CPREPROCESSOR
     if (chosenAssembler->envname && !parseenv(chosenAssembler->envname))

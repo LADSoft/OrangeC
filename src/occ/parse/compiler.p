@@ -33,6 +33,13 @@ void browse_blockend(int lineno);
 void browse_usage(SYMBOL *var, int file);
 
                                /* Ccerr.c */
+void DisableWarning(int num);
+void EnableWarning(int num);
+void WarningOnlyOnce(int num);
+void WarningAsError(int num);
+void AllWarningsAsError();
+void AllWarningsDisable();
+void DisableTrivialWarnings();
 void errorinit(void);
 void errskim(LEXEME **lex, enum e_kw *skimlist);
 void skip(LEXEME **lex, enum e_kw kw);

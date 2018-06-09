@@ -39,6 +39,7 @@
 #include <fstream>
 #include <stdio.h>
 #include <string.h>
+#include <io.h>
 
 int main(int argc, char **argv)
 {
@@ -277,6 +278,7 @@ int LinkerMain::Run(int argc, char **argv)
             else
                 path.erase(n+1);
             int rv = TargetConfig.RunApp(path, outputFile, debugFile, Verbosity.GetExists());
+            _unlink(outputFile.c_str());
             return rv;
         }
     }

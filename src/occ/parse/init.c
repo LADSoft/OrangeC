@@ -1401,14 +1401,7 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
             lex = initialize_string(lex, funcsp, &tp, &exp);
         }
         castToPointer(&tp, &exp, (enum e_kw)-1, itype);
-        if (basetype(basetype(itype)->btp)->type == bt_auto)
-        {
-            TYPE **tpq = &itype;
-            tpq = &(basetype(*tpq)->btp);
-            while (*tpq && (*tpq)->type != bt_auto)
-                tpq = &(*tpq)->btp;
-            *tpq = basetype(tp)->btp;
-        }
+        DeduceAuto(&itype, tp);
         if (sc != sc_auto && sc != sc_register)
         {
             if (!isarithmeticconst(exp) && !isconstaddress(exp) && !cparams.prm_cplusplus)
@@ -1775,8 +1768,8 @@ static LEXEME *initialize_reference_type(LEXEME *lex, SYMBOL *funcsp, int offset
     if (tp)
     {
         ResolveTemplateVariable(&tp, &exp, basetype(itype)->btp, NULL);
-        basetype(itype)->btp = assignauto(basetype(itype)->btp, tp);
-        basetype(sp->tp)->btp = assignauto(basetype(sp->tp)->btp, tp);
+        DeduceAuto(&itype, tp);
+        DeduceAuto(&sp->tp, tp);
         UpdateRootTypes(itype);
         UpdateRootTypes(sp->tp);
         if (!isref(tp) && ((isconst(tp) && !isconst(basetype(itype)->btp)) || (isvolatile(tp) && !isvolatile(basetype(itype)->btp))))

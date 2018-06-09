@@ -204,6 +204,8 @@ BOOLEAN isautotype(TYPE *tp)
 {
     if (isref(tp))
         tp = basetype(tp)->btp;
+    while (ispointer(tp))
+        tp = basetype(tp)->btp;
     return basetype(tp)->type == bt_auto;
 }
 BOOLEAN isunsigned(TYPE *tp)
@@ -537,38 +539,72 @@ BOOLEAN isunion(TYPE *tp)
         return tp->type == bt_union;
     return FALSE;
 }
-TYPE *assignauto(TYPE *pat, TYPE *nt)
+void DeduceAuto(TYPE **pat, TYPE *nt)
 {
-    if (isautotype(pat))
+    TYPE *in = nt;
+    if (isautotype(*pat))
     {
-        if (isref(pat))
+        BOOLEAN pointerOrRef = FALSE;
+        BOOLEAN err = FALSE;
+        if (isref(*pat))
         {
             if (isref(nt))
-                basetype(pat)->btp = basetype(nt)->btp;
-            else
-                basetype(pat)->btp = nt;
+            {
+                nt = basetype(nt)->btp;
+            }
+            pointerOrRef = TRUE;
+            pat = &basetype(*pat)->btp;
         }
-        else
+        while (!err && ispointer(*pat) && ispointer(nt))
         {
-            if (pat->decltypeauto)
-                if (pat->decltypeautoextended)
+            if (!ispointer(nt))
+            {
+                err = TRUE;
+            }
+            else
+            {
+                pointerOrRef = TRUE;
+                pat = &basetype(*pat)->btp;
+                nt = basetype(nt)->btp;
+            }
+        }
+        if (basetype(*pat)->type != bt_auto)
+            err = TRUE;
+        nt = basetype(nt);
+        if (err)
+        {
+            errortype(ERR_CANNOT_DEDUCE_AUTO_TYPE, in, in);
+        }
+        else if (!pointerOrRef)
+        {
+            if ((*pat)->decltypeauto)
+                if ((*pat)->decltypeautoextended)
                 {
-                    pat = (TYPE *)Alloc(sizeof(TYPE));
-                    pat->type = bt_lref;
-                    pat->size = getSize(bt_pointer);
-                    pat->btp = nt;
+                    *pat = (TYPE *)Alloc(sizeof(TYPE));
+                    (*pat)->type = bt_lref;
+                    (*pat)->size = getSize(bt_pointer);
+                    (*pat)->btp = nt;
                 }
                 else
                 {
-                    pat = nt;
+                    *pat = nt;
                 }
             else if (isref(nt))
-                pat = basetype(nt)->btp;
+            {
+                *pat = basetype(nt)->btp;
+            }
             else
-                pat = nt;
+            {
+                *pat = nt;
+            }
+        }
+        else
+        {
+            while ((*pat)->type != bt_auto)
+                pat = &(*pat)->btp;
+            *pat = nt;
         }
     }
-    return pat;
 }
 SYMBOL *getFunctionSP(TYPE **tp)
 {

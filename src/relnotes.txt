@@ -25,6 +25,12 @@ version 6.0.38:
     occ: pass specified /o switch to assembler or RC compiler, if /c is also specified
     occ: fix problems with auto pointers
     occ: fix problems with the preprocessor not being able to handle maxed out 64-bit unsigned numbers
+    occ: delete output files on error
+    occ: fix problem where things trailing a function prototype sometimes couldn't refernece the arguments from the prototype
+    occ: remove 'suspicious pointer' warning when assigning to a function pointer
+    occ: add command line and pragma support for warning control
+    occ: pass output file name to assembler, rc compiler when compiling a single file
+    occ: fix rare problem with register allocator failing
     olink: fix a crash if occ failed to output line information properly
     dlpe: fix the fixup of relative branch to import thunks, to allow the thunks to be relocated
     dlpe: use --nologo when invokeing oimplib

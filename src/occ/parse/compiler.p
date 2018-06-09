@@ -395,7 +395,7 @@ BOOLEAN isvoid(TYPE *tp);
 BOOLEAN isvoidptr(TYPE *tp);
 BOOLEAN isarray(TYPE *tp);
 BOOLEAN isunion(TYPE *tp);
-TYPE *assignauto(TYPE *pat, TYPE *nt);
+void DeduceAuto(TYPE **pat, TYPE *nt);
 SYMBOL *getFunctionSP(TYPE **tp);
 LEXEME *concatStringsInternal(LEXEME *lex, STRING **str, int *elems);
 LEXEME *concatStrings(LEXEME *lex, EXPRESSION **exp, enum e_lexType *tp, int *elems);

@@ -557,6 +557,7 @@ static struct {
 { "__fault or __finally can appear only once per __try block", ERROR },
 { "static function '%s' is undefined", ERROR },
 { "Missing type specifier for identifier '%s'", WARNING },
+{ "Cannot deduce auto type from '%s'", ERROR },
 #endif
 } ;
 

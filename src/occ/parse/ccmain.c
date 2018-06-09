@@ -591,7 +591,8 @@ void compile(BOOLEAN global)
 
 void Cleanup()
 {
-    fclose(outputFile);
+    if (outputFile)
+        fclose(outputFile);
     unlink(realOutFile);
     unlink(tempOutFile);
     rename(oldOutFile, realOutFile);
@@ -846,6 +847,7 @@ int main(int argc, char *argv[])
 #endif
         if (outputFile && openOutput)
             fclose(outputFile);
+        outputFile = NULL;
         if (cppFile)
             fclose(cppFile);
         if (listFile)

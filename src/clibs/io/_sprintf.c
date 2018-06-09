@@ -816,13 +816,13 @@ doinf:
                 xxx = *(char **)arg ;
                 if (xxx == NULL)
                     xxx = "(null)";
-		if (width == 0)
-			if (prec >= 0)
-				width = prec;
-			else
-				width = strlen(xxx);
-		if (prec < 0 || prec > width)
-			prec = width;
+                int width1 = strlen(xxx);
+                if (prec >= 0 && width1 > prec)
+                    width1 = prec;
+                if (width < width1)
+                    width = width1;
+ 		if (prec < 0)
+                   prec = width;
                 hold = strlen(xxx);
                 if (hold < prec)
                     prec = hold;

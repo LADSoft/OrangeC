@@ -853,6 +853,10 @@ void FormatLine(HWND hwnd, INTERNAL_CHAR *buf, int type, int bkColor)
         DWORD len;
         if (p->ch == 'c' && p[1].ch == 'a' && !pcmp(p, "case", FALSE, &len, TRUE, FALSE))
             return TRUE;
+        if (p->ch == 'n' && p[1].ch == 'e' && !pcmp(p, "new", FALSE, &len, TRUE, FALSE))
+            return TRUE;
+        if (p->ch == 'd' && p[1].ch == 'e' && !pcmp(p, "delete", FALSE, &len, TRUE, FALSE))
+            return TRUE;
         return p->ch == 'r' && p[1].ch == 'e' && !pcmp(p, "return", FALSE, &len, TRUE, FALSE);
         
     }
@@ -1057,6 +1061,8 @@ void FormatLine(HWND hwnd, INTERNAL_CHAR *buf, int type, int bkColor)
                                 semiState = IN_MATCH;
                             else if (IsOperator(ptr))
                                 semiState = FOUND_OPERATOR;
+                            else if (ptr->ch == ':' && (ptr[-1].ch == ':' || ptr[1].ch == ':'))
+                                semiState = FOUND_TYPE_CHAR;
                             else if (ptr->ch == ';')
                                 semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
                             else
@@ -1096,6 +1102,8 @@ void FormatLine(HWND hwnd, INTERNAL_CHAR *buf, int type, int bkColor)
                                 semiState = IN_MATCH;
                             else if (IsOperator(ptr))
                                 semiState = FOUND_OPERATOR;
+                            else if (ptr->ch == ':' && (ptr[-1].ch == ':' || ptr[1].ch == ':'))
+                                semiState = FOUND_ID_CHAR;
                             else if (ptr->ch == ';' || ptr->ch == ':' || ptr->ch == '}')
                                 semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
                                 break;
@@ -1238,7 +1246,9 @@ void FormatLine(HWND hwnd, INTERNAL_CHAR *buf, int type, int bkColor)
                                 semiState = NEED_SEMI;
                             break;
                         case FOUND_OPERATOR:
-                            if (isdigit(ptr->ch))
+                            if (IsReturn(ptr) && ptr->ch == 'n') // new
+                                semiState = FOUND_RETURN;
+                            else if (isdigit(ptr->ch))
                                 semiState = FOUND_DIGIT;
                             else if (isalpha(ptr->ch) || ptr->ch == '_')
                                 semiState = FOUND_ID_START;
@@ -1260,7 +1270,9 @@ void FormatLine(HWND hwnd, INTERNAL_CHAR *buf, int type, int bkColor)
                                 semiState = NEED_SEMI;
                             break;
                         case FOUND_OPERATOR_END:
-                            if (isdigit(ptr->ch))
+                            if (IsReturn(ptr) && ptr->ch == 'n') // new
+                                semiState = FOUND_RETURN;
+                            else if (isdigit(ptr->ch))
                                 semiState = FOUND_DIGIT;
                             else if (isalpha(ptr->ch) || ptr->ch == '_')
                                 semiState = FOUND_ID_START;

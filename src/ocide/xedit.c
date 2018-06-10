@@ -42,31 +42,31 @@ extern LOGFONT systemDialogFont;
 extern HWND codecompleteBox;
 extern BOOL inStructBox;
 extern HWND hwndShowFunc;
- extern COLORREF keywordColor;
- extern COLORREF numberColor;
- extern COLORREF commentColo;
- extern COLORREF stringColor;
- extern COLORREF directiveColor;
- extern COLORREF backgroundColor;
- extern COLORREF readonlyBackgroundColor;
- extern COLORREF textColor;
- extern COLORREF highlightColor;
- extern COLORREF selectedTextColor ;
- extern COLORREF selectedBackgroundColor;
- extern COLORREF columnbarColor;
+extern COLORREF keywordColor;
+extern COLORREF numberColor;
+extern COLORREF commentColo;
+extern COLORREF stringColor;
+extern COLORREF directiveColor;
+extern COLORREF backgroundColor;
+extern COLORREF readonlyBackgroundColor;
+extern COLORREF textColor;
+extern COLORREF highlightColor;
+extern COLORREF selectedTextColor ;
+extern COLORREF selectedBackgroundColor;
+extern COLORREF columnbarColor;
 
- extern COLORREF defineColor;
- extern COLORREF functionColor;
- extern COLORREF parameterColor;
- extern COLORREF typedefColor;
- extern COLORREF tagColor;
- extern COLORREF autoColor;
- extern COLORREF localStaticColor;
- extern COLORREF staticColor;
- extern COLORREF globalColor;
- extern COLORREF externColor;
- extern COLORREF labelColor;
- extern COLORREF memberColor;
+extern COLORREF defineColor;
+extern COLORREF functionColor;
+extern COLORREF parameterColor;
+extern COLORREF typedefColor;
+extern COLORREF tagColor;
+extern COLORREF autoColor;
+extern COLORREF localStaticColor;
+extern COLORREF staticColor;
+extern COLORREF globalColor;
+extern COLORREF externColor;
+extern COLORREF labelColor;
+extern COLORREF memberColor;
 
 extern COLORREF *colors[];
 
@@ -1769,6 +1769,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                 KillTimer(hwnd, p->cd->reparseTimerID);
                 p->cd->reparseTimerID = 0;
                 InstallForParse(GetParent(hwnd));
+                SyntaxCheck(hwnd, p);
                 break;
                 /*
             case WM_NCPAINT:

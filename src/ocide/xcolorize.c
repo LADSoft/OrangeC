@@ -85,6 +85,10 @@ KEYLIST C_keywordList[] =
 {
     #include "c_kw.h"
 };
+KEYLIST Ctype_keywordList[] = 
+{
+    #include "ctype_kw.h"
+};
 KEYLIST ASM_keywordList[] = 
 {
     #include "asm_kw.h"
@@ -670,6 +674,7 @@ void FormatLine(HWND hwnd, INTERNAL_CHAR *buf, int type, int bkColor)
         }
         FormatBufferFromScratch(info->ed->colorizeEntries, info->ed->cd->text, 0, info->ed->cd->textlen, info->ed->cd
             ->language, info->ed->cd->defbackground);
+        SyntaxCheck(info->wnd, info->ed);
         InvalidateRect(info->wnd, 0, 0);
         info->ed->cd->colorizing--;
         free(info);
@@ -749,7 +754,7 @@ void FormatLine(HWND hwnd, INTERNAL_CHAR *buf, int type, int bkColor)
                     nesting--;
                 else if (*name == '@')
                     last = name;
-                name++;
+                name++; 
             }
             nesting = 0;
             name = last+1;
@@ -817,4 +822,565 @@ void FormatLine(HWND hwnd, INTERNAL_CHAR *buf, int type, int bkColor)
                 he = next;
             }
         }
+    }
+    static BOOL IsOperator(INTERNAL_CHAR *p)
+    {
+        switch (p->ch)
+        {
+            case '+':
+            case '-':
+            case '=':
+            case '/':
+            case '*':
+            case '&':
+            case '|':
+            case '^':
+            case '%':
+            case '~':
+            case '!':
+            case '<':
+            case '>':
+            case ',':
+            case '.':
+            case '?':
+                return TRUE;
+            default:
+                return FALSE;
+        }
+    }
+    static BOOL IsReturn(INTERNAL_CHAR *p)
+    {
+        DWORD len;
+        if (p->ch == 'c' && p[1].ch == 'a' && !pcmp(p, "case", FALSE, &len, TRUE, FALSE))
+            return TRUE;
+        return p->ch == 'r' && p[1].ch == 'e' && !pcmp(p, "return", FALSE, &len, TRUE, FALSE);
+        
+    }
+    static BOOL IsElse(INTERNAL_CHAR *p)
+    {
+        DWORD len;
+        return p->ch == 'e' && p[1].ch == 'l' && !pcmp(p, "else", FALSE, &len, TRUE, FALSE);
+
+    }
+    static BOOL IsFreeControl(INTERNAL_CHAR *p)
+    {
+        DWORD len;
+//        if (p->ch == 'e' && p[1].ch == 'l' && !pcmp(p, "else", FALSE, &len, TRUE, FALSE))
+//            return TRUE;
+        if (p->ch == 'b' && p[1].ch == 'r' && !pcmp(p, "break", FALSE, &len, TRUE, FALSE))
+            return TRUE;
+        if (p->ch == 'c' && p[1].ch == 'o' && !pcmp(p, "continue", FALSE, &len, TRUE, FALSE))
+            return TRUE;
+        if (p->ch == 'd' && p[1].ch == 'e' && !pcmp(p, "default", FALSE, &len, TRUE, FALSE))
+            return TRUE;
+//        if (p->ch == 't' && p[1].ch == 'r' && !pcmp(p, "try", FALSE, &len, TRUE, FALSE))
+//            return TRUE;
+        if (p->ch == 'd' && p[1].ch == 'o')
+            return TRUE;
+        return FALSE;
+    }
+    static BOOL IsBoundControl(INTERNAL_CHAR *p)
+    {
+        DWORD len;
+        if (p->ch == 'w' && p[1].ch == 'h' && !pcmp(p, "while", FALSE, &len, TRUE, FALSE))
+            return TRUE;
+        if (p->ch == 'f' && p[1].ch == 'o' && !pcmp(p, "for", FALSE, &len, TRUE, FALSE))
+            return TRUE;
+        if (p->ch == 'c' && p[1].ch == 'a' && !pcmp(p, "catch", FALSE, &len, TRUE, FALSE))
+            return TRUE;
+        if (p->ch == 's' && p[1].ch == 'w' && !pcmp(p, "switch", FALSE, &len, TRUE, FALSE))
+            return TRUE;
+        if (p->ch == 'i' && p[1].ch == 'f')
+            return TRUE;
+        return FALSE;
+    }
+    static BOOL IsType(INTERNAL_CHAR *p)
+    {
+        return FALSE; // can't do the below without knowing typedefs...
+//        DWORD retlen = 0;
+//        return !!matchkeyword(Ctype_keywordList, sizeof(Ctype_keywordList)/sizeof(Ctype_keywordList[0]), FALSE, p, &retlen, FALSE);
+    }
+#define EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL 0
+#define FOUND_FREE_CONTROL 1
+#define FOUND_FREE_CONTROL_END 2
+#define FOUND_BOUND_CONTROL 3
+#define FOUND_BOUND_CONTROL_END 4
+#define FOUND_RETURN 5
+#define FOUND_RETURN_END 6
+#define FOUND_ID_START 7
+#define FOUND_ID_CHAR 8
+#define FOUND_ID_END 9
+#define FOUND_TYPE_START 10
+#define FOUND_TYPE_CHAR 11
+#define FOUND_TYPE_END 12
+#define FOUND_DIGIT 13
+#define FOUND_DIGIT_END 14
+#define IN_MATCH 15
+#define FOUND_OPERATOR 16
+#define FOUND_OPERATOR_END 17
+#define FOUND_STRING 18
+#define FOUND_STRING_END 19
+#define FOUND_CONTROL_BINDING 20
+#define FOUND_ELSE 21
+#define FOUND_ELSE_END 22
+#define SKIM_TO_EOL 23
+#define NEED_SEMI 100
+
+
+    void SyntaxCheck(HWND hWnd, EDITDATA *p)
+    {
+        BOOL inFor = FALSE;
+        BOOL changed = FALSE;
+        char matching[1024];
+        int matchIndex[1024];
+        int matchCount = 0; 
+        int braceIndex[1024];
+        int braceCount = 0;
+
+        char instring = 0; 
+
+        int semiPos=0;
+        int semiState = 0, oldSemiState=0, oldStringSemiState=0;
+        BOOL erred = FALSE;
+        BOOL functionMatch = FALSE;
+        INTERNAL_CHAR *ptr = p->cd->text; 
+        for (int i=0; i < p->cd->textlen; i++, ptr++)
+        {
+            if (ptr->squiggle)
+                changed = TRUE;
+
+            ptr->squiggle = FALSE;
+            if ((ptr->Color & 0xf) != C_COMMENT)
+            {
+                if (instring && ptr->ch == '\n')
+                {
+                    instring = 0;
+                    ptr[-1].squiggle = TRUE;
+                    changed = TRUE;
+                }
+                if (semiState == SKIM_TO_EOL)
+                {
+                    if (ptr->ch == '\n')
+                        semiState = oldSemiState;
+                }
+                else  if (ptr->ch == '"' || ptr->ch == '\'')
+                {
+                    int n = i;
+                    while (n > 0 && p->cd->text[n - 1].ch == '\\')
+                        n--;
+                    if (!((i - n) & 1))
+                    {
+                        if (instring == ptr->ch)
+                        {
+                            instring = 0;
+                            semiState = oldStringSemiState;
+                        }
+                        else if (!instring)
+                        {
+                            instring = ptr->ch;
+                            switch (semiState)
+                            {
+                                case FOUND_FREE_CONTROL:
+                                case FOUND_BOUND_CONTROL:
+                                case FOUND_DIGIT:
+                                    semiState = NEED_SEMI;
+                                    break;
+                                default:
+                                    oldStringSemiState = semiState;
+                                    semiState = FOUND_STRING;
+                                    break;
+
+                            }
+                        }
+                    }
+                }
+                else if (!instring)
+                {
+                    if (ptr->ch == '#')
+                    {
+                        INTERNAL_CHAR *q = ptr - 1;
+                        while (q > p->cd->text && isspace(q->ch))
+                        {
+                            if (q->ch == '\n')
+                            {
+                                oldSemiState = semiState;
+                                semiState = SKIM_TO_EOL;
+                                break;
+                            }
+                            q--;
+                        }
+                        if (ptr->squiggle)
+                            changed = TRUE;
+
+                        ptr->squiggle = FALSE;
+                    }
+                    if (!matchCount)
+                        switch (semiState)
+                        {
+                        case FOUND_CONTROL_BINDING:
+                        case EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL:
+                            if (IsType(ptr))
+                                semiState = FOUND_TYPE_START;
+                            else if (ptr->ch == '*' || ptr->ch == '&')
+                                semiState = FOUND_OPERATOR;
+                            else if (ptr->ch == '_')
+                                semiState = FOUND_TYPE_START;
+                            else if (isalpha(ptr->ch))
+                            {
+                                if (IsElse(ptr))
+                                    semiState = FOUND_ELSE;
+                                else if (IsReturn(ptr))
+                                    semiState = FOUND_RETURN;
+                                else if (IsFreeControl(ptr))
+                                    semiState = FOUND_FREE_CONTROL;
+                                else if (IsBoundControl(ptr))
+                                    semiState = FOUND_BOUND_CONTROL;
+                                else
+                                    semiState = FOUND_TYPE_START;
+                            }
+                            else if (isdigit(ptr->ch))
+                                semiState = FOUND_DIGIT;
+                            else if (ptr->ch == '(' || ptr->ch == '[')
+                                semiState = IN_MATCH;
+                            else if (isspace(ptr->ch))
+                                semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
+                            else if (ptr->ch != '{' && ptr->ch != '}' && ptr->ch != ';')
+                                semiState = NEED_SEMI;
+                            break;
+                        case FOUND_TYPE_START:
+                        case FOUND_TYPE_CHAR:
+                            if (isalnum(ptr->ch) || isdigit(ptr->ch) || ptr->ch == '_')
+                                semiState = FOUND_TYPE_CHAR;
+                            else if (isspace(ptr->ch))
+                                semiState = FOUND_TYPE_END;
+                            else if (ptr->ch == '(' || ptr->ch == '[')
+                                semiState = IN_MATCH;
+                            else if (IsOperator(ptr))
+                                semiState = FOUND_OPERATOR;
+                            else if (ptr->ch == ';')
+                                semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
+                            else
+                                semiState = NEED_SEMI;
+                            break;
+                        case FOUND_TYPE_END:
+                            if (IsElse(ptr))
+                                semiState = NEED_SEMI;
+                            else if (IsReturn(ptr))
+                                semiState = NEED_SEMI;
+                            else if (IsFreeControl(ptr))
+                                semiState = NEED_SEMI;
+                            else if (IsBoundControl(ptr))
+                                semiState = NEED_SEMI;
+                            else if (IsType(ptr))
+                                semiState = FOUND_TYPE_START;
+                            else if (isalpha(ptr->ch) || ptr->ch == '_')
+                                semiState = FOUND_TYPE_START;
+                            else if (isspace(ptr->ch))
+                                semiState = FOUND_TYPE_END;
+                            else if (ptr->ch == '(' || ptr->ch == '[')
+                                semiState = IN_MATCH;
+                            else if (IsOperator(ptr))
+                                semiState = FOUND_OPERATOR;
+                            else if (ptr->ch == ';')
+                                semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
+                            else if (!isspace(ptr->ch))
+                                semiState = NEED_SEMI;
+                            break;
+                        case FOUND_ID_START:
+                        case FOUND_ID_CHAR:
+                            if (isalnum(ptr->ch) || isdigit(ptr->ch) || ptr->ch == '_')
+                                semiState = FOUND_ID_CHAR;
+                            else if (isspace(ptr->ch))
+                                semiState = FOUND_ID_END;
+                            else if (ptr->ch == '(' || ptr->ch == '[')
+                                semiState = IN_MATCH;
+                            else if (IsOperator(ptr))
+                                semiState = FOUND_OPERATOR;
+                            else if (ptr->ch == ';' || ptr->ch == ':' || ptr->ch == '}')
+                                semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
+                                break;
+                        case FOUND_ID_END:
+                            if (IsElse(ptr))
+                                semiState = NEED_SEMI;
+                            else if (IsReturn(ptr))
+                                semiState = NEED_SEMI;
+                            else if (IsFreeControl(ptr))
+                                semiState = NEED_SEMI;
+                            else if (IsBoundControl(ptr))
+                                semiState = NEED_SEMI;
+                            else if (ptr->ch == '(' || ptr->ch == '[')
+                                semiState = IN_MATCH;
+                            else if (isspace(ptr->ch))
+                                semiState = FOUND_ID_END;
+                            else if (IsOperator(ptr))
+                                semiState = FOUND_OPERATOR;
+                            else if (ptr->ch == ';' || ptr->ch == ':' || ptr->ch == '}')
+                                semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
+                            else if (!isspace(ptr->ch))
+                                semiState = NEED_SEMI;
+                            break;
+                        case FOUND_FREE_CONTROL:
+                            if (!isalpha(ptr->ch))
+                            {
+                                if (ptr->ch == ';' || ptr->ch == ':' || ptr->ch == '}')
+                                    semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
+                                else if (isspace(ptr->ch))
+                                    semiState = FOUND_FREE_CONTROL_END;
+                                else
+                                    semiState = NEED_SEMI;
+                            }
+                            break;
+                        case FOUND_FREE_CONTROL_END:
+                            if (!isspace(ptr->ch))
+                                if (ptr->ch == ';' || ptr->ch == ':' || ptr->ch == '}')
+                                    semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
+                                else
+                                    semiState = NEED_SEMI;
+                            break;
+                        case FOUND_BOUND_CONTROL:
+                            if (!isalpha(ptr->ch))
+                            {
+                                if (ptr->ch == '(')
+                                {
+                                    semiState = FOUND_CONTROL_BINDING;
+                                }
+                                else if (isspace(ptr->ch))
+                                {
+                                    semiState = FOUND_BOUND_CONTROL_END;
+                                }
+                                else
+                                    semiState = NEED_SEMI;
+                            }
+                            break;
+                        case FOUND_BOUND_CONTROL_END:
+                            if (ptr->ch == '(')
+                            {
+                                semiState = FOUND_CONTROL_BINDING;
+                            }
+                            else if (!isspace(ptr->ch))
+                            {
+                                semiState = NEED_SEMI;
+                            }
+                            break;
+                        case IN_MATCH:
+                            if (isspace(ptr->ch))
+                                semiState = IN_MATCH;
+                            else if (ptr->ch == ';' || ptr->ch == '}')
+                                semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
+                            else if (IsOperator(ptr))
+                                semiState = FOUND_OPERATOR;
+                            else
+                                semiState = NEED_SEMI;
+                            break;
+                        case FOUND_ELSE:
+                            if (!isalpha(ptr->ch))
+                            {
+                                semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
+                            }
+                            break;
+                        case FOUND_RETURN:
+                            if (!isalpha(ptr->ch))
+                            {
+                                if (ptr->ch == ';' || ptr->ch == '}')
+                                    semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
+                                else if (isspace(ptr->ch))
+                                    semiState = FOUND_RETURN_END;
+                                else
+                                    semiState = NEED_SEMI;
+                            }
+                            break;
+                        case FOUND_RETURN_END:
+                            if (IsElse(ptr))
+                                semiState = FOUND_ELSE;
+                            else if (IsReturn(ptr))
+                                semiState = NEED_SEMI;
+                            else if (IsFreeControl(ptr))
+                                semiState = NEED_SEMI;
+                            else if (IsBoundControl(ptr))
+                                semiState = NEED_SEMI;
+                            else if (ptr->ch == '(' || ptr->ch == '[')
+                                semiState = IN_MATCH;
+                            else if (isspace(ptr->ch))
+                                semiState = FOUND_RETURN_END;
+                            else if (isalpha(ptr->ch) || ptr->ch == '_')
+                                semiState = FOUND_ID_START;
+                            else if (IsOperator(ptr))
+                                semiState = FOUND_OPERATOR;
+                            else if (isdigit(ptr->ch))
+                                semiState = FOUND_DIGIT;
+                            else if (ptr->ch == ';' || ptr->ch == ':' || ptr->ch == '}')
+                                semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
+                            else
+                                semiState = NEED_SEMI;
+                            break;
+                        case FOUND_DIGIT:
+                            if (isxdigit(ptr->ch) || ptr->ch == 'x' || ptr->ch == 'X')
+                                semiState = FOUND_DIGIT;
+                            else if (isspace(ptr->ch))
+                                semiState = FOUND_DIGIT_END;
+                            else if (ptr->ch == ';' || ptr->ch == ':' || ptr->ch == '}')
+                                semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
+                            else if (IsOperator(ptr))
+                                semiState = FOUND_OPERATOR;
+                            else
+                                semiState = NEED_SEMI;
+                            break;
+                        case FOUND_DIGIT_END:
+                            if (ptr->ch == ';')
+                                semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
+                            else if (isspace(ptr->ch))
+                                semiState = FOUND_DIGIT_END;
+                            else if (IsOperator(ptr))
+                                semiState = FOUND_OPERATOR;
+                            else if (ptr->ch == ';' || ptr->ch == ':'|| ptr->ch == '}')
+                                semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
+                            else
+                                semiState = NEED_SEMI;
+                            break;
+                        case FOUND_OPERATOR:
+                            if (isdigit(ptr->ch))
+                                semiState = FOUND_DIGIT;
+                            else if (isalpha(ptr->ch) || ptr->ch == '_')
+                                semiState = FOUND_ID_START;
+                            else if (ptr->ch == '(')
+                                semiState = IN_MATCH;
+                            else if (isspace(ptr->ch))
+                                semiState = FOUND_OPERATOR_END;
+                            else if (ptr->ch == ';' || ptr->ch == '}')
+                            {
+                                INTERNAL_CHAR *p1 = ptr - 1;
+                                while (p1 > p->cd->text && isspace(p1->ch))
+                                    p1--;
+                                if (p1->ch != '+' && p1->ch != '-')
+                                    semiState = NEED_SEMI;
+                                else if (p1[-1].ch != p1->ch)
+                                    semiState = NEED_SEMI;
+                            }
+                            else if (!IsOperator(ptr))
+                                semiState = NEED_SEMI;
+                            break;
+                        case FOUND_OPERATOR_END:
+                            if (isdigit(ptr->ch))
+                                semiState = FOUND_DIGIT;
+                            else if (isalpha(ptr->ch) || ptr->ch == '_')
+                                semiState = FOUND_ID_START;
+                            else if (ptr->ch == '(')
+                                semiState = IN_MATCH;
+                            else if (isspace(ptr->ch))
+                                semiState = FOUND_OPERATOR_END;
+                            else if (ptr->ch == ';' || ptr->ch == '}')
+                            {
+                                INTERNAL_CHAR *p1 = ptr - 1;
+                                while (p1 > p->cd->text && isspace(p1->ch))
+                                    p1--;
+                                if (p1->ch != '+' && p1->ch != '-')
+                                    semiState = NEED_SEMI;
+                                else if (p1[-1].ch != p1->ch)
+                                    semiState = NEED_SEMI;
+                            }
+                            else if (!IsOperator(ptr))
+                                semiState = NEED_SEMI;
+                            break;
+                        case FOUND_STRING:
+                        case FOUND_STRING_END:
+                            break;
+                        case NEED_SEMI:
+                            break;
+
+                        }
+                    if (ptr->ch == '{' || ptr->ch == '}' || ptr->ch == ';' && !inFor)
+                    {
+                        if (ptr->ch == '{' && functionMatch || semiState != NEED_SEMI)
+                            semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
+                        if (matchCount && !erred)
+                        {
+                            p->cd->text[matchIndex[matchCount - 1]].squiggle = TRUE;
+                            changed = TRUE;
+                        }
+                        matchCount = 0;
+                        erred = FALSE;
+                    }
+                    else if (ptr->ch == '[' || ptr->ch == '(')
+                    {
+                        if (matchCount == 0)
+                        {
+                            inFor = FALSE;
+                            if (ptr->ch == '(')
+                            {
+                                int n = i - 1;
+                                while (n > 2 && isspace(p->cd->text[n].ch))
+                                    n--;
+                                if (n > 1)
+                                {
+                                    if (p->cd->text[n].ch == 'r' &&
+                                        p->cd->text[n - 1].ch == 'o' && 
+                                        p->cd->text[n - 2].ch == 'f')
+                                        inFor = TRUE;
+                                }
+                            }
+                        }
+                        matchIndex[matchCount] = i;
+                        matching[matchCount++] = ptr->ch;
+
+                    }
+                    else if (ptr->ch == ']')
+                    {
+                        if (!matchCount)
+                        {
+                            ptr->squiggle = TRUE;
+                            changed = TRUE;
+                            erred = TRUE;
+                        }
+                        else if (matching[matchCount - 1] != '[')
+                        {
+                            p->cd->text[matchIndex[matchCount - 1]].squiggle = TRUE;
+                            changed = TRUE;
+                            erred = TRUE;
+                        }
+                        else
+                        {
+                            matchCount--;
+                        }
+                    }
+                    else if (ptr->ch == ')')
+                    {
+                        if (!matchCount)
+                        {
+                            ptr->squiggle = TRUE;
+                            changed = TRUE;
+                            erred = TRUE;
+                        }
+                        else if (matching[matchCount - 1] != '(')
+                        {
+                            p->cd->text[matchIndex[matchCount - 1]].squiggle = TRUE;
+                            changed = TRUE;
+                            erred = TRUE;
+
+                        }
+                        else
+                        {
+                            matchCount--;
+                            if (!matchCount)
+                                functionMatch = TRUE;
+                        }
+                    }
+                    else if (ptr->ch == '=')
+                        functionMatch = TRUE;
+                    else if (!isspace(ptr->ch))
+                        functionMatch = FALSE;
+                    if (semiState == NEED_SEMI)
+                    {
+                        semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
+                        changed = TRUE;
+                        p->cd->text[semiPos].squiggle = TRUE;
+                    }
+                    if (!isspace(ptr->ch))
+                        semiPos = i;
+                }
+                else
+                    functionMatch = FALSE;
+            }
+        }
+        if (changed)
+            InvalidateRect(hWnd, 0, 0);
     }

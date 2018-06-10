@@ -443,7 +443,8 @@ typedef struct
 //    COLORREF color;
 	unsigned short Color:10;
     unsigned short effect:3;
-    unsigned short pad1:3;
+    unsigned short squiggle: 1;
+    unsigned short pad1:2;
     unsigned char pad2;
     unsigned char ch;
 //    char pad;

@@ -1175,6 +1175,8 @@ void FormatLine(HWND hwnd, INTERNAL_CHAR *buf, int type, int bkColor)
                         case IN_MATCH:
                             if (isspace(ptr->ch))
                                 semiState = IN_MATCH;
+                            else if (isalpha(ptr->ch) || ptr->ch == '_' || ptr->ch == '*' ||ptr->ch == '&' )
+                                semiState = FOUND_ID_START;
                             else if (ptr->ch == ';' || ptr->ch == '}')
                                 semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
                             else if (IsOperator(ptr))

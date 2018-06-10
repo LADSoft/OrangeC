@@ -1,0 +1,18 @@
+occ Version 6.0.37.1 Copyright (C) LADSoft 2006-2018
+
+Warning(132)  errchk.c(11):  Suspicious pointer conversion in function suspicious_assign_to_func_f
+Warning(191)  errchk.c(29):  Expression has no effect in function expression_no_effect_f
+Warning(191)  errchk.c(30):  Expression has no effect in function expression_no_effect_f
+Warning(191)  errchk.c(31):  Expression has no effect in function expression_no_effect_f
+Warning(191)  errchk.c(32):  Expression has no effect in function expression_no_effect_f
+Warning( 36)  errchk.c(40):  Redefinition of macro 'umacro' changes value in function expression_no_effect_f
+Warning( 39)  errchk.c(39):  Previous declaration of 'umacro' here
+Warning(105)  errchk.c(63):  Function should return a value in function switch_noreturn_f
+Warning(105)  errchk.c(71):  Function should return a value in function while_noreturn_f1
+Warning(105)  errchk.c(75):  Function should return a value in function while_noreturn_f2
+Warning(105)  errchk.c(94):  Function should return a value in function do_noreturn_f
+Warning(105)  errchk.c(108):  Function should return a value in function for_noreturn_f
+Warning(105)  errchk.c(120):  Function should return a value in function if_noreturn_f1
+Warning(105)  errchk.c(126):  Function should return a value in function if_noreturn_f2
+Warning(105)  errchk.c(132):  Function should return a value in function if_noreturn_f3
+Warning(482)  errchk.c(134):  Missing type specifier for identifier 'missing_type_f'

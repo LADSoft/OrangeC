@@ -448,7 +448,7 @@ static struct {
 {"Anonymous union cannot contain function or nested type", ERROR },
 {"Anonymous union must contain only public members", ERROR },
 {"Anonymous union must contain only nonstatic data members", ERROR },
-{"Goto bypasses initialization", CPLUSPLUSERROR | WARNING },
+{"Goto on line %s bypasses initialization", CPLUSPLUSERROR | WARNING },
 {"Try keyword requires compound statement", ERROR },
 {"One or more catch handlers expected", ERROR },
 {"Catch handler requires compound statement", ERROR },
@@ -1270,7 +1270,7 @@ static BOOLEAN hasGoto(STATEMENT *stmt)
     }
     return FALSE;
 }
-static BOOLEAN findVLAs(STATEMENT *stmt)
+static BOOLEAN hasDeclarations(STATEMENT *stmt)
 {
     while (stmt)
     {
@@ -1284,7 +1284,7 @@ static BOOLEAN findVLAs(STATEMENT *stmt)
             case st___catch:
             case st___finally:
             case st___fault:
-                if (findVLAs(stmt->lower))
+                if (hasDeclarations(stmt->lower))
                     return TRUE;
                 break;
             case st_declare:
@@ -1307,25 +1307,14 @@ static BOOLEAN findVLAs(STATEMENT *stmt)
             case st_nop:
                 break;
             default:
-                diag("unknown stmt type in findvlas");
+                diag("unknown stmt type in hasDeclarations");
                 break;
         }
         stmt = stmt->next;
     }
     return FALSE;
 }
-typedef struct vlaShim
-{
-    struct vlaShim *next, *prev;
-    enum { v_label, v_goto, v_vla, v_declare, v_blockstart, v_blockend } type;
-    STATEMENT *stmt;
-    int level;
-    int label;
-    int line;
-    char *file;
-} VLASHIM ;
-/* thisll be sluggish if there are lots of gotos & labels... */
-static void getVLAList(STATEMENT *stmt, VLASHIM ***shims, VLASHIM **prev, int level)
+static void labelIndexes(STATEMENT *stmt, int *min, int *max)
 {
     while (stmt)
     {
@@ -1339,63 +1328,140 @@ static void getVLAList(STATEMENT *stmt, VLASHIM ***shims, VLASHIM **prev, int le
             case st___catch:
             case st___finally:
             case st___fault:
-                **shims = Alloc(sizeof(VLASHIM));
-                (**shims)->prev = *prev;
-                (**shims)->type = v_blockstart;
-                (**shims)->level = level ;
-                (**shims)->label = stmt->label;
-                (**shims)->line = stmt->line;
-                (**shims)->file = stmt->file;
-                (**shims)->stmt = stmt;
-                *prev = **shims;
-                *shims = &(**shims)->next;
-                getVLAList(stmt->lower, shims, prev, level + 1);
-                if (stmt->blockTail)
+                labelIndexes(stmt->lower, min, max);
+                break;
+            case st_declare:
+            case st_expr:
+                break;
+            case st_goto:
+            case st_select:
+            case st_notselect:
+            case st_label:
+                if (stmt->label < *min)
+                    *min = stmt->label;
+                if (stmt->label > *max)
+                    *max = stmt->label;
+                break;
+            case st_return:
+            case st_line:
+            case st_passthrough:
+            case st_datapassthrough:
+            case st_asmcond:
+            case st_varstart:
+            case st_dbgblock:
+                break;
+            case st_nop:
+                break;
+            default:
+                diag("unknown stmt type in hasDeclarations");
+                break;
+        }
+        stmt = stmt->next;
+    }
+}
+typedef struct vlaShim
+{
+    struct vlaShim *next, *lower;
+    struct vlaShim *fwd;
+    struct vlaShim *parent;
+    LIST *backs;
+    enum { v_label, v_goto, v_return, v_branch, v_vla, v_declare, v_blockstart, v_blockend } type;
+    STATEMENT *stmt;
+    int level;
+    int blocknum;
+    int blockindex;
+    int label;
+    int line;
+    int checkme : 1;
+    int mark : 1;
+    char *file;
+} VLASHIM ;
+static VLASHIM *mkshim(int type, int level, STATEMENT *stmt, VLASHIM *last, VLASHIM *parent, int blocknum, int blockindex)
+{
+    VLASHIM *rv = Alloc(sizeof(VLASHIM));
+    if (last && last->type != v_return)
+    {
+        rv->backs = (LIST *)Alloc(sizeof(LIST));
+        rv->backs->data = last;
+    }
+    rv->type = type;
+    rv->level = level ;
+    rv->label = stmt->label;
+    rv->line = stmt->line;
+    rv->file = stmt->file;
+    rv->stmt = stmt;
+    rv->blocknum = blocknum;
+    rv->blockindex = blockindex;
+    rv->parent = parent;
+    return rv;
+}
+/* thisll be sluggish if there are lots of gotos & labels... */
+static VLASHIM *getVLAList(STATEMENT *stmt, VLASHIM *last, VLASHIM *parent, VLASHIM **labels, int minLabel, int *blocknum, int level)
+{
+    int curBlockNum = (*blocknum)++;
+    int curBlockIndex = 0;
+    VLASHIM *rv= NULL, **cur = &rv;
+    while (stmt)
+    {
+        switch(stmt->type)
+        {
+            case st_block:
+            case st_switch:
+            case st_try:
+            case st_catch:
+            case st___try:
+            case st___catch:
+            case st___finally:
+            case st___fault:
+                if (stmt->lower && stmt->lower->type == st_goto)
                 {
-                    **shims = Alloc(sizeof(VLASHIM));
-                    (**shims)->prev = *prev;
-                    (**shims)->type = v_blockend;
-                    (**shims)->level = level + 1;
-                    (**shims)->label = stmt->label;
-                    (**shims)->line = stmt->line;
-                    (**shims)->file = stmt->file;
-                    (**shims)->stmt = stmt;
-                    *prev = **shims;
-                    *shims = &(**shims)->next;
+                    // unwrap the goto for purposes of these diagnostics
+                    *cur = mkshim(v_goto, level, stmt->lower, last, parent, curBlockNum, curBlockIndex++);
+                    last = *cur;
+                    last->checkme = stmt->lower->explicitGoto;
+                    cur = &(*cur)->next;
+
+                }
+                else
+                {
+                    *cur = mkshim(v_blockstart, level, stmt, last, parent, curBlockNum, curBlockIndex++);
+                    last = *cur;
+                    cur = &(*cur)->next;
+                    last->lower = getVLAList(stmt->lower, last, last, labels, minLabel, blocknum, level + 1);
+                    if (stmt->blockTail)
+                    {
+                        *cur = mkshim(v_blockend, level, stmt, last, parent, curBlockNum, curBlockIndex++);
+                        last = *cur;
+                        cur = &(*cur)->next;
+                    }
                 }
                 break;
             case st_declare:
             case st_expr:
                 if (stmt->hasvla)
                 {
-                    **shims = Alloc(sizeof(VLASHIM));
-                    (**shims)->prev = *prev;
-                    (**shims)->type = v_vla;
-                    (**shims)->level = level;
-                    (**shims)->label = stmt->label;
-                    (**shims)->line = stmt->line;
-                    (**shims)->file = stmt->file;
-                    (**shims)->stmt = stmt;
-                    *prev = **shims;
-                    *shims = &(**shims)->next;
+                    *cur = mkshim(v_vla, level, stmt, last, parent, curBlockNum, curBlockIndex++);
+                    last = *cur;
+                    cur = &(*cur)->next;
                 }
                 else if (stmt->hasdeclare)
                 {
-                    **shims = Alloc(sizeof(VLASHIM));
-                    (**shims)->prev = *prev;
-                    (**shims)->type = v_declare;
-                    (**shims)->level = level;
-                    (**shims)->label = stmt->label;
-                    (**shims)->line = stmt->line;
-                    (**shims)->file = stmt->file;
-                    (**shims)->stmt = stmt;
-                    *prev = **shims;
-                    *shims = &(**shims)->next;
+                    *cur = mkshim(v_declare, level, stmt, last, parent, curBlockNum, curBlockIndex++);
+                    last = *cur;
+                    cur = &(*cur)->next;
                 }
                 break;
             case st_return:
+                *cur = mkshim(v_return, level, stmt, last, parent, curBlockNum, curBlockIndex++);
+                last = *cur;
+                cur = &(*cur)->next;
+                break;
             case st_select:
             case st_notselect:
+                *cur = mkshim(v_branch, level, stmt, last, parent, curBlockNum, curBlockIndex++);
+                last = *cur;
+                cur = &(*cur)->next;
+                break;
             case st_line:
             case st_passthrough:
             case st_datapassthrough:
@@ -1406,28 +1472,16 @@ static void getVLAList(STATEMENT *stmt, VLASHIM ***shims, VLASHIM **prev, int le
             case st_nop:
                 break;
             case st_goto:
-                **shims = Alloc(sizeof(VLASHIM));
-                (**shims)->prev = *prev;
-                (**shims)->type = v_goto;
-                (**shims)->level = level;
-                (**shims)->label = stmt->label;
-                (**shims)->line = stmt->line;
-                (**shims)->file = stmt->file;
-                (**shims)->stmt = stmt;
-                *prev = **shims;
-                *shims = &(**shims)->next;
+                *cur = mkshim(v_goto, level, stmt, last, parent, curBlockNum, curBlockIndex++);
+                last = *cur;
+                last->checkme = stmt->explicitGoto;
+                cur = &(*cur)->next;
                 break;
             case st_label:
-                **shims = Alloc(sizeof(VLASHIM));
-                (**shims)->prev = *prev;
-                (**shims)->type = v_label;
-                (**shims)->level = level;
-                (**shims)->label = stmt->label;
-                (**shims)->line = stmt->line;
-                (**shims)->file = stmt->file;
-                (**shims)->stmt = stmt;
-                *prev = **shims;
-                *shims = &(**shims)->next;
+                *cur = mkshim(v_label, level, stmt, last, parent, curBlockNum, curBlockIndex++);
+                last = *cur;
+                cur = &(*cur)->next;
+                labels[stmt->label-minLabel] = last;
                 break;
             default:
                 diag("unknown stmt type in checkvla");
@@ -1435,113 +1489,168 @@ static void getVLAList(STATEMENT *stmt, VLASHIM ***shims, VLASHIM **prev, int le
         }
         stmt = stmt->next;
     }
+    return rv;
+}
+static void fillPrevious(VLASHIM *shim, VLASHIM **labels, int minLabel)
+{
+    while (shim)
+    {
+        VLASHIM *selected;
+        LIST *prev;
+        switch(shim->type)
+        {
+            case v_blockstart:
+                fillPrevious(shim->lower, labels, minLabel);
+                break;
+            case v_declare:
+            case v_vla:
+            case v_return:
+            case v_label:
+            case v_blockend:
+                break;
+            case v_goto:
+            case v_branch:
+                selected = labels[shim->label - minLabel];
+                prev = (LIST *)Alloc(sizeof(LIST));
+                prev->data = shim;
+                prev->next = selected->backs;
+                selected->backs = prev;
+                shim->fwd = selected;
+                break;
+            default:
+                diag("unknown shim type in fillPrevious");
+                break;
+        }
+        shim = shim->next;
+    }
 }
 static void vlaError(VLASHIM *gotoShim, VLASHIM *errShim)
 {
     char buf[256];
-    my_sprintf(buf, "%d", errShim->line);
+    my_sprintf(buf, "%d", gotoShim->line);
     currentErrorLine = 0;
-    specerror(ERR_GOTO_BYPASSES_VLA_INITIALIZATION, buf, gotoShim->file, gotoShim->line);
+    specerror(ERR_GOTO_BYPASSES_VLA_INITIALIZATION, buf, errShim->file, errShim->line);
 }
 static void declError(VLASHIM *gotoShim, VLASHIM *errShim)
 {
     char buf[256];
-    my_sprintf(buf, "%d", errShim->line);
+    my_sprintf(buf, "%d", gotoShim->line);
     currentErrorLine = 0;
-    specerror(ERR_GOTO_BYPASSES_INITIALIZATION, buf, gotoShim->file, gotoShim->line);
+    specerror(ERR_GOTO_BYPASSES_INITIALIZATION, buf, errShim->file, errShim->line);
 }
-void checkGotoPastVLA(STATEMENT *stmt, BOOLEAN first)
+static BOOLEAN scanGoto(VLASHIM *shim, VLASHIM *gotoshim, VLASHIM *matchshim, int *currentLevel)
 {
-    
-    if (hasGoto(stmt) && findVLAs(stmt))
+    if (shim == matchshim)
+        return TRUE;
+    if (shim && !shim->mark && shim != gotoshim)
     {
-        VLASHIM *vlaList = NULL, **pvlaList = &vlaList, *prev = NULL, *gotop;
-        if (first)
-            while (stmt && stmt->type == st_declare)
-                stmt = stmt->next;
-        getVLAList(stmt, &pvlaList, &prev, 0);
-        gotop = vlaList;
-        while (gotop)
+        shim->mark = TRUE;
+        if (shim->level <= *currentLevel)
         {
-            if (gotop->type == v_goto)
-            {
-                VLASHIM *lblp = vlaList, *temp;
-                BOOLEAN after = FALSE;
-                while (lblp)
-                {
-                    if (lblp == gotop)
-                        after = TRUE;
-                    else
-                        if (lblp->type == v_label && lblp->label == gotop->label)
-                        {
-                            int level, minlevel;
-                            if (after)
-                            {
-                                level = lblp->level;
-                                temp = lblp->prev;
-                                while (temp != gotop)
-                                {
-                                    if (temp->level <= level)
-                                    {
-                                        if (temp->type == v_vla)
-                                            vlaError(gotop, temp);
-                                        else if (temp->type == v_declare)
-                                            declError(gotop, temp);
-                                        level = temp->level;
-                                    }
-                                    temp = temp->prev;
-                                }
-                            }
-                            else
-                            {
-                                level = gotop->level;
-                                temp = gotop->prev;
-                                while (lblp != temp)
-                                {
-                                    if (temp->level < level)
-                                    {
-                                        level = temp->level;
-                                    }
-                                    temp = temp->prev;
-                                }
-                                temp = lblp;
-                                while (temp && temp->level > level)
-                                {
-                                    if (temp->type == v_vla)
-                                        vlaError(gotop, temp);
-                                    else if (temp->type == v_declare)
-                                        declError(gotop, temp);
-                                    temp = temp->prev;
-                                }
-                            }
-                            temp = gotop;
-                            minlevel = temp->level;
-                            while (temp && temp->level >= level)
-                            {
-                                if (temp->level <= minlevel)
-                                {
-                                    if (temp->type == v_blockend)
-                                    {
-                                          STATEMENT *st = stmtNode(NULL, NULL, st_expr);
-                                        *st = *gotop->stmt;
-                                        gotop->stmt->type = st_expr;
-                                        gotop->stmt->select = temp->stmt->blockTail->select;
-                                        gotop->stmt->next = st;
-                                        gotop->stmt = st;
-                                    }
-                                    minlevel = temp->level;
-                                }
-                                temp = temp->next;
-                            }
-                            break;
-                        }
-                    lblp = lblp->next;
-                }
-            }
-            gotop = gotop->next;
+            *currentLevel = shim->level;
+            if (shim->type == v_declare)
+                declError(gotoshim, shim);
+            if (shim->type == v_vla)
+                vlaError(gotoshim, shim);
+        }
+        LIST *lst = shim->backs;
+        while (lst)
+        {
+            if (lst->data == matchshim)
+                return TRUE;
+            lst = lst->next;
+        }
+        lst = shim->backs;
+        while (lst)
+        {
+
+            if (scanGoto((VLASHIM *)lst->data, gotoshim, matchshim, currentLevel))
+                return TRUE;
+            lst = lst->next;
         }
     }
-    
+    return FALSE;
+}
+void unmarkGotos(VLASHIM *shim)
+{
+    while (shim)
+    {
+        shim->mark = FALSE;
+        if (shim->type == v_blockstart)
+            unmarkGotos(shim->lower);
+        shim = shim->next;
+    }
+}
+static void validateGotos(VLASHIM *shim, VLASHIM *root)
+{
+    while (shim)
+    {
+        VLASHIM *selected;
+        LIST *prev;
+        switch(shim->type)
+        {
+            case v_blockstart:
+                validateGotos(shim->lower, root);
+                break;
+            case v_declare:
+            case v_vla:
+            case v_return:
+            case v_label:
+            case v_blockend:
+            case v_branch:
+                break;
+            case v_goto:
+                if (shim->checkme)
+                {
+                    VLASHIM *sgoto = shim;
+                    VLASHIM *fwd = sgoto->fwd;
+                    while (sgoto->level > fwd->level)
+                        sgoto = sgoto->parent;
+                    while (sgoto->level < fwd->level)
+                        fwd = fwd->parent;
+                    while (sgoto->blocknum != fwd->blocknum)
+                    {
+                        sgoto = sgoto->parent;
+                        fwd = fwd->parent;
+                    }
+                    unmarkGotos(root);
+                    int level = shim->fwd->level;
+                    if (sgoto->blockindex > fwd->blockindex)
+                    {
+                        // goto is after label
+                        // drill up in the label block until we hit the label
+                        scanGoto(shim->fwd, shim, fwd, &level);
+                    }
+                    else
+                    {
+                        // goto is before label
+                        // drill up in the label block until we hit the goto
+                        scanGoto(shim->fwd, shim, sgoto, &level);
+                    }
+                }
+                break;
+            default:
+                diag("unknown shim type in validateGotos");
+                break;
+        }
+        shim = shim->next;
+    }
+}
+void checkGotoPastVLA(STATEMENT *stmt, BOOLEAN first)
+{    
+    if (hasGoto(stmt) && hasDeclarations(stmt))
+    {
+        int min = INT_MAX, max = INT_MIN;
+        labelIndexes(stmt, &min, &max);
+        if (min > max)
+            return;
+        VLASHIM **labels = (VLASHIM *)Alloc((max+1 - min) * sizeof(VLASHIM *));
+
+        int blockNum = 0;
+        VLASHIM *list = getVLAList(stmt, NULL, NULL, labels, min, &blockNum, 0);
+        fillPrevious(list, labels, min);
+        validateGotos(list, list);
+    }    
 }
 void checkUnlabeledReferences(BLOCKDATA *block)
 {

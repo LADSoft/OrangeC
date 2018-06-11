@@ -425,6 +425,7 @@ typedef struct stmt
     int hasvla: 1;
     int hasdeclare: 1;
     int purelabel: 1;
+    int explicitGoto : 1;
 } STATEMENT;
 
 typedef struct blockdata

@@ -1566,6 +1566,7 @@ static LEXEME *statement_goto(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         SYMBOL *spx = search(lex->value.s.a, labelSyms);
         BLOCKDATA *block = Alloc(sizeof(BLOCKDATA));
         STATEMENT *st = stmtNode(lex, block, st_goto);
+        st->explicitGoto = TRUE;
         block->next = parent;
         block->type = begin;
         block->table = localNameSpace->syms;

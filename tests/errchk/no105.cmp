@@ -1,0 +1,4 @@
+occ Version 6.0.37.1 Copyright (C) LADSoft 2006-2018
+
+Warning( 73)  errparam.c(5):  Missing type in declaration
+Warning( 73)  errparam.c(8):  Missing type in declaration

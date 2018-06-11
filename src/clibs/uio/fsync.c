@@ -1,5 +1,5 @@
 #include <io.h>
-int fsync(int fd)
+int _RTL_FUNC fsync(int fd)
 {
   int h = dup(fd);
   if (h == -1)

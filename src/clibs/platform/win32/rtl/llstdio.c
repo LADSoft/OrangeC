@@ -48,14 +48,6 @@ FILE _istreams[3] = {
    { FILTOK, _F_WRIT | _F_LBUF | _F_TERM,0, 2,0,0,0,0,&_iextended[2] }
 } ;
 
-#undef stdin
-#undef stdout
-#undef stderr
-
-#define stdin (&_istreams[0])
-#define stdout (&_istreams[1])
-#define stderr (&_istreams[2])
-
 void *_RTL_FUNC __iob_func() 
 { 
     return _istreams; 
@@ -70,12 +62,8 @@ FILE *_RTL_FUNC __getStream(int stream)
 
 void __ll_init(void)
 {
-   static int done ;
-   if (!done) {
       _pstreams[0] = &_istreams[0] ;
       _pstreams[1] = &_istreams[1] ;
       _pstreams[2] = &_istreams[2] ;
       __maxfiles = 3;
-      done = 1 ;
-   }
 }

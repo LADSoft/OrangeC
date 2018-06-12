@@ -52,9 +52,9 @@ int __stdcall ___lscrtl_startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvRese
     char *cmd;
     asm mov [flags],edx;
     quote = 0;
-    ___lsdllinit(flags, _dorundown, exceptBlock);
     if (!(flags & DLL) || fdwReason == DLL_PROCESS_ATTACH)
     {   
+        ___lsdllinit(flags, _dorundown, exceptBlock);
         if (flags & DLL)
         {
             if (!dllexists)

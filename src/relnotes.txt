@@ -56,6 +56,7 @@ version 6.0.38:
     ocide: be explicit about errors when can't debug a program , especially the 'invalid workding directory' error.
     ocide: find 'stdcall' functions in the code completion
     ocide: fix various other problems with code completion
+    ocide: fix build: handle data imports correctly
     oimplib, olib, olink: fix more problems when '/' was used as a path separator
     olink: bail with an error if a library cannot be found
     olink: make sure intermediate file always has a .rel extension
@@ -73,6 +74,8 @@ version 6.0.38:
     rtl: access() set errno to EACCESS instead of ENOENT on failure.
     rtl: open/sopen would set errno to ENOENT if they were successfully creating an output file
     rtl: implement fcntl
+    rtl: fix strerror(), was adding a line feed to end of string
+    rtl: fix problems with LSCRTL: double load issue and issue where DLLs couldn't use it
     all: add 'clang' to continuous integration builds
     documentation: add minimal documentation for ancilliary projects
 Version 6.0.37: 5/20/2018

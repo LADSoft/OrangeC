@@ -1150,6 +1150,10 @@ LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defa
         ParseAttributeSpecifiers(&lex, funcsp, TRUE);
         if (MATCHKW(lex,classsel) || ISID(lex))
         {
+            char name[512];
+            name[0] = 0;
+            if (ISID(lex))
+                strcpy(name, lex->value.s.a);
             bcsym = NULL;
             lex = nestedSearch(lex, &bcsym, NULL, NULL, NULL, NULL, FALSE, sc_global, FALSE, FALSE);
             if (bcsym && bcsym->storage_class == sc_typedef)
@@ -1307,6 +1311,10 @@ restart:
 //                {
 //                    errorsym(ERR_NEED_SPECIALIZATION_PARAMETERS, bcsym);
 //                }
+            }
+            else if (MATCHKW(lex, lt))
+            {
+                errorstr(ERR_NOT_A_TEMPLATE, bcsym ? bcsym->name : name[0] ? name : "unknown");
             }
             if (bcsym && bcsym->tp->templateParam && bcsym->tp->templateParam->p->packed)
             {

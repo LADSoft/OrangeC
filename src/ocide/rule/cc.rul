@@ -19,52 +19,52 @@
 				<CHOOSE ID="__DEBUG" SELECT="1">
 					<ASSIGN ID="__CCDEBUG">/v</ASSIGN>
 				</CHOOSE>
-                <CHOOSE ID="PROJECTTYPE" SELECT="0">
-                    <CHOOSE ID="LIBRARYTYPE" SELECT="1">
+                <CHOOSE ID="__PROJECTTYPE" SELECT="0">
+                    <CHOOSE ID="__LIBRARYTYPE" SELECT="1">
                         <ASSIGN ID="__BUILDTYPE">/Wc</ASSIGN>
                     </CHOOSE>
-                    <CHOOSE ID="LIBRARYTYPE" SELECT="2">
+                    <CHOOSE ID="__LIBRARYTYPE" SELECT="2">
                         <ASSIGN ID="__BUILDTYPE">/Wcl</ASSIGN>
                     </CHOOSE>
-                    <CHOOSE ID="LIBRARYTYPE" SELECT="3">
+                    <CHOOSE ID="__LIBRARYTYPE" SELECT="3">
                         <ASSIGN ID="__BUILDTYPE">/Wcc</ASSIGN>
                     </CHOOSE>
-                    <CHOOSE ID="LIBRARYTYPE" SELECT="4">
+                    <CHOOSE ID="__LIBRARYTYPE" SELECT="4">
                         <ASSIGN ID="__BUILDTYPE">/Wcm</ASSIGN>
                     </CHOOSE>
                 </CHOOSE>
-                <CHOOSE ID="PROJECTTYPE" SELECT="1">
-                    <CHOOSE ID="LIBRARYTYPE" SELECT="1">
+                <CHOOSE ID="__PROJECTTYPE" SELECT="1">
+                    <CHOOSE ID="__LIBRARYTYPE" SELECT="1">
                         <ASSIGN ID="__BUILDTYPE">/Wg</ASSIGN>
                     </CHOOSE>
-                    <CHOOSE ID="LIBRARYTYPE" SELECT="2">
+                    <CHOOSE ID="__LIBRARYTYPE" SELECT="2">
                         <ASSIGN ID="__BUILDTYPE">/Wgl</ASSIGN>
                     </CHOOSE>
-                    <CHOOSE ID="LIBRARYTYPE" SELECT="3">
+                    <CHOOSE ID="__LIBRARYTYPE" SELECT="3">
                         <ASSIGN ID="__BUILDTYPE">/Wgc</ASSIGN>
                     </CHOOSE>
-                    <CHOOSE ID="LIBRARYTYPE" SELECT="4">
+                    <CHOOSE ID="__LIBRARYTYPE" SELECT="4">
                         <ASSIGN ID="__BUILDTYPE">/Wgm</ASSIGN>
                     </CHOOSE>
                 </CHOOSE>
-                <CHOOSE ID="PROJECTTYPE" SELECT="2">
-                    <CHOOSE ID="LIBRARYTYPE" SELECT="1">
+                <CHOOSE ID="__PROJECTTYPE" SELECT="2">
+                    <CHOOSE ID="__LIBRARYTYPE" SELECT="1">
                         <ASSIGN ID="__BUILDTYPE">/Wd</ASSIGN>
                     </CHOOSE>
-                    <CHOOSE ID="LIBRARYTYPE" SELECT="2">
+                    <CHOOSE ID="__LIBRARYTYPE" SELECT="2">
                         <ASSIGN ID="__BUILDTYPE">/Wdl</ASSIGN>
                     </CHOOSE>
-                    <CHOOSE ID="LIBRARYTYPE" SELECT="3">
+                    <CHOOSE ID="__LIBRARYTYPE" SELECT="3">
                         <ASSIGN ID="__BUILDTYPE">/Wdc</ASSIGN>
                     </CHOOSE>
-                    <CHOOSE ID="LIBRARYTYPE" SELECT="4">
+                    <CHOOSE ID="__LIBRARYTYPE" SELECT="4">
                         <ASSIGN ID="__BUILDTYPE">/Wdm</ASSIGN>
                     </CHOOSE>
                 </CHOOSE>
-                <CHOOSE ID="PROJECTTYPE" SELECT="4">
+                <CHOOSE ID="__PROJECTTYPE" SELECT="4">
                     <ASSIGN ID="__BUILDTYPE">/Wa</ASSIGN>
                 </CHOOSE>
-                <CHOOSE ID="PROJECTTYPE" SELECT="5">
+                <CHOOSE ID="__PROJECTTYPE" SELECT="5">
                     <ASSIGN ID="__BUILDTYPE">/Wa</ASSIGN>
                 </CHOOSE>
                 <ASSIGN ID="CFLAGS">/c /C+? $(__BUILDTYPE) $(__C99) $(__ANSI) $(__CCDEBUG) $(__WARNINGS) $(__ALIGNSTACK) $(__CFLAGS)</ASSIGN>

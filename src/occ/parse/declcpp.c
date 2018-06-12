@@ -1148,7 +1148,26 @@ LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defa
     do
     {
         ParseAttributeSpecifiers(&lex, funcsp, TRUE);
-        if (MATCHKW(lex,classsel) || ISID(lex))
+        if (MATCHKW(lex, kw_decltype))
+        {
+            TYPE *tp = NULL;
+            lex = get_type_id(lex, &tp, funcsp, sc_type, TRUE, TRUE);
+            if (!tp)
+            {
+                error(ERR_TYPE_NAME_EXPECTED);
+            }
+            else if (!isstructured(tp))
+            {
+                error(ERR_STRUCTURED_TYPE_EXPECTED);
+            }
+            else
+            {
+                *bc = innerBaseClass(declsym, tp->sp, isvirtual, currentAccess);
+                if (*bc)
+                    bc = &(*bc)->next;
+            }
+        }
+        else if (MATCHKW(lex,classsel) || ISID(lex))
         {
             char name[512];
             name[0] = 0;

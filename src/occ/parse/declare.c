@@ -1166,14 +1166,23 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
     }
     if (ISID(lex))
     {
-        // multiple identifiers, wade through them for error handling
-        error(ERR_TOO_MANY_IDENTIFIERS_IN_DECLARATION);
-        while (ISID(lex))
+        lex = getsym();
+        if (MATCHKW(lex, lt) || MATCHKW(lex, begin) || MATCHKW(lex, colon))
         {
-            charindex = lex->charindex;
-            tagname = litlate(lex->value.s.a);
-            strcpy(newName, tagname);
-            lex = tagsearch(lex, newName, &sp, &table, &strSym, &nsv, storage_class);
+            lex = backupsym();
+            // multiple identifiers, wade through them for error handling
+            error(ERR_TOO_MANY_IDENTIFIERS_IN_DECLARATION);
+            while (ISID(lex))
+            {
+                charindex = lex->charindex;
+                tagname = litlate(lex->value.s.a);
+                strcpy(newName, tagname);
+                lex = tagsearch(lex, newName, &sp, &table, &strSym, &nsv, storage_class);
+            }
+        }
+        else
+        {
+            lex = backupsym();
         }
     }
     if (!sp)

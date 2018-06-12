@@ -1,17 +1,17 @@
 all: test 
 
 test: ofiles
-	fc /b errchk.txt errchk.cmp
-	fc /b allwarn.txt allwarn.cmp
-	fc /b nowarn.txt nowarn.cmp
-	fc /b no105.txt no105.cmp
-	fc /b no1000.txt no1000.cmp
-	fc /b no11.txt no11.cmp
-	fc /b once105.txt once105.cmp
-	fc /b aserr.txt aserr.cmp
-	fc /b aserr2.txt aserr2.cmp
-	fc /b only141.txt only141.cmp
-	fc /b pragma.txt pragma.cmp
+	fc /b errchk.txt errchk.cmpx
+	fc /b allwarn.txt allwarn.cmpx
+	fc /b nowarn.txt nowarn.cmpx
+	fc /b no105.txt no105.cmpx
+	fc /b no1000.txt no1000.cmpx
+	fc /b no11.txt no11.cmpx
+	fc /b once105.txt once105.cmpx
+	fc /b aserr.txt aserr.cmpx
+	fc /b aserr2.txt aserr2.cmpx
+	fc /b only141.txt only141.cmpx
+	fc /b pragma.txt pragma.cmpx
 ofiles:
 	occ -c errchk.c > errchk.txt
 	occ -c /w+ errparam.c > allwarn.txt

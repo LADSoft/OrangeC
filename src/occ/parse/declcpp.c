@@ -3278,3 +3278,141 @@ BOOLEAN MatchesConstFunction(SYMBOL *sp)
     }
     return TRUE;
 }
+static BOOLEAN constructedType(LEXEME *lex)
+{
+    BOOLEAN rv;
+    LEXEME *orig = lex;
+    while (lex && (ISID(lex) || MATCHKW(lex, classsel)))
+        lex = getsym();
+    rv = MATCHKW(lex, openpa) || MATCHKW(lex, begin);
+    lex = prevsym(orig);
+    return rv;
+}
+LEXEME *getDeclType(LEXEME *lex, SYMBOL *funcsp, TYPE **tn)
+{
+    BOOLEAN hasAmpersand = FALSE;
+    BOOLEAN hasAuto = FALSE;
+    EXPRESSION *exp, *exp2;
+    lex = getsym();
+    needkw(&lex, openpa);
+    BOOLEAN extended = MATCHKW(lex, openpa);
+    hasAmpersand = MATCHKW(lex, and);
+    if (extended || hasAmpersand)
+    {
+        lex = getsym();
+        hasAuto = MATCHKW(lex, kw_auto);
+        lex = backupsym();
+    }
+    else
+    {
+        hasAuto = MATCHKW(lex, kw_auto);
+    }
+    if (hasAuto)
+    {
+        if (extended || hasAmpersand)
+            lex = getsym();
+        lex = getsym();
+        if (MATCHKW(lex, and) || MATCHKW(lex, land))
+        {
+            lex = getsym();
+            error(ERR_DECLTYPE_AUTO_NO_REFERENCE);
+        }
+        if (extended)
+            needkw(&lex, closepa);
+        (*tn) = (TYPE *)Alloc(sizeof(TYPE));
+        (*tn)->type = bt_auto;
+        (*tn)->decltypeauto = TRUE;
+        (*tn)->decltypeautoextended = extended;
+    }
+    else if (startOfType(lex, FALSE) & !constructedType(lex))
+    {
+        lex = get_type_id(lex, &(*tn), funcsp, sc_cast, FALSE, FALSE);
+    }
+    else
+    {
+        lex = expression_no_check(lex, NULL, NULL, &(*tn), &exp, _F_SIZEOF);
+        if ((*tn) && (*tn)->type == bt_aggregate && exp->type == en_func)
+        {
+            HASHREC *hr = (*tn)->syms->table[0];
+            if (hr->next)
+                errorsym2(ERR_AMBIGUITY_BETWEEN, hr->p, hr->next->p);
+            exp->v.func->sp = (SYMBOL *)hr->p;
+            if (hasAmpersand)
+            {
+                (*tn) = (TYPE *)Alloc(sizeof(TYPE));
+                if (ismember(exp->v.func->sp))
+                {
+                    (*tn)->type = bt_memberptr;
+                    (*tn)->sp = exp->v.func->sp->parentClass;
+                }
+                else
+                {
+                    (*tn)->type = bt_pointer;
+                    (*tn)->size = getSize(bt_pointer);
+                }
+                (*tn)->btp = exp->v.func->functp = exp->v.func->sp->tp;
+                (*tn)->rootType = (*tn);
+            }
+            else
+            {
+                (*tn) = exp->v.func->functp = exp->v.func->sp->tp;
+            }
+        }
+        if ((*tn))
+        {
+            optimize_for_constants(&exp);
+            if (templateNestingCount && !instantiatingTemplate)
+            {
+                TYPE *tp2 = Alloc(sizeof(TYPE));
+                tp2->type = bt_templatedecltype;
+                tp2->rootType = tp2;
+                tp2->templateDeclType = exp;
+                (*tn) = tp2;
+            }
+        }
+        exp2 = exp;
+        if (!(*tn))
+        {
+            error(ERR_IDENTIFIER_EXPECTED);
+            errskim(&lex, skim_semi_declare);
+            return lex;
+        }
+        if (extended && lvalue(exp) && exp->left->type == en_auto)
+        {
+            if (!lambdas && xvalue(exp))
+            {
+                TYPE *tp2 = Alloc(sizeof(TYPE));
+                if (isref((*tn)))
+                    (*tn) = basetype((*tn))->btp;
+                tp2->type = bt_rref;
+                tp2->size = getSize(bt_pointer);
+                tp2->btp = (*tn);
+                tp2->rootType = tp2;
+                (*tn) = tp2;
+            }
+            else if (lvalue(exp))
+            {
+                TYPE *tp2 = Alloc(sizeof(TYPE));
+                if (isref((*tn)))
+                    (*tn) = basetype((*tn))->btp;
+                if (lambdas && !lambdas->isMutable)
+                {
+                    tp2->type = bt_const;
+                    tp2->size = (*tn)->size;
+                    tp2->btp = (*tn);
+                    tp2->rootType = (*tn)->rootType;
+                    (*tn) = tp2;
+                    tp2 = Alloc(sizeof(TYPE));
+                }
+                tp2->type = bt_lref;
+                tp2->size = getSize(bt_pointer);
+                tp2->btp = (*tn);
+                tp2->rootType = (*tn)->rootType;
+                (*tn) = tp2;
+            }
+        }
+    }
+//    if (!MATCHKW(lex, closepa))
+        needkw(&lex, closepa);
+    return lex;
+}

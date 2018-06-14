@@ -119,8 +119,9 @@ BOOLEAN startOfType(LEXEME *lex, BOOLEAN assumeType)
             }
         }
     }
-    if (lex->type == l_id || MATCHKW(lex, classsel))
+    if (lex->type == l_id || MATCHKW(lex, classsel) || MATCHKW(lex, kw_decltype))
     {
+        BOOLEAN isdecltype = MATCHKW(lex, kw_decltype);
         SYMBOL *sp, *strSym = NULL;
         LEXEME *placeholder = lex;
         BOOLEAN dest = FALSE;
@@ -129,7 +130,7 @@ BOOLEAN startOfType(LEXEME *lex, BOOLEAN assumeType)
             prevsym(placeholder);
         linesHead = oldHead;
         linesTail = oldTail;
-        return (sp && istype(sp)) || (assumeType && strSym && (strSym->tp->type == bt_templateselector || strSym->tp->type == bt_templatedecltype));
+        return (!sp && isdecltype) || (sp && istype(sp)) || (assumeType && strSym && (strSym->tp->type == bt_templateselector || strSym->tp->type == bt_templatedecltype));
     }
     else 
     {

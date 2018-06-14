@@ -263,7 +263,7 @@ KEYWORD keywords[] = {
     { "const_cast",10,  kw_const_cast, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR },
     { "constexpr", 9,  kw_constexpr, KW_CPLUSPLUS, TT_DECLARE},
     { "continue", 8,  kw_continue, 0, TT_CONTROL },
-    { "decltype", 8,  kw_decltype, KW_CPLUSPLUS, TT_BASETYPE | TT_OPERATOR },
+    { "decltype", 8,  kw_decltype, KW_CPLUSPLUS, TT_OPERATOR },
     { "default", 7,  kw_default, 0, TT_CONTROL },
     { "delete", 6,  kw_delete, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR },
     { "do", 2,  kw_do, 0, TT_CONTROL },

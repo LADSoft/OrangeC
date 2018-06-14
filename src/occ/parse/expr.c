@@ -3201,7 +3201,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
         lex = getArgs(lex, funcsp, funcparams, closepa, TRUE, flags);
     }
         
-    if (funcparams->astemplate && packIndex != -1)
+    if (funcparams->astemplate && argument_nesting)
     {
         // if we hit a packed template param here, then this is going to be a candidate
         // for some other function's packed expression
@@ -4494,6 +4494,7 @@ static LEXEME *expression_primary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
                     break;
                 case classsel:
                 case kw_operator:
+                case kw_decltype:
                     lex = variableName(lex, funcsp, atp, tp, exp, ismutable, flags);
                     break;
                 case kw_nullptr:

@@ -495,7 +495,7 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
                         if (p)
                             deferred = TRUE;
                     }
-                    if (!deferred)
+                    if (!deferred && sp)
                     {
                         if (basetype(sp->tp)->type == bt_templateselector)
                         {

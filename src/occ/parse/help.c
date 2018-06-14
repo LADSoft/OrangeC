@@ -1620,6 +1620,8 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
             *pos = expsym;
         }
     }
+    if (!rv)
+        rv = intNode(en_c_i, 0);
     return rv;
 }
 BOOLEAN assignDiscardsConst(TYPE *dest, TYPE *source)

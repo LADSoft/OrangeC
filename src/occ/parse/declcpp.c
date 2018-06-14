@@ -970,7 +970,7 @@ static BOOLEAN declaringTemplate(SYMBOL *sp)
     {
         if (l->str && l->str->templateLevel)
         {
-            if (!strcmp(sp->decoratedName, l->str->decoratedName))
+            if (sp->decoratedName && !strcmp(sp->decoratedName, l->str->decoratedName))
                 return TRUE;
         }
         l = l->next;
@@ -1166,6 +1166,9 @@ LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defa
                 if (*bc)
                     bc = &(*bc)->next;
             }
+            done = !MATCHKW(lex, comma);
+            if (!done)
+                lex = getsym();
         }
         else if (MATCHKW(lex,classsel) || ISID(lex))
         {
@@ -1183,7 +1186,7 @@ LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defa
                 {
                     bcsym = tp->sp;
                 }
-                else
+                else if (tp->type != bt_templateselector)
                 {
                     bcsym = NULL;
                 }
@@ -1626,15 +1629,17 @@ BOOLEAN hasPackedExpression(EXPRESSION *exp, BOOLEAN useAuto)
         return exp->v.sp->packed;
     if (exp->type == en_func)
     {
-        TEMPLATEPARAMLIST *tpl = exp->v.func->templateParams;
-        INITLIST *il;
-        while (tpl)
+        if (useAuto)
         {
-            if (tpl->p->packed)
-                return TRUE;
-            tpl = tpl->next;
+            TEMPLATEPARAMLIST *tpl = exp->v.func->templateParams;
+            while (tpl)
+            {
+                if (tpl->p->packed)
+                    return TRUE;
+                tpl = tpl->next;
+            }
         }
-        il = exp->v.func->arguments;
+        INITLIST *il = exp->v.func->arguments;
         while (il)
         {
             if (hasPackedExpression(il->exp, useAuto))

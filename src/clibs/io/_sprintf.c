@@ -870,7 +870,8 @@ doinf:
             if (prec == 0 && strlen(sz) == 1 && sz[0] == '0')
                 sz++;
             else if (strlen(sz) < prec)
-                sz -= prec - strlen(sz);
+                for (int i=strlen(sz); i < prec; i++)
+                    *--sz = '0';
             signch = -1 ;
             if (type != 'x' && type != 'u' && type != 'o' && type != 'b')
     			if (issigned) {

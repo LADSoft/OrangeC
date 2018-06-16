@@ -902,28 +902,21 @@ doinf:
                 width = temp;
             if (signch != -1)
 			{
-				if (leadzero)
-				{
-					PUTCH(signch);
-					(*written)++;
-				}
-				else
-				{
 					*(--sz) = signch;
 					temp++;
-				}
 			}
             if (prefixed)
                 if ((type == 'o' || type == 'b') && sz[0] != '0')
 				{
-					PUTCH('0');
-					(*written)++;
+					*(--sz) = '0';
+					temp++;
 				}
                 else if ((type == 'x') && c)
 				{
-					PUTCH('0');
-					PUTCH('X');
-					(*written)+=2;
+					*(--sz) = 'X' + lc;
+					temp++;
+					*(--sz) = '0';
+					temp++;
 				}
 			justifiedOutput(__stream, sz, ljustify, strlen(sz), width, leadzero ? '0' : ' ', written);
 			break;

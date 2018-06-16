@@ -31,6 +31,7 @@ version 6.0.38:
     occ: add command line and pragma support for warning control
     occ: pass output file name to assembler, rc compiler when compiling a single file
     occ: fix rare problem with register allocator failing
+    occ: implicit cast from long long to 'enum type' as a function arg could result in bad code generation
     olink: fix a crash if occ failed to output line information properly
     dlpe: fix the fixup of relative branch to import thunks, to allow the thunks to be relocated
     dlpe: use --nologo when invokeing oimplib

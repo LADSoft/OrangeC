@@ -529,7 +529,8 @@ __declspec(dllexport) void CALLBACK StackTrace(char *text, char *prog, PCONTEXT 
                     unmangle(unmangled, name);
                     sprintf(buf + strlen(buf), ": %s + 0x%x", unmangled, sp[1] - funcaddr);
                     int linenum = 0;
-                    GetEqualsBreakpoint(db, sp[1], name, &linenum);
+                    // a function taking no args and having no return value will calculate the next line, if we don't subtract 1
+                    GetEqualsBreakpoint(db, sp[1]-1, name, &linenum);
                     if (linenum)
                     {
                         char *p = strrchr(name, '\\');

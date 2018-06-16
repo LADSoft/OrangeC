@@ -41,6 +41,11 @@ void PEFixupObject::Setup(ObjInt &endVa, ObjInt &endPhys)
             Utils::fatal("Internal error");
     }
     raw_addr = endPhys;
+    // setup fixups for the rel branch import thunk table
+    for (int i = 0; i < importCount; i++)
+    {
+        SetThunk(i, 0);
+    }
     if (fixups.size() == 0)
     {
         // for WINNT, he needs some reloc data even if it is empty...

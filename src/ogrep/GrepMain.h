@@ -36,7 +36,7 @@ public:
     void SetModes();
     void DisplayMatch(const std::string &fileName, int &matchCount, int lineno, const char *text);
     void FindLine(const std::string fileName, int &matchCount, int &matchLine, char **matchPos, char *curpos, bool matched);
-    void OneFile(RegExpContext &regexp, const std::string &fileName, int &openCount);
+    void OneFile(RegExpContext &regexp, const std::string fileName, std::istream &file, int &openCount);
 private:
     
     static CmdSwitchParser SwitchParser;
@@ -56,7 +56,7 @@ private:
     static CmdSwitchBool displayFileNames;
     static CmdSwitchBool displayHeaderFileName;
     
-    static char *usageText;
+    static const char *usageText;
     static char *helpText;
 } ;
 #endif

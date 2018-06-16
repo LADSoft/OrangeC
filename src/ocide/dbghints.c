@@ -374,7 +374,7 @@ int HintBf(VARINFO *info, int *signedtype)
 void GetStringValue(VARINFO *info, char *buf, int len, int address)
 {
     int i;
-    char buf2[256],  *p;
+    char buf2[5000],  *p;
     memset(buf2, 0, sizeof(buf2));
     if (info->type == eChar && ReadValue(address, buf2, len, info))
     {
@@ -383,7 +383,7 @@ void GetStringValue(VARINFO *info, char *buf, int len, int address)
         *buf++ = '\"';
         p = buf2;
         for (i = 0; i < len &&  *p; i++)
-            if (isprint(*p))
+            if (*p >= 0x20 && *p < 0x7f)
                 *buf++ =  *p++;
             else
         {

@@ -15,5 +15,3 @@ By default the compiler compiles for pre-99 standard.  If you want extended feat
      OCC /9 myfunc.c
  
      Will enable C99 mode.
-  
-  

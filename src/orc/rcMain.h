@@ -48,6 +48,6 @@ private:
     static CmdSwitchCombineString includePath;
     static CmdSwitchString Language;
         
-    static char *usageText;
+    static const char *usageText;
 } ;
 #endif

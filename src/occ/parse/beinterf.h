@@ -59,6 +59,7 @@ typedef struct {
     BOOLEAN prm_trigraph;      /* parse trigraphs */
     BOOLEAN prm_oldfor;        /* old C++ for scoping */
     BOOLEAN prm_stackcheck;    /* generate stack check code */
+    BOOLEAN prm_allowinline;   /* enable inlining of functions */
     BOOLEAN prm_profiler;      /* generate profiler insets */
     BOOLEAN prm_mergestrings;  /* merge strings and other constants */
     BOOLEAN prm_revbits;       /* use reverse of the default bit ordering */
@@ -421,7 +422,7 @@ typedef struct _arch_asm
     int (*compiler_postprocess)(char *);              /* postprocess function, or NULL */
     int (*rundown)(void);                           /* compiler rundown */
     void (*insert_output_file)(char *name);          /* insert the output (executable name) into the backend */
-    int (*insert_noncompile_file)(char *name);      /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
+    int (*insert_noncompile_file)(char *name, BOOLEAN primary);      /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
     int (*parse_param)(char mode, char *string); /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
     int (*parse_codegen)(char mode, char *string); /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
     void (*doPragma)(char *kw, char *tag);         /* parse a pragma directive, or null */

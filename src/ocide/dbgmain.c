@@ -27,6 +27,7 @@
 #include <commctrl.h>
 #include <stdio.h>
 #include <richedit.h>
+#include <winerror.h>
 
 #include "header.h"
 #include <process.h>
@@ -49,7 +50,6 @@ PROCESS *debugProcessList;
 static int Semaphores;
 static int stopWinMain;
 static HANDLE abortEvent;
-
 static void DeleteDLLInfo(DWORD procId, DLL_INFO *info);
 // this code sorta has the beginning of multiprocess debugging, but, the symbol
 // table stuff needs to be revamped to handle it properly.  For right now,
@@ -704,8 +704,31 @@ void StartDebug(char *cmd)
     if (!bRet)
     {
         ReleaseSemaphore(StartupSem, 1, 0);
-        ExtendedMessageBox("Debugger", MB_SETFOREGROUND | MB_SYSTEMMODAL, 
-            "Could not execute %s. %d", cmd,  GetLastError());
+	LPVOID msg;
+        DWORD le = GetLastError(); 
+
+        if (le == ERROR_DIRECTORY)
+        {
+            ExtendedMessageBox("Debugger", MB_SETFOREGROUND | MB_SYSTEMMODAL, 
+                "Could not execute %s:\n\n The specified working directory is invalid", cmd);
+        }
+        else
+        {
+            FormatMessage(
+                FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+                FORMAT_MESSAGE_FROM_SYSTEM |
+                FORMAT_MESSAGE_IGNORE_INSERTS,
+                NULL,
+                le,
+                MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                (LPTSTR) &msg,
+                0, NULL );
+
+            ExtendedMessageBox("Debugger", MB_SETFOREGROUND | MB_SYSTEMMODAL, 
+                "Could not execute %s:\n\n %s", cmd,  msg);
+
+            LocalFree(msg);
+        }
         return ;
     }
     Sleep(500); /* Needed to make things happy */
@@ -759,7 +782,7 @@ void StartDebug(char *cmd)
                             SendInfoMessage(ERR_DEBUG_WINDOW, buf);
                         }
                         /* next line has to be deferred to the init bp */
-                        TagRegenBreakPoints();
+                        TagRegenBreakPoints(FALSE);
                         GetRegs(0);
                         thread->regs.Dr7 = 0;
                         SetBreakPoints(stDE.dwProcessId);
@@ -772,6 +795,7 @@ void StartDebug(char *cmd)
 
                 case EXIT_PROCESS_DEBUG_EVENT:
                     {
+                        activeProcess = 0; // tells the edit window painter to abstain from drawing line data
                         PROCESS *pr = GetProcess(stDE.dwProcessId);
                         PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
 
@@ -785,7 +809,7 @@ void StartDebug(char *cmd)
                             char buf[512];
                             DWORD exitCode;
                             GetExitCodeProcess(pr->hProcess, &exitCode);
-                            sprintf(buf, "Process Unloading: %s with exitCode %d\r\n", pr->name, exitCode) ;
+                            sprintf(buf, "Process Unloading: %s with exit code %d\r\n", pr->name, exitCode) ;
                             SendInfoMessage(ERR_DEBUG_WINDOW, buf);
                             DeleteProcess(pr->idProcess);
                         }
@@ -843,9 +867,9 @@ void StartDebug(char *cmd)
                                             DWINFO *ptr = editWindows;
                                             int *q = calloc(2, sizeof(int));
                                             q[0] = addr;
+                                            (*p)->addresses = q;
                                             GetBreakpointLine(addr, &(*p)->module[0],
                                                 &(*p)->linenum, FALSE);
-                                            (*p)->addresses = q;
                                             dllInfo->breakpoint = addr;
                                             while (ptr)
                                             {
@@ -858,7 +882,7 @@ void StartDebug(char *cmd)
                                 }
                             }
                             // set breakpoints for recently loaded DLL.
-                            TagRegenBreakPoints();
+                            TagRegenBreakPoints(FALSE);
                             GetRegs(0);
                             SetBreakPoints(stDE.dwProcessId);
                             SetRegs(0);
@@ -872,9 +896,14 @@ void StartDebug(char *cmd)
                         DLL_INFO *info = GetDLLInfo(stDE.dwProcessId, (DWORD)stDE.u.UnloadDll.lpBaseOfDll);
                         if (info)
                         {
+                            GetRegs(0);
+                            dbgClearBreakpointsForModule(info);
+                            ClearBreakPoints(stDE.dwProcessId);
+                            DeleteDLLInfo(stDE.dwProcessId, info);
+                            SetBreakPoints(stDE.dwProcessId);
+                            SetRegs(0);
                             sprintf(buf, "DLL Unloading: %s\r\n", info->name) ;
                             SendInfoMessage(ERR_DEBUG_WINDOW, buf);
-                            DeleteDLLInfo(stDE.dwProcessId, info);
                         }
                         dwContinueStatus = DBG_CONTINUE;
                     }
@@ -909,8 +938,13 @@ void StartDebug(char *cmd)
                         THREAD *th = GetThread(stDE.dwProcessId, stDE.dwThreadId);
                         if (th)
                         {
-                            sprintf(buf, "Thread exit: %d %s with exit code %d\r\n", th
-                                ->idThread, th->name, stDE.u.ExitProcess.dwExitCode);
+                            if (th->name && th->name[0]) {
+  			       sprintf(buf, "Thread exit: %d %s with exit code %d\r\n",
+                                  th->idThread, th->name, stDE.u.ExitProcess.dwExitCode);
+                            } else {
+  			       sprintf(buf, "Thread exit: %d with exit code %d\r\n",
+                                  th->idThread, stDE.u.ExitProcess.dwExitCode);
+                            }
                             SendInfoMessage(ERR_DEBUG_WINDOW, buf);
                             DeleteThread(stDE.dwProcessId, stDE.dwThreadId);
                         }
@@ -1042,6 +1076,7 @@ void StartDebug(char *cmd)
                                         }
                                     }
                                     SendDIDMessage(DID_BREAKWND, WM_RESTACK, 0, 0);
+                                    TagRegenBreakPoints(TRUE);
                                     dwContinueStatus = DBG_CONTINUE;
                                 }
                                 isSteppingOut(&stDE);

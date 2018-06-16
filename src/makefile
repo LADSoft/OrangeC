@@ -39,12 +39,13 @@ export _TREETARGET
 export NOMAKEDIR
 
 tools: 
-	@$(MAKE) -f $(_TREEROOT)
+	@$(MAKE) -f $(_TREEROOT) library
+	@$(MAKE) -f $(_TREEROOT) exefile
 
 distribute:
 	@$(MAKE) -f $(_TREEROOT) distribute
-
-fullbuild: buildenv tools copyexes library distribute
+	@$(MAKE) -f $(_TREEROOT) distribute_clibs
+	@$(MAKE) -f $(_TREEROOT) zip
 
 clean:  
 	@$(MAKE) -f $(_TREEROOT) clean
@@ -53,11 +54,34 @@ library:
 	@$(MAKE) -Cclibs
 
 copyexes:
-	@$(MAKE) -f $(_TREEROOT) exeDISTRIBUTE
+	@$(MAKE) -f $(_TREEROOT) distribute_exe
 
 buildenv:
-	@$(MAKE) -f $(_TREEROOT) --eval="BUILDENV:=1" distribute
+	@$(MAKE) -f $(_TREEROOT) distribute_self
+	@$(MAKE) -f $(_TREEROOT) distribute_clibs_no_binary
 	-copy orc.exe ..\bin
+
+buildenv1:
+	@$(MAKE) -f $(_TREEROOT) distribute_self
+	@$(MAKE) -f $(_TREEROOT) distribute_clibs_no_binary
+	-copy orc.exe ..\bin
+tools1: buildenv1 
+	@$(MAKE) -f $(_TREEROOT) library
+	@$(MAKE) -f $(_TREEROOT) exefile
+copyexes1: tools1
+	@$(MAKE) -f $(_TREEROOT) distribute_exe
+library1: copyexes1
+	@$(MAKE) -Cclibs
+distribute1: library1
+	@$(MAKE) -f $(_TREEROOT) distribute
+	@$(MAKE) -f $(_TREEROOT) distribute_clibs
+
+zip: distribute1
+	@$(MAKE) -f $(_TREEROOT) zip
+
+fullbuild: zip
+
+
 else
 # when called from TREETOP.MAK do the below
 
@@ -71,27 +95,8 @@ DISTRIBUTE:
 	$(COPYDIR) examples\win32\xmlview\%.% $(DISTEXAM)\win32\xmlview
 	$(COPYDIR) examples\win32\RCDemo\%.% $(DISTEXAM)\win32\RCDemo
 	$(COPYDIR) examples\win32\Huff\%.% $(DISTEXAM)\win32\Huff
-	$(COPYDIR) doc\%.% $(DISTDOC)
-	$(COPYDIR) doc\general\%.% $(DISTDOC)\general
-	$(COPYDIR) doc\oasm\%.% $(DISTDOC)\oasm
-	$(COPYDIR) doc\occ\%.% $(DISTDOC)\occ
-	$(COPYDIR) doc\ogrep\%.% $(DISTDOC)\ogrep
-	$(COPYDIR) doc\olink\%.% $(DISTDOC)\olink
-	$(COPYDIR) doc\omake\%.% $(DISTDOC)\omake    
 	copy license.txt $(DISTROOT)
 	copy readme.txt $(DISTROOT)
 	copy relnotes.txt $(DISTROOT)
 	copy addon.txt $(DISTADDON)
-ifdef BUILDENV
-	@$(MAKE) -C$(DISTROOT)\src\clibs DISTRIBUTE --eval="BUILDENV:=1"
-else
-	@$(MAKE) -C$(DISTROOT)\src\clibs DISTRIBUTE
-ifdef WITHMSDOS
-# this requires CC386 be installed since it relies on far pointer support
-# so I don't make it a part of the default install
-	@$(MAKE) -C$(DISTROOT)\src\..\ -f $(realpath .\doszip.mak)
-	@$(MAKE) -f makefile.le -C$(DISTROOT)\src\dos\install
-endif
-	@$(MAKE) -C\ -f $(realpath .\zip.mak)
-endif
 endif

@@ -42,6 +42,8 @@ extern int __maxfiles;
 
 static char localbuf[LBSIZE];
 
+int  _RTL_FUNC __flush  (int __handle);
+
 static int __flushone(FILE *stream)
 {
     int rv = 0, lvl;

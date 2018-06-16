@@ -198,7 +198,6 @@
     <ClCompile Include="brkhdwe.c" />
     <ClCompile Include="brkstep.c" />
     <ClCompile Include="brkwnd.c" />
-    <ClCompile Include="browse.c" />
     <ClCompile Include="brsJump.c" />
     <ClCompile Include="brsLookup.c" />
     <ClCompile Include="brswnd.c" />
@@ -253,7 +252,6 @@
     <ClCompile Include="make.c" />
     <ClCompile Include="makecommon.c" />
     <ClCompile Include="makegen.c" />
-    <ClCompile Include="memwnd.c" />
     <ClCompile Include="mru.c" />
     <ClCompile Include="ocide.c" />
     <ClCompile Include="opcodes.c" />

@@ -44,7 +44,7 @@ DISTRIBUTE:
 	$(ZIP) a $(DISTEXE) orangec/rule/*.rul orangec/help/*.* orangec/addon/*.* orangec/appdata
 	$(ZIP) a $(DISTEXE) orangec/license.txt orangec/readme.txt orangec/relnotes.txt
 	$(ZIP) -r0 -xr@orangec/src/xclude.lst a $(DISTSRC) orangec/src/*.adl orangec/src/*.cpp orangec/src/*.c orangec/src/*.h orangec/src/*.nas orangec/src/*.ase orangec/src/*.asi orangec/src/*.inc orangec/src/*.p orangec/src/*.rc orangec/src/*.spc orangec/src/*.app orangec/src/*.cfg orangec/src/makefile* orangec/src/*.mak orangec/src/*.txt orangec/src/copying orangec/src/*.def orangec/src/*.lst 
-	$(ZIP) -r0 -xr@orangec/src/xclude.lst a $(DISTSRC) orangec/src/ocl/ocl.lic orangec/src/clibs/cpp/* orangec/src/clibs/platform/copyrght.asm orangec/src/help/*.* orangec/src/doc/*.*
+	$(ZIP) -r0 -xr@orangec/src/xclude.lst a $(DISTSRC) orangec/src/ocl/ocl.lic orangec/src/clibs/cpp/* orangec/src/clibs/platform/copyrght.asm orangec/src/help/*.* orangec/doc/*.*
 	$(ZIP) -r0 a $(DISTSRC) orangec/src/clibs/platform/dos32/extender/*.* orangec/src/clibs/platform/dos32/extender/*
 	$(ZIP) -r0 a $(DISTSRC) orangec/src/*.vcxproj orangec/src/*.vcxproj.filters orangec/src/*.sln
 	$(ZIP) a $(DISTSRC) orangec/src/ocide/fonts/ttf-bitstream-vera-1.10/*.* orangec/src/ocide/res/*.* orangec/src/ocide/rule/*.rul orangec/src/ocide/rule/*.props

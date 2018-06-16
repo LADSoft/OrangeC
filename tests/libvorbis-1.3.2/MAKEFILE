@@ -11,9 +11,9 @@ LFLAGS = /Wc /!
 RFLAGS =
 
 
-all: $(EXE) test
+all: test
 
-test:
+test: $(EXE)
 	test > test.out
 	fc /b test.cmpx test.out
 

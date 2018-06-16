@@ -132,7 +132,8 @@ void abspath(char *name, char *path)
             ;
         name += 3;
     }
-    *++p = '\\';
+    if (p[0] != '\\')
+        *++p = '\\';
     p++;
     strcpy(p, name);
     strcpy(nname, projname);

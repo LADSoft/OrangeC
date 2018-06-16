@@ -13,6 +13,8 @@
  The list of files can be a list of one or more C language files.  C++ language files are supported as well.  If you don't specify an extension on the command line it will default to .C; it will detect a .CPP extension and activate C++ mode as required.
 
 The list of files can also include wild cards.
+
+A special file name '-' means take input from the console.
  
  OCC will accept response files with a list of command line options.  To use a response file, prefix its name with '@':
  
@@ -22,6 +24,7 @@ The list of files can also include wild cards.
  
 * [Output Control](OCC%20Output%20Control.md)
 * [Error Control](OCC%20Error%20Control.md)
+* [Warning Control](OCC%20Warning%20Control.md)
 * [List File Control](OCC%20List%20File%20Control.md)
 * [Preprocessor File Control](OCC%20Preprocessor%20File%20Control.md)
 * [Compilation Modes](OCC%20Compilation%20Modes.md)
@@ -30,11 +33,10 @@ The list of files can also include wild cards.
 * [Translating Trigraphs](OCC%20Translating%20Trigraphs.md)
 * [Code Generation Parameters](OCC%20Code%20Generation%20Parameters.md)
 * [Optimizer Parameters](OCC%20Optimizer%20Parameters.md)
+* [Passthrough Parameters](OCC%20Passthrough%20Parameters.md)
 
 ### Additional generic options
 
  The **/V** switch shows version information, and the compile date
 
- The **/!** switch is 'nologo'
-
-
+ The **/!** or **--nologo** switch is 'nologo'

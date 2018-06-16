@@ -58,6 +58,10 @@ FILE *cppFile, *browseFile;
 FILE *errFile, *icdFile;
 char infile[256];
 
+static char tempOutFile[260];
+static char realOutFile[260];
+static char oldOutFile[260];
+
 static FILE *inputFile = 0;
 static int stoponerr = 0;
 
@@ -88,6 +92,7 @@ COMPILER_PARAMS cparams = {
     FALSE,  /* char prm_trigraph;*/
     FALSE, /* char prm_oldfor;*/
     FALSE, /* char prm_stackcheck;*/
+    TRUE, /* char prm_allowinline;*/
     FALSE, /* char prm_profiler;*/
     TRUE,  /* char prm_mergstrings;*/
     FALSE, /* char prm_revbits;*/
@@ -103,14 +108,17 @@ COMPILER_PARAMS cparams = {
 void bool_setup(char select, char *string);
 void err_setup(char select, char *string);
 void incl_setup(char select, char *string);
+void libpath_setup(char select, char *string);
 void def_setup(char select, char *string);
 void codegen_setup(char select, char *string);
 void optimize_setup(char select, char *string);
-/*void warning_setup(char select, char *string); */
 void parsefile(char select, char *string);
 void output_setup(char select, char *string);
 void stackalign_setup(char select, char *string);
 void verbose_setup(char select, char *string);
+void library_setup(char select, char *string);
+void tool_setup(char select, char *string);
+void warning_setup(char select, char *string);
 /* setup for ARGS.C */
 static CMDLIST Args[] = 
 {
@@ -139,6 +147,10 @@ static CMDLIST Args[] =
     }
     , 
     {
+        'L', ARG_COMBINESTRING, libpath_setup
+    }
+    , 
+    {
         'D', ARG_CONCATSTRING, def_setup
     }
     , 
@@ -151,7 +163,7 @@ static CMDLIST Args[] =
     }
     , 
     {
-        'l', ARG_BOOL, bool_setup
+        'l', ARG_CONCATSTRING, library_setup
     }
     , 
     {
@@ -215,12 +227,36 @@ static CMDLIST Args[] =
     }
     , 
     {
+        'p', ARG_CONCATSTRING, tool_setup
+    }
+    , 
+    {
+        'w', ARG_CONCATSTRING, warning_setup
+    }
+    , 
+    {
         0, 0, 0
     }
 };
 
 CMDLIST *ArgList = &Args[0];
 
+
+void library_setup(char select, char *string)
+{
+    if (string[0] == 0)
+    {
+        cparams.prm_listfile = TRUE;
+    }
+    else
+    {
+        char buf[260];
+        strcpy(buf, string);
+        StripExt(buf);
+        AddExt(buf, ".l");
+        InsertAnyFile(buf, 0,  - 1, FALSE);
+    }
+}
 void bool_setup(char select, char *string)
 /*
  * activation routine (callback) for boolean command line arguments
@@ -242,8 +278,8 @@ void bool_setup(char select, char *string)
         cparams.prm_ansi = v;
     if (select == 'e')
         cparams.prm_errfile = v;
-    if (select == 'l')
-        cparams.prm_listfile = v;
+//    if (select == 'l')
+//        cparams.prm_listfile = v;
     if (select == 'i')
         cparams.prm_cppfile = v;
     if (select == 'Q')
@@ -362,6 +398,9 @@ void codegen_setup(char select, char *string)
                 break;
             case 'Z':
                 cparams.prm_profiler = v;
+                break;
+            case 'i':
+                cparams.prm_allowinline = v;
                 break;
             case '-':
                 v = FALSE;
@@ -550,6 +589,14 @@ void compile(BOOLEAN global)
 }
 /*-------------------------------------------------------------------------*/
 
+void Cleanup()
+{
+    if (outputFile)
+        fclose(outputFile);
+    unlink(realOutFile);
+    unlink(tempOutFile);
+    rename(oldOutFile, realOutFile);
+}
 int main(int argc, char *argv[])
 {
     char buffer[256];
@@ -557,6 +604,7 @@ int main(int argc, char *argv[])
     BOOLEAN multipleFiles = FALSE;
     BOOLEAN openOutput = TRUE;
     int rv;
+    char tempOutFile[260];
     char realOutFile[260];
     char oldOutFile[260];
     srand(time(0));
@@ -602,11 +650,19 @@ int main(int argc, char *argv[])
         cparams.prm_cplusplus = FALSE;
         strcpy(buffer, clist->data);
 #ifndef PARSER_ONLY
+        if (buffer[0] == '-')
+            strcpy(buffer, "a.c");
         strcpy(realOutFile, outfile);
+        strcpy(tempOutFile, outfile);
+        outputfile(tempOutFile, buffer, ".oo");
         if (cparams.prm_asmfile)
+        {
             outputfile(realOutFile, buffer, chosenAssembler->asmext);
+        }
         else
+        {
             outputfile(realOutFile, buffer, chosenAssembler->objext);
+        }
         strcpy(oldOutFile, realOutFile);
         StripExt(oldOutFile);
         AddExt(oldOutFile, ".tmp");
@@ -650,7 +706,10 @@ int main(int argc, char *argv[])
             cparams.prm_c99 = cparams.prm_c1x = FALSE;
         if (cparams.prm_cplusplus && chosenAssembler->msil)
             fatal("MSIL compiler does not compile C++ files at this time");
-        inputFile = SrchPth2(buffer, "", "r");
+        if (*(char *)clist->data == '-')
+            inputFile = stdin;
+        else
+            inputFile = SrchPth2(buffer, "", "r");
         if (!inputFile)
             fatal("Cannot open input file %s", buffer);
         strcpy(infile, buffer);
@@ -668,11 +727,12 @@ int main(int argc, char *argv[])
             {
                 unlink(oldOutFile);
                 rename(realOutFile, oldOutFile);
-                outputFile = fopen(realOutFile, cparams.prm_asmfile ? "w" : "wb");
+                outputFile = fopen(tempOutFile, cparams.prm_asmfile ? "w" : "wb");
                 if (!outputFile)
                 {
-                    fclose(inputFile);
-                    fatal("Cannot open output file %s", realOutFile);
+                    if (inputFile != stdin)
+                       fclose(inputFile);
+                    fatal("Cannot open output file %s", tempOutFile);
                 }
                 setvbuf(outputFile,0,_IOFBF,32768);
             }
@@ -685,7 +745,8 @@ int main(int argc, char *argv[])
                 cppFile = fopen(buffer, "w");
                 if (!cppFile)
                 {
-                    fclose(inputFile);
+                    if (inputFile != stdin)
+                        fclose(inputFile);
                     fclose(outputFile);
                     fatal("Cannot open preprocessor output file %s", buffer);
                 }
@@ -697,7 +758,8 @@ int main(int argc, char *argv[])
                 listFile = fopen(buffer, "w");
                 if (!listFile)
                 {
-                    fclose(inputFile);
+                    if (inputFile != stdin)
+                        fclose(inputFile);
                     fclose(cppFile);
                     fclose(outputFile);
                     fatal("Cannot open list file %s", buffer);
@@ -710,7 +772,8 @@ int main(int argc, char *argv[])
                 errFile = fopen(buffer, "w");
                 if (!errFile)
                 {
-                    fclose(inputFile);
+                    if (inputFile != stdin)
+                        fclose(inputFile);
                     fclose(cppFile);
                     fclose(listFile);
                     fclose(outputFile);
@@ -727,7 +790,8 @@ int main(int argc, char *argv[])
                 if (!browseFile)
                 {   
                     fclose(errFile);
-                    fclose(inputFile);
+                    if (inputFile != stdin)
+                        fclose(inputFile);
                     fclose(cppFile);
                     fclose(listFile);
                     fclose(outputFile);
@@ -744,7 +808,8 @@ int main(int argc, char *argv[])
                 {   
                     fclose(browseFile);
                     fclose(errFile);
-                    fclose(inputFile);
+                    if (inputFile != stdin)
+                        fclose(inputFile);
                     fclose(cppFile);
                     fclose(listFile);
                     fclose(outputFile);
@@ -774,13 +839,15 @@ int main(int argc, char *argv[])
                printf("  Allocation Accesses: %d\n", maxAllocationAccesses);
         }
         maxBlocks = maxTemps = maxAllocationSpills = maxAllocationPasses = maxAllocationAccesses = 0;
+        if (inputFile != stdin)
 #ifdef PARSER_ONLY
-        ccCloseFile(inputFile);
+            ccCloseFile(inputFile);
 #else
-        fclose(inputFile);
+            fclose(inputFile);
 #endif
         if (outputFile && openOutput)
             fclose(outputFile);
+        outputFile = NULL;
         if (cppFile)
             fclose(cppFile);
         if (listFile)
@@ -796,12 +863,12 @@ int main(int argc, char *argv[])
         {
             if (total_errors)
             {
-                unlink(realOutFile);
-                rename(oldOutFile, realOutFile);
+                Cleanup();
             }
             else
             {
                 unlink (oldOutFile);
+                rename (tempOutFile, realOutFile);
             }
         }
         /* Flag to stop if there are any errors */
@@ -814,7 +881,7 @@ int main(int argc, char *argv[])
     rv = !!stoponerr ;
     if (!cparams.prm_makestubs)
     {
-        if (!cparams.prm_compileonly && !stoponerr) {
+        if (!stoponerr) {
             rv = 0 ;
             if (chosenAssembler->compiler_postprocess)
             {

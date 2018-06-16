@@ -73,7 +73,6 @@ int equalnode(EXPRESSION *node1, EXPRESSION *node2)
     switch (node1->type)
     {
         case en_const:
-        case en_label:
         case en_pc:
         case en_global:
         case en_auto:
@@ -114,7 +113,7 @@ int equalnode(EXPRESSION *node1, EXPRESSION *node2)
             return node1->v.sp == node2->v.sp;
     }
 }
-char *GetSymName(SYMBOL *sp)
+char *GetSymName(SYMBOL *sp, SYMBOL *parent)
 {
     static char buf[4096];
     if (sp->thisPtr)
@@ -125,21 +124,30 @@ char *GetSymName(SYMBOL *sp)
     {
         mangleNameSpaces(buf, sp);
     }
-    else if (sp->storage_class == sc_localstatic && sp->parent)
-    {
-        sprintf(buf, "@%s@%s", sp->parent->name, sp->name);
-    }
-    else if (sp->storage_class == sc_auto || sp->storage_class == sc_parameter)
+    else if (sp->storage_class == sc_localstatic || sp ->storage_class == sc_auto || sp->storage_class == sc_parameter)
     {
         sprintf(buf, "_%s", sp->name);   
     }
+    else if (sp->decoratedName)
+    {
+        if (sp != parent && !isfunction(sp->tp))
+        {
+            char buf[2048], *p = strchr(sp->decoratedName+1, '@');
+            if (!p)
+                p = sp->name;
+
+            sprintf(buf, "@%s@%s", parent->name, sp->name);
+            return litlate(buf);
+        }
+        return sp->decoratedName;
+    }
     else
     {
-        return sp->decoratedName;
+        return sp->name;
     }
     return buf;
 }
-static int WriteStructMembers(SYMBOL *sym, sqlite3_int64 struct_id, sqlite3_int64 file_id, int order,BOOLEAN base, enum e_ac access)
+static int WriteStructMembers(SYMBOL *sym, SYMBOL *parent, sqlite3_int64 struct_id, sqlite3_int64 file_id, int order,BOOLEAN base, enum e_ac access)
 {
     if (basetype(sym->tp)->syms)
     {    
@@ -149,7 +157,7 @@ static int WriteStructMembers(SYMBOL *sym, sqlite3_int64 struct_id, sqlite3_int6
             BASECLASS *bases = sym->baseClasses;
             while (bases)
             {
-                order = WriteStructMembers(bases->cls, struct_id, file_id, order, TRUE, imin(bases->cls->access, access));
+                order = WriteStructMembers(bases->cls, parent, struct_id, file_id, order, TRUE, imin(bases->cls->access, access));
                 bases = bases->next;
             }
         }
@@ -158,11 +166,12 @@ static int WriteStructMembers(SYMBOL *sym, sqlite3_int64 struct_id, sqlite3_int6
             SYMBOL *st = (SYMBOL *)hr->p;
             if (st->storage_class == sc_overloads)
             {
-                order = WriteStructMembers(st, struct_id, file_id, order, base, access);
+                order = WriteStructMembers(st, parent, struct_id, file_id, order, base, access);
             }
             else
             {
-                char type_name[100000];
+                static char type_name[100000];
+                memset(type_name, 0, sizeof(type_name));
                 int indirectCount = 0;
                 int rel_id = 0;
                 TYPE *tp = st->tp;
@@ -219,8 +228,8 @@ static int WriteStructMembers(SYMBOL *sym, sqlite3_int64 struct_id, sqlite3_int6
                     strcat(type_name, "enum ");
                 }
                 typenum(type_name+strlen(type_name), st->tp);
-                type_name[40] = 0;
-                ccWriteStructField(struct_id, GetSymName(st), litlate(type_name), 
+
+                ccWriteStructField(struct_id, GetSymName(st, parent), litlate(type_name), 
                                    indirectCount, rel_id,
                                    file_id, main_id, flags, &order, &id);
             }
@@ -253,7 +262,7 @@ static void DumpStructs(void)
             if (ccWriteFileName(sym->origdeclfile, &file_id))
             {
                 int order = 1;
-                WriteStructMembers(sym, struct_id, file_id, order, FALSE, sym->access);
+                WriteStructMembers(sym, sym, struct_id, file_id, order, FALSE, sym->access);
             }
         }
         item = item->next;
@@ -262,7 +271,7 @@ static void DumpStructs(void)
 static void DumpSymbolType(SYMBOL *sym)
 {
     int type = ST_UNKNOWN;
-    char *name = GetSymName(sym);
+    char *name = GetSymName(sym, sym);
     if (strstr(name, "++"))
         name = " ";
     if (sym->tp && isfunction(sym->tp))
@@ -312,7 +321,7 @@ static void DumpSymbolType(SYMBOL *sym)
 static void DumpSymbol(SYMBOL *sym);
 static void DumpNamespace(SYMBOL *sym)
 {
-    char *symName = GetSymName(sym);
+    char *symName = GetSymName(sym, sym);
     struct _ccNamespaceData *ns = sym->ccNamespaceData;
     while (ns)
     {
@@ -328,7 +337,7 @@ static void DumpSymbol(SYMBOL *sym)
         SYMBOL *declsym;
         char type_name[100000];
         int indirectCount = 0;
-        char *name = GetSymName(sym);
+        char *name = GetSymName(sym, sym);
         TYPE *tp = sym->tp;
         sqlite3_int64 id, struct_id = 0;
         if (strstr(name, "++"))
@@ -379,19 +388,19 @@ static void DumpSymbol(SYMBOL *sym)
         }
         if (sym->storage_class == sc_namespace)
             DumpNamespace(sym);
-        else if (ccWriteLineNumbers( name, litlate(type_name), sym->origdeclfile ? sym->origdeclfile : "$$$", 
+        // use sym->declline here to get real function addresses
+        else if (ccWriteLineNumbers( name, litlate(type_name), sym->declfile ? sym->declfile : "$$$", 
                                indirectCount, struct_id, main_id, 
-                           declsym->origdeclline, sym->ccEndLine, sym->endLine, isfunction(sym->tp), &id))
+                           sym->declline, sym->ccEndLine, sym->endLine, isfunction(sym->tp), &id))
         {
             if (isfunction(sym->tp) && sym->tp->syms)
-            {
+            {   
                 int order = 1;
                 HASHREC *hr = sym->tp->syms->table[0];
                 while (hr && ((SYMBOL *)hr->p)->storage_class == sc_parameter)
                 {
-                    char type_name[100000];
                     SYMBOL *st = (SYMBOL *)hr->p;
-                    char *argName = GetSymName(st);
+                    char *argName = GetSymName(st, st);
                     if (strstr(argName, "++"))
                         argName = " ";
                     type_name[0] = 0;
@@ -451,9 +460,9 @@ static void DumpUsing(void)
     while (lusing)
     {
         char name1[4096], name2[4096];
-        strcpy(name1, GetSymName(lusing->sym));
+        strcpy(name1, GetSymName(lusing->sym, lusing->sym));
         if (lusing->parent)
-            strcpy(name2, GetSymName(lusing->parent));
+            strcpy(name2, GetSymName(lusing->parent, lusing->parent));
         else
             name2[0] = 0;
         ccWriteUsingRecord(name1, name2, lusing->file, lusing->line, main_id);

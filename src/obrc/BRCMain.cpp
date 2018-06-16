@@ -44,10 +44,10 @@ int main(int argc, char **argv)
 CmdSwitchParser BRCMain::SwitchParser;
 
 CmdSwitchFile BRCMain::File(SwitchParser, '@');
-char *BRCMain::usageText = "[options] outputfile filelist \n"
+const char *BRCMain::usageText = "[options] outputfile filelist \n"
             "\n"
             "/V, --version  Show version and date\n"
-            "/!             No logo\n"
+            "/!, --nologo   No logo\n"
             "@xxx           Read commands from file\n"
             "\n"
             "Time: " __TIME__ "  Date: " __DATE__;

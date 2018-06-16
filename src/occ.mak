@@ -68,8 +68,6 @@ DEFINES := $(addprefix /D,$(DEFINES))
 DEFINES := $(subst @, ,$(DEFINES))
 LIB_DEPENDENCIES := $(foreach file, $(addsuffix .l,$(LIB_DEPENDENCIES)), $(file))
 
-$(info $(LIB_DEPENDENCIES))
-
 CCFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) /DMICROSOFT /DBORLAND /DWIN32
 ifeq "$(TARGET)" "GUI"
 STARTUP=C0pe.o
@@ -82,7 +80,7 @@ COMPLIB=clwin$(LIB_EXT) climp$(LIB_EXT)
 endif
 
 vpath %.o $(_OUTPUTDIR)
-vpath %$(LIB_EXT) $(DISTROOT)\lib $(_LIBDIR)
+vpath %.l $(_LIBDIR)
 vpath %.res $(_OUTPUTDIR)
 
 %.o: %.cpp
@@ -101,7 +99,7 @@ $(_LIBDIR)\$(NAME)$(LIB_EXT): $(LLIB_DEPENDENCIES)
 #	-del $(_LIBDIR)\$(NAME)$(LIB_EXT) >> $(NULLDEV)
 	$(LIB) $(LIBFLAGS) $(_LIBDIR)\$(NAME)$(LIB_EXT) $(addprefix +-$(_OUTPUTDIR)\,$(LLIB_DEPENDENCIES))
 
-$(NAME).exe: $(MAIN_DEPENDENCIES) $(addprefix $(_LIBDIR)\,$(LIB_DEPENDENCIES)) $(_LIBDIR)\$(NAME)$(LIB_EXT) $(RES_deps)
+$(NAME).exe: $(MAIN_DEPENDENCIES) $(LIB_DEPENDENCIES) $(NAME)$(LIB_EXT) $(RES_deps)
 	$(LINK) /o$(NAME).exe $(TYPE) $(LFLAGS) $(STARTUP) $(addprefix $(_OUTPUTDIR)\,$(MAIN_DEPENDENCIES)) $(_LIBDIR)\$(NAME)$(LIB_EXT) $(LIB_DEPENDENCIES) $(COMPLIB) $(DEF_DEPENDENCIES) $(addprefix $(_OUTPUTDIR)\,$(RES_deps))
 
 %.exe: %.c

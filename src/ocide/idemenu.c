@@ -622,12 +622,12 @@ void InitMenuPopup(HMENU menu)
     if (win == hwndASM)
         x_state = MF_ENABLED;
     EnableMenuItem(menu, IDM_GOTO, x_state);
-    if (defaultWorkArea || !PropGetBool(NULL, "BROWSE_INFORMATION")) 
+    if (!PropGetBool(NULL, "BROWSE_INFORMATION")) 
         mf_state = MF_GRAYED;   
     EnableMenuItem(menu, IDM_BROWSETODECLARATION, mf_state);
     EnableMenuItem(menu, IDM_BROWSETODEFINITION, mf_state);
 
-    if (defaultWorkArea || !PropGetBool(NULL, "BROWSE_INFORMATION")) 
+    if (!PropGetBool(NULL, "BROWSE_INFORMATION")) 
         mf_state = MF_GRAYED;   
     else
         mf_state = MF_ENABLED;
@@ -655,7 +655,6 @@ void InitMenuPopup(HMENU menu)
     EnableMenuItem(menu, IDM_TILEVERT, mf_state);
     EnableMenuItem(menu, IDM_ARRANGE, mf_state);
     EnableMenuItem(menu, IDM_SAVEALL, mf_state);
-    EnableMenuItem(menu, IDM_SAVEALL2, mf_state);
 
     EnableMenuItem(menu, IDM_NEWPROJECT, MF_ENABLED);
     EnableMenuItem(menu, IDM_VIEWPROJECT, MF_ENABLED);
@@ -677,8 +676,6 @@ void InitMenuPopup(HMENU menu)
     
     if (!activeProject)
         mf_state = MF_GRAYED;
-    EnableMenuItem(menu, IDM_ACTIVEPROJECTPROPERTIES, mf_state);
-    EnableMenuItem(menu, IDM_PROJECTPROPERTIES, mf_state);
     EnableMenuItem(menu, IDM_PROJECTDEPENDS, mf_state);
     EnableMenuItem(menu, IDM_RUNNODEBUG, mf_state);
     if (making)
@@ -709,6 +706,9 @@ void InitMenuPopup(HMENU menu)
 
     mf_state = (uState != notDebugging && (uState == atException || uState == atBreakpoint)  && !making && activeProject) ? MF_ENABLED : MF_GRAYED;
     EnableMenuItem(menu, IDM_STOPDEBUGGING, mf_state);
+    EnableMenuItem(menu, IDM_STEPIN, mf_state);
+    EnableMenuItem(menu, IDM_STEPOUT, mf_state);
+    EnableMenuItem(menu, IDM_STEPOVER, mf_state);
     EnableMenuItem(menu, IDM_RUNTO, mf_state);
     EnableMenuItem(menu, IDM_SCROLLTOBP, mf_state);
 //    EnableMenuItem(menu, IDM_VIEWBP, mf_state);

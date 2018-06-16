@@ -45,8 +45,9 @@ private:
     static CmdSwitchString includePath;
     static CmdSwitchString errorMax;
     static CmdSwitchFile File;
+    static CmdSwitchString outputPath;
     
-    static char *usageText;
+    static const char *usageText;
 } ;
 
 #endif

@@ -49,7 +49,7 @@ private:
     static CmdSwitchString outputFileSwitch;
     static CmdSwitchString modeSwitch;
     static CmdSwitchString DebugFile;
-    static char *usageText;
+    static const char *usageText;
     ObjFile *file;
     OutFile *data;
 } ;

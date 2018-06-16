@@ -199,24 +199,24 @@ static char *unmangptr(char *buf , char *name, char *last)
     }
     return name;
 }
-char *unmangleExpression(char *dest, char *name)
+char *unmangleExpression(char *dest, char **name)
 {
-    if (isdigit(*name) || *name == '_' )
+    if (isdigit(*(*name)) || *(*name) == '_' )
     {
-        if (*name== '_')
+        if (*(*name)== '_')
         {
             *dest++ = '-';
-            name++;
+            (*name)++;
         }
-        while(isdigit(*name))
+        while(isdigit(*(*name)))
         {
-            *dest++ = *name ++;
+            *dest++ = *(*name) ++;
         }
-        name++ ; // past '&'
+        (*name)++ ; // past '&'
     }
     else
     {
-        switch(*name++)
+        switch(*(*name)++)
         {
             case 'n':
                 strcpy(dest, "nullptr");
@@ -237,7 +237,7 @@ char *unmangleExpression(char *dest, char *name)
                 break;
             case 'i':
             {
-                char next = *name++;
+                char next = *(*name)++;
                 dest = unmangleExpression(dest, name);
                 if (next == 'p')
                 {
@@ -268,7 +268,7 @@ char *unmangleExpression(char *dest, char *name)
                 break;
             case 'h':
             {
-                char next = *name++;
+                char next = *(*name)++;
                 dest = unmangleExpression(dest, name);
                 if (next == 'l')
                 {
@@ -292,10 +292,10 @@ char *unmangleExpression(char *dest, char *name)
                 break;                    
             case 'c':
             {
-                char next = *name++, next1=0;
+                char next = *(*name)++, next1=0;
                 if (next != 'e' && next != 'n')
                 {
-                    next1 = *name++;
+                    next1 = *(*name)++;
                 }
                 dest = unmangleExpression(dest, name);
                 switch(next)
@@ -324,7 +324,7 @@ char *unmangleExpression(char *dest, char *name)
             }
             case 'b':
             {
-                char next = *name++;
+                char next = *(*name)++;
                 if (next == 'n')
                 {
                     *dest++ = '~';
@@ -351,7 +351,7 @@ char *unmangleExpression(char *dest, char *name)
             }
             case 'l':
             {
-                char next = *name++;
+                char next = *(*name)++;
                 if (next == 'n')
                 {
                     *dest++ = '!';
@@ -377,51 +377,52 @@ char *unmangleExpression(char *dest, char *name)
             }
             case 't':
             {
-                char next = *name++;
+                char next = *(*name)++;
                 if (next == 's')
                 {
                     int v;
-                    if (*name == '#')
+                    if (*(*name) == '#')
                     {
-                        name = unmangTemplate(dest, name, "");
+                        (*name) = unmangTemplate(dest, (*name), "");
                         dest += strlen(dest);
                     }
-                    else if (isdigit(*name))
+                    else if (isdigit(*(*name)))
                     {
-                        v =  *name++ - '0';
-                        while (isdigit(*name))
-                            v = v * 10+ *name++ - '0';
-                        strncpy(dest, name, v);
-                        name += v;
+                        v =  *(*name)++ - '0';
+                        while (isdigit(*(*name)))
+                            v = v * 10+ *(*name)++ - '0';
+                        strncpy(dest, (*name), v);
+                        (*name) += v;
                         dest += strlen(dest);
                     }
-                    else if (*name == 'n')
+                    else if (*(*name) == 'n')
                     {
-                        name++;
-                        v =  *name++ - '0';
+                        (*name)++;
+                        v =  *(*name)++ - '0';
                         if (v > 9)
                             v -= 7;
                         strcpy(dest, manglenames[v]);
                         dest += strlen(dest);
                     }
-                    while (*name == 't')
+                    while (*(*name) == 't')
                     {
-                        name++;
+                        (*name)++;
                         *dest++=':';
                         *dest++=':';
-                        if (isdigit(*name))
+                        if (isdigit(*(*name)))
                         {
-                            v =  *name++ - '0';
-                            while (isdigit(*name))
-                                v = v * 10+ *name++ - '0';
-                            strncpy(dest, name, v);
-                            name += v;
+                            v =  *(*name)++ - '0';
+                            while (isdigit(*(*name)))
+                                v = v * 10+ *(*name)++ - '0';
+                            strncpy(dest, (*name), v);
+                            dest[v] = 0;
+                            (*name) += v;
                             dest += strlen(dest);                    
                         }
-                        else if (*name == 'n')
+                        else if (*(*name) == 'n')
                         {
-                            name++;
-                            v =  *name++ - '0';
+                            (*name)++;
+                            v =  *(*name)++ - '0';
                             if (v > 9)
                                 v -= 7;
                             strcpy(dest, manglenames[v]);
@@ -432,53 +433,54 @@ char *unmangleExpression(char *dest, char *name)
                 else
                 {
                     int v;
-                    name++;
-                    if (isdigit (*name))
+                    (*name)++;
+                    if (isdigit (*(*name)))
                     {
-                        v =  *name++ - '0';
-                        while (isdigit(*name))
-                            v = v * 10+ *name++ - '0';
-                        strncpy(dest, name, v);
-                        name += v;
+                        v =  *(*name)++ - '0';
+                        while (isdigit(*(*name)))
+                            v = v * 10+ *(*name)++ - '0';
+                        strncpy(dest, (*name), v);
+                        (*name) += v;
                         dest += strlen(dest);                    
                     }
-                    else if (*name == 'n')
+                    else if (*(*name) == 'n')
                     {
-                        name++;
-                        v =  *name++ - '0';
+                        (*name)++;
+                        v =  *(*name)++ - '0';
                         if (v > 9)
                             v -= 7;
                         strcpy(dest, manglenames[v]);
                         dest += strlen(dest);
                     }
                 }
+                break;
             }
             case 'f':
             {
                 int v;
-                if (isdigit (*name))
+                if (isdigit (*(*name)))
                 {
                 
-                    v =  *name++ - '0';
-                    while (isdigit(*name))
-                        v = v * 10+ *name++ - '0';
-                    strncpy(dest, name, v);
-                    name += v;
+                    v =  *(*name)++ - '0';
+                    while (isdigit(*(*name)))
+                        v = v * 10+ *(*name)++ - '0';
+                    strncpy(dest, (*name), v);
+                    (*name) += v;
                     dest += strlen(dest);
                 }
-                else if (*name == 'n')
+                else if (*(*name) == 'n')
                 {
-                    name++;
-                    v =  *name++ - '0';
+                    (*name)++;
+                    v =  *(*name)++ - '0';
                     if (v > 9)
                         v -= 7;
                     strcpy(dest, manglenames[v]);
                     dest += strlen(dest);
                 }
                 *dest++='(';
-                while (*name == 'f')
+                while (*(*name) == 'f')
                 {
-                    name ++;
+                    (*name) ++;
                    dest = unmangleExpression(dest, name);
                 }
                 *dest++=')';
@@ -486,37 +488,37 @@ char *unmangleExpression(char *dest, char *name)
                 break;
             }
             case 'e':
-                if (*name == '&')
+                if (*(*name) == '&')
                 {
                     *dest++='*';
-                    name++;
+                    (*name)++;
                 }
-                while (*name && *name != '$')
-                    *dest++ = *name++;
-                if (*name)
+                while (*(*name) && *(*name) != '$')
+                    *dest++ = *(*name)++;
+                if (*(*name))
                 {
                     char bft[4096];
-                    name ++;
-                    unmang1(bft, name, "", FALSE);
+                    (*name) ++;
+                    unmang1(bft, (*name), "", FALSE);
                 }
                 break;
            case 'g':
-                if (*name == '&')
+                if (*(*name) == '&')
                 {
                     *dest++='*';
-                    name++;
+                    (*name)++;
                 }
-                while (*name && *name != '$')
-                    *dest++ = *name++;
-                if (*name)
+                while (*(*name) && *(*name) != '$')
+                    *dest++ = *(*name)++;
+                if (*(*name))
                 {
-                    name ++;
+                    (*name) ++;
                 }
                 break;
         }
     }        
 	*dest = 0;
-    return name;
+    return dest;
 }
 static char *unmangTemplate(char *buf, char *name, char *last)
 {
@@ -556,6 +558,7 @@ static char *unmangTemplate(char *buf, char *name, char *last)
                     {
                         char tname[10000];
                         *buf = 0;
+                        memset(tname, 0, sizeof(tname));
                         tname[0] = 0;
                         if (*name == 'e')
                         {
@@ -567,7 +570,7 @@ static char *unmangTemplate(char *buf, char *name, char *last)
                         {
                             name++;
                             strcat(tname,"=");
-                            name = unmangleExpression(tname + strlen(tname), name);
+                            unmangleExpression(tname + strlen(tname), &name);
                         }
                         strcpy(buf, tname);
                         buf += strlen(buf);

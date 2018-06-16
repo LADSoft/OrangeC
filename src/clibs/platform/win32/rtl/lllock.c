@@ -35,9 +35,17 @@
 #include "libp.h"
 #include <sys\stat.h>
 
-int __ll_lock(int handle, int offset, int length)
+int __ll_lock(int handle, int offset, int length, int exclusive, int wait)
 {
-   if (LockFile((HANDLE)handle,offset,0,length,0))
+   DWORD flags = 0;
+   OVERLAPPED overlapped;
+   memset(&overlapped, 0, sizeof(overlapped));
+   if (exclusive)
+       flags |= LOCKFILE_EXCLUSIVE_LOCK;
+   if (!wait)
+       flags |= LOCKFILE_FAIL_IMMEDIATELY;
+   overlapped.Offset = offset;
+   if (LockFileEx((HANDLE)handle,flags, 0, length,0, &overlapped))
       return 0 ;
    errno = GetLastError() ;
    return -1 ;

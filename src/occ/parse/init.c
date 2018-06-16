@@ -705,7 +705,7 @@ int dumpInit(SYMBOL *sp, INITIALIZER *init)
             exp = exp->left;
         if (exp->type == en_func && !exp->v.func->ascall)
             exp = exp->v.func->fcall;
-        if (!IsConstantExpression(exp, FALSE))
+        if (!IsConstantExpression(exp, FALSE, FALSE))
         {
             if (cparams.prm_cplusplus)
             {
@@ -725,7 +725,6 @@ int dumpInit(SYMBOL *sp, INITIALIZER *init)
                     // fall through
                 case en_pc:
                 case en_global:
-                case en_label:
                 case en_labcon:
                 case en_add:
                 case en_arrayadd:
@@ -775,9 +774,6 @@ int dumpInit(SYMBOL *sp, INITIALIZER *init)
                     break;
                 case en_global:
                     genref(exp->v.sp, 0);
-                    break;
-                case en_label:
-                    gen_labref(exp->v.sp->label);
                     break;
                 case en_labcon:
                     gen_labref(exp->v.i);
@@ -1363,7 +1359,6 @@ static void refExp(EXPRESSION *exp)
             refExp(exp->right);
             break;
         case en_global:
-        case en_label:
         case en_pc:
         case en_threadlocal:
             GENREF(exp->v.sp);
@@ -1394,6 +1389,7 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
             if (!tp)
             {
                 error(ERR_EXPRESSION_SYNTAX);
+                tp = &stdint;
             }
             else
             {
@@ -1405,7 +1401,7 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
             lex = initialize_string(lex, funcsp, &tp, &exp);
         }
         castToPointer(&tp, &exp, (enum e_kw)-1, itype);
-
+        DeduceAuto(&itype, tp);
         if (sc != sc_auto && sc != sc_register)
         {
             if (!isarithmeticconst(exp) && !isconstaddress(exp) && !cparams.prm_cplusplus)
@@ -1772,8 +1768,8 @@ static LEXEME *initialize_reference_type(LEXEME *lex, SYMBOL *funcsp, int offset
     if (tp)
     {
         ResolveTemplateVariable(&tp, &exp, basetype(itype)->btp, NULL);
-        basetype(itype)->btp = assignauto(basetype(itype)->btp, tp);
-        basetype(sp->tp)->btp = assignauto(basetype(sp->tp)->btp, tp);
+        DeduceAuto(&itype, tp);
+        DeduceAuto(&sp->tp, tp);
         UpdateRootTypes(itype);
         UpdateRootTypes(sp->tp);
         if (!isref(tp) && ((isconst(tp) && !isconst(basetype(itype)->btp)) || (isvolatile(tp) && !isvolatile(basetype(itype)->btp))))
@@ -2354,6 +2350,7 @@ static void set_array_sizes(AGGREGATE_DESCRIPTOR *cache)
 static LEXEME *read_strings(LEXEME *lex, INITIALIZER **next,
                                  AGGREGATE_DESCRIPTOR **desc)
 {
+    BOOLEAN nothingWritten = TRUE;
     TYPE *tp = basetype((*desc)->tp);
     TYPE *btp = basetype(tp->btp);
     int max = tp->size / btp->size;
@@ -2408,6 +2405,7 @@ static LEXEME *read_strings(LEXEME *lex, INITIALIZER **next,
                 (*desc)->reloffset += btp->size;
                 next = &(*next)->next;
                 index++;
+                nothingWritten = FALSE;
             }
         }
     }
@@ -2417,6 +2415,14 @@ static LEXEME *read_strings(LEXEME *lex, INITIALIZER **next,
         
         initInsert(next, btp, exp, (*desc)->offset + (*desc)->reloffset, FALSE); /* NULL=no initializer */
         max = (*desc)->reloffset/btp->size;
+        nothingWritten = FALSE;
+    }
+    if (nothingWritten)
+    {
+        EXPRESSION *exp = intNode(en_c_i, 0);
+
+        initInsert(next, btp, exp, (*desc)->offset + (*desc)->reloffset, FALSE); /* NULL=no initializer */
+
     }
     for (i = (*desc)->reloffset / btp->size; i < max; i++)
     {
@@ -2535,7 +2541,7 @@ EXPRESSION *getThisNode(SYMBOL *sp)
             if (sp->linkage3 == lk_threadlocal)
                 exp = varNode(en_threadlocal, sp);
             else
-                exp = varNode(en_label, sp);
+                exp = varNode(en_global, sp);
             break;
         case sc_absolute:
             exp = varNode(en_absolute, sp);
@@ -3339,7 +3345,17 @@ LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc,
     }
     return lex;
 }
-BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams)
+BOOLEAN checkconstexprfunc(EXPRESSION *node)
+{
+    if (node->type == en_thisref)
+        node = node->left;
+    if (node->type == en_func && node->v.func->sp)
+    {
+        return node->v.func->sp->constexpression;
+    }
+    return FALSE;
+}
+BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams, BOOLEAN allowFunc)
 {
     BOOLEAN rv = FALSE;
     if (total_errors) // in some error conditions nodes can get into a loop
@@ -3387,7 +3403,6 @@ BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams)
             rv = TRUE;
             break;
         case en_global:
-        case en_label:
         case en_pc:
         case en_labcon:
         case en_absolute:
@@ -3435,12 +3450,11 @@ BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams)
             else switch (node->left->type)
             {
                 case en_global:
-                case en_label:
                 case en_pc:
                 case en_labcon:
                 case en_absolute:
                 case en_threadlocal:
-                    return node->left->v.sp->constexpression || node->left->v.sp->init && IsConstantExpression(node->left->v.sp->init->exp, allowParams);
+                    return node->left->v.sp->constexpression || node->left->v.sp->init && IsConstantExpression(node->left->v.sp->init->exp, allowParams, allowFunc);
             }
             break;
         case en_uminus:
@@ -3485,14 +3499,14 @@ BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams)
         case en_loadstack:
         case en_savestack:
         case en_literalclass:
-            rv = IsConstantExpression(node->left, allowParams);
+            rv = IsConstantExpression(node->left, allowParams, allowFunc);
             break;
         case en_assign:
             rv = FALSE;
             break;
         case en_autoinc:
         case en_autodec:
-            rv = IsConstantExpression(node->left, allowParams);
+            rv = IsConstantExpression(node->left, allowParams, allowFunc);
             break; 
         case en_add:
         case en_sub:
@@ -3539,8 +3553,8 @@ BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams)
         case en__cpblk:
             /*		case en_array: */
 
-            rv = IsConstantExpression(node->left, allowParams);
-            rv &= IsConstantExpression(node->right, allowParams);
+            rv = IsConstantExpression(node->left, allowParams, allowFunc);
+            rv &= IsConstantExpression(node->right, allowParams, allowFunc);
             break;
         case en_atomic:
             rv = FALSE;
@@ -3552,10 +3566,10 @@ BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams)
         case en_thisref:
         case en_lvalue:
         case en_funcret:
-            rv = IsConstantExpression(node->left, allowParams);
+            rv = IsConstantExpression(node->left, allowParams, allowFunc);
             break;
         case en_func:
-            return !node->v.func->ascall;
+            return !node->v.func->ascall || (allowFunc && checkconstexprfunc(node));
             break;
         case en_stmt:
             rv = FALSE;
@@ -3698,13 +3712,8 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
     }
     if (funcsp && funcsp->isInline && sp->storage_class == sc_static)
     {
-        if (funcsp->templateLevel)
+        if (cparams.prm_cplusplus)
         {
-            char buf[1024];
-            strcpy(buf, funcsp->decoratedName);
-            strcat(buf, "@");
-            strcat(buf, sp->name);
-            sp->decoratedName = litlate(buf);
             sp->isInline = TRUE;
         }
         else
@@ -3956,7 +3965,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
             while (l)
             {
                 if (l->next || l->exp)
-                    if (!IsConstantExpression(sp->init->exp, FALSE))
+                    if (!IsConstantExpression(sp->init->exp, FALSE, TRUE))
                     {
                         error(ERR_CONSTANT_EXPRESSION_EXPECTED);
                         break;
@@ -3966,7 +3975,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
         }
         else
         {
-            if (!IsConstantExpression(sp->init->exp, FALSE))
+            if (!IsConstantExpression(sp->init->exp, FALSE, TRUE))
             {
                 sp->init->exp = intNode(en_c_i, 0);
                 error(ERR_CONSTANT_EXPRESSION_EXPECTED);
@@ -4027,8 +4036,6 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
         }
         else {
             SYMBOL *tmpl;
-            if (storage_class_in == sc_auto || storage_class_in == sc_register)
-                sp = clonesym(sp);
             tmpl = sp;
             while (tmpl)
                 if (tmpl->templateLevel)
@@ -4038,17 +4045,10 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                     tmpl = tmpl->parentClass;
             if (!tmpl)
             {
-                if (cparams.prm_cplusplus && sp->init && sp->storage_class == sc_localstatic && !IsConstantExpression(sp->init->exp, FALSE))
-                    sp->init = NULL;
                 insertInitSym(sp);
             }
         }       
     }
-//    else if (sp->storage_class == sc_external && instantiatingTemplate)
-//    {
-//        sp->linkage = lk_virtual;
-//        InsertInlineData(sp);
-//    } 
     if (sp->init)
     {
         declareAndInitialize = TRUE;

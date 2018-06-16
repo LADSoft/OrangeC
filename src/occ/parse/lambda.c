@@ -693,7 +693,7 @@ static EXPRESSION *createLambda(BOOLEAN noinline)
     else
     {
         insert(cls, globalNameSpace->syms); // well if we could put this as an auto in the init func that would be good but there is no way to do that here...
-        clsThs = varNode(en_label, cls); // this ptr
+        clsThs = varNode(en_global, cls); // this ptr
         cls->label = nextLabel++;
         insertInitSym(cls);
     }

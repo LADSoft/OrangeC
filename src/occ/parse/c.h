@@ -115,7 +115,7 @@ enum e_kw
         kw__near, kw__seg, kw___typeid, kw___int64, kw_alloca, kw__msil_rtl,
         kw___va_list__,  kw___va_typeof__, kw__unmanaged,  kw__uuid, kw__uuidof,
         kw___string, kw___object,  kw_native, kw__cpblk, kw__initblk, kw__property,  kw__entrypoint,
-        kw___try, kw___catch, kw___finally, kw___fault,
+        kw___try, kw___catch, kw___finally, kw___fault,  kw__declspec,
     /* These next are generic register names */
     kw_D0, kw_D1, kw_D2, kw_D3, kw_D4, kw_D5, kw_D6, kw_D7, kw_D8, kw_D9, kw_DA,
         kw_DB, kw_DC, kw_DD, kw_DE, kw_DF, kw_A0, kw_A1, kw_A2, kw_A3, kw_A4,
@@ -146,7 +146,7 @@ enum e_node
 {
 
     en_void, en_not_lvalue, en_lvalue, en_argnopush, en_voidnz, en_shiftby, 
-    en_global, en_auto, en_labcon, en_absolute, en_pc, en_label, en_const, en_threadlocal,
+    en_global, en_auto, en_labcon, en_absolute, en_pc, en_const, en_threadlocal,
     en_c_bit, en_c_bool, en_c_c, en_c_uc, en_c_wc, en_c_s, en_c_u16, en_c_us, en_c_i, en_c_ui, 
     en_c_u32, en_c_l, en_c_ul, en_c_ll, en_c_ull, en_c_f, en_c_d, en_c_ld,
         en_c_p, en_c_sp, en_c_fp, en_c_fc, en_c_dc, en_c_ldc,
@@ -425,6 +425,7 @@ typedef struct stmt
     int hasvla: 1;
     int hasdeclare: 1;
     int purelabel: 1;
+    int explicitGoto : 1;
 } STATEMENT;
 
 typedef struct blockdata
@@ -493,7 +494,7 @@ typedef struct sym
     char *decoratedName; /* symbol name with decorations, as used in output format */
     char *errname; /* name to be used in errors */
     char *declfile, *origdeclfile ; /* file symbol was declared in */
-    int  declline, origdeclline ; /* line number symbol was declared at */
+    int  declline, origdeclline, realdeclline ; /* line number symbol was declared at */
     short declcharpos ; /* character position symbol was declared at */
     short declfilenum; /* the file number */
     int sizeNoVirtual; /* size without virtual classes and thunks */
@@ -593,6 +594,7 @@ typedef struct sym
         unsigned xtEntry:1; // is an exception table label
         unsigned isExplicit:1; // explicit constructor or conversion function
         unsigned specialized:1; // is a template specialization
+        unsigned specialized2 : 1; // specialization of a template class nontemplate func
         unsigned packed:1; // packed template param instance
         unsigned instantiated:1; // instantiated template
         unsigned instantiated2:1; // instantiated template
@@ -706,6 +708,7 @@ typedef struct _memberInitializers
     struct _memberInitializers *next;
     char *name;
     SYMBOL *sp;
+    SYMBOL *basesym;
     INITIALIZER *init;
     int line;
     char *file;
@@ -938,6 +941,7 @@ typedef struct lexeme
     char *file;
     LINEDATA *linedata;
     int line;
+    int realline;
     int charindex;
     int filenum;
     KEYWORD *kw;

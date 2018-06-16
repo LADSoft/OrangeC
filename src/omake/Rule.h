@@ -124,6 +124,8 @@ public:
     bool IsUpToDate();
     bool IsBuilt() { return isBuilt; }
     void SetBuilt();
+    Spawner *GetSpawner() { return spawner; }
+    void SetSpawner(Spawner *spawner) { this->spawner = spawner; }
 private:
     std::string targetPatternStem;
     std::string target;
@@ -131,6 +133,7 @@ private:
     std::list<Rule *> rules;
     std::map<const std::string *, Variable *, rllt> specificVariables;
     std::string newerPrerequisites;
+    Spawner *spawner;
     bool doubleColon;
     bool intermediate;
     bool keep;
@@ -164,6 +167,9 @@ public:
     const ImplicitIterator ImplicitEnd() { return implicitRules.end(); }
     void Clear();
     void SecondaryEval();	
+    bool OnList(const std::string &goal, char *what);
+    bool NoList(char *what);
+    bool ScanList(const std::string &v, const std::string &goal);
 protected:
     RuleContainer() { }
 private:

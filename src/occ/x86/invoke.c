@@ -30,8 +30,6 @@
 #include "be.h"
 #include "winmode.h"
  
-#define TEMPFILE "$$$OCC.TMP"
-
 extern COMPILER_PARAMS cparams;
 extern int prm_targettype;
 extern int prm_crtdll;
@@ -39,6 +37,7 @@ extern int prm_lscrtdll;
 extern int prm_msvcrt;
 extern int showBanner;
 extern int verbosity;
+extern char *prm_libpath;
 
 char *winflags[] = 
 {
@@ -55,18 +54,43 @@ char *winc0[] =
 
 LIST *objlist,  *asmlist,  *liblist,  *reslist,  *rclist;
 static char outputFileName[256];
-
+static char *asm_params, *rc_params, *link_params;
 #ifdef MICROSOFT
 #define system(x) winsystem(x)
 extern int winsystem(const char *);
 #endif
-static void InsertFile(LIST **r, char *name, char *ext)
+static BOOLEAN InsertOption(char *name)
 {
-
-    char buf[256],  *newbuffer;
+    char **p;
+    switch (name[0])
+    {
+        case 'a':
+            p = &asm_params;
+            break;
+        case 'r':
+            p = &rc_params;
+            break;
+        case 'l':
+            p = &link_params;
+            break;
+        default:
+            return FALSE;
+    }
+    int len = 0;
+    if (*p)
+        len = strlen(*p);
+    *p = realloc(*p, 2 + len + strlen(name+1));
+    (*p)[len] = 0;
+    strcat(*p, " ");
+    strcat(*p, name + 1);    
+    return TRUE;
+}
+static void InsertFile(LIST **r, char *name, char *ext, BOOLEAN primary)
+{
     LIST *lst;
+    char buf[256],  *newbuffer;
     strcpy(buf, name);
-    if (!outputFileName[0])
+    if (primary && !outputFileName[0])
     {
         strcpy(outputFileName, name);
         StripExt(outputFileName);
@@ -101,34 +125,40 @@ static void InsertFile(LIST **r, char *name, char *ext)
 
 /*-------------------------------------------------------------------------*/
 
-int InsertExternalFile(char *name)
+int InsertExternalFile(char *name, BOOLEAN primary)
 {
     char buf[260], *p;
+    if (name[0] == '$')
+    {
+        if (!InsertOption(name + 1))
+            fatal("invalid parameter: /p%s", name + 1);
+        return TRUE;
+    }
     if (HasExt(name, ".asm") || HasExt(name,".nas") || HasExt(name, ".s"))
     {
-        InsertFile(&objlist, name, ".o");
-        InsertFile(&asmlist, name, 0);
+        InsertFile(&objlist, name, ".o", primary);
+        InsertFile(&asmlist, name, 0, primary);
         return 1; /* compiler shouldn't process it*/
     }
-    else if (HasExt(name, ".l"))
+    else if (HasExt(name, ".l") || HasExt(name, ".a") || HasExt(name, ".lib"))
     {
-        InsertFile(&liblist, name, 0);
+        InsertFile(&liblist, name, 0, primary);
         return 1;
     }
     else if (HasExt(name, ".rc"))
     {
-        InsertFile(&reslist, name, ".res");
-        InsertFile(&rclist, name, 0);
+        InsertFile(&reslist, name, ".res", primary);
+        InsertFile(&rclist, name, 0, primary);
         return 1;
     }
     else if (HasExt(name, ".res"))
     {
-        InsertFile(&reslist, name, 0);
+        InsertFile(&reslist, name, 0, primary);
         return 1;
     }
     else if (HasExt(name, ".o"))
     {
-        InsertFile(&objlist, name, 0);
+        InsertFile(&objlist, name, 0, primary);
         return 1;
     }
     p = strrchr(name, '\\');
@@ -139,12 +169,12 @@ int InsertExternalFile(char *name)
     else
         p++;
     strcpy(buf, p);
-    InsertFile(&objlist, buf, ".o");
+    InsertFile(&objlist, buf, ".o", primary);
     
     // compiling via assembly
     if (cparams.prm_asmfile && !cparams.prm_compileonly)
     {
-        InsertFile(&asmlist, buf, ".asm");
+        InsertFile(&asmlist, buf, ".asm", primary);
     }
     return 0; /* compiler should process it*/
 }
@@ -196,9 +226,14 @@ int RunExternalFiles(char *rootPath)
 //    p = strrchr(outName, '.');
 //    if (p && p[1] != '\\')
 //        *p = 0;
+    BOOLEAN first = FALSE;
     while (asmlist)
     {
-        sprintf(spname, "\"%soasm.exe\" %s \"%s\"", root, !showBanner ? "-!" : "", asmlist->data);
+        if (cparams.prm_compileonly && outputFileName[0] && !first)
+            sprintf(spname, "\"%soasm.exe\" \"-o%s\" %s %s \"%s\"", root, outputFileName, asm_params ? asm_params : "", !showBanner ? "-!" : "", asmlist->data);
+        else 
+            sprintf(spname, "\"%soasm.exe\" %s %s \"%s\"", root, asm_params ? asm_params : "", !showBanner ? "-!" : "", asmlist->data);
+        first = TRUE;
         if (verbosity)
             printf("%s\n", spname);
         rv = system(spname);
@@ -212,7 +247,11 @@ int RunExternalFiles(char *rootPath)
         args[0] = 0;
     while (rclist)
     {
-        sprintf(spname, "\"%sorc.exe\" -r %s %s \"%s\"", root, !showBanner ? "-!" : "", args, rclist->data);
+        if (cparams.prm_compileonly && outputFileName[0] && !first)
+            sprintf(spname, "\"%sorc.exe\" \"-o%s\" -r %s %s %s \"%s\"", root, outputFileName, rc_params ? rc_params : "", !showBanner ? "-!" : "", args, rclist->data);
+        else
+            sprintf(spname, "\"%sorc.exe\" -r %s %s %s \"%s\"", root, rc_params ? rc_params : "", !showBanner ? "-!" : "", args, rclist->data);
+        first = TRUE;
         if (verbosity)
             printf("%s\n", spname);
         rv = system(spname);
@@ -220,11 +259,17 @@ int RunExternalFiles(char *rootPath)
             return rv;
         rclist = rclist->next;
     }
-    if (objlist)
+    if (!cparams.prm_compileonly && objlist)
     {
-        FILE *fil = fopen(TEMPFILE, "w");
+        char tempFile[260];
+        tmpnam(tempFile);
+        FILE *fil = fopen(tempFile, "w");
         if (!fil)
             return 1;
+        if (prm_libpath)
+        {
+            fprintf(fil, "\"/L%s\" ", prm_libpath);
+        }
         
         strcpy(args, winflags[prm_targettype]);
             
@@ -270,22 +315,22 @@ int RunExternalFiles(char *rootPath)
             reslist = reslist->next;
         }
         fclose(fil);
-        sprintf(spname, "\"%solink.exe\" %s /mx /c+ %s %s @"TEMPFILE, root, !showBanner ? "-!" : "", args, verbosityString);
+        sprintf(spname, "\"%solink.exe\" %s %s /c+ %s %s @%s", root, link_params ? link_params : "", !showBanner ? "-!" : "", args, verbosityString, tempFile);
         if (verbosity) {
-            FILE *fil = fopen(TEMPFILE, "r");
+            FILE *fil = fopen(tempFile, "r");
             printf("%s\n", spname);
             if (fil)
             {
                 char buffer[8192];
                 int len;
-                printf("with " TEMPFILE "=\n");
+                printf("with %s=\n", tempFile);
                 while ((len = fread(buffer, 1, 8192, fil)) > 0)
                     fwrite(buffer, 1, len, stdout);
                 fclose(fil);
             }
         }
         rv = system(spname);
-        unlink(TEMPFILE);
+        unlink(tempFile);
 
         if (rv)
             return rv;

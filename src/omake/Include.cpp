@@ -34,6 +34,7 @@
 #include <iostream>
 #include <string.h>
 #include <algorithm>
+#include <io.h>
 
 Include *Include::instance = nullptr;
 
@@ -54,29 +55,17 @@ void Include::Clear()
 bool Include::Parse(const std::string &name, bool ignoreOk, bool MakeFiles)
 {
     bool rv = false;
-    std::fstream in(name.c_str(), std::ios::in | std::ios::binary);
-    if (!in.fail())
+    if (name == "-")
     {
-        in.seekg(0, std::ios::end);
-        size_t len = in.tellg();
-        in.seekg(0);
-        if (!in.fail())
+        rv = true;
+        while (!std::cin.eof())
         {
-            char *text = new char[len + 1];
-            in.read(text, len);
-            text[len] = 0;
-            in.close();
-            char *p = text, *q = p;
-            while (*p)
-                if (*p != '\r')
-                    *q++ = *p++;
-                else
-                    p++;
-            *q = 0;
-            len = strlen(text);
-            if (!in.fail())
+            char buf[2048];
+            buf[0] = 0;
+            std::cin.getline(buf, sizeof(buf));
+            if (buf[0])
             {
-                Parser p(std::string(text), name, 1); 
+                Parser p(std::string(buf), name, 1);
                 if (MakeFiles)
                     p.SetIgnoreFirstGoal();
                 rv = p.Parse();
@@ -85,11 +74,64 @@ bool Include::Parse(const std::string &name, bool ignoreOk, bool MakeFiles)
     }
     else
     {
-
-        if (ignoreOk)
+        std::string current = name;
+        if (access(current.c_str(), 0) == -1)
         {
-            ignoredFiles.insert(name);
-            rv = true;
+            std::string includeDirs;
+            Variable *id = VariableContainer::Instance()->Lookup(".INCLUDE_DIRS");
+            if (id)
+            {
+                includeDirs = id->GetValue();
+                if (id->GetFlavor() == Variable::f_recursive)
+                {
+                    Eval r(includeDirs, false);
+                    includeDirs = r.Evaluate();
+                }
+            }
+            while (includeDirs.size())
+            {
+                current = Eval::ExtractFirst(includeDirs, ";") + "\\" + name;
+                if (access(current.c_str(), 0) != -1)
+                    break;
+            }
+        }
+        std::fstream in(current.c_str(), std::ios::in | std::ios::binary);
+        if (!in.fail())
+        {
+            in.seekg(0, std::ios::end);
+            size_t len = in.tellg();
+            in.seekg(0);
+            if (!in.fail())
+            {
+                char *text = new char[len + 1];
+                in.read(text, len);
+                text[len] = 0;
+                in.close();
+                char *p = text, *q = p;
+                while (*p)
+                    if (*p != '\r')
+                        *q++ = *p++;
+                    else
+                        p++;
+                *q = 0;
+                len = strlen(text);
+                if (!in.fail())
+                {
+                    Parser p(std::string(text), name, 1);
+                    if (MakeFiles)
+                        p.SetIgnoreFirstGoal();
+                    rv = p.Parse();
+                }
+            }
+        }
+        else
+        {
+
+            if (ignoreOk)
+            {
+                ignoredFiles.insert(name);
+                rv = true;
+            }
         }
     }
     return rv;
@@ -113,11 +155,9 @@ bool Include::AddFileList(const std::string &name, bool ignoreOk, bool MakeFile)
             includeDirs = r.Evaluate();
         }
     }
-    std::replace(includeDirs.begin(), includeDirs.end(), '/','\\');
     while (iname.size())
     {
         std::string current = Eval::ExtractFirst(iname, seps);
-        std::replace(current.begin(), current.end(), '/','\\');
         cmdFiles.AddFromPath(current, includeDirs);
     }
     for (CmdFiles::FileNameIterator it = cmdFiles.FileNameBegin(); rv && it != cmdFiles.FileNameEnd(); ++it)
@@ -137,12 +177,13 @@ bool Include::AddFileList(const std::string &name, bool ignoreOk, bool MakeFile)
     }
     return rv;
 }
-bool Include::MakeMakefiles(bool Silent)
+bool Include::MakeMakefiles(bool Silent, OutputType outputType)
 {
-    Maker maker(Silent, false, false, false);
+    Maker maker(Silent, false, false, false, outputType);
     for (auto goal : *this)
     {
-        maker.AddGoal(goal);
+        if (goal != "-")
+            maker.AddGoal(goal);
     }
     for (auto file : ignoredFiles)
     {

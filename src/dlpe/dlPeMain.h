@@ -37,11 +37,12 @@
 class ObjFile;
 class ObjFactory;
 class PEObject;
+class PEExportObject;
 
 class dlPeMain
 {
 public:
-    dlPeMain() : mode(CONSOLE) { }
+    dlPeMain() : mode(CONSOLE), exportObject(nullptr) { }
     ~dlPeMain();
     
     int Run(int argc, char **argv);
@@ -65,12 +66,13 @@ private:
     static CmdSwitchString outputFileSwitch;
     static CmdSwitchString DebugFile;
     static CmdSwitchBool FlatExports;
-    static char *usageText;
+    static const char *usageText;
 
     ObjInt fileAlign;
     ObjInt objectAlign;
     ObjInt imageBase;
     ObjInt importThunkVA;
+    ObjInt importCount;
     ObjInt heapCommit;
     ObjInt heapSize;
     ObjInt stackCommit;
@@ -86,6 +88,7 @@ private:
     PEHeader header;
     ObjInt startAddress;
     ObjFactory *factory;
+    PEExportObject *exportObject;
     static unsigned char defaultStubData[];
     static int defaultStubSize;
     static int osMajor;

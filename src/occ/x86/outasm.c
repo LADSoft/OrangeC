@@ -1788,11 +1788,6 @@ void oa_putconst(int sz, EXPRESSION *offset, BOOLEAN doSign)
             FPFToString(buf,&offset->v.f);
             bePrintf( "%s", buf);
             break;
-        case en_label:
-            if (doSign)
-                beputc('+');
-            bePrintf( "L_%d", offset->v.sp->label);
-            break;
         case en_labcon:
             if (doSign)
                 beputc('+');
@@ -1999,7 +1994,6 @@ int islabeled(EXPRESSION *n)
         case en_global:
         case en_auto:
         case en_absolute:
-        case en_label:
         case en_pc:
         case en_threadlocal:
             return 1;
@@ -2230,24 +2224,17 @@ void oa_gen_strlab(SYMBOL *sp)
  */
 {
     char buf[4096];
-    if (sp->storage_class == sc_localstatic)
+    beDecorateSymName(buf, sp);
+    if (cparams.prm_asmfile)
     {
-        oa_put_label(sp->label);
-    }
-    else
-    {
-        beDecorateSymName(buf, sp);
-        if (cparams.prm_asmfile)
+        if (oa_currentSeg == dataseg || oa_currentSeg == bssxseg)
         {
-            if (oa_currentSeg == dataseg || oa_currentSeg == bssxseg)
-            {
-                newlabel = TRUE;
-                bePrintf( "\n%s", buf);
-                oa_outcol = strlen(buf) + 1;
-            }
-            else
-                bePrintf( "%s:\n", buf);
+            newlabel = TRUE;
+            bePrintf( "\n%s", buf);
+            oa_outcol = strlen(buf) + 1;
         }
+        else
+            bePrintf( "%s:\n", buf);
     }
 }
 

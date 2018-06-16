@@ -41,11 +41,11 @@
 CmdSwitchParser Coff2ieeeMain::SwitchParser;
 CmdSwitchCombineString Coff2ieeeMain::outputFileSwitch(SwitchParser, 'o');
 
-char *Coff2ieeeMain::usageText = "[options] <coff file>\n"
+const char *Coff2ieeeMain::usageText = "[options] <coff file>\n"
             "\n"
             "/oxxx          Set output file name\n"
             "/V, --version  Show version and date\n"
-            "/!             No logo\n"
+            "/!, --nologo   No logo\n"
             "\n"
             "\nTime: " __TIME__ "  Date: " __DATE__;
             

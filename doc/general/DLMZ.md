@@ -46,12 +46,10 @@
 ### Alternative display options
 
  The **/V** switch shows version information, and the compile date
- The **/!** switch is 'nologo'
+ The **/!** or **--nologo** switch is 'nologo'
 
 ## General Considerations
 
  This toolchain isn't compatible with the normal MSDOS build process.  Normally, MSDOS programs would have sections that also included something called a class name;  the linker would take both the class name and the section name into account when determining how to create an output file.  Class names aren't supported by this toolchain, instead it is preferred to write a linker specification file to specify how the sections should be combined.  A generic linker specification file exists for each of the supported modes, however, since sections can be named and placed arbitrarily, this specification file would not work for all programs.  It may be necessary to augment an MSDOS program with its own specific linker specification file.  
  
  In tiny mode, it is customary to instruct most MSDOS assemblers to set a code origin of 100h.  However, the linker specification file for tiny mode automatically sets this origin.  Therefore it does not have to be present for this toolchain to generate tiny mode files.  Such files still must start with a code sequence, however.
- 
- 

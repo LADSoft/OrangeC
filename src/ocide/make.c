@@ -93,7 +93,7 @@ void SetOutputNames(PROJECTITEM *pj, BOOL first)
             if (p)
             {
                 strcpy(pj->outputName, p);
-        free(p);
+                free(p);
             }
             if (pj->type == PJ_FILE && first)
             {
@@ -318,6 +318,11 @@ static int GenCommand(PROJECTITEM *pj, BOOL always)
             if (banner)
                 MakeMessage(banner, pj->realName);
             free(banner);
+
+            char echoCmd[4096];
+            strcpy(echoCmd, cmd);
+            strcat(echoCmd, "\n");
+            SendInfoMessage(ERR_EXTENDED_BUILD_WINDOW, echoCmd);
             
             rv = !Execute(cmd, project->realName, ERR_BUILD_WINDOW);
             free(cmd);
@@ -541,6 +546,8 @@ static DWORD MakerThread(void *p)
     {
         SetInfoColor(ERR_BUILD_WINDOW, 0x0000ff); // red
         SendInfoMessage(ERR_BUILD_WINDOW, "The build was canceled");
+        SetInfoColor(ERR_EXTENDED_BUILD_WINDOW, 0x0000ff); // red
+        SendInfoMessage(ERR_EXTENDED_BUILD_WINDOW, "The build was canceled");
     }
     else
    {
@@ -579,6 +586,12 @@ void Maker(PROJECTITEM *pj, BOOL clean)
 }
 void dbgRebuildMainThread(int cmd)
 {
+    static int sem;
+    if (++sem != 1)
+    {
+        --sem;
+        return;
+    }
     cmd &= 0xffff;
     if (!activeProject)
     {
@@ -599,13 +612,19 @@ void dbgRebuildMainThread(int cmd)
                 case IDYES:
                     stopBuild = FALSE;
                     if (!MakerThread(workArea))
+                    {
+                        --sem;
                         return ;
+                    }
+                    break;
                 case IDCANCEL:
+                    --sem;
                     return;
             }
         }
         initiateDebug(!TagAnyBreakpoints() || cmd == IDM_STEPIN || cmd == IDM_STEPOUT || cmd == IDM_STEPOVER);
     }
+    --sem;
 }
 
 //-------------------------------------------------------------------------

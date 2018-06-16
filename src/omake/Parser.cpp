@@ -103,11 +103,7 @@ std::string Parser::GetLine(bool inCommand)
                 Eval::error("backslash-newline at end of input stream");
                 break;
             }
-            if (!inCommand)
-            {
-                rv.replace(rv.size() - 1, 1, "");
-                rv = rv + " ";
-            }
+            rv.replace(rv.size() - 1, 1, " ");
             lineno++;
             std::string next = Eval::ExtractFirst(remaining, "\n");
             rv += next;
@@ -871,17 +867,26 @@ bool Parser::ParseCommand(const std::string &line)
         *lastCommand += line;
         if (n != std::string::npos && n != line.size()-2)
         {
-            char match = line[n +2];
-            bool found = false;
-            while (remaining.size() && !found)
+            // disable the temporary command files for /bin/sh
+            Variable *v = VariableContainer::Instance()->Lookup("SHELL");
+            if (v)
             {
-                std::string iline = GetLine(false);
-                *lastCommand += iline;
-                found = iline.find(match) != std::string::npos;
-            }
-            if (!found)
-            {
-                Eval::error("End of file detected while processing temporary command file");
+                std::string shell = v->GetValue();
+                if (shell != "/bin/sh")
+                {
+                    char match = line[n +2];
+                    bool found = false;
+                    while (remaining.size() && !found)
+                    {
+                        std::string iline = GetLine(false);
+                        *lastCommand += iline;
+                        found = iline.find(match) != std::string::npos;
+                    }
+                    if (!found)
+                    {
+                        Eval::error("End of file detected while processing temporary command file");
+                    }
+                }
             }
         }
     }

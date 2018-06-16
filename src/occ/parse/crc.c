@@ -66,11 +66,14 @@ unsigned crctab[256] = {
 0x660951ba, 0x110e612c, 0x88073096, 0xff000000, 
 };
 
-unsigned CRC32(unsigned char *data, size_t len)
+unsigned PartialCRC32(unsigned crc, unsigned char *data, size_t len)
 {
-    unsigned crc = 0;
     size_t i;
     for(i = 0; i < len; ++i)
         crc = crctab[(unsigned char) crc ^ data[i]] ^ crc >> 8;
     return crc;
+}
+unsigned CRC32(unsigned char *data, size_t len)
+{
+    return PartialCRC32(0, data, len);
 }

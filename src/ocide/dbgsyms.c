@@ -100,6 +100,7 @@ DWORD GetMainAddress(DEBUG_INFO *dbg)
         rv = GetSymbolAddress(dbg, "WinMain");
     if (!rv)
         rv = GetSymbolAddress(dbg, "DllMain");
+    rv = rv - dbg->linkbase + dbg->loadbase;
     return rv;
 }
 DEBUG_INFO *findDebug(int Address)
@@ -157,7 +158,7 @@ int GetBreakpointLine(int Address, char *module, int *linenum, BOOL next)
     {
         for (p = &b->addresses[0]; *p; p++)
         {
-            if (*p == Address)
+            if (*p == Address && b->linenum)
             {
                 strcpy(module, b->module);
                 *linenum = b->linenum;                
@@ -171,11 +172,15 @@ int GetBreakpointLine(int Address, char *module, int *linenum, BOOL next)
     if (!dbg)
         return 0;
         
+    int rv = 0;
     Address = Address - dbg->loadbase + dbg->linkbase;
     if (next)
-        return GetHigherBreakpoint(dbg, Address, module, linenum);
+        rv = GetHigherBreakpoint(dbg, Address, module, linenum);
     else
-        return GetEqualsBreakpoint(dbg, Address, module, linenum);
+        rv = GetEqualsBreakpoint(dbg, Address, module, linenum);
+    if (rv)
+        rv += dbg->loadbase - dbg->linkbase;
+    return rv;
 }
 
 
@@ -192,7 +197,7 @@ int *GetBreakpointAddresses(char *module, int *linenum)
     {
         if (dll->dbg_info)
         {
-            GetBreakpointAddressesInternal(dbg, module, linenum, &p, &max, &count);
+            GetBreakpointAddressesInternal(dll->dbg_info, module, linenum, &p, &max, &count);
         }
         dll = dll->next;
     }

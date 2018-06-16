@@ -53,5 +53,3 @@
  
  
  Note that when a conditional block is not being assembled, no preprocessor directives within that block will be evaluated either (other than to allow **OAsm's** preprocessor to reevaluate the state of conditional processing).
- 
- 

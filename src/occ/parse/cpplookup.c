@@ -236,6 +236,7 @@ SYMBOL *namespacesearch(char *name, NAMESPACEVALUES *ns, BOOLEAN qualified, BOOL
 LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns, 
                    BOOLEAN *throughClass, BOOLEAN tagsOnly, enum e_sc storage_class, BOOLEAN isType)
 {
+    BOOLEAN first = TRUE;
     NAMESPACEVALUES *nssym = globalNameSpace;
     SYMBOL *strSym = NULL;
     BOOLEAN qualified = FALSE;
@@ -257,15 +258,30 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
         qualified = TRUE;
     }
     finalPos = lex;
-    while (ISID(lex) || (templateSelector && MATCHKW(lex, kw_operator)))
+    while (ISID(lex) || first && MATCHKW(lex, kw_decltype) || (templateSelector && MATCHKW(lex, kw_operator)))
     {
         char buf[512];
         SYMBOL *sp = NULL;
         int ovdummy;
-        lex = getIdName(lex, NULL, buf, &ovdummy, NULL);
-        lex = getsym();
-        if (templateSelector)
+        if (first && MATCHKW(lex, kw_decltype))
         {
+            TYPE *tp = NULL;
+            lex = getDeclType(lex, theCurrentFunc, &tp);
+            if (!tp || (!isstructured(tp) && tp->type != bt_templatedecltype) || !MATCHKW(lex, classsel))
+                break;
+            lex = getsym();
+            sp = basetype(tp)->sp;
+            if (sp)
+                sp->tp = PerformDeferredInitialization(sp->tp, NULL);
+            strSym = sp;
+            if (!qualified)
+                nssym = NULL;
+            finalPos = lex;
+        }
+        else if (templateSelector)
+        {
+            lex = getIdName(lex, NULL, buf, &ovdummy, NULL);
+            lex = getsym();
             *last = Alloc(sizeof(TEMPLATESELECTOR));
             (*last)->name = litlate(buf);
             if (hasTemplate)
@@ -288,6 +304,8 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
         }
         else
         {
+            lex = getIdName(lex, NULL, buf, &ovdummy, NULL);
+            lex = getsym();
             BOOLEAN hasTemplateArgs = FALSE;
             BOOLEAN deferred = FALSE;
             BOOLEAN istypedef = FALSE;
@@ -342,7 +360,7 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
                 {
                     if (!qualified)
                         sp = namespacesearch(buf, localNameSpace, qualified, FALSE);
-                    if (!sp)
+                    if (!sp && nssym)
                     {
                         sp = namespacesearch(buf, nssym, qualified, FALSE);
                     }
@@ -495,7 +513,7 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
                         if (p)
                             deferred = TRUE;
                     }
-                    if (!deferred)
+                    if (!deferred && sp)
                     {
                         if (basetype(sp->tp)->type == bt_templateselector)
                         {
@@ -606,6 +624,7 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
                 break;
             }
         }
+        first = FALSE;
         hasTemplate = FALSE;
         if (MATCHKW(lex, kw_template))
         {
@@ -890,8 +909,7 @@ LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES
         }
         return lex;
     }
-//    if (MATCHKW(lex, classsel))
-//        namespaceOnly = TRUE;
+
     lex = nestedPath(lex, &encloser, &ns, &throughClass, tagsOnly, storage_class, isType);
     if (cparams.prm_cplusplus)
     {
@@ -1597,7 +1615,6 @@ static BOOLEAN ismem(EXPRESSION *exp)
     switch (exp->type)
     {
         case en_global:
-        case en_label:
         case en_pc:
         case en_auto:
         case en_threadlocal:
@@ -2934,7 +2951,7 @@ void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
          return;
     }
     lref = (basetype(tpa)->type == bt_lref || isstructured(tpa) && (!expa || expa->type != en_not_lvalue) || expa && (lvalue(expa) || isarithmeticconst(expa))) && (!expa || expa->type != en_func && expa->type != en_thisref) && !tpa->rref || tpa->lref ;
-    rref = (basetype(tpa)->type == bt_rref || (isstructured(tpa) && expa && expa->type == en_not_lvalue) || expa && !lvalue(expa) && !ismem(expa) ) && !tpa->lref || tpa->rref;
+    rref = (basetype(tpa)->type == bt_rref || (isstructured(tpa) && expa && expa->type == en_not_lvalue) || expa && !lvalue(expa) && !ismem(expa) ) && !lref && !tpa->lref || tpa->rref;
     if (exp && exp->type == en_thisref)
         exp = exp->left;
     if (exp && exp->type == en_func)
@@ -3974,7 +3991,7 @@ static int insertFuncs(SYMBOL **spList, SYMBOL **spFilterList, LIST *gather, FUN
                     matchOverload(sym->tp, spFilterList[i]->tp, FALSE) && sym->overlayIndex == spFilterList[i]->overlayIndex)
                     break;
 
-            if (i >= n && (!args || !args->astemplate || sym->templateLevel) && (!sym->instantiated || sym->isDestructor))
+            if (i >= n && (!args || !args->astemplate || sym->templateLevel) && (!sym->instantiated || sym->specialized2 || sym->isDestructor))
             {
                 if (sym->templateLevel && (sym->templateParams || sym->isDestructor))
                 {
@@ -4183,7 +4200,7 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
                 funcList = (struct sym ***)Alloc(sizeof(SYMBOL **) * n);
 
                 n = insertFuncs(spList, spFilterList, gather, args, atp);
-                if (n != 1 || (spList[0] && !spList[0]->isDestructor))
+                if (n != 1 || (spList[0] && !spList[0]->isDestructor && !spList[0]->specialized2))
                 {
                     if (atp || args->ascall)
                     {
@@ -4328,14 +4345,14 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
             }
             if (found1)
             {
-                if (theCurrentFunc && !found1->constexpression)
-                {
-                    theCurrentFunc->nonConstVariableUsed = TRUE;
-                }
                 if (found1->deprecationText)
                     deprecateMessage(found1);
                 if (!(flags & _F_SIZEOF))
                 {
+                    if (theCurrentFunc && !found1->constexpression)
+                    {
+                        theCurrentFunc->nonConstVariableUsed = TRUE;
+                    }
                     if (found1->templateLevel && (found1->templateParams || found1->isDestructor))
                     {
                         found1 = found1->mainsym;
@@ -4363,7 +4380,15 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
                     {
                         if (toInstantiate && found1->deferredCompile && !found1->inlineFunc.stmt)
                         {
+                            if (found1->templateParams)
+                                instantiatingTemplate++;
                             deferredCompileOne(found1);
+                            if (found1->templateParams)
+                                instantiatingTemplate--;
+                        }
+                        else
+                        {
+                            InsertInline(found1);
                         }
                     }
                 }

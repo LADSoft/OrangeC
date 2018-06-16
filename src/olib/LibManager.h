@@ -40,6 +40,13 @@ class ObjFactory;
 class LibManager
 {
     public:
+	enum
+	{
+		CANNOT_CREATE = -1,
+		CANNOT_READ = -2,
+                CANNOT_WRITE = -3,
+		SUCCESS = 0
+        };
         LibManager(const ObjString &Name, bool CaseSensitive = true) 
             : dictionary(CaseSensitive), name(Name), files(CaseSensitive)
         {
@@ -47,16 +54,18 @@ class LibManager
             InitHeader();
         }
         ~LibManager() { Close(); }
-        
+
+        LibFiles &Files() { return files; }        
         void AddFile(const ObjString &name) {files.Add(name); }
         void AddFile(ObjFile &obj) { files.Add(obj); }
         void RemoveFile(const ObjString &name) {files.Remove(name); }
         void ExtractFile(const ObjString &name) {files.Extract(stream, name); }
         void ReplaceFile(const ObjString &name) { files.Replace(name); }
+        void ReplaceFile(ObjFile &obj) { files.Replace(obj); }
         ObjInt Lookup(const ObjString &name);
         ObjFile *LoadModule(ObjInt index, ObjFactory *factory) { return files.LoadModule(stream, index, factory); }
         bool LoadLibrary();
-        bool SaveLibrary();
+        int SaveLibrary();
         bool fail() const { return false; } //stream.fail(); }
         bool IsOpen() const { return stream != nullptr; }
         void Close() { if (stream) fclose(stream); }

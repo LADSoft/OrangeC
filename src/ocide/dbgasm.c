@@ -199,14 +199,12 @@ void CalculateDisassembly(int moving)
                 }
                 lastlineno = lineno;
             }
-            /*
-            if (FindGlobalSymbol(&dbg, code_address, buffer, NULL))
+            else if (FindGlobalSymbol(&dbg, code_address, buffer, NULL))
             {
                 addrs[i] = code_address;
                 strcat(buffer, ":");
                 strcpy(lines[i++], buffer);
             }
-            */
             addrs[i] = code_address;
             GetCodeLine(lines[i++]);
         }
@@ -496,7 +494,7 @@ LRESULT CALLBACK ASMProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 SetCaretPos(caretX, caretY);
             }
             SetFocus(hwnd);
-            if (iMessage == WM_LBUTTONDOWN)
+            if (iMessage == WM_LBUTTONDOWN && activeProcess)
             {
                 int n ;
 setBreakPoint:

@@ -32,9 +32,11 @@ static WINBOOL CALLBACK ControlCHandler(DWORD type)
 {
    if (type == CTRL_C_EVENT)
       raise(SIGINT) ;
-   else 
+   else if (type = CTRL_BREAK_EVENT)
       raise(SIGBREAK) ;
-   return TRUE ;
+   else
+      exit(1); // other events need cleanup because we are exiting regardless
+   return TRUE; // don't continue processing
 }
 void __ll_signal(int signum, sighandler_t func)
 {

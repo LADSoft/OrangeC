@@ -400,6 +400,8 @@ HWND hwndShowFunc;
                 }
                 EndPaint(hwnd, &ps);
                 return 0;
+            case WM_CLOSE:
+                break;
         }
         return DefWindowProc(hwnd, iMessage, wParam, lParam);
     }
@@ -512,11 +514,17 @@ HWND hwndShowFunc;
                     *p = 0;
                 }
                 functionData = ccLookupFunctionList(lineno, info->dwName, name);
+                //try again if not found, looking for 'C' version
                 if (!functionData)
                 {
                     name[0] = '_';
                     functionData = ccLookupFunctionList(lineno, info->dwName, name);
                     name[0] = '@';
+                }
+                // one last try, looking for 'stdcall' version
+                if (!functionData)
+                {
+                    functionData = ccLookupFunctionList(lineno, info->dwName, name+1);
                 }
                 scan = &functionData;
                 while (*scan)

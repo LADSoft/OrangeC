@@ -39,6 +39,7 @@
 #include <fstream>
 #include <stdio.h>
 #include <string.h>
+#include <io.h>
 
 int main(int argc, char **argv)
 {
@@ -60,7 +61,7 @@ CmdSwitchCombineString LinkerMain::LibPath(SwitchParser, 'L',';');
 CmdSwitchOutput LinkerMain::OutputFile(SwitchParser, 'o', ".rel");
 CmdSwitchBool LinkerMain::Verbosity(SwitchParser, 'y');
 SwitchConfig LinkerMain::TargetConfig(SwitchParser, 'T');
-char *LinkerMain::usageText = "[options] inputfiles\n"
+const char *LinkerMain::usageText = "[options] inputfiles\n"
             "\n"
             "/Dxxx=val Define something           /Lpath         Set Library Path\n"
             "/T:xxx    Target configuration       /V, --version  Show version and date\n"
@@ -68,7 +69,7 @@ char *LinkerMain::usageText = "[options] inputfiles\n"
             "/m[x]     Generate Map file          /oxxx          Set output file\n"
             "/r+       Relative output file       /sxxx          Read specification file\n"
             "/v        Pass debug info            /y[...]        Verbose\n"
-            "/!        No logo\n"
+            "/!, --nologo   No logo\n"
             "@xxx      Read commands from file\n"
             "\nTime: " __TIME__ "  Date: " __DATE__;
 
@@ -76,7 +77,11 @@ const ObjString &LinkerMain::GetOutputFile(CmdFiles &files)
 {
     static ObjString outputFile;
     if (OutputFile.GetValue().size() != 0)
-        return OutputFile.GetValue();
+    {
+        outputFile = OutputFile.GetValue();
+        if (outputFile.find(".rel") == std::string::npos)
+           outputFile = Utils::QualifiedFile(outputFile.c_str(), ".rel");
+    }
     else if (files.GetSize())
     {
         CmdFiles::FileNameIterator it = files.FileNameBegin();
@@ -114,10 +119,12 @@ void LinkerMain::AddFile(LinkManager &linker, std::string &name)
     if (!TargetConfig.InterceptFile(name))
     {
         bool found = false;
-        if (name.size() > 1 && name.find(".l")== name.size()-2)
-            found = true;
-        else if (name.size() > 1 && name.find(".L")== name.size()-2)
-            found = true;
+        size_t n = name.find_last_of(".");
+        if (n != std::string::npos)
+        {
+            ObjString match = name.substr(n);
+            found = match == ".l" || match == ".L" || match == ".a" || match == ".lib";
+        }
         if (found)
             linker.AddLibrary(name);
         else
@@ -205,6 +212,9 @@ int LinkerMain::Run(int argc, char **argv)
         {
             std::string prefix = modName;
             size_t n = prefix.find_last_of('\\');
+            size_t n1 = prefix.find_last_of('/');
+            if (n1 != std::string::npos && n != std::string::npos)
+                n = n < n1 ? n1 : n;
             if (n != std::string::npos)
             {
                 prefix.replace(n+1, prefix.size()-n, "");
@@ -223,6 +233,13 @@ int LinkerMain::Run(int argc, char **argv)
     ObjFactory fact1(&im2);
     if (DebugInfo.GetValue())
         debugFile = Utils::QualifiedFile(outputFile.c_str(), ".odx");
+    char *lpath=getenv("LIBRARY_PATH");
+    if (lpath)
+    {
+        if (LibPath.GetValue().size())
+            LibPath += ";";
+        LibPath += lpath;
+    }
     LinkManager linker(SpecFileContents(specificationFile), CaseSensitive.GetValue(), 
                        outputFile, !RelFile.GetValue() && !TargetConfig.GetRelFile(), 
                        TargetConfig.GetDebugPassThrough(), debugFile);
@@ -261,6 +278,7 @@ int LinkerMain::Run(int argc, char **argv)
             else
                 path.erase(n+1);
             int rv = TargetConfig.RunApp(path, outputFile, debugFile, Verbosity.GetExists());
+            _unlink(outputFile.c_str());
             return rv;
         }
     }

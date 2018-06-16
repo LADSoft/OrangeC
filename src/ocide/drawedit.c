@@ -573,7 +573,7 @@ void SetTitle(HWND hwnd)
         strcat(dir,"\\hithere");
         strcpy(buf, relpath2(buf, dir));
     }
-    if (dt->id)
+    if (dt && dt->id)
         sprintf(buf + strlen(buf), " (%d)", dt->id + 1);
     if (mod)
         strcat(buf, " *");
@@ -848,12 +848,13 @@ LRESULT CALLBACK gotoProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 void recolorize(DWINFO *ptr)
 {
     int language = LANGUAGE_NONE;
-    if (stristr(ptr->dwName, ".c") == ptr->dwName + strlen(ptr->dwName) - 2 ||
-        stristr(ptr->dwName, ".cpp") == ptr->dwName + strlen(ptr->dwName) - 4 
-        || stristr(ptr->dwName, ".cxx") == ptr->dwName + strlen(ptr->dwName) - 4 
-        || stristr(ptr->dwName, ".cc") == ptr->dwName + strlen(ptr->dwName) - 3 
+    if (stristr(ptr->dwName, ".c") == ptr->dwName + strlen(ptr->dwName) - 2
         || stristr(ptr->dwName, ".h") == ptr->dwName + strlen(ptr->dwName) - 2)
         language = LANGUAGE_C;
+    if (stristr(ptr->dwName, ".cpp") == ptr->dwName + strlen(ptr->dwName) - 4 
+        || stristr(ptr->dwName, ".cxx") == ptr->dwName + strlen(ptr->dwName) - 4 
+        || stristr(ptr->dwName, ".cc") == ptr->dwName + strlen(ptr->dwName) - 3) 
+        language = LANGUAGE_CPP;
     else if (stristr(ptr->dwName, ".asm") == ptr->dwName + strlen(ptr->dwName) 
         - 4 || stristr(ptr->dwName, ".asi") == ptr->dwName + strlen(ptr->dwName)
         - 4 || stristr(ptr->dwName, ".inc") == ptr->dwName + strlen(ptr->dwName)
@@ -892,7 +893,7 @@ DWORD MsgWait(HANDLE event, DWORD timeout)
         }
     }
 }
-static void removeAllparse()
+void RemoveAllParse()
 {
     WaitForSingleObject(ccThreadGuard, INFINITE);
     while (codeCompList)
@@ -975,17 +976,23 @@ unsigned __stdcall ScanParse(void *aa)
     {
         if (codeCompList)
         {
-            struct _ccList *list;
+            struct _ccList *list = NULL;
             WaitForSingleObject(ccThreadGuard, INFINITE);
-            list = codeCompList;
-            codeCompList = codeCompList->next;
+            if (codeCompList)
+            {
+                list = codeCompList;
+                codeCompList = codeCompList->next;
+            }
             SetEvent(ccThreadGuard);
-            if (list->remove)
-                deleteFileData(list->name);
-            else
-                DoParse(list->name);
-            free(list->name);
-            free(list);
+            if (list)
+            {
+                if (list->remove)
+                    deleteFileData(list->name);
+                else
+                    DoParse(list->name);
+                free(list->name);
+                free(list);
+            }
         }
         if (stopCCThread)
             break;

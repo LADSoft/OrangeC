@@ -58,8 +58,8 @@ public:
     bool AtEof() { return atEof; }
     void SkipPastEol()
     {
-        while (!AtEol() && !AtEof())
-            NextToken();
+        GetRestOfLine();
+        NextToken();
     }
     void StopAtEol(bool stop) { stopAtEol = stop; }
 protected:

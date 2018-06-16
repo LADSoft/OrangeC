@@ -41,6 +41,6 @@ private:
     static CmdSwitchParser SwitchParser;
     static CmdSwitchFile File;
 
-    static char *usageText;
+    static const char *usageText;
 };
 #endif

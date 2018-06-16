@@ -47,7 +47,4 @@ The following non-standard macros are predefined by the compiler:
 |\_\_LSCRTL\_DLL|defined when LSCRTL.dll is in use|
 |\_\_MSVCRT\_DLL|defined when MSVCRT.dll is in use|
 |\_\_CRTDLL\_DLL|defined when CRTDLL.dll is in use|
-
-
-
-  
+|\_\_COUNTER\_\_|starts at 0 and increments every usage|

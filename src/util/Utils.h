@@ -31,11 +31,11 @@
 class Utils
 {
 public:
-    static void banner(char *progName);
-    static void usage(char *progName, char *text);
+    static void banner(const char *progName);
+    static void usage(const char *progName, const char *text);
     static void fatal(const char *format, ...);
     static char *GetModuleName();
-    static void SetEnvironmentToPathParent(char *name);
+    static void SetEnvironmentToPathParent(const char *name);
     static std::string FullPath(const std::string &path, const std::string &name);
     static std::string QualifiedFile(const char *path, const char *ext);
     static std::string SearchForFile(const std::string &path, const std::string &name);
@@ -44,6 +44,6 @@ public:
     static int StringToNumber(std::string str);
     static int StringToNumberHex(std::string str);
 protected:
-    static char *ShortName(char *v);
+    static char *ShortName(const char *v);
 };
 #endif

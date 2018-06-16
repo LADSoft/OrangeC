@@ -54,6 +54,7 @@ extern LINEDATA *linesHead, *linesTail;
 extern BOOLEAN inTemplateType;
 extern STRUCTSYM *structSyms;
 extern char *deprecationText;
+extern TYPE stdany;
 
 LIST *nameSpaceList;
 char anonymousNameSpaceName[512];
@@ -969,7 +970,7 @@ static BOOLEAN declaringTemplate(SYMBOL *sp)
     {
         if (l->str && l->str->templateLevel)
         {
-            if (!strcmp(sp->decoratedName, l->str->decoratedName))
+            if (sp->decoratedName && !strcmp(sp->decoratedName, l->str->decoratedName))
                 return TRUE;
         }
         l = l->next;
@@ -978,52 +979,51 @@ static BOOLEAN declaringTemplate(SYMBOL *sp)
 }
 TYPE *PerformDeferredInitialization (TYPE *tp, SYMBOL *funcsp)
 {
-    if (!inTemplateSpecialization)
+    if (!tp)
+        return &stdany;
+    TYPE **tpx = &tp;
+    if (isref(*tpx))
+        tpx = &basetype(*tpx)->btp;
+    while ((*tpx)->btp && !isfunction(*tpx))
+        tpx = &(*tpx)->btp;
+    if (cparams.prm_cplusplus && !inTemplateType && isstructured(*tpx))
     {
-        TYPE **tpx = &tp;
-        if (isref(*tpx))
-            tpx = &basetype(*tpx)->btp;
-        while ((*tpx)->btp && !isfunction(*tpx))
-            tpx = &(*tpx)->btp;
-        if (cparams.prm_cplusplus && !inTemplateType && isstructured(*tpx))
+        SYMBOL *sp = basetype(*tpx)->sp;
+        TEMPLATEPARAMLIST *tpl = sp->templateParams;
+        while (tpl)
         {
-            SYMBOL *sp = basetype(*tpx)->sp;
-            TEMPLATEPARAMLIST *tpl = sp->templateParams;
-            while (tpl)
-            {
-                if (tpl->p->usedAsUnpacked)
-                    return tp;
-                tpl = tpl->next;
-            }
-            if (declaringTemplate(sp))
-            {
-                if (sp->instantiated)
-                {
-                    *tpx = sp->tp;
-                }
-            }
-            else if (sp->templateLevel && (!sp->instantiated || sp->linkage != lk_virtual)
-                && sp->templateParams && allTemplateArgsSpecified(sp, sp->templateParams->next))
-            {
-                sp = TemplateClassInstantiateInternal(sp, NULL, FALSE);
-                if (sp)
-                    *tpx = sp->tp;
-            }
-            else if (!sp->templateLevel && sp->parentClass && sp->parentClass->templateLevel
-                && (!sp->instantiated || sp->linkage != lk_virtual)
-                && sp->parentClass->templateParams && allTemplateArgsSpecified(sp->parentClass, sp->parentClass->templateParams->next))
-            {
-                TEMPLATEPARAMLIST *tpl = sp->parentClass->templateParams;
-                sp->templateParams = tpl;
-                sp = TemplateClassInstantiateInternal(sp, NULL, FALSE);
-                sp->templateParams = NULL;
-                if (sp)
-                    *tpx = sp->tp;
-            }
-            else if (sp->instantiated)
+            if (tpl->p->usedAsUnpacked)
+                return tp;
+            tpl = tpl->next;
+        }
+        if (declaringTemplate(sp))
+        {
+            if (sp->instantiated)
             {
                 *tpx = sp->tp;
             }
+        }
+        else if (sp->templateLevel && (!sp->instantiated || sp->linkage != lk_virtual)
+            && sp->templateParams && allTemplateArgsSpecified(sp, sp->templateParams->next))
+        {
+            sp = TemplateClassInstantiateInternal(sp, NULL, FALSE);
+            if (sp)
+                *tpx = sp->tp;
+        }
+        else if (!sp->templateLevel && sp->parentClass && sp->parentClass->templateLevel
+            && (!sp->instantiated || sp->linkage != lk_virtual)
+            && sp->parentClass->templateParams && allTemplateArgsSpecified(sp->parentClass, sp->parentClass->templateParams->next))
+        {
+            TEMPLATEPARAMLIST *tpl = sp->parentClass->templateParams;
+            sp->templateParams = tpl;
+            sp = TemplateClassInstantiateInternal(sp, NULL, FALSE);
+            sp->templateParams = NULL;
+            if (sp)
+                *tpx = sp->tp;
+        }
+        else if (sp->instantiated)
+        {
+            *tpx = sp->tp;
         }
     }
     return tp;
@@ -1148,8 +1148,34 @@ LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defa
     do
     {
         ParseAttributeSpecifiers(&lex, funcsp, TRUE);
-        if (MATCHKW(lex,classsel) || ISID(lex))
+        if (MATCHKW(lex, kw_decltype))
         {
+            TYPE *tp = NULL;
+            lex = get_type_id(lex, &tp, funcsp, sc_type, TRUE, TRUE);
+            if (!tp)
+            {
+                error(ERR_TYPE_NAME_EXPECTED);
+            }
+            else if (!isstructured(tp))
+            {
+                error(ERR_STRUCTURED_TYPE_EXPECTED);
+            }
+            else
+            {
+                *bc = innerBaseClass(declsym, tp->sp, isvirtual, currentAccess);
+                if (*bc)
+                    bc = &(*bc)->next;
+            }
+            done = !MATCHKW(lex, comma);
+            if (!done)
+                lex = getsym();
+        }
+        else if (MATCHKW(lex,classsel) || ISID(lex))
+        {
+            char name[512];
+            name[0] = 0;
+            if (ISID(lex))
+                strcpy(name, lex->value.s.a);
             bcsym = NULL;
             lex = nestedSearch(lex, &bcsym, NULL, NULL, NULL, NULL, FALSE, sc_global, FALSE, FALSE);
             if (bcsym && bcsym->storage_class == sc_typedef)
@@ -1160,7 +1186,7 @@ LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defa
                 {
                     bcsym = tp->sp;
                 }
-                else
+                else if (tp->type != bt_templateselector)
                 {
                     bcsym = NULL;
                 }
@@ -1307,6 +1333,10 @@ restart:
 //                {
 //                    errorsym(ERR_NEED_SPECIALIZATION_PARAMETERS, bcsym);
 //                }
+            }
+            else if (MATCHKW(lex, lt))
+            {
+                errorstr(ERR_NOT_A_TEMPLATE, bcsym ? bcsym->name : name[0] ? name : "unknown");
             }
             if (bcsym && bcsym->tp->templateParam && bcsym->tp->templateParam->p->packed)
             {
@@ -1599,15 +1629,17 @@ BOOLEAN hasPackedExpression(EXPRESSION *exp, BOOLEAN useAuto)
         return exp->v.sp->packed;
     if (exp->type == en_func)
     {
-        TEMPLATEPARAMLIST *tpl = exp->v.func->templateParams;
-        INITLIST *il;
-        while (tpl)
+        if (useAuto)
         {
-            if (tpl->p->packed)
-                return TRUE;
-            tpl = tpl->next;
+            TEMPLATEPARAMLIST *tpl = exp->v.func->templateParams;
+            while (tpl)
+            {
+                if (tpl->p->packed)
+                    return TRUE;
+                tpl = tpl->next;
+            }
         }
-        il = exp->v.func->arguments;
+        INITLIST *il = exp->v.func->arguments;
         while (il)
         {
             if (hasPackedExpression(il->exp, useAuto))
@@ -3146,7 +3178,7 @@ static BOOLEAN hasNoBody(STATEMENT *stmt)
     }
     return TRUE;
 }
-static BOOLEAN isConstexprConstructor(SYMBOL *sym)
+BOOLEAN isConstexprConstructor(SYMBOL *sym)
 {
     HASHREC *hr;
     if (sym->constexpression)
@@ -3245,4 +3277,142 @@ BOOLEAN MatchesConstFunction(SYMBOL *sp)
         hr = hr->next;
     }
     return TRUE;
+}
+static BOOLEAN constructedType(LEXEME *lex)
+{
+    BOOLEAN rv;
+    LEXEME *orig = lex;
+    while (lex && (ISID(lex) || MATCHKW(lex, classsel)))
+        lex = getsym();
+    rv = MATCHKW(lex, openpa) || MATCHKW(lex, begin);
+    lex = prevsym(orig);
+    return rv;
+}
+LEXEME *getDeclType(LEXEME *lex, SYMBOL *funcsp, TYPE **tn)
+{
+    BOOLEAN hasAmpersand = FALSE;
+    BOOLEAN hasAuto = FALSE;
+    EXPRESSION *exp, *exp2;
+    lex = getsym();
+    needkw(&lex, openpa);
+    BOOLEAN extended = MATCHKW(lex, openpa);
+    hasAmpersand = MATCHKW(lex, and);
+    if (extended || hasAmpersand)
+    {
+        lex = getsym();
+        hasAuto = MATCHKW(lex, kw_auto);
+        lex = backupsym();
+    }
+    else
+    {
+        hasAuto = MATCHKW(lex, kw_auto);
+    }
+    if (hasAuto)
+    {
+        if (extended || hasAmpersand)
+            lex = getsym();
+        lex = getsym();
+        if (MATCHKW(lex, and) || MATCHKW(lex, land))
+        {
+            lex = getsym();
+            error(ERR_DECLTYPE_AUTO_NO_REFERENCE);
+        }
+        if (extended)
+            needkw(&lex, closepa);
+        (*tn) = (TYPE *)Alloc(sizeof(TYPE));
+        (*tn)->type = bt_auto;
+        (*tn)->decltypeauto = TRUE;
+        (*tn)->decltypeautoextended = extended;
+    }
+    else if (startOfType(lex, FALSE) & !constructedType(lex))
+    {
+        lex = get_type_id(lex, &(*tn), funcsp, sc_cast, FALSE, FALSE);
+    }
+    else
+    {
+        lex = expression_no_check(lex, NULL, NULL, &(*tn), &exp, _F_SIZEOF);
+        if ((*tn) && (*tn)->type == bt_aggregate && exp->type == en_func)
+        {
+            HASHREC *hr = (*tn)->syms->table[0];
+            if (hr->next)
+                errorsym2(ERR_AMBIGUITY_BETWEEN, hr->p, hr->next->p);
+            exp->v.func->sp = (SYMBOL *)hr->p;
+            if (hasAmpersand)
+            {
+                (*tn) = (TYPE *)Alloc(sizeof(TYPE));
+                if (ismember(exp->v.func->sp))
+                {
+                    (*tn)->type = bt_memberptr;
+                    (*tn)->sp = exp->v.func->sp->parentClass;
+                }
+                else
+                {
+                    (*tn)->type = bt_pointer;
+                    (*tn)->size = getSize(bt_pointer);
+                }
+                (*tn)->btp = exp->v.func->functp = exp->v.func->sp->tp;
+                (*tn)->rootType = (*tn);
+            }
+            else
+            {
+                (*tn) = exp->v.func->functp = exp->v.func->sp->tp;
+            }
+        }
+        if ((*tn))
+        {
+            optimize_for_constants(&exp);
+            if (templateNestingCount && !instantiatingTemplate)
+            {
+                TYPE *tp2 = Alloc(sizeof(TYPE));
+                tp2->type = bt_templatedecltype;
+                tp2->rootType = tp2;
+                tp2->templateDeclType = exp;
+                (*tn) = tp2;
+            }
+        }
+        exp2 = exp;
+        if (!(*tn))
+        {
+            error(ERR_IDENTIFIER_EXPECTED);
+            errskim(&lex, skim_semi_declare);
+            return lex;
+        }
+        if (extended && lvalue(exp) && exp->left->type == en_auto)
+        {
+            if (!lambdas && xvalue(exp))
+            {
+                TYPE *tp2 = Alloc(sizeof(TYPE));
+                if (isref((*tn)))
+                    (*tn) = basetype((*tn))->btp;
+                tp2->type = bt_rref;
+                tp2->size = getSize(bt_pointer);
+                tp2->btp = (*tn);
+                tp2->rootType = tp2;
+                (*tn) = tp2;
+            }
+            else if (lvalue(exp))
+            {
+                TYPE *tp2 = Alloc(sizeof(TYPE));
+                if (isref((*tn)))
+                    (*tn) = basetype((*tn))->btp;
+                if (lambdas && !lambdas->isMutable)
+                {
+                    tp2->type = bt_const;
+                    tp2->size = (*tn)->size;
+                    tp2->btp = (*tn);
+                    tp2->rootType = (*tn)->rootType;
+                    (*tn) = tp2;
+                    tp2 = Alloc(sizeof(TYPE));
+                }
+                tp2->type = bt_lref;
+                tp2->size = getSize(bt_pointer);
+                tp2->btp = (*tn);
+                tp2->rootType = (*tn)->rootType;
+                (*tn) = tp2;
+            }
+        }
+    }
+//    if (!MATCHKW(lex, closepa))
+        needkw(&lex, closepa);
+    return lex;
 }

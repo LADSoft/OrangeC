@@ -28,8 +28,10 @@
 
 #include <list>
 #include <string>
+#include <deque>
 
 #undef GetCurrentTime
+#undef Yield
 
 class Time
 {
@@ -54,7 +56,20 @@ typedef std::list<EnvEntry> EnvironmentStrings;
 class OS
 {
 public:
-    static int Spawn(const std::string command, EnvironmentStrings &environment);
+    static void Init();
+    static void SetSHEXE(bool flag) { isSHEXE = flag; }
+    static void PushJobCount(int jobs);
+    static void PopJobCount();
+    static void JobInit();
+    static void JobRundown();
+    static bool TakeJob();
+    static void GiveJob();
+    static void Take();
+    static void Give();
+    static void WriteConsole(std::string string);
+    static void ToConsole(std::deque<std::string>& strings);
+    static void AddConsole(std::deque<std::string>& strings, std::string string);
+    static int Spawn(const std::string command, EnvironmentStrings &environment, std::string* output);
     static std::string SpawnWithRedirect(const std::string command);
     static Time GetCurrentTime();
     static Time GetFileTime(const std::string fileName);
@@ -63,5 +78,12 @@ public:
     static bool SetWorkingDir(const std::string name);
     static void RemoveFile(const std::string name);
     static std::string NormalizeFileName(const std::string name);
+    static void CreateThread(void *func, void *data);
+    static void Yield();
+    static int JobCount() { return jobsLeft; }
+private:
+    static int jobsLeft;
+    static std::deque<int> jobCounts;
+    static bool isSHEXE;
 } ;
 #endif

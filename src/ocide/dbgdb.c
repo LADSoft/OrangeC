@@ -277,6 +277,11 @@ int GetEqualsBreakpoint(DEBUG_INFO *dbg_info, DWORD Address, char *module, int *
         }
         sqlite3_finalize(handle);
     }
+    if (!rv || GetFuncId(dbg_info, Address) != GetFuncId(dbg_info, rv))
+    {
+        *linenum = 0;
+        return 0;
+    }
     return rv;
 }
 int GetHigherBreakpoint(DEBUG_INFO *dbg_info, DWORD Address, char *module, int *linenum)
@@ -326,6 +331,11 @@ int GetHigherBreakpoint(DEBUG_INFO *dbg_info, DWORD Address, char *module, int *
             }
         }
         sqlite3_finalize(handle);
+    }
+    if (!rv || GetFuncId(dbg_info, Address) != GetFuncId(dbg_info, rv))
+    {
+        *linenum = 0;
+        return 0;
     }
     return rv;
 }

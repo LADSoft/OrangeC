@@ -2,10 +2,10 @@
  * OCIDE Help
  * LADSoft
  *
- * This help file was created with HelpScribble 7.8.8
+ * This help file was created with HelpScribble 7.8.3
  * Licensed to: LADSoft
  *
- * HelpScribble is copyright (c) 1996-2014  Jan Goyvaerts
+ * HelpScribble is copyright (c) 1996-2009  Jan Goyvaerts
  * Visit http://www.helpscribble.com/ for more information
  */
 

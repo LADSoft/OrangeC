@@ -61,7 +61,7 @@ private:
     static CmdSwitchString stubSwitch;
     static CmdSwitchString outputFileSwitch;
     static CmdSwitchString DebugFile;
-    static char *usageText;
+    static const char *usageText;
 
     ObjInt stackSize;
     std::string outputName;

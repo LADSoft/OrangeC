@@ -48,7 +48,7 @@ int CmdSwitchInt::Parse(const char *data)
 {
     char number[256];
     if (data[0] != ':')
-        return -1;
+        return 0;
     strncpy(number, data+1, 255);
     number[255] = 0;
     
@@ -60,13 +60,13 @@ int CmdSwitchInt::Parse(const char *data)
     value = Utils::StringToNumber(number);
     if (value < lowLimit || value > hiLimit)
         return -1;
-    return p - number;
+    return p - number + 1;
 }
 int CmdSwitchHex::Parse(const char *data)
 {
     char number[256];
     if (data[0] != ':')
-        return -1;
+        return 0;
     strncpy(number, data+1, 255);
     number[255] = 0;
     
@@ -135,7 +135,7 @@ CmdSwitchDefine::~CmdSwitchDefine()
 int CmdSwitchDefine::Parse(const char *data)
 {
     int rv = strlen(data);
-    char name[512],*p = name;
+    char name[10000],*p = name;
     if (!isalpha(*data) && *data != '_')
         return -1;
     while (*data && (isalnum(*data) || *data == '_'))
@@ -285,7 +285,7 @@ bool CmdSwitchParser::Parse(int *argc, char *argv[])
         }
         else if ((argv[0][0] == '-' || argv[0][0] == '/') && argv[0][1])
         {
-            if (argv[0][1] == '!')
+            if (argv[0][1] == '!' || !strcmp(argv[0], "--nologo"))
             {
                 // skip the banner nondisplay arg
             }

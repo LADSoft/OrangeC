@@ -75,7 +75,7 @@ COMPLIB=-lstdc++ -lcomctl32 -lgdi32 -lcomdlg32 -lole32 -luxtheme -lkernel32 -lms
 
 
 vpath %.o $(_OUTPUTDIR)
-vpath %$(LIB_EXT) c:\bcc55\lib c:\bcc55\lib\psdk $(_LIBDIR)
+vpath %.a $(_LIBDIR)
 vpath %.res $(_OUTPUTDIR)
 
 %.o: %.cpp
@@ -96,7 +96,7 @@ $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT): $(LLIB_DEPENDENCIES)
 
 LDEPS := $(addprefix -l,$(NAME) $(LIB_DEPENDENCIES))
 
-LDEPS2 := $(addprefix $(_LIBDIR)\$(LIB_PREFIX),$(NAME) $(LIB_DEPENDENCIES))
+LDEPS2 := $(addprefix $(LIB_PREFIX),$(NAME) $(LIB_DEPENDENCIES))
 LDEPS2 := $(addsuffix .a, $(LDEPS2))
 
 LMAIN := $(addprefix $(_OUTPUTDIR)\,$(MAIN_DEPENDENCIES) $(RES_deps))

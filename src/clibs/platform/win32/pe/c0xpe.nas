@@ -24,11 +24,14 @@
 
 section data USE32
 %include "..\..\copyrght.asm"
+global ___unaligned_stacktop
+___unaligned_stacktop dd 0
 
 section code USE32
 extern ___startup
 ..start:
 and	esp,-16
+mov	[___unaligned_stacktop],esp
 push	0
 mov 	ebp, esp
 jmp ___startup

@@ -35,6 +35,7 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
+#include <sstream>
 #include "Utils.h"
 
 std::string Eval::VPath;
@@ -168,7 +169,7 @@ std::string Eval::ExtractFirst(std::string &value, const std::string &seps)
         int m;
         if (seps == " ")
             m = value.find_first_of(" \t\n");
-	    else
+	else
             m = value.find_first_of(seps);
         if (m != std::string::npos)
             n = m;
@@ -176,6 +177,8 @@ std::string Eval::ExtractFirst(std::string &value, const std::string &seps)
     std::string rv = value.substr(0, n);
     if (value.find_first_not_of(" \t", n) == std::string::npos)
         value.replace(0,value.size(),"");
+    else if (value[0] == '"' && seps == " ")
+        value.replace(0, n, "");
     else
         value.replace(0,n+1,"");
     
@@ -229,6 +232,27 @@ std::string Eval::ParseMacroLine(const std::string &in)
             m = MacroSpan(in, n);
             if (m == std::string::npos)
                 m = 1;
+            if (in[n+1] == '(' && m >= 3)
+            {
+                rv += "$(";
+                std::string temp = in.substr(n+2, m-3);
+                for (int q = 0; q < temp.size()-1; q++)
+                {
+                    if (temp[q] == '$')
+                    {
+                        std::string temp1 = temp.substr(q+1, 1), temp2;
+                        if (AutomaticVar(temp1, temp2))
+                        {
+                            temp = temp.substr(0, q)+temp2 + (q < temp.size()-2 ? temp.substr(q+2) : "");
+                            q+= temp2.size() - 2;
+                        }
+                    }
+                }
+                rv += temp;
+                rv += ")";
+                n = m + n;
+                m = 0;
+            }
             m = in.find_first_of('$', n + m);
         }
         else
@@ -466,6 +490,7 @@ std::string Eval::ExpandMacro(const std::string &name)
 {
     std::string rv;
     std::string extra;
+
     if (AutomaticVar(name, rv))
         return rv;
     if (name == ".VARIABLES")
@@ -484,8 +509,6 @@ std::string Eval::ExpandMacro(const std::string &name)
         extra = std::string(name.substr(n+1));
         Eval a(rv, false, ruleList, rule);
         rv = a.Evaluate();
-        Eval a1(rv, false, ruleList, rule);
-        rv = a1.Evaluate();
     }
     else
     {
@@ -1051,7 +1074,7 @@ std::string Eval::dir(const std::string &names)
         if (n != std::string::npos)
             rv += p.substr(0,n+1);
         else
-            rv += std::string(".") + CmdFiles::DIR_SEP;
+            rv += std::string("./");
     }
     return rv;
 }
@@ -1183,7 +1206,6 @@ std::string Eval::wildcardinternal(std::string &names)
     while (names.size())
     {
         std::string current = ExtractFirst(names, " ");
-        std::replace(current.begin(), current.end(), '/', '\\');
         files.Add(current);
     }
     std::string rv;
@@ -1228,7 +1250,7 @@ std::string Eval::realpath(const std::string &arglist)
     {
         std::string thisOne = ExtractFirst(text, " ");
         if (thisOne[0] != '\\' && thisOne[1] != ':' && thisOne[0] != '/') // windows specific
-            thisOne = OS::GetWorkingDir() + CmdFiles::DIR_SEP + thisOne;
+            thisOne = OS::GetWorkingDir() + '/' + thisOne;
         if (rv.size())
             rv += " ";
         rv += thisOne;
@@ -1511,55 +1533,65 @@ std::string Eval::shell(const std::string &arglist)
 
 std::string Eval::error(const std::string &arglist, const std::string fileOverride , int lineOverride)
 {
+    std::ostringstream os;
     if (fileOverride.size())
     {
-        std::cout << "Error " << fileOverride.c_str() << "(" << lineOverride << "): " << arglist.c_str() << std::endl;
+        os << "Error " << fileOverride.c_str() << "(" << lineOverride << "): " << arglist.c_str() << std::endl;
     }
     else if (lineOverride != -1)
     {
-        std::cout << "Error " << file.c_str() << "(" << lineno << "): " << arglist.c_str() << std::endl;
+        os << "Error " << file.c_str() << "(" << lineno << "): " << arglist.c_str() << std::endl;
     }
     else
     {
-        std::cout << "Error: " << arglist.c_str() << std::endl;
+        os << "Error: " << arglist.c_str() << std::endl;
     }
+    OS::WriteConsole(os.str());
     errcount++;
     return "";
 }
 std::string Eval::errorx(const std::string &arglist)
 {
     Eval a(arglist, false, nullptr, nullptr);
+    std::ostringstream os;
     std::cout << "Error " << file.c_str() << "(" << lineno << "): " << a.Evaluate().c_str() << std::endl;
+    OS::WriteConsole(os.str());
     errcount++;
     return "";
 }
 std::string Eval::warning(const std::string &arglist, const std::string fileOverride , int lineOverride)
 {
+    std::ostringstream os;
     if (fileOverride.size())
     {
-        std::cout << "Warning " << fileOverride.c_str() << "(" << lineOverride << "): " << arglist.c_str() << std::endl;
+        os << "Warning " << fileOverride.c_str() << "(" << lineOverride << "): " << arglist.c_str() << std::endl;
     }
     else if (lineOverride != -1)
     {
-        std::cout << "Warning " << file.c_str() << "(" << lineno << "): " << arglist.c_str() << std::endl;
+        os << "Warning " << file.c_str() << "(" << lineno << "): " << arglist.c_str() << std::endl;
     }
     else
     {
-        std::cout << "Warning: " << arglist.c_str() << std::endl;
+        os << "Warning: " << arglist.c_str() << std::endl;
     }
+    OS::WriteConsole(os.str());
     return "";
 }
 std::string Eval::warningx(const std::string &arglist)
 {
     Eval a(arglist, false, nullptr, nullptr);
-    std::cout << "Warning " << file.c_str() << "(" << lineno << "): " << a.Evaluate().c_str() << std::endl;
+    std::ostringstream os;
+    os << "Warning " << file.c_str() << "(" << lineno << "): " << a.Evaluate().c_str() << std::endl;
+    OS::WriteConsole(os.str());
     return "";
 }
 
 std::string Eval::info(const std::string &arglist)
 {
     Eval a(arglist, false, ruleList, rule);
-    std::cout << a.Evaluate().c_str() << std::endl;
+    std::ostringstream os;
+    os << a.Evaluate().c_str() << std::endl;
+    OS::WriteConsole(os.str());
     return "";
 }
 std::string Eval::exists(const std::string &arglist)

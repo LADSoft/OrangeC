@@ -28,6 +28,7 @@
 #include "Eval.h"
 #include "os.h"
 #include "Spawner.h"
+#include "CmdFiles.h"
 #include <iostream>
 CommandContainer *CommandContainer::instance = nullptr;
 RuleContainer *RuleContainer::instance = nullptr;
@@ -67,7 +68,7 @@ void Rule::SecondaryEval(RuleList *ruleList)
 }
 RuleList::RuleList(const std::string &Target)
     : target(Target), doubleColon(false), intermediate(false), keep(false),
-         isBuilt(false)
+         isBuilt(false), spawner(nullptr)
 {
 }
 RuleList::~RuleList()
@@ -199,4 +200,64 @@ void RuleContainer::Clear()
     for (auto rule : implicitRules)
         delete rule;
     implicitRules.clear();
+}
+bool RuleContainer::OnList(const std::string &goal, char *what)
+{
+    bool rv = false;
+    RuleList *rl = Lookup(what);
+    if (rl)
+    {
+        for (RuleList::iterator it = rl->begin(); !rv && it != rl->end(); ++it)
+        {
+            std::string value = (*it)->GetPrerequisites();	
+            rv = ScanList(value, goal);
+        }
+    }
+    return rv;
+}
+bool RuleContainer::NoList(char *what)
+{
+    bool rv = false;
+    RuleList *rl = Lookup(what);
+    if (rl)
+    {
+        rv = true;
+        for (RuleList::iterator it = rl->begin(); rv && it != rl->end(); ++it)
+        {
+            if (Eval::ExtractFirst((*it)->GetPrerequisites(), " ") != "")
+            {
+                rv = false;
+            }
+        }
+    }
+    return rv;
+}
+bool RuleContainer::ScanList(const std::string &v, const std::string &goal)
+{
+    std::string value = v;
+    bool rv = false;
+    while (value.size() && !rv)
+    {
+        size_t start;
+        size_t span;
+        
+        std::string aa = Eval::ExtractFirst(value, " ");
+        span = Eval::MatchesPattern(goal, aa, start, 0);
+        if (span == goal.size())
+        {
+            rv = true;
+            break;
+        }
+        if (aa[aa.size()-1] != '/' && aa[aa.size()-1] != '\\')
+        {
+            aa += "/";
+            span = Eval::MatchesPattern(goal, aa, start, 0);
+            if (span == goal.size())
+            {
+                rv = true;
+                break;
+            }
+        }
+    }
+    return rv;
 }

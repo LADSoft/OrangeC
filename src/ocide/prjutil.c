@@ -107,6 +107,41 @@ void FreeSubTree(PROJECTITEM *data, BOOL save)
         free(data);
     }
 }
+void ProjectRemoveOne(PROJECTITEM *data)
+{
+            MarkChanged(data, data->type == PJ_PROJ);
+            TreeView_DeleteItem(prjTreeWindow, data->hTreeItem);
+            ResDeleteItem(data);
+            if (data->type != PJ_PROJ)
+            {
+                PROJECTITEM *p = data;
+                while (p->type != PJ_PROJ)
+                    p = p->parent;
+                p->clean = TRUE;
+            }
+            if (data->type != PJ_FILE || !RetrieveInternalDepend(data->realName))
+                FreeSubTree(data, TRUE);
+            if (data == activeProject)
+            {
+                activeProject = workArea->children;
+                while (activeProject && !activeProject->loaded)
+                    activeProject = activeProject->next;
+                MarkChanged(activeProject, TRUE);
+                InvalidateRect(prjTreeWindow,0,1);
+            }
+}
+void ProjectRemoveAll(void)
+{
+     PROJECTITEM *root = workArea;
+     root = root->children;
+     while (root)
+     {
+          PROJECTITEM *next = root->next;
+          if (root->type == PJ_PROJ)
+              ProjectRemoveOne(root);
+          root = next;
+     }
+}
 void ProjectRemove(void)
 {
     PROJECTITEM *data = GetItemInfo(prjSelectedItem);
@@ -134,26 +169,7 @@ void ProjectRemove(void)
         }
         if (del)
         {
-            MarkChanged(data, data->type == PJ_PROJ);
-            TreeView_DeleteItem(prjTreeWindow, data->hTreeItem);
-            ResDeleteItem(data);
-            if (data->type != PJ_PROJ)
-            {
-                PROJECTITEM *p = data;
-                while (p->type != PJ_PROJ)
-                    p = p->parent;
-                p->clean = TRUE;
-            }
-            if (data->type != PJ_FILE || !RetrieveInternalDepend(data->realName))
-                FreeSubTree(data, TRUE);
-            if (data == activeProject)
-            {
-                activeProject = workArea->children;
-                while (activeProject && !activeProject->loaded)
-                    activeProject = activeProject->next;
-                MarkChanged(activeProject, TRUE);
-                InvalidateRect(prjTreeWindow,0,1);
-            }
+            ProjectRemoveOne(data);
         }
     }
 }

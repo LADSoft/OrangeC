@@ -10,6 +10,4 @@ test: cpplinqtest.exe
 	$(MAKE) /Cbackslash
 
 cpplinqtest.exe: $(FILES)
-	olink /c /! /T:CON32 /mx /o$@ @&&|
-c0xpe.o $(FILES) clwin.l climp.l
-|
+	olink /c /! /T:CON32 /mx /o$@ c0xpe.o $(FILES) clwin.l climp.l

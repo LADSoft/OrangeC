@@ -77,6 +77,7 @@ struct UIVHash
 static ALIASADDRESS *addresses[DAGSIZE];
 static ALIASNAME *mem[DAGSIZE];
 static struct UIVHash *names[DAGSIZE];
+static ADDRBYNAME *addrNames[DAGSIZE];
 static void ResetProcessed(void);
 static void GatherInds(BITINT *p, int n, ALIASLIST *al);
 void AliasInit(void)
@@ -90,6 +91,7 @@ void AliasInit(void)
     memset(addresses, 0, sizeof(addresses));
     memset(names, 0, sizeof(names));
     memset(mem, 0, sizeof(mem));
+    memset(addrNames, 0, sizeof(addrNames));
     parmList = NULL;
     uivBytes= NULL;
     cachedTempCount = tempCount;
@@ -199,7 +201,6 @@ static ALIASNAME *LookupMem(IMODE *im)
     switch (im->offset->type)
     {
         case en_global:
-        case en_label:
         case en_pc:
         case en_auto:
         case en_threadlocal:
@@ -225,7 +226,6 @@ static ALIASNAME *LookupMem(IMODE *im)
     switch(im->offset->type)
     {
         case en_auto:
-        case en_label:
         case en_global:
             (*p)->v.uiv = aAlloc(sizeof(UIV));
             (*p)->v.uiv->im = im;		
@@ -241,10 +241,17 @@ static void AliasUnion(ALIASLIST **dest, ALIASLIST *src)
     while (src)
     {
         ALIASLIST **q = dest;
-        while (*q)
+        ALIASNAME *nm2 = src->address->name;
+        IMODE *im2;
+        if (nm2->byUIV)
+            im2 = nm2->v.uiv->im;
+        else
+            im2 = nm2->v.name;
+        ALIASLIST *q1 = *q;
+        while (q1)
         {
-            ALIASNAME *nm1 = (*q)->address->name, *nm2 = src->address->name;
-            IMODE *im1, *im2;
+            ALIASNAME *nm1 = q1->address->name;
+            IMODE *im1;
             // we don't check the offset here because of the rule if the same
             // name is used with different offsets it is assumed to be an array.
             if (nm1 == nm2)
@@ -253,13 +260,9 @@ static void AliasUnion(ALIASLIST **dest, ALIASLIST *src)
                 im1 = nm1->v.uiv->im;
             else
                 im1 = nm1->v.name;
-            if (nm2->byUIV)
-                im2 = nm2->v.uiv->im;
-            else
-                im2 = nm2->v.name;
             if (im1 == im2)
                 break;
-            q = &(*q)->next;
+            q1 = q1->next;
         }
         if (!*q)
         {
@@ -397,6 +400,25 @@ static ALIASADDRESS *LookupAddress(ALIASNAME *name, int offset)
     li->data = addr;
     li->next = name->addresses;
     name->addresses = li;
+    hash = dhash(&name, sizeof(name));
+    ADDRBYNAME *q = addrNames[hash];
+    while (q)
+    {
+        if (q->name == name)
+            break;
+        q = q->next;
+    }
+    if (!q)
+    {
+        q = (ADDRBYNAME *)aAlloc(sizeof(ADDRBYNAME));
+        q->next = addrNames[hash];
+        addrNames[hash] = q;
+        q->name = name;
+    }
+    ALIASLIST *ali = aAlloc(sizeof(ALIASLIST));
+    ali->address = addr;
+    ali->next = q->addresses;
+    q->addresses = ali;
     return addr;
 }
 static ALIASADDRESS *GetAddress(ALIASNAME *name, int offset)
@@ -443,7 +465,7 @@ static void CreateMem(IMODE *im)
             p = LookupMem(im);
             p = LookupAliasName(p, 0);
         }
-        if (im->size == ISZ_ADDR || im->offset->type == en_label || im->offset->type == en_global)
+        if (im->size == ISZ_ADDR || im->offset->type == en_global)
         {
             ALIASADDRESS *aa;
             aa = LookupAddress(p, 0);
@@ -725,35 +747,47 @@ static int InferStride(IMODE *im)
 }
 static void SetStride(ALIASADDRESS *addr, int stride)
 {
-    int i;
-    for (i=0; i < DAGSIZE; i++)
+    int hash = dhash(&addr->name, sizeof(addr->name));
+    ADDRBYNAME *q = addrNames[hash];
+    while (q)
     {
-        ALIASADDRESS *scan = addresses[i];
-        while (scan)
+        if (q->name == addr->name)
+            break;
+        q = q->next;
+    }
+    if (q)
+    {
+        ALIASLIST *addresses = q->addresses;
+        while (addresses)
         {
-            if (addr != scan && addr->name == scan->name)
+            ALIASADDRESS *scan = addresses->address;
+            while (scan)
             {
-                if (addr->offset < scan->offset)
+                if (addr != scan && addr->name == scan->name)
                 {
-                    int o2 = addr->offset + (scan->offset - addr->offset) % stride;
-                    if (addr->offset == o2)
+                    if (addr->offset < scan->offset)
                     {
-                        AliasUnion(&addr->pointsto, scan->pointsto);
-                        scan->merge = addr;
-                    }
-                    else
-                    {
-                        ALIASADDRESS *sc2 = LookupAddress(addr->name, o2);
-                        if (sc2 && sc2 != scan)
+                        int o2 = addr->offset + (scan->offset - addr->offset) % stride;
+                        if (addr->offset == o2)
                         {
-                            AliasUnion(&sc2->pointsto, scan->pointsto);
-                            scan->merge = sc2;
+                            AliasUnion(&addr->pointsto, scan->pointsto);
+                            scan->merge = addr;
                         }
+                        else
+                        {
+                            ALIASADDRESS *sc2 = LookupAddress(addr->name, o2);
+                            if (sc2 && sc2 != scan)
+                            {
+                                AliasUnion(&sc2->pointsto, scan->pointsto);
+                                scan->merge = sc2;
+                            }
+                        }
+
                     }
-                    
                 }
+                scan = scan->next;
             }
-            scan = scan->next;
+            addresses = addresses->next;
         }
     }
 }
@@ -973,7 +1007,6 @@ static void HandleParm(QUAD *head)
             {
                 case en_labcon:
                 case en_global:
-                case en_label:
                 case en_pc:
                 case en_threadlocal:
                     return;
@@ -1283,7 +1316,6 @@ static void ScanUIVs(void)
             {
                 case en_auto:
                 case en_global:
-                case en_label:
                 case en_pc:
                 case en_threadlocal:
                     im = GetLoadTemp(im);

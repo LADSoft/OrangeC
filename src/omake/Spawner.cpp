@@ -30,43 +30,88 @@
 #include <iomanip>
 #include <iostream>
 #include <deque>
+#include "Variable.h"
 #include "utils.h"
 #include <algorithm>
 
 const char Spawner::escapeStart = '\x1';
 const char Spawner::escapeEnd = '\x2';
-int Spawner::lineLength = 1024 * 1024; // os limitation on XP and later is 8191
-std::list<std::string> Spawner::cmdList;
+int Spawner::runningProcesses;
 
-int Spawner::Run(Command &commands, RuleList *ruleList, Rule *rule)
+unsigned WINFUNC Spawner::Thread(void *cls)
 {
+    Spawner *ths = (Spawner *)cls;
+    ++runningProcesses;
+    ths->RetVal(ths->InternalRun());
+    --runningProcesses;
+    ths->done = true;
+    return 0;
+}
+void Spawner::WaitForDone()
+{
+    int count = 30 *100;
+    while (runningProcesses > 0 && -- count > 0)
+    {
+        OS::Yield();
+    }
+}
+void Spawner::Run(Command &Commands, OutputType Type, RuleList *RuleListx, Rule *Rulex)
+{
+    commands = &Commands;
+    outputType = Type;
+    ruleList = RuleListx;
+    rule = Rulex;
+    if (OS::JobCount() == 1)
+    {
+        // make sure we go in order if this isn't a parallel job...
+        Thread(this);
+    }
+    else
+    {
+        OS::CreateThread((void *)&Spawner::Thread, this);
+    }
+}
+int Spawner::InternalRun()
+{
+    std::string shell;
+    Variable *v = VariableContainer::Instance()->Lookup("SHELL");
+    if (v)
+    {
+        shell = v->GetValue();
+    }
     int rv = 0;
     std::string longstr;
     std::deque<std::string> tempFiles;
-    for (Command::iterator it = commands.begin(); it != commands.end() && (!rv || !posix) ; ++it)
+    bool make = false;
+    for (Command::iterator it = commands->begin(); it != commands->end() && (!rv || !posix) ; ++it)
     {
         bool curSilent = silent;
         bool curIgnore = ignoreErrors;
         bool curDontRun = dontRun;
         const std::string &a = (*it);
+        if (a.find("$(MAKE)") != std::string::npos || a.find("${MAKE}") != std::string::npos)
+        {
+            make = true;
+            curDontRun = false;
+        }
+        OS::Take();
+        std::string cmd = a;
+        Eval c(cmd, false, ruleList, rule);
+        cmd = c.Evaluate(); // deferred evaluation
         int i;
-        for (i=0; i < a.size(); i++)
-            if (a[i] == '+')
+        for (i=0; i < cmd.size(); i++)
+            if (cmd[i] == '+')
                 curDontRun = false;
-            else if (a[i] == '@')
+            else if (cmd[i] == '@')
                 curSilent = true;
-            else if (a[i] == '-')
+            else if (cmd[i] == '-')
                 curIgnore = true;
             else
                 break;
-        if (a.find("$(MAKE)") != std::string::npos || a.find("${MAKE}") != std::string::npos)
-            curDontRun = false;
-        std::string cmd = a.substr(i);
-        Eval c(cmd, false, ruleList, rule);
-        cmd = c.Evaluate(); // deferred evaluation
+        cmd = cmd.substr(i);
         size_t n = cmd.find("&&");
         std::string makeName;
-        if (n != std::string::npos && n == cmd.size() - 3)
+        if (shell != "/bin/sh" && n != std::string::npos && n == cmd.size() - 3)
         {
             char match = cmd[n+2];
             cmd.erase(n);
@@ -102,27 +147,53 @@ int Spawner::Run(Command &commands, RuleList *ruleList, Rule *rule)
             cmd += makeName + tail;
         }
         cmd = QualifyFiles(cmd);
+        OS::Give();
         if (oneShell)
+        {
              longstr += cmd;
+        }
         else
-             rv = Run(cmd, curIgnore, curSilent, curDontRun);
+        {
+             int rv1 = Run(cmd, curIgnore, curSilent, curDontRun, make);
+             make = false;
+             if (!rv)
+                 rv = rv1;
+        }
+        if (outputType == o_line)
+            OS::ToConsole(output);
         if (curIgnore)
             rv = 0;
         if (rv && posix)
             break;
     }
     if (oneShell)
-        rv = Run(longstr, ignoreErrors, silent, dontRun);
+        rv = Run(longstr, ignoreErrors, silent, dontRun, false);
+    OS::ToConsole(output);
     for (auto f : tempFiles)
         OS::RemoveFile(f);
     return rv;
 }
-int Spawner::Run(const std::string &cmdin, bool ignoreErrors, bool silent, bool dontrun)
+int Spawner::Run(const std::string &cmdin, bool ignoreErrors, bool silent, bool dontrun, bool make)
 {
-    std::string cmd = OS::NormalizeFileName(cmdin);
+
+    std::string cmd = cmdin;
+    Variable *v = VariableContainer::Instance()->Lookup("SHELL");
+    if (v)
+    {
+        std::string shell = v->GetValue();
+        if (shell != "/bin/sh")
+        {
+           cmd = OS::NormalizeFileName(cmdin);
+        }
+    }
     if (oneShell)
     {
-        return OS::Spawn(cmd, environment);
+        if (!make)
+            OS::TakeJob();
+        int rv = OS::Spawn(cmd, environment, nullptr);
+        if (!make)
+            OS::GiveJob();
+        return rv;
     }
     else if (!split(cmd))
     {
@@ -134,17 +205,24 @@ int Spawner::Run(const std::string &cmdin, bool ignoreErrors, bool silent, bool 
         int rv = 0;
         for (auto command : cmdList)
         {
+            if (!make)
+                OS::TakeJob();
             if (!silent)
-                std::cout << "\t" << command.c_str() << std::endl;
+                OS::WriteConsole(std::string("\t") + command.c_str() + "\n");
             int rv1;
             if (!dontrun)
             {
-                rv1 = OS::Spawn(command, environment);
+                std::string str;
+                rv1 = OS::Spawn(command, environment, outputType != o_none && (outputType != o_recurse || !make) ? &str : nullptr);
+                if (outputType != o_none && str.size())
+                    output.push_back(str);
                 if (!rv)
                      rv = rv1;
-                if (rv && posix)
-                     return rv;
             }
+            if (!make)
+                OS::GiveJob();
+            if (rv && posix)
+                return rv;
         }
         return rv;
     }

@@ -37,6 +37,29 @@
 #include <io.h>
 #include "libp.h"
 
+static int isexe(const char *filename)
+{
+   int rv = 0;
+   int n = strlen(filename);
+   rv = n > 4 && !stricmp(filename + n -4, ".bat");
+   if (!rv && n > 4 && !stricmp(filename + n - 4, ".exe"))
+   {
+      HANDLE handle = CreateFile(filename,GENERIC_READ,FILE_SHARE_READ,0,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,0);
+      if (handle != INVALID_HANDLE_VALUE)
+      {
+          DWORD read;
+          char buf[2];
+          buf[0] = buf[1] = 1;
+
+          ReadFile(handle, buf, 2, &read, 0);
+
+          rv = buf[0] == 'M' && buf[1] == 'Z';
+
+          CloseHandle(handle);
+      }
+   }
+   return rv;
+}
 time_t __to_timet(FILETIME *time)
 {
    TIME_ZONE_INFORMATION tzinfo ;
@@ -104,6 +127,8 @@ int __ll_namedstat(const char *file, void *__statbuf)
       sb->st_mode |= S_IREAD;
       if (!(finddata.dwFileAttributes & FILE_ATTRIBUTE_READONLY))
           sb->st_mode |= S_IWRITE;
+      if (isexe(file))
+          sb->st_mode |= S_IEXEC;
       if (!finddata.nFileSizeHigh)
       {
           sb->st_size = finddata.nFileSizeLow;

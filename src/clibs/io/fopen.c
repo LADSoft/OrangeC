@@ -165,6 +165,18 @@ FILE *__basefopen(const char *restrict name, const char *restrict mode,
     if (id < 0) {
 		goto nofile;
     }
+    if (fd != -1)
+    {
+        if (flags & _F_BIN)
+        {
+            setmode(fd, O_BINARY);
+        }
+        else
+        {
+            setmode(fd, O_TEXT);
+        }
+    }
+
     file->extended->orient = __or_unspecified;
     memset(file->extended->mbstate,0,sizeof(file->extended->mbstate));
 	file->token = FILTOK;

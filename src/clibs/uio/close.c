@@ -30,9 +30,11 @@
 #include <wchar.h>
 #include <locale.h>
 #include "libp.h"
+#include <fcntl.h>
 
 extern int __uihandles[HANDLE_MAX],__uiflags[HANDLE_MAX] ;
 extern char __uinames[HANDLE_MAX][256] ;
+extern struct flock *__uilocks[HANDLE_MAX];
 
 int  _RTL_FUNC close  (int __handle)
 {
@@ -48,6 +50,12 @@ int  _RTL_FUNC close  (int __handle)
    __ll_close(__handle) ;
    if (__uiflags[ohand] & UIF_RO) {  
       __ll_chmod(__uinames[ohand],0) ;
+   }
+   while (__uilocks[ohand])
+   {
+       struct flock *next = __uilocks[ohand]->l_next;
+       free(__uilocks[ohand]);
+       __uilocks[ohand] = next;
    }
    __ll_exit_critical() ;
    return 0 ;

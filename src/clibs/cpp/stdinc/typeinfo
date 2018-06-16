@@ -9,6 +9,8 @@
 #include <_defs.h>
 #endif
 
+#include <exception>
+
 class                   tpid;
 
 namespace std {
@@ -38,7 +40,7 @@ protected:
                  _RTL_FUNC type_info(tpid *_tpp) { tpp = _tpp; }
 };
 
-_RTL_CLASS class   bad_cast{};
+_RTL_CLASS class   bad_cast : public exception {};
 _RTL_CLASS class   bad_typeid{};
 
 } // std

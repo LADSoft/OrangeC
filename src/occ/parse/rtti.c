@@ -453,7 +453,6 @@ static void XCExpression(EXPRESSION *node, XCLIST ***listPtr)
         case en_structelem:
             break;
         case en_global:
-        case en_label:
         case en_pc:
         case en_labcon:
         case en_absolute:

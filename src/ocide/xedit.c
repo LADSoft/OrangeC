@@ -6,7 +6,7 @@
  * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
- *     the Free Software Foundation, either version 3 of the License, or
+ *     the Free Software Foundation, either version 3 of the , or
  *     (at your option) any later version, with the addition of the 
  *     Orange C "Target Code" exception.
  * 
@@ -42,31 +42,31 @@ extern LOGFONT systemDialogFont;
 extern HWND codecompleteBox;
 extern BOOL inStructBox;
 extern HWND hwndShowFunc;
- extern COLORREF keywordColor;
- extern COLORREF numberColor;
- extern COLORREF commentColo;
- extern COLORREF stringColor;
- extern COLORREF directiveColor;
- extern COLORREF backgroundColor;
- extern COLORREF readonlyBackgroundColor;
- extern COLORREF textColor;
- extern COLORREF highlightColor;
- extern COLORREF selectedTextColor ;
- extern COLORREF selectedBackgroundColor;
- extern COLORREF columnbarColor;
+extern COLORREF keywordColor;
+extern COLORREF numberColor;
+extern COLORREF commentColo;
+extern COLORREF stringColor;
+extern COLORREF directiveColor;
+extern COLORREF backgroundColor;
+extern COLORREF readonlyBackgroundColor;
+extern COLORREF textColor;
+extern COLORREF highlightColor;
+extern COLORREF selectedTextColor ;
+extern COLORREF selectedBackgroundColor;
+extern COLORREF columnbarColor;
 
- extern COLORREF defineColor;
- extern COLORREF functionColor;
- extern COLORREF parameterColor;
- extern COLORREF typedefColor;
- extern COLORREF tagColor;
- extern COLORREF autoColor;
- extern COLORREF localStaticColor;
- extern COLORREF staticColor;
- extern COLORREF globalColor;
- extern COLORREF externColor;
- extern COLORREF labelColor;
- extern COLORREF memberColor;
+extern COLORREF defineColor;
+extern COLORREF functionColor;
+extern COLORREF parameterColor;
+extern COLORREF typedefColor;
+extern COLORREF tagColor;
+extern COLORREF autoColor;
+extern COLORREF localStaticColor;
+extern COLORREF staticColor;
+extern COLORREF globalColor;
+extern COLORREF externColor;
+extern COLORREF labelColor;
+extern COLORREF memberColor;
 
 extern COLORREF *colors[];
 
@@ -1723,8 +1723,11 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
             }
             else
             {
-                p->selstartcharpos = p->selendcharpos = p->marks[index];
-                ScrollCaretIntoView(hwnd, p, TRUE);
+                if (p->marks[index] >= 0)
+                {
+                    p->selstartcharpos = p->selendcharpos = p->marks[index];
+                    ScrollCaretIntoView(hwnd, p, TRUE);
+                }
             }
         }
     }
@@ -1766,6 +1769,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                 KillTimer(hwnd, p->cd->reparseTimerID);
                 p->cd->reparseTimerID = 0;
                 InstallForParse(GetParent(hwnd));
+                SyntaxCheck(hwnd, p);
                 break;
                 /*
             case WM_NCPAINT:
@@ -1897,11 +1901,11 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                 case VK_INSERT:
                     if (!p->cd->readonly)
                     {
-                        if (GetKeyState(VK_SHIFT) &0x80000000)
+                        if (GetKeyState(VK_SHIFT) & 0x80000000)
                         {
                             SendMessage(hwnd, WM_PASTE, 0, 0);
                         }
-                        else if (GetKeyState(VK_CONTROL) &0x80000000)
+                        else if (GetKeyState(VK_CONTROL) & 0x80000000)
                         {
                             SendMessage(hwnd, WM_COPY, 0, 0);
                         }
@@ -1930,7 +1934,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                 case VK_DELETE:
                     if (!p->cd->readonly)
                     {
-                        if (GetKeyState(VK_SHIFT) &0x80000000)
+                        if (GetKeyState(VK_SHIFT) & 0x80000000)
                         {
                             SendMessage(hwnd, WM_CUT, 0, 0);
                         }
@@ -1959,11 +1963,11 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                         setcurcol(p);
                         if (IsWindowVisible(hwndShowFunc))
                             scrollup(hwnd, p, 1);
-                        }
-                    
+                    }
+
                     break;
                 case VK_TAB:
-                    if (GetKeyState(VK_SHIFT) &0x80000000)
+                    if (GetKeyState(VK_SHIFT) & 0x80000000)
                     {
                         if (!p->cd->readonly)
                         {
@@ -2004,11 +2008,11 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     SendMessage(GetParent(hwnd), EN_SETCURSOR, 0, 0);
                     break;
                 case VK_UP:
-                    upline(hwnd, p,  - 1);
+                    upline(hwnd, p, -1);
                     SendMessage(GetParent(hwnd), EN_SETCURSOR, 0, 0);
                     break;
                 case VK_PRIOR:
-                    if (GetKeyState(VK_CONTROL) &0x80000000)
+                    if (GetKeyState(VK_CONTROL) & 0x80000000)
                     {
                         VScrollPos(hwnd, 0, TRUE);
                         p->textshowncharpos = p->selendcharpos = 0;
@@ -2021,14 +2025,14 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     {
                         ClientArea(hwnd, p, &r);
                         i = r.bottom / p->cd->txtFontHeight;
-                        upline(hwnd, p, 2-i);
+                        upline(hwnd, p, 2 - i);
                     }
                     SendMessage(GetParent(hwnd), EN_SETCURSOR, 0, 0);
 
                     break;
                 case VK_NEXT:
                     ClientArea(hwnd, p, &r);
-                    if (GetKeyState(VK_CONTROL) &0x80000000)
+                    if (GetKeyState(VK_CONTROL) & 0x80000000)
                     {
                         i = lfchars(p->cd->text, p->textshowncharpos, p->cd->textlen);
                         upline(hwnd, p, i);
@@ -2041,7 +2045,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     SendMessage(GetParent(hwnd), EN_SETCURSOR, 0, 0);
                     break;
                 case VK_END:
-                    if (GetKeyState(VK_CONTROL) &0x80000000)
+                    if (GetKeyState(VK_CONTROL) & 0x80000000)
                     {
                         i = lfchars(p->cd->text, p->textshowncharpos, p->cd->textlen);
                         upline(hwnd, p, i);
@@ -2054,7 +2058,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     SendMessage(GetParent(hwnd), EN_SETCURSOR, 0, 0);
                     break;
                 case VK_HOME:
-                    if (GetKeyState(VK_CONTROL) &0x80000000)
+                    if (GetKeyState(VK_CONTROL) & 0x80000000)
                     {
                         VScrollPos(hwnd, 0, TRUE);
                         p->textshowncharpos = 0;
@@ -2074,7 +2078,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     SendMessage(GetParent(hwnd), EN_SETCURSOR, 0, 0);
                     break;
                 case VK_LEFT:
-                    if (GetKeyState(VK_CONTROL) &0x80000000)
+                    if (GetKeyState(VK_CONTROL) & 0x80000000)
                         leftword(hwnd, p);
                     else
                         left(hwnd, p);
@@ -2082,7 +2086,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     SendMessage(GetParent(hwnd), EN_SETCURSOR, 0, 0);
                     break;
                 case VK_RIGHT:
-                    if (GetKeyState(VK_CONTROL) &0x80000000)
+                    if (GetKeyState(VK_CONTROL) & 0x80000000)
                         rightword(hwnd, p);
                     else
                         right(hwnd, p);
@@ -2090,7 +2094,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     SendMessage(GetParent(hwnd), EN_SETCURSOR, 0, 0);
                     break;
                 case 'A':
-                    if (GetKeyState(VK_CONTROL) &0x80000000)
+                    if (GetKeyState(VK_CONTROL) & 0x80000000)
                     {
                         p->selstartcharpos = 0;
                         p->selendcharpos = p->cd->textlen;
@@ -2098,48 +2102,48 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     }
                     break;
                 case 'X':
-                    if (!p->cd->readonly && GetKeyState(VK_CONTROL) &0x80000000)
+                    if (!p->cd->readonly && GetKeyState(VK_CONTROL) & 0x80000000)
                     {
                         SendMessage(hwnd, WM_CUT, 0, 0);
                     }
                     break;
                 case 'C':
-                    if (GetKeyState(VK_CONTROL) &0x80000000)
+                    if (GetKeyState(VK_CONTROL) & 0x80000000)
                     {
                         SendMessage(hwnd, WM_COPY, 0, 0);
                     }
                     break;
                 case 'V':
-                    if (!p->cd->readonly && GetKeyState(VK_CONTROL) &0x80000000)
+                    if (!p->cd->readonly && GetKeyState(VK_CONTROL) & 0x80000000)
                     {
                         SendMessage(hwnd, WM_PASTE, 0, 0);
                     }
                     break;
                 case 'Y':
-                    if (!p->cd->readonly && GetKeyState(VK_CONTROL) &0x80000000)
+                    if (!p->cd->readonly && GetKeyState(VK_CONTROL) & 0x80000000)
                     {
                         RemoveCurrentLine(hwnd, p);
                         return 0;
                     }
                     break;
                 case 'T':
-                    if (!p->cd->readonly && GetKeyState(VK_CONTROL) &0x80000000)
+                    if (!p->cd->readonly && GetKeyState(VK_CONTROL) & 0x80000000)
                     {
                         RemoveNextWord(hwnd, p);
                     }
                     break;
                 case 'R':
                     if (!p->cd->readonly)
-                        if (GetKeyState(VK_CONTROL) &0x80000000)
+                        if (GetKeyState(VK_CONTROL) & 0x80000000)
                         {
-                                SendMessage(hwnd, WM_REDO, 0, 0);
-                                if (IsWindowVisible(hwndShowFunc))
-                                    ShowWindow(hwndShowFunc, SW_HIDE);
+                            SendMessage(hwnd, WM_REDO, 0, 0);
+                            if (IsWindowVisible(hwndShowFunc))
+                                ShowWindow(hwndShowFunc, SW_HIDE);
                         }
                     break;
                 case 'Z':
                     if (!p->cd->readonly)
-                        if (GetKeyState(VK_CONTROL) &0x80000000)
+                        if (GetKeyState(VK_CONTROL) & 0x80000000)
                         {
                             SendMessage(hwnd, WM_UNDO, 0, 0);
                             if (IsWindowVisible(hwndShowFunc))
@@ -2147,7 +2151,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                         }
                     break;
                 case 'S':
-                    if (!p->cd->readonly && GetKeyState(VK_CONTROL) &0x80000000)
+                    if (!p->cd->readonly && GetKeyState(VK_CONTROL) & 0x80000000)
                     {
                         if (p->cd->modified)
                             SendMessage(GetParent(hwnd), WM_COMMAND, IDM_SAVE,
@@ -2155,58 +2159,83 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     }
                     break;
                 case 'L':
-                    if (!(GetKeyState(VK_CONTROL) &0x80000000))
+                    if (!(GetKeyState(VK_CONTROL) & 0x80000000))
                         break;
                     if (!p->cd->readonly && p->cd->inserting)
                     {
                         insertautoundo(hwnd, p, UNDO_AUTOEND);
-                        insertchar(hwnd,p , '\f');
-                        insertcr(hwnd,p,FALSE);	
+                        insertchar(hwnd, p, '\f');
+                        insertcr(hwnd, p, FALSE);
                         insertautoundo(hwnd, p, UNDO_AUTOBEGIN);
                     }
                     break;
                 case 'W':
-                    if (!(GetKeyState(VK_CONTROL) &0x80000000))
+                    if (!(GetKeyState(VK_CONTROL) & 0x80000000))
                         break;
                     InstallForParse(GetParent(hwnd));
-                    break ;
-                                        
+                    break;
+
                 case VK_SHIFT:
                     p->cd->selecting = TRUE;
                     break;
                 default:
-                    if (wParam >= '1' && wParam <= '9') // I couldn't get shift-ctrl-0 to return any value on my computer
+                    if (GetKeyState(VK_CONTROL) & 0x80000000)
                     {
-                        if (GetKeyState(VK_CONTROL) &0x80000000)
+                        switch (KeyboardToAscii(wParam, lParam, FALSE))
                         {
-                            MarkOrGoto(hwnd, p , wParam-'0', !!(GetKeyState(VK_SHIFT) &0x80000000));
+                        case '[':
+                            PopupFullScreen(hwnd, p);
+                            return 0;
+                        case ']':
+                            ReleaseFullScreen(hwnd, p);
+                            return 0;
+                        case '\\':
+                            verticalCenter(hwnd, p);
+                            break;
+                        case '1':
+                        case '2':
+                        case '3':
+                        case '4':
+                        case '5':
+                        case '6':
+                        case '7':
+                        case '8':
+                        case '9':
+                            // on german keyboards still honor the rcontrol
+                            switch (KeyboardToAscii(wParam, lParam, TRUE))
+                            {
+                            case '[':
+                                if (GetKeyState(VK_RCONTROL) & 0x80000000)
+                                {
+                                    PopupFullScreen(hwnd, p);
+                                    return 0;
+                                }
+                                break;
+                            case ']':
+                                if (GetKeyState(VK_RCONTROL) & 0x80000000)
+                                {
+                                    ReleaseFullScreen(hwnd, p);
+                                    return 0;
+                                }
+                                break;
+                            case '{':
+                            case '}':
+                            case 0xb3: // superscript 3
+                            case 0xb2: // superscript 2
+                                break;
+                            case '\\':
+                                if (GetKeyState(VK_RCONTROL) & 0x80000000)
+                                {
+                                    verticalCenter(hwnd, p);
+                                }
+                                break;
+                            default:
+                                MarkOrGoto(hwnd, p, wParam - '0', !!(GetKeyState(VK_SHIFT) & 0x80000000));
+                                break;
+                            }
                             break;
                         }
                     }
-                    switch (KeyboardToAscii(wParam, lParam, FALSE))
-                    {
-                         case '[':
-                            if (GetKeyState(VK_CONTROL) &0x80000000)
-                            {
-                                PopupFullScreen(hwnd, p);
-                                return 0;
-                            }
-                            break;
-                        case ']':
-                            if (GetKeyState(VK_CONTROL) &0x80000000)
-                            {
-                                ReleaseFullScreen(hwnd, p);
-                                return 0;
-                            }
-                            break;
-                        case '\\':
-                            if (GetKeyState(VK_CONTROL) &0x80000000)
-                            {
-                                verticalCenter(hwnd, p);
-                            }
-                            break;
-                    }
-                    break;
                 }
                 if (p->cd->selecting)
                     InvalidateRect(hwnd, 0, 0);
@@ -2254,7 +2283,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                 }
                 break;
             case WM_CHAR:
-                if (wParam >= ' ' && wParam < 256)
+                if ((wParam >= ' ' && wParam < 256) && !(GetKeyState(VK_RCONTROL) & 0x80000000))//german kb support
                 {
                     p = (EDITDATA*)GetWindowLong(hwnd, 0);
                     if (p->insertcursorcolumn)
@@ -2392,7 +2421,6 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                    {
                        if (p->cd)
                        {
-//                            p->cd->colorizing++;
                             free(p->cd->lineData);
                             p->cd->lineData = NULL;
                             p->cd->lineDataMax = 0;
@@ -2400,9 +2428,14 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                             {
                                 HWND t = GetParent(hwnd);
                                 DWINFO *x = (DWINFO *)GetWindowLong(t, 0);
-                                p->cd->lineData = ccGetLineData(x->dwName, &p->cd->lineDataMax);
+                                BYTE *ld = ccGetLineData(x->dwName, &p->cd->lineDataMax);
+                                // the above call call takes a while and meanwhile they may
+                                // have closed the window... if they did 'p' is invalid now
+                                // so bail..
+                                if (!IsWindow(hwnd))
+                                    return 0;
+                                p->cd->lineData = ld;
                             }
-//                            p->cd->colorizing--;
                        }
                         FreeColorizeEntries(p->colorizeEntries);
                         {
@@ -2454,6 +2487,8 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     p->cd->tabs = PropGetInt(NULL, "TAB_INDENT");
                     p->cd->leftmargin = EC_LEFTMARGIN;
                     
+                    for (int i = 0; i < 10; i++)
+                        p->marks[i] = -1;
                     getPageSize() ;
                     if (allocmem(p, page_size * 20) && commitmem(p, page_size))
                     {
@@ -3051,7 +3086,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                 SelectObject(dc, xfont);
 
                 ReleaseDC(hwnd, dc);
-                p->cd->txtFontHeight = t.tmHeight;
+                p->cd->txtFontHeight = t.tmHeight+ 1; // the +1 is necessary for italic underline to be visible on some fonts...
                 p->cd->txtFontWidth = t.tmAveCharWidth;
                 GetObject(p->cd->hFont, sizeof(LOGFONT), &lf);
                 lf.lfWidth = t.tmAveCharWidth-1;

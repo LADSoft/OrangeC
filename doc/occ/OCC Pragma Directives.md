@@ -2,6 +2,13 @@
 
  \#pragma preprocessor directives control the interpretation of source code, or extend the functionality of the compiler in some way.
 
+### \#pragma once
+
+ \#pragma once   automatically performs the function of an include guard
+
+ when this is encountered in a file (usually at the top of the file) occ checks to see if this file has been encountered
+ before, and if so stops processing it.   To determine if a file has been encountered before, occ does not consider the file name.  If the last modification time of the file, the file size, and a CRC32 taken over the file contents all match a file that has previously been cached due to encountering a \#pragma once directive, the file is considered to have been processed before and processing of it immediately stops.
+
 
 ### \#pragma error
 
@@ -25,6 +32,28 @@
      #endif
  
  generates a compile time warning if the LONG macro is not defined.
+
+otherwise #pragma warning may be used to disable and enable warnings, if the contents are in parenthesis:
+
+ \#pragma warning(disable:73)
+
+disables warning #73
+
+ \#pragma warning(enable:141)
+
+enables warning #141
+
+ \#pragma warning(push)
+
+pushes the warning state
+
+ \#pragma warning(pop)
+
+pops the warning state
+
+multiple options may be specified by separating with commas:
+
+ \#pragma warning(push, disable:73, enable:141)
 
 
 ### \#pragma aux
@@ -67,8 +96,4 @@ runs the function 'myfunc' after the RTL functions have initialized.  Myfunc wou
  
      void myfunc(void) ;
  
-Note that \#pragma rundown is equivalent to atexit.  
- 
- 
- 
-   
+Note that \#pragma rundown is equivalent to atexit.

@@ -113,7 +113,7 @@ void InsertBeginTabs(HWND hwnd, EDITDATA *p)
     int storepos, parencount = 0;
     int solpos, eospos;
     int oldinsert = p->cd->inserting;
-    if (p->cd->language != LANGUAGE_C && p->cd->language != LANGUAGE_RC)
+    if (p->cd->language != LANGUAGE_C && p->cd->language != LANGUAGE_CPP && p->cd->language != LANGUAGE_RC)
         return ;
     if (!PropGetBool(NULL, "AUTO_FORMAT"))
         return ;
@@ -194,7 +194,7 @@ void InsertEndTabs(HWND hwnd, EDITDATA *p, int newend)
     int eospos;
     int lsolpos, leospos;
     int oldinsert = p->cd->inserting;
-    if (p->cd->language != LANGUAGE_C && p->cd->language != LANGUAGE_RC)
+    if (p->cd->language != LANGUAGE_C && p->cd->language != LANGUAGE_CPP && p->cd->language != LANGUAGE_RC)
         return ;
     if (!newend)
         return ;
@@ -592,7 +592,7 @@ void SelectComment(HWND hwnd, EDITDATA *p, int insert)
 void DeletePound(HWND hwnd, EDITDATA *p)
 {
     int n, m;
-    if (p->cd->language != LANGUAGE_C && p->cd->language != LANGUAGE_RC)
+    if (p->cd->language != LANGUAGE_C && p->cd->language != LANGUAGE_CPP && p->cd->language != LANGUAGE_RC)
         return ;
     if (!PropGetBool(NULL, "AUTO_FORMAT"))
         return ;

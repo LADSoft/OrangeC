@@ -35,7 +35,6 @@ endif
 WINOBJS = $(shell dir $(B) $(WINOBJECT)\\*.o)
 DLLOBJS = $(shell dir $(B) $(DLLOBJECT)\\*.o)
 
-$(info hi $(DLLOBJS))
 .\lscrtl.dll: .\lscrtl.o .\c0dll.o $(RCFILE).res
 	-del $@
 	$(LINK) $(LINKFLAGS) /T:DLL32 -o.\lscrtl .\lscrtl.o .\c0dll.o $(CLIBOBJECT)\srproc.o $(foreach dir, $(filter-out c0.o c0lsstartup.o, $(DLLOBJS)), $(DLLOBJECT)\$(dir)) $(SYSOBJECT)\climp.l $(RCFILE).res
@@ -44,18 +43,17 @@ $(info hi $(DLLOBJS))
 
 .\lscrtlil.dll: .\lscrtl.o .\c0dll.o $(RCFILE).res
 	-del $@
-	$(LINK) $(LINKFLAGS) /l /T:DLL32 -o.\lscrtlil.rel .\lscrtl.o .\c0dll.o $(CLIBOBJECT)\srproc.o $(foreach dir, $(filter-out c0.o c0lsstartup.o, $(DLLOBJS)), $(DLLOBJECT)\$(dir)) $(SYSOBJECT)\climp.l $(RCFILE).res
-	dlpe /! /f /mDLL /olscrtlil.dll lscrtl.
+	$(LINK) $(LINKFLAGS) /l /T:DLL32 -o.\lscrtlil .\lscrtl.o .\c0dll.o $(CLIBOBJECT)\srproc.o $(foreach dir, $(filter-out c0.o c0lsstartup.o, $(DLLOBJS)), $(DLLOBJECT)\$(dir)) $(SYSOBJECT)\climp.l $(RCFILE).res
 #	move lscrtlil.dll \occil\bin
 
 .\lscrtl.o: lscrtl.nas
 	$(ASM) $(ASMFLAGS) -o$@ $^
 
 .\c0dll.o: c0dll.c
-	$(CC) /c $(CFLAGS) -o$@ $^
+	$(CC) /c $(CFLAGS) $(STDINCLUDE) -o$@ $^
 
 $(RCFILE).res: $(RCFILE).rc ..\..\..\..\version.h
-	orc -i$(ORANGEC)\include $(RCFILE).rc
+	orc -i$(ORANGEC)\src\clibs\stdinc -i$(ORANGEC)\src\clibs\platform\win32\wininc $(RCFILE).rc
 
 #DISTRIBUTE:
 #	$(ZIP) -porangec a $(DISTADDON)\lscrtl $(LSCRTLOBJECT)\*.*

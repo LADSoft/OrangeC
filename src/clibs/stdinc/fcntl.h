@@ -36,11 +36,14 @@
 #include <stddef.h>
 #endif
 
+#ifndef __TYPES_H
+#include <sys/types.h>
+#endif
+
 #if defined(__cplusplus)
 namespace __STD_NS__ {
 extern "C" {
 #endif
-int _RTL_FUNC _IMPORT _pipe(int *phandles, unsigned int psize, int textmode);
 
 extern int _RTL_DATA _fmode;
 
@@ -60,6 +63,7 @@ extern int _RTL_DATA _fmode;
 #define O_CREAT     0x0100  /* create and open file */
 #define O_TRUNC     0x0200  /* open with truncation */
 #define O_EXCL      0x0400  /* exclusive open */
+#define O_NOCTTY    0x0800
 
 #define _O_CREAT    O_CREAT
 #define _O_TRUNC    O_TRUNC
@@ -75,6 +79,10 @@ extern int _RTL_DATA _fmode;
 /* a file in append mode may be written to only at its end.
 */
 #define O_APPEND    0x0800  /* to end of file */
+#define O_DSYNC     0x0010
+#define O_NONBLOCK  0x0020
+#define O_RSYNC     0x0040
+#define O_SYNC      0x0080
 
 /* MSDOS special bits */
 
@@ -106,14 +114,37 @@ extern int _RTL_DATA _fmode;
 #define	F_SETLKW	9		/* F_SETLK; wait if blocked */
 
 /* file descriptor flags (F_GETFD, F_SETFD) */
-#define	FD_CLOEXEC	1		/* close-on-exec flag */
+#define	FD_CLOEXEC	0x0100		/* close-on-exec flag */
 
 /* record locking flags (F_GETLK, F_SETLK, F_SETLKW) */
 #define	F_RDLCK		1		/* shared or read lock */
 #define	F_UNLCK		2		/* unlock */
 #define	F_WRLCK		3		/* exclusive or write lock */
 
-int fcntl(int, int, ...);
+
+#define POSIX_FADV_NORMAL     0 //The application has no advice to give on its behavior with respect to the specified data. It is the default characteristic if no advice is given for an open file.
+#define POSIX_FADV_SEQUENTIAL 1 //The application expects to access the specified data sequentially from lower offsets to higher offsets.
+#define POSIX_FADV_RANDOM     2 // The application expects to access the specified data in a random order.
+#define POSIX_FADV_WILLNEED   3 //The application expects to access the specified data in the near future.
+#define POSIX_FADV_DONTNEED   4 //The application expects that it will not access the specified data in the near future.
+#define POSIX_FADV_NOREUSE    5 //The application expects to access the specified data once and then not reuse it thereafter.
+
+struct flock
+{
+    struct flock *l_next;
+    short  l_type;     //Type of lock; F_RDLCK, F_WRLCK, F_UNLCK. 
+    short  l_whence;   //Flag for starting offset. 
+    off_t  l_start;    //Relative offset in bytes. 
+    off_t  l_len;      //Size; if 0 then until EOF. 
+    pid_t  l_pid;      //Process ID of the process holding the lock; returned with F_GETLK. 
+};
+int  _RTL_FUNC _IMPORT  _pipe(int *phandles, unsigned int psize, int textmode);
+int  _RTL_FUNC _IMPORT  fcntl(int, int, ...);
+int  _RTL_FUNC _IMPORT  creat   (const char *__path, int __amode);
+int  _RTL_FUNC _IMPORT  open  (const char *__path, int __access,... /*unsigned mode*/);
+int  _RTL_FUNC _IMPORT  posix_fadvise(int, off_t, off_t, int);
+int  _RTL_FUNC _IMPORT  posix_fallocate(int, off_t, off_t);
+
 #ifdef __cplusplus
 } ;
 } ;
@@ -123,7 +154,11 @@ int fcntl(int, int, ...);
 
 #if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__FCNTL_H_USING_LIST)
 #define __FCNTL_H_USING_LIST
-using __STD_NS_QUALIFIER _pipe ;
 using __STD_NS_QUALIFIER _fmode ;
+using __STD_NS_QUALIFIER _pipe ;
 using __STD_NS_QUALIFIER fcntl;
+using __STD_NS_QUALIFIER open;
+using __STD_NS_QUALIFIER creat;
+using __STD_NS_QUALIFIER posix_fadvise;
+using __STD_NS_QUALIFIER posix_fallocate;
 #endif

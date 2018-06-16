@@ -39,8 +39,6 @@
 #include <io.h>
 #endif
 
-#define putenv(x, y) _putenv_s(x,y)
-
 #ifdef __CCDL__
     int _stklen = 100 * 1024;
     #ifdef MSDOS
@@ -67,6 +65,7 @@ FILE *listFile;
 char outfile[256];
 char *prm_searchpath = 0;
 char *sys_searchpath = 0;
+char *prm_libpath = 0;
 char version[256];
 char copyright[256];
 LIST *clist = 0;
@@ -75,9 +74,8 @@ int showVersion = FALSE;
 
 static BOOLEAN has_output_file;
 static LIST *deflist = 0, *undeflist = 0;
-static jmp_buf ctrlcreturn;
 static char **set_searchpath = &prm_searchpath;
-
+static char **set_libpath = &prm_libpath;
 void fatal(char *fmt, ...)
 {
     va_list argptr;
@@ -86,6 +84,8 @@ void fatal(char *fmt, ...)
     printf("Fatal error: ");
     vprintf(fmt, argptr);
     va_end(argptr);
+    extern void Cleanup();
+    Cleanup();
     exit(1);
 }
 void banner(char *fmt, ...)
@@ -448,9 +448,13 @@ BOOLEAN parse_args(int *argc, char *argv[], BOOLEAN case_sensitive)
         if ((argv[pos][0] == ARG_SEPSWITCH) || (argv[pos][0] == ARG_SEPFALSE) 
             || (argv[pos][0] == ARG_SEPTRUE))
         {
-            if (argv[pos][1] == '!')
+            if (argv[pos][1] == '!' || !strcmp(argv[pos], "--nologo"))
             {
                 // skip the silence arg
+            }
+            else if (argv[pos][0] == ARG_SEPFALSE && !argv[pos][1])
+            {
+                continue;
             }
             else
             {
@@ -548,6 +552,38 @@ void err_setup(char select, char *string)
     n = atoi(string);
     if (n > 0)
         cparams.prm_maxerr = n ;
+    DisableTrivialWarnings();
+}
+void warning_setup(char select, char *string)
+{
+    if (string[0] == 0)
+        AllWarningsDisable();
+    else switch (string[0])
+    {
+        case '+':
+            cparams.prm_extwarning = TRUE;
+            DisableTrivialWarnings();
+            break;
+        case 'd':
+            DisableWarning(atoi(string+1));
+            break;
+        case 'o':
+            WarningOnlyOnce(atoi(string+1));
+            break;
+        case 'x':
+            AllWarningsAsError();
+            break;
+        case 'e':
+            if (!strcmp(string, "error"))
+                AllWarningsAsError();
+            else
+                WarningAsError(atoi(string + 1));
+            break;
+        default:
+            EnableWarning(atoi(string));
+            break;
+            
+    }
 }
 
 /*-------------------------------------------------------------------------*/
@@ -572,7 +608,30 @@ void incl_setup(char select, char *string)
     fflush(stdout);
     strcat(*set_searchpath, string);
 }
-
+void libpath_setup(char select, char *string)
+{
+    (void) select;
+    if (*set_libpath)
+    {
+        *set_libpath = realloc(*set_libpath, strlen(string) + strlen
+            (*set_libpath) + 2);
+        strcat(*set_libpath, ";");
+    }
+    else
+    {
+        *set_libpath = malloc(strlen(string) + 1);
+        *set_libpath[0] = 0;
+    }
+    fflush(stdout);
+    strcat(*set_libpath, string);
+}
+void tool_setup(char select, char *string)
+{
+    char buf[2048];
+    buf[0] = '$';
+    strcpy(buf+1, string);
+    InsertAnyFile(buf, 0, -1, FALSE);
+}
 /*-------------------------------------------------------------------------*/
 
 void def_setup(char select, char *string)
@@ -632,7 +691,19 @@ void setglbdefs(void)
             s++;
         if (*s == '=')
             *s++ = 0;
-        glbdefine(n, s,FALSE);
+        if (*s)
+        {
+            char *q = calloc(1, strlen(s) + 3);
+            q[0] = MACRO_PLACEHOLDER;
+            strcpy(q + 1, s);
+            q[strlen(s) + 1] = MACRO_PLACEHOLDER;
+            glbdefine(n, q, FALSE);
+            free(q);
+        }
+        else
+        {
+            glbdefine(n, s, FALSE);
+        }
         if (*s)
             s[-1] = '=';
         l = l->next;
@@ -701,12 +772,13 @@ void setglbdefs(void)
 
 /*-------------------------------------------------------------------------*/
 
-void InsertOneFile(char *filename, char *path, int drive)
+void InsertOneFile(char *filename, char *path, int drive, BOOLEAN primary)
 /*
  * Insert a file name onto the list of files to process
  */
 
 {
+    char a = 0;
     char *newbuffer, buffer[260],  *p = buffer;
     BOOLEAN inserted;
     LIST **r = &clist, *s;
@@ -726,12 +798,19 @@ void InsertOneFile(char *filename, char *path, int drive)
     /* Allocate buffer and make .C if no extension */
     strcat(buffer, filename);
 #ifndef CPREPROCESSOR
+    if (buffer[0] == '-')
+    {
+        a = buffer[0];
+        buffer[0] = 'a';
+    }
     inserted = chosenAssembler->insert_noncompile_file 
-        && chosenAssembler->insert_noncompile_file(buffer);
+        && chosenAssembler->insert_noncompile_file(buffer, primary);
+    if (a)
+        buffer[0] = a;
     if (!inserted)
 #endif
     {
-        AddExt(buffer, ".C");
+        AddExt(buffer, ".c");
         newbuffer = (char*)malloc(strlen(buffer) + 1);
         if (!newbuffer)
             return ;
@@ -747,7 +826,7 @@ void InsertOneFile(char *filename, char *path, int drive)
         s->data = newbuffer;
     }
 }
-void InsertAnyFile(char *filename, char *path, int drive)
+void InsertAnyFile(char *filename, char *path, int drive, BOOLEAN primary)
 {
     char drv[256],dir[256],name[256],ext[256];
 #if defined(_MSC_VER) || defined(BORLAND) || defined(__ORANGEC__)
@@ -758,16 +837,16 @@ void InsertAnyFile(char *filename, char *path, int drive)
     if (n != -1)
     {
         do {
-            InsertOneFile(findbuf.name, dir[0] ? dir : 0, drv[0] ? tolower(drv[0])-'a' : -1);
+            InsertOneFile(findbuf.name, dir[0] ? dir : 0, drv[0] ? tolower(drv[0])-'a' : -1, primary);
         } while (_findnext(n, &findbuf) != -1);
         _findclose(n);
     }
     else
     {
-        InsertOneFile(filename, path, drive);
+        InsertOneFile(filename, path, drive, primary);
     }
 #else
-    InsertOneFile(filename, path, drive);
+    InsertOneFile(filename, path, drive, primary);
 #endif
 }
 /*-------------------------------------------------------------------------*/
@@ -779,8 +858,11 @@ void setfile(char *buf, char *orgbuf, char *ext)
  */
 {
     char *p = strrchr(orgbuf, '\\');
-    if (!p)
-        p = strrchr(orgbuf, '/');
+    char *p1 = strrchr(orgbuf, '/');
+    if (p1 > p)
+        p = p1;
+    else if (!p)
+        p = p1;
     if (!p)
         p = orgbuf;
     else
@@ -881,7 +963,7 @@ int parse_arbitrary(char *string)
     }
     rv = parse_args(&argc, argv, TRUE);
     for (i = 1; i < argc; i++)
-        InsertAnyFile(argv[i], 0,  - 1);
+        InsertAnyFile(argv[i], 0,  - 1, TRUE);
     return rv;
 }
 
@@ -922,6 +1004,20 @@ void addinclude(void)
     #else 
         char *string = getenv("CCINCL");
     #endif 
+    if (string && string[0])
+    {
+        char temp[1000];
+        strcpy(temp, string);
+        if (*set_searchpath)
+        {
+            strcat(temp, ";");
+            strcat(temp,  *set_searchpath);
+            free(*set_searchpath);
+        }
+        *set_searchpath = malloc(strlen(temp) + 1);
+        strcpy(*set_searchpath, temp);
+    }
+    string = getenv("CPATH");
     if (string && string[0])
     {
         char temp[1000];
@@ -1012,8 +1108,10 @@ void dumperrs(FILE *file)
 
 void ctrlchandler(int aa)
 {
-    (void) aa;
-    longjmp(ctrlcreturn, 1);
+    printf("^C");
+    extern void Cleanup();
+    Cleanup();
+    exit(1);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -1021,6 +1119,8 @@ void ctrlchandler(int aa)
 void internalError(int a)
 {
     (void) a;
+    extern void Cleanup();
+    Cleanup();
     printf("Internal Error - Aborting compile");
     exit(1);
 }
@@ -1039,7 +1139,7 @@ void ccinit(int argc, char *argv[])
     outfile[0] = 0;
     for (i = 1; i < argc; i++)
         if (argv[i][0] == '-' || argv[i][0] == '/')
-            if (argv[i][1] == '!')
+            if (argv[i][1] == '!' || !strcmp(argv[i], "--nologo"))
             {
                 showBanner = FALSE;
             }
@@ -1077,12 +1177,17 @@ void ccinit(int argc, char *argv[])
              if (q)
              {
                   *q = 0;
-                 putenv("ORANGEC", buffer);
+		char *buf1 = (char *)calloc(1,strlen("ORANGEC") + strlen(buffer) + 2);
+		strcpy(buf1, "ORANGEC");
+		strcat(buf1,"=");
+                strcat(buf1, buffer);
+                putenv(buf1);
                  *q = '\\';
              }
              *p = '\\';
         }
     }
+    DisableTrivialWarnings();
     /* parse the environment and command line */
 #ifndef CPREPROCESSOR
     if (chosenAssembler->envname && !parseenv(chosenAssembler->envname))
@@ -1104,7 +1209,7 @@ void ccinit(int argc, char *argv[])
             if (argv[i][0] == '@')
                 parsefile(0, argv[i] + 1);
             else
-                InsertAnyFile(argv[i], 0,  - 1);
+                InsertAnyFile(argv[i], 0,  - 1, TRUE);
     }
 
 #ifndef PARSER_ONLY
@@ -1136,8 +1241,7 @@ void ccinit(int argc, char *argv[])
     }
     #endif
             
-    /* Set up a ctrl-C handler so we can exit the prog */
+    /* Set up a ctrl-C handler so we can exit the prog with cleanup */
     signal(SIGINT, ctrlchandler);
-    if (setjmp(ctrlcreturn))
-        exit(1);
+    signal(SIGSEGV, internalError);
 }

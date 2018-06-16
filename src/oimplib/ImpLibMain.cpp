@@ -50,13 +50,13 @@ CmdSwitchBool ImpLibMain::caseSensitiveSwitch(SwitchParser, 'c', true);
 CmdSwitchBool ImpLibMain::CDLLSwitch(SwitchParser, 'C');
 CmdSwitchOutput ImpLibMain::OutputFile(SwitchParser, 'o', ".a");
 CmdSwitchFile ImpLibMain::File(SwitchParser, '@');
-char *ImpLibMain::usageText = "[options] outputfile [+ files] [- files] [* files]\n"
+const char *ImpLibMain::usageText = "[options] outputfile [+ files] [- files] [* files]\n"
             "\n"
             "/c-            Case insensitive library\n"
             "/oxxx          Set output file name\n"
             "/C             C language compatibility\n"
             "/V, --version  Show version and date\n"
-            "/!             No logo\n"
+            "/!, --nologo   No logo\n"
             "@xxx           Read commands from file\n"
             "\n"
             "outputfile can be a library, object, or def file\n"
@@ -130,7 +130,7 @@ void ImpLibMain::AddFile(LibManager &librarian, const char *arg)
                                 return;
                             }
                             defFile.SetFileName(inputFile);
-                            librarian.AddFile(*DefFileToObjFile(defFile));
+                            librarian.ReplaceFile(*DefFileToObjFile(defFile));
                         }
                         else if (ext == ".dll")
                         {
@@ -140,7 +140,7 @@ void ImpLibMain::AddFile(LibManager &librarian, const char *arg)
                                 std::cout << "Dll file '" << inputFile.c_str() << "' is missing or in wrong format" << std::endl;
                                 return;
                             }
-                            librarian.AddFile(*DllFileToObjFile(dllFile));
+                            librarian.ReplaceFile(*DllFileToObjFile(dllFile));
                         }
                         else
                         {
@@ -270,6 +270,8 @@ ObjFile *ImpLibMain::DllFileToObjFile(DLLExportReader &dll)
 {
     std::string name = dll.GetName();
     int npos = name.find_last_of('\\');
+    if (npos == std::string::npos)
+    	npos = name.find_last_of('//');
     if (npos != std::string::npos)
         name.erase(0, npos + 1);
     ObjectData *od = new ObjectData;
@@ -344,10 +346,19 @@ int ImpLibMain::HandleLibrary(const std::string &outputFile, int argc, char **ar
         librarian.ReplaceFile(*(*it));
     }
     if (modified)
-        if (!librarian.SaveLibrary())
+        switch (librarian.SaveLibrary())
         {
-            std::cout << "Error writing library file" << std::endl;
-            return 1;
+             case LibManager::CANNOT_CREATE:
+                std::cout << "Cannot open library file for 'write' access" << std::endl;
+                return 1;
+             case LibManager::CANNOT_WRITE:
+                std::cout << "Error while writing library file" << std::endl;
+                return 1;
+             case LibManager::CANNOT_READ:
+                std::cout << "Error while reading input files" << std::endl;
+                return 1;
+             default:
+                break;
         }
     return 0;
 }
@@ -411,7 +422,7 @@ int ImpLibMain::Run(int argc, char **argv)
                 return 0;
             }
         }
-        else if (ext != ".l")
+        else if (ext != ".l" && ext != ".a" && ext != ".lib")
         {
             std::cout << outputFile.c_str() << " is an invalid output file type" << std::endl;
             return 1;

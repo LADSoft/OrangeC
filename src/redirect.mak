@@ -30,7 +30,7 @@ export _TREEROOT
 export _TREETARGET
 
 redirect:
-	@$(MAKE) -f $(_TREEROOT)
+	@$(MAKE) -f $(_TREEROOT) localfiles
 
 endif
 

@@ -24,6 +24,7 @@
  */
 
 #include "compiler.h"
+#include "sys/stat.h"
 //#include "dir.h"
   
 char *getcwd(char *, int);
@@ -60,6 +61,7 @@ void ppdefcheck(unsigned char *line);
 
 MACROLIST *macroBuffers = NULL;
 
+
 int cppprio;
 int packdata[MAX_PACK_DATA] = 
 {
@@ -72,13 +74,30 @@ void datemac(char *string);
 void dateisomac(char *string);
 void timemac(char *string);
 void linemac(char *string);
+void countermac(char *string);
 
 static int instr = 0;
 static int commentlevel, commentline;
 static char defkw[] = "defined";
 static int currentfile;
+static time_t source_date_epoch = (time_t)-1;
+static int counter;
+
+#ifndef CPREPROCESSOR
+#define ONCE_BUCKETS 32
+typedef struct _once
+{
+    struct _once *next;
+    long filesize;
+    time_t filetime;
+    unsigned crc;
+} ONCE	;
+static ONCE *onceLists[ONCE_BUCKETS];
+static int once;
+#endif
+
 /* List of standard macros */
-#define INGROWNMACROS 5
+#define INGROWNMACROS 6
 
 struct inmac
 {
@@ -104,6 +123,9 @@ struct inmac
     , 
     {
         "__LINE__", linemac
+    },
+    {
+        "__COUNTER__", countermac
     }
 };
 
@@ -124,12 +146,17 @@ void preprocini(char *name, FILE *fil)
     stdpragmas = STD_PRAGMA_FCONTRACT ;
     defsyms = CreateHashTable(GLOBALHASHSIZE);
     macroBuffers = NULL;
+    counter = 0;
 #ifndef CPREPROCESSOR
+    once = 0;
     packlevel  = 0;
     packdata[0] = chosenAssembler->arch->packSize;
+    memset(onceLists, 0, sizeof(onceLists));
     cppprio = 0;
 #endif
-    
+    char *sde = getenv("SOURCE_DATE_EPOCH");
+    if (sde)
+        source_date_epoch = (time_t)strtoul(sde, NULL, 10);    
 }
 int defid(char *name, unsigned char **p)
 /*
@@ -186,11 +213,20 @@ BOOLEAN expectstring(char *buf, unsigned char **in, BOOLEAN angle)
 }
 PPINT expectnum(BOOLEAN *uns)
 {
+    BOOLEAN minus = FALSE;
+    while (isspace(*includes->lptr)) includes->lptr++;
+    if (*includes->lptr == '-')
+    {
+        includes->lptr++;
+        minus = TRUE;
+    }
 #ifdef USE_LONGLONG
-    LLONG_TYPE rv = strtoll((char *)includes->lptr, (char **)&includes->lptr, 0);
+    LLONG_TYPE rv = strtoull((char *)includes->lptr, (char **)&includes->lptr, 0);
 #else
-    LLONG_TYPE rv = strtol((char *)includes->lptr, (char **)&includes->lptr, 0);
+    LLONG_TYPE rv = strtoul((char *)includes->lptr, (char **)&includes->lptr, 0);
 #endif
+    if (minus)
+        rv = -rv;
     if (uns)
     {
         *uns = FALSE;
@@ -415,11 +451,22 @@ int getstring(unsigned char *s, int len, FILE *file)
             else
                 includes->ibufPtr++;
         }
+        if (file == stdin)
+        {
+            char *p = fgets(includes->inputbuffer, sizeof(includes->inputbuffer), file);
+            if (p)
+                includes->inputlen = strlen(p);
+            else
+                includes->inputlen = 0;
+        }
+        else
+        {
 #ifdef PARSER_ONLY
-        includes->inputlen = ccReadFile(includes->inputbuffer, 1, sizeof(includes->inputbuffer), file);
+            includes->inputlen = ccReadFile(includes->inputbuffer, 1, sizeof(includes->inputbuffer), file);
 #else
-        includes->inputlen = fread(includes->inputbuffer, 1, sizeof(includes->inputbuffer), file);
+            includes->inputlen = fread(includes->inputbuffer, 1, sizeof(includes->inputbuffer), file);
 #endif
+        }
         includes->ibufPtr = includes->inputbuffer;
         if (includes->inputlen <= 0)
         {
@@ -462,6 +509,7 @@ BOOLEAN getline(void)
         {
             int temp;
             ++includes->line;
+            ++includes->realline;
             preprocLine = includes->line;
             preprocFile = includes->fname;
 #ifdef PARSER_ONLY
@@ -469,8 +517,16 @@ BOOLEAN getline(void)
                 ccSetFileLine(includes->fname, includes->line);
 #endif
             rv = getstring(includes->inputline + rvc, MACRO_REPLACE_SIZE-132-rvc, includes->handle);
+#ifndef CPREPROCESSOR
+            if (rv || once)
+#else
             if (rv)
+#endif
             {
+#ifndef CPREPROCESSOR
+                once = FALSE;
+                rv = TRUE;
+#endif
                 break;
             }
             temp = strlen((char *)includes->inputline);
@@ -490,7 +546,7 @@ BOOLEAN getline(void)
             stripcomment(includes->inputline + rvc);
             /* for the back end*/
 #ifndef CPREPROCESSOR
-            InsertLineData(includes->line, includes->fileindex, includes->fname, (char *)includes->inputline + rvc);
+            InsertLineData(includes->realline, includes->fileindex, includes->fname, (char *)includes->inputline + rvc);
 #endif
             rvc = strlen((char *)includes->inputline);
             while (rvc && isspace((unsigned char)includes->inputline[rvc - 1]))
@@ -684,7 +740,55 @@ unsigned char *getauxname(unsigned char *ptr, char **bufp)
     DecGlobalFlag();
     return ptr;
 }
-
+#ifndef CPREPROCESSOR
+unsigned onceCRC(FILE *handle)
+{
+    unsigned crc =0 ;
+    unsigned PartialCRC32(unsigned crc, unsigned char *data, size_t len);
+#ifdef PARSER_ONLY
+    crc = PartialCRC32(crc, includes->handle, includes->filesize);
+#else
+    int hnd = dup(fileno(handle));
+    unsigned char buf[8192];
+    int n;
+    lseek(hnd, 0, SEEK_SET);
+    while ((n = read(hnd, buf, sizeof(buf))) > 0)
+    {
+        crc = PartialCRC32(crc, buf, n);
+    }
+    close(hnd);
+#endif
+    return crc;
+}
+void pragonce(void)
+{
+    time_t filetime = 0;
+    struct stat statbuf;
+    stat(includes->fname, &statbuf);
+    filetime = statbuf.st_mtime;
+    int bucket = ((includes->filesize >> 8) + (includes->filesize)) & (ONCE_BUCKETS-1);
+    ONCE *oncePos = onceLists[bucket];
+    for (; oncePos; oncePos = oncePos->next)
+        if (oncePos->filesize == includes->filesize)
+            break;
+    if (oncePos && filetime == oncePos->filetime)
+    {
+        if (oncePos->crc == onceCRC(includes->handle))
+        {
+            once = TRUE;
+            return;
+        }
+    }
+    IncGlobalFlag();
+    oncePos = Alloc(sizeof(ONCE));
+    DecGlobalFlag();
+    oncePos->filesize = includes->filesize;
+    oncePos->filetime = filetime;
+    oncePos->crc = onceCRC(includes->handle);
+    oncePos->next = onceLists[bucket];
+    onceLists[bucket] = oncePos;
+}
+#endif
 /*-------------------------------------------------------------------------*/
 
 static void pragerror(int error)
@@ -694,8 +798,67 @@ static void pragerror(int error)
     unsigned char *s ;
     skipspace();
     s = includes->lptr;
-    if (*s == '(') /* ignore microsoft warning pragmas  */
+    if (*s == '(')
+    {
+        // warning control
+#ifndef CPREPROCESSOR
+        if (error == ERR_PRAGWARN)
+        {
+            do
+            {
+                void (*func)(int) = NULL;
+                s++;
+                char name[256];
+                name[0] = 0;
+                while (isspace(*s))
+                    s++;
+                defid(name, &s);
+                if (!strcmp(name, "push"))
+                {
+                    PushWarnings();
+                } 
+                else if (!strcmp(name, "pop"))
+                {
+                    PopWarnings();
+                } 
+                else if (!strcmp(name, "enable"))
+                {
+                    func = EnableWarning;
+                } 
+                else if (!strcmp(name, "disable"))
+                {
+                    func = DisableWarning;
+                } 
+                else
+                {
+                    break;
+                }
+                if (func)
+                {
+                    while (isspace(*s))
+                        s++;
+                    if (*s != ':')
+                        break;
+                    s++;
+                    while (isspace(*s))
+                        s++;
+                    while (isdigit(*s))
+                    {
+                        func(atoi(s));
+                        while (isdigit(*s))
+                            s++;
+                        while (isspace(*s))
+                            s++;
+                    }
+                }
+                while (isspace(*s))
+                    s++;
+            } while (*s == ',');
+        }
+#endif
         return ;
+    }
+    // else a warning message
     while (i-- &&  *s &&  *s != '\n')
         *p++ =  (char)*s++;
     *p = 0;
@@ -746,6 +909,13 @@ void dopragma(void)
             stdpragmas &= ~val;
         return ;
     }
+#ifndef CPREPROCESSOR
+    else if (!strcmp(name, "once"))
+    {
+         pragonce();
+         return;
+    }
+#endif
     else if (!strcmp(name, "error"))
     {
         pragerror(ERR_PRAGERROR);
@@ -987,7 +1157,7 @@ void doline(void)
     if (*includes->lptr)
     {
         expectstring(buf, &includes->lptr, TRUE);
-        includes->fname = litlate(buf);
+        includes->linename = litlate(buf);
     }
 }
 
@@ -1119,6 +1289,13 @@ void doinclude(void)
         inc->linesTail = linesTail;
         
         linesHead = linesTail = NULL;
+#ifdef PARSER_ONLY
+        inc->filesize = strlen(inc->handle);
+#else
+        fseek(inc->handle, 0, SEEK_END);
+        inc->filesize = ftell(inc->handle);
+        fseek(inc->handle, 0, SEEK_SET);
+#endif
 #endif
         inc->fileindex = i;
 #ifndef CPREPROCESSOR
@@ -1660,7 +1837,10 @@ void datemac(char *string)
 {
     struct tm *t1;
     time_t t2;
-    time(&t2);
+    if (source_date_epoch != (time_t)-1)
+        t2 = source_date_epoch;
+    else
+        time(&t2);
     t1 = localtime(&t2);
     strftime(string, 40, "\"%b %d %Y\"", t1);
     if (string[5] == '0')
@@ -1671,7 +1851,10 @@ void dateisomac(char *string)
 {
     struct tm *t1;
     time_t t2;
-    time(&t2);
+    if (source_date_epoch != (time_t)-1)
+        t2 = source_date_epoch;
+    else
+        time(&t2);
     t1 = localtime(&t2);
     strftime(string, 40, "\"%Y-%m-%d\"", t1);
 }
@@ -1682,7 +1865,10 @@ void timemac(char *string)
 {
     struct tm *t1;
     time_t t2;
-    time(&t2);
+    if (source_date_epoch != (time_t)-1)
+        t2 = source_date_epoch;
+    else
+        time(&t2);
     t1 = localtime(&t2);
     strftime(string, 40, "\"%H:%M:%S\"", t1);
 }
@@ -1692,7 +1878,16 @@ void timemac(char *string)
 void linemac(char *string)
 {
     sprintf(string, "%d", includes->line);
-} 
+}
+
+/*-------------------------------------------------------------------------*/
+
+void countermac(char *string)
+{
+    sprintf(string, "%d", counter);
+    counter++;
+}
+
 /* Scan for default macros and replace them */
 void defmacroreplace(char *macro, char *name)
 {

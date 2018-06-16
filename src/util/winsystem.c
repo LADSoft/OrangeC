@@ -29,7 +29,9 @@ int winsystem(char *cmd)
         return -1;
     }
     WaitForSingleObject(stProcessInfo.hProcess, INFINITE);
+    DWORD rv = -1;
+    GetExitCodeProcess(stProcessInfo.hProcess, &rv);
     CloseHandle(stProcessInfo.hProcess);
     CloseHandle(stProcessInfo.hThread);
-    return 0;
+    return rv;
 }

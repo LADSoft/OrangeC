@@ -644,6 +644,11 @@ declval();
 
 #endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
 
+template <class _Tp>
+struct _LIBCPP_TYPE_VIS_ONLY __uncvref  {
+    typedef typename remove_cv<typename remove_reference<_Tp>::type>::type type;
+};
+
 struct __any
 {
     __any(...);

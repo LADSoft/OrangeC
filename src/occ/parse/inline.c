@@ -393,7 +393,6 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOLEAN *fromlval)
             break;
         case en_global:
         case en_pc:
-        case en_label:
         case en_labcon:
         case en_const:
         case en_threadlocal:
@@ -888,7 +887,6 @@ static BOOLEAN sideEffects(EXPRESSION *node)
         case en_global:
         case en_pc:
         case en_threadlocal:
-        case en_label:
         case en_labcon:
         case en_const:
         case en_auto:

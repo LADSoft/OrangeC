@@ -67,9 +67,11 @@ typedef struct _includes_
     int     anonymousid;
     int 	fileindex;
     int		line;
+    int     realline;
     int		current;
     int 	ifskip;
     int		skiplevel;
+    long        filesize;
     BOOLEAN	elsetaken;
     char	*data;
     unsigned char *lptr;
@@ -80,6 +82,7 @@ typedef struct _includes_
     unsigned char 	*ibufPtr;
     int		inputlen;
     char	*fname;
+    char    *linename;
     void    *linesHead, *linesTail;
     int     first:1;
     unsigned char inputline[MACRO_REPLACE_SIZE];

@@ -28,11 +28,12 @@
 #include "CmdSwitch.h"
 #include "Variable.h"
 #include "Rule.h"
+#include "Maker.h"
 #include <string>
 class MakeMain
 {
 public:
-    MakeMain() : restarts(0) { }
+    MakeMain() : restarts(0), outputType(o_none) { }
     int Run (int argc, char **argv);
     
 protected:
@@ -42,6 +43,7 @@ protected:
     void SetMakeFlags();
     void SetInternalVars();
     void SetupImplicit();
+    void LoadJobArgs();
     void LoadEnvironment();
     void LoadCmdDefines();
     void ShowRule(RuleList *ruleList);
@@ -49,6 +51,7 @@ protected:
     void SetTreePath(std::string &files);
 private:
     int restarts;
+    OutputType outputType;
     static CmdSwitchParser switchParser;
     static CmdSwitchCombineString specifiedFiles;
     static CmdSwitchBool displayOnly;
@@ -76,7 +79,9 @@ private:
     static CmdSwitchBool warnUndef;
     static CmdSwitchBool treeBuild;
     static CmdSwitchBool keepResponseFiles;
-    static char *usageText;
+    static CmdSwitchInt  jobs;
+    static CmdSwitchCombineString jobOutputMode;
+    static const char *usageText;
     static char *builtinVars;
     static char *builtinRules;
     

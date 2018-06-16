@@ -74,7 +74,7 @@ void LinkManager::AddObject(const ObjString &name)
     }
 }
 void LinkManager::AddLibrary(const ObjString &name) 
-{ 
+{
     libFiles.Add(name); 
 }
 void LinkManager::LoadExterns(ObjFile *file, ObjExpression *exp)
@@ -457,7 +457,7 @@ void LinkManager::LoadLibraries()
         }
         else
         {
-            LinkWarning("Library '" + (**it) + "' does not exist");
+            LinkError("Library '" + (**it) + "' does not exist");
         }
     }
 }

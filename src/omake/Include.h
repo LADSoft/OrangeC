@@ -26,6 +26,7 @@
 #ifndef INCLUDE_H
 #define INCLUDE_H
 
+#include "Maker.h"
 #include <string>
 #include <list>
 #include <set>
@@ -38,7 +39,7 @@ public:
     void Clear();
     
     bool AddFileList(const std::string &name, bool ignoreOk = false, bool MakeFile = false);
-    bool MakeMakefiles(bool Silent);
+    bool MakeMakefiles(bool Silent, OutputType outputType);
     
     typedef std::list<std::string>::iterator iterator;
     iterator begin() { return files.begin(); }

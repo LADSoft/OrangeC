@@ -119,8 +119,9 @@ BOOLEAN startOfType(LEXEME *lex, BOOLEAN assumeType)
             }
         }
     }
-    if (lex->type == l_id || MATCHKW(lex, classsel))
+    if (lex->type == l_id || MATCHKW(lex, classsel) || MATCHKW(lex, kw_decltype))
     {
+        BOOLEAN isdecltype = MATCHKW(lex, kw_decltype);
         SYMBOL *sp, *strSym = NULL;
         LEXEME *placeholder = lex;
         BOOLEAN dest = FALSE;
@@ -129,7 +130,7 @@ BOOLEAN startOfType(LEXEME *lex, BOOLEAN assumeType)
             prevsym(placeholder);
         linesHead = oldHead;
         linesTail = oldTail;
-        return (sp && istype(sp)) || (assumeType && strSym && (strSym->tp->type == bt_templateselector || strSym->tp->type == bt_templatedecltype));
+        return (!sp && isdecltype) || (sp && istype(sp)) || (assumeType && strSym && (strSym->tp->type == bt_templateselector || strSym->tp->type == bt_templatedecltype));
     }
     else 
     {
@@ -203,6 +204,8 @@ BOOLEAN isDerivedFromTemplate(TYPE *tp)
 BOOLEAN isautotype(TYPE *tp)
 {
     if (isref(tp))
+        tp = basetype(tp)->btp;
+    while (ispointer(tp))
         tp = basetype(tp)->btp;
     return basetype(tp)->type == bt_auto;
 }
@@ -537,38 +540,72 @@ BOOLEAN isunion(TYPE *tp)
         return tp->type == bt_union;
     return FALSE;
 }
-TYPE *assignauto(TYPE *pat, TYPE *nt)
+void DeduceAuto(TYPE **pat, TYPE *nt)
 {
-    if (isautotype(pat))
+    TYPE *in = nt;
+    if (isautotype(*pat))
     {
-        if (isref(pat))
+        BOOLEAN pointerOrRef = FALSE;
+        BOOLEAN err = FALSE;
+        if (isref(*pat))
         {
             if (isref(nt))
-                basetype(pat)->btp = basetype(nt)->btp;
-            else
-                basetype(pat)->btp = nt;
+            {
+                nt = basetype(nt)->btp;
+            }
+            pointerOrRef = TRUE;
+            pat = &basetype(*pat)->btp;
         }
-        else
+        while (!err && ispointer(*pat) && ispointer(nt))
         {
-            if (pat->decltypeauto)
-                if (pat->decltypeautoextended)
+            if (!ispointer(nt))
+            {
+                err = TRUE;
+            }
+            else
+            {
+                pointerOrRef = TRUE;
+                pat = &basetype(*pat)->btp;
+                nt = basetype(nt)->btp;
+            }
+        }
+        if (basetype(*pat)->type != bt_auto)
+            err = TRUE;
+        nt = basetype(nt);
+        if (err)
+        {
+            errortype(ERR_CANNOT_DEDUCE_AUTO_TYPE, in, in);
+        }
+        else if (!pointerOrRef)
+        {
+            if ((*pat)->decltypeauto)
+                if ((*pat)->decltypeautoextended)
                 {
-                    pat = (TYPE *)Alloc(sizeof(TYPE));
-                    pat->type = bt_lref;
-                    pat->size = getSize(bt_pointer);
-                    pat->btp = nt;
+                    *pat = (TYPE *)Alloc(sizeof(TYPE));
+                    (*pat)->type = bt_lref;
+                    (*pat)->size = getSize(bt_pointer);
+                    (*pat)->btp = nt;
                 }
                 else
                 {
-                    pat = nt;
+                    *pat = nt;
                 }
             else if (isref(nt))
-                pat = basetype(nt)->btp;
+            {
+                *pat = basetype(nt)->btp;
+            }
             else
-                pat = nt;
+            {
+                *pat = nt;
+            }
+        }
+        else
+        {
+            while ((*pat)->type != bt_auto)
+                pat = &(*pat)->btp;
+            *pat = nt;
         }
     }
-    return pat;
 }
 SYMBOL *getFunctionSP(TYPE **tp)
 {
@@ -719,11 +756,6 @@ EXPRESSION *anonymousVar(enum e_sc storage_class, TYPE *tp)
     static int anonct = 1;
     char buf[256];
     SYMBOL *rv = (SYMBOL *)Alloc(sizeof(SYMBOL));
-//    if ((storage_class == sc_localstatic || storage_class == sc_auto) && !theCurrentFunc)
-//    {
-//        storage_class = sc_static;
-//        insertInitSym(rv);
-//    }
     if (tp->size == 0 && isstructured(tp))
         tp = basetype(tp)->sp->tp;
     rv->storage_class = storage_class;
@@ -740,7 +772,7 @@ EXPRESSION *anonymousVar(enum e_sc storage_class, TYPE *tp)
     if (theCurrentFunc && localNameSpace->syms && !inDefaultParam && !anonymousNotAlloc)
         InsertSymbol(rv, storage_class, FALSE, FALSE);
     SetLinkerNames(rv, lk_none);
-    return varNode(storage_class == sc_auto || storage_class == sc_parameter ? en_auto : storage_class == sc_localstatic ? en_label : en_global, rv);
+    return varNode(storage_class == sc_auto || storage_class == sc_parameter ? en_auto : en_global, rv);
 }
 void deref(TYPE *tp, EXPRESSION **exp)
 {
@@ -1245,7 +1277,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
             else
             {
                 local = TRUE;
-                expsym = varNode(en_label, sp);
+                expsym = varNode(en_global, sp);
             }
             break;
         case sc_static:
@@ -1589,6 +1621,8 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
             *pos = expsym;
         }
     }
+    if (!rv)
+        rv = intNode(en_c_i, 0);
     return rv;
 }
 BOOLEAN assignDiscardsConst(TYPE *dest, TYPE *source)
@@ -1710,7 +1744,6 @@ BOOLEAN isconstaddress(EXPRESSION *exp)
             return (isconstaddress(exp->left) || isintconst(exp->left))
                     && (isconstaddress(exp->right) || isintconst(exp->right));
         case en_global:
-        case en_label:
         case en_pc:
         case en_labcon:
             return TRUE;

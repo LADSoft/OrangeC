@@ -135,7 +135,7 @@ static int ParseNewProjectData(HWND hwnd)
                     break;
                 case BT_DLL:
                     if (strlen(newName) < 5 || stricmp(newName + strlen(newName)-4, ".dll") != 0)
-                       strcat(newName, ".exe");
+                       strcat(newName, ".dll");
                     break;
                 case BT_LIBRARY:
                     if (strlen(newName) < 3 || stricmp(newName + strlen(newName)-2, ".l") != 0)
@@ -493,12 +493,14 @@ void LoadProject(char *name)
         strcpy(p->realName, name);
         p->type = PJ_PROJ;
         p->displayName[0] = 0;
-        RestoreProject(p, TRUE);
+        RestoreProject(p, FALSE);
         if (p->displayName[0])
         {
+            ins = &workArea->children;
             while ((*ins) && stricmp((*ins)->displayName, p->displayName) < 0)
                 ins = &(*ins)->next;
             p->next = *ins;
+            p->parent = workArea;
             *ins = p;
             TreeView_DeleteAllItems(prjTreeWindow);
             ResDeleteAllItems();

@@ -76,6 +76,6 @@ private:
     static CmdSwitchFile File;
     static CmdSwitchBool CDLLSwitch;
 
-    static char *usageText;
+    static const char *usageText;
 };
 #endif

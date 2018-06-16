@@ -21,18 +21,30 @@
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
-DIRS=pe rtl def msvcrdm crtdmain lscrtl pels 
 BUILDING_DLL := BUILDING_DLL=-D__BUILDING_LSCRTL_DLL
 
 SHELL=cmd.exe
 export SHELL
 
-all: lscrtl_objs alldirs
+all: alldirs
+
 
 lscrtl_objs:
 	$(MAKE) -Crtl --eval="OBJECT=$(DLLOBJECT)" --eval="$(BUILDING_DLL)"
+rtl_objs: lscrtl_objs
+	$(MAKE) -Crtl
 
-$(eval $(ALLDIRS))
+alldirs: rtl_objs
+ifdef FINAL
+	$(MAKE) -Clsdbghelper
+else
+	$(MAKE) -Cpe
+	$(MAKE) -Cdef
+	$(MAKE) -Cmsvcrdm
+	$(MAKE) -Ccrtdmain
+	$(MAKE) -Clscrtl
+	$(MAKE) -Cpels
+endif
 
 DISTRIBUTE:
 	$(MAKE) -Cpe DISTRIBUTE

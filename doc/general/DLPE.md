@@ -63,5 +63,4 @@ name.  For example:
 
  The **/V** switch shows version information, and the compile date
 
- The **/!** switch is 'nologo'
-
+ The **/!** or **--nologo** switch is 'nologo'

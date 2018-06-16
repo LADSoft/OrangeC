@@ -49,6 +49,7 @@ public:
     void Add(const ObjString &Name);
     void Remove(const ObjString &Name);
     void Extract(FILE *stream, const ObjString &Name);
+    void Replace(ObjFile &obj);
     void Replace(const ObjString &Name);
     
     size_t size() { return files.size(); }

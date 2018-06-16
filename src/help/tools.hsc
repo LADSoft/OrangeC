@@ -187,7 +187,7 @@ Writing
 
 
 FALSE
-23
+25
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}{\f2\fnil\fcharset0 Courier New;}}
 {\colortbl ;\red0\green0\blue255;\red0\green128\blue0;\red128\green0\blue0;}
 \viewkind4\uc1\pard\cf1\b\fs32 OCC\cf0\b0\f1\fs20 
@@ -205,6 +205,8 @@ FALSE
 \par \f2 OCC [options] filename-list\f1 
 \par 
 \par Where filename-list gives a\f0  \f1 list of files to \f0 compile\f1 . 
+\par 
+\par \f0 A special filename '-' allows taking input from the console.\f1 
 \par 
 \par In addition to support for the C99 standard, OCC supports a variety of the usual\f0  \cf2\strike\f1 compiler extensions\cf3\strike0\{linkID=160\}\cf0\f0  \f1  found\f0  \f1 in MSDOS and WIN32 compilers.
 \par 
@@ -242,7 +244,7 @@ FALSE
 \par \f2 
 \par OCC [parameters] @resp.cc\f1 
 \par 
-\par There are a variety of parameters that can be set. Help is\f0  \f1 available for the following:
+\par There are a variety of parameters that can be set. \f0 In the latest version of the compiler it is often possible to place a space between the parameter and any file name associated with it.  \f1 Help is\f0  \f1 available for the following:
 \par 
 \par \f0\tab\cf2\strike Output Control\cf3\strike0\{linkID=50\}\cf0 
 \par \tab\cf2\strike Error Control\cf3\strike0\{linkID=60\}\cf0 
@@ -729,14 +731,19 @@ Writing
 
 
 FALSE
-68
+73
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}{\f2\fnil\fcharset0 Courier New;}}
 {\colortbl ;\red0\green0\blue255;}
 \viewkind4\uc1\pard\cf1\b\fs32 #Pragma statements\cf0\b0\f1\fs20 
 \par 
 \par #pragma preprocessor directives control\f0  \f1 the interpretation of source code, or extend the functionality of the\f0  \f1 compiler in some way.
-\par 
 \par \f0 
+\par 
+\par \cf1 #pragma once\cf0 
+\par 
+\par #pragma once allows automatic include-guarding.  When #pragma once is encountered, a check will be made to determine if the file has been processed before; if it has, processing wil stop immediately.   To determine if a file has been processed before, the file time, the file size, and the file contents are considered; if they match then the file has been processed before even if it is in a different location or has a different name.
+\par 
+\par 
 \par \cf1 #pragma error\f1 
 \par 
 \par \cf0 #pragma error \f0 <\f1 text\f0 >\f1  allows conditional\f0  \f1 generation of errors. For example:

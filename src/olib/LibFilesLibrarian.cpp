@@ -47,6 +47,11 @@ void LibFiles::Add(ObjFile &obj)
 void LibFiles::Add(const ObjString &Name)
 {
     unsigned npos = Name.find_last_of(CmdFiles::DIR_SEP);
+    unsigned npos1 = Name.find_last_of('/');
+    if (npos != std::string::npos && npos1 != std::string::npos && npos1 > npos)
+        npos = npos1;
+    else if (npos == std::string::npos)
+        npos = npos;
     std::string internalName = Name;
     if (npos != std::string::npos)
         internalName = Name.substr(npos+1);
@@ -113,6 +118,30 @@ void LibFiles::Extract(FILE *stream, const ObjString &Name)
     }
     std::cout << "Warning: Module '" << Name.c_str() << "' not in library and could not be extracted" << std::endl;
 }
+void LibFiles::Replace(ObjFile &obj)
+{
+    std::string Name = obj.GetName();
+    unsigned npos = Name.find_last_of(CmdFiles::DIR_SEP);
+    std::string internalName = Name;
+    if (npos != std::string::npos)
+        internalName = Name.substr(npos+1);
+    for (FileIterator it = FileBegin(); it != FileEnd(); ++it)
+    {
+        if ((*it)->name == internalName)
+        {
+            if ((*it)->data)
+            {
+                delete (*it)->data;
+                (*it)->data = nullptr;
+            }
+            (*it)->data = &obj;
+            (*it)->name = Name;
+            (*it)->offset = 0;
+            return;
+        }
+    }
+    Add(obj);        
+}
 void LibFiles::Replace(const ObjString &Name)
 {
     unsigned npos = Name.find_last_of(CmdFiles::DIR_SEP);
@@ -148,6 +177,11 @@ void LibFiles::WriteNames(FILE *stream)
     {
         const char *p = (*it)->name.c_str();
         const char *q = strrchr(p, '\\');
+        const char *q1 = strrchr(p, '/');
+        if (q && q1)
+            q = q > q1 ? q : q1;
+        else if (q == 0)
+            q = q1;
         if (q)
             q++;
         else

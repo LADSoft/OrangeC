@@ -43,12 +43,14 @@ long _RTL_FUNC lseek(int __handle, long __offset, int __whence)
       __ll_exit_critical() ;
       return -1 ;
    }
-   __uiflags[HANDLE_MAX] &= ~UIF_EOF ;
    if (__ll_seek(__handle,__offset,__whence) < 0) {
       __ll_exit_critical() ;
       return -1 ;
    }
-   __uiflags [ohand] &= ~UIF_EOF ;
+   if (__whence == SEEK_END && __offset >= 0)
+      __uiflags [ohand] |= UIF_EOF ;
+   else
+      __uiflags [ohand] &= ~UIF_EOF ;
    rv = __ll_getpos(__handle);
    __ll_exit_critical() ;
    return rv;

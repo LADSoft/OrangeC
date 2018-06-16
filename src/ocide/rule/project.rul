@@ -19,37 +19,37 @@
         </DEPENDS>
 		<PROPS NAME="General Properties">
 			<PROPS NAME="Configuration" HELPID="560">
-				<ITEM CLASS="File" NAME="Output Path" TYPE="TEXT" ID="OUTPUTDIR">
+				<ITEM CLEAN="1" CLASS="File" NAME="Output Path" TYPE="TEXT" ID="OUTPUTDIR">
 					$(PROJECTDIR)\$(CURRENTPROFILE)\$(CURRENTRELEASETYPE)
 				</ITEM>
-				<ITEM CLASS="File" NAME="Output File" TYPE="TEXT" ID="OUTPUTFILE">
+				<ITEM CLEAN="1" CLASS="File" NAME="Output File" TYPE="TEXT" ID="OUTPUTFILE">
 					$(OUTPUTDIR)\$(OUTPUTNAME)$(OUTPUTEXT)
 				</ITEM>
-				<ITEM NAME="Project TYPE" TYPE="COMBO" ID="__PROJECTTYPE" DEFAULT="0">
+				<ITEM CLEAN="1" NAME="Project TYPE" TYPE="COMBO" ID="__PROJECTTYPE" DEFAULT="0">
 					<SETTING NAME="Console" VALUE="0"/>
 					<SETTING NAME="GUI" VALUE="1"/>
 					<SETTING NAME="DLL" VALUE="2"/>
 					<SETTING NAME="Static Library" VALUE= "3"/>
 					<SETTING NAME="DOS" VALUE="4"/>
 				</ITEM>
-				<ITEM NAME="Library TYPE" TYPE="COMBO" ID="__LIBRARYTYPE" DEFAULT="1">
+				<ITEM CLEAN="1" NAME="Library TYPE" TYPE="COMBO" ID="__LIBRARYTYPE" DEFAULT="1">
 					<SETTING NAME="None" VALUE="0"/>
 					<SETTING NAME="Static Library" VALUE="1"/>
 					<SETTING NAME="LSCRTL.DLL" VALUE="2"/>
 					<SETTING NAME="CRTDLL.DLL" VALUE="3"/>
 					<SETTING NAME="MSVCRT.DLL" VALUE="4"/>
-                </ITEM>
-				<ITEM NAME="Unicode" ID="UNICODE" TYPE="COMBO" DEFAULT="">
+                                </ITEM>
+				<ITEM CLEAN="1" NAME="Unicode" ID="UNICODE" TYPE="COMBO" DEFAULT="">
 					<SETTING NAME="No" VALUE=""/>
 					<SETTING NAME="Yes" VALUE=" /DUNICODE"/>
 				</ITEM>
 			</PROPS>
 			<PROPS NAME="Debugging" HELPID="570">
-				<ITEM NAME="Debug Program" TYPE="COMBO" ID="__DEBUG" DEFAULT="1" MODE="DEBUG">
+				<ITEM CLEAN="1" NAME="Debug Program" TYPE="COMBO" ID="__DEBUG" DEFAULT="1" MODE="DEBUG">
 					<SETTING NAME="No" VALUE="0"/>
 					<SETTING NAME="Yes" VALUE="1"/>
 				</ITEM>
-				<ITEM NAME="Debug Program" TYPE="COMBO" ID="__DEBUG" DEFAULT="0" MODE="RELEASE">
+				<ITEM CLEAN="1" NAME="Debug Program" TYPE="COMBO" ID="__DEBUG" DEFAULT="0" MODE="RELEASE">
 					<SETTING NAME="No" VALUE="0"/>
 					<SETTING NAME="Yes" VALUE="1"/>
 				</ITEM>

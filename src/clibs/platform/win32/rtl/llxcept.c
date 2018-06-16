@@ -25,15 +25,34 @@
 
 #include <windows.h>
 #include <signal.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
+#include <stdlib.h>
+#undef errno
+#include <wchar.h>
+#include <locale.h>
+#include <libp.h>
 extern int _win32 ;
+extern char **_argv;
+extern DWORD __unaligned_stacktop;
+extern HINSTANCE __hInstance;
+typedef void CALLBACK trace_func(char *text, char *filename, PCONTEXT p, void *hInstance, void *stacktop);
+
+
 static int *_xceptblkptr;
 /*static*/ PCONTEXT xxctxt;
 /*static*/ void regdump(char *text, PCONTEXT p)
 {
+   HMODULE hmod = LoadLibrary("lsdbghelper");
+   if (hmod)
+   {
+       trace_func *f = (trace_func *)GetProcAddress(hmod, "StackTrace");
+       if (f) f(text, _argv[0], p, (void *)__hInstance, (void *)__unaligned_stacktop);
+       FreeLibrary(hmod);
+       if(f) return;
+   }
    char buf[1024] ;
-      sprintf(buf,"\n%s\n\n",text);
+      sprintf(buf,"\n%s:(%s)\n",text, _argv[0]);
       sprintf(buf+strlen(buf),"CS:EIP %04X:%08X  SS:ESP %04X:%08X\n",p->SegCs,p->Eip,p->SegSs,p->Esp);
       sprintf(buf+strlen(buf),"EAX: %08X  EBX: %08X  ECX: %08X  EDX: %08X  flags: %08X\n",
             p->Eax, p->Ebx, p->Ecx, p->Edx, p->EFlags);
@@ -42,6 +61,7 @@ static int *_xceptblkptr;
          p->SegDs,p->SegEs,p->SegFs,p->SegGs);
    if (!_win32) {
       fprintf(stderr,buf) ;
+      fflush(stderr);
    } else {
       MessageBox(0,buf,text,0) ;
    }
@@ -57,6 +77,11 @@ LONG ___xceptionhandle(PEXCEPTION_RECORD p, void *record, PCONTEXT context, void
    int signum = -1,rv = 1;
    if (p->ExceptionFlags == 2) // unwinding
    		return 1 ;
+   // if we get a C++ exception here, it is a 'loose' throw that needs an abort...
+#ifndef __BUILDING_LSCRTL_DLL
+   if (p->ExceptionCode == OUR_CPP_EXC_CODE) 
+       __call_terminate();
+#endif
    switch(p->ExceptionCode) {
 		case EXCEPTION_ACCESS_VIOLATION:
 		case EXCEPTION_DATATYPE_MISALIGNMENT:

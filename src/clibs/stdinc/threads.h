@@ -38,10 +38,13 @@ typedef struct
     char called;
 } once_flag;
 
+#ifndef _TIMESPEC_DEFINED
+#define _TIMESPEC_DEFINED
 typedef struct {
     time_t sec;
     long nsec;
 } timespec;
+#endif
 
 enum mtx_e
 {

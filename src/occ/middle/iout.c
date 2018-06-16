@@ -876,16 +876,17 @@ static void iop_block(QUAD *q)
 static void iop_blockend(QUAD *q)
 {
     oprintf(icdFile, "\tBLOCK END");
-    if (0 && q->dc.v.data)
+    if (q->dc.v.data)
     {
         int i,j;
         BITINT *p;
         oprintf(icdFile, "\n;\tLive: ");
         p = q->dc.v.data;
-        for (i=0; i < (tempCount+BITINTBITS-1)/BITINTBITS; i++)
+
+        for (i=0; i < (tempCount+BITINTBITS-1)/BITINTBITS; i++, p++)
             if (*p)
                 for (j=0; j < BITINTBITS; j++)
-                    if ((*p) && (1 << j))
+                    if ((*p) & (1 << j))
                         oprintf(icdFile,"TEMP%d, ", i * BITINTBITS + j);
     }
 }
@@ -1176,8 +1177,6 @@ void beDecorateSymName(char *buf, SYMBOL *sp)
     q = lookupAlias(sp->name);
     if (q)
         strcpy(buf, q);
-    else if (sp->storage_class == sc_localstatic)
-        sprintf(buf, "L_%d", sp->label);
     else
     {
         strcpy(buf, sp->decoratedName);
@@ -1255,9 +1254,6 @@ void putconst(EXPRESSION *offset, int color)
             break;
         case en_structelem:
             oprintf(icdFile, "%s:STRUCTELEM(%d)", ((SYMBOL*)offset->v.sp)->decoratedName, offset->v.sp->offset);
-            break;
-        case en_label:
-            oprintf(icdFile, "L_%ld:RAM", offset->v.sp->label);
             break;
         case en_c_string:
             if (offset->string)
@@ -2661,7 +2657,7 @@ void putexterns(void)
         {
             SYMBOL *sp = externList->data;
             if (!sp->ispure && (sp->dontinstantiate && sp->genreffed || !sp->inlineFunc.stmt && !sp->init && 
-                                (sp->parentClass || sp->genreffed && sp->storage_class == sc_external)) & !sp->noextern)
+                                (sp->parentClass && sp->genreffed || sp->genreffed && sp->storage_class == sc_external)) & !sp->noextern)
             {
                 notyet = put_exfunc(sp, notyet);
                 sp->genreffed = FALSE;

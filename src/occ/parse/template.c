@@ -129,7 +129,6 @@ EXPRESSION *GetSymRef(EXPRESSION *n)
         case en_global:
         case en_auto:
         case en_absolute:
-        case en_label:
         case en_pc:
         case en_threadlocal:
             return n;
@@ -172,8 +171,6 @@ BOOLEAN templatecompareexpressions(EXPRESSION *exp1, EXPRESSION *exp2)
         case en_const:
         case en_threadlocal:
             return exp1->v.sp == exp2->v.sp;
-        case en_label:
-            return exp1->v.i == exp2->v.i;
         case en_func:
             return exp1->v.func->sp == exp2->v.func->sp;
         case en_templateselector:
@@ -775,7 +772,7 @@ TEMPLATEPARAMLIST **expandArgs(TEMPLATEPARAMLIST **lst, LEXEME *start, SYMBOL *f
             }
         }
     }
-    else
+    else if (select)
     {
         *lst = Alloc(sizeof(TEMPLATEPARAMLIST));
         (*lst)->p = select->p;
@@ -1464,6 +1461,7 @@ SYMBOL *LookupSpecialization(SYMBOL *sym, TEMPLATEPARAMLIST *templateParams)
     candidate->tp->tags = NULL;
     candidate->baseClasses = NULL;
     candidate->declline = candidate->origdeclline = includes->line;
+    candidate->realdeclline = includes->realline;
     candidate->declfile = candidate->origdeclfile = includes->fname;
     candidate->trivialCons = FALSE;
     SetLinkerNames(candidate, lk_cdecl);
@@ -1878,6 +1876,8 @@ static LEXEME *TemplateArg(LEXEME *lex, SYMBOL *funcsp, TEMPLATEPARAMLIST *arg, 
             arg->p->type = kw_template;
             lex = getsym();
             lex = TemplateHeader(lex, funcsp, &arg->p->byTemplate.args);
+            if (arg->p->byTemplate.args)
+                dropStructureDeclaration();
             arg->p->packed = FALSE;
             if (!MATCHKW(lex, kw_class))
             {
@@ -2307,7 +2307,21 @@ static TEMPLATEPARAMLIST **addStructParam(TEMPLATEPARAMLIST **pt, TEMPLATEPARAML
             find = find->next;
         }
         if (!find)
-            return NULL;
+        {
+            SYMBOL *sym = NULL;
+            STRUCTSYM *s = structSyms;
+            while (s && !sym)
+            {
+                if (s->tmpl)
+                    sym = templatesearch(search->argsym->name, s->tmpl);
+                s = s->next;
+            }
+            if (!sym)
+                return NULL;
+            if (sym->tp->type != bt_templateparam || sym->tp->templateParam->p->type != kw_typename)
+                return NULL;
+            find = sym->tp->templateParam;
+        }
         *pt = Alloc(sizeof(TEMPLATEPARAMLIST));
         (*pt)->p = find->p;
     }
@@ -2426,7 +2440,6 @@ static TYPE *LookupTypeFromExpression(EXPRESSION *exp, TEMPLATEPARAMLIST *enclos
         case en_pc:
         case en_const:
         case en_threadlocal:
-        case en_label:
             return &stdpointer;
         case en_x_label:
         case en_l_ref:
@@ -2940,6 +2953,8 @@ TYPE *SynthesizeType(TYPE *tp, TEMPLATEPARAMLIST *enclosing, BOOLEAN alt)
                     if (tp->type == bt_templateparam)
                     {
                         *last = tp->templateParam->p->byClass.dflt;
+                        if (!*last)
+                            *last = &stdany;
                     }
                     else
                     {
@@ -3163,7 +3178,7 @@ TYPE *SynthesizeType(TYPE *tp, TEMPLATEPARAMLIST *enclosing, BOOLEAN alt)
                                 if (p->tmpl)
                                 {
                                     SYMBOL *s = templatesearch(tpa->argsym->name, p->tmpl);
-                                    if (s)
+                                    if (s && s->tp->templateParam->p->byClass.val)
                                     {
                                         *last = Alloc(sizeof(TYPE));
                                         **last = *s->tp->templateParam->p->byClass.val;
@@ -4040,7 +4055,7 @@ static BOOLEAN Deduce(TYPE *P, TYPE *A, BOOLEAN change, BOOLEAN byClass, BOOLEAN
 static int eval(EXPRESSION *exp)
 {
     optimize_for_constants(&exp);
-    if (IsConstantExpression(exp, FALSE))
+    if (IsConstantExpression(exp, FALSE, FALSE))
         return exp->v.i;
     return 0;
 }
@@ -6129,7 +6144,7 @@ SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExte
 			argument_nesting = 0;
             packIndex = -1;
             linesHead = linesTail = NULL;
-            if (sym->storage_class != sc_member && sym->storage_class != sc_mutable)
+            if (sym->storage_class != sc_member && sym->storage_class != sc_mutable&& sym->storage_class != sc_virtual)
                 sym->storage_class = sc_global;
             sym->linkage = lk_virtual;
             sym->xc = NULL;
@@ -6178,7 +6193,8 @@ SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExte
         }
         else
         {
-            sym->storage_class = sc_external;
+            if (!ismember(sym))
+                sym->storage_class = sc_external;
             InsertExtern(sym);
             InsertInline(sym);
         }
@@ -6862,7 +6878,6 @@ static BOOLEAN checkArgSpecified(TEMPLATEPARAMLIST *args)
                         {
                             case en_pc:
                             case en_global:
-                            case en_label:
                             case en_func:
                                 return TRUE;
                             default:
@@ -7954,7 +7969,6 @@ static BOOLEAN fullySpecialized(TEMPLATEPARAMLIST *tpl)
                     {
                         case en_pc:
                         case en_global:
-                        case en_label:
                         case en_func:
                             return TRUE;
                         default:

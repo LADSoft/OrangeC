@@ -42,8 +42,9 @@
 #include <sstream>
 #endif
 #include "..\version.h"
+#include <iostream>
 
-char *Utils::ShortName(char *v)
+char *Utils::ShortName(const char *v)
 {
     static char prog_name[MAX_PATH], *short_name, *extension;
     strcpy(prog_name, v);
@@ -62,13 +63,13 @@ char *Utils::ShortName(char *v)
         *extension = '\0';
     return short_name;
 }
-void Utils::banner(char *progName)
+void Utils::banner(const char *progName)
 {
     // no banner if they specify -!, this is also caught in the cmd switch module
     // so it is transparent to the proggy
     for (int i=1; i < __argc && __argv[i]; i++)
         if (__argv[i] && (__argv[i][0] == '/' || __argv[i][0] == '-'))
-            if (__argv[i][1] == '!')
+            if (__argv[i][1] == '!' || !strcmp(__argv[i], "--nologo"))
                 return;
     printf("%s Version " STRING_VERSION " " COPYRIGHT "\n", ShortName(progName));
 
@@ -81,7 +82,7 @@ void Utils::banner(char *progName)
                 exit(0);
             }
 }
-void Utils::usage(char *prog_name, char *text)
+void Utils::usage(const char *prog_name, const char *text)
 {
     printf("\nUsage: %s %s", ShortName(prog_name), text);
     exit(1);
@@ -107,7 +108,7 @@ char *Utils::GetModuleName()
 #endif
     return buf;
 }
-void Utils::SetEnvironmentToPathParent(char *name)
+void Utils::SetEnvironmentToPathParent(const char *name)
 {
      if (!getenv(name))
      {
@@ -121,7 +122,11 @@ void Utils::SetEnvironmentToPathParent(char *name)
              if (p)
              {
                  *p = 0;
-                 _putenv_s(name, buf);
+		char *buf1 = (char *)calloc(1,strlen(name) + strlen(buf) + 2);
+		strcpy(buf1, name);
+		strcat(buf1,"=");
+                strcat(buf1, buf);
+                putenv(buf1);
              }
          }
      }

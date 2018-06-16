@@ -1552,7 +1552,11 @@ static void SelectSpill(void)
         }
     }
     briggsReset(spillWorklist, m);
-    simplifyWorklist[simplifyTop++] = m;
+    if (tempInfo[m]->triedSpill)
+        briggsSet(spilledNodes, m);
+    else 
+        simplifyWorklist[simplifyTop++] = m;
+    tempInfo[m]->triedSpill = TRUE;
     FreezeMoves(m);
 }
 static void AssignColors(void)

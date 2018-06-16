@@ -433,6 +433,7 @@ void recolorize(DWINFO *ptr);
 DWORD MsgWait(HANDLE event, DWORD timeout);
 void InstallForParse(HWND hwnd);
 void InstallAllForParse(void);
+void RemoveAllParse();
 LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
 void RegisterDrawWindow(HINSTANCE hInstance);
@@ -863,6 +864,7 @@ void IndirectProjectWindow(DWINFO *info);
 
 void MoveChildrenUp(PROJECTITEM *data);
 void FreeSubTree(PROJECTITEM *data, BOOL save);
+void ProjectRemoveAll(void);
 void ProjectRemove(void);
 void ProjectRename(void);
 void DoneRenaming(void);
@@ -1245,7 +1247,7 @@ int TagEnableAllBreakpoints(BOOL enableState);
 int Tag(int type, char *name, int drawnLineno, int charpos, void *extra, int
     freeextra, int alwaysadd);
 void TagRemoveAll(int type);
-void TagRegenBreakPoints(void);
+void TagRegenBreakPoints(BOOL toerror);
 int TagOldLine(char *name, int lineno);
 int TagNewLine(char *name, int lineno);
 void TagRemoveOld(struct tagfile *l);
@@ -1367,6 +1369,7 @@ void FormatLine(HWND hwnd, INTERNAL_CHAR *buf, int type, int bkColor);
 void FullColorize(HWND hwnd, EDITDATA *p, int creation);
 void InsertColorizeEntry(COLORIZE_HASH_ENTRY *entries[], char *name, int start, int end, int type);
 void FreeColorizeEntries(COLORIZE_HASH_ENTRY *entries[]);
+void SyntaxCheck(HWND hWnd, EDITDATA *p);
 
                                /* Xedit.c */
 

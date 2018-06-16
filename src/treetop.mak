@@ -25,6 +25,7 @@
 SHELL=cmd.exe
 export SHELL
 
+all:
 
 PATHSWAP = $(subst /,\,$(1))
 export PATHSWAP
@@ -42,24 +43,20 @@ ifeq "$(TEST)" "dirs.mak"
 include $(_TARGETDIR)\dirs.mak
 endif
 
-define SUFFIXDIRS =
-	$(foreach dir, $(1), $(dir)$(2))
-endef
 
-
-LIBS:= $(call SUFFIXDIRS,$(DIRS),.library)
-EXES:= $(call SUFFIXDIRS,$(DIRS),.exefile)
-CLEANS:= $(call SUFFIXDIRS,$(DIRS),.clean)
-DISTS:= $(call SUFFIXDIRS,$(DIRS),.dist)
-
-all: files
+LIBS:= $(addsuffix .library,$(DIRS))
+EXES:= $(addsuffix .exefile,$(DIRS))
+CLEANS:= $(addsuffix .clean,$(DIRS))
+DISTS:= $(addsuffix .dist,$(DIRS))
+DISTS1:= $(addsuffix .dist1,$(DIRS))
+CDIRS:= $(addsuffix .dirs,$(DIRS))
 
 NULLDEV := NUL
 
 
 del:
 	-del /Q  $(_OUTPUTDIR)\*.* 2> $(NULLDEV)
-	-del /Q *.exe
+	-del /Q *.exe 2> $(NULLDEV)
 mkdir:
 	-mkdir  $(_OUTPUTDIR) 2> $(NULLDEV)
 rmdir:
@@ -95,8 +92,9 @@ export LIB_PREFIX
 ifeq "$(NAME)" ""
 compile:
 else
-compile: $(LLIB_DEPENDENCIES) $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT)
+compile: $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT)
 endif
+
 
 ifndef _STARTED
 _STARTED = 1
@@ -126,8 +124,6 @@ DISTSTARTUPWIN=$(DISTROOT)\lib\startup\win32
 export DISTSTARTUPWIN
 DISTADDON=$(DISTROOT)\addon
 export DISTADDON
-DISTDOC=$(DISTROOT)\doc
-export DISTDOC
 DISTEXAM=$(DISTROOT)\examples
 export DISTEXAM
 DISTDIST=$(DISTROOT)\dist
@@ -206,20 +202,6 @@ ifndef NOMAKEDIR
 	-del /Q $(DISTSTARTUPWIN) 2> $(NULLDEV)
 	-mkdir $(DISTADDON) 2> $(NULLDEV)
 	-del /Q $(DISTADDON) 2> $(NULLDEV)
-	-mkdir $(DISTDOC) 2> $(NULLDEV)
-	-del /Q $(DISTDOC) 2> $(NULLDEV)	
-	-mkdir $(DISTDOC)\general 2> $(NULLDEV)
-	-del /Q $(DISTDOC)\general 2> $(NULLDEV)
-	-mkdir $(DISTDOC)\oasm 2> $(NULLDEV)
-	-del /Q $(DISTDOC)\oasm 2> $(NULLDEV)
-	-mkdir $(DISTDOC)\occ 2> $(NULLDEV)
-	-del /Q $(DISTDOC)\occ 2> $(NULLDEV)
-	-mkdir $(DISTDOC)\ogrep 2> $(NULLDEV)
-	-del /Q $(DISTDOC)\ogrep 2> $(NULLDEV)
-	-mkdir $(DISTDOC)\olink 2> $(NULLDEV)
-	-del /Q $(DISTDOC)\olink 2> $(NULLDEV)
-	-mkdir $(DISTDOC)\omake 2> $(NULLDEV)
-	-del /Q $(DISTDOC)\omake 2> $(NULLDEV)
 	-mkdir $(DISTEXAM) 2> $(NULLDEV)
 	-del /Q $(DISTEXAM) 2> $(NULLDEV)
 	-mkdir $(DISTEXAM)\msdos 2> $(NULLDEV)
@@ -241,21 +223,6 @@ ifndef NOMAKEDIR
 	-mkdir $(DISTDIST) 2> $(NULLDEV)
 endif
 
-makelibdir:
-	-mkdir  $(_LIBDIR) 2> $(NULLDEV)
-
-
-$(LIBS): %.library :
-	$(MAKE) library -f $(_TREEROOT) -C$*
-$(EXES): %.exefile :
-	$(MAKE) exefile -f $(_TREEROOT) -C$*
-
-
-files: makelibdir $(LIBS) $(EXES) compile link
-
-library: $(LIBS)
-
-exefile: $(EXES)
 
 cleanstart:
 	-del /Q $(_LIBDIR)
@@ -265,19 +232,9 @@ $(CLEANS): %.clean :
 	$(MAKE) clean -f $(_TREEROOT) -C$*
 
 clean: cleanstart $(CLEANS)
-
+distribute: $(DISTS1)
+	$(MAKE) DISTRIBUTE
 else
-
-$(LIBS): %.library : 
-	$(MAKE) library -f $(_TREEROOT) -C$*
-
-$(EXES): %.exefile : 
-	$(MAKE) exefile -f $(_TREEROOT) -C$*
-
-library: mkdir compile $(LIBS)
-
-exefile: mkdir link $(EXES)
-
 
 cleanDISTRIBUTE:
 
@@ -285,14 +242,47 @@ $(CLEANS): %.clean :
 	$(MAKE) clean -f $(_TREEROOT) -C$*
 clean: del rmdir $(CLEANS)
 
+distribute: $(DISTS1)
+
 endif
 
-ifndef BUILDENV
-exeDISTRIBUTE: $(DISTS)
-$(DISTS): %.dist :
+$(DISTS): %.dist : cleanDISTRIBUTE
+	$(MAKE) DISTRIBUTE -f $(_TREEROOT) -C$*
+
+$(DISTS1): %.dist1 : $(DISTS)
 	$(MAKE) distribute -f $(_TREEROOT) -C$*
-else
-exeDISTRIBUTE:
-endif
 
-distribute: cleanDISTRIBUTE exeDISTRIBUTE DISTRIBUTE   
+zip:
+ifdef WITHMSDOS
+# this requires CC386 be installed since it relies on far pointer support
+# so I don't make it a part of the default install
+	@$(MAKE) -C$(DISTROOT)\src\..\ -f $(realpath .\doszip.mak)
+	@$(MAKE) -C$(DISTROOT)\src\dos\install -fmakefile.le
+endif
+	@$(MAKE) -C\ -f $(realpath .\zip.mak)
+
+$(CDIRS): %.dirs :
+	-mkdir $*\obj\$(OBJ_IND_PATH) 2> $(NULLDEV)
+
+$(LIBS): %.library : $(CDIRS)
+	$(MAKE) library compile -f $(_TREEROOT) -C$*
+$(EXES): %.exefile :
+	$(MAKE) exefile link -f $(_TREEROOT) -C$*
+
+distribute_self:  cleanDISTRIBUTE
+	$(MAKE) DISTRIBUTE
+distribute_exe: $(DISTS1)
+
+distribute_clibs_no_binary:
+	@$(MAKE) -Cclibs DISTRIBUTE --eval="BUILDENV:=1"
+distribute_clibs:
+	@$(MAKE) -Cclibs DISTRIBUTE
+
+makelibdir:
+	-mkdir  $(_LIBDIR) 2> $(NULLDEV)
+
+library: makelibdir $(LIBS)
+
+exefile: makelibdir $(EXES)
+
+localfiles: makelibdir mkdir compile library exefile

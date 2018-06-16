@@ -30,7 +30,8 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <Stdio.h>
+#include <algorithm>
+#include <io.h>
 #ifdef OPENWATCOM
 namespace std
 {
@@ -55,7 +56,7 @@ CmdSwitchBool GrepMain::displayFileNames(SwitchParser,'#');
 CmdSwitchBool GrepMain::displayHeaderFileName(SwitchParser,'#');
 
 
-char *GrepMain::usageText = "[-rxlcnvidzwo?] searchstring file[s]\n";
+const char *GrepMain::usageText = "[-rxlcnvidzwo?] searchstring file[s]\n";
 char *GrepMain::helpText = "[options] searchstring file[s]"
                     "\n"
                     "   -c             Show Match Count only        -d  Recurse Subdirectories\n"
@@ -185,71 +186,59 @@ void GrepMain::FindLine(const std::string fileName, int &matchCount, int &matchL
     }
     *matchPos = p;
 }
-void GrepMain::OneFile(RegExpContext &regexp, const std::string &fileName, int &openCount)
+void GrepMain::OneFile(RegExpContext &regexp, const std::string fileName, std::istream &fil, int &openCount)
 {
-    std::fstream fil(fileName.c_str(), std::ios::in | std::ios::binary);
+    char *buf;
+    openCount ++;
+    // couldn't do this as a straight definition as MSVC decided to treat it as a func
+    std::string *str = new std::string(std::istreambuf_iterator<char>(fil), std::istreambuf_iterator<char>());
+    str->erase(std::remove(str->begin(), str->end(), '\r'), str->end());
+    std::string bufs = " " + *str;
+    delete str;
+    bufs[0] = 0;
+    int matchCount = 0;
+    int lineno = 0;
+    int length = bufs.size() -1;
     if (!fil.fail())
     {
-        openCount ++;
-        fil.seekg(0, std::ios::end);
-        int length = fil.tellg();
-        fil.seekg(0);
-        char *buf = new char[length + 2];
-        //if (buf)
+        char *buf = (char *)bufs.c_str();
+        char *str = buf + 1;
+        char *matchPos = buf + 1;
+        int matchLine = 1;
+        bool matched = true;
+        while (matched)
         {
-            buf[0] = 0;
-            buf[length+1] = 0;
-            int matchCount = 0;
-            int lineno = 0;
-            fil.read((char *)buf + 1, length);
-            char *p = buf+1;
-            for (int i=1; i < length+1; i++)
-                if (buf[i] != '\r')
-                    *p++ = buf[i];
-            *p = 0;
-            length = strlen(buf+1);
-            if (!fil.fail())
+            char *p = nullptr;
+            matched = regexp.Match(str-buf, length, buf);
+            if (matched)
             {
-                char *str = buf + 1;
-                char *matchPos = buf + 1;
-                int matchLine = 1;
-                bool matched = true;
-                while (matched)
-                {
-                    char *p = nullptr;
-                    matched = regexp.Match(str-buf, length, buf);
-                    if (matched)
-                    {
-                        FindLine(fileName, matchCount, matchLine, &matchPos, buf +regexp.GetStart(), true);
-                        p = strchr((char *)buf + regexp.GetEnd(), '\n');
-                    }
-                    else
-                    {
-                        FindLine(fileName, matchCount, matchLine, &matchPos, str + strlen(str), false);
-                    }
-                    if (!p)
-                        p = str + strlen(str);
-                    else
-                        p++;
-                    str = p;
-                }
-                if (matchCount && verboseMode.GetValue())
-                {
-                    if (displayNonMatching.GetValue())
-                    {
-                        std::cout << matchCount << " Non-matching lines" << std::endl;
-                    }
-                    else
-                    {
-                        std::cout << matchCount << " Matching lines" << std::endl;
-                    }
-                }
-                else if (matchCount && displayMatchCount.GetValue())
-                {
-                        std::cout << ": " << matchCount << std::endl;
-                }
+                FindLine(fileName, matchCount, matchLine, &matchPos, buf +regexp.GetStart(), true);
+                p = strchr((char *)buf + regexp.GetEnd(), '\n');
             }
-            delete[] buf;
+            else
+            {
+                FindLine(fileName, matchCount, matchLine, &matchPos, str + strlen(str), false);
+            }
+            if (!p)
+                p = str + strlen(str);
+            else
+                p++;
+            str = p;
+        }
+        if (matchCount && verboseMode.GetValue())
+        {
+            if (displayNonMatching.GetValue())
+            {
+                std::cout << matchCount << " Non-matching lines" << std::endl;
+            }
+            else
+            {
+                std::cout << matchCount << " Matching lines" << std::endl;
+            }
+        }
+        else if (matchCount && displayMatchCount.GetValue())
+        {
+                std::cout << ": " << matchCount << std::endl;
         }
     }
 }
@@ -275,7 +264,8 @@ int GrepMain::Run(int argc, char **argv)
     }
     if (argc < 3)
     {
-        Utils::usage(argv[0], usageText);
+        if (isatty(fileno(stdin)) || argc < 2)
+            Utils::usage(argv[0], usageText);
     }
     if (verboseMode.GetValue())
     {
@@ -290,8 +280,17 @@ int GrepMain::Run(int argc, char **argv)
     CmdFiles files(argv + 2, recurseDirs.GetValue());
 
     int openCount = 0;
-    for (CmdFiles::FileNameIterator it = files.FileNameBegin(); it !=files.FileNameEnd(); ++it)
-        OneFile(regexp, *(*it), openCount);
+    if (!isatty(fileno(stdin)))
+    {
+        OneFile(regexp, "STDIN", std::cin, openCount);
+    }
+    else
+        for (CmdFiles::FileNameIterator it = files.FileNameBegin(); it !=files.FileNameEnd(); ++it)
+        {
+            std::fstream fil(*(*it), std::ios::in | std::ios::binary);
+            if (fil.is_open())
+                OneFile(regexp, *(*it), fil, openCount);
+        }
     if (openCount == 0)
     {
         std::cout << "Nothing to do." << std::endl;

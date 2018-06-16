@@ -33,6 +33,15 @@ void browse_blockend(int lineno);
 void browse_usage(SYMBOL *var, int file);
 
                                /* Ccerr.c */
+void DisableWarning(int num);
+void EnableWarning(int num);
+void WarningOnlyOnce(int num);
+void WarningAsError(int num);
+void AllWarningsAsError();
+void AllWarningsDisable();
+void PushWarnings();
+void PopWarnings();
+void DisableTrivialWarnings();
 void errorinit(void);
 void errskim(LEXEME **lex, enum e_kw *skimlist);
 void skip(LEXEME **lex, enum e_kw kw);
@@ -158,6 +167,7 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
                     BOOLEAN checkcopy, EXPRESSION *arrayElms, BOOLEAN top, 
                     BOOLEAN maybeConversion, BOOLEAN implicit, BOOLEAN pointer,
                     BOOLEAN usesInitList);
+LEXEME *getDeclType(LEXEME *lex, SYMBOL *funcsp, TYPE **tn);
 LEXEME *insertNamespace(LEXEME *lex, enum e_lk linkage, enum e_sc storage_class, BOOLEAN *linked);
 LEXEME *insertUsing(LEXEME *lex, SYMBOL **sp, enum e_ac access, enum e_sc storage_class, BOOLEAN inTemplate, BOOLEAN hasAttribs);
 LEXEME *handleStaticAssert(LEXEME *lex);
@@ -239,6 +249,7 @@ void DoDefaultSpecialization(SYMBOL *sp2);
 TEMPLATEPARAMLIST *getCurrentSpecialization(SYMBOL *sp);
 BOOLEAN TemplateFullySpecialized(SYMBOL *sp);
 LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum e_sc storage_class, BOOLEAN isextern);
+BOOLEAN isConstexprConstructor(SYMBOL *sym);
 BOOLEAN MatchesConstFunction(SYMBOL *sp);
 LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_class, enum e_lk defaultLinkage,
 					   BLOCKDATA *parent, BOOLEAN needsemi, int asExpression, BOOLEAN asfriend, BOOLEAN isTemplate, enum e_ac access );
@@ -296,6 +307,7 @@ void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, 
 LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, int flags);
 LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, int flags);
 LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, int flags);
+LEXEME *expression_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, int flags);
 LEXEME *expression_no_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, int flags);
 LEXEME *expression_no_check(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, int flags);
 LEXEME *expression(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, int flags);
@@ -384,7 +396,7 @@ BOOLEAN isvoid(TYPE *tp);
 BOOLEAN isvoidptr(TYPE *tp);
 BOOLEAN isarray(TYPE *tp);
 BOOLEAN isunion(TYPE *tp);
-TYPE *assignauto(TYPE *pat, TYPE *nt);
+void DeduceAuto(TYPE **pat, TYPE *nt);
 SYMBOL *getFunctionSP(TYPE **tp);
 LEXEME *concatStringsInternal(LEXEME *lex, STRING **str, int *elems);
 LEXEME *concatStrings(LEXEME *lex, EXPRESSION **exp, enum e_lexType *tp, int *elems);
@@ -604,7 +616,7 @@ INITIALIZER *initInsert(INITIALIZER **pos, TYPE *tp, EXPRESSION *exp,
                                int offset, BOOLEAN noassign);
 LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc, 
 				 INITIALIZER **init, INITIALIZER **dest, TYPE *itype, SYMBOL *sp, BOOLEAN arrayMember, int flags);
-BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams);
+BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams, BOOLEAN allowFunc);
 EXPRESSION *getThisNode(SYMBOL *sp);
 void RecalculateVariableTemplateInitializers(INITIALIZER **in, INITIALIZER ***out, TYPE *tp, int ioffset);
 LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_class_in, BOOLEAN uninitconst, int flags);
@@ -855,7 +867,7 @@ void def_setup(char select, char *string);
 void undef_setup(char select, char *string);
 void output_setup(char select, char *string);
 void setglbdefs(void);
-void InsertAnyFile(char *filename, char *path, int drive);
+void InsertAnyFile(char *filename, char *path, int drive, BOOLEAN primary);
 void setfile(char *buf, char *orgbuf, char *ext);
 void outputfile(char *buf, char *orgbuf, char *ext);
 void scan_env(char *output, char *string);

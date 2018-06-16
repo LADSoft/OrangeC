@@ -7,8 +7,3 @@
      OCC /I..\include;..\source;c:\libraries\include myfile.c
  
  Will search the paths ..\\include , ..\\source, and c:\\libraries\\include in that order.  Note that you generally don't have to specify a path to the OCC compiler header files such as stdio.h, as that will be taken care of automatically.
- 
- 
- 
-  
-  

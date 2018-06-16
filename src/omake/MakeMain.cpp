@@ -39,6 +39,8 @@
 #include <stdlib.h>
 #include <ios>
 #include <stdio.h>
+#include <algorithm>
+
 #ifdef OPENWATCOM
 namespace std
 {
@@ -72,17 +74,20 @@ CmdSwitchBool MakeMain::printDir(switchParser, 'w');
 CmdSwitchBool MakeMain::warnUndef(switchParser, 'u');
 CmdSwitchBool MakeMain::treeBuild(switchParser, 'T');
 CmdSwitchBool MakeMain::keepResponseFiles(switchParser, 'K');
+CmdSwitchInt  MakeMain::jobs(switchParser, 'j', INT_MAX, 1, INT_MAX);
+CmdSwitchCombineString MakeMain::jobOutputMode(switchParser, 'O');
 
-char *MakeMain::usageText = "[options] goals\n"
+const char *MakeMain::usageText = "[options] goals\n"
                     "\n"
                     "/B    Rebuild all             /C    Set directory\n"
                     "/Dxxx Define something        /Ixxx Set include path\n"
-                    "/K    Keep response files     /R    Ignore builtin vars\n"
-                    "/S    Cancel keepgoing        /T    Tree Build\n"
-                    "/V    Show version and date   /Wxxx WhatIf\n"
-                    "/d    Reserved                /e    Environment overrides\n"
-                    "/fxxx Specify make file       /h    This text\n"
-                    "/i    Ignore errors           /k    Keep going\n"
+                    "/K    Keep response files     /O    Set output mode\n"
+                    "/R    Ignore builtin vars     /S    Cancel keepgoing\n"
+                    "/T    Tree Build              /V    Show version and date\n"
+                    "/Wxxx WhatIf                  /d    Reserved\n"
+                    "/e    Environment overrides   /fxxx Specify make file\n"
+                    "/h    This text               /i    Ignore errors\n"
+                    "/j:xx Set number of jobs      /k    Keep going\n"
                     "/n    Display only            /oxxx Specify old goals\n"
                     "/p    Print database          /q    Query\n"
                     "/r    Ignore builtin rules    /s    Don't print commands\n"
@@ -221,6 +226,20 @@ void MakeMain::SetMakeFlags()
     // not setting -T so we don't make it recursive
     if (vals == "-")
         vals = "";
+    if (jobs.GetExists())
+    {
+        int n = jobs.GetValue();
+        char buf[256];
+        if (jobs.GetValue() != INT_MAX)
+            sprintf(buf, "%d", jobs.GetValue());
+        else
+            buf[0] = 0;;
+        vals += std::string(" -j:") + buf;
+    }
+    if (jobOutputMode.GetExists())
+    {
+        vals += std::string(" -O") + jobOutputMode.GetValue();
+    }
     if (includes.GetValue().size())
     {
         vals += "\"-I" +includes.GetValue() + "\"";
@@ -236,6 +255,28 @@ void MakeMain::SetMakeFlags()
         vals += "\"/D" + def->name + "=" + def->value + "\"";
     }
     SetVariable("MAKEOVERRIDES", vals, Variable::o_command_line, true);
+}
+void MakeMain::LoadJobArgs()
+{
+    int jobCount = 1;
+    if (jobs.GetExists())
+    {
+        jobCount = jobs.GetValue();
+    }
+    OS::PushJobCount(jobCount);
+    if (jobOutputMode.GetExists())
+    {
+        if (jobOutputMode.GetValue() == "none")
+            outputType = o_none;
+        else if (jobOutputMode.GetValue() == "line")
+            outputType = o_line;
+        else if (jobOutputMode.GetValue() == "target")
+            outputType = o_target;
+        else if (jobOutputMode.GetValue() == "recurse")
+            outputType = o_recurse;
+        else
+            Utils::fatal((std::string("Unknown output mode: ") + jobOutputMode.GetValue()).c_str());
+    }
 }
 void MakeMain::LoadEnvironment()
 {
@@ -380,7 +421,8 @@ void MakeMain::SetTreePath(std::string &files)
 }
 int MakeMain::Run(int argc, char **argv)
 {
-    for (int i=0; argv[i]; i++)
+    OS::Init();
+    for (int i=0; i < argc; i++)
     {
         if (!strcmp(argv[i], "--version"))
         {
@@ -409,6 +451,13 @@ int MakeMain::Run(int argc, char **argv)
         Utils::banner(argv[0]);
         Utils::usage(argv[0], usageText);
     }
+    char *cpath=getenv("CPATH");
+    if (cpath)
+    {
+        if (includes.GetValue().size())
+            includes += ";";
+        includes += cpath;
+    }
     if (dir.GetValue().size())
     {
         cwd = OS::GetWorkingDir();
@@ -433,6 +482,8 @@ int MakeMain::Run(int argc, char **argv)
         cancelKeep.SetValue(false);
         keepGoing.SetValue(false);
     }
+
+    LoadJobArgs();
     
     bool done = false;
     Eval::SetWarnings(warnUndef.GetValue());
@@ -448,7 +499,9 @@ int MakeMain::Run(int argc, char **argv)
         Variable *v = VariableContainer::Instance()->Lookup("SHELL");
         if (!v)
         {
-            v = VariableContainer::Instance()->Lookup("COMSPEC");
+            v = VariableContainer::Instance()->Lookup("MSYSCON"); // detect MSYS version of comspec
+            if (!v)
+                v = VariableContainer::Instance()->Lookup("COMSPEC");
             if (!v)
                 v = VariableContainer::Instance()->Lookup("ComSpec");
             if (v)
@@ -458,6 +511,7 @@ int MakeMain::Run(int argc, char **argv)
                 SetVariable(".SHELLFLAGS", "-c", Variable::o_environ, false);
             }
         }
+
         std::string wd = OS::GetWorkingDir();
         SetVariable("CURDIR", wd, Variable::o_environ, false);
         std::string goals;
@@ -512,7 +566,7 @@ int MakeMain::Run(int argc, char **argv)
         Include::Instance()->AddFileList(files, false, false);
         SetupImplicit();
         RuleContainer::Instance()->SecondaryEval();
-        done = !Include::Instance()->MakeMakefiles(silent.GetValue());
+        done = !Include::Instance()->MakeMakefiles(silent.GetValue(), outputType);
         if (!done)
             restarts++;
     }
@@ -544,8 +598,6 @@ int MakeMain::Run(int argc, char **argv)
         bool xtouch = touch.GetValue();
         xdontrun |= xtouch || query.GetValue();
         xsilent |= xtouch || query.GetValue();
-        if (RuleContainer::Instance()->Lookup(".NOTPARALLEL") || RuleContainer::Instance()->Lookup(".NO_PARALLEL"))
-            Eval::warning("omake serializes builds, .NOTPARALLEL special target ignored");
         if (RuleContainer::Instance()->Lookup(".BEGIN") || RuleContainer::Instance()->Lookup(".END"))
             Eval::warning(".BEGIN and .END special targets ignored");
         if (RuleContainer::Instance()->Lookup(".INCLUDES") || RuleContainer::Instance()->Lookup(".LIBS"))
@@ -560,7 +612,7 @@ int MakeMain::Run(int argc, char **argv)
             Eval::warning(".SHELL special target ignored");
         if (RuleContainer::Instance()->Lookup(".WARN"))
             Eval::warning(".WARN special target ignored");
-        Maker maker(xsilent, xdontrun, xignore, xtouch, rebuild.GetValue(), keepResponseFiles.GetValue(), newFiles.GetValue(), oldFiles.GetValue());
+        Maker maker(xsilent, xdontrun, xignore, xtouch, outputType, rebuild.GetValue(), keepResponseFiles.GetValue(), newFiles.GetValue(), oldFiles.GetValue());
         if (argc <= 1)
         {
             auto r = RuleContainer::Instance()->Lookup(".MAIN");
@@ -612,5 +664,6 @@ int MakeMain::Run(int argc, char **argv)
         std::cout << std::endl;
     }
 #endif
+    Spawner::WaitForDone();
     return rv;
 }

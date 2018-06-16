@@ -16,7 +16,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />
-    <None Include="..\olib\LibFilesLinker.bak" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DefFile.cpp">

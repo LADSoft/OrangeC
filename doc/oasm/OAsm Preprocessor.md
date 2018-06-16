@@ -108,5 +108,3 @@
 |%elifnctx|else-style test to see if a context is not in effect|   
 
   Table 6 - Context - Related Extensions
-  
- 

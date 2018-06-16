@@ -35,7 +35,6 @@
 char * __stdcall GetModuleFileNameA(void * handle, char *buf, int size);
 #endif
 
-#define putenv(x, y) _putenv_s(x,y)
 
 #ifdef __CCDL__
     int _stklen = 100 * 1024;
@@ -402,6 +401,7 @@ static int scan_args(char *string, int index, char *arg)
  */
 BOOLEAN parse_args(int *argc, char *argv[], BOOLEAN case_sensitive)
 {
+
     int pos = 0;
     BOOLEAN retval = TRUE;
     use_case = case_sensitive;
@@ -411,68 +411,79 @@ BOOLEAN parse_args(int *argc, char *argv[], BOOLEAN case_sensitive)
         if ((argv[pos][0] == ARG_SEPSWITCH) || (argv[pos][0] == ARG_SEPFALSE) 
             || (argv[pos][0] == ARG_SEPTRUE))
         {
-            int argmode;
-            int index = 1;
-            BOOLEAN done = FALSE;
-            do
+            if (argv[pos][1] == '!' || !strcmp(argv[pos], "--nologo"))
             {
-                /* Scan the present arg */
-                if (pos <  *argc - 1)
-                    argmode = scan_args(argv[pos], index, argv[pos + 1]);
-                else
-                    argmode = scan_args(argv[pos], index, 0);
-
-                switch (argmode)
-                {
-                    case ARG_NEXTCHAR:
-                        /* If it was a char, go to the next one */
-                        if (!argv[pos][++index])
-                            done = TRUE;
-                        break;
-                    case ARG_NEXTNOCAT:
-                        /* Otherwise if it was a nocat, remove the extra arg */
-                        remove_arg(pos, argc, argv);
-                        /* Fall through to NEXTARG */
-                    case ARG_NEXTARG:
-                        /* Just a next arg, go do it */
-                        done = TRUE;
-                        break;
-                    case ARG_NOMATCH:
-                        /* No such arg, spit an error  */
-#ifndef CPREPROCESSOR
-#ifdef XXXXX
-                        switch( parseParam(argv[pos][index] != ARG_SEPFALSE, &argv[pos][index + 1])) {
-                            case 0:
-#endif
-#endif
-                                fprintf(stderr, "Invalid Arg: %s\n", argv[pos]);
-                                retval = FALSE;
-                                done = TRUE;
-#ifndef CPREPROCESSORXX
-#ifdef XXXXX
-                                break ;
-                            case 1:
-                                if (!argv[pos][++index])
-                                    done = TRUE;
-                                break ;
-                            case 2:
-                                done = TRUE;
-                                break;
-                        }
-#endif
-#endif
-                        break;
-                    case ARG_NOARG:
-                        /* Missing the arg for a CONCAT type, spit the error */
-                        fprintf(stderr, "Missing string for Arg %s\n",
-                            argv[pos]);
-                        done = TRUE;
-                        retval = FALSE;
-                        break;
-                };
-
+                // skip the silence arg
             }
-            while (!done);
+            else if (argv[pos][0] == ARG_SEPFALSE && !argv[pos][1])
+            {
+                continue;
+            }
+            else
+            {
+                int argmode;
+                int index = 1;
+                BOOLEAN done = FALSE;
+                do
+                {
+                    /* Scan the present arg */
+                    if (pos <  *argc - 1)
+                        argmode = scan_args(argv[pos], index, argv[pos + 1]);
+                    else
+                        argmode = scan_args(argv[pos], index, 0);
+    
+                    switch (argmode)
+                    {
+                        case ARG_NEXTCHAR:
+                            /* If it was a char, go to the next one */
+                            if (!argv[pos][++index])
+                                done = TRUE;
+                            break;
+                        case ARG_NEXTNOCAT:
+                            /* Otherwise if it was a nocat, remove the extra arg */
+                            remove_arg(pos, argc, argv);
+                            /* Fall through to NEXTARG */
+                        case ARG_NEXTARG:
+                            /* Just a next arg, go do it */
+                            done = TRUE;
+                            break;
+                        case ARG_NOMATCH:
+                            /* No such arg, spit an error  */
+    #ifndef CPREPROCESSOR
+    #ifdef XXXXX
+                            switch( parseParam(argv[pos][index] != ARG_SEPFALSE, &argv[pos][index + 1])) {
+                                case 0:
+    #endif
+    #endif
+                                    fprintf(stderr, "Invalid Arg: %s\n", argv[pos]);
+                                    retval = FALSE;
+                                    done = TRUE;
+    #ifndef CPREPROCESSORXX
+    #ifdef XXXXX
+                                    break ;
+                                case 1:
+                                    if (!argv[pos][++index])
+                                        done = TRUE;
+                                    break ;
+                                case 2:
+                                    done = TRUE;
+                                    break;
+                            }
+    #endif
+    #endif
+                            break;
+                        case ARG_NOARG:
+                            /* Missing the arg for a CONCAT type, spit the error */
+                            fprintf(stderr, "Missing string for Arg %s\n",
+                                argv[pos]);
+                            done = TRUE;
+                            retval = FALSE;
+                            break;
+                    };
+
+                }
+                while (!done);
+            }
             /* We'll always get rid of the present arg
              * And back up one
              */
@@ -639,7 +650,7 @@ void setglbdefs(void)
 
 /*-------------------------------------------------------------------------*/
 
-void InsertAnyFile(char *filename, char *path, int drive)
+void InsertAnyFile(char *filename, char *path, int drive, BOOLEAN primary)
 /*
  * Insert a file name onto the list of files to process
  */
@@ -777,7 +788,7 @@ int parse_arbitrary(char *string)
     }
     rv = parse_args(&argc, argv, TRUE);
     for (i = 1; i < argc; i++)
-        InsertAnyFile(argv[i], 0,  - 1);
+        InsertAnyFile(argv[i], 0,  - 1, TRUE);
     return rv;
 }
 
@@ -818,6 +829,20 @@ void addinclude(void)
     #else 
         char *string = getenv("CCINCL");
     #endif 
+    if (string && string[0])
+    {
+        char temp[1000];
+        strcpy(temp, string);
+        if (*set_searchpath)
+        {
+            strcat(temp, ";");
+            strcat(temp,  *set_searchpath);
+            free(*set_searchpath);
+        }
+        *set_searchpath = malloc(strlen(temp) + 1);
+        strcpy(*set_searchpath, temp);
+    }
+    string = getenv("CPATH");
     if (string && string[0])
     {
         char temp[1000];
@@ -932,7 +957,7 @@ void ccinit(int argc, char *argv[])
 
     for (i = 1; i < argc; i++)
         if (argv[i][0] == '-' || argv[i][0] == '/')
-            if (argv[i][1] == '!')
+            if (argv[i][1] == '!' || !strcmp(argv[i], "--nologo"))
             {
                 showBanner = FALSE;
             }
@@ -974,7 +999,11 @@ void ccinit(int argc, char *argv[])
              if (q)
              {
                   *q = 0;
-                 putenv("ORANGEC", buffer);
+		char *buf1 = (char *)calloc(1,strlen("ORANGEC") + strlen(buffer) + 2);
+		strcpy(buf1, "ORANGEC");
+		strcat(buf1,"=");
+                strcat(buf1, buffer);
+                putenv(buf1);
                  *q = '\\';
              }
              *p = '\\';
@@ -994,7 +1023,7 @@ void ccinit(int argc, char *argv[])
             if (argv[i][0] == '@')
                 parsefile(0, argv[i] + 1);
             else
-                InsertAnyFile(argv[i], 0,  - 1);
+                InsertAnyFile(argv[i], 0,  - 1, TRUE);
     }
 
     if ((clist && clist->next) && has_output_file)

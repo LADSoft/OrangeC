@@ -23,5 +23,3 @@
 * Match one character out of a set of characters
 * A match can be specified to be repeated at another point within the sequence
   Some of these matching algorithms can be combined, for example matching one character out of a set of characters can be combined with matching a sequence of characters to find words consisting of characters in a subset of the letters and numbers.
- 
- 

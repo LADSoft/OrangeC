@@ -480,6 +480,7 @@ static EXPRESSION *inasm_ident(void)
             sp->name = litlate(nm);
             sp->declfile = sp->origdeclfile = lex->file;
             sp->declline = sp->origdeclline = lex->line;
+            sp->realdeclline = lex->realline;
             sp->declfilenum = lex->filenum;
             sp->used = TRUE;
             sp->tp = beLocalAlloc(sizeof(TYPE));
@@ -506,7 +507,7 @@ static EXPRESSION *inasm_ident(void)
                         break;
                 case sc_localstatic:
                         sp->genreffed = TRUE;
-                        node = varNode(en_label, sp);
+                        node = varNode(en_global, sp);
                         break;
                 case sc_global:
                 case sc_external:
@@ -562,6 +563,7 @@ static EXPRESSION *inasm_label(void)
         sp->name = litlate(lex->value.s.a);
         sp->declfile = sp->origdeclfile = lex->file;
         sp->declline = sp->origdeclline = lex->line;
+        sp->realdeclline = lex->realline;
         sp->declfilenum = lex->filenum;
         sp->tp = beLocalAlloc(sizeof(TYPE));
         sp->tp->type = bt_unsigned;
@@ -1387,7 +1389,7 @@ static OCODE *ope_call(void)
             ap1->length = ap2->length = ISZ_UINT;
             return make_ocode(ap1, ap2, 0);
         }
-        else if ((ap1->offset->type != en_label && ap1->offset->type
+        else if ((ap1->offset->type
             != en_labcon && ap1->offset->type != en_pc) || ap1->seg)
             return (OCODE*) - 1;
     }
@@ -1513,8 +1515,7 @@ static OCODE *ope_relbra(void)
     ap1->length = ISZ_NONE;
     if (ap1->mode != am_immed)
         return (OCODE*) - 1;
-    if (ap1->offset->type != en_label && ap1->offset->type !=
-        en_labcon)
+    if (ap1->offset->type != en_labcon)
         return (OCODE*) - 1;
     return make_ocode(ap1, 0, 0);
 }

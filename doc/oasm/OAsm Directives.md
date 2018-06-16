@@ -397,6 +397,3 @@ creates a function 'puterror' which is visible to other files during linkage.  G
  is not valid, because the label 'mystruc.s3' does not exist.  The move would have to be changed to something like:
  
 >     mov eax,[mystruc + astruc.s3]
- 
- 
- 

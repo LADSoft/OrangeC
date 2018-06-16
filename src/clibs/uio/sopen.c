@@ -92,8 +92,10 @@ int _RTL_FUNC sopen  (const char *__path, int __access, int __shmode, ... /*unsi
 		 if (!__ll_isatty(handle))
 	         __uiflags[h] |= UIF_EOF ;
       } else {
+         errno = 0;
          handle = __ll_creat(__path,__ll_uioflags(__access),__ll_shflags(__shmode) ) ;
          if (handle == 0) {
+            errno = ENOENT;
             __ll_exit_critical() ;
             return -1 ;
          }

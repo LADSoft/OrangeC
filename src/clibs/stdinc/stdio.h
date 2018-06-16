@@ -209,6 +209,8 @@ int       _RTL_FUNC _IMPORT fsetpos(FILE *__stream, const fpos_t *__pos);
 long      _RTL_FUNC _IMPORT ftell(FILE *__stream);
 size_t    _RTL_FUNC _IMPORT fwrite(const void *__ptr, size_t __size, size_t __n,
                       FILE *__stream);
+FILE *_RTL_FUNC popen(const char *name, const char *restrict mode);
+FILE *_RTL_FUNC _popen(const char *name, const char *restrict mode);
 char   *  _RTL_FUNC _IMPORT gets(char *__s);
 void      _RTL_FUNC _IMPORT perror(const char *__s);
 int       _RTL_FUNC _IMPORT printf(const char *restrict __format, ...);

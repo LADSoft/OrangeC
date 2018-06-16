@@ -25,6 +25,7 @@
 
 #include "Maker.h"
 #include "Variable.h"
+#include "Runner.h"
 #include "Rule.h"
 #include "Eval.h"
 #include "Parser.h"
@@ -34,22 +35,21 @@
 #include <list>
 #include <stdlib.h>
 #include <iostream>
-std::map<std::string, Maker::Depends *> Maker::Depends::all;
+#include <algorithm>
+std::map<std::string, Depends *> Depends::all;
 std::string Maker::firstGoal;
 std::map<std::string, std::string> Maker::filePaths;
 
-Maker::Depends::~Depends()
-{
-    for (auto goal : subgoals)
-        delete goal;
-    subgoals.clear();
-}
-
-Maker::Maker(bool Silent, bool DisplayOnly, bool IgnoreResults, bool Touch, bool RebuildAll,
+Maker::Maker(bool Silent, bool DisplayOnly, bool IgnoreResults, bool Touch, OutputType Type, bool RebuildAll,
              bool KeepResponseFiles, std::string NewFiles, std::string OldFiles) : silent(Silent),
     displayOnly(DisplayOnly), ignoreResults(IgnoreResults), missingTarget(false), touch(Touch),
-    rebuildAll(RebuildAll), keepResponseFiles(KeepResponseFiles), newFiles(NewFiles), oldFiles(OldFiles)
+    rebuildAll(RebuildAll), keepResponseFiles(KeepResponseFiles), newFiles(NewFiles), oldFiles(OldFiles),
+    outputType(Type)
     {
+        Variable *v = VariableContainer::Instance()->Lookup("SHELL");
+        std::string shtest = v->GetValue();
+        std::transform(shtest.begin(), shtest.end(), shtest.begin(), ::toupper);
+        OS::SetSHEXE(shtest.find("SH.EXE") != std::string::npos);
     }
 Maker::~Maker()
 {
@@ -70,7 +70,7 @@ void Maker::SetFirstGoal(const std::string &name)
                             name != ".INCLUDES" || name != ".INTERRUPT" || 
                             name != ".LIBS" || name != ".MAKEFILEDEPS" || 
                             name != ".MAKEFLAGS" || name != ".MFLAGS" || 
-                            name != ".NOPARALLEL" || name != ".ORDER" || 
+                            name != ".NOTPARALLEL" || name != ".ORDER" || 
                             name != ".SHELL" || name != ".WARN")
           	            firstGoal = name;
     }
@@ -127,7 +127,7 @@ bool Maker::CreateDependencyTree()
     }
     return !missingTarget;
 }
-Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &preferredPath, Time &timeval, bool err, std::string file, int line)
+Depends *Maker::Dependencies(const std::string &goal, const std::string &preferredPath, Time &timeval, bool err, std::string file, int line)
 {
     if (++dependsNesting > 200)
     {
@@ -137,10 +137,10 @@ Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &
     Time goalTime;
     Time dependsTime;
     Depends *rv = Depends::Lookup(goal);
-    bool intermediate = OnList(goal, ".INTERMEDIATE");
-    bool secondary = OnList(goal, ".SECONDARY");
-    bool precious = OnList(goal, ".PRECIOUS");
-    lowResolutionTime = OnList(goal, ".LOW_RESOLUTION_TIME");
+    bool intermediate = RuleContainer::Instance()->OnList(goal, ".INTERMEDIATE");
+    bool secondary = RuleContainer::Instance()->OnList(goal, ".SECONDARY");
+    bool precious = RuleContainer::Instance()->OnList(goal, ".PRECIOUS");
+    lowResolutionTime = RuleContainer::Instance()->OnList(goal, ".LOW_RESOLUTION_TIME");
     if (!rv)
     {
         Time xx;
@@ -194,11 +194,17 @@ Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &
                 {
                     Time current;
                     std::string thisOne = Eval::ExtractFirst(working, " ");
-                    Depends *dp = Dependencies(thisOne, preferredPath, current, err && !rule->IsDontCare(), rule->File(), rule->Line());
-                    if (dp)
+                    Time checkTime;
+                    std::string foundPath = GetFileTime(thisOne ,preferredPath, checkTime);
+                    bool exists = ! !goalTime;
+                    if (!exists)
                     {
-                        dp->SetOrdered(true);
-                        (*rv) += dp;
+                        Depends *dp = Dependencies(thisOne, preferredPath, current, err && !rule->IsDontCare(), rule->File(), rule->Line());
+                        if (dp)
+                        {
+                            dp->SetOrdered(true);
+                            (*rv) += dp;
+                        }
                     }
                 }
                 if (rule->HasCommands())
@@ -248,7 +254,7 @@ Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &
     }
     if (rv && !rebuildAll)
     {
-        if (goalTime > dependsTime && !OnList(goal, ".PHONY"))
+        if (goalTime > dependsTime && !RuleContainer::Instance()->OnList(goal, ".PHONY"))
         {
             if (!rv->size())
             {
@@ -295,49 +301,36 @@ std::string Maker::GetFileTime(const std::string &goal, const std::string &prefe
     {
         internalGoal = internalGoal.substr(1, internalGoal.size()-2);
     }
-    if (internalGoal.find_first_of("/\\") != std::string::npos)
+    std::string vpath = preferredPath + std::string(" ./ ") + Eval::GetVPATH(internalGoal);
+    std::string sep = std::string(" ") + CmdFiles::PATH_SEP;
+    while (vpath.size())
     {
-        std::fstream fil(internalGoal.c_str(), std::ios::in);
+        std::string cur = Eval::ExtractFirst(vpath, sep);
+        if (cur[cur.size() -1] != '/' && cur[cur.size() -1] != '\\')
+            cur += '/';
+        std::string name ;
+        if (internalGoal[0] != '/' && internalGoal[0] != '\\' && internalGoal[1] != ':')
+            name = cur + internalGoal;
+        else
+            name = internalGoal;
+        std::fstream fil(name.c_str(), std::ios::in);
         if (!fil.fail())
         {
             fil.close();
-            timeval = OS::GetFileTime(internalGoal);
-        }
-    }
-    else
-    {
-        std::string vpath = preferredPath + std::string(" .\\ ") + Eval::GetVPATH(internalGoal);
-        std::string sep = std::string(" ") + CmdFiles::PATH_SEP;
-        while (vpath.size())
-        {
-            std::string cur = Eval::ExtractFirst(vpath, sep);
-            if (cur[cur.size() -1] != '/' && cur[cur.size() -1] != '\\')
-                cur += CmdFiles::DIR_SEP;
-            std::string name ;
-            if (internalGoal[0] != '/' && internalGoal[0] != '\\' && internalGoal[1] != ':')
-                name = cur + internalGoal;
-            else
-                name = internalGoal;
-            if (cur != ".\\")
-                filePaths[internalGoal] = cur; // tentatively enter this as the goal path
-                                    // this will collide if there are multiple paths and no file exists
-                                    // and choose the last one
-            std::fstream fil(name.c_str(), std::ios::in);
-            if (!fil.fail())
-            {
-                fil.close();
-                rv = cur; // return value is the path, with a slash on the end
-                timeval = OS::GetFileTime(name);
+            rv = cur; // return value is the path, with a slash on the end
+            if (rv == "./")
+                rv = "";
+            timeval = OS::GetFileTime(name);
+            if (rv != "")
                 filePaths[internalGoal] = cur;
-                break;
-            }
+            break;
         }
     }
-    if (ScanList(newFiles, goal) || ScanList(newFiles, rv + goal))
+    if (RuleContainer::Instance()->ScanList(newFiles, goal) || RuleContainer::Instance()->ScanList(newFiles, rv + goal))
     {
         timeval = OS::GetCurrentTime();
     }
-    else if (ScanList(oldFiles, goal) || ScanList(oldFiles, rv + goal))
+    else if (RuleContainer::Instance()->ScanList(oldFiles, goal) || RuleContainer::Instance()->ScanList(oldFiles, rv + goal))
     {
         timeval.Clear();
     }
@@ -355,9 +348,7 @@ bool Maker::ExistsOrMentioned(const std::string &stem, RuleList *ruleList, const
         std::string working = (*itr)->GetPrerequisites();
         while (working.size() && found)
         {
-            std::string thisOne = Eval::ExtractFirst(working, " ");
-            if (thisOne.find_first_of("/\\") == std::string::npos)
-                thisOne = dir + thisOne;
+            std::string thisOne = dir + Eval::ExtractFirst(working, " ");
             thisOne = Eval::ReplaceStem(stem, thisOne);
             Time theTime;
             if (RuleContainer::Instance()->find(&thisOne) != RuleContainer::Instance()->end())
@@ -389,23 +380,21 @@ bool Maker::ExistsOrMentioned(const std::string &stem, RuleList *ruleList, const
     if (found)
     {
         // ok this is a match...
-        EnterSpecificRule(ruleList, stem, preferredPath, outerMost);
+        EnterSpecificRule(ruleList, stem, preferredPath, dir, outerMost);
     }
     return found;
 }
 void Maker::EnterSpecificRule(RuleList *l, const std::string &stem, 
-                              const std::string &preferredPath, bool outerMost)
+                              const std::string &preferredPath, const std::string &dir, bool outerMost)
 {
-    std::string target = Eval::ReplaceStem(stem, l->GetTarget());
+    Time theTime;
+    std::string target = dir + Eval::ReplaceStem(stem, l->GetTarget());
     RuleList *ruleList = RuleContainer::Instance()->Lookup(target);
     if (!ruleList)
     {
         ruleList = new RuleList(target);
-//        if (ruleList)
-        {
-            *RuleContainer::Instance() += ruleList;
-            ruleList->SetTargetPatternStem(stem);
-        }
+        *RuleContainer::Instance() += ruleList;
+        ruleList->SetTargetPatternStem(stem);
     }
     std::string orderPrereq;
     std::string prereq;
@@ -417,33 +406,31 @@ void Maker::EnterSpecificRule(RuleList *l, const std::string &stem,
         std::string working = rule->GetPrerequisites();
         while (working.size())
         {
-            std::string temp = Eval::ExtractFirst(working, " ");
-            temp = Eval::ReplaceStem(stem, temp);
+            std::string thisOne = dir + Eval::ExtractFirst(working, " ");
+            thisOne = Eval::ReplaceStem(stem, thisOne);
+            thisOne = GetFileTime(thisOne, preferredPath, theTime) + thisOne;
             if (prereq.size())
                 prereq += " ";
-            prereq += temp;
+            prereq += thisOne;
         }
         working = rule->GetOrderPrerequisites();
         while (working.size())
         {
-            std::string temp = Eval::ExtractFirst(working, " ");
-            temp = Eval::ReplaceStem(stem, temp);
+            std::string thisOne = dir + Eval::ExtractFirst(working, " ");
+            thisOne = Eval::ReplaceStem(stem, thisOne);
+            thisOne = GetFileTime(thisOne, preferredPath, theTime) + thisOne;
             if (orderPrereq.size())
                 orderPrereq += " ";
-            orderPrereq += temp;
+            orderPrereq += thisOne;
         }
     }
     Rule *rule = new Rule(target, prereq, orderPrereq, commands, "<implicitbuild>", 1);
-//    if (rule)
-        ruleList->InsertFirst(rule);
+    ruleList->InsertFirst(rule);
     if (!outerMost)
     {
         Parser p(".INTERMEDIATE: " + target, "<implicitbuild>", 1, false);
         p.Parse();
     }
-//	Time tv;
-    // for vpaths...
-//	GetFileTime(target, preferredPath, tv);
 }
 void Maker::EnterDefaultRule(const std::string &goal, RuleList *dflt)
 {
@@ -453,13 +440,9 @@ void Maker::EnterDefaultRule(const std::string &goal, RuleList *dflt)
         for (RuleList::iterator it = dflt->begin(); !commands && it != dflt->end(); ++it)
             commands = (*it)->GetCommands();
         RuleList *ruleList = new RuleList(goal);
-//        if (ruleList)
-        {
-            *RuleContainer::Instance() += ruleList;
-            Rule *rule = new Rule(goal, "", "", commands, "<implicitbuild>", 1);
-//            if (rule)
-                ruleList->Add(rule);
-        }
+        *RuleContainer::Instance() += ruleList;
+        Rule *rule = new Rule(goal, "", "", commands, "<implicitbuild>", 1);
+        ruleList->Add(rule);
     }
 }
 bool Maker::SearchImplicitRules(const std::string &goal, const std::string &preferredPath, bool outerMost, Time &timeval)
@@ -527,7 +510,7 @@ bool Maker::SearchImplicitRules(const std::string &goal, const std::string &pref
     for (auto rule : matchedRules)
     {
         
-        std::string stem = Eval::FindStem(goal, rule->GetTarget());
+        std::string stem = Eval::FindStem(name, rule->GetTarget());
         if (ExistsOrMentioned(stem, rule, preferredPath, dir, false, outerMost))
             return true;
     }
@@ -536,7 +519,7 @@ bool Maker::SearchImplicitRules(const std::string &goal, const std::string &pref
     {
         if (rule->GetTarget() != "%" || !rule->GetDoubleColon())
         {
-            std::string stem = Eval::FindStem(goal, rule->GetTarget());		
+            std::string stem = Eval::FindStem(name, rule->GetTarget());		
             if (ExistsOrMentioned(stem, rule, preferredPath, dir, true, outerMost))
                 return true;
         }
@@ -549,66 +532,6 @@ bool Maker::SearchImplicitRules(const std::string &goal, const std::string &pref
         return true;
     }
     return false;
-}
-bool Maker::ScanList(const std::string &v, const std::string &goal)
-{
-    std::string value = v;
-    bool rv = false;
-    while (value.size() && !rv)
-    {
-        size_t start;
-        size_t span;
-        
-        std::string aa = Eval::ExtractFirst(value, " ");
-        span = Eval::MatchesPattern(goal, aa, start, 0);
-        if (span == goal.size())
-        {
-            rv = true;
-            break;
-        }
-        if (aa[aa.size()-1] != '/' && aa[aa.size()-1] != '\\')
-        {
-            aa += CmdFiles::DIR_SEP;
-            span = Eval::MatchesPattern(goal, aa, start, 0);
-            if (span == goal.size())
-            {
-                rv = true;
-                break;
-            }
-        }
-    }
-    return rv;
-}
-bool Maker::OnList(const std::string &goal, char *what)
-{
-    bool rv = false;
-    RuleList *rl = RuleContainer::Instance()->Lookup(what);
-    if (rl)
-    {
-        for (RuleList::iterator it = rl->begin(); !rv && it != rl->end(); ++it)
-        {
-            std::string value = (*it)->GetPrerequisites();	
-            rv = ScanList(value, goal);
-        }
-    }
-    return rv;
-}
-bool Maker::NoList(char *what)
-{
-    bool rv = false;
-    RuleList *rl = RuleContainer::Instance()->Lookup(what);
-    if (rl)
-    {
-        rv = true;
-        for (RuleList::iterator it = rl->begin(); rv && it != rl->end(); ++it)
-        {
-            if (Eval::ExtractFirst((*it)->GetPrerequisites(), " ") != "")
-            {
-                rv = false;
-            }
-        }
-    }
-    return rv;
 }
 void Maker::EnterSuffixTerminals()
 {
@@ -625,12 +548,8 @@ void Maker::EnterSuffixTerminals()
                 if (!ruleList)
                 {
                     ruleList = new RuleList(target);
-                    //if (ruleList)
-                    {
-                        Rule *rule = new Rule(target, "", "", nullptr, "<implicitbuild>", 1);
-                        //if (rule)
-                            ruleList->Add(rule);
-                    }
+                    Rule *rule = new Rule(target, "", "", nullptr, "<implicitbuild>", 1);
+                    ruleList->Add(rule);
                 }
             }
         }
@@ -651,142 +570,43 @@ void Maker::GetEnvironment(EnvironmentStrings &env)
         }
     }
 }
-void Maker::DeleteOne(Depends *depend)
-{
-    for (auto d : *depend)
-    {
-        DeleteOne(d);
-    }
-    if (depend->ShouldDelete())
-        OS::RemoveFile(depend->GetGoal());	
-}
-int Maker::RunOne(Depends *depend, EnvironmentStrings &env, bool keepGoing)
-{
-    int rv = 0;
-    if (depend->GetRuleList()->IsBuilt())
-        return 0;
-    RuleList *rl = depend->GetRuleList();
-    Eval::PushruleStack(rl);
-    bool stop = false;
-    bool cantbuild = false;
-    for (auto d : *depend)
-    {
-//		if (!d->GetOrdered())
-        {
-            if ((rv = RunOne(d, env, keepGoing)))
-            {
-                stop = true;
-                if (!keepGoing)
-                {
-                    Eval::PopruleStack();
-                    return rv;
-                }
-            }			
-        }
-//		else 
-//			cantbuild |= d->GetRuleList()->IsBuilt();
-    }
-    if (stop)
-    {
-        Eval::PopruleStack();
-        return -1;
-    }
-    if (cantbuild || rl->IsBuilt())
-    {
-        Eval::PopruleStack();
-        return 0;
-    }
-    rl->SetBuilt();
-    if (touch)
-    {
-        rl->Touch(OS::GetCurrentTime());
-    }
-    bool sil = silent;
-    bool ig = ignoreResults;
-    bool precious = false;
-    bool make = OnList(depend->GetGoal(), ".RECURSIVE");
-    bool oneShell = RuleContainer::Instance()->Lookup(".ONESHELL") != nullptr;
-    bool posix = RuleContainer::Instance()->Lookup(".POSIX") != nullptr;
-    if (!sil)
-        sil = OnList(depend->GetGoal(), ".SILENT") || NoList(".SILENT");
-    if (!ig)
-        ig = OnList(depend->GetGoal(), ".IGNORE") || NoList(".IGNORE");
-    if (depend->GetRule())
-    {
-        ig |= depend->GetRule()->IsIgnore();
-        sil |= depend->GetRule()->IsSilent();
-        precious = depend->GetRule()->IsPrecious();
-        make |= depend->GetRule()->IsMake();
-        if (precious)
-            depend->Precious();
-    }
-    Spawner sp(env, ig, sil, oneShell, posix, displayOnly && !make, keepResponseFiles);
-    if (depend->GetRule() && depend->GetRule()->GetCommands())
-        rv = sp.Run(*depend->GetRule()->GetCommands(), rl, nullptr);
-    if (rv)
-    {
-        std::string b = Utils::NumberToString(rv);
-        if (RuleContainer::Instance()->Lookup(".DELETE_ON_ERROR"))
-        {
-            OS::RemoveFile(depend->GetGoal());
-            std::cout << std::endl;
-            Eval::error("commands returned error code " + b + " '" + depend->GetGoal()  + "' removed", depend->GetRule()->GetCommands()->GetFile(), depend->GetRule()->GetCommands()->GetLine());
-        }
-        else
-        {
-            std::cout << std::endl;
-            Eval::error("commands returned error code " + b, depend->GetRule()->GetCommands()->GetFile(), depend->GetRule()->GetCommands()->GetLine());
-        }
-    }
-    Eval::PopruleStack();
-    return rv;	
-}
-void Maker::CancelOne(Depends *depend)
-{
-    for (auto d : *depend)
-    {
-        CancelOne(d);
-    }
-    std::string path = filePaths[depend->GetGoal()];
-    if (path.size() != 0)
-    {
-        Variable *v = VariableContainer::Instance()->Lookup("GPATH");
-        if (v)
-        {
-            std::string t = v->GetValue();
-            if (v->GetFlavor() == Variable::f_recursive)
-            {
-                Eval e(t, false);
-                t = e.Evaluate();
-            }
-            if (!ScanList(t, path))
-                    filePaths[depend->GetGoal()] = "";		
-        }
-//		else
-//			filePaths[depend->GetGoal()] = "";		
-    }
-}
 int Maker::RunCommands(bool keepGoing)
 {
-    int rv =0 ;
+    if (RuleContainer::Instance()->Lookup(".NOTPARALLEL") || RuleContainer::Instance()->Lookup(".NO_PARALLEL"))
+        OS::PushJobCount(1);
     bool stop = false;
     EnvironmentStrings env;
     GetEnvironment(env);
     int count;
-    for (std::list<Depends *>::iterator it = depends.begin(); (rv == 0 || keepGoing) && it != depends.end(); ++it)
+    Runner runner(silent, displayOnly, ignoreResults, touch, outputType, keepResponseFiles, firstGoal, filePaths);
+
+    for (std::list<Depends *>::iterator it = depends.begin(); it != depends.end(); ++it)
     {
-        CancelOne(*it);
+        runner.CancelOne(*it);
     }
-    for (std::list<Depends *>::iterator it = depends.begin(); (rv == 0 || keepGoing) && it != depends.end(); ++it)
+
+    int rv;
+    OS::JobInit();
+    do
     {
-        rv = RunOne(*it, env, keepGoing);
-        if (rv)
-            stop = true;
-    }
+        rv = 0;
+        for (std::list<Depends *>::iterator it = depends.begin(); (rv <= 0 || keepGoing) && it != depends.end(); ++it)
+        {
+            int rv1 = runner.RunOne(*it, env, keepGoing);
+            if (rv <= 0 && rv1 != 0)
+                rv = rv1;
+            if (rv > 0)
+                stop = true;
+        }
+        OS::Yield();
+    } while (rv < 0);
+    OS::JobRundown();
     for (auto d : depends)
     {
-        DeleteOne(d);
+        runner.DeleteOne(d);
     }
+    if (RuleContainer::Instance()->Lookup(".NOTPARALLEL") || RuleContainer::Instance()->Lookup(".NO_PARALLEL"))
+        OS::PopJobCount();
     if (stop)
         return 2;
     else

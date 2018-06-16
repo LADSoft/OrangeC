@@ -611,7 +611,7 @@ static LEXEME *statement_do(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             currentLineData(dostmt, lex, 0);
             st = stmtNode(lex, dostmt, st_select);
             st->select = select;
-            if (!dostmt->hasbreak && isselecttrue(st->select))
+            if (!dostmt->hasbreak && (dostmt->needlabel || isselecttrue(st->select)))
                 parent->needlabel = TRUE;
             st->label = loopLabel;
             st = stmtNode(lex, dostmt, st_label);
@@ -1034,12 +1034,9 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         st = stmtNode(lex, forstmt, st_expr);
                         if (!isstructured(selectTP))
                         {
-                            TYPE **tp = &declSP->tp;
-                            if (isref(*tp))
-                                tp = &(*tp)->btp;
-                            while (isconst(*tp) || isvolatile(*tp))
-                                tp = &(*tp)->btp;
-                            *tp = assignauto(*tp, basetype(selectTP)->btp);
+                            DeduceAuto(&declSP->tp, selectTP);
+                            if (ispointer(selectTP) && ispointer(declSP->tp))
+                                declSP->tp = basetype(declSP->tp)->btp;
                             UpdateRootTypes(declSP->tp);
                             if (isarray(selectTP) && !comparetypes(declSP->tp, basetype(selectTP)->btp, TRUE))
                             {
@@ -1075,12 +1072,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                             st->select = eBegin;
                             if (ispointer(iteratorType))
                             {
-                                TYPE **tp = &declSP->tp;
-                                if (isref(*tp))
-                                    tp = &(*tp)->btp;
-                                while (isconst(*tp) || isvolatile(*tp))
-                                    tp = &(*tp)->btp;
-                                *tp = assignauto(*tp, basetype(iteratorType)->btp);
+                                DeduceAuto(&declSP->tp, iteratorType);
                                 UpdateRootTypes(declSP->tp);
                                 if (!comparetypes(declSP->tp, basetype(iteratorType)->btp, TRUE))
                                 {
@@ -1117,16 +1109,12 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                 
                             }
                             else {
-                                TYPE **tp = &declSP->tp;
                                 BOOLEAN ref = FALSE;
-                                if (isref(*tp))
+                                if (isref(declSP->tp))
                                 {
                                     ref = TRUE;
-                                    tp = &(*tp)->btp;
                                 }
-                                while (isconst(*tp) || isvolatile(*tp))
-                                    tp = &(*tp)->btp;
-                                *tp = assignauto(*tp, starType);
+                                DeduceAuto(&declSP->tp, starType);
                                 UpdateRootTypes(declSP->tp);
                                 if (!comparetypes(declSP->tp, starType, TRUE) && (!isarithmetic(declSP->tp) || !isarithmetic(starType)))
                                 {
@@ -1304,10 +1292,14 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 if (!MATCHKW(lex, closepa))
                 {
                     TYPE *tp = NULL;
-                    lex = optimized_expression(lex, funcsp, NULL, &tp, &before, TRUE);
+                    lex = expression_comma(lex, funcsp, NULL, &tp, &before, NULL, 0);
                     if (!tp)
                     {
                         error(ERR_EXPRESSION_SYNTAX);
+                    }
+                    else
+                    {
+                        optimize_for_constants(&before);
                     }
                 }
                 if (!MATCHKW(lex, closepa))
@@ -1354,6 +1346,8 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         addedBlock--;
                         FreeLocalContext(forstmt, funcsp, codeLabel++);
                     }
+                    if (before)
+                        assignmentUsages(before, FALSE);
                     st = stmtNode(lex, forstmt, st_label);
                     st->label = forstmt->continuelabel;
                     st = stmtNode(lex, forstmt, st_expr);
@@ -1572,6 +1566,7 @@ static LEXEME *statement_goto(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         SYMBOL *spx = search(lex->value.s.a, labelSyms);
         BLOCKDATA *block = Alloc(sizeof(BLOCKDATA));
         STATEMENT *st = stmtNode(lex, block, st_goto);
+        st->explicitGoto = TRUE;
         block->next = parent;
         block->type = begin;
         block->table = localNameSpace->syms;
@@ -1580,6 +1575,7 @@ static LEXEME *statement_goto(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             spx = makeID(sc_ulabel, NULL, NULL, litlate(lex->value.s.a));
             spx->declfile = spx->origdeclfile = lex->file;
             spx->declline = spx->origdeclline = lex->line;
+            spx->realdeclline = lex->realline;
             spx->declfilenum = lex->filenum;
             SetLinkerNames(spx, lk_none);
             spx->offset = codeLabel++;
@@ -1729,7 +1725,6 @@ static SYMBOL *baseNode(EXPRESSION *node)
         return 0;
     switch (node->type)
     {
-        case en_label:
         case en_auto:
         case en_pc:
         case en_global:
@@ -1808,7 +1803,8 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             lex = prevsym(current);
             while (tp1->type == bt_typedef)
                 tp1 = tp1->btp;
-            basetype(funcsp->tp)->btp = tp = assignauto(basetype(funcsp->tp)->btp, tp1);
+            DeduceAuto(&basetype(funcsp->tp)->btp, tp1);
+            tp = basetype(funcsp->tp)->btp;
             UpdateRootTypes(funcsp->tp);
             SetLinkerNames(funcsp, funcsp->linkage);
             matchReturnTypes = TRUE;
@@ -1923,7 +1919,6 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                             switch (exp1->type)
                             {
                                 case en_global:
-                                case en_label:
                                 case en_auto:
                                 case en_threadlocal:
                                     exp1->v.sp->dest = NULL;
@@ -2355,10 +2350,10 @@ static LEXEME *statement_while(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     AddBlock(lex, parent, whilestmt);
     return lex;
 }
-static void checkNoEffect(EXPRESSION *exp)
+static BOOLEAN checkNoEffect(EXPRESSION *exp)
 {
     if (exp->noexprerr)
-        return;
+        return FALSE;
         switch(exp->type)
         {
             case en_func:
@@ -2373,17 +2368,18 @@ static void checkNoEffect(EXPRESSION *exp)
             case en_void:
             case en__initblk:
             case en__cpblk:
+		return FALSE;
                 break;                
             case en_not_lvalue:
             case en_lvalue:
             case en_thisref:
             case en_literalclass:
             case en_funcret:
-                checkNoEffect(exp->left);
-                break;
+                return checkNoEffect(exp->left);
+            case en_cond:
+                return checkNoEffect(exp->right->left) | checkNoEffect(exp->right->right);
             default:
-                error(ERR_EXPRESSION_HAS_NO_EFFECT);
-                break;
+                return TRUE;
         }
 }
 static LEXEME *statement_expr(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
@@ -2404,7 +2400,8 @@ static LEXEME *statement_expr(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         error(ERR_EXPRESSION_SYNTAX);
     else if (tp->type != bt_void && tp->type != bt_any)
     {
-        checkNoEffect(st->select);
+        if (checkNoEffect(st->select))
+            error(ERR_EXPRESSION_HAS_NO_EFFECT);
         if (cparams.prm_cplusplus && isstructured(tp) && select->type == en_func)
         {
             SYMBOL *sp = select->v.func->returnSP;
@@ -2417,6 +2414,14 @@ static LEXEME *statement_expr(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 sp->dest = init;
             }
         }
+    }
+    else
+    {
+        if (select->type == en_func && select->v.func->sp && select->v.func->sp->linkage3 == lk_noreturn)
+        {
+            parent->needlabel = TRUE;
+        }
+
     }
     return lex;
 }
@@ -3104,7 +3109,7 @@ LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
     }
     browse_blockend(endline = lex->line);
     currentLineData(blockstmt, lex, -!first);
-    if (parent->type == begin || parent->type == kw_switch || parent->type == kw_try || parent->type == kw_catch)
+    if (parent->type == begin || parent->type == kw_switch || parent->type == kw_try || parent->type == kw_catch || parent->type == kw_do)
         parent->needlabel = blockstmt->needlabel;
     if (!blockstmt->hassemi && (!blockstmt->nosemi || blockstmt->lastcaseordefault))
     {
@@ -3493,7 +3498,7 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     theCurrentFunc = funcsp;
 
     checkUndefinedStructures(funcsp);
-    FlushLineData(funcsp->declfile, funcsp->declline);
+    FlushLineData(funcsp->declfile, funcsp->realdeclline);
     if (!funcsp->linedata)
     {
         startStmt = currentLineData(NULL, lex, 0);
@@ -3523,6 +3528,8 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
         funcsp->inlineFunc.stmt->blockTail = block->blockTail;
         funcsp->declaring = FALSE;
         if (funcsp->isInline && (functionHasAssembly || funcsp->linkage2 == lk_export))
+            funcsp->isInline = funcsp->dumpInlineToFile = funcsp->promotedToInline = FALSE;
+        if (!cparams.prm_allowinline)
             funcsp->isInline = funcsp->dumpInlineToFile = funcsp->promotedToInline = FALSE;
         // if it is variadic don't allow it to be inline
         if (funcsp->isInline)

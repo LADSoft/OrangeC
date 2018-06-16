@@ -71,6 +71,7 @@ extern THREAD *activeThread, *stoppedThread;
 extern enum DebugState uState;
 extern PROJECTITEM *workArea;
 extern BOOL stopCCThread;
+extern HWND hwndGeneralProps;
 
 void ApplyDialogFont(HWND hwnd);
 char *getcwd( char *__buf, int __buflen ); // can't include dir.h because it defines eof...
@@ -104,6 +105,7 @@ char *watchhist[MAX_COMBO_HISTORY];
 
 LOGFONT systemDialogFont, systemMenuFont, systemCaptionFont;
 
+static BOOL StepFromASM;
 static char szFrameClassName[] = "ocideFrame";
 static LOGFONT NormalFontData = 
 {
@@ -115,9 +117,14 @@ static LOGFONT NormalFontData =
 static int bCmdLineWS, bCmdLineProj;
 static char szNewWS[256], szNewProj[256];
 static char browseToText[256];
+static BOOL showHelp;
+static BOOL clearFiles;
+static BOOL clearWA;
 
 void ProjSetup(char select, char *string);
 void WorkAreaSetup(char select, char *string);
+void ClearSetup(char select, char *string);
+void HelpSetup(char select, char *string);
 ARGLIST ArgList[] = 
 {
     {
@@ -128,6 +135,19 @@ ARGLIST ArgList[] =
         'w', ARG_CONCATSTRING, WorkAreaSetup
     }
     , 
+    {
+        'c', ARG_CONCATSTRING, ClearSetup
+    }
+    ,
+    {
+        'h', ARG_BOOL, HelpSetup
+    }
+    ,
+    {
+        '?', ARG_BOOL, HelpSetup
+    }
+    ,
+    
     {
         0, 0, 0
     }
@@ -218,6 +238,20 @@ void WorkAreaSetup(char select, char *string)
     abspath(szNewWS, 0);
     if (!strrchr(szNewWS, '.'))
         strcat(szNewWS,".cwa");
+}
+void ClearSetup(char select, char *string)
+{
+    if (string[0] == 0)
+       clearFiles = TRUE;
+    else for (int i=0; i < strlen(string); i++)
+       if (string[i] == 'f')
+           clearFiles = TRUE;
+       else if (string[i] == 'w')
+           clearWA = TRUE;
+}
+void HelpSetup(char select, char *string)
+{
+    showHelp = TRUE;
 }
 
 //-------------------------------------------------------------------------
@@ -414,18 +448,26 @@ static DWORD LoadFirstWorkArea(void *v)
     if (argv)
     {
         int todo = parse_args(&argc, argv, 1) && argc > 1 ;
-        CloseWorkArea();
-        if (!bCmdLineWS)
+        if (showHelp)
         {
-            if (bCmdLineProj)
-            {
-                LoadProject(szNewProj);
-                SelectWindow(DID_PROJWND);
-            }
+           ExtendedMessageBox("Command Line Help", 0, "usage: ocide [-c[fw]] [-wworkspacename] [-pprojectname] [list of files]");
+           exit(0);
         }
-        else
-        {
+        CloseWorkArea();
+        if (bCmdLineWS)
             LoadWorkArea(szNewWS, TRUE);
+        if (bCmdLineProj)
+        {
+            LoadProject(szNewProj);
+            SelectWindow(DID_PROJWND);
+        }
+        if (clearFiles)
+        {
+            CloseAll();
+        }
+        if (clearWA)
+        {
+            ProjectRemoveAll();
         }
         if (todo)
         {
@@ -636,12 +678,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             return 1;
         case WM_EXCEPTION:
             dbe = (DEBUG_EVENT*)lParam;
-            if (!GetBreakpointLine((DWORD)dbe
+            if (StepFromASM || !GetBreakpointLine((DWORD)dbe
                 ->u.Exception.ExceptionRecord.ExceptionAddress, &module[0],
                 &linenum, FALSE))
                 CreateASMWindow();
             else
                 ApplyBreakAddress(module, linenum);
+            StepFromASM = FALSE;
             if (hwndASM)
                 SendMessage(hwndASM, WM_COMMAND, ID_SETADDRESS, (LPARAM)
                             dbe->u.Exception.ExceptionRecord.ExceptionAddress);
@@ -672,12 +715,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             if (uState != notDebugging)
             {
                 
-                if (!GetBreakpointLine((DWORD)dbe
+                if (StepFromASM || !GetBreakpointLine((DWORD)dbe
                     ->u.Exception.ExceptionRecord.ExceptionAddress, &module[0],
                     &linenum, FALSE))
                     CreateASMWindow();
                 else
                     ApplyBreakAddress(module, linenum);
+                StepFromASM = FALSE;
                 if (hwndASM)
                     SendMessage(hwndASM, WM_COMMAND, ID_SETADDRESS, (LPARAM)
                                 dbe->u.Exception.ExceptionRecord.ExceptionAddress);
@@ -821,12 +865,18 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     dbgRebuildMain(wParam);
                 else if (uState != notDebugging && uState != Running)
                 {
+                    if ((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwndASM)
+                        StepFromASM = TRUE;
                     StepIn(dbe);
                     if (hwndASM)
                         InvalidateRect(hwndASM, 0, 1);
                 }
                 return 0;
             case IDM_RUN:
+                if ((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwndASM)
+                    StepFromASM = TRUE;
+                else
+                    StepFromASM = FALSE;
                 if (uState != notDebugging && uState != Running)
                 {
                     SaveRegisterContext();
@@ -853,6 +903,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     dbgRebuildMain(wParam);
                 else if (uState != notDebugging && uState != Running)
                 {
+                    if ((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwndASM)
+                        StepFromASM = TRUE;
                     StepOver(dbe);
                     if (hwndASM)
                         InvalidateRect(hwndASM, 0, 1);
@@ -863,12 +915,16 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     dbgRebuildMain(wParam);
                 else if (uState != notDebugging && uState != Running)
                 {
+                    if ((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwndASM)
+                        StepFromASM = TRUE;
                     StepOut(dbe);
                     if (hwndASM)
                         InvalidateRect(hwndASM, 0, 1);
                 }
                 return 0;
             case IDM_RUNTO:
+                if ((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwndASM)
+                    StepFromASM = TRUE;
                 if (RunTo(dbe))
                 {
                     if (hwndASM)
@@ -1288,7 +1344,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 FileBrowseLeft();
                 break;
             case IDM_SAVEALL:
-            case IDM_SAVEALL2:
                 SaveDrawAll();
                 ResSaveAll();
                 break;                
@@ -1750,11 +1805,15 @@ void ProcessMessage(MSG *msg)
                         case WM_LBUTTONDOWN:
                         case WM_RBUTTONDOWN:
                         case WM_MBUTTONDOWN:
-                        case WM_KEYDOWN:
                         case WM_VSCROLL: // for thumb tracking
                             PropsWndClearEditBox(msg);
                             break;
-                    } 
+                        case WM_KEYDOWN:
+                            PropsWndClearEditBox(msg);
+                            if (hwndGeneralProps && msg->wParam == VK_ESCAPE)
+                                PostMessage(hwndGeneralProps, WM_COMMAND, ID_CLOSEWINDOW, 0); // close window
+                            break;
+                    }
                     TranslateMessage(msg);
                     DispatchMessage(msg);
                 }
@@ -1819,7 +1878,11 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpszCmdLine,
              if (q)
              {
                   *q = 0;
-                 _putenv_s("ORANGEC", buffer);
+		char *buf1 = (char *)calloc(1,strlen("ORANGEC") + strlen(buffer) + 2);
+		strcpy(buf1, "ORANGEC");
+		strcat(buf1,"=");
+                strcat(buf1, buffer);
+                putenv(buf1);
                  *q = '\\';
              }
              *p = '\\';
@@ -1916,7 +1979,6 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpszCmdLine,
                 InitFont(FALSE);
                 exit(0);
             }
-
     GetSystemDialogFont();
     
     hMenuMain = LoadMenuGeneric(hInstance, "MAINMENU");

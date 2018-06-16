@@ -196,6 +196,7 @@ KEYWORD keywords[] = {
     { "__char16_t", 10,  kw_char16_t, KW_CPLUSPLUS | KW_C1X, TT_BASETYPE | TT_INT },
     { "__char32_t", 10,  kw_char32_t, KW_CPLUSPLUS | KW_C1X, TT_BASETYPE | TT_INT },
     { "__cpblk", 7, kw__cpblk, KW_MSIL, TT_OPERATOR | TT_UNARY },
+    { "__declspec", 10, kw__declspec, KW_NONANSI | KW_ALL, TT_LINKAGE},
     { "__entrypoint", 12,  kw__entrypoint, KW_MSIL, TT_LINKAGE },
     { "__export", 8,  kw__export, KW_NONANSI | KW_ALL, TT_LINKAGE},
     { "__fault", 7,  kw___fault, KW_MSIL, TT_CONTROL },
@@ -262,7 +263,7 @@ KEYWORD keywords[] = {
     { "const_cast",10,  kw_const_cast, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR },
     { "constexpr", 9,  kw_constexpr, KW_CPLUSPLUS, TT_DECLARE},
     { "continue", 8,  kw_continue, 0, TT_CONTROL },
-    { "decltype", 8,  kw_decltype, KW_CPLUSPLUS, TT_BASETYPE | TT_OPERATOR },
+    { "decltype", 8,  kw_decltype, KW_CPLUSPLUS, TT_OPERATOR },
     { "default", 7,  kw_default, 0, TT_CONTROL },
     { "delete", 6,  kw_delete, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR },
     { "do", 2,  kw_do, 0, TT_CONTROL },
@@ -1323,7 +1324,8 @@ LEXEME *getsym(void)
         } while (*includes->lptr == 0);
         lex->charindex = includes->lptr - includes->inputline;
         lex->line = includes->line;
-        lex->file = includes->fname;
+        lex->realline = includes->realline;
+        lex->file = includes->linename ? includes->linename : includes->fname;
         lex->filenum = includes->fileindex;
         if ((cval = getChar(&includes->lptr, &tp)) != INT_MIN)
         {

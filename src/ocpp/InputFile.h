@@ -41,13 +41,16 @@ public:
         inComment(false), commentLine(0), endedWithoutEOL(false), file(nullptr) { }
     virtual ~InputFile() 
     { 
-        if (file) 
+        if (file && file != stdin) 
             fclose(file); 
         CheckErrors(); 
     }
     virtual bool Open()
     {
-        file = fopen(name.c_str(),"r");
+        if (name[0] == '-') 
+            file = stdin;
+        else 
+            file = fopen(name.c_str(),"r");
         return file != nullptr;
     }
     int GetLineNo() { return lineno; }

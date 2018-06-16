@@ -39,7 +39,7 @@
 #include <stdio.h>
 
 #ifdef __ORANGEC__
-#define __sync_add_and_fetch(__a__, __m__) __atomic_modify( __a__, +=, __m__, 5 )
+#define __sync_add_and_fetch(__a__, __m__) (__atomic_modify( __a__, +=, __m__, 5 ) + __m__)
 #endif
 
 // On Linux, wint_t and wchar_t have different signed-ness, and this causes

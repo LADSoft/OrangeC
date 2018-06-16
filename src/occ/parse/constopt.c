@@ -1501,7 +1501,7 @@ int opt0(EXPRESSION **node)
             rv |= opt0(&(ep->left));
             if (isintconst(ep->left))
             {
-                *node = intNode(en_c_i, -ep->left->v.i);
+                *node = intNode(ep->left->type, -ep->left->v.i);
                 rv = TRUE;
             }
             else if (isfloatconst(ep->left))
@@ -2004,7 +2004,6 @@ int opt0(EXPRESSION **node)
             }
             else switch(ep->left->type)
             {
-                case en_label:
                 case en_pc:
                 case en_threadlocal:
                 case en_global:
@@ -2020,7 +2019,6 @@ join_land:
                     }
                     else switch(ep->right->type)
                     {
-                        case en_label:
                         case en_pc:
                         case en_threadlocal:
                         case en_global:
@@ -2056,7 +2054,6 @@ join_land:
             }
             else switch(ep->left->type)
             {
-                case en_label:
                 case en_pc:
                 case en_threadlocal:
                 case en_global:
@@ -2085,7 +2082,6 @@ join_lor:
                     }
                     else switch(ep->right->type)
                     {
-                        case en_label:
                         case en_pc:
                         case en_threadlocal:
                         case en_global:
@@ -2951,7 +2947,7 @@ int fold_const(EXPRESSION *node)
                                         functionnesting[functionnestingcount++] = st->select;
                                         optimize_for_constants(&st->select);
                                         functionnestingcount--;
-                                        if (IsConstantExpression(st->select, FALSE))
+                                        if (IsConstantExpression(st->select, FALSE, FALSE))
                                         {
                                             *node = *st->select;
                                             node->noexprerr = TRUE;
@@ -2993,7 +2989,7 @@ int fold_const(EXPRESSION *node)
                     {
                         EXPRESSION *exp = st->select;
                         optimize_for_constants(&st->select);
-                        if (IsConstantExpression(st->select, TRUE))
+                        if (IsConstantExpression(st->select, TRUE, FALSE))
                         {
                             *node = *st->select;
                             node->noexprerr = TRUE;
@@ -3501,7 +3497,6 @@ static int depth(EXPRESSION *ep)
         case en_pc:
         case en_threadlocal:
         case en_labcon:
-        case en_label:
         case en_absolute:
         case en_nullptr:
         case en_atomic:
@@ -3552,7 +3547,6 @@ static void rebalance(EXPRESSION *ep)
         case en_pc:
         case en_threadlocal:
         case en_labcon:
-        case en_label:
         case en_absolute:
         case en_nullptr:
         case en_structelem:

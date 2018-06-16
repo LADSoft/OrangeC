@@ -30,7 +30,7 @@
 #include <wchar.h>
 #include <locale.h>
 #include "libp.h"
-
+#include "errno.h"
 
 extern char _RTL_DATA **_environ;
 int _RTL_FUNC putenv(const char *name)
@@ -45,7 +45,7 @@ int _RTL_FUNC putenv(const char *name)
     while (*q) {
       count++ ;
       if (!strnicmp(name,*q,len) && (*q)[len] == '=') {
-            *q = strdup(name) ;
+            *q = name ; // yes this is supposed to be raw
             __ll_exit_critical() ;
             return 0 ;
       }
@@ -54,10 +54,11 @@ int _RTL_FUNC putenv(const char *name)
    p = (char **)realloc(_environ,(count+2)*sizeof(char **)) ;
    if (!p) {
       __ll_exit_critical() ;
+      errno = ENOMEM;
       return -1 ;
    }
-   p[count-1] = NULL ;
-   p[count-2] = strdup(name) ;
+   p[count+2-1] = NULL ;
+   p[count+2-2] = name ;
    _environ = p ;
    __ll_exit_critical() ;
     return 0;
@@ -70,11 +71,46 @@ int _RTL_FUNC _putenv_s(const char *name, const char *value)
 {
     char *buf = calloc(strlen(name) + strlen(value) + 2, 1);
     if (!buf)
+    {
+         errno = ENOMEM;
          return -1;
+    }
     strcpy(buf, name);
     buf[strlen(buf)] = '=';
     strcat(buf, value);
-    int rv = putenv(buf);
+    int rv = putenv(strdup(buf));
     free(buf);
     return rv;
+}
+int _RTL_FUNC setenv(const char *name, const char *value, int overwrite)
+{
+    if (name == 0 || name[0] == 0 || strchr(name, '='))
+    {
+        errno = EINVAL;
+        return -1;
+    }
+    if (!overwrite && getenv(name))
+        return 0;
+    return _putenv_s(name, value);
+}
+int _RTL_FUNC unsetenv(const char *name)
+{
+   char **q = _environ;
+   int len = 0;
+   len = strlen(name);
+   __ll_enter_critical() ;
+    while (*q) {
+      if (!strnicmp(name,*q,len) && (*q)[len] == '=') {
+            while (*q)
+            {
+                 *q = *(q+1);
+                 q++;
+            }
+            __ll_exit_critical() ;
+            return 0 ;
+      }
+        q++;
+    }
+    __ll_exit_critical();
+    return 0;
 }

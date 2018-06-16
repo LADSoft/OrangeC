@@ -46,6 +46,7 @@ unsigned	_win32;
 jmp_buf __exitbranch, __abortbranch;
 static unsigned	dllexists = 0;
 unsigned _isDLL;
+static int jumped;
 void PASCAL __xceptinit(int *block);
 void PASCAL __xceptrundown(void);
 // in the follow, the args are ONLY valid for DLLs
@@ -106,14 +107,19 @@ int __stdcall ___startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvReserved)
                 rv = (*startupStruct.func)(_argc, _argv, _environ) + 1;
             }
         }
+        else
+ 	    jumped++;
         if (!(startupStruct.flags & DLL) || fdwReason == DLL_PROCESS_DETACH)
         {
             __srproc(EXITSTART, EXITEND);
         }
     }
+    else
+        jumped++;
     rv--;
-    __xceptrundown();
-    if (!(startupStruct.flags & DLL))
+    if (!jumped)
+        __xceptrundown();
+    if (jumped || !(startupStruct.flags & DLL))
     {
         __crtexit(rv);	// never returns if linked to CRTDLL
         ExitProcess(rv);

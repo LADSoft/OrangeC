@@ -33,10 +33,12 @@
 #include <wchar.h>
 #include <locale.h>
 #include "libp.h"
+#include <fcntl.h>
 
 int _fmode = O_TEXT;
 int __uihandles[HANDLE_MAX], __uimodes[HANDLE_MAX],__uiflags[HANDLE_MAX] ;
 char __uinames[HANDLE_MAX][256], __uidrives[HANDLE_MAX] ;
+struct flock *__uilocks[HANDLE_MAX];
 
 #pragma startup uio_init 227
 #pragma rundown __uio_rundown 9 /* 11 */

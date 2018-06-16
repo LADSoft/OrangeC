@@ -1,6 +1,6 @@
 LADSoft:  The below license only applies to the WIN32 header files.  The rest of 
-the library with the exception of the DOS Extenders is covered under the new 
-BSD license.  See the file 'license.txt' for details.
+the library with the exception of the DOS Extenders is covered under the GNU version 3 license.
+See the file 'license.txt' for details.
 
 GNU lesser public license text follows
 --------------------------------------------------------------------------------

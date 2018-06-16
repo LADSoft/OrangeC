@@ -46,6 +46,9 @@
 extern "C" {
 #endif
 
+#define OUR_CPP_EXC_CODE 0xEEFABCD
+
+
 #define _DTA_BUF_DEFAULT 8192 /* must be a power of two <= 64K */
 
 #if  __STDC_VERSION__ >= 199901L
@@ -59,6 +62,7 @@ void __ll_init(void);
 /* File open close */
 int __ll_open(const char *__name, int flags, int shflags);
 int __ll_creat(const char *__name, int flags, int shflags);
+int __ll_openpipe(int *read, int *write, unsigned int size);
 int __ll_close(int __fd);
 
 /* Convert C-style open flags to os-style open flags */
@@ -68,6 +72,7 @@ int __ll_flags(int __oldflags);
 int __ll_write(int __fd,void *__buf,size_t __size);
 int __ll_read(int __fd,void *__buf,size_t __len);
 int __appendedwrite(FILE *stream, char *buf, int len);
+int __ll_flush(int __fd);
 
 /* File positioning */
 size_t __ll_getpos(int __fd);
@@ -85,7 +90,6 @@ void __ll_free(void *__blk);
 /* System stuff */
 int __ll_getenvsize(int id);
 int __ll_getenv(char *buf, int id);
-int __ll_system(const char *string);
 void __ll_gettempdir(char *buf);
 
 /* Time & date stuff */
@@ -97,6 +101,7 @@ void __ll_xtime (struct _timeb * buf);
 
 /* Spawn function */
 int __ll_spawn(char *name, char *parms, char **env, int mode);
+int __ll_system(char *string, int in, int out);
 
 /* assert */
 void __ll_assertfail( const char *__who, const char *__file, 
@@ -225,7 +230,7 @@ int __ll_setftime(int handle,void *ftimep) ;
 int __ll_getftime(int handle,void *ftimep) ;
 int __ll_utime(int handle, struct tm *access, struct tm * modify);
 int __ll_isatty(int handle) ;
-int __ll_lock(int handle, int offset, int length) ;
+int __ll_lock(int handle, int offset, int length, int exclusive, int wait) ;
 int __ll_unlock(int handle, int offset, int length) ;
 int __ll_uioflags(int flags) ;
 int __ll_shflags(int mode) ;
@@ -254,6 +259,7 @@ struct ithrd
     void *start;
     void *arglist;
     void *handle;
+    void *stevent;
     struct itsslst {
         struct itsslst *next;
         void *tss;

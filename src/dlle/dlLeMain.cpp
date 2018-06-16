@@ -48,13 +48,13 @@ CmdSwitchString dlLeMain::DebugFile(SwitchParser, 'v');
 
 unsigned dlLeMain::fileVersion = 0;
 
-char *dlLeMain::usageText = "[options] relfile\n"
+const char *dlLeMain::usageText = "[options] relfile\n"
             "\n"
             "/mxxx          Set output file type\n"
             "/oxxx          Set output file name\n"
             "/sxxx          Set stub file name\n"
             "/V, --version  Show version and date\n"
-            "/!             No logo\n"
+            "/!, --nologo   No logo\n"
             "\n"
             "Available output file types:\n"
             "   LE (default)\n"

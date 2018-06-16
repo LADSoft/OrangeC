@@ -92,5 +92,3 @@
  Note that a definition declared with **%define** or **%assign** can have any difference from the argument and trigger assembly of the block, whereas a definition declared with **%idefine** or **%iassign** must differ in some way other than in case.  **%elifndef** will assemble the following block for identifiers declared with **%macro** or **%imacro**.
  
  See the section on [Conditional Processing](Conditional%20Processing.md) for more on _%elif-style conditionals_.
-     
- 

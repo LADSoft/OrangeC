@@ -59,7 +59,7 @@ private:
     static CmdSwitchHex padSwitch;
     static CmdSwitchString outputFileSwitch;
     static CmdSwitchString DebugFile;
-    static char *usageText;
+    static const char *usageText;
 
     std::vector<Section *> sections;	
     enum OutputMode

@@ -105,12 +105,14 @@
 
 #define ERR_NO_WINDOW -1
 #define ERR_BUILD_WINDOW 0
-#define ERR_DEBUG_WINDOW 1
+#define ERR_EXTENDED_BUILD_WINDOW 1
+#define ERR_DEBUG_WINDOW 2
 
 #define LANGUAGE_NONE 0
 #define LANGUAGE_C 1
 #define LANGUAGE_ASM 2
 #define LANGUAGE_RC 3
+#define LANGUAGE_CPP 4
 
 #define EDITSIG 0xf1823794
 #define RESSIG 0x1F8237A5
@@ -198,6 +200,7 @@ typedef struct _setting
 	char * lowLimit, *highLimit;
     int order;
     int helpid;
+    int clean:1;
 } SETTING;
 typedef struct _profile
 {
@@ -442,7 +445,8 @@ typedef struct
 //    COLORREF color;
 	unsigned short Color:10;
     unsigned short effect:3;
-    unsigned short pad1:3;
+    unsigned short squiggle: 1;
+    unsigned short pad1:2;
     unsigned char pad2;
     unsigned char ch;
 //    char pad;
@@ -829,7 +833,7 @@ BOOL WINAPI SetLayeredWindowAttributes(
 BOOL WINAPI AllowSetForegroundWindow(
     DWORD dwProcessId);
 #endif
-#if defined(GNUC) && !defined(__MINGW64__)
+#if defined(GNUC) && !defined(__MINGW64__) && !defined(__clang__)
 #pragma pack(push,1)
 typedef struct tagTVKEYDOWN {
     NMHDR hdr;
@@ -864,7 +868,7 @@ typedef struct tagNMTTCUSTOMDRAW
     (*(HTREEITEM FAR *)prc = (hitem), (BOOL)SendMessage((hwnd), TVM_GETITEMRECT, (WPARAM)(code), (LPARAM)(RECT FAR*)(prc)))
 #endif
 
-#ifdef __MINGW64__
+#if defined(__MINGW64__)
 #define Eax Rax
 #define Ebx Rbx
 #define Ecx Rdx

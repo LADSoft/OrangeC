@@ -68,6 +68,10 @@ static char *szClose = "Close";
 static char *szHelp = "Help";
 static HBITMAP menuButtonBM, comboButtonBM;
 static CRITICAL_SECTION propsMutex;
+static SETTING *current;
+static HWND hwndTree;
+static HWND hwndLV;
+static BOOL populating;
 
 static struct _propsData generalProps =
 {
@@ -78,6 +82,7 @@ static struct _propsData generalProps =
 } ;
 
 static SETTING *PropFindAll(PROFILE **list, int count, char *id);
+static void PopulateItems(HWND parent, HWND hwnd, SETTING *settings);
 
 char *LookupProfileName(char *name)
 {
@@ -298,24 +303,27 @@ void InitProps(void)
 BOOL MatchesExt(char *name, char *exts)
 {
     char *p = strrchr(name, '.');
-    int n =strlen(p);
-    if (p && p[1] != '\\')
+    if (p) 
     {
-        char *q = exts;
-        while (q && *q)
+        int n =strlen(p);
+        if (p && p[1] != '\\')
         {
-            char *r = strchr(q, '.');
-            if (r)
+            char *q = exts;
+            while (q && *q)
             {
-                if (!strnicmp(r,p,n) && (r[n] == 0 || r[n] == ' '))
+                char *r = strchr(q, '.');
+                if (r)
                 {
-                    return TRUE;
+                    if (!strnicmp(r,p,n) && (r[n] == 0 || r[n] == ' '))
+                    {
+                        return TRUE;
+                    }
                 }
+                q = strchr(q, ' ');
+                if (q)
+                    while (isspace(*q))
+                        q++;
             }
-            q = strchr(q, ' ');
-            if (q)
-                while (isspace(*q))
-                    q++;
         }
     }
     return FALSE;
@@ -500,15 +508,16 @@ static SETTING *FindSetting(SETTING *settings, SETTING *old)
     return rv;
     
 }
-static void PopulateTree(HWND hwnd, HTREEITEM hParent, SETTING *settings)
+static void PopulateTree(HWND hwnd, HTREEITEM hParent, SETTING *settings, int *first)
 {
     while (settings)
     {
         if (settings->type == e_tree)
         {
+            int xx = first ? *first : 0;
             TV_INSERTSTRUCT t;
             memset(&t, 0, sizeof(t));
-            t.hParent = hParent;
+            t.hParent = hParent;    
             t.hInsertAfter = TVI_LAST;
             t.UNNAMED_UNION item.mask = TVIF_TEXT | TVIF_PARAM;
             t.UNNAMED_UNION item.hItem = 0;
@@ -516,7 +525,20 @@ static void PopulateTree(HWND hwnd, HTREEITEM hParent, SETTING *settings)
             t.UNNAMED_UNION item.cchTextMax = strlen(settings->displayName);
             t.UNNAMED_UNION item.lParam = (LPARAM)settings ;
             settings->hTreeItem = TreeView_InsertItem(hwnd, &t);
-            PopulateTree(hwnd, settings->hTreeItem, settings->children);
+            PopulateTree(hwnd, settings->hTreeItem, settings->children, first);
+            if (first && *first && settings->children && settings->children->type != e_tree)
+            {
+                *first = FALSE;
+                current = settings;
+                populating = TRUE;
+                PopulateItems(hwnd, hwndLV, current);
+                populating = FALSE;
+
+            }
+            else if (xx)
+            {
+                TreeView_Expand(hwnd, settings->hTreeItem, TVE_EXPAND);
+            }
         }
         settings = settings->next;
     }
@@ -862,9 +884,9 @@ void ApplyCurrentValues(SETTING *setting, PROJECTITEM *saveTo)
                     {
                         SETTING *p = *s;
                         *s = (*s)->next;
-                        free(p);
                         MarkChanged(saveTo, FALSE);
-                        saveTo->clean = TRUE;
+                        saveTo->clean = iscleanable(p->id);
+                        free(p);
                         break;
                     }
                     s = &(*s)->next;
@@ -880,12 +902,12 @@ void ApplyCurrentValues(SETTING *setting, PROJECTITEM *saveTo)
                     s->id = strdup(setting->id);
                     InsertSetting(saveTo, s);
                 }
-                if (s)
+                if (s && (!s->value || strcmp(s->value, setting->tentative)))
                 {
                     free(s->value);
                     s->value = strdup(setting->tentative);
                     MarkChanged(saveTo, FALSE);
-                    saveTo->clean = TRUE;
+                    saveTo->clean = iscleanable(s->id);
                 }
             }
             LeaveCriticalSection(&propsMutex);
@@ -1007,9 +1029,6 @@ static BOOL GetNewProfileName(HWND hwndCombo, char *name)
 static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
     WPARAM wParam, LPARAM lParam)
 {
-    static HWND hwndTree;
-    static HWND hwndLV;
-    static SETTING *current;
     static HWND hStaticProfile;
     static HWND hStaticReleaseType;
     static HWND hProfileCombo;
@@ -1029,9 +1048,9 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
     SETTING *lastSetting;
     LPCREATESTRUCT cs;
     RECT r;
-    SIZE acceptSz;
-    SIZE cancelSz;
-    SIZE helpSz;
+    static SIZE acceptSz;
+    static SIZE cancelSz;
+    static SIZE helpSz;
     static POINT pt;
     static SIZE sz;
     HDC dc;
@@ -1040,6 +1059,7 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
     
     switch (iMessage)
     {
+        int first;
         case WM_CTLCOLORSTATIC:
 //        case WM_CTLCOLORLISTBOX:
 //        case WM_CTLCOLORMSGBOX:
@@ -1209,6 +1229,10 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
                     EnableWindow(hAcceptBtn, FALSE);
                     EnableWindow(hApplyBtn, FALSE);
                     break;
+                case ID_CLOSEWINDOW:
+                    if (SendMessage(hwnd, WM_COMMAND, ID_QUERYSAVE, 0) != IDCANCEL)
+                        SendMessage(hwnd, WM_CLOSE, 0, 0);
+                    break;
                 case ID_QUERYSAVE:
                     if (IsWindowEnabled(hAcceptBtn))
                     {
@@ -1250,7 +1274,7 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
                     for (i=0;i < pd->protocount; i++)
                     {
                         SETTING *set = GetSettings(pd->prototype[i]);
-                        PopulateTree(hwndTree, TVI_ROOT, set->children);
+                        PopulateTree(hwndTree, TVI_ROOT, set->children, NULL);
                     }
                     if (lastSetting)
                     {
@@ -1409,10 +1433,10 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
             }
             hwndTree = CreateWindowEx(0, WC_TREEVIEW, "", WS_VISIBLE | WS_BORDER | 
                 WS_CHILD | TVS_HASLINES | TVS_LINESATROOT | TVS_HASBUTTONS | TVS_TRACKSELECT,
-                0, y, (r.right - r.left)*3/10, r.bottom - r.top-32-y, hwnd, 0, hInstance, NULL);
+                0, y, (r.right - r.left)*3/10, r.bottom - r.top-32-24-y, hwnd, 0, hInstance, NULL);
             hwndLV = CreateWindowEx(0, WC_LISTVIEW, "", WS_VISIBLE | WS_BORDER |
                 LVS_REPORT | LVS_SINGLESEL | WS_CHILD,
-                (r.right - r.left)*3/10, y, (r.right - r.left)*7/10, r.bottom - r.top-32-y, hwnd, 0, hInstance, NULL);
+                (r.right - r.left)*3/10, y, (r.right - r.left)*7/10, r.bottom - r.top-32-24-y, hwnd, 0, hInstance, NULL);
             dc = GetDC(hwnd);
             GetTextExtentPoint32(dc, szAccept, strlen(szAccept), &acceptSz);
             GetTextExtentPoint32(dc, szClose, strlen(szClose), &cancelSz);
@@ -1431,6 +1455,8 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
                 sz.cx = helpSz.cx;
             if (helpSz.cy > sz.cy)
                 sz.cy = helpSz.cy;
+            pt.x = sz.cx;
+            pt.y = sz.cy;
             hAcceptBtn = CreateWindowEx(0, "button", szAccept, WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 
                                         r.right - 1 * (sz.cx + 32), r.bottom -sz.cy - 12, sz.cx+24, sz.cy + 8,
                                         hwnd, (HMENU)IDOK, hInstance, NULL);
@@ -1454,10 +1480,11 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
             for (i=0;i < pd->protocount; i++)
                 SetupCurrentValues(oldSettings[i] = GetSettings(pd->prototype[i]), pd->saveTo);
             CreateLVColumns(hwndLV, (r.right - r.left)*7/10);
+            first = TRUE;
             for (i=0;i < pd->protocount; i++)
             {
                 SETTING *set = GetSettings(pd->prototype[i]);
-                PopulateTree(hwndTree, TVI_ROOT, set->children);
+                PopulateTree(hwndTree, TVI_ROOT, set->children, &first);
             }
             return 0;
         case WM_CLOSE:
@@ -1501,14 +1528,16 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
             {
                 int x = LOWORD(lParam);
                 int y = HIWORD(lParam);
-                MoveWindow(hwndTree, 0, 0, x*3/10, y-32, 1);
-                MoveWindow(hwndLV, x*3/10, 0, x*7/10, y-32, 1);
+                MoveWindow(hwndTree, 0, 24, x*3/10, y-32-24, 1);
+                MoveWindow(hwndLV, x*3/10, 24, x*7/10, y-32-24, 1);
                 MoveWindow(hAcceptBtn, x - 3 * (pt.x + 20), y -pt.y - 12, pt.x+12, pt.y + 8, 1);
                 MoveWindow(hCancelBtn, x - 2 * (pt.x + 20), y -pt.y - 12, pt.x+12, pt.y + 8, 1);
                 MoveWindow(hApplyBtn, x - 1 * (pt.x + 20), y -pt.y - 12, pt.x+12, pt.y + 8, 1);
                 CreateLVColumns(hwndLV, x*7/10);
                 DestroyItemWindows(current);
+                populating = TRUE;
                 PopulateItems(hwnd, hwndLV, current);
+                populating = FALSE;
             }
             break;
     }
@@ -1914,7 +1943,7 @@ void RegisterPropWindows(HINSTANCE hInstance)
     wc.cbClsExtra = 0;
     wc.cbWndExtra = sizeof(LPVOID);
     wc.hInstance = hInstance;
-    wc.hIcon = 0; //LoadIcon(0, IDI_APPLICATION);
+    wc.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(1));
     wc.hCursor = LoadCursor(0, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
     wc.lpszMenuName = 0;
@@ -1943,13 +1972,15 @@ void ShowGeneralProperties(void)
     if (!hwndGeneralProps)
     {
         hwndGeneralProps = CreateWindow(szGeneralPropsClassName, generalProps.title, 
-                 WS_VISIBLE | WS_POPUPWINDOW | WS_CAPTION | WS_SYSMENU | WS_DLGFRAME | WS_CHILD,
+                 WS_VISIBLE | WS_POPUPWINDOW | WS_CAPTION | WS_SYSMENU | WS_DLGFRAME,
                              0,0,700,500,
-                             hwndFrame, 0, hInstance, (LPVOID)&generalProps);
+                             0, 0, hInstance, (LPVOID)&generalProps);
     }
 }
 void ShowBuildProperties(PROJECTITEM *projectItem)
 {
+    if (hwndGeneralProps)
+        SendMessage(hwndGeneralProps, WM_COMMAND, ID_CLOSEWINDOW, 0);
     if (!hwndGeneralProps)
     {
         PROFILE **arr = calloc(sizeof(PROFILE *), 100);
@@ -1969,9 +2000,9 @@ void ShowBuildProperties(PROJECTITEM *projectItem)
                 sprintf(title, "Build properties for %s", projectItem->displayName);
             }
             hwndGeneralProps = CreateWindow(szGeneralPropsClassName, data->title, 
-                     WS_VISIBLE | WS_POPUPWINDOW | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_CHILD,
+                     WS_VISIBLE | WS_POPUPWINDOW | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME,
                                  0,0,724,500,
-                                 hwndFrame, 0, hInstance, (LPVOID)data);
+                                 0, 0, hInstance, (LPVOID)data);
         }
     }
 }

@@ -34,6 +34,7 @@
 
 int __ll_close(int fd)
 {
+   __ll_flush(fd);
    if (!CloseHandle((HANDLE)fd)) {
       errno = GetLastError() ;
       return 1;

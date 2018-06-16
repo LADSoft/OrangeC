@@ -35,7 +35,7 @@
 #include "llp.h"
 #include <sys\stat.h>
 
-int __ll_lock(int handle, int offset, int length)
+int __ll_lock(int handle, int offset, int length, int exclusive, int wait)
 {
     DPMI_REGS regs;
    regs.b.al = 0 ;

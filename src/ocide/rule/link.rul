@@ -2,9 +2,7 @@
     <PROPGROUP VERSION="10" CLASS="EXTENEDED" SELECT="LINK" NAME="Linker Settings" ORDER="21">
     	<COMMAND>
   			<ITEM NAME="Command Line" ID="__COMMAND_LINE" TYPE="TEXT">
-   				"$$(LSINSTALLBIN)\olink.exe" -c -! "-o$(OUTPUTFILE)" $$(LFLAGS) "@&amp;&amp;|
-            $$(LSTARTUP) "%.o" "%.l" $$(LLIBS) "%.res" "%.def"
-|"
+   				"$$(LSINSTALLBIN)\olink.exe" -c -! "-o$(OUTPUTFILE)" $$(LFLAGS) $$(LSTARTUP) "%.o" "%.l" $$(LLIBS) "%.res" $(__MODDEF)
    			</ITEM>
             <ITEM NAME="Make Banner" ID="__MAKEBANNER" TYPE="TEXT">Linking</ITEM>
             <ASSIGNMENTS>
@@ -80,8 +78,9 @@
             </ASSIGNMENTS>
     	</COMMAND>	
 		<PROPS NAME="Linker Settings" HELPID="620">
-			<ITEM NAME="Additional Libraries" TYPE="TEXT" ID="__LLIBS"/>
-			<ITEM NAME="Additional Switches" TYPE="TEXT" ID="__LFLAGS"/>
+			<ITEM NAME="Additional Libraries" CLEAN="1" TYPE="TEXT" ID="__LLIBS"/>
+			<ITEM NAME="Additional Switches" CLEAN="1" TYPE="TEXT" ID="__LFLAGS"/>
+                        <ITEM NAME="Module Definition File" CLEAN="1" TYPE="TEXT" ID="__MODDEF"/>
 		</PROPS>
 	</PROPGROUP>
 </OCRULE>

@@ -701,7 +701,7 @@ static void CoalesceTemps(LOOP *l, BOOLEAN all)
                 bl = t->entry->succ;
                 while (bl)
                 {
-                    if (!bl->block->critical && !bl->block->unuseThunk)
+                    if (!bl->block->critical && !bl->block->unuseThunk && !bl->block->dead)
                     {
                         BLOCKLIST *bb = bl->block->pred;
                         int i = 0;

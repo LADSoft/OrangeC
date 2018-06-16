@@ -58,6 +58,6 @@ private:
     static CmdSwitchOutput OutputFile;
     static CmdSwitchFile File;
 
-    static char *usageText;
+    static const char *usageText;
 };
 #endif

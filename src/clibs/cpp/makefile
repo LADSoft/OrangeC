@@ -24,6 +24,7 @@
 
 all:
 	$(MAKE) -CCOMPLIB
+	$(MAKE) -CLIBEXTRA
 ifdef OLDSGL
 	$(MAKE) -CSGISRC
 else

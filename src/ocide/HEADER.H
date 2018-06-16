@@ -200,6 +200,7 @@ typedef struct _setting
 	char * lowLimit, *highLimit;
     int order;
     int helpid;
+    int clean:1;
 } SETTING;
 typedef struct _profile
 {

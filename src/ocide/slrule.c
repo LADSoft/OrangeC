@@ -31,6 +31,25 @@
 #include "header.h"
 #include "xml.h"
 
+static LIST *cleanable;
+static void insertcleanable(char *id)
+{
+    LIST *next = calloc(1, sizeof(LIST));
+    next->data = strdup(id);
+    next->next = cleanable;
+    cleanable = next;
+}
+BOOL iscleanable(char *id)
+{
+    LIST *search = cleanable;
+    while (search)
+    {
+        if (!strcmp(search->data, id))
+            return TRUE;
+        search = search->next;
+    }
+    return FALSE;
+}
 SETTINGCOMBO *LoadCombo(struct xmlNode *node, int version)
 {
     SETTINGCOMBO *rv = NULL, **rvl = &(rv);
@@ -87,6 +106,8 @@ SETTING *LoadItem(struct xmlNode *node, int version, BOOL debug)
                 rv->id = strdup(attribs->value);
             else if (IsAttrib(attribs, "EXT"))
                 rv->ext = strdup(attribs->value);
+            else if (IsAttrib(attribs, "CLEAN"))
+                rv->clean = !!atoi(attribs->value);
             else if (IsAttrib(attribs, "TYPE"))
             {
                 if (!strcmp(attribs->value, "COMBO"))
@@ -150,6 +171,8 @@ SETTING *LoadItem(struct xmlNode *node, int version, BOOL debug)
                 
             attribs = attribs->next;
         } 
+        if (rv->clean)
+            insertcleanable(rv->id);
         return rv;
     }
     return NULL;

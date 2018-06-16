@@ -73,31 +73,31 @@
             </ASSIGNMENTS>
     	</COMMAND>	
 		<PROPS NAME="Compiler Settings" HELPID="590">
-			<ITEM NAME="Additional Preprocessor Directives" TYPE="PREPENDTEXT=/D" ID="__DEFINE"/>
-			<ITEM NAME="Additional Include Paths" TYPE="SEPARATEDTEXT=;" ID="__INCLUDE"/>
-			<ITEM NAME="Additional Dependencies" TYPE="TEXT" ID="__DEPENDENCIES"/>
-			<ITEM CLASS="File" NAME="Output File" TYPE="TEXT" ID="OUTPUTFILE">
+			<ITEM NAME="Additional Preprocessor Directives" CLEAN="1" TYPE="PREPENDTEXT=/D" ID="__DEFINE"/>
+			<ITEM NAME="Additional Include Paths" CLEAN="1" TYPE="SEPARATEDTEXT=;" ID="__INCLUDE"/>
+			<ITEM NAME="Additional Dependencies" CLEAN="1" TYPE="TEXT" ID="__DEPENDENCIES"/>
+			<ITEM CLASS="File" NAME="Output File" CLEAN="1" TYPE="TEXT" ID="OUTPUTFILE">
 				$(OUTPUTDIR)\$(OUTPUTNAME)$(OUTPUTEXT)
 			</ITEM>
-			<ITEM NAME="Compatibility" TYPE="COMBO" EXT="%.c" ID="__C99" DEFAULT="/9">
+			<ITEM NAME="Compatibility" CLEAN="1" TYPE="COMBO" EXT="%.c" ID="__C99" DEFAULT="/9">
 				<SETTING NAME="C89" VALUE="/8"/>
 				<SETTING NAME="C99" VALUE="/9"/>
 				<SETTING NAME="C11" VALUE="/1"/>
 			</ITEM>
-			<ITEM NAME="Ansi" TYPE="COMBO" ID="__ANSI" DEFAULT="">
+			<ITEM NAME="Ansi" CLEAN="1" TYPE="COMBO" ID="__ANSI" DEFAULT="">
 				<SETTING NAME="No" VALUE=""/>
 				<SETTING NAME="Yes" VALUE="/A"/>
 			</ITEM>
-			<ITEM NAME="Show Warnings" TYPE="COMBO" ID="__WARNINGS" DEFAULT=" /E100">
+			<ITEM NAME="Show Warnings" CLEAN="1" TYPE="COMBO" ID="__WARNINGS" DEFAULT=" /E100">
 				<SETTING NAME="No" VALUE="/E-100"/>
 				<SETTING NAME="Yes" VALUE="/E100"/>
 				<SETTING NAME="Extended" VALUE="/E+100"/>
 			</ITEM>
-			<ITEM NAME="Align Stack" TYPE="COMBO" ID="__ALIGNSTACK" DEFAULT="">
+			<ITEM NAME="Align Stack" CLEAN="1" TYPE="COMBO" ID="__ALIGNSTACK" DEFAULT="">
 				<SETTING NAME="No" VALUE=""/>
 				<SETTING NAME="Yes" VALUE="/s16"/>
 			</ITEM>
-			<ITEM NAME="Additional Switches" TYPE="TEXT" ID="__CFLAGS"/>
+			<ITEM NAME="Additional Switches" CLEAN="1" TYPE="TEXT" ID="__CFLAGS"/>
 		</PROPS>
 	</PROPGROUP>
 </OCRULE>

@@ -35,6 +35,10 @@ typedef struct
 void __srproc(SRDATA *start, SRDATA *end)
 {
     SRDATA *pos;
+    // wipe because load-unload-load behavior for DLLs doesn't seem to reinitialize this region of memory
+    for (pos = start; pos < end; pos++)
+        pos->flag = 0;
+
     while (1)
     {
         SRDATA *cur = NULL;

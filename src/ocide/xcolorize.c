@@ -434,7 +434,7 @@ static void SearchKeywords(COLORIZE_HASH_ENTRY *entries[], INTERNAL_CHAR *buf,
                 {
                     int j = i;
                     char ch = buf[start + i++].ch;
-                    if (type == LANGUAGE_C || type == LANGUAGE_RC)
+                    if (type == LANGUAGE_C || type == LANGUAGE_CPP || type == LANGUAGE_RC)
                     {
                         if (isdigit(ch) || ch == '.')
                         {
@@ -538,7 +538,7 @@ void FormatBuffer(COLORIZE_HASH_ENTRY *entries[], INTERNAL_CHAR *buf, int start,
 {
     if (type != LANGUAGE_NONE && PropGetBool(NULL, "COLORIZE"))
     {
-        if (type == LANGUAGE_C || type == LANGUAGE_RC)
+        if (type == LANGUAGE_C || type == LANGUAGE_CPP || type == LANGUAGE_RC)
         {
             INTERNAL_CHAR *t = buf + start;
             INTERNAL_CHAR *t1;
@@ -933,6 +933,8 @@ void FormatLine(HWND hwnd, INTERNAL_CHAR *buf, int type, int bkColor)
 
     void SyntaxCheck(HWND hWnd, EDITDATA *p)
     {
+        if (p->cd->language != LANGUAGE_C && p->cd->language != LANGUAGE_CPP)
+            return;
         BOOL inFor = FALSE;
         BOOL changed = FALSE;
         char matching[1024];
@@ -1002,16 +1004,24 @@ void FormatLine(HWND hwnd, INTERNAL_CHAR *buf, int type, int bkColor)
                 {
                     if (ptr->ch == '#')
                     {
-                        INTERNAL_CHAR *q = ptr - 1;
-                        while (q > p->cd->text && isspace(q->ch))
+                        if (i == 0)
                         {
-                            if (q->ch == '\n')
-                            {
                                 oldSemiState = semiState;
                                 semiState = SKIM_TO_EOL;
-                                break;
+                        }
+                        else
+                        {
+                            INTERNAL_CHAR *q = ptr - 1;
+                            while (q > p->cd->text && isspace(q->ch))
+                            {
+                                if (q->ch == '\n')
+                                {
+                                    oldSemiState = semiState;
+                                    semiState = SKIM_TO_EOL;
+                                    break;
+                                }
+                                q--;
                             }
-                            q--;
                         }
                         if (ptr->squiggle)
                             changed = TRUE;
@@ -1050,7 +1060,7 @@ void FormatLine(HWND hwnd, INTERNAL_CHAR *buf, int type, int bkColor)
                                 semiState = IN_MATCH;
                             else if (isspace(ptr->ch))
                                 semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
-                            else if (ptr->ch != '{' && ptr->ch != '}' && ptr->ch != ';')
+                            else if (ptr->ch != '{' && ptr->ch != '}' && ptr->ch != ';' && ptr->ch != ':')
                                 semiState = NEED_SEMI;
                             break;
                         case FOUND_TYPE_START:
@@ -1063,9 +1073,7 @@ void FormatLine(HWND hwnd, INTERNAL_CHAR *buf, int type, int bkColor)
                                 semiState = IN_MATCH;
                             else if (IsOperator(ptr))
                                 semiState = FOUND_OPERATOR;
-                            else if (ptr->ch == ':' && (ptr[-1].ch == ':' || ptr[1].ch == ':'))
-                                semiState = FOUND_TYPE_CHAR;
-                            else if (ptr->ch == ';' || ptr->ch == '}' || ptr->ch == '{')
+                            else if (ptr->ch == ';' || ptr->ch == ':' || ptr->ch == '}' || ptr->ch == '{')
                                 semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
                             else
                                 semiState = NEED_SEMI;
@@ -1089,7 +1097,7 @@ void FormatLine(HWND hwnd, INTERNAL_CHAR *buf, int type, int bkColor)
                                 semiState = IN_MATCH;
                             else if (IsOperator(ptr))
                                 semiState = FOUND_OPERATOR;
-                            else if (ptr->ch == ';' || ptr->ch == '}' || ptr->ch == '{')
+                            else if (ptr->ch == ';' || ptr->ch == ':' || ptr->ch == '}' || ptr->ch == '{')
                                 semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
                             else if (!isspace(ptr->ch))
                                 semiState = NEED_SEMI;
@@ -1104,8 +1112,6 @@ void FormatLine(HWND hwnd, INTERNAL_CHAR *buf, int type, int bkColor)
                                 semiState = IN_MATCH;
                             else if (IsOperator(ptr))
                                 semiState = FOUND_OPERATOR;
-                            else if (ptr->ch == ':' && (ptr[-1].ch == ':' || ptr[1].ch == ':'))
-                                semiState = FOUND_ID_CHAR;
                             else if (ptr->ch == ';' || ptr->ch == ':' || ptr->ch == '}' || ptr->ch == '{')
                                 semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
                                 break;
@@ -1174,10 +1180,13 @@ void FormatLine(HWND hwnd, INTERNAL_CHAR *buf, int type, int bkColor)
                             break;
                         case IN_MATCH:
                             if (isspace(ptr->ch))
-                                semiState = IN_MATCH;
-                            else if (isalpha(ptr->ch) || ptr->ch == '_' || ptr->ch == '*' ||ptr->ch == '&' )
+                                if (ptr->ch == '\n')
+                                    semiState = NEED_SEMI;
+                                else
+                                    semiState = IN_MATCH;
+                            else if (isalpha(ptr->ch) || ptr->ch == '_')
                                 semiState = FOUND_ID_START;
-                            else if (ptr->ch == ';' || ptr->ch == '}')
+                            else if (ptr->ch == ';' || ptr->ch == '}' || ptr->ch == ':')
                                 semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
                             else if (IsOperator(ptr))
                                 semiState = FOUND_OPERATOR;
@@ -1193,7 +1202,7 @@ void FormatLine(HWND hwnd, INTERNAL_CHAR *buf, int type, int bkColor)
                         case FOUND_RETURN:
                             if (!isalpha(ptr->ch))
                             {
-                                if (ptr->ch == ';' || ptr->ch == '}')
+                                if (ptr->ch == ';' || ptr->ch == '}' || ptr->ch == ':')
                                     semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
                                 else if (isspace(ptr->ch))
                                     semiState = FOUND_RETURN_END;

@@ -618,7 +618,7 @@ int dlPeMain::Run(int argc, char **argv)
                     path = "";
                 else
                     path.erase(n+1);
-                std::string usesC = exportObject->ImportsNeedUnderscore() ? "/C " : "";
+                std::string usesC = exportObject && exportObject->ImportsNeedUnderscore() ? "/C " : "";
                 std::string implibName = Utils::QualifiedFile(outputName.c_str(), ".l");
 	                std::string cmd = std::string("\"") + path + "oimplib" + "\" /! " + usesC + "\"" + implibName + "\" \"" + outputName + "\"";
                 return system(cmd.c_str());

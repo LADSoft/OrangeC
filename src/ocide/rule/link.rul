@@ -78,9 +78,9 @@
             </ASSIGNMENTS>
     	</COMMAND>	
 		<PROPS NAME="Linker Settings" HELPID="620">
-			<ITEM NAME="Additional Libraries" TYPE="TEXT" ID="__LLIBS"/>
-			<ITEM NAME="Additional Switches" TYPE="TEXT" ID="__LFLAGS"/>
-                        <ITEM NAME="Module Definition File" TYPE="TEXT" ID="__MODDEF"/>
+			<ITEM NAME="Additional Libraries" CLEAN="1" TYPE="TEXT" ID="__LLIBS"/>
+			<ITEM NAME="Additional Switches" CLEAN="1" TYPE="TEXT" ID="__LFLAGS"/>
+                        <ITEM NAME="Module Definition File" CLEAN="1" TYPE="TEXT" ID="__MODDEF"/>
 		</PROPS>
 	</PROPGROUP>
 </OCRULE>

@@ -31,6 +31,9 @@ version 6.0.38:
     occ: add command line and pragma support for warning control
     occ: pass output file name to assembler, rc compiler when compiling a single file
     occ: fix rare problem with register allocator failing
+    occ: implicit cast from long long to 'enum type' as a function arg could result in bad code generation
+    occ: local initialization of char aa[10] = ""; didn't work.  Forms without the empty string worked
+    occ: a negative long long constant got downconverted to int during constant evaluation
     olink: fix a crash if occ failed to output line information properly
     dlpe: fix the fixup of relative branch to import thunks, to allow the thunks to be relocated
     dlpe: use --nologo when invokeing oimplib
@@ -56,10 +59,13 @@ version 6.0.38:
     ocide: be explicit about errors when can't debug a program , especially the 'invalid workding directory' error.
     ocide: find 'stdcall' functions in the code completion
     ocide: fix various other problems with code completion
+    ocide: fix build: handle data imports correctly
+    ocide: fix problem with browse info and default workspace
     oimplib, olib, olink: fix more problems when '/' was used as a path separator
     olink: bail with an error if a library cannot be found
     olink: make sure intermediate file always has a .rel extension
     omake: fix compatibility issues with /bin/sh
+    omake: fix 'order' prerequisites to work correctly
     obrc: tweak error message to not mention object files
     rtl:  sprintf could try to modify input strings, didn't work if string is in readonly memory
     rtl: remove definition of __declspec in the _defs.h
@@ -73,6 +79,8 @@ version 6.0.38:
     rtl: access() set errno to EACCESS instead of ENOENT on failure.
     rtl: open/sopen would set errno to ENOENT if they were successfully creating an output file
     rtl: implement fcntl
+    rtl: fix strerror(), was adding a line feed to end of string
+    rtl: fix problems with LSCRTL: double load issue and issue where DLLs couldn't use it
     all: add 'clang' to continuous integration builds
     documentation: add minimal documentation for ancilliary projects
 Version 6.0.37: 5/20/2018

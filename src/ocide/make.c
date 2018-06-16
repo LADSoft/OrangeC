@@ -612,9 +612,13 @@ void dbgRebuildMainThread(int cmd)
                 case IDYES:
                     stopBuild = FALSE;
                     if (!MakerThread(workArea))
+                    {
+                        --sem;
                         return ;
+                    }
                     break;
                 case IDCANCEL:
+                    --sem;
                     return;
             }
         }

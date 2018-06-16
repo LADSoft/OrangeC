@@ -41,7 +41,6 @@ static char *thunk(const char *string, int error)
       strcat(strbuf,": ") ;
    }
    strcat(strbuf,str) ;
-   strcat(strbuf,"\n") ;
    return strbuf ;
 }
 char *_RTL_FUNC strerror(int error)

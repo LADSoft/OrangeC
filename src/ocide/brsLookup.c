@@ -38,7 +38,6 @@
 
 extern HINSTANCE hInstance;
 extern int changedProject;
-extern int defaultWorkArea;
 extern PROJECTITEM *workArea;
 extern HWND hwndFrame, hwndClient;
 extern PROJECTITEM *activeProject;
@@ -837,8 +836,6 @@ void BrowseTo(HWND hwnd, char *msg, BOOL toDeclaration)
     BOOL browsing = FALSE;
 
     int ofs;
-    if (defaultWorkArea)
-        return ;
     if (msg)
     {
         strcpy(name, msg);

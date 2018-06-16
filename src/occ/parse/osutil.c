@@ -560,6 +560,10 @@ void warning_setup(char select, char *string)
         AllWarningsDisable();
     else switch (string[0])
     {
+        case '+':
+            cparams.prm_extwarning = TRUE;
+            DisableTrivialWarnings();
+            break;
         case 'd':
             DisableWarning(atoi(string+1));
             break;

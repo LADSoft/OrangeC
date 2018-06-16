@@ -568,30 +568,42 @@ static struct {
 
 unsigned char warningFlags[sizeof(errors)/sizeof(errors[0])];
 
-void DisableWarning(int num)
+static BOOLEAN ValidateWarning(int num)
 {
    if (num && num < sizeof(warningFlags))
+   {
+        if (!(errors[num].level & ERROR))
+        {
+            return TRUE;
+        }
+   }
+   printf("Warning: /w index %d does not correspond to a warning\n", num);
+   return FALSE;
+}
+void DisableWarning(int num)
+{
+   if (ValidateWarning(num))
    {
        warningFlags[num] |= WARNING_DISABLE;
    }
 }
 void EnableWarning(int num)
 {
-   if (num && num < sizeof(warningFlags))
+   if (ValidateWarning(num))
    {
        warningFlags[num] &= ~WARNING_DISABLE;
    }
 }
 void WarningOnlyOnce(int num)
 {
-   if (num && num < sizeof(warningFlags))
+   if (ValidateWarning(num))
    {
        warningFlags[num] |= WARNING_ONLY_ONCE;
    }
 }
 void WarningAsError(int num)
 {
-   if (num && num < sizeof(warningFlags))
+   if (ValidateWarning(num))
    {
        warningFlags[num] |= WARNING_AS_ERROR;
    }

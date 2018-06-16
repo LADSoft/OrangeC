@@ -2350,6 +2350,7 @@ static void set_array_sizes(AGGREGATE_DESCRIPTOR *cache)
 static LEXEME *read_strings(LEXEME *lex, INITIALIZER **next,
                                  AGGREGATE_DESCRIPTOR **desc)
 {
+    BOOLEAN nothingWritten = TRUE;
     TYPE *tp = basetype((*desc)->tp);
     TYPE *btp = basetype(tp->btp);
     int max = tp->size / btp->size;
@@ -2404,6 +2405,7 @@ static LEXEME *read_strings(LEXEME *lex, INITIALIZER **next,
                 (*desc)->reloffset += btp->size;
                 next = &(*next)->next;
                 index++;
+                nothingWritten = FALSE;
             }
         }
     }
@@ -2413,6 +2415,14 @@ static LEXEME *read_strings(LEXEME *lex, INITIALIZER **next,
         
         initInsert(next, btp, exp, (*desc)->offset + (*desc)->reloffset, FALSE); /* NULL=no initializer */
         max = (*desc)->reloffset/btp->size;
+        nothingWritten = FALSE;
+    }
+    if (nothingWritten)
+    {
+        EXPRESSION *exp = intNode(en_c_i, 0);
+
+        initInsert(next, btp, exp, (*desc)->offset + (*desc)->reloffset, FALSE); /* NULL=no initializer */
+
     }
     for (i = (*desc)->reloffset / btp->size; i < max; i++)
     {

@@ -631,12 +631,15 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
             if (sp)
             {
                 EXPRESSION **e1 = exp;
-                 while ((*e1)->type == en_void && (*e1)->right)
-                    e1 = &(*e1)->right;
-                 if ((*e1)->type == en_void)
-                     e1 = &(*e1)->left;
-                *e1 = exprNode(en_void, *e1, varNode(en_auto, sp));
-                sp->dest = dest;
+                if (*e1)
+                {
+                    while ((*e1)->type == en_void && (*e1)->right)
+                        e1 = &(*e1)->right;
+                    if ((*e1)->type == en_void)
+                        e1 = &(*e1)->left;
+                    *e1 = exprNode(en_void, *e1, varNode(en_auto, sp));
+                    sp->dest = dest;
+                }
             }
         }
         else
@@ -1759,7 +1762,8 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
             {
                 if (!comparetypes(initializers->arguments->tp, *tp, FALSE) || initializers->arguments->next)
                 {
-                    error(ERR_NEED_NUMERIC_EXPRESSION);
+                    if (!templateNestingCount)
+                        error(ERR_NEED_NUMERIC_EXPRESSION);
                 }
                 else
                 {

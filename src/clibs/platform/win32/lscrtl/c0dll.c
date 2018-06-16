@@ -69,6 +69,7 @@ void __export __stdcall ___lsdllinit(DWORD flags, void (*rundown)(), int *except
 {
     static int Flags ;
     static int rv;
+    memset(BSSSTART, 0, BSSEND - BSSSTART); // for DLL second load cleanup
     Flags = flags;
     if (flags & GUI)
         _win32 = 1;

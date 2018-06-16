@@ -1966,6 +1966,7 @@ join:
             {
                 // this needs to be revisited to get proper typing in C++
                 cast(&stdint, &list->exp);
+                list->tp = &stdint;
             }
         }
         if (list)

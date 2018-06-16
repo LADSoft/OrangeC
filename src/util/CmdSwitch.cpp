@@ -135,7 +135,7 @@ CmdSwitchDefine::~CmdSwitchDefine()
 int CmdSwitchDefine::Parse(const char *data)
 {
     int rv = strlen(data);
-    char name[512],*p = name;
+    char name[10000],*p = name;
     if (!isalpha(*data) && *data != '_')
         return -1;
     while (*data && (isalnum(*data) || *data == '_'))

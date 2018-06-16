@@ -12,6 +12,7 @@ test: ofiles
 	fc /b aserr2.txt aserr2.cmpx
 	fc /b only141.txt only141.cmpx
 	fc /b pragma.txt pragma.cmpx
+	fc /b goto.txt goto.cmpx
 ofiles:
 	occ -c errchk.c > errchk.txt
 	occ -c /w+ errparam.c > allwarn.txt
@@ -24,3 +25,4 @@ ofiles:
 	-occ -c /werror errparam.c > aserr2.txt
 	occ -c /w /w141 errparam.c > only141.txt
 	occ -c errpragma.c > pragma.txt 
+	occ -c goto.c > goto.txt

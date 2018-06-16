@@ -1388,17 +1388,17 @@ typedef struct vlaShim
     int mark : 1;
     char *file;
 } VLASHIM ;
-static VLASHIM *mkshim(int type, int level, STATEMENT *stmt, VLASHIM *last, VLASHIM *parent, int blocknum, int blockindex)
+static VLASHIM *mkshim(int type, int level, int label, STATEMENT *stmt, VLASHIM *last, VLASHIM *parent, int blocknum, int blockindex)
 {
     VLASHIM *rv = Alloc(sizeof(VLASHIM));
-    if (last && last->type != v_return)
+    if (last && last->type != v_return && last->type != v_goto)
     {
         rv->backs = (LIST *)Alloc(sizeof(LIST));
         rv->backs->data = last;
     }
     rv->type = type;
     rv->level = level ;
-    rv->label = stmt->label;
+    rv->label = label;
     rv->line = stmt->line;
     rv->file = stmt->file;
     rv->stmt = stmt;
@@ -1412,13 +1412,28 @@ static VLASHIM *getVLAList(STATEMENT *stmt, VLASHIM *last, VLASHIM *parent, VLAS
 {
     int curBlockNum = (*blocknum)++;
     int curBlockIndex = 0;
-    VLASHIM *rv= NULL, **cur = &rv;
+    VLASHIM *rv= NULL, **cur = &rv, *nextParent = NULL;
     while (stmt)
     {
         switch(stmt->type)
         {
-            case st_block:
             case st_switch:
+            {
+                BOOLEAN first = TRUE;
+                CASEDATA *cases = stmt->cases;
+                while (cases)
+                {
+                    *cur = mkshim(v_branch, level, cases->label, stmt, last, parent, curBlockNum, curBlockIndex++);
+                    last = *cur;
+                    if (first)
+                        nextParent = last;
+                    first = FALSE;
+                    cur = &(*cur)->next;
+                    cases = cases->next;
+                }
+            }
+                // fallthrough
+            case st_block:
             case st_try:
             case st_catch:
             case st___try:
@@ -1428,7 +1443,7 @@ static VLASHIM *getVLAList(STATEMENT *stmt, VLASHIM *last, VLASHIM *parent, VLAS
                 if (stmt->lower && stmt->lower->type == st_goto)
                 {
                     // unwrap the goto for purposes of these diagnostics
-                    *cur = mkshim(v_goto, level, stmt->lower, last, parent, curBlockNum, curBlockIndex++);
+                    *cur = mkshim(v_goto, level, stmt->lower->label, stmt->lower, last, parent, curBlockNum, curBlockIndex++);
                     last = *cur;
                     last->checkme = stmt->lower->explicitGoto;
                     cur = &(*cur)->next;
@@ -1436,13 +1451,15 @@ static VLASHIM *getVLAList(STATEMENT *stmt, VLASHIM *last, VLASHIM *parent, VLAS
                 }
                 else
                 {
-                    *cur = mkshim(v_blockstart, level, stmt, last, parent, curBlockNum, curBlockIndex++);
+                    *cur = mkshim(v_blockstart, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++);
                     last = *cur;
                     cur = &(*cur)->next;
-                    last->lower = getVLAList(stmt->lower, last, last, labels, minLabel, blocknum, level + 1);
+                    if (!nextParent)
+                        nextParent = last;
+                    last->lower = getVLAList(stmt->lower, last, nextParent, labels, minLabel, blocknum, level + 1);
                     if (stmt->blockTail)
                     {
-                        *cur = mkshim(v_blockend, level, stmt, last, parent, curBlockNum, curBlockIndex++);
+                        *cur = mkshim(v_blockend, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++);
                         last = *cur;
                         cur = &(*cur)->next;
                     }
@@ -1452,27 +1469,29 @@ static VLASHIM *getVLAList(STATEMENT *stmt, VLASHIM *last, VLASHIM *parent, VLAS
             case st_expr:
                 if (stmt->hasvla)
                 {
-                    *cur = mkshim(v_vla, level, stmt, last, parent, curBlockNum, curBlockIndex++);
+                    *cur = mkshim(v_vla, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++);
                     last = *cur;
                     cur = &(*cur)->next;
                 }
                 else if (stmt->hasdeclare)
                 {
-                    *cur = mkshim(v_declare, level, stmt, last, parent, curBlockNum, curBlockIndex++);
+                    *cur = mkshim(v_declare, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++);
                     last = *cur;
                     cur = &(*cur)->next;
                 }
+                nextParent = last;
                 break;
             case st_return:
-                *cur = mkshim(v_return, level, stmt, last, parent, curBlockNum, curBlockIndex++);
+                *cur = mkshim(v_return, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++);
                 last = *cur;
                 cur = &(*cur)->next;
                 break;
             case st_select:
             case st_notselect:
-                *cur = mkshim(v_branch, level, stmt, last, parent, curBlockNum, curBlockIndex++);
+                *cur = mkshim(v_branch, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++);
                 last = *cur;
                 cur = &(*cur)->next;
+                nextParent = last;
                 break;
             case st_line:
             case st_passthrough:
@@ -1484,13 +1503,13 @@ static VLASHIM *getVLAList(STATEMENT *stmt, VLASHIM *last, VLASHIM *parent, VLAS
             case st_nop:
                 break;
             case st_goto:
-                *cur = mkshim(v_goto, level, stmt, last, parent, curBlockNum, curBlockIndex++);
+                *cur = mkshim(v_goto, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++);
                 last = *cur;
                 last->checkme = stmt->explicitGoto;
                 cur = &(*cur)->next;
                 break;
             case st_label:
-                *cur = mkshim(v_label, level, stmt, last, parent, curBlockNum, curBlockIndex++);
+                *cur = mkshim(v_label, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++);
                 last = *cur;
                 cur = &(*cur)->next;
                 labels[stmt->label-minLabel] = last;
@@ -1552,7 +1571,7 @@ static void declError(VLASHIM *gotoShim, VLASHIM *errShim)
 }
 static BOOLEAN scanGoto(VLASHIM *shim, VLASHIM *gotoshim, VLASHIM *matchshim, int *currentLevel)
 {
-    if (shim == matchshim)
+    if (shim == matchshim || shim->level < matchshim->level)
         return TRUE;
     if (shim && !shim->mark && shim != gotoshim)
     {
@@ -1575,8 +1594,8 @@ static BOOLEAN scanGoto(VLASHIM *shim, VLASHIM *gotoshim, VLASHIM *matchshim, in
         lst = shim->backs;
         while (lst)
         {
-
-            if (scanGoto((VLASHIM *)lst->data, gotoshim, matchshim, currentLevel))
+            VLASHIM *s = (VLASHIM *)lst->data;
+            if (!s->checkme && scanGoto(s, gotoshim, matchshim, currentLevel))
                 return TRUE;
             lst = lst->next;
         }

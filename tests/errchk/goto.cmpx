@@ -1,0 +1,5 @@
+occ Version 6.0.37.1 Copyright (C) LADSoft 2006-2018
+
+Warning(374)  goto.c(162):  Goto on line 167 bypasses initialization in function goto_f1
+Warning(374)  goto.c(176):  Goto on line 182 bypasses initialization in function goto_f2
+Warning(374)  goto.c(189):  Goto on line 196 bypasses initialization in function goto_f3

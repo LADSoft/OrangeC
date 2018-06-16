@@ -33,6 +33,7 @@ version 6.0.38:
     occ: fix rare problem with register allocator failing
     occ: implicit cast from long long to 'enum type' as a function arg could result in bad code generation
     occ: local initialization of char aa[10] = ""; didn't work.  Forms without the empty string worked
+    occ: a negative long long constant got downconverted to int during constant evaluation
     olink: fix a crash if occ failed to output line information properly
     dlpe: fix the fixup of relative branch to import thunks, to allow the thunks to be relocated
     dlpe: use --nologo when invokeing oimplib

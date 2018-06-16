@@ -622,12 +622,12 @@ void InitMenuPopup(HMENU menu)
     if (win == hwndASM)
         x_state = MF_ENABLED;
     EnableMenuItem(menu, IDM_GOTO, x_state);
-    if (defaultWorkArea || !PropGetBool(NULL, "BROWSE_INFORMATION")) 
+    if (!PropGetBool(NULL, "BROWSE_INFORMATION")) 
         mf_state = MF_GRAYED;   
     EnableMenuItem(menu, IDM_BROWSETODECLARATION, mf_state);
     EnableMenuItem(menu, IDM_BROWSETODEFINITION, mf_state);
 
-    if (defaultWorkArea || !PropGetBool(NULL, "BROWSE_INFORMATION")) 
+    if (!PropGetBool(NULL, "BROWSE_INFORMATION")) 
         mf_state = MF_GRAYED;   
     else
         mf_state = MF_ENABLED;

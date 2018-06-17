@@ -8201,6 +8201,42 @@ void propagateTemplateDefinition(SYMBOL *sym)
     currents = oldList;
     templateNestingCount = oldCount;
 }
+static void MarkDllLinkage(SYMBOL *sp, enum e_lk linkage)
+{
+    if (linkage != lk_none && sp->linkage2 != linkage)
+    {
+        if (sp->linkage2 != lk_none)
+        {
+            errorsym(ERR_ATTEMPING_TO_REDEFINE_DLL_LINKAGE, sp);
+        }
+        else
+        {
+            sp->linkage2 = linkage;
+            if (sp->tp->syms)
+            {
+                HASHREC *hr = sp->tp->syms->table[0];
+                while (hr)
+                {
+                    SYMBOL *sym = (SYMBOL *)hr->p;
+                    if (sym->storage_class == sc_overloads)
+                    {
+                        HASHREC *hr2 = sym->tp->syms->table[0];
+                        while (hr2)
+                        {
+                            ((SYMBOL *)hr2->p)->linkage2 = linkage;
+                            hr2 = hr2->next;
+                        }
+                    }
+                    else if (!ismember(sym) && !istype(sym))
+                    {
+                        sym->linkage2 = linkage;
+                    }
+                    hr = hr->next;
+                }
+            }
+        }
+    }
+}
 LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum e_sc storage_class, BOOLEAN isExtern)
 {
     HASHTABLE *oldSyms = localNameSpace->syms;
@@ -8299,7 +8335,13 @@ LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum 
     {
         if (KWTYPE(lex, TT_STRUCT))
         {
+            enum e_lk linkage1 = lk_none, linkage2 = lk_none, linkage3 = lk_none;
             lex = getsym();
+            if (MATCHKW(lex, kw__declspec))
+            {
+                lex = getsym();
+                lex = parse_declspec(lex, &linkage1, &linkage2, &linkage3);
+            }
             if (!ISID(lex))
             {
                 error(ERR_IDENTIFIER_EXPECTED);
@@ -8331,6 +8373,7 @@ LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum 
                     instance = GetClassTemplate(cls, templateParams, FALSE);
                     if (instance)
                     {
+                        MarkDllLinkage(instance, linkage2);
                         if (!isExtern)
                         {
                             instance->dontinstantiate = FALSE;

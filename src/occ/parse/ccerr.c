@@ -558,7 +558,8 @@ static struct {
 { "static function '%s' is undefined", ERROR },
 { "Missing type specifier for identifier '%s'", WARNING },
 { "Cannot deduce auto type from '%s'", ERROR },
-{ "declspec-qualifier not allowed on member of declspec-qualified class %s", ERROR },
+{ "%s: dll interface member may not be declared in dll interface class", ERROR },
+{ "%s: attempting to redefine dll interface linkage for class", WARNING },
 #endif
 } ;
 

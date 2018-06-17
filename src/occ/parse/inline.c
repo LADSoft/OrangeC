@@ -182,7 +182,7 @@ void dumpInlines(void)
             SYMBOL *sym = (SYMBOL *)dataList->data;
             if (sym->linkage2 != lk_import)
             {
-                if (sym->parentClass)
+                if (sym->parentClass && sym->parentClass->parentTemplate)
                 {
                     SYMBOL *parentTemplate = sym->parentClass->parentTemplate;
                     SYMBOL *origsym;

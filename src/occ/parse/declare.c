@@ -85,7 +85,6 @@ static char *importFile;
 static LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, SYMBOL **strSym, BOOLEAN inTemplate, BOOLEAN assumeType, enum e_sc *storage_class, enum e_sc *storage_class_in,
                        ADDRESS *address, BOOLEAN *blocked, BOOLEAN *isExplicit, BOOLEAN *constexpression, TYPE **tp, 
                        enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3, enum e_ac access, BOOLEAN *notype, BOOLEAN *defd, int *consdest, BOOLEAN *templateArg);
-static LEXEME *parse_declspec(LEXEME *lex, enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3);
 
 void declare_init(void)
 {
@@ -1512,6 +1511,7 @@ static LEXEME *declenum(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storag
     int declline = lex->line;
     int realdeclline = lex->realline;
     BOOLEAN anonymous = FALSE;
+    enum e_lk linkage1 = lk_none, linkage2 = lk_none, linkage3 = lk_none;
     *defd = FALSE;
     lex = getsym();
     ParseAttributeSpecifiers(&lex, funcsp, TRUE);
@@ -1519,6 +1519,11 @@ static LEXEME *declenum(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storag
     {
         scoped = TRUE;
         lex = getsym();
+    }
+    if (MATCHKW(lex, kw__declspec))
+    {
+        lex = getsym();
+        lex = parse_declspec(lex, &linkage1, &linkage2, &linkage3);
     }
     if (ISID(lex))
     {
@@ -1573,6 +1578,7 @@ static LEXEME *declenum(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storag
         sp->tp = Alloc(sizeof(TYPE));
         sp->tp->type = bt_enum;
         sp->tp->rootType = sp->tp;
+        sp->linkage2 = linkage2;
         if (fixedType)
         {
             sp->tp->fixed = TRUE;
@@ -1859,7 +1865,7 @@ static LEXEME *getPointerQualifiers(LEXEME *lex, TYPE **tp, BOOLEAN allowstatic)
     }
     return lex;
 }
-static LEXEME *parse_declspec(LEXEME *lex, enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3)
+LEXEME *parse_declspec(LEXEME *lex, enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3)
 {
 	if (needkw(&lex, openpa))
 	{
@@ -5567,8 +5573,8 @@ jointemplate:
                             sp->linkage = linkage;
                         if (ssp && ssp->linkage2 != lk_none)
                         {
-                            if (linkage2 != lk_none)
-                                errorsym(ERR_DECLSPEC_MEMBER_OF_DECLSPEC_CLASS_NOT_ALLOWED, ssp);
+                            if (linkage2 != lk_none && !asFriend)
+                                errorsym(ERR_DECLSPEC_MEMBER_OF_DECLSPEC_CLASS_NOT_ALLOWED, sp);
                             else
                                 sp->linkage2 = ssp->linkage2;
                         }

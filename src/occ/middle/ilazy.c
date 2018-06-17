@@ -448,7 +448,7 @@ static void CalculateDSafe(void)
                             {
                                 andmap(tempBytes, first->dsafe);
                             }
-                            else
+                            else if (!pbl->block->dead)
                                 diag("Empty block in dsafe");
                             pbl = pbl->next;
                         }
@@ -511,7 +511,7 @@ static void CalculateEarliest(void)
                                 ormap(tempBytes, tempBytes2);
                                 ormap(tempBytes3, tempBytes);
                             }
-                            else
+                            else if (!pbl->block->dead)
                                 diag("Empty block in earliest");
                             pbl = pbl->next;
                         }
@@ -575,7 +575,7 @@ static void CalculateDelay(void)
                                 andmap(tempBytes2, tail->delay);
                                 andmap(tempBytes, tempBytes2);
                             }
-                            else
+                            else if (!pbl->block->dead)
                                 diag("Empty block in delay");
                             pbl = pbl->next;
                         }
@@ -629,7 +629,7 @@ static void CalculateLatest(void)
                         QUAD *first = First(pbl->block->head);
                         if (first)
                             andmap(tail->latest, first->delay);
-                        else
+                        else if (!pbl->block->dead)
                             diag("Empty block in latest");
                         pbl = pbl->next;
                     }
@@ -695,7 +695,7 @@ static void CalculateIsolated(void)
                                 ormap(tempBytes2, first->latest);
                                 andmap(tempBytes, tempBytes2);
                             }
-                            else
+                            else if (!pbl->block->dead)
                                 diag("Empty block in isolated");
                             pbl = pbl->next;
                         }

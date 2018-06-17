@@ -52,6 +52,7 @@ extern SYMBOL *theCurrentFunc;
 extern unsigned termCount;
 extern QUAD *criticalThunks;
 extern int cachedTempCount;
+extern LIST *exports;
 
 QUAD *currentQuad ;
 
@@ -2505,6 +2506,8 @@ void gen_virtual(SYMBOL *sp, int data)
     {
         if (chosenAssembler->gen->gen_virtual)
             chosenAssembler->gen->gen_virtual(sp, data);
+        if (sp->linkage2 == lk_export)
+            put_expfunc(sp);
         if (!icdFile)
             return;
         virtual_mode = data;

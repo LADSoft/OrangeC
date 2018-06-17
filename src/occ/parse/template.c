@@ -7918,7 +7918,10 @@ static void referenceInstanceMembers(SYMBOL *cls)
                 }
             }
             else if (!ismember(sym) && !istype(sym))
+            {
+                InsertInlineData(sym);
                 GENREF(sym);
+            }
             hr = hr->next;
         }
         hr = cls->tp->tags->table[0]->next; // past the definition of self
@@ -8369,7 +8372,12 @@ LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum 
                 addStructureDeclaration(&s);
                 
             }
-            if (notype && !consdest)
+            if (!sym)
+            {
+                error(ERR_IDENTIFIER_EXPECTED);
+
+            }
+            else if (notype && !consdest)
             {
                 error(ERR_TYPE_NAME_EXPECTED);
             }

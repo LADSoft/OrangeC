@@ -558,6 +558,7 @@ static struct {
 { "static function '%s' is undefined", ERROR },
 { "Missing type specifier for identifier '%s'", WARNING },
 { "Cannot deduce auto type from '%s'", ERROR },
+{ "declspec-qualifier not allowed on member of declspec-qualified class %s", ERROR },
 #endif
 } ;
 

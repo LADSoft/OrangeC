@@ -34,6 +34,9 @@ version 6.0.38:
     occ: implicit cast from long long to 'enum type' as a function arg could result in bad code generation
     occ: local initialization of char aa[10] = ""; didn't work.  Forms without the empty string worked
     occ: a negative long long constant got downconverted to int during constant evaluation
+    occ: line numbers in c++ code were off by one.
+    occ: when a template defined in a template using statement was used as the specialization of another template,
+         it wasn't evaluated properly.
     olink: fix a crash if occ failed to output line information properly
     dlpe: fix the fixup of relative branch to import thunks, to allow the thunks to be relocated
     dlpe: use --nologo when invokeing oimplib
@@ -81,6 +84,7 @@ version 6.0.38:
     rtl: implement fcntl
     rtl: fix strerror(), was adding a line feed to end of string
     rtl: fix problems with LSCRTL: double load issue and issue where DLLs couldn't use it
+    rtl: precision on integers in sprintf did not have the desired effect
     all: add 'clang' to continuous integration builds
     documentation: add minimal documentation for ancilliary projects
 Version 6.0.37: 5/20/2018

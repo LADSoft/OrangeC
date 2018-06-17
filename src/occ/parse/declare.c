@@ -85,6 +85,7 @@ static char *importFile;
 static LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, SYMBOL **strSym, BOOLEAN inTemplate, BOOLEAN assumeType, enum e_sc *storage_class, enum e_sc *storage_class_in,
                        ADDRESS *address, BOOLEAN *blocked, BOOLEAN *isExplicit, BOOLEAN *constexpression, TYPE **tp, 
                        enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3, enum e_ac access, BOOLEAN *notype, BOOLEAN *defd, int *consdest, BOOLEAN *templateArg);
+static LEXEME *parse_declspec(LEXEME *lex, enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3);
 
 void declare_init(void)
 {
@@ -1118,6 +1119,7 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
     int realdeclline = lex->realline;
     BOOLEAN anonymous = FALSE;
     unsigned char *uuid;
+    enum e_lk linkage1 = lk_none, linkage2 = lk_none, linkage3 = lk_none;
     *defd = FALSE;
     switch(KW(lex))
     {
@@ -1137,6 +1139,11 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
     lex = getsym();
     uuid = ParseUUID(&lex);
     ParseAttributeSpecifiers(&lex, funcsp, TRUE);
+    if (MATCHKW(lex, kw__declspec))
+    {
+        lex = getsym();
+        lex = parse_declspec(lex, &linkage1, &linkage2, &linkage3);
+    }
     if (ISID(lex))
     {
         charindex = lex->charindex;
@@ -1213,6 +1220,7 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
         sp->anonymous = charindex == -1;
         sp->access = access;
         sp->uuid = uuid;
+        sp->linkage2 = linkage2;
         SetLinkerNames(sp, lk_cdecl);
         if (inTemplate && templateNestingCount)
         {
@@ -5557,7 +5565,15 @@ jointemplate:
                             sp->tp = tp1;
                         if (!sp->instantiated)
                             sp->linkage = linkage;
-                        sp->linkage2 = linkage2;
+                        if (ssp && ssp->linkage2 != lk_none)
+                        {
+                            if (linkage2 != lk_none)
+                                errorsym(ERR_DECLSPEC_MEMBER_OF_DECLSPEC_CLASS_NOT_ALLOWED, ssp);
+                            else
+                                sp->linkage2 = ssp->linkage2;
+                        }
+                        else
+                            sp->linkage2 = linkage2;
                         sp->linkage3 = linkage3;
                         if (linkage2 == lk_import)
                         {

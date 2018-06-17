@@ -1641,8 +1641,11 @@ static void validateGotos(VLASHIM *shim, VLASHIM *root)
                         fwd = fwd->parent;
                     while (sgoto->blocknum != fwd->blocknum)
                     {
-                        sgoto = sgoto->parent;
-                        fwd = fwd->parent;
+                        int n = sgoto->level, m = fwd->level;
+                        if (n >= m)
+                            sgoto = sgoto->parent;
+                        if (n <= m)
+                            fwd = fwd->parent;
                     }
                     unmarkGotos(root);
                     int level = shim->fwd->level;

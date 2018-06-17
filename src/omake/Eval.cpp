@@ -539,6 +539,8 @@ join:
             {
                 extra = name.substr(m);
                 rv = name.substr(0, m);
+                Eval a(extra, false, ruleList, rule);
+                extra = a.Evaluate();
             }
             else
             {

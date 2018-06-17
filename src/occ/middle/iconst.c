@@ -1597,7 +1597,7 @@ static void emulBlock(BLOCK *b)
     BOOLEAN br = FALSE;
     while (head && (head->ignoreMe || head->dc.opcode == i_label))
         head = head->fwd;
-    while (head->dc.opcode == i_phi)
+    while (head->dc.opcode == i_phi) // possible null pointer deref
     {
         emulInstruction(head, b);
         head = head->fwd;

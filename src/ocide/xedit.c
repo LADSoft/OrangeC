@@ -1645,8 +1645,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
         RECT bounds;
         int rows, pos, lines=0;
         ClientArea(hwnd, p, &bounds);
-        rows = (bounds.bottom - bounds.top) / p->cd->txtFontHeight;
-        rows = rows ; /* find center */
+        rows = (bounds.bottom - bounds.top) / p->cd->txtFontHeight; /* find center */
         if (p->selstartcharpos <= p->selendcharpos)
             pos = p->selendcharpos;
         else

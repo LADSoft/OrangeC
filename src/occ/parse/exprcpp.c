@@ -1829,19 +1829,8 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
                 }
                 if (arrSize && !isstructured(*tp))
                 {
-                    if (arrSize)
-                    {
-                        exp1 = exprNode(en_blockclear, base, exprNode(en_mul, arrSize, intNode(en_c_i, (*tp)->size)));
-                    }
-                    else
-                    {
-                        exp1 = exprNode(en_blockclear, base, NULL);
-                        exp1->size = (*tp)->size;
-                    }
-                    if (*exp)
-                        *exp = exprNode(en_void, exp1, *exp);
-                    else
-                        *exp = exp1;
+                    exp1 = exprNode(en_blockclear, base, exprNode(en_mul, arrSize, intNode(en_c_i, (*tp)->size)));
+                    *exp = *exp ? exprNode(en_void, exp1, *exp) : exp1;
                 }
                 else if (isstructured(*tp) && (arrSize || !init->exp))
                 {
@@ -1857,14 +1846,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
                     }
                     tpf = *tp;
                     callConstructor(&tpf, &exp1, NULL, FALSE, arrSize, TRUE, FALSE, FALSE, TRUE, FALSE);
-                    if (*exp)
-                    {
-                        *exp = exprNode(en_void, *exp, exp1);
-                    }
-                    else
-                    {
-                        *exp = exp1;
-                    }
+                    *exp = *exp ? exprNode(en_void, *exp, exp1) : exp1;
                 }
             }
         }

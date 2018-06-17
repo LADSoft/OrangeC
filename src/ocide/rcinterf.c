@@ -734,14 +734,12 @@ HANDLE ResGetHeap(PROJECTITEM *pj, struct resRes *data)
     else
     {
         PROJECTITEM *cur = pj->children;
+        HANDLE heap; // reuse instead of allocating again and again.
         while (cur)
         {
-            if (cur)
-            {
-                HANDLE heap = ResGetHeap(cur, data);
-                if (heap)
-                    return heap;
-            }
+            heap = ResGetHeap(cur, data);
+            if (heap)
+                return heap;
             cur = cur->next;
         }
     }
@@ -776,9 +774,8 @@ BOOL ResSaveCurrent(PROJECTITEM *pj, struct resRes *res)
         PROJECTITEM *cur = pj->children;
         while (cur)
         {
-            if (cur)
-                if (ResSaveCurrent(cur, res))
-                    return TRUE;
+            if (ResSaveCurrent(cur, res))
+                return TRUE;
             cur = cur->next;
         }
     }

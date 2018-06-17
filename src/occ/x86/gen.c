@@ -639,30 +639,23 @@ void getAmodes(QUAD *q, enum e_op *op, IMODE *im, AMODE **apl, AMODE **aph)
         else
             mode = am_direct;
         *apl = (AMODE *)beLocalAlloc(sizeof(AMODE));
-        
-        if (im->offset)
         {
-            (*apl)->preg = regmap[beRegFromTempInd(q, im, 0)][0];
-            if (im->offset2)
-                (*apl)->sreg = regmap[beRegFromTempInd(q, im, 1)][0];
-            else
+            int reg = regmap[beRegFromTempInd(q, im, 1)][0];
+            if (im->offset)
+            {
+                (*apl)->preg = reg;
+                (*apl)->sreg = im->offset2 ? reg : -1;
+            }
+            else if (mode == am_indisp && im->offset2)
+            {
+                (*apl)->preg = reg;
                 (*apl)->sreg = -1;
-        }
-        else if (mode == am_indisp && im->offset2)
-        {
-            if (im->offset2)
-                (*apl)->preg = regmap[beRegFromTempInd(q, im, 1)][0];
+            }
             else
+            {
                 (*apl)->preg = -1;
-            (*apl)->sreg = -1;
-        }
-        else
-        {
-            (*apl)->preg = -1;
-            if (im->offset2)
-                (*apl)->sreg = regmap[beRegFromTempInd(q, im, 1)][0];
-            else
-                (*apl)->sreg = -1;
+                (*apl)->sreg = im->offset2 ? reg : -1;
+            }
         }
         (*apl)->scale = im->scale;
         (*apl)->offset = im->offset3 ? im->offset3 : intNode(en_c_i, 0);

@@ -54,7 +54,7 @@ static char *szThreadTitle = "Threads";
 
 static void CopyText(HWND hwnd)
 {
-    int count;
+    int count = 0;
     THREAD *list = activeProcess->threads;
     char *p;
     while (list)

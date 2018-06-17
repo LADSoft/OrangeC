@@ -242,7 +242,6 @@ static void WatchValue(DEBUG_INFO *dbg_info, char *buf, VARINFO *info, int oneva
                 break;
             case eDouble:
             case eImaginaryDouble:
-                *(double*)buf1 = *(double*)buf1;
             case eLongDouble:
             case eImaginaryLongDouble:
                 sprintf(buf, "%f", *(long double*)buf1);

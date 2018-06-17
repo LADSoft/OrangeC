@@ -5106,10 +5106,8 @@ int TemplatePartialDeduce(TYPE *origl, TYPE *origr, TYPE *syml, TYPE *symr, BOOL
             if (basetype(origr)->type != bt_lref)
                 return -1;
             else
-                if (n)
-                    return -1;
-                if (m)
-                    return 1;
+                return -1; // originally checked n & m but since that's already checked just do this, pointing this out since it's GAURENTEED to return -1
+            return 1;
         }
         else if (basetype(origr)->type == bt_lref)
         {
@@ -5553,22 +5551,20 @@ static void TemplateTransferClassDeferred(SYMBOL *newCls, SYMBOL *tmpl)
                         if (ts2->defaulted || ss2->defaulted)
                             break;
                         ss2->copiedTemplateFunction = TRUE;
-                        if (os2)
+                        HASHREC *tsf = basetype(ts2->tp)->syms->table[0];
+                        if (ts2->deferredCompile && !ss2->deferredCompile)
                         {
-                            HASHREC *tsf = basetype(ts2->tp)->syms->table[0];
-                            if (ts2->deferredCompile && !ss2->deferredCompile)
+                            HASHREC *ssf = basetype(ss2->tp)->syms->table[0];
+                            while (tsf && ssf)
                             {
-                                HASHREC *ssf = basetype(ss2->tp)->syms->table[0];
-                                while (tsf && ssf)
-                                {
-                                    ssf->p->name = tsf->p->name;
-                                    tsf = tsf->next;
-                                    ssf = ssf->next;
-                                }
-                                ss2->deferredCompile = ts2->deferredCompile;
+                                ssf->p->name = tsf->p->name;
+                                tsf = tsf->next;
+                                ssf = ssf->next;
                             }
-                            ss2->maintemplate = ts2;
-/*
+                            ss2->deferredCompile = ts2->deferredCompile;
+                        }
+                        ss2->maintemplate = ts2;
+                        /*
                             if (!ss2->instantiatedInlineInClass)
                             {
                                 if (tmpl->parentTemplate)
@@ -5592,9 +5588,8 @@ static void TemplateTransferClassDeferred(SYMBOL *newCls, SYMBOL *tmpl)
                                 }
                             }
 */
-                            ns2 = ns2->next;
-                            os2 = os2->next;
-                        }
+                        ns2 = ns2->next;
+                        os2 = os2->next;
                     }
                 }
             }
@@ -7329,10 +7324,9 @@ SYMBOL *GetClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *args, BOOLEAN noErr)
 			{
 	            test.templateParams = copyParams(test.templateParams, TRUE);
 				dflts = test.templateParams;
-
 				while (dflts)
 				{
-					if (dflts && dflts->p->type == kw_int && dflts->p->byNonType.val)
+					if (dflts->p->type == kw_int && dflts->p->byNonType.val)
 						if (!isarithmeticconst(dflts->p->byNonType.val))
 						{
 							dflts->p->byNonType.val = copy_expression(dflts->p->byNonType.val);
@@ -7524,7 +7518,7 @@ SYMBOL *GetVariableTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *args)
 
                 while (dflts)
                 {
-                    if (dflts && dflts->p->type == kw_int && dflts->p->byNonType.val)
+                    if (dflts->p->type == kw_int && dflts->p->byNonType.val)
                         if (!isarithmeticconst(dflts->p->byNonType.val))
                         {
                             dflts->p->byNonType.val = copy_expression(dflts->p->byNonType.val);
@@ -7746,7 +7740,7 @@ SYMBOL *GetTypedefSpecialization(SYMBOL *sp, TEMPLATEPARAMLIST *args)
 
             while (dflts)
             {
-                if (dflts && dflts->p->type == kw_int && dflts->p->byNonType.val)
+                if (dflts->p->type == kw_int && dflts->p->byNonType.val)
                     if (!isarithmeticconst(dflts->p->byNonType.val))
                     {
                         dflts->p->byNonType.val = copy_expression(dflts->p->byNonType.val);

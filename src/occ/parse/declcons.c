@@ -1301,7 +1301,7 @@ static void shimDefaultConstructor(SYMBOL *sp, SYMBOL *cons)
     if (match)
     {
         hr = basetype(match->tp)->syms->table[0];
-        if (hr->next && hr->next && ((struct sym *)hr->next->p)->init)
+        if (hr->next && ((SYMBOL *)hr->next->p)->init)
         {
             // will match a default constructor but has defaulted args
             SYMBOL *consfunc = declareConstructor(sp, TRUE, FALSE); // default
@@ -1342,9 +1342,9 @@ static void shimDefaultConstructor(SYMBOL *sp, SYMBOL *cons)
                 *p = x;
             }
             e1 = varNode(en_func, NULL);
-            e1->v.func = params;
-            if (e1)
+            if (e1) // could probably remove this, only null if ran out of memory.
             {
+                e1->v.func = params;
                 e1= exprNode(en_thisref, e1, NULL);
                 e1->v.t.thisptr = params->thisptr;
                 e1->v.t.tp = sp->tp;
@@ -1367,14 +1367,10 @@ static void shimDefaultConstructor(SYMBOL *sp, SYMBOL *cons)
             // under other circumstances
             hr = hr->next;
             ((SYMBOL*)hr->p)->init = NULL;
-
             if (match->deferredCompile && !match->inlineFunc.stmt)
                 deferredCompileOne(match);
             localNameSpace->syms = syms;
-                    
-            
         }
-        
     }
 }
 void createDefaultConstructors(SYMBOL *sp)
@@ -1624,7 +1620,7 @@ static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi
             }
             else
             {
-                tp=member->tp;
+                tp = member->tp;
             }
             params->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
             params->arguments->tp = tp;

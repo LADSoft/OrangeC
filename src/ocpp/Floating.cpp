@@ -34,14 +34,14 @@ bool FPF::bigEndian = false;
 void FPF::SetZero(int sign)
 {
     type=IFPF_IS_ZERO;
-    sign=sign;
+    this->sign = sign;
     exp=MIN_EXP;
     memset(mantissa, 0, sizeof(mantissa));
 }
 void FPF::SetInfinity(int sign)
 {
     type=IFPF_IS_INFINITY;
-    sign=sign;
+    this->sign = sign;
     exp=MIN_EXP;
     memset(mantissa, 0, sizeof(mantissa));
 }

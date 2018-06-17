@@ -191,17 +191,20 @@ std::string CoffFile::GetSectionName(int sect)
     {
         return "string";
     }
-    if ((sections[sect].Characteristics & IMAGE_SCN_MEM_READ) && !(sections[sect].Characteristics & IMAGE_SCN_MEM_WRITE) && (sections[sect].Characteristics & IMAGE_SCN_CNT_INITIALIZED_DATA))
+    if (sections[sect].Characteristics & IMAGE_SCN_MEM_READ)
     {
-        return "const";
-    }
-    if ((sections[sect].Characteristics & IMAGE_SCN_MEM_READ) && (sections[sect].Characteristics & IMAGE_SCN_MEM_WRITE) && (sections[sect].Characteristics & IMAGE_SCN_CNT_INITIALIZED_DATA))
-    {
-        return "data";
-    }
-    if ((sections[sect].Characteristics & IMAGE_SCN_MEM_READ) && (sections[sect].Characteristics & IMAGE_SCN_MEM_WRITE) && (sections[sect].Characteristics & IMAGE_SCN_CNT_UNINITIALIZED_DATA))
-    {
-        return "bss";
+        if (sections[sect].Characteristics & IMAGE_SCN_MEM_WRITE)
+        {
+            if (sections[sect].Characteristics & IMAGE_SCN_CNT_INITIALIZED_DATA)
+                return "const";
+            else if (sections[sect].Characteristics & IMAGE_SCN_CNT_UNINITIALIZED_DATA)
+                return "data";
+        }
+        else
+        {
+            if (sections[sect].Characteristics & IMAGE_SCN_CNT_INITIALIZED_DATA)
+                return "bss";
+        }
     }
     return "data";
 }
@@ -218,9 +221,8 @@ ObjInt CoffFile::GetSectionQualifiers(int sect)
             case 2:
             case 3:
             case 4:
-            case 6:
-                sel = ObjSection::max;
             case 5:
+            case 6:
                 sel = ObjSection::max;
                 break;
             default:
@@ -242,17 +244,18 @@ ObjInt CoffFile::GetSectionQualifiers(int sect)
     {
         return ObjSection::ram;
     }
-    if ((sections[sect].Characteristics & IMAGE_SCN_MEM_READ) && !(sections[sect].Characteristics & IMAGE_SCN_MEM_WRITE) && (sections[sect].Characteristics & IMAGE_SCN_CNT_INITIALIZED_DATA))
+    if (sections[sect].Characteristics & IMAGE_SCN_MEM_READ)
     {
-        return ObjSection::rom;
-    }
-    if ((sections[sect].Characteristics & IMAGE_SCN_MEM_READ) && (sections[sect].Characteristics & IMAGE_SCN_MEM_WRITE) && (sections[sect].Characteristics & IMAGE_SCN_CNT_INITIALIZED_DATA))
-    {
-        return ObjSection::ram;
-    }
-    if ((sections[sect].Characteristics & IMAGE_SCN_MEM_READ) && (sections[sect].Characteristics & IMAGE_SCN_MEM_WRITE) && (sections[sect].Characteristics & IMAGE_SCN_CNT_UNINITIALIZED_DATA))
-    {
-        return ObjSection::ram;
+        if (sections[sect].Characteristics & IMAGE_SCN_MEM_WRITE)
+        {
+            if (sections[sect].Characteristics & (IMAGE_SCN_CNT_UNINITIALIZED_DATA | IMAGE_SCN_CNT_INITIALIZED_DATA))
+                return ObjSection::ram;
+        }
+        else
+        {
+            if (sections[sect].Characteristics & IMAGE_SCN_CNT_INITIALIZED_DATA)
+                return ObjSection::rom;
+        }
     }
     return ObjSection::ram;
 }

@@ -2502,7 +2502,7 @@ founddecltype:
                         SYMBOL *sp1;
                         lex = GetTemplateArguments(lex, funcsp, NULL, &lst);
                         sp1 = GetTypedefSpecialization(sp, lst);
-                        if (sp1 && sp1->instantiated)
+                        if (sp1)
                         {
                             sp = sp1;
                             if (isstructured(sp->tp))

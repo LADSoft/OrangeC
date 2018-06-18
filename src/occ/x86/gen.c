@@ -491,50 +491,23 @@ void complexLoad(AMODE *ap, AMODE *api, int sz)
 }
 int beRegFromTempInd(QUAD *q, IMODE *im, int which)
 {
+    if (which)
+    {
+        if (q->scaleColor < 0)
+            return 0;
+        return q->scaleColor;
+    }
     if (im == q->ans)
     {
-        if (which)
-        {
-            if (q->scaleColor < 0)
-                return 0;
-            return q->scaleColor;
-        }
-        else
-        {
-            if (q->ansColor < 0)
-                return 0;
-            return q->ansColor;
-        }
+        return q->ansColor < 0 ? 0 : q->ansColor;
     }
     else if (im == q->dc.left)
     {
-        if (which)
-        {
-            if (q->scaleColor < 0)
-                return 0;
-            return q->scaleColor;
-        }
-        else
-        {
-            if (q->leftColor < 0)
-                return 0;
-            return q->leftColor;
-        }
+        return q->leftColor < 0 ? 0 : q->leftColor;
     }
     else
     {
-        if (which)
-        {
-            if (q->scaleColor < 0)
-                return 0;
-            return q->scaleColor;
-        }
-        else
-        {
-            if (q->rightColor < 0)
-                return 0;
-            return q->rightColor;
-        }
+        return q->rightColor < 0 ? 0 : q->rightColor;
     }
 }
 int beRegFromTemp(QUAD *q, IMODE *im)
@@ -625,7 +598,7 @@ void getAmodes(QUAD *q, enum e_op *op, IMODE *im, AMODE **apl, AMODE **aph)
         gen_code(op_push, temp, 0);
         callLibrary("___tlsaddr", 0);
         *apl = (AMODE *)beLocalAlloc(sizeof(AMODE));
-        (*apl)->preg = regmap[beRegFromTempInd(q, im, 0)][0];
+        (*apl)->preg = regmap[beRegFromTemp(q, im)][0];
         (*apl)->mode = am_dreg;
         gen_codes(op_pop, ISZ_ADDR, (*apl), 0);
     }

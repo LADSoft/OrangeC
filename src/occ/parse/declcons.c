@@ -1342,9 +1342,9 @@ static void shimDefaultConstructor(SYMBOL *sp, SYMBOL *cons)
                 *p = x;
             }
             e1 = varNode(en_func, NULL);
+            e1->v.func = params;
             if (e1) // could probably remove this, only null if ran out of memory.
             {
-                e1->v.func = params;
                 e1= exprNode(en_thisref, e1, NULL);
                 e1->v.t.thisptr = params->thisptr;
                 e1->v.t.tp = sp->tp;

@@ -7919,7 +7919,8 @@ static void referenceInstanceMembers(SYMBOL *cls)
             }
             else if (!ismember(sym) && !istype(sym))
             {
-                InsertInlineData(sym);
+                if (cls->templateLevel || sym->templateLevel)
+                    InsertInlineData(sym);
                 GENREF(sym);
             }
             hr = hr->next;

@@ -498,341 +498,348 @@ void adjustUsesESP()
     }
     SetUsesESP(prm_useesp);
 }
-ARCH_DEBUG dbgStruct [] = {
+ARCH_DEBUG dbgStruct[] = {
     {
-    "LS",                       /* name of debug format */
-    0,                          /* backend specific data, compiler ignores */
-    &dbgblocknum,               /* pointer to variable which holds block number, or zero for no blocking */
-    dbginit,                    /* per file initialization */
-    0,                          /* per file rundown */
-    debug_outputtypedef,        /* output a (global) typedef */
-    /* browser funcs */
-    0,                          /* per file initialization */
-    dump_browsedata,    /* put browse info somewhere */
-    dump_browsefile,    /* put browse file list somewhere */
-    0,                          /* per file rundown */
+        "LS",                /* name of debug format */
+        0,                   /* backend specific data, compiler ignores */
+        &dbgblocknum,        /* pointer to variable which holds block number, or zero for no blocking */
+        dbginit,             /* per file initialization */
+        0,                   /* per file rundown */
+        debug_outputtypedef, /* output a (global) typedef */
+        /* browser funcs */
+        0,               /* per file initialization */
+        dump_browsedata, /* put browse info somewhere */
+        dump_browsefile, /* put browse file list somewhere */
+        0,               /* per file rundown */
     },
-    { 0 }
+    {0}
 
-} ;
+};
 ARCH_GEN outputfunctions = {
-    oa_header,             /* generate assembly language header */
-    oa_trailer,            /* generate assembly language trailer */
-    oa_adjust_codelab,   /* adjust an assembly language statement for the relative code labels */
-    NULL, 			         /* allow access to the quad list prior to GCSE */
-    examine_icode,                   /* allow access to the quad list after GCSE */
-    flush_peep,             /* called after function body is generated */
-    oa_end_generation,		/* end of code generation */
-    cg_internal_conflict,   /* internal conflict */
-    preRegAlloc,			/* rewrites to improve register allocation */
-    precolor,				/* precolor routine */
-    oa_gen_strlab,             /* generate a named label */
-    oa_put_label,              /* generate a numbered label */
-    oa_put_string_label,    /* generate a numbered label */
-    NULL,                   /* reserve space for a bit */
-    oa_genint,                 /* initialize an int */
-    oa_genfloat,               /* initialize a float */
-    oa_genaddress,             /* initializae a pointer */
-    oa_genstring,              /* initialize a string */
-    oa_genref,                 /* put a reference to a variable */
-    oa_genpcref,               /* put a reference to something in the code segment */
-    oa_gensrref,               /* put a reference to the startup.rundown */
-    oa_gen_labref,             /* put a reference to a label */
-    oa_gen_labdifref,          /* put the difference of two labels */
-    oa_gen_virtual,        /* start a virtual segment */
-    oa_gen_endvirtual,     /* end a virtual segment */
-    oa_gen_vtt,                  /* do a VT thunk entry */
-    oa_gen_vc1,                 /* do a vc1 thunk entry */
-    oa_gen_importThunk,                 /* do an import thunk entry */
-    oa_genstorage,             /* generate uninitialized storage */
-    oa_align,                  /* put an alignment command */
-    oa_enterseg,               /* switch to new seg */
-    oa_exitseg,                /* exit current segment */
-    oa_globaldef,          /* put a global definition */
+    oa_header,            /* generate assembly language header */
+    oa_trailer,           /* generate assembly language trailer */
+    oa_adjust_codelab,    /* adjust an assembly language statement for the relative code labels */
+    NULL,                 /* allow access to the quad list prior to GCSE */
+    examine_icode,        /* allow access to the quad list after GCSE */
+    flush_peep,           /* called after function body is generated */
+    oa_end_generation,    /* end of code generation */
+    cg_internal_conflict, /* internal conflict */
+    preRegAlloc,          /* rewrites to improve register allocation */
+    precolor,             /* precolor routine */
+    oa_gen_strlab,        /* generate a named label */
+    oa_put_label,         /* generate a numbered label */
+    oa_put_string_label,  /* generate a numbered label */
+    NULL,                 /* reserve space for a bit */
+    oa_genint,            /* initialize an int */
+    oa_genfloat,          /* initialize a float */
+    oa_genaddress,        /* initializae a pointer */
+    oa_genstring,         /* initialize a string */
+    oa_genref,            /* put a reference to a variable */
+    oa_genpcref,          /* put a reference to something in the code segment */
+    oa_gensrref,          /* put a reference to the startup.rundown */
+    oa_gen_labref,        /* put a reference to a label */
+    oa_gen_labdifref,     /* put the difference of two labels */
+    oa_gen_virtual,       /* start a virtual segment */
+    oa_gen_endvirtual,    /* end a virtual segment */
+    oa_gen_vtt,           /* do a VT thunk entry */
+    oa_gen_vc1,           /* do a vc1 thunk entry */
+    oa_gen_importThunk,   /* do an import thunk entry */
+    oa_genstorage,        /* generate uninitialized storage */
+    oa_align,             /* put an alignment command */
+    oa_enterseg,          /* switch to new seg */
+    oa_exitseg,           /* exit current segment */
+    oa_globaldef,         /* put a global definition */
     oa_localdef,          /* put a local definition */
-    oa_localstaticdef,          /* put a local static definition */
-    oa_put_extern,         /* put an external definition */
-    oa_put_impfunc,        /* put an import definition */
-    oa_put_expfunc,        /* put an export definition */
-    oa_output_alias,       /* put an alias */
-    oa_output_includelib,  /* put an included library name */
-    0,                      /* backend handle intrinsic */
-    0,                      /* expression tag */
-    0,                      /* tag */
-    asm_line,               /* line number information and text */
-    asm_blockstart,         /* block start */
-    asm_blockend,           /* block end */
-    asm_varstart,           /* var start */
-    asm_func,               /* func start or end */
-    asm_passthrough,        /* reserved */
-    asm_datapassthrough,	/* reserved */
-    asm_label,              /* put a label in the code stream */
-    asm_atomic,             /* atomic primitives */
-    asm_goto,               /* unconditional branch */
-    asm_gosub,              /* normal gosub to an immediate label or through a var */
-    asm_fargosub,           /* far version of gosub */
-    asm_trap,               /* 'trap' instruction - the arg will be an immediate # */
-    asm_int,                /* 'int' instruction, calls a labeled function which is an interrupt */
-    asm_ret,                /* return from subroutine */
-    asm_fret,                /* far return from subroutine */
-    asm_rett,               /* return from trap or int */
-    asm_add,                /* evaluate an addition */
-    asm_sub,                /* evaluate a subtraction */
-    asm_udiv,               /* unsigned division */
-    asm_umod,               /* unsigned modulous */
-    asm_sdiv,               /* signed division */
-    asm_smod,               /* signed modulous */
-    asm_muluh,               /* multiply highword unsigned*/
-    asm_mulsh,               /* multiply highword signed*/
-    asm_mul,               /* multiply */
-    asm_lsl,                /* unsigned shift left */
-    asm_lsr,                /* unsigned shift right */
-    asm_asr,                /* signed shift right */
-    asm_neg,                /* negation */
-    asm_not,                /* complement */
-    asm_and,                /* binary and */
-    asm_or,                 /* binary or */
-    asm_eor,                /* binary exclusive or */
-    asm_setne,              /* evaluate a = b != c */
-    asm_sete,               /* evaluate a = b == c */
-    asm_setc,               /* evaluate a = b U< c */
-    asm_seta,               /* evaluate a = b U> c */
-    asm_setnc,              /* evaluate a = b U>= c */
-    asm_setbe,              /* evaluate a = b U<= c */
-    asm_setl,               /* evaluate a = b S< c */
-    asm_setg,               /* evaluate a = b s> c */
-    asm_setle,              /* evaluate a = b S<= c */
-    asm_setge,              /* evaluate a = b S>= c */
-    asm_assn,               /* assignment */
-    asm_genword,            /* put a byte or word into the code stream */
-    asm_coswitch,           /* switch characteristics */
-    asm_swbranch,           /* case characteristics */
-    asm_dc,                 /* unused */
-    asm_assnblock,          /* copy block of memory*/
-    asm_clrblock,           /* clear block of memory */
-    asm_jc,                 /* branch if a U< b */
-    asm_ja,                 /* branch if a U> b */
-    asm_je,                 /* branch if a == b */
-    asm_jnc,                /* branch if a U>= b */
-    asm_jbe,                /* branch if a U<= b */
-    asm_jne,                /* branch if a != b */
-    asm_jl,                 /* branch if a S< b */
-    asm_jg,                 /* branch if a S> b */
-    asm_jle,                /* branch if a S<= b */
-    asm_jge,                /* branch if a S>= b */
-    asm_parm,               /* push a parameter*/
-    asm_parmadj,            /* adjust stack after function call */
-    asm_parmblock,          /* push a block of memory */
-    asm_cppini,             /* cplusplus initialization (historic)*/
-    asm_prologue,           /* function prologue */
-    asm_epilogue,           /* function epilogue */
-    asm_pushcontext,        /* push register context */
-    asm_popcontext,         /* pop register context */
-    asm_loadcontext,        /* load register context (e.g. at interrupt level ) */
-    asm_unloadcontext,        /* unload register context (e.g. at interrupt level ) */
-    asm_tryblock,			/* try, catch, end block */
-    asm_stackalloc,         /* allocate stack space - positive value = allocate, negative value deallocate */
-    asm_loadstack,			/* load the stack pointer from a var */
-    asm_savestack,			/* save the stack pointer to a var */
-    NULL,                   /* seh */
-    asm_functail,			/* function tail (e.g. destructor) start/end */
-} ;       
+    oa_localstaticdef,    /* put a local static definition */
+    oa_put_extern,        /* put an external definition */
+    oa_put_impfunc,       /* put an import definition */
+    oa_put_expfunc,       /* put an export definition */
+    oa_output_alias,      /* put an alias */
+    oa_output_includelib, /* put an included library name */
+    0,                    /* backend handle intrinsic */
+    0,                    /* expression tag */
+    0,                    /* tag */
+    asm_line,             /* line number information and text */
+    asm_blockstart,       /* block start */
+    asm_blockend,         /* block end */
+    asm_varstart,         /* var start */
+    asm_func,             /* func start or end */
+    asm_passthrough,      /* reserved */
+    asm_datapassthrough,  /* reserved */
+    asm_label,            /* put a label in the code stream */
+    asm_atomic,           /* atomic primitives */
+    asm_goto,             /* unconditional branch */
+    asm_gosub,            /* normal gosub to an immediate label or through a var */
+    asm_fargosub,         /* far version of gosub */
+    asm_trap,             /* 'trap' instruction - the arg will be an immediate # */
+    asm_int,              /* 'int' instruction, calls a labeled function which is an interrupt */
+    asm_ret,              /* return from subroutine */
+    asm_fret,             /* far return from subroutine */
+    asm_rett,             /* return from trap or int */
+    asm_add,              /* evaluate an addition */
+    asm_sub,              /* evaluate a subtraction */
+    asm_udiv,             /* unsigned division */
+    asm_umod,             /* unsigned modulous */
+    asm_sdiv,             /* signed division */
+    asm_smod,             /* signed modulous */
+    asm_muluh,            /* multiply highword unsigned*/
+    asm_mulsh,            /* multiply highword signed*/
+    asm_mul,              /* multiply */
+    asm_lsl,              /* unsigned shift left */
+    asm_lsr,              /* unsigned shift right */
+    asm_asr,              /* signed shift right */
+    asm_neg,              /* negation */
+    asm_not,              /* complement */
+    asm_and,              /* binary and */
+    asm_or,               /* binary or */
+    asm_eor,              /* binary exclusive or */
+    asm_setne,            /* evaluate a = b != c */
+    asm_sete,             /* evaluate a = b == c */
+    asm_setc,             /* evaluate a = b U< c */
+    asm_seta,             /* evaluate a = b U> c */
+    asm_setnc,            /* evaluate a = b U>= c */
+    asm_setbe,            /* evaluate a = b U<= c */
+    asm_setl,             /* evaluate a = b S< c */
+    asm_setg,             /* evaluate a = b s> c */
+    asm_setle,            /* evaluate a = b S<= c */
+    asm_setge,            /* evaluate a = b S>= c */
+    asm_assn,             /* assignment */
+    asm_genword,          /* put a byte or word into the code stream */
+    asm_coswitch,         /* switch characteristics */
+    asm_swbranch,         /* case characteristics */
+    asm_dc,               /* unused */
+    asm_assnblock,        /* copy block of memory*/
+    asm_clrblock,         /* clear block of memory */
+    asm_jc,               /* branch if a U< b */
+    asm_ja,               /* branch if a U> b */
+    asm_je,               /* branch if a == b */
+    asm_jnc,              /* branch if a U>= b */
+    asm_jbe,              /* branch if a U<= b */
+    asm_jne,              /* branch if a != b */
+    asm_jl,               /* branch if a S< b */
+    asm_jg,               /* branch if a S> b */
+    asm_jle,              /* branch if a S<= b */
+    asm_jge,              /* branch if a S>= b */
+    asm_parm,             /* push a parameter*/
+    asm_parmadj,          /* adjust stack after function call */
+    asm_parmblock,        /* push a block of memory */
+    asm_cppini,           /* cplusplus initialization (historic)*/
+    asm_prologue,         /* function prologue */
+    asm_epilogue,         /* function epilogue */
+    asm_pushcontext,      /* push register context */
+    asm_popcontext,       /* pop register context */
+    asm_loadcontext,      /* load register context (e.g. at interrupt level ) */
+    asm_unloadcontext,    /* unload register context (e.g. at interrupt level ) */
+    asm_tryblock,         /* try, catch, end block */
+    asm_stackalloc,       /* allocate stack space - positive value = allocate, negative value deallocate */
+    asm_loadstack,        /* load the stack pointer from a var */
+    asm_savestack,        /* save the stack pointer to a var */
+    NULL,                 /* seh */
+    asm_functail,         /* function tail (e.g. destructor) start/end */
+};
 ARCH_ASM assemblerInterface[] = {
     {
-    "nasm",                                 /* assembler name */
-    0,                                      /* backend data (compiler ignores) */
-     "1",								/* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
-   ".asm",                                  /* extension for assembly files */
-    ".o",                               /* extension for object files, NULL = has no object mode */
-    "occ",                               /* name of an environment variable to parse, or 0 */
-    "occ",                             /* name of the program, for usage */
-    "occ",                              /* name of a config file if you want to use one, or NULL (sans extension) */
-    usage_text,                           /* pointer to usage text */
-    args,									/* extra args */
-    sizeof(args)/sizeof(args[0]),			/* number of args */
-    oplst,                             /* inline assembler opcode list, or null */
-    reglst,                             /* inline assembler register list, or null */
-    prockeywords,                         /* specific keywords, e.g. allow a 'bit' keyword and so forth */
-    defines,                     /* defines list to create at compile time, or null */
-    &dbgStruct[0],                         /* debug structure, or NULL */
-    &architecture,                /* architecture characteristics */
-    &outputfunctions,                              /* pointer to backend function linkages */
-    NULL,                               /* pointer to MSIL-specific data and functions */
-    NULL,                               /* pointer to extra builtin data */
-    initnasm,  /* return 1 to proceed */
-    0,              /* precompile function, or NULL */
-    0,              /* postcompile function, or NULL */
-    RunExternalFiles,     /* postprocess function, or NULL */
-    0,     /* compiler rundown */
-    InsertOutputFileName,          /* insert the output (executable name) into the backend */
-    InsertExternalFile,      /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
-    parse_param,     /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-    parse_codegen,   /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-    0,         /* parse a pragma directive, or null */
-    compile_start,    /* signal start of compile on a per file basis */
-    include_start,		/* signal switching to a new source file */
-    output_obj_file,      /* write the object file (for native object formats) */
-    outcode_file_init,    /* initialize the object file */
-    inasmini,             /* initialize inline assembler, per file, or NULL */
-    inasm_statement,        /* parse an assembly statement, or NULL */
-    inlineAsmStmt,		/* translate an assembly instruction which was inlined */
-    0,                   /* initialize intrinsic mechanism, compiler startup */
-    0,                   /* search for an intrinsic */
-    0,                     /* enter a type in the BE */
-    
-    },
-    {
-    "fasm",                                 /* assembler name */
-    0,                                      /* backend data (compiler ignores) */
-     "1",								/* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
-    ".asm",                                  /* extension for assembly files */
-    ".o",                               /* extension for object files, NULL = has no object mode */
-    "occ",                               /* name of an environment variable to parse, or 0 */
-    "occ",                             /* name of the program, for usage */
-    "occ",                              /* name of a config file if you want to use one, or NULL (sans extension) */
-    usage_text,                           /* pointer to usage text */
-    args,									/* extra args */
-    sizeof(args)/sizeof(args[0]),			/* number of args */
-    oplst,                             /* inline assembler opcode list, or null */
-    reglst,                             /* inline assembler register list, or null */
-    prockeywords,                         /* specific keywords, e.g. allow a 'bit' keyword and so forth */
-    defines,                     /* defines list to create at compile time, or null */
-    &dbgStruct[0],                         /* debug structure, or NULL */
-    &architecture,                /* architecture characteristics */
-    &outputfunctions,                              /* pointer to backend function linkages */
-    initfasm,  /* return 1 to proceed */
-    RunExternalFiles,     /* postprocess function, or NULL */
-    0,     /* compiler rundown */
-    InsertOutputFileName,          /* insert the output (executable name) into the backend */
-    InsertExternalFile,      /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
-    parse_param,     /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-    parse_codegen,   /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-    0,         /* parse a pragma directive, or null */
-    compile_start,    /* signal start of compile on a per file basis */
-    include_start,		/* signal switching to a new source file */
-    output_obj_file,      /* write the object file (for native object formats) */
-    outcode_file_init,    /* initialize the object file */
-    inasmini,             /* initialize inline assembler, per file, or NULL */
-    inasm_statement,        /* parse an assembly statement, or NULL */
-    inlineAsmStmt,		/* translate an assembly instruction which was inlined */
-    0,                   /* initialize intrinsic mechanism, compiler startup */
-    0,                   /* search for an intrinsic */
-    0,                       /* __using__ declaration */    
-    },
-    {
-    "tasm",                                 /* assembler name */
-    0,                                      /* backend data (compiler ignores) */
-     "1",								/* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
-    ".asm",                                  /* extension for assembly files */
-    ".o",                               /* extension for object files, NULL = has no object mode */
-    "occ",                               /* name of an environment variable to parse, or 0 */
-    "occ",                             /* name of the program, for usage */
-    "occ",                              /* name of a config file if you want to use one, or NULL (sans extension) */
-    usage_text,                           /* pointer to usage text */
-    args,									/* extra args */
-    sizeof(args)/sizeof(args[0]),			/* number of args */
-    oplst,                             /* inline assembler opcode list, or null */
-    reglst,                             /* inline assembler register list, or null */
-    prockeywords,                         /* specific keywords, e.g. allow a 'bit' keyword and so forth */
-    defines,                     /* defines list to create at compile time, or null */
-    &dbgStruct[0],                         /* debug structure, or NULL */
-    &architecture,                /* architecture characteristics */
-    &outputfunctions,                              /* pointer to backend function linkages */
-    inittasm,  /* return 1 to proceed */
-    RunExternalFiles,     /* postprocess function, or NULL */
-    0,     /* compiler rundown */
-    InsertOutputFileName,          /* insert the output (executable name) into the backend */
-    InsertExternalFile,      /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
-    parse_param,     /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-    parse_codegen,   /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-    0,         /* parse a pragma directive, or null */
-    compile_start,    /* signal start of compile on a per file basis */
-    include_start,		/* signal switching to a new source file */
-    output_obj_file,      /* write the object file (for native object formats) */
-    outcode_file_init,    /* initialize the object file */
-    inasmini,             /* initialize inline assembler, per file, or NULL */
-    inasm_statement,        /* parse an assembly statement, or NULL */
-    inlineAsmStmt,		/* translate an assembly instruction which was inlined */
-    0,                   /* initialize intrinsic mechanism, compiler startup */
-    0,                   /* search for an intrinsic */
-    0,                       /* __using__ declaration */    
-    },
-    {
-    "masm",                                 /* assembler name */
-    0,                                      /* backend data (compiler ignores) */
-     "1",								/* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
-    ".asm",                                  /* extension for assembly files */
-    ".o",                               /* extension for object files, NULL = has no object mode */
-    "occ",                               /* name of an environment variable to parse, or 0 */
-    "occ",                             /* name of the program, for usage */
-    "occ",                              /* name of a config file if you want to use one, or NULL (sans extension) */
-    usage_text,                           /* pointer to usage text */
-    args,									/* extra args */
-    sizeof(args)/sizeof(args[0]),			/* number of args */
-    oplst,                             /* inline assembler opcode list, or null */
-    reglst,                             /* inline assembler register list, or null */
-    prockeywords,                         /* specific keywords, e.g. allow a 'bit' keyword and so forth */
-    defines,                     /* defines list to create at compile time, or null */
-    &dbgStruct[0],                         /* debug structure, or NULL */
-    &architecture,                /* architecture characteristics */
-    &outputfunctions,                              /* pointer to backend function linkages */
-    initmasm,  /* return 1 to proceed */
-    RunExternalFiles,     /* postprocess function, or NULL */
-    0,     /* compiler rundown */
-    InsertOutputFileName,          /* insert the output (executable name) into the backend */
-    InsertExternalFile,      /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
-    parse_param,     /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-    parse_codegen,   /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-    0,         /* parse a pragma directive, or null */
-    compile_start,    /* signal start of compile on a per file basis */
-    include_start,		/* signal switching to a new source file */
-    output_obj_file,      /* write the object file (for native object formats) */
-    outcode_file_init,    /* initialize the object file */
-    inasmini,             /* initialize inline assembler, per file, or NULL */
-    inasm_statement,        /* parse an assembly statement, or NULL */
-    inlineAsmStmt,		/* translate an assembly instruction which was inlined */
-    0,                   /* initialize intrinsic mechanism, compiler startup */
-    0,                   /* search for an intrinsic */
-    0,                       /* __using__ declaration */    
-    },
-    {
-    "generic",                                 /* assembler name */
-    0,                                      /* backend data (compiler ignores) */
-     "1",								/* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
-    ".asm",                                  /* extension for assembly files */
-    ".o",                               /* extension for object files, NULL = has no object mode */
-    "occ",                               /* name of an environment variable to parse, or 0 */
-    "occ",                             /* name of the program, for usage */
-    "occ",                              /* name of a config file if you want to use one, or NULL (sans extension) */
-    usage_text,                           /* pointer to usage text */
-    args,									/* extra args */
-    sizeof(args)/sizeof(args[0]),			/* number of args */
-    oplst,                             /* inline assembler opcode list, or null */
-    reglst,                             /* inline assembler register list, or null */
-    prockeywords,                         /* specific keywords, e.g. allow a 'bit' keyword and so forth */
-    defines,                     /* defines list to create at compile time, or null */
-    &dbgStruct[0],                         /* debug structure, or NULL */
-    &architecture,                /* architecture characteristics */
-    &outputfunctions,                              /* pointer to backend function linkages */
-    initgeneric,  /* return 1 to proceed */
-    RunExternalFiles,     /* postprocess function, or NULL */
-    0,     /* compiler rundown */
-    InsertOutputFileName,          /* insert the output (executable name) into the backend */
-    InsertExternalFile,      /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
-    parse_param,     /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-    parse_codegen,   /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-    0,         /* parse a pragma directive, or null */
-    compile_start,    /* signal start of compile on a per file basis */
-    include_start,		/* signal switching to a new source file */
-    output_obj_file,      /* write the object file (for native object formats) */
-    outcode_file_init,    /* initialize the object file */
-    inasmini,             /* initialize inline assembler, per file, or NULL */
-    inasm_statement,        /* parse an assembly statement, or NULL */
-    inlineAsmStmt,		/* translate an assembly instruction which was inlined */
-    0,                   /* initialize intrinsic mechanism, compiler startup */
-    0,                   /* search for an intrinsic */
-    0,                       /* __using__ declaration */    
-    },
-    { 0 }
-} ;
+        "nasm",                         /* assembler name */
+        0,                              /* backend data (compiler ignores) */
+        "1",                            /* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
+        ".asm",                         /* extension for assembly files */
+        ".o",                           /* extension for object files, NULL = has no object mode */
+        "occ",                          /* name of an environment variable to parse, or 0 */
+        "occ",                          /* name of the program, for usage */
+        "occ",                          /* name of a config file if you want to use one, or NULL (sans extension) */
+        usage_text,                     /* pointer to usage text */
+        args,                           /* extra args */
+        sizeof(args) / sizeof(args[0]), /* number of args */
+        oplst,                          /* inline assembler opcode list, or null */
+        reglst,                         /* inline assembler register list, or null */
+        prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
+        defines,                        /* defines list to create at compile time, or null */
+        &dbgStruct[0],                  /* debug structure, or NULL */
+        &architecture,                  /* architecture characteristics */
+        &outputfunctions,               /* pointer to backend function linkages */
+        NULL,                           /* pointer to MSIL-specific data and functions */
+        NULL,                           /* pointer to extra builtin data */
+        initnasm,                       /* return 1 to proceed */
+        0,                              /* precompile function, or NULL */
+        0,                              /* postcompile function, or NULL */
+        RunExternalFiles,               /* postprocess function, or NULL */
+        0,                              /* compiler rundown */
+        InsertOutputFileName,           /* insert the output (executable name) into the backend */
+        InsertExternalFile,             /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
+        parse_param,                    /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
+        parse_codegen,                  /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
+        0,                              /* parse a pragma directive, or null */
+        compile_start,                  /* signal start of compile on a per file basis */
+        include_start,                  /* signal switching to a new source file */
+        output_obj_file,                /* write the object file (for native object formats) */
+        outcode_file_init,              /* initialize the object file */
+        inasmini,                       /* initialize inline assembler, per file, or NULL */
+        inasm_statement,                /* parse an assembly statement, or NULL */
+        inlineAsmStmt,                  /* translate an assembly instruction which was inlined */
+        0,                              /* initialize intrinsic mechanism, compiler startup */
+        0,                              /* search for an intrinsic */
+        0,                              /* enter a type in the BE */
 
+    },
+    {
+        "fasm",                         /* assembler name */
+        0,                              /* backend data (compiler ignores) */
+        "1",                            /* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
+        ".asm",                         /* extension for assembly files */
+        ".o",                           /* extension for object files, NULL = has no object mode */
+        "occ",                          /* name of an environment variable to parse, or 0 */
+        "occ",                          /* name of the program, for usage */
+        "occ",                          /* name of a config file if you want to use one, or NULL (sans extension) */
+        usage_text,                     /* pointer to usage text */
+        args,                           /* extra args */
+        sizeof(args) / sizeof(args[0]), /* number of args */
+        oplst,                          /* inline assembler opcode list, or null */
+        reglst,                         /* inline assembler register list, or null */
+        prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
+        defines,                        /* defines list to create at compile time, or null */
+        &dbgStruct[0],                  /* debug structure, or NULL */
+        &architecture,                  /* architecture characteristics */
+        &outputfunctions,               /* pointer to backend function linkages */
+        NULL,                           /* pointer to MSIL-specific data and functions */
+        NULL,                           /* pointer to extra builtin data */
+        initfasm,                       /* return 1 to proceed */
+        0,                              /* precompile function, or NULL */
+        0,                              /* postcompile function, or NULL */
+        RunExternalFiles,               /* postprocess function, or NULL */
+        0,                              /* compiler rundown */
+        InsertOutputFileName,           /* insert the output (executable name) into the backend */
+        InsertExternalFile,             /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
+        parse_param,                    /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
+        parse_codegen,                  /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
+        0,                              /* parse a pragma directive, or null */
+        compile_start,                  /* signal start of compile on a per file basis */
+        include_start,                  /* signal switching to a new source file */
+        output_obj_file,                /* write the object file (for native object formats) */
+        outcode_file_init,              /* initialize the object file */
+        inasmini,                       /* initialize inline assembler, per file, or NULL */
+        inasm_statement,                /* parse an assembly statement, or NULL */
+        inlineAsmStmt,                  /* translate an assembly instruction which was inlined */
+        0,                              /* initialize intrinsic mechanism, compiler startup */
+        0,                              /* search for an intrinsic */
+        0,                              /* enter a type in the BE */
+
+    },
+    {
+        "tasm",                         /* assembler name */
+        0,                              /* backend data (compiler ignores) */
+        "1",                            /* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
+        ".asm",                         /* extension for assembly files */
+        ".o",                           /* extension for object files, NULL = has no object mode */
+        "occ",                          /* name of an environment variable to parse, or 0 */
+        "occ",                          /* name of the program, for usage */
+        "occ",                          /* name of a config file if you want to use one, or NULL (sans extension) */
+        usage_text,                     /* pointer to usage text */
+        args,                           /* extra args */
+        sizeof(args) / sizeof(args[0]), /* number of args */
+        oplst,                          /* inline assembler opcode list, or null */
+        reglst,                         /* inline assembler register list, or null */
+        prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
+        defines,                        /* defines list to create at compile time, or null */
+        &dbgStruct[0],                  /* debug structure, or NULL */
+        &architecture,                  /* architecture characteristics */
+        &outputfunctions,               /* pointer to backend function linkages */
+        inittasm,                       /* return 1 to proceed */
+        RunExternalFiles,               /* postprocess function, or NULL */
+        0,                              /* compiler rundown */
+        InsertOutputFileName,           /* insert the output (executable name) into the backend */
+        InsertExternalFile,             /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
+        parse_param,                    /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
+        parse_codegen,                  /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
+        0,                              /* parse a pragma directive, or null */
+        compile_start,                  /* signal start of compile on a per file basis */
+        include_start,                  /* signal switching to a new source file */
+        output_obj_file,                /* write the object file (for native object formats) */
+        outcode_file_init,              /* initialize the object file */
+        inasmini,                       /* initialize inline assembler, per file, or NULL */
+        inasm_statement,                /* parse an assembly statement, or NULL */
+        inlineAsmStmt,                  /* translate an assembly instruction which was inlined */
+        0,                              /* initialize intrinsic mechanism, compiler startup */
+        0,                              /* search for an intrinsic */
+        0,                              /* __using__ declaration */
+    },
+    {
+        "masm",                         /* assembler name */
+        0,                              /* backend data (compiler ignores) */
+        "1",                            /* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
+        ".asm",                         /* extension for assembly files */
+        ".o",                           /* extension for object files, NULL = has no object mode */
+        "occ",                          /* name of an environment variable to parse, or 0 */
+        "occ",                          /* name of the program, for usage */
+        "occ",                          /* name of a config file if you want to use one, or NULL (sans extension) */
+        usage_text,                     /* pointer to usage text */
+        args,                           /* extra args */
+        sizeof(args) / sizeof(args[0]), /* number of args */
+        oplst,                          /* inline assembler opcode list, or null */
+        reglst,                         /* inline assembler register list, or null */
+        prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
+        defines,                        /* defines list to create at compile time, or null */
+        &dbgStruct[0],                  /* debug structure, or NULL */
+        &architecture,                  /* architecture characteristics */
+        &outputfunctions,               /* pointer to backend function linkages */
+        NULL,
+        NULL,
+        initmasm, /* return 1 to proceed */
+        0,
+        0,
+        RunExternalFiles,     /* postprocess function, or NULL */
+        0,                    /* compiler rundown */
+        InsertOutputFileName, /* insert the output (executable name) into the backend */
+        InsertExternalFile,   /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
+        parse_param,          /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
+        parse_codegen,        /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
+        0,                    /* parse a pragma directive, or null */
+        compile_start,        /* signal start of compile on a per file basis */
+        include_start,        /* signal switching to a new source file */
+        output_obj_file,      /* write the object file (for native object formats) */
+        outcode_file_init,    /* initialize the object file */
+        inasmini,             /* initialize inline assembler, per file, or NULL */
+        inasm_statement,      /* parse an assembly statement, or NULL */
+        inlineAsmStmt,        /* translate an assembly instruction which was inlined */
+        0,                    /* initialize intrinsic mechanism, compiler startup */
+        0,                    /* search for an intrinsic */
+        0,                    /* __using__ declaration */
+    },
+    {
+        "generic",                      /* assembler name */
+        0,                              /* backend data (compiler ignores) */
+        "1",                            /* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
+        ".asm",                         /* extension for assembly files */
+        ".o",                           /* extension for object files, NULL = has no object mode */
+        "occ",                          /* name of an environment variable to parse, or 0 */
+        "occ",                          /* name of the program, for usage */
+        "occ",                          /* name of a config file if you want to use one, or NULL (sans extension) */
+        usage_text,                     /* pointer to usage text */
+        args,                           /* extra args */
+        sizeof(args) / sizeof(args[0]), /* number of args */
+        oplst,                          /* inline assembler opcode list, or null */
+        reglst,                         /* inline assembler register list, or null */
+        prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
+        defines,                        /* defines list to create at compile time, or null */
+        &dbgStruct[0],                  /* debug structure, or NULL */
+        &architecture,                  /* architecture characteristics */
+        &outputfunctions,               /* pointer to backend function linkages */
+        initgeneric,                    /* return 1 to proceed */
+        RunExternalFiles,               /* postprocess function, or NULL */
+        0,                              /* compiler rundown */
+        InsertOutputFileName,           /* insert the output (executable name) into the backend */
+        InsertExternalFile,             /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
+        parse_param,                    /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
+        parse_codegen,                  /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
+        0,                              /* parse a pragma directive, or null */
+        compile_start,                  /* signal start of compile on a per file basis */
+        include_start,                  /* signal switching to a new source file */
+        output_obj_file,                /* write the object file (for native object formats) */
+        outcode_file_init,              /* initialize the object file */
+        inasmini,                       /* initialize inline assembler, per file, or NULL */
+        inasm_statement,                /* parse an assembly statement, or NULL */
+        inlineAsmStmt,                  /* translate an assembly instruction which was inlined */
+        0,                              /* initialize intrinsic mechanism, compiler startup */
+        0,                              /* search for an intrinsic */
+        0,                              /* __using__ declaration */
+    },
+    {0}};

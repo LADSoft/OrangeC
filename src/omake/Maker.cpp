@@ -313,10 +313,9 @@ std::string Maker::GetFileTime(const std::string &goal, const std::string &prefe
             name = cur + internalGoal;
         else
             name = internalGoal;
-        std::fstream fil(name.c_str(), std::ios::in);
-        if (!fil.fail())
+        timeval = OS::GetFileTime(name);
+        if (!!timeval)
         {
-            fil.close();
             rv = cur; // return value is the path, with a slash on the end
             if (rv == "./")
                 rv = "";

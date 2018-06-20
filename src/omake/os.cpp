@@ -414,32 +414,25 @@ Time OS::GetCurrentTime()
 }
 Time OS::GetFileTime(const std::string fileName)
 {
-    FILETIME mod;
-    HANDLE h = CreateFile(fileName.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr,
-                          OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-                          
-    if (h != INVALID_HANDLE_VALUE)
+    WIN32_FILE_ATTRIBUTE_DATA data;
+    if (GetFileAttributesEx(fileName.c_str(), GetFileExInfoStandard, &data))
     {
-     	if (::GetFileTime(h, nullptr, nullptr, &mod))
-        {
-            CloseHandle(h);
-            FILETIME v;
-            SYSTEMTIME systemTime;
-            LocalFileTimeToFileTime(&mod, &v);
-            FileTimeToSystemTime(&v, &systemTime);
-            struct tm tmx;
-            memset(&tmx, 0, sizeof(tmx));
-            tmx.tm_hour = systemTime.wHour;
-            tmx.tm_min = systemTime.wMinute;
-            tmx.tm_sec = systemTime.wSecond;
-            tmx.tm_mday = systemTime.wDay;
-            tmx.tm_mon = systemTime.wMonth-1;
-            tmx.tm_year = systemTime.wYear - 1900;
-            time_t t = mktime(&tmx);
-            Time rv(t, systemTime.wMilliseconds);
-            return rv;
-        }
-        CloseHandle(h);
+        FILETIME mod = data.ftLastWriteTime;
+        FILETIME v;
+        SYSTEMTIME systemTime;
+        LocalFileTimeToFileTime(&mod, &v);
+        FileTimeToSystemTime(&v, &systemTime);
+        struct tm tmx;
+        memset(&tmx, 0, sizeof(tmx));
+        tmx.tm_hour = systemTime.wHour;
+        tmx.tm_min = systemTime.wMinute;
+        tmx.tm_sec = systemTime.wSecond;
+        tmx.tm_mday = systemTime.wDay;
+        tmx.tm_mon = systemTime.wMonth-1;
+        tmx.tm_year = systemTime.wYear - 1900;
+        time_t t = mktime(&tmx);
+        Time rv(t, systemTime.wMilliseconds);
+        return rv;
     }
     Time rv;
     return rv;

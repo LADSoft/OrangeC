@@ -283,6 +283,11 @@ static ARCH_CHARACTERISTICS architecture = {
 extern ARCH_GEN outputfunctions ;
 ARCH_GEN outputfunctions ;
 
+enum e_lk get_dll_linkage()
+{
+	return prm_lscrtdll ? lk_import : lk_none;
+}
+
 static void WinmodeSetup(char select, char *string);
 static void chkdos(void)
 {
@@ -679,7 +684,7 @@ ARCH_ASM assemblerInterface[] = {
     0,                   /* initialize intrinsic mechanism, compiler startup */
     0,                   /* search for an intrinsic */
     0,                     /* enter a type in the BE */
-    
+    get_dll_linkage,                /* get dll linkage corresponding to command line switches */
     },
     {
     "fasm",                                 /* assembler name */
@@ -718,6 +723,7 @@ ARCH_ASM assemblerInterface[] = {
     0,                   /* initialize intrinsic mechanism, compiler startup */
     0,                   /* search for an intrinsic */
     0,                       /* __using__ declaration */    
+    get_dll_linkage,                /* get dll linkage corresponding to command line switches */
     },
     {
     "tasm",                                 /* assembler name */
@@ -756,6 +762,7 @@ ARCH_ASM assemblerInterface[] = {
     0,                   /* initialize intrinsic mechanism, compiler startup */
     0,                   /* search for an intrinsic */
     0,                       /* __using__ declaration */    
+    get_dll_linkage,                /* get dll linkage corresponding to command line switches */
     },
     {
     "masm",                                 /* assembler name */
@@ -794,6 +801,7 @@ ARCH_ASM assemblerInterface[] = {
     0,                   /* initialize intrinsic mechanism, compiler startup */
     0,                   /* search for an intrinsic */
     0,                       /* __using__ declaration */    
+    get_dll_linkage,                /* get dll linkage corresponding to command line switches */
     },
     {
     "generic",                                 /* assembler name */
@@ -832,6 +840,7 @@ ARCH_ASM assemblerInterface[] = {
     0,                   /* initialize intrinsic mechanism, compiler startup */
     0,                   /* search for an intrinsic */
     0,                       /* __using__ declaration */    
+    get_dll_linkage,                /* get dll linkage corresponding to command line switches */
     },
     { 0 }
 } ;

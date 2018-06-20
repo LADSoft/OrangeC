@@ -30,6 +30,7 @@ namespace __dls {
    const char _RTL_DATA *__dls_bad_alloc = "bad_alloc" ;
 } ;
 
+/*
 namespace std {
 
 //   nothrow_t _RTL_DATA nothrow;
@@ -38,6 +39,7 @@ namespace std {
    }
 
 } ;
+*/
 
 #ifdef STD_NEWHANDLER
 static std::new_handler _new_handler ;

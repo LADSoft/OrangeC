@@ -1143,6 +1143,12 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
         lex = getsym();
         lex = parse_declspec(lex, &linkage1, &linkage2, &linkage3);
     }
+    if (MATCHKW(lex, kw__rtllinkage))
+    {
+        lex = getsym();
+        if (chosenAssembler->getDefaultLinkage)
+            linkage2 = chosenAssembler->getDefaultLinkage();
+    }
     if (ISID(lex))
     {
         charindex = lex->charindex;
@@ -1965,6 +1971,10 @@ static LEXEME *getLinkageQualifiers(LEXEME *lex, enum e_lk *linkage, enum e_lk *
                 break;
             case kw__declspec:
                 lex = parse_declspec(lex, linkage, linkage2, linkage3);
+                break;
+            case kw__rtllinkage:
+                if (chosenAssembler->getDefaultLinkage)
+                    *linkage2 = chosenAssembler->getDefaultLinkage();
                 break;
             case kw__entrypoint:
                 if (*linkage3 != lk_none)

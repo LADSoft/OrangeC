@@ -91,6 +91,13 @@
 #define _LIBCPP_AVAILABILITY_FUTURE_ERROR
 #define _LIBCPP_AVAILABILITY_FUTURE
 #endif // NEW_ORANGEC_THREADING_BEHAVIOR
+#ifdef __LSCRTL_DLL
+#define _LIBCPP_DLL
+#endif
+#ifdef __BUILDING_LSCRTL_DLL
+#define _LIBCPP_DLL
+#define cxx_EXPORTS
+#endif
 #endif // __ORANGEC__
 #define _LIBCPP_VERSION 1101
 
@@ -247,8 +254,12 @@
 
 #ifdef __ORANGEC__
 # define _LIBCPP_HIDDEN
+#ifndef _LIBCPP_FUNC_VIS
 # define _LIBCPP_FUNC_VIS
+#endif
+#ifndef _LIBCPP_TYPE_VIS
 # define _LIBCPP_TYPE_VIS
+#endif
 
 #define _LIBCPP_TYPE_VIS_ONLY
 #define _LIBCPP_FUNC_VIS_ONLY

@@ -151,7 +151,6 @@ void LinkManager::LoadSectionExternals(ObjFile *file, ObjSection *section)
         }
     }
 }
-#include <stdio.h>
 void LinkManager::MergePublics(ObjFile *file, bool toerr)
 {
     for (ObjFile::SymbolIterator it = file->PublicBegin(); it != file->PublicEnd(); ++it)
@@ -198,11 +197,36 @@ void LinkManager::MergePublics(ObjFile *file, bool toerr)
         {
             LinkSymbolData *newSymbol = new LinkSymbolData(file, *it);
             exports.insert(newSymbol);
-            SymbolIterator it = publics.find(newSymbol);
-            if (it != publics.end())
+            SymbolIterator it1 = publics.find(newSymbol);
+            if (it1 != publics.end())
             {
-                (*it)->SetUsed(true);
+                (*it1)->SetUsed(true);
                 newSymbol->SetUsed(true);
+            }
+            else
+            {
+                int n = (*it)->GetName().find('@');
+                if (n != std::string::npos)
+                {
+                    std::string name = (*it)->GetName().substr(n);
+                    ObjSymbol sym(name, ObjSymbol::ePublic, -1);
+                    LinkSymbolData test(file, &sym);
+                    if (publics.find(&test) != publics.end())
+                    {
+                        if (toerr)
+                            LinkError("Duplicate public " + (*it)->GetName() + " in module " + file->GetName());
+                    }
+                    else
+                    {
+                        SymbolIterator it1 = virtsections.find(&test);
+                        if (it1 == virtsections.end())
+                        {
+                            LinkSymbolData *newSymbol = new LinkSymbolData(file, new ObjSymbol(sym));
+                            virtsections.insert(newSymbol);
+                            // don't set used here as we want to scan the section's externals later
+                        }
+                    }
+                }
             }
         }
     }
@@ -233,6 +257,10 @@ void LinkManager::MergePublics(ObjFile *file, bool toerr)
                         LinkSymbolData *newSymbol = new LinkSymbolData(file, new ObjSymbol(sym));
                         newSymbol->SetAuxData(*it);
                         virtsections.insert(newSymbol);
+                    }
+                    else if (!(*it1)->GetAuxData())
+                    {
+                        (*it1)->SetAuxData(*it);
                     }
                     else
                     {
@@ -325,6 +353,18 @@ bool LinkManager::ScanVirtuals()
         else
         {
             ++it;
+        }
+    }
+    for (SymbolIterator it = exports.begin(); it != exports.end(); ++it)
+    {
+        SymbolIterator it1 = virtsections.find(*it);
+        if (it1 != virtsections.end())
+        {
+            if (!(*it1)->GetUsed())
+            {
+                (*it1)->SetUsed(true);
+                LoadSectionExternals((*it1)->GetFile(), (ObjSection *)(*it1)->GetAuxData());
+            }
         }
     }
     return rv;
@@ -781,6 +821,22 @@ bool LinkManager::ExternalErrors()
     }
     return rv;
 }
+void LinkManager::AddGlobalsForVirtuals(ObjFile *file)
+{
+    int index = file->PublicSize();
+    for (auto v : virtsections)
+    {
+        if (v->GetUsed())
+        {
+            ObjSymbol *s = v->GetSymbol();
+            LinkExpressionSymbol *sym = LinkExpression::FindSymbol(s->GetName());
+            ObjExpression *exp = new ObjExpression(ObjExpression::eAdd, new ObjExpression(sym->GetValue()->GetUnresolvedSection()), new ObjExpression(sym->GetValue()->GetUnresolvedSection()->GetBase()));
+            s->SetIndex(index++);
+            s->SetOffset(exp);
+            file->Add(s);
+        }
+    }
+}
 void LinkManager::CreateOutputFile()
 {
     LinkRemapper remapper(*this, *factory, *indexManager, completeLink);
@@ -803,6 +859,7 @@ void LinkManager::CreateOutputFile()
             }
             if (completeLink)
             {
+                AddGlobalsForVirtuals(file);
                 ioBase->SetAbsolute(true);
                 if (!debugPassThrough)
                 {                    

@@ -348,6 +348,8 @@ SYMBOL *RTTIDumpType(TYPE *tp)
         {
             xtSym = makeID(sc_global, tp, NULL, litlate(name));
             xtSym->linkage = lk_virtual;
+            if (isstructured(tp))
+                xtSym->linkage2 = basetype(tp)->sp->linkage2;
             xtSym->decoratedName = xtSym->errname = xtSym->name;
             xtSym->xtEntry = TRUE;
             insert(xtSym, rttiSyms);

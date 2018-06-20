@@ -271,7 +271,7 @@ extern "C" LONG __cppexceptionhandle(PEXCEPTION_RECORD p, void *record, PCONTEXT
 	}
     return ___xceptionhandle(p, record, context, param);
 }
-void _ThrowException(void *irecord,void *instance,int arraySize,void *cons,void *xceptBlock_in)
+void _RTL_FUNC _ThrowException(void *irecord,void *instance,int arraySize,void *cons,void *xceptBlock_in)
 {
     XCTAB *record = (XCTAB *)irecord;
     RTTI *xceptBlock = (RTTI *)xceptBlock_in;
@@ -304,7 +304,7 @@ void uninstantiate(XCTAB *record, void *instance)
     }
     free(instance);
 }
-void _RethrowException(void *r)
+void _RTL_FUNC _RethrowException(void *r)
 {
     XCTAB *record = (XCTAB *)r;
     ULONG_PTR params[1];
@@ -316,7 +316,7 @@ void _RethrowException(void *r)
     params[0] = (ULONG_PTR)record;
 	RaiseException(OUR_CPP_EXC_CODE,EXCEPTION_CONTINUABLE,1,(DWORD *)&params[0]) ;    
 }
-void _CatchCleanup(void *r)
+void _RTL_FUNC _CatchCleanup(void *r)
 {
     XCTAB *record = (XCTAB *)r;
     ULONG_PTR params[1];

@@ -297,6 +297,7 @@ void LinkRegion::CheckAttributes()
         bool anyMax = false;
         bool anySeparate = false;
         bool notEqual = false;
+        bool used = false;
         ObjInt maxAlign = -1;
         for (auto data : nowData)
         {
@@ -405,7 +406,6 @@ void LinkRegion::CheckAttributes()
             attribs.SetAlign(new LinkExpression(maxAlign));
     }
 }
-#include <stdio.h>
 ObjInt LinkRegion::ArrangeOverlayed(LinkManager *manager, NamedSection *data, ObjInt address)
 {
     // weeding

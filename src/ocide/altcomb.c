@@ -197,7 +197,7 @@ static DWORD CALLBACK neEditComboProc(HWND hwnd, unsigned iMessage, WPARAM wPara
             HideCaret(hwnd);
             return 0;
     }
-    CallWindowProc(oldEditProc, hwnd, iMessage, wParam, lParam);
+    return CallWindowProc(oldEditProc, hwnd, iMessage, wParam, lParam);
 }
 void SubClassNECombo(HWND combo)
 {

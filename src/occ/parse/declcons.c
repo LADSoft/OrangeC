@@ -76,7 +76,6 @@ LEXEME *FindClass(LEXEME *lex, SYMBOL *funcsp, SYMBOL **sym)
     TYPE *castType = NULL;
     char buf[512];
     int ov = 0;
-    BOOLEAN hasTemplate = FALSE;
     BOOLEAN namespaceOnly = FALSE;
 
     *sym = NULL;
@@ -87,12 +86,13 @@ LEXEME *FindClass(LEXEME *lex, SYMBOL *funcsp, SYMBOL **sym)
     lex = getIdName(lex, funcsp, buf, &ov, &castType);
     if (buf[0])
     {
-        *sym = finishSearch(buf, encloser, ns, FALSE, throughClass, namespaceOnly);
+        *sym = finishSearch(buf, encloser, ns, FALSE, throughClass, namespaceOnly);  // undefined in local context
     }
     return lex;
 }
 MEMBERINITIALIZERS *GetMemberInitializers(LEXEME **lex2, SYMBOL *funcsp, SYMBOL *sym)
 {
+	(void)sym;
     LEXEME *lex = *lex2, *last = NULL;
     MEMBERINITIALIZERS *first = NULL, **cur = &first;
 //    if (sym->name != overloadNameTab[CI_CONSTRUCTOR])
@@ -293,7 +293,6 @@ static SYMBOL *declareDestructor(SYMBOL *sp)
     SYMBOL *rv;
     SYMBOL *func, *sp1;
     TYPE *tp = (TYPE *)Alloc(sizeof(TYPE));
-    TYPE *tp1;
     VBASEENTRY *e;
     BASECLASS *b;
     HASHREC *hr;
@@ -354,8 +353,6 @@ static SYMBOL *declareDestructor(SYMBOL *sp)
 }
 static BOOLEAN hasConstFunc(SYMBOL *sp, int type, BOOLEAN move)
 {
-    TYPE *tp = NULL;
-    EXPRESSION *exp = NULL;
     SYMBOL *ovl = search(overloadNameTab[type], basetype(sp->tp)->syms);
     if (ovl)
     {
@@ -421,7 +418,6 @@ static SYMBOL *declareConstructor(SYMBOL *sp, BOOLEAN deflt, BOOLEAN move)
 {
     SYMBOL *func, *sp1;
     TYPE *tp = (TYPE *)Alloc(sizeof(TYPE));
-    TYPE *tp1;
     tp->type = bt_func;
     tp->size = getSize(bt_pointer);
     tp->btp = (TYPE *)Alloc(sizeof(TYPE));
@@ -494,7 +490,7 @@ static SYMBOL *declareAssignmentOp(SYMBOL *sp, BOOLEAN move)
 {
     SYMBOL *func, *sp1;
     TYPE *tp = (TYPE *)Alloc(sizeof(TYPE));
-    TYPE *tp1, *tpx;
+    TYPE *tpx;
     tp->type = bt_func;
     tp->size = getSize(bt_pointer);
     tp->btp = (TYPE *)Alloc(sizeof(TYPE));
@@ -617,6 +613,7 @@ static BOOLEAN checkDefaultCons(SYMBOL *sp, HASHTABLE *syms, enum e_ac access)
 }
 SYMBOL *getCopyCons(SYMBOL *base, BOOLEAN move)
 {
+	(void)move;
     SYMBOL *ovl = search(overloadNameTab[CI_CONSTRUCTOR], basetype(base->tp)->syms);
     if (ovl)
     {
@@ -660,6 +657,7 @@ SYMBOL *getCopyCons(SYMBOL *base, BOOLEAN move)
 }
 static SYMBOL *GetCopyAssign(SYMBOL *base, BOOLEAN move)
 {
+	(void)move;
     SYMBOL *ovl = search(overloadNameTab[assign - kw_new + CI_NEW ], basetype(base->tp)->syms);
     if (ovl)
     {
@@ -1308,7 +1306,6 @@ static void shimDefaultConstructor(SYMBOL *sp, SYMBOL *cons)
             HASHTABLE *syms;
             BLOCKDATA b;
             STATEMENT *st;
-            TYPE *ctp = sp->tp;
             EXPRESSION *thisptr = varNode(en_auto, (SYMBOL *)hr->p);
             EXPRESSION *e1;
             FUNCTIONCALL *params = Alloc(sizeof(FUNCTIONCALL));
@@ -1547,6 +1544,8 @@ static void genConsData(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi,
                         SYMBOL *member, int offset, 
                         EXPRESSION *thisptr, EXPRESSION *otherptr, SYMBOL *parentCons, BOOLEAN doCopy)
 {
+	(void)cls;
+	(void)mi;
     if (doCopy && (matchesCopy(parentCons, FALSE) || matchesCopy(parentCons, TRUE)))
     {
         thisptr = exprNode(en_add, thisptr, intNode(en_c_i, offset));
@@ -1711,7 +1710,6 @@ static void virtualBaseThunks(BLOCKDATA *b, SYMBOL *sp, EXPRESSION *thisptr)
         EXPRESSION *left = exprNode(en_add, thisptr, intNode(en_c_i, entries->pointerOffset));
         EXPRESSION *right = exprNode(en_add, thisptr, intNode(en_c_i, entries->structOffset));
         EXPRESSION *asn;
-        VBASEENTRY *subentries;
         deref(&stdpointer, &left);
         asn = exprNode(en_assign, left, right);
         if (!*pos)
@@ -1919,7 +1917,6 @@ SYMBOL *findClassName(char *name, SYMBOL *cls, BASECLASS *bc, VBASEENTRY *vbase,
 void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
 {
     MEMBERINITIALIZERS *init = cons->memberInitializers;
-    HASHREC *hr;
     BOOLEAN first = TRUE;
     BOOLEAN hasDelegate = FALSE;
     while (init)
@@ -2286,6 +2283,7 @@ static void allocInitializers(SYMBOL *cls, SYMBOL *cons, EXPRESSION *ths)
 }
 static void releaseInitializers(SYMBOL *cls, SYMBOL *cons)
 {
+	(void)cons;
     HASHREC *hr = basetype(cls->tp)->syms->table[0];
     while (hr)
     {
@@ -2458,6 +2456,7 @@ static void genAsnData(BLOCKDATA *b, SYMBOL *cls, SYMBOL *member, int offset, EX
 }
 static void genAsnCall(BLOCKDATA *b, SYMBOL *cls, SYMBOL *base, int offset, EXPRESSION *thisptr, EXPRESSION *other, BOOLEAN move, BOOLEAN isconst)
 {
+	(void)cls;
     EXPRESSION *exp = NULL;
     STATEMENT *st;
     FUNCTIONCALL *params = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
@@ -2854,12 +2853,13 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
                      BOOLEAN maybeConversion, BOOLEAN implicit, BOOLEAN pointer, 
                      BOOLEAN flags)
 {
+	(void)checkcopy;
     TYPE *stp = *tp;
     SYMBOL *sp;
     SYMBOL *against;
     SYMBOL *cons;
     SYMBOL *cons1;
-    EXPRESSION *e1 = NULL, *e2 = NULL;
+	EXPRESSION *e1 = NULL;
     TYPE *initializerListTemplate = NULL;
     TYPE *initializerListType = NULL;
     BOOLEAN initializerRef = FALSE;

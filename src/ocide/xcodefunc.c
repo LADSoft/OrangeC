@@ -144,7 +144,6 @@ HWND hwndShowFunc;
             HDC dc = GetDC(hwnd);
             int x = 0, y = 0;
             SIZE sz;
-            RECT r;
             normal = SelectObject(dc, normal);
             GetTextExtentPoint32(dc, fragments[0], strlen(fragments[0]), &sz);
             x += sz.cx;
@@ -186,14 +185,12 @@ HWND hwndShowFunc;
         static HFONT normal, bold, oldfont;
         static POINT origin[100];
         static HBITMAP leftarrow, rightarrow;
-        int offset;
         int oldbk, oldfg;
         LOGFONT lf;
         PAINTSTRUCT ps;
         HPEN pen;
         HBRUSH brush;
         HDC dc;
-        SIZE size1, size2;
         RECT r;
         char * fragments[4];
         switch(iMessage)
@@ -407,13 +404,10 @@ HWND hwndShowFunc;
     }
     void showFunction(HWND hwnd, EDITDATA *p, int ch)
     {
-        sqlite3_int64 id, baseid;
         CCFUNCDATA *functionData = NULL;
         char name[2046], *q = name;
         int end = p->selstartcharpos;
         int pos = p->selstartcharpos - 1;
-        POINT cpos;
-        SIZE size;
         int curArg = 0;
         if (instring(p->cd->text, &p->cd->text[p->selstartcharpos]))
             return;
@@ -458,7 +452,7 @@ HWND hwndShowFunc;
                 range.cpMin = p->selendcharpos-1;
                 range.cpMax = p->selendcharpos-1;
             }
-            GetWordSpan(p, &range);
+            GetWordSpan(p, &range); // undefined in local context
             if (range.cpMin == range.cpMax)
                 return;
             pos = range.cpMin;
@@ -468,7 +462,7 @@ HWND hwndShowFunc;
             }
             if (pos && p->cd->text[pos-1].ch == ':')
             {
-                pos = CPPScanBackward(p, range.cpMax, TRUE);
+                pos = CPPScanBackward(p, range.cpMax, TRUE); // undefined in local context
             }
             else
             {

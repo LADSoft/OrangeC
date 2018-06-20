@@ -1281,7 +1281,7 @@ char * FPFToString(char *dest,
 	            *dest++ = '-';
 	        } else
 	            *dest++ = '+';
-	        my_sprintf(dest,"%d",power);
+	        my_sprintf(dest,"%d",power); // undefined in local context
 	    } else
 	        *dest = 0 ;
 	}
@@ -1291,7 +1291,6 @@ char * FPFToString(char *dest,
 LLONG_TYPE FPFToLongLong(FPF *src)
 {
 	FPF stemp = *src;
-	int exp = stemp.exp;
     LLONG_TYPE temp;
     uf16 tmant[INTERNAL_FPF_PRECISION];
     int i;

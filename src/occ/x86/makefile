@@ -95,7 +95,7 @@ DEFINES=$(i386) $(LL) $(MSDOS) $(WIN32)
 SOURCE = ..\parse;..\preproc;..\middle
 
 SRCPATH=$(BACKEND_INCLUDE_PATH);$(SOURCE);..;..\..\util
-BACKEND_FILES = config.c dbgieee.c gen.c inasm.c invoke.c objieeea.c outasm.c outcode.c peep.c rewrite.c
+BACKEND_FILES = config.c gen.c inasm.c invoke.c objieeea.c outasm.c outcode.c peep.c rewrite.c
 
 BACKEND_INCLUDE_PATH=.
 

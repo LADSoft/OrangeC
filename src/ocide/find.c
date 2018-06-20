@@ -654,7 +654,6 @@ static BUFLIST **FindLoadProject(PROJECTITEM *pi, BUFLIST **tail, int flags, cha
 {
     static int max, count;
     static DWINFO **files;
-    HANDLE handle;
     if (!pi)
         return tail;
     pi = pi->children;
@@ -1949,7 +1948,6 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
                 case IDC_REPLACEFINDNEXT:
                 {
                     HWND child;
-                    DWORD id;
                     if (LOWORD(wParam) == IDC_FINDNEXT)
                     {
                         child = GetDlgItem(hwndDlg, IDC_COMBOFINDFIND);
@@ -1976,7 +1974,6 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
                 case IDC_REPLACENEXT:
                 {
                     HWND child = GetDlgItem(hwndDlg, IDC_COMBOREPLACEFIND);
-                    DWORD id;
                     SendMessage(child, WM_GETTEXT, 256, (LPARAM)findText);
                     child = GetDlgItem(hwndDlg, IDC_COMBOREPLACE);
                     SendMessage(child, WM_GETTEXT, 256, (LPARAM)replaceText);
@@ -1990,7 +1987,6 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
                 case IDC_REPLACEALL:
                 {
                     HWND child = GetDlgItem(hwndDlg, IDC_COMBOREPLACEFIND);
-                    DWORD id;
                     EndFind();
                     SendMessage(child, WM_GETTEXT, 256, (LPARAM)findText);
                     child = GetDlgItem(hwndDlg, IDC_COMBOREPLACE);
@@ -2073,7 +2069,6 @@ LRESULT CALLBACK FindDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LPARAM
     DLGHDR *pHdr;
     TC_ITEM tie;
     int i;
-    char buf[512];
     switch (iMessage)
     {
         case WM_INITDIALOG:

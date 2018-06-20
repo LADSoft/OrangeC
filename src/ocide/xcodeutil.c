@@ -52,9 +52,7 @@ HWND hwndShowFunc;
     }
     static void LookupBaseType(int line, char *file, char *name, sqlite_int64 *struct_id, int *indir)
     {
-        char buf[512];
         char funcbase[2048], nsbase[512];
-        int rflags;
         GetContainerData(line, file, nsbase, funcbase);
         if (funcbase[0])
         {
@@ -145,7 +143,6 @@ HWND hwndShowFunc;
                         return NULL;
                     }
                     {
-                        int i;
                         CCSTRUCTDATA *found;
                         // look for operator ->
                         found = FindStructData(structData, file,"@$barrow$qv", 11, &indir[parenLevel]);
@@ -190,14 +187,8 @@ HWND hwndShowFunc;
                         ccFreeStructData(structData);
                         return NULL;
                     }
-
-
-
-
-
                     {
                         char *end = (*name);
-                        int i;
                         CCSTRUCTDATA *found;
 
                         id = 0;                            
@@ -275,7 +266,6 @@ HWND hwndShowFunc;
                     structData = GetStructType(name, lineno, file, structData, &n);
                     if (structData)
                     {
-                        int i;
                         CCSTRUCTDATA *found;
                         // look for operator *()
                         found = FindStructData(structData, file,"@$bmul$qv", 9, &indir[parenLevel]);
@@ -383,7 +373,7 @@ HWND hwndShowFunc;
         {
             RECT rect, frame;
             GetWindowRect(hwnd, &rect);
-            GetFrameWindowRect(&frame);
+            GetFrameWindowRect(&frame); // undefined in local context
             pt->x -= width/2;
             pt->x += rect.left;
 //			pt->x -= frame.left;
@@ -508,7 +498,7 @@ HWND hwndShowFunc;
                         POINT cpos;
                         TEXTMETRIC t;
                         HDC dc = GetDC(codecompleteBox);
-                        xdrawline(hwnd, p, p->selstartcharpos);
+                        xdrawline(hwnd, p, p->selstartcharpos); // undefiend in local context
                         GetTextMetrics(dc, &t);
                         SendMessage(codecompleteBox, LB_RESETCONTENT, 0, 0); 
                         p->cd->selecting = FALSE;

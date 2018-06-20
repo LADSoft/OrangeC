@@ -772,9 +772,7 @@ int ToolBarDropDown(int id, int lParam)
 LRESULT CALLBACK tbStatProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
     lParam)
 {
-    HWND hwndStatic;
     RECT r;
-    char *p;
     char buf[256];
     PAINTSTRUCT ps;
     HDC dc;
@@ -809,7 +807,7 @@ LRESULT CALLBACK tbStatProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
         case WM_ERASEBKGND:
             GetClientRect(hwnd, &r);
             dc = GetDC(hwnd);
-            GradientFillTB(dc, &r);
+            GradientFillTB(dc, &r); // undefined in local context
             ReleaseDC(hwnd, dc);
             return 1;        
     }
@@ -997,9 +995,6 @@ static int tbBarRedraw(HWND hwnd)
 LRESULT CALLBACK tbBarProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
     lParam)
 {
-    RECT r;
-    HDC dc;
-    PAINTSTRUCT ps;
     switch (iMessage)
     {        
         case WM_REDRAWTOOLBAR:

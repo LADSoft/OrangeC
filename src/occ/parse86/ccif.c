@@ -132,12 +132,12 @@ char *GetSymName(SYMBOL *sp, SYMBOL *parent)
     {
         if (sp != parent && !isfunction(sp->tp))
         {
-            char buf[2048], *p = strchr(sp->decoratedName+1, '@');
+            char buf1[2048], *p = strchr(sp->decoratedName+1, '@');
             if (!p)
                 p = sp->name;
 
-            sprintf(buf, "@%s@%s", parent->name, sp->name);
-            return litlate(buf);
+            sprintf(buf1, "@%s@%s", parent->name, sp->name);
+            return litlate(buf1);
         }
         return sp->decoratedName;
     }
@@ -529,7 +529,6 @@ void ccSetSymbol(SYMBOL *sp)
 void ccNewFile(char *fileName, BOOLEAN main)
 {
     LINEINCLUDES *l;
-    sqlite3_int64 id;
     char *s = fullqualify(fileName), *q = s;
     while (*q)
     {

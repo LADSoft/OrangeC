@@ -15,7 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ReadMe.txt" />
     <None Include="parse\compiler.p">
       <Filter>Header Files</Filter>
     </None>
@@ -157,9 +156,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="preproc\PREPROC.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="x86\dbgieee.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="x86\gen.c">

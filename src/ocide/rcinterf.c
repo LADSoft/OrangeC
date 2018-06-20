@@ -1413,7 +1413,6 @@ static void ResPrependDialogButton(CONTROL **ctl, char *text, int id, char *idna
 {
     EXPRESSION *curExp = NULL;
     CONTROL *rv = rcAlloc(sizeof(CONTROL));
-    int n;
     rv->next = *ctl;
     *ctl = rv;
     rv->generic = TRUE;
@@ -1648,7 +1647,6 @@ static ICON *ResNewIcon(PROJECTITEM *pj, RESOURCE *newRes)
 {
     char name[MAX_PATH];
     ICON *nico;
-    int colorTableBytes;
     char *p;
     int colorbits;
     switch (ResGetImageName(pj, name, "Load Icon", szIconFilter))

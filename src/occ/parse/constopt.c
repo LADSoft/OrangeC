@@ -199,8 +199,6 @@ static BOOLEAN hasFloats(EXPRESSION *node)
         case en_c_di:
         case en_c_ldi:
             return 1;
-        default:
-            return 0;
         case en_assign:
         case en_autoinc:
         case en_autodec:
@@ -237,8 +235,9 @@ static BOOLEAN hasFloats(EXPRESSION *node)
         case en_literalclass:
         case en_lvalue:
             return hasFloats(node->left);
+		default:
+			return 0;
     }
-    return (0);
 }
 /*-------------------------------------------------------------------------*/
 
@@ -549,7 +548,7 @@ FPF refloat(EXPRESSION *node)
 
 ULLONG_TYPE reint(EXPRESSION *node)
 {
-    ULLONG_TYPE rv;
+    ULLONG_TYPE rv = 0;
     if (node->left && node->right)
         node->unionoffset = node->left->unionoffset | node->right->unionoffset;
     else if (node->left)
@@ -1184,10 +1183,10 @@ void dooper(EXPRESSION **node, int mode)
                 break;
             case 8: // convert to a multiply
             {
-                FPF temp;
-                UnsignedLongLongToFPF(&temp, 1);
-                DivideFPF(&temp, &ep2->v.f, &temp);
-                ep2->v.f = temp;
+                FPF temp1;
+                UnsignedLongLongToFPF(&temp1, 1);
+                DivideFPF(&temp1, &ep2->v.f, &temp1);
+                ep2->v.f = temp1;
                 ep->type = en_mul;
             }
                 break;
@@ -1402,8 +1401,7 @@ int opt0(EXPRESSION **node)
  */
 {
     EXPRESSION *ep;
-    LLONG_TYPE val;
-    int sc;
+	LLONG_TYPE val;
     int rv = FALSE;
     int mode;
     FPF dval;

@@ -119,14 +119,13 @@ static void SetCursMode(MEMDATA *ptr)
 }
 static int GetMemAddress(char *buf, BOOL error)
 {
-    int addr, newaddr;
+    int addr;
     int stars = 0;
     while (*buf == ' ')
         buf++;
     if (*buf == '&')
         buf++;
     {
-        int l;
         DEBUG_INFO *dbg;
         VARINFO *var;
         var = EvalExpr(&dbg, activeScope, buf, FALSE);
@@ -163,11 +162,6 @@ static void MemCopyText(HWND hwnd, MEMDATA *ptr)
     int i;
     char buf[1024];
     char charbuf[1000];
-    PAINTSTRUCT ps;
-    CONTEXT context;
-    HDC dc;
-    HFONT oldFont;
-    COLORREF oldbk, oldtxt;
     RECT rect;
     int lines;
     int chars;
@@ -259,7 +253,6 @@ void MemDoPaint(HWND hwnd, MEMDATA *ptr, int focussed)
         char charbuf[1000];
         HFONT oldFont;
         COLORREF oldbk, oldtxt;
-        CONTEXT context;
         RECT rect;
         int lines;
         int chars;
@@ -502,7 +495,6 @@ LRESULT CALLBACK MemInternalProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 {
     RECT r;
     int lines, chars;
-    char buf[256];
     LPCREATESTRUCT lpCreateStruct;
     MEMDATA *ptr;
     switch (iMessage)
@@ -803,10 +795,8 @@ LRESULT CALLBACK MemProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     MEMDATA *ptr;
     RECT r;
     POINT pt;
-    int lines, chars;
     static int focussed;
     char buf[256];
-    int i;
     switch (iMessage)
     {
         case WM_ACTIVATEME:

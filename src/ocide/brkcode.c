@@ -99,7 +99,7 @@ void allocBreakPoint(HANDLE hProcess, BREAKPOINT *pt)
     unsigned char bf;
     if (!pt->active && pt->addresses)
     {
-        int i =0,j;
+        int i = 0;
         int *p;
         for (p = pt->addresses; *p !=0; ++p)
             i++;
@@ -467,7 +467,7 @@ void SetBP(DEBUG_EVENT *dbe)
         {
             if (ptr->active && ptr->dwHandle == hWnd)
             {
-                int addr, linenum;
+                int linenum;
                 SendMessage(ptr->dwHandle, EM_GETSEL, (WPARAM) &linenum, 0);
                 linenum = SendMessage(ptr->dwHandle, EM_EXLINEFROMCHAR, 0,
                     linenum) + 1;

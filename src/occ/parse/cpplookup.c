@@ -236,6 +236,8 @@ SYMBOL *namespacesearch(char *name, NAMESPACEVALUES *ns, BOOLEAN qualified, BOOL
 LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns, 
                    BOOLEAN *throughClass, BOOLEAN tagsOnly, enum e_sc storage_class, BOOLEAN isType)
 {
+	(void)tagsOnly;
+	(void)storage_class;
     NAMESPACEVALUES *nssym = globalNameSpace;
     SYMBOL *strSym = NULL;
     BOOLEAN qualified = FALSE;
@@ -293,8 +295,6 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
             BOOLEAN istypedef = FALSE;
             TEMPLATEPARAMLIST *current = NULL;
             SYMBOL *currentsp = NULL;
-            LEXEME *cur = lex;
-            int level = -1;
             if (!strSym)
             {
                 TEMPLATEPARAMLIST *tparam = TemplateLookupSpecializationParam(buf);
@@ -464,7 +464,7 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
                 break;
             if (templateParamAsTemplate)
             {
-                matchTemplateSpecializationToParams(current, templateParamAsTemplate->p->byTemplate.args, templateParamAsTemplate->argsym);
+                matchTemplateSpecializationToParams(current, templateParamAsTemplate->p->byTemplate.args, templateParamAsTemplate->argsym); // this function is apparently undefined in this file
             }
             if (hasTemplateArgs)
             {
@@ -708,7 +708,7 @@ SYMBOL *templatesearch(char *name, TEMPLATEPARAMLIST *arg)
 }
 TEMPLATEPARAMLIST *getTemplateStruct(char *name)
 {
-    SYMBOL *cls = getStructureDeclaration(), *base = cls;
+    SYMBOL *cls = getStructureDeclaration();
     while (cls)
     {
         TEMPLATEPARAMLIST *arg = cls->templateParams;
@@ -857,7 +857,6 @@ SYMBOL *finishSearch(char *name, SYMBOL *encloser, NAMESPACEVALUES *ns, BOOLEAN 
         }
         else
         {
-            LIST *rvl;
             unvisitUsingDirectives(ns);
             rv = namespacesearch(name, ns, FALSE, tagsOnly);
             if (rv)
@@ -1249,7 +1248,6 @@ static BOOLEAN isFriend(SYMBOL *cls, SYMBOL *frnd)
 {
     if (cls && frnd)
     {
-        BASECLASS *bases;
         LIST *l = cls->friends;
         while (l)
         {
@@ -1282,7 +1280,6 @@ static BOOLEAN isAccessibleInternal(SYMBOL *derived, SYMBOL *currentBase,
     HASHREC *hr;
     SYMBOL *ssp;
     BOOLEAN matched;
-    TYPE *tp;
     if (!cparams.prm_cplusplus)
         return TRUE;
     ssp = getStructureDeclaration();
@@ -1311,21 +1308,21 @@ static BOOLEAN isAccessibleInternal(SYMBOL *derived, SYMBOL *currentBase,
             HASHREC *hr1 = sym->tp->syms->table[0];
             while (hr1)
             {
-                SYMBOL *sym = (SYMBOL *)hr1->p;
-                if (sym == member || sym == member->mainsym)
+                SYMBOL *sym1 = (SYMBOL *)hr1->p;
+                if (sym1 == member || sym1 == member->mainsym)
                 {
                     break;
                 }
-                else if (sym->instantiations)
+                else if (sym1->instantiations)
                 {
-                    LIST *lst = sym->instantiations;
-                    while (lst)
+                    LIST *lst1 = sym1->instantiations;
+                    while (lst1)
                     {
-                        if (lst->data == member)
+                        if (lst1->data == member)
                             break;
-                        lst = lst->next;
+                        lst1 = lst1->next;
                     }
-                    if (lst)
+                    if (lst1)
                     {
                         break;
                     }
@@ -1353,14 +1350,14 @@ static BOOLEAN isAccessibleInternal(SYMBOL *derived, SYMBOL *currentBase,
             }
             else if (sym->instantiations)
             {
-                LIST *lst = sym->instantiations;
-                while (lst)
+                LIST *lst1 = sym->instantiations;
+                while (lst1)
                 {
-                    if (lst->data == member)
+                    if (lst1->data == member)
                         break;
-                    lst = lst->next;
+                    lst1 = lst1->next;
                 }
-                if (lst)
+                if (lst1)
                 {
                     matched = TRUE;
                     break;
@@ -1578,11 +1575,11 @@ static void  GatherConversions(SYMBOL *sp, SYMBOL **spList, int n, FUNCTIONCALL 
             }
             else
             {
-                int n = 0;
+                int n1 = 0;
                 for (j=0; j < argCount; j++)
-                    n += counts[j];
-                icsList[i] = (enum e_cvsrn *)Alloc(sizeof(enum e_cvsrn) * n);
-                memcpy(icsList[i], arr, n * sizeof(enum e_cvsrn));
+                    n1 += counts[j];
+                icsList[i] = (enum e_cvsrn *)Alloc(sizeof(enum e_cvsrn) * n1);
+                memcpy(icsList[i], arr, n1 * sizeof(enum e_cvsrn));
                 lenList[i] = (int *)Alloc(sizeof(int) * argCount);
                 memcpy(lenList[i], counts, argCount * sizeof(int));
                 funcList[i] = (SYMBOL **)Alloc(sizeof(SYMBOL *) * argCount);
@@ -1641,11 +1638,12 @@ static int compareConversions(SYMBOL *spLeft, SYMBOL *spRight, enum e_cvsrn *seq
                               SYMBOL *funcl, SYMBOL *funcr, 
                               int lenl, int lenr, BOOLEAN fromUser)
 {
+	(void)spLeft;
+	(void)spRight;
     enum e_ct xl=conv, xr=conv;
     int lderivedfrombase = 0, rderivedfrombase = 0;
     int rankl, rankr;
-    int i,j;
-    int n,q;
+	int i;
     // must be of same general type, types are standard conversion, user defined conversion, ellipses
     for (i=0; i < lenl; i++)
     {
@@ -1930,10 +1928,10 @@ static int compareConversions(SYMBOL *spLeft, SYMBOL *spRight, enum e_cvsrn *seq
         {
             if (comparetypes(basetype(ltype), basetype(rtype), TRUE))
             {
-                int n = rankl ^ rankr;
-                if ((n & rankl) && !(n & rankr))
+                int n1 = rankl ^ rankr;
+                if ((n1 & rankl) && !(n1 & rankr))
                     return 1;
-                if ((n & rankr) && !(n & rankl))
+                if ((n1 & rankr) && !(n1 & rankl))
                     return -1;
             }
         }
@@ -1980,10 +1978,10 @@ static int compareConversions(SYMBOL *spLeft, SYMBOL *spRight, enum e_cvsrn *seq
             {
                 if (comparetypes(basetype(basetype(ltype)->btp), basetype(basetype(rtype)->btp), TRUE))
                 {
-                    int n = rankl ^ rankr;
-                    if ((n & rankl) && !(n & rankr))
+                    int n1 = rankl ^ rankr;
+                    if ((n1 & rankl) && !(n1 & rankr))
                         return 1;
-                    if ((n & rankr) && !(n & rankl))
+                    if ((n1 & rankr) && !(n1 & rankl))
                         return -1;
                 }
             }
@@ -2098,7 +2096,6 @@ static void SelectBestFunc(SYMBOL ** spList, enum e_cvsrn **icsList,
     static enum e_cvsrn identity = CV_IDENTITY;
     char arr[500];
     int i, j;
-    int ellipseCount=0, unellipseCount=0;
     for (i=0; i < funcCount; i++)
     {
         for (j=i+1; j < funcCount && spList[i]; j++)
@@ -2423,12 +2420,12 @@ static SYMBOL *getUserConversion(int flags,
                 while (*hr)
                 {
                     SYMBOL *sym = (SYMBOL *)(*hr)->p;
-                    int n;
-                    for (n=0; n < i; n++)
-                        if (spFilterList[n] == sym || spFilterList[n]->mainsym == sym || spFilterList[n] == sym->mainsym ||
-                            matchOverload(sym->tp, spFilterList[n]->tp, FALSE) && sym->overlayIndex == spFilterList[n]->overlayIndex)
+                    int n1;
+                    for (n1 = 0; n1 < i; n++)
+                        if (spFilterList[n1] == sym || spFilterList[n1]->mainsym == sym || spFilterList[n1] == sym->mainsym ||
+                            matchOverload(sym->tp, spFilterList[n1]->tp, FALSE) && sym->overlayIndex == spFilterList[n1]->overlayIndex)
                             break;
-                    if (!sym->instantiated && n >= i)
+                    if (!sym->instantiated && n1 >= i)
                     {
                         spFilterList[i] = sym;
                         if (sym->templateLevel && sym->templateParams)
@@ -3494,13 +3491,14 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp,
                                   SYMBOL *parent, enum e_cvsrn arr[], int *sizes, 
                                   int count, SYMBOL **userFunc, BOOLEAN usesInitList)
 {
+	(void)usesInitList;
     int pos = 0;
     int n = 0;
     int i;
     INITLIST *a = NULL;
     HASHREC **hr;
     HASHREC **hrt = NULL;
-    enum e_cvsrn seq[100], cur;
+    enum e_cvsrn seq[100];
     TYPE *initializerListType = NULL;
     int m = 0,m1;
     TEMPLATEPARAMLIST *tr = NULL;
@@ -4025,8 +4023,7 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
     }
     if (!sp || sp->storage_class == sc_overloads)
     {
-        LIST *gather = NULL;
-        SYMBOL **flatList;    
+        LIST *gather = NULL;  
         SYMBOL *found1 = NULL, *found2 = NULL;
         if (!cparams.prm_cplusplus && (!chosenAssembler->msil || !chosenAssembler->msil->allowExtensions || sp && !sp->tp->syms->table[0]->next))
         {
@@ -4151,7 +4148,6 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
                 SYMBOL ***funcList;
                 enum e_cvsrn **icsList;
                 int **lenList;
-                BOOLEAN done = FALSE;
                 int argCount = 0;
                 if (args)
                 {

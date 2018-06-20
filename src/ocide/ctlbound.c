@@ -40,7 +40,6 @@ static LRESULT CALLBACK FocusWndProc(HWND hwnd, UINT iMessage,
 {
     HDC dc;
     HBRUSH brush;
-    HPEN pen;
     PAINTSTRUCT ps;
     RECT rect;
     int x,y;

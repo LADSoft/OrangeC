@@ -266,7 +266,6 @@ static BLOCKDATA *getCommonParent(BLOCKDATA *src, BLOCKDATA *dest)
 }
 void makeXCTab(SYMBOL *funcsp)
 {
-    char name[512];
     SYMBOL *sp; 
     if (!funcsp->xc)
     {
@@ -1900,7 +1899,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                     FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
                     TYPE *ctype = tp;
                     // shortcut for conversion from single expression
-                    EXPRESSION *exp1 = NULL, *exp2, *exp3 = NULL;
+					EXPRESSION *exp1 = NULL;
                     TYPE *tp1 = NULL;
                     lex = expression_no_comma(lex, funcsp, NULL, &tp1, &exp1, NULL, 0);
                     MatchReturnTypes(funcsp, tp, tp1);
@@ -2088,7 +2087,6 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             {
                 if (returnexp->v.func->sp->storage_class == sc_overloads)
                 {
-                    SYMBOL *funcsp;
                     EXPRESSION *exp1 = returnexp;
                     if (returnexp->v.func->sp->parentClass && !returnexp->v.func->asaddress)
                         error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
@@ -2260,7 +2258,6 @@ static LEXEME *statement_switch(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         lex = selection_expression(lex, switchstmt, &select, funcsp, kw_switch, NULL);
         if (MATCHKW(lex, closepa))
         {
-            STATEMENT *st1;
             currentLineData(switchstmt, lex, 0);
             lex = getsym();
             st = stmtNode(lex, switchstmt, st_switch);
@@ -2793,7 +2790,6 @@ BOOLEAN resolveToDeclaration(LEXEME * lex)
     }
     if (MATCHKW(lex, openpa))
     {
-        BOOLEAN sawClose = FALSE;
         int level = 1;
         lex = getsym();
         while (level && lex != NULL && !MATCHKW(lex, semicolon))
@@ -3078,7 +3074,6 @@ LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
     BLOCKDATA *blockstmt = Alloc(sizeof(BLOCKDATA))  ;
     int pragmas = stdpragmas;
     STATEMENT *st;
-    int blknum;
     EXPRESSION *thisptr = NULL;
     browse_blockstart(lex->line);
     blockstmt->next = parent;
@@ -3320,6 +3315,7 @@ void assignParam(SYMBOL *funcsp, int *base, SYMBOL *param)
 }
 static void assignCParams(LEXEME *lex, SYMBOL *funcsp, int *base, HASHREC *params, TYPE *rv, BLOCKDATA *block)
 {
+	(void)rv;
     while (params)
     {
         STATEMENT *s = stmtNode(lex, block, st_varstart);
@@ -3531,7 +3527,6 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     SYMBOL *oldtheCurrentFunc = theCurrentFunc;
     BLOCKDATA *block = Alloc(sizeof(BLOCKDATA)) ;
     STATEMENT *startStmt;
-    SYMBOL *spt = funcsp;
     int oldCodeLabel = codeLabel;
     int oldMatchReturnTypes = matchReturnTypes;
     funcNesting++;

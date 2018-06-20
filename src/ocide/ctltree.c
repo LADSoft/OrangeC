@@ -155,7 +155,6 @@ LRESULT CALLBACK extTreeWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam)
 {
     static char buf[256];
-    LRESULT rv;
     RECT r;
     TREEINFO *ptr;
     HTREEITEM hTreeItem;
@@ -304,7 +303,6 @@ LRESULT CALLBACK ColumnTreeWndProc(HWND hwnd, UINT iMessage, WPARAM
     TV_ITEM item;
     TCData *td;
     TV_HITTESTINFO tvh;
-    TREEINFO *treeinfo;
     PAINTSTRUCT ps;
     HDC dc;
     NM_TREEVIEW *ntv;
@@ -316,7 +314,7 @@ LRESULT CALLBACK ColumnTreeWndProc(HWND hwnd, UINT iMessage, WPARAM
             case TVM_HITTEST:
                 tvh.pt = ((TV_HITTESTINFO*)lParam)->pt;
                 ptr = (COLUMNINFO*)GetWindowLong(hwnd, 0);
-                GetRelativeRect(hwnd, ptr->hwndTree, &r);
+                GetRelativeRect(hwnd, ptr->hwndTree, &r); // undefined in local context
                 tvh.pt.x -= r.left;
                 tvh.pt.y -= r.top;
                 if ((titem = TreeView_HitTest(ptr->hwndTree, &tvh)))

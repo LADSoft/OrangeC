@@ -61,7 +61,6 @@ void ToggleBookMark(int linenum)
         if (ptr->active && ptr->dwHandle == hWnd)
         {
             char buf[256],  *ch;
-            int addr;
             if (linenum == -1)
                 SendMessage(ptr->dwHandle, EM_GETSEL, (WPARAM) &linenum, 0);
 

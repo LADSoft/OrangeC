@@ -95,7 +95,6 @@ LRESULT CALLBACK CtlTbProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     static BOOL dragging;
     static BOOL inView;
     static int dragSrc;
-    int i;
     NM_TREEVIEW *nm;
     RECT rs;
     TVHITTESTINFO hittest;

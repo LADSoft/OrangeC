@@ -93,7 +93,6 @@ int Expression::unary()
         }
     }
     throw new std::runtime_error("Syntax error in constant expression");
-    return 0;
 }
 int Expression::multiply()
 {
@@ -114,7 +113,6 @@ int Expression::multiply()
                     if (val2 == 0)
                     {
                         throw new std::runtime_error("Divide by zero in preprocessor constant");
-                        val1 = 1;
                     }
                     else
                     {
@@ -125,7 +123,6 @@ int Expression::multiply()
                     if (val2 == 0)
                     {
                         throw new std::runtime_error("Divide by zero in preprocessor constant");
-                        val1 = 1;
                     }
                     else
                     {
@@ -337,7 +334,6 @@ int Expression::conditional()
                 else
                 {
                     throw new std::runtime_error("Conditional needs ':'");
-                    val1 = 0;
                 }
             }
         }

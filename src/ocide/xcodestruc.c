@@ -67,7 +67,6 @@ BOOL inStructBox;
         DRAWITEMSTRUCT *lpdis;
         MEASUREITEMSTRUCT *lpmis;
         TEXTMETRIC tm;
-        HFONT font;
         RECT r;
         int fg, bg;
         int i = selected;
@@ -533,7 +532,7 @@ BOOL inStructBox;
 
         if (!codecompleteBox)
         {
-            int pos = CPPScanBackward(p, p->selendcharpos, ch != ':');
+            int pos = CPPScanBackward(p, p->selendcharpos, ch != ':'); // undefined in local context
             if (pos != p->selendcharpos)
             {
                 DWINFO *info = (DWINFO *)GetWindowLong(GetParent(hwnd), 0);
@@ -563,7 +562,7 @@ BOOL inStructBox;
                         POINT cpos;
                         TEXTMETRIC t;
                         HDC dc = GetDC(codecompleteBox);
-                        xdrawline(hwnd, p, p->selstartcharpos);
+                        xdrawline(hwnd, p, p->selstartcharpos); // undefined in local context
                         GetTextMetrics(dc, &t);
                         SendMessage(codecompleteBox, LB_RESETCONTENT, 0, 0); 
                         p->cd->selecting = FALSE;

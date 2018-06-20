@@ -106,7 +106,6 @@ EXPRESSION *baseClassOffset(SYMBOL *base, SYMBOL *derived, EXPRESSION *en)
     if (base != derived)
     {
         VBASEENTRY *vbase = derived->vbaseEntries;
-        BASECLASS *lst;
         while (vbase)
         {
             // this will get all virtual bases since they are all listed on each deriviation
@@ -202,7 +201,6 @@ void qualifyForFunc(SYMBOL *sym, TYPE **tp, BOOLEAN isMutable)
 }
 void getThisType(SYMBOL *sym, TYPE **tp)
 {
-    TYPE *n;
     *tp = Alloc(sizeof(TYPE));
     (*tp)->size = stdpointer.size;
     (*tp)->type = bt_pointer;
@@ -293,6 +291,7 @@ EXPRESSION *getMemberNode(SYMBOL *memberSym, SYMBOL *strSym, TYPE **tp, SYMBOL *
 }
 EXPRESSION *getMemberPtr(SYMBOL *memberSym, SYMBOL *strSym, TYPE **tp, SYMBOL *funcsp)
 {
+	(void)strSym;
     EXPRESSION *rv;
     TYPE *tpq = Alloc(sizeof(TYPE));
     tpq->type = bt_memberptr;
@@ -310,6 +309,7 @@ EXPRESSION *getMemberPtr(SYMBOL *memberSym, SYMBOL *strSym, TYPE **tp, SYMBOL *f
 }
 BOOLEAN castToArithmeticInternal(BOOLEAN integer, TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other, BOOLEAN implicit)
 {
+	(void)kw;
     SYMBOL *sp = basetype(*tp)->sp;
     if (!other || isarithmetic(other))
     {
@@ -399,6 +399,7 @@ void castToArithmetic(BOOLEAN integer, TYPE **tp, EXPRESSION **exp, enum e_kw kw
 }
 BOOLEAN castToPointer(TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other)
 {
+	(void)kw;
     if (cparams.prm_cplusplus && isstructured(*tp))
     {
         SYMBOL *sp = basetype(*tp)->sp;
@@ -794,7 +795,6 @@ BOOLEAN doDynamicCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *f
                     if (sp)
                     {
                         EXPRESSION *exp1 = *exp;
-                        EXPRESSION *exp2;
                         FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
                         INITLIST *arg1 = Alloc(sizeof(INITLIST)); // thisptr
                         INITLIST *arg2 = Alloc(sizeof(INITLIST)); // excepttab from thisptr
@@ -984,6 +984,8 @@ BOOLEAN doStaticCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *fu
 }
 BOOLEAN doConstCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *funcsp)
 {
+	(void)exp;
+	(void)funcsp;
     TYPE *orig = *newType;
     BOOLEAN rref = FALSE;
     if (isref(*newType))
@@ -1005,6 +1007,7 @@ BOOLEAN doConstCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *fun
 }
 BOOLEAN doReinterpretCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *funcsp, BOOLEAN checkconst)
 {
+	(void)funcsp;
     // int to pointer
     if (ispointer(*newType) && isint(oldType))
     {
@@ -1181,6 +1184,7 @@ LEXEME *GetCastInfo(LEXEME *lex, SYMBOL *funcsp, TYPE **newType, TYPE **oldType,
 }
 LEXEME *expression_typeid(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, int flags)
 {
+	(void)flags;
     lex = getsym();
     if (needkw(&lex, openpa))
     {
@@ -1612,10 +1616,6 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
         else
         {
             // new type id
-            enum e_lk linkage = lk_none, linkage2 = lk_none, linkage3 = lk_none;
-            BOOLEAN defd = FALSE;
-            SYMBOL *sp = NULL;
-            BOOLEAN notype = FALSE;
             lex = get_type_id(lex, tp, funcsp, sc_auto, TRUE, TRUE);
             if (MATCHKW(lex, openbr))
             {
@@ -1977,6 +1977,7 @@ LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
 }
 BOOLEAN isNoexcept(EXPRESSION *exp)
 {
+	(void)exp;
     return FALSE;
 }
 static BOOLEAN noexceptStmt(STATEMENT *block);

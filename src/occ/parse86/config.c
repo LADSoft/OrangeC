@@ -362,6 +362,9 @@ ARCH_GEN outputfunctions ;
     }
 static int init(COMPILER_PARAMS *parms, ARCH_ASM *data, ARCH_DEBUG *debug)
 {
+	(void)parms;
+	(void)data;
+	(void)debug;
     WinmodeSetup(0, "c");
 }
 static int parse_param(char select, char *string)
@@ -527,6 +530,6 @@ ARCH_ASM assemblerInterface[] = {
     { 0 }
 } ;
 
-int natural_size(EXPRESSION *exp) { return ISZ_UINT; }
+int natural_size(EXPRESSION *exp) { (void)exp; return ISZ_UINT; }
 
-EXPRESSION *stringlit(STRING *s) { return intNode(en_c_i, 0); }
+EXPRESSION *stringlit(STRING *s) { (void)s; return intNode(en_c_i, 0); }

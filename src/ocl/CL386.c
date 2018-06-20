@@ -8,7 +8,6 @@ static char rundir[LINE_MAX];
 char *getrundir(void) { return rundir; }
 
 int main( int argc, char *argv[] ) {
-    int ret;
     char buf[260];
     if ( argc == 1 )
         help();

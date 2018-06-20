@@ -9,7 +9,6 @@ int winsystem(char *cmd)
 {
     STARTUPINFO stStartInfo;
     PROCESS_INFORMATION stProcessInfo;
-    DWORD exitCode;
     BOOL bRet;
 
     memset(&stStartInfo, 0, sizeof(STARTUPINFO));

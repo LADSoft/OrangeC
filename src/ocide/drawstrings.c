@@ -209,7 +209,6 @@ static void StringTableUndo(HWND hwnd, struct resRes *stringTableData)
         switch(undo->type)
         {
             STRINGS **p;
-            STRINGS *hold;
             int i;
             case au_nop:
                 break;

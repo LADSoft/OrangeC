@@ -137,9 +137,6 @@ static BOOL LookupLineInfo(sqlite3 *db, BROWSELIST *bl)
             {
                 switch(rc = sqlite3_step(handle))
                 {
-                    int newQual;
-                    int newStartLine;
-                    char *file;
                     case SQLITE_BUSY:
                         done = TRUE;
                         break;
@@ -189,9 +186,6 @@ static BOOL LookupUsageInfo(sqlite3 *db, BROWSELIST *bl)
             {
                 switch(rc = sqlite3_step(handle))
                 {
-                    int newQual;
-                    int newStartLine;
-                    char *file;
                     case SQLITE_BUSY:
                         done = TRUE;
                         break;
@@ -224,14 +218,13 @@ static void CreateUsageList(void)
     if (db)
     {
         char mangled[2048], *srcName = brsName;
-        BROWSELIST *rv = NULL, **scan;
+        BROWSELIST *rv = NULL;
         FreeUsageList();
         
         GetQualifiedName(mangled, &srcName, FALSE, FALSE);
         
         if (!strrchr(mangled+1, '@'))
         {
-            DEBUG_INFO *inf;
             int id;
             mangled[0] = '_';
             if (id = LookupSymbolBrowse(db, mangled))
@@ -255,7 +248,7 @@ static void CreateUsageList(void)
             rv = next;
         }
         PostMessage(hwndBrowse, WM_USER, 0, 0);
-        DBClose(db);
+        DBClose(db); // undefined in local context
     }
 }
 //-------------------------------------------------------------------------

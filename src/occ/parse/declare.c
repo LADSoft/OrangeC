@@ -250,23 +250,23 @@ void InsertSymbol(SYMBOL *sp, enum e_sc storage_class, enum e_lk linkage, BOOLEA
                     // but we won't fully implement this at this time, e.g. if it has enable_if it had better be
                     // defined inline.   If it is defined out of line the lack of matching when we do lookups
                     // will cause multiply defined references in GetOverloadedFunction
-                    HASHREC **hr = &table->table[0];
+                    HASHREC **hr1 = &table->table[0];
                     int n = 0;
-                    while (*hr)
+                    while (*hr1)
                     {
-                        if (!strcmp(sp->decoratedName, ((SYMBOL *)(*hr)->p)->decoratedName))
+                        if (!strcmp(sp->decoratedName, ((SYMBOL *)(*hr1)->p)->decoratedName))
                         {
                             n++;
-                            if (comparetypes(basetype(sp->tp)->btp, basetype(((SYMBOL *)(*hr)->p)->tp)->btp, TRUE))
+                            if (comparetypes(basetype(sp->tp)->btp, basetype(((SYMBOL *)(*hr1)->p)->tp)->btp, TRUE))
                                 break;
                         }
-                        hr = &(*hr)->next;
+                        hr1 = &(*hr1)->next;
                     }
-                    if (!*hr)
+                    if (!*hr1)
                     {
                         sp->overlayIndex = n;
-                        *hr = Alloc(sizeof(HASHREC));
-                        (*hr)->p = (struct _hrintern_ *)sp;
+                        *hr1 = Alloc(sizeof(HASHREC));
+                        (*hr1)->p = (struct _hrintern_ *)sp;
                     }
                 }
                 sp->overloadName = funcs;
@@ -430,7 +430,6 @@ SYMBOL * calculateStructAbstractness(SYMBOL *top, SYMBOL *sp)
     while (hr)
     {
         SYMBOL *p = (SYMBOL *)hr->p;
-        TYPE *tp = basetype(p->tp);
         if (p->storage_class == sc_overloads)
         {
             HASHREC *hri = p->tp->syms->table[0];
@@ -827,6 +826,7 @@ static BOOLEAN usesClass(SYMBOL *cls, SYMBOL *internal)
 }
 static void baseFinishDeclareStruct(SYMBOL *funcsp)
 {
+	(void)funcsp;
     int n = 0,i,j;
     LIST *lst = openStructs;
     SYMBOL ** syms;
@@ -940,7 +940,7 @@ static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac cur
     if (cparams.prm_cplusplus)
     {
         calculateStructAbstractness(sp, sp);
-        calculateVirtualBaseOffsets(sp);
+        calculateVirtualBaseOffsets(sp); // undefined in local context
         calculateVTabEntries(sp, sp, &sp->vtabEntries, 0);
         if (sp->vtabEntries)
         {
@@ -977,16 +977,16 @@ static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac cur
             HASHREC *hr = basetype(sp->tp)->syms->table[0];
             while (hr)
             {
-                SYMBOL *sp = (SYMBOL *)hr->p;
-                if (sp->storage_class == sc_member || sp->storage_class == sc_mutable)
+                SYMBOL *sp1 = (SYMBOL *)hr->p;
+                if (sp1->storage_class == sc_member || sp1->storage_class == sc_mutable)
                 {
-                    if (isref(sp->tp))
+                    if (isref(sp1->tp))
                     {
-                        errorsym(ERR_REF_CLASS_NO_CONSTRUCTORS, sp);
+                        errorsym(ERR_REF_CLASS_NO_CONSTRUCTORS, sp1);
                     }
-                    else if (isconst(sp->tp))
+                    else if (isconst(sp1->tp))
                     {
-                        errorsym(ERR_CONST_CLASS_NO_CONSTRUCTORS, sp);
+                        errorsym(ERR_CONST_CLASS_NO_CONSTRUCTORS, sp1);
                     }
                 }
                 hr = hr->next;
@@ -1082,7 +1082,6 @@ static unsigned char *ParseUUID(LEXEME **lex)
                &vals[8], &vals[9], &vals[10], &vals[11],
                &vals[12], &vals[13], &vals[14], &vals[15]))
             {
-                int i;
                 rv[0] = vals[0] & 0xff;
                 rv[1] = (vals[0] >>8) & 0xff;
                 rv[2] = (vals[0] >>16)& 0xff;
@@ -1091,8 +1090,8 @@ static unsigned char *ParseUUID(LEXEME **lex)
                 rv[5] = (vals[1] >>8) & 0xff;
                 rv[6] = vals[2] & 0xff;
                 rv[7] = (vals[2] >>8) & 0xff;
-                for (i=8; i < 16; i++)
-                    rv[i] = vals[i];
+                for (int j = 8; j < 16; j++)
+                    rv[j] = vals[j];
             }
             *lex = getsym();
         }
@@ -1224,7 +1223,6 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
         {
             if (inTemplate && KW(lex) == lt)
             {
-                SYMBOL *sp1;
                 TEMPLATEPARAMLIST *origParams = sp->templateParams;
                 TEMPLATEPARAMLIST *templateParams = TemplateGetParams(sp);
                 inTemplateSpecialization++;
@@ -1371,7 +1369,7 @@ static LEXEME *enumbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *spi,
                 EXPRESSION *exp = NULL;
                 lex = getsym();
                 lex = optimized_expression(lex, funcsp, NULL, &tp, &exp, FALSE);
-                if (tp && isintconst(exp))
+                if (tp && isintconst(exp)) // type is redefined to NULL here, is this intentional?
                 {
                     if (cparams.prm_cplusplus)
                     {
@@ -1603,6 +1601,7 @@ static LEXEME *declenum(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storag
 static LEXEME *getStorageClass(LEXEME *lex, SYMBOL *funcsp, enum e_sc *storage_class, 
                                enum e_lk *linkage, ADDRESS *address, BOOLEAN *blocked, BOOLEAN *isExplicit, enum e_ac access)
 {
+	(void)access;
     BOOLEAN found = FALSE;
     enum e_sc oldsc;
     while (KWTYPE(lex, TT_STORAGE_CLASS))
@@ -1832,6 +1831,7 @@ static LEXEME *getPointerQualifiers(LEXEME *lex, TYPE **tp, BOOLEAN allowstatic)
 }
 static LEXEME *parse_declspec(LEXEME *lex, enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3)
 {
+	(void)linkage;
 	if (needkw(&lex, openpa))
 	{
         while (1)
@@ -1878,7 +1878,7 @@ static LEXEME *parse_declspec(LEXEME *lex, enum e_lk *linkage, enum e_lk *linkag
         }
 		needkw(&lex, closepa);
 	}
-        return lex;
+    return lex;
 }
 static LEXEME *getLinkageQualifiers(LEXEME *lex, enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3)
 {
@@ -2599,7 +2599,7 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
             SYMBOL *sp = NULL;
             BOOLEAN destructor = FALSE;
             LEXEME *placeholder = lex;
-            BOOLEAN inTemplate = FALSE;
+            BOOLEAN inTemplate = FALSE; // hides function parameter
             lex = nestedSearch(lex, &sp, &strSym, &nsv, &destructor, &inTemplate, FALSE, storage_class, FALSE, TRUE);
             if (sp && (istype(sp) || (sp->storage_class == sc_type && inTemplate) || sp->storage_class == sc_typedef && sp->templateLevel) )
             {
@@ -3175,8 +3175,6 @@ BOOLEAN intcmp(TYPE *t1, TYPE *t2)
 }
 static void matchFunctionDeclaration(LEXEME *lex, SYMBOL *sp, SYMBOL *spo, BOOLEAN checkReturn)
 {
-    HASHREC *hro;
-
     /* two oldstyle declarations aren't compared */
     if ((spo && !spo->oldstyle && spo->hasproto) || !sp->oldstyle)
     {
@@ -3384,6 +3382,7 @@ LEXEME *getDeferredData(LEXEME *lex, SYMBOL *sym, BOOLEAN braces)
 }
 LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp, BOOLEAN inTemplate, enum e_sc storage_class)
 {
+	(void)storage_class;
     SYMBOL *sp = *spin;
     SYMBOL *spi;
     HASHREC *hri, **hrp;
@@ -3443,7 +3442,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                 BOOLEAN blocked;
                 BOOLEAN constexpression;
                 ADDRESS address;
-                TYPE *tpb, *tpx;
+				TYPE *tpb;
                 enum e_lk linkage = lk_none;
                 enum e_lk linkage2 = lk_none;
                 enum e_lk linkage3 = lk_none;
@@ -3776,7 +3775,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                     }
                     else
                     {
-                        SYMBOL *spo ;
+                        SYMBOL *spo;
                         TYPE *tpb;
                         spi->linkage = linkage;
                         spi->linkage2 = linkage2;
@@ -3947,6 +3946,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
 }
 LEXEME *getExceptionSpecifiers(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_class)
 {
+	(void)storage_class;
     switch (KW(lex))
     {
         case kw_throw:
@@ -4071,7 +4071,6 @@ static LEXEME *getAfterType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **sp,
                             BOOLEAN done = FALSE;
                             BOOLEAN foundConst = FALSE;
                             BOOLEAN foundVolatile = FALSE;
-                            BOOLEAN foundPure = FALSE;
                             BOOLEAN foundand = FALSE;
                             BOOLEAN foundland = FALSE;
                             while (lex != NULL && !done)
@@ -4901,7 +4900,7 @@ static EXPRESSION *vlaSetSizes(EXPRESSION ***rptr, EXPRESSION *vlanode,
 }
 static EXPRESSION * llallocateVLA(SYMBOL *sp, EXPRESSION *ep1, EXPRESSION *ep2)
 {
-    EXPRESSION *vp, *loader, *unloader;
+    EXPRESSION *loader, *unloader;
 
     if (chosenAssembler->msil)
     {
@@ -5001,7 +5000,7 @@ static void allocateVLA(LEXEME *lex, SYMBOL *sp, SYMBOL *funcsp, BLOCKDATA *bloc
     }
     else
     {
-        int size,i;
+        int size;
         SYMBOL *vlasp = sp;
         EXPRESSION *vlanode ;
         EXPRESSION *ep;
@@ -5677,7 +5676,6 @@ jointemplate:
                         if (cparams.prm_cplusplus && isfunction(sp->tp) && (MATCHKW(lex, kw_try) || MATCHKW(lex, colon)))
                         {
                             BOOLEAN viaTry = MATCHKW(lex, kw_try);
-                            int old = GetGlobalFlag();
                             if (viaTry)
                             {
                                 sp->hasTry = TRUE;
@@ -5817,7 +5815,6 @@ jointemplate:
                                 {
                                     // a specialization
                                     // this may result in returning sp depending on what happens...
-                                    TEMPLATEPARAMLIST *templateParams;
                                     if (sp->templateParams->p->bySpecialization.types)
                                     {
                                         HASHREC *hr = spi->tp->syms->table[0];
@@ -6398,7 +6395,6 @@ jointemplate:
                                 {
                                     SYMBOL *sym = (SYMBOL *)hr->p;
                                     TYPE *tpl = sym->tp;
-                                    int old = GetGlobalFlag();
                                     while (tpl)
                                     {
                                         if (tpl->unsized)
@@ -6408,8 +6404,7 @@ jointemplate:
                                                       sym->declline);
                                             while (hr->next)
                                                 hr = hr->next;
-                                            break;
-                                            
+                                            break; // hmmmmm
                                         }
                                         tpl = tpl->btp;
                                     }

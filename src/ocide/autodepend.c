@@ -59,7 +59,7 @@ static void DependsGetPath(PROJECTITEM *pj, PROJECTITEM *fi, char *path, int len
             q = p + strlen(p);
         if (p != q)
         {
-            char exp[MAX_PATH], *r;
+            char exp[MAX_PATH];
             strncpy(exp, p, q-p);
             exp[q-p] = '\0';
             abspath(exp, pj->realName);

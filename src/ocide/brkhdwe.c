@@ -51,7 +51,7 @@ HDWEBKPT hdwebp[4];
 
 static int resolvenametoaddr(int index, int doErrors)
 {
-    int offset, addr, linoffs;
+    int addr;
     DEBUG_INFO *dbg;
     VARINFO *var;
     char buf[256];
@@ -127,7 +127,7 @@ void hbpEnableAllBreakpoints(BOOL enableState)
 void hbpSetBP(void)
 {
     int xdr0 = 0, xdr1 = 0, xdr2 = 0, xdr3 = 0, xdr6 = 0, xdr7 = 0x0000;
-    int i, offset;
+	int i;
     THREAD *t;
     int flag = FALSE;
     for (i = 0; i < 4; i++)
@@ -251,10 +251,7 @@ static void GetHDWEDBFields(HWND hwnd, int startField, int index)
 
 static int FAR PASCAL hbpDlgProc(HWND hwnd, UINT wmsg, WPARAM wParam, LPARAM
     lParam)
-
 {
-    NMHDR *nmhead;
-    int disable_state;
     switch (wmsg)
     {
         case WM_INITDIALOG:

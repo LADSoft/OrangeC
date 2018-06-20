@@ -383,7 +383,6 @@ static LRESULT CALLBACK tbWindWndProc(HWND hwnd, UINT iMessage,
     PAINTSTRUCT ps;
     HDC dc;
     TBData *ptr;
-    char *p;
     LPNMTOOLBAR lpnmtoolbar;
     int i,j,n;
     if (iMessage >= WM_USER && iMessage < WM_USER + 200)

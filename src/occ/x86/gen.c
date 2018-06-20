@@ -814,7 +814,6 @@ void getAmodes(QUAD *q, enum e_op *op, IMODE *im, AMODE **apl, AMODE **aph)
         }
         else if (im->size == ISZ_ULONGLONG || im->size == - ISZ_ULONGLONG)
         {
-            int i;
             if (im->offset->type == en_tempref)
             {
                 int clr = beRegFromTemp(q, im);

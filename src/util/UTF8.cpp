@@ -77,6 +77,7 @@ int UTF8::Encode(char *dest, int val)
 }
 int UTF8::CharSpan(const char *str)
 {
+	(void)str;
     return 1;
     /*
     if ((*str & 0x80) == 0)

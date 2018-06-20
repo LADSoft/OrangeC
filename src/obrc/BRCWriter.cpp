@@ -157,7 +157,6 @@ int BRCWriter::SQLiteExec( char *str)
 }
 int BRCWriter::VersionCallback(void *NotUsed, int argc, char **argv, char **azColName)
 {
-    int i;
     if (argc == 1)
     {
         if (atoi(argv[0]) >= DBVersion)

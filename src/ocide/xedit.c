@@ -865,7 +865,7 @@ void insertcrtabs(HWND hwnd, EDITDATA *p);
 void insertcr(HWND hwnd, EDITDATA *p, BOOL tabs)
 {
     int temp;
-    xdrawline(hwnd, p, p->selstartcharpos);
+    xdrawline(hwnd, p, p->selstartcharpos); // undefined in local context
     if (p->selstartcharpos > p->selendcharpos)
     {
         temp =  - p->selstartcharpos;
@@ -2239,7 +2239,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     InvalidateRect(hwnd, 0, 0);
                 PostMessage(GetParent(hwnd), WM_COMMAND, ID_REDRAWSTATUS, 0);
                 p = (EDITDATA*)GetWindowLong(hwnd, 0);
-                FindParenMatch(hwnd, p);
+                FindParenMatch(hwnd, p); // undefined in local context
                 break;
             case WM_SYSKEYUP:
                 p = (EDITDATA*)GetWindowLong(hwnd, 0);
@@ -2266,7 +2266,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     case ']':
                         if (!(GetKeyState(VK_CONTROL) &0x80000000) && (GetKeyState(VK_SHIFT) &0x80000000))
                             if (lParam &0x20000000) {// alt key
-                                FindBraceMatch(hwnd, p, wParam == '[' ? '{' : '}');
+                                FindBraceMatch(hwnd, p, wParam == '[' ? '{' : '}'); // undefined in local context
                                 return 0;
                             }
                         break;
@@ -2439,7 +2439,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                         {
                             HWND t = GetParent(hwnd);
                             DWINFO *x = (DWINFO *)GetWindowLong(t, 0);
-                            ccGetColorizeData(x->dwName, p->colorizeEntries);
+                            ccGetColorizeData(x->dwName, p->colorizeEntries); // undefined in local context
                             FullColorize(hwnd, p, FALSE);
                         }
                    }
@@ -2472,7 +2472,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     memcpy(&editFont, &EditFont, sizeof(editFont));
                     memset(&osvi,0,sizeof(osvi));
                     osvi.dwOSVersionInfoSize = sizeof(osvi);
-                    GetVersionEx(&osvi);
+                    GetVersionEx(&osvi); // ascii version of this function is deprecated
                     if (osvi.dwMajorVersion >= 6)
                         strcpy(editFont.lfFaceName, "Consolas");
                     PropGetFont(NULL, "FONT", &editFont);

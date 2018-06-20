@@ -852,7 +852,9 @@ LEXEME *GetTemplateArguments(LEXEME *lex, SYMBOL *funcsp, SYMBOL *templ, TEMPLAT
                 noSpecializationError++;
                 lex = get_type_id(lex, &tp, funcsp, sc_parameter, FALSE, TRUE);
                 noSpecializationError--;
-                if (tp && !templateNestingCount)
+                if (!tp)
+                    tp = &stdint;
+                else if (tp && !templateNestingCount)
                     tp = PerformDeferredInitialization(tp, NULL);
                 if (MATCHKW(lex, ellipse))
                 {

@@ -493,21 +493,19 @@ int beRegFromTempInd(QUAD *q, IMODE *im, int which)
 {
     if (which)
     {
-        if (q->scaleColor < 0)
-            return 0;
-        return q->scaleColor;
+        return (q->scaleColor < 0) ? 0 : q->scaleColor;
     }
     if (im == q->ans)
     {
-        return q->ansColor < 0 ? 0 : q->ansColor;
+        return (q->ansColor < 0) ? 0 : q->ansColor;
     }
     else if (im == q->dc.left)
     {
-        return q->leftColor < 0 ? 0 : q->leftColor;
+        return (q->leftColor < 0) ? 0 : q->leftColor;
     }
     else
     {
-        return q->rightColor < 0 ? 0 : q->rightColor;
+        return (q->rightColor < 0) ? 0 : q->rightColor;
     }
 }
 int beRegFromTemp(QUAD *q, IMODE *im)
@@ -616,7 +614,7 @@ void getAmodes(QUAD *q, enum e_op *op, IMODE *im, AMODE **apl, AMODE **aph)
             int reg = regmap[beRegFromTempInd(q, im, 1)][0];
             if (im->offset)
             {
-                (*apl)->preg = reg;
+                (*apl)->preg = regmap[beRegFromTemp(q, im)][0];
                 (*apl)->sreg = im->offset2 ? reg : -1;
             }
             else if (mode == am_indisp && im->offset2)

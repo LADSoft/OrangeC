@@ -679,7 +679,6 @@ ARCH_ASM assemblerInterface[] = {
         0,                              /* initialize intrinsic mechanism, compiler startup */
         0,                              /* search for an intrinsic */
         0,                              /* enter a type in the BE */
-
     },
     {
         "fasm",                         /* assembler name */
@@ -722,7 +721,6 @@ ARCH_ASM assemblerInterface[] = {
         0,                              /* initialize intrinsic mechanism, compiler startup */
         0,                              /* search for an intrinsic */
         0,                              /* enter a type in the BE */
-
     },
     {
         "tasm",                         /* assembler name */
@@ -743,24 +741,28 @@ ARCH_ASM assemblerInterface[] = {
         &dbgStruct[0],                  /* debug structure, or NULL */
         &architecture,                  /* architecture characteristics */
         &outputfunctions,               /* pointer to backend function linkages */
-        inittasm,                       /* return 1 to proceed */
-        RunExternalFiles,               /* postprocess function, or NULL */
-        0,                              /* compiler rundown */
-        InsertOutputFileName,           /* insert the output (executable name) into the backend */
-        InsertExternalFile,             /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
-        parse_param,                    /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-        parse_codegen,                  /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-        0,                              /* parse a pragma directive, or null */
-        compile_start,                  /* signal start of compile on a per file basis */
-        include_start,                  /* signal switching to a new source file */
-        output_obj_file,                /* write the object file (for native object formats) */
-        outcode_file_init,              /* initialize the object file */
-        inasmini,                       /* initialize inline assembler, per file, or NULL */
-        inasm_statement,                /* parse an assembly statement, or NULL */
-        inlineAsmStmt,                  /* translate an assembly instruction which was inlined */
-        0,                              /* initialize intrinsic mechanism, compiler startup */
-        0,                              /* search for an intrinsic */
-        0,                              /* __using__ declaration */
+        NULL,
+        NULL,
+        inittasm, /* return 1 to proceed */
+        0,
+        0,
+        RunExternalFiles,     /* postprocess function, or NULL */
+        0,                    /* compiler rundown */
+        InsertOutputFileName, /* insert the output (executable name) into the backend */
+        InsertExternalFile,   /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
+        parse_param,          /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
+        parse_codegen,        /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
+        0,                    /* parse a pragma directive, or null */
+        compile_start,        /* signal start of compile on a per file basis */
+        include_start,        /* signal switching to a new source file */
+        output_obj_file,      /* write the object file (for native object formats) */
+        outcode_file_init,    /* initialize the object file */
+        inasmini,             /* initialize inline assembler, per file, or NULL */
+        inasm_statement,      /* parse an assembly statement, or NULL */
+        inlineAsmStmt,        /* translate an assembly instruction which was inlined */
+        0,                    /* initialize intrinsic mechanism, compiler startup */
+        0,                    /* search for an intrinsic */
+        0,                    /* __using__ declaration */
     },
     {
         "masm",                         /* assembler name */
@@ -823,23 +825,27 @@ ARCH_ASM assemblerInterface[] = {
         &dbgStruct[0],                  /* debug structure, or NULL */
         &architecture,                  /* architecture characteristics */
         &outputfunctions,               /* pointer to backend function linkages */
-        initgeneric,                    /* return 1 to proceed */
-        RunExternalFiles,               /* postprocess function, or NULL */
-        0,                              /* compiler rundown */
-        InsertOutputFileName,           /* insert the output (executable name) into the backend */
-        InsertExternalFile,             /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
-        parse_param,                    /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-        parse_codegen,                  /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-        0,                              /* parse a pragma directive, or null */
-        compile_start,                  /* signal start of compile on a per file basis */
-        include_start,                  /* signal switching to a new source file */
-        output_obj_file,                /* write the object file (for native object formats) */
-        outcode_file_init,              /* initialize the object file */
-        inasmini,                       /* initialize inline assembler, per file, or NULL */
-        inasm_statement,                /* parse an assembly statement, or NULL */
-        inlineAsmStmt,                  /* translate an assembly instruction which was inlined */
-        0,                              /* initialize intrinsic mechanism, compiler startup */
-        0,                              /* search for an intrinsic */
-        0,                              /* __using__ declaration */
+        NULL,
+        NULL,
+        initgeneric, /* return 1 to proceed */
+        0,
+        0,
+        RunExternalFiles,     /* postprocess function, or NULL */
+        0,                    /* compiler rundown */
+        InsertOutputFileName, /* insert the output (executable name) into the backend */
+        InsertExternalFile,   /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
+        parse_param,          /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
+        parse_codegen,        /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
+        0,                    /* parse a pragma directive, or null */
+        compile_start,        /* signal start of compile on a per file basis */
+        include_start,        /* signal switching to a new source file */
+        output_obj_file,      /* write the object file (for native object formats) */
+        outcode_file_init,    /* initialize the object file */
+        inasmini,             /* initialize inline assembler, per file, or NULL */
+        inasm_statement,      /* parse an assembly statement, or NULL */
+        inlineAsmStmt,        /* translate an assembly instruction which was inlined */
+        0,                    /* initialize intrinsic mechanism, compiler startup */
+        0,                    /* search for an intrinsic */
+        0,                    /* __using__ declaration */
     },
     {0}};

@@ -847,12 +847,13 @@ LRESULT CALLBACK gotoProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 void recolorize(DWINFO *ptr)
 {
     int language = LANGUAGE_NONE;
-    if (stristr(ptr->dwName, ".c") == ptr->dwName + strlen(ptr->dwName) - 2 ||
-        stristr(ptr->dwName, ".cpp") == ptr->dwName + strlen(ptr->dwName) - 4 
-        || stristr(ptr->dwName, ".cxx") == ptr->dwName + strlen(ptr->dwName) - 4 
-        || stristr(ptr->dwName, ".cc") == ptr->dwName + strlen(ptr->dwName) - 3 
+    if (stristr(ptr->dwName, ".c") == ptr->dwName + strlen(ptr->dwName) - 2
         || stristr(ptr->dwName, ".h") == ptr->dwName + strlen(ptr->dwName) - 2)
         language = LANGUAGE_C;
+    if (stristr(ptr->dwName, ".cpp") == ptr->dwName + strlen(ptr->dwName) - 4 
+        || stristr(ptr->dwName, ".cxx") == ptr->dwName + strlen(ptr->dwName) - 4 
+        || stristr(ptr->dwName, ".cc") == ptr->dwName + strlen(ptr->dwName) - 3) 
+        language = LANGUAGE_CPP;
     else if (stristr(ptr->dwName, ".asm") == ptr->dwName + strlen(ptr->dwName) 
         - 4 || stristr(ptr->dwName, ".asi") == ptr->dwName + strlen(ptr->dwName)
         - 4 || stristr(ptr->dwName, ".inc") == ptr->dwName + strlen(ptr->dwName)

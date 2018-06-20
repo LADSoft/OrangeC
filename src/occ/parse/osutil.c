@@ -84,6 +84,8 @@ void fatal(char *fmt, ...)
     printf("Fatal error: ");
     vprintf(fmt, argptr);
     va_end(argptr);
+    extern void Cleanup();
+    Cleanup();
     exit(1);
 }
 void banner(char *fmt, ...)
@@ -550,6 +552,38 @@ void err_setup(char select, char *string)
     n = atoi(string);
     if (n > 0)
         cparams.prm_maxerr = n ;
+    DisableTrivialWarnings();
+}
+void warning_setup(char select, char *string)
+{
+    if (string[0] == 0)
+        AllWarningsDisable();
+    else switch (string[0])
+    {
+        case '+':
+            cparams.prm_extwarning = TRUE;
+            DisableTrivialWarnings();
+            break;
+        case 'd':
+            DisableWarning(atoi(string+1));
+            break;
+        case 'o':
+            WarningOnlyOnce(atoi(string+1));
+            break;
+        case 'x':
+            AllWarningsAsError();
+            break;
+        case 'e':
+            if (!strcmp(string, "error"))
+                AllWarningsAsError();
+            else
+                WarningAsError(atoi(string + 1));
+            break;
+        default:
+            EnableWarning(atoi(string));
+            break;
+            
+    }
 }
 
 /*-------------------------------------------------------------------------*/
@@ -1075,6 +1109,8 @@ void dumperrs(FILE *file)
 void ctrlchandler(int aa)
 {
     printf("^C");
+    extern void Cleanup();
+    Cleanup();
     exit(1);
 }
 
@@ -1083,6 +1119,8 @@ void ctrlchandler(int aa)
 void internalError(int a)
 {
     (void) a;
+    extern void Cleanup();
+    Cleanup();
     printf("Internal Error - Aborting compile");
     exit(1);
 }
@@ -1149,6 +1187,7 @@ void ccinit(int argc, char *argv[])
              *p = '\\';
         }
     }
+    DisableTrivialWarnings();
     /* parse the environment and command line */
 #ifndef CPREPROCESSOR
     if (chosenAssembler->envname && !parseenv(chosenAssembler->envname))
@@ -1204,4 +1243,5 @@ void ccinit(int argc, char *argv[])
             
     /* Set up a ctrl-C handler so we can exit the prog with cleanup */
     signal(SIGINT, ctrlchandler);
+    signal(SIGSEGV, internalError);
 }

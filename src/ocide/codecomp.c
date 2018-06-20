@@ -337,8 +337,6 @@ static BOOL changed(char *name)
 }
 void DoParse(char *name)
 {
-
-    return;
     if (vacuuming)
         return;
     if (workArea && changed(name))

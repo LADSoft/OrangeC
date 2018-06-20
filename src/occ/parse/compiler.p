@@ -33,6 +33,15 @@ void browse_blockend(int lineno);
 void browse_usage(SYMBOL *var, int file);
 
                                /* Ccerr.c */
+void DisableWarning(int num);
+void EnableWarning(int num);
+void WarningOnlyOnce(int num);
+void WarningAsError(int num);
+void AllWarningsAsError();
+void AllWarningsDisable();
+void PushWarnings();
+void PopWarnings();
+void DisableTrivialWarnings();
 void errorinit(void);
 void errskim(LEXEME **lex, enum e_kw *skimlist);
 void skip(LEXEME **lex, enum e_kw kw);
@@ -158,6 +167,7 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
                     BOOLEAN checkcopy, EXPRESSION *arrayElms, BOOLEAN top, 
                     BOOLEAN maybeConversion, BOOLEAN implicit, BOOLEAN pointer,
                     BOOLEAN usesInitList);
+LEXEME *getDeclType(LEXEME *lex, SYMBOL *funcsp, TYPE **tn);
 LEXEME *insertNamespace(LEXEME *lex, enum e_lk linkage, enum e_sc storage_class, BOOLEAN *linked);
 LEXEME *insertUsing(LEXEME *lex, SYMBOL **sp, enum e_ac access, enum e_sc storage_class, BOOLEAN inTemplate, BOOLEAN hasAttribs);
 LEXEME *handleStaticAssert(LEXEME *lex);
@@ -387,7 +397,7 @@ BOOLEAN isvoid(TYPE *tp);
 BOOLEAN isvoidptr(TYPE *tp);
 BOOLEAN isarray(TYPE *tp);
 BOOLEAN isunion(TYPE *tp);
-TYPE *assignauto(TYPE *pat, TYPE *nt);
+void DeduceAuto(TYPE **pat, TYPE *nt);
 SYMBOL *getFunctionSP(TYPE **tp);
 LEXEME *concatStringsInternal(LEXEME *lex, STRING **str, int *elems);
 LEXEME *concatStrings(LEXEME *lex, EXPRESSION **exp, enum e_lexType *tp, int *elems);

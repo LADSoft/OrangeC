@@ -194,11 +194,17 @@ Depends *Maker::Dependencies(const std::string &goal, const std::string &preferr
                 {
                     Time current;
                     std::string thisOne = Eval::ExtractFirst(working, " ");
-                    Depends *dp = Dependencies(thisOne, preferredPath, current, err && !rule->IsDontCare(), rule->File(), rule->Line());
-                    if (dp)
+                    Time checkTime;
+                    std::string foundPath = GetFileTime(thisOne ,preferredPath, checkTime);
+                    bool exists = ! !goalTime;
+                    if (!exists)
                     {
-                        dp->SetOrdered(true);
-                        (*rv) += dp;
+                        Depends *dp = Dependencies(thisOne, preferredPath, current, err && !rule->IsDontCare(), rule->File(), rule->Line());
+                        if (dp)
+                        {
+                            dp->SetOrdered(true);
+                            (*rv) += dp;
+                        }
                     }
                 }
                 if (rule->HasCommands())

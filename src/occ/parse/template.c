@@ -772,7 +772,7 @@ TEMPLATEPARAMLIST **expandArgs(TEMPLATEPARAMLIST **lst, LEXEME *start, SYMBOL *f
             }
         }
     }
-    else
+    else if (select)
     {
         *lst = Alloc(sizeof(TEMPLATEPARAMLIST));
         (*lst)->p = select->p;
@@ -1867,6 +1867,8 @@ static LEXEME *TemplateArg(LEXEME *lex, SYMBOL *funcsp, TEMPLATEPARAMLIST *arg, 
             arg->p->type = kw_template;
             lex = getsym();
             lex = TemplateHeader(lex, funcsp, &arg->p->byTemplate.args);
+            if (arg->p->byTemplate.args)
+                dropStructureDeclaration();
             arg->p->packed = FALSE;
             if (!MATCHKW(lex, kw_class))
             {

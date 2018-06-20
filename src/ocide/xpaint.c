@@ -36,6 +36,9 @@
 #include <ctype.h>
 #include <process.h>
 #include "symtypes.h"
+
+#define SQUIGGLE_COLOR 0xff
+
  extern COLORREF keywordColor;
  extern COLORREF numberColor;
  extern COLORREF commentColo;
@@ -260,6 +263,35 @@ void xdrawline(HWND hwnd, EDITDATA *p, int chpos)
         buf[count] = 0;
         return pos;
     }
+    void DrawSquiggles(HDC dc, HPEN squigglePen, EDITDATA *p, int row, int start, int end)
+    {
+        squigglePen = SelectObject(dc, squigglePen);
+        int initial = start;
+        row = row + p->cd->txtFontHeight-2;
+        while (start < end)
+        {
+             while (!p->cd->text[start].squiggle && start < end) start++;
+             if (start < end)
+             {
+                 int runstart = start;
+                 while (p->cd->text[start].squiggle && start < end) start++;
+                 int runend = start;
+                 runstart = (runstart - initial) * p->cd->txtFontWidth;
+                 runend = (runend - initial) * p->cd->txtFontWidth;
+                 for (int i=runstart; i < runend; i+=6)
+                 {    
+                     MoveToEx(dc, i, row+1, NULL);
+                     LineTo(dc, i + 3, row+1);
+                     if (i + 3 < runend)
+                     {
+                        MoveToEx(dc, i+3, row, NULL);
+                        LineTo(dc, i + 6, row);
+                     }
+                 }
+             }
+        }
+        squigglePen = SelectObject(dc, squigglePen);
+    }
     /**********************************************************************
      * EditPaint is the paint procedure for the window.  It selectively
      * paints only those lines that have been marked as changed
@@ -274,7 +306,7 @@ void xdrawline(HWND hwnd, EDITDATA *p, int chpos)
         int lines, i, pos;
         int baseline;
         HBRUSH selBrush = CreateSolidBrush(selectedBackgroundColor);
-        HPEN columnbarPen ;
+        HPEN columnbarPen, squigglePen ;
         int colMark = PropGetInt(NULL, "COLUMN_MARK");
         int autoDecoration = PropGetInt(NULL, "DECORATE_AUTO");
 		int colorizing = PropGetBool(NULL, "COLORIZE");
@@ -286,6 +318,7 @@ void xdrawline(HWND hwnd, EDITDATA *p, int chpos)
         {
             columnbarPen = CreatePen(PS_NULL, 0, 0);
         }
+        squigglePen = CreatePen(PS_SOLID, 0, SQUIGGLE_COLOR);
         ClientArea(hwnd, p, &r);
         GetClientRect(hwnd, &client);
         lines = r.bottom / p->cd->txtFontHeight;
@@ -325,6 +358,7 @@ void xdrawline(HWND hwnd, EDITDATA *p, int chpos)
                 }
                 if (leftcol > p->leftshownindex)
                     leftcol = p->leftshownindex;
+                int startPos = pos;
                 while (p->cd->text[pos].ch != '\n' && pos < p->cd->textlen)
                 {
                     int selection = FALSE;
@@ -357,6 +391,7 @@ void xdrawline(HWND hwnd, EDITDATA *p, int chpos)
                     ExtTextOut(dc, col+z, r.top, ETO_OPAQUE, &r, buf, n,dx);
                     col += (p->cd->txtFontWidth) * n;
                 }
+                DrawSquiggles(dc, squigglePen, p, r.top, startPos, pos);
             }
             while (pos < p->cd->textlen)
             {
@@ -411,5 +446,6 @@ void xdrawline(HWND hwnd, EDITDATA *p, int chpos)
                 (GetWindowLong(hwnd, GWL_ID) << 16)), (LPARAM)hwnd);
         }
         DeleteObject(selBrush);
+        DeleteObject(squigglePen);
         DeleteObject(columnbarPen);
     }

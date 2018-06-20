@@ -112,6 +112,7 @@
 #define LANGUAGE_C 1
 #define LANGUAGE_ASM 2
 #define LANGUAGE_RC 3
+#define LANGUAGE_CPP 4
 
 #define EDITSIG 0xf1823794
 #define RESSIG 0x1F8237A5
@@ -199,6 +200,7 @@ typedef struct _setting
 	char * lowLimit, *highLimit;
     int order;
     int helpid;
+    int clean:1;
 } SETTING;
 typedef struct _profile
 {
@@ -443,7 +445,8 @@ typedef struct
 //    COLORREF color;
 	unsigned short Color:10;
     unsigned short effect:3;
-    unsigned short pad1:3;
+    unsigned short squiggle: 1;
+    unsigned short pad1:2;
     unsigned char pad2;
     unsigned char ch;
 //    char pad;

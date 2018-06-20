@@ -1499,7 +1499,7 @@ int opt0(EXPRESSION **node)
             rv |= opt0(&(ep->left));
             if (isintconst(ep->left))
             {
-                *node = intNode(en_c_i, -ep->left->v.i);
+                *node = intNode(ep->left->type, -ep->left->v.i);
                 rv = TRUE;
             }
             else if (isfloatconst(ep->left))

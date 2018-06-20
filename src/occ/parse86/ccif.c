@@ -171,7 +171,7 @@ static int WriteStructMembers(SYMBOL *sym, SYMBOL *parent, sqlite3_int64 struct_
             else
             {
                 static char type_name[100000];
-                memset(type_name, 0, strlen(type_name));
+                memset(type_name, 0, sizeof(type_name));
                 int indirectCount = 0;
                 int rel_id = 0;
                 TYPE *tp = st->tp;

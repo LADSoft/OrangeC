@@ -78,6 +78,7 @@ LIST *importThunks;
 /*-------------------------------------------------------------------------------------------------------------------------------- */
 static EXPRESSION *nodeSizeof(TYPE *tp, EXPRESSION *exp);
 static LEXEME *expression_primary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, int flags);
+static LEXEME *expression_pm(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, int flags);
 LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, int flags);
 static LEXEME *expression_msilfunc(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, int flags);
 
@@ -490,6 +491,8 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                 case kw_int:
                     *exp = sp->tp->templateParam->p->byNonType.val;
                     *tp = sp->tp->templateParam->p->byNonType.tp;
+                    if (!*exp)
+                        *exp = intNode(en_c_i, 0);
                     if ((*tp)->type == bt_templateparam)
                     {
                         TYPE *tp1 = (*tp)->templateParam->p->byClass.val;
@@ -586,6 +589,8 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                     lex = prevsym(placeholder);
                     *tp = NULL;
                     lex = expression_func_type_cast(lex, funcsp, tp, exp, flags);
+                    if (!*exp)
+                        *exp = intNode(en_c_i, 0);
                     return lex;
                 case sc_overloads:
                     if (!strcmp(sp->name, "setjmp") && sp->parentClass == NULL && sp->parentNameSpace == NULL)
@@ -1059,6 +1064,8 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
         }
         DecGlobalFlag();
     }
+    if (!*exp)
+        *exp = intNode(en_c_i, 0);
     sp->allocate = TRUE;
     return lex;
 }
@@ -1210,9 +1217,11 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                 errorstr(ERR_POINTER_TO_STRUCTURE_EXPECTED, tokenName);
             else
                 errorstr(ERR_STRUCTURED_TYPE_EXPECTED, tokenName);
-            while (ISID(lex))
+            while (ISID(lex) || MATCHKW(lex, kw_operator))
             {
-                lex = getsym();
+                TYPE *tp = NULL;
+                EXPRESSION *exp = NULL;
+                lex = expression_pm(lex, funcsp, NULL, &tp, &exp, NULL, 0);
                 if (!MATCHKW(lex, pointsto) && !MATCHKW(lex, dot))
                     break;
                 lex = getsym();
@@ -1950,6 +1959,7 @@ join:
             {
                 // this needs to be revisited to get proper typing in C++
                 cast(&stdint, &list->exp);
+                list->tp = &stdint;
             }
         }
         if (list)
@@ -3177,7 +3187,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
         lex = getArgs(lex, funcsp, funcparams, closepa, TRUE, flags);
     }
         
-    if (funcparams->astemplate)
+    if (funcparams->astemplate && argument_nesting)
     {
         // if we hit a packed template param here, then this is going to be a candidate
         // for some other function's packed expression
@@ -4465,6 +4475,7 @@ static LEXEME *expression_primary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
                     break;
                 case classsel:
                 case kw_operator:
+                case kw_decltype:
                     lex = variableName(lex, funcsp, atp, tp, exp, ismutable, flags);
                     break;
                 case kw_nullptr:
@@ -7368,7 +7379,7 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                     else if (isfunction(tp1))
                     {
                         if (!isvoidptr(*tp) && 
-                            (!isfunction(basetype(*tp)->btp) || !comparetypes(basetype(*tp)->btp, tp1, TRUE)))
+                            (!isfunction(basetype(*tp)->btp) || !comparetypes(basetype(basetype(*tp)->btp)->btp, basetype(tp1)->btp, TRUE)))
                             error(ERR_SUSPICIOUS_POINTER_CONVERSION);
                     }
                     else 

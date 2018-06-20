@@ -1369,6 +1369,7 @@ void FormatLine(HWND hwnd, INTERNAL_CHAR *buf, int type, int bkColor);
 void FullColorize(HWND hwnd, EDITDATA *p, int creation);
 void InsertColorizeEntry(COLORIZE_HASH_ENTRY *entries[], char *name, int start, int end, int type);
 void FreeColorizeEntries(COLORIZE_HASH_ENTRY *entries[]);
+void SyntaxCheck(HWND hWnd, EDITDATA *p);
 
                                /* Xedit.c */
 

@@ -39,6 +39,7 @@ extern ___lscrtl_startup
     push dword [ebp + 8]
     call ___lscrtl_startup
     mov	esp,[unalignedstack]
+    pop ebp
     ret 12
 global WinMain
 WinMain:

@@ -816,13 +816,13 @@ doinf:
                 xxx = *(char **)arg ;
                 if (xxx == NULL)
                     xxx = "(null)";
-		if (width == 0)
-			if (prec >= 0)
-				width = prec;
-			else
-				width = strlen(xxx);
-		if (prec < 0 || prec > width)
-			prec = width;
+                int width1 = strlen(xxx);
+                if (prec >= 0 && width1 > prec)
+                    width1 = prec;
+                if (width < width1)
+                    width = width1;
+ 		if (prec < 0)
+                   prec = width;
                 hold = strlen(xxx);
                 if (hold < prec)
                     prec = hold;
@@ -870,7 +870,8 @@ doinf:
             if (prec == 0 && strlen(sz) == 1 && sz[0] == '0')
                 sz++;
             else if (strlen(sz) < prec)
-                sz -= prec - strlen(sz);
+                for (int i=strlen(sz); i < prec; i++)
+                    *--sz = '0';
             signch = -1 ;
             if (type != 'x' && type != 'u' && type != 'o' && type != 'b')
     			if (issigned) {
@@ -902,28 +903,21 @@ doinf:
                 width = temp;
             if (signch != -1)
 			{
-				if (leadzero)
-				{
-					PUTCH(signch);
-					(*written)++;
-				}
-				else
-				{
 					*(--sz) = signch;
 					temp++;
-				}
 			}
             if (prefixed)
                 if ((type == 'o' || type == 'b') && sz[0] != '0')
 				{
-					PUTCH('0');
-					(*written)++;
+					*(--sz) = '0';
+					temp++;
 				}
                 else if ((type == 'x') && c)
 				{
-					PUTCH('0');
-					PUTCH('X');
-					(*written)+=2;
+					*(--sz) = 'X' + lc;
+					temp++;
+					*(--sz) = '0';
+					temp++;
 				}
 			justifiedOutput(__stream, sz, ljustify, strlen(sz), width, leadzero ? '0' : ' ', written);
 			break;

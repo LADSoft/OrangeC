@@ -20,6 +20,9 @@
  
  **Olink** takes the files in _filename-list_, and produces an output file with a **.rel **extension.
 
+## Environment Variables
+
+OLINK parses the LIBRARY_PATH environment variable and adds the contents to the library search path.
 
 ## Specification Files
 

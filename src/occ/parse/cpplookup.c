@@ -236,8 +236,9 @@ SYMBOL *namespacesearch(char *name, NAMESPACEVALUES *ns, BOOLEAN qualified, BOOL
 LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns, 
                    BOOLEAN *throughClass, BOOLEAN tagsOnly, enum e_sc storage_class, BOOLEAN isType)
 {
-	(void)tagsOnly;
-	(void)storage_class;
+	 (void)tagsOnly;
+	 (void)storage_class;
+    BOOLEAN first = TRUE;
     NAMESPACEVALUES *nssym = globalNameSpace;
     SYMBOL *strSym = NULL;
     BOOLEAN qualified = FALSE;
@@ -259,15 +260,30 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
         qualified = TRUE;
     }
     finalPos = lex;
-    while (ISID(lex) || (templateSelector && MATCHKW(lex, kw_operator)))
+    while (ISID(lex) || first && MATCHKW(lex, kw_decltype) || (templateSelector && MATCHKW(lex, kw_operator)))
     {
         char buf[512];
         SYMBOL *sp = NULL;
         int ovdummy;
-        lex = getIdName(lex, NULL, buf, &ovdummy, NULL);
-        lex = getsym();
-        if (templateSelector)
+        if (first && MATCHKW(lex, kw_decltype))
         {
+            TYPE *tp = NULL;
+            lex = getDeclType(lex, theCurrentFunc, &tp);
+            if (!tp || (!isstructured(tp) && tp->type != bt_templatedecltype) || !MATCHKW(lex, classsel))
+                break;
+            lex = getsym();
+            sp = basetype(tp)->sp;
+            if (sp)
+                sp->tp = PerformDeferredInitialization(sp->tp, NULL);
+            strSym = sp;
+            if (!qualified)
+                nssym = NULL;
+            finalPos = lex;
+        }
+        else if (templateSelector)
+        {
+            lex = getIdName(lex, NULL, buf, &ovdummy, NULL);
+            lex = getsym();
             *last = Alloc(sizeof(TEMPLATESELECTOR));
             (*last)->name = litlate(buf);
             if (hasTemplate)
@@ -290,6 +306,8 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
         }
         else
         {
+            lex = getIdName(lex, NULL, buf, &ovdummy, NULL);
+            lex = getsym();
             BOOLEAN hasTemplateArgs = FALSE;
             BOOLEAN deferred = FALSE;
             BOOLEAN istypedef = FALSE;
@@ -342,7 +360,7 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
                 {
                     if (!qualified)
                         sp = namespacesearch(buf, localNameSpace, qualified, FALSE);
-                    if (!sp)
+                    if (!sp && nssym)
                     {
                         sp = namespacesearch(buf, nssym, qualified, FALSE);
                     }
@@ -495,7 +513,7 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
                         if (p)
                             deferred = TRUE;
                     }
-                    if (!deferred)
+                    if (!deferred && sp)
                     {
                         if (basetype(sp->tp)->type == bt_templateselector)
                         {
@@ -606,6 +624,7 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
                 break;
             }
         }
+        first = FALSE;
         hasTemplate = FALSE;
         if (MATCHKW(lex, kw_template))
         {
@@ -889,8 +908,7 @@ LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES
         }
         return lex;
     }
-//    if (MATCHKW(lex, classsel))
-//        namespaceOnly = TRUE;
+
     lex = nestedPath(lex, &encloser, &ns, &throughClass, tagsOnly, storage_class, isType);
     if (cparams.prm_cplusplus)
     {

@@ -33,6 +33,28 @@
  
  generates a compile time warning if the LONG macro is not defined.
 
+otherwise #pragma warning may be used to disable and enable warnings, if the contents are in parenthesis:
+
+ \#pragma warning(disable:73)
+
+disables warning #73
+
+ \#pragma warning(enable:141)
+
+enables warning #141
+
+ \#pragma warning(push)
+
+pushes the warning state
+
+ \#pragma warning(pop)
+
+pops the warning state
+
+multiple options may be specified by separating with commas:
+
+ \#pragma warning(push, disable:73, enable:141)
+
 
 ### \#pragma aux
 

@@ -119,8 +119,9 @@ BOOLEAN startOfType(LEXEME *lex, BOOLEAN assumeType)
             }
         }
     }
-    if (lex->type == l_id || MATCHKW(lex, classsel))
+    if (lex->type == l_id || MATCHKW(lex, classsel) || MATCHKW(lex, kw_decltype))
     {
+        BOOLEAN isdecltype = MATCHKW(lex, kw_decltype);
         SYMBOL *sp, *strSym = NULL;
         LEXEME *placeholder = lex;
         BOOLEAN dest = FALSE;
@@ -129,7 +130,7 @@ BOOLEAN startOfType(LEXEME *lex, BOOLEAN assumeType)
             prevsym(placeholder);
         linesHead = oldHead;
         linesTail = oldTail;
-        return (sp && istype(sp)) || (assumeType && strSym && (strSym->tp->type == bt_templateselector || strSym->tp->type == bt_templatedecltype));
+        return (!sp && isdecltype) || (sp && istype(sp)) || (assumeType && strSym && (strSym->tp->type == bt_templateselector || strSym->tp->type == bt_templatedecltype));
     }
     else 
     {
@@ -203,6 +204,8 @@ BOOLEAN isDerivedFromTemplate(TYPE *tp)
 BOOLEAN isautotype(TYPE *tp)
 {
     if (isref(tp))
+        tp = basetype(tp)->btp;
+    while (ispointer(tp))
         tp = basetype(tp)->btp;
     return basetype(tp)->type == bt_auto;
 }
@@ -537,38 +540,72 @@ BOOLEAN isunion(TYPE *tp)
         return tp->type == bt_union;
     return FALSE;
 }
-TYPE *assignauto(TYPE *pat, TYPE *nt)
+void DeduceAuto(TYPE **pat, TYPE *nt)
 {
-    if (isautotype(pat))
+    TYPE *in = nt;
+    if (isautotype(*pat))
     {
-        if (isref(pat))
+        BOOLEAN pointerOrRef = FALSE;
+        BOOLEAN err = FALSE;
+        if (isref(*pat))
         {
             if (isref(nt))
-                basetype(pat)->btp = basetype(nt)->btp;
-            else
-                basetype(pat)->btp = nt;
+            {
+                nt = basetype(nt)->btp;
+            }
+            pointerOrRef = TRUE;
+            pat = &basetype(*pat)->btp;
         }
-        else
+        while (!err && ispointer(*pat) && ispointer(nt))
         {
-            if (pat->decltypeauto)
-                if (pat->decltypeautoextended)
+            if (!ispointer(nt))
+            {
+                err = TRUE;
+            }
+            else
+            {
+                pointerOrRef = TRUE;
+                pat = &basetype(*pat)->btp;
+                nt = basetype(nt)->btp;
+            }
+        }
+        if (basetype(*pat)->type != bt_auto)
+            err = TRUE;
+        nt = basetype(nt);
+        if (err)
+        {
+            errortype(ERR_CANNOT_DEDUCE_AUTO_TYPE, in, in);
+        }
+        else if (!pointerOrRef)
+        {
+            if ((*pat)->decltypeauto)
+                if ((*pat)->decltypeautoextended)
                 {
-                    pat = (TYPE *)Alloc(sizeof(TYPE));
-                    pat->type = bt_lref;
-                    pat->size = getSize(bt_pointer);
-                    pat->btp = nt;
+                    *pat = (TYPE *)Alloc(sizeof(TYPE));
+                    (*pat)->type = bt_lref;
+                    (*pat)->size = getSize(bt_pointer);
+                    (*pat)->btp = nt;
                 }
                 else
                 {
-                    pat = nt;
+                    *pat = nt;
                 }
             else if (isref(nt))
-                pat = basetype(nt)->btp;
+            {
+                *pat = basetype(nt)->btp;
+            }
             else
-                pat = nt;
+            {
+                *pat = nt;
+            }
+        }
+        else
+        {
+            while ((*pat)->type != bt_auto)
+                pat = &(*pat)->btp;
+            *pat = nt;
         }
     }
-    return pat;
 }
 SYMBOL *getFunctionSP(TYPE **tp)
 {
@@ -1584,6 +1621,8 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
             *pos = expsym;
         }
     }
+    if (!rv)
+        rv = intNode(en_c_i, 0);
     return rv;
 }
 BOOLEAN assignDiscardsConst(TYPE *dest, TYPE *source)

@@ -1401,14 +1401,7 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
             lex = initialize_string(lex, funcsp, &tp, &exp);
         }
         castToPointer(&tp, &exp, (enum e_kw)-1, itype);
-        if (basetype(basetype(itype)->btp)->type == bt_auto)
-        {
-            TYPE **tpq = &itype;
-            tpq = &(basetype(*tpq)->btp);
-            while (*tpq && (*tpq)->type != bt_auto)
-                tpq = &(*tpq)->btp;
-            *tpq = basetype(tp)->btp;
-        }
+        DeduceAuto(&itype, tp);
         if (sc != sc_auto && sc != sc_register)
         {
             if (!isarithmeticconst(exp) && !isconstaddress(exp) && !cparams.prm_cplusplus)
@@ -1775,8 +1768,8 @@ static LEXEME *initialize_reference_type(LEXEME *lex, SYMBOL *funcsp, int offset
     if (tp)
     {
         ResolveTemplateVariable(&tp, &exp, basetype(itype)->btp, NULL);
-        basetype(itype)->btp = assignauto(basetype(itype)->btp, tp);
-        basetype(sp->tp)->btp = assignauto(basetype(sp->tp)->btp, tp);
+        DeduceAuto(&itype, tp);
+        DeduceAuto(&sp->tp, tp);
         UpdateRootTypes(itype);
         UpdateRootTypes(sp->tp);
         if (!isref(tp) && ((isconst(tp) && !isconst(basetype(itype)->btp)) || (isvolatile(tp) && !isvolatile(basetype(itype)->btp))))
@@ -2357,6 +2350,7 @@ static void set_array_sizes(AGGREGATE_DESCRIPTOR *cache)
 static LEXEME *read_strings(LEXEME *lex, INITIALIZER **next,
                                  AGGREGATE_DESCRIPTOR **desc)
 {
+    BOOLEAN nothingWritten = TRUE;
     TYPE *tp = basetype((*desc)->tp);
     TYPE *btp = basetype(tp->btp);
     int max = tp->size / btp->size;
@@ -2411,6 +2405,7 @@ static LEXEME *read_strings(LEXEME *lex, INITIALIZER **next,
                 (*desc)->reloffset += btp->size;
                 next = &(*next)->next;
                 index++;
+                nothingWritten = FALSE;
             }
         }
     }
@@ -2420,6 +2415,14 @@ static LEXEME *read_strings(LEXEME *lex, INITIALIZER **next,
         
         initInsert(next, btp, exp, (*desc)->offset + (*desc)->reloffset, FALSE); /* NULL=no initializer */
         max = (*desc)->reloffset/btp->size;
+        nothingWritten = FALSE;
+    }
+    if (nothingWritten)
+    {
+        EXPRESSION *exp = intNode(en_c_i, 0);
+
+        initInsert(next, btp, exp, (*desc)->offset + (*desc)->reloffset, FALSE); /* NULL=no initializer */
+
     }
     for (i = (*desc)->reloffset / btp->size; i < max; i++)
     {

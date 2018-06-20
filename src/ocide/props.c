@@ -884,9 +884,9 @@ void ApplyCurrentValues(SETTING *setting, PROJECTITEM *saveTo)
                     {
                         SETTING *p = *s;
                         *s = (*s)->next;
-                        free(p);
                         MarkChanged(saveTo, FALSE);
-                        saveTo->clean = TRUE;
+                        saveTo->clean = iscleanable(p->id);
+                        free(p);
                         break;
                     }
                     s = &(*s)->next;
@@ -902,12 +902,12 @@ void ApplyCurrentValues(SETTING *setting, PROJECTITEM *saveTo)
                     s->id = strdup(setting->id);
                     InsertSetting(saveTo, s);
                 }
-                if (s)
+                if (s && (!s->value || strcmp(s->value, setting->tentative)))
                 {
                     free(s->value);
                     s->value = strdup(setting->tentative);
                     MarkChanged(saveTo, FALSE);
-                    saveTo->clean = TRUE;
+                    saveTo->clean = iscleanable(s->id);
                 }
             }
             LeaveCriticalSection(&propsMutex);

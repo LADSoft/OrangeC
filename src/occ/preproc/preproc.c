@@ -798,8 +798,67 @@ static void pragerror(int error)
     unsigned char *s ;
     skipspace();
     s = includes->lptr;
-    if (*s == '(') /* ignore microsoft warning pragmas  */
+    if (*s == '(')
+    {
+        // warning control
+#ifndef CPREPROCESSOR
+        if (error == ERR_PRAGWARN)
+        {
+            do
+            {
+                void (*func)(int) = NULL;
+                s++;
+                char name[256];
+                name[0] = 0;
+                while (isspace(*s))
+                    s++;
+                defid(name, &s);
+                if (!strcmp(name, "push"))
+                {
+                    PushWarnings();
+                } 
+                else if (!strcmp(name, "pop"))
+                {
+                    PopWarnings();
+                } 
+                else if (!strcmp(name, "enable"))
+                {
+                    func = EnableWarning;
+                } 
+                else if (!strcmp(name, "disable"))
+                {
+                    func = DisableWarning;
+                } 
+                else
+                {
+                    break;
+                }
+                if (func)
+                {
+                    while (isspace(*s))
+                        s++;
+                    if (*s != ':')
+                        break;
+                    s++;
+                    while (isspace(*s))
+                        s++;
+                    while (isdigit(*s))
+                    {
+                        func(atoi(s));
+                        while (isdigit(*s))
+                            s++;
+                        while (isspace(*s))
+                            s++;
+                    }
+                }
+                while (isspace(*s))
+                    s++;
+            } while (*s == ',');
+        }
+#endif
         return ;
+    }
+    // else a warning message
     while (i-- &&  *s &&  *s != '\n')
         *p++ =  (char)*s++;
     *p = 0;

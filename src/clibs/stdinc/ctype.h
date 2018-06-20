@@ -42,7 +42,7 @@
 extern "C" {
 #endif
 
-extern unsigned short const _RTL_DATA * _pctype;
+extern unsigned short const _IMPORT _RTL_DATA * _pctype;
 
 /* character classes */
 

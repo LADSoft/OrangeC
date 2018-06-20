@@ -591,11 +591,22 @@ join:
                 else if (n)
                     pat.replace(0,n,"");
                 n = rep.find_first_not_of(' ');
-                if (rep[n] == '.')
-                    rep.replace(0,n,"%");
+                if (n == std::string::npos)
+                {
+                    pat = extra.substr(m, m1 - m);
+                    while ((n = rv.find(pat)) != std::string::npos)
+                    {
+                        rv.replace(n, pat.size(),"");
+                    }
+                }
                 else
-                    rep.replace(0,n,"");
-                rv = patsubst(pat + "," +  rep + "," + rv);					
+                {
+                    if (rep[n] == '.')
+                        rep.replace(0, n, "%");
+                    else
+                        rep.replace(0, n, "");
+                    rv = patsubst(pat + "," + rep + "," + rv);
+                }
             }
             else
             {

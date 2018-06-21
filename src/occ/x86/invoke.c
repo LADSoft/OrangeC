@@ -94,7 +94,8 @@ static void InsertFile(LIST **r, char *name, char *ext, BOOLEAN primary)
     {
         strcpy(outputFileName, name);
         StripExt(outputFileName);
-        strcat(outputFileName, ".exe");
+	if (!cparams.prm_compileonly && !cparams.prm_assemble)
+	    strcat(outputFileName, ".exe");
     }
     if (ext)
     {

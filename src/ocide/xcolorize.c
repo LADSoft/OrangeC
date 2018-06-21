@@ -1181,12 +1181,21 @@ void FormatLine(HWND hwnd, INTERNAL_CHAR *buf, int type, int bkColor)
                         case IN_MATCH:
                             if (isspace(ptr->ch))
                                 if (ptr->ch == '\n')
-                                    semiState = NEED_SEMI;
+                                {
+                                    INTERNAL_CHAR *p = ptr + 1;
+                                    while (isspace(p->ch)) p++;
+                                    if (p->ch == '{')
+                                        semiState = IN_MATCH;
+                                    else
+                                        semiState = NEED_SEMI;
+                                }
                                 else
+                                {
                                     semiState = IN_MATCH;
+                                }
                             else if (isalpha(ptr->ch) || ptr->ch == '_')
                                 semiState = FOUND_ID_START;
-                            else if (ptr->ch == ';' || ptr->ch == '}' || ptr->ch == ':')
+                            else if (ptr->ch == ';' || ptr->ch == '{' || ptr->ch == '}' || ptr->ch == ':')
                                 semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
                             else if (IsOperator(ptr))
                                 semiState = FOUND_OPERATOR;

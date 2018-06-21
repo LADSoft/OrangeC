@@ -519,7 +519,7 @@ bool Maker::SearchImplicitRules(const std::string &goal, const std::string &pref
         if (rule->GetTarget() != "%" || !rule->GetDoubleColon())
         {
             unsigned n;
-            if ((n = name.find_last_of(".")) == std::string::npos || n == name.size() - 1 || name[n + 1] == '/' || name[n + 1] == '\\')
+            if (rule->GetTarget() != "%" || (n = name.find_last_of(".")) == std::string::npos || n == name.size() - 1 || name[n + 1] == '/' || name[n + 1] == '\\')
             {
                 std::string stem = Eval::FindStem(name, rule->GetTarget());
                 if (ExistsOrMentioned(stem, rule, preferredPath, dir, true, outerMost))

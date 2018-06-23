@@ -1550,11 +1550,14 @@ static void fillPrevious(VLASHIM *shim, VLASHIM **labels, int minLabel)
             case v_goto:
             case v_branch:
                 selected = labels[shim->label - minLabel];
-                prev = (LIST *)Alloc(sizeof(LIST));
-                prev->data = shim;
-                prev->next = selected->backs;
-                selected->backs = prev;
-                shim->fwd = selected;
+                if (selected)
+                {
+                    prev = (LIST *)Alloc(sizeof(LIST));
+                    prev->data = shim;
+                    prev->next = selected->backs;
+                    selected->backs = prev;
+                    shim->fwd = selected;
+                }
                 break;
             default:
                 diag("unknown shim type in fillPrevious");

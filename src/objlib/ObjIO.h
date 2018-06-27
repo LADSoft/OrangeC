@@ -37,7 +37,9 @@ class ObjExpression;
 class ObjIOBase
 {
 public:
+// clang-format off
     enum eParseType { eMake, eLink, eBrowse, eAll };
+// clang-format on
     ObjIOBase(const ObjString Name, bool CaseSensitive) : name(Name), translatorName(""),bitsPerMAU(8),
                 MAUS(4), debugInfo(true), startAddress(nullptr), caseSensitive(CaseSensitive), absolute(false) {}
     virtual ~ObjIOBase() { }

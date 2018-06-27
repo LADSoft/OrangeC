@@ -40,6 +40,7 @@
 #define F_INRETURN 128
 
 /* icode innstruction opcodes */
+// clang-format off
 enum i_ops
 {
         /* note, the branches MUST be higher in the ordering than the sets */
@@ -65,12 +66,15 @@ enum i_ops
         /* end marker */
         i_endoflist
 };
+// clang-format on
 
 /* icode address modes annd special regs */
+// clang-format off
 enum i_adr
 {
     i_none, i_immed, i_direct, i_ind, i_rret
 };
+// clang-format on
 
 /*
  * address mode
@@ -216,6 +220,8 @@ typedef struct quad
  * i = imaginary
  * c = complex
  */
+// clang-format off
+
 enum e_icmode {
     icnone,icnl,icnr,icni,icnc, 
     icln,icll,iclr,icli,iclc, 
@@ -224,6 +230,7 @@ enum e_icmode {
     iccn,iccl,iccr,icci,iccc,
     ical,icla,icaa
 };
+// clang-format on
 struct cases {
     LLONG_TYPE bottom;
     LLONG_TYPE top;
@@ -233,19 +240,24 @@ struct cases {
         LLONG_TYPE id;
     } *ptrs;
 } ;
-
+// clang-format off
 enum e_gt
 {
     nogen, chargen, shortgen, wchar_tgen, intgen, u16gen, u32gen, enumgen, longgen, longlonggen,
     floatgen, doublegen, longdoublegen, srrefgen
 };
+// clang-format on
+
 /* backend may have tables based on this ordering */
+// clang-format off
 enum e_sg
 {
     noseg, codeseg, dataseg, bssxseg, stringseg, constseg, tlsseg, startupxseg,
         rundownxseg, tlssuseg, tlsrdseg, typeseg, symseg, browseseg, 
         fixcseg, fixdseg, virtseg = 100
 };
+// clang-format on
+
 typedef struct _storetemphash
 {
     struct _storetemphash *next;

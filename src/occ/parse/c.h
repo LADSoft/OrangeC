@@ -75,6 +75,7 @@ typedef struct
     int count;
 } SLCHAR;
 /* keywords and symbols */
+// clang-format off
 enum e_kw
 {
     /* first comes all the C++ overloadable operators */
@@ -126,7 +127,9 @@ enum e_kw
         kw_dr4, kw_dr5, kw_dr6, kw_dr7, kw_tr0, kw_tr1, kw_tr2, kw_tr3, kw_tr4,
         kw_tr5, kw_tr6, kw_tr7, eol, kw_none
 };
+// clang-format on
 
+// clang-format off
 enum ovcl 
 {
     ovcl_unary_numeric, ovcl_unary_numericptr, ovcl_unary_int,
@@ -136,12 +139,15 @@ enum ovcl
     ovcl_assign_any, ovcl_assign_numericptr, ovcl_assign_numeric, ovcl_assign_int,
     ovcl_pointsto, ovcl_openbr, ovcl_openpa, ovcl_comma
 };
+// clang-format on
+
 typedef struct
 { 
     FPF r;
     FPF i;
 } _COMPLEX_S;
 
+// clang-format off
 enum e_node
 {
 
@@ -175,8 +181,12 @@ enum e_node
         en_literalclass, en_templateparam, en_templateselector, en_packedempty, en_sizeofellipse,
         en_type
 };
-/*      statement node descriptions     */
+// clang-format on
 
+
+
+/*      statement node descriptions     */
+// clang-format off
 enum e_stmt
 {
     st_line, st_nop, st_expr, st_declare, st_goto, st_asmgoto, st_asmcond, 
@@ -185,8 +195,11 @@ enum e_stmt
     st__genword, st_passthrough, st_datapassthrough, st_abs, st_label,
     st___try, st___catch, st___finally, st___fault
 };
+// clang-format on
+
 
 /* storage classes */
+// clang-format off
 enum e_sc
 {
         sc_none, sc_static, sc_localstatic, sc_auto, sc_register, sc_global, sc_external, sc_templateparam,
@@ -195,8 +208,10 @@ enum e_sc
         sc_friendlist, sc_const, sc_tconst, sc_classmember, sc_constexpr,
            sc_memberreg, sc_namespace, sc_namespacealias, sc_temp, sc_virtual
 };
+// clang-format on
 
 /* basic types */
+// clang-format off
 enum e_bt
 {
     /* keep this ordering and dont insert anything before the end of the
@@ -220,12 +235,19 @@ enum e_bt
         /* last */
         bt_none
 };
+// clang-format on
+
+// clang-format off
 enum e_lk { lk_none, lk_cdecl, lk_pascal, lk_stdcall, lk_c, lk_cpp,
     lk_interrupt, lk_fault, lk_inline, lk_virtual, lk_noreturn, lk_threadlocal, 
     lk_import, lk_export, lk_auto, lk_msil_rtl, lk_unmanaged, lk_property, lk_entrypoint };
-    
-enum e_ac { ac_private, ac_protected, ac_public, ac_none };
+// clang-format on
 
+// clang-format off    
+enum e_ac { ac_private, ac_protected, ac_public, ac_none };
+// clang-format on
+
+// clang-format off
 enum e_cvsrn
 {
     // tier 1
@@ -253,6 +275,7 @@ enum e_cvsrn
     CV_AMBIGUOUS,
     CV_NONE,
 } ;
+// clang-format on
 
 #define _F_AMPERSAND 1
 #define _F_PACKABLE 2
@@ -486,7 +509,9 @@ struct _ccNamespaceData
     int endline;
 };
 #endif
+// clang-format off
 enum e_cm { cmNone, cmValue, cmRef, cmThis, cmExplicitValue };
+// clang-format on
 /* symbols */
 typedef struct sym
 {
@@ -660,7 +685,9 @@ typedef struct sym
     struct sym *parentTemplate; // could be the parent of a specialization or an instantiation
     struct init * init, *lastInit, *dest;
     // order is important for this next, a comparison is done based on this ordering
+// clang-format off
     enum e_xc { xc_unspecified, xc_all, xc_dynamic, xc_none } xcMode;
+// clang-format on
     struct xcept
     {
         LIST *xcDynamic; // list of types, the exception specification when dynamic
@@ -897,12 +924,16 @@ typedef struct kwblk
     char *name;
     int len;
     enum e_kw key;
+// clang-format off
     enum
     {
         KW_NONE = 0, KW_CPLUSPLUS = 1, KW_INLINEASM = 2, KW_NONANSI = 4, KW_C99 = 8, 
         KW_C1X = 16, KW_ASSEMBLER = 32, KW_MSIL = 64,
         KW_386 = 128, KW_68K= 256, KW_ALL = 0x40000000
     } matchFlags;
+// clang-format on
+
+// clang-format off    
     enum 
     {
         TT_BASE = 1, TT_BOOL=2, TT_INT = 4, TT_FLOAT= 8, TT_COMPLEX = 16, 
@@ -915,6 +946,7 @@ typedef struct kwblk
         TT_TYPENAME=0x4000000, TT_TYPEDEF = 0x8000000, TT_VOID = 0x10000000, TT_CLASS = 0x20000000,
         TT_LINKAGE = 0x40000000,TT_DECLARE = 0x80000000, TT_UNKNOWN = 0
     } tokenTypes;
+// clang-format on
 /*    ASMNAME *data; */
 }KEYWORD;
 
@@ -929,12 +961,14 @@ typedef struct kwblk
 typedef struct lexeme
 {
     struct lexeme *next, *prev;
+// clang-format off
     enum e_lexType { l_none, l_i, l_ui, l_l, l_ul, l_ll, l_ull, l_f, l_d, l_ld, l_I, 
             l_id, l_kw, 
             l_astr, l_wstr,  l_ustr, l_Ustr, l_u8str, l_msilstr, 
             l_achr, l_wchr, l_uchr, l_Uchr, 
             l_qualifiedname, l_asminst, l_asmreg
          } type;
+// clang-format on
     union u_val value;
     char *litaslit;
     char *suffix;

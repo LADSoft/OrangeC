@@ -33,11 +33,13 @@ class LinkExpression;
 class LinkTokenizer
 {
     public:
+// clang-format off
         enum eTokenType { eUnknown, eSymbol, eNumber, ePartition, eOverlay, eRegion, 
                 eComma, eBegin, eEnd, eSemi, eOpen, eClose, eBracketOpen, eBracketClose, eAssign,
                 ePC,
                 eAddr, eSize, eMaxSize, eRoundSize, eAlign, eVirtual, eFill,
                 eAdd, eSub, eMul, eDiv, eNeg, eCmpl, eEOF } ;
+// clang-format on
         LinkTokenizer(ObjString spec) : data(spec), token(eUnknown), 
                             value(0), lineNo(1) { NextToken(); }
         ~LinkTokenizer() { }

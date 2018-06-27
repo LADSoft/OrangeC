@@ -279,7 +279,7 @@ std::string Spawner::shell(const std::string &cmd)
 {
     std::string rv = OS::SpawnWithRedirect(cmd);
     int n = rv.size();
-    while (n && rv[n - 1] == '\r' || rv[n - 1] == '\n')
+    while (n && (rv[n - 1] == '\r' || rv[n - 1] == '\n'))
         n--;
     rv = rv.substr(0, n);
     std::replace(rv.begin(), rv.end(), '\r', ' ');

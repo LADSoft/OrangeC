@@ -35,7 +35,9 @@ class ObjFunction : public ObjType
 {
     typedef std::vector<ObjType *>ParameterContainer;
 public:
+// clang-format off
     enum eLinkage { eLabel, eC, eStdcall, ePascal, eMethod };
+// clang-format on
     ObjFunction(ObjString Name, ObjType *returnType, ObjInt Index) 
             : ObjType(Name, eFunction, returnType, Index), linkage(eLabel) {}
     virtual ~ObjFunction() {}

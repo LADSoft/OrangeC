@@ -96,6 +96,7 @@ public:
 
     SymbolIterator PublicBegin() { return publics.begin(); }
     SymbolIterator PublicEnd() { return publics.end(); }
+    size_t PublicSize() { return publics.size(); }
     SymbolIterator ExternalBegin() { return externals.begin(); }
     SymbolIterator ExternalEnd() { return externals.end(); }
     SymbolIterator LocalBegin() { return locals.begin(); }

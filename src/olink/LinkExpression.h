@@ -53,7 +53,9 @@ class LinkExpression
 {
 
     public:
+// clang-format off
         enum eOperator { eValue, ePC, eSymbol, eUnresolvedSection, eSection, eAdd, eSub, eMul, eDiv, eNeg, eCpl };
+// clang-format on
         LinkExpression() : op (eValue), left(nullptr), right(nullptr), symbolName(""), value(0), sect(0) {}
         LinkExpression(eOperator Op) : op (Op), left(nullptr), right(nullptr), symbolName(""), value(0) {}
         LinkExpression(ObjInt Value) : op (eValue), left(nullptr), right(nullptr), symbolName(""), value(Value) {}

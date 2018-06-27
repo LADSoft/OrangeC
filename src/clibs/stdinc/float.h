@@ -71,15 +71,24 @@
 #define DBL_EPSILON         0x1P-52
 #define FLT_EPSILON         0x1P-23
 #define LDBL_EPSILON        0x1P-63
+#define __DBL_EPSILON__	    DBL_EPSILON
+#define __FLT_EPSILON__     FLT_EPSILON
+#define __LDBL_EPSILON__    LDBL_EPSILON
 
 /* smallest positive IEEE normal numbers */
 #define DBL_MIN             0x1P-1022
 #define FLT_MIN             0x1P-126F
 #define LDBL_MIN            0x1P-16382L
+#define __DBL_MIN__	    DBL_MIN
+#define __FLT_MIN__         FLT_MIN
+#define __LDBL_MIN__        LDBL_MIN
 
 #define DBL_MAX             0x1.FFFFFFFFFFFFFP+1023
 #define FLT_MAX             0x1.FFFFFEP+127F
 #define LDBL_MAX            0x1.FFFFFFFFFFFFFFFEP+16383L
+#define __DBL_MAX__	    DBL_MAX
+#define __FLT_MAX__         FLT_MAX
+#define __LDBL_MAX__        LDBL_MAX
 
 #define DBL_MAX_EXP         +1024
 #define FLT_MAX_EXP         +128

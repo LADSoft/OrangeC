@@ -33,7 +33,7 @@
 #include "libp.h"
 
 typedef void (*CONSDEST)(void *);
-void __arrCall(void *instance, void *cons, void *dest, int elems, int size)
+void _RTL_FUNC __arrCall(void *instance, void *cons, void *dest, int elems, int size)
 {
     void *pos = instance;
     if (cons)

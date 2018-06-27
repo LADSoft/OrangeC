@@ -113,7 +113,7 @@ void dumpInlines(void)
                 SYMBOL *sym = (SYMBOL *)funcList->data;
                 if (((sym->isInline && sym->dumpInlineToFile) || sym->genreffed))
                 {
-                    if (sym->parentClass && sym->parentClass->dontinstantiate && !sym->templateLevel)
+                    if (sym->parentClass && sym->parentClass->dontinstantiate && !sym->templateLevel || sym->linkage2 == lk_import && !sym->isInline)
                     {
                         sym->dontinstantiate = TRUE;
                         InsertExtern(sym);
@@ -180,89 +180,92 @@ void dumpInlines(void)
         while (dataList)
         {
             SYMBOL *sym = (SYMBOL *)dataList->data;
-            if (sym->parentClass)
+            if (sym->linkage2 != lk_import)
             {
-                SYMBOL *parentTemplate = sym->parentClass->parentTemplate;
-                SYMBOL *origsym;
-                LIST *instants = parentTemplate->instantiations;
-                while (instants)
+                if (sym->parentClass && sym->parentClass->parentTemplate)
                 {
-                    if (TemplateInstantiationMatch(instants->data, sym->parentClass))
+                    SYMBOL *parentTemplate = sym->parentClass->parentTemplate;
+                    SYMBOL *origsym;
+                    LIST *instants = parentTemplate->instantiations;
+                    while (instants)
                     {
-                        parentTemplate = (SYMBOL *)instants->data;
-                        break;
+                        if (TemplateInstantiationMatch(instants->data, sym->parentClass))
+                        {
+                            parentTemplate = (SYMBOL *)instants->data;
+                            break;
+                        }
+                        instants = instants->next;
                     }
-                    instants = instants->next;
-                }
-                origsym = search(sym->name, parentTemplate->tp->syms);
-    //            printf("%s\n", origsym->decoratedName);
-    
-                if (!origsym || origsym->storage_class != sc_global)
-                {
-                    parentTemplate = sym->parentClass->parentTemplate;
                     origsym = search(sym->name, parentTemplate->tp->syms);
-                }
-    
-                if (sym->parentClass && sym->parentClass->dontinstantiate)
-                {
-                    sym->dontinstantiate = TRUE;
-                    InsertExtern(sym);
-                }
-                if (origsym && origsym->storage_class == sc_global && !sym->didinline && !sym->dontinstantiate)
-                {
-                    sym->didinline = TRUE;
-                    sym->genreffed = FALSE;
-                    sym->noextern  = TRUE;
-                    sym->storage_class = sc_global;
-                    sym->linkage = lk_virtual;
-                    if (origsym->deferredCompile)
+                    //            printf("%s\n", origsym->decoratedName);
+
+                    if (!origsym || origsym->storage_class != sc_global)
                     {
-                        STRUCTSYM s1, s;
-                        LEXEME *lex;
-                        s1.str = sym->parentClass;
-                        addStructureDeclaration(&s1);
-                        s.tmpl = sym->templateParams;
-                        addTemplateDeclaration(&s);
-                        lex = SetAlternateLex(origsym->deferredCompile);
-                        sym->init = NULL;
-                        lex = initialize(lex, NULL, sym, sc_global, TRUE, 0);
-                        SetAlternateLex(NULL);
-                        dropStructureDeclaration();
-                        dropStructureDeclaration();
+                        parentTemplate = sym->parentClass->parentTemplate;
+                        origsym = search(sym->name, parentTemplate->tp->syms);
                     }
-                    gen_virtual(sym, TRUE);
-                    if (sym->init)
+
+                    if (sym->parentClass && sym->parentClass->dontinstantiate)
                     {
-                        dumpInitGroup(sym, sym->tp);
+                        sym->dontinstantiate = TRUE;
+                        InsertExtern(sym);
                     }
-                    else
+                    if (origsym && origsym->storage_class == sc_global && !sym->didinline && !sym->dontinstantiate)
                     {
-                        genstorage(basetype(sym->tp)->size);
-                    }
-                    gen_endvirtual(sym);
-                }
-            }
-            else
-            {
-                if (!sym->didinline)
-                {
-                    SYMBOL *srch = inSearch(sym);
-                    if (srch)
-                    {
-                        sym->mainsym = srch;
                         sym->didinline = TRUE;
-                    }
-                    else
-                    {
-                        inInsert(sym);
+                        sym->genreffed = FALSE;
+                        sym->noextern = TRUE;
+                        sym->storage_class = sc_global;
+                        sym->linkage = lk_virtual;
+                        if (origsym->deferredCompile)
+                        {
+                            STRUCTSYM s1, s;
+                            LEXEME *lex;
+                            s1.str = sym->parentClass;
+                            addStructureDeclaration(&s1);
+                            s.tmpl = sym->templateParams;
+                            addTemplateDeclaration(&s);
+                            lex = SetAlternateLex(origsym->deferredCompile);
+                            sym->init = NULL;
+                            lex = initialize(lex, NULL, sym, sc_global, TRUE, 0);
+                            SetAlternateLex(NULL);
+                            dropStructureDeclaration();
+                            dropStructureDeclaration();
+                        }
                         gen_virtual(sym, TRUE);
                         if (sym->init)
                         {
                             dumpInitGroup(sym, sym->tp);
                         }
                         else
+                        {
                             genstorage(basetype(sym->tp)->size);
+                        }
                         gen_endvirtual(sym);
+                    }
+                }
+                else
+                {
+                    if (!sym->didinline)
+                    {
+                        SYMBOL *srch = inSearch(sym);
+                        if (srch)
+                        {
+                            sym->mainsym = srch;
+                            sym->didinline = TRUE;
+                        }
+                        else
+                        {
+                            inInsert(sym);
+                            gen_virtual(sym, TRUE);
+                            if (sym->init)
+                            {
+                                dumpInitGroup(sym, sym->tp);
+                            }
+                            else
+                                genstorage(basetype(sym->tp)->size);
+                            gen_endvirtual(sym);
+                        }
                     }
                 }
             }

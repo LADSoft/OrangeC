@@ -169,6 +169,7 @@ class LinkManager
         void PlaceSections();
         void UnplacedWarnings();
         bool ExternalErrors();
+        void AddGlobalsForVirtuals(ObjFile *file);
         void CreateOutputFile();
         ObjString outputFile;
         LinkTokenizer specification;

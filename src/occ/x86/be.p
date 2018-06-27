@@ -1,6 +1,8 @@
 
 /* Protogen Version 2.1.1.17Friday October 28, 2005  17:44:50 */
 
+enum e_lk get_dll_linkage();                /* get dll linkage corresponding to command line switches */
+
                               /* Dbgfmt.c */
 
 void dbginit(void);

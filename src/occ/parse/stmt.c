@@ -116,7 +116,7 @@ STATEMENT *currentLineData(BLOCKDATA *parent, LEXEME *lex, int offset)
     char *file;
     if (!lex)
         return NULL;
-    lineno = lex->line + offset;
+    lineno = lex->realline + offset;
     file = lex->file;
     while (*p && (strcmp((*p)->file, file) != 0 || lineno >= (*p)->lineno))
     {

@@ -177,7 +177,7 @@ struc operand
 	.override	resw	1
 	.address	resd	1
 	.oeseg		resw	1
-	.code		resb	1
+	.typecode	resb	1
 	.thereg		resb	1
 	.scalereg	resb	1
 	.scale		resb	1

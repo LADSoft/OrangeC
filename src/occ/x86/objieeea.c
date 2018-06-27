@@ -1114,8 +1114,7 @@ void link_Exports(void)
     while (lf)
     {
         sp = lf->data;
-        if (sp->storage_class == sc_global && sp->linkage2 == lk_export && 
-            !sp->isInline)
+        if (sp->linkage2 == lk_export)
         {
             link_putexport(sp);
         }

@@ -127,13 +127,13 @@ put4	:
 
 setseg	:	
         mov     byte [reqsPtrSizeOvride],FALSE
-    mov	byte [edi + operand.code],OM_SEGMENT
+    mov	byte [edi + operand.typecode],OM_SEGMENT
     mov	byte [edi + operand.thereg],al
     ret
 
 setreg	:	
     mov	byte [reqsPtrSizeOvride],FALSE
-    mov	byte [edi + operand.code],OM_REG
+    mov	byte [edi + operand.typecode],OM_REG
     mov	byte [edi + operand.thereg],al
     ret
 
@@ -147,7 +147,7 @@ readrm	:
     mov	ch,al
     cmp	ch,MOD_REG
     jnz	short notregreg
-    mov	byte [edi + operand.code],OM_REG
+    mov	byte [edi + operand.typecode],OM_REG
     mov	byte [reqsPtrSizeOvride],FALSE
     sub	eax,eax
     pop	ecx
@@ -172,7 +172,7 @@ hassp:
     jnz	basedAndscaled
     cmp	ch,MOD_NOOFS
     jnz	short basedAndscaled
-    mov	byte [edi + operand.code],OM_ABSOLUTE
+    mov	byte [edi + operand.typecode],OM_ABSOLUTE
     LONG	esi+3
     mov	[edi+operand.address],eax
     sub	eax,eax
@@ -185,7 +185,7 @@ notscaled:
     jnz	basedAndscaled
     cmp	byte [edi + operand.thereg], RM_32_ABSOLUTE
     jnz	basedAndscaled
-    mov	byte [edi + operand.code], OM_ABSOLUTE
+    mov	byte [edi + operand.typecode], OM_ABSOLUTE
     LONG	esi+2
     mov	[edi+operand.address],eax
     sub	eax,eax
@@ -198,7 +198,7 @@ adr16:
     jnz	basedAndscaled
     cmp	byte [edi + operand.thereg], RM_16_ABSOLUTE
     jnz	basedAndscaled
-    mov	byte [edi + operand.code], OM_ABSOLUTE
+    mov	byte [edi + operand.typecode], OM_ABSOLUTE
     UINT	esi+2
     mov	[edi+operand.address],eax
     sub	eax,eax
@@ -206,7 +206,7 @@ adr16:
     pop	ecx
     ret
 basedAndscaled:
-    mov	byte [edi + operand.code], OM_BASED
+    mov	byte [edi + operand.typecode], OM_BASED
     cmp	ch,MOD_ADDR
     jnz	short checksigned
     bts	dword [edi + operand.oeflags], OMF_WORD_OFFSET
@@ -248,7 +248,7 @@ RegRM	:
 Immediate	:	
     push	ecx
     sub	ecx,ecx
-    mov	byte [edi + operand.code],OM_IMMEDIATE
+    mov	byte [edi + operand.typecode],OM_IMMEDIATE
     bt	dword [edi + operand.oeflags],OMF_BYTE
     jnc	short inotbyte
     inc	cl
@@ -351,7 +351,7 @@ op6	:
     sub	ecx,ecx
     mov	cl,al
     mov	edi,ebx
-    mov	byte [edi + operand.code],OM_SHIFT
+    mov	byte [edi + operand.typecode],OM_SHIFT
     bt	dword [esi],4
     jnc	short op6cnt
     bt	dword [esi],1
@@ -394,14 +394,14 @@ op9	:
     mov	al,[esi+1]
 op9int3:
     mov	[edi+operand.address],eax
-    mov	byte [edi + operand.code],OM_INT
+    mov	byte [edi + operand.typecode],OM_INT
     sub	al,al
     ret
 
 ;/* op 10, short relative branch */
 op10	:	
     mov	byte [reqsPtrSizeOvride],FALSE
-    mov	byte [edi + operand.code],OM_SHORTBRANCH
+    mov	byte [edi + operand.typecode],OM_SHORTBRANCH
     movsx	eax,byte [esi+1]
         inc     eax
         inc     eax
@@ -442,7 +442,7 @@ op12	:
 ;/* op 13 absolute, acc*/
 op13	:	
     sub	ecx,ecx
-    mov	byte [edi + operand.code],OM_ABSOLUTE
+    mov	byte [edi + operand.typecode],OM_ABSOLUTE
     bt	dword [edi + operand.oeflags],OMF_ADR32
     jnc	short op13word
     LONG	esi+1
@@ -534,7 +534,7 @@ noswap:
 ;/* op 17, far return */
 op17	:	
     mov	byte [reqsPtrSizeOvride],FALSE
-    mov	byte [edi + operand.code],OM_RETURN
+    mov	byte [edi + operand.typecode],OM_RETURN
     btr	dword [edi + operand.oeflags],OMF_ADR32
     btr	dword [edi + operand.oeflags],OMF_OP32
     btr	dword [edi + operand.oeflags],OMF_BYTE
@@ -547,7 +547,7 @@ op17	:
 op18	:	
     sub	ecx,ecx
     mov	byte [reqsPtrSizeOvride],FALSE
-    mov	byte [edi + operand.code],OM_FARBRANCH
+    mov	byte [edi + operand.typecode],OM_FARBRANCH
     btr	dword [edi + operand.oeflags],OMF_BYTE
     bt	dword [edi + operand.oeflags],OMF_OP32
     jnc	short op18word
@@ -567,7 +567,7 @@ op18fin:
 
 ;/* op 19 - ESC, mnem of bits 0-2 of opcode, imm,readrm */
 op19	:	
-    mov	byte [edi + operand.code],OM_IMMEDIATE
+    mov	byte [edi + operand.typecode],OM_IMMEDIATE
     bts	dword [edi + operand.oeflags],OMF_BYTE
     mov	al,[esi]
     and	al,7
@@ -588,7 +588,7 @@ op20	:
     sub	eax,eax
     mov	byte [reqsPtrSizeOvride],FALSE
     sub	ecx,ecx
-    mov	byte [edi + operand.code],OM_LONGBRANCH
+    mov	byte [edi + operand.typecode],OM_LONGBRANCH
     bt	dword [edi + operand.oeflags],OMF_OP32
     jnc	short op20word
     LONG	esi+1
@@ -650,7 +650,7 @@ op23	:
     xchg	ebx,edi
 op20noswap:
     bts	dword [edi + operand.oeflags],OMF_BYTE
-    mov	byte [edi + operand.code],OM_PORT
+    mov	byte [edi + operand.typecode],OM_PORT
     movzx	eax,byte [esi+1]
     mov	[edi+operand.address],eax
     mov	edi,ebx
@@ -665,7 +665,7 @@ op24	:
     mov	al,REG_EAX
     call	setreg
     mov	edi,ebx
-    mov	byte [edi + operand.code],OM_ABSOLUTE
+    mov	byte [edi + operand.typecode],OM_ABSOLUTE
     bt	dword [edi + operand.oeflags],OMF_ADR32
     jnc	short op24word
     inc	cl
@@ -741,7 +741,7 @@ op30	:
     call	readrm
         movzx   ecx,al
     mov	edi,ebx
-    mov	byte [edi + operand.code],OM_SHIFT
+    mov	byte [edi + operand.typecode],OM_SHIFT
     bt	dword [esi],3
     jnc	op30cl
     movzx	ecx,cx
@@ -804,7 +804,7 @@ op32gotype:
     jc	op32noswap
     xchg	ebx,edi
 op32noswap:
-    mov	byte [edi + operand.code],al
+    mov	byte [edi + operand.typecode],al
     REG	esi
     mov	byte [edi + operand.thereg],al
     mov	edi,ebx
@@ -824,7 +824,7 @@ op33	:
     mov	edi,ebx
     call	setreg
     mov	edi,extraoperand
-    mov	byte [edi + operand.code],OM_SHIFT
+    mov	byte [edi + operand.typecode],OM_SHIFT
     bt	dword [esi],0
     jnc	short getofs
     bts	dword [edi + operand.oeflags],OMF_CL
@@ -1169,7 +1169,7 @@ op64    :
     sub	ecx,ecx
     mov	cl,al
     mov	edi,ebx
-    mov	byte [edi + operand.code],OM_SHIFT
+    mov	byte [edi + operand.typecode],OM_SHIFT
     movzx	ecx,cx
     movzx	eax,byte [esi+ecx+2]
     inc	cl
@@ -1187,7 +1187,7 @@ op65pc:
     call	MnemonicChar
     sub	eax,eax
     mov	byte [reqsPtrSizeOvride],FALSE
-        mov     byte [edi + operand.code],OM_SHORTBRANCH
+        mov     byte [edi + operand.typecode],OM_SHORTBRANCH
         movsx   eax,byte [esi+1]
 
         mov   edx,[code_address]
@@ -1244,7 +1244,7 @@ op67    :
 ;
 op68    :
         mov     byte [reqsPtrSizeOvride],FALSE
-        mov     byte [edi + operand.code],OM_BASED
+        mov     byte [edi + operand.typecode],OM_BASED
         mov     byte [edi + operand.thereg],3 ; [ebx]
         bt      dword [edi + operand.oeflags],OMF_ADR32
         jc      op68n32
@@ -1336,9 +1336,9 @@ DispatchOperands	:
     or	word [segs],SG_TWOBYTEOP
 notwobyte:
     mov	eax,extraoperand
-    mov	byte [eax+operand.code],0
-    mov	byte [edi + operand.code],0
-    mov	byte [ebx+operand.code],0
+    mov	byte [eax+operand.typecode],0
+    mov	byte [edi + operand.typecode],0
+    mov	byte [ebx+operand.typecode],0
     mov	dword [edi + operand.oeflags],0
     mov	dword [ebx + operand.oeflags],0
         mov     dword [edi+operand.address],0
@@ -1963,7 +1963,7 @@ FOM_SEGMENT	:
 Putoperand	:	
     call	strlen
     add	esi,eax
-    mov	al,byte [edi + operand.code]
+    mov	al,byte [edi + operand.typecode]
     dec	al
     js	short po_none
     push	0
@@ -2033,7 +2033,7 @@ fd_notrepnz:
     mov	edi,dest
     call	Putoperand
     mov	edi,source
-    test	byte [edi + operand.code],-1
+    test	byte [edi + operand.typecode],-1
     jz	short nosource
     mov	byte [esi],','
     inc	esi
@@ -2041,7 +2041,7 @@ fd_notrepnz:
     call	Putoperand
 nosource:
     mov	edi,extraoperand
-    test	byte [edi + operand.code],-1
+    test	byte [edi + operand.typecode],-1
     jz	short noextra
     mov	byte [esi],','
     inc	esi

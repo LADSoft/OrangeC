@@ -5324,6 +5324,12 @@ WINOLEAPI CoInitialize(PVOID);
 WINOLEAPI CoInitializeEx(LPVOID,DWORD);
 WINOLEAPI_(void) CoUninitialize(void);
 
+extern WINBOOL PASCAL WINBASEAPI GetFileAttributesExA(
+    LPCSTR lpFileName,
+    GET_FILEEX_INFO_LEVELS fInfoLevelId,
+    LPVOID lpFileInformation
+    );
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

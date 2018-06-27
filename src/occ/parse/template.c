@@ -98,7 +98,6 @@ static int inTemplateArgs;
 struct templateListData *currents;
 
 static LEXEME *TemplateArg(LEXEME *lex, SYMBOL *funcsp, TEMPLATEPARAMLIST *arg, TEMPLATEPARAMLIST **lst);
-static BOOLEAN fullySpecialized(TEMPLATEPARAMLIST *tpl);
 static TEMPLATEPARAMLIST *copyParams(TEMPLATEPARAMLIST *t, BOOLEAN alsoSpecializations);
 static BOOLEAN valFromDefault(TEMPLATEPARAMLIST *params, BOOLEAN usesParams, INITLIST **args);
 static int pushContext(SYMBOL *cls, BOOLEAN all);
@@ -848,7 +847,9 @@ LEXEME *GetTemplateArguments(LEXEME *lex, SYMBOL *funcsp, SYMBOL *templ, TEMPLAT
                 noSpecializationError++;
                 lex = get_type_id(lex, &tp, funcsp, sc_parameter, FALSE, TRUE);
                 noSpecializationError--;
-                if (tp && !templateNestingCount)
+                if (!tp)
+                    tp = &stdint;
+                else if (tp && !templateNestingCount)
                     tp = PerformDeferredInitialization(tp, NULL);
                 if (MATCHKW(lex, ellipse))
                 {
@@ -7881,7 +7882,11 @@ static void referenceInstanceMembers(SYMBOL *cls)
                 }
             }
             else if (!ismember(sym) && !istype(sym))
+            {
+                if (cls->templateLevel || sym->templateLevel)
+                    InsertInlineData(sym);
                 GENREF(sym);
+            }
             hr = hr->next;
         }
         hr = cls->tp->tags->table[0]->next; // past the definition of self
@@ -7903,6 +7908,7 @@ static void referenceInstanceMembers(SYMBOL *cls)
         }
     }
 }
+
 static BOOLEAN fullySpecialized(TEMPLATEPARAMLIST *tpl)
 {
     switch (tpl->p->type)
@@ -7968,63 +7974,6 @@ BOOLEAN TemplateFullySpecialized(SYMBOL *sp)
     return FALSE;
 }
 
-/*static SYMBOL *matchTemplateFunc(SYMBOL *old, SYMBOL *instantiated)
-{
-    if (basetype(instantiated->tp)->syms)
-    {
-        FUNCTIONCALL list;
-        INITLIST **next = &list.arguments , *il;
-        HASHREC *hr, *hro, *hrs;
-        EXPRESSION *exp = intNode(en_c_i, 0);
-        TEMPLATEPARAMLIST *src, *dest;
-        if (!instantiated->isConstructor && !instantiated->isDestructor && !TemplateDeduceFromType(basetype(old->tp)->btp, basetype(instantiated->tp)->btp))
-            return FALSE;
-
-        memset(&list, 0, sizeof(list));
-        hr  = basetype(instantiated->tp)->syms->table[0];
-        hro = hrs = basetype(old->tp)->syms->table[0];
-        if (((SYMBOL *)hr->p)->tp->type == bt_void)
-            if (((SYMBOL *)hro->p)->tp->type == bt_void)
-                return TRUE;
-        while (hr)
-        {
-            *next = Alloc(sizeof(INITLIST));
-            (*next)->tp = ((SYMBOL *)hr->p)->tp;
-            (*next)->exp = exp;
-            next = &(*next)->next;
-            hr = hr->next;
-            if (!hro)
-                return FALSE;
-            hro = hro->next;
-        }
-        if (hro)
-            return FALSE;
-        if (instantiated->parentClass)
-        {
-            src = instantiated->parentClass->templateParams;
-            dest = old->parentClass->templateParams;
-            while (src && dest)
-            {
-                if (src->p->type != dest->p->type)
-                    return FALSE;
-                if (src->p->type != kw_new)
-                {
-                    dest->p->byClass.val = src->p->byClass.val;
-                    dest->p->initialized = FALSE;
-                }
-                src = src->next;
-                dest = dest->next;
-            }
-            if (src || dest)
-                return FALSE;
-        }
-        return TemplateDeduceArgList(hrs, hrs, list.arguments, TRUE);
-    }
-    else if (!basetype(old->tp)->syms)
-        return TRUE;
-    return FALSE;
-}
-*/
 void propagateTemplateDefinition(SYMBOL *sym)
 {
     int oldCount = templateNestingCount;
@@ -8161,6 +8110,42 @@ void propagateTemplateDefinition(SYMBOL *sym)
     currents = oldList;
     templateNestingCount = oldCount;
 }
+static void MarkDllLinkage(SYMBOL *sp, enum e_lk linkage)
+{
+    if (linkage != lk_none && sp->linkage2 != linkage)
+    {
+        if (sp->linkage2 != lk_none)
+        {
+            errorsym(ERR_ATTEMPING_TO_REDEFINE_DLL_LINKAGE, sp);
+        }
+        else
+        {
+            sp->linkage2 = linkage;
+            if (sp->tp->syms)
+            {
+                HASHREC *hr = sp->tp->syms->table[0];
+                while (hr)
+                {
+                    SYMBOL *sym = (SYMBOL *)hr->p;
+                    if (sym->storage_class == sc_overloads)
+                    {
+                        HASHREC *hr2 = sym->tp->syms->table[0];
+                        while (hr2)
+                        {
+                            ((SYMBOL *)hr2->p)->linkage2 = linkage;
+                            hr2 = hr2->next;
+                        }
+                    }
+                    else if (!ismember(sym) && !istype(sym))
+                    {
+                        sym->linkage2 = linkage;
+                    }
+                    hr = hr->next;
+                }
+            }
+        }
+    }
+}
 LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum e_sc storage_class, BOOLEAN isExtern)
 {
     HASHTABLE *oldSyms = localNameSpace->syms;
@@ -8257,7 +8242,13 @@ LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum 
     {
         if (KWTYPE(lex, TT_STRUCT))
         {
+            enum e_lk linkage1 = lk_none, linkage2 = lk_none, linkage3 = lk_none;
             lex = getsym();
+            if (MATCHKW(lex, kw__declspec))
+            {
+                lex = getsym();
+                lex = parse_declspec(lex, &linkage1, &linkage2, &linkage3);
+            }
             if (!ISID(lex))
             {
                 error(ERR_IDENTIFIER_EXPECTED);
@@ -8289,6 +8280,7 @@ LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum 
                     instance = GetClassTemplate(cls, templateParams, FALSE);
                     if (instance)
                     {
+                        MarkDllLinkage(instance, linkage2);
                         if (!isExtern)
                         {
                             instance->dontinstantiate = FALSE;
@@ -8330,7 +8322,12 @@ LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum 
                 addStructureDeclaration(&s);
                 
             }
-            if (notype && !consdest)
+            if (!sym)
+            {
+                error(ERR_IDENTIFIER_EXPECTED);
+
+            }
+            else if (notype && !consdest)
             {
                 error(ERR_TYPE_NAME_EXPECTED);
             }
@@ -8340,6 +8337,8 @@ LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum 
                 TEMPLATEPARAMLIST *templateParams = TemplateGetParams(sym->parentClass);
                 DoInstantiateTemplateFunction(tp, &sp, nsv, strSym, templateParams, isExtern);
                 sym = sp;
+                if (sym->linkage2 == lk_none)
+                    sym->linkage2 = linkage2;
                 if (!comparetypes(basetype(sp->tp)->btp, basetype(tp)->btp, TRUE))
                 {
                     errorsym(ERR_TYPE_MISMATCH_IN_REDECLARATION, sp);

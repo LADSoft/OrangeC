@@ -39,7 +39,7 @@ CmdSwitchBool AsmMain::CaseInsensitive(SwitchParser, 'i');
 CmdSwitchCombo AsmMain::CreateListFile(SwitchParser, 'l',"m");
 CmdSwitchFile AsmMain::File(SwitchParser, '@');
 CmdSwitchBool AsmMain::PreprocessOnly(SwitchParser, 'e');
-CmdSwitchOutput AsmMain::OutputFile(SwitchParser, 'o', ".res");
+CmdSwitchOutput AsmMain::OutputFile(SwitchParser, 'o', ".o");
 CmdSwitchDefine AsmMain::Defines(SwitchParser, 'D');
 CmdSwitchCombineString AsmMain::includePath(SwitchParser, 'I', ';');
 

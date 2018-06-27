@@ -313,10 +313,9 @@ std::string Maker::GetFileTime(const std::string &goal, const std::string &prefe
             name = cur + internalGoal;
         else
             name = internalGoal;
-        std::fstream fil(name.c_str(), std::ios::in);
-        if (!fil.fail())
+        timeval = OS::GetFileTime(name);
+        if (!!timeval)
         {
-            fil.close();
             rv = cur; // return value is the path, with a slash on the end
             if (rv == "./")
                 rv = "";
@@ -519,9 +518,13 @@ bool Maker::SearchImplicitRules(const std::string &goal, const std::string &pref
     {
         if (rule->GetTarget() != "%" || !rule->GetDoubleColon())
         {
-            std::string stem = Eval::FindStem(name, rule->GetTarget());		
-            if (ExistsOrMentioned(stem, rule, preferredPath, dir, true, outerMost))
-                return true;
+            unsigned n;
+            if (rule->GetTarget() != "%" || (n = name.find_last_of(".")) == std::string::npos || n == name.size() - 1 || name[n + 1] == '/' || name[n + 1] == '\\')
+            {
+                std::string stem = Eval::FindStem(name, rule->GetTarget());
+                if (ExistsOrMentioned(stem, rule, preferredPath, dir, true, outerMost))
+                    return true;
+            }
         }
     }
     RuleList *dflt = RuleContainer::Instance()->Lookup(".DEFAULT");

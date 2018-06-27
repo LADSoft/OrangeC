@@ -275,7 +275,7 @@ operator+(const basic_string<charT, traits, Allocator>& lhs,
           const basic_string<charT, traits, Allocator>& rhs);
 
 template<class charT, class traits, class Allocator>
-basic_string<charT, traits, Allocator>
+_LIBCPP_FUNC_VIS basic_string<charT, traits, Allocator>
 operator+(const charT* lhs , const basic_string<charT,traits,Allocator>&rhs);
 
 template<class charT, class traits, class Allocator>
@@ -1131,7 +1131,7 @@ operator+(const basic_string<_CharT, _Traits, _Allocator>& __x,
           const basic_string<_CharT, _Traits, _Allocator>& __y);
 
 template<class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>
+_LIBCPP_FUNC_VIS basic_string<_CharT, _Traits, _Allocator>
 operator+(const _CharT* __x, const basic_string<_CharT,_Traits,_Allocator>& __y);
 
 template<class _CharT, class _Traits, class _Allocator>
@@ -3948,7 +3948,7 @@ operator+(const basic_string<_CharT, _Traits, _Allocator>& __lhs,
 }
 
 template<class _CharT, class _Traits, class _Allocator>
-basic_string<_CharT, _Traits, _Allocator>
+_LIBCPP_FUNC_VIS basic_string<_CharT, _Traits, _Allocator>
 operator+(const _CharT* __lhs , const basic_string<_CharT,_Traits,_Allocator>& __rhs)
 {
     basic_string<_CharT, _Traits, _Allocator> __r(__rhs.get_allocator());
@@ -4242,7 +4242,7 @@ inline namespace literals
 
 _LIBCPP_EXTERN_TEMPLATE(class _LIBCPP_TYPE_VIS basic_string<char>)
 _LIBCPP_EXTERN_TEMPLATE(class _LIBCPP_TYPE_VIS basic_string<wchar_t>)
-_LIBCPP_EXTERN_TEMPLATE(string operator+<char, char_traits<char>, allocator<char> >(char const*, string const&))
+_LIBCPP_EXTERN_TEMPLATE(_LIBCPP_FUNC_VIS string operator+<char, char_traits<char>, allocator<char> >(char const*, string const&))
 
 _LIBCPP_END_NAMESPACE_STD
 

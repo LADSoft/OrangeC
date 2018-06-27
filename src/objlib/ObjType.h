@@ -35,6 +35,7 @@ class ObjType : public ObjWrapper
 {
     typedef std::vector<ObjField *> FieldContainer;
 public:
+// clang-format off
     enum eType { eNone = 0, ePointer, eFunction, eBitField,
                  eStruct, eUnion, eArray, eVla, eEnum,
                  eField, eTypeDef, eLRef, eRRef,
@@ -55,6 +56,7 @@ public:
                  ePComplex = 112, ePComplexDouble, ePComplexLongDouble,
                  eReservedTop = 1023
     } ;
+// clang-format on
     ObjType(eType Type, ObjInt Index) : name(""), type(Type), base(0), top(1), 
                 constVal(0), baseType(nullptr), index(Index),
                 indexType(&defaultIndexType) {}

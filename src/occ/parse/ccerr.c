@@ -558,6 +558,8 @@ static struct {
 { "static function '%s' is undefined", ERROR },
 { "Missing type specifier for identifier '%s'", WARNING },
 { "Cannot deduce auto type from '%s'", ERROR },
+{ "%s: dll interface member may not be declared in dll interface class", ERROR },
+{ "%s: attempting to redefine dll interface linkage for class", WARNING },
 #endif
 } ;
 
@@ -1408,7 +1410,7 @@ static VLASHIM *mkshim(int type, int level, int label, STATEMENT *stmt, VLASHIM 
     return rv;
 }
 /* thisll be sluggish if there are lots of gotos & labels... */
-static VLASHIM *getVLAList(STATEMENT *stmt, VLASHIM *last, VLASHIM *parent, VLASHIM **labels, int minLabel, int *blocknum, int level)
+static VLASHIM *getVLAList(STATEMENT *stmt, VLASHIM *last, VLASHIM *parent, VLASHIM **labels, int minLabel, int *blocknum, int level, BOOLEAN *branched)
 {
     int curBlockNum = (*blocknum)++;
     int curBlockIndex = 0;
@@ -1447,7 +1449,7 @@ static VLASHIM *getVLAList(STATEMENT *stmt, VLASHIM *last, VLASHIM *parent, VLAS
                     last = *cur;
                     last->checkme = stmt->lower->explicitGoto;
                     cur = &(*cur)->next;
-
+                    *branched = TRUE;
                 }
                 else
                 {
@@ -1456,7 +1458,7 @@ static VLASHIM *getVLAList(STATEMENT *stmt, VLASHIM *last, VLASHIM *parent, VLAS
                     cur = &(*cur)->next;
                     if (!nextParent)
                         nextParent = last;
-                    last->lower = getVLAList(stmt->lower, last, nextParent, labels, minLabel, blocknum, level + 1);
+                    last->lower = getVLAList(stmt->lower, last, nextParent, labels, minLabel, blocknum, level + 1, branched);
                     if (stmt->blockTail)
                     {
                         *cur = mkshim(v_blockend, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++);
@@ -1467,27 +1469,32 @@ static VLASHIM *getVLAList(STATEMENT *stmt, VLASHIM *last, VLASHIM *parent, VLAS
                 break;
             case st_declare:
             case st_expr:
-                if (stmt->hasvla)
+                if (*branched)
                 {
-                    *cur = mkshim(v_vla, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++);
-                    last = *cur;
-                    cur = &(*cur)->next;
+                    if (stmt->hasvla)
+                    {
+                        *cur = mkshim(v_vla, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++);
+                        last = *cur;
+                        cur = &(*cur)->next;
+                    }
+                    else if (stmt->hasdeclare)
+                    {
+                        *cur = mkshim(v_declare, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++);
+                        last = *cur;
+                        cur = &(*cur)->next;
+                    }
+                    nextParent = last;
                 }
-                else if (stmt->hasdeclare)
-                {
-                    *cur = mkshim(v_declare, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++);
-                    last = *cur;
-                    cur = &(*cur)->next;
-                }
-                nextParent = last;
                 break;
             case st_return:
+                *branched = TRUE;
                 *cur = mkshim(v_return, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++);
                 last = *cur;
                 cur = &(*cur)->next;
                 break;
             case st_select:
             case st_notselect:
+                *branched = TRUE;
                 *cur = mkshim(v_branch, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++);
                 last = *cur;
                 cur = &(*cur)->next;
@@ -1503,6 +1510,7 @@ static VLASHIM *getVLAList(STATEMENT *stmt, VLASHIM *last, VLASHIM *parent, VLAS
             case st_nop:
                 break;
             case st_goto:
+                *branched = TRUE;
                 *cur = mkshim(v_goto, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++);
                 last = *cur;
                 last->checkme = stmt->explicitGoto;
@@ -1542,11 +1550,14 @@ static void fillPrevious(VLASHIM *shim, VLASHIM **labels, int minLabel)
             case v_goto:
             case v_branch:
                 selected = labels[shim->label - minLabel];
-                prev = (LIST *)Alloc(sizeof(LIST));
-                prev->data = shim;
-                prev->next = selected->backs;
-                selected->backs = prev;
-                shim->fwd = selected;
+                if (selected)
+                {
+                    prev = (LIST *)Alloc(sizeof(LIST));
+                    prev->data = shim;
+                    prev->next = selected->backs;
+                    selected->backs = prev;
+                    shim->fwd = selected;
+                }
                 break;
             default:
                 diag("unknown shim type in fillPrevious");
@@ -1681,7 +1692,8 @@ void checkGotoPastVLA(STATEMENT *stmt, BOOLEAN first)
         VLASHIM **labels = (VLASHIM *)Alloc((max+1 - min) * sizeof(VLASHIM *));
 
         int blockNum = 0;
-        VLASHIM *list = getVLAList(stmt, NULL, NULL, labels, min, &blockNum, 0);
+        BOOLEAN branched = FALSE;
+        VLASHIM *list = getVLAList(stmt, NULL, NULL, labels, min, &blockNum, 0, &branched);
         fillPrevious(list, labels, min);
         validateGotos(list, list);
     }    

@@ -948,6 +948,7 @@ static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac cur
             InsertInline(sp);
             my_sprintf(buf, "%s@_$vt", sp->decoratedName);
             sp->vtabsp = makeID(sc_static, &stdvoid, NULL, litlate(buf));
+            sp->vtabsp->linkage2 = sp->linkage2;
             sp->vtabsp->linkage = lk_virtual;
             sp->vtabsp->decoratedName = sp->vtabsp->errname = sp->vtabsp->name;
             warnCPPWarnings(sp, funcsp != NULL);
@@ -1117,6 +1118,7 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
     int realdeclline = lex->realline;
     BOOLEAN anonymous = FALSE;
     unsigned char *uuid;
+    enum e_lk linkage1 = lk_none, linkage2 = lk_none, linkage3 = lk_none;
     *defd = FALSE;
     switch(KW(lex))
     {
@@ -1136,6 +1138,17 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
     lex = getsym();
     uuid = ParseUUID(&lex);
     ParseAttributeSpecifiers(&lex, funcsp, TRUE);
+    if (MATCHKW(lex, kw__declspec))
+    {
+        lex = getsym();
+        lex = parse_declspec(lex, &linkage1, &linkage2, &linkage3);
+    }
+    if (MATCHKW(lex, kw__rtllinkage))
+    {
+        lex = getsym();
+        if (chosenAssembler->getDefaultLinkage)
+            linkage2 = chosenAssembler->getDefaultLinkage();
+    }
     if (ISID(lex))
     {
         charindex = lex->charindex;
@@ -1212,6 +1225,7 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
         sp->anonymous = charindex == -1;
         sp->access = access;
         sp->uuid = uuid;
+        sp->linkage2 = linkage2;
         SetLinkerNames(sp, lk_cdecl);
         if (inTemplate && templateNestingCount)
         {
@@ -1252,6 +1266,8 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
                 parsingSpecializationDeclaration = FALSE;
                 inTemplateSpecialization--;
                 sp = LookupSpecialization(sp, templateParams);
+                if (linkage2 != lk_none)
+                    sp->linkage2 = linkage2;
                 sp->templateParams = TemplateMatching(lex, origParams, templateParams, sp,
                                                       MATCHKW(lex, begin) || MATCHKW(lex, colon));
             }
@@ -1502,6 +1518,7 @@ static LEXEME *declenum(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storag
     int declline = lex->line;
     int realdeclline = lex->realline;
     BOOLEAN anonymous = FALSE;
+    enum e_lk linkage1 = lk_none, linkage2 = lk_none, linkage3 = lk_none;
     *defd = FALSE;
     lex = getsym();
     ParseAttributeSpecifiers(&lex, funcsp, TRUE);
@@ -1509,6 +1526,11 @@ static LEXEME *declenum(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storag
     {
         scoped = TRUE;
         lex = getsym();
+    }
+    if (MATCHKW(lex, kw__declspec))
+    {
+        lex = getsym();
+        lex = parse_declspec(lex, &linkage1, &linkage2, &linkage3);
     }
     if (ISID(lex))
     {
@@ -1563,6 +1585,7 @@ static LEXEME *declenum(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storag
         sp->tp = Alloc(sizeof(TYPE));
         sp->tp->type = bt_enum;
         sp->tp->rootType = sp->tp;
+        sp->linkage2 = linkage2;
         if (fixedType)
         {
             sp->tp->fixed = TRUE;
@@ -1850,7 +1873,7 @@ static LEXEME *getPointerQualifiers(LEXEME *lex, TYPE **tp, BOOLEAN allowstatic)
     }
     return lex;
 }
-static LEXEME *parse_declspec(LEXEME *lex, enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3)
+LEXEME *parse_declspec(LEXEME *lex, enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3)
 {
 	(void)linkage;
 	if (needkw(&lex, openpa))
@@ -1951,6 +1974,10 @@ static LEXEME *getLinkageQualifiers(LEXEME *lex, enum e_lk *linkage, enum e_lk *
                 break;
             case kw__declspec:
                 lex = parse_declspec(lex, linkage, linkage2, linkage3);
+                break;
+            case kw__rtllinkage:
+                if (chosenAssembler->getDefaultLinkage)
+                    *linkage2 = chosenAssembler->getDefaultLinkage();
                 break;
             case kw__entrypoint:
                 if (*linkage3 != lk_none)
@@ -5556,7 +5583,15 @@ jointemplate:
                             sp->tp = tp1;
                         if (!sp->instantiated)
                             sp->linkage = linkage;
-                        sp->linkage2 = linkage2;
+                        if (ssp && ssp->linkage2 != lk_none)
+                        {
+                            if (linkage2 != lk_none && !asFriend)
+                                errorsym(ERR_DECLSPEC_MEMBER_OF_DECLSPEC_CLASS_NOT_ALLOWED, sp);
+                            else
+                                sp->linkage2 = ssp->linkage2;
+                        }
+                        else
+                            sp->linkage2 = linkage2;
                         sp->linkage3 = linkage3;
                         if (linkage2 == lk_import)
                         {
@@ -6461,6 +6496,12 @@ doInitialize:
                                 if (sp->parentClass && sp->storage_class == sc_global)
                                 {
                                     if (sp->templateParams && !sp->templateParams->next)
+                                    {
+                                        SetLinkerNames(sp, lk_cdecl);
+                                        InsertInlineData(sp);
+                                    }
+                                    else if ((!sp->parentClass || sp->parentClass->templateParams && allTemplateArgsSpecified(sp->parentClass, sp->parentClass->templateParams->next))
+                                        && (!sp->templateParams || allTemplateArgsSpecified(sp, sp->templateParams->next)))
                                     {
                                         SetLinkerNames(sp, lk_cdecl);
                                         InsertInlineData(sp);

@@ -436,6 +436,7 @@ typedef struct _arch_asm
     void (*intrinsicInit)(void);                    /* initialize intrinsic mechanism, compiler startup */
     void (*SearchIntrins)(SYMBOL *sp);                 /* search for an intrinsic */
     void (*enter_type)(SYMBOL *sp);                     /* enter a type in the BE */
+    enum e_lk(*getDefaultLinkage)();                /* get dll linkage corresponding to command line switches */
 } ARCH_ASM ;
 
 enum e_bet { bee_unknown, 

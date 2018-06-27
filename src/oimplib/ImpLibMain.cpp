@@ -254,7 +254,7 @@ ObjFile *ImpLibMain::DefFileToObjFile(DefFile &def)
     ObjFile *obj = new ObjFile(def.GetLibraryName());
     for (DefFile::ExportIterator it = def.ExportBegin(); it != def.ExportEnd(); ++it)
     {
-        ObjImportSymbol *p = od->factory.MakeImportSymbol((CDLLSwitch.GetValue() ? "_" : "") + (*it)->id);
+        ObjImportSymbol *p = od->factory.MakeImportSymbol((CDLLSwitch.GetValue() && (*it)->id.find('@') == std::string::npos ? "_" : "") + (*it)->id);
         p->SetExternalName((*it)->entry);
         p->SetByOrdinal((*it)->byOrd);
         p->SetOrdinal((*it)->ord);
@@ -278,7 +278,7 @@ ObjFile *ImpLibMain::DllFileToObjFile(DLLExportReader &dll)
     ObjFile *obj = new ObjFile(name);
     for (auto exp : dll)
     {
-        ObjImportSymbol *p = od->factory.MakeImportSymbol((CDLLSwitch.GetValue() ? "_" : "" ) + exp->name);
+        ObjImportSymbol *p = od->factory.MakeImportSymbol((CDLLSwitch.GetValue()  && exp->name.find("@") == std::string::npos ? "_" : "" ) + exp->name);
         p->SetExternalName(exp->name);
         p->SetByOrdinal(exp->byOrd);
         p->SetOrdinal(exp->ordinal);

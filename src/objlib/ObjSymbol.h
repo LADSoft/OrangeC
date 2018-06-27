@@ -36,8 +36,10 @@ class ObjSourceFile;
 class ObjSymbol : public ObjWrapper
 {
 public:
+// clang-format off
     enum eType { eLabel, ePublic, eLocal, eGlobal, eExternal, eAuto, eReg, 
             eExport, eImport, eDefinition };
+// clang-format on
     ObjSymbol(const ObjString Name, eType Type, ObjInt Index) : name(Name), 
             offset(0), index(Index), type(Type), baseType(nullptr),
             sectionRelative(false) { }

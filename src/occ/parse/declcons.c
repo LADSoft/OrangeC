@@ -304,6 +304,7 @@ static SYMBOL *declareDestructor(SYMBOL *sp)
     tp->btp->rootType = tp->btp;
     func = makeID(sc_member, tp, NULL, overloadNameTab[CI_DESTRUCTOR]);
     func->xcMode = xc_none;
+    func->linkage2 = sp->linkage2;
     tp->syms = CreateHashTable(1);        
     sp1 = makeID(sc_parameter, tp->btp, NULL, AnonymousName());
     insert(sp1, tp->syms);
@@ -426,6 +427,7 @@ static SYMBOL *declareConstructor(SYMBOL *sp, BOOLEAN deflt, BOOLEAN move)
     tp->btp->rootType = tp->btp;
     func = makeID(sc_member, tp, NULL, overloadNameTab[CI_CONSTRUCTOR]);
     func->isConstructor = TRUE;
+    func->linkage2 = sp->linkage2;
     sp1= makeID(sc_parameter, NULL, NULL, AnonymousName());
     tp->syms = CreateHashTable(1);        
     tp->syms->table[0] = (HASHREC *)Alloc(sizeof(HASHREC));
@@ -504,6 +506,7 @@ static SYMBOL *declareAssignmentOp(SYMBOL *sp, BOOLEAN move)
     *(tpx) = *basetype(sp->tp);
     UpdateRootTypes(tp);
     func = makeID(sc_member, tp, NULL, overloadNameTab[assign - kw_new + CI_NEW]);
+    func->linkage2 = sp->linkage2;
     sp1= makeID(sc_parameter, NULL, NULL, AnonymousName());
     tp->syms = CreateHashTable(1);
     tp->syms->table[0] = (HASHREC *)Alloc(sizeof(HASHREC));
@@ -1355,10 +1358,8 @@ static void shimDefaultConstructor(SYMBOL *sp, SYMBOL *cons)
             consfunc->inlineFunc.stmt->lower = b.head;
             consfunc->inlineFunc.syms = basetype(consfunc->tp)->syms;
             consfunc->retcount = 1;
-            consfunc->isInline = TRUE;
-        //    consfunc->inlineFunc.stmt->blockTail = b.tail;
+            consfunc->isInline = consfunc->linkage2 != lk_export;
             InsertInline(consfunc);
-//            match->genreffed;
             // now get rid of the first default arg
             // leave others so the old constructor can be considered
             // under other circumstances
@@ -2417,7 +2418,7 @@ void createConstructor(SYMBOL *sp, SYMBOL *consfunc)
     consfunc->inlineFunc.stmt->lower = b.head;
     consfunc->inlineFunc.syms = basetype(consfunc->tp)->syms;
     consfunc->retcount = 1;
-    consfunc->isInline = TRUE;
+    consfunc->isInline = consfunc->linkage2 != lk_export;
 //    consfunc->inlineFunc.stmt->blockTail = b.tail;
     InsertInline(consfunc);
     localNameSpace->syms = syms;
@@ -2713,7 +2714,7 @@ static void createDestructor(SYMBOL *sp)
     dest->inlineFunc.stmt->lower = b.head;
     dest->inlineFunc.syms = basetype(dest->tp)->syms;
     dest->retcount = 1;
-    dest->isInline = TRUE;
+    dest->isInline = dest->linkage2 != lk_export;
 //    dest->inlineFunc.stmt->blockTail = b.tail;
     InsertInline(dest);
     InsertExtern(dest);

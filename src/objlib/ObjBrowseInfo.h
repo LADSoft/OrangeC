@@ -34,9 +34,11 @@ class ObjMemory;
 class ObjBrowseInfo : public ObjWrapper
 {
 public:
+// clang-format off
     enum eType { eDefine, eVariable, eFileStart, eFuncStart, eFuncEnd, eBlockStart, 
                  eBlockEnd, eTypePrototype, eUsage  };
     enum eQual { eGlobal, eStatic, eExternal, eLocal, ePrototype, eTypeval };
+// clang-format on
     ObjBrowseInfo(eType Type, eQual Qual, ObjLineNo *Line, ObjInt CharPos, ObjString Data) :
         type(Type), qual(Qual), line(Line), charpos(CharPos), data(Data) { }
     virtual ~ObjBrowseInfo() { }

@@ -283,6 +283,11 @@ static ARCH_CHARACTERISTICS architecture = {
 extern ARCH_GEN outputfunctions ;
 ARCH_GEN outputfunctions ;
 
+enum e_lk get_dll_linkage()
+{
+	return prm_lscrtdll ? lk_import : lk_none;
+}
+
 static void WinmodeSetup(char select, char *string);
 static void chkdos(void)
 {
@@ -639,213 +644,216 @@ ARCH_GEN outputfunctions = {
 };
 ARCH_ASM assemblerInterface[] = {
     {
-        "nasm",                         /* assembler name */
-        0,                              /* backend data (compiler ignores) */
-        "1",                            /* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
-        ".asm",                         /* extension for assembly files */
-        ".o",                           /* extension for object files, NULL = has no object mode */
-        "occ",                          /* name of an environment variable to parse, or 0 */
-        "occ",                          /* name of the program, for usage */
-        "occ",                          /* name of a config file if you want to use one, or NULL (sans extension) */
-        usage_text,                     /* pointer to usage text */
-        args,                           /* extra args */
-        sizeof(args) / sizeof(args[0]), /* number of args */
-        oplst,                          /* inline assembler opcode list, or null */
-        reglst,                         /* inline assembler register list, or null */
-        prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
-        defines,                        /* defines list to create at compile time, or null */
-        &dbgStruct[0],                  /* debug structure, or NULL */
-        &architecture,                  /* architecture characteristics */
-        &outputfunctions,               /* pointer to backend function linkages */
-        NULL,                           /* pointer to MSIL-specific data and functions */
-        NULL,                           /* pointer to extra builtin data */
-        initnasm,                       /* return 1 to proceed */
-        0,                              /* precompile function, or NULL */
-        0,                              /* postcompile function, or NULL */
-        RunExternalFiles,               /* postprocess function, or NULL */
-        0,                              /* compiler rundown */
-        InsertOutputFileName,           /* insert the output (executable name) into the backend */
-        InsertExternalFile,             /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
-        parse_param,                    /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-        parse_codegen,                  /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-        0,                              /* parse a pragma directive, or null */
-        compile_start,                  /* signal start of compile on a per file basis */
-        include_start,                  /* signal switching to a new source file */
-        output_obj_file,                /* write the object file (for native object formats) */
-        outcode_file_init,              /* initialize the object file */
-        inasmini,                       /* initialize inline assembler, per file, or NULL */
-        inasm_statement,                /* parse an assembly statement, or NULL */
-        inlineAsmStmt,                  /* translate an assembly instruction which was inlined */
-        0,                              /* initialize intrinsic mechanism, compiler startup */
-        0,                              /* search for an intrinsic */
-        0,                              /* enter a type in the BE */
+    "nasm",                                 /* assembler name */
+    0,                                      /* backend data (compiler ignores) */
+    "1",								/* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
+    ".asm",                                  /* extension for assembly files */
+    ".o",                               /* extension for object files, NULL = has no object mode */
+    "occ",                               /* name of an environment variable to parse, or 0 */
+    "occ",                             /* name of the program, for usage */
+    "occ",                              /* name of a config file if you want to use one, or NULL (sans extension) */
+    usage_text,                           /* pointer to usage text */
+    args,									/* extra args */
+    sizeof(args)/sizeof(args[0]),			/* number of args */
+    oplst,                             /* inline assembler opcode list, or null */
+    reglst,                             /* inline assembler register list, or null */
+    prockeywords,                         /* specific keywords, e.g. allow a 'bit' keyword and so forth */
+    defines,                     /* defines list to create at compile time, or null */
+    &dbgStruct[0],                         /* debug structure, or NULL */
+    &architecture,                /* architecture characteristics */
+    &outputfunctions,                              /* pointer to backend function linkages */
+    NULL,                               /* pointer to MSIL-specific data and functions */
+    NULL,                               /* pointer to extra builtin data */
+    initnasm,  /* return 1 to proceed */
+    0,              /* precompile function, or NULL */
+    0,              /* postcompile function, or NULL */
+    RunExternalFiles,     /* postprocess function, or NULL */
+    0,     /* compiler rundown */
+    InsertOutputFileName,          /* insert the output (executable name) into the backend */
+    InsertExternalFile,      /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
+    parse_param,     /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
+    parse_codegen,   /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
+    0,         /* parse a pragma directive, or null */
+    compile_start,    /* signal start of compile on a per file basis */
+    include_start,		/* signal switching to a new source file */
+    output_obj_file,      /* write the object file (for native object formats) */
+    outcode_file_init,    /* initialize the object file */
+    inasmini,             /* initialize inline assembler, per file, or NULL */
+    inasm_statement,        /* parse an assembly statement, or NULL */
+    inlineAsmStmt,		/* translate an assembly instruction which was inlined */
+    0,                   /* initialize intrinsic mechanism, compiler startup */
+    0,                   /* search for an intrinsic */
+    0,                     /* enter a type in the BE */
+    get_dll_linkage,                /* get dll linkage corresponding to command line switches */
     },
     {
-        "fasm",                         /* assembler name */
-        0,                              /* backend data (compiler ignores) */
-        "1",                            /* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
-        ".asm",                         /* extension for assembly files */
-        ".o",                           /* extension for object files, NULL = has no object mode */
-        "occ",                          /* name of an environment variable to parse, or 0 */
-        "occ",                          /* name of the program, for usage */
-        "occ",                          /* name of a config file if you want to use one, or NULL (sans extension) */
-        usage_text,                     /* pointer to usage text */
-        args,                           /* extra args */
-        sizeof(args) / sizeof(args[0]), /* number of args */
-        oplst,                          /* inline assembler opcode list, or null */
-        reglst,                         /* inline assembler register list, or null */
-        prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
-        defines,                        /* defines list to create at compile time, or null */
-        &dbgStruct[0],                  /* debug structure, or NULL */
-        &architecture,                  /* architecture characteristics */
-        &outputfunctions,               /* pointer to backend function linkages */
-        NULL,                           /* pointer to MSIL-specific data and functions */
-        NULL,                           /* pointer to extra builtin data */
-        initfasm,                       /* return 1 to proceed */
-        0,                              /* precompile function, or NULL */
-        0,                              /* postcompile function, or NULL */
-        RunExternalFiles,               /* postprocess function, or NULL */
-        0,                              /* compiler rundown */
-        InsertOutputFileName,           /* insert the output (executable name) into the backend */
-        InsertExternalFile,             /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
-        parse_param,                    /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-        parse_codegen,                  /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-        0,                              /* parse a pragma directive, or null */
-        compile_start,                  /* signal start of compile on a per file basis */
-        include_start,                  /* signal switching to a new source file */
-        output_obj_file,                /* write the object file (for native object formats) */
-        outcode_file_init,              /* initialize the object file */
-        inasmini,                       /* initialize inline assembler, per file, or NULL */
-        inasm_statement,                /* parse an assembly statement, or NULL */
-        inlineAsmStmt,                  /* translate an assembly instruction which was inlined */
-        0,                              /* initialize intrinsic mechanism, compiler startup */
-        0,                              /* search for an intrinsic */
-        0,                              /* enter a type in the BE */
+    "fasm",                                 /* assembler name */
+    0,                                      /* backend data (compiler ignores) */
+    "1",								/* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
+    ".asm",                                  /* extension for assembly files */
+    ".o",                               /* extension for object files, NULL = has no object mode */
+    "occ",                               /* name of an environment variable to parse, or 0 */
+    "occ",                             /* name of the program, for usage */
+    "occ",                              /* name of a config file if you want to use one, or NULL (sans extension) */
+    usage_text,                           /* pointer to usage text */
+    args,									/* extra args */
+    sizeof(args)/sizeof(args[0]),			/* number of args */
+    oplst,                             /* inline assembler opcode list, or null */
+    reglst,                             /* inline assembler register list, or null */
+    prockeywords,                         /* specific keywords, e.g. allow a 'bit' keyword and so forth */
+    defines,                     /* defines list to create at compile time, or null */
+    &dbgStruct[0],                         /* debug structure, or NULL */
+    &architecture,                /* architecture characteristics */
+    &outputfunctions,                              /* pointer to backend function linkages */
+    NULL,                               /* pointer to MSIL-specific data and functions */
+    NULL,                               /* pointer to extra builtin data */
+    initfasm,  /* return 1 to proceed */
+    0,              /* precompile function, or NULL */
+    0,              /* postcompile function, or NULL */
+    RunExternalFiles,     /* postprocess function, or NULL */
+    0,     /* compiler rundown */
+    InsertOutputFileName,          /* insert the output (executable name) into the backend */
+    InsertExternalFile,      /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
+    parse_param,     /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
+    parse_codegen,   /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
+    0,         /* parse a pragma directive, or null */
+    compile_start,    /* signal start of compile on a per file basis */
+    include_start,		/* signal switching to a new source file */
+    output_obj_file,      /* write the object file (for native object formats) */
+    outcode_file_init,    /* initialize the object file */
+    inasmini,             /* initialize inline assembler, per file, or NULL */
+    inasm_statement,        /* parse an assembly statement, or NULL */
+    inlineAsmStmt,		/* translate an assembly instruction which was inlined */
+    0,                   /* initialize intrinsic mechanism, compiler startup */
+    0,                   /* search for an intrinsic */
+    0,                       /* __using__ declaration */    
+    get_dll_linkage,                /* get dll linkage corresponding to command line switches */
     },
     {
-        "tasm",                         /* assembler name */
-        0,                              /* backend data (compiler ignores) */
-        "1",                            /* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
-        ".asm",                         /* extension for assembly files */
-        ".o",                           /* extension for object files, NULL = has no object mode */
-        "occ",                          /* name of an environment variable to parse, or 0 */
-        "occ",                          /* name of the program, for usage */
-        "occ",                          /* name of a config file if you want to use one, or NULL (sans extension) */
-        usage_text,                     /* pointer to usage text */
-        args,                           /* extra args */
-        sizeof(args) / sizeof(args[0]), /* number of args */
-        oplst,                          /* inline assembler opcode list, or null */
-        reglst,                         /* inline assembler register list, or null */
-        prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
-        defines,                        /* defines list to create at compile time, or null */
-        &dbgStruct[0],                  /* debug structure, or NULL */
-        &architecture,                  /* architecture characteristics */
-        &outputfunctions,               /* pointer to backend function linkages */
-        NULL,
-        NULL,
-        inittasm, /* return 1 to proceed */
-        0,
-        0,
-        RunExternalFiles,     /* postprocess function, or NULL */
-        0,                    /* compiler rundown */
-        InsertOutputFileName, /* insert the output (executable name) into the backend */
-        InsertExternalFile,   /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
-        parse_param,          /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-        parse_codegen,        /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-        0,                    /* parse a pragma directive, or null */
-        compile_start,        /* signal start of compile on a per file basis */
-        include_start,        /* signal switching to a new source file */
-        output_obj_file,      /* write the object file (for native object formats) */
-        outcode_file_init,    /* initialize the object file */
-        inasmini,             /* initialize inline assembler, per file, or NULL */
-        inasm_statement,      /* parse an assembly statement, or NULL */
-        inlineAsmStmt,        /* translate an assembly instruction which was inlined */
-        0,                    /* initialize intrinsic mechanism, compiler startup */
-        0,                    /* search for an intrinsic */
-        0,                    /* __using__ declaration */
+    "tasm",                                 /* assembler name */
+    0,                                      /* backend data (compiler ignores) */
+    "1",								/* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
+    ".asm",                                  /* extension for assembly files */
+    ".o",                               /* extension for object files, NULL = has no object mode */
+    "occ",                               /* name of an environment variable to parse, or 0 */
+    "occ",                             /* name of the program, for usage */
+    "occ",                              /* name of a config file if you want to use one, or NULL (sans extension) */
+    usage_text,                           /* pointer to usage text */
+    args,									/* extra args */
+    sizeof(args)/sizeof(args[0]),			/* number of args */
+    oplst,                             /* inline assembler opcode list, or null */
+    reglst,                             /* inline assembler register list, or null */
+    prockeywords,                         /* specific keywords, e.g. allow a 'bit' keyword and so forth */
+    defines,                     /* defines list to create at compile time, or null */
+    &dbgStruct[0],                         /* debug structure, or NULL */
+    &architecture,                /* architecture characteristics */
+    &outputfunctions,                              /* pointer to backend function linkages */
+    NULL,                               /* pointer to MSIL-specific data and functions */
+    NULL,                               /* pointer to extra builtin data */
+    inittasm,  /* return 1 to proceed */
+    0,              /* precompile function, or NULL */
+    0,              /* postcompile function, or NULL */
+    RunExternalFiles,     /* postprocess function, or NULL */
+    0,     /* compiler rundown */
+    InsertOutputFileName,          /* insert the output (executable name) into the backend */
+    InsertExternalFile,      /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
+    parse_param,     /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
+    parse_codegen,   /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
+    0,         /* parse a pragma directive, or null */
+    compile_start,    /* signal start of compile on a per file basis */
+    include_start,		/* signal switching to a new source file */
+    output_obj_file,      /* write the object file (for native object formats) */
+    outcode_file_init,    /* initialize the object file */
+    inasmini,             /* initialize inline assembler, per file, or NULL */
+    inasm_statement,        /* parse an assembly statement, or NULL */
+    inlineAsmStmt,		/* translate an assembly instruction which was inlined */
+    0,                   /* initialize intrinsic mechanism, compiler startup */
+    0,                   /* search for an intrinsic */
+    0,                       /* __using__ declaration */    
+    get_dll_linkage,                /* get dll linkage corresponding to command line switches */
     },
     {
-        "masm",                         /* assembler name */
-        0,                              /* backend data (compiler ignores) */
-        "1",                            /* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
-        ".asm",                         /* extension for assembly files */
-        ".o",                           /* extension for object files, NULL = has no object mode */
-        "occ",                          /* name of an environment variable to parse, or 0 */
-        "occ",                          /* name of the program, for usage */
-        "occ",                          /* name of a config file if you want to use one, or NULL (sans extension) */
-        usage_text,                     /* pointer to usage text */
-        args,                           /* extra args */
-        sizeof(args) / sizeof(args[0]), /* number of args */
-        oplst,                          /* inline assembler opcode list, or null */
-        reglst,                         /* inline assembler register list, or null */
-        prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
-        defines,                        /* defines list to create at compile time, or null */
-        &dbgStruct[0],                  /* debug structure, or NULL */
-        &architecture,                  /* architecture characteristics */
-        &outputfunctions,               /* pointer to backend function linkages */
-        NULL,
-        NULL,
-        initmasm, /* return 1 to proceed */
-        0,
-        0,
-        RunExternalFiles,     /* postprocess function, or NULL */
-        0,                    /* compiler rundown */
-        InsertOutputFileName, /* insert the output (executable name) into the backend */
-        InsertExternalFile,   /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
-        parse_param,          /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-        parse_codegen,        /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-        0,                    /* parse a pragma directive, or null */
-        compile_start,        /* signal start of compile on a per file basis */
-        include_start,        /* signal switching to a new source file */
-        output_obj_file,      /* write the object file (for native object formats) */
-        outcode_file_init,    /* initialize the object file */
-        inasmini,             /* initialize inline assembler, per file, or NULL */
-        inasm_statement,      /* parse an assembly statement, or NULL */
-        inlineAsmStmt,        /* translate an assembly instruction which was inlined */
-        0,                    /* initialize intrinsic mechanism, compiler startup */
-        0,                    /* search for an intrinsic */
-        0,                    /* __using__ declaration */
+    "masm",                                 /* assembler name */
+    0,                                      /* backend data (compiler ignores) */
+    "1",								/* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
+    ".asm",                                  /* extension for assembly files */
+    ".o",                               /* extension for object files, NULL = has no object mode */
+    "occ",                               /* name of an environment variable to parse, or 0 */
+    "occ",                             /* name of the program, for usage */
+    "occ",                              /* name of a config file if you want to use one, or NULL (sans extension) */
+    usage_text,                           /* pointer to usage text */
+    args,									/* extra args */
+    sizeof(args)/sizeof(args[0]),			/* number of args */
+    oplst,                             /* inline assembler opcode list, or null */
+    reglst,                             /* inline assembler register list, or null */
+    prockeywords,                         /* specific keywords, e.g. allow a 'bit' keyword and so forth */
+    defines,                     /* defines list to create at compile time, or null */
+    &dbgStruct[0],                         /* debug structure, or NULL */
+    &architecture,                /* architecture characteristics */
+    &outputfunctions,                              /* pointer to backend function linkages */
+    NULL,                               /* pointer to MSIL-specific data and functions */
+    NULL,                               /* pointer to extra builtin data */
+    initmasm,  /* return 1 to proceed */
+    0,              /* precompile function, or NULL */
+    0,              /* postcompile function, or NULL */
+    RunExternalFiles,     /* postprocess function, or NULL */
+    0,     /* compiler rundown */
+    InsertOutputFileName,          /* insert the output (executable name) into the backend */
+    InsertExternalFile,      /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
+    parse_param,     /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
+    parse_codegen,   /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
+    0,         /* parse a pragma directive, or null */
+    compile_start,    /* signal start of compile on a per file basis */
+    include_start,		/* signal switching to a new source file */
+    output_obj_file,      /* write the object file (for native object formats) */
+    outcode_file_init,    /* initialize the object file */
+    inasmini,             /* initialize inline assembler, per file, or NULL */
+    inasm_statement,        /* parse an assembly statement, or NULL */
+    inlineAsmStmt,		/* translate an assembly instruction which was inlined */
+    0,                   /* initialize intrinsic mechanism, compiler startup */
+    0,                   /* search for an intrinsic */
+    0,                       /* __using__ declaration */    
+    get_dll_linkage,                /* get dll linkage corresponding to command line switches */
     },
     {
-        "generic",                      /* assembler name */
-        0,                              /* backend data (compiler ignores) */
-        "1",                            /* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
-        ".asm",                         /* extension for assembly files */
-        ".o",                           /* extension for object files, NULL = has no object mode */
-        "occ",                          /* name of an environment variable to parse, or 0 */
-        "occ",                          /* name of the program, for usage */
-        "occ",                          /* name of a config file if you want to use one, or NULL (sans extension) */
-        usage_text,                     /* pointer to usage text */
-        args,                           /* extra args */
-        sizeof(args) / sizeof(args[0]), /* number of args */
-        oplst,                          /* inline assembler opcode list, or null */
-        reglst,                         /* inline assembler register list, or null */
-        prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
-        defines,                        /* defines list to create at compile time, or null */
-        &dbgStruct[0],                  /* debug structure, or NULL */
-        &architecture,                  /* architecture characteristics */
-        &outputfunctions,               /* pointer to backend function linkages */
-        NULL,
-        NULL,
-        initgeneric, /* return 1 to proceed */
-        0,
-        0,
-        RunExternalFiles,     /* postprocess function, or NULL */
-        0,                    /* compiler rundown */
-        InsertOutputFileName, /* insert the output (executable name) into the backend */
-        InsertExternalFile,   /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
-        parse_param,          /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-        parse_codegen,        /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-        0,                    /* parse a pragma directive, or null */
-        compile_start,        /* signal start of compile on a per file basis */
-        include_start,        /* signal switching to a new source file */
-        output_obj_file,      /* write the object file (for native object formats) */
-        outcode_file_init,    /* initialize the object file */
-        inasmini,             /* initialize inline assembler, per file, or NULL */
-        inasm_statement,      /* parse an assembly statement, or NULL */
-        inlineAsmStmt,        /* translate an assembly instruction which was inlined */
-        0,                    /* initialize intrinsic mechanism, compiler startup */
-        0,                    /* search for an intrinsic */
-        0,                    /* __using__ declaration */
+    "generic",                                 /* assembler name */
+    0,                                      /* backend data (compiler ignores) */
+     "1",								/* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
+    ".asm",                                  /* extension for assembly files */
+    ".o",                               /* extension for object files, NULL = has no object mode */
+    "occ",                               /* name of an environment variable to parse, or 0 */
+    "occ",                             /* name of the program, for usage */
+    "occ",                              /* name of a config file if you want to use one, or NULL (sans extension) */
+    usage_text,                           /* pointer to usage text */
+    args,									/* extra args */
+    sizeof(args)/sizeof(args[0]),			/* number of args */
+    oplst,                             /* inline assembler opcode list, or null */
+    reglst,                             /* inline assembler register list, or null */
+    prockeywords,                         /* specific keywords, e.g. allow a 'bit' keyword and so forth */
+    defines,                     /* defines list to create at compile time, or null */
+    &dbgStruct[0],                         /* debug structure, or NULL */
+    &architecture,                /* architecture characteristics */
+    &outputfunctions,                              /* pointer to backend function linkages */
+    initgeneric,  /* return 1 to proceed */
+    0,              /* precompile function, or NULL */
+    0,              /* postcompile function, or NULL */
+    RunExternalFiles,     /* postprocess function, or NULL */
+    0,     /* compiler rundown */
+    InsertOutputFileName,          /* insert the output (executable name) into the backend */
+    InsertExternalFile,      /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
+    parse_param,     /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
+    parse_codegen,   /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
+    0,         /* parse a pragma directive, or null */
+    compile_start,    /* signal start of compile on a per file basis */
+    include_start,		/* signal switching to a new source file */
+    output_obj_file,      /* write the object file (for native object formats) */
+    outcode_file_init,    /* initialize the object file */
+    inasmini,             /* initialize inline assembler, per file, or NULL */
+    inasm_statement,        /* parse an assembly statement, or NULL */
+    inlineAsmStmt,		/* translate an assembly instruction which was inlined */
+    0,                   /* initialize intrinsic mechanism, compiler startup */
+    0,                   /* search for an intrinsic */
+    0,                       /* __using__ declaration */    
+    get_dll_linkage,                /* get dll linkage corresponding to command line switches */
     },
     {0}};

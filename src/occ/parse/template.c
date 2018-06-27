@@ -98,7 +98,6 @@ static int inTemplateArgs;
 struct templateListData *currents;
 
 static LEXEME *TemplateArg(LEXEME *lex, SYMBOL *funcsp, TEMPLATEPARAMLIST *arg, TEMPLATEPARAMLIST **lst);
-static BOOLEAN fullySpecialized(TEMPLATEPARAMLIST *tpl);
 static TEMPLATEPARAMLIST *copyParams(TEMPLATEPARAMLIST *t, BOOLEAN alsoSpecializations);
 static BOOLEAN valFromDefault(TEMPLATEPARAMLIST *params, BOOLEAN usesParams, INITLIST **args);
 static int pushContext(SYMBOL *cls, BOOLEAN all);
@@ -7946,6 +7945,7 @@ static void referenceInstanceMembers(SYMBOL *cls)
         }
     }
 }
+
 static BOOLEAN fullySpecialized(TEMPLATEPARAMLIST *tpl)
 {
     switch (tpl->p->type)
@@ -8011,63 +8011,6 @@ BOOLEAN TemplateFullySpecialized(SYMBOL *sp)
     return FALSE;
 }
 
-/*static SYMBOL *matchTemplateFunc(SYMBOL *old, SYMBOL *instantiated)
-{
-    if (basetype(instantiated->tp)->syms)
-    {
-        FUNCTIONCALL list;
-        INITLIST **next = &list.arguments , *il;
-        HASHREC *hr, *hro, *hrs;
-        EXPRESSION *exp = intNode(en_c_i, 0);
-        TEMPLATEPARAMLIST *src, *dest;
-        if (!instantiated->isConstructor && !instantiated->isDestructor && !TemplateDeduceFromType(basetype(old->tp)->btp, basetype(instantiated->tp)->btp))
-            return FALSE;
-
-        memset(&list, 0, sizeof(list));
-        hr  = basetype(instantiated->tp)->syms->table[0];
-        hro = hrs = basetype(old->tp)->syms->table[0];
-        if (((SYMBOL *)hr->p)->tp->type == bt_void)
-            if (((SYMBOL *)hro->p)->tp->type == bt_void)
-                return TRUE;
-        while (hr)
-        {
-            *next = Alloc(sizeof(INITLIST));
-            (*next)->tp = ((SYMBOL *)hr->p)->tp;
-            (*next)->exp = exp;
-            next = &(*next)->next;
-            hr = hr->next;
-            if (!hro)
-                return FALSE;
-            hro = hro->next;
-        }
-        if (hro)
-            return FALSE;
-        if (instantiated->parentClass)
-        {
-            src = instantiated->parentClass->templateParams;
-            dest = old->parentClass->templateParams;
-            while (src && dest)
-            {
-                if (src->p->type != dest->p->type)
-                    return FALSE;
-                if (src->p->type != kw_new)
-                {
-                    dest->p->byClass.val = src->p->byClass.val;
-                    dest->p->initialized = FALSE;
-                }
-                src = src->next;
-                dest = dest->next;
-            }
-            if (src || dest)
-                return FALSE;
-        }
-        return TemplateDeduceArgList(hrs, hrs, list.arguments, TRUE);
-    }
-    else if (!basetype(old->tp)->syms)
-        return TRUE;
-    return FALSE;
-}
-*/
 void propagateTemplateDefinition(SYMBOL *sym)
 {
     int oldCount = templateNestingCount;
@@ -8433,6 +8376,8 @@ LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum 
                 TEMPLATEPARAMLIST *templateParams = TemplateGetParams(sym->parentClass);
                 DoInstantiateTemplateFunction(tp, &sp, nsv, strSym, templateParams, isExtern);
                 sym = sp;
+                if (sym->linkage2 == lk_none)
+                    sym->linkage2 = linkage2;
                 if (!comparetypes(basetype(sp->tp)->btp, basetype(tp)->btp, TRUE))
                 {
                     errorsym(ERR_TYPE_MISMATCH_IN_REDECLARATION, sp);

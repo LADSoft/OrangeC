@@ -948,6 +948,7 @@ static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac cur
             InsertInline(sp);
             my_sprintf(buf, "%s@_$vt", sp->decoratedName);
             sp->vtabsp = makeID(sc_static, &stdvoid, NULL, litlate(buf));
+            sp->vtabsp->linkage2 = sp->linkage2;
             sp->vtabsp->linkage = lk_virtual;
             sp->vtabsp->decoratedName = sp->vtabsp->errname = sp->vtabsp->name;
             warnCPPWarnings(sp, funcsp != NULL);
@@ -1267,6 +1268,8 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
                 parsingSpecializationDeclaration = FALSE;
                 inTemplateSpecialization--;
                 sp = LookupSpecialization(sp, templateParams);
+                if (linkage2 != lk_none)
+                    sp->linkage2 = linkage2;
                 sp->templateParams = TemplateMatching(lex, origParams, templateParams, sp,
                                                       MATCHKW(lex, begin) || MATCHKW(lex, colon));
             }
@@ -6498,6 +6501,12 @@ doInitialize:
                                 if (sp->parentClass && sp->storage_class == sc_global)
                                 {
                                     if (sp->templateParams && !sp->templateParams->next)
+                                    {
+                                        SetLinkerNames(sp, lk_cdecl);
+                                        InsertInlineData(sp);
+                                    }
+                                    else if ((!sp->parentClass || sp->parentClass->templateParams && allTemplateArgsSpecified(sp->parentClass, sp->parentClass->templateParams->next))
+                                        && (!sp->templateParams || allTemplateArgsSpecified(sp, sp->templateParams->next)))
                                     {
                                         SetLinkerNames(sp, lk_cdecl);
                                         InsertInlineData(sp);

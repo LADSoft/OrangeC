@@ -2439,7 +2439,7 @@ static SYMBOL *getUserConversion(int flags,
                 {
                     SYMBOL *sym = (SYMBOL *)(*hr)->p;
                     int n1;
-                    for (n1 = 0; n1 < i; n++)
+                    for (n1 = 0; n1 < i; n1++)
                         if (spFilterList[n1] == sym || spFilterList[n1]->mainsym == sym || spFilterList[n1] == sym->mainsym ||
                             matchOverload(sym->tp, spFilterList[n1]->tp, FALSE) && sym->overlayIndex == spFilterList[n1]->overlayIndex)
                             break;

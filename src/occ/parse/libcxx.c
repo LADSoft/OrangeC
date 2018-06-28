@@ -221,12 +221,12 @@ static BOOLEAN isStandardLayout(TYPE *tp, SYMBOL **result)
     return FALSE;
     /*
  hasnonon-staticdatamembersoftypenon-standard-layoutclass(orarrayofsuchtypes)orreference, 
- — has no virtual functions (10.3) and no virtual base classes (10.1), 
- — has the same access control (Clause 11) for all non-static data members, 
- — has no non-standard-layout base classes, 
- — either has no non-static data members in the most derived class and at most one base class with non-static data members, 
+ ï¿½ has no virtual functions (10.3) and no virtual base classes (10.1), 
+ ï¿½ has the same access control (Clause 11) for all non-static data members, 
+ ï¿½ has no non-standard-layout base classes, 
+ ï¿½ either has no non-static data members in the most derived class and at most one base class with non-static data members, 
     or has no base classes with non-static data members, and 
- — has no base classes of the same type as the ?rst non-static data member.     
+ ï¿½ has no base classes of the same type as the ?rst non-static data member.     
  */
 }
 static BOOLEAN trivialFunc(SYMBOL *func, BOOLEAN move)
@@ -399,11 +399,11 @@ static BOOLEAN trivialStructure(TYPE *tp)
 }
     /*
 A trivially copyable class is a class that: 
-— has no non-trivial copy constructors (12.8),
-— has no non-trivial move constructors (12.8), 
-— has no non-trivial copy assignment operators (13.5.3, 12.8), 
-— has no non-trivial move assignment operators (13.5.3, 12.8), and 
-— has a trivial destructor (12.4). 
+ï¿½ has no non-trivial copy constructors (12.8),
+ï¿½ has no non-trivial move constructors (12.8), 
+ï¿½ has no non-trivial copy assignment operators (13.5.3, 12.8), 
+ï¿½ has no non-trivial move assignment operators (13.5.3, 12.8), and 
+ï¿½ has a trivial destructor (12.4). 
 
 A trivial class is a class that has a trivial default constructor (12.1) and is trivially copyable.     
 */
@@ -670,16 +670,19 @@ static BOOLEAN is_convertible_to(LEXEME **lex, SYMBOL *funcsp, SYMBOL *sym, TYPE
     {
         TYPE *from = funcparams.arguments->tp;
         TYPE *to = funcparams.arguments->next->tp;
-        if (isref(from) && isref(to))
+        if(isref(from))
         {
-            if (basetype(to)->type == bt_lref)
+            if (isref(to))
             {
-                if (basetype(from)->type == bt_rref)
-                    rv = FALSE;
+                if (basetype(to)->type == bt_lref)
+                    if (basetype(from)->type == bt_rref)
+                        rv = FALSE;
+            }
+            else
+            {
+                rv = FALSE;
             }
         }
-        else if (isref(from))
-            rv = FALSE;
         if (isfunction(from))
             from = basetype(from)->btp;
         if (rv)

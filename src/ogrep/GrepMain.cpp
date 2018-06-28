@@ -188,8 +188,7 @@ void GrepMain::FindLine(const std::string fileName, int &matchCount, int &matchL
 }
 void GrepMain::OneFile(RegExpContext &regexp, const std::string fileName, std::istream &fil, int &openCount)
 {
-    char *buf;
-    openCount ++;
+    openCount++;
     // couldn't do this as a straight definition as MSVC decided to treat it as a func
     std::string *str = new std::string(std::istreambuf_iterator<char>(fil), std::istreambuf_iterator<char>());
     str->erase(std::remove(str->begin(), str->end(), '\r'), str->end());

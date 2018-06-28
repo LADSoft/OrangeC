@@ -279,15 +279,8 @@ LRESULT CALLBACK breakProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam)
 {
     static LVHITTESTINFO hittest;
-    NMHDR *h;
-    POINT pt;
     RECT r;
-    HDC dc ;
-    PAINTSTRUCT ps;
-    HPEN pen;
-    int i;
-    LV_ITEM item;
-    LV_COLUMN lvC;    
+	LV_COLUMN lvC;    
     switch (iMessage)
     {
         case WM_SYSCOMMAND:

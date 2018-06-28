@@ -113,7 +113,6 @@ void LoadWorkArea(char *name, BOOL existing)
 {
     PROJECTITEM *oldWorkArea;
     sqlite3 *db;
-    DWINFO *ptr;
     if (workArea)
     {
         SaveAllProjects(workArea, TRUE);
@@ -185,7 +184,7 @@ void LoadWorkArea(char *name, BOOL existing)
     db = ccDBOpen(workArea);
     ccDBVacuum(db);
     ccDBSetDB(db);
-    _beginthread(SetColorize, 0, 0);
+    _beginthread(SetColorize, 0, 0); // undefined in local context
 }
 void CloseWorkArea(void)
 {

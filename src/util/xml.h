@@ -57,7 +57,7 @@ class xmlVisitor
 public:
     virtual bool VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData) { return false; };
     virtual bool VisitNode(xmlNode &node, xmlNode *child, void *userData) { return false; };
-} ;
+};
 class xmlNode
 {
 public:

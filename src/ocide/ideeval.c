@@ -1060,7 +1060,7 @@ void GetQualifiedName(char *dest, char **src, BOOL type, BOOL towarn)
             in = strlen(p+1);
             if (p-in > dest && !strncmp(p-in-1, p+1, strlen(p+1)))
             {
-                strcpy(p, cpp_funcname_tab[1]);
+                strcpy(p, cpp_funcname_tab[1]); // This results in an OOB, is this intentional?
             }
             
         }

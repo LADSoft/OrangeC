@@ -180,19 +180,16 @@ int CmdSwitchFile::Parse(const char *data)
         in.seekg(0, std::ios::end);
         size_t size = in.tellg();
         in.seekg(0, std::ios::beg);
-        char *data = new char[size + 1];
-        memset(data, 0, size + 1);
-        in.read(data, size);
-        data[size] = 0;
+        char *data1 = new char[size + 1];
+        memset(data1, 0, size + 1);
+        in.read(data1, size);
+        data1[size] = 0;
         in.close();
-        Dispatch(data);
-        delete[] data;
+        Dispatch(data1);
+        delete[] data1;
         return n;
     }
-    else
-    {
-        return -1;
-    }
+    return -1;
 }
 void CmdSwitchFile::Dispatch(char *data)
 {
@@ -274,7 +271,6 @@ bool CmdSwitchParser::Parse(int *argc, char *argv[])
         // special casing '-' alone in an argv
         if (argv[0][0] == '@') // meant to be a file loader
         {
-            const char *data = &argv[0][1];
             CmdSwitchBase temp('@');
             auto it = switches.find(&temp);
             if (it == switches.end())

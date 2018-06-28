@@ -891,7 +891,6 @@ LRESULT CALLBACK rcDataDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 
 void RegisterRCDataDrawWindow(HINSTANCE hInstance)
 {
-    HBITMAP bitmap;
     WNDCLASS wc;
     memset(&wc, 0, sizeof(wc));
     wc.style = CS_DBLCLKS;

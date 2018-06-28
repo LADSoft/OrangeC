@@ -869,7 +869,7 @@ static void pragerror(int error)
 
 void dopragma(void)
 {
-    char buf[40],  *p = buf;
+    char buf[40], *p = buf;
     BOOLEAN sflag;
     int val;
     char name[SYMBOL_NAME_LEN];
@@ -2015,7 +2015,6 @@ int replacesegment(unsigned char *start, unsigned char *end, int *inbuffer, int 
                     p = q;
                     if (sp->argcount > 1)
                     {
-                        int ln = strlen(name);
                         do
                         {
                             unsigned char *nm = macro;

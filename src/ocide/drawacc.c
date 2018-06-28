@@ -1172,9 +1172,7 @@ LRESULT CALLBACK AcceleratorDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                             {
                                 if (acceleratorData->gd.selectedColumn == 1)
                                 {
-                                    SYM *sp;
                                     char buf[256];
-                                    EXPRESSION *id;
                                     buf[GetWindowText(acceleratorData->gd.editWindow, buf, sizeof(buf)-1)] = 0;
                                     AccSetChanged(acceleratorData, accelerator);
                                     PropSetIdName(acceleratorData, buf, &accelerator->id, NULL, TRUE);

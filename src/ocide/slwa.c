@@ -435,7 +435,7 @@ void RestoreToolBars(struct xmlNode *node, int version)
     {
         hwnd = GetToolWindow(id);
         if (hwnd)
-            SetToolBarData(hwnd, defines);
+            SetToolBarData(hwnd, defines); // undefined in local context
     }
 }
 void RestoreToolbarLayout(struct xmlNode *node, int version)
@@ -480,7 +480,6 @@ void RestoreToolbarLayout(struct xmlNode *node, int version)
 }    
 void RestoreDocks(struct xmlNode *node, int version)
 {
-    int i;
     struct xmlNode *nodes = node->children;
     DOCK_STR debug[100], release[100];
     HWND debugfrees[100], releasefrees[100];
@@ -541,7 +540,6 @@ void RestoreDocks(struct xmlNode *node, int version)
             {
                 int *count;
                 DOCK_STR *docks;
-                int pos;
                 if (type == 0)
                 {
                     count = & dbgCount;
@@ -603,7 +601,6 @@ void RestoreWindows(struct xmlNode *node, int version, PROJECTITEM *wa)
 {
     MDICREATESTRUCT mc;
     static DWINFO info;
-    int i;
     struct xmlNode *child = node->children;
     HWND hwnd = NULL;
     ShowWindow(hwndSrcTab, SW_HIDE);
@@ -1640,7 +1637,7 @@ void SaveProjectNames(FILE *out, PROJECTITEM *wa)
 void SaveToolBarA(FILE *out, HWND hwnd)
 {
     char data[512];
-    int id = GetToolBarData(hwnd, data);
+    int id = GetToolBarData(hwnd, data); // undefined in local context
     fprintf(out, "\t<TOOLBAR ID=\"%d\" DEFINE=\"%s\"/>\n", id, data);
 }
 
@@ -1716,7 +1713,6 @@ void SaveDocks(FILE *out)
 void SaveWorkArea(PROJECTITEM *wa)
 {
     FILE *out;
-    int i;
     PROFILENAMELIST *pf;
     char buf[ MAX_PATH];    
     if (PropGetBool(NULL, "BACKUP_PROJECTS"))

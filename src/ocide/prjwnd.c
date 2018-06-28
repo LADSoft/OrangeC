@@ -463,7 +463,6 @@ LRESULT CALLBACK treeDoubleBufferProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 LRESULT CALLBACK ProjectProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam)
 {
-    int i;
     RECT rs;
     NM_TREEVIEW *nm;
     DWINFO info;
@@ -678,7 +677,7 @@ LRESULT CALLBACK ProjectProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 {
                     HWND htemp;
                     PROFILENAMELIST *pf;
-                    int selected,n;
+                    int selected;
                     int count;
                     POINT pt;
                     pf = profileNames;

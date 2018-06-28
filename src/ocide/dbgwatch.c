@@ -98,7 +98,6 @@ static void RefreshAddresses(WATCHDATA *ptr, VARINFO *var, int address, THREAD *
     ptr->structNesting[ptr->nestingCount++] = var;
     while (var)
     {
-        char buf[1048];
         int unscope = noscope;
         var->scope = ptr->structNesting[0]->scope;
         if (noscope)
@@ -143,7 +142,6 @@ static void RefreshAddresses(WATCHDATA *ptr, VARINFO *var, int address, THREAD *
 
 static void WatchValue(DEBUG_INFO *dbg_info, char *buf, VARINFO *info, int onevalue)
 {
-    int i;
     if (info->outofscope || info->outofscopereg)
         sprintf(buf, "out of scope");
     else if (info->constant)
@@ -242,7 +240,6 @@ static void WatchValue(DEBUG_INFO *dbg_info, char *buf, VARINFO *info, int oneva
                 break;
             case eDouble:
             case eImaginaryDouble:
-                *(double*)buf1 = *(double*)buf1;
             case eLongDouble:
             case eImaginaryLongDouble:
                 sprintf(buf, "%f", *(long double*)buf1);
@@ -466,14 +463,11 @@ static void Rescope(WATCHINFO *wi, int index, WATCHDATA *ptr)
 static void RefreshItems(WATCHDATA *ptr)
 {
     int i;
-    char *types,  *syms;
     int offset;
-    DEBUG_INFO *dbg;
     for (i = 0; i < ptr->watchinfo_count; i++)
     {
         WATCHINFO *wi = &ptr->watchinfo_list[i];
         VARINFO *var;
-        int level;
         var = EvalExpr(&wi->dbg_info, activeScope,
                                (char*)wi->info->membername, FALSE);
         if (!var)
@@ -491,7 +485,6 @@ static void RefreshItems(WATCHDATA *ptr)
             }
             else
             {
-                int ebp, level;
                 Rescope(wi, i, ptr);
                 offset = var->address;
                 wi->cursoreip = activeScope->address;
@@ -759,27 +752,17 @@ LRESULT CALLBACK WatchWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     WATCHDATA *ptr;    
     static POINT menupos;
     static char buf[256];
-    RECT r,  *pr;
-    WINDOWPOS wp;
-    HD_ITEM hie;
-    HD_LAYOUT hdl;
+	RECT r;
     NMHDR *h;
-    DRAWITEMSTRUCT *dr;
-    HBITMAP hbmp;
-    HDC hMemDC;
     TCHeader tch;
     TV_ITEM item;
-    TV_INSERTSTRUCT t;
     static int sizingbottom;
     int offset;
     DEBUG_INFO *dbg;
     NM_TREEVIEW *nmt;
     VARINFO *var;
     HWND win;
-    int level;
-    int offset1;
     int doit;
-    int i;
     CHARRANGE charrange;
     switch (iMessage)
     {

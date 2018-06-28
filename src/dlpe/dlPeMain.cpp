@@ -236,8 +236,6 @@ void dlPeMain::ReadValues()
 }
 bool dlPeMain::LoadImports(ObjFile *file)
 {
-    ObjInt base;
-    ObjInt offs;
     std::set<std::string> names;
     for (ObjFile::SymbolIterator it = file->ImportBegin(); it != file->ImportEnd(); ++it)
     {

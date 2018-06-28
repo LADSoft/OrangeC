@@ -57,7 +57,6 @@ BOOL Findbump(HWND hwnd, char *buffer)
     DWINFO info;
     char  *t, *q;
     int lineno;
-    int start;
     lineno =  - 1;
     t = info.dwName;
     q = buffer;
@@ -326,13 +325,10 @@ LRESULT CALLBACK findProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam)
 {
     FINDDATA *ptr;
-   NMHDR *h;
     RECT r;
     CHARRANGE s;
     HDC dc ;
     PAINTSTRUCT ps;
-    HPEN pen;
-    int i;
     switch (iMessage)
     {
         case WM_SYSCOMMAND:

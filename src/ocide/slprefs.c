@@ -151,9 +151,7 @@ int RestorePreferences(void)
     int version;
     FILE *in;
     struct xmlNode *root;
-    struct xmlNode *nodes,  *children;
-    struct xmlAttr *attribs;
-    char  *p; 
+    struct xmlNode *nodes;
     char name[256];
     if (!generalProject.profiles)
         generalProject.profiles = calloc(1, sizeof(PROFILE));

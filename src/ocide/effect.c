@@ -313,7 +313,7 @@ HBITMAP ConvertToTransparent(HBITMAP hBmpSrc, DWORD color)
     HBITMAP hnewBmp = hBmpSrc;
     BITMAPINFO bmiNew;
     VOID *pvBitsNew;
-    if (GetVersion() > 6) // windows 7?
+    if (GetVersion() > 6) // windows 7? btw this function is deprecated
     {
         GetObject(hBmpSrc, sizeof(BITMAP), (LPSTR) &bmBits);
         if ((hDC = GetDC(NULL)))

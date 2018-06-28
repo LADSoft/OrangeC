@@ -142,8 +142,6 @@ BOOLEAN comparetypes(TYPE *typ1, TYPE *typ2, int exact)
     typ2 = basetype(typ2);
     if (exact && (isfunction(typ1) || isfuncptr(typ1)) && (isfunction(typ2) || isfuncptr(typ2)))
     {
-        HASHREC *hr1;
-        HASHREC *hr2;
         typ1 = basetype(typ1);
         typ2 = basetype(typ2);
         if (ispointer(typ1))
@@ -317,6 +315,7 @@ void typenumptr(char *buf, TYPE *tp)
 }
 void RenderExpr(char *buf, EXPRESSION *exp)
 {
+	(void)exp;
     strcpy (buf, "decltype(...)");
 }
 TYPE *typenum(char *buf, TYPE *tp)

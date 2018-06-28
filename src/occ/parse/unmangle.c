@@ -87,7 +87,7 @@ static char manglenames[MAX_MANGLE_NAME_COUNT][512];
 
 char *unmang_intrins(char *buf, char *name, char *last)
 {
-    char cur[4096],  *p = cur,  *q;
+    char cur[4096],  *p = cur;
     int i;
     *p++ = *name++; // past the '$'
     while (*name != '@' &&  *name != '$' &&  *name)
@@ -117,7 +117,7 @@ char *unmang_intrins(char *buf, char *name, char *last)
                         // fallthrough
                     case 0: // new
                     {
-                        char *p = last,*q=buf;
+                        char *p = last, *q=buf;
                         while (*p && *p != ':')
                             *q++ = *p++;
                         *q = 0;
@@ -619,7 +619,7 @@ char *unmang1(char *buf, char *name, char *last, BOOLEAN tof)
             strcat(buf, tn_volatile);
     }
         
-    start: if (isdigit(*name))
+    if (isdigit(*name))
     {
         char *s = buf;
         v =  *name++ - '0';
@@ -1043,7 +1043,6 @@ char *unmang1(char *buf, char *name, char *last, BOOLEAN tof)
 
 static char *unmangcpptype(char *buf, char *name, char *last)
 {
-    int i;
     *buf++ = '<';
     while (*name &&  *name != '$' &&  *name != '@' &&  *name != '#')
     {

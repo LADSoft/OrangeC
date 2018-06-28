@@ -43,9 +43,8 @@
  **********************************************************************/
 void insertcrtabs(HWND hwnd, EDITDATA *p)
 {
-    int pos, n;
     int oldinsert = p->cd->inserting;
-    int storepos, parencount = 0;
+    int parencount = 0;
     if (!p->cd->language)
     {
         p->insertcursorcolumn = 0;

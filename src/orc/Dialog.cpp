@@ -39,6 +39,7 @@ Control::~Control()
 }
 void Control::WriteRes(ResFile &resFile, bool ex, bool last)
 {
+	(void)last;
     resFile.Align();
     if (!ex)
     {

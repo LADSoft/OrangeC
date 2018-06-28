@@ -364,9 +364,6 @@ BOOLEAN matchOverload(TYPE *tnew, TYPE *told, BOOLEAN argsOnly)
     inMatchOverload--;
     if (!hold && !hnew)
     {
-        int i;
-        TEMPLATEPARAMLIST *tplNew, *tplOld;
-
         if (tCount)
         {
             int i,j;
@@ -452,8 +449,8 @@ BOOLEAN matchOverload(TYPE *tnew, TYPE *told, BOOLEAN argsOnly)
                         {
                             if (!templateselectorcompare(tpn->sp->templateSelector, tps->sp->templateSelector))
                             {
-                                TEMPLATESELECTOR *ts1 = tpn->sp->templateSelector->next, *tss1;
-                                TEMPLATESELECTOR *ts2 = tps->sp->templateSelector->next, *tss2;
+                                TEMPLATESELECTOR *ts1 = tpn->sp->templateSelector->next;
+                                TEMPLATESELECTOR *ts2 = tps->sp->templateSelector->next;
                                 if (ts2->sym->typedefSym)
                                 {
                                     ts1 = ts1->next;
@@ -529,7 +526,7 @@ BOOLEAN matchOverload(TYPE *tnew, TYPE *told, BOOLEAN argsOnly)
                             return FALSE;
                     }
                     return TRUE;
-                    return templateselectorcompare(tpn->sp->templateSelector, tps->sp->templateSelector);
+                    return templateselectorcompare(tpn->sp->templateSelector, tps->sp->templateSelector); // unreachable
                 }
             }
             else if (basetype(tnew)->sp->castoperator)

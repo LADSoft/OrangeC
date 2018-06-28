@@ -244,6 +244,7 @@ CMDLIST *ArgList = &Args[0];
 
 void library_setup(char select, char *string)
 {
+	(void)select;
     if (string[0] == 0)
     {
         cparams.prm_listfile = TRUE;
@@ -316,11 +317,11 @@ void bool_setup(char select, char *string)
 }
 void verbose_setup(char select, char *string)
 {
+	(void)select;
 	verbosity = 1 + strlen(string);
 }
 void optimize_setup(char select, char *string)
 {
-    BOOLEAN v = TRUE;
     (void)select;
     if (!*string || (*string == '+' && string[1] == '\0'))
     {
@@ -430,6 +431,7 @@ void codegen_setup(char select, char *string)
 }
 void stackalign_setup(char select, char *string)
 {
+	(void)select;
     int n = 16;
     if (string[0])
         n = atoi(string);
@@ -885,7 +887,6 @@ int main(int argc, char *argv[])
             rv = 0 ;
             if (chosenAssembler->compiler_postprocess)
             {
-                char buf[260];
 #ifdef MICROSOFT
                 GetModuleFileNameA(NULL, buffer, sizeof(buffer));    
 #else

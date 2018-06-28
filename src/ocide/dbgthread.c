@@ -54,7 +54,7 @@ static char *szThreadTitle = "Threads";
 
 static void CopyText(HWND hwnd)
 {
-    int count;
+    int count = 0;
     THREAD *list = activeProcess->threads;
     char *p;
     while (list)
@@ -65,7 +65,6 @@ static void CopyText(HWND hwnd)
     p = malloc(256 * count);
     if (p)
     {
-        int i;
         p[0] = 0;
         list = activeProcess->threads;
         while (list)
@@ -95,7 +94,6 @@ LRESULT CALLBACK ThreadProc(HWND hwnd, UINT iMessage, WPARAM
     LV_COLUMN lvC;
     RECT r;
     int i;
-    char module[256];
     THREAD *sl;
     LPNMHDR nmh;
     switch (iMessage)

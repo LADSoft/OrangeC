@@ -1688,13 +1688,13 @@ OCODE * peep_div(OCODE *ip)
     if (ip->oper1->mode == am_dreg)
     {
         OCODE *ip2 = ip->back;
-        while (ip2 && ip2->opcode != op_label && ip2->opcode < op_ja && ip2->opcode > op_jmp)
+        while (ip2 && ip2->opcode != op_label && ip2->opcode < op_ja && ip2->opcode > op_jmp) // It appears that this loop is NEVER run op_ja is less than op_jmp
         {
             if (ip2->opcode == op_mov && ip2->oper1->mode == am_dreg && ip2->oper1->preg == ip->oper1->preg)
                 break;
             ip2 = ip2->back;
         }
-        if (ip2 && ip2->opcode != op_label && ip2->opcode < op_ja && ip2->opcode > op_jmp)
+        if (ip2 && ip2->opcode != op_label && ip2->opcode < op_ja && ip2->opcode > op_jmp) // this if statement is never travelled, same reason above
         {
             AMODE *oper = ip2->oper2;
             if (oper->mode != am_indisp || oper->preg != EAX && oper->preg != EDX && oper->preg != ESP)

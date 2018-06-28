@@ -1078,7 +1078,7 @@ static void ResizeAllWindows(int dx, int dy)
                 len /= EXTRA;
                 len2 /= EXTRA;
                 if (len == 0)
-                    len == len2;
+                    len == len2; // meant to be assign?
                 for (j=0; j < count; j++)
                 {
                     if (j)
@@ -1126,7 +1126,7 @@ static void ResizeAllWindows(int dx, int dy)
                 len /= EXTRA;
                 len2 /= EXTRA;
                 if (len == 0)
-                    len == len2;
+                    len == len2; // meaning to assign?
                 for (j=0; j < count; j++)
                 {
                     if (j)
@@ -1171,10 +1171,8 @@ static void ReTopAllWindows(RECT *old, RECT *new)
 void ResizeLayout(RECT *rect)
 {
     int jmpListHeight = 0;
-    int i, j;
-    int arr[200];
-    int count;
-    RECT client ;
+    int i;
+	RECT client;
     RECT frame;
     RECT statusBar;
     RECT toolBar;
@@ -1305,10 +1303,8 @@ static LRESULT CALLBACK DockRectWndProc(HWND hwnd, UINT iMessage,
 {
     HDC dc;
     HBRUSH brush;
-    HPEN pen;
     PAINTSTRUCT ps;
     RECT rect;
-    int x,y;
     switch (iMessage)
     {
         case WM_CREATE:
@@ -2343,7 +2339,6 @@ BOOL DockDrag(HWND hwnd, int ox, int oy, int x, int y)
 {
     static int selected;
     static POINT pt3, pt4;
-    int n;
     RECT r;
     HWND hwndParent;
     if (!moving)
@@ -2448,7 +2443,7 @@ HWND CreateInternalWindow(int DID, char *clsName, char *title)
 }
 static void SetupInitialDocks(int flag)
 {
-    int i,j;
+    int i;
     for (i=0; i < sizeof(windowDeclarations)/sizeof(windowDeclarations[0]); i++)
     {
         if (windowDeclarations[i].defaultDock & DOCKABLE_INITIAL)

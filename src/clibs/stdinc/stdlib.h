@@ -172,11 +172,17 @@ int         _RTL_FUNC _IMPORT wctombflush(char *__s);
 #define environ _environ
 #endif
 
+#if defined(__LSCRTL_DLL)
+extern  char          _IMPORT ** _environ;
+extern  int           _IMPORT    _fmode;
+extern  unsigned char _IMPORT    _osmajor;
+extern  unsigned char _IMPORT    _osminor;
+#else
 extern  char          _RTL_DATA ** _environ;
 extern  int           _RTL_DATA    _fmode;
 extern  unsigned char _RTL_DATA    _osmajor;
 extern  unsigned char _RTL_DATA    _osminor;
-
+#endif
 
 
 /* Constants for MSC pathname functions */
@@ -292,13 +298,26 @@ int  *_RTL_FUNC _IMPORT __GetDosErrno(void);
 #define _dos_errno (*__GetDosErrno())
 #endif
 #define sys_nerr _sys_nerr
+#if defined(__LSCRTL_DLL)
+extern int _IMPORT _sys_nerr ;
+#else
 extern int _RTL_DATA _sys_nerr ;
+#endif
 
 #define sys_errlist _sys_errlist
+#if defined(__LSCRTL_DLL)
+extern char _IMPORT *_sys_errlist[] ;
+#else
 extern char _RTL_DATA *_sys_errlist[] ;
+#endif
 
+#if defined(__LSCRTL_DLL)
+extern int _IMPORT __argc ;
+extern char _IMPORT ** __argv ;
+#else
 extern int _RTL_DATA __argc ;
 extern char _RTL_DATA ** __argv ;
+#endif
 
 void      _RTL_FUNC _IMPORT perror(const char *__s);
 

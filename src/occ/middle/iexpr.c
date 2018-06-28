@@ -2437,7 +2437,7 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
                 ap->mode = i_direct;
             }
         }
-        else if (f->sp && f->sp->linkage2 == lk_import)
+        else if (f->sp && f->sp->linkage2 == lk_import && f->sp->storage_class != sc_virtual)
         {
             IMODE *ap1 = ap;
             gen_icode(i_assn, ap = tempreg(ISZ_ADDR, 0), ap1, 0);

@@ -1078,7 +1078,7 @@ static void ResizeAllWindows(int dx, int dy)
                 len /= EXTRA;
                 len2 /= EXTRA;
                 if (len == 0)
-                    len == len2; // meant to be assign?
+                    len = len2;
                 for (j=0; j < count; j++)
                 {
                     if (j)
@@ -1126,7 +1126,7 @@ static void ResizeAllWindows(int dx, int dy)
                 len /= EXTRA;
                 len2 /= EXTRA;
                 if (len == 0)
-                    len == len2; // meaning to assign?
+                    len = len2;
                 for (j=0; j < count; j++)
                 {
                     if (j)

@@ -308,9 +308,6 @@ int GetWordFromPos(HWND hwnd, char *outputbuf, int fullcpp, int charpos, int *li
     *startoffs, int *endoffs)
 {
     int linepos;
-    int linecharpos;
-    int linecharindex;
-    char buf[1000];
     CHARRANGE charrange;
 
     EDITDATA *p = (EDITDATA*)GetWindowLong(hwnd, 0);
@@ -372,7 +369,7 @@ void DoHelp(HWND edwin, int speced)
     else
     {
         if (GetKeyState(VK_CONTROL) &0x80000000)
-            MSDNHelp(buf);
+            MSDNHelp(buf); // undefined in local context
         else
             RTLHelp(buf);
     }
@@ -394,39 +391,39 @@ void ClientArea(HWND hwnd, EDITDATA *p, RECT *r)
     r->bottom -= r->bottom % (p->cd->txtFontHeight ? p->cd->txtFontHeight : 2);
 }
 
-    void GetEditPopupFrame(RECT *rect)
-    {
-        GetFrameWindowRect(rect);
-        rect->top -= GetSystemMetrics(SM_CYMENU);
-    }
-    void PopupFullScreen (HWND hwnd, EDITDATA *p)
-    {
-        if (!(GetWindowLong(hwnd, GWL_STYLE) & WS_POPUP))
-        {
-            RECT wrect;
-            GetEditPopupFrame(&wrect);
-            hwndeditPopup = CreateWindow("xedit","", 
-                                       (WS_POPUP | WS_CHILD),
-                                       wrect.left, wrect.top, 
-                                       wrect.right - wrect.left, wrect.bottom - wrect.top,
-                                       GetParent(hwnd),0, hInstance, p);
-            SetWindowPos(hwndeditPopup, HWND_TOP, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_SHOWWINDOW);
-        }
-    }
-    void ReleaseFullScreen(HWND hwnd, EDITDATA *p)
-    {
-        if (GetWindowLong(hwnd, GWL_STYLE) & WS_POPUP)
-        {
-            hwndeditPopup = NULL;
-            CloseWindow(hwnd);
-            DestroyWindow(hwnd);
-        }
-    }
-    void SendUpdate(HWND hwnd)
-    {
-        SendMessage(GetParent(hwnd), WM_COMMAND, (WPARAM)(EN_UPDATE | 
-            (GetWindowLong(hwnd, GWL_ID) << 16)), (LPARAM)hwnd);
-    }
+void GetEditPopupFrame(RECT *rect)
+{
+	GetFrameWindowRect(rect); // undefined in local context
+	rect->top -= GetSystemMetrics(SM_CYMENU);
+}
+void PopupFullScreen(HWND hwnd, EDITDATA *p)
+{
+	if (!(GetWindowLong(hwnd, GWL_STYLE) & WS_POPUP))
+	{
+		RECT wrect;
+		GetEditPopupFrame(&wrect);
+		hwndeditPopup = CreateWindow("xedit", "",
+			(WS_POPUP | WS_CHILD),
+			wrect.left, wrect.top,
+			wrect.right - wrect.left, wrect.bottom - wrect.top,
+			GetParent(hwnd), 0, hInstance, p);
+		SetWindowPos(hwndeditPopup, HWND_TOP, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_SHOWWINDOW);
+	}
+}
+void ReleaseFullScreen(HWND hwnd, EDITDATA *p)
+{
+	if (GetWindowLong(hwnd, GWL_STYLE) & WS_POPUP)
+	{
+		hwndeditPopup = NULL;
+		CloseWindow(hwnd);
+		DestroyWindow(hwnd);
+	}
+}
+void SendUpdate(HWND hwnd)
+{
+	SendMessage(GetParent(hwnd), WM_COMMAND, (WPARAM)(EN_UPDATE |
+		(GetWindowLong(hwnd, GWL_ID) << 16)), (LPARAM)hwnd);
+}
 int KeyboardToAscii(int vk, int scan, BOOL fullstate)
 {
     WCHAR data[10];

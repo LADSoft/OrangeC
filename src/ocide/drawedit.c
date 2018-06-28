@@ -553,7 +553,6 @@ int LoadFile(HWND hwnd, DWINFO *info, BOOL savepos)
 //-------------------------------------------------------------------------
 void SetTitle(HWND hwnd)
 {
-    RECT r;
     DWINFO *info = (DWINFO *)GetWindowLong(hwnd, 0);
     char buf[MAX_PATH];
     EDITDATA *dt = (EDITDATA *)SendMessage(info->dwHandle, EM_GETEDITDATA, 0, 0);
@@ -1012,7 +1011,6 @@ LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     DWINFO *ptr,  *ptr1;
     EDITDATA *ed;
     OPENFILENAME ofn;
-    HDC dc;
     RECT r;
     PAINTSTRUCT paint;
     LPCREATESTRUCT createStruct;
@@ -1256,7 +1254,6 @@ LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 break;
             case IDM_FINDNEXT:
             {
-                DWORD id;
                 _beginthread((BEGINTHREAD_FUNC)(finding ? DoFindNext : DoReplaceNext), 0, (LPVOID)hwndFindInternal);
                 break;
             }

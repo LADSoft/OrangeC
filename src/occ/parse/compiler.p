@@ -371,6 +371,7 @@ int FPFToLongDouble(unsigned char *dest, FPF *src);
 void FPFTruncate(FPF *value, int bits, int maxexp, int minexp);
 
                                /* Help.c */
+void helpinit();
 void deprecateMessage(SYMBOL *sp);
 BOOLEAN ismember(SYMBOL *sym);
 BOOLEAN istype(SYMBOL *sym);

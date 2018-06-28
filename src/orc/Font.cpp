@@ -57,8 +57,6 @@ void Font::ReadRC(RCFile &rcFile)
     ResourceData *rd = new ResourceData;
     rd->ReadRC(rcFile);
     rcFile.NeedEol();
-    int n = rd->GetWord();
-    int s = rd->GetWord();
     // check version and size
 /*
     if *n != 0x200 && n != 0x300 || s != rd->GetLen() || s < 0x180)

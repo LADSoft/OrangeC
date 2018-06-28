@@ -50,8 +50,6 @@ void LibFiles::Add(const ObjString &Name)
     unsigned npos1 = Name.find_last_of('/');
     if (npos != std::string::npos && npos1 != std::string::npos && npos1 > npos)
         npos = npos1;
-    else if (npos == std::string::npos)
-        npos = npos;
     std::string internalName = Name;
     if (npos != std::string::npos)
         internalName = Name.substr(npos+1);

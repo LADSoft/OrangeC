@@ -198,7 +198,6 @@ void BRCLoader::EndBlock(int line)
         blocks.pop_back();
 
         b->end = line;
-        int i;
         for (auto sym : b->syms)
         {
             InsertSymData(sym.first, sym.second);
@@ -208,7 +207,6 @@ void BRCLoader::EndBlock(int line)
 }
 void BRCLoader::ParseData(ObjFile &f)
 {
-    unsigned char *p;
     blocks.clear();
     for (ObjFile::BrowseInfoIterator it = f.BrowseInfoBegin(); it != f.BrowseInfoEnd(); ++it)
     {

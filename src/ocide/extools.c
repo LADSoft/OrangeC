@@ -287,7 +287,10 @@ static int CreateNewExTool(HWND hwnd)
         current =  & (*current)->next;
     }
     if (count >= MAX_EXTERNALTOOLS)
+    {
+        free(newTool);
         return GetSelected(hwnd);
+    }
     if (workArea && workArea->children)
     {
         char *p;

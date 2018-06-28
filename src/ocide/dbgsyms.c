@@ -203,7 +203,6 @@ int *GetBreakpointAddresses(char *module, int *linenum)
     }
     if (count)
     {
-        int i;
         if (count == max)
         {
             p = realloc(p, sizeof(int) * (count +1));
@@ -281,11 +280,9 @@ FUNCTIONLIST *GetFunctionList(DEBUG_INFO *dbg_info, SCOPE *scope, char *name)
 int FindFunctionName(char *buf, int Address, DEBUG_INFO **dbg_out, int *type)
 {
     DEBUG_INFO *dbg;
-    int offset;
     int rv;
+
     buf[0] = 0;
-
-
     dbg = findDebug(Address);
     if (!dbg)
         return 0;
@@ -304,11 +301,9 @@ int FindFunctionName(char *buf, int Address, DEBUG_INFO **dbg_out, int *type)
 int FindGlobalSymbol(DEBUG_INFO **dbg_info, int Address, char *buf, int *type)
 {
     DEBUG_INFO *dbg;
-    int offset;
     int rv;
+
     buf[0] = 0;
-
-
     dbg = findDebug(Address);
     if (!dbg)
         return 0;
@@ -324,7 +319,7 @@ int FindGlobalSymbol(DEBUG_INFO **dbg_info, int Address, char *buf, int *type)
 //-------------------------------------------------------------------------
 NAMELIST *FindEnclosedAutos(SCOPE *scope)
 {
-    DEBUG_INFO *dbg ;
+    DEBUG_INFO *dbg;
     int funcId;
     int line;
     int Address;

@@ -102,7 +102,6 @@ static int finalize(sqlite3_stmt *handle)
 }
 
 static int verscallback(void *NotUsed, int argc, char **argv, char **azColName){
-    int i;
     if (argc == 1)
     {
         if (atoi(argv[0]) >= DBVersion)
@@ -393,7 +392,6 @@ int ccLookupUsing(char *file, int lineno, int parent_id, char *ns)
         "    AND ? >= usingData.startLine;"
     };
     int startline = 0, endline = INT_MAX;
-    int i;
     int rc = SQLITE_OK;
     sqlite3_stmt *handle;
     rc = prepare(db, query, strlen(query)+1, &handle, NULL);
@@ -776,7 +774,7 @@ char ** ccGetMatchingNames(char *name, char **names, int *size, int *max)
 {
     static char *query1 = "SELECT name FROM Names WHERE name like ?;";
     static char *query2 = "SELECT name FROM StructNames WHERE name like = ?;";
-    char buf[4096],*q;
+    char buf[4096];
     char found[256];
     int rc = SQLITE_OK;
     sqlite3_stmt *handle;
@@ -1024,7 +1022,6 @@ CCSTRUCTDATA *ccLookupStructElems(char *module, sqlite3_int64 structId, int indi
     {
         int max = 0;
         int count = 0;
-        CCSTRUCTDATA *data;
         static char *query = {
            "SELECT a.name, b.name, StructFields.structId, StructFields.indirectCount, StructFields.flags FROM MemberNames a, Names b"
            "    JOIN StructFields ON StructFields.nameId = ?"
@@ -1514,8 +1511,6 @@ static unsigned int __stdcall Start(void *aa)
                                                               
     while (serverPipe != INVALID_HANDLE_VALUE)
     {
-        DWORD n;
-        DWORD read;
         serverPipe = CreateNamedPipe(pipe, PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE | 8/* to reject remote connections */,
                                      PIPE_UNLIMITED_INSTANCES,100000,10000,0,NULL);
         if (serverPipe != INVALID_HANDLE_VALUE)

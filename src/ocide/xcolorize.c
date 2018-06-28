@@ -601,7 +601,6 @@ void FormatBuffer(COLORIZE_HASH_ENTRY *entries[], INTERNAL_CHAR *buf, int start,
         else if (type == LANGUAGE_ASM)
         {
             INTERNAL_CHAR *t = buf + start;
-            int type;
             INTERNAL_CHAR *t1;
             t1 = strpstr(t, ";", end - (t - buf));
             while (t1)
@@ -684,7 +683,6 @@ void FormatLine(HWND hwnd, INTERNAL_CHAR *buf, int type, int bkColor)
         CINFO *info = calloc(1,sizeof(CINFO));
         if (info)
         {
-            DWORD hand;
             info->ed = p;
             info->wnd = hwnd;
             info->creation = creation;

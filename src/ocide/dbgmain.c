@@ -75,8 +75,7 @@ int initiateDebug(int stopimmediately)
     static char cmd[4096];
     if (uState == notDebugging && activeProject)
     {
-        DWORD debugThreadID;
-        int val=0,i;
+        int val = 0;
         char *exe, *args, *wd;
         char wdbuf[MAX_PATH];
         SetOutputNames(activeProject, TRUE);
@@ -157,7 +156,6 @@ void ProcessToTop(DWORD processid)
 
 BOOL CALLBACK consoleMenuFunc(HWND wnd, LPARAM value)
 {
-    DWORD id;
     char buf[256];
     GetWindowText(wnd, buf, 256);
     if (!strcmp(buf, (char *)value))
@@ -314,7 +312,7 @@ static void DeleteDLLInfo(DWORD procId, DLL_INFO *info)
     PROCESS *pr = GetProcess(procId);
     if (pr)
     {
-        DLL_INFO **d = &pr->dll_info, *q;
+        DLL_INFO **d = &pr->dll_info;
         while (*d && (*d) != info)
             d = &(*d)->next;
         if (*d)
@@ -329,8 +327,6 @@ static void DeleteDLLInfo(DWORD procId, DLL_INFO *info)
 
 static int HandleBreakpoint(DEBUG_EVENT *info, char *cmd)
 {
-    char module[256];
-    int linenum;
 	if (uState != Aborting)
 	{
 		SetForegroundWindow(hwndFrame);
@@ -493,7 +489,6 @@ void StopRunning(int newState)
     {
         HANDLE hThisThread = GetCurrentThread();
         int iOldPriority = GetThreadPriority(hThisThread);
-        int oldaddr;
         int *p = calloc(2, sizeof(int));
         p[0] = debugProcessList->base;
         SetForegroundWindow(hwndFrame);
@@ -589,7 +584,6 @@ static void abortDebugThread(void)
 
 void abortDebug(void)
 {
-    DWORD threadhand;
     if (!abortEvent)
         abortEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
     _beginthread((BEGINTHREAD_FUNC)abortDebugThread, 0, NULL);
@@ -683,11 +677,9 @@ void StartDebug(char *cmd)
     DWORD dwContinueStatus;
     BOOL bRet;
     BOOL ContinueStep = FALSE;
-    BREAKPOINT **bp;
     HMODULE hpsapiLib;
-    THREAD **th;
     HANDLE hExitHandle = NULL;
-    int val, i, hbp;
+    int hbp;
     BOOL isTerminating = FALSE;
     char buf[512],*pwd = cmd + strlen(cmd)+1;
     BOOL sittingAtDataBreakpoint = FALSE;
@@ -828,7 +820,6 @@ void StartDebug(char *cmd)
                         DLL_INFO *dllInfo = NewDLLInfo(stDE.dwProcessId, (DWORD)stDE.u.LoadDll.lpBaseOfDll);
                         if (dllInfo)
                         {
-                            int len;
                             char *ava = "";
                             PROCESS *pr = GetProcess(stDE.dwProcessId);
                             dllInfo->name[0] = 0;
@@ -897,7 +888,7 @@ void StartDebug(char *cmd)
                         if (info)
                         {
                             GetRegs(0);
-                            dbgClearBreakpointsForModule(info);
+                            dbgClearBreakpointsForModule(info); // undefined in this file
                             ClearBreakPoints(stDE.dwProcessId);
                             DeleteDLLInfo(stDE.dwProcessId, info);
                             SetBreakPoints(stDE.dwProcessId);

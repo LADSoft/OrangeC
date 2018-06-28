@@ -153,17 +153,14 @@ static int dumpVTabEntries(int count, THUNK *thunks, SYMBOL *sym, VTABENTRY *ent
         entry = entry->next;
     }
 #else
-    count  =0 ;
+    count = 0;
 #endif
     return count;
 }
 void dumpVTab(SYMBOL *sym)
 {
 #ifndef PARSER_ONLY
-
-    char buf[256];
     THUNK thunks[1000];
-    SYMBOL *localsp;
     SYMBOL *xtSym = RTTIDumpType(basetype(sym->tp));
     int count = 0;
 
@@ -473,6 +470,7 @@ static void checkExceptionSpecification(SYMBOL *sp)
 }
 void CheckCalledException(SYMBOL *cst, EXPRESSION *exp)
 {
+	(void)exp;
     if (cst->xcMode != xc_none && (cst->xcMode != xc_dynamic || cst->xc && cst->xc->xcDynamic))
         functionCanThrow = TRUE;
 }
@@ -730,7 +728,6 @@ void calculateVirtualBaseOffsets(SYMBOL *sp)
             int n;
             int align = vbase->cls->structAlign;
             VBASEENTRY *cur;
-            VTABENTRY *old = vbase->cls->vtabEntries;
             sp->structAlign = imax(sp->structAlign, align );
             if (align != 1)
             {
@@ -760,9 +757,8 @@ void calculateVirtualBaseOffsets(SYMBOL *sp)
 }
 void deferredCompileOne(SYMBOL *cur)
 {
-    SYMBOL *sp;
     LEXEME *lex;
-    STRUCTSYM l,m, n;
+    STRUCTSYM l, n;
     int count = 0;
     LAMBDA *oldLambdas;
     // function body
@@ -790,7 +786,6 @@ void deferredCompileOne(SYMBOL *cur)
         if (MATCHKW(lex, kw_try) || MATCHKW(lex, colon))
         {
             BOOLEAN viaTry = MATCHKW(lex, kw_try);
-            int old = GetGlobalFlag();
             if (viaTry)
             {
                 cur->hasTry = TRUE;
@@ -827,9 +822,8 @@ static void RecalcArraySize(TYPE *tp)
 void deferredInitializeStructFunctions(SYMBOL *cur)
 {
     HASHREC *hr;
-    SYMBOL *sp;
     LEXEME *lex;
-    STRUCTSYM l,m, n;
+    STRUCTSYM l, n;
     int count = 0;
     int tns = PushTemplateNamespace(cur);
     l.str = cur;
@@ -912,9 +906,8 @@ void deferredInitializeStructMembers(SYMBOL *cur)
 {
     LIST *staticAssert;
     HASHREC *hr;
-    SYMBOL *sp;
     LEXEME *lex;
-    STRUCTSYM l,m, n;
+    STRUCTSYM l, n;
     int count = 0;
     int tns = PushTemplateNamespace(cur);
     l.str = cur;
@@ -979,6 +972,7 @@ static BOOLEAN declaringTemplate(SYMBOL *sp)
 }
 TYPE *PerformDeferredInitialization (TYPE *tp, SYMBOL *funcsp)
 {
+	(void)funcsp;
     if (!tp)
         return &stdany;
     TYPE **tpx = &tp;
@@ -1071,7 +1065,6 @@ BOOLEAN usesVTab(SYMBOL *sym)
 {
     HASHREC *hr;
     BASECLASS *base;
-    VTABENTRY *vt;
     hr = sym->tp->syms->table[0];
     while (hr)
     {
@@ -1211,8 +1204,6 @@ restart:
                 if (MATCHKW(lex, lt))
                 {
                     int i;
-                    SYMBOL *sym;
-                    LEXEME *start = lex;
                     inTemplateSpecialization++;
                     lex = GetTemplateArguments(lex, funcsp, bcsym, &lst);
                     inTemplateSpecialization--;
@@ -1604,7 +1595,6 @@ static BOOLEAN hasPackedTemplate(TYPE *tp)
 }
 void checkPackedType(SYMBOL *sp)
 {
-    TYPE *tp = sp->tp;
     /*
     if (!hasPackedTemplate(tp))
     {
@@ -1812,6 +1802,7 @@ INITLIST **expandPackedInitList(INITLIST **lptr, SYMBOL *funcsp, LEXEME *start, 
 }
 static int GetBaseClassList(char *name, SYMBOL *cls, BASECLASS *bc, BASECLASS **result)
 {
+	(void)cls;
     int n = 0;
     char str[1024];
     char *clslst[100];
@@ -1849,6 +1840,7 @@ static int GetBaseClassList(char *name, SYMBOL *cls, BASECLASS *bc, BASECLASS **
 }
 static int GetVBaseClassList(char *name, SYMBOL *cls, VBASEENTRY *vbase, VBASEENTRY **result)
 {
+	(void)cls;
     int n = 0;
     char str[1024];
     char *clslst[100];
@@ -1943,7 +1935,6 @@ MEMBERINITIALIZERS *expandPackedBaseClasses(SYMBOL *cls, SYMBOL *funcsp, MEMBERI
                 {
                     int oldPack = packIndex;
                     SYMBOL *baseSP = basecount ? baseEntries[i]->cls : vbaseEntries[i]->cls;
-                    BASECLASS *bc1;
                     MEMBERINITIALIZERS *added = (MEMBERINITIALIZERS *)Alloc(sizeof(MEMBERINITIALIZERS));
                     BOOLEAN done = FALSE;
                     lex = SetAlternateLex(arglex);
@@ -2160,7 +2151,6 @@ void checkOperatorArgs(SYMBOL *sp, BOOLEAN asFriend)
                 SYMBOL *sym = (SYMBOL *)hr->p;
                 if (sym->tp->type != bt_void)
                 {
-                    char buf[256];
                     errortype(ERR_OPERATOR_NEEDS_NO_PARAMETERS, basetype(sp->tp)->btp, NULL);
                 }
             }
@@ -2497,7 +2487,6 @@ LEXEME *handleStaticAssert(LEXEME *lex)
         LEXEME **cur = &staticAssert->data, *last = NULL;
         int paren = 0;
         int brack = 0;
-        int ltgt = 0;
         staticAssert->next = sym->staticAsserts;
         sym->staticAsserts = staticAssert;
         while (lex != NULL)
@@ -2822,7 +2811,6 @@ LEXEME *insertUsing(LEXEME *lex, SYMBOL **sp_out, enum e_ac access, enum e_sc st
             // by spec using directives match the current state of 
             // the namespace at all times... so we cache pointers to
             // related namespaces
-            HASHREC **hr;
             lex = nestedSearch(lex, &sp, NULL, NULL, NULL, NULL, FALSE, sc_global, TRUE, FALSE);
             if (sp)
             {
@@ -2998,6 +2986,7 @@ static void balancedAttributeParameter(LEXEME **lex)
 }
 BOOLEAN ParseAttributeSpecifiers(LEXEME **lex, SYMBOL *funcsp, BOOLEAN always)
 {
+	(void)always;
     BOOLEAN rv = FALSE;
     if (cparams.prm_cplusplus || cparams.prm_c1x)
     {

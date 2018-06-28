@@ -37,7 +37,7 @@ static HCURSOR hcurs, vcurs;
 static void DrawFrame(HDC dc, RECT *r, int vertical)
 {
     HBRUSH brush, oldbrush;
-    HPEN pen1, pen2, oldpen;
+    HPEN pen1, pen2;
     pen1 = CreatePen(PS_SOLID, 2, RetrieveSysColor(COLOR_BTNHIGHLIGHT));
     pen2 = CreatePen(PS_SOLID, 1, RetrieveSysColor(COLOR_BTNSHADOW));
     brush = CreateSolidBrush(RetrieveSysColor(COLOR_BTNFACE));

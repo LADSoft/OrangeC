@@ -1621,7 +1621,6 @@ static LRESULT CALLBACK ColorWndProc(HWND hwnd, UINT iMessage,
         }
         case WM_CTLCOLORSTATIC:
         {
-            HBRUSH br;
             ptr = (struct buttonWindow *)GetWindowLong(hwnd, 0);
             if (ptr->brush)
                 DeleteObject(ptr->brush);

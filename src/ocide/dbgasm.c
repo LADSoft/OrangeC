@@ -176,7 +176,6 @@ void CalculateDisassembly(int moving)
         else
         {
             DEBUG_INFO *dbg;
-            char *types,  *syms;
             if (GetBreakpointLine(code_address, buf1, &lineno, FALSE) == code_address)
             {
                 if (lastlineno == -1)
@@ -282,7 +281,6 @@ void DoDisassembly(HDC dc, RECT *r)
     for (i = 0; i < linecnt; i++)
     {
         int n, indnt = indent(i+shownLine);
-        RECT r1;
         n = addrs[i + shownLine];
         if (indnt)
         {

@@ -1770,17 +1770,17 @@ void findUnusedStatics(NAMESPACEVALUES *nameSpace)
                 {
                     if (sp->storage_class == sc_overloads)
                     {
-                        HASHREC *hr = sp->tp->syms->table[0];
-                        while (hr)
+                        HASHREC *hr1 = sp->tp->syms->table[0];
+                        while (hr1)
                         {
-                            SYMBOL *sp = (SYMBOL *)hr->p;
-                            if (sp->isInline && !sp->inlineFunc.stmt && !sp->templateLevel)
+                            SYMBOL *sp1 = (SYMBOL *)hr1->p;
+                            if (sp1->isInline && !sp1->inlineFunc.stmt && !sp1->templateLevel)
                             {
-                                errorsym(ERR_UNDEFINED_IDENTIFIER, sp);
+                                errorsym(ERR_UNDEFINED_IDENTIFIER, sp1);
                             }
-                            else if (sp->storage_class == sc_static && !sp->inlineFunc.stmt && !(sp->templateLevel || sp->instantiated))
-                                errorsym(ERR_UNDEFINED_STATIC_FUNCTION, sp);
-                            hr = hr->next;
+                            else if (sp1->storage_class == sc_static && !sp1->inlineFunc.stmt && !(sp1->templateLevel || sp1->instantiated))
+                                errorsym(ERR_UNDEFINED_STATIC_FUNCTION, sp1);
+                            hr1 = hr1->next;
                         }
                     }
                     else

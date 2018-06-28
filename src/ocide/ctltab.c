@@ -940,7 +940,6 @@ static void DrawMenu(HDC hDC, struct ttrack *pTrack)
 static LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
     struct ttrack *pTrack;
-    PAINTSTRUCT ps;
     HDC hDC;
     switch( iMessage)
     {
@@ -1293,9 +1292,6 @@ static void DragTo(HWND hwnd, struct _tabStruct *ptr, struct _singleTab *tab)
 static LRESULT CALLBACK TabWndProc(HWND hwnd, UINT iMessage,
     WPARAM wParam, LPARAM lParam)
 {
-    RECT r;
-    PAINTSTRUCT ps;
-    HDC dc;
     LRESULT rv;
     BOOLEAN notDragging;
     struct _tabStruct *ptr;
@@ -1458,7 +1454,6 @@ static LRESULT CALLBACK TabWndProc(HWND hwnd, UINT iMessage,
             }
             if (ptr->dragging)
             {
-                HCURSOR old;
                 if (tab)
                 {
 //                    old = SetCursor(dragCur);

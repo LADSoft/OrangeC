@@ -246,8 +246,10 @@ static int create_exec( char *str)
     }
     return rv;
 }
-static int verscallback(void *NotUsed, int argc, char **argv, char **azColName){
-    int i;
+static int verscallback(void *NotUsed, int argc, char **argv, char **azColName)
+{
+	(void)NotUsed;
+	(void)azColName;
     if (argc == 1)
     {
         if (atoi(argv[0]) >= DBVersion)
@@ -392,10 +394,11 @@ void ccLoadIdsFromNameTable(char *tabname, HASHTABLE *table)
 }
 static int ccSelectIdFromNameTable( sqlite3_stmt **shndl, char *name, char *tabname, sqlite3_int64 *id, HASHTABLE *table)
 {
+	(void)shndl;
+	(void)tabname;
     static char *query = "SELECT id FROM %s WHERE name = ?";
     int rc = SQLITE_OK;
     HASHREC **p = LookupName(name, table);
-    SYMID *v;
     if (p)
     {
         *id = ((SYMID *)((*p)->p))->id;
@@ -859,7 +862,6 @@ int ccWriteMethodArg( sqlite_int64 struct_id, char *typename, int *order, sqlite
 }
 int ccWriteLineData(sqlite_int64 file_id, sqlite_int64 main_id, char *data, int len, int lines)
 {
-    sqlite3_int64 type_id;
     static char *query = "INSERT INTO LineData (fileId, mainId, lines, data)"
                          " VALUES (?,?,?,?)";
     static sqlite3_stmt *handle;

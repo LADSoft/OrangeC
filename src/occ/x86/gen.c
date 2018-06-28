@@ -491,50 +491,21 @@ void complexLoad(AMODE *ap, AMODE *api, int sz)
 }
 int beRegFromTempInd(QUAD *q, IMODE *im, int which)
 {
+    if (which)
+    {
+        return (q->scaleColor < 0) ? 0 : q->scaleColor;
+    }
     if (im == q->ans)
     {
-        if (which)
-        {
-            if (q->scaleColor < 0)
-                return 0;
-            return q->scaleColor;
-        }
-        else
-        {
-            if (q->ansColor < 0)
-                return 0;
-            return q->ansColor;
-        }
+        return (q->ansColor < 0) ? 0 : q->ansColor;
     }
     else if (im == q->dc.left)
     {
-        if (which)
-        {
-            if (q->scaleColor < 0)
-                return 0;
-            return q->scaleColor;
-        }
-        else
-        {
-            if (q->leftColor < 0)
-                return 0;
-            return q->leftColor;
-        }
+        return (q->leftColor < 0) ? 0 : q->leftColor;
     }
     else
     {
-        if (which)
-        {
-            if (q->scaleColor < 0)
-                return 0;
-            return q->scaleColor;
-        }
-        else
-        {
-            if (q->rightColor < 0)
-                return 0;
-            return q->rightColor;
-        }
+        return (q->rightColor < 0) ? 0 : q->rightColor;
     }
 }
 int beRegFromTemp(QUAD *q, IMODE *im)
@@ -625,7 +596,7 @@ void getAmodes(QUAD *q, enum e_op *op, IMODE *im, AMODE **apl, AMODE **aph)
         gen_code(op_push, temp, 0);
         callLibrary("___tlsaddr", 0);
         *apl = (AMODE *)beLocalAlloc(sizeof(AMODE));
-        (*apl)->preg = regmap[beRegFromTempInd(q, im, 0)][0];
+        (*apl)->preg = regmap[beRegFromTemp(q, im)][0];
         (*apl)->mode = am_dreg;
         gen_codes(op_pop, ISZ_ADDR, (*apl), 0);
     }
@@ -639,30 +610,23 @@ void getAmodes(QUAD *q, enum e_op *op, IMODE *im, AMODE **apl, AMODE **aph)
         else
             mode = am_direct;
         *apl = (AMODE *)beLocalAlloc(sizeof(AMODE));
-        
-        if (im->offset)
         {
-            (*apl)->preg = regmap[beRegFromTempInd(q, im, 0)][0];
-            if (im->offset2)
-                (*apl)->sreg = regmap[beRegFromTempInd(q, im, 1)][0];
-            else
+            int reg = regmap[beRegFromTempInd(q, im, 1)][0];
+            if (im->offset)
+            {
+                (*apl)->preg = regmap[beRegFromTemp(q, im)][0];
+                (*apl)->sreg = im->offset2 ? reg : -1;
+            }
+            else if (mode == am_indisp && im->offset2)
+            {
+                (*apl)->preg = reg;
                 (*apl)->sreg = -1;
-        }
-        else if (mode == am_indisp && im->offset2)
-        {
-            if (im->offset2)
-                (*apl)->preg = regmap[beRegFromTempInd(q, im, 1)][0];
+            }
             else
+            {
                 (*apl)->preg = -1;
-            (*apl)->sreg = -1;
-        }
-        else
-        {
-            (*apl)->preg = -1;
-            if (im->offset2)
-                (*apl)->sreg = regmap[beRegFromTempInd(q, im, 1)][0];
-            else
-                (*apl)->sreg = -1;
+                (*apl)->sreg = im->offset2 ? reg : -1;
+            }
         }
         (*apl)->scale = im->scale;
         (*apl)->offset = im->offset3 ? im->offset3 : intNode(en_c_i, 0);
@@ -850,7 +814,6 @@ void getAmodes(QUAD *q, enum e_op *op, IMODE *im, AMODE **apl, AMODE **aph)
         }
         else if (im->size == ISZ_ULONGLONG || im->size == - ISZ_ULONGLONG)
         {
-            int i;
             if (im->offset->type == en_tempref)
             {
                 int clr = beRegFromTemp(q, im);

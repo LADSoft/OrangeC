@@ -268,7 +268,6 @@ void ValidateMSILFuncPtr(TYPE *dest, TYPE *src, EXPRESSION **exp)
             {
                 int n = 0;
                 HASHREC *hr;
-                char buf[512], *save = buf;
                 FUNCTIONCALL *functionCall = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
                 TYPE *tp1 = src;
                 if (ispointer(tp1))
@@ -420,7 +419,6 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
     }
     if (sp)
     {
-        SYMBOL *spx;
         HASHREC *hr;
         static int count;
         browse_usage(sp, lex->filenum);
@@ -1075,7 +1073,6 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
 {
     TYPE *typein = *tp , *typein2 = isarray(typein) ? typein : NULL;
     BOOLEAN points = FALSE;
-    BOOLEAN thisptr = (*exp)->type == en_auto && (*exp)->v.sp->thisPtr;
     char *tokenName = lex->kw->name;
     (void)funcsp;
     // find structured version of arithmetic types for msil member matching
@@ -1134,7 +1131,6 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
         // direct destructor or psuedo-destructor
         enum e_lk linkage = lk_none, linkage2 = lk_none, linkage3 = lk_none;
         BOOLEAN defd = FALSE;
-        SYMBOL *sp = NULL;
         BOOLEAN notype = FALSE;
         TYPE *tp1 = NULL;
         lex = getsym();
@@ -1174,7 +1170,6 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
             // possible psuedo destructor with selector
             enum e_lk linkage = lk_none, linkage2 = lk_none, linkage3 = lk_none;
             BOOLEAN defd = FALSE;
-            SYMBOL *sp = NULL;
             BOOLEAN notype = FALSE;
             TYPE *tp1 = NULL;
             lex = getBasicType(lex, funcsp, &tp1, NULL, FALSE, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL, NULL, FALSE, TRUE);
@@ -1357,9 +1352,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
             {
                 TYPE *tpb;
                 TYPE *basetp = *tp;
-                SYMBOL *sp3 = sp2;
                 TYPE *typ2 = typein;
-                SYMBOL *tpl = sp2;
                 if (sp2->deprecationText)
                     deprecateMessage(sp2);
                 browse_usage(sp2,lex->filenum);
@@ -1419,7 +1412,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                 }
                 else 
                 {
-                    SYMBOL *sp3 = sp2->parentClass, *sp4 = basetype(typ2)->sp;
+					SYMBOL *sp3 = sp2->parentClass;
                     if (ismutable && sp2->storage_class == sc_mutable)
                         *ismutable = TRUE;
                     if (sp2->templateLevel)
@@ -2352,6 +2345,7 @@ static BOOLEAN cloneTempExpr(EXPRESSION **expr, SYMBOL **found, SYMBOL **replace
 void CreateInitializerList(TYPE *initializerListTemplate, TYPE *initializerListType, 
                            INITLIST **lptr, BOOLEAN operands, BOOLEAN asref)
 {
+	(void)operands;
     INITLIST **initial = lptr;
     EXPRESSION *rv = NULL , **pos = &rv;
     int count = 0, i;
@@ -2484,6 +2478,7 @@ void CreateInitializerList(TYPE *initializerListTemplate, TYPE *initializerListT
 }
 void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, BOOLEAN implicit)
 {
+	(void)operands;
     if (func->storage_class == sc_overloads)
         return;
     if (hr && ((SYMBOL *)hr->p)->thisPtr)
@@ -2491,14 +2486,13 @@ void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, 
     while (hr && (*lptr || ((SYMBOL *)hr->p)->init != NULL || ((SYMBOL *)hr->p)->deferredCompile != NULL
                    && (!templateNestingCount || instantiatingTemplate)))
     {
-        SYMBOL *sym= (SYMBOL *)hr->p;
-        EXPRESSION *exp = NULL;
+        SYMBOL *sym = (SYMBOL *)hr->p;
         INITLIST *p;
 
         if (sym->deferredCompile && !sym->init)
         {
             LEXEME *lex;
-            STRUCTSYM l,m, n;
+            STRUCTSYM l, n;
             TYPE *tp2;
             int count = 0;
             int tns = PushTemplateNamespace(func);
@@ -2722,13 +2716,10 @@ void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, 
                     // use constructor or conversion function and push on stack ( no destructor)
                     if (temp->type == en_func && basetype(temp->v.func->sp->tp)->btp && !isref(basetype(temp->v.func->sp->tp)->btp) &&((sameType = comparetypes(sym->tp, tpx, TRUE)) || classRefCount(basetype(sym->tp)->sp, basetype(tpx)->sp) == 1))
                     {
-                        EXPRESSION **exp = NULL;
                         SYMBOL *esp;
                         EXPRESSION *consexp;
-                        TYPE *tp;
                         // copy constructor...
                         TYPE *ctype = sym->tp;
-                        EXPRESSION *exp1 = NULL;
                         FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
                         INITLIST *arg = Alloc(sizeof(INITLIST));
                         consexp = anonymousVar(sc_auto, sym->tp); // sc_parameter to push it...
@@ -2744,14 +2735,11 @@ void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, 
                     }
                     else
                     {
-                        EXPRESSION *x;
                         TYPE *ctype = sym->tp;
                         FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
                         INITLIST *arg = Alloc(sizeof(INITLIST));
                         EXPRESSION *consexp = anonymousVar(sc_auto, sym->tp); // sc_parameter to push it...
                         SYMBOL *esp = consexp->v.sp;
-                        EXPRESSION *destexp = consexp;
-                        EXPRESSION *old = p->exp;
                         esp->stackblock = TRUE;
                         arg->exp = p->exp;
                         arg->tp = p->tp;
@@ -2774,7 +2762,6 @@ void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, 
                             // make temp via constructor or conversion function
                             EXPRESSION *consexp = anonymousVar(sc_auto, basetype(sym->tp)->btp); // sc_parameter to push it...
                             SYMBOL *esp = consexp->v.sp;
-                            EXPRESSION *destexp = consexp;
                             TYPE *ctype = basetype(sym->tp)->btp;
                             FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
                             INITLIST *arg = Alloc(sizeof(INITLIST));
@@ -2788,7 +2775,6 @@ void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, 
                                 SYMBOL *spx = p->exp->v.func->sp;
                                 TYPE *tpx = basetype(spx->tp);
                                 TYPE *tpx1, *tpx2;
-                                HASHREC *hr1;
                                 if (spx->castoperator)
                                 {
                                     tpx1 = spx->parentClass->tp;
@@ -2832,7 +2818,6 @@ void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, 
                         }
                         else if (p->exp->type == en_func && p->exp->v.func->returnSP)
                         {
-                            EXPRESSION *dest = anonymousVar(sc_auto, tp2);
                             int lbl = dumpMemberPtr(p->exp->v.sp, tp2, TRUE);
                             p->exp = intNode(en_labcon, lbl);
                             /*
@@ -3396,8 +3381,6 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
         // might be operator ()
         if (cparams.prm_cplusplus)
         {
-            EXPRESSION *exp_arg = exp_cpp;
-            TYPE *tp_arg = tp_cpp;
             if (insertOperatorParams(funcsp, &tp_cpp, &exp_cpp, funcparams, flags))
             {
                 hasThisPtr = funcparams->thisptr != NULL;
@@ -3771,10 +3754,8 @@ static LEXEME *expression_msilfunc(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRE
 }
 static LEXEME *expression_string(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp)
 {
-    BOOLEAN wide;
     int elems = 0;
     STRING *data;
-    int i;
     (void)funcsp;
     
     IncGlobalFlag();
@@ -4481,7 +4462,6 @@ static LEXEME *expression_primary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
 {
     switch(lex ? lex->type : l_none)
     {
-        SYMBOL *sym;
         case l_id:
                lex = variableName(lex, funcsp, atp, tp, exp, ismutable, flags);
             break;
@@ -4901,7 +4881,6 @@ static int widelen(LCHAR *s)
 static LEXEME *expression_sizeof(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp)
 {
     int paren = FALSE;
-    TYPE *itp;
     *exp = NULL;
     lex = getsym();
     if (cparams.prm_cplusplus && MATCHKW(lex, ellipse))
@@ -4920,7 +4899,6 @@ static LEXEME *expression_sizeof(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
         else
         {
             EXPRESSION *exp1 = NULL;
-            LEXEME *old = lex;
             lex = variableName(lex, funcsp, NULL, tp, &exp1, NULL, _F_PACKABLE | _F_SIZEOF);
             if (!exp1 || !exp1->v.sp->tp->templateParam->p->packed)
             {
@@ -5036,7 +5014,6 @@ static LEXEME *expression_sizeof(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
 }
 static LEXEME *expression_alignof(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp)
 {
-    int paren = FALSE;
     lex = getsym();
     if (needkw(&lex, openpa))
     {
@@ -5949,7 +5926,6 @@ static LEXEME *expression_pm(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, 
     {
         BOOLEAN points = FALSE;
         enum e_kw kw = KW(lex);
-        enum e_node type ;
         TYPE *tp1 = NULL;
         EXPRESSION *exp1 = NULL;
           lex = getsym();
@@ -6360,7 +6336,6 @@ static LEXEME *expression_inequality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYP
         }
         if (!done)
         {
-            LEXEME *current = lex;
             lex = getsym();
             
             lex = expression_shift(lex, funcsp, NULL, &tp1, &exp1, NULL, flags);
@@ -7075,8 +7050,6 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                 {
                     if (isstructured(*tp))
                     {
-                        EXPRESSION *destexp = exp1 = anonymousVar(sc_auto, *tp);
-                        SYMBOL *sp = destexp->v.sp;
                         INITIALIZER *init = NULL;
                         SYMBOL *spinit = NULL;
                         tp1 = *tp;

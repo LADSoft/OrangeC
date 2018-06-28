@@ -754,7 +754,6 @@ static void VersUndo(struct resRes *versionData)
 }
 static int CustomDraw(HWND hwnd, struct resRes *versionData, LPNMLVCUSTOMDRAW draw)
 {
-    HWND hwndLV;
     switch(draw->nmcd.dwDrawStage)
     {
         POINT pt;

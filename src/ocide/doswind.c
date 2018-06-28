@@ -78,7 +78,6 @@ DWORD DosWindowThread(void *xx)
         BOOL bRet;
         STARTUPINFO stStartInfo;
         PROCESS_INFORMATION stProcessInfo;
-        DWORD exitCode;
         char wd[MAX_PATH], *p, cmd[MAX_PATH];
         if (vdata->path)
         {
@@ -218,7 +217,6 @@ void DosWindow(char *path, char *exec, char *args, char *rvTitle, char *rvBody)
     struct _varData *vdata = calloc(sizeof(struct _varData), 1);
     if (vdata)
     {
-        DWORD id;
         if (path)
             vdata->path = strdup(path);
         if (exec)

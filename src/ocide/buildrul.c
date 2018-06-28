@@ -124,8 +124,7 @@ void SaveBuildRules(FILE *out)
 static int CreateBuildRuleData(HWND hwnd)
 {
     int items = 0;
-    int i;
-    LV_ITEM item ;
+    LV_ITEM item;
     RECT r;
     HWND hwndLV = GetDlgItem(hwnd, IDC_BRLISTBOX);
     LV_COLUMN lvC;
@@ -134,7 +133,7 @@ static int CreateBuildRuleData(HWND hwnd)
     ListView_DeleteAllItems(hwndLV);
 
     GetWindowRect(hwndLV, &r);
-    lvC.mask = LVCF_WIDTH | LVCF_SUBITEM ;
+    lvC.mask = LVCF_WIDTH | LVCF_SUBITEM;
     lvC.cx = 20;
     lvC.iSubItem = 0;
     ListView_InsertColumn(hwndLV, 0, &lvC);
@@ -187,7 +186,7 @@ static void ParseBuildRuleData(HWND hwnd)
         }
         else
         {
-            BUILDRULE *xx = (BUILDRULE *)item.lParam;
+            BUILDRULE *xx = (BUILDRULE *)item.lParam; // item is uninitialized, is it a good idea to use it here?
             (*br)->add = FALSE;
             item.iItem = i;
             item.iSubItem = 0;
@@ -326,7 +325,6 @@ static int FAR PASCAL brDlgProc(HWND hwnd, UINT wmsg, WPARAM wParam, LPARAM
     lParam)
 
 {
-    NMHDR *nmhead;
     switch (wmsg)
     {
         case WM_INITDIALOG:

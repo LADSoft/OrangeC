@@ -502,7 +502,6 @@ LRESULT CALLBACK JumpListProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     RECT r;
     POINT pt;
     HWND editWnd;
-    HFONT xfont;
     switch (iMessage)
     {
         case WM_SYSCOMMAND:

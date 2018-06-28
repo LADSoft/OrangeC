@@ -252,7 +252,6 @@ void SetResourceProperties(void *data, struct propertyFuncs *funcs)
     ListView_DeleteAllItems(lvwindow);
     if (funcs)
     {
-		RECT rs;
         funcs->draw(lvwindow, data);
 		ResizeListViewColumns();
     }

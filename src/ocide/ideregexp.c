@@ -177,7 +177,10 @@ static unsigned char *GetRegexp(RE_CONTEXT *context, char **ch)
     if (!rv)
         return FALSE;
     if (*(*ch)++ != '[')
+    {
+        free(rv); // memleak pointed out by cppcheck
         return FALSE;
+    }
     if ((**ch) == '^')
     {
         not = TRUE;

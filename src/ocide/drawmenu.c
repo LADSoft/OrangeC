@@ -376,7 +376,6 @@ static void DrawItem(HDC hDC, WCHAR *text, BOOL selected, int bg, int x, int y, 
     {
         char buf[256];
         WCHAR wbuf[256];
-        BOOL usedDefault;
         WCHAR *n;
         int old = SetTextColor(hDC, grayed ? GetSysColor(COLOR_BTNSHADOW) : GetSysColor(COLOR_WINDOWTEXT));
         StringWToA(buf, text, wcslen(text));
@@ -1136,9 +1135,7 @@ LRESULT CALLBACK MenuDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     static struct resRes *resData;
     static struct propertyFuncs *resFuncs;
     POINT mouse;
-    RECT r;
     PAINTSTRUCT paint;
-    HDC dc;
     LPCREATESTRUCT createStruct;
     struct resRes *menuData;
     int i;

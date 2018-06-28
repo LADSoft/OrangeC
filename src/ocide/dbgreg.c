@@ -320,10 +320,6 @@ LRESULT CALLBACK RegisterProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam)
 {
     static int charwidth;
-    HDC dc;
-    TEXTMETRIC metric;
-    DEBUG_EVENT *xc;
-    LOGBRUSH brushstr;
     RECT r;
     int i;
     NM_TREEVIEW *nmt;

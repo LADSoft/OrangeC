@@ -679,7 +679,6 @@ void CheckEditWindowChangedThread(void *aa)
 
 void CheckEditWindowChanged(void)
 {
-    DWORD threadhand;
     _beginthread((BEGINTHREAD_FUNC)CheckEditWindowChangedThread, 0, NULL);
 }
 
@@ -756,7 +755,7 @@ int PaintMDITitleBar(HWND hwnd, int iMessage, WPARAM wParam, LPARAM lParam)
     SelectObject(hdcDraw, bitmap);
     FillRect(hdcDraw, &r, (HBRUSH)(((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwnd ? COLOR_GRADIENTACTIVECAPTION : COLOR_GRADIENTINACTIVECAPTION)+1));
     r.bottom = r.top + GetSystemMetrics(SM_CYSMCAPTION);
-    GradientFillCaption(hdcDraw, &r, (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwnd);
+    GradientFillCaption(hdcDraw, &r, (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwnd); // undefined in local context
     hdcMem = CreateCompatibleDC(hdc);
     
     if (tbi.rgstate[5] == STATE_SYSTEM_PRESSED)

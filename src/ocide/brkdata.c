@@ -234,7 +234,6 @@ int databpCheck(DEBUG_EVENT *stDE)
 int LoadDataBreakpoints(HWND hwnd)
 {
     int items = 0;
-    int i;
     LV_ITEM item;
     RECT r;
     HWND hwndLV = GetDlgItem(hwnd, IDC_BPLIST);
@@ -451,7 +450,6 @@ LRESULT CALLBACK DataBpProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 if (((LPNMHDR)lParam)->code == LVN_GETDISPINFO)
                 {
                     LV_DISPINFO *plvdi = (LV_DISPINFO*)lParam;
-                    DWINFO *ptr;
                     plvdi->item.mask |= LVIF_TEXT | LVIF_DI_SETITEM;
                     plvdi->item.mask &= ~LVIF_STATE;
                     switch (plvdi->item.iSubItem)

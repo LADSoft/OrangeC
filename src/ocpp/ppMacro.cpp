@@ -126,7 +126,7 @@ bool ppMacro::HandleRep(std::string &line)
             if (ll[t] == '%')
             {
                 t = ll.find_first_not_of(" \t\v\r\n", t+1);
-                if (ll.substr(t, 3) == "macro")
+                if (ll.substr(t, 5) == "macro")
                     Errors::Error("macro definition in %rep loop not allowed");
                 else if (ll.substr(t, 3) == "rep")
                     level ++;

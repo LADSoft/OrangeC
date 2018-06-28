@@ -67,7 +67,7 @@ static LRESULT CALLBACK ControlWindWndProc(HWND hwnd, UINT iMessage,
 {
     static BOOL captured;
     static POINT origin;
-    RECT r,  *pr;
+    RECT r;
     PAINTSTRUCT ps;
     HDC dc;
     TWData *ptr;
@@ -229,7 +229,7 @@ static LRESULT CALLBACK ControlWindWndProc(HWND hwnd, UINT iMessage,
             }
             ptr->childCount = 0;
             InvalidateRect((HWND)lParam, 0, 0);
-            DockRemoveWindow(hwnd);
+            DockRemoveWindow(hwnd); // undefined in local context
             break;
         case TW_MAKEPOPUP:
             ptr = (TWData*)GetWindowLong(hwnd, 0);

@@ -37,7 +37,8 @@ static int version_ok;
 void DBClose(sqlite3 *db);
 
 static int verscallback(void *NotUsed, int argc, char **argv, char **azColName){
-    int i;
+	(void)NotUsed;
+	(void)azColName;
     if (argc == 1)
     {
         if (atoi(argv[0]) >= DBVersion)

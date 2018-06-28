@@ -880,7 +880,6 @@ int examine_icode(QUAD *head)
 {
     BLOCK *b = NULL;
     BOOLEAN changed = FALSE;
-    QUAD *insert;
     QUAD *hold = head;
     uses_substack = FALSE;
     while (head)
@@ -1881,7 +1880,6 @@ binary_join:
                 {
                     QUAD *q;
                     IMODE *temp;
-                     IMODE *ret ;
                     temp = AllocateTemp(head->dc.left->size);
                     q = (QUAD *)beLocalAlloc(sizeof(QUAD));
                     q->dc.opcode = i_assn;

@@ -52,7 +52,6 @@ void DBClose(sqlite3 *db)
         sqlite3_close(db);
 }
 static int verscallback(void *NotUsed, int argc, char **argv, char **azColName){
-    int i;
     if (argc == 1)
     {
         if (atoi(argv[0]) >= DBVersion)
@@ -198,9 +197,6 @@ static BROWSELINELIST *FindSymmetric(sqlite3 *db, char *file, int line)
         {
             switch(rc = sqlite3_step(handle))
             {
-                int newQual;
-                int newStartLine;
-                char *file;
                 case SQLITE_BUSY:
                     done = TRUE;
                     break;
@@ -232,9 +228,6 @@ static BROWSELINELIST *FindSymmetric(sqlite3 *db, char *file, int line)
                 {
                     switch(rc = sqlite3_step(handle))
                     {
-                        int newQual;
-                        int newStartLine;
-                        char *file;
                         case SQLITE_BUSY:
                             done = TRUE;
                             break;
@@ -397,9 +390,6 @@ int LookupSymbolBrowse(sqlite3 *db, char *name)
         {
             switch(rc = sqlite3_step(handle))
             {
-                int newQual;
-                int newStartLine;
-                char *file;
                 case SQLITE_BUSY:
                     done = TRUE;
                     break;
@@ -548,7 +538,6 @@ static BROWSELIST *GetBrowseList(sqlite3 *db, char *name, char *filename, int cu
     BROWSELIST *rv = NULL, **scan;
     if (!strrchr(name+1, '@'))
     {
-        DEBUG_INFO *inf;
         int id;
         name[0] = '_';
         if (id = LookupSymbolBrowse(db, name))
@@ -852,7 +841,7 @@ void BrowseTo(HWND hwnd, char *msg, BOOL toDeclaration)
             "Browse information not enabled");
         browsing = FALSE;
     }
-    if (browsing )
+    if (browsing)
     {
         BROWSELIST *selected;
         sqlite3 *db = NULL;

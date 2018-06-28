@@ -734,14 +734,12 @@ HANDLE ResGetHeap(PROJECTITEM *pj, struct resRes *data)
     else
     {
         PROJECTITEM *cur = pj->children;
+        HANDLE heap; // reuse instead of allocating again and again.
         while (cur)
         {
-            if (cur)
-            {
-                HANDLE heap = ResGetHeap(cur, data);
-                if (heap)
-                    return heap;
-            }
+            heap = ResGetHeap(cur, data);
+            if (heap)
+                return heap;
             cur = cur->next;
         }
     }
@@ -776,9 +774,8 @@ BOOL ResSaveCurrent(PROJECTITEM *pj, struct resRes *res)
         PROJECTITEM *cur = pj->children;
         while (cur)
         {
-            if (cur)
-                if (ResSaveCurrent(cur, res))
-                    return TRUE;
+            if (ResSaveCurrent(cur, res))
+                return TRUE;
             cur = cur->next;
         }
     }
@@ -1416,7 +1413,6 @@ static void ResPrependDialogButton(CONTROL **ctl, char *text, int id, char *idna
 {
     EXPRESSION *curExp = NULL;
     CONTROL *rv = rcAlloc(sizeof(CONTROL));
-    int n;
     rv->next = *ctl;
     *ctl = rv;
     rv->generic = TRUE;
@@ -1651,7 +1647,6 @@ static ICON *ResNewIcon(PROJECTITEM *pj, RESOURCE *newRes)
 {
     char name[MAX_PATH];
     ICON *nico;
-    int colorTableBytes;
     char *p;
     int colorbits;
     switch (ResGetImageName(pj, name, "Load Icon", szIconFilter))

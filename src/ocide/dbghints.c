@@ -406,7 +406,6 @@ void GetStringValue(VARINFO *info, char *buf, int len, int address)
 
 void HintValue(DEBUG_INFO *dbg_info, VARINFO *info, char *buf)
 {
-    int i;
  restart:
     if (info->outofscope)
         strcpy(buf, "out of scope");
@@ -450,7 +449,6 @@ void HintValue(DEBUG_INFO *dbg_info, VARINFO *info, char *buf)
     else if (info->pointer)
     {
         int val;
-        char buf2[256],  *p;
         if (info->lref || info->rref)
         {
             val = info->derefaddress;
@@ -473,7 +471,6 @@ void HintValue(DEBUG_INFO *dbg_info, VARINFO *info, char *buf)
                     sprintf(buf, "LVALUE REFERENCE: 0x%x", val);
                 else
                     sprintf(buf, "RVALUE REFERENCE: 0x%x", val);
-
             }
         }
         else if (info->derefaddress != -1)

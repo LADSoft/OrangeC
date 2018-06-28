@@ -3540,6 +3540,8 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
         }
         if (funcsp->linkage == lk_virtual || funcsp->isInline)
         {
+            if (funcsp->isInline)
+                funcsp->linkage2 = lk_none;
             InsertInline(funcsp);
             if (!cparams.prm_cplusplus && funcsp->storage_class != sc_static)
                 GENREF(funcsp);

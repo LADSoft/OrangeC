@@ -5587,7 +5587,7 @@ jointemplate:
                         {
                             if (linkage2 != lk_none && !asFriend)
                                 errorsym(ERR_DECLSPEC_MEMBER_OF_DECLSPEC_CLASS_NOT_ALLOWED, sp);
-                            else
+                            else if (!ssp->templateLevel || !inTemplate)
                                 sp->linkage2 = ssp->linkage2;
                         }
                         else

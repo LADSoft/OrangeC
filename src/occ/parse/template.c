@@ -8132,7 +8132,8 @@ static void MarkDllLinkage(SYMBOL *sp, enum e_lk linkage)
                         HASHREC *hr2 = sym->tp->syms->table[0];
                         while (hr2)
                         {
-                            ((SYMBOL *)hr2->p)->linkage2 = linkage;
+                            if (!((SYMBOL *)hr2->p)->templateParams)
+                                ((SYMBOL *)hr2->p)->linkage2 = linkage;
                             hr2 = hr2->next;
                         }
                     }

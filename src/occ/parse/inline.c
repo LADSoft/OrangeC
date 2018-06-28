@@ -113,7 +113,7 @@ void dumpInlines(void)
                 SYMBOL *sym = (SYMBOL *)funcList->data;
                 if (((sym->isInline && sym->dumpInlineToFile) || sym->genreffed))
                 {
-                    if ((sym->parentClass && sym->parentClass->dontinstantiate || sym->linkage2 == lk_import && !sym->isInline) && !sym->templateLevel)
+                    if (sym->parentClass && sym->parentClass->dontinstantiate && !sym->templateLevel || sym->linkage2 == lk_import)
                     {
                         sym->dontinstantiate = TRUE;
                         InsertExtern(sym);

@@ -257,7 +257,7 @@ static void CopyText(HWND hwnd)
             }
             strcat(p, lines[i + shownLine]);
             strcat(p, "\n");
-            if (c != --1)
+            if (c != -1)
                 lines[i + shownLine][97] = c;
         }
         TextToClipBoard(hwnd, p);

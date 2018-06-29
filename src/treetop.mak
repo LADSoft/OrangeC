@@ -241,6 +241,7 @@ cleanDISTRIBUTE:
 $(CLEANS): %.clean :
 	$(MAKE) clean -f $(_TREEROOT) -C$*
 clean: del rmdir $(CLEANS)
+	del *.cf *.cppf *.hf
 
 distribute: $(DISTS1)
 
@@ -288,6 +289,7 @@ exefile: makelibdir $(EXES)
 localfiles: makelibdir mkdir compile library exefile
 
 
+ifdef formattingcode
 %.cppf: %.cpp
 	clang-format -style=file $< > $@
 	copy $@ $<
@@ -302,3 +304,4 @@ localfiles: makelibdir mkdir compile library exefile
 
 
 format: $(H_FILES:.h=.hf) $(CPP_DEPENDENCIES:.cpp=.cppf) $(C_DEPENDENCIES:.c=.cf)
+endif

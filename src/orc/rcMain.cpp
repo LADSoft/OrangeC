@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "rcMain.h"
@@ -43,24 +43,25 @@ CmdSwitchDefine rcMain::Defines(SwitchParser, 'D');
 CmdSwitchCombineString rcMain::includePath(SwitchParser, 'i', ';');
 CmdSwitchString rcMain::Language(SwitchParser, 'L');
 
-const char *rcMain::usageText = "[options] file"
-"\n"
-"  @filename  use response file\n"
-"  /Dxxx  Define something             /ixxx             Set include file path\n"
-"  /Lxx   Set default language id      /oxxx             Set output file name\n"
-"  /r     reserved for compatability   /t                reserved for compatability\n"
-"  /v     reserved for compatability   /V, --version     Show version and date\n"
-"  /!, --nologo   No logo\n"
-"\n"
-"Time: " __TIME__ "  Date: " __DATE__;
+const char* rcMain::usageText =
+    "[options] file"
+    "\n"
+    "  @filename  use response file\n"
+    "  /Dxxx  Define something             /ixxx             Set include file path\n"
+    "  /Lxx   Set default language id      /oxxx             Set output file name\n"
+    "  /r     reserved for compatability   /t                reserved for compatability\n"
+    "  /v     reserved for compatability   /V, --version     Show version and date\n"
+    "  /!, --nologo   No logo\n"
+    "\n"
+    "Time: " __TIME__ "  Date: " __DATE__;
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
     rcMain rc;
     return rc.Run(argc, argv);
 }
 
-int rcMain::Run(int argc, char *argv[])
+int rcMain::Run(int argc, char* argv[])
 {
     int rv = 0;
     int language = LANG_ENGLISH + (SUBLANG_ENGLISH_US << 10);
@@ -79,7 +80,7 @@ int rcMain::Run(int argc, char *argv[])
     {
         Utils::usage(argv[0], usageText);
     }
-    CmdFiles files(argv+1);
+    CmdFiles files(argv + 1);
     if (File.GetValue())
         files.Add(File.GetValue() + 1);
     if (files.GetSize() > 1 && OutputFile.GetValue().size())
@@ -96,10 +97,10 @@ int rcMain::Run(int argc, char *argv[])
         else
         {
             sysSrchPth = includePath.GetValue().substr(0, n);
-            srchPth = includePath.GetValue().substr(n+1);
+            srchPth = includePath.GetValue().substr(n + 1);
         }
     }
-    char *cpath=getenv("CPATH");
+    char* cpath = getenv("CPATH");
     if (cpath)
     {
         if (srchPth.size())
@@ -112,22 +113,21 @@ int rcMain::Run(int argc, char *argv[])
     }
     for (CmdFiles::FileNameIterator it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
     {
-        std::string inName = Utils::QualifiedFile( (*it)->c_str(), ".rc");
-        PreProcessor pp(inName, srchPth, sysSrchPth,
-                 false, false, '#', false, true, true);
+        std::string inName = Utils::QualifiedFile((*it)->c_str(), ".rc");
+        PreProcessor pp(inName, srchPth, sysSrchPth, false, false, '#', false, true, true);
         int n = Defines.GetCount();
-        for (int i=0; i < n; i++)
+        for (int i = 0; i < n; i++)
         {
-            CmdSwitchDefine::define *v = Defines.GetValue(i);
+            CmdSwitchDefine::define* v = Defines.GetValue(i);
             pp.Define(v->name, v->value, false);
         }
-		std::string s("");
+        std::string s("");
         pp.Define("RC_INVOKED", s, false);
         std::string outName;
         if (OutputFile.GetValue().size() != 0)
             outName = OutputFile.GetValue();
         else
-            outName = Utils::QualifiedFile( (*it)->c_str(), ".res");
+            outName = Utils::QualifiedFile((*it)->c_str(), ".res");
         ResFile resFile;
         RCFile rcFile(pp, resFile, srchPth, language);
         if (rcFile.Read())

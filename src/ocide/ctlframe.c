@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -28,13 +28,13 @@
 #include <stdio.h>
 #include "header.h"
 
-static char *szFrameClassName = "ladSoftFrameWindow";
+static char* szFrameClassName = "ladSoftFrameWindow";
 static HCURSOR hcurs, vcurs;
 
 #define FRAMEBODY 2
 #define FRAMEWIDTH 5
 
-static void DrawFrame(HDC dc, RECT *r, int vertical)
+static void DrawFrame(HDC dc, RECT* r, int vertical)
 {
     HBRUSH brush, oldbrush;
     HPEN pen1, pen2;
@@ -44,37 +44,37 @@ static void DrawFrame(HDC dc, RECT *r, int vertical)
     oldbrush = SelectObject(dc, brush);
     FillRect(dc, r, brush);
 
-/*
-    oldpen = SelectObject(dc, pen1);
-    MoveToEx(dc, r->left, r->top, 0);
-    LineTo(dc, r->right, r->top);
-
-    SelectObject(dc, pen2);
-
-
-    if (vertical)
-    {
-        SelectObject(dc, pen1);
-        MoveToEx(dc, r->left, r->top + 1, 0);
-        LineTo(dc, r->left, r->bottom - 2);
+    /*
+        oldpen = SelectObject(dc, pen1);
+        MoveToEx(dc, r->left, r->top, 0);
+        LineTo(dc, r->right, r->top);
 
         SelectObject(dc, pen2);
-        MoveToEx(dc, r->right - 1, r->top, 0);
-        LineTo(dc, r->right - 1, r->bottom - 1);
-    }
-    else
-    {
-        SelectObject(dc, pen1);
-        MoveToEx(dc, r->left + 1, r->top, 0);
-        LineTo(dc, r->right - 1, r->top);
 
-        SelectObject(dc, pen2);
-        MoveToEx(dc, r->left + 1, r->bottom - 1, 0);
-        LineTo(dc, r->right - 1, r->bottom - 1);
-    }
-    SelectObject(dc, oldpen);
-    SelectObject(dc, oldbrush);
-    */
+
+        if (vertical)
+        {
+            SelectObject(dc, pen1);
+            MoveToEx(dc, r->left, r->top + 1, 0);
+            LineTo(dc, r->left, r->bottom - 2);
+
+            SelectObject(dc, pen2);
+            MoveToEx(dc, r->right - 1, r->top, 0);
+            LineTo(dc, r->right - 1, r->bottom - 1);
+        }
+        else
+        {
+            SelectObject(dc, pen1);
+            MoveToEx(dc, r->left + 1, r->top, 0);
+            LineTo(dc, r->right - 1, r->top);
+
+            SelectObject(dc, pen2);
+            MoveToEx(dc, r->left + 1, r->bottom - 1, 0);
+            LineTo(dc, r->right - 1, r->bottom - 1);
+        }
+        SelectObject(dc, oldpen);
+        SelectObject(dc, oldbrush);
+        */
     DeleteObject(pen1);
     DeleteObject(pen2);
     DeleteObject(brush);
@@ -82,8 +82,7 @@ static void DrawFrame(HDC dc, RECT *r, int vertical)
 
 //-------------------------------------------------------------------------
 
-static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT iMessage,
-    WPARAM wParam, LPARAM lParam)
+static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
     static BOOL captured;
     static POINT origin;
@@ -99,7 +98,7 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT iMessage,
     {
         case WM_SETCURSOR:
             GetClientRect(hwnd, &r);
-            if (r.bottom-r.top > r.right-r.left)
+            if (r.bottom - r.top > r.right - r.left)
                 oldCursor = SetCursor(hcurs);
             else
                 oldCursor = SetCursor(vcurs);
@@ -148,7 +147,7 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT iMessage,
         case WM_PAINT:
             dc = BeginPaint(hwnd, &ps);
             GetClientRect(hwnd, &r);
-            DrawFrame(dc, &r, r.bottom-r.top > r.right-r.left);
+            DrawFrame(dc, &r, r.bottom - r.top > r.right - r.left);
             EndPaint(hwnd, &ps);
             return 0;
         case WM_CREATE:
@@ -158,7 +157,7 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT iMessage,
         case WM_CLOSE:
             break;
         case WM_SIZE:
-            break ;
+            break;
     }
     return DefWindowProc(hwnd, iMessage, wParam, lParam);
 }
@@ -189,7 +188,6 @@ void RegisterFrameWindow(HINSTANCE hInstance)
 
 HWND CreateFrameWindow(HWND parent)
 {
-    return CreateWindow(szFrameClassName, 0, WS_CLIPSIBLINGS |
-            WS_CLIPCHILDREN | WS_CHILD, 0, 0, 10, 10, parent, 0, 
-            (HINSTANCE)GetWindowLong(parent, GWL_HINSTANCE), NULL);
+    return CreateWindow(szFrameClassName, 0, WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_CHILD, 0, 0, 10, 10, parent, 0,
+                        (HINSTANCE)GetWindowLong(parent, GWL_HINSTANCE), NULL);
 }

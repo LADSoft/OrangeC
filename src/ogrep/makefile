@@ -27,6 +27,7 @@ MAIN_FILE=GrepMain.cpp
 INCLUDES=..\util
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=util
+H_FILES=$(wildcard *.h)
 
 include ..\redirect.mak
 

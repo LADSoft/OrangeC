@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "ObjFile.h"
@@ -48,15 +48,11 @@
 static int version_ok;
 
 // well I didn't originally use virtual tables.  It turns out that virtual tables
-// speed things up for individual tables, but when you are writing as database the 
-// disk writes are the limiting factor.  Nonetheless I remain with the virtual table 
+// speed things up for individual tables, but when you are writing as database the
+// disk writes are the limiting factor.  Nonetheless I remain with the virtual table
 // approach because the codelooks much prettier...
-char *LinkDebugFile::pragmas=
-{
-    "PRAGMA journal_mode=MEMORY; PRAGMA temp_store=MEMORY;"
-};
-char *LinkDebugFile::tables= 
-{
+char* LinkDebugFile::pragmas = {"PRAGMA journal_mode=MEMORY; PRAGMA temp_store=MEMORY;"};
+char* LinkDebugFile::tables = {
     "BEGIN; "
     "CREATE TABLE dbPropertyBag ("
     " property VARCHAR(100)"
@@ -70,7 +66,7 @@ char *LinkDebugFile::tables=
     " address INTEGER PRIMARY KEY"
     " ,fileId INTEGER"
     " ,line INTEGER"
-//    " ,FOREIGN KEY (fileId) REFERENCES FileNames(id)"
+    //    " ,FOREIGN KEY (fileId) REFERENCES FileNames(id)"
     " );"
     "CREATE TABLE LineNumbersFull("
     " fileID INTEGER"
@@ -78,7 +74,7 @@ char *LinkDebugFile::tables=
     " ,line INTEGER"
     " );"
     "CREATE TABLE Types ("
-    " id INTEGER PRIMARY KEY" // groups types
+    " id INTEGER PRIMARY KEY"  // groups types
     " ,qualifier INTEGER"
     " ,size INTEGER"
     " ,baseType INTEGER"
@@ -97,50 +93,50 @@ char *LinkDebugFile::tables=
     "CREATE TABLE TypeNames ("
     " symbolId INTEGER"
     " ,typeId INTEGER"
-//    " ,FOREIGN KEY (typeId) REFERENCES Types(id)"
-//    " ,FOREIGN KEY (symbolId) REFERENCES Names(id)"
+    //    " ,FOREIGN KEY (typeId) REFERENCES Types(id)"
+    //    " ,FOREIGN KEY (symbolId) REFERENCES Names(id)"
     " );"
     "CREATE TABLE Fields ("
-    " typeId INTEGER" // groups types                          
+    " typeId INTEGER"  // groups types
     " ,baseType INTEGER"
     " ,symbolId INTEGER"
     " ,offsetOrOrd INTEGER"
     " ,fieldOrder INTEGER"
-//    " ,FOREIGN KEY (typeId) REFERENCES Types(id)"
-//    " ,FOREIGN KEY (symbolId) REFERENCES Names(id)"
+    //    " ,FOREIGN KEY (typeId) REFERENCES Types(id)"
+    //    " ,FOREIGN KEY (symbolId) REFERENCES Names(id)"
     " );"
     "CREATE TABLE Args ("
     " typeId INTEGER"
     " ,paramId INTEGER"
     " ,argOrder INTEGER"
-//    " ,FOREIGN KEY (typeId) REFERENCES Types(id)"
-    " );"    
+    //    " ,FOREIGN KEY (typeId) REFERENCES Types(id)"
+    " );"
     "CREATE TABLE Globals ("
     "  symbolId INTEGER"
     " ,typeId INTEGER"
     " ,varAddress INTEGER"
     " ,fileId INTEGER"
-//    " ,lineNo INTEGER"  // future
-//    " ,FOREIGN KEY (symbolId) REFERENCES Names(id)"
-//    " ,FOREIGN KEY (typeId) REFERENCES Types(id)"
+    //    " ,lineNo INTEGER"  // future
+    //    " ,FOREIGN KEY (symbolId) REFERENCES Names(id)"
+    //    " ,FOREIGN KEY (typeId) REFERENCES Types(id)"
     " );"
     "CREATE TABLE Virtuals ("
     "  symbolId INTEGER"
     " ,typeId INTEGER"
     " ,varAddress INTEGER"
     " ,fileId INTEGER"
-//    " ,lineNo INTEGER"  // future
-//    " ,FOREIGN KEY (symbolId) REFERENCES Names(id)"
-//    " ,FOREIGN KEY (typeId) REFERENCES Types(id)"
-    " );"    
+    //    " ,lineNo INTEGER"  // future
+    //    " ,FOREIGN KEY (symbolId) REFERENCES Names(id)"
+    //    " ,FOREIGN KEY (typeId) REFERENCES Types(id)"
+    " );"
     "CREATE TABLE Locals ("
     "  symbolId INTEGER"
     " ,typeId INTEGER"
     " ,varAddress INTEGER"
     " ,fileId INTEGER"
-//    " ,lineNo INTEGER"  // future
-//    " ,FOREIGN KEY (symbolId) REFERENCES Names(id)"
-//    " ,FOREIGN KEY (typeId) REFERENCES Types(id)"
+    //    " ,lineNo INTEGER"  // future
+    //    " ,FOREIGN KEY (symbolId) REFERENCES Names(id)"
+    //    " ,FOREIGN KEY (typeId) REFERENCES Types(id)"
     " );"
     "CREATE TABLE Autos ("
     "  symbolId INTEGER"
@@ -150,19 +146,18 @@ char *LinkDebugFile::tables=
     " ,varOffset INTEGER"
     " ,beginLine INTEGER"
     " ,endLine INTEGER"
-//    " ,FOREIGN KEY (symbolId) REFERENCES Names(id)"
-//    " ,FOREIGN KEY (fileId) REFERENCES FileNames(id)"
+    //    " ,FOREIGN KEY (symbolId) REFERENCES Names(id)"
+    //    " ,FOREIGN KEY (fileId) REFERENCES FileNames(id)"
     " );"
     "CREATE TABLE CPPNameMapping ("
     "  simpleId INTEGER"
     " ,complexId INTEGER"
     " );"
     "INSERT INTO dbPropertyBag (property, value)"
-    " VALUES (\"dbVersion\", " STRINGVERSION ");"
-    "COMMIT; "
-} ;
-char *LinkDebugFile::indexes = 
-{
+    " VALUES (\"dbVersion\", " STRINGVERSION
+    ");"
+    "COMMIT; "};
+char* LinkDebugFile::indexes = {
     "BEGIN; "
     "CREATE INDEX LNIndex ON LineNumbers(fileid,line);"
     "CREATE INDEX TNIndex1 ON TypeNames(symbolId);"
@@ -173,21 +168,18 @@ char *LinkDebugFile::indexes =
     "CREATE INDEX GBLIndex2 ON Globals(varAddress, fileId);"
     "CREATE INDEX LCLIndex ON Locals(symbolId, fileId);"
     "CREATE INDEX AUTIndex ON Autos(symbolId, fileId, funcId);"
-    "COMMIT; "
-} ;
-LinkDebugFile::~LinkDebugFile()
-{
-}
+    "COMMIT; "};
+LinkDebugFile::~LinkDebugFile() {}
 bool LinkDebugFile::Begin(void)
 {
-    bool rv = true; 
+    bool rv = true;
     if (!SQLiteExec("BEGIN"))
     {
         rv = false;
     }
     return rv;
 }
-bool LinkDebugFile::End(void )
+bool LinkDebugFile::End(void)
 {
     bool rv = true;
     if (!SQLiteExec("END"))
@@ -196,15 +188,15 @@ bool LinkDebugFile::End(void )
     }
     return rv;
 }
-bool LinkDebugFile::SQLiteExec( char *str)
+bool LinkDebugFile::SQLiteExec(char* str)
 {
-    char *zErrMsg  = 0;
+    char* zErrMsg = 0;
     bool rv = false;
     int rc = sqlite3_exec(dbPointer, str, 0, 0, &zErrMsg);
-    if( rc!=SQLITE_OK )
+    if (rc != SQLITE_OK)
     {
-      fprintf(stderr, "SQL error: %s\n", zErrMsg);
-      sqlite3_free(zErrMsg);
+        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        sqlite3_free(zErrMsg);
     }
     else
     {
@@ -234,7 +226,7 @@ bool LinkDebugFile::CreateIndexes(void)
     }
     return rv;
 }
-bool LinkDebugFile::DBOpen(char *name)
+bool LinkDebugFile::DBOpen(char* name)
 {
     bool rv = false;
     dbPointer = nullptr;
@@ -255,14 +247,14 @@ bool LinkDebugFile::DBOpen(char *name)
 bool LinkDebugFile::WriteFileNames()
 {
     std::vector<sqlite3_int64> v;
-    std::vector<ObjString *> n;
+    std::vector<ObjString*> n;
     for (ObjFile::SourceFileIterator it = file->SourceFileBegin(); it != file->SourceFileEnd(); ++it)
     {
         ObjString name = (*it)->GetName();
         int index = (*it)->GetIndex();
         char lcname[260];
         int i;
-        for (i=0; i < name.size(); ++i)
+        for (i = 0; i < name.size(); ++i)
             lcname[i] = tolower(name[i]);
         lcname[i] = 0;
         v.push_back(index);
@@ -272,9 +264,9 @@ bool LinkDebugFile::WriteFileNames()
     fns.Start(dbPointer);
     fns.InsertIntoFrom("filenames");
     fns.Stop();
-    for (int i=0; i < v.size(); i++)
+    for (int i = 0; i < v.size(); i++)
     {
-        ObjString *s = n[i];
+        ObjString* s = n[i];
         delete s;
     }
     v.clear();
@@ -283,34 +275,34 @@ bool LinkDebugFile::WriteFileNames()
 bool LinkDebugFile::WriteLineNumbers()
 {
     std::vector<sqlite3_int64> v;
-//    std::vector<sqlite3_int64> a;
+    //    std::vector<sqlite3_int64> a;
     for (ObjFile::SectionIterator it = file->SectionBegin(); it != file->SectionEnd(); ++it)
     {
-        ObjMemoryManager &m = (*it)->GetMemoryManager();
+        ObjMemoryManager& m = (*it)->GetMemoryManager();
         ObjInt address = m.GetBase();
         for (ObjMemoryManager::MemoryIterator it1 = m.MemoryBegin(); it1 != m.MemoryEnd(); ++it1)
         {
             if ((*it1)->HasDebugTags())
             {
-                ObjLineNo *ln = nullptr;
+                ObjLineNo* ln = nullptr;
                 // full list of line numbers needed for symbol data...
                 for (ObjMemory::DebugTagIterator it2 = (*it1)->DebugTagBegin(); it2 != (*it1)->DebugTagEnd(); ++it2)
                 {
-                    ObjLineNo *ln2 = (*it2)->GetLineNo();
+                    ObjLineNo* ln2 = (*it2)->GetLineNo();
                     if (ln2)
                     {
-//                        int line = ln2->GetLineNumber();  
-//                        int fileId = ln2->GetFile()->GetIndex();
-//                        a.push_back(address);
-//                        a.push_back(fileId);
-//                        a.push_back(line);
+                        //                        int line = ln2->GetLineNumber();
+                        //                        int fileId = ln2->GetFile()->GetIndex();
+                        //                        a.push_back(address);
+                        //                        a.push_back(fileId);
+                        //                        a.push_back(line);
                         ln = ln2;
                     }
                 }
                 // pick the last line number in the list for this address...
                 if (ln)
                 {
-                    int line = ln->GetLineNumber();  
+                    int line = ln->GetLineNumber();
                     int fileId = ln->GetFile()->GetIndex();
                     v.push_back(address);
                     v.push_back(fileId);
@@ -324,10 +316,10 @@ bool LinkDebugFile::WriteLineNumbers()
     lines.Start(dbPointer);
     lines.InsertIntoFrom("linenumbers");
     lines.Stop();
-//    IntegerColumnsVirtualTable linesfull(a, 3);
-//    linesfull.Start(dbPointer);
-//    linesfull.InsertIntoFrom("linenumbersfull");
-//    linesfull.Stop();
+    //    IntegerColumnsVirtualTable linesfull(a, 3);
+    //    linesfull.Start(dbPointer);
+    //    linesfull.InsertIntoFrom("linenumbersfull");
+    //    linesfull.Stop();
     return true;
 }
 void LinkDebugFile::PushCPPName(ObjString name, int n)
@@ -337,13 +329,13 @@ void LinkDebugFile::PushCPPName(ObjString name, int n)
         int first = 0;
         int last = name.size();
         int nested = 0;
-        for (int i =0; i < name.size(); i++)
+        for (int i = 0; i < name.size(); i++)
         {
             if (name[i] == '@')
             {
                 first = i;
-                if (name[i+1] == '$')
-                    i++; // past any '$'
+                if (name[i + 1] == '$')
+                    i++;  // past any '$'
             }
             else if (name[i] == '#')
             {
@@ -361,7 +353,7 @@ void LinkDebugFile::PushCPPName(ObjString name, int n)
         }
         if (last != name.size())
         {
-            std::string simpleName = name.substr(first, last-first);
+            std::string simpleName = name.substr(first, last - first);
             int s = GetSQLNameId(simpleName);
             CPPMapping map;
             map.simpleId = s;
@@ -394,17 +386,17 @@ int LinkDebugFile::GetSQLNameId(ObjString name)
 bool LinkDebugFile::WriteNamesTable()
 {
     std::vector<sqlite3_int64> v;
-    for (int i=0; i < nameList.size(); i++)
+    for (int i = 0; i < nameList.size(); i++)
     {
-        v.push_back(i+1);
+        v.push_back(i + 1);
     }
     LinkerColumnsWithNameVirtualTable fns(v, nameList, 2, true);
     fns.Start(dbPointer);
     fns.InsertIntoFrom("names");
     fns.Stop();
-    for (int i=0; i < nameList.size(); i++)
+    for (int i = 0; i < nameList.size(); i++)
     {
-        ObjString *s = nameList[i];
+        ObjString* s = nameList[i];
         delete s;
     }
     nameList.clear();
@@ -425,10 +417,10 @@ bool LinkDebugFile::WriteVariableTypes()
 {
     ObjString empty = "";
     std::vector<sqlite3_int64> v;
-    std::vector<ObjString *>n;
+    std::vector<ObjString*> n;
     for (ObjFile::TypeIterator it = file->TypeBegin(); it != file->TypeEnd(); ++it)
     {
-        ObjType *type = *it;
+        ObjType* type = *it;
         switch (type->GetType())
         {
             case ObjType::ePointer:
@@ -448,7 +440,7 @@ bool LinkDebugFile::WriteVariableTypes()
                 break;
             case ObjType::eFunction:
             {
-                ObjFunction *func = static_cast<ObjFunction *>(type);
+                ObjFunction* func = static_cast<ObjFunction*>(type);
                 v.push_back(func->GetIndex());
                 v.push_back(ObjType::eFunction);
                 v.push_back(0);
@@ -461,7 +453,7 @@ bool LinkDebugFile::WriteVariableTypes()
                 v.push_back(0);
                 n.push_back(&empty);
             }
-                break;
+            break;
             case ObjType::eBitField:
                 v.push_back(type->GetIndex());
                 v.push_back(ObjType::eBitField);
@@ -491,7 +483,7 @@ bool LinkDebugFile::WriteVariableTypes()
                 v.push_back(0);
                 n.push_back(&empty);
             }
-                break;
+            break;
             case ObjType::eArray:
             case ObjType::eVla:
                 v.push_back(type->GetIndex());
@@ -522,27 +514,26 @@ bool LinkDebugFile::WriteVariableTypes()
             default:
                 break;
         }
-       
     }
     LinkerColumnsWithNameVirtualTable types(v, n, 11, true);
     types.Start(dbPointer);
     types.InsertIntoFrom("types");
     types.Stop();
-    for (int i=0; i < n.size(); i++)
+    for (int i = 0; i < n.size(); i++)
     {
-        ObjString *s = n[i];
+        ObjString* s = n[i];
         if (s != &empty)
             delete s;
     }
     v.clear();
     for (ObjFile::TypeIterator it = file->TypeBegin(); it != file->TypeEnd(); ++it)
     {
-        ObjType *type = *it;
+        ObjType* type = *it;
         switch (type->GetType())
         {
             case ObjType::eFunction:
             {
-                ObjFunction *func = static_cast<ObjFunction *>(type);
+                ObjFunction* func = static_cast<ObjFunction*>(type);
                 int order = 0;
                 for (ObjFunction::ParameterIterator it = func->ParameterBegin(); it != func->ParameterEnd(); ++it)
                 {
@@ -551,11 +542,10 @@ bool LinkDebugFile::WriteVariableTypes()
                     v.push_back(order++);
                 }
             }
-                break;
+            break;
             default:
                 break;
         }
-       
     }
     IntegerColumnsVirtualTable args(v, 3);
     args.Start(dbPointer);
@@ -564,7 +554,7 @@ bool LinkDebugFile::WriteVariableTypes()
     v.clear();
     for (ObjFile::TypeIterator it = file->TypeBegin(); it != file->TypeEnd(); ++it)
     {
-        ObjType *type = *it;
+        ObjType* type = *it;
         switch (type->GetType())
         {
             case ObjType::eStruct:
@@ -581,11 +571,10 @@ bool LinkDebugFile::WriteVariableTypes()
                     v.push_back(order++);
                 }
             }
-                break;
+            break;
             default:
                 break;
         }
-       
     }
     IntegerColumnsVirtualTable fields(v, 5);
     fields.Start(dbPointer);
@@ -633,7 +622,7 @@ bool LinkDebugFile::WriteVariableNames()
                 return false;
             typeMap[index] = n;
         }
-   }
+    }
     for (auto sect : Sections)
     {
         ObjString name = sect->GetName();
@@ -647,7 +636,7 @@ bool LinkDebugFile::WriteVariableNames()
     }
     return true;
 }
-ObjInt LinkDebugFile::GetSectionBase(ObjExpression *e)
+ObjInt LinkDebugFile::GetSectionBase(ObjExpression* e)
 {
     if (e->GetOperator() == ObjExpression::eAdd)
     {
@@ -658,15 +647,14 @@ ObjInt LinkDebugFile::GetSectionBase(ObjExpression *e)
     }
     else if (e->GetOperator() == ObjExpression::eSection)
     {
-        ObjSection *s = file->GetSection(e->GetSection()->GetIndex());
-	ObjExpression *oldOffs = e->GetSection()->GetOffset();
-        ObjMemoryManager &m = s->GetMemoryManager();
+        ObjSection* s = file->GetSection(e->GetSection()->GetIndex());
+        ObjExpression* oldOffs = e->GetSection()->GetOffset();
+        ObjMemoryManager& m = s->GetMemoryManager();
         // wrecks the link but the link is already done!!!!
         e->GetSection()->SetOffset(new ObjExpression(0));
         int rv = m.GetBase();
         e->GetSection()->SetOffset(oldOffs);
-	return rv;
-
+        return rv;
     }
     return 0;
 }
@@ -676,7 +664,7 @@ bool LinkDebugFile::WriteGlobalsTable()
     for (ObjFile::SymbolIterator it = file->PublicBegin(); it != file->PublicEnd(); ++it)
     {
         int index = (*it)->GetIndex();
-        //ObjString name = (*it)->GetName();
+        // ObjString name = (*it)->GetName();
         index = publicMap[index];
         int address = GetSectionBase((*it)->GetOffset());
         address += (*it)->GetOffset()->EvalNoModify(0);
@@ -698,7 +686,7 @@ bool LinkDebugFile::WriteGlobalsTable()
     for (ObjFile::SymbolIterator it = file->LocalBegin(); it != file->LocalEnd(); ++it)
     {
         int index = (*it)->GetIndex();
-        //ObjString name = (*it)->GetName();
+        // ObjString name = (*it)->GetName();
         index = localMap[index];
         int address = GetSectionBase((*it)->GetOffset());
         address += (*it)->GetOffset()->EvalNoModify(0);
@@ -739,23 +727,23 @@ bool LinkDebugFile::WriteGlobalsTable()
 }
 class context
 {
-public:
-    context() : startLine(nullptr), currentLine(nullptr) { }
-    ObjLineNo *startLine;
-    ObjLineNo *currentLine;
-    std::map<ObjSymbol *, ObjLineNo *>vars;
-} ;
+  public:
+    context() : startLine(nullptr), currentLine(nullptr) {}
+    ObjLineNo* startLine;
+    ObjLineNo* currentLine;
+    std::map<ObjSymbol*, ObjLineNo*> vars;
+};
 bool LinkDebugFile::WriteAutosTable()
 {
     std::vector<sqlite3_int64> v;
-    std::deque<context *> contexts;
-    context *currentContext = nullptr;
+    std::deque<context*> contexts;
+    context* currentContext = nullptr;
     int funcId = 0;
     for (ObjFile::SectionIterator it = file->SectionBegin(); it != file->SectionEnd(); ++it)
     {
-        ObjMemoryManager &m = (*it)->GetMemoryManager();
+        ObjMemoryManager& m = (*it)->GetMemoryManager();
         ObjInt address = m.GetBase();
-        ObjLineNo *currentLine = nullptr;
+        ObjLineNo* currentLine = nullptr;
         for (ObjMemoryManager::MemoryIterator it1 = m.MemoryBegin(); it1 != m.MemoryEnd(); ++it1)
         {
             // find the line number first.  This is because it is difficult to get the line number
@@ -764,10 +752,10 @@ bool LinkDebugFile::WriteAutosTable()
             {
                 for (ObjMemory::DebugTagIterator it2 = (*it1)->DebugTagBegin(); it2 != (*it1)->DebugTagEnd(); ++it2)
                 {
-                    switch((*it2)->GetType())
+                    switch ((*it2)->GetType())
                     {
                         case ObjDebugTag::eLineNo:
-                            if ((*it2)->GetLineNo() > currentLine) // e.g. for statements can have their first statement last
+                            if ((*it2)->GetLineNo() > currentLine)  // e.g. for statements can have their first statement last
                                 currentLine = (*it2)->GetLineNo();
                             break;
                         default:
@@ -776,30 +764,30 @@ bool LinkDebugFile::WriteAutosTable()
                 }
                 for (ObjMemory::DebugTagIterator it2 = (*it1)->DebugTagBegin(); it2 != (*it1)->DebugTagEnd(); ++it2)
                 {
-                    switch((*it2)->GetType())
+                    switch ((*it2)->GetType())
                     {
                         case ObjDebugTag::eVar:
                             currentContext->vars[(*it2)->GetSymbol()] = currentLine;
                             break;
                         case ObjDebugTag::eVirtualFunctionStart:
                         {
-                            ObjSection *func = (*it2)->GetSection();
+                            ObjSection* func = (*it2)->GetSection();
                             funcId = sectionMap[func->GetName()];
                         }
                             // fall through
                         case ObjDebugTag::eFunctionStart:
-                        if ((*it2)->GetType() == ObjDebugTag::eFunctionStart)
-                        {
-                            ObjSymbol *func = (*it2)->GetSymbol();
-                            if (func->GetType() == ObjSymbol::ePublic)
+                            if ((*it2)->GetType() == ObjDebugTag::eFunctionStart)
                             {
-                                funcId = publicMap[func->GetIndex()];
+                                ObjSymbol* func = (*it2)->GetSymbol();
+                                if (func->GetType() == ObjSymbol::ePublic)
+                                {
+                                    funcId = publicMap[func->GetIndex()];
+                                }
+                                else
+                                {
+                                    funcId = localMap[func->GetIndex()];
+                                }
                             }
-                            else
-                            {
-                                funcId = localMap[func->GetIndex()];
-                            }
-                        }
                             // fallthrough
                         case ObjDebugTag::eBlockStart:
                             contexts.push_back(currentContext);
@@ -815,7 +803,7 @@ bool LinkDebugFile::WriteAutosTable()
                             int fileId = currentLine->GetFile()->GetIndex();
                             for (auto obj : currentContext->vars)
                             {
-                                ObjSymbol *s = obj.first;
+                                ObjSymbol* s = obj.first;
                                 int startLine = obj.second->GetLineNumber();
                                 v.push_back(autoMap[s->GetIndex()]);
                                 v.push_back(GetTypeIndex(s->GetBaseType()));
@@ -869,22 +857,22 @@ bool LinkDebugFile::WriteTypeNamesTable()
 }
 bool LinkDebugFile::CreateOutput()
 {
-    bool ok = DBOpen((char *)outputFile.c_str());
+    bool ok = DBOpen((char*)outputFile.c_str());
     if (ok)
     {
         ok = false;
-//        Begin();
+        //        Begin();
         if (WriteFileNames())
             if (WriteLineNumbers())
                 if (WriteVariableTypes())
                     if (WriteVariableNames())
-                       if (WriteGlobalsTable())
+                        if (WriteGlobalsTable())
                             if (WriteAutosTable())
                                 if (WriteTypeNamesTable())
                                     if (WriteNamesTable())
                                         if (CreateIndexes())
                                             ok = true;
-//        End();
+        //        End();
     }
     if (dbPointer)
         sqlite3_close(dbPointer);

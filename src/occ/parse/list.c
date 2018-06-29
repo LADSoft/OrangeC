@@ -1,46 +1,46 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
-/* 
+/*
  * Listing file
  */
 #include <stdio.h>
 #include <string.h>
 #include "compiler.h"
 
-extern ARCH_ASM *chosenAssembler;
+extern ARCH_ASM* chosenAssembler;
 extern COMPILER_PARAMS cparams;
-extern FILE *listFile;
-extern char *registers[];
+extern FILE* listFile;
+extern char* registers[];
 
 /* Unnamed structure tags */
-char *tn_unnamed = "<no name> ";
+char* tn_unnamed = "<no name> ";
 
-void list_table(HASHTABLE *t, int j);
+void list_table(HASHTABLE* t, int j);
 
-static char *unmangledname(char *str)
+static char* unmangledname(char* str)
 {
     static char name[1024];
     unmangle(name, str);
@@ -51,7 +51,7 @@ static char *unmangledname(char *str)
 void put_sc(int scl)
 {
     if (!cparams.prm_listfile)
-        return ;
+        return;
     switch (scl)
     {
         case sc_static:
@@ -90,10 +90,10 @@ void put_sc(int scl)
 }
 
 /* Put the type */
-void put_ty(TYPE *tp)
+void put_ty(TYPE* tp)
 {
     if ((tp == 0) || (!cparams.prm_listfile))
-        return ;
+        return;
     switch (tp->type)
     {
         case bt_any:
@@ -196,35 +196,37 @@ void put_ty(TYPE *tp)
         case bt_pointer:
             if (!tp->vla && !tp->array)
                 fprintf(listFile, "Pointer to ");
+            else if (tp->vla)
+            {
+                fprintf(listFile, "VArray of ");
+                tp = tp->btp;
+            }
             else
-                if (tp->vla) {
-                    fprintf(listFile,"VArray of ");
-                    tp = tp->btp;
-                } else
-                    fprintf(listFile, "Array of ");
+                fprintf(listFile, "Array of ");
             put_ty(tp->btp);
             break;
         case bt_union:
             fprintf(listFile, "union ");
             goto ucont;
-            case bt_lref:
-                fprintf(listFile, "Reference to ");
-                put_ty(tp->btp);
-                break;
-            case bt_rref:
-                fprintf(listFile, "r-value Reference to ");
-                put_ty(tp->btp);
-                break;
-            case bt_memberptr:
-                fprintf(listFile, "Member Pointer to %s::", tp->sp->name);
-                put_ty(tp->btp->btp);
-                break;
-            case bt_class:
-                fprintf(listFile, "class ");
-                goto ucont;
+        case bt_lref:
+            fprintf(listFile, "Reference to ");
+            put_ty(tp->btp);
+            break;
+        case bt_rref:
+            fprintf(listFile, "r-value Reference to ");
+            put_ty(tp->btp);
+            break;
+        case bt_memberptr:
+            fprintf(listFile, "Member Pointer to %s::", tp->sp->name);
+            put_ty(tp->btp->btp);
+            break;
+        case bt_class:
+            fprintf(listFile, "class ");
+            goto ucont;
         case bt_struct:
             fprintf(listFile, "struct ");
-            ucont: if (tp->sp == 0)
+        ucont:
+            if (tp->sp == 0)
                 fprintf(listFile, "%s", tn_unnamed);
             else
                 fprintf(listFile, "%s ", unmangledname(tp->sp->name));
@@ -240,32 +242,30 @@ void put_ty(TYPE *tp)
         default:
             fprintf(listFile, "???");
             break;
-            
     }
-    if (tp->bits !=  0)
-        fprintf(listFile, "  Bits %d to %d", tp->startbit, tp->startbit + tp
-            ->bits - 1);
+    if (tp->bits != 0)
+        fprintf(listFile, "  Bits %d to %d", tp->startbit, tp->startbit + tp->bits - 1);
 }
 
 /* List a variable */
-void list_var(SYMBOL *sp, int i)
+void list_var(SYMBOL* sp, int i)
 {
     int j;
     long val;
     if (!cparams.prm_listfile)
-        return ;
+        return;
     if (sp->dontlist)
         return;
     if (sp->tp->type == bt_aggregate)
     {
-        HASHREC *hr = sp->tp->syms->table[0];
+        HASHREC* hr = sp->tp->syms->table[0];
         while (hr)
         {
-            sp = (SYMBOL *)hr->p;
+            sp = (SYMBOL*)hr->p;
             list_var(sp, 0);
             hr = hr->next;
         }
-        return ;
+        return;
     }
     for (j = i; j; --j)
         fprintf(listFile, "    ");
@@ -273,65 +273,66 @@ void list_var(SYMBOL *sp, int i)
         val = (long)getautoval(sp->offset);
     else
         val = sp->value.u;
-    fprintf(listFile,"Identifier:   %s\n    ", unmangledname(sp->name));
+    fprintf(listFile, "Identifier:   %s\n    ", unmangledname(sp->name));
     for (j = i; j; --j)
         fprintf(listFile, "    ");
-    if (sp->regmode == 1) {
-        fprintf(listFile,"Register: %-3s&     ",lookupRegName((-sp->offset) & 255));
+    if (sp->regmode == 1)
+    {
+        fprintf(listFile, "Register: %-3s&     ", lookupRegName((-sp->offset) & 255));
     }
-    else if (sp->regmode == 2) {
-        fprintf(listFile,"Register: %-3s      ",lookupRegName((-sp->offset) & 255));
+    else if (sp->regmode == 2)
+    {
+        fprintf(listFile, "Register: %-3s      ", lookupRegName((-sp->offset) & 255));
     }
     else
-        fprintf(listFile,"Offset:   %08lX ", val);
-    fprintf(listFile,"Storage: ");
+        fprintf(listFile, "Offset:   %08lX ", val);
+    fprintf(listFile, "Storage: ");
     if (sp->tp->type == bt_ifunc)
         if (sp->isInline && !sp->noinline)
-            fprintf(listFile,"%-7s","inline");
+            fprintf(listFile, "%-7s", "inline");
         else
-            fprintf(listFile,"%-7s","code");
+            fprintf(listFile, "%-7s", "code");
     else if (sp->storage_class == sc_auto)
         if (sp->regmode)
-            fprintf(listFile,"%-7s","reg");
+            fprintf(listFile, "%-7s", "reg");
         else
-            fprintf(listFile,"%-7s","stack");
-    else if (sp->storage_class == sc_global || sp->storage_class == sc_static 
-             || sp->storage_class == sc_localstatic)
+            fprintf(listFile, "%-7s", "stack");
+    else if (sp->storage_class == sc_global || sp->storage_class == sc_static || sp->storage_class == sc_localstatic)
         if (isconst(sp->tp))
-            fprintf(listFile,"%-7s","const");
+            fprintf(listFile, "%-7s", "const");
         else if (sp->init)
-            fprintf(listFile,"%-7s","data");
+            fprintf(listFile, "%-7s", "data");
         else
-            fprintf(listFile,"%-7s","bss");
+            fprintf(listFile, "%-7s", "bss");
     else if (sp->storage_class == sc_constant || sp->storage_class == sc_enumconstant)
-        fprintf(listFile,"%-7s","constant");
+        fprintf(listFile, "%-7s", "constant");
     else
-        fprintf(listFile,"%-7s","none");
+        fprintf(listFile, "%-7s", "none");
     put_sc(sp->storage_class);
     put_ty(sp->tp);
     fprintf(listFile, "\n");
     if (sp->tp == 0)
-        return ;
+        return;
     if (isstructured(sp->tp) && sp->storage_class == sc_type)
         list_table(sp->tp->syms, i + 1);
 }
 
 /* List an entire table */
 /* won't do child namespaces */
-void list_table(HASHTABLE *t, int j)
+void list_table(HASHTABLE* t, int j)
 {
-    SYMBOL *sp;
+    SYMBOL* sp;
     int i;
     if (!cparams.prm_listfile)
-        return ;
+        return;
     while (t)
     {
-        for (i=0; i < t->size; i++)
+        for (i = 0; i < t->size; i++)
         {
-            HASHREC *hr = t->table[i];
+            HASHREC* hr = t->table[i];
             while (hr)
             {
-                list_var((SYMBOL *)hr->p, j);
+                list_var((SYMBOL*)hr->p, j);
                 hr = hr->next;
             }
         }

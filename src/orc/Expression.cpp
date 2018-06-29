@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "Errors.h"
@@ -33,7 +33,7 @@ int Expression::primary()
     if (lexer.GetToken()->GetKeyword() == Lexer::openpa)
     {
         lexer.NextToken();
-        if (lexer.GetToken() != nullptr )
+        if (lexer.GetToken() != nullptr)
         {
             rv = Eval();
             if (lexer.GetToken()->GetKeyword() == Lexer::closepa)
@@ -69,13 +69,13 @@ int Expression::unary()
             if (lexer.GetToken() != nullptr)
             {
                 int val1 = unary();
-                switch(kw)
+                switch (kw)
                 {
                     case Lexer::minus:
-                        val1 = - val1;
+                        val1 = -val1;
                         break;
                     case Lexer::plus:
-                        val1 = + val1;
+                        val1 = +val1;
                         break;
                     case Lexer::lnot:
                         val1 = !val1;
@@ -104,7 +104,7 @@ int Expression::multiply()
         if (lexer.GetToken() != nullptr)
         {
             int val2 = unary();
-            switch(kw)
+            switch (kw)
             {
                 case Lexer::star:
                     val1 *= val2;
@@ -145,7 +145,7 @@ int Expression::add()
         if (lexer.GetToken() != nullptr)
         {
             int val2 = multiply();
-            switch(kw)
+            switch (kw)
             {
                 case Lexer::plus:
                     val1 += val2;
@@ -169,7 +169,7 @@ int Expression::shift()
         if (lexer.GetToken() != nullptr)
         {
             int val2 = add();
-            switch(kw)
+            switch (kw)
             {
                 case Lexer::leftshift:
                     val1 <<= val2;
@@ -183,7 +183,7 @@ int Expression::shift()
     }
     return val1;
 }
-int Expression::relation()	
+int Expression::relation()
 {
     int val1 = shift();
     int kw = lexer.GetToken()->GetKeyword();
@@ -193,7 +193,7 @@ int Expression::relation()
         if (lexer.GetToken() != nullptr)
         {
             int val2 = shift();
-            switch(kw)
+            switch (kw)
             {
                 case Lexer::gt:
                     val1 = val1 > val2;
@@ -223,7 +223,7 @@ int Expression::equal()
         if (lexer.GetToken() != nullptr)
         {
             int val2 = shift();
-            switch(kw)
+            switch (kw)
             {
                 case Lexer::eq:
                     val1 = val1 == val2;
@@ -340,4 +340,3 @@ int Expression::conditional()
     }
     return val1;
 }
-

@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "ppCond.h"
@@ -31,7 +31,7 @@
 
 ppCond::~ppCond()
 {
-    
+
     delete current;
     while (skipList.size())
     {
@@ -40,10 +40,10 @@ ppCond::~ppCond()
         delete current;
     }
 }
-bool ppCond::Check(int token, const std::string &line, int lineno)
+bool ppCond::Check(int token, const std::string& line, int lineno)
 {
     std::string line1 = line;
-    switch(token)
+    switch (token)
     {
         case ELSE:
             HandleElse(line1);
@@ -150,9 +150,9 @@ bool ppCond::Check(int token, const std::string &line, int lineno)
     }
     return true;
 }
-void ppCond::HandleIf(bool val, const std::string &line, int lineno)
+void ppCond::HandleIf(bool val, const std::string& line, int lineno)
 {
-    skip *old = current;
+    skip* old = current;
     if (current)
         skipList.push_front(current);
     current = new skip;
@@ -166,17 +166,17 @@ void ppCond::HandleIf(bool val, const std::string &line, int lineno)
         current->skipping = true;
         current->takeElse = true;
     }
-}	
-void ppCond::HandleElif(bool val, const std::string &line)
+}
+void ppCond::HandleElif(bool val, const std::string& line)
 {
     ansieol(line);
     if (!current || current->elseSeen)
     {
         Errors::Error("Misplaced elif directive");
     }
-    else 
+    else
     {
-        skip *old = nullptr;
+        skip* old = nullptr;
         if (skipList.size())
             old = skipList.front();
         if ((!old || !old->skipping) && current->takeElse && val)
@@ -184,13 +184,13 @@ void ppCond::HandleElif(bool val, const std::string &line)
             current->skipping = false;
             current->takeElse = false;
         }
-        else				
+        else
         {
             current->skipping = true;
         }
     }
 }
-void ppCond::HandleElse(std::string &line)
+void ppCond::HandleElse(std::string& line)
 {
     ansieol(line);
     if (!current)
@@ -203,7 +203,7 @@ void ppCond::HandleElse(std::string &line)
         {
             current->skipping = false;
         }
-        else	
+        else
         {
             current->skipping = true;
         }
@@ -214,12 +214,12 @@ void ppCond::HandleElse(std::string &line)
         current->elseSeen = true;
     }
 }
-void ppCond::HandleEndIf(std::string &line)
+void ppCond::HandleEndIf(std::string& line)
 {
     ansieol(line);
     if (!current)
     {
-        Errors::Error("Misplaced endif directive");			
+        Errors::Error("Misplaced endif directive");
     }
     else
     {
@@ -235,17 +235,17 @@ void ppCond::HandleEndIf(std::string &line)
         }
     }
 }
-void ppCond::HandleDef(std::string &line, bool Else, bool negate, int lineno)
+void ppCond::HandleDef(std::string& line, bool Else, bool negate, int lineno)
 {
     Tokenizer tk(line, nullptr);
-    const Token *t = tk.Next();
+    const Token* t = tk.Next();
     if (!t->IsIdentifier())
     {
         Errors::Error("Identifier expected");
         if (Else)
-            HandleElif(false,"");
-         else
-            HandleIf(false,"", lineno);
+            HandleElif(false, "");
+        else
+            HandleIf(false, "", lineno);
     }
     else
     {
@@ -253,22 +253,22 @@ void ppCond::HandleDef(std::string &line, bool Else, bool negate, int lineno)
         if (asmpp && !v)
         {
             std::string one = UTF8::ToUpper(t->GetId());
-            Symbol *t = define->Lookup(one);
+            Symbol* t = define->Lookup(one);
             if (t)
             {
-                ppDefine::Definition *p = static_cast<ppDefine::Definition *>(t);
+                ppDefine::Definition* p = static_cast<ppDefine::Definition*>(t);
                 v = p->IsCaseInsensitive();
             }
         }
         if (negate)
             v = !v;
         if (Else)
-            HandleElif(v,tk.GetString());
+            HandleElif(v, tk.GetString());
         else
             HandleIf(v, tk.GetString(), lineno);
     }
 }
-void ppCond::HandleIdn(std::string &line, bool Else, bool negate, bool caseSensitive, int lineno)
+void ppCond::HandleIdn(std::string& line, bool Else, bool negate, bool caseSensitive, int lineno)
 {
     define->Process(line);
     size_t n = line.find_first_of(',');
@@ -278,25 +278,25 @@ void ppCond::HandleIdn(std::string &line, bool Else, bool negate, bool caseSensi
         if (Else)
             HandleElif(false, "");
         else
-            HandleIf(false,"", lineno);
+            HandleIf(false, "", lineno);
     }
     else
     {
         std::string line1 = line.substr(0, n);
-        line.erase(0, n+1);
+        line.erase(0, n + 1);
         n = line.find_first_not_of(" \t\v\n");
         if (n && n != std::string::npos)
             line.erase(0, n);
         n = line.find_last_not_of(" \t\v\n");
-        if (n != std::string::npos && n != line.size()-1)
-            line.erase(n+1, line.size()-n-1);
+        if (n != std::string::npos && n != line.size() - 1)
+            line.erase(n + 1, line.size() - n - 1);
         n = line1.find_first_not_of(" \t\v\n");
         if (n && n != std::string::npos)
             line1.erase(0, n);
         n = line1.find_last_not_of(" \t\v\n");
-        if (n != std::string::npos && n != line1.size()-1)
-            line1.erase(n+1, line1.size()-n-1);
-        int pos=0, pos1 = 0;
+        if (n != std::string::npos && n != line1.size() - 1)
+            line1.erase(n + 1, line1.size() - n - 1);
+        int pos = 0, pos1 = 0;
         int z = 0;
         if (!caseSensitive)
         {
@@ -331,16 +331,16 @@ void ppCond::HandleIdn(std::string &line, bool Else, bool negate, bool caseSensi
         if (negate)
             v = !v;
         if (Else)
-            HandleElif(v,"");
+            HandleElif(v, "");
         else
             HandleIf(v, "", lineno);
     }
 }
-void ppCond::HandleId(std::string &line, bool Else, bool negate, int lineno)
+void ppCond::HandleId(std::string& line, bool Else, bool negate, int lineno)
 {
     define->Process(line);
     Tokenizer tk(line, nullptr);
-    const Token *t = tk.Next();
+    const Token* t = tk.Next();
     bool v = t->IsIdentifier();
     if (negate)
         v = !v;
@@ -349,11 +349,11 @@ void ppCond::HandleId(std::string &line, bool Else, bool negate, int lineno)
     else
         HandleIf(v, tk.GetString(), lineno);
 }
-void ppCond::HandleNum(std::string &line, bool Else, bool negate, int lineno)
+void ppCond::HandleNum(std::string& line, bool Else, bool negate, int lineno)
 {
     define->Process(line);
     Tokenizer tk(line, nullptr);
-    const Token *t = tk.Next();
+    const Token* t = tk.Next();
     bool v = t->IsNumeric();
     if (negate)
         v = !v;
@@ -362,11 +362,11 @@ void ppCond::HandleNum(std::string &line, bool Else, bool negate, int lineno)
     else
         HandleIf(v, tk.GetString(), lineno);
 }
-void ppCond::HandleStr(std::string &line, bool Else, bool negate, int lineno)
+void ppCond::HandleStr(std::string& line, bool Else, bool negate, int lineno)
 {
     define->Process(line);
     Tokenizer tk(line, nullptr);
-    const Token *t = tk.Next();
+    const Token* t = tk.Next();
     bool v = t->IsString();
     if (negate)
         v = !v;
@@ -375,11 +375,11 @@ void ppCond::HandleStr(std::string &line, bool Else, bool negate, int lineno)
     else
         HandleIf(v, tk.GetString(), lineno);
 }
-void ppCond::HandleCtx(std::string &line, bool Else, bool negate, int lineno)
+void ppCond::HandleCtx(std::string& line, bool Else, bool negate, int lineno)
 {
     define->Process(line);
     Tokenizer tk(line, nullptr);
-    const Token *t = tk.Next();
+    const Token* t = tk.Next();
     bool v = false;
     if (t->IsIdentifier())
     {
@@ -396,11 +396,11 @@ void ppCond::HandleCtx(std::string &line, bool Else, bool negate, int lineno)
     else
         HandleIf(v, tk.GetString(), lineno);
 }
-void ppCond::ansieol(const std::string &line)
+void ppCond::ansieol(const std::string& line)
 {
     if (!extensions)
     {
-        const char *p = line.c_str();
+        const char* p = line.c_str();
         while (*p)
         {
             if (!isspace(*p))
@@ -415,7 +415,7 @@ void ppCond::ansieol(const std::string &line)
 void ppCond::CheckErrors()
 {
     if (skipList.size() || current)
-    {		
+    {
         Errors::Error("Non-terminated preprocessor conditional started in line " + Errors::ToNum(current->line));
     }
 }

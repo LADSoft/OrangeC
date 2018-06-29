@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "Token.h"
@@ -38,7 +38,7 @@ bool NumericToken::ansi;
 bool NumericToken::c99;
 
 unsigned llminus1 = -1;
-bool StringToken::Start(const std::string &line)
+bool StringToken::Start(const std::string& line)
 {
     if (line[0] == '"' || line[0] == '\'')
         return true;
@@ -50,22 +50,23 @@ bool StringToken::Start(const std::string &line)
     }
     return false;
 }
-void StringToken::Parse(std::string &line)
+void StringToken::Parse(std::string& line)
 {
-    wchar_t buf[1024],*p = buf;
-    const char *start = line.c_str();
+    wchar_t buf[1024], *p = buf;
+    const char* start = line.c_str();
     if (start[0] == 'L')
     {
         wide = true;
         start++;
-        while(isspace(*start)) start++;
+        while (isspace(*start))
+            start++;
     }
     int quote = *start;
-    start++; // past the quote
+    start++;  // past the quote
     while (*start && *start != quote)
     {
         int n = *p++ = CharacterToken::QuotedChar(1, &start);
-        if (p - buf == sizeof(buf)/sizeof(wchar_t)-1 || n == 0)
+        if (p - buf == sizeof(buf) / sizeof(wchar_t) - 1 || n == 0)
         {
             *p = 0;
             str += buf;
@@ -90,35 +91,30 @@ void StringToken::Parse(std::string &line)
     else
         start++;
     SetChars(line.substr(0, start - line.c_str()));
-    line.erase(0, start - line.c_str());	
+    line.erase(0, start - line.c_str());
 }
-bool CharacterToken::Start(const std::string &line)
+bool CharacterToken::Start(const std::string& line) { return false; }
+void CharacterToken::Parse(std::string& line)
 {
-    return false;
-}
-void CharacterToken::Parse(std::string &line)
-{
-    const char *start = line.c_str();
+    const char* start = line.c_str();
     bool wide = false;
     if (start[0] == 'L')
     {
         wide = true;
         start++;
-        while(isspace(*start)) start++;
+        while (isspace(*start))
+            start++;
     }
-    start++; // past the quote
+    start++;  // past the quote
     value = QuotedChar(2, &start);
     if (*start != '\'')
         Errors::Error("Character constant must be one or two characters");
     else
         start++;
     SetChars(line.substr(0, start - line.c_str()));
-    line.erase(0, start - line.c_str());	
+    line.erase(0, start - line.c_str());
 }
-int CharacterToken::QuotedChar(int bytes, const char **source)
-{
-    return *(*source)++;
-}
+int CharacterToken::QuotedChar(int bytes, const char** source) { return *(*source)++; }
 L_INT NumericToken::GetInteger() const
 {
     if (parsedAsFloat)
@@ -127,26 +123,23 @@ L_INT NumericToken::GetInteger() const
     }
     return intValue;
 }
-const FPF *NumericToken::GetFloat() const
+const FPF* NumericToken::GetFloat() const
 {
     if (!parsedAsFloat)
-        switch(type)
+        switch (type)
         {
             case t_int:
             case t_longint:
             case t_longlongint:
-                const_cast<FPF &>(floatValue) = intValue;
+                const_cast<FPF&>(floatValue) = intValue;
                 break;
             default:
-                const_cast<FPF &>(floatValue) = (unsigned)intValue;
+                const_cast<FPF&>(floatValue) = (unsigned)intValue;
                 break;
         }
     return &floatValue;
 }
-bool NumericToken::Start(const std::string &line)
-{
-    return isdigit(line[0]);
-}
+bool NumericToken::Start(const std::string& line) { return isdigit(line[0]); }
 int NumericToken::Radix36(char c)
 {
     if (c >= '0' && c <= '9')
@@ -157,7 +150,7 @@ int NumericToken::Radix36(char c)
         return c - 'A' + 10;
     return INT_MAX;
 }
-L_INT NumericToken::GetBase(int b, char **ptr)
+L_INT NumericToken::GetBase(int b, char** ptr)
 {
     L_INT i;
     int j;
@@ -177,7 +170,7 @@ L_INT NumericToken::GetBase(int b, char **ptr)
     return i;
 }
 
-void NumericToken::GetFraction(int radix, char **ptr, FPF &floatValue)
+void NumericToken::GetFraction(int radix, char** ptr, FPF& floatValue)
 {
     int pow = -1;
     while (Radix36(**ptr) < radix)
@@ -188,13 +181,13 @@ void NumericToken::GetFraction(int radix, char **ptr, FPF &floatValue)
             temp.MultiplyPowTen(pow--);
         else
         {
-            temp.SetExp(temp.GetExp() +  4 * pow--);
+            temp.SetExp(temp.GetExp() + 4 * pow--);
         }
         floatValue += temp;
     }
 }
 
-int NumericToken::GetExponent(char **ptr)
+int NumericToken::GetExponent(char** ptr)
 {
     bool neg = false;
     int intValue;
@@ -210,10 +203,10 @@ int NumericToken::GetExponent(char **ptr)
     }
     intValue = GetBase(10, ptr);
     if (neg)
-        intValue =  - intValue;
+        intValue = -intValue;
     return intValue;
 }
-void NumericToken::GetFloating(FPF &floatValue, int radix, char **ptr)
+void NumericToken::GetFloating(FPF& floatValue, int radix, char** ptr)
 {
     FPF fradix;
     fradix = radix;
@@ -230,31 +223,31 @@ void NumericToken::GetFloating(FPF &floatValue, int radix, char **ptr)
         GetFraction(radix, ptr, floatValue);
         intValue = 0;
     }
-    if (**ptr == 'e' ||  **ptr == 'E' ||  **ptr == 'p' ||  **ptr== 'P')
+    if (**ptr == 'e' || **ptr == 'E' || **ptr == 'p' || **ptr == 'P')
     {
         (*ptr)++;
         int intValue = GetExponent(ptr);
         /* floating point too large goes to infinity... */
         if (radix == 2)
         {
-           floatValue.SetExp(floatValue.GetExp() + intValue);
+            floatValue.SetExp(floatValue.GetExp() + intValue);
         }
         else
         {
-           floatValue.MultiplyPowTen(intValue);
+            floatValue.MultiplyPowTen(intValue);
         }
     }
 }
-int NumericToken::GetNumber(const char **ptr)
+int NumericToken::GetNumber(const char** ptr)
 {
     char buf[256];
-    char  *p = buf ;
+    char* p = buf;
     int radix = 10;
     int floatradix = 0;
     bool hasdot = false;
     bool floating = false;
     if (!isdigit(**ptr) && **ptr != '.')
-        return  INT_MIN;
+        return INT_MIN;
     if (**ptr == '.' && !isdigit(*(*ptr + 1)))
         return INT_MIN;
     if (**ptr == '0')
@@ -295,8 +288,8 @@ int NumericToken::GetNumber(const char **ptr)
         radix = floatradix = 10;
     else if ((**ptr == 'p' || **ptr == 'P') && radix == 16)
     {
-           floatradix = 2;
-    } 
+        floatradix = 2;
+    }
     else if (radix == 16 && hasdot)
     {
         Errors::Error("Invalid floating point constant");
@@ -321,7 +314,7 @@ int NumericToken::GetNumber(const char **ptr)
     *p = 0;
     if (!floatradix && radix != 16)
     {
-        char *q = buf;
+        char* q = buf;
         if (**ptr == 'H' || **ptr == 'h')
         {
             radix = 16;
@@ -347,7 +340,7 @@ int NumericToken::GetNumber(const char **ptr)
             intValue = GetBase(radix, &p);
         else
         {
-               intValue = 0;
+            intValue = 0;
         }
     }
     if (!floating)
@@ -355,7 +348,7 @@ int NumericToken::GetNumber(const char **ptr)
         type = t_int;
         if (**ptr == 'i')
         {
-            if (!ansi &&  (*ptr)[1] == '6' && (*ptr)[2] == '4')
+            if (!ansi && (*ptr)[1] == '6' && (*ptr)[2] == '4')
             {
                 (*ptr)++;
                 (*ptr)++;
@@ -369,7 +362,7 @@ int NumericToken::GetNumber(const char **ptr)
             type = t_unsignedint;
             if (**ptr == 'i')
             {
-                if (!ansi &&  (*ptr)[1] == '6' && (*ptr)[2] == '4')
+                if (!ansi && (*ptr)[1] == '6' && (*ptr)[2] == '4')
                 {
                     (*ptr)++;
                     (*ptr)++;
@@ -447,7 +440,8 @@ int NumericToken::GetNumber(const char **ptr)
             type = t_longdouble;
             (*ptr)++;
             floatValue.Truncate(LDBL_MANT_DIG, LDBL_MAX_EXP, LDBL_MIN_EXP);
-        } else
+        }
+        else
         {
             type = t_double;
             floatValue.Truncate(DBL_MANT_DIG, DBL_MAX_EXP, DBL_MIN_EXP);
@@ -460,28 +454,25 @@ int NumericToken::GetNumber(const char **ptr)
         while (**ptr && IsSymbolChar(*ptr))
         {
             int n = UTF8::CharSpan(*ptr);
-            for (int i=0; i < n && **ptr; i++)
+            for (int i = 0; i < n && **ptr; i++)
                 (*ptr)++;
         }
     }
     return type;
 }
-void NumericToken::Parse(std::string &line)
+void NumericToken::Parse(std::string& line)
 {
-    const char *p = line.c_str();
+    const char* p = line.c_str();
     GetNumber(&p);
     SetChars(line.substr(0, p - line.c_str()));
-    line.erase(0, p-line.c_str());
+    line.erase(0, p - line.c_str());
 }
-bool KeywordToken::Start(const std::string &line)
-{
-    return ispunct(line[0]);
-}
-void KeywordToken::Parse(std::string &line)
+bool KeywordToken::Start(const std::string& line) { return ispunct(line[0]); }
+void KeywordToken::Parse(std::string& line)
 {
     char buf[256], *p = buf;
     int i;
-    for (i=0; i < line.size(); i++)
+    for (i = 0; i < line.size(); i++)
         if (ispunct(line[i]))
             *p++ = line[i];
         else
@@ -489,7 +480,7 @@ void KeywordToken::Parse(std::string &line)
     *p = 0;
     if (keywordTable)
     {
-        for (int j=i; j > 0; j--)
+        for (int j = i; j > 0; j--)
         {
             buf[j] = 0;
             auto it = keywordTable->find(std::string(buf));
@@ -503,18 +494,15 @@ void KeywordToken::Parse(std::string &line)
         }
     }
 }
-bool IdentifierToken::Start(const std::string &line)
-{
-    return IsSymbolStartChar(line.c_str()) != 0;
-}
-void IdentifierToken::Parse(std::string &line)
+bool IdentifierToken::Start(const std::string& line) { return IsSymbolStartChar(line.c_str()) != 0; }
+void IdentifierToken::Parse(std::string& line)
 {
     char buf[2048], *p = buf;
     int i, n;
-    for (i =0; (p == buf || p - buf -1 < sizeof(buf)) && p-buf < line.size() && IsSymbolChar(line.c_str() + i);)
+    for (i = 0; (p == buf || p - buf - 1 < sizeof(buf)) && p - buf < line.size() && IsSymbolChar(line.c_str() + i);)
     {
         n = UTF8::CharSpan(line.c_str() + i);
-        for (int j=0; j < n && i < line.size(); j++)
+        for (int j = 0; j < n && i < line.size(); j++)
             *p++ = line[i++];
     }
     *p = 0;
@@ -523,7 +511,7 @@ void IdentifierToken::Parse(std::string &line)
     id = buf;
     if (keywordTable)
     {
-        KeywordHash::const_iterator it ;
+        KeywordHash::const_iterator it;
         if (caseInsensitive)
         {
             p = buf;
@@ -540,16 +528,16 @@ void IdentifierToken::Parse(std::string &line)
             keyValue = it->second;
     }
 }
-void ErrorToken::Parse(std::string &line)
+void ErrorToken::Parse(std::string& line)
 {
     ch = line[0];
     SetChars(line.substr(0, 1));
-    line.erase(0,1);
+    line.erase(0, 1);
 }
-const Token *Tokenizer::Next()
+const Token* Tokenizer::Next()
 {
     size_t n = line.find_first_not_of("\t \v");
-    line.erase(0,n);
+    line.erase(0, n);
     if (currentToken)
         delete currentToken;
     if (line.size() == 0)

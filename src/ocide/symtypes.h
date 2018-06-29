@@ -11,6 +11,5 @@
 #define ST_EXTERN 10
 #define ST_LABEL 11
 
-
 #define ST_CONST 256
 #define ST_VOLATILE 512

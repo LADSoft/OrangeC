@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "LEFixup.h"
@@ -30,7 +30,7 @@
 #include "ObjExpression.h"
 #include "Utils.h"
 #include "LEHeader.h"
-int LEFixup::SectionOf(ObjExpression *e)
+int LEFixup::SectionOf(ObjExpression* e)
 {
     if (!e)
         return -1;
@@ -46,7 +46,7 @@ int LEFixup::SectionOf(ObjExpression *e)
         return n1;
     return -1;
 }
-bool LEFixup::IsRel(ObjExpression *e)
+bool LEFixup::IsRel(ObjExpression* e)
 {
     if (!e)
         return false;
@@ -54,29 +54,29 @@ bool LEFixup::IsRel(ObjExpression *e)
         return true;
     return IsRel(e->GetLeft()) || IsRel(e->GetRight());
 }
-void LEFixup::LoadFixups(ObjFile &file)
+void LEFixup::LoadFixups(ObjFile& file)
 {
     pages = 0;
     for (auto obj : objects)
     {
         if (lx)
-            pages += ObjectAlign(4096, obj->GetSize())/4096;
+            pages += ObjectAlign(4096, obj->GetSize()) / 4096;
         else
-            pages += ObjectAlign(4096, obj->GetInitSize())/4096;
+            pages += ObjectAlign(4096, obj->GetInitSize()) / 4096;
     }
     int i = 0;
     for (ObjFile::SectionIterator it = file.SectionBegin(); it != file.SectionEnd(); ++it)
     {
         ObjInt base = (*it)->GetOffset()->Eval(0);
-        ObjMemoryManager &m = (*it)->GetMemoryManager();
+        ObjMemoryManager& m = (*it)->GetMemoryManager();
         int ofs = 0;
         for (ObjMemoryManager::MemoryIterator it = m.MemoryBegin(); it != m.MemoryEnd(); ++it)
         {
             int msize = (*it)->GetSize();
-            ObjByte *mdata = (*it)->GetData();
+            ObjByte* mdata = (*it)->GetData();
             if (msize)
             {
-                ObjExpression *fixup = (*it)->GetFixup();
+                ObjExpression* fixup = (*it)->GetFixup();
                 if (fixup && !IsRel(fixup))
                 {
                     if (msize != 4)
@@ -93,14 +93,14 @@ void LEFixup::LoadFixups(ObjFile &file)
                 }
                 ofs += msize;
             }
-        }		
+        }
         i++;
     }
     CreateSections();
 }
 void LEFixup::Setup()
 {
-        
+
     int page = 0;
     int foffs = 0;
     int size = 0;
@@ -109,7 +109,7 @@ void LEFixup::Setup()
     auto it = fixups.begin();
     for (page = 0; page < pages; page++)
     {
-        ((unsigned *)indexTable)[page] = foffs;
+        ((unsigned*)indexTable)[page] = foffs;
         if (it != fixups.end())
         {
             if (sect != it->second.origSection)
@@ -129,18 +129,18 @@ void LEFixup::Setup()
                     bf[bfs++] = LX_FT_INTERNAL;
                 else
                     bf[bfs++] = LX_FT_INTERNAL | LX_FF_TARGET32;
-                *(unsigned short *)(bf + bfs) = addr - size;
-                bfs+= sizeof(unsigned short);
+                *(unsigned short*)(bf + bfs) = addr - size;
+                bfs += sizeof(unsigned short);
                 bf[bfs++] = it->second.section + 1;
                 if (n < 65536)
                 {
-                    *(unsigned short *)(bf + bfs) = n;
-                    bfs+= sizeof(unsigned short);
+                    *(unsigned short*)(bf + bfs) = n;
+                    bfs += sizeof(unsigned short);
                 }
                 else
                 {
-                    *(unsigned *)(bf + bfs) = n;
-                    bfs+= sizeof(unsigned);
+                    *(unsigned*)(bf + bfs) = n;
+                    bfs += sizeof(unsigned);
                 }
                 memcpy(fixupTable + foffs, bf, bfs);
                 foffs += bfs;
@@ -157,19 +157,19 @@ void LEFixup::Setup()
             {
                 if (lx)
                 {
-                    int is = ObjectAlign(4096, objects[sect]->GetInitSize())/ 4096;
-                    int s = ObjectAlign(4096, objects[sect]->GetSize())/ 4096;
+                    int is = ObjectAlign(4096, objects[sect]->GetInitSize()) / 4096;
+                    int s = ObjectAlign(4096, objects[sect]->GetSize()) / 4096;
                     while (s != is)
                     {
-                        ((unsigned *)indexTable)[++page] = foffs;
-                        is++;					
+                        ((unsigned*)indexTable)[++page] = foffs;
+                        is++;
                     }
                 }
             }
             size += 4096;
         }
     }
-    ((unsigned *)indexTable)[page] = foffs;	
+    ((unsigned*)indexTable)[page] = foffs;
 }
 unsigned LEFixup::CreateSections()
 {
@@ -191,8 +191,8 @@ unsigned LEFixup::CreateSections()
     fixupTable = new unsigned char[fixupSize];
     return 0;
 }
-void LEFixup::Write(std::fstream &stream)
+void LEFixup::Write(std::fstream& stream)
 {
-    stream.write((char *)indexTable, indexTableSize);
-    stream.write((char *)fixupTable, fixupSize);
+    stream.write((char*)indexTable, indexTableSize);
+    stream.write((char*)fixupTable, fixupSize);
 }

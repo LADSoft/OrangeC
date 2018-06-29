@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "Instruction.h"
@@ -34,13 +34,13 @@ Instruction::~Instruction()
 {
     if (data)
         delete data;
-    for (int i=0; i < fixups.size(); i++)
+    for (int i = 0; i < fixups.size(); i++)
     {
-        Fixup *f = fixups[i];
+        Fixup* f = fixups[i];
         delete f;
     }
 }
-int Instruction::GetNext(Fixup &fixup, unsigned char *buf)
+int Instruction::GetNext(Fixup& fixup, unsigned char* buf)
 {
     if (type == RESERVE)
     {
@@ -65,7 +65,7 @@ int Instruction::GetNext(Fixup &fixup, unsigned char *buf)
     }
     else
     {
-    
+
         if (pos >= size)
             return 0;
         int top = size;
@@ -91,7 +91,7 @@ int Instruction::GetNext(Fixup &fixup, unsigned char *buf)
             }
         }
         int rv = top - pos;
-        for (int i=pos; i < top; i++)
+        for (int i = pos; i < top; i++)
         {
             *buf++ = data[i];
         }

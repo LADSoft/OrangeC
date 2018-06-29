@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -35,22 +35,22 @@
 
 //#define TEST
 extern jmp_buf errjump;
-void StringWToA(char *a, WCHAR *w, int l)
+void StringWToA(char* a, WCHAR* w, int l)
 {
     while (l--)
-        *a++ = (char) *w++;
+        *a++ = (char)*w++;
     *a = 0;
 }
-static FILE * DoOpen(char *name, char *mode)
+static FILE* DoOpen(char* name, char* mode)
 {
-    FILE *rv;
+    FILE* rv;
 #ifdef TEST
     char realname[256];
-    char *p = strrchr(name, '\\');
+    char* p = strrchr(name, '\\');
     if (!p)
         p = strrchr(name, ':');
     if (p)
-        p ++;
+        p++;
     else
         p = name;
     sprintf(realname, ".\\temp\\%s", p);
@@ -61,155 +61,155 @@ static FILE * DoOpen(char *name, char *mode)
         fatal("Cannot open output file %s", name);
     return rv;
 }
-static void WriteCursorFile(RESOURCE *res)
+static void WriteCursorFile(RESOURCE* res)
 {
     if (res->changed)
     {
-        CURSORDATA *cursors = res->u.cursor->cursors;
+        CURSORDATA* cursors = res->u.cursor->cursors;
         int n = res->u.cursor->count;
-        int offset = 6 + n*16;
+        int offset = 6 + n * 16;
         int val;
         int i;
-        FILE *fil;
-        for (i=0 ; i < n; i++)
+        FILE* fil;
+        for (i = 0; i < n; i++)
         {
             cursors[i].offset = offset;
             offset += cursors[i].bytes;
         }
         fil = DoOpen(res->filename, "wb");
         if (!fil)
-            fatal("Could not open %s for write" , res->filename);
-        val = 0; // filler
+            fatal("Could not open %s for write", res->filename);
+        val = 0;  // filler
         fwrite(&val, 1, 2, fil);
-        val = 2; // this is a cursor file
-        fwrite(&val, 1, 2, fil); 
-        val = n; // number of objects
+        val = 2;  // this is a cursor file
         fwrite(&val, 1, 2, fil);
-        for (i=0 ; i < n; i++)
+        val = n;  // number of objects
+        fwrite(&val, 1, 2, fil);
+        for (i = 0; i < n; i++)
         {
             char buf[16];
             buf[0] = cursors[i].width;
             buf[1] = cursors[i].height;
             buf[2] = cursors[i].colorcount;
             buf[3] = cursors[i].xtra;
-            *(short *)(buf + 4) = cursors[i].xhotspot;
-            *(short *)(buf + 6) = cursors[i].yhotspot;
-            *(int *)(buf + 8) = cursors[i].bytes;
-            *(int *)(buf + 12) = cursors[i].offset;
+            *(short*)(buf + 4) = cursors[i].xhotspot;
+            *(short*)(buf + 6) = cursors[i].yhotspot;
+            *(int*)(buf + 8) = cursors[i].bytes;
+            *(int*)(buf + 12) = cursors[i].offset;
             fwrite(buf, 1, 16, fil);
         }
-        for (i=0 ; i < n; i++)
+        for (i = 0; i < n; i++)
         {
             fwrite(cursors[i].data, 1, cursors[i].bytes, fil);
         }
         fclose(fil);
     }
 }
-static void WriteIconFile(RESOURCE *res)
-{   
+static void WriteIconFile(RESOURCE* res)
+{
     if (res->changed)
     {
-        ICONDATA *icons = res->u.icon->icons;
+        ICONDATA* icons = res->u.icon->icons;
         int n = res->u.cursor->count;
-        int offset = 6 + n*16;
+        int offset = 6 + n * 16;
         int val;
         int i;
-        FILE *fil;
-        for (i=0 ; i < n; i++)
+        FILE* fil;
+        for (i = 0; i < n; i++)
         {
             icons[i].offset = offset;
             offset += icons[i].bytes;
         }
         fil = DoOpen(res->filename, "wb");
         if (!fil)
-            fatal("Could not open %s for write" , res->filename);
-        val = 0; // filler
+            fatal("Could not open %s for write", res->filename);
+        val = 0;  // filler
         fwrite(&val, 1, 2, fil);
-        val = 1; // this is an icon file
-        fwrite(&val, 1, 2, fil); 
-        val = n; // number of objects
+        val = 1;  // this is an icon file
         fwrite(&val, 1, 2, fil);
-        for (i=0 ; i < n; i++)
+        val = n;  // number of objects
+        fwrite(&val, 1, 2, fil);
+        for (i = 0; i < n; i++)
         {
             char buf[16];
             buf[0] = icons[i].width;
             buf[1] = icons[i].height;
             buf[2] = icons[i].colorcount;
             buf[3] = icons[i].xtra;
-            *(short *)(buf + 4) = icons[i].planes;
-            *(short *)(buf + 6) = icons[i].bits;
-            *(int *)(buf + 8) = icons[i].bytes;
-            *(int *)(buf + 12) = icons[i].offset;
+            *(short*)(buf + 4) = icons[i].planes;
+            *(short*)(buf + 6) = icons[i].bits;
+            *(int*)(buf + 8) = icons[i].bytes;
+            *(int*)(buf + 12) = icons[i].offset;
             fwrite(buf, 1, 16, fil);
         }
-        for (i=0 ; i < n; i++)
+        for (i = 0; i < n; i++)
         {
             fwrite(icons[i].data, 1, icons[i].bytes, fil);
         }
         fclose(fil);
     }
 }
-static void WriteBitmapFile(RESOURCE *res)
+static void WriteBitmapFile(RESOURCE* res)
 {
     if (res->changed)
     {
-        BITMAP_ *bd = res->u.bitmap;
+        BITMAP_* bd = res->u.bitmap;
         char data[14];
-        FILE *fil;
+        FILE* fil;
         memset(data, 0, sizeof(data));
         data[0] = 'B';
         data[1] = 'M';
-        *(int *)(data + 2) = 14 + bd->headerSize + bd->pixelSize;
-        *(int *)(data + 10) = 14 + bd->headerSize;
+        *(int*)(data + 2) = 14 + bd->headerSize + bd->pixelSize;
+        *(int*)(data + 10) = 14 + bd->headerSize;
         fil = DoOpen(res->filename, "wb");
         if (!fil)
-            fatal("Could not open %s for write" , res->filename);
+            fatal("Could not open %s for write", res->filename);
         fwrite(data, 1, 14, fil);
         fwrite(bd->headerData, 1, bd->headerSize, fil);
         fwrite(bd->pixelData, 1, bd->pixelSize, fil);
         fclose(fil);
     }
 }
-static void WriteMessageTableFile(RESOURCE *res)
+static void WriteMessageTableFile(RESOURCE* res)
 {
     if (res->changed)
     {
-        FILE *fil = DoOpen(res->filename, "wb");
+        FILE* fil = DoOpen(res->filename, "wb");
         if (!fil)
-            fatal("Could not open %s for write" , res->filename);
+            fatal("Could not open %s for write", res->filename);
         fwrite(res->u.data.data, 1, res->u.data.length, fil);
         fclose(fil);
     }
 }
-static void WriteUserDataFile(RESOURCE *res)
+static void WriteUserDataFile(RESOURCE* res)
 {
     if (res->changed)
     {
-        FILE *fil = DoOpen(res->filename, "wb");
+        FILE* fil = DoOpen(res->filename, "wb");
         if (!fil)
-            fatal("Could not open %s for write" , res->filename);
+            fatal("Could not open %s for write", res->filename);
         fwrite(res->u.rcdata->u.buffer.data, 1, res->u.rcdata->u.buffer.length, fil);
         fclose(fil);
     }
 }
-static void WriteFontFile(RESOURCE *res)
+static void WriteFontFile(RESOURCE* res)
 {
     if (res->changed)
     {
-        FILE *fil = DoOpen(res->filename, "wb");
+        FILE* fil = DoOpen(res->filename, "wb");
         if (!fil)
-            fatal("Could not open %s for write" , res->filename);
+            fatal("Could not open %s for write", res->filename);
         fwrite(res->u.font->data, 1, res->u.font->length, fil);
         fclose(fil);
     }
 }
-static void WriteExpInternal(FILE *outputFile, EXPRESSION *p, int n)
+static void WriteExpInternal(FILE* outputFile, EXPRESSION* p, int n)
 {
     // well -1 is the outer layer, well this tries to omit the outer parenthesis
     // but it isn't perfect
     if (n == -1)
         n = p->type;
-    switch(p->type)
+    switch (p->type)
     {
         case hook:
             fputc('(', outputFile);
@@ -219,17 +219,17 @@ static void WriteExpInternal(FILE *outputFile, EXPRESSION *p, int n)
             fprintf(outputFile, " : ");
             WriteExpInternal(outputFile, p->left->left, hook);
             fputc(')', outputFile);
-            break;            
+            break;
         case land:
             WriteExpInternal(outputFile, p->left, land);
-            fprintf(outputFile, " && ");            
+            fprintf(outputFile, " && ");
             WriteExpInternal(outputFile, p->right, land);
             break;
         case lor:
             if (n != lor)
                 fputc('(', outputFile);
             WriteExpInternal(outputFile, p->left, lor);
-            fprintf(outputFile, " || ");            
+            fprintf(outputFile, " || ");
             WriteExpInternal(outputFile, p->right, lor);
             if (n != lor)
                 fputc(')', outputFile);
@@ -238,7 +238,7 @@ static void WriteExpInternal(FILE *outputFile, EXPRESSION *p, int n)
             if (n != or)
                 fputc('(', outputFile);
             WriteExpInternal(outputFile, p->left, or);
-            fprintf(outputFile, " | ");            
+            fprintf(outputFile, " | ");
             WriteExpInternal(outputFile, p->right, or);
             if (n != or)
                 fputc(')', outputFile);
@@ -247,7 +247,7 @@ static void WriteExpInternal(FILE *outputFile, EXPRESSION *p, int n)
             if (n != uparrow)
                 fputc('(', outputFile);
             WriteExpInternal(outputFile, p->left, uparrow);
-            fprintf(outputFile, " ^ ");            
+            fprintf(outputFile, " ^ ");
             WriteExpInternal(outputFile, p->right, uparrow);
             if (n != uparrow)
                 fputc(')', outputFile);
@@ -256,7 +256,7 @@ static void WriteExpInternal(FILE *outputFile, EXPRESSION *p, int n)
             if (n != and)
                 fputc('(', outputFile);
             WriteExpInternal(outputFile, p->left, and);
-            fprintf(outputFile, " & ");            
+            fprintf(outputFile, " & ");
             WriteExpInternal(outputFile, p->right, and);
             if (n != and)
                 fputc(')', outputFile);
@@ -265,7 +265,7 @@ static void WriteExpInternal(FILE *outputFile, EXPRESSION *p, int n)
             if (n != eq)
                 fputc('(', outputFile);
             WriteExpInternal(outputFile, p->left, eq);
-            fprintf(outputFile, " == ");            
+            fprintf(outputFile, " == ");
             WriteExpInternal(outputFile, p->right, eq);
             if (n != eq)
                 fputc(')', outputFile);
@@ -274,7 +274,7 @@ static void WriteExpInternal(FILE *outputFile, EXPRESSION *p, int n)
             if (n != eq)
                 fputc('(', outputFile);
             WriteExpInternal(outputFile, p->left, eq);
-            fprintf(outputFile, " != ");            
+            fprintf(outputFile, " != ");
             WriteExpInternal(outputFile, p->right, eq);
             if (n != eq)
                 fputc(')', outputFile);
@@ -283,7 +283,7 @@ static void WriteExpInternal(FILE *outputFile, EXPRESSION *p, int n)
             if (n != lt)
                 fputc('(', outputFile);
             WriteExpInternal(outputFile, p->left, lt);
-            fprintf(outputFile, " < ");            
+            fprintf(outputFile, " < ");
             WriteExpInternal(outputFile, p->right, lt);
             if (n != lt)
                 fputc(')', outputFile);
@@ -292,7 +292,7 @@ static void WriteExpInternal(FILE *outputFile, EXPRESSION *p, int n)
             if (n != lt)
                 fputc('(', outputFile);
             WriteExpInternal(outputFile, p->left, lt);
-            fprintf(outputFile, " > ");            
+            fprintf(outputFile, " > ");
             WriteExpInternal(outputFile, p->right, lt);
             if (n != lt)
                 fputc(')', outputFile);
@@ -301,7 +301,7 @@ static void WriteExpInternal(FILE *outputFile, EXPRESSION *p, int n)
             if (n != lt)
                 fputc('(', outputFile);
             WriteExpInternal(outputFile, p->left, lt);
-            fprintf(outputFile, " <= ");            
+            fprintf(outputFile, " <= ");
             WriteExpInternal(outputFile, p->right, lt);
             if (n != lt)
                 fputc(')', outputFile);
@@ -310,7 +310,7 @@ static void WriteExpInternal(FILE *outputFile, EXPRESSION *p, int n)
             if (n != lt)
                 fputc('(', outputFile);
             WriteExpInternal(outputFile, p->left, lt);
-            fprintf(outputFile, " >= ");            
+            fprintf(outputFile, " >= ");
             WriteExpInternal(outputFile, p->right, lt);
             if (n != lt)
                 fputc(')', outputFile);
@@ -319,7 +319,7 @@ static void WriteExpInternal(FILE *outputFile, EXPRESSION *p, int n)
             if (n != lshift)
                 fputc('(', outputFile);
             WriteExpInternal(outputFile, p->left, lshift);
-            fprintf(outputFile, " << ");            
+            fprintf(outputFile, " << ");
             WriteExpInternal(outputFile, p->right, lshift);
             if (n != lshift)
                 fputc(')', outputFile);
@@ -328,7 +328,7 @@ static void WriteExpInternal(FILE *outputFile, EXPRESSION *p, int n)
             if (n != rshift)
                 fputc('(', outputFile);
             WriteExpInternal(outputFile, p->left, rshift);
-            fprintf(outputFile, " >> ");            
+            fprintf(outputFile, " >> ");
             WriteExpInternal(outputFile, p->right, rshift);
             if (n != rshift)
                 fputc(')', outputFile);
@@ -337,7 +337,7 @@ static void WriteExpInternal(FILE *outputFile, EXPRESSION *p, int n)
             if (n != plus)
                 fputc('(', outputFile);
             WriteExpInternal(outputFile, p->left, plus);
-            fprintf(outputFile, " + ");            
+            fprintf(outputFile, " + ");
             WriteExpInternal(outputFile, p->right, plus);
             if (n != plus)
                 fputc(')', outputFile);
@@ -348,7 +348,7 @@ static void WriteExpInternal(FILE *outputFile, EXPRESSION *p, int n)
                 if (n != minus)
                     fputc('(', outputFile);
                 WriteExpInternal(outputFile, p->left, plus);
-                fprintf(outputFile, " - ");            
+                fprintf(outputFile, " - ");
                 WriteExpInternal(outputFile, p->right, plus);
                 if (n != plus)
                     fputc(')', outputFile);
@@ -363,7 +363,7 @@ static void WriteExpInternal(FILE *outputFile, EXPRESSION *p, int n)
             if (n != star)
                 fputc('(', outputFile);
             WriteExpInternal(outputFile, p->left, star);
-            fprintf(outputFile, " * ");            
+            fprintf(outputFile, " * ");
             WriteExpInternal(outputFile, p->right, star);
             if (n != star)
                 fputc(')', outputFile);
@@ -372,7 +372,7 @@ static void WriteExpInternal(FILE *outputFile, EXPRESSION *p, int n)
             if (n != star)
                 fputc('(', outputFile);
             WriteExpInternal(outputFile, p->left, star);
-            fprintf(outputFile, " / ");            
+            fprintf(outputFile, " / ");
             WriteExpInternal(outputFile, p->right, star);
             if (n != star)
                 fputc(')', outputFile);
@@ -381,7 +381,7 @@ static void WriteExpInternal(FILE *outputFile, EXPRESSION *p, int n)
             if (n != star)
                 fputc('(', outputFile);
             WriteExpInternal(outputFile, p->left, star);
-            fprintf(outputFile, " %% ");            
+            fprintf(outputFile, " %% ");
             WriteExpInternal(outputFile, p->right, star);
             if (n != star)
                 fputc(')', outputFile);
@@ -400,23 +400,23 @@ static void WriteExpInternal(FILE *outputFile, EXPRESSION *p, int n)
             break;
         case e_int:
             if (p->rendition)
-                fprintf(outputFile,"%s", p->rendition);
+                fprintf(outputFile, "%s", p->rendition);
             else
-                fprintf(outputFile,"%d", p->val);
+                fprintf(outputFile, "%d", p->val);
             break;
         default:
             fatal("internal error");
             break;
     }
 }
-static void WriteExp(FILE *outputFile, EXPRESSION *exp)
+static void WriteExp(FILE* outputFile, EXPRESSION* exp)
 {
     if (!exp)
         fprintf(outputFile, "0");
     else
         WriteExpInternal(outputFile, exp, -1);
 }
-static void WriteCommentLines(FILE *outputFile, LIST *lines)
+static void WriteCommentLines(FILE* outputFile, LIST* lines)
 {
     while (lines)
     {
@@ -424,7 +424,7 @@ static void WriteCommentLines(FILE *outputFile, LIST *lines)
         lines = lines->next;
     }
 }
-static void WriteAString(FILE *outputFile, char *string, int len)
+static void WriteAString(FILE* outputFile, char* string, int len)
 {
     fputc('\"', outputFile);
     while (len--)
@@ -433,7 +433,7 @@ static void WriteAString(FILE *outputFile, char *string, int len)
         if (ch < 0x20)
         {
             fputc('\\', outputFile);
-            switch(ch)
+            switch (ch)
             {
                 case 0:
                     fputc('0', outputFile);
@@ -463,7 +463,7 @@ static void WriteAString(FILE *outputFile, char *string, int len)
         }
         else
         {
-            switch(ch)
+            switch (ch)
             {
                 case '\'':
                     fputc('\\', outputFile);
@@ -482,20 +482,20 @@ static void WriteAString(FILE *outputFile, char *string, int len)
                     break;
             }
         }
-    }        
+    }
     fputc('\"', outputFile);
 }
-static void WriteWString(FILE *outputFile, WCHAR *str, int len)
+static void WriteWString(FILE* outputFile, WCHAR* str, int len)
 {
     char buffer[1000];
-    char *p = buffer;
+    char* p = buffer;
     int ilen = len;
     while (ilen--)
         *p++ = (char)*str++;
     *p = 0;
     WriteAString(outputFile, buffer, len);
 }
-static void WriteQuotedResId(FILE *outputFile, IDENT *id)
+static void WriteQuotedResId(FILE* outputFile, IDENT* id)
 {
     if (id->symbolic)
     {
@@ -503,8 +503,8 @@ static void WriteQuotedResId(FILE *outputFile, IDENT *id)
         {
             char buf[256];
             StringWToA(buf, id->origName, wcslen(id->origName));
-            if (buf[0] && buf[strlen(buf)-1] == '\n')
-                buf[strlen(buf)-1] = 0;
+            if (buf[0] && buf[strlen(buf) - 1] == '\n')
+                buf[strlen(buf) - 1] = 0;
             fprintf(outputFile, "%s ", buf);
         }
         else
@@ -518,7 +518,7 @@ static void WriteQuotedResId(FILE *outputFile, IDENT *id)
         fputc(' ', outputFile);
     }
 }
-static void WriteResId(FILE *outputFile, IDENT *id)
+static void WriteResId(FILE* outputFile, IDENT* id)
 {
     if (id->symbolic)
     {
@@ -530,9 +530,9 @@ static void WriteResId(FILE *outputFile, IDENT *id)
         }
         else
         {
-                char buf[256];
-                StringWToA(buf, id->u.n.symbol, id->u.n.length);
-                fprintf(outputFile, "%s ", buf);
+            char buf[256];
+            StringWToA(buf, id->u.n.symbol, id->u.n.length);
+            fprintf(outputFile, "%s ", buf);
         }
     }
     else
@@ -541,24 +541,24 @@ static void WriteResId(FILE *outputFile, IDENT *id)
         fputc(' ', outputFile);
     }
 }
-static void WriteFileName(FILE *outputFile, char *rel, char *name)
+static void WriteFileName(FILE* outputFile, char* rel, char* name)
 {
     char buf[MAX_PATH];
     strcpy(buf, relpath(name, rel));
-    
+
 #ifdef TEST
-    char *p = strrchr(name , '\\');
+    char* p = strrchr(name, '\\');
     if (!p)
         p = strrchr(name, ':');
     if (p)
-        p ++;
-    else 
+        p++;
+    else
         p = name;
     name = p;
 #endif
     fprintf(outputFile, "\"%s\"", buf);
 }
-static void WriteMemFlags(FILE *outputFile, int flags)
+static void WriteMemFlags(FILE* outputFile, int flags)
 {
     if (flags & MF_MOVEABLE)
         fprintf(outputFile, "MOVEABLE ");
@@ -573,7 +573,7 @@ static void WriteMemFlags(FILE *outputFile, int flags)
     if (flags & MF_NONDISCARDABLE)
         fprintf(outputFile, "NONDISCARDABLE ");
 }
-static void WriteSecondaryCharacteristics(FILE *outputFile, CHARACTERISTICS *info)
+static void WriteSecondaryCharacteristics(FILE* outputFile, CHARACTERISTICS* info)
 {
     if (info->language_low)
     {
@@ -599,7 +599,7 @@ static void WriteSecondaryCharacteristics(FILE *outputFile, CHARACTERISTICS *inf
         fprintf(outputFile, "\n");
     }
 }
-static void WriteMenuFlags(FILE *outputFile, MENUITEM *item)
+static void WriteMenuFlags(FILE* outputFile, MENUITEM* item)
 {
     if (item->flags & MI_GRAYED)
         fprintf(outputFile, "GRAYED ");
@@ -616,7 +616,7 @@ static void WriteMenuFlags(FILE *outputFile, MENUITEM *item)
     if (item->flags & MI_SEPARATOR)
         fprintf(outputFile, "SEPARATOR ");
 }
-static void WriteLanguage(FILE *outputFile, RESOURCE *res)
+static void WriteLanguage(FILE* outputFile, RESOURCE* res)
 {
     fprintf(outputFile, "LANGUAGE ");
     WriteExp(outputFile, res->info.language_low);
@@ -624,7 +624,7 @@ static void WriteLanguage(FILE *outputFile, RESOURCE *res)
     WriteExp(outputFile, res->info.language_high);
     fprintf(outputFile, "\n");
 }
-static void WriteUserData(FILE *outputFile, char *rel, RESOURCE *res)
+static void WriteUserData(FILE* outputFile, char* rel, RESOURCE* res)
 {
     WriteUserDataFile(res);
     WriteResId(outputFile, &res->type);
@@ -632,7 +632,7 @@ static void WriteUserData(FILE *outputFile, char *rel, RESOURCE *res)
     WriteFileName(outputFile, rel, res->filename);
     fprintf(outputFile, "\n");
 }
-static void WriteCursor(FILE *outputFile, char *rel, RESOURCE *res)
+static void WriteCursor(FILE* outputFile, char* rel, RESOURCE* res)
 {
     WriteCursorFile(res);
     fprintf(outputFile, "CURSOR ");
@@ -640,7 +640,7 @@ static void WriteCursor(FILE *outputFile, char *rel, RESOURCE *res)
     WriteFileName(outputFile, rel, res->filename);
     fprintf(outputFile, "\n");
 }
-static void WriteBitmap(FILE *outputFile, char *rel, RESOURCE *res)
+static void WriteBitmap(FILE* outputFile, char* rel, RESOURCE* res)
 {
     WriteBitmapFile(res);
     fprintf(outputFile, "BITMAP ");
@@ -648,7 +648,7 @@ static void WriteBitmap(FILE *outputFile, char *rel, RESOURCE *res)
     WriteFileName(outputFile, rel, res->filename);
     fprintf(outputFile, "\n");
 }
-static void WriteIcon(FILE *outputFile, char *rel, RESOURCE *res)
+static void WriteIcon(FILE* outputFile, char* rel, RESOURCE* res)
 {
     WriteIconFile(res);
     fprintf(outputFile, "ICON ");
@@ -656,7 +656,7 @@ static void WriteIcon(FILE *outputFile, char *rel, RESOURCE *res)
     WriteFileName(outputFile, rel, res->filename);
     fprintf(outputFile, "\n");
 }
-static void WriteFont(FILE *outputFile, char *rel, RESOURCE *res)
+static void WriteFont(FILE* outputFile, char* rel, RESOURCE* res)
 {
     WriteFontFile(res);
     fprintf(outputFile, "FONT ");
@@ -664,7 +664,7 @@ static void WriteFont(FILE *outputFile, char *rel, RESOURCE *res)
     WriteFileName(outputFile, rel, res->filename);
     fprintf(outputFile, "\n");
 }
-static void WriteMessageTable(FILE *outputFile, char *rel, RESOURCE *res)
+static void WriteMessageTable(FILE* outputFile, char* rel, RESOURCE* res)
 {
     WriteMessageTableFile(res);
     fprintf(outputFile, "MESSAGETABLE ");
@@ -672,16 +672,16 @@ static void WriteMessageTable(FILE *outputFile, char *rel, RESOURCE *res)
     WriteFileName(outputFile, rel, res->filename);
     fprintf(outputFile, "\n");
 }
-static void WriteDLGInclude(FILE *outputFile, char *rel, RESOURCE *res)
+static void WriteDLGInclude(FILE* outputFile, char* rel, RESOURCE* res)
 {
     fprintf(outputFile, "DLGINCLUDE ");
     WriteMemFlags(outputFile, res->info.memflags);
-    WriteFileName(outputFile, rel, (char *)res->u.data.data);
+    WriteFileName(outputFile, rel, (char*)res->u.data.data);
     fprintf(outputFile, "\n");
 }
-static void WriteString(FILE *outputFile, RESOURCE *res)
+static void WriteString(FILE* outputFile, RESOURCE* res)
 {
-    STRINGS *strings;
+    STRINGS* strings;
     fprintf(outputFile, "STRINGTABLE ");
     WriteMemFlags(outputFile, res->info.memflags);
     fprintf(outputFile, "\n{\n");
@@ -697,9 +697,9 @@ static void WriteString(FILE *outputFile, RESOURCE *res)
     }
     fprintf(outputFile, "}\n");
 }
-static void WriteAccelerator(FILE *outputFile, RESOURCE *res)
+static void WriteAccelerator(FILE* outputFile, RESOURCE* res)
 {
-    ACCELERATOR *acc;
+    ACCELERATOR* acc;
     fprintf(outputFile, "ACCELERATORS ");
     WriteMemFlags(outputFile, res->info.memflags);
     fprintf(outputFile, "\n");
@@ -723,7 +723,7 @@ static void WriteAccelerator(FILE *outputFile, RESOURCE *res)
             fprintf(outputFile, "\"%c\", ", acc->skey);
         }
         WriteExp(outputFile, acc->id);
-        
+
         if (acc->flags)
         {
             fprintf(outputFile, ", ");
@@ -739,14 +739,13 @@ static void WriteAccelerator(FILE *outputFile, RESOURCE *res)
                 fprintf(outputFile, "CONTROL ");
             if (acc->flags & ACC_ALT)
                 fprintf(outputFile, "ALT ");
-        }        
+        }
         fprintf(outputFile, "\n");
         acc = acc->next;
-        
     }
     fprintf(outputFile, "END\n");
 }
-static void WriteRCData(FILE *outputFile, char *rel, RESOURCE *res)
+static void WriteRCData(FILE* outputFile, char* rel, RESOURCE* res)
 {
     fprintf(outputFile, "RCDATA ");
     WriteMemFlags(outputFile, res->info.memflags);
@@ -758,14 +757,14 @@ static void WriteRCData(FILE *outputFile, char *rel, RESOURCE *res)
     }
     else
     {
-        RCDATA *data = res->u.rcdata;
+        RCDATA* data = res->u.rcdata;
         fprintf(outputFile, "\nBEGIN\n");
         while (data)
         {
             fprintf(outputFile, "\t");
             if (data->type == RCDATA_STRING)
             {
-                WriteAString(outputFile, (char *)data->u.string.s, data->u.string.length);
+                WriteAString(outputFile, (char*)data->u.string.s, data->u.string.length);
             }
             else if (data->type == RCDATA_WORD)
             {
@@ -776,26 +775,24 @@ static void WriteRCData(FILE *outputFile, char *rel, RESOURCE *res)
                 fprintf(outputFile, "%dL", data->u.dword);
             }
             fprintf(outputFile, "\n");
-                
+
             data = data->next;
         }
-        fprintf(outputFile, "END\n");    
+        fprintf(outputFile, "END\n");
     }
 }
-static void WriteVersion(FILE *outputFile, RESOURCE *res)
+static void WriteVersion(FILE* outputFile, RESOURCE* res)
 {
-    VERSIONINFO *v= res->u.versioninfo;
-    struct variable *var = res->u.versioninfo->var;
-    struct ver_stringinfo *strings;
-    struct ver_varinfo *vars;
-    struct ver_varlangchar *langchars;
+    VERSIONINFO* v = res->u.versioninfo;
+    struct variable* var = res->u.versioninfo->var;
+    struct ver_stringinfo* strings;
+    struct ver_varinfo* vars;
+    struct ver_varlangchar* langchars;
     fprintf(outputFile, "VERSIONINFO\n");
-    fprintf(outputFile, "FILEVERSION %d, %d, %d, %d\n",v->fixed->file_version_ms >> 16,
-            v->fixed->file_version_ms &0xffff,v->fixed->file_version_ls >> 16,
-            v->fixed->file_version_ls &0xffff);
-    fprintf(outputFile, "PRODUCTVERSION %d, %d, %d, %d\n",v->fixed->product_version_ms >> 16,
-            v->fixed->product_version_ms &0xffff,v->fixed->product_version_ls >> 16,
-            v->fixed->product_version_ls &0xffff);
+    fprintf(outputFile, "FILEVERSION %d, %d, %d, %d\n", v->fixed->file_version_ms >> 16, v->fixed->file_version_ms & 0xffff,
+            v->fixed->file_version_ls >> 16, v->fixed->file_version_ls & 0xffff);
+    fprintf(outputFile, "PRODUCTVERSION %d, %d, %d, %d\n", v->fixed->product_version_ms >> 16,
+            v->fixed->product_version_ms & 0xffff, v->fixed->product_version_ls >> 16, v->fixed->product_version_ls & 0xffff);
     if (v->fixed->file_flags_mask)
     {
         fprintf(outputFile, "FILEFLAGSMASK ");
@@ -829,7 +826,7 @@ static void WriteVersion(FILE *outputFile, RESOURCE *res)
     fprintf(outputFile, "BEGIN\n");
     while (var)
     {
-        switch(var->type)
+        switch (var->type)
         {
             case VERINFO_STRING:
                 fprintf(outputFile, "\tBLOCK \"StringFileInfo\"\n");
@@ -869,7 +866,7 @@ static void WriteVersion(FILE *outputFile, RESOURCE *res)
                             WriteExp(outputFile, langchars->charset);
                         }
                         langchars = langchars->next;
-                    }   
+                    }
                     fprintf(outputFile, "\n");
                     vars = vars->next;
                 }
@@ -880,13 +877,13 @@ static void WriteVersion(FILE *outputFile, RESOURCE *res)
     }
     fprintf(outputFile, "END\n");
 }
-static void WriteIndent(FILE *outputFile, int indent)
+static void WriteIndent(FILE* outputFile, int indent)
 {
     int i;
-    for (i=0; i < indent; i++)
+    for (i = 0; i < indent; i++)
         fputc('\t', outputFile);
 }
-static void WritePopup(FILE *outputFile, MENUITEM *items, int extended, int indent)
+static void WritePopup(FILE* outputFile, MENUITEM* items, int extended, int indent)
 {
     WriteIndent(outputFile, indent++);
     fprintf(outputFile, "BEGIN\n");
@@ -965,9 +962,9 @@ static void WritePopup(FILE *outputFile, MENUITEM *items, int extended, int inde
     WriteIndent(outputFile, --indent);
     fprintf(outputFile, "END\n");
 }
-static void WriteMenu(FILE *outputFile, RESOURCE *res, BOOL extended)
+static void WriteMenu(FILE* outputFile, RESOURCE* res, BOOL extended)
 {
-    MENU *m = res->u.menu;
+    MENU* m = res->u.menu;
     if (extended)
     {
         fprintf(outputFile, "MENUEX ");
@@ -975,23 +972,23 @@ static void WriteMenu(FILE *outputFile, RESOURCE *res, BOOL extended)
     else
     {
         fprintf(outputFile, "MENU ");
-    }   
+    }
     WriteMemFlags(outputFile, res->info.memflags);
     fprintf(outputFile, "\n");
     WriteSecondaryCharacteristics(outputFile, &res->info);
     WritePopup(outputFile, m->items, extended, 0);
 }
-static void WriteControl(FILE *outputFile, CONTROL *control, int extended)
+static void WriteControl(FILE* outputFile, CONTROL* control, int extended)
 {
     int generic = control->generic;
     BOOL writeText = TRUE;
-    WCHAR *class = NULL;
+    WCHAR* class = NULL;
     WriteCommentLines(outputFile, control->prevLines);
     if (!generic)
     {
         if (!control->class.symbolic)
         {
-            switch(control->class.u.id->val)
+            switch (control->class.u.id->val)
             {
                 case CTL_EDIT:
                     fprintf(outputFile, "EDITTEXT ");
@@ -1079,10 +1076,10 @@ static void WriteControl(FILE *outputFile, CONTROL *control, int extended)
                     generic = TRUE;
                     break;
             }
-        }   
+        }
         else
         {
-            switch(control->class.u.id->val)
+            switch (control->class.u.id->val)
             {
                 case CTL_EDIT:
                     class = L"edit";
@@ -1113,7 +1110,7 @@ static void WriteControl(FILE *outputFile, CONTROL *control, int extended)
     {
         if (!control->class.symbolic)
         {
-            switch(control->class.u.id->val)
+            switch (control->class.u.id->val)
             {
                 case CTL_EDIT:
                     class = L"edit";
@@ -1139,14 +1136,13 @@ static void WriteControl(FILE *outputFile, CONTROL *control, int extended)
     if (generic)
     {
         fprintf(outputFile, "CONTROL ");
-        
     }
     if ((writeText && control->text) || generic)
     {
-		if (control->text)
-	        WriteQuotedResId(outputFile, control->text);
-		else
-			fprintf(outputFile, "\"\"");
+        if (control->text)
+            WriteQuotedResId(outputFile, control->text);
+        else
+            fprintf(outputFile, "\"\"");
         fprintf(outputFile, ", ");
     }
     WriteExp(outputFile, control->id);
@@ -1183,9 +1179,9 @@ static void WriteControl(FILE *outputFile, CONTROL *control, int extended)
         fprintf(outputFile, ", ");
         WriteExp(outputFile, control->help);
     }
-    fputc('\n', outputFile);    
+    fputc('\n', outputFile);
 }
-static void WriteDialogSettings(FILE *outputFile, DIALOG *dlg, CHARACTERISTICS *info, BOOL extended)
+static void WriteDialogSettings(FILE* outputFile, DIALOG* dlg, CHARACTERISTICS* info, BOOL extended)
 {
     if (info->language_low)
     {
@@ -1195,7 +1191,7 @@ static void WriteDialogSettings(FILE *outputFile, DIALOG *dlg, CHARACTERISTICS *
         {
             fprintf(outputFile, ", ");
             WriteExp(outputFile, info->language_high);
-        }       
+        }
         fprintf(outputFile, "\n");
     }
     if (info->version)
@@ -1273,10 +1269,10 @@ static void WriteDialogSettings(FILE *outputFile, DIALOG *dlg, CHARACTERISTICS *
         fprintf(outputFile, "\n");
     }
 }
-static void WriteDialog(FILE *outputFile, RESOURCE *res, BOOL extended)
+static void WriteDialog(FILE* outputFile, RESOURCE* res, BOOL extended)
 {
-    DIALOG *d = res->u.dialog;
-    CONTROL *c = d->controls;
+    DIALOG* d = res->u.dialog;
+    CONTROL* c = d->controls;
     if (extended)
     {
         fprintf(outputFile, "DIALOGEX ");
@@ -1307,22 +1303,22 @@ static void WriteDialog(FILE *outputFile, RESOURCE *res, BOOL extended)
     }
     fprintf(outputFile, "END\n");
 }
-static void WriteRes(FILE *outputFile, char *rel, RESOURCE *res)
+static void WriteRes(FILE* outputFile, char* rel, RESOURCE* res)
 {
     WriteCommentLines(outputFile, res->prevLines);
 
     if (res->itype == RESTYPE_PLACEHOLDER)
-        return;    
-        
+        return;
+
     if (res->type.symbolic || (res->itype != RESTYPE_STRING && res->itype != RESTYPE_LANGUAGE))
         WriteResId(outputFile, &res->id);
     if (res->type.symbolic)
     {
         WriteUserData(outputFile, rel, res);
     }
-    else 
+    else
     {
-        switch(res->itype)
+        switch (res->itype)
         {
             case RESTYPE_LANGUAGE:
                 WriteLanguage(outputFile, res);
@@ -1369,16 +1365,16 @@ static void WriteRes(FILE *outputFile, char *rel, RESOURCE *res)
         }
     }
 }
-static void MarkDef(RESOURCE_DATA *select, EXPRESSION *id)
+static void MarkDef(RESOURCE_DATA* select, EXPRESSION* id)
 {
     if (id && id->rendition)
     {
-        SYM *s = search(id->rendition, &select->syms);
+        SYM* s = search(id->rendition, &select->syms);
         if (s)
             s->marked = TRUE;
     }
 }
-static void MarkAcceleratorDefinitions(RESOURCE_DATA *select, ACCELERATOR *accel)
+static void MarkAcceleratorDefinitions(RESOURCE_DATA* select, ACCELERATOR* accel)
 {
     while (accel)
     {
@@ -1386,7 +1382,7 @@ static void MarkAcceleratorDefinitions(RESOURCE_DATA *select, ACCELERATOR *accel
         accel = accel->next;
     }
 }
-static void MarkStringDefinitions(RESOURCE_DATA *select, STRINGS *strings)
+static void MarkStringDefinitions(RESOURCE_DATA* select, STRINGS* strings)
 {
     while (strings)
     {
@@ -1394,16 +1390,16 @@ static void MarkStringDefinitions(RESOURCE_DATA *select, STRINGS *strings)
         strings = strings->next;
     }
 }
-static void MarkControlDefinitions(RESOURCE_DATA *select, DIALOG *dlg)
+static void MarkControlDefinitions(RESOURCE_DATA* select, DIALOG* dlg)
 {
-    CONTROL *controls = dlg->controls;
+    CONTROL* controls = dlg->controls;
     while (controls)
     {
         MarkDef(select, controls->id);
         controls = controls->next;
     }
 }
-static void MarkMenuDefinitions(RESOURCE_DATA *select, MENUITEM *items)
+static void MarkMenuDefinitions(RESOURCE_DATA* select, MENUITEM* items)
 {
     while (items)
     {
@@ -1413,14 +1409,14 @@ static void MarkMenuDefinitions(RESOURCE_DATA *select, MENUITEM *items)
         items = items->next;
     }
 }
-static void MarkNewDefinitions(RESOURCE_DATA *select)
+static void MarkNewDefinitions(RESOURCE_DATA* select)
 {
-    RESOURCE *res;
+    RESOURCE* res;
     for (res = select->resources; res; res = res->next)
     {
         if (!res->id.symbolic && res->id.u.id)
             MarkDef(select, res->id.u.id);
-        switch(res->itype)
+        switch (res->itype)
         {
             case RESTYPE_ACCELERATOR:
                 MarkAcceleratorDefinitions(select, res->u.accelerator);
@@ -1439,7 +1435,7 @@ static void MarkNewDefinitions(RESOURCE_DATA *select)
         }
     }
 }
-static void WriteDefinitionSet(FILE *outputFile, SYM *definitions, BOOL weed)
+static void WriteDefinitionSet(FILE* outputFile, SYM* definitions, BOOL weed)
 {
     while (definitions)
     {
@@ -1447,7 +1443,7 @@ static void WriteDefinitionSet(FILE *outputFile, SYM *definitions, BOOL weed)
         {
             char buf[2048];
             int i;
-            DEFSTRUCT *d = (DEFSTRUCT *)definitions->value.s;
+            DEFSTRUCT* d = (DEFSTRUCT*)definitions->value.s;
             WriteCommentLines(outputFile, definitions->lines);
             fprintf(outputFile, "#define ");
             fprintf(outputFile, "%s", definitions->name);
@@ -1456,28 +1452,28 @@ static void WriteDefinitionSet(FILE *outputFile, SYM *definitions, BOOL weed)
                 fputc('(', outputFile);
                 for (i = 0; i < d->argcount; i++)
                 {
-                    StringWToA(buf,d->args[i],wcslen(d->args[i]));
+                    StringWToA(buf, d->args[i], wcslen(d->args[i]));
                     fprintf(outputFile, "%s", buf);
-                    if (i +1 < d->argcount)
+                    if (i + 1 < d->argcount)
                         fprintf(outputFile, ", ");
                 }
                 fputc(')', outputFile);
             }
             fputc(' ', outputFile);
-            StringWToA(buf, d->string,wcslen(d->string));
+            StringWToA(buf, d->string, wcslen(d->string));
             fprintf(outputFile, "%s", buf);
             fputc('\n', outputFile);
         }
         definitions = definitions->xref;
     }
 }
-static void WriteDefines(FILE *outputFile, RESOURCE_DATA *select)
+static void WriteDefines(FILE* outputFile, RESOURCE_DATA* select)
 {
-    SYM *definitions;
+    SYM* definitions;
     fprintf(outputFile, "#ifdef __IDE_RC_INVOKED\n");
     fprintf(outputFile, "#define __NEXT_CONTROL_ID\t%d\n", select->nextControlId);
     fprintf(outputFile, "#define __NEXT_MENU_ID\t\t%d\n", select->nextMenuId);
-    fprintf(outputFile, "#define __NEXT_RESOURCE_ID\t%d\n", select->nextResourceId);    
+    fprintf(outputFile, "#define __NEXT_RESOURCE_ID\t%d\n", select->nextResourceId);
     fprintf(outputFile, "#define __NEXT_STRING_ID\t%d\n", select->nextStringId);
     fprintf(outputFile, "#endif\n");
     definitions = select->newDefinitions;
@@ -1490,10 +1486,10 @@ static void WriteDefines(FILE *outputFile, RESOURCE_DATA *select)
     WriteDefinitionSet(outputFile, select->headerDefinitions, FALSE);
     WriteDefinitionSet(outputFile, select->newDefinitions, TRUE);
 }
-void WriteResources(char *fileName, RESOURCE_DATA *select)
+void WriteResources(char* fileName, RESOURCE_DATA* select)
 {
-    RESOURCE *res = select->resources;
-    if (setjmp(errjump)) 
+    RESOURCE* res = select->resources;
+    if (setjmp(errjump))
         return;
     while (res)
     {
@@ -1509,7 +1505,7 @@ void WriteResources(char *fileName, RESOURCE_DATA *select)
     if (res)
 #endif
     {
-        FILE *fil = DoOpen(fileName,"w");
+        FILE* fil = DoOpen(fileName, "w");
         if (!fil)
             fatal("Could not write file");
         for (res = select->resources; res; res = res->next)
@@ -1520,12 +1516,11 @@ void WriteResources(char *fileName, RESOURCE_DATA *select)
         fclose(fil);
         if (select->resourceIdFile)
         {
-            fil = DoOpen(select->resourceIdFile,"w");
+            fil = DoOpen(select->resourceIdFile, "w");
             if (!fil)
                 fatal("Could not write file");
             WriteDefines(fil, select);
             fclose(fil);
-            
         }
     }
 }

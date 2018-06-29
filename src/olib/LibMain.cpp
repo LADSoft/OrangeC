@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "ObjTypes.h"
@@ -34,7 +34,7 @@
 #include "LibMain.h"
 #include <iostream>
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     LibMain librarian;
     return librarian.Run(argc, argv);
@@ -45,19 +45,20 @@ CmdSwitchParser LibMain::SwitchParser;
 CmdSwitchBool LibMain::caseSensitiveSwitch(SwitchParser, 'c', true);
 CmdSwitchOutput LibMain::OutputFile(SwitchParser, 'o', ".a");
 CmdSwitchFile LibMain::File(SwitchParser, '@');
-const char *LibMain::usageText = "[options] libfile [+ files] [- files] [* files]\n"
-            "\n"
-            "/c-            Case insensitive library\n"
-            "/oxxx          Set output file name\n"
-            "/V, --version  Show version and date\n"
-            "/!, --nologo   No logo\n"
-            "@xxx           Read commands from file\n"
-            "\n"
-            "Time: " __TIME__ "  Date: " __DATE__;
+const char* LibMain::usageText =
+    "[options] libfile [+ files] [- files] [* files]\n"
+    "\n"
+    "/c-            Case insensitive library\n"
+    "/oxxx          Set output file name\n"
+    "/V, --version  Show version and date\n"
+    "/!, --nologo   No logo\n"
+    "@xxx           Read commands from file\n"
+    "\n"
+    "Time: " __TIME__ "  Date: " __DATE__;
 
-void LibMain::AddFile(LibManager &librarian, const char *arg)
+void LibMain::AddFile(LibManager& librarian, const char* arg)
 {
-    const char *p = arg;
+    const char* p = arg;
     if (p[0] == '+')
     {
         if (p[1] == '-')
@@ -92,7 +93,7 @@ void LibMain::AddFile(LibManager &librarian, const char *arg)
     if (*p)
     {
         std::string name = p;
-        switch(mode)
+        switch (mode)
         {
             case ADD:
                 modified = true;
@@ -114,7 +115,7 @@ void LibMain::AddFile(LibManager &librarian, const char *arg)
         }
     }
 }
-int LibMain::Run(int argc, char **argv)
+int LibMain::Run(int argc, char** argv)
 {
     Utils::banner(argv[0]);
     Utils::SetEnvironmentToPathParent("ORANGEC");
@@ -131,7 +132,7 @@ int LibMain::Run(int argc, char **argv)
     {
         Utils::usage(argv[0], usageText);
     }
-    int fileCount = argc -1 + File.GetCount() + !!OutputFile.GetValue().size();
+    int fileCount = argc - 1 + File.GetCount() + !!OutputFile.GetValue().size();
     if (fileCount < 2)
     {
         Utils::usage(argv[0], usageText);
@@ -140,15 +141,15 @@ int LibMain::Run(int argc, char **argv)
     // ar-like behavior for autoconf support
     if (!strcmp(argv[1], "cru"))
     {
-         mode = REPLACE;
-        memcpy(argv+1, argv+2, (argc-1) * sizeof(char *));
+        mode = REPLACE;
+        memcpy(argv + 1, argv + 2, (argc - 1) * sizeof(char*));
         --argc;
     }
     ObjString outputFile = OutputFile.GetValue();
     if (!outputFile.size())
     {
-       outputFile = argv[1];
-        memcpy(argv+1, argv+2, (argc-1) * sizeof(char *));
+        outputFile = argv[1];
+        memcpy(argv + 1, argv + 2, (argc - 1) * sizeof(char*));
         --argc;
     }
     // setup
@@ -163,7 +164,7 @@ int LibMain::Run(int argc, char **argv)
         if (ext != ".l" && ext != ".a" && ext != ".lib")
             outputFile += ".l";
     }
-    
+
     LibManager librarian(outputFile, caseSensitiveSwitch.GetValue());
     if (librarian.IsOpen())
         if (!librarian.LoadLibrary())
@@ -171,7 +172,7 @@ int LibMain::Run(int argc, char **argv)
             std::cout << outputFile.c_str() << " is not a library" << std::endl;
             return 1;
         }
-    for (int i= 1; i < argc; i++)
+    for (int i = 1; i < argc; i++)
         AddFile(librarian, argv[i]);
     for (int i = 1; i < File.GetCount(); i++)
         AddFile(librarian, File.GetValue()[i]);
@@ -186,16 +187,16 @@ int LibMain::Run(int argc, char **argv)
     if (modified)
         switch (librarian.SaveLibrary())
         {
-             case LibManager::CANNOT_CREATE:
+            case LibManager::CANNOT_CREATE:
                 std::cout << "Cannot open library file for 'write' access" << std::endl;
                 return 1;
-             case LibManager::CANNOT_WRITE:
+            case LibManager::CANNOT_WRITE:
                 std::cout << "Error while writing library file" << std::endl;
                 return 1;
-             case LibManager::CANNOT_READ:
+            case LibManager::CANNOT_READ:
                 std::cout << "Error while reading input files" << std::endl;
                 return 1;
-             default:
+            default:
                 break;
         }
     return 0;

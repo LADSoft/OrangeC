@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #define STRICT
@@ -70,17 +70,17 @@ DOCK_STR debugDocks[MAX_DOCK], releaseDocks[MAX_DOCK];
 int debugDockCount, releaseDockCount;
 HWND debugfreeWindows[100], releasefreeWindows[100];
 int debugfreeWindowCount, releasefreeWindowCount;
-HWND handles [MAX_HANDLES];
+HWND handles[MAX_HANDLES];
 RECT oldFrame;
 
 static HBITMAP dockCenterBmp, dockLeftBmp, dockRightBmp, dockTopBmp, dockBottomBmp;
-static char *szDockRectClassName = "xccDockRect";
-static char *szDockHighlightRectClassName = "xccDockHighlightRectRect";
+static char* szDockRectClassName = "xccDockRect";
+static char* szDockHighlightRectClassName = "xccDockHighlightRectRect";
 int freeWindowCount;
 int dockCount;
 static HWND lastWindowUnderCursor;
-static HWND *freeWindows;
-static DOCK_STR *docks;
+static HWND* freeWindows;
+static DOCK_STR* docks;
 static int dockSelected;
 static HWND left;
 static HWND right;
@@ -93,80 +93,77 @@ static POINT pt, pt2;
 
 typedef HWND CreateFunc(void);
 typedef void RegisterFunc(HINSTANCE);
-typedef struct 
+typedef struct
 {
-    int CTL_ID; // or zero for not a control;
+    int CTL_ID;  // or zero for not a control;
     int defaultDock;
-    CreateFunc *cfunc;
-    RegisterFunc *rfunc;
-    HWND *cFunc;
-    
+    CreateFunc* cfunc;
+    RegisterFunc* rfunc;
+    HWND* cFunc;
+
 } WINDOW_STR;
 
 static int frameCount = 0;
 static int framePos = 0;
 static HWND frames[100];
 
-static WINDOW_STR windowDeclarations[MAX_HANDLES] =
-{
-    { 0, UNDOCKABLE, NULL, RegisterXeditWindow },
-    { 0, UNDOCKABLE, NULL, RegisterextTreeWindow },
-    { 0, UNDOCKABLE, NULL, RegisterControlWindow },
-    { 0, UNDOCKABLE, NULL, RegisterFrameWindow },
-    { 0, UNDOCKABLE, NULL, RegisterToolBarWindow },
-    { 0, UNDOCKABLE, NULL, RegisterLsTabWindow },
-    { 0, UNDOCKABLE, NULL, RegisterTTIPWindow },
-    { 0, UNDOCKABLE, NULL, RegisterHistoryComboWindow },
-    { 0, UNDOCKABLE, NULL, RegisterPropWindows },
-    { 0, UNDOCKABLE, NULL, RegisterImageWindows },    
+static WINDOW_STR windowDeclarations[MAX_HANDLES] = {
+    {0, UNDOCKABLE, NULL, RegisterXeditWindow},
+    {0, UNDOCKABLE, NULL, RegisterextTreeWindow},
+    {0, UNDOCKABLE, NULL, RegisterControlWindow},
+    {0, UNDOCKABLE, NULL, RegisterFrameWindow},
+    {0, UNDOCKABLE, NULL, RegisterToolBarWindow},
+    {0, UNDOCKABLE, NULL, RegisterLsTabWindow},
+    {0, UNDOCKABLE, NULL, RegisterTTIPWindow},
+    {0, UNDOCKABLE, NULL, RegisterHistoryComboWindow},
+    {0, UNDOCKABLE, NULL, RegisterPropWindows},
+    {0, UNDOCKABLE, NULL, RegisterImageWindows},
 
-    { 0, UNDOCKABLE, NULL, RegisterDrawWindow },
-    { 0, UNDOCKABLE, NULL, RegisterASMWindow },
-    { 0, UNDOCKABLE, NULL, RegisterDlgDrawWindow },
-    { 0, UNDOCKABLE, NULL, RegisterAcceleratorDrawWindow },
-    { 0, UNDOCKABLE, NULL, RegisterImageDrawWindow },
-    { 0, UNDOCKABLE, NULL, RegisterMenuDrawWindow },
-    { 0, UNDOCKABLE, NULL, RegisterVersionDrawWindow },
-    { 0, UNDOCKABLE, NULL, RegisterStringTableDrawWindow },
-    { 0, UNDOCKABLE, NULL, RegisterRCDataDrawWindow },
-    { 0, UNDOCKABLE, NULL, RegisterJumpListWindow },
+    {0, UNDOCKABLE, NULL, RegisterDrawWindow},
+    {0, UNDOCKABLE, NULL, RegisterASMWindow},
+    {0, UNDOCKABLE, NULL, RegisterDlgDrawWindow},
+    {0, UNDOCKABLE, NULL, RegisterAcceleratorDrawWindow},
+    {0, UNDOCKABLE, NULL, RegisterImageDrawWindow},
+    {0, UNDOCKABLE, NULL, RegisterMenuDrawWindow},
+    {0, UNDOCKABLE, NULL, RegisterVersionDrawWindow},
+    {0, UNDOCKABLE, NULL, RegisterStringTableDrawWindow},
+    {0, UNDOCKABLE, NULL, RegisterRCDataDrawWindow},
+    {0, UNDOCKABLE, NULL, RegisterJumpListWindow},
 
-    
-    { DID_PROJWND, CLIENT | LEFT | DOCKABLE_INITIAL | DOCKABLE_DEBUG | DOCKABLE_EDIT, CreateProjectWindow, RegisterProjectWindow },
-    { DID_RESWND, CLIENT | LEFT | DOCKABLE_INITIAL | DOCKABLE_EDIT, CreateResourceWindow, RegisterResourceWindow },
-    { DID_REGWND, CLIENT | RIGHT | DOCKABLE_DEBUG, CreateRegisterWindow, RegisterRegisterWindow },
-    { DID_PROPSWND, CLIENT | RIGHT | DOCKABLE_INITIAL | DOCKABLE_EDIT, CreatePropsWindow, RegisterPropsWindow },
-    { DID_CTLTBWND, CLIENT | RIGHT | DOCKABLE_EDIT, CreateCtlTbWindow, RegisterCtlTbWindow },
-    { DID_ERRWND, BOTTOM, CreateErrorWindow, RegisterErrorWindow },
-    { DID_INFOWND, BOTTOM | DOCKABLE_INITIAL | DOCKABLE_DEBUG | DOCKABLE_EDIT, CreateInfoWindow, RegisterInfoWindow },
-    { DID_FINDWND, BOTTOM | DOCKABLE_INITIAL | DOCKABLE_DEBUG | DOCKABLE_EDIT, CreateFind1Window, RegisterFindWindow },
-    { DID_FINDWND+1, BOTTOM | 1 | DOCKABLE_DEBUG | DOCKABLE_EDIT, CreateFind2Window, RegisterFindWindow },
-    { DID_WATCHWND, BOTTOM | DOCKABLE_DEBUG | DOCKABLE_INITIAL, CreateWatch1Window, RegisterWatchWindow },
-    { DID_WATCHWND+1, BOTTOM | 1| DOCKABLE_DEBUG, CreateWatch2Window, RegisterWatchWindow },
-    { DID_WATCHWND+2, TOP | DOCKABLE_DEBUG, CreateWatch3Window, RegisterWatchWindow },
-    { DID_WATCHWND+3, TOP | 1 | DOCKABLE_DEBUG, CreateWatch4Window, RegisterWatchWindow },
-    { DID_BROWSEWND, BOTTOM | 1 | DOCKABLE_EDIT, CreateBrowseWindow, RegisterBrowseWindow },
-    { DID_LOCALSWND, BOTTOM | 1 | DOCKABLE_DEBUG, CreateLocalsWindow, RegisterWatchWindow },
-    { DID_STACKWND, BOTTOM | 1 | DOCKABLE_DEBUG | DOCKABLE_INITIAL, CreateStackWindow, RegisterStackWindow },
-    { DID_THREADWND, BOTTOM | 1 | DOCKABLE_DEBUG, CreateThreadWindow, RegisterThreadWindow },
-    { DID_MEMWND, BOTTOM | 1 | DOCKABLE_DEBUG, CreateMem1Window, RegisterMemWindow },
-    { DID_MEMWND+1, BOTTOM | 0 | DOCKABLE_DEBUG, CreateMem2Window, RegisterMemWindow },
-    { DID_MEMWND+2, TOP | 1 | DOCKABLE_DEBUG, CreateMem3Window, RegisterMemWindow },
-    { DID_MEMWND+3, TOP | 0 | DOCKABLE_DEBUG, CreateMem4Window, RegisterMemWindow },
-    { DID_BREAKWND, BOTTOM | DOCKABLE_DEBUG, CreateBreakWindow, RegisterBreakWindow },
+    {DID_PROJWND, CLIENT | LEFT | DOCKABLE_INITIAL | DOCKABLE_DEBUG | DOCKABLE_EDIT, CreateProjectWindow, RegisterProjectWindow},
+    {DID_RESWND, CLIENT | LEFT | DOCKABLE_INITIAL | DOCKABLE_EDIT, CreateResourceWindow, RegisterResourceWindow},
+    {DID_REGWND, CLIENT | RIGHT | DOCKABLE_DEBUG, CreateRegisterWindow, RegisterRegisterWindow},
+    {DID_PROPSWND, CLIENT | RIGHT | DOCKABLE_INITIAL | DOCKABLE_EDIT, CreatePropsWindow, RegisterPropsWindow},
+    {DID_CTLTBWND, CLIENT | RIGHT | DOCKABLE_EDIT, CreateCtlTbWindow, RegisterCtlTbWindow},
+    {DID_ERRWND, BOTTOM, CreateErrorWindow, RegisterErrorWindow},
+    {DID_INFOWND, BOTTOM | DOCKABLE_INITIAL | DOCKABLE_DEBUG | DOCKABLE_EDIT, CreateInfoWindow, RegisterInfoWindow},
+    {DID_FINDWND, BOTTOM | DOCKABLE_INITIAL | DOCKABLE_DEBUG | DOCKABLE_EDIT, CreateFind1Window, RegisterFindWindow},
+    {DID_FINDWND + 1, BOTTOM | 1 | DOCKABLE_DEBUG | DOCKABLE_EDIT, CreateFind2Window, RegisterFindWindow},
+    {DID_WATCHWND, BOTTOM | DOCKABLE_DEBUG | DOCKABLE_INITIAL, CreateWatch1Window, RegisterWatchWindow},
+    {DID_WATCHWND + 1, BOTTOM | 1 | DOCKABLE_DEBUG, CreateWatch2Window, RegisterWatchWindow},
+    {DID_WATCHWND + 2, TOP | DOCKABLE_DEBUG, CreateWatch3Window, RegisterWatchWindow},
+    {DID_WATCHWND + 3, TOP | 1 | DOCKABLE_DEBUG, CreateWatch4Window, RegisterWatchWindow},
+    {DID_BROWSEWND, BOTTOM | 1 | DOCKABLE_EDIT, CreateBrowseWindow, RegisterBrowseWindow},
+    {DID_LOCALSWND, BOTTOM | 1 | DOCKABLE_DEBUG, CreateLocalsWindow, RegisterWatchWindow},
+    {DID_STACKWND, BOTTOM | 1 | DOCKABLE_DEBUG | DOCKABLE_INITIAL, CreateStackWindow, RegisterStackWindow},
+    {DID_THREADWND, BOTTOM | 1 | DOCKABLE_DEBUG, CreateThreadWindow, RegisterThreadWindow},
+    {DID_MEMWND, BOTTOM | 1 | DOCKABLE_DEBUG, CreateMem1Window, RegisterMemWindow},
+    {DID_MEMWND + 1, BOTTOM | 0 | DOCKABLE_DEBUG, CreateMem2Window, RegisterMemWindow},
+    {DID_MEMWND + 2, TOP | 1 | DOCKABLE_DEBUG, CreateMem3Window, RegisterMemWindow},
+    {DID_MEMWND + 3, TOP | 0 | DOCKABLE_DEBUG, CreateMem4Window, RegisterMemWindow},
+    {DID_BREAKWND, BOTTOM | DOCKABLE_DEBUG, CreateBreakWindow, RegisterBreakWindow},
 };
-void GetFrameWindowRect(RECT *r)
+void GetFrameWindowRect(RECT* r)
 {
     GetWindowRect(hwndFrame, r);
-    r->top += GetSystemMetrics(SM_CYCAPTION) + GetSystemMetrics(SM_CYMENU) +
-        GetSystemMetrics(SM_CYFRAME);
+    r->top += GetSystemMetrics(SM_CYCAPTION) + GetSystemMetrics(SM_CYMENU) + GetSystemMetrics(SM_CYFRAME);
     r->bottom -= GetSystemMetrics(SM_CYFRAME);
     r->left += GetSystemMetrics(SM_CXFRAME);
     r->right -= GetSystemMetrics(SM_CXFRAME);
 
     r->bottom -= sbheight;
 }
-void GetRelativeRect(HWND parent, HWND self, RECT *r)
+void GetRelativeRect(HWND parent, HWND self, RECT* r)
 {
     POINT pt;
     GetWindowRect(self, r);
@@ -181,19 +178,17 @@ void GetRelativeRect(HWND parent, HWND self, RECT *r)
 void RegisterAllWindows(void)
 {
     int i;
-    for (i=0; i < sizeof(windowDeclarations)/sizeof(windowDeclarations[0]); i++)
+    for (i = 0; i < sizeof(windowDeclarations) / sizeof(windowDeclarations[0]); i++)
         windowDeclarations[i].rfunc(hInstance);
 }
 void CreateAllWindows(void)
-{    int i;
-    for (i=0; i < sizeof(windowDeclarations)/sizeof(windowDeclarations[0]); i++)
+{
+    int i;
+    for (i = 0; i < sizeof(windowDeclarations) / sizeof(windowDeclarations[0]); i++)
         if (windowDeclarations[i].cfunc)
             handles[windowDeclarations[i].CTL_ID] = windowDeclarations[i].cfunc();
 }
-HWND GetWindowHandle(int wndId)
-{
-    return handles[wndId];
-}
+HWND GetWindowHandle(int wndId) { return handles[wndId]; }
 LRESULT PostDIDMessage(int DID, unsigned iMessage, WPARAM wParam, LPARAM lParam)
 {
     return PostMessage(GetWindowHandle(DID), iMessage, wParam, lParam);
@@ -205,11 +200,10 @@ LRESULT SendDIDMessage(int DID, unsigned iMessage, WPARAM wParam, LPARAM lParam)
 static void Show(int flag)
 {
     int i;
-    for (i=0; i < dockCount; i++)
+    for (i = 0; i < dockCount; i++)
         ShowWindow(docks[i].hwnd, flag ? SW_SHOW : SW_HIDE);
-    for (i=0; i < freeWindowCount; i++)
+    for (i = 0; i < freeWindowCount; i++)
         ShowWindow(freeWindows[i], flag ? SW_SHOW : SW_HIDE);
-         
 }
 void Select(int flag)
 {
@@ -265,7 +259,7 @@ void SelectDebugWindows(BOOL dbgMode)
 int GetWindowIndex(int DID)
 {
     int i;
-    for (i=0; i < dockCount; i++)
+    for (i = 0; i < dockCount; i++)
     {
         if (docks[i].hwnd)
         {
@@ -286,7 +280,7 @@ void RemoveWindow(int DID)
 static void PositionWindow(int z)
 {
     int i, j;
-    int start , end, bottom;
+    int start, end, bottom;
     RECT frame;
     RECT toolBar;
     RECT statusBar;
@@ -296,26 +290,29 @@ static void PositionWindow(int z)
     frame.top += toolBar.bottom - toolBar.top;
     frame.bottom -= statusBar.bottom - statusBar.top;
     // this isn't going to be general, it is only in support of the expected layout
-    switch(docks[z].ctl & POSITION_MASK)
+    switch (docks[z].ctl & POSITION_MASK)
     {
         case LEFT:
             docks[z].r.left = 0;
             docks[z].r.right = DEFAULT_WINDOW_WIDTH * EXTRA;
-            if (z != dockCount -1 && (docks[z+1].ctl & POSITION_MASK) == LEFT)
+            if (z != dockCount - 1 && (docks[z + 1].ctl & POSITION_MASK) == LEFT)
             {
-                for (i=z+1; i < dockCount && (docks[i].ctl & POSITION_MASK) == LEFT; i++)
+                for (i = z + 1; i < dockCount && (docks[i].ctl & POSITION_MASK) == LEFT; i++)
                 {
                     docks[i].r.left += DEFAULT_WINDOW_WIDTH * EXTRA;
                     docks[i].r.right += DEFAULT_WINDOW_WIDTH * EXTRA;
                 }
-                docks[z].r.top = docks[z+1].r.top;
-                docks[z].r.bottom = docks[z+1].r.bottom;
-           }
-            else 
+                docks[z].r.top = docks[z + 1].r.top;
+                docks[z].r.bottom = docks[z + 1].r.bottom;
+            }
+            else
             {
-                for (i=0; i < dockCount && (docks[i].ctl & POSITION_MASK) != BOTTOM; i++);
-                for (j=0; j < dockCount && (docks[j].ctl & POSITION_MASK) != TOP; j++);
-                for (;j < dockCount-1 && (docks[j+1].ctl & POSITION_MASK) == TOP; j++);
+                for (i = 0; i < dockCount && (docks[i].ctl & POSITION_MASK) != BOTTOM; i++)
+                    ;
+                for (j = 0; j < dockCount && (docks[j].ctl & POSITION_MASK) != TOP; j++)
+                    ;
+                for (; j < dockCount - 1 && (docks[j + 1].ctl & POSITION_MASK) == TOP; j++)
+                    ;
                 if (i == dockCount)
                     docks[z].r.bottom = frame.bottom * EXTRA;
                 else
@@ -329,21 +326,24 @@ static void PositionWindow(int z)
         case RIGHT:
             docks[z].r.left = (frame.right - DEFAULT_WINDOW_WIDTH) * EXTRA;
             docks[z].r.right = frame.right * EXTRA;
-            if (z && (docks[z-1].ctl & POSITION_MASK) == RIGHT)
+            if (z && (docks[z - 1].ctl & POSITION_MASK) == RIGHT)
             {
-                for (i=z-1; i >= 0 && (docks[i].ctl & POSITION_MASK) == RIGHT; i--)
+                for (i = z - 1; i >= 0 && (docks[i].ctl & POSITION_MASK) == RIGHT; i--)
                 {
                     docks[i].r.left -= DEFAULT_WINDOW_WIDTH * EXTRA;
                     docks[i].r.right -= DEFAULT_WINDOW_WIDTH * EXTRA;
                 }
-                docks[z].r.top = docks[z-1].r.top;
-                docks[z].r.bottom = docks[z-1].r.bottom;
+                docks[z].r.top = docks[z - 1].r.top;
+                docks[z].r.bottom = docks[z - 1].r.bottom;
             }
-            else 
+            else
             {
-                for (i=0; i < dockCount && (docks[i].ctl & POSITION_MASK) != BOTTOM; i++);
-                for (j=0; j < dockCount && (docks[j].ctl & POSITION_MASK) != TOP; j++);
-                for (;j < dockCount-1 && (docks[j+1].ctl & POSITION_MASK) == TOP; j++);
+                for (i = 0; i < dockCount && (docks[i].ctl & POSITION_MASK) != BOTTOM; i++)
+                    ;
+                for (j = 0; j < dockCount && (docks[j].ctl & POSITION_MASK) != TOP; j++)
+                    ;
+                for (; j < dockCount - 1 && (docks[j + 1].ctl & POSITION_MASK) == TOP; j++)
+                    ;
                 if (i == dockCount)
                     docks[z].r.bottom = frame.bottom * EXTRA;
                 else
@@ -355,12 +355,12 @@ static void PositionWindow(int z)
             }
             break;
         case BOTTOM:
-        case TOP:    
+        case TOP:
             start = end = z;
-            
-            if (start & (docks[start-1].ctl & POSITION_MASK) == (docks[start].ctl & POSITION_MASK))
+
+            if (start & (docks[start - 1].ctl & POSITION_MASK) == (docks[start].ctl & POSITION_MASK))
             {
-                docks[start].r = docks[start-1].r;
+                docks[start].r = docks[start - 1].r;
                 bottom = -1;
             }
             else
@@ -376,33 +376,33 @@ static void PositionWindow(int z)
                     docks[start].r.top = docks[start].r.bottom - DEFAULT_WINDOW_HEIGHT * EXTRA;
                 }
             }
-            while (start && (docks[start-1].ctl & POSITION_MASK) == (docks[start].ctl & POSITION_MASK)
-                   && docks[start-1].r.top == docks[start].r.top && docks[start-1].r.bottom ==docks[start].r.bottom)
+            while (start && (docks[start - 1].ctl & POSITION_MASK) == (docks[start].ctl & POSITION_MASK) &&
+                   docks[start - 1].r.top == docks[start].r.top && docks[start - 1].r.bottom == docks[start].r.bottom)
                 start--;
-            while (end < dockCount-1 && (docks[end+1].ctl & POSITION_MASK) == (docks[start].ctl & POSITION_MASK)
-                   && docks[end+1].r.top == docks[start].r.top && docks[end+1].r.bottom ==docks[start].r.bottom)
+            while (end < dockCount - 1 && (docks[end + 1].ctl & POSITION_MASK) == (docks[start].ctl & POSITION_MASK) &&
+                   docks[end + 1].r.top == docks[start].r.top && docks[end + 1].r.bottom == docks[start].r.bottom)
                 end++;
-            for (j=start; j < end+1; j++)
+            for (j = start; j < end + 1; j++)
             {
-                
+
                 if (j == start)
-                    docks[j].r.left =  frame.left * EXTRA;
+                    docks[j].r.left = frame.left * EXTRA;
                 else
-                    docks[j].r.left = docks[j-1].r.right;
+                    docks[j].r.left = docks[j - 1].r.right;
                 if (j == end)
                 {
                     docks[j].r.right = frame.right * EXTRA;
                 }
                 else
                 {
-                    docks[j].r.right = docks[j].r.left  + (frame.right - frame.left) * EXTRA /(end+1 - start);
+                    docks[j].r.right = docks[j].r.left + (frame.right - frame.left) * EXTRA / (end + 1 - start);
                 }
             }
             if (start == end && bottom != -1)
             {
                 if ((docks[start].ctl & POSITION_MASK) == TOP)
                 {
-                    for (i=0; i < dockCount; i++)
+                    for (i = 0; i < dockCount; i++)
                     {
                         if (i != z && docks[i].r.top == bottom)
                         {
@@ -412,7 +412,7 @@ static void PositionWindow(int z)
                 }
                 else
                 {
-                    for (i=0; i < dockCount; i++)
+                    for (i = 0; i < dockCount; i++)
                     {
                         if (i != z && docks[i].r.bottom == bottom)
                         {
@@ -429,10 +429,10 @@ static BOOL InContact(int start, int end, int start2, int end2)
     int middle = (start2 + end2) / 2;
     return (start < middle && end > middle);
 }
-static void ExtendLeft(DOCK_STR *dock, int w)
+static void ExtendLeft(DOCK_STR* dock, int w)
 {
     int j;
-    for (j=0; j < dockCount; j++)
+    for (j = 0; j < dockCount; j++)
     {
         if (InContact(dock->r.top, dock->r.bottom, docks[j].r.top, docks[j].r.bottom))
             if (docks[j].r.left == dock->r.right)
@@ -448,7 +448,7 @@ static void ExtendLeft(DOCK_STR *dock, int w)
                         }
                         break;
                     case LEFT:
-                        ExtendLeft(docks + j , w);
+                        ExtendLeft(docks + j, w);
                         docks[j].r.left -= w;
                         docks[j].r.right -= w;
                         break;
@@ -456,10 +456,10 @@ static void ExtendLeft(DOCK_STR *dock, int w)
             }
     }
 }
-static void ExtendRight(DOCK_STR *dock, int w)
+static void ExtendRight(DOCK_STR* dock, int w)
 {
     int j;
-    for (j=0; j < dockCount; j++)
+    for (j = 0; j < dockCount; j++)
     {
         if (InContact(dock->r.top, dock->r.bottom, docks[j].r.top, docks[j].r.bottom))
             if (docks[j].r.right == dock->r.left)
@@ -475,7 +475,7 @@ static void ExtendRight(DOCK_STR *dock, int w)
                         }
                         break;
                     case RIGHT:
-                        ExtendRight(docks + j , w);
+                        ExtendRight(docks + j, w);
                         docks[j].r.left += w;
                         docks[j].r.right += w;
                         break;
@@ -483,10 +483,10 @@ static void ExtendRight(DOCK_STR *dock, int w)
             }
     }
 }
-static void ExtendTop(DOCK_STR *dock, int w)
+static void ExtendTop(DOCK_STR* dock, int w)
 {
     int j;
-    for (j=0; j < dockCount; j++)
+    for (j = 0; j < dockCount; j++)
     {
         if (InContact(dock->r.left, dock->r.right, docks[j].r.left, docks[j].r.right))
             if (docks[j].r.top == dock->r.bottom)
@@ -502,7 +502,7 @@ static void ExtendTop(DOCK_STR *dock, int w)
                         }
                         break;
                     case TOP:
-                        ExtendTop(docks + j , w);
+                        ExtendTop(docks + j, w);
                         docks[j].r.top -= w;
                         docks[j].r.bottom -= w;
                         break;
@@ -510,10 +510,10 @@ static void ExtendTop(DOCK_STR *dock, int w)
             }
     }
 }
-static void ExtendBottom(DOCK_STR *dock, int w)
+static void ExtendBottom(DOCK_STR* dock, int w)
 {
     int j;
-    for (j=0; j < dockCount; j++)
+    for (j = 0; j < dockCount; j++)
     {
         if (InContact(dock->r.left, dock->r.right, docks[j].r.left, docks[j].r.right))
             if (docks[j].r.bottom == dock->r.top)
@@ -529,7 +529,7 @@ static void ExtendBottom(DOCK_STR *dock, int w)
                         }
                         break;
                     case BOTTOM:
-                        ExtendBottom(docks + j , w);
+                        ExtendBottom(docks + j, w);
                         docks[j].r.top += w;
                         docks[j].r.bottom += w;
                         break;
@@ -537,19 +537,21 @@ static void ExtendBottom(DOCK_STR *dock, int w)
             }
     }
 }
-static void ExtendSurroundingWindows(DOCK_STR *dock, HWND hwnd)
+static void ExtendSurroundingWindows(DOCK_STR* dock, HWND hwnd)
 {
     int i;
-    for (i=0; i < dockCount; i++)
+    for (i = 0; i < dockCount; i++)
         docks[i].ctl &= ~CHANGED;
-    switch(dock->ctl & POSITION_MASK)
+    switch (dock->ctl & POSITION_MASK)
     {
         case LEFT:
-            if (dock != docks && dock[-1].r.bottom == dock->r.top && dock[-1].r.left == dock->r.left && dock[-1].r.right == dock->r.right)
+            if (dock != docks && dock[-1].r.bottom == dock->r.top && dock[-1].r.left == dock->r.left &&
+                dock[-1].r.right == dock->r.right)
             {
                 dock[-1].r.bottom = dock->r.bottom;
             }
-            else if (dock != docks + dockCount -1 && dock->r.bottom == dock[1].r.top && dock[1].r.left == dock->r.left && dock[1].r.right == dock->r.right)
+            else if (dock != docks + dockCount - 1 && dock->r.bottom == dock[1].r.top && dock[1].r.left == dock->r.left &&
+                     dock[1].r.right == dock->r.right)
             {
                 dock[1].r.top = dock->r.top;
             }
@@ -559,11 +561,13 @@ static void ExtendSurroundingWindows(DOCK_STR *dock, HWND hwnd)
             }
             break;
         case RIGHT:
-            if (dock != docks && dock[-1].r.bottom == dock->r.top && dock[-1].r.left == dock->r.left && dock[-1].r.right == dock->r.right)
+            if (dock != docks && dock[-1].r.bottom == dock->r.top && dock[-1].r.left == dock->r.left &&
+                dock[-1].r.right == dock->r.right)
             {
                 dock[-1].r.bottom = dock->r.bottom;
             }
-            else if (dock != docks + dockCount -1 && dock->r.bottom == dock[1].r.top && dock[1].r.left == dock->r.left && dock[1].r.right == dock->r.right)
+            else if (dock != docks + dockCount - 1 && dock->r.bottom == dock[1].r.top && dock[1].r.left == dock->r.left &&
+                     dock[1].r.right == dock->r.right)
             {
                 dock[1].r.top = dock->r.top;
             }
@@ -573,11 +577,13 @@ static void ExtendSurroundingWindows(DOCK_STR *dock, HWND hwnd)
             }
             break;
         case TOP:
-            if (dock != docks && dock[-1].r.right == dock->r.left && dock[-1].r.top == dock->r.top && dock[-1].r.bottom == dock->r.bottom)
+            if (dock != docks && dock[-1].r.right == dock->r.left && dock[-1].r.top == dock->r.top &&
+                dock[-1].r.bottom == dock->r.bottom)
             {
                 dock[-1].r.right = dock->r.right;
             }
-            else if (dock != docks + dockCount -1 && dock->r.right == dock[1].r.left && dock[1].r.top == dock->r.top && dock[1].r.bottom == dock->r.bottom)
+            else if (dock != docks + dockCount - 1 && dock->r.right == dock[1].r.left && dock[1].r.top == dock->r.top &&
+                     dock[1].r.bottom == dock->r.bottom)
             {
                 dock[1].r.left = dock->r.left;
             }
@@ -587,25 +593,27 @@ static void ExtendSurroundingWindows(DOCK_STR *dock, HWND hwnd)
             }
             break;
         case BOTTOM:
-            if (dock != docks && dock[-1].r.right == dock->r.left && dock[-1].r.top == dock->r.top && dock[-1].r.bottom == dock->r.bottom)
+            if (dock != docks && dock[-1].r.right == dock->r.left && dock[-1].r.top == dock->r.top &&
+                dock[-1].r.bottom == dock->r.bottom)
             {
                 dock[-1].r.right = dock->r.right;
             }
-            else if (dock != docks + dockCount -1 && dock->r.right == dock[1].r.left && dock[1].r.top == dock->r.top && dock[1].r.bottom == dock->r.bottom)
+            else if (dock != docks + dockCount - 1 && dock->r.right == dock[1].r.left && dock[1].r.top == dock->r.top &&
+                     dock[1].r.bottom == dock->r.bottom)
             {
                 dock[1].r.left = dock->r.left;
             }
             else
             {
                 ExtendBottom(dock, dock->r.bottom - dock->r.top);
-            }                
+            }
             break;
     }
 }
 BOOL SelectWindowInternal(int DID, BOOL select)
 {
     BOOL rv = FALSE;
-    WINDOW_STR *p = NULL;
+    WINDOW_STR* p = NULL;
     int i = GetWindowIndex(DID);
     int count = 0;
     if (i >= 0)
@@ -613,12 +621,12 @@ BOOL SelectWindowInternal(int DID, BOOL select)
         SendMessage(docks[i].hwnd, TW_SELECT, select, (LPARAM)handles[DID]);
         return FALSE;
     }
-    for (i=0; i < freeWindowCount; i++)
+    for (i = 0; i < freeWindowCount; i++)
     {
         if (SendMessage(freeWindows[i], TW_HAS, select, (LPARAM)handles[DID]))
             return FALSE;
     }
-    for (i=0; i < sizeof(windowDeclarations)/sizeof(windowDeclarations[0]); i++)
+    for (i = 0; i < sizeof(windowDeclarations) / sizeof(windowDeclarations[0]); i++)
     {
         if (windowDeclarations[i].CTL_ID == DID)
         {
@@ -628,8 +636,8 @@ BOOL SelectWindowInternal(int DID, BOOL select)
     }
     if (p)
     {
-        int n1=-1, n2=-1, z = -1;
-        for (i=0; i < dockCount; i++)
+        int n1 = -1, n2 = -1, z = -1;
+        for (i = 0; i < dockCount; i++)
         {
             if ((p->defaultDock & POSITION_MASK) == (docks[i].ctl & POSITION_MASK))
             {
@@ -641,21 +649,21 @@ BOOL SelectWindowInternal(int DID, BOOL select)
                 {
                     n2 = i;
                 }
-            } 
+            }
         }
         if (p->defaultDock & CLIENT)
         {
             if (n2 != -1)
                 z = n2;
             else if (n1 != -1)
-                z = n1;   
+                z = n1;
         }
         else
         {
             if (n1 != -1)
                 z = n1;
             else if (n2 != -1)
-                z = n2;   
+                z = n2;
         }
         if (z == -1)
         {
@@ -663,30 +671,30 @@ BOOL SelectWindowInternal(int DID, BOOL select)
         }
         if ((p->defaultDock & COUNT_MASK))
         {
-            if (z < dockCount - 1 && (docks[z].ctl & POSITION_MASK) == (docks[z+1].ctl & POSITION_MASK))
+            if (z < dockCount - 1 && (docks[z].ctl & POSITION_MASK) == (docks[z + 1].ctl & POSITION_MASK))
                 switch (docks[z].ctl & POSITION_MASK)
                 {
                     case TOP:
                     case BOTTOM:
-                        if (docks[z].r.top == docks[z+1].r.top)
-                            if (docks[z].r.bottom = docks[z+1].r.bottom)
+                        if (docks[z].r.top == docks[z + 1].r.top)
+                            if (docks[z].r.bottom = docks[z + 1].r.bottom)
                             {
-                                SendMessage(docks[z+1].hwnd, TW_ADD, select, (LPARAM)handles[DID]);
+                                SendMessage(docks[z + 1].hwnd, TW_ADD, select, (LPARAM)handles[DID]);
                                 return rv;
                             }
                         break;
                     case LEFT:
                     case RIGHT:
-                        if (docks[z].r.right == docks[z+1].r.right)
-                            if (docks[z].r.left = docks[z+1].r.left)
+                        if (docks[z].r.right == docks[z + 1].r.right)
+                            if (docks[z].r.left = docks[z + 1].r.left)
                             {
-                                SendMessage(docks[z+1].hwnd, TW_ADD, select, (LPARAM)handles[DID]);
+                                SendMessage(docks[z + 1].hwnd, TW_ADD, select, (LPARAM)handles[DID]);
                                 return rv;
                             }
                         break;
                 }
-             if (z != dockCount)
-                 z++;
+            if (z != dockCount)
+                z++;
         }
         else if (z < dockCount && !(docks[z].ctl & COUNT_MASK))
         {
@@ -694,7 +702,7 @@ BOOL SelectWindowInternal(int DID, BOOL select)
             return rv;
         }
         if (z < dockCount)
-            memmove(&docks[z+1], & docks[z], sizeof(DOCK_STR) * (dockCount - z - 1));
+            memmove(&docks[z + 1], &docks[z], sizeof(DOCK_STR) * (dockCount - z - 1));
         dockCount++;
         docks[z].ctl = p->defaultDock;
         docks[z].hwnd = CreateControlWindow(hwndFrame);
@@ -710,7 +718,7 @@ void SelectWindow(int DID)
     if (SelectWindowInternal(DID, TRUE))
         ResizeLayout(NULL);
 }
-static void PutWindow(HWND hwnd, RECT *r)
+static void PutWindow(HWND hwnd, RECT* r)
 {
     InvalidateRect(hwnd, 0, 0);
     MoveWindow(hwnd, r->left, r->top, r->right - r->left, r->bottom - r->top, 1);
@@ -729,71 +737,74 @@ static void CreateFrame(int left, int right, int top, int bottom)
         framePos++;
     }
     ShowWindow(hwnd, SW_SHOW);
-    MoveWindow(hwnd, left, top, right-left, bottom-top, 1);
+    MoveWindow(hwnd, left, top, right - left, bottom - top, 1);
 }
 static void PutFrames(void)
 {
-    
+
     int i;
-    for (i=0; i < framePos; i++)
+    for (i = 0; i < framePos; i++)
         ShowWindow(frames[i], SW_HIDE);
     framePos = 0;
-    for (i=0; i < dockCount; i++)
+    for (i = 0; i < dockCount; i++)
     {
         switch (docks[i].ctl & POSITION_MASK)
         {
             case LEFT:
                 docks[i].display.right -= FRAMEWIDTH;
-                CreateFrame(docks[i].display.right, docks[i].display.right + FRAMEWIDTH, docks[i].display.top, docks[i].display.bottom);
-                if (i && (docks[i-1].ctl & POSITION_MASK) == (docks[i].ctl & POSITION_MASK)
-                        && docks[i-1].r.bottom == docks[i].r.top 
-                        && docks[i-1].r.left == docks[i].r.left 
-                        && docks[i-1].r.right == docks[i].r.right)
+                CreateFrame(docks[i].display.right, docks[i].display.right + FRAMEWIDTH, docks[i].display.top,
+                            docks[i].display.bottom);
+                if (i && (docks[i - 1].ctl & POSITION_MASK) == (docks[i].ctl & POSITION_MASK) &&
+                    docks[i - 1].r.bottom == docks[i].r.top && docks[i - 1].r.left == docks[i].r.left &&
+                    docks[i - 1].r.right == docks[i].r.right)
                 {
                     docks[i].display.top += FRAMEWIDTH;
-                    CreateFrame(docks[i].display.left, docks[i].display.right, docks[i].display.top-FRAMEWIDTH, docks[i].display.top);
+                    CreateFrame(docks[i].display.left, docks[i].display.right, docks[i].display.top - FRAMEWIDTH,
+                                docks[i].display.top);
                 }
                 break;
             case RIGHT:
                 docks[i].display.left += FRAMEWIDTH;
-                CreateFrame(docks[i].display.left-FRAMEWIDTH, docks[i].display.left, docks[i].display.top, docks[i].display.bottom);
-                if (i && (docks[i-1].ctl & POSITION_MASK) == (docks[i].ctl & POSITION_MASK)
-                      && docks[i-1].r.bottom == docks[i].r.top
-                      && docks[i-1].r.left == docks[i].r.left 
-                      && docks[i-1].r.right == docks[i].r.right)
+                CreateFrame(docks[i].display.left - FRAMEWIDTH, docks[i].display.left, docks[i].display.top,
+                            docks[i].display.bottom);
+                if (i && (docks[i - 1].ctl & POSITION_MASK) == (docks[i].ctl & POSITION_MASK) &&
+                    docks[i - 1].r.bottom == docks[i].r.top && docks[i - 1].r.left == docks[i].r.left &&
+                    docks[i - 1].r.right == docks[i].r.right)
                 {
                     docks[i].display.top += FRAMEWIDTH;
-                    CreateFrame(docks[i].display.left, docks[i].display.right, docks[i].display.top-FRAMEWIDTH, docks[i].display.top);
+                    CreateFrame(docks[i].display.left, docks[i].display.right, docks[i].display.top - FRAMEWIDTH,
+                                docks[i].display.top);
                 }
                 break;
             case TOP:
                 docks[i].display.bottom -= FRAMEWIDTH;
-                CreateFrame(docks[i].display.left, docks[i].display.right, docks[i].display.bottom, docks[i].display.bottom+FRAMEWIDTH);
-                if (i && (docks[i-1].ctl & POSITION_MASK) == (docks[i].ctl & POSITION_MASK)
-                     && docks[i-1].r.right == docks[i].r.left
-                      && docks[i-1].r.top == docks[i].r.top
-                       && docks[i-1].r.bottom == docks[i].r.bottom)
+                CreateFrame(docks[i].display.left, docks[i].display.right, docks[i].display.bottom,
+                            docks[i].display.bottom + FRAMEWIDTH);
+                if (i && (docks[i - 1].ctl & POSITION_MASK) == (docks[i].ctl & POSITION_MASK) &&
+                    docks[i - 1].r.right == docks[i].r.left && docks[i - 1].r.top == docks[i].r.top &&
+                    docks[i - 1].r.bottom == docks[i].r.bottom)
                 {
                     docks[i].display.left += FRAMEWIDTH;
-                    CreateFrame(docks[i].display.left-FRAMEWIDTH, docks[i].display.left, docks[i].display.top, docks[i].display.bottom);
+                    CreateFrame(docks[i].display.left - FRAMEWIDTH, docks[i].display.left, docks[i].display.top,
+                                docks[i].display.bottom);
                 }
                 break;
             case BOTTOM:
                 docks[i].display.top += FRAMEWIDTH;
-                CreateFrame(docks[i].display.left, docks[i].display.right, docks[i].display.top-FRAMEWIDTH, docks[i].display.top);
-                if (i && (docks[i-1].ctl & POSITION_MASK) == (docks[i].ctl & POSITION_MASK)
-                     && docks[i-1].r.right == docks[i].r.left
-                      && docks[i-1].r.top == docks[i].r.top
-                       && docks[i-1].r.bottom == docks[i].r.bottom)
+                CreateFrame(docks[i].display.left, docks[i].display.right, docks[i].display.top - FRAMEWIDTH, docks[i].display.top);
+                if (i && (docks[i - 1].ctl & POSITION_MASK) == (docks[i].ctl & POSITION_MASK) &&
+                    docks[i - 1].r.right == docks[i].r.left && docks[i - 1].r.top == docks[i].r.top &&
+                    docks[i - 1].r.bottom == docks[i].r.bottom)
                 {
                     docks[i].display.left += FRAMEWIDTH;
-                    CreateFrame(docks[i].display.left-FRAMEWIDTH, docks[i].display.left, docks[i].display.top, docks[i].display.bottom);
+                    CreateFrame(docks[i].display.left - FRAMEWIDTH, docks[i].display.left, docks[i].display.top,
+                                docks[i].display.bottom);
                 }
                 break;
         }
     }
 }
-void GetSpanWidth(DOCK_STR *one, RECT *r)
+void GetSpanWidth(DOCK_STR* one, RECT* r)
 {
     DOCK_STR *start = one, *end = one;
     while (start > docks)
@@ -802,9 +813,9 @@ void GetSpanWidth(DOCK_STR *one, RECT *r)
             break;
         if (start[-1].r.bottom != -1 && start[-1].r.bottom != one->r.bottom)
             break;
-        start--; 
+        start--;
     }
-    while (end < docks + dockCount-1)
+    while (end < docks + dockCount - 1)
     {
         if ((end[1].ctl & POSITION_MASK) != (one->ctl & POSITION_MASK))
             break;
@@ -815,7 +826,7 @@ void GetSpanWidth(DOCK_STR *one, RECT *r)
     r->left = start->display.left;
     r->right = end->display.right;
 }
-void GetSpanHeight(DOCK_STR *one, RECT *r)
+void GetSpanHeight(DOCK_STR* one, RECT* r)
 {
     DOCK_STR *start = one, *end = one;
     while (start > docks)
@@ -824,9 +835,9 @@ void GetSpanHeight(DOCK_STR *one, RECT *r)
             break;
         if (start[-1].r.right != -1 && start[-1].r.right != one->r.right)
             break;
-        start--; 
+        start--;
     }
-    while (end < docks + dockCount-1)
+    while (end < docks + dockCount - 1)
     {
         if ((end[1].ctl & POSITION_MASK) != (one->ctl & POSITION_MASK))
             break;
@@ -846,28 +857,28 @@ void ResizeDockWindow(HWND hwnd, int ox, int oy, int x, int y)
     int i;
     BOOL changed = FALSE;
     BOOL readjust = TRUE;
-    DOCK_STR *one=NULL, *two=NULL;
+    DOCK_STR *one = NULL, *two = NULL;
     GetCursorPos(&curs);
     MapWindowPoints(HWND_DESKTOP, hwndFrame, &curs, 1);
-    GetWindowRect(hwnd,&r);
+    GetWindowRect(hwnd, &r);
     GetWindowRect(hwndClient, &client);
     GetClientRect(hwndToolbarBar, &toolBar);
-    MapWindowPoints(HWND_DESKTOP,hwndFrame, (LPPOINT)&r,2);
+    MapWindowPoints(HWND_DESKTOP, hwndFrame, (LPPOINT)&r, 2);
     client.top -= toolBar.bottom - toolBar.top;
     client.bottom -= toolBar.bottom - toolBar.top;
     if (r.bottom - r.top > r.right - r.left)
     {
         // vert
-        int dx = (x - ox)* EXTRA;
+        int dx = (x - ox) * EXTRA;
         int right;
-        for (i=0; i < dockCount; i++)
+        for (i = 0; i < dockCount; i++)
             if (docks[i].display.top <= curs.y && docks[i].display.bottom > curs.y)
             {
                 if (docks[i].display.left == r.right)
                 {
                     two = &docks[i];
                 }
-                else if (docks[i].display.right == r.left) 
+                else if (docks[i].display.right == r.left)
                 {
                     one = &docks[i];
                 }
@@ -907,22 +918,22 @@ void ResizeDockWindow(HWND hwnd, int ox, int oy, int x, int y)
         {
             if (readjust)
             {
-                
+
                 GetSpanHeight(one, &r);
             }
-            for (i=0; i < dockCount; i++)
+            for (i = 0; i < dockCount; i++)
             {
                 if (docks[i].display.top >= r.top && docks[i].display.bottom <= r.bottom)
                 {
                     if (docks[i].r.right == right)
                     {
                         if (docks[i].r.right - docks[i].r.left + dx < 100 * EXTRA)
-                            return;   
+                            return;
                     }
                     else if (docks[i].r.left == right)
                     {
                         if (docks[i].r.right - docks[i].r.left - dx < 100 * EXTRA)
-                            return;   
+                            return;
                     }
                 }
             }
@@ -932,7 +943,7 @@ void ResizeDockWindow(HWND hwnd, int ox, int oy, int x, int y)
             if (right == client.left)
                 if (client.right - client.left - dx < 100 * EXTRA)
                     return;
-            for (i=0; i < dockCount; i++)
+            for (i = 0; i < dockCount; i++)
             {
                 if (docks[i].display.top >= r.top && docks[i].display.bottom <= r.bottom)
                 {
@@ -952,17 +963,17 @@ void ResizeDockWindow(HWND hwnd, int ox, int oy, int x, int y)
     }
     else
     {
-        //horiz
-        int dy = (y - oy)* EXTRA;
+        // horiz
+        int dy = (y - oy) * EXTRA;
         int bottom;
-        for (i=0; i < dockCount; i++)
+        for (i = 0; i < dockCount; i++)
             if (docks[i].display.left <= curs.x && docks[i].display.right > curs.x)
             {
                 if (docks[i].display.top == r.bottom)
                 {
                     two = &docks[i];
                 }
-                else if (docks[i].display.bottom == r.top) 
+                else if (docks[i].display.bottom == r.top)
                 {
                     one = &docks[i];
                 }
@@ -1004,19 +1015,19 @@ void ResizeDockWindow(HWND hwnd, int ox, int oy, int x, int y)
             {
                 GetSpanWidth(one, &r);
             }
-            for (i=0; i < dockCount; i++)
+            for (i = 0; i < dockCount; i++)
             {
                 if (docks[i].display.left >= r.left && docks[i].display.right <= r.right)
                 {
                     if (docks[i].r.bottom == bottom)
                     {
                         if (docks[i].r.bottom - docks[i].r.top + dy < 100 * EXTRA)
-                            return;   
+                            return;
                     }
                     else if (docks[i].r.top == bottom)
                     {
                         if (docks[i].r.bottom - docks[i].r.top - dy < 100 * EXTRA)
-                            return;   
+                            return;
                     }
                 }
             }
@@ -1026,7 +1037,7 @@ void ResizeDockWindow(HWND hwnd, int ox, int oy, int x, int y)
             if (bottom == client.top)
                 if (client.bottom - client.top - dy < 100 * EXTRA)
                     return;
-            for (i=0; i < dockCount; i++)
+            for (i = 0; i < dockCount; i++)
             {
                 if (docks[i].display.left >= r.left && docks[i].display.right <= r.right)
                 {
@@ -1052,38 +1063,39 @@ void ResizeDockWindow(HWND hwnd, int ox, int oy, int x, int y)
 static void ResizeAllWindows(int dx, int dy)
 {
     int i;
-    DOCK_STR *arr[100];
+    DOCK_STR* arr[100];
     int count;
     if (dx)
-    {        
-        for (i=0; i < dockCount; i++)
+    {
+        for (i = 0; i < dockCount; i++)
             if ((docks[i].ctl & POSITION_MASK) == RIGHT)
             {
                 docks[i].r.right += dx;
                 docks[i].r.left += dx;
             }
-         count = 0;
-         for (i=0; i < dockCount;)
-         {
+        count = 0;
+        for (i = 0; i < dockCount;)
+        {
             if ((docks[i].ctl & POSITION_MASK) == TOP || (docks[i].ctl & POSITION_MASK) == BOTTOM)
             {
                 int j;
                 int len = 0, len2;
-                while (!count || (arr[count-1]->ctl & POSITION_MASK) == (docks[i].ctl & POSITION_MASK) && arr[count-1]->r.top == docks[i].r.top && arr[count-1]->r.bottom == docks[i].r.bottom)
+                while (!count || (arr[count - 1]->ctl & POSITION_MASK) == (docks[i].ctl & POSITION_MASK) &&
+                                     arr[count - 1]->r.top == docks[i].r.top && arr[count - 1]->r.bottom == docks[i].r.bottom)
                 {
                     arr[count++] = &docks[i++];
                 }
-                len = arr[count-1]->r.right - arr[0]->r.left;
+                len = arr[count - 1]->r.right - arr[0]->r.left;
                 len2 = len + dx;
                 len /= EXTRA;
                 len2 /= EXTRA;
                 if (len == 0)
                     len = len2;
-                for (j=0; j < count; j++)
+                for (j = 0; j < count; j++)
                 {
                     if (j)
-                        arr[j]->r.left = arr[j-1]->r.right;
-                    if (j != count-1)
+                        arr[j]->r.left = arr[j - 1]->r.right;
+                    if (j != count - 1)
                     {
                         int w = arr[j]->r.right - arr[j]->r.left;
                         w = w * len2 / len;
@@ -1100,38 +1112,39 @@ static void ResizeAllWindows(int dx, int dy)
             {
                 i++;
             }
-         }
+        }
     }
     if (dy)
     {
-        for (i=0; i < dockCount; i++)
+        for (i = 0; i < dockCount; i++)
             if ((docks[i].ctl & POSITION_MASK) == BOTTOM)
             {
                 docks[i].r.bottom += dy;
                 docks[i].r.top += dy;
             }
-         count = 0;
-         for (i=0; i < dockCount;)
-         {
+        count = 0;
+        for (i = 0; i < dockCount;)
+        {
             if ((docks[i].ctl & POSITION_MASK) == LEFT || (docks[i].ctl & POSITION_MASK) == RIGHT)
             {
                 int j;
                 int len = 0, len2;
-                while (!count || (arr[count-1]->ctl & POSITION_MASK) == (docks[i].ctl & POSITION_MASK) && arr[count-1]->r.left == docks[i].r.left && arr[count-1]->r.right == docks[i].r.right)
+                while (!count || (arr[count - 1]->ctl & POSITION_MASK) == (docks[i].ctl & POSITION_MASK) &&
+                                     arr[count - 1]->r.left == docks[i].r.left && arr[count - 1]->r.right == docks[i].r.right)
                 {
                     arr[count++] = &docks[i++];
                 }
-                len = arr[count-1]->r.bottom - arr[0]->r.top;
+                len = arr[count - 1]->r.bottom - arr[0]->r.top;
                 len2 = len + dy;
                 len /= EXTRA;
                 len2 /= EXTRA;
                 if (len == 0)
                     len = len2;
-                for (j=0; j < count; j++)
+                for (j = 0; j < count; j++)
                 {
                     if (j)
-                        arr[j]->r.top = arr[j-1]->r.bottom;
-                    if (j != count-1)
+                        arr[j]->r.top = arr[j - 1]->r.bottom;
+                    if (j != count - 1)
                     {
                         int h = arr[j]->r.bottom - arr[j]->r.top;
                         h = h * len2 / len;
@@ -1148,36 +1161,36 @@ static void ResizeAllWindows(int dx, int dy)
             {
                 i++;
             }
-         }
+        }
     }
 }
-static void ReTopAllWindows(RECT *old, RECT *new)
+static void ReTopAllWindows(RECT* old, RECT* new)
 {
     if (old->top != new->top)
     {
         int i;
-        for (i=0; i < debugDockCount; i++)
+        for (i = 0; i < debugDockCount; i++)
         {
             if (debugDocks[i].r.top == old->top * EXTRA)
-                debugDocks[i].r.top = new->top * EXTRA;
+                debugDocks[i].r.top = new->top* EXTRA;
         }
-        for (i=0; i < releaseDockCount; i++)
+        for (i = 0; i < releaseDockCount; i++)
         {
             if (releaseDocks[i].r.top == old->top * EXTRA)
-                releaseDocks[i].r.top = new->top * EXTRA;
+                releaseDocks[i].r.top = new->top* EXTRA;
         }
     }
 }
-void ResizeLayout(RECT *rect)
+void ResizeLayout(RECT* rect)
 {
     int jmpListHeight = 0;
     int i;
-	RECT client;
+    RECT client;
     RECT frame;
     RECT statusBar;
     RECT toolBar;
     BOOL settop = FALSE;
-    int deltax=INT_MAX, deltay=INT_MAX;
+    int deltax = INT_MAX, deltay = INT_MAX;
     GetClientRect(hwndStatus, &statusBar);
     sbheight = statusBar.bottom - statusBar.top;
     if (rect)
@@ -1196,31 +1209,31 @@ void ResizeLayout(RECT *rect)
         oldFrame = frame;
     deltax = frame.right - oldFrame.right;
     deltay = frame.bottom - oldFrame.bottom;
-    ResizeAllWindows(deltax*EXTRA, deltay*EXTRA);
+    ResizeAllWindows(deltax * EXTRA, deltay * EXTRA);
     ReTopAllWindows(&oldFrame, &frame);
     oldFrame = frame;
-    for (i=0; i < dockCount; i++)
+    for (i = 0; i < dockCount; i++)
     {
         switch (docks[i].ctl & POSITION_MASK)
         {
             case LEFT:
-                if (docks[i].r.right > client.left*EXTRA)
-                    client.left = docks[i].r.right/EXTRA;
+                if (docks[i].r.right > client.left * EXTRA)
+                    client.left = docks[i].r.right / EXTRA;
                 break;
             case RIGHT:
-                if (docks[i].r.left < client.right*EXTRA)
-                    client.right = docks[i].r.left/EXTRA;
+                if (docks[i].r.left < client.right * EXTRA)
+                    client.right = docks[i].r.left / EXTRA;
                 break;
             case TOP:
-                if (docks[i].r.bottom > client.top*EXTRA)
+                if (docks[i].r.bottom > client.top * EXTRA)
                 {
                     settop = TRUE;
-                    client.top = docks[i].r.bottom/EXTRA;
+                    client.top = docks[i].r.bottom / EXTRA;
                 }
                 break;
             case BOTTOM:
-                if (docks[i].r.top < client.bottom*EXTRA)
-                    client.bottom = docks[i].r.top/EXTRA;
+                if (docks[i].r.top < client.bottom * EXTRA)
+                    client.bottom = docks[i].r.top / EXTRA;
                 break;
         }
     }
@@ -1228,7 +1241,7 @@ void ResizeLayout(RECT *rect)
         ShowWindow(hwndSrcTab, SW_SHOW);
     if (!settop)
         client.top += toolBar.bottom - toolBar.top;
-    client.top += 28; // src tab height;
+    client.top += 28;  // src tab height;
     if (PropGetBool(NULL, "BROWSE_INFORMATION") && !defaultWorkArea)
     {
         if (!IsWindowVisible(hwndJumpList))
@@ -1240,7 +1253,7 @@ void ResizeLayout(RECT *rect)
             ShowWindow(hwndJumpList, SW_HIDE);
     }
     if (IsWindowVisible(hwndJumpList))
-   {
+    {
         client.top += jmpListHeight = SendMessage(hwndJumpList, WM_GETHEIGHT, 0, 0);
     }
     PutWindow(hwndClient, &client);
@@ -1255,7 +1268,7 @@ void ResizeLayout(RECT *rect)
 
     PutWindow(hwndSrcTab, &client);
 
-    for (i=0; i < dockCount; i++)
+    for (i = 0; i < dockCount; i++)
     {
         docks[i].display = docks[i].r;
         docks[i].display.left /= EXTRA;
@@ -1264,7 +1277,7 @@ void ResizeLayout(RECT *rect)
         docks[i].display.bottom /= EXTRA;
     }
     PutFrames();
-    for (i=0; i < dockCount; i++)
+    for (i = 0; i < dockCount; i++)
     {
         PutWindow(docks[i].hwnd, &docks[i].display);
     }
@@ -1278,9 +1291,9 @@ static HWND WindowUnderCursor(HWND hwnd)
     int i;
     GetCursorPos(&p);
     MapWindowPoints(HWND_DESKTOP, hwndFrame, &p, 1);
-    for (i=0; i < dockCount; i++)
+    for (i = 0; i < dockCount; i++)
     {
-//        GetWindowRect(docks[i].hwnd, &r);
+        //        GetWindowRect(docks[i].hwnd, &r);
         if (PtInRect(&docks[i].display, p))
             return docks[i].hwnd;
     }
@@ -1298,8 +1311,7 @@ static HWND WindowUnderCursor(HWND hwnd)
 #define DBOTTOM 4
 #define DCENTER 5
 #define DCLIENT 0x100
-static LRESULT CALLBACK DockRectWndProc(HWND hwnd, UINT iMessage,
-    WPARAM wParam, LPARAM lParam)
+static LRESULT CALLBACK DockRectWndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
     HDC dc;
     HBRUSH brush;
@@ -1334,9 +1346,8 @@ static LRESULT CALLBACK DockRectWndProc(HWND hwnd, UINT iMessage,
                 SelectObject(dcMem, dockCenterBmp);
                 BitBlt(dc, 34, 34, 32, 32, dcMem, 0, 0, SRCCOPY);
                 DeleteDC(dcMem);
-                
             }
-            else 
+            else
             {
                 HBITMAP bmp;
                 switch (GetWindowLong(hwnd, GWL_USERDATA))
@@ -1361,7 +1372,7 @@ static LRESULT CALLBACK DockRectWndProc(HWND hwnd, UINT iMessage,
                     HDC dcMem = CreateCompatibleDC(dc);
                     GetClientRect(hwnd, &r);
                     SelectObject(dcMem, bmp);
-                    n = (r.right - r.left - 32)/2;
+                    n = (r.right - r.left - 32) / 2;
                     BitBlt(dc, n, n, 32, 32, dcMem, 0, 0, SRCCOPY);
                     DeleteDC(dcMem);
                 }
@@ -1373,8 +1384,7 @@ static LRESULT CALLBACK DockRectWndProc(HWND hwnd, UINT iMessage,
 }
 #define DOCKHIGHLIGHT_COLOR 0x663300
 
-static LRESULT CALLBACK DockHighlightRectWndProc(HWND hwnd, UINT iMessage,
-    WPARAM wParam, LPARAM lParam)
+static LRESULT CALLBACK DockHighlightRectWndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
     HBRUSH brush;
     HDC dc;
@@ -1416,8 +1426,8 @@ static int GetDockRectSelected(void)
     GetWindowRect(center, &r);
     if (PtInRect(&r, pt))
     {
-        int x = (pt.x - r.left-2)/32;
-        int y = (pt.y - r.top-2)/32;
+        int x = (pt.x - r.left - 2) / 32;
+        int y = (pt.y - r.top - 2) / 32;
         int z = (y << 8) + x;
         if (x < 0)
             x = 0;
@@ -1427,28 +1437,28 @@ static int GetDockRectSelected(void)
             y = 0;
         if (y > 2)
             y = 2;
-        switch( z)
+        switch (z)
         {
             case 1:
                 return DCLIENT + DTOP;
-                
+
             case 0x100:
                 return DCLIENT + DLEFT;
             case 0x101:
-                return DCLIENT + DCENTER; 
+                return DCLIENT + DCENTER;
             case 0x102:
                 return DCLIENT + DRIGHT;
             case 0x201:
                 return DCLIENT + DBOTTOM;
         }
     }
-    
+
     return 0;
 }
 static void Highlight(int n, BOOL select)
 {
     HWND hwnd;
-    POINT pt = {2,2};
+    POINT pt = {2, 2};
     HDC dc;
     HBRUSH oldBrush;
     HPEN oldPen;
@@ -1477,7 +1487,7 @@ static void Highlight(int n, BOOL select)
             hwnd = top;
             break;
         case DCLIENT + DBOTTOM:
-            pt.y += 32 + 32+2;
+            pt.y += 32 + 32 + 2;
             pt.x += 32;
             hwnd = center;
             break;
@@ -1490,7 +1500,7 @@ static void Highlight(int n, BOOL select)
             hwnd = center;
             break;
         default:
-            return;        
+            return;
     }
     dc = GetDC(hwnd);
     oldBrush = SelectObject(dc, GetStockObject(NULL_BRUSH));
@@ -1515,7 +1525,7 @@ static HWND CreateDockRect(int type)
         wc.cbWndExtra = 0;
         wc.hInstance = hInstance;
         wc.hIcon = LoadIcon(0, IDI_APPLICATION);
-        wc.hCursor = 0; 
+        wc.hCursor = 0;
         wc.hbrBackground = 0;
         wc.lpszMenuName = 0;
         wc.lpszClassName = szDockRectClassName;
@@ -1526,9 +1536,8 @@ static HWND CreateDockRect(int type)
         dockTopBmp = LoadBitmap(hInstance, "ID_DOCKTBMP");
         dockBottomBmp = LoadBitmap(hInstance, "ID_DOCKBBMP");
     }
-    return CreateWindowEx(WS_EX_LAYERED | WS_EX_NOACTIVATE, 
-                          szDockRectClassName, "", WS_CLIPSIBLINGS | WS_POPUP,
-                          0,0,center ? 32 * 3 + 4 : 36, center ? 32 * 3 + 4 : 36, hwndFrame, 0, hInstance, (void *)type);
+    return CreateWindowEx(WS_EX_LAYERED | WS_EX_NOACTIVATE, szDockRectClassName, "", WS_CLIPSIBLINGS | WS_POPUP, 0, 0,
+                          center ? 32 * 3 + 4 : 36, center ? 32 * 3 + 4 : 36, hwndFrame, 0, hInstance, (void*)type);
 }
 static HWND CreateDockHighlightRect(void)
 {
@@ -1547,15 +1556,14 @@ static HWND CreateDockHighlightRect(void)
         wc.cbWndExtra = 0;
         wc.hInstance = hInstance;
         wc.hIcon = LoadIcon(0, IDI_APPLICATION);
-        wc.hCursor = 0; 
+        wc.hCursor = 0;
         wc.hbrBackground = 0;
         wc.lpszMenuName = 0;
         wc.lpszClassName = szDockHighlightRectClassName;
         RegisterClass(&wc);
     }
-    return hwnd = CreateWindowEx(WS_EX_LAYERED | WS_EX_NOACTIVATE, 
-                          szDockHighlightRectClassName, "", WS_CLIPSIBLINGS | WS_POPUP,
-                          0,0,10, 10, hwndFrame, 0, hInstance,  NULL);
+    return hwnd = CreateWindowEx(WS_EX_LAYERED | WS_EX_NOACTIVATE, szDockHighlightRectClassName, "", WS_CLIPSIBLINGS | WS_POPUP, 0,
+                                 0, 10, 10, hwndFrame, 0, hInstance, NULL);
 }
 void drawSideBars(HWND hwnd, BOOL show)
 {
@@ -1568,7 +1576,7 @@ void drawSideBars(HWND hwnd, BOOL show)
         r.top += r1.bottom - r1.top;
         r.top += GetSystemMetrics(SM_CYCAPTION) + GetSystemMetrics(SM_CYMENU) + GetSystemMetrics(SM_CYFRAME);
         r.bottom -= GetSystemMetrics(SM_CYFRAME);
-        r.bottom -= r2.bottom-r2.top;
+        r.bottom -= r2.bottom - r2.top;
         r.left += GetSystemMetrics(SM_CXFRAME);
         r.right -= GetSystemMetrics(SM_CYFRAME);
         if (!left)
@@ -1578,10 +1586,11 @@ void drawSideBars(HWND hwnd, BOOL show)
             top = CreateDockRect(DTOP);
             bottom = CreateDockRect(DBOTTOM);
         }
-        SetWindowPos(left, HWND_TOPMOST, 5 + r.left, (r.bottom + r.top)/2 - 18, 36, 36, SWP_NOACTIVATE | SWP_SHOWWINDOW);
-        SetWindowPos(right, HWND_TOPMOST, r.right - 5 - 36, (r.bottom + r.top)/2 - 18, 36, 36, SWP_NOACTIVATE | SWP_SHOWWINDOW);
-        SetWindowPos(top, HWND_TOPMOST, (r.left + r.right)/2-18, r.top + 5, 36, 36, SWP_NOACTIVATE | SWP_SHOWWINDOW);
-        SetWindowPos(bottom, HWND_TOPMOST, (r.left + r.right)/2-18, (r.bottom - 5 - 36), 36, 36, SWP_NOACTIVATE | SWP_SHOWWINDOW);
+        SetWindowPos(left, HWND_TOPMOST, 5 + r.left, (r.bottom + r.top) / 2 - 18, 36, 36, SWP_NOACTIVATE | SWP_SHOWWINDOW);
+        SetWindowPos(right, HWND_TOPMOST, r.right - 5 - 36, (r.bottom + r.top) / 2 - 18, 36, 36, SWP_NOACTIVATE | SWP_SHOWWINDOW);
+        SetWindowPos(top, HWND_TOPMOST, (r.left + r.right) / 2 - 18, r.top + 5, 36, 36, SWP_NOACTIVATE | SWP_SHOWWINDOW);
+        SetWindowPos(bottom, HWND_TOPMOST, (r.left + r.right) / 2 - 18, (r.bottom - 5 - 36), 36, 36,
+                     SWP_NOACTIVATE | SWP_SHOWWINDOW);
     }
     else
     {
@@ -1596,11 +1605,12 @@ void drawCtl(HWND hwnd, BOOL show)
 {
     if (show)
     {
-        RECT r ;
+        RECT r;
         GetWindowRect(hwnd, &r);
         if (!center)
             center = CreateDockRect(DCENTER);
-        SetWindowPos(center, HWND_TOPMOST, (r.right + r.left)/2 - (32 * 3 + 4)/2, (r.bottom + r.top)/2 - (32 * 3 + 4) / 2, 32 * 3 + 4, 32 * 3 + 4, SWP_NOACTIVATE | SWP_SHOWWINDOW);
+        SetWindowPos(center, HWND_TOPMOST, (r.right + r.left) / 2 - (32 * 3 + 4) / 2, (r.bottom + r.top) / 2 - (32 * 3 + 4) / 2,
+                     32 * 3 + 4, 32 * 3 + 4, SWP_NOACTIVATE | SWP_SHOWWINDOW);
     }
     else
     {
@@ -1612,38 +1622,38 @@ void DockRemoveWindow(HWND hwnd)
 {
     int i;
     DestroyWindow(hwnd);
-    for (i=0; i < freeWindowCount; i++)
+    for (i = 0; i < freeWindowCount; i++)
     {
         if (freeWindows[i] == hwnd)
         {
-            memcpy(freeWindows + i, freeWindows + i + 1, (freeWindowCount -i -1) * sizeof(freeWindows[i]));
+            memcpy(freeWindows + i, freeWindows + i + 1, (freeWindowCount - i - 1) * sizeof(freeWindows[i]));
             freeWindowCount--;
             return;
         }
     }
-    for (i=0; i < dockCount; i++)
+    for (i = 0; i < dockCount; i++)
     {
         if (docks[i].hwnd == hwnd)
         {
             ExtendSurroundingWindows(docks + i, hwnd);
-            memcpy(docks + i, docks + i + 1, (dockCount -i -1) * sizeof(docks[i]));
+            memcpy(docks + i, docks + i + 1, (dockCount - i - 1) * sizeof(docks[i]));
             dockCount--;
             ResizeLayout(NULL);
             return;
         }
     }
 }
-static void GetNewDockRect(HWND hwnd, RECT *r, int selected)
+static void GetNewDockRect(HWND hwnd, RECT* r, int selected)
 {
     int ctl = 0;
     int i;
-//    int i = 0;
+    //    int i = 0;
     RECT frame;
     RECT toolBar;
     RECT statusBar;
     RECT client;
     int n;
-    for (i=0; i < dockCount; i++)
+    for (i = 0; i < dockCount; i++)
         if (docks[i].hwnd == hwnd)
         {
             ctl = docks[i].ctl;
@@ -1660,7 +1670,7 @@ static void GetNewDockRect(HWND hwnd, RECT *r, int selected)
     frame.bottom -= statusBar.bottom - statusBar.top;
     if (hwnd == hwndClient)
     {
-        int n = 28;//- FRAMEWIDTH;
+        int n = 28;  //- FRAMEWIDTH;
         if (IsWindowVisible(hwndJumpList))
         {
             n += SendMessage(hwndJumpList, WM_GETHEIGHT, 0, 0);
@@ -1673,28 +1683,28 @@ static void GetNewDockRect(HWND hwnd, RECT *r, int selected)
         {
             case LEFT:
                 r->right += FRAMEWIDTH;
-                if (i && (docks[i-1].ctl & POSITION_MASK) == LEFT && docks[i].r.left == docks[i-1].r.left)
+                if (i && (docks[i - 1].ctl & POSITION_MASK) == LEFT && docks[i].r.left == docks[i - 1].r.left)
                 {
                     r->top -= FRAMEWIDTH;
                 }
                 break;
             case RIGHT:
                 r->left -= FRAMEWIDTH;
-                if (i && (docks[i-1].ctl & POSITION_MASK) == RIGHT && docks[i].r.left == docks[i-1].r.left)
+                if (i && (docks[i - 1].ctl & POSITION_MASK) == RIGHT && docks[i].r.left == docks[i - 1].r.left)
                 {
                     r->top -= FRAMEWIDTH;
                 }
                 break;
             case TOP:
                 r->bottom += FRAMEWIDTH;
-                if (i && (docks[i-1].ctl & POSITION_MASK) == TOP && docks[i].r.top == docks[i-1].r.top)
+                if (i && (docks[i - 1].ctl & POSITION_MASK) == TOP && docks[i].r.top == docks[i - 1].r.top)
                 {
                     r->left -= FRAMEWIDTH;
                 }
                 break;
             case BOTTOM:
                 r->top -= FRAMEWIDTH;
-                if (i && (docks[i-1].ctl & POSITION_MASK) == BOTTOM && docks[i].r.top == docks[i-1].r.top)
+                if (i && (docks[i - 1].ctl & POSITION_MASK) == BOTTOM && docks[i].r.top == docks[i - 1].r.top)
                 {
                     r->left -= FRAMEWIDTH;
                 }
@@ -1711,7 +1721,7 @@ static void GetNewDockRect(HWND hwnd, RECT *r, int selected)
                 r->right = r->left + DEFAULT_WINDOW_WIDTH;
                 return;
             }
-            else if ((ctl &POSITION_MASK) == LEFT || (ctl & POSITION_MASK) == RIGHT)
+            else if ((ctl & POSITION_MASK) == LEFT || (ctl & POSITION_MASK) == RIGHT)
             {
                 GetSpanHeight(docks + i, r);
                 if ((ctl & POSITION_MASK) == RIGHT)
@@ -1720,7 +1730,7 @@ static void GetNewDockRect(HWND hwnd, RECT *r, int selected)
                     r->left -= n;
                     r->right -= n;
                 }
-            }    
+            }
             else
             {
                 r->right = r->left + DEFAULT_WINDOW_WIDTH;
@@ -1733,7 +1743,7 @@ static void GetNewDockRect(HWND hwnd, RECT *r, int selected)
                 r->left = r->right - DEFAULT_WINDOW_WIDTH;
                 return;
             }
-            else if ((ctl &POSITION_MASK) == LEFT || (ctl & POSITION_MASK) == RIGHT)
+            else if ((ctl & POSITION_MASK) == LEFT || (ctl & POSITION_MASK) == RIGHT)
             {
                 GetSpanHeight(docks + i, r);
                 if ((ctl & POSITION_MASK) == LEFT)
@@ -1742,7 +1752,7 @@ static void GetNewDockRect(HWND hwnd, RECT *r, int selected)
                     r->left += n;
                     r->right += n;
                 }
-            }    
+            }
             else
             {
                 r->left = r->right - DEFAULT_WINDOW_WIDTH;
@@ -1755,17 +1765,17 @@ static void GetNewDockRect(HWND hwnd, RECT *r, int selected)
                 r->bottom = r->top + DEFAULT_WINDOW_HEIGHT;
                 return;
             }
-            else if ((ctl &POSITION_MASK) == TOP || (ctl & POSITION_MASK) == BOTTOM)
+            else if ((ctl & POSITION_MASK) == TOP || (ctl & POSITION_MASK) == BOTTOM)
             {
                 GetSpanWidth(docks + i, r);
-                
+
                 if ((ctl & POSITION_MASK) == BOTTOM)
                 {
                     n = r->bottom - r->top;
                     r->top -= n;
                     r->bottom -= n;
                 }
-            }    
+            }
             else
             {
                 r->bottom = r->top + DEFAULT_WINDOW_HEIGHT;
@@ -1779,17 +1789,17 @@ static void GetNewDockRect(HWND hwnd, RECT *r, int selected)
                 r->top = r->bottom - DEFAULT_WINDOW_HEIGHT;
                 return;
             }
-            else if ((ctl &POSITION_MASK) == TOP || (ctl & POSITION_MASK) == BOTTOM)
+            else if ((ctl & POSITION_MASK) == TOP || (ctl & POSITION_MASK) == BOTTOM)
             {
                 GetSpanWidth(docks + i, r);
-                
+
                 if ((ctl & POSITION_MASK) == TOP)
                 {
                     n = r->bottom - r->top;
                     r->top += n;
                     r->bottom += n;
                 }
-            }    
+            }
             else
             {
                 r->top = r->bottom - DEFAULT_WINDOW_HEIGHT;
@@ -1801,7 +1811,7 @@ static void GetNewDockRect(HWND hwnd, RECT *r, int selected)
             r->bottom = frame.bottom;
             r->left = frame.left;
             r->right = r->left + DEFAULT_WINDOW_WIDTH;
-            for (i=0; i < dockCount; i++)
+            for (i = 0; i < dockCount; i++)
                 if ((docks[i].ctl & POSITION_MASK == LEFT) && docks[i].display.left == r->left)
                 {
                     r->left = docks[i].display.left;
@@ -1814,7 +1824,7 @@ static void GetNewDockRect(HWND hwnd, RECT *r, int selected)
             r->bottom = frame.bottom;
             r->right = frame.right;
             r->left = r->right - DEFAULT_WINDOW_WIDTH;
-            for (i=0; i < dockCount; i++)
+            for (i = 0; i < dockCount; i++)
                 if ((docks[i].ctl & POSITION_MASK == RIGHT) && docks[i].display.right == r->right)
                 {
                     r->left = docks[i].display.left;
@@ -1827,7 +1837,7 @@ static void GetNewDockRect(HWND hwnd, RECT *r, int selected)
             r->right = frame.right;
             r->top = frame.top;
             r->bottom = r->top + DEFAULT_WINDOW_HEIGHT;
-            for (i=0; i < dockCount; i++)
+            for (i = 0; i < dockCount; i++)
                 if ((docks[i].ctl & POSITION_MASK == TOP) && docks[i].display.top == r->top)
                 {
                     r->top = docks[i].display.top;
@@ -1840,7 +1850,7 @@ static void GetNewDockRect(HWND hwnd, RECT *r, int selected)
             r->right = frame.right;
             r->bottom = frame.bottom;
             r->top = r->bottom - DEFAULT_WINDOW_HEIGHT;
-            for (i=0; i < dockCount; i++)
+            for (i = 0; i < dockCount; i++)
                 if ((docks[i].ctl & POSITION_MASK == BOTTOM) && docks[i].display.bottom == r->bottom)
                 {
                     r->top = docks[i].display.top;
@@ -1855,14 +1865,15 @@ static void ReassignTopBottomLeft(int i, int w)
     int left, width;
     int oldleft, oldwidth;
     int start = i;
-    int end = i+1;
+    int end = i + 1;
     int last;
-    while (end < dockCount && (docks[i].ctl & POSITION_MASK) == (docks[end].ctl & POSITION_MASK) && docks[end].r.left == docks[end-1].r.right)
-        end ++ ;
+    while (end < dockCount && (docks[i].ctl & POSITION_MASK) == (docks[end].ctl & POSITION_MASK) &&
+           docks[end].r.left == docks[end - 1].r.right)
+        end++;
     oldleft = docks[start].r.left;
     left = oldleft + w;
-    oldwidth = docks[end-1].r.right - oldleft;
-    width = docks[end-1].r.right - left;
+    oldwidth = docks[end - 1].r.right - oldleft;
+    width = docks[end - 1].r.right - left;
     last = left;
     while (start < end)
     {
@@ -1872,10 +1883,10 @@ static void ReassignTopBottomLeft(int i, int w)
         start++;
     }
 }
-static void ConsiderNewLeft(int last, RECT *r, int w)
+static void ConsiderNewLeft(int last, RECT* r, int w)
 {
     int j;
-    for (j=0; j < dockCount; j++)
+    for (j = 0; j < dockCount; j++)
     {
         if (docks[j].r.left == r->left)
             if (InContact(r->top, r->bottom, docks[j].r.top, docks[j].r.bottom))
@@ -1892,7 +1903,7 @@ static void ConsiderNewLeft(int last, RECT *r, int w)
                             RECT r = docks[j].r;
                             r.left = r.right;
                             ConsiderNewLeft(j, &r, w);
-                            GetSpanHeight(&docks[j], & docks[j].r);
+                            GetSpanHeight(&docks[j], &docks[j].r);
                             docks[j].r.left += w;
                             docks[j].r.right += w;
                             docks[j].r.top *= EXTRA;
@@ -1910,18 +1921,18 @@ static void ConsiderNewLeft(int last, RECT *r, int w)
                 docks[j].r.bottom = r->top;
             }
     }
-    
 }
 static void ReassignTopBottomRight(int i, int w)
 {
     int right, width;
     int oldright, oldwidth;
-    int start = i+1;
+    int start = i + 1;
     int end = i;
     int last;
-    while (end > 0 && (docks[i].ctl & POSITION_MASK) == (docks[end-1].ctl & POSITION_MASK) && docks[end-1].r.right == docks[end].r.left)
-        end -- ;
-    oldright = docks[start-1].r.right;
+    while (end > 0 && (docks[i].ctl & POSITION_MASK) == (docks[end - 1].ctl & POSITION_MASK) &&
+           docks[end - 1].r.right == docks[end].r.left)
+        end--;
+    oldright = docks[start - 1].r.right;
     right = oldright - w;
     oldwidth = oldright - docks[end].r.left;
     width = right - docks[end].r.left;
@@ -1933,10 +1944,10 @@ static void ReassignTopBottomRight(int i, int w)
         last = docks[start].r.left;
     }
 }
-static void ConsiderNewRight(int last, RECT *r, int w)
+static void ConsiderNewRight(int last, RECT* r, int w)
 {
     int j;
-    for (j=0; j < dockCount; j++)
+    for (j = 0; j < dockCount; j++)
     {
         if (docks[j].r.right == r->right)
             if (InContact(r->top, r->bottom, docks[j].r.top, docks[j].r.bottom))
@@ -1945,7 +1956,7 @@ static void ConsiderNewRight(int last, RECT *r, int w)
                 {
                     case TOP:
                     case BOTTOM:
-                        ReassignTopBottomRight(j,w);
+                        ReassignTopBottomRight(j, w);
                         break;
                     case RIGHT:
                         if (j != last)
@@ -1953,7 +1964,7 @@ static void ConsiderNewRight(int last, RECT *r, int w)
                             RECT r = docks[j].r;
                             r.right = r.left;
                             ConsiderNewRight(j, &r, w);
-                            GetSpanHeight(&docks[j], & docks[j].r);
+                            GetSpanHeight(&docks[j], &docks[j].r);
                             docks[j].r.left -= w;
                             docks[j].r.right -= w;
                             docks[j].r.top *= EXTRA;
@@ -1977,14 +1988,15 @@ static void ReassignLeftRightTop(int i, int w)
     int top, height;
     int oldtop, oldheight;
     int start = i;
-    int end = i+1;
+    int end = i + 1;
     int last;
-    while (end < dockCount && (docks[i].ctl & POSITION_MASK) == (docks[end].ctl & POSITION_MASK) && docks[end].r.top == docks[end-1].r.bottom)
-        end ++ ;
+    while (end < dockCount && (docks[i].ctl & POSITION_MASK) == (docks[end].ctl & POSITION_MASK) &&
+           docks[end].r.top == docks[end - 1].r.bottom)
+        end++;
     oldtop = docks[start].r.top;
     top = oldtop + w;
-    oldheight = docks[end-1].r.bottom - oldtop;
-    height = docks[end-1].r.bottom - top;
+    oldheight = docks[end - 1].r.bottom - oldtop;
+    height = docks[end - 1].r.bottom - top;
     last = top;
     while (start < end)
     {
@@ -1994,12 +2006,12 @@ static void ReassignLeftRightTop(int i, int w)
         start++;
     }
 }
-static void ConsiderNewTop(int last, RECT *r, int h)
+static void ConsiderNewTop(int last, RECT* r, int h)
 {
     int j;
-    for (j=0; j < dockCount; j++)
+    for (j = 0; j < dockCount; j++)
     {
-        if (docks[j].r.top == r->top) 
+        if (docks[j].r.top == r->top)
             if (InContact(r->left, r->right, docks[j].r.left, docks[j].r.right))
             {
                 switch (docks[j].ctl & POSITION_MASK)
@@ -2010,7 +2022,7 @@ static void ConsiderNewTop(int last, RECT *r, int h)
                             RECT r = docks[j].r;
                             r.top = r.bottom;
                             ConsiderNewTop(j, &r, h);
-                            GetSpanWidth(&docks[j], & docks[j].r);
+                            GetSpanWidth(&docks[j], &docks[j].r);
                             docks[j].r.top += h;
                             docks[j].r.bottom += h;
                             docks[j].r.left *= EXTRA;
@@ -2019,7 +2031,7 @@ static void ConsiderNewTop(int last, RECT *r, int h)
                         break;
                     case LEFT:
                     case RIGHT:
-                        ReassignLeftRightTop(j,h);
+                        ReassignLeftRightTop(j, h);
                         break;
                 }
             }
@@ -2037,12 +2049,13 @@ static void ReassignLeftRightBottom(int i, int w)
 {
     int bottom, height;
     int oldbottom, oldheight;
-    int start = i+1;
+    int start = i + 1;
     int end = i;
     int last;
-    while (end > 0 && (docks[i].ctl & POSITION_MASK) == (docks[end-1].ctl & POSITION_MASK) && docks[end-1].r.bottom == docks[end].r.top)
-        end -- ;
-    oldbottom = docks[start-1].r.bottom;
+    while (end > 0 && (docks[i].ctl & POSITION_MASK) == (docks[end - 1].ctl & POSITION_MASK) &&
+           docks[end - 1].r.bottom == docks[end].r.top)
+        end--;
+    oldbottom = docks[start - 1].r.bottom;
     bottom = oldbottom - w;
     oldheight = oldbottom - docks[end].r.top;
     height = bottom - docks[end].r.top;
@@ -2054,10 +2067,10 @@ static void ReassignLeftRightBottom(int i, int w)
         last = docks[start].r.top;
     }
 }
-static void ConsiderNewBottom(int last, RECT *r, int h)
+static void ConsiderNewBottom(int last, RECT* r, int h)
 {
     int j;
-    for (j=0; j < dockCount; j++)
+    for (j = 0; j < dockCount; j++)
     {
         if (docks[j].r.bottom == r->bottom)
             if (InContact(r->left, r->right, docks[j].r.left, docks[j].r.right))
@@ -2070,7 +2083,7 @@ static void ConsiderNewBottom(int last, RECT *r, int h)
                             RECT r = docks[j].r;
                             r.bottom = r.top;
                             ConsiderNewBottom(j, &r, h);
-                            GetSpanWidth(&docks[j], & docks[j].r);
+                            GetSpanWidth(&docks[j], &docks[j].r);
                             docks[j].r.top -= h;
                             docks[j].r.bottom -= h;
                             docks[j].r.left *= EXTRA;
@@ -2079,7 +2092,7 @@ static void ConsiderNewBottom(int last, RECT *r, int h)
                         break;
                     case LEFT:
                     case RIGHT:
-                        ReassignLeftRightBottom(j,h);
+                        ReassignLeftRightBottom(j, h);
                         break;
                 }
             }
@@ -2093,7 +2106,7 @@ static void ConsiderNewBottom(int last, RECT *r, int h)
             }
     }
 }
-static BOOL InsertDock(HWND hwnd, int i, RECT *r, int target)
+static BOOL InsertDock(HWND hwnd, int i, RECT* r, int target)
 {
     BOOL rv = TRUE;
     int j;
@@ -2110,13 +2123,13 @@ static BOOL InsertDock(HWND hwnd, int i, RECT *r, int target)
     frame.right *= EXTRA;
     frame.top *= EXTRA;
     frame.bottom *= EXTRA;
-    for (j=0; j < freeWindowCount; j++)
+    for (j = 0; j < freeWindowCount; j++)
         if (freeWindows[j] == hwnd)
         {
             memcpy(freeWindows + j, freeWindows + j + 1, (freeWindowCount - j - 1) * sizeof(HWND));
             freeWindowCount--;
         }
-    memmove(docks+i+1, docks +i, (dockCount - i) * sizeof(DOCK_STR));
+    memmove(docks + i + 1, docks + i, (dockCount - i) * sizeof(DOCK_STR));
     dockCount++;
     docks[i].hwnd = hwnd;
     docks[i].ctl = target;
@@ -2124,13 +2137,13 @@ static BOOL InsertDock(HWND hwnd, int i, RECT *r, int target)
     docks[i].r.right = -1;
     docks[i].r.top = -1;
     docks[i].r.bottom = -1;
-    for (j=0; j < dockCount; j++)
+    for (j = 0; j < dockCount; j++)
         docks[j].hr = docks[j].r;
     style = GetWindowLong(hwnd, GWL_STYLE);
-    SetWindowLong(hwnd, GWL_STYLE, (style | WS_CHILD) & ~( WS_POPUP | WS_SIZEBOX));
-//    SetParent(hwnd, hwndFrame);    
-    
-    switch(target & POSITION_MASK)
+    SetWindowLong(hwnd, GWL_STYLE, (style | WS_CHILD) & ~(WS_POPUP | WS_SIZEBOX));
+    //    SetParent(hwnd, hwndFrame);
+
+    switch (target & POSITION_MASK)
     {
         case LEFT:
             ConsiderNewLeft(i, r, r->right - r->left);
@@ -2146,7 +2159,7 @@ static BOOL InsertDock(HWND hwnd, int i, RECT *r, int target)
             break;
     }
     docks[i].r = *r;
-    for (j=0; j < dockCount; j++)
+    for (j = 0; j < dockCount; j++)
     {
         if (docks[j].r.right - docks[j].r.left < 100 * EXTRA)
             rv = FALSE;
@@ -2155,14 +2168,14 @@ static BOOL InsertDock(HWND hwnd, int i, RECT *r, int target)
     }
     if (!rv)
     {
-        for (j=0; j < dockCount; j++)
+        for (j = 0; j < dockCount; j++)
             docks[j].r = docks[j].hr;
-        memcpy(docks+i, docks+i+1, (dockCount - i - 1) * sizeof(docks[i]));
+        memcpy(docks + i, docks + i + 1, (dockCount - i - 1) * sizeof(docks[i]));
         dockCount--;
     }
     return rv;
 }
-static BOOL PositionNewDockRect(HWND hwnd, HWND src, RECT *r, int selected)
+static BOOL PositionNewDockRect(HWND hwnd, HWND src, RECT* r, int selected)
 {
     BOOL rv = TRUE;
     RECT client;
@@ -2171,16 +2184,17 @@ static BOOL PositionNewDockRect(HWND hwnd, HWND src, RECT *r, int selected)
     client.bottom *= EXTRA;
     if (hwnd == hwndClient && (selected & DCLIENT))
     {
-        switch(selected)
+        switch (selected)
         {
             int i;
             case DCLIENT | DCENTER:
-                SetWindowPos(src, HWND_TOP, r->left/EXTRA, r->top/EXTRA, (r->right - r->left)/EXTRA, (r->bottom - r->top)/EXTRA, SWP_NOACTIVATE);
+                SetWindowPos(src, HWND_TOP, r->left / EXTRA, r->top / EXTRA, (r->right - r->left) / EXTRA,
+                             (r->bottom - r->top) / EXTRA, SWP_NOACTIVATE);
                 break;
             case DCLIENT | DLEFT:
-                if (client.right < r->right - r->left + 100*EXTRA)
+                if (client.right < r->right - r->left + 100 * EXTRA)
                     return FALSE;
-                for (i=0; i < dockCount; i++)
+                for (i = 0; i < dockCount; i++)
                 {
                     if ((docks[i].ctl & POSITION_MASK) != LEFT)
                         break;
@@ -2188,11 +2202,11 @@ static BOOL PositionNewDockRect(HWND hwnd, HWND src, RECT *r, int selected)
                 rv = InsertDock(src, i, r, LEFT);
                 break;
             case DCLIENT | DRIGHT:
-                if (client.right < r->right - r->left + 100*EXTRA)
+                if (client.right < r->right - r->left + 100 * EXTRA)
                     return FALSE;
-                for (i=dockCount; i> 0; i--)
+                for (i = dockCount; i > 0; i--)
                 {
-                    if ((docks[i-1].ctl & POSITION_MASK) != BOTTOM && (docks[i].ctl & POSITION_MASK) != TOP)
+                    if ((docks[i - 1].ctl & POSITION_MASK) != BOTTOM && (docks[i].ctl & POSITION_MASK) != TOP)
                     {
                         break;
                     }
@@ -2200,26 +2214,26 @@ static BOOL PositionNewDockRect(HWND hwnd, HWND src, RECT *r, int selected)
                 rv = InsertDock(src, i, r, RIGHT);
                 break;
             case DCLIENT | DTOP:
-                if (client.bottom < r->top - r->bottom + 100*EXTRA)
+                if (client.bottom < r->top - r->bottom + 100 * EXTRA)
                     return FALSE;
-                for (i=dockCount; i < dockCount; i++)
+                for (i = dockCount; i < dockCount; i++)
                 {
-                    if ((docks[i-1].ctl & POSITION_MASK) == BOTTOM)
+                    if ((docks[i - 1].ctl & POSITION_MASK) == BOTTOM)
                         break;
                 }
                 rv = InsertDock(src, i, r, TOP);
                 break;
             case DCLIENT | DBOTTOM:
-                if (client.bottom < r->top - r->bottom + 100*EXTRA)
+                if (client.bottom < r->top - r->bottom + 100 * EXTRA)
                     return FALSE;
-                for (i=dockCount; i > 0; i--)
+                for (i = dockCount; i > 0; i--)
                 {
-                    if ((docks[i-1].ctl & POSITION_MASK) != BOTTOM)
+                    if ((docks[i - 1].ctl & POSITION_MASK) != BOTTOM)
                         break;
                 }
                 rv = InsertDock(src, i, r, BOTTOM);
                 break;
-             default:
+            default:
                 return FALSE;
         }
     }
@@ -2228,54 +2242,55 @@ static BOOL PositionNewDockRect(HWND hwnd, HWND src, RECT *r, int selected)
         int i;
         if (selected & DCLIENT)
         {
-            for (i=0; i < dockCount; i++)
+            for (i = 0; i < dockCount; i++)
                 if (docks[i].hwnd == hwnd)
                 {
                     break;
                 }
-            switch(selected)
+            switch (selected)
             {
                 case DCLIENT | DLEFT:
-                    rv = InsertDock(src, i==dockCount ? 0 : i, r, docks[i].ctl);
+                    rv = InsertDock(src, i == dockCount ? 0 : i, r, docks[i].ctl);
                     break;
                 case DCLIENT | DTOP:
-                    rv = InsertDock(src, i==dockCount ? 0 : i, r, docks[i].ctl);
+                    rv = InsertDock(src, i == dockCount ? 0 : i, r, docks[i].ctl);
                     break;
                 case DCLIENT | DRIGHT:
-                    rv = InsertDock(src, i==dockCount ? i : i+1, r, docks[i].ctl);
+                    rv = InsertDock(src, i == dockCount ? i : i + 1, r, docks[i].ctl);
                     break;
                 case DCLIENT | DBOTTOM:
-                    rv = InsertDock(src, i==dockCount ? i : i+1, r, docks[i].ctl);
+                    rv = InsertDock(src, i == dockCount ? i : i + 1, r, docks[i].ctl);
                     break;
             }
         }
-        else switch(selected)
-        {
-            case DLEFT:
-                rv = InsertDock(src, 0, r, LEFT);
-                break;
-            case DRIGHT:
-                for (i=0; i < dockCount; i++)
-                {
-                    if ((docks[i].ctl & POSITION_MASK) != LEFT && (docks[i].ctl & POSITION_MASK) != RIGHT)
-                        break;
-                }
-                rv = InsertDock(src, i, r, RIGHT);
-                break;
-            case DTOP:
-                for (i=0; i < dockCount; i++)
-                {
-                    if ((docks[i].ctl & POSITION_MASK) != LEFT && (docks[i].ctl & POSITION_MASK) != RIGHT)
-                        break;
-                }
-                rv = InsertDock(src, i, r, TOP);
-                break;
-            case DBOTTOM:
-                rv = InsertDock(src, dockCount, r, BOTTOM);
-                break;
-            default:
-                return FALSE;
-        }
+        else
+            switch (selected)
+            {
+                case DLEFT:
+                    rv = InsertDock(src, 0, r, LEFT);
+                    break;
+                case DRIGHT:
+                    for (i = 0; i < dockCount; i++)
+                    {
+                        if ((docks[i].ctl & POSITION_MASK) != LEFT && (docks[i].ctl & POSITION_MASK) != RIGHT)
+                            break;
+                    }
+                    rv = InsertDock(src, i, r, RIGHT);
+                    break;
+                case DTOP:
+                    for (i = 0; i < dockCount; i++)
+                    {
+                        if ((docks[i].ctl & POSITION_MASK) != LEFT && (docks[i].ctl & POSITION_MASK) != RIGHT)
+                            break;
+                    }
+                    rv = InsertDock(src, i, r, TOP);
+                    break;
+                case DBOTTOM:
+                    rv = InsertDock(src, dockCount, r, BOTTOM);
+                    break;
+                default:
+                    return FALSE;
+            }
     }
     return rv;
 }
@@ -2288,13 +2303,13 @@ void DockEndDrag(HWND hwnd, int ox, int oy, int x, int y)
         HWND hwndHighlight = CreateDockHighlightRect();
         int n = GetDockRectSelected();
         ShowWindow(hwndHighlight, SW_HIDE);
-        if (!target || target == hwndClient && ( n & DCLIENT))
+        if (!target || target == hwndClient && (n & DCLIENT))
         {
             RECT r;
             POINT pt;
             int i;
             GetCursorPos(&pt);
-            for (i=0; i < freeWindowCount; i++)
+            for (i = 0; i < freeWindowCount; i++)
             {
                 if (freeWindows[i] != hwnd)
                 {
@@ -2321,13 +2336,15 @@ void DockEndDrag(HWND hwnd, int ox, int oy, int x, int y)
             r.top *= EXTRA;
             r.bottom *= EXTRA;
             if (!PositionNewDockRect(target, hwnd, &r, n))
-                SetWindowPos(hwnd, HWND_TOP, dragPos.left+pt2.x-pt.x, dragPos.top+pt2.y - pt.y, dragPos.right - dragPos.left, dragPos.bottom - dragPos.top, SWP_NOACTIVATE);
+                SetWindowPos(hwnd, HWND_TOP, dragPos.left + pt2.x - pt.x, dragPos.top + pt2.y - pt.y, dragPos.right - dragPos.left,
+                             dragPos.bottom - dragPos.top, SWP_NOACTIVATE);
             else
                 ResizeLayout(0);
         }
         else
         {
-            SetWindowPos(hwnd, HWND_TOP, dragPos.left+pt2.x-pt.x, dragPos.top+pt2.y - pt.y, dragPos.right - dragPos.left, dragPos.bottom - dragPos.top, SWP_NOACTIVATE);
+            SetWindowPos(hwnd, HWND_TOP, dragPos.left + pt2.x - pt.x, dragPos.top + pt2.y - pt.y, dragPos.right - dragPos.left,
+                         dragPos.bottom - dragPos.top, SWP_NOACTIVATE);
         }
         drawSideBars(lastWindowUnderCursor, FALSE);
         drawCtl(lastWindowUnderCursor, FALSE);
@@ -2354,19 +2371,19 @@ BOOL DockDrag(HWND hwnd, int ox, int oy, int x, int y)
         GetCursorPos(&pt4);
         if (pt4.x == pt3.x && pt4.y == pt3.y)
             return FALSE;
-        pt3 = pt4;   
-    }    
+        pt3 = pt4;
+    }
     hwndParent = WindowUnderCursor(hwnd);
     if (hwndParent && hwndParent != lastWindowUnderCursor)
     {
         int i;
         if (SendMessage(hwnd, TW_ISCONT, 0, 0) == TW_ISCONT)
         {
-            GetWindowRect(hwnd, &r);            
+            GetWindowRect(hwnd, &r);
             if (!(((int)GetWindowLong(hwnd, GWL_STYLE)) & WS_POPUP))
             {
-                MapWindowPoints(HWND_DESKTOP, hwndFrame, (LPPOINT)&r, 2);        
-                for (i=0; i < dockCount; i++)
+                MapWindowPoints(HWND_DESKTOP, hwndFrame, (LPPOINT)&r, 2);
+                for (i = 0; i < dockCount; i++)
                 {
                     if (docks[i].display.left == r.left && docks[i].display.top == r.top)
                     {
@@ -2376,15 +2393,15 @@ BOOL DockDrag(HWND hwnd, int ox, int oy, int x, int y)
                 if (i < dockCount)
                 {
                     ExtendSurroundingWindows(docks + i, hwnd);
-                    memcpy(docks +i, docks + i + 1, (dockCount - i -1) * sizeof(docks[i]));
+                    memcpy(docks + i, docks + i + 1, (dockCount - i - 1) * sizeof(docks[i]));
                     dockCount--;
                     freeWindows[freeWindowCount++] = hwnd;
                     SendMessage(hwnd, TW_MAKEPOPUP, 1, 0);
-//                    SetParent(hwnd, HWND_DESKTOP);
+                    //                    SetParent(hwnd, HWND_DESKTOP);
                     if (dragPos.left < pt.x - DEFAULT_WINDOW_WIDTH || dragPos.left > pt.x)
                         dragPos.left = pt.x - 125;
                     if (dragPos.top < pt.y - SM_CYSMCAPTION || dragPos.top > pt.y)
-                        dragPos.top = pt.y - SM_CYSMCAPTION/2;
+                        dragPos.top = pt.y - SM_CYSMCAPTION / 2;
                     dragPos.right = dragPos.left + DEFAULT_WINDOW_WIDTH;
                     dragPos.bottom = dragPos.top + 400;
                     ResizeLayout(NULL);
@@ -2393,7 +2410,7 @@ BOOL DockDrag(HWND hwnd, int ox, int oy, int x, int y)
                 {
                     freeWindows[freeWindowCount++] = hwnd;
                     SendMessage(hwnd, TW_MAKEPOPUP, 1, 0);
-//                    SetParent(hwnd, HWND_DESKTOP);
+                    //                    SetParent(hwnd, HWND_DESKTOP);
                 }
             }
         }
@@ -2408,7 +2425,8 @@ BOOL DockDrag(HWND hwnd, int ox, int oy, int x, int y)
         GetClientRect(hwndFrame, &r);
         if (pt2.y < r.bottom - GetSystemMetrics(SM_CYCAPTION))
         {
-            SetWindowPos(hwnd, HWND_TOP, dragPos.left+pt2.x-pt.x, dragPos.top+pt2.y - pt.y, dragPos.right - dragPos.left, dragPos.bottom - dragPos.top, SWP_NOACTIVATE);
+            SetWindowPos(hwnd, HWND_TOP, dragPos.left + pt2.x - pt.x, dragPos.top + pt2.y - pt.y, dragPos.right - dragPos.left,
+                         dragPos.bottom - dragPos.top, SWP_NOACTIVATE);
             if (lastWindowUnderCursor)
             {
                 int n = GetDockRectSelected();
@@ -2416,14 +2434,15 @@ BOOL DockDrag(HWND hwnd, int ox, int oy, int x, int y)
                 {
                     Highlight(selected, FALSE);
                     selected = n;
-                    Highlight(selected , TRUE);
+                    Highlight(selected, TRUE);
                     if (n)
                     {
                         RECT r;
                         HWND hwnd = CreateDockHighlightRect();
                         GetNewDockRect(lastWindowUnderCursor, &r, n);
                         MapWindowPoints(hwndFrame, HWND_DESKTOP, (LPPOINT)&r, 2);
-                        SetWindowPos(hwnd, HWND_TOP, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_NOACTIVATE | SWP_SHOWWINDOW);
+                        SetWindowPos(hwnd, HWND_TOP, r.left, r.top, r.right - r.left, r.bottom - r.top,
+                                     SWP_NOACTIVATE | SWP_SHOWWINDOW);
                     }
                     else
                     {
@@ -2436,15 +2455,14 @@ BOOL DockDrag(HWND hwnd, int ox, int oy, int x, int y)
     }
     return FALSE;
 }
-HWND CreateInternalWindow(int DID, char *clsName, char *title)
+HWND CreateInternalWindow(int DID, char* clsName, char* title)
 {
-    return CreateWindow(clsName, title, WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
-                                0, 0, 1, 1, hwndFrame, 0, hInstance, 0);                            
+    return CreateWindow(clsName, title, WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS, 0, 0, 1, 1, hwndFrame, 0, hInstance, 0);
 }
 static void SetupInitialDocks(int flag)
 {
     int i;
-    for (i=0; i < sizeof(windowDeclarations)/sizeof(windowDeclarations[0]); i++)
+    for (i = 0; i < sizeof(windowDeclarations) / sizeof(windowDeclarations[0]); i++)
     {
         if (windowDeclarations[i].defaultDock & DOCKABLE_INITIAL)
         {
@@ -2457,8 +2475,8 @@ static void SetupInitialDocks(int flag)
 }
 void FreeDockWindows()
 {
-   int i;
-    for (i=0; i < dockCount; i++)
+    int i;
+    for (i = 0; i < dockCount; i++)
     {
         CloseWindow(docks[i].hwnd);
         DestroyWindow(docks[i].hwnd);
@@ -2476,7 +2494,7 @@ void CreateDocks(void)
         GetClientRect(hwndToolbarBar, &toolBar);
         oldFrame.bottom -= statusBar.bottom - statusBar.top;
         oldFrame.top += toolBar.bottom - toolBar.top;
-        
+
         Select(DOCKABLE_DEBUG);
         SetupInitialDocks(DOCKABLE_DEBUG);
         Select(DOCKABLE_EDIT);

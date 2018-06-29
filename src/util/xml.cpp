@@ -1,67 +1,73 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "xml.h"
 #include "ctype.h"
 #include <string.h>
-bool xmlAttrib::Read(std::fstream &stream)
+bool xmlAttrib::Read(std::fstream& stream)
 {
     char t;
     stream >> t;
-    if (stream.fail()) return false;
+    if (stream.fail())
+        return false;
     while (isspace(t))
     {
         stream >> t;
-        if (stream.fail()) return false;
+        if (stream.fail())
+            return false;
     }
-    if (isalpha(t)|| t=='_')
+    if (isalpha(t) || t == '_')
     {
         char buf[512];
-        char *p = buf;
+        char* p = buf;
         buf[0] = 0;
-        while (isalnum(t)|| t=='_')
+        while (isalnum(t) || t == '_')
         {
             *p++ = t;
             stream >> t;
-            if (stream.fail()) return false;
+            if (stream.fail())
+                return false;
         }
         *p = 0;
         name = buf;
         while (isspace(t))
         {
             stream >> t;
-            if (stream.fail()) return false;
+            if (stream.fail())
+                return false;
         }
         if (t != '=')
-            return false;		
+            return false;
         stream >> t;
-        if (stream.fail()) return false;
+        if (stream.fail())
+            return false;
         while (isspace(t))
         {
             stream >> t;
-            if (stream.fail()) return false;
+            if (stream.fail())
+                return false;
         }
         if (t != '\"')
             return false;
@@ -70,43 +76,41 @@ bool xmlAttrib::Read(std::fstream &stream)
     }
     return true;
 }
-bool xmlAttrib::Write(std::fstream &stream)
+bool xmlAttrib::Write(std::fstream& stream)
 {
     stream << ' ' << name.c_str() << " = \"";
-    const char *p = value.c_str();
-    while(*p)
+    const char* p = value.c_str();
+    while (*p)
         WriteTextChar(stream, *p++);
     stream << "\"";
     return !stream.fail();
 }
-bool xmlAttrib::IsSpecial(char t)
+bool xmlAttrib::IsSpecial(char t) { return t == '>' || t == '<' || t == '=' || t == '&' || t == '\'' || t == '\"'; }
+void xmlAttrib::WriteTextChar(std::fstream& stream, char t)
 {
-    return t == '>' || t == '<' || t == '=' || t == '&' || t == '\'' || t == '\"' ;
-}
-void xmlAttrib::WriteTextChar(std::fstream &stream, char t)
-{
-    switch(t) {
-        case '"' :
+    switch (t)
+    {
+        case '"':
             stream << "&quot;";
-            break ;
+            break;
         case '\'':
             stream << "&apos;";
-            break ;
+            break;
         case '&':
             stream << "&amp;";
-            break ;
+            break;
         case '<':
             stream << "&lt;";
-            break ;
+            break;
         case '>':
             stream << "&gt;";
-            break ;
+            break;
         default:
             stream << t;
-            break ;
+            break;
     }
 }
-bool xmlAttrib::ReadTextString(std::fstream &stream, std::string &str)
+bool xmlAttrib::ReadTextString(std::fstream& stream, std::string& str)
 {
     char buf[512], *p = buf;
     while (!stream.fail())
@@ -129,18 +133,18 @@ bool xmlAttrib::ReadTextString(std::fstream &stream, std::string &str)
     }
     return false;
 }
-char xmlAttrib::ReadTextChar(std::fstream &stream)
+char xmlAttrib::ReadTextChar(std::fstream& stream)
 {
     char buf[10];
-    char *p = buf;
-    for (int i=0; i < 10; i++)
+    char* p = buf;
+    for (int i = 0; i < 10; i++)
     {
         stream >> *p++;
         if (stream.fail())
             return 0;
         if (p[-1] == ';')
         {
-            *--p= '\0';
+            *--p = '\0';
             if (!strcmp(buf, "amp"))
                 return '&';
             if (!strcmp(buf, "lt"))
@@ -152,7 +156,7 @@ char xmlAttrib::ReadTextChar(std::fstream &stream)
             if (!strcmp(buf, "quot"))
                 return '"';
             return 0;
-        }		
+        }
     }
     return 0;
 }
@@ -170,7 +174,7 @@ xmlNode::~xmlNode()
     }
     children.clear();
 }
-bool xmlNode::Read(std::fstream &stream, char v)
+bool xmlNode::Read(std::fstream& stream, char v)
 {
     char t;
     stream.unsetf(std::ios::skipws);
@@ -179,47 +183,53 @@ bool xmlNode::Read(std::fstream &stream, char v)
     else
     {
         stream >> t;
-        if (stream.fail()) return false;
+        if (stream.fail())
+            return false;
         while (isspace(t))
         {
             stream >> t;
-            if (stream.fail()) return false;
+            if (stream.fail())
+                return false;
         }
         if (t != '<')
             return false;
         stream >> t;
-        if (stream.fail()) return false;
+        if (stream.fail())
+            return false;
         while (isspace(t))
         {
             stream >> t;
-            if (stream.fail()) return false;
+            if (stream.fail())
+                return false;
         }
     }
-    if (!isalpha(t)&& t!='_')
+    if (!isalpha(t) && t != '_')
         return false;
     char buf[512], *p = buf;
     buf[0] = 0;
-    while (isalnum(t)|| t=='_')
+    while (isalnum(t) || t == '_')
     {
-        *p ++ = t;
+        *p++ = t;
         stream >> t;
-        if (stream.fail()) return false;
+        if (stream.fail())
+            return false;
     }
     *p = 0;
     elementType = buf;
-//	std::cout << elementType << std::endl;
+    //	std::cout << elementType << std::endl;
     while (!stream.fail())
     {
         while (isspace(t))
         {
             stream >> t;
-            if (stream.fail()) return false;
+            if (stream.fail())
+                return false;
         }
-        if (isalpha(t)|| t=='_')
+        if (isalpha(t) || t == '_')
         {
             stream.putback(t);
-            xmlAttrib *attrib = new xmlAttrib();
-            //if (!attrib)
+            xmlAttrib* attrib = new xmlAttrib();
+            // if (!attrib)
             //    return false;
             if (!attrib->Read(stream))
             {
@@ -227,52 +237,59 @@ bool xmlNode::Read(std::fstream &stream, char v)
                 return false;
             }
             InsertAttrib(attrib);
-//			std::cout << attrib->GetName() << ": " << attrib->GetValue() << std::endl;
+            //			std::cout << attrib->GetName() << ": " << attrib->GetValue() << std::endl;
             stream >> t;
-            if (stream.fail()) return false;		
+            if (stream.fail())
+                return false;
         }
         else
             break;
-    }	
+    }
     if (t == '/')
     {
         stream >> t;
-        if (stream.fail()) return false;
+        if (stream.fail())
+            return false;
         return (t == '>');
     }
     else if (t == '>')
     {
         while (!stream.fail())
-        {		
+        {
             stream >> t;
             while (isspace(t))
             {
                 stream >> t;
-                if (stream.fail()) return false;
+                if (stream.fail())
+                    return false;
             }
             stream.putback(t);
             if (!ReadTextString(stream, text))
                 return false;
             stream >> t;
-            if (stream.fail()) return false;
+            if (stream.fail())
+                return false;
             if (t == '/')
             {
                 stream >> t;
-                if (stream.fail()) return false;
+                if (stream.fail())
+                    return false;
                 while (isspace(t))
                 {
                     stream >> t;
-                    if (stream.fail()) return false;
+                    if (stream.fail())
+                        return false;
                 }
-                if (!isalpha(t)&& t!='_')
+                if (!isalpha(t) && t != '_')
                     return false;
                 p = buf;
                 buf[0] = 0;
-                while (isalnum(t)|| t=='_')
+                while (isalnum(t) || t == '_')
                 {
-                    *p ++ = t;
+                    *p++ = t;
                     stream >> t;
-                    if (stream.fail()) return false;
+                    if (stream.fail())
+                        return false;
                 }
                 *p = 0;
                 if (elementType != buf)
@@ -280,7 +297,8 @@ bool xmlNode::Read(std::fstream &stream, char v)
                 while (isspace(t))
                 {
                     stream >> t;
-                    if (stream.fail()) return false;
+                    if (stream.fail())
+                        return false;
                 }
                 Strip();
                 return t == '>';
@@ -291,9 +309,11 @@ bool xmlNode::Read(std::fstream &stream, char v)
                 {
                     // handle comments;
                     stream >> t;
-                    if (t != '-') return false;
+                    if (t != '-')
+                        return false;
                     stream >> t;
-                    if (t != '-') return false;
+                    if (t != '-')
+                        return false;
                     int ct = 0;
                     while (!stream.fail())
                     {
@@ -314,9 +334,9 @@ bool xmlNode::Read(std::fstream &stream, char v)
                         return false;
                 }
                 else
-                {	
-                    xmlNode *node = new xmlNode();
-                    //if (!node)
+                {
+                    xmlNode* node = new xmlNode();
+                    // if (!node)
                     //    return false;
                     if (!node->Read(stream, t))
                     {
@@ -337,11 +357,11 @@ void xmlNode::Strip()
 {
     if (stripSpaces)
     {
-        const char *p = text.c_str();
+        const char* p = text.c_str();
         const char *q = p, *r = p + strlen(p);
         while (*q && isspace(*q))
             q++;
-        while (r > p && isspace(*(r-1)))
+        while (r > p && isspace(*(r - 1)))
             r--;
         if (r > q)
             text = text.substr(q - p, r - p);
@@ -349,7 +369,7 @@ void xmlNode::Strip()
             text = "";
     }
 }
-bool xmlNode::ReadTextString(std::fstream &stream, std::string &str)
+bool xmlNode::ReadTextString(std::fstream& stream, std::string& str)
 {
     char buf[512], *p = buf;
     while (!stream.fail())
@@ -374,10 +394,10 @@ bool xmlNode::ReadTextString(std::fstream &stream, std::string &str)
     }
     return false;
 }
-bool xmlNode::Write(std::fstream &stream, int indent)
+bool xmlNode::Write(std::fstream& stream, int indent)
 {
-    for (int i=0; i < indent; i++)
-        stream << "  " ;
+    for (int i = 0; i < indent; i++)
+        stream << "  ";
     stream << '<' << elementType.c_str();
     if (attribs.size())
     {
@@ -391,12 +411,12 @@ bool xmlNode::Write(std::fstream &stream, int indent)
             child->Write(stream, indent + 1);
         if (text.size())
         {
-            const char *p = text.c_str();
+            const char* p = text.c_str();
             while (*p)
                 WriteTextChar(stream, *p++);
             stream << std::endl;
         }
-        for (int i=0; i < indent; i++)
+        for (int i = 0; i < indent; i++)
             stream << "  ";
         stream << "</" << elementType.c_str() << '>' << std::endl;
     }
@@ -406,26 +426,27 @@ bool xmlNode::Write(std::fstream &stream, int indent)
     }
     return !stream.fail();
 }
-void xmlNode::WriteTextChar(std::fstream &stream, char t)
+void xmlNode::WriteTextChar(std::fstream& stream, char t)
 {
-    switch(t) {
+    switch (t)
+    {
         case '&':
             stream << "&amp;";
-            break ;
+            break;
         case '<':
             stream << "&lt;";
-            break ;
+            break;
         case '>':
             stream << "&gt;";
-            break ;
+            break;
         default:
             stream << t;
-            break ;
+            break;
     }
 }
-void xmlNode::RemoveAttrib(const xmlAttrib *attrib)
+void xmlNode::RemoveAttrib(const xmlAttrib* attrib)
 {
-    for (std::deque<xmlAttrib *>::iterator it = attribs.begin(); it != attribs.end(); ++it)
+    for (std::deque<xmlAttrib*>::iterator it = attribs.begin(); it != attribs.end(); ++it)
     {
         if (*it == attrib)
         {
@@ -434,9 +455,9 @@ void xmlNode::RemoveAttrib(const xmlAttrib *attrib)
         }
     }
 }
-void xmlNode::RemoveChild(const xmlNode *child)
+void xmlNode::RemoveChild(const xmlNode* child)
 {
-    for (std::deque<xmlNode *>::iterator it = children.begin(); it != children.end(); ++it)
+    for (std::deque<xmlNode*>::iterator it = children.begin(); it != children.end(); ++it)
     {
         if (*it == child)
         {
@@ -445,7 +466,7 @@ void xmlNode::RemoveChild(const xmlNode *child)
         }
     }
 }
-bool xmlNode::Visit(xmlVisitor &v, void *userData)
+bool xmlNode::Visit(xmlVisitor& v, void* userData)
 {
     for (auto attrib : attribs)
     {

@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "Menu.h"
@@ -33,11 +33,11 @@ MenuItem::~MenuItem()
 {
     for (iterator it = begin(); it != end(); ++it)
     {
-        MenuItem *item = *it;
+        MenuItem* item = *it;
         delete item;
     }
 }
-void MenuItem::WriteRes(ResFile &resFile, bool ex, bool last)
+void MenuItem::WriteRes(ResFile& resFile, bool ex, bool last)
 {
     if (!ex)
     {
@@ -82,7 +82,7 @@ void MenuItem::WriteRes(ResFile &resFile, bool ex, bool last)
         }
     }
 }
-void MenuItem::GetFlags(RCFile &rcFile)
+void MenuItem::GetFlags(RCFile& rcFile)
 {
     bool done = false;
     while (!done)
@@ -124,104 +124,104 @@ void MenuItem::GetFlags(RCFile &rcFile)
         state = rcFile.GetNumber();
     }
 }
-bool MenuItem::ReadRCInternal(RCFile &rcFile, bool ex)
+bool MenuItem::ReadRCInternal(RCFile& rcFile, bool ex)
 {
     bool rv = false;
     if (rcFile.IsKeyword())
-        switch(rcFile.GetToken()->GetKeyword())
+        switch (rcFile.GetToken()->GetKeyword())
         {
             case Lexer::MENUITEM:
+            {
+                rcFile.NextToken();
+                if (rcFile.IsKeyword())
                 {
-                    rcFile.NextToken();
-                    if (rcFile.IsKeyword())
+                    if (rcFile.GetTokenId() != Lexer::SEPARATOR)
+                        throw new std::runtime_error("Invalid menu type");
+                }
+                else if (rcFile.IsString())
+                {
+                    text = rcFile.GetString();
+                    rcFile.SkipComma();
+                }
+                if (rcFile.IsNumber())
+                {
+                    id = rcFile.GetNumber();
+                    rcFile.SkipComma();
+                }
+                if (ex)
+                {
+                    if (rcFile.IsNumber())
                     {
-                        if (rcFile.GetTokenId() != Lexer::SEPARATOR)
-                            throw new std::runtime_error("Invalid menu type");
-                    }
-                    else if (rcFile.IsString())
-                    {
-                        text = rcFile.GetString();
+                        type = rcFile.GetNumber();
                         rcFile.SkipComma();
                     }
                     if (rcFile.IsNumber())
                     {
-                        id = rcFile.GetNumber();
+                        state = rcFile.GetNumber();
                         rcFile.SkipComma();
                     }
-                    if (ex)
-                    {
-                        if (rcFile.IsNumber())
-                        {
-                            type = rcFile.GetNumber();
-                            rcFile.SkipComma();
-                        }
-                        if (rcFile.IsNumber())
-                        {
-                            state = rcFile.GetNumber();
-                            rcFile.SkipComma();
-                        }
-                    }
-                    else
-                    {
-                        GetFlags(rcFile);
-                    }
-                    rcFile.NeedEol();
                 }
-                break;
+                else
+                {
+                    GetFlags(rcFile);
+                }
+                rcFile.NeedEol();
+            }
+            break;
             case Lexer::POPUP:
+            {
+                rcFile.NextToken();
+                if (rcFile.IsString())
                 {
-                    rcFile.NextToken();
-                    if (rcFile.IsString())
+                    text = rcFile.GetString();
+                    rcFile.SkipComma();
+                }
+                if (rcFile.IsNumber())
+                {
+                    id = rcFile.GetNumber();
+                    rcFile.SkipComma();
+                }
+                if (ex)
+                {
+                    if (rcFile.IsNumber())
                     {
-                        text = rcFile.GetString();
+                        type = rcFile.GetNumber();
                         rcFile.SkipComma();
                     }
                     if (rcFile.IsNumber())
                     {
-                        id = rcFile.GetNumber();
+                        state = rcFile.GetNumber();
                         rcFile.SkipComma();
                     }
-                    if (ex)
+                    if (rcFile.IsNumber())
                     {
-                        if (rcFile.IsNumber())
-                        {
-                            type = rcFile.GetNumber();
-                            rcFile.SkipComma();
-                        }
-                        if (rcFile.IsNumber())
-                        {
-                            state = rcFile.GetNumber();
-                            rcFile.SkipComma();
-                        }
-                        if (rcFile.IsNumber())
-                        {
-                            helpIndex = rcFile.GetNumber();
-                            rcFile.SkipComma();
-                        }
+                        helpIndex = rcFile.GetNumber();
+                        rcFile.SkipComma();
                     }
-                    else
-                    {
-                        GetFlags(rcFile);
-                    }
-                    rcFile.NeedEol();
-                    ReadRC(rcFile, popup, ex);
                 }
-                break;
+                else
+                {
+                    GetFlags(rcFile);
+                }
+                rcFile.NeedEol();
+                ReadRC(rcFile, popup, ex);
+            }
+            break;
             default:
                 rv = true;
                 break;
         }
-    
+
     return rv;
 }
-void MenuItem::ReadRC(RCFile &rcFile, MenuItemList &list, bool ex)
+void MenuItem::ReadRC(RCFile& rcFile, MenuItemList& list, bool ex)
 {
     rcFile.NeedBegin();
     bool done = false;
     while (!done)
     {
-        
-        MenuItem *item = new MenuItem;
+
+        MenuItem* item = new MenuItem;
         if (!(done = item->ReadRCInternal(rcFile, ex)))
             list.push_back(item);
         else
@@ -233,18 +233,18 @@ Menu::~Menu()
 {
     for (iterator it = begin(); it != end(); ++it)
     {
-        MenuItem *item = *it;
+        MenuItem* item = *it;
         delete item;
     }
 }
-void Menu::WriteRes(ResFile &resFile)
+void Menu::WriteRes(ResFile& resFile)
 {
     Resource::WriteRes(resFile);
     if (!extended)
     {
         resFile.WriteWord(0);
         resFile.WriteWord(0);
-    } 
+    }
     else
     {
         resFile.WriteWord(1);
@@ -256,7 +256,7 @@ void Menu::WriteRes(ResFile &resFile)
         res->WriteRes(resFile, extended, !--count);
     resFile.Release();
 }
-void Menu::ReadRC(RCFile &rcFile)
+void Menu::ReadRC(RCFile& rcFile)
 {
     resInfo.SetFlags(resInfo.GetFlags() | ResourceInfo::Pure);
     resInfo.ReadRC(rcFile, true);

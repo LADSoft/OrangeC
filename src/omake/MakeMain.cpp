@@ -1,29 +1,29 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
-#define _CRT_SECURE_NO_WARNINGS  
+#define _CRT_SECURE_NO_WARNINGS
 
 #include "MakeMain.h"
 #include "Include.h"
@@ -44,8 +44,8 @@
 #ifdef OPENWATCOM
 namespace std
 {
-    ios& right(ios&in) { return in; }
-}
+ios& right(ios& in) { return in; }
+}  // namespace std
 #endif
 CmdSwitchParser MakeMain::switchParser;
 CmdSwitchCombineString MakeMain::specifiedFiles(switchParser, 'f', ' ');
@@ -53,14 +53,14 @@ CmdSwitchBool MakeMain::displayOnly(switchParser, 'n');
 CmdSwitchBool MakeMain::touch(switchParser, 't');
 CmdSwitchBool MakeMain::query(switchParser, 'q');
 CmdSwitchBool MakeMain::keepGoing(switchParser, 'k');
-CmdSwitchBool MakeMain::ignoreErrors(switchParser, 'i');	
+CmdSwitchBool MakeMain::ignoreErrors(switchParser, 'i');
 CmdSwitchDefine MakeMain::defines(switchParser, 'D');
 CmdSwitchDefine MakeMain::evals(switchParser, '-');
 CmdSwitchBool MakeMain::rebuild(switchParser, 'B');
 CmdSwitchCombineString MakeMain::newFiles(switchParser, 'W', ' ');
 CmdSwitchCombineString MakeMain::oldFiles(switchParser, 'o', ' ');
 CmdSwitchCombineString MakeMain::dir(switchParser, 'C', '+');
-CmdSwitchBool MakeMain::debug(switchParser, 'd');	// not implemented
+CmdSwitchBool MakeMain::debug(switchParser, 'd');  // not implemented
 CmdSwitchBool MakeMain::environOverride(switchParser, 'e');
 CmdSwitchBool MakeMain::help(switchParser, 'h');
 CmdSwitchBool MakeMain::help2(switchParser, '?');
@@ -74,42 +74,43 @@ CmdSwitchBool MakeMain::printDir(switchParser, 'w');
 CmdSwitchBool MakeMain::warnUndef(switchParser, 'u');
 CmdSwitchBool MakeMain::treeBuild(switchParser, 'T');
 CmdSwitchBool MakeMain::keepResponseFiles(switchParser, 'K');
-CmdSwitchInt  MakeMain::jobs(switchParser, 'j', INT_MAX, 1, INT_MAX);
+CmdSwitchInt MakeMain::jobs(switchParser, 'j', INT_MAX, 1, INT_MAX);
 CmdSwitchCombineString MakeMain::jobOutputMode(switchParser, 'O');
 
-const char *MakeMain::usageText = "[options] goals\n"
-                    "\n"
-                    "/B    Rebuild all             /C    Set directory\n"
-                    "/Dxxx Define something        /Ixxx Set include path\n"
-                    "/K    Keep response files     /O    Set output mode\n"
-                    "/R    Ignore builtin vars     /S    Cancel keepgoing\n"
-                    "/T    Tree Build              /V    Show version and date\n"
-                    "/Wxxx WhatIf                  /d    Reserved\n"
-                    "/e    Environment overrides   /fxxx Specify make file\n"
-                    "/h    This text               /i    Ignore errors\n"
-                    "/j:xx Set number of jobs      /k    Keep going\n"
-                    "/n    Display only            /oxxx Specify old goals\n"
-                    "/p    Print database          /q    Query\n"
-                    "/r    Ignore builtin rules    /s    Don't print commands\n"
-                    "/t    Touch                   /u    Debug warnings\n"
-                    "/w    Print directory         --eval=STRING evaluate a statement\n"     
-                    "/!    No logo\n"
-                    "--version show version info\n"
-                    "\nTime: " __TIME__ "  Date: " __DATE__;
-char *MakeMain::builtinVars = "";
-char *MakeMain::builtinRules = "";
+const char* MakeMain::usageText =
+    "[options] goals\n"
+    "\n"
+    "/B    Rebuild all             /C    Set directory\n"
+    "/Dxxx Define something        /Ixxx Set include path\n"
+    "/K    Keep response files     /O    Set output mode\n"
+    "/R    Ignore builtin vars     /S    Cancel keepgoing\n"
+    "/T    Tree Build              /V    Show version and date\n"
+    "/Wxxx WhatIf                  /d    Reserved\n"
+    "/e    Environment overrides   /fxxx Specify make file\n"
+    "/h    This text               /i    Ignore errors\n"
+    "/j:xx Set number of jobs      /k    Keep going\n"
+    "/n    Display only            /oxxx Specify old goals\n"
+    "/p    Print database          /q    Query\n"
+    "/r    Ignore builtin rules    /s    Don't print commands\n"
+    "/t    Touch                   /u    Debug warnings\n"
+    "/w    Print directory         --eval=STRING evaluate a statement\n"
+    "/!    No logo\n"
+    "--version show version info\n"
+    "\nTime: " __TIME__ "  Date: " __DATE__;
+char* MakeMain::builtinVars = "";
+char* MakeMain::builtinRules = "";
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     MakeMain Main;
     return Main.Run(argc, argv);
 }
 
-void MakeMain::Dispatch(const char *data)
+void MakeMain::Dispatch(const char* data)
 {
     int max = 10;
     argcx = 1;
-    argvx = new char *[max + 1];
+    argvx = new char*[max + 1];
     argvx[0] = "";
     while (*data)
     {
@@ -117,37 +118,37 @@ void MakeMain::Dispatch(const char *data)
         if (argcx == max)
         {
             max += 10;
-            char **p = new char *[max + 1];
-            memcpy(p, argvx, argcx * sizeof(char *));
-            delete [] argvx;
+            char** p = new char*[max + 1];
+            memcpy(p, argvx, argcx * sizeof(char*));
+            delete[] argvx;
             argvx = p;
         }
     }
     argvx[argcx] = 0;
     switchParser.Parse(&argcx, argvx);
-    delete[] argvx;	
+    delete[] argvx;
 }
-const char * MakeMain::GetStr(const char *data)
+const char* MakeMain::GetStr(const char* data)
 {
     char buf[2048], *p = buf;
     bool quote = false;
     while (isspace(*data))
         data++;
     if (*data == '"')
-        quote= true, data++;
+        quote = true, data++;
     while (*data && ((quote && *data != '"') || (!quote && !isspace(*data))))
         *p++ = *data++;
     *p = 0;
     if (quote && *data)
-        data ++;
-    char *x = new char [strlen(buf) + 1];
-    strcpy(x,buf);
+        data++;
+    char* x = new char[strlen(buf) + 1];
+    strcpy(x, buf);
     argvx[argcx++] = x;
     return data;
 }
-void MakeMain::SetVariable(const std::string &name, const std::string &value, Variable::Origin origin, bool toExport)
+void MakeMain::SetVariable(const std::string& name, const std::string& value, Variable::Origin origin, bool toExport)
 {
-    Variable *v = VariableContainer::Instance()->Lookup(name);
+    Variable* v = VariableContainer::Instance()->Lookup(name);
     if (v)
     {
         v->SetValue(value);
@@ -233,7 +234,8 @@ void MakeMain::SetMakeFlags()
         if (jobs.GetValue() != INT_MAX)
             sprintf(buf, "%d", jobs.GetValue());
         else
-            buf[0] = 0;;
+            buf[0] = 0;
+        ;
         vals += std::string(" -j:") + buf;
     }
     if (jobOutputMode.GetExists())
@@ -242,16 +244,16 @@ void MakeMain::SetMakeFlags()
     }
     if (includes.GetValue().size())
     {
-        vals += "\"-I" +includes.GetValue() + "\"";
+        vals += "\"-I" + includes.GetValue() + "\"";
     }
     vals = vals + " $(MAKEOVERRIDES)";
     SetVariable("MAKEFLAGS", vals, Variable::o_command_line, true);
     vals = "";
-    for (int i=0; i < defines.GetCount(); i++)
+    for (int i = 0; i < defines.GetCount(); i++)
     {
         if (vals.size())
             vals += " ";
-        const CmdSwitchDefine::define *def = defines.GetValue(i);
+        const CmdSwitchDefine::define* def = defines.GetValue(i);
         vals += "\"/D" + def->name + "=" + def->value + "\"";
     }
     SetVariable("MAKEOVERRIDES", vals, Variable::o_command_line, true);
@@ -280,17 +282,17 @@ void MakeMain::LoadJobArgs()
 }
 void MakeMain::LoadEnvironment()
 {
-    char **env = environ;
+    char** env = environ;
     Variable::Origin origin;
     if (environOverride.GetValue())
         origin = Variable::o_environ_override;
     else
         origin = Variable::o_environ;
-    for (int i=0; env[i]; i++)
+    for (int i = 0; env[i]; i++)
     {
         std::string name = env[i];
         size_t n = name.find_first_of('=', 1);
-        if (n && n != std::string::npos) // ignore drive specifiers on win32
+        if (n && n != std::string::npos)  // ignore drive specifiers on win32
         {
             std::string value = name.substr(n + 1);
             name.replace(n, name.size(), "");
@@ -300,24 +302,23 @@ void MakeMain::LoadEnvironment()
 }
 void MakeMain::LoadCmdDefines()
 {
-    for (int i=0; i < defines.GetCount(); i++)
+    for (int i = 0; i < defines.GetCount(); i++)
     {
-        const CmdSwitchDefine::define *def = defines.GetValue(i);
+        const CmdSwitchDefine::define* def = defines.GetValue(i);
         SetVariable(def->name, def->value, Variable::o_command_line, false);
     }
-    for (int i=0; i < evals.GetCount(); i++)
-	{
-                const CmdSwitchDefine::define *def = evals.GetValue(i);
-		if (std::string(def->name) != "eval")
-		{
-			Eval::error(std::string("Invalid switch --") + def->name);
-		    exit (1);
-		}
+    for (int i = 0; i < evals.GetCount(); i++)
+    {
+        const CmdSwitchDefine::define* def = evals.GetValue(i);
+        if (std::string(def->name) != "eval")
+        {
+            Eval::error(std::string("Invalid switch --") + def->name);
+            exit(1);
+        }
         Parser p(def->value, "<eval>", 1, false, Variable::o_default);
-		p.SetAutoExport();
+        p.SetAutoExport();
         p.Parse();
-		
-	}
+    }
 }
 void MakeMain::SetInternalVars()
 {
@@ -335,7 +336,7 @@ void MakeMain::SetupImplicit()
         p.Parse();
     }
 }
-void MakeMain::ShowRule(RuleList *ruleList)
+void MakeMain::ShowRule(RuleList* ruleList)
 {
     for (auto rule : *ruleList)
     {
@@ -345,7 +346,7 @@ void MakeMain::ShowRule(RuleList *ruleList)
         std::cout << "\tOrder Prerequisites:" << std::endl;
         std::cout << "\t\t" << rule->GetOrderPrerequisites().c_str() << std::endl;
         std::cout << "\tCommands:" << std::endl;
-        Command *commands = rule->GetCommands();
+        Command* commands = rule->GetCommands();
         for (auto command : *rule->GetCommands())
         {
             std::cout << "\t\t" << command.c_str() << std::endl;
@@ -375,7 +376,7 @@ void MakeMain::ShowDatabase()
         std::cout << var.second->GetValue().c_str() << std::endl;
     }
     std::cout << std::endl << "Explicit rules:" << std::endl;
-    for (auto rule: *RuleContainer::Instance())
+    for (auto rule : *RuleContainer::Instance())
     {
         ShowRule(rule.second);
     }
@@ -386,7 +387,7 @@ void MakeMain::ShowDatabase()
         ShowRule(*it);
     }
 }
-void MakeMain::SetTreePath(std::string &files)
+void MakeMain::SetTreePath(std::string& files)
 {
     // will get the working dir possibly modified by a 'C' command
     std::string wd = OS::GetWorkingDir() + CmdFiles::DIR_SEP;
@@ -395,8 +396,9 @@ void MakeMain::SetTreePath(std::string &files)
     {
         bool found = false;
         std::string path;
-        do {
-            path = wd.substr(0, pos+1) + files;
+        do
+        {
+            path = wd.substr(0, pos + 1) + files;
             std::fstream check(path.c_str(), std::ios::in);
             if (!check.fail())
             {
@@ -419,10 +421,10 @@ void MakeMain::SetTreePath(std::string &files)
         }
     }
 }
-int MakeMain::Run(int argc, char **argv)
+int MakeMain::Run(int argc, char** argv)
 {
     OS::Init();
-    for (int i=0; i < argc; i++)
+    for (int i = 0; i < argc; i++)
     {
         if (!strcmp(argv[i], "--version"))
         {
@@ -431,15 +433,15 @@ int MakeMain::Run(int argc, char **argv)
         }
     }
     Utils::SetEnvironmentToPathParent("ORANGEC");
-    char *p = getenv("MAKEFLAGS");
+    char* p = getenv("MAKEFLAGS");
     if (p)
     {
-        Variable *v = new Variable("MAKEFLAGS", p, Variable::f_recursive, Variable::o_environ);
+        Variable* v = new Variable("MAKEFLAGS", p, Variable::f_recursive, Variable::o_environ);
         *VariableContainer::Instance() += v;
         p = getenv("MAKEDOOVERIDES");
         if (p)
         {
-            Variable *v = new Variable("MAKEDOOVERIDES", p, Variable::f_recursive, Variable::o_environ);
+            Variable* v = new Variable("MAKEDOOVERIDES", p, Variable::f_recursive, Variable::o_environ);
             *VariableContainer::Instance() += v;
         }
         Eval r(v->GetValue(), false);
@@ -451,7 +453,7 @@ int MakeMain::Run(int argc, char **argv)
         Utils::banner(argv[0]);
         Utils::usage(argv[0], usageText);
     }
-    char *cpath=getenv("CPATH");
+    char* cpath = getenv("CPATH");
     if (cpath)
     {
         if (includes.GetValue().size())
@@ -484,7 +486,7 @@ int MakeMain::Run(int argc, char **argv)
     }
 
     LoadJobArgs();
-    
+
     bool done = false;
     Eval::SetWarnings(warnUndef.GetValue());
     while (!done && !Eval::GetErrCount())
@@ -496,10 +498,10 @@ int MakeMain::Run(int argc, char **argv)
         LoadEnvironment();
         LoadCmdDefines();
         SetVariable("MAKE", argv[0], Variable::o_environ, false);
-        Variable *v = VariableContainer::Instance()->Lookup("SHELL");
+        Variable* v = VariableContainer::Instance()->Lookup("SHELL");
         if (!v)
         {
-            v = VariableContainer::Instance()->Lookup("MSYSCON"); // detect MSYS version of comspec
+            v = VariableContainer::Instance()->Lookup("MSYSCON");  // detect MSYS version of comspec
             if (!v)
                 v = VariableContainer::Instance()->Lookup("COMSPEC");
             if (!v)
@@ -515,7 +517,7 @@ int MakeMain::Run(int argc, char **argv)
         std::string wd = OS::GetWorkingDir();
         SetVariable("CURDIR", wd, Variable::o_environ, false);
         std::string goals;
-        for (int i=1; i < argc; i++)
+        for (int i = 1; i < argc; i++)
         {
             if (goals.size())
                 goals += " ";
@@ -536,21 +538,21 @@ int MakeMain::Run(int argc, char **argv)
         else
         {
             int n = Utils::StringToNumber(v->GetValue());
-            v->SetValue(Utils::NumberToString(n+1));
+            v->SetValue(Utils::NumberToString(n + 1));
         }
-        SetVariable(".FEATURES","second-expansion order-only target-specific", Variable::o_environ, false);
-        SetVariable(".DEFAULT_GOAL","", Variable::o_environ, false);
-        SetVariable(".INCLUDE_DIRS",includes.GetValue(), Variable::o_command_line, false);
-        SetVariable("VPATH",includes.GetValue(), Variable::o_environ, false);
-        SetInternalVars();		
+        SetVariable(".FEATURES", "second-expansion order-only target-specific", Variable::o_environ, false);
+        SetVariable(".DEFAULT_GOAL", "", Variable::o_environ, false);
+        SetVariable(".INCLUDE_DIRS", includes.GetValue(), Variable::o_command_line, false);
+        SetVariable("VPATH", includes.GetValue(), Variable::o_environ, false);
+        SetInternalVars();
         v = VariableContainer::Instance()->Lookup("MAKEFILES");
         if (v)
         {
             v->SetExport(true);
             Include::Instance()->AddFileList(v->GetValue(), true, true);
         }
-        Rule *rule = new Rule(".SUFFIXES", ".c .o .cpp .nas .asm .s", "", new Command("", 0), "", 0, false);
-        RuleList *ruleList = new RuleList(".SUFFIXES");
+        Rule* rule = new Rule(".SUFFIXES", ".c .o .cpp .nas .asm .s", "", new Command("", 0), "", 0, false);
+        RuleList* ruleList = new RuleList(".SUFFIXES");
         ruleList->Add(rule, false);
         *RuleContainer::Instance() += ruleList;
         std::string files = specifiedFiles.GetValue();
@@ -571,7 +573,7 @@ int MakeMain::Run(int argc, char **argv)
             restarts++;
     }
     // now low for .MAKEFLAGS || .MFLAGS
-    RuleList *rl = nullptr;
+    RuleList* rl = nullptr;
     if ((rl = RuleContainer::Instance()->Lookup(".MAKEFLAGS")) || (rl = RuleContainer::Instance()->Lookup(".MFLAGS")))
     {
         for (auto rule : *rl)
@@ -612,7 +614,8 @@ int MakeMain::Run(int argc, char **argv)
             Eval::warning(".SHELL special target ignored");
         if (RuleContainer::Instance()->Lookup(".WARN"))
             Eval::warning(".WARN special target ignored");
-        Maker maker(xsilent, xdontrun, xignore, xtouch, outputType, rebuild.GetValue(), keepResponseFiles.GetValue(), newFiles.GetValue(), oldFiles.GetValue());
+        Maker maker(xsilent, xdontrun, xignore, xtouch, outputType, rebuild.GetValue(), keepResponseFiles.GetValue(),
+                    newFiles.GetValue(), oldFiles.GetValue());
         if (argc <= 1)
         {
             auto r = RuleContainer::Instance()->Lookup(".MAIN");

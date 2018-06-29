@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*
@@ -37,26 +37,26 @@
 #include <richedit.h>
 #include <stdio.h>
 #include <ctype.h>
- 
+
 #include "header.h"
 
 extern int lastch;
-extern WCHAR *lptr; 
+extern WCHAR* lptr;
 extern int cantnewline;
 extern enum e_sym lastst;
 extern char lastid[];
 extern long ival;
 extern TABLE defsyms;
-extern SYM *typequal;
+extern SYM* typequal;
 extern TABLE lsyms;
 extern TABLE tagtable;
-extern IFSTRUCT *ifs;
+extern IFSTRUCT* ifs;
 extern char intstring[50];
 
-EXPRESSION *ReadExp(void);
-int Eval(EXPRESSION *);
-static EXPRESSION *iecondop(void);
-void freeExpr(EXPRESSION *r)
+EXPRESSION* ReadExp(void);
+int Eval(EXPRESSION*);
+static EXPRESSION* iecondop(void);
+void freeExpr(EXPRESSION* r)
 {
     if (r)
     {
@@ -65,10 +65,10 @@ void freeExpr(EXPRESSION *r)
         rcFree(r);
     }
 }
-EXPRESSION *ReadExpFromString(WCHAR *id)
+EXPRESSION* ReadExpFromString(WCHAR* id)
 {
-    EXPRESSION *expr;
-    WCHAR *p;
+    EXPRESSION* expr;
+    WCHAR* p;
     cantnewline++;
     p = --lptr;
     lptr = id;
@@ -80,11 +80,11 @@ EXPRESSION *ReadExpFromString(WCHAR *id)
     cantnewline--;
     return expr;
 }
-EXPRESSION *InternalLookup(char *id, int translate)
+EXPRESSION* InternalLookup(char* id, int translate)
 {
     WCHAR buf[2048], *p = buf;
     WCHAR nbuf[2048];
-    EXPRESSION *expr = NULL;
+    EXPRESSION* expr = NULL;
     while (isspace(*id))
         id++;
     while (*id)
@@ -99,14 +99,11 @@ EXPRESSION *InternalLookup(char *id, int translate)
     }
     return expr;
 }
-EXPRESSION *LookupWithTranslation(char *id)
-{
-    return InternalLookup(id, TRUE);
-}
-static int rcLookup(char *id)
+EXPRESSION* LookupWithTranslation(char* id) { return InternalLookup(id, TRUE); }
+static int rcLookup(char* id)
 {
     int rv = 0;
-    EXPRESSION *expr = InternalLookup(id, FALSE);
+    EXPRESSION* expr = InternalLookup(id, FALSE);
     if (expr)
     {
         rv = Eval(expr);
@@ -115,7 +112,7 @@ static int rcLookup(char *id)
     return rv;
 }
 
-static EXPRESSION *ieprimary(void)
+static EXPRESSION* ieprimary(void)
 /*
  * PRimary integer
  *    id
@@ -124,7 +121,7 @@ static EXPRESSION *ieprimary(void)
  *    (intexpr)
  */
 {
-    EXPRESSION *temp = 0;
+    EXPRESSION* temp = 0;
     if (lastst == rceol)
         getsym();
     if (lastst == iconst || lastst == lconst || lastst == iuconst || lastst == luconst)
@@ -135,7 +132,7 @@ static EXPRESSION *ieprimary(void)
         temp->val = ival;
         getsym();
         return temp;
-    } 
+    }
     else if (lastst == cconst)
     {
         char buf[10];
@@ -144,7 +141,7 @@ static EXPRESSION *ieprimary(void)
         {
             buf[1] = '\\';
             buf[3] = 0;
-            switch(lastch)
+            switch (lastch)
             {
                 case 0:
                     buf[2] = '0';
@@ -168,7 +165,7 @@ static EXPRESSION *ieprimary(void)
                     buf[2] = 't';
                     break;
                 default:
-                    sprintf(buf+2, "x%02X", lastch);
+                    sprintf(buf + 2, "x%02X", lastch);
                     break;
             }
             strcat(buf, "'");
@@ -189,7 +186,7 @@ static EXPRESSION *ieprimary(void)
     else if (lastst == ident)
     {
         int val = rcLookup(lastid);
-        char *s = rcStrdup(lastid);
+        char* s = rcStrdup(lastid);
         temp = rcAlloc(sizeof(EXPRESSION));
         temp->type = e_int;
         temp->val = val;
@@ -215,9 +212,9 @@ static EXPRESSION *ieprimary(void)
  *   ~unary
  *   primary
  */
-static EXPRESSION *ieunary(void)
+static EXPRESSION* ieunary(void)
 {
-    EXPRESSION *temp;
+    EXPRESSION* temp;
     switch (lastst)
     {
         case minus:
@@ -242,7 +239,7 @@ static EXPRESSION *ieunary(void)
 
 //-------------------------------------------------------------------------
 
-static EXPRESSION *iemultops(void)
+static EXPRESSION* iemultops(void)
 /* Multiply ops */
 {
     EXPRESSION *val1 = ieunary(), *val2, *temp;
@@ -262,7 +259,7 @@ static EXPRESSION *iemultops(void)
 
 //-------------------------------------------------------------------------
 
-static EXPRESSION *ieaddops(void)
+static EXPRESSION* ieaddops(void)
 /* Add ops */
 {
     EXPRESSION *val1 = iemultops(), *val2, *temp;
@@ -282,7 +279,7 @@ static EXPRESSION *ieaddops(void)
 
 //-------------------------------------------------------------------------
 
-static EXPRESSION *ieshiftops(void)
+static EXPRESSION* ieshiftops(void)
 /* Shift ops */
 {
     EXPRESSION *val1 = ieaddops(), *val2, *temp;
@@ -302,7 +299,7 @@ static EXPRESSION *ieshiftops(void)
 
 //-------------------------------------------------------------------------
 
-static EXPRESSION *ierelation(void)
+static EXPRESSION* ierelation(void)
 /* non-eq relations */
 {
     EXPRESSION *val1 = ieshiftops(), *val2, *temp;
@@ -322,7 +319,7 @@ static EXPRESSION *ierelation(void)
 
 //-------------------------------------------------------------------------
 
-static EXPRESSION *ieequalops(void)
+static EXPRESSION* ieequalops(void)
 /* eq relations */
 {
     EXPRESSION *val1 = ierelation(), *val2, *temp;
@@ -342,7 +339,7 @@ static EXPRESSION *ieequalops(void)
 
 //-------------------------------------------------------------------------
 
-static EXPRESSION *ieandop(void)
+static EXPRESSION* ieandop(void)
 /* and op */
 {
     EXPRESSION *val1 = ieequalops(), *val2, *temp;
@@ -361,7 +358,7 @@ static EXPRESSION *ieandop(void)
 
 //-------------------------------------------------------------------------
 
-static EXPRESSION *iexorop(void)
+static EXPRESSION* iexorop(void)
 /* xor op */
 {
     EXPRESSION *val1 = ieandop(), *val2, *temp;
@@ -380,7 +377,7 @@ static EXPRESSION *iexorop(void)
 
 //-------------------------------------------------------------------------
 
-static EXPRESSION *ieorop(void)
+static EXPRESSION* ieorop(void)
 /* or op */
 {
     EXPRESSION *val1 = iexorop(), *val2, *temp;
@@ -391,7 +388,7 @@ static EXPRESSION *ieorop(void)
         temp = rcAlloc(sizeof(EXPRESSION));
         temp->left = val1;
         temp->right = val2;
-        temp->type = or;
+        temp->type = or ;
         val1 = temp;
     }
     return (val1);
@@ -399,7 +396,7 @@ static EXPRESSION *ieorop(void)
 
 //-------------------------------------------------------------------------
 
-static EXPRESSION *ielandop(void)
+static EXPRESSION* ielandop(void)
 /* logical and op */
 {
     EXPRESSION *val1 = ieorop(), *val2, *temp;
@@ -418,7 +415,7 @@ static EXPRESSION *ielandop(void)
 
 //-------------------------------------------------------------------------
 
-static EXPRESSION *ielorop(void)
+static EXPRESSION* ielorop(void)
 /* logical or op */
 {
     EXPRESSION *val1 = ielandop(), *val2, *temp;
@@ -437,7 +434,7 @@ static EXPRESSION *ielorop(void)
 
 //-------------------------------------------------------------------------
 
-static EXPRESSION *iecondop(void)
+static EXPRESSION* iecondop(void)
 /* Hook op */
 {
     EXPRESSION *val1 = ielorop(), *val2, *val3, *temp;
@@ -459,33 +456,33 @@ static EXPRESSION *iecondop(void)
 
 //-------------------------------------------------------------------------
 
-EXPRESSION *ReadExp(void)
+EXPRESSION* ReadExp(void)
 {
-    EXPRESSION *rv = iecondop();
+    EXPRESSION* rv = iecondop();
     if (!rv)
     {
         generror(ERR_NEEDCONST, 0);
     }
     return rv;
 }
-EXPRESSION *ReadExpOr(EXPRESSION *p)
+EXPRESSION* ReadExpOr(EXPRESSION* p)
 {
-    EXPRESSION *rv;
+    EXPRESSION* rv;
     if (!p)
         return ReadExp();
-        
+
     rv = rcAlloc(sizeof(EXPRESSION));
-    rv->type = or;
+    rv->type = or ;
     rv->left = p;
     rv->right = ReadExp();
     return ReadExp();
 }
 
-int Eval(EXPRESSION *p)
+int Eval(EXPRESSION* p)
 {
     if (!p)
         return 0;
-    switch(p->type)
+    switch (p->type)
     {
         case hook:
             if (Eval(p->left))
@@ -526,7 +523,7 @@ int Eval(EXPRESSION *p)
             else
                 return 0 - Eval(p->left);
         case star:
-                return Eval(p->left) * Eval(p->right);
+            return Eval(p->left) * Eval(p->right);
         case divide:
         {
             int n = Eval(p->right);
@@ -544,22 +541,22 @@ int Eval(EXPRESSION *p)
                 return 0;
         }
         case not:
-                return !Eval(p->left);
-        case compl:        
-                return ~Eval(p->left);
+            return !Eval(p->left);
+        case compl:
+            return ~Eval(p->left);
         case e_int:
-                return p->val;
+            return p->val;
         default:
             fatal("internal error");
             break;
     }
-        
+
     return 0;
 }
 
 int intexpr(void)
 {
-    EXPRESSION *rv = ReadExp();
+    EXPRESSION* rv = ReadExp();
     if (rv)
     {
         int n = Eval(rv);

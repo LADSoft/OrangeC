@@ -28,6 +28,7 @@ INCLUDES=..\util ..\ocpp ..\objlib
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=ocpplib objlib util
 DEFINES=L_INT=__int64
+H_FILES=$(wildcard *.h)
 
 include ..\redirect.mak
 

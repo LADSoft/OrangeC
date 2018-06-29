@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "ResidentNameTable.h"
@@ -30,15 +30,12 @@ void ResidentNameTable::Setup()
 {
     int npos = fileName.find_last_of("\\");
     if (npos != std::string::npos)
-        fileName = fileName.substr(npos+ 1);
+        fileName = fileName.substr(npos + 1);
     entryOffset = fileName.size() + 2;
     size = entryOffset + 1;
     data = new char[size];
     data[0] = fileName.size();
-    memcpy(data + 1, fileName.c_str(), fileName.size()+1);
+    memcpy(data + 1, fileName.c_str(), fileName.size() + 1);
     data[entryOffset] = 0;
 }
-void ResidentNameTable::Write(std::fstream &stream)
-{
-    stream.write((char *)data, size);
-}
+void ResidentNameTable::Write(std::fstream& stream) { stream.write((char*)data, size); }

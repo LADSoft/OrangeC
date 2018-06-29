@@ -1,35 +1,35 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
 
-extern BLOCK **blockArray;
+extern BLOCK** blockArray;
 extern int blockCount;
-extern TEMP_INFO **tempInfo;
+extern TEMP_INFO** tempInfo;
 extern int tempCount;
-extern SYMBOL *theCurrentFunc;
+extern SYMBOL* theCurrentFunc;
 extern BITINT bittab[BITINTBITS];
 
 static int current;
@@ -60,22 +60,22 @@ static int current;
  * (technique borrowed from Scribble and optimized)
  */
 static struct reflist
- {
-     struct reflist *next;
-    QUAD *old;
-    QUAD *newVal;
- } *refs;
- static void EnterRef(QUAD *old, QUAD *newVal)
- {
-     struct reflist *newRef = oAlloc(sizeof(struct reflist));
+{
+    struct reflist* next;
+    QUAD* old;
+    QUAD* newVal;
+} * refs;
+static void EnterRef(QUAD* old, QUAD* newVal)
+{
+    struct reflist* newRef = oAlloc(sizeof(struct reflist));
     newRef->old = old;
     newRef->newVal = newVal;
     newRef->next = refs;
     refs = newRef;
- }
- static void WeedRefs(void)
- {
-     while(refs)
+}
+static void WeedRefs(void)
+{
+    while (refs)
     {
         if (refs->newVal->invarKeep)
         {
@@ -95,12 +95,12 @@ static struct reflist
         }
         refs = refs->next;
     }
- }
-static void keep(IMODE *l)
+}
+static void keep(IMODE* l)
 {
     if (l && l->mode == i_direct && l->offset->type == en_tempref)
     {
-        QUAD *i = tempInfo[l->offset->v.sp->value.i]->instructionDefines;
+        QUAD* i = tempInfo[l->offset->v.sp->value.i]->instructionDefines;
         if (i->invarInserted)
         {
             i->invarKeep = TRUE;
@@ -109,13 +109,13 @@ static void keep(IMODE *l)
         }
     }
 }
-static BOOLEAN IsAncestor(BLOCK *b1, BLOCK *b2)
+static BOOLEAN IsAncestor(BLOCK* b1, BLOCK* b2)
 {
     BOOLEAN rv = FALSE;
     if (b1)
     {
-        LOOP *lb1 = b1->loopParent;
-        LOOP *temp = b2->loopParent->parent;
+        LOOP* lb1 = b1->loopParent;
+        LOOP* temp = b2->loopParent->parent;
         while (temp && !rv)
         {
             if (temp == lb1)
@@ -125,10 +125,10 @@ static BOOLEAN IsAncestor(BLOCK *b1, BLOCK *b2)
     }
     return rv;
 }
-static void MoveTo(BLOCK *dest, BLOCK *src, QUAD *head)
+static void MoveTo(BLOCK* dest, BLOCK* src, QUAD* head)
 {
-    QUAD *insert = beforeJmp(dest->tail, TRUE);
-    QUAD *head2 = Alloc(sizeof(QUAD));
+    QUAD* insert = beforeJmp(dest->tail, TRUE);
+    QUAD* head2 = Alloc(sizeof(QUAD));
     *head2 = *head;
     EnterRef(head, head2);
     head = head2;
@@ -148,7 +148,7 @@ static void MoveTo(BLOCK *dest, BLOCK *src, QUAD *head)
         head->invarKeep = TRUE;
     }
 }
-static void MoveExpression(BLOCK *b, QUAD *head, BLOCK *pbl, BLOCK *pbr)
+static void MoveExpression(BLOCK* b, QUAD* head, BLOCK* pbl, BLOCK* pbr)
 {
     if (IsAncestor(pbl, b))
     {
@@ -170,9 +170,9 @@ static void MoveExpression(BLOCK *b, QUAD *head, BLOCK *pbl, BLOCK *pbr)
         {
             MoveTo(pbl, b, head);
         }
-    }		
+    }
 }
-static BOOLEAN isPhiUsing(LOOP *considering, int temp)
+static BOOLEAN isPhiUsing(LOOP* considering, int temp)
 {
     BOOLEAN rv = FALSE;
     if (temp != -1 && considering)
@@ -181,15 +181,15 @@ static BOOLEAN isPhiUsing(LOOP *considering, int temp)
     }
     return rv;
 }
-static BOOLEAN InvariantPhiUsing(QUAD *head)
+static BOOLEAN InvariantPhiUsing(QUAD* head)
 {
     int ans = head->ans->offset->v.sp->value.i;
     BOOLEAN rv = FALSE;
     int left = -1, right = -1;
-    LOOP *considering = head->block->loopParent;
+    LOOP* considering = head->block->loopParent;
     if (tempInfo[ans]->preSSATemp >= 0)
         rv = !tempInfo[tempInfo[ans]->preSSATemp]->enode->v.sp->pushedtotemp;
-    if (head->temps & TEMP_LEFT) 
+    if (head->temps & TEMP_LEFT)
         left = head->dc.left->offset->v.sp->value.i;
     if (head->temps & TEMP_RIGHT)
         right = head->dc.right->offset->v.sp->value.i;
@@ -199,37 +199,36 @@ static BOOLEAN InvariantPhiUsing(QUAD *head)
     }
     if (considering)
     {
-        rv &= 
-            !isPhiUsing(considering, ans) && !isPhiUsing(considering, left) && !isPhiUsing(considering, right);
+        rv &= !isPhiUsing(considering, ans) && !isPhiUsing(considering, left) && !isPhiUsing(considering, right);
     }
     return rv;
 }
-void ScanForInvariants(BLOCK *b)
+void ScanForInvariants(BLOCK* b)
 {
-    BLOCKLIST *bl = b->succ;
-    QUAD *head = b->head;
+    BLOCKLIST* bl = b->succ;
+    QUAD* head = b->head;
     b->preWalk = current++;
-    
+
     while (head != b->tail->fwd)
     {
-        QUAD *next = head->fwd;
+        QUAD* next = head->fwd;
         if (!head->ignoreMe && head->dc.opcode != i_label && head->dc.opcode != i_assnblock)
         {
             if (head->dc.opcode == i_phi)
             {
-                
-                
-                LOOP *parent = head->block->inclusiveLoopParent;
-                struct _phiblock *pb;
+
+                LOOP* parent = head->block->inclusiveLoopParent;
+                struct _phiblock* pb;
                 if (!parent->invariantPhiList)
                 {
-                    LOOP *last = parent->parent;
+                    LOOP* last = parent->parent;
                     while (last && !last->invariantPhiList)
                         last = last->parent;
-                    
+
                     parent->invariantPhiList = allocbit(tempCount);
                     if (last)
-                        memcpy(bits(parent->invariantPhiList), bits(last->invariantPhiList), ((tempCount) + (BITINTBITS-1))/BITINTBITS * sizeof(BITINT));
+                        memcpy(bits(parent->invariantPhiList), bits(last->invariantPhiList),
+                               ((tempCount) + (BITINTBITS - 1)) / BITINTBITS * sizeof(BITINT));
                 }
                 pb = head->dc.v.phi->temps;
                 while (pb)
@@ -242,7 +241,7 @@ void ScanForInvariants(BLOCK *b)
             else if ((head->temps & TEMP_ANS) && head->ans->mode == i_direct && head->ans->size < ISZ_FLOAT)
             {
                 tempInfo[head->ans->offset->v.sp->value.i]->blockDefines = b;
-                if (!tempInfo[head->ans->offset->v.sp->value.i]->inductionLoop && ( head->temps & (TEMP_LEFT | TEMP_RIGHT)))
+                if (!tempInfo[head->ans->offset->v.sp->value.i]->inductionLoop && (head->temps & (TEMP_LEFT | TEMP_RIGHT)))
                 {
                     BOOLEAN canMove = TRUE;
                     BLOCK *pbl = NULL, *pbr = NULL;
@@ -261,7 +260,8 @@ void ScanForInvariants(BLOCK *b)
                     if (canMove)
                         canMove = InvariantPhiUsing(head);
                     if (canMove)
-                        if (pbl && pbl->preWalk != b->preWalk && pbl->nesting == b->nesting && (!pbr || (pbr->preWalk != b->preWalk && pbr->nesting == b->nesting)))
+                        if (pbl && pbl->preWalk != b->preWalk && pbl->nesting == b->nesting &&
+                            (!pbr || (pbr->preWalk != b->preWalk && pbr->nesting == b->nesting)))
                             MoveExpression(b, head, pbl, pbr);
                 }
                 /*
@@ -282,7 +282,7 @@ void ScanForInvariants(BLOCK *b)
                                 }
                             }
                         }
-                        
+                        
                     }
                 }
                 */
@@ -303,10 +303,10 @@ void MoveLoopInvariants(void)
 {
     int i;
     refs = NULL;
-    for (i=0; i < blockCount; i++)
+    for (i = 0; i < blockCount; i++)
         if (blockArray[i])
             blockArray[i]->preWalk = 0;
-    for (i=0; i < tempCount; i++)
+    for (i = 0; i < tempCount; i++)
         tempInfo[i]->blockDefines = NULL;
     current = 1;
     ScanForInvariants(blockArray[0]);

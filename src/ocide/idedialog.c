@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 //
@@ -53,13 +53,13 @@ void SetEditFieldRO(HWND hwnd, int control)
 //
 // set the value of an edit field
 //
-void SetEditField(HWND hWnd, int control, char *text)
+void SetEditField(HWND hWnd, int control, char* text)
 {
     HWND hwndedit = GetDlgItem(hWnd, control);
-//    SendMessage(hwndedit, EM_LIMITTEXT, 1020, 0);
-//    SendMessage(hwndedit, EM_SETSEL, 0,  - 1);
-//    SendMessage(hwndedit, EM_REPLACESEL, 0, (LPARAM)text);
-//    SendMessage(hwndedit, EM_SETSEL, 0,  - 1);
+    //    SendMessage(hwndedit, EM_LIMITTEXT, 1020, 0);
+    //    SendMessage(hwndedit, EM_SETSEL, 0,  - 1);
+    //    SendMessage(hwndedit, EM_REPLACESEL, 0, (LPARAM)text);
+    //    SendMessage(hwndedit, EM_SETSEL, 0,  - 1);
     SendMessage(hwndedit, WM_SETTEXT, 0, (LPARAM)text);
     SendMessage(hwndedit, EM_SETLIMITTEXT, 255, 0);
 }
@@ -77,7 +77,7 @@ void SetEditFieldValue(HWND hWnd, int control, long value)
 //
 // get the value of an edit field
 //
-void GetEditField(HWND hWnd, int control, char *text)
+void GetEditField(HWND hWnd, int control, char* text)
 {
     HWND hwndedit = GetDlgItem(hWnd, control);
     char itext[1024];
@@ -97,24 +97,18 @@ long GetEditFieldValue(HWND hWnd, int control)
 }
 
 // ==============================================================
-// 
+//
 // handle checkboxes
 //
-void SetCBField(HWND hWnd, int control, int value)
-{
-    CheckDlgButton(hWnd, control, value);
-}
+void SetCBField(HWND hWnd, int control, int value) { CheckDlgButton(hWnd, control, value); }
 
 //-------------------------------------------------------------------------
 
-int GetCBField(HWND hWnd, int control)
-{
-    return IsDlgButtonChecked(hWnd, control);
-}
+int GetCBField(HWND hWnd, int control) { return IsDlgButtonChecked(hWnd, control); }
 
 // ==============================================================
 //
-// set focus 
+// set focus
 void NewFocus(HWND hWnd, int control)
 {
     HWND hwndc = GetDlgItem(hWnd, control);
@@ -123,7 +117,7 @@ void NewFocus(HWND hWnd, int control)
 
 //-------------------------------------------------------------------------
 
-void AddComboString(HWND hwnd, int control, char *string)
+void AddComboString(HWND hwnd, int control, char* string)
 {
     HWND hwndc = GetDlgItem(hwnd, control);
     SendMessage(hwndc, CB_ADDSTRING, 0, (LPARAM)string);
@@ -147,7 +141,7 @@ int GetComboSel(HWND hwnd, int control)
 
 //-------------------------------------------------------------------------
 
-void AddListString(HWND hwnd, int control, char *string)
+void AddListString(HWND hwnd, int control, char* string)
 {
     HWND hwndc = GetDlgItem(hwnd, control);
     SendMessage(hwndc, LB_ADDSTRING, 0, (LPARAM)string);

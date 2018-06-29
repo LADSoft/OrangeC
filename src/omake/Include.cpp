@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "Include.h"
@@ -36,9 +36,9 @@
 #include <algorithm>
 #include <io.h>
 
-Include *Include::instance = nullptr;
+Include* Include::instance = nullptr;
 
-Include *Include::Instance()
+Include* Include::Instance()
 {
     if (!instance)
         instance = new Include;
@@ -48,11 +48,11 @@ void Include::Clear()
 {
     files.clear();
     ignoredFiles.clear();
-     Variable *v = VariableContainer::Instance()->Lookup("MAKEFILE_LIST");
+    Variable* v = VariableContainer::Instance()->Lookup("MAKEFILE_LIST");
     if (v)
         v->SetValue("");
 }
-bool Include::Parse(const std::string &name, bool ignoreOk, bool MakeFiles)
+bool Include::Parse(const std::string& name, bool ignoreOk, bool MakeFiles)
 {
     bool rv = false;
     if (name == "-")
@@ -78,7 +78,7 @@ bool Include::Parse(const std::string &name, bool ignoreOk, bool MakeFiles)
         if (access(current.c_str(), 0) == -1)
         {
             std::string includeDirs;
-            Variable *id = VariableContainer::Instance()->Lookup(".INCLUDE_DIRS");
+            Variable* id = VariableContainer::Instance()->Lookup(".INCLUDE_DIRS");
             if (id)
             {
                 includeDirs = id->GetValue();
@@ -103,7 +103,7 @@ bool Include::Parse(const std::string &name, bool ignoreOk, bool MakeFiles)
             in.seekg(0);
             if (!in.fail())
             {
-                char *text = new char[len + 1];
+                char* text = new char[len + 1];
                 in.read(text, len);
                 text[len] = 0;
                 in.close();
@@ -136,16 +136,16 @@ bool Include::Parse(const std::string &name, bool ignoreOk, bool MakeFiles)
     }
     return rv;
 }
-bool Include::AddFileList(const std::string &name, bool ignoreOk, bool MakeFile)
+bool Include::AddFileList(const std::string& name, bool ignoreOk, bool MakeFile)
 {
     Eval e(name, false);
-     std::string iname = e.Evaluate();
-     bool rv = true;
+    std::string iname = e.Evaluate();
+    bool rv = true;
     CmdFiles cmdFiles;
     std::string seps(" ");
     seps += CmdFiles::PATH_SEP;
     std::string includeDirs;
-    Variable *id = VariableContainer::Instance()->Lookup(".INCLUDE_DIRS");
+    Variable* id = VariableContainer::Instance()->Lookup(".INCLUDE_DIRS");
     if (id)
     {
         includeDirs = id->GetValue();
@@ -162,7 +162,7 @@ bool Include::AddFileList(const std::string &name, bool ignoreOk, bool MakeFile)
     }
     for (CmdFiles::FileNameIterator it = cmdFiles.FileNameBegin(); rv && it != cmdFiles.FileNameEnd(); ++it)
     {
-         Variable *v = VariableContainer::Instance()->Lookup("MAKEFILE_LIST");
+        Variable* v = VariableContainer::Instance()->Lookup("MAKEFILE_LIST");
         if (!v)
         {
             v = new Variable(std::string("MAKEFILE_LIST"), *(*it), Variable::f_simple, Variable::o_file);
@@ -170,7 +170,7 @@ bool Include::AddFileList(const std::string &name, bool ignoreOk, bool MakeFile)
         }
         else
         {
-            v->SetValue(v->GetValue() +" " + *(*it));
+            v->SetValue(v->GetValue() + " " + *(*it));
         }
         files.push_back(*(*it));
         rv &= Parse(*(*it), ignoreOk | MakeFile, MakeFile);

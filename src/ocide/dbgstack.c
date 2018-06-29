@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -38,27 +38,26 @@ extern HINSTANCE hInstance;
 extern HWND hwndClient, hwndFrame;
 extern enum DebugState uState;
 extern THREAD *activeThread, *stoppedThread;
-extern PROCESS *activeProcess;
+extern PROCESS* activeProcess;
 extern HWND hwndTbProcedure;
 
 SCOPE lastScope;
-SCOPE *activeScope;
-SCOPE *StackList;
+SCOPE* activeScope;
+SCOPE* StackList;
 
 static HWND hwndStack;
 static char szStackClassName[] = "xccStackClass";
 
 static HIMAGELIST tagImageList;
 static int curSel;
-static char *szStackTitle = "Call Stack";
+static char* szStackTitle = "Call Stack";
 static HWND hwndLV;
-
 
 static void CopyText(HWND hwnd)
 {
-    SCOPE *list = StackList;
-    int count = 0; 
-    char *p;
+    SCOPE* list = StackList;
+    int count = 0;
+    char* p;
     while (list)
     {
         count++;
@@ -78,7 +77,7 @@ static void CopyText(HWND hwnd)
         free(p);
     }
 }
-static void SetScope(SCOPE *newScope)
+static void SetScope(SCOPE* newScope)
 {
     if (newScope)
     {
@@ -95,7 +94,7 @@ void ClearStackArea(HWND hwnd)
 {
     while (StackList)
     {
-        SCOPE *s = StackList->next;
+        SCOPE* s = StackList->next;
         free(StackList);
         StackList = s;
     }
@@ -109,26 +108,23 @@ int eipReal(int eip)
     DWORD len;
     int i;
     unsigned char buf[16];
-    ReadProcessMemory(activeProcess->hProcess, (LPVOID)(eip - 16), (LPVOID) &buf,
-        16, &len);
+    ReadProcessMemory(activeProcess->hProcess, (LPVOID)(eip - 16), (LPVOID)&buf, 16, &len);
     if (buf[11] == 0xe8)
         return eip - 5;
     for (i = 14; i >= 0; i--)
-        if (buf[i] == 0xff && ((buf[i] &0x38) == 0x10))
-            return eip - (16-i);
+        if (buf[i] == 0xff && ((buf[i] & 0x38) == 0x10))
+            return eip - (16 - i);
     return eip;
 }
 
 //-------------------------------------------------------------------------
 
-int readStackedData(int inebp, int *outebp)
+int readStackedData(int inebp, int* outebp)
 {
     DWORD eip = 0;
     DWORD len = 0;
-    ReadProcessMemory(activeProcess->hProcess, (LPVOID)(inebp + 4), (LPVOID) &eip,
-        4, &len);
-    ReadProcessMemory(activeProcess->hProcess, (LPVOID)inebp, (LPVOID)outebp, 4,
-        &len);
+    ReadProcessMemory(activeProcess->hProcess, (LPVOID)(inebp + 4), (LPVOID)&eip, 4, &len);
+    ReadProcessMemory(activeProcess->hProcess, (LPVOID)inebp, (LPVOID)outebp, 4, &len);
     return eip;
 }
 
@@ -138,24 +134,24 @@ void SetStackArea(void)
 {
     int ebp = activeThread->regs.Ebp;
     int eip = activeThread->regs.Eip;
-    SCOPE *stackbase = 0,  *stackptr,  *newStack;
+    SCOPE *stackbase = 0, *stackptr, *newStack;
 
     if (uState != atBreakpoint && uState != atException)
-        return ;
+        return;
     while (1)
     {
         char name[256];
         int n;
         int type = 0;
-        DEBUG_INFO *dbg = NULL;
+        DEBUG_INFO* dbg = NULL;
         eip = eipReal(eip);
-        newStack = calloc(1,sizeof(SCOPE));
+        newStack = calloc(1, sizeof(SCOPE));
         if (!newStack)
-            return ;
+            return;
         newStack->next = 0;
         n = FindFunctionName(name, eip, &dbg, &type);
         sprintf(newStack->name, "%s + 0x%x", name, eip - n);
-        GetBreakpointLine(eip, &newStack->fileName[0], &newStack->lineno, FALSE/*stackbase != NULL*/);
+        GetBreakpointLine(eip, &newStack->fileName[0], &newStack->lineno, FALSE /*stackbase != NULL*/);
         newStack->address = eip;
         newStack->basePtr = ebp;
         if (stackbase)
@@ -171,15 +167,14 @@ void SetStackArea(void)
 
 //-------------------------------------------------------------------------
 
-LRESULT CALLBACK StackProc(HWND hwnd, UINT iMessage, WPARAM wParam,
-    LPARAM lParam)
+LRESULT CALLBACK StackProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
     LV_ITEM item;
-    LV_COLUMN lvC;    
+    LV_COLUMN lvC;
     RECT r;
     LPNMHDR nmh;
     char module[256];
-    SCOPE *sl;
+    SCOPE* sl;
     int i, lines;
     switch (iMessage)
     {
@@ -198,8 +193,8 @@ LRESULT CALLBACK StackProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             }
             else if (nmh->code == LVN_GETDISPINFO)
             {
-                LV_DISPINFO *p = (LV_DISPINFO *)lParam;
-                SCOPE *x = (SCOPE *)p->item.lParam;
+                LV_DISPINFO* p = (LV_DISPINFO*)lParam;
+                SCOPE* x = (SCOPE*)p->item.lParam;
                 char addr[256];
                 p->item.mask |= LVIF_TEXT | LVIF_DI_SETITEM;
                 p->item.mask &= ~LVIF_STATE;
@@ -209,7 +204,7 @@ LRESULT CALLBACK StackProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 }
                 else
                 {
-                    sprintf(addr,"%8X", x->address);
+                    sprintf(addr, "%8X", x->address);
                     p->item.pszText = addr;
                 }
             }
@@ -231,14 +226,14 @@ LRESULT CALLBACK StackProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 switch (((LPNMLVKEYDOWN)lParam)->wVKey)
                 {
                     case 'C':
-                        if (GetKeyState(VK_CONTROL) &0x80000000)
+                        if (GetKeyState(VK_CONTROL) & 0x80000000)
                         {
                             CopyText(hwnd);
                         }
                         break;
                     case VK_UP:
                         if (curSel > 0)
-                            SendMessage(hwnd, WM_USER, curSel-1, 0);
+                            SendMessage(hwnd, WM_USER, curSel - 1, 0);
                         break;
                     case VK_DOWN:
                         if (curSel < ListView_GetItemCount(hwndLV) - 1)
@@ -248,12 +243,12 @@ LRESULT CALLBACK StackProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             }
             break;
         case WM_COMMAND:
-            switch(LOWORD(wParam))
+            switch (LOWORD(wParam))
             {
                 case ID_TBPROCEDURE:
                     if (HIWORD(wParam) == CBN_SELENDOK)
                     {
-                        int i = SendMessage(hwndTbProcedure, CB_GETCURSEL, 0 , 0);
+                        int i = SendMessage(hwndTbProcedure, CB_GETCURSEL, 0, 0);
                         if (i != CB_ERR)
                         {
                             SendMessage(hwnd, WM_USER, i, 0);
@@ -293,7 +288,7 @@ LRESULT CALLBACK StackProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             {
                 if (GetBreakpointLine(sl->address, module, &lines, curSel != 0))
                 {
-                    char *p;
+                    char* p;
                     static DWINFO x;
                     strcpy(x.dwName, sl->fileName);
                     p = strrchr(module, '\\');
@@ -309,16 +304,15 @@ LRESULT CALLBACK StackProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 }
             }
         }
-            break;
+        break;
         case WM_CREATE:
             hwndStack = hwnd;
             GetClientRect(hwnd, &r);
-            hwndLV = CreateWindowEx(0, WC_LISTVIEW, "", 
-                           LVS_REPORT | LVS_SINGLESEL | WS_CHILD | WS_VISIBLE | WS_BORDER,
-                           0,0,r.right-r.left, r.bottom - r.top, hwnd, 0, hInstance, 0);
+            hwndLV = CreateWindowEx(0, WC_LISTVIEW, "", LVS_REPORT | LVS_SINGLESEL | WS_CHILD | WS_VISIBLE | WS_BORDER, 0, 0,
+                                    r.right - r.left, r.bottom - r.top, hwnd, 0, hInstance, 0);
             ListView_SetExtendedListViewStyle(hwndLV, LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES | LVS_EX_DOUBLEBUFFER);
             ApplyDialogFont(hwndLV);
-            lvC.mask = LVCF_WIDTH | LVCF_SUBITEM ;
+            lvC.mask = LVCF_WIDTH | LVCF_SUBITEM;
             lvC.cx = 20;
             lvC.iSubItem = 0;
             ListView_InsertColumn(hwndLV, 0, &lvC);
@@ -338,17 +332,16 @@ LRESULT CALLBACK StackProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             r.left = r.top = 0;
             r.right = LOWORD(lParam);
             r.bottom = HIWORD(lParam);
-            MoveWindow(hwndLV, r.left, r.top, r.right - r.left,
-                r.bottom - r.top, 1);
+            MoveWindow(hwndLV, r.left, r.top, r.right - r.left, r.bottom - r.top, 1);
             break;
         case WM_INITIALSTACK:
             SetStackArea();
             SendDIDMessage(DID_WATCHWND, WM_INITIALSTACK, 0, 0);
-            SendDIDMessage(DID_WATCHWND+1, WM_INITIALSTACK, 0, 0);
-            SendDIDMessage(DID_WATCHWND+2, WM_INITIALSTACK, 0, 0);
-            SendDIDMessage(DID_WATCHWND+3, WM_INITIALSTACK, 0, 0);
+            SendDIDMessage(DID_WATCHWND + 1, WM_INITIALSTACK, 0, 0);
+            SendDIDMessage(DID_WATCHWND + 2, WM_INITIALSTACK, 0, 0);
+            SendDIDMessage(DID_WATCHWND + 3, WM_INITIALSTACK, 0, 0);
             break;
-         case WM_RESTACK:
+        case WM_RESTACK:
             SetScope(NULL);
             ClearStackArea(hwnd);
             EnableWindow(hwndLV, uState != notDebugging && wParam);
@@ -357,9 +350,9 @@ LRESULT CALLBACK StackProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             {
                 int i = 0;
                 char buf[256];
-                SCOPE *list;
+                SCOPE* list;
                 SetStackArea();
-                
+
                 list = StackList;
                 ListView_DeleteAllItems(hwndLV);
                 memset(&item, 0, sizeof(item));
@@ -378,7 +371,6 @@ LRESULT CALLBACK StackProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                             item.iImage = IML_STOP;
                         if (i == curSel)
                             SetScope(list);
-                            
                     }
                     else if (i == curSel)
                     {
@@ -391,7 +383,7 @@ LRESULT CALLBACK StackProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     }
                     item.lParam = (LPARAM)list;
                     ListView_InsertItem(hwndLV, &item);
-                    
+
                     item.iSubItem = 1;
                     item.mask = LVIF_PARAM | LVIF_TEXT;
                     item.lParam = (LPARAM)list;
@@ -418,7 +410,6 @@ LRESULT CALLBACK StackProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     return DefWindowProc(hwnd, iMessage, wParam, lParam);
 }
 
-
 //-------------------------------------------------------------------------
 
 void RegisterStackWindow(HINSTANCE hInstance)
@@ -433,7 +424,7 @@ void RegisterStackWindow(HINSTANCE hInstance)
     wc.hInstance = hInstance;
     wc.hIcon = LoadIcon(0, IDI_APPLICATION);
     wc.hCursor = LoadCursor(0, IDC_ARROW);
-    wc.hbrBackground = 0; //GetStockObject(WHITE_BRUSH);
+    wc.hbrBackground = 0;  // GetStockObject(WHITE_BRUSH);
     wc.lpszMenuName = 0;
     wc.lpszClassName = szStackClassName;
     RegisterClass(&wc);
@@ -443,7 +434,6 @@ void RegisterStackWindow(HINSTANCE hInstance)
     tagImageList = ImageList_Create(16, 16, ILC_COLOR24, ILEDIT_IMAGECOUNT, 0);
     ImageList_Add(tagImageList, bitmap, NULL);
     DeleteObject(bitmap);
-
 }
 
 //-------------------------------------------------------------------------

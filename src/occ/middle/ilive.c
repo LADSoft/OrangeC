@@ -1,59 +1,59 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /* we are only doing local opts on temp variables.  At this point,
-  * any variable that does not have its address taken is also made a temp
-  * variable
-  */
+ * any variable that does not have its address taken is also made a temp
+ * variable
+ */
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
 #include "compiler.h"
 
-extern ARCH_ASM *chosenAssembler;  
+extern ARCH_ASM* chosenAssembler;
 extern BITINT bittab[BITINTBITS];
 extern int blockCount;
-extern BLOCK **blockArray;
-extern QUAD *intermed_head;
+extern BLOCK** blockArray;
+extern QUAD* intermed_head;
 extern int tempCount;
-extern TEMP_INFO **tempInfo;
+extern TEMP_INFO** tempInfo;
 extern int exitBlock;
 
-int *dfst;
-BRIGGS_SET *globalVars;
+int* dfst;
+BRIGGS_SET* globalVars;
 
-static BRIGGS_SET *visited ;
-static BRIGGS_SET *worklist ;
-static BRIGGS_SET *livelist ;
-static BOOLEAN hasPhi ;
-QUAD *beforeJmp(QUAD *I, BOOLEAN before)
+static BRIGGS_SET* visited;
+static BRIGGS_SET* worklist;
+static BRIGGS_SET* livelist;
+static BOOLEAN hasPhi;
+QUAD* beforeJmp(QUAD* I, BOOLEAN before)
 {
-    QUAD *start = I;
+    QUAD* start = I;
     while (I->dc.opcode != i_block)
     {
-        switch(I->dc.opcode)
+        switch (I->dc.opcode)
         {
             case i_swbranch:
                 while (I->dc.opcode == i_swbranch)
@@ -82,28 +82,28 @@ QUAD *beforeJmp(QUAD *I, BOOLEAN before)
         }
         I = I->back;
     }
-//	if (before)
-//		return start->back;
+    //	if (before)
+    //		return start->back;
     return start;
 }
 static void liveSetup(void)
 {
-    BRIGGS_SET *exposed = briggsAllocs(tempCount);
+    BRIGGS_SET* exposed = briggsAllocs(tempCount);
     int i;
-    for (i=0; i < blockCount; i++)
+    for (i = 0; i < blockCount; i++)
     {
-        struct _block *blk = blockArray[i];
+        struct _block* blk = blockArray[i];
         if (blk && blk->head)
         {
-            QUAD *tail = blk->tail;
+            QUAD* tail = blk->tail;
             int j;
             briggsClear(exposed);
             do
             {
                 if (tail->dc.opcode == i_phi)
                 {
-                    PHIDATA *pd = tail->dc.v.phi;
-                    struct _phiblock *pb = pd->temps;
+                    PHIDATA* pd = tail->dc.v.phi;
+                    struct _phiblock* pb = pd->temps;
                     hasPhi = TRUE;
                     briggsReset(exposed, pd->T0);
                     clearbit(blk->liveGen, pd->T0);
@@ -113,7 +113,7 @@ static void liveSetup(void)
                         briggsSet(exposed, pb->Tn);
                         setbit(blk->liveGen, pb->Tn);
                         pb = pb->next;
-                    }	
+                    }
                 }
                 else
                 {
@@ -178,7 +178,7 @@ static void liveSetup(void)
             briggsUnion(globalVars, exposed);
         }
     }
-    for (i=0; i < globalVars->top; i++)
+    for (i = 0; i < globalVars->top; i++)
     {
         int t = globalVars->data[i], j;
         tempInfo[t]->liveAcrossBlock = TRUE;
@@ -187,23 +187,23 @@ static void liveSetup(void)
 static void liveOut()
 {
     BITINT inWorkList[8192];
-    unsigned short *workList = sAlloc((blockCount + 1) * sizeof(unsigned short));
+    unsigned short* workList = sAlloc((blockCount + 1) * sizeof(unsigned short));
     int i;
     int head = 0, tail = 0;
-    int tempDWords = (tempCount + BITINTBITS-1)/BITINTBITS;
-    memset(inWorkList, 0, (blockCount + BITINTBITS-1)/BITINTBITS * sizeof(BITINT));
+    int tempDWords = (tempCount + BITINTBITS - 1) / BITINTBITS;
+    memset(inWorkList, 0, (blockCount + BITINTBITS - 1) / BITINTBITS * sizeof(BITINT));
     workList[head++] = exitBlock;
     setbit(inWorkList, exitBlock);
     while (tail != head)
     {
         unsigned n = workList[tail++];
-        BLOCKLIST *bl = blockArray[n]->pred;
+        BLOCKLIST* bl = blockArray[n]->pred;
         while (bl)
         {
-            BITINT *b;
+            BITINT* b;
             BITINT r;
             n = bl->block->blocknum;
-            b = inWorkList + (n/BITINTBITS);
+            b = inWorkList + (n / BITINTBITS);
             r = 1 << (n % BITINTBITS);
             if (!(*b & r))
             {
@@ -218,19 +218,19 @@ static void liveOut()
     {
         BOOLEAN changed = FALSE;
         unsigned n = workList[tail];
-        BLOCK *b = blockArray[n];
-        BLOCKLIST *bl = b->succ;
+        BLOCK* b = blockArray[n];
+        BLOCKLIST* bl = b->succ;
         int j;
         BITINT *gen, *kills, *live, *outb;
         if (++tail == blockCount + 1)
             tail = 0;
         clearbit(inWorkList, n);
-        memset(b->liveOut, 0 , tempDWords * sizeof(BITINT));
+        memset(b->liveOut, 0, tempDWords * sizeof(BITINT));
         while (bl)
         {
             live = bl->block->liveIn;
             outb = b->liveOut;
-            for (j=0; j < tempDWords; j++)
+            for (j = 0; j < tempDWords; j++)
             {
                 if (live[j])
                     outb[j] |= live[j];
@@ -241,7 +241,7 @@ static void liveOut()
         gen = b->liveGen;
         kills = b->liveKills;
         outb = b->liveOut;
-        for (j=0; j < tempDWords; j++)
+        for (j = 0; j < tempDWords; j++)
         {
             BITINT c = gen[j] | (outb[j] & ~kills[j]);
             if (changed)
@@ -257,10 +257,10 @@ static void liveOut()
             bl = b->pred;
             while (bl)
             {
-                BITINT *b;
+                BITINT* b;
                 BITINT r;
                 n = bl->block->blocknum;
-                b = inWorkList + (n/BITINTBITS);
+                b = inWorkList + (n / BITINTBITS);
                 r = 1 << (n % BITINTBITS);
                 if (!(*b & r))
                 {
@@ -280,7 +280,7 @@ static void liveOut()
         {
             if (blockArray[i])
             {
-                QUAD *t = blockArray[i]->tail->fwd;
+                QUAD* t = blockArray[i]->tail->fwd;
                 /* this doesn't follow the normal handling rules
                  * so we remove and insert it by hand
                  */
@@ -290,10 +290,10 @@ static void liveOut()
                     if (t->fwd)
                         t->fwd->back = t->back;
                 }
-                    
+
                 if (blockArray[i]->liveOut)
                 {
-                    QUAD *q = Alloc(sizeof(QUAD));
+                    QUAD* q = Alloc(sizeof(QUAD));
                     t = blockArray[i]->tail;
                     q->dc.opcode = i_blockend;
                     q->dc.v.data = blockArray[i]->liveOut;
@@ -311,27 +311,26 @@ static void liveOut()
 static void killPhiPaths1(void)
 {
     int i;
-    for (i=0; i < blockCount; i++)
+    for (i = 0; i < blockCount; i++)
     {
-        struct _block *blk = blockArray[i];
+        struct _block* blk = blockArray[i];
         if (blk)
         {
-            QUAD *head = blk->head->fwd;
+            QUAD* head = blk->head->fwd;
             if (head)
             {
-                while (head != blk->tail->fwd && (head->dc.opcode == i_label || 
-                       head->ignoreMe))
+                while (head != blk->tail->fwd && (head->dc.opcode == i_label || head->ignoreMe))
                 {
                     head = head->fwd;
                 }
                 while (head->dc.opcode == i_phi && head != blk->tail->fwd)
                 {
-                    PHIDATA *pd = head->dc.v.phi;
-                    struct _phiblock *pb = pd->temps;
-                    BLOCKLIST *bl = blk->pred;
+                    PHIDATA* pd = head->dc.v.phi;
+                    struct _phiblock* pb = pd->temps;
+                    BLOCKLIST* bl = blk->pred;
                     while (pb)
                     {
-                        struct _phiblock *pb2 = pd->temps;
+                        struct _phiblock* pb2 = pd->temps;
                         while (pb2)
                         {
                             if (pb->Tn != pb2->Tn)
@@ -342,8 +341,8 @@ static void killPhiPaths1(void)
                         }
                         pb = pb->next;
                         bl = bl->next;
-                    }		
-                    
+                    }
+
                     head = head->fwd;
                 }
             }
@@ -353,27 +352,26 @@ static void killPhiPaths1(void)
 static void killPhiPaths2(void)
 {
     int i;
-    for (i=0; i < blockCount; i++)
+    for (i = 0; i < blockCount; i++)
     {
-        struct _block *blk = blockArray[i];
+        struct _block* blk = blockArray[i];
         if (blk)
         {
-            QUAD *head = blk->head->fwd;
+            QUAD* head = blk->head->fwd;
             if (head)
             {
-                while (head != blk->tail->fwd && (head->dc.opcode == i_label || 
-                       head->ignoreMe))
+                while (head != blk->tail->fwd && (head->dc.opcode == i_label || head->ignoreMe))
                 {
                     head = head->fwd;
                 }
                 while (head->dc.opcode == i_phi && head != blk->tail->fwd)
                 {
-                    PHIDATA *pd = head->dc.v.phi;
-                    struct _phiblock *pb = pd->temps;
-                    BLOCKLIST *bl = blk->pred;
+                    PHIDATA* pd = head->dc.v.phi;
+                    struct _phiblock* pb = pd->temps;
+                    BLOCKLIST* bl = blk->pred;
                     while (pb)
                     {
-                        struct _phiblock *pb2 = pd->temps;
+                        struct _phiblock* pb2 = pd->temps;
                         while (pb2)
                         {
                             clearbit(bl->block->liveOut, pb2->Tn);
@@ -381,17 +379,17 @@ static void killPhiPaths2(void)
                         }
                         pb = pb->next;
                         bl = bl->next;
-                    }		
-                    
+                    }
+
                     head = head->fwd;
                 }
             }
         }
     }
 }
-static void markLiveInstruction(BRIGGS_SET *live, QUAD *ins)
+static void markLiveInstruction(BRIGGS_SET* live, QUAD* ins)
 {
-    switch(ins->dc.opcode)
+    switch (ins->dc.opcode)
     {
         case i_parmadj:
         case i_passthrough:
@@ -430,7 +428,7 @@ static void markLiveInstruction(BRIGGS_SET *live, QUAD *ins)
         case i_label:
         case i_goto:
             ins->live = TRUE;
-            break;		
+            break;
         case i_assnblock:
         case i_clrblock:
         case i_parmblock:
@@ -452,7 +450,7 @@ static void markLiveInstruction(BRIGGS_SET *live, QUAD *ins)
         case i_phi:
             if (briggsTest(live, ins->dc.v.phi->T0))
             {
-                struct _phiblock *pb = ins->dc.v.phi->temps;
+                struct _phiblock* pb = ins->dc.v.phi->temps;
                 ins->live = TRUE;
                 while (pb)
                 {
@@ -462,8 +460,8 @@ static void markLiveInstruction(BRIGGS_SET *live, QUAD *ins)
             }
             return;
         default:
-            if (!(ins->temps & TEMP_ANS) || ins->ans->mode == i_ind || 
-               (chosenAssembler->arch->denyopts & DO_NODEADPUSHTOTEMP) && ins->ans->offset->v.sp->pushedtotemp)
+            if (!(ins->temps & TEMP_ANS) || ins->ans->mode == i_ind ||
+                (chosenAssembler->arch->denyopts & DO_NODEADPUSHTOTEMP) && ins->ans->offset->v.sp->pushedtotemp)
                 ins->live = TRUE;
             else if ((ins->temps & TEMP_ANS) && briggsTest(live, ins->ans->offset->v.sp->value.i))
                 ins->live = TRUE;
@@ -508,23 +506,23 @@ static void markLiveInstruction(BRIGGS_SET *live, QUAD *ins)
         }
     }
 }
-void removeDead(BLOCK *b)
+void removeDead(BLOCK* b)
 {
-    static BRIGGS_SET *live;
-    BITINT *p;
-    int j,k;
-    QUAD *tail;
-    BLOCKLIST *bl;
+    static BRIGGS_SET* live;
+    BITINT* p;
+    int j, k;
+    QUAD* tail;
+    BLOCKLIST* bl;
     BOOLEAN done = FALSE;
     if (b == blockArray[0])
     {
         int i;
         liveVariables();
         live = briggsAlloc(tempCount);
-        for (i=0; i < blockCount; i++)
+        for (i = 0; i < blockCount; i++)
             if (blockArray[i])
             {
-                QUAD *tail = blockArray[i]->head;
+                QUAD* tail = blockArray[i]->head;
                 while (tail != blockArray[i]->tail->fwd)
                 {
                     tail->live = tail->alwayslive;
@@ -536,12 +534,12 @@ void removeDead(BLOCK *b)
     b->visiteddfst = TRUE;
     briggsClear(live);
     p = b->liveOut;
-    for (j=0; j < (tempCount + BITINTBITS-1)/BITINTBITS; j++,p++)
+    for (j = 0; j < (tempCount + BITINTBITS - 1) / BITINTBITS; j++, p++)
         if (*p)
-            for (k=0; k < BITINTBITS; k++)
+            for (k = 0; k < BITINTBITS; k++)
                 if (*p & (1 << k))
                 {
-                    briggsSet(live, j*BITINTBITS + k);
+                    briggsSet(live, j * BITINTBITS + k);
                 }
     tail = b->tail;
     while (tail != b->head->back)
@@ -558,7 +556,7 @@ void removeDead(BLOCK *b)
     }
     if (b == blockArray[0])
     {
-        QUAD *head = intermed_head;
+        QUAD* head = intermed_head;
         BOOLEAN changed = FALSE;
         int i;
         /*
@@ -569,12 +567,12 @@ void removeDead(BLOCK *b)
                     removeDead(blockArray[i]);
         }
         */
-        for (i=0; i < blockCount; i++)
+        for (i = 0; i < blockCount; i++)
         {
-            BLOCK *b1 = blockArray[i];
+            BLOCK* b1 = blockArray[i];
             if (b1)
             {
-                QUAD *head = b1->head;
+                QUAD* head = b1->head;
                 while (head != b1->tail->fwd)
                 {
                     if (!head->live)
@@ -585,7 +583,7 @@ void removeDead(BLOCK *b)
                             RemoveInstruction(head);
                             if (head->dc.opcode == i_coswitch || (head->dc.opcode >= i_jne && head->dc.opcode <= i_jge))
                             {
-                                BLOCKLIST *bl = head->block->succ->next;
+                                BLOCKLIST* bl = head->block->succ->next;
                                 head->block->succ->next = NULL;
                                 while (bl)
                                 {
@@ -615,17 +613,17 @@ void liveVariables(void)
     worklist = briggsAllocs(blockCount);
     livelist = briggsAllocs(blockCount);
     visited = briggsAllocs(blockCount);
-    for (i=0; i < blockCount; i++)
+    for (i = 0; i < blockCount; i++)
     {
         if (blockArray[i])
         {
             blockArray[i]->liveGen = sallocbit(tempCount);
             blockArray[i]->liveKills = sallocbit(tempCount);
-            blockArray[i]-> liveIn = sallocbit(tempCount); 
+            blockArray[i]->liveIn = sallocbit(tempCount);
             blockArray[i]->liveOut = sallocbit(tempCount);
         }
     }
-    for (i=0; i <tempCount; i++)
+    for (i = 0; i < tempCount; i++)
     {
         tempInfo[i]->liveAcrossBlock = FALSE;
     }

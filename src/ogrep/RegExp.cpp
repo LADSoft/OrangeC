@@ -1,134 +1,134 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "RegExp.h"
 #include <limits.h>
 #include <stdlib.h>
 
-UBYTE RegExpMatch::wordChars[256/8];
+UBYTE RegExpMatch::wordChars[256 / 8];
 bool RegExpMatch::initted;
 
 void RegExpMatch::Init(bool caseSensitive)
 {
     if (!initted)
     {
-        memset(wordChars,0, sizeof(wordChars));
-        for (int i='A'; i <= 'Z'; i++)
-            wordChars[i/8] |= 1 << (i & 7);
+        memset(wordChars, 0, sizeof(wordChars));
+        for (int i = 'A'; i <= 'Z'; i++)
+            wordChars[i / 8] |= 1 << (i & 7);
         if (caseSensitive)
-            for (int i='a'; i <= 'z'; i++)
-                wordChars[i/8] |= 1 << (i & 7);
-        for (int i='0'; i <= '9'; i++)
-            wordChars[i/8] |= 1 << (i & 7);
-        wordChars['_'/8] |= 1 << ('_' & 7);
+            for (int i = 'a'; i <= 'z'; i++)
+                wordChars[i / 8] |= 1 << (i & 7);
+        for (int i = '0'; i <= '9'; i++)
+            wordChars[i / 8] |= 1 << (i & 7);
+        wordChars['_' / 8] |= 1 << ('_' & 7);
         initted = true;
     }
 }
-const char * RegExpMatch::SetClass(const char *name)
+const char* RegExpMatch::SetClass(const char* name)
 {
     int i;
     if (!strcmp(name, "alpha"))
     {
-        for (i=0; i < 128; i++)
+        for (i = 0; i < 128; i++)
             if (isalpha(i))
                 SetBit(i);
         name += 5;
     }
     else if (!strcmp(name, "upper"))
     {
-        for (i=0; i < 128; i++)
+        for (i = 0; i < 128; i++)
             if (isupper(i))
                 SetBit(i);
         name += 5;
     }
     else if (!strcmp(name, "lower"))
     {
-        for (i=0; i < 128; i++)
+        for (i = 0; i < 128; i++)
             if (islower(i))
                 SetBit(i);
         name += 5;
     }
     else if (!strcmp(name, "digit"))
     {
-        for (i=0; i < 128; i++)
+        for (i = 0; i < 128; i++)
             if (isdigit(i))
                 SetBit(i);
         name += 5;
     }
     else if (!strcmp(name, "alnum"))
     {
-        for (i=0; i < 128; i++)
+        for (i = 0; i < 128; i++)
             if (isalnum(i))
                 SetBit(i);
         name += 5;
     }
     else if (!strcmp(name, "xdigit"))
     {
-        for (i=0; i < 128; i++)
+        for (i = 0; i < 128; i++)
             if (isxdigit(i))
                 SetBit(i);
         name += 6;
     }
     else if (!strcmp(name, "space"))
     {
-        for (i=0; i < 128; i++)
+        for (i = 0; i < 128; i++)
             if (isspace(i))
                 SetBit(i);
         name += 5;
     }
     else if (!strcmp(name, "print"))
     {
-        for (i=0; i < 128; i++)
+        for (i = 0; i < 128; i++)
             if (isprint(i))
                 SetBit(i);
         name += 5;
     }
     else if (!strcmp(name, "punct"))
     {
-        for (i=0; i < 128; i++)
+        for (i = 0; i < 128; i++)
             if (ispunct(i))
                 SetBit(i);
         name += 5;
     }
     else if (!strcmp(name, "graph"))
     {
-        for (i=0; i < 128; i++)
+        for (i = 0; i < 128; i++)
             if (isgraph(i))
                 SetBit(i);
         name += 5;
     }
     else if (!strcmp(name, "cntrl"))
     {
-        for (i=0; i < 128; i++)
+        for (i = 0; i < 128; i++)
             if (iscntrl(i))
                 SetBit(i);
         name += 5;
     }
     else if (!strcmp(name, "blank"))
     {
-        for (i=0; i < 128; i++)
+        for (i = 0; i < 128; i++)
             if (i == ' ' || i == '\t')
                 SetBit(i);
         name += 5;
@@ -137,11 +137,11 @@ const char * RegExpMatch::SetClass(const char *name)
         invalid = true;
     return name;
 }
-void RegExpMatch::SetSet(const char **p, bool caseSensitive)
+void RegExpMatch::SetSet(const char** p, bool caseSensitive)
 {
     bool lnot = false;
-    UBYTE last[256/8];
-    const char *str = *p;
+    UBYTE last[256 / 8];
+    const char* str = *p;
     memcpy(last, matches, sizeof(last));
     memset(matches, 0, sizeof(matches));
     if (*str == '^')
@@ -152,15 +152,15 @@ void RegExpMatch::SetSet(const char **p, bool caseSensitive)
     if (*str == '-')
     {
         SetBit('-');
-        str++;	
+        str++;
     }
     while (!invalid && *str && *str != ']')
     {
         if (*str == '[' && str[1] == ':')
         {
-            str = SetClass(str+2);
+            str = SetClass(str + 2);
             if (*str != ':' || str[1] == ']')
-                invalid = true;	
+                invalid = true;
             str += 2;
         }
         if (*str == '\\')
@@ -174,19 +174,18 @@ void RegExpMatch::SetSet(const char **p, bool caseSensitive)
                 SetBit(*str);
             str++;
         }
-        else
-            if (str[1] == '-')
-            {
-                if (str[0] > str[2])
-                    invalid = true;
-                else
-                {
-                    SetRange(str[0], str[2], caseSensitive);
-                    str += 3;
-                }
-            }
+        else if (str[1] == '-')
+        {
+            if (str[0] > str[2])
+                invalid = true;
             else
-                SetChar(*str++, caseSensitive);
+            {
+                SetRange(str[0], str[2], caseSensitive);
+                str += 3;
+            }
+        }
+        else
+            SetChar(*str++, caseSensitive);
     }
     if (*str != ']')
         invalid = true;
@@ -194,12 +193,12 @@ void RegExpMatch::SetSet(const char **p, bool caseSensitive)
         str++;
     if (!invalid && lnot)
     {
-        for (int i = 32/8; i < 128/8; i++)
-            matches[i] = ~matches[i] &last[i];
+        for (int i = 32 / 8; i < 128 / 8; i++)
+            matches[i] = ~matches[i] & last[i];
     }
     *p = str;
 }
-bool RegExpMatch::MatchRange(RegExpContext &context ,const char *str)
+bool RegExpMatch::MatchRange(RegExpContext& context, const char* str)
 {
     if (IsSet(M_START))
     {
@@ -221,7 +220,7 @@ bool RegExpMatch::MatchRange(RegExpContext &context ,const char *str)
     }
     return false;
 }
-int RegExpMatch::MatchOne(RegExpContext &context, const char *str)
+int RegExpMatch::MatchOne(RegExpContext& context, const char* str)
 {
     if (MatchRange(context, str))
         return 0;
@@ -240,12 +239,12 @@ int RegExpMatch::MatchOne(RegExpContext &context, const char *str)
             else
             {
                 bool matches = true;
-                const char *p = context.beginning + context.matchOffsets[matchRange][0];
-                const char *q = str;
-                
-                for (int i=0; i < n && matches; i++)
+                const char* p = context.beginning + context.matchOffsets[matchRange][0];
+                const char* q = str;
+
+                for (int i = 0; i < n && matches; i++)
                     if (toupper(*p++) != toupper(*q++))
-                        matches = false; 
+                        matches = false;
                 if (matches)
                     return n;
             }
@@ -315,26 +314,26 @@ int RegExpMatch::MatchOne(RegExpContext &context, const char *str)
     if (IsSet(RE_M_EOL))
     {
         if (*str == '\n' || !*str)
-            return 0;	
+            return 0;
     }
     return -1;
 }
-int RegExpMatch::Matches(RegExpContext &context, const char *str)
+int RegExpMatch::Matches(RegExpContext& context, const char* str)
 {
     if (rl >= 0 && rh >= 0)
     {
-        int n,m = 0;
+        int n, m = 0;
         int count = 0;
         n = MatchOne(context, str);
         while (n > 0)
         {
             m += n;
             n = MatchOne(context, str + m);
-            count ++;
+            count++;
         }
         if (count >= rl && count <= rh)
         {
-            if (count != 0 || MatchOne(context,str-1) == -1)
+            if (count != 0 || MatchOne(context, str - 1) == -1)
                 return m;
         }
         if (m)
@@ -344,23 +343,23 @@ int RegExpMatch::Matches(RegExpContext &context, const char *str)
     }
     else
         return MatchOne(context, str);
-;
+    ;
 }
 void RegExpContext::Clear()
 {
     while (matches.size())
     {
-        RegExpMatch *m = matches.front();
+        RegExpMatch* m = matches.front();
         matches.pop_front();
         delete m;
     }
-    matchStackTop = 0; 
+    matchStackTop = 0;
     m_so = m_eo = 0;
     matchCount = 0;
 }
 int RegExpContext::GetSpecial(char ch)
 {
-    switch(ch)
+    switch (ch)
     {
         case 'b':
             return RegExpMatch::RE_M_WORD;
@@ -382,14 +381,14 @@ int RegExpContext::GetSpecial(char ch)
             return ch;
     }
 }
-void RegExpContext::Parse(const char *exp, bool regular, bool CaseSensitive, bool matchesWord)
+void RegExpContext::Parse(const char* exp, bool regular, bool CaseSensitive, bool matchesWord)
 {
     invalid = false;
     caseSensitive = CaseSensitive;
     Clear();
     if (matchesWord)
     {
-        RegExpMatch *m = new RegExpMatch(RegExpMatch::RE_M_BWORD, caseSensitive);
+        RegExpMatch* m = new RegExpMatch(RegExpMatch::RE_M_BWORD, caseSensitive);
         if (m)
             matches.push_back(m);
         else
@@ -397,11 +396,11 @@ void RegExpContext::Parse(const char *exp, bool regular, bool CaseSensitive, boo
     }
     if (regular)
     {
-        RegExpMatch *lastMatch = nullptr;
+        RegExpMatch* lastMatch = nullptr;
         while (!invalid && *exp)
         {
-            RegExpMatch *currentMatch = nullptr;
-            switch(*exp)
+            RegExpMatch* currentMatch = nullptr;
+            switch (*exp)
             {
                 case '.':
                     currentMatch = new RegExpMatch(true);
@@ -415,7 +414,7 @@ void RegExpContext::Parse(const char *exp, bool regular, bool CaseSensitive, boo
                         lastMatch->SetInterval(0, INT_MAX);
                         lastMatch = nullptr;
                     }
-                    else 
+                    else
                         invalid = true;
                     exp++;
                     break;
@@ -425,17 +424,17 @@ void RegExpContext::Parse(const char *exp, bool regular, bool CaseSensitive, boo
                         lastMatch->SetInterval(1, INT_MAX);
                         lastMatch = nullptr;
                     }
-                    else 
+                    else
                         invalid = true;
                     exp++;
                     break;
                 case '?':
                     if (lastMatch)
                     {
-                        lastMatch->SetInterval(0,1);
+                        lastMatch->SetInterval(0, 1);
                         lastMatch = nullptr;
                     }
-                    else 
+                    else
                         invalid = true;
                     exp++;
                     break;
@@ -517,9 +516,9 @@ void RegExpContext::Parse(const char *exp, bool regular, bool CaseSensitive, boo
                             }
                             break;
                         default:
-                            if (isdigit (*exp))
+                            if (isdigit(*exp))
                             {
-                                currentMatch = new RegExpMatch(RegExpMatch::M_MATCH, *exp++-'0', caseSensitive);
+                                currentMatch = new RegExpMatch(RegExpMatch::M_MATCH, *exp++ - '0', caseSensitive);
                                 if (!currentMatch)
                                     invalid = true;
                             }
@@ -558,7 +557,7 @@ void RegExpContext::Parse(const char *exp, bool regular, bool CaseSensitive, boo
                         }
                     }
                     lastMatch = nullptr;
-                    break;				
+                    break;
                 default:
                     currentMatch = new RegExpMatch(*exp++, caseSensitive);
                     if (!currentMatch)
@@ -574,20 +573,20 @@ void RegExpContext::Parse(const char *exp, bool regular, bool CaseSensitive, boo
     {
         while (*exp)
         {
-            RegExpMatch *m = new RegExpMatch(*exp++, caseSensitive);
+            RegExpMatch* m = new RegExpMatch(*exp++, caseSensitive);
             matches.push_back(m);
         }
     }
     if (!invalid && matchesWord)
     {
-        RegExpMatch *m = new RegExpMatch(RegExpMatch::RE_M_EWORD, caseSensitive);
+        RegExpMatch* m = new RegExpMatch(RegExpMatch::RE_M_EWORD, caseSensitive);
         if (m)
             matches.push_back(m);
         else
             invalid = true;
     }
 }
-int RegExpContext::MatchOne(const char *str)
+int RegExpContext::MatchOne(const char* str)
 {
     int m = 0;
     RegExpMatch::Reset(caseSensitive);
@@ -602,11 +601,11 @@ int RegExpContext::MatchOne(const char *str)
     }
     return m;
 }
-bool RegExpContext::Match(int start, int len, const char *Beginning)
+bool RegExpContext::Match(int start, int len, const char* Beginning)
 {
     beginning = Beginning;
-    const char *str = Beginning + start;
-    const char *end = str + len;
+    const char* str = Beginning + start;
+    const char* end = str + len;
     matchStackTop = 0;
     while (*str && str < end)
     {
@@ -619,7 +618,7 @@ bool RegExpContext::Match(int start, int len, const char *Beginning)
         }
         else
         {
-            str+=-n;
+            str += -n;
         }
     }
     return false;

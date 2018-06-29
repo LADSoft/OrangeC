@@ -1,49 +1,49 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
- 
-extern ARCH_ASM *chosenAssembler;
+
+extern ARCH_ASM* chosenAssembler;
 extern TYPE stdint;
-extern NAMESPACEVALUES *localNameSpace;
+extern NAMESPACEVALUES* localNameSpace;
 extern TYPE stdpointer, stdvoid;
 extern int startlab, retlab;
 extern int total_errors;
-extern INCLUDES *includes;
-extern LIST *importThunks;
+extern INCLUDES* includes;
+extern LIST* importThunks;
 
 static LIST *inlineHead, *inlineTail, *inlineVTabHead, *inlineVTabTail;
 static LIST *inlineDataHead, *inlineDataTail;
 
-static SYMBOL *inlinesp_list[MAX_INLINE_NESTING];
+static SYMBOL* inlinesp_list[MAX_INLINE_NESTING];
 
 static int inlinesp_count;
-static HASHTABLE *vc1Thunks;
-static HASHTABLE *didInlines;
+static HASHTABLE* vc1Thunks;
+static HASHTABLE* didInlines;
 
-static FUNCTIONCALL *function_list[MAX_INLINE_NESTING];
+static FUNCTIONCALL* function_list[MAX_INLINE_NESTING];
 static int function_list_count;
 static int namenumber;
 
@@ -56,44 +56,43 @@ void inlineinit(void)
     vc1Thunks = CreateHashTable(1);
     didInlines = CreateHashTable(32);
 }
-static SYMBOL *inSearch(SYMBOL *sp)
+static SYMBOL* inSearch(SYMBOL* sp)
 {
-    HASHREC **hr = GetHashLink(didInlines, sp->decoratedName);
+    HASHREC** hr = GetHashLink(didInlines, sp->decoratedName);
     while (*hr)
     {
-        SYMBOL *sym = (SYMBOL *)(*hr)->p;
+        SYMBOL* sym = (SYMBOL*)(*hr)->p;
         if (!strcmp(sym->decoratedName, sp->decoratedName))
             return sym;
         hr = &(*hr)->next;
     }
     return NULL;
 }
-static void inInsert(SYMBOL *sp)
+static void inInsert(SYMBOL* sp)
 {
     // assumes the symbol isn't already there...
-    HASHREC **hr = GetHashLink(didInlines, sp->decoratedName);
-    HASHREC *added = Alloc(sizeof(HASHREC));
+    HASHREC** hr = GetHashLink(didInlines, sp->decoratedName);
+    HASHREC* added = Alloc(sizeof(HASHREC));
     sp->mainsym = NULL;
-    added->p = (struct _hrintern_ *)sp;
+    added->p = (struct _hrintern_*)sp;
     added->next = *hr;
     *hr = added;
 }
-static void UndoPreviousCodegen(SYMBOL *sym)
+static void UndoPreviousCodegen(SYMBOL* sym)
 {
-    HASHTABLE *syms = sym->inlineFunc.syms;
+    HASHTABLE* syms = sym->inlineFunc.syms;
     while (syms)
     {
-        HASHREC *hr = syms->table[0];
+        HASHREC* hr = syms->table[0];
         while (hr)
         {
-            SYMBOL *sx = (SYMBOL *)hr->p;
+            SYMBOL* sx = (SYMBOL*)hr->p;
             sx->imaddress = sx->imvalue = NULL;
             sx->imind = NULL;
             hr = hr->next;
         }
         syms = syms->next;
     }
-    
 }
 void dumpInlines(void)
 {
@@ -101,16 +100,16 @@ void dumpInlines(void)
     if (!total_errors)
     {
         BOOLEAN done;
-        LIST *vtabList;
-        LIST *dataList;
+        LIST* vtabList;
+        LIST* dataList;
         cseg();
         do
         {
-            LIST *funcList = inlineHead;
+            LIST* funcList = inlineHead;
             done = TRUE;
             while (funcList)
             {
-                SYMBOL *sym = (SYMBOL *)funcList->data;
+                SYMBOL* sym = (SYMBOL*)funcList->data;
                 if (((sym->isInline && sym->dumpInlineToFile) || sym->genreffed))
                 {
                     if (sym->parentClass && sym->parentClass->dontinstantiate && !sym->templateLevel || sym->linkage2 == lk_import)
@@ -120,7 +119,7 @@ void dumpInlines(void)
                     }
                     if (!sym->didinline && !sym->dontinstantiate)
                     {
-                        SYMBOL *srch = inSearch(sym);
+                        SYMBOL* srch = inSearch(sym);
                         if (srch)
                         {
                             sym->mainsym = srch;
@@ -136,7 +135,7 @@ void dumpInlines(void)
                             {
                                 inInsert(sym);
                                 sym->genreffed = FALSE;
-                                sym->noextern  = TRUE;
+                                sym->noextern = TRUE;
                                 UndoPreviousCodegen(sym);
                                 startlab = nextLabel++;
                                 retlab = nextLabel++;
@@ -153,7 +152,7 @@ void dumpInlines(void)
             vtabList = inlineVTabHead;
             while (vtabList)
             {
-                SYMBOL *sym = (SYMBOL *)vtabList->data;
+                SYMBOL* sym = (SYMBOL*)vtabList->data;
                 if (sym->vtabsp->genreffed && hasVTab(sym) && !sym->vtabsp->didinline)
                 {
                     if (sym->dontinstantiate)
@@ -166,32 +165,31 @@ void dumpInlines(void)
                     {
                         sym->vtabsp->didinline = TRUE;
                         sym->vtabsp->genreffed = FALSE;
-                        sym->vtabsp->noextern  = TRUE;
+                        sym->vtabsp->noextern = TRUE;
                         dumpVTab(sym);
                         done = FALSE;
                     }
                 }
                 vtabList = vtabList->next;
-                
             }
         } while (!done);
         dataList = inlineDataHead;
         dseg();
         while (dataList)
         {
-            SYMBOL *sym = (SYMBOL *)dataList->data;
+            SYMBOL* sym = (SYMBOL*)dataList->data;
             if (sym->linkage2 != lk_import)
             {
                 if (sym->parentClass && sym->parentClass->parentTemplate)
                 {
-                    SYMBOL *parentTemplate = sym->parentClass->parentTemplate;
-                    SYMBOL *origsym;
-                    LIST *instants = parentTemplate->instantiations;
+                    SYMBOL* parentTemplate = sym->parentClass->parentTemplate;
+                    SYMBOL* origsym;
+                    LIST* instants = parentTemplate->instantiations;
                     while (instants)
                     {
                         if (TemplateInstantiationMatch(instants->data, sym->parentClass))
                         {
-                            parentTemplate = (SYMBOL *)instants->data;
+                            parentTemplate = (SYMBOL*)instants->data;
                             break;
                         }
                         instants = instants->next;
@@ -220,7 +218,7 @@ void dumpInlines(void)
                         if (origsym->deferredCompile)
                         {
                             STRUCTSYM s1, s;
-                            LEXEME *lex;
+                            LEXEME* lex;
                             s1.str = sym->parentClass;
                             addStructureDeclaration(&s1);
                             s.tmpl = sym->templateParams;
@@ -248,7 +246,7 @@ void dumpInlines(void)
                 {
                     if (!sym->didinline)
                     {
-                        SYMBOL *srch = inSearch(sym);
+                        SYMBOL* srch = inSearch(sym);
                         if (srch)
                         {
                             sym->mainsym = srch;
@@ -277,12 +275,12 @@ void dumpInlines(void)
 void dumpImportThunks(void)
 {
 #ifndef PARSER_ONLY
-    LIST *l = importThunks;
+    LIST* l = importThunks;
     while (l)
     {
-        gen_virtual((SYMBOL *)l->data, FALSE);
-        gen_importThunk((SYMBOL *)l->data);
-        gen_endvirtual((SYMBOL *)l->data);
+        gen_virtual((SYMBOL*)l->data, FALSE);
+        gen_importThunk((SYMBOL*)l->data);
+        gen_endvirtual((SYMBOL*)l->data);
         l = l->next;
     }
 #endif
@@ -290,23 +288,23 @@ void dumpImportThunks(void)
 void dumpvc1Thunks(void)
 {
 #ifndef PARSER_ONLY
-    HASHREC *hr;
+    HASHREC* hr;
     cseg();
     hr = vc1Thunks->table[0];
     while (hr)
     {
-        gen_virtual((SYMBOL *)hr->p, FALSE);
-        gen_vc1((SYMBOL *)hr->p);
-        gen_endvirtual((SYMBOL *)hr->p);
+        gen_virtual((SYMBOL*)hr->p, FALSE);
+        gen_vc1((SYMBOL*)hr->p);
+        gen_endvirtual((SYMBOL*)hr->p);
         hr = hr->next;
     }
 #endif
 }
-SYMBOL *getvc1Thunk(int offset)
+SYMBOL* getvc1Thunk(int offset)
 {
     char name[256];
-    SYMBOL *rv;
-    my_sprintf(name, "@$vc1$B0$%d$0", offset+1);
+    SYMBOL* rv;
+    my_sprintf(name, "@$vc1$B0$%d$0", offset + 1);
     rv = search(name, vc1Thunks);
     if (!rv)
     {
@@ -320,9 +318,9 @@ SYMBOL *getvc1Thunk(int offset)
     }
     return rv;
 }
-void InsertInline(SYMBOL *sp)
+void InsertInline(SYMBOL* sp)
 {
-    LIST *temp = Alloc(sizeof(LIST));
+    LIST* temp = Alloc(sizeof(LIST));
     temp->data = sp;
     if (isfunction(sp->tp))
     {
@@ -339,9 +337,9 @@ void InsertInline(SYMBOL *sp)
             inlineVTabHead = inlineVTabTail = temp;
     }
 }
-void InsertInlineData(SYMBOL *sp)
+void InsertInlineData(SYMBOL* sp)
 {
-    LIST *temp = Alloc(sizeof(LIST));
+    LIST* temp = Alloc(sizeof(LIST));
     temp->data = sp;
     if (inlineDataHead)
         inlineDataTail = inlineDataTail->next = temp;
@@ -350,20 +348,20 @@ void InsertInlineData(SYMBOL *sp)
 }
 /*-------------------------------------------------------------------------*/
 
-EXPRESSION *inlineexpr(EXPRESSION *node, BOOLEAN *fromlval)
+EXPRESSION* inlineexpr(EXPRESSION* node, BOOLEAN* fromlval)
 {
     /*
      * routine takes an enode tree and replaces it with a copy of itself.
      * Used because we have to munge the block_nesting field (value.i) of each
      * sp in an inline function to force allocation of the variables
      */
-    EXPRESSION *temp,  *temp1;
-    FUNCTIONCALL *fp;
+    EXPRESSION *temp, *temp1;
+    FUNCTIONCALL* fp;
     int i;
     (void)fromlval;
     if (node == 0)
         return 0;
-    temp = (EXPRESSION *)Alloc(sizeof(EXPRESSION));
+    temp = (EXPRESSION*)Alloc(sizeof(EXPRESSION));
     memcpy(temp, node, sizeof(EXPRESSION));
     switch (temp->type)
     {
@@ -404,7 +402,7 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOLEAN *fromlval)
             if (temp->v.sp->inlineFunc.stmt)
             {
                 // guaranteed to be an lvalue at this point
-                temp = ((EXPRESSION *)(temp->v.sp->inlineFunc.stmt));
+                temp = ((EXPRESSION*)(temp->v.sp->inlineFunc.stmt));
                 temp = inlineexpr(temp, fromlval);
                 if (fromlval)
                     *fromlval = TRUE;
@@ -413,7 +411,7 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOLEAN *fromlval)
             }
             else if (temp->v.sp->structuredReturn)
             {
-                SYMBOL *sp = temp->v.sp;
+                SYMBOL* sp = temp->v.sp;
                 int n = function_list_count;
                 while (sp && sp->structuredReturn && --n >= 0)
                 {
@@ -448,7 +446,7 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOLEAN *fromlval)
         case en_l_ul:
         case en_l_l:
         case en_l_p:
-        case en_l_ref:        
+        case en_l_ref:
         case en_l_i:
         case en_l_ui:
         case en_l_inative:
@@ -510,7 +508,7 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOLEAN *fromlval)
         case en_x_sp:
         case en_trapcall:
         case en_shiftby:
-/*        case en_movebyref: */
+            /*        case en_movebyref: */
         case en_substack:
         case en_alloca:
         case en_loadstack:
@@ -527,7 +525,7 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOLEAN *fromlval)
         case en_add:
         case en_structadd:
         case en_sub:
-/*        case en_addcast: */
+            /*        case en_addcast: */
         case en_lsh:
         case en_arraylsh:
         case en_rsh:
@@ -535,7 +533,7 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOLEAN *fromlval)
         case en_assign:
         case en_void:
         case en_voidnz:
-/*        case en_dvoid: */
+            /*        case en_dvoid: */
         case en_arraymul:
         case en_arrayadd:
         case en_arraydiv:
@@ -591,7 +589,7 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOLEAN *fromlval)
             if (fp->sp->linkage == lk_virtual)
             {
                 // check for recursion
-                for (i=0; i <inlinesp_count; i++)
+                for (i = 0; i < inlinesp_count; i++)
                 {
                     if (inlinesp_list[i] == fp->sp)
                     {
@@ -607,7 +605,7 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOLEAN *fromlval)
                 }
                 else
                 {
-                    EXPRESSION *temp1;
+                    EXPRESSION* temp1;
                     inlinesp_list[inlinesp_count++] = fp->sp;
                     temp1 = doinline(fp, NULL); /* discarding our allocation */
                     inlinesp_count--;
@@ -617,8 +615,8 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOLEAN *fromlval)
             }
             if (temp->v.func == NULL)
             {
-                INITLIST *args = fp->arguments;
-                INITLIST **p ;
+                INITLIST* args = fp->arguments;
+                INITLIST** p;
                 temp->v.func = Alloc(sizeof(FUNCTIONCALL));
                 *temp->v.func = *fp;
                 p = &temp->v.func->arguments;
@@ -646,15 +644,14 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOLEAN *fromlval)
     return temp;
 }
 
-
 /*-------------------------------------------------------------------------*/
 
-STATEMENT *inlinestmt(STATEMENT *block)
+STATEMENT* inlinestmt(STATEMENT* block)
 {
     STATEMENT *out = NULL, **outptr = &out;
     while (block != NULL)
     {
-        *outptr = (STATEMENT *)Alloc(sizeof(STATEMENT));
+        *outptr = (STATEMENT*)Alloc(sizeof(STATEMENT));
         memcpy(*outptr, block, sizeof(STATEMENT));
         (*outptr)->next = NULL;
         switch (block->type)
@@ -712,9 +709,9 @@ STATEMENT *inlinestmt(STATEMENT *block)
     }
     return out;
 }
-static void inlineResetReturn(STATEMENT *block, TYPE *rettp, EXPRESSION *retnode)
+static void inlineResetReturn(STATEMENT* block, TYPE* rettp, EXPRESSION* retnode)
 {
-    EXPRESSION *exp;
+    EXPRESSION* exp;
     if (isstructured(rettp))
     {
         diag("structure in inlineResetReturn");
@@ -729,9 +726,9 @@ static void inlineResetReturn(STATEMENT *block, TYPE *rettp, EXPRESSION *retnode
     block->type = st_expr;
     block->select = exp;
 }
-static EXPRESSION *newReturn(TYPE *tp)
+static EXPRESSION* newReturn(TYPE* tp)
 {
-    EXPRESSION *exp ;
+    EXPRESSION* exp;
     if (!isstructured(tp) && !isvoid(tp))
     {
         exp = anonymousVar(sc_auto, tp);
@@ -741,7 +738,7 @@ static EXPRESSION *newReturn(TYPE *tp)
         exp = intNode(en_c_i, 0);
     return exp;
 }
-static void reduceReturns(STATEMENT *block, TYPE *rettp, EXPRESSION *retnode)
+static void reduceReturns(STATEMENT* block, TYPE* rettp, EXPRESSION* retnode)
 {
     while (block != NULL)
     {
@@ -764,7 +761,7 @@ static void reduceReturns(STATEMENT *block, TYPE *rettp, EXPRESSION *retnode)
             case st_label:
                 break;
             case st_expr:
-/*			case st_functailexpr: */
+                /*			case st_functailexpr: */
             case st_declare:
             case st_select:
             case st_notselect:
@@ -792,9 +789,9 @@ static void reduceReturns(STATEMENT *block, TYPE *rettp, EXPRESSION *retnode)
         block = block->next;
     }
 }
-static EXPRESSION *scanReturn(STATEMENT *block, TYPE *rettp)
+static EXPRESSION* scanReturn(STATEMENT* block, TYPE* rettp)
 {
-    EXPRESSION *rv = NULL;
+    EXPRESSION* rv = NULL;
     while (block != NULL && !rv)
     {
         switch (block->type)
@@ -823,7 +820,7 @@ static EXPRESSION *scanReturn(STATEMENT *block, TYPE *rettp)
             case st_label:
                 break;
             case st_expr:
-/*			case st_functailexpr: */
+                /*			case st_functailexpr: */
             case st_declare:
             case st_select:
             case st_notselect:
@@ -854,7 +851,7 @@ static EXPRESSION *scanReturn(STATEMENT *block, TYPE *rettp)
 }
 
 /*-------------------------------------------------------------------------*/
-static BOOLEAN sideEffects(EXPRESSION *node)
+static BOOLEAN sideEffects(EXPRESSION* node)
 {
     BOOLEAN rv = FALSE;
     if (node == 0)
@@ -915,7 +912,7 @@ static BOOLEAN sideEffects(EXPRESSION *node)
         case en_l_ul:
         case en_l_l:
         case en_l_p:
-        case en_l_ref:        
+        case en_l_ref:
         case en_l_i:
         case en_l_ui:
         case en_l_inative:
@@ -985,14 +982,14 @@ static BOOLEAN sideEffects(EXPRESSION *node)
             break;
         case en_add:
         case en_sub:
-/*        case en_addcast: */
+            /*        case en_addcast: */
         case en_lsh:
         case en_arraylsh:
         case en_rsh:
         case en_rshd:
         case en_void:
         case en_voidnz:
-/*        case en_dvoid: */
+            /*        case en_dvoid: */
         case en_arraymul:
         case en_arrayadd:
         case en_arraydiv:
@@ -1024,7 +1021,7 @@ static BOOLEAN sideEffects(EXPRESSION *node)
         case en_stackblock:
         case en_blockassign:
         case en_mp_compare:
-/*		case en_array: */
+            /*		case en_array: */
             rv = sideEffects(node->right);
         case en_mp_as_bool:
         case en_blockclear:
@@ -1055,19 +1052,19 @@ static BOOLEAN sideEffects(EXPRESSION *node)
     }
     return rv;
 }
-static void setExp(SYMBOL *sx, EXPRESSION *exp, STATEMENT ***stp)
+static void setExp(SYMBOL* sx, EXPRESSION* exp, STATEMENT*** stp)
 {
     if (!sx->altered && !sx->addressTaken && !sideEffects(exp))
     {
         // well if the expression is too complicated it gets evaluated over and over
         // but maybe the backend can clean it up again...
-        sx->inlineFunc.stmt = (STATEMENT *)exp;
+        sx->inlineFunc.stmt = (STATEMENT*)exp;
     }
     else
     {
-        EXPRESSION *tnode = anonymousVar(sc_auto, sx->tp);
-        deref(sx->tp, &tnode);            
-        sx->inlineFunc.stmt = (STATEMENT *)tnode;
+        EXPRESSION* tnode = anonymousVar(sc_auto, sx->tp);
+        deref(sx->tp, &tnode);
+        sx->inlineFunc.stmt = (STATEMENT*)tnode;
         tnode = exprNode(en_assign, tnode, exp);
         **stp = Alloc(sizeof(STATEMENT));
         (**stp)->type = st_expr;
@@ -1075,21 +1072,21 @@ static void setExp(SYMBOL *sx, EXPRESSION *exp, STATEMENT ***stp)
         *stp = &(**stp)->next;
     }
 }
-static STATEMENT *SetupArguments(FUNCTIONCALL *params)
+static STATEMENT* SetupArguments(FUNCTIONCALL* params)
 {
-        
+
     STATEMENT *st = NULL, **stp = &st;
-    INITLIST *al = params->arguments;
-    HASHREC *hr = basetype(params->sp->tp)->syms->table[0];
+    INITLIST* al = params->arguments;
+    HASHREC* hr = basetype(params->sp->tp)->syms->table[0];
     if (ismember(params->sp))
     {
-        SYMBOL *sx = (SYMBOL *)hr->p;
+        SYMBOL* sx = (SYMBOL*)hr->p;
         setExp(sx, params->thisptr, &stp);
         hr = hr->next;
     }
     while (al && hr)
     {
-        SYMBOL *sx = (SYMBOL *)hr->p;
+        SYMBOL* sx = (SYMBOL*)hr->p;
         setExp(sx, al->exp, &stp);
         al = al->next;
         hr = hr->next;
@@ -1098,23 +1095,23 @@ static STATEMENT *SetupArguments(FUNCTIONCALL *params)
 }
 /*-------------------------------------------------------------------------*/
 
-void SetupVariables(SYMBOL *sp)
+void SetupVariables(SYMBOL* sp)
 /* Copy all the func args into the xsyms table.
  * This copies the function parameters twice...
  */
 {
-    HASHTABLE *syms = sp->inlineFunc.syms;
+    HASHTABLE* syms = sp->inlineFunc.syms;
     while (syms)
     {
-        HASHREC *hr = syms->table[0];
+        HASHREC* hr = syms->table[0];
         while (hr)
         {
-            SYMBOL *sx = (SYMBOL *)hr->p;
+            SYMBOL* sx = (SYMBOL*)hr->p;
             if (sx->storage_class == sc_auto)
             {
-                EXPRESSION *ev = anonymousVar(sc_auto, sx->tp);
+                EXPRESSION* ev = anonymousVar(sc_auto, sx->tp);
                 deref(sx->tp, &ev);
-                sx->inlineFunc.stmt = (STATEMENT *)ev;
+                sx->inlineFunc.stmt = (STATEMENT*)ev;
             }
             hr = hr->next;
         }
@@ -1123,11 +1120,11 @@ void SetupVariables(SYMBOL *sp)
 }
 /*-------------------------------------------------------------------------*/
 
-EXPRESSION *doinline(FUNCTIONCALL *params, SYMBOL *funcsp)
+EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp)
 {
     BOOLEAN found = FALSE;
     STATEMENT *stmt = NULL, **stp = &stmt, *stmt1;
-    EXPRESSION *newExpression;
+    EXPRESSION* newExpression;
     BOOLEAN allocated = FALSE;
 
     if (function_list_count >= MAX_INLINE_NESTING)
@@ -1169,7 +1166,7 @@ EXPRESSION *doinline(FUNCTIONCALL *params, SYMBOL *funcsp)
     if (!localNameSpace->syms)
     {
         allocated = TRUE;
-        AllocateLocalContext(NULL, NULL,nextLabel++);
+        AllocateLocalContext(NULL, NULL, nextLabel++);
     }
     stmt1 = SetupArguments(params);
     if (stmt1)
@@ -1181,13 +1178,13 @@ EXPRESSION *doinline(FUNCTIONCALL *params, SYMBOL *funcsp)
     }
     SetupVariables(params->sp);
     function_list[function_list_count++] = params;
-    
+
     while (*stp)
         stp = &(*stp)->next;
     *stp = inlinestmt(params->sp->inlineFunc.stmt);
     newExpression = exprNode(en_stmt, NULL, NULL);
     newExpression->v.stmt = stmt;
-    
+
     if (params->sp->retcount == 1)
     {
         /* optimization for simple inline functions that only have
@@ -1209,7 +1206,7 @@ EXPRESSION *doinline(FUNCTIONCALL *params, SYMBOL *funcsp)
     if (newExpression->type == en_stmt)
         if (newExpression->v.stmt->type == st_block)
             if (!newExpression->v.stmt->lower)
-                newExpression = intNode(en_c_i, 0); // noop if there is no body
+                newExpression = intNode(en_c_i, 0);  // noop if there is no body
     if (newExpression->type == en_stmt)
     {
         newExpression->left = intNode(en_c_i, 0);
@@ -1220,13 +1217,13 @@ EXPRESSION *doinline(FUNCTIONCALL *params, SYMBOL *funcsp)
     }
     return newExpression;
 }
-static BOOLEAN IsEmptyBlocks(STATEMENT *block)
+static BOOLEAN IsEmptyBlocks(STATEMENT* block)
 {
     BOOLEAN rv = TRUE;
     while (block != NULL && rv)
     {
         switch (block->type)
-        {        
+        {
             case st_line:
             case st_varstart:
             case st_dbgblock:
@@ -1264,9 +1261,9 @@ static BOOLEAN IsEmptyBlocks(STATEMENT *block)
     }
     return rv;
 }
-BOOLEAN IsEmptyFunction(FUNCTIONCALL *params, SYMBOL *funcsp)
+BOOLEAN IsEmptyFunction(FUNCTIONCALL* params, SYMBOL* funcsp)
 {
-    STATEMENT *st;
+    STATEMENT* st;
     if (!isfunction(params->functp))
         return FALSE;
     if (!params->sp->inlineFunc.stmt)
@@ -1279,5 +1276,4 @@ BOOLEAN IsEmptyFunction(FUNCTIONCALL *params, SYMBOL *funcsp)
     if (!st)
         return TRUE;
     return TRUE || IsEmptyBlocks(st);
-    
 }

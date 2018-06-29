@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*
@@ -28,7 +28,7 @@
  *
  * create flow graph and dominator tree
  */
-/* Define this to get a dump of the flow graph and dominator tree 
+/* Define this to get a dump of the flow graph and dominator tree
  * These are dumped into ccfg.$$$
  */
 #include <stdio.h>
@@ -39,15 +39,16 @@
 extern COMPILER_PARAMS cparams;
 extern int blockCount;
 extern QUAD *intermed_head, *intermed_tail;
-extern BLOCK *currentBlock;
+extern BLOCK* currentBlock;
 
 int firstLabel;
 int exitBlock;
-BLOCK **blockArray;
-QUAD *criticalThunks , **criticalThunkPtr;
+BLOCK** blockArray;
+QUAD *criticalThunks, **criticalThunkPtr;
 
-typedef struct _edge {
-    struct _edge *next;
+typedef struct _edge
+{
+    struct _edge* next;
     int first;
     int second;
     enum e_fgtype edgetype;
@@ -55,25 +56,23 @@ typedef struct _edge {
 
 #define EDGE_HASH_SIZE 256
 
-static EDGE *edgeHash[EDGE_HASH_SIZE] ;
+static EDGE* edgeHash[EDGE_HASH_SIZE];
 
-static BLOCK **labels ;
+static BLOCK** labels;
 int walkPreorder, walkPostorder;
 
-    extern FILE *icdFile;
-    
-void flow_init(void)
-{
-}
-    /* dump the flow graph */
-    
+extern FILE* icdFile;
+
+void flow_init(void) {}
+/* dump the flow graph */
+
 void dump_flowgraph(void)
 {
     int i;
-    for ( i =0; i < blockCount; i++)
+    for (i = 0; i < blockCount; i++)
     {
-        BLOCK *b = blockArray[i];
-        BLOCKLIST *list1 = b->pred;
+        BLOCK* b = blockArray[i];
+        BLOCKLIST* list1 = b->pred;
         int i;
         fprintf(icdFile, "\n; %d: ", b->blocknum + 1);
         while (list1)
@@ -88,7 +87,7 @@ void dump_flowgraph(void)
             fprintf(icdFile, " %d", list1->block->blocknum + 1);
             list1 = list1->next;
         }
-        
+
         fprintf(icdFile, "\n\t : %d /", b->idom + 1);
         list1 = b->dominates;
         while (list1)
@@ -96,7 +95,7 @@ void dump_flowgraph(void)
             fprintf(icdFile, " %d", list1->block->blocknum + 1);
             list1 = list1->next;
         }
-        
+
         fprintf(icdFile, "\n\t $");
         list1 = b->dominanceFrontier;
         while (list1)
@@ -105,11 +104,11 @@ void dump_flowgraph(void)
             list1 = list1->next;
         }
     }
-    fprintf(icdFile,"\n");
+    fprintf(icdFile, "\n");
 }
 static void RemoveDuplicateGotos(void)
 {
-    QUAD *head = intermed_head;
+    QUAD* head = intermed_head;
     while (head)
     {
         if (head->dc.opcode == i_goto)
@@ -124,14 +123,14 @@ static void basicFlowInfo(void)
 {
     QUAD *head = intermed_head, *block;
     int low = INT_MAX, high = 0;
-    blockArray = oAlloc(sizeof(BLOCK *) * (blockCount + 1000));
+    blockArray = oAlloc(sizeof(BLOCK*) * (blockCount + 1000));
     while (head)
     {
         criticalThunks = intermed_head;
         if (head->dc.opcode == i_block)
         {
             if (!head->block->dead)
-                blockArray[head->dc.v.label] = head->block ;
+                blockArray[head->dc.v.label] = head->block;
         }
         if (head->dc.opcode == i_label)
         {
@@ -140,36 +139,32 @@ static void basicFlowInfo(void)
             if (head->dc.v.label >= high)
                 high = head->dc.v.label + 1;
         }
-        head = head->fwd ;
+        head = head->fwd;
     }
-    labels = oAlloc(sizeof(BLOCK *) * (high - low)) ;
-    firstLabel = low ;
+    labels = oAlloc(sizeof(BLOCK*) * (high - low));
+    firstLabel = low;
     head = intermed_head;
     block = NULL;
     while (head)
     {
         if (head->dc.opcode == i_block)
         {
-            block = head ;
+            block = head;
         }
         if (head->dc.opcode == i_label)
         {
-            labels[head->dc.v.label - firstLabel] = block->block ; /* the block num*/
+            labels[head->dc.v.label - firstLabel] = block->block; /* the block num*/
         }
-        head = head->fwd ;
+        head = head->fwd;
     }
-    
 }
 /* find a label on the list */
-static BLOCK *findlab(int labnum)
-{
-    return labels[labnum - firstLabel];
-}
+static BLOCK* findlab(int labnum) { return labels[labnum - firstLabel]; }
 
 /* insert on a flowgraph node */
-static void flowinsert(BLOCKLIST **pos, BLOCK *valuesource)
+static void flowinsert(BLOCKLIST** pos, BLOCK* valuesource)
 {
-    BLOCKLIST *nblock = oAlloc(sizeof(BLOCKLIST));
+    BLOCKLIST* nblock = oAlloc(sizeof(BLOCKLIST));
     nblock->next = (*pos);
     (*pos) = nblock;
     nblock->block = valuesource;
@@ -177,14 +172,14 @@ static void flowinsert(BLOCKLIST **pos, BLOCK *valuesource)
 /* create the flowgraph.  */
 static void gather_flowgraph(void)
 {
-    BLOCK *temp;
+    BLOCK* temp;
     int i;
-    for (i=0 ; i < blockCount; i++)
+    for (i = 0; i < blockCount; i++)
     {
-        BLOCK *b = blockArray[i];
+        BLOCK* b = blockArray[i];
         if (!b->dead)
         {
-            QUAD *tail = b->tail;
+            QUAD* tail = b->tail;
             while (tail->ignoreMe)
                 tail = tail->back;
             switch (tail->dc.opcode)
@@ -200,7 +195,7 @@ static void gather_flowgraph(void)
                     else
                     {
                         diag("flow:unfound label");
-    /*                    printf("g %d", tail->dc.v.label); */
+                        /*                    printf("g %d", tail->dc.v.label); */
                     }
                     break;
                 case i_swbranch:
@@ -215,7 +210,7 @@ static void gather_flowgraph(void)
                         else
                         {
                             diag("flow:unfound label");
-    /*                        printf("dc %d", tail->dc.v.label); */
+                            /*                        printf("dc %d", tail->dc.v.label); */
                         }
                         tail = tail->back;
                     }
@@ -230,7 +225,7 @@ static void gather_flowgraph(void)
                     else
                     {
                         diag("flow:unfound label");
-    /*                    printf("cs %d", tail->dc.v.label); */
+                        /*                    printf("cs %d", tail->dc.v.label); */
                     }
                     break;
                 case i_asmcond:
@@ -253,13 +248,13 @@ static void gather_flowgraph(void)
                     else
                     {
                         diag("flow:unfound label");
-    /*                    printf("j %d", tail->dc.v.label); */
+                        /*                    printf("j %d", tail->dc.v.label); */
                     }
                     /* fall through */
                 default:
-                    if (i != blockCount-1)
+                    if (i != blockCount - 1)
                     {
-                        BLOCK *temp = blockArray[i+1];
+                        BLOCK* temp = blockArray[i + 1];
                         flowinsert(&temp->pred, b);
                         flowinsert(&b->succ, temp);
                     }
@@ -268,28 +263,26 @@ static void gather_flowgraph(void)
         }
     }
     // associate live blocks without a predecessor with blockarray[0]
-    for (i=0; i < blockCount; i++)
+    for (i = 0; i < blockCount; i++)
     {
-        BLOCK *b = blockArray[i];
+        BLOCK* b = blockArray[i];
         if (b->alwayslive && !b->pred)
         {
-            BLOCK *temp = blockArray[0];
+            BLOCK* temp = blockArray[0];
             flowinsert(&temp->succ, b);
             flowinsert(&b->pred, temp);
         }
     }
 }
 
-
-static void FGWalker(int (*func)(enum e_fgtype type, BLOCK *parent, BLOCK *b), 
-                     BLOCK *cur, int fwd)
+static void FGWalker(int (*func)(enum e_fgtype type, BLOCK* parent, BLOCK* b), BLOCK* cur, int fwd)
 {
-    BLOCKLIST *l ;
+    BLOCKLIST* l;
     if (fwd)
         l = cur->succ;
-    else 
+    else
         l = cur->pred;
-    cur->preWalk = walkPreorder++ ;
+    cur->preWalk = walkPreorder++;
     while (l)
     {
         if (l->block->preWalk == 0)
@@ -297,33 +290,34 @@ static void FGWalker(int (*func)(enum e_fgtype type, BLOCK *parent, BLOCK *b),
             /* tree*/
             if (func(F_TREE, cur, l->block))
                 FGWalker(func, l->block, fwd);
-        } 
+        }
         else if (l->block->postWalk == 0)
         {
             /* back edge*/
             func(F_BACKEDGE, cur, l->block);
-        } else if (l->block->preWalk > cur->preWalk)
+        }
+        else if (l->block->preWalk > cur->preWalk)
         {
             /* forward edge*/
             func(F_FORWARDEDGE, cur, l->block);
-        } else
+        }
+        else
         {
             /* cross edge*/
             func(F_CROSSEDGE, cur, l->block);
         }
-        l = l->next ;
+        l = l->next;
     }
-    cur->postWalk = walkPostorder++;	
+    cur->postWalk = walkPostorder++;
 }
 /* depth first search entry point */
-void WalkFlowgraph(BLOCK *b, 
-                   int (*func)(enum e_fgtype type, BLOCK *parent, BLOCK *b), int fwd)
+void WalkFlowgraph(BLOCK* b, int (*func)(enum e_fgtype type, BLOCK* parent, BLOCK* b), int fwd)
 {
     int i;
-    walkPreorder = 1 ;
+    walkPreorder = 1;
     walkPostorder = 1;
-    
-    for (i=0; i < blockCount; i++)
+
+    for (i = 0; i < blockCount; i++)
         if (blockArray[i])
             blockArray[i]->preWalk = blockArray[i]->postWalk = 0;
 
@@ -331,15 +325,15 @@ void WalkFlowgraph(BLOCK *b,
         FGWalker(func, b, fwd);
 }
 // have to do this to make the rtti happy in the face of infinite blocks
-static void MoveLabelsToExit(BLOCK *b)
+static void MoveLabelsToExit(BLOCK* b)
 {
-    QUAD *head = b->head;
+    QUAD* head = b->head;
     while (head && head != b->tail)
     {
-        QUAD *next = head->fwd;
+        QUAD* next = head->fwd;
         if (head->dc.opcode == i_label)
         {
-            QUAD *q = blockArray[exitBlock]->head;
+            QUAD* q = blockArray[exitBlock]->head;
             head->fwd->back = head->back;
             head->back->fwd = head->fwd;
             q->fwd->back = head;
@@ -350,39 +344,39 @@ static void MoveLabelsToExit(BLOCK *b)
         head = next;
     }
 }
-static void removeDeadBlocks(BRIGGS_SET *brs, BLOCK *back, BLOCK *b)
+static void removeDeadBlocks(BRIGGS_SET* brs, BLOCK* back, BLOCK* b)
 {
     if (b->temp)
         return;
     b->temp = TRUE;
     if (!briggsTest(brs, b->blocknum) && b->blocknum != exitBlock)
     {
-        BLOCKLIST *bl2 = b->succ;
+        BLOCKLIST* bl2 = b->succ;
         while (bl2)
         {
             removeDeadBlocks(brs, b, bl2->block);
             if (!bl2->block->dead)
             {
-                BLOCKLIST **bl3 = &bl2->block->pred;
+                BLOCKLIST** bl3 = &bl2->block->pred;
                 int n = 0;
                 while (*bl3)
                 {
                     if ((*bl3)->block == b)
                     {
-                        QUAD *head = bl2->block->head->fwd;
+                        QUAD* head = bl2->block->head->fwd;
                         *bl3 = (*bl3)->next;
-                        while (head != bl2->block->tail->fwd && (head->dc.opcode == i_label ||
-                               head->ignoreMe))
+                        while (head != bl2->block->tail->fwd && (head->dc.opcode == i_label || head->ignoreMe))
                         {
                             head = head->fwd;
                         }
                         while (head->dc.opcode == i_phi && head != bl2->block->tail->fwd)
                         {
-                            PHIDATA *pd = head->dc.v.phi;
-                            struct _phiblock **pb = &pd->temps;
+                            PHIDATA* pd = head->dc.v.phi;
+                            struct _phiblock** pb = &pd->temps;
                             int i;
-                            for (i=0; i < n; i++, pb = &(*pb)->next) ;
-                            (*pb) = (*pb)->next;			
+                            for (i = 0; i < n; i++, pb = &(*pb)->next)
+                                ;
+                            (*pb) = (*pb)->next;
                             head = head->fwd;
                         }
                         break;
@@ -405,9 +399,9 @@ static void removeDeadBlocks(BRIGGS_SET *brs, BLOCK *back, BLOCK *b)
     }
     else
     {
-        QUAD *head ;
+        QUAD* head;
         int n = 0;
-        BLOCKLIST **bl = &b->pred;
+        BLOCKLIST** bl = &b->pred;
         while (bl)
         {
             if ((*bl)->block == back)
@@ -418,27 +412,27 @@ static void removeDeadBlocks(BRIGGS_SET *brs, BLOCK *back, BLOCK *b)
             n++;
             bl = &(*bl)->next;
         }
-        
+
         head = b->head->fwd;
-        while (head != b->tail->fwd && (head->dc.opcode == i_label || 
-               head->ignoreMe))
+        while (head != b->tail->fwd && (head->dc.opcode == i_label || head->ignoreMe))
         {
             head = head->fwd;
         }
         while (head->dc.opcode == i_phi && head != b->tail->fwd)
         {
-            PHIDATA *pd = head->dc.v.phi;
-            struct _phiblock **pb = &pd->temps;
+            PHIDATA* pd = head->dc.v.phi;
+            struct _phiblock** pb = &pd->temps;
             int i;
-            for (i=0; i < n; i++, pb = &(*pb)->next) ;
-            (*pb) = (*pb)->next;			
+            for (i = 0; i < n; i++, pb = &(*pb)->next)
+                ;
+            (*pb) = (*pb)->next;
             head = head->fwd;
         }
     }
 }
-static void removeMark(BRIGGS_SET *bls, BLOCK *b)
+static void removeMark(BRIGGS_SET* bls, BLOCK* b)
 {
-    BLOCKLIST *bl;
+    BLOCKLIST* bl;
     if (b->blocknum == exitBlock || b->temp)
         return;
     b->temp = TRUE;
@@ -450,24 +444,24 @@ static void removeMark(BRIGGS_SET *bls, BLOCK *b)
         bl = bl->next;
     }
 }
-void reflowConditional(BLOCK *src, BLOCK *dst)
+void reflowConditional(BLOCK* src, BLOCK* dst)
 {
     BLOCKLIST *bl, *bl1 = src->succ;
     BLOCKLIST temp;
-    BRIGGS_SET *bls = briggsAlloc(blockCount);
+    BRIGGS_SET* bls = briggsAlloc(blockCount);
     int i;
     temp.block = dst;
     temp.next = NULL;
     src->succ = &temp;
-    for (i=0; i < blockCount; i++)
+    for (i = 0; i < blockCount; i++)
         if (blockArray[i])
             blockArray[i]->temp = FALSE;
     removeMark(bls, blockArray[0]);
-    for (i=1; i < blockCount; i++)
+    for (i = 1; i < blockCount; i++)
         if (blockArray[i] && blockArray[i]->alwayslive)
             removeMark(bls, blockArray[i]);
     src->succ = bl1;
-    for (i=0; i < blockCount; i++)
+    for (i = 0; i < blockCount; i++)
         if (blockArray[i])
             blockArray[i]->temp = FALSE;
     bl = bl1;
@@ -479,8 +473,8 @@ void reflowConditional(BLOCK *src, BLOCK *dst)
     }
     if (dst->critical)
     {
-        BLOCK *crit = dst;
-        BLOCKLIST *bl = crit->succ->block->pred;
+        BLOCK* crit = dst;
+        BLOCKLIST* bl = crit->succ->block->pred;
         while (bl)
         {
             if (bl->block == crit)
@@ -492,7 +486,7 @@ void reflowConditional(BLOCK *src, BLOCK *dst)
         }
         dst = crit->succ->block;
         crit->succ = crit->pred = NULL;
-        blockArray[crit->blocknum] = NULL;	
+        blockArray[crit->blocknum] = NULL;
     }
     // it may have died in the above code..
     if (!src->dead)
@@ -502,46 +496,46 @@ void reflowConditional(BLOCK *src, BLOCK *dst)
     }
 }
 /* not even thinking about assert() or longjmp() */
-static int RemoveCriticalEdges(enum e_fgtype type, BLOCK *parent, BLOCK *in)
+static int RemoveCriticalEdges(enum e_fgtype type, BLOCK* parent, BLOCK* in)
 {
     (void)parent;
     if (type == F_TREE)
     {
-        BLOCKLIST *f = in->succ;
+        BLOCKLIST* f = in->succ;
         if (f && f->next)
         {
             while (f)
             {
-                BLOCKLIST *b = f->block->pred;
+                BLOCKLIST* b = f->block->pred;
                 if (b && b->next)
                 {
                     /* critical edge, we need to insert something... */
                     /* we won't need to revist this so we don't care what
                      * it does to the presetn tree walk
                      */
-                    BLOCKLIST *m = newBlock();
-                    BLOCKLIST *q ;
+                    BLOCKLIST* m = newBlock();
+                    BLOCKLIST* q;
 
                     QUAD *quad, *quad2;
-                    
+
                     m->block->critical = TRUE;
-                    
+
                     /* note : the following does NOT insert jmps for the
                      * newly added block
                      */
                     *criticalThunkPtr = quad = Alloc(sizeof(QUAD));
-                    criticalThunkPtr = & quad->fwd;
+                    criticalThunkPtr = &quad->fwd;
                     quad->dc.opcode = i_block;
                     quad->block = m->block;
                     quad->dc.v.label = m->block->blocknum;
 
                     *criticalThunkPtr = quad2 = Alloc(sizeof(QUAD));
-                    criticalThunkPtr = & quad2->fwd;
+                    criticalThunkPtr = &quad2->fwd;
                     quad2->back = quad;
                     quad2->dc.opcode = i_blockend;
-                        quad2->block = m->block;
-//					quad2->dc.v.label = m->block->blocknum;
-                                        
+                    quad2->block = m->block;
+                    //					quad2->dc.v.label = m->block->blocknum;
+
                     m->block->head = quad;
                     m->block->tail = quad2;
 
@@ -563,7 +557,6 @@ static int RemoveCriticalEdges(enum e_fgtype type, BLOCK *parent, BLOCK *in)
                         }
                         q = q->next;
                     }
-                    
                 }
                 f = f->next;
             }
@@ -573,7 +566,7 @@ static int RemoveCriticalEdges(enum e_fgtype type, BLOCK *parent, BLOCK *in)
 }
 /* Lengauer-tarjan method for computing the dominator tree */
 /* this implementation based on a paper by Martin Richards */
-static int domCount ;
+static int domCount;
 
 /* this algorithm could be implemented more efficiently with individual arrays
  * than with a structure like this, but, for now we'll take a minor penalty
@@ -588,9 +581,9 @@ static struct _tarjan
     int idom;
     int ancestor;
     int best;
-    BRIGGS_SET *bucket;
-} **vectorData;
-static int domNumber(enum e_fgtype t, BLOCK *parent, BLOCK *b)
+    BRIGGS_SET* bucket;
+} * *vectorData;
+static int domNumber(enum e_fgtype t, BLOCK* parent, BLOCK* b)
 {
     (void)parent;
     if (t == F_TREE)
@@ -599,12 +592,12 @@ static int domNumber(enum e_fgtype t, BLOCK *parent, BLOCK *b)
     }
     return TRUE;
 }
-static int domInit(enum e_fgtype t, BLOCK *parent, BLOCK *b)
+static int domInit(enum e_fgtype t, BLOCK* parent, BLOCK* b)
 {
 
     if (t == F_TREE && parent != NULL)
     {
-        struct _tarjan *t = vectorData[b->dfstOrder];
+        struct _tarjan* t = vectorData[b->dfstOrder];
         t->blocknum = b->blocknum;
         t->parent = parent->dfstOrder;
         t->succs = b->succ;
@@ -642,7 +635,6 @@ static void domCompress(int v)
             vectorData[v]->best = vectorData[a]->best;
         vectorData[v]->ancestor = vectorData[a]->ancestor;
     }
-        
 }
 static int domEval(int v)
 {
@@ -657,20 +649,20 @@ static void PostDominators(void)
     int w, i;
     domCount = 0;
     WalkFlowgraph(blockArray[exitBlock], domNumber, FALSE);
-    vectorData = tAlloc(sizeof(struct _tarjan *) * (domCount + 1));
-    for (i=0; i <= domCount; i++)
+    vectorData = tAlloc(sizeof(struct _tarjan*) * (domCount + 1));
+    for (i = 0; i <= domCount; i++)
     {
         vectorData[i] = tAlloc(sizeof(struct _tarjan));
-        vectorData[i]->bucket = briggsAlloct(domCount+1);
+        vectorData[i]->bucket = briggsAlloct(domCount + 1);
     }
     WalkFlowgraph(blockArray[exitBlock], domInit, FALSE);
-    
-    for (w = domCount; w>=2; w--)
+
+    for (w = domCount; w >= 2; w--)
     {
         int p = vectorData[w]->parent;
         int j;
-        struct _tarjan *v = vectorData[w];
-        BLOCKLIST *bl = v->preds;
+        struct _tarjan* v = vectorData[w];
+        BLOCKLIST* bl = v->preds;
         while (bl)
         {
             int u = domEval(bl->block->dfstOrder);
@@ -680,7 +672,7 @@ static void PostDominators(void)
         }
         briggsSet(vectorData[vectorData[w]->semi]->bucket, w);
         domLink(p, w);
-        for (j = vectorData[p]->bucket->top -1 ; j >= 0; j--)
+        for (j = vectorData[p]->bucket->top - 1; j >= 0; j--)
         {
             int v = vectorData[p]->bucket->data[j];
             int u = domEval(v);
@@ -689,9 +681,9 @@ static void PostDominators(void)
             else
                 vectorData[v]->idom = u;
         }
-        briggsClear(vectorData[p]->bucket);		
+        briggsClear(vectorData[p]->bucket);
     }
-    for (w=2; w <=domCount; w++)
+    for (w = 2; w <= domCount; w++)
     {
         if (vectorData[w]->idom != vectorData[w]->semi)
         {
@@ -710,20 +702,20 @@ static void Dominators(void)
         if (blockArray[i])
             blockArray[i]->dfstOrder = 0;
     WalkFlowgraph(blockArray[0], domNumber, TRUE);
-    vectorData = tAlloc(sizeof(struct _tarjan *) * (domCount + 1));
-    for (i=0; i <= domCount; i++)
+    vectorData = tAlloc(sizeof(struct _tarjan*) * (domCount + 1));
+    for (i = 0; i <= domCount; i++)
     {
         vectorData[i] = tAlloc(sizeof(struct _tarjan));
-        vectorData[i]->bucket = briggsAlloct(domCount+1);
+        vectorData[i]->bucket = briggsAlloct(domCount + 1);
     }
     WalkFlowgraph(blockArray[0], domInit, TRUE);
-    
-    for (w = domCount; w>=2; w--)
+
+    for (w = domCount; w >= 2; w--)
     {
         int p = vectorData[w]->parent;
         int j;
-        struct _tarjan *v = vectorData[w];
-        BLOCKLIST *bl = v->preds;
+        struct _tarjan* v = vectorData[w];
+        BLOCKLIST* bl = v->preds;
         while (bl)
         {
             int u = domEval(bl->block->dfstOrder);
@@ -733,7 +725,7 @@ static void Dominators(void)
         }
         briggsSet(vectorData[vectorData[w]->semi]->bucket, w);
         domLink(p, w);
-        for (j = vectorData[p]->bucket->top -1 ; j >= 0; j--)
+        for (j = vectorData[p]->bucket->top - 1; j >= 0; j--)
         {
             int v = vectorData[p]->bucket->data[j];
             int u = domEval(v);
@@ -742,9 +734,9 @@ static void Dominators(void)
             else
                 vectorData[v]->idom = u;
         }
-        briggsClear(vectorData[p]->bucket);		
+        briggsClear(vectorData[p]->bucket);
     }
-    for (w=2; w <=domCount; w++)
+    for (w = 2; w <= domCount; w++)
     {
         if (vectorData[w]->idom != vectorData[w]->semi)
         {
@@ -754,14 +746,14 @@ static void Dominators(void)
         blockArray[vectorData[w]->blocknum]->idom = vectorData[vectorData[w]->idom]->blocknum;
     }
     /* now make the forward tree */
-    for (i=blockCount-1; i >=1; i--)
+    for (i = blockCount - 1; i >= 1; i--)
     {
         /* make dominates lists by walking the idom tree backwards from each node*/
         if (blockArray[i] && blockArray[i]->pred)
         {
             int w = blockArray[i]->idom;
-            BLOCK *ub = blockArray[w];
-            BLOCKLIST *bl = oAlloc(sizeof(BLOCKLIST));
+            BLOCK* ub = blockArray[w];
+            BLOCKLIST* bl = oAlloc(sizeof(BLOCKLIST));
             bl->block = blockArray[i];
             bl->next = ub->dominates;
             ub->dominates = bl;
@@ -769,7 +761,7 @@ static void Dominators(void)
     }
     tFree();
 }
-BOOLEAN dominatedby(BLOCK *src, BLOCK *ancestor)
+BOOLEAN dominatedby(BLOCK* src, BLOCK* ancestor)
 {
     int idom = src->idom;
     while (idom > 0)
@@ -783,7 +775,7 @@ BOOLEAN dominatedby(BLOCK *src, BLOCK *ancestor)
 /* we are also calculating the reverse postorder here
  * it will be needed later for the loop handling
  */
-static void DominanceFrontier(BLOCK *b, int *count)
+static void DominanceFrontier(BLOCK* b, int* count)
 {
     BLOCKLIST *c = b->dominates, *s;
     while (c)
@@ -797,7 +789,7 @@ static void DominanceFrontier(BLOCK *b, int *count)
     {
         if (s->block->idom != b->blocknum)
         {
-            BLOCKLIST *t = oAlloc(sizeof(BLOCKLIST));
+            BLOCKLIST* t = oAlloc(sizeof(BLOCKLIST));
             t->next = b->dominanceFrontier;
             t->block = s->block;
             b->dominanceFrontier = t;
@@ -807,13 +799,13 @@ static void DominanceFrontier(BLOCK *b, int *count)
     c = b->dominates;
     while (c)
     {
-        BLOCKLIST *bl = c->block->dominanceFrontier;
+        BLOCKLIST* bl = c->block->dominanceFrontier;
         int i;
         while (bl)
         {
             if (!dominatedby(bl->block, b))
             {
-                BLOCKLIST *t = oAlloc(sizeof(BLOCKLIST));
+                BLOCKLIST* t = oAlloc(sizeof(BLOCKLIST));
                 t->next = b->dominanceFrontier;
                 t->block = bl->block;
                 b->dominanceFrontier = t;
@@ -823,15 +815,12 @@ static void DominanceFrontier(BLOCK *b, int *count)
         c = c->next;
     }
 }
-static int hashfunc(int i, int j)
-{
-    return (j * (j- 1) / 2 + i) % EDGE_HASH_SIZE;
-}
-static int gatherEdges(enum e_fgtype type, BLOCK *parent, BLOCK *in)
+static int hashfunc(int i, int j) { return (j * (j - 1) / 2 + i) % EDGE_HASH_SIZE; }
+static int gatherEdges(enum e_fgtype type, BLOCK* parent, BLOCK* in)
 {
     if (parent)
     {
-        EDGE *edge = oAlloc(sizeof(EDGE));
+        EDGE* edge = oAlloc(sizeof(EDGE));
         int bucket = hashfunc(parent->blocknum, in->blocknum);
         edge->first = parent->blocknum;
         edge->second = in->blocknum;
@@ -841,15 +830,15 @@ static int gatherEdges(enum e_fgtype type, BLOCK *parent, BLOCK *in)
     }
     return TRUE;
 }
-static void CalculateEdges(BLOCK *b)
+static void CalculateEdges(BLOCK* b)
 {
-    memset(edgeHash, 0, EDGE_HASH_SIZE * sizeof(EDGE *));
+    memset(edgeHash, 0, EDGE_HASH_SIZE * sizeof(EDGE*));
     WalkFlowgraph(b, gatherEdges, TRUE);
 }
 enum e_fgtype getEdgeType(int first, int second)
 {
-    int bucket= hashfunc(first, second);
-    EDGE *p = edgeHash[bucket];
+    int bucket = hashfunc(first, second);
+    EDGE* p = edgeHash[bucket];
     while (p)
     {
         if (p->first == first && p->second == second)
@@ -859,28 +848,29 @@ enum e_fgtype getEdgeType(int first, int second)
     return F_NONE;
 }
 /* SSA doesn't work well when there are dead paths */
-static void removeDeadBlock(BLOCK *b)
+static void removeDeadBlock(BLOCK* b)
 {
     if (b->pred == NULL && !b->alwayslive)
     {
-        BLOCKLIST *bl = b->succ;
+        BLOCKLIST* bl = b->succ;
         while (bl)
         {
             unlinkBlock(bl->block, b);
             bl = bl->next;
         }
-		if (b->critical)
-		{
-			b->critical = FALSE;
-			blockArray[b->blocknum] = 0;
-		}
+        if (b->critical)
+        {
+            b->critical = FALSE;
+            blockArray[b->blocknum] = 0;
+        }
         if (b->head != b->tail && b->head->fwd != b->tail)
-        {   QUAD *p = b->head->fwd;
-            QUAD *q = b->tail->fwd;
+        {
+            QUAD* p = b->head->fwd;
+            QUAD* q = b->tail->fwd;
             while (q != p)
             {
-                if (p->dc.opcode != i_dbgblock && p->dc.opcode != i_dbgblockend 
-                    && p->dc.opcode != i_var && p->dc.opcode != i_func && p->dc.opcode != i_label)
+                if (p->dc.opcode != i_dbgblock && p->dc.opcode != i_dbgblockend && p->dc.opcode != i_var &&
+                    p->dc.opcode != i_func && p->dc.opcode != i_label)
                 {
                     RemoveInstruction(p);
                 }
@@ -889,11 +879,11 @@ static void removeDeadBlock(BLOCK *b)
         }
     }
 }
-static void InsertLabel(BLOCK *b, int label)
+static void InsertLabel(BLOCK* b, int label)
 {
     // insert a label in the target block
-    QUAD *head = b->head;
-    QUAD *lbl = Alloc(sizeof(QUAD));
+    QUAD* head = b->head;
+    QUAD* lbl = Alloc(sizeof(QUAD));
     lbl->dc.opcode = i_label;
     lbl->dc.v.label = label;
     while (head->ignoreMe || head->dc.opcode == i_block)
@@ -907,14 +897,14 @@ static void InsertLabel(BLOCK *b, int label)
     head->back = head->back->fwd = lbl;
     lbl->block = b;
 }
-static void MoveBlockTo(BLOCK *b)
+static void MoveBlockTo(BLOCK* b)
 {
-    BLOCK *prev = b->pred->block;
-    BLOCK *succ = b->succ->block;
-    QUAD *head;
-    QUAD *tail = prev->tail;
-    QUAD *jmp = Alloc(sizeof(QUAD));
-    QUAD *insert = b->tail;
+    BLOCK* prev = b->pred->block;
+    BLOCK* succ = b->succ->block;
+    QUAD* head;
+    QUAD* tail = prev->tail;
+    QUAD* jmp = Alloc(sizeof(QUAD));
+    QUAD* insert = b->tail;
     int label = nextLabel++;
     if (b->tail->dc.opcode == i_blockend)
         RemoveInstruction(b->tail);
@@ -928,9 +918,9 @@ static void MoveBlockTo(BLOCK *b)
         jmp->fwd->back = jmp;
     jmp->back->fwd = jmp;
     b->tail = jmp;
-    
+
     InsertLabel(succ, label);
-    
+
     // unlink
     if (b->head == criticalThunks)
         criticalThunks = b->tail->fwd;
@@ -938,18 +928,18 @@ static void MoveBlockTo(BLOCK *b)
         b->head->back->fwd = b->tail->fwd;
     if (b->tail->fwd)
         b->tail->fwd->back = b->head->back;
-    
+
     // relink
     prev->tail->fwd->back = b->tail;
     b->tail->fwd = prev->tail->fwd;
     prev->tail->fwd = b->head;
     b->head->back = prev->tail;
 }
-static void SwapBranchSense(QUAD *jmp)
+static void SwapBranchSense(QUAD* jmp)
 {
-    BLOCK *b = jmp->block;
-    BLOCKLIST *f = b->succ;
-    BLOCKLIST *s = f->next;
+    BLOCK* b = jmp->block;
+    BLOCKLIST* f = b->succ;
+    BLOCKLIST* s = f->next;
     s->next = f;
     f->next = NULL;
     b->succ = s;
@@ -989,11 +979,10 @@ static void SwapBranchSense(QUAD *jmp)
             diag("SwapBranchSense: non-branch");
             break;
     }
-    
 }
-void UnlinkCritical(BLOCK *s)
+void UnlinkCritical(BLOCK* s)
 {
-    BLOCKLIST *bl;
+    BLOCKLIST* bl;
     s->critical = FALSE;
     s->dead = TRUE;
     blockArray[s->blocknum] = NULL;
@@ -1021,20 +1010,20 @@ void UnlinkCritical(BLOCK *s)
 void RemoveCriticalThunks(void)
 {
     int i;
-    for (i=0; i < blockCount; i++)
+    for (i = 0; i < blockCount; i++)
     {
-        BLOCK *b = blockArray[i];
+        BLOCK* b = blockArray[i];
         if (b && i != exitBlock && !b->critical && !b->dead)
         {
-            QUAD *bjmp = beforeJmp(b->tail, FALSE);
+            QUAD* bjmp = beforeJmp(b->tail, FALSE);
             if (bjmp->dc.opcode == i_coswitch)
             {
-                
-                QUAD *i = bjmp;
-                BLOCKLIST *sl = b->succ;
+
+                QUAD* i = bjmp;
+                BLOCKLIST* sl = b->succ;
                 while (sl)
                 {
-                    BLOCK *s = sl->block;
+                    BLOCK* s = sl->block;
                     if (s->critical)
                     {
                         s->critical = FALSE;
@@ -1056,8 +1045,8 @@ void RemoveCriticalThunks(void)
             }
             else if (bjmp->dc.opcode >= i_jne && bjmp->dc.opcode <= i_jge)
             {
-                BLOCK *s = b->succ->block;
-                BLOCK *n = b->succ->next->block;
+                BLOCK* s = b->succ->block;
+                BLOCK* n = b->succ->next->block;
                 if (s->critical)
                 {
                     s->critical = FALSE;
@@ -1081,7 +1070,7 @@ void RemoveCriticalThunks(void)
                             }
                         }
                     }
-                    else 
+                    else
                     {
                         UnlinkCritical(s);
                         if (n->critical)
@@ -1089,9 +1078,9 @@ void RemoveCriticalThunks(void)
                             n->critical = FALSE;
                             if (n->head->fwd != n->tail)
                             {
-                                int lbl = nextLabel ++;
+                                int lbl = nextLabel++;
                                 bjmp->dc.v.label = lbl;
-                                InsertLabel(b->succ->block, lbl);			
+                                InsertLabel(b->succ->block, lbl);
                                 SwapBranchSense(bjmp);
                                 MoveBlockTo(n);
                             }
@@ -1107,9 +1096,9 @@ void RemoveCriticalThunks(void)
                     n->critical = FALSE;
                     if (n->head->fwd != n->tail)
                     {
-                        int lbl = nextLabel ++;
+                        int lbl = nextLabel++;
                         bjmp->dc.v.label = lbl;
-                        InsertLabel(b->succ->block, lbl);			
+                        InsertLabel(b->succ->block, lbl);
                         SwapBranchSense(bjmp);
                         MoveBlockTo(n);
                     }
@@ -1121,7 +1110,7 @@ void RemoveCriticalThunks(void)
             }
             else if (b->succ->block->critical)
             {
-                BLOCK *s = b->succ->block;
+                BLOCK* s = b->succ->block;
                 s->critical = FALSE;
                 if (b->succ->next)
                     diag("RemoveCritical - invalid flow");
@@ -1141,14 +1130,14 @@ void RemoveCriticalThunks(void)
         }
     }
 }
-void unlinkBlock(BLOCK *succ, BLOCK *pred)
+void unlinkBlock(BLOCK* succ, BLOCK* pred)
 {
-    BLOCKLIST **bl = &succ->pred;
+    BLOCKLIST** bl = &succ->pred;
     while (*bl && (*bl)->block != pred)
         bl = &(*bl)->next;
     if (*bl)
     {
-        *bl = (*bl)->next;	
+        *bl = (*bl)->next;
         removeDeadBlock(succ);
     }
 }
@@ -1166,48 +1155,48 @@ void doms_only(BOOLEAN always)
     WalkFlowgraph(blockArray[0], RemoveCriticalEdges, TRUE);
     if (blockCount != n)
     {
-        QUAD *head = intermed_head;
-        blockArray = oAlloc(sizeof(BLOCK *) * (blockCount + 1000)); // fixme...
+        QUAD* head = intermed_head;
+        blockArray = oAlloc(sizeof(BLOCK*) * (blockCount + 1000));  // fixme...
         while (head)
         {
             if (head->dc.opcode == i_block)
             {
-                blockArray[head->dc.v.label] = head->block ;
+                blockArray[head->dc.v.label] = head->block;
             }
-            head = head->fwd ;
+            head = head->fwd;
         }
         head = criticalThunks;
         while (head)
         {
             if (head->dc.opcode == i_block)
             {
-                blockArray[head->dc.v.label] = head->block ;
+                blockArray[head->dc.v.label] = head->block;
             }
-            head = head->fwd ;
+            head = head->fwd;
         }
         *criticalThunkPtr = Alloc(sizeof(QUAD));
         (*criticalThunkPtr)->dc.opcode = i_label;
         (*criticalThunkPtr)->dc.v.label = -1;
-        criticalThunkPtr = (QUAD **)*criticalThunkPtr;
+        criticalThunkPtr = (QUAD**)*criticalThunkPtr;
     }
     CancelInfinite(blockCount);
 
     blockArray[0]->dominates = NULL;
-    for (i=1; i < blockCount; i++)
+    for (i = 1; i < blockCount; i++)
     {
         if (blockArray[i])
         {
             removeDeadBlock(blockArray[i]);
-			if (blockArray[i])
-			{
-	            blockArray[i]->idom = 0;
-		        blockArray[i]->dominates = NULL;
-			}
+            if (blockArray[i])
+            {
+                blockArray[i]->idom = 0;
+                blockArray[i]->dominates = NULL;
+            }
         }
     }
     Dominators();
     PostDominators();
-    for (i=0; i < blockCount; i++)
+    for (i = 0; i < blockCount; i++)
     {
         if (blockArray[i])
         {
@@ -1222,23 +1211,23 @@ void doms_only(BOOLEAN always)
 /* main routine for creating flowgraph and dominator info */
 void flows_and_doms(void)
 {
-    BLOCKLIST *bl;
+    BLOCKLIST* bl;
     int i;
     if (exitBlock == 0)
     {
-        exitBlock = blockCount-1;
+        exitBlock = blockCount - 1;
         currentBlock->tail = intermed_tail;
     }
     else
     {
         int i;
-        for (i=0; i < blockCount; i++)
+        for (i = 0; i < blockCount; i++)
         {
             blockArray[i]->succ = blockArray[i]->pred = NULL;
         }
     }
 
-    RemoveDuplicateGotos();        
+    RemoveDuplicateGotos();
     basicFlowInfo();
     gather_flowgraph();
     doms_only(TRUE);

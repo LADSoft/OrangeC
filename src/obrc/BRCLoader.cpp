@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "BRCDictionary.h"
@@ -39,17 +39,15 @@ SymData::~SymData()
     for (auto l : data)
         delete l;
 }
-BlockData::~BlockData()
-{
-}
+BlockData::~BlockData() {}
 BRCLoader::~BRCLoader()
 {
     for (auto sym : syms)
         delete sym.second;
 }
-void BRCLoader::InsertSymData(std::string s, BrowseData *ldata, bool func)
+void BRCLoader::InsertSymData(std::string s, BrowseData* ldata, bool func)
 {
-    SymData *sym;
+    SymData* sym;
     Symbols::iterator it = syms.find(s);
     if (it != syms.end())
     {
@@ -65,14 +63,14 @@ void BRCLoader::InsertSymData(std::string s, BrowseData *ldata, bool func)
         if (ldata->type == compare->type)
             if (ldata->startLine == compare->startLine)
                 if (ldata->qual == compare->qual)
-//                    if (ldata->charPos == compare->charPos)
-//                        if (ldata->hint == compare->hint)
-                            if (ldata->blockLevel == compare->blockLevel)
-                                if (ldata->fileIndex == compare->fileIndex)
-                                {
-                                    delete ldata;
-                                    return;
-                                }
+                    //                    if (ldata->charPos == compare->charPos)
+                    //                        if (ldata->hint == compare->hint)
+                    if (ldata->blockLevel == compare->blockLevel)
+                        if (ldata->fileIndex == compare->fileIndex)
+                        {
+                            delete ldata;
+                            return;
+                        }
     }
     sym->insert(ldata);
     if (func)
@@ -81,14 +79,11 @@ void BRCLoader::InsertSymData(std::string s, BrowseData *ldata, bool func)
 
 //-------------------------------------------------------------------------
 
-void BRCLoader::InsertBlockData(std::string s, BrowseData *ldata)
-{
-    blocks[blocks.size()-1]->syms[s] = ldata;
-}
+void BRCLoader::InsertBlockData(std::string s, BrowseData* ldata) { blocks[blocks.size() - 1]->syms[s] = ldata; }
 
 //-------------------------------------------------------------------------
 
-void BRCLoader::InsertFile(ObjBrowseInfo &p)
+void BRCLoader::InsertFile(ObjBrowseInfo& p)
 {
     int index = p.GetQual();
     index = indexMap[index];
@@ -97,23 +92,23 @@ void BRCLoader::InsertFile(ObjBrowseInfo &p)
 
 //-------------------------------------------------------------------------
 
-ObjInt BRCLoader::InsertVariable(ObjBrowseInfo &p, bool func)
+ObjInt BRCLoader::InsertVariable(ObjBrowseInfo& p, bool func)
 {
-    BrowseData *ldata = new BrowseData;
+    BrowseData* ldata = new BrowseData;
     std::string hint;
     std::string name = p.GetData();
-    ldata->type =  p.GetType();
+    ldata->type = p.GetType();
     ldata->startLine = p.GetLine()->GetLineNumber();
     ldata->qual = p.GetQual();
     ldata->charPos = p.GetCharPos();
     ldata->hint = hint;
-    ldata->blockLevel = blocks.size()- blockHead;
+    ldata->blockLevel = blocks.size() - blockHead;
     ldata->fileIndex = indexMap[p.GetLineNo()->GetFile()->GetIndex()];
     // functions can be nested in C++ browse info..
-    if (blocks.size()-blockHead == 0)
+    if (blocks.size() - blockHead == 0)
     {
         InsertSymData(name, ldata, func);
-    } 
+    }
     else
     {
         InsertBlockData(name, ldata);
@@ -123,23 +118,20 @@ ObjInt BRCLoader::InsertVariable(ObjBrowseInfo &p, bool func)
 
 //-------------------------------------------------------------------------
 
-void BRCLoader::InsertDefine(ObjBrowseInfo &p)
+void BRCLoader::InsertDefine(ObjBrowseInfo& p) { InsertVariable(p); }
+void BRCLoader::Usages(ObjBrowseInfo& p)
 {
-    InsertVariable(p);
-}
-void BRCLoader::Usages(ObjBrowseInfo &p)
-{
-    BrowseData *ldata = new BrowseData;
+    BrowseData* ldata = new BrowseData;
     std::string hint;
     std::string name = p.GetData();
-    ldata->type =  p.GetType();
+    ldata->type = p.GetType();
     ldata->startLine = p.GetLine()->GetLineNumber();
     ldata->qual = p.GetQual();
     ldata->charPos = p.GetCharPos();
     ldata->hint = hint;
-    ldata->blockLevel = blocks.size()- blockHead;
+    ldata->blockLevel = blocks.size() - blockHead;
     ldata->fileIndex = indexMap[p.GetLineNo()->GetFile()->GetIndex()];
-    SymData *sym;
+    SymData* sym;
     Symbols::iterator it = syms.find(name);
     if (it != syms.end())
     {
@@ -154,7 +146,7 @@ void BRCLoader::Usages(ObjBrowseInfo &p)
 }
 
 //-------------------------------------------------------------------------
-void BRCLoader::StartFunc(ObjBrowseInfo &p)
+void BRCLoader::StartFunc(ObjBrowseInfo& p)
 {
     functionNesting.push_front(blockHead);
     blockHead = blocks.size();
@@ -164,14 +156,14 @@ void BRCLoader::StartFunc(ObjBrowseInfo &p)
 
 //-------------------------------------------------------------------------
 
-void BRCLoader::EndFunc(ObjBrowseInfo &p)
+void BRCLoader::EndFunc(ObjBrowseInfo& p)
 {
     std::string name = p.GetData();
     int line = p.GetLine()->GetLineNumber();
-    SymData * sym = syms[name];
+    SymData* sym = syms[name];
     if (!sym)
-       Utils::fatal("EndFunc::Cannot find symbol");
-//    (*sym->data.begin())->funcEndLine = line;
+        Utils::fatal("EndFunc::Cannot find symbol");
+    //    (*sym->data.begin())->funcEndLine = line;
     sym->func->funcEndLine = line;
     EndBlock(line);
     blockHead = functionNesting.front();
@@ -182,7 +174,7 @@ void BRCLoader::EndFunc(ObjBrowseInfo &p)
 
 void BRCLoader::StartBlock(int line)
 {
-    BlockData *b = new BlockData;
+    BlockData* b = new BlockData;
     b->count = 0;
     b->start = line;
     blocks.push_back(b);
@@ -194,7 +186,7 @@ void BRCLoader::EndBlock(int line)
 {
     if (blocks.size())
     {
-        BlockData *b = blocks.back();
+        BlockData* b = blocks.back();
         blocks.pop_back();
 
         b->end = line;
@@ -205,13 +197,13 @@ void BRCLoader::EndBlock(int line)
         delete b;
     }
 }
-void BRCLoader::ParseData(ObjFile &f)
+void BRCLoader::ParseData(ObjFile& f)
 {
     blocks.clear();
     for (ObjFile::BrowseInfoIterator it = f.BrowseInfoBegin(); it != f.BrowseInfoEnd(); ++it)
     {
-        ObjBrowseInfo *p = *it;
-        switch(p->GetType())
+        ObjBrowseInfo* p = *it;
+        switch (p->GetType())
         {
             case ObjBrowseInfo::eFileStart:
                 InsertFile(*p);
@@ -246,7 +238,7 @@ void BRCLoader::ParseData(ObjFile &f)
         }
     }
 }
-void BRCLoader::LoadSourceFiles(ObjFile &fil)
+void BRCLoader::LoadSourceFiles(ObjFile& fil)
 {
     indexMap.clear();
     for (ObjFile::SourceFileIterator it = fil.SourceFileBegin(); it != fil.SourceFileEnd(); ++it)
@@ -270,19 +262,19 @@ void BRCLoader::LoadSourceFiles(ObjFile &fil)
 bool BRCLoader::load()
 {
     bool rv = true;
-    for (CmdFiles::FileNameIterator it = files.FileNameBegin(); it != files. FileNameEnd(); ++it)
+    for (CmdFiles::FileNameIterator it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
     {
         std::string name = **it;
         ObjIeeeIndexManager im1;
         ObjFactory fact1(&im1);
-        FILE *b = fopen(name.c_str(), "rb");
-//        std::fstream b(name.c_str(), std::fstream::in);
+        FILE* b = fopen(name.c_str(), "rb");
+        //        std::fstream b(name.c_str(), std::fstream::in);
         if (b != nullptr)
         {
             ObjIeee i(name);
-            ObjFile *fil = i.Read(b, ObjIeee::eAll, &fact1);
+            ObjFile* fil = i.Read(b, ObjIeee::eAll, &fact1);
             fclose(b);
-//            b.close();
+            //            b.close();
             if (fil)
             {
                 LoadSourceFiles(*fil);
@@ -290,7 +282,7 @@ bool BRCLoader::load()
             }
             else
             {
-                std::string temp = std::string("Invalid browse information file ") + name.c_str(); 
+                std::string temp = std::string("Invalid browse information file ") + name.c_str();
                 std::cout << temp.c_str() << std::endl;
             }
         }

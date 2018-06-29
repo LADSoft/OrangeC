@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -32,16 +32,16 @@
 
 extern HINSTANCE hInstance;
 extern HWND hwndFrame;
-extern PROCESS *activeProcess;
+extern PROCESS* activeProcess;
 extern HWND hwndASM;
-extern DWINFO *editWindows;
+extern DWINFO* editWindows;
 extern enum DebugState uState;
-extern SCOPE *activeScope;
+extern SCOPE* activeScope;
 
-char *funcbphist[MAX_COMBO_HISTORY];
+char* funcbphist[MAX_COMBO_HISTORY];
 //-------------------------------------------------------------------------
 
-void SetTempBreakPoint(int procid, int threadid, int *addresses)
+void SetTempBreakPoint(int procid, int threadid, int* addresses)
 {
     ClearTempBreakPoint(procid);
     activeProcess->breakpoints.addresses = addresses;
@@ -60,10 +60,7 @@ void ClearTempBreakPoint(int procid)
 
 //-------------------------------------------------------------------------
 
-int SittingOnBreakPoint(DEBUG_EVENT *dbe)
-{
-    return isBreakPoint((int)dbe->u.Exception.ExceptionRecord.ExceptionAddress);
-}
+int SittingOnBreakPoint(DEBUG_EVENT* dbe) { return isBreakPoint((int)dbe->u.Exception.ExceptionRecord.ExceptionAddress); }
 
 //-------------------------------------------------------------------------
 
@@ -76,46 +73,40 @@ void WriteBreakPoint(HANDLE hProcess, int address, int value)
     //	if (!IsNT() && address >= 0x80000000)
     //		return ;
     if (!VirtualQueryEx(hProcess, (LPVOID)address, &mbi, sizeof(mbi)))
-        ExtendedMessageBox("Debugger", MB_SYSTEMMODAL, "Could not query pages %d",
-            GetLastError());
+        ExtendedMessageBox("Debugger", MB_SYSTEMMODAL, "Could not query pages %d", GetLastError());
     // the following fails on win98
-    VirtualProtectEx(hProcess, mbi.BaseAddress, mbi.RegionSize,
-        PAGE_EXECUTE_WRITECOPY, &mbi.Protect);
+    VirtualProtectEx(hProcess, mbi.BaseAddress, mbi.RegionSize, PAGE_EXECUTE_WRITECOPY, &mbi.Protect);
 
-    if (!WriteProcessMemory(hProcess, (LPVOID)address, (LPVOID) &bf, 1, 0))
-        ExtendedMessageBox("Debugger", MB_SYSTEMMODAL, 
-            "Could not write breakpoint address %x %d", address, GetLastError())
-            ;
+    if (!WriteProcessMemory(hProcess, (LPVOID)address, (LPVOID)&bf, 1, 0))
+        ExtendedMessageBox("Debugger", MB_SYSTEMMODAL, "Could not write breakpoint address %x %d", address, GetLastError());
 
-    VirtualProtectEx(hProcess, mbi.BaseAddress, mbi.RegionSize, mbi.Protect,
-        &dwOldProtect);
+    VirtualProtectEx(hProcess, mbi.BaseAddress, mbi.RegionSize, mbi.Protect, &dwOldProtect);
     FlushInstructionCache(hProcess, (LPVOID)address, 1);
 }
 
 //-------------------------------------------------------------------------
 
-void allocBreakPoint(HANDLE hProcess, BREAKPOINT *pt)
+void allocBreakPoint(HANDLE hProcess, BREAKPOINT* pt)
 {
     unsigned char bf;
     if (!pt->active && pt->addresses)
     {
         int i = 0;
-        int *p;
-        for (p = pt->addresses; *p !=0; ++p)
+        int* p;
+        for (p = pt->addresses; *p != 0; ++p)
             i++;
         if (!pt->tempvals)
         {
-             pt->tempvals = calloc(i, sizeof(int));
+            pt->tempvals = calloc(i, sizeof(int));
         }
         strcpy(pt->name, "unknown");
-        for (i=0, p = pt->addresses; *p !=0; ++p, ++i)
+        for (i = 0, p = pt->addresses; *p != 0; ++p, ++i)
         {
             DWORD len;
-            if (ReadProcessMemory(hProcess, (LPVOID)pt->addresses[i], (LPVOID) &bf, 1,
-                &len))
+            if (ReadProcessMemory(hProcess, (LPVOID)pt->addresses[i], (LPVOID)&bf, 1, &len))
             {
                 if (!len)
-                    return ;
+                    return;
                 if (bf == 0xcc)
                 {
                     pt->tempvals[i] = -1;
@@ -126,14 +117,13 @@ void allocBreakPoint(HANDLE hProcess, BREAKPOINT *pt)
                     pt->active = TRUE;
                     pt->tempvals[i] = bf;
                 }
-                
             }
             if (i == 0)
             {
                 char name[256];
                 DWORD n = FindFunctionName(name, pt->addresses[i], NULL, NULL);
                 if (n)
-                    sprintf(pt->name, "%s + 0x%x", name, pt->addresses[i]-n);
+                    sprintf(pt->name, "%s + 0x%x", name, pt->addresses[i] - n);
             }
         }
     }
@@ -141,15 +131,15 @@ void allocBreakPoint(HANDLE hProcess, BREAKPOINT *pt)
 
 //-------------------------------------------------------------------------
 
-void freeBreakPoint(HANDLE hProcess, BREAKPOINT *pt)
+void freeBreakPoint(HANDLE hProcess, BREAKPOINT* pt)
 {
     if (pt->active)
     {
         int i;
-        int *p;
-        for (i=0, p = pt->addresses; p && *p !=0; ++p, ++i)
+        int* p;
+        for (i = 0, p = pt->addresses; p && *p != 0; ++p, ++i)
         {
-            if (pt->tempvals != (int *)-1 && pt->addresses && pt->tempvals)
+            if (pt->tempvals != (int*)-1 && pt->addresses && pt->tempvals)
             {
                 WriteBreakPoint(hProcess, pt->addresses[i], pt->tempvals[i]);
             }
@@ -162,7 +152,7 @@ void freeBreakPoint(HANDLE hProcess, BREAKPOINT *pt)
 
 void SetBreakPoints(int procid)
 {
-    BREAKPOINT *p = &activeProcess->breakpoints;
+    BREAKPOINT* p = &activeProcess->breakpoints;
     hbpSetBP();
     databpSetBP(activeProcess->hProcess);
     while (p)
@@ -177,8 +167,8 @@ void SetBreakPoints(int procid)
 
 void ClearBreakPoints(int procid)
 {
-    BREAKPOINT *p = &activeProcess->breakpoints;
-    THREAD *th = activeProcess->threads;
+    BREAKPOINT* p = &activeProcess->breakpoints;
+    THREAD* th = activeProcess->threads;
     hbpResetBP();
     databpResetBP(activeProcess->hProcess);
     while (p)
@@ -191,7 +181,6 @@ void ClearBreakPoints(int procid)
         freeBreakPoint(activeProcess->hProcess, &th->breakpoint);
         th = th->next;
     }
-
 }
 
 //-------------------------------------------------------------------------
@@ -199,7 +188,7 @@ int inTempBreakPoint(int addr)
 {
     if (activeProcess->breakpoints.addresses)
     {
-        int *p;
+        int* p;
         for (p = activeProcess->breakpoints.addresses; *p; ++p)
             if (*p == addr)
                 return TRUE;
@@ -207,14 +196,13 @@ int inTempBreakPoint(int addr)
     return FALSE;
 }
 
-
 int isBreakPoint(int addr)
 {
-    BREAKPOINT *p = activeProcess->breakpoints.next;
+    BREAKPOINT* p = activeProcess->breakpoints.next;
     while (p)
     {
-        int *q;
-        for (q = p->addresses; q && *q !=0; ++q)
+        int* q;
+        for (q = p->addresses; q && *q != 0; ++q)
         {
             if (addr == *q)
                 return TRUE;
@@ -228,11 +216,11 @@ int isBreakPoint(int addr)
 
 int isLocalBreakPoint(int addr)
 {
-    THREAD *th = activeProcess->threads;
+    THREAD* th = activeProcess->threads;
     while (th)
     {
-        int *q;
-        for (q = th->breakpoint.addresses; q && *q !=0; ++q)
+        int* q;
+        for (q = th->breakpoint.addresses; q && *q != 0; ++q)
         {
             if (addr == *q)
                 return TRUE;
@@ -242,9 +230,9 @@ int isLocalBreakPoint(int addr)
     return isBreakPoint(addr);
 }
 
-int dbgSetBreakPoint(char *name, int linenum, char *extra)
+int dbgSetBreakPoint(char* name, int linenum, char* extra)
 {
-    BREAKPOINT **p = &activeProcess->breakpoints.next;
+    BREAKPOINT** p = &activeProcess->breakpoints.next;
     if (uState == notDebugging)
         return 1;
     // will be checked when entering debugger
@@ -254,34 +242,34 @@ int dbgSetBreakPoint(char *name, int linenum, char *extra)
         int addr = linenum;
         while (*p)
         {
-            int *q;
-            for (q = (*p)->addresses; q && *q !=0; ++q)
+            int* q;
+            for (q = (*p)->addresses; q && *q != 0; ++q)
             {
                 if (addr == *q)
                     return 1;
             }
             p = &(*p)->next;
         }
-        *p = calloc(1,sizeof(BREAKPOINT));
+        *p = calloc(1, sizeof(BREAKPOINT));
         if (*p)
         {
-            (*p)->addresses = calloc(2, sizeof(int ));
+            (*p)->addresses = calloc(2, sizeof(int));
             (*p)->addresses[0] = addr;
             (*p)->extra = extra;
             GetBreakpointLine(addr, &(*p)->module[0], &(*p)->linenum, FALSE);
             if (hwndASM)
                 InvalidateRect(hwndASM, 0, 0);
-//            Tag(TAG_BP, (*p)->module, (*p)->linenum, 0, 0, 0, 0);
+            //            Tag(TAG_BP, (*p)->module, (*p)->linenum, 0, 0, 0, 0);
             if (uState == Running)
             {
-                allocBreakPoint(activeProcess->hProcess,  *p);
+                allocBreakPoint(activeProcess->hProcess, *p);
             }
             else
             {
                 char name[256];
-                DWORD n = FindFunctionName(name, (*p)->addresses[0], NULL,NULL);
+                DWORD n = FindFunctionName(name, (*p)->addresses[0], NULL, NULL);
                 if (n)
-                    sprintf((*p)->name, "%s + 0x%x", name, (*p)->addresses[0]-n);
+                    sprintf((*p)->name, "%s + 0x%x", name, (*p)->addresses[0] - n);
             }
         }
         SendDIDMessage(DID_BREAKWND, WM_RESTACK, 0, 0);
@@ -290,17 +278,17 @@ int dbgSetBreakPoint(char *name, int linenum, char *extra)
     else
     {
         // it was from a source module
-        int *addresses = GetBreakpointAddresses(name, &linenum);
+        int* addresses = GetBreakpointAddresses(name, &linenum);
         if (addresses)
         {
-            int *t;
-            for (t = addresses; *t !=0; ++t)
+            int* t;
+            for (t = addresses; *t != 0; ++t)
             {
                 p = &activeProcess->breakpoints.next;
                 while (*p)
                 {
-                    int *q;
-                    for (q = (*p)->addresses; q && *q !=0; ++q)
+                    int* q;
+                    for (q = (*p)->addresses; q && *q != 0; ++q)
                     {
                         if (*t == *q)
                             return 1;
@@ -308,7 +296,7 @@ int dbgSetBreakPoint(char *name, int linenum, char *extra)
                     p = &(*p)->next;
                 }
             }
-            *p = calloc(1,sizeof(BREAKPOINT));
+            *p = calloc(1, sizeof(BREAKPOINT));
             if (*p)
             {
                 (*p)->addresses = addresses;
@@ -319,14 +307,14 @@ int dbgSetBreakPoint(char *name, int linenum, char *extra)
                     InvalidateRect(hwndASM, 0, 0);
                 if (uState == Running)
                 {
-                    allocBreakPoint(activeProcess->hProcess,  *p);
+                    allocBreakPoint(activeProcess->hProcess, *p);
                 }
                 else
                 {
                     char name[256];
                     DWORD n = FindFunctionName(name, (*p)->addresses[0], NULL, NULL);
                     if (n)
-                        sprintf((*p)->name, "%s + 0x%x", name, (*p)->addresses[0]-n);
+                        sprintf((*p)->name, "%s + 0x%x", name, (*p)->addresses[0] - n);
                 }
             }
             else
@@ -342,25 +330,24 @@ int dbgSetBreakPoint(char *name, int linenum, char *extra)
 }
 
 //-------------------------------------------------------------------------
-void dbgClearBreakpointsForModule(DLL_INFO *dllinfo)
+void dbgClearBreakpointsForModule(DLL_INFO* dllinfo)
 {
     // this doesn't actually unwrite the breakpoint.
     // it is meant to be called at DLL unload time, when the DLL is already gone...
-    BREAKPOINT **p = &activeProcess->breakpoints.next;
+    BREAKPOINT** p = &activeProcess->breakpoints.next;
     if (uState == notDebugging)
         return;
     while (*p)
     {
-        int *t;
+        int* t;
         BOOL found = FALSE;
         for (t = (*p)->addresses; t && *t != 0; ++t)
         {
-            if (*t >= dllinfo->base && (
-                dllinfo->next && *t < dllinfo->next->base || 
-                    !dllinfo->next && dllinfo->base > activeProcess->base) &&
+            if (*t >= dllinfo->base &&
+                (dllinfo->next && *t < dllinfo->next->base || !dllinfo->next && dllinfo->base > activeProcess->base) &&
                 (dllinfo->base > activeProcess->base || *t < activeProcess->base))
             {
-                BREAKPOINT *q = *p;
+                BREAKPOINT* q = *p;
                 found = TRUE;
                 *p = (*p)->next;
                 free(q->addresses);
@@ -374,29 +361,29 @@ void dbgClearBreakpointsForModule(DLL_INFO *dllinfo)
             p = &(*p)->next;
     }
 }
-void dbgClearBreakPoint(char *name, int linenum)
+void dbgClearBreakPoint(char* name, int linenum)
 {
-    BREAKPOINT **p = &activeProcess->breakpoints.next;
+    BREAKPOINT** p = &activeProcess->breakpoints.next;
     if (uState == notDebugging)
-        return ;
+        return;
     if (!name)
     {
         // from ASM window
         int addr = linenum;
         while (*p)
         {
-            int *t;
-            for (t = (*p)->addresses; t && *t !=0; ++t)
+            int* t;
+            for (t = (*p)->addresses; t && *t != 0; ++t)
             {
                 if (*t == addr)
                     break;
             }
             if (*t)
             {
-                BREAKPOINT *q =  *p;
+                BREAKPOINT* q = *p;
 
                 *p = (*p)->next;
-//                Tag(TAG_BP, q->module, q->linenum, 0, 0, 0, 0);
+                //                Tag(TAG_BP, q->module, q->linenum, 0, 0, 0, 0);
                 if (uState == Running)
                     freeBreakPoint(activeProcess->hProcess, q);
                 free(q->addresses);
@@ -406,28 +393,28 @@ void dbgClearBreakPoint(char *name, int linenum)
                 if (hwndASM)
                     InvalidateRect(hwndASM, 0, 0);
                 SendDIDMessage(DID_BREAKWND, WM_RESTACK, 0, 0);
-                return ;
+                return;
             }
             p = &(*p)->next;
         }
     }
     else
     {
-        int *addresses = GetBreakpointAddresses(name, &linenum);
+        int* addresses = GetBreakpointAddresses(name, &linenum);
         if (addresses)
         {
             int addr = addresses[0];
             while (*p)
             {
-                int *t;
-                for (t = (*p)->addresses; t && *t !=0; ++t)
+                int* t;
+                for (t = (*p)->addresses; t && *t != 0; ++t)
                 {
                     if (*t == addr)
                         break;
                 }
                 if (*t)
                 {
-                    BREAKPOINT *q =  *p;
+                    BREAKPOINT* q = *p;
                     *p = (*p)->next;
                     if (uState == Running)
                         freeBreakPoint(activeProcess->hProcess, q);
@@ -438,7 +425,7 @@ void dbgClearBreakPoint(char *name, int linenum)
                     if (hwndASM)
                         InvalidateRect(hwndASM, 0, 0);
                     SendDIDMessage(DID_BREAKWND, WM_RESTACK, 0, 0);
-                    return ;
+                    return;
                 }
                 p = &(*p)->next;
             }
@@ -449,28 +436,27 @@ void dbgClearBreakPoint(char *name, int linenum)
 
 //-------------------------------------------------------------------------
 
-void SetBP(DEBUG_EVENT *dbe)
+void SetBP(DEBUG_EVENT* dbe)
 {
-    BREAKPOINT **p = &activeProcess->breakpoints.next;
+    BREAKPOINT** p = &activeProcess->breakpoints.next;
     if (hwndASM && GetFocus() == hwndASM)
     {
         int addr = SendMessage(hwndASM, WM_GETCURSORADDRESS, 0, 0);
         Tag(TAG_BP, 0, addr, 0, 0, 0, 0);
         if (uState == Running)
-            allocBreakPoint(activeProcess->hProcess,  *p);
+            allocBreakPoint(activeProcess->hProcess, *p);
     }
     else
     {
         HWND hWnd = GetFocus();
-        DWINFO *ptr = editWindows;
+        DWINFO* ptr = editWindows;
         while (ptr)
         {
             if (ptr->active && ptr->dwHandle == hWnd)
             {
                 int linenum;
-                SendMessage(ptr->dwHandle, EM_GETSEL, (WPARAM) &linenum, 0);
-                linenum = SendMessage(ptr->dwHandle, EM_EXLINEFROMCHAR, 0,
-                    linenum) + 1;
+                SendMessage(ptr->dwHandle, EM_GETSEL, (WPARAM)&linenum, 0);
+                linenum = SendMessage(ptr->dwHandle, EM_EXLINEFROMCHAR, 0, linenum) + 1;
                 Tag(TAG_BP, ptr->dwName, linenum, 0, 0, 0, 0);
                 break;
             }
@@ -489,27 +475,25 @@ LRESULT FunctionBPProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
         case WM_COMMAND:
             switch (LOWORD(wParam))
             {
-            case IDOK:
-                editwnd = GetDlgItem(hwnd, IDC_EDFUNC);
-                GetWindowText(editwnd, buf, 256);
-                SendMessage(editwnd, WM_SAVEHISTORY, 0, 0);
-                                
-                EndDialog(hwnd, (int)buf);
-                break;
-            case IDCANCEL:
-                EndDialog(hwnd, 0);
-                break;
+                case IDOK:
+                    editwnd = GetDlgItem(hwnd, IDC_EDFUNC);
+                    GetWindowText(editwnd, buf, 256);
+                    SendMessage(editwnd, WM_SAVEHISTORY, 0, 0);
 
+                    EndDialog(hwnd, (int)buf);
+                    break;
+                case IDCANCEL:
+                    EndDialog(hwnd, 0);
+                    break;
             }
             switch (HIWORD(wParam))
             {
-            case CBN_SELCHANGE:
-                EnableWindow(GetDlgItem(hwnd, IDOK), TRUE);
-                break;
-            case CBN_EDITCHANGE:
-                EnableWindow(GetDlgItem(hwnd, IDOK), GetWindowText((HWND)lParam,
-                    buf, 2));
-                break;
+                case CBN_SELCHANGE:
+                    EnableWindow(GetDlgItem(hwnd, IDOK), TRUE);
+                    break;
+                case CBN_EDITCHANGE:
+                    EnableWindow(GetDlgItem(hwnd, IDOK), GetWindowText((HWND)lParam, buf, 2));
+                    break;
             }
             break;
         case WM_CLOSE:
@@ -528,7 +512,7 @@ LRESULT FunctionBPProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 }
 LRESULT FunctionBPSelectProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
-    FUNCTIONLIST *list;
+    FUNCTIONLIST* list;
     LV_COLUMN lvC;
     LV_ITEM item;
     RECT r;
@@ -552,10 +536,9 @@ LRESULT FunctionBPSelectProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lPa
             }
             else if (wParam == IDC_BMGOTO)
             {
-                
-                int sel = ListView_GetSelectionMark(GetDlgItem(hwnd,
-                    IDC_FBPLISTBOX));
-                if (sel ==  - 1)
+
+                int sel = ListView_GetSelectionMark(GetDlgItem(hwnd, IDC_FBPLISTBOX));
+                if (sel == -1)
                 {
                     EndDialog(hwnd, 0);
                     break;
@@ -568,7 +551,7 @@ LRESULT FunctionBPSelectProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lPa
             }
             break;
         case WM_INITDIALOG:
-            list = (FUNCTIONLIST *)lParam;
+            list = (FUNCTIONLIST*)lParam;
             CenterWindow(hwnd);
             hwndlb = GetDlgItem(hwnd, IDC_FBPLISTBOX);
             ApplyDialogFont(hwndlb);
@@ -594,8 +577,7 @@ LRESULT FunctionBPSelectProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lPa
 }
 void functionbp(void)
 {
-    char *name = (char *)DialogBox(hInstance, "FUNCTIONBPDIALOG", hwndFrame, (DLGPROC)
-        FunctionBPProc);
+    char* name = (char*)DialogBox(hInstance, "FUNCTIONBPDIALOG", hwndFrame, (DLGPROC)FunctionBPProc);
     if (name)
     {
         char buf[2048];
@@ -609,12 +591,12 @@ void functionbp(void)
         {
             int count = 0;
             FUNCTIONLIST *list, *selected = NULL;
-            DEBUG_INFO *dbg = findDebug(activeScope->address);
+            DEBUG_INFO* dbg = findDebug(activeScope->address);
             list = GetFunctionList(dbg, activeScope, buf);
             if (list && list->next)
             {
-                selected = (FUNCTIONLIST *)DialogBoxParam(hInstance, "FUNCTIONBPSELECTDIALOG", hwndFrame, (DLGPROC)
-                    FunctionBPSelectProc, (LPARAM)list);
+                selected = (FUNCTIONLIST*)DialogBoxParam(hInstance, "FUNCTIONBPSELECTDIALOG", hwndFrame,
+                                                         (DLGPROC)FunctionBPSelectProc, (LPARAM)list);
             }
             else
             {
@@ -626,18 +608,16 @@ void functionbp(void)
                 char module[MAX_PATH];
                 if (GetBreakpointLine(selected->address, module, &line, FALSE))
                 {
-                    Tag(TAG_BP, module, line, 0,0,0,0);
+                    Tag(TAG_BP, module, line, 0, 0, 0, 0);
                 }
-                    
             }
             if (list)
             {
                 while (list)
                 {
-                    FUNCTIONLIST *l = list;
+                    FUNCTIONLIST* l = list;
                     list = list->next;
                     free(l);
-               
                 }
             }
         }

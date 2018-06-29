@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "VersionInfo.h"
@@ -29,7 +29,7 @@
 #include <windows.h>
 #include <stdexcept>
 
-void StringVerInfo::WriteRes(ResFile &resFile)
+void StringVerInfo::WriteRes(ResFile& resFile)
 {
     resFile.Align();
     size_t pos = resFile.GetPos();
@@ -54,11 +54,11 @@ void StringVerInfo::WriteRes(ResFile &resFile)
         resFile.Align();
         int n = info.value.size();
         // write word by word for portability
-        for (int i=0; i < n; i++)
+        for (int i = 0; i < n; i++)
             resFile.WriteWord(info.value[i]);
         size_t pos4 = resFile.GetPos();
         resFile.SetPos(pos3);
-        resFile.WriteWord(pos4-pos3);
+        resFile.WriteWord(pos4 - pos3);
         resFile.SetPos(pos4);
     }
     size_t pos2 = resFile.GetPos();
@@ -68,7 +68,7 @@ void StringVerInfo::WriteRes(ResFile &resFile)
     resFile.WriteWord(pos2 - pos);
     resFile.SetPos(pos2);
 }
-void StringVerInfo::ReadRC(RCFile &rcFile)
+void StringVerInfo::ReadRC(RCFile& rcFile)
 {
     rcFile.NeedBegin();
     while (rcFile.GetToken()->GetKeyword() == Lexer::VALUE)
@@ -84,13 +84,13 @@ void StringVerInfo::ReadRC(RCFile &rcFile)
     }
     rcFile.NeedEnd();
 }
-VarVerInfo::Info::Info(const Info &Old)
+VarVerInfo::Info::Info(const Info& Old)
 {
     key = Old.key;
     for (auto info : Old)
         languages.push_back(info);
 }
-void VarVerInfo::WriteRes(ResFile &resFile)
+void VarVerInfo::WriteRes(ResFile& resFile)
 {
     resFile.Align();
     size_t pos = resFile.GetPos();
@@ -121,12 +121,12 @@ void VarVerInfo::WriteRes(ResFile &resFile)
     resFile.WriteWord(pos1 - pos);
     resFile.SetPos(pos1);
 }
-void VarVerInfo::ReadRC(RCFile &rcFile)
+void VarVerInfo::ReadRC(RCFile& rcFile)
 {
     while (rcFile.GetToken()->GetKeyword() == Lexer::VALUE)
     {
         rcFile.NextToken();
-        
+
         std::wstring key = rcFile.GetString();
         if (rcFile.GetToken()->GetKeyword() != Lexer::comma)
             throw new std::runtime_error("Comma expected");
@@ -134,7 +134,7 @@ void VarVerInfo::ReadRC(RCFile &rcFile)
         while (rcFile.GetToken()->GetKeyword() == Lexer::comma)
         {
             rcFile.NextToken();
-            v.languages.push_back( rcFile.GetNumber());
+            v.languages.push_back(rcFile.GetNumber());
         }
         info.push_back(v);
     }
@@ -148,11 +148,11 @@ VersionInfo::~VersionInfo()
     }
     varInfo.clear();
 }
-void VersionInfo::WriteRes(ResFile &resFile)
+void VersionInfo::WriteRes(ResFile& resFile)
 {
     Resource::WriteRes(resFile);
     size_t pos = resFile.GetPos();
-    resFile.WriteWord(0); // length goes here
+    resFile.WriteWord(0);  // length goes here
     if (fixed)
     {
         resFile.WriteWord(52);
@@ -190,7 +190,7 @@ void VersionInfo::WriteRes(ResFile &resFile)
     resFile.SetPos(pos1);
     resFile.Release();
 }
-void VersionInfo::ReadRC(RCFile &rcFile)
+void VersionInfo::ReadRC(RCFile& rcFile)
 {
     resInfo.SetFlags(ResourceInfo::Pure | ResourceInfo::Moveable);
     bool done = false;
@@ -200,49 +200,49 @@ void VersionInfo::ReadRC(RCFile &rcFile)
         switch (rcFile.GetTokenId())
         {
             case Lexer::FILEVERSION:
+            {
+                count++;
+                fileVersionMS = rcFile.GetNumber() << 16;
+                if (!rcFile.AtEol())
                 {
-                    count ++;
-                    fileVersionMS = rcFile.GetNumber() << 16;
+                    rcFile.SkipComma();
+                    fileVersionMS |= rcFile.GetNumber() & 0xffff;
                     if (!rcFile.AtEol())
                     {
                         rcFile.SkipComma();
-                        fileVersionMS |= rcFile.GetNumber() &0xffff;
+                        fileVersionLS = rcFile.GetNumber() << 16;
                         if (!rcFile.AtEol())
                         {
                             rcFile.SkipComma();
-                            fileVersionLS = rcFile.GetNumber() << 16;
-                            if (!rcFile.AtEol())
-                            {
-                                rcFile.SkipComma();
-                                fileVersionLS |= rcFile.GetNumber() &0xffff;
-                            }
+                            fileVersionLS |= rcFile.GetNumber() & 0xffff;
                         }
                     }
-                    rcFile.NeedEol();
                 }
-                break;
+                rcFile.NeedEol();
+            }
+            break;
             case Lexer::PRODUCTVERSION:
+            {
+                count++;
+                productVersionMS = rcFile.GetNumber() << 16;
+                if (!rcFile.AtEol())
                 {
-                    count ++;
-                    productVersionMS = rcFile.GetNumber() << 16;
+                    rcFile.SkipComma();
+                    productVersionMS |= rcFile.GetNumber() & 0xffff;
                     if (!rcFile.AtEol())
                     {
                         rcFile.SkipComma();
-                        productVersionMS |= rcFile.GetNumber() &0xffff;
+                        productVersionLS = rcFile.GetNumber() << 16;
                         if (!rcFile.AtEol())
                         {
                             rcFile.SkipComma();
-                            productVersionLS = rcFile.GetNumber() << 16;
-                            if (!rcFile.AtEol())
-                            {
-                                rcFile.SkipComma();
-                                productVersionLS |= rcFile.GetNumber() &0xffff;
-                            }
+                            productVersionLS |= rcFile.GetNumber() & 0xffff;
                         }
                     }
-                    rcFile.NeedEol();
                 }
-                break;
+                rcFile.NeedEol();
+            }
+            break;
             case Lexer::FILEFLAGSMASK:
                 count++;
                 fileFlagsMask = rcFile.GetNumber();
@@ -292,7 +292,7 @@ void VersionInfo::ReadRC(RCFile &rcFile)
             if (rcFile.GetTokenId() != Lexer::BLOCK)
                 throw new std::runtime_error("Block expected");
             std::wstring language = rcFile.GetString();
-            StringVerInfo *v = new StringVerInfo(language);
+            StringVerInfo* v = new StringVerInfo(language);
             varInfo.push_back(v);
             rcFile.NeedEol();
             v->ReadRC(rcFile);
@@ -302,14 +302,13 @@ void VersionInfo::ReadRC(RCFile &rcFile)
         {
             rcFile.NeedEol();
             rcFile.NeedBegin();
-            VarVerInfo *v = new VarVerInfo();
+            VarVerInfo* v = new VarVerInfo();
             v->ReadRC(rcFile);
             varInfo.push_back(v);
             rcFile.NeedEnd();
         }
         else
             throw new std::runtime_error("Invalid version info type");
-
     }
     rcFile.NeedEnd();
 }

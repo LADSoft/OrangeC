@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <ctype.h>
@@ -37,100 +37,86 @@
 
 #define MAX_STRLEN 257
 
-extern char *rcIdFile;
+extern char* rcIdFile;
 extern WCHAR inputline[];
-extern FILE *inputFile;
+extern FILE* inputFile;
 extern TABLE *gsyms, defsyms;
 extern long ival;
 extern char laststr[];
-extern HASHREC **defhash;
-extern char *infile;
+extern HASHREC** defhash;
+extern char* infile;
 extern int incconst;
-extern char *rcSearchPath;
-extern WCHAR *lptr;
+extern char* rcSearchPath;
+extern WCHAR* lptr;
 extern int cantnewline;
-extern char *infile;
+extern char* infile;
 extern int backupchar;
 extern enum e_sym lastst;
 extern char lastid[];
 extern char laststr[];
 extern int lastch;
 extern int lineno;
-extern char *inputBuffer;
+extern char* inputBuffer;
 extern int inputLen;
-extern char *ibufPtr;
+extern char* ibufPtr;
 typedef struct _startups_
 {
-    struct _startups_ *link;
-    char *name;
+    struct _startups_* link;
+    char* name;
     int prio;
 } STARTUPS;
 SYM *rcDefs, **rcDefTail;
 int inSymFile;
-char *errfile;
+char* errfile;
 int errlineno = 0;
-IFSTRUCT *ifshold[10];
-char *inclfname[10];
-FILE *inclfile[10];
+IFSTRUCT* ifshold[10];
+char* inclfname[10];
+FILE* inclfile[10];
 int incldepth = 0;
 int inclline[10];
 int inclhfile[10];
 int inclInputLen[10];
-char *inclInputBuffer[10];
-char *inclibufPtr[10];
+char* inclInputBuffer[10];
+char* inclibufPtr[10];
 int inhfile;
-WCHAR *lptr;
-LIST *incfiles = 0,  *lastinc;
+WCHAR* lptr;
+LIST *incfiles = 0, *lastinc;
 
-LIST *libincludes = 0;
+LIST* libincludes = 0;
 
-IFSTRUCT *ifs = 0;
+IFSTRUCT* ifs = 0;
 int ifskip = 0;
 int elsetaken = 0;
 
-void filemac(WCHAR *string);
-void datemac(WCHAR *string);
-void timemac(WCHAR *string);
-void linemac(WCHAR *string);
+void filemac(WCHAR* string);
+void datemac(WCHAR* string);
+void timemac(WCHAR* string);
+void linemac(WCHAR* string);
 
-static char *unmangid; /* In this module we have to ignore leading underscores
-    */
+static char* unmangid; /* In this module we have to ignore leading underscores
+                        */
 static WCHAR unmangidW[256];
-static STARTUPS *startuplist,  *rundownlist;
-static WCHAR defkw[] = 
-{
-    'd', 'e', 'f', 'i', 'n', 'e', 'd', 0
-};
+static STARTUPS *startuplist, *rundownlist;
+static WCHAR defkw[] = {'d', 'e', 'f', 'i', 'n', 'e', 'd', 0};
 static int definelistcount;
-static SYM *definelist[100]; /* Way deep but hey! */
+static SYM* definelist[100]; /* Way deep but hey! */
 static int skiplevel;
 /* List of standard macros */
 #define INGROWNMACROS 4
 
 struct inmac
 {
-    WCHAR *s;
-    void(*func)();
-} ingrownmacros[INGROWNMACROS] = 
-{
-    {
-        L"__FILE__", filemac
-    }
-    , 
-    {
-        L"__DATE__", datemac, 
-    }
-    , 
-    {
-        L"__TIME__", timemac
-    }
-    , 
-    {
-        L"__LINE__", linemac
-    }
-};
+    WCHAR* s;
+    void (*func)();
+} ingrownmacros[INGROWNMACROS] = {{L"__FILE__", filemac},
+                                  {
+                                      L"__DATE__",
+                                      datemac,
+                                  },
+                                  {L"__TIME__", timemac},
+                                  {L"__LINE__", linemac}};
 
-static void repdefines(WCHAR *lptr);
+static void repdefines(WCHAR* lptr);
 
 void pushif(void);
 
@@ -205,7 +191,7 @@ int preprocess(void)
 
 int doerror(void)
 {
-    char *temp;
+    char* temp;
     int i = 0;
     if (ifskip)
         return incldepth == 0;
@@ -223,10 +209,10 @@ int doerror(void)
 
 static int pragerror(int errornum)
 {
-    char buf[100],  *p = buf, i = 99;
-    WCHAR *s = lptr;
-    while (i-- &&  *s &&  *s != '\n')
-        *p++ =  *s++;
+    char buf[100], *p = buf, i = 99;
+    WCHAR* s = lptr;
+    while (i-- && *s && *s != '\n')
+        *p++ = *s++;
     *p = 0;
     basicerror(errornum, buf);
     return (incldepth == 0);
@@ -236,13 +222,13 @@ static int pragerror(int errornum)
 
 int dopragma(void)
 {
-    char buf[40],  *p = buf;
+    char buf[40], *p = buf;
     int val = 0;
     if (ifskip)
         return incldepth == 0;
-        cantnewline = TRUE;
+    cantnewline = TRUE;
     getsym();
-        cantnewline = FALSE;
+    cantnewline = FALSE;
     if (lastst != ident)
         return incldepth == 0;
     if (!strcmp(unmangid, "error"))
@@ -251,7 +237,6 @@ int dopragma(void)
         return pragerror(ERR_USERWARN);
     else
         return incldepth == 0;
-
 }
 
 //-------------------------------------------------------------------------
@@ -288,7 +273,7 @@ void ReadFileName(void)
     if (lastst == sconst)
     {
         getsym();
-        return ;
+        return;
     }
     laststr[0] = 0;
     while (!done)
@@ -321,11 +306,11 @@ int doinclude(int unquoted)
  */
 {
     int rv;
-    FILE *oldfile = inputFile;
+    FILE* oldfile = inputFile;
     int sysinc = FALSE;
     incconst = TRUE;
-    getsym(); /* get file to include */
-    if (!incconst) // gets set false automatically if a a system style include is used
+    getsym();       /* get file to include */
+    if (!incconst)  // gets set false automatically if a a system style include is used
         sysinc = TRUE;
     incconst = FALSE;
     if (ifskip)
@@ -354,7 +339,7 @@ int doinclude(int unquoted)
     }
     else
     {
-        LIST *list;
+        LIST* list;
         if (!sysinc && !rcIdFile && incldepth == 0 && !strstr(laststr, "windows.h"))
         {
             inSymFile = TRUE;
@@ -373,7 +358,7 @@ int doinclude(int unquoted)
         inclibufPtr[incldepth] = ibufPtr;
         inclfname[incldepth++] = infile;
         inputLen = 0;
-        inputBuffer = calloc(INPUT_BUFFER_LEN , 1);
+        inputBuffer = calloc(INPUT_BUFFER_LEN, 1);
         infile = rcStrdup(laststr);
         list = rcAlloc(sizeof(LIST));
         list->data = infile;
@@ -393,36 +378,35 @@ int doinclude(int unquoted)
 
 //-------------------------------------------------------------------------
 
-WCHAR *prcStrdup(const WCHAR *string)
+WCHAR* prcStrdup(const WCHAR* string)
 {
-    WCHAR *temp = rcAlloc(pstrlen(string) *sizeof(WCHAR) + sizeof(WCHAR))
-        ;
+    WCHAR* temp = rcAlloc(pstrlen(string) * sizeof(WCHAR) + sizeof(WCHAR));
     pstrcpy(temp, string);
     return temp;
 }
 
 //-------------------------------------------------------------------------
 
-void glbdefine(char *name, char *value)
+void glbdefine(char* name, char* value)
 {
     {
-        SYM *sp;
-        WCHAR *p;
-        DEFSTRUCT *def;
+        SYM* sp;
+        WCHAR* p;
+        DEFSTRUCT* def;
         if ((sp = search(name, &defsyms)) != 0)
-            return ;
+            return;
         sp = rcAlloc(sizeof(SYM));
         sp->name = rcStrdup(name);
         def = rcAlloc(sizeof(DEFSTRUCT));
         def->args = 0;
         def->argcount = 0;
-        def->string = p = rcAlloc(strlen(value) *sizeof(WCHAR) + sizeof(WCHAR));
+        def->string = p = rcAlloc(strlen(value) * sizeof(WCHAR) + sizeof(WCHAR));
         while (*value)
-            *p++ =  *value++;
+            *p++ = *value++;
         *p++ = 0;
         sp->value.s = (char*)def;
         insert(sp, &defsyms);
-        return ;
+        return;
     }
 }
 
@@ -430,16 +414,16 @@ void glbdefine(char *name, char *value)
 
 void getdefsym(void)
 {
-    if (backupchar !=  - 1)
+    if (backupchar != -1)
     {
         lastst = backupchar;
-        backupchar =  - 1;
-        return ;
+        backupchar = -1;
+        return;
     }
-    restart:  /* we come back here after comments */
+restart: /* we come back here after comments */
     while (iswhitespacechar(lastch))
         getch();
-    if (lastch ==  - 1)
+    if (lastch == -1)
         lastst = rceof;
     else if (isdigit(lastch))
         getnum();
@@ -447,7 +431,7 @@ void getdefsym(void)
     {
         lptr--;
         defid(unmangidW, &lptr, unmangid);
-        lastch =  *lptr++;
+        lastch = *lptr++;
         lastst = ident;
     }
     else if (getsym2())
@@ -460,12 +444,12 @@ void getdefsym(void)
  */
 int dodefine(void)
 {
-    SYM *sp;
-    DEFSTRUCT *def;
+    SYM* sp;
+    DEFSTRUCT* def;
     WCHAR *args[40], count = 0;
-    WCHAR *olptr;
+    WCHAR* olptr;
     int p;
-    LIST *prevLines = inSymFile ? GetCachedLines() : NULL;
+    LIST* prevLines = inSymFile ? GetCachedLines() : NULL;
 
     getsym(); /* get past #define */
     if (ifskip)
@@ -498,8 +482,8 @@ int dodefine(void)
         if (lastst != closepa)
             generror(ERR_PUNCT, closepa);
         olptr = lptr - 1;
-        def->args = rcAlloc(count *sizeof(WCHAR*));
-        memcpy(def->args, args, count *sizeof(WCHAR*));
+        def->args = rcAlloc(count * sizeof(WCHAR*));
+        memcpy(def->args, args, count * sizeof(WCHAR*));
         def->argcount = count + 1;
     }
     while (iswhitespacechar(*olptr))
@@ -538,7 +522,7 @@ void undef2(void)
         generror(ERR_IDEXPECT, 0);
     else
     {
-        SYM **p = (SYM **)LookupHash(unmangid, defhash, HASHTABLESIZE);
+        SYM** p = (SYM**)LookupHash(unmangid, defhash, HASHTABLESIZE);
         if (p)
         {
             *p = (*p)->next;
@@ -546,10 +530,9 @@ void undef2(void)
     }
 }
 
-
 //-------------------------------------------------------------------------
 
-int defid(WCHAR *name, WCHAR **p, char *q)
+int defid(WCHAR* name, WCHAR** p, char* q)
 /*
  * Get an identifier during macro replacement
  */
@@ -573,47 +556,46 @@ int defid(WCHAR *name, WCHAR **p, char *q)
     return (count);
 }
 
-/* 
+/*
  * Insert a replacement string
  */
-int definsert(WCHAR *end, WCHAR *begin, WCHAR *text, int len, int replen)
+int definsert(WCHAR* end, WCHAR* begin, WCHAR* text, int len, int replen)
 {
-    WCHAR *q;
+    WCHAR* q;
     int i, p, r;
     int val;
     if (begin != inputline)
-    if (*(begin - 1) == '#')
-    {
-        if (*(begin - 2) != '#')
+        if (*(begin - 1) == '#')
         {
-            begin--;
-            replen++;
-            r = pstrlen(text);
+            if (*(begin - 2) != '#')
+            {
+                begin--;
+                replen++;
+                r = pstrlen(text);
 
-            text[r++] = '\"';
-            text[r] = 0;
-            for (i = r; i >= 0; i--)
-                text[i + 1] = text[i];
-            *text = '\"';
+                text[r++] = '\"';
+                text[r] = 0;
+                for (i = r; i >= 0; i--)
+                    text[i + 1] = text[i];
+                *text = '\"';
+            }
         }
-    }
     p = pstrlen(text);
     val = p - replen;
     r = pstrlen(begin);
     if (val + (int)pstrlen(begin) + 1 >= len)
     {
         generror(ERR_MACROSUBS, 0);
-        return ( - 8000);
+        return (-8000);
     }
     if (val > 0)
         for (q = begin + r + 1; q >= end; q--)
-            *(q + val) =  *q;
-        else
-    if (val < 0)
+            *(q + val) = *q;
+    else if (val < 0)
     {
         r = pstrlen(end) + 1;
         for (q = end; q < end + r; q++)
-                *(q + val) =  *q;
+            *(q + val) = *q;
     }
     for (i = 0; i < p; i++)
         begin[i] = text[i];
@@ -621,36 +603,35 @@ int definsert(WCHAR *end, WCHAR *begin, WCHAR *text, int len, int replen)
 }
 
 /* replace macro args */
-int defreplace(WCHAR *macro, int count, WCHAR **oldargs, WCHAR **newargs)
+int defreplace(WCHAR* macro, int count, WCHAR** oldargs, WCHAR** newargs)
 {
     int i, rv;
     int instring = 0;
     WCHAR narg[1024];
     WCHAR name[100];
-    WCHAR *p = macro,  *q;
+    WCHAR *p = macro, *q;
     while (*p)
     {
         if (*p == instring)
             instring = 0;
-        else if (*p == '\'' ||  *p == '"')
-            instring =  *p;
+        else if (*p == '\'' || *p == '"')
+            instring = *p;
         else if (!instring && isstartchar(*p))
         {
             q = p;
             defid(name, &p, 0);
             for (i = 0; i < count; i++)
-            if (!pstrcmp(name, oldargs[i]))
-            {
-                pstrcpy(narg, newargs[i]);
-                if ((rv = definsert(p, q, narg, 1024-(q - macro), p - q)) ==  -
-                    8000)
-                    return (FALSE);
-                else
+                if (!pstrcmp(name, oldargs[i]))
                 {
-                    p = q + rv;
-                    break;
+                    pstrcpy(narg, newargs[i]);
+                    if ((rv = definsert(p, q, narg, 1024 - (q - macro), p - q)) == -8000)
+                        return (FALSE);
+                    else
+                    {
+                        p = q + rv;
+                        break;
+                    }
                 }
-            }
         }
         p++;
     }
@@ -658,16 +639,16 @@ int defreplace(WCHAR *macro, int count, WCHAR **oldargs, WCHAR **newargs)
 }
 
 /* Handlers for default macros */
-void cnvt(WCHAR *out, char *in)
+void cnvt(WCHAR* out, char* in)
 {
     while (*in)
-        *out++ =  *in++;
+        *out++ = *in++;
     *out = 0;
 }
 
 //-------------------------------------------------------------------------
 
-void filemac(WCHAR *string)
+void filemac(WCHAR* string)
 {
     char str1[40];
     sprintf(str1, "\"%s\"", infile);
@@ -676,10 +657,10 @@ void filemac(WCHAR *string)
 
 //-------------------------------------------------------------------------
 
-void datemac(WCHAR *string)
+void datemac(WCHAR* string)
 {
     char str1[40];
-    struct tm *t1;
+    struct tm* t1;
     time_t t2;
     time(&t2);
     t1 = localtime(&t2);
@@ -689,10 +670,10 @@ void datemac(WCHAR *string)
 
 //-------------------------------------------------------------------------
 
-void timemac(WCHAR *string)
+void timemac(WCHAR* string)
 {
     char str1[40];
-    struct tm *t1;
+    struct tm* t1;
     time_t t2;
     time(&t2);
     t1 = localtime(&t2);
@@ -703,37 +684,34 @@ void timemac(WCHAR *string)
 
 //-------------------------------------------------------------------------
 
-void linemac(WCHAR *string)
+void linemac(WCHAR* string)
 {
     char str1[40];
     sprintf(str1, "%d", lineno);
     cnvt(string, str1);
-} 
+}
 /* Scan for default macros and replace them */
-void defmacroreplace(WCHAR *macro, WCHAR *name)
+void defmacroreplace(WCHAR* macro, WCHAR* name)
 {
     int i;
     macro[0] = 0;
     for (i = 0; i < INGROWNMACROS; i++)
-    if (!pstrcmp(name, ingrownmacros[i].s))
-    {
-        (ingrownmacros[i].func)(macro);
-        break;
-    }
+        if (!pstrcmp(name, ingrownmacros[i].s))
+        {
+            (ingrownmacros[i].func)(macro);
+            break;
+        }
 }
 
 /* The next few functions support recursion blocking for macros.
- * Basicall a list of all active macros is kept and if a lookup would 
+ * Basicall a list of all active macros is kept and if a lookup would
  * result in one of those macros, no replacement is done.
  */
-void nodefines(void)
-{
-    definelistcount = 0;
-}
+void nodefines(void) { definelistcount = 0; }
 
 //-------------------------------------------------------------------------
 
-int indefine(SYM *sp)
+int indefine(SYM* sp)
 {
     int i;
     for (i = 0; i < definelistcount; i++)
@@ -745,30 +723,23 @@ int indefine(SYM *sp)
 
 //-------------------------------------------------------------------------
 
-void enterdefine(SYM *sp)
-{
-    definelist[definelistcount++] = sp;
-}
+void enterdefine(SYM* sp) { definelist[definelistcount++] = sp; }
 
 //-------------------------------------------------------------------------
 
-void exitdefine(void)
-{
-    definelistcount--;
-}
+void exitdefine(void) { definelistcount--; }
 
 //-------------------------------------------------------------------------
 
-int replacesegment(WCHAR *start, WCHAR *end, int *inbuffer, int totallen, int
-    *changed)
+int replacesegment(WCHAR* start, WCHAR* end, int* inbuffer, int totallen, int* changed)
 {
     WCHAR macro[1024];
     WCHAR name[1024];
-    WCHAR *args[40];
+    WCHAR* args[40];
     char ascii[60];
     int waiting = FALSE, rv;
-    WCHAR *p,  *q;
-    SYM *sp;
+    WCHAR *p, *q;
+    SYM* sp;
     p = start;
     while (p < end)
     {
@@ -785,13 +756,13 @@ int replacesegment(WCHAR *start, WCHAR *end, int *inbuffer, int totallen, int
             defid(name, &p, ascii);
             if ((sp = search(ascii, &defsyms)) != 0 && !indefine(sp))
             {
-                DEFSTRUCT *def = (DEFSTRUCT *)sp->value.s;
+                DEFSTRUCT* def = (DEFSTRUCT*)sp->value.s;
                 enterdefine(sp);
                 pstrcpy(macro, def->string);
                 if (def->argcount)
                 {
                     int count = 0;
-                    WCHAR *q = p;
+                    WCHAR* q = p;
                     while (iswhitespacechar(*q))
                         q++;
                     if (*q++ != '(')
@@ -804,13 +775,13 @@ int replacesegment(WCHAR *start, WCHAR *end, int *inbuffer, int totallen, int
                     {
                         do
                         {
-                            WCHAR *nm = name;
+                            WCHAR* nm = name;
                             int nestedparen = 0;
                             int nestedstring = 0;
-                            while (((*p != ',' &&  *p != ')') || nestedparen ||
-                                nestedstring) &&  *p != '\n')
+                            while (((*p != ',' && *p != ')') || nestedparen || nestedstring) && *p != '\n')
                             {
-                                if (*p == '(')nestedparen++;
+                                if (*p == '(')
+                                    nestedparen++;
                                 if (*p == ')' && nestedparen)
                                     nestedparen--;
                                 if (nestedstring)
@@ -818,9 +789,9 @@ int replacesegment(WCHAR *start, WCHAR *end, int *inbuffer, int totallen, int
                                     if (*p == nestedstring)
                                         nestedstring = 0;
                                 }
-                                else if (*p == '\'' ||  *p == '"')
-                                    nestedstring =  *p;
-                                *nm++ =  *p++;
+                                else if (*p == '\'' || *p == '"')
+                                    nestedstring = *p;
+                                *nm++ = *p++;
                             }
                             while (iswhitespacechar(*(nm - 1)))
                                 nm--;
@@ -829,9 +800,7 @@ int replacesegment(WCHAR *start, WCHAR *end, int *inbuffer, int totallen, int
                             while (iswhitespacechar(*nm))
                                 nm++;
                             args[count++] = prcStrdup(nm);
-                        }
-                        while (*p++ == ',')
-                            ;
+                        } while (*p++ == ',');
                     }
                     else
                         while (iswhitespacechar(*p++))
@@ -839,9 +808,9 @@ int replacesegment(WCHAR *start, WCHAR *end, int *inbuffer, int totallen, int
                     if (*(p - 1) != ')' || count != def->argcount - 1)
                     {
                         if (*(p - 1) == '\n')
-                            return  - 10;
+                            return -10;
                         gensymerror(ERR_WRONGMACROARGS, ascii);
-                        return  - 1;
+                        return -1;
                     }
                     /* Can't replace if tokenizing next */
                     if (*p == '#' && *(p + 1) == '#')
@@ -849,11 +818,11 @@ int replacesegment(WCHAR *start, WCHAR *end, int *inbuffer, int totallen, int
                     if (count == 0)
                         goto insert;
                     if (!defreplace(macro, count, def->args, args))
-                        return  - 1;
+                        return -1;
                 }
-                insert: if ((rv = definsert(p, q, macro, totallen -  *inbuffer,
-                    p - q)) ==  - 8000)
-                    return  - 1;
+            insert:
+                if ((rv = definsert(p, q, macro, totallen - *inbuffer, p - q)) == -8000)
+                    return -1;
                 *changed = TRUE;
                 rv = replacesegment(q, q + rv, inbuffer, totallen, changed);
                 if (rv < 0)
@@ -866,12 +835,12 @@ int replacesegment(WCHAR *start, WCHAR *end, int *inbuffer, int totallen, int
             }
             else
             {
-                join: defmacroreplace(macro, name);
+            join:
+                defmacroreplace(macro, name);
                 if (macro[0])
                 {
-                    if ((rv = definsert(p, q, macro, totallen -  *inbuffer, p -
-                        q)) ==  - 8000)
-                        return  - 1;
+                    if ((rv = definsert(p, q, macro, totallen - *inbuffer, p - q)) == -8000)
+                        return -1;
                     *changed = TRUE;
                     end += rv - (p - q);
                     *inbuffer += rv - (p - q);
@@ -886,15 +855,14 @@ int replacesegment(WCHAR *start, WCHAR *end, int *inbuffer, int totallen, int
 }
 
 /* Scan line for macros and do replacements */
-int defcheck(WCHAR *line)
+int defcheck(WCHAR* line)
 {
     int x;
-    WCHAR *p = line,  *q;
+    WCHAR *p = line, *q;
     int inbuffer = pstrlen(line);
     int changed = FALSE;
     nodefines();
-    if ((x = replacesegment(line, line + inbuffer, &inbuffer, 4096, &changed))
-        < 0)
+    if ((x = replacesegment(line, line + inbuffer, &inbuffer, 4096, &changed)) < 0)
         return x;
 
     /* Token pasting */
@@ -906,7 +874,7 @@ int defcheck(WCHAR *line)
             if (*p == '#' && *(p + 1) == '#')
                 p += 2;
             else
-                *q++ =  *p++;
+                *q++ = *p++;
         }
         *q = 0;
     }
@@ -915,12 +883,12 @@ int defcheck(WCHAR *line)
 
 //-------------------------------------------------------------------------
 
-static void repdefines(WCHAR *lptr)
+static void repdefines(WCHAR* lptr)
 /*
  * replace 'defined' keyword in #IF and #ELIF statements
  */
 {
-    WCHAR *q = lptr;
+    WCHAR* q = lptr;
     WCHAR name[40];
     char ascii[60];
     while (*lptr)
@@ -951,11 +919,10 @@ static void repdefines(WCHAR *lptr)
             else
                 *q++ = '0';
             *q++ = ' ';
-
         }
         else
         {
-            *q++ =  *lptr++;
+            *q++ = *lptr++;
         }
     }
     *q = 0;
@@ -966,7 +933,7 @@ static void repdefines(WCHAR *lptr)
 void pushif(void)
 /* Push an if context */
 {
-    IFSTRUCT *p;
+    IFSTRUCT* p;
     p = rcAlloc(sizeof(IFSTRUCT));
     p->link = ifs;
     p->iflevel = ifskip;
@@ -995,13 +962,12 @@ void popif(void)
 
 //-------------------------------------------------------------------------
 
-
 //-------------------------------------------------------------------------
 
 int doifdef(int flag)
 /* Handle IFDEF */
 {
-    SYM *sp;
+    SYM* sp;
     if (ifskip)
     {
         skiplevel++;
@@ -1036,12 +1002,12 @@ int doif(int flag)
     }
     getsym();
     pushif();
-        cantnewline = TRUE;
+    cantnewline = TRUE;
     if (!intexpr())
         ifskip = TRUE;
     else
         elsetaken = TRUE;
-        cantnewline = FALSE;
+    cantnewline = FALSE;
     return (incldepth == 0);
 }
 
@@ -1057,9 +1023,9 @@ int doelif(void)
     }
 
     getsym();
-            cantnewline = TRUE;
+    cantnewline = TRUE;
     is = !intexpr();
-            cantnewline = FALSE;
+    cantnewline = FALSE;
     if (!elsetaken)
     {
         if (ifs)

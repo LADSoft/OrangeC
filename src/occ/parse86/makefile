@@ -90,6 +90,8 @@ export _TREETARGET
 
 redirect:
 	@$(MAKE) /f$(_TREEROOT)
+format:
+	@$(MAKE) /f$(_TREEROOT) format
 endif
 
 DISTRIBUTE: copyexe

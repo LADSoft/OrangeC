@@ -1,105 +1,107 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "OutputObjects.h"
 #include "ObjUtil.h"
 
-void MotorolaOutputObject::putdatarec(std::fstream &stream, unsigned char *data, int datalen, long offset)
+void MotorolaOutputObject::putdatarec(std::fstream& stream, unsigned char* data, int datalen, long offset)
 {
-    int cs = 0,i;
-    cs += offset &255;
-    cs += (offset >>8) & 255;
+    int cs = 0, i;
+    cs += offset & 255;
+    cs += (offset >> 8) & 255;
     cs += datalen;
     cs += 3;
     int len = datalen + 3;
-    switch(type) {
+    switch (type)
+    {
         case 1:
             stream << "S1" << ObjUtil::ToHex(len, 2).c_str() << ObjUtil::ToHex(offset & 0xffff, 4).c_str();
             break;
         case 2:
             len += 1;
-            cs ++;
-            cs += (offset >>16) & 255;
+            cs++;
+            cs += (offset >> 16) & 255;
             stream << "S2" << ObjUtil::ToHex(len, 2).c_str() << ObjUtil::ToHex(offset & 0xffffff, 6).c_str();
             break;
         case 3:
             len += 2;
             cs += 2;
-            cs += (offset >>16) & 255;
-            cs += (offset >>24) & 255;
+            cs += (offset >> 16) & 255;
+            cs += (offset >> 24) & 255;
             stream << "S3" << ObjUtil::ToHex(len, 2).c_str() << ObjUtil::ToHex(offset & 0xffffffff, 8).c_str();
             break;
     }
-    for (i=0; i < datalen; i++) 
-    {	
+    for (i = 0; i < datalen; i++)
+    {
         stream << ObjUtil::ToHex(data[i], 2).c_str();
         cs += data[i];
     }
-    cs = 255-(cs & 255);
+    cs = 255 - (cs & 255);
     stream << ObjUtil::ToHex(cs, 2).c_str() << std::endl;
 }
-void MotorolaOutputObject::putendrec(std::fstream &stream)
+void MotorolaOutputObject::putendrec(std::fstream& stream)
 {
     int cs = 0;
     int entryPoint = 0;
-    cs += entryPoint &255;
-    cs += (entryPoint >>8) & 255;
+    cs += entryPoint & 255;
+    cs += (entryPoint >> 8) & 255;
     cs += 3; /* record size */
-    switch(type) {
+    switch (type)
+    {
         case 1:
             stream << "S903" << ObjUtil::ToHex(entryPoint & 0xffff, 4).c_str();
             break;
         case 2:
-            cs += 1+ (entryPoint >>16) & 255;
+            cs += 1 + (entryPoint >> 16) & 255;
             stream << "S805" << ObjUtil::ToHex(entryPoint & 0xffffff, 6).c_str();
             break;
         case 3:
-            cs += 1+ (entryPoint >>16) & 255;
-            cs += 1+ (entryPoint >>24) & 255;
+            cs += 1 + (entryPoint >> 16) & 255;
+            cs += 1 + (entryPoint >> 24) & 255;
             stream << "S709" << ObjUtil::ToHex(entryPoint & 0xffffffff, 8).c_str();
             break;
     }
-    cs = 255-(cs & 255);
+    cs = 255 - (cs & 255);
     stream << ObjUtil::ToHex(cs, 2).c_str() << std::endl;
 }
-void MotorolaOutputObject::putheaderrec(std::fstream &stream)
+void MotorolaOutputObject::putheaderrec(std::fstream& stream)
 {
-    int cs = 0,i;
+    int cs = 0, i;
     int len = name.size() + 5;
-    cs +=len ;
-    stream << "S0" << ObjUtil::ToHex(len,2).c_str() << "0000";
-    const char *p = name.c_str();
+    cs += len;
+    stream << "S0" << ObjUtil::ToHex(len, 2).c_str() << "0000";
+    const char* p = name.c_str();
     while (*p)
     {
         stream << ObjUtil::ToHex(*p).c_str();
         cs += *p++;
     }
-    cs = 255-(cs & 255);
+    cs = 255 - (cs & 255);
     stream << ObjUtil::ToHex(cs).c_str() << std::endl;
 }
-int MotorolaOutputObject::Write(std::fstream &stream, char *data, int len, int firstAddress)
+int MotorolaOutputObject::Write(std::fstream& stream, char* data, int len, int firstAddress)
 {
     while (len)
     {
@@ -107,19 +109,19 @@ int MotorolaOutputObject::Write(std::fstream &stream, char *data, int len, int f
         if (type == 3)
             max = 15;
         int m = len > max ? max : len;
-        putdatarec(stream, (unsigned char *)data, m, firstAddress);
+        putdatarec(stream, (unsigned char*)data, m, firstAddress);
         firstAddress += m;
         data += m;
         len -= m;
     }
     return 0;
 }
-int MotorolaOutputObject::WriteHeader(std::fstream &stream)
+int MotorolaOutputObject::WriteHeader(std::fstream& stream)
 {
     putheaderrec(stream);
     return 0;
 }
-int MotorolaOutputObject::WriteTrailer(std::fstream &stream)
+int MotorolaOutputObject::WriteTrailer(std::fstream& stream)
 {
     putendrec(stream);
     return 0;

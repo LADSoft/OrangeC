@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #ifndef LINKPARTITION_H
@@ -40,66 +40,67 @@ class ObjFile;
 
 class LinkPartition
 {
-    typedef std::vector<LinkOverlaySpecifier *> OverlayContainer;
-    public:
-        LinkPartition(LinkManager *Parent) : name(""), parent(Parent) { }
-        ~LinkPartition();
+    typedef std::vector<LinkOverlaySpecifier*> OverlayContainer;
 
-        ObjString &GetName() { return name; }
-        void SetName(const ObjString &Name) { name = Name; }
+  public:
+    LinkPartition(LinkManager* Parent) : name(""), parent(Parent) {}
+    ~LinkPartition();
 
-        LinkAttribs &GetAttribs() { return attribs; }
+    ObjString& GetName() { return name; }
+    void SetName(const ObjString& Name) { name = Name; }
 
-        typedef OverlayContainer::iterator OverlayIterator;
-        
-        OverlayIterator OverlayBegin() { return overlays.begin(); }
-        OverlayIterator OverlayEnd() { return overlays.end(); }
+    LinkAttribs& GetAttribs() { return attribs; }
 
-        bool CreateSeparateRegions(LinkManager *manager, CmdFiles &files, LinkTokenizer &spec);
-        bool ParsePartitionSpec(LinkManager *manager, CmdFiles &files, LinkTokenizer &spec);
-        
-        void Add(LinkOverlaySpecifier *ov) { overlays.push_back(ov); }
-        ObjInt PlacePartition(LinkManager *manager, ObjInt bottom, bool completeLink, int &overlayNum);
-        
-    private:
-        bool ParseValue(LinkTokenizer &spec, LinkExpression **rv, bool alreadyassign = false);
-        bool ParseAttributes(LinkTokenizer &spec);
-        bool ParseName(LinkTokenizer &spec);
-        bool ParseOverlays(LinkManager *manager, CmdFiles &files, LinkTokenizer &spec);
-        bool ParseAssignment(LinkTokenizer &spec);
-        ObjString name;
-        OverlayContainer overlays;
-        LinkAttribs attribs;
-        LinkManager *parent;
+    typedef OverlayContainer::iterator OverlayIterator;
+
+    OverlayIterator OverlayBegin() { return overlays.begin(); }
+    OverlayIterator OverlayEnd() { return overlays.end(); }
+
+    bool CreateSeparateRegions(LinkManager* manager, CmdFiles& files, LinkTokenizer& spec);
+    bool ParsePartitionSpec(LinkManager* manager, CmdFiles& files, LinkTokenizer& spec);
+
+    void Add(LinkOverlaySpecifier* ov) { overlays.push_back(ov); }
+    ObjInt PlacePartition(LinkManager* manager, ObjInt bottom, bool completeLink, int& overlayNum);
+
+  private:
+    bool ParseValue(LinkTokenizer& spec, LinkExpression** rv, bool alreadyassign = false);
+    bool ParseAttributes(LinkTokenizer& spec);
+    bool ParseName(LinkTokenizer& spec);
+    bool ParseOverlays(LinkManager* manager, CmdFiles& files, LinkTokenizer& spec);
+    bool ParseAssignment(LinkTokenizer& spec);
+    ObjString name;
+    OverlayContainer overlays;
+    LinkAttribs attribs;
+    LinkManager* parent;
 };
 class LinkPartitionSpecifier
 {
-    public:
-        LinkPartitionSpecifier(LinkPartition *Partition) : partition(Partition), symbol(nullptr) {}
-        LinkPartitionSpecifier(LinkExpressionSymbol *Symbol) : partition(nullptr), symbol(Symbol) {}
-        ~LinkPartitionSpecifier()
-        {
-            delete partition;
-            delete symbol;
-        }
-        LinkPartition *GetPartition() { return partition; }
-        LinkExpressionSymbol *GetSymbol() { return symbol; }
-        
-    private:
-        LinkPartition *partition;
-        LinkExpressionSymbol *symbol;
+  public:
+    LinkPartitionSpecifier(LinkPartition* Partition) : partition(Partition), symbol(nullptr) {}
+    LinkPartitionSpecifier(LinkExpressionSymbol* Symbol) : partition(nullptr), symbol(Symbol) {}
+    ~LinkPartitionSpecifier()
+    {
+        delete partition;
+        delete symbol;
+    }
+    LinkPartition* GetPartition() { return partition; }
+    LinkExpressionSymbol* GetSymbol() { return symbol; }
+
+  private:
+    LinkPartition* partition;
+    LinkExpressionSymbol* symbol;
 };
 class LinkOverlaySpecifier
 {
-    public:
-        LinkOverlaySpecifier(LinkOverlay *Overlay) : overlay(Overlay), symbol(nullptr) {}
-        LinkOverlaySpecifier(LinkExpressionSymbol *Symbol) : overlay(nullptr), symbol(Symbol) {}
-        ~LinkOverlaySpecifier();
-        LinkOverlay *GetOverlay() { return overlay; }
-        LinkExpressionSymbol *GetSymbol() { return symbol; }
-        
-    private:
-        LinkOverlay *overlay;
-        LinkExpressionSymbol *symbol;
+  public:
+    LinkOverlaySpecifier(LinkOverlay* Overlay) : overlay(Overlay), symbol(nullptr) {}
+    LinkOverlaySpecifier(LinkExpressionSymbol* Symbol) : overlay(nullptr), symbol(Symbol) {}
+    ~LinkOverlaySpecifier();
+    LinkOverlay* GetOverlay() { return overlay; }
+    LinkExpressionSymbol* GetSymbol() { return symbol; }
+
+  private:
+    LinkOverlay* overlay;
+    LinkExpressionSymbol* symbol;
 };
 #endif

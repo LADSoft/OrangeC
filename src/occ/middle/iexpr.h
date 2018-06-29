@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*
@@ -28,7 +28,6 @@
  *
  * ICODE structures
  */
-
 
 #define F_VOL 1
 #define F_NOVALUE 2
@@ -81,29 +80,29 @@ enum i_adr
  */
 typedef struct _imode_
 {
-    enum i_adr mode; /* mode */
-    struct expr *offset; /* offset */
-    struct expr *offset2; /* a second temp reg */
-    struct expr *offset3; /* an address */
-    struct exprlist {
-        struct exprlist *next;
-        struct expr *offset;
-    } *vararg;
-    int scale;				/* scale factor on the second temp reg */
+    enum i_adr mode;      /* mode */
+    struct expr* offset;  /* offset */
+    struct expr* offset2; /* a second temp reg */
+    struct expr* offset3; /* an address */
+    struct exprlist
+    {
+        struct exprlist* next;
+        struct expr* offset;
+    } * vararg;
+    int scale; /* scale factor on the second temp reg */
     char useindx;
-    char size; /* size */
-    char ptrsize; /* ptr indirection size, either ISZ_ADDR or ISZ_FARPTR */
-    char startbit, bits; /* bit width  for i_Bf*/
-    char seg;	/* seg reg  for segmented architectures */
-    unsigned char vol:1; /* TRUE if is a node for a volatile var */
-    unsigned char restricted:1; /* TRUE if pointer type is set to restricted */
-    unsigned char retval:1;	/* TRUE if this is the value returned by a function */
-    unsigned char fieldname:1; /* vararg is an en_structelem field name */
-    unsigned char msilObject:1; /* TRUE if this is an MSIL object that shouldn't be loaded by address */
+    char size;                    /* size */
+    char ptrsize;                 /* ptr indirection size, either ISZ_ADDR or ISZ_FARPTR */
+    char startbit, bits;          /* bit width  for i_Bf*/
+    char seg;                     /* seg reg  for segmented architectures */
+    unsigned char vol : 1;        /* TRUE if is a node for a volatile var */
+    unsigned char restricted : 1; /* TRUE if pointer type is set to restricted */
+    unsigned char retval : 1;     /* TRUE if this is the value returned by a function */
+    unsigned char fieldname : 1;  /* vararg is an en_structelem field name */
+    unsigned char msilObject : 1; /* TRUE if this is an MSIL object that shouldn't be loaded by address */
 } IMODE;
 
 /*-------------------------------------------------------------------------*/
-
 
 #define IM_LIVELEFT 1
 #define IM_LIVERIGHT 2
@@ -114,10 +113,10 @@ typedef struct _phidata
     int T0;
     struct _phiblock
     {
-        struct _phiblock *next;
+        struct _phiblock* next;
         int Tn;
-        struct _block *block;
-    } *temps;
+        struct _block* block;
+    } * temps;
 } PHIDATA;
 
 /*
@@ -130,39 +129,39 @@ typedef struct quad
     struct _basic_dag
     {
         enum i_ops opcode; /* opcode */
-        IMODE *left; /* ans = left opcode right */
-        IMODE *right;
+        IMODE* left;       /* ans = left opcode right */
+        IMODE* right;
         union ival
         {
-             /* values for constant nodes */
+            /* values for constant nodes */
             LLONG_TYPE i;
             FPF f;
-            struct {
+            struct
+            {
                 FPF r;
                 FPF i;
             } c;
-            void *data ; /* generic data, won't be filled in until after LCSE */
-            PHIDATA *phi;
-            long label; // branches
+            void* data; /* generic data, won't be filled in until after LCSE */
+            PHIDATA* phi;
+            long label;  // branches
         } v;
-    }
-    dc;
-    IMODE *ans;
+    } dc;
+    IMODE* ans;
     ULLONG_TYPE liveRegs;
     struct quad *fwd, *back;
-    struct _block *block;
-    void *altdata;
-    BITINT *uses;
-    BITINT *transparent;
-    BITINT *dsafe;
-    BITINT *earliest;
-    BITINT *delay;
-    BITINT *latest;
-    BITINT *isolated;
-    BITINT *OCP;
-    BITINT *RO;
-    struct expr * valist; /* argument is a valist that needs translation */
-//	unsigned short *modifiesTnum;
+    struct _block* block;
+    void* altdata;
+    BITINT* uses;
+    BITINT* transparent;
+    BITINT* dsafe;
+    BITINT* earliest;
+    BITINT* delay;
+    BITINT* latest;
+    BITINT* isolated;
+    BITINT* OCP;
+    BITINT* RO;
+    struct expr* valist; /* argument is a valist that needs translation */
+                         //	unsigned short *modifiesTnum;
     int index;
     int ansColor;
     int leftColor;
@@ -173,28 +172,28 @@ typedef struct quad
     int sourceindx;
     int copy;
     char sehMode;
-    int denormal:1;
-    int isvolatile:1;
-    int isrestrict:1;
-    int cxlimited:1;
-    int dead:1;
-    int loopKeep:1;
-    int live:1;
-    int alwayslive:1;
-    int OCPInserted:1;
-    int invarInserted:1;
-    int invarKeep:1;
-    int needsOCP:1;  /* special case instruction needs to be OCP in lazy opts */
-    int OCPUsed:1; /* answer was used in an OCP sort */
-    int OCPGenned:1; /* node was generated already in an OCP sort */
-    int spill:1;
-    int ignoreMe:1;
-    int genConflict:1; /* assignment node the ans conflicts with left */
-    int hook:1; /* one of the two assigns for a hook, used in diagnostic generation */
-    int vararg:1; /* a param passed as a vararg */
-    int varargPrev:1; /* right before the vararg is genned */
-    int beforeGosub:1;
-    int nullvararg:1;
+    int denormal : 1;
+    int isvolatile : 1;
+    int isrestrict : 1;
+    int cxlimited : 1;
+    int dead : 1;
+    int loopKeep : 1;
+    int live : 1;
+    int alwayslive : 1;
+    int OCPInserted : 1;
+    int invarInserted : 1;
+    int invarKeep : 1;
+    int needsOCP : 1;  /* special case instruction needs to be OCP in lazy opts */
+    int OCPUsed : 1;   /* answer was used in an OCP sort */
+    int OCPGenned : 1; /* node was generated already in an OCP sort */
+    int spill : 1;
+    int ignoreMe : 1;
+    int genConflict : 1; /* assignment node the ans conflicts with left */
+    int hook : 1;        /* one of the two assigns for a hook, used in diagnostic generation */
+    int vararg : 1;      /* a param passed as a vararg */
+    int varargPrev : 1;  /* right before the vararg is genned */
+    int beforeGosub : 1;
+    int nullvararg : 1;
     int blockassign : 1;
     char oldmode;
     char novalue;
@@ -208,7 +207,6 @@ typedef struct quad
 #define TEMP_LEFT 2
 #define TEMP_RIGHT 4
 /*-------------------------------------------------------------------------*/
-
 
 #define DAGCOMPARE sizeof(struct _basic_dag)
 #define DAGSIZE 251
@@ -231,15 +229,17 @@ enum e_icmode {
     ical,icla,icaa
 };
 // clang-format on
-struct cases {
+struct cases
+{
     LLONG_TYPE bottom;
     LLONG_TYPE top;
     int count;
-    struct caseptrs {
+    struct caseptrs
+    {
         int label;
         LLONG_TYPE id;
-    } *ptrs;
-} ;
+    } * ptrs;
+};
 // clang-format off
 enum e_gt
 {
@@ -260,17 +260,18 @@ enum e_sg
 
 typedef struct _storetemphash
 {
-    struct _storetemphash *next;
-    IMODE *mem;
-    IMODE *temp;
-} STORETEMPHASH ;
+    struct _storetemphash* next;
+    IMODE* mem;
+    IMODE* temp;
+} STORETEMPHASH;
 
 typedef struct _casttemphash
 {
-    struct _casttemphash *next;
-    struct {
-        IMODE *im;
+    struct _casttemphash* next;
+    struct
+    {
+        IMODE* im;
         int size;
-    } sf ;
-    IMODE *rv;
+    } sf;
+    IMODE* rv;
 } CASTTEMPHASH;

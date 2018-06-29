@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -39,58 +39,53 @@
 extern HWND hwndSrcTab;
 extern HWND hwndClient;
 extern HINSTANCE hInstance;
-extern PROJECTITEM *workArea;
+extern PROJECTITEM* workArea;
 extern LOGFONT systemMenuFont;
 
-static char *szMenuDrawClassName = "xccMenuDrawClass";
-static char *szUntitled = "Menu";
+static char* szMenuDrawClassName = "xccMenuDrawClass";
+static char* szUntitled = "Menu";
 static HBITMAP arrImage;
 static HCURSOR dragCur, noCur;
 
-HANDLE ResGetHeap(PROJECTITEM *wa, struct resRes *data);
-EXPRESSION *ResAllocateMenuId();
-static void UndoChange(struct resRes *menuData, MENUITEM *item);
+HANDLE ResGetHeap(PROJECTITEM* wa, struct resRes* data);
+EXPRESSION* ResAllocateMenuId();
+static void UndoChange(struct resRes* menuData, MENUITEM* item);
 
 struct menuUndo
 {
-    struct menuUndo *next;
-    enum { mu_changed, mu_insert, mu_delete, mu_move} type;
-    MENUITEM **place;
-    MENUITEM *item;
-    WCHAR *text;
-    EXPRESSION *id;
-    EXPRESSION *state;
-    EXPRESSION *help;
+    struct menuUndo* next;
+    enum
+    {
+        mu_changed,
+        mu_insert,
+        mu_delete,
+        mu_move
+    } type;
+    MENUITEM** place;
+    MENUITEM* item;
+    WCHAR* text;
+    EXPRESSION* id;
+    EXPRESSION* state;
+    EXPRESSION* help;
     int flags;
-} ;
-static void InsertMenuProperties(HWND lv, struct resRes *data);
-static void GetMenuPropText(char *buf, HWND lv, struct resRes *data, int row);
-static HWND MenuPropStartEdit(HWND lv, int row, struct resRes *data);
-static void MenuPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data);
+};
+static void InsertMenuProperties(HWND lv, struct resRes* data);
+static void GetMenuPropText(char* buf, HWND lv, struct resRes* data, int row);
+static HWND MenuPropStartEdit(HWND lv, int row, struct resRes* data);
+static void MenuPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes* data);
 // callbacks to populate the properties window for this resource editor
-static struct propertyFuncs menuFuncs = { 
-    InsertMenuProperties,
-    GetMenuPropText,
-    MenuPropStartEdit,
-    MenuPropEndEdit
-} ;
-static void InsertMenuItemProperties(HWND lv, struct resRes *data);
-static void GetMenuItemPropText(char *buf, HWND lv, struct resRes *data, int row);
-static HWND MenuItemPropStartEdit(HWND lv, int row, struct resRes *data);
-static void MenuItemPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data);
-struct propertyFuncs menuItemFuncs = 
-{ 
-    InsertMenuItemProperties,
-    GetMenuItemPropText,
-    MenuItemPropStartEdit,
-    MenuItemPropEndEdit
-} ;
-static void SetSeparatorFlag(MENU *menu, MENUITEM *mi, BOOL issep, BOOL extended)
+static struct propertyFuncs menuFuncs = {InsertMenuProperties, GetMenuPropText, MenuPropStartEdit, MenuPropEndEdit};
+static void InsertMenuItemProperties(HWND lv, struct resRes* data);
+static void GetMenuItemPropText(char* buf, HWND lv, struct resRes* data, int row);
+static HWND MenuItemPropStartEdit(HWND lv, int row, struct resRes* data);
+static void MenuItemPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes* data);
+struct propertyFuncs menuItemFuncs = {InsertMenuItemProperties, GetMenuItemPropText, MenuItemPropStartEdit, MenuItemPropEndEdit};
+static void SetSeparatorFlag(MENU* menu, MENUITEM* mi, BOOL issep, BOOL extended)
 {
     if (extended)
     {
         if (issep)
-            AddToStyle(&mi->type, "MFT_SEPARATOR", MFT_SEPARATOR);   
+            AddToStyle(&mi->type, "MFT_SEPARATOR", MFT_SEPARATOR);
         else
             RemoveFromStyle(&mi->type, MFT_SEPARATOR);
     }
@@ -102,31 +97,25 @@ static void SetSeparatorFlag(MENU *menu, MENUITEM *mi, BOOL issep, BOOL extended
             mi->flags &= ~MI_SEPARATOR;
     }
 }
-static void InsertMenuProperties(HWND lv, struct resRes *data)
+static void InsertMenuProperties(HWND lv, struct resRes* data)
 {
     PropSetGroup(lv, 102, L"General Characteristics");
     PropSetItem(lv, 0, 102, "Resource Id");
     PropSetItem(lv, 1, 102, "Language");
     PropSetItem(lv, 2, 102, "SubLanguage");
     PropSetItem(lv, 3, 102, "Characteristics");
-    PropSetItem(lv, 4, 102, "Version");    
+    PropSetItem(lv, 4, 102, "Version");
 }
-void GetMenuPropText(char *buf, HWND lv, struct resRes *data, int row)
-{
-    GetAccPropText(buf, lv, data, row);
-}
-HWND MenuPropStartEdit(HWND lv, int row, struct resRes *data)
-{
-    return AccPropStartEdit(lv, row, data);
-}
-void MenuPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data)
+void GetMenuPropText(char* buf, HWND lv, struct resRes* data, int row) { GetAccPropText(buf, lv, data, row); }
+HWND MenuPropStartEdit(HWND lv, int row, struct resRes* data) { return AccPropStartEdit(lv, row, data); }
+void MenuPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes* data)
 {
     AccPropEndEdit(lv, row, editWnd, data);
     DestroyWindow(editWnd);
     ListView_SetItemText(lv, row, 1, LPSTR_TEXTCALLBACK);
     SetFocus(data->activeHwnd);
 }
-static void InsertMenuItemProperties(HWND lv, struct resRes *data)
+static void InsertMenuItemProperties(HWND lv, struct resRes* data)
 {
     PropSetGroup(lv, 101, L"Menu Item Characteristics");
     PropSetItem(lv, 0, 101, "Menu Identifier");
@@ -134,7 +123,7 @@ static void InsertMenuItemProperties(HWND lv, struct resRes *data)
     PropSetItem(lv, 2, 101, "Grayed");
     PropSetItem(lv, 3, 101, "Checked");
 }
-void GetMenuItemPropText(char *buf, HWND lv, struct resRes *data, int row)
+void GetMenuItemPropText(char* buf, HWND lv, struct resRes* data, int row)
 {
     buf[0] = 0;
     switch (row)
@@ -142,7 +131,7 @@ void GetMenuItemPropText(char *buf, HWND lv, struct resRes *data, int row)
         int flag;
         case 0:
             FormatExp(buf, data->gd.selectedMenu->id);
-            break;        
+            break;
         case 1:
             if (data->gd.selectedMenu->text)
                 StringWToA(buf, data->gd.selectedMenu->text, wcslen(data->gd.selectedMenu->text));
@@ -179,10 +168,10 @@ void GetMenuItemPropText(char *buf, HWND lv, struct resRes *data, int row)
             break;
     }
 }
-HWND MenuItemPropStartEdit(HWND lv, int row, struct resRes *data)
+HWND MenuItemPropStartEdit(HWND lv, int row, struct resRes* data)
 {
     HWND rv;
-    if (row < 2) 
+    if (row < 2)
     {
         rv = PropGetHWNDText(lv);
         if (rv)
@@ -192,7 +181,7 @@ HWND MenuItemPropStartEdit(HWND lv, int row, struct resRes *data)
             SendMessage(rv, WM_SETTEXT, 0, (LPARAM)buf);
         }
     }
-    else 
+    else
     {
         rv = PropGetHWNDCombobox(lv);
         if (rv)
@@ -200,20 +189,20 @@ HWND MenuItemPropStartEdit(HWND lv, int row, struct resRes *data)
             char buf[256];
             int v;
             GetMenuItemPropText(buf, lv, data, row);
-            v = SendMessage(rv, CB_ADDSTRING, 0, (LPARAM)"No");
+            v = SendMessage(rv, CB_ADDSTRING, 0, (LPARAM) "No");
             SendMessage(rv, CB_SETITEMDATA, v, 0);
-            v = SendMessage(rv, CB_ADDSTRING, 0, (LPARAM)"Yes");
+            v = SendMessage(rv, CB_ADDSTRING, 0, (LPARAM) "Yes");
             SendMessage(rv, CB_SETITEMDATA, v, 1);
             SendMessage(rv, CB_SETCURSEL, buf[0] == 'Y' ? 1 : 0, 0);
         }
     }
     return rv;
 }
-void MenuItemPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data)
+void MenuItemPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes* data)
 {
     char buf[256];
     char buf1[256];
-    switch(row)
+    switch (row)
     {
         int n;
         case 0:
@@ -231,7 +220,7 @@ void MenuItemPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data)
             {
                 if (data->gd.selectedMenu->id)
                     ResGetMenuItemName(data->gd.selectedMenu->id, buf);
-                StringAsciiToWChar(& data->gd.selectedMenu->text, buf, strlen(buf));
+                StringAsciiToWChar(&data->gd.selectedMenu->text, buf, strlen(buf));
                 InvalidateRect(data->activeHwnd, 0, 0);
             }
             break;
@@ -281,16 +270,16 @@ void MenuItemPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data)
     ListView_SetItemText(lv, row, 1, LPSTR_TEXTCALLBACK);
     SetFocus(data->activeHwnd);
 }
-static int CalculateMenuWidth(HDC hDC, MENUITEM *items)
+static int CalculateMenuWidth(HDC hDC, MENUITEM* items)
 {
-    int textWidth = 0, cmdWidth=0;
+    int textWidth = 0, cmdWidth = 0;
     int maxWidth;
     SIZE sz;
     while (items)
     {
         if (items->text)
         {
-            WCHAR *n = wcschr(items->text, L'\t');
+            WCHAR* n = wcschr(items->text, L'\t');
             int m = wcslen(items->text);
             if (n)
             {
@@ -318,7 +307,7 @@ static int CalculateMenuWidth(HDC hDC, MENUITEM *items)
         maxWidth = 64;
     return maxWidth;
 }
-static void GetSize(HDC hDC, MENUITEM *items, int x, int y, int fontHeight, LPSIZE sz)
+static void GetSize(HDC hDC, MENUITEM* items, int x, int y, int fontHeight, LPSIZE sz)
 {
     int width = CalculateMenuWidth(hDC, items) + 28;
     int pos = y;
@@ -326,11 +315,11 @@ static void GetSize(HDC hDC, MENUITEM *items, int x, int y, int fontHeight, LPSI
     {
         if (items->popup && items->expanded)
         {
-            GetSize(hDC, items->popup, x+width, pos, fontHeight, sz);
+            GetSize(hDC, items->popup, x + width, pos, fontHeight, sz);
         }
         pos += fontHeight;
         items = items->next;
-    }    
+    }
     // this adds a row at the bottom and at the right for the shims...
     if (x + width + width > sz->cx)
         sz->cx = x + width + width;
@@ -338,7 +327,7 @@ static void GetSize(HDC hDC, MENUITEM *items, int x, int y, int fontHeight, LPSI
     if (pos > sz->cy)
         sz->cy = pos;
 }
-static void GetSizeTopRow(HDC hDC, MENUITEM *items, int x, int y, int fontHeight, LPSIZE sz)
+static void GetSizeTopRow(HDC hDC, MENUITEM* items, int x, int y, int fontHeight, LPSIZE sz)
 {
     SIZE xx;
     xx.cx = 40;
@@ -351,83 +340,82 @@ static void GetSizeTopRow(HDC hDC, MENUITEM *items, int x, int y, int fontHeight
         x += xx.cx;
         items = items->next;
     }
-    x += xx.cx; // for the shim
+    x += xx.cx;  // for the shim
     if (x > sz->cx)
         sz->cx = x;
     if (fontHeight > sz->cy)
         sz->cy = fontHeight;
 }
-static void DrawItem(HDC hDC, WCHAR *text, BOOL selected, int bg, int x, int y, int width, int height, BOOL checked, BOOL grayed)
+static void DrawItem(HDC hDC, WCHAR* text, BOOL selected, int bg, int x, int y, int width, int height, BOOL checked, BOOL grayed)
 {
     RECT r1;
     r1.left = x;
     r1.top = y;
-    r1.right = x+width;
+    r1.right = x + width;
     r1.bottom = y + height;
-    FillRect(hDC,&r1, (HBRUSH)(bg + 1));
-    
+    FillRect(hDC, &r1, (HBRUSH)(bg + 1));
+
     MoveToEx(hDC, x, y, NULL);
-    LineTo(hDC, x+width, y);
-    LineTo(hDC, x+width, y+height);
-    LineTo(hDC, x, y+height);
+    LineTo(hDC, x + width, y);
+    LineTo(hDC, x + width, y + height);
+    LineTo(hDC, x, y + height);
     LineTo(hDC, x, y);
-    
+
     if (text)
     {
         char buf[256];
         WCHAR wbuf[256];
-        WCHAR *n;
+        WCHAR* n;
         int old = SetTextColor(hDC, grayed ? GetSysColor(COLOR_BTNSHADOW) : GetSysColor(COLOR_WINDOWTEXT));
         StringWToA(buf, text, wcslen(text));
         SetBkColor(hDC, GetSysColor(bg));
-        wbuf[MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, buf,strlen(buf), wbuf, 256)]=0;
+        wbuf[MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, buf, strlen(buf), wbuf, 256)] = 0;
         n = wcschr(wbuf, L'\t');
         if (n)
         {
             SIZE sz;
-            TextOutW(hDC, x+3, y+1, wbuf, n - wbuf);
+            TextOutW(hDC, x + 3, y + 1, wbuf, n - wbuf);
             n++;
             GetTextExtentPoint32W(hDC, n, wcslen(n), &sz);
-            TextOutW(hDC, x+width-10-sz.cx, y+1, n, wcslen(n));
-            
+            TextOutW(hDC, x + width - 10 - sz.cx, y + 1, n, wcslen(n));
         }
         else
         {
-            TextOutW(hDC, x+3, y+1, wbuf, wcslen(wbuf));
+            TextOutW(hDC, x + 3, y + 1, wbuf, wcslen(wbuf));
         }
         SetTextColor(hDC, old);
     }
-    else // separator
+    else  // separator
     {
-        MoveToEx(hDC, x+5, y+height/2-1, NULL);
-        LineTo(hDC, x+width-5, y+height/2-1);
-        MoveToEx(hDC, x+5, y+height/2, NULL);
-        LineTo(hDC, x+width-5, y+height/2);
+        MoveToEx(hDC, x + 5, y + height / 2 - 1, NULL);
+        LineTo(hDC, x + width - 5, y + height / 2 - 1);
+        MoveToEx(hDC, x + 5, y + height / 2, NULL);
+        LineTo(hDC, x + width - 5, y + height / 2);
     }
     if (selected)
     {
         HPEN pen = CreatePen(PS_DOT, 0, 0);
         pen = SelectObject(hDC, pen);
-        MoveToEx(hDC, x+1, y+1, NULL);
-        LineTo(hDC, x+width-1, y+1);
-        LineTo(hDC, x+width-1, y+height-1);
-        LineTo(hDC, x+1, y+height-1);
-        LineTo(hDC, x+1, y+1);
+        MoveToEx(hDC, x + 1, y + 1, NULL);
+        LineTo(hDC, x + width - 1, y + 1);
+        LineTo(hDC, x + width - 1, y + height - 1);
+        LineTo(hDC, x + 1, y + height - 1);
+        LineTo(hDC, x + 1, y + 1);
         pen = SelectObject(hDC, pen);
         DeleteObject(pen);
-        
     }
 }
-static void PaintColumn(HDC hDC, HDC arrow, MENUITEM *items, MENUITEM *selected, int x, int y, HFONT font, int fontHeight, BOOL extended)
+static void PaintColumn(HDC hDC, HDC arrow, MENUITEM* items, MENUITEM* selected, int x, int y, HFONT font, int fontHeight,
+                        BOOL extended)
 {
-    MENUITEM *orig = items;
+    MENUITEM* orig = items;
     int width = CalculateMenuWidth(hDC, items) + 28;
     int pos = y;
     BOOL submenu = FALSE;
     while (items)
     {
         int checked;
-        int grayed; 
+        int grayed;
         if (extended)
         {
             checked = Eval(items->state) & MFS_CHECKED;
@@ -438,26 +426,26 @@ static void PaintColumn(HDC hDC, HDC arrow, MENUITEM *items, MENUITEM *selected,
             checked = items->flags & MI_CHECKED;
             grayed = items->flags & MI_GRAYED;
         }
-        DrawItem(hDC, items->text, selected == items,COLOR_BTNFACE, x, pos, width, fontHeight, checked, grayed);
+        DrawItem(hDC, items->text, selected == items, COLOR_BTNFACE, x, pos, width, fontHeight, checked, grayed);
         if (items->popup)
         {
             if (items->expanded)
                 submenu = TRUE;
-            BitBlt(hDC, x + width - 10, pos + (fontHeight - 8)/2, 8,8,arrow, 0, 0, SRCCOPY);
+            BitBlt(hDC, x + width - 10, pos + (fontHeight - 8) / 2, 8, 8, arrow, 0, 0, SRCCOPY);
         }
         pos += fontHeight;
         items = items->next;
     }
     if (submenu)
     {
-   
+
         items = orig;
         pos = y;
         while (items)
         {
             if (items->popup && items->expanded)
             {
-                PaintColumn(hDC, arrow, items->popup, selected, x+width, pos, font, fontHeight, extended);
+                PaintColumn(hDC, arrow, items->popup, selected, x + width, pos, font, fontHeight, extended);
             }
             pos += fontHeight;
             items = items->next;
@@ -472,23 +460,24 @@ static void PaintColumn(HDC hDC, HDC arrow, MENUITEM *items, MENUITEM *selected,
         {
             if (items->expanded)
             {
-                DrawItem(hDC, L"<---->", FALSE, COLOR_WINDOW, x+width, pos, width, fontHeight, FALSE, FALSE);
+                DrawItem(hDC, L"<---->", FALSE, COLOR_WINDOW, x + width, pos, width, fontHeight, FALSE, FALSE);
             }
             pos += fontHeight;
             items = items->next;
         }
     }
 }
-static void PaintTopRow(HDC hDC, HDC arrow, MENUITEM *items, MENUITEM *selected, int x, int y, HFONT font, int fontHeight, int extended)
+static void PaintTopRow(HDC hDC, HDC arrow, MENUITEM* items, MENUITEM* selected, int x, int y, HFONT font, int fontHeight,
+                        int extended)
 {
-    MENUITEM *orig = items;
+    MENUITEM* orig = items;
     int orig_x = x;
     SIZE xx;
-    xx.cx =40;
+    xx.cx = 40;
     while (items)
     {
         int checked;
-        int grayed; 
+        int grayed;
         if (extended)
         {
             checked = Eval(items->state) & MFS_CHECKED;
@@ -507,22 +496,21 @@ static void PaintTopRow(HDC hDC, HDC arrow, MENUITEM *items, MENUITEM *selected,
     }
     GetTextExtentPoint32W(hDC, L"<---->", 6, &xx);
     xx.cx += 16;
-    DrawItem(hDC, L"<---->", FALSE, COLOR_WINDOW, x, y, xx.cx, fontHeight, FALSE, FALSE);    
+    DrawItem(hDC, L"<---->", FALSE, COLOR_WINDOW, x, y, xx.cx, fontHeight, FALSE, FALSE);
     items = orig;
     x = orig_x;
     while (items)
     {
         SIZE xx;
         if (items->expanded)
-            PaintColumn(hDC, arrow, items->popup, selected, x, y+fontHeight, font, fontHeight, extended);
+            PaintColumn(hDC, arrow, items->popup, selected, x, y + fontHeight, font, fontHeight, extended);
         GetTextExtentPoint32W(hDC, items->text, wcslen(items->text), &xx);
         xx.cx += 16;
         x += xx.cx;
         items = items->next;
     }
-    
 }
-static void DoPaint(HWND hwnd, HDC hDC, LPPAINTSTRUCT lpPaint, RECT *r, struct resRes *menuData)
+static void DoPaint(HWND hwnd, HDC hDC, LPPAINTSTRUCT lpPaint, RECT* r, struct resRes* menuData)
 {
     RECT r1;
     HFONT font;
@@ -530,16 +518,16 @@ static void DoPaint(HWND hwnd, HDC hDC, LPPAINTSTRUCT lpPaint, RECT *r, struct r
     HDC compatDC, arrowDC;
     HBITMAP compatBitmap, arrowBitmap;
     int fontHeight;
-    fontHeight = (systemMenuFont.lfHeight < 0 ? - systemMenuFont.lfHeight : systemMenuFont.lfHeight)+6;
+    fontHeight = (systemMenuFont.lfHeight < 0 ? -systemMenuFont.lfHeight : systemMenuFont.lfHeight) + 6;
     font = CreateFontIndirect(&systemMenuFont);
     compatDC = CreateCompatibleDC(hDC);
     arrowDC = CreateCompatibleDC(hDC);
     font = SelectObject(compatDC, font);
-    sz.cx = 0; 
+    sz.cx = 0;
     sz.cy = 0;
     GetSizeTopRow(compatDC, menuData->resource->u.menu->items, 0, 0, fontHeight, &sz);
-    sz.cx +=GetSystemMetrics(SM_CXBORDER) * 2;
-    sz.cy +=GetSystemMetrics(SM_CYBORDER) * 2;
+    sz.cx += GetSystemMetrics(SM_CXBORDER) * 2;
+    sz.cy += GetSystemMetrics(SM_CYBORDER) * 2;
     if (sz.cx < r->right)
         sz.cx = r->right;
     if (sz.cy < r->bottom)
@@ -551,9 +539,10 @@ static void DoPaint(HWND hwnd, HDC hDC, LPPAINTSTRUCT lpPaint, RECT *r, struct r
     r1.left = r1.top = 0;
     r1.right = 1000;
     r1.bottom = 1000;
-    FillRect(compatDC,&r1, (HBRUSH)(COLOR_APPWORKSPACE + 1));
+    FillRect(compatDC, &r1, (HBRUSH)(COLOR_APPWORKSPACE + 1));
     SetTextColor(compatDC, GetSysColor(COLOR_WINDOWTEXT));
-    PaintTopRow(compatDC, arrowDC, menuData->resource->u.menu->items, menuData->gd.selectedMenu, 0, 0, font, fontHeight, menuData->resource->extended);
+    PaintTopRow(compatDC, arrowDC, menuData->resource->u.menu->items, menuData->gd.selectedMenu, 0, 0, font, fontHeight,
+                menuData->resource->extended);
     font = SelectObject(compatDC, font);
     menuData->gd.scrollMax.x = sz.cx;
     menuData->gd.scrollMax.y = sz.cy;
@@ -579,8 +568,8 @@ static void DoPaint(HWND hwnd, HDC hDC, LPPAINTSTRUCT lpPaint, RECT *r, struct r
     }
     menuData->gd.scrollMax.x = sz.cx;
     menuData->gd.scrollMax.y = sz.cy;
-    BitBlt(hDC, r->left+10, r->top+10, r->right+10, r->bottom+10,
-           compatDC, menuData->gd.scrollPos.x, menuData->gd.scrollPos.y, SRCCOPY);
+    BitBlt(hDC, r->left + 10, r->top + 10, r->right + 10, r->bottom + 10, compatDC, menuData->gd.scrollPos.x,
+           menuData->gd.scrollPos.y, SRCCOPY);
     compatBitmap = SelectObject(compatDC, compatBitmap);
     arrowBitmap = SelectObject(arrowDC, arrowBitmap);
     DeleteObject(compatBitmap);
@@ -588,9 +577,9 @@ static void DoPaint(HWND hwnd, HDC hDC, LPPAINTSTRUCT lpPaint, RECT *r, struct r
     DeleteDC(arrowDC);
     DeleteObject(font);
 }
-static void UndoChange(struct resRes *menuData, MENUITEM *item)
+static void UndoChange(struct resRes* menuData, MENUITEM* item)
 {
-    struct menuUndo *newUndo = calloc(1, sizeof(struct menuUndo));
+    struct menuUndo* newUndo = calloc(1, sizeof(struct menuUndo));
     if (newUndo)
     {
         newUndo->type = mu_changed;
@@ -604,9 +593,9 @@ static void UndoChange(struct resRes *menuData, MENUITEM *item)
         menuData->gd.undoData = newUndo;
     }
 }
-static void UndoDelete(struct resRes *menuData, MENUITEM **item)
+static void UndoDelete(struct resRes* menuData, MENUITEM** item)
 {
-    struct menuUndo *newUndo = calloc(1, sizeof(struct menuUndo));
+    struct menuUndo* newUndo = calloc(1, sizeof(struct menuUndo));
     if (newUndo)
     {
         newUndo->type = mu_delete;
@@ -616,9 +605,9 @@ static void UndoDelete(struct resRes *menuData, MENUITEM **item)
         menuData->gd.undoData = newUndo;
     }
 }
-static void UndoInsert(struct resRes *menuData, MENUITEM **item)
+static void UndoInsert(struct resRes* menuData, MENUITEM** item)
 {
-    struct menuUndo *newUndo = calloc(1, sizeof(struct menuUndo));
+    struct menuUndo* newUndo = calloc(1, sizeof(struct menuUndo));
     if (newUndo)
     {
         newUndo->type = mu_insert;
@@ -627,9 +616,9 @@ static void UndoInsert(struct resRes *menuData, MENUITEM **item)
         menuData->gd.undoData = newUndo;
     }
 }
-static MENUITEM **GetItemPlace(MENUITEM **top, MENUITEM *src, MENUITEM *item)
+static MENUITEM** GetItemPlace(MENUITEM** top, MENUITEM* src, MENUITEM* item)
 {
-    MENUITEM **last = NULL;
+    MENUITEM** last = NULL;
     while (*top)
     {
         if (*top == item)
@@ -642,7 +631,7 @@ static MENUITEM **GetItemPlace(MENUITEM **top, MENUITEM *src, MENUITEM *item)
         }
         if ((*top)->popup)
         {
-            MENUITEM **rv = GetItemPlace(&(*top)->popup, src, item);
+            MENUITEM** rv = GetItemPlace(&(*top)->popup, src, item);
             if (rv)
                 return rv;
         }
@@ -651,9 +640,9 @@ static MENUITEM **GetItemPlace(MENUITEM **top, MENUITEM *src, MENUITEM *item)
     }
     return NULL;
 }
-static void UndoMove(struct resRes *menuData, MENUITEM **src, MENUITEM *item)
+static void UndoMove(struct resRes* menuData, MENUITEM** src, MENUITEM* item)
 {
-    struct menuUndo *newUndo = calloc(1, sizeof(struct menuUndo));
+    struct menuUndo* newUndo = calloc(1, sizeof(struct menuUndo));
     if (newUndo)
     {
         newUndo->type = mu_move;
@@ -663,15 +652,15 @@ static void UndoMove(struct resRes *menuData, MENUITEM **src, MENUITEM *item)
         menuData->gd.undoData = newUndo;
     }
 }
-static void DoUndo(struct resRes * menuData)
+static void DoUndo(struct resRes* menuData)
 {
-    struct menuUndo *undo= menuData->gd.undoData;
+    struct menuUndo* undo = menuData->gd.undoData;
     if (undo)
     {
         menuData->gd.undoData = undo->next;
         switch (undo->type)
         {
-            MENUITEM **place;
+            MENUITEM** place;
             case mu_changed:
                 undo->item->text = undo->text;
                 undo->item->id = undo->id;
@@ -689,12 +678,12 @@ static void DoUndo(struct resRes * menuData)
             case mu_move:
                 place = GetItemPlace(&menuData->resource->u.menu->items, undo->place, undo->item);
                 *place = (*place)->next;
-                undo->item->next = *undo->place;               
+                undo->item->next = *undo->place;
                 *undo->place = undo->item;
                 break;
         }
-        
-        InvalidateRect(menuData->activeHwnd, 0 , FALSE);
+
+        InvalidateRect(menuData->activeHwnd, 0, FALSE);
         free(undo);
         if (menuData->gd.cantClearUndo)
             ResSetDirty(menuData);
@@ -702,7 +691,7 @@ static void DoUndo(struct resRes * menuData)
             ResSetClean(menuData);
     }
 }
-static void MarkUnexpanded(MENUITEM *items)
+static void MarkUnexpanded(MENUITEM* items)
 {
     while (items)
     {
@@ -712,8 +701,8 @@ static void MarkUnexpanded(MENUITEM *items)
         items = items->next;
     }
 }
-static void SelectItem(struct resRes *menuData, MENUITEM *orig, MENUITEM *selected, 
-                       BOOL openEditor, int x, int y, int width, int height)
+static void SelectItem(struct resRes* menuData, MENUITEM* orig, MENUITEM* selected, BOOL openEditor, int x, int y, int width,
+                       int height)
 {
     if (selected->text)
     {
@@ -726,10 +715,9 @@ static void SelectItem(struct resRes *menuData, MENUITEM *orig, MENUITEM *select
             HFONT font;
             font = CreateFontIndirect(&systemMenuFont);
             StringWToA(buf, selected->text, wcslen(selected->text));
-            menuData->gd.editWindow = CreateWindow("edit", "", WS_VISIBLE |
-                WS_CHILD | WS_CLIPSIBLINGS | WS_BORDER | ES_AUTOHSCROLL | ES_MULTILINE,
-                x,y,width,height, menuData->activeHwnd, (HMENU)ID_EDIT,
-                hInstance, NULL);
+            menuData->gd.editWindow =
+                CreateWindow("edit", "", WS_VISIBLE | WS_CHILD | WS_CLIPSIBLINGS | WS_BORDER | ES_AUTOHSCROLL | ES_MULTILINE, x, y,
+                             width, height, menuData->activeHwnd, (HMENU)ID_EDIT, hInstance, NULL);
             SendMessage(menuData->gd.editWindow, WM_SETFONT, (WPARAM)font, TRUE);
             SendMessage(menuData->gd.editWindow, WM_SETTEXT, 0, (LPARAM)buf);
             AccSubclassEditWnd(menuData->activeHwnd, menuData->gd.editWindow);
@@ -738,13 +726,12 @@ static void SelectItem(struct resRes *menuData, MENUITEM *orig, MENUITEM *select
         }
     }
 }
-static BOOL SelectFromColumns(HDC hDC, struct resRes * menuData,
-                              MENUITEM *items, int x, int y, int fontHeight, 
-                              POINT mouse, BOOL makeEditor)
+static BOOL SelectFromColumns(HDC hDC, struct resRes* menuData, MENUITEM* items, int x, int y, int fontHeight, POINT mouse,
+                              BOOL makeEditor)
 {
-    MENUITEM *orig = items;
+    MENUITEM* orig = items;
     int width = CalculateMenuWidth(hDC, orig) + 28;
-    if (x +width < mouse.x)
+    if (x + width < mouse.x)
     {
         while (items)
         {
@@ -762,12 +749,12 @@ static BOOL SelectFromColumns(HDC hDC, struct resRes * menuData,
         {
             if (y + fontHeight > mouse.y)
             {
-//                if (items->popup)
+                //                if (items->popup)
                 {
                     SelectItem(menuData, orig, items, makeEditor, x, y, width, fontHeight);
                     return TRUE;
                 }
-                return FALSE; 
+                return FALSE;
             }
             y += fontHeight;
             items = items->next;
@@ -775,10 +762,9 @@ static BOOL SelectFromColumns(HDC hDC, struct resRes * menuData,
     }
     return FALSE;
 }
-static BOOL SelectFromTopRow(HDC hDC, struct resRes *menuData,
-                             MENUITEM *items, int fontHeight, POINT mouse, BOOL makeEditor)
+static BOOL SelectFromTopRow(HDC hDC, struct resRes* menuData, MENUITEM* items, int fontHeight, POINT mouse, BOOL makeEditor)
 {
-    MENUITEM *orig = items;
+    MENUITEM* orig = items;
     int x = 10;
     SIZE xx;
     while (items)
@@ -788,36 +774,36 @@ static BOOL SelectFromTopRow(HDC hDC, struct resRes *menuData,
         if (items->expanded && mouse.y > 10 + fontHeight)
         {
             if (mouse.x >= x)
-                return SelectFromColumns(hDC, menuData, items->popup, x, 10+fontHeight, fontHeight, mouse, makeEditor);
-            x += xx.cx+16;
+                return SelectFromColumns(hDC, menuData, items->popup, x, 10 + fontHeight, fontHeight, mouse, makeEditor);
+            x += xx.cx + 16;
         }
         else if (mouse.y < 10 + fontHeight)
-        {        
+        {
             if (mouse.x < x + xx.cx + 16)
             {
                 break;
             }
-            x += xx.cx+16;
+            x += xx.cx + 16;
         }
         else
         {
-            x += xx.cx+16;
+            x += xx.cx + 16;
         }
         items = items->next;
     }
     if (items)
     {
-        SelectItem(menuData, orig, items, makeEditor, x, 10, xx.cx+16, fontHeight);
+        SelectItem(menuData, orig, items, makeEditor, x, 10, xx.cx + 16, fontHeight);
         return TRUE;
     }
     return FALSE;
 }
-static void SelectSubmenu(HWND hwnd, struct resRes *menuData, POINT mouse, BOOL openEditor)
+static void SelectSubmenu(HWND hwnd, struct resRes* menuData, POINT mouse, BOOL openEditor)
 {
     HFONT font;
     int fontHeight;
     HDC hDC = GetDC(hwnd);
-    fontHeight = (systemMenuFont.lfHeight < 0 ? - systemMenuFont.lfHeight : systemMenuFont.lfHeight)+6;
+    fontHeight = (systemMenuFont.lfHeight < 0 ? -systemMenuFont.lfHeight : systemMenuFont.lfHeight) + 6;
     font = CreateFontIndirect(&systemMenuFont);
     font = SelectObject(hDC, font);
     mouse.x += menuData->gd.scrollPos.x;
@@ -828,12 +814,11 @@ static void SelectSubmenu(HWND hwnd, struct resRes *menuData, POINT mouse, BOOL 
     DeleteObject(font);
     ReleaseDC(hwnd, hDC);
 }
-static int HitTestFromColumns(HDC hDC, struct resRes *menuData, MENUITEM *items, int x, int y, int fontHeight, 
-                              POINT mouse)
+static int HitTestFromColumns(HDC hDC, struct resRes* menuData, MENUITEM* items, int x, int y, int fontHeight, POINT mouse)
 {
-    MENUITEM *orig = items;
+    MENUITEM* orig = items;
     int width = CalculateMenuWidth(hDC, orig) + 28;
-    if (x +width < mouse.x)
+    if (x + width < mouse.x)
     {
         while (items)
         {
@@ -843,7 +828,7 @@ static int HitTestFromColumns(HDC hDC, struct resRes *menuData, MENUITEM *items,
                 {
                     return HitTestFromColumns(hDC, menuData, items->popup, x + width, y, fontHeight, mouse);
                 }
-                else 
+                else
                 {
                     if (x + width + width > mouse.x)
                         if (y + fontHeight > mouse.y && y <= mouse.y)
@@ -887,9 +872,9 @@ static int HitTestFromColumns(HDC hDC, struct resRes *menuData, MENUITEM *items,
     }
     return 0;
 }
-static int HitTestFromTopRow(HDC hDC, struct resRes *menuData,MENUITEM *items, int fontHeight, POINT mouse)
+static int HitTestFromTopRow(HDC hDC, struct resRes* menuData, MENUITEM* items, int fontHeight, POINT mouse)
 {
-    MENUITEM *orig = items;
+    MENUITEM* orig = items;
     int x = 10;
     SIZE xx;
     while (items)
@@ -899,11 +884,11 @@ static int HitTestFromTopRow(HDC hDC, struct resRes *menuData,MENUITEM *items, i
         if (items->expanded && mouse.y > 10 + fontHeight)
         {
             if (mouse.x >= x)
-                return HitTestFromColumns(hDC, menuData, items->popup, x, 10+fontHeight, fontHeight, mouse);
-            x += xx.cx+16;
+                return HitTestFromColumns(hDC, menuData, items->popup, x, 10 + fontHeight, fontHeight, mouse);
+            x += xx.cx + 16;
         }
         else if (mouse.y < 10 + fontHeight)
-        {        
+        {
             if (mouse.x < x + xx.cx + 16)
             {
                 while (orig)
@@ -915,11 +900,11 @@ static int HitTestFromTopRow(HDC hDC, struct resRes *menuData,MENUITEM *items, i
                 menuData->gd.selectedMenu = items;
                 return 1 + 4 + (orig ? 8 : 0);
             }
-            x += xx.cx+16;
+            x += xx.cx + 16;
         }
         else
         {
-            x += xx.cx+16;
+            x += xx.cx + 16;
         }
         items = items->next;
     }
@@ -936,13 +921,13 @@ static int HitTestFromTopRow(HDC hDC, struct resRes *menuData,MENUITEM *items, i
     }
     return 0;
 }
-int menuHitTest(HWND hwnd, struct resRes *menuData, POINT mouse)
+int menuHitTest(HWND hwnd, struct resRes* menuData, POINT mouse)
 {
     int rv;
     HFONT font;
     int fontHeight;
     HDC hDC = GetDC(hwnd);
-    fontHeight = (systemMenuFont.lfHeight < 0 ? - systemMenuFont.lfHeight : systemMenuFont.lfHeight)+6;
+    fontHeight = (systemMenuFont.lfHeight < 0 ? -systemMenuFont.lfHeight : systemMenuFont.lfHeight) + 6;
     font = CreateFontIndirect(&systemMenuFont);
     font = SelectObject(hDC, font);
     mouse.x += menuData->gd.scrollPos.x;
@@ -953,12 +938,12 @@ int menuHitTest(HWND hwnd, struct resRes *menuData, POINT mouse)
     ReleaseDC(hwnd, hDC);
     return rv;
 }
-static void DoMove(struct resRes *menuData, MENUITEM *item, MENUITEM *dest)
+static void DoMove(struct resRes* menuData, MENUITEM* item, MENUITEM* dest)
 {
     if (item != dest)
     {
-        MENUITEM **itemplace = GetItemPlace(&menuData->resource->u.menu->items, NULL, item);
-        MENUITEM **destplace;
+        MENUITEM** itemplace = GetItemPlace(&menuData->resource->u.menu->items, NULL, item);
+        MENUITEM** destplace;
         if (dest)
         {
             destplace = GetItemPlace(&menuData->resource->u.menu->items, item, dest);
@@ -982,11 +967,11 @@ static void DoMove(struct resRes *menuData, MENUITEM *item, MENUITEM *dest)
         }
     }
 }
-static void DoInsert(struct resRes *menuData, MENUITEM **items, int code, MENUITEM *parent)
+static void DoInsert(struct resRes* menuData, MENUITEM** items, int code, MENUITEM* parent)
 {
     switch (code)
     {
-        MENUITEM *newItem;
+        MENUITEM* newItem;
         case IDM_DELETE:
             UndoDelete(menuData, items);
             (*items)->expanded = FALSE;
@@ -1025,13 +1010,11 @@ static void DoInsert(struct resRes *menuData, MENUITEM **items, int code, MENUIT
             break;
     }
 }
-static int InsertDeleteFromColumns(HDC hDC, struct resRes *menuData,
-                                   MENUITEM **items, int x, int y, int fontHeight, 
-                                    int code)
+static int InsertDeleteFromColumns(HDC hDC, struct resRes* menuData, MENUITEM** items, int x, int y, int fontHeight, int code)
 {
-    MENUITEM **orig = items;
+    MENUITEM** orig = items;
     int width = CalculateMenuWidth(hDC, *orig) + 28;
-    if (x +width < menuData->gd.selectedColumn)
+    if (x + width < menuData->gd.selectedColumn)
     {
         while (*items)
         {
@@ -1041,7 +1024,7 @@ static int InsertDeleteFromColumns(HDC hDC, struct resRes *menuData,
                 {
                     return InsertDeleteFromColumns(hDC, menuData, &(*items)->popup, x + width, y, fontHeight, code);
                 }
-                else 
+                else
                 {
                     if (x + width + width > menuData->gd.selectedColumn)
                         if (y + fontHeight > menuData->gd.selectedRow && y <= menuData->gd.selectedRow)
@@ -1076,8 +1059,7 @@ static int InsertDeleteFromColumns(HDC hDC, struct resRes *menuData,
     }
     return 0;
 }
-static int InsertDeleteFromTopRow(HDC hDC, struct resRes *menuData,
-                                  MENUITEM **items, int fontHeight, int code)
+static int InsertDeleteFromTopRow(HDC hDC, struct resRes* menuData, MENUITEM** items, int fontHeight, int code)
 {
     int x = 10;
     SIZE xx;
@@ -1088,21 +1070,21 @@ static int InsertDeleteFromTopRow(HDC hDC, struct resRes *menuData,
         if ((*items)->expanded && menuData->gd.selectedRow > 10 + fontHeight)
         {
             if (menuData->gd.selectedColumn >= x)
-                return InsertDeleteFromColumns(hDC, menuData, &(*items)->popup, x, 10+fontHeight, fontHeight, code);
-            x += xx.cx+16;
+                return InsertDeleteFromColumns(hDC, menuData, &(*items)->popup, x, 10 + fontHeight, fontHeight, code);
+            x += xx.cx + 16;
         }
         else if (menuData->gd.selectedRow < 10 + fontHeight)
-        {        
+        {
             if (menuData->gd.selectedColumn < x + xx.cx + 16)
             {
                 DoInsert(menuData, items, code, NULL);
                 return 1;
             }
-            x += xx.cx+16;
+            x += xx.cx + 16;
         }
         else
         {
-            x += xx.cx+16;
+            x += xx.cx + 16;
         }
         items = &(*items)->next;
     }
@@ -1113,12 +1095,12 @@ static int InsertDeleteFromTopRow(HDC hDC, struct resRes *menuData,
     }
     return 0;
 }
-void InsertDelete(HWND hwnd, struct resRes * menuData, int code)
+void InsertDelete(HWND hwnd, struct resRes* menuData, int code)
 {
     HFONT font;
     int fontHeight;
     HDC hDC = GetDC(hwnd);
-    fontHeight = (systemMenuFont.lfHeight < 0 ? - systemMenuFont.lfHeight : systemMenuFont.lfHeight)+6;
+    fontHeight = (systemMenuFont.lfHeight < 0 ? -systemMenuFont.lfHeight : systemMenuFont.lfHeight) + 6;
     font = CreateFontIndirect(&systemMenuFont);
     font = SelectObject(hDC, font);
     InsertDeleteFromTopRow(hDC, menuData, &menuData->resource->u.menu->items, fontHeight, code);
@@ -1126,20 +1108,19 @@ void InsertDelete(HWND hwnd, struct resRes * menuData, int code)
     DeleteObject(font);
     ReleaseDC(hwnd, hDC);
 }
-LRESULT CALLBACK MenuDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
-    LPARAM lParam)
+LRESULT CALLBACK MenuDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
-    static MENUITEM *start;
+    static MENUITEM* start;
     static BOOL dragging;
     static HCURSOR oldcurs;
-    static struct resRes *resData;
-    static struct propertyFuncs *resFuncs;
+    static struct resRes* resData;
+    static struct propertyFuncs* resFuncs;
     POINT mouse;
     PAINTSTRUCT paint;
     LPCREATESTRUCT createStruct;
-    struct resRes *menuData;
+    struct resRes* menuData;
     int i;
-    struct menuUndo *undo;
+    struct menuUndo* undo;
     switch (iMessage)
     {
         case WM_MDIACTIVATE:
@@ -1149,40 +1130,40 @@ LRESULT CALLBACK MenuDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             }
             break;
         case WM_SETFOCUS:
-            menuData = (struct resRes *)GetWindowLong(hwnd, 0);
+            menuData = (struct resRes*)GetWindowLong(hwnd, 0);
             SetResourceProperties(resData, resFuncs);
             break;
         case EM_CANUNDO:
-            menuData = (struct resRes *)GetWindowLong(hwnd, 0);
+            menuData = (struct resRes*)GetWindowLong(hwnd, 0);
             return menuData->gd.undoData != NULL;
         case WM_KEYDOWN:
-            menuData = (struct resRes *)GetWindowLong(hwnd, 0);
+            menuData = (struct resRes*)GetWindowLong(hwnd, 0);
             switch (wParam)
             {
-            case 'S':
-                if (GetKeyState(VK_CONTROL) &0x80000000)
-                {
-                    PostMessage(hwnd, WM_COMMAND, IDM_SAVE, 0);
-                }
-                break;
-            case 'Z':
-                if (GetKeyState(VK_CONTROL) &0x80000000)
-                {
-                    PostMessage(hwnd, WM_COMMAND, IDM_UNDO, 0);
-                }
-                break;
+                case 'S':
+                    if (GetKeyState(VK_CONTROL) & 0x80000000)
+                    {
+                        PostMessage(hwnd, WM_COMMAND, IDM_SAVE, 0);
+                    }
+                    break;
+                case 'Z':
+                    if (GetKeyState(VK_CONTROL) & 0x80000000)
+                    {
+                        PostMessage(hwnd, WM_COMMAND, IDM_UNDO, 0);
+                    }
+                    break;
             }
             switch (KeyboardToAscii(wParam, lParam, FALSE))
             {
-                 case '[':
-                    if (GetKeyState(VK_CONTROL) &0x80000000)
+                case '[':
+                    if (GetKeyState(VK_CONTROL) & 0x80000000)
                     {
                         PopupResFullScreen(hwnd);
                         return 0;
                     }
                     break;
                 case ']':
-                    if (GetKeyState(VK_CONTROL) &0x80000000)
+                    if (GetKeyState(VK_CONTROL) & 0x80000000)
                     {
                         ReleaseResFullScreen(hwnd);
                         return 0;
@@ -1191,14 +1172,14 @@ LRESULT CALLBACK MenuDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             }
             break;
         case WM_NCACTIVATE:
-             PaintMDITitleBar(hwnd, iMessage, wParam, lParam);
-             return TRUE;
+            PaintMDITitleBar(hwnd, iMessage, wParam, lParam);
+            return TRUE;
         case WM_NCPAINT:
-             return PaintMDITitleBar(hwnd, iMessage, wParam, lParam);
+            return PaintMDITitleBar(hwnd, iMessage, wParam, lParam);
         case WM_CREATE:
             SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_TOOLWINDOW);
             createStruct = (LPCREATESTRUCT)lParam;
-            menuData = (struct resRes *)((LPMDICREATESTRUCT)(createStruct->lpCreateParams))->lParam;
+            menuData = (struct resRes*)((LPMDICREATESTRUCT)(createStruct->lpCreateParams))->lParam;
             SetWindowLong(hwnd, 0, (long)menuData);
             menuData->activeHwnd = hwnd;
             resData = menuData;
@@ -1211,7 +1192,7 @@ LRESULT CALLBACK MenuDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             SendMessage(hwndSrcTab, TABM_REMOVE, 0, (LPARAM)hwnd);
             break;
         case WM_DESTROY:
-            menuData = (struct resRes *)GetWindowLong(hwnd, 0);
+            menuData = (struct resRes*)GetWindowLong(hwnd, 0);
             menuData->activeHwnd = NULL;
             undo = menuData->gd.undoData;
             menuData->gd.undoData = NULL;
@@ -1219,12 +1200,12 @@ LRESULT CALLBACK MenuDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 menuData->gd.cantClearUndo = TRUE;
             while (undo)
             {
-                struct menuUndo *next = undo->next;
+                struct menuUndo* next = undo->next;
                 free(undo);
                 undo = next;
             }
             break;
-//        case WM_LBUTTONUP:
+            //        case WM_LBUTTONUP:
         case WM_MBUTTONUP:
         case WM_MBUTTONDOWN:
         case WM_RBUTTONDBLCLK:
@@ -1246,16 +1227,16 @@ LRESULT CALLBACK MenuDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             bitmap = CreateCompatibleBitmap(hDC, rect.right, rect.bottom);
             SelectObject(hdouble, bitmap);
             FillRect(hdouble, &rect, (HBRUSH)(COLOR_APPWORKSPACE + 1));
-            menuData = (struct resRes *)GetWindowLong(hwnd, 0);
+            menuData = (struct resRes*)GetWindowLong(hwnd, 0);
             DoPaint(hwnd, hdouble, &paint, &rect, menuData);
             BitBlt(hDC, 0, 0, rect.right, rect.bottom, hdouble, 0, 0, SRCCOPY);
             DeleteObject(bitmap);
             DeleteObject(hdouble);
             EndPaint(hwnd, &ps);
         }
-        return 0;
+            return 0;
         case WM_RBUTTONDOWN:
-            menuData = (struct resRes *)GetWindowLong(hwnd, 0);
+            menuData = (struct resRes*)GetWindowLong(hwnd, 0);
             SendMessage(hwnd, WM_COMMAND, ID_EDIT + (EN_KILLFOCUS << 16), 0);
             mouse.x = LOWORD(lParam);
             mouse.y = HIWORD(lParam);
@@ -1274,15 +1255,14 @@ LRESULT CALLBACK MenuDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 popup = GetSubMenu(menu, 0);
                 ClientToScreen(hwnd, &mouse);
                 InsertBitmapsInMenu(popup);
-                TrackPopupMenuEx(popup, TPM_TOPALIGN | TPM_LEFTALIGN | TPM_LEFTBUTTON, mouse.x,
-                    mouse.y, hwnd, NULL);
+                TrackPopupMenuEx(popup, TPM_TOPALIGN | TPM_LEFTALIGN | TPM_LEFTBUTTON, mouse.x, mouse.y, hwnd, NULL);
                 DestroyMenu(menu);
             }
             return 1;
         case WM_LBUTTONDBLCLK:
             SendMessage(hwnd, WM_COMMAND, ID_EDIT + (EN_KILLFOCUS << 16), 0);
             SetFocus(hwnd);
-            menuData = (struct resRes *)GetWindowLong(hwnd, 0);
+            menuData = (struct resRes*)GetWindowLong(hwnd, 0);
             mouse.x = LOWORD(lParam);
             mouse.y = HIWORD(lParam);
             SelectSubmenu(hwnd, menuData, mouse, TRUE);
@@ -1290,7 +1270,7 @@ LRESULT CALLBACK MenuDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
         case WM_MOUSEMOVE:
             if (dragging)
             {
-                menuData = (struct resRes *)GetWindowLong(hwnd, 0);
+                menuData = (struct resRes*)GetWindowLong(hwnd, 0);
                 mouse.x = LOWORD(lParam);
                 mouse.y = HIWORD(lParam);
                 menuData->gd.selectedMenu = start;
@@ -1302,7 +1282,7 @@ LRESULT CALLBACK MenuDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             break;
         case WM_LBUTTONDOWN:
             SetFocus(hwnd);
-            menuData = (struct resRes *)GetWindowLong(hwnd, 0);
+            menuData = (struct resRes*)GetWindowLong(hwnd, 0);
             SendMessage(hwnd, WM_COMMAND, ID_EDIT + (EN_KILLFOCUS << 16), 0);
             mouse.x = LOWORD(lParam);
             mouse.y = HIWORD(lParam);
@@ -1328,7 +1308,7 @@ LRESULT CALLBACK MenuDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 dragging = FALSE;
                 ReleaseCapture();
             }
-            menuData = (struct resRes *)GetWindowLong(hwnd, 0);
+            menuData = (struct resRes*)GetWindowLong(hwnd, 0);
             if (oldcurs)
             {
                 if (GetCursor() == dragCur)
@@ -1351,7 +1331,7 @@ LRESULT CALLBACK MenuDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             }
             break;
         case WM_COMMAND:
-            menuData = (struct resRes *)GetWindowLong(hwnd, 0);
+            menuData = (struct resRes*)GetWindowLong(hwnd, 0);
             switch (LOWORD(wParam))
             {
                 case ID_EDIT:
@@ -1398,84 +1378,84 @@ LRESULT CALLBACK MenuDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             }
             break;
         case WM_VSCROLL:
-            menuData = (struct resRes *)GetWindowLong(hwnd, 0);
+            menuData = (struct resRes*)GetWindowLong(hwnd, 0);
             switch (LOWORD(wParam))
             {
-            case SB_BOTTOM:
-                menuData->gd.scrollPos.y = menuData->gd.scrollMax.y;
+                case SB_BOTTOM:
+                    menuData->gd.scrollPos.y = menuData->gd.scrollMax.y;
+                    break;
+                case SB_TOP:
+                    menuData->gd.scrollPos.y = 0;
+                    break;
+                case SB_LINEDOWN:
+                    menuData->gd.scrollPos.y += 8;
+                    break;
+                case SB_LINEUP:
+                    menuData->gd.scrollPos.y -= 8;
+                    break;
+                case SB_PAGEDOWN:
+                    menuData->gd.scrollPos.y += 64;
+                    break;
+                case SB_PAGEUP:
+                    menuData->gd.scrollPos.y -= 64;
+                    break;
+                case SB_ENDSCROLL:
+                    return 0;
+                case SB_THUMBPOSITION:
+                case SB_THUMBTRACK:
+                {
+                    SCROLLINFO si;
+                    memset(&si, 0, sizeof(si));
+                    si.cbSize = sizeof(si);
+                    si.fMask = SIF_TRACKPOS;
+                    GetScrollInfo(hwnd, SB_VERT, &si);
+                    menuData->gd.scrollPos.y = si.nTrackPos;
+                }
                 break;
-            case SB_TOP:
-                menuData->gd.scrollPos.y = 0;
-                break;
-            case SB_LINEDOWN:
-                menuData->gd.scrollPos.y += 8;
-                break;
-            case SB_LINEUP:
-                menuData->gd.scrollPos.y -= 8;
-                break;
-            case SB_PAGEDOWN:
-                menuData->gd.scrollPos.y += 64;
-                break;
-            case SB_PAGEUP:
-                menuData->gd.scrollPos.y -= 64;
-                break;
-            case SB_ENDSCROLL:
-                return 0;
-            case SB_THUMBPOSITION:
-            case SB_THUMBTRACK:
-            {
-                SCROLLINFO si;
-                memset(&si, 0, sizeof(si));
-                si.cbSize = sizeof(si);
-                si.fMask = SIF_TRACKPOS;
-                GetScrollInfo(hwnd, SB_VERT, &si);
-                menuData->gd.scrollPos.y = si.nTrackPos;
-            }
-                break;
-            default:
-                return 0;
+                default:
+                    return 0;
             }
             if (menuData->gd.scrollPos.y < 0)
                 menuData->gd.scrollPos.y = 0;
             if (menuData->gd.scrollPos.y >= menuData->gd.scrollMax.y)
                 menuData->gd.scrollPos.y = menuData->gd.scrollMax.y;
             SetScrollPos(hwnd, SB_VERT, menuData->gd.scrollPos.y, TRUE);
-            InvalidateRect(hwnd,0,FALSE);
+            InvalidateRect(hwnd, 0, FALSE);
             return 0;
         case WM_HSCROLL:
-            menuData = (struct resRes *)GetWindowLong(hwnd, 0);
+            menuData = (struct resRes*)GetWindowLong(hwnd, 0);
             switch (LOWORD(wParam))
             {
-            case SB_LEFT:
-                menuData->gd.scrollPos.x = 0;
-                break;
-            case SB_RIGHT:
-                menuData->gd.scrollPos.x = menuData->gd.scrollMax.x;
-                break;
-            case SB_LINELEFT:
-                menuData->gd.scrollPos.x -= 8;
-                break;
-            case SB_LINERIGHT:
-                menuData->gd.scrollPos.x += 8;
-                break;
-            case SB_PAGERIGHT:
-                menuData->gd.scrollPos.x += 64;
-                break;
-            case SB_PAGELEFT:
-                menuData->gd.scrollPos.x -= 64;
-                break;
-            case SB_ENDSCROLL:
-                return 0;
-            case SB_THUMBPOSITION:
-            case SB_THUMBTRACK:
-            {
-                SCROLLINFO si;
-                memset(&si, 0, sizeof(si));
-                si.cbSize = sizeof(si);
-                si.fMask = SIF_TRACKPOS;
-                GetScrollInfo(hwnd, SB_HORZ, &si);
-                menuData->gd.scrollPos.x = si.nTrackPos;
-            }
+                case SB_LEFT:
+                    menuData->gd.scrollPos.x = 0;
+                    break;
+                case SB_RIGHT:
+                    menuData->gd.scrollPos.x = menuData->gd.scrollMax.x;
+                    break;
+                case SB_LINELEFT:
+                    menuData->gd.scrollPos.x -= 8;
+                    break;
+                case SB_LINERIGHT:
+                    menuData->gd.scrollPos.x += 8;
+                    break;
+                case SB_PAGERIGHT:
+                    menuData->gd.scrollPos.x += 64;
+                    break;
+                case SB_PAGELEFT:
+                    menuData->gd.scrollPos.x -= 64;
+                    break;
+                case SB_ENDSCROLL:
+                    return 0;
+                case SB_THUMBPOSITION:
+                case SB_THUMBTRACK:
+                {
+                    SCROLLINFO si;
+                    memset(&si, 0, sizeof(si));
+                    si.cbSize = sizeof(si);
+                    si.fMask = SIF_TRACKPOS;
+                    GetScrollInfo(hwnd, SB_HORZ, &si);
+                    menuData->gd.scrollPos.x = si.nTrackPos;
+                }
                 break;
             }
             if (menuData->gd.scrollPos.x < 0)
@@ -1483,13 +1463,11 @@ LRESULT CALLBACK MenuDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             if (menuData->gd.scrollPos.x >= menuData->gd.scrollMax.x)
                 menuData->gd.scrollPos.x = menuData->gd.scrollMax.x;
             SetScrollPos(hwnd, SB_HORZ, menuData->gd.scrollPos.x, TRUE);
-            SetWindowPos(menuData->gd.childWindow, NULL,
-                         menuData->gd.origin.x - menuData->gd.scrollPos.x,
-                         menuData->gd.origin.y - menuData->gd.scrollPos.y,
-                         0,0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
-                         
-            InvalidateRect(hwnd,0,FALSE);
-                       
+            SetWindowPos(menuData->gd.childWindow, NULL, menuData->gd.origin.x - menuData->gd.scrollPos.x,
+                         menuData->gd.origin.y - menuData->gd.scrollPos.y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+
+            InvalidateRect(hwnd, 0, FALSE);
+
             return 0;
         case WM_SIZE:
             InvalidateRect(hwnd, 0, FALSE);
@@ -1520,19 +1498,18 @@ void RegisterMenuDrawWindow(HINSTANCE hInstance)
     dragCur = LoadCursor(hInstance, "ID_DRAGCTL");
     noCur = LoadCursor(hInstance, "ID_NODRAGCUR");
 }
-void CreateMenuDrawWindow(struct resRes *info)
+void CreateMenuDrawWindow(struct resRes* info)
 {
     char name[512];
     int maximized;
     HWND hwnd;
     sprintf(name, "%s - %s", szUntitled, info->name);
-    SendMessage(hwndClient, WM_MDIGETACTIVE, 0, (LPARAM) &maximized);
-    hwnd = CreateMDIWindow(szMenuDrawClassName, name, WS_VISIBLE |
-           WS_CHILD | WS_OVERLAPPED | WS_CAPTION | WS_THICKFRAME | MDIS_ALLCHILDSTYLES | 
-        WS_CLIPSIBLINGS | WS_CLIPCHILDREN |
-        WS_SIZEBOX | (PropGetInt(NULL, "TABBED_WINDOWS") ? WS_MAXIMIZE : WS_SYSMENU),
-        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwndClient, hInstance, 
-        (LPARAM)info); 
+    SendMessage(hwndClient, WM_MDIGETACTIVE, 0, (LPARAM)&maximized);
+    hwnd =
+        CreateMDIWindow(szMenuDrawClassName, name,
+                        WS_VISIBLE | WS_CHILD | WS_OVERLAPPED | WS_CAPTION | WS_THICKFRAME | MDIS_ALLCHILDSTYLES | WS_CLIPSIBLINGS |
+                            WS_CLIPCHILDREN | WS_SIZEBOX | (PropGetInt(NULL, "TABBED_WINDOWS") ? WS_MAXIMIZE : WS_SYSMENU),
+                        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwndClient, hInstance, (LPARAM)info);
     if (hwnd)
     {
         SendMessage(hwndSrcTab, TABM_ADD, (WPARAM)name, (LPARAM)hwnd);

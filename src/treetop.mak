@@ -286,3 +286,19 @@ library: makelibdir $(LIBS)
 exefile: makelibdir $(EXES)
 
 localfiles: makelibdir mkdir compile library exefile
+
+
+%.cppf: %.cpp
+	clang-format -style=file $< > $@
+	copy $@ $<
+
+%.cf: %.c
+	clang-format -style=file $< > $@
+	copy $@ $<
+
+%.hf: %.h
+	clang-format -style=file $< > $@
+	copy $@ $<
+
+
+format: $(H_FILES:.h=.hf) $(CPP_DEPENDENCIES:.cpp=.cppf) $(C_DEPENDENCIES:.c=.cf)

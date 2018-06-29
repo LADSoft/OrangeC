@@ -1,29 +1,29 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
-/* 
+/*
  * error handler
  */
 #include <stdio.h>
@@ -37,27 +37,24 @@
 #include <stdio.h>
 
 #include "header.h"
- 
+
 extern HWND hwndFrame;
 extern int errlineno;
-extern char *errfile;
-extern FILE *outputFile;
+extern char* errfile;
+extern FILE* outputFile;
 extern int lastch;
 extern enum e_sym lastst;
 extern char lastid[];
 extern int lineno;
-extern FILE *inclfile[10]; /* shared with preproc */
-extern int incldepth; /* shared with preproc */
-extern char *infile;
-extern FILE *inputFile;
+extern FILE* inclfile[10]; /* shared with preproc */
+extern int incldepth;      /* shared with preproc */
+extern char* infile;
+extern FILE* inputFile;
 extern jmp_buf errjump;
 
 int diagcount = 0;
 int referrorlvl = 3;
-static char expectlist[] = 
-{
-    "###################################################:{}.#])#,;"
-};
+static char expectlist[] = {"###################################################:{}.#])#,;"};
 static int errline;
 
 int total_errors = 0;
@@ -68,7 +65,7 @@ void initerr(void)
     errline = 0;
 }
 
-void fatal(char *fmt, ...)
+void fatal(char* fmt, ...)
 {
     char buf[256];
     va_list argptr;
@@ -80,15 +77,15 @@ void fatal(char *fmt, ...)
 #else
     printf("Fatal error: ");
     vprintf(fmt, argptr);
-    fputc('\n',stdout);
+    fputc('\n', stdout);
 #endif
     va_end(argptr);
-    longjmp(errjump,1);
+    longjmp(errjump, 1);
 }
 
 //-------------------------------------------------------------------------
 
-int printerr(char *buf, int errnum, void *data)
+int printerr(char* buf, int errnum, void* data)
 /*
  * subroutine gets the error code and returns whether it is an error or
  * warning
@@ -200,9 +197,8 @@ int printerr(char *buf, int errnum, void *data)
             sprintf(buf, "Accelerator key expected");
             break;
         case ERR_NO_ASCII_VIRTKEY:
-            sprintf(buf, 
-                "ASCII/VIRTKEY keywords not allowed for string key type");
-                break;
+            sprintf(buf, "ASCII/VIRTKEY keywords not allowed for string key type");
+            break;
         case ERR_NOT_DIALOGEX:
             sprintf(buf, "Need DIALOGEX for this feature");
             break;
@@ -236,7 +232,7 @@ int printerr(char *buf, int errnum, void *data)
 
 //-------------------------------------------------------------------------
 
-void basicerror(int n, void *data)
+void basicerror(int n, void* data)
 /*
  * standard routine for putting out an error
  */
@@ -245,7 +241,7 @@ void basicerror(int n, void *data)
     int errlvl;
     ;
     errlvl = printerr(buf, n, data);
-    if (!(errlvl &1))
+    if (!(errlvl & 1))
     {
         errline = lineno;
 #ifdef GUI
@@ -257,13 +253,13 @@ void basicerror(int n, void *data)
     }
     if (total_errors)
     {
-        longjmp(errjump,1);
+        longjmp(errjump, 1);
     }
 }
 
 //-------------------------------------------------------------------------
 
-void Error(char *string)
+void Error(char* string)
 /*
  * some of the library functions required a generic error function
  *
@@ -280,13 +276,13 @@ void generror(int n, int data)
  * most errors come here
  */
 {
-	if (inputFile)
-	    basicerror(n, (void*)data);
+    if (inputFile)
+        basicerror(n, (void*)data);
 }
 
 //-------------------------------------------------------------------------
 
-void gensymerror(int n, char *data)
+void gensymerror(int n, char* data)
 /*
  * errors come here if the error has a symbol name
  */
@@ -302,28 +298,16 @@ void gensymerror(int n, char *data)
 /*
  * various utilities for special case errors
  */
-void expecttoken(int n)
-{
-    generror(ERR_INSERT, n);
-}
+void expecttoken(int n) { generror(ERR_INSERT, n); }
 
 //-------------------------------------------------------------------------
 
-void generrorexp(int n, int data)
-{
-    basicerror(n, (void*)data);
-}
+void generrorexp(int n, int data) { basicerror(n, (void*)data); }
 
 //-------------------------------------------------------------------------
 
-void gensymerrorexp(int n, char *data)
-{
-    basicerror(n, (void*)rcStrdup(data));
-}
+void gensymerrorexp(int n, char* data) { basicerror(n, (void*)rcStrdup(data)); }
 
 //-------------------------------------------------------------------------
 
-void expecttokenexp(int n)
-{
-    generrorexp(ERR_INSERT, n);
-}
+void expecttokenexp(int n) { generrorexp(ERR_INSERT, n); }

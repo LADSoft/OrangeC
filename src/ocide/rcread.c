@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdio.h>
@@ -38,80 +38,76 @@
 #include "header.h"
 #include <setjmp.h>
 
-EXPRESSION *ReadExp(void);
-EXPRESSION *ReadExpOr(EXPRESSION *);
-int Eval(EXPRESSION *);
+EXPRESSION* ReadExp(void);
+EXPRESSION* ReadExpOr(EXPRESSION*);
+int Eval(EXPRESSION*);
 
-extern char *errfile;
-extern SYM *rcDefs;
+extern char* errfile;
+extern SYM* rcDefs;
 extern int cantnewline;
-extern WCHAR *lptr;
+extern WCHAR* lptr;
 extern int laststrlen;
-extern char *rcSearchPath;
+extern char* rcSearchPath;
 extern enum e_sym lastst;
 extern char lastid[];
 extern char laststr[];
 extern int lastch;
 extern int ival;
-extern char *infile;
+extern char* infile;
 extern int lineno;
 extern int incconst;
 extern TABLE defsyms;
 /* We read the directory entries in a cursor or icon file into
 instances of this structure.  */
 
-
-char *rcIdFile;
-FILE *inputFile;
+char* rcIdFile;
+FILE* inputFile;
 int rc_lineno;
 
 jmp_buf errjump;
 
-
 typedef struct compileData
 {
-    RESOURCE *resources;
-    RESOURCE **resourcesTail;
-    LIST *lines;
+    RESOURCE* resources;
+    RESOURCE** resourcesTail;
+    LIST* lines;
     EXPRESSION *base_language_high, *base_language_low;
-} COMPILEDATA ;
+} COMPILEDATA;
 
 static HANDLE memHeap;
 
-void *rcAlloc(int v)
+void* rcAlloc(int v)
 {
-    void *rv;
+    void* rv;
     if (!memHeap)
         memHeap = HeapCreate(0, 0, 0);
     rv = HeapAlloc(memHeap, HEAP_ZERO_MEMORY, v);
     if (!rv)
         fatal("out of memory");
     return rv;
-          
 }
-char *rcStrdup(const char *s)
+char* rcStrdup(const char* s)
 {
-    char *v = rcAlloc(strlen(s) + 1);
+    char* v = rcAlloc(strlen(s) + 1);
     if (v)
         strcpy(v, s);
     return v;
 }
-void rcFree(void *p)
+void rcFree(void* p)
 {
-    HeapFree(memHeap, 0, p);//fixme
+    HeapFree(memHeap, 0, p);  // fixme
 }
 #define GetByte(fil) fgetc(fil)
 
-static int GetWord(FILE *fil)
+static int GetWord(FILE* fil)
 {
     int b1, b2;
 
     b1 = GetByte(fil);
     b2 = GetByte(fil);
-    return ((b2 &0xff) << 8) | (b1 &0xff);
-
-} 
-static unsigned int GetLong(FILE *fil)
+    return ((b2 & 0xff) << 8) | (b1 & 0xff);
+}
+static unsigned int GetLong(FILE* fil)
 {
     int b1, b2, b3, b4;
 
@@ -119,13 +115,12 @@ static unsigned int GetLong(FILE *fil)
     b2 = GetByte(fil);
     b3 = GetByte(fil);
     b4 = GetByte(fil);
-    return (((((((b4 &0xff) << 8) | (b3 &0xff)) << 8) | (b2 &0xff)) << 8) | (b1
-        &0xff));
+    return (((((((b4 & 0xff) << 8) | (b3 & 0xff)) << 8) | (b2 & 0xff)) << 8) | (b1 & 0xff));
 }
 
 //-------------------------------------------------------------------------
 
-static int GetData(FILE *fil, BYTE *p, int c)
+static int GetData(FILE* fil, BYTE* p, int c)
 {
     unsigned int got;
 
@@ -133,7 +128,7 @@ static int GetData(FILE *fil, BYTE *p, int c)
     return (got == c);
 }
 
-static int CompareType(IDENT *id1, IDENT *id2)
+static int CompareType(IDENT* id1, IDENT* id2)
 {
     if (id1->symbolic != id2->symbolic)
         return FALSE;
@@ -145,15 +140,15 @@ static int CompareType(IDENT *id1, IDENT *id2)
     {
         if (id1->u.n.length != id2->u.n.length)
             return FALSE;
-        return !memcmp(id1->u.n.symbol, id2->u.n.symbol, id1->u.n.length *sizeof(WCHAR) + sizeof(WCHAR));
+        return !memcmp(id1->u.n.symbol, id2->u.n.symbol, id1->u.n.length * sizeof(WCHAR) + sizeof(WCHAR));
     }
 }
-static void AddResource(COMPILEDATA *cd, IDENT *specType, RESOURCE *r, IDENT *id, 
-                        EXPRESSION *language_high, EXPRESSION *language_low, char *fileName)
+static void AddResource(COMPILEDATA* cd, IDENT* specType, RESOURCE* r, IDENT* id, EXPRESSION* language_high,
+                        EXPRESSION* language_low, char* fileName)
 {
     IDENT type;
     if ((int)specType < 100)
-    {    
+    {
         type.symbolic = 0;
         type.u.id = rcAlloc(sizeof(EXPRESSION));
         type.u.id->type = e_int;
@@ -164,7 +159,7 @@ static void AddResource(COMPILEDATA *cd, IDENT *specType, RESOURCE *r, IDENT *id
         type = *specType;
     }
     r->next = NULL;
-    r->type =  type;
+    r->type = type;
     r->id = *id;
     r->info.language_high = language_high;
     r->info.language_low = language_low;
@@ -174,35 +169,35 @@ static void AddResource(COMPILEDATA *cd, IDENT *specType, RESOURCE *r, IDENT *id
     *(cd->resourcesTail) = r;
     cd->resourcesTail = &r->next;
 }
-static void CreatePlaceholderResource(COMPILEDATA *cd)
+static void CreatePlaceholderResource(COMPILEDATA* cd)
 {
     IDENT id;
-    RESOURCE *r = rcAlloc(sizeof(RESOURCE));
+    RESOURCE* r = rcAlloc(sizeof(RESOURCE));
     r->itype = RESTYPE_PLACEHOLDER;
     memset(&id, 0, sizeof(id));
-    AddResource(cd, (IDENT *)RESTYPE_PLACEHOLDER, r, &id, cd->base_language_high, cd->base_language_low, 0);
+    AddResource(cd, (IDENT*)RESTYPE_PLACEHOLDER, r, &id, cd->base_language_high, cd->base_language_low, 0);
 }
-static void CreateLanguageResource(COMPILEDATA *cd)
+static void CreateLanguageResource(COMPILEDATA* cd)
 {
     IDENT id;
-    RESOURCE *r = rcAlloc(sizeof(RESOURCE));
+    RESOURCE* r = rcAlloc(sizeof(RESOURCE));
     r->itype = RESTYPE_LANGUAGE;
     memset(&id, 0, sizeof(id));
-    AddResource(cd, (IDENT *)RESTYPE_LANGUAGE, r, &id, cd->base_language_high, cd->base_language_low, 0);
+    AddResource(cd, (IDENT*)RESTYPE_LANGUAGE, r, &id, cd->base_language_high, cd->base_language_low, 0);
 }
 //-------------------------------------------------------------------------
 
-static void CreateAcceleratorResource(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *resinfo, ACCELERATOR *data)
+static void CreateAcceleratorResource(COMPILEDATA* cd, IDENT* id, CHARACTERISTICS* resinfo, ACCELERATOR* data)
 {
-    RESOURCE *r = rcAlloc(sizeof(RESOURCE));
+    RESOURCE* r = rcAlloc(sizeof(RESOURCE));
     r->itype = RESTYPE_ACCELERATOR;
     r->u.accelerator = data;
-    r->info =  *resinfo;
-    AddResource(cd, (IDENT *)RESTYPE_ACCELERATOR, r, id, resinfo->language_high, resinfo->language_low, 0);
-} 
+    r->info = *resinfo;
+    AddResource(cd, (IDENT*)RESTYPE_ACCELERATOR, r, id, resinfo->language_high, resinfo->language_low, 0);
+}
 
 #define BITMAP_SKIP (14)
-static int filesize(FILE *fil)
+static int filesize(FILE* fil)
 {
     int rv;
     fseek(fil, 0L, SEEK_END);
@@ -213,10 +208,10 @@ static int filesize(FILE *fil)
 
 //-------------------------------------------------------------------------
 
-BITMAP_ *RCLoadBitmap(char *fileName)
+BITMAP_* RCLoadBitmap(char* fileName)
 {
-    BITMAP_ *bd;
-    FILE *fil;
+    BITMAP_* bd;
+    FILE* fil;
     char buf[256];
     BYTE *headerData, *pixelData;
     int size;
@@ -229,10 +224,10 @@ BITMAP_ *RCLoadBitmap(char *fileName)
     size = filesize(fil);
 
     fread(buf, 1, BITMAP_SKIP, fil);
-    if (buf[0] != 'B' || buf[1] != 'M' || *(int *)(buf + 2) != size)
+    if (buf[0] != 'B' || buf[1] != 'M' || *(int*)(buf + 2) != size)
         fatal("%s is not a bitmap file", fileName);
-        
-    pixelOffs = *(int *)(buf +10);
+
+    pixelOffs = *(int*)(buf + 10);
 
     headerData = rcAlloc(pixelOffs - BITMAP_SKIP);
     pixelData = rcAlloc(size - pixelOffs);
@@ -256,27 +251,26 @@ BITMAP_ *RCLoadBitmap(char *fileName)
     fclose(fil);
     return bd;
 }
-static void CreateBitmapResource(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *resinfo, char *fileName)
+static void CreateBitmapResource(COMPILEDATA* cd, IDENT* id, CHARACTERISTICS* resinfo, char* fileName)
 {
-    BITMAP_ *bd = RCLoadBitmap(fileName);
-    RESOURCE *r;
+    BITMAP_* bd = RCLoadBitmap(fileName);
+    RESOURCE* r;
 
     r = rcAlloc(sizeof(RESOURCE));
     r->itype = RESTYPE_BITMAP;
     r->u.bitmap = bd;
-    r->info =  *resinfo;
-    AddResource(cd, (IDENT *)RESTYPE_BITMAP, r, id, resinfo->language_high, resinfo->language_low, fileName);
-
+    r->info = *resinfo;
+    AddResource(cd, (IDENT*)RESTYPE_BITMAP, r, id, resinfo->language_high, resinfo->language_low, fileName);
 }
- 
+
 //-------------------------------------------------------------------------
 
-CURSOR *RCLoadCursor(char *fileName)
+CURSOR* RCLoadCursor(char* fileName)
 {
-    FILE *fil;
+    FILE* fil;
     int type, count, fill, i;
-    CURSOR *cursor;
-    CURSORDATA *cursors;
+    CURSOR* cursor;
+    CURSORDATA* cursors;
     fil = MySearchPath(fileName, rcSearchPath, "rb");
     if (!fil)
         fatal("File Not Found  %s in line %d", fileName, lineno);
@@ -286,7 +280,6 @@ CURSOR *RCLoadCursor(char *fileName)
     count = GetWord(fil);
     if (type != 2)
         fatal("cursor file `%s' does not contain cursor data", fileName);
-
 
     cursor = rcAlloc(sizeof(CURSOR));
     cursors = rcAlloc(sizeof(CURSORDATA) * (count));
@@ -307,7 +300,7 @@ CURSOR *RCLoadCursor(char *fileName)
         if (!cursors[i].width)
             cursors[i].width = 32;
         if (!cursors[i].height)
-            cursors[i].height = (cursors[i].bytes - 48) / ((32 / 8) *2);
+            cursors[i].height = (cursors[i].bytes - 48) / ((32 / 8) * 2);
         t = ftell(fil);
         if (fseek(fil, cursors[i].offset, SEEK_SET) != 0)
         {
@@ -325,47 +318,45 @@ CURSOR *RCLoadCursor(char *fileName)
         {
             fatal("Data too short in %s", fileName);
         }
-    } 
+    }
     fclose(fil);
     return cursor;
 }
-static void CreateCursorResource(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *resinfo, char *fileName)
+static void CreateCursorResource(COMPILEDATA* cd, IDENT* id, CHARACTERISTICS* resinfo, char* fileName)
 {
-    CURSOR *cursor = RCLoadCursor(fileName);
-    RESOURCE *r;
+    CURSOR* cursor = RCLoadCursor(fileName);
+    RESOURCE* r;
     r = rcAlloc(sizeof(RESOURCE));
     r->itype = RESTYPE_CURSOR;
     r->u.cursor = cursor;
-    r->info =  *resinfo;
-    AddResource(cd, (IDENT *)RESTYPE_CURSOR, r, id, resinfo
-        ->language_high, resinfo->language_low, fileName);
-
+    r->info = *resinfo;
+    AddResource(cd, (IDENT*)RESTYPE_CURSOR, r, id, resinfo->language_high, resinfo->language_low, fileName);
 }
 
 //-------------------------------------------------------------------------
 
-static void CreateDialogResource(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *resinfo, DIALOG *dialog, BOOL extended)
+static void CreateDialogResource(COMPILEDATA* cd, IDENT* id, CHARACTERISTICS* resinfo, DIALOG* dialog, BOOL extended)
 {
-    DIALOG *copy;
-    RESOURCE *r;
+    DIALOG* copy;
+    RESOURCE* r;
 
     copy = rcAlloc(sizeof *copy);
-    *copy =  *dialog;
+    *copy = *dialog;
 
     r = rcAlloc(sizeof(RESOURCE));
     r->itype = RESTYPE_DIALOG;
     r->extended = extended;
     r->u.dialog = copy;
-    r->info =  *resinfo;
-    AddResource(cd, (IDENT *)RESTYPE_DIALOG, r, id, resinfo->language_high, resinfo->language_low, 0);
-} 
-int StringAsciiToWChar(WCHAR **text, char *string, int len)
+    r->info = *resinfo;
+    AddResource(cd, (IDENT*)RESTYPE_DIALOG, r, id, resinfo->language_high, resinfo->language_low, 0);
+}
+int StringAsciiToWChar(WCHAR** text, char* string, int len)
 {
     int i = 0;
-    *text = rcAlloc(len *sizeof(WCHAR)+sizeof(WCHAR));
+    *text = rcAlloc(len * sizeof(WCHAR) + sizeof(WCHAR));
     while (len--)
     {
-        (*text)[i++] = (WCHAR)*(unsigned char*)string++;
+        (*text)[i++] = (WCHAR) * (unsigned char*)string++;
     }
     (*text)[i++] = 0;
     return (i - 1);
@@ -373,7 +364,7 @@ int StringAsciiToWChar(WCHAR **text, char *string, int len)
 
 //-------------------------------------------------------------------------
 
-static void IdentFromString(IDENT *val, char *string)
+static void IdentFromString(IDENT* val, char* string)
 {
     val->symbolic = 1;
     val->u.n.length = StringAsciiToWChar(&val->u.n.symbol, string, strlen(string));
@@ -381,36 +372,34 @@ static void IdentFromString(IDENT *val, char *string)
 
 //-------------------------------------------------------------------------
 
-static void CreateDlgIncludeResource(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *resinfo, char *fileName)
+static void CreateDlgIncludeResource(COMPILEDATA* cd, IDENT* id, CHARACTERISTICS* resinfo, char* fileName)
 {
-    char *data;
-    RESOURCE *r;
+    char* data;
+    RESOURCE* r;
     int size;
 
     data = rcAlloc(size = strlen(fileName) + 1);
     strcpy(data, fileName);
-    
-    r= rcAlloc(sizeof(RESOURCE));
+
+    r = rcAlloc(sizeof(RESOURCE));
     r->itype = RESTYPE_DLGINCLUDE;
     r->u.data.length = size;
-    r->u.data.data = (BYTE *)data;
-    r->info =  *resinfo;
-    
-    AddResource(cd, (IDENT *)RESTYPE_DLGINCLUDE, r, id, resinfo
-        ->language_high, resinfo->language_low, fileName);
+    r->u.data.data = (BYTE*)data;
+    r->info = *resinfo;
 
+    AddResource(cd, (IDENT*)RESTYPE_DLGINCLUDE, r, id, resinfo->language_high, resinfo->language_low, fileName);
 }
 
 //-------------------------------------------------------------------------
 
-FONT *RCLoadFont(char *fileName)
+FONT* RCLoadFont(char* fileName)
 {
-    FILE *fil;
-    BYTE *data;
+    FILE* fil;
+    BYTE* data;
     int offset;
-    const char *device,  *face;
+    const char *device, *face;
     int size;
-    FONT *fd;
+    FONT* fd;
 
     fil = MySearchPath(fileName, rcSearchPath, "rb");
     if (!fil)
@@ -427,15 +416,13 @@ FONT *RCLoadFont(char *fileName)
 
     fclose(fil);
 
-    offset = ((((((data[47] << 8) | data[46]) << 8) | data[45]) << 8) |
-        data[44]);
+    offset = ((((((data[47] << 8) | data[46]) << 8) | data[45]) << 8) | data[44]);
     if (offset > 0 && offset < size)
         device = (char*)data + offset;
     else
         device = "";
 
-    offset = ((((((data[51] << 8) | data[50]) << 8) | data[49]) << 8) |
-        data[48]);
+    offset = ((((((data[51] << 8) | data[50]) << 8) | data[49]) << 8) | data[48]);
     if (offset > 0 && offset < size)
         face = (char*)data + offset;
     else
@@ -448,29 +435,28 @@ FONT *RCLoadFont(char *fileName)
     fd->face = rcStrdup(face);
     return fd;
 }
-static void CreateFontResource(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *resinfo, char *fileName)
+static void CreateFontResource(COMPILEDATA* cd, IDENT* id, CHARACTERISTICS* resinfo, char* fileName)
 {
-    RESOURCE *r;
-    FONT *fd = RCLoadFont(fileName);
-         
+    RESOURCE* r;
+    FONT* fd = RCLoadFont(fileName);
+
     r = rcAlloc(sizeof(RESOURCE));
     r->itype = RESTYPE_FONT;
     r->u.data.length = fd->length;
     r->u.font = fd;
-    r->info =  *resinfo;
+    r->info = *resinfo;
 
-    AddResource(cd, (IDENT *)RESTYPE_FONT, r, id, resinfo->language_high, resinfo->language_low, fileName);
-
+    AddResource(cd, (IDENT*)RESTYPE_FONT, r, id, resinfo->language_high, resinfo->language_low, fileName);
 }
 
 //-------------------------------------------------------------------------
 
-ICON *RCLoadIcon(char *fileName)
+ICON* RCLoadIcon(char* fileName)
 {
-    FILE *fil;
+    FILE* fil;
     int type, count, i;
-    ICONDATA *icons;
-    ICON *icon;
+    ICONDATA* icons;
+    ICON* icon;
 
     fil = MySearchPath(fileName, rcSearchPath, "rb");
     if (!fil)
@@ -512,34 +498,32 @@ ICON *RCLoadIcon(char *fileName)
         {
             fatal("Data file too short");
         }
-            
+
         fseek(fil, t, SEEK_SET);
         if (feof(fil))
             fatal("Data too short in %s", fileName);
-    } 
+    }
     fclose(fil);
     return icon;
 }
-static void CreateIconResource(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *resinfo, char *fileName)
+static void CreateIconResource(COMPILEDATA* cd, IDENT* id, CHARACTERISTICS* resinfo, char* fileName)
 {
-    ICON *icon = RCLoadIcon(fileName);
-    RESOURCE *r;
+    ICON* icon = RCLoadIcon(fileName);
+    RESOURCE* r;
 
     r = rcAlloc(sizeof(RESOURCE));
     r->itype = RESTYPE_ICON;
     r->u.icon = icon;
-    r->info =  *resinfo;
-    AddResource(cd, (IDENT *)RESTYPE_ICON, r, id, resinfo
-        ->language_high, resinfo->language_low, fileName);
+    r->info = *resinfo;
+    AddResource(cd, (IDENT*)RESTYPE_ICON, r, id, resinfo->language_high, resinfo->language_low, fileName);
 }
 
 //-------------------------------------------------------------------------
 
-static void CreateMenuResource(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *resinfo, MENUITEM *menuitems,
-                               int extended)
+static void CreateMenuResource(COMPILEDATA* cd, IDENT* id, CHARACTERISTICS* resinfo, MENUITEM* menuitems, int extended)
 {
-    MENU *m;
-    RESOURCE *r;
+    MENU* m;
+    RESOURCE* r;
 
     m = rcAlloc(sizeof *m);
     m->items = menuitems;
@@ -549,14 +533,14 @@ static void CreateMenuResource(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *resi
     r->itype = RESTYPE_MENU;
     r->extended = extended;
     r->u.menu = m;
-    r->info =  *resinfo;
-    AddResource(cd, (IDENT *)RESTYPE_MENU, r, id, resinfo->language_high, resinfo->language_low, 0);
-} 
+    r->info = *resinfo;
+    AddResource(cd, (IDENT*)RESTYPE_MENU, r, id, resinfo->language_high, resinfo->language_low, 0);
+}
 
-BYTE *RCLoadMessageTable(char *fileName, int *size)
+BYTE* RCLoadMessageTable(char* fileName, int* size)
 {
-    FILE *fil;
-    BYTE *data;
+    FILE* fil;
+    BYTE* data;
 
     fil = MySearchPath(fileName, rcSearchPath, "rb");
     if (!fil)
@@ -575,10 +559,10 @@ BYTE *RCLoadMessageTable(char *fileName, int *size)
     return data;
 }
 
-static void CreateMessageTableResource(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *resinfo, char *fileName)
+static void CreateMessageTableResource(COMPILEDATA* cd, IDENT* id, CHARACTERISTICS* resinfo, char* fileName)
 {
-    BYTE *data;
-    RESOURCE *r;
+    BYTE* data;
+    RESOURCE* r;
     int size;
 
     data = RCLoadMessageTable(fileName, &size);
@@ -586,28 +570,27 @@ static void CreateMessageTableResource(COMPILEDATA *cd, IDENT *id, CHARACTERISTI
     r->itype = RESTYPE_MESSAGETABLE;
     r->u.data.length = size;
     r->u.data.data = data;
-    r->info =  *resinfo;
-    AddResource(cd, (IDENT *)RESTYPE_MESSAGETABLE, r, id, resinfo->language_high, resinfo->language_low, fileName);
-
+    r->info = *resinfo;
+    AddResource(cd, (IDENT*)RESTYPE_MESSAGETABLE, r, id, resinfo->language_high, resinfo->language_low, fileName);
 }
 
 //-------------------------------------------------------------------------
 
-static void CreateRCDataResource(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *resinfo, RCDATA *data)
+static void CreateRCDataResource(COMPILEDATA* cd, IDENT* id, CHARACTERISTICS* resinfo, RCDATA* data)
 {
-    RESOURCE *r;
+    RESOURCE* r;
 
     r = rcAlloc(sizeof(RESOURCE));
     r->itype = RESTYPE_RCDATA;
     r->u.rcdata = data;
-    r->info =  *resinfo;
-    AddResource(cd, (IDENT *)RESTYPE_RCDATA, r, id, resinfo->language_high, resinfo->language_low, 0);
-} 
+    r->info = *resinfo;
+    AddResource(cd, (IDENT*)RESTYPE_RCDATA, r, id, resinfo->language_high, resinfo->language_low, 0);
+}
 
-static RCDATA *CreateRCDataResourceString(char *string, int len)
+static RCDATA* CreateRCDataResourceString(char* string, int len)
 {
-    RCDATA *ri;
-    char *s;
+    RCDATA* ri;
+    char* s;
 
     ri = rcAlloc(sizeof *ri);
     ri->next = NULL;
@@ -615,14 +598,14 @@ static RCDATA *CreateRCDataResourceString(char *string, int len)
     ri->u.string.length = len;
     s = rcAlloc(len);
     memcpy(s, string, len);
-    ri->u.string.s = (BYTE *)s;
+    ri->u.string.s = (BYTE*)s;
 
     return ri;
-} 
+}
 
-static RCDATA *CreateRCDataResourceNumber(int val, int dword)
+static RCDATA* CreateRCDataResourceNumber(int val, int dword)
 {
-    RCDATA *ri;
+    RCDATA* ri;
 
     ri = rcAlloc(sizeof *ri);
     ri->next = NULL;
@@ -630,26 +613,23 @@ static RCDATA *CreateRCDataResourceNumber(int val, int dword)
     ri->u.dword = val;
 
     return ri;
-} 
+}
 
-static void CreateStringTableResource(COMPILEDATA *cd, IDENT *id,
-                                      CHARACTERISTICS *resinfo, STRINGS *strings)
+static void CreateStringTableResource(COMPILEDATA* cd, IDENT* id, CHARACTERISTICS* resinfo, STRINGS* strings)
 {
-    RESOURCE *r;
+    RESOURCE* r;
     r = rcAlloc(sizeof(RESOURCE));
     r->itype = RESTYPE_STRING;
     r->u.stringtable = strings;
     r->info = *resinfo;
-    AddResource(cd, (IDENT *)RESTYPE_STRING, r, id, resinfo->language_high, resinfo->language_low, 0);
-
+    AddResource(cd, (IDENT*)RESTYPE_STRING, r, id, resinfo->language_high, resinfo->language_low, 0);
 }
 
-static void CreateUserFileResource(COMPILEDATA *cd, IDENT *id, IDENT *type, CHARACTERISTICS *resinfo, char
-    *fileName)
+static void CreateUserFileResource(COMPILEDATA* cd, IDENT* id, IDENT* type, CHARACTERISTICS* resinfo, char* fileName)
 {
-    FILE *fil;
-    BYTE *data;
-    RESOURCE *r;
+    FILE* fil;
+    BYTE* data;
+    RESOURCE* r;
     int size, xsize;
 
     fil = MySearchPath(fileName, rcSearchPath, "rb");
@@ -676,33 +656,32 @@ static void CreateUserFileResource(COMPILEDATA *cd, IDENT *id, IDENT *type, CHAR
     r->u.rcdata->type = RCDATA_BUFFER;
     r->u.rcdata->u.buffer.length = size;
     r->u.rcdata->u.buffer.data = data;
-    r->info =  *resinfo;
+    r->info = *resinfo;
     AddResource(cd, type, r, id, resinfo->language_high, resinfo->language_low, fileName);
 }
 
 //-------------------------------------------------------------------------
 
-static void CreateVersionInfoResource(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info, struct fixed
-    *fixedverinfo, struct variable *verinfo)
+static void CreateVersionInfoResource(COMPILEDATA* cd, IDENT* id, CHARACTERISTICS* info, struct fixed* fixedverinfo,
+                                      struct variable* verinfo)
 {
-    RESOURCE *r;
+    RESOURCE* r;
 
     r = rcAlloc(sizeof(RESOURCE));
     r->itype = RESTYPE_VERSION;
     r->u.versioninfo = rcAlloc(sizeof(VERSIONINFO));
     r->u.versioninfo->fixed = fixedverinfo;
     r->u.versioninfo->var = verinfo;
-    r->info =  *info;
-    AddResource(cd, (IDENT *)RESTYPE_VERSION, r, id, info->language_high, info->language_low, 0);
-} 
-
+    r->info = *info;
+    AddResource(cd, (IDENT*)RESTYPE_VERSION, r, id, info->language_high, info->language_low, 0);
+}
 
 //-------------------------------------------------------------------------
 
-static void ReadResID(IDENT *id)
+static void ReadResID(IDENT* id)
 {
     int i;
-    EXPRESSION *p;
+    EXPRESSION* p;
     char buf[512];
     switch (lastst)
     {
@@ -734,13 +713,12 @@ static void ReadResID(IDENT *id)
         default:
             generror(ERR_RESOURCE_ID_EXPECTED, 0);
             break;
-
     }
 }
 
 //-------------------------------------------------------------------------
 
-static void ReadQuotedResID(IDENT *id)
+static void ReadQuotedResID(IDENT* id)
 {
     if (lastst == sconst)
     {
@@ -752,8 +730,8 @@ static void ReadQuotedResID(IDENT *id)
     {
         WCHAR buf[2048], *p = buf;
         WCHAR nbuf[2048];
-        EXPRESSION *expr = NULL;
-        char *idp = lastid;
+        EXPRESSION* expr = NULL;
+        char* idp = lastid;
         while (*idp)
             *p++ = *idp++;
         *p++ = '\n';
@@ -772,9 +750,9 @@ static void ReadQuotedResID(IDENT *id)
             getch();
             cantnewline = FALSE;
             id->origName = WStrDup(nbuf);
-//            StringAsciiToWChar(&id->origName, nbuf, wcslen(nbuf));
+            //            StringAsciiToWChar(&id->origName, nbuf, wcslen(nbuf));
             return;
-        }        
+        }
         generror(ERR_INVALIDCLASS, 0);
     }
     else if (is_number())
@@ -787,7 +765,7 @@ static void ReadQuotedResID(IDENT *id)
 
 //-------------------------------------------------------------------------
 
-static void ReadSecondaryCharacteristics(COMPILEDATA *cd, CHARACTERISTICS *info)
+static void ReadSecondaryCharacteristics(COMPILEDATA* cd, CHARACTERISTICS* info)
 {
     int done = FALSE;
     info->language_high = 0;
@@ -825,7 +803,7 @@ static void ReadSecondaryCharacteristics(COMPILEDATA *cd, CHARACTERISTICS *info)
 
 //-------------------------------------------------------------------------
 
-static void ReadMemflags(CHARACTERISTICS *info)
+static void ReadMemflags(CHARACTERISTICS* info)
 {
     int done = FALSE;
     while (!done)
@@ -864,10 +842,9 @@ static void ReadMemflags(CHARACTERISTICS *info)
 
 //-------------------------------------------------------------------------
 
-
 //-------------------------------------------------------------------------
 
-static int ReadString(WCHAR **string)
+static int ReadString(WCHAR** string)
 {
     int rv = 0;
     if (lastst == sconst)
@@ -882,10 +859,10 @@ static int ReadString(WCHAR **string)
 
 //-------------------------------------------------------------------------
 
-static void ParseAccelerator(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
+static void ParseAccelerator(COMPILEDATA* cd, IDENT* id, CHARACTERISTICS* info)
 {
     int mode;
-    ACCELERATOR *data,  **p = &data,  *x;
+    ACCELERATOR *data, **p = &data, *x;
     getsym();
     ReadMemflags(info);
     need_eol();
@@ -895,18 +872,18 @@ static void ParseAccelerator(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
     while (TRUE)
     {
         int done;
-        x =  *p = rcAlloc(sizeof(*data));
+        x = *p = rcAlloc(sizeof(*data));
         x->next = NULL;
         x->flags = 0;
         if (lastst == sconst)
         {
             if (laststr[0] == '^')
-                x->skey = laststr[1] &0x1f;
+                x->skey = laststr[1] & 0x1f;
             else
                 x->skey = laststr[0];
             mode = 1;
             getsym();
-        } 
+        }
         else if (is_number())
         {
             x->key = ReadExp();
@@ -952,7 +929,6 @@ static void ParseAccelerator(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
         }
         need_eol();
         p = &(*p)->next;
-
     }
     *p = 0;
     need_end();
@@ -961,7 +937,7 @@ static void ParseAccelerator(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
 
 //-------------------------------------------------------------------------
 
-static void ParseBitmap(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
+static void ParseBitmap(COMPILEDATA* cd, IDENT* id, CHARACTERISTICS* info)
 {
     incconst = TRUE;
     defcheck(--lptr);
@@ -976,7 +952,7 @@ static void ParseBitmap(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
 
 //-------------------------------------------------------------------------
 
-static void ParseCursor(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
+static void ParseCursor(COMPILEDATA* cd, IDENT* id, CHARACTERISTICS* info)
 {
     incconst = TRUE;
     defcheck(--lptr);
@@ -1000,7 +976,7 @@ static void NotExDialogError(extended)
 
 //-------------------------------------------------------------------------
 
-static void ReadDialogSettings(COMPILEDATA *cd, DIALOG *dlg, CHARACTERISTICS *info, int extended)
+static void ReadDialogSettings(COMPILEDATA* cd, DIALOG* dlg, CHARACTERISTICS* info, int extended)
 {
     int done = FALSE;
     info->language_high = 0;
@@ -1070,7 +1046,7 @@ static void ReadDialogSettings(COMPILEDATA *cd, DIALOG *dlg, CHARACTERISTICS *in
             case kw_class:
                 getsym();
                 dlg->class = rcAlloc(sizeof(IDENT));
-                ReadQuotedResID(dlg->class );
+                ReadQuotedResID(dlg->class);
                 break;
             case kw_help:
                 getsym();
@@ -1093,24 +1069,25 @@ static void ReadDialogSettings(COMPILEDATA *cd, DIALOG *dlg, CHARACTERISTICS *in
         }
         if (!done)
         {
-                need_eol();
+            need_eol();
         }
     }
 }
 
 //-------------------------------------------------------------------------
 
-static void ParseExtendedControl(CONTROL *c, int extended)
+static void ParseExtendedControl(CONTROL* c, int extended)
 {
-        if (lastst != rceol)
-        {
-                c->exstyle = ReadExp();
-                skip_comma();
-        } if (lastst != rceol)
-        {
-                c->help = ReadExp();
-                skip_comma();
-        }
+    if (lastst != rceol)
+    {
+        c->exstyle = ReadExp();
+        skip_comma();
+    }
+    if (lastst != rceol)
+    {
+        c->help = ReadExp();
+        skip_comma();
+    }
 }
 
 //-------------------------------------------------------------------------
@@ -1118,9 +1095,9 @@ static int GetIdentString(void)
 {
     WCHAR buf[2048], *p = buf;
     WCHAR nbuf[2048];
-    char *id = lastid;
+    char* id = lastid;
     int rv = FALSE;
-    EXPRESSION *expr = NULL;
+    EXPRESSION* expr = NULL;
     while (*id)
         *p++ = *id++;
     *p++ = '\n';
@@ -1140,9 +1117,8 @@ static int GetIdentString(void)
         cantnewline = FALSE;
     }
     return rv;
-    
 }
-int StrToClass(char *str)
+int StrToClass(char* str)
 {
     int v;
     if (!stricmp(str, "button"))
@@ -1161,88 +1137,88 @@ int StrToClass(char *str)
         v = 0;
     return v;
 }
-static void SetClass(CONTROL *c, int st)
+static void SetClass(CONTROL* c, int st)
 {
-        int v = 0;
-        int found = TRUE;
-        switch (st)
+    int v = 0;
+    int found = TRUE;
+    switch (st)
+    {
+        case kw_auto3state:
+        case kw_autocheckbox:
+        case kw_autoradiobutton:
+        case kw_checkbox:
+        case kw_pushbutton:
+        case kw_radiobutton:
+        case kw_defpushbutton:
+        case kw_state3:
+            v = CTL_BUTTON;
+            break;
+        case kw_combobox:
+            v = CTL_COMBOBOX;
+            break;
+        case kw_ctext:
+        case kw_ltext:
+        case kw_rtext:
+        case kw_icon:
+            v = CTL_STATIC;
+            break;
+        case kw_edittext:
+            v = CTL_EDIT;
+            break;
+        case kw_groupbox:
+            v = CTL_BUTTON;
+            break;
+        case kw_listbox:
+            v = CTL_LISTBOX;
+            break;
+        case kw_scrollbar:
+            v = CTL_SCROLLBAR;
+            break;
+        case ident:
         {
-                case kw_auto3state:
-                case kw_autocheckbox:
-                case kw_autoradiobutton:
-                case kw_checkbox:
-                case kw_pushbutton:
-                case kw_radiobutton:
-                case kw_defpushbutton:
-                case kw_state3:
-                    v = CTL_BUTTON;
-                    break;
-                case kw_combobox:
-                    v = CTL_COMBOBOX;
-                    break;
-                case kw_ctext:
-                case kw_ltext:
-                case kw_rtext:
-                case kw_icon:
-                    v = CTL_STATIC;
-                    break;
-                case kw_edittext:
-                    v = CTL_EDIT;
-                    break;
-                case kw_groupbox:
-                    v = CTL_BUTTON;
-                    break;
-                case kw_listbox:
-                    v = CTL_LISTBOX;
-                    break;
-                case kw_scrollbar:
-                    v = CTL_SCROLLBAR;
-                    break;
-                case ident:
-                {
-                    ReadQuotedResID(&c->class);
-                    if (c->class.symbolic)
-                    {
-                        char buf[256], *p = buf;
-                        WCHAR *q;
-                        q = c->class.u.n.symbol;
-                        while (*q)
-                            *p++ = (char) *q++;
-                        *p = 0;
-                        v = StrToClass(buf);
-                        if (!v)
-                            return;
-                        rcFree(c->class.u.n.symbol);
-                        c->class.u.n.symbol = NULL;
-                    }                    
-                    break;
-                }
-                case sconst:
-                {
-                    v = StrToClass(laststr);
-                    if (!v)
-                    {
-                            c->class.symbolic = TRUE;
-                            c->class.u.n.length = StringAsciiToWChar(&c->class.u.n.symbol, laststr, laststrlen);
-                            return ;
-                    }
-                    break;
-                }
+            ReadQuotedResID(&c->class);
+            if (c->class.symbolic)
+            {
+                char buf[256], *p = buf;
+                WCHAR* q;
+                q = c->class.u.n.symbol;
+                while (*q)
+                    *p++ = (char)*q++;
+                *p = 0;
+                v = StrToClass(buf);
+                if (!v)
+                    return;
+                rcFree(c->class.u.n.symbol);
+                c->class.u.n.symbol = NULL;
+            }
+            break;
         }
-        if (!v)
-            generror(ERR_UNKNOWN_DIALOG_CONTROL_CLASS, 0);
-        else
+        case sconst:
         {
-                c->class.symbolic = FALSE;
-                c->class.u.id = rcAlloc(sizeof(EXPRESSION));
-                c->class.u.id->type = e_int;
-                c->class.u.id->val = v;
+            v = StrToClass(laststr);
+            if (!v)
+            {
+                c->class.symbolic = TRUE;
+                c->class.u.n.length = StringAsciiToWChar(&c->class.u.n.symbol, laststr, laststrlen);
+                return;
+            }
+            break;
         }
+    }
+    if (!v)
+        generror(ERR_UNKNOWN_DIALOG_CONTROL_CLASS, 0);
+    else
+    {
+        c->class.symbolic = FALSE;
+        c->class.u.id = rcAlloc(sizeof(EXPRESSION));
+        c->class.u.id->type = e_int;
+        c->class.u.id->val = v;
+    }
 }
 
 //-------------------------------------------------------------------------
 
-static void ParseGenericControl(CONTROL *c, int extended)
+static void ParseGenericControl(CONTROL* c, int extended)
 {
     c->generic = TRUE;
     getsym();
@@ -1265,171 +1241,152 @@ static void ParseGenericControl(CONTROL *c, int extended)
     c->height = ReadExp();
     skip_comma();
     ParseExtendedControl(c, extended);
-} 
-static void ParseStandardControl(CONTROL *c, int class , int style,
-    int extended, int text)
+}
+static void ParseStandardControl(CONTROL* c, int class, int style, int extended, int text)
 {
-        int st = lastst;
-        c->generic = FALSE;
-        c->baseStyle = style;
-        SetClass(c, st = lastst);
-        getsym();
-        if (text)
-        {
-                c->text = rcAlloc(sizeof(IDENT));
-                ReadQuotedResID(c->text);
-                skip_comma();
-        } 
-        else if (class == CTL_EDIT)
-        {
-            c->text = rcAlloc(sizeof(IDENT));
-            c->text->symbolic = TRUE;
-            c->text->u.n.length = 8;
-            c->text->u.n.symbol = WStrDup(L"Edit Box");
-        }
-        c->id = ReadExp();
+    int st = lastst;
+    c->generic = FALSE;
+    c->baseStyle = style;
+    SetClass(c, st = lastst);
+    getsym();
+    if (text)
+    {
+        c->text = rcAlloc(sizeof(IDENT));
+        ReadQuotedResID(c->text);
         skip_comma();
-        c->x = ReadExp();
+    }
+    else if (class == CTL_EDIT)
+    {
+        c->text = rcAlloc(sizeof(IDENT));
+        c->text->symbolic = TRUE;
+        c->text->u.n.length = 8;
+        c->text->u.n.symbol = WStrDup(L"Edit Box");
+    }
+    c->id = ReadExp();
+    skip_comma();
+    c->x = ReadExp();
+    skip_comma();
+    c->y = ReadExp();
+    skip_comma();
+    c->width = ReadExp();
+    skip_comma();
+    c->height = ReadExp();
+    skip_comma();
+    if (lastst != rceol)
+    {
+        c->style = ReadExp();
         skip_comma();
-        c->y = ReadExp();
-        skip_comma();
-        c->width = ReadExp();
-        skip_comma();
-        c->height = ReadExp();
-        skip_comma();
-        if (lastst != rceol)
-        {
-                c->style = ReadExp();
-                skip_comma();
-        }
-        ParseExtendedControl(c, extended);
+    }
+    ParseExtendedControl(c, extended);
 }
 
 //-------------------------------------------------------------------------
 
-static int ParseControl(CONTROL * * * ctl, int extended)
+static int ParseControl(CONTROL*** ctl, int extended)
 {
-        int rv = FALSE;
-        CONTROL *c = rcAlloc(sizeof(CONTROL))
-            ;
-        memset(c, 0, sizeof(CONTROL));
-        c->prevLines = GetCachedLines();
-        switch (lastst)
-        {
-                case kw_auto3state:
-                    ParseStandardControl(c, CTL_BUTTON, BS_AUTO3STATE |
-                        WS_TABSTOP, extended, 1);
-                    break;
-                case kw_autocheckbox:
-                    ParseStandardControl(c, CTL_BUTTON, BS_AUTOCHECKBOX |
-                        WS_TABSTOP, extended, 1);
-                    break;
-                case kw_autoradiobutton:
-                    ParseStandardControl(c, CTL_BUTTON, BS_AUTORADIOBUTTON,
-                        extended, 1);
-                    break;
-                case kw_checkbox:
-                    ParseStandardControl(c, CTL_BUTTON, BS_CHECKBOX |
-                        WS_TABSTOP, extended, 1);
-                    break;
-                case kw_combobox:
-                    ParseStandardControl(c, CTL_COMBOBOX, WS_TABSTOP,
-                        extended, 0);
-                    break;
-                case kw_ctext:
-                    ParseStandardControl(c, CTL_STATIC, SS_CENTER | WS_GROUP,
-                        extended, 1);
-                    break;
-                case kw_defpushbutton:
-                    ParseStandardControl(c, CTL_BUTTON, BS_DEFPUSHBUTTON |
-                        WS_TABSTOP, extended, 1);
-                    break;
-                case kw_edittext:
-                    ParseStandardControl(c, CTL_EDIT, ES_LEFT | WS_BORDER |
-                        WS_TABSTOP, extended, 0);
-                    break;
-                case kw_groupbox:
-                    ParseStandardControl(c, CTL_STATIC, BS_GROUPBOX, extended,
-                        1);
-                    break;
-                case kw_icon:
-                    ParseStandardControl(c, CTL_STATIC, SS_ICON, extended, 1);
-                    break;
-                case kw_listbox:
-                    ParseStandardControl(c, CTL_LISTBOX, LBS_NOTIFY |
-                        WS_BORDER | WS_VSCROLL | WS_TABSTOP, extended, 0);
-                    break;
-                case kw_ltext:
-                    ParseStandardControl(c, CTL_STATIC, SS_LEFT | WS_GROUP,
-                        extended, 1);
-                    break;
-                case kw_pushbutton:
-                    ParseStandardControl(c, CTL_BUTTON, BS_PUSHBUTTON |
-                        WS_TABSTOP, extended, 1);
-                    break;
-                case kw_radiobutton:
-                    ParseStandardControl(c, CTL_BUTTON, BS_RADIOBUTTON,
-                        extended, 1);
-                    break;
-                case kw_rtext:
-                    ParseStandardControl(c, CTL_STATIC, SS_RIGHT | WS_GROUP,
-                        extended, 1);
-                    break;
-                case kw_scrollbar:
-                    ParseStandardControl(c, CTL_SCROLLBAR, SBS_HORZ, extended,
-                        0);
-                    break;
-                case kw_state3:
-                    ParseStandardControl(c, CTL_BUTTON, BS_3STATE |
-                        WS_TABSTOP, extended, 1);
-                    break;
-                case kw_control:
-                    ParseGenericControl(c, extended);
-                    break;
-                default:
-                    rv = TRUE;
-                    break;
-        }
-        if (!rv)
-        {
-                need_eol();
-                **ctl = c;
-                *ctl = &c->next;
-        }
-        return !rv;
-}
-
-//-------------------------------------------------------------------------
-
-static void ParseDialog(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info, int extended)
-{
-        DIALOG *dialog = rcAlloc(sizeof(DIALOG));
-        CONTROL **p = &dialog->controls;
-        memset(dialog, 0, sizeof(*dialog));
-        dialog->style = 0; // WS_POPUPWINDOW ;
-        getsym();
-        ReadMemflags(info);
-        dialog->x = ReadExp();
-        skip_comma();
-        dialog->y = ReadExp();
-        skip_comma();
-        dialog->width = ReadExp();
-        skip_comma();
-        dialog->height = ReadExp();
-        skip_comma();
+    int rv = FALSE;
+    CONTROL* c = rcAlloc(sizeof(CONTROL));
+    memset(c, 0, sizeof(CONTROL));
+    c->prevLines = GetCachedLines();
+    switch (lastst)
+    {
+        case kw_auto3state:
+            ParseStandardControl(c, CTL_BUTTON, BS_AUTO3STATE | WS_TABSTOP, extended, 1);
+            break;
+        case kw_autocheckbox:
+            ParseStandardControl(c, CTL_BUTTON, BS_AUTOCHECKBOX | WS_TABSTOP, extended, 1);
+            break;
+        case kw_autoradiobutton:
+            ParseStandardControl(c, CTL_BUTTON, BS_AUTORADIOBUTTON, extended, 1);
+            break;
+        case kw_checkbox:
+            ParseStandardControl(c, CTL_BUTTON, BS_CHECKBOX | WS_TABSTOP, extended, 1);
+            break;
+        case kw_combobox:
+            ParseStandardControl(c, CTL_COMBOBOX, WS_TABSTOP, extended, 0);
+            break;
+        case kw_ctext:
+            ParseStandardControl(c, CTL_STATIC, SS_CENTER | WS_GROUP, extended, 1);
+            break;
+        case kw_defpushbutton:
+            ParseStandardControl(c, CTL_BUTTON, BS_DEFPUSHBUTTON | WS_TABSTOP, extended, 1);
+            break;
+        case kw_edittext:
+            ParseStandardControl(c, CTL_EDIT, ES_LEFT | WS_BORDER | WS_TABSTOP, extended, 0);
+            break;
+        case kw_groupbox:
+            ParseStandardControl(c, CTL_STATIC, BS_GROUPBOX, extended, 1);
+            break;
+        case kw_icon:
+            ParseStandardControl(c, CTL_STATIC, SS_ICON, extended, 1);
+            break;
+        case kw_listbox:
+            ParseStandardControl(c, CTL_LISTBOX, LBS_NOTIFY | WS_BORDER | WS_VSCROLL | WS_TABSTOP, extended, 0);
+            break;
+        case kw_ltext:
+            ParseStandardControl(c, CTL_STATIC, SS_LEFT | WS_GROUP, extended, 1);
+            break;
+        case kw_pushbutton:
+            ParseStandardControl(c, CTL_BUTTON, BS_PUSHBUTTON | WS_TABSTOP, extended, 1);
+            break;
+        case kw_radiobutton:
+            ParseStandardControl(c, CTL_BUTTON, BS_RADIOBUTTON, extended, 1);
+            break;
+        case kw_rtext:
+            ParseStandardControl(c, CTL_STATIC, SS_RIGHT | WS_GROUP, extended, 1);
+            break;
+        case kw_scrollbar:
+            ParseStandardControl(c, CTL_SCROLLBAR, SBS_HORZ, extended, 0);
+            break;
+        case kw_state3:
+            ParseStandardControl(c, CTL_BUTTON, BS_3STATE | WS_TABSTOP, extended, 1);
+            break;
+        case kw_control:
+            ParseGenericControl(c, extended);
+            break;
+        default:
+            rv = TRUE;
+            break;
+    }
+    if (!rv)
+    {
         need_eol();
-        ReadDialogSettings(cd, dialog, info, extended);
-        need_begin();
-        while (ParseControl(&p, extended))
-            ;
-        need_end();
-        CreateDialogResource(cd, id, info, dialog, extended);
-
+        **ctl = c;
+        *ctl = &c->next;
+    }
+    return !rv;
 }
 
 //-------------------------------------------------------------------------
 
-static void ParseDlgInclude(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
+static void ParseDialog(COMPILEDATA* cd, IDENT* id, CHARACTERISTICS* info, int extended)
+{
+    DIALOG* dialog = rcAlloc(sizeof(DIALOG));
+    CONTROL** p = &dialog->controls;
+    memset(dialog, 0, sizeof(*dialog));
+    dialog->style = 0;  // WS_POPUPWINDOW ;
+    getsym();
+    ReadMemflags(info);
+    dialog->x = ReadExp();
+    skip_comma();
+    dialog->y = ReadExp();
+    skip_comma();
+    dialog->width = ReadExp();
+    skip_comma();
+    dialog->height = ReadExp();
+    skip_comma();
+    need_eol();
+    ReadDialogSettings(cd, dialog, info, extended);
+    need_begin();
+    while (ParseControl(&p, extended))
+        ;
+    need_end();
+    CreateDialogResource(cd, id, info, dialog, extended);
+}
+
+//-------------------------------------------------------------------------
+
+static void ParseDlgInclude(COMPILEDATA* cd, IDENT* id, CHARACTERISTICS* info)
 {
     incconst = TRUE;
     defcheck(--lptr);
@@ -1444,7 +1401,7 @@ static void ParseDlgInclude(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
 
 //-------------------------------------------------------------------------
 
-static void ParseFont(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
+static void ParseFont(COMPILEDATA* cd, IDENT* id, CHARACTERISTICS* info)
 {
     incconst = TRUE;
     defcheck(--lptr);
@@ -1459,7 +1416,7 @@ static void ParseFont(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
 
 //-------------------------------------------------------------------------
 
-static void ParseIcon(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
+static void ParseIcon(COMPILEDATA* cd, IDENT* id, CHARACTERISTICS* info)
 {
     incconst = TRUE;
     defcheck(--lptr);
@@ -1474,65 +1431,65 @@ static void ParseIcon(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
 
 //-------------------------------------------------------------------------
 
-static void ReadMenuFlags(MENUITEM *m)
+static void ReadMenuFlags(MENUITEM* m)
 {
-        int done = FALSE;
-        while (!done)
+    int done = FALSE;
+    while (!done)
+    {
+        switch (lastst)
         {
-                switch (lastst)
-                {
-                        case kw_grayed:
-                            m->flags |= MI_GRAYED;
-                            break;
-                        case kw_inactive:
-                            m->flags |= MI_INACTIVE;
-                            break;
-                        case kw_checked:
-                            m->flags |= MI_CHECKED;
-                            break;
-                        case kw_menubarbreak:
-                            m->flags |= MI_MENUBARBREAK;
-                            break;
-                        case kw_menubreak:
-                            m->flags |= MI_MENUBREAK;
-                            break;
-                        case kw_help:
-                            m->flags |= MI_HELP;
-                            break;
-                        case kw_separator:
-                            m->flags |= MI_SEPARATOR ;
-                            break;
-                        default:
-                            done = TRUE;
-                            break;
-                }
-                if (!done)
-                {
-                        getsym();
-                        skip_comma();
-                }
-                else
-                {
-                    skip_comma();
-                    if (lastst != rceol)
-                    {
-                        m->state = ReadExp();
-                        skip_comma();
-                    }
-                }
+            case kw_grayed:
+                m->flags |= MI_GRAYED;
+                break;
+            case kw_inactive:
+                m->flags |= MI_INACTIVE;
+                break;
+            case kw_checked:
+                m->flags |= MI_CHECKED;
+                break;
+            case kw_menubarbreak:
+                m->flags |= MI_MENUBARBREAK;
+                break;
+            case kw_menubreak:
+                m->flags |= MI_MENUBREAK;
+                break;
+            case kw_help:
+                m->flags |= MI_HELP;
+                break;
+            case kw_separator:
+                m->flags |= MI_SEPARATOR;
+                break;
+            default:
+                done = TRUE;
+                break;
         }
+        if (!done)
+        {
+            getsym();
+            skip_comma();
+        }
+        else
+        {
+            skip_comma();
+            if (lastst != rceol)
+            {
+                m->state = ReadExp();
+                skip_comma();
+            }
+        }
+    }
 }
 
 //-------------------------------------------------------------------------
 
-static void ReadMenuList(MENUITEM * * * i, int extended)
+static void ReadMenuList(MENUITEM*** i, int extended)
 {
-    MENUITEM **p;
+    MENUITEM** p;
     int done = FALSE;
     need_begin();
     while (!done)
     {
-        MENUITEM *m = rcAlloc(sizeof(MENUITEM));
+        MENUITEM* m = rcAlloc(sizeof(MENUITEM));
         memset(m, 0, sizeof(*m));
         m->prevLines = GetCachedLines();
         switch (lastst)
@@ -1541,10 +1498,9 @@ static void ReadMenuList(MENUITEM * * * i, int extended)
                 getsym();
                 if (lastst == sconst)
                 {
-                        StringAsciiToWChar(&m->text, laststr,
-                            laststrlen);
-                        getsym();
-                        skip_comma();
+                    StringAsciiToWChar(&m->text, laststr, laststrlen);
+                    getsym();
+                    skip_comma();
                 }
                 if (is_number())
                     m->id = ReadExp();
@@ -1553,7 +1509,7 @@ static void ReadMenuList(MENUITEM * * * i, int extended)
                     ReadMenuFlags(m);
                 else if (lastst != rceol)
                 {
-                    if( is_number())
+                    if (is_number())
                         m->type = ReadExp();
                     if (Eval(m->type) & MFT_SEPARATOR)
                         m->text = NULL;
@@ -1576,8 +1532,7 @@ static void ReadMenuList(MENUITEM * * * i, int extended)
                 getsym();
                 if (lastst == sconst)
                 {
-                    StringAsciiToWChar(&m->text, laststr,
-                        laststrlen);
+                    StringAsciiToWChar(&m->text, laststr, laststrlen);
                     getsym();
                     skip_comma();
                 }
@@ -1624,11 +1579,10 @@ static void ReadMenuList(MENUITEM * * * i, int extended)
     if (lastst != end && lastst != kw_end)
         generror(ERR_END_EXPECTED, 0);
     getsym();
-
 }
-static void ParseMenu(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info, int extended)
+static void ParseMenu(COMPILEDATA* cd, IDENT* id, CHARACTERISTICS* info, int extended)
 {
-    MENUITEM *s = 0,  **p = &s;
+    MENUITEM *s = 0, **p = &s;
     getsym();
     ReadMemflags(info);
     need_eol();
@@ -1637,12 +1591,11 @@ static void ParseMenu(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info, int ext
 
     need_eol();
     CreateMenuResource(cd, id, info, s, extended);
-
 }
-static void ParseRC(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
+static void ParseRC(COMPILEDATA* cd, IDENT* id, CHARACTERISTICS* info)
 {
     int done = FALSE;
-    RCDATA *r = 0,  **p = &r;
+    RCDATA *r = 0, **p = &r;
     defcheck(--lptr);
     getch();
     getsym();
@@ -1651,7 +1604,7 @@ static void ParseRC(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
     {
         ReadFileName();
         need_eol();
-        CreateUserFileResource(cd, id, (IDENT *)RESTYPE_RCDATA, info, laststr);
+        CreateUserFileResource(cd, id, (IDENT*)RESTYPE_RCDATA, info, laststr);
         return;
     }
     need_eol();
@@ -1690,7 +1643,7 @@ static void ParseRC(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
     need_end();
     CreateRCDataResource(cd, id, info, r);
 }
-static void ParseMessageTable(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
+static void ParseMessageTable(COMPILEDATA* cd, IDENT* id, CHARACTERISTICS* info)
 {
     incconst = TRUE;
     defcheck(--lptr);
@@ -1702,7 +1655,7 @@ static void ParseMessageTable(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
     CreateMessageTableResource(cd, id, info, laststr);
     incconst = FALSE;
 }
-static void ParseStringTable(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
+static void ParseStringTable(COMPILEDATA* cd, IDENT* id, CHARACTERISTICS* info)
 {
     STRINGS *strings = NULL, **next = &strings;
     incconst = TRUE;
@@ -1714,7 +1667,7 @@ static void ParseStringTable(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
     need_begin();
     while (is_number())
     {
-        EXPRESSION *val;
+        EXPRESSION* val;
         defcheck(lptr);
         val = ReadExp();
         skip_comma();
@@ -1731,13 +1684,12 @@ static void ParseStringTable(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
     need_end();
     incconst = FALSE;
 }
-static void ParseVersionInfo(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
+static void ParseVersionInfo(COMPILEDATA* cd, IDENT* id, CHARACTERISTICS* info)
 {
     int val, val1;
     int done = 0, did1 = 0;
-    struct fixed *fixedverinfo = rcAlloc(sizeof
-        (struct fixed));
-    struct variable *verinfo = 0,  **verinfop = &verinfo;
+    struct fixed* fixedverinfo = rcAlloc(sizeof(struct fixed));
+    struct variable *verinfo = 0, **verinfop = &verinfo;
     getsym();
     info->memflags = MF_PURE | MF_MOVEABLE;
     while (!done)
@@ -1751,7 +1703,7 @@ static void ParseVersionInfo(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
                 if (lastst == comma)
                 {
                     getsym();
-                    val |= intexpr() &0xffff;
+                    val |= intexpr() & 0xffff;
                     if (lastst == comma)
                     {
                         getsym();
@@ -1759,7 +1711,7 @@ static void ParseVersionInfo(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
                         if (lastst == comma)
                         {
                             getsym();
-                            val1 |= intexpr() &0xffff;
+                            val1 |= intexpr() & 0xffff;
                         }
                     }
                 }
@@ -1772,7 +1724,7 @@ static void ParseVersionInfo(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
                 if (lastst == comma)
                 {
                     getsym();
-                    val |= intexpr() &0xffff;
+                    val |= intexpr() & 0xffff;
                     if (lastst == comma)
                     {
                         getsym();
@@ -1780,7 +1732,7 @@ static void ParseVersionInfo(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
                         if (lastst == comma)
                         {
                             getsym();
-                            val1 |= intexpr() &0xffff;
+                            val1 |= intexpr() & 0xffff;
                         }
                     }
                 }
@@ -1830,7 +1782,7 @@ static void ParseVersionInfo(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
             generror(ERR_INVALID_VERSION_INFO_TYPE, 0);
         if (!strcmp(laststr, "StringFileInfo"))
         {
-            struct ver_stringinfo **current;
+            struct ver_stringinfo** current;
             getsym();
             need_eol();
             need_begin();
@@ -1849,8 +1801,7 @@ static void ParseVersionInfo(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
                 getsym();
                 if (lastst != sconst)
                     generror(ERR_STRING_EXPECTED, 0);
-                *current = rcAlloc(sizeof(struct
-                    ver_stringinfo));
+                *current = rcAlloc(sizeof(struct ver_stringinfo));
                 ReadString(&(*current)->key);
                 if (lastst != comma)
                     generror(ERR_NEEDCHAR, ',');
@@ -1858,17 +1809,18 @@ static void ParseVersionInfo(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
                 (*current)->length = laststrlen;
                 if (lastst != sconst)
                     generror(ERR_STRING_EXPECTED, 0);
-                (*current)->value = rcAlloc(laststrlen *2+2);
+                (*current)->value = rcAlloc(laststrlen * 2 + 2);
                 for (val = 0; val < laststrlen; val++)
                     (*current)->value[val] = laststr[val];
                 getsym();
                 need_eol();
                 current = &(*current)->next;
-            } need_end();
+            }
+            need_end();
         }
         else if (!strcmp(laststr, "VarFileInfo"))
         {
-            struct ver_varinfo **current;
+            struct ver_varinfo** current;
             getsym();
             need_eol();
             need_begin();
@@ -1877,10 +1829,9 @@ static void ParseVersionInfo(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
             current = &((*verinfop)->u.var.var);
             while (lastst == kw_value)
             {
-                struct ver_varlangchar **cur1;
+                struct ver_varlangchar** cur1;
                 defcheck(lptr);
-                *current = rcAlloc(sizeof(struct ver_varinfo)
-                    );
+                *current = rcAlloc(sizeof(struct ver_varinfo));
                 getsym();
                 ReadString(&(*current)->key);
                 if (lastst != comma)
@@ -1889,8 +1840,7 @@ static void ParseVersionInfo(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
                 cur1 = &(*current)->intident;
                 while (TRUE)
                 {
-                    *cur1 = rcAlloc(sizeof(struct
-                        ver_varlangchar));
+                    *cur1 = rcAlloc(sizeof(struct ver_varlangchar));
                     (*cur1)->language = ReadExp();
                     if (lastst == comma)
                     {
@@ -1900,12 +1850,12 @@ static void ParseVersionInfo(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
                         {
                             getsym();
                         }
-                        else 
+                        else
                         {
                             break;
                         }
                     }
-                    else 
+                    else
                     {
                         break;
                     }
@@ -1918,18 +1868,16 @@ static void ParseVersionInfo(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
         else
             generror(ERR_INVALID_VERSION_INFO_TYPE, 0);
 
-
         verinfop = &(*verinfop)->next;
         need_end();
-
     }
     need_end();
     CreateVersionInfoResource(cd, id, info, fixedverinfo, verinfo);
 }
-static void ParseSpecial(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
+static void ParseSpecial(COMPILEDATA* cd, IDENT* id, CHARACTERISTICS* info)
 {
     IDENT type;
-    memset(&type, 0 ,sizeof(IDENT));
+    memset(&type, 0, sizeof(IDENT));
     incconst = TRUE;
     ReadResID(&type);
     defcheck(--lptr);
@@ -1940,7 +1888,7 @@ static void ParseSpecial(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
     CreateUserFileResource(cd, id, &type, info, laststr);
     incconst = FALSE;
 }
-static void Parse(COMPILEDATA *cd)
+static void Parse(COMPILEDATA* cd)
 {
     IDENT id;
     CHARACTERISTICS info;
@@ -1971,10 +1919,9 @@ static void Parse(COMPILEDATA *cd)
                 {
                     if (st >= kw_accelerator && st < rceol)
                     {
-                        char *s = namefromkw(st);
+                        char* s = namefromkw(st);
                         id.symbolic = 1;
-                        id.u.n.length = StringAsciiToWChar(&id.u.n.symbol, s,
-                            strlen(s));
+                        id.u.n.length = StringAsciiToWChar(&id.u.n.symbol, s, strlen(s));
                     }
                     else
                         backup(st);
@@ -2053,51 +2000,44 @@ static void Parse(COMPILEDATA *cd)
                 generror(ERR_UNKNOWN_RESOURCE_TYPE, 0);
                 break;
         }
-
     }
 }
-void FreeResources(RESOURCE_DATA *r)
+void FreeResources(RESOURCE_DATA* r) { HeapDestroy(r->memHeap); }
+void SetRCMallocScope(RESOURCE_DATA* r) { memHeap = r->memHeap; }
+static void SelectControlIdBase(RESOURCE_DATA* select)
 {
-    HeapDestroy(r->memHeap);
-}
-void SetRCMallocScope(RESOURCE_DATA *r)
-{
-    memHeap = r->memHeap;
-}
-static void SelectControlIdBase(RESOURCE_DATA *select)
-{
-    RESOURCE *res;
+    RESOURCE* res;
     select->nextControlId = 1;
     for (res = select->resources; res; res = res->next)
     {
         if (res->itype == RESTYPE_DIALOG)
         {
-            CONTROL *controls = res->u.dialog->controls;
+            CONTROL* controls = res->u.dialog->controls;
             while (controls)
             {
                 int n = Eval(controls->id);
                 if (n >= select->nextControlId)
-                    select->nextControlId = n+1;
+                    select->nextControlId = n + 1;
                 controls = controls->next;
             }
         }
     }
 }
-static void RecurseMenuIdBase(RESOURCE_DATA *select, MENUITEM *items)
+static void RecurseMenuIdBase(RESOURCE_DATA* select, MENUITEM* items)
 {
     while (items)
     {
         int n = Eval(items->id);
         if (n >= select->nextMenuId)
-            select->nextMenuId = n+1;
+            select->nextMenuId = n + 1;
         if (items->popup)
             RecurseMenuIdBase(select, items->popup);
         items = items->next;
     }
 }
-static void SelectMenuIdBase(RESOURCE_DATA *select)
+static void SelectMenuIdBase(RESOURCE_DATA* select)
 {
-    RESOURCE *res;
+    RESOURCE* res;
     select->nextMenuId = 10000;
     for (res = select->resources; res; res = res->next)
     {
@@ -2107,9 +2047,9 @@ static void SelectMenuIdBase(RESOURCE_DATA *select)
         }
     }
 }
-static void SelectResourceIdBase(RESOURCE_DATA *select)
+static void SelectResourceIdBase(RESOURCE_DATA* select)
 {
-    RESOURCE *res;
+    RESOURCE* res;
     select->nextResourceId = 10;
     for (res = select->resources; res; res = res->next)
     {
@@ -2117,52 +2057,50 @@ static void SelectResourceIdBase(RESOURCE_DATA *select)
         {
             int n = Eval(res->id.u.id);
             if (n >= select->nextResourceId)
-                select->nextResourceId = n+1;
+                select->nextResourceId = n + 1;
         }
     }
 }
-static void SelectStringIdBase(RESOURCE_DATA *select)
+static void SelectStringIdBase(RESOURCE_DATA* select)
 {
-    RESOURCE *res;
+    RESOURCE* res;
     select->nextStringId = 1000;
     for (res = select->resources; res; res = res->next)
     {
         if (res->itype == RESTYPE_STRING)
         {
-            STRINGS *strings = res->u.stringtable;
+            STRINGS* strings = res->u.stringtable;
             while (strings)
             {
                 int n = Eval(strings->id);
                 if (n >= select->nextStringId)
-                    select->nextStringId = n+1;
+                    select->nextStringId = n + 1;
                 strings = strings->next;
             }
         }
     }
 }
-static int GetIdVal(SYM *sym)
+static int GetIdVal(SYM* sym)
 {
     char buf[256];
-    DEFSTRUCT *d = (DEFSTRUCT *)sym->value.s;
-    StringWToA(buf, d->string,wcslen(d->string));
+    DEFSTRUCT* d = (DEFSTRUCT*)sym->value.s;
+    StringWToA(buf, d->string, wcslen(d->string));
     return atoi(buf);
 }
-static SYM * GetIds(RESOURCE_DATA *select, SYM *syms)
+static SYM* GetIds(RESOURCE_DATA* select, SYM* syms)
 {
-    SYM **curs = &syms;
+    SYM** curs = &syms;
     BOOL done = FALSE;
     // we are going to search for our special id #defines in any order
     // in case the user went happily editing them
-    while (*curs && (stricmp((*curs)->name, "__NEXT_CONTROL_ID")
-        && stricmp((*curs)->name, "__NEXT_MENU_ID") != 0
-        && stricmp((*curs)->name, "__NEXT_RESOURCE_ID") != 0
-        && stricmp((*curs)->name, "__NEXT_STRING_ID") != 0))
+    while (*curs && (stricmp((*curs)->name, "__NEXT_CONTROL_ID") && stricmp((*curs)->name, "__NEXT_MENU_ID") != 0 &&
+                     stricmp((*curs)->name, "__NEXT_RESOURCE_ID") != 0 && stricmp((*curs)->name, "__NEXT_STRING_ID") != 0))
     {
         curs = &(*curs)->xref;
     }
     if (*curs)
-    { 
-        SYM **begin = curs;
+    {
+        SYM** begin = curs;
         // ok found something, try to get the values
         while (!done && *curs)
         {
@@ -2170,8 +2108,8 @@ static SYM * GetIds(RESOURCE_DATA *select, SYM *syms)
             {
                 select->nextControlId = GetIdVal(*curs);
                 *curs = (*curs)->xref;
-                continue;            
-            }    
+                continue;
+            }
             if (!stricmp((*curs)->name, "__NEXT_MENU_ID"))
             {
                 select->nextMenuId = GetIdVal(*curs);
@@ -2192,8 +2130,7 @@ static SYM * GetIds(RESOURCE_DATA *select, SYM *syms)
             }
             done = TRUE;
         }
-        
-    }    
+    }
     // now if something was unspecified try to recover
     if (select->nextControlId == 0)
     {
@@ -2213,44 +2150,44 @@ static SYM * GetIds(RESOURCE_DATA *select, SYM *syms)
     }
     return syms;
 }
-RESOURCE_DATA *ReadResources(char *fileName)
+RESOURCE_DATA* ReadResources(char* fileName)
 {
     COMPILEDATA cd;
     rcIdFile = NULL;
     memset(&cd, 0, sizeof(cd));
     cd.resourcesTail = &cd.resources;
     memHeap = NULL;
-    
+
     if (setjmp(errjump))
     {
         cd.resources = NULL;
-    }    
+    }
     else
     {
-        symini() ;
-        preprocini() ;
-        initsym() ;
-        initerr() ;
-        kwini() ;
-        glbdefine("__CCDL__","");
-        glbdefine("__ORANGEC__","");
-        glbdefine("__386__","");
-        glbdefine("__i386__","");
-        glbdefine("RC_INVOKED","");
-        glbdefine("__IDE_RC_INVOKED","");
-        
+        symini();
+        preprocini();
+        initsym();
+        initerr();
+        kwini();
+        glbdefine("__CCDL__", "");
+        glbdefine("__ORANGEC__", "");
+        glbdefine("__386__", "");
+        glbdefine("__i386__", "");
+        glbdefine("RC_INVOKED", "");
+        glbdefine("__IDE_RC_INVOKED", "");
+
         errfile = infile = fileName;
         inputFile = fopen(fileName, "r");
         if (!inputFile)
             fatal("file %s not found", fileName);
         Parse(&cd);
     }
-	if (inputFile)
-	    fclose(inputFile);
-	inputFile = NULL;
+    if (inputFile)
+        fclose(inputFile);
+    inputFile = NULL;
     if (cd.resources)
     {
-        RESOURCE_DATA *rv = rcAlloc(sizeof(RESOURCE_DATA));
+        RESOURCE_DATA* rv = rcAlloc(sizeof(RESOURCE_DATA));
         rv->memHeap = memHeap;
         memHeap = NULL;
         rv->resources = cd.resources;

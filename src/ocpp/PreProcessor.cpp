@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "PreProcessor.h"
@@ -30,7 +30,7 @@
 #include <limits.h>
 
 bool asmMode = false;
-bool IsSymbolStartChar(const char *data)
+bool IsSymbolStartChar(const char* data)
 {
     if (asmMode)
     {
@@ -38,15 +38,15 @@ bool IsSymbolStartChar(const char *data)
     }
     else
     {
-        return *data == '_' || UTF8::IsAlpha(data);	
+        return *data == '_' || UTF8::IsAlpha(data);
     }
 }
-bool IsSymbolChar(const char *data)
+bool IsSymbolChar(const char* data)
 {
     if (asmMode)
     {
-        return *data == '_' || *data == '$' || *data == '#' || *data == '@' || *data == '~' ||
-            *data == '?' || *data == '.' || *data == '&' || UTF8::IsAlnum(data);
+        return *data == '_' || *data == '$' || *data == '#' || *data == '@' || *data == '~' || *data == '?' || *data == '.' ||
+               *data == '&' || UTF8::IsAlnum(data);
     }
     else
     {
@@ -111,7 +111,7 @@ void PreProcessor::InitHash()
         hash["repl"] = REPL;
     }
 }
-bool PreProcessor::GetPreLine(std::string &line)
+bool PreProcessor::GetPreLine(std::string& line)
 {
     if (preData)
     {
@@ -153,7 +153,7 @@ std::string PreProcessor::StripDigraphs(std::string line)
         return line;
     std::string rv;
     int last = 0, cp;
-    for (cp=0; cp < line.size()-1; cp++)
+    for (cp = 0; cp < line.size() - 1; cp++)
     {
         int ch = 0;
         if (line[cp] == '<' && line[cp + 1] == ':')
@@ -178,7 +178,7 @@ std::string PreProcessor::StripDigraphs(std::string line)
         }
         if (ch)
         {
-            static char msg[2] = { 0, 0 };
+            static char msg[2] = {0, 0};
             msg[0] = ch;
             if (last != cp)
             {
@@ -198,7 +198,7 @@ std::string PreProcessor::StripDigraphs(std::string line)
     return rv;
 }
 
-bool PreProcessor::GetLine(std::string &line)
+bool PreProcessor::GetLine(std::string& line)
 {
     std::string last;
     while (1)
@@ -210,16 +210,16 @@ bool PreProcessor::GetLine(std::string &line)
         size_t n = line.find_first_not_of(" \n\t\v\r");
         if (n != std::string::npos)
         {
-            if ((line[n] == ppStart && (n +1 < line.length() && line[n+1] != ppStart))
-                 || (trigraphs && n < line.size()-1 && line[n] == '%' && line[n+1] == ':'))
+            if ((line[n] == ppStart && (n + 1 < line.length() && line[n + 1] != ppStart)) ||
+                (trigraphs && n < line.size() - 1 && line[n] == '%' && line[n + 1] == ':'))
             {
-                int n1 = line.find_first_not_of(" \n\t\v\r", n+1);
+                int n1 = line.find_first_not_of(" \n\t\v\r", n + 1);
                 if (!isdigit(line[n1]))
                 {
                     if (trigraphs)
                         line = StripDigraphs(line);
-                    Tokenizer tk(line.substr(n+1), &hash);
-                    const Token *t = tk.Next();
+                    Tokenizer tk(line.substr(n + 1), &hash);
+                    const Token* t = tk.Next();
                     if (t->IsKeyword())
                     {
                         if (t->GetKeyword() == ASSIGN || t->GetKeyword() == IASSIGN)
@@ -285,7 +285,7 @@ bool PreProcessor::GetLine(std::string &line)
             }
             else
             {
-    join:
+            join:
                 if (include.Skipping())
                 {
                     line.erase(0, line.size());
@@ -293,7 +293,7 @@ bool PreProcessor::GetLine(std::string &line)
                 }
                 else
                 {
-                    if (define.Process(line) != INT_MIN+1)
+                    if (define.Process(line) != INT_MIN + 1)
                         break;
                     last = line;
                 }

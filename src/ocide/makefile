@@ -32,6 +32,7 @@ RC_DEPENDENCIES=ociderc.rc
 LIB_DEPENDENCIES=sqlite3
 #OBJ_DEPENDENCIES=\bcc55\lib\wildargs.obj
 DEFINES=GUI
+H_FILES=$(wildcard *.h)
 
 vpath %.c ..\util
 

@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "ppExpr.h"
@@ -62,7 +62,7 @@ void ppExpr::InitHash()
         hash[","] = comma;
     }
 }
-PPINT ppExpr::Eval(std::string &line)
+PPINT ppExpr::Eval(std::string& line)
 {
     tokenizer = new Tokenizer(line, &hash);
     token = tokenizer->Next();
@@ -77,13 +77,13 @@ PPINT ppExpr::Eval(std::string &line)
     return rv;
 }
 
-PPINT ppExpr::primary(std::string &line)
+PPINT ppExpr::primary(std::string& line)
 {
     PPINT rv = 0;
     if (token->GetKeyword() == openpa)
     {
         token = tokenizer->Next();
-        if (!token->IsEnd() )
+        if (!token->IsEnd())
         {
             rv = comma_(line);
             if (token->GetKeyword() == closepa)
@@ -130,7 +130,7 @@ PPINT ppExpr::primary(std::string &line)
                             }
                         }
                     }
-                }					
+                }
             }
         }
         else
@@ -155,7 +155,7 @@ PPINT ppExpr::primary(std::string &line)
     }
     return rv;
 }
-PPINT ppExpr::unary(std::string &line)
+PPINT ppExpr::unary(std::string& line)
 {
     if (!token->IsEnd())
     {
@@ -166,13 +166,13 @@ PPINT ppExpr::unary(std::string &line)
             if (!token->IsEnd())
             {
                 PPINT val1 = unary(line);
-                switch(kw)
+                switch (kw)
                 {
                     case minus:
-                        val1 = - val1;
+                        val1 = -val1;
                         break;
                     case plus:
-                        val1 = + val1;
+                        val1 = +val1;
                         break;
                     case lnot:
                         val1 = !val1;
@@ -192,7 +192,7 @@ PPINT ppExpr::unary(std::string &line)
     Errors::Error("Syntax error in constant expression");
     return 0;
 }
-PPINT ppExpr::multiply(std::string &line)
+PPINT ppExpr::multiply(std::string& line)
 {
     PPINT val1 = unary(line);
     int kw = token->GetKeyword();
@@ -202,7 +202,7 @@ PPINT ppExpr::multiply(std::string &line)
         if (!token->IsEnd())
         {
             PPINT val2 = unary(line);
-            switch(kw)
+            switch (kw)
             {
                 case star:
                     val1 *= val2;
@@ -233,7 +233,7 @@ PPINT ppExpr::multiply(std::string &line)
     }
     return val1;
 }
-PPINT ppExpr::add(std::string &line)
+PPINT ppExpr::add(std::string& line)
 {
     PPINT val1 = multiply(line);
     int kw = token->GetKeyword();
@@ -243,7 +243,7 @@ PPINT ppExpr::add(std::string &line)
         if (!token->IsEnd())
         {
             PPINT val2 = multiply(line);
-            switch(kw)
+            switch (kw)
             {
                 case plus:
                     val1 += val2;
@@ -257,7 +257,7 @@ PPINT ppExpr::add(std::string &line)
     }
     return val1;
 }
-PPINT ppExpr::shift(std::string &line)
+PPINT ppExpr::shift(std::string& line)
 {
     PPINT val1 = add(line);
     int kw = token->GetKeyword();
@@ -267,7 +267,7 @@ PPINT ppExpr::shift(std::string &line)
         if (!token->IsEnd())
         {
             PPINT val2 = add(line);
-            switch(kw)
+            switch (kw)
             {
                 case leftshift:
                     val1 <<= val2;
@@ -281,7 +281,7 @@ PPINT ppExpr::shift(std::string &line)
     }
     return val1;
 }
-PPINT ppExpr::relation(std::string &line)	
+PPINT ppExpr::relation(std::string& line)
 {
     PPINT val1 = shift(line);
     int kw = token->GetKeyword();
@@ -291,7 +291,7 @@ PPINT ppExpr::relation(std::string &line)
         if (!token->IsEnd())
         {
             PPINT val2 = shift(line);
-            switch(kw)
+            switch (kw)
             {
                 case gt:
                     val1 = val1 > val2;
@@ -311,7 +311,7 @@ PPINT ppExpr::relation(std::string &line)
     }
     return val1;
 }
-PPINT ppExpr::equal(std::string &line)
+PPINT ppExpr::equal(std::string& line)
 {
     PPINT val1 = relation(line);
     int kw = token->GetKeyword();
@@ -321,7 +321,7 @@ PPINT ppExpr::equal(std::string &line)
         if (!token->IsEnd())
         {
             PPINT val2 = shift(line);
-            switch(kw)
+            switch (kw)
             {
                 case eq:
                     val1 = val1 == val2;
@@ -335,10 +335,10 @@ PPINT ppExpr::equal(std::string &line)
     }
     return val1;
 }
-PPINT ppExpr::and_(std::string &line)
+PPINT ppExpr::and_(std::string& line)
 {
     PPINT val1 = equal(line);
-    while (!token->IsEnd() && token->GetKeyword()== band)
+    while (!token->IsEnd() && token->GetKeyword() == band)
     {
         token = tokenizer->Next();
         if (!token->IsEnd())
@@ -349,10 +349,10 @@ PPINT ppExpr::and_(std::string &line)
     }
     return val1;
 }
-PPINT ppExpr::xor_(std::string &line)
+PPINT ppExpr::xor_(std::string& line)
 {
     PPINT val1 = and_(line);
-    while (!token->IsEnd() && token->GetKeyword()== bxor)
+    while (!token->IsEnd() && token->GetKeyword() == bxor)
     {
         token = tokenizer->Next();
         if (!token->IsEnd())
@@ -363,10 +363,10 @@ PPINT ppExpr::xor_(std::string &line)
     }
     return val1;
 }
-PPINT ppExpr::or_(std::string &line)
+PPINT ppExpr::or_(std::string& line)
 {
     PPINT val1 = xor_(line);
-    while (!token->IsEnd() && token->GetKeyword()== bor)
+    while (!token->IsEnd() && token->GetKeyword() == bor)
     {
         token = tokenizer->Next();
         if (!token->IsEnd())
@@ -377,10 +377,10 @@ PPINT ppExpr::or_(std::string &line)
     }
     return val1;
 }
-PPINT ppExpr::logicaland(std::string &line)
+PPINT ppExpr::logicaland(std::string& line)
 {
     PPINT val1 = or_(line);
-    while (!token->IsEnd() && token->GetKeyword()== land)
+    while (!token->IsEnd() && token->GetKeyword() == land)
     {
         token = tokenizer->Next();
         if (!token->IsEnd())
@@ -391,10 +391,10 @@ PPINT ppExpr::logicaland(std::string &line)
     }
     return val1;
 }
-PPINT ppExpr::logicalor(std::string &line)
+PPINT ppExpr::logicalor(std::string& line)
 {
     PPINT val1 = logicaland(line);
-    while (!token->IsEnd() && token->GetKeyword()== lor)
+    while (!token->IsEnd() && token->GetKeyword() == lor)
     {
         token = tokenizer->Next();
         if (!token->IsEnd())
@@ -405,7 +405,7 @@ PPINT ppExpr::logicalor(std::string &line)
     }
     return val1;
 }
-PPINT ppExpr::conditional(std::string &line)
+PPINT ppExpr::conditional(std::string& line)
 {
     PPINT val1 = logicalor(line);
     if ((!token->IsEnd()) && token->GetKeyword() == hook)
@@ -438,7 +438,7 @@ PPINT ppExpr::conditional(std::string &line)
     }
     return val1;
 }
-PPINT ppExpr::comma_(std::string &line)
+PPINT ppExpr::comma_(std::string& line)
 {
     PPINT rv = 0;
     rv = conditional(line);
@@ -449,6 +449,5 @@ PPINT ppExpr::comma_(std::string &line)
             break;
         (void)conditional(line);
     }
-    return(rv);
+    return (rv);
 }
-

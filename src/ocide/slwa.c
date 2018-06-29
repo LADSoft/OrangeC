@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -39,27 +39,27 @@ extern char findText[256];
 extern int profileDebugMode;
 extern HWND hwndTbFind;
 extern int editFlags;
-extern DWINFO *editWindows;
+extern DWINFO* editWindows;
 extern HINSTANCE hInstance;
-extern struct tagfile *tagFileList;
+extern struct tagfile* tagFileList;
 extern HWND hwndClient, hwndFrame;
 extern HWND hwndSrcTab;
-extern char *findhist[MAX_COMBO_HISTORY];
-extern char *findbrowsehist[MAX_COMBO_HISTORY];
-extern char *replacehist[MAX_COMBO_HISTORY];
-extern char *replacebrowsehist[MAX_COMBO_HISTORY];
-extern char *watchhist[MAX_COMBO_HISTORY];
-extern char *funcbphist[MAX_COMBO_HISTORY];
-extern char *databphist[MAX_COMBO_HISTORY];
-extern char *memhist[MAX_COMBO_HISTORY];
-extern char *varinfohist[MAX_COMBO_HISTORY];
-extern DWINFO *newInfo;
+extern char* findhist[MAX_COMBO_HISTORY];
+extern char* findbrowsehist[MAX_COMBO_HISTORY];
+extern char* replacehist[MAX_COMBO_HISTORY];
+extern char* replacebrowsehist[MAX_COMBO_HISTORY];
+extern char* watchhist[MAX_COMBO_HISTORY];
+extern char* funcbphist[MAX_COMBO_HISTORY];
+extern char* databphist[MAX_COMBO_HISTORY];
+extern char* memhist[MAX_COMBO_HISTORY];
+extern char* varinfohist[MAX_COMBO_HISTORY];
+extern DWINFO* newInfo;
 extern char szDrawClassName[];
 extern char szUntitled[];
-extern DATABREAK *dataBpList;
+extern DATABREAK* dataBpList;
 extern HDWEBKPT hdwebp[4];
-extern PROJECTITEM *activeProject;
-extern FILEBROWSE *fileBrowseInfo;
+extern PROJECTITEM* activeProject;
+extern FILEBROWSE* fileBrowseInfo;
 extern int fileBrowseCount;
 extern POINT findDlgPos;
 extern int findflags;
@@ -68,8 +68,8 @@ extern int findmode;
 extern int replacemode;
 extern int findext;
 extern int replaceext;
-extern PROFILENAMELIST *profileNames;
-extern char *sysProfileName;
+extern PROFILENAMELIST* profileNames;
+extern char* sysProfileName;
 extern BOOL snapToGrid;
 extern BOOL showGrid;
 extern int gridSpacing;
@@ -97,25 +97,25 @@ static char ipathbuf[2048];
 
 //-------------------------------------------------------------------------
 
-void abspath(char *name, char *path)
+void abspath(char* name, char* path)
 {
-    char projname[256],  *p,  *nname = name;
+    char projname[256], *p, *nname = name;
     if (!path)
     {
         path = projname;
         GetCurrentDirectory(256, projname);
-        strcat(projname,"\\hi");
+        strcat(projname, "\\hi");
     }
     if (!path[0])
-        return ;
+        return;
     if (name[0] == 0)
-        return ;
+        return;
     if (name[1] == ':')
-        return ;
+        return;
     strcpy(projname, path);
     p = strrchr(projname, '\\');
     if (!p)
-        return ;
+        return;
     p--;
     if (!strstr(name, "..\\"))
     {
@@ -124,11 +124,11 @@ void abspath(char *name, char *path)
             strcpy(p + 2, name);
             strcpy(nname, projname);
         }
-        return ;
+        return;
     }
     while (!strncmp(name, "..\\", 3))
     {
-        while (p > projname &&  *p-- != '\\')
+        while (p > projname && *p-- != '\\')
             ;
         name += 3;
     }
@@ -141,10 +141,10 @@ void abspath(char *name, char *path)
 
 //-------------------------------------------------------------------------
 
-char *relpath(char *name, char *path)
+char* relpath(char* name, char* path)
 {
     static char projname[MAX_PATH], localname[MAX_PATH];
-    char *p = localname,  *q = projname,  *r,  *s;
+    char *p = localname, *q = projname, *r, *s;
     if (!path[0])
         return name;
     if (toupper(name[0]) != toupper(path[0]))
@@ -164,21 +164,21 @@ char *relpath(char *name, char *path)
     if (*s)
         *s = 0;
 
-    while (*p &&  *q && toupper(*p) == toupper(*q))
+    while (*p && *q && toupper(*p) == toupper(*q))
     {
         p++, q++;
     }
     while (q != path && q[-1] != '\\')
         p--, q--;
-    if (!(*p |  *q))
+    if (!(*p | *q))
         return r;
     else if (*(p - 1) == '\\' && *(p - 2) == ':')
         return name;
     else
     {
-        int count =  *q != 0;
+        int count = *q != 0;
         if (*q != '\\')
-            while (p > localname &&  *p != '\\')
+            while (p > localname && *p != '\\')
                 p--;
         while (*q && (q = strchr(q + 1, '\\')))
             count++;
@@ -194,10 +194,10 @@ char *relpath(char *name, char *path)
         return projname;
     }
 }
-char *relpath2(char *name, char *path)
+char* relpath2(char* name, char* path)
 {
     static char projname[MAX_PATH], localname[MAX_PATH];
-    char *p = localname,  *q = projname,  *r,  *s;
+    char *p = localname, *q = projname, *r, *s;
     if (!path[0])
         return name;
     if (toupper(name[0]) != toupper(path[0]))
@@ -217,21 +217,21 @@ char *relpath2(char *name, char *path)
     if (*s)
         *s = 0;
 
-    while (*p &&  *q && toupper(*p) == toupper(*q))
+    while (*p && *q && toupper(*p) == toupper(*q))
     {
         p++, q++;
     }
     while (q != path && q[-1] != '\\')
         p--, q--;
-    if (!(*p |  *q))
+    if (!(*p | *q))
         return r;
     else if (*(p - 1) == '\\' && *(p - 2) == ':')
         return name;
     else
     {
-        int count =  0;
+        int count = 0;
         if (*q != '\\')
-            while (p > localname &&  *p != '\\')
+            while (p > localname && *p != '\\')
                 p--;
         while (*q && (q = strchr(q + 1, '\\')))
             count++;
@@ -249,14 +249,14 @@ char *relpath2(char *name, char *path)
 }
 //-------------------------------------------------------------------------
 
-void absincludepath(char *name, char *path)
+void absincludepath(char* name, char* path)
 {
-    char *p = ipathbuf,  *dest1 = name,  *dest2 = name;
+    char *p = ipathbuf, *dest1 = name, *dest2 = name;
     strcpy(ipathbuf, name);
     name[0] = 0;
     do
     {
-        char *q;
+        char* q;
         if (*p == ';')
             p++;
         q = p;
@@ -264,26 +264,25 @@ void absincludepath(char *name, char *path)
         p = strchr(p, ';');
         if (!p)
             p = ipathbuf + strlen(ipathbuf);
-        while (q != p)*dest2++ =  *q++;
+        while (q != p)
+            *dest2++ = *q++;
         *dest2 = 0;
         abspath(dest1, path);
         dest2 = dest1 + strlen(dest1);
         if (*p)
             *dest2++ = ';';
-    }
-    while (*p)
-        ;
+    } while (*p);
 }
 
 //-------------------------------------------------------------------------
 
-char *relincludepath(char *name, char *path)
+char* relincludepath(char* name, char* path)
 {
-    char *p = name,  *dest1 = ipathbuf,  *dest2 = ipathbuf;
+    char *p = name, *dest1 = ipathbuf, *dest2 = ipathbuf;
     ipathbuf[0] = 0;
     do
     {
-        char *q;
+        char* q;
         if (*p == ';')
             p++;
         q = p;
@@ -291,70 +290,62 @@ char *relincludepath(char *name, char *path)
         p = strchr(p, ';');
         if (!p)
             p = name + strlen(name);
-        while (q != p)*dest2++ =  *q++;
+        while (q != p)
+            *dest2++ = *q++;
         *dest2 = 0;
         strcpy(dest1, relpath(dest1, path));
         dest2 = dest1 + strlen(dest1);
         if (*p)
             *dest2++ = ';';
-    }
-    while (*p)
-        ;
+    } while (*p);
     return ipathbuf;
 }
 
-PROJECTITEM *LoadErr(struct xmlNode *root, char *name)
+PROJECTITEM* LoadErr(struct xmlNode* root, char* name)
 {
     xmlFree(root);
-    ExtendedMessageBox("Load Error", MB_SETFOREGROUND | MB_SYSTEMMODAL, 
-        "Project File %s is the wrong format", name);
+    ExtendedMessageBox("Load Error", MB_SETFOREGROUND | MB_SYSTEMMODAL, "Project File %s is the wrong format", name);
     return 0;
-} 
-PROJECTITEM *NoMemory(struct xmlNode *root)
+}
+PROJECTITEM* NoMemory(struct xmlNode* root)
 {
     xmlFree(root);
-    ExtendedMessageBox("Load Error", MB_SETFOREGROUND | MB_SYSTEMMODAL, 
-        "Out of memory");
+    ExtendedMessageBox("Load Error", MB_SETFOREGROUND | MB_SYSTEMMODAL, "Out of memory");
     return 0;
-} 
-
-void NoMemoryWS(void)
-{
-    ExtendedMessageBox("Load Error", MB_SETFOREGROUND | MB_SYSTEMMODAL, 
-        "Out of memory");
 }
 
+void NoMemoryWS(void) { ExtendedMessageBox("Load Error", MB_SETFOREGROUND | MB_SYSTEMMODAL, "Out of memory"); }
+
 //-------------------------------------------------------------------------
 
-
 //-------------------------------------------------------------------------
-void RestoreMemoryWindowSettings(struct xmlNode *node, int version)
+void RestoreMemoryWindowSettings(struct xmlNode* node, int version)
 {
-    struct xmlAttr *attribs = node->attribs;
+    struct xmlAttr* attribs = node->attribs;
     while (attribs)
     {
         if (IsAttrib(attribs, "WORDSIZE"))
             memoryWordSize = atoi(attribs->value);
         attribs = attribs->next;
-    } 
+    }
 }
-void RestoreErrorWindowSettings(struct xmlNode *node, int version)
+void RestoreErrorWindowSettings(struct xmlNode* node, int version)
 {
-    struct xmlAttr *attribs = node->attribs;
+    struct xmlAttr* attribs = node->attribs;
     while (attribs)
     {
         if (IsAttrib(attribs, "BTNS"))
             errorButtons = atoi(attribs->value);
         attribs = attribs->next;
-    } 
+    }
 }
 
-void RestoreHistory(struct xmlNode *node, int version)
+void RestoreHistory(struct xmlNode* node, int version)
 {
     int count = 0;
-    char **histitem = 0;
-    struct xmlAttr *attribs = node->attribs;
-    struct xmlNode *children = node->children;
+    char** histitem = 0;
+    struct xmlAttr* attribs = node->attribs;
+    struct xmlNode* children = node->children;
     while (attribs)
     {
         if (IsAttrib(attribs, "TYPE"))
@@ -373,21 +364,21 @@ void RestoreHistory(struct xmlNode *node, int version)
                 histitem = memhist;
             else if (!strcmp(attribs->value, "VARINFO"))
                 histitem = varinfohist;
-            else if ( !strcmp(attribs->value, "BFINDPATH"))
+            else if (!strcmp(attribs->value, "BFINDPATH"))
                 histitem = findbrowsehist;
-            else if ( !strcmp(attribs->value, "BREPLACEPATH"))
+            else if (!strcmp(attribs->value, "BREPLACEPATH"))
                 histitem = replacebrowsehist;
-        } 
+        }
         attribs = attribs->next;
     }
     if (!histitem)
-        return ;
+        return;
     for (count = 0; count < MAX_COMBO_HISTORY; count++)
-    if (histitem[count])
-    {
-        free(histitem[count]);
-        histitem[count] = 0;
-    }
+        if (histitem[count])
+        {
+            free(histitem[count]);
+            histitem[count] = 0;
+        }
     count = 0;
     while (children && count < MAX_COMBO_HISTORY)
     {
@@ -407,20 +398,19 @@ void RestoreHistory(struct xmlNode *node, int version)
     }
     if (histitem == findhist)
     {
-		if (findhist[0])
-	        strcpy(findText, findhist[0]);
+        if (findhist[0])
+            strcpy(findText, findhist[0]);
         SendMessage((HWND)hwndTbFind, WM_SETHISTORY, 0, (LPARAM)findhist);
     }
 }
 
-
 //-------------------------------------------------------------------------
-void RestoreToolBars(struct xmlNode *node, int version)
+void RestoreToolBars(struct xmlNode* node, int version)
 {
     int id = 0;
     HWND hwnd;
-    char *defines = 0;
-    struct xmlAttr *attribs = node->attribs;
+    char* defines = 0;
+    struct xmlAttr* attribs = node->attribs;
     if (version != WSPVERS)
         return;
     while (attribs)
@@ -430,18 +420,18 @@ void RestoreToolBars(struct xmlNode *node, int version)
         else if (IsAttrib(attribs, "DEFINE"))
             defines = attribs->value;
         attribs = attribs->next;
-    } 
+    }
     if (id && defines)
     {
         hwnd = GetToolWindow(id);
         if (hwnd)
-            SetToolBarData(hwnd, defines); // undefined in local context
+            SetToolBarData(hwnd, defines);  // undefined in local context
     }
 }
-void RestoreToolbarLayout(struct xmlNode *node, int version)
+void RestoreToolbarLayout(struct xmlNode* node, int version)
 {
     int n = 0;
-    struct xmlAttr *attribs = node->attribs;
+    struct xmlAttr* attribs = node->attribs;
     if (version != WSPVERS)
         return;
     while (attribs)
@@ -449,13 +439,13 @@ void RestoreToolbarLayout(struct xmlNode *node, int version)
         if (IsAttrib(attribs, "COUNT"))
             n = atoi(attribs->value);
         attribs = attribs->next;
-    } 
+    }
     if (n)
     {
-        char *str = node->textData;
-        int pos = 0 ;
+        char* str = node->textData;
+        int pos = 0;
         int i;
-        for (i=0; i < n && i < sizeof(toolLayout)/sizeof(toolLayout[0]) ; i++)
+        for (i = 0; i < n && i < sizeof(toolLayout) / sizeof(toolLayout[0]); i++)
         {
             int d;
             if (sscanf(str, "%d%n", &d, &pos))
@@ -477,24 +467,24 @@ void RestoreToolbarLayout(struct xmlNode *node, int version)
     }
     SendMessage(hwndToolbarBar, WM_REDRAWTOOLBAR, 0, 0);
     ResizeLayout(NULL);
-}    
-void RestoreDocks(struct xmlNode *node, int version)
+}
+void RestoreDocks(struct xmlNode* node, int version)
 {
-    struct xmlNode *nodes = node->children;
+    struct xmlNode* nodes = node->children;
     DOCK_STR debug[100], release[100];
     HWND debugfrees[100], releasefrees[100];
-    int dbgCount =0;
+    int dbgCount = 0;
     int rlsCount = 0;
     int dbgfreeCount = 0;
     int rlsfreeCount = 0;
     while (nodes)
     {
-        int ctl=-1;
+        int ctl = -1;
         int type;
-        RECT r;        
+        RECT r;
         int index;
         int sel;
-        struct xmlAttr *attribs = nodes->attribs;
+        struct xmlAttr* attribs = nodes->attribs;
         while (attribs)
         {
             if (IsAttrib(attribs, "SEL"))
@@ -512,37 +502,37 @@ void RestoreDocks(struct xmlNode *node, int version)
                 r.bottom += r.top;
             }
             attribs = attribs->next;
-        } 
+        }
         if (IsNode(nodes, "FRAME"))
         {
             oldFrame = r;
         }
-        else if (IsNode(nodes,"DOCKWND"))
+        else if (IsNode(nodes, "DOCKWND"))
         {
             HWND wnd = CreateControlWindow(hwndFrame);
             int current, n;
-            char*p = nodes->textData;
+            char* p = nodes->textData;
             if (type == 2)
             {
-                SetWindowPos(wnd, NULL, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_NOACTIVATE | SWP_NOZORDER); 
+                SetWindowPos(wnd, NULL, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_NOACTIVATE | SWP_NOZORDER);
                 SendMessage(wnd, TW_MAKEPOPUP, 0, 0);
-//                SetParent(wnd, HWND_DESKTOP);
+                //                SetParent(wnd, HWND_DESKTOP);
                 debugfrees[dbgfreeCount++] = wnd;
             }
             else if (type == 3)
             {
-                SetWindowPos(wnd, NULL, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_NOACTIVATE | SWP_NOZORDER); 
+                SetWindowPos(wnd, NULL, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_NOACTIVATE | SWP_NOZORDER);
                 SendMessage(wnd, TW_MAKEPOPUP, 0, 0);
-//                SetParent(wnd, HWND_DESKTOP);
+                //                SetParent(wnd, HWND_DESKTOP);
                 releasefrees[rlsfreeCount++] = wnd;
             }
             else
             {
-                int *count;
-                DOCK_STR *docks;
+                int* count;
+                DOCK_STR* docks;
                 if (type == 0)
                 {
-                    count = & dbgCount;
+                    count = &dbgCount;
                     docks = &debug[0];
                 }
                 else
@@ -570,16 +560,16 @@ void RestoreDocks(struct xmlNode *node, int version)
     if (dbgCount || rlsCount || dbgfreeCount || rlsfreeCount)
     {
         int i;
-        for (i=0; i < debugDockCount; i++)
+        for (i = 0; i < debugDockCount; i++)
             DestroyWindow(debugDocks[i].hwnd);
         debugDockCount = 0;
-        for (i=0; i < releaseDockCount; i++)
+        for (i = 0; i < releaseDockCount; i++)
             DestroyWindow(releaseDocks[i].hwnd);
         releaseDockCount = 0;
-        for (i=0; i < debugfreeWindowCount; i++)
+        for (i = 0; i < debugfreeWindowCount; i++)
             DestroyWindow(debugfreeWindows[i]);
         debugfreeWindowCount = 0;
-        for (i=0; i < releasefreeWindowCount; i++)
+        for (i = 0; i < releasefreeWindowCount; i++)
             DestroyWindow(releasefreeWindows[i]);
         releasefreeWindowCount = 0;
         memcpy(&debugDocks[0], &debug[0], dbgCount * sizeof(DOCK_STR));
@@ -590,27 +580,27 @@ void RestoreDocks(struct xmlNode *node, int version)
         dockCount = releaseDockCount = rlsCount;
         debugfreeWindowCount = dbgfreeCount;
         freeWindowCount = releasefreeWindowCount = rlsfreeCount;
-        for (i=0; i < releasefreeWindowCount; i++)
+        for (i = 0; i < releasefreeWindowCount; i++)
             ShowWindow(releasefreeWindows[i], SW_SHOW);
         SelectDebugWindows(FALSE);
         ResizeLayout(NULL);
     }
 }
 
-void RestoreWindows(struct xmlNode *node, int version, PROJECTITEM *wa)
+void RestoreWindows(struct xmlNode* node, int version, PROJECTITEM* wa)
 {
     MDICREATESTRUCT mc;
     static DWINFO info;
-    struct xmlNode *child = node->children;
+    struct xmlNode* child = node->children;
     HWND hwnd = NULL;
     ShowWindow(hwndSrcTab, SW_HIDE);
     while (child)
     {
         if (IsNode(child, "WINDOW"))
         {
-            struct xmlAttr *attribs = child->attribs;
+            struct xmlAttr* attribs = child->attribs;
             int copyId = 0;
-            EDITDATA *extra = NULL;
+            EDITDATA* extra = NULL;
             memset(&info, 0, sizeof(info));
             memset(&mc, 0, sizeof(mc));
             while (attribs)
@@ -619,7 +609,7 @@ void RestoreWindows(struct xmlNode *node, int version, PROJECTITEM *wa)
                 {
                     strcpy(info.dwName, attribs->value);
                     abspath(info.dwName, wa->realName);
-                } 
+                }
                 else if (IsAttrib(attribs, "TITLE"))
                     strcpy(info.dwTitle, attribs->value);
                 else if (IsAttrib(attribs, "X"))
@@ -639,35 +629,34 @@ void RestoreWindows(struct xmlNode *node, int version, PROJECTITEM *wa)
             newInfo = &info;
             if (copyId)
             {
-                DWINFO *ptr = editWindows;
+                DWINFO* ptr = editWindows;
                 while (ptr)
                 {
-                    if (ptr->active && SendMessage(ptr->self, WM_COMMAND, ID_QUERYHASFILE, 
-                        (LPARAM)newInfo))
+                    if (ptr->active && SendMessage(ptr->self, WM_COMMAND, ID_QUERYHASFILE, (LPARAM)newInfo))
                     {
-                        extra = (EDITDATA *)SendMessage(ptr->dwHandle, EM_GETEDITDATA, 0, 0);
+                        extra = (EDITDATA*)SendMessage(ptr->dwHandle, EM_GETEDITDATA, 0, 0);
                         break;
                     }
                     ptr = ptr->next;
                 }
             }
-                
-            hwnd = CreateMDIWindow(szDrawClassName, szUntitled,  WS_VISIBLE |
-                WS_CHILD | WS_OVERLAPPED | WS_CAPTION | WS_THICKFRAME | MDIS_ALLCHILDSTYLES | 
-                WS_SIZEBOX | (PropGetInt(NULL, "TABBED_WINDOWS") ? WS_MAXIMIZE : WS_SYSMENU) |
-                WS_CLIPSIBLINGS | WS_CLIPCHILDREN,
-                mc.x,mc.y,mc.cx,mc.cy, hwndClient, hInstance, (LPARAM)extra); 
+
+            hwnd = CreateMDIWindow(szDrawClassName, szUntitled,
+                                   WS_VISIBLE | WS_CHILD | WS_OVERLAPPED | WS_CAPTION | WS_THICKFRAME | MDIS_ALLCHILDSTYLES |
+                                       WS_SIZEBOX | (PropGetInt(NULL, "TABBED_WINDOWS") ? WS_MAXIMIZE : WS_SYSMENU) |
+                                       WS_CLIPSIBLINGS | WS_CLIPCHILDREN,
+                                   mc.x, mc.y, mc.cx, mc.cy, hwndClient, hInstance, (LPARAM)extra);
             if (copyId)
             {
-                SendMessage(hwnd, WM_SETSIBLINGID, copyId-1, 0);
+                SendMessage(hwnd, WM_SETSIBLINGID, copyId - 1, 0);
             }
         }
         else if (IsNode(child, "ACTIVE"))
         {
             // should be last
-            struct xmlAttr *attribs = child->attribs;
+            struct xmlAttr* attribs = child->attribs;
             newInfo = &info;
-            info.dwLineNo =  - 1;
+            info.dwLineNo = -1;
             info.logMRU = FALSE;
             info.newFile = FALSE;
             while (attribs)
@@ -676,7 +665,7 @@ void RestoreWindows(struct xmlNode *node, int version, PROJECTITEM *wa)
                 {
                     strcpy(info.dwName, attribs->value);
                     abspath(info.dwName, wa->realName);
-                } 
+                }
                 else if (IsAttrib(attribs, "TITLE"))
                 {
                     strcpy(info.dwTitle, attribs->value);
@@ -692,11 +681,11 @@ void RestoreWindows(struct xmlNode *node, int version, PROJECTITEM *wa)
 
 //-------------------------------------------------------------------------
 
-void RestoreChangeLn(struct xmlNode *node, int version, PROJECTITEM *wa)
+void RestoreChangeLn(struct xmlNode* node, int version, PROJECTITEM* wa)
 {
-    struct xmlNode *children = node->children;
-    struct tagfile *l,  **ls = &tagFileList, *lprev = NULL;
-    struct xmlAttr *attribs;
+    struct xmlNode* children = node->children;
+    struct tagfile *l, **ls = &tagFileList, *lprev = NULL;
+    struct xmlAttr* attribs;
     while (*ls)
     {
         lprev = *ls;
@@ -706,14 +695,14 @@ void RestoreChangeLn(struct xmlNode *node, int version, PROJECTITEM *wa)
     {
         if (IsNode(children, "FILE"))
         {
-            struct xmlNode *fchildren = children->children;
-            struct tagchangeln *c = 0,  **x = &c;
+            struct xmlNode* fchildren = children->children;
+            struct tagchangeln *c = 0, **x = &c;
             *ls = calloc(sizeof(struct tagfile), 1);
             if (!ls)
             {
                 NoMemoryWS();
-                return ;
-            } 
+                return;
+            }
             attribs = children->attribs;
             while (attribs)
             {
@@ -731,7 +720,7 @@ void RestoreChangeLn(struct xmlNode *node, int version, PROJECTITEM *wa)
                     break;
                 l = l->next;
             }
-            if (l !=  *ls)
+            if (l != *ls)
             {
                 free(*ls);
                 *ls = 0;
@@ -748,11 +737,12 @@ void RestoreChangeLn(struct xmlNode *node, int version, PROJECTITEM *wa)
                 {
                     // assumes enumerated in order
                     *x = calloc(sizeof(struct tagchangeln), 1);
-                    if (! *x)
+                    if (!*x)
                     {
                         NoMemoryWS();
-                        return ;
-                    } attribs = fchildren->attribs;
+                        return;
+                    }
+                    attribs = fchildren->attribs;
                     while (attribs)
                     {
                         if (IsAttrib(attribs, "NUM"))
@@ -770,10 +760,10 @@ void RestoreChangeLn(struct xmlNode *node, int version, PROJECTITEM *wa)
         children = children->next;
     }
 }
-void RestoreFileBrowse(struct xmlNode *node, int version, PROJECTITEM *wa)
+void RestoreFileBrowse(struct xmlNode* node, int version, PROJECTITEM* wa)
 {
-    struct xmlNode *children = node->children;
-    struct xmlAttr *attribs;
+    struct xmlNode* children = node->children;
+    struct xmlAttr* attribs;
     FILEBROWSE **p = &fileBrowseInfo, *last = NULL;
     FileBrowseCloseAll();
     while (children)
@@ -799,10 +789,10 @@ void RestoreFileBrowse(struct xmlNode *node, int version, PROJECTITEM *wa)
             }
             if (lineno != -1 && buf[0])
             {
-                DWINFO *info = GetFileInfo(buf);
+                DWINFO* info = GetFileInfo(buf);
                 if (info)
                 {
-                    FILEBROWSE *newBrowse = calloc(1, sizeof(FILEBROWSE));
+                    FILEBROWSE* newBrowse = calloc(1, sizeof(FILEBROWSE));
                     if (newBrowse)
                     {
                         newBrowse->lineno = lineno;
@@ -810,7 +800,7 @@ void RestoreFileBrowse(struct xmlNode *node, int version, PROJECTITEM *wa)
                         newBrowse->next = NULL;
                         newBrowse->prev = last;
                         last = newBrowse;
-                        *p = newBrowse; 
+                        *p = newBrowse;
                         p = &(*p)->next;
                         fileBrowseCount++;
                     }
@@ -823,21 +813,21 @@ void RestoreFileBrowse(struct xmlNode *node, int version, PROJECTITEM *wa)
 
 //-------------------------------------------------------------------------
 
-void RestoreTags(struct xmlNode *node, int version, PROJECTITEM *wa)
+void RestoreTags(struct xmlNode* node, int version, PROJECTITEM* wa)
 {
-    struct tagfile *l,  **ls = &tagFileList, *lprev = NULL;
+    struct tagfile *l, **ls = &tagFileList, *lprev = NULL;
     struct tag **ts, *tprev = NULL;
-    struct xmlAttr *attribs = node->attribs;
-    struct xmlNode *children = node->children;
-    int tagid =  - 1;
+    struct xmlAttr* attribs = node->attribs;
+    struct xmlNode* children = node->children;
+    int tagid = -1;
     while (attribs)
     {
         if (IsAttrib(attribs, "ID"))
             tagid = atoi(attribs->value);
         attribs = attribs->next;
-    } 
-    if (tagid ==  - 1 || (tagid != TAG_BP && tagid != TAG_BOOKMARK))
-        return ;
+    }
+    if (tagid == -1 || (tagid != TAG_BP && tagid != TAG_BOOKMARK))
+        return;
     while (*ls)
     {
         lprev = *ls;
@@ -847,13 +837,13 @@ void RestoreTags(struct xmlNode *node, int version, PROJECTITEM *wa)
     {
         if (IsNode(children, "FILE"))
         {
-            struct xmlNode *fchildren = children->children;
+            struct xmlNode* fchildren = children->children;
             *ls = calloc(sizeof(struct tagfile), 1);
             if (!ls)
             {
                 NoMemoryWS();
-                return ;
-            } 
+                return;
+            }
             attribs = children->attribs;
             while (attribs)
             {
@@ -871,7 +861,7 @@ void RestoreTags(struct xmlNode *node, int version, PROJECTITEM *wa)
                     break;
                 l = l->next;
             }
-            if (l !=  *ls)
+            if (l != *ls)
             {
                 free(*ls);
                 *ls = 0;
@@ -889,19 +879,18 @@ void RestoreTags(struct xmlNode *node, int version, PROJECTITEM *wa)
                 if (IsNode(fchildren, "TAGITEM"))
                 {
                     *ts = calloc(sizeof(struct tag), 1);
-                    if (! *ts)
+                    if (!*ts)
                     {
                         NoMemoryWS();
-                        return ;
-                    } 
+                        return;
+                    }
                     (*ts)->prev = tprev;
                     tprev = *ts;
                     attribs = fchildren->attribs;
                     while (attribs)
                     {
                         if (IsAttrib(attribs, "LINENO"))
-                            (*ts)->drawnLineno = (*ts)->editingLineno = (*ts)
-                                ->debugLineno = atoi(attribs->value);
+                            (*ts)->drawnLineno = (*ts)->editingLineno = (*ts)->debugLineno = atoi(attribs->value);
                         else if (IsAttrib(attribs, "CP"))
                             (*ts)->charpos = atoi(attribs->value);
                         else if (IsAttrib(attribs, "ENABLED"))
@@ -925,9 +914,9 @@ void RestoreTags(struct xmlNode *node, int version, PROJECTITEM *wa)
 
 //-------------------------------------------------------------------------
 
-void RestoreFind(struct xmlNode *node, int version)
+void RestoreFind(struct xmlNode* node, int version)
 {
-    struct xmlAttr *attribs = node->attribs;
+    struct xmlAttr* attribs = node->attribs;
     while (attribs)
     {
         if (IsAttrib(attribs, "X"))
@@ -940,7 +929,7 @@ void RestoreFind(struct xmlNode *node, int version)
         }
         else if (IsAttrib(attribs, "RF"))
         {
-            sscanf(attribs->value, "%d", &replaceflags); 
+            sscanf(attribs->value, "%d", &replaceflags);
         }
         else if (IsAttrib(attribs, "FM"))
             findmode = atoi(attribs->value);
@@ -953,9 +942,9 @@ void RestoreFind(struct xmlNode *node, int version)
         attribs = attribs->next;
     }
 }
-void RestoreSimpleFind(struct xmlNode *node, int version)
+void RestoreSimpleFind(struct xmlNode* node, int version)
 {
-    struct xmlAttr *attribs = node->attribs;
+    struct xmlAttr* attribs = node->attribs;
     while (attribs)
     {
         if (IsAttrib(attribs, "FLAGS"))
@@ -965,9 +954,9 @@ void RestoreSimpleFind(struct xmlNode *node, int version)
 }
 //-------------------------------------------------------------------------
 
-void RestoreWatch(struct xmlNode *node, int version)
+void RestoreWatch(struct xmlNode* node, int version)
 {
-    struct xmlAttr *attribs = node->attribs;
+    struct xmlAttr* attribs = node->attribs;
     int id = 0;
     while (attribs)
     {
@@ -976,8 +965,8 @@ void RestoreWatch(struct xmlNode *node, int version)
             // ID MUST BE FIRST!!!!!
             id = atoi(attribs->value) - 1;
             if (id < 0 || id > 3)
-                return ;
-        } 
+                return;
+        }
         else if (IsAttrib(attribs, "ENABLE"))
         {
             hdwebp[id].disable = atoi(attribs->value);
@@ -1003,11 +992,11 @@ void RestoreWatch(struct xmlNode *node, int version)
         attribs = attribs->next;
     }
 }
-void RestoreDataBreakpoints(struct xmlNode *node, int version)
+void RestoreDataBreakpoints(struct xmlNode* node, int version)
 {
-    struct xmlAttr *attribs = node->attribs;
+    struct xmlAttr* attribs = node->attribs;
     int id = 0;
-    DATABREAK *b = (DATABREAK *)calloc(sizeof(DATABREAK), 1) ,** search = &dataBpList;
+    DATABREAK *b = (DATABREAK*)calloc(sizeof(DATABREAK), 1), **search = &dataBpList;
     while (*search)
         search = &(*search)->next;
     *search = b;
@@ -1030,17 +1019,17 @@ void RestoreDataBreakpoints(struct xmlNode *node, int version)
 }
 //-------------------------------------------------------------------------
 
-void RestoreProjectNames(struct xmlNode *node, int version, PROJECTITEM *wa)
+void RestoreProjectNames(struct xmlNode* node, int version, PROJECTITEM* wa)
 {
-    struct xmlNode *children = node->children;
+    struct xmlNode* children = node->children;
     while (children)
     {
         if (IsNode(children, "FILE"))
         {
-            PROJECTITEM **ins = &wa->children;
-            PROJECTITEM *p = calloc(1, sizeof(PROJECTITEM));
-            struct xmlAttr * attribs = children->attribs ;
-        char *q;
+            PROJECTITEM** ins = &wa->children;
+            PROJECTITEM* p = calloc(1, sizeof(PROJECTITEM));
+            struct xmlAttr* attribs = children->attribs;
+            char* q;
             if (!p)
                 return;
             while (attribs)
@@ -1054,13 +1043,13 @@ void RestoreProjectNames(struct xmlNode *node, int version, PROJECTITEM *wa)
                 {
                     p->clean = atoi(attribs->value);
                 }
-                attribs = attribs->next ;
+                attribs = attribs->next;
             }
-            q = strrchr(p->realName,'\\');
+            q = strrchr(p->realName, '\\');
             if (q)
                 q++;
             else
-                q= p->realName;
+                q = p->realName;
             strcpy(p->displayName, q);
             while (*ins && stricmp((*ins)->displayName, p->displayName) < 0)
                 ins = &(*ins)->next;
@@ -1069,10 +1058,10 @@ void RestoreProjectNames(struct xmlNode *node, int version, PROJECTITEM *wa)
             p->next = *ins;
             *ins = p;
         }
-        children = children->next ;
+        children = children->next;
     }
 }
-void RestoreProjectDependencies(struct xmlNode *node, int version, PROJECTITEM *wa)
+void RestoreProjectDependencies(struct xmlNode* node, int version, PROJECTITEM* wa)
 {
     struct xmlNode *children = node->children, *dependsChildren;
     while (children)
@@ -1080,7 +1069,7 @@ void RestoreProjectDependencies(struct xmlNode *node, int version, PROJECTITEM *
         if (IsNode(children, "FILE"))
         {
             char parentName[MAX_PATH], dependsName[MAX_PATH];
-            struct xmlAttr * attribs = children->attribs ;
+            struct xmlAttr* attribs = children->attribs;
             parentName[0] = 0;
             while (attribs)
             {
@@ -1089,7 +1078,7 @@ void RestoreProjectDependencies(struct xmlNode *node, int version, PROJECTITEM *
                     strcpy(parentName, attribs->value);
                     abspath(parentName, wa->realName);
                 }
-                attribs = attribs->next ;
+                attribs = attribs->next;
             }
             dependsChildren = children->children;
             while (dependsChildren)
@@ -1103,7 +1092,7 @@ void RestoreProjectDependencies(struct xmlNode *node, int version, PROJECTITEM *
                         strcpy(dependsName, attribs->value);
                         abspath(dependsName, wa->realName);
                     }
-                    attribs = attribs->next ;
+                    attribs = attribs->next;
                 }
                 if (parentName[0] && dependsName[0])
                 {
@@ -1122,23 +1111,23 @@ void RestoreProjectDependencies(struct xmlNode *node, int version, PROJECTITEM *
                     }
                     if (parent && depends)
                     {
-                        PROJECTITEMLIST **list = &parent->depends;
+                        PROJECTITEMLIST** list = &parent->depends;
                         while (*list)
                             list = &(*list)->next;
-                        *list = (PROJECTITEMLIST *)calloc(1, sizeof(PROJECTITEMLIST));
+                        *list = (PROJECTITEMLIST*)calloc(1, sizeof(PROJECTITEMLIST));
                         (*list)->item = depends;
                     }
                 }
                 dependsChildren = dependsChildren->next;
             }
         }
-        children = children->next ;
+        children = children->next;
     }
 }
-void RestoreProfileNames(struct xmlNode *node, int version, PROJECTITEM *wa)
+void RestoreProfileNames(struct xmlNode* node, int version, PROJECTITEM* wa)
 {
-    char *selected = NULL;
-    struct xmlAttr *attribs = node->attribs;
+    char* selected = NULL;
+    struct xmlAttr* attribs = node->attribs;
     while (attribs)
     {
         if (IsAttrib(attribs, "SELECTED"))
@@ -1146,7 +1135,7 @@ void RestoreProfileNames(struct xmlNode *node, int version, PROJECTITEM *wa)
         if (IsAttrib(attribs, "TYPE"))
             profileDebugMode = !strcmp(attribs->value, "DEBUG");
         attribs = attribs->next;
-    } 
+    }
     if (selected)
     {
         strcpy(currentProfileName, LookupProfileName(selected));
@@ -1156,13 +1145,13 @@ void RestoreProfileNames(struct xmlNode *node, int version, PROJECTITEM *wa)
     {
         if (IsNode(node, "NAME"))
         {
-            struct xmlAttr *attribs = node->attribs;
-            char *name = NULL;
+            struct xmlAttr* attribs = node->attribs;
+            char* name = NULL;
             while (attribs)
             {
                 if (IsAttrib(attribs, "VALUE"))
                     name = attribs->value;
-                attribs = attribs->next;       
+                attribs = attribs->next;
             }
             if (name)
                 LookupProfileName(name);
@@ -1173,14 +1162,14 @@ void RestoreProfileNames(struct xmlNode *node, int version, PROJECTITEM *wa)
 }
 //-------------------------------------------------------------------------
 
-PROJECTITEM *RestoreWorkArea(char *name)
+PROJECTITEM* RestoreWorkArea(char* name)
 {
-    PROJECTITEM *wa;
+    PROJECTITEM* wa;
     int version;
-    FILE *in;
+    FILE* in;
     char activeName[MAX_PATH], buf[MAX_PATH], *p;
-    struct xmlNode *root;
-    struct xmlNode *nodes;
+    struct xmlNode* root;
+    struct xmlNode* nodes;
     activeName[0] = 0;
 
     in = fopen(name, "r");
@@ -1197,7 +1186,7 @@ PROJECTITEM *RestoreWorkArea(char *name)
             xmlFree(root);
         return 0;
     }
-    wa = calloc(1,sizeof(PROJECTITEM));
+    wa = calloc(1, sizeof(PROJECTITEM));
     if (!wa)
     {
         xmlFree(root);
@@ -1211,8 +1200,7 @@ PROJECTITEM *RestoreWorkArea(char *name)
     if (strrchr(p, '\\'))
         p = strrchr(p, '\\') + 1;
     strcpy(wa->displayName, p);
-    
-    
+
     TagEraseAllEntries();
     CloseAll();
     hbpInit();
@@ -1222,27 +1210,27 @@ PROJECTITEM *RestoreWorkArea(char *name)
     {
         if (IsNode(nodes, "VERSION"))
         {
-            struct xmlAttr *attribs = nodes->attribs;
+            struct xmlAttr* attribs = nodes->attribs;
             while (attribs)
             {
                 if (IsAttrib(attribs, "ID"))
                     version = atoi(attribs->value);
                 attribs = attribs->next;
-            } 
+            }
         }
         else if (IsNode(nodes, "FLAGS"))
         {
-            struct xmlAttr *attribs = nodes->attribs;
+            struct xmlAttr* attribs = nodes->attribs;
             while (attribs)
             {
                 if (IsAttrib(attribs, "EXPANDED"))
                     wa->expanded = atoi(attribs->value);
                 attribs = attribs->next;
-            } 
+            }
         }
         else if (IsNode(nodes, "DIALOG"))
         {
-            struct xmlAttr *attribs = nodes->attribs;
+            struct xmlAttr* attribs = nodes->attribs;
             while (attribs)
             {
                 if (IsAttrib(attribs, "GRIDSPACING"))
@@ -1252,12 +1240,12 @@ PROJECTITEM *RestoreWorkArea(char *name)
                 if (IsAttrib(attribs, "SNAPTOGRID"))
                     snapToGrid = !!atoi(attribs->value);
                 attribs = attribs->next;
-            } 
+            }
             if (gridSpacing <= 0)
                 gridSpacing = 4;
         }
         else if (IsNode(nodes, "PROFILELIST"))
-            RestoreProfileNames(nodes, version,wa);
+            RestoreProfileNames(nodes, version, wa);
         else if (IsNode(nodes, "HISTORY"))
             RestoreHistory(nodes, version);
         else if (IsNode(nodes, "EDITWINDOWS"))
@@ -1290,7 +1278,7 @@ PROJECTITEM *RestoreWorkArea(char *name)
             RestoreDocks(nodes, version);
         else if (IsNode(nodes, "PROJECTS"))
         {
-            struct xmlAttr *attribs = nodes->attribs;
+            struct xmlAttr* attribs = nodes->attribs;
             while (attribs)
             {
                 if (IsAttrib(attribs, "SELECTED"))
@@ -1298,14 +1286,14 @@ PROJECTITEM *RestoreWorkArea(char *name)
                     strcpy(activeName, attribs->value);
                 }
                 attribs = attribs->next;
-            } 
+            }
             RestoreProjectNames(nodes, version, wa);
             RestoreProjectDependencies(nodes, version, wa);
         }
         nodes = nodes->next;
     }
     xmlFree(root);
-    sprintf(buf, "%s.user", name);   
+    sprintf(buf, "%s.user", name);
     in = fopen(buf, "r");
     if (in)
     {
@@ -1324,27 +1312,27 @@ PROJECTITEM *RestoreWorkArea(char *name)
             {
                 if (IsNode(nodes, "VERSION"))
                 {
-                    struct xmlAttr *attribs = nodes->attribs;
+                    struct xmlAttr* attribs = nodes->attribs;
                     while (attribs)
                     {
                         if (IsAttrib(attribs, "ID"))
                             version = atoi(attribs->value);
                         attribs = attribs->next;
-                    } 
+                    }
                 }
                 else if (IsNode(nodes, "FLAGS"))
                 {
-                    struct xmlAttr *attribs = nodes->attribs;
+                    struct xmlAttr* attribs = nodes->attribs;
                     while (attribs)
                     {
                         if (IsAttrib(attribs, "EXPANDED"))
                             wa->expanded = atoi(attribs->value);
                         attribs = attribs->next;
-                    } 
+                    }
                 }
                 else if (IsNode(nodes, "DIALOG"))
                 {
-                    struct xmlAttr *attribs = nodes->attribs;
+                    struct xmlAttr* attribs = nodes->attribs;
                     while (attribs)
                     {
                         if (IsAttrib(attribs, "GRIDSPACING"))
@@ -1354,12 +1342,12 @@ PROJECTITEM *RestoreWorkArea(char *name)
                         if (IsAttrib(attribs, "SNAPTOGRID"))
                             snapToGrid = !!atoi(attribs->value);
                         attribs = attribs->next;
-                    } 
+                    }
                     if (gridSpacing <= 0)
                         gridSpacing = 4;
                 }
                 else if (IsNode(nodes, "PROFILELIST"))
-                    RestoreProfileNames(nodes, version,wa);
+                    RestoreProfileNames(nodes, version, wa);
                 else if (IsNode(nodes, "HISTORY"))
                     RestoreHistory(nodes, version);
                 else if (IsNode(nodes, "EDITWINDOWS"))
@@ -1397,7 +1385,7 @@ PROJECTITEM *RestoreWorkArea(char *name)
     }
     if (activeName[0])
     {
-        PROJECTITEM *project = wa->children;
+        PROJECTITEM* project = wa->children;
         while (project)
         {
             int n = strlen(activeName);
@@ -1419,27 +1407,27 @@ PROJECTITEM *RestoreWorkArea(char *name)
     PostDIDMessage(DID_BREAKWND, WM_RESTACK, 0, 0);
     PostDIDMessage(DID_BROWSEWND, WM_RESETHISTORY, 0, 0);
     PostDIDMessage(DID_MEMWND, WM_RESETHISTORY, 0, 0);
-    PostDIDMessage(DID_MEMWND+1, WM_RESETHISTORY, 0, 0);
-    PostDIDMessage(DID_MEMWND+2, WM_RESETHISTORY, 0, 0);
-    PostDIDMessage(DID_MEMWND+3, WM_RESETHISTORY, 0, 0);
+    PostDIDMessage(DID_MEMWND + 1, WM_RESETHISTORY, 0, 0);
+    PostDIDMessage(DID_MEMWND + 2, WM_RESETHISTORY, 0, 0);
+    PostDIDMessage(DID_MEMWND + 3, WM_RESETHISTORY, 0, 0);
     return wa;
 }
 
 //-------------------------------------------------------------------------
 
-void onehistsave(FILE *out, char **hist, char *name)
+void onehistsave(FILE* out, char** hist, char* name)
 {
     int i;
     fprintf(out, "\t<HISTORY TYPE=\"%s\">\n", name);
     for (i = 0; i < MAX_COMBO_HISTORY; i++)
         if (hist[i])
-            fprintf(out, "\t\t<HISTITEM VALUE=\"%s\"/>\n", xmlConvertString(hist[i],TRUE));
+            fprintf(out, "\t\t<HISTITEM VALUE=\"%s\"/>\n", xmlConvertString(hist[i], TRUE));
     fprintf(out, "\t</HISTORY>\n");
 }
 
 //-------------------------------------------------------------------------
 
-void SaveHistory(FILE *out)
+void SaveHistory(FILE* out)
 {
     onehistsave(out, findhist, "FIND");
     onehistsave(out, findbrowsehist, "BFINDPATH");
@@ -1454,64 +1442,62 @@ void SaveHistory(FILE *out)
 
 //-------------------------------------------------------------------------
 
-void SaveChangeLn(FILE *out, PROJECTITEM *wa)
+void SaveChangeLn(FILE* out, PROJECTITEM* wa)
 {
-    struct tagfile *list = tagFileList;
+    struct tagfile* list = tagFileList;
     fprintf(out, "\t<CHANGELN>\n");
     while (list)
     {
         if (list->changedLines)
         {
-            struct tagchangeln *data = list->changedLines;
+            struct tagchangeln* data = list->changedLines;
             fprintf(out, "\t\t<FILE NAME=\"%s\">\n", relpath(list->name, wa->realName));
             while (data)
             {
-                fprintf(out, "\t\t\t<LINE NUM=\"%d\" DELTA=\"%d\"/>\n", data
-                    ->lineno, data->delta);
+                fprintf(out, "\t\t\t<LINE NUM=\"%d\" DELTA=\"%d\"/>\n", data->lineno, data->delta);
                 data = data->next;
-            } fprintf(out, "\t\t</FILE>\n");
+            }
+            fprintf(out, "\t\t</FILE>\n");
         }
         list = list->next;
     }
     fprintf(out, "\t</CHANGELN>\n");
 }
-void SaveFileBrowse(FILE *out, PROJECTITEM *wa)
+void SaveFileBrowse(FILE* out, PROJECTITEM* wa)
 {
-    FILEBROWSE *p = fileBrowseInfo;
+    FILEBROWSE* p = fileBrowseInfo;
     fprintf(out, "\t<FILEBROWSE>\n");
     while (p)
     {
-        fprintf(out, "\t\t<FILE NAME=\"%s\" LINE=\"%d\"/>\n", relpath(p->info->dwName, wa->realName),
-                p->lineno);
+        fprintf(out, "\t\t<FILE NAME=\"%s\" LINE=\"%d\"/>\n", relpath(p->info->dwName, wa->realName), p->lineno);
         p = p->next;
     }
     fprintf(out, "\t</FILEBROWSE>\n");
 }
 //-------------------------------------------------------------------------
 
-void saveonetag(FILE *out, int tag, PROJECTITEM *wa)
+void saveonetag(FILE* out, int tag, PROJECTITEM* wa)
 {
-    struct tagfile *list = tagFileList;
+    struct tagfile* list = tagFileList;
     fprintf(out, "\t<TAG ID=\"%d\">\n", tag);
     while (list)
     {
         if (list->tagArray[tag])
         {
-            struct tag *data = list->tagArray[tag];
+            struct tag* data = list->tagArray[tag];
             fprintf(out, "\t\t<FILE NAME=\"%s\">\n", relpath(list->name, wa->realName));
             while (data)
             {
-                fprintf(out, 
-                    "\t\t\t<TAGITEM LINENO=\"%d\" CP=\"%d\" ENABLED=\"%d\" DISABLED=\"%d\"",
-                    data->drawnLineno, data->charpos, data->enabled, data->disable);
+                fprintf(out, "\t\t\t<TAGITEM LINENO=\"%d\" CP=\"%d\" ENABLED=\"%d\" DISABLED=\"%d\"", data->drawnLineno,
+                        data->charpos, data->enabled, data->disable);
 
                 if (tag == TAG_BOOKMARK)
-                    fprintf(out, ">\n%s\n\t\t\t</TAGITEM>\n", xmlConvertString
-                        (data->extra, FALSE));
+                    fprintf(out, ">\n%s\n\t\t\t</TAGITEM>\n", xmlConvertString(data->extra, FALSE));
                 else
                     fprintf(out, "/>\n");
                 data = data->next;
-            } fprintf(out, "\t\t</FILE>\n");
+            }
+            fprintf(out, "\t\t</FILE>\n");
         }
         list = list->next;
     }
@@ -1520,51 +1506,50 @@ void saveonetag(FILE *out, int tag, PROJECTITEM *wa)
 
 //-------------------------------------------------------------------------
 
-void SaveTags(FILE *out, PROJECTITEM *wa)
+void SaveTags(FILE* out, PROJECTITEM* wa)
 {
-    saveonetag(out, TAG_BP, wa );
+    saveonetag(out, TAG_BP, wa);
     saveonetag(out, TAG_BOOKMARK, wa);
 }
 
 //-------------------------------------------------------------------------
 
-
-
 //-------------------------------------------------------------------------
-void SaveWindows(FILE *out, PROJECTITEM *wa)
+void SaveWindows(FILE* out, PROJECTITEM* wa)
 {
     int count;
     int i;
     HWND wnd = (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0);
-    DWINFO *info = (DWINFO *)GetWindowLong(wnd, 0);
+    DWINFO* info = (DWINFO*)GetWindowLong(wnd, 0);
     fprintf(out, "\t<EDITWINDOWS>\n");
-    for (i=0; i < 10000; i++)
+    for (i = 0; i < 10000; i++)
         if (!SendMessage(hwndSrcTab, TABM_GETITEM, i, 0))
             break;
     count = i;
-    for (i=count-1; i >= 0; i--)
+    for (i = count - 1; i >= 0; i--)
     {
         HWND hwnd = (HWND)SendMessage(hwndSrcTab, TABM_GETITEM, i, 0);
         if (IsEditWindow(hwnd))
         {
-            DWINFO *ptr = (DWINFO *)GetWindowLong(hwnd, 0);
-            EDITDATA *dt = (EDITDATA *)SendMessage(ptr->dwHandle, EM_GETEDITDATA, 0, 0);
+            DWINFO* ptr = (DWINFO*)GetWindowLong(hwnd, 0);
+            EDITDATA* dt = (EDITDATA*)SendMessage(ptr->dwHandle, EM_GETEDITDATA, 0, 0);
             POINT p;
             int startpos;
             WINDOWPLACEMENT placement;
             CHARRANGE a;
-            SendMessage(ptr->dwHandle, EM_EXGETSEL, 0, (WPARAM) &a);
+            SendMessage(ptr->dwHandle, EM_EXGETSEL, 0, (WPARAM)&a);
             startpos = SendMessage(ptr->dwHandle, EM_EXLINEFROMCHAR, 0, a.cpMin);
             placement.length = sizeof(placement);
             GetWindowPlacement(ptr->self, &placement);
             p.x = placement.rcNormalPosition.left;
             p.y = placement.rcNormalPosition.top;
-            fprintf(out, 
-                "\t\t<WINDOW NAME=\"%s\" TITLE=\"%s\" X=\"%d\" Y=\"%d\" WIDTH=\"%d\" HEIGHT=\"%d\" LINENO=\"%d\" COPYID=\"%d\"/>\n", 
-                relpath(ptr->dwName, wa->realName), ptr->dwTitle, p.x, p.y, 
-                placement.rcNormalPosition.right - placement.rcNormalPosition.left, 
-                placement.rcNormalPosition.bottom - placement.rcNormalPosition.top, 
-                startpos + 1, dt->cd->siblings ? dt->id + 1 : 0);
+            fprintf(
+                out,
+                "\t\t<WINDOW NAME=\"%s\" TITLE=\"%s\" X=\"%d\" Y=\"%d\" WIDTH=\"%d\" HEIGHT=\"%d\" LINENO=\"%d\" COPYID=\"%d\"/>\n",
+                relpath(ptr->dwName, wa->realName), ptr->dwTitle, p.x, p.y,
+                placement.rcNormalPosition.right - placement.rcNormalPosition.left,
+                placement.rcNormalPosition.bottom - placement.rcNormalPosition.top, startpos + 1,
+                dt->cd->siblings ? dt->id + 1 : 0);
         }
     }
     // must be last
@@ -1577,77 +1562,67 @@ void SaveWindows(FILE *out, PROJECTITEM *wa)
 
 //-------------------------------------------------------------------------
 
-
 //-------------------------------------------------------------------------
 
-void SaveWatchpoints(FILE *out)
+void SaveWatchpoints(FILE* out)
 {
     int i;
     for (i = 0; i < 4; i++)
     {
-        fprintf(out, 
-            "\t<WATCH ID=\"%d\" ACTIVE=\"%d\" DISABLE=\"%d\" NAME=\"%s\" MODE=\"%d\" SIZE=\"%d\"/>\n", i + 1, 
-            !!(hdwebp[i].active), !!(hdwebp[i].disable), xmlConvertString(hdwebp[i].name, TRUE), 
-            hdwebp[i].mode, hdwebp[i].size);
+        fprintf(out, "\t<WATCH ID=\"%d\" ACTIVE=\"%d\" DISABLE=\"%d\" NAME=\"%s\" MODE=\"%d\" SIZE=\"%d\"/>\n", i + 1,
+                !!(hdwebp[i].active), !!(hdwebp[i].disable), xmlConvertString(hdwebp[i].name, TRUE), hdwebp[i].mode,
+                hdwebp[i].size);
     }
 }
 
-void SaveDataBreakpoints(FILE *out)
+void SaveDataBreakpoints(FILE* out)
 {
-    DATABREAK *search = dataBpList;
+    DATABREAK* search = dataBpList;
     while (search)
     {
-        fprintf(out,"\t<DATABP NAME=\"%s\" ACTIVE=\"%d\" DISABLE=\"%d\"/>\n", 
-                search->name, search->active, search->disable);
+        fprintf(out, "\t<DATABP NAME=\"%s\" ACTIVE=\"%d\" DISABLE=\"%d\"/>\n", search->name, search->active, search->disable);
         search = search->next;
     }
 }
-void SaveProjectNames(FILE *out, PROJECTITEM *wa)
+void SaveProjectNames(FILE* out, PROJECTITEM* wa)
 {
-    PROJECTITEM *l = wa->children;
-    fprintf(out,"\t<PROJECTS SELECTED=\"%s\">\n", 
-            activeProject ? activeProject->displayName : "");
+    PROJECTITEM* l = wa->children;
+    fprintf(out, "\t<PROJECTS SELECTED=\"%s\">\n", activeProject ? activeProject->displayName : "");
     while (l)
     {
         if (l->depends)
         {
-            PROJECTITEMLIST *depends = l->depends;
-            fprintf(out,
-                "\t\t<FILE NAME=\"%s\" CLEAN=\"%x\">\n", 
-                relpath(l->realName, wa->realName), l->clean);
+            PROJECTITEMLIST* depends = l->depends;
+            fprintf(out, "\t\t<FILE NAME=\"%s\" CLEAN=\"%x\">\n", relpath(l->realName, wa->realName), l->clean);
             while (depends)
             {
-                fprintf(out,
-                    "\t\t\t<DEPENDENCY NAME=\"%s\" />\n", 
-                    relpath(depends->item->realName, wa->realName));
+                fprintf(out, "\t\t\t<DEPENDENCY NAME=\"%s\" />\n", relpath(depends->item->realName, wa->realName));
                 depends = depends->next;
             }
             fprintf(out, "\t\t</FILE>\n");
         }
         else
         {
-            fprintf(out,
-                "\t\t<FILE NAME=\"%s\" CLEAN=\"%x\"/>\n", 
-                relpath(l->realName, wa->realName), l->clean);
+            fprintf(out, "\t\t<FILE NAME=\"%s\" CLEAN=\"%x\"/>\n", relpath(l->realName, wa->realName), l->clean);
         }
-        l = l->next ;
+        l = l->next;
     }
-    fprintf(out,"\t</PROJECTS>\n");
+    fprintf(out, "\t</PROJECTS>\n");
 }
-void SaveToolBarA(FILE *out, HWND hwnd)
+void SaveToolBarA(FILE* out, HWND hwnd)
 {
     char data[512];
-    int id = GetToolBarData(hwnd, data); // undefined in local context
+    int id = GetToolBarData(hwnd, data);  // undefined in local context
     fprintf(out, "\t<TOOLBAR ID=\"%d\" DEFINE=\"%s\"/>\n", id, data);
 }
 
 //-------------------------------------------------------------------------
 
-void SaveToolBars(FILE *out)
+void SaveToolBars(FILE* out)
 {
     int i;
     fprintf(out, "\t<TOOLLAYOUT COUNT=\"%d\">\n", toolCount);
-    for (i=0; i < toolCount; i++)
+    for (i = 0; i < toolCount; i++)
     {
         int n = toolLayout[i];
         if (n > 0)
@@ -1657,7 +1632,7 @@ void SaveToolBars(FILE *out)
                 n += 10000;
         }
         fprintf(out, " %d ", n);
-    }    
+    }
     fprintf(out, "\n\t</TOOLLAYOUT>\n");
     SaveToolBarA(out, hwndToolNav);
     SaveToolBarA(out, hwndToolBuildType);
@@ -1667,83 +1642,82 @@ void SaveToolBars(FILE *out)
     SaveToolBarA(out, hwndToolBookmark);
     SaveToolBarA(out, hwndToolThreads);
 }
-static void SaveDock(FILE *out, HWND hwnd, RECT *r, int ctl, int type, int index)
+static void SaveDock(FILE* out, HWND hwnd, RECT* r, int ctl, int type, int index)
 {
     int sel;
     int *list, *list1;
     HWND xx = (HWND)SendMessage(hwnd, TW_GETACTIVE, 0, 0);
-    for (sel=0; sel < MAX_HANDLES; sel++)
+    for (sel = 0; sel < MAX_HANDLES; sel++)
         if (handles[sel] == xx)
             break;
-    fprintf(out, "\t\t<DOCKWND TYPE=\"%d\" INDEX=\"%d\" SEL=\"%d\" CTL=\"%d\" POS=\"%d %d %d %d\">\n",
-            type, index, sel, ctl, r->left, r->top, r->right - r->left, r->bottom - r->top);
+    fprintf(out, "\t\t<DOCKWND TYPE=\"%d\" INDEX=\"%d\" SEL=\"%d\" CTL=\"%d\" POS=\"%d %d %d %d\">\n", type, index, sel, ctl,
+            r->left, r->top, r->right - r->left, r->bottom - r->top);
     fprintf(out, "\t\t\t");
-    list1 = list = (int *)SendMessage(hwnd, WM_GETDOCKLIST, 0, 0);
+    list1 = list = (int*)SendMessage(hwnd, WM_GETDOCKLIST, 0, 0);
     while (list && *list)
         fprintf(out, "%d ", *list++);
     free(list1);
     fprintf(out, "\n\t\t</DOCKWND>\n");
 }
-void SaveDocks(FILE *out)
+void SaveDocks(FILE* out)
 {
     int i;
     Select(0);
-    fprintf(out,"\t<DOCKS>\n");
-    fprintf(out,"\t\t<FRAME POS=\"%d %d %d %d\"/>\n", oldFrame.left, oldFrame.top, oldFrame.right - oldFrame.left, oldFrame.bottom -oldFrame.top);
-    for (i=0 ; i < debugDockCount; i++)
-         SaveDock(out, debugDocks[i].hwnd, &debugDocks[i].r, debugDocks[i].ctl, 0, i);
-    for (i=0 ; i < releaseDockCount; i++)
-         SaveDock(out, releaseDocks[i].hwnd, &releaseDocks[i].r, releaseDocks[i].ctl, 1, i);
-    for (i=0; i < debugfreeWindowCount; i++)
+    fprintf(out, "\t<DOCKS>\n");
+    fprintf(out, "\t\t<FRAME POS=\"%d %d %d %d\"/>\n", oldFrame.left, oldFrame.top, oldFrame.right - oldFrame.left,
+            oldFrame.bottom - oldFrame.top);
+    for (i = 0; i < debugDockCount; i++)
+        SaveDock(out, debugDocks[i].hwnd, &debugDocks[i].r, debugDocks[i].ctl, 0, i);
+    for (i = 0; i < releaseDockCount; i++)
+        SaveDock(out, releaseDocks[i].hwnd, &releaseDocks[i].r, releaseDocks[i].ctl, 1, i);
+    for (i = 0; i < debugfreeWindowCount; i++)
     {
         RECT r;
         GetWindowRect(debugfreeWindows[i], &r);
         MapWindowPoints(HWND_DESKTOP, hwndFrame, (LPPOINT)&r, 2);
         SaveDock(out, debugfreeWindows[i], &r, 0, 2, i);
     }
-    for (i=0; i < releasefreeWindowCount; i++)
+    for (i = 0; i < releasefreeWindowCount; i++)
     {
         RECT r;
         GetWindowRect(releasefreeWindows[i], &r);
         MapWindowPoints(HWND_DESKTOP, hwndFrame, (LPPOINT)&r, 2);
         SaveDock(out, releasefreeWindows[i], &r, 0, 3, i);
     }
-    fprintf(out,"\t</DOCKS>\n");
+    fprintf(out, "\t</DOCKS>\n");
 }
-void SaveWorkArea(PROJECTITEM *wa)
+void SaveWorkArea(PROJECTITEM* wa)
 {
-    FILE *out;
-    PROFILENAMELIST *pf;
-    char buf[ MAX_PATH];    
+    FILE* out;
+    PROFILENAMELIST* pf;
+    char buf[MAX_PATH];
     if (PropGetBool(NULL, "BACKUP_PROJECTS"))
-        backupFile(wa->realName);	
+        backupFile(wa->realName);
     out = fopen(wa->realName, "w");
     if (!out)
     {
         ExtendedMessageBox("Save Error", 0, "Could not save WorkArea");
-        return ;
-   }
+        return;
+    }
     fprintf(out, "<OCCWORKAREA>\n");
     fprintf(out, "\t<VERSION ID=\"%d\"/>\n", WSPVERS);
     SaveProjectNames(out, wa);
     fprintf(out, "</OCCWORKAREA>\n");
     fclose(out);
-    
-    
-    sprintf(buf, "%s.user", wa->realName);   
+
+    sprintf(buf, "%s.user", wa->realName);
     if (PropGetBool(NULL, "BACKUP_PROJECTS"))
-        backupFile(buf);	
+        backupFile(buf);
     out = fopen(buf, "w");
     if (!out)
     {
         ExtendedMessageBox("Save Error", 0, "Could not save WorkArea");
-        return ;
+        return;
     }
     fprintf(out, "<OCCWORKAREAUSERPREF>\n");
     fprintf(out, "\t<VERSION ID=\"%d\"/>\n", WSPVERS);
     fprintf(out, "\t<FLAGS EXPANDED=\"%d\"/>\n", wa->expanded ? 1 : 0);
-    fprintf(out, "\t<PROFILELIST SELECTED=\"%s\" TYPE=\"%s\">\n", currentProfileName,
-            profileDebugMode ? "DEBUG" : "RELEASE");
+    fprintf(out, "\t<PROFILELIST SELECTED=\"%s\" TYPE=\"%s\">\n", currentProfileName, profileDebugMode ? "DEBUG" : "RELEASE");
     fprintf(out, "\t\t<NAME VALUE=\"%s\"/>\n", sysProfileName);
     pf = profileNames;
     while (pf)
@@ -1755,8 +1729,8 @@ void SaveWorkArea(PROJECTITEM *wa)
     fprintf(out, "\t<DIALOG GRIDSPACING=\"%d\" SHOWGRID=\"%d\" SNAPTOGRID=\"%d\"/>\n", gridSpacing, showGrid, snapToGrid);
 
     fprintf(out, "\t<FIND X=\"%d\" Y=\"%d\"", findDlgPos.x, findDlgPos.y);
-    fprintf(out, "\n\t\tFF=\"%d\" RF=\"%d\" FM=\"%d\" RM=\"%d\" FE=\"%d\" RE=\"%d\"/>\n",
-            findflags, replaceflags, findmode, replacemode, findext, replaceext);
+    fprintf(out, "\n\t\tFF=\"%d\" RF=\"%d\" FM=\"%d\" RM=\"%d\" FE=\"%d\" RE=\"%d\"/>\n", findflags, replaceflags, findmode,
+            replacemode, findext, replaceext);
     fprintf(out, "\t<SIMPLEFIND FLAGS=\"%d\"/>\n", simpleFindFlags);
     SaveWatchpoints(out);
     fprintf(out, "\t<MEMWND WORDSIZE=\"%d\"/>\n", memoryWordSize);
@@ -1764,16 +1738,14 @@ void SaveWorkArea(PROJECTITEM *wa)
     SaveDataBreakpoints(out);
     SaveWindows(out, wa);
     SaveHistory(out);
-    SaveTags(out, wa );
+    SaveTags(out, wa);
     SaveChangeLn(out, wa);
     SaveFileBrowse(out, wa);
     SaveProfiles(out, wa, 1);
     SaveToolBars(out);
     SaveDocks(out);
-    
+
     fprintf(out, "</OCCWORKAREAUSERPREF>\n");
     fclose(out);
     wa->changed = FALSE;
-
 }
-

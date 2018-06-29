@@ -1,29 +1,29 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
-#define STRICT 
+#define STRICT
 #include <windows.h>
 #include <commctrl.h>
 #include <stdio.h>
@@ -34,20 +34,18 @@ extern HINSTANCE hInstance;
 extern HWND hwndTbFind;
 extern int modifiedFind;
 
-
 static int wndoffs;
 static WNDPROC oldComboProc;
 static WNDPROC oldEditProc;
 
-static char *propname = "HISTBUF";
+static char* propname = "HISTBUF";
 
-LRESULT CALLBACK historyEditComboProc(HWND hwnd, UINT iMessage, WPARAM wParam,
-    LPARAM lParam)
+LRESULT CALLBACK historyEditComboProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
     switch (iMessage)
     {
         case WM_KEYDOWN:
-            switch(wParam)
+            switch (wParam)
             {
                 case VK_RETURN:
                 case VK_ESCAPE:
@@ -58,7 +56,7 @@ LRESULT CALLBACK historyEditComboProc(HWND hwnd, UINT iMessage, WPARAM wParam,
         case WM_KEYUP:
             if (hwnd == hwndTbFind)
                 modifiedFind = TRUE;
-            switch(wParam)
+            switch (wParam)
             {
                 case VK_RETURN:
                 case VK_ESCAPE:
@@ -71,10 +69,9 @@ LRESULT CALLBACK historyEditComboProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     return CallWindowProc(oldEditProc, hwnd, iMessage, wParam, lParam);
 }
 
-LRESULT CALLBACK historyComboProc(HWND hwnd, UINT iMessage, WPARAM wParam,
-    LPARAM lParam)
+LRESULT CALLBACK historyComboProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
-    char **cbptr;
+    char** cbptr;
     char buf[MAX_PATH];
     int i;
     POINT pt;
@@ -87,27 +84,28 @@ LRESULT CALLBACK historyComboProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             return SendMessage(hwndedit, EM_GETMODIFY, wParam, lParam);
         case EM_SETMODIFY:
             return SendMessage(hwndedit, EM_SETMODIFY, wParam, lParam);
-            
+
         case WM_SETMODIFY:
-            return SendMessage(hwndedit, WM_SETTEXT, 0, (LPARAM)" "); 
-                // hack to fix a timing varagary that kept the find button disabled even though text was changing
+            return SendMessage(hwndedit, WM_SETTEXT, 0, (LPARAM) " ");
+            // hack to fix a timing varagary that kept the find button disabled even though text was changing
         case WM_COMMAND:
             if (LOWORD(wParam) == 1698)
             {
                 // return or escape key pressed in edit box...
-                PostMessage((HWND)GetWindowLong(hwnd, GWL_HWNDPARENT), WM_COMMAND, (4000 + HIWORD(wParam)) , (LPARAM)hwnd);
+                PostMessage((HWND)GetWindowLong(hwnd, GWL_HWNDPARENT), WM_COMMAND, (4000 + HIWORD(wParam)), (LPARAM)hwnd);
             }
             //         if ((wParam >> 16) == EN_CHANGE || (wParam >> 16) == EN_UPDATE)
-            //            return SendMessage(GetParent(hwnd),WM_COMMAND,(wParam & 0xffff0000) + GetWindowLong(hwnd,GWL_ID), (LPARAM)hwnd) ;
+            //            return SendMessage(GetParent(hwnd),WM_COMMAND,(wParam & 0xffff0000) + GetWindowLong(hwnd,GWL_ID),
+            //            (LPARAM)hwnd) ;
             break;
         case WM_SETHISTORY:
-            cbptr = (char **)lParam;
+            cbptr = (char**)lParam;
             SetProp(hwnd, propname, cbptr);
             for (i = 0; i < MAX_COMBO_HISTORY; i++)
-            if (cbptr[i])
-            {
-                SendMessage(hwnd, CB_ADDSTRING, 0, (LPARAM)cbptr[i]);
-            }
+                if (cbptr[i])
+                {
+                    SendMessage(hwnd, CB_ADDSTRING, 0, (LPARAM)cbptr[i]);
+                }
             SendMessage(hwnd, CB_SETCURSEL, 0, 0);
 
             return (0);
@@ -115,7 +113,7 @@ LRESULT CALLBACK historyComboProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             cbptr = GetProp(hwnd, propname);
             if (cbptr)
             {
-                int sel; // = SendMessage(hwnd, CB_GETCURSEL,0,0) ;
+                int sel;  // = SendMessage(hwnd, CB_GETCURSEL,0,0) ;
                 buf[SendMessage(hwndedit, WM_GETTEXT, MAX_PATH, (LPARAM)buf)] = 0;
                 sel = SendMessage(hwnd, CB_FINDSTRINGEXACT, 0, (LPARAM)buf);
                 if (sel == CB_ERR)
@@ -126,8 +124,7 @@ LRESULT CALLBACK historyComboProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                         {
                             free(cbptr[MAX_COMBO_HISTORY - 1]);
                         }
-                        memmove(cbptr + 1, cbptr, (MAX_COMBO_HISTORY - 1)
-                            *sizeof(char*));
+                        memmove(cbptr + 1, cbptr, (MAX_COMBO_HISTORY - 1) * sizeof(char*));
                         cbptr[0] = strdup(buf);
                         SendMessage(hwnd, CB_INSERTSTRING, 0, (LPARAM)buf);
                         //                  SendMessage(hwnd,CB_SETCURSEL,-1,0 );
@@ -136,8 +133,8 @@ LRESULT CALLBACK historyComboProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 }
                 else
                 {
-                    char *s = cbptr[sel];
-                    memmove(cbptr + 1, cbptr, sel *sizeof(char*));
+                    char* s = cbptr[sel];
+                    memmove(cbptr + 1, cbptr, sel * sizeof(char*));
                     cbptr[0] = s;
                 }
             }
@@ -145,10 +142,8 @@ LRESULT CALLBACK historyComboProc(HWND hwnd, UINT iMessage, WPARAM wParam,
         case WM_DESTROY:
             RemoveProp(hwnd, propname);
             break;
-            
     }
     return CallWindowProc(oldComboProc, hwnd, iMessage, wParam, lParam);
-
 }
 
 //-------------------------------------------------------------------------
@@ -186,7 +181,7 @@ static DWORD CALLBACK neEditComboProc(HWND hwnd, unsigned iMessage, WPARAM wPara
                 hwnd = hwnd1;
                 hwnd1 = GetParent(hwnd);
             }
-            
+
             return SendMessage(hwnd, iMessage, wParam, lParam);
         }
         case EM_EXSETSEL:

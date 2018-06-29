@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "LinkManager.h"
@@ -40,16 +40,16 @@ LinkOverlay::~LinkOverlay()
     for (auto region : regions)
         delete region;
 }
-bool LinkOverlay::ParseAssignment(LinkTokenizer &spec)
+bool LinkOverlay::ParseAssignment(LinkTokenizer& spec)
 {
     ObjString symName = spec.GetSymbol();
-    LinkExpression *value;
+    LinkExpression* value;
     spec.NextToken();
     if (!spec.MustMatch(LinkTokenizer::eAssign))
         return false;
     if (!spec.GetExpression(&value, true))
         return false;
-    LinkExpressionSymbol *esym = new LinkExpressionSymbol(symName, value) ;
+    LinkExpressionSymbol* esym = new LinkExpressionSymbol(symName, value);
     if (!LinkExpression::EnterSymbol(esym))
     {
         delete esym;
@@ -57,12 +57,12 @@ bool LinkOverlay::ParseAssignment(LinkTokenizer &spec)
     }
     else
     {
-        LinkRegionSpecifier *lrs = new LinkRegionSpecifier(esym);
+        LinkRegionSpecifier* lrs = new LinkRegionSpecifier(esym);
         regions.push_back(lrs);
     }
     return spec.MustMatch(LinkTokenizer::eSemi);
 }
-bool LinkOverlay::ParseName(LinkTokenizer &spec)
+bool LinkOverlay::ParseName(LinkTokenizer& spec)
 {
     if (!spec.Matches(LinkTokenizer::eSymbol))
         return false;
@@ -70,7 +70,7 @@ bool LinkOverlay::ParseName(LinkTokenizer &spec)
     spec.NextToken();
     return true;
 }
-bool LinkOverlay::ParseValue(LinkTokenizer &spec, LinkExpression **rv, bool alreadyassign)
+bool LinkOverlay::ParseValue(LinkTokenizer& spec, LinkExpression** rv, bool alreadyassign)
 {
     if (!alreadyassign)
     {
@@ -82,7 +82,7 @@ bool LinkOverlay::ParseValue(LinkTokenizer &spec, LinkExpression **rv, bool alre
         return false;
     return true;
 }
-bool LinkOverlay::ParseAttributes( LinkTokenizer &spec)
+bool LinkOverlay::ParseAttributes(LinkTokenizer& spec)
 {
     /* optional */
     if (spec.Matches(LinkTokenizer::eBracketOpen))
@@ -91,9 +91,9 @@ bool LinkOverlay::ParseAttributes( LinkTokenizer &spec)
         spec.NextToken();
         while (!done)
         {
-            switch(spec.GetTokenType())
+            switch (spec.GetTokenType())
             {
-                LinkExpression *value;
+                LinkExpression* value;
                 case LinkTokenizer::eAddr:
                     if (!ParseValue(spec, &value))
                         return false;
@@ -137,11 +137,11 @@ bool LinkOverlay::ParseAttributes( LinkTokenizer &spec)
             else
                 spec.NextToken();
         }
-        return spec.MustMatch(LinkTokenizer:: eBracketClose);
+        return spec.MustMatch(LinkTokenizer::eBracketClose);
     }
     return true;
 }
-bool LinkOverlay::ParseOverlaySpec(LinkManager *manager, CmdFiles &files, LinkTokenizer &spec)
+bool LinkOverlay::ParseOverlaySpec(LinkManager* manager, CmdFiles& files, LinkTokenizer& spec)
 {
     if (!spec.MustMatch(LinkTokenizer::eBegin))
         return false;
@@ -159,12 +159,12 @@ bool LinkOverlay::ParseOverlaySpec(LinkManager *manager, CmdFiles &files, LinkTo
         }
         else
         {
-            LinkRegion *newRegion = new LinkRegion(this);
+            LinkRegion* newRegion = new LinkRegion(this);
             regions.push_back(new LinkRegionSpecifier(newRegion));
             if (!newRegion->ParseRegionSpec(manager, files, spec))
                 return false;
             if (!spec.MustMatch(LinkTokenizer::eSemi))
-                return false;	
+                return false;
         }
     }
     if (!spec.MustMatch(LinkTokenizer::eEnd))
@@ -173,7 +173,7 @@ bool LinkOverlay::ParseOverlaySpec(LinkManager *manager, CmdFiles &files, LinkTo
         return false;
     return ParseAttributes(spec);
 }
-ObjInt LinkOverlay::PlaceOverlay(LinkManager *manager, LinkAttribs &partitionAttribs, bool completeLink, int overlayNum)
+ObjInt LinkOverlay::PlaceOverlay(LinkManager* manager, LinkAttribs& partitionAttribs, bool completeLink, int overlayNum)
 {
     ObjInt size = 0;
     ObjInt base = partitionAttribs.GetAddress();
@@ -182,7 +182,7 @@ ObjInt LinkOverlay::PlaceOverlay(LinkManager *manager, LinkAttribs &partitionAtt
     {
         if (!region->GetSymbol())
         {
-            alignRegion0= region->GetRegion()->GetAttribs().GetAlign();
+            alignRegion0 = region->GetRegion()->GetAttribs().GetAlign();
             break;
         }
     }
@@ -205,18 +205,18 @@ ObjInt LinkOverlay::PlaceOverlay(LinkManager *manager, LinkAttribs &partitionAtt
     {
         if (region->GetSymbol())
         {
-//			if (completeLink)
-//				region->GetSymbol()->SetValue(new LinkExpression(region->GetSymbol()->GetValue()->Eval(base + size)));
-//			else
-                region->GetSymbol()->SetValue(region->GetSymbol()->GetValue()->Eval(overlayNum, base, size));
+            //			if (completeLink)
+            //				region->GetSymbol()->SetValue(new LinkExpression(region->GetSymbol()->GetValue()->Eval(base + size)));
+            //			else
+            region->GetSymbol()->SetValue(region->GetSymbol()->GetValue()->Eval(overlayNum, base, size));
         }
         else
         {
             size += region->GetRegion()->PlaceRegion(manager, attribs, base + size);
         }
-    }	
-//	if (attribs.GetAlign() > partitionAttribs.GetAlign())
-//		partitionAttribs.SetAlign(new LinkExpression(attribs.GetAlign()));
+    }
+    //	if (attribs.GetAlign() > partitionAttribs.GetAlign())
+    //		partitionAttribs.SetAlign(new LinkExpression(attribs.GetAlign()));
     if (size < attribs.GetSize())
         size = attribs.GetSize();
     if (!attribs.GetRoundSize())
@@ -224,7 +224,7 @@ ObjInt LinkOverlay::PlaceOverlay(LinkManager *manager, LinkAttribs &partitionAtt
             attribs.SetRoundSize(new LinkExpression(partitionAttribs.GetRoundSize()));
     if (attribs.GetRoundSize())
     {
-        size += attribs.GetRoundSize() -1;
+        size += attribs.GetRoundSize() - 1;
         size /= attribs.GetRoundSize();
         size *= attribs.GetRoundSize();
     }
@@ -236,5 +236,5 @@ ObjInt LinkOverlay::PlaceOverlay(LinkManager *manager, LinkAttribs &partitionAtt
     if (!attribs.GetSize())
         attribs.SetSize(new LinkExpression(size));
     ObjInt maxSize = base + size - partitionAttribs.GetAddress();
-    return maxSize;	
+    return maxSize;
 }

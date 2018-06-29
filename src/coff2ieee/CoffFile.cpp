@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "CoffFile.h"
@@ -35,39 +35,38 @@ CoffFile::~CoffFile()
 {
     if (name.size() && inputFile)
         delete inputFile;
-        
-    delete [] sections;
-    delete [] symbols;
-    delete [] strings;
-    for (int i=0; i < relocs.size(); i++)
+
+    delete[] sections;
+    delete[] symbols;
+    delete[] strings;
+    for (int i = 0; i < relocs.size(); i++)
     {
-        CoffReloc *reloc = relocs[i];
+        CoffReloc* reloc = relocs[i];
         delete[] reloc;
     }
-    
 }
 bool CoffFile::Load()
 {
     if (name.size())
         inputFile = new std::fstream(name.c_str(), std::ios::binary | std::ios::in);
     if (inputFile && inputFile->is_open())
-    {   
-        inputFile->read((char *)&header, sizeof(header));
+    {
+        inputFile->read((char*)&header, sizeof(header));
         if (!inputFile->fail() && !inputFile->eof())
         {
             if (header.Machine == IMAGE_FILE_MACHINE_I386)
             {
                 sections = new CoffSection[header.NumberOfSections + 1];
-                inputFile->read((char *)sections, header.NumberOfSections * sizeof(CoffSection));
+                inputFile->read((char*)sections, header.NumberOfSections * sizeof(CoffSection));
                 if (!inputFile->fail() && !inputFile->eof())
                 {
                     inputFile->seekg(header.PointerToSymbolTable + libOffset);
-                    symbols = new CoffSymbol[header.NumberOfSymbols+2];
-                    inputFile->read((char *)symbols, header.NumberOfSymbols * sizeof(CoffSymbol));
+                    symbols = new CoffSymbol[header.NumberOfSymbols + 2];
+                    inputFile->read((char*)symbols, header.NumberOfSymbols * sizeof(CoffSymbol));
                     if (!inputFile->fail() && !inputFile->eof())
                     {
                         unsigned size;
-                        inputFile->read((char *)&size, sizeof(size));
+                        inputFile->read((char*)&size, sizeof(size));
                         strings = new char[size];
                         memcpy(strings, &size, sizeof(size));
                         inputFile->read(strings + sizeof(size), size - sizeof(size));
@@ -75,11 +74,11 @@ bool CoffFile::Load()
                         {
                             int i;
                             inputFile->clear();
-                            for (i=0; i < header.NumberOfSections; i++)
+                            for (i = 0; i < header.NumberOfSections; i++)
                             {
                                 if (sections[i].NumberOfRelocations)
                                 {
-                                    CoffReloc *thisReloc;
+                                    CoffReloc* thisReloc;
                                     int relocCount = sections[i].NumberOfRelocations;
                                     if (sections[i].Characteristics & IMAGE_SCN_LNK_NRELOC_OVFL)
                                     {
@@ -89,14 +88,14 @@ bool CoffFile::Load()
                                         }
                                         CoffReloc temp;
                                         inputFile->seekg(sections[i].PointerToRelocations + libOffset);
-                                        inputFile->read((char *)&temp, sizeof(CoffReloc));
+                                        inputFile->read((char*)&temp, sizeof(CoffReloc));
                                         relocCount = temp.VirtualAddress + 1;
                                     }
 
                                     thisReloc = new CoffReloc[relocCount];
                                     relocs.push_back(thisReloc);
                                     inputFile->seekg(sections[i].PointerToRelocations + libOffset);
-                                    inputFile->read((char *)thisReloc, relocCount * sizeof(CoffReloc)); 
+                                    inputFile->read((char*)thisReloc, relocCount * sizeof(CoffReloc));
                                     if (inputFile->fail())
                                         break;
                                     inputFile->clear();
@@ -121,18 +120,19 @@ bool CoffFile::Load()
 bool CoffFile::ScanSymbols()
 {
     sectionSymbols.resize(header.NumberOfSections + 1);
-    for (int i=0; i < header.NumberOfSymbols; i+= symbols[i].NumberOfAuxSymbols + 1)
+    for (int i = 0; i < header.NumberOfSymbols; i += symbols[i].NumberOfAuxSymbols + 1)
     {
-        if ((symbols[i].StorageClass == IMAGE_SYM_CLASS_STATIC || symbols[i].StorageClass == IMAGE_SYM_CLASS_SECTION) && symbols[i].SectionNumber)
+        if ((symbols[i].StorageClass == IMAGE_SYM_CLASS_STATIC || symbols[i].StorageClass == IMAGE_SYM_CLASS_SECTION) &&
+            symbols[i].SectionNumber)
         {
             int n = strlen(symbols[i].Name);
             if (n)
             {
                 if (n > 8)
                     n = 8;
-                if (!strncmp(symbols[i].Name, sections[symbols[i].SectionNumber-1].Name, n))
+                if (!strncmp(symbols[i].Name, sections[symbols[i].SectionNumber - 1].Name, n))
                 {
-                    sectionSymbols[symbols[i].SectionNumber-1] = (symbols +i);
+                    sectionSymbols[symbols[i].SectionNumber - 1] = (symbols + i);
                 }
             }
         }
@@ -142,7 +142,7 @@ bool CoffFile::ScanSymbols()
 bool CoffFile::AddComdefs()
 {
     int n = header.NumberOfSections;
-    for (int i=1; i < header.NumberOfSymbols; i+= symbols[i].NumberOfAuxSymbols + 1)
+    for (int i = 1; i < header.NumberOfSymbols; i += symbols[i].NumberOfAuxSymbols + 1)
     {
         if (symbols[i].SectionNumber == 0 && symbols[i].StorageClass == IMAGE_SYM_CLASS_EXTERNAL && symbols[i].Value)
         {
@@ -153,13 +153,13 @@ bool CoffFile::AddComdefs()
 }
 std::string CoffFile::GetSectionName(int sect)
 {
-    if (sectionSymbols[sect] && ((CoffSectionAux *)&sectionSymbols[sect][1])->Selection > 1)
+    if (sectionSymbols[sect] && ((CoffSectionAux*)&sectionSymbols[sect][1])->Selection > 1)
     {
         std::string name;
-        CoffSymbol *sym = sectionSymbols[sect] + sectionSymbols[sect]->NumberOfAuxSymbols + 1;
+        CoffSymbol* sym = sectionSymbols[sect] + sectionSymbols[sect]->NumberOfAuxSymbols + 1;
         while (sym < symbols + header.NumberOfSymbols)
         {
-            if (sym->SectionNumber == sect+1)
+            if (sym->SectionNumber == sect + 1)
                 break;
             sym += sym->NumberOfAuxSymbols + 1;
         }
@@ -167,10 +167,10 @@ std::string CoffFile::GetSectionName(int sect)
         {
             Utils::fatal("Comdat symbol name not found, exiting");
         }
-        if (*(unsigned *)sym->Name == 0)
+        if (*(unsigned*)sym->Name == 0)
         {
-            name = strings + *(unsigned *)(sym->Name + 4);
-        }            
+            name = strings + *(unsigned*)(sym->Name + 4);
+        }
         else
         {
             name = sym->Name;
@@ -182,7 +182,7 @@ std::string CoffFile::GetSectionName(int sect)
         else
             return "vsd" + name;
     }
-    
+
     if (sections[sect].Characteristics & (IMAGE_SCN_MEM_EXECUTE | IMAGE_SCN_CNT_CODE))
     {
         return "code";
@@ -210,14 +210,14 @@ std::string CoffFile::GetSectionName(int sect)
 }
 ObjInt CoffFile::GetSectionQualifiers(int sect)
 {
-    if (sectionSymbols[sect] && ((CoffSectionAux *)&sectionSymbols[sect][1])->Selection > 1)
+    if (sectionSymbols[sect] && ((CoffSectionAux*)&sectionSymbols[sect][1])->Selection > 1)
     {
         ObjInt sel = 0;
-        switch(((CoffSectionAux *)&sectionSymbols[sect][1])->Selection)
+        switch (((CoffSectionAux*)&sectionSymbols[sect][1])->Selection)
         {
-//            case 1:
-//                sel = ObjSection::unique;
-                break;
+            //            case 1:
+            //                sel = ObjSection::unique;
+            break;
             case 2:
             case 3:
             case 4:
@@ -227,15 +227,16 @@ ObjInt CoffFile::GetSectionQualifiers(int sect)
                 break;
             default:
                 sel = ObjSection::max;
-                std:: cout << "warning: unknown comdat style #" << (int)((CoffSectionAux *)&sectionSymbols[sect][1])->Selection << std::endl;
+                std::cout << "warning: unknown comdat style #" << (int)((CoffSectionAux*)&sectionSymbols[sect][1])->Selection
+                          << std::endl;
                 break;
-        } 
+        }
         if (sections[sect].Characteristics & (IMAGE_SCN_MEM_EXECUTE | IMAGE_SCN_CNT_CODE))
             return ObjSection::rom | sel | ObjSection::virt;
         else
             return ObjSection::ram | sel | ObjSection::virt;
     }
-    
+
     if (sections[sect].Characteristics & (IMAGE_SCN_MEM_EXECUTE | IMAGE_SCN_CNT_CODE))
     {
         return ObjSection::rom;
@@ -259,21 +260,21 @@ ObjInt CoffFile::GetSectionQualifiers(int sect)
     }
     return ObjSection::ram;
 }
-ObjFile *CoffFile::ConvertToObject(std::string outputName, ObjFactory &factory)
+ObjFile* CoffFile::ConvertToObject(std::string outputName, ObjFactory& factory)
 {
-    ObjFile *fil = new ObjFile(outputName);
-    std::vector<ObjSection *> objectSections;
-    std::map<int, ObjSymbol *> externalMapping;
+    ObjFile* fil = new ObjFile(outputName);
+    std::vector<ObjSection*> objectSections;
+    std::map<int, ObjSymbol*> externalMapping;
     // Create the sections;
-    for (int i=0; i < header.NumberOfSections; i++)
+    for (int i = 0; i < header.NumberOfSections; i++)
     {
         if (!(sections[i].Characteristics & (IMAGE_SCN_LNK_REMOVE | IMAGE_SCN_LNK_INFO)) && strnicmp(sections[i].Name, ".debug", 6))
         {
             std::string sectname = GetSectionName(i);
-            ObjSection * sect = factory.MakeSection(sectname);
+            ObjSection* sect = factory.MakeSection(sectname);
             if (sectionSymbols[i])
             {
-                CoffSectionAux *aux = (CoffSectionAux *)& sectionSymbols[i][1];
+                CoffSectionAux* aux = (CoffSectionAux*)&sectionSymbols[i][1];
                 sect->SetSize(new ObjExpression(aux->Length));
             }
             sect->SetAlignment(IMAGE_SCN_ALIGN(sections[i].Characteristics));
@@ -287,16 +288,17 @@ ObjFile *CoffFile::ConvertToObject(std::string outputName, ObjFactory &factory)
         }
     }
     // dump comdefs
-    for (int i=1; i < header.NumberOfSymbols; i+= symbols[i].NumberOfAuxSymbols + 1)
+    for (int i = 1; i < header.NumberOfSymbols; i += symbols[i].NumberOfAuxSymbols + 1)
     {
-        if (symbols[i].SectionNumber > header.NumberOfSections && symbols[i].StorageClass == IMAGE_SYM_CLASS_EXTERNAL && symbols[i].Value)
+        if (symbols[i].SectionNumber > header.NumberOfSections && symbols[i].StorageClass == IMAGE_SYM_CLASS_EXTERNAL &&
+            symbols[i].Value)
         {
-            char *sname = symbols[i].Name;
+            char* sname = symbols[i].Name;
             std::string symbolName;
-            if (*(unsigned *)sname == 0)
+            if (*(unsigned*)sname == 0)
             {
-                symbolName = strings + *(unsigned *)(sname + 4); 
-            }            
+                symbolName = strings + *(unsigned*)(sname + 4);
+            }
             else
             {
                 symbolName = symbols[i].Name;
@@ -304,7 +306,7 @@ ObjFile *CoffFile::ConvertToObject(std::string outputName, ObjFactory &factory)
                     symbolName = symbolName.substr(0, 8);
             }
             symbolName = std::string("vsb") + symbolName;
-            ObjSection * sect = factory.MakeSection(symbolName);
+            ObjSection* sect = factory.MakeSection(symbolName);
             sect->SetSize(new ObjExpression(symbols[i].Value));
             sect->SetAlignment(8);
             sect->SetQuals(ObjSection::ram | ObjSection::max | ObjSection::virt);
@@ -313,20 +315,21 @@ ObjFile *CoffFile::ConvertToObject(std::string outputName, ObjFactory &factory)
         }
     }
     // create the symbols
-    for (int i=0; i < header.NumberOfSymbols; i+= symbols[i].NumberOfAuxSymbols + 1)
+    for (int i = 0; i < header.NumberOfSymbols; i += symbols[i].NumberOfAuxSymbols + 1)
     {
         if (symbols[i].StorageClass == IMAGE_SYM_CLASS_EXTERNAL && symbols[i].SectionNumber <= header.NumberOfSections)
         {
-            if (symbols[i].SectionNumber <= 0 || sectionSymbols[i] && (((CoffSectionAux *)&sectionSymbols[symbols[i].SectionNumber-1][1])->Selection <= 1))
+            if (symbols[i].SectionNumber <= 0 ||
+                sectionSymbols[i] && (((CoffSectionAux*)&sectionSymbols[symbols[i].SectionNumber - 1][1])->Selection <= 1))
             {
-                char *sname = symbols[i].Name;
+                char* sname = symbols[i].Name;
                 std::string symbolName;
-                if (*(unsigned *)sname == 0)
+                if (*(unsigned*)sname == 0)
                 {
-                    symbolName = strings + *(unsigned *)(sname + 4); 
+                    symbolName = strings + *(unsigned*)(sname + 4);
                     if (symbolName == "_WinMain@16")
                         symbolName = "WinMain";
-                }            
+                }
                 else
                 {
                     symbolName = symbols[i].Name;
@@ -335,21 +338,23 @@ ObjFile *CoffFile::ConvertToObject(std::string outputName, ObjFactory &factory)
                 }
                 if (symbols[i].SectionNumber == -1)
                 {
-                    ObjSymbol *symbol = factory.MakePublicSymbol(symbolName);
-                    ObjExpression *exp = new ObjExpression(symbols[i].Value);
-                    symbol->SetOffset(exp);       
+                    ObjSymbol* symbol = factory.MakePublicSymbol(symbolName);
+                    ObjExpression* exp = new ObjExpression(symbols[i].Value);
+                    symbol->SetOffset(exp);
                     fil->Add(symbol);
                 }
                 else if (symbols[i].SectionNumber)
                 {
-                    ObjSymbol *symbol = factory.MakePublicSymbol(symbolName);
-                    ObjExpression *exp = new ObjExpression(ObjExpression::eAdd, new ObjExpression(objectSections[symbols[i].SectionNumber-1]), new ObjExpression(symbols[i].Value));
-                    symbol->SetOffset(exp);       
+                    ObjSymbol* symbol = factory.MakePublicSymbol(symbolName);
+                    ObjExpression* exp =
+                        new ObjExpression(ObjExpression::eAdd, new ObjExpression(objectSections[symbols[i].SectionNumber - 1]),
+                                          new ObjExpression(symbols[i].Value));
+                    symbol->SetOffset(exp);
                     fil->Add(symbol);
                 }
                 else
                 {
-                    ObjSymbol *symbol = factory.MakeExternalSymbol(symbolName);
+                    ObjSymbol* symbol = factory.MakeExternalSymbol(symbolName);
                     externalMapping[i] = symbol;
                     fil->Add(symbol);
                 }
@@ -357,7 +362,7 @@ ObjFile *CoffFile::ConvertToObject(std::string outputName, ObjFactory &factory)
         }
     }
     // dump data to the sections
-    for (int i=0; i < header.NumberOfSections; i++)
+    for (int i = 0; i < header.NumberOfSections; i++)
     {
         if (objectSections[i])
         {
@@ -366,7 +371,7 @@ ObjFile *CoffFile::ConvertToObject(std::string outputName, ObjFactory &factory)
             {
                 inputFile->seekg(sections[i].PointerToRawData + libOffset);
                 int relocCount = sections[i].NumberOfRelocations;
-                CoffReloc * relocPointer = relocs[i];
+                CoffReloc* relocPointer = relocs[i];
                 if (relocCount == 0xffff && (sections[i].Characteristics & IMAGE_SCN_LNK_NRELOC_OVFL))
                 {
                     relocCount = relocPointer[0].VirtualAddress;
@@ -378,13 +383,13 @@ ObjFile *CoffFile::ConvertToObject(std::string outputName, ObjFactory &factory)
                 {
                     if (!relocCount)
                     {
-                        ObjByte *data = new ObjByte[sections[i].SizeOfRawData-offset];
-                        inputFile->read((char *)data, sections[i].SizeOfRawData-offset);
+                        ObjByte* data = new ObjByte[sections[i].SizeOfRawData - offset];
+                        inputFile->read((char*)data, sections[i].SizeOfRawData - offset);
                         if (inputFile->fail())
                         {
                             return nullptr;
                         }
-                        ObjMemory *newMem = new ObjMemory(data, sections[i].SizeOfRawData-offset);
+                        ObjMemory* newMem = new ObjMemory(data, sections[i].SizeOfRawData - offset);
                         objectSections[i]->Add(newMem);
                         offset = sections[i].SizeOfRawData;
                     }
@@ -394,82 +399,96 @@ ObjFile *CoffFile::ConvertToObject(std::string outputName, ObjFactory &factory)
                         int n = relocPointer->VirtualAddress - offset;
                         if (n)
                         {
-                            ObjByte *data = new ObjByte[n];
-                            inputFile->read((char *)data, n);
+                            ObjByte* data = new ObjByte[n];
+                            inputFile->read((char*)data, n);
                             if (inputFile->fail())
                             {
                                 return nullptr;
                             }
-                            ObjMemory *newMem = new ObjMemory(data, n);
+                            ObjMemory* newMem = new ObjMemory(data, n);
                             objectSections[i]->Add(newMem);
                         }
-                        inputFile->read((char *)&fixupOffset, sizeof(unsigned));
+                        inputFile->read((char*)&fixupOffset, sizeof(unsigned));
                         if (inputFile->fail())
                         {
                             return nullptr;
                         }
                         switch (relocPointer->Type)
                         {
-                            ObjExpression *fixupExpr;
+                            ObjExpression* fixupExpr;
                             case IMAGE_REL_I386_DIR32:
                             case IMAGE_REL_I386_REL32:
                                 if (symbols[relocPointer->SymbolTableIndex].StorageClass == IMAGE_SYM_CLASS_EXTERNAL)
                                 {
-                                    if  (symbols[relocPointer->SymbolTableIndex].SectionNumber == 0)
+                                    if (symbols[relocPointer->SymbolTableIndex].SectionNumber == 0)
                                     {
                                         // external
                                         fixupExpr = new ObjExpression(externalMapping[relocPointer->SymbolTableIndex]);
                                     }
-                                    else if  (symbols[relocPointer->SymbolTableIndex].SectionNumber > header.NumberOfSections)
+                                    else if (symbols[relocPointer->SymbolTableIndex].SectionNumber > header.NumberOfSections)
                                     {
-                                        fixupExpr = new ObjExpression(ObjExpression::eAdd, new ObjExpression(objectSections[symbols[relocPointer->SymbolTableIndex].SectionNumber-1]), new ObjExpression(0));
+                                        fixupExpr = new ObjExpression(
+                                            ObjExpression::eAdd,
+                                            new ObjExpression(
+                                                objectSections[symbols[relocPointer->SymbolTableIndex].SectionNumber - 1]),
+                                            new ObjExpression(0));
                                     }
                                     else
                                     {
-                                        
-                                        // public 
-                                        fixupExpr = new ObjExpression(ObjExpression::eAdd, new ObjExpression(objectSections[symbols[relocPointer->SymbolTableIndex].SectionNumber-1]), new ObjExpression(symbols[relocPointer->SymbolTableIndex].Value));
-                                    }    
-                                    
+
+                                        // public
+                                        fixupExpr = new ObjExpression(
+                                            ObjExpression::eAdd,
+                                            new ObjExpression(
+                                                objectSections[symbols[relocPointer->SymbolTableIndex].SectionNumber - 1]),
+                                            new ObjExpression(symbols[relocPointer->SymbolTableIndex].Value));
+                                    }
                                 }
                                 else
                                 {
                                     // local static
-                                    fixupExpr = new ObjExpression(ObjExpression::eAdd, new ObjExpression(objectSections[symbols[relocPointer->SymbolTableIndex].SectionNumber-1]), new ObjExpression(symbols[relocPointer->SymbolTableIndex].Value));
+                                    fixupExpr = new ObjExpression(
+                                        ObjExpression::eAdd,
+                                        new ObjExpression(
+                                            objectSections[symbols[relocPointer->SymbolTableIndex].SectionNumber - 1]),
+                                        new ObjExpression(symbols[relocPointer->SymbolTableIndex].Value));
                                 }
                                 if (relocPointer->Type == IMAGE_REL_I386_REL32)
                                 {
-                                    fixupExpr = new ObjExpression(ObjExpression::eAdd, fixupExpr, new ObjExpression(fixupOffset - 4));
-                                    fixupExpr = new ObjExpression(ObjExpression::eSub, fixupExpr, new ObjExpression(ObjExpression::ePC) );
+                                    fixupExpr =
+                                        new ObjExpression(ObjExpression::eAdd, fixupExpr, new ObjExpression(fixupOffset - 4));
+                                    fixupExpr =
+                                        new ObjExpression(ObjExpression::eSub, fixupExpr, new ObjExpression(ObjExpression::ePC));
                                 }
                                 else if (fixupOffset)
                                 {
                                     fixupExpr = new ObjExpression(ObjExpression::eAdd, fixupExpr, new ObjExpression(fixupOffset));
                                 }
                                 objectSections[i]->Add(new ObjMemory(fixupExpr, 4));
-   
+
                                 break;
                             default:
                                 std::cout << "Invalid relocation" << std::endl;
                                 return nullptr;
                         }
-                        
+
                         offset += n + 4;
                         relocPointer++;
                         relocCount--;
                     }
-                }                
+                }
             }
         }
     }
-    for (int i=1; i < header.NumberOfSymbols; i+= symbols[i].NumberOfAuxSymbols + 1)
+    for (int i = 1; i < header.NumberOfSymbols; i += symbols[i].NumberOfAuxSymbols + 1)
     {
-        if (symbols[i].SectionNumber > header.NumberOfSections && symbols[i].StorageClass == IMAGE_SYM_CLASS_EXTERNAL && symbols[i].Value)
+        if (symbols[i].SectionNumber > header.NumberOfSections && symbols[i].StorageClass == IMAGE_SYM_CLASS_EXTERNAL &&
+            symbols[i].Value)
         {
-            int n = symbols[i].SectionNumber-1;
-            ObjByte *data = new ObjByte[symbols[i].Value];
-            memset(data,0, symbols[i].Value);
-            ObjMemory *newMem = new ObjMemory(data, symbols[i].Value);
+            int n = symbols[i].SectionNumber - 1;
+            ObjByte* data = new ObjByte[symbols[i].Value];
+            memset(data, 0, symbols[i].Value);
+            ObjMemory* newMem = new ObjMemory(data, symbols[i].Value);
             objectSections[n]->Add(newMem);
         }
     }

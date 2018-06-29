@@ -1,30 +1,30 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 // assumes tabs aren't going to get reset yet
-#define STRICT 
+#define STRICT
 #include <windows.h>
 #include <commctrl.h>
 #include <stdio.h>
@@ -37,26 +37,25 @@
 #include <process.h>
 #include "symtypes.h"
 
-
 /**********************************************************************
  * tab to the current line position
  **********************************************************************/
-void insertcrtabs(HWND hwnd, EDITDATA *p)
+void insertcrtabs(HWND hwnd, EDITDATA* p)
 {
     int oldinsert = p->cd->inserting;
     int parencount = 0;
     if (!p->cd->language)
     {
         p->insertcursorcolumn = 0;
-        return ;
+        return;
     }
     if (!PropGetBool(NULL, "AUTO_INDENT"))
     {
         p->insertcursorcolumn = 0;
-        return ;
+        return;
     }
     p->cd->inserting = TRUE;
-    while (p->insertcursorcolumn  >= p->cd->tabs)
+    while (p->insertcursorcolumn >= p->cd->tabs)
     {
         inserttab(hwnd, p);
         p->insertcursorcolumn -= p->cd->tabs;
@@ -67,19 +66,18 @@ void insertcrtabs(HWND hwnd, EDITDATA *p)
         insertchar(hwnd, p, ' ');
     }
     p->cd->inserting = oldinsert;
-//    insertautoundo(hwnd, p, UNDO_AUTOCHAINBEGIN);
+    //    insertautoundo(hwnd, p, UNDO_AUTOCHAINBEGIN);
 }
 //-------------------------------------------------------------------------
 
-int spacedend(EDITDATA *p, int pos)
+int spacedend(EDITDATA* p, int pos)
 {
     int rv = 0;
     while (pos && p->cd->text[pos - 1].ch != '\n')
         if (!isspace(p->cd->text[--pos].ch))
             return 0;
     rv = pos;
-    while (p->cd->text[pos].ch && isspace(p->cd->text[pos].ch) && p->cd->text[pos].ch !=
-        '\n')
+    while (p->cd->text[pos].ch && isspace(p->cd->text[pos].ch) && p->cd->text[pos].ch != '\n')
         pos++;
     if (p->cd->text[pos].ch == '}')
         return rv;
@@ -89,7 +87,7 @@ int spacedend(EDITDATA *p, int pos)
 
 //-------------------------------------------------------------------------
 
-int preprocline(EDITDATA *p, int pos)
+int preprocline(EDITDATA* p, int pos)
 {
     int rv;
     while (pos && p->cd->text[pos - 1].ch != '\n')
@@ -100,61 +98,57 @@ int preprocline(EDITDATA *p, int pos)
     if (p->cd->text[pos].ch == '#')
         return rv;
     else
-        return  - 1;
+        return -1;
 }
 
 /**********************************************************************
  * tab to the current line position
  **********************************************************************/
-void InsertBeginTabs(HWND hwnd, EDITDATA *p)
+void InsertBeginTabs(HWND hwnd, EDITDATA* p)
 {
     int pos, n;
     int storepos, parencount = 0;
     int solpos, eospos;
     int oldinsert = p->cd->inserting;
     if (p->cd->language != LANGUAGE_C && p->cd->language != LANGUAGE_CPP && p->cd->language != LANGUAGE_RC)
-        return ;
+        return;
     if (!PropGetBool(NULL, "AUTO_FORMAT"))
-        return ;
+        return;
     p->cd->inserting = TRUE;
     pos = p->selstartcharpos - 1;
     solpos = pos;
     while (solpos && p->cd->text[solpos - 1].ch != '\n')
     {
         if (!isspace(p->cd->text[solpos - 1].ch))
-            return ;
+            return;
         solpos--;
     }
     if (solpos)
-        pos = solpos-1 ;
+        pos = solpos - 1;
     eospos = solpos;
-    while (eospos < p->cd->textlen && isspace(p->cd->text[eospos].ch) &&
-               p->cd->text[eospos].ch != '\n')
+    while (eospos < p->cd->textlen && isspace(p->cd->text[eospos].ch) && p->cd->text[eospos].ch != '\n')
         eospos++;
     while (1)
     {
-        int pos2 = pos ;
+        int pos2 = pos;
         while (pos && p->cd->text[pos - 1].ch != '\n')
             pos--;
-        while (p->cd->text[pos].ch && isspace(p->cd->text[pos].ch) && p->cd->text[pos].ch 
-            != '\n')
+        while (p->cd->text[pos].ch && isspace(p->cd->text[pos].ch) && p->cd->text[pos].ch != '\n')
             pos++;
         if (p->cd->text[pos].ch != '#')
         {
-            while (pos2-- > pos &&
-                   p->cd->text[pos2].ch && p->cd->text[pos2].ch != '\n')
+            while (pos2-- > pos && p->cd->text[pos2].ch && p->cd->text[pos2].ch != '\n')
             {
                 if (p->cd->text[pos2].ch == '(')
                 {
-                    storepos = pos2 ;
+                    storepos = pos2;
                     if (++parencount == 0)
                         break;
                 }
-                else
-                    if (p->cd->text[pos2].ch == ')')
-                        if (--parencount == 0)
-                            break;
-            } 
+                else if (p->cd->text[pos2].ch == ')')
+                    if (--parencount == 0)
+                        break;
+            }
             if (parencount >= 0)
                 break;
         }
@@ -164,7 +158,7 @@ void InsertBeginTabs(HWND hwnd, EDITDATA *p)
             break;
         pos--;
     }
-    while (pos && p->cd->text[pos-1].ch != '\n')
+    while (pos && p->cd->text[pos - 1].ch != '\n')
         pos--;
     while (isspace(p->cd->text[pos].ch) && p->cd->text[pos].ch && pos < p->cd->textlen)
         pos++;
@@ -180,25 +174,25 @@ void InsertBeginTabs(HWND hwnd, EDITDATA *p)
     }
     while (n--)
         insertchar(hwnd, p, ' ');
-    p->selstartcharpos = ++p->selendcharpos; // skip past '}'
+    p->selstartcharpos = ++p->selendcharpos;  // skip past '}'
     insertautoundo(hwnd, p, UNDO_AUTOCHAINBEGIN);
     p->cd->inserting = oldinsert;
 }
 /**********************************************************************
  * tab to the current line position
  **********************************************************************/
-void InsertEndTabs(HWND hwnd, EDITDATA *p, int newend)
+void InsertEndTabs(HWND hwnd, EDITDATA* p, int newend)
 {
     int pos, n;
     int eospos;
     int lsolpos, leospos;
     int oldinsert = p->cd->inserting;
     if (p->cd->language != LANGUAGE_C && p->cd->language != LANGUAGE_CPP && p->cd->language != LANGUAGE_RC)
-        return ;
+        return;
     if (!newend)
-        return ;
+        return;
     if (!PropGetBool(NULL, "AUTO_FORMAT"))
-        return ;
+        return;
     p->cd->inserting = TRUE;
     leospos = pos = p->selstartcharpos - 1;
     while (isspace(p->cd->text[leospos].ch) && p->cd->text[leospos].ch != '\n')
@@ -212,7 +206,7 @@ void InsertEndTabs(HWND hwnd, EDITDATA *p, int newend)
         while (pos > 0)
         {
             int pos1 = preprocline(p, pos);
-            if (pos1 !=  - 1)
+            if (pos1 != -1)
                 pos = pos1;
             else if ((p->cd->text[pos].Color & 0xf) != C_COMMENT)
             {
@@ -221,7 +215,7 @@ void InsertEndTabs(HWND hwnd, EDITDATA *p, int newend)
                     if (!indentlevel)
                     {
                         while (pos && p->cd->text[pos - 1].ch != '\n')
-                                pos--;
+                            pos--;
                         while (isspace(p->cd->text[pos].ch))
                             pos++;
                         eospos = pos;
@@ -247,7 +241,7 @@ void InsertEndTabs(HWND hwnd, EDITDATA *p, int newend)
         }
         while (n--)
             insertchar(hwnd, p, ' ');
-        p->selstartcharpos = ++p->selendcharpos; // skip past '}'
+        p->selstartcharpos = ++p->selendcharpos;  // skip past '}'
         insertautoundo(hwnd, p, UNDO_AUTOCHAINBEGIN);
     }
     p->cd->inserting = oldinsert;
@@ -255,7 +249,7 @@ void InsertEndTabs(HWND hwnd, EDITDATA *p, int newend)
 
 //-------------------------------------------------------------------------
 
-void SelectIndent(HWND hwnd, EDITDATA *p, int insert)
+void SelectIndent(HWND hwnd, EDITDATA* p, int insert)
 {
     int olds = p->selstartcharpos;
     int olde = p->selendcharpos;
@@ -265,17 +259,17 @@ void SelectIndent(HWND hwnd, EDITDATA *p, int insert)
     int oldselect = p->cd->selecting;
     int oldte = p->cd->textlen;
     int decd = FALSE;
-    int inverted = FALSE ;
+    int inverted = FALSE;
     p->cd->inserting = TRUE;
     if (start == end)
     {
         int x;
         int adjustPos = start;
         int uVal = p->cd->undohead;
-        while (start && p->cd->text[start-1].ch != '\n')
+        while (start && p->cd->text[start - 1].ch != '\n')
             start--;
         while (p->cd->text[end].ch && p->cd->text[end].ch != '\n')
-            end ++;
+            end++;
         x = p->textshowncharpos;
         if (insert)
         {
@@ -289,7 +283,7 @@ void SelectIndent(HWND hwnd, EDITDATA *p, int insert)
             if (adjustPos > start)
                 p->selstartcharpos += p->cd->textlen - oldte;
             p->selendcharpos = p->selstartcharpos;
-            
+
             if (start < x)
                 p->textshowncharpos = x + p->cd->textlen - oldte;
         }
@@ -326,7 +320,7 @@ void SelectIndent(HWND hwnd, EDITDATA *p, int insert)
     {
         if (end < start)
         {
-            inverted = TRUE ;
+            inverted = TRUE;
             start = p->selendcharpos;
             end = p->selstartcharpos;
         }
@@ -394,7 +388,7 @@ void SelectIndent(HWND hwnd, EDITDATA *p, int insert)
     p->cd->selecting = oldselect;
     InvalidateRect(hwnd, 0, 0);
 }
-void SelectComment(HWND hwnd, EDITDATA *p, int insert)
+void SelectComment(HWND hwnd, EDITDATA* p, int insert)
 {
     int olds = p->selstartcharpos;
     int olde = p->selendcharpos;
@@ -403,19 +397,19 @@ void SelectComment(HWND hwnd, EDITDATA *p, int insert)
     int oldinsert = p->cd->inserting;
     int oldselect = p->cd->selecting;
     int decd = FALSE;
-    int inverted = FALSE ;
+    int inverted = FALSE;
     int column = 10000;
     p->cd->inserting = TRUE;
     insertautoundo(hwnd, p, UNDO_AUTOEND);
     if (start == end)
     {
         int adjustPos = start;
-           int x = p->textshowncharpos;
+        int x = p->textshowncharpos;
         while (start && p->cd->text[start - 1].ch != '\n')
             start--;
         while (p->cd->text[end].ch && p->cd->text[end].ch != '\n')
             end++;
-        while (start && isspace(p->cd->text[start].ch) && p->cd->text[start].ch != '\n' )
+        while (start && isspace(p->cd->text[start].ch) && p->cd->text[start].ch != '\n')
             start++;
         p->selstartcharpos = p->selendcharpos = start;
         if (insert)
@@ -428,7 +422,7 @@ void SelectComment(HWND hwnd, EDITDATA *p, int insert)
                     p->textshowncharpos = x + 1;
                 p->selstartcharpos = adjustPos;
                 if (adjustPos > start)
-                    p->selstartcharpos ++;
+                    p->selstartcharpos++;
                 p->selendcharpos = p->selstartcharpos;
             }
             else
@@ -456,7 +450,7 @@ void SelectComment(HWND hwnd, EDITDATA *p, int insert)
                         p->textshowncharpos = x - 1;
                     p->selstartcharpos = adjustPos;
                     if (adjustPos > start)
-                        p->selstartcharpos --;
+                        p->selstartcharpos--;
                     p->selendcharpos = p->selstartcharpos;
                 }
             }
@@ -478,7 +472,7 @@ void SelectComment(HWND hwnd, EDITDATA *p, int insert)
     {
         if (end < start)
         {
-            inverted = TRUE ;
+            inverted = TRUE;
             start = p->selendcharpos;
             end = p->selstartcharpos;
         }
@@ -588,15 +582,15 @@ void SelectComment(HWND hwnd, EDITDATA *p, int insert)
 }
 //-------------------------------------------------------------------------
 
-void DeletePound(HWND hwnd, EDITDATA *p)
+void DeletePound(HWND hwnd, EDITDATA* p)
 {
     int n, m;
     if (p->cd->language != LANGUAGE_C && p->cd->language != LANGUAGE_CPP && p->cd->language != LANGUAGE_RC)
-        return ;
+        return;
     if (!PropGetBool(NULL, "AUTO_FORMAT"))
-        return ;
+        return;
     if (p->selstartcharpos && p->cd->text[p->selstartcharpos - 1].ch != '#')
-        return ;
+        return;
     n = p->selstartcharpos - 1;
     while (n && p->cd->text[n - 1].ch != '\n')
         n--;
@@ -604,7 +598,7 @@ void DeletePound(HWND hwnd, EDITDATA *p)
     while (isspace(p->cd->text[m].ch))
         m++;
     if (p->cd->text[m].ch != '#' || m == n)
-        return ;
+        return;
     insertautoundo(hwnd, p, UNDO_AUTOCHAINEND);
     p->selstartcharpos = n;
     p->selendcharpos = m;
@@ -616,15 +610,15 @@ void DeletePound(HWND hwnd, EDITDATA *p)
 
 //-------------------------------------------------------------------------
 
-void DeletePercent(HWND hwnd, EDITDATA *p)
+void DeletePercent(HWND hwnd, EDITDATA* p)
 {
     int n, m;
     if (p->cd->language != LANGUAGE_ASM)
-        return ;
+        return;
     if (!PropGetBool(NULL, "AUTO_FORMAT"))
-        return ;
+        return;
     if (p->selstartcharpos && p->cd->text[p->selstartcharpos - 1].ch != '%')
-        return ;
+        return;
     n = p->selstartcharpos - 1;
     while (n && p->cd->text[n - 1].ch != '\n')
         n--;
@@ -632,7 +626,7 @@ void DeletePercent(HWND hwnd, EDITDATA *p)
     while (isspace(p->cd->text[m].ch))
         m++;
     if (p->cd->text[m].ch != '%' || m == n)
-        return ;
+        return;
     insertautoundo(hwnd, p, UNDO_AUTOCHAINEND);
     p->selstartcharpos = n;
     p->selendcharpos = m;
@@ -642,69 +636,68 @@ void DeletePercent(HWND hwnd, EDITDATA *p)
     ScrollCaretIntoView(hwnd, p, FALSE);
 }
 
-    void upperlowercase(HWND hwnd, EDITDATA *p, int ucase)
-    {
-        int oldsel = -1;
-        int i;
-        int s, e;
-        UNDO *u;
-        u = undo_casechange(hwnd, p);
-        if (p->selstartcharpos == p->selendcharpos)
-        {
-            e = s = p->selstartcharpos;
-            if (!isalnum(p->cd->text[e].ch) && p->cd->text[e].ch != '_')
-                return;
-            e++;
-            while (p->cd->text[e].ch && (isalnum(p->cd->text[e].ch) || p->cd->text[e].ch == '_'))
-                   e++;
-            while (s && (isalnum(p->cd->text[s-1].ch) || p->cd->text[s-1].ch == '_'))
-                s--;
-            oldsel = p->selstartcharpos;
-            p->selstartcharpos = s;
-            p->selendcharpos = e;
-        }
-        else
-        {
-            s = p->selstartcharpos;
-            e = p->selendcharpos;
-        }
-        u->postselstart = s;
-        u->postselend = e;
-        if (e < s)
-        {
-            int v = s;
-            s = e;
-            e = v;
-        }
-        if (oldsel != -1)
-        {
-            u->noChangeSel = TRUE;
-            p->selstartcharpos = p->selendcharpos = oldsel;
-        }
-        for (i = s; i < e; i++)
-        {
-            p->cd->text[i].ch = ucase ? toupper(p->cd->text[i].ch): tolower(p
-                ->cd->text[i].ch);
-        }
-        InvalidateRect(hwnd, 0, 0);
-    }
-int DeleteColonSpaces(HWND hwnd, EDITDATA *p)
+void upperlowercase(HWND hwnd, EDITDATA* p, int ucase)
 {
-    int n = p->selstartcharpos-1, s, b = n+1;
+    int oldsel = -1;
+    int i;
+    int s, e;
+    UNDO* u;
+    u = undo_casechange(hwnd, p);
+    if (p->selstartcharpos == p->selendcharpos)
+    {
+        e = s = p->selstartcharpos;
+        if (!isalnum(p->cd->text[e].ch) && p->cd->text[e].ch != '_')
+            return;
+        e++;
+        while (p->cd->text[e].ch && (isalnum(p->cd->text[e].ch) || p->cd->text[e].ch == '_'))
+            e++;
+        while (s && (isalnum(p->cd->text[s - 1].ch) || p->cd->text[s - 1].ch == '_'))
+            s--;
+        oldsel = p->selstartcharpos;
+        p->selstartcharpos = s;
+        p->selendcharpos = e;
+    }
+    else
+    {
+        s = p->selstartcharpos;
+        e = p->selendcharpos;
+    }
+    u->postselstart = s;
+    u->postselend = e;
+    if (e < s)
+    {
+        int v = s;
+        s = e;
+        e = v;
+    }
+    if (oldsel != -1)
+    {
+        u->noChangeSel = TRUE;
+        p->selstartcharpos = p->selendcharpos = oldsel;
+    }
+    for (i = s; i < e; i++)
+    {
+        p->cd->text[i].ch = ucase ? toupper(p->cd->text[i].ch) : tolower(p->cd->text[i].ch);
+    }
+    InvalidateRect(hwnd, 0, 0);
+}
+int DeleteColonSpaces(HWND hwnd, EDITDATA* p)
+{
+    int n = p->selstartcharpos - 1, s, b = n + 1;
     if (p->cd->language != LANGUAGE_ASM)
         return 0;
     if (!PropGetBool(NULL, "AUTO_FORMAT"))
         return 0;
-    while (n && isspace(p->cd->text[n-1].ch) && p->cd->text[n-1].ch != '\n')
+    while (n && isspace(p->cd->text[n - 1].ch) && p->cd->text[n - 1].ch != '\n')
         n--;
-    if (n && (isalnum(p->cd->text[n-1].ch) || p->cd->text[n-1].ch == '_'))
+    if (n && (isalnum(p->cd->text[n - 1].ch) || p->cd->text[n - 1].ch == '_'))
     {
-        while (n && (isalnum(p->cd->text[n-1].ch) || p->cd->text[n-1].ch == '_'))
+        while (n && (isalnum(p->cd->text[n - 1].ch) || p->cd->text[n - 1].ch == '_'))
             n--;
         s = n;
-        while (s && isspace(p->cd->text[s-1].ch) && p->cd->text[s-1].ch != '\n')
+        while (s && isspace(p->cd->text[s - 1].ch) && p->cd->text[s - 1].ch != '\n')
             s--;
-        if ((!s || p->cd->text[s-1].ch == '\n') && s != n)
+        if ((!s || p->cd->text[s - 1].ch == '\n') && s != n)
         {
             p->selstartcharpos = s;
             p->selendcharpos = n;

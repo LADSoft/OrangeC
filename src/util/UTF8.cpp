@@ -1,6 +1,6 @@
 #include "UTF8.h"
 #include "ctype.h"
-int UTF8::Decode(const char *str)
+int UTF8::Decode(const char* str)
 {
     return *str;
     /*
@@ -31,7 +31,7 @@ int UTF8::Decode(const char *str)
         if ((str[1] & 0xc0) == 0x80 && (str[2] & 0xc0) == 0x80 && (str[3] & 0xc0) == 0x80)
         {
             int rv;
-            rv = ((str[0] & 0x7) << 18) + ((str[1] & 0x3f) << 12) 
+            rv = ((str[0] & 0x7) << 18) + ((str[1] & 0x3f) << 12)
                     + ((str[2] & 0x3f) << 6) + (str[3] & 0x3f);
             return rv;
         }
@@ -42,7 +42,7 @@ int UTF8::Decode(const char *str)
     }
     */
 }
-int UTF8::Encode(char *dest, int val)
+int UTF8::Encode(char* dest, int val)
 {
     dest[0] = static_cast<char>(val);
     return 1;
@@ -75,9 +75,9 @@ int UTF8::Encode(char *dest, int val)
     }
     */
 }
-int UTF8::CharSpan(const char *str)
+int UTF8::CharSpan(const char* str)
 {
-	(void)str;
+    (void)str;
     return 1;
     /*
     if ((*str & 0x80) == 0)
@@ -102,14 +102,14 @@ int UTF8::CharSpan(const char *str)
     }
     */
 }
-int UTF8::Span(const char *str)
+int UTF8::Span(const char* str)
 {
     int rv = 0;
     while (*str)
     {
         rv++;
         int n = CharSpan(str);
-        for (int i=0; i < n; i++)
+        for (int i = 0; i < n; i++)
         {
             if (!*++str)
                 break;
@@ -121,18 +121,18 @@ int UTF8::Span(const char *str)
 std::string UTF8::ToUpper(const std::string& val)
 {
     std::string rv;
-    const char *str = val.c_str();
+    const char* str = val.c_str();
     char buf[10];
-    for (int i=0; i < val.size();)
+    for (int i = 0; i < val.size();)
     {
-    /*
-        if ((str[i] & 0x80) == 0)
-        {
-        (*/
-            buf[0] = ToUpper(str[i]);
-            buf[1] = 0;
-            rv += buf;
-            i++;
+        /*
+            if ((str[i] & 0x80) == 0)
+            {
+            (*/
+        buf[0] = ToUpper(str[i]);
+        buf[1] = 0;
+        rv += buf;
+        i++;
         /*
         }
         else

@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #ifndef Token_h
@@ -34,11 +34,18 @@ typedef std::map<std::string, int> KeywordHash;
 
 class Token
 {
-public:
+  public:
     enum Type
     {
-        t_int, t_unsignedint, t_longint, t_unsignedlongint, t_longlongint, t_unsignedlonglongint,
-        t_float, t_double, t_longdouble
+        t_int,
+        t_unsignedint,
+        t_longint,
+        t_unsignedlongint,
+        t_longlongint,
+        t_unsignedlonglongint,
+        t_float,
+        t_double,
+        t_longdouble
     };
     virtual bool IsNumeric() const { return false; }
     virtual bool IsFloating() const { return false; }
@@ -53,150 +60,185 @@ public:
     virtual std::wstring GetRawString() const { return L""; }
     virtual L_INT GetInteger() const { return 0; }
     virtual Type GetNumericType() const { return t_int; }
-    virtual const FPF *GetFloat() const { return 0; }
+    virtual const FPF* GetFloat() const { return 0; }
     virtual int GetKeyword() const { return -1; }
-    virtual const std::string &GetId() const { static std::string aa; return aa; }
-    static bool Start(const std::string &line) { return false; }
+    virtual const std::string& GetId() const
+    {
+        static std::string aa;
+        return aa;
+    }
+    static bool Start(const std::string& line) { return false; }
     void SetChars(const std::string str) { chars = str; }
     std::string GetChars() const { return chars; }
-	virtual ~Token() {}
-protected:
-    virtual void Parse(std::string &line) {}
-private:
+    virtual ~Token() {}
+
+  protected:
+    virtual void Parse(std::string& line) {}
+
+  private:
     std::string chars;
 };
-inline bool operator ==(const Token &tk, char *id) { return tk.GetId() == id; }
+inline bool operator==(const Token& tk, char* id) { return tk.GetId() == id; }
 class StringToken : public Token
 {
-public:
-    StringToken(std::string &line) : wide(false) { Parse(line); }
+  public:
+    StringToken(std::string& line) : wide(false) { Parse(line); }
     virtual std::wstring GetString() const { return str; }
     virtual std::wstring GetRawString() const { return raw; }
     virtual bool IsString() const { return true; }
     virtual bool IsWide() const { return wide; }
-    static bool Start(const std::string &line);
-protected:
-    virtual void Parse(std::string &line);
-private:
+    static bool Start(const std::string& line);
+
+  protected:
+    virtual void Parse(std::string& line);
+
+  private:
     bool wide;
     bool doParse;
     std::wstring str;
     std::wstring raw;
-} ;
+};
 class CharacterToken : public Token
 {
     friend class StringToken;
-public:
-    CharacterToken(std::string &line) : value(0) { Parse(line); }
+
+  public:
+    CharacterToken(std::string& line) : value(0) { Parse(line); }
     virtual bool IsCharacter() const { return true; }
     virtual L_INT GetInteger() const { return value; }
-    static bool Start(const std::string &line);	
+    static bool Start(const std::string& line);
     static void SetUnsigned(bool flag) { unsignedchar = flag; }
-protected:
-    virtual void Parse(std::string &line);
-    static int QuotedChar(int len, const char **buf);
-private:
+
+  protected:
+    virtual void Parse(std::string& line);
+    static int QuotedChar(int len, const char** buf);
+
+  private:
     L_INT value;
     static bool unsignedchar;
-} ;
+};
 class NumericToken : public Token
 {
-public:
-    NumericToken(std::string &line) : intValue(0), type(t_int), parsedAsFloat(false) { Parse(line); }
+  public:
+    NumericToken(std::string& line) : intValue(0), type(t_int), parsedAsFloat(false) { Parse(line); }
     virtual bool IsNumeric() const { return true; }
     virtual bool IsFloating() const { return parsedAsFloat; }
     virtual L_INT GetInteger() const;
-    virtual const FPF *GetFloat() const ;
+    virtual const FPF* GetFloat() const;
     virtual Type GetNumericType() const { return type; }
-    static bool Start(const std::string &line);
+    static bool Start(const std::string& line);
     static void SetAnsi(bool flag) { ansi = flag; }
     static void SetC99(bool flag) { c99 = flag; }
-protected:
-    virtual void Parse(std::string &line);
+
+  protected:
+    virtual void Parse(std::string& line);
     int Radix36(char c);
-    L_INT GetBase(int b, char **ptr);
-    void GetFraction(int radix, char **ptr, FPF &rval);
-    int GetExponent(char **ptr);
-    void GetFloating(FPF &floatValue, int radix, char **ptr);
-    int GetNumber(const char **ptr);
-private:
+    L_INT GetBase(int b, char** ptr);
+    void GetFraction(int radix, char** ptr, FPF& rval);
+    int GetExponent(char** ptr);
+    void GetFloating(FPF& floatValue, int radix, char** ptr);
+    int GetNumber(const char** ptr);
+
+  private:
     bool parsedAsFloat;
     L_INT intValue;
     FPF floatValue;
     Type type;
     static bool ansi;
     static bool c99;
-} ;
+};
 class KeywordToken : public Token
 {
-public:
-    KeywordToken(std::string &line, KeywordHash *table) : keyValue(-1), keywordTable(table) { Parse(line); }
+  public:
+    KeywordToken(std::string& line, KeywordHash* table) : keyValue(-1), keywordTable(table) { Parse(line); }
     virtual bool IsKeyword() const { return keyValue != -1; }
     virtual int GetKeyword() const { return keyValue; }
     virtual bool IsError() const { return keyValue == -1; }
-    static bool Start(const std::string &line);
-protected:
-    virtual void Parse(std::string &line);
-private:
+    static bool Start(const std::string& line);
+
+  protected:
+    virtual void Parse(std::string& line);
+
+  private:
     int keyValue;
-    KeywordHash *keywordTable;
-} ;
+    KeywordHash* keywordTable;
+};
 class IdentifierToken : public Token
 {
-public:
-    IdentifierToken(std::string &line, KeywordHash *Table, bool CaseInsensitive) 
-    : keyValue(-1), keywordTable(Table), caseInsensitive(CaseInsensitive) { Parse(line); }
+  public:
+    IdentifierToken(std::string& line, KeywordHash* Table, bool CaseInsensitive) :
+        keyValue(-1),
+        keywordTable(Table),
+        caseInsensitive(CaseInsensitive)
+    {
+        Parse(line);
+    }
     virtual bool IsIdentifier() const { return keyValue == -1; }
     virtual bool IsKeyword() const { return keyValue != -1; }
     virtual int GetKeyword() const { return keyValue; }
-    virtual const std::string &GetId() const { return id; }
-    static bool Start(const std::string &line);
-protected:
-    virtual void Parse(std::string &line);
-private:
+    virtual const std::string& GetId() const { return id; }
+    static bool Start(const std::string& line);
+
+  protected:
+    virtual void Parse(std::string& line);
+
+  private:
     int keyValue;
     bool parseKeyword;
-    KeywordHash *keywordTable;
+    KeywordHash* keywordTable;
     std::string id;
     bool caseInsensitive;
-} ;
+};
 class EndToken : public Token
 {
-public:
-    EndToken() { }
+  public:
+    EndToken() {}
     virtual bool IsEnd() const { return true; }
-} ;
+};
 class ErrorToken : public Token
 {
-public:
-    ErrorToken(std::string &line) { Parse(line); }
+  public:
+    ErrorToken(std::string& line) { Parse(line); }
     virtual bool IsError() const { return true; }
-protected:
-    virtual void Parse(std::string &line);
-private:
+
+  protected:
+    virtual void Parse(std::string& line);
+
+  private:
     int ch;
-} ;
+};
 class Tokenizer
 {
-public:
-    Tokenizer(const std::string &Line, KeywordHash *Table) : line(Line), keywordTable(Table),
-        currentToken(nullptr), caseInsensitive(false) { }
-    virtual ~Tokenizer() {  delete currentToken; }
-    void Reset(const std::string &Line) { line = Line; delete currentToken; currentToken = nullptr; }
-    const Token *Next() ;
-    std::string &GetString() { return line; }
+  public:
+    Tokenizer(const std::string& Line, KeywordHash* Table) :
+        line(Line),
+        keywordTable(Table),
+        currentToken(nullptr),
+        caseInsensitive(false)
+    {
+    }
+    virtual ~Tokenizer() { delete currentToken; }
+    void Reset(const std::string& Line)
+    {
+        line = Line;
+        delete currentToken;
+        currentToken = nullptr;
+    }
+    const Token* Next();
+    std::string& GetString() { return line; }
     static void SetUnsigned(bool flag) { CharacterToken::SetUnsigned(flag); }
     static void SetAnsi(bool flag) { NumericToken::SetAnsi(flag); }
     static void SetC99(bool flag) { NumericToken::SetC99(flag); }
     void SetCaseInsensitive(bool flag) { caseInsensitive = flag; }
-private:
-    KeywordHash *keywordTable;
+
+  private:
+    KeywordHash* keywordTable;
     std::string line;
-    Token *currentToken;
+    Token* currentToken;
     bool caseInsensitive;
 };
 
-bool IsSymbolStartChar(const char *data);
-bool IsSymbolChar(const char *data);
+bool IsSymbolStartChar(const char* data);
+bool IsSymbolChar(const char* data);
 
 #endif

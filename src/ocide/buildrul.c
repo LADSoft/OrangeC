@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -38,14 +38,14 @@ extern char szRuleFilter[];
 extern HWND hwndFrame;
 extern HINSTANCE hInstance;
 
-BUILDRULE *buildRules;
+BUILDRULE* buildRules;
 
 void LoadDefaultRules(void)
 {
-    BUILDRULE **next = &buildRules;
+    BUILDRULE** next = &buildRules;
     WIN32_FIND_DATA data;
     HANDLE hndl;
-    char name [MAX_PATH];
+    char name[MAX_PATH];
     strcpy(name, szInstallPath);
     strcat(name, "\\rule\\*.rul");
     hndl = FindFirstFile(name, &data);
@@ -53,7 +53,7 @@ void LoadDefaultRules(void)
     {
         do
         {
-            BUILDRULE *p = calloc(1, sizeof(BUILDRULE));
+            BUILDRULE* p = calloc(1, sizeof(BUILDRULE));
             strcpy(p->name, szInstallPath);
             strcat(p->name, "\\rule\\");
             strcat(p->name, data.cFileName);
@@ -62,7 +62,7 @@ void LoadDefaultRules(void)
             p->profiles = LoadRule(p->name);
             if (!p->profiles)
             {
-                ExtendedMessageBox("Missing Rule File",0, "Rule file %s cannot be loaded", p->name);
+                ExtendedMessageBox("Missing Rule File", 0, "Rule file %s cannot be loaded", p->name);
                 p->active = FALSE;
             }
             *next = p;
@@ -70,51 +70,50 @@ void LoadDefaultRules(void)
         } while (FindNextFile(hndl, &data));
         FindClose(hndl);
     }
-    
 }
-void RestoreBuildRules(struct xmlNode *node, int version)
+void RestoreBuildRules(struct xmlNode* node, int version)
 {
     node = node->children;
     if (!node)
-        LoadDefaultRules(); // Safety
-    else while (node)
-    {
-        if (IsNode(node, "FILE"))
+        LoadDefaultRules();  // Safety
+    else
+        while (node)
         {
-            struct xmlAttr *attribs = node->attribs;
-            BUILDRULE *p = calloc(1, sizeof(BUILDRULE));
-            while (attribs)
+            if (IsNode(node, "FILE"))
             {
-                if (IsAttrib(attribs, "NAME"))
+                struct xmlAttr* attribs = node->attribs;
+                BUILDRULE* p = calloc(1, sizeof(BUILDRULE));
+                while (attribs)
                 {
-                    strcpy(p->name, attribs->value);
+                    if (IsAttrib(attribs, "NAME"))
+                    {
+                        strcpy(p->name, attribs->value);
+                    }
+                    if (IsAttrib(attribs, "ACTIVE"))
+                    {
+                        p->active = !!atoi(attribs->value);
+                    }
+                    if (IsAttrib(attribs, "DEFAULT"))
+                    {
+                        p->defaultRule = !!atoi(attribs->value);
+                    }
+                    attribs = attribs->next;
                 }
-                if (IsAttrib(attribs, "ACTIVE"))
+                p->profiles = LoadRule(p->name);
+                if (!p->profiles)
                 {
-                    p->active = !!atoi(attribs->value);
+                    ExtendedMessageBox("Missing Rule File", 0, "Rule file %s cannot be loaded", p->name);
+                    p->active = FALSE;
                 }
-                if (IsAttrib(attribs, "DEFAULT"))
-                {
-                    p->defaultRule = !!atoi(attribs->value);
-                }
-                attribs = attribs->next;
+                p->next = buildRules;
+                buildRules = p;
             }
-            p->profiles = LoadRule(p->name);
-            if (!p->profiles)
-            {
-                ExtendedMessageBox("Missing Rule File",0, "Rule file %s cannot be loaded", p->name);
-                p->active = FALSE;
-            }
-            p->next = buildRules;
-            buildRules = p;
+            node = node->next;
         }
-        node = node->next;
-    }
-    
 }
-void SaveBuildRules(FILE *out)
+void SaveBuildRules(FILE* out)
 {
-    BUILDRULE *p = buildRules;
+    BUILDRULE* p = buildRules;
     while (p)
     {
         fprintf(out, "\t\t<FILE NAME=\"%s\" ACTIVE=\"%d\" DEFAULT=\"%d\"/>\n", p->name, p->active, p->defaultRule);
@@ -128,7 +127,7 @@ static int CreateBuildRuleData(HWND hwnd)
     RECT r;
     HWND hwndLV = GetDlgItem(hwnd, IDC_BRLISTBOX);
     LV_COLUMN lvC;
-    BUILDRULE *br;
+    BUILDRULE* br;
     ListView_SetExtendedListViewStyle(hwndLV, LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
     ListView_DeleteAllItems(hwndLV);
 
@@ -155,12 +154,12 @@ static int CreateBuildRuleData(HWND hwnd)
             int v;
             item.iItem = items++;
             item.iSubItem = 0;
-            item.mask = LVIF_PARAM ;
+            item.mask = LVIF_PARAM;
             item.lParam = (LPARAM)br;
-            item.pszText = ""; // LPSTR_TEXTCALLBACK ;
+            item.pszText = "";  // LPSTR_TEXTCALLBACK ;
             v = ListView_InsertItem(hwndLV, &item);
             ListView_SetCheckState(hwndLV, v, br->active);
-        }   
+        }
         br = br->next;
     }
     if (items)
@@ -175,18 +174,18 @@ static void ParseBuildRuleData(HWND hwnd)
     LV_ITEM item;
     HWND hwndLV = GetDlgItem(hwnd, IDC_FILELIST);
     int i;
-    BUILDRULE **br = &buildRules;
-    for (i = 0;*br;)
+    BUILDRULE** br = &buildRules;
+    for (i = 0; *br;)
     {
         if ((*br)->remove)
         {
-            BUILDRULE *p = *br;
+            BUILDRULE* p = *br;
             *br = (*br)->next;
             free(p);
         }
         else
         {
-            BUILDRULE *xx = (BUILDRULE *)item.lParam; // item is uninitialized, is it a good idea to use it here?
+            BUILDRULE* xx = (BUILDRULE*)item.lParam;  // item is uninitialized, is it a good idea to use it here?
             (*br)->add = FALSE;
             item.iItem = i;
             item.iSubItem = 0;
@@ -199,7 +198,7 @@ static void ParseBuildRuleData(HWND hwnd)
                     xx->profiles = LoadRule(xx->name);
                     if (!xx->profiles)
                     {
-                        ExtendedMessageBox("Missing Rule File",0, "Rule file %s cannot be loaded", xx->name);
+                        ExtendedMessageBox("Missing Rule File", 0, "Rule file %s cannot be loaded", xx->name);
                         xx->active = FALSE;
                     }
                 }
@@ -211,32 +210,32 @@ static void ParseBuildRuleData(HWND hwnd)
 }
 static void ResetBuildRuleData()
 {
-   BUILDRULE **br = &buildRules;
-   while (*br)
-   {
-       if ((*br)->add)
-       {
-            BUILDRULE *p = *br;
+    BUILDRULE** br = &buildRules;
+    while (*br)
+    {
+        if ((*br)->add)
+        {
+            BUILDRULE* p = *br;
             *br = (*br)->next;
             free(p);
-       }
-       else
-       {
-           (*br)->remove = FALSE;
+        }
+        else
+        {
+            (*br)->remove = FALSE;
             br = &(*br)->next;
-       }
-   }
- }
-static void AddOneRule(HWND hwnd, char *name)
+        }
+    }
+}
+static void AddOneRule(HWND hwnd, char* name)
 {
-    BUILDRULE *br = calloc(1, sizeof(BUILDRULE));
+    BUILDRULE* br = calloc(1, sizeof(BUILDRULE));
     strcpy(br->name, name);
     br->active = TRUE;
     br->add = TRUE;
     br->profiles = LoadRule(br->name);
     if (!br->profiles)
     {
-        ExtendedMessageBox("Missing Rule File",0, "Rule file %s cannot be loaded", br->name);
+        ExtendedMessageBox("Missing Rule File", 0, "Rule file %s cannot be loaded", br->name);
         br->active = FALSE;
     }
     br->next = buildRules;
@@ -253,7 +252,7 @@ static void AddRule(HWND hwnd)
         char *q = ofn.lpstrFile, path[MAX_PATH];
         strcpy(path, ofn.lpstrFile);
         q += strlen(q) + 1;
-        if (! *q)
+        if (!*q)
         {
             AddOneRule(hwnd, path);
         }
@@ -283,7 +282,7 @@ static void RemoveRule(HWND hwnd)
         item.mask = LVIF_PARAM;
         if (ListView_GetItem(hwndLV, &item))
         {
-            BUILDRULE *br = (BUILDRULE *)item.lParam;
+            BUILDRULE* br = (BUILDRULE*)item.lParam;
             br->remove = TRUE;
             CreateBuildRuleData(hwnd);
             ListView_SetSelectionMark(hwndLV, i);
@@ -291,28 +290,26 @@ static void RemoveRule(HWND hwnd)
         }
     }
 }
-static void EditRule(HWND hwnd)
-{
-}
+static void EditRule(HWND hwnd) {}
 static int CustomDraw(HWND hwnd, LPNMLVCUSTOMDRAW draw)
 {
-    switch(draw->nmcd.dwDrawStage)
+    switch (draw->nmcd.dwDrawStage)
     {
-        case CDDS_PREPAINT :
+        case CDDS_PREPAINT:
         case CDDS_ITEMPREPAINT:
             return CDRF_NOTIFYSUBITEMDRAW;
         case CDDS_ITEMPREPAINT | CDDS_SUBITEM:
-            if (draw->nmcd.uItemState & (CDIS_SELECTED ))
+            if (draw->nmcd.uItemState & (CDIS_SELECTED))
             {
                 draw->clrText = RetrieveSysColor(COLOR_HIGHLIGHTTEXT);
                 draw->clrTextBk = RetrieveSysColor(COLOR_HIGHLIGHT);
             }
             else
             {
-                BUILDRULE *p = (BUILDRULE *)draw->nmcd.lItemlParam;
+                BUILDRULE* p = (BUILDRULE*)draw->nmcd.lItemlParam;
                 if (p->defaultRule)
-                    draw->clrText = RGB(0,0xee,0xff);
-                else                
+                    draw->clrText = RGB(0, 0xee, 0xff);
+                else
                     draw->clrText = RetrieveSysColor(COLOR_WINDOWTEXT);
                 draw->clrTextBk = RetrieveSysColor(COLOR_WINDOW);
             }
@@ -321,8 +318,7 @@ static int CustomDraw(HWND hwnd, LPNMLVCUSTOMDRAW draw)
             return CDRF_DODEFAULT;
     }
 }
-static int FAR PASCAL brDlgProc(HWND hwnd, UINT wmsg, WPARAM wParam, LPARAM
-    lParam)
+static int FAR PASCAL brDlgProc(HWND hwnd, UINT wmsg, WPARAM wParam, LPARAM lParam)
 
 {
     switch (wmsg)
@@ -332,11 +328,11 @@ static int FAR PASCAL brDlgProc(HWND hwnd, UINT wmsg, WPARAM wParam, LPARAM
             HWND hwndLV = GetDlgItem(hwnd, IDC_BRLISTBOX);
             CenterWindow(hwnd);
             CreateBuildRuleData(hwnd);
-            EnableWindow(GetDlgItem(hwnd, IDC_BUILDRULEADD),FALSE);          
-            EnableWindow(GetDlgItem(hwnd, IDC_BUILDRULEREMOVE),FALSE);          
-            EnableWindow(GetDlgItem(hwnd, IDC_BUILDRULEEDIT),FALSE);          
+            EnableWindow(GetDlgItem(hwnd, IDC_BUILDRULEADD), FALSE);
+            EnableWindow(GetDlgItem(hwnd, IDC_BUILDRULEREMOVE), FALSE);
+            EnableWindow(GetDlgItem(hwnd, IDC_BUILDRULEEDIT), FALSE);
         }
-            break;
+        break;
         case WM_NOTIFY:
             if (((LPNMHDR)lParam)->code == NM_CUSTOMDRAW)
             {
@@ -347,19 +343,19 @@ static int FAR PASCAL brDlgProc(HWND hwnd, UINT wmsg, WPARAM wParam, LPARAM
             {
                 if (((LPNMHDR)lParam)->code == LVN_GETDISPINFO)
                 {
-                    BUILDRULE *br = buildRules;
-                    LV_DISPINFO *plvdi = (LV_DISPINFO*)lParam;
+                    BUILDRULE* br = buildRules;
+                    LV_DISPINFO* plvdi = (LV_DISPINFO*)lParam;
                     plvdi->item.mask |= LVIF_TEXT | LVIF_DI_SETITEM;
                     plvdi->item.mask &= ~LVIF_STATE;
                     switch (plvdi->item.iSubItem)
                     {
-                    case 2:
-                        br = (BUILDRULE*)plvdi->item.lParam;
-                        plvdi->item.pszText = br->profiles->debugSettings->displayName;
-                        break;
-                    default:
-                        plvdi->item.pszText = "";
-                        break;
+                        case 2:
+                            br = (BUILDRULE*)plvdi->item.lParam;
+                            plvdi->item.pszText = br->profiles->debugSettings->displayName;
+                            break;
+                        default:
+                            plvdi->item.pszText = "";
+                            break;
                     }
                 }
                 else if (((LPNMHDR)lParam)->code == LVN_ITEMCHANGED)
@@ -369,8 +365,8 @@ static int FAR PASCAL brDlgProc(HWND hwnd, UINT wmsg, WPARAM wParam, LPARAM
                     {
                         if (p->uNewState & LVIS_SELECTED)
                         {
-                            BUILDRULE *br = (BUILDRULE *)p->lParam;
-                            EnableWindow(GetDlgItem(hwnd, IDC_BUILDRULEREMOVE),!br->defaultRule);          
+                            BUILDRULE* br = (BUILDRULE*)p->lParam;
+                            EnableWindow(GetDlgItem(hwnd, IDC_BUILDRULEREMOVE), !br->defaultRule);
                         }
                     }
                 }
@@ -409,7 +405,7 @@ static int FAR PASCAL brDlgProc(HWND hwnd, UINT wmsg, WPARAM wParam, LPARAM
             }
             return 0;
         case WM_COMMAND:
-            switch (wParam &0xffff)
+            switch (wParam & 0xffff)
             {
                 case IDOK:
                     ParseBuildRuleData(hwnd);
@@ -440,7 +436,4 @@ static int FAR PASCAL brDlgProc(HWND hwnd, UINT wmsg, WPARAM wParam, LPARAM
     }
     return 0;
 }
-void BuildRulesCustomize(void)
-{
-    DialogBox(hInstance, "DLG_BUILDRULE", hwndFrame, (DLGPROC) &brDlgProc);
-}
+void BuildRulesCustomize(void) { DialogBox(hInstance, "DLG_BUILDRULE", hwndFrame, (DLGPROC)&brDlgProc); }

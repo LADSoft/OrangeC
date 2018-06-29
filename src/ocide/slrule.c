@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -31,17 +31,17 @@
 #include "header.h"
 #include "xml.h"
 
-static LIST *cleanable;
-static void insertcleanable(char *id)
+static LIST* cleanable;
+static void insertcleanable(char* id)
 {
-    LIST *next = calloc(1, sizeof(LIST));
+    LIST* next = calloc(1, sizeof(LIST));
     next->data = strdup(id);
     next->next = cleanable;
     cleanable = next;
 }
-BOOL iscleanable(char *id)
+BOOL iscleanable(char* id)
 {
-    LIST *search = cleanable;
+    LIST* search = cleanable;
     while (search)
     {
         if (!strcmp(search->data, id))
@@ -50,7 +50,7 @@ BOOL iscleanable(char *id)
     }
     return FALSE;
 }
-SETTINGCOMBO *LoadCombo(struct xmlNode *node, int version)
+SETTINGCOMBO* LoadCombo(struct xmlNode* node, int version)
 {
     SETTINGCOMBO *rv = NULL, **rvl = &(rv);
     while (node)
@@ -60,7 +60,7 @@ SETTINGCOMBO *LoadCombo(struct xmlNode *node, int version)
             *rvl = calloc(1, sizeof(SETTINGCOMBO));
             if (*rvl)
             {
-                struct xmlAttr *attribs = node->attribs;
+                struct xmlAttr* attribs = node->attribs;
                 while (attribs)
                 {
                     if (IsAttrib(attribs, "NAME"))
@@ -73,7 +73,7 @@ SETTINGCOMBO *LoadCombo(struct xmlNode *node, int version)
                     }
                     attribs = attribs->next;
                 }
-                
+
                 rvl = &(*rvl)->next;
             }
         }
@@ -81,22 +81,22 @@ SETTINGCOMBO *LoadCombo(struct xmlNode *node, int version)
     }
     return rv;
 }
-SETTING *LoadItem(struct xmlNode *node, int version, BOOL debug)
+SETTING* LoadItem(struct xmlNode* node, int version, BOOL debug)
 {
-    struct xmlAttr *attribs = node->attribs;
-    char *type = NULL;
+    struct xmlAttr* attribs = node->attribs;
+    char* type = NULL;
     while (attribs)
     {
         if (IsAttrib(attribs, "MODE"))
         {
-            type =  attribs->value;
+            type = attribs->value;
             break;
         }
         attribs = attribs->next;
     }
     if (!type || (debug && !stricmp(type, "DEBUG")) || (!debug && !stricmp(type, "RELEASE")))
     {
-        SETTING *rv = calloc(1, sizeof(SETTING));
+        SETTING* rv = calloc(1, sizeof(SETTING));
         attribs = node->attribs;
         while (attribs)
         {
@@ -168,16 +168,16 @@ SETTING *LoadItem(struct xmlNode *node, int version, BOOL debug)
                 free(rv->value);
                 rv->value = strdup(attribs->value);
             }
-                
+
             attribs = attribs->next;
-        } 
+        }
         if (rv->clean)
             insertcleanable(rv->id);
         return rv;
     }
     return NULL;
 }
-SETTING *LoadPropItems(struct xmlNode *node, int version, BOOL debug)
+SETTING* LoadPropItems(struct xmlNode* node, int version, BOOL debug)
 {
     SETTING *rv = NULL, **rvl = &rv;
     while (node)
@@ -187,7 +187,7 @@ SETTING *LoadPropItems(struct xmlNode *node, int version, BOOL debug)
             *rvl = calloc(1, sizeof(SETTING));
             if (*rvl)
             {
-                struct xmlAttr *attribs = node->attribs;
+                struct xmlAttr* attribs = node->attribs;
                 while (attribs)
                 {
                     if (IsAttrib(attribs, "NAME"))
@@ -196,7 +196,7 @@ SETTING *LoadPropItems(struct xmlNode *node, int version, BOOL debug)
                         (*rvl)->helpid = atoi(attribs->value);
                     attribs = attribs->next;
                 }
-                    
+
                 (*rvl)->type = e_tree;
                 (*rvl)->children = LoadPropItems(node->children, version, debug);
                 rvl = &(*rvl)->next;
@@ -212,7 +212,7 @@ SETTING *LoadPropItems(struct xmlNode *node, int version, BOOL debug)
     }
     return rv;
 }
-SETTING *LoadAssignmentItems(struct xmlNode *node, int version)
+SETTING* LoadAssignmentItems(struct xmlNode* node, int version)
 {
     SETTING *rv = NULL, **rvl = &rv;
     while (node)
@@ -222,14 +222,14 @@ SETTING *LoadAssignmentItems(struct xmlNode *node, int version)
             *rvl = calloc(1, sizeof(SETTING));
             if (*rvl)
             {
-                struct xmlAttr *attribs = node->attribs;
+                struct xmlAttr* attribs = node->attribs;
                 while (attribs)
                 {
                     if (IsAttrib(attribs, "ID"))
                         (*rvl)->id = strdup(attribs->value);
                     attribs = attribs->next;
                 }
-                    
+
                 (*rvl)->type = e_assign;
                 (*rvl)->value = strdup(node->textData);
                 rvl = &(*rvl)->next;
@@ -240,7 +240,7 @@ SETTING *LoadAssignmentItems(struct xmlNode *node, int version)
             *rvl = calloc(1, sizeof(SETTING));
             if (*rvl)
             {
-                struct xmlAttr *attribs = node->attribs;
+                struct xmlAttr* attribs = node->attribs;
                 while (attribs)
                 {
                     if (IsAttrib(attribs, "ID"))
@@ -262,12 +262,12 @@ SETTING *LoadAssignmentItems(struct xmlNode *node, int version)
     }
     return rv;
 }
-SETTING *LoadCommandItems(struct xmlNode *node, int version)
+SETTING* LoadCommandItems(struct xmlNode* node, int version)
 {
-    SETTING *rv = calloc(1, sizeof(SETTING));
+    SETTING* rv = calloc(1, sizeof(SETTING));
     if (rv)
     {
-        SETTING **rvl = &rv->children;
+        SETTING** rvl = &rv->children;
         while (node)
         {
             if (IsNode(node, "ASSIGNMENTS"))
@@ -285,7 +285,7 @@ SETTING *LoadCommandItems(struct xmlNode *node, int version)
     }
     return rv;
 }
-SETTING *LoadDependsItems(struct xmlNode *node, int version)
+SETTING* LoadDependsItems(struct xmlNode* node, int version)
 {
     SETTING *rv = NULL, **rvl = &rv;
     while (node)
@@ -295,7 +295,7 @@ SETTING *LoadDependsItems(struct xmlNode *node, int version)
             *rvl = calloc(1, sizeof(SETTING));
             if (*rvl)
             {
-                struct xmlAttr *attribs = node->attribs;
+                struct xmlAttr* attribs = node->attribs;
                 while (attribs)
                 {
                     if (IsAttrib(attribs, "ID"))
@@ -319,7 +319,7 @@ SETTING *LoadDependsItems(struct xmlNode *node, int version)
             (*rvl)->type = e_assign;
             if (*rvl)
             {
-                struct xmlAttr *attribs = node->attribs;
+                struct xmlAttr* attribs = node->attribs;
                 while (attribs)
                 {
                     if (IsAttrib(attribs, "SELECT"))
@@ -335,18 +335,18 @@ SETTING *LoadDependsItems(struct xmlNode *node, int version)
     }
     return rv;
 }
-void FreeCombo(SETTINGCOMBO *c)
+void FreeCombo(SETTINGCOMBO* c)
 {
     while (c)
     {
-        SETTINGCOMBO *next = c->next;
+        SETTINGCOMBO* next = c->next;
         free(c->displayName);
         free(c->value);
         free(c);
         c = next;
     }
 }
-void FreeRule(SETTING *rule)
+void FreeRule(SETTING* rule)
 {
     if (rule)
     {
@@ -367,9 +367,9 @@ void FreeRule(SETTING *rule)
         free(rule);
     }
 }
-void LoadChildren(struct xmlNode *node, int version, SETTING *rvp, BOOL debug)
-{	
-    SETTING **rvx = &rvp->children;
+void LoadChildren(struct xmlNode* node, int version, SETTING* rvp, BOOL debug)
+{
+    SETTING** rvx = &rvp->children;
     while (node)
     {
         if (IsNode(node, "PROPS"))
@@ -377,7 +377,7 @@ void LoadChildren(struct xmlNode *node, int version, SETTING *rvp, BOOL debug)
             *rvx = calloc(1, sizeof(SETTING));
             if (*rvx)
             {
-                struct xmlAttr *attribs = node->attribs;
+                struct xmlAttr* attribs = node->attribs;
                 while (attribs)
                 {
                     if (IsAttrib(attribs, "NAME"))
@@ -386,7 +386,7 @@ void LoadChildren(struct xmlNode *node, int version, SETTING *rvp, BOOL debug)
                         (*rvx)->helpid = atoi(attribs->value);
                     attribs = attribs->next;
                 }
-                    
+
                 (*rvx)->type = e_tree;
                 (*rvx)->children = LoadPropItems(node->children, version, debug);
                 rvx = &(*rvx)->next;
@@ -399,16 +399,16 @@ void LoadChildren(struct xmlNode *node, int version, SETTING *rvp, BOOL debug)
         node = node->next;
     }
 }
-PROFILE *LoadRule(char *fileName)
+PROFILE* LoadRule(char* fileName)
 {
-    PROFILE *rv;
-    SETTING **rvpd;
-    SETTING **rvpr;
-    int version=0;
-    FILE *in;
-    struct xmlNode *root;
-    struct xmlNode *nodes;
-    struct xmlAttr *attribs;
+    PROFILE* rv;
+    SETTING** rvpd;
+    SETTING** rvpr;
+    int version = 0;
+    FILE* in;
+    struct xmlNode* root;
+    struct xmlNode* nodes;
+    struct xmlAttr* attribs;
     in = fopen(fileName, "r");
     if (!in)
     {
@@ -421,21 +421,21 @@ PROFILE *LoadRule(char *fileName)
         return 0;
     }
     rv = calloc(1, sizeof(PROFILE));
-    rvpd = & rv->debugSettings;
-    rvpr = & rv->releaseSettings;
+    rvpd = &rv->debugSettings;
+    rvpr = &rv->releaseSettings;
     attribs = root->attribs;
-    
+
     nodes = root->children;
     while (nodes)
     {
         if (IsNode(nodes, "PROPGROUP"))
         {
-            struct xmlAttr *attribs = nodes->attribs;
+            struct xmlAttr* attribs = nodes->attribs;
             (*rvpd) = calloc(1, sizeof(SETTING));
             (*rvpr) = calloc(1, sizeof(SETTING));
             if ((*rvpd) && (&rvpr))
             {
-                char *select = NULL;
+                char* select = NULL;
                 int order = 0;
                 (*rvpd)->type = (*rvpr)->type = e_tree;
                 while (attribs)
@@ -456,9 +456,9 @@ PROFILE *LoadRule(char *fileName)
                         select = strdup(attribs->value);
                     if (IsAttrib(attribs, "ORDER"))
                         order = atoi(attribs->value);
-                        
+
                     attribs = attribs->next;
-                } 
+                }
                 (*rvpd)->select = (*rvpr)->select = select;
                 (*rvpd)->order = (*rvpr)->order = order;
                 LoadChildren(nodes->children, version, *rvpd, TRUE);

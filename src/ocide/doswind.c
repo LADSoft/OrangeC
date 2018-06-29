@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -31,42 +31,40 @@
 
 struct _varData
 {
-    char *rvTitle; // zero for no RV
-    char *rvBody; // zero for no RV
-    char *path;
-    char *exec;
-    char *args;
-    
-} ;
+    char* rvTitle;  // zero for no RV
+    char* rvBody;   // zero for no RV
+    char* path;
+    char* exec;
+    char* args;
+};
 extern char szInstallPath[];
 
 static char oldPath[32768];
-char *GetCmd(void)
+char* GetCmd(void)
 {
-    char *a;
+    char* a;
     a = getenv("COMSPEC");
-//	if (!a)
-//		a = searchpath("cmd.exe");
+    //	if (!a)
+    //		a = searchpath("cmd.exe");
     return a;
 }
 static LPTCH GetEnv(void)
 {
     char buffer2[32768];
     GetEnvironmentVariable("PATH", oldPath, sizeof(oldPath));
-    sprintf(buffer2,"%s\\bin;%s", szInstallPath, oldPath);
+    sprintf(buffer2, "%s\\bin;%s", szInstallPath, oldPath);
     SetEnvironmentVariable("PATH", buffer2);
     return GetEnvironmentStrings();
-    
 }
 void FreeEnv(LPTCH env)
 {
     FreeEnvironmentStrings(env);
     SetEnvironmentVariable("PATH", oldPath);
 }
-DWORD DosWindowThread(void *xx)
+DWORD DosWindowThread(void* xx)
 {
-    struct _varData *vdata = (struct _varData *)xx;
-    char *xcmd = GetCmd();
+    struct _varData* vdata = (struct _varData*)xx;
+    char* xcmd = GetCmd();
     if (xcmd)
     {
         BOOL bSeenInitialBP = FALSE;
@@ -89,13 +87,13 @@ DWORD DosWindowThread(void *xx)
                 else
                     p[0] = 0;
             else
-                    wd[0] = 0;
+                wd[0] = 0;
         }
-        else 
+        else
             GetCurrentDirectory(sizeof(wd), wd);
         if (vdata->exec)
         {
-            sprintf(cmd,"\"%s\" %s", vdata->exec, vdata->args);
+            sprintf(cmd, "\"%s\" %s", vdata->exec, vdata->args);
         }
         else
         {
@@ -105,13 +103,12 @@ DWORD DosWindowThread(void *xx)
         memset(&stProcessInfo, 0, sizeof(PROCESS_INFORMATION));
 
         stStartInfo.cb = sizeof(STARTUPINFO);
-        bRet = CreateProcess(NULL, cmd, NULL, NULL, TRUE, DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS | CREATE_NEW_CONSOLE, env, 
-                wd,  &stStartInfo, &stProcessInfo);
+        bRet = CreateProcess(NULL, cmd, NULL, NULL, TRUE, DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS | CREATE_NEW_CONSOLE, env, wd,
+                             &stStartInfo, &stProcessInfo);
         if (!bRet)
         {
             FreeEnv(env);
-            ExtendedMessageBox("Command Execution", MB_SETFOREGROUND | MB_SYSTEMMODAL, 
-                "Could not execute %s.", cmd);
+            ExtendedMessageBox("Command Execution", MB_SETFOREGROUND | MB_SYSTEMMODAL, "Could not execute %s.", cmd);
             return 0;
         }
         ProcessToTop(stProcessInfo.dwProcessId);
@@ -140,11 +137,12 @@ DWORD DosWindowThread(void *xx)
                         // from auto-closing before we show it.
                         if (stDE.u.ExitThread.dwExitCode == STATUS_CONTROL_C_EXIT)
                         {
-                            if (!bShownExitCode) 
+                            if (!bShownExitCode)
                             {
                                 if (vdata->rvTitle)
                                 {
-                                    ExtendedMessageBox(vdata->rvTitle, MB_SETFOREGROUND | MB_SYSTEMMODAL, vdata->rvBody, stDE.u.ExitProcess.dwExitCode);
+                                    ExtendedMessageBox(vdata->rvTitle, MB_SETFOREGROUND | MB_SYSTEMMODAL, vdata->rvBody,
+                                                       stDE.u.ExitProcess.dwExitCode);
                                     bShownExitCode = TRUE;
                                 }
                             }
@@ -152,19 +150,20 @@ DWORD DosWindowThread(void *xx)
                         dwContinueStatus = DBG_CONTINUE;
                         break;
                     case EXIT_PROCESS_DEBUG_EVENT:
-                        
-                        if (!bShownExitCode) 
+
+                        if (!bShownExitCode)
                         {
                             if (vdata->rvTitle)
                             {
-                                ExtendedMessageBox(vdata->rvTitle, MB_SETFOREGROUND | MB_SYSTEMMODAL, vdata->rvBody, stDE.u.ExitProcess.dwExitCode);
+                                ExtendedMessageBox(vdata->rvTitle, MB_SETFOREGROUND | MB_SYSTEMMODAL, vdata->rvBody,
+                                                   stDE.u.ExitProcess.dwExitCode);
                                 bShownExitCode = TRUE;
                             }
                         }
                         dwContinueStatus = DBG_CONTINUE;
                         bContinue = FALSE;
                         break;
-    
+
                     case EXCEPTION_DEBUG_EVENT:
                         switch (stDE.u.Exception.ExceptionRecord.ExceptionCode)
                         {
@@ -174,7 +173,7 @@ DWORD DosWindowThread(void *xx)
                             case EXCEPTION_BREAKPOINT:
                                 if (!bSeenInitialBP)
                                 {
-                                    bSeenInitialBP = TRUE;									
+                                    bSeenInitialBP = TRUE;
                                     dwContinueStatus = DBG_CONTINUE;
                                 }
                                 else
@@ -184,7 +183,7 @@ DWORD DosWindowThread(void *xx)
                                 break;
                         }
                         break;
-    
+
                         // For any other events, just continue on.
                     default:
                         dwContinueStatus = DBG_EXCEPTION_NOT_HANDLED;
@@ -198,7 +197,6 @@ DWORD DosWindowThread(void *xx)
                 dwContinueStatus = DBG_CONTINUE;
                 bContinue = TRUE;
             }
-    
         }
         CloseHandle(stProcessInfo.hProcess);
         CloseHandle(stProcessInfo.hThread);
@@ -212,9 +210,9 @@ DWORD DosWindowThread(void *xx)
     free(vdata);
     return 0;
 }
-void DosWindow(char *path, char *exec, char *args, char *rvTitle, char *rvBody)
+void DosWindow(char* path, char* exec, char* args, char* rvTitle, char* rvBody)
 {
-    struct _varData *vdata = calloc(sizeof(struct _varData), 1);
+    struct _varData* vdata = calloc(sizeof(struct _varData), 1);
     if (vdata)
     {
         if (path)
@@ -228,5 +226,5 @@ void DosWindow(char *path, char *exec, char *args, char *rvTitle, char *rvBody)
         if (rvBody)
             vdata->rvBody = strdup(rvBody);
         _beginthread((BEGINTHREAD_FUNC)DosWindowThread, 0, (LPVOID)vdata);
-    }    
+    }
 }

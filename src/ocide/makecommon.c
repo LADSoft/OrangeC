@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -44,22 +44,21 @@ extern char currentProfileName[256];
 int errcount, warncount;
 char makeTempFile[MAX_PATH];
 
+static HashTable* tables;
 
-static HashTable *tables;
-
-void ExpandSpecial(SETTING *setting, PROJECTITEM *pj, char *buf, char *src)
+void ExpandSpecial(SETTING* setting, PROJECTITEM* pj, char* buf, char* src)
 {
     if (setting)
     {
         if (pj && setting->ext)
         {
-            char *p = strrchr(pj->realName, '.');
+            char* p = strrchr(pj->realName, '.');
             if (!p || !MatchesExt(p, setting->ext))
             {
                 buf[0] = 0;
                 return;
             }
-        }            
+        }
         switch (setting->type)
         {
             case e_prependtext:
@@ -68,9 +67,10 @@ void ExpandSpecial(SETTING *setting, PROJECTITEM *pj, char *buf, char *src)
                     if (isspace(*src))
                     {
                         *buf++ = ' ';
-                        while (isspace(*src)) src++;
+                        while (isspace(*src))
+                            src++;
                     }
-                    *buf++='"';
+                    *buf++ = '"';
                     strcpy(buf, setting->aux);
                     buf += strlen(buf);
                     while (*src && !isspace(*src))
@@ -88,15 +88,15 @@ void ExpandSpecial(SETTING *setting, PROJECTITEM *pj, char *buf, char *src)
                             *buf++ = *src++;
                         }
                     }
-                    *buf++='"';
+                    *buf++ = '"';
                 }
                 *buf = 0;
                 break;
             case e_separatedtext:
-                while (isspace(*src)) 
+                while (isspace(*src))
                     src++;
                 while (src[0])
-                    
+
                 {
                     strcpy(buf, setting->aux);
                     buf += strlen(buf);
@@ -115,7 +115,8 @@ void ExpandSpecial(SETTING *setting, PROJECTITEM *pj, char *buf, char *src)
                             *buf++ = *src++;
                         }
                     }
-                    while (isspace(*src)) src++;
+                    while (isspace(*src))
+                        src++;
                 }
                 *buf = 0;
                 break;
@@ -129,15 +130,15 @@ void ExpandSpecial(SETTING *setting, PROJECTITEM *pj, char *buf, char *src)
         strcpy(buf, src);
     }
 }
-static void ExpandMacro(PROJECTITEM *proj, char **dest, char **src, PROJECTITEM **lcd)
+static void ExpandMacro(PROJECTITEM* proj, char** dest, char** src, PROJECTITEM** lcd)
 {
-    char *p = strchr(*src, ')');
-    if ((*dest)[-1] == '$') // get past the make instruction
+    char* p = strchr(*src, ')');
+    if ((*dest)[-1] == '$')  // get past the make instruction
     {
         (*dest)--;
         if (lcd)
         {
-            memcpy(*dest, *src, p +1 - *src);
+            memcpy(*dest, *src, p + 1 - *src);
             *dest += p + 1 - *src;
             *src = p + 1;
             return;
@@ -148,8 +149,8 @@ static void ExpandMacro(PROJECTITEM *proj, char **dest, char **src, PROJECTITEM 
     {
         char buf[256];
         memcpy(buf, *src, p - *src);
-        buf[p-*src] = 0;
-        (*src) = p+1;
+        buf[p - *src] = 0;
+        (*src) = p + 1;
         p = Lookup(buf, proj, lcd);
         if (p)
         {
@@ -159,16 +160,16 @@ static void ExpandMacro(PROJECTITEM *proj, char **dest, char **src, PROJECTITEM 
         }
     }
 }
-static void ExpandFile(PROJECTITEM *proj, char **dest, char **src, PROJECTITEM **lcd)
+static void ExpandFile(PROJECTITEM* proj, char** dest, char** src, PROJECTITEM** lcd)
 {
     char delim, *p, dest1[10000];
-    FILE *fil = fopen(makeTempFile, "w");
+    FILE* fil = fopen(makeTempFile, "w");
     *src += 2;
     delim = *(*src)++;
     p = strchr((*src), delim);
     if (p)
     {
-        *p = 0; 
+        *p = 0;
     }
     EvalMacros(proj, dest1, *src, lcd);
     if (p)
@@ -189,10 +190,10 @@ static void ExpandFile(PROJECTITEM *proj, char **dest, char **src, PROJECTITEM *
         *dest += strlen(*dest);
         fputs(p, fil);
         fclose(fil);
-//        CopyFile("C:\orangec\src\ocide\temp.tmp",makeTempFile, FALSE);
+        //        CopyFile("C:\orangec\src\ocide\temp.tmp",makeTempFile, FALSE);
     }
 }
-static void PutFilePath(PROJECTITEM *rel, char **dest, char *name, int escaped, int spacing)
+static void PutFilePath(PROJECTITEM* rel, char** dest, char* name, int escaped, int spacing)
 {
     if (spacing)
     {
@@ -203,7 +204,8 @@ static void PutFilePath(PROJECTITEM *rel, char **dest, char *name, int escaped, 
     strcpy(*dest, name);
     if (rel)
     {
-        while (rel && rel->type != PJ_PROJ) rel = rel->parent;
+        while (rel && rel->type != PJ_PROJ)
+            rel = rel->parent;
         if (rel)
             strcpy(*dest, relpathmake(name, rel->realName));
         else
@@ -217,7 +219,8 @@ static void PutFilePath(PROJECTITEM *rel, char **dest, char *name, int escaped, 
     if (escaped)
         *(*dest)++ = '"';
 }
-static int GetOneFilenamePath(PROJECTITEM *pj, char **dest, char *ext, int len, BOOL first, int escaped, int spacing, PROJECTITEM **lcd)
+static int GetOneFilenamePath(PROJECTITEM* pj, char** dest, char* ext, int len, BOOL first, int escaped, int spacing,
+                              PROJECTITEM** lcd)
 {
     if (pj->type != PJ_PROJ && strlen(pj->realName) > len && !stricmp(pj->realName + strlen(pj->realName) - len, ext))
     {
@@ -231,7 +234,7 @@ static int GetOneFilenamePath(PROJECTITEM *pj, char **dest, char *ext, int len, 
     }
     return spacing;
 }
-int GetFilenamePaths(PROJECTITEM *pj, char **dest, char *ext, int len, BOOL first, int escaped, int spacing, PROJECTITEM **lcd)
+int GetFilenamePaths(PROJECTITEM* pj, char** dest, char* ext, int len, BOOL first, int escaped, int spacing, PROJECTITEM** lcd)
 {
     do
     {
@@ -239,7 +242,7 @@ int GetFilenamePaths(PROJECTITEM *pj, char **dest, char *ext, int len, BOOL firs
             spacing = GetFilenamePaths(pj->children, dest, ext, len, FALSE, escaped, spacing, lcd);
         if (pj->type == PJ_PROJ)
         {
-            PROJECTITEMLIST *list = pj->depends;
+            PROJECTITEMLIST* list = pj->depends;
             while (list)
             {
                 spacing = GetOneFilenamePath(list->item, dest, ext, len, FALSE, escaped, spacing, lcd);
@@ -248,20 +251,19 @@ int GetFilenamePaths(PROJECTITEM *pj, char **dest, char *ext, int len, BOOL firs
         }
         spacing = GetOneFilenamePath(pj, dest, ext, len, FALSE, escaped, spacing, lcd);
         pj = pj->next;
-    }
-    while (pj && !first);
+    } while (pj && !first);
     return spacing;
 }
-static void ExpandFileName(PROJECTITEM *pj, char **dest, char **src, PROJECTITEM **lcd)
+static void ExpandFileName(PROJECTITEM* pj, char** dest, char** src, PROJECTITEM** lcd)
 {
-    char buf[256], *p=buf;
+    char buf[256], *p = buf;
     BOOL escaped = FALSE;
     if ((*src)[-1] == '"')
     {
         escaped = TRUE;
     }
-    (*src)+=2;
-    *p++= '.';
+    (*src) += 2;
+    *p++ = '.';
     while (isalnum(**src) || **src == '_')
         *p++ = *(*src)++;
     if (escaped && *(*src) == '"')
@@ -276,15 +278,15 @@ static void ExpandFileName(PROJECTITEM *pj, char **dest, char **src, PROJECTITEM
     *p = 0;
     GetFilenamePaths(pj, dest, buf, strlen(buf), TRUE, escaped, FALSE, lcd);
 }
-void EvalMacros(PROJECTITEM *pj, char *parsedCmd, char *rawCmd, PROJECTITEM **lcd)
+void EvalMacros(PROJECTITEM* pj, char* parsedCmd, char* rawCmd, PROJECTITEM** lcd)
 {
-    char *dest =parsedCmd;
+    char* dest = parsedCmd;
     BOOL done = FALSE;
     while (!done)
     {
-        char *ma = strstr(rawCmd, "$(");
-        char *se = strstr(rawCmd, "%.");
-        char *fi = NULL;
+        char* ma = strstr(rawCmd, "$(");
+        char* se = strstr(rawCmd, "%.");
+        char* fi = NULL;
         if (!lcd)
             fi = strstr(rawCmd, "&&");
         if (ma && se)
@@ -310,9 +312,9 @@ void EvalMacros(PROJECTITEM *pj, char *parsedCmd, char *rawCmd, PROJECTITEM **lc
         }
         if (ma || se || fi)
         {
-            char *p =(ma ? ma : se ? se : fi);
+            char* p = (ma ? ma : se ? se : fi);
             memcpy(dest, rawCmd, p - rawCmd);
-            dest[p-rawCmd] = 0;
+            dest[p - rawCmd] = 0;
             dest += p - rawCmd;
             rawCmd = p;
             if (fi)
@@ -323,7 +325,7 @@ void EvalMacros(PROJECTITEM *pj, char *parsedCmd, char *rawCmd, PROJECTITEM **lc
             {
                 ExpandMacro(pj, &dest, &rawCmd, lcd);
             }
-            else // se
+            else  // se
             {
                 if (pj)
                     ExpandFileName(pj, &dest, &rawCmd, lcd);
@@ -349,16 +351,17 @@ void EvalMacros(PROJECTITEM *pj, char *parsedCmd, char *rawCmd, PROJECTITEM **lc
         else if (isspace(*parsedCmd) && *parsedCmd != '\n')
         {
             *dest++ = ' ';
-            while (isspace(*parsedCmd)) parsedCmd++;
+            while (isspace(*parsedCmd))
+                parsedCmd++;
         }
         else
         {
-            *dest++ = *parsedCmd ++;
+            *dest++ = *parsedCmd++;
         }
     }
     *dest = 0;
 }
-unsigned MakeHash(char *name)
+unsigned MakeHash(char* name)
 {
     unsigned rv = 0;
     while (*name)
@@ -367,9 +370,9 @@ unsigned MakeHash(char *name)
     }
     return rv % MAKEHASH_MAX;
 }
-PROJECTITEM *LCD(PROJECTITEM *proj, PROJECTITEM *lcd)
+PROJECTITEM* LCD(PROJECTITEM* proj, PROJECTITEM* lcd)
 {
-    PROJECTITEM *test;
+    PROJECTITEM* test;
     if (!lcd)
         return proj;
     if (!proj)
@@ -396,21 +399,21 @@ PROJECTITEM *LCD(PROJECTITEM *proj, PROJECTITEM *lcd)
     }
     return NULL;
 }
-char *Lookup(char *id, PROJECTITEM *proj, PROJECTITEM **lcd)
+char* Lookup(char* id, PROJECTITEM* proj, PROJECTITEM** lcd)
 {
-    HashTable *search = tables;
+    HashTable* search = tables;
     int hash = MakeHash(id);
     while (search)
     {
-        NameValuePair *p = search->pairs[hash];
+        NameValuePair* p = search->pairs[hash];
         while (p)
         {
             if (!strcmp(p->name, id))
             {
-                PROJECTITEM *lcd2 = NULL;
+                PROJECTITEM* lcd2 = NULL;
                 SETTING *value, *setting = PropSearchProtos(proj, id, &value);
                 char buf1[10000];
-                char *buf = malloc(10000);
+                char* buf = malloc(10000);
                 if (!p->assign)
                     lcd2 = search->pj;
                 if (lcd)
@@ -427,10 +430,10 @@ char *Lookup(char *id, PROJECTITEM *proj, PROJECTITEM **lcd)
     }
     return NULL;
 }
-void AddMakeSymbol(char *name, char *value, BOOL dup, BOOL assign)
+void AddMakeSymbol(char* name, char* value, BOOL dup, BOOL assign)
 {
     int hash = MakeHash(name);
-    NameValuePair *p = calloc(1, sizeof(NameValuePair)+32);
+    NameValuePair* p = calloc(1, sizeof(NameValuePair) + 32);
     if (p)
     {
         p->next = tables->pairs[hash];
@@ -449,7 +452,7 @@ void AddMakeSymbol(char *name, char *value, BOOL dup, BOOL assign)
         p->alloced = dup;
     }
 }
-void RecursiveAddSymbols(SETTING *set, BOOL assign)
+void RecursiveAddSymbols(SETTING* set, BOOL assign)
 {
     while (set)
     {
@@ -464,13 +467,13 @@ void RecursiveAddSymbols(SETTING *set, BOOL assign)
         set = set->next;
     }
 }
-void AddAssigns(SETTING *set)
+void AddAssigns(SETTING* set)
 {
     while (set)
     {
         if (set->type == e_choose)
         {
-            char *val = Lookup(set->id, NULL, NULL);
+            char* val = Lookup(set->id, NULL, NULL);
             if (val)
             {
                 if (!strcmp(val, set->value))
@@ -487,36 +490,36 @@ void AddAssigns(SETTING *set)
         set = set->next;
     }
 }
-void AddRuleSymbols(PROJECTITEM *fi)
+void AddRuleSymbols(PROJECTITEM* fi)
 {
     struct _propsData data;
-    PROFILE *pages[100];
+    PROFILE* pages[100];
     int i;
     memset(&data, 0, sizeof(data));
     data.prototype = pages;
     GetActiveRules(fi, &data);
-    for (i=0; i < data.protocount; i++)
+    for (i = 0; i < data.protocount; i++)
     {
         RecursiveAddSymbols(GetSettings(data.prototype[i]), TRUE);
     }
 }
-void AddRuleCommands(PROJECTITEM *fi)
+void AddRuleCommands(PROJECTITEM* fi)
 {
     struct _propsData data;
-    PROFILE *pages[100];
+    PROFILE* pages[100];
     int i;
     memset(&data, 0, sizeof(data));
     data.prototype = pages;
     SelectRules(fi, &data);
-    for (i=0; i < data.protocount; i++)
+    for (i = 0; i < data.protocount; i++)
     {
-        SETTING *set = GetSettings(data.prototype[i]);
+        SETTING* set = GetSettings(data.prototype[i]);
         if (set->depends)
             EvalDependentRules(set->depends, fi, &data);
     }
-    for (i=0; i < data.protocount; i++)
+    for (i = 0; i < data.protocount; i++)
     {
-        SETTING *set = GetSettings(data.prototype[i]);
+        SETTING* set = GetSettings(data.prototype[i]);
         if (set->command)
         {
             AddAssigns(set->command->assignments);
@@ -532,8 +535,8 @@ void CreateEnvironmentMacros(void)
     {
         while (*p)
         {
-            char *name = p;
-            char *value = strchr(p+1, '=');
+            char* name = p;
+            char* value = strchr(p + 1, '=');
             if (*value)
             {
                 *value = 0;
@@ -545,9 +548,9 @@ void CreateEnvironmentMacros(void)
         FreeEnvironmentStrings(x);
     }
 }
-void CreateBuiltinWorkspaceMacros(PROJECTITEM *wa)
+void CreateBuiltinWorkspaceMacros(PROJECTITEM* wa)
 {
-    char buf[MAX_PATH],*p;
+    char buf[MAX_PATH], *p;
     strcpy(buf, szInstallPath);
     strcat(buf, "\\");
     p = buf + strlen(buf);
@@ -563,7 +566,7 @@ void CreateBuiltinWorkspaceMacros(PROJECTITEM *wa)
     AddMakeSymbol("CURRENTRELEASETYPE", profileDebugMode ? "Debug" : "Release", FALSE, FALSE);
     CreateEnvironmentMacros();
 }
-void CreateBuiltinProjectMacros(PROJECTITEM *pj, BOOL rel)
+void CreateBuiltinProjectMacros(PROJECTITEM* pj, BOOL rel)
 {
     char buf[MAX_PATH], *p, *q;
     strcpy(buf, pj->realName);
@@ -575,7 +578,7 @@ void CreateBuiltinProjectMacros(PROJECTITEM *pj, BOOL rel)
         p = relpathmake(buf, pj->realName);
         strcpy(buf, p);
     }
-    AddMakeSymbol("PROJECTDIR", buf, TRUE, FALSE);	
+    AddMakeSymbol("PROJECTDIR", buf, TRUE, FALSE);
     AddMakeSymbol("OUTPUTEXT", pj->outputExt, TRUE, FALSE);
     strcpy(buf, pj->realName);
     p = strrchr(buf, '.');
@@ -597,9 +600,9 @@ void CreateBuiltinProjectMacros(PROJECTITEM *pj, BOOL rel)
         free(p);
     }
 }
-void CreateBuiltinFileMacros(PROJECTITEM *pj)
+void CreateBuiltinFileMacros(PROJECTITEM* pj)
 {
-    char *p,buf[MAX_PATH], *q;
+    char *p, buf[MAX_PATH], *q;
     AddMakeSymbol("INPUTFILE", pj->realName, TRUE, FALSE);
     strcpy(buf, pj->realName);
     p = strrchr(buf, '.');
@@ -640,7 +643,7 @@ void CreateBuiltinFileMacros(PROJECTITEM *pj)
         }
     }
 }
-BOOL CreateFullPath(char *path)
+BOOL CreateFullPath(char* path)
 {
     char buf[MAX_PATH], *p;
     strcpy(buf, path);
@@ -657,21 +660,21 @@ BOOL CreateFullPath(char *path)
     CreateDirectory(path, NULL);
     return FALSE;
 }
-static void CreateOutputPath(PROJECTITEM *fi)
+static void CreateOutputPath(PROJECTITEM* fi)
 {
-    char *p = Lookup("OUTPUTDIR", fi, NULL);
+    char* p = Lookup("OUTPUTDIR", fi, NULL);
     if (p && (!CreateDirectory(p, NULL) && GetLastError() != ERROR_ALREADY_EXISTS))
     {
         CreateFullPath(p);
         free(p);
     }
 }
-void AddSymbolTable(PROJECTITEM *fi, BOOL rel)
+void AddSymbolTable(PROJECTITEM* fi, BOOL rel)
 {
-    HashTable *newTable = calloc(1, sizeof(HashTable));
+    HashTable* newTable = calloc(1, sizeof(HashTable));
     if (newTable)
     {
-        SETTING *settings;
+        SETTING* settings;
         newTable->next = tables;
         newTable->pj = fi;
         tables = newTable;
@@ -696,21 +699,21 @@ void AddSymbolTable(PROJECTITEM *fi, BOOL rel)
         }
     }
 }
-void AddRootTables(PROJECTITEM *pj, BOOL rel)
+void AddRootTables(PROJECTITEM* pj, BOOL rel)
 {
     if (pj->parent)
         AddRootTables(pj->parent, rel);
     AddSymbolTable(pj, rel);
 }
-void RemoveSymbols(HashTable *table)
+void RemoveSymbols(HashTable* table)
 {
     int i;
-    for (i=0; i < MAKEHASH_MAX; i++)
+    for (i = 0; i < MAKEHASH_MAX; i++)
     {
-        NameValuePair *p = table->pairs[i];
+        NameValuePair* p = table->pairs[i];
         while (p)
         {
-            NameValuePair *next = p->next;
+            NameValuePair* next = p->next;
             if (p->alloced)
             {
                 free(p->name);
@@ -725,7 +728,7 @@ void RemoveSymbolTable(void)
 {
     if (tables)
     {
-        HashTable *oldTable = tables;
+        HashTable* oldTable = tables;
         tables = tables->next;
         RemoveSymbols(oldTable);
         free(oldTable);
@@ -740,7 +743,6 @@ void SetIsMaking(int makeRunning)
 {
     making = makeRunning;
     PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
-
 }
 void CreateTempFileName(void)
 {
@@ -752,9 +754,9 @@ void CreateTempFileName(void)
 /*
  * Pull the next path off the path search list
  */
-static char *parsepath(char *path, char *buffer)
+static char* parsepath(char* path, char* buffer)
 {
-    char *pos = path;
+    char* pos = path;
 
     /* Quit if hit a ';' */
     while (*pos)
@@ -764,7 +766,7 @@ static char *parsepath(char *path, char *buffer)
             pos++;
             break;
         }
-        *buffer++ =  *pos++;
+        *buffer++ = *pos++;
     }
     *buffer = 0;
 
@@ -780,10 +782,10 @@ static char *parsepath(char *path, char *buffer)
  * Search local directory and all directories in the search path
  *  until it is found or run out of directories
  */
-FILE *FindOnPath(char *string, char *searchPath)
+FILE* FindOnPath(char* string, char* searchPath)
 {
-    FILE *in;
-    char *newpath = searchPath;
+    FILE* in;
+    char* newpath = searchPath;
     if (string[1] == ':' || string[0] == '\\')
         return fopen(string, "rb");
     if (string[0] != '\\' && string[1] != ':')
@@ -808,9 +810,9 @@ FILE *FindOnPath(char *string, char *searchPath)
     }
     return (0);
 }
-void LoadPath(char *root, char *dest, char *item)
+void LoadPath(char* root, char* dest, char* item)
 {
-    char *p = Lookup(item, NULL, NULL);
+    char* p = Lookup(item, NULL, NULL);
     char buf[MAX_PATH];
     if (p && *p)
     {
@@ -821,10 +823,11 @@ void LoadPath(char *root, char *dest, char *item)
     }
     free(p);
 }
-char *GetNextFile(char *out, char *in)
+char* GetNextFile(char* out, char* in)
 {
-    char *p;
-    while (isspace(*in)) in++;
+    char* p;
+    while (isspace(*in))
+        in++;
     if (*in == '"')
     {
         p = strchr(++in, '"');
@@ -833,7 +836,7 @@ char *GetNextFile(char *out, char *in)
             p = in + strlen(in);
         }
         memcpy(out, in, p - in);
-        out[p-in] = 0;
+        out[p - in] = 0;
         if (*p)
             p++;
     }
@@ -843,20 +846,20 @@ char *GetNextFile(char *out, char *in)
         while (*p && !isspace(*p))
             p++;
         memcpy(out, in, p - in);
-        out[p-in] = 0;
+        out[p - in] = 0;
     }
     return p;
 }
-void countErrors(char *buf)
+void countErrors(char* buf)
 {
-    char *p = buf;
+    char* p = buf;
     if (!strnicmp(p, "ERROR", 5) || stristr(p, "ERROR:"))
         errcount++;
     if (!strnicmp(p, "WARNING", 7) || stristr(p, "WARNING:"))
         warncount++;
-    if (!strnicmp(p, "LINKER ERROR",12))
+    if (!strnicmp(p, "LINKER ERROR", 12))
         errcount++;
-    if (!strnicmp(p, "FATAL ERROR",11))
+    if (!strnicmp(p, "FATAL ERROR", 11))
         errcount++;
     while ((p = stristr(p, "\nERROR")))
     {
@@ -882,13 +885,12 @@ void countErrors(char *buf)
         p += 8;
     }
 }
-int FileTime(FILETIME *timex, char *name)
+int FileTime(FILETIME* timex, char* name)
 {
     HANDLE fd;
 
     memset(timex, 0, sizeof(*timex));
-    fd = CreateFile(name, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING,
-        FILE_ATTRIBUTE_NORMAL, 0);
+    fd = CreateFile(name, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
     if (fd == INVALID_HANDLE_VALUE)
         return 0;
     if (!GetFileTime(fd, 0, 0, timex))
@@ -902,18 +904,18 @@ int FileTime(FILETIME *timex, char *name)
 
 //-------------------------------------------------------------------------
 
-int CompareTimes(FILETIME *target, FILETIME *source)
+int CompareTimes(FILETIME* target, FILETIME* source)
 {
     // gotta have a two second delay because windows writes the files
     // in different orders... this is the max delay based on FAT
-    __int64 result = *(__int64 *)source - *(__int64 *)target;
-    return result > 2000000; // true if source is newer than target
+    __int64 result = *(__int64*)source - *(__int64*)target;
+    return result > 2000000;  // true if source is newer than target
 }
 int ParsePipeData(HANDLE handle, int window, HANDLE hProcess)
 {
     static char buf[513];
     static int pos = 0;
-    char *p;
+    char* p;
     int rv = TRUE;
     while (TRUE)
     {
@@ -938,28 +940,28 @@ int ParsePipeData(HANDLE handle, int window, HANDLE hProcess)
             }
             if (avail)
             {
-                rv = ReadFile(handle, buf + pos, 512-pos, &read, 0);
+                rv = ReadFile(handle, buf + pos, 512 - pos, &read, 0);
             }
         }
         pos += read;
         buf[pos] = 0;
         while ((p = strchr(buf, '\n')))
         {
-            char s =  *++p;
+            char s = *++p;
             int wc = warncount, ec = errcount;
             *p = 0;
             if (window != ERR_NO_WINDOW)
             {
                 countErrors(buf);
                 if (ec != errcount)
-                    SetInfoColor(window, 0x0000ff); // red
+                    SetInfoColor(window, 0x0000ff);  // red
                 else if (wc != warncount)
-                    SetInfoColor(window, 0xff0000); // blue
+                    SetInfoColor(window, 0xff0000);  // blue
                 SendInfoMessage(window, buf);
                 if (ec != errcount)
-                    SetInfoColor(ERR_EXTENDED_BUILD_WINDOW, 0x0000ff); // red
+                    SetInfoColor(ERR_EXTENDED_BUILD_WINDOW, 0x0000ff);  // red
                 else if (wc != warncount)
-                    SetInfoColor(ERR_EXTENDED_BUILD_WINDOW, 0xff0000); // blue
+                    SetInfoColor(ERR_EXTENDED_BUILD_WINDOW, 0xff0000);  // blue
                 SendInfoMessage(ERR_EXTENDED_BUILD_WINDOW, buf);
             }
             *p = s;
@@ -974,14 +976,14 @@ int ParsePipeData(HANDLE handle, int window, HANDLE hProcess)
             {
                 countErrors(buf);
                 if (ec != errcount)
-                    SetInfoColor(window, 0x0000ff); // red
+                    SetInfoColor(window, 0x0000ff);  // red
                 else if (wc != warncount)
-                    SetInfoColor(window, 0xff0000); // blue
+                    SetInfoColor(window, 0xff0000);  // blue
                 SendInfoMessage(window, buf);
                 if (ec != errcount)
-                    SetInfoColor(ERR_EXTENDED_BUILD_WINDOW, 0x0000ff); // red
+                    SetInfoColor(ERR_EXTENDED_BUILD_WINDOW, 0x0000ff);  // red
                 else if (wc != warncount)
-                    SetInfoColor(ERR_EXTENDED_BUILD_WINDOW, 0xff0000); // blue
+                    SetInfoColor(ERR_EXTENDED_BUILD_WINDOW, 0xff0000);  // blue
                 SendInfoMessage(ERR_EXTENDED_BUILD_WINDOW, buf);
             }
             pos = 0;
@@ -994,7 +996,7 @@ int ParsePipeData(HANDLE handle, int window, HANDLE hProcess)
 
 //-------------------------------------------------------------------------
 
-int Execute(char *cmd, char *wdp, int window)
+int Execute(char* cmd, char* wdp, int window)
 {
     char path[260], *p;
     DWORD retcode;
@@ -1016,7 +1018,7 @@ int Execute(char *cmd, char *wdp, int window)
     {
         *p = 0;
     }
-        
+
     memset(&security, 0, sizeof(security));
     security.nLength = sizeof(security);
     security.bInheritHandle = TRUE;
@@ -1028,19 +1030,17 @@ int Execute(char *cmd, char *wdp, int window)
     si.wShowWindow = SW_HIDE;
 
     CreatePipe(&stdinRd, &stdinWr, &security, 0);
-    DuplicateHandle(GetCurrentProcess(), stdinWr, GetCurrentProcess(), &stdinWr,
-        0, FALSE, DUPLICATE_SAME_ACCESS | DUPLICATE_CLOSE_SOURCE);
+    DuplicateHandle(GetCurrentProcess(), stdinWr, GetCurrentProcess(), &stdinWr, 0, FALSE,
+                    DUPLICATE_SAME_ACCESS | DUPLICATE_CLOSE_SOURCE);
 
     si.hStdInput = INVALID_HANDLE_VALUE;
     si.hStdOutput = stdoutWr;
     si.hStdError = stdoutWr;
 
-    retcode = CreateProcess(0, cmd, 0, 0, TRUE, CREATE_SUSPENDED, 
-                            0, path, &si, &pi);
+    retcode = CreateProcess(0, cmd, 0, 0, TRUE, CREATE_SUSPENDED, 0, path, &si, &pi);
 
     CloseHandle(stdoutWr);
     CloseHandle(stdinRd);
-
 
     if (retcode)
     {
@@ -1078,9 +1078,9 @@ int Execute(char *cmd, char *wdp, int window)
 
 //-------------------------------------------------------------------------
 
-void MakeMessage(char *title, char *name)
+void MakeMessage(char* title, char* name)
 {
-    char buf[512],buf1[512],*p=name;
+    char buf[512], buf1[512], *p = name;
     if (!title)
         title = "%s";
     name = strrchr(name, '\\');
@@ -1096,17 +1096,16 @@ void MakeMessage(char *title, char *name)
 void ErrWarnCounts()
 {
     char buf[256];
-    sprintf(buf, "\r\nCompile done.  Errors: %d,  Warnings: %d\r\n", errcount,
-        warncount);
+    sprintf(buf, "\r\nCompile done.  Errors: %d,  Warnings: %d\r\n", errcount, warncount);
     if (0 != errcount)
-        SetInfoColor(ERR_BUILD_WINDOW, 0x0000ff); // red
+        SetInfoColor(ERR_BUILD_WINDOW, 0x0000ff);  // red
     else if (0 != warncount)
-        SetInfoColor(ERR_BUILD_WINDOW, 0xff0000); // blue
+        SetInfoColor(ERR_BUILD_WINDOW, 0xff0000);  // blue
     SendInfoMessage(ERR_BUILD_WINDOW, buf);
     if (0 != errcount)
-        SetInfoColor(ERR_EXTENDED_BUILD_WINDOW, 0x0000ff); // red
+        SetInfoColor(ERR_EXTENDED_BUILD_WINDOW, 0x0000ff);  // red
     else if (0 != warncount)
-        SetInfoColor(ERR_EXTENDED_BUILD_WINDOW, 0xff0000); // blue
+        SetInfoColor(ERR_EXTENDED_BUILD_WINDOW, 0xff0000);  // blue
     SendInfoMessage(ERR_EXTENDED_BUILD_WINDOW, buf);
 }
 /*---------------------------------------------------------------------------------------------------*/

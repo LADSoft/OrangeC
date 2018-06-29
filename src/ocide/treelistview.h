@@ -36,23 +36,23 @@
 #ifndef TREELISTVIEW_H
 #define TREELISTVIEW_H
 
-#define TLM_INSERTITEM     WM_USER + 1 
-#define TLM_DELETEITEM     WM_USER + 2 
-#define TLM_DELETEALLITEMS WM_USER + 3 
-#define TLM_GETITEM        WM_USER + 4 
-#define TLM_SETITEM        WM_USER + 5 
-#define TLM_GETITEMCOUNT   WM_USER + 6 
-#define TLM_GETNEXTITEM    WM_USER + 7 
-#define TLM_EXPAND         WM_USER + 8 
-#define TLM_SETIMAGELIST   WM_USER + 9 
-#define TLM_GETIMAGELIST   WM_USER + 10 
-#define TLM_INSERTCOLUMN   WM_USER + 11 
-#define TLM_DELETECOLUMN   WM_USER + 12 
-#define TLM_SELECTITEM     WM_USER + 13 
-#define TLM_REDRAWWINDOW   WM_USER + 14 
-#define TLM_ISEXPANDED     WM_USER + 15 
-#define TLM_GETCOLUMNWIDTH WM_USER + 16 
-#define TLM_SETCOLUMNWIDTH WM_USER + 17 
+#define TLM_INSERTITEM WM_USER + 1
+#define TLM_DELETEITEM WM_USER + 2
+#define TLM_DELETEALLITEMS WM_USER + 3
+#define TLM_GETITEM WM_USER + 4
+#define TLM_SETITEM WM_USER + 5
+#define TLM_GETITEMCOUNT WM_USER + 6
+#define TLM_GETNEXTITEM WM_USER + 7
+#define TLM_EXPAND WM_USER + 8
+#define TLM_SETIMAGELIST WM_USER + 9
+#define TLM_GETIMAGELIST WM_USER + 10
+#define TLM_INSERTCOLUMN WM_USER + 11
+#define TLM_DELETECOLUMN WM_USER + 12
+#define TLM_SELECTITEM WM_USER + 13
+#define TLM_REDRAWWINDOW WM_USER + 14
+#define TLM_ISEXPANDED WM_USER + 15
+#define TLM_GETCOLUMNWIDTH WM_USER + 16
+#define TLM_SETCOLUMNWIDTH WM_USER + 17
 
 // this differ slightly from the TVGN_ variants
 // I haven't fleshed them out fully.
@@ -61,12 +61,12 @@
 #define TLGN_NEXT 4
 
 // kinda a a TV_INSERTSTRUCT with an LVITEM instead of a TVITEM
-typedef struct tagTL_INSERTSTRUCT 
-{ 
-        PVOID hParent; 
-        PVOID hInsertAfter; 
-        LVITEM *plvitem; 
-} TL_INSERTSTRUCT; 
+typedef struct tagTL_INSERTSTRUCT
+{
+    PVOID hParent;
+    PVOID hInsertAfter;
+    LVITEM* plvitem;
+} TL_INSERTSTRUCT;
 
 #define TREELIST_DLL L"RASDLG.DLL"
 #define TREELIST_CONTROL L"TreeList"

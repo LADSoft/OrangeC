@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <fstream>
@@ -31,9 +31,9 @@
 #include "ObjExpression.h"
 #include "LEHeader.h"
 #include <string.h>
-ObjFile *LEObject::file;
+ObjFile* LEObject::file;
 
-bool LEObject::IsRel(ObjExpression *e)
+bool LEObject::IsRel(ObjExpression* e)
 {
     if (!e)
         return false;
@@ -41,24 +41,24 @@ bool LEObject::IsRel(ObjExpression *e)
         return true;
     return IsRel(e->GetLeft()) || IsRel(e->GetRight());
 }
-void LEObject::Setup(unsigned &offs)
+void LEObject::Setup(unsigned& offs)
 {
     pageOffs = offs + 1;
-    offs += ObjectAlign(4096, initSize)/4096;
+    offs += ObjectAlign(4096, initSize) / 4096;
     data = new unsigned char[initSize];
-    ObjMemoryManager &m = sect->GetMemoryManager();
+    ObjMemoryManager& m = sect->GetMemoryManager();
     int ofs = 0;
     for (ObjMemoryManager::MemoryIterator it = m.MemoryBegin(); it != m.MemoryEnd() && ofs < initSize; ++it)
     {
         int msize = (*it)->GetSize();
-        ObjByte *mdata = (*it)->GetData();
+        ObjByte* mdata = (*it)->GetData();
         if (msize)
         {
-            ObjExpression *fixup = (*it)->GetFixup();
+            ObjExpression* fixup = (*it)->GetFixup();
             if (fixup)
             {
                 int sbase = sect->GetOffset()->Eval(0);
-                int n = fixup->Eval(sbase + ofs); // need this to apply relative offsets in code seg
+                int n = fixup->Eval(sbase + ofs);  // need this to apply relative offsets in code seg
                 int bigEndian = file->GetBigEndian();
                 if (msize == 1)
                 {
@@ -74,24 +74,24 @@ void LEObject::Setup(unsigned &offs)
                     else
                     {
                         data[ofs] = n & 0xff;
-                        data[ofs+1] = n >> 8;
+                        data[ofs + 1] = n >> 8;
                     }
                 }
-                else // msize == 4
+                else  // msize == 4
                 {
                     if (bigEndian)
                     {
                         data[ofs + 0] = n >> 24;
                         data[ofs + 1] = n >> 16;
-                        data[ofs + 2] = n >>  8;
+                        data[ofs + 2] = n >> 8;
                         data[ofs + 3] = n & 0xff;
                     }
                     else
                     {
                         data[ofs] = n & 0xff;
-                        data[ofs+1] = n >> 8;
-                        data[ofs+2] = n >> 16;
-                        data[ofs+3] = n >> 24;
+                        data[ofs + 1] = n >> 8;
+                        data[ofs + 2] = n >> 16;
+                        data[ofs + 3] = n >> 24;
                     }
                 }
             }
@@ -134,23 +134,23 @@ void LEObject::InitFlags()
         SetFlags(LX_OF_READABLE | LX_OF_WRITEABLE | LX_OF_BIGDEFAULT);
     }
 }
-void LEObject::WriteHeader(std::fstream &stream)
+void LEObject::WriteHeader(std::fstream& stream)
 {
-    unsigned temp = size; //ObjectAlign(4096, size);
-    stream.write((char *)&temp, sizeof(temp));
-    stream.write((char *)&base_addr, sizeof(base_addr));
-    stream.write((char *)&flags, sizeof(flags));
-//	if (initSize == 0)
-//		pageOffs = 1;
-    stream.write((char *)&pageOffs, sizeof(pageOffs));
-    temp = ObjectAlign(4096, initSize)/4096;
-    stream.write((char *)&temp, sizeof(temp));
-    temp = 0 ;
-    stream.write((char *)&temp, sizeof(temp));
+    unsigned temp = size;  // ObjectAlign(4096, size);
+    stream.write((char*)&temp, sizeof(temp));
+    stream.write((char*)&base_addr, sizeof(base_addr));
+    stream.write((char*)&flags, sizeof(flags));
+    //	if (initSize == 0)
+    //		pageOffs = 1;
+    stream.write((char*)&pageOffs, sizeof(pageOffs));
+    temp = ObjectAlign(4096, initSize) / 4096;
+    stream.write((char*)&temp, sizeof(temp));
+    temp = 0;
+    stream.write((char*)&temp, sizeof(temp));
 }
-void LEObject::Write(std::fstream &stream)
+void LEObject::Write(std::fstream& stream)
 {
-    stream.write((char *)data, initSize);
+    stream.write((char*)data, initSize);
     int n = ObjectAlign(4096, initSize) - initSize;
     char buf[512];
     memset(buf, 0, sizeof(buf));
@@ -163,7 +163,4 @@ void LEObject::Write(std::fstream &stream)
         n -= s;
     }
 }
-void LEObject::SetFile(ObjFile *File)
-{
-    file = File;
-}
+void LEObject::SetFile(ObjFile* File) { file = File; }

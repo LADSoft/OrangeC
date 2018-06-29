@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "Dialog.h"
@@ -33,13 +33,13 @@ Control::~Control()
 {
     for (iterator it = begin(); it != end(); ++it)
     {
-        ResourceData *d = *it;
+        ResourceData* d = *it;
         delete d;
     }
 }
-void Control::WriteRes(ResFile &resFile, bool ex, bool last)
+void Control::WriteRes(ResFile& resFile, bool ex, bool last)
 {
-	(void)last;
+    (void)last;
     resFile.Align();
     if (!ex)
     {
@@ -78,7 +78,7 @@ void Control::WriteRes(ResFile &resFile, bool ex, bool last)
         }
     }
 }
-bool Control::ValidType(RCFile &rcFile)
+bool Control::ValidType(RCFile& rcFile)
 {
     switch (rcFile.GetToken()->GetKeyword())
     {
@@ -103,10 +103,9 @@ bool Control::ValidType(RCFile &rcFile)
             return true;
         default:
             return false;
-            
     }
 }
-void Control::ReadStandard(RCFile &rcFile, int clss , int addStyle, int extended, int hasText)
+void Control::ReadStandard(RCFile& rcFile, int clss, int addStyle, int extended, int hasText)
 {
     addStyle |= WS_CHILD | WS_VISIBLE;
     cls.SetId(clss);
@@ -148,13 +147,13 @@ void Control::ReadStandard(RCFile &rcFile, int clss , int addStyle, int extended
             style &= ~SBS_HORZ;
     }
 }
-void Control::GetClass(RCFile &rcFile)
+void Control::GetClass(RCFile& rcFile)
 {
     if (rcFile.IsString())
     {
         std::wstring str = rcFile.GetString();
         std::wstring str1 = str;
-        for (int i=0; i < str1.size(); i++)
+        for (int i = 0; i < str1.size(); i++)
             str1[i] = tolower(str1[i]);
         if (str1 == L"button")
             cls.SetId(Button);
@@ -173,42 +172,43 @@ void Control::GetClass(RCFile &rcFile)
             cls.SetName(str);
         }
     }
-    else switch (rcFile.GetTokenId())
-    {
-        case Lexer::AUTO3STATE:
-        case Lexer::AUTOCHECKBOX:
-        case Lexer::AUTORADIOBUTTON:
-        case Lexer::CHECKBOX:
-        case Lexer::PUSHBUTTON:
-        case Lexer::RADIOBUTTON:
-        case Lexer::DEFPUSHBUTTON:
-        case Lexer::STATE3:
-        case Lexer::GROUPBOX:
-            cls.SetId(Button);
-            break;
-        case Lexer::COMBOBOX:
-            cls.SetId(Combobox);
-            break;
-        case Lexer::CTEXT:
-        case Lexer::LTEXT:
-        case Lexer::RTEXT:
-        case Lexer::ICON:
-            cls.SetId(Static);
-            break;
-        case Lexer::EDITTEXT:
-            cls.SetId(Edit);
-            break;
-        case Lexer::LISTBOX:
-            cls.SetId(Listbox);
-            break;
-        case Lexer::SCROLLBAR:
-            cls.SetId(Scrollbar);
-            break;
-        default:
-            throw new std::runtime_error("Unknown dialog control class");
-    }
+    else
+        switch (rcFile.GetTokenId())
+        {
+            case Lexer::AUTO3STATE:
+            case Lexer::AUTOCHECKBOX:
+            case Lexer::AUTORADIOBUTTON:
+            case Lexer::CHECKBOX:
+            case Lexer::PUSHBUTTON:
+            case Lexer::RADIOBUTTON:
+            case Lexer::DEFPUSHBUTTON:
+            case Lexer::STATE3:
+            case Lexer::GROUPBOX:
+                cls.SetId(Button);
+                break;
+            case Lexer::COMBOBOX:
+                cls.SetId(Combobox);
+                break;
+            case Lexer::CTEXT:
+            case Lexer::LTEXT:
+            case Lexer::RTEXT:
+            case Lexer::ICON:
+                cls.SetId(Static);
+                break;
+            case Lexer::EDITTEXT:
+                cls.SetId(Edit);
+                break;
+            case Lexer::LISTBOX:
+                cls.SetId(Listbox);
+                break;
+            case Lexer::SCROLLBAR:
+                cls.SetId(Scrollbar);
+                break;
+            default:
+                throw new std::runtime_error("Unknown dialog control class");
+        }
 }
-void Control::ReadGeneric(RCFile &rcFile, bool extended)
+void Control::ReadGeneric(RCFile& rcFile, bool extended)
 {
     text.ReadRC(rcFile, true);
     rcFile.SkipComma();
@@ -236,8 +236,8 @@ void Control::ReadGeneric(RCFile &rcFile, bool extended)
         rcFile.SkipComma();
     }
 }
-                           
-void Control::ReadRC(RCFile &rcFile, bool extended)
+
+void Control::ReadRC(RCFile& rcFile, bool extended)
 {
     switch (rcFile.GetTokenId())
     {
@@ -255,7 +255,7 @@ void Control::ReadRC(RCFile &rcFile, bool extended)
             break;
         case Lexer::COMBOBOX:
             ReadStandard(rcFile, Combobox, 0, extended, 0);
-            if (!(style &3))
+            if (!(style & 3))
                 style |= CBS_SIMPLE;
             break;
         case Lexer::CTEXT:
@@ -307,18 +307,18 @@ Dialog::~Dialog()
 {
     for (iterator it = begin(); it != end(); ++it)
     {
-        Control *c = *it;
+        Control* c = *it;
         delete c;
     }
 }
-void Dialog::WriteRes(ResFile &resFile)
+void Dialog::WriteRes(ResFile& resFile)
 {
     Resource::WriteRes(resFile);
     if (!extended)
     {
         resFile.WriteDWord(style);
         resFile.WriteDWord(exStyle);
-    } 
+    }
     else
     {
         resFile.WriteWord(1);
@@ -355,7 +355,7 @@ void Dialog::WriteRes(ResFile &resFile)
     }
     resFile.Release();
 }
-void Dialog::ReadSettings(RCFile &rcFile)
+void Dialog::ReadSettings(RCFile& rcFile)
 {
     bool hascaption = false, hasstyle = false, hasfont = false;
     resInfo.SetLanguage(rcFile.GetLanguage());
@@ -367,12 +367,12 @@ void Dialog::ReadSettings(RCFile &rcFile)
             case Lexer::LANGUAGE:
             {
                 rcFile.NextToken();
-                int n = rcFile.GetNumber() ;
+                int n = rcFile.GetNumber();
                 rcFile.SkipComma();
                 n += rcFile.GetNumber() * 1024;
                 resInfo.SetLanguage(n);
             }
-                break;
+            break;
             case Lexer::VERSION:
                 rcFile.NextToken();
                 resInfo.SetVersion(rcFile.GetNumber());
@@ -417,7 +417,7 @@ void Dialog::ReadSettings(RCFile &rcFile)
                             }
                         }
                     }
-                } 
+                }
                 break;
             case Lexer::CAPTION:
                 hascaption = true;
@@ -462,14 +462,14 @@ void Dialog::ReadSettings(RCFile &rcFile)
     if (hasfont)
         style |= DS_SETFONT;
 }
-void Dialog::ReadRC(RCFile &rcFile)
+void Dialog::ReadRC(RCFile& rcFile)
 {
     if (extended)
     {
         italics = 256;
     }
     resInfo.SetFlags(resInfo.GetFlags() | ResourceInfo::Pure);
-    resInfo.ReadRC(rcFile,false);
+    resInfo.ReadRC(rcFile, false);
     pos.x = rcFile.GetNumber();
     rcFile.SkipComma();
     pos.y = rcFile.GetNumber();
@@ -482,8 +482,8 @@ void Dialog::ReadRC(RCFile &rcFile)
     ReadSettings(rcFile);
     rcFile.NeedBegin();
     while (Control::ValidType(rcFile))
-    {	
-        Control *c = new Control;
+    {
+        Control* c = new Control;
         controls.push_back(c);
         c->ReadRC(rcFile, extended);
     }

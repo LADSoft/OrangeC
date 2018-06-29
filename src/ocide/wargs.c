@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 //
@@ -62,10 +62,10 @@ static int use_case; /* Gets set for case sensitivity */
 
 // ==============================================================
 //
-/* 
+/*
  * Function that unlinks the argument from che argv[] chain
  */
-static void remove_arg(int pos, int *count, char *list[])
+static void remove_arg(int pos, int* count, char* list[])
 {
     int i;
 
@@ -73,9 +73,8 @@ static void remove_arg(int pos, int *count, char *list[])
     (*count)--;
 
     /* move items down */
-    for (i = pos; i <  *count; i++)
+    for (i = pos; i < *count; i++)
         list[i] = list[i + 1];
-
 }
 
 // ==============================================================
@@ -101,9 +100,9 @@ static int cmatch(char t1, char t2)
  *   void switchcallback( char selectchar, int value)  ;; value always true
  *   void stringcallback( char selectchar, char *string)
  */
-static int scan_args(char *string, int index, char *arg)
+static int scan_args(char* string, int index, char* arg)
 {
-    int i =  - 1;
+    int i = -1;
     while (ArgList[++i].id)
     {
         switch (ArgList[i].mode)
@@ -159,17 +158,16 @@ static int scan_args(char *string, int index, char *arg)
  * Main parse routine.  Scans for '-', then scan for arguments and
  * delete from the argv[] array if so.
  */
-int parse_args(int *argc, char *argv[], int case_sensitive)
+int parse_args(int* argc, char* argv[], int case_sensitive)
 {
     int pos = 0;
 
     int retval = TRUE;
     use_case = case_sensitive;
 
-    while (++pos <  *argc)
+    while (++pos < *argc)
     {
-        if ((argv[pos][0] == ARG_SEPSWITCH) || (argv[pos][0] == ARG_SEPFALSE) 
-            || (argv[pos][0] == ARG_SEPTRUE))
+        if ((argv[pos][0] == ARG_SEPSWITCH) || (argv[pos][0] == ARG_SEPFALSE) || (argv[pos][0] == ARG_SEPTRUE))
         {
             int argmode;
             int index = 1;
@@ -177,7 +175,7 @@ int parse_args(int *argc, char *argv[], int case_sensitive)
             do
             {
                 /* Scan the present arg */
-                if (pos <  *argc - 1)
+                if (pos < *argc - 1)
                     argmode = scan_args(argv[pos], index, argv[pos + 1]);
                 else
                     argmode = scan_args(argv[pos], index, 0);
@@ -199,21 +197,20 @@ int parse_args(int *argc, char *argv[], int case_sensitive)
                         break;
                     case ARG_NOMATCH:
                         /* No such arg, spit an error  */
-//                        fprintf(stderr, "Invalid Arg: %s\n", argv[pos]);
+                        //                        fprintf(stderr, "Invalid Arg: %s\n", argv[pos]);
                         done = TRUE;
                         retval = FALSE;
                         break;
                     case ARG_NOARG:
                         /* Missing the arg for a CONCAT type, spit the error */
-//                        fprintf(stderr, "Missing string for Arg %s\n",
-//                            argv[pos]);
+                        //                        fprintf(stderr, "Missing string for Arg %s\n",
+                        //                            argv[pos]);
                         done = TRUE;
                         retval = FALSE;
                         break;
                 };
 
-            }
-            while (!done);
+            } while (!done);
             /* We'll always get rid of the present arg
              * And back up one
              */

@@ -28,9 +28,13 @@ INCLUDES=. ..\parse ..\middle
 C_DEPENDENCIES=$(wildcard *.c)
 #LIB_DEPENDENCIES=util.lib objlib.lib
 DEFINES=CPREPROCESSOR USE_LONGLONG
+H_FILES=$(wildcard *.h)
 
 redirect:
 	@$(MAKE) /T
+
+format:
+	@$(MAKE) /T format
 
 DISTRIBUTE: copyexe
 	copy target.cfg $(DISTBIN)\ocpp.cfg

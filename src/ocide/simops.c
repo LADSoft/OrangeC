@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -33,17 +33,14 @@
 
 BOOL useim;
 
-void SegmentDisplay(char *buffer, long value)
-{
-    sprintf(buffer, "0x%x", value);
-}
+void SegmentDisplay(char* buffer, long value) { sprintf(buffer, "0x%x", value); }
 
 //-------------------------------------------------------------------------
 
-void FormatValue(char *buffer, OPERAND *record, uint segs, uint type)
+void FormatValue(char* buffer, OPERAND* record, uint segs, uint type)
 {
     char buf[256];
-    DEBUG_INFO *dbg;
+    DEBUG_INFO* dbg;
     buf[0] = 0;
     if (record->address)
         segs++;
@@ -121,7 +118,7 @@ void FormatValue(char *buffer, OPERAND *record, uint segs, uint type)
 
 //-------------------------------------------------------------------------
 
-void AddSymbol(OPERAND *record, uint type)
+void AddSymbol(OPERAND* record, uint type)
 {
     record++;
     type++;

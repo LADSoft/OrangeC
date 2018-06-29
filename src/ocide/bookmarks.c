@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -31,7 +31,7 @@
 
 #include "header.h"
 #include "idewinconst.h"
-extern DWINFO *editWindows;
+extern DWINFO* editWindows;
 extern HWND hwndFrame;
 extern HINSTANCE hInstance;
 
@@ -39,11 +39,11 @@ HWND hwndBookmark;
 
 DWINFO currentBM;
 
-extern struct tagfile *tagFileList,  *last_module;
+extern struct tagfile *tagFileList, *last_module;
 
 BOOL AnyBookmarks(void)
 {
-    struct tagfile *l = tagFileList;
+    struct tagfile* l = tagFileList;
     while (l)
     {
         if (l->tagArray[TAG_BOOKMARK])
@@ -55,24 +55,21 @@ BOOL AnyBookmarks(void)
 void ToggleBookMark(int linenum)
 {
     HWND hWnd = GetFocus();
-    DWINFO *ptr = editWindows;
+    DWINFO* ptr = editWindows;
     while (ptr)
     {
         if (ptr->active && ptr->dwHandle == hWnd)
         {
-            char buf[256],  *ch;
+            char buf[256], *ch;
             if (linenum == -1)
-                SendMessage(ptr->dwHandle, EM_GETSEL, (WPARAM) &linenum, 0);
+                SendMessage(ptr->dwHandle, EM_GETSEL, (WPARAM)&linenum, 0);
 
-            linenum = SendMessage(ptr->dwHandle, EM_LINEFROMCHAR, linenum, 0) +
-                1;
+            linenum = SendMessage(ptr->dwHandle, EM_LINEFROMCHAR, linenum, 0) + 1;
             memset(buf, 0, 256);
             *(short*)buf = 256;
 
-            SendMessage(ptr->dwHandle, EM_GETLINE, (WPARAM)linenum - 1, (LPARAM)
-                buf);
-            if (Tag(TAG_BOOKMARK, ptr->dwName, linenum, 0, ch = strdup(buf), 0,
-                0))
+            SendMessage(ptr->dwHandle, EM_GETLINE, (WPARAM)linenum - 1, (LPARAM)buf);
+            if (Tag(TAG_BOOKMARK, ptr->dwName, linenum, 0, ch = strdup(buf), 0, 0))
             {
                 strcpy(currentBM.dwName, ptr->dwName);
                 currentBM.dwLineNo = linenum;
@@ -83,14 +80,13 @@ void ToggleBookMark(int linenum)
         }
         ptr = ptr->next;
     }
-
 }
 
 //-------------------------------------------------------------------------
 
-int findbmpos(struct tagfile **l, struct tag **t)
+int findbmpos(struct tagfile** l, struct tag** t)
 {
-    struct tagfile *il;
+    struct tagfile* il;
     (*l) = tagFileList;
     if (currentBM.dwName[0])
     {
@@ -99,7 +95,8 @@ int findbmpos(struct tagfile **l, struct tag **t)
             if (!stricmp(currentBM.dwName, (*l)->name))
                 break;
             (*l) = (*l)->next;
-        } if (!(*l))
+        }
+        if (!(*l))
             (*l) = tagFileList;
     }
     if (!(*l))
@@ -111,17 +108,15 @@ int findbmpos(struct tagfile **l, struct tag **t)
         (*t) = (*l)->tagArray[TAG_BOOKMARK];
         while ((*t))
         {
-            if ((*t)->drawnLineno >= currentBM.dwLineNo || (*l) != il)return 1;
-            (*t)
-                 = (*t)->next;
+            if ((*t)->drawnLineno >= currentBM.dwLineNo || (*l) != il)
+                return 1;
+            (*t) = (*t)->next;
         }
         (*l) = (*l)->next;
         if (!(*l))
             (*l) = tagFileList;
         (*t) = (*l)->tagArray[TAG_BOOKMARK];
-    }
-    while ((*l) != il)
-        ;
+    } while ((*l) != il);
     return 0;
 }
 
@@ -129,10 +124,10 @@ int findbmpos(struct tagfile **l, struct tag **t)
 
 void NextBookMark(void)
 {
-    struct tagfile *l;
-    struct tag *t,  *st;
+    struct tagfile* l;
+    struct tag *t, *st;
     if (!findbmpos(&l, &t))
-        return ;
+        return;
     st = t;
     t = t->next;
     do
@@ -144,8 +139,8 @@ void NextBookMark(void)
             currentBM.logMRU = FALSE;
             currentBM.newFile = FALSE;
             CreateDrawWindow(&currentBM, TRUE);
-            return ;
-        } 
+            return;
+        }
         else
         {
             l = l->next;
@@ -153,29 +148,27 @@ void NextBookMark(void)
                 l = tagFileList;
             t = l->tagArray[TAG_BOOKMARK];
         }
-    }
-    while (t != st);
+    } while (t != st);
     strcpy(currentBM.dwName, l->name);
     currentBM.dwLineNo = t->drawnLineno;
     currentBM.logMRU = FALSE;
     currentBM.newFile = FALSE;
     CreateDrawWindow(&currentBM, TRUE);
-
 }
 
 //-------------------------------------------------------------------------
 
 void NextBookMarkFile(void)
 {
-    struct tagfile *l;
-    struct tag *t;
+    struct tagfile* l;
+    struct tag* t;
     if (!findbmpos(&l, &t))
-        return ;
+        return;
     do
     {
         l = l->next;
     } while (l && !l->tagArray[TAG_BOOKMARK]);
-    
+
     if (!l)
     {
         l = tagFileList;
@@ -192,18 +185,17 @@ void NextBookMarkFile(void)
         currentBM.logMRU = FALSE;
         currentBM.newFile = FALSE;
         CreateDrawWindow(&currentBM, TRUE);
-        return ;
-    } 
-
+        return;
+    }
 }
 //-------------------------------------------------------------------------
 
 void PreviousBookMark(void)
 {
-    struct tagfile *l;
+    struct tagfile* l;
     struct tag *t, *st;
     if (!findbmpos(&l, &t))
-        return ;
+        return;
     st = t;
     t = t->prev;
     do
@@ -215,15 +207,15 @@ void PreviousBookMark(void)
             currentBM.logMRU = FALSE;
             currentBM.newFile = FALSE;
             CreateDrawWindow(&currentBM, TRUE);
-            return ;
-        } 
+            return;
+        }
         else
         {
             do
             {
                 l = l->prev;
             } while (l && !l->tagArray[TAG_BOOKMARK]);
-            
+
             if (!l)
             {
                 l = tagFileList;
@@ -240,8 +232,7 @@ void PreviousBookMark(void)
             while (t->next)
                 t = t->next;
         }
-    }
-    while (t != st);
+    } while (t != st);
     strcpy(currentBM.dwName, l->name);
     currentBM.dwLineNo = t->drawnLineno;
     currentBM.logMRU = FALSE;
@@ -253,15 +244,15 @@ void PreviousBookMark(void)
 
 void PreviousBookMarkFile(void)
 {
-    struct tagfile *l;
-    struct tag *t;
+    struct tagfile* l;
+    struct tag* t;
     if (!findbmpos(&l, &t))
-        return ;
+        return;
     do
     {
         l = l->prev;
     } while (l && !l->tagArray[TAG_BOOKMARK]);
-    
+
     if (!l)
     {
         l = tagFileList;
@@ -284,20 +275,19 @@ void PreviousBookMarkFile(void)
         currentBM.logMRU = FALSE;
         currentBM.newFile = FALSE;
         CreateDrawWindow(&currentBM, TRUE);
-        return ;
-    } 
+        return;
+    }
 }
 //-------------------------------------------------------------------------
 
-LRESULT CALLBACK BMProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
-    lParam)
+LRESULT CALLBACK BMProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
     LPMEASUREITEMSTRUCT mi;
     LV_COLUMN lvC;
     LV_ITEM item;
     RECT r;
-    struct tagfile *l = tagFileList;
-    struct tag *t,  *t1;
+    struct tagfile* l = tagFileList;
+    struct tag *t, *t1;
     HWND hwndlb;
     int i;
     switch (iMessage)
@@ -319,9 +309,8 @@ LRESULT CALLBACK BMProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
             }
             else if (wParam == IDC_BMGOTO)
             {
-                int sel = ListView_GetSelectionMark(GetDlgItem(hwnd,
-                    IDC_BMLISTBOX));
-                if (sel ==  - 1)
+                int sel = ListView_GetSelectionMark(GetDlgItem(hwnd, IDC_BMLISTBOX));
+                if (sel == -1)
                 {
                     EndDialog(hwnd, 1);
                     break;
@@ -373,8 +362,7 @@ LRESULT CALLBACK BMProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                 while (t)
                 {
                     char buf[256];
-                    sprintf(buf, "%s(%d): %s", l->name, t->drawnLineno, t
-                        ->extra);
+                    sprintf(buf, "%s(%d): %s", l->name, t->drawnLineno, t->extra);
                     item.iItem = i++;
                     item.iSubItem = 0;
                     item.mask = LVIF_PARAM | LVIF_TEXT;
@@ -392,8 +380,4 @@ LRESULT CALLBACK BMProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
 
 //-------------------------------------------------------------------------
 
-void ShowBookMarks(void)
-{
-    hwndBookmark = CreateDialog(hInstance, "BOOKMARKDLG", hwndFrame, (DLGPROC)
-        BMProc);
-}
+void ShowBookMarks(void) { hwndBookmark = CreateDialog(hInstance, "BOOKMARKDLG", hwndFrame, (DLGPROC)BMProc); }

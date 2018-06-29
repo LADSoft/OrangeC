@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "Listing.h"
@@ -34,21 +34,21 @@
 
 Listing::Listing() : bigEndian(false)
 {
-    for (int i=0; i < AddressWidth * 2 + 2 + Bytes * 3 + 1; i++)
+    for (int i = 0; i < AddressWidth * 2 + 2 + Bytes * 3 + 1; i++)
         blanks += " ";
-    for (int i=0; i < AddressWidth; i++)
+    for (int i = 0; i < AddressWidth; i++)
         zeros += "00";
 }
 Listing::~Listing()
 {
     while (list.size())
     {
-        ListedLine *p = list.front();
+        ListedLine* p = list.front();
         list.pop_front();
         delete p;
     }
 }
-void Listing::ListLine(std::fstream &out, std::string &line, ListedLine *cur, bool macro)
+void Listing::ListLine(std::fstream& out, std::string& line, ListedLine* cur, bool macro)
 {
     std::string outputLine;
     if (!cur)
@@ -60,10 +60,10 @@ void Listing::ListLine(std::fstream &out, std::string &line, ListedLine *cur, bo
     {
         if (cur->label)
         {
-            std::string ss = Utils::NumberToStringHex( cur->label->GetOffset()->ival);
-            if (ss.size() < AddressWidth *2)
-                outputLine += zeros.substr(0, AddressWidth *2 - ss.size());
-            outputLine += ss + std::string("  ")+ blanks.substr(0, Bytes *3 + 1) + line;
+            std::string ss = Utils::NumberToStringHex(cur->label->GetOffset()->ival);
+            if (ss.size() < AddressWidth * 2)
+                outputLine += zeros.substr(0, AddressWidth * 2 - ss.size());
+            outputLine += ss + std::string("  ") + blanks.substr(0, Bytes * 3 + 1) + line;
             out << outputLine.c_str() << std::endl;
         }
         else if (cur->ins->GetType() == Instruction::ALIGN)
@@ -74,18 +74,18 @@ void Listing::ListLine(std::fstream &out, std::string &line, ListedLine *cur, bo
         else if (cur->ins->IsLabel())
         {
             std::string ss = Utils::NumberToStringHex(cur->ins->GetOffset());
-            if (ss.size() < AddressWidth *2)
-                outputLine += zeros.substr(0, AddressWidth *2 - ss.size());
-            outputLine += ss + std::string(": ")+ blanks.substr(0, Bytes *3 + 1) + line;
+            if (ss.size() < AddressWidth * 2)
+                outputLine += zeros.substr(0, AddressWidth * 2 - ss.size());
+            outputLine += ss + std::string(": ") + blanks.substr(0, Bytes * 3 + 1) + line;
             out << outputLine.c_str() << std::endl;
         }
         else
         {
             int size = cur->ins->GetSize() / cur->ins->GetRepeat();
-            unsigned char *buf = cur->ins->GetBytes();
+            unsigned char* buf = cur->ins->GetBytes();
             std::string ss = Utils::NumberToStringHex(cur->ins->GetOffset());
-            if (ss.size() < AddressWidth *2)
-                outputLine += zeros.substr(0, AddressWidth *2 - ss.size());
+            if (ss.size() < AddressWidth * 2)
+                outputLine += zeros.substr(0, AddressWidth * 2 - ss.size());
             if (macro)
             {
                 outputLine += ss + "* ";
@@ -94,13 +94,13 @@ void Listing::ListLine(std::fstream &out, std::string &line, ListedLine *cur, bo
             {
                 outputLine += ss + ": ";
             }
-            FixupContainer *fixups = cur->ins->GetFixups();
+            FixupContainer* fixups = cur->ins->GetFixups();
             int z = 0;
             bool first = true;
             int top = size;
             if (fixups->size() > z)
                 top = (*fixups)[z]->GetInsOffs();
-            for (int i=0; i < size; i++)
+            for (int i = 0; i < size; i++)
             {
                 if (i < top)
                 {
@@ -134,16 +134,16 @@ void Listing::ListLine(std::fstream &out, std::string &line, ListedLine *cur, bo
                         out << outputLine.c_str() << std::endl;
                         outputLine = blanks.substr(0, 10);
                     }
-//                    if (bigEndian)
+                    //                    if (bigEndian)
                     {
-                        for (int j=0; j < fsize; j++)
+                        for (int j = 0; j < fsize; j++)
                         {
-                            ss = Utils::NumberToStringHex(buf[j+i]);
+                            ss = Utils::NumberToStringHex(buf[j + i]);
                             if (ss.size() == 1)
                                 ss = std::string("0") + ss;
                             outputLine += ss;
                         }
-                        i += fsize-1;
+                        i += fsize - 1;
                     }
                     /*
                     else
@@ -181,7 +181,7 @@ void Listing::ListLine(std::fstream &out, std::string &line, ListedLine *cur, bo
                     outputLine = outputLine.substr(0, outputLine.size() - 2);
                 else
                     outputLine = outputLine.substr(0, outputLine.size() - 1);
-                outputLine+= '+';
+                outputLine += '+';
             }
             if (outputLine.size() - AddressWidth * 2 - 2 != 0)
             {
@@ -196,7 +196,7 @@ void Listing::ListLine(std::fstream &out, std::string &line, ListedLine *cur, bo
         }
     }
 }
-bool Listing::Write(std::string &listingName, std::string &inName, bool listMacros)
+bool Listing::Write(std::string& listingName, std::string& inName, bool listMacros)
 {
     std::fstream in(inName.c_str(), std::ios::in);
     if (!in.is_open())
@@ -209,7 +209,7 @@ bool Listing::Write(std::string &listingName, std::string &inName, bool listMacr
     }
     std::vector<std::string> lines;
     int lineno = 1;
-    ListedLine *cur = nullptr;
+    ListedLine* cur = nullptr;
     if (list.size())
     {
         cur = list.front();
@@ -218,7 +218,7 @@ bool Listing::Write(std::string &listingName, std::string &inName, bool listMacr
     while (!in.eof())
     {
         char buf[4000];
-        while ((!cur  || (cur && lineno < cur->lineno)) && !in.eof())
+        while ((!cur || (cur && lineno < cur->lineno)) && !in.eof())
         {
             in.getline(buf, 4000);
             std::string bufs = buf;
@@ -254,7 +254,7 @@ bool Listing::Write(std::string &listingName, std::string &inName, bool listMacr
         while (cur && cur->lineno < lineno)
         {
             if (listMacros)
-                ListLine(out, lines[cur->lineno-1], cur, true);
+                ListLine(out, lines[cur->lineno - 1], cur, true);
             if (list.size())
             {
                 cur = list.front();

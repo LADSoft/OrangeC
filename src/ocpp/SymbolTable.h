@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #ifndef SymbolTable_h
@@ -34,41 +34,42 @@
 #include "Token.h"
 class Symbol
 {
-public:
-    Symbol(const std::string &Name) : name(Name), fileName(""), lineNo(0) {}
-    Symbol(const Symbol &old)
-    { 
+  public:
+    Symbol(const std::string& Name) : name(Name), fileName(""), lineNo(0) {}
+    Symbol(const Symbol& old)
+    {
         name = old.name;
         fileName = old.fileName;
         lineNo = old.lineNo;
     }
-    virtual ~Symbol() { }
-    std::string &GetName() { return name; }
-    void SetLocation(std::string &name, int line)
+    virtual ~Symbol() {}
+    std::string& GetName() { return name; }
+    void SetLocation(std::string& name, int line)
     {
         fileName = name;
         lineNo = line;
     }
-    std::string &GetFileName() { return fileName; }
+    std::string& GetFileName() { return fileName; }
     int GetLineNo() { return lineNo; }
-    void DefinedError(const std::string &msg)
+    void DefinedError(const std::string& msg)
     {
         Errors::Error(name + " " + msg);
         if (lineNo && fileName.size())
             Errors::Previous(name, lineNo, fileName);
     }
-private:
+
+  private:
     std::string name;
     std::string fileName;
     int lineNo;
-} ;
+};
 
 class SymbolTable
 {
-public:
-    SymbolTable() { }
+  public:
+    SymbolTable() {}
     virtual ~SymbolTable();
-    Symbol *Lookup(const std::string &name)
+    Symbol* Lookup(const std::string& name)
     {
         auto it = hashTable.find(name);
         if (it != hashTable.end())
@@ -76,12 +77,12 @@ public:
         else
             return nullptr;
     }
-    void Add(Symbol *symbol)
+    void Add(Symbol* symbol)
     {
         hashTable[symbol->GetName()] = symbol;
         symList.push_back(symbol);
     }
-    void Remove(Symbol *symbol)
+    void Remove(Symbol* symbol)
     {
         auto it = hashTable.find(symbol->GetName());
         if (it != hashTable.end())
@@ -98,13 +99,18 @@ public:
             delete symbol;
         }
     }
-    typedef std::deque<Symbol *>::iterator iterator;
+    typedef std::deque<Symbol*>::iterator iterator;
     iterator begin() { return symList.begin(); }
     iterator end() { return symList.end(); }
 
-    void clear() { hashTable.clear(); symList.clear(); }	
-private:
-    std::map<std::string, Symbol *> hashTable;
-    std::deque<Symbol *> symList;
-} ;
+    void clear()
+    {
+        hashTable.clear();
+        symList.clear();
+    }
+
+  private:
+    std::map<std::string, Symbol*> hashTable;
+    std::deque<Symbol*> symList;
+};
 #endif

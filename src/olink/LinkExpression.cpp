@@ -1,39 +1,36 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "LinkExpression.h"
 #include "LinkManager.h"
 #include "ObjSection.h"
 #include <exception>
-LinkExpressionSymbol::~LinkExpressionSymbol() 
-{ 
-    delete value; 
-}
+LinkExpressionSymbol::~LinkExpressionSymbol() { delete value; }
 
-std::set<LinkExpressionSymbol *, leltcompare> LinkExpression::symbols;
-LinkExpression::LinkExpression(const LinkExpression &exp)
+std::set<LinkExpressionSymbol*, leltcompare> LinkExpression::symbols;
+LinkExpression::LinkExpression(const LinkExpression& exp)
 {
     op = exp.op;
     value = exp.value;
@@ -47,25 +44,28 @@ LinkExpression::LinkExpression(const LinkExpression &exp)
         right = new LinkExpression(*exp.right);
     else
         right = nullptr;
-        
 }
-LinkExpression::LinkExpression(int section, ObjInt base, ObjInt offs) : op (eAdd), 
-        left(nullptr), right(new LinkExpression(offs)), symbolName(""), 
-        value(0), sect(0)
+LinkExpression::LinkExpression(int section, ObjInt base, ObjInt offs) :
+    op(eAdd),
+    left(nullptr),
+    right(new LinkExpression(offs)),
+    symbolName(""),
+    value(0),
+    sect(0)
 {
     left = new LinkExpression;
     left->op = eSection;
-    left->value = base; 
+    left->value = base;
     left->sect = section;
 }
-LinkExpression *LinkExpression::Eval(int section, int base, ObjInt offset)
+LinkExpression* LinkExpression::Eval(int section, int base, ObjInt offset)
 {
     if (left)
         left = left->Eval(section, base, offset);
     if (right)
         right = right->Eval(section, base, offset);
-    LinkExpression *rv = this;
-    switch(op)
+    LinkExpression* rv = this;
+    switch (op)
     {
         case ePC:
             delete rv;
@@ -73,10 +73,10 @@ LinkExpression *LinkExpression::Eval(int section, int base, ObjInt offset)
             break;
         case eSymbol:
         {
-            LinkExpressionSymbol *exp = FindSymbol(symbolName);
+            LinkExpressionSymbol* exp = FindSymbol(symbolName);
             if (!exp)
             {
-                LinkManager::LinkError("Variable "+symbolName+" is undefined");
+                LinkManager::LinkError("Variable " + symbolName + " is undefined");
             }
             else
             {
@@ -92,7 +92,7 @@ LinkExpression *LinkExpression::Eval(int section, int base, ObjInt offset)
 }
 ObjInt LinkExpression::Eval(ObjInt pc)
 {
-    switch(op)
+    switch (op)
     {
         case eValue:
         case eSection:
@@ -103,11 +103,11 @@ ObjInt LinkExpression::Eval(ObjInt pc)
             return pc;
         case eSymbol:
         {
-            LinkExpressionSymbol *exp = FindSymbol(symbolName);
-            ObjInt n=0;
+            LinkExpressionSymbol* exp = FindSymbol(symbolName);
+            ObjInt n = 0;
             if (!exp)
             {
-                LinkManager::LinkError("Variable "+symbolName+" is undefined");
+                LinkManager::LinkError("Variable " + symbolName + " is undefined");
             }
             else
             {
@@ -134,7 +134,7 @@ ObjInt LinkExpression::Eval(ObjInt pc)
         }
     }
 }
-bool LinkExpression::EnterSymbol(LinkExpressionSymbol *Symbol, bool removeOld)
+bool LinkExpression::EnterSymbol(LinkExpressionSymbol* Symbol, bool removeOld)
 {
     auto it = symbols.find(Symbol);
     if (it == symbols.end())
@@ -144,7 +144,7 @@ bool LinkExpression::EnterSymbol(LinkExpressionSymbol *Symbol, bool removeOld)
     }
     else if (removeOld)
     {
-        LinkExpressionSymbol *v = *it;
+        LinkExpressionSymbol* v = *it;
         symbols.erase(it);
         delete v;
         symbols.insert(Symbol);
@@ -152,7 +152,7 @@ bool LinkExpression::EnterSymbol(LinkExpressionSymbol *Symbol, bool removeOld)
     }
     return false;
 }
-LinkExpressionSymbol *LinkExpression::FindSymbol(const std::string &name)
+LinkExpressionSymbol* LinkExpression::FindSymbol(const std::string& name)
 {
     LinkExpressionSymbol sym(name, 0);
     auto it = symbols.find(&sym);
@@ -162,10 +162,10 @@ LinkExpressionSymbol *LinkExpression::FindSymbol(const std::string &name)
     }
     return nullptr;
 }
-LinkExpression *LinkExpression::LookupSymbol(ObjString &symbolName)
+LinkExpression* LinkExpression::LookupSymbol(ObjString& symbolName)
 {
     LinkExpressionSymbol sym(symbolName, nullptr);
-    LinkExpressionSymbol *exp = nullptr;
+    LinkExpressionSymbol* exp = nullptr;
     auto it = symbols.find(&sym);
     if (it != symbols.end())
         exp = *it;
@@ -176,4 +176,3 @@ LinkExpression *LinkExpression::LookupSymbol(ObjString &symbolName)
     }
     return exp->GetValue();
 }
-

@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -33,31 +33,35 @@
 #include "idewinconst.h"
 #include "header.h"
 #define MAX_SAVED_DIRS 10
- 
+
 extern HINSTANCE hInstance;
 extern HWND hwndClient;
-extern PROJECTITEM *activeProject;
-extern PROJECTITEM *workArea;
+extern PROJECTITEM* activeProject;
+extern PROJECTITEM* workArea;
 extern int defaultWorkArea;
 
-char szSourceFilter[] = "Source files (*.c,*.cpp,*.h)\0*.c;*.cpp;*.cxx;*.cc;*.h;*.hpp;*.hxx;*.p\0"
+char szSourceFilter[] =
+    "Source files (*.c,*.cpp,*.h)\0*.c;*.cpp;*.cxx;*.cc;*.h;*.hpp;*.hxx;*.p\0"
     "Assembly files (*.asm, *.asi, *.inc)\0*.asm;*.asi;*.inc\0"
     "Resource files (*.rc,*.dlg,*.bmp,*.cur,*.ico)\0*.rc;*.dlg;*.bmp;*.cur;*.ico\0"
     "All Files (*.*)\0*.*\0";
 
 char szProjectFilter[] = "Project files (*.cpj)\0*.cpj\0";
 char szWorkAreaFilter[] = "WorksArea files (*.cwa)\0*.cwa\0";
-char szTargetFilter[] = "Executables (*.exe)\0*.exe\0"
+char szTargetFilter[] =
+    "Executables (*.exe)\0*.exe\0"
     "DLLs (*.dll)\0*.dll\0"
     "Librarys (*.lib)\0*.lib\0";
 
-char szNewFileFilter[] = "C Source Files(*.c, *.cpp)\0*.c;*.cpp;*.cxx;*.cc\0"
+char szNewFileFilter[] =
+    "C Source Files(*.c, *.cpp)\0*.c;*.cpp;*.cxx;*.cc\0"
     "C Header Files(*.h)\0*.h;*.hxx;*.hpp\0"
     "Resource Files(*.rc,*.bmp,*.cur,*.ico)\0*.rc;*.bmp;*.cur;*.ico\0"
     "Assembly Language Files(*.asm)\0*.asm\0"
     "All Files(*.*)\0*.*\0";
 
-char szRuleFilter[] = "Rule files(*.rul)\0*.rul\0"    
+char szRuleFilter[] =
+    "Rule files(*.rul)\0*.rul\0"
     "All Files(*.*)\0*.*\0";
 
 char szCTGFilter[] = "Old Target Files(*.ctg)\0*.ctg\0";
@@ -70,15 +74,15 @@ char szFontFilter[] = "True Type Font (*.ttf)\0*.ttf\0Font (*.fnt)\0*.fnt\0";
 char szMessageTableFilter[] = "Message Table (*.msg)\0*.msg\0";
 
 static char szFileName[10000], szFileTitle[MAX_PATH], szDirPath[MAX_PATH];
-static char *szTitle;
-static char *savedDirs[MAX_SAVED_DIRS];
+static char* szTitle;
+static char* savedDirs[MAX_SAVED_DIRS];
 static int savedDirCount;
-/* hook function gets rid of the toolbar on the left hand size of the 
+/* hook function gets rid of the toolbar on the left hand size of the
  * explorer dialog box
  */
 void ProfileToMRD()
 {
-    char buf[MAX_PATH],  *p;
+    char buf[MAX_PATH], *p;
     int i;
     for (i = 0; i < MAX_SAVED_DIRS; i++)
     {
@@ -112,41 +116,40 @@ void MRDToProfile()
 
 //-------------------------------------------------------------------------
 
-static void AddDirToList(char *buf)
+static void AddDirToList(char* buf)
 {
     int i;
     for (i = 0; i < savedDirCount; i++)
-    if (savedDirs[i] && !stricmp(savedDirs[i], buf))
-    {
-        if (i != 0)
+        if (savedDirs[i] && !stricmp(savedDirs[i], buf))
         {
-            char *s = savedDirs[i];
-            memmove(&savedDirs[1], &savedDirs[0], i *sizeof(char*));
-            savedDirs[0] = s;
+            if (i != 0)
+            {
+                char* s = savedDirs[i];
+                memmove(&savedDirs[1], &savedDirs[0], i * sizeof(char*));
+                savedDirs[0] = s;
+            }
+            return;
         }
-        return ;
-    }
 
     if (savedDirCount == MAX_SAVED_DIRS)
     {
         savedDirCount--;
         free(savedDirs[9]);
     }
-    memmove(&savedDirs[1], &savedDirs[0], (savedDirCount *sizeof(char*)));
+    memmove(&savedDirs[1], &savedDirs[0], (savedDirCount * sizeof(char*)));
     savedDirs[0] = strdup(buf);
     savedDirCount++;
 }
 
 //-------------------------------------------------------------------------
 
-static LRESULT CALLBACK filedlghook(HWND hwnd, UINT iMessage, WPARAM wParam,
-    LPARAM lParam)
+static LRESULT CALLBACK filedlghook(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
     int i;
     RECT r1, r2;
     if (iMessage == WM_NOTIFY)
     {
-        OFNOTIFY *msg = (OFNOTIFY*)lParam;
+        OFNOTIFY* msg = (OFNOTIFY*)lParam;
         if (msg->hdr.code == CDN_INITDONE)
         {
             HWND hcombo = GetDlgItem(hwnd, IDC_EAI_DIRCOMBO);
@@ -162,13 +165,12 @@ static LRESULT CALLBACK filedlghook(HWND hwnd, UINT iMessage, WPARAM wParam,
             r2.bottom -= r1.top;
             r2.left -= r1.left;
             r2.top -= r1.top;
-            MoveWindow(hcombo, r2.left, r2.top, r2.right - r2.left, r2.bottom -
-                r2.top, 1);
+            MoveWindow(hcombo, r2.left, r2.top, r2.right - r2.left, r2.bottom - r2.top, 1);
         }
     }
     else if (iMessage == WM_INITDIALOG)
     {
-//        SendMessage(hwnd, CDM_HIDECONTROL, 1184, 0); // hides the left-hand junk
+        //        SendMessage(hwnd, CDM_HIDECONTROL, 1184, 0); // hides the left-hand junk
         // win50 has another way to do it, but we won't for backward compatibility
         if (szTitle)
             SendMessage(GetParent(hwnd), WM_SETTEXT, 0, (LPARAM)szTitle);
@@ -185,16 +187,12 @@ static LRESULT CALLBACK filedlghook(HWND hwnd, UINT iMessage, WPARAM wParam,
                 {
                     char buf[270];
                     buf[0] = 0;
-                    if (SendMessage(wnd, CB_GETLBTEXT, i, (LPARAM)buf) !=
-                        CB_ERR)
+                    if (SendMessage(wnd, CB_GETLBTEXT, i, (LPARAM)buf) != CB_ERR)
                     {
-                        SendMessage(GetParent(hwnd), CDM_SETCONTROLTEXT, 0x480,
-                            (LPARAM)buf);
-                        SendMessage(GetParent(hwnd), WM_COMMAND, (BN_PUSHED <<
-                            16) | IDOK, (LPARAM)GetDlgItem(GetParent(hwnd),
-                            IDOK));
-                        SendMessage(GetParent(hwnd), CDM_SETCONTROLTEXT, 0x480,
-                            (LPARAM)"");
+                        SendMessage(GetParent(hwnd), CDM_SETCONTROLTEXT, 0x480, (LPARAM)buf);
+                        SendMessage(GetParent(hwnd), WM_COMMAND, (BN_PUSHED << 16) | IDOK,
+                                    (LPARAM)GetDlgItem(GetParent(hwnd), IDOK));
+                        SendMessage(GetParent(hwnd), CDM_SETCONTROLTEXT, 0x480, (LPARAM) "");
                         SetFocus(GetDlgItem(GetParent(hwnd), 0x480));
                     }
                 }
@@ -207,40 +205,40 @@ static LRESULT CALLBACK filedlghook(HWND hwnd, UINT iMessage, WPARAM wParam,
 
 //-------------------------------------------------------------------------
 
-void setofndata(OPENFILENAME *ofn, char *name, HWND handle, char *filter)
+void setofndata(OPENFILENAME* ofn, char* name, HWND handle, char* filter)
 {
     if (name && name[0])
     {
-        char *p;
-        strcpy(szDirPath,name);
+        char* p;
+        strcpy(szDirPath, name);
         p = strrchr(szDirPath, '\\');
         if (p)
             p[1] = 0;
     }
     else if (activeProject)
     {
-        char *p;
-        strcpy(szDirPath,activeProject->realName);
+        char* p;
+        strcpy(szDirPath, activeProject->realName);
         p = strrchr(szDirPath, '\\');
         if (p)
             p[1] = 0;
     }
-    else 
+    else
     {
         HWND win = (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0);
         if (IsWindow(win) && IsEditWindow(win))
         {
-            DWINFO *q = (DWINFO *)GetWindowLong(win, 0);
-            char *p;
-            strcpy(szDirPath,q->dwName);
+            DWINFO* q = (DWINFO*)GetWindowLong(win, 0);
+            char* p;
+            strcpy(szDirPath, q->dwName);
             p = strrchr(szDirPath, '\\');
             if (p)
                 p[1] = 0;
         }
         else if (!defaultWorkArea)
         {
-            char *p;
-            strcpy(szDirPath,workArea->realName);
+            char* p;
+            strcpy(szDirPath, workArea->realName);
             p = strrchr(szDirPath, '\\');
             if (p)
                 p[1] = 0;
@@ -256,12 +254,12 @@ void setofndata(OPENFILENAME *ofn, char *name, HWND handle, char *filter)
     else
         szFileName[0] = 0;
     szFileTitle[0] = 0;
-//    #ifdef OPENFILENAME_SIZE_VERSION_400
-        // needed because the real size confuses older windows
-//        ofn->lStructSize = OPENFILENAME_SIZE_VERSION_400;
-//    #else 
-        ofn->lStructSize = sizeof(OPENFILENAME);
-//    #endif 
+    //    #ifdef OPENFILENAME_SIZE_VERSION_400
+    // needed because the real size confuses older windows
+    //        ofn->lStructSize = OPENFILENAME_SIZE_VERSION_400;
+    //    #else
+    ofn->lStructSize = sizeof(OPENFILENAME);
+    //    #endif
     ofn->hwndOwner = handle;
     ofn->hInstance = hInstance;
     ofn->lpstrFilter = filter;
@@ -275,19 +273,19 @@ void setofndata(OPENFILENAME *ofn, char *name, HWND handle, char *filter)
     ofn->lpfnHook = (LPOFNHOOKPROC)filedlghook;
     ofn->lpstrDefExt = NULL;
     ofn->lpTemplateName = "EXPADDIN";
-    
+
     memset(szFileName, 0, sizeof(szFileName));
-    
 }
 
 //-------------------------------------------------------------------------
 
-void savedir(char *name)
+void savedir(char* name)
 {
-    char buf[260],  *p;
+    char buf[260], *p;
     strcpy(buf, name);
     p = name + strlen(name) + 1;
-    if (!p[0]) {
+    if (!p[0])
+    {
         p = strrchr(buf, '\\');
         if (p)
             *p = 0;
@@ -309,12 +307,12 @@ void savedir(char *name)
 
 //-------------------------------------------------------------------------
 
-void AppendExtension(OPENFILENAME *ofn)
+void AppendExtension(OPENFILENAME* ofn)
 {
     if (ofn->lpstrFilter)
     {
         // has a filter
-        char *p = ofn->lpstrFile + strlen(ofn->lpstrFile) + 1;
+        char* p = ofn->lpstrFile + strlen(ofn->lpstrFile) + 1;
         if (!*p)
         {
             // they didn't multiselect
@@ -323,19 +321,19 @@ void AppendExtension(OPENFILENAME *ofn)
             if (!p || *(p - 1) == '.')
             {
                 // has no  extension
-                int n = ofn->nFilterIndex *2-1;
-                const char *s = ofn->lpstrFilter;
-                char *q = ofn->lpstrFileTitle + strlen(ofn->lpstrFileTitle);
+                int n = ofn->nFilterIndex * 2 - 1;
+                const char* s = ofn->lpstrFilter;
+                char* q = ofn->lpstrFileTitle + strlen(ofn->lpstrFileTitle);
                 p = ofn->lpstrFile + strlen(ofn->lpstrFile);
                 while (n--)
                     s = s + strlen(s) + 1;
                 s = strchr(s, '.');
                 if (s[1] != '*')
                 {
-                    while (*s &&  *s != ';')
+                    while (*s && *s != ';')
                     {
-                        *p++ =  *s;
-                        *q++ =  *s++;
+                        *p++ = *s;
+                        *q++ = *s++;
                     }
                     *p = 0;
                     *q = 0;
@@ -347,8 +345,7 @@ void AppendExtension(OPENFILENAME *ofn)
 
 //-------------------------------------------------------------------------
 
-int OpenFileDialogWithCancel(OPENFILENAME *ofn, char *name, HWND handle, int new, int
-    multiple, char *filter, char *title)
+int OpenFileDialogWithCancel(OPENFILENAME* ofn, char* name, HWND handle, int new, int multiple, char* filter, char* title)
 {
     szTitle = title;
     setofndata(ofn, name, handle, filter);
@@ -358,8 +355,8 @@ int OpenFileDialogWithCancel(OPENFILENAME *ofn, char *name, HWND handle, int new
         ofn->Flags |= OFN_ALLOWMULTISELECT;
     if (GetOpenFileName(ofn))
     {
-        FILE *fil;
-        if (ofn->lpstrFile[strlen(ofn->lpstrFile)+1]) // multiselect
+        FILE* fil;
+        if (ofn->lpstrFile[strlen(ofn->lpstrFile) + 1])  // multiselect
             return 3;
         AppendExtension(ofn);
         fil = fopen(ofn->lpstrFile, "rb");
@@ -373,13 +370,12 @@ int OpenFileDialogWithCancel(OPENFILENAME *ofn, char *name, HWND handle, int new
     }
     else
     {
-        if (CommDlgExtendedError() == 0) // cancel
+        if (CommDlgExtendedError() == 0)  // cancel
             return 2;
         return 0;
     }
 }
-int OpenFileDialog(OPENFILENAME *ofn, char *name, HWND handle, int new, int
-    multiple, char *filter, char *title)
+int OpenFileDialog(OPENFILENAME* ofn, char* name, HWND handle, int new, int multiple, char* filter, char* title)
 {
     int n = OpenFileDialogWithCancel(ofn, name, handle, new, multiple, filter, title);
     if (n == 2)
@@ -388,8 +384,7 @@ int OpenFileDialog(OPENFILENAME *ofn, char *name, HWND handle, int new, int
 }
 //-------------------------------------------------------------------------
 
-int SaveFileDialog(OPENFILENAME *ofn, char *name, HWND handle, int saveas, char
-    *filter, char *title)
+int SaveFileDialog(OPENFILENAME* ofn, char* name, HWND handle, int saveas, char* filter, char* title)
 {
     szTitle = title;
     setofndata(ofn, name, handle, filter);
@@ -397,14 +392,13 @@ int SaveFileDialog(OPENFILENAME *ofn, char *name, HWND handle, int saveas, char
         ofn->Flags |= OFN_OVERWRITEPROMPT;
     while (GetSaveFileName(ofn))
     {
-        FILE *fil;
+        FILE* fil;
         ofn->lpstrFile[strlen(ofn->lpstrFile) + 1] = 0;
         AppendExtension(ofn);
         if (saveas && (fil = fopen(ofn->lpstrFile, "r")))
         {
             fclose(fil);
-            if (ExtendedMessageBox("File Exists", MB_YESNO, 
-                    "File '%s' exists, overwrite it?", ofn->lpstrFileTitle) == IDYES)
+            if (ExtendedMessageBox("File Exists", MB_YESNO, "File '%s' exists, overwrite it?", ofn->lpstrFileTitle) == IDYES)
             {
                 savedir(szFileName);
                 return 1;

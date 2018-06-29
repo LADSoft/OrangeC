@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "dlMzMain.h"
@@ -40,32 +40,29 @@ CmdSwitchString dlMzMain::outputFileSwitch(SwitchParser, 'o');
 CmdSwitchString dlMzMain::modeSwitch(SwitchParser, 'm');
 CmdSwitchString dlMzMain::DebugFile(SwitchParser, 'v');
 
-const char *dlMzMain::usageText = "[options] relfile\n"
-            "\n"
-            "/oxxx          Set output file name\n"
-            "/mxxx          Set output file type\n"
-            "/V, --version  Show version and date\n"
-            "/!, --nologo   No logo\n"
-            "\n"
-            "Available output file types:\n"
-            "    TINY\n"
-            "    REAL (segmented, default)\n"
-            "\nTime: " __TIME__ "  Date: " __DATE__;
-            
+const char* dlMzMain::usageText =
+    "[options] relfile\n"
+    "\n"
+    "/oxxx          Set output file name\n"
+    "/mxxx          Set output file type\n"
+    "/V, --version  Show version and date\n"
+    "/!, --nologo   No logo\n"
+    "\n"
+    "Available output file types:\n"
+    "    TINY\n"
+    "    REAL (segmented, default)\n"
+    "\nTime: " __TIME__ "  Date: " __DATE__;
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     dlMzMain downloader;
     return downloader.Run(argc, argv);
 }
-dlMzMain::~dlMzMain()
-{
-    delete data;
-}
+dlMzMain::~dlMzMain() { delete data; }
 bool dlMzMain::GetMode()
 {
     mode = UNKNOWN;
-    const std::string &val = modeSwitch.GetValue();
+    const std::string& val = modeSwitch.GetValue();
     if (val.size() == 0)
     {
         mode = REAL;
@@ -79,14 +76,14 @@ bool dlMzMain::GetMode()
     }
     return mode != UNKNOWN;
 }
-bool dlMzMain::ReadSections(const std::string &path)
+bool dlMzMain::ReadSections(const std::string& path)
 {
     ObjIeeeIndexManager iml;
     ObjFactory factory(&iml);
     ObjIeee ieee("");
-    FILE *in = fopen(path.c_str(), "rb");
+    FILE* in = fopen(path.c_str(), "rb");
     if (!in)
-       Utils::fatal("Cannot open input file");
+        Utils::fatal("Cannot open input file");
     file = ieee.Read(in, ObjIeee::eAll, &factory);
     fclose(in);
     if (!ieee.GetAbsolute())
@@ -108,20 +105,19 @@ bool dlMzMain::ReadSections(const std::string &path)
         return data->ReadSections(file, ieee.GetStartAddress());
     }
     return false;
-    
 }
-std::string dlMzMain::GetOutputName(char *infile) const
+std::string dlMzMain::GetOutputName(char* infile) const
 {
     std::string name;
     if (outputFileSwitch.GetValue().size() != 0)
     {
         name = outputFileSwitch.GetValue();
-        const char *p = strrchr(name.c_str(), '.');
-        if (p  && p[-1] != '.')
+        const char* p = strrchr(name.c_str(), '.');
+        if (p && p[-1] != '.')
             return name;
     }
     else
-    { 
+    {
         name = infile;
     }
     if (mode == TINY)
@@ -129,8 +125,8 @@ std::string dlMzMain::GetOutputName(char *infile) const
     else
         name = Utils::QualifiedFile(name.c_str(), ".exe");
     return name;
-}			
-int dlMzMain::Run(int argc, char **argv)
+}
+int dlMzMain::Run(int argc, char** argv)
 {
     Utils::banner(argv[0]);
     Utils::SetEnvironmentToPathParent("ORANGEC");

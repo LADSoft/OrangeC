@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*
@@ -43,26 +43,26 @@
 #define DOING_LCSE
 
 extern int codeLabelOffset;
-extern COMPILER_PARAMS cparams; 
-extern TEMP_INFO **tempInfo;
-extern ARCH_ASM *chosenAssembler; 
-extern BLOCK **blockArray;
+extern COMPILER_PARAMS cparams;
+extern TEMP_INFO** tempInfo;
+extern ARCH_ASM* chosenAssembler;
+extern BLOCK** blockArray;
 
-QUAD *intermed_head,  *intermed_tail;
+QUAD *intermed_head, *intermed_tail;
 int blockCount;
-QUAD *intermed_head,  *intermed_tail;
-DAGLIST *ins_hash[DAGSIZE];
-DAGLIST *name_hash[DAGSIZE];
+QUAD *intermed_head, *intermed_tail;
+DAGLIST* ins_hash[DAGSIZE];
+DAGLIST* name_hash[DAGSIZE];
 short wasgoto = FALSE;
 
-BLOCK *currentBlock;
+BLOCK* currentBlock;
 
 int blockMax;
 
-static void add_intermed(QUAD *newQuad);
-void gen_nodag(enum i_ops op, IMODE *res, IMODE *left, IMODE *right);
+static void add_intermed(QUAD* newQuad);
+void gen_nodag(enum i_ops op, IMODE* res, IMODE* left, IMODE* right);
 
-int equalnode(EXPRESSION *node1, EXPRESSION *node2)
+int equalnode(EXPRESSION* node1, EXPRESSION* node2)
 /*
  *      equalnode will return 1 if the expressions pointed to by
  *      node1 and node2 are equivalent.
@@ -87,8 +87,8 @@ int equalnode(EXPRESSION *node1, EXPRESSION *node2)
         case en_labcon:
             return node1->v.i == node2->v.i;
         default:
-            return (!node1->left || equalnode(node1->left, node2->left))
-                    && (!node1->right || equalnode(node1->right, node2->right));
+            return (!node1->left || equalnode(node1->left, node2->left)) &&
+                   (!node1->right || equalnode(node1->right, node2->right));
         case en_c_i:
         case en_c_l:
         case en_c_ul:
@@ -101,7 +101,7 @@ int equalnode(EXPRESSION *node1, EXPRESSION *node2)
         case en_c_ll:
         case en_c_ull:
         case en_c_wc:
-        case en_nullptr:        
+        case en_nullptr:
             return node1->v.i == node2->v.i;
         case en_c_d:
         case en_c_f:
@@ -113,7 +113,7 @@ int equalnode(EXPRESSION *node1, EXPRESSION *node2)
         case en_c_dc:
         case en_c_fc:
         case en_c_ldc:
-            return FPFEQ(&node1->v.c.r,&node2->v.c.r) && FPFEQ(&node1->v.c.i,&node2->v.c.i);
+            return FPFEQ(&node1->v.c.r, &node2->v.c.r) && FPFEQ(&node1->v.c.i, &node2->v.c.i);
         case en_tempref:
             return node1->v.sp == node2->v.sp;
     }
@@ -121,7 +121,7 @@ int equalnode(EXPRESSION *node1, EXPRESSION *node2)
 
 /*-------------------------------------------------------------------------*/
 
-int equalimode(IMODE *ap1, IMODE *ap2)
+int equalimode(IMODE* ap1, IMODE* ap2)
 /*
  * return true if the imodes match
  */
@@ -148,7 +148,7 @@ int equalimode(IMODE *ap1, IMODE *ap2)
 
 /*-------------------------------------------------------------------------*/
 
-short dhash(UBYTE *str, int len)
+short dhash(UBYTE* str, int len)
 /*
  * hashing for dag nodes
  */
@@ -165,14 +165,14 @@ short dhash(UBYTE *str, int len)
 
 /*-------------------------------------------------------------------------*/
 
-QUAD *LookupNVHash(UBYTE *key, int size, DAGLIST **table)
+QUAD* LookupNVHash(UBYTE* key, int size, DAGLIST** table)
 {
     int hashval = dhash(key, size);
-    DAGLIST *list = table[hashval];
+    DAGLIST* list = table[hashval];
     while (list)
     {
         if (list->key && !memcmp(key, list->key, size))
-            return (QUAD *)list->rv;
+            return (QUAD*)list->rv;
         list = list->next;
     }
     return 0;
@@ -180,31 +180,31 @@ QUAD *LookupNVHash(UBYTE *key, int size, DAGLIST **table)
 
 /*-------------------------------------------------------------------------*/
 
-DAGLIST *ReplaceHash(QUAD *rv, UBYTE *key, int size, DAGLIST **table)
+DAGLIST* ReplaceHash(QUAD* rv, UBYTE* key, int size, DAGLIST** table)
 {
     int hashval = dhash(key, size);
-    DAGLIST **list = &table[hashval],  **flist = list;
-    DAGLIST *newDag;
+    DAGLIST **list = &table[hashval], **flist = list;
+    DAGLIST* newDag;
     while (*list)
     {
         if ((*list)->key && !memcmp(key, (*list)->key, size))
         {
-            (*list)->rv = (UBYTE *)rv;
+            (*list)->rv = (UBYTE*)rv;
             return *list;
         }
-        list =  *(DAGLIST ***)list;
+        list = *(DAGLIST***)list;
     }
     newDag = oAlloc(sizeof(DAGLIST));
-    newDag->rv = (UBYTE *)rv;
+    newDag->rv = (UBYTE*)rv;
     newDag->key = key;
-    newDag->next =  *flist;
+    newDag->next = *flist;
     *flist = newDag;
     return newDag;
 }
 
 /*-------------------------------------------------------------------------*/
 
-static void add_intermed(QUAD *newQuad)
+static void add_intermed(QUAD* newQuad)
 /*
  *      add the icode quad to the icode list
  */
@@ -238,9 +238,9 @@ static void add_intermed(QUAD *newQuad)
     }
     newQuad->block = currentBlock;
 }
-IMODE *liveout2(QUAD *q)
+IMODE* liveout2(QUAD* q)
 {
-    IMODE *rv;
+    IMODE* rv;
     if (!q)
         return NULL;
     return q->ans;
@@ -252,7 +252,7 @@ IMODE *liveout2(QUAD *q)
             else
                 rv = q->dc.left;
         else
-            rv = liveout2((QUAD *)q->dc.left);
+            rv = liveout2((QUAD*)q->dc.left);
     else
         rv = q->ans;
     return rv;
@@ -260,76 +260,87 @@ IMODE *liveout2(QUAD *q)
 }
 /*-------------------------------------------------------------------------*/
 
-QUAD *liveout(QUAD *node)
+QUAD* liveout(QUAD* node)
 {
-    QUAD *outnode;
-    outnode = (QUAD *)Alloc(sizeof(QUAD));
+    QUAD* outnode;
+    outnode = (QUAD*)Alloc(sizeof(QUAD));
     outnode->dc.opcode = node->dc.opcode;
     outnode->ans = node->ans;
     outnode->dc.v = node->dc.v;
-    if (node->livein &IM_LIVELEFT)
+    if (node->livein & IM_LIVELEFT)
         outnode->dc.left = node->dc.left;
     else
-        outnode->dc.left = liveout2((QUAD *)node->dc.left);
-        
-    if (node->livein &IM_LIVERIGHT)
+        outnode->dc.left = liveout2((QUAD*)node->dc.left);
+
+    if (node->livein & IM_LIVERIGHT)
         outnode->dc.right = node->dc.right;
     else
-        outnode->dc.right = liveout2((QUAD *)node->dc.right);
+        outnode->dc.right = liveout2((QUAD*)node->dc.right);
     return outnode;
 }
 
 #ifdef DOING_LCSE
-int ToQuadConst(IMODE **im)
+int ToQuadConst(IMODE** im)
 {
-    if (*im && (*im)->mode == i_immed) {
-        QUAD *rv, temp ;
-        memset(&temp,0,sizeof(temp));
-        if (isintconst((*im)->offset)) {
+    if (*im && (*im)->mode == i_immed)
+    {
+        QUAD *rv, temp;
+        memset(&temp, 0, sizeof(temp));
+        if (isintconst((*im)->offset))
+        {
             temp.dc.opcode = i_icon;
             temp.dc.v.i = (*im)->offset->v.i;
-        } else if (isfloatconst((*im)->offset)) {
+        }
+        else if (isfloatconst((*im)->offset))
+        {
             temp.dc.opcode = i_fcon;
             temp.dc.v.f = (*im)->offset->v.f;
-        } else if (isimaginaryconst((*im)->offset)) {
+        }
+        else if (isimaginaryconst((*im)->offset))
+        {
             temp.dc.opcode = i_imcon;
             temp.dc.v.f = (*im)->offset->v.f;
-        } else if (iscomplexconst((*im)->offset)) {
+        }
+        else if (iscomplexconst((*im)->offset))
+        {
             temp.dc.opcode = i_cxcon;
             temp.dc.v.c.r = (*im)->offset->v.c.r;
             temp.dc.v.c.i = (*im)->offset->v.c.i;
-        } else {
-/*			DIAG("ToQuadConst:  unknown constant type");*/
+        }
+        else
+        {
+            /*			DIAG("ToQuadConst:  unknown constant type");*/
             /* might get address constants here*/
             return 0;
         }
-        rv = LookupNVHash((UBYTE *)&temp, DAGCOMPARE, ins_hash);
-        if (!rv) {
+        rv = LookupNVHash((UBYTE*)&temp, DAGCOMPARE, ins_hash);
+        if (!rv)
+        {
             rv = Alloc(sizeof(QUAD));
-            *rv = temp ;
-            rv->ans = tempreg(ISZ_UINT,0);
+            *rv = temp;
+            rv->ans = tempreg(ISZ_UINT, 0);
             add_intermed(rv);
-            ReplaceHash(rv, (UBYTE *)rv, DAGCOMPARE, ins_hash);
+            ReplaceHash(rv, (UBYTE*)rv, DAGCOMPARE, ins_hash);
             wasgoto = FALSE;
-        } 
-        *im = (IMODE *)rv ;
-        return 1 ; /* it is now not a livein node any more*/
+        }
+        *im = (IMODE*)rv;
+        return 1; /* it is now not a livein node any more*/
     }
     return 0;
 }
 #endif
-BOOLEAN usesAddress(IMODE *im)
+BOOLEAN usesAddress(IMODE* im)
 {
     if (im->offset)
     {
-        switch(im->offset->type)
+        switch (im->offset->type)
         {
             case en_auto:
             case en_pc:
             case en_absolute:
             case en_global:
             case en_threadlocal:
-                return TRUE ;
+                return TRUE;
             default:
                 return FALSE;
         }
@@ -350,7 +361,7 @@ BOOLEAN usesAddress(IMODE *im)
  *  4) convert the resulting quad QUAD members back to IMODE members
  *  5) save the final QUAD back to the names table for use in step 1 of
  *     subsequent instructions
- *     
+ *
  * if local CSEs are disabled we simply don't put anything in the lookup
  * tables.
  *
@@ -375,15 +386,15 @@ BOOLEAN usesAddress(IMODE *im)
  * constant for each global and local variable, both when used as an
  * address and when used as data.
  */
-static QUAD * add_dag(QUAD *newQuad)
+static QUAD* add_dag(QUAD* newQuad)
 {
-    QUAD *outnode;
+    QUAD* outnode;
 #ifdef DOING_LCSE
-    QUAD *node;
+    QUAD* node;
     /* if the left-hand side is volatile, insert a temp so we can keep
      * going with CSEs
      */
-    /* 
+    /*
     if (newQuad->ans && newQuad->ans->vol)
     {
         QUAD *tquad;
@@ -400,7 +411,7 @@ static QUAD * add_dag(QUAD *newQuad)
     */
 
     /* Transform the quad structure members from imodes to quads */
-    node = LookupNVHash((UBYTE *)&newQuad->dc.left, sizeof(void*), name_hash);
+    node = LookupNVHash((UBYTE*)&newQuad->dc.left, sizeof(void*), name_hash);
     if (node)
     {
         if (node->dc.opcode == i_assn && node->dc.left->mode == i_immed && !node->ans->offset->v.sp->storeTemp)
@@ -409,15 +420,16 @@ static QUAD * add_dag(QUAD *newQuad)
             newQuad->livein |= IM_LIVELEFT;
         }
         else if (node->ans->size == newQuad->dc.left->size && node->ans->bits == newQuad->dc.left->bits)
-            newQuad->dc.left = (IMODE *)node;
+            newQuad->dc.left = (IMODE*)node;
         else
             newQuad->livein |= IM_LIVELEFT;
     }
-    else {
-/*		if (!ToQuadConst(&newQuad->dc.left))*/
-            newQuad->livein |= IM_LIVELEFT;
+    else
+    {
+        /*		if (!ToQuadConst(&newQuad->dc.left))*/
+        newQuad->livein |= IM_LIVELEFT;
     }
-    node = LookupNVHash((UBYTE *)&newQuad->dc.right, sizeof(void*), name_hash);
+    node = LookupNVHash((UBYTE*)&newQuad->dc.right, sizeof(void*), name_hash);
     if (node)
     {
         if (node->dc.opcode == i_assn && node->dc.left->mode == i_immed)
@@ -426,42 +438,44 @@ static QUAD * add_dag(QUAD *newQuad)
             newQuad->livein |= IM_LIVERIGHT;
         }
         else if (node->ans->size == newQuad->dc.right->size && node->ans->bits == newQuad->dc.right->bits)
-            newQuad->dc.right = (IMODE *)node;
+            newQuad->dc.right = (IMODE*)node;
         else
             newQuad->livein |= IM_LIVERIGHT;
     }
-    else {
-/*		if (!ToQuadConst(&newQuad->dc.right))*/
-            newQuad->livein |= IM_LIVERIGHT;
+    else
+    {
+        /*		if (!ToQuadConst(&newQuad->dc.right))*/
+        newQuad->livein |= IM_LIVERIGHT;
     }
 
     /* constant folding, now! */
-/*    ConstantFold(newQuad); */
-    
+    /*    ConstantFold(newQuad); */
+
     /* Now replace the CSE or enter it into the table */
-    node = LookupNVHash((UBYTE *)newQuad, DAGCOMPARE, ins_hash);
-    if (!node || (newQuad->dc.opcode == i_assn && node->ans->size != newQuad->ans->size)
-         || node->ans->bits != newQuad->ans->bits)
+    node = LookupNVHash((UBYTE*)newQuad, DAGCOMPARE, ins_hash);
+    if (!node || (newQuad->dc.opcode == i_assn && node->ans->size != newQuad->ans->size) || node->ans->bits != newQuad->ans->bits)
     {
-        if ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) &&
-            !(chosenAssembler->arch->denyopts & DO_NOLOCAL))
+        if ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) && !(chosenAssembler->arch->denyopts & DO_NOLOCAL))
         {
-        /* take care of volatiles by not registering volatile expressions
-         * in the CSE table.  At this point a temp var will already exist
-         * in the case that a volatile exists as the answer.
-         */
-            if (newQuad->ans && (newQuad->dc.opcode != i_assn || newQuad->dc.left->mode != i_immed)
-                && (!newQuad->ans->vol && !newQuad->ans->retval && (newQuad->ans->size < ISZ_FLOAT || chosenAssembler->arch->hasFloatRegs)
-                && (!newQuad->dc.left || !(newQuad->livein & IM_LIVELEFT) || (!newQuad->dc.left->vol && (newQuad->dc.left->size < ISZ_FLOAT || chosenAssembler->arch->hasFloatRegs)))
-                && (!newQuad->dc.right || !(newQuad->livein & IM_LIVERIGHT) || (!newQuad->dc.right->vol && (newQuad->dc.right->size < ISZ_FLOAT || chosenAssembler->arch->hasFloatRegs)))))
-                    if (newQuad->dc.opcode != i_add || 
-                        (!(newQuad->livein & IM_LIVELEFT) || newQuad->dc.left->mode != i_immed)
-                        || (!(newQuad->livein & IM_LIVERIGHT) || newQuad->dc.right->mode != i_immed))
-                    {
-                        if (newQuad->dc.opcode != i_parmstack)
-                            if (newQuad->dc.opcode != i_assn || !newQuad->genConflict && (!(newQuad->livein & IM_LIVELEFT) || newQuad->ans->size == newQuad->dc.left->size))
-                                ReplaceHash(newQuad, (UBYTE *)newQuad, DAGCOMPARE, ins_hash);
-                    }
+            /* take care of volatiles by not registering volatile expressions
+             * in the CSE table.  At this point a temp var will already exist
+             * in the case that a volatile exists as the answer.
+             */
+            if (newQuad->ans && (newQuad->dc.opcode != i_assn || newQuad->dc.left->mode != i_immed) &&
+                (!newQuad->ans->vol && !newQuad->ans->retval &&
+                 (newQuad->ans->size < ISZ_FLOAT || chosenAssembler->arch->hasFloatRegs) &&
+                 (!newQuad->dc.left || !(newQuad->livein & IM_LIVELEFT) ||
+                  (!newQuad->dc.left->vol && (newQuad->dc.left->size < ISZ_FLOAT || chosenAssembler->arch->hasFloatRegs))) &&
+                 (!newQuad->dc.right || !(newQuad->livein & IM_LIVERIGHT) ||
+                  (!newQuad->dc.right->vol && (newQuad->dc.right->size < ISZ_FLOAT || chosenAssembler->arch->hasFloatRegs)))))
+                if (newQuad->dc.opcode != i_add || (!(newQuad->livein & IM_LIVELEFT) || newQuad->dc.left->mode != i_immed) ||
+                    (!(newQuad->livein & IM_LIVERIGHT) || newQuad->dc.right->mode != i_immed))
+                {
+                    if (newQuad->dc.opcode != i_parmstack)
+                        if (newQuad->dc.opcode != i_assn || !newQuad->genConflict && (!(newQuad->livein & IM_LIVELEFT) ||
+                                                                                      newQuad->ans->size == newQuad->dc.left->size))
+                            ReplaceHash(newQuad, (UBYTE*)newQuad, DAGCOMPARE, ins_hash);
+                }
         }
         /* convert back to a quad structure and generate code */
         node = newQuad;
@@ -471,7 +485,7 @@ static QUAD * add_dag(QUAD *newQuad)
     }
     else
     {
-        outnode = (QUAD *)Alloc(sizeof(QUAD));
+        outnode = (QUAD*)Alloc(sizeof(QUAD));
         outnode->dc.opcode = i_assn;
         outnode->ans = newQuad->ans;
         outnode->dc.left = node->ans;
@@ -479,22 +493,21 @@ static QUAD * add_dag(QUAD *newQuad)
         if (outnode->ans != outnode->dc.left)
             add_intermed(outnode);
     }
-    /* Save the newQuad node structure for later lookups 
+    /* Save the newQuad node structure for later lookups
      * always save constants even when no LCSE is to be done because it
      * is needed for constant-folding in subsequent instructions
      */
-    if ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) &&
-            !(chosenAssembler->arch->denyopts & DO_NOLOCAL))
+    if ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) && !(chosenAssembler->arch->denyopts & DO_NOLOCAL))
 
     {
         if (newQuad->ans && (newQuad->ans->mode == i_ind || newQuad->ans->offset->type != en_tempref))
             flush_dag();
         else if (newQuad->ans /* &&  (newQuad->dc.opcode != i_assn || (newQuad->livein & IM_LIVELEFT)) */
-            && ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size)  && ((newQuad->ans->offset->type == en_tempref && newQuad->ans->mode == i_direct) 
-                || node->dc.opcode == i_icon || node->dc.opcode
-            == i_fcon || node->dc.opcode == i_imcon || node->dc.opcode == i_cxcon)))
+                 && ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) &&
+                     ((newQuad->ans->offset->type == en_tempref && newQuad->ans->mode == i_direct) || node->dc.opcode == i_icon ||
+                      node->dc.opcode == i_fcon || node->dc.opcode == i_imcon || node->dc.opcode == i_cxcon)))
         {
-            ReplaceHash(node, (UBYTE *)&newQuad->ans, sizeof(IMODE*), name_hash);
+            ReplaceHash(node, (UBYTE*)&newQuad->ans, sizeof(IMODE*), name_hash);
         }
     }
 #else
@@ -524,17 +537,17 @@ void dag_rundown(void)
 }
 
 /*-------------------------------------------------------------------------*/
-BLOCKLIST *newBlock(void)
+BLOCKLIST* newBlock(void)
 {
-    BLOCK *block = Alloc(sizeof(BLOCK));
-    BLOCKLIST *list = (BLOCKLIST *)Alloc(sizeof(BLOCKLIST));
+    BLOCK* block = Alloc(sizeof(BLOCK));
+    BLOCKLIST* list = (BLOCKLIST*)Alloc(sizeof(BLOCKLIST));
     list->next = 0;
     list->block = block;
     block->blocknum = blockCount++;
     if (blockCount >= blockMax)
     {
-        BLOCK **newBlocks = Alloc(sizeof(BLOCK *) * (blockMax + 1000));
-        memcpy(newBlocks, blockArray, sizeof(BLOCK *) * blockMax);
+        BLOCK** newBlocks = Alloc(sizeof(BLOCK*) * (blockMax + 1000));
+        memcpy(newBlocks, blockArray, sizeof(BLOCK*) * blockMax);
         blockMax += 1000;
         blockArray = newBlocks;
     }
@@ -547,9 +560,9 @@ void addblock(int val)
  * create a block
  */
 {
-    BLOCKLIST *list;
+    BLOCKLIST* list;
 
-    QUAD *q;
+    QUAD* q;
     if (blockCount)
     {
         currentBlock->tail = intermed_tail;
@@ -558,11 +571,11 @@ void addblock(int val)
     {
         case i_ret:
         case i_rett:
-            return ;
+            return;
     }
 
     /* block statement gets included */
-    q = (QUAD *)Alloc(sizeof(QUAD));
+    q = (QUAD*)Alloc(sizeof(QUAD));
     q->dc.opcode = i_block;
     q->ans = q->dc.right = 0;
     q->dc.v.label = blockCount;
@@ -575,36 +588,36 @@ void addblock(int val)
 }
 
 /*
- * intermed code poitners 
+ * intermed code poitners
  */
 void gen_label(int labno)
 /*
  *      add a compiler generated label to the intermediate list.
  */
 {
-    QUAD *newQuad;
+    QUAD* newQuad;
     if (labno < 0)
         diag("gen_label: uncompensatedlabel");
     flush_dag();
     if (!wasgoto)
         addblock(i_label);
     wasgoto = FALSE;
-    newQuad = (QUAD *)Alloc(sizeof(QUAD));
+    newQuad = (QUAD*)Alloc(sizeof(QUAD));
     newQuad->dc.opcode = i_label;
     newQuad->dc.v.label = labno;
     add_intermed(newQuad);
 }
 /*-------------------------------------------------------------------------*/
 
-QUAD * gen_icode_with_conflict(enum i_ops op, IMODE *res, IMODE *left, IMODE *right, BOOLEAN conflicting)
+QUAD* gen_icode_with_conflict(enum i_ops op, IMODE* res, IMODE* left, IMODE* right, BOOLEAN conflicting)
 /*
  *      generate a code sequence into the peep list.
  */
 {
-    QUAD *newQuad;
-    if (right && right->mode == i_immed /*&& right->size == ISZ_NONE*/)\
+    QUAD* newQuad;
+    if (right && right->mode == i_immed /*&& right->size == ISZ_NONE*/)
     {
-        IMODE *newRight = Alloc(sizeof(IMODE));
+        IMODE* newRight = Alloc(sizeof(IMODE));
         *newRight = *right;
         right = newRight;
         right->size = left->size;
@@ -620,7 +633,7 @@ QUAD * gen_icode_with_conflict(enum i_ops op, IMODE *res, IMODE *left, IMODE *ri
         default:
             break;
     }
-    newQuad = (QUAD *)Alloc(sizeof(QUAD));
+    newQuad = (QUAD*)Alloc(sizeof(QUAD));
     newQuad->genConflict = conflicting;
     newQuad->dc.opcode = op;
     newQuad->dc.left = left;
@@ -639,21 +652,21 @@ QUAD * gen_icode_with_conflict(enum i_ops op, IMODE *res, IMODE *left, IMODE *ri
     wasgoto = FALSE;
     return newQuad;
 }
-QUAD * gen_icode(enum i_ops op, IMODE *res, IMODE *left, IMODE *right)
+QUAD* gen_icode(enum i_ops op, IMODE* res, IMODE* left, IMODE* right)
 {
-    return gen_icode_with_conflict(op, res,left, right, FALSE);
+    return gen_icode_with_conflict(op, res, left, right, FALSE);
 }
 
 /*-------------------------------------------------------------------------*/
 
-void gen_iiconst(IMODE *res, LLONG_TYPE val)
+void gen_iiconst(IMODE* res, LLONG_TYPE val)
 /*
  *      generate an integer constant sequence into the peep list.
  */
 {
-    QUAD *newQuad;
-    IMODE *left = make_immed(ISZ_UINT, val);
-    newQuad = (QUAD *)Alloc(sizeof(QUAD));
+    QUAD* newQuad;
+    IMODE* left = make_immed(ISZ_UINT, val);
+    newQuad = (QUAD*)Alloc(sizeof(QUAD));
     newQuad->dc.opcode = i_assn;
     newQuad->ans = res;
     newQuad->dc.left = left;
@@ -663,13 +676,13 @@ void gen_iiconst(IMODE *res, LLONG_TYPE val)
 
 /*-------------------------------------------------------------------------*/
 
-void gen_ifconst(IMODE *res, FPF val)
+void gen_ifconst(IMODE* res, FPF val)
 /*
  *      generate an integer constant sequence into the peep list.
  */
 {
-    QUAD *newQuad;
-    newQuad = (QUAD *)Alloc(sizeof(QUAD));
+    QUAD* newQuad;
+    newQuad = (QUAD*)Alloc(sizeof(QUAD));
     newQuad->dc.opcode = i_fcon;
     newQuad->dc.v.f = val;
     newQuad->ans = res;
@@ -684,9 +697,9 @@ void gen_igoto(enum i_ops op, long label)
  *      generate a code sequence into the peep list.
  */
 {
-    QUAD *newQuad;
+    QUAD* newQuad;
     flush_dag();
-    newQuad = (QUAD *)Alloc(sizeof(QUAD));
+    newQuad = (QUAD*)Alloc(sizeof(QUAD));
     newQuad->dc.opcode = op;
     newQuad->dc.left = newQuad->dc.right = newQuad->ans = 0;
     newQuad->dc.v.label = label;
@@ -699,9 +712,9 @@ void gen_igoto(enum i_ops op, long label)
 
 void gen_data(int val)
 {
-    QUAD *newQuad;
+    QUAD* newQuad;
     flush_dag();
-    newQuad = (QUAD *)Alloc(sizeof(QUAD));
+    newQuad = (QUAD*)Alloc(sizeof(QUAD));
     newQuad->dc.opcode = i_genword;
     newQuad->dc.left = newQuad->dc.right = newQuad->ans = 0;
     newQuad->dc.v.label = val;
@@ -711,16 +724,16 @@ void gen_data(int val)
 
 /*-------------------------------------------------------------------------*/
 
-void gen_icgoto(enum i_ops op, long label, IMODE *left, IMODE *right)
+void gen_icgoto(enum i_ops op, long label, IMODE* left, IMODE* right)
 /*
  *      generate a code sequence into the peep list.
  */
 {
-    QUAD *newQuad;
+    QUAD* newQuad;
     if (right && right->mode == i_immed /*&& right->size == ISZ_NONE*/)
         right->size = left->size;
 
-    newQuad = (QUAD *)Alloc(sizeof(QUAD));
+    newQuad = (QUAD*)Alloc(sizeof(QUAD));
     newQuad->dc.opcode = op;
     newQuad->dc.left = left;
     newQuad->dc.right = right;
@@ -734,14 +747,14 @@ void gen_icgoto(enum i_ops op, long label, IMODE *left, IMODE *right)
 
 /*-------------------------------------------------------------------------*/
 
-QUAD *gen_igosub(enum i_ops op, IMODE *left)
+QUAD* gen_igosub(enum i_ops op, IMODE* left)
 /*
  *      generate a code sequence into the peep list.
  */
 {
-    QUAD *newQuad;
+    QUAD* newQuad;
 
-    newQuad = (QUAD *)Alloc(sizeof(QUAD));
+    newQuad = (QUAD*)Alloc(sizeof(QUAD));
     newQuad->dc.opcode = op;
     newQuad->dc.left = left;
     newQuad->dc.right = 0;
@@ -749,21 +762,21 @@ QUAD *gen_igosub(enum i_ops op, IMODE *left)
     newQuad->dc.v.label = 0;
     add_dag(newQuad);
     flush_dag();
-/*     addblock(op); */
+    /*     addblock(op); */
     wasgoto = TRUE;
     return intermed_tail;
 }
 
 /*-------------------------------------------------------------------------*/
 
-void gen_icode2(enum i_ops op, IMODE *res, IMODE *left, IMODE *right, int label)
+void gen_icode2(enum i_ops op, IMODE* res, IMODE* left, IMODE* right, int label)
 /*
  *      generate a code sequence into the peep list.
  *		only being used for switches
  */
 {
-    QUAD *newQuad;
-    newQuad = (QUAD *)Alloc(sizeof(QUAD));
+    QUAD* newQuad;
+    newQuad = (QUAD*)Alloc(sizeof(QUAD));
     newQuad->dc.opcode = op;
     newQuad->dc.left = left;
     newQuad->dc.right = right;
@@ -775,29 +788,29 @@ void gen_icode2(enum i_ops op, IMODE *res, IMODE *left, IMODE *right, int label)
 
 /*-------------------------------------------------------------------------*/
 
-void gen_line(LINEDATA *data)
+void gen_line(LINEDATA* data)
 /*
- * generate a line number statement 
+ * generate a line number statement
  */
 {
-    QUAD *newQuad;
+    QUAD* newQuad;
     if (data == 0)
         return;
-    newQuad = (QUAD *)Alloc(sizeof(QUAD));
+    newQuad = (QUAD*)Alloc(sizeof(QUAD));
     newQuad->dc.opcode = i_line;
-    newQuad->dc.left = (IMODE *)data;  /* text */
+    newQuad->dc.left = (IMODE*)data; /* text */
     add_intermed(newQuad);
 }
 
 /*-------------------------------------------------------------------------*/
 
-void gen_asm(STATEMENT *stmt)
+void gen_asm(STATEMENT* stmt)
 /*
  * generate an ASM statement
  */
 {
-    QUAD *newQuad;
-    newQuad = (QUAD *)Alloc(sizeof(QUAD));
+    QUAD* newQuad;
+    newQuad = (QUAD*)Alloc(sizeof(QUAD));
     newQuad->dc.opcode = i_passthrough;
     newQuad->dc.left = (IMODE*)stmt->select; /* actually is defined by the INASM module*/
     if (chosenAssembler->gen->adjust_codelab)
@@ -805,10 +818,10 @@ void gen_asm(STATEMENT *stmt)
     flush_dag();
     add_intermed(newQuad);
 }
-void gen_asmdata(STATEMENT *stmt)
+void gen_asmdata(STATEMENT* stmt)
 {
-    QUAD *newQuad;
-    newQuad = (QUAD *)Alloc(sizeof(QUAD));
+    QUAD* newQuad;
+    newQuad = (QUAD*)Alloc(sizeof(QUAD));
     newQuad->dc.opcode = i_datapassthrough;
     newQuad->dc.left = (IMODE*)stmt->select; /* actually is defined by the INASM module*/
     flush_dag();
@@ -816,24 +829,23 @@ void gen_asmdata(STATEMENT *stmt)
 }
 /*-------------------------------------------------------------------------*/
 
-void gen_nodag(enum i_ops op, IMODE *res, IMODE *left, IMODE *right)
+void gen_nodag(enum i_ops op, IMODE* res, IMODE* left, IMODE* right)
 /*
  *      generate a code sequence into the peep list.
  */
 {
-    QUAD *newQuad;
-    newQuad = (QUAD *)Alloc(sizeof(QUAD));
+    QUAD* newQuad;
+    newQuad = (QUAD*)Alloc(sizeof(QUAD));
     newQuad->dc.opcode = op;
     newQuad->dc.left = left;
     newQuad->dc.right = right;
     newQuad->ans = res;
     add_intermed(newQuad);
     wasgoto = FALSE;
-
 }
-void RemoveFromUses(QUAD *ins, int tnum)
+void RemoveFromUses(QUAD* ins, int tnum)
 {
-    INSTRUCTIONLIST **l = &tempInfo[tnum]->instructionUses;
+    INSTRUCTIONLIST** l = &tempInfo[tnum]->instructionUses;
     while (*l)
     {
         if ((*l)->ins == ins)
@@ -844,19 +856,23 @@ void RemoveFromUses(QUAD *ins, int tnum)
         l = &(*l)->next;
     }
 }
-void InsertUses(QUAD *ins, int tnum)
+void InsertUses(QUAD* ins, int tnum)
 {
-    INSTRUCTIONLIST *l = oAlloc(sizeof(INSTRUCTIONLIST));
+    INSTRUCTIONLIST* l = oAlloc(sizeof(INSTRUCTIONLIST));
     l->next = tempInfo[tnum]->instructionUses;
     l->ins = ins;
     tempInfo[tnum]->instructionUses = l;
 }
-void RemoveInstruction(QUAD *ins)
-{			
+void RemoveInstruction(QUAD* ins)
+{
     switch (ins->dc.opcode)
     {
-        case i_dbgblock: case i_dbgblockend: case i_varstart: case i_func:
-        case i_label: case i_expressiontag:
+        case i_dbgblock:
+        case i_dbgblockend:
+        case i_varstart:
+        case i_func:
+        case i_label:
+        case i_expressiontag:
             return;
         default:
             break;
@@ -870,8 +886,8 @@ void RemoveInstruction(QUAD *ins)
         ins->fwd->back = ins->back;
     if (ins->dc.opcode == i_phi)
     {
-        PHIDATA *pd = ins->dc.v.phi;
-        struct _phiblock *pb = pd->temps;
+        PHIDATA* pd = ins->dc.v.phi;
+        struct _phiblock* pb = pd->temps;
         tempInfo[pd->T0]->instructionDefines = NULL;
         while (pb)
         {
@@ -900,19 +916,19 @@ void RemoveInstruction(QUAD *ins)
                 RemoveFromUses(ins, ins->dc.left->offset->v.sp->value.i);
             if (ins->dc.left->offset2)
                 RemoveFromUses(ins, ins->dc.left->offset2->v.sp->value.i);
-        } 
+        }
         if (ins->temps & TEMP_RIGHT)
         {
             if (ins->dc.right->offset)
                 RemoveFromUses(ins, ins->dc.right->offset->v.sp->value.i);
             if (ins->dc.right->offset2)
                 RemoveFromUses(ins, ins->dc.right->offset2->v.sp->value.i);
-        } 
+        }
     }
 }
-void InsertInstruction(QUAD *before, QUAD *ins)
+void InsertInstruction(QUAD* before, QUAD* ins)
 {
-    INSTRUCTIONLIST *l ;
+    INSTRUCTIONLIST* l;
     ins->block = before->block;
     if (before->fwd && before->fwd->dc.opcode == i_skipcompare)
         if (before->fwd->dc.v.label)
@@ -926,8 +942,8 @@ void InsertInstruction(QUAD *before, QUAD *ins)
         ins->block->tail = ins;
     if (ins->dc.opcode == i_phi)
     {
-        PHIDATA *pd = ins->dc.v.phi;
-        struct _phiblock *pb = pd->temps;
+        PHIDATA* pd = ins->dc.v.phi;
+        struct _phiblock* pb = pd->temps;
         tempInfo[pd->T0]->instructionDefines = ins;
         while (pb)
         {

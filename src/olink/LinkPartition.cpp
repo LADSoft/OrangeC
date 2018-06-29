@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "LinkPartition.h"
@@ -43,7 +43,7 @@ LinkPartition::~LinkPartition()
     for (auto overlay : overlays)
         delete overlay;
 }
-bool LinkPartition::ParseName(LinkTokenizer &spec)
+bool LinkPartition::ParseName(LinkTokenizer& spec)
 {
     if (!spec.Matches(LinkTokenizer::eSymbol))
         return false;
@@ -51,7 +51,7 @@ bool LinkPartition::ParseName(LinkTokenizer &spec)
     spec.NextToken();
     return true;
 }
-bool LinkPartition::ParseValue(LinkTokenizer &spec, LinkExpression **rv, bool alreadyassign)
+bool LinkPartition::ParseValue(LinkTokenizer& spec, LinkExpression** rv, bool alreadyassign)
 {
     if (!alreadyassign)
     {
@@ -63,7 +63,7 @@ bool LinkPartition::ParseValue(LinkTokenizer &spec, LinkExpression **rv, bool al
         return false;
     return true;
 }
-bool LinkPartition::ParseAttributes( LinkTokenizer &spec)
+bool LinkPartition::ParseAttributes(LinkTokenizer& spec)
 {
     /* optional */
     if (spec.Matches(LinkTokenizer::eBracketOpen))
@@ -72,9 +72,9 @@ bool LinkPartition::ParseAttributes( LinkTokenizer &spec)
         spec.NextToken();
         while (!done)
         {
-            switch(spec.GetTokenType())
+            switch (spec.GetTokenType())
             {
-                LinkExpression *value;
+                LinkExpression* value;
                 case LinkTokenizer::eAddr:
                     if (!ParseValue(spec, &value))
                         return false;
@@ -118,20 +118,20 @@ bool LinkPartition::ParseAttributes( LinkTokenizer &spec)
             else
                 spec.NextToken();
         }
-        return spec.MustMatch(LinkTokenizer:: eBracketClose);
+        return spec.MustMatch(LinkTokenizer::eBracketClose);
     }
     return true;
 }
-bool LinkPartition::ParseAssignment(LinkTokenizer &spec)
+bool LinkPartition::ParseAssignment(LinkTokenizer& spec)
 {
     ObjString symName = spec.GetSymbol();
-    LinkExpression *value;
+    LinkExpression* value;
     spec.NextToken();
     if (!spec.MustMatch(LinkTokenizer::eAssign))
         return false;
     if (!spec.GetExpression(&value, true))
         return false;
-    LinkExpressionSymbol *esym = new LinkExpressionSymbol(symName, value);
+    LinkExpressionSymbol* esym = new LinkExpressionSymbol(symName, value);
     if (!LinkExpression::EnterSymbol(esym))
     {
         delete esym;
@@ -143,53 +143,50 @@ bool LinkPartition::ParseAssignment(LinkTokenizer &spec)
     }
     return spec.MustMatch(LinkTokenizer::eSemi);
 }
-bool LinkPartition::CreateSeparateRegions(LinkManager *manager, CmdFiles &files, LinkTokenizer &spec)
+bool LinkPartition::CreateSeparateRegions(LinkManager* manager, CmdFiles& files, LinkTokenizer& spec)
 {
-    LinkOverlay *newOverlay = new LinkOverlay(this);
-    LinkRegion *newRegion = new LinkRegion(newOverlay);
+    LinkOverlay* newOverlay = new LinkOverlay(this);
+    LinkRegion* newRegion = new LinkRegion(newOverlay);
     if (!newRegion->ParseRegionSpec(manager, files, spec))
         return false;
     if (!spec.MustMatch(LinkTokenizer::eSemi))
-        return false;	
-    for (LinkRegion::SectionDataIterator itr = newRegion->NowDataBegin();
-         itr != newRegion->NowDataEnd(); ++itr)
+        return false;
+    for (LinkRegion::SectionDataIterator itr = newRegion->NowDataBegin(); itr != newRegion->NowDataEnd(); ++itr)
     {
         for (auto sect : (*itr)->sections)
         {
-            LinkOverlay *overlay = new LinkOverlay(this);
+            LinkOverlay* overlay = new LinkOverlay(this);
             overlay->SetName(std::string(sect.file->GetName()) + "_" + sect.section->GetName());
             overlays.push_back(new LinkOverlaySpecifier(overlay));
-            LinkRegion *region = new LinkRegion(overlay);
+            LinkRegion* region = new LinkRegion(overlay);
             overlay->Add(new LinkRegionSpecifier(region));
             region->SetName(newRegion->GetName());
             region->SetAttribs(newRegion->GetAttribs());
             region->AddNormalData(sect.file, sect.section);
         }
     }
-    for (LinkRegion::SectionDataIterator itr = newRegion->NormalDataBegin();
-         itr != newRegion->NormalDataEnd(); ++itr)
+    for (LinkRegion::SectionDataIterator itr = newRegion->NormalDataBegin(); itr != newRegion->NormalDataEnd(); ++itr)
     {
         for (auto sect : (*itr)->sections)
         {
-            LinkOverlay *overlay = new LinkOverlay(this);
+            LinkOverlay* overlay = new LinkOverlay(this);
             overlay->SetName(std::string(sect.file->GetName()) + "_" + sect.section->GetName());
             overlays.push_back(new LinkOverlaySpecifier(overlay));
-            LinkRegion *region = new LinkRegion(overlay);
+            LinkRegion* region = new LinkRegion(overlay);
             overlay->Add(new LinkRegionSpecifier(region));
             region->SetName(newRegion->GetName());
             region->SetAttribs(newRegion->GetAttribs());
             region->AddNormalData(sect.file, sect.section);
         }
     }
-    for (LinkRegion::SectionDataIterator itr = newRegion->PostponeDataBegin();
-         itr != newRegion->PostponeDataEnd(); ++itr)
+    for (LinkRegion::SectionDataIterator itr = newRegion->PostponeDataBegin(); itr != newRegion->PostponeDataEnd(); ++itr)
     {
         for (auto sect : (*itr)->sections)
         {
-            LinkOverlay *overlay = new LinkOverlay(this);
+            LinkOverlay* overlay = new LinkOverlay(this);
             overlay->SetName(std::string(sect.file->GetName()) + "_" + sect.section->GetName());
             overlays.push_back(new LinkOverlaySpecifier(overlay));
-            LinkRegion *region = new LinkRegion(overlay);
+            LinkRegion* region = new LinkRegion(overlay);
             overlay->Add(new LinkRegionSpecifier(region));
             region->SetName(newRegion->GetName());
             region->SetAttribs(newRegion->GetAttribs());
@@ -200,7 +197,7 @@ bool LinkPartition::CreateSeparateRegions(LinkManager *manager, CmdFiles &files,
     delete newOverlay;
     return true;
 }
-bool LinkPartition::ParseOverlays(LinkManager *manager, CmdFiles &files, LinkTokenizer &spec)
+bool LinkPartition::ParseOverlays(LinkManager* manager, CmdFiles& files, LinkTokenizer& spec)
 {
     if (!spec.MustMatch(LinkTokenizer::eBegin))
         return false;
@@ -212,7 +209,7 @@ bool LinkPartition::ParseOverlays(LinkManager *manager, CmdFiles &files, LinkTok
             if (!ParseAssignment(spec))
                 return false;
             if (!spec.MustMatch(LinkTokenizer::eSemi))
-                return false;	
+                return false;
         }
         else if (spec.Matches(LinkTokenizer::eRegion))
         {
@@ -226,17 +223,17 @@ bool LinkPartition::ParseOverlays(LinkManager *manager, CmdFiles &files, LinkTok
         }
         else
         {
-            LinkOverlay *newOverlay = new LinkOverlay(this);
+            LinkOverlay* newOverlay = new LinkOverlay(this);
             overlays.push_back(new LinkOverlaySpecifier(newOverlay));
             if (!newOverlay->ParseOverlaySpec(manager, files, spec))
                 return false;
             if (!spec.MustMatch(LinkTokenizer::eSemi))
-                return false;	
+                return false;
         }
     }
     return spec.MustMatch(LinkTokenizer::eEnd);
 }
-bool LinkPartition::ParsePartitionSpec(LinkManager *manager, CmdFiles &files, LinkTokenizer &spec)
+bool LinkPartition::ParsePartitionSpec(LinkManager* manager, CmdFiles& files, LinkTokenizer& spec)
 {
     if (!ParseOverlays(manager, files, spec))
         return false;
@@ -244,8 +241,8 @@ bool LinkPartition::ParsePartitionSpec(LinkManager *manager, CmdFiles &files, Li
         return false;
     return ParseAttributes(spec);
 }
-#define max(x,y) (((x)>(y)) ? (x) : (y))
-ObjInt LinkPartition::PlacePartition(LinkManager *manager, ObjInt bottom, bool completeLink, int &overlayNum)
+#define max(x, y) (((x) > (y)) ? (x) : (y))
+ObjInt LinkPartition::PlacePartition(LinkManager* manager, ObjInt bottom, bool completeLink, int& overlayNum)
 {
     ObjInt maxSize = 0;
     if (!attribs.GetAddressSpecified())
@@ -258,10 +255,10 @@ ObjInt LinkPartition::PlacePartition(LinkManager *manager, ObjInt bottom, bool c
     {
         if (overlay->GetSymbol())
         {
-//			if (completeLink)
-//				overlay->GetSymbol()->SetValue(new LinkExpression(overlay->GetSymbol()->GetValue()->Eval(bottom + size)));
-//			else
-                overlay->GetSymbol()->SetValue(overlay->GetSymbol()->GetValue()->Eval(overlayNum ? overlayNum -1 : 0, bottom, size));
+            //			if (completeLink)
+            //				overlay->GetSymbol()->SetValue(new LinkExpression(overlay->GetSymbol()->GetValue()->Eval(bottom +
+            //size))); 			else
+            overlay->GetSymbol()->SetValue(overlay->GetSymbol()->GetValue()->Eval(overlayNum ? overlayNum - 1 : 0, bottom, size));
         }
         else
         {
@@ -271,7 +268,7 @@ ObjInt LinkPartition::PlacePartition(LinkManager *manager, ObjInt bottom, bool c
     }
     if (attribs.GetRoundSize())
     {
-        maxSize += attribs.GetRoundSize() -1;
+        maxSize += attribs.GetRoundSize() - 1;
         maxSize /= attribs.GetRoundSize();
         maxSize *= attribs.GetRoundSize();
     }

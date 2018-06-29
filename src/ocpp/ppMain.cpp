@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "ppMain.h"
@@ -36,28 +36,29 @@ CmdSwitchBool ppMain::disableExtensions(SwitchParser, 'A', false);
 CmdSwitchBool ppMain::c99Mode(SwitchParser, '9', false);
 CmdSwitchBool ppMain::trigraphs(SwitchParser, 'T', false);
 CmdSwitchDefine ppMain::defines(SwitchParser, 'D');
-CmdSwitchString ppMain::undefines(SwitchParser, 'U',';');
+CmdSwitchString ppMain::undefines(SwitchParser, 'U', ';');
 CmdSwitchString ppMain::includePath(SwitchParser, 'I', ';');
 CmdSwitchString ppMain::errorMax(SwitchParser, 'E');
 CmdSwitchFile ppMain::File(SwitchParser, '@');
 CmdSwitchString ppMain::outputPath(SwitchParser, 'o');
-    
-const char *ppMain::usageText = "[options] files\n"
-        "\n"
-        "/9             - C99 mode                  /a      - Assembler mode\n"
-        "/A             - Disable extensions        /Dxxx   - Define something\n"
-        "/E[+]nn        - Max number of errors      /Ipath  - Specify include path\n"
-        "/T             - translate trigraphs       /Uxxx   - Undefine something\n"
-        "/V, --version  - Show version and date     /!,--nologo - No logo\n"
-        "/o             - set output file\n"
-        "Time: " __TIME__ "  Date: " __DATE__;
 
-int main(int argc, char *argv[])
+const char* ppMain::usageText =
+    "[options] files\n"
+    "\n"
+    "/9             - C99 mode                  /a      - Assembler mode\n"
+    "/A             - Disable extensions        /Dxxx   - Define something\n"
+    "/E[+]nn        - Max number of errors      /Ipath  - Specify include path\n"
+    "/T             - translate trigraphs       /Uxxx   - Undefine something\n"
+    "/V, --version  - Show version and date     /!,--nologo - No logo\n"
+    "/o             - set output file\n"
+    "Time: " __TIME__ "  Date: " __DATE__;
+
+int main(int argc, char* argv[])
 {
     ppMain preproc;
     return preproc.Run(argc, argv);
 }
-int ppMain::Run(int argc, char *argv[])
+int ppMain::Run(int argc, char* argv[])
 {
     Utils::banner(argv[0]);
     Utils::SetEnvironmentToPathParent("ORANGEC");
@@ -74,7 +75,7 @@ int ppMain::Run(int argc, char *argv[])
     {
         Utils::usage(argv[0], usageText);
     }
-    CmdFiles files(argv+1);
+    CmdFiles files(argv + 1);
     if (File.GetValue())
         files.Add(File.GetValue() + 1);
 
@@ -90,20 +91,19 @@ int ppMain::Run(int argc, char *argv[])
         else
         {
             sysSrchPth = includePath.GetValue().substr(0, n);
-            srchPth = includePath.GetValue().substr(n+1);
+            srchPth = includePath.GetValue().substr(n + 1);
         }
     }
     Tokenizer::SetAnsi(disableExtensions.GetValue());
     Tokenizer::SetC99(c99Mode.GetValue());
     for (CmdFiles::FileNameIterator it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
     {
-        PreProcessor pp(*(*it), srchPth, sysSrchPth,
-                 false, trigraphs.GetValue(),  assembly.GetValue() ? '%' : '#' , false, 
-                 !c99Mode.GetValue(), !disableExtensions.GetValue());
+        PreProcessor pp(*(*it), srchPth, sysSrchPth, false, trigraphs.GetValue(), assembly.GetValue() ? '%' : '#', false,
+                        !c99Mode.GetValue(), !disableExtensions.GetValue());
         int n = defines.GetCount();
-        for (int i=0; i < n; i++)
+        for (int i = 0; i < n; i++)
         {
-            CmdSwitchDefine::define *v = defines.GetValue(i);
+            CmdSwitchDefine::define* v = defines.GetValue(i);
             pp.Define(v->name, v->value, false);
         }
         if (c99Mode.GetValue())
@@ -124,7 +124,7 @@ int ppMain::Run(int argc, char *argv[])
             {
                 std::string temp = working.substr(0, n);
                 pp.Undefine(temp);
-                working = working.substr(n+1);
+                working = working.substr(n + 1);
             }
         }
         working = errorMax.GetValue();
@@ -133,7 +133,7 @@ int ppMain::Run(int argc, char *argv[])
             if (working[0] == '+')
             {
                 Errors::SetShowTrivialWarnings(true);
-                working.erase(0,1);
+                working.erase(0, 1);
             }
             n = Utils::StringToNumber(working);
             if (n)
@@ -146,7 +146,7 @@ int ppMain::Run(int argc, char *argv[])
         else if (getenv("OCC_LEGACY_OPTIONS"))
             working = Utils::QualifiedFile((*it)->c_str(), ".i");
 
-        std::ostream *outstream = nullptr;
+        std::ostream* outstream = nullptr;
         if (working.size())
             outstream = new std::fstream(working.c_str(), std::ios::out);
         else
@@ -165,21 +165,22 @@ int ppMain::Run(int argc, char *argv[])
                         bool caseInsensitive = false;
                         if (npos != std::string::npos)
                         {
-                            if (working.size() - 7 > npos && working.substr(npos,6) == "assign" && isspace(working[npos+6]))
+                            if (working.size() - 7 > npos && working.substr(npos, 6) == "assign" && isspace(working[npos + 6]))
                             {
                                 isAssign = true;
                             }
-                            else if (working.size() - 8 > npos && working.substr(npos,7) == "iassign" && isspace(working[npos+7]))
+                            else if (working.size() - 8 > npos && working.substr(npos, 7) == "iassign" &&
+                                     isspace(working[npos + 7]))
                             {
                                 isAssign = true;
                                 caseInsensitive = true;
                             }
-                        }   
+                        }
                         if (isAssign)
                         {
                             std::string name;
                             PPINT value = 0;
-                            npos = working.find_first_not_of(" \t\r\b\v", npos+6 + (caseInsensitive ? 1 : 0));
+                            npos = working.find_first_not_of(" \t\r\b\v", npos + 6 + (caseInsensitive ? 1 : 0));
                             if (npos == std::string::npos || !IsSymbolStartChar(working.c_str() + npos))
                             {
                                 Errors::Error("Expected identifier");
@@ -187,10 +188,10 @@ int ppMain::Run(int argc, char *argv[])
                             else
                             {
                                 int npos1 = npos;
-                                
+
                                 while (npos1 != working.size() && IsSymbolChar(working.c_str() + npos1))
-                                       npos1 ++;
-                                name = working.substr(npos, npos1-npos);
+                                    npos1++;
+                                name = working.substr(npos, npos1 - npos);
                                 if (!isspace(working[npos1]))
                                 {
                                     Errors::Error("Invalid arguments to %assign");
@@ -220,9 +221,9 @@ int ppMain::Run(int argc, char *argv[])
             }
             (*outstream) << working.c_str() << std::endl;
         }
-        if (outstream != &std::cout) 
+        if (outstream != &std::cout)
         {
-	    std::fstream *f = static_cast<std::fstream *>(outstream);
+            std::fstream* f = static_cast<std::fstream*>(outstream);
             f->close();
             delete f;
         }

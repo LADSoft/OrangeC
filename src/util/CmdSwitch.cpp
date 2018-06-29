@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -32,11 +32,8 @@
 #include <fstream>
 #include <limits.h>
 
-CmdSwitchBase::CmdSwitchBase(CmdSwitchParser &parser, char SwitchChar) : exists(false), switchChar(SwitchChar)
-{
-    parser += this;
-}
-int CmdSwitchBool::Parse(const char *data)
+CmdSwitchBase::CmdSwitchBase(CmdSwitchParser& parser, char SwitchChar) : exists(false), switchChar(SwitchChar) { parser += this; }
+int CmdSwitchBool::Parse(const char* data)
 {
     if (data[0] != '-')
         value = true;
@@ -44,15 +41,15 @@ int CmdSwitchBool::Parse(const char *data)
         value = false;
     return (data[0] == '-' || data[0] == '+');
 }
-int CmdSwitchInt::Parse(const char *data)
+int CmdSwitchInt::Parse(const char* data)
 {
     char number[256];
     if (data[0] != ':')
         return 0;
-    strncpy(number, data+1, 255);
+    strncpy(number, data + 1, 255);
     number[255] = 0;
-    
-    char *p = number;
+
+    char* p = number;
     while (isdigit(*p))
         p++;
     if (*p)
@@ -62,15 +59,15 @@ int CmdSwitchInt::Parse(const char *data)
         return -1;
     return p - number + 1;
 }
-int CmdSwitchHex::Parse(const char *data)
+int CmdSwitchHex::Parse(const char* data)
 {
     char number[256];
     if (data[0] != ':')
         return 0;
-    strncpy(number, data+1, 255);
+    strncpy(number, data + 1, 255);
     number[255] = 0;
-    
-    char *p = number;
+
+    char* p = number;
     while (isxdigit(*p))
         p++;
     if (*p)
@@ -78,9 +75,9 @@ int CmdSwitchHex::Parse(const char *data)
     value = Utils::StringToNumberHex(number);
     if (value < lowLimit || value > hiLimit)
         return -1;
-    return p - number+1;
+    return p - number + 1;
 }
-int CmdSwitchString::Parse(const char *data)
+int CmdSwitchString::Parse(const char* data)
 {
     int rv = strlen(data);
     if (data[0] == ':')
@@ -97,28 +94,28 @@ int CmdSwitchString::Parse(const char *data)
     }
     return rv;
 }
-int CmdSwitchCombineString::Parse(const char *data)
+int CmdSwitchCombineString::Parse(const char* data)
 {
     if (data[0] == 0)
-        return INT_MAX; // go on to next arg
+        return INT_MAX;  // go on to next arg
     return CmdSwitchString::Parse(data);
 }
-int CmdSwitchCombo::Parse(const char *data)
+int CmdSwitchCombo::Parse(const char* data)
 {
     int rv = CmdSwitchString::Parse(data);
-    for (int i=0; i < value.size(); i++)
+    for (int i = 0; i < value.size(); i++)
         if (valid.find_first_of(value[i]) == std::string::npos)
             return -1;
     selected = true;
     return rv;
 }
-int CmdSwitchOutput::Parse(const char *data)
+int CmdSwitchOutput::Parse(const char* data)
 {
     int rv = CmdSwitchCombineString::Parse(data);
     if (rv != INT_MAX)
     {
-        const char *p = value.c_str();
-        const char *q = strrchr(p, '.');
+        const char* p = value.c_str();
+        const char* q = strrchr(p, '.');
         if (!q || q[-1] == '.')
             value += extension;
     }
@@ -132,10 +129,10 @@ CmdSwitchDefine::~CmdSwitchDefine()
     }
     defines.clear();
 }
-int CmdSwitchDefine::Parse(const char *data)
+int CmdSwitchDefine::Parse(const char* data)
 {
     int rv = strlen(data);
-    char name[10000],*p = name;
+    char name[10000], *p = name;
     if (!isalpha(*data) && *data != '_')
         return -1;
     while (*data && (isalnum(*data) || *data == '_'))
@@ -145,13 +142,13 @@ int CmdSwitchDefine::Parse(const char *data)
     {
         return -1;
     }
-    define *newDefine = new define;
-//	if (!newDefine) // new return not nullptr or exception!
-//        return -1;
+    define* newDefine = new define;
+    //	if (!newDefine) // new return not nullptr or exception!
+    //        return -1;
     newDefine->name = name;
     if (*data == '=')
     {
-        data ++;
+        data++;
         p = name;
         while (*data)
         {
@@ -163,13 +160,13 @@ int CmdSwitchDefine::Parse(const char *data)
     defines.push_back(newDefine);
     return rv;
 }
-CmdSwitchDefine::define *CmdSwitchDefine::GetValue(int index)
+CmdSwitchDefine::define* CmdSwitchDefine::GetValue(int index)
 {
     if (defines.size() > (size_t)index)
         return defines[index];
-    return nullptr;		
+    return nullptr;
 }
-int CmdSwitchFile::Parse(const char *data)
+int CmdSwitchFile::Parse(const char* data)
 {
     int n = CmdSwitchString::Parse(data);
     if (n < 0 || argv)
@@ -180,7 +177,7 @@ int CmdSwitchFile::Parse(const char *data)
         in.seekg(0, std::ios::end);
         size_t size = in.tellg();
         in.seekg(0, std::ios::beg);
-        char *data1 = new char[size + 1];
+        char* data1 = new char[size + 1];
         memset(data1, 0, size + 1);
         in.read(data1, size);
         data1[size] = 0;
@@ -191,11 +188,11 @@ int CmdSwitchFile::Parse(const char *data)
     }
     return -1;
 }
-void CmdSwitchFile::Dispatch(char *data)
+void CmdSwitchFile::Dispatch(char* data)
 {
     int max = 10;
     argc = 1;
-    argv = new char *[max];
+    argv = new char*[max];
     argv[0] = "";
     while (*data)
     {
@@ -203,16 +200,16 @@ void CmdSwitchFile::Dispatch(char *data)
         if (argc == max)
         {
             max += 10;
-            char **p = new char *[max+1];
-            memcpy(p, argv, argc * sizeof(char *));
-            delete [] argv;
+            char** p = new char*[max + 1];
+            memcpy(p, argv, argc * sizeof(char*));
+            delete[] argv;
             argv = p;
         }
     }
     argv[argc] = 0;
     Parser->Parse(&argc, argv);
 }
-char * CmdSwitchFile::GetStr(char *data)
+char* CmdSwitchFile::GetStr(char* data)
 {
     char buf[10000], *p = buf;
     bool quote = false;
@@ -221,22 +218,22 @@ char * CmdSwitchFile::GetStr(char *data)
     if (data[0] == '\0')
         return data;
     if (*data == '"')
-        quote= true, data++;
+        quote = true, data++;
     while (*data && ((quote && *data != '"') || (!quote && !isspace(*data))))
         *p++ = *data++;
     *p = 0;
     if (quote && *data)
-        data ++;
+        data++;
     while ((p = strstr(buf, "%")))
     {
-        char *q = strchr(p+1, '%');
+        char* q = strchr(p + 1, '%');
         if (q)
         {
-            int len = q +1 - p;
-            char *name = new char[len-1];
+            int len = q + 1 - p;
+            char* name = new char[len - 1];
             memcpy(name, p + 1, len - 2);
-            name[len-2] = 0;
-            char *env = getenv(name);
+            name[len - 2] = 0;
+            char* env = getenv(name);
             delete[] name;
             if (env)
             {
@@ -253,30 +250,30 @@ char * CmdSwitchFile::GetStr(char *data)
             }
             else
             {
-                strcpy(p, q+1);
+                strcpy(p, q + 1);
             }
         }
         else
             break;
     }
-    char *x = new char [strlen(buf) + 1];
-    strcpy(x,buf);
+    char* x = new char[strlen(buf) + 1];
+    strcpy(x, buf);
     argv[argc++] = x;
     return data;
 }
-bool CmdSwitchParser::Parse(int *argc, char *argv[])
+bool CmdSwitchParser::Parse(int* argc, char* argv[])
 {
-    for (int i =0 ; *argv; )
+    for (int i = 0; *argv;)
     {
         // special casing '-' alone in an argv
-        if (argv[0][0] == '@') // meant to be a file loader
+        if (argv[0][0] == '@')  // meant to be a file loader
         {
             CmdSwitchBase temp('@');
             auto it = switches.find(&temp);
             if (it == switches.end())
                 return false;
             (*it)->Parse(&argv[0][1]);
-            memcpy(argv, argv+1, (*argc + 1 -i) * sizeof(char *));
+            memcpy(argv, argv + 1, (*argc + 1 - i) * sizeof(char*));
             (*argc)--;
         }
         else if ((argv[0][0] == '-' || argv[0][0] == '/') && argv[0][1])
@@ -287,8 +284,8 @@ bool CmdSwitchParser::Parse(int *argc, char *argv[])
             }
             else
             {
-                const char *data = &argv[0][1];
-                const char *end = data + strlen(data);
+                const char* data = &argv[0][1];
+                const char* end = data + strlen(data);
                 while (data < end)
                 {
                     CmdSwitchBase temp(*data);
@@ -300,7 +297,7 @@ bool CmdSwitchParser::Parse(int *argc, char *argv[])
                     while (n == INT_MAX && argv[1])
                     {
                         // use next arg as the value
-                        memcpy(argv, argv+1, (*argc -i) * sizeof(char *));
+                        memcpy(argv, argv + 1, (*argc - i) * sizeof(char*));
                         (*argc)--;
                         data = &argv[0][0];
                         end = data + strlen(data);
@@ -315,7 +312,7 @@ bool CmdSwitchParser::Parse(int *argc, char *argv[])
                     data += n;
                 }
             }
-            memcpy(argv, argv+1, (*argc -i) * sizeof(char *));
+            memcpy(argv, argv + 1, (*argc - i) * sizeof(char*));
             (*argc)--;
         }
         else

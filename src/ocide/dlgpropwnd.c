@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -32,33 +32,33 @@
 
 #include "header.h"
 #include "rc.h"
-//#include "props.h"  
+//#include "props.h"
 #include "rcgui.h"
-extern PROJECTITEM *workArea;
+extern PROJECTITEM* workArea;
 extern HINSTANCE hInstance;
-extern RESOURCE_DATA *currentResData;
+extern RESOURCE_DATA* currentResData;
 
 static HWND hwndProps;
 
 static WNDPROC oldEditProc;
 static HWND lvwindow;
-static struct propertyFuncs *currentPropertyFuncs;
-static void *currentPropertyData;
+static struct propertyFuncs* currentPropertyFuncs;
+static void* currentPropertyData;
 static int currentPropertyRow;
 static HWND currentPropertyWindow;
 
-//static PROPDESC *desc;
+// static PROPDESC *desc;
 
-static char *szPropsClassName = "xccProps";
-static char *szPropsTitle = "Properties";
+static char* szPropsClassName = "xccProps";
+static char* szPropsTitle = "Properties";
 
-static void SetListViewColumns(RECT *r)
+static void SetListViewColumns(RECT* r)
 {
     LV_COLUMN lvC;
     ListView_EnableGroupView(lvwindow, TRUE);
     ListView_SetExtendedListViewStyle(lvwindow, LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT | LVS_EX_LABELTIP | LVS_EX_DOUBLEBUFFER);
 
-    lvC.mask = LVCF_WIDTH | LVCF_SUBITEM  | LVCF_TEXT;
+    lvC.mask = LVCF_WIDTH | LVCF_SUBITEM | LVCF_TEXT;
     lvC.cx = (r->right - r->left) / 2;
     lvC.iSubItem = 0;
     lvC.pszText = "Property";
@@ -75,7 +75,7 @@ static void ResizeListViewColumns(void)
     LV_COLUMN lvC;
 
     GetClientRect(lvwindow, &r);
-    lvC.mask = LVCF_WIDTH | LVCF_SUBITEM ;
+    lvC.mask = LVCF_WIDTH | LVCF_SUBITEM;
     lvC.cx = (r.right - r.left) / 2;
     lvC.iSubItem = 0;
     ListView_SetColumn(lvwindow, 0, &lvC);
@@ -84,8 +84,7 @@ static void ResizeListViewColumns(void)
     lvC.iSubItem = 1;
     ListView_SetColumn(lvwindow, 1, &lvC);
 }
-static LRESULT CALLBACK PropsEditorSubclassProc(HWND hwnd, UINT iMessage, WPARAM wParam,
-    LPARAM lParam)
+static LRESULT CALLBACK PropsEditorSubclassProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
     if (iMessage == WM_KEYDOWN && wParam == VK_RETURN)
     {
@@ -102,9 +101,8 @@ static void SubclassPropsEditWindow(HWND hwnd)
 }
 HWND PropGetHWNDCombobox(HWND parent)
 {
-    HWND rv = CreateWindow("combobox", "", WS_VISIBLE | WS_CHILD | WS_BORDER | CBS_SORT | CBS_DROPDOWN,
-                                  CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-                                  parent, 0, hInstance, NULL);
+    HWND rv = CreateWindow("combobox", "", WS_VISIBLE | WS_CHILD | WS_BORDER | CBS_SORT | CBS_DROPDOWN, CW_USEDEFAULT,
+                           CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, parent, 0, hInstance, NULL);
     POINT pt;
     HWND h;
     pt.x = pt.y = 5;
@@ -114,30 +112,28 @@ HWND PropGetHWNDCombobox(HWND parent)
 }
 HWND PropGetHWNDNumeric(HWND parent)
 {
-    HWND rv = CreateWindow("edit", "", WS_VISIBLE | WS_CHILD | WS_BORDER | ES_NUMBER | ES_AUTOHSCROLL,
-                                  CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-                                  parent, 0, hInstance, NULL);
+    HWND rv = CreateWindow("edit", "", WS_VISIBLE | WS_CHILD | WS_BORDER | ES_NUMBER | ES_AUTOHSCROLL, CW_USEDEFAULT, CW_USEDEFAULT,
+                           CW_USEDEFAULT, CW_USEDEFAULT, parent, 0, hInstance, NULL);
     SubclassPropsEditWindow(rv);
-	ApplyDialogFont(rv);
+    ApplyDialogFont(rv);
     return rv;
 }
 HWND PropGetHWNDText(HWND parent)
 {
-    HWND rv = CreateWindow("edit", "", WS_VISIBLE | WS_CHILD | WS_BORDER | ES_AUTOHSCROLL,
-                                  CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-                                  parent, 0, hInstance, NULL);
+    HWND rv = CreateWindow("edit", "", WS_VISIBLE | WS_CHILD | WS_BORDER | ES_AUTOHSCROLL, CW_USEDEFAULT, CW_USEDEFAULT,
+                           CW_USEDEFAULT, CW_USEDEFAULT, parent, 0, hInstance, NULL);
     SubclassPropsEditWindow(rv);
-	ApplyDialogFont(rv);
+    ApplyDialogFont(rv);
     return rv;
 }
-void PropSetExp(struct resRes *data, char *buf, EXPRESSION **exp)
+void PropSetExp(struct resRes* data, char* buf, EXPRESSION** exp)
 {
     ResSetDirty(data);
     while (isspace(*buf))
-        buf ++;
+        buf++;
     (*exp) = LookupWithTranslation(buf);
 }
-EXPRESSION *GetBaseId(EXPRESSION *exp)
+EXPRESSION* GetBaseId(EXPRESSION* exp)
 {
     if (!exp)
         return NULL;
@@ -147,45 +143,45 @@ EXPRESSION *GetBaseId(EXPRESSION *exp)
     }
     else
     {
-        EXPRESSION *rv = GetBaseId(exp->left);
+        EXPRESSION* rv = GetBaseId(exp->left);
         if (rv)
             return rv;
         rv = GetBaseId(exp->right);
         return rv;
     }
 }
-static int GetId(EXPRESSION *exp)
+static int GetId(EXPRESSION* exp)
 {
-    EXPRESSION *x = GetBaseId(exp);
+    EXPRESSION* x = GetBaseId(exp);
     if (x)
         return x->val;
     if (exp->type == e_int)
         return exp->val;
     return 100;
 }
-static void SetId(struct resRes *data, EXPRESSION *exp, int id, CONTROL *ctls)
+static void SetId(struct resRes* data, EXPRESSION* exp, int id, CONTROL* ctls)
 {
-    EXPRESSION *x = GetBaseId(exp);
+    EXPRESSION* x = GetBaseId(exp);
     if (x)
-    {        
-        SYM *sp = search(x->rendition, &currentResData->syms);
+    {
+        SYM* sp = search(x->rendition, &currentResData->syms);
         if (!sp)
         {
-            x->val = id ;
+            x->val = id;
             if (ctls && id < 100)
-                x->val = ResNextCtlId(ctls); // if it is a sys ctl id assign a new one...
-                                             // otherwise reuse what was there...
+                x->val = ResNextCtlId(ctls);  // if it is a sys ctl id assign a new one...
+                                              // otherwise reuse what was there...
             ResAddNewDef(x->rendition, x->val);
         }
     }
 }
-void PropSetIdName(struct resRes *data, char *buf, EXPRESSION **exp, CONTROL *ctls, BOOL changeTree)
+void PropSetIdName(struct resRes* data, char* buf, EXPRESSION** exp, CONTROL* ctls, BOOL changeTree)
 {
     WCHAR name[512], *p = name;
-    char xx[256],*q;
+    char xx[256], *q;
     int id = GetId(*exp);
     while (isspace(*buf))
-        buf ++;
+        buf++;
     q = buf;
     if (!isalpha(*q) && *q != '_')
         return;
@@ -198,7 +194,7 @@ void PropSetIdName(struct resRes *data, char *buf, EXPRESSION **exp, CONTROL *ct
     ResGetHeap(workArea, data);
     ResSetDirty(data);
     if (changeTree)
-        ResSetTreeName(data,buf); 
+        ResSetTreeName(data, buf);
     q = buf;
     while (*q)
         *p++ = *q++;
@@ -220,7 +216,7 @@ void PropSetIdName(struct resRes *data, char *buf, EXPRESSION **exp, CONTROL *ct
             SetId(data, *exp, id, ctls);
     }
 }
-void PropSetItem(HWND lv, int index, int group, char *label)
+void PropSetItem(HWND lv, int index, int group, char* label)
 {
     LVITEMA_x item;
     memset(&item, 0, sizeof(LVITEMA_x));
@@ -235,7 +231,7 @@ void PropSetItem(HWND lv, int index, int group, char *label)
     item.mask = LVIF_GROUPID | LVIF_COLUMNS | LVIF_PARAM;
     ListView_SetItem(lv, &item);
 }
-void PropSetGroup(HWND lv, int group, WCHAR *label)
+void PropSetGroup(HWND lv, int group, WCHAR* label)
 {
     LVGROUP lvG;
     ListView_RemoveGroup(lv, group);
@@ -245,7 +241,7 @@ void PropSetGroup(HWND lv, int group, WCHAR *label)
     lvG.pszHeader = label;
     ListView_InsertGroup(lv, -1, &lvG);
 }
-void SetResourceProperties(void *data, struct propertyFuncs *funcs)
+void SetResourceProperties(void* data, struct propertyFuncs* funcs)
 {
     currentPropertyFuncs = funcs;
     currentPropertyData = data;
@@ -253,18 +249,18 @@ void SetResourceProperties(void *data, struct propertyFuncs *funcs)
     if (funcs)
     {
         funcs->draw(lvwindow, data);
-		ResizeListViewColumns();
+        ResizeListViewColumns();
     }
     if (GetWindowIndex(DID_PROPSWND) >= 0)
         SelectWindow(DID_PROPSWND);
 }
 static int CustomDraw(HWND hwnd, LPNMLVCUSTOMDRAW draw)
 {
-    switch(draw->nmcd.dwDrawStage)
+    switch (draw->nmcd.dwDrawStage)
     {
         POINT pt;
         HPEN oldPen;
-        case CDDS_PREPAINT :
+        case CDDS_PREPAINT:
         case CDDS_ITEMPREPAINT:
             return CDRF_NOTIFYSUBITEMDRAW | CDRF_NOTIFYPOSTPAINT;
         case CDDS_ITEMPREPAINT | CDDS_SUBITEM:
@@ -274,13 +270,13 @@ static int CustomDraw(HWND hwnd, LPNMLVCUSTOMDRAW draw)
             // then draw the grids by hand...
             oldPen = SelectObject(draw->nmcd.hdc, CreatePen(PS_SOLID, 0, 0xe0e0e0));
             MoveToEx(draw->nmcd.hdc, draw->iSubItem == 0 ? 0 : draw->nmcd.rc.left, draw->nmcd.rc.bottom, &pt);
-            LineTo(draw->nmcd.hdc, draw->nmcd.rc.right, draw->nmcd.rc.bottom );
-            MoveToEx(draw->nmcd.hdc, draw->iSubItem == 0 ? 0 : draw->nmcd.rc.left, draw->nmcd.rc.top-1, NULL);
-            LineTo(draw->nmcd.hdc, draw->nmcd.rc.right, draw->nmcd.rc.top-1 );
+            LineTo(draw->nmcd.hdc, draw->nmcd.rc.right, draw->nmcd.rc.bottom);
+            MoveToEx(draw->nmcd.hdc, draw->iSubItem == 0 ? 0 : draw->nmcd.rc.left, draw->nmcd.rc.top - 1, NULL);
+            LineTo(draw->nmcd.hdc, draw->nmcd.rc.right, draw->nmcd.rc.top - 1);
             if (draw->iSubItem == 1)
             {
-                MoveToEx(draw->nmcd.hdc, draw->nmcd.rc.left-1, draw->nmcd.rc.top-1, NULL);
-                LineTo(draw->nmcd.hdc, draw->nmcd.rc.left-1, draw->nmcd.rc.bottom );
+                MoveToEx(draw->nmcd.hdc, draw->nmcd.rc.left - 1, draw->nmcd.rc.top - 1, NULL);
+                LineTo(draw->nmcd.hdc, draw->nmcd.rc.left - 1, draw->nmcd.rc.bottom);
             }
             MoveToEx(draw->nmcd.hdc, pt.x, pt.y, NULL);
             oldPen = SelectObject(draw->nmcd.hdc, oldPen);
@@ -294,20 +290,19 @@ void PropsWndRedraw(void)
 {
     int n = ListView_GetItemCount(lvwindow);
     int i;
-    for (i=0; i < n; i++)
+    for (i = 0; i < n; i++)
     {
         ListView_SetItemText(lvwindow, i, 1, LPSTR_TEXTCALLBACK);
     }
 }
-void PropsWndClearEditBox(MSG *msg)
+void PropsWndClearEditBox(MSG* msg)
 {
-    if (currentPropertyWindow && currentPropertyWindow != msg->hwnd && !IsChild(currentPropertyWindow,msg->hwnd))
+    if (currentPropertyWindow && currentPropertyWindow != msg->hwnd && !IsChild(currentPropertyWindow, msg->hwnd))
         SendMessage(hwndProps, WM_KILLPROPSEDITOR, 0, 0);
 }
-LRESULT CALLBACK PropsProc(HWND hwnd, UINT iMessage, WPARAM wParam,
-    LPARAM lParam)
+LRESULT CALLBACK PropsProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
-    NM_TREEVIEW *nm;
+    NM_TREEVIEW* nm;
     RECT rs;
     LVHITTESTINFO_x hittest;
     switch (iMessage)
@@ -318,32 +313,32 @@ LRESULT CALLBACK PropsProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             {
                 case LVN_GETDISPINFO:
                 {
-                    LV_DISPINFO *plvdi = (LV_DISPINFO*)lParam;
-					plvdi->item.mask |= LVIF_TEXT | LVIF_DI_SETITEM;
-					plvdi->item.mask &= ~LVIF_IMAGE;
-					switch (plvdi->item.iSubItem)
-					{
-					case 1:
-						if (currentPropertyFuncs)
-						{
-							char buf[256];
-							LV_ITEM item;
-							buf[0] = 0;
-							memset(&item, 0, sizeof(item));
-							item.iItem = plvdi->item.iItem;
-							item.mask = LVIF_PARAM;
-							ListView_GetItem(lvwindow, &item);
-							currentPropertyFuncs->getText(buf, lvwindow, currentPropertyData, item.lParam);
-							plvdi->item.pszText = buf;
-						}
-						else
-						{
-							plvdi->item.pszText = "";
-						}
-						break;
-					default:
-						break;
-					}
+                    LV_DISPINFO* plvdi = (LV_DISPINFO*)lParam;
+                    plvdi->item.mask |= LVIF_TEXT | LVIF_DI_SETITEM;
+                    plvdi->item.mask &= ~LVIF_IMAGE;
+                    switch (plvdi->item.iSubItem)
+                    {
+                        case 1:
+                            if (currentPropertyFuncs)
+                            {
+                                char buf[256];
+                                LV_ITEM item;
+                                buf[0] = 0;
+                                memset(&item, 0, sizeof(item));
+                                item.iItem = plvdi->item.iItem;
+                                item.mask = LVIF_PARAM;
+                                ListView_GetItem(lvwindow, &item);
+                                currentPropertyFuncs->getText(buf, lvwindow, currentPropertyData, item.lParam);
+                                plvdi->item.pszText = buf;
+                            }
+                            else
+                            {
+                                plvdi->item.pszText = "";
+                            }
+                            break;
+                        default:
+                            break;
+                    }
                 }
                 case NM_CUSTOMDRAW:
                     return CustomDraw(hwnd, (LPNMLVCUSTOMDRAW)lParam);
@@ -352,7 +347,7 @@ LRESULT CALLBACK PropsProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     ScreenToClient(lvwindow, &hittest.pt);
                     if (currentPropertyWindow)
                     {
-//                        PostMessage(hwnd, WM_KILLPROPSEDITOR, 0, 0);
+                        //                        PostMessage(hwnd, WM_KILLPROPSEDITOR, 0, 0);
                     }
                     else
                     {
@@ -368,15 +363,13 @@ LRESULT CALLBACK PropsProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                                 item.mask = LVIF_PARAM;
                                 ListView_GetItem(lvwindow, &item);
                                 currentPropertyRow = item.lParam;
-                                currentPropertyWindow = currentPropertyFuncs->startEdit(lvwindow, 
-                                                                                        currentPropertyRow,
-                                                                                        currentPropertyData);
+                                currentPropertyWindow =
+                                    currentPropertyFuncs->startEdit(lvwindow, currentPropertyRow, currentPropertyData);
                                 if (currentPropertyWindow)
                                 {
                                     SendMessage(currentPropertyWindow, WM_SETFONT, SendMessage(lvwindow, WM_GETFONT, 0, 0), 0);
-                                    ListView_GetSubItemRect(lvwindow,hittest.iItem, 1, LVIR_BOUNDS, &r);
-                                    SetWindowPos(currentPropertyWindow, NULL,
-                                                 r.left, r.top, r.right- r.left, r.bottom - r.top,
+                                    ListView_GetSubItemRect(lvwindow, hittest.iItem, 1, LVIR_BOUNDS, &r);
+                                    SetWindowPos(currentPropertyWindow, NULL, r.left, r.top, r.right - r.left, r.bottom - r.top,
                                                  SWP_NOZORDER | SWP_SHOWWINDOW);
                                     SetFocus(currentPropertyWindow);
                                     // well it might not be an edit window in which case this should be ignored
@@ -407,10 +400,8 @@ LRESULT CALLBACK PropsProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             break;
         case WM_CREATE:
             GetClientRect(hwnd, &rs);
-            lvwindow = CreateWindowEx(0, WC_LISTVIEW, "", WS_VISIBLE |
-                WS_CHILD | LVS_REPORT | LVS_SINGLESEL,
-                0, 0, rs.right, rs.bottom, hwnd, (HMENU)ID_TREEVIEW,
-                hInstance, NULL);
+            lvwindow = CreateWindowEx(0, WC_LISTVIEW, "", WS_VISIBLE | WS_CHILD | LVS_REPORT | LVS_SINGLESEL, 0, 0, rs.right,
+                                      rs.bottom, hwnd, (HMENU)ID_TREEVIEW, hInstance, NULL);
             SetListViewColumns(&rs);
             break;
         case WM_SIZE:
@@ -418,7 +409,7 @@ LRESULT CALLBACK PropsProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             ResizeListViewColumns();
             break;
         case WM_DESTROY:
-//            ReleasePropInfo();
+            //            ReleasePropInfo();
             DestroyWindow(lvwindow);
             break;
     }

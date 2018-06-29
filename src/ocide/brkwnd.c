@@ -1,29 +1,29 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
-#define STRICT 
+#define STRICT
 #include <windows.h>
 #include <commctrl.h>
 #include <commdlg.h>
@@ -35,68 +35,72 @@
 
 extern enum DebugState uState;
 
-extern PROCESS *activeProcess;
-extern DATABREAK *dataBpList;
+extern PROCESS* activeProcess;
+extern DATABREAK* dataBpList;
 extern HDWEBKPT hdwebp[4];
 extern HANDLE hInstance;
 extern HWND hwndClient, hwndFrame;
 extern LOGFONT systemDialogFont;
-extern struct tagfile *tagFileList;
+extern struct tagfile* tagFileList;
 
 static char szBreakClassName[] = "xccBreakClass";
 static HWND hwndLV;
 static BOOL loading;
 
-static char *szBreakTitle = "Breakpoints";
+static char* szBreakTitle = "Breakpoints";
 
 typedef struct _bpdata
 {
-    struct _bpdata *next;
-    enum { bt_code, bt_data, bt_hdwe } type;
+    struct _bpdata* next;
+    enum
+    {
+        bt_code,
+        bt_data,
+        bt_hdwe
+    } type;
     union
     {
-        struct tag *c;
-        HDWEBKPT *h;
-        DATABREAK *d;
+        struct tag* c;
+        HDWEBKPT* h;
+        DATABREAK* d;
     } u;
     char size[20];
     char name[256];
     char module[256];
 } BPDATA;
 
-static BPDATA *bpData;
+static BPDATA* bpData;
 
 static void ClearBPWind()
 {
     while (bpData)
     {
-        BPDATA *next = bpData->next;
+        BPDATA* next = bpData->next;
         free(bpData);
         bpData = next;
     }
     ListView_DeleteAllItems(hwndLV);
-    
 }
 static void LoadBPWind(void)
 {
-    int i,v;
+    int i, v;
     LV_ITEM item;
-    DATABREAK *q= dataBpList;
-    struct tagfile *p = tagFileList;
+    DATABREAK* q = dataBpList;
+    struct tagfile* p = tagFileList;
     int curSel = 0;
     loading = TRUE;
     while (p)
     {
         if (p->tagArray[TAG_BP])
         {
-            struct tag *t = p->tagArray[TAG_BP];
+            struct tag* t = p->tagArray[TAG_BP];
             while (t)
             {
-                BPDATA *cur = (BPDATA *)calloc(sizeof(BPDATA), 1);
-                char *str = strrchr(p->name, '\\');
+                BPDATA* cur = (BPDATA*)calloc(sizeof(BPDATA), 1);
+                char* str = strrchr(p->name, '\\');
                 int linenum = t->debugLineno;
                 int n = GetBreakpointNearestLine(p->name, t->debugLineno, TRUE);
-                int * addresses = uState != notDebugging ? GetBreakpointAddresses(p->name, &linenum) : 0;
+                int* addresses = uState != notDebugging ? GetBreakpointAddresses(p->name, &linenum) : 0;
                 int eip;
                 if (addresses)
                 {
@@ -114,12 +118,12 @@ static void LoadBPWind(void)
                     str = p->name;
                 else
                     str++;
-                strcpy (cur->module, p->name);
+                strcpy(cur->module, p->name);
                 cur->u.c = t;
                 cur->type = bt_code;
                 cur->next = bpData;
                 bpData = cur;
-                
+
                 item.iItem = curSel;
                 item.iSubItem = 0;
                 item.mask = LVIF_PARAM;
@@ -127,31 +131,32 @@ static void LoadBPWind(void)
                 item.pszText = "";
                 v = ListView_InsertItem(hwndLV, &item);
                 ListView_SetCheckState(hwndLV, v, !t->disable);
-    
+
                 item.iItem = curSel;
                 item.iSubItem = 1;
                 item.mask = LVIF_TEXT;
                 item.pszText = cur->name;
-                
+
                 ListView_SetItem(hwndLV, &item);
                 item.iItem = curSel;
                 item.iSubItem = 2;
                 item.mask = LVIF_TEXT;
                 item.pszText = "code";
-                
+
                 ListView_SetItem(hwndLV, &item);
                 item.iItem = curSel;
                 item.iSubItem = 3;
                 item.mask = LVIF_TEXT;
-                item.pszText = "1"; //size
-    
+                item.pszText = "1";  // size
+
                 ListView_SetItem(hwndLV, &item);
                 item.iItem = curSel;
-                item.iSubItem = 4;;
+                item.iSubItem = 4;
+                ;
                 item.mask = LVIF_TEXT;
                 sprintf(cur->size, "%d", t->drawnLineno);
-                item.pszText = cur->size; //line
-    
+                item.pszText = cur->size;  // line
+
                 ListView_SetItem(hwndLV, &item);
                 item.iItem = curSel;
                 item.iSubItem = 5;
@@ -166,7 +171,7 @@ static void LoadBPWind(void)
     }
     while (q)
     {
-        BPDATA *cur = (BPDATA *)calloc(sizeof(BPDATA), 1);
+        BPDATA* cur = (BPDATA*)calloc(sizeof(BPDATA), 1);
         cur->u.c = q;
         cur->type = bt_data;
         cur->next = bpData;
@@ -183,28 +188,28 @@ static void LoadBPWind(void)
         item.iSubItem = 1;
         item.mask = LVIF_TEXT;
         item.pszText = q->name;
-        
+
         ListView_SetItem(hwndLV, &item);
         item.iItem = curSel;
         item.iSubItem = 2;
         item.mask = LVIF_TEXT;
         item.pszText = "data";
-        
+
         ListView_SetItem(hwndLV, &item);
         item.iItem = curSel;
         item.iSubItem = 3;
         item.mask = LVIF_TEXT;
         sprintf(cur->size, "%d", q->size);
-        item.pszText = cur->size; //size
+        item.pszText = cur->size;  // size
         ListView_SetItem(hwndLV, &item);
         curSel++;
         q = q->next;
     }
-    for (i=0; i < 4; i++)
+    for (i = 0; i < 4; i++)
     {
         if (hdwebp[i].active)
         {
-            BPDATA *cur = (BPDATA *)calloc(sizeof(BPDATA), 1);
+            BPDATA* cur = (BPDATA*)calloc(sizeof(BPDATA), 1);
             cur->u.c = &hdwebp[i];
             cur->type = bt_hdwe;
             cur->next = bpData;
@@ -221,23 +226,23 @@ static void LoadBPWind(void)
             item.iSubItem = 1;
             item.mask = LVIF_TEXT;
             item.pszText = hdwebp[i].name;
-            
+
             ListView_SetItem(hwndLV, &item);
             item.iItem = curSel;
             item.iSubItem = 2;
             item.mask = LVIF_TEXT;
             item.pszText = "hdwe";
-            
+
             ListView_SetItem(hwndLV, &item);
             item.iItem = curSel;
             item.iSubItem = 3;
             item.mask = LVIF_TEXT;
-            sprintf(cur->size, "%d", hdwebp[i].size+1);
-            item.pszText = cur->size; //size
+            sprintf(cur->size, "%d", hdwebp[i].size + 1);
+            item.pszText = cur->size;  // size
             ListView_SetItem(hwndLV, &item);
             curSel++;
         }
-    }    
+    }
     loading = FALSE;
 }
 //-------------------------------------------------------------------------
@@ -246,16 +251,16 @@ static void CopyText(HWND hwnd)
 {
     int n = ListView_GetItemCount(hwndLV);
     int i;
-    char *data = calloc(n+1, 1024);
+    char* data = calloc(n + 1, 1024);
     if (data)
     {
-        for (i=0; i < n; i++)
+        for (i = 0; i < n; i++)
         {
             int j;
             LVITEM item;
             if (ListView_GetCheckState(hwndLV, i))
                 strcat(data, "X");
-            for (j=1; j <= 5; j++)
+            for (j = 1; j <= 5; j++)
             {
                 char buf[512];
                 memset(&item, 0, sizeof(item));
@@ -275,12 +280,11 @@ static void CopyText(HWND hwnd)
 }
 //-------------------------------------------------------------------------
 
-LRESULT CALLBACK breakProc(HWND hwnd, UINT iMessage, WPARAM wParam,
-    LPARAM lParam)
+LRESULT CALLBACK breakProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
     static LVHITTESTINFO hittest;
     RECT r;
-	LV_COLUMN lvC;    
+    LV_COLUMN lvC;
     switch (iMessage)
     {
         case WM_SYSCOMMAND:
@@ -297,14 +301,14 @@ LRESULT CALLBACK breakProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             switch (LOWORD(wParam))
             {
                 LVITEM item;
-                BPDATA *bpData;
+                BPDATA* bpData;
                 case IDM_REMOVEBREAKPOINT:
                     memset(&item, 0, sizeof(item));
                     item.iItem = hittest.iItem;
                     item.iSubItem = hittest.iSubItem;
                     item.mask = LVIF_PARAM;
                     ListView_GetItem(hwndLV, &item);
-                    bpData = ((BPDATA *)item.lParam);
+                    bpData = ((BPDATA*)item.lParam);
                     switch (bpData->type)
                     {
                         case bt_code:
@@ -318,7 +322,7 @@ LRESULT CALLBACK breakProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                             break;
                     }
                     PostMessage(hwnd, WM_RESTACK, 0, 0);
-                    break;                    
+                    break;
                 default:
                     SendMessage(hwndFrame, iMessage, wParam, lParam);
                     PostMessage(hwnd, WM_RESTACK, 0, 0);
@@ -326,95 +330,93 @@ LRESULT CALLBACK breakProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             }
             break;
         case WM_NOTIFY:
-                if (((LPNMHDR)lParam)->code == LVN_ITEMCHANGED)
+            if (((LPNMHDR)lParam)->code == LVN_ITEMCHANGED)
+            {
+                LPNMLISTVIEW lpnmListView = (LPNMLISTVIEW)lParam;
+                BPDATA* bpData = ((BPDATA*)lpnmListView->lParam);
+                if (!loading)
                 {
-                    LPNMLISTVIEW  lpnmListView = (LPNMLISTVIEW)lParam;
-                    BPDATA *bpData = ((BPDATA *)lpnmListView->lParam);
-                    if (!loading)
+                    BOOL state = !ListView_GetCheckState(hwndLV, lpnmListView->iItem);
+                    switch (bpData->type)
                     {
-                        BOOL state = !ListView_GetCheckState(hwndLV, lpnmListView->iItem);
-                        switch (bpData->type)
-                        {
-                            case bt_code:
-                                bpData->u.c->disable = state;
-                                InvalidateByName(bpData->module);
-                                break;
-                            case bt_data:
-                                bpData->u.d->disable = state;
-                                break;
-                            case bt_hdwe:
-                                bpData->u.h->disable = state;
-                                break;
-                        }
-                    }
-                }
-                else if (((LPNMHDR)lParam)->code == NM_RCLICK)
-                {
-                    HMENU menu = LoadMenuGeneric(hInstance, "BRKPOINTMENU");
-                                    POINT pos;
-                    HMENU popup = GetSubMenu(menu, 0);
-                    GetCursorPos(&pos);
-            
-                    InsertBitmapsInMenu(popup);
-                    hittest.pt = pos;
-                    ScreenToClient(hwndLV, &hittest.pt);
-                    if (ListView_HitTest(hwndLV, &hittest) < 0)
-                    {
-                        EnableMenuItem(popup, IDM_REMOVEBREAKPOINT, MF_GRAYED); 
-                        hittest.iItem = -1;
-                        hittest.iSubItem = 0;
-                    }
-                    TrackPopupMenuEx(popup, TPM_BOTTOMALIGN | TPM_LEFTBUTTON, pos.x,
-                        pos.y, hwnd, NULL);
-                    DestroyMenu(menu);
-                }
-                else if (((LPNMHDR)lParam)->code == NM_DBLCLK)
-                {
-                    GetCursorPos(&hittest.pt);
-                    ScreenToClient(hwndLV, &hittest.pt);
-                    if (ListView_SubItemHitTest(hwndLV, &hittest) >= 0)
-                    {
-                        BPDATA *bpdata;
-                        LVITEM lvitem;
-                        lvitem.iItem = hittest.iItem;
-                        lvitem.iSubItem = 0;
-                        lvitem.mask = LVIF_PARAM;
-                        ListView_GetItem(hwndLV, &lvitem);
-                        bpdata = (BPDATA *)lvitem.lParam;
-                        if (bpdata->type == bt_code)
-                        {
-                            DWINFO info;
-                            char *q;
-                            strcpy(info.dwName, bpdata->module);
-                            q = strrchr(info.dwName, '\\');
-                            if (q)
-                                strcpy(info.dwTitle, q + 1);
-                            else
-                                strcpy(info.dwTitle, info.dwName);
-                            info.dwLineNo = TagNewLine(info.dwName, atoi(bpdata->size));
-                            info.logMRU = FALSE;
-                            info.newFile = FALSE;
-                            CreateDrawWindow(&info, TRUE);
-                            return 0;
-                        }
-
-                    }
-                }
-                else if (((LPNMHDR)lParam)->code == LVN_KEYDOWN)
-                {
-                    switch (((LPNMLVKEYDOWN)lParam)->wVKey)
-                    {
-                        case 'C':
-                            if (GetKeyState(VK_CONTROL) &0x80000000)
-                            {
-                                CopyText(hwnd);
-                            }
+                        case bt_code:
+                            bpData->u.c->disable = state;
+                            InvalidateByName(bpData->module);
+                            break;
+                        case bt_data:
+                            bpData->u.d->disable = state;
+                            break;
+                        case bt_hdwe:
+                            bpData->u.h->disable = state;
                             break;
                     }
                 }
+            }
+            else if (((LPNMHDR)lParam)->code == NM_RCLICK)
+            {
+                HMENU menu = LoadMenuGeneric(hInstance, "BRKPOINTMENU");
+                POINT pos;
+                HMENU popup = GetSubMenu(menu, 0);
+                GetCursorPos(&pos);
+
+                InsertBitmapsInMenu(popup);
+                hittest.pt = pos;
+                ScreenToClient(hwndLV, &hittest.pt);
+                if (ListView_HitTest(hwndLV, &hittest) < 0)
+                {
+                    EnableMenuItem(popup, IDM_REMOVEBREAKPOINT, MF_GRAYED);
+                    hittest.iItem = -1;
+                    hittest.iSubItem = 0;
+                }
+                TrackPopupMenuEx(popup, TPM_BOTTOMALIGN | TPM_LEFTBUTTON, pos.x, pos.y, hwnd, NULL);
+                DestroyMenu(menu);
+            }
+            else if (((LPNMHDR)lParam)->code == NM_DBLCLK)
+            {
+                GetCursorPos(&hittest.pt);
+                ScreenToClient(hwndLV, &hittest.pt);
+                if (ListView_SubItemHitTest(hwndLV, &hittest) >= 0)
+                {
+                    BPDATA* bpdata;
+                    LVITEM lvitem;
+                    lvitem.iItem = hittest.iItem;
+                    lvitem.iSubItem = 0;
+                    lvitem.mask = LVIF_PARAM;
+                    ListView_GetItem(hwndLV, &lvitem);
+                    bpdata = (BPDATA*)lvitem.lParam;
+                    if (bpdata->type == bt_code)
+                    {
+                        DWINFO info;
+                        char* q;
+                        strcpy(info.dwName, bpdata->module);
+                        q = strrchr(info.dwName, '\\');
+                        if (q)
+                            strcpy(info.dwTitle, q + 1);
+                        else
+                            strcpy(info.dwTitle, info.dwName);
+                        info.dwLineNo = TagNewLine(info.dwName, atoi(bpdata->size));
+                        info.logMRU = FALSE;
+                        info.newFile = FALSE;
+                        CreateDrawWindow(&info, TRUE);
+                        return 0;
+                    }
+                }
+            }
+            else if (((LPNMHDR)lParam)->code == LVN_KEYDOWN)
+            {
+                switch (((LPNMLVKEYDOWN)lParam)->wVKey)
+                {
+                    case 'C':
+                        if (GetKeyState(VK_CONTROL) & 0x80000000)
+                        {
+                            CopyText(hwnd);
+                        }
+                        break;
+                }
+            }
             break;
         case WM_VSCROLL:
-                break;
+            break;
         case WM_SETFOCUS:
             PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
             SendMessage(GetParent(hwnd), WM_ACTIVATEME, 0, 0);
@@ -423,12 +425,12 @@ LRESULT CALLBACK breakProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             return 1;
         case WM_CREATE:
             GetClientRect(hwnd, &r);
-            hwndLV = CreateWindowEx(0, WC_LISTVIEW, "", 
-                           LVS_REPORT | LVS_SINGLESEL | WS_CHILD | WS_VISIBLE | WS_BORDER,
-                           0,0,r.right-r.left, r.bottom - r.top, hwnd, 0, hInstance, 0);
-            ListView_SetExtendedListViewStyle(hwndLV, LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES | LVS_EX_DOUBLEBUFFER);
+            hwndLV = CreateWindowEx(0, WC_LISTVIEW, "", LVS_REPORT | LVS_SINGLESEL | WS_CHILD | WS_VISIBLE | WS_BORDER, 0, 0,
+                                    r.right - r.left, r.bottom - r.top, hwnd, 0, hInstance, 0);
+            ListView_SetExtendedListViewStyle(hwndLV,
+                                              LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES | LVS_EX_DOUBLEBUFFER);
             ApplyDialogFont(hwndLV);
-            lvC.mask = LVCF_WIDTH | LVCF_SUBITEM ;
+            lvC.mask = LVCF_WIDTH | LVCF_SUBITEM;
             lvC.cx = 20;
             lvC.iSubItem = 0;
             ListView_InsertColumn(hwndLV, 0, &lvC);
@@ -457,7 +459,7 @@ LRESULT CALLBACK breakProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             lvC.iSubItem = 5;
             lvC.pszText = "Module";
             ListView_InsertColumn(hwndLV, 5, &lvC);
-//            ListView_SetImageList(hwndLV, tagImageList, LVSIL_SMALL);
+            //            ListView_SetImageList(hwndLV, tagImageList, LVSIL_SMALL);
             SendMessage(hwnd, WM_DOENABLE, 1, 0);
             return 0;
         case WM_DOENABLE:
@@ -497,12 +499,8 @@ void RegisterBreakWindow(HINSTANCE hInstance)
     wc.lpszMenuName = 0;
     wc.lpszClassName = szBreakClassName;
     RegisterClass(&wc);
-
 }
 
 //-------------------------------------------------------------------------
 
-HWND CreateBreakWindow(void)
-{
-    return CreateInternalWindow(DID_BREAKWND, szBreakClassName, szBreakTitle);
-}
+HWND CreateBreakWindow(void) { return CreateInternalWindow(DID_BREAKWND, szBreakClassName, szBreakTitle); }

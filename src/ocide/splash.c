@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /* DESCRIPTION    : Functions for splash screen                               */
@@ -41,7 +41,7 @@
 #include <stdio.h>
 #include "header.h"
 
-#define SPLASH_CLASS    "AbSplashScreenWndClass"
+#define SPLASH_CLASS "AbSplashScreenWndClass"
 
 #define ID_BUTTON 100
 #define ID_SHOW 101
@@ -54,13 +54,12 @@ typedef struct
     LPSPLASH lpSplash;
     HWND hButton;
     DWORD uTimerId;
-} SPLASH2, FAR *LPSPLASH2;
+} SPLASH2, FAR* LPSPLASH2;
 
-unsigned char *InflateWrap(unsigned char *data);
+unsigned char* InflateWrap(unsigned char* data);
 
 /*****************************************************************************/
-static unsigned char *SplashScreen_LoadBmp(HINSTANCE hInstance, LPSTR
-    lpszResource, LPINT lpiWidth, LPINT lpiHeight)
+static unsigned char* SplashScreen_LoadBmp(HINSTANCE hInstance, LPSTR lpszResource, LPINT lpiWidth, LPINT lpiHeight)
 {
     DWORD dwLen;
     HRSRC hResource;
@@ -90,17 +89,14 @@ static unsigned char *SplashScreen_LoadBmp(HINSTANCE hInstance, LPSTR
                 if (lpBuffer != NULL)
                 {
                     lpbfh = (LPBITMAPFILEHEADER)lpBuffer;
-                    lpbih = (LPBITMAPINFOHEADER)(((LPBYTE)lpBuffer) + sizeof
-                        (BITMAPFILEHEADER));
+                    lpbih = (LPBITMAPINFOHEADER)(((LPBYTE)lpBuffer) + sizeof(BITMAPFILEHEADER));
 
                     if (lpbfh->bfType == 0x4D42)
                     {
                         hGlobalRet = hGlobal;
 
-                        *lpiWidth = (INT)lpbih->biWidth >= 0 ? lpbih->biWidth: 
-                            - lpbih->biWidth;
-                        *lpiHeight = (INT)lpbih->biHeight >= 0 ? lpbih
-                            ->biHeight:  - lpbih->biHeight;
+                        *lpiWidth = (INT)lpbih->biWidth >= 0 ? lpbih->biWidth : -lpbih->biWidth;
+                        *lpiHeight = (INT)lpbih->biHeight >= 0 ? lpbih->biHeight : -lpbih->biHeight;
                     }
                 }
             }
@@ -127,23 +123,19 @@ static VOID SplashScreen_Paint(HWND hWnd)
     if (lpSplash2 != NULL && lpSplash2->lpBuffer != NULL)
     {
         HDC hdcMem = CreateCompatibleDC(hdc);
-        HBITMAP bmp = CreateCompatibleBitmap(hdc, lpSplash2->iWidth, lpSplash2
-            ->iHeight);
-        lpbih = (LPBITMAPINFOHEADER)(lpSplash2->lpBuffer + sizeof
-            (BITMAPFILEHEADER));
+        HBITMAP bmp = CreateCompatibleBitmap(hdc, lpSplash2->iWidth, lpSplash2->iHeight);
+        lpbih = (LPBITMAPINFOHEADER)(lpSplash2->lpBuffer + sizeof(BITMAPFILEHEADER));
         if (lpbih->biBitCount == 24)
             lpbits = ((LPBYTE)lpbih) + lpbih->biSize;
         else if (lpbih->biBitCount == 8)
-            lpbits = ((LPBYTE)lpbih) + lpbih->biSize + sizeof(RGBQUAD) *256;
+            lpbits = ((LPBYTE)lpbih) + lpbih->biSize + sizeof(RGBQUAD) * 256;
         else if (lpbih->biBitCount == 4)
-            lpbits = ((LPBYTE)lpbih) + lpbih->biSize + sizeof(RGBQUAD) *16;
+            lpbits = ((LPBYTE)lpbih) + lpbih->biSize + sizeof(RGBQUAD) * 16;
         else if (lpbih->biBitCount == 1)
-            lpbits = ((LPBYTE)lpbih) + lpbih->biSize + sizeof(RGBQUAD) *2;
-        SetDIBits(hdcMem, bmp, 0, lpSplash2->iHeight, lpbits, (BITMAPINFO *)lpbih,
-            DIB_RGB_COLORS);
+            lpbits = ((LPBYTE)lpbih) + lpbih->biSize + sizeof(RGBQUAD) * 2;
+        SetDIBits(hdcMem, bmp, 0, lpSplash2->iHeight, lpbits, (BITMAPINFO*)lpbih, DIB_RGB_COLORS);
         SelectObject(hdcMem, bmp);
-        BitBlt(hdc, 0, 0, lpSplash2->iWidth, lpSplash2->iHeight, hdcMem, 0, 0,
-            SRCCOPY);
+        BitBlt(hdc, 0, 0, lpSplash2->iWidth, lpSplash2->iHeight, hdcMem, 0, 0, SRCCOPY);
         DeleteObject(hdcMem);
     }
     if (lpSplash2->lpSplash->lpszVersion)
@@ -153,8 +145,7 @@ static VOID SplashScreen_Paint(HWND hWnd)
         GetTextExtentPoint32(hdc, buf, strlen(buf), &size);
         SetBkMode(hdc, TRANSPARENT);
         n = SetTextColor(hdc, 0x0000ff);
-        TextOut(hdc, lpSplash2->iWidth - size.cx - 4, lpSplash2->iHeight -
-            size.cy - 4, buf, strlen(buf));
+        TextOut(hdc, lpSplash2->iWidth - size.cx - 4, lpSplash2->iHeight - size.cy - 4, buf, strlen(buf));
         SetTextColor(hdc, n);
     }
 
@@ -162,8 +153,7 @@ static VOID SplashScreen_Paint(HWND hWnd)
 }
 
 /*****************************************************************************/
-static LRESULT CALLBACK SplashScreen_Proc(HWND hWnd, UINT msg, WPARAM wParam,
-    LPARAM lParam)
+static LRESULT CALLBACK SplashScreen_Proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     LPSPLASH2 lpSplash2;
     switch (msg)
@@ -201,21 +191,18 @@ static LRESULT CALLBACK SplashScreen_Proc(HWND hWnd, UINT msg, WPARAM wParam,
                 lpSplash2 = (LPSPLASH2)GetWindowLong(hWnd, GWL_USERDATA);
                 if (lpSplash2->lpSplash->bAbout)
                 {
-                    lpSplash2->hButton = CreateWindowEx(0, "button", lpSplash2
-                        ->lpSplash->lpszButtonTitle, WS_VISIBLE | WS_CHILD,
-                        lpSplash2->lpSplash->bPos.left, lpSplash2->lpSplash
-                        ->bPos.top, lpSplash2->lpSplash->bPos.right - lpSplash2
-                        ->lpSplash->bPos.left, lpSplash2->lpSplash->bPos.bottom
-                        - lpSplash2->lpSplash->bPos.top, hWnd, (HMENU)100,
-                        lpSplash2->lpSplash->hInstance, NULL);
+                    lpSplash2->hButton = CreateWindowEx(0, "button", lpSplash2->lpSplash->lpszButtonTitle, WS_VISIBLE | WS_CHILD,
+                                                        lpSplash2->lpSplash->bPos.left, lpSplash2->lpSplash->bPos.top,
+                                                        lpSplash2->lpSplash->bPos.right - lpSplash2->lpSplash->bPos.left,
+                                                        lpSplash2->lpSplash->bPos.bottom - lpSplash2->lpSplash->bPos.top, hWnd,
+                                                        (HMENU)100, lpSplash2->lpSplash->hInstance, NULL);
                     lpSplash2->uTimerId = 0;
                     ShowWindow(hWnd, SW_SHOW);
                 }
                 else
                 {
                     lpSplash2->hButton = 0;
-                    lpSplash2->uTimerId = SetTimer(hWnd, 1, (UINT)lpSplash2
-                        ->lpSplash->uTime, NULL);
+                    lpSplash2->uTimerId = SetTimer(hWnd, 1, (UINT)lpSplash2->lpSplash->uTime, NULL);
 
                     if (lpSplash2->uTimerId != 0)
                         ShowWindow(hWnd, SW_SHOW);
@@ -223,7 +210,6 @@ static LRESULT CALLBACK SplashScreen_Proc(HWND hWnd, UINT msg, WPARAM wParam,
                         PostMessage(hWnd, WM_CLOSE, 0, 0L);
                 }
             }
-
 
             break;
 
@@ -241,7 +227,7 @@ static LRESULT CALLBACK SplashScreen_Proc(HWND hWnd, UINT msg, WPARAM wParam,
 }
 
 /******************************************************************************/
-static unsigned __stdcall SplashScreen_Thread(void *in)
+static unsigned __stdcall SplashScreen_Thread(void* in)
 {
     LPSPLASH lpSplash = (LPSPLASH)in;
     LPBYTE lpBuffer;
@@ -254,14 +240,12 @@ static unsigned __stdcall SplashScreen_Thread(void *in)
     HWND hWnd;
     MSG msg;
     {
-        lpBuffer = SplashScreen_LoadBmp(lpSplash->hInstanceRes, lpSplash
-            ->lpszResource,  &iWidth, &iHeight);
-
+        lpBuffer = SplashScreen_LoadBmp(lpSplash->hInstanceRes, lpSplash->lpszResource, &iWidth, &iHeight);
 
         if (lpBuffer != NULL)
         {
-            INT wWidth = iWidth + GetSystemMetrics(SM_CXDLGFRAME) *2;
-            INT wHeight = iHeight + GetSystemMetrics(SM_CYDLGFRAME) *2;
+            INT wWidth = iWidth + GetSystemMetrics(SM_CXDLGFRAME) * 2;
+            INT wHeight = iHeight + GetSystemMetrics(SM_CYDLGFRAME) * 2;
 
             //            if (lpSplash->bAbout)
             //                wHeight += GetSystemMetrics(SM_CYCAPTION) ;
@@ -321,9 +305,8 @@ static unsigned __stdcall SplashScreen_Thread(void *in)
                     lpSplash2->iHeight = iHeight;
                     lpSplash2->lpSplash = lpSplash;
 
-                    hWnd = CreateWindowEx(dwExStyles, SPLASH_CLASS, 
-                        "About CCIDE", dwStyles, iPosX, iPosY, wWidth, wHeight,
-                        lpSplash->hWndOwner, NULL, lpSplash->hInstance, NULL);
+                    hWnd = CreateWindowEx(dwExStyles, SPLASH_CLASS, "About CCIDE", dwStyles, iPosX, iPosY, wWidth, wHeight,
+                                          lpSplash->hWndOwner, NULL, lpSplash->hInstance, NULL);
 
                     SetWindowLong(hWnd, GWL_USERDATA, (LONG)lpSplash2);
 
@@ -339,7 +322,6 @@ static unsigned __stdcall SplashScreen_Thread(void *in)
                     free(lpBuffer);
             }
         }
-
     }
 
     GlobalFree((HGLOBAL)lpSplash);
@@ -358,7 +340,7 @@ VOID WINAPI SplashScreen(LPSPLASH lpSplash)
     if (lpSplash_t != NULL)
     {
         memcpy(lpSplash_t, lpSplash, sizeof(SPLASH));
-        
+
         hThread = (HANDLE)_beginthreadex(NULL, 0, SplashScreen_Thread, (LPVOID)lpSplash_t, 0, &dwTid);
 
         if (lpSplash->bWait && hThread != NULL)

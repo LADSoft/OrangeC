@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #ifndef CTL_H
@@ -42,7 +42,7 @@
 
 #define TCN_PAINT (TV_FIRST + 150)
 #define TCN_EDITDONE (TV_FIRST + 151)
-#define TCN_EDITQUERY (TV_FIRST + 152) 
+#define TCN_EDITQUERY (TV_FIRST + 152)
 
 #define TCS_LINE 0x1000
 #undef TV_FIRST
@@ -66,7 +66,7 @@ typedef struct
 {
     HWND hwnd;
     RECT pos;
-    HWND *children;
+    HWND* children;
     int childCount;
     int activeIndex;
     HWND tabCtl;
@@ -83,19 +83,20 @@ typedef struct
 #define BUTTONCORNER 1
 #define BUTTONWIDTH 12
 
-typedef struct {
+typedef struct
+{
     DWORD id;
     HWND hWnd;
     HWND blank;
     HWND grip;
     RECT pos;
-    char **hints;
-    WCHAR **whints;
-    TBBUTTON *buttons;
+    char** hints;
+    WCHAR** whints;
+    TBBUTTON* buttons;
     int btncount;
     int bmpid;
     int bmpcount;
-    HWND *children;
+    HWND* children;
     DWORD helpItem;
     HWND notifyParent;
     HIMAGELIST imageList, disabledImageList;
@@ -104,31 +105,31 @@ typedef struct {
 
 struct _stList
 {
-    struct _singleTab *head;
-    struct _singleTab *tail;
+    struct _singleTab* head;
+    struct _singleTab* tail;
 };
 struct _stItem
 {
-    struct _singleTab *prev;
-    struct _singleTab *next;
+    struct _singleTab* prev;
+    struct _singleTab* next;
 };
 struct _singleTab
 {
     struct _stItem chain;
     struct _stItem selectedChain;
-    char *text;
+    char* text;
     LPARAM lParam;
     BOOL displayed;
     BOOL modified;
     RECT displayRect;
     RECT closeBtn;
     int iImage;
-}; 
+};
 struct _tabStruct
 {
     struct _stList active;
     struct _stList selected;
-    struct _singleTab *highlighted;
+    struct _singleTab* highlighted;
     int fontHeight;
     HFONT normalFont, boldFont;
     RECT windowBtn;
@@ -138,7 +139,7 @@ struct _tabStruct
     HBITMAP xBitmap, xBitmapSelected;
     HBITMAP xBack;
     HBITMAP menuBitmap;
-     HBITMAP menuBitmap2;
+    HBITMAP menuBitmap2;
     RECT xRect;
     BOOL captured;
     BOOL flat;
@@ -147,9 +148,9 @@ struct _tabStruct
     BOOL dragging;
     HCURSOR oldCursor;
     HIMAGELIST hImageList;
-    struct _singleTab *dragSrc;
-    struct _singleTab **menuList;
-} ;
+    struct _singleTab* dragSrc;
+    struct _singleTab** menuList;
+};
 
 struct ttrack
 {
@@ -163,24 +164,24 @@ struct ttrack
     BOOL inWindow;
     int id;
     int oldTrack;
-} ;
+};
 typedef struct
 {
-    char *colText1;
-    char *colText2;
+    char* colText1;
+    char* colText2;
     HBITMAP colBmp1;
     HBITMAP colBmp2;
 } TCHeader;
 
 typedef struct
 {
-    char *col1Text;
-    char *col2Text;
+    char* col1Text;
+    char* col2Text;
     DWORD col1Color;
     DWORD col2Color;
 } TCData;
 
-#define TABM_ADD 	WM_USER
+#define TABM_ADD WM_USER
 #define TABM_REMOVE (WM_USER + 1)
 #define TABM_REMOVEALL (WM_USER + 2)
 #define TABM_SELECT (WM_USER + 3)
@@ -193,7 +194,7 @@ typedef struct
 #define TABM_SETIMAGE (WM_USER + 10)
 
 #define TABN_SELECTED (-1000)
-#define TABN_CLOSED   (-1001)
+#define TABN_CLOSED (-1001)
 #define TABN_STARTDRAG (-1002)
 
 #define TABS_BOTTOM 1
@@ -206,9 +207,9 @@ typedef struct
 
 typedef struct LsTabNotify
 {
-	NMHDR hdr;
-	char *text;
-	LPARAM lParam;
+    NMHDR hdr;
+    char* text;
+    LPARAM lParam;
 } LSTABNOTIFY;
 
 #endif

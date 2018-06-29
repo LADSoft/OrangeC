@@ -1,8 +1,8 @@
 #ifdef __IDE_RC_INVOKED
-#define __NEXT_CONTROL_ID	2
-#define __NEXT_MENU_ID		10026
-#define __NEXT_RESOURCE_ID	13
-#define __NEXT_STRING_ID	1000
+#    define __NEXT_CONTROL_ID 2
+#    define __NEXT_MENU_ID 10026
+#    define __NEXT_RESOURCE_ID 13
+#    define __NEXT_STRING_ID 1000
 #endif
 #define IDM_Exit 10001
 #define IDM_File 10000

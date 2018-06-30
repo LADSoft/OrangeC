@@ -98,7 +98,7 @@ static void InsertFile(LIST** r, char* name, char* ext, BOOLEAN primary)
     lst = *r;
     while (lst)
     {
-        if (!strcasecmp(lst->data, buf))
+        if (!strcasecmp_internal(lst->data, buf))
             return;
         lst = lst->next;
     }

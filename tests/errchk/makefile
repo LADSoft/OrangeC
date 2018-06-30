@@ -14,15 +14,15 @@ test: ofiles
 	fc /b pragma.txt pragma.cmpx
 	fc /b goto.txt goto.cmpx
 ofiles:
-	occ -c errchk.c > errchk.txt
-	occ -c /w+ errparam.c > allwarn.txt
-	occ -c /w errparam.c > nowarn.txt
-	occ -c /wd105 errparam.c > no105.txt
-	occ -c /wd1000 errparam.c > no1000.txt
-	occ -c /wd11 errparam.c > no11.txt
-	occ -c /wo105 errparam.c > once105.txt
-	-occ -c /wx errparam.c >aserr.txt
-	-occ -c /werror errparam.c > aserr2.txt
-	occ -c /w /w141 errparam.c > only141.txt
-	occ -c errpragma.c > pragma.txt 
-	occ -c goto.c > goto.txt
+	occ -c --nologo errchk.c > errchk.txt
+	occ -c --nologo /w+ errparam.c > allwarn.txt
+	occ -c --nologo /w errparam.c > nowarn.txt
+	occ -c --nologo /wd105 errparam.c > no105.txt
+	occ -c --nologo /wd1000 errparam.c > no1000.txt
+	occ -c --nologo /wd11 errparam.c > no11.txt
+	occ -c --nologo /wo105 errparam.c > once105.txt
+	-occ -c --nologo /wx errparam.c >aserr.txt
+	-occ -c --nologo /werror errparam.c > aserr2.txt
+	occ -c --nologo /w /w141 errparam.c > only141.txt
+	occ -c --nologo errpragma.c > pragma.txt 
+	occ -c --nologo goto.c > goto.txt

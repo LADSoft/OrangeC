@@ -1,5 +1,3 @@
-occ Version 6.0.37.1 Copyright (C) LADSoft 2006-2018
-
 Warning(132)  errchk.c(11):  Suspicious pointer conversion in function suspicious_assign_to_func_f
 Warning(191)  errchk.c(29):  Expression has no effect in function expression_no_effect_f
 Warning(191)  errchk.c(30):  Expression has no effect in function expression_no_effect_f

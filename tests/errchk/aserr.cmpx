@@ -1,5 +1,3 @@
-occ Version 6.0.37.1 Copyright (C) LADSoft 2006-2018
-
 Error(105)    errparam.c(3):  Function should return a value in function err_1
 Error( 73)    errparam.c(5):  Missing type in declaration
 Error(105)    errparam.c(6):  Function should return a value in function err_2

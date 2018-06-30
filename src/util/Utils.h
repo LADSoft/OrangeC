@@ -44,7 +44,6 @@ class Utils
     static int StringToNumber(std::string str);
     static int StringToNumberHex(std::string str);
 
-  protected:
     static char* ShortName(const char* v);
 };
 #endif

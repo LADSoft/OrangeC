@@ -35,7 +35,7 @@ class GrepMain
     void SetModes();
     void DisplayMatch(const std::string& fileName, int& matchCount, int lineno, const char* text);
     void FindLine(const std::string fileName, int& matchCount, int& matchLine, char** matchPos, char* curpos, bool matched);
-    void OneFile(RegExpContext& regexp, const std::string fileName, std::istream& file, int& openCount);
+    int OneFile(RegExpContext& regexp, const std::string fileName, std::istream& file, int& openCount);
 
   private:
     static CmdSwitchParser SwitchParser;
@@ -57,5 +57,8 @@ class GrepMain
 
     static const char* usageText;
     static char* helpText;
+
+    static void usage(const char* prog_name, const char* text, int retcode);
+
 };
 #endif

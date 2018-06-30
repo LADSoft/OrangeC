@@ -186,7 +186,7 @@ void GrepMain::FindLine(const std::string fileName, int& matchCount, int& matchL
     }
     *matchPos = p;
 }
-void GrepMain::OneFile(RegExpContext& regexp, const std::string fileName, std::istream& fil, int& openCount)
+int GrepMain::OneFile(RegExpContext& regexp, const std::string fileName, std::istream& fil, int& openCount)
 {
     openCount++;
     // couldn't do this as a straight definition as MSVC decided to treat it as a func
@@ -240,6 +240,12 @@ void GrepMain::OneFile(RegExpContext& regexp, const std::string fileName, std::i
             std::cout << ": " << matchCount << std::endl;
         }
     }
+    return matchCount;
+}
+void GrepMain::usage(const char* prog_name, const char* text, int retcode)
+{
+    fprintf(stderr, "\nusage: %s %s", Utils::ShortName(prog_name), text);
+    exit(retcode);
 }
 int GrepMain::Run(int argc, char** argv)
 {
@@ -253,18 +259,17 @@ int GrepMain::Run(int argc, char** argv)
             }
     if (!SwitchParser.Parse(&argc, argv))
     {
-        Utils::usage(argv[0], usageText);
+        usage(argv[0], usageText, 2);
     }
     if (showHelp.GetValue() || (argc >= 2 && !strcmp(argv[1], "?")))
     {
         Utils::banner(argv[0]);
-        Utils::usage(argv[0], helpText);
-        return 1;
+        usage(argv[0], helpText, 0);
     }
     if (argc < 3)
     {
         if (isatty(fileno(stdin)) || argc < 2)
-            Utils::usage(argv[0], usageText);
+            usage(argv[0], usageText, 2);
     }
     if (verboseMode.GetValue())
     {
@@ -274,25 +279,29 @@ int GrepMain::Run(int argc, char** argv)
     RegExpContext regexp(argv[1], regularExpressions.GetValue(), !caseInSensitive.GetValue(), completeWords.GetValue());
 
     if (!regexp.IsValid())
-        Utils::fatal("Invalid regular expression");
+    {
+        fprintf(stderr, "Invalid regular expression");
+        return 2;
+    }
 
     CmdFiles files(argv + 2, recurseDirs.GetValue());
 
     int openCount = 0;
+    int matchCount = 0;
     if (!isatty(fileno(stdin)))
     {
-        OneFile(regexp, "STDIN", std::cin, openCount);
+        matchCount += OneFile(regexp, "STDIN", std::cin, openCount);
     }
     else
         for (CmdFiles::FileNameIterator it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
         {
             std::fstream fil(*(*it), std::ios::in | std::ios::binary);
             if (fil.is_open())
-                OneFile(regexp, *(*it), fil, openCount);
+                matchCount += OneFile(regexp, *(*it), fil, openCount);
         }
     if (openCount == 0)
     {
         std::cout << "Nothing to do." << std::endl;
     }
-    return 0;
+    return matchCount ? 0 : 1;
 }

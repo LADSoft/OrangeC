@@ -81,7 +81,7 @@ const ObjString& LinkerMain::GetOutputFile(CmdFiles& files)
     {
         outputFile = OutputFile.GetValue();
         if (outputFile.find(".rel") == std::string::npos)
-            outputFile = Utils::QualifiedFile(outputFile.c_str(), ".rel");
+            outputFile += ".rel";
     }
     else if (files.GetSize())
     {

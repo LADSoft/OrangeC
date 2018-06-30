@@ -101,7 +101,7 @@ class GroupIcon : public Resource
     iterator end() { return icons.end(); }
 
   private:
-    std::deque<Icon*> icons;
+    std::deque<::Icon*> icons;
 };
 
 #endif

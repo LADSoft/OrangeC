@@ -2185,6 +2185,8 @@ static BOOLEAN noexceptExpression(EXPRESSION* node)
         case en_stmt:
             rv = noexceptStmt(node->v.stmt);
             break;
+        case en_templateparam:
+            break;
         default:
             diag("noexceptExpression");
             break;

@@ -2916,6 +2916,7 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                 }
                 if (storage_class == sc_member)
                     sp->parentClass = getStructureDeclaration();
+                SetLinkerNames(sp, lk_cdecl);
                 InsertSymbol(sp, storage_class, lk_cdecl, FALSE);
                 if (sp_out)
                     *sp_out = sp;
@@ -3290,16 +3291,6 @@ BOOLEAN MatchesConstFunction(SYMBOL* sp)
     }
     return TRUE;
 }
-static BOOLEAN constructedType(LEXEME* lex)
-{
-    BOOLEAN rv;
-    LEXEME* orig = lex;
-    while (lex && (ISID(lex) || MATCHKW(lex, classsel)))
-        lex = getsym();
-    rv = MATCHKW(lex, openpa) || MATCHKW(lex, begin);
-    lex = prevsym(orig);
-    return rv;
-}
 LEXEME* getDeclType(LEXEME* lex, SYMBOL* funcsp, TYPE** tn)
 {
     BOOLEAN hasAmpersand = FALSE;
@@ -3335,10 +3326,6 @@ LEXEME* getDeclType(LEXEME* lex, SYMBOL* funcsp, TYPE** tn)
         (*tn)->type = bt_auto;
         (*tn)->decltypeauto = TRUE;
         (*tn)->decltypeautoextended = extended;
-    }
-    else if (startOfType(lex, FALSE) & !constructedType(lex))
-    {
-        lex = get_type_id(lex, &(*tn), funcsp, sc_cast, FALSE, FALSE);
     }
     else
     {

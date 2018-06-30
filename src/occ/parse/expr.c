@@ -842,11 +842,12 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                     {
                         *exp = intNode(en_c_i, 0);
                     }
-                    if (MATCHKW(lex, openpa))
+                    if (MATCHKW(lex, openpa) || MATCHKW(lex, begin))
                     {
                         lex = prevsym(placeholder);
-                        *tp = NULL;
-                        lex = expression_func_type_cast(lex, funcsp, tp, exp, flags);
+                        TYPE *tp1 = NULL;
+                        EXPRESSION *exp1;
+                        lex = expression_func_type_cast(lex, funcsp, &tp1, &exp1, flags);
                         return lex;
                     }
                 }
@@ -1468,7 +1469,13 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
                         sp3 = sp3->mainsym;
                     if (sp4 && sp4->mainsym)
                         sp4 = sp4->mainsym;
-                        
+                        
+
+
+
+
+
+
                     if (sp3 && sp4 && sp3 != sp4 && classRefCount(sp3, sp4) != 1)
                     {
                         errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, sp3, sp4);

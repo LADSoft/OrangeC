@@ -873,8 +873,8 @@ BOOLEAN isbasevolatile(TYPE* tp)
 int link_getseg(SYMBOL* sp)
 {
     // the exception is for the win32 address thunks
-    if (sp->mainsym && (sp->linkage != lk_virtual || sp->mainsym->storage_class != sc_external))
-        sp = sp->mainsym;
+    if (sp->mainsym && (sp->linkage != lk_virtual || !sp->importThunk))
+       sp = sp->mainsym;
     if (!sp->tp)
         return dataseg;
     switch (sp->storage_class)

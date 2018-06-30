@@ -648,6 +648,7 @@ typedef struct sym
     unsigned retemp : 1;                                  // retemp has already been performed on this SP
     unsigned has_property_setter : 1;                     // a property has a setter
     unsigned nonConstVariableUsed : 1;                    // a non-const variable was used or assigned to in this function's body
+    unsigned importThunk : 1;                             // an import thunk
     char* deprecationText;                                // C++ declaration was deprecated
     int __func__label;                                    /* label number for the __func__ keyword */
     int ipointerindx;                                     /* pointer index for pointer opts */

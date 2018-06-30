@@ -129,7 +129,7 @@ void usage(char* prog_name)
     exit(1);
 }
 #ifndef __MINGW64__
-int strcasecmp(const char* left, const char* right)
+int strcasecmp_internal(const char* left, const char* right)
 {
     while (*left && *right)
     {
@@ -180,7 +180,7 @@ int HasExt(char* buffer, char* ext)
     int l = strlen(buffer), l1 = strlen(ext);
     if (l1 < l)
     {
-        return !strcasecmp(buffer + l - l1, ext);
+        return !strcasecmp_internal(buffer + l - l1, ext);
     }
     return 0;
 }
@@ -311,7 +311,7 @@ FILE* SrchPth(char* name, char* path, char* attrib, BOOLEAN sys)
         return rv;
     strcpy(buf, name);
     p = strrchr(buf, '.');
-    if (p && !strcasecmp(p, ".h"))
+    if (p && !strcasecmp_internal(p, ".h"))
     {
         *p = 0;
         rv = SrchPth2(buf, path, attrib);

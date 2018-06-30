@@ -131,7 +131,16 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, VTABENTRY* ent
                     my_sprintf(buf + strlen(buf), "_$%c%d", count % 26 + 'A', count / 26);
 
                     thunks[count].entry = entry;
-                    thunks[count].func = vf->func;
+                    if (vf->func->linkage2 == lk_import)
+                    {
+                        EXPRESSION *exp = varNode(en_pc, vf->func);
+                        thunkForImportTable(&exp);
+                        thunks[count].func = exp->v.sp;
+                    }
+                    else
+                    {
+                        thunks[count].func = vf->func;
+                    }
                     thunks[count].name = localsp = makeID(sc_static, &stdfunc, NULL, litlate(buf));
                     localsp->decoratedName = localsp->errname = localsp->name;
                     GENREF(localsp);
@@ -143,7 +152,16 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, VTABENTRY* ent
                 }
                 else
                 {
-                    genref(vf->func, 0);
+                    if (vf->func->linkage2 == lk_import)
+                    {
+                        EXPRESSION *exp = varNode(en_pc, vf->func);
+                        thunkForImportTable(&exp);
+                        genref(exp->v.sp, 0);
+                    }
+                    else
+                    {
+                        genref(vf->func, 0);
+                    }
                 }
                 vf = vf->next;
             }

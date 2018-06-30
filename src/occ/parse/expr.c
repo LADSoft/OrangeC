@@ -115,11 +115,12 @@ void thunkForImportTable(EXPRESSION** exp)
         {
             SYMBOL* newThunk;
             char buf[2048];
-            my_sprintf(buf, "@$%s", sp->name);
+            my_sprintf(buf, "@$%s", sp->decoratedName);
             newThunk = makeID(sc_global, &stdpointer, NULL, litlate(buf));
             newThunk->errname = newThunk->decoratedName = newThunk->name;
             newThunk->mainsym = sp;  // mainsym is the symbol this was derived from
             newThunk->linkage = lk_virtual;
+            newThunk->importThunk = TRUE;
             search = (LIST*)Alloc(sizeof(LIST));
             search->next = importThunks;
             search->data = newThunk;

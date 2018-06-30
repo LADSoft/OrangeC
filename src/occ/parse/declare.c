@@ -953,6 +953,9 @@ static LEXEME* structbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac cur
             sp->vtabsp->linkage2 = sp->linkage2;
             if (sp->vtabsp->linkage2 == lk_import)
                 sp->vtabsp->dontinstantiate = TRUE;
+            else if (sp->vtabsp->linkage2 == lk_export)
+                GENREF(sp->vtabsp);
+            InsertInline(sp);
             sp->vtabsp->linkage = lk_virtual;
             sp->vtabsp->decoratedName = sp->vtabsp->errname = sp->vtabsp->name;
             warnCPPWarnings(sp, funcsp != NULL);

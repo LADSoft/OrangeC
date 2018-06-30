@@ -216,7 +216,6 @@ bool xmlNode::Read(std::fstream& stream, char v)
     }
     *p = 0;
     elementType = buf;
-    //	std::cout << elementType << std::endl;
     while (!stream.fail())
     {
         while (isspace(t))
@@ -237,7 +236,6 @@ bool xmlNode::Read(std::fstream& stream, char v)
                 return false;
             }
             InsertAttrib(attrib);
-            //			std::cout << attrib->GetName() << ": " << attrib->GetValue() << std::endl;
             stream >> t;
             if (stream.fail())
                 return false;

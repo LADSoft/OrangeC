@@ -71,8 +71,8 @@ void fatal(char* fmt, ...)
     va_list argptr;
 
     va_start(argptr, fmt);
-    printf("Fatal error: ");
-    vprintf(fmt, argptr);
+    fprintf(stderr, "Fatal error: ");
+    vfprintf(stderr, fmt, argptr);
     va_end(argptr);
     exit(1);
 }
@@ -83,10 +83,10 @@ void banner(char* fmt, ...)
     putc('\n', stdout);
 
     va_start(argptr, fmt);
-    vprintf(fmt, argptr);
+    vfprintf(stderr, fmt, argptr);
     va_end(argptr);
 
-    putc('\n', stdout);
+    putc('\n', stderr);
 }
 
 /* Print usage info */
@@ -108,10 +108,10 @@ void usage(char* prog_name)
     extension = strrchr(short_name, '.');
     if (extension != NULL)
         *extension = '\0';
-    printf("\nUsage: %s %s", short_name, getUsageText());
+    fprintf(stderr, "\nUsage: %s %s", short_name, getUsageText());
 #ifndef CPREPROCESSOR
 #    ifndef USE_LONGLONG
-    printf("   long long not supported");
+    fprintf(stderr, "   long long not supported");
 #    endif
 #endif
     exit(1);
@@ -936,7 +936,7 @@ void ctrlchandler(int aa)
 void internalError(int a)
 {
     (void)a;
-    printf("Internal Error - Aborting compile");
+    fprintf(stderr, "Internal Error - Aborting compile");
     exit(1);
 }
 
@@ -975,7 +975,7 @@ void ccinit(int argc, char* argv[])
     }
     if (showVersion)
     {
-        printf("Compile date: " __DATE__ ", time: " __TIME__ "\n");
+        fprintf(stderr, "Compile date: " __DATE__ ", time: " __TIME__ "\n");
         exit(0);
     }
 

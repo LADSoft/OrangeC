@@ -81,8 +81,8 @@ void fatal(char* fmt, ...)
     va_list argptr;
 
     va_start(argptr, fmt);
-    printf("Fatal error: ");
-    vprintf(fmt, argptr);
+    fprintf(stderr, "Fatal error: ");
+    vfprintf(stderr, fmt, argptr);
     va_end(argptr);
     extern void Cleanup();
     Cleanup();
@@ -93,11 +93,11 @@ void banner(char* fmt, ...)
     va_list argptr;
 
     va_start(argptr, fmt);
-    vprintf(fmt, argptr);
+    vfprintf(stderr, fmt, argptr);
     va_end(argptr);
 
-    putc('\n', stdout);
-    putc('\n', stdout);
+    putc('\n', stderr);
+    putc('\n', stderr);
 }
 
 /* Print usage info */
@@ -119,10 +119,10 @@ void usage(char* prog_name)
     extension = strrchr(short_name, '.');
     if (extension != NULL)
         *extension = '\0';
-    printf("Usage: %s %s", short_name, getUsageText());
+    fprintf(stderr, "Usage: %s %s", short_name, getUsageText());
 #ifndef CPREPROCESSOR
 #    ifndef USE_LONGLONG
-    printf("   long long not supported");
+    fprintf(stderr, "   long long not supported");
 #    endif
 #endif
 
@@ -1102,7 +1102,7 @@ void dumperrs(FILE* file)
 
 void ctrlchandler(int aa)
 {
-    printf("^C");
+    fprintf(stderr, "^C");
     extern void Cleanup();
     Cleanup();
     exit(1);
@@ -1115,7 +1115,7 @@ void internalError(int a)
     (void)a;
     extern void Cleanup();
     Cleanup();
-    printf("Internal Error - Aborting compile");
+    fprintf(stderr, "Internal Error - Aborting compile");
     exit(1);
 }
 
@@ -1152,7 +1152,7 @@ void ccinit(int argc, char* argv[])
     }
     if (showVersion)
     {
-        printf("Compile date: " __DATE__ ", time: " __TIME__ "\n");
+        fprintf(stderr, "Compile date: " __DATE__ ", time: " __TIME__ "\n");
         exit(0);
     }
 #if defined(WIN32) || defined(MICROSOFT)

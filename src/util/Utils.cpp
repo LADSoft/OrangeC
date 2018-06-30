@@ -71,20 +71,20 @@ void Utils::banner(const char* progName)
         if (__argv[i] && (__argv[i][0] == '/' || __argv[i][0] == '-'))
             if (__argv[i][1] == '!' || !strcmp(__argv[i], "--nologo"))
                 return;
-    printf("%s Version " STRING_VERSION " " COPYRIGHT "\n", ShortName(progName));
+    fprintf(stderr, "%s Version " STRING_VERSION " " COPYRIGHT "\n", ShortName(progName));
 
     // handle /V switch
     for (int i = 1; i < __argc && __argv[i]; i++)
         if (__argv[i] && (__argv[i][0] == '/' || __argv[i][0] == '-'))
             if (__argv[i][1] == 'V' && __argv[i][2] == 0 || !strcmp(__argv[i], "--version"))
             {
-                printf("\nCompile date: " __DATE__ " time: " __TIME__ "\n");
+                fprintf(stderr, "\nCompile date: " __DATE__ " time: " __TIME__ "\n");
                 exit(0);
             }
 }
 void Utils::usage(const char* prog_name, const char* text)
 {
-    printf("\nUsage: %s %s", ShortName(prog_name), text);
+    fprintf(stderr, "\nUsage: %s %s", ShortName(prog_name), text);
     exit(1);
 }
 void Utils::fatal(const char* format, ...)
@@ -92,10 +92,10 @@ void Utils::fatal(const char* format, ...)
     va_list argptr;
 
     va_start(argptr, format);
-    printf("Fatal error: ");
-    vprintf(format, argptr);
+    fprintf(stderr, "Fatal error: ");
+    vfprintf(stderr, format, argptr);
     va_end(argptr);
-    fputc('\n', stdout);
+    fputc('\n', stderr);
     exit(1);
 }
 char* Utils::GetModuleName()

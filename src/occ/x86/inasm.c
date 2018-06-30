@@ -2217,7 +2217,7 @@ LEXEME* inasm_statement(LEXEME* inlex, BLOCKDATA* parent)
                     snp->label =  rv->oper1->offset->v.i;
                 }
                 break;
-            
+            
         }
         */
     } while (op == op_rep || op == op_repnz || op == op_repz || op == op_repe || op == op_repne || op == op_lock);

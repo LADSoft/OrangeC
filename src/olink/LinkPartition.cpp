@@ -257,7 +257,7 @@ ObjInt LinkPartition::PlacePartition(LinkManager* manager, ObjInt bottom, bool c
         {
             //			if (completeLink)
             //				overlay->GetSymbol()->SetValue(new LinkExpression(overlay->GetSymbol()->GetValue()->Eval(bottom +
-            //size))); 			else
+            // size))); 			else
             overlay->GetSymbol()->SetValue(overlay->GetSymbol()->GetValue()->Eval(overlayNum ? overlayNum - 1 : 0, bottom, size));
         }
         else

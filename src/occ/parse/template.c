@@ -1623,7 +1623,7 @@ SYMBOL* LookupFunctionSpecialization(SYMBOL* overloads, SYMBOL* sp)
             n++;
         hr = hr->next;
     }
-    
+    
     spList = (SYMBOL **)Alloc(n * sizeof(SYMBOL *));
     n = 0;
     hr = overloads->tp->syms->table[0];
@@ -5314,7 +5314,7 @@ void TemplatePartialOrdering(SYMBOL** table, int count, FUNCTIONCALL* funcparams
                             {
                                 params->p->byNonType.temp = (EXPRESSION *)exprchk->data;
                                 exprchk = exprchk->next;
-                                
+                                
                             }
                             else
                             {
@@ -5582,7 +5582,7 @@ static void TemplateTransferClassDeferred(SYMBOL* newCls, SYMBOL* tmpl)
                                             tpo = tpo->next;
                                             tpn = tpn->next;
                                         }
-                                        
+                                        
                                         if (!ss2->templateParams)
                                             ss2->templateParams = ts2->templateParams;
                                     }

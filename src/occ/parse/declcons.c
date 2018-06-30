@@ -1731,7 +1731,7 @@ static void dovtabThunks(BLOCKDATA* b, SYMBOL* sym, EXPRESSION* thisptr, BOOLEAN
     STATEMENT* st;
     SYMBOL* localsp;
     localsp = sym->vtabsp;
-    EXPRESSION *vtabBase = varNode(en_global, localsp);
+    EXPRESSION* vtabBase = varNode(en_global, localsp);
     if (localsp->linkage2 == lk_import)
         deref(&stdpointer, &vtabBase);
     while (entries)
@@ -1740,8 +1740,7 @@ static void dovtabThunks(BLOCKDATA* b, SYMBOL* sym, EXPRESSION* thisptr, BOOLEAN
         {
             EXPRESSION* left = exprNode(en_add, thisptr, intNode(en_c_i, entries->dataOffset));
             EXPRESSION* right =
-                exprNode(en_add, exprNode(en_add, vtabBase, intNode(en_c_i, entries->vtabOffset)),
-                         intNode(en_c_i, VTAB_XT_OFFS));
+                exprNode(en_add, exprNode(en_add, vtabBase, intNode(en_c_i, entries->vtabOffset)), intNode(en_c_i, VTAB_XT_OFFS));
             EXPRESSION* asn;
             deref(&stdpointer, &left);
             asn = exprNode(en_assign, left, right);

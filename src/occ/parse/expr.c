@@ -1467,7 +1467,7 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
                         sp3 = sp3->mainsym;
                     if (sp4 && sp4->mainsym)
                         sp4 = sp4->mainsym;
-                        
+                        
                     if (sp3 && sp4 && sp3 != sp4 && classRefCount(sp3, sp4) != 1)
                     {
                         errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, sp3, sp4);

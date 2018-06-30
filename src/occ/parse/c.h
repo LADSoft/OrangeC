@@ -689,7 +689,7 @@ typedef struct sym
     void* msil;                                  // MSIL data
     struct _templateSelector* templateSelector;  // first element is the last valid sym found, second element is the template
                                                  // parameter sym following elements are the list of pointers to names
-    struct sym* parentTemplate;  // could be the parent of a specialization or an instantiation
+    struct sym* parentTemplate;                  // could be the parent of a specialization or an instantiation
     struct init *init, *lastInit, *dest;
     // order is important for this next, a comparison is done based on this ordering
     // clang-format off

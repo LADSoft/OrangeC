@@ -955,7 +955,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
                     /*
                     {
                         MENUITEMINFO info;
-                    
+                    
                         info.cbSize = sizeof(MENUITEMINFO);
                         info.fMask = MIIM_STATE;
                         GetMenuItemInfo(hMenuMain, IDM_VIEWASM, MF_BYCOMMAND, &info);

@@ -81,6 +81,8 @@ zip: distribute1
 
 fullbuild: zip
 
+format:
+	@$(MAKE) -f $(_TREEROOT) format
 
 else
 # when called from TREETOP.MAK do the below

@@ -1651,6 +1651,7 @@ void peep_prefixes(OCODE* ip)
 }
 OCODE* peep_div(OCODE* ip)
 {
+#if 0 // see comments below
     if (ip->oper1->mode == am_dreg)
     {
         OCODE* ip2 = ip->back;
@@ -1681,6 +1682,7 @@ OCODE* peep_div(OCODE* ip)
                     }
         }
     }
+#endif
     return ip;
 }
 /*

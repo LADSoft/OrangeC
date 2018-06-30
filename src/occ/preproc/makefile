@@ -30,11 +30,13 @@ C_DEPENDENCIES=$(wildcard *.c)
 DEFINES=CPREPROCESSOR USE_LONGLONG
 H_FILES=$(wildcard *.h)
 
+ifndef _TREEROOT
 redirect:
 	@$(MAKE) /T
 
 format:
 	@$(MAKE) /T format
+endif
 
 DISTRIBUTE: copyexe
 	copy target.cfg $(DISTBIN)\ocpp.cfg

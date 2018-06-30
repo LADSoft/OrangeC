@@ -96,7 +96,7 @@ LRESULT CALLBACK codecompProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lP
 
             /*
              * Draw the bitmap and text for the list box item. Draw a
-
+
              * rectangle around the bitmap if it is selected.
              */
             switch (lpdis->itemAction)
@@ -154,7 +154,7 @@ LRESULT CALLBACK codecompProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lP
                 case ODA_FOCUS:
                     /*
                      * Do not process focus changes. The focus caret
-
+
                      * (outline rectangle) indicates the selection.
                      * The Which one? (IDOK) button indicates the final
                      * selection.

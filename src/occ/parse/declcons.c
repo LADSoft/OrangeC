@@ -1731,13 +1731,16 @@ static void dovtabThunks(BLOCKDATA* b, SYMBOL* sym, EXPRESSION* thisptr, BOOLEAN
     STATEMENT* st;
     SYMBOL* localsp;
     localsp = sym->vtabsp;
+    EXPRESSION *vtabBase = varNode(en_global, localsp);
+    if (localsp->linkage2 == lk_import)
+        deref(&stdpointer, &vtabBase);
     while (entries)
     {
         if (!entries->isdead && entries->isvirtual == isvirtual && hasVTab(entries->cls))
         {
             EXPRESSION* left = exprNode(en_add, thisptr, intNode(en_c_i, entries->dataOffset));
             EXPRESSION* right =
-                exprNode(en_add, exprNode(en_add, varNode(en_global, localsp), intNode(en_c_i, entries->vtabOffset)),
+                exprNode(en_add, exprNode(en_add, vtabBase, intNode(en_c_i, entries->vtabOffset)),
                          intNode(en_c_i, VTAB_XT_OFFS));
             EXPRESSION* asn;
             deref(&stdpointer, &left);

@@ -155,7 +155,7 @@ void dumpInlines(void)
                 SYMBOL* sym = (SYMBOL*)vtabList->data;
                 if (sym->vtabsp->genreffed && hasVTab(sym) && !sym->vtabsp->didinline)
                 {
-                    if (sym->dontinstantiate)
+                    if (sym->dontinstantiate || sym->vtabsp->dontinstantiate)
                     {
                         InsertExtern(sym->vtabsp);
                         sym->vtabsp->storage_class = sc_external;

@@ -120,6 +120,8 @@ void preprocini(char* name, FILE* fil)
     p->fname = litlate(name);
     p->handle = fil;
     p->first = TRUE;
+    p->realline = -1;
+    p->line = -1;
     includes = p;
     inclData = NULL;
     incfiles = NULL;

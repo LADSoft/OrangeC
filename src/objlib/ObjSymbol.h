@@ -46,7 +46,8 @@ class ObjSymbol : public ObjWrapper
         index(Index),
         type(Type),
         baseType(nullptr),
-        sectionRelative(false)
+        sectionRelative(false),
+        sourceFile(nullptr)
     {
     }
     virtual ~ObjSymbol() {}

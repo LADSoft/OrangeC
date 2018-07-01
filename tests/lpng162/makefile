@@ -1,3 +1,4 @@
+.NOTPARALLEL:
 
 OUT = libpng.l
 LIB = libpng.l zlib\zlib.l

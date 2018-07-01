@@ -519,9 +519,7 @@ int main(int argc, char* argv[])
     BOOLEAN multipleFiles = FALSE;
     BOOLEAN openOutput = TRUE;
     int rv;
-    char tempOutFile[260];
-    char realOutFile[260];
-    char oldOutFile[260];
+
     srand(time(0));
 
     /*   signal(SIGSEGV,internalError) ;*/

@@ -2007,6 +2007,7 @@ static void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
 static LEXEME* getInitInternal(LEXEME* lex, SYMBOL* funcsp, INITLIST** lptr, enum e_kw finish, BOOLEAN allowNesting,
                                BOOLEAN allowPack, BOOLEAN toErr, int flags)
 {
+    /*
     if (finish == end)
     {
         SYMBOL* sp = namespacesearch("std", globalNameSpace, FALSE, FALSE);
@@ -2017,6 +2018,7 @@ static LEXEME* getInitInternal(LEXEME* lex, SYMBOL* funcsp, INITLIST** lptr, enu
                 error(ERR_NEED_INITIALIZER_LIST_H);
         }
     }
+    */
     *lptr = NULL;
     lex = getsym(); /* past ( */
     while (!MATCHKW(lex, finish))

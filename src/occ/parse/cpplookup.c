@@ -1350,6 +1350,23 @@ static BOOLEAN isAccessibleInternal(SYMBOL* derived, SYMBOL* currentBase, SYMBOL
                 break;
             }
         }
+        else if (sym->storage_class == sc_typedef && sym->instantiations)
+        {
+            LIST *data = sym->instantiations;
+            while (data)
+            {
+                if ((SYMBOL *)data->data == member)
+                {
+                    break;
+                }
+                data = data->next;
+            }
+            if (data)
+            {
+                matched = TRUE;
+                break;
+            }
+        }
         hr = hr->next;
     }
     if (!matched)

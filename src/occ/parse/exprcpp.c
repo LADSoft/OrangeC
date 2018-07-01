@@ -622,6 +622,10 @@ LEXEME* expression_func_type_cast(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
     *tp = NULL;
     lex = getBasicType(lex, funcsp, tp, NULL, FALSE, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, &consdest,
                        NULL, FALSE, TRUE);
+    if (isstructured(*tp) && !(*tp)->size && (!templateNestingCount || !basetype(*tp)->sp->templateLevel))
+    {
+        errorsym(ERR_STRUCT_NOT_DEFINED, basetype(*tp)->sp);
+    }
     if (!MATCHKW(lex, openpa))
     {
         if (MATCHKW(lex, begin))

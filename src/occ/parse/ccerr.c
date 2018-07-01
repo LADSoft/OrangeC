@@ -393,7 +393,7 @@ static struct
     {"Invalid parameters for '%s'", ERROR},
     {"Could not find a match for literal suffix '%s'", ERROR},
     {"Literal suffix mismatch", ERROR},
-    {"Structured type '%s' not defined", ERROR},
+    {"Structured type '%s' not fully defined", ERROR},
     {"Incorrect use of destructor syntax", ERROR},
     {"Constructor or destructor for '%s' must be a function", ERROR},
     {"Default may only be used on a special function", ERROR},

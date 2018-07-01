@@ -573,7 +573,7 @@ void calculateStructOffsets(SYMBOL* sp)
             }
             if (isstructured(tp) && !tp->size && !templateNestingCount)
             {
-                errorsym(ERR_UNSIZED, p);
+                errorsym(ERR_STRUCT_NOT_DEFINED, p);
             }
             if (tp->hasbits)
             {

@@ -55,6 +55,7 @@ extern BOOLEAN inTemplateType;
 extern STRUCTSYM* structSyms;
 extern char* deprecationText;
 extern TYPE stdany;
+extern int noSpecializationError;
 
 LIST* nameSpaceList;
 char anonymousNameSpaceName[512];
@@ -1191,15 +1192,18 @@ LEXEME* baseClasses(LEXEME* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac defa
             lex = nestedSearch(lex, &bcsym, NULL, NULL, NULL, NULL, FALSE, sc_global, FALSE, FALSE);
             if (bcsym && bcsym->storage_class == sc_typedef)
             {
-                // in case typedef is being used as a base class specifier
-                TYPE* tp = basetype(bcsym->tp);
-                if (isstructured(tp))
+                if (!bcsym->templateLevel)
                 {
-                    bcsym = tp->sp;
-                }
-                else if (tp->type != bt_templateselector)
-                {
-                    bcsym = NULL;
+                    // in case typedef is being used as a base class specifier
+                    TYPE* tp = basetype(bcsym->tp);
+                    if (isstructured(tp))
+                    {
+                        bcsym = tp->sp;
+                    }
+                    else if (tp->type != bt_templateselector)
+                    {
+                        bcsym = NULL;
+                    }
                 }
             }
             lex = getsym();
@@ -1218,130 +1222,155 @@ LEXEME* baseClasses(LEXEME* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac defa
             }
             else if (bcsym && bcsym->templateLevel)
             {
-                TEMPLATEPARAMLIST* lst = NULL;
-                if (MATCHKW(lex, lt))
+                if (bcsym->storage_class == sc_typedef)
                 {
-                    int i;
-                    inTemplateSpecialization++;
-                    lex = GetTemplateArguments(lex, funcsp, bcsym, &lst);
-                    inTemplateSpecialization--;
-                    if (MATCHKW(lex, ellipse))
+                    if (MATCHKW(lex, lt))
                     {
-                        if (templateNestingCount)
+                        // throwaway
+                        TEMPLATEPARAMLIST* lst = NULL;
+                        SYMBOL* sp1;
+                        lex = GetTemplateArguments(lex, funcsp, NULL, &lst);
+                        sp1 = GetTypedefSpecialization(bcsym, lst);
+                        if (sp1)
                         {
-                            bcsym = GetClassTemplate(bcsym, lst, TRUE);
-                            if (bcsym)
-                            {
-                                bcsym->packed = TRUE;
-                                *bc = innerBaseClass(declsym, bcsym, isvirtual, currentAccess);
-                                if (*bc)
-                                    bc = &(*bc)->next;
-                            }
+                            bcsym = sp1;
+                            if (isstructured(bcsym->tp))
+                                bcsym->tp = PerformDeferredInitialization(bcsym->tp, funcsp);
+                            else
+                                bcsym->tp = SynthesizeType(bcsym->tp, NULL, FALSE);
+                            if (isstructured(bcsym->tp))
+                                bcsym = bcsym->tp->sp;
                         }
-                        else
+                    }
+                    else
+                    {
+                        if (!noSpecializationError && !instantiatingTemplate)
+                            errorsym(ERR_NEED_SPECIALIZATION_PARAMETERS, bcsym);
+                    }
+                }
+                else
+                {
+                    TEMPLATEPARAMLIST* lst = NULL;
+                    if (MATCHKW(lex, lt))
+                    {
+                        int i;
+                        inTemplateSpecialization++;
+                        lex = GetTemplateArguments(lex, funcsp, bcsym, &lst);
+                        inTemplateSpecialization--;
+                        if (MATCHKW(lex, ellipse))
                         {
-                            int n = 0;
-                            BOOLEAN done = FALSE;
-                            BOOLEAN failed = FALSE;
-                            TEMPLATEPARAMLIST* dest;
-                            TEMPLATEPARAMLIST* src;
-                            while (!done)
+                            if (templateNestingCount)
                             {
-                                TEMPLATEPARAMLIST *workingList = NULL, **workingListPtr = &workingList;
-                                SYMBOL* temp;
-                                BOOLEAN packed = FALSE;
+                                bcsym = GetClassTemplate(bcsym, lst, TRUE);
+                                if (bcsym)
+                                {
+                                    bcsym->packed = TRUE;
+                                    *bc = innerBaseClass(declsym, bcsym, isvirtual, currentAccess);
+                                    if (*bc)
+                                        bc = &(*bc)->next;
+                                }
+                            }
+                            else
+                            {
+                                int n = 0;
+                                BOOLEAN done = FALSE;
+                                BOOLEAN failed = FALSE;
+                                TEMPLATEPARAMLIST* dest;
+                                TEMPLATEPARAMLIST* src;
+                                while (!done)
+                                {
+                                    TEMPLATEPARAMLIST *workingList = NULL, **workingListPtr = &workingList;
+                                    SYMBOL* temp;
+                                    BOOLEAN packed = FALSE;
+                                    dest = bcsym->templateParams->next;
+                                    src = lst;
+                                    while (src && dest)
+                                    {
+                                        *workingListPtr = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
+                                        (*workingListPtr)->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
+                                        if (src->p->packed)
+                                        {
+                                            TEMPLATEPARAMLIST* p = src->p->byPack.pack;
+                                            packed = TRUE;
+                                            for (i = 0; i < n && p; i++)
+                                            {
+                                                p = p->next;
+                                            }
+                                            if (!p)
+                                            {
+                                                done = TRUE;
+                                                break;
+                                            }
+                                            *(*workingListPtr)->p = *(p->p);
+                                            (*workingListPtr)->p->byClass.dflt = p->p->byClass.val;
+                                        }
+                                        else
+                                        {
+                                            *(*workingListPtr)->p = *(src->p);
+                                            (*workingListPtr)->p->byClass.dflt = src->p->byClass.val;
+                                        }
+                                        workingListPtr = &(*workingListPtr)->next;
+                                        dest = dest->next;
+                                        src = src->next;
+                                    }
+                                    if (done)
+                                        break;
+                                    if (workingList)
+                                    {
+                                        temp = GetClassTemplate(bcsym, workingList, TRUE);
+                                        if (temp && allTemplateArgsSpecified(temp, temp->templateParams->next))
+                                            temp = TemplateClassInstantiateInternal(temp, temp->templateParams->next, FALSE);
+                                        if (temp)
+                                        {
+                                            *bc = innerBaseClass(declsym, temp, isvirtual, currentAccess);
+                                            if (*bc)
+                                            {
+                                                bc = &(*bc)->next;
+                                            }
+                                        }
+                                        n++;
+                                    }
+                                    if (!packed)
+                                        break;
+                                }
                                 dest = bcsym->templateParams->next;
                                 src = lst;
                                 while (src && dest)
                                 {
-                                    *workingListPtr = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
-                                    (*workingListPtr)->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
                                     if (src->p->packed)
                                     {
                                         TEMPLATEPARAMLIST* p = src->p->byPack.pack;
-                                        packed = TRUE;
                                         for (i = 0; i < n && p; i++)
                                         {
                                             p = p->next;
                                         }
-                                        if (!p)
-                                        {
-                                            done = TRUE;
-                                            break;
-                                        }
-                                        *(*workingListPtr)->p = *(p->p);
-                                        (*workingListPtr)->p->byClass.dflt = p->p->byClass.val;
+                                        if (p)
+                                            failed = TRUE;
                                     }
-                                    else
-                                    {
-                                        *(*workingListPtr)->p = *(src->p);
-                                        (*workingListPtr)->p->byClass.dflt = src->p->byClass.val;
-                                    }
-                                    workingListPtr = &(*workingListPtr)->next;
                                     dest = dest->next;
                                     src = src->next;
                                 }
-                                if (done)
-                                    break;
-                                if (workingList)
+                                if (failed)
                                 {
-                                    temp = GetClassTemplate(bcsym, workingList, TRUE);
-                                    if (temp && allTemplateArgsSpecified(temp, temp->templateParams->next))
-                                        temp = TemplateClassInstantiateInternal(temp, temp->templateParams->next, FALSE);
-                                    if (temp)
-                                    {
-                                        *bc = innerBaseClass(declsym, temp, isvirtual, currentAccess);
-                                        if (*bc)
-                                        {
-                                            bc = &(*bc)->next;
-                                        }
-                                    }
-                                    n++;
+                                    error(ERR_PACK_SPECIFIERS_SIZE_MISMATCH);
                                 }
-                                if (!packed)
-                                    break;
                             }
-                            dest = bcsym->templateParams->next;
-                            src = lst;
-                            while (src && dest)
-                            {
-                                if (src->p->packed)
-                                {
-                                    TEMPLATEPARAMLIST* p = src->p->byPack.pack;
-                                    for (i = 0; i < n && p; i++)
-                                    {
-                                        p = p->next;
-                                    }
-                                    if (p)
-                                        failed = TRUE;
-                                }
-                                dest = dest->next;
-                                src = src->next;
-                            }
-                            if (failed)
-                            {
-                                error(ERR_PACK_SPECIFIERS_SIZE_MISMATCH);
-                            }
-                        }
-                        lex = getsym();
-                        currentAccess = defaultAccess;
-                        isvirtual = FALSE;
-                        done = !MATCHKW(lex, comma);
-                        if (!done)
                             lex = getsym();
-                        continue;
-                    }
-                    else
-                    {
-                        bcsym = GetClassTemplate(bcsym, lst, TRUE);
-                        if (bcsym && bcsym->instantiated && allTemplateArgsSpecified(bcsym, bcsym->templateParams->next))
-                            bcsym = TemplateClassInstantiateInternal(bcsym, bcsym->templateParams->next, FALSE);
+                            currentAccess = defaultAccess;
+                            isvirtual = FALSE;
+                            done = !MATCHKW(lex, comma);
+                            if (!done)
+                                lex = getsym();
+                            continue;
+                        }
+                        else
+                        {
+                            bcsym = GetClassTemplate(bcsym, lst, TRUE);
+                            if (bcsym && bcsym->instantiated && allTemplateArgsSpecified(bcsym, bcsym->templateParams->next))
+                                bcsym = TemplateClassInstantiateInternal(bcsym, bcsym->templateParams->next, FALSE);
+                        }
                     }
                 }
-                //                else if (!bcsym->instantiated)
-                //                {
-                //                    errorsym(ERR_NEED_SPECIALIZATION_PARAMETERS, bcsym);
-                //                }
             }
             else if (MATCHKW(lex, lt))
             {

@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "dlLeMain.h"
@@ -48,32 +48,30 @@ CmdSwitchString dlLeMain::DebugFile(SwitchParser, 'v');
 
 unsigned dlLeMain::fileVersion = 0;
 
-const char *dlLeMain::usageText = "[options] relfile\n"
-            "\n"
-            "/mxxx          Set output file type\n"
-            "/oxxx          Set output file name\n"
-            "/sxxx          Set stub file name\n"
-            "/V, --version  Show version and date\n"
-            "/!, --nologo   No logo\n"
-            "\n"
-            "Available output file types:\n"
-            "   LE (default)\n"
-            "   LX\n"
-            "\nTime: " __TIME__ "  Date: " __DATE__;
-            
+const char* dlLeMain::usageText =
+    "[options] relfile\n"
+    "\n"
+    "/mxxx          Set output file type\n"
+    "/oxxx          Set output file name\n"
+    "/sxxx          Set stub file name\n"
+    "/V, --version  Show version and date\n"
+    "/!, --nologo   No logo\n"
+    "\n"
+    "Available output file types:\n"
+    "   LE (default)\n"
+    "   LX\n"
+    "\nTime: " __TIME__ "  Date: " __DATE__;
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     dlLeMain downloader;
     return downloader.Run(argc, argv);
 }
-dlLeMain::~dlLeMain()
-{
-}
+dlLeMain::~dlLeMain() {}
 bool dlLeMain::GetMode()
 {
     mode = UNKNOWN;
-    const std::string &val = modeSwitch.GetValue();
+    const std::string& val = modeSwitch.GetValue();
     if (val.size() == 0)
     {
         mode = eLe;
@@ -91,21 +89,21 @@ void dlLeMain::ReadValues()
 {
     for (ObjFile::SymbolIterator it = file->DefinitionBegin(); it != file->DefinitionEnd(); ++it)
     {
-        ObjDefinitionSymbol *p = (ObjDefinitionSymbol *)*it;
+        ObjDefinitionSymbol* p = (ObjDefinitionSymbol*)*it;
         if (p->GetName() == "STACKSIZE")
         {
             stackSize = p->GetValue();
         }
     }
 }
-bool dlLeMain::ReadSections(const std::string &path, const std::string &exeName)
+bool dlLeMain::ReadSections(const std::string& path, const std::string& exeName)
 {
     ObjIeeeIndexManager iml;
     factory = new ObjFactory(&iml);
     ObjIeee ieee("");
-    FILE *in = fopen(path.c_str(), "rb");
+    FILE* in = fopen(path.c_str(), "rb");
     if (!in)
-       Utils::fatal("Cannot open input file");
+        Utils::fatal("Cannot open input file");
     file = ieee.Read(in, ObjIeee::eAll, factory);
     fclose(in);
     if (!ieee.GetAbsolute())
@@ -125,7 +123,7 @@ bool dlLeMain::ReadSections(const std::string &path, const std::string &exeName)
         ReadValues();
         for (ObjFile::SectionIterator it = file->SectionBegin(); it != file->SectionEnd(); ++it)
         {
-            LEObject *p = new LEObject(*it);
+            LEObject* p = new LEObject(*it);
             objects.push_back(p);
             (*it)->ResolveSymbols(factory);
         }
@@ -143,71 +141,71 @@ bool dlLeMain::ReadSections(const std::string &path, const std::string &exeName)
     }
     return false;
 }
-std::string dlLeMain::GetOutputName(char *infile) const
+std::string dlLeMain::GetOutputName(char* infile) const
 {
     std::string name;
     if (outputFileSwitch.GetValue().size() != 0)
     {
         name = outputFileSwitch.GetValue();
-        const char *p = strrchr(name.c_str(), '.');
-        if (p  && p[-1] != '.' && p[1] != '\\')
+        const char* p = strrchr(name.c_str(), '.');
+        if (p && p[-1] != '.' && p[1] != '\\')
             return name;
     }
     else
-    { 
+    {
         name = infile;
     }
     name = Utils::QualifiedFile(name.c_str(), ".exe");
     return name;
-}			
+}
 void dlLeMain::InitHeader()
 {
     memset(&header, 0, sizeof(header));
     if (mode == eLx)
     {
-      header.sig = LX_SIGNATURE ;
+        header.sig = LX_SIGNATURE;
     }
     else
     {
-      header.sig = LE_SIGNATURE ;
+        header.sig = LE_SIGNATURE;
     }
-    header.cpu_level = LX_CPU_386 ;
-    header.os_type = LX_OS_OS2 ;
-    header.module_version = fileVersion ;
-    header.module_flags = LX_MF_PMWINDOWINGCOMPATIBLE ;
-    header.page_size = 4096 ;
+    header.cpu_level = LX_CPU_386;
+    header.os_type = LX_OS_OS2;
+    header.module_version = fileVersion;
+    header.module_flags = LX_MF_PMWINDOWINGCOMPATIBLE;
+    header.page_size = 4096;
     header.auto_ds_object = 2; /* data seg, causeway needs it */
     if (mode == eLx)
     {
-      header.page_offset_shift = 12 ;
+        header.page_offset_shift = 12;
     }
-    header.eip_object = 1 ; // hard coded in SPC file by ordering... so we don't need to be more generic
+    header.eip_object = 1;  // hard coded in SPC file by ordering... so we don't need to be more generic
     header.eip = startAddress - objects[0]->GetAddr();
 
     header.esp_object = objects.size();
-    header.esp = stackSize ; // highest address
-    
+    header.esp = stackSize;  // highest address
+
     unsigned totalPages = 0;
     unsigned initPages = 0;
     for (auto obj : objects)
     {
-        totalPages += ObjectAlign(4096, obj->GetSize())/4096;
-        initPages += ObjectAlign(4096, obj->GetInitSize())/4096;
+        totalPages += ObjectAlign(4096, obj->GetSize()) / 4096;
+        initPages += ObjectAlign(4096, obj->GetInitSize()) / 4096;
         if (mode != eLx)
         {
             if (obj->GetInitSize())
-                header.page_offset_shift = obj->GetInitSize() % 4096 ; // for le this is bytes last page
+                header.page_offset_shift = obj->GetInitSize() % 4096;  // for le this is bytes last page
         }
     }
-    header.module_page_count = initPages ;
+    header.module_page_count = initPages;
     if (mode == eLx)
     {
-      header.instance_preload_count = totalPages ;
-      header.preload_pages_count = initPages ;
+        header.instance_preload_count = totalPages;
+        header.preload_pages_count = initPages;
     }
-    header.object_table_offset =  sizeof(LEHeader) ;
-    header.object_count = objects.size() ;
-    header.object_page_table_offset  = header.object_table_offset + objects.size() * LEObject::HeaderSize;
+    header.object_table_offset = sizeof(LEHeader);
+    header.object_count = objects.size();
+    header.object_page_table_offset = header.object_table_offset + objects.size() * LEObject::HeaderSize;
     header.loader_section_size = objectPages->GetSize();
     if (mode == eLe)
     {
@@ -218,22 +216,22 @@ void dlLeMain::InitHeader()
     header.fixup_page_table_offset = header.object_page_table_offset + header.loader_section_size;
     header.fixup_record_table_offset = header.fixup_page_table_offset + fixups->GetIndexTableSize();
     header.fixup_section_size = fixups->GetIndexTableSize() + fixups->GetFixupSize();
-    header.loader_section_size += header.fixup_section_size ;
-    
+    header.loader_section_size += header.fixup_section_size;
+
     header.import_module_table_offset = header.object_page_table_offset + header.loader_section_size;
-    header.import_proc_table_offset = header.import_module_table_offset ;
+    header.import_proc_table_offset = header.import_module_table_offset;
     header.loader_section_size += objects.size() * 24;
     // this is relative to the beginning of the file, instead of from the beginning of the LE header
     // like the rest of the offsets
-    header.data_pages_offset = header.import_proc_table_offset + 3 + stubSize;	
+    header.data_pages_offset = header.import_proc_table_offset + 3 + stubSize;
 }
-bool dlLeMain::LoadStub(const std::string &exeName)
+bool dlLeMain::LoadStub(const std::string& exeName)
 {
     std::string val = stubSwitch.GetValue();
     if (val.size() == 0)
         val = "dos32a.exe";
     // look in current directory
-    std::fstream *file = new std::fstream(val.c_str(), std::ios::in | std::ios::binary);
+    std::fstream* file = new std::fstream(val.c_str(), std::ios::in | std::ios::binary);
     if (file == nullptr || !file->is_open())
     {
         if (file)
@@ -261,7 +259,7 @@ bool dlLeMain::LoadStub(const std::string &exeName)
     else
     {
         MZHeader mzHead;
-        file->read((char *)&mzHead, sizeof(mzHead));
+        file->read((char*)&mzHead, sizeof(mzHead));
         int bodySize = mzHead.image_length_MOD_512 + mzHead.image_length_DIV_512 * 512;
         int oldReloc = mzHead.offset_to_relocation_table;
         int oldHeader = mzHead.n_header_paragraphs * 16;
@@ -272,7 +270,7 @@ bool dlLeMain::LoadStub(const std::string &exeName)
         int preHeader = 0x40;
         int totalHeader = (preHeader + relocSize + 15) & ~15;
         stubSize = (totalHeader + bodySize + 15) & ~15;
-        stubData = new char [stubSize];
+        stubData = new char[stubSize];
         memset(stubData, 0, stubSize);
         int newSize = bodySize + totalHeader;
         if (newSize & 511)
@@ -280,9 +278,9 @@ bool dlLeMain::LoadStub(const std::string &exeName)
         mzHead.image_length_MOD_512 = newSize % 512;
         mzHead.image_length_DIV_512 = newSize / 512;
         mzHead.offset_to_relocation_table = 0x40;
-        mzHead.n_header_paragraphs = totalHeader/ 16;
+        mzHead.n_header_paragraphs = totalHeader / 16;
         memcpy(stubData, &mzHead, sizeof(mzHead));
-        *(unsigned *)(stubData + 0x3c) = stubSize;
+        *(unsigned*)(stubData + 0x3c) = stubSize;
         if (relocSize)
         {
             file->seekg(oldReloc, std::ios::beg);
@@ -299,11 +297,8 @@ bool dlLeMain::LoadStub(const std::string &exeName)
     }
     return true;
 }
-void dlLeMain::WriteStub(std::fstream &out)
-{
-    out.write((char *)stubData, stubSize);
-}
-int dlLeMain::Run(int argc, char **argv)
+void dlLeMain::WriteStub(std::fstream& out) { out.write((char*)stubData, stubSize); }
+int dlLeMain::Run(int argc, char** argv)
 {
     Utils::banner(argv[0]);
     Utils::SetEnvironmentToPathParent("ORANGEC");
@@ -320,7 +315,7 @@ int dlLeMain::Run(int argc, char **argv)
     {
         Utils::usage(argv[0], usageText);
     }
-    if (argc != 2)		
+    if (argc != 2)
     {
         Utils::usage(argv[0], usageText);
     }
@@ -331,10 +326,10 @@ int dlLeMain::Run(int argc, char **argv)
     outputName = GetOutputName(argv[1]);
     if (!LoadStub(argv[0]))
         Utils::fatal("Missing or invalid stub file");
-        
+
     if (!ReadSections(std::string(argv[1]), outputName))
         Utils::fatal("Invalid .rel file");
-    
+
     unsigned ofs = 0;
     for (auto obj : objects)
     {
@@ -349,7 +344,7 @@ int dlLeMain::Run(int argc, char **argv)
     if (!out.fail())
     {
         WriteStub(out);
-        out.write((char *)&header, sizeof(header));
+        out.write((char*)&header, sizeof(header));
         for (auto obj : objects)
         {
             obj->WriteHeader(out);
@@ -359,7 +354,7 @@ int dlLeMain::Run(int argc, char **argv)
             rnt->Write(out);
         fixups->Write(out);
         unsigned vv = 0;
-        out.write((char *)&vv, 3); // import tables
+        out.write((char*)&vv, 3);  // import tables
         for (auto obj : objects)
         {
             obj->Write(out);

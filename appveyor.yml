@@ -10,9 +10,15 @@ install:
 
 environment:
   matrix:
-    - BUILD_PROFILE: MINGW64
-    - BUILD_PROFILE: MS
-    - BUILD_PROFILE: CLANG
+    - type: MINGW64
+      BUILD_PROFILE: MINGW64
+    - type: MS
+      BUILD_PROFILE: MS
+    - type: MS WITH LSCRTL
+      BUILD_PROFILE: MS
+      LSCRTL: YES
+    - type: CLANG
+      BUILD_PROFILE: CLANG
  
 build_script:
 # the appveyor virtual machine reported two processors, so, lets try running parallel compile!
@@ -24,16 +30,16 @@ build_script:
         - mingw32-make fullbuild --eval="COMPILER=$(BUILD_PROFILE)" -j 4
         - c:\orangec\bin\occ /V
         - copy omake\omake.exe \orangec\temp
-        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild -j:4
+        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC /DLSCRTL=%LSCRTL% -B fullbuild -j:4
         - c:\orangec\bin\occ /V
         - copy omake\omake.exe \orangec\temp
-        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild -j:4
+        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC /DLSCRTL=%LSCRTL% -B fullbuild -j:4
         - c:\orangec\bin\occ /V
         - copy omake\omake.exe \orangec\temp
-        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC -B fullbuild -j:4
+        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC /DLSCRTL=%LSCRTL% -B fullbuild -j:4
         - path=%ORIGPATH%
         - cd ..\tests
-        - omake -B
+        - omake -B -j:4
         - cd ..\.. 
         - move orangec projects
 

@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "PreProcessor.h"
@@ -29,17 +29,16 @@
 #include <fstream>
 #include <limits.h>
 
-ppMacro::ppMacro(ppInclude &Include, ppDefine &Define) :
-        include(Include), expr(false), define(Define), nextMacro(1) 
+ppMacro::ppMacro(ppInclude& Include, ppDefine& Define) : include(Include), expr(false), define(Define), nextMacro(1)
 {
-	expr.SetParams(&define);
+    expr.SetParams(&define);
 }
 ppMacro::~ppMacro()
 {
     while (stack.size())
         HandleExitRep();
 }
-bool ppMacro::Check(int token, std::string &line)
+bool ppMacro::Check(int token, std::string& line)
 {
     bool rv = false;
     switch (token)
@@ -69,11 +68,11 @@ bool ppMacro::Check(int token, std::string &line)
     }
     return rv;
 }
-bool ppMacro::GetLine(std::string &line, int &lineno)
+bool ppMacro::GetLine(std::string& line, int& lineno)
 {
     while (stack.size())
     {
-        MacroData *p = stack.back();
+        MacroData* p = stack.back();
         if (p->offset >= p->lines.size())
         {
             p->offset = 0;
@@ -94,12 +93,12 @@ bool ppMacro::GetLine(std::string &line, int &lineno)
     }
     return false;
 }
-bool ppMacro::HandleRep(std::string &line)
+bool ppMacro::HandleRep(std::string& line)
 {
     define.Process(line);
     PPINT n = expr.Eval(line);
     int level = 1;
-    MacroData *p = nullptr;
+    MacroData* p = nullptr;
     if (n < 0 || n > INT_MAX)
     {
         Errors::Error("Invalid range in %rep expression");
@@ -107,7 +106,7 @@ bool ppMacro::HandleRep(std::string &line)
     else if (n > 0)
     {
         p = new MacroData;
-        p-> repsLeft = (int)n;
+        p->repsLeft = (int)n;
         p->offset = 0;
         p->id = -1;
         p->begline = 0;
@@ -118,19 +117,19 @@ bool ppMacro::HandleRep(std::string &line)
     include.SetInProc("%rep");
     while (pp->GetPreLine(ll))
     {
-        if (p->begline == 0 )
+        if (p->begline == 0)
             p->begline = pp->GetMainLineNo();
         int t = ll.find_first_not_of(" \t\v\r\n");
         if (t != std::string::npos)
         {
             if (ll[t] == '%')
             {
-                t = ll.find_first_not_of(" \t\v\r\n", t+1);
-                if (ll.substr(t, 3) == "macro")
+                t = ll.find_first_not_of(" \t\v\r\n", t + 1);
+                if (ll.substr(t, 5) == "macro")
                     Errors::Error("macro definition in %rep loop not allowed");
                 else if (ll.substr(t, 3) == "rep")
-                    level ++;
-                else if (ll.substr(t,6) == "endrep")
+                    level++;
+                else if (ll.substr(t, 6) == "endrep")
                     if (!--level)
                         break;
             }
@@ -155,7 +154,7 @@ bool ppMacro::HandleRep(std::string &line)
 }
 bool ppMacro::HandleExitRep()
 {
-    MacroData *p = stack.back();
+    MacroData* p = stack.back();
     stack.pop_back();
     if (p->id < 0)
         delete p;
@@ -166,7 +165,7 @@ bool ppMacro::HandleEndRep()
     Errors::Error("unexpected %endrep");
     return true;
 }
-std::string ppMacro::ExtractArg(std::string &line)
+std::string ppMacro::ExtractArg(std::string& line)
 {
     int npos;
     if (line[0] == '{')
@@ -183,13 +182,13 @@ std::string ppMacro::ExtractArg(std::string &line)
     line.erase(0, npos + 1);
     if (rv[0] == '{')
     {
-        rv.erase(0,1);
+        rv.erase(0, 1);
         npos = line.find_first_not_of(" \t\r\v\n");
         if (npos != std::string::npos)
             if (line[npos] != ',')
                 Errors::Error("Expected ','");
             else
-                line.erase(0, npos+1);
+                line.erase(0, npos + 1);
         else
             line = "";
     }
@@ -198,15 +197,14 @@ std::string ppMacro::ExtractArg(std::string &line)
         npos = rv.find_last_not_of(" \t\r\n\v");
         if (npos == std::string::npos)
             rv = "";
-        else if (npos != rv.size() -1)
-            rv.erase(npos+1, rv.size() - npos -1);
-            
+        else if (npos != rv.size() - 1)
+            rv.erase(npos + 1, rv.size() - npos - 1);
     }
     return rv;
 }
-void ppMacro::GetArgs(int max, std::string &line, std::vector<std::string> &vals)
+void ppMacro::GetArgs(int max, std::string& line, std::vector<std::string>& vals)
 {
-    for (int i=0; i < max; i++)
+    for (int i = 0; i < max; i++)
     {
         int npos = line.find_first_not_of(" \t\r\n\v");
         if (npos == std::string::npos)
@@ -221,13 +219,13 @@ void ppMacro::GetArgs(int max, std::string &line, std::vector<std::string> &vals
     int npos = line.find_first_not_of(" \t\r\n\v");
     if (npos != std::string::npos)
     {
-        line.erase(0,npos);
+        line.erase(0, npos);
         npos = line.find_last_not_of(" \t\r\n\v");
-        if (npos != std::string::npos && npos < line.size()-1)
+        if (npos != std::string::npos && npos < line.size() - 1)
             line.erase(npos + 1, line.size() - npos - 1);
     }
 }
-bool ppMacro::HandleMacro(std::string &line, bool caseInsensitive)
+bool ppMacro::HandleMacro(std::string& line, bool caseInsensitive)
 {
     bool nolist = false;
     bool native = false;
@@ -236,8 +234,8 @@ bool ppMacro::HandleMacro(std::string &line, bool caseInsensitive)
     int start, end;
     bool plussign;
     Tokenizer tk(line, ppExpr::GetHash());
-    const Token *next = tk.Next();
-    MacroData *p = nullptr;
+    const Token* next = tk.Next();
+    MacroData* p = nullptr;
     bool bailed = false;
     if (next->IsIdentifier())
     {
@@ -258,7 +256,7 @@ bool ppMacro::HandleMacro(std::string &line, bool caseInsensitive)
                     end = next->GetInteger();
                     if (end < start)
                     {
-                        Errors::Error("Macro end limit < start limit");						
+                        Errors::Error("Macro end limit < start limit");
                         bailed = true;
                     }
                     else
@@ -304,8 +302,8 @@ bool ppMacro::HandleMacro(std::string &line, bool caseInsensitive)
         {
             Errors::Error("Macro argument count expected");
             bailed = true;
-        }	
-    }	
+        }
+    }
     else
     {
         Errors::Error("Macro name expected");
@@ -314,9 +312,9 @@ bool ppMacro::HandleMacro(std::string &line, bool caseInsensitive)
     if (!bailed)
     {
         p = new MacroData;
-        p-> repsLeft = 0;
+        p->repsLeft = 0;
         p->offset = 0;
-        p->id = 0; // macro
+        p->id = 0;  // macro
         p->argmin = start;
         p->argmax = end;
         p->plus = plussign;
@@ -325,11 +323,11 @@ bool ppMacro::HandleMacro(std::string &line, bool caseInsensitive)
         p->caseInsensitive = caseInsensitive;
         line = next->GetChars() + tk.GetString();
         int count = 0;
-        GetArgs(end-start, line, p->defaults);
+        GetArgs(end - start, line, p->defaults);
         if (line.size())
         {
             if (line.find_first_not_of(" \t\r\n\v") == std::string::npos)
-                line.erase(0,line.size());
+                line.erase(0, line.size());
         }
         if ((p->defaults.size() + (line.size() != 0)) > end - start + plussign)
             Errors::Error("Too many default arguments to macro");
@@ -340,18 +338,18 @@ bool ppMacro::HandleMacro(std::string &line, bool caseInsensitive)
     include.SetInProc("%macro");
     while (pp->GetPreLine(ll))
     {
-        if (p && p->begline == 0 )
+        if (p && p->begline == 0)
             p->begline = nolist ? INT_MIN : pp->GetMainLineNo();
         int t = ll.find_first_not_of(" \t\v\r\n");
         if (t != std::string::npos)
         {
             if (ll[t] == '%')
             {
-                t = ll.find_first_not_of(" \t\v\r\n", t+1);
+                t = ll.find_first_not_of(" \t\v\r\n", t + 1);
                 if (ll.substr(t, 5) == "macro")
                     Errors::Error("macro definitions may not be nested");
-                else if (ll.substr(t,8) == "endmacro")
-                        break;
+                else if (ll.substr(t, 8) == "endmacro")
+                    break;
             }
             if (p)
                 p->lines.push_back(ll);
@@ -367,18 +365,18 @@ bool ppMacro::HandleEndMacro()
     Errors::Error("unexpected %endmacro");
     return true;
 }
-void ppMacro::reverse(std::vector<std::string> &x, int offs, int len)
+void ppMacro::reverse(std::vector<std::string>& x, int offs, int len)
 {
-    for (int i=0; i < len/ 2; i++)
+    for (int i = 0; i < len / 2; i++)
     {
         std::string n = x[offs + i];
         x[offs + i] = x[offs + len - i - 1];
         x[offs + len - i - 1] = n;
     }
 }
-bool ppMacro::HandleRotate(std::string &line)
+bool ppMacro::HandleRotate(std::string& line)
 {
-    MacroData *p = GetTopMacro();
+    MacroData* p = GetTopMacro();
     if (!p)
     {
         Errors::Error("%rotate outside of macro invocation");
@@ -394,7 +392,7 @@ bool ppMacro::HandleRotate(std::string &line)
         int n = (int)m;
         if (n < 0)
         {
-            n = - n;
+            n = -n;
             n %= p->args.size();
             n = p->args.size() - n;
         }
@@ -403,9 +401,9 @@ bool ppMacro::HandleRotate(std::string &line)
             n %= p->args.size();
         }
         if (n != 0)
-        {				
+        {
             reverse(p->args, 0, n);
-            reverse(p->args, n, p->args.size() - n );
+            reverse(p->args, n, p->args.size() - n);
             reverse(p->args, 0, p->args.size());
         }
     }
@@ -413,7 +411,7 @@ bool ppMacro::HandleRotate(std::string &line)
 }
 bool ppMacro::Invoke(std::string name, std::string line)
 {
-   auto it = macros.find(name);
+    auto it = macros.find(name);
     if (it == macros.end())
     {
         std::string name1 = UTF8::ToUpper(name);
@@ -423,7 +421,7 @@ bool ppMacro::Invoke(std::string name, std::string line)
         else
             name = name1;
     }
-    MacroData *p = it->second;
+    MacroData* p = it->second;
     if (p->repsLeft != 0)
     {
         return false;
@@ -433,7 +431,7 @@ bool ppMacro::Invoke(std::string name, std::string line)
     if (line.size())
     {
         if (line.find_first_not_of(" \t\r\n\v") == std::string::npos)
-            line.erase(0,line.size());
+            line.erase(0, line.size());
     }
     if (p->args.size() < p->argmin)
     {
@@ -457,9 +455,9 @@ bool ppMacro::Invoke(std::string name, std::string line)
     stack.push_back(p);
     return true;
 }
-MacroData *ppMacro::GetTopMacro()
+MacroData* ppMacro::GetTopMacro()
 {
-    for (int i = stack.size()-1; i >= 0; i--)
+    for (int i = stack.size() - 1; i >= 0; i--)
         if (stack[i]->id != -1)
             return stack[i];
     return nullptr;

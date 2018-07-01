@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -39,8 +39,8 @@
 extern HINSTANCE hInstance;
 extern char szCWSFilter[], szCTGFilter[];
 extern HWND hwndFrame;
-extern PROJECTITEM *activeProject;
-extern PROJECTITEM *workArea;
+extern PROJECTITEM* activeProject;
+extern PROJECTITEM* workArea;
 extern HWND prjTreeWindow;
 extern HTREEITEM prjSelectedItem;
 extern HFONT projFont, boldProjFont, italicProjFont;
@@ -48,24 +48,24 @@ extern char szInstallPath[];
 
 WNDPROC oldPrjEditProc;
 HWND hwndEdit;
-PROJECTITEM *editItem;
-char *szprjEditClassName = "xccprjEditClass";
+PROJECTITEM* editItem;
+char* szprjEditClassName = "xccprjEditClass";
 
-PROJECTITEM *GetItemInfo(HTREEITEM item);
+PROJECTITEM* GetItemInfo(HTREEITEM item);
 
-void MoveChildrenUp(PROJECTITEM *data)
+void MoveChildrenUp(PROJECTITEM* data)
 {
-    PROJECTITEM *children = data->children;
+    PROJECTITEM* children = data->children;
     data->children = NULL;
     while (children)
     {
-        PROJECTITEM **ins = &data->parent->children;
+        PROJECTITEM** ins = &data->parent->children;
         HTREEITEM pos = TVI_FIRST;
-        PROJECTITEM *next = children->next;
+        PROJECTITEM* next = children->next;
         while (*ins && stricmp((*ins)->displayName, children->displayName) < 0)
         {
             pos = (*ins)->hTreeItem;
-            ins =  & (*ins)->next;
+            ins = &(*ins)->next;
         }
         children->next = *ins;
         (*ins) = children;
@@ -76,19 +76,19 @@ void MoveChildrenUp(PROJECTITEM *data)
         children = next;
     }
 }
-void FreeSubTree(PROJECTITEM *data, BOOL save)
+void FreeSubTree(PROJECTITEM* data, BOOL save)
 {
-    PROJECTITEM *children = data->children;
-    PROJECTITEM **rmv ;
+    PROJECTITEM* children = data->children;
+    PROJECTITEM** rmv;
     while (children)
     {
-        PROJECTITEM *next = children->next;
+        PROJECTITEM* next = children->next;
         FreeSubTree(children, save);
         children = next;
     }
     if (data->parent)
     {
-        rmv	= &data->parent->children;
+        rmv = &data->parent->children;
         while (*rmv)
         {
             if ((*rmv) == data)
@@ -107,62 +107,62 @@ void FreeSubTree(PROJECTITEM *data, BOOL save)
         free(data);
     }
 }
-void ProjectRemoveOne(PROJECTITEM *data)
+void ProjectRemoveOne(PROJECTITEM* data)
 {
-            MarkChanged(data, data->type == PJ_PROJ);
-            TreeView_DeleteItem(prjTreeWindow, data->hTreeItem);
-            ResDeleteItem(data);
-            if (data->type != PJ_PROJ)
-            {
-                PROJECTITEM *p = data;
-                while (p->type != PJ_PROJ)
-                    p = p->parent;
-                p->clean = TRUE;
-            }
-            if (data->type != PJ_FILE || !RetrieveInternalDepend(data->realName))
-                FreeSubTree(data, TRUE);
-            if (data == activeProject)
-            {
-                activeProject = workArea->children;
-                while (activeProject && !activeProject->loaded)
-                    activeProject = activeProject->next;
-                MarkChanged(activeProject, TRUE);
-                InvalidateRect(prjTreeWindow,0,1);
-            }
+    MarkChanged(data, data->type == PJ_PROJ);
+    TreeView_DeleteItem(prjTreeWindow, data->hTreeItem);
+    ResDeleteItem(data);
+    if (data->type != PJ_PROJ)
+    {
+        PROJECTITEM* p = data;
+        while (p->type != PJ_PROJ)
+            p = p->parent;
+        p->clean = TRUE;
+    }
+    if (data->type != PJ_FILE || !RetrieveInternalDepend(data->realName))
+        FreeSubTree(data, TRUE);
+    if (data == activeProject)
+    {
+        activeProject = workArea->children;
+        while (activeProject && !activeProject->loaded)
+            activeProject = activeProject->next;
+        MarkChanged(activeProject, TRUE);
+        InvalidateRect(prjTreeWindow, 0, 1);
+    }
 }
 void ProjectRemoveAll(void)
 {
-     PROJECTITEM *root = workArea;
-     root = root->children;
-     while (root)
-     {
-          PROJECTITEM *next = root->next;
-          if (root->type == PJ_PROJ)
-              ProjectRemoveOne(root);
-          root = next;
-     }
+    PROJECTITEM* root = workArea;
+    root = root->children;
+    while (root)
+    {
+        PROJECTITEM* next = root->next;
+        if (root->type == PJ_PROJ)
+            ProjectRemoveOne(root);
+        root = next;
+    }
 }
 void ProjectRemove(void)
 {
-    PROJECTITEM *data = GetItemInfo(prjSelectedItem);
+    PROJECTITEM* data = GetItemInfo(prjSelectedItem);
     if (data)
     {
         BOOL del = FALSE;
-        switch( data->type)
+        switch (data->type)
         {
             case PJ_PROJ:
-                del = MessageBox(hwndFrame, "This project will be removed from the work area.",
-                                 "Project Remove Item", MB_OKCANCEL | MB_APPLMODAL) == IDOK;
+                del = MessageBox(hwndFrame, "This project will be removed from the work area.", "Project Remove Item",
+                                 MB_OKCANCEL | MB_APPLMODAL) == IDOK;
                 if (del && data->changed)
                     SaveProject(data);
                 break;
             case PJ_FILE:
-                del = MessageBox(hwndFrame, "This file will be removed from the work area.",
-                                 "Project Remove Item", MB_OKCANCEL | MB_APPLMODAL) == IDOK;
-                break;				
+                del = MessageBox(hwndFrame, "This file will be removed from the work area.", "Project Remove Item",
+                                 MB_OKCANCEL | MB_APPLMODAL) == IDOK;
+                break;
             case PJ_FOLDER:
-                del = MessageBox(hwndFrame, "This folder will be removed from the work area.",
-                                 "Project Remove Item", MB_OKCANCEL | MB_APPLMODAL) == IDOK;
+                del = MessageBox(hwndFrame, "This folder will be removed from the work area.", "Project Remove Item",
+                                 MB_OKCANCEL | MB_APPLMODAL) == IDOK;
                 if (del)
                     MoveChildrenUp(data);
                 break;
@@ -175,18 +175,16 @@ void ProjectRemove(void)
 }
 void ProjectRename(void)
 {
-    PROJECTITEM *data = GetItemInfo(prjSelectedItem);
+    PROJECTITEM* data = GetItemInfo(prjSelectedItem);
     if (data && (data->type == PJ_PROJ || data->type == PJ_FOLDER || data->type == PJ_FILE))
     {
         RECT r, s;
         editItem = data;
         TreeView_GetItemRect(prjTreeWindow, data->hTreeItem, &r, TRUE);
         TreeView_GetItemRect(prjTreeWindow, data->hTreeItem, &s, FALSE);
-        hwndEdit = CreateWindow(szprjEditClassName,
-            data->displayName, WS_CHILD | ES_AUTOHSCROLL | WS_BORDER, r.left, r.top,
-            s.right - r.left, r.bottom - r.top, GetWindowHandle(DID_PROJWND), (HMENU)
-            449, hInstance, 0);
-        SendMessage(hwndEdit, EM_SETSEL, 0, (LPARAM) - 1);
+        hwndEdit = CreateWindow(szprjEditClassName, data->displayName, WS_CHILD | ES_AUTOHSCROLL | WS_BORDER, r.left, r.top,
+                                s.right - r.left, r.bottom - r.top, GetWindowHandle(DID_PROJWND), (HMENU)449, hInstance, 0);
+        SendMessage(hwndEdit, EM_SETSEL, 0, (LPARAM)-1);
         SendMessage(hwndEdit, EM_SETLIMITTEXT, 64, 0);
         ShowWindow(hwndEdit, SW_SHOW);
         SetFocus(hwndEdit);
@@ -203,7 +201,7 @@ void DoneRenaming(void)
     {
         if (strcmp(buf, editItem->displayName))
         {
-            PROJECTITEM **rmv = &editItem->parent->children;
+            PROJECTITEM** rmv = &editItem->parent->children;
             switch (editItem->type)
             {
                 char buf2[MAX_PATH], buf3[MAX_PATH], *p;
@@ -219,7 +217,7 @@ void DoneRenaming(void)
                     strcpy(buf3, editItem->realName);
                     if (editItem->type == PJ_PROJ)
                     {
-                        char *q = strrchr(editItem->realName, '.');
+                        char* q = strrchr(editItem->realName, '.');
                         if (q)
                         {
                             strcat(buf, q);
@@ -233,7 +231,7 @@ void DoneRenaming(void)
                             return;
                         }
                     }
-                    if (!MoveFileEx( buf3, buf2, 0))
+                    if (!MoveFileEx(buf3, buf2, 0))
                     {
                         DestroyWindow(hwndEdit);
                         return;
@@ -242,11 +240,11 @@ void DoneRenaming(void)
                     {
                         EditRenameFile(editItem->realName, buf2);
                     }
-                break;
+                    break;
             }
             if (editItem->type == PJ_FILE || editItem->type == PJ_PROJ || editItem->type == PJ_WS)
             {
-                char *p = stristr(editItem->realName, editItem->displayName);
+                char* p = stristr(editItem->realName, editItem->displayName);
                 if (!p)
                     return;
                 strcpy(p, buf);
@@ -254,7 +252,7 @@ void DoneRenaming(void)
             strcpy(editItem->displayName, buf);
             if (editItem->type == PJ_PROJ)
             {
-                char *q = strrchr(editItem->displayName, '.');
+                char* q = strrchr(editItem->displayName, '.');
                 *q = 0;
             }
             while (*rmv && (*rmv) != editItem)
@@ -279,19 +277,19 @@ void DoneRenaming(void)
                     break;
                 case PJ_PROJ:
                 {
-                        PROJECTITEM **ins = &editItem->parent->children;
-                        HTREEITEM pos = TVI_FIRST;
-                        while (*ins && stricmp((*ins)->displayName, editItem->displayName) < 0)
-                        {
-                           pos = (*ins)->hTreeItem;
-                           ins = &(*ins)->next;
-                        }
-                        editItem->next = NULL;
-                        RecursiveCreateTree(editItem->parent->hTreeItem, pos, editItem);
-                        editItem->next = *ins;
-                        *ins = editItem;
-                        MarkChanged(editItem, FALSE);
-                        MarkChanged(editItem, TRUE);
+                    PROJECTITEM** ins = &editItem->parent->children;
+                    HTREEITEM pos = TVI_FIRST;
+                    while (*ins && stricmp((*ins)->displayName, editItem->displayName) < 0)
+                    {
+                        pos = (*ins)->hTreeItem;
+                        ins = &(*ins)->next;
+                    }
+                    editItem->next = NULL;
+                    RecursiveCreateTree(editItem->parent->hTreeItem, pos, editItem);
+                    editItem->next = *ins;
+                    *ins = editItem;
+                    MarkChanged(editItem, FALSE);
+                    MarkChanged(editItem, TRUE);
                 }
                 break;
             }
@@ -301,16 +299,16 @@ void DoneRenaming(void)
 }
 static int CustomDraw(HWND hwnd, LPNMTVCUSTOMDRAW draw)
 {
-    PROJECTITEM *p;
-    switch(draw->nmcd.dwDrawStage)
+    PROJECTITEM* p;
+    switch (draw->nmcd.dwDrawStage)
     {
-        case CDDS_PREPAINT :
-            return CDRF_NOTIFYITEMDRAW ;
+        case CDDS_PREPAINT:
+            return CDRF_NOTIFYITEMDRAW;
         case CDDS_ITEMPREPAINT:
-            p = (PROJECTITEM *)draw->nmcd.lItemlParam;
+            p = (PROJECTITEM*)draw->nmcd.lItemlParam;
             if (p->type == PJ_PROJ && !p->loaded)
             {
-                draw->clrText= RetrieveSysColor(COLOR_GRAYTEXT);
+                draw->clrText = RetrieveSysColor(COLOR_GRAYTEXT);
                 draw->clrTextBk = RetrieveSysColor(COLOR_WINDOW);
                 SelectObject(draw->nmcd.hdc, italicProjFont);
                 return CDRF_NEWFONT;
@@ -320,50 +318,49 @@ static int CustomDraw(HWND hwnd, LPNMTVCUSTOMDRAW draw)
                 if (activeProject == p)
                 {
                     SelectObject(draw->nmcd.hdc, boldProjFont);
-                    return CDRF_NEWFONT;    
+                    return CDRF_NEWFONT;
                 }
-                else if (((PROJECTITEM *)draw->nmcd.lItemlParam)->hTreeItem == TreeView_GetDropHilight(prjTreeWindow))
+                else if (((PROJECTITEM*)draw->nmcd.lItemlParam)->hTreeItem == TreeView_GetDropHilight(prjTreeWindow))
                 {
-                    draw->clrText= RetrieveSysColor(COLOR_HIGHLIGHTTEXT);
+                    draw->clrText = RetrieveSysColor(COLOR_HIGHLIGHTTEXT);
                     draw->clrTextBk = RetrieveSysColor(COLOR_HIGHLIGHT);
                 }
-                else if (draw->nmcd.uItemState & (CDIS_SELECTED ))
+                else if (draw->nmcd.uItemState & (CDIS_SELECTED))
                 {
-                    draw->clrText= RetrieveSysColor(COLOR_HIGHLIGHT);
+                    draw->clrText = RetrieveSysColor(COLOR_HIGHLIGHT);
                     draw->clrTextBk = RetrieveSysColor(COLOR_WINDOW);
                 }
                 else if (draw->nmcd.uItemState & (CDIS_HOT))
                 {
-                    draw->clrText= RetrieveSysColor(COLOR_INFOTEXT);
+                    draw->clrText = RetrieveSysColor(COLOR_INFOTEXT);
                     draw->clrTextBk = RetrieveSysColor(COLOR_INFOBK);
                 }
                 else if (draw->nmcd.uItemState == 0)
                 {
-                    draw->clrText= RetrieveSysColor(COLOR_WINDOWTEXT);
+                    draw->clrText = RetrieveSysColor(COLOR_WINDOWTEXT);
                     draw->clrTextBk = RetrieveSysColor(COLOR_WINDOW);
                 }
                 SelectObject(draw->nmcd.hdc, projFont);
-                return CDRF_NEWFONT;    
+                return CDRF_NEWFONT;
             }
             return CDRF_DODEFAULT;
         default:
             return CDRF_DODEFAULT;
     }
 }
-static BOOL SendImportCommand(char *fname, BOOL target)
+static BOOL SendImportCommand(char* fname, BOOL target)
 {
-    DWORD bRet;			
+    DWORD bRet;
     STARTUPINFO stStartInfo;
     PROCESS_INFORMATION stProcessInfo;
     DWORD retCode;
     char cmd[5000];
-    sprintf(cmd, "\"%s\\bin\\upgradedb.exe\" %s \"%s\"", szInstallPath, target?"proj":"ws", fname);
+    sprintf(cmd, "\"%s\\bin\\upgradedb.exe\" %s \"%s\"", szInstallPath, target ? "proj" : "ws", fname);
     memset(&stStartInfo, 0, sizeof(STARTUPINFO));
     memset(&stProcessInfo, 0, sizeof(PROCESS_INFORMATION));
 
     stStartInfo.cb = sizeof(STARTUPINFO);
-    bRet = CreateProcess(NULL, cmd, NULL, NULL, TRUE, 0, 0, 
-            szInstallPath,  &stStartInfo, &stProcessInfo);
+    bRet = CreateProcess(NULL, cmd, NULL, NULL, TRUE, 0, 0, szInstallPath, &stStartInfo, &stProcessInfo);
     if (!bRet)
     {
         return FALSE;
@@ -374,76 +371,75 @@ static BOOL SendImportCommand(char *fname, BOOL target)
 }
 void ImportProject(BOOL ctg)
 {
-        OPENFILENAME ofn;
+    OPENFILENAME ofn;
 
-        if (OpenFileDialog(&ofn, 0, GetWindowHandle(DID_PROJWND), FALSE, FALSE, ctg? szCTGFilter : szCWSFilter,
-                               ctg ? "Open Old Target File" : "Open Old Workspace File"))
+    if (OpenFileDialog(&ofn, 0, GetWindowHandle(DID_PROJWND), FALSE, FALSE, ctg ? szCTGFilter : szCWSFilter,
+                       ctg ? "Open Old Target File" : "Open Old Workspace File"))
+    {
+        char* q = stristr(ofn.lpstrFile, ctg ? ".ctg" : ".cws");
+        if (!q)
+            strcat(ofn.lpstrFile, ctg ? ".ctg" : ".cws");
+
+        if (!SendImportCommand(ofn.lpstrFile, ctg))
         {
-            char *q = stristr(ofn.lpstrFile,ctg?".ctg" : ".cws");
-            if (!q)
-                strcat(ofn.lpstrFile, ctg?".ctg" : ".cws");
-            
-            if (!SendImportCommand(ofn.lpstrFile, ctg))
+            ExtendedMessageBox("Conversion error", 0, "File %s could not be converted", ofn.lpstrFile);
+        }
+        else
+        {
+            if (ctg)
             {
-                ExtendedMessageBox("Conversion error",0, "File %s could not be converted", ofn.lpstrFile);
-            }
-            else
-            {
-                if (ctg)
+                if (workArea)
                 {
-                    if (workArea)
-                    {
-                        PROJECTITEM *p = workArea->children;
-                        q = strrchr(ofn.lpstrFile, '.');
-                        if (q)
-                            *q = 0;
-                        while (p)
-                            if (!stricmp(p->realName, ofn.lpstrFile))
-                                return;
-                            else
-                                p = p->next;
-                        p = calloc(1, sizeof(PROJECTITEM));
-                        if (p)
-                        {
-                            PROJECTITEM **ins = &workArea->children;
-                            HTREEITEM pos = TVI_FIRST;
-                            strcpy(p->realName, ofn.lpstrFile);
-                            strcpy(p->displayName, ofn.lpstrFileTitle);
-                            q = stristr(p->displayName, ".cpj");
-                            if (q)
-                                *q = 0;
-                            p->type = PJ_PROJ;
-                            p->parent = workArea;
-                            while (*ins && stricmp((*ins)->displayName, p->displayName) < 0)
-                            {
-                                pos = (*ins)->hTreeItem;
-                                ins = &(*ins)->next;
-                            }
-                            p->parent = workArea;
-                            RestoreProject(p, FALSE);
-                            RecursiveCreateTree(workArea->hTreeItem, pos, p);
-                            p->next = *ins;
-                            *ins = p;
-                            ExpandParents(p);
-                            activeProject = p;
-                            MarkChanged(activeProject, TRUE);
-                        }
-                    }                    
-                }
-                else
-                {
+                    PROJECTITEM* p = workArea->children;
                     q = strrchr(ofn.lpstrFile, '.');
                     if (q)
                         *q = 0;
-                    strcat(ofn.lpstrFile, ".cwa");
-                    LoadWorkArea(ofn.lpstrFile, TRUE);
-                    SetWorkAreaMRU(workArea);
+                    while (p)
+                        if (!stricmp(p->realName, ofn.lpstrFile))
+                            return;
+                        else
+                            p = p->next;
+                    p = calloc(1, sizeof(PROJECTITEM));
+                    if (p)
+                    {
+                        PROJECTITEM** ins = &workArea->children;
+                        HTREEITEM pos = TVI_FIRST;
+                        strcpy(p->realName, ofn.lpstrFile);
+                        strcpy(p->displayName, ofn.lpstrFileTitle);
+                        q = stristr(p->displayName, ".cpj");
+                        if (q)
+                            *q = 0;
+                        p->type = PJ_PROJ;
+                        p->parent = workArea;
+                        while (*ins && stricmp((*ins)->displayName, p->displayName) < 0)
+                        {
+                            pos = (*ins)->hTreeItem;
+                            ins = &(*ins)->next;
+                        }
+                        p->parent = workArea;
+                        RestoreProject(p, FALSE);
+                        RecursiveCreateTree(workArea->hTreeItem, pos, p);
+                        p->next = *ins;
+                        *ins = p;
+                        ExpandParents(p);
+                        activeProject = p;
+                        MarkChanged(activeProject, TRUE);
+                    }
                 }
             }
+            else
+            {
+                q = strrchr(ofn.lpstrFile, '.');
+                if (q)
+                    *q = 0;
+                strcat(ofn.lpstrFile, ".cwa");
+                LoadWorkArea(ofn.lpstrFile, TRUE);
+                SetWorkAreaMRU(workArea);
+            }
         }
+    }
 }
-LRESULT CALLBACK prjEditWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
-    LPARAM lParam)
+LRESULT CALLBACK prjEditWndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
     NMHDR nm;
     switch (iMessage)

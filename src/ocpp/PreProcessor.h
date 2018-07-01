@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #ifndef PreProcessor_h
@@ -88,34 +88,46 @@ static const int IMACRO = 68;
 
 class PreProcessor
 {
-public:
-    PreProcessor(const std::string &FileName, const std::string &SrchPth, const std::string &SysSrchPth,
-                 bool fullName, bool Trigraph, char PPStart, bool isunsignedchar, 
-                 bool C89, bool extensions) 
-        : ppStart(PPStart), preData(nullptr), lineno(0),
-        include(fullName, Trigraph, extensions, isunsignedchar, C89, SrchPth, SysSrchPth, PPStart == '%'), 
-            define(extensions, &include, C89, PPStart == '%'), 
-            macro(include, define), ctx(define), trigraphs(Trigraph)
-        { InitHash(); Errors::SetInclude(&include); macro.SetPreProcessor(this); 
-				include.SetParams(FileName, &define, &ctx); define.SetParams(&ctx, &macro); }
-        
+  public:
+    PreProcessor(const std::string& FileName, const std::string& SrchPth, const std::string& SysSrchPth, bool fullName,
+                 bool Trigraph, char PPStart, bool isunsignedchar, bool C89, bool extensions) :
+        ppStart(PPStart),
+        preData(nullptr),
+        lineno(0),
+        include(fullName, Trigraph, extensions, isunsignedchar, C89, SrchPth, SysSrchPth, PPStart == '%'),
+        define(extensions, &include, C89, PPStart == '%'),
+        macro(include, define),
+        ctx(define),
+        trigraphs(Trigraph)
+    {
+        InitHash();
+        Errors::SetInclude(&include);
+        macro.SetPreProcessor(this);
+        include.SetParams(FileName, &define, &ctx);
+        define.SetParams(&ctx, &macro);
+    }
+
     void InitHash();
-    bool GetLine(std::string &line);
+    bool GetLine(std::string& line);
     std::string GetFile() { return include.GetFile(); }
     int GetLineNo() { return include.GetLineNo(); }
     int GetMainLineNo() { return lineno; }
-    void Define(const std::string &name, std::string &value, bool caseInsensitive) { define.Define(name, value, nullptr, false, false, false, caseInsensitive); }
-    void Undefine(std::string &name) { define.Undefine(name, true); }
-    void IncludeFile(const std::string &name) { include.IncludeFile(name); }
+    void Define(const std::string& name, std::string& value, bool caseInsensitive)
+    {
+        define.Define(name, value, nullptr, false, false, false, caseInsensitive);
+    }
+    void Undefine(std::string& name) { define.Undefine(name, true); }
+    void IncludeFile(const std::string& name) { include.IncludeFile(name); }
     int GetCtxId() { return ctx.GetTopId(); }
     int GetMacroId() { return macro.GetMacroId(); }
-    void Assign(std::string &name, int value, bool caseInsensitive) { define.Assign(name, value, caseInsensitive); }
+    void Assign(std::string& name, int value, bool caseInsensitive) { define.Assign(name, value, caseInsensitive); }
     bool InMacro() { return macro.InMacro(); }
-    void SetPreData(char *data) {preData = new std::string(data); }
-    bool GetPreLine(std::string &line) ;
+    void SetPreData(char* data) { preData = new std::string(data); }
+    bool GetPreLine(std::string& line);
     std::string StripDigraphs(std::string line);
     std::string StripTrigraphs(std::string line);
-private:
+
+  private:
     bool trigraphs;
     char ppStart;
     ppCtx ctx;
@@ -126,7 +138,7 @@ private:
     ppPragma pragma;
     KeywordHash hash;
     int lineno;
-    std::string *preData;
-} ;
+    std::string* preData;
+};
 
 #endif

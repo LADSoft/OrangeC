@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "AsmFile.h"
@@ -46,22 +46,22 @@ AsmFile::~AsmFile()
 {
     for (int i = 0; i < numericSections.size(); i++)
     {
-        Section *s = numericSections[i];
+        Section* s = numericSections[i];
         delete s;
     }
-    for (int i=0; i < numericLabels.size(); i++)
+    for (int i = 0; i < numericLabels.size(); i++)
     {
-        Label *l = numericLabels[i];
+        Label* l = numericLabels[i];
         delete l;
     }
     for (auto import : imports)
     {
-        Import *i = import.second;
+        Import* i = import.second;
         delete i;
     }
 }
 bool AsmFile::Read()
-{	
+{
     bool rv = true;
     AsmExpr::ReInit();
     parser->Init();
@@ -85,7 +85,7 @@ bool AsmFile::Read()
                 NeedSection();
                 inInstruction = true;
                 int lineno = preProcessor.GetMainLineNo();
-                Instruction *ins = parser->Parse(lexer.GetRestOfLine(), currentSection->GetPC());
+                Instruction* ins = parser->Parse(lexer.GetRestOfLine(), currentSection->GetPC());
                 if (lineno >= 0)
                     listing.Add(ins, lineno, preProcessor.InMacro());
                 NextToken();
@@ -99,7 +99,7 @@ bool AsmFile::Read()
                 DoLabel(name, lineno);
             }
         }
-        catch(std::runtime_error *e)
+        catch (std::runtime_error* e)
         {
             Errors::Error(e->what());
             delete e;
@@ -136,13 +136,13 @@ bool AsmFile::Read()
     }
     return rv && !Errors::ErrorCount();
 }
-void AsmFile::DoLabel(std::string &name, int lineno)
+void AsmFile::DoLabel(std::string& name, int lineno)
 {
     NeedSection();
-    Label *label;
+    Label* label;
     if (caseInsensitive)
     {
-        for (int i=0; i < name.size(); i++)
+        for (int i = 0; i < name.size(); i++)
             name[i] = toupper(name[i]);
     }
     std::string realName = name;
@@ -174,7 +174,7 @@ void AsmFile::DoLabel(std::string &name, int lineno)
                 realName = currentLabel->GetName() + name;
             }
         }
-    } 
+    }
     if (labels[realName] != nullptr)
     {
         if (realName != "..start")
@@ -194,7 +194,7 @@ void AsmFile::DoLabel(std::string &name, int lineno)
         }
         else
         {
-            label = new Label(realName, labels.size(), currentSection->GetSect()-1);
+            label = new Label(realName, labels.size(), currentSection->GetSect() - 1);
         }
         if (name[0] != '.')
         {
@@ -206,8 +206,8 @@ void AsmFile::DoLabel(std::string &name, int lineno)
         numericLabels.push_back(label);
         if (!inAbsolute)
             currentSection->InsertLabel(label);
-//		if (lineno >= 0)
-//			listing.Add(thisLabel, lineno, preProcessor.InMacro());
+        //		if (lineno >= 0)
+        //			listing.Add(thisLabel, lineno, preProcessor.InMacro());
         if (realName == "..start")
             startupLabel = label;
     }
@@ -223,7 +223,7 @@ void AsmFile::DoDB()
     int size = 0;
     bool byte = GetKeyword() == Lexer::DB;
     short val = 0;
-    std::deque<Fixup *> fixups;
+    std::deque<Fixup*> fixups;
     NeedSection();
     int lineno = preProcessor.GetMainLineNo();
     do
@@ -237,7 +237,7 @@ void AsmFile::DoDB()
             int len = str.size();
             if (byte)
             {
-                for (int i=0; i < len; i++)
+                for (int i = 0; i < len; i++)
                 {
                     buf[size++] = str[i];
                 }
@@ -246,15 +246,15 @@ void AsmFile::DoDB()
             {
                 char temp[1000];
                 int j;
-                for (j=0; j < len; j++)
+                for (j = 0; j < len; j++)
                     temp[j] = str[j];
                 temp[j] = 0;
-                for (int i=0; i < len;)
+                for (int i = 0; i < len;)
                 {
                     int v = UTF8::Decode(temp + i);
                     if (v < 0x10000)
                     {
-                        (*(short *)(buf + size)) = v;
+                        (*(short*)(buf + size)) = v;
                         size += 2;
                     }
                     else
@@ -262,10 +262,9 @@ void AsmFile::DoDB()
                         v -= 0x10000;
                         int n1 = v >> 10;
                         int n2 = v & 0x3ff;
-                        *((short *)(buf+size)) = n1 + 0xd800;
-                        *((short *)(buf+size+2)) = n2 + 0xdc00;
+                        *((short*)(buf + size)) = n1 + 0xd800;
+                        *((short*)(buf + size + 2)) = n2 + 0xdc00;
                         size += 4;
-                                            
                     }
                     i += UTF8::CharSpan(temp + i);
                 }
@@ -273,8 +272,8 @@ void AsmFile::DoDB()
         }
         else
         {
-            AsmExprNode *num = GetNumber();
-            Fixup *f = new Fixup(num, byte ? 1 : 2, false, 0);
+            AsmExprNode* num = GetNumber();
+            Fixup* f = new Fixup(num, byte ? 1 : 2, false, 0);
             f->SetInsOffs(size);
             f->SetFileName(errFile);
             f->SetErrorLine(errLine);
@@ -284,13 +283,13 @@ void AsmFile::DoDB()
                 buf[size++] = 0;
         }
     } while (GetKeyword() == Lexer::comma);
-    Instruction *ins = new Instruction((unsigned char *)buf, size, true);
+    Instruction* ins = new Instruction((unsigned char*)buf, size, true);
     if (lineno >= 0)
         listing.Add(ins, lineno, preProcessor.InMacro());
     currentSection->InsertInstruction(ins);
     while (fixups.size())
     {
-        Fixup *f = fixups.front();
+        Fixup* f = fixups.front();
         fixups.pop_front();
         ins->Add(f);
     }
@@ -302,49 +301,49 @@ void AsmFile::DoDD()
     NeedSection();
     int val = 0;
     int lineno = preProcessor.GetMainLineNo();
-    std::deque<Fixup *> fixups;
+    std::deque<Fixup*> fixups;
     do
     {
         int errLine = Errors::GetErrorLine();
         std::string errFile = Errors::GetFileName();
-        AsmExprNode *num;
+        AsmExprNode* num;
         NextToken();
         if (IsString())
         {
             std::wstring str = GetString();
             int len = str.size();
-            int i,j;
+            int i, j;
             char temp[1000];
-            for (j=0; j < len; j++)
+            for (j = 0; j < len; j++)
                 temp[j] = str[j];
             temp[j] = 0;
-            for (i=0; i < len;)
+            for (i = 0; i < len;)
             {
                 int v = UTF8::Decode(temp + i);
-                *((unsigned *)(buf+size)) = v;
+                *((unsigned*)(buf + size)) = v;
                 size += 4;
-                i+= UTF8::CharSpan(temp + i);
+                i += UTF8::CharSpan(temp + i);
             }
         }
         else
         {
             num = GetNumber();
-            Fixup *f = new Fixup(num, 4, false, 0);
+            Fixup* f = new Fixup(num, 4, false, 0);
             f->SetInsOffs(size);
             f->SetFileName(errFile);
             f->SetErrorLine(errLine);
             fixups.push_back(f);
-            *((unsigned *)(buf+size)) = 0;
+            *((unsigned*)(buf + size)) = 0;
             size += 4;
         }
     } while (GetKeyword() == Lexer::comma);
-    Instruction *ins = new Instruction((unsigned char *)buf, size, true);
+    Instruction* ins = new Instruction((unsigned char*)buf, size, true);
     if (lineno >= 0)
         listing.Add(ins, lineno, preProcessor.InMacro());
     currentSection->InsertInstruction(ins);
     while (fixups.size())
     {
-        Fixup *f = fixups.front();
+        Fixup* f = fixups.front();
         fixups.pop_front();
         ins->Add(f);
     }
@@ -356,30 +355,30 @@ void AsmFile::DoFloat()
     bool tbyte = GetKeyword() == Lexer::DT;
     NeedSection();
     int lineno = preProcessor.GetMainLineNo();
-    std::deque<Fixup *> fixups;
+    std::deque<Fixup*> fixups;
     memset(buf, 0, sizeof(buf));
     do
     {
         int errLine = Errors::GetErrorLine();
         std::string errFile = Errors::GetFileName();
-        int lineno = preProcessor.GetMainLineNo();		
-        AsmExprNode *num;
+        int lineno = preProcessor.GetMainLineNo();
+        AsmExprNode* num;
         NextToken();
         num = GetNumber();
-        Fixup *f = new Fixup(num, tbyte ? 10 : 8, false, 0);
+        Fixup* f = new Fixup(num, tbyte ? 10 : 8, false, 0);
         f->SetInsOffs(size);
         f->SetFileName(errFile);
         f->SetErrorLine(errLine);
         fixups.push_back(f);
         size += tbyte ? 10 : 8;
     } while (GetKeyword() == Lexer::comma);
-    Instruction *ins = new Instruction((unsigned char *)buf, size, true);
+    Instruction* ins = new Instruction((unsigned char*)buf, size, true);
     if (lineno >= 0)
         listing.Add(ins, lineno, preProcessor.InMacro());
     currentSection->InsertInstruction(ins);
     while (fixups.size())
     {
-        Fixup *f = fixups.front();
+        Fixup* f = fixups.front();
         fixups.pop_front();
         ins->Add(f);
     }
@@ -394,7 +393,7 @@ void AsmFile::ReserveDirective(int n)
     int num = GetValue();
     if (num <= 0)
         throw new std::runtime_error("Invalid reserve size");
-    Instruction *ins = new Instruction(num, n);
+    Instruction* ins = new Instruction(num, n);
     if (lineno >= 0)
         listing.Add(ins, lineno, preProcessor.InMacro());
     if (inAbsolute)
@@ -406,7 +405,7 @@ void AsmFile::ReserveDirective(int n)
         if (GetKeyword() == Lexer::comma)
         {
             NextToken();
-            Fixup *f = new Fixup(GetNumber(), n, false, 0);
+            Fixup* f = new Fixup(GetNumber(), n, false, 0);
             f->SetFileName(errFile);
             f->SetErrorLine(errLine);
             ins->Add(f);
@@ -420,7 +419,7 @@ void AsmFile::EquDirective()
         throw new std::runtime_error("Label needed");
     int lineno = preProcessor.GetMainLineNo();
     NextToken();
-    AsmExprNode *num = GetNumber();
+    AsmExprNode* num = GetNumber();
     int n = 0;
     if (inAbsolute)
         n = absoluteValue;
@@ -429,7 +428,7 @@ void AsmFile::EquDirective()
     num = AsmExpr::ConvertToBased(num, n);
     if (num->IsAbsolute())
     {
-        AsmExprNode *num1 = AsmExpr::Eval(num, n);
+        AsmExprNode* num1 = AsmExpr::Eval(num, n);
         delete num;
         num = num1;
     }
@@ -507,7 +506,7 @@ void AsmFile::Directive()
             break;
         case Lexer::TIMES:
             NoAbsolute();
-            TimesDirective();	// timesdirective eats the ']'
+            TimesDirective();  // timesdirective eats the ']'
             return;
         default:
             throw new std::runtime_error("Expected directive");
@@ -531,12 +530,12 @@ void AsmFile::AlignDirective()
         int v = GetValue();
         int n = (absoluteValue % v);
         if (n)
-            absoluteValue += n-v;
+            absoluteValue += n - v;
     }
     else
     {
         NeedSection();
-        Instruction *ins = new Instruction(GetValue());
+        Instruction* ins = new Instruction(GetValue());
         currentSection->InsertInstruction(ins);
     }
 }
@@ -549,15 +548,15 @@ void AsmFile::TimesDirective()
     int npos = line.find_last_of("]");
     if (npos == std::string::npos)
         throw new std::runtime_error("Expected ']'");
-    if (npos != line.size()-1)
+    if (npos != line.size() - 1)
     {
-        int npos1 = line.find_first_not_of(" \t\v\n\r", npos+1);
+        int npos1 = line.find_first_not_of(" \t\v\n\r", npos + 1);
         if (npos1 != std::string::npos)
             throw new std::runtime_error("Extra characters on end of line");
     }
     line = line.substr(0, npos);
     lexer.StopAtEol(true);
-    for (int i=0; i < n; i++)
+    for (int i = 0; i < n; i++)
     {
         lexer.Reset(line);
         if (GetKeyword() == Lexer::openbr)
@@ -566,11 +565,11 @@ void AsmFile::TimesDirective()
         }
         else if (parser->MatchesOpcode(GetToken()->GetChars()))
         {
-            Instruction *ins = parser->Parse(lexer.GetRestOfLine(), currentSection->GetPC());
+            Instruction* ins = parser->Parse(lexer.GetRestOfLine(), currentSection->GetPC());
             currentSection->InsertInstruction(ins);
         }
         else
-            throw new std::runtime_error("Unknown instruction");		
+            throw new std::runtime_error("Unknown instruction");
     }
     lexer.StopAtEol(false);
     NextToken();
@@ -585,7 +584,7 @@ void AsmFile::IncbinDirective()
         throw new std::runtime_error("File name expected");
     std::wstring wname = GetString();
     std::string name;
-    for (int i=0; i < wname.size(); i++)
+    for (int i = 0; i < wname.size(); i++)
     {
         char buf[2];
         buf[0] = wname[i];
@@ -614,9 +613,9 @@ void AsmFile::IncbinDirective()
     else if (len - start < size)
         throw new std::runtime_error("Not enough data.");
     in.seekg(start, std::ios::beg);
-    unsigned char *data = new unsigned char[size];
-    in.read((char *)data, size);
-    Instruction *ins = new Instruction(data, size);
+    unsigned char* data = new unsigned char[size];
+    in.read((char*)data, size);
+    Instruction* ins = new Instruction(data, size);
     currentSection->InsertInstruction(ins);
     delete[] data;
 }
@@ -628,7 +627,7 @@ void AsmFile::PublicDirective()
         std::string name = GetId();
         if (caseInsensitive)
         {
-            for (int i=0; i < name.size(); i++)
+            for (int i = 0; i < name.size(); i++)
                 name[i] = toupper(name[i]);
         }
         globals.insert(name);
@@ -642,7 +641,7 @@ void AsmFile::ExternDirective()
         std::string name = GetId();
         if (caseInsensitive)
         {
-            for (int i=0; i < name.size(); i++)
+            for (int i = 0; i < name.size(); i++)
                 name[i] = toupper(name[i]);
         }
         externs.insert(name);
@@ -652,11 +651,10 @@ void AsmFile::ExternDirective()
         }
         else
         {
-            Label *label = new Label(name, labels.size(), sections.size()-1);
+            Label* label = new Label(name, labels.size(), sections.size() - 1);
             label->SetExtern(true);
             labels[name] = label;
             numericLabels.push_back(label);
-
         }
     } while (GetKeyword() == Lexer::comma);
 }
@@ -670,7 +668,7 @@ void AsmFile::ImportDirective()
         external = GetId();
     else
         external = internal;
-    Import *imp = new Import;
+    Import* imp = new Import;
     imp->dll = dll;
     imp->extname = external;
     imports[internal] = imp;
@@ -692,7 +690,7 @@ void AsmFile::SectionDirective()
     std::string name = GetId();
     if (sections[name] == nullptr)
     {
-        Section *section = new Section(name, sections.size());
+        Section* section = new Section(name, sections.size());
         sections[name] = section;
         numericSections.push_back(section);
         section->Parse(this);
@@ -726,9 +724,9 @@ void AsmFile::NeedSection()
 {
     if (sections.size() == 0 && !inAbsolute)
     {
-        Section *section = new Section("__text__", 1);
+        Section* section = new Section("__text__", 1);
         sections["__text__"] = section;
-        numericSections.push_back( section);
+        numericSections.push_back(section);
         currentSection = section;
         AsmExpr::SetSection(currentSection);
         parser->Setup(currentSection);
@@ -736,35 +734,35 @@ void AsmFile::NeedSection()
         AsmExpr::SetCurrentLabel(std::string(""));
     }
 }
-bool AsmFile::Write(std::string &fileName, std::string &srcName)
+bool AsmFile::Write(std::string& fileName, std::string& srcName)
 {
     bool rv = true;
     ObjIeeeIndexManager im;
     ObjFactory f(&im);
-    ObjFile *fi = MakeFile(f, srcName);
+    ObjFile* fi = MakeFile(f, srcName);
     if (fi)
     {
         fi->ResolveSymbols(&f);
-        
-//        std::fstream out(fileName.c_str(), std::fstream::trunc | std::fstream::out);
-        FILE *out = fopen(fileName.c_str(), "wb");
+
+        //        std::fstream out(fileName.c_str(), std::fstream::trunc | std::fstream::out);
+        FILE* out = fopen(fileName.c_str(), "wb");
         if (out != nullptr)
         {
-        
+
             ObjIeee i(fileName.c_str());
             i.SetTranslatorName(ObjString("oasm"));
             i.SetDebugInfoFlag(false);
-        
+
             if (startSection)
             {
-                ObjExpression *left = f.MakeExpression(startSection);
-                ObjExpression *right = f.MakeExpression(startupLabel->GetOffset()->ival);
-                ObjExpression *sa = f.MakeExpression(ObjExpression::eAdd, left, right);
+                ObjExpression* left = f.MakeExpression(startSection);
+                ObjExpression* right = f.MakeExpression(startupLabel->GetOffset()->ival);
+                ObjExpression* sa = f.MakeExpression(ObjExpression::eAdd, left, right);
                 i.SetStartAddress(fi, sa);
             }
             i.Write(out, fi, &f);
             fclose(out);
-//            out.close();
+            //            out.close();
         }
         else
         {
@@ -777,20 +775,20 @@ bool AsmFile::Write(std::string &fileName, std::string &srcName)
     }
     return rv;
 }
-ObjFile *AsmFile::MakeFile(ObjFactory &factory, std::string &name)
+ObjFile* AsmFile::MakeFile(ObjFactory& factory, std::string& name)
 {
     bool rv = true;
-    ObjFile *fi = factory.MakeFile(name);
+    ObjFile* fi = factory.MakeFile(name);
     if (fi)
     {
         std::time_t x = std::time(0);
         fi->SetFileTime(*std::localtime(&x));
-        ObjSourceFile *sf = factory.MakeSourceFile(ObjString(name.c_str()));
+        ObjSourceFile* sf = factory.MakeSourceFile(ObjString(name.c_str()));
         fi->Add(sf);
-        for (int i=0; i < numericSections.size(); ++i)
+        for (int i = 0; i < numericSections.size(); ++i)
         {
             numericSections[i]->Resolve(this);
-            ObjSection *s = numericSections[i]->CreateObject(factory);
+            ObjSection* s = numericSections[i]->CreateObject(factory);
             if (s)
             {
                 if (numericSections[i] == startupSection)
@@ -803,32 +801,32 @@ ObjFile *AsmFile::MakeFile(ObjFactory &factory, std::string &name)
         }
         if (objSections.size())
         {
-            for (int i=0; i < numericLabels.size(); ++i)
+            for (int i = 0; i < numericLabels.size(); ++i)
             {
-                Label *l = numericLabels[i];
+                Label* l = numericLabels[i];
                 if (l->GetSect() != 0xffffffff)
                 {
                     l->SetObjectSection(objSections[l->GetSect()]);
                     if (l->IsPublic())
                     {
-                        ObjSymbol *s1 = factory.MakePublicSymbol(l->GetName());
-                        ObjExpression *left = factory.MakeExpression(objSections[l->GetSect()]);
-                        ObjExpression *right = factory.MakeExpression(l->GetOffset()->ival);
-                        ObjExpression *sum = factory.MakeExpression(ObjExpression::eAdd, left, right);
+                        ObjSymbol* s1 = factory.MakePublicSymbol(l->GetName());
+                        ObjExpression* left = factory.MakeExpression(objSections[l->GetSect()]);
+                        ObjExpression* right = factory.MakeExpression(l->GetOffset()->ival);
+                        ObjExpression* sum = factory.MakeExpression(ObjExpression::eAdd, left, right);
                         s1->SetOffset(sum);
                         fi->Add(s1);
                         l->SetObjSymbol(s1);
                     }
                     else if (l->IsExtern())
                     {
-                        ObjSymbol *s1 = factory.MakeExternalSymbol(l->GetName());
+                        ObjSymbol* s1 = factory.MakeExternalSymbol(l->GetName());
                         fi->Add(s1);
                         l->SetObjSymbol(s1);
                     }
                 }
                 else
                 {
-                    ObjSymbol *s1 = factory.MakeExternalSymbol(l->GetName());
+                    ObjSymbol* s1 = factory.MakeExternalSymbol(l->GetName());
                     fi->Add(s1);
                     l->SetObjSymbol(s1);
                 }
@@ -836,18 +834,18 @@ ObjFile *AsmFile::MakeFile(ObjFactory &factory, std::string &name)
         }
         for (auto exp : exports)
         {
-            ObjExportSymbol *p = factory.MakeExportSymbol(exp.first);
+            ObjExportSymbol* p = factory.MakeExportSymbol(exp.first);
             p->SetExternalName(exp.second);
-            fi->Add(p);			
+            fi->Add(p);
         }
         for (auto import : imports)
         {
-            ObjImportSymbol *p = factory.MakeImportSymbol(import.first);
+            ObjImportSymbol* p = factory.MakeImportSymbol(import.first);
             p->SetExternalName(import.second->extname);
             p->SetDllName(import.second->dll);
-            fi->Add(p);			
+            fi->Add(p);
         }
-        for (int i=0; i < numericSections.size(); i++)
+        for (int i = 0; i < numericSections.size(); i++)
         {
             if (!numericSections[i]->MakeData(factory, this))
                 rv = false;
@@ -859,15 +857,12 @@ ObjFile *AsmFile::MakeFile(ObjFactory &factory, std::string &name)
     }
     return fi;
 }
-bool AsmFile::IsKeyword() 
+bool AsmFile::IsKeyword()
 {
-    bool rv = GetToken() && GetToken()->IsKeyword(); 
+    bool rv = GetToken() && GetToken()->IsKeyword();
     return rv;
 }
-int AsmFile::GetKeyword()
-{
-    return GetToken()->GetKeyword();
-}
+int AsmFile::GetKeyword() { return GetToken()->GetKeyword(); }
 unsigned AsmFile::GetTokenId()
 {
     unsigned rv = 0;
@@ -878,17 +873,18 @@ unsigned AsmFile::GetTokenId()
     }
     return rv;
 }
-bool AsmFile::IsNumber() 
+bool AsmFile::IsNumber()
 {
-    bool rv = GetToken() && (GetToken()->IsNumeric() || (GetToken()->IsKeyword() && (
-        GetToken()->GetKeyword() == Lexer::openpa || GetToken()->GetKeyword() == Lexer::plus ||
-        GetToken()->GetKeyword() == Lexer::minus || GetToken()->GetKeyword() == Lexer::lnot ||
-        GetToken()->GetKeyword() == Lexer::bcompl)));
+    bool rv = GetToken() &&
+              (GetToken()->IsNumeric() ||
+               (GetToken()->IsKeyword() && (GetToken()->GetKeyword() == Lexer::openpa || GetToken()->GetKeyword() == Lexer::plus ||
+                                            GetToken()->GetKeyword() == Lexer::minus || GetToken()->GetKeyword() == Lexer::lnot ||
+                                            GetToken()->GetKeyword() == Lexer::bcompl)));
     return rv;
 }
 unsigned AsmFile::GetValue()
 {
-    AsmExprNode *num = GetNumber();
+    AsmExprNode* num = GetNumber();
     if (!inAbsolute && !num->IsAbsolute())
         throw new std::runtime_error("Constant value expected");
     int n = 0;
@@ -896,7 +892,7 @@ unsigned AsmFile::GetValue()
         n = absoluteValue;
     else if (currentSection)
         n = currentSection->GetPC();
-    AsmExprNode *num1 = AsmExpr::Eval(num, n);
+    AsmExprNode* num1 = AsmExpr::Eval(num, n);
     if (num1->GetType() != AsmExprNode::IVAL)
         throw new std::runtime_error("Integer constant expected");
     int rv = num1->ival;
@@ -904,22 +900,19 @@ unsigned AsmFile::GetValue()
     delete num1;
     return rv;
 }
-AsmExprNode *AsmFile::GetNumber()
+AsmExprNode* AsmFile::GetNumber()
 {
     std::string line = lexer.GetRestOfLine();
     if (currentLabel)
         asmexpr.SetCurrentLabel(currentLabel->GetName());
-    AsmExprNode *rv = asmexpr.Build(line);
+    AsmExprNode* rv = asmexpr.Build(line);
     if (line == "")
         NextToken();
     else
         lexer.Reset(line);
     return rv;
 }
-bool AsmFile::IsString() 
-{
-    return GetToken() && GetToken()->IsString(); 
-}
+bool AsmFile::IsString() { return GetToken() && GetToken()->IsString(); }
 std::wstring AsmFile::GetString()
 {
     std::wstring rv;
@@ -934,10 +927,7 @@ std::wstring AsmFile::GetString()
     }
     return rv;
 }
-bool AsmFile::IsIdentifier() 
-{
-    return GetToken() && GetToken()->IsIdentifier(); 
-}
+bool AsmFile::IsIdentifier() { return GetToken() && GetToken()->IsIdentifier(); }
 std::string AsmFile::GetId()
 {
     std::string rv;
@@ -945,7 +935,7 @@ std::string AsmFile::GetId()
     {
         rv = GetToken()->GetId();
         if (rv[0] == '%')
-            rv.erase(0,1);
+            rv.erase(0, 1);
         NextToken();
     }
     else if (IsKeyword())
@@ -965,7 +955,7 @@ void AsmFile::NeedEol()
     if (!lexer.AtEol())
         throw new std::runtime_error("End of line expected");
 }
-ObjSection *AsmFile::GetSectionByName(std::string &name)
+ObjSection* AsmFile::GetSectionByName(std::string& name)
 {
     auto it = sections.find(name);
     if (it != sections.end())

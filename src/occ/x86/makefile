@@ -85,6 +85,9 @@ C_DEPENDENCIES= \
     unmangle.c\
     winsystem.c \
     wseh.c
+
+H_FILES=$(wildcard *.h) $(wildcard ..\parse\*.h) $(wildcard ..\middle\*.h) $(wildcard ..\preproc\*.h)
+
 #LIB_DEPENDENCIES=util.lib objlib.lib
 #determine if we can ignore the banner for a batch compile
 WIN32 = WIN32
@@ -95,7 +98,7 @@ DEFINES=$(i386) $(LL) $(MSDOS) $(WIN32)
 SOURCE = ..\parse;..\preproc;..\middle
 
 SRCPATH=$(BACKEND_INCLUDE_PATH);$(SOURCE);..;..\..\util
-BACKEND_FILES = config.c dbgieee.c gen.c inasm.c invoke.c objieeea.c outasm.c outcode.c peep.c rewrite.c
+BACKEND_FILES = config.c gen.c inasm.c invoke.c objieeea.c outasm.c outcode.c peep.c rewrite.c
 
 BACKEND_INCLUDE_PATH=.
 
@@ -110,6 +113,8 @@ export _TREETARGET
 
 redirect:
 	@$(MAKE) -f$(_TREEROOT)
+format:
+	@$(MAKE) -f $(_TREEROOT) format
 endif
 
 DISTRIBUTE: copyexe

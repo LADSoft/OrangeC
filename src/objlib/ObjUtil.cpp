@@ -1,29 +1,29 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
-#define _CRT_SECURE_NO_WARNINGS  
+#define _CRT_SECURE_NO_WARNINGS
 
 #include "ObjUtil.h"
 #include <iomanip>
@@ -42,9 +42,9 @@ ObjString ObjUtil::ToHex(ObjInt value, int width)
     n = strlen(buf);
     if (n < width)
     {
-        for (int i=n; i < width; i++)
+        for (int i = n; i < width; i++)
         {
-            buf2[i-n] = '0';
+            buf2[i - n] = '0';
         }
         strcpy(buf2 + width - n, buf);
         return buf2;
@@ -59,17 +59,16 @@ ObjString ObjUtil::ToDecimal(ObjInt value, int width)
     n = strlen(buf);
     if (n < width)
     {
-        for (int i=n; i < width; i++)
+        for (int i = n; i < width; i++)
         {
-            buf2[i-n] = '0';
+            buf2[i - n] = '0';
         }
-        strcpy(
-               buf2 + width - n, buf);
+        strcpy(buf2 + width - n, buf);
         return buf2;
     }
     return buf;
 }
-ObjInt ObjUtil::FromInt(const char *data, int *pos, int width, int radix)
+ObjInt ObjUtil::FromInt(const char* data, int* pos, int width, int radix)
 {
     int n = 0;
     if (pos)

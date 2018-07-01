@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdio.h>
@@ -29,15 +29,14 @@
 #include <limits.h>
 #include <ctype.h>
 #include "utype.h"
-#include "regexp.h" 
- 
-static int insert(context, type, ch, regexp)
-unsigned char *regexp;
+#include "regexp.h"
+
+static int insert(context, type, ch, regexp) unsigned char* regexp;
 int ch;
 int type;
-RE_CONTEXT *context;
+RE_CONTEXT* context;
 {
-    *context->current = calloc(sizeof(RE_MATCH),1);
+    *context->current = calloc(sizeof(RE_MATCH), 1);
     if (!*context->current)
     {
         if (regexp)
@@ -71,9 +70,8 @@ RE_CONTEXT *context;
     (*context->current)->rh = -1;
     return TRUE;
 }
-static int GetClass(array, ch, not)
-unsigned char *array;
-char **ch;
+static int GetClass(array, ch, not) unsigned char* array;
+char** ch;
 int not;
 {
     char name[256], *p = name;
@@ -91,97 +89,100 @@ int not;
 
     if (!strcmp(name, "alpha"))
     {
-        for (i=0; i < 128; i++)
+        for (i = 0; i < 128; i++)
             if (isalpha(i))
                 SETBIT(found, i);
     }
     else if (!strcmp(name, "upper"))
     {
-        for (i=0; i < 128; i++)
+        for (i = 0; i < 128; i++)
             if (isupper(i))
                 SETBIT(found, i);
     }
     else if (!strcmp(name, "lower"))
     {
-        for (i=0; i < 128; i++)
+        for (i = 0; i < 128; i++)
             if (islower(i))
                 SETBIT(found, i);
     }
     else if (!strcmp(name, "digit"))
     {
-        for (i=0; i < 128; i++)
+        for (i = 0; i < 128; i++)
             if (isdigit(i))
                 SETBIT(found, i);
     }
     else if (!strcmp(name, "alnum"))
     {
-        for (i=0; i < 128; i++)
+        for (i = 0; i < 128; i++)
             if (isalnum(i))
                 SETBIT(found, i);
     }
     else if (!strcmp(name, "xdigit"))
     {
-        for (i=0; i < 128; i++)
+        for (i = 0; i < 128; i++)
             if (isxdigit(i))
                 SETBIT(found, i);
     }
     else if (!strcmp(name, "space"))
     {
-        for (i=0; i < 128; i++)
+        for (i = 0; i < 128; i++)
             if (isspace(i))
                 SETBIT(found, i);
     }
     else if (!strcmp(name, "print"))
     {
-        for (i=0; i < 128; i++)
+        for (i = 0; i < 128; i++)
             if (isprint(i))
                 SETBIT(found, i);
     }
     else if (!strcmp(name, "punct"))
     {
-        for (i=0; i < 128; i++)
+        for (i = 0; i < 128; i++)
             if (ispunct(i))
                 SETBIT(found, i);
     }
     else if (!strcmp(name, "graph"))
     {
-        for (i=0; i < 128; i++)
+        for (i = 0; i < 128; i++)
             if (isgraph(i))
                 SETBIT(found, i);
     }
     else if (!strcmp(name, "cntrl"))
     {
-        for (i=0; i < 128; i++)
+        for (i = 0; i < 128; i++)
             if (iscntrl(i))
                 SETBIT(found, i);
     }
     else if (!strcmp(name, "blank"))
     {
-        for (i=0; i < 128; i++)
+        for (i = 0; i < 128; i++)
             if (i == ' ' || i == '\t')
                 SETBIT(found, i);
     }
     else
         return FALSE;
-    for (i=0; i < SET_BYTES; i++)
+    for (i = 0; i < SET_BYTES; i++)
         if (not)
             array[i] &= ~found[i];
         else
             array[i] |= found[i];
     return TRUE;
 }
-static unsigned char *GetRegexp(RE_CONTEXT *context, char **ch)
+static unsigned char* GetRegexp(RE_CONTEXT* context, char** ch)
 {
     int not = FALSE;
-    unsigned char *rv = calloc(SET_BYTES, 1);
+    unsigned char* rv = calloc(SET_BYTES, 1);
     if (!rv)
         return FALSE;
     if (*(*ch)++ != '[')
+    {
+        free(rv);  // memleak pointed out by cppcheck
         return FALSE;
+    }
     if ((**ch) == '^')
     {
         not = TRUE;
-        memset(rv, 255, SET_BYTES/2);
+        memset(rv, 255, SET_BYTES / 2);
         (*ch)++;
     }
     if ((**ch) == '-')
@@ -202,10 +203,9 @@ static unsigned char *GetRegexp(RE_CONTEXT *context, char **ch)
             {
                 free(rv);
                 return NULL;
-                
             }
             continue;
-        }	
+        }
         if (n == '\\')
         {
             n = *(*ch)++;
@@ -279,11 +279,10 @@ static unsigned char *GetRegexp(RE_CONTEXT *context, char **ch)
     }
     return rv;
 }
-static int getSpecial(ch)
-char **ch;
+static int getSpecial(ch) char** ch;
 {
     int n = *(*ch)++;
-    switch(n)
+    switch (n)
     {
         case 'b':
             return RE_M_WORD;
@@ -305,15 +304,14 @@ char **ch;
             return n;
     }
 }
-static int GetMatch(context, ch)
-RE_CONTEXT *context;
-char **ch;
+static int GetMatch(context, ch) RE_CONTEXT* context;
+char** ch;
 {
 
-    unsigned char *regexp;
+    unsigned char* regexp;
     if (context->flags & RE_F_REGULAR)
     {
-        switch(**ch)
+        switch (**ch)
         {
             int n;
             case '.':
@@ -354,7 +352,7 @@ char **ch;
                     else
                     {
                         int i;
-                        for (i=0; i < SET_BYTES; i++)
+                        for (i = 0; i < SET_BYTES; i++)
                             context->last->regexp[i] |= regexp[i];
                         free(regexp);
                     }
@@ -371,7 +369,7 @@ char **ch;
                     }
                     SETBIT(context->last->regexp, n);
                 }
-                break;				
+                break;
             case '*':
                 if (!context->last || context->last->type != M_CHAR)
                     return FALSE;
@@ -428,7 +426,7 @@ char **ch;
                         (*ch)++;
                     if (**ch == ',')
                     {
-                        (*ch)++; 
+                        (*ch)++;
                         if (!isdigit(**ch))
                         {
                             return FALSE;
@@ -462,7 +460,7 @@ char **ch;
                     if (!insert(context, M_END, context->matchStack[--context->matchStackTop], NULL))
                         return FALSE;
                 }
-                else if (isdigit (**ch))
+                else if (isdigit(**ch))
                 {
                     if (!insert(context, M_MATCH, *(*ch)++ - '0', NULL))
                         return FALSE;
@@ -488,12 +486,11 @@ char **ch;
     return TRUE;
 }
 
-void re_free(context)
-RE_CONTEXT *context;
+void re_free(context) RE_CONTEXT* context;
 {
     while (context->root)
     {
-        RE_MATCH *cur = context->root;
+        RE_MATCH* cur = context->root;
         context->root = context->root->next;
         if (cur->regexp)
             free(cur->regexp);
@@ -502,19 +499,18 @@ RE_CONTEXT *context;
     free(context);
 }
 
-RE_CONTEXT *re_init(param, flags, word)
-char *param;
+RE_CONTEXT* re_init(param, flags, word) char* param;
 int flags;
-char *word;
+char* word;
 {
-    
-    RE_CONTEXT *context = calloc(1, sizeof(RE_CONTEXT));
+
+    RE_CONTEXT* context = calloc(1, sizeof(RE_CONTEXT));
     if (!context)
         return NULL;
     if (!word)
         word = "[a-zA-Z0-9_]";
     context->last = NULL;
-    context->current = & context->root;
+    context->current = &context->root;
     context->wordChars = GetRegexp(context, &word);
     context->flags = flags;
     if (!context->wordChars)
@@ -542,9 +538,9 @@ char *word;
     }
     return context;
 }
-int matchesSpecial(RE_CONTEXT *context, int sp, char **ch)
+int matchesSpecial(RE_CONTEXT* context, int sp, char** ch)
 {
-    switch(sp)
+    switch (sp)
     {
         case RE_M_WORD:
             if (TSTBIT(context->wordChars, **ch))
@@ -602,7 +598,7 @@ int matchesSpecial(RE_CONTEXT *context, int sp, char **ch)
         case RE_M_SOL:
             if (*ch == context->beginning)
                 return TRUE;
-            return ((*ch)[-1] == '\n');			
+            return ((*ch)[-1] == '\n');
         case RE_M_EOL:
             if (**ch == '\n' || !**ch)
             {
@@ -615,9 +611,8 @@ int matchesSpecial(RE_CONTEXT *context, int sp, char **ch)
             return FALSE;
     }
 }
-int matchesChar(context, ch)
-RE_CONTEXT *context;
-char **ch;
+int matchesChar(context, ch) RE_CONTEXT* context;
+char** ch;
 {
     int n = **ch, i;
     if ((*context->current)->regexp)
@@ -627,13 +622,13 @@ char **ch;
             (*ch)++;
             return TRUE;
         }
-        for (i=RE_M_WORD; i < RE_M_END; i++)
-             if (TSTBIT((*context->current)->regexp, i))
-                 return matchesSpecial(context, i, ch);
+        for (i = RE_M_WORD; i < RE_M_END; i++)
+            if (TSTBIT((*context->current)->regexp, i))
+                return matchesSpecial(context, i, ch);
     }
     else
     {
-        if ( (*context->current)->ch == n)
+        if ((*context->current)->ch == n)
         {
             (*ch)++;
             return TRUE;
@@ -642,48 +637,46 @@ char **ch;
     }
     return FALSE;
 }
-int matchesRange(context, string)
-RE_CONTEXT *context;
-char **string;
+int matchesRange(context, string) RE_CONTEXT* context;
+char** string;
 {
     int i;
     if ((*context->current)->rl < 0 || (*context->current)->rh < 0)
         return matchesChar(context, string);
     if (*string != context->beginning)
     {
-        char *old = *string;
+        char* old = *string;
         (*string)--;
-        if (matchesChar(context,string))
+        if (matchesChar(context, string))
         {
             *string = old;
             return FALSE;
         }
         *string = old;
     }
-    for (i=0; i < (*context->current)->rl; i++)
+    for (i = 0; i < (*context->current)->rl; i++)
     {
         if (!matchesChar(context, string))
             return FALSE;
     }
-    for (i=(*context->current)->rl; i < (*context->current)->rh; i++)
+    for (i = (*context->current)->rl; i < (*context->current)->rh; i++)
         if (!matchesChar(context, string))
             return TRUE;
     return !matchesChar(context, string);
 }
-int isMatched(context, string)
-RE_CONTEXT *context;
-char *string;
+int isMatched(context, string) RE_CONTEXT* context;
+char* string;
 {
-    char *old = string;
+    char* old = string;
     context->current = &context->root;
     while (*context->current)
     {
-        switch((*context->current)->type)
-        {	
+        switch ((*context->current)->type)
+        {
             case M_CHAR:
                 if (!matchesRange(context, &string))
                     return -1;
-                break;					
+                break;
             case M_ANY:
                 if (!isgraph(*string++))
                     return -1;
@@ -691,9 +684,10 @@ char *string;
             case M_ONE:
                 if (!matchesChar(context, &string))
                     return -1;
-                /* fallthrough*/				
-            case M_ZERO:			
-                while (matchesChar(context, &string));
+                /* fallthrough*/
+            case M_ZERO:
+                while (matchesChar(context, &string))
+                    ;
                 break;
             case M_START:
                 context->matchOffsets[(*context->current)->ch][0] = string - context->beginning;
@@ -709,7 +703,7 @@ char *string;
                     int i;
                     int begin = context->matchOffsets[(*context->current)->ch][0];
                     int end = context->matchOffsets[(*context->current)->ch][1];
-                    for (i= begin; i < end; i++)
+                    for (i = begin; i < end; i++)
                     {
                         int n1 = context->beginning[i];
                         int n2 = *string++;
@@ -730,15 +724,14 @@ char *string;
     }
     return string - old;
 }
-int re_matches(context, text, start, end)
-RE_CONTEXT *context;
-char *text;
+int re_matches(context, text, start, end) RE_CONTEXT* context;
+char* text;
 int start;
 int end;
 {
     int i;
     int direction = 1;
-    char *old ;
+    char* old;
     context->beginning = text;
     old = text += start;
     if (start == end)
@@ -750,7 +743,7 @@ int end;
         end = n;
         direction = -1;
     }
-    memset(context->matchOffsets, 0 , sizeof(context->matchOffsets));
+    memset(context->matchOffsets, 0, sizeof(context->matchOffsets));
     while (text >= context->beginning + start && text <= context->beginning + end)
     {
         int n;
@@ -758,7 +751,7 @@ int end;
         {
             if (!(context->flags & RE_F_WORD))
             {
-                for (i=0; i < 10; i++)
+                for (i = 0; i < 10; i++)
                 {
                     context->matchOffsets[i][0] -= old - context->beginning;
                     context->matchOffsets[i][1] -= old - context->beginning;
@@ -772,7 +765,7 @@ int end;
                 if (text == context->beginning || !TSTBIT(context->wordChars, text[-1]))
                     if (!TSTBIT(context->wordChars, text[n]))
                     {
-                        for (i=0; i < 10; i++)
+                        for (i = 0; i < 10; i++)
                         {
                             context->matchOffsets[i][0] -= old - context->beginning;
                             context->matchOffsets[i][1] -= old - context->beginning;
@@ -783,7 +776,7 @@ int end;
                     }
             }
         }
-        text+= direction;
+        text += direction;
     }
     return FALSE;
 }

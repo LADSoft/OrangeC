@@ -27,6 +27,7 @@ MAIN_FILE=dlMzMain.cpp
 INCLUDES=..\util ..\objlib ..\exefmt
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=util objlib
+H_FILES=$(wildcard *.h)
 
 include ..\redirect.mak
 

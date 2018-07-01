@@ -27,6 +27,7 @@ MAIN_FILE=dlHexMain.cpp
 INCLUDES=..\util ..\objlib
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=util objlib
+H_FILES=$(wildcard *.h)
 
 include ..\redirect.mak
 

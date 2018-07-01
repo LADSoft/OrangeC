@@ -148,10 +148,18 @@ int  *_RTL_FUNC _IMPORT __GetDosErrno(void);
 #define _dos_errno (*__GetDosErrno())
 
 #define sys_nerr _sys_nerr
+#if defined(__LSCRTL_DLL)
+extern int _IMPORT _sys_nerr ;
+#else
 extern int _RTL_DATA _sys_nerr ;
+#endif
 
 #define sys_errlist _sys_errlist
+#if defined(__LSCRTL_DLL)
+extern char _IMPORT *_sys_errlist[] ;
+#else
 extern char _RTL_DATA *_sys_errlist[] ;
+#endif
 
 typedef int errno_t;
 

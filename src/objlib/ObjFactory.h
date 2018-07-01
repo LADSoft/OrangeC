@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #ifndef OBJFACTORY_H
@@ -39,208 +39,201 @@
 #include "ObjSymbol.h"
 #include "ObjType.h"
 
-class ObjFactory 
+class ObjFactory
 {
-    typedef std::vector<ObjWrapper *> MemoryContainer;
-public:
-    ObjFactory(ObjIndexManager *IndexManager) : indexManager(IndexManager) { }
+    typedef std::vector<ObjWrapper*> MemoryContainer;
+
+  public:
+    ObjFactory(ObjIndexManager* IndexManager) : indexManager(IndexManager) {}
     ~ObjFactory() { Deallocate(); }
-    ObjIndexManager *GetIndexManager() { return indexManager; }
-    virtual ObjBrowseInfo *MakeBrowseInfo(ObjBrowseInfo::eType Type, ObjBrowseInfo::eQual Qual, 
-                                          ObjLineNo *Line, ObjInt CharPos, ObjString Data)
+    ObjIndexManager* GetIndexManager() { return indexManager; }
+    virtual ObjBrowseInfo* MakeBrowseInfo(ObjBrowseInfo::eType Type, ObjBrowseInfo::eQual Qual, ObjLineNo* Line, ObjInt CharPos,
+                                          ObjString Data)
     {
-        ObjBrowseInfo *b = new ObjBrowseInfo(Type, Qual, Line, CharPos, Data);
+        ObjBrowseInfo* b = new ObjBrowseInfo(Type, Qual, Line, CharPos, Data);
         Tag(b);
         return b;
     }
-    virtual ObjDebugTag *MakeDebugTag(ObjLineNo *LineNo)
+    virtual ObjDebugTag* MakeDebugTag(ObjLineNo* LineNo)
     {
-        ObjDebugTag *d = new ObjDebugTag(LineNo);
+        ObjDebugTag* d = new ObjDebugTag(LineNo);
         Tag(d);
         return d;
     }
-    virtual ObjDebugTag *MakeDebugTag(ObjSymbol *Symbol)
+    virtual ObjDebugTag* MakeDebugTag(ObjSymbol* Symbol)
     {
-        ObjDebugTag *d = new ObjDebugTag(Symbol);
+        ObjDebugTag* d = new ObjDebugTag(Symbol);
         Tag(d);
         return d;
     }
-    virtual ObjDebugTag *MakeDebugTag(ObjSection *Section, bool Start)
+    virtual ObjDebugTag* MakeDebugTag(ObjSection* Section, bool Start)
     {
-        ObjDebugTag *d = new ObjDebugTag(Section, Start);
+        ObjDebugTag* d = new ObjDebugTag(Section, Start);
         Tag(d);
         return d;
     }
-    virtual ObjDebugTag *MakeDebugTag(ObjSymbol *Function, bool Start)
+    virtual ObjDebugTag* MakeDebugTag(ObjSymbol* Function, bool Start)
     {
-        ObjDebugTag *d = new ObjDebugTag(Function, Start);
+        ObjDebugTag* d = new ObjDebugTag(Function, Start);
         Tag(d);
         return d;
     }
-    virtual ObjDebugTag *MakeDebugTag(bool Start)
+    virtual ObjDebugTag* MakeDebugTag(bool Start)
     {
-        ObjDebugTag *d = new ObjDebugTag(Start);
+        ObjDebugTag* d = new ObjDebugTag(Start);
         Tag(d);
         return d;
     }
-    virtual ObjExpression *MakeExpression(ObjExpression::eOperator Type)
+    virtual ObjExpression* MakeExpression(ObjExpression::eOperator Type)
     {
-        ObjExpression *e = new ObjExpression(Type);
+        ObjExpression* e = new ObjExpression(Type);
         Tag(e);
         return e;
     }
-    virtual ObjExpression *MakeExpression(ObjInt Left)
+    virtual ObjExpression* MakeExpression(ObjInt Left)
     {
-        ObjExpression *e = new ObjExpression(Left);
+        ObjExpression* e = new ObjExpression(Left);
         Tag(e);
         return e;
     }
-    virtual ObjExpression *MakeExpression(ObjExpression *Left)
+    virtual ObjExpression* MakeExpression(ObjExpression* Left)
     {
-        ObjExpression *e = new ObjExpression(Left);
+        ObjExpression* e = new ObjExpression(Left);
         Tag(e);
         return e;
     }
-    virtual ObjExpression *MakeExpression(ObjSymbol *Left)
+    virtual ObjExpression* MakeExpression(ObjSymbol* Left)
     {
-        ObjExpression *e = new ObjExpression(Left);
+        ObjExpression* e = new ObjExpression(Left);
         Tag(e);
         return e;
     }
-    virtual ObjExpression *MakeExpression(ObjSection *Left)
+    virtual ObjExpression* MakeExpression(ObjSection* Left)
     {
-        ObjExpression *e = new ObjExpression(Left);
+        ObjExpression* e = new ObjExpression(Left);
         Tag(e);
         return e;
     }
-    virtual ObjExpression *MakeExpression(ObjExpression::eOperator op, 
-                                          ObjExpression *Left)
+    virtual ObjExpression* MakeExpression(ObjExpression::eOperator op, ObjExpression* Left)
     {
-        ObjExpression *e = new ObjExpression(op, Left);
+        ObjExpression* e = new ObjExpression(op, Left);
         Tag(e);
         return e;
     }
-    virtual ObjExpression *MakeExpression(ObjExpression::eOperator op, 
-                                          ObjExpression *Left,
-                                          ObjExpression *Right)
+    virtual ObjExpression* MakeExpression(ObjExpression::eOperator op, ObjExpression* Left, ObjExpression* Right)
     {
-        ObjExpression *e = new ObjExpression(op, Left, Right);
+        ObjExpression* e = new ObjExpression(op, Left, Right);
         Tag(e);
         return e;
     }
-    virtual ObjFile *MakeFile(ObjString Name)
+    virtual ObjFile* MakeFile(ObjString Name)
     {
-        ObjFile *f = new ObjFile (Name);
+        ObjFile* f = new ObjFile(Name);
         Tag(f);
         return f;
     }
-    virtual ObjFunction *MakeFunction(ObjString Name, ObjType *ReturnType, int index = -1)
+    virtual ObjFunction* MakeFunction(ObjString Name, ObjType* ReturnType, int index = -1)
     {
-        ObjFunction *f = new ObjFunction(Name, ReturnType, index >= 0 ? index : indexManager->NextType());
+        ObjFunction* f = new ObjFunction(Name, ReturnType, index >= 0 ? index : indexManager->NextType());
         Tag(f);
         return f;
     }
-    virtual ObjLineNo *MakeLineNo(ObjSourceFile *File, ObjInt LineNumber)
+    virtual ObjLineNo* MakeLineNo(ObjSourceFile* File, ObjInt LineNumber)
     {
-        ObjLineNo *l = new ObjLineNo(File , LineNumber);
+        ObjLineNo* l = new ObjLineNo(File, LineNumber);
         Tag(l);
         return l;
     }
-    virtual ObjMemory *MakeData(ObjByte *Data, ObjInt Size)
+    virtual ObjMemory* MakeData(ObjByte* Data, ObjInt Size)
     {
-        ObjMemory *m = new ObjMemory(Data, Size);
+        ObjMemory* m = new ObjMemory(Data, Size);
         Tag(m);
         return m;
     }
-    virtual ObjMemory *MakeData(ObjInt Size, ObjByte fill)
+    virtual ObjMemory* MakeData(ObjInt Size, ObjByte fill)
     {
-        ObjMemory *m = new ObjMemory(Size, fill);
+        ObjMemory* m = new ObjMemory(Size, fill);
         Tag(m);
         return m;
     }
-    virtual ObjMemory *MakeFixup(ObjExpression *Expression, ObjInt Size)
+    virtual ObjMemory* MakeFixup(ObjExpression* Expression, ObjInt Size)
     {
-        ObjMemory *m = new ObjMemory(Expression, Size);
+        ObjMemory* m = new ObjMemory(Expression, Size);
         Tag(m);
         return m;
     }
-    virtual ObjSection *MakeSection(ObjString Name, int index = -1)
+    virtual ObjSection* MakeSection(ObjString Name, int index = -1)
     {
-        ObjSection *s = new ObjSection(Name, index >= 0 ? index : indexManager->NextSection());
+        ObjSection* s = new ObjSection(Name, index >= 0 ? index : indexManager->NextSection());
         Tag(s);
         return s;
     }
-    virtual ObjSourceFile *MakeSourceFile(ObjString Name, int index = -1)
+    virtual ObjSourceFile* MakeSourceFile(ObjString Name, int index = -1)
     {
-        ObjSourceFile *s = new ObjSourceFile(Name, index >= 0 ? index : indexManager->NextFile());
-        Tag (s);
+        ObjSourceFile* s = new ObjSourceFile(Name, index >= 0 ? index : indexManager->NextFile());
+        Tag(s);
         return s;
     }
-    virtual ObjSymbol *MakePublicSymbol(ObjString Name, int index=-1)
+    virtual ObjSymbol* MakePublicSymbol(ObjString Name, int index = -1)
     {
-        ObjSymbol *p = new ObjSymbol(Name, ObjSymbol::ePublic, 
-                                     index >= 0 ? index : indexManager->NextPublic());
+        ObjSymbol* p = new ObjSymbol(Name, ObjSymbol::ePublic, index >= 0 ? index : indexManager->NextPublic());
         p->SetSectionRelative(true);
         Tag(p);
         return p;
     }
-    virtual ObjSymbol *MakeExternalSymbol(ObjString Name, int index = -1)
+    virtual ObjSymbol* MakeExternalSymbol(ObjString Name, int index = -1)
     {
-        ObjSymbol *p = new ObjSymbol(Name, ObjSymbol::eExternal, 
-                                     index >= 0 ? index : indexManager->NextExternal());
+        ObjSymbol* p = new ObjSymbol(Name, ObjSymbol::eExternal, index >= 0 ? index : indexManager->NextExternal());
         Tag(p);
         return p;
     }
-    virtual ObjSymbol *MakeLocalSymbol(ObjString Name, int index = -1)
+    virtual ObjSymbol* MakeLocalSymbol(ObjString Name, int index = -1)
     {
-        ObjSymbol *p = new ObjSymbol(Name, ObjSymbol::eLocal, 
-                                     index >= 0 ? index : indexManager->NextLocal());
+        ObjSymbol* p = new ObjSymbol(Name, ObjSymbol::eLocal, index >= 0 ? index : indexManager->NextLocal());
         p->SetSectionRelative(true);
         Tag(p);
         return p;
     }
-    virtual ObjSymbol *MakeAutoSymbol(ObjString Name, int index = -1)
+    virtual ObjSymbol* MakeAutoSymbol(ObjString Name, int index = -1)
     {
-        ObjSymbol *p = new ObjSymbol(Name, ObjSymbol::eAuto, 
-                                     index >= 0 ? index : indexManager->NextAuto());
+        ObjSymbol* p = new ObjSymbol(Name, ObjSymbol::eAuto, index >= 0 ? index : indexManager->NextAuto());
         Tag(p);
         return p;
     }
-    virtual ObjSymbol *MakeRegSymbol(ObjString Name, int index = -1)
+    virtual ObjSymbol* MakeRegSymbol(ObjString Name, int index = -1)
     {
-        ObjSymbol *p = new ObjSymbol(Name, ObjSymbol::eReg, 
-                                     index >= 0 ? index : indexManager->NextReg());
+        ObjSymbol* p = new ObjSymbol(Name, ObjSymbol::eReg, index >= 0 ? index : indexManager->NextReg());
         Tag(p);
         return p;
     }
-    virtual ObjSymbol *MakeLabelSymbol(ObjString Name)
+    virtual ObjSymbol* MakeLabelSymbol(ObjString Name)
     {
-        ObjSymbol *p = new ObjSymbol(Name, ObjSymbol::eLabel, 0);
+        ObjSymbol* p = new ObjSymbol(Name, ObjSymbol::eLabel, 0);
         p->SetSectionRelative(true);
         Tag(p);
         return p;
     }
-    virtual ObjImportSymbol *MakeImportSymbol(const ObjString Name)
+    virtual ObjImportSymbol* MakeImportSymbol(const ObjString Name)
     {
-        ObjImportSymbol *p = new ObjImportSymbol(Name);
+        ObjImportSymbol* p = new ObjImportSymbol(Name);
         Tag(p);
         return p;
     }
-    virtual ObjExportSymbol *MakeExportSymbol(const ObjString Name)
+    virtual ObjExportSymbol* MakeExportSymbol(const ObjString Name)
     {
-        ObjExportSymbol *p = new ObjExportSymbol(Name);
+        ObjExportSymbol* p = new ObjExportSymbol(Name);
         Tag(p);
         return p;
     }
-    virtual ObjDefinitionSymbol *MakeDefinitionSymbol(ObjString Name)
+    virtual ObjDefinitionSymbol* MakeDefinitionSymbol(ObjString Name)
     {
-        ObjDefinitionSymbol *p = new ObjDefinitionSymbol(Name);
+        ObjDefinitionSymbol* p = new ObjDefinitionSymbol(Name);
         Tag(p);
         return p;
     }
-    virtual ObjType *MakeType(ObjType::eType Type, ObjInt Index = -1)
+    virtual ObjType* MakeType(ObjType::eType Type, ObjInt Index = -1)
     {
-        ObjType *t;
+        ObjType* t;
         if (Index == -1 && Type < ObjType::eVoid)
             t = new ObjType(Type, indexManager->NextType());
         else
@@ -248,9 +241,9 @@ public:
         Tag(t);
         return t;
     }
-    virtual ObjType *MakeType(ObjType::eType Type, ObjType *Base, ObjInt Index = -1)
+    virtual ObjType* MakeType(ObjType::eType Type, ObjType* Base, ObjInt Index = -1)
     {
-        ObjType *t;
+        ObjType* t;
         if (Index == -1 && Type < ObjType::eVoid)
             t = new ObjType(Type, Base, indexManager->NextType());
         else
@@ -258,9 +251,9 @@ public:
         Tag(t);
         return t;
     }
-    virtual ObjType *MakeType(ObjString Name, ObjType::eType Type, ObjType *Base, ObjInt Index = -1)
+    virtual ObjType* MakeType(ObjString Name, ObjType::eType Type, ObjType* Base, ObjInt Index = -1)
     {
-        ObjType *t;
+        ObjType* t;
         if (Index == -1 && Type < ObjType::eVoid)
             t = new ObjType(Name, Type, Base, indexManager->NextType());
         else
@@ -268,9 +261,9 @@ public:
         Tag(t);
         return t;
     }
-    virtual ObjField *MakeField(ObjString Name, ObjType *Base, ObjInt ConstVal, ObjInt index)
+    virtual ObjField* MakeField(ObjString Name, ObjType* Base, ObjInt ConstVal, ObjInt index)
     {
-        ObjField *f = new ObjField(Name, Base, ConstVal, index);
+        ObjField* f = new ObjField(Name, Base, ConstVal, index);
         Tag(f);
         return f;
     }
@@ -280,12 +273,12 @@ public:
     MemoryIterator MemoryBegin() { return allocated.begin(); }
     MemoryIterator MemoryEnd() { return allocated.end(); }
 
-protected:
+  protected:
     virtual void Deallocate();
-    virtual void Tag(ObjWrapper *obj);
-private:
-    ObjIndexManager *indexManager;
+    virtual void Tag(ObjWrapper* obj);
+
+  private:
+    ObjIndexManager* indexManager;
     MemoryContainer allocated;
-        
 };
 #endif

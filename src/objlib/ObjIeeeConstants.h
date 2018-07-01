@@ -1,4 +1,5 @@
-enum eCommentType {
+enum eCommentType
+{
     eGeneralText = 1,
     eLinkPass = 100,
     eMakePass = 101,
@@ -13,11 +14,11 @@ enum eCommentType {
     eLineNo = 401,
     eBlockStart = 402,
     eBlockEnd = 403,
-    eFunctionStart= 404,
-    eFunctionEnd = 405,		
+    eFunctionStart = 404,
+    eFunctionEnd = 405,
     eBrowseInfo = 500
-} ;
-static const int IeeeBinarySig = 0x4549534c; // LSIE
+};
+static const int IeeeBinarySig = 0x4549534c;  // LSIE
 
 enum eCommands
 {

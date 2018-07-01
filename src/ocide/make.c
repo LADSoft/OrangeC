@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -35,10 +35,10 @@ extern int errcount, warncount;
 extern HWND hwndFrame;
 extern char makeTempFile[MAX_PATH];
 extern char szInstallPath[];
-extern BUILDRULE *buildRules;
-extern PROJECTITEM *workArea;
-extern PROJECTITEM *internalDepends;
-extern PROJECTITEM *activeProject;
+extern BUILDRULE* buildRules;
+extern PROJECTITEM* workArea;
+extern PROJECTITEM* internalDepends;
+extern PROJECTITEM* activeProject;
 extern HWND hwndTbProfile, hwndTbBuildType;
 
 int making;
@@ -47,25 +47,21 @@ static BOOL stopBuild;
 
 HANDLE makeSem;
 
-void InitMake(void)
-{
-    makeSem= CreateSemaphore(0,1,1,0);
-}
+void InitMake(void) { makeSem = CreateSemaphore(0, 1, 1, 0); }
 
+void EvalMacros(PROJECTITEM* pj, char* parsedCmd, char* rawCmd, PROJECTITEM** lcd);
 
-void EvalMacros(PROJECTITEM *pj, char *parsedCmd, char *rawCmd, PROJECTITEM **lcd);
-
-static BOOL MakeGetFile(PROJECTITEM *pj, char *buf)
+static BOOL MakeGetFile(PROJECTITEM* pj, char* buf)
 {
     if (pj->type == PJ_PROJ)
     {
-        char *p = strstr(buf, ".cpj");
-        if (p) // get rid of cpj extension
+        char* p = strstr(buf, ".cpj");
+        if (p)  // get rid of cpj extension
             *p = 0;
     }
     else
     {
-        char *value = Lookup("__TARGET_EXTENSION", pj, NULL);
+        char* value = Lookup("__TARGET_EXTENSION", pj, NULL);
         if (value)
         {
             char *p, *q;
@@ -81,14 +77,14 @@ static BOOL MakeGetFile(PROJECTITEM *pj, char *buf)
     }
     return FALSE;
 }
-void SetOutputNames(PROJECTITEM *pj, BOOL first)
+void SetOutputNames(PROJECTITEM* pj, BOOL first)
 {
     while (pj)
     {
         AddSymbolTable(pj, FALSE);
         if (pj->type == PJ_FILE || pj->type == PJ_PROJ)
         {
-            char *p;
+            char* p;
             p = Lookup("OUTPUTFILE", pj, NULL);
             if (p)
             {
@@ -109,7 +105,7 @@ void SetOutputNames(PROJECTITEM *pj, BOOL first)
         pj = pj->next;
     }
 }
-void SetOutputExtensions(PROJECTITEM *pj, BOOL first)
+void SetOutputExtensions(PROJECTITEM* pj, BOOL first)
 {
     while (pj)
     {
@@ -117,20 +113,20 @@ void SetOutputExtensions(PROJECTITEM *pj, BOOL first)
         if (pj->type == PJ_FILE)
         {
             struct _propsData data;
-            PROFILE **pages = calloc(sizeof(PROFILE *),100);
+            PROFILE** pages = calloc(sizeof(PROFILE*), 100);
             memset(&data, 0, sizeof(data));
             data.prototype = pages;
             SelectRules(pj, &data);
             if (data.protocount)
             {
-                SETTING *set = GetSettings(data.prototype[0]);
+                SETTING* set = GetSettings(data.prototype[0]);
                 if (set->command)
                 {
-                    SETTING *ext = PropFind(set->command->children, "__TARGET_EXTENSION");
+                    SETTING* ext = PropFind(set->command->children, "__TARGET_EXTENSION");
 
                     if (ext)
                     {
-                        char *q = strchr(ext->value, '.');
+                        char* q = strchr(ext->value, '.');
                         if (q)
                         {
                             strcpy(pj->outputExt, q);
@@ -147,7 +143,7 @@ void SetOutputExtensions(PROJECTITEM *pj, BOOL first)
         }
         else if (pj->type == PJ_PROJ)
         {
-            char *p = strrchr(pj->realName, '.');
+            char* p = strrchr(pj->realName, '.');
             if (p)
                 strcpy(pj->outputExt, p);
         }
@@ -159,16 +155,16 @@ void SetOutputExtensions(PROJECTITEM *pj, BOOL first)
         pj = pj->next;
     }
 }
-static void GetFileTimes(PROJECTITEM *pj, BOOL clean, BOOL first)
+static void GetFileTimes(PROJECTITEM* pj, BOOL clean, BOOL first)
 {
-    do        
+    do
     {
         AddSymbolTable(pj, FALSE);
         if (pj->type == PJ_FILE || pj->type == PJ_PROJ)
         {
             if (pj->outputExt[0])
             {
-                char *p = Lookup("OUTPUTFILE", pj, NULL);
+                char* p = Lookup("OUTPUTFILE", pj, NULL);
                 if (p)
                 {
                     if (clean || pj->clean)
@@ -192,12 +188,11 @@ static void GetFileTimes(PROJECTITEM *pj, BOOL clean, BOOL first)
         pj->clean = FALSE;
         RemoveSymbolTable();
         pj = pj->next;
-    }
-    while (pj && !first);
+    } while (pj && !first);
 }
-static BOOL CharDepsChanged(char *wd, char *outputFile, char *dependencies)
+static BOOL CharDepsChanged(char* wd, char* outputFile, char* dependencies)
 {
-    char path[4096],*p;
+    char path[4096], *p;
     char root[MAX_PATH];
     if (!dependencies)
         return FALSE;
@@ -210,10 +205,10 @@ static BOOL CharDepsChanged(char *wd, char *outputFile, char *dependencies)
     LoadPath(root, path, "__RCINCLUDES");
     LoadPath(root, path, "__ASMINCLUDES");
     {
-        char *current = dependencies;
+        char* current = dependencies;
         FILETIME outTime;
-        FILE *fil;
-        fil =FindOnPath(outputFile, path);
+        FILE* fil;
+        fil = FindOnPath(outputFile, path);
         if (fil)
         {
             fclose(fil);
@@ -222,8 +217,8 @@ static BOOL CharDepsChanged(char *wd, char *outputFile, char *dependencies)
         else
         {
             return TRUE;
-        }        
-        
+        }
+
         while (*current)
         {
             char depBuf[MAX_PATH];
@@ -245,7 +240,7 @@ static BOOL CharDepsChanged(char *wd, char *outputFile, char *dependencies)
     }
     return FALSE;
 }
-static BOOL AnythingChanged(PROJECTITEM *pj, PROJECTITEM *fi)
+static BOOL AnythingChanged(PROJECTITEM* pj, PROJECTITEM* fi)
 {
     BOOL rv = FALSE;
     while (fi && !rv)
@@ -266,13 +261,14 @@ static BOOL AnythingChanged(PROJECTITEM *pj, PROJECTITEM *fi)
     }
     return rv;
 }
-static BOOL DependsChanged(PROJECTITEM *pj)
+static BOOL DependsChanged(PROJECTITEM* pj)
 {
     BOOL rv = FALSE;
-    PROJECTITEMLIST *depends = pj->depends;
-    PROJECTITEM *proj = pj;
+    PROJECTITEMLIST* depends = pj->depends;
+    PROJECTITEM* proj = pj;
     BOOL isProj = pj->type == PJ_PROJ;
-    while (proj->type != PJ_PROJ) proj = proj->parent;
+    while (proj->type != PJ_PROJ)
+        proj = proj->parent;
     while (depends)
     {
         if (CompareTimes(&pj->outputTime, isProj ? &depends->item->outputTime : &depends->item->fileTime))
@@ -291,28 +287,28 @@ static BOOL DependsChanged(PROJECTITEM *pj)
     }
     if (pj->outputExt[0])
     {
-        char *out = Lookup("OUTPUTFILE",pj, NULL);
-        char *dep = Lookup("__DEPENDENCIES",pj, NULL);
+        char* out = Lookup("OUTPUTFILE", pj, NULL);
+        char* dep = Lookup("__DEPENDENCIES", pj, NULL);
         rv = CharDepsChanged(proj->realName, out, dep);
         free(out);
         free(dep);
     }
     return rv;
 }
-static int GenCommand(PROJECTITEM *pj, BOOL always)
+static int GenCommand(PROJECTITEM* pj, BOOL always)
 {
     BOOL rv = TRUE;
     if (always || (pj->outputExt[0] && DependsChanged(pj)))
     {
-        char *cmd= Lookup("__COMMAND_LINE", pj, NULL);
+        char* cmd = Lookup("__COMMAND_LINE", pj, NULL);
         if (!cmd)
         {
             rv = 0;
         }
         else
         {
-            char *banner = Lookup("__MAKEBANNER", pj, NULL);
-            PROJECTITEM *project = pj;
+            char* banner = Lookup("__MAKEBANNER", pj, NULL);
+            PROJECTITEM* project = pj;
             while (project && project->type != PJ_PROJ)
                 project = project->parent;
             if (banner)
@@ -323,12 +319,12 @@ static int GenCommand(PROJECTITEM *pj, BOOL always)
             strcpy(echoCmd, cmd);
             strcat(echoCmd, "\n");
             SendInfoMessage(ERR_EXTENDED_BUILD_WINDOW, echoCmd);
-            
+
             rv = !Execute(cmd, project->realName, ERR_BUILD_WINDOW);
             free(cmd);
             if (rv)
             {
-                char *p = Lookup("OUTPUTFILE", pj, NULL);
+                char* p = Lookup("OUTPUTFILE", pj, NULL);
                 if (p)
                     FileTime(&pj->outputTime, p);
                 return 1;
@@ -338,22 +334,22 @@ static int GenCommand(PROJECTITEM *pj, BOOL always)
     }
     return 0;
 }
-static int CustomBuildStep(PROJECTITEM *pj)
+static int CustomBuildStep(PROJECTITEM* pj)
 {
     int rv = 1;
-    char *commands = Lookup("__CUSTOM_COMMANDS", pj, NULL);
+    char* commands = Lookup("__CUSTOM_COMMANDS", pj, NULL);
     if (commands && commands[0])
     {
         char buf[10000], expanded[10000], *p;
-        char *output = Lookup("__CUSTOM_OUTPUT", pj, NULL);
-        char *outputFile = Lookup("OUTPUTFILE", pj, NULL);
+        char* output = Lookup("__CUSTOM_OUTPUT", pj, NULL);
+        char* outputFile = Lookup("OUTPUTFILE", pj, NULL);
         if (output && output[0])
         {
-            char *depends = Lookup("__CUSTOM_DEPENDS",pj, NULL);
+            char* depends = Lookup("__CUSTOM_DEPENDS", pj, NULL);
             if (depends)
             {
-                char *fil = Lookup("OUTPUTFILE", pj, NULL);
-                char *newDeps = calloc(1, strlen(depends) + MAX_PATH);
+                char* fil = Lookup("OUTPUTFILE", pj, NULL);
+                char* newDeps = calloc(1, strlen(depends) + MAX_PATH);
                 strcpy(newDeps, depends);
                 strcat(newDeps, " ");
                 strcat(newDeps, fil);
@@ -370,22 +366,23 @@ static int CustomBuildStep(PROJECTITEM *pj)
         free(outputFile);
         if (rv)
         {
-            char *msg = Lookup("__CUSTOM_DISPLAY",pj, NULL);
+            char* msg = Lookup("__CUSTOM_DISPLAY", pj, NULL);
             rv = 0;
             MakeMessage(msg, "");
             free(msg);
             while (*commands)
             {
-                char *q ;
+                char* q;
                 strcpy(buf, "CMD /C ");
                 q = buf + strlen(buf);
                 p = strrchr(commands, '\n');
                 if (!p)
                     p = commands + strlen(commands);
-                memcpy(q, commands, p-commands);
-                q[p-commands] = 0;
+                memcpy(q, commands, p - commands);
+                q[p - commands] = 0;
                 commands = p;
-                if (*commands) commands++;
+                if (*commands)
+                    commands++;
                 EvalMacros(NULL, expanded, buf, NULL);
                 if (Execute(expanded, pj->realName, ERR_BUILD_WINDOW))
                     rv |= 1;
@@ -400,11 +397,11 @@ static int CustomBuildStep(PROJECTITEM *pj)
     }
     return rv;
 }
-static int BrowseStep(PROJECTITEM *pj)
+static int BrowseStep(PROJECTITEM* pj)
 {
     if (PropGetBool(NULL, "BROWSE_INFORMATION"))
     {
-        BUILDRULE *p = buildRules;
+        BUILDRULE* p = buildRules;
         while (p)
         {
             if (p->profiles->debugSettings->select && !strcmp(p->profiles->debugSettings->select, "BROWSE"))
@@ -415,7 +412,7 @@ static int BrowseStep(PROJECTITEM *pj)
         {
             AddAssigns(p->profiles->debugSettings->command->assignments);
             RecursiveAddSymbols(p->profiles->debugSettings->command->children, TRUE);
-            if ( GenCommand(pj, TRUE))
+            if (GenCommand(pj, TRUE))
             {
                 FreeJumpSymbols();
                 LoadJumpSymbols();
@@ -426,7 +423,7 @@ static int BrowseStep(PROJECTITEM *pj)
     }
     return 0;
 }
-static int Make(PROJECTITEM *pj, BOOL first)
+static int Make(PROJECTITEM* pj, BOOL first)
 {
     int rv = 0;
     do
@@ -434,7 +431,7 @@ static int Make(PROJECTITEM *pj, BOOL first)
         AddSymbolTable(pj, FALSE);
         if (pj->type == PJ_FILE)
         {
-            
+
             rv |= GenCommand(pj, FALSE);
             if (first)
             {
@@ -444,7 +441,7 @@ static int Make(PROJECTITEM *pj, BOOL first)
         }
         else if (pj->children)
         {
-              
+
             if (pj->type == PJ_PROJ)
                 MakeMessage("Building Project %s", pj->displayName);
             rv |= Make(pj->type == PJ_WS ? pj->projectBuildList : pj->children, FALSE);
@@ -472,7 +469,7 @@ static int Make(PROJECTITEM *pj, BOOL first)
     } while (pj && !stopBuild && !first);
     return rv;
 }
-static BOOL CheckChanged(PROJECTITEM *pj)
+static BOOL CheckChanged(PROJECTITEM* pj)
 {
     BOOL rv = FALSE;
     do
@@ -480,7 +477,7 @@ static BOOL CheckChanged(PROJECTITEM *pj)
         AddSymbolTable(pj, FALSE);
         if (pj->type == PJ_FILE)
         {
-            
+
             rv = pj->outputExt[0] && DependsChanged(pj);
         }
         else if (pj->children)
@@ -499,10 +496,10 @@ static BOOL CheckChanged(PROJECTITEM *pj)
     } while (pj && !rv);
     return rv;
 }
-static BOOL BuildModified(PROJECTITEM *pj)
+static BOOL BuildModified(PROJECTITEM* pj)
 {
     BOOL rv;
-    PROJECTITEM *deps = (PROJECTITEM *)internalDepends;
+    PROJECTITEM* deps = (PROJECTITEM*)internalDepends;
     PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
     WaitForSingleObject(makeSem, INFINITE);
     AddRootTables(pj, FALSE);
@@ -519,10 +516,10 @@ static BOOL BuildModified(PROJECTITEM *pj)
     ReleaseSemaphore(makeSem, 1, NULL);
     return rv;
 }
-static DWORD MakerThread(void *p)
+static DWORD MakerThread(void* p)
 {
-    PROJECTITEM *pj = (PROJECTITEM *)p;
-    PROJECTITEM *deps = (PROJECTITEM *)internalDepends;
+    PROJECTITEM* pj = (PROJECTITEM*)p;
+    PROJECTITEM* deps = (PROJECTITEM*)internalDepends;
     PostMessage(hwndFrame, WM_BUILDANIMATE, 1, 0);
     making = TRUE;
     PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
@@ -544,13 +541,13 @@ static DWORD MakerThread(void *p)
     ReleaseSymbolTables();
     if (stopBuild)
     {
-        SetInfoColor(ERR_BUILD_WINDOW, 0x0000ff); // red
+        SetInfoColor(ERR_BUILD_WINDOW, 0x0000ff);  // red
         SendInfoMessage(ERR_BUILD_WINDOW, "The build was canceled");
-        SetInfoColor(ERR_EXTENDED_BUILD_WINDOW, 0x0000ff); // red
+        SetInfoColor(ERR_EXTENDED_BUILD_WINDOW, 0x0000ff);  // red
         SendInfoMessage(ERR_EXTENDED_BUILD_WINDOW, "The build was canceled");
     }
     else
-   {
+    {
         ErrWarnCounts();
     }
     making = FALSE;
@@ -562,11 +559,8 @@ static DWORD MakerThread(void *p)
     SetStatusMessage(errcount == 0 ? "Build Succeeded" : "Build Failed", FALSE);
     return errcount == 0;
 }
-void StopBuild(void)
-{
-    stopBuild = TRUE;
-}
-void Maker(PROJECTITEM *pj, BOOL clean)
+void StopBuild(void) { stopBuild = TRUE; }
+void Maker(PROJECTITEM* pj, BOOL clean)
 {
     DWORD threadhand;
     HWND errWnd = GetWindowHandle(DID_ERRWND);
@@ -595,8 +589,7 @@ void dbgRebuildMainThread(int cmd)
     cmd &= 0xffff;
     if (!activeProject)
     {
-        ExtendedMessageBox("Debugger", MB_SETFOREGROUND | MB_SYSTEMMODAL, 
-            "No project Selected");
+        ExtendedMessageBox("Debugger", MB_SETFOREGROUND | MB_SYSTEMMODAL, "No project Selected");
     }
     else
     {
@@ -606,15 +599,15 @@ void dbgRebuildMainThread(int cmd)
         CreateProjectDependenciesList();
         if (BuildModified(workArea))
         {
-            switch (ExtendedMessageBox("Debugger", MB_YESNOCANCEL, 
-                "Project needs to be rebuilt before debugging,  Do you want to rebuild?"))
+            switch (ExtendedMessageBox("Debugger", MB_YESNOCANCEL,
+                                       "Project needs to be rebuilt before debugging,  Do you want to rebuild?"))
             {
                 case IDYES:
                     stopBuild = FALSE;
                     if (!MakerThread(workArea))
                     {
                         --sem;
-                        return ;
+                        return;
                     }
                     break;
                 case IDCANCEL:

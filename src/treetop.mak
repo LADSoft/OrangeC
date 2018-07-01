@@ -50,6 +50,7 @@ CLEANS:= $(addsuffix .clean,$(DIRS))
 DISTS:= $(addsuffix .dist,$(DIRS))
 DISTS1:= $(addsuffix .dist1,$(DIRS))
 CDIRS:= $(addsuffix .dirs,$(DIRS))
+FORMATS:= $(addsuffix .format,$(DIRS))
 
 NULLDEV := NUL
 
@@ -241,6 +242,7 @@ cleanDISTRIBUTE:
 $(CLEANS): %.clean :
 	$(MAKE) clean -f $(_TREEROOT) -C$*
 clean: del rmdir $(CLEANS)
+	del *.xcf *.xcppf *.xhf
 
 distribute: $(DISTS1)
 
@@ -286,3 +288,24 @@ library: makelibdir $(LIBS)
 exefile: makelibdir $(EXES)
 
 localfiles: makelibdir mkdir compile library exefile
+
+
+%.xcppf: %.cpp
+	clang-format -style=file $< > $@
+	copy $@ $<
+
+%.xcf: %.c
+	clang-format -style=file $< > $@
+	copy $@ $<
+
+%.xhf: %.h
+	clang-format -style=file $< > $@
+	copy $@ $<
+
+
+$(FORMATS): %.format :
+	$(MAKE) format -f $(_TREEROOT) -C$*
+
+format: $(H_FILES:.h=.xhf) $(CPP_DEPENDENCIES:.cpp=.xcppf) $(C_DEPENDENCIES:.c=.xcf) $(FORMATS)
+
+

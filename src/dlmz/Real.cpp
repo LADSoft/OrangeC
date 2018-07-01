@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "ObjFile.h"
@@ -29,7 +29,7 @@
 #include "OutputFormats.h"
 #include "Utils.h"
 #include <iostream>
-bool Real::ReadSections(ObjFile *file, ObjExpression *start)
+bool Real::ReadSections(ObjFile* file, ObjExpression* start)
 {
     size = 0;
     int base = GetFirstSeg(start);
@@ -55,15 +55,15 @@ bool Real::ReadSections(ObjFile *file, ObjExpression *start)
     {
         if ((*it)->GetName() != ".stack")
         {
-            ObjSection *sect = *it;
-            ObjMemoryManager &m = sect->GetMemoryManager();
+            ObjSection* sect = *it;
+            ObjMemoryManager& m = sect->GetMemoryManager();
             for (ObjMemoryManager::MemoryIterator it = m.MemoryBegin(); it != m.MemoryEnd(); ++it)
             {
                 int msize = (*it)->GetSize();
-                ObjByte *mdata = (*it)->GetData();
+                ObjByte* mdata = (*it)->GetData();
                 if (msize)
                 {
-                    ObjExpression *fixup = (*it)->GetFixup();
+                    ObjExpression* fixup = (*it)->GetFixup();
                     if (fixup)
                     {
                         int sbase = sect->GetOffset()->Eval(0);
@@ -77,7 +77,7 @@ bool Real::ReadSections(ObjFile *file, ObjExpression *start)
                         }
                         else if (msize == 2)
                         {
-                            if (n >65535)
+                            if (n > 65535)
                                 Utils::fatal("16-bit offset outside of segment");
                             if (bigEndian)
                             {
@@ -87,24 +87,24 @@ bool Real::ReadSections(ObjFile *file, ObjExpression *start)
                             else
                             {
                                 data[ofs] = n & 0xff;
-                                data[ofs+1] = n >> 8;
+                                data[ofs + 1] = n >> 8;
                             }
                         }
-                        else // msize == 4
+                        else  // msize == 4
                         {
                             if (bigEndian)
                             {
                                 data[ofs + 0] = n >> 24;
                                 data[ofs + 1] = n >> 16;
-                                data[ofs + 2] = n >>  8;
+                                data[ofs + 2] = n >> 8;
                                 data[ofs + 3] = n & 0xff;
                             }
                             else
                             {
                                 data[ofs] = n & 0xff;
-                                data[ofs+1] = n >> 8;
-                                data[ofs+2] = n >> 16;
-                                data[ofs+3] = n >> 24;
+                                data[ofs + 1] = n >> 8;
+                                data[ofs + 2] = n >> 16;
+                                data[ofs + 3] = n >> 24;
                             }
                         }
                     }
@@ -122,20 +122,20 @@ bool Real::ReadSections(ObjFile *file, ObjExpression *start)
     }
     return true;
 }
-bool Real::Write(std::fstream &stream)
+bool Real::Write(std::fstream& stream)
 {
     if (stackSeg == 0 && stackOffs == 0)
     {
         std::cout << "Warning: No stack segment" << std::endl;
     }
     WriteHeader(stream);
-    stream.write((char *)data, size);
+    stream.write((char*)data, size);
     return true;
 }
-void Real::WriteHeader(std::fstream &stream)
+void Real::WriteHeader(std::fstream& stream)
 {
     memset(&header, 0, sizeof(header));
-    int hdrSize = (sizeof(header) + (fixups.size() * 4) + 15) &~15;
+    int hdrSize = (sizeof(header) + (fixups.size() * 4) + 15) & ~15;
     int fileSize = hdrSize + size;
     header.signature = MZ_SIGNATURE;
     header.image_length_MOD_512 = fileSize % 512;
@@ -143,7 +143,7 @@ void Real::WriteHeader(std::fstream &stream)
     if (header.image_length_MOD_512 != 0)
         header.image_length_DIV_512++;
     header.n_relocation_items = fixups.size();
-    header.n_header_paragraphs = hdrSize/16;
+    header.n_header_paragraphs = hdrSize / 16;
     header.min_paragraphs_above = (size + 15) / 16;
     header.max_paragraphs_above = 0xffff;
     header.initial_SS = stackSeg;
@@ -154,13 +154,13 @@ void Real::WriteHeader(std::fstream &stream)
     header.offset_to_relocation_table = sizeof(header);
     header.overlay = 0;
     header.always_one = 1;
-    stream.write((char *)&header, sizeof(header));
+    stream.write((char*)&header, sizeof(header));
     for (auto fixup : fixups)
     {
         unsigned short dd[2];
         dd[0] = fixup.off;
         dd[1] = fixup.seg;
-        stream.write((char *)&dd, sizeof(dd));
+        stream.write((char*)&dd, sizeof(dd));
     }
     int n = stream.tellg() & 15;
     // pad to end of header
@@ -171,7 +171,7 @@ void Real::WriteHeader(std::fstream &stream)
         stream.write(buf, 16 - n);
     }
 }
-void Real::GetSectionBalance(ObjExpression *n, int &add, int &sub, bool positive)
+void Real::GetSectionBalance(ObjExpression* n, int& add, int& sub, bool positive)
 {
     if (n->GetOperator() == ObjExpression::eSection)
     {
@@ -195,7 +195,7 @@ void Real::GetSectionBalance(ObjExpression *n, int &add, int &sub, bool positive
         GetSectionBalance(n->GetRight(), add, sub, !positive);
     }
 }
-bool Real::Balanced(ObjExpression *n, bool skipping)
+bool Real::Balanced(ObjExpression* n, bool skipping)
 {
     bool rv = true;
     if (!skipping)
@@ -231,13 +231,13 @@ bool Real::Balanced(ObjExpression *n, bool skipping)
     }
     return rv;
 }
-int Real::GetFixupOffset(ObjExpression *fixup, int sbase, int pc)
+int Real::GetFixupOffset(ObjExpression* fixup, int sbase, int pc)
 {
     if (fixup->GetOperator() == ObjExpression::eDiv)
     {
         int base = GetFirstSeg(fixup);
         // segment
-        Fixup xx(sbase >> 4, pc - (sbase &~15));
+        Fixup xx(sbase >> 4, pc - (sbase & ~15));
         fixups.push_back(xx);
         return base >> 4;
     }
@@ -257,14 +257,15 @@ int Real::GetFixupOffset(ObjExpression *fixup, int sbase, int pc)
     {
         if (Balanced(fixup, false))
             return fixup->Eval(pc);
-        Utils::fatal("Invalid fixup");			
+        Utils::fatal("Invalid fixup");
     }
     return 0;
 }
-int Real::GetFirstSeg(ObjExpression *exp)
+int Real::GetFirstSeg(ObjExpression* exp)
 {
-    ObjExpression *find = exp;
-    while (find->GetOperator() == ObjExpression::eAdd || find->GetOperator() == ObjExpression:: eSub || find->GetOperator() == ObjExpression::eDiv)
+    ObjExpression* find = exp;
+    while (find->GetOperator() == ObjExpression::eAdd || find->GetOperator() == ObjExpression::eSub ||
+           find->GetOperator() == ObjExpression::eDiv)
     {
         find = find->GetLeft();
     }

@@ -1,30 +1,30 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*
- * this module combines constants at compile time.  It is used e.g. 
+ * this module combines constants at compile time.  It is used e.g.
  * for evaluating static assignments, but an initial folding of variable
  * expressions is done as well to slightly improve the code generation
  */
@@ -34,29 +34,29 @@
 #include "compiler.h"
 
 extern int stdpragmas;
-extern ARCH_ASM *chosenAssembler;
+extern ARCH_ASM* chosenAssembler;
 extern TYPE stdvoid;
 extern BOOLEAN initializingGlobalVar;
 extern int total_errors;
-extern STRUCTSYM *structSyms;
+extern STRUCTSYM* structSyms;
 extern int templateNestingCount;
 
-static EXPRESSION *asidehead,  **asidetail;
-ULLONG_TYPE reint(EXPRESSION *node);
+static EXPRESSION *asidehead, **asidetail;
+ULLONG_TYPE reint(EXPRESSION* node);
 LLONG_TYPE mod_mask(int i);
 
-static unsigned LLONG_TYPE shifts[sizeof(LLONG_TYPE)*8] ;
-static EXPRESSION *functionnesting[100];
+static unsigned LLONG_TYPE shifts[sizeof(LLONG_TYPE) * 8];
+static EXPRESSION* functionnesting[100];
 static int functionnestingcount = 0;
 void constoptinit(void)
 {
     int i;
-    for (i=0; i < sizeof(LLONG_TYPE) * 8; i++)
+    for (i = 0; i < sizeof(LLONG_TYPE) * 8; i++)
         shifts[i] = ((ULLONG_TYPE)1) << i;
 }
-static int optimizerfloatconst(EXPRESSION *en)
+static int optimizerfloatconst(EXPRESSION* en)
 {
-    if ((en->pragmas &STD_PRAGMA_FENV) && !initializingGlobalVar)
+    if ((en->pragmas & STD_PRAGMA_FENV) && !initializingGlobalVar)
         return FALSE;
 
     return isfloatconst(en) || isimaginaryconst(en) || iscomplexconst(en);
@@ -64,7 +64,7 @@ static int optimizerfloatconst(EXPRESSION *en)
 
 /*-------------------------------------------------------------------------*/
 
-static int isoptconst(EXPRESSION *en)
+static int isoptconst(EXPRESSION* en)
 {
     if (!en)
         return FALSE;
@@ -73,7 +73,7 @@ static int isoptconst(EXPRESSION *en)
 
 /*-------------------------------------------------------------------------*/
 
-static int maxinttype(EXPRESSION *ep1, EXPRESSION *ep2)
+static int maxinttype(EXPRESSION* ep1, EXPRESSION* ep2)
 {
     int type1 = ep1->type;
     int type2 = ep2->type;
@@ -104,7 +104,7 @@ static int maxinttype(EXPRESSION *ep1, EXPRESSION *ep2)
 
 /*-------------------------------------------------------------------------*/
 
-static int isunsignedexpr(EXPRESSION *ep1)
+static int isunsignedexpr(EXPRESSION* ep1)
 {
     switch (ep1->type)
     {
@@ -119,50 +119,43 @@ static int isunsignedexpr(EXPRESSION *ep1)
 
 /*-------------------------------------------------------------------------*/
 
-static int maxfloattype(EXPRESSION *ep1, EXPRESSION *ep2)
+static int maxfloattype(EXPRESSION* ep1, EXPRESSION* ep2)
 {
     int type1 = ep1->type;
     int type2 = ep2->type;
-    if (type1 == en_c_ld || type2 == en_c_ld || type1 == en_c_ldi ||
-        type2 == en_c_ldi)
+    if (type1 == en_c_ld || type2 == en_c_ld || type1 == en_c_ldi || type2 == en_c_ldi)
         return en_c_ld;
-    if (type1 == en_c_d || type2 == en_c_d || type1 == en_c_di ||
-        type2 == en_c_di)
+    if (type1 == en_c_d || type2 == en_c_d || type1 == en_c_di || type2 == en_c_di)
         return en_c_d;
     return en_c_f;
 }
 
 /*-------------------------------------------------------------------------*/
 
-static int maximaginarytype(EXPRESSION *ep1, EXPRESSION *ep2)
+static int maximaginarytype(EXPRESSION* ep1, EXPRESSION* ep2)
 {
     int type1 = ep1->type;
     int type2 = ep2->type;
-    if (type1 == en_c_ld || type2 == en_c_ld || type1 == en_c_ldi ||
-        type2 == en_c_ldi)
+    if (type1 == en_c_ld || type2 == en_c_ld || type1 == en_c_ldi || type2 == en_c_ldi)
         return en_c_ldi;
-    if (type1 == en_c_d || type2 == en_c_d || type1 == en_c_di ||
-        type2 == en_c_di)
+    if (type1 == en_c_d || type2 == en_c_d || type1 == en_c_di || type2 == en_c_di)
         return en_c_di;
     return en_c_fi;
 }
 
 /*-------------------------------------------------------------------------*/
 
-static int maxcomplextype(EXPRESSION *ep1, EXPRESSION *ep2)
+static int maxcomplextype(EXPRESSION* ep1, EXPRESSION* ep2)
 {
     int type1 = ep1->type;
     int type2 = ep2->type;
-    if (type1 == en_c_ld || type2 == en_c_ld || type1 == en_c_ldi ||
-        type2 == en_c_ldi || type1 == en_c_ldc ||
-        type2 == en_c_ldc)
+    if (type1 == en_c_ld || type2 == en_c_ld || type1 == en_c_ldi || type2 == en_c_ldi || type1 == en_c_ldc || type2 == en_c_ldc)
         return en_c_ldc;
-    if (type1 == en_c_d || type2 == en_c_d || type1 == en_c_di ||
-        type2 == en_c_di || type1 == en_c_dc || type2 == en_c_dc)
+    if (type1 == en_c_d || type2 == en_c_d || type1 == en_c_di || type2 == en_c_di || type1 == en_c_dc || type2 == en_c_dc)
         return en_c_dc;
     return en_c_fc;
 }
-static BOOLEAN hasFloats(EXPRESSION *node)
+static BOOLEAN hasFloats(EXPRESSION* node)
 /*
  * Go through a node and see if it will be promoted to type FLOAT
  */
@@ -199,8 +192,6 @@ static BOOLEAN hasFloats(EXPRESSION *node)
         case en_c_di:
         case en_c_ldi:
             return 1;
-        default:
-            return 0;
         case en_assign:
         case en_autoinc:
         case en_autodec:
@@ -237,12 +228,13 @@ static BOOLEAN hasFloats(EXPRESSION *node)
         case en_literalclass:
         case en_lvalue:
             return hasFloats(node->left);
+        default:
+            return 0;
     }
-    return (0);
 }
 /*-------------------------------------------------------------------------*/
 
-static int getmode(EXPRESSION *ep1, EXPRESSION *ep2)
+static int getmode(EXPRESSION* ep1, EXPRESSION* ep2)
 /*
  * get the constant mode of a pair of nodes
  * 0 = Neither node is a constant
@@ -273,11 +265,11 @@ static int getmode(EXPRESSION *ep1, EXPRESSION *ep2)
  */
 {
     int mode = 0;
-    if (!initializingGlobalVar && (ep1->pragmas &STD_PRAGMA_FENV) && (isfloatconst(ep1) ||
-        isimaginaryconst(ep1) || iscomplexconst(ep1)))
+    if (!initializingGlobalVar && (ep1->pragmas & STD_PRAGMA_FENV) &&
+        (isfloatconst(ep1) || isimaginaryconst(ep1) || iscomplexconst(ep1)))
         return 0;
-    if (!initializingGlobalVar && ep2 && (ep2->pragmas &STD_PRAGMA_FENV) && (isfloatconst(ep2) ||
-        isimaginaryconst(ep2) || iscomplexconst(ep2)))
+    if (!initializingGlobalVar && ep2 && (ep2->pragmas & STD_PRAGMA_FENV) &&
+        (isfloatconst(ep2) || isimaginaryconst(ep2) || iscomplexconst(ep2)))
         return 0;
     if (isintconst(ep1))
         if (ep2)
@@ -286,12 +278,12 @@ static int getmode(EXPRESSION *ep1, EXPRESSION *ep2)
                 mode = 1;
             else if (isfloatconst(ep2))
             {
-                    mode = 2;
+                mode = 2;
             }
             else if (isimaginaryconst(ep2))
-                    mode = 15;
+                mode = 15;
             else if (iscomplexconst(ep2))
-                    mode = 24;
+                mode = 24;
             else
                 mode = 5;
         }
@@ -301,13 +293,13 @@ static int getmode(EXPRESSION *ep1, EXPRESSION *ep2)
         if (ep2)
         {
             if (isintconst(ep2))
-                    mode = 3;
+                mode = 3;
             else if (isfloatconst(ep2))
-                    mode = 4;
+                mode = 4;
             else if (isimaginaryconst(ep2))
-                    mode = 9;
+                mode = 9;
             else if (iscomplexconst(ep2))
-                    mode = 18;
+                mode = 18;
             else
                 mode = 6;
         }
@@ -317,46 +309,45 @@ static int getmode(EXPRESSION *ep1, EXPRESSION *ep2)
         if (ep2)
         {
             if (isfloatconst(ep2))
-                    mode = 10;
+                mode = 10;
             else if (isimaginaryconst(ep2))
-                    mode = 11;
+                mode = 11;
             else if (iscomplexconst(ep2))
-                    mode = 16;
+                mode = 16;
             else if (isintconst(ep2))
-                    mode = 14;
+                mode = 14;
             else
                 mode = 12;
-        } else
+        }
+        else
             mode = 12;
     else if (iscomplexconst(ep1))
         if (ep2)
         {
             if (isfloatconst(ep2))
-                    mode = 17;
+                mode = 17;
             else if (isimaginaryconst(ep2))
-                    mode = 19;
+                mode = 19;
             else if (iscomplexconst(ep2))
-                    mode = 20;
+                mode = 20;
             else if (isintconst(ep2))
-                    mode = 23;
+                mode = 23;
             else
                 mode = 21;
-        } else
+        }
+        else
             mode = 21;
     else if (ep2)
     {
         if (isintconst(ep2))
             mode = 7;
-        else if (ep2->type == en_c_d || ep2->type == en_c_ld || ep2
-            ->type == en_c_f)
-                mode = 8;
-        else if (ep2->type == en_c_di || ep2->type == en_c_fi ||
-            ep2->type == en_c_ldi)
-                mode = 13;
-        else if (ep2->type == en_c_dc || ep2->type == en_c_fc ||
-            ep2->type == en_c_ldc)
-                mode = 22;
-    }    
+        else if (ep2->type == en_c_d || ep2->type == en_c_ld || ep2->type == en_c_f)
+            mode = 8;
+        else if (ep2->type == en_c_di || ep2->type == en_c_fi || ep2->type == en_c_ldi)
+            mode = 13;
+        else if (ep2->type == en_c_dc || ep2->type == en_c_fc || ep2->type == en_c_ldc)
+            mode = 22;
+    }
     return (mode);
 }
 LLONG_TYPE MaxOut(enum e_bt size, LLONG_TYPE value)
@@ -384,10 +375,10 @@ LLONG_TYPE MaxOut(enum e_bt size, LLONG_TYPE value)
             bits = getSize(bt_short) * 8;
             break;
         default:
-            return value;			
+            return value;
     }
     plus = mod_mask(bits);
-    minus = - plus;
+    minus = -plus;
     if (value < minus)
         value = minus;
     if (value > plus)
@@ -398,9 +389,10 @@ LLONG_TYPE MaxOut(enum e_bt size, LLONG_TYPE value)
 ULLONG_TYPE CastToInt(int size, LLONG_TYPE value)
 {
     int bits;
-    switch(size) {
+    switch (size)
+    {
         default:
-            return value ;
+            return value;
         case ISZ_U16:
             bits = getSize(bt_char16_t) * 8;
             break;
@@ -409,7 +401,7 @@ ULLONG_TYPE CastToInt(int size, LLONG_TYPE value)
             break;
         case ISZ_BOOLEAN:
             bits = 1;
-            break ;
+            break;
         case -ISZ_UCHAR:
         case ISZ_UCHAR:
             bits = 8;
@@ -423,15 +415,15 @@ ULLONG_TYPE CastToInt(int size, LLONG_TYPE value)
         case -ISZ_UNATIVE:
         case ISZ_UNATIVE:
             bits = getSize(bt_int) * 8;
-            break ;
+            break;
         case -ISZ_ULONG:
         case ISZ_ULONG:
             bits = getSize(bt_long) * 8;
-            break ;
+            break;
         case -ISZ_ULONGLONG:
         case ISZ_ULONGLONG:
             bits = getSize(bt_long_long) * 8;
-            break ;
+            break;
     }
     value &= mod_mask(bits);
     if (size < 0)
@@ -439,14 +431,15 @@ ULLONG_TYPE CastToInt(int size, LLONG_TYPE value)
             value |= ~mod_mask(bits);
     return value;
 }
-FPF CastToFloat(int size, FPF *value)
+FPF CastToFloat(int size, FPF* value)
 {
-    switch(size) {
+    switch (size)
+    {
         case ISZ_FLOAT:
         case ISZ_IFLOAT:
             if (chosenAssembler->arch->flt_float)
             {
-                ARCH_FLOAT *flt = chosenAssembler->arch->flt_float;
+                ARCH_FLOAT* flt = chosenAssembler->arch->flt_float;
                 FPFTruncate(value, flt->mantissa_bits, flt->exp_max, flt->exp_min);
             }
             else
@@ -456,7 +449,7 @@ FPF CastToFloat(int size, FPF *value)
         case ISZ_IDOUBLE:
             if (chosenAssembler->arch->flt_dbl)
             {
-                ARCH_FLOAT *flt = chosenAssembler->arch->flt_dbl;
+                ARCH_FLOAT* flt = chosenAssembler->arch->flt_dbl;
                 FPFTruncate(value, flt->mantissa_bits, flt->exp_max, flt->exp_min);
             }
             else
@@ -466,78 +459,78 @@ FPF CastToFloat(int size, FPF *value)
         case ISZ_ILDOUBLE:
             if (chosenAssembler->arch->flt_ldbl)
             {
-                ARCH_FLOAT *flt = chosenAssembler->arch->flt_ldbl;
+                ARCH_FLOAT* flt = chosenAssembler->arch->flt_ldbl;
                 FPFTruncate(value, flt->mantissa_bits, flt->exp_max, flt->exp_min);
             }
             else
                 diag("CastToFloat: architecture characteristics for 'long double' not set");
-            break ;
+            break;
     }
     return *value;
 }
-FPF *IntToFloat(FPF* temp, int size, LLONG_TYPE value)
+FPF* IntToFloat(FPF* temp, int size, LLONG_TYPE value)
 {
-    LLONG_TYPE t = CastToInt(size,value);
+    LLONG_TYPE t = CastToInt(size, value);
     if (size < 0)
-        LongLongToFPF(temp,t);
+        LongLongToFPF(temp, t);
     else
-        UnsignedLongLongToFPF(temp,t);
+        UnsignedLongLongToFPF(temp, t);
     return temp;
 }
-FPF refloat(EXPRESSION *node)
+FPF refloat(EXPRESSION* node)
 {
     FPF rv;
     FPF temp;
     switch (node->type)
     {
         case en_c_i:
-            rv = CastToFloat(ISZ_LDOUBLE,IntToFloat(&temp,-ISZ_UINT,node->v.i));
+            rv = CastToFloat(ISZ_LDOUBLE, IntToFloat(&temp, -ISZ_UINT, node->v.i));
             break;
         case en_c_l:
-            rv = CastToFloat(ISZ_LDOUBLE,IntToFloat(&temp,-ISZ_ULONG,node->v.i));
+            rv = CastToFloat(ISZ_LDOUBLE, IntToFloat(&temp, -ISZ_ULONG, node->v.i));
             break;
         case en_c_ui:
-            rv = CastToFloat(ISZ_LDOUBLE,IntToFloat(&temp,ISZ_UINT,node->v.i));
+            rv = CastToFloat(ISZ_LDOUBLE, IntToFloat(&temp, ISZ_UINT, node->v.i));
             break;
         case en_c_ul:
-            rv = CastToFloat(ISZ_LDOUBLE,IntToFloat(&temp,ISZ_ULONG,node->v.i));
+            rv = CastToFloat(ISZ_LDOUBLE, IntToFloat(&temp, ISZ_ULONG, node->v.i));
             break;
         case en_c_c:
-            rv = CastToFloat(ISZ_LDOUBLE,IntToFloat(&temp,-ISZ_UCHAR,node->v.i));
+            rv = CastToFloat(ISZ_LDOUBLE, IntToFloat(&temp, -ISZ_UCHAR, node->v.i));
             break;
         case en_c_uc:
-            rv = CastToFloat(ISZ_LDOUBLE,IntToFloat(&temp,ISZ_UCHAR,node->v.i));
+            rv = CastToFloat(ISZ_LDOUBLE, IntToFloat(&temp, ISZ_UCHAR, node->v.i));
             break;
         case en_c_u16:
-            rv = CastToFloat(ISZ_LDOUBLE,IntToFloat(&temp,ISZ_U16,node->v.i));
+            rv = CastToFloat(ISZ_LDOUBLE, IntToFloat(&temp, ISZ_U16, node->v.i));
             break;
         case en_c_u32:
-            rv = CastToFloat(ISZ_LDOUBLE,IntToFloat(&temp,ISZ_U32,node->v.i));
+            rv = CastToFloat(ISZ_LDOUBLE, IntToFloat(&temp, ISZ_U32, node->v.i));
             break;
         case en_c_wc:
-            rv = CastToFloat(ISZ_LDOUBLE,IntToFloat(&temp,ISZ_WCHAR,node->v.i));
+            rv = CastToFloat(ISZ_LDOUBLE, IntToFloat(&temp, ISZ_WCHAR, node->v.i));
             break;
         case en_c_bool:
-            rv = CastToFloat(ISZ_LDOUBLE,IntToFloat(&temp,ISZ_BOOLEAN,node->v.i));
+            rv = CastToFloat(ISZ_LDOUBLE, IntToFloat(&temp, ISZ_BOOLEAN, node->v.i));
             break;
         case en_c_ull:
-            rv = CastToFloat(ISZ_LDOUBLE,IntToFloat(&temp,ISZ_ULONGLONG,node->v.i));
+            rv = CastToFloat(ISZ_LDOUBLE, IntToFloat(&temp, ISZ_ULONGLONG, node->v.i));
             break;
         case en_c_ll:
-            rv = CastToFloat(ISZ_LDOUBLE,IntToFloat(&temp,-ISZ_ULONGLONG,node->v.i));
+            rv = CastToFloat(ISZ_LDOUBLE, IntToFloat(&temp, -ISZ_ULONGLONG, node->v.i));
             break;
         case en_c_f:
         case en_c_fi:
-            rv = CastToFloat(ISZ_FLOAT,&node->v.f);
+            rv = CastToFloat(ISZ_FLOAT, &node->v.f);
             break;
         case en_c_d:
         case en_c_di:
-            rv = CastToFloat(ISZ_DOUBLE,&node->v.f);
+            rv = CastToFloat(ISZ_DOUBLE, &node->v.f);
             break;
 
         case en_c_ld:
         case en_c_ldi:
-            rv = CastToFloat(ISZ_LDOUBLE,&node->v.f);
+            rv = CastToFloat(ISZ_LDOUBLE, &node->v.f);
             break;
         default:
             break;
@@ -547,9 +540,9 @@ FPF refloat(EXPRESSION *node)
 
 /*-------------------------------------------------------------------------*/
 
-ULLONG_TYPE reint(EXPRESSION *node)
+ULLONG_TYPE reint(EXPRESSION* node)
 {
-    ULLONG_TYPE rv;
+    ULLONG_TYPE rv = 0;
     if (node->left && node->right)
         node->unionoffset = node->left->unionoffset | node->right->unionoffset;
     else if (node->left)
@@ -614,7 +607,7 @@ ULLONG_TYPE reint(EXPRESSION *node)
 }
 /*-------------------------------------------------------------------------*/
 
-void dooper(EXPRESSION **node, int mode)
+void dooper(EXPRESSION** node, int mode)
 /*
  *      dooper will execute a constant operation in a node and
  *      modify the node to be the result of the operation.
@@ -622,716 +615,716 @@ void dooper(EXPRESSION **node, int mode)
  *			necessary
  */
 {
-    EXPRESSION *ep,  *ep1,  *ep2;
+    EXPRESSION *ep, *ep1, *ep2;
     FPF temp;
-    ep =  *node;
+    ep = *node;
     ep1 = ep->left;
     ep2 = ep->right;
     if (mode == 5)
     {
         if (hasFloats(ep2))
         {
-                if (isunsignedexpr(ep1))
-                    UnsignedLongLongToFPF(&ep1->v.f, ep1->v.i);
-                else
-                    LongLongToFPF(&ep1->v.f, ep1->v.i);
+            if (isunsignedexpr(ep1))
+                UnsignedLongLongToFPF(&ep1->v.f, ep1->v.i);
+            else
+                LongLongToFPF(&ep1->v.f, ep1->v.i);
             ep1->type = en_c_d;
             refloat(ep1);
         }
-        return ;
+        return;
     }
     else if (mode == 7)
     {
         if (hasFloats(ep1))
         {
-                if (isunsignedexpr(ep2))
-                    UnsignedLongLongToFPF(&ep2->v.f, ep2->v.i);
-                else
-                    LongLongToFPF(&ep2->v.f, ep2->v.i);
+            if (isunsignedexpr(ep2))
+                UnsignedLongLongToFPF(&ep2->v.f, ep2->v.i);
+            else
+                LongLongToFPF(&ep2->v.f, ep2->v.i);
             ep2->type = en_c_d;
             refloat(ep2);
         }
-        return ;
+        return;
     }
     else if (mode == 6 || mode == 12 || mode == 13 || mode == 21 || mode == 22)
-        return ;
+        return;
     else
-    switch (ep->type)
-    {
-        case en_structadd:
-            if (ep->right->type == en_structelem)
-                break;
-        case en_add:
-        case en_arrayadd:
-            switch (mode)
-            {
-            case 1:
-                ep->type = maxinttype(ep1, ep2);
-                ep->v.i = ep1->v.i + ep2->v.i;
-                ep->v.i = reint(ep);
-//				if (ep->unionoffset)
-//					printf("1");
-//				if (ep1->unionoffset)
-//					printf("2");
-//				if (ep2->unionoffset)
-//					printf("3");
-//				printf(";");
-                break;
-            case 2:
-                ep->type = maxfloattype(ep1, ep2);
-                if (isunsignedexpr(ep1))
-                    UnsignedLongLongToFPF(&temp, ep1->v.i);
-                else
-                    LongLongToFPF(&temp, ep1->v.i);
-                AddSubFPF(0,&temp, &ep2->v.f, &ep->v.f);
-                refloat(ep);
-                break;
-            case 3:
-                ep->type = maxfloattype(ep1, ep2);
-                if (isunsignedexpr(ep2))
-                    UnsignedLongLongToFPF(&temp, ep2->v.i);
-                else
-                    LongLongToFPF(&temp, ep2->v.i);
-                AddSubFPF(0,&ep1->v.f, &temp, &ep->v.f);
-                refloat(ep);
-                break;
-            case 4:
-                ep->type = maxfloattype(ep1, ep2);
-                AddSubFPF(0,&ep1->v.f, &ep2->v.f, &ep->v.f);
-                refloat(ep);
-                break;
-            case 9:
-                ep->type = maxcomplextype(ep1,ep2);
-                ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                    && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                        STD_PRAGMA_CXLIMITED : 0;
-                ep->v.c.r = ep1->v.f ;
-                ep->v.c.i = ep2->v.f;
-                refloat(ep);
-                break ;
-            case 10:
-                ep->type = maxcomplextype(ep1,ep2);
-                ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                    && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                        STD_PRAGMA_CXLIMITED : 0;
-                ep->v.c.r = ep2->v.f ;
-                ep->v.c.i = ep1->v.f;
-                refloat(ep);
-                break ;
-            case 11:
-                ep->type = maximaginarytype(ep1,ep2);
-                AddSubFPF(0,&ep1->v.f, &ep2->v.f, &ep->v.f);
-                refloat(ep);
-                break ;
-            case 14:
-                ep->type = maxcomplextype(ep1,ep2);
-                ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                    && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                        STD_PRAGMA_CXLIMITED : 0;
-                LongLongToFPF(&ep->v.c.r, ep2->v.i);
-                ep->v.c.i = ep1->v.f ;
-                refloat(ep);
-                break;
-            case 15:
-                ep->type = maxcomplextype(ep1,ep2);
-                ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                    && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                        STD_PRAGMA_CXLIMITED : 0;
-                LongLongToFPF(&ep->v.c.r, ep1->v.i);
-                ep->v.c.i = ep2->v.f ;
-                refloat(ep);
-                break;
-            case 16:
-                ep->type = maxcomplextype(ep1,ep2);
-                ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                    && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                        STD_PRAGMA_CXLIMITED : 0;
-                ep->v.c.r = ep2->v.c.r ;
-                AddSubFPF(0,&ep1->v.f, &ep2->v.c.i, &ep->v.c.i);
-                refloat(ep);
-                break;
-            case 17:
-                ep->type = maxcomplextype(ep1,ep2);
-                ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                    && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                        STD_PRAGMA_CXLIMITED : 0;
-                ep->v.c.r = ep1->v.c.r ;
-                AddSubFPF(0,&ep2->v.f, &ep1->v.c.i, &ep->v.c.i);
-                refloat(ep);
-                break;
-            case 18:
-                ep->type = maxcomplextype(ep1,ep2);
-                ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                    && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                        STD_PRAGMA_CXLIMITED : 0;
-                AddSubFPF(0,&ep1->v.f, &ep2->v.c.r, &ep->v.c.r);
-                ep->v.c.i = ep2->v.c.i;
-                refloat(ep);
-                break;
-            case 19:
-                ep->type = maxcomplextype(ep1,ep2);
-                ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                    && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                        STD_PRAGMA_CXLIMITED : 0;
-                AddSubFPF(0,&ep2->v.f, &ep1->v.c.r, &ep->v.c.r);
-                ep->v.c.i = ep1->v.c.i;
-                refloat(ep);
-                break;
-            case 20:
-                ep->type = maxcomplextype(ep1,ep2);
-                ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                    && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                        STD_PRAGMA_CXLIMITED : 0;
-                AddSubFPF(0,&ep1->v.c.r, &ep2->v.c.r, &ep->v.c.r);
-                AddSubFPF(0,&ep1->v.c.i, &ep2->v.c.i, &ep->v.c.i);
-                refloat(ep);
-                break;
-            case 23:
-                ep->type = maxcomplextype(ep1,ep2);
-                ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                    && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                        STD_PRAGMA_CXLIMITED : 0;
-                if (isunsignedexpr(ep2))
-                    UnsignedLongLongToFPF(&temp, ep2->v.i);
-                else
-                    LongLongToFPF(&temp, ep2->v.i);
-                AddSubFPF(0,&ep1->v.c.r, &temp, &ep->v.c.r);
-                ep->v.c.i = ep1->v.c.i ;
-                refloat(ep);
-                break;
-            case 24:
-                ep->type = maxcomplextype(ep1,ep2);
-                ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                    && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                        STD_PRAGMA_CXLIMITED : 0;
-                if (isunsignedexpr(ep1))
-                    UnsignedLongLongToFPF(&temp, ep1->v.i);
-                else
-                    LongLongToFPF(&temp, ep1->v.i);
-                AddSubFPF(0,&ep2->v.c.r, &temp, &ep->v.c.r);
-                ep->v.c.i = ep2->v.c.i ;
-                refloat(ep);
-                break;
-            default:
-                break;
-            }
-            break;
-        case en_sub:
-            switch (mode)
-            {
-            case 1:
-                ep->type = maxinttype(ep1, ep2);
-                ep->v.i = ep1->v.i - ep2->v.i;
-                ep->v.i = reint(ep);
-                break;
-            case 2:
-                ep->type = maxfloattype(ep1, ep2);
-                if (isunsignedexpr(ep1))
-                    UnsignedLongLongToFPF(&temp, ep1->v.i);
-                else
-                    LongLongToFPF(&temp, ep1->v.i);
-                AddSubFPF(1,&temp, &ep2->v.f, &ep->v.f);
-                refloat(ep);
-                break;
-            case 3:
-                ep->type = maxfloattype(ep1, ep2);
-                if (isunsignedexpr(ep2))
-                    UnsignedLongLongToFPF(&temp, ep2->v.i);
-                else
-                    LongLongToFPF(&temp, ep2->v.i);
-                AddSubFPF(1,&ep1->v.f, &temp, &ep->v.f);
-                refloat(ep);
-                break;
-            case 4:
-                ep->type = maxfloattype(ep1, ep2);
-                if (isunsignedexpr(ep1))
-                    UnsignedLongLongToFPF(&temp, ep1->v.i);
-                else
-                    LongLongToFPF(&temp, ep1->v.i);
-                AddSubFPF(1,&ep1->v.f, &ep2->v.f, &ep->v.f);
-                refloat(ep);
-                break;
-            case 9:
-                ep->type = maxcomplextype(ep1,ep2);
-                ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                    && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                        STD_PRAGMA_CXLIMITED : 0;
-                ep->v.c.r = ep1->v.f ;
-                ep->v.c.i = ep2->v.f;
-                ep->v.c.i.sign ^= 1;
-                refloat(ep);
-                break ;
-            case 10:
-                ep->type = maxcomplextype(ep1,ep2);
-                ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                    && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                        STD_PRAGMA_CXLIMITED : 0;
-                ep->v.c.r = ep2->v.f ;
-                ep->v.c.r.sign ^= 1;
-                ep->v.c.i = ep1->v.f;
-                refloat(ep);
-                break ;
-            case 11:
-                ep->type = maximaginarytype(ep1,ep2);
-                AddSubFPF(1,&ep1->v.f, &ep2->v.f, &ep->v.f);
-                refloat(ep);
-                break ;
-            case 14:
-                ep->type = maxcomplextype(ep1,ep2);
-                ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                    && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                        STD_PRAGMA_CXLIMITED : 0;
-                if (isunsignedexpr(ep2))
-                    UnsignedLongLongToFPF(&ep->v.c.r, ep2->v.i);
-                else
-                    LongLongToFPF(&ep->v.c.r, ep2->v.i);
-                ep->v.c.i = ep1->v.f ;
-                refloat(ep);
-                break;
-            case 15:
-                ep->type = maxcomplextype(ep1,ep2);
-                ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                    && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                        STD_PRAGMA_CXLIMITED : 0;
-                if (isunsignedexpr(ep1))
-                    UnsignedLongLongToFPF(&ep->v.c.r, ep1->v.i);
-                else
-                    LongLongToFPF(&ep->v.c.r, ep1->v.i);
-                ep->v.c.i = ep2->v.f ;
-                ep->v.c.i.sign ^= 1;
-                refloat(ep);
-                break;
-            case 16:
-                ep->type = maxcomplextype(ep1,ep2);
-                ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                    && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                        STD_PRAGMA_CXLIMITED : 0;
-                ep->v.c.r = ep2->v.c.r ;
-                ep->v.c.r.sign ^= 1;
-                AddSubFPF(1,&ep1->v.f, &ep2->v.c.i, & ep->v.c.i);
-                refloat(ep);
-                break;
-            case 17:
-                ep->type = maxcomplextype(ep1,ep2);
-                ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                    && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                        STD_PRAGMA_CXLIMITED : 0;
-                ep->v.c.r = ep1->v.c.r ;
-                AddSubFPF(1,&ep1->v.c.i, &ep2->v.f, & ep->v.c.i);
-                refloat(ep);
-                break;
-            case 18:
-                ep->type = maxcomplextype(ep1,ep2);
-                ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                    && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                        STD_PRAGMA_CXLIMITED : 0;
-                AddSubFPF(1,&ep1->v.f, &ep2->v.c.r, & ep->v.c.r);
-                ep->v.c.i = ep2->v.c.i;
-                ep->v.c.i.sign ^= 1;
-                refloat(ep);
-                break;
-            case 19:
-                ep->type = maxcomplextype(ep1,ep2);
-                ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                    && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                        STD_PRAGMA_CXLIMITED : 0;
-                AddSubFPF(1,&ep1->v.c.r, &ep2->v.f, & ep->v.c.r);
-                ep->v.c.i = ep1->v.c.i;
-                refloat(ep);
-                break;
-            case 20:
-                ep->type = maxcomplextype(ep1,ep2);
-                ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                    && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                        STD_PRAGMA_CXLIMITED : 0;
-                AddSubFPF(1,&ep1->v.c.r, &ep2->v.c.r, & ep->v.c.r);
-                AddSubFPF(1,&ep1->v.c.i, &ep2->v.c.i, & ep->v.c.i);
-                refloat(ep);
-                break;
-            case 23:
-                ep->type = maxcomplextype(ep1,ep2);
-                ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                    && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                        STD_PRAGMA_CXLIMITED : 0;
-                if (isunsignedexpr(ep2))
-                    UnsignedLongLongToFPF(&temp, ep2->v.i);
-                else
-                    LongLongToFPF(&temp, ep2->v.i);
-                AddSubFPF(1,&ep1->v.c.r, &temp, & ep->v.c.r);
-                ep->v.c.i = ep1->v.c.i ;
-                refloat(ep);
-                break;
-            case 24:
-                ep->type = maxcomplextype(ep1,ep2);
-                ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                    && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                        STD_PRAGMA_CXLIMITED : 0;
-                if (isunsignedexpr(ep1))
-                    UnsignedLongLongToFPF(&temp, ep1->v.i);
-                else
-                    LongLongToFPF(&temp, ep1->v.i);
-                AddSubFPF(1,&temp, &ep2->v.c.r, & ep->v.c.r);
-                ep->v.c.i = ep2->v.c.i ;
-                ep->v.c.i.sign ^= 1;
-                refloat(ep);
-                break;
-            default:
-                break;
-            }
-            break;
-        case en_arraymul:
-        case en_umul:
-        case en_mul:
-            switch (mode)
-            {
-            case 1:
-                ep->type = maxinttype(ep1, ep2);
-                ep->v.i = ep1->v.i *ep2->v.i;
-                ep->v.i = reint(ep);
-                break;
-            case 2:
-                ep->type = maxfloattype(ep1, ep2);
-                if (isunsignedexpr(ep1))
-                    UnsignedLongLongToFPF(&temp, ep1->v.i);
-                else
-                    LongLongToFPF(&temp, ep1->v.i);
-                MultiplyFPF(&temp, & ep2->v.f, &ep->v.f);
-                refloat(ep);
-                break;
-            case 3:
-                ep->type = maxfloattype(ep1, ep2);
-                if (isunsignedexpr(ep2))
-                    UnsignedLongLongToFPF(&temp, ep2->v.i);
-                else
-                    LongLongToFPF(&temp, ep2->v.i);
-                MultiplyFPF(&ep1->v.f, &temp, &ep->v.f);
-                refloat(ep);
-                break;
-            case 4:
-                ep->type = maxfloattype(ep1, ep2);
-                MultiplyFPF(&ep1->v.f, &ep2->v.f, &ep->v.f);
-                refloat(ep);
-                break;
-            case 9:
-                ep->type = maximaginarytype(ep1, ep2);
-                MultiplyFPF(&ep1->v.f, &ep2->v.f, &ep->v.f);
-                refloat(ep);
-                break;
-            case 10:
-                ep->type = maximaginarytype(ep1, ep2);
-                MultiplyFPF(&ep1->v.f, &ep2->v.f, &ep->v.f);
-                refloat(ep);
-                break;
-            case 11:
-                ep->type = maxfloattype(ep1, ep2);
-                MultiplyFPF(&ep1->v.f, &ep2->v.f, &ep->v.f);
-                ep->v.f.sign ^= 1;
-                refloat(ep);
-                break;
-            case 14:
-                ep->type = maximaginarytype(ep1, ep2);
-                if (isunsignedexpr(ep2))
-                    UnsignedLongLongToFPF(&temp, ep2->v.i);
-                else
-                    LongLongToFPF(&temp, ep2->v.i);
-                MultiplyFPF(&ep1->v.f, &temp, &ep->v.f);
-                refloat(ep);
-                break;
-            case 15:
-                ep->type = maximaginarytype(ep1, ep2);
-                if (isunsignedexpr(ep1))
-                    UnsignedLongLongToFPF(&temp, ep1->v.i);
-                else
-                    LongLongToFPF(&temp, ep1->v.i);
-                MultiplyFPF(&temp, &ep2->v.f, &ep->v.f);
-                refloat(ep);
-                break;
-            case 16:
-                ep->type = maxcomplextype(ep1, ep2);
-                ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                    && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                        STD_PRAGMA_CXLIMITED : 0;
-                MultiplyFPF(&ep1->v.f, &ep2->v.c.i, &ep->v.c.r);
-                ep->v.c.r.sign ^= 1;
-                MultiplyFPF(&ep1->v.f, &ep2->v.c.r, &ep->v.c.i);
-                refloat(ep);
-                break;
-            case 17:
-                ep->type = maxcomplextype(ep1, ep2);
-                ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                    && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                        STD_PRAGMA_CXLIMITED : 0;
-                MultiplyFPF(&ep2->v.f, &ep1->v.c.i, &ep->v.c.r);
-                ep->v.c.r.sign ^= 1;
-                MultiplyFPF(&ep2->v.f, &ep1->v.c.r, &ep->v.c.i);
-                refloat(ep);
-                break;
-            case 18:
-                ep->type = maxcomplextype(ep1, ep2);
-                ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                    && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                        STD_PRAGMA_CXLIMITED : 0;
-                MultiplyFPF(&ep1->v.f, &ep2->v.c.r, &ep->v.c.r);
-                MultiplyFPF(&ep1->v.f, &ep2->v.c.i, &ep->v.c.i);
-                refloat(ep);
-                break;
-            case 19:
-                ep->type = maxcomplextype(ep1, ep2);
-                ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                    && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                        STD_PRAGMA_CXLIMITED : 0;
-                MultiplyFPF(&ep2->v.f, &ep1->v.c.r, &ep->v.c.r);
-                MultiplyFPF(&ep2->v.f, &ep1->v.c.i, &ep->v.c.i);
-                refloat(ep);
-                break;
-            case 20:
-                if (ep1->v.c.r.type == IFPF_IS_ZERO)
+        switch (ep->type)
+        {
+            case en_structadd:
+                if (ep->right->type == en_structelem)
+                    break;
+            case en_add:
+            case en_arrayadd:
+                switch (mode)
                 {
-                    ep->type = maxcomplextype(ep1, ep2);
-                    ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                        && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                            STD_PRAGMA_CXLIMITED : 0;
-                    MultiplyFPF(&ep2->v.c.r, &ep1->v.c.i, &ep->v.c.i);
-                    MultiplyFPF(&ep2->v.c.i, &ep1->v.c.i, &ep->v.c.r);
-                    ep->v.c.r.sign ^= 1;
+                    case 1:
+                        ep->type = maxinttype(ep1, ep2);
+                        ep->v.i = ep1->v.i + ep2->v.i;
+                        ep->v.i = reint(ep);
+                        //				if (ep->unionoffset)
+                        //					printf("1");
+                        //				if (ep1->unionoffset)
+                        //					printf("2");
+                        //				if (ep2->unionoffset)
+                        //					printf("3");
+                        //				printf(";");
+                        break;
+                    case 2:
+                        ep->type = maxfloattype(ep1, ep2);
+                        if (isunsignedexpr(ep1))
+                            UnsignedLongLongToFPF(&temp, ep1->v.i);
+                        else
+                            LongLongToFPF(&temp, ep1->v.i);
+                        AddSubFPF(0, &temp, &ep2->v.f, &ep->v.f);
+                        refloat(ep);
+                        break;
+                    case 3:
+                        ep->type = maxfloattype(ep1, ep2);
+                        if (isunsignedexpr(ep2))
+                            UnsignedLongLongToFPF(&temp, ep2->v.i);
+                        else
+                            LongLongToFPF(&temp, ep2->v.i);
+                        AddSubFPF(0, &ep1->v.f, &temp, &ep->v.f);
+                        refloat(ep);
+                        break;
+                    case 4:
+                        ep->type = maxfloattype(ep1, ep2);
+                        AddSubFPF(0, &ep1->v.f, &ep2->v.f, &ep->v.f);
+                        refloat(ep);
+                        break;
+                    case 9:
+                        ep->type = maxcomplextype(ep1, ep2);
+                        ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                           ? STD_PRAGMA_CXLIMITED
+                                           : 0;
+                        ep->v.c.r = ep1->v.f;
+                        ep->v.c.i = ep2->v.f;
+                        refloat(ep);
+                        break;
+                    case 10:
+                        ep->type = maxcomplextype(ep1, ep2);
+                        ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                           ? STD_PRAGMA_CXLIMITED
+                                           : 0;
+                        ep->v.c.r = ep2->v.f;
+                        ep->v.c.i = ep1->v.f;
+                        refloat(ep);
+                        break;
+                    case 11:
+                        ep->type = maximaginarytype(ep1, ep2);
+                        AddSubFPF(0, &ep1->v.f, &ep2->v.f, &ep->v.f);
+                        refloat(ep);
+                        break;
+                    case 14:
+                        ep->type = maxcomplextype(ep1, ep2);
+                        ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                           ? STD_PRAGMA_CXLIMITED
+                                           : 0;
+                        LongLongToFPF(&ep->v.c.r, ep2->v.i);
+                        ep->v.c.i = ep1->v.f;
+                        refloat(ep);
+                        break;
+                    case 15:
+                        ep->type = maxcomplextype(ep1, ep2);
+                        ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                           ? STD_PRAGMA_CXLIMITED
+                                           : 0;
+                        LongLongToFPF(&ep->v.c.r, ep1->v.i);
+                        ep->v.c.i = ep2->v.f;
+                        refloat(ep);
+                        break;
+                    case 16:
+                        ep->type = maxcomplextype(ep1, ep2);
+                        ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                           ? STD_PRAGMA_CXLIMITED
+                                           : 0;
+                        ep->v.c.r = ep2->v.c.r;
+                        AddSubFPF(0, &ep1->v.f, &ep2->v.c.i, &ep->v.c.i);
+                        refloat(ep);
+                        break;
+                    case 17:
+                        ep->type = maxcomplextype(ep1, ep2);
+                        ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                           ? STD_PRAGMA_CXLIMITED
+                                           : 0;
+                        ep->v.c.r = ep1->v.c.r;
+                        AddSubFPF(0, &ep2->v.f, &ep1->v.c.i, &ep->v.c.i);
+                        refloat(ep);
+                        break;
+                    case 18:
+                        ep->type = maxcomplextype(ep1, ep2);
+                        ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                           ? STD_PRAGMA_CXLIMITED
+                                           : 0;
+                        AddSubFPF(0, &ep1->v.f, &ep2->v.c.r, &ep->v.c.r);
+                        ep->v.c.i = ep2->v.c.i;
+                        refloat(ep);
+                        break;
+                    case 19:
+                        ep->type = maxcomplextype(ep1, ep2);
+                        ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                           ? STD_PRAGMA_CXLIMITED
+                                           : 0;
+                        AddSubFPF(0, &ep2->v.f, &ep1->v.c.r, &ep->v.c.r);
+                        ep->v.c.i = ep1->v.c.i;
+                        refloat(ep);
+                        break;
+                    case 20:
+                        ep->type = maxcomplextype(ep1, ep2);
+                        ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                           ? STD_PRAGMA_CXLIMITED
+                                           : 0;
+                        AddSubFPF(0, &ep1->v.c.r, &ep2->v.c.r, &ep->v.c.r);
+                        AddSubFPF(0, &ep1->v.c.i, &ep2->v.c.i, &ep->v.c.i);
+                        refloat(ep);
+                        break;
+                    case 23:
+                        ep->type = maxcomplextype(ep1, ep2);
+                        ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                           ? STD_PRAGMA_CXLIMITED
+                                           : 0;
+                        if (isunsignedexpr(ep2))
+                            UnsignedLongLongToFPF(&temp, ep2->v.i);
+                        else
+                            LongLongToFPF(&temp, ep2->v.i);
+                        AddSubFPF(0, &ep1->v.c.r, &temp, &ep->v.c.r);
+                        ep->v.c.i = ep1->v.c.i;
+                        refloat(ep);
+                        break;
+                    case 24:
+                        ep->type = maxcomplextype(ep1, ep2);
+                        ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                           ? STD_PRAGMA_CXLIMITED
+                                           : 0;
+                        if (isunsignedexpr(ep1))
+                            UnsignedLongLongToFPF(&temp, ep1->v.i);
+                        else
+                            LongLongToFPF(&temp, ep1->v.i);
+                        AddSubFPF(0, &ep2->v.c.r, &temp, &ep->v.c.r);
+                        ep->v.c.i = ep2->v.c.i;
+                        refloat(ep);
+                        break;
+                    default:
+                        break;
                 }
-                else if (ep1->v.c.i.type == IFPF_IS_ZERO)
-                {
-                    ep->type = maxcomplextype(ep1, ep2);
-                    ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                        && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                            STD_PRAGMA_CXLIMITED : 0;
-                    MultiplyFPF(&ep2->v.c.r, &ep1->v.c.r, &ep->v.c.r);
-                    MultiplyFPF(&ep2->v.c.i, &ep1->v.c.r, &ep->v.c.i);
-                }
-                else if (ep2->v.c.r.type == IFPF_IS_ZERO)
-                {
-                    ep->type = maxcomplextype(ep1, ep2);
-                    ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                        && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                            STD_PRAGMA_CXLIMITED : 0;
-                    MultiplyFPF(&ep1->v.c.r, &ep2->v.c.i, &ep->v.c.i);
-                    MultiplyFPF(&ep1->v.c.i, &ep2->v.c.i, &ep->v.c.r);
-                    ep->v.c.r.sign ^= 1;
-                }
-                else if (ep2->v.c.i.type == IFPF_IS_ZERO)
-                {
-                    ep->type = maxcomplextype(ep1, ep2);
-                    ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                        && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                            STD_PRAGMA_CXLIMITED : 0;
-                    MultiplyFPF(&ep1->v.c.r, &ep2->v.c.r, &ep->v.c.r);
-                    MultiplyFPF(&ep1->v.c.i, &ep2->v.c.r, &ep->v.c.i);
-                }
-                refloat(ep);
-                break ;
-            case 24:
-                ep->type = maxcomplextype(ep1, ep2);
-                ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                    && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                        STD_PRAGMA_CXLIMITED : 0;
-                if (isunsignedexpr(ep1))
-                    UnsignedLongLongToFPF(&temp, ep1->v.i);
-                else
-                    LongLongToFPF(&temp, ep1->v.i);
-                MultiplyFPF(&temp, &ep2->v.c.r, &ep->v.c.r);
-                MultiplyFPF(&temp, &ep2->v.c.i, &ep->v.c.i);
-                refloat(ep);
                 break;
-            default:
+            case en_sub:
+                switch (mode)
+                {
+                    case 1:
+                        ep->type = maxinttype(ep1, ep2);
+                        ep->v.i = ep1->v.i - ep2->v.i;
+                        ep->v.i = reint(ep);
+                        break;
+                    case 2:
+                        ep->type = maxfloattype(ep1, ep2);
+                        if (isunsignedexpr(ep1))
+                            UnsignedLongLongToFPF(&temp, ep1->v.i);
+                        else
+                            LongLongToFPF(&temp, ep1->v.i);
+                        AddSubFPF(1, &temp, &ep2->v.f, &ep->v.f);
+                        refloat(ep);
+                        break;
+                    case 3:
+                        ep->type = maxfloattype(ep1, ep2);
+                        if (isunsignedexpr(ep2))
+                            UnsignedLongLongToFPF(&temp, ep2->v.i);
+                        else
+                            LongLongToFPF(&temp, ep2->v.i);
+                        AddSubFPF(1, &ep1->v.f, &temp, &ep->v.f);
+                        refloat(ep);
+                        break;
+                    case 4:
+                        ep->type = maxfloattype(ep1, ep2);
+                        if (isunsignedexpr(ep1))
+                            UnsignedLongLongToFPF(&temp, ep1->v.i);
+                        else
+                            LongLongToFPF(&temp, ep1->v.i);
+                        AddSubFPF(1, &ep1->v.f, &ep2->v.f, &ep->v.f);
+                        refloat(ep);
+                        break;
+                    case 9:
+                        ep->type = maxcomplextype(ep1, ep2);
+                        ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                           ? STD_PRAGMA_CXLIMITED
+                                           : 0;
+                        ep->v.c.r = ep1->v.f;
+                        ep->v.c.i = ep2->v.f;
+                        ep->v.c.i.sign ^= 1;
+                        refloat(ep);
+                        break;
+                    case 10:
+                        ep->type = maxcomplextype(ep1, ep2);
+                        ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                           ? STD_PRAGMA_CXLIMITED
+                                           : 0;
+                        ep->v.c.r = ep2->v.f;
+                        ep->v.c.r.sign ^= 1;
+                        ep->v.c.i = ep1->v.f;
+                        refloat(ep);
+                        break;
+                    case 11:
+                        ep->type = maximaginarytype(ep1, ep2);
+                        AddSubFPF(1, &ep1->v.f, &ep2->v.f, &ep->v.f);
+                        refloat(ep);
+                        break;
+                    case 14:
+                        ep->type = maxcomplextype(ep1, ep2);
+                        ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                           ? STD_PRAGMA_CXLIMITED
+                                           : 0;
+                        if (isunsignedexpr(ep2))
+                            UnsignedLongLongToFPF(&ep->v.c.r, ep2->v.i);
+                        else
+                            LongLongToFPF(&ep->v.c.r, ep2->v.i);
+                        ep->v.c.i = ep1->v.f;
+                        refloat(ep);
+                        break;
+                    case 15:
+                        ep->type = maxcomplextype(ep1, ep2);
+                        ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                           ? STD_PRAGMA_CXLIMITED
+                                           : 0;
+                        if (isunsignedexpr(ep1))
+                            UnsignedLongLongToFPF(&ep->v.c.r, ep1->v.i);
+                        else
+                            LongLongToFPF(&ep->v.c.r, ep1->v.i);
+                        ep->v.c.i = ep2->v.f;
+                        ep->v.c.i.sign ^= 1;
+                        refloat(ep);
+                        break;
+                    case 16:
+                        ep->type = maxcomplextype(ep1, ep2);
+                        ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                           ? STD_PRAGMA_CXLIMITED
+                                           : 0;
+                        ep->v.c.r = ep2->v.c.r;
+                        ep->v.c.r.sign ^= 1;
+                        AddSubFPF(1, &ep1->v.f, &ep2->v.c.i, &ep->v.c.i);
+                        refloat(ep);
+                        break;
+                    case 17:
+                        ep->type = maxcomplextype(ep1, ep2);
+                        ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                           ? STD_PRAGMA_CXLIMITED
+                                           : 0;
+                        ep->v.c.r = ep1->v.c.r;
+                        AddSubFPF(1, &ep1->v.c.i, &ep2->v.f, &ep->v.c.i);
+                        refloat(ep);
+                        break;
+                    case 18:
+                        ep->type = maxcomplextype(ep1, ep2);
+                        ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                           ? STD_PRAGMA_CXLIMITED
+                                           : 0;
+                        AddSubFPF(1, &ep1->v.f, &ep2->v.c.r, &ep->v.c.r);
+                        ep->v.c.i = ep2->v.c.i;
+                        ep->v.c.i.sign ^= 1;
+                        refloat(ep);
+                        break;
+                    case 19:
+                        ep->type = maxcomplextype(ep1, ep2);
+                        ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                           ? STD_PRAGMA_CXLIMITED
+                                           : 0;
+                        AddSubFPF(1, &ep1->v.c.r, &ep2->v.f, &ep->v.c.r);
+                        ep->v.c.i = ep1->v.c.i;
+                        refloat(ep);
+                        break;
+                    case 20:
+                        ep->type = maxcomplextype(ep1, ep2);
+                        ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                           ? STD_PRAGMA_CXLIMITED
+                                           : 0;
+                        AddSubFPF(1, &ep1->v.c.r, &ep2->v.c.r, &ep->v.c.r);
+                        AddSubFPF(1, &ep1->v.c.i, &ep2->v.c.i, &ep->v.c.i);
+                        refloat(ep);
+                        break;
+                    case 23:
+                        ep->type = maxcomplextype(ep1, ep2);
+                        ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                           ? STD_PRAGMA_CXLIMITED
+                                           : 0;
+                        if (isunsignedexpr(ep2))
+                            UnsignedLongLongToFPF(&temp, ep2->v.i);
+                        else
+                            LongLongToFPF(&temp, ep2->v.i);
+                        AddSubFPF(1, &ep1->v.c.r, &temp, &ep->v.c.r);
+                        ep->v.c.i = ep1->v.c.i;
+                        refloat(ep);
+                        break;
+                    case 24:
+                        ep->type = maxcomplextype(ep1, ep2);
+                        ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                           ? STD_PRAGMA_CXLIMITED
+                                           : 0;
+                        if (isunsignedexpr(ep1))
+                            UnsignedLongLongToFPF(&temp, ep1->v.i);
+                        else
+                            LongLongToFPF(&temp, ep1->v.i);
+                        AddSubFPF(1, &temp, &ep2->v.c.r, &ep->v.c.r);
+                        ep->v.c.i = ep2->v.c.i;
+                        ep->v.c.i.sign ^= 1;
+                        refloat(ep);
+                        break;
+                    default:
+                        break;
+                }
                 break;
-            }
-            break;
-        case en_arraydiv:
-        case en_div:
-        case en_udiv:
-            switch (mode)
-            {
-            case 1:
+            case en_arraymul:
+            case en_umul:
+            case en_mul:
+                switch (mode)
+                {
+                    case 1:
+                        ep->type = maxinttype(ep1, ep2);
+                        ep->v.i = ep1->v.i * ep2->v.i;
+                        ep->v.i = reint(ep);
+                        break;
+                    case 2:
+                        ep->type = maxfloattype(ep1, ep2);
+                        if (isunsignedexpr(ep1))
+                            UnsignedLongLongToFPF(&temp, ep1->v.i);
+                        else
+                            LongLongToFPF(&temp, ep1->v.i);
+                        MultiplyFPF(&temp, &ep2->v.f, &ep->v.f);
+                        refloat(ep);
+                        break;
+                    case 3:
+                        ep->type = maxfloattype(ep1, ep2);
+                        if (isunsignedexpr(ep2))
+                            UnsignedLongLongToFPF(&temp, ep2->v.i);
+                        else
+                            LongLongToFPF(&temp, ep2->v.i);
+                        MultiplyFPF(&ep1->v.f, &temp, &ep->v.f);
+                        refloat(ep);
+                        break;
+                    case 4:
+                        ep->type = maxfloattype(ep1, ep2);
+                        MultiplyFPF(&ep1->v.f, &ep2->v.f, &ep->v.f);
+                        refloat(ep);
+                        break;
+                    case 9:
+                        ep->type = maximaginarytype(ep1, ep2);
+                        MultiplyFPF(&ep1->v.f, &ep2->v.f, &ep->v.f);
+                        refloat(ep);
+                        break;
+                    case 10:
+                        ep->type = maximaginarytype(ep1, ep2);
+                        MultiplyFPF(&ep1->v.f, &ep2->v.f, &ep->v.f);
+                        refloat(ep);
+                        break;
+                    case 11:
+                        ep->type = maxfloattype(ep1, ep2);
+                        MultiplyFPF(&ep1->v.f, &ep2->v.f, &ep->v.f);
+                        ep->v.f.sign ^= 1;
+                        refloat(ep);
+                        break;
+                    case 14:
+                        ep->type = maximaginarytype(ep1, ep2);
+                        if (isunsignedexpr(ep2))
+                            UnsignedLongLongToFPF(&temp, ep2->v.i);
+                        else
+                            LongLongToFPF(&temp, ep2->v.i);
+                        MultiplyFPF(&ep1->v.f, &temp, &ep->v.f);
+                        refloat(ep);
+                        break;
+                    case 15:
+                        ep->type = maximaginarytype(ep1, ep2);
+                        if (isunsignedexpr(ep1))
+                            UnsignedLongLongToFPF(&temp, ep1->v.i);
+                        else
+                            LongLongToFPF(&temp, ep1->v.i);
+                        MultiplyFPF(&temp, &ep2->v.f, &ep->v.f);
+                        refloat(ep);
+                        break;
+                    case 16:
+                        ep->type = maxcomplextype(ep1, ep2);
+                        ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                           ? STD_PRAGMA_CXLIMITED
+                                           : 0;
+                        MultiplyFPF(&ep1->v.f, &ep2->v.c.i, &ep->v.c.r);
+                        ep->v.c.r.sign ^= 1;
+                        MultiplyFPF(&ep1->v.f, &ep2->v.c.r, &ep->v.c.i);
+                        refloat(ep);
+                        break;
+                    case 17:
+                        ep->type = maxcomplextype(ep1, ep2);
+                        ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                           ? STD_PRAGMA_CXLIMITED
+                                           : 0;
+                        MultiplyFPF(&ep2->v.f, &ep1->v.c.i, &ep->v.c.r);
+                        ep->v.c.r.sign ^= 1;
+                        MultiplyFPF(&ep2->v.f, &ep1->v.c.r, &ep->v.c.i);
+                        refloat(ep);
+                        break;
+                    case 18:
+                        ep->type = maxcomplextype(ep1, ep2);
+                        ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                           ? STD_PRAGMA_CXLIMITED
+                                           : 0;
+                        MultiplyFPF(&ep1->v.f, &ep2->v.c.r, &ep->v.c.r);
+                        MultiplyFPF(&ep1->v.f, &ep2->v.c.i, &ep->v.c.i);
+                        refloat(ep);
+                        break;
+                    case 19:
+                        ep->type = maxcomplextype(ep1, ep2);
+                        ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                           ? STD_PRAGMA_CXLIMITED
+                                           : 0;
+                        MultiplyFPF(&ep2->v.f, &ep1->v.c.r, &ep->v.c.r);
+                        MultiplyFPF(&ep2->v.f, &ep1->v.c.i, &ep->v.c.i);
+                        refloat(ep);
+                        break;
+                    case 20:
+                        if (ep1->v.c.r.type == IFPF_IS_ZERO)
+                        {
+                            ep->type = maxcomplextype(ep1, ep2);
+                            ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                               ? STD_PRAGMA_CXLIMITED
+                                               : 0;
+                            MultiplyFPF(&ep2->v.c.r, &ep1->v.c.i, &ep->v.c.i);
+                            MultiplyFPF(&ep2->v.c.i, &ep1->v.c.i, &ep->v.c.r);
+                            ep->v.c.r.sign ^= 1;
+                        }
+                        else if (ep1->v.c.i.type == IFPF_IS_ZERO)
+                        {
+                            ep->type = maxcomplextype(ep1, ep2);
+                            ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                               ? STD_PRAGMA_CXLIMITED
+                                               : 0;
+                            MultiplyFPF(&ep2->v.c.r, &ep1->v.c.r, &ep->v.c.r);
+                            MultiplyFPF(&ep2->v.c.i, &ep1->v.c.r, &ep->v.c.i);
+                        }
+                        else if (ep2->v.c.r.type == IFPF_IS_ZERO)
+                        {
+                            ep->type = maxcomplextype(ep1, ep2);
+                            ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                               ? STD_PRAGMA_CXLIMITED
+                                               : 0;
+                            MultiplyFPF(&ep1->v.c.r, &ep2->v.c.i, &ep->v.c.i);
+                            MultiplyFPF(&ep1->v.c.i, &ep2->v.c.i, &ep->v.c.r);
+                            ep->v.c.r.sign ^= 1;
+                        }
+                        else if (ep2->v.c.i.type == IFPF_IS_ZERO)
+                        {
+                            ep->type = maxcomplextype(ep1, ep2);
+                            ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                               ? STD_PRAGMA_CXLIMITED
+                                               : 0;
+                            MultiplyFPF(&ep1->v.c.r, &ep2->v.c.r, &ep->v.c.r);
+                            MultiplyFPF(&ep1->v.c.i, &ep2->v.c.r, &ep->v.c.i);
+                        }
+                        refloat(ep);
+                        break;
+                    case 24:
+                        ep->type = maxcomplextype(ep1, ep2);
+                        ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                           ? STD_PRAGMA_CXLIMITED
+                                           : 0;
+                        if (isunsignedexpr(ep1))
+                            UnsignedLongLongToFPF(&temp, ep1->v.i);
+                        else
+                            LongLongToFPF(&temp, ep1->v.i);
+                        MultiplyFPF(&temp, &ep2->v.c.r, &ep->v.c.r);
+                        MultiplyFPF(&temp, &ep2->v.c.i, &ep->v.c.i);
+                        refloat(ep);
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            case en_arraydiv:
+            case en_div:
+            case en_udiv:
+                switch (mode)
+                {
+                    case 1:
+                        if (ep2->v.i)
+                        {
+                            ep->type = maxinttype(ep1, ep2);
+                            if (isunsignedexpr(ep1) || isunsignedexpr(ep2))
+                                ep->v.i = (ULLONG_TYPE)ep1->v.i / (ULLONG_TYPE)ep2->v.i;
+                            else
+                                ep->v.i = ep1->v.i / ep2->v.i;
+
+                            ep->v.i = reint(ep);
+                        }
+                        break;
+                    case 2:
+                        ep->type = maxfloattype(ep1, ep2);
+                        if (isunsignedexpr(ep1))
+                            UnsignedLongLongToFPF(&temp, ep1->v.i);
+                        else
+                            LongLongToFPF(&temp, ep1->v.i);
+                        DivideFPF(&temp, &ep2->v.f, &ep->v.f);
+                        refloat(ep);
+                        break;
+                    case 3:
+                        ep->type = maxfloattype(ep1, ep2);
+                        if (isunsignedexpr(ep2))
+                            UnsignedLongLongToFPF(&temp, ep2->v.i);
+                        else
+                            LongLongToFPF(&temp, ep2->v.i);
+                        DivideFPF(&ep1->v.f, &temp, &ep->v.f);
+                        refloat(ep);
+                        break;
+                    case 4:
+                        ep->type = maxfloattype(ep1, ep2);
+                        DivideFPF(&ep1->v.f, &ep2->v.f, &ep->v.f);
+                        refloat(ep);
+                        break;
+                    case 8:  // convert to a multiply
+                    {
+                        FPF temp1;
+                        UnsignedLongLongToFPF(&temp1, 1);
+                        DivideFPF(&temp1, &ep2->v.f, &temp1);
+                        ep2->v.f = temp1;
+                        ep->type = en_mul;
+                    }
+                    break;
+                    case 9:
+                        ep->type = maximaginarytype(ep1, ep2);
+                        DivideFPF(&ep1->v.f, &ep2->v.f, &ep->v.f);
+                        ep->v.f.sign ^= 1;
+                        refloat(ep);
+                        break;
+                    case 10:
+                        ep->type = maximaginarytype(ep1, ep2);
+                        DivideFPF(&ep1->v.f, &ep2->v.f, &ep->v.f);
+                        refloat(ep);
+                        break;
+                    case 11:
+                        ep->type = maximaginarytype(ep1, ep2);
+                        DivideFPF(&ep1->v.f, &ep2->v.f, &ep->v.f);
+                        refloat(ep);
+                        break;
+                    case 14:
+                        ep->type = maximaginarytype(ep1, ep2);
+                        if (isunsignedexpr(ep2))
+                            UnsignedLongLongToFPF(&temp, ep2->v.i);
+                        else
+                            LongLongToFPF(&temp, ep2->v.i);
+                        DivideFPF(&ep1->v.f, &temp, &ep->v.f);
+                        refloat(ep);
+                        break;
+                    case 15:
+                        ep->type = maximaginarytype(ep1, ep2);
+                        if (isunsignedexpr(ep1))
+                            UnsignedLongLongToFPF(&temp, ep1->v.i);
+                        else
+                            LongLongToFPF(&temp, ep1->v.i);
+                        DivideFPF(&temp, &ep2->v.f, &ep->v.f);
+                        ep->v.f.sign ^= 1;
+                        refloat(ep);
+                        break;
+                    case 17:
+                        ep->type = maxcomplextype(ep1, ep2);
+                        ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                           ? STD_PRAGMA_CXLIMITED
+                                           : 0;
+                        DivideFPF(&ep1->v.c.i, &ep2->v.f, &ep->v.c.r);
+                        DivideFPF(&ep1->v.c.r, &ep2->v.f, &ep->v.c.i);
+                        ep->v.c.i.sign ^= 1;
+                        refloat(ep);
+                        break;
+                    case 19:
+                        ep->type = maxcomplextype(ep1, ep2);
+                        ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                           ? STD_PRAGMA_CXLIMITED
+                                           : 0;
+                        DivideFPF(&ep1->v.c.i, &ep2->v.f, &ep->v.c.r);
+                        DivideFPF(&ep1->v.c.r, &ep2->v.f, &ep->v.c.i);
+                        refloat(ep);
+                        break;
+                    case 20:
+                        if (ep2->v.c.r.type == IFPF_IS_ZERO)
+                        {
+                            ep->type = maxcomplextype(ep1, ep2);
+                            ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                               ? STD_PRAGMA_CXLIMITED
+                                               : 0;
+                            DivideFPF(&ep1->v.c.r, &ep2->v.c.i, &ep->v.c.i);
+                            DivideFPF(&ep1->v.c.i, &ep2->v.c.i, &ep->v.c.r);
+                            ep->v.c.i.sign ^= 1;
+                        }
+                        else if (ep2->v.c.i.type == IFPF_IS_ZERO)
+                        {
+                            ep->type = maxcomplextype(ep1, ep2);
+                            ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                               ? STD_PRAGMA_CXLIMITED
+                                               : 0;
+                            DivideFPF(&ep1->v.c.r, &ep2->v.c.r, &ep->v.c.r);
+                            DivideFPF(&ep1->v.c.i, &ep2->v.c.r, &ep->v.c.i);
+                        }
+                        refloat(ep);
+                        break;
+                    case 23:
+                        ep->type = maxcomplextype(ep1, ep2);
+                        ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
+                                           ? STD_PRAGMA_CXLIMITED
+                                           : 0;
+                        if (isunsignedexpr(ep2))
+                            UnsignedLongLongToFPF(&temp, ep2->v.i);
+                        else
+                            LongLongToFPF(&temp, ep2->v.i);
+                        DivideFPF(&ep1->v.c.r, &temp, &ep->v.c.r);
+                        DivideFPF(&ep1->v.c.i, &temp, &ep->v.c.i);
+                        refloat(ep);
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            case en_mod:
+            case en_umod:
                 if (ep2->v.i)
                 {
                     ep->type = maxinttype(ep1, ep2);
+
                     if (isunsignedexpr(ep1) || isunsignedexpr(ep2))
-                        ep->v.i = (ULLONG_TYPE)ep1->v.i / (ULLONG_TYPE)ep2->v.i;
+                        ep->v.i = (ULLONG_TYPE)ep1->v.i % (ULLONG_TYPE)ep2->v.i;
                     else
-                        ep->v.i = ep1->v.i / ep2->v.i;
-                    
+                        ep->v.i = ep1->v.i % ep2->v.i;
                     ep->v.i = reint(ep);
                 }
                 break;
-            case 2: 
-                ep->type = maxfloattype(ep1, ep2);
-                if (isunsignedexpr(ep1))
-                    UnsignedLongLongToFPF(&temp, ep1->v.i);
-                else
-                    LongLongToFPF(&temp, ep1->v.i);
-                DivideFPF(&temp, &ep2->v.f, &ep->v.f);
-                refloat(ep);
+            case en_arraylsh:
+            case en_lsh:
+                ep->type = ep1->type; /* maxinttype(ep1, ep2);*/
+                ep->v.i = ep1->v.i << ep2->v.i;
+                ep->v.i = reint(ep);
                 break;
-            case 3:
-                ep->type = maxfloattype(ep1, ep2);
-                if (isunsignedexpr(ep2)) 
-                    UnsignedLongLongToFPF(&temp, ep2->v.i);
-                else
-                    LongLongToFPF(&temp, ep2->v.i);
-                DivideFPF(&ep1->v.f, &temp, &ep->v.f);
-                refloat(ep);
+            case en_ursh:
+                ep->type = ep1->type; /* maxinttype(ep1, ep2);*/
+                ep1->v.i = reint(ep1);
+                ep->v.i = ((ULLONG_TYPE)ep1->v.i) >> ep2->v.i;
+                ep->v.i = reint(ep);
                 break;
-            case 4:
-                ep->type = maxfloattype(ep1, ep2);
-                DivideFPF(&ep1->v.f, &ep2->v.f, &ep->v.f);
-                refloat(ep);
+            case en_rsh:
+                ep->type = ep1->type; /* maxinttype(ep1, ep2);*/
+                ep->v.i = ep1->v.i >> ep2->v.i;
+                ep->v.i = reint(ep);
                 break;
-            case 8: // convert to a multiply
-            {
-                FPF temp;
-                UnsignedLongLongToFPF(&temp, 1);
-                DivideFPF(&temp, &ep2->v.f, &temp);
-                ep2->v.f = temp;
-                ep->type = en_mul;
-            }
+            case en_and:
+                ep->type = maxinttype(ep1, ep2);
+                ep->v.i = ep1->v.i & ep2->v.i;
+                ep->v.i = reint(ep);
                 break;
-            case 9:
-                ep->type = maximaginarytype(ep1, ep2);
-                DivideFPF(&ep1->v.f, &ep2->v.f, &ep->v.f);
-                ep->v.f.sign ^= 1;
-                refloat(ep);
+            case en_or:
+                ep->type = maxinttype(ep1, ep2);
+                ep->v.i = ep1->v.i | ep2->v.i;
+                ep->v.i = reint(ep);
                 break;
-            case 10:
-                ep->type = maximaginarytype(ep1, ep2);
-                DivideFPF(&ep1->v.f, &ep2->v.f, &ep->v.f);
-                refloat(ep);
-                break;
-            case 11:
-                ep->type = maximaginarytype(ep1, ep2);
-                DivideFPF(&ep1->v.f, &ep2->v.f, &ep->v.f);
-                refloat(ep);
-                break;
-            case 14:
-                ep->type = maximaginarytype(ep1, ep2);
-                if (isunsignedexpr(ep2))
-                    UnsignedLongLongToFPF(&temp, ep2->v.i);
-                else
-                    LongLongToFPF(&temp, ep2->v.i);
-                DivideFPF(&ep1->v.f, &temp, &ep->v.f);
-                refloat(ep);
-                break;
-            case 15:
-                ep->type = maximaginarytype(ep1, ep2);
-                if (isunsignedexpr(ep1))
-                    UnsignedLongLongToFPF(&temp, ep1->v.i);
-                else
-                    LongLongToFPF(&temp, ep1->v.i);
-                DivideFPF(&temp, &ep2->v.f, &ep->v.f);
-                ep->v.f.sign ^= 1;
-                refloat(ep);
-                break;
-            case 17:
-                ep->type = maxcomplextype(ep1, ep2);
-                ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                    && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                        STD_PRAGMA_CXLIMITED : 0;
-                DivideFPF(&ep1->v.c.i, &ep2->v.f, &ep->v.c.r);
-                DivideFPF(&ep1->v.c.r, &ep2->v.f, &ep->v.c.i);
-                ep->v.c.i.sign ^= 1;
-                refloat(ep);
-                break;
-            case 19:
-                ep->type = maxcomplextype(ep1, ep2);
-                ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                    && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                        STD_PRAGMA_CXLIMITED : 0;
-                DivideFPF(&ep1->v.c.i, &ep2->v.f, &ep->v.c.r);
-                DivideFPF(&ep1->v.c.r, &ep2->v.f, &ep->v.c.i);
-                refloat(ep);
-                break;
-            case 20:
-                if (ep2->v.c.r.type == IFPF_IS_ZERO)
-                {
-                    ep->type = maxcomplextype(ep1, ep2);
-                    ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                        && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                            STD_PRAGMA_CXLIMITED : 0;
-                    DivideFPF(&ep1->v.c.r, &ep2->v.c.i, &ep->v.c.i);
-                    DivideFPF(&ep1->v.c.i, &ep2->v.c.i, &ep->v.c.r);
-                    ep->v.c.i.sign ^= 1;
-                }
-                else if (ep2->v.c.i.type == IFPF_IS_ZERO)
-                {
-                    ep->type = maxcomplextype(ep1, ep2);
-                    ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                        && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                            STD_PRAGMA_CXLIMITED : 0;
-                    DivideFPF(&ep1->v.c.r, &ep2->v.c.r, &ep->v.c.r);
-                    DivideFPF(&ep1->v.c.i, &ep2->v.c.r, &ep->v.c.i);
-                }
-                refloat(ep);
-                break ;
-            case 23:
-                ep->type = maxcomplextype(ep1, ep2);
-                ep->pragmas |= ((ep1->pragmas &STD_PRAGMA_CXLIMITED)
-                    && (ep2->pragmas & STD_PRAGMA_CXLIMITED)) ?
-                        STD_PRAGMA_CXLIMITED : 0;
-                if (isunsignedexpr(ep2))
-                    UnsignedLongLongToFPF(&temp, ep2->v.i);
-                else
-                    LongLongToFPF(&temp, ep2->v.i);
-                DivideFPF(&ep1->v.c.r, &temp, &ep->v.c.r);
-                DivideFPF(&ep1->v.c.i, &temp, &ep->v.c.i);
-                refloat(ep);
+            case en_xor:
+                ep->type = maxinttype(ep1, ep2);
+                ep->v.i = ep1->v.i ^ ep2->v.i;
+                ep->v.i = reint(ep);
                 break;
             default:
                 break;
-            }
-            break;
-        case en_mod:
-        case en_umod:
-            if (ep2->v.i)
-            {
-                ep->type = maxinttype(ep1, ep2);
-    
-                if (isunsignedexpr(ep1) || isunsignedexpr(ep2))
-                    ep->v.i = (ULLONG_TYPE)ep1->v.i % (ULLONG_TYPE)ep2->v.i;
-                else
-                    ep->v.i = ep1->v.i % ep2->v.i;
-                ep->v.i = reint(ep);
-            }
-            break;
-        case en_arraylsh:
-        case en_lsh:
-            ep->type = ep1->type; /* maxinttype(ep1, ep2);*/
-            ep->v.i = ep1->v.i << ep2->v.i;
-            ep->v.i = reint(ep);
-            break;
-        case en_ursh:
-            ep->type = ep1->type; /* maxinttype(ep1, ep2);*/
-            ep1->v.i = reint(ep1);
-            ep->v.i = ((ULLONG_TYPE)ep1->v.i) >> ep2->v.i;
-            ep->v.i = reint(ep);
-            break;
-        case en_rsh:
-            ep->type = ep1->type; /* maxinttype(ep1, ep2);*/
-            ep->v.i = ep1->v.i >> ep2->v.i;
-            ep->v.i = reint(ep);
-            break;
-        case en_and:
-            ep->type = maxinttype(ep1, ep2);
-            ep->v.i = ep1->v.i &ep2->v.i;
-            ep->v.i = reint(ep);
-            break;
-        case en_or:
-            ep->type = maxinttype(ep1, ep2);
-            ep->v.i = ep1->v.i | ep2->v.i;
-            ep->v.i = reint(ep);
-            break;
-        case en_xor:
-            ep->type = maxinttype(ep1, ep2);
-            ep->v.i = ep1->v.i ^ ep2->v.i;
-            ep->v.i = reint(ep);
-            break;
-        default:
-            break;
-    }
+        }
 }
 
 int pwrof2(LLONG_TYPE i)
@@ -1339,10 +1332,10 @@ int pwrof2(LLONG_TYPE i)
  *      return which power of two i is or -1.
  */
 {
-    if (i > 1) 
+    if (i > 1)
     {
-        int top = sizeof(shifts)/sizeof(LLONG_TYPE);
-        int bottom =  - 1;
+        int top = sizeof(shifts) / sizeof(LLONG_TYPE);
+        int bottom = -1;
         while (top - bottom > 1)
         {
             int mid = (top + bottom) / 2;
@@ -1360,7 +1353,7 @@ int pwrof2(LLONG_TYPE i)
         if (i == shifts[bottom])
             return bottom;
     }
-    return -1 ;
+    return -1;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -1370,14 +1363,14 @@ LLONG_TYPE mod_mask(int i)
  *      make a mod mask for a power of two.
  */
 {
-    if (i >= sizeof(shifts)/sizeof(LLONG_TYPE))
+    if (i >= sizeof(shifts) / sizeof(LLONG_TYPE))
         return (LLONG_TYPE)-1;
-    return shifts[i] - 1;		
+    return shifts[i] - 1;
 }
 
 /*-------------------------------------------------------------------------*/
 
-void addaside(EXPRESSION *node)
+void addaside(EXPRESSION* node)
 {
     *asidetail = exprNode(en_void, node, 0);
     asidetail = &(*asidetail)->right;
@@ -1385,7 +1378,7 @@ void addaside(EXPRESSION *node)
 
 /*-------------------------------------------------------------------------*/
 
-int opt0(EXPRESSION **node)
+int opt0(EXPRESSION** node)
 /*
  *      opt0 - delete useless expressions and combine constants.
  *
@@ -1401,18 +1394,17 @@ int opt0(EXPRESSION **node)
  * leaving en_arrayadd in in case we need it later.
  */
 {
-    EXPRESSION *ep;
+    EXPRESSION* ep;
     LLONG_TYPE val;
-    int sc;
     int rv = FALSE;
     int mode;
     FPF dval;
     int negtype = en_uminus;
 
-    ep =  *node;
+    ep = *node;
 
     if (ep == 0)
-        return FALSE ;
+        return FALSE;
     switch (ep->type)
     {
         case en_l_sp:
@@ -1426,10 +1418,10 @@ int opt0(EXPRESSION **node)
         case en_l_u32:
         case en_l_c:
         case en_l_s:
-             /* optimize unary node */
+            /* optimize unary node */
         case en_l_uc:
         case en_l_us:
-             /* optimize unary node */
+            /* optimize unary node */
         case en_l_p:
         case en_l_ref:
         case en_l_i:
@@ -1484,7 +1476,7 @@ int opt0(EXPRESSION **node)
         case en_bits:
         case en_literalclass:
             rv |= opt0(&((*node)->left));
-            return rv ;
+            return rv;
         case en_compl:
             rv |= opt0(&(ep->left));
             if (isintconst(ep->left))
@@ -1495,7 +1487,7 @@ int opt0(EXPRESSION **node)
                 ep->v.i = reint(ep);
                 ep->unionoffset = ep->left->unionoffset;
             }
-            return rv ;
+            return rv;
 
         case en_uminus:
             rv |= opt0(&(ep->left));
@@ -1508,32 +1500,29 @@ int opt0(EXPRESSION **node)
             {
                 *node = intNode(ep->left->type, 0);
                 (*node)->v.f = ep->left->v.f;
-                (*node)->v.f.sign ^= 1;                
+                (*node)->v.f.sign ^= 1;
                 rv = TRUE;
             }
-            else if (ep->left->type == en_c_d || ep->left->type ==
-                en_c_f || ep->left->type == en_c_ld ||
-                ep->left->type == en_c_di || ep->left->type ==
-                en_c_fi || ep->left->type == en_c_ldi)
+            else if (ep->left->type == en_c_d || ep->left->type == en_c_f || ep->left->type == en_c_ld ||
+                     ep->left->type == en_c_di || ep->left->type == en_c_fi || ep->left->type == en_c_ldi)
             {
                 rv = TRUE;
                 ep->type = ep->left->type;
-                ep->v.f =  ep->left->v.f;
+                ep->v.f = ep->left->v.f;
                 ep->v.f.sign ^= 1;
                 *node = ep;
             }
-            else if (ep->left->type == en_c_dc || ep->left->type ==
-                en_c_fc || ep->left->type == en_c_ldc)
+            else if (ep->left->type == en_c_dc || ep->left->type == en_c_fc || ep->left->type == en_c_ldc)
             {
                 rv = TRUE;
                 ep->type = ep->left->type;
-                ep->v.c.r =  ep->left->v.c.r;
+                ep->v.c.r = ep->left->v.c.r;
                 ep->v.c.r.sign ^= 1;
-                ep->v.c.i =  ep->left->v.c.i;
+                ep->v.c.i = ep->left->v.c.i;
                 ep->v.c.i.sign ^= 1;
                 *node = ep;
             }
-            return rv ;
+            return rv;
         case en_structadd:
         case en_add:
         case en_arrayadd:
@@ -1545,82 +1534,80 @@ int opt0(EXPRESSION **node)
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {
-            case 1:
-            case 2:
-            case 3:
-            case 4:
-            default:
-                rv = TRUE;
-                dooper(node, mode);
-                break;
-            case 5:
-                if (ep->left->v.i == 0)
-                {
-                    if (ep->left->type != en_auto)
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                default:
+                    rv = TRUE;
+                    dooper(node, mode);
+                    break;
+                case 5:
+                    if (ep->left->v.i == 0)
+                    {
+                        if (ep->left->type != en_auto)
+                        {
+                            if (ep->type == en_sub)
+                                *node = exprNode(en_uminus, ep->right, 0);
+                            else
+                                *node = ep->right;
+                            rv = TRUE;
+                        }
+                    }
+                    else
+                    {
+                        dooper(node, mode);
+                        rv = TRUE;
+                    }
+                    break;
+                case 6:
+                    if (ep->left->v.f.type == IFPF_IS_ZERO)
                     {
                         if (ep->type == en_sub)
-                            *node = exprNode(en_uminus, ep->right, 0);
-                        else
-                            *node = ep->right;
+                        {
+                            ep->right->v.f.sign ^= 1;
+                        }
+                        *node = ep->right;
+                    }
+                    else
+                        dooper(node, mode);
+                    rv = TRUE;
+                    break;
+                case 7:
+                    if (ep->right->v.i == 0)
+                    {
+                        if (ep->left->type != en_auto)
+                        {
+                            *node = ep->left;
+                            rv = TRUE;
+                        }
+                    }
+                    else
+                    {
+                        dooper(node, mode);
                         rv = TRUE;
                     }
-                }
-                else
-                {
-                    dooper(node, mode);
-                    rv = TRUE;
-                }
-                break;
-            case 6:
-                if (ep->left->v.f.type == IFPF_IS_ZERO)
-                {
-                    if (ep->type == en_sub)
-                    {
-                        ep->right->v.f.sign ^= 1 ;
-
-                    }
-                    *node = ep->right;
-                }
-                else
-                    dooper(node, mode);
-                rv = TRUE;
-                break;
-            case 7:
-                if (ep->right->v.i == 0)
-                {
-                    if (ep->left->type != en_auto)
+                    break;
+                case 8:
+                    if (ep->right->v.f.type == IFPF_IS_ZERO)
                     {
                         *node = ep->left;
-                        rv = TRUE;
                     }
-                }
-                else
-                {
-                    dooper(node, mode);
+                    else
+                        dooper(node, mode);
                     rv = TRUE;
-                }
-                break;
-            case 8:
-                if (ep->right->v.f.type == IFPF_IS_ZERO)
-                {
-                    *node = ep->left;
-                }
-                else
-                    dooper(node, mode);
-                rv = TRUE;
-                break;
-            case 22:
-                if (ep->right->v.c.r.type == IFPF_IS_ZERO &&
-                    ep->right->v.c.i.type == IFPF_IS_ZERO)
-                {
-                    *node = ep->left;
-                }
-                else
-                    dooper(node, mode);
-                rv = TRUE;
-                break;
+                    break;
+                case 22:
+                    if (ep->right->v.c.r.type == IFPF_IS_ZERO && ep->right->v.c.i.type == IFPF_IS_ZERO)
+                    {
+                        *node = ep->left;
+                    }
+                    else
+                        dooper(node, mode);
+                    rv = TRUE;
+                    break;
             }
-            return rv ;
+            return rv;
         case en_mul:
         case en_umul:
         case en_arraymul:
@@ -1629,159 +1616,159 @@ int opt0(EXPRESSION **node)
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {
-            default:
-                break;
-            case 1:
-            case 2:
-            case 3:
-            case 4:
-            case 9:
-            case 10:
-            case 11:
-            case 14:
-            case 15:
-            case 16:
-            case 17:
-            case 18:
-            case 19:
-            case 20:
-                dooper(node, mode);
-                rv = TRUE;
-                break;
-            case 5:
-                if (!hasFloats(ep->right))
-                {
-                    val = ep->left->v.i;
-                    if (val == 0)
+                default:
+                    break;
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                case 9:
+                case 10:
+                case 11:
+                case 14:
+                case 15:
+                case 16:
+                case 17:
+                case 18:
+                case 19:
+                case 20:
+                    dooper(node, mode);
+                    rv = TRUE;
+                    break;
+                case 5:
+                    if (!hasFloats(ep->right))
+                    {
+                        val = ep->left->v.i;
+                        if (val == 0)
+                        {
+                            addaside(ep->right);
+                            *node = ep->left;
+                        }
+                        else if (val == 1)
+                            *node = ep->right;
+                        else if (val == -1)
+                            *node = exprNode(negtype, ep->right, 0);
+                        else
+                        {
+                            LLONG_TYPE i = pwrof2(val);
+                            if (i != -1)
+                            {
+                                EXPRESSION* x = ep->left;
+                                ep->left = ep->right;
+                                ep->right = x;
+                                ep->right->v.i = i;
+                                rv = TRUE;
+                                switch (ep->type)
+                                {
+                                    case en_mul:
+                                        ep->type = en_lsh;
+                                        break;
+                                    case en_umul:
+                                        ep->type = en_lsh;
+                                        break;
+                                    case en_arraymul:
+                                        ep->type = en_arraylsh;
+                                        break;
+                                    default:
+                                        break;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    dooper(node, mode);
+                    rv = TRUE;
+                    break;
+                case 6:
+                    dval = ep->left->v.f;
+#ifdef XXXXX
+                    if (dval.type == IFPF_IS_ZERO)
                     {
                         addaside(ep->right);
                         *node = ep->left;
                     }
-                    else if (val == 1)
+                    else
+#endif
+                        if (!dval.sign && ValueIsOne(&dval))
                         *node = ep->right;
-                    else if (val ==  - 1)
+                    else if (dval.sign && ValueIsOne(&dval))
                         *node = exprNode(negtype, ep->right, 0);
                     else
+                        dooper(node, mode);
+                    rv = TRUE;
+                    break;
+                case 7:
+                    if (!hasFloats(ep->left))
                     {
-                        LLONG_TYPE i = pwrof2(val);
-                        if (i != -1)
+                        val = ep->right->v.i;
+                        if (val == 0)
                         {
-                            EXPRESSION *x = ep->left;
-                            ep->left = ep->right;
-                            ep->right = x;
-                            ep->right->v.i = i;
-                            rv = TRUE;
-                            switch (ep->type)
+                            addaside(ep->left);
+                            *node = ep->right;
+                        }
+                        else if (val == 1)
+                        {
+                            *node = ep->left;
+                        }
+                        else if (val == -1)
+                        {
+                            *node = exprNode(negtype, ep->left, 0);
+                        }
+                        else
+                        {
+                            LLONG_TYPE i = pwrof2(val);
+                            if (i != -1)
                             {
-                            case en_mul:
-                                ep->type = en_lsh;
-                                break;
-                            case en_umul:
-                                ep->type = en_lsh;
-                                break;
-                            case en_arraymul:
-                                ep->type = en_arraylsh;
-                                break;
-                            default:
+                                ep->right->v.i = i;
+                                rv = TRUE;
+                                switch (ep->type)
+                                {
+                                    case en_mul:
+                                        ep->type = en_lsh;
+                                        break;
+                                    case en_umul:
+                                        ep->type = en_lsh;
+                                        break;
+                                    case en_arraymul:
+                                        ep->type = en_arraylsh;
+                                        break;
+                                    default:
+                                        break;
+                                }
                                 break;
                             }
-                            break;
                         }
                     }
-                }
-                dooper(node, mode);
-                rv = TRUE;
-                break;
-            case 6:
-                dval = ep->left->v.f;
-#ifdef XXXXX
-                if (dval.type == IFPF_IS_ZERO)
-                {
-                    addaside(ep->right);
-                    *node = ep->left;
-                }
-                else 
-#endif
-                if (!dval.sign && ValueIsOne(&dval))
-                    *node = ep->right;
-                else if (dval.sign && ValueIsOne(&dval))
-                    *node = exprNode(negtype, ep->right, 0);
-                else
                     dooper(node, mode);
-                rv = TRUE;
-                break;
-            case 7:
-                if (!hasFloats(ep->left))
-                {
-                    val = ep->right->v.i;
-                    if (val == 0)
-                    {
-                        addaside(ep->left);
-                        *node = ep->right;
-                    }
-                    else if (val == 1)
-                    {
-                        *node = ep->left;
-                    }
-                    else if (val ==  - 1)
-                    {
-                        *node = exprNode(negtype, ep->left, 0);
-                    }
-                    else
-                    {
-                        LLONG_TYPE i = pwrof2(val);
-                        if (i != -1)
-                        {
-                            ep->right->v.i = i;
-                            rv = TRUE;
-                            switch (ep->type)
-                            {
-                            case en_mul:
-                                ep->type = en_lsh;
-                                break;
-                            case en_umul:
-                                ep->type = en_lsh;
-                                break;
-                            case en_arraymul:
-                                ep->type = en_arraylsh;
-                                break;
-                            default:
-                                break;
-                            }
-                            break;
-                        }
-                    }
-                }
-                dooper(node, mode);
-                rv = TRUE;
-                break;
-            case 8:
-                dval = ep->right->v.f;
-                if (!dval.sign && ValueIsOne(&dval))
-                {
-                    *node = ep->left;
-                }
-                else if (dval.sign && ValueIsOne(&dval))
-                {
-                    *node = exprNode(negtype, ep->left, 0);
-                }
-                else
-                    dooper(node, mode);
-                rv = TRUE;
-                break;
-            case 22:
-                dval = ep->right->v.c.r;
-                if (ep->right->v.c.i.type == IFPF_IS_ZERO)
-                {
+                    rv = TRUE;
+                    break;
+                case 8:
+                    dval = ep->right->v.f;
                     if (!dval.sign && ValueIsOne(&dval))
+                    {
                         *node = ep->left;
+                    }
                     else if (dval.sign && ValueIsOne(&dval))
                     {
                         *node = exprNode(negtype, ep->left, 0);
                     }
                     else
                         dooper(node, mode);
-                }
+                    rv = TRUE;
+                    break;
+                case 22:
+                    dval = ep->right->v.c.r;
+                    if (ep->right->v.c.i.type == IFPF_IS_ZERO)
+                    {
+                        if (!dval.sign && ValueIsOne(&dval))
+                            *node = ep->left;
+                        else if (dval.sign && ValueIsOne(&dval))
+                        {
+                            *node = exprNode(negtype, ep->left, 0);
+                        }
+                        else
+                            dooper(node, mode);
+                    }
             }
             break;
         case en_arraydiv:
@@ -1792,67 +1779,67 @@ int opt0(EXPRESSION **node)
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {
-            case 1:
-            case 2:
-            case 3:
-            case 4:
-            case 20:
-                dooper(node, mode);
-                rv = TRUE;
-                break;
-            case 5:
-                if (ep->left->v.i == 0)
-                {
-                    addaside(ep->right);
-                    *node = ep->left;
-                }
-                else
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                case 20:
                     dooper(node, mode);
-                rv = TRUE;
-                break;
-            case 6:
-                dooper(node, mode);
-                rv = TRUE;
-                break;
-            case 7:
-                if (!hasFloats(ep->left))
-                {
-                    val = ep->right->v.i;
-                    if (val == 1)
-                        *node = ep->left;
-                    else if (val ==  - 1)
-                        *node = exprNode(negtype, ep->left, 0);
-                }
-                dooper(node, mode);
-                rv = TRUE;
-                break;
-            case 8:
-                dval = ep->right->v.f;
-                if (!dval.sign && ValueIsOne(&dval))
-                    *node = ep->left;
-                if (dval.sign && ValueIsOne(&dval))
-                    *node = exprNode(negtype, ep->left, 0);
-                else
-                    dooper(node, mode);
-                rv = TRUE;
-                break;
-              case 22:
-                dval = ep->right->v.c.r;
-                if (ep->right->v.c.i.type == IFPF_IS_ZERO)
-                {
-                    if (!dval.sign && ValueIsOne(&dval))
-                        *node = ep->left;
-                    else if (dval.sign && ValueIsOne(&dval))
+                    rv = TRUE;
+                    break;
+                case 5:
+                    if (ep->left->v.i == 0)
                     {
-                        *node = exprNode(negtype, ep->left, 0);
+                        addaside(ep->right);
+                        *node = ep->left;
                     }
                     else
                         dooper(node, mode);
-                }
-                else
+                    rv = TRUE;
+                    break;
+                case 6:
                     dooper(node, mode);
-                rv = TRUE;
-                break;
+                    rv = TRUE;
+                    break;
+                case 7:
+                    if (!hasFloats(ep->left))
+                    {
+                        val = ep->right->v.i;
+                        if (val == 1)
+                            *node = ep->left;
+                        else if (val == -1)
+                            *node = exprNode(negtype, ep->left, 0);
+                    }
+                    dooper(node, mode);
+                    rv = TRUE;
+                    break;
+                case 8:
+                    dval = ep->right->v.f;
+                    if (!dval.sign && ValueIsOne(&dval))
+                        *node = ep->left;
+                    if (dval.sign && ValueIsOne(&dval))
+                        *node = exprNode(negtype, ep->left, 0);
+                    else
+                        dooper(node, mode);
+                    rv = TRUE;
+                    break;
+                case 22:
+                    dval = ep->right->v.c.r;
+                    if (ep->right->v.c.i.type == IFPF_IS_ZERO)
+                    {
+                        if (!dval.sign && ValueIsOne(&dval))
+                            *node = ep->left;
+                        else if (dval.sign && ValueIsOne(&dval))
+                        {
+                            *node = exprNode(negtype, ep->left, 0);
+                        }
+                        else
+                            dooper(node, mode);
+                    }
+                    else
+                        dooper(node, mode);
+                    rv = TRUE;
+                    break;
             }
             break;
         case en_mod:
@@ -1862,19 +1849,19 @@ int opt0(EXPRESSION **node)
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {
-            default:
-                break;
-            case 7:
-            case 1:
-            case 2:
-            case 3:
-            case 4:
-            case 5:
-            case 6:
-            case 8:
-                dooper(node, mode);
-                rv = TRUE;
-                break;
+                default:
+                    break;
+                case 7:
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                case 5:
+                case 6:
+                case 8:
+                    dooper(node, mode);
+                    rv = TRUE;
+                    break;
             }
             break;
         case en_and:
@@ -1883,32 +1870,32 @@ int opt0(EXPRESSION **node)
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {
-            default:
-                break;
-            case 1:
-                dooper(node, mode);
-                rv = TRUE;
-                break;
-            case 5:
-                if (ep->left->v.i == 0)
-                {
-                    addaside(ep->right);
-                    *node = ep->left;
-                }
-                else
+                default:
+                    break;
+                case 1:
                     dooper(node, mode);
-                rv = TRUE;
-                break;
-            case 7:
-                if (ep->right->v.i == 0)
-                {
-                    addaside(ep->left);
-                    *node = ep->right;
-                }
-                else
-                    dooper(node, mode);
-                rv = TRUE;
-                break;
+                    rv = TRUE;
+                    break;
+                case 5:
+                    if (ep->left->v.i == 0)
+                    {
+                        addaside(ep->right);
+                        *node = ep->left;
+                    }
+                    else
+                        dooper(node, mode);
+                    rv = TRUE;
+                    break;
+                case 7:
+                    if (ep->right->v.i == 0)
+                    {
+                        addaside(ep->left);
+                        *node = ep->right;
+                    }
+                    else
+                        dooper(node, mode);
+                    rv = TRUE;
+                    break;
             }
             break;
         case en_or:
@@ -1918,30 +1905,30 @@ int opt0(EXPRESSION **node)
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {
-            default:
-                break;
-            case 1:
-                dooper(node, mode);
-                rv = TRUE;
-                break;
-            case 5:
-                if (ep->left->v.i == 0)
-                {
-                    *node = ep->right;
-                }
-                else
+                default:
+                    break;
+                case 1:
                     dooper(node, mode);
-                rv = TRUE;
-                break;
-            case 7:
-                if (ep->right->v.i == 0)
-                {
-                    *node = ep->left;
-                }
-                else
-                    dooper(node, mode);
-                rv = TRUE;
-                break;
+                    rv = TRUE;
+                    break;
+                case 5:
+                    if (ep->left->v.i == 0)
+                    {
+                        *node = ep->right;
+                    }
+                    else
+                        dooper(node, mode);
+                    rv = TRUE;
+                    break;
+                case 7:
+                    if (ep->right->v.i == 0)
+                    {
+                        *node = ep->left;
+                    }
+                    else
+                        dooper(node, mode);
+                    rv = TRUE;
+                    break;
             }
             break;
         case en_rsh:
@@ -1949,8 +1936,7 @@ int opt0(EXPRESSION **node)
         case en_arraylsh:
         case en_ursh:
             rv |= opt0(&(ep->left));
-            if (isintconst(ep->left) && ep->right->type ==
-                en_shiftby)
+            if (isintconst(ep->left) && ep->right->type == en_shiftby)
                 if (isintconst(ep->right->left))
                 {
                     ep->right = ep->right->left;
@@ -1960,31 +1946,31 @@ int opt0(EXPRESSION **node)
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {
-            default:
-                break;
-            case 1:
-                dooper(node, mode);
-                rv = TRUE;
-                break;
-            case 5:
-                if (ep->left->v.i == 0)
-                {
-                    addaside(ep->right);
-                    *node = ep->left;
-                }
-                else
+                default:
+                    break;
+                case 1:
                     dooper(node, mode);
-                rv = TRUE;
-                break;
-            case 7:
-                if (ep->right->v.i == 0)
-                {
-                    *node = ep->left;
-                }
-                else
-                    dooper(node, mode);
-                rv = TRUE;
-                break;
+                    rv = TRUE;
+                    break;
+                case 5:
+                    if (ep->left->v.i == 0)
+                    {
+                        addaside(ep->right);
+                        *node = ep->left;
+                    }
+                    else
+                        dooper(node, mode);
+                    rv = TRUE;
+                    break;
+                case 7:
+                    if (ep->right->v.i == 0)
+                    {
+                        *node = ep->left;
+                    }
+                    else
+                        dooper(node, mode);
+                    rv = TRUE;
+                    break;
             }
             break;
         case en_land:
@@ -1997,45 +1983,47 @@ int opt0(EXPRESSION **node)
                     *node = intNode(en_c_i, 0);
                     break;
                 }
-                else 
+                else
                 {
                     goto join_land;
                 }
             }
-            else switch(ep->left->type)
-            {
-                case en_pc:
-                case en_threadlocal:
-                case en_global:
-                case en_labcon:
-                case en_auto:
+            else
+                switch (ep->left->type)
                 {
-join_land:
-                    rv |= opt0(&(ep->right));
-                    if (isintconst(ep->right))
+                    case en_pc:
+                    case en_threadlocal:
+                    case en_global:
+                    case en_labcon:
+                    case en_auto:
                     {
-                        rv = TRUE;
-                        *node = intNode(en_c_i, !!ep->right->v.i);
-                    }
-                    else switch(ep->right->type)
-                    {
-                        case en_pc:
-                        case en_threadlocal:
-                        case en_global:
-                        case en_labcon:
-                        case en_auto:
-                            /* assumes nothing can be relocated to address 0 */
-                            *node = intNode(en_c_i, 1);
+                    join_land:
+                        rv |= opt0(&(ep->right));
+                        if (isintconst(ep->right))
+                        {
                             rv = TRUE;
-                            break;
-                        default:
-                            break;
+                            *node = intNode(en_c_i, !!ep->right->v.i);
+                        }
+                        else
+                            switch (ep->right->type)
+                            {
+                                case en_pc:
+                                case en_threadlocal:
+                                case en_global:
+                                case en_labcon:
+                                case en_auto:
+                                    /* assumes nothing can be relocated to address 0 */
+                                    *node = intNode(en_c_i, 1);
+                                    rv = TRUE;
+                                    break;
+                                default:
+                                    break;
+                            }
                     }
+                    default:
+                        rv |= opt0(&(ep->right));
+                        break;
                 }
-                default:
-                    rv |= opt0(&(ep->right));
-                    break;
-            }
             break;
         case en_lor:
             rv |= opt0(&(ep->left));
@@ -2047,55 +2035,57 @@ join_land:
                     *node = intNode(en_c_i, 1);
                     break;
                 }
-                else 
+                else
                 {
                     goto join_lor;
                 }
             }
-            else switch(ep->left->type)
-            {
-                case en_pc:
-                case en_threadlocal:
-                case en_global:
-                case en_labcon:
-                case en_auto:
-                    /* assumes nothing can be relocated to address 0 */
-                    *node = intNode(en_c_i, 1);
-                    rv = TRUE;
-                    break;
-                default:
+            else
+                switch (ep->left->type)
                 {
-join_lor:
-                    rv |= opt0(&(ep->right));
-                    if (isintconst(ep->right))
+                    case en_pc:
+                    case en_threadlocal:
+                    case en_global:
+                    case en_labcon:
+                    case en_auto:
+                        /* assumes nothing can be relocated to address 0 */
+                        *node = intNode(en_c_i, 1);
+                        rv = TRUE;
+                        break;
+                    default:
                     {
-                        if (ep->right->v.i)
+                    join_lor:
+                        rv |= opt0(&(ep->right));
+                        if (isintconst(ep->right))
                         {
-                            rv = TRUE;
-                            *node = intNode(en_c_i, 1);
+                            if (ep->right->v.i)
+                            {
+                                rv = TRUE;
+                                *node = intNode(en_c_i, 1);
+                            }
+                            else if (isintconst(ep->left) && !ep->left->v.i)
+                            {
+                                rv = TRUE;
+                                *node = intNode(en_c_i, 0);
+                            }
                         }
-                        else if (isintconst(ep->left) && !ep->left->v.i)
-                        {
-                            rv = TRUE;
-                            *node = intNode(en_c_i, 0);
-                        }
-                    }
-                    else switch(ep->right->type)
-                    {
-                        case en_pc:
-                        case en_threadlocal:
-                        case en_global:
-                        case en_labcon:
-                        case en_auto:
-                            /* assumes nothing can be relocated to address 0 */
-                            *node = intNode(en_c_i, 1);
-                            rv = TRUE;
-                            break;
-                        default:
-                            break;
+                        else
+                            switch (ep->right->type)
+                            {
+                                case en_pc:
+                                case en_threadlocal:
+                                case en_global:
+                                case en_labcon:
+                                case en_auto:
+                                    /* assumes nothing can be relocated to address 0 */
+                                    *node = intNode(en_c_i, 1);
+                                    rv = TRUE;
+                                    break;
+                                default:
+                                    break;
+                            }
                     }
                 }
-            }
             break;
         case en_not:
             rv |= opt0(&(ep->left));
@@ -2116,18 +2106,17 @@ join_lor:
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {
-            case 1:
-                *node = intNode(en_c_i, (ep->left->v.i == ep->right
-                    ->v.i));
-                rv = TRUE;
+                case 1:
+                    *node = intNode(en_c_i, (ep->left->v.i == ep->right->v.i));
+                    rv = TRUE;
 
-                break;
-            case 4:
-                *node = intNode(en_c_i, FPFEQ(&ep->left->v.f, &ep->right->v.f));
-                rv = TRUE;
-                break;
-            default:
-                break;
+                    break;
+                case 4:
+                    *node = intNode(en_c_i, FPFEQ(&ep->left->v.f, &ep->right->v.f));
+                    rv = TRUE;
+                    break;
+                default:
+                    break;
             }
             break;
         case en_ne:
@@ -2136,17 +2125,16 @@ join_lor:
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {
-            case 1:
-                *node = intNode(en_c_i, (ep->left->v.i != ep->right
-                    ->v.i));
-                rv = TRUE;
-                break;
-            case 4:
-                *node = intNode(en_c_i, !FPFEQ(&ep->left->v.f, &ep->right->v.f));
-                rv = TRUE;
-                break;
-            default:
-                break;
+                case 1:
+                    *node = intNode(en_c_i, (ep->left->v.i != ep->right->v.i));
+                    rv = TRUE;
+                    break;
+                case 4:
+                    *node = intNode(en_c_i, !FPFEQ(&ep->left->v.f, &ep->right->v.f));
+                    rv = TRUE;
+                    break;
+                default:
+                    break;
             }
             break;
         case en_lt:
@@ -2155,17 +2143,16 @@ join_lor:
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {
-            case 1:
-                *node = intNode(en_c_i, (ep->left->v.i < ep->right->v.i)
-                    );
-                rv = TRUE;
-                break;
-            case 4:
-                *node = intNode(en_c_i, !FPFGTE(&ep->left->v.f, &ep->right->v.f));
-                rv = TRUE;
-                break;
-            default:
-                break;
+                case 1:
+                    *node = intNode(en_c_i, (ep->left->v.i < ep->right->v.i));
+                    rv = TRUE;
+                    break;
+                case 4:
+                    *node = intNode(en_c_i, !FPFGTE(&ep->left->v.f, &ep->right->v.f));
+                    rv = TRUE;
+                    break;
+                default:
+                    break;
             }
             break;
         case en_le:
@@ -2174,17 +2161,16 @@ join_lor:
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {
-            case 1:
-                *node = intNode(en_c_i, (ep->left->v.i <= ep->right
-                    ->v.i));
-                rv = TRUE;
-                break;
-            case 4:
-                *node = intNode(en_c_i, !FPFGT(&ep->left->v.f, &ep->right->v.f));
-                rv = TRUE;
-                break;
-            default:
-                break;
+                case 1:
+                    *node = intNode(en_c_i, (ep->left->v.i <= ep->right->v.i));
+                    rv = TRUE;
+                    break;
+                case 4:
+                    *node = intNode(en_c_i, !FPFGT(&ep->left->v.f, &ep->right->v.f));
+                    rv = TRUE;
+                    break;
+                default:
+                    break;
             }
             break;
         case en_ugt:
@@ -2193,13 +2179,12 @@ join_lor:
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {
-            case 1:
-                *node = intNode(en_c_i, ((ULLONG_TYPE)ep->left->v.i > 
-                    (ULLONG_TYPE)ep->right->v.i));
-                rv = TRUE;
-                break;
-            default:
-                break;
+                case 1:
+                    *node = intNode(en_c_i, ((ULLONG_TYPE)ep->left->v.i > (ULLONG_TYPE)ep->right->v.i));
+                    rv = TRUE;
+                    break;
+                default:
+                    break;
             }
             break;
         case en_uge:
@@ -2208,13 +2193,12 @@ join_lor:
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {
-            case 1:
-                *node = intNode(en_c_i, ((ULLONG_TYPE)ep->left->v.i >= 
-                    (ULLONG_TYPE)ep->right->v.i));
-                rv = TRUE;
-                break;
-            default:
-                break;
+                case 1:
+                    *node = intNode(en_c_i, ((ULLONG_TYPE)ep->left->v.i >= (ULLONG_TYPE)ep->right->v.i));
+                    rv = TRUE;
+                    break;
+                default:
+                    break;
             }
             break;
         case en_ult:
@@ -2223,13 +2207,12 @@ join_lor:
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {
-            case 1:
-                *node = intNode(en_c_i, ((ULLONG_TYPE)ep->left->v.i < 
-                    (ULLONG_TYPE)ep->right->v.i));
-                rv = TRUE;
-                break;
-            default:
-                break;
+                case 1:
+                    *node = intNode(en_c_i, ((ULLONG_TYPE)ep->left->v.i < (ULLONG_TYPE)ep->right->v.i));
+                    rv = TRUE;
+                    break;
+                default:
+                    break;
             }
             break;
         case en_ule:
@@ -2238,13 +2221,12 @@ join_lor:
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {
-            case 1:
-                *node = intNode(en_c_i, ((ULLONG_TYPE)ep->left->v.i <= 
-                    (ULLONG_TYPE)ep->right->v.i));
-                rv = TRUE;
-                break;
-            default:
-                break;
+                case 1:
+                    *node = intNode(en_c_i, ((ULLONG_TYPE)ep->left->v.i <= (ULLONG_TYPE)ep->right->v.i));
+                    rv = TRUE;
+                    break;
+                default:
+                    break;
             }
             break;
         case en_gt:
@@ -2253,17 +2235,16 @@ join_lor:
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {
-            case 1:
-                *node = intNode(en_c_i, (ep->left->v.i > ep->right->v.i)
-                    );
-                rv = TRUE;
-                break;
-            case 4:
-                *node = intNode(en_c_i, FPFGT(&ep->left->v.f, &ep->right->v.f));
-                rv = TRUE;
-                break;
-            default:
-                break;
+                case 1:
+                    *node = intNode(en_c_i, (ep->left->v.i > ep->right->v.i));
+                    rv = TRUE;
+                    break;
+                case 4:
+                    *node = intNode(en_c_i, FPFGT(&ep->left->v.f, &ep->right->v.f));
+                    rv = TRUE;
+                    break;
+                default:
+                    break;
             }
             break;
         case en_ge:
@@ -2272,32 +2253,34 @@ join_lor:
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {
-            case 1:
-                *node = intNode(en_c_i, (ep->left->v.i >= ep->right
-                    ->v.i));
-                rv = TRUE;
-                break;
-            case 4:
-                *node = intNode(en_c_i, !FPFGTE(&ep->left->v.f, &ep->right->v.f));
-                rv = TRUE;
-                break;
-            default:
-                break;
+                case 1:
+                    *node = intNode(en_c_i, (ep->left->v.i >= ep->right->v.i));
+                    rv = TRUE;
+                    break;
+                case 4:
+                    *node = intNode(en_c_i, !FPFGTE(&ep->left->v.f, &ep->right->v.f));
+                    rv = TRUE;
+                    break;
+                default:
+                    break;
             }
             break;
 
-
         case en_cond:
             opt0(&ep->left);
-            if (isoptconst(ep->left)) {
-                if (isfloatconst(ep->left)) {
+            if (isoptconst(ep->left))
+            {
+                if (isfloatconst(ep->left))
+                {
                     if (ep->left->v.f.type != IFPF_IS_ZERO)
                         *node = ep->right->left;
                     else
                         *node = ep->right->right;
                     rv |= opt0(node);
                     break;
-                } else if (isintconst(ep->left)) {
+                }
+                else if (isintconst(ep->left))
+                {
                     if (ep->left->v.i)
                         *node = ep->right->left;
                     else
@@ -2348,7 +2331,7 @@ join_lor:
             if (!templateNestingCount)
             {
                 int n = 0;
-                TEMPLATEPARAMLIST *tpl = (*node)->v.templateParam->p->byPack.pack;
+                TEMPLATEPARAMLIST* tpl = (*node)->v.templateParam->p->byPack.pack;
                 while (tpl)
                     n++, tpl = tpl->next;
                 *node = intNode(en_c_i, n);
@@ -2357,36 +2340,36 @@ join_lor:
         case en_templateselector:
             if (!templateNestingCount)
             {
-                TEMPLATESELECTOR *tsl = (*node)->v.templateSelector;
-                SYMBOL *ts = tsl->next->sym;
-                SYMBOL *sp = ts;
-                TEMPLATESELECTOR *find = tsl->next->next;
+                TEMPLATESELECTOR* tsl = (*node)->v.templateSelector;
+                SYMBOL* ts = tsl->next->sym;
+                SYMBOL* sp = ts;
+                TEMPLATESELECTOR* find = tsl->next->next;
                 if (tsl->next->isTemplate)
                 {
-                    TEMPLATEPARAMLIST *current = tsl->next->templateParams;
+                    TEMPLATEPARAMLIST* current = tsl->next->templateParams;
                     sp = GetClassTemplate(ts, current, TRUE);
                 }
                 if (sp && sp->tp->type == bt_templateselector)
                 {
-                    TYPE *tp = sp->tp;
+                    TYPE* tp = sp->tp;
                     tp = SynthesizeType(tp, NULL, FALSE);
                     if (tp && isstructured(tp))
                         sp = basetype(tp)->sp;
                 }
                 if (sp)
                 {
-                    sp = basetype(PerformDeferredInitialization (sp->tp, NULL))->sp;
+                    sp = basetype(PerformDeferredInitialization(sp->tp, NULL))->sp;
                     while (find && sp)
                     {
-                        SYMBOL *spo = sp;
+                        SYMBOL* spo = sp;
                         if (!isstructured(spo->tp))
                             break;
-                        
+
                         sp = search(find->name, spo->tp->syms);
                         if (!sp)
                         {
                             sp = classdata(find->name, spo, NULL, FALSE, FALSE);
-                            if (sp == (SYMBOL *)-1)
+                            if (sp == (SYMBOL*)-1)
                                 sp = NULL;
                         }
                         find = find->next;
@@ -2401,21 +2384,20 @@ join_lor:
                         }
                     }
                 }
-                return FALSE;                
-                
+                return FALSE;
             }
             break;
         case en_templateparam:
             if (!templateNestingCount && (*node)->v.sp->tp->templateParam->p->type == kw_int)
             {
-                SYMBOL *sym = (*node)->v.sp;
-                TEMPLATEPARAMLIST *found = NULL;
-                STRUCTSYM *search = structSyms;
+                SYMBOL* sym = (*node)->v.sp;
+                TEMPLATEPARAMLIST* found = NULL;
+                STRUCTSYM* search = structSyms;
                 while (search && !found)
                 {
                     if (search->tmpl)
                     {
-                        TEMPLATEPARAMLIST *tpl = search->tmpl;
+                        TEMPLATEPARAMLIST* tpl = search->tmpl;
                         while (tpl && !found)
                         {
                             if (tpl->argsym && !strcmp(tpl->argsym->name, sym->name))
@@ -2440,16 +2422,16 @@ join_lor:
 
 /*-------------------------------------------------------------------------*/
 
-void enswap(EXPRESSION **one, EXPRESSION **two)
+void enswap(EXPRESSION** one, EXPRESSION** two)
 {
-    EXPRESSION *temp =  *one;
-    *one =  *two;
+    EXPRESSION* temp = *one;
+    *one = *two;
     *two = temp;
 }
 
 /*-------------------------------------------------------------------------*/
 
-int fold_const(EXPRESSION *node)
+int fold_const(EXPRESSION* node)
 /*
  *      fold_const will remove constant nodes and return the values to
  *      the calling routines.
@@ -2471,129 +2453,121 @@ int fold_const(EXPRESSION *node)
             {
                 switch (node->left->type)
                 {
-                case en_add:
-                case en_arrayadd:
-                case en_structadd:
-                    if (isoptconst(node->left->left))
-                    {
-                        int type = en_add;
-                        if (node->type == en_arrayadd || node->left
-                               ->type == en_arrayadd)
-                               type = en_arrayadd;
-                        if (node->type == en_structadd || node->left
-                               ->type == en_structadd)
-                               type = en_structadd;
-                        node->type = type;
-                        node->left->type = en_add;
-                        enswap(&node->left->right, &node->right);
-                        rv = TRUE;
-                    }
-                    else if (isoptconst(node->left->right))
-                    {
-                        int type = en_add;
+                    case en_add:
+                    case en_arrayadd:
+                    case en_structadd:
+                        if (isoptconst(node->left->left))
+                        {
+                            int type = en_add;
+                            if (node->type == en_arrayadd || node->left->type == en_arrayadd)
+                                type = en_arrayadd;
+                            if (node->type == en_structadd || node->left->type == en_structadd)
+                                type = en_structadd;
+                            node->type = type;
+                            node->left->type = en_add;
+                            enswap(&node->left->right, &node->right);
+                            rv = TRUE;
+                        }
+                        else if (isoptconst(node->left->right))
+                        {
+                            int type = en_add;
 
-                        if (node->type == en_arrayadd || node->left
-                               ->type == en_arrayadd)
-                            type = en_arrayadd;
-                        if (node->type == en_structadd || node->left
-                               ->type == en_structadd)
-                               type = en_structadd;
-                        node->type = type;
-                        node->left->type = en_add;
-                        enswap(&node->left->left, &node->right);
-                        rv = TRUE;
-                    }
-                    break;
-                case en_sub:
-                    if (isoptconst(node->left->left))
-                    {
-                        int type = en_add;
-                        if (node->type == en_arrayadd)
-                            type = en_arrayadd;
-                        if (node->type == en_structadd)
-                            type = en_structadd;
-                        node->type = en_sub;
-                        node->left->type = type;
-                        enswap(&node->left->right, &node->right);
-                        rv = TRUE;
-                    }
-                    else if (isoptconst(node->left->right))
-                    {
-                        int type = en_add;
-                        if (node->type == en_arrayadd)
-                            type = en_arrayadd;
-                        if (node->type == en_structadd)
-                            type = en_structadd;
-                        node->type = type;
-                        node->left->type = en_sub;
-                        enswap(&node->left->left, &node->right);
-                        rv = TRUE;
-                    }
-                    break;
-                default:
-                    break;
+                            if (node->type == en_arrayadd || node->left->type == en_arrayadd)
+                                type = en_arrayadd;
+                            if (node->type == en_structadd || node->left->type == en_structadd)
+                                type = en_structadd;
+                            node->type = type;
+                            node->left->type = en_add;
+                            enswap(&node->left->left, &node->right);
+                            rv = TRUE;
+                        }
+                        break;
+                    case en_sub:
+                        if (isoptconst(node->left->left))
+                        {
+                            int type = en_add;
+                            if (node->type == en_arrayadd)
+                                type = en_arrayadd;
+                            if (node->type == en_structadd)
+                                type = en_structadd;
+                            node->type = en_sub;
+                            node->left->type = type;
+                            enswap(&node->left->right, &node->right);
+                            rv = TRUE;
+                        }
+                        else if (isoptconst(node->left->right))
+                        {
+                            int type = en_add;
+                            if (node->type == en_arrayadd)
+                                type = en_arrayadd;
+                            if (node->type == en_structadd)
+                                type = en_structadd;
+                            node->type = type;
+                            node->left->type = en_sub;
+                            enswap(&node->left->left, &node->right);
+                            rv = TRUE;
+                        }
+                        break;
+                    default:
+                        break;
                 }
             }
             else if (isoptconst(node->left))
             {
                 switch (node->right->type)
                 {
-                case en_add:
-                case en_arrayadd:
-                case en_structadd:
-                    if (isoptconst(node->right->left))
-                    {
-                        int type = en_add;
-                        if (node->type == en_arrayadd || node->right
-                            ->type == en_arrayadd)
-                            type = en_arrayadd;
-                        if (node->type == en_structadd || node->right
-                            ->type == en_structadd)
-                            type = en_structadd;
-                        node->type = type;
-                        node->right->type = en_add;
-                        enswap(&node->right->right, &node->left);
-                        rv = TRUE;
-                    }
-                    else if (isoptconst(node->right->right))
-                    {
-                        int type = en_add;
-                        if (node->type == en_arrayadd || node->right
-                            ->type == en_arrayadd)
-                            type = en_arrayadd;
-                        if (node->type == en_structadd || node->right
-                            ->type == en_structadd)
-                            type = en_structadd;
-                        node->type = type;
-                        node->right->type = en_add;
-                        enswap(&node->right->left, &node->left);
-                        rv = TRUE;
-                    }
-                    break;
-                case en_sub:
-                    if (isoptconst(node->right->left))
-                    {
-                        node->type = en_sub;
-                        node->right->type = en_add;
-                        enswap(&node->left, &node->right);
-                        enswap(&node->left->right, &node->right);
-                        rv = TRUE;
-                    }
-                    else if (isoptconst(node->right->right))
-                    {
-                        int type = en_add;
-                        if (node->type == en_arrayadd)
-                            type = en_arrayadd;
-                        if (node->type == en_structadd)
-                            type = en_structadd;
-                        node->type = type;
-                        node->right->type = en_sub;
-                        enswap(&node->right->left, &node->left);
-                        rv = TRUE;
-                    }
-                    break;
-                default:
-                    break;
+                    case en_add:
+                    case en_arrayadd:
+                    case en_structadd:
+                        if (isoptconst(node->right->left))
+                        {
+                            int type = en_add;
+                            if (node->type == en_arrayadd || node->right->type == en_arrayadd)
+                                type = en_arrayadd;
+                            if (node->type == en_structadd || node->right->type == en_structadd)
+                                type = en_structadd;
+                            node->type = type;
+                            node->right->type = en_add;
+                            enswap(&node->right->right, &node->left);
+                            rv = TRUE;
+                        }
+                        else if (isoptconst(node->right->right))
+                        {
+                            int type = en_add;
+                            if (node->type == en_arrayadd || node->right->type == en_arrayadd)
+                                type = en_arrayadd;
+                            if (node->type == en_structadd || node->right->type == en_structadd)
+                                type = en_structadd;
+                            node->type = type;
+                            node->right->type = en_add;
+                            enswap(&node->right->left, &node->left);
+                            rv = TRUE;
+                        }
+                        break;
+                    case en_sub:
+                        if (isoptconst(node->right->left))
+                        {
+                            node->type = en_sub;
+                            node->right->type = en_add;
+                            enswap(&node->left, &node->right);
+                            enswap(&node->left->right, &node->right);
+                            rv = TRUE;
+                        }
+                        else if (isoptconst(node->right->right))
+                        {
+                            int type = en_add;
+                            if (node->type == en_arrayadd)
+                                type = en_arrayadd;
+                            if (node->type == en_structadd)
+                                type = en_structadd;
+                            node->type = type;
+                            node->right->type = en_sub;
+                            enswap(&node->right->left, &node->left);
+                            rv = TRUE;
+                        }
+                        break;
+                    default:
+                        break;
                 }
             }
             break;
@@ -2604,88 +2578,86 @@ int fold_const(EXPRESSION *node)
             {
                 switch (node->left->type)
                 {
-                case en_add:
-                case en_arrayadd:
-                case en_structadd:
-                    if (isoptconst(node->left->left))
-                    {
-                        node->type = en_add;
-                        node->left->type = en_sub;
-                        enswap(&node->left->right, &node->right);
-                        rv = TRUE;
-                    }
-                    else if (isoptconst(node->left->right))
-                    {
-                        node->type = en_add;
-                        node->left->type = en_sub;
-                        enswap(&node->left->left, &node->left->right);
-                        enswap(&node->left->right, &node->right);
-                        rv = TRUE;
-                    }
-                    break;
-                case en_sub:
-                    if (isoptconst(node->left->left))
-                    {
-                        enswap(&node->left->right, &node->right);
-                        rv = TRUE;
-                    }
-                    else if (isoptconst(node->left->right))
-                    {
-                        enswap(&node->left, &node->right);
-                        enswap(&node->right->left, &node->left);
-                        node->type = en_add;
-                        node->right->left = exprNode(en_uminus, node->right
-                            ->left, 0);
-                        rv = TRUE;
-                    }
-                    break;
-                default:
-                    break;
+                    case en_add:
+                    case en_arrayadd:
+                    case en_structadd:
+                        if (isoptconst(node->left->left))
+                        {
+                            node->type = en_add;
+                            node->left->type = en_sub;
+                            enswap(&node->left->right, &node->right);
+                            rv = TRUE;
+                        }
+                        else if (isoptconst(node->left->right))
+                        {
+                            node->type = en_add;
+                            node->left->type = en_sub;
+                            enswap(&node->left->left, &node->left->right);
+                            enswap(&node->left->right, &node->right);
+                            rv = TRUE;
+                        }
+                        break;
+                    case en_sub:
+                        if (isoptconst(node->left->left))
+                        {
+                            enswap(&node->left->right, &node->right);
+                            rv = TRUE;
+                        }
+                        else if (isoptconst(node->left->right))
+                        {
+                            enswap(&node->left, &node->right);
+                            enswap(&node->right->left, &node->left);
+                            node->type = en_add;
+                            node->right->left = exprNode(en_uminus, node->right->left, 0);
+                            rv = TRUE;
+                        }
+                        break;
+                    default:
+                        break;
                 }
             }
             else if (isoptconst(node->left))
             {
                 switch (node->right->type)
                 {
-                case en_add:
-                case en_arrayadd:
-                case en_structadd:
-                    if (isoptconst(node->right->left))
-                    {
-                        node->type = en_sub;
-                        node->right->type = en_sub;
-                        enswap(&node->left, &node->right);
-                        enswap(&node->left->right, &node->right);
-                        enswap(&node->left->left, &node->left->right);
-                        rv = TRUE;
-                    }
-                    else if (isoptconst(node->right->right))
-                    {
-                        node->type = en_sub;
-                        node->right->type = en_sub;
-                        enswap(&node->left, &node->right);
-                        enswap(&node->left->left, &node->right);
-                        rv = TRUE;
-                    }
-                    break;
-                case en_sub:
-                    if (isoptconst(node->right->left))
-                    {
-                        enswap(&node->right->right, &node->left);
-                        rv = TRUE;
-                    }
-                    else if (isoptconst(node->right->right))
-                    {
+                    case en_add:
+                    case en_arrayadd:
+                    case en_structadd:
+                        if (isoptconst(node->right->left))
+                        {
+                            node->type = en_sub;
+                            node->right->type = en_sub;
+                            enswap(&node->left, &node->right);
+                            enswap(&node->left->right, &node->right);
+                            enswap(&node->left->left, &node->left->right);
+                            rv = TRUE;
+                        }
+                        else if (isoptconst(node->right->right))
+                        {
+                            node->type = en_sub;
+                            node->right->type = en_sub;
+                            enswap(&node->left, &node->right);
+                            enswap(&node->left->left, &node->right);
+                            rv = TRUE;
+                        }
+                        break;
+                    case en_sub:
+                        if (isoptconst(node->right->left))
+                        {
+                            enswap(&node->right->right, &node->left);
+                            rv = TRUE;
+                        }
+                        else if (isoptconst(node->right->right))
+                        {
 
-                        enswap(&node->left, &node->right);
-                        enswap(&node->left->left, &node->right);
-                        node->left->right = exprNode(en_uminus, node->left
-                            ->right, 0);
-                        rv = TRUE;
-                    }
-                    break;
-                default:
-                    break;
+                            enswap(&node->left, &node->right);
+                            enswap(&node->left->left, &node->right);
+                            node->left->right = exprNode(en_uminus, node->left->right, 0);
+                            rv = TRUE;
+                        }
+                        break;
+                    default:
+                        break;
                 }
             }
             break;
@@ -2697,50 +2669,50 @@ int fold_const(EXPRESSION *node)
             {
                 switch (node->left->type)
                 {
-                case en_mul:
-                case en_umul:
-                    if (isoptconst(node->left->left))
-                    {
-                        node->type = en_mul;
-                        node->left->type = en_mul;
-                        enswap(&node->left->right, &node->right);
-                        rv = TRUE;
-                    }
-                    else if (isoptconst(node->left->right))
-                    {
-                        node->type = en_mul;
-                        node->left->type = en_mul;
-                        enswap(&node->left->left, &node->right);
-                        rv = TRUE;
-                    }
-                    break;
-                default:
-                    break;
+                    case en_mul:
+                    case en_umul:
+                        if (isoptconst(node->left->left))
+                        {
+                            node->type = en_mul;
+                            node->left->type = en_mul;
+                            enswap(&node->left->right, &node->right);
+                            rv = TRUE;
+                        }
+                        else if (isoptconst(node->left->right))
+                        {
+                            node->type = en_mul;
+                            node->left->type = en_mul;
+                            enswap(&node->left->left, &node->right);
+                            rv = TRUE;
+                        }
+                        break;
+                    default:
+                        break;
                 }
             }
             else if (isoptconst(node->left))
             {
                 switch (node->right->type)
                 {
-                case en_mul:
-                case en_umul:
-                    if (isoptconst(node->right->left))
-                    {
-                        node->type = en_mul;
-                        node->right->type = en_mul;
-                        enswap(&node->right->right, &node->left);
-                        rv = TRUE;
-                    }
-                    else if (isoptconst(node->right->right))
-                    {
-                        node->type = en_mul;
-                        node->right->type = en_mul;
-                        enswap(&node->right->left, &node->left);
-                        rv = TRUE;
-                    }
-                    break;
-                default:
-                    break;
+                    case en_mul:
+                    case en_umul:
+                        if (isoptconst(node->right->left))
+                        {
+                            node->type = en_mul;
+                            node->right->type = en_mul;
+                            enswap(&node->right->right, &node->left);
+                            rv = TRUE;
+                        }
+                        else if (isoptconst(node->right->right))
+                        {
+                            node->type = en_mul;
+                            node->right->type = en_mul;
+                            enswap(&node->right->left, &node->left);
+                            rv = TRUE;
+                        }
+                        break;
+                    default:
+                        break;
                 }
             }
             break;
@@ -2749,8 +2721,7 @@ int fold_const(EXPRESSION *node)
         case en_xor:
             rv |= fold_const(node->left);
             rv |= fold_const(node->right);
-            if (node->left->type == node->type && isoptconst(node
-                ->right))
+            if (node->left->type == node->type && isoptconst(node->right))
             {
                 if (isoptconst(node->left->left))
                 {
@@ -2763,8 +2734,7 @@ int fold_const(EXPRESSION *node)
                     rv = TRUE;
                 }
             }
-            else if (node->right->type == node->type && isoptconst
-                (node->left))
+            else if (node->right->type == node->type && isoptconst(node->left))
             {
                 if (isoptconst(node->right->left))
                 {
@@ -2922,42 +2892,42 @@ int fold_const(EXPRESSION *node)
             if (node->v.func->sp && node->v.func->sp->constexpression && node->v.func->sp->inlineFunc.stmt)
             {
                 int i;
-                STATEMENT *stmt = node->v.func->sp->inlineFunc.stmt;
-                    while (stmt && stmt->type == st_expr)
-                        stmt = stmt->next;
-                    if (stmt && stmt->type == st_block && stmt->lower)
+                STATEMENT* stmt = node->v.func->sp->inlineFunc.stmt;
+                while (stmt && stmt->type == st_expr)
+                    stmt = stmt->next;
+                if (stmt && stmt->type == st_block && stmt->lower)
+                {
+                    STATEMENT* st = stmt->lower;
+                    while (st->type == st_varstart)
+                        st = st->next;
+                    if (st->type == st_block && !st->next)
                     {
-                        STATEMENT *st = stmt->lower;
-                        while (st->type == st_varstart)
+                        st = st->lower;
+                        while (st->type == st_line || st->type == st_dbgblock)
                             st = st->next;
-                        if (st->type == st_block && !st->next)
+                        if (st->type == st_expr || st->type == st_return)
                         {
-                            st = st->lower;
-                            while (st->type == st_line || st->type == st_dbgblock)
-                                st = st->next;
-                            if (st->type == st_expr || st->type == st_return)
+                            if (st->select)
                             {
-                                if (st->select)
+                                for (i = 0; i < functionnestingcount; i++)
+                                    if (functionnesting[i] == st->select)
+                                        break;
+                                if (i >= functionnestingcount)
                                 {
-                                    for (i = 0; i < functionnestingcount; i++)
-                                        if (functionnesting[i] == st->select)
-                                            break;
-                                    if (i >= functionnestingcount)
+                                    functionnesting[functionnestingcount++] = st->select;
+                                    optimize_for_constants(&st->select);
+                                    functionnestingcount--;
+                                    if (IsConstantExpression(st->select, FALSE, FALSE))
                                     {
-                                        functionnesting[functionnestingcount++] = st->select;
-                                        optimize_for_constants(&st->select);
-                                        functionnestingcount--;
-                                        if (IsConstantExpression(st->select, FALSE, FALSE))
-                                        {
-                                            *node = *st->select;
-                                            node->noexprerr = TRUE;
-                                            rv = TRUE;
-                                        }
+                                        *node = *st->select;
+                                        node->noexprerr = TRUE;
+                                        rv = TRUE;
                                     }
                                 }
                             }
                         }
                     }
+                }
             }
             if (!rv)
                 rv |= fold_const(node->v.func->fcall);
@@ -2977,7 +2947,7 @@ int fold_const(EXPRESSION *node)
                 node->v.stmt = node->v.stmt->next;
             if (node->v.stmt && node->v.stmt->type == st_block)
             {
-                STATEMENT *st = node->v.stmt->lower;
+                STATEMENT* st = node->v.stmt->lower;
                 while (st->type == st_varstart)
                     st = st->next;
                 if (st->type == st_block && !st->next)
@@ -2987,7 +2957,7 @@ int fold_const(EXPRESSION *node)
                         st = st->next;
                     if (st->type == st_expr || st->type == st_return)
                     {
-                        EXPRESSION *exp = st->select;
+                        EXPRESSION* exp = st->select;
                         optimize_for_constants(&st->select);
                         if (IsConstantExpression(st->select, TRUE, FALSE))
                         {
@@ -3005,12 +2975,11 @@ int fold_const(EXPRESSION *node)
     return rv;
 }
 
-
 /*
 
  * remove type casts from constant nodes and change their size
  */
-int typedconsts(EXPRESSION *node1)
+int typedconsts(EXPRESSION* node1)
 {
     int rv = FALSE;
     if (!node1)
@@ -3018,16 +2987,17 @@ int typedconsts(EXPRESSION *node1)
     switch (node1->type)
     {
         case en_nullptr:
-            node1->type = en_c_ui; // change the nullptr to an int
+            node1->type = en_c_ui;  // change the nullptr to an int
             rv = TRUE;
             break;
         case en_const:
             /* special trap to replace sc_constants */
-//            if (basetype(node1->v.sp->tp)->type == bt_long_long || basetype(node1->v.sp->tp)->type == bt_unsigned_long_long)
-//                node1->type = en_c_ll;
-//            else
-//                node1->type = en_c_i;
-//            node1->v.i = node1->v.sp->value.i;
+            //            if (basetype(node1->v.sp->tp)->type == bt_long_long || basetype(node1->v.sp->tp)->type ==
+            //            bt_unsigned_long_long)
+            //                node1->type = en_c_ll;
+            //            else
+            //                node1->type = en_c_i;
+            //            node1->v.i = node1->v.sp->value.i;
             optimize_for_constants(&node1->v.sp->init->exp);
             *node1 = *node1->v.sp->init->exp;
             rv = TRUE;
@@ -3175,7 +3145,7 @@ int typedconsts(EXPRESSION *node1)
             if (node1->left && isoptconst(node1->left))
             {
                 rv = TRUE;
-                node1->v.i = CastToInt(ISZ_ULONGLONG,reint(node1->left));
+                node1->v.i = CastToInt(ISZ_ULONGLONG, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_ull;
             }
@@ -3185,7 +3155,7 @@ int typedconsts(EXPRESSION *node1)
             if (node1->left && isoptconst(node1->left))
             {
                 rv = TRUE;
-                node1->v.i = CastToInt(-ISZ_ULONGLONG,reint(node1->left));
+                node1->v.i = CastToInt(-ISZ_ULONGLONG, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_ll;
             }
@@ -3199,11 +3169,10 @@ int typedconsts(EXPRESSION *node1)
                 if (isfloatconst(node1->left) || isimaginaryconst(node1->left))
                     node1->v.i = node1->left->v.f.type != IFPF_IS_ZERO;
                 else if (iscomplexconst(node1->left))
-                    node1->v.i = node1->left->v.c.r.type != IFPF_IS_ZERO
-                             || node1->left->v.c.i.type != IFPF_IS_ZERO;
+                    node1->v.i = node1->left->v.c.r.type != IFPF_IS_ZERO || node1->left->v.c.i.type != IFPF_IS_ZERO;
                 else
                 {
-                    node1->v.i = CastToInt(ISZ_BOOLEAN,!!reint(node1->left));
+                    node1->v.i = CastToInt(ISZ_BOOLEAN, !!reint(node1->left));
                     node1->unionoffset = node1->left->unionoffset;
                 }
                 node1->type = en_c_bool;
@@ -3214,7 +3183,7 @@ int typedconsts(EXPRESSION *node1)
             if (node1->left && isoptconst(node1->left))
             {
                 rv = TRUE;
-                node1->v.i = CastToInt(-ISZ_UCHAR,reint(node1->left));
+                node1->v.i = CastToInt(-ISZ_UCHAR, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_c;
             }
@@ -3224,7 +3193,7 @@ int typedconsts(EXPRESSION *node1)
             if (node1->left && isoptconst(node1->left))
             {
                 rv = TRUE;
-                node1->v.i = CastToInt(ISZ_U16,reint(node1->left));
+                node1->v.i = CastToInt(ISZ_U16, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_u16;
             }
@@ -3234,7 +3203,7 @@ int typedconsts(EXPRESSION *node1)
             if (node1->left && isoptconst(node1->left))
             {
                 rv = TRUE;
-                node1->v.i = CastToInt(ISZ_U32,reint(node1->left));
+                node1->v.i = CastToInt(ISZ_U32, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_u32;
             }
@@ -3244,7 +3213,7 @@ int typedconsts(EXPRESSION *node1)
             if (node1->left && isoptconst(node1->left))
             {
                 rv = TRUE;
-                node1->v.i = CastToInt(-ISZ_WCHAR,reint(node1->left));
+                node1->v.i = CastToInt(-ISZ_WCHAR, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_wc;
             }
@@ -3254,7 +3223,7 @@ int typedconsts(EXPRESSION *node1)
             if (node1->left && isoptconst(node1->left))
             {
                 rv = TRUE;
-                node1->v.i = CastToInt(ISZ_UCHAR,reint(node1->left));
+                node1->v.i = CastToInt(ISZ_UCHAR, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_uc;
             }
@@ -3264,7 +3233,7 @@ int typedconsts(EXPRESSION *node1)
             if (node1->left && isoptconst(node1->left))
             {
                 rv = TRUE;
-                node1->v.i = CastToInt(-ISZ_USHORT,reint(node1->left));
+                node1->v.i = CastToInt(-ISZ_USHORT, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_i;
             }
@@ -3274,7 +3243,7 @@ int typedconsts(EXPRESSION *node1)
             if (node1->left && isoptconst(node1->left))
             {
                 rv = TRUE;
-                node1->v.i = CastToInt(ISZ_USHORT,reint(node1->left));
+                node1->v.i = CastToInt(ISZ_USHORT, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_ui;
             }
@@ -3285,7 +3254,7 @@ int typedconsts(EXPRESSION *node1)
             if (node1->left && isoptconst(node1->left))
             {
                 rv = TRUE;
-                node1->v.i = CastToInt(-ISZ_UINT,reint(node1->left));
+                node1->v.i = CastToInt(-ISZ_UINT, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_i;
             }
@@ -3296,7 +3265,7 @@ int typedconsts(EXPRESSION *node1)
             if (node1->left && isoptconst(node1->left))
             {
                 rv = TRUE;
-                node1->v.i = CastToInt(ISZ_UINT,reint(node1->left));
+                node1->v.i = CastToInt(ISZ_UINT, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_ul;
             }
@@ -3306,7 +3275,7 @@ int typedconsts(EXPRESSION *node1)
             if (node1->left && isoptconst(node1->left))
             {
                 rv = TRUE;
-                node1->v.i = CastToInt(-ISZ_ULONG,reint(node1->left));
+                node1->v.i = CastToInt(-ISZ_ULONG, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_i;
             }
@@ -3316,12 +3285,12 @@ int typedconsts(EXPRESSION *node1)
             if (node1->left && isoptconst(node1->left))
             {
                 rv = TRUE;
-                node1->v.i = CastToInt(ISZ_ULONG,reint(node1->left));
+                node1->v.i = CastToInt(ISZ_ULONG, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_ul;
             }
             break;
-/*#ifdef XXXXX */
+            /*#ifdef XXXXX */
         case en_x_f:
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
@@ -3395,7 +3364,7 @@ int typedconsts(EXPRESSION *node1)
                 }
                 else if (isimaginaryconst(node1->left))
                 {
-                    FPF temp ;
+                    FPF temp;
                     node1->left->type = en_c_ld;
                     temp = refloat(node1->left);
                     node1->v.c.i = CastToFloat(ISZ_ILDOUBLE, &temp);
@@ -3405,7 +3374,7 @@ int typedconsts(EXPRESSION *node1)
                 {
                     node1->v.c = node1->left->v.c;
                 }
-                node1->type = en_c_fc;					
+                node1->type = en_c_fc;
             }
             break;
         case en_x_dc:
@@ -3421,7 +3390,7 @@ int typedconsts(EXPRESSION *node1)
                 }
                 else if (isimaginaryconst(node1->left))
                 {
-                    FPF temp ;
+                    FPF temp;
                     node1->left->type = en_c_ld;
                     temp = refloat(node1->left);
                     node1->v.c.i = CastToFloat(ISZ_ILDOUBLE, &temp);
@@ -3447,7 +3416,7 @@ int typedconsts(EXPRESSION *node1)
                 }
                 else if (isimaginaryconst(node1->left))
                 {
-                    FPF temp ;
+                    FPF temp;
                     node1->left->type = en_c_ld;
                     temp = refloat(node1->left);
                     node1->v.c.i = CastToFloat(ISZ_ILDOUBLE, &temp);
@@ -3460,15 +3429,15 @@ int typedconsts(EXPRESSION *node1)
                 node1->type = en_c_ldc;
             }
             break;
-/*#endif */
+            /*#endif */
     }
     return rv;
 }
-static int depth(EXPRESSION *ep)
+static int depth(EXPRESSION* ep)
 {
     if (ep == 0)
         return 0;
-   switch (ep->type)
+    switch (ep->type)
     {
         case en_c_bool:
         case en_c_c:
@@ -3501,12 +3470,12 @@ static int depth(EXPRESSION *ep)
         case en_nullptr:
         case en_atomic:
         case en_structelem:
-         
+
             return 1;
         case en_funcret:
             return depth(ep->left);
         case en_func:
-            
+
             return 10 + imax(depth(ep->left), depth(ep->right));
         case en_cond:
             return 1 + imax(depth(ep->left), imax(depth(ep->right->left), depth(ep->right->right)));
@@ -3514,10 +3483,10 @@ static int depth(EXPRESSION *ep)
             return 1 + imax(depth(ep->left), depth(ep->right));
     }
 }
-static void rebalance(EXPRESSION *ep)
+static void rebalance(EXPRESSION* ep)
 {
     if (ep == 0)
-        return ;
+        return;
     switch (ep->type)
     {
         case en_c_bool:
@@ -3569,7 +3538,7 @@ static void rebalance(EXPRESSION *ep)
             rebalance(ep->right);
             if (depth(ep->left) < depth(ep->right))
             {
-                EXPRESSION *p = ep->left;
+                EXPRESSION* p = ep->left;
                 ep->left = ep->right;
                 ep->right = p;
             }
@@ -3579,7 +3548,7 @@ static void rebalance(EXPRESSION *ep)
             rebalance(ep->right);
             if (depth(ep->left) < depth(ep->right))
             {
-                EXPRESSION *p = ep->left;
+                EXPRESSION* p = ep->left;
                 ep->left = ep->right;
                 ep->right = p;
                 ep->type = en_add;
@@ -3605,11 +3574,11 @@ static void rebalance(EXPRESSION *ep)
             break;
     }
 }
-void optimize_for_constants(EXPRESSION **expr)
+void optimize_for_constants(EXPRESSION** expr)
 {
     int rv = TRUE, count = 8;
-    EXPRESSION * oldasidehead = asidehead;
-    EXPRESSION ** oldasidetail = asidetail;
+    EXPRESSION* oldasidehead = asidehead;
+    EXPRESSION** oldasidetail = asidetail;
 
     asidehead = 0;
     asidetail = &asidehead;
@@ -3617,16 +3586,16 @@ void optimize_for_constants(EXPRESSION **expr)
         rv = typedconsts(*expr) | fold_const(*expr) | opt0(expr);
     if (asidehead)
     {
-        *asidetail =  *expr;
+        *asidetail = *expr;
         *expr = asidehead;
     }
     asidehead = oldasidehead;
     asidetail = oldasidetail;
     rebalance(*expr);
 }
-LEXEME *optimized_expression(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **expr, BOOLEAN commaallowed)
+LEXEME* optimized_expression(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** expr, BOOLEAN commaallowed)
 {
-    
+
     if (commaallowed)
         lex = expression(lex, funcsp, atp, tp, expr, 0);
     else
@@ -3635,5 +3604,5 @@ LEXEME *optimized_expression(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, 
     {
         optimize_for_constants(expr);
     }
-    return lex; 
+    return lex;
 }

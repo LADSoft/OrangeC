@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -37,8 +37,8 @@
 extern HINSTANCE hInstance;
 extern HWND hwndClient, hwndFrame;
 extern HWND hwndASM;
-extern THREAD *activeThread;
-extern PROCESS *activeProcess;
+extern THREAD* activeThread;
+extern PROCESS* activeProcess;
 extern enum DebugState uState;
 extern HWND hwndTbThreads;
 
@@ -50,13 +50,13 @@ static HWND hwndLV;
 static int curSel;
 static HIMAGELIST tagImageList;
 
-static char *szThreadTitle = "Threads";
+static char* szThreadTitle = "Threads";
 
 static void CopyText(HWND hwnd)
 {
-    int count;
-    THREAD *list = activeProcess->threads;
-    char *p;
+    int count = 0;
+    THREAD* list = activeProcess->threads;
+    char* p;
     while (list)
     {
         list = list->next;
@@ -65,7 +65,6 @@ static void CopyText(HWND hwnd)
     p = malloc(256 * count);
     if (p)
     {
-        int i;
         p[0] = 0;
         list = activeProcess->threads;
         while (list)
@@ -88,15 +87,13 @@ static void CopyText(HWND hwnd)
 
 //-------------------------------------------------------------------------
 
-LRESULT CALLBACK ThreadProc(HWND hwnd, UINT iMessage, WPARAM
-    wParam, LPARAM lParam)
+LRESULT CALLBACK ThreadProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
     LV_ITEM item;
     LV_COLUMN lvC;
     RECT r;
     int i;
-    char module[256];
-    THREAD *sl;
+    THREAD* sl;
     LPNMHDR nmh;
     switch (iMessage)
     {
@@ -117,8 +114,8 @@ LRESULT CALLBACK ThreadProc(HWND hwnd, UINT iMessage, WPARAM
             }
             else if (nmh->code == LVN_GETDISPINFO)
             {
-                LV_DISPINFO *p = (LV_DISPINFO *)lParam;
-                THREAD *x = (THREAD *)p->item.lParam;
+                LV_DISPINFO* p = (LV_DISPINFO*)lParam;
+                THREAD* x = (THREAD*)p->item.lParam;
                 char name[256], name1[256];
                 if (p->item.iSubItem == 2)
                 {
@@ -155,14 +152,14 @@ LRESULT CALLBACK ThreadProc(HWND hwnd, UINT iMessage, WPARAM
                 switch (((LPNMLVKEYDOWN)lParam)->wVKey)
                 {
                     case 'C':
-                        if (GetKeyState(VK_CONTROL) &0x80000000)
+                        if (GetKeyState(VK_CONTROL) & 0x80000000)
                         {
                             CopyText(hwnd);
                         }
                         break;
                     case VK_UP:
                         if (curSel > 0)
-                            SendMessage(hwnd, WM_USER, curSel-1, 0);
+                            SendMessage(hwnd, WM_USER, curSel - 1, 0);
                         break;
                     case VK_DOWN:
                         if (curSel < ListView_GetItemCount(hwndLV) - 1)
@@ -172,7 +169,7 @@ LRESULT CALLBACK ThreadProc(HWND hwnd, UINT iMessage, WPARAM
             }
             break;
         case WM_COMMAND:
-            switch(LOWORD(wParam))
+            switch (LOWORD(wParam))
             {
                 case ID_TBTHREADS:
                     if (HIWORD(wParam) == CBN_SELENDOK)
@@ -182,7 +179,6 @@ LRESULT CALLBACK ThreadProc(HWND hwnd, UINT iMessage, WPARAM
                         {
                             SendMessage(hwnd, WM_USER, i, 0);
                             curSel = i;
-                            
                         }
                     }
                     break;
@@ -206,33 +202,29 @@ LRESULT CALLBACK ThreadProc(HWND hwnd, UINT iMessage, WPARAM
             item.mask = LVIF_IMAGE;
             item.iImage = 4;
             ListView_SetItem(hwndLV, &item);
-            PostDIDMessage(DID_REGWND, WM_COMMAND, ID_SETADDRESS, (LPARAM)
-                activeThread->hThread);
+            PostDIDMessage(DID_REGWND, WM_COMMAND, ID_SETADDRESS, (LPARAM)activeThread->hThread);
             PostDIDMessage(DID_WATCHWND, WM_COMMAND, ID_SETADDRESS, 0);
-            PostDIDMessage(DID_WATCHWND+1, WM_COMMAND, ID_SETADDRESS, 0);
-            PostDIDMessage(DID_WATCHWND+2, WM_COMMAND, ID_SETADDRESS, 0);
-            PostDIDMessage(DID_WATCHWND+3, WM_COMMAND, ID_SETADDRESS, 0);
+            PostDIDMessage(DID_WATCHWND + 1, WM_COMMAND, ID_SETADDRESS, 0);
+            PostDIDMessage(DID_WATCHWND + 2, WM_COMMAND, ID_SETADDRESS, 0);
+            PostDIDMessage(DID_WATCHWND + 3, WM_COMMAND, ID_SETADDRESS, 0);
             PostDIDMessage(DID_LOCALSWND, WM_COMMAND, ID_SETADDRESS, 0);
             PostDIDMessage(DID_STACKWND, WM_RESTACK, (WPARAM)1, 0);
             PostDIDMessage(DID_MEMWND, WM_RESTACK, 0, 0);
-            PostDIDMessage(DID_MEMWND+1, WM_RESTACK, 0, 0);
-            PostDIDMessage(DID_MEMWND+2, WM_RESTACK, 0, 0);
-            PostDIDMessage(DID_MEMWND+3, WM_RESTACK, 0, 0);
-            SendMessage(hwndASM, WM_COMMAND, ID_SETADDRESS, (LPARAM)
-                        activeThread->regs.Eip);
+            PostDIDMessage(DID_MEMWND + 1, WM_RESTACK, 0, 0);
+            PostDIDMessage(DID_MEMWND + 2, WM_RESTACK, 0, 0);
+            PostDIDMessage(DID_MEMWND + 3, WM_RESTACK, 0, 0);
+            SendMessage(hwndASM, WM_COMMAND, ID_SETADDRESS, (LPARAM)activeThread->regs.Eip);
             SendMessage(hwndTbThreads, CB_SETCURSEL, curSel, 0);
-
         }
-            break;
+        break;
         case WM_CREATE:
             hwndThread = hwnd;
             GetClientRect(hwnd, &r);
-            hwndLV = CreateWindowEx(0, WC_LISTVIEW, "", 
-                           LVS_REPORT | LVS_SINGLESEL | WS_CHILD | WS_VISIBLE | WS_BORDER,
-                           0,0,r.right-r.left, r.bottom - r.top, hwnd, 0, hInstance, 0);
+            hwndLV = CreateWindowEx(0, WC_LISTVIEW, "", LVS_REPORT | LVS_SINGLESEL | WS_CHILD | WS_VISIBLE | WS_BORDER, 0, 0,
+                                    r.right - r.left, r.bottom - r.top, hwnd, 0, hInstance, 0);
             ListView_SetExtendedListViewStyle(hwndLV, LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES | LVS_EX_DOUBLEBUFFER);
             ApplyDialogFont(hwndLV);
-            lvC.mask = LVCF_WIDTH | LVCF_SUBITEM ;
+            lvC.mask = LVCF_WIDTH | LVCF_SUBITEM;
             lvC.cx = 20;
             lvC.iSubItem = 0;
             ListView_InsertColumn(hwndLV, 0, &lvC);
@@ -252,8 +244,7 @@ LRESULT CALLBACK ThreadProc(HWND hwnd, UINT iMessage, WPARAM
             r.left = r.top = 0;
             r.right = LOWORD(lParam);
             r.bottom = HIWORD(lParam);
-            MoveWindow(hwndLV, r.left, r.top, r.right - r.left,
-                r.bottom - r.top, 1);
+            MoveWindow(hwndLV, r.left, r.top, r.right - r.left, r.bottom - r.top, 1);
             break;
         case WM_DESTROY:
             hwndThread = 0;
@@ -263,9 +254,9 @@ LRESULT CALLBACK ThreadProc(HWND hwnd, UINT iMessage, WPARAM
             EnableWindow(hwndTbThreads, uState != notDebugging && wParam);
             if (uState != notDebugging && wParam)
             {
-                
+
                 int i = 0;
-                THREAD *list = activeProcess->threads;
+                THREAD* list = activeProcess->threads;
                 ListView_DeleteAllItems(hwndLV);
                 memset(&item, 0, sizeof(item));
                 SendMessage(hwndTbThreads, CB_RESETCONTENT, 0, 0);
@@ -286,7 +277,7 @@ LRESULT CALLBACK ThreadProc(HWND hwnd, UINT iMessage, WPARAM
                     }
                     item.lParam = (LPARAM)list;
                     ListView_InsertItem(hwndLV, &item);
-                    
+
                     item.iSubItem = 1;
                     item.mask = LVIF_PARAM | LVIF_TEXT;
                     item.lParam = (LPARAM)list;
@@ -327,7 +318,7 @@ void RegisterThreadWindow(HINSTANCE hInstance)
     wc.hInstance = hInstance;
     wc.hIcon = LoadIcon(0, IDI_APPLICATION);
     wc.hCursor = LoadCursor(0, IDC_ARROW);
-    wc.hbrBackground = 0; // GetStockObject(WHITE_BRUSH);
+    wc.hbrBackground = 0;  // GetStockObject(WHITE_BRUSH);
     wc.lpszMenuName = 0;
     wc.lpszClassName = szThreadClassName;
     RegisterClass(&wc);

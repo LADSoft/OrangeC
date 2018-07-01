@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -33,7 +33,7 @@
 #include "header.h"
 #include "rc.h"
 #include "rcgui.h"
-#include "props.h"  
+#include "props.h"
 extern HWND hwndPropsTabCtrl;
 extern HINSTANCE hInstance;
 
@@ -44,39 +44,39 @@ static HWND hwndToolbox;
 struct arrangement
 {
     int index;
-    char *text;
-} ;
+    char* text;
+};
 static struct arrangement rows[] = {
-    { IL_PUSHBUTTON, "Push Button" },
-    { IL_PUSHBUTTON, "Default Push Button" },
-    { IL_CHECKBOX, "Check Box" },
-    { IL_RADIOBUTTON, "Radio Button" },
-    { IL_STATICTEXT, "Static Text" },
-    { IL_ICON, "Icon" },
-    { IL_EDIT, "Edit Text" },
-    { IL_COMBOBOX, "Combo Box" },
-    { IL_LISTBOX, "List Box" },
-    { IL_GROUPBOX, "Group Box" },
-    { IL_FRAME, "Frame" },
-    { IL_RECTANGLE, "Rectangle" },
-    { IL_ETCHED, "Etched" },
-    { IL_HSCROLL, "Horizontal Scrollbar" },
-    { IL_VSCROLL, "Vertical Scrollbar" },
-} ;
+    {IL_PUSHBUTTON, "Push Button"},
+    {IL_PUSHBUTTON, "Default Push Button"},
+    {IL_CHECKBOX, "Check Box"},
+    {IL_RADIOBUTTON, "Radio Button"},
+    {IL_STATICTEXT, "Static Text"},
+    {IL_ICON, "Icon"},
+    {IL_EDIT, "Edit Text"},
+    {IL_COMBOBOX, "Combo Box"},
+    {IL_LISTBOX, "List Box"},
+    {IL_GROUPBOX, "Group Box"},
+    {IL_FRAME, "Frame"},
+    {IL_RECTANGLE, "Rectangle"},
+    {IL_ETCHED, "Etched"},
+    {IL_HSCROLL, "Horizontal Scrollbar"},
+    {IL_VSCROLL, "Vertical Scrollbar"},
+};
 static HIMAGELIST lvIml;
 static HBITMAP mainIml;
 static HCURSOR dragCur, noCur;
 static HWND lvwindow;
-static PROPDESC *desc;
+static PROPDESC* desc;
 
-static char *szCtlTbClassName = "xccCtlTb";
-static char *szCtlTbTitle = "Toolbox";
+static char* szCtlTbClassName = "xccCtlTb";
+static char* szCtlTbTitle = "Toolbox";
 
 static void SetListViewRows()
 {
     int i;
     LV_ITEM item;
-    for (i=0; i < sizeof(rows)/sizeof(rows[0]); i++)
+    for (i = 0; i < sizeof(rows) / sizeof(rows[0]); i++)
     {
         memset(&item, 0, sizeof(item));
         item.iItem = i;
@@ -88,15 +88,13 @@ static void SetListViewRows()
         ListView_InsertItem(lvwindow, &item);
     }
 }
-LRESULT CALLBACK CtlTbProc(HWND hwnd, UINT iMessage, WPARAM wParam,
-    LPARAM lParam)
+LRESULT CALLBACK CtlTbProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
     static HCURSOR origCurs;
     static BOOL dragging;
     static BOOL inView;
     static int dragSrc;
-    int i;
-    NM_TREEVIEW *nm;
+    NM_TREEVIEW* nm;
     RECT rs;
     TVHITTESTINFO hittest;
     switch (iMessage)
@@ -105,8 +103,8 @@ LRESULT CALLBACK CtlTbProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             nm = (NM_TREEVIEW*)lParam;
             switch (nm->hdr.code)
             {
-                // don't allow selection
-                 case LVN_ITEMCHANGING:
+                    // don't allow selection
+                case LVN_ITEMCHANGING:
                     return 1;
                 case LVN_BEGINDRAG:
                     dragSrc = ((LPNMLISTVIEW)lParam)->iItem;
@@ -169,15 +167,13 @@ LRESULT CALLBACK CtlTbProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             dragCur = LoadCursor(hInstance, "ID_DRAGCTL");
             noCur = LoadCursor(hInstance, "ID_NODRAGCUR");
             GetClientRect(hwnd, &rs);
-            lvwindow = CreateWindowEx(0, WC_LISTVIEW, "", WS_VISIBLE |
-                WS_CHILD | LVS_SMALLICON,
-                0, 0, rs.right, rs.bottom, hwnd, (HMENU)ID_TREEVIEW,
-                hInstance, NULL);
+            lvwindow = CreateWindowEx(0, WC_LISTVIEW, "", WS_VISIBLE | WS_CHILD | LVS_SMALLICON, 0, 0, rs.right, rs.bottom, hwnd,
+                                      (HMENU)ID_TREEVIEW, hInstance, NULL);
             ListView_SetBkColor(lvwindow, RetrieveSysColor(COLOR_BTNFACE));
             ListView_SetTextBkColor(lvwindow, RetrieveSysColor(COLOR_BTNFACE));
             ListView_SetExtendedListViewStyle(lvwindow, LVS_EX_DOUBLEBUFFER);
             lvIml = ImageList_Create(32, 32, ILC_COLOR24, IMAGECOUNT, 0);
-            
+
             mainIml = LoadBitmap(hInstance, "ID_CONTROLS");
             ChangeBitmapColor(mainIml, 0xffffff, RetrieveSysColor(COLOR_BTNFACE));
             ImageList_Add(lvIml, mainIml, NULL);

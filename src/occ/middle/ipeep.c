@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*
@@ -33,26 +33,24 @@
 
 extern int firstLabel;
 extern int nextLabel;
-extern TEMP_INFO **tempInfo;
+extern TEMP_INFO** tempInfo;
 extern int tempCount;
-extern BLOCK **blockArray;
+extern BLOCK** blockArray;
 extern int blockCount;
 extern int exitBlock;
 extern BITINT bittab[BITINTBITS];
-extern QUAD *intermed_head;
-extern SYMBOL *theCurrentFunc;
+extern QUAD* intermed_head;
+extern SYMBOL* theCurrentFunc;
 extern BOOLEAN functionHasAssembly;
-extern ARCH_ASM *chosenAssembler;
+extern ARCH_ASM* chosenAssembler;
 
-static BITINT *occursInAbnormal;
+static BITINT* occursInAbnormal;
 
-static QUAD **golist; /* list of goto statements */
+static QUAD** golist; /* list of goto statements */
 
-void peepini(void)
-{
-}
+void peepini(void) {}
 
-static void scan_gotos(QUAD *head)
+static void scan_gotos(QUAD* head)
 /*
  * make a list of goto statements
  */
@@ -77,39 +75,39 @@ static void scan_gotos(QUAD *head)
                     {
                         LLONG_TYPE l = head->dc.left->offset->v.i;
                         LLONG_TYPE r = head->dc.right->offset->v.i;
-                        int ok ;
+                        int ok;
                         switch (head->dc.opcode)
                         {
                             case i_jc:
                                 ok = (ULLONG_TYPE)l < (ULLONG_TYPE)r;
-                                break ;
+                                break;
                             case i_jnc:
                                 ok = (ULLONG_TYPE)l >= (ULLONG_TYPE)r;
-                                break ;
+                                break;
                             case i_jbe:
                                 ok = (ULLONG_TYPE)l <= (ULLONG_TYPE)r;
-                                break ;
+                                break;
                             case i_ja:
                                 ok = (ULLONG_TYPE)l > (ULLONG_TYPE)r;
-                                break ;
+                                break;
                             case i_je:
                                 ok = l == r;
-                                break ;
+                                break;
                             case i_jne:
                                 ok = l != r;
-                                break ;
+                                break;
                             case i_jge:
                                 ok = l >= r;
-                                break ;
+                                break;
                             case i_jg:
                                 ok = l > r;
-                                break ;
+                                break;
                             case i_jle:
                                 ok = l <= r;
-                                break ;
+                                break;
                             case i_jl:
                                 ok = l < r;
-                                break ;
+                                break;
                             default:
                                 break;
                         }
@@ -137,12 +135,12 @@ static void scan_gotos(QUAD *head)
 
 /*-------------------------------------------------------------------------*/
 
-static void kill_brtonext(BLOCK *b, QUAD *head)
+static void kill_brtonext(BLOCK* b, QUAD* head)
 /*
  * branches to the next statement get wiped
  */
 {
-    QUAD *temp;
+    QUAD* temp;
     (void)b;
     while (TRUE)
     {
@@ -162,11 +160,10 @@ static void kill_brtonext(BLOCK *b, QUAD *head)
                     return;
             case i_goto:
                 temp = head->fwd;
-                while (temp && (temp->dc.opcode == i_label || temp->ignoreMe 
-                    || temp->dc.opcode == i_block || temp->dc.opcode == i_blockend))
+                while (temp && (temp->dc.opcode == i_label || temp->ignoreMe || temp->dc.opcode == i_block ||
+                                temp->dc.opcode == i_blockend))
                 {
-                    if (temp->dc.opcode == i_label && temp->dc.v.label == head
-                        ->dc.v.label)
+                    if (temp->dc.opcode == i_label && temp->dc.v.label == head->dc.v.label)
                     {
                         RemoveInstruction(head);
                         return;
@@ -174,20 +171,19 @@ static void kill_brtonext(BLOCK *b, QUAD *head)
                     temp = temp->fwd;
                 }
             default:
-                return ;
+                return;
         }
     }
 }
 
-static void kill_dupgoto(BLOCK *b, QUAD *head)
+static void kill_dupgoto(BLOCK* b, QUAD* head)
 {
     (void)b;
     head = head->fwd;
     while (head && head->dc.opcode != i_label)
     {
-        if (head->dc.opcode != i_block && head->dc.opcode != i_blockend 
-            && head->dc.opcode != i_dbgblock && head->dc.opcode != i_dbgblockend && head->dc.opcode != i_var
-            && head->dc.opcode != i_label && !head->ignoreMe)
+        if (head->dc.opcode != i_block && head->dc.opcode != i_blockend && head->dc.opcode != i_dbgblock &&
+            head->dc.opcode != i_dbgblockend && head->dc.opcode != i_var && head->dc.opcode != i_label && !head->ignoreMe)
             RemoveInstruction(head);
         head = head->fwd;
     }
@@ -195,11 +191,11 @@ static void kill_dupgoto(BLOCK *b, QUAD *head)
 void weed_goto(void)
 {
     BOOLEAN killing = FALSE;
-    QUAD *head = intermed_head;
-    BLOCK *b = head->block;
+    QUAD* head = intermed_head;
+    BLOCK* b = head->block;
     while (head)
     {
-        QUAD *next = head->fwd;
+        QUAD* next = head->fwd;
         if (head->block != b)
         {
             killing = FALSE;
@@ -207,9 +203,8 @@ void weed_goto(void)
         }
         if (killing)
         {
-            if (head->dc.opcode != i_block && head->dc.opcode != i_blockend
-                && head->dc.opcode != i_dbgblock && head->dc.opcode != i_dbgblockend && head->dc.opcode != i_var
-                && head->dc.opcode != i_label && !head->ignoreMe)
+            if (head->dc.opcode != i_block && head->dc.opcode != i_blockend && head->dc.opcode != i_dbgblock &&
+                head->dc.opcode != i_dbgblockend && head->dc.opcode != i_var && head->dc.opcode != i_label && !head->ignoreMe)
                 RemoveInstruction(head);
         }
         else if (head->dc.opcode == i_goto)
@@ -219,30 +214,29 @@ void weed_goto(void)
 }
 /*-------------------------------------------------------------------------*/
 
-void kill_labeledgoto(BLOCK *b, QUAD *head)
+void kill_labeledgoto(BLOCK* b, QUAD* head)
 /*
  * if any goto goes to a label which is immediately followed by a goto,
  * replaces the original goto label with the new label annd possibly
  * get rid of the labeled goto if it is preceded by another goto
  */
 {
-    QUAD *newhead;
+    QUAD* newhead;
     BLOCKLIST *bl, **bt;
     int oldlabel = head->dc.v.label;
     (void)b;
     newhead = head->fwd;
     /* look for following goto */
-    while (newhead && (newhead->ignoreMe || newhead->dc.opcode ==
-        i_block))
+    while (newhead && (newhead->ignoreMe || newhead->dc.opcode == i_block))
         newhead = newhead->fwd;
     if (!newhead)
         return;
     if (newhead->dc.opcode != i_goto)
-        return ;
+        return;
     bt = &newhead->block->pred;
     while (*bt)
     {
-        QUAD *tail = (*bt)->block->tail;
+        QUAD* tail = (*bt)->block->tail;
         tail = beforeJmp(tail, FALSE);
         switch (tail->dc.opcode)
         {
@@ -263,7 +257,7 @@ void kill_labeledgoto(BLOCK *b, QUAD *head)
             case i_jg:
             case i_jle:
             case i_jl:
-                 if (tail->dc.v.label == oldlabel)
+                if (tail->dc.v.label == oldlabel)
                 {
                     tail->dc.v.label = newhead->dc.v.label;
                     kill_brtonext(tail->block, tail);
@@ -278,9 +272,8 @@ void kill_labeledgoto(BLOCK *b, QUAD *head)
                         kill_brtonext(tail->block, tail);
                     }
                     tail = tail->fwd;
-                }
-                while (tail->dc.opcode == i_swbranch);
-                    
+                } while (tail->dc.opcode == i_swbranch);
+
                 break;
             default:
                 break;
@@ -291,38 +284,36 @@ void kill_labeledgoto(BLOCK *b, QUAD *head)
 
 /*-------------------------------------------------------------------------*/
 
-void kill_jumpover(BLOCK *b, QUAD *head)
+void kill_jumpover(BLOCK* b, QUAD* head)
 /*
  * Conditionnal jumps over gotos get squashed here
  */
 {
     int newtype;
-    QUAD *newhead = head->fwd;
+    QUAD* newhead = head->fwd;
     (void)b;
-    while (newhead->dc.opcode == i_block || newhead->dc.opcode == i_blockend || 
-           newhead->dc.opcode == i_dbgblock || newhead->dc.opcode == i_dbgblockend ||
-           newhead->ignoreMe)
+    while (newhead->dc.opcode == i_block || newhead->dc.opcode == i_blockend || newhead->dc.opcode == i_dbgblock ||
+           newhead->dc.opcode == i_dbgblockend || newhead->ignoreMe)
     {
         newhead = newhead->fwd;
     }
     /* if followed by while will be voided by intervening labels */
     if (newhead->dc.opcode == i_goto)
     {
-        QUAD *fwd = newhead->fwd;
-        while (fwd->dc.opcode == i_block || fwd->dc.opcode == i_blockend ||
-               newhead->dc.opcode == i_dbgblock || newhead->dc.opcode == i_dbgblockend ||
-               fwd->dc.opcode == i_label || fwd->ignoreMe)
+        QUAD* fwd = newhead->fwd;
+        while (fwd->dc.opcode == i_block || fwd->dc.opcode == i_blockend || newhead->dc.opcode == i_dbgblock ||
+               newhead->dc.opcode == i_dbgblockend || fwd->dc.opcode == i_label || fwd->ignoreMe)
         {
             if (fwd->dc.opcode == i_label && head->dc.v.label == fwd->dc.v.label)
                 break;
             fwd = fwd->fwd;
         }
-                
+
         if (fwd->dc.opcode != i_label)
             return;
-        /* if it was a goto and we are branching around it, 
-         * swap the conditional type and 
-         * put the new label in the goto statement 
+        /* if it was a goto and we are branching around it,
+         * swap the conditional type and
+         * put the new label in the goto statement
          */
         head->dc.v.label = newhead->dc.v.label;
         RemoveInstruction(newhead);
@@ -363,10 +354,11 @@ void kill_jumpover(BLOCK *b, QUAD *head)
         }
         /* remove the goto */
         head->dc.opcode = newtype;
-        while (1) {
-            while (newhead && (newhead->dc.opcode == i_block || newhead->ignoreMe 
-                   || newhead->dc.opcode == i_dbgblock || newhead->dc.opcode == i_dbgblockend
-                   || newhead->dc.opcode == i_blockend)) {
+        while (1)
+        {
+            while (newhead && (newhead->dc.opcode == i_block || newhead->ignoreMe || newhead->dc.opcode == i_dbgblock ||
+                               newhead->dc.opcode == i_dbgblockend || newhead->dc.opcode == i_blockend))
+            {
                 newhead = newhead->fwd;
             }
             if (!newhead || newhead->dc.opcode != i_goto)
@@ -376,28 +368,26 @@ void kill_jumpover(BLOCK *b, QUAD *head)
         }
     }
 }
-static int peep_assn(BLOCK *b, QUAD *head)
+static int peep_assn(BLOCK* b, QUAD* head)
 {
     (void)b;
-    if (head->temps == (TEMP_LEFT | TEMP_ANS) && !(head->dc.right) && 
-        head->dc.left->size == head->ans->size &&
+    if (head->temps == (TEMP_LEFT | TEMP_ANS) && !(head->dc.right) && head->dc.left->size == head->ans->size &&
         head->dc.left->mode == i_direct && head->ans->mode == i_direct && !head->dc.left->bits)
     {
         int t0 = head->ans->offset->v.sp->value.i;
         int t1 = head->dc.left->offset->v.sp->value.i;
-        if (!isset(occursInAbnormal, t0) && !isset(occursInAbnormal,t1))
+        if (!isset(occursInAbnormal, t0) && !isset(occursInAbnormal, t1))
         {
             if (t0 == t1)
             {
-                RemoveInstruction(head);			
+                RemoveInstruction(head);
                 return -1;
             }
         }
     }
     if (!(chosenAssembler->arch->denyopts & DO_NOOPTCONVERSION))
     {
-        if (head->temps == (TEMP_LEFT | TEMP_ANS) && 
-            head->dc.left->size != head->ans->size)
+        if (head->temps == (TEMP_LEFT | TEMP_ANS) && head->dc.left->size != head->ans->size)
         {
             if (head->back->dc.opcode == i_assn)
             {
@@ -405,8 +395,8 @@ static int peep_assn(BLOCK *b, QUAD *head)
                     if (head->back->dc.left->mode != i_immed && !head->back->dc.left->bits)
                     {
                         head->dc.left = head->back->dc.left;
-                        if ((!head->dc.left->offset || head->dc.left->offset->type != en_tempref)
-                            && (!head->dc.left->offset2 || head->dc.left->offset2->type != en_tempref))						
+                        if ((!head->dc.left->offset || head->dc.left->offset->type != en_tempref) &&
+                            (!head->dc.left->offset2 || head->dc.left->offset2->type != en_tempref))
                             head->temps &= ~TEMP_LEFT;
                         return -1;
                     }
@@ -417,13 +407,13 @@ static int peep_assn(BLOCK *b, QUAD *head)
 }
 /*-------------------------------------------------------------------------*/
 
-static BOOLEAN peep(BLOCK *b, BOOLEAN branches)
+static BOOLEAN peep(BLOCK* b, BOOLEAN branches)
 /*
  * ICODE peep main routine
  */
 {
-    QUAD *head = b->head;
-    BLOCKLIST *bl;
+    QUAD* head = b->head;
+    BLOCKLIST* bl;
     BOOLEAN changed = FALSE;
     if (b->visiteddfst)
         return changed;
@@ -452,7 +442,7 @@ static BOOLEAN peep(BLOCK *b, BOOLEAN branches)
             case i_jl:
                 if (branches && !functionHasAssembly)
                 {
-                       kill_jumpover(b, head);
+                    kill_jumpover(b, head);
                     kill_brtonext(b, head);
                 }
                 break;
@@ -472,7 +462,7 @@ static BOOLEAN peep(BLOCK *b, BOOLEAN branches)
                 break;
         }
         changed |= !!rv;
-        if (rv <=0)
+        if (rv <= 0)
             head = head->fwd;
     }
     return changed;
@@ -481,23 +471,22 @@ static void scan_abnormal(void)
 {
     int i;
     occursInAbnormal = allocbit(tempCount);
-    for (i=exitBlock; i < blockCount; i++)
+    for (i = exitBlock; i < blockCount; i++)
     {
         if (blockArray[i] && blockArray[i]->critical && blockArray[i]->succ)
         {
-            BLOCK * b = blockArray[i]->succ->block;
-            QUAD *head = b->head->fwd;
-            while (head != b->tail->fwd &&
-                   (head->ignoreMe || head->dc.opcode == i_label))
+            BLOCK* b = blockArray[i]->succ->block;
+            QUAD* head = b->head->fwd;
+            while (head != b->tail->fwd && (head->ignoreMe || head->dc.opcode == i_label))
                 head = head->fwd;
             while (head != b->tail->fwd && head->dc.opcode == i_phi)
             {
-                PHIDATA *pd = head->dc.v.phi;
-                struct _phiblock *pb = pd->temps;
+                PHIDATA* pd = head->dc.v.phi;
+                struct _phiblock* pb = pd->temps;
                 while (pb && pb->block != blockArray[i])
                     pb = pb->next;
-                setbit(occursInAbnormal,pd->T0);
-                setbit(occursInAbnormal,pb->Tn);
+                setbit(occursInAbnormal, pd->T0);
+                setbit(occursInAbnormal, pb->Tn);
                 head = head->fwd;
             }
         }
@@ -507,18 +496,17 @@ void peep_icode(BOOLEAN branches)
 {
     int i;
     BOOLEAN changed;
-    golist = oAlloc(sizeof(QUAD*)*(nextLabel - firstLabel));
+    golist = oAlloc(sizeof(QUAD*) * (nextLabel - firstLabel));
     scan_gotos(intermed_head);
     scan_abnormal();
-    for (i=0; i < blockCount; i++)
+    for (i = 0; i < blockCount; i++)
         if (blockArray[i])
             blockArray[i]->visiteddfst = FALSE;
 
-
-    do 
+    do
     {
         changed = FALSE;
-        for (i=0; i < blockCount; i++)
+        for (i = 0; i < blockCount; i++)
             if (blockArray[i])
                 changed |= peep(blockArray[i], branches);
     } while (changed);

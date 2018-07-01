@@ -28,6 +28,7 @@ INCLUDES=..\util ..\objlib ..\sqlite3 ..\exefmt
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=sqlite3 util objlib
 DEFINES=SQLITE_THREADSAFE=0
+H_FILES=$(wildcard *.h)
 
 include ..\redirect.mak
 

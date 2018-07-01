@@ -1,41 +1,41 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
-extern ARCH_ASM *chosenAssembler; 
+extern ARCH_ASM* chosenAssembler;
 extern int exitBlock, blockCount;
-extern BLOCK **blockArray;
-extern TEMP_INFO **tempInfo;
+extern BLOCK** blockArray;
+extern TEMP_INFO** tempInfo;
 extern int tempCount;
-extern BRIGGS_SET *globalVars;
-extern QUAD *intermed_head;
+extern BRIGGS_SET* globalVars;
+extern QUAD* intermed_head;
 void Prealloc(int pass)
 {
     int i;
     BOOLEAN done = FALSE;
-    BRIGGS_SET *eobGlobals;
+    BRIGGS_SET* eobGlobals;
     liveVariables();
     globalVars = briggsAlloc(tempCount * 2 < 100 ? 100 : tempCount * 2);
     eobGlobals = briggsAlloc(tempCount * 2 < 100 ? 100 : tempCount * 2);
@@ -43,21 +43,21 @@ void Prealloc(int pass)
         return;
     for (; pass < 11 && !done; pass++)
     {
-        for (i=0; i < blockCount; i++)
+        for (i = 0; i < blockCount; i++)
         {
             if (blockArray[i])
             {
-                QUAD *tail = blockArray[i]->tail;
-                BITINT *p = blockArray[i]->liveOut;
-                int j,k;
+                QUAD* tail = blockArray[i]->tail;
+                BITINT* p = blockArray[i]->liveOut;
+                int j, k;
                 briggsClear(globalVars);
                 briggsClear(eobGlobals);
-                for (j=0; j < (tempCount + BITINTBITS-1)/BITINTBITS; j++,p++)
+                for (j = 0; j < (tempCount + BITINTBITS - 1) / BITINTBITS; j++, p++)
                     if (*p)
-                        for (k=0; k < BITINTBITS; k++)
+                        for (k = 0; k < BITINTBITS; k++)
                             if (*p & (1 << k))
                             {
-                                int n = j*BITINTBITS + k;
+                                int n = j * BITINTBITS + k;
                                 briggsSet(globalVars, n);
                                 briggsSet(eobGlobals, n);
                             }
@@ -99,22 +99,22 @@ void CalculateBackendLives(void)
 {
     int i;
     liveVariables();
-    for (i=0; i < blockCount; i++)
+    for (i = 0; i < blockCount; i++)
     {
         if (blockArray[i])
         {
-            QUAD *tail = blockArray[i]->tail;
-            QUAD *head = blockArray[i]->head;
+            QUAD* tail = blockArray[i]->tail;
+            QUAD* head = blockArray[i]->head;
             ULLONG_TYPE liveRegs = 0;
-            BITINT *p = blockArray[i]->liveOut;
-            int j,k;
+            BITINT* p = blockArray[i]->liveOut;
+            int j, k;
             int gosubcolor = -1;
-            for (j=0; j < (tempCount + BITINTBITS-1)/BITINTBITS; j++,p++)
+            for (j = 0; j < (tempCount + BITINTBITS - 1) / BITINTBITS; j++, p++)
                 if (*p)
-                    for (k=0; k < BITINTBITS; k++)
+                    for (k = 0; k < BITINTBITS; k++)
                         if (*p & (1 << k))
                         {
-                            int n = j*BITINTBITS+k;
+                            int n = j * BITINTBITS + k;
                             liveRegs |= ((ULLONG_TYPE)1) << chosenAssembler->arch->regNames[tempInfo[n]->color].reg1live;
                             if (chosenAssembler->arch->regNames[tempInfo[n]->color].reg2live >= 0)
                                 liveRegs |= ((ULLONG_TYPE)1) << chosenAssembler->arch->regNames[tempInfo[n]->color].reg2live;
@@ -127,10 +127,10 @@ void CalculateBackendLives(void)
                     {
                         liveRegs &= ~(((ULLONG_TYPE)1) << chosenAssembler->arch->regNames[tempInfo[gosubcolor]->color].reg1live);
                         if (chosenAssembler->arch->regNames[tempInfo[gosubcolor]->color].reg2live >= 0)
-                            liveRegs &= ~(((ULLONG_TYPE)1) << chosenAssembler->arch->regNames[tempInfo[gosubcolor]->color].reg2live);
+                            liveRegs &=
+                                ~(((ULLONG_TYPE)1) << chosenAssembler->arch->regNames[tempInfo[gosubcolor]->color].reg2live);
                         gosubcolor = -1;
                     }
-                    
                 }
                 tail->liveRegs = liveRegs;
                 if (tail->temps & TEMP_ANS)

@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "ppExpr.h"
@@ -38,26 +38,26 @@ KeywordHash DefFile::keywords;
 
 #define SPACES " \t\v\f\r\n"
 #define COMMA ","
-bool IsSymbolStartChar(const char *data)
+bool IsSymbolStartChar(const char* data)
 {
     return *data == '_' || *data == '$' || *data == '?' || *data == '.' || UTF8::IsAlpha(data);
 }
-bool IsSymbolChar(const char *data)
+bool IsSymbolChar(const char* data)
 {
-    return *data == '_' || *data == '$' || *data == '#' || *data == '@' || *data == '~' ||
-        *data == '?' || *data == '.' || UTF8::IsAlnum(data);
+    return *data == '_' || *data == '$' || *data == '#' || *data == '@' || *data == '~' || *data == '?' || *data == '.' ||
+           UTF8::IsAlnum(data);
 }
 DefFile::~DefFile()
 {
     while (exports.size())
     {
-        Export *one = exports.front();
+        Export* one = exports.front();
         exports.pop_front();
         delete one;
     }
     while (imports.size())
     {
-        Import *one = imports.front();
+        Import* one = imports.front();
         imports.pop_front();
         delete one;
     }
@@ -110,7 +110,7 @@ bool DefFile::Read()
                 }
                 else
                 {
-                    switch(token->GetKeyword())
+                    switch (token->GetKeyword())
                     {
                         case edt_name:
                             ReadName();
@@ -148,9 +148,9 @@ bool DefFile::Read()
                 }
             }
         }
-        catch (std::runtime_error *e)
+        catch (std::runtime_error* e)
         {
-            std::cout << fileName.c_str() << "(" << lineno << "): " << e->what() << std::endl ;
+            std::cout << fileName.c_str() << "(" << lineno << "): " << e->what() << std::endl;
             delete e;
         }
         delete stream;
@@ -164,7 +164,7 @@ bool DefFile::Read()
 bool DefFile::Write()
 {
     stream = new std::fstream(fileName.c_str(), std::ios::out);
-    //if (!stream->fail())
+    // if (!stream->fail())
     {
         WriteName();
         WriteLibrary();
@@ -193,7 +193,7 @@ void DefFile::NextToken()
             {
                 if (stream->fail())
                     throw new std::runtime_error("I/O error");
-                char *npos = strchr(buf, ';');
+                char* npos = strchr(buf, ';');
                 if (npos)
                     *npos = 0;
                 tokenizer.Reset(buf);
@@ -208,7 +208,7 @@ void DefFile::ReadName()
     tokenizer.Reset("");
     token = nullptr;
     NextToken();
-    
+
     int npos1 = line.find_first_not_of(SPACES);
     if (npos1 == std::string::npos)
         throw new std::runtime_error("Invalid NAME specifiers");
@@ -233,7 +233,7 @@ void DefFile::ReadLibrary()
     tokenizer.Reset("");
     token = nullptr;
     NextToken();
-    
+
     int npos1 = line.find_first_not_of(SPACES);
     if (npos1 == std::string::npos)
         throw new std::runtime_error("Invalid NAME specifiers");
@@ -261,7 +261,7 @@ void DefFile::ReadExports()
             NextToken();
         while (token->IsIdentifier())
         {
-            Export *oneExport = new Export;
+            Export* oneExport = new Export;
             oneExport->id = token->GetId();
             NextToken();
             if (token->GetKeyword() == edt_equals)
@@ -352,7 +352,7 @@ void DefFile::ReadImports()
             NextToken();
         while (token->IsIdentifier())
         {
-            Import *oneImport = new Import;
+            Import* oneImport = new Import;
             oneImport->id = token->GetId();
             NextToken();
             if (token->GetKeyword() == edt_dot)
@@ -379,7 +379,7 @@ void DefFile::ReadImports()
                 NextToken();
                 if (!token->IsIdentifier())
                     throw new std::runtime_error("Expected id specifier");
-                oneImport->id =  token->GetId();
+                oneImport->id = token->GetId();
             }
             imports.push_back(oneImport);
             if (!token->IsEnd())
@@ -414,16 +414,16 @@ void DefFile::ReadHeapsize()
     heapSize = token->GetInteger();
     NextToken();
 }
-void DefFile::ReadSectionsInternal(const char *name)
+void DefFile::ReadSectionsInternal(const char* name)
 {
     bool done = false;
     int flags = 0;
     while (!done && token->IsKeyword())
     {
-        switch(token->GetKeyword())
+        switch (token->GetKeyword())
         {
-               case edt_read:
-                 flags |= WINF_READABLE;
+            case edt_read:
+                flags |= WINF_READABLE;
                 break;
             case edt_write:
                 flags |= WINF_WRITEABLE;
@@ -483,10 +483,10 @@ void DefFile::WriteName()
 {
     if (name.size())
     {
-        *stream << "NAME " << name.c_str() ;
+        *stream << "NAME " << name.c_str();
         if (imageBase != -1)
         {
-            *stream << ", " << imageBase ;
+            *stream << ", " << imageBase;
         }
         *stream << std::endl;
     }
@@ -495,10 +495,10 @@ void DefFile::WriteLibrary()
 {
     if (library.size())
     {
-        *stream << "LIBRARY " << library.c_str() ;
+        *stream << "LIBRARY " << library.c_str();
         if (imageBase != -1)
         {
-            *stream << ", " << imageBase ;
+            *stream << ", " << imageBase;
         }
         *stream << std::endl;
     }
@@ -525,7 +525,8 @@ void DefFile::WriteExports()
         if ((!cdll || exp->byOrd) && exp->ord != -1)
             *stream << " @" << exp->ord;
         if (exp->byOrd)
-            *stream << " " << "NONAME";
+            *stream << " "
+                    << "NONAME";
         *stream << std::endl;
     }
 }
@@ -606,7 +607,7 @@ void DefFile::WriteData()
     {
         if (section.first == "DATA")
         {
-            *stream << "DATA " ;
+            *stream << "DATA ";
             WriteSectionBits(section.second);
             break;
         }
@@ -624,7 +625,7 @@ void DefFile::WriteSections()
                 std::cout << "SECTIONS" << std::endl;
                 first = false;
             }
-            *stream << "\t" << section.first.c_str() << " " ;
+            *stream << "\t" << section.first.c_str() << " ";
             WriteSectionBits(section.second);
             break;
         }

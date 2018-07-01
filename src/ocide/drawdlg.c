@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -48,7 +48,7 @@
 #define CTLPROPS "ctl.props"
 
 #ifndef DC_BUTTONS
-#define DC_BUTTONS 0x1000
+#    define DC_BUTTONS 0x1000
 #endif
 
 #define WM_MOVEDCHILD 20000
@@ -57,134 +57,144 @@ extern LOGFONT systemCaptionFont;
 extern HWND hwndSrcTab;
 extern HWND hwndClient;
 extern HINSTANCE hInstance;
-extern PROJECTITEM *workArea;
+extern PROJECTITEM* workArea;
 extern char szInstallPath[];
-extern EXPRESSION *ResAllocateControlId(struct resRes *dlgData, char *name);
+extern EXPRESSION* ResAllocateControlId(struct resRes* dlgData, char* name);
 
 BOOL snapToGrid;
 BOOL showGrid;
 int gridSpacing = 4;
 
 #define MAX_CONTROL 32
-static struct ctlDB *dbs[MAX_CONTROL];
-static char *dbNames[MAX_CONTROL];
+static struct ctlDB* dbs[MAX_CONTROL];
+static char* dbNames[MAX_CONTROL];
 static int dbCount;
-static struct ctlDB *currentDB;
+static struct ctlDB* currentDB;
 
-static char *szDlgDrawClassName = "xccDlgDrawClass";
-static char *szDlgDialogClassName = "xccDlgDialogClass";
-static char *szDlgUnknownClassName = "xccDlgUnknownClass";
-static char *szDlgControlInputClassName = "xccDlgControlInputClass";
+static char* szDlgDrawClassName = "xccDlgDrawClass";
+static char* szDlgDialogClassName = "xccDlgDialogClass";
+static char* szDlgUnknownClassName = "xccDlgUnknownClass";
+static char* szDlgControlInputClassName = "xccDlgControlInputClass";
 
-static char *szUntitled = "Dialog";
+static char* szUntitled = "Dialog";
 static HCURSOR dragCur, noCur, hcurs, vcurs;
 static int clipboardFormatId;
 
-
-static void InsertCtlProperties(HWND lv, struct ctlData *data);
-static void GetCtlPropText(char *buf, HWND lv, struct ctlData *data, int row);
-static HWND CtlPropStartEdit(HWND lv, int row, struct ctlData *data);
-static void CtlPropEndEdit(HWND lv, int row, HWND editWnd, struct ctlData *data);
+static void InsertCtlProperties(HWND lv, struct ctlData* data);
+static void GetCtlPropText(char* buf, HWND lv, struct ctlData* data, int row);
+static HWND CtlPropStartEdit(HWND lv, int row, struct ctlData* data);
+static void CtlPropEndEdit(HWND lv, int row, HWND editWnd, struct ctlData* data);
 // callbacks to populate the properties window for this resource editor
-static struct propertyFuncs CtlFuncs = 
-{ 
-    InsertCtlProperties,
-    GetCtlPropText,
-    CtlPropStartEdit,
-    CtlPropEndEdit
-} ;
-static void InsertDlgProperties(HWND lv, struct resRes *data);
-void GetDlgPropText(char *buf, HWND lv, struct resRes *data, int row);
-HWND DlgPropStartEdit(HWND lv, int row, struct resRes *data);
-void DlgPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data);
-HRESULT PASCAL SetWindowTheme(
-  HWND hwnd,
-  LPCWSTR pszSubAppName,
-  LPCWSTR pszSubIdList
-);
-struct propertyFuncs dlgFuncs = 
-{ 
-    InsertDlgProperties,
-    GetDlgPropText,
-    DlgPropStartEdit,
-    DlgPropEndEdit
-} ;
-HANDLE ResGetHeap(PROJECTITEM *wa, struct resRes *data);
-static void CreateSingleControl(HWND hwnd, struct resRes *dlgData, CONTROL *c, BOOL activate);
+static struct propertyFuncs CtlFuncs = {InsertCtlProperties, GetCtlPropText, CtlPropStartEdit, CtlPropEndEdit};
+static void InsertDlgProperties(HWND lv, struct resRes* data);
+void GetDlgPropText(char* buf, HWND lv, struct resRes* data, int row);
+HWND DlgPropStartEdit(HWND lv, int row, struct resRes* data);
+void DlgPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes* data);
+HRESULT PASCAL SetWindowTheme(HWND hwnd, LPCWSTR pszSubAppName, LPCWSTR pszSubIdList);
+struct propertyFuncs dlgFuncs = {InsertDlgProperties, GetDlgPropText, DlgPropStartEdit, DlgPropEndEdit};
+HANDLE ResGetHeap(PROJECTITEM* wa, struct resRes* data);
+static void CreateSingleControl(HWND hwnd, struct resRes* dlgData, CONTROL* c, BOOL activate);
 static BOOL CALLBACK RemoveDlgWindow(HWND hwnd, LPARAM lParam);
-static void UndoChanged(struct resRes *dlgData, CONTROL *list);
-BOOL RemoveFromStyle(EXPRESSION **style, int val);
-void AddToStyle(EXPRESSION **style, char *text, int val);
+static void UndoChanged(struct resRes* dlgData, CONTROL* list);
+BOOL RemoveFromStyle(EXPRESSION** style, int val);
+void AddToStyle(EXPRESSION** style, char* text, int val);
 HWND PropGetHWNDCombobox(HWND parent);
 HWND PropGetHWNDNumeric(HWND parent);
 HWND PropGetHWNDText(HWND parent);
 
-
 struct dlgUndo
 {
-    struct dlgUndo *next;
-    enum { du_changed, du_insert, du_delete, du_reorder, du_groupstart, du_groupend } type;
-    CONTROL **place;
-    CONTROL *item;
-    CONTROL *saved;
-    LIST *order;
-} ;
+    struct dlgUndo* next;
+    enum
+    {
+        du_changed,
+        du_insert,
+        du_delete,
+        du_reorder,
+        du_groupstart,
+        du_groupend
+    } type;
+    CONTROL** place;
+    CONTROL* item;
+    CONTROL* saved;
+    LIST* order;
+};
 
 struct clipboardBuffer
 {
-    char *data;
+    char* data;
     int maxSize;
     int currentSize;
-} ;
+};
 struct ctlField
 {
-    struct ctlField *next;
-    char *label;
-    char *valueLabel;
+    struct ctlField* next;
+    char* label;
+    char* valueLabel;
     int value;
-} ;
+};
 struct ctlDB
 {
-    struct ctlDB *next;
-    enum { eCaption, eStyle, eEXStyle, eID, eNumber, eHeader } recType;
-    enum { iNone, iYESNO, iNEGYESNO, iCombo, iID, iX, iY, iWidth, iHeight, iText } ctlType;
+    struct ctlDB* next;
+    enum
+    {
+        eCaption,
+        eStyle,
+        eEXStyle,
+        eID,
+        eNumber,
+        eHeader
+    } recType;
+    enum
+    {
+        iNone,
+        iYESNO,
+        iNEGYESNO,
+        iCombo,
+        iID,
+        iX,
+        iY,
+        iWidth,
+        iHeight,
+        iText
+    } ctlType;
     int mask;
-    char *label;
-    struct ctlField *fields;
-} ;
+    char* label;
+    struct ctlField* fields;
+};
 
 static SIZE GetAveCharSize(HDC dc)
 {
-   TEXTMETRIC tm;
-   char *buffer = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";    
+    TEXTMETRIC tm;
+    char* buffer = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
-   SIZE result;
-   GetTextMetrics(dc, &tm);
+    SIZE result;
+    GetTextMetrics(dc, &tm);
 
-   GetTextExtentPoint32(dc, buffer, 52, &result);
+    GetTextExtentPoint32(dc, buffer, 52, &result);
 
-   result.cx = (result.cx/26 + 1) / 2; //div uses trunc rounding; we want arithmetic rounding
-   result.cy = tm.tmHeight;
+    result.cx = (result.cx / 26 + 1) / 2;  // div uses trunc rounding; we want arithmetic rounding
+    result.cy = tm.tmHeight;
 
-   return result;
+    return result;
 }
 
 static SIZE GetCheckBoxSize(HDC dc)
 {
-    
-    const int dluCheckboxSpacing = 12; //12 horizontal dlus
-    const int dluCheckboxHeight = 10; //10 vertical dlus
+
+    const int dluCheckboxSpacing = 12;  // 12 horizontal dlus
+    const int dluCheckboxHeight = 10;   // 10 vertical dlus
 
     SIZE internal = GetAveCharSize(dc);
-    SIZE rv = { 0 , 0 };
-    rv.cx = MulDiv(dluCheckboxSpacing, internal.cx,  4); 
-    rv.cy = MulDiv(dluCheckboxSpacing, internal.cy,  8); 
+    SIZE rv = {0, 0};
+    rv.cx = MulDiv(dluCheckboxSpacing, internal.cx, 4);
+    rv.cy = MulDiv(dluCheckboxSpacing, internal.cy, 8);
     return rv;
 }
 
-static SIZE GetTextSize(HDC dc, char *caption)
+static SIZE GetTextSize(HDC dc, char* caption)
 {
-    RECT textRect = { 0,0,0,0 };
+    RECT textRect = {0, 0, 0, 0};
     SIZE rv;
     DrawText(dc, caption, -1, &textRect, DT_CALCRECT | DT_LEFT | DT_SINGLELINE);
 
@@ -193,16 +203,16 @@ static SIZE GetTextSize(HDC dc, char *caption)
     return rv;
 }
 
-static void LoadCtlFields(struct ctlDB *dbEntry, struct xmlNode *node)
+static void LoadCtlFields(struct ctlDB* dbEntry, struct xmlNode* node)
 {
-    struct xmlNode *children = node->children;
-    struct ctlField **store = &dbEntry->fields;
+    struct xmlNode* children = node->children;
+    struct ctlField** store = &dbEntry->fields;
     while (children)
     {
         if (IsNode(children, "FIELD"))
         {
-            struct xmlAttr *attr = children->attribs;
-            struct ctlField *field = calloc(1, sizeof (struct ctlField));
+            struct xmlAttr* attr = children->attribs;
+            struct ctlField* field = calloc(1, sizeof(struct ctlField));
             *store = field;
             store = &(*store)->next;
             while (attr)
@@ -233,11 +243,11 @@ static void LoadCtlFields(struct ctlDB *dbEntry, struct xmlNode *node)
         children = children->next;
     }
 }
-static void LoadCtlDb(struct xmlNode *control)
+static void LoadCtlDb(struct xmlNode* control)
 {
-    struct xmlNode *children = control->children;
-    struct ctlDB *dbEntry = NULL ,**store = &dbs[dbCount];
-    struct xmlAttr *attr = control->attribs;
+    struct xmlNode* children = control->children;
+    struct ctlDB *dbEntry = NULL, **store = &dbs[dbCount];
+    struct xmlAttr* attr = control->attribs;
     while (attr)
     {
         if (IsAttrib(attr, "TYPE"))
@@ -294,7 +304,7 @@ static void LoadCtlDb(struct xmlNode *control)
                         ERRORMSG;
                     }
                 }
-                else if (IsAttrib(attr,"MASK"))
+                else if (IsAttrib(attr, "MASK"))
                 {
                     dbEntry->mask = strtoul(attr->value, NULL, 0);
                 }
@@ -328,7 +338,7 @@ static void LoadCtlDb(struct xmlNode *control)
                         ERRORMSG;
                     }
                 }
-                else if (IsAttrib(attr,"MASK"))
+                else if (IsAttrib(attr, "MASK"))
                 {
                     dbEntry->mask = strtoul(attr->value, NULL, 0);
                 }
@@ -413,7 +423,7 @@ static void LoadCtlDb(struct xmlNode *control)
 }
 void drawdlginit(void)
 {
-    FILE *in;
+    FILE* in;
     char name[MAX_PATH];
     struct xmlNode *root, *children;
     strcpy(name, szInstallPath);
@@ -428,7 +438,7 @@ void drawdlginit(void)
     fclose(in);
     if (!root || !IsNode(root, "CTLPROPS"))
     {
-        ExtendedMessageBox("Error",0,"Invalid XML in ctl.props");
+        ExtendedMessageBox("Error", 0, "Invalid XML in ctl.props");
         if (root)
             xmlFree(root);
         return;
@@ -444,9 +454,9 @@ void drawdlginit(void)
     }
     xmlFree(root);
 }
-char *GetCtlName(CONTROL *c)
+char* GetCtlName(CONTROL* c)
 {
-    char *name = "GENERIC";
+    char* name = "GENERIC";
     int n = Eval(c->style);
     if (c->class.symbolic)
     {
@@ -454,104 +464,104 @@ char *GetCtlName(CONTROL *c)
         StringWToA(buf, c->class.u.n.symbol, c->class.u.n.length);
         name = rcStrdup(buf);
     }
-    else switch(Eval(c->class.u.id))
-    {
-        case CTL_BUTTON:
-            switch(n & 0xf)
-            {
-                case BS_GROUPBOX:
-                    name = "GROUPBOX";
-                    break;
-                case BS_PUSHBUTTON:
-                case BS_DEFPUSHBUTTON:
-                    name = "PUSHBUTTON";
-                    break;
-                case BS_CHECKBOX:
-                case BS_AUTOCHECKBOX:
-                case BS_3STATE:
-                case BS_AUTO3STATE:
-                    name = "CHECKBOX";
-                    break;
-                case BS_RADIOBUTTON:
-                case BS_AUTORADIOBUTTON:
-                    name = "RADIOBUTTON";
-                    break;
-            }
-            break;
-        case CTL_EDIT:
-            name = "EDIT";
-            break;
-        case CTL_STATIC:
-            switch (n & 0x1f)
-            {
-                case SS_LEFT:
-                case SS_CENTER:
-                case SS_RIGHT:
-                case SS_SIMPLE:
-                case SS_LEFTNOWORDWRAP:
-                    name = "STATICTEXT";
-                    break;
-                case SS_ICON:
-                case SS_BITMAP:
-                    name = "ICON";
-                    break;
-                case SS_BLACKRECT:
-                case SS_GRAYRECT:
-                case SS_WHITERECT:
-                    name = "RECTANGLE";
-                    break;
-                case SS_BLACKFRAME:
-                case SS_GRAYFRAME:
-                case SS_WHITEFRAME:
-                    name = "FRAME";
-                    break;
-                case SS_ETCHEDHORZ:
-                case SS_ETCHEDVERT:
-                case SS_ETCHEDFRAME:
-                    name = "ETCHED";
-                    break;                
-            }
-            break;
-        case CTL_LISTBOX:
-            name = "LISTBOX";
-            break;
-        case CTL_SCROLLBAR:
-            if (n & SBS_VERT)
-            {
-                name = "VSCROLL";
-            }
-            else
-            {
-                name = "HSCROLL";
-            }
-            break;
-        case CTL_COMBOBOX:
-            name = "COMBOBOX";
-            break;
-    }
+    else
+        switch (Eval(c->class.u.id))
+        {
+            case CTL_BUTTON:
+                switch (n & 0xf)
+                {
+                    case BS_GROUPBOX:
+                        name = "GROUPBOX";
+                        break;
+                    case BS_PUSHBUTTON:
+                    case BS_DEFPUSHBUTTON:
+                        name = "PUSHBUTTON";
+                        break;
+                    case BS_CHECKBOX:
+                    case BS_AUTOCHECKBOX:
+                    case BS_3STATE:
+                    case BS_AUTO3STATE:
+                        name = "CHECKBOX";
+                        break;
+                    case BS_RADIOBUTTON:
+                    case BS_AUTORADIOBUTTON:
+                        name = "RADIOBUTTON";
+                        break;
+                }
+                break;
+            case CTL_EDIT:
+                name = "EDIT";
+                break;
+            case CTL_STATIC:
+                switch (n & 0x1f)
+                {
+                    case SS_LEFT:
+                    case SS_CENTER:
+                    case SS_RIGHT:
+                    case SS_SIMPLE:
+                    case SS_LEFTNOWORDWRAP:
+                        name = "STATICTEXT";
+                        break;
+                    case SS_ICON:
+                    case SS_BITMAP:
+                        name = "ICON";
+                        break;
+                    case SS_BLACKRECT:
+                    case SS_GRAYRECT:
+                    case SS_WHITERECT:
+                        name = "RECTANGLE";
+                        break;
+                    case SS_BLACKFRAME:
+                    case SS_GRAYFRAME:
+                    case SS_WHITEFRAME:
+                        name = "FRAME";
+                        break;
+                    case SS_ETCHEDHORZ:
+                    case SS_ETCHEDVERT:
+                    case SS_ETCHEDFRAME:
+                        name = "ETCHED";
+                        break;
+                }
+                break;
+            case CTL_LISTBOX:
+                name = "LISTBOX";
+                break;
+            case CTL_SCROLLBAR:
+                if (n & SBS_VERT)
+                {
+                    name = "VSCROLL";
+                }
+                else
+                {
+                    name = "HSCROLL";
+                }
+                break;
+            case CTL_COMBOBOX:
+                name = "COMBOBOX";
+                break;
+        }
     return name;
 }
-static struct ctlDB *GetCtlDb(CONTROL *c)
+static struct ctlDB* GetCtlDb(CONTROL* c)
 {
     int i;
-    char *name = GetCtlName(c);
-    for (i=0; dbs[i] && i < MAX_CONTROL; i++)
+    char* name = GetCtlName(c);
+    for (i = 0; dbs[i] && i < MAX_CONTROL; i++)
     {
         if (!stricmp(dbNames[i], name))
             return dbs[i];
     }
     return NULL;
 }
-static void GetCtlPropText(char *buf, HWND lv, struct ctlData *data, int row)
+static void GetCtlPropText(char* buf, HWND lv, struct ctlData* data, int row)
 {
-    struct ctlDB *db = data->db;
+    struct ctlDB* db = data->db;
     while (db)
     {
         if (db->recType != eHeader)
         {
             if (!row--)
                 break;
-            
         }
         db = db->next;
     }
@@ -564,7 +574,7 @@ static void GetCtlPropText(char *buf, HWND lv, struct ctlData *data, int row)
             n = Eval(data->data->exstyle);
         switch (db->ctlType)
         {
-            struct ctlField *field;
+            struct ctlField* field;
             case iYESNO:
                 n &= db->mask;
                 field = db->fields;
@@ -600,16 +610,16 @@ static void GetCtlPropText(char *buf, HWND lv, struct ctlData *data, int row)
                 break;
             case iX:
                 sprintf(buf, "%d", Eval(data->data->x));
-                break;                       
+                break;
             case iY:
                 sprintf(buf, "%d", Eval(data->data->y));
-                break;                       
+                break;
             case iWidth:
                 sprintf(buf, "%d", Eval(data->data->width));
-                break;                       
+                break;
             case iHeight:
                 sprintf(buf, "%d", Eval(data->data->height));
-                break;                       
+                break;
             case iText:
                 if (data->data->text->symbolic)
                 {
@@ -627,18 +637,17 @@ static void GetCtlPropText(char *buf, HWND lv, struct ctlData *data, int row)
         }
     }
 }
-static HWND CtlPropStartEdit(HWND lv, int row, struct ctlData *data)
+static HWND CtlPropStartEdit(HWND lv, int row, struct ctlData* data)
 {
     int irow = row;
     HWND rv = NULL;
-    struct ctlDB *db = data->db;
+    struct ctlDB* db = data->db;
     while (db)
     {
         if (db->recType != eHeader)
         {
             if (!irow--)
                 break;
-            
         }
         db = db->next;
     }
@@ -670,17 +679,17 @@ static HWND CtlPropStartEdit(HWND lv, int row, struct ctlData *data)
             switch (db->ctlType)
             {
                 int v;
-                struct ctlField *field;
+                struct ctlField* field;
                 case iYESNO:
-                    v = SendMessage(rv, CB_ADDSTRING, 0, (LPARAM)"No");
+                    v = SendMessage(rv, CB_ADDSTRING, 0, (LPARAM) "No");
                     SendMessage(rv, CB_SETITEMDATA, v, 0);
-                    v = SendMessage(rv, CB_ADDSTRING, 0, (LPARAM)"Yes");
+                    v = SendMessage(rv, CB_ADDSTRING, 0, (LPARAM) "Yes");
                     SendMessage(rv, CB_SETITEMDATA, v, db->fields->value);
                     break;
                 case iNEGYESNO:
-                    v = SendMessage(rv, CB_ADDSTRING, 0, (LPARAM)"No");
+                    v = SendMessage(rv, CB_ADDSTRING, 0, (LPARAM) "No");
                     SendMessage(rv, CB_SETITEMDATA, v, db->fields->value);
-                    v = SendMessage(rv, CB_ADDSTRING, 0, (LPARAM)"Yes");
+                    v = SendMessage(rv, CB_ADDSTRING, 0, (LPARAM) "Yes");
                     SendMessage(rv, CB_SETITEMDATA, v, 0);
                     break;
                 case iCombo:
@@ -712,21 +721,21 @@ static HWND CtlPropStartEdit(HWND lv, int row, struct ctlData *data)
             }
         }
     }
-    return rv;    
+    return rv;
 }
-static void AdjustControlWidths(struct ctlData *data, char *text)
+static void AdjustControlWidths(struct ctlData* data, char* text)
 {
     int n = Eval(data->data->style);
     int width = 0;
-    EXPRESSION *exp;
+    EXPRESSION* exp;
     SIZE size;
 
-    switch(Eval(data->data->class.u.id))
+    switch (Eval(data->data->class.u.id))
     {
         SIZE cbsize, textsize;
         HDC dc;
         case CTL_BUTTON:
-            switch(n & 0xf)
+            switch (n & 0xf)
             {
                 case BS_CHECKBOX:
                 case BS_AUTOCHECKBOX:
@@ -764,7 +773,7 @@ static void AdjustControlWidths(struct ctlData *data, char *text)
         default:
             return;
     }
-    width = MulDiv(width, 4, size.cx); 
+    width = MulDiv(width, 4, size.cx);
     exp = data->data->width;
     if (width != Eval(exp))
     {
@@ -776,17 +785,16 @@ static void AdjustControlWidths(struct ctlData *data, char *text)
         exp->val = width;
     }
 }
-static void CtlPropEndEdit(HWND lv, int row, HWND editWnd, struct ctlData *data)
+static void CtlPropEndEdit(HWND lv, int row, HWND editWnd, struct ctlData* data)
 {
     int irow = row;
-    struct ctlDB *db = data->db;
+    struct ctlDB* db = data->db;
     while (db)
     {
         if (db->recType != eHeader)
         {
             if (!irow--)
                 break;
-            
         }
         db = db->next;
     }
@@ -796,7 +804,7 @@ static void CtlPropEndEdit(HWND lv, int row, HWND editWnd, struct ctlData *data)
         switch (db->ctlType)
         {
             int v;
-            EXPRESSION *exp;
+            EXPRESSION* exp;
             char buf[256];
             case iYESNO:
             case iNEGYESNO:
@@ -816,7 +824,7 @@ static void CtlPropEndEdit(HWND lv, int row, HWND editWnd, struct ctlData *data)
                     }
                     if (v)
                     {
-                        struct ctlField *field = db->fields;
+                        struct ctlField* field = db->fields;
                         while (field && field->value != v)
                             field = field->next;
                         if (field)
@@ -837,7 +845,7 @@ static void CtlPropEndEdit(HWND lv, int row, HWND editWnd, struct ctlData *data)
                                     AddToStyle(&data->data->exstyle, field->valueLabel, field->value);
                                 }
                                 ResSetDirty(data->dlg);
-                            }   
+                            }
                         }
                     }
                     else if (n)
@@ -850,13 +858,13 @@ static void CtlPropEndEdit(HWND lv, int row, HWND editWnd, struct ctlData *data)
                         ResSetDirty(data->dlg);
                     }
                 }
-                break; 
+                break;
             case iX:
             case iY:
             case iWidth:
             case iHeight:
                 SendMessage(editWnd, WM_GETTEXT, sizeof(buf), (LPARAM)buf);
-                switch(db->ctlType)
+                switch (db->ctlType)
                 {
                     case iX:
                         exp = data->data->x;
@@ -909,8 +917,8 @@ static void CtlPropEndEdit(HWND lv, int row, HWND editWnd, struct ctlData *data)
                 break;
         }
         {
-            CONTROL *c = data->data;
-            struct resRes *d = data->dlg;
+            CONTROL* c = data->data;
+            struct resRes* d = data->dlg;
             EnumChildWindows(d->gd.childWindow, RemoveDlgWindow, (LPARAM)c);
             CreateSingleControl(d->gd.childWindow, d, c, FALSE);
         }
@@ -919,9 +927,9 @@ static void CtlPropEndEdit(HWND lv, int row, HWND editWnd, struct ctlData *data)
     ListView_SetItemText(lv, row, 1, LPSTR_TEXTCALLBACK);
     SetFocus(data->dlg->activeHwnd);
 }
-static void InsertCtlProperties(HWND lv, struct ctlData *data)
+static void InsertCtlProperties(HWND lv, struct ctlData* data)
 {
-    struct ctlDB *db = data->db;
+    struct ctlDB* db = data->db;
     int gnum = 101;
     int index = 0;
     while (db)
@@ -929,11 +937,11 @@ static void InsertCtlProperties(HWND lv, struct ctlData *data)
         if (db->recType == eHeader)
         {
             WCHAR bufp[256], *p = bufp;
-            char *s = db->label;
+            char* s = db->label;
             while (*s)
                 *p++ = *s++;
             *p = 0;
- 
+
             PropSetGroup(lv, gnum++, bufp);
         }
         db = db->next;
@@ -953,16 +961,14 @@ static void InsertCtlProperties(HWND lv, struct ctlData *data)
         db = db->next;
     }
 }
-static HFONT MakeFont(HDC hDC, WCHAR *font, int pointsize, int weight, int italic, int charset)
+static HFONT MakeFont(HDC hDC, WCHAR* font, int pointsize, int weight, int italic, int charset)
 {
-    return CreateFontW(-MulDiv(pointsize, GetDeviceCaps(hDC, LOGPIXELSY), 72),
-                      0, 0, 0, weight, !!italic, FALSE, FALSE, charset,
-                      OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,
-                      DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, font);
+    return CreateFontW(-MulDiv(pointsize, GetDeviceCaps(hDC, LOGPIXELSY), 72), 0, 0, 0, weight, !!italic, FALSE, FALSE, charset,
+                       OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, font);
 }
-static void GetBaseUnits(HWND hwnd, struct resRes *dlgData, LPSIZE base)
+static void GetBaseUnits(HWND hwnd, struct resRes* dlgData, LPSIZE base)
 {
-    DIALOG *d = dlgData->resource->u.dialog;
+    DIALOG* d = dlgData->resource->u.dialog;
     HFONT font;
     HDC hDC = GetDC(hwnd);
     TEXTMETRIC tm;
@@ -979,31 +985,31 @@ static void GetBaseUnits(HWND hwnd, struct resRes *dlgData, LPSIZE base)
         font = CreateFontIndirect(&systemCaptionFont);
     }
     font = SelectObject(hDC, font);
-    GetTextExtentPoint32(hDC,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", 52, base);
+    GetTextExtentPoint32(hDC, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", 52, base);
     GetTextMetrics(hDC, &tm);
-    base->cx = ((base->cx / 26) + 1)/2;
-    base->cy =tm.tmHeight >= 0 ? tm.tmHeight : - tm.tmHeight;
+    base->cx = ((base->cx / 26) + 1) / 2;
+    base->cy = tm.tmHeight >= 0 ? tm.tmHeight : -tm.tmHeight;
     font = SelectObject(hDC, font);
     dlgData->gd.font = font;
     ReleaseDC(hwnd, hDC);
 }
-static void ConvertToPixels(RECT *r, LPSIZE base)
+static void ConvertToPixels(RECT* r, LPSIZE base)
 {
     r->left = (r->left * base->cx) / 4;
     r->top = (r->top * base->cy) / 8;
     r->right = (r->right * base->cx) / 4;
     r->bottom = (r->bottom * base->cy) / 8;
 }
-static void ConvertToDlgUnits(RECT *r, LPSIZE base)
+static void ConvertToDlgUnits(RECT* r, LPSIZE base)
 {
     r->left = r->left * 4 / base->cx;
     r->top = r->top * 8 / base->cy;
     r->right = r->right * 4 / base->cx;
     r->bottom = r->bottom * 8 / base->cy;
 }
-static HWND CreateDlgWindow(HWND hwnd, struct resRes * dlgData)
+static HWND CreateDlgWindow(HWND hwnd, struct resRes* dlgData)
 {
-    DIALOG *d = dlgData->resource->u.dialog;
+    DIALOG* d = dlgData->resource->u.dialog;
     char buf[256];
     SIZE base;
     RECT r;
@@ -1023,11 +1029,9 @@ static HWND CreateDlgWindow(HWND hwnd, struct resRes * dlgData)
     {
         StringWToA(buf, d->caption, wcslen(d->caption));
     }
-    rv = CreateWindowEx(Eval(d->exstyle),
-                           szDlgDialogClassName, buf,
-                           (Eval(d->style) | WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN) & ~WS_POPUP, 
-                           r.left, r.top , r.right - r.left, r.bottom - r.top,
-                           hwnd, 0, hInstance, dlgData);
+    rv = CreateWindowEx(Eval(d->exstyle), szDlgDialogClassName, buf,
+                        (Eval(d->style) | WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN) & ~WS_POPUP, r.left, r.top, r.right - r.left,
+                        r.bottom - r.top, hwnd, 0, hInstance, dlgData);
     if (rv)
     {
         HMENU hMenu = GetSystemMenu(rv, FALSE);
@@ -1039,7 +1043,7 @@ static HWND CreateDlgWindow(HWND hwnd, struct resRes * dlgData)
     }
     return rv;
 }
-static void ShowOrHideScrollBars(HWND hwnd, struct resRes *dlgData)
+static void ShowOrHideScrollBars(HWND hwnd, struct resRes* dlgData)
 {
     RECT cr;
     POINT pt1, pt2;
@@ -1066,65 +1070,65 @@ static void ShowOrHideScrollBars(HWND hwnd, struct resRes *dlgData)
         SetScrollPos(hwnd, SB_VERT, dlgData->gd.scrollPos.y, TRUE);
     }
 }
-static void DrawRect(HDC dc, RECT *r)
+static void DrawRect(HDC dc, RECT* r)
 {
     MoveToEx(dc, r->left, r->top, NULL);
     LineTo(dc, r->right, r->top);
-    MoveToEx(dc, r->right-1, r->top, NULL);
-    LineTo(dc, r->right-1, r->bottom-1);
-    MoveToEx(dc, r->right-1, r->bottom-1, NULL);
-    LineTo(dc, r->left, r->bottom-1);
-    MoveToEx(dc, r->left, r->bottom-1, NULL);
+    MoveToEx(dc, r->right - 1, r->top, NULL);
+    LineTo(dc, r->right - 1, r->bottom - 1);
+    MoveToEx(dc, r->right - 1, r->bottom - 1, NULL);
+    LineTo(dc, r->left, r->bottom - 1);
+    MoveToEx(dc, r->left, r->bottom - 1, NULL);
     LineTo(dc, r->left, r->top);
 }
-void ChangePosition(struct resRes *dlgData, EXPRESSION **pos, int offset)
+void ChangePosition(struct resRes* dlgData, EXPRESSION** pos, int offset)
 {
-	if (offset != 0)
-	{
-		char buf[256];
-		ResGetHeap(workArea, dlgData);
-		if ((*pos)->type == e_int)
-		{
-			(*pos)->val += offset;
-			sprintf(buf, "%d", (*pos)->val);
-			(*pos)->rendition = rcStrdup(buf);
-			if (snapToGrid)
-				(*pos)->val = ((*pos)->val/gridSpacing) *gridSpacing;
-		}
-		else if ((*pos)->type == plus && (*pos)->right->type == e_int)
-		{
-			(*pos)->right->val += offset;
-			sprintf(buf, "%d", (*pos)->right->val);
-			(*pos)->right->rendition = rcStrdup(buf);
-			if (snapToGrid)
-				(*pos)->right->val = ((*pos)->right->val/gridSpacing) *gridSpacing;
-		}
-		else if (snapToGrid)
-		{
-			(*pos)->val = ((Eval(*pos) + offset)/gridSpacing) * gridSpacing;
-			(*pos)->type = e_int;
-			(*pos)->left = (*pos)->right = 0;
-			sprintf(buf, "%d", (*pos)->val);
-			(*pos)->rendition = rcStrdup(buf);
-		}
-		else
-		{
-			EXPRESSION *n;
-			n = rcAlloc(sizeof(EXPRESSION));
-			n->left = *pos;
-			n->right = rcAlloc(sizeof(EXPRESSION));
-			*pos = n;
-			n->type = plus;
-			n->right->type = e_int;
-			n->right->val = offset;
-			sprintf(buf, "%d", n->right->val);
-			n->right->rendition = rcStrdup(buf);
-		}
-	}
+    if (offset != 0)
+    {
+        char buf[256];
+        ResGetHeap(workArea, dlgData);
+        if ((*pos)->type == e_int)
+        {
+            (*pos)->val += offset;
+            sprintf(buf, "%d", (*pos)->val);
+            (*pos)->rendition = rcStrdup(buf);
+            if (snapToGrid)
+                (*pos)->val = ((*pos)->val / gridSpacing) * gridSpacing;
+        }
+        else if ((*pos)->type == plus && (*pos)->right->type == e_int)
+        {
+            (*pos)->right->val += offset;
+            sprintf(buf, "%d", (*pos)->right->val);
+            (*pos)->right->rendition = rcStrdup(buf);
+            if (snapToGrid)
+                (*pos)->right->val = ((*pos)->right->val / gridSpacing) * gridSpacing;
+        }
+        else if (snapToGrid)
+        {
+            (*pos)->val = ((Eval(*pos) + offset) / gridSpacing) * gridSpacing;
+            (*pos)->type = e_int;
+            (*pos)->left = (*pos)->right = 0;
+            sprintf(buf, "%d", (*pos)->val);
+            (*pos)->rendition = rcStrdup(buf);
+        }
+        else
+        {
+            EXPRESSION* n;
+            n = rcAlloc(sizeof(EXPRESSION));
+            n->left = *pos;
+            n->right = rcAlloc(sizeof(EXPRESSION));
+            *pos = n;
+            n->type = plus;
+            n->right->type = e_int;
+            n->right->val = offset;
+            sprintf(buf, "%d", n->right->val);
+            n->right->rendition = rcStrdup(buf);
+        }
+    }
 }
-static void UndoGroupStart(struct resRes *dlgData)
+static void UndoGroupStart(struct resRes* dlgData)
 {
-    struct dlgUndo *cur = calloc(1, sizeof(struct dlgUndo));
+    struct dlgUndo* cur = calloc(1, sizeof(struct dlgUndo));
     if (cur)
     {
         cur->type = du_groupstart;
@@ -1132,9 +1136,9 @@ static void UndoGroupStart(struct resRes *dlgData)
         dlgData->gd.undoData = cur;
     }
 }
-static void UndoGroupEnd(struct resRes *dlgData)
+static void UndoGroupEnd(struct resRes* dlgData)
 {
-    struct dlgUndo *cur = calloc(1, sizeof(struct dlgUndo));
+    struct dlgUndo* cur = calloc(1, sizeof(struct dlgUndo));
     if (cur)
     {
         cur->type = du_groupend;
@@ -1142,12 +1146,12 @@ static void UndoGroupEnd(struct resRes *dlgData)
         dlgData->gd.undoData = cur;
     }
 }
-static void UndoInsert(struct resRes *dlgData, CONTROL *list)
+static void UndoInsert(struct resRes* dlgData, CONTROL* list)
 {
-    struct dlgUndo *cur = calloc(1, sizeof(struct dlgUndo));
+    struct dlgUndo* cur = calloc(1, sizeof(struct dlgUndo));
     if (cur)
     {
-        CONTROL **item = &dlgData->resource->u.dialog->controls;
+        CONTROL** item = &dlgData->resource->u.dialog->controls;
         while (*item && *item != list)
             item = &(*item)->next;
         cur->type = du_insert;
@@ -1158,19 +1162,19 @@ static void UndoInsert(struct resRes *dlgData, CONTROL *list)
 }
 static BOOL CALLBACK UndoDeleteOne(HWND hwnd, LPARAM lParam)
 {
-    struct resRes * dlgData = (struct resRes *)lParam;
-    struct ctlData *data = (struct ctlData*)GetWindowLong(hwnd, GWL_USERDATA);
+    struct resRes* dlgData = (struct resRes*)lParam;
+    struct ctlData* data = (struct ctlData*)GetWindowLong(hwnd, GWL_USERDATA);
     data->data->deleteme = SendMessage(hwnd, WM_QUERYSELECTEDSTATE, 0, 0);
     return TRUE;
 }
-static void UndoDeleteOneReally(struct resRes *dlgData, CONTROL **c)
+static void UndoDeleteOneReally(struct resRes* dlgData, CONTROL** c)
 {
     // this walks the list backwards...
     if ((*c)->next)
         UndoDeleteOneReally(dlgData, &(*c)->next);
     if ((*c)->deleteme)
     {
-        struct dlgUndo *cur = calloc(1, sizeof(struct dlgUndo));
+        struct dlgUndo* cur = calloc(1, sizeof(struct dlgUndo));
         if (cur)
         {
             cur->type = du_delete;
@@ -1181,16 +1185,16 @@ static void UndoDeleteOneReally(struct resRes *dlgData, CONTROL **c)
         }
     }
 }
-static void UndoDeleteActive(struct resRes *dlgData)
+static void UndoDeleteActive(struct resRes* dlgData)
 {
     UndoGroupStart(dlgData);
     EnumChildWindows(dlgData->gd.childWindow, UndoDeleteOne, (LPARAM)dlgData);
     UndoDeleteOneReally(dlgData, &dlgData->resource->u.dialog->controls);
     UndoGroupEnd(dlgData);
 }
-static EXPRESSION *dupexpr(EXPRESSION *in)
+static EXPRESSION* dupexpr(EXPRESSION* in)
 {
-    EXPRESSION *rv;
+    EXPRESSION* rv;
     if (!in)
         return in;
     rv = rcAlloc(sizeof(EXPRESSION));
@@ -1202,9 +1206,9 @@ static EXPRESSION *dupexpr(EXPRESSION *in)
     rv->right = dupexpr(in->right);
     return rv;
 }
-static void UndoChanged(struct resRes *dlgData, CONTROL *list)
+static void UndoChanged(struct resRes* dlgData, CONTROL* list)
 {
-    struct dlgUndo *cur = calloc(1, sizeof(struct dlgUndo));
+    struct dlgUndo* cur = calloc(1, sizeof(struct dlgUndo));
     if (cur)
     {
         cur->type = du_changed;
@@ -1235,25 +1239,25 @@ static void UndoChanged(struct resRes *dlgData, CONTROL *list)
 }
 static BOOL CALLBACK UndoMoveOne(HWND hwnd, LPARAM lParam)
 {
-    struct resRes * dlgData = (struct resRes *)lParam;
+    struct resRes* dlgData = (struct resRes*)lParam;
     if (SendMessage(hwnd, WM_QUERYSELECTEDSTATE, 0, 0))
     {
-        struct ctlData *data = (struct ctlData*)GetWindowLong(hwnd, GWL_USERDATA);
+        struct ctlData* data = (struct ctlData*)GetWindowLong(hwnd, GWL_USERDATA);
         UndoChanged(dlgData, data->data);
     }
     return TRUE;
 }
-static void UndoMoveActive(struct resRes *dlgData)
+static void UndoMoveActive(struct resRes* dlgData)
 {
     UndoGroupStart(dlgData);
     EnumChildWindows(dlgData->gd.childWindow, UndoMoveOne, (LPARAM)dlgData);
     UndoGroupEnd(dlgData);
 }
-static void UndoReorder(struct resRes *dlgData)
+static void UndoReorder(struct resRes* dlgData)
 {
     LIST *val = NULL, **cv = &val;
-    struct dlgUndo *cur = calloc(1, sizeof(struct dlgUndo));
-    CONTROL *list = dlgData->resource->u.dialog->controls;
+    struct dlgUndo* cur = calloc(1, sizeof(struct dlgUndo));
+    CONTROL* list = dlgData->resource->u.dialog->controls;
     while (list)
     {
         *cv = calloc(1, sizeof(LIST));
@@ -1280,16 +1284,16 @@ static void CleanChildSpace(HWND hwnd, HWND parent)
     pt2.y = cl.bottom;
     ScreenToClient(parent, &pt1);
     ScreenToClient(parent, &pt2);
-    cl.left = pt1.x-3;
-    cl.top = pt1.y-3;
-    cl.right = pt2.x+3;
-    cl.bottom = pt2.y+3;
+    cl.left = pt1.x - 3;
+    cl.top = pt1.y - 3;
+    cl.right = pt2.x + 3;
+    cl.bottom = pt2.y + 3;
     InvalidateRect(parent, &cl, TRUE);
 }
 static BOOL CALLBACK RemoveDlgWindow(HWND hwnd, LPARAM lParam)
 {
-    CONTROL *c = (CONTROL *)lParam;
-    struct ctlData *data = (struct ctlData *)GetWindowLong(hwnd, GWL_USERDATA);
+    CONTROL* c = (CONTROL*)lParam;
+    struct ctlData* data = (struct ctlData*)GetWindowLong(hwnd, GWL_USERDATA);
     if (data->data == c)
     {
         CleanChildSpace(hwnd, data->dlg->gd.childWindow);
@@ -1298,16 +1302,16 @@ static BOOL CALLBACK RemoveDlgWindow(HWND hwnd, LPARAM lParam)
     }
     return TRUE;
 }
-static void DlgUndoOne(struct resRes *dlgData)
+static void DlgUndoOne(struct resRes* dlgData)
 {
-    struct dlgUndo *undo = dlgData->gd.undoData;
+    struct dlgUndo* undo = dlgData->gd.undoData;
     if (undo)
     {
         dlgData->gd.undoData = undo->next;
-        switch(undo->type)
+        switch (undo->type)
         {
-            LIST *order;
-            CONTROL *c;
+            LIST* order;
+            CONTROL* c;
             case du_groupstart:
             case du_groupend:
                 break;
@@ -1359,9 +1363,9 @@ static void DlgUndoOne(struct resRes *dlgData)
                 while (order)
                 {
                     if (order->next)
-                        ((CONTROL *)order->data)->next = order->next->data;
+                        ((CONTROL*)order->data)->next = order->next->data;
                     else
-                        ((CONTROL *)order->data)->next = NULL;
+                        ((CONTROL*)order->data)->next = NULL;
                     order = order->next;
                 }
                 InvalidateRect(dlgData->gd.childWindow, NULL, TRUE);
@@ -1373,7 +1377,7 @@ static void DlgUndoOne(struct resRes *dlgData)
         {
             while (undo->order)
             {
-                LIST *next = undo->order->next;
+                LIST* next = undo->order->next;
                 free(undo->order);
                 undo->order = next;
             }
@@ -1390,9 +1394,9 @@ static BOOL CALLBACK ActivateSizing(HWND child, LPARAM param)
     SendMessage(child, WM_ACTIVATESIZERECTANGLE, 0, 0);
     return TRUE;
 }
-static void DlgDoUndo(struct resRes *dlgData)
+static void DlgDoUndo(struct resRes* dlgData)
 {
-    struct dlgUndo *undo = dlgData->gd.undoData;
+    struct dlgUndo* undo = dlgData->gd.undoData;
     if (undo)
     {
         ResGetHeap(workArea, dlgData);
@@ -1423,18 +1427,17 @@ static void DlgDoUndo(struct resRes *dlgData)
         PropsWndRedraw();
     }
 }
-LRESULT CALLBACK DlgControlInputRedirProc(HWND hwnd, UINT iMessage, WPARAM wParam,
-    LPARAM lParam)
+LRESULT CALLBACK DlgControlInputRedirProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
     LRESULT rv;
-    struct ctlData *data = (struct ctlData *)GetWindowLong(hwnd, GWL_USERDATA);
+    struct ctlData* data = (struct ctlData*)GetWindowLong(hwnd, GWL_USERDATA);
     WNDPROC oldProc = data->oldWndProcRedir;
     switch (iMessage)
     {
         case WM_NCHITTEST:
             rv = CallWindowProc(oldProc, hwnd, iMessage, wParam, lParam);
-            if (rv == HTTRANSPARENT) // this is for the group box.  We also have
-                                    // problems with static controls but use SS_NOTIFY there
+            if (rv == HTTRANSPARENT)  // this is for the group box.  We also have
+                                      // problems with static controls but use SS_NOTIFY there
                 rv = HTCLIENT;
             return rv;
         case WM_LBUTTONDOWN:
@@ -1477,16 +1480,15 @@ LRESULT CALLBACK DlgControlInputRedirProc(HWND hwnd, UINT iMessage, WPARAM wPara
         case WM_CTLDROP:
             return SendMessage(data->hwndParent, iMessage, wParam, lParam);
         case WM_DESTROY:
-            SetWindowLong(hwnd, GWL_WNDPROC, (long) oldProc);
+            SetWindowLong(hwnd, GWL_WNDPROC, (long)oldProc);
             free(data);
             break;
         default:
             break;
-    }       
+    }
     return CallWindowProc(oldProc, hwnd, iMessage, wParam, lParam);
 }
-LRESULT CALLBACK DlgControlInputProc(HWND hwnd, UINT iMessage, WPARAM wParam,
-    LPARAM lParam)
+LRESULT CALLBACK DlgControlInputProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
     POINT pt;
     LRESULT rv;
@@ -1497,33 +1499,33 @@ LRESULT CALLBACK DlgControlInputProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     static LPARAM lastlParam;
     static RECT lastSizeRect;
     RECT r1, client;
-    struct ctlData *data = (struct ctlData *)GetWindowLong(hwnd, GWL_USERDATA);
-   
+    struct ctlData* data = (struct ctlData*)GetWindowLong(hwnd, GWL_USERDATA);
+
     switch (iMessage)
     {
         case WM_LBUTTONDOWN:
         case WM_RBUTTONDOWN:
         case WM_MBUTTONDOWN:
+        {
+            struct ctlDB* db = GetCtlDb(data->data);
+            lastlParam = lParam;
+            if (db)
             {
-                struct ctlDB *db = GetCtlDb(data->data);
-                lastlParam = lParam;
-                if (db)
-                {
-                    currentDB = db;
-                    data->db = db;
-                    SetResourceProperties(data, &CtlFuncs);
-                }
-                else
-                {
-                    SetResourceProperties(NULL, NULL);
-                }
+                currentDB = db;
+                data->db = db;
+                SetResourceProperties(data, &CtlFuncs);
             }
+            else
+            {
+                SetResourceProperties(NULL, NULL);
+            }
+        }
             if (!data->sizing)
             {
                 SendMessage(data->dlg->gd.childWindow, WM_ACTIVATESIZERECTANGLE, 0, 0);
                 SendMessage(hwnd, WM_ACTIVATESIZERECTANGLE, TRUE, 0);
             }
-            if (flags) // in a sizing region
+            if (flags)  // in a sizing region
             {
                 flags |= SIZING;
                 start.x = GET_X_LPARAM(lParam);
@@ -1545,9 +1547,9 @@ LRESULT CALLBACK DlgControlInputProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 memset(&r1, 0, sizeof(r1));
                 if (flags & F_TOP)
                 {
-                    r1.top = pt.y - start.y +delta.y;
+                    r1.top = pt.y - start.y + delta.y;
                     delta.y = r1.top;
-                }            
+                }
                 else if (flags & F_BOTTOM)
                 {
                     r1.bottom = pt.y - start.y;
@@ -1560,7 +1562,7 @@ LRESULT CALLBACK DlgControlInputProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 else
                 {
                     r1.right = pt.x - start.x;
-                }    
+                }
                 GetBaseUnits(data->dlg->gd.childWindow, data->dlg, &base);
                 ConvertToDlgUnits(&r1, &base);
                 SendMessage(hwnd, WM_RELMOVE, TRUE, (LPARAM)&r1);
@@ -1607,14 +1609,14 @@ LRESULT CALLBACK DlgControlInputProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 if (!(flags & SIZINGUNDODONE))
                 {
                     flags |= SIZINGUNDODONE;
-                    UndoMoveActive(data->dlg); // size
+                    UndoMoveActive(data->dlg);  // size
                 }
                 memset(&r1, 0, sizeof(r1));
                 if (flags & F_TOP)
                 {
-                    r1.top = pt.y - start.y +delta.y;
+                    r1.top = pt.y - start.y + delta.y;
                     delta.y = r1.top;
-                }            
+                }
                 else if (flags & F_BOTTOM)
                 {
                     r1.bottom = pt.y - start.y;
@@ -1627,7 +1629,7 @@ LRESULT CALLBACK DlgControlInputProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 else
                 {
                     r1.right = pt.x - start.x;
-                }    
+                }
                 GetBaseUnits(data->dlg->gd.childWindow, data->dlg, &base);
                 ConvertToDlgUnits(&r1, &base);
                 SendMessage(hwnd, WM_RELMOVE, FALSE, (LPARAM)&r1);
@@ -1637,29 +1639,29 @@ LRESULT CALLBACK DlgControlInputProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 oldflags = flags;
                 flags = 0;
                 GetClientRect(hwnd, &client);
-                r1.left = (client.right +client.left)/2 -3;
+                r1.left = (client.right + client.left) / 2 - 3;
                 r1.right = r1.left + 7;
-                r1.top = client.top -3;
-                r1.bottom = client.top +4;
+                r1.top = client.top - 3;
+                r1.bottom = client.top + 4;
                 if (PtInRect(&r1, pt))
                     flags = F_TOP;
-                r1.left = (client.right +client.left)/2 -3;
+                r1.left = (client.right + client.left) / 2 - 3;
                 r1.right = r1.left + 7;
-                r1.top = client.bottom -4;
-                r1.bottom = client.bottom +3;
+                r1.top = client.bottom - 4;
+                r1.bottom = client.bottom + 3;
                 if (PtInRect(&r1, pt))
                     flags = F_BOTTOM;
-    
+
                 r1.left = client.left - 3;
                 r1.right = client.left + 4;
-                r1.top = (client.top + client.bottom) / 2-3;
+                r1.top = (client.top + client.bottom) / 2 - 3;
                 r1.bottom = r1.top + 7;
                 if (PtInRect(&r1, pt))
                     flags = F_LEFT;
-    
+
                 r1.left = client.right - 4;
                 r1.right = client.right + 3;
-                r1.top = (client.top + client.bottom) / 2-3;
+                r1.top = (client.top + client.bottom) / 2 - 3;
                 r1.bottom = r1.top + 7;
                 if (PtInRect(&r1, pt))
                     flags = F_RIGHT;
@@ -1693,7 +1695,7 @@ LRESULT CALLBACK DlgControlInputProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             rv = DefWindowProc(hwnd, iMessage, wParam, lParam);
             if (data && data->sizing)
             {
-                RECT r,r1;
+                RECT r, r1;
                 HDC dc;
                 HPEN pen = CreatePen(PS_DOT, 0, 0);
                 GetClientRect(hwnd, &r);
@@ -1701,24 +1703,24 @@ LRESULT CALLBACK DlgControlInputProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 pen = SelectObject(dc, pen);
                 DrawRect(dc, &r);
                 pen = SelectObject(dc, pen);
-                r1.left = (r.right +r.left)/2 -3;
+                r1.left = (r.right + r.left) / 2 - 3;
                 r1.right = r1.left + 7;
-                r1.top = r.top -3;
-                r1.bottom = r.top +4;
+                r1.top = r.top - 3;
+                r1.bottom = r.top + 4;
                 DrawRect(dc, &r1);
-                r1.left = (r.right +r.left)/2 -3;
+                r1.left = (r.right + r.left) / 2 - 3;
                 r1.right = r1.left + 7;
-                r1.top = r.bottom -4;
-                r1.bottom = r.bottom +3;
+                r1.top = r.bottom - 4;
+                r1.bottom = r.bottom + 3;
                 DrawRect(dc, &r1);
                 r1.left = r.left - 3;
                 r1.right = r.left + 4;
-                r1.top = (r.top + r.bottom) / 2-3;
+                r1.top = (r.top + r.bottom) / 2 - 3;
                 r1.bottom = r1.top + 7;
                 DrawRect(dc, &r1);
                 r1.left = r.right - 4;
                 r1.right = r.right + 3;
-                r1.top = (r.top + r.bottom) / 2-3;
+                r1.top = (r.top + r.bottom) / 2 - 3;
                 r1.bottom = r1.top + 7;
                 DrawRect(dc, &r1);
                 DeleteObject(pen);
@@ -1742,24 +1744,23 @@ LRESULT CALLBACK DlgControlInputProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                         r.right = Eval(data->data->width) + r.left;
                         r.bottom = Eval(data->data->height) + r.top;
                         ConvertToPixels(&r, &base);
-                        
                     }
                     else
                     {
-                        POINT x = { 0 };
+                        POINT x = {0};
                         GetWindowRect(data->hwndRedir, &r);
                         x.x = r.left;
                         x.y = r.top;
                         ScreenToClient(GetParent(hwnd), &x);
-                        r.left = x.x-1;
-                        r.top = x.y-1;
+                        r.left = x.x - 1;
+                        r.top = x.y - 1;
                         x.x = r.right;
                         x.y = r.bottom;
                         ScreenToClient(GetParent(hwnd), &x);
-                        r.right = x.x-1;
-                        r.bottom = x.y-1;
+                        r.right = x.x - 1;
+                        r.bottom = x.y - 1;
                     }
-                    MoveWindow(hwnd, r.left, r.top, r.right - r.left, r.bottom-r.top, FALSE);
+                    MoveWindow(hwnd, r.left, r.top, r.right - r.left, r.bottom - r.top, FALSE);
                 }
                 InvalidateRect(hwnd, NULL, TRUE);
                 /*
@@ -1784,7 +1785,7 @@ LRESULT CALLBACK DlgControlInputProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             break;
         case WM_RELMOVE:
         {
-            RECT *p = (RECT *)lParam; // in dlg units...
+            RECT* p = (RECT*)lParam;  // in dlg units...
             RECT r;
             SIZE base;
             GetBaseUnits(data->dlg->gd.childWindow, data->dlg, &base);
@@ -1807,15 +1808,15 @@ LRESULT CALLBACK DlgControlInputProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 width = r.right - r.left;
                 height = r.bottom - r.top;
                 if (p->left)
-                    r.left = (r.left / gridSpacing) *gridSpacing;
+                    r.left = (r.left / gridSpacing) * gridSpacing;
                 if (p->top)
-                    r.top = (r.top / gridSpacing) *gridSpacing;
+                    r.top = (r.top / gridSpacing) * gridSpacing;
                 if (p->bottom && p->top != p->bottom)
-                    r.bottom = (r.bottom / gridSpacing) *gridSpacing;
+                    r.bottom = (r.bottom / gridSpacing) * gridSpacing;
                 else
                     r.bottom = r.top + height;
                 if (p->right && p->left != p->right)
-                    r.right = (r.right / gridSpacing) *gridSpacing;
+                    r.right = (r.right / gridSpacing) * gridSpacing;
                 else
                     r.right = r.left + width;
                 r.left--;
@@ -1834,11 +1835,11 @@ LRESULT CALLBACK DlgControlInputProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 ResSetDirty(data->dlg);
                 PropsWndRedraw();
             }
-            CleanChildSpace( hwnd, data->dlg->gd.childWindow);
-            MoveWindow(hwnd, r.left, r.top, r.right-r.left, r.bottom-r.top, TRUE);
-            MoveWindow(data->hwndRedir, 1,1,r.right-r.left-2, r.bottom-r.top-2, TRUE);
+            CleanChildSpace(hwnd, data->dlg->gd.childWindow);
+            MoveWindow(hwnd, r.left, r.top, r.right - r.left, r.bottom - r.top, TRUE);
+            MoveWindow(data->hwndRedir, 1, 1, r.right - r.left - 2, r.bottom - r.top - 2, TRUE);
         }
-        return 0;
+            return 0;
         case WM_MOVE:
             break;
         default:
@@ -1848,23 +1849,23 @@ LRESULT CALLBACK DlgControlInputProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 }
 static BOOL CALLBACK HookAllChildren(HWND child, LPARAM old)
 {
-    struct ctlData *data = calloc(1, sizeof(struct ctlData));
-    *data = *(struct ctlData *)old;
+    struct ctlData* data = calloc(1, sizeof(struct ctlData));
+    *data = *(struct ctlData*)old;
     data->oldWndProcRedir = (WNDPROC)GetWindowLong(child, GWL_WNDPROC);
     SetWindowLong(child, GWL_USERDATA, (long)data);
-    SetWindowLong(child, GWL_WNDPROC, (long)DlgControlInputRedirProc);    
+    SetWindowLong(child, GWL_WNDPROC, (long)DlgControlInputRedirProc);
     EnumChildWindows(child, HookAllChildren, (LPARAM)data);
     return TRUE;
 }
-static void CreateSingleControl(HWND hwnd, struct resRes *dlgData, CONTROL *c, BOOL activate)
+static void CreateSingleControl(HWND hwnd, struct resRes* dlgData, CONTROL* c, BOOL activate)
 {
-    WCHAR *name;
+    WCHAR* name;
     SIZE base;
     RECT r;
     HWND child, parent;
     int plusstyle;
     char className[256], classText[256];
-    struct ctlData *data = calloc(1, sizeof(struct ctlData));
+    struct ctlData* data = calloc(1, sizeof(struct ctlData));
     if (!data)
     {
         return;
@@ -1881,7 +1882,7 @@ static void CreateSingleControl(HWND hwnd, struct resRes *dlgData, CONTROL *c, B
     if (c->class.symbolic)
         name = c->class.u.n.symbol;
     else
-        switch(Eval(c->class.u.id))
+        switch (Eval(c->class.u.id))
         {
             case CTL_BUTTON:
                 name = L"button";
@@ -1901,14 +1902,14 @@ static void CreateSingleControl(HWND hwnd, struct resRes *dlgData, CONTROL *c, B
             case CTL_COMBOBOX:
                 name = L"combobox";
                 break;
-             default:
+            default:
                 name = L"???UNKNOWN???WINDOW???CLASS???";
                 break;
         }
     StringWToA(className, name, wcslen(name));
     if (!strcmp(className, "combobox"))
         c->isCombo = TRUE;
-    if (c->text && c->text->symbolic) // also need to handle retrieving the text by id...
+    if (c->text && c->text->symbolic)  // also need to handle retrieving the text by id...
         StringWToA(classText, c->text->u.n.symbol, c->text->u.n.length);
     else
         strcpy(classText, "{}");
@@ -1918,23 +1919,15 @@ static void CreateSingleControl(HWND hwnd, struct resRes *dlgData, CONTROL *c, B
         plusstyle = BS_NOTIFY;
     else
         plusstyle = 0;
-    parent = CreateWindowEx(0, szDlgControlInputClassName, "",
-                   (WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS), 
-                   r.left-1, r.top-1 , r.right - r.left+2, r.bottom - r.top+2,
-                   hwnd, 0, hInstance, 0);
+    parent = CreateWindowEx(0, szDlgControlInputClassName, "", (WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS), r.left - 1, r.top - 1,
+                            r.right - r.left + 2, r.bottom - r.top + 2, hwnd, 0, hInstance, 0);
     data->hwndParent = parent;
     SetWindowLong(parent, GWL_USERDATA, (long)data);
-    child = CreateWindowEx(Eval(c->exstyle),
-                           className, classText,
-                           (Eval(c->style) | plusstyle | WS_CHILD | WS_VISIBLE), 
-                           1, 1 , r.right - r.left, r.bottom - r.top,
-                           parent, 0, hInstance,0);
+    child = CreateWindowEx(Eval(c->exstyle), className, classText, (Eval(c->style) | plusstyle | WS_CHILD | WS_VISIBLE), 1, 1,
+                           r.right - r.left, r.bottom - r.top, parent, 0, hInstance, 0);
     if (!child)
-        child = CreateWindowEx(Eval(c->exstyle),
-                           szDlgUnknownClassName, classText,
-                           (Eval(c->style) | WS_CHILD | WS_VISIBLE), 
-                           1, 1 , r.right - r.left, r.bottom - r.top,
-                           parent, 0, hInstance,0);
+        child = CreateWindowEx(Eval(c->exstyle), szDlgUnknownClassName, classText, (Eval(c->style) | WS_CHILD | WS_VISIBLE), 1, 1,
+                               r.right - r.left, r.bottom - r.top, parent, 0, hInstance, 0);
     SetWindowTheme(child, L" ", L" ");
     if (child)
     {
@@ -1942,27 +1935,26 @@ static void CreateSingleControl(HWND hwnd, struct resRes *dlgData, CONTROL *c, B
         HookAllChildren(child, (LPARAM)data);
         SendMessage(child, WM_ACTIVATESIZERECTANGLE, activate, 0);
         SendMessage(child, WM_SETFONT, (WPARAM)dlgData->gd.font, 0);
-        if (c->isCombo) // force a resize down to the 'slim' size
-			data->sizing = TRUE;
+        if (c->isCombo)  // force a resize down to the 'slim' size
+            data->sizing = TRUE;
         SendMessage(parent, WM_ACTIVATESIZERECTANGLE, activate, 0);
     }
 }
-static void CreateControls(HWND hwnd, struct resRes *dlgData)
+static void CreateControls(HWND hwnd, struct resRes* dlgData)
 {
 
-    CONTROL *c = dlgData->resource->u.dialog->controls;
+    CONTROL* c = dlgData->resource->u.dialog->controls;
     while (c)
     {
         CreateSingleControl(hwnd, dlgData, c, FALSE);
         c = c->next;
     }
-        
 }
 static BOOL CALLBACK SelectChildren(HWND child, LPARAM param)
 {
-    RECT *r = (RECT *)param;
+    RECT* r = (RECT*)param;
     RECT cr;
-    POINT start,end;
+    POINT start, end;
     BOOL active;
     GetWindowRect(child, &cr);
     start.x = cr.left;
@@ -1977,7 +1969,7 @@ static BOOL CALLBACK MoveChildren(HWND child, LPARAM param)
 {
     if (SendMessage(child, WM_QUERYSELECTEDSTATE, 0, 0))
     {
-        SendMessage(child, WM_RELMOVE, 0, param); 
+        SendMessage(child, WM_RELMOVE, 0, param);
     }
     return TRUE;
 }
@@ -1985,11 +1977,11 @@ static BOOL CALLBACK MoveChildrenCommit(HWND child, LPARAM param)
 {
     if (SendMessage(child, WM_QUERYSELECTEDSTATE, 0, 0))
     {
-        SendMessage(child, WM_RELMOVE, 1, param); 
+        SendMessage(child, WM_RELMOVE, 1, param);
     }
     return TRUE;
 }
-BOOL RemoveFromStyle(EXPRESSION **style, int val)
+BOOL RemoveFromStyle(EXPRESSION** style, int val)
 {
     if ((*style)->type == e_int)
     {
@@ -2025,17 +2017,17 @@ BOOL RemoveFromStyle(EXPRESSION **style, int val)
     }
     return FALSE;
 }
-void AddToStyle(EXPRESSION **style, char *text, int val)
+void AddToStyle(EXPRESSION** style, char* text, int val)
 {
-    EXPRESSION *th = rcAlloc(sizeof(EXPRESSION));
+    EXPRESSION* th = rcAlloc(sizeof(EXPRESSION));
     if (!*style)
     {
         *style = th;
     }
     else
     {
-        EXPRESSION *top = rcAlloc(sizeof(EXPRESSION));
-        top->type = or;
+        EXPRESSION* top = rcAlloc(sizeof(EXPRESSION));
+        top->type = or ;
         top->right = *style;
         top->left = th;
         *style = top;
@@ -2045,13 +2037,13 @@ void AddToStyle(EXPRESSION **style, char *text, int val)
     if (text)
         th->rendition = rcStrdup(text);
 }
-static void InsertNewControl(struct resRes *dlgData, int type, POINT at)
+static void InsertNewControl(struct resRes* dlgData, int type, POINT at)
 {
     SIZE base;
-    CONTROL *c , **parent = &dlgData->resource->u.dialog->controls;
+    CONTROL *c, **parent = &dlgData->resource->u.dialog->controls;
     RECT r;
-    int classtype ;
-    char *text = NULL;
+    int classtype;
+    char* text = NULL;
     ResGetHeap(workArea, dlgData);
     c = rcAlloc(sizeof(CONTROL));
     while (*parent)
@@ -2063,33 +2055,33 @@ static void InsertNewControl(struct resRes *dlgData, int type, POINT at)
     AddToStyle(&c->style, "WS_VISIBLE", WS_TABSTOP);
     switch (type)
     {
-        case 0: // push button
+        case 0:  // push button
         default:
             AddToStyle(&c->style, "WS_TABSTOP", WS_TABSTOP);
             AddToStyle(&c->style, "BS_PUSHBUTTON", BS_PUSHBUTTON);
             classtype = CTL_BUTTON;
             text = "Push Button";
             break;
-        case 1: // default push button
+        case 1:  // default push button
             AddToStyle(&c->style, "WS_TABSTOP", WS_TABSTOP);
             AddToStyle(&c->style, "BS_DEFPUSHBUTTON", BS_DEFPUSHBUTTON);
             classtype = CTL_BUTTON;
-            text = "Default Push Button";          
+            text = "Default Push Button";
             break;
-        case 2: // check box
+        case 2:  // check box
             AddToStyle(&c->style, "WS_TABSTOP", WS_TABSTOP);
             AddToStyle(&c->style, "BS_AUTOCHECKBOX", BS_AUTOCHECKBOX);
             classtype = CTL_BUTTON;
             text = "Check Box";
-            r.bottom = MulDiv(10, base.cy, 8);          
+            r.bottom = MulDiv(10, base.cy, 8);
             break;
-        case 3: // Radio Button
+        case 3:  // Radio Button
             AddToStyle(&c->style, "BS_AUTORADIOBUTTON", BS_AUTORADIOBUTTON);
             classtype = CTL_BUTTON;
             text = "Radio Button";
-            r.bottom = 10;          
+            r.bottom = 10;
             break;
-        case 4: // Static Text
+        case 4:  // Static Text
             AddToStyle(&c->style, "WS_GROUP", WS_GROUP);
             AddToStyle(&c->style, "SS_LEFT", SS_LEFT);
             classtype = CTL_STATIC;
@@ -2097,21 +2089,21 @@ static void InsertNewControl(struct resRes *dlgData, int type, POINT at)
             r.right = 20 + strlen(text) * base.cx;
             r.bottom = base.cy;
             break;
-        case 5: // Icon
+        case 5:  // Icon
             AddToStyle(&c->style, "SS_ICON", SS_ICON);
             classtype = CTL_STATIC;
             r.right = 32;
             r.bottom = 32;
             break;
-        case 6: // Edit box
+        case 6:  // Edit box
             AddToStyle(&c->style, "WS_TABSTOP", WS_TABSTOP);
             AddToStyle(&c->style, "WS_BORDER", WS_BORDER);
             AddToStyle(&c->style, "ES_LEFT", ES_LEFT);
             classtype = CTL_EDIT;
             text = "Edit Box";
-            r.bottom = MulDiv(14, base.cy, 8);          
+            r.bottom = MulDiv(14, base.cy, 8);
             break;
-        case 7: // combo box
+        case 7:  // combo box
             AddToStyle(&c->style, "WS_TABSTOP", WS_TABSTOP);
             AddToStyle(&c->style, "CBS_DROPDOWNLIST", CBS_DROPDOWNLIST);
             classtype = CTL_COMBOBOX;
@@ -2119,7 +2111,7 @@ static void InsertNewControl(struct resRes *dlgData, int type, POINT at)
             r.right = 20 + strlen(text) * base.cx;
             r.bottom = 4 * base.cy;
             break;
-        case 8: // list box
+        case 8:  // list box
             AddToStyle(&c->style, "WS_TABSTOP", WS_TABSTOP);
             AddToStyle(&c->style, "WS_BORDER", WS_BORDER);
             AddToStyle(&c->style, "WS_VSCROLL", WS_VSCROLL);
@@ -2129,39 +2121,39 @@ static void InsertNewControl(struct resRes *dlgData, int type, POINT at)
             r.right = 100;
             r.bottom = 100;
             break;
-        case 9: // group box
+        case 9:  // group box
             AddToStyle(&c->style, "BS_GROUPBOX", BS_GROUPBOX);
             classtype = CTL_BUTTON;
             text = "Group Box";
             r.right = 100;
             r.bottom = 100;
             break;
-        case 10: // frame
+        case 10:  // frame
             AddToStyle(&c->style, "SS_GRAYFRAME", SS_GRAYFRAME);
             classtype = CTL_STATIC;
             r.right = 50;
             r.bottom = 50;
 
             break;
-        case 11: // rectangle
+        case 11:  // rectangle
             AddToStyle(&c->style, "SS_GRAYRECT", SS_GRAYRECT);
             classtype = CTL_STATIC;
             r.right = 50;
             r.bottom = 50;
             break;
-        case 12: // etched
+        case 12:  // etched
             AddToStyle(&c->style, "SS_ETCHEDHORZ", SS_ETCHEDHORZ);
             classtype = CTL_STATIC;
             r.right = 50;
             r.bottom = 20;
             break;
-        case 13: // horizontal scroll
+        case 13:  // horizontal scroll
             AddToStyle(&c->style, "SBS_HORZ", SBS_HORZ);
             classtype = CTL_SCROLLBAR;
             r.right = 100;
             r.bottom = GetSystemMetrics(SM_CYHSCROLL);
             break;
-        case 14: // vertical scroll
+        case 14:  // vertical scroll
             AddToStyle(&c->style, "SBS_VERT", SBS_VERT);
             classtype = CTL_SCROLLBAR;
             r.right = GetSystemMetrics(SM_CXVSCROLL);
@@ -2184,7 +2176,6 @@ static void InsertNewControl(struct resRes *dlgData, int type, POINT at)
         {
             r.bottom = 2 * base.cy;
         }
-        
     }
     r.right += r.left;
     r.bottom += r.top;
@@ -2192,7 +2183,7 @@ static void InsertNewControl(struct resRes *dlgData, int type, POINT at)
     c->class.u.id = rcAlloc(sizeof(EXPRESSION));
     c->class.u.id->type = e_int;
     c->class.u.id->val = classtype;
-    
+
     ConvertToDlgUnits(&r, &base);
     c->x = rcAlloc(sizeof(EXPRESSION));
     c->y = rcAlloc(sizeof(EXPRESSION));
@@ -2210,12 +2201,13 @@ static void InsertNewControl(struct resRes *dlgData, int type, POINT at)
 }
 static BOOL CALLBACK DeleteActiveControls(HWND hwnd, LPARAM lParam)
 {
-    struct resRes *dlgData = (struct resRes *)lParam;
+    struct resRes* dlgData = (struct resRes*)lParam;
     if (SendMessage(hwnd, WM_QUERYSELECTEDSTATE, 0, 0))
     {
-        struct ctlData *data = (struct ctlData *)GetWindowLong(hwnd, GWL_USERDATA);
-        CONTROL **p = &dlgData->resource->u.dialog->controls;
-        while (*p && *p != data->data) p = &(*p)->next;
+        struct ctlData* data = (struct ctlData*)GetWindowLong(hwnd, GWL_USERDATA);
+        CONTROL** p = &dlgData->resource->u.dialog->controls;
+        while (*p && *p != data->data)
+            p = &(*p)->next;
         if (*p)
             *p = (*p)->next;
         CleanChildSpace(hwnd, data->dlg->gd.childWindow);
@@ -2224,13 +2216,13 @@ static BOOL CALLBACK DeleteActiveControls(HWND hwnd, LPARAM lParam)
     }
     return TRUE;
 }
-static void DrawGrid(HWND hwnd, HDC hDC, struct resRes *dlgData, BOOL show, int spacing, RECT *clip)
+static void DrawGrid(HWND hwnd, HDC hDC, struct resRes* dlgData, BOOL show, int spacing, RECT* clip)
 {
     if (show)
     {
         HPEN pen = CreatePen(PS_DOT, 0, 0x808080);
         RECT r;
-        int i,j;
+        int i, j;
         SIZE base;
         RECT s;
         s.left = s.top = spacing;
@@ -2239,27 +2231,27 @@ static void DrawGrid(HWND hwnd, HDC hDC, struct resRes *dlgData, BOOL show, int 
         ConvertToPixels(&s, &base);
         pen = SelectObject(hDC, pen);
         GetClientRect(hwnd, &r);
-        for (i=s.top; i < r.bottom; i+= s.top)
+        for (i = s.top; i < r.bottom; i += s.top)
         {
-            for (j=r.left; j < r.right; j+= 2)
+            for (j = r.left; j < r.right; j += 2)
             {
                 if (j >= clip->left && j < clip->right)
-                    if (i>= clip->top && i < clip->bottom)
+                    if (i >= clip->top && i < clip->bottom)
                     {
                         MoveToEx(hDC, j, i, NULL);
-                        LineTo(hDC, j+1, i);
+                        LineTo(hDC, j + 1, i);
                     }
             }
         }
-        for (i=s.left; i < r.right; i+= s.left)
+        for (i = s.left; i < r.right; i += s.left)
         {
-            for (j=r.top; j < r.bottom; j+= 2)
+            for (j = r.top; j < r.bottom; j += 2)
             {
                 if (i >= clip->left && i < clip->right)
-                    if (j>= clip->top && j < clip->bottom)
+                    if (j >= clip->top && j < clip->bottom)
                     {
                         MoveToEx(hDC, i, j, NULL);
-                        LineTo(hDC, i, j+1);
+                        LineTo(hDC, i, j + 1);
                     }
             }
         }
@@ -2269,16 +2261,16 @@ static void DrawGrid(HWND hwnd, HDC hDC, struct resRes *dlgData, BOOL show, int 
 }
 static BOOL CALLBACK RemoveAllWindows(HWND hwnd, LPARAM lParam)
 {
-    struct ctlData *data = (struct ctlData *)GetWindowLong(hwnd, GWL_USERDATA);
+    struct ctlData* data = (struct ctlData*)GetWindowLong(hwnd, GWL_USERDATA);
     CleanChildSpace(hwnd, data->dlg->gd.childWindow);
     DestroyWindow(hwnd);
     return TRUE;
 }
-static void SetAltMode(int mode, struct resRes *dlgData)
+static void SetAltMode(int mode, struct resRes* dlgData)
 {
     if (mode != dlgData->gd.dlgAltMode)
     {
-        CONTROL *c = dlgData->resource->u.dialog->controls;
+        CONTROL* c = dlgData->resource->u.dialog->controls;
         if (mode == DA_NONE)
         {
             InvalidateRect(dlgData->gd.childWindow, NULL, TRUE);
@@ -2288,32 +2280,32 @@ static void SetAltMode(int mode, struct resRes *dlgData)
         {
             dlgData->gd.selectedColumn = 0;
             if (dlgData->gd.dlgAltMode == DA_NONE)
-                EnumChildWindows( dlgData->gd.childWindow, RemoveAllWindows, 0);
+                EnumChildWindows(dlgData->gd.childWindow, RemoveAllWindows, 0);
             if (mode == DA_CREATION)
                 UndoReorder(dlgData);
-	        InvalidateRect(dlgData->gd.childWindow, NULL, TRUE);
+            InvalidateRect(dlgData->gd.childWindow, NULL, TRUE);
         }
         dlgData->gd.dlgAltMode = mode;
     }
 }
-static void DrawColoredRect(HDC hDC, int color, WCHAR *text, LPSIZE base, LPRECT r)
+static void DrawColoredRect(HDC hDC, int color, WCHAR* text, LPSIZE base, LPRECT r)
 {
     HPEN pen = CreatePen(PS_SOLID, 1, color);
-    int x,y;
+    int x, y;
     int mode = SetBkMode(hDC, TRANSPARENT);
     SetTextColor(hDC, color);
     pen = SelectObject(hDC, pen);
     MoveToEx(hDC, r->left, r->top, NULL);
     LineTo(hDC, r->right, r->top);
-    MoveToEx(hDC, r->right-1, r->top, NULL);
-    LineTo(hDC, r->right-1, r->bottom);
+    MoveToEx(hDC, r->right - 1, r->top, NULL);
+    LineTo(hDC, r->right - 1, r->bottom);
     MoveToEx(hDC, r->left, r->top, NULL);
     LineTo(hDC, r->left, r->bottom);
-    MoveToEx(hDC, r->left, r->bottom-1, NULL);
-    LineTo(hDC, r->right, r->bottom-1);
+    MoveToEx(hDC, r->left, r->bottom - 1, NULL);
+    LineTo(hDC, r->right, r->bottom - 1);
     pen = SelectObject(hDC, pen);
-    x = (r->left + r->right - base->cx * wcslen(text))/2;
-    y = (r->top + r->bottom - base->cy)/2;
+    x = (r->left + r->right - base->cx * wcslen(text)) / 2;
+    y = (r->top + r->bottom - base->cy) / 2;
     TextOutW(hDC, x, y, text, wcslen(text));
     DeleteObject(pen);
     SetBkMode(hDC, mode);
@@ -2323,54 +2315,55 @@ static void DrawAltMode(HWND hwnd, HDC hDC, struct resRes* dlgData)
     if (dlgData->gd.dlgAltMode != DA_NONE)
     {
         int count = 0;
-        CONTROL *c = dlgData->resource->u.dialog->controls;
+        CONTROL* c = dlgData->resource->u.dialog->controls;
         SIZE base;
         GetBaseUnits(hwnd, dlgData, &base);
         while (c)
         {
             RECT r;
-            int color = 0xff; // red
+            int color = 0xff;  // red
             WCHAR buf[256];
-            if (dlgData->gd.dlgAltMode != DA_CREATION && c->text && c->text->symbolic) // also need to handle retrieving the text by id...
+            if (dlgData->gd.dlgAltMode != DA_CREATION && c->text &&
+                c->text->symbolic)  // also need to handle retrieving the text by id...
             {
                 memcpy(buf, c->text->u.n.symbol, c->text->u.n.length * sizeof(WCHAR));
                 buf[c->text->u.n.length] = 0;
             }
             else
             {
-                wsprintfW(buf, L"%d", count+1);
+                wsprintfW(buf, L"%d", count + 1);
             }
             r.left = Eval(c->x);
             r.top = Eval(c->y);
             r.right = Eval(c->width) + r.left;
             r.bottom = Eval(c->height) + r.top;
-            switch(dlgData->gd.dlgAltMode)
+            switch (dlgData->gd.dlgAltMode)
             {
                 case DA_CREATION:
                     if (count < dlgData->gd.selectedColumn)
                     {
-                        color = 0xff0000; // blue
+                        color = 0xff0000;  // blue
                     }
                     break;
                 case DA_TAB:
                     if (Eval(c->style) & WS_TABSTOP)
                     {
-                        color = 0xff0000; // blue
+                        color = 0xff0000;  // blue
                     }
                     break;
                 case DA_GROUP:
                     if (Eval(c->style) & WS_GROUP)
                     {
-                        color = 0xff0000; // blue
+                        color = 0xff0000;  // blue
                     }
                     break;
             }
             ConvertToPixels(&r, &base);
             DrawColoredRect(hDC, color, buf, &base, &r);
-            count ++;
+            count++;
             c = c->next;
         }
-    }   
+    }
 }
 static void ClickAltMode(HWND hwnd, struct resRes* dlgData)
 {
@@ -2378,12 +2371,12 @@ static void ClickAltMode(HWND hwnd, struct resRes* dlgData)
     {
         SIZE base;
         POINT mouse;
-        CONTROL *match;
+        CONTROL* match;
         int size;
-    } ;
+    };
     struct altData ad;
     RECT r;
-    CONTROL *x = dlgData->resource->u.dialog->controls;
+    CONTROL* x = dlgData->resource->u.dialog->controls;
     memset(&ad, 0, sizeof(ad));
     GetCursorPos(&ad.mouse);
     ScreenToClient(hwnd, &ad.mouse);
@@ -2408,13 +2401,13 @@ static void ClickAltMode(HWND hwnd, struct resRes* dlgData)
     }
     if (ad.match)
     {
-        switch(dlgData->gd.dlgAltMode)
+        switch (dlgData->gd.dlgAltMode)
         {
             int i;
             CONTROL **c, **c1;
             case DA_CREATION:
                 c = &dlgData->resource->u.dialog->controls;
-                for (i=0; i < dlgData->gd.selectedColumn; i++)
+                for (i = 0; i < dlgData->gd.selectedColumn; i++)
                 {
                     if (*c == ad.match)
                     {
@@ -2475,7 +2468,7 @@ static void ClickAltMode(HWND hwnd, struct resRes* dlgData)
         }
     }
 }
-static void InsertDlgProperties(HWND lv, struct resRes *data)
+static void InsertDlgProperties(HWND lv, struct resRes* data)
 {
     // style
     // x,y,width,height
@@ -2483,7 +2476,7 @@ static void InsertDlgProperties(HWND lv, struct resRes *data)
     // font
     // caption
     // class
-    
+
     // extended
     // help,weight,italic, exstyle
     PropSetGroup(lv, 101, L"Dialog Characteristics");
@@ -2496,21 +2489,21 @@ static void InsertDlgProperties(HWND lv, struct resRes *data)
     PropSetItem(lv, 4, 101, "Y");
     PropSetItem(lv, 5, 101, "Width");
     PropSetItem(lv, 6, 101, "Height");
-    
+
     PropSetItem(lv, 7, 102, "Typeface");
     PropSetItem(lv, 8, 102, "Point Size");
     PropSetItem(lv, 9, 102, "Bold");
     PropSetItem(lv, 10, 102, "Italic");
     PropSetItem(lv, 11, 102, "Charset");
-    
+
     PropSetItem(lv, 12, 103, "Resource id");
     PropSetItem(lv, 13, 103, "Language");
     PropSetItem(lv, 14, 103, "SubLanguage");
     PropSetItem(lv, 15, 103, "Characteristics");
-    PropSetItem(lv, 16, 103, "Version");    
-    PropSetItem(lv, 17, 103, "Class");    
+    PropSetItem(lv, 16, 103, "Version");
+    PropSetItem(lv, 17, 103, "Class");
 }
-void GetDlgPropText(char *buf, HWND lv, struct resRes *data, int row)
+void GetDlgPropText(char* buf, HWND lv, struct resRes* data, int row)
 {
     buf[0] = 0;
     switch (row)
@@ -2547,7 +2540,7 @@ void GetDlgPropText(char *buf, HWND lv, struct resRes *data, int row)
             break;
         case 8:
             sprintf(buf, "%d", Eval(data->resource->u.dialog->pointsize));
-            break;        
+            break;
         case 9:
             if (Eval(data->resource->u.dialog->ex.weight) == FW_BOLD)
                 strcpy(buf, "Yes");
@@ -2584,11 +2577,11 @@ void GetDlgPropText(char *buf, HWND lv, struct resRes *data, int row)
             break;
     }
 }
-HWND DlgPropStartEdit(HWND lv, int row, struct resRes *data)
+HWND DlgPropStartEdit(HWND lv, int row, struct resRes* data)
 {
     HWND rv;
     int v;
-    switch(row)
+    switch (row)
     {
         case 4:
         case 5:
@@ -2603,13 +2596,13 @@ HWND DlgPropStartEdit(HWND lv, int row, struct resRes *data)
             break;
         default:
             rv = PropGetHWNDText(lv);
-            break;        
+            break;
         case 10:
         case 11:
             rv = PropGetHWNDCombobox(lv);
-            v = SendMessage(rv, CB_ADDSTRING, 0, (LPARAM)"No");
+            v = SendMessage(rv, CB_ADDSTRING, 0, (LPARAM) "No");
             SendMessage(rv, CB_SETITEMDATA, v, 0);
-            v = SendMessage(rv, CB_ADDSTRING, 0, (LPARAM)"Yes");
+            v = SendMessage(rv, CB_ADDSTRING, 0, (LPARAM) "Yes");
             SendMessage(rv, CB_SETITEMDATA, v, 1);
             return rv;
     }
@@ -2621,7 +2614,7 @@ HWND DlgPropStartEdit(HWND lv, int row, struct resRes *data)
     }
     return rv;
 }
-void DlgPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data)
+void DlgPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes* data)
 {
     char buf[256];
     char buf1[256];
@@ -2640,7 +2633,7 @@ void DlgPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data)
     }
     if (strcmp(buf, buf1))
     {
-        switch(row)
+        switch (row)
         {
             case 0:
                 data->resource->u.dialog->caption = NULL;
@@ -2680,7 +2673,7 @@ void DlgPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data)
                     data->gd.font = NULL;
                 }
                 PropSetExp(data, buf, &data->resource->u.dialog->pointsize);
-                break;        
+                break;
             case 9:
                 if (data->gd.font)
                 {
@@ -2735,9 +2728,10 @@ void DlgPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data)
                 else
                 {
                     int len;
-                    char *p = ParseVersionString(buf, &len);
+                    char* p = ParseVersionString(buf, &len);
                     data->resource->u.dialog->class->symbolic = TRUE;
-                    data->resource->u.dialog->class->u.n.length = StringAsciiToWChar(&data->resource->u.dialog->class->u.n.symbol, p, len);
+                    data->resource->u.dialog->class->u.n.length =
+                        StringAsciiToWChar(&data->resource->u.dialog->class->u.n.symbol, p, len);
                 }
                 break;
         }
@@ -2751,8 +2745,7 @@ void DlgPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data)
     data->gd.childWindow = CreateDlgWindow(data->activeHwnd, data);
     SetFocus(data->activeHwnd);
 }
-LRESULT CALLBACK DlgDlgProc(HWND hwnd, UINT iMessage, WPARAM wParam,
-    LPARAM lParam)
+LRESULT CALLBACK DlgDlgProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
     static POINT start, end;
     static BOOL selecting, dragging;
@@ -2761,23 +2754,23 @@ LRESULT CALLBACK DlgDlgProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     POINT pt;
     RECT focus;
     LPCREATESTRUCT createStruct;
-    struct resRes *dlgData;
+    struct resRes* dlgData;
     HDC hDC;
     PAINTSTRUCT ps;
     switch (iMessage)
     {
         case WM_CREATE:
             createStruct = (LPCREATESTRUCT)lParam;
-            dlgData = (struct resRes *)(createStruct->lpCreateParams);
+            dlgData = (struct resRes*)(createStruct->lpCreateParams);
             SetWindowLong(hwnd, 0, (long)dlgData);
             CreateControls(hwnd, dlgData);
             break;
         case WM_ACTIVATESIZERECTANGLE:
-           if (!(GetKeyState(VK_CONTROL) &0x80000000))
+            if (!(GetKeyState(VK_CONTROL) & 0x80000000))
                 EnumChildWindows(hwnd, ActivateSizing, wParam);
             break;
         case WM_POSTBUTTONSTATE:
-            switch(wParam)
+            switch (wParam)
             {
                 case WM_LBUTTONDOWN:
                 case WM_RBUTTONDOWN:
@@ -2803,30 +2796,29 @@ LRESULT CALLBACK DlgDlgProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             ClientToScreen(hwnd, &pt);
             if (snapToGrid)
             {
-                CheckMenuItem( menu, IDM_SNAPTOGRID, MF_BYCOMMAND | MF_CHECKED);
+                CheckMenuItem(menu, IDM_SNAPTOGRID, MF_BYCOMMAND | MF_CHECKED);
             }
             if (showGrid)
             {
-                CheckMenuItem( menu, IDM_SHOWGRID, MF_BYCOMMAND | MF_CHECKED);
+                CheckMenuItem(menu, IDM_SHOWGRID, MF_BYCOMMAND | MF_CHECKED);
             }
-            switch(gridSpacing)
+            switch (gridSpacing)
             {
                 case 2:
-                    CheckMenuItem( menu, IDM_GRID2, MF_BYCOMMAND | MF_CHECKED);
+                    CheckMenuItem(menu, IDM_GRID2, MF_BYCOMMAND | MF_CHECKED);
                     break;
                 case 4:
-                    CheckMenuItem( menu, IDM_GRID4, MF_BYCOMMAND | MF_CHECKED);
+                    CheckMenuItem(menu, IDM_GRID4, MF_BYCOMMAND | MF_CHECKED);
                     break;
                 case 8:
-                    CheckMenuItem( menu, IDM_GRID8, MF_BYCOMMAND | MF_CHECKED);
+                    CheckMenuItem(menu, IDM_GRID8, MF_BYCOMMAND | MF_CHECKED);
                     break;
                 case 10:
-                    CheckMenuItem( menu, IDM_GRID10, MF_BYCOMMAND | MF_CHECKED);
+                    CheckMenuItem(menu, IDM_GRID10, MF_BYCOMMAND | MF_CHECKED);
                     break;
             }
             InsertBitmapsInMenu(popup);
-            TrackPopupMenuEx(popup, TPM_TOPALIGN | TPM_LEFTALIGN | TPM_LEFTBUTTON, pt.x,
-                pt.y, hwnd, NULL);
+            TrackPopupMenuEx(popup, TPM_TOPALIGN | TPM_LEFTALIGN | TPM_LEFTBUTTON, pt.x, pt.y, hwnd, NULL);
             DestroyMenu(menu);
         }
             return 0;
@@ -2835,7 +2827,7 @@ LRESULT CALLBACK DlgDlgProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             return 0;
         case WM_LBUTTONDOWN:
         case WM_MBUTTONDOWN:
-            dlgData = (struct resRes *)GetWindowLong(hwnd, 0);
+            dlgData = (struct resRes*)GetWindowLong(hwnd, 0);
             SetResourceProperties(dlgData, &dlgFuncs);
             if (dlgData->gd.dlgAltMode != DA_NONE)
             {
@@ -2857,26 +2849,24 @@ LRESULT CALLBACK DlgDlgProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 end.x = GET_X_LPARAM(lParam);
                 end.y = GET_Y_LPARAM(lParam);
                 ClientToScreen(hwnd, &end);
-                focus.left= start.x;
+                focus.left = start.x;
                 focus.top = start.y;
                 focus.right = end.x;
                 focus.bottom = end.y;
                 DrawBoundingRect(&focus);
-                 EnumChildWindows(hwnd, SelectChildren, (LPARAM)&focus);
+                EnumChildWindows(hwnd, SelectChildren, (LPARAM)&focus);
             }
             else if (dragging)
             {
                 if (!saved)
                 {
-                    if (abs(GET_X_LPARAM(lParam) - start.x) < 5 &&
-                        abs(GET_Y_LPARAM(lParam) - start.y) < 5)
+                    if (abs(GET_X_LPARAM(lParam) - start.x) < 5 && abs(GET_Y_LPARAM(lParam) - start.y) < 5)
                         break;
                     saved = TRUE;
                     UndoMoveActive((struct resRes*)GetWindowLong(hwnd, 0));
                 }
                 // without this if we got an infinite loop while dragging
-                if (end.x != GET_X_LPARAM(lParam) ||
-                    end.y != GET_Y_LPARAM(lParam))
+                if (end.x != GET_X_LPARAM(lParam) || end.y != GET_Y_LPARAM(lParam))
                 {
                     RECT client;
                     GetClientRect(hwnd, &client);
@@ -2917,9 +2907,9 @@ LRESULT CALLBACK DlgDlgProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 end.x = GET_X_LPARAM(lParam);
                 end.y = GET_Y_LPARAM(lParam);
                 if (end.x > client.right)
-                    end.x = client.right -1;
+                    end.x = client.right - 1;
                 if (end.y > client.bottom)
-                    end.y = client.bottom -1;
+                    end.y = client.bottom - 1;
                 if (saved && PtInRect(&client, end))
                 {
                     SIZE base;
@@ -3002,33 +2992,33 @@ LRESULT CALLBACK DlgDlgProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             pt.x = GET_X_LPARAM(lParam);
             pt.y = GET_Y_LPARAM(lParam);
             ScreenToClient(hwnd, &pt);
-            InsertNewControl((struct resRes *)GetWindowLong(hwnd, 0), wParam, pt);
+            InsertNewControl((struct resRes*)GetWindowLong(hwnd, 0), wParam, pt);
             break;
         case WM_MOVE:
             SendMessage(GetParent(hwnd), WM_MOVEDCHILD, 0, 0);
             break;
         case WM_PAINT:
             hDC = BeginPaint(hwnd, &ps);
-            DrawGrid(hwnd, hDC, (struct resRes *)GetWindowLong(hwnd, 0), showGrid, gridSpacing, &ps.rcPaint);
+            DrawGrid(hwnd, hDC, (struct resRes*)GetWindowLong(hwnd, 0), showGrid, gridSpacing, &ps.rcPaint);
             DrawAltMode(hwnd, hDC, (struct resRes*)GetWindowLong(hwnd, 0));
             EndPaint(hwnd, &ps);
             break;
     }
     return DefWindowProc(hwnd, iMessage, wParam, lParam);
 }
-static char *UnStreamExpr(char *p, EXPRESSION **c)
+static char* UnStreamExpr(char* p, EXPRESSION** c)
 {
-    int type = *((short *)p);
+    int type = *((short*)p);
     p += sizeof(short);
     if (type >= 0)
     {
-        EXPRESSION *rv = rcAlloc(sizeof(EXPRESSION));
+        EXPRESSION* rv = rcAlloc(sizeof(EXPRESSION));
         int len;
         *c = rv;
         rv->type = type;
-        rv->val = *((int *)p);
+        rv->val = *((int*)p);
         p += sizeof(int);
-        len = *((unsigned char *)p);
+        len = *((unsigned char*)p);
         p += sizeof(unsigned char);
         if (len)
         {
@@ -3042,25 +3032,25 @@ static char *UnStreamExpr(char *p, EXPRESSION **c)
     }
     return p;
 }
-static char *UnStreamIdent(char *p, IDENT *ident)
+static char* UnStreamIdent(char* p, IDENT* ident)
 {
     int len;
-    ident->symbolic = *((short *)p);
+    ident->symbolic = *((short*)p);
     p += sizeof(short);
-    len = *((short *)p);
+    len = *((short*)p);
     p += sizeof(short);
     if (len)
     {
-        WCHAR *name = rcAlloc(sizeof(WCHAR) * (len + 1));
+        WCHAR* name = rcAlloc(sizeof(WCHAR) * (len + 1));
         memcpy(name, p, sizeof(WCHAR) * len);
         name[len] = 0;
         ident->origName = name;
         p += sizeof(WCHAR) * len;
-    }        
+    }
     if (ident->symbolic)
     {
-        WCHAR *name;
-        len = *((short *)p);
+        WCHAR* name;
+        len = *((short*)p);
         p += sizeof(short);
         name = rcAlloc(sizeof(WCHAR) * (len + 1));
         memcpy(name, p, sizeof(WCHAR) * len);
@@ -3075,11 +3065,11 @@ static char *UnStreamIdent(char *p, IDENT *ident)
     }
     return p;
 }
-static char *UnStreamControl(char *p, struct resRes *dlgData, CONTROL *c)
+static char* UnStreamControl(char* p, struct resRes* dlgData, CONTROL* c)
 {
-    c->generic = *((int *)p);
+    c->generic = *((int*)p);
     p += sizeof(int);
-    c->baseStyle = *((int *)p);
+    c->baseStyle = *((int*)p);
     p += sizeof(int);
     p = UnStreamIdent(p, &c->class);
     c->text = rcAlloc(sizeof(IDENT));
@@ -3094,12 +3084,12 @@ static char *UnStreamControl(char *p, struct resRes *dlgData, CONTROL *c)
     p = UnStreamExpr(p, &c->help);
     return p;
 }
-static BOOL DlgHasId(struct resRes *dlgData, EXPRESSION *id)
+static BOOL DlgHasId(struct resRes* dlgData, EXPRESSION* id)
 {
     int n = Eval(id);
     if (n)
     {
-        CONTROL *c = dlgData->resource->u.dialog->controls;
+        CONTROL* c = dlgData->resource->u.dialog->controls;
         while (c)
         {
             int t = Eval(c->id);
@@ -3110,13 +3100,13 @@ static BOOL DlgHasId(struct resRes *dlgData, EXPRESSION *id)
     }
     return FALSE;
 }
-static void StreamActiveControlsFromClipboard(struct resRes *dlgData)
+static void StreamActiveControlsFromClipboard(struct resRes* dlgData)
 {
     if (OpenClipboard(dlgData->gd.childWindow))
     {
-        char *buf = NULL;
+        char* buf = NULL;
         HANDLE clh = GetClipboardData(clipboardFormatId);
-        char *data = GlobalLock(clh);
+        char* data = GlobalLock(clh);
         int l = GlobalSize(clh);
         if (l)
         {
@@ -3131,13 +3121,13 @@ static void StreamActiveControlsFromClipboard(struct resRes *dlgData)
         if (buf)
         {
             CONTROL *newControls = NULL, **cp = &newControls, *nc;
-            char *p = buf;
-            int count = *((int *)p);
+            char* p = buf;
+            int count = *((int*)p);
             int i;
             int x = INT_MAX, y = INT_MAX;
             p += sizeof(int);
             ResGetHeap(workArea, dlgData);
-            for (i=0; i < count; i++)
+            for (i = 0; i < count; i++)
             {
                 *cp = rcAlloc(sizeof(CONTROL));
                 p = UnStreamControl(p, dlgData, *cp);
@@ -3159,11 +3149,11 @@ static void StreamActiveControlsFromClipboard(struct resRes *dlgData)
             {
                 int x1 = Eval(nc->x);
                 int y1 = Eval(nc->y);
-                nc->x->val = x1-x + 10;
+                nc->x->val = x1 - x + 10;
                 nc->x->type = e_int;
                 nc->x->left = nc->x->right = 0;
                 nc->x->rendition = NULL;
-                nc->y->val = y1-y + 10;
+                nc->y->val = y1 - y + 10;
                 nc->y->type = e_int;
                 nc->y->left = nc->y->right = 0;
                 nc->y->rendition = NULL;
@@ -3189,18 +3179,18 @@ static void StreamActiveControlsFromClipboard(struct resRes *dlgData)
         }
     }
 }
-static char *StreamExpr(char *p, EXPRESSION *exp)
+static char* StreamExpr(char* p, EXPRESSION* exp)
 {
     if (!exp)
     {
-        *((short *)p)=-1;
+        *((short*)p) = -1;
         p += sizeof(short);
     }
     else
     {
-        *((short *)p) = exp->type;
+        *((short*)p) = exp->type;
         p += sizeof(short);
-        *((int *)p) = exp->val;
+        *((int*)p) = exp->val;
         p += sizeof(int);
         if (exp->rendition)
         {
@@ -3217,25 +3207,25 @@ static char *StreamExpr(char *p, EXPRESSION *exp)
     }
     return p;
 }
-static char * StreamIdent(char *p, IDENT *ident)
+static char* StreamIdent(char* p, IDENT* ident)
 {
-    *((short *)p) = ident->symbolic;
+    *((short*)p) = ident->symbolic;
     p += sizeof(short);
     if (!ident->origName)
     {
-        *((short *)p) = 0;
+        *((short*)p) = 0;
         p += sizeof(short);
     }
     else
     {
-        *((short *)p) = wcslen(ident->origName);
+        *((short*)p) = wcslen(ident->origName);
         p += sizeof(short);
-        wcscpy((WCHAR *)p, ident->origName);
+        wcscpy((WCHAR*)p, ident->origName);
         p += sizeof(WCHAR) * wcslen(ident->origName);
-    }        
+    }
     if (ident->symbolic)
     {
-        *((short *)p) = ident->u.n.length;
+        *((short*)p) = ident->u.n.length;
         p += sizeof(short);
         memcpy(p, ident->u.n.symbol, ident->u.n.length * sizeof(WCHAR));
         p += sizeof(WCHAR) * ident->u.n.length;
@@ -3248,24 +3238,24 @@ static char * StreamIdent(char *p, IDENT *ident)
 }
 static BOOL CALLBACK StreamToClipboard(HWND hwnd, LPARAM lParam)
 {
-    struct clipboardBuffer *b = (struct clipboardBuffer *)lParam;
+    struct clipboardBuffer* b = (struct clipboardBuffer*)lParam;
     if (b->maxSize == 0)
     {
         b->maxSize = 1000;
         b->data = realloc(b->data, b->maxSize);
         b->currentSize = 4;
-        *(int *)b->data = 0;
+        *(int*)b->data = 0;
     }
     if (SendMessage(hwnd, WM_QUERYSELECTEDSTATE, 0, 0))
     {
-        char buf[10000], *p=buf;
-        struct ctlData *data = (struct ctlData *)GetWindowLong(hwnd, GWL_USERDATA);
+        char buf[10000], *p = buf;
+        struct ctlData* data = (struct ctlData*)GetWindowLong(hwnd, GWL_USERDATA);
         int len;
-        CONTROL *c = data->data;
-                
-        *((int *)p) = c->generic;
+        CONTROL* c = data->data;
+
+        *((int*)p) = c->generic;
         p += sizeof(int);
-        *((int *)p) = c->baseStyle;
+        *((int*)p) = c->baseStyle;
         p += sizeof(int);
         p = StreamIdent(p, &c->class);
         p = StreamIdent(p, c->text);
@@ -3277,20 +3267,20 @@ static BOOL CALLBACK StreamToClipboard(HWND hwnd, LPARAM lParam)
         p = StreamExpr(p, c->width);
         p = StreamExpr(p, c->height);
         p = StreamExpr(p, c->help);
-        if (p -buf + b->currentSize >= b->maxSize)
+        if (p - buf + b->currentSize >= b->maxSize)
         {
             b->maxSize *= 2;
             b->data = realloc(b->data, b->maxSize);
         }
-        memcpy(b->data + b->currentSize, buf, p-buf);
+        memcpy(b->data + b->currentSize, buf, p - buf);
         b->currentSize += p - buf;
-        len = *((int *)b->data);
+        len = *((int*)b->data);
         len++;
-        *((int *)b->data) = len; // increment count
+        *((int*)b->data) = len;  // increment count
     }
     return TRUE;
 }
-static void WriteClipboardData(struct resRes *dlgData, struct clipboardBuffer *b)
+static void WriteClipboardData(struct resRes* dlgData, struct clipboardBuffer* b)
 {
     if (OpenClipboard(dlgData->gd.childWindow))
     {
@@ -3298,7 +3288,7 @@ static void WriteClipboardData(struct resRes *dlgData, struct clipboardBuffer *b
         glmem = GlobalAlloc(GMEM_DDESHARE + GMEM_MOVEABLE, b->currentSize);
         if (glmem != NULL)
         {
-            char *data = GlobalLock(glmem);
+            char* data = GlobalLock(glmem);
             memcpy(data, b->data, b->currentSize);
             GlobalUnlock(data);
             EmptyClipboard();
@@ -3307,12 +3297,11 @@ static void WriteClipboardData(struct resRes *dlgData, struct clipboardBuffer *b
         CloseClipboard();
     }
 }
-LRESULT CALLBACK DlgDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
-    LPARAM lParam)
+LRESULT CALLBACK DlgDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
     LPCREATESTRUCT createStruct;
-    struct resRes *dlgData;
-    struct dlgUndo *undo;
+    struct resRes* dlgData;
+    struct dlgUndo* undo;
     switch (iMessage)
     {
         case WM_MDIACTIVATE:
@@ -3322,12 +3311,12 @@ LRESULT CALLBACK DlgDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             }
             break;
         case WM_SETFOCUS:
-//            dlgData = (struct resRes *)GetWindowLong(hwnd, 0);
-//            SetResourceProperties(dlgData, &dlgFuncs);
+            //            dlgData = (struct resRes *)GetWindowLong(hwnd, 0);
+            //            SetResourceProperties(dlgData, &dlgFuncs);
             break;
         case WM_COMMAND:
-            dlgData = (struct resRes *)GetWindowLong(hwnd, 0);
-            switch(LOWORD(wParam))
+            dlgData = (struct resRes*)GetWindowLong(hwnd, 0);
+            switch (LOWORD(wParam))
             {
                 case IDM_SAVE:
                     if (dlgData->resource->changed)
@@ -3348,7 +3337,7 @@ LRESULT CALLBACK DlgDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     UndoDeleteActive(dlgData);
                     EnumChildWindows(dlgData->gd.childWindow, DeleteActiveControls, (LPARAM)dlgData);
                 }
-                    break;
+                break;
                 case IDM_COPY:
                 {
                     struct clipboardBuffer b;
@@ -3357,7 +3346,7 @@ LRESULT CALLBACK DlgDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     WriteClipboardData(dlgData, &b);
                     free(b.data);
                 }
-                    break;
+                break;
                 case IDM_PASTE:
                     StreamActiveControlsFromClipboard(dlgData);
                     break;
@@ -3367,10 +3356,10 @@ LRESULT CALLBACK DlgDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             }
             break;
         case EM_CANUNDO:
-            dlgData = (struct resRes *)GetWindowLong(hwnd, 0);
+            dlgData = (struct resRes*)GetWindowLong(hwnd, 0);
             return dlgData->gd.undoData != NULL;
         case WM_KEYDOWN:
-            dlgData = (struct resRes *)GetWindowLong(hwnd, 0);
+            dlgData = (struct resRes*)GetWindowLong(hwnd, 0);
             switch (wParam)
             {
                 case VK_DELETE:
@@ -3381,31 +3370,31 @@ LRESULT CALLBACK DlgDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     PostMessage(dlgData->gd.childWindow, iMessage, wParam, lParam);
                     break;
                 case 'S':
-                    if (GetKeyState(VK_CONTROL) &0x80000000)
+                    if (GetKeyState(VK_CONTROL) & 0x80000000)
                     {
                         PostMessage(hwnd, WM_COMMAND, IDM_SAVE, 0);
                     }
                     break;
                 case 'Z':
-                    if (GetKeyState(VK_CONTROL) &0x80000000)
+                    if (GetKeyState(VK_CONTROL) & 0x80000000)
                     {
                         PostMessage(hwnd, WM_COMMAND, IDM_UNDO, 0);
                     }
                     break;
                 case 'C':
-                    if (GetKeyState(VK_CONTROL) &0x80000000)
+                    if (GetKeyState(VK_CONTROL) & 0x80000000)
                     {
                         PostMessage(hwnd, WM_COMMAND, IDM_COPY, 0);
                     }
                     break;
                 case 'X':
-                    if (GetKeyState(VK_CONTROL) &0x80000000)
+                    if (GetKeyState(VK_CONTROL) & 0x80000000)
                     {
                         PostMessage(hwnd, WM_COMMAND, IDM_CUT, 0);
                     }
                     break;
                 case 'V':
-                    if (GetKeyState(VK_CONTROL) &0x80000000)
+                    if (GetKeyState(VK_CONTROL) & 0x80000000)
                     {
                         PostMessage(hwnd, WM_COMMAND, IDM_PASTE, 0);
                     }
@@ -3413,15 +3402,15 @@ LRESULT CALLBACK DlgDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             }
             switch (KeyboardToAscii(wParam, lParam, FALSE))
             {
-                 case '[':
-                    if (GetKeyState(VK_CONTROL) &0x80000000)
+                case '[':
+                    if (GetKeyState(VK_CONTROL) & 0x80000000)
                     {
                         PopupResFullScreen(hwnd);
                         return 0;
                     }
                     break;
                 case ']':
-                    if (GetKeyState(VK_CONTROL) &0x80000000)
+                    if (GetKeyState(VK_CONTROL) & 0x80000000)
                     {
                         ReleaseResFullScreen(hwnd);
                         return 0;
@@ -3430,14 +3419,14 @@ LRESULT CALLBACK DlgDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             }
             break;
         case WM_NCACTIVATE:
-             PaintMDITitleBar(hwnd, iMessage, wParam, lParam);
-             return TRUE;
+            PaintMDITitleBar(hwnd, iMessage, wParam, lParam);
+            return TRUE;
         case WM_NCPAINT:
-             return PaintMDITitleBar(hwnd, iMessage, wParam, lParam);
+            return PaintMDITitleBar(hwnd, iMessage, wParam, lParam);
         case WM_CREATE:
             SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_TOOLWINDOW);
             createStruct = (LPCREATESTRUCT)lParam;
-            dlgData = (struct resRes *)((LPMDICREATESTRUCT)(createStruct->lpCreateParams))->lParam;
+            dlgData = (struct resRes*)((LPMDICREATESTRUCT)(createStruct->lpCreateParams))->lParam;
             SetWindowLong(hwnd, 0, (long)dlgData);
             dlgData->activeHwnd = hwnd;
             dlgData->gd.childWindow = CreateDlgWindow(hwnd, dlgData);
@@ -3446,12 +3435,12 @@ LRESULT CALLBACK DlgDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             break;
         case WM_CLOSE:
             RemoveRCWindow(hwnd);
-            dlgData = (struct resRes *)GetWindowLong(hwnd, 0);
+            dlgData = (struct resRes*)GetWindowLong(hwnd, 0);
             SendMessage(dlgData->gd.childWindow, WM_CLOSE, 0, 0);
             SendMessage(hwndSrcTab, TABM_REMOVE, 0, (LPARAM)hwnd);
             break;
         case WM_DESTROY:
-            dlgData = (struct resRes *)GetWindowLong(hwnd, 0);
+            dlgData = (struct resRes*)GetWindowLong(hwnd, 0);
             dlgData->activeHwnd = NULL;
             DeleteObject(dlgData->gd.font);
             undo = dlgData->gd.undoData;
@@ -3460,7 +3449,7 @@ LRESULT CALLBACK DlgDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 dlgData->gd.cantClearUndo = TRUE;
             while (undo)
             {
-                struct dlgUndo *next = undo->next;
+                struct dlgUndo* next = undo->next;
                 free(undo);
                 undo = next;
             }
@@ -3471,7 +3460,7 @@ LRESULT CALLBACK DlgDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
         case WM_RBUTTONUP:
         case WM_MBUTTONDOWN:
         case WM_MBUTTONUP:
-            dlgData = (struct resRes *)GetWindowLong(hwnd, 0);
+            dlgData = (struct resRes*)GetWindowLong(hwnd, 0);
             PostMessage(dlgData->gd.childWindow, WM_KEYDOWN, VK_ESCAPE, 0);
             // fall through
         case WM_LBUTTONDBLCLK:
@@ -3480,87 +3469,85 @@ LRESULT CALLBACK DlgDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             SetFocus(hwnd);
             return 0;
         case WM_VSCROLL:
-            dlgData = (struct resRes *)GetWindowLong(hwnd, 0);
+            dlgData = (struct resRes*)GetWindowLong(hwnd, 0);
             switch (LOWORD(wParam))
             {
-            case SB_BOTTOM:
-                dlgData->gd.scrollPos.y = dlgData->gd.scrollMax.y;
+                case SB_BOTTOM:
+                    dlgData->gd.scrollPos.y = dlgData->gd.scrollMax.y;
+                    break;
+                case SB_TOP:
+                    dlgData->gd.scrollPos.y = 0;
+                    break;
+                case SB_LINEDOWN:
+                    dlgData->gd.scrollPos.y += 8;
+                    break;
+                case SB_LINEUP:
+                    dlgData->gd.scrollPos.y -= 8;
+                    break;
+                case SB_PAGEDOWN:
+                    dlgData->gd.scrollPos.y += 64;
+                    break;
+                case SB_PAGEUP:
+                    dlgData->gd.scrollPos.y -= 64;
+                    break;
+                case SB_ENDSCROLL:
+                    return 0;
+                case SB_THUMBPOSITION:
+                case SB_THUMBTRACK:
+                {
+                    SCROLLINFO si;
+                    memset(&si, 0, sizeof(si));
+                    si.cbSize = sizeof(si);
+                    si.fMask = SIF_TRACKPOS;
+                    GetScrollInfo(hwnd, SB_VERT, &si);
+                    dlgData->gd.scrollPos.y = si.nTrackPos;
+                }
                 break;
-            case SB_TOP:
-                dlgData->gd.scrollPos.y = 0;
-                break;
-            case SB_LINEDOWN:
-                dlgData->gd.scrollPos.y += 8;
-                break;
-            case SB_LINEUP:
-                dlgData->gd.scrollPos.y -= 8;
-                break;
-            case SB_PAGEDOWN:
-                dlgData->gd.scrollPos.y += 64;
-                break;
-            case SB_PAGEUP:
-                dlgData->gd.scrollPos.y -= 64;
-                break;
-            case SB_ENDSCROLL:
-                return 0;
-            case SB_THUMBPOSITION:
-            case SB_THUMBTRACK:
-            {
-                SCROLLINFO si;
-                memset(&si, 0, sizeof(si));
-                si.cbSize = sizeof(si);
-                si.fMask = SIF_TRACKPOS;
-                GetScrollInfo(hwnd, SB_VERT, &si);
-                dlgData->gd.scrollPos.y = si.nTrackPos;
-            }
-                break;
-            default:
-                return 0;
+                default:
+                    return 0;
             }
             if (dlgData->gd.scrollPos.y < 0)
                 dlgData->gd.scrollPos.y = 0;
             if (dlgData->gd.scrollPos.y >= dlgData->gd.scrollMax.y)
                 dlgData->gd.scrollPos.y = dlgData->gd.scrollMax.y;
             SetScrollPos(hwnd, SB_VERT, dlgData->gd.scrollPos.y, TRUE);
-            SetWindowPos(dlgData->gd.childWindow, NULL,
-                         dlgData->gd.origin.x - dlgData->gd.scrollPos.x,
-                         dlgData->gd.origin.y - dlgData->gd.scrollPos.y,
-                         0,0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+            SetWindowPos(dlgData->gd.childWindow, NULL, dlgData->gd.origin.x - dlgData->gd.scrollPos.x,
+                         dlgData->gd.origin.y - dlgData->gd.scrollPos.y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
             return 0;
         case WM_HSCROLL:
-            dlgData = (struct resRes *)GetWindowLong(hwnd, 0);
+            dlgData = (struct resRes*)GetWindowLong(hwnd, 0);
             switch (LOWORD(wParam))
             {
-            case SB_LEFT:
-                dlgData->gd.scrollPos.x = 0;
-                break;
-            case SB_RIGHT:
-                dlgData->gd.scrollPos.x = dlgData->gd.scrollMax.x;
-                break;
-            case SB_LINELEFT:
-                dlgData->gd.scrollPos.x -= 8;
-                break;
-            case SB_LINERIGHT:
-                dlgData->gd.scrollPos.x += 8;
-                break;
-            case SB_PAGERIGHT:
-                dlgData->gd.scrollPos.x += 64;
-                break;
-            case SB_PAGELEFT:
-                dlgData->gd.scrollPos.x -= 64;
-                break;
-            case SB_ENDSCROLL:
-                return 0;
-            case SB_THUMBPOSITION:
-            case SB_THUMBTRACK:
-            {
-                SCROLLINFO si;
-                memset(&si, 0, sizeof(si));
-                si.cbSize = sizeof(si);
-                si.fMask = SIF_TRACKPOS;
-                GetScrollInfo(hwnd, SB_HORZ, &si);
-                dlgData->gd.scrollPos.x = si.nTrackPos;
-            }
+                case SB_LEFT:
+                    dlgData->gd.scrollPos.x = 0;
+                    break;
+                case SB_RIGHT:
+                    dlgData->gd.scrollPos.x = dlgData->gd.scrollMax.x;
+                    break;
+                case SB_LINELEFT:
+                    dlgData->gd.scrollPos.x -= 8;
+                    break;
+                case SB_LINERIGHT:
+                    dlgData->gd.scrollPos.x += 8;
+                    break;
+                case SB_PAGERIGHT:
+                    dlgData->gd.scrollPos.x += 64;
+                    break;
+                case SB_PAGELEFT:
+                    dlgData->gd.scrollPos.x -= 64;
+                    break;
+                case SB_ENDSCROLL:
+                    return 0;
+                case SB_THUMBPOSITION:
+                case SB_THUMBTRACK:
+                {
+                    SCROLLINFO si;
+                    memset(&si, 0, sizeof(si));
+                    si.cbSize = sizeof(si);
+                    si.fMask = SIF_TRACKPOS;
+                    GetScrollInfo(hwnd, SB_HORZ, &si);
+                    dlgData->gd.scrollPos.x = si.nTrackPos;
+                }
                 break;
             }
             if (dlgData->gd.scrollPos.x < 0)
@@ -3568,16 +3555,13 @@ LRESULT CALLBACK DlgDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             if (dlgData->gd.scrollPos.x >= dlgData->gd.scrollMax.x)
                 dlgData->gd.scrollPos.x = dlgData->gd.scrollMax.x;
             SetScrollPos(hwnd, SB_HORZ, dlgData->gd.scrollPos.x, TRUE);
-            SetWindowPos(dlgData->gd.childWindow, NULL,
-                         dlgData->gd.origin.x - dlgData->gd.scrollPos.x,
-                         dlgData->gd.origin.y - dlgData->gd.scrollPos.y,
-                         0,0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
-                         
-                       
+            SetWindowPos(dlgData->gd.childWindow, NULL, dlgData->gd.origin.x - dlgData->gd.scrollPos.x,
+                         dlgData->gd.origin.y - dlgData->gd.scrollPos.y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+
             return 0;
         case WM_MOVEDCHILD:
         case WM_SIZE:
-            dlgData = (struct resRes *)GetWindowLong(hwnd, 0);
+            dlgData = (struct resRes*)GetWindowLong(hwnd, 0);
             ShowOrHideScrollBars(hwnd, dlgData);
             break;
         default:
@@ -3601,7 +3585,7 @@ void RegisterDlgDrawWindow(HINSTANCE hInstance)
     wc.lpszMenuName = 0;
     wc.lpszClassName = szDlgDrawClassName;
     RegisterClass(&wc);
-    
+
     memset(&wc, 0, sizeof(wc));
     wc.style = CS_DBLCLKS;
     wc.lpfnWndProc = &DlgDlgProc;
@@ -3614,7 +3598,7 @@ void RegisterDlgDrawWindow(HINSTANCE hInstance)
     wc.lpszMenuName = 0;
     wc.lpszClassName = szDlgDialogClassName;
     RegisterClass(&wc);
-    
+
     memset(&wc, 0, sizeof(wc));
     wc.style = CS_DBLCLKS;
     wc.lpfnWndProc = &DefWindowProc;
@@ -3627,7 +3611,7 @@ void RegisterDlgDrawWindow(HINSTANCE hInstance)
     wc.lpszMenuName = 0;
     wc.lpszClassName = szDlgUnknownClassName;
     RegisterClass(&wc);
-    
+
     memset(&wc, 0, sizeof(wc));
     wc.style = CS_DBLCLKS;
     wc.lpfnWndProc = &DlgControlInputProc;
@@ -3647,27 +3631,26 @@ void RegisterDlgDrawWindow(HINSTANCE hInstance)
     vcurs = LoadCursor(0, IDC_SIZENS);
 
     clipboardFormatId = RegisterClipboardFormat("xccControlFormat");
-    
+
     drawdlginit();
 }
-void CreateDlgDrawWindow(struct resRes *info)
+void CreateDlgDrawWindow(struct resRes* info)
 {
     char name[512];
     int maximized;
     HWND hwnd;
     sprintf(name, "%s - %s", szUntitled, info->name);
-    SendMessage(hwndClient, WM_MDIGETACTIVE, 0, (LPARAM) &maximized);
-    hwnd = CreateMDIWindow(szDlgDrawClassName, name, WS_VISIBLE | WS_HSCROLL | WS_VSCROLL | 
-           WS_CHILD | WS_OVERLAPPED | WS_CAPTION | WS_THICKFRAME | MDIS_ALLCHILDSTYLES | 
-        WS_CLIPSIBLINGS | WS_CLIPCHILDREN |
-        WS_SIZEBOX | (PropGetInt(NULL, "TABBED_WINDOWS") ? WS_MAXIMIZE : WS_SYSMENU),
-        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwndClient, hInstance, 
-        (LPARAM)info); 
+    SendMessage(hwndClient, WM_MDIGETACTIVE, 0, (LPARAM)&maximized);
+    hwnd = CreateMDIWindow(szDlgDrawClassName, name,
+                           WS_VISIBLE | WS_HSCROLL | WS_VSCROLL | WS_CHILD | WS_OVERLAPPED | WS_CAPTION | WS_THICKFRAME |
+                               MDIS_ALLCHILDSTYLES | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_SIZEBOX |
+                               (PropGetInt(NULL, "TABBED_WINDOWS") ? WS_MAXIMIZE : WS_SYSMENU),
+                           CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwndClient, hInstance, (LPARAM)info);
     if (hwnd)
     {
         SelectWindow(DID_CTLTBWND);
         SendMessage(hwndSrcTab, TABM_ADD, (WPARAM)name, (LPARAM)hwnd);
-        
+
         if (info->resource->changed)
             ResRewriteTitle(info, TRUE);
     }

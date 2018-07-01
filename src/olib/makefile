@@ -27,6 +27,7 @@ MAIN_FILE=LibMain.cpp
 INCLUDES=..\util ..\objlib ..\ocpp
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=ocpplib objlib util
+H_FILES=$(wildcard *.h)
 
 include ..\redirect.mak
 

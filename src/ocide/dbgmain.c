@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -35,27 +35,27 @@
 extern HWND hwndClient;
 extern HWND hwndFrame;
 extern HWND hwndToolDebug;
-extern DWINFO *editWindows;
-extern PROJECTITEM *activeProject;
+extern DWINFO* editWindows;
+extern PROJECTITEM* activeProject;
 extern BOOL SingleStepping;
 extern HWND hwndTbBuildType, hwndTbProfile;
 
 enum DebugState uState = notDebugging;
 HANDLE StartupSem, BreakpointSem;
-PROCESS *activeProcess;
+PROCESS* activeProcess;
 THREAD *activeThread, *stoppedThread;
 
-PROCESS *debugProcessList;
+PROCESS* debugProcessList;
 
 static int Semaphores;
 static int stopWinMain;
 static HANDLE abortEvent;
-static void DeleteDLLInfo(DWORD procId, DLL_INFO *info);
+static void DeleteDLLInfo(DWORD procId, DLL_INFO* info);
 // this code sorta has the beginning of multiprocess debugging, but, the symbol
 // table stuff needs to be revamped to handle it properly.  For right now,
 // debugging is started on a single-process basis so there will only be one process
 // even though multiple processes should be linked into a list in a reasonable way...
-void RunProgram(PROJECTITEM *plist)
+void RunProgram(PROJECTITEM* plist)
 {
     char *exeName, *exeArgs;
     SetOutputNames(plist, TRUE);
@@ -75,8 +75,7 @@ int initiateDebug(int stopimmediately)
     static char cmd[4096];
     if (uState == notDebugging && activeProject)
     {
-        DWORD debugThreadID;
-        int val=0,i;
+        int val = 0;
         char *exe, *args, *wd;
         char wdbuf[MAX_PATH];
         SetOutputNames(activeProject, TRUE);
@@ -88,29 +87,26 @@ int initiateDebug(int stopimmediately)
         free(wd);
         if (wdbuf[0] == 0)
         {
-            char *p;
+            char* p;
             strcpy(wdbuf, exe);
             p = strrchr(wdbuf, '\\');
             if (p)
                 *p = 0;
-            
         }
         if (exe)
             val = IsPEFile(exe);
         if (val <= 0)
         {
             if (val == 0)
-                ExtendedMessageBox("File Error", MB_SYSTEMMODAL |
-                    MB_SETFOREGROUND, "File %s was not found", cmd);
+                ExtendedMessageBox("File Error", MB_SYSTEMMODAL | MB_SETFOREGROUND, "File %s was not found", cmd);
             else
-                ExtendedMessageBox("File Error", MB_SYSTEMMODAL |
-                    MB_SETFOREGROUND, 
-                    "File %s must be a win32 executable to debug.", cmd);
+                ExtendedMessageBox("File Error", MB_SYSTEMMODAL | MB_SETFOREGROUND, "File %s must be a win32 executable to debug.",
+                                   cmd);
             ReleaseSymbolTables();
             free(exe);
             free(args);
             return uState;
-        } 
+        }
         EnableWindow(hwndTbProfile, FALSE);
         EnableWindow(hwndTbBuildType, FALSE);
         stopWinMain = !!stopimmediately;
@@ -122,7 +118,7 @@ int initiateDebug(int stopimmediately)
         ReleaseSymbolTables();
         free(exe);
         free(args);
-        _beginthread((BEGINTHREAD_FUNC)StartDebug,0, (LPVOID)cmd);
+        _beginthread((BEGINTHREAD_FUNC)StartDebug, 0, (LPVOID)cmd);
 
         ReleaseSymbolTables();
 
@@ -149,35 +145,27 @@ BOOL CALLBACK topenumfunc(HWND wnd, LPARAM value)
 }
 
 /* if we don't do this, the debugger locks up sometimes */
-void ProcessToTop(DWORD processid)
-{
-    EnumWindows((WNDENUMPROC)topenumfunc, processid);
-}
-
+void ProcessToTop(DWORD processid) { EnumWindows((WNDENUMPROC)topenumfunc, processid); }
 
 BOOL CALLBACK consoleMenuFunc(HWND wnd, LPARAM value)
 {
-    DWORD id;
     char buf[256];
     GetWindowText(wnd, buf, 256);
-    if (!strcmp(buf, (char *)value))
+    if (!strcmp(buf, (char*)value))
     {
         HMENU hMenu = GetSystemMenu(wnd, FALSE);
-        DeleteMenu(hMenu, SC_CLOSE, MF_BYCOMMAND);		
+        DeleteMenu(hMenu, SC_CLOSE, MF_BYCOMMAND);
         return FALSE;
     }
     return TRUE;
 }
-void DisableConsoleCloseButton(char *cmd)
+void DisableConsoleCloseButton(char* cmd) { EnumWindows((WNDENUMPROC)consoleMenuFunc, (LPARAM)cmd); }
+THREAD* GetThread(DWORD procId, DWORD threadId)
 {
-    EnumWindows((WNDENUMPROC)consoleMenuFunc, (LPARAM)cmd);
-}
-THREAD *GetThread(DWORD procId, DWORD threadId)
-{
-    PROCESS *p = GetProcess(procId);
+    PROCESS* p = GetProcess(procId);
     if (p)
     {
-        THREAD *thread = p->threads;
+        THREAD* thread = p->threads;
         while (thread)
         {
             if (thread->idThread == threadId)
@@ -187,12 +175,12 @@ THREAD *GetThread(DWORD procId, DWORD threadId)
     }
     return NULL;
 }
-static THREAD *NewThread(DWORD procId, DWORD threadId)
+static THREAD* NewThread(DWORD procId, DWORD threadId)
 {
-    PROCESS *p = GetProcess(procId);
+    PROCESS* p = GetProcess(procId);
     if (p)
     {
-        THREAD **thread = &p->threads;
+        THREAD** thread = &p->threads;
         while (*thread)
             thread = &(*thread)->next;
         *thread = calloc(1, sizeof(THREAD));
@@ -207,23 +195,23 @@ static THREAD *NewThread(DWORD procId, DWORD threadId)
 }
 static void DeleteThread(DWORD procId, DWORD threadId)
 {
-    PROCESS *p = GetProcess(procId);
+    PROCESS* p = GetProcess(procId);
     if (p)
     {
-        THREAD **thread = &p->threads;
+        THREAD** thread = &p->threads;
         while (*thread && (*thread)->idThread != threadId)
             thread = &(*thread)->next;
         if (*thread)
         {
-            THREAD *v = *thread;
+            THREAD* v = *thread;
             (*thread) = (*thread)->next;
             free(v);
         }
     }
 }
-PROCESS *GetProcess(DWORD procId)
+PROCESS* GetProcess(DWORD procId)
 {
-    PROCESS *process = debugProcessList;
+    PROCESS* process = debugProcessList;
     while (process)
     {
         if (process->idProcess == procId)
@@ -232,9 +220,9 @@ PROCESS *GetProcess(DWORD procId)
     }
     return NULL;
 }
-static PROCESS *NewProcess(DWORD procId)
+static PROCESS* NewProcess(DWORD procId)
 {
-    PROCESS **process = &debugProcessList;
+    PROCESS** process = &debugProcessList;
     while (*process)
         process = &(*process)->next;
     *process = calloc(1, sizeof(PROCESS));
@@ -246,30 +234,30 @@ static PROCESS *NewProcess(DWORD procId)
 }
 static void DeleteProcess(DWORD procId)
 {
-    PROCESS **process = &debugProcessList;
+    PROCESS** process = &debugProcessList;
     while (*process && (*process)->idProcess != procId)
         process = &(*process)->next;
     if (*process)
     {
-        PROCESS *v = *process;
-        BREAKPOINT **bp;
+        PROCESS* v = *process;
+        BREAKPOINT** bp;
         // Created threads may not exit gracefully
         // in fact one at least will always be left
         while (v->threads)
         {
-            THREAD *th = v->threads;
+            THREAD* th = v->threads;
             DeleteThread(v->idProcess, th->idThread);
         }
         // System dlls don't get an unload message
         while (v->dll_info)
         {
-            DLL_INFO *d = v->dll_info;
+            DLL_INFO* d = v->dll_info;
             DeleteDLLInfo(procId, d);
         }
         bp = &v->breakpoints.next;
         while (*bp)
         {
-            BREAKPOINT *q =  *bp;
+            BREAKPOINT* q = *bp;
             *bp = (*bp)->next;
             free(q);
         }
@@ -278,25 +266,25 @@ static void DeleteProcess(DWORD procId)
         free(v);
     }
 }
-DLL_INFO *GetDLLInfo(DWORD procId, DWORD addr)
+DLL_INFO* GetDLLInfo(DWORD procId, DWORD addr)
 {
-    PROCESS *pr = GetProcess(procId);
+    PROCESS* pr = GetProcess(procId);
     if (pr)
     {
-        DLL_INFO *d = pr->dll_info;
+        DLL_INFO* d = pr->dll_info;
         while (d && d->base != addr)
             d = d->next;
-        return d;            
+        return d;
     }
     return NULL;
 }
-static DLL_INFO *NewDLLInfo(DWORD procId, DWORD base)
+static DLL_INFO* NewDLLInfo(DWORD procId, DWORD base)
 {
-    PROCESS *pr = GetProcess(procId);
+    PROCESS* pr = GetProcess(procId);
     if (pr)
     {
         DLL_INFO **d = &pr->dll_info, *x;
-        while (*d && (*d)->base < base )
+        while (*d && (*d)->base < base)
             d = &(*d)->next;
         x = calloc(1, sizeof(DLL_INFO));
         if (x)
@@ -309,12 +297,12 @@ static DLL_INFO *NewDLLInfo(DWORD procId, DWORD base)
     }
     return NULL;
 }
-static void DeleteDLLInfo(DWORD procId, DLL_INFO *info)
+static void DeleteDLLInfo(DWORD procId, DLL_INFO* info)
 {
-    PROCESS *pr = GetProcess(procId);
+    PROCESS* pr = GetProcess(procId);
     if (pr)
     {
-        DLL_INFO **d = &pr->dll_info, *q;
+        DLL_INFO** d = &pr->dll_info;
         while (*d && (*d) != info)
             d = &(*d)->next;
         if (*d)
@@ -327,34 +315,31 @@ static void DeleteDLLInfo(DWORD procId, DLL_INFO *info)
 }
 //-------------------------------------------------------------------------
 
-static int HandleBreakpoint(DEBUG_EVENT *info, char *cmd)
+static int HandleBreakpoint(DEBUG_EVENT* info, char* cmd)
 {
-    char module[256];
-    int linenum;
-	if (uState != Aborting)
-	{
-		SetForegroundWindow(hwndFrame);
-	//    ProcessToTop(GetCurrentProcessId());
-		if (uState != Aborting)
-			uState = atBreakpoint;
-		PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
-	    PostDIDMessage(DID_STACKWND, WM_RESTACK, (WPARAM)1, 0);
-		PostDIDMessage(DID_REGWND, WM_COMMAND, ID_SETADDRESS, (LPARAM)
-		GetThread(info->dwProcessId, info->dwThreadId)->hThread);
-		PostDIDMessage(DID_WATCHWND, WM_COMMAND, ID_SETADDRESS, 0);
-		PostDIDMessage(DID_WATCHWND+1, WM_COMMAND, ID_SETADDRESS, 0);
-		PostDIDMessage(DID_WATCHWND+2, WM_COMMAND, ID_SETADDRESS, 0);
-		PostDIDMessage(DID_WATCHWND+3, WM_COMMAND, ID_SETADDRESS, 0);
+    if (uState != Aborting)
+    {
+        SetForegroundWindow(hwndFrame);
+        //    ProcessToTop(GetCurrentProcessId());
+        if (uState != Aborting)
+            uState = atBreakpoint;
+        PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
+        PostDIDMessage(DID_STACKWND, WM_RESTACK, (WPARAM)1, 0);
+        PostDIDMessage(DID_REGWND, WM_COMMAND, ID_SETADDRESS, (LPARAM)GetThread(info->dwProcessId, info->dwThreadId)->hThread);
+        PostDIDMessage(DID_WATCHWND, WM_COMMAND, ID_SETADDRESS, 0);
+        PostDIDMessage(DID_WATCHWND + 1, WM_COMMAND, ID_SETADDRESS, 0);
+        PostDIDMessage(DID_WATCHWND + 2, WM_COMMAND, ID_SETADDRESS, 0);
+        PostDIDMessage(DID_WATCHWND + 3, WM_COMMAND, ID_SETADDRESS, 0);
         PostDIDMessage(DID_LOCALSWND, WM_COMMAND, ID_SETADDRESS, 0);
-		PostDIDMessage(DID_THREADWND, WM_RESTACK, (WPARAM)1, 0);
-		PostDIDMessage(DID_MEMWND, WM_RESTACK, 0, 0);
-		PostDIDMessage(DID_MEMWND+1, WM_RESTACK, 0, 0);
-		PostDIDMessage(DID_MEMWND+2, WM_RESTACK, 0, 0);
-		PostDIDMessage(DID_MEMWND+3, WM_RESTACK, 0, 0);
-		SendDIDMessage(DID_THREADWND, WM_RESTACK, 0, 0);
-		PostMessage(hwndFrame, WM_BREAKPOINT, 0, (LPARAM)info);
+        PostDIDMessage(DID_THREADWND, WM_RESTACK, (WPARAM)1, 0);
+        PostDIDMessage(DID_MEMWND, WM_RESTACK, 0, 0);
+        PostDIDMessage(DID_MEMWND + 1, WM_RESTACK, 0, 0);
+        PostDIDMessage(DID_MEMWND + 2, WM_RESTACK, 0, 0);
+        PostDIDMessage(DID_MEMWND + 3, WM_RESTACK, 0, 0);
+        SendDIDMessage(DID_THREADWND, WM_RESTACK, 0, 0);
+        PostMessage(hwndFrame, WM_BREAKPOINT, 0, (LPARAM)info);
         PostDIDMessage(DID_BREAKWND, WM_DOENABLE, 1, 0);
-	}
+    }
     if (uState != Aborting && uState != notDebugging)
     {
         WaitForSingleObject(BreakpointSem, INFINITE);
@@ -362,7 +347,7 @@ static int HandleBreakpoint(DEBUG_EVENT *info, char *cmd)
     PostDIDMessage(DID_STACKWND, WM_RESTACK, (WPARAM)0, 0);
     PostDIDMessage(DID_THREADWND, WM_RESTACK, (WPARAM)0, 0);
     PostDIDMessage(DID_BREAKWND, WM_DOENABLE, 0, 0);
-    ApplyBreakAddress(0, 0); // get rid of the break line
+    ApplyBreakAddress(0, 0);  // get rid of the break line
     if (uState == notDebugging || uState == Aborting)
     {
         PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
@@ -370,8 +355,7 @@ static int HandleBreakpoint(DEBUG_EVENT *info, char *cmd)
     }
     else
     {
-        if (uState != SteppingOut && uState != SteppingOver && uState !=
-            SteppingIn && uState != StepInOut)
+        if (uState != SteppingOut && uState != SteppingOver && uState != SteppingIn && uState != StepInOut)
             uState = Running;
         PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
         ProcessToTop(info->dwProcessId);
@@ -381,7 +365,7 @@ static int HandleBreakpoint(DEBUG_EVENT *info, char *cmd)
 
 //-------------------------------------------------------------------------
 
-static int HandleException(DEBUG_EVENT *info, char *cmd)
+static int HandleException(DEBUG_EVENT* info, char* cmd)
 {
     if (uState == notDebugging || uState == Aborting)
         return DBG_EXCEPTION_NOT_HANDLED;
@@ -392,22 +376,21 @@ static int HandleException(DEBUG_EVENT *info, char *cmd)
             return DBG_EXCEPTION_NOT_HANDLED;
     activeThread = stoppedThread = GetThread(info->dwProcessId, info->dwThreadId);
     SetForegroundWindow(hwndFrame);
-//    ProcessToTop(GetCurrentProcessId());
+    //    ProcessToTop(GetCurrentProcessId());
     uState = atException;
     PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
     PostDIDMessage(DID_STACKWND, WM_RESTACK, (WPARAM)1, 0);
     PostDIDMessage(DID_WATCHWND, WM_COMMAND, ID_SETADDRESS, 0);
-    PostDIDMessage(DID_WATCHWND+1, WM_COMMAND, ID_SETADDRESS, 0);
-    PostDIDMessage(DID_WATCHWND+2, WM_COMMAND, ID_SETADDRESS, 0);
-    PostDIDMessage(DID_WATCHWND+3, WM_COMMAND, ID_SETADDRESS, 0);
+    PostDIDMessage(DID_WATCHWND + 1, WM_COMMAND, ID_SETADDRESS, 0);
+    PostDIDMessage(DID_WATCHWND + 2, WM_COMMAND, ID_SETADDRESS, 0);
+    PostDIDMessage(DID_WATCHWND + 3, WM_COMMAND, ID_SETADDRESS, 0);
     PostDIDMessage(DID_LOCALSWND, WM_COMMAND, ID_SETADDRESS, 0);
     PostDIDMessage(DID_THREADWND, WM_RESTACK, (WPARAM)1, 0);
-    PostDIDMessage(DID_REGWND, WM_COMMAND, ID_SETADDRESS, (LPARAM)
-    GetThread(info->dwProcessId, info->dwThreadId)->hThread);
+    PostDIDMessage(DID_REGWND, WM_COMMAND, ID_SETADDRESS, (LPARAM)GetThread(info->dwProcessId, info->dwThreadId)->hThread);
     PostDIDMessage(DID_MEMWND, WM_RESTACK, 0, 0);
-    PostDIDMessage(DID_MEMWND+1, WM_RESTACK, 0, 0);
-    PostDIDMessage(DID_MEMWND+2, WM_RESTACK, 0, 0);
-    PostDIDMessage(DID_MEMWND+3, WM_RESTACK, 0, 0);
+    PostDIDMessage(DID_MEMWND + 1, WM_RESTACK, 0, 0);
+    PostDIDMessage(DID_MEMWND + 2, WM_RESTACK, 0, 0);
+    PostDIDMessage(DID_MEMWND + 3, WM_RESTACK, 0, 0);
     PostMessage(hwndFrame, WM_EXCEPTION, 0, (LPARAM)info);
     PostDIDMessage(DID_BREAKWND, WM_DOENABLE, 1, 0);
     WaitForSingleObject(BreakpointSem, INFINITE);
@@ -420,43 +403,39 @@ static int HandleException(DEBUG_EVENT *info, char *cmd)
         PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
         return DBG_TERMINATE_PROCESS;
     }
-    if (uState != SteppingOut && uState != SteppingOver && uState != SteppingIn
-        && uState != StepInOut)
+    if (uState != SteppingOut && uState != SteppingOver && uState != SteppingIn && uState != StepInOut)
         uState = Running;
     PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
     ProcessToTop(info->dwProcessId);
     return DBG_EXCEPTION_NOT_HANDLED;
 }
 
-
 //-------------------------------------------------------------------------
 
 void BlastExitProcFunc(DWORD procID, DWORD threadID, DWORD address)
 {
-    THREAD *thread = GetThread(procID, threadID);
-    int buf = 0; // exit code
+    THREAD* thread = GetThread(procID, threadID);
+    int buf = 0;  // exit code
     thread->regs.Eip = address;
     // write exit code
-    thread->regs.Esp -= 4; // for exit code
-    WriteProcessMemory(thread->process->hProcess, (LPVOID)thread->regs.Esp, (LPVOID) &buf,
-        4, 0);
-    thread->regs.Esp -= 4; // for return address (n/c since this is ExitProcess)
+    thread->regs.Esp -= 4;  // for exit code
+    WriteProcessMemory(thread->process->hProcess, (LPVOID)thread->regs.Esp, (LPVOID)&buf, 4, 0);
+    thread->regs.Esp -= 4;  // for return address (n/c since this is ExitProcess)
 }
 
 //-------------------------------------------------------------------------
 
 void GetRegs(DWORD procID)
 {
-    PROCESS *p = debugProcessList;
+    PROCESS* p = debugProcessList;
     while (p)
     {
         if (p->idProcess == procID || procID == 0)
         {
-            THREAD *thread = p->threads;
+            THREAD* thread = p->threads;
             while (thread)
             {
-                thread->regs.ContextFlags = CONTEXT_FULL | CONTEXT_FLOATING_POINT |
-                    0;// CONTEXT_DEBUG_REGISTERS;
+                thread->regs.ContextFlags = CONTEXT_FULL | CONTEXT_FLOATING_POINT | 0;  // CONTEXT_DEBUG_REGISTERS;
                 GetThreadContext(thread->hThread, &thread->regs);
                 thread = thread->next;
             }
@@ -469,12 +448,12 @@ void GetRegs(DWORD procID)
 
 void SetRegs(DWORD procID)
 {
-    PROCESS *p = debugProcessList;
+    PROCESS* p = debugProcessList;
     while (p)
     {
         if (p->idProcess == procID || procID == 0)
         {
-            THREAD *thread = p->threads;
+            THREAD* thread = p->threads;
             while (thread)
             {
                 SetThreadContext(thread->hThread, &thread->regs);
@@ -487,19 +466,17 @@ void SetRegs(DWORD procID)
 
 void StopRunning(int newState)
 {
-    THREAD *th = debugProcessList->threads; // use first process, will usually be the
-                                    // one we invoked unless it exited...
+    THREAD* th = debugProcessList->threads;  // use first process, will usually be the
+                                             // one we invoked unless it exited...
     if (uState == Running || uState == SteppingOut || uState == StepInOut)
     {
         HANDLE hThisThread = GetCurrentThread();
         int iOldPriority = GetThreadPriority(hThisThread);
-        int oldaddr;
-        int *p = calloc(2, sizeof(int));
+        int* p = calloc(2, sizeof(int));
         p[0] = debugProcessList->base;
         SetForegroundWindow(hwndFrame);
-//        ProcessToTop(GetCurrentProcessId());
-        SetThreadPriority(hThisThread, REALTIME_PRIORITY_CLASS +
-            THREAD_PRIORITY_BELOW_NORMAL);
+        //        ProcessToTop(GetCurrentProcessId());
+        SetThreadPriority(hThisThread, REALTIME_PRIORITY_CLASS + THREAD_PRIORITY_BELOW_NORMAL);
         while (th)
         {
             SuspendThread(th->hThread);
@@ -534,7 +511,7 @@ void StopRunning(int newState)
          */
         SetThreadPriority(hThisThread, iOldPriority);
         ProcessToTop(debugProcessList->idProcess);
-        th=debugProcessList->threads;
+        th = debugProcessList->threads;
         free(th->breakpoint.tempvals);
         free(th->breakpoint.addresses);
         th->breakpoint.tempvals = NULL;
@@ -564,7 +541,7 @@ static void abortDebugThread(void)
         }
         while (uState != notDebugging)
         {
-			MSG msg;
+            MSG msg;
             while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
             {
                 ProcessMessage(&msg);
@@ -573,11 +550,9 @@ static void abortDebugThread(void)
             }
             if (++i >= 100)
             {
-                ExtendedMessageBox("Debugger", MB_SETFOREGROUND |
-                    MB_SYSTEMMODAL, "Internal error - debugger is not stopping")
-                    ;
+                ExtendedMessageBox("Debugger", MB_SETFOREGROUND | MB_SYSTEMMODAL, "Internal error - debugger is not stopping");
                 SetEvent(abortEvent);
-                return ;
+                return;
             }
             Sleep(100);
         }
@@ -589,63 +564,61 @@ static void abortDebugThread(void)
 
 void abortDebug(void)
 {
-    DWORD threadhand;
     if (!abortEvent)
         abortEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
     _beginthread((BEGINTHREAD_FUNC)abortDebugThread, 0, NULL);
     WaitForSingleObject(abortEvent, INFINITE);
 }
 
-void TranslateFilename(char * szFilename)
+void TranslateFilename(char* szFilename)
 {
     char szWin32Name[MAX_PATH];
-// sanity checks
-   char * pszInfo;
-   if (szFilename == NULL || szFilename[0] == 0)
-   {
-           return;
-   }
+    // sanity checks
+    char* pszInfo;
+    if (szFilename == NULL || szFilename[0] == 0)
+    {
+        return;
+    }
 
-// check for "strange" filenames
-   pszInfo = strstr(szFilename, "\\SystemRoot\\");
-   if (pszInfo == szFilename)
-   {
-   //       \SystemRoot\System32\smss.exe
-   // -->   c:\winnt\System32\smss.exe  using GetWindowsDirectory()
-      UINT Len = GetWindowsDirectory(szWin32Name, MAX_PATH);
-      if (Len != 0)
-      {
-         strcat(szWin32Name, "\\");
-         strcat(szWin32Name, &szFilename[strlen("\\SystemRoot\\")]);
-        strcpy(szFilename, szWin32Name);
-         return;
-      }
-   }
-   else
-   {
-   //       \??\C:\WINNT\system32\winlogon.exe
-   // -->   C:\WINNT\system32\winlogon.exe  
-      pszInfo = strstr(szFilename, "\\??\\");
-      if (pszInfo == szFilename)
-      {
-         strcpy(szWin32Name, &szFilename[strlen("\\??\\")]);
-          strcpy(szFilename, szWin32Name);
-      }
-   }
+    // check for "strange" filenames
+    pszInfo = strstr(szFilename, "\\SystemRoot\\");
+    if (pszInfo == szFilename)
+    {
+        //       \SystemRoot\System32\smss.exe
+        // -->   c:\winnt\System32\smss.exe  using GetWindowsDirectory()
+        UINT Len = GetWindowsDirectory(szWin32Name, MAX_PATH);
+        if (Len != 0)
+        {
+            strcat(szWin32Name, "\\");
+            strcat(szWin32Name, &szFilename[strlen("\\SystemRoot\\")]);
+            strcpy(szFilename, szWin32Name);
+            return;
+        }
+    }
+    else
+    {
+        //       \??\C:\WINNT\system32\winlogon.exe
+        // -->   C:\WINNT\system32\winlogon.exe
+        pszInfo = strstr(szFilename, "\\??\\");
+        if (pszInfo == szFilename)
+        {
+            strcpy(szWin32Name, &szFilename[strlen("\\??\\")]);
+            strcpy(szFilename, szWin32Name);
+        }
+    }
 }
-BOOL GetFileNameOfDLL(HMODULE hpsapiLib, HANDLE hProcess, DWORD base, DWORD nameBase, BOOL fUnicode, char *outName)
+BOOL GetFileNameOfDLL(HMODULE hpsapiLib, HANDLE hProcess, DWORD base, DWORD nameBase, BOOL fUnicode, char* outName)
 {
     BOOL found = FALSE;
-    char name[MAX_PATH *sizeof(int)];
+    char name[MAX_PATH * sizeof(int)];
     if (nameBase)
     {
-            DWORD len;
+        DWORD len;
         ReadProcessMemory(hProcess, (LPVOID)nameBase, (LPVOID)&nameBase, 4, &len);
-       
+
         if (nameBase)
         {
-            ReadProcessMemory(hProcess, 
-                (LPVOID)nameBase, (LPVOID)name, MAX_PATH * sizeof(WCHAR), &len);
+            ReadProcessMemory(hProcess, (LPVOID)nameBase, (LPVOID)name, MAX_PATH * sizeof(WCHAR), &len);
             name[len] = 0;
             if (fUnicode)
             {
@@ -672,7 +645,7 @@ BOOL GetFileNameOfDLL(HMODULE hpsapiLib, HANDLE hProcess, DWORD base, DWORD name
 }
 //-------------------------------------------------------------------------
 
-void StartDebug(char *cmd)
+void StartDebug(char* cmd)
 {
     STARTUPINFO stStartInfo;
     PROCESS_INFORMATION stProcessInfo;
@@ -683,13 +656,11 @@ void StartDebug(char *cmd)
     DWORD dwContinueStatus;
     BOOL bRet;
     BOOL ContinueStep = FALSE;
-    BREAKPOINT **bp;
     HMODULE hpsapiLib;
-    THREAD **th;
     HANDLE hExitHandle = NULL;
-    int val, i, hbp;
+    int hbp;
     BOOL isTerminating = FALSE;
-    char buf[512],*pwd = cmd + strlen(cmd)+1;
+    char buf[512], *pwd = cmd + strlen(cmd) + 1;
     BOOL sittingAtDataBreakpoint = FALSE;
 
     memset(&stStartInfo, 0, sizeof(STARTUPINFO));
@@ -697,46 +668,38 @@ void StartDebug(char *cmd)
 
     stStartInfo.cb = sizeof(STARTUPINFO);
 
-    bRet = CreateProcess(NULL, cmd, NULL, NULL, FALSE, CREATE_NEW_PROCESS_GROUP |
-            DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS |
-            (PropGetInt(activeProject, "__PROJECTTYPE") == BT_CONSOLE ? CREATE_NEW_CONSOLE : 0), NULL, 
-            pwd,  &stStartInfo, &stProcessInfo);
+    bRet = CreateProcess(NULL, cmd, NULL, NULL, FALSE,
+                         CREATE_NEW_PROCESS_GROUP | DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS |
+                             (PropGetInt(activeProject, "__PROJECTTYPE") == BT_CONSOLE ? CREATE_NEW_CONSOLE : 0),
+                         NULL, pwd, &stStartInfo, &stProcessInfo);
     if (!bRet)
     {
         ReleaseSemaphore(StartupSem, 1, 0);
-	LPVOID msg;
-        DWORD le = GetLastError(); 
+        LPVOID msg;
+        DWORD le = GetLastError();
 
         if (le == ERROR_DIRECTORY)
         {
-            ExtendedMessageBox("Debugger", MB_SETFOREGROUND | MB_SYSTEMMODAL, 
-                "Could not execute %s:\n\n The specified working directory is invalid", cmd);
+            ExtendedMessageBox("Debugger", MB_SETFOREGROUND | MB_SYSTEMMODAL,
+                               "Could not execute %s:\n\n The specified working directory is invalid", cmd);
         }
         else
         {
-            FormatMessage(
-                FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-                FORMAT_MESSAGE_FROM_SYSTEM |
-                FORMAT_MESSAGE_IGNORE_INSERTS,
-                NULL,
-                le,
-                MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                (LPTSTR) &msg,
-                0, NULL );
+            FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, le,
+                          MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&msg, 0, NULL);
 
-            ExtendedMessageBox("Debugger", MB_SETFOREGROUND | MB_SYSTEMMODAL, 
-                "Could not execute %s:\n\n %s", cmd,  msg);
+            ExtendedMessageBox("Debugger", MB_SETFOREGROUND | MB_SYSTEMMODAL, "Could not execute %s:\n\n %s", cmd, msg);
 
             LocalFree(msg);
         }
-        return ;
+        return;
     }
     Sleep(500); /* Needed to make things happy */
     uState = Running;
 
     ReleaseSemaphore(StartupSem, 1, 0);
 
-    // this is used to retrieve the names of DLLs as they load...	
+    // this is used to retrieve the names of DLLs as they load...
     hpsapiLib = LoadLibrary("PSAPI.DLL");
 
     PostMessage(hwndFrame, WM_HIDEDEBUGWINDOWS, 0, 0);
@@ -755,229 +718,220 @@ void StartDebug(char *cmd)
             switch (stDE.dwDebugEventCode)
             {
                 case CREATE_PROCESS_DEBUG_EVENT:
+                {
+                    PROCESS* process = NewProcess(stDE.dwProcessId);
+                    THREAD* thread = NewThread(stDE.dwProcessId, stDE.dwThreadId);
+                    if (!process->next)
+                        activeProcess = process;
+                    //                    	if (PropGetInt(activeProject, "__PROJECTTYPE") == BT_CONSOLE)
+                    //							SetConsoleCtrlHandler(NULL, TRUE);
+                    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
+                    // Save the handle information needed for later.
+                    process->hProcess = stDE.u.CreateProcessInfo.hProcess;
+                    thread->hThread = stDE.u.CreateProcessInfo.hThread;
+                    strcpy(thread->name, "main thread");
+                    dwContinueStatus = DBG_CONTINUE;
+                    process->dbg_info = GetDebugInfo(process->hProcess, (DWORD)stDE.u.CreateProcessInfo.lpBaseOfImage);
+                    process->base = (DWORD)stDE.u.CreateProcessInfo.lpBaseOfImage;
+                    if (GetFileNameOfDLL(hpsapiLib, process->hProcess, process->base, (DWORD)stDE.u.CreateProcessInfo.lpImageName,
+                                         (DWORD)stDE.u.CreateProcessInfo.fUnicode, &process->name[0]))
                     {
-                        PROCESS *process = NewProcess(stDE.dwProcessId);
-                        THREAD *thread = NewThread(stDE.dwProcessId, stDE.dwThreadId);
-                        if (!process->next)
-                            activeProcess = process;
-//                    	if (PropGetInt(activeProject, "__PROJECTTYPE") == BT_CONSOLE)
-//							SetConsoleCtrlHandler(NULL, TRUE);
-                        SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
-                        // Save the handle information needed for later.
-                        process->hProcess = stDE.u.CreateProcessInfo.hProcess;
-                        thread->hThread = stDE.u.CreateProcessInfo.hThread;
-                        strcpy(thread->name, "main thread");
-                        dwContinueStatus = DBG_CONTINUE;
-                        process->dbg_info = GetDebugInfo(process->hProcess, (DWORD)stDE.u.CreateProcessInfo.lpBaseOfImage);
-                        process->base = (DWORD)stDE.u.CreateProcessInfo.lpBaseOfImage;
-                        if (GetFileNameOfDLL(hpsapiLib, process->hProcess, process->base, 
-                                             (DWORD)stDE.u.CreateProcessInfo.lpImageName, (DWORD)stDE.u.CreateProcessInfo.fUnicode, 
-                                             &process->name[0]))
-                        {
-                            char *ava = "";
-                            if (process->dbg_info)
-                                ava = " ...Debug info loaded";
-                            sprintf(buf, "Process Loading: %s%s\r\n",
-                                process->name, ava);
-                            SendInfoMessage(ERR_DEBUG_WINDOW, buf);
-                        }
-                        /* next line has to be deferred to the init bp */
-                        TagRegenBreakPoints(FALSE);
-                        GetRegs(0);
-                        thread->regs.Dr7 = 0;
-                        SetBreakPoints(stDE.dwProcessId);
-                        SetRegs(0);
-                        CloseHandle(stDE.u.CreateProcessInfo.hFile);
-                        SetThreadPriority(GetCurrentThread(),THREAD_PRIORITY_LOWEST);
-                        dwContinueStatus = DBG_CONTINUE;
+                        char* ava = "";
+                        if (process->dbg_info)
+                            ava = " ...Debug info loaded";
+                        sprintf(buf, "Process Loading: %s%s\r\n", process->name, ava);
+                        SendInfoMessage(ERR_DEBUG_WINDOW, buf);
                     }
-                    break;
+                    /* next line has to be deferred to the init bp */
+                    TagRegenBreakPoints(FALSE);
+                    GetRegs(0);
+                    thread->regs.Dr7 = 0;
+                    SetBreakPoints(stDE.dwProcessId);
+                    SetRegs(0);
+                    CloseHandle(stDE.u.CreateProcessInfo.hFile);
+                    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
+                    dwContinueStatus = DBG_CONTINUE;
+                }
+                break;
 
                 case EXIT_PROCESS_DEBUG_EVENT:
-                    {
-                        activeProcess = 0; // tells the edit window painter to abstain from drawing line data
-                        PROCESS *pr = GetProcess(stDE.dwProcessId);
-                        PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
+                {
+                    activeProcess = 0;  // tells the edit window painter to abstain from drawing line data
+                    PROCESS* pr = GetProcess(stDE.dwProcessId);
+                    PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
 
-                        if (!debugProcessList->next)
-                        {
-                            DuplicateHandle(GetCurrentProcess(), debugProcessList->hProcess, 
-                                            GetCurrentProcess(),&hExitHandle, 0, FALSE, DUPLICATE_SAME_ACCESS);
-                        }
-                        if (pr)
-                        {
-                            char buf[512];
-                            DWORD exitCode;
-                            GetExitCodeProcess(pr->hProcess, &exitCode);
-                            sprintf(buf, "Process Unloading: %s with exit code %d\r\n", pr->name, exitCode) ;
-                            SendInfoMessage(ERR_DEBUG_WINDOW, buf);
-                            DeleteProcess(pr->idProcess);
-                        }
-                        if (!debugProcessList)
-                        {
-                            bContinue = FALSE;
-                            hbpEnd();
-                               databpEnd();
-                        }
-                        dwContinueStatus = DBG_CONTINUE;
+                    if (!debugProcessList->next)
+                    {
+                        DuplicateHandle(GetCurrentProcess(), debugProcessList->hProcess, GetCurrentProcess(), &hExitHandle, 0,
+                                        FALSE, DUPLICATE_SAME_ACCESS);
                     }
-                    break;
+                    if (pr)
+                    {
+                        char buf[512];
+                        DWORD exitCode;
+                        GetExitCodeProcess(pr->hProcess, &exitCode);
+                        sprintf(buf, "Process Unloading: %s with exit code %d\r\n", pr->name, exitCode);
+                        SendInfoMessage(ERR_DEBUG_WINDOW, buf);
+                        DeleteProcess(pr->idProcess);
+                    }
+                    if (!debugProcessList)
+                    {
+                        bContinue = FALSE;
+                        hbpEnd();
+                        databpEnd();
+                    }
+                    dwContinueStatus = DBG_CONTINUE;
+                }
+                break;
 
                 case LOAD_DLL_DEBUG_EVENT:
+                {
+                    DLL_INFO* dllInfo = NewDLLInfo(stDE.dwProcessId, (DWORD)stDE.u.LoadDll.lpBaseOfDll);
+                    if (dllInfo)
                     {
-                        DLL_INFO *dllInfo = NewDLLInfo(stDE.dwProcessId, (DWORD)stDE.u.LoadDll.lpBaseOfDll);
-                        if (dllInfo)
+                        char* ava = "";
+                        PROCESS* pr = GetProcess(stDE.dwProcessId);
+                        dllInfo->name[0] = 0;
+                        dllInfo->dbg_info = GetDebugInfo(pr->hProcess, (DWORD)stDE.u.LoadDll.lpBaseOfDll);
+                        dllInfo->fUnicode = stDE.u.LoadDll.fUnicode;
+                        dllInfo->hFile = stDE.u.LoadDll.hFile;
+                        CloseHandle(dllInfo->hFile);
+                        SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
+                        if (GetFileNameOfDLL(hpsapiLib, pr->hProcess, dllInfo->base, (DWORD)stDE.u.LoadDll.lpImageName,
+                                             stDE.u.LoadDll.fUnicode, &dllInfo->name[0]))
                         {
-                            int len;
-                            char *ava = "";
-                            PROCESS *pr = GetProcess(stDE.dwProcessId);
-                            dllInfo->name[0] = 0;
-                            dllInfo->dbg_info = GetDebugInfo(pr->hProcess, (DWORD)stDE.u.LoadDll.lpBaseOfDll);
-                            dllInfo->fUnicode = stDE.u.LoadDll.fUnicode;
-                            dllInfo->hFile = stDE.u.LoadDll.hFile;
-                            CloseHandle(dllInfo->hFile);
-                            SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
-                            if (GetFileNameOfDLL(hpsapiLib, pr->hProcess, dllInfo->base, 
-                                             (DWORD)stDE.u.LoadDll.lpImageName, stDE.u.LoadDll.fUnicode, 
-                                                 &dllInfo->name[0]))
-                            {
-                                char *ava = "";
-                                if (dllInfo->dbg_info)
-                                    ava = " ...Debug info loaded";
-                                sprintf(buf, "DLL Loading: %s%s\r\n",
-                                    dllInfo->name, ava);
-                                SendInfoMessage(ERR_DEBUG_WINDOW, buf);
-                            }
+                            char* ava = "";
+                            if (dllInfo->dbg_info)
+                                ava = " ...Debug info loaded";
+                            sprintf(buf, "DLL Loading: %s%s\r\n", dllInfo->name, ava);
+                            SendInfoMessage(ERR_DEBUG_WINDOW, buf);
+                        }
 
-                            if (dllInfo->dbg_info && 
-                                PropGetBool(activeProject, "__BREAK_DLL"))
+                        if (dllInfo->dbg_info && PropGetBool(activeProject, "__BREAK_DLL"))
+                        {
+                            int addr = GetMainAddress(dllInfo->dbg_info);
+                            if (addr)
                             {
-                                int addr = GetMainAddress(dllInfo->dbg_info);
-                                if (addr)
+                                PROCESS* pr = GetProcess(stDE.dwProcessId);
+                                if (pr)
                                 {
-                                    PROCESS *pr = GetProcess(stDE.dwProcessId);
-                                    if (pr)
+                                    BREAKPOINT** p = &pr->breakpoints.next;
+                                    while (*p)
+                                        p = &(*p)->next;
+                                    *p = calloc(sizeof(BREAKPOINT), 1);
+                                    if (*p)
                                     {
-                                        BREAKPOINT **p = &pr->breakpoints.next;
-                                        while (*p)
-                                            p = &(*p)->next;
-                                        *p = calloc(sizeof(BREAKPOINT), 1);
-                                        if (*p)
+                                        DWINFO* ptr = editWindows;
+                                        int* q = calloc(2, sizeof(int));
+                                        q[0] = addr;
+                                        (*p)->addresses = q;
+                                        GetBreakpointLine(addr, &(*p)->module[0], &(*p)->linenum, FALSE);
+                                        dllInfo->breakpoint = addr;
+                                        while (ptr)
                                         {
-                                            DWINFO *ptr = editWindows;
-                                            int *q = calloc(2, sizeof(int));
-                                            q[0] = addr;
-                                            (*p)->addresses = q;
-                                            GetBreakpointLine(addr, &(*p)->module[0],
-                                                &(*p)->linenum, FALSE);
-                                            dllInfo->breakpoint = addr;
-                                            while (ptr)
-                                            {
-                                                if (ptr->active)
-                                                    InvalidateRect(ptr->self, 0, 0);
-                                                ptr = ptr->next;
-                                            }
+                                            if (ptr->active)
+                                                InvalidateRect(ptr->self, 0, 0);
+                                            ptr = ptr->next;
                                         }
                                     }
                                 }
                             }
-                            // set breakpoints for recently loaded DLL.
-                            TagRegenBreakPoints(FALSE);
-                            GetRegs(0);
-                            SetBreakPoints(stDE.dwProcessId);
-                            SetRegs(0);
-                            SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
                         }
-                        dwContinueStatus = DBG_CONTINUE;
+                        // set breakpoints for recently loaded DLL.
+                        TagRegenBreakPoints(FALSE);
+                        GetRegs(0);
+                        SetBreakPoints(stDE.dwProcessId);
+                        SetRegs(0);
+                        SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
                     }
-                    break;
+                    dwContinueStatus = DBG_CONTINUE;
+                }
+                break;
                 case UNLOAD_DLL_DEBUG_EVENT:
+                {
+                    DLL_INFO* info = GetDLLInfo(stDE.dwProcessId, (DWORD)stDE.u.UnloadDll.lpBaseOfDll);
+                    if (info)
                     {
-                        DLL_INFO *info = GetDLLInfo(stDE.dwProcessId, (DWORD)stDE.u.UnloadDll.lpBaseOfDll);
-                        if (info)
-                        {
-                            GetRegs(0);
-                            dbgClearBreakpointsForModule(info);
-                            ClearBreakPoints(stDE.dwProcessId);
-                            DeleteDLLInfo(stDE.dwProcessId, info);
-                            SetBreakPoints(stDE.dwProcessId);
-                            SetRegs(0);
-                            sprintf(buf, "DLL Unloading: %s\r\n", info->name) ;
-                            SendInfoMessage(ERR_DEBUG_WINDOW, buf);
-                        }
-                        dwContinueStatus = DBG_CONTINUE;
+                        GetRegs(0);
+                        dbgClearBreakpointsForModule(info);  // undefined in this file
+                        ClearBreakPoints(stDE.dwProcessId);
+                        DeleteDLLInfo(stDE.dwProcessId, info);
+                        SetBreakPoints(stDE.dwProcessId);
+                        SetRegs(0);
+                        sprintf(buf, "DLL Unloading: %s\r\n", info->name);
+                        SendInfoMessage(ERR_DEBUG_WINDOW, buf);
                     }
-                    break;
+                    dwContinueStatus = DBG_CONTINUE;
+                }
+                break;
 
                 case CREATE_THREAD_DEBUG_EVENT:
+                {
+                    char name[256];
+                    THREAD* th = NewThread(stDE.dwProcessId, stDE.dwThreadId);
+                    strcpy(name, "Win32 Thread");
+                    if (th)
                     {
-                        char name[256];
-                        THREAD *th = NewThread(stDE.dwProcessId, stDE.dwThreadId);
-                        strcpy(name, "Win32 Thread");
-                        if (th)
-                        {
-                            th->hThread = stDE.u.CreateThread.hThread;
-                            FindFunctionName(name, (int)
-                                stDE.u.CreateThread.lpStartAddress, NULL, NULL);
-                            strcpy(th->name, name);
-                        }
-                        sprintf(buf, "Thread creation: %d %08x %s\r\n",
-                            stDE.dwThreadId, stDE.u.CreateThread.lpStartAddress,
-                            name);
-                        SendInfoMessage(ERR_DEBUG_WINDOW, buf);
-                        if (isTerminating)
-                            SuspendThread(stDE.u.CreateThread.hThread);
-                        GetRegs(0);
-                        th->regs.Dr7 = 0;
-                        SetRegs(0);
-                        dwContinueStatus = DBG_CONTINUE;
+                        th->hThread = stDE.u.CreateThread.hThread;
+                        FindFunctionName(name, (int)stDE.u.CreateThread.lpStartAddress, NULL, NULL);
+                        strcpy(th->name, name);
                     }
-                    break;
+                    sprintf(buf, "Thread creation: %d %08x %s\r\n", stDE.dwThreadId, stDE.u.CreateThread.lpStartAddress, name);
+                    SendInfoMessage(ERR_DEBUG_WINDOW, buf);
+                    if (isTerminating)
+                        SuspendThread(stDE.u.CreateThread.hThread);
+                    GetRegs(0);
+                    th->regs.Dr7 = 0;
+                    SetRegs(0);
+                    dwContinueStatus = DBG_CONTINUE;
+                }
+                break;
                 case EXIT_THREAD_DEBUG_EVENT:
+                {
+                    THREAD* th = GetThread(stDE.dwProcessId, stDE.dwThreadId);
+                    if (th)
                     {
-                        THREAD *th = GetThread(stDE.dwProcessId, stDE.dwThreadId);
-                        if (th)
+                        if (th->name && th->name[0])
                         {
-                            if (th->name && th->name[0]) {
-  			       sprintf(buf, "Thread exit: %d %s with exit code %d\r\n",
-                                  th->idThread, th->name, stDE.u.ExitProcess.dwExitCode);
-                            } else {
-  			       sprintf(buf, "Thread exit: %d with exit code %d\r\n",
-                                  th->idThread, stDE.u.ExitProcess.dwExitCode);
-                            }
-                            SendInfoMessage(ERR_DEBUG_WINDOW, buf);
-                            DeleteThread(stDE.dwProcessId, stDE.dwThreadId);
+                            sprintf(buf, "Thread exit: %d %s with exit code %d\r\n", th->idThread, th->name,
+                                    stDE.u.ExitProcess.dwExitCode);
                         }
-                        dwContinueStatus = DBG_CONTINUE;
+                        else
+                        {
+                            sprintf(buf, "Thread exit: %d with exit code %d\r\n", th->idThread, stDE.u.ExitProcess.dwExitCode);
+                        }
+                        SendInfoMessage(ERR_DEBUG_WINDOW, buf);
+                        DeleteThread(stDE.dwProcessId, stDE.dwThreadId);
                     }
-                    break;
+                    dwContinueStatus = DBG_CONTINUE;
+                }
+                break;
 
                 case OUTPUT_DEBUG_STRING_EVENT:
-                    {
-                        PROCESS *pr = GetProcess(stDE.dwProcessId);
-                        char buf2[256];
-                        int len = stDE.u.DebugString.nDebugStringLength;
-                        if (len > 255)
-                            len = 255;
-                        memset(buf2, 0, 256);
-                        ReadProcessMemory(pr->hProcess,
-                            stDE.u.DebugString.lpDebugStringData, buf2, len, 0);
-                        SetInfoColor(ERR_DEBUG_WINDOW, 0xff0000);
-                            SendInfoMessage(ERR_DEBUG_WINDOW, buf2);
-                        dwContinueStatus = DBG_CONTINUE;
-                    }
-                    break;
+                {
+                    PROCESS* pr = GetProcess(stDE.dwProcessId);
+                    char buf2[256];
+                    int len = stDE.u.DebugString.nDebugStringLength;
+                    if (len > 255)
+                        len = 255;
+                    memset(buf2, 0, 256);
+                    ReadProcessMemory(pr->hProcess, stDE.u.DebugString.lpDebugStringData, buf2, len, 0);
+                    SetInfoColor(ERR_DEBUG_WINDOW, 0xff0000);
+                    SendInfoMessage(ERR_DEBUG_WINDOW, buf2);
+                    dwContinueStatus = DBG_CONTINUE;
+                }
+                break;
 
                 case RIP_EVENT:
-                    {
-                        dwContinueStatus = DBG_CONTINUE;
-                    }
-                    break;
+                {
+                    dwContinueStatus = DBG_CONTINUE;
+                }
+                break;
 
                 case EXCEPTION_DEBUG_EVENT:
+                {
+                    switch (stDE.u.Exception.ExceptionRecord.ExceptionCode)
                     {
-                        switch (stDE.u.Exception.ExceptionRecord.ExceptionCode)
-                        {
                         case DBG_CONTROL_C:
                         case DBG_CONTROL_BREAK:
                         case EXCEPTION_SINGLE_STEP:
@@ -1006,39 +960,34 @@ void StartDebug(char *cmd)
                             activeThread = stoppedThread = GetThread(stDE.dwProcessId, stDE.dwThreadId);
                             GetRegs(0);
                             ClearBreakPoints(stDE.dwProcessId);
-                            if (!inTempBreakPoint((int)stDE.u.Exception.ExceptionRecord.ExceptionAddress)
-                                        || stDE.dwThreadId == activeProcess->idTempBpThread)
+                            if (!inTempBreakPoint((int)stDE.u.Exception.ExceptionRecord.ExceptionAddress) ||
+                                stDE.dwThreadId == activeProcess->idTempBpThread)
                             {
                                 if (bSeenInitialBP)
                                 {
-                                    if (stDE.u.Exception.ExceptionRecord.ExceptionCode == EXCEPTION_BREAKPOINT 
-                                        && (isLocalBreakPoint((int)stDE.u.Exception.ExceptionRecord.ExceptionAddress)
-                                            || inTempBreakPoint((int)stDE.u.Exception.ExceptionRecord.ExceptionAddress)))
+                                    if (stDE.u.Exception.ExceptionRecord.ExceptionCode == EXCEPTION_BREAKPOINT &&
+                                        (isLocalBreakPoint((int)stDE.u.Exception.ExceptionRecord.ExceptionAddress) ||
+                                         inTempBreakPoint((int)stDE.u.Exception.ExceptionRecord.ExceptionAddress)))
                                     {
                                         activeThread->regs.Eip--;
                                     }
                                     if (activeThread->oldaddr)
                                     {
-                                        activeThread->regs.Eip = activeThread
-                                            ->oldaddr;
-                                       
+                                        activeThread->regs.Eip = activeThread->oldaddr;
+
                                         stDE.u.Exception.ExceptionRecord.ExceptionAddress = (LPVOID)activeThread->oldaddr;
                                         while (activeThread->suspcount)
                                         {
                                             activeThread->suspcount--;
-                                            SuspendThread(activeThread
-                                                ->hThread);
+                                            SuspendThread(activeThread->hThread);
                                         }
                                         activeThread->oldaddr = 0;
-                                        freeBreakPoint(activeProcess->hProcess,
-                                            &activeThread->breakpoint);
+                                        freeBreakPoint(activeProcess->hProcess, &activeThread->breakpoint);
                                     }
                                     ClearTempBreakPoint(stDE.dwProcessId);
-                                    if (!isTerminating && uState != SteppingOut
-                                        && !IsStepping(&stDE))
+                                    if (!isTerminating && uState != SteppingOut && !IsStepping(&stDE))
                                     {
-                                        dwContinueStatus = HandleBreakpoint
-                                            (&stDE, cmd);
+                                        dwContinueStatus = HandleBreakpoint(&stDE, cmd);
                                     }
                                     else
                                         dwContinueStatus = DBG_CONTINUE;
@@ -1048,20 +997,18 @@ void StartDebug(char *cmd)
                                     DWORD addr;
                                     bSeenInitialBP = TRUE;
                                     /* This had to be deferred for win2K */
-                                    
+
                                     if (activeProcess)
                                         activeProcess->ExitAddr =
-                                            FindExitProcessAddress
-                                                (activeProcess->hProcess, activeProcess->base);
+                                            FindExitProcessAddress(activeProcess->hProcess, activeProcess->base);
                                     if ((addr = GetMainAddress(activeProcess->dbg_info)))
                                     {
                                         if (stopWinMain)
                                             if (stDE.dwProcessId == stProcessInfo.dwProcessId)
                                             {
-                                                int *p = calloc(2, sizeof(int));
+                                                int* p = calloc(2, sizeof(int));
                                                 p[0] = addr;
-                                                SetTempBreakPoint(stDE.dwProcessId,
-                                                    stDE.dwThreadId, p);
+                                                SetTempBreakPoint(stDE.dwProcessId, stDE.dwThreadId, p);
                                             }
                                     }
                                     else
@@ -1069,10 +1016,9 @@ void StartDebug(char *cmd)
                                         ClearTempBreakPoint(stDE.dwProcessId);
                                         if (stopWinMain)
                                         {
-                                            int *p = calloc(2, sizeof(int));
+                                            int* p = calloc(2, sizeof(int));
                                             p[0] = GetEntryPoint();
-                                            SetTempBreakPoint(stDE.dwProcessId,
-                                                stDE.dwThreadId, p);
+                                            SetTempBreakPoint(stDE.dwProcessId, stDE.dwThreadId, p);
                                         }
                                     }
                                     SendDIDMessage(DID_BREAKWND, WM_RESTACK, 0, 0);
@@ -1085,38 +1031,36 @@ void StartDebug(char *cmd)
                             {
                                 dwContinueStatus = DBG_CONTINUE;
                             }
-                            // WIN32 doesn't support the DBG_TERMINATE_PROCESS flag, so we
-                            // have to go to some effort to get the process terminated.
-                            // This started at process creation time, when we found the address
-                            // of the ExitProcess function if there was one.
-                            doterm: if (dwContinueStatus ==
-                                DBG_TERMINATE_PROCESS)
+                        // WIN32 doesn't support the DBG_TERMINATE_PROCESS flag, so we
+                        // have to go to some effort to get the process terminated.
+                        // This started at process creation time, when we found the address
+                        // of the ExitProcess function if there was one.
+                        doterm:
+                            if (dwContinueStatus == DBG_TERMINATE_PROCESS)
                             {
                                 isTerminating = TRUE;
                                 dwContinueStatus = DBG_CONTINUE;
                                 sittingAtDataBreakpoint = FALSE;
                                 ContinueStep = FALSE;
-								if (debugProcessList->ExitAddr)
-								{
-									// Blast an exit process call into the main thread, and resume it
-									GetRegs(0);
-									BlastExitProcFunc(
-										activeProcess->idProcess, activeThread->idThread,
-										debugProcessList->ExitAddr);
-									SetRegs(0);
-									while ((int)ResumeThread(activeThread->hThread) > 1)
-										;
-									PostThreadMessage(activeThread->idThread, WM_NULL, 0, 0);
-								}
-								else
-								{
-									// This should never happen, unless we don't have ExitProcess
-									// in the executable file.  Our tools don't do that.
-									TerminateProcess(debugProcessList->hProcess, 0);
-									ExtendedMessageBox("Debugger", MB_SETFOREGROUND |
-										MB_SYSTEMMODAL, 
-										"A forced termination has been used.\n  This may leave the system in an unstable state.");
-								}
+                                if (debugProcessList->ExitAddr)
+                                {
+                                    // Blast an exit process call into the main thread, and resume it
+                                    GetRegs(0);
+                                    BlastExitProcFunc(activeProcess->idProcess, activeThread->idThread, debugProcessList->ExitAddr);
+                                    SetRegs(0);
+                                    while ((int)ResumeThread(activeThread->hThread) > 1)
+                                        ;
+                                    PostThreadMessage(activeThread->idThread, WM_NULL, 0, 0);
+                                }
+                                else
+                                {
+                                    // This should never happen, unless we don't have ExitProcess
+                                    // in the executable file.  Our tools don't do that.
+                                    TerminateProcess(debugProcessList->hProcess, 0);
+                                    ExtendedMessageBox(
+                                        "Debugger", MB_SETFOREGROUND | MB_SYSTEMMODAL,
+                                        "A forced termination has been used.\n  This may leave the system in an unstable state.");
+                                }
                             }
                             else if (!SingleStepping && !isTerminating)
                             {
@@ -1137,67 +1081,64 @@ void StartDebug(char *cmd)
                         default:
                             activeProcess = GetProcess(stDE.dwProcessId);
                             activeThread = stoppedThread = GetThread(stDE.dwProcessId, stDE.dwThreadId);
-							if (!isTerminating)
-							{
-								switch(databpCheck(&stDE))
-								{
-									case 0:
-										/* real exception */
-										GetRegs(0);
-										ClearBreakPoints(stDE.dwProcessId);
-										dwContinueStatus = HandleException(&stDE, cmd);
+                            if (!isTerminating)
+                            {
+                                switch (databpCheck(&stDE))
+                                {
+                                    case 0:
+                                        /* real exception */
+                                        GetRegs(0);
+                                        ClearBreakPoints(stDE.dwProcessId);
+                                        dwContinueStatus = HandleException(&stDE, cmd);
                                         SetBreakPoints(stDE.dwProcessId);
                                         if (dwContinueStatus == DBG_TERMINATE_PROCESS)
-											goto doterm;
-										SetRegs(0);
-										break;
-									case 1:
-										/* breakpoint */
-										GetRegs(0);
-										ClearBreakPoints(stDE.dwProcessId);
-										ClearTempBreakPoint(stDE.dwProcessId);
-										if (!isTerminating && uState != SteppingOut
-											&& !IsStepping(&stDE))
-										{
-											sittingAtDataBreakpoint = TRUE;
-											dwContinueStatus = HandleBreakpoint
-												(&stDE, cmd);
-											isSteppingOut(&stDE);
-											goto doterm;
-										}
-										else
-											dwContinueStatus = DBG_CONTINUE;
-										break;
-									case 2:
-										/* singlestep & continue */
-										GetRegs(0);
-										ClearBreakPoints(stDE.dwProcessId);
-										ContinueStep = TRUE;
-										SingleStep(stDE.dwProcessId, stDE.dwThreadId);
-										SetRegs(0);
-										break;
-								}
-							}
+                                            goto doterm;
+                                        SetRegs(0);
+                                        break;
+                                    case 1:
+                                        /* breakpoint */
+                                        GetRegs(0);
+                                        ClearBreakPoints(stDE.dwProcessId);
+                                        ClearTempBreakPoint(stDE.dwProcessId);
+                                        if (!isTerminating && uState != SteppingOut && !IsStepping(&stDE))
+                                        {
+                                            sittingAtDataBreakpoint = TRUE;
+                                            dwContinueStatus = HandleBreakpoint(&stDE, cmd);
+                                            isSteppingOut(&stDE);
+                                            goto doterm;
+                                        }
+                                        else
+                                            dwContinueStatus = DBG_CONTINUE;
+                                        break;
+                                    case 2:
+                                        /* singlestep & continue */
+                                        GetRegs(0);
+                                        ClearBreakPoints(stDE.dwProcessId);
+                                        ContinueStep = TRUE;
+                                        SingleStep(stDE.dwProcessId, stDE.dwThreadId);
+                                        SetRegs(0);
+                                        break;
+                                }
+                            }
                             break;
-                                    
-                        }
                     }
-                    break;
+                }
+                break;
 
                     // For any other events, just continue on.
                 default:
-                    {
-                        dwContinueStatus = DBG_EXCEPTION_NOT_HANDLED;
-                    }
-                    break;
+                {
+                    dwContinueStatus = DBG_EXCEPTION_NOT_HANDLED;
+                }
+                break;
             }
-			// Pass on to the operating system.
-			ContinueDebugEvent(stDE.dwProcessId, stDE.dwThreadId, dwContinueStatus);
+            // Pass on to the operating system.
+            ContinueDebugEvent(stDE.dwProcessId, stDE.dwThreadId, dwContinueStatus);
         }
         else
         {
-            
-	        bContinue = TRUE;
+
+            bContinue = TRUE;
             if (hExitHandle && WaitForSingleObject(hExitHandle, 0 == WAIT_OBJECT_0))
             {
                 CloseHandle(hExitHandle);
@@ -1208,26 +1149,26 @@ void StartDebug(char *cmd)
     activeProcess = NULL;
     CloseHandle(stProcessInfo.hThread);
     CloseHandle(stProcessInfo.hProcess);
-        CloseHandle(StartupSem);
-        CloseHandle(BreakpointSem);
+    CloseHandle(StartupSem);
+    CloseHandle(BreakpointSem);
     SetForegroundWindow(hwndFrame);
     PostMessage(hwndFrame, WM_HIDEDEBUGWINDOWS, 1, 0);
 
-        PostMessage(hwndFrame, WM_INITMENUPOPUP, 0, 0);
-    
+    PostMessage(hwndFrame, WM_INITMENUPOPUP, 0, 0);
+
     //    ProcessToTop(GetCurrentProcessId());
-        uState = notDebugging;
-        PostDIDMessage(DID_REGWND, WM_COMMAND, ID_SETADDRESS, 0);
-        RedrawAllBreakpoints();
-    
-        PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
-        PostDIDMessage(DID_PROJWND, WM_COMMAND, IDM_RESETPROFILECOMBOS, 0);
-        PostDIDMessage(DID_BREAKWND, WM_DOENABLE, 1, 0);
-        SendDIDMessage(DID_WATCHWND, WM_INITIALSTACK, 0, 0);                                    
-        SendDIDMessage(DID_WATCHWND+1, WM_INITIALSTACK, 0, 0);                                    
-        SendDIDMessage(DID_WATCHWND+2, WM_INITIALSTACK, 0, 0);                                    
-        SendDIDMessage(DID_WATCHWND+3, WM_INITIALSTACK, 0, 0);                                    
-        SetStatusMessage("Stopping Debugger", FALSE);
+    uState = notDebugging;
+    PostDIDMessage(DID_REGWND, WM_COMMAND, ID_SETADDRESS, 0);
+    RedrawAllBreakpoints();
+
+    PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
+    PostDIDMessage(DID_PROJWND, WM_COMMAND, IDM_RESETPROFILECOMBOS, 0);
+    PostDIDMessage(DID_BREAKWND, WM_DOENABLE, 1, 0);
+    SendDIDMessage(DID_WATCHWND, WM_INITIALSTACK, 0, 0);
+    SendDIDMessage(DID_WATCHWND + 1, WM_INITIALSTACK, 0, 0);
+    SendDIDMessage(DID_WATCHWND + 2, WM_INITIALSTACK, 0, 0);
+    SendDIDMessage(DID_WATCHWND + 3, WM_INITIALSTACK, 0, 0);
+    SetStatusMessage("Stopping Debugger", FALSE);
     if (hpsapiLib)
         FreeLibrary(hpsapiLib);
 }

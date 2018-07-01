@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <fstream>
@@ -32,7 +32,7 @@
 #include "ObjSymbol.h"
 #include <string.h>
 
-void PEDataObject::Setup(ObjInt &endVa, ObjInt &endPhys)
+void PEDataObject::Setup(ObjInt& endVa, ObjInt& endPhys)
 {
     if (virtual_addr == 0)
     {
@@ -46,9 +46,9 @@ void PEDataObject::Setup(ObjInt &endVa, ObjInt &endPhys)
     raw_addr = endPhys;
     endVa = ObjectAlign(objectAlign, endVa + size);
     endPhys = ObjectAlign(fileAlign, endPhys + initSize);
-    data = new unsigned char[initSize+importCount *6];
+    data = new unsigned char[initSize + importCount * 6];
 }
-bool PEDataObject::hasPC(ObjExpression *exp)
+bool PEDataObject::hasPC(ObjExpression* exp)
 {
     if (exp->GetOperator() == ObjExpression::ePC)
         return true;
@@ -58,19 +58,19 @@ bool PEDataObject::hasPC(ObjExpression *exp)
         return true;
     return false;
 }
-ObjExpression* PEDataObject::getExtern(ObjExpression *exp)
+ObjExpression* PEDataObject::getExtern(ObjExpression* exp)
 {
     if (exp->GetOperator() == ObjExpression::eSymbol)
         return exp;
     if (exp->GetLeft())
     {
-        ObjExpression *s = getExtern(exp->GetLeft());
+        ObjExpression* s = getExtern(exp->GetLeft());
         if (s)
             return s;
     }
     if (exp->GetRight())
     {
-        ObjExpression *s = getExtern(exp->GetRight());
+        ObjExpression* s = getExtern(exp->GetRight());
         if (s)
             return s;
     }
@@ -86,7 +86,7 @@ void PEDataObject::GetImportNames()
         }
     }
 }
-ObjInt PEDataObject::EvalFixup(ObjExpression *fixup, ObjInt base)
+ObjInt PEDataObject::EvalFixup(ObjExpression* fixup, ObjInt base)
 {
     // all this is so that we can thunk relative branches so they can still
     // use the import table.
@@ -95,10 +95,10 @@ ObjInt PEDataObject::EvalFixup(ObjExpression *fixup, ObjInt base)
     // current implementation that minimizes its use.
     if (hasPC(fixup))
     {
-        ObjExpression * ext = getExtern(fixup);
+        ObjExpression* ext = getExtern(fixup);
         if (ext)
         {
-            ObjSymbol *sym = ext->GetSymbol();
+            ObjSymbol* sym = ext->GetSymbol();
             if (sym->GetType() == ObjSymbol::eExternal)
             {
                 GetImportNames();
@@ -112,7 +112,7 @@ ObjInt PEDataObject::EvalFixup(ObjExpression *fixup, ObjInt base)
                         val1 = val1 - sym->GetOffset()->Eval(0) + val;
                         return val1;
                     }
-                }   
+                }
             }
         }
     }
@@ -120,21 +120,21 @@ ObjInt PEDataObject::EvalFixup(ObjExpression *fixup, ObjInt base)
 }
 void PEDataObject::Fill()
 {
-    ObjMemoryManager &m = sect->GetMemoryManager();
+    ObjMemoryManager& m = sect->GetMemoryManager();
     int ofs = 0;
     bool hasVA = name == ".text";
     int top = importThunkVA - virtual_addr - imageBase;
     for (ObjMemoryManager::MemoryIterator it = m.MemoryBegin(); it != m.MemoryEnd(); ++it)
     {
         int msize = (*it)->GetSize();
-        ObjByte *mdata = (*it)->GetData();
+        ObjByte* mdata = (*it)->GetData();
         if (hasVA && msize + ofs > top)
             msize = top - ofs;
         if (msize + ofs > initSize)
             msize = initSize - ofs;
         if (msize >= 0)
         {
-            ObjExpression *fixup = (*it)->GetFixup();
+            ObjExpression* fixup = (*it)->GetFixup();
             if (fixup)
             {
                 int sbase = sect->GetOffset()->Eval(0);
@@ -154,24 +154,24 @@ void PEDataObject::Fill()
                     else
                     {
                         data[ofs] = n & 0xff;
-                        data[ofs+1] = n >> 8;
+                        data[ofs + 1] = n >> 8;
                     }
                 }
-                else // msize == 4
+                else  // msize == 4
                 {
                     if (bigEndian)
                     {
                         data[ofs + 0] = n >> 24;
                         data[ofs + 1] = n >> 16;
-                        data[ofs + 2] = n >>  8;
+                        data[ofs + 2] = n >> 8;
                         data[ofs + 3] = n & 0xff;
                     }
                     else
                     {
                         data[ofs] = n & 0xff;
-                        data[ofs+1] = n >> 8;
-                        data[ofs+2] = n >> 16;
-                        data[ofs+3] = n >> 24;
+                        data[ofs + 1] = n >> 8;
+                        data[ofs + 2] = n >> 16;
+                        data[ofs + 3] = n >> 24;
                     }
                 }
             }
@@ -193,7 +193,6 @@ void PEDataObject::InitFlags()
     if (name == ".text")
     {
         SetFlags(WINF_CODE | WINF_EXECUTE | WINF_READABLE | WINF_NEG_FLAGS);
-
     }
     else if (name == ".data")
     {
@@ -211,8 +210,8 @@ ObjInt PEDataObject::SetThunk(int index, unsigned va)
     {
         unsigned offs = importThunkVA - virtual_addr - imageBase + index * 6;
         data[offs] = 0xff;
-        data[offs+1] = 0x25;
-        *(unsigned *)(data +offs+2) = va;
+        data[offs + 1] = 0x25;
+        *(unsigned*)(data + offs + 2) = va;
         return offs + virtual_addr + imageBase;
     }
     return -1;

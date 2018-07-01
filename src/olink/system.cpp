@@ -8,7 +8,7 @@ namespace std
 // this is to get around a buggy command.com on freedos...
 // it is implemented this way to prevent the IDE from popping up a console window
 // when it is used...
-int winsystem(const char *cmd)
+int winsystem(const char* cmd)
 {
     STARTUPINFO stStartInfo;
     PROCESS_INFORMATION stProcessInfo;
@@ -20,12 +20,11 @@ int winsystem(const char *cmd)
     stStartInfo.cb = sizeof(STARTUPINFO);
     stStartInfo.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
     stStartInfo.wShowWindow = SW_HIDE;
-    stStartInfo.hStdInput = GetStdHandle(STD_INPUT_HANDLE) ;
-    stStartInfo.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE) ;
-    stStartInfo.hStdError = GetStdHandle(STD_ERROR_HANDLE) ;
+    stStartInfo.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
+    stStartInfo.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+    stStartInfo.hStdError = GetStdHandle(STD_ERROR_HANDLE);
 
-    bRet = CreateProcess(NULL, (LPSTR)cmd, NULL, NULL, TRUE, NORMAL_PRIORITY_CLASS, NULL, 
-            NULL,  &stStartInfo, &stProcessInfo);
+    bRet = CreateProcess(NULL, (LPSTR)cmd, NULL, NULL, TRUE, NORMAL_PRIORITY_CLASS, NULL, NULL, &stStartInfo, &stProcessInfo);
     if (!bRet)
     {
         return -1;
@@ -35,4 +34,4 @@ int winsystem(const char *cmd)
     CloseHandle(stProcessInfo.hThread);
     return 0;
 }
-}
+}  // namespace std

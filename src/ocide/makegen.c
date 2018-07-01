@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -34,11 +34,11 @@
 
 extern char szInstallPath[];
 extern int making;
-extern PROJECTITEM *activeProject;
+extern PROJECTITEM* activeProject;
 
 static char szFileName[MAX_PATH];
 
-char *relpathmake(char *name, char *path)
+char* relpathmake(char* name, char* path)
 {
     if (szFileName[0])
     {
@@ -47,10 +47,10 @@ char *relpathmake(char *name, char *path)
         abspath(buf, szFileName);
         return relpath(buf, szFileName);
     }
-    else 
+    else
         return relpath(name, path);
 }
-static char *nodotslash(char *p)
+static char* nodotslash(char* p)
 {
     char *q = p, *r = p;
     while (*q)
@@ -63,32 +63,31 @@ static char *nodotslash(char *p)
     *r = 0;
     return p;
 }
-static char *Find(char *str, PROJECTITEM *pj, PROJECTITEM **found, int mode)
+static char* Find(char* str, PROJECTITEM* pj, PROJECTITEM** found, int mode)
 {
     char buf[10000];
-    char *rv = Lookup(str, pj, found);
-    char *p = rv;
+    char* rv = Lookup(str, pj, found);
+    char* p = rv;
     if (!p)
         return NULL;
     while (*p)
     {
         if (*p == '$' && p[1] == '(')
         {
-            char *q = strchr(p, ')');
+            char* q = strchr(p, ')');
             if (q)
             {
-                PROJECTITEM *found2 = *found;
+                PROJECTITEM* found2 = *found;
                 int l;
-                char *r;
-                memcpy(buf, p+2, q - p-2);
-                buf[q-p-2] = 0;
+                char* r;
+                memcpy(buf, p + 2, q - p - 2);
+                buf[q - p - 2] = 0;
                 r = Find(buf, pj, &found2, 0);
                 l = strlen(r) - (q - p - 2);
-                memmove(q+l, q, strlen(q)+1);
-                memcpy(p+2, r, strlen(r));
+                memmove(q + l, q, strlen(q) + 1);
+                memcpy(p + 2, r, strlen(r));
                 *found = LCD(*found, found2);
                 p = q + l + 1;
-                
             }
             else
             {
@@ -102,11 +101,11 @@ static char *Find(char *str, PROJECTITEM *pj, PROJECTITEM **found, int mode)
     }
     if (*found)
     {
-        NameValuePair *mm;
+        NameValuePair* mm;
         char buf2[MAX_PATH];
-        char *p = strrchr((*found)->realName, '\\');
+        char* p = strrchr((*found)->realName, '\\');
         if (p)
-            strcpy(buf2, p+1);
+            strcpy(buf2, p + 1);
         else
             strcpy(buf2, (*found)->realName);
         p = buf2;
@@ -120,7 +119,7 @@ static char *Find(char *str, PROJECTITEM *pj, PROJECTITEM **found, int mode)
         strcpy(p, str);
         if (mode == 0)
         {
-            NameValuePair *p = (*found)->mmacro;
+            NameValuePair* p = (*found)->mmacro;
             while (p)
             {
                 if (!strcmp(p->name, buf2))
@@ -136,7 +135,7 @@ static char *Find(char *str, PROJECTITEM *pj, PROJECTITEM **found, int mode)
         }
         else
         {
-            char buf[10000],*p=rv, *q;
+            char buf[10000], *p = rv, *q;
             buf[0] = 0;
             while (*p)
             {
@@ -146,8 +145,8 @@ static char *Find(char *str, PROJECTITEM *pj, PROJECTITEM **found, int mode)
                 if (p != q)
                 {
                     char exp[MAX_PATH], *r;
-                    strncpy(exp, p, q-p);
-                    exp[q-p] = '\0';
+                    strncpy(exp, p, q - p);
+                    exp[q - p] = '\0';
                     abspath(exp, pj->realName);
                     r = nodotslash(relpathmake(exp, pj->realName));
                     if (buf[0])
@@ -164,7 +163,7 @@ static char *Find(char *str, PROJECTITEM *pj, PROJECTITEM **found, int mode)
             }
             mm->value = strdup(buf);
         }
-        switch(mode)
+        switch (mode)
         {
             case 2:
                 pj->mmcustomCmd = mm;
@@ -177,24 +176,24 @@ static char *Find(char *str, PROJECTITEM *pj, PROJECTITEM **found, int mode)
                 (*found)->mmacro = mm;
                 return mm->name;
         }
-    }    
+    }
     return NULL;
 }
-static void GatherCommandMacros(PROJECTITEM *pj)
+static void GatherCommandMacros(PROJECTITEM* pj)
 {
-    PROJECTITEM *found = pj;
+    PROJECTITEM* found = pj;
     while (found && found->type != PJ_PROJ)
         found = found->parent;
     Find("__COMMAND_LINE", pj, &found, 1);
 }
-static void GatherCustomBuildMacros(PROJECTITEM *pj)
+static void GatherCustomBuildMacros(PROJECTITEM* pj)
 {
-    PROJECTITEM *found = pj;
+    PROJECTITEM* found = pj;
     while (found && found->type != PJ_PROJ)
         found = found->parent;
     Find("__CUSTOM_COMMANDS", pj, &found, 2);
 }
-static void GatherMacros(PROJECTITEM *pj, BOOL first)
+static void GatherMacros(PROJECTITEM* pj, BOOL first)
 {
     do
     {
@@ -203,7 +202,7 @@ static void GatherMacros(PROJECTITEM *pj, BOOL first)
         {
             if (pj->outputExt[0])
             {
-            
+
                 GatherCommandMacros(pj);
             }
         }
@@ -220,16 +219,16 @@ static void GatherMacros(PROJECTITEM *pj, BOOL first)
         pj = pj->next;
     } while (pj && !first);
 }
-static void GenFileMacros(FILE *out, PROJECTITEM *pj)
+static void GenFileMacros(FILE* out, PROJECTITEM* pj)
 {
-    NameValuePair *p = pj->mmacro;
+    NameValuePair* p = pj->mmacro;
     while (p)
     {
         fprintf(out, "%s = %s\n", p->name, p->value);
         p = p->next;
     }
 }
-static int GenProjDepends(FILE *out, PROJECTITEM *pj, PROJECTITEM *fi, int pos)
+static int GenProjDepends(FILE* out, PROJECTITEM* pj, PROJECTITEM* fi, int pos)
 {
     while (fi)
     {
@@ -240,8 +239,8 @@ static int GenProjDepends(FILE *out, PROJECTITEM *pj, PROJECTITEM *fi, int pos)
             {
                 if (fi->outputExt[0])
                 {
-                    char *outFile = Lookup("OUTPUTFILE",fi, NULL);
-                    char *rp;
+                    char* outFile = Lookup("OUTPUTFILE", fi, NULL);
+                    char* rp;
                     if (pos > 60)
                     {
                         fprintf(out, " \\\n\t");
@@ -255,7 +254,7 @@ static int GenProjDepends(FILE *out, PROJECTITEM *pj, PROJECTITEM *fi, int pos)
                 break;
             }
             case PJ_FOLDER:
-                pos = GenProjDepends(out,pj, fi->children, pos);
+                pos = GenProjDepends(out, pj, fi->children, pos);
                 break;
         }
         RemoveSymbolTable();
@@ -263,7 +262,7 @@ static int GenProjDepends(FILE *out, PROJECTITEM *pj, PROJECTITEM *fi, int pos)
     }
     return pos;
 }
-static void GenFileDepends(FILE *out, PROJECTITEM *pj)
+static void GenFileDepends(FILE* out, PROJECTITEM* pj)
 {
     switch (pj->type)
     {
@@ -272,17 +271,17 @@ static void GenFileDepends(FILE *out, PROJECTITEM *pj)
             if (pj->outputExt[0])
             {
                 int i;
-                PROJECTITEM *proj = pj;
-                char *outFile = Lookup("OUTPUTFILE",pj, NULL);
-                char *deps = Lookup("__DEPENDENCIES",pj, NULL);
-                PROJECTITEMLIST *depends = pj->depends;
+                PROJECTITEM* proj = pj;
+                char* outFile = Lookup("OUTPUTFILE", pj, NULL);
+                char* deps = Lookup("__DEPENDENCIES", pj, NULL);
+                PROJECTITEMLIST* depends = pj->depends;
                 char buf[MAX_PATH];
                 while (proj && proj->type != PJ_PROJ)
                     proj = proj->parent;
                 fprintf(out, "\"%s\": ", nodotslash(relpathmake(pj->realName, proj->realName)));
-                for (i=0; depends; depends = depends->next)
+                for (i = 0; depends; depends = depends->next)
                 {
-                    char *rp;
+                    char* rp;
                     if (i > 60)
                     {
                         fprintf(out, " \\\n\t");
@@ -295,7 +294,7 @@ static void GenFileDepends(FILE *out, PROJECTITEM *pj)
                 }
                 if (deps[0])
                 {
-                    char path[4096],*p;
+                    char path[4096], *p;
                     char root[MAX_PATH];
                     if (proj)
                     {
@@ -328,13 +327,13 @@ static void GenFileDepends(FILE *out, PROJECTITEM *pj)
                 free(deps);
             }
             break;
-        }                        
+        }
         case PJ_PROJ:
         {
-            PROJECTITEMLIST *list;
+            PROJECTITEMLIST* list;
             int pos = 0;
-            char *outFile = Lookup("OUTPUTFILE",pj, NULL);
-            char *rp;
+            char* outFile = Lookup("OUTPUTFILE", pj, NULL);
+            char* rp;
             rp = nodotslash(relpathmake(outFile, pj->realName));
             fprintf(out, "\"%s\": ", rp);
             GenProjDepends(out, pj, pj->children, 0);
@@ -343,10 +342,10 @@ static void GenFileDepends(FILE *out, PROJECTITEM *pj)
             {
                 if (list->item->outputExt[0])
                 {
-                    char *outFile;
-                    char *rp;
+                    char* outFile;
+                    char* rp;
                     AddSymbolTable(list->item, TRUE);
-                    outFile = Lookup("OUTPUTFILE",list->item, NULL);
+                    outFile = Lookup("OUTPUTFILE", list->item, NULL);
                     if (pos > 60)
                     {
                         fprintf(out, " \\\n\t");
@@ -366,17 +365,17 @@ static void GenFileDepends(FILE *out, PROJECTITEM *pj)
         }
     }
 }
-static void GenFileCommands(FILE *out, PROJECTITEM *pj)
+static void GenFileCommands(FILE* out, PROJECTITEM* pj)
 {
     GenFileDepends(out, pj);
     fprintf(out, "\t%s\n", pj->mmcmd->value);
 }
-static void GenCustomBuildDepends(FILE *out, PROJECTITEM *pj)
+static void GenCustomBuildDepends(FILE* out, PROJECTITEM* pj)
 {
-    char *outFile = Lookup("OUTPUTFILE",pj, NULL);
+    char* outFile = Lookup("OUTPUTFILE", pj, NULL);
     char *rp, *q;
-    char *deps = Lookup("__CUSTOM_DEPENDENCIES",pj, NULL);
-    rp = nodotslash(relpathmake(outFile,pj->realName));
+    char* deps = Lookup("__CUSTOM_DEPENDENCIES", pj, NULL);
+    rp = nodotslash(relpathmake(outFile, pj->realName));
     q = rp;
     while (*q)
     {
@@ -387,7 +386,7 @@ static void GenCustomBuildDepends(FILE *out, PROJECTITEM *pj)
     fprintf(out, "CUSTOM_%s: ", rp);
     if (deps[0])
     {
-        char path[4096],*p;
+        char path[4096], *p;
         char root[MAX_PATH];
         int i = 0;
         strcpy(path, pj->realName);
@@ -408,23 +407,23 @@ static void GenCustomBuildDepends(FILE *out, PROJECTITEM *pj)
                 i = 0;
             }
             i += strlen(buf);
-            fprintf(out, "%s ", buf);  
+            fprintf(out, "%s ", buf);
         }
     }
-    outFile = Lookup("OUTPUTFILE",pj, NULL);
-    fprintf(out,"%s\n", outFile);
+    outFile = Lookup("OUTPUTFILE", pj, NULL);
+    fprintf(out, "%s\n", outFile);
     free(deps);
     free(outFile);
 }
-static void GenCustomBuildCommands(FILE *out, PROJECTITEM *pj)
+static void GenCustomBuildCommands(FILE* out, PROJECTITEM* pj)
 {
     if (pj->mmcustomCmd->value[0])
     {
-        char *p = pj->mmcustomCmd->value;
+        char* p = pj->mmcustomCmd->value;
         GenCustomBuildDepends(out, pj);
         while (*p)
         {
-            char *q = strchr(p,'\n');
+            char* q = strchr(p, '\n');
             if (q)
             {
                 *q = 0;
@@ -440,7 +439,7 @@ static void GenCustomBuildCommands(FILE *out, PROJECTITEM *pj)
         }
     }
 }
-static void GenMakeFile(FILE *out, PROJECTITEM *pj, BOOL first)
+static void GenMakeFile(FILE* out, PROJECTITEM* pj, BOOL first)
 {
     do
     {
@@ -466,7 +465,7 @@ static void GenMakeFile(FILE *out, PROJECTITEM *pj, BOOL first)
         pj = pj->next;
     } while (pj && !first);
 }
-static void GenAllRule(FILE *out, PROJECTITEM *pj, BOOL first)
+static void GenAllRule(FILE* out, PROJECTITEM* pj, BOOL first)
 {
     if (first)
         fprintf(out, "all: ");
@@ -478,14 +477,14 @@ static void GenAllRule(FILE *out, PROJECTITEM *pj, BOOL first)
         }
         else if (pj->type == PJ_PROJ)
         {
-            char *rp;
-            char *outFile;
+            char* rp;
+            char* outFile;
             AddSymbolTable(pj, TRUE);
-            outFile = Lookup("OUTPUTFILE",pj, NULL);
-            rp = nodotslash(relpathmake(outFile,pj->realName));
+            outFile = Lookup("OUTPUTFILE", pj, NULL);
+            rp = nodotslash(relpathmake(outFile, pj->realName));
             if (pj->mmcustomCmd->value[0])
             {
-                char *q = rp;
+                char* q = rp;
                 while (*q)
                 {
                     if (*q == '\\' || *q == '.')
@@ -504,7 +503,7 @@ static void GenAllRule(FILE *out, PROJECTITEM *pj, BOOL first)
         pj = pj->next;
     } while (pj && !first);
 }
-static void FreeNVPs(PROJECTITEM *pj)
+static void FreeNVPs(PROJECTITEM* pj)
 {
     if (pj->mmcmd)
     {
@@ -522,15 +521,15 @@ static void FreeNVPs(PROJECTITEM *pj)
     }
     while (pj->mmacro)
     {
-        NameValuePair *p = pj->mmacro->next;
+        NameValuePair* p = pj->mmacro->next;
         free(pj->mmacro->name);
         free(pj->mmacro->value);
-        free(pj->mmacro);        
+        free(pj->mmacro);
         pj->mmacro = p;
     }
     if (pj->children)
     {
-        PROJECTITEM *p = pj->children;
+        PROJECTITEM* p = pj->children;
         while (p)
         {
             FreeNVPs(p);
@@ -538,17 +537,16 @@ static void FreeNVPs(PROJECTITEM *pj)
         }
     }
 }
-static DWORD genMake(PROJECTITEM *l)
+static DWORD genMake(PROJECTITEM* l)
 {
-    FILE *out;
+    FILE* out;
     OPENFILENAME ofn;
-    PROJECTITEM *pj = activeProject;
+    PROJECTITEM* pj = activeProject;
     char vpath[10000];
     vpath[0] = 0;
     activeProject = NULL;
-    if (!SaveFileDialog(&ofn, "makefile", GetWindowHandle(DID_PROJWND), FALSE, 0,
-        "Save Makefile As"))
-        
+    if (!SaveFileDialog(&ofn, "makefile", GetWindowHandle(DID_PROJWND), FALSE, 0, "Save Makefile As"))
+
     {
         activeProject = pj;
         return 1;
@@ -558,8 +556,7 @@ static DWORD genMake(PROJECTITEM *l)
     out = fopen(ofn.lpstrFile, "w");
     if (!out)
     {
-        ExtendedMessageBox("Makefile Generation", MB_SETFOREGROUND |
-            MB_SYSTEMMODAL, "Could not open %s for write", ofn.lpstrFile);
+        ExtendedMessageBox("Makefile Generation", MB_SETFOREGROUND | MB_SYSTEMMODAL, "Could not open %s for write", ofn.lpstrFile);
         return 1;
     }
     making = 1;
@@ -567,21 +564,20 @@ static DWORD genMake(PROJECTITEM *l)
     SetOutputExtensions(l, TRUE);
     SetOutputNames(l, TRUE);
     GatherMacros(l, TRUE);
-    GenAllRule(out,l, TRUE);
+    GenAllRule(out, l, TRUE);
     fprintf(out, "\n\n");
     GenMakeFile(out, l, TRUE);
     fclose(out);
     FreeNVPs(l);
     szFileName[0] = 0;
-    ExtendedMessageBox("Makefile Generation", MB_SETFOREGROUND | MB_SYSTEMMODAL, 
-        "Makefile generated");
+    ExtendedMessageBox("Makefile Generation", MB_SETFOREGROUND | MB_SYSTEMMODAL, "Makefile generated");
     making = 0;
     return 0;
 }
 
 //-------------------------------------------------------------------------
 
-void genMakeFile(PROJECTITEM *l)
+void genMakeFile(PROJECTITEM* l)
 {
     DWORD threadhand;
     _beginthread((BEGINTHREAD_FUNC)genMake, 0, (LPVOID)l);

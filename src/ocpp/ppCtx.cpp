@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "PreProcessor.h"
@@ -31,7 +31,7 @@ ppCtx::~ppCtx()
     while (stack.size())
         pop();
 }
-bool ppCtx::Check(int token, std::string &line)
+bool ppCtx::Check(int token, std::string& line)
 {
     bool rv = false;
     if (token == PUSH)
@@ -42,10 +42,10 @@ bool ppCtx::Check(int token, std::string &line)
         rv = repl(line);
     return rv;
 }
-std::string ppCtx::GetId(std::string &line)
+std::string ppCtx::GetId(std::string& line)
 {
     Tokenizer tk(line, nullptr);
-    const Token *t = tk.Next();
+    const Token* t = tk.Next();
     if (t->IsIdentifier())
     {
         return t->GetId();
@@ -56,10 +56,10 @@ std::string ppCtx::GetId(std::string &line)
     }
     return "";
 }
-bool ppCtx::push(std::string &line)
+bool ppCtx::push(std::string& line)
 {
     define.Process(line);
-    CtxData *p = new CtxData;
+    CtxData* p = new CtxData;
     p->id = nextId++;
     p->name = GetId(line);
     stack.push_front(p);
@@ -69,7 +69,7 @@ bool ppCtx::pop()
 {
     if (stack.size())
     {
-        CtxData *p = stack.front();
+        CtxData* p = stack.front();
         stack.pop_front();
         delete p;
     }
@@ -79,12 +79,12 @@ bool ppCtx::pop()
     }
     return true;
 }
-bool ppCtx::repl(std::string &line)
+bool ppCtx::repl(std::string& line)
 {
     if (stack.size())
     {
         define.Process(line);
-        CtxData *p = stack.front();
+        CtxData* p = stack.front();
         p->name = GetId(line);
     }
     else

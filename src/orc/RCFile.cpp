@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "PreProcessor.h"
@@ -48,27 +48,27 @@
 
 #include <stdexcept>
 
-std::string RCFile::CvtString(const std::wstring &str)
+std::string RCFile::CvtString(const std::wstring& str)
 {
     char buf[1024], *q = buf;
-    const WCHAR *p = str.c_str();
+    const WCHAR* p = str.c_str();
     while (*p)
         *q++ = *p++;
     *q = 0;
     return buf;
 }
-std::wstring RCFile::CvtString(const std::string &str)
+std::wstring RCFile::CvtString(const std::string& str)
 {
     WCHAR buf[1024], *q = buf;
-    const char *p = str.c_str();
+    const char* p = str.c_str();
     while (*p)
         *q++ = *p++;
     *q = 0;
     return buf;
 }
-bool RCFile::IsKeyword() 
+bool RCFile::IsKeyword()
 {
-    bool rv = GetToken() && GetToken()->IsKeyword(); 
+    bool rv = GetToken() && GetToken()->IsKeyword();
     return rv;
 }
 unsigned RCFile::GetTokenId()
@@ -81,12 +81,14 @@ unsigned RCFile::GetTokenId()
     }
     return rv;
 }
-bool RCFile::IsNumber() 
+bool RCFile::IsNumber()
 {
-    bool rv = GetToken() && (GetToken()->IsNumeric() || (GetToken()->IsKeyword() && (
-        GetToken()->GetKeyword() == Lexer::openpa || GetToken()->GetKeyword() == Lexer::plus ||
-        GetToken()->GetKeyword() == Lexer::minus || GetToken()->GetKeyword() == Lexer::lnot ||
-        GetToken()->GetKeyword() == Lexer::bcompl||GetToken()->GetKeyword() == Lexer::comma)));
+    bool rv =
+        GetToken() &&
+        (GetToken()->IsNumeric() ||
+         (GetToken()->IsKeyword() && (GetToken()->GetKeyword() == Lexer::openpa || GetToken()->GetKeyword() == Lexer::plus ||
+                                      GetToken()->GetKeyword() == Lexer::minus || GetToken()->GetKeyword() == Lexer::lnot ||
+                                      GetToken()->GetKeyword() == Lexer::bcompl || GetToken()->GetKeyword() == Lexer::comma)));
     return rv;
 }
 unsigned RCFile::GetNumber()
@@ -95,9 +97,9 @@ unsigned RCFile::GetNumber()
         return 0;
     return expr.Eval();
 }
-bool RCFile::IsString() 
+bool RCFile::IsString()
 {
-    bool rv = GetToken() && GetToken()->IsString(); 
+    bool rv = GetToken() && GetToken()->IsString();
     return rv;
 }
 std::wstring RCFile::GetString()
@@ -107,7 +109,7 @@ std::wstring RCFile::GetString()
     {
         while (IsString())
         {
-            rv += GetToken()->GetString();			 
+            rv += GetToken()->GetString();
             NextToken();
         }
     }
@@ -117,9 +119,9 @@ std::wstring RCFile::GetString()
     }
     return rv;
 }
-bool RCFile::IsIdentifier() 
+bool RCFile::IsIdentifier()
 {
-    bool rv = GetToken() && GetToken()->IsIdentifier(); 
+    bool rv = GetToken() && GetToken()->IsIdentifier();
     return rv;
 }
 std::wstring RCFile::GetId()
@@ -128,7 +130,7 @@ std::wstring RCFile::GetId()
     if (IsIdentifier())
     {
         rv = CvtString(GetToken()->GetId());
-        for (int i=0; i < rv.size(); i++)
+        for (int i = 0; i < rv.size(); i++)
             rv[i] = toupper(rv[i]);
         NextToken();
     }
@@ -151,9 +153,9 @@ void RCFile::SkipComma()
 void RCFile::NeedBegin()
 {
     if (!IsKeyword() || (GetToken()->GetKeyword() != Lexer::openbr && GetToken()->GetKeyword() != Lexer::BEGIN))
-{
+    {
         throw new std::runtime_error("Begin expected");
-}
+    }
     NextToken();
 }
 void RCFile::NeedEnd()
@@ -166,7 +168,7 @@ std::string RCFile::GetFileName()
 {
     if (GetToken()->IsString())
     {
-	std::string rv = CvtString(GetToken()->GetRawString());
+        std::string rv = CvtString(GetToken()->GetRawString());
         NextToken();
         rv = Utils::SearchForFile(includePath, rv);
         return rv;
@@ -180,24 +182,24 @@ std::string RCFile::GetFileName()
         size_t e = line.find_first_of(" \t\v", s);
         if (e == std::string::npos)
             e = line.size();
-        std::string rv = line.substr(s, e-s);
+        std::string rv = line.substr(s, e - s);
         line.erase(0, e);
         lexer.Reset(line);
         rv = Utils::SearchForFile(includePath, rv);
         return rv;
     }
 }
-Resource *RCFile::GetRes()
+Resource* RCFile::GetRes()
 {
     int type;
     int val = 0;
     std::wstring name;
     ResourceId id;
     bool done = false;
-    Resource *rv = nullptr;
+    Resource* rv = nullptr;
     while (!done && !AtEof())
     {
-        done= true;
+        done = true;
         if (!IsNumber() && GetToken()->IsKeyword())
         {
             type = GetToken()->GetKeyword();
@@ -217,7 +219,7 @@ Resource *RCFile::GetRes()
                     {
                         id.SetName(name);
                         type = -1;
-                        name =CvtString(GetToken()->GetId());
+                        name = CvtString(GetToken()->GetId());
                     }
                     else if (IsNumber())
                     {
@@ -272,7 +274,7 @@ Resource *RCFile::GetRes()
         switch (type)
         {
             case -1:
-                for (int i=0 ; i < name.size(); i++)
+                for (int i = 0; i < name.size(); i++)
                     name[i] = toupper(name[i]);
                 rv = new GenericResource(ResourceId(name), id, info);
                 break;
@@ -327,19 +329,19 @@ Resource *RCFile::GetRes()
                 break;
             case Lexer::LANGUAGE:
             {
-                    language = GetNumber();
-                    SkipComma();
-                    language |= GetNumber() << 10;
-                    NeedEol();
-                    done = false;
-                    break;
+                language = GetNumber();
+                SkipComma();
+                language |= GetNumber() << 10;
+                NeedEol();
+                done = false;
+                break;
             }
             case Lexer::RCINCLUDE:
-                {
-                    std::string name = GetFileName();
-                    pp.IncludeFile(name);
-                }
-                break;
+            {
+                std::string name = GetFileName();
+                pp.IncludeFile(name);
+            }
+            break;
             default:
                 throw new std::runtime_error("Invalid resource type");
                 break;
@@ -352,15 +354,15 @@ Resource *RCFile::GetRes()
 bool RCFile::Read()
 {
     resFile.Reset();
-    resFile.Add(new FileHeader()); // add the 32 byte header into the resource database
-    
-    Resource *res;
+    resFile.Add(new FileHeader());  // add the 32 byte header into the resource database
+
+    Resource* res;
     try
     {
         while (!lexer.AtEof() && (res = GetRes()))
             resFile.Add(res);
     }
-    catch (std::runtime_error *e)
+    catch (std::runtime_error* e)
     {
         Errors::Error(e->what());
         delete e;

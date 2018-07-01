@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #ifndef BRCLoader_H
@@ -40,13 +40,13 @@ class ObjBrowseInfo;
 
 class SymData;
 
-typedef std::map<std::string, SymData *> Symbols;
+typedef std::map<std::string, SymData*> Symbols;
 
 class BrowseData
 {
-public:
-    std::string name;	
-    std::string hint; // unused
+  public:
+    std::string name;
+    std::string hint;  // unused
     int func;
     int type;
     int qual;
@@ -55,38 +55,43 @@ public:
     int blockLevel;
     int line;
     int charPos;
-} ;
+};
 
-typedef std::deque<BrowseData *> BrowseDataset;
+typedef std::deque<BrowseData*> BrowseDataset;
 
 class SymData
 {
-public:
-    SymData(std::string &Name) : name(Name), externalCount(0), func(nullptr),
-        globalCount(0), argCount(0), localCount(0), fileOffs(0) { }
+  public:
+    SymData(std::string& Name) :
+        name(Name),
+        externalCount(0),
+        func(nullptr),
+        globalCount(0),
+        argCount(0),
+        localCount(0),
+        fileOffs(0)
+    {
+    }
     ~SymData();
     std::string name;
     BrowseDataset data;
     BrowseDataset usages;
-    std::deque<SymData *> mapping;
-    BrowseData *func;
+    std::deque<SymData*> mapping;
+    BrowseData* func;
     int externalCount;
     int globalCount;
     int argCount;
     int localCount;
     __int64 index;
     unsigned fileOffs;
-    void insert(BrowseData *xx)
-    {
-        data.push_back(xx);
-    }
-} ;
+    void insert(BrowseData* xx) { data.push_back(xx); }
+};
 class BlockData
 {
-public:
-    BlockData() : start(0), end(0), max(0), count(0) { }
+  public:
+    BlockData() : start(0), end(0), max(0), count(0) {}
     ~BlockData();
-    std::map<std::string, BrowseData *> syms;
+    std::map<std::string, BrowseData*> syms;
     int start;
     int end;
     int max;
@@ -94,33 +99,35 @@ public:
 };
 class BRCLoader
 {
-public:
-    BRCLoader(CmdFiles &Files ) : files(Files), currentFile(0), blockHead(0) { }
+  public:
+    BRCLoader(CmdFiles& Files) : files(Files), currentFile(0), blockHead(0) {}
     ~BRCLoader();
     bool load();
 
-    Symbols &GetSymbols() { return syms; }
-    std::map<std::string, int> &GetFileNames() { return nameMap; }    
-protected:
-    void InsertSymData(std::string s, BrowseData *data, bool func = false);
-    void InsertBlockData(std::string s, BrowseData *ldata);
-    void InsertFile(ObjBrowseInfo &p);
-    int InsertVariable(ObjBrowseInfo &p, bool func = false);
-    void InsertDefine(ObjBrowseInfo &p);
-    void StartFunc(ObjBrowseInfo &p);
-    void EndFunc(ObjBrowseInfo &p);
+    Symbols& GetSymbols() { return syms; }
+    std::map<std::string, int>& GetFileNames() { return nameMap; }
+
+  protected:
+    void InsertSymData(std::string s, BrowseData* data, bool func = false);
+    void InsertBlockData(std::string s, BrowseData* ldata);
+    void InsertFile(ObjBrowseInfo& p);
+    int InsertVariable(ObjBrowseInfo& p, bool func = false);
+    void InsertDefine(ObjBrowseInfo& p);
+    void StartFunc(ObjBrowseInfo& p);
+    void EndFunc(ObjBrowseInfo& p);
     void StartBlock(int line);
     void EndBlock(int line);
-    void Usages(ObjBrowseInfo &p);
-    void ParseData(ObjFile &f);
-    void LoadSourceFiles(ObjFile &fil);
-private:
+    void Usages(ObjBrowseInfo& p);
+    void ParseData(ObjFile& f);
+    void LoadSourceFiles(ObjFile& fil);
+
+  private:
     int currentFile;
-    CmdFiles &files;
+    CmdFiles& files;
     std::map<std::string, int> nameMap;
-    std::map<int, int> indexMap;	
+    std::map<int, int> indexMap;
     Symbols syms;
-    std::vector<BlockData *> blocks;
+    std::vector<BlockData*> blocks;
     int blockHead;
     std::deque<int> functionNesting;
 };

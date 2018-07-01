@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*
@@ -30,239 +30,137 @@
 #include <string.h>
 #include <ctype.h>
 #include "compiler.h"
- 
+
 extern int packdata[], packlevel;
 
-TYPE stdobject =
-{
-    bt___object ,0
-} ;
-TYPE stdvoid =
-{
-    bt_void, 0
-} ;
-TYPE stdany =
-{
-    bt_any, 1
-} ;
-TYPE stdauto =
-{
-    bt_auto, 0
-} ;
-TYPE stdfunc =
-{
-    bt_func, 0, &stdvoid
+TYPE stdobject = {bt___object, 0};
+TYPE stdvoid = {bt_void, 0};
+TYPE stdany = {bt_any, 1};
+TYPE stdauto = {bt_auto, 0};
+TYPE stdfunc = {bt_func, 0, &stdvoid};
+TYPE stdpointer = {bt_pointer, 4, &stdvoid};
+TYPE std__string = {bt___string, 4};
+TYPE std__object = {bt___object, 4};
+TYPE stdnullpointer = {bt_pointer, 4, &stdvoid};
+TYPE stdfloatcomplex = {bt_float_complex, 8};
+TYPE stddoublecomplex = {bt_double_complex, 16};
+TYPE stdlongdoublecomplex = {bt_long_double_complex, 24};
+TYPE stdfloat = {
+    bt_float,
+    4,
 };
-TYPE stdpointer = 
-{
-    bt_pointer, 4, &stdvoid
+TYPE stdfloatimaginary = {
+    bt_float_imaginary,
+    4,
 };
-TYPE std__string =
-{
-    bt___string, 4
+TYPE stddouble = {bt_double, 8};
+TYPE stddoubleimaginary = {bt_double_imaginary, 8};
+TYPE stdlongdoubleimaginary = {bt_long_double_imaginary, 12};
+TYPE stdlonglong = {bt_long_long, 8};
+TYPE stdunsigned = {bt_unsigned, 4};
+TYPE stdunative = {bt_unative, 4};
+TYPE stdunsignedlong = {
+    bt_unsigned_long,
+    4,
 };
-TYPE std__object =
-{
-    bt___object, 4
+TYPE stdunsignedlonglong = {bt_unsigned_long_long, 8};
+TYPE stdconst = {
+    bt_int,
+    4,
 };
-TYPE stdnullpointer =
-{
-    bt_pointer, 4, &stdvoid
+TYPE stdchar = {
+    bt_char,
+    1,
 };
-TYPE stdfloatcomplex =
-{
-    bt_float_complex, 8
+TYPE stdchar16t = {
+    bt_char16_t,
+    2,
 };
-TYPE stddoublecomplex =
-{
-    bt_double_complex, 16
+TYPE stdchar16tptr = {bt_pointer, 0, &stdchar16t};
+TYPE stdchar32t = {
+    bt_char32_t,
+    4,
 };
-TYPE stdlongdoublecomplex =
-{
-    bt_long_double_complex, 24
+TYPE stdchar32tptr = {bt_pointer, 0, &stdchar32t};
+TYPE stdsignedchar = {
+    bt_char,
+    1,
 };
-TYPE stdfloat = 
-{
-    bt_float, 4,
+TYPE stdunsignedchar = {
+    bt_unsigned_char,
+    1,
 };
-TYPE stdfloatimaginary = 
-{
-    bt_float_imaginary, 4, 
+TYPE stdshort = {
+    bt_short,
+    2,
 };
-TYPE stddouble = 
-{
-    bt_double, 8
+TYPE stdunsignedshort = {
+    bt_unsigned_short,
+    2,
 };
-TYPE stddoubleimaginary = 
-{
-    bt_double_imaginary, 8
-};
-TYPE stdlongdoubleimaginary = 
-{
-    bt_long_double_imaginary, 12
-};
-TYPE stdlonglong = 
-{
-    bt_long_long, 8
-};
-TYPE stdunsigned = 
-{
-    bt_unsigned, 4
-};
-TYPE stdunative =
-{
-    bt_unative, 4
-};
-TYPE stdunsignedlong =
-{
-    bt_unsigned_long, 4,
-};
-TYPE stdunsignedlonglong = 
-{
-    bt_unsigned_long_long, 8
-};
-TYPE stdconst = 
-{
-    bt_int, 4,
-};
-TYPE stdchar = 
-{
-    bt_char, 1,
-};
-TYPE stdchar16t = 
-{
-    bt_char16_t, 2,
-};
-TYPE stdchar16tptr =
-{
-    bt_pointer, 0, &stdchar16t
-};
-TYPE stdchar32t = 
-{
-    bt_char32_t, 4,
-};
-TYPE stdchar32tptr =
-{
-    bt_pointer, 0, &stdchar32t
-};
-TYPE stdsignedchar = 
-{
-    bt_char, 1,
-};
-TYPE stdunsignedchar = 
-{
-    bt_unsigned_char, 1,
-};
-TYPE stdshort = 
-{
-    bt_short, 2,
-};
-TYPE stdunsignedshort = 
-{
-    bt_unsigned_short, 2,
-};
-TYPE std__func__nc = 
-{
-    bt_pointer, 4, &stdchar
-};
-static TYPE std__func__c = 
-{
-    bt_const, 4, &stdchar
-};
-TYPE std__func__ = 
-{
-    bt_pointer, 4, &std__func__c
-};
-TYPE stdstring = 
-{
-    bt_pointer, 4, &stdchar
-};
-TYPE stdint = 
-{
-    bt_int, 4
-};
-TYPE stdinative =
-{
-    bt_inative, 4
-};
-TYPE stdlong =
-{
-    bt_long, 4
-};
-TYPE stdlongdouble = 
-{
-    bt_long_double, 10
-};
-TYPE stdbool = 
-{
-    bt_bool, 1
-};
-TYPE stdwidechar = 
-{
-    bt_wchar_t, 0
-};
-TYPE stdwcharptr =
-{
-    bt_pointer, 0, &stdwidechar
-};
-TYPE stdcharptr =
-{
-    bt_pointer, 0, &stdchar
-};
+TYPE std__func__nc = {bt_pointer, 4, &stdchar};
+static TYPE std__func__c = {bt_const, 4, &stdchar};
+TYPE std__func__ = {bt_pointer, 4, &std__func__c};
+TYPE stdstring = {bt_pointer, 4, &stdchar};
+TYPE stdint = {bt_int, 4};
+TYPE stdinative = {bt_inative, 4};
+TYPE stdlong = {bt_long, 4};
+TYPE stdlongdouble = {bt_long_double, 10};
+TYPE stdbool = {bt_bool, 1};
+TYPE stdwidechar = {bt_wchar_t, 0};
+TYPE stdwcharptr = {bt_pointer, 0, &stdwidechar};
+TYPE stdcharptr = {bt_pointer, 0, &stdchar};
 
 extern ARCH_ASM assemblerInterface[];
 extern COMPILER_PARAMS cparams;
 
-ARCH_ASM *chosenAssembler;
-ARCH_DEBUG *chosenDebugger;
+ARCH_ASM* chosenAssembler;
+ARCH_DEBUG* chosenDebugger;
 
-static int recurseNode(EXPRESSION *node, EXPRESSION **type, EXPRESSION **bits)
+static int recurseNode(EXPRESSION* node, EXPRESSION** type, EXPRESSION** bits)
 {
-            switch(node->type)
+    switch (node->type)
+    {
+        case en_tempref:
+            *type = node;
+            return 0;
+        case en_bits:
+            *bits = node;
+            return recurseNode(node->left, type, bits);
+        case en_absolute:
+        case en_auto:
+        case en_global:
+        case en_pc:
+        case en_threadlocal:
+            *type = node;
+            return 0;
+        case en_add:
+        case en_arrayadd:
+        case en_structadd:
+            return (recurseNode(node->left, type, bits) + recurseNode(node->right, type, bits));
+        default:
+            if (isintconst(node))
+                return node->v.i;
+            if (isfloatconst(node) || isimaginaryconst(node) || iscomplexconst(node))
             {
-                case en_tempref:
-                    *type = node;
-                    return 0;
-                case en_bits:
-                    *bits = node;
-                    return recurseNode(node->left, type, bits);
-                case en_absolute:
-                case en_auto:
-                case en_global:
-                case en_pc:
-                case en_threadlocal:
-                    *type = node;
-                    return 0;
-                case en_add:
-                case en_arrayadd:
-                case en_structadd:
-                    return(recurseNode(node->left, type, bits)
-                            + recurseNode(node->right, type, bits));
-                default:
-                    if (isintconst(node))
-                        return node->v.i;
-                    if (isfloatconst(node) 
-                        || isimaginaryconst(node)
-                        || iscomplexconst(node))
-                    {
-                        *type = node;
-                        return 0;
-                    }
-                    diag("recurseNode: unknown node");
-                    break;
+                *type = node;
+                return 0;
             }
+            diag("recurseNode: unknown node");
+            break;
+    }
     return 0;
 }
 
-BE_IMODEDATA *beArgType(IMODE *in)
+BE_IMODEDATA* beArgType(IMODE* in)
 {
-    BE_IMODEDATA *rv = (BE_IMODEDATA *)Alloc(sizeof(BE_IMODEDATA));
+    BE_IMODEDATA* rv = (BE_IMODEDATA*)Alloc(sizeof(BE_IMODEDATA));
     EXPRESSION *node = in->offset, *bits = 0;
     int ofs;
     rv->size = in->size;
     rv->u.sym.startBit = BIT_NO_BITS;
     rv->m = in;
-    switch(in->mode)
+    switch (in->mode)
     {
         case i_none:
         default:
@@ -279,8 +177,8 @@ BE_IMODEDATA *beArgType(IMODE *in)
                 rv->mode = bee_rv;
                 break;
             }
-            ofs  = recurseNode(in->offset, &node, &bits);
-            switch(node->type)
+            ofs = recurseNode(in->offset, &node, &bits);
+            switch (node->type)
             {
                 case en_tempref:
                     rv->mode = bee_temp;
@@ -293,14 +191,14 @@ BE_IMODEDATA *beArgType(IMODE *in)
                 case en_global:
                 case en_pc:
                     rv->u.sym.symOffset = ofs;
-                    rv->u.sym.sp = node->v.sp ;
+                    rv->u.sym.sp = node->v.sp;
                     rv->u.sym.name = node->v.sp->decoratedName;
                     if (bits)
                     {
                         rv->u.sym.startBit = bits->startbit;
                         rv->u.sym.bits = bits->bits;
                     }
-                    switch(node->type)
+                    switch (node->type)
                     {
                         case en_auto:
                             rv->mode = bee_local;
@@ -317,11 +215,11 @@ BE_IMODEDATA *beArgType(IMODE *in)
                         default:
                             break;
                     }
-                    break ;
+                    break;
                 case en_labcon:
                     rv->mode = bee_label;
                     rv->u.labelNum = node->v.i;
-                    break ;
+                    break;
                 case en_threadlocal:
                     rv->mode = bee_threadlocal;
                     break;
@@ -336,13 +234,13 @@ BE_IMODEDATA *beArgType(IMODE *in)
                     {
                         rv->mode = bee_float;
                         rv->u.f.r = &node->v.f;
-                        break ;
+                        break;
                     }
                     if (isimaginaryconst(node))
                     {
                         rv->mode = bee_imaginary;
                         rv->u.f.r = &node->v.f;
-                        break ;
+                        break;
                     }
                     if (iscomplexconst(node))
                     {
@@ -350,7 +248,7 @@ BE_IMODEDATA *beArgType(IMODE *in)
                         rv->u.f.r = &node->v.c.r;
                         rv->u.f.i = &node->v.c.i;
                     }
-                    break ;
+                    break;
             }
             break;
     }
@@ -358,7 +256,7 @@ BE_IMODEDATA *beArgType(IMODE *in)
 }
 int sizeFromISZ(int isz)
 {
-    ARCH_SIZING *p = chosenAssembler->arch->type_sizes;
+    ARCH_SIZING* p = chosenAssembler->arch->type_sizes;
     switch (isz)
     {
         case ISZ_U16:
@@ -375,8 +273,8 @@ int sizeFromISZ(int isz)
         case ISZ_USHORT:
         case -ISZ_USHORT:
             return p->a_short;
-/*        case ISZ_:*/
-/*            return p->a_wchar_t;*/
+            /*        case ISZ_:*/
+            /*            return p->a_wchar_t;*/
         case ISZ_ULONG:
         case -ISZ_ULONG:
             return p->a_long;
@@ -388,8 +286,8 @@ int sizeFromISZ(int isz)
         case ISZ_UNATIVE:
         case -ISZ_UNATIVE:
             return p->a_int;
-/*        case ISZ_ENUM:*/
-/*            return p->a_enum;*/
+            /*        case ISZ_ENUM:*/
+            /*            return p->a_enum;*/
         case ISZ_ADDR:
         case ISZ_STRING:
         case ISZ_OBJECT:
@@ -417,9 +315,9 @@ int sizeFromISZ(int isz)
             return 1;
     }
 }
-int needsAtomicLockFromType(TYPE *tp)
+int needsAtomicLockFromType(TYPE* tp)
 {
-    ARCH_SIZING *p = chosenAssembler->arch->type_needsLock;
+    ARCH_SIZING* p = chosenAssembler->arch->type_needsLock;
     switch (basetype(tp)->type)
     {
         case bt_char16_t:
@@ -484,7 +382,7 @@ int needsAtomicLockFromType(TYPE *tp)
             return 1;
     }
 }
-static int basesize(ARCH_SIZING *p, TYPE *tp)
+static int basesize(ARCH_SIZING* p, TYPE* tp)
 {
     tp = basetype(tp);
     switch (tp->type)
@@ -560,28 +458,28 @@ static int basesize(ARCH_SIZING *p, TYPE *tp)
             else if (tp->alignment)
                 return tp->alignment;
             else
-                return tp->sp->structAlign?  tp->sp->structAlign : 1;
+                return tp->sp->structAlign ? tp->sp->structAlign : 1;
         default:
-/*            diag("basesize: unknown type");*/
+            /*            diag("basesize: unknown type");*/
             return 1;
     }
 }
 int getSize(enum e_bt type)
 {
-    TYPE tp ;
+    TYPE tp;
     memset(&tp, 0, sizeof(tp));
     tp.type = type; /* other fields don't matter, we never call this for structured types*/
-    return basesize(chosenAssembler->arch->type_sizes, &tp);    
+    return basesize(chosenAssembler->arch->type_sizes, &tp);
 }
 int getBaseAlign(enum e_bt type)
 {
-    TYPE tp ;
+    TYPE tp;
     if (type == bt_auto)
         type = bt_struct;
     tp.type = type; /* other fields don't matter, we never call this for structured types*/
     tp.array = tp.vla = FALSE;
     tp.rootType = &tp;
-    return basesize(chosenAssembler->arch->type_align, &tp);    
+    return basesize(chosenAssembler->arch->type_align, &tp);
 }
 long getautoval(long val)
 {
@@ -593,15 +491,15 @@ long getautoval(long val)
 int funcvaluesize(int val)
 {
     if (chosenAssembler->arch->param_offs)
-        return(chosenAssembler->arch->param_offs(val));
+        return (chosenAssembler->arch->param_offs(val));
     return 0;
 }
-int alignment(int sc, TYPE *tp)
+int alignment(int sc, TYPE* tp)
 {
     (void)sc;
     return basesize(chosenAssembler->arch->type_align, tp);
 }
-int getAlign(int sc, TYPE *tp)
+int getAlign(int sc, TYPE* tp)
 {
     int align = basesize(chosenAssembler->arch->type_align, tp);
     if (sc != sc_auto)
@@ -611,81 +509,88 @@ int getAlign(int sc, TYPE *tp)
         align = chosenAssembler->arch->align(align);
     return align;
 }
-char *getUsageText(void)
-{
-    return chosenAssembler->usage_text;
-}
-char *lookupRegName(int regnum)
+char* getUsageText(void) { return chosenAssembler->usage_text; }
+char* lookupRegName(int regnum)
 {
     if (regnum < chosenAssembler->arch->registerCount)
         return chosenAssembler->arch->regNames[regnum].name;
     return "???";
 }
-KEYWORD *GetProcKeywords(void)
-{
-    return chosenAssembler->keywords;
-}
-int init_backend(int *argc ,char **argv)
+KEYWORD* GetProcKeywords(void) { return chosenAssembler->keywords; }
+int init_backend(int* argc, char** argv)
 {
     char assembler[100], debugger[100];
-    int i,rv;
+    int i, rv;
     assembler[0] = debugger[0] = 0;
     cparams.prm_asmfile = cparams.prm_compileonly = FALSE;
-    for (i=0; i < *argc; i++)
-        if (!strncmp(argv[i],"/S",2) || !strncmp(argv[i], "-S", 2)) {
-            char *p = argv[i]+2,*q = assembler;
+    for (i = 0; i < *argc; i++)
+        if (!strncmp(argv[i], "/S", 2) || !strncmp(argv[i], "-S", 2))
+        {
+            char *p = argv[i] + 2, *q = assembler;
             cparams.prm_asmfile = TRUE;
             if (argv[i][1] == 'S')
                 cparams.prm_compileonly = TRUE;
             while (*p && !isspace(*p) && *p != ';')
                 *q++ = *p++;
             *q = 0;
-            if (*p == ';') {
+            if (*p == ';')
+            {
                 q = debugger;
                 p++;
                 while (*p && !isspace(*p))
                     *q++ = *p++;
                 *q = 0;
             }
-            memcpy(argv + i, argv + i + 1, sizeof(char **) * (*argc - i + 1));
+            memcpy(argv + i, argv + i + 1, sizeof(char**) * (*argc - i + 1));
             (*argc)--;
             break;
         }
-    if (assembler[0]) {
-        ARCH_ASM *a = assemblerInterface ;
-        while (a->name) {
-            if (!strcmp(a->name, assembler)) {
+    if (assembler[0])
+    {
+        ARCH_ASM* a = assemblerInterface;
+        while (a->name)
+        {
+            if (!strcmp(a->name, assembler))
+            {
                 chosenAssembler = a;
-                break ;
+                break;
             }
             a++;
-                
         }
         if (!a->name)
             fatal("Chosen assembler format '%s' not found", assembler);
-    } else {
+    }
+    else
+    {
         chosenAssembler = assemblerInterface;
     }
     if (!chosenAssembler->objext)
         cparams.prm_asmfile = TRUE;
-    if (debugger[0]) {
-        ARCH_DEBUG *d = chosenAssembler->debug;
-        if (d) {
-            while (d->name) {
-                if (!strcmp(d->name, debugger)) {
+    if (debugger[0])
+    {
+        ARCH_DEBUG* d = chosenAssembler->debug;
+        if (d)
+        {
+            while (d->name)
+            {
+                if (!strcmp(d->name, debugger))
+                {
                     chosenDebugger = d;
-                    break ;
+                    break;
                 }
                 d++;
             }
         }
-        if (!d || !d->name) {
+        if (!d || !d->name)
+        {
             fatal("Chosen debugger format '%s' not found", debugger);
         }
-    } else
+    }
+    else
         chosenDebugger = chosenAssembler->debug;
     rv = !chosenAssembler->init || (*chosenAssembler->init)(&cparams, chosenAssembler, chosenDebugger);
-    if (rv ) {
+    if (rv)
+    {
         stdpointer.size = getSize(bt_pointer);
         stdnullpointer.size = getSize(bt_pointer);
         stdnullpointer.nullptrType = TRUE;
@@ -697,7 +602,7 @@ int init_backend(int *argc ,char **argv)
         stdlongdoublecomplex.size = getSize(bt_float_complex);
         stdunsignedlonglong.size = stdlonglong.size = getSize(bt_long_long);
         stdunsignedlong.size = stdlong.size = getSize(bt_long);
-        stdconst.size = stdunsigned.size = stdint.size = getSize(bt_unsigned);        
+        stdconst.size = stdunsigned.size = stdint.size = getSize(bt_unsigned);
         stdstring.size = getSize(bt_pointer);
         std__string.size = getSize(bt_pointer);
         std__object.size = getSize(bt_pointer);
@@ -721,9 +626,11 @@ int init_backend(int *argc ,char **argv)
         stdfloatimaginary.rootType = &stdfloatimaginary;
         stdfloat.rootType = &stdfloat;
         stddouble.rootType = &stddouble;
-        stddoubleimaginary.rootType = &stddoubleimaginary;;
+        stddoubleimaginary.rootType = &stddoubleimaginary;
+        ;
         stdlongdouble.rootType = &stdlongdouble;
-        stdlongdoubleimaginary.rootType = &stdlongdoubleimaginary;;
+        stdlongdoubleimaginary.rootType = &stdlongdoubleimaginary;
+        ;
         stdfloatcomplex.rootType = &stdfloatcomplex;
         stddoublecomplex.rootType = &stddoublecomplex;
         stdlongdoublecomplex.rootType = &stdlongdoublecomplex;
@@ -733,7 +640,7 @@ int init_backend(int *argc ,char **argv)
         stdlong.rootType = &stdlong;
         stdconst.rootType = &stdconst;
         stdunsigned.rootType = &stdunsigned;
-        stdint.rootType = &stdint;        
+        stdint.rootType = &stdint;
         stdunative.rootType = &stdunative;
         stdinative.rootType = &stdinative;
         stdstring.rootType = &stdstring;
@@ -751,7 +658,6 @@ int init_backend(int *argc ,char **argv)
         stdwcharptr.rootType = &stdwcharptr;
         stdchar16tptr.rootType = &stdchar16tptr;
         stdchar32tptr.rootType = &stdchar32tptr;
-
     }
-    return rv ;
+    return rv;
 }

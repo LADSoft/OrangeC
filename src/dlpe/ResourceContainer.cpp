@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "ResourceContainer.h"
@@ -29,13 +29,8 @@
 #include <fstream>
 #include <iostream>
 
-unsigned char ResourceContainer::resourceHeader[32] = 
-{
-   0,0,0,0,0x20,0,0,0,
-   0xff,0xff,0,0,0xff,0xff,0,0,
-   0,0,0,0,0,0,0,0,
-   0,0,0,0,0,0,0,0
-};
+unsigned char ResourceContainer::resourceHeader[32] = {0, 0, 0, 0, 0x20, 0, 0, 0, 0xff, 0xff, 0, 0, 0xff, 0xff, 0, 0,
+                                                       0, 0, 0, 0, 0,    0, 0, 0, 0,    0,    0, 0, 0,    0,    0, 0};
 ResourceContainer::~ResourceContainer()
 {
     for (auto type : numberedTypes)
@@ -66,7 +61,7 @@ bool ResourceContainer::LoadFiles()
     }
     return rv;
 }
-int ResourceContainer::GetId(unsigned short *hdrdata, int &i, int &id, std::wstring &name)
+int ResourceContainer::GetId(unsigned short* hdrdata, int& i, int& id, std::wstring& name)
 {
     if (hdrdata[i] == 0xffff)
     {
@@ -86,23 +81,23 @@ int ResourceContainer::GetId(unsigned short *hdrdata, int &i, int &id, std::wstr
     }
     return 0;
 }
-bool ResourceContainer::LoadFile(const std::string &name)
+bool ResourceContainer::LoadFile(const std::string& name)
 {
     std::fstream in(name.c_str(), std::ios::in | std::ios::binary);
     if (!in.is_open())
         return false;
     unsigned char buf[sizeof(resourceHeader)];
-    in.read((char *)buf, sizeof(resourceHeader));
+    in.read((char*)buf, sizeof(resourceHeader));
     if (memcmp(buf, resourceHeader, sizeof(resourceHeader)))
         return false;
     while (1)
     {
         unsigned hdr[2];
-        in.read((char *)hdr, sizeof(hdr));
+        in.read((char*)hdr, sizeof(hdr));
         if (in.eof())
             break;
-        unsigned short *hdrdata= new unsigned short[hdr[1]/2];
-        in.read((char *)hdrdata, hdr[1] - sizeof(hdr));
+        unsigned short* hdrdata = new unsigned short[hdr[1] / 2];
+        in.read((char*)hdrdata, hdr[1] - sizeof(hdr));
         if (in.fail())
         {
             delete[] hdrdata;
@@ -116,15 +111,15 @@ bool ResourceContainer::LoadFile(const std::string &name)
         std::wstring name;
         GetId(hdrdata, i, nameId, name);
         if (i & 1)
-            i ++;
-        int lang = hdrdata[i+3];
-        i += 8; // past postheader
+            i++;
+        int lang = hdrdata[i + 3];
+        i += 8;  // past postheader
         delete[] hdrdata;
         // past end of header?
-        if (i*2+8 > hdr[1])
+        if (i * 2 + 8 > hdr[1])
             return false;
-        unsigned char *data = new unsigned char[hdr[0]];
-        in.read((char *)data, hdr[0]);
+        unsigned char* data = new unsigned char[hdr[0]];
+        in.read((char*)data, hdr[0]);
         if (in.fail())
         {
             delete[] data;
@@ -141,7 +136,8 @@ bool ResourceContainer::LoadFile(const std::string &name)
     }
     return true;
 }
-void ResourceContainer::InsertResource(int typeId, std::wstring type, int nameId, std::wstring name, unsigned char *data, size_t len, int language)
+void ResourceContainer::InsertResource(int typeId, std::wstring type, int nameId, std::wstring name, unsigned char* data,
+                                       size_t len, int language)
 {
     ResourceData d, n;
     n.sig = SIGNAT;

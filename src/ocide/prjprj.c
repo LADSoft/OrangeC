@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -38,14 +38,14 @@
 
 extern HINSTANCE hInstance;
 extern HWND hwndFrame;
-extern char szProjectFilter[] ;
+extern char szProjectFilter[];
 extern int profileDebugMode;
 extern char currentProfileName[256];
-extern char *sysProfileName;
+extern char* sysProfileName;
 extern HWND prjTreeWindow;
-extern PROJECTITEM *activeProject;
+extern PROJECTITEM* activeProject;
 extern int defaultWorkArea;
-extern PROJECTITEM *workArea;
+extern PROJECTITEM* workArea;
 extern HIMAGELIST treeIml;
 
 static int newMode;
@@ -72,7 +72,7 @@ static int ParseNewProjectData(HWND hwnd)
         if (newDir)
         {
             char *p, *q;
-            if (newName[strlen(newName)-1] != '\\')
+            if (newName[strlen(newName) - 1] != '\\')
                 strcat(newName, "\\");
             strcat(newName, newTitle);
             p = strrchr(newName, '.');
@@ -94,20 +94,21 @@ static int ParseNewProjectData(HWND hwnd)
                 ff = FindFirstFile(nbuf, &aa);
                 if (ff != INVALID_HANDLE_VALUE)
                 {
-                    do {
+                    do
+                    {
                         if (strcmp(aa.cFileName, ".") && strcmp(aa.cFileName, ".."))
                         {
                             if (!strstr(aa.cFileName, ".cwa"))
                                 foundone = TRUE;
                             break;
                         }
-                    }
-                    while (FindNextFile(ff, &aa));
+                    } while (FindNextFile(ff, &aa));
                     FindClose(ff);
                 }
                 if (foundone)
                 {
-                    if (ExtendedMessageBox("Exists", MB_YESNO, "Project directory exists and is not empty.\nCreate project anyway?") != IDYES)
+                    if (ExtendedMessageBox("Exists", MB_YESNO,
+                                           "Project directory exists and is not empty.\nCreate project anyway?") != IDYES)
                         rv = 0;
                 }
             }
@@ -125,21 +126,21 @@ static int ParseNewProjectData(HWND hwnd)
         {
             strcat(newName, "\\");
             strcat(newName, newTitle);
-            switch(newMode)
+            switch (newMode)
             {
                 case BT_CONSOLE:
                 case BT_WINDOWS:
                 default:
-                    if (strlen(newName) < 5 || stricmp(newName + strlen(newName)-4, ".exe") != 0)
-                       strcat(newName, ".exe");
+                    if (strlen(newName) < 5 || stricmp(newName + strlen(newName) - 4, ".exe") != 0)
+                        strcat(newName, ".exe");
                     break;
                 case BT_DLL:
-                    if (strlen(newName) < 5 || stricmp(newName + strlen(newName)-4, ".dll") != 0)
-                       strcat(newName, ".dll");
+                    if (strlen(newName) < 5 || stricmp(newName + strlen(newName) - 4, ".dll") != 0)
+                        strcat(newName, ".dll");
                     break;
                 case BT_LIBRARY:
-                    if (strlen(newName) < 3 || stricmp(newName + strlen(newName)-2, ".l") != 0)
-                       strcat(newName, ".l");
+                    if (strlen(newName) < 3 || stricmp(newName + strlen(newName) - 2, ".l") != 0)
+                        strcat(newName, ".l");
                     break;
             }
         }
@@ -159,7 +160,7 @@ static int CreateNewProjectData(HWND hwnd)
     ListView_SetImageList(hwndLV, ImageList_Duplicate(treeIml), LVSIL_SMALL);
 
     GetWindowRect(hwndLV, &r);
-    lvC.mask = LVCF_WIDTH | LVCF_SUBITEM ;
+    lvC.mask = LVCF_WIDTH | LVCF_SUBITEM;
     lvC.cx = r.right - r.left;
     lvC.iSubItem = 0;
     ListView_InsertColumn(hwndLV, 0, &lvC);
@@ -171,36 +172,36 @@ static int CreateNewProjectData(HWND hwnd)
     item.iImage = IL_CONSOLE;
     item.pszText = "Console";
     ListView_InsertItem(hwndLV, &item);
-    
+
     item.iItem = items++;
     item.iSubItem = 0;
     item.mask = LVIF_TEXT | LVIF_IMAGE;
     item.iImage = IL_GUI;
     item.pszText = "Windows GUI";
     ListView_InsertItem(hwndLV, &item);
-    
+
     item.iItem = items++;
     item.iSubItem = 0;
     item.mask = LVIF_TEXT | LVIF_IMAGE;
     item.iImage = IL_DLL;
     item.pszText = "Windows DLL";
     ListView_InsertItem(hwndLV, &item);
-    
+
     item.iItem = items++;
     item.iSubItem = 0;
     item.mask = LVIF_TEXT | LVIF_IMAGE;
     item.iImage = IL_LIB;
-    item.pszText = "Static Library";    
+    item.pszText = "Static Library";
     ListView_InsertItem(hwndLV, &item);
-    
+
     ListView_SetSelectionMark(hwndLV, 0);
     ListView_SetItemState(hwndLV, 0, LVIS_SELECTED, LVIS_SELECTED);
 
     newTitle[0] = 0;
     if (!defaultWorkArea)
     {
-        char *p;
-        strcpy(newName,workArea->realName);
+        char* p;
+        strcpy(newName, workArea->realName);
         p = strrchr(newName, '\\');
         if (p)
             p[0] = 0;
@@ -210,9 +211,9 @@ static int CreateNewProjectData(HWND hwnd)
         GetDefaultProjectsPath(newName);
     }
     CheckDlgButton(hwnd, IDC_NEWDIR, BST_CHECKED);
-    SendDlgItemMessage(hwnd, IDC_FILENEWPROJECT, WM_SETTEXT, 0, (LPARAM) newTitle);
+    SendDlgItemMessage(hwnd, IDC_FILENEWPROJECT, WM_SETTEXT, 0, (LPARAM)newTitle);
     SendDlgItemMessage(hwnd, IDC_FILENEWPROJECT, EM_SETLIMITTEXT, MAX_PATH, 0);
-    SendDlgItemMessage(hwnd, IDC_PROJECTNEWPROJECT, WM_SETTEXT, 0, (LPARAM) newName);
+    SendDlgItemMessage(hwnd, IDC_PROJECTNEWPROJECT, WM_SETTEXT, 0, (LPARAM)newName);
     SendDlgItemMessage(hwnd, IDC_PROJECTNEWPROJECT, EM_SETLIMITTEXT, MAX_PATH, 0);
     strcpy(browsePath, newName);
     return items;
@@ -220,9 +221,9 @@ static int CreateNewProjectData(HWND hwnd)
 static int CustomDrawNewProject(HWND hwnd, LPNMLVCUSTOMDRAW draw)
 {
     HWND hwndLV;
-    switch(draw->nmcd.dwDrawStage)
+    switch (draw->nmcd.dwDrawStage)
     {
-        case CDDS_PREPAINT :
+        case CDDS_PREPAINT:
         case CDDS_ITEMPREPAINT:
             return CDRF_NOTIFYSUBITEMDRAW;
         case CDDS_ITEMPREPAINT | CDDS_SUBITEM:
@@ -245,16 +246,15 @@ static int CustomDrawNewProject(HWND hwnd, LPNMLVCUSTOMDRAW draw)
 }
 //-------------------------------------------------------------------------
 
-long APIENTRY NewProjectProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
-    lParam)
+long APIENTRY NewProjectProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
         case WM_INITDIALOG:
-           if (!CreateNewProjectData(hwnd))
-           {
+            if (!CreateNewProjectData(hwnd))
+            {
                 EndDialog(hwnd, 1);
-           }
+            }
             else
             {
                 CenterWindow(hwnd);
@@ -288,22 +288,22 @@ long APIENTRY NewProjectProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
             }
             return 0;
         case WM_COMMAND:
-            switch (wParam &0xffff)
+            switch (wParam & 0xffff)
             {
-            case IDC_NEWPROJECTBROWSE:
-                BrowseForFile(hwndFrame, "New Project Directory", browsePath, MAX_PATH);
-                SendDlgItemMessage(hwnd, IDC_PROJECTNEWPROJECT, WM_SETTEXT, 0, (LPARAM)browsePath);
-                break;
-            case IDOK:
-                if (ParseNewProjectData(hwnd))
-                    EndDialog(hwnd, IDOK);
-                break;
-            case IDCANCEL:
-                EndDialog(hwnd, IDCANCEL);
-                break;
-            case IDHELP:
-                ContextHelp(IDH_NEW_PROJECT_DIALOG);
-                break;
+                case IDC_NEWPROJECTBROWSE:
+                    BrowseForFile(hwndFrame, "New Project Directory", browsePath, MAX_PATH);
+                    SendDlgItemMessage(hwnd, IDC_PROJECTNEWPROJECT, WM_SETTEXT, 0, (LPARAM)browsePath);
+                    break;
+                case IDOK:
+                    if (ParseNewProjectData(hwnd))
+                        EndDialog(hwnd, IDOK);
+                    break;
+                case IDCANCEL:
+                    EndDialog(hwnd, IDCANCEL);
+                    break;
+                case IDHELP:
+                    ContextHelp(IDH_NEW_PROJECT_DIALOG);
+                    break;
             }
             break;
         case WM_CLOSE:
@@ -312,23 +312,23 @@ long APIENTRY NewProjectProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
     }
     return 0;
 }
-void SetProjectType(PROJECTITEM *pj, int newMode)
+void SetProjectType(PROJECTITEM* pj, int newMode)
 {
     int n = profileDebugMode;
     char num[256];
-    SETTING *set;
-    sprintf(num ,"%d", newMode);
+    SETTING* set;
+    sprintf(num, "%d", newMode);
 
     profileDebugMode = 0;
     set = calloc(1, sizeof(SETTING));
-    InsertSetting(pj,set);
+    InsertSetting(pj, set);
     set->id = strdup("__PROJECTTYPE");
     set->type = e_numeric;
     set->value = strdup(num);
 
     profileDebugMode = 1;
     set = calloc(1, sizeof(SETTING));
-    InsertSetting(pj,set);
+    InsertSetting(pj, set);
     set->id = strdup("__PROJECTTYPE");
     set->type = e_numeric;
     set->value = strdup(num);
@@ -339,13 +339,13 @@ void PropagateAllProjectTypes(void)
 {
     int n = profileDebugMode;
     char m[256];
-    PROJECTITEM *pj = workArea->children;
+    PROJECTITEM* pj = workArea->children;
     strcpy(m, currentProfileName);
     profileDebugMode = 0;
     while (pj)
     {
-        SETTING *s;
-        char *rls = NULL;
+        SETTING* s;
+        char* rls = NULL;
         strcpy(currentProfileName, sysProfileName);
         s = PropFind(GetSettings(pj->profiles), "__PROJECTTYPE");
         if (s)
@@ -362,12 +362,12 @@ void PropagateAllProjectTypes(void)
 }
 void ProjectNewProject(void)
 {
-    PROJECTITEM *data = workArea;
+    PROJECTITEM* data = workArea;
     if (data && data->type == PJ_WS)
     {
         if (DialogBox(hInstance, "IDD_NEWPROJECT", hwndFrame, (DLGPROC)NewProjectProc) == IDOK)
         {
-            PROJECTITEM *p = workArea->children;
+            PROJECTITEM* p = workArea->children;
             while (p)
                 if (!stricmp(p->realName, newName))
                     return;
@@ -376,11 +376,11 @@ void ProjectNewProject(void)
             p = calloc(1, sizeof(PROJECTITEM));
             if (p)
             {
-                PROJECTITEM **ins = &workArea->children;
+                PROJECTITEM** ins = &workArea->children;
                 HTREEITEM pos = TVI_FIRST;
                 int imagetype;
-                strcpy( p->displayName, newTitle);
-                strcpy( p->realName, newName);
+                strcpy(p->displayName, newTitle);
+                strcpy(p->realName, newName);
                 p->expanded = TRUE;
                 p->parent = workArea;
                 p->type = PJ_PROJ;
@@ -412,19 +412,18 @@ void ProjectNewProject(void)
 }
 void ProjectExistingProject(void)
 {
-    PROJECTITEM *data = workArea;
+    PROJECTITEM* data = workArea;
     if (data && data->type == PJ_WS)
     {
         OPENFILENAME ofn;
 
-        if (OpenFileDialog(&ofn, 0, GetWindowHandle(DID_PROJWND), FALSE, FALSE, szProjectFilter,
-                               "Open existing project"))
+        if (OpenFileDialog(&ofn, 0, GetWindowHandle(DID_PROJWND), FALSE, FALSE, szProjectFilter, "Open existing project"))
         {
-            PROJECTITEM *p = workArea->children;
-            char *q;
-            q = stristr(ofn.lpstrFile,".cpj");
+            PROJECTITEM* p = workArea->children;
+            char* q;
+            q = stristr(ofn.lpstrFile, ".cpj");
             if (q)
-                *q = 0;            
+                *q = 0;
             while (p)
                 if (!stricmp(p->realName, ofn.lpstrFile))
                     return;
@@ -433,7 +432,7 @@ void ProjectExistingProject(void)
             p = calloc(1, sizeof(PROJECTITEM));
             if (p)
             {
-                PROJECTITEM **ins = &workArea->children;
+                PROJECTITEM** ins = &workArea->children;
                 HTREEITEM pos = TVI_FIRST;
                 strcpy(p->realName, ofn.lpstrFile);
                 q = strrchr(p->realName, '\\');
@@ -462,30 +461,30 @@ void ProjectExistingProject(void)
     }
 }
 //-------------------------------------------------------------------------
-void SaveAllProjects(PROJECTITEM *workArea, BOOL always)
+void SaveAllProjects(PROJECTITEM* workArea, BOOL always)
 {
     if (workArea)
     {
-        PROJECTITEM *p = workArea->children;
+        PROJECTITEM* p = workArea->children;
         if (always || workArea->changed)
             SaveWorkArea(workArea);
         while (p)
         {
             if (p->changed)
             {
-                char *q = strrchr(p->realName, '\\');
+                char* q = strrchr(p->realName, '\\');
                 if (q)
                     q++;
                 else
                     q = p->realName;
-            if (ExtendedMessageBox("Save projects", MB_YESNO,"Project %s has changed.\nDo you want to save it?", q) == IDYES)
+                if (ExtendedMessageBox("Save projects", MB_YESNO, "Project %s has changed.\nDo you want to save it?", q) == IDYES)
                     SaveProject(p);
             }
             p = p->next;
         }
     }
 }
-void LoadProject(char *name)
+void LoadProject(char* name)
 {
     PROJECTITEM *p = calloc(1, sizeof(PROJECTITEM)), **ins = NULL;
     if (p)
@@ -514,7 +513,7 @@ void LoadProject(char *name)
 }
 //-------------------------------------------------------------------------
 
-void IndirectProjectWindow(DWINFO *info)
+void IndirectProjectWindow(DWINFO* info)
 {
     SelectWindow(DID_PROJWND);
     LoadWorkArea(info->dwName, TRUE);

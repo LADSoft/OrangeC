@@ -1,5 +1,3 @@
-occ Version 6.0.37.1 Copyright (C) LADSoft 2006-2018
-
 Warning: /w index 1000 does not correspond to a warning
 Warning(105)  errparam.c(3):  Function should return a value in function err_1
 Warning( 73)  errparam.c(5):  Missing type in declaration

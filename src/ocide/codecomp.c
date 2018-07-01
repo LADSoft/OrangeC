@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -39,21 +39,21 @@
 
 #define DBVersion 121
 
-extern PROJECTITEM *workArea;
-extern DWINFO *editWindows;
+extern PROJECTITEM* workArea;
+extern DWINFO* editWindows;
 extern char szInstallPath[];
 extern HANDLE editHeap;
 extern HANDLE ewSem;
 extern HANDLE makeSem;
 extern int defaultWorkArea;
 
-static char prm_searchpath[10000] ;
-static char sys_searchpath[256] ;
+static char prm_searchpath[10000];
+static char sys_searchpath[256];
 
 static char pipeName[MAX_PATH];
 
-static char *localEmptyString = "";
-static sqlite3 *db;
+static char* localEmptyString = "";
+static sqlite3* db;
 
 static int version_ok;
 
@@ -61,18 +61,17 @@ static HANDLE ccEvent;
 
 static BOOL vacuuming;
 
-void DBClose(sqlite3 *db);
-char *getcwd( char *__buf, int __buflen ); // can't include dir.h because it defines eof...
+void DBClose(sqlite3* db);
+char* getcwd(char* __buf, int __buflen);  // can't include dir.h because it defines eof...
 
-void ReloadLineData(char *name)
+void ReloadLineData(char* name)
 {
-    DWINFO *ptr = editWindows;
+    DWINFO* ptr = editWindows;
     DWINFO info;
     strcpy(info.dwName, name);
     while (ptr)
     {
-        if (ptr->active && SendMessage(ptr->self, WM_COMMAND, ID_QUERYHASFILE, (LPARAM)
-            &info))
+        if (ptr->active && SendMessage(ptr->self, WM_COMMAND, ID_QUERYHASFILE, (LPARAM)&info))
         {
             PostMessage(ptr->dwHandle, EM_LOADLINEDATA, 0, 0);
             InvalidateRect(ptr->dwHandle, 0, 0);
@@ -82,7 +81,7 @@ void ReloadLineData(char *name)
         ptr = ptr->next;
     }
 }
-static int prepare(sqlite3 *db, char *name, int len, sqlite3_stmt** handle, char ** vv)
+static int prepare(sqlite3* db, char* name, int len, sqlite3_stmt** handle, char** vv)
 {
     int rv;
     if (!ccEvent)
@@ -94,15 +93,15 @@ static int prepare(sqlite3 *db, char *name, int len, sqlite3_stmt** handle, char
         SetEvent(ccEvent);
     return rv;
 }
-static int finalize(sqlite3_stmt *handle)
+static int finalize(sqlite3_stmt* handle)
 {
     int rv = sqlite3_finalize(handle);
     SetEvent(ccEvent);
     return rv;
 }
 
-static int verscallback(void *NotUsed, int argc, char **argv, char **azColName){
-    int i;
+static int verscallback(void* NotUsed, int argc, char** argv, char** azColName)
+{
     if (argc == 1)
     {
         if (atoi(argv[0]) >= DBVersion)
@@ -110,7 +109,7 @@ static int verscallback(void *NotUsed, int argc, char **argv, char **azColName){
     }
     return 0;
 }
-static int busyFunc(void*handle,int times)
+static int busyFunc(void* handle, int times)
 {
     static DWORD timer;
     if (times == 0)
@@ -123,7 +122,8 @@ static int busyFunc(void*handle,int times)
     {
         return 0;
     }
-    else {   
+    else
+    {
         MSG msg;
         while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
         {
@@ -135,16 +135,16 @@ static int busyFunc(void*handle,int times)
         return 1;
     }
 }
-static void dbVacuum(void *xx)
+static void dbVacuum(void* xx)
 {
-    char *zErrMsg = NULL;
-    sqlite3 *xdb = xx;
-    DWINFO *p;
-    if (sqlite3_exec(xdb, "PRAGMA journal_mode = OFF; PRAGMA synchronous = OFF;PRAGMA temp_store = MEMORY;",//VACUUM;", 
-                          verscallback, 0, &zErrMsg)!=SQLITE_OK )
+    char* zErrMsg = NULL;
+    sqlite3* xdb = xx;
+    DWINFO* p;
+    if (sqlite3_exec(xdb, "PRAGMA journal_mode = OFF; PRAGMA synchronous = OFF;PRAGMA temp_store = MEMORY;",  // VACUUM;",
+                     verscallback, 0, &zErrMsg) != SQLITE_OK)
     {
-          sqlite3_free(zErrMsg);
-    } 
+        sqlite3_free(zErrMsg);
+    }
     vacuuming = FALSE;
     WaitForSingleObject(ewSem, INFINITE);
     p = editWindows;
@@ -156,22 +156,19 @@ static void dbVacuum(void *xx)
     }
     SetEvent(ewSem);
 }
-void ccDBVacuum(sqlite3 *db)
+void ccDBVacuum(sqlite3* db)
 {
     if (db)
     {
         vacuuming = TRUE;
-        _beginthread((BEGINTHREAD_FUNC)dbVacuum, 0, (LPVOID)db);       
+        _beginthread((BEGINTHREAD_FUNC)dbVacuum, 0, (LPVOID)db);
     }
 }
-void ccDBSetDB(sqlite3 *xdb)
+void ccDBSetDB(sqlite3* xdb) { db = xdb; }
+sqlite3* ccDBOpen(PROJECTITEM* pj)
 {
-    db = xdb;
-}
-sqlite3 *ccDBOpen(PROJECTITEM *pj)
-{
-    sqlite3 *xdb;
-    char *zErrMsg = NULL;
+    sqlite3* xdb;
+    char* zErrMsg = NULL;
     char name[MAX_PATH], *p;
     strcpy(name, pj->realName);
     p = strrchr(name, '.');
@@ -181,12 +178,13 @@ sqlite3 *ccDBOpen(PROJECTITEM *pj)
     DBClose(db);
     db = NULL;
     vacuuming = FALSE;
-    if (sqlite3_open_v2(name, &xdb,SQLITE_OPEN_READWRITE, NULL) == SQLITE_OK)
+    if (sqlite3_open_v2(name, &xdb, SQLITE_OPEN_READWRITE, NULL) == SQLITE_OK)
     {
-        char *zErrMsg = NULL;
+        char* zErrMsg = NULL;
         version_ok = FALSE;
-        if (sqlite3_exec(xdb, "SELECT value FROM ccPropertyBag WHERE property = \"ccVersion\"", 
-                              verscallback, 0, &zErrMsg) != SQLITE_OK || !version_ok)
+        if (sqlite3_exec(xdb, "SELECT value FROM ccPropertyBag WHERE property = \"ccVersion\"", verscallback, 0, &zErrMsg) !=
+                SQLITE_OK ||
+            !version_ok)
         {
             sqlite3_free(zErrMsg);
             DBClose(xdb);
@@ -198,7 +196,6 @@ sqlite3 *ccDBOpen(PROJECTITEM *pj)
         {
             sqlite3_busy_handler(xdb, busyFunc, NULL);
         }
-            
     }
     else
     {
@@ -207,20 +204,19 @@ sqlite3 *ccDBOpen(PROJECTITEM *pj)
     }
     return xdb;
 }
-static void DoCompleteCommand(PROJECTITEM *pj)
+static void DoCompleteCommand(PROJECTITEM* pj)
 {
-    char *cmd= Lookup("__CODE_COMPLETION", pj, NULL);
+    char* cmd = Lookup("__CODE_COMPLETION", pj, NULL);
     if (cmd)
     {
-        PROJECTITEM *project = pj;
+        PROJECTITEM* project = pj;
         while (project && project->type != PJ_PROJ)
             project = project->parent;
         Execute(cmd, project->realName, ERR_NO_WINDOW);
         free(cmd);
     }
-        
 }
-static int FindCompleteCommand(PROJECTITEM *pj, char *name)
+static int FindCompleteCommand(PROJECTITEM* pj, char* name)
 {
     int rv = 0;
     do
@@ -229,10 +225,10 @@ static int FindCompleteCommand(PROJECTITEM *pj, char *name)
         {
             BOOL smattered = FALSE;
             char buf[10];
-            char *p;
-            if (!xstricmp(pj->realName + strlen(pj->realName)-2, ".h") ||
-                !xstricmp(pj->realName + strlen(pj->realName)-4, ".hpp") ||
-                !xstricmp(pj->realName + strlen(pj->realName)-4, ".hxx"))
+            char* p;
+            if (!xstricmp(pj->realName + strlen(pj->realName) - 2, ".h") ||
+                !xstricmp(pj->realName + strlen(pj->realName) - 4, ".hpp") ||
+                !xstricmp(pj->realName + strlen(pj->realName) - 4, ".hxx"))
             {
                 // all this is to look up the rules for a .h file as if it were a .c
                 // file, we do it this way rather than goofing with the rule file
@@ -240,14 +236,14 @@ static int FindCompleteCommand(PROJECTITEM *pj, char *name)
                 p = strrchr(pj->realName, '.');
                 strcpy(buf, p);
                 strcpy(p, ".c");
-                 
+
                 smattered = TRUE;
             }
             AddSymbolTable(pj, FALSE);
             if (smattered)
             {
-                strcpy(p,buf);
-            }            
+                strcpy(p, buf);
+            }
             if (!xstricmp(name, pj->realName))
             {
                 DoCompleteCommand(pj);
@@ -258,7 +254,7 @@ static int FindCompleteCommand(PROJECTITEM *pj, char *name)
         else if (pj->children)
         {
             AddSymbolTable(pj, FALSE);
-              
+
             FindCompleteCommand(pj->children, name);
         }
         RemoveSymbolTable();
@@ -266,27 +262,26 @@ static int FindCompleteCommand(PROJECTITEM *pj, char *name)
     } while (pj);
     return rv;
 }
-static BOOL changed(char *name)
+static BOOL changed(char* name)
 {
-    char lcname[MAX_PATH], *p= lcname, *q = name;
+    char lcname[MAX_PATH], *p = lcname, *q = name;
     struct stat statbuf;
-    static char *query = {
-       "SELECT fileDate FROM FileNames"
-       "    WHERE fileNames.name = ?;"
-    } ;
+    static char* query = {
+        "SELECT fileDate FROM FileNames"
+        "    WHERE fileNames.name = ?;"};
     BOOL idefile;
-    sqlite3_stmt *handle;
+    sqlite3_stmt* handle;
     int rc;
     time_t t;
-    DWINFO *ptr;
-    EDITDATA *e;
+    DWINFO* ptr;
+    EDITDATA* e;
     if (vacuuming)
         return FALSE;
     WaitForSingleObject(ewSem, INFINITE);
     ptr = editWindows;
     while (ptr)
     {
-        if (ptr->active && !xstricmp(name,ptr->dwName))
+        if (ptr->active && !xstricmp(name, ptr->dwName))
         {
             e = ptr->editData;
             break;
@@ -299,9 +294,10 @@ static BOOL changed(char *name)
     {
         return TRUE;
     }
-    while (*q) *p++=tolower(*q++);
+    while (*q)
+        *p++ = tolower(*q++);
     *p = 0;
-    rc = prepare(db, query, strlen(query)+1, &handle, NULL);
+    rc = prepare(db, query, strlen(query) + 1, &handle, NULL);
     if (rc == SQLITE_OK)
     {
         int done = FALSE;
@@ -310,7 +306,7 @@ static BOOL changed(char *name)
         sqlite3_bind_text(handle, 1, lcname, strlen(lcname), SQLITE_STATIC);
         while (!done)
         {
-            switch(rc = sqlite3_step(handle))
+            switch (rc = sqlite3_step(handle))
             {
                 case SQLITE_BUSY:
                     done = TRUE;
@@ -336,7 +332,7 @@ static BOOL changed(char *name)
     }
     return TRUE;
 }
-void DoParse(char *name)
+void DoParse(char* name)
 {
     if (vacuuming)
         return;
@@ -344,7 +340,7 @@ void DoParse(char *name)
     {
         char dbName[MAX_PATH], *p;
         char buf[256];
-        PROJECTITEM *pj = workArea;
+        PROJECTITEM* pj = workArea;
         sprintf(buf, "Calculating completion data for %s", name);
         SetStatusMessage(buf, FALSE);
         strcpy(dbName, pj->realName);
@@ -352,7 +348,7 @@ void DoParse(char *name)
         if (!p)
             p = dbName + strlen(dbName);
         strcpy(p, ".ods");
-        if (defaultWorkArea) // this is a convenience so I an use code completion without a project
+        if (defaultWorkArea)  // this is a convenience so I an use code completion without a project
         {
             char cmd[10000];
             char cwd[MAX_PATH];
@@ -379,24 +375,20 @@ void DoParse(char *name)
         ReloadLineData(name);
     }
 }
-void deleteFileData(char *name)
+void deleteFileData(char* name) {}
+int ccLookupUsing(char* file, int lineno, int parent_id, char* ns)
 {
-}
-int ccLookupUsing(char *file, int lineno, int parent_id, char *ns)
-{
-    static char *query = {
+    static char* query = {
         "SELECT names.name FROM names"
         "    JOIN UsingData on Names.id = usingData.symbolId"
         "    Join FileNames ON UsingData.fileId = fileNames.id"
         "    WHERE fileNames.name = ?"
         "    AND usingData.parentId = ?"
-        "    AND ? >= usingData.startLine;"
-    };
+        "    AND ? >= usingData.startLine;"};
     int startline = 0, endline = INT_MAX;
-    int i;
     int rc = SQLITE_OK;
-    sqlite3_stmt *handle;
-    rc = prepare(db, query, strlen(query)+1, &handle, NULL);
+    sqlite3_stmt* handle;
+    rc = prepare(db, query, strlen(query) + 1, &handle, NULL);
     if (rc == SQLITE_OK)
     {
         int done = FALSE;
@@ -407,7 +399,7 @@ int ccLookupUsing(char *file, int lineno, int parent_id, char *ns)
         sqlite3_bind_int(handle, 3, lineno);
         while (!done)
         {
-            switch(rc = sqlite3_step(handle))
+            switch (rc = sqlite3_step(handle))
             {
                 case SQLITE_BUSY:
                     done = TRUE;
@@ -417,7 +409,7 @@ int ccLookupUsing(char *file, int lineno, int parent_id, char *ns)
                     break;
                 case SQLITE_ROW:
                 {
-                    char *text = sqlite3_column_text(handle, 0);
+                    char* text = sqlite3_column_text(handle, 0);
                     if (ns[0])
                         strcat(ns, ";");
                     strcat(ns, text);
@@ -433,24 +425,23 @@ int ccLookupUsing(char *file, int lineno, int parent_id, char *ns)
     }
     return rc;
 }
-int ccLookupContainingNamespace(char *file, int lineno, char *ns)
+int ccLookupContainingNamespace(char* file, int lineno, char* ns)
 {
-    static char *query = {
+    static char* query = {
         "SELECT names.name, NameSpaceData.startLine, NameSpaceData.endLine, names.id FROM Names"
         "    JOIN NameSpaceData ON Names.id = NameSpaceData.symbolId"
         "    JOIN FileNames ON NameSpaceData.fileId = fileNames.id"
-        "    WHERE fileNames.name = ?" 
-        "        AND ? >= NameSpaceData.startLine AND ? <= NameSpaceData.endLine;"
-    };
+        "    WHERE fileNames.name = ?"
+        "        AND ? >= NameSpaceData.startLine AND ? <= NameSpaceData.endLine;"};
     int startline = 0, endline = INT_MAX;
     int parent_id = -1;
     int i, l = strlen(file);
     int rc = SQLITE_OK;
-    sqlite3_stmt *handle;
+    sqlite3_stmt* handle;
     ns[0] = 0;
-    for (i=0; i < l; i++)
+    for (i = 0; i < l; i++)
         file[i] = tolower(file[i]);
-    rc = prepare(db, query, strlen(query)+1, &handle, NULL);
+    rc = prepare(db, query, strlen(query) + 1, &handle, NULL);
     if (rc == SQLITE_OK)
     {
         int done = FALSE;
@@ -461,7 +452,7 @@ int ccLookupContainingNamespace(char *file, int lineno, char *ns)
         sqlite3_bind_int(handle, 3, lineno);
         while (!done)
         {
-            switch(rc = sqlite3_step(handle))
+            switch (rc = sqlite3_step(handle))
             {
                 case SQLITE_BUSY:
                     done = TRUE;
@@ -494,22 +485,21 @@ int ccLookupContainingNamespace(char *file, int lineno, char *ns)
     return rc;
 }
 // this really returns the stem not the entire function name...
-int ccLookupContainingMemberFunction(char *file, int lineno, char *func)
+int ccLookupContainingMemberFunction(char* file, int lineno, char* func)
 {
-    static char *query = {
+    static char* query = {
         "SELECT names.name FROM Names"
         "    JOIN LineNumbers ON Names.id = LineNumbers.symbolId"
         "    JOIN FileNames ON linenumbers.fileId = fileNames.id"
-        "    WHERE fileNames.name = ?  AND LineNumbers.altendLine != 0 " // altline is currently only used for 
-        "        AND ? >= LineNumbers.startLine AND ? <= LineNumbers.altendLine;"
-    };
+        "    WHERE fileNames.name = ?  AND LineNumbers.altendLine != 0 "  // altline is currently only used for
+        "        AND ? >= LineNumbers.startLine AND ? <= LineNumbers.altendLine;"};
     int i, l = strlen(file);
     int rc = SQLITE_OK;
-    sqlite3_stmt *handle;
+    sqlite3_stmt* handle;
     func[0] = 0;
-    for (i=0; i < l; i++)
+    for (i = 0; i < l; i++)
         file[i] = tolower(file[i]);
-    rc = prepare(db, query, strlen(query)+1, &handle, NULL);
+    rc = prepare(db, query, strlen(query) + 1, &handle, NULL);
     if (rc == SQLITE_OK)
     {
         int done = FALSE;
@@ -520,7 +510,7 @@ int ccLookupContainingMemberFunction(char *file, int lineno, char *func)
         sqlite3_bind_int(handle, 3, lineno);
         while (!done)
         {
-            switch(rc = sqlite3_step(handle))
+            switch (rc = sqlite3_step(handle))
             {
                 case SQLITE_BUSY:
                     done = TRUE;
@@ -542,9 +532,9 @@ int ccLookupContainingMemberFunction(char *file, int lineno, char *func)
     }
     if (func[0])
     {
-        char *p = func;
+        char* p = func;
         int nesting = 0;
-        char * last = p;
+        char* last = p;
         while (*p)
         {
             if (*p == '@' && !nesting)
@@ -562,38 +552,37 @@ int ccLookupContainingMemberFunction(char *file, int lineno, char *func)
     {
         rc = FALSE;
     }
-    
+
     return rc;
 }
-static int findLine(char *file, int line, char *name, sqlite3_int64 *line_id, 
-                    sqlite3_int64 * struct_id,
-                    sqlite_int64 * sym_id, sqlite_int64 *type_id, int * flags, int *indirectCount)
+static int findLine(char* file, int line, char* name, sqlite3_int64* line_id, sqlite3_int64* struct_id, sqlite_int64* sym_id,
+                    sqlite_int64* type_id, int* flags, int* indirectCount)
 {
     // this query to attempt to find it in the current file
-    static char *query = {
+    static char* query = {
         "SELECT Linenumbers.id, structId, symbolId, typeId, flags, indirectCount FROM LineNumbers"
         "    JOIN Names ON LineNumbers.symbolId = names.id"
         "    JOIN FileNames ON linenumbers.fileId = fileNames.id"
         "    WHERE Names.Name=?"
         "        AND fileNames.name = ?"
         "        AND ? >= startLine AND (? <= endLine OR endLine = 0);"
-//        "    ORDER BY lineNumbers.startLine ASC;"
+        //        "    ORDER BY lineNumbers.startLine ASC;"
     };
-    static char *query2 = {
+    static char* query2 = {
         "SELECT Linenumbers.id, structId, symbolId, typeId, flags, indirectCount FROM LineNumbers"
         "    JOIN FileNames ON linenumbers.mainId = fileNames.id"
         "    JOIN Names ON LineNumbers.symbolId = names.id"
         "    WHERE Names.Name=?"
         "        AND fileNames.name = ?"
         "        AND LineNumbers.mainId != LineNumbers.fileId AND endLine = 0;"
-//        "    ORDER BY lineNumbers.startLine ASC;"
+        //        "    ORDER BY lineNumbers.startLine ASC;"
     };
     int i, l = strlen(file);
     int rc = SQLITE_OK;
-    static sqlite3_stmt *handle;
-    for (i=0; i < l; i++)
+    static sqlite3_stmt* handle;
+    for (i = 0; i < l; i++)
         file[i] = tolower(file[i]);
-    rc = prepare(db, query, strlen(query)+1, &handle, NULL);
+    rc = prepare(db, query, strlen(query) + 1, &handle, NULL);
     if (rc == SQLITE_OK)
     {
         int done = FALSE;
@@ -605,7 +594,7 @@ static int findLine(char *file, int line, char *name, sqlite3_int64 *line_id,
         sqlite3_bind_int(handle, 4, line);
         while (!done)
         {
-            switch(rc = sqlite3_step(handle))
+            switch (rc = sqlite3_step(handle))
             {
                 case SQLITE_BUSY:
                     done = TRUE;
@@ -631,8 +620,8 @@ static int findLine(char *file, int line, char *name, sqlite3_int64 *line_id,
         finalize(handle);
         if (rc != SQLITE_OK)
         {
-            sqlite3_stmt *handle2;
-            rc = prepare(db, query2, strlen(query2)+1, &handle2, NULL);
+            sqlite3_stmt* handle2;
+            rc = prepare(db, query2, strlen(query2) + 1, &handle2, NULL);
             if (rc == SQLITE_OK)
             {
                 int done = FALSE;
@@ -642,7 +631,7 @@ static int findLine(char *file, int line, char *name, sqlite3_int64 *line_id,
                 sqlite3_bind_text(handle2, 2, file, strlen(file), SQLITE_STATIC);
                 while (!done)
                 {
-                    switch(rc = sqlite3_step(handle2))
+                    switch (rc = sqlite3_step(handle2))
                     {
                         case SQLITE_BUSY:
                             done = TRUE;
@@ -671,34 +660,31 @@ static int findLine(char *file, int line, char *name, sqlite3_int64 *line_id,
     }
     return rc == SQLITE_OK;
 }
-static int findLine2(char *file, char *name, sqlite3_int64 *line_id, 
-                    sqlite3_int64 * struct_id,
-                    sqlite_int64 * sym_id, sqlite_int64 *type_id, int * flags)
+static int findLine2(char* file, char* name, sqlite3_int64* line_id, sqlite3_int64* struct_id, sqlite_int64* sym_id,
+                     sqlite_int64* type_id, int* flags)
 {
     // this query to attempt to find it in the current file
-    static char *query = {
+    static char* query = {
         "SELECT Linenumbers.id, structId, symbolId, typeId, flags FROM LineNumbers"
         "    JOIN FileNames ON linenumbers.fileId = fileNames.id"
         "    JOIN Names ON LineNumbers.symbolId = names.id"
         "    WHERE Names.Name=?"
         "        AND fileNames.name = ? AND endLine = 0 AND flags=1"
-        "    ORDER BY lineNumbers.startLine ASC;"
-    };
-    static char *query2 = {
+        "    ORDER BY lineNumbers.startLine ASC;"};
+    static char* query2 = {
         "SELECT Linenumbers.id, structId, symbolId, typeId, flags FROM LineNumbers"
         "    JOIN FileNames ON linenumbers.mainId = fileNames.id"
         "    JOIN Names ON LineNumbers.symbolId = names.id"
         "    WHERE Names.Name=?"
         "        AND fileNames.name = ? AND flags=1"
         "        AND LineNumbers.mainId != LineNumbers.fileId AND endLine = 0"
-        "    ORDER BY lineNumbers.startLine ASC;"
-    };
+        "    ORDER BY lineNumbers.startLine ASC;"};
     int i, l = strlen(file);
     int rc = SQLITE_OK;
-    static sqlite3_stmt *handle;
-    for (i=0; i < l; i++)
+    static sqlite3_stmt* handle;
+    for (i = 0; i < l; i++)
         file[i] = tolower(file[i]);
-    rc = prepare(db, query, strlen(query)+1, &handle, NULL);
+    rc = prepare(db, query, strlen(query) + 1, &handle, NULL);
     if (rc == SQLITE_OK)
     {
         int done = FALSE;
@@ -708,7 +694,7 @@ static int findLine2(char *file, char *name, sqlite3_int64 *line_id,
         sqlite3_bind_text(handle, 2, file, strlen(file), SQLITE_STATIC);
         while (!done)
         {
-            switch(rc = sqlite3_step(handle))
+            switch (rc = sqlite3_step(handle))
             {
                 case SQLITE_BUSY:
                     done = TRUE;
@@ -733,8 +719,8 @@ static int findLine2(char *file, char *name, sqlite3_int64 *line_id,
         finalize(handle);
         if (rc != SQLITE_OK)
         {
-            sqlite3_stmt *handle2;
-            rc = prepare(db, query2, strlen(query2)+1, &handle2, NULL);
+            sqlite3_stmt* handle2;
+            rc = prepare(db, query2, strlen(query2) + 1, &handle2, NULL);
             if (rc == SQLITE_OK)
             {
                 int done = FALSE;
@@ -744,7 +730,7 @@ static int findLine2(char *file, char *name, sqlite3_int64 *line_id,
                 sqlite3_bind_text(handle2, 2, file, strlen(file), SQLITE_STATIC);
                 while (!done)
                 {
-                    switch(rc = sqlite3_step(handle2))
+                    switch (rc = sqlite3_step(handle2))
                     {
                         case SQLITE_BUSY:
                             done = TRUE;
@@ -772,20 +758,20 @@ static int findLine2(char *file, char *name, sqlite3_int64 *line_id,
     }
     return rc == SQLITE_OK;
 }
-char ** ccGetMatchingNames(char *name, char **names, int *size, int *max)
+char** ccGetMatchingNames(char* name, char** names, int* size, int* max)
 {
-    static char *query1 = "SELECT name FROM Names WHERE name like ?;";
-    static char *query2 = "SELECT name FROM StructNames WHERE name like = ?;";
-    char buf[4096],*q;
+    static char* query1 = "SELECT name FROM Names WHERE name like ?;";
+    static char* query2 = "SELECT name FROM StructNames WHERE name like = ?;";
+    char buf[4096];
     char found[256];
     int rc = SQLITE_OK;
-    sqlite3_stmt *handle;
+    sqlite3_stmt* handle;
     int len = strlen(name);
     if (vacuuming)
         return names;
     strcpy(buf, name);
     strcat(buf, "%");
-    rc = prepare(db, query1, strlen(query1)+1, &handle, NULL);
+    rc = prepare(db, query1, strlen(query1) + 1, &handle, NULL);
     if (rc == SQLITE_OK)
     {
         int done = FALSE;
@@ -794,7 +780,7 @@ char ** ccGetMatchingNames(char *name, char **names, int *size, int *max)
         sqlite3_bind_text(handle, 1, buf, strlen(buf), SQLITE_STATIC);
         while (!done)
         {
-            switch(rc = sqlite3_step(handle))
+            switch (rc = sqlite3_step(handle))
             {
                 case SQLITE_BUSY:
                     done = TRUE;
@@ -804,14 +790,17 @@ char ** ccGetMatchingNames(char *name, char **names, int *size, int *max)
                     rc = SQLITE_OK;
                     break;
                 case SQLITE_ROW:
-                    strncpy(found, (char *)sqlite3_column_text(handle, 0), 250);
+                    strncpy(found, (char*)sqlite3_column_text(handle, 0), 250);
                     found[250] = 0;
                     if (!strncmp(name, found, len))
                     {
                         if (*size >= *max)
                         {
-                            if (!*max) *max = 10; else *max *= 2;
-                            names = realloc(names, *max * sizeof(void *));
+                            if (!*max)
+                                *max = 10;
+                            else
+                                *max *= 2;
+                            names = realloc(names, *max * sizeof(void*));
                         }
                         names[(*size)++] = strdup(found);
                     }
@@ -825,7 +814,7 @@ char ** ccGetMatchingNames(char *name, char **names, int *size, int *max)
     }
     if (rc == SQLITE_OK)
     {
-        rc = prepare(db, query2, strlen(query2)+1, &handle, NULL);
+        rc = prepare(db, query2, strlen(query2) + 1, &handle, NULL);
         if (rc == SQLITE_OK)
         {
             int done = FALSE;
@@ -834,7 +823,7 @@ char ** ccGetMatchingNames(char *name, char **names, int *size, int *max)
             sqlite3_bind_text(handle, 1, buf, strlen(buf), SQLITE_STATIC);
             while (!done)
             {
-                switch(rc = sqlite3_step(handle))
+                switch (rc = sqlite3_step(handle))
                 {
                     case SQLITE_BUSY:
                         done = TRUE;
@@ -843,14 +832,17 @@ char ** ccGetMatchingNames(char *name, char **names, int *size, int *max)
                         done = TRUE;
                         break;
                     case SQLITE_ROW:
-                        strncpy(found, (char *) sqlite3_column_text(handle, 0), 250);
+                        strncpy(found, (char*)sqlite3_column_text(handle, 0), 250);
                         found[250] = 0;
                         if (!strncmp(name, found, strlen(name)))
                         {
                             if (*size >= *max)
                             {
-                                if (!*max) *max = 10; else *max *= 2;
-                                names = realloc(names, *max * sizeof(void *));
+                                if (!*max)
+                                    *max = 10;
+                                else
+                                    *max *= 2;
+                                names = realloc(names, *max * sizeof(void*));
                             }
                             names[(*size)++] = strdup(found);
                         }
@@ -862,15 +854,15 @@ char ** ccGetMatchingNames(char *name, char **names, int *size, int *max)
             }
             finalize(handle);
         }
-    }    
+    }
     return names;
 }
-static int LookupName(sqlite_int64 name, char *buf)
+static int LookupName(sqlite_int64 name, char* buf)
 {
-    static char *query = "SELECT name FROM NAMES WHERE id = ?";
+    static char* query = "SELECT name FROM NAMES WHERE id = ?";
     int rc = SQLITE_OK;
-    sqlite3_stmt *handle;
-    rc = prepare(db, query, strlen(query)+1, &handle, NULL);
+    sqlite3_stmt* handle;
+    rc = prepare(db, query, strlen(query) + 1, &handle, NULL);
     if (rc == SQLITE_OK)
     {
         int done = FALSE;
@@ -879,7 +871,7 @@ static int LookupName(sqlite_int64 name, char *buf)
         sqlite3_bind_int64(handle, 1, name);
         while (!done)
         {
-            switch(rc = sqlite3_step(handle))
+            switch (rc = sqlite3_step(handle))
             {
                 case SQLITE_BUSY:
                     done = TRUE;
@@ -888,7 +880,7 @@ static int LookupName(sqlite_int64 name, char *buf)
                     done = TRUE;
                     break;
                 case SQLITE_ROW:
-                    strncpy(buf, (char *)sqlite3_column_text(handle, 0), 250);
+                    strncpy(buf, (char*)sqlite3_column_text(handle, 0), 250);
                     buf[250] = 0;
                     rc = SQLITE_OK;
                     done = TRUE;
@@ -902,14 +894,13 @@ static int LookupName(sqlite_int64 name, char *buf)
     }
     return rc == SQLITE_OK;
 }
-int ccLookupType(char *buffer, char *name, char *module, int line, int *rflags, sqlite3_int64 *rtype_id)
+int ccLookupType(char* buffer, char* name, char* module, int line, int* rflags, sqlite3_int64* rtype_id)
 {
     sqlite3_int64 line_id, struct_id, sym_id, type_id;
     int flags, indirectCount;
     if (vacuuming)
         return FALSE;
-    if (findLine(module, line, name, &line_id, &struct_id,
-                    &sym_id, &type_id, &flags, &indirectCount))
+    if (findLine(module, line, name, &line_id, &struct_id, &sym_id, &type_id, &flags, &indirectCount))
     {
         *rflags = flags;
         if (rtype_id)
@@ -918,14 +909,13 @@ int ccLookupType(char *buffer, char *name, char *module, int line, int *rflags, 
     }
     return FALSE;
 }
-int ccLookupStructType(char *name, char *module, int line, sqlite3_int64 *structId, int *indir)
+int ccLookupStructType(char* name, char* module, int line, sqlite3_int64* structId, int* indir)
 {
     sqlite3_int64 line_id, struct_id, sym_id, type_id;
     int flags, indirectCount;
     if (vacuuming)
         return FALSE;
-    if (findLine(module, line, name, &line_id, &struct_id,
-                    &sym_id, &type_id, &flags, &indirectCount))
+    if (findLine(module, line, name, &line_id, &struct_id, &sym_id, &type_id, &flags, &indirectCount))
     {
         *structId = struct_id;
         *indir = indirectCount;
@@ -933,12 +923,12 @@ int ccLookupStructType(char *name, char *module, int line, sqlite3_int64 *struct
     }
     return FALSE;
 }
-int ccLookupStructId(char *name, char *module, int line, sqlite3_int64 *structId)
+int ccLookupStructId(char* name, char* module, int line, sqlite3_int64* structId)
 {
-    char *query = "SELECT id From StructNames where name = ?;";
+    char* query = "SELECT id From StructNames where name = ?;";
     int rc = SQLITE_OK;
-    sqlite3_stmt *handle;
-    rc = prepare(db, query, strlen(query)+1, &handle, NULL);
+    sqlite3_stmt* handle;
+    rc = prepare(db, query, strlen(query) + 1, &handle, NULL);
     if (rc == SQLITE_OK)
     {
         int done = FALSE;
@@ -947,7 +937,7 @@ int ccLookupStructId(char *name, char *module, int line, sqlite3_int64 *structId
         sqlite3_bind_text(handle, 1, name, strlen(name), SQLITE_STATIC);
         while (!done)
         {
-            switch(rc = sqlite3_step(handle))
+            switch (rc = sqlite3_step(handle))
             {
                 case SQLITE_BUSY:
                     done = TRUE;
@@ -968,16 +958,16 @@ int ccLookupStructId(char *name, char *module, int line, sqlite3_int64 *structId
         finalize(handle);
     }
     return rc == SQLITE_OK;
-    
 }
-int ccLookupMemberType(char *name, char *module, int line, sqlite3_int64 *structId, int *indir)
+int ccLookupMemberType(char* name, char* module, int line, sqlite3_int64* structId, int* indir)
 {
-    char *query = "SELECT structid, indirectCount From structfields"
-                  "  join membernames on membernames.id = structfields.symbolid"
-                  "    where membernames.name = ?;";
+    char* query =
+        "SELECT structid, indirectCount From structfields"
+        "  join membernames on membernames.id = structfields.symbolid"
+        "    where membernames.name = ?;";
     int rc = SQLITE_OK;
-    sqlite3_stmt *handle;
-    rc = prepare(db, query, strlen(query)+1, &handle, NULL);
+    sqlite3_stmt* handle;
+    rc = prepare(db, query, strlen(query) + 1, &handle, NULL);
     if (rc == SQLITE_OK)
     {
         int done = FALSE;
@@ -986,7 +976,7 @@ int ccLookupMemberType(char *name, char *module, int line, sqlite3_int64 *struct
         sqlite3_bind_text(handle, 1, name, strlen(name), SQLITE_STATIC);
         while (!done)
         {
-            switch(rc = sqlite3_step(handle))
+            switch (rc = sqlite3_step(handle))
             {
                 case SQLITE_BUSY:
                     done = TRUE;
@@ -1008,36 +998,35 @@ int ccLookupMemberType(char *name, char *module, int line, sqlite3_int64 *struct
         finalize(handle);
     }
     return rc == SQLITE_OK;
-    
 }
-CCSTRUCTDATA *ccLookupStructElems(char *module, sqlite3_int64 structId, int indirectCount)
+CCSTRUCTDATA* ccLookupStructElems(char* module, sqlite3_int64 structId, int indirectCount)
 {
-    CCSTRUCTDATA *rv = calloc(1, sizeof(CCSTRUCTDATA));
+    CCSTRUCTDATA* rv = calloc(1, sizeof(CCSTRUCTDATA));
     int rc = SQLITE_ERROR;
     int i;
     char file[MAX_PATH];
     int l = strlen(module);
     strcpy(file, module);
-    for (i=0; i < l; i++)
+    for (i = 0; i < l; i++)
         file[i] = tolower(file[i]);
     if (rv)
     {
         int max = 0;
         int count = 0;
-        CCSTRUCTDATA *data;
-        static char *query = {
-           "SELECT a.name, b.name, StructFields.structId, StructFields.indirectCount, StructFields.flags FROM MemberNames a, Names b"
-           "    JOIN StructFields ON StructFields.nameId = ?"
-           "    JOIN FileNames on StructFields.mainId = FileNames.id OR StructFields.fileId=FileNames.id"
-           "    WHERE a.id = StructFields.symbolId"
-           "        AND b.id = StructFields.typeId"
-           "        AND FileNames.name = ?"
-           "    ORDER BY StructFields.fieldOrder ASC"
-           
-        } ;
-        sqlite3_stmt *handle;
+        static char* query = {
+            "SELECT a.name, b.name, StructFields.structId, StructFields.indirectCount, StructFields.flags FROM MemberNames a, "
+            "Names b"
+            "    JOIN StructFields ON StructFields.nameId = ?"
+            "    JOIN FileNames on StructFields.mainId = FileNames.id OR StructFields.fileId=FileNames.id"
+            "    WHERE a.id = StructFields.symbolId"
+            "        AND b.id = StructFields.typeId"
+            "        AND FileNames.name = ?"
+            "    ORDER BY StructFields.fieldOrder ASC"
+
+        };
+        sqlite3_stmt* handle;
         rv->indirectCount = indirectCount;
-        rc = prepare(db, query, strlen(query)+1, &handle, NULL);
+        rc = prepare(db, query, strlen(query) + 1, &handle, NULL);
         if (rc == SQLITE_OK)
         {
             int done = FALSE;
@@ -1047,7 +1036,7 @@ CCSTRUCTDATA *ccLookupStructElems(char *module, sqlite3_int64 structId, int indi
             sqlite3_bind_text(handle, 2, file, strlen(file), SQLITE_STATIC);
             while (!done)
             {
-                switch(rc = sqlite3_step(handle))
+                switch (rc = sqlite3_step(handle))
                 {
                     case SQLITE_BUSY:
                         done = TRUE;
@@ -1057,14 +1046,14 @@ CCSTRUCTDATA *ccLookupStructElems(char *module, sqlite3_int64 structId, int indi
                         rc = SQLITE_OK;
                         break;
                     case SQLITE_ROW:
-                        if (count+1 > max)
+                        if (count + 1 > max)
                         {
                             int old = max;
                             if (max == 0)
                             {
                                 max = 20;
                             }
-                            else 
+                            else
                             {
                                 max = max * 2;
                             }
@@ -1072,8 +1061,8 @@ CCSTRUCTDATA *ccLookupStructElems(char *module, sqlite3_int64 structId, int indi
                             memset(rv->data + old, 0, (max - old) * sizeof(struct _structData));
                         }
                         {
-                            char *sym = (char *)sqlite3_column_text(handle, 0);
-                            char *type = (char *)sqlite3_column_text(handle, 1);
+                            char* sym = (char*)sqlite3_column_text(handle, 0);
+                            char* type = (char*)sqlite3_column_text(handle, 1);
                             sqlite3_int64 id = sqlite3_column_int64(handle, 2);
                             int indir = sqlite3_column_int(handle, 3);
                             int flags = sqlite3_column_int(handle, 4);
@@ -1100,7 +1089,7 @@ CCSTRUCTDATA *ccLookupStructElems(char *module, sqlite3_int64 structId, int indi
     }
     return rv;
 }
-void ccFreeStructData(CCSTRUCTDATA *data)
+void ccFreeStructData(CCSTRUCTDATA* data)
 {
     if (data)
     {
@@ -1110,18 +1099,17 @@ void ccFreeStructData(CCSTRUCTDATA *data)
             free(data->data[i].fieldName);
             free(data->data[i].fieldType);
         }
-        free (data->data);
-        free (data);
+        free(data->data);
+        free(data);
     }
 }
-int ccLookupFunctionType(char *name, char *module, sqlite3_int64 *protoId, sqlite3_int64 *typeId)
+int ccLookupFunctionType(char* name, char* module, sqlite3_int64* protoId, sqlite3_int64* typeId)
 {
     sqlite3_int64 line_id, struct_id, sym_id, type_id;
     int flags;
     if (vacuuming)
         return FALSE;
-    if (findLine2(module, name, &line_id, &struct_id,
-                    &sym_id, &type_id, &flags))
+    if (findLine2(module, name, &line_id, &struct_id, &sym_id, &type_id, &flags))
     {
         *typeId = type_id;
         *protoId = line_id;
@@ -1129,24 +1117,21 @@ int ccLookupFunctionType(char *name, char *module, sqlite3_int64 *protoId, sqlit
     }
     return FALSE;
 }
-CCPROTODATA *ccLookupArgList(sqlite3_int64 protoId, sqlite3_int64 typeId)
+CCPROTODATA* ccLookupArgList(sqlite3_int64 protoId, sqlite3_int64 typeId)
 {
     int rc = SQLITE_ERROR;
-    CCPROTODATA *rv = calloc(1, sizeof(CCPROTODATA));
+    CCPROTODATA* rv = calloc(1, sizeof(CCPROTODATA));
     if (rv)
     {
-        static char *query = {
-           "SELECT a.name, b.name FROM Names a, Names b"
-           "    JOIN GlobalArgs ON GlobalArgs.lineid = ?"
-           "    WHERE a.id = GlobalArgs.symbolId"
-           "        AND b.id = GlobalArgs.typeId"
-           "    ORDER BY GlobalArgs.fieldOrder ASC"
-        } ;
-        static char *query2 = {
-            " SELECT name FROM Names where id = ?;"
-        } ;
-        sqlite3_stmt *handle;
-        rc = prepare(db, query, strlen(query)+1, &handle, NULL);
+        static char* query = {
+            "SELECT a.name, b.name FROM Names a, Names b"
+            "    JOIN GlobalArgs ON GlobalArgs.lineid = ?"
+            "    WHERE a.id = GlobalArgs.symbolId"
+            "        AND b.id = GlobalArgs.typeId"
+            "    ORDER BY GlobalArgs.fieldOrder ASC"};
+        static char* query2 = {" SELECT name FROM Names where id = ?;"};
+        sqlite3_stmt* handle;
+        rc = prepare(db, query, strlen(query) + 1, &handle, NULL);
         if (rc == SQLITE_OK)
         {
             int max = 0, count = 0;
@@ -1156,7 +1141,7 @@ CCPROTODATA *ccLookupArgList(sqlite3_int64 protoId, sqlite3_int64 typeId)
             sqlite3_bind_int64(handle, 1, protoId);
             while (!done)
             {
-                switch(rc = sqlite3_step(handle))
+                switch (rc = sqlite3_step(handle))
                 {
                     case SQLITE_BUSY:
                         done = TRUE;
@@ -1167,35 +1152,35 @@ CCPROTODATA *ccLookupArgList(sqlite3_int64 protoId, sqlite3_int64 typeId)
                         break;
                     case SQLITE_ROW:
 
+                    {
+                        char* sym = (char*)sqlite3_column_text(handle, 0);
+                        char* type = (char*)sqlite3_column_text(handle, 1);
+                        if (count != 0 || strcmp(sym, "_this"))
                         {
-                            char *sym = (char *)sqlite3_column_text(handle, 0);
-                            char *type = (char *)sqlite3_column_text(handle, 1);
-                            if (count != 0 || strcmp(sym, "_this"))
+                            if (count + 1 > max)
                             {
-                                if (count+1 > max)
+                                int old = max;
+                                if (max == 0)
                                 {
-                                    int old = max;
-                                    if (max == 0)
-                                    {
-                                        max = 20;
-                                    }
-                                    else 
-                                    {
-                                        max = max * 2;
-                                    }
-                                    rv->data = realloc(rv->data, max * sizeof(struct _structData));
-                                    memset(rv->data + old, 0, (max - old) * sizeof(struct _structData));
+                                    max = 20;
                                 }
-                                rv->data[count].fieldName= strdup(sym);
-                                rv->data[count].fieldType= strdup(type);
-                                rv->argCount++, count++;
+                                else
+                                {
+                                    max = max * 2;
+                                }
+                                rv->data = realloc(rv->data, max * sizeof(struct _structData));
+                                memset(rv->data + old, 0, (max - old) * sizeof(struct _structData));
                             }
-                            else
-                            {
-                                rv->member = TRUE;
-                            }
+                            rv->data[count].fieldName = strdup(sym);
+                            rv->data[count].fieldType = strdup(type);
+                            rv->argCount++, count++;
                         }
-                        break;
+                        else
+                        {
+                            rv->member = TRUE;
+                        }
+                    }
+                    break;
                     default:
                         done = TRUE;
                         break;
@@ -1205,7 +1190,7 @@ CCPROTODATA *ccLookupArgList(sqlite3_int64 protoId, sqlite3_int64 typeId)
         }
         if (rc == SQLITE_OK && rv->argCount)
         {
-            rc = prepare(db, query2, strlen(query2)+1, &handle, NULL);
+            rc = prepare(db, query2, strlen(query2) + 1, &handle, NULL);
             if (rc == SQLITE_OK)
             {
                 int done = FALSE;
@@ -1214,7 +1199,7 @@ CCPROTODATA *ccLookupArgList(sqlite3_int64 protoId, sqlite3_int64 typeId)
                 sqlite3_bind_int64(handle, 1, typeId);
                 while (!done)
                 {
-                    switch(rc = sqlite3_step(handle))
+                    switch (rc = sqlite3_step(handle))
                     {
                         case SQLITE_BUSY:
                             done = TRUE;
@@ -1223,7 +1208,7 @@ CCPROTODATA *ccLookupArgList(sqlite3_int64 protoId, sqlite3_int64 typeId)
                             done = TRUE;
                             break;
                         case SQLITE_ROW:
-                            rv->baseType = strdup((char *)sqlite3_column_text(handle, 0));
+                            rv->baseType = strdup((char*)sqlite3_column_text(handle, 0));
                             rc = SQLITE_OK;
                             done = TRUE;
                             break;
@@ -1243,32 +1228,31 @@ CCPROTODATA *ccLookupArgList(sqlite3_int64 protoId, sqlite3_int64 typeId)
     }
     return rv;
 }
-void ccFreeArgList(CCPROTODATA *data)
+void ccFreeArgList(CCPROTODATA* data)
 {
     int i;
     if (data)
     {
         free(data->baseType);
-        for (i=0; i < data->argCount; i++)
+        for (i = 0; i < data->argCount; i++)
         {
             free(data->data[i].fieldName);
             free(data->data[i].fieldType);
         }
-        free (data->data);
-        free (data);
+        free(data->data);
+        free(data);
     }
 }
-BYTE * ccGetLineData(char *file, int *max)
+BYTE* ccGetLineData(char* file, int* max)
 {
-    BYTE *rv = NULL;
+    BYTE* rv = NULL;
     char buf[MAX_PATH], *p = buf;
-    static char *query = {
-       "SELECT lines, data FROM LineData"
-       "    JOIN FileNames ON FileNames.id = LineData.fileId"
-       "    WHERE fileNames.name = ?;"
-    } ;
-    sqlite3_stmt *handle;
-    int rc = prepare(db, query, strlen(query)+1, &handle, NULL);
+    static char* query = {
+        "SELECT lines, data FROM LineData"
+        "    JOIN FileNames ON FileNames.id = LineData.fileId"
+        "    WHERE fileNames.name = ?;"};
+    sqlite3_stmt* handle;
+    int rc = prepare(db, query, strlen(query) + 1, &handle, NULL);
     if (rc == SQLITE_OK)
     {
         int done = FALSE;
@@ -1279,7 +1263,7 @@ BYTE * ccGetLineData(char *file, int *max)
         sqlite3_bind_text(handle, 1, buf, strlen(buf), SQLITE_STATIC);
         while (!done)
         {
-            switch(rc = sqlite3_step(handle))
+            switch (rc = sqlite3_step(handle))
             {
                 case SQLITE_BUSY:
                     done = TRUE;
@@ -1295,11 +1279,11 @@ BYTE * ccGetLineData(char *file, int *max)
                     {
                         memcpy(rv, sqlite3_column_blob(handle, 1), n);
                         *max = sqlite3_column_int(handle, 0);
-                    }   
+                    }
                     done = TRUE;
                     rc = SQLITE_OK;
                 }
-                    break;
+                break;
                 default:
                     done = TRUE;
                     break;
@@ -1309,18 +1293,17 @@ BYTE * ccGetLineData(char *file, int *max)
     }
     return rv;
 }
-int ccGetColorizeData(char *file, COLORIZE_HASH_ENTRY *entries[])
+int ccGetColorizeData(char* file, COLORIZE_HASH_ENTRY* entries[])
 {
-    BYTE *rv = NULL;
+    BYTE* rv = NULL;
     char buf[MAX_PATH], *p = buf;
-    static char *query = {
-       "SELECT Names.Name, FileNames.id, fileid, startline, endline, type From SymbolTypes"
-       " JOIN Names on names.id = SymbolTypes.symbolId"
-       " JOIN FileNames on SymbolTypes.mainId = FileNames.id OR SymbolTypes.fileId=FileNames.id"
-       " WHERE FileNames.name = ?"
-    } ;
-    sqlite3_stmt *handle;
-    int rc = prepare(db, query, strlen(query)+1, &handle, NULL);
+    static char* query = {
+        "SELECT Names.Name, FileNames.id, fileid, startline, endline, type From SymbolTypes"
+        " JOIN Names on names.id = SymbolTypes.symbolId"
+        " JOIN FileNames on SymbolTypes.mainId = FileNames.id OR SymbolTypes.fileId=FileNames.id"
+        " WHERE FileNames.name = ?"};
+    sqlite3_stmt* handle;
+    int rc = prepare(db, query, strlen(query) + 1, &handle, NULL);
     if (rc == SQLITE_OK)
     {
         int done = FALSE;
@@ -1331,7 +1314,7 @@ int ccGetColorizeData(char *file, COLORIZE_HASH_ENTRY *entries[])
         sqlite3_bind_text(handle, 1, buf, strlen(buf), SQLITE_STATIC);
         while (!done)
         {
-            switch(rc = sqlite3_step(handle))
+            switch (rc = sqlite3_step(handle))
             {
                 case SQLITE_BUSY:
                     done = TRUE;
@@ -1343,17 +1326,18 @@ int ccGetColorizeData(char *file, COLORIZE_HASH_ENTRY *entries[])
                 {
                     char name[256];
                     int mainid, fileid, start, end, type;
-                    strncpy(name, (char *)sqlite3_column_text(handle, 0), 250);
+                    strncpy(name, (char*)sqlite3_column_text(handle, 0), 250);
                     name[250] = 0;
                     mainid = sqlite3_column_int64(handle, 1);
                     fileid = sqlite3_column_int64(handle, 2);
                     start = sqlite3_column_int64(handle, 3);
                     end = sqlite3_column_int64(handle, 4);
                     type = sqlite3_column_int64(handle, 5);
-                    InsertColorizeEntry(entries, name, fileid == mainid && type != ST_FUNCTION ? start : 1, fileid == mainid && type != ST_FUNCTION ? end : 0, type);
+                    InsertColorizeEntry(entries, name, fileid == mainid && type != ST_FUNCTION ? start : 1,
+                                        fileid == mainid && type != ST_FUNCTION ? end : 0, type);
                     rc = SQLITE_OK;
                 }
-                    break;
+                break;
                 default:
                     done = TRUE;
                     break;
@@ -1363,15 +1347,13 @@ int ccGetColorizeData(char *file, COLORIZE_HASH_ENTRY *entries[])
     }
     return rv;
 }
-BOOL ccExistsInDB(char *file)
+BOOL ccExistsInDB(char* file)
 {
     BOOL rv = FALSE;
     char buf[MAX_PATH], *p = buf;
-    static char *query = {
-       "SELECT Count(id) From FileNames where FileNames.name = ?"
-    } ;
-    sqlite3_stmt *handle;
-    int rc = prepare(db, query, strlen(query)+1, &handle, NULL);
+    static char* query = {"SELECT Count(id) From FileNames where FileNames.name = ?"};
+    sqlite3_stmt* handle;
+    int rc = prepare(db, query, strlen(query) + 1, &handle, NULL);
     if (rc == SQLITE_OK)
     {
         int done = FALSE;
@@ -1382,7 +1364,7 @@ BOOL ccExistsInDB(char *file)
         sqlite3_bind_text(handle, 1, buf, strlen(buf), SQLITE_STATIC);
         while (!done)
         {
-            switch(rc = sqlite3_step(handle))
+            switch (rc = sqlite3_step(handle))
             {
                 case SQLITE_BUSY:
                     done = TRUE;
@@ -1396,7 +1378,7 @@ BOOL ccExistsInDB(char *file)
                     rc = SQLITE_OK;
                     done = TRUE;
                 }
-                    break;
+                break;
                 default:
                     done = TRUE;
                     break;
@@ -1406,7 +1388,7 @@ BOOL ccExistsInDB(char *file)
     }
     return rv;
 }
-static unsigned int __stdcall Start(void *);
+static unsigned int __stdcall Start(void*);
 static BOOL started;
 
 void StartCodeCompletionServer()
@@ -1422,17 +1404,17 @@ void StartCodeCompletionServer()
         serverThread = (HANDLE)_beginthreadex(NULL, 0, Start, NULL, 0, NULL);
     }
 }
-static char *GetFileData(char *filname, int *size)
+static char* GetFileData(char* filname, int* size)
 {
-    DWINFO *ptr;
-    EDITDATA *e= NULL;
-    char *rv = 0;
+    DWINFO* ptr;
+    EDITDATA* e = NULL;
+    char* rv = 0;
     WaitForSingleObject(ewSem, INFINITE);
     *size = 0;
     ptr = editWindows;
     while (ptr)
     {
-        if (ptr->active && !xstricmp(filname,ptr->dwName))
+        if (ptr->active && !xstricmp(filname, ptr->dwName))
         {
             e = ptr->editData;
             break;
@@ -1441,9 +1423,9 @@ static char *GetFileData(char *filname, int *size)
     }
     if (!e || !e->cd->textlen || !e->cd->text)
     {
-        FILE *fil;
+        FILE* fil;
         SetEvent(ewSem);
-        fil = fopen(filname,"rb");
+        fil = fopen(filname, "rb");
         if (fil)
         {
             int n;
@@ -1451,8 +1433,8 @@ static char *GetFileData(char *filname, int *size)
             n = ftell(fil);
             if (n < 1024 * 1024)
             {
-                char *buf = malloc(n+1);
-                fseek(fil,0, SEEK_SET);
+                char* buf = malloc(n + 1);
+                fseek(fil, 0, SEEK_SET);
                 if (buf)
                 {
                     fread(buf, 1, n, fil);
@@ -1470,11 +1452,11 @@ static char *GetFileData(char *filname, int *size)
         rv = malloc(n + 1);
         if (rv)
         {
-            char *p = rv;
+            char* p = rv;
             int i;
-            INTERNAL_CHAR *s = e->cd->text;
+            INTERNAL_CHAR* s = e->cd->text;
             rv[n] = 0;
-            for (i=0; i < n; i++)
+            for (i = 0; i < n; i++)
                 *p++ = s->ch, s++;
             *size = n;
         }
@@ -1482,18 +1464,18 @@ static char *GetFileData(char *filname, int *size)
     }
     return rv;
 }
-static DWORD serverProc(void *b)
+static DWORD serverProc(void* b)
 {
-    HANDLE myPipe = (HANDLE )b;
+    HANDLE myPipe = (HANDLE)b;
     int n;
     DWORD read;
     if (ReadFile(myPipe, &n, sizeof(DWORD), &read, NULL))
     {
         char filname[256];
-        if (ReadFile(myPipe, filname, n, &read , NULL))
+        if (ReadFile(myPipe, filname, n, &read, NULL))
         {
-            char *buf ;
-            filname[n] = 0 ;
+            char* buf;
+            filname[n] = 0;
             buf = GetFileData(filname, &n);
             WriteFile(myPipe, &n, sizeof(DWORD), &read, NULL);
             if (n)
@@ -1505,39 +1487,35 @@ static DWORD serverProc(void *b)
     CloseHandle(myPipe);
     return 0;
 }
-static unsigned int __stdcall Start(void *aa)
+static unsigned int __stdcall Start(void* aa)
 {
     char pipe[260];
     HANDLE serverPipe = 0;
-    sprintf(pipe,"\\\\.\\pipe\\%s", pipeName);
-                                 
-                                                              
+    sprintf(pipe, "\\\\.\\pipe\\%s", pipeName);
+
     while (serverPipe != INVALID_HANDLE_VALUE)
     {
-        DWORD n;
-        DWORD read;
-        serverPipe = CreateNamedPipe(pipe, PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE | 8/* to reject remote connections */,
-                                     PIPE_UNLIMITED_INSTANCES,100000,10000,0,NULL);
+        serverPipe = CreateNamedPipe(pipe, PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE | 8 /* to reject remote connections */,
+                                     PIPE_UNLIMITED_INSTANCES, 100000, 10000, 0, NULL);
         if (serverPipe != INVALID_HANDLE_VALUE)
         {
 
-            BOOL fConnected = ConnectNamedPipe(serverPipe, NULL) ? 
-                    TRUE : (GetLastError() == ERROR_PIPE_CONNECTED); 
-              if (fConnected) 
-              { 
-                 _beginthread((BEGINTHREAD_FUNC)serverProc, 0, (LPVOID)serverPipe);
-               } 
-              else 
-                 CloseHandle(serverPipe); 
+            BOOL fConnected = ConnectNamedPipe(serverPipe, NULL) ? TRUE : (GetLastError() == ERROR_PIPE_CONNECTED);
+            if (fConnected)
+            {
+                _beginthread((BEGINTHREAD_FUNC)serverProc, 0, (LPVOID)serverPipe);
+            }
+            else
+                CloseHandle(serverPipe);
         }
     }
     return 0;
 }
-CCFUNCDATA *ccLookupFunctionList(int lineno, char *file, char *name)
+CCFUNCDATA* ccLookupFunctionList(int lineno, char* file, char* name)
 {
     CCFUNCDATA *funcs = NULL, **scan;
     sqlite_int64 id, baseid;
-    CCPROTODATA *args ;
+    CCPROTODATA* args;
     if (ccLookupFunctionType(name, file, &id, &baseid) && (args = ccLookupArgList(id, baseid)))
     {
         funcs = calloc(1, sizeof(CCFUNCDATA));
@@ -1548,33 +1526,29 @@ CCFUNCDATA *ccLookupFunctionList(int lineno, char *file, char *name)
     {
         int ids[1000];
         int count = 0;
-        static char * query = {
-            "SELECT id from NAMES where name = ?;"
-        };
-        static char *query1 = {
+        static char* query = {"SELECT id from NAMES where name = ?;"};
+        static char* query1 = {
             " SELECT Names.name FROM LineNumbers "
             "    JOIN names on  names.id = linenumbers.symbolid"
             "    Join FileNames on fileNames.id = linenumbers.fileid"
             "    JOIN cppNameMapping ON cppnamemapping.complexId = linenumbers.symbolid "
             "           and cppnamemapping.mainid = filenames.id"
             "    WHERE CPPNameMapping.simpleId = ? AND FileNames.name= ? and "
-            "         LineNumbers.startLine < ? and (linenumbers.endline == 0 OR lineNumbers.endline > ?);"
-        };  
-        static char *query2 = {
+            "         LineNumbers.startLine < ? and (linenumbers.endline == 0 OR lineNumbers.endline > ?);"};
+        static char* query2 = {
             " SELECT Names.name FROM LineNumbers "
             "    JOIN names on  names.id = linenumbers.symbolid"
             "    Join FileNames on fileNames.id = linenumbers.mainid"
             "    JOIN cppNameMapping ON cppnamemapping.complexId = linenumbers.symbolid "
             "           and cppnamemapping.mainid = filenames.id"
-            "    WHERE CPPNameMapping.simpleId = ? AND FileNames.name= ?;"
-        };  
+            "    WHERE CPPNameMapping.simpleId = ? AND FileNames.name= ?;"};
         sqlite_int64 id, baseid;
         int i, l = strlen(file);
         int rc = SQLITE_OK;
-        sqlite3_stmt *handle;
-        for (i=0; i < l; i++)
+        sqlite3_stmt* handle;
+        for (i = 0; i < l; i++)
             file[i] = tolower(file[i]);
-        rc = prepare(db, query, strlen(query)+1, &handle, NULL);
+        rc = prepare(db, query, strlen(query) + 1, &handle, NULL);
         if (rc == SQLITE_OK)
         {
             int done = FALSE;
@@ -1583,7 +1557,7 @@ CCFUNCDATA *ccLookupFunctionList(int lineno, char *file, char *name)
             sqlite3_bind_text(handle, 1, name, strlen(name), SQLITE_STATIC);
             while (!done)
             {
-                switch(sqlite3_step(handle))
+                switch (sqlite3_step(handle))
                 {
                     case SQLITE_BUSY:
                         done = TRUE;
@@ -1608,9 +1582,9 @@ CCFUNCDATA *ccLookupFunctionList(int lineno, char *file, char *name)
         if (rc == SQLITE_OK)
         {
             int i;
-            for (i=0; i < count; i++)
+            for (i = 0; i < count; i++)
             {
-                rc = prepare(db, query1, strlen(query1)+1, &handle, NULL);
+                rc = prepare(db, query1, strlen(query1) + 1, &handle, NULL);
                 if (rc == SQLITE_OK)
                 {
                     int done = FALSE;
@@ -1622,7 +1596,7 @@ CCFUNCDATA *ccLookupFunctionList(int lineno, char *file, char *name)
                     sqlite3_bind_int64(handle, 4, lineno);
                     while (!done)
                     {
-                        switch(rc = sqlite3_step(handle))
+                        switch (rc = sqlite3_step(handle))
                         {
                             case SQLITE_BUSY:
                                 done = TRUE;
@@ -1632,12 +1606,12 @@ CCFUNCDATA *ccLookupFunctionList(int lineno, char *file, char *name)
                                 break;
                             case SQLITE_ROW:
                             {
-                                CCFUNCDATA *next = calloc(1, sizeof(CCFUNCDATA));
+                                CCFUNCDATA* next = calloc(1, sizeof(CCFUNCDATA));
                                 ids[count] = -1;
-//                                scan = &funcs;
-//                                while (*scan)
-//                                    scan = &(*scan)->next;
-//                                *scan = next;
+                                //                                scan = &funcs;
+                                //                                while (*scan)
+                                //                                    scan = &(*scan)->next;
+                                //                                *scan = next;
                                 next->next = funcs;
                                 funcs = next;
                                 next->fullname = strdup(sqlite3_column_text(handle, 0));
@@ -1652,11 +1626,11 @@ CCFUNCDATA *ccLookupFunctionList(int lineno, char *file, char *name)
                     finalize(handle);
                 }
             }
-            for (i=0; i < count; i++)
+            for (i = 0; i < count; i++)
             {
                 if (ids[count] != -1)
                 {
-                    rc = prepare(db, query2, strlen(query2)+1, &handle, NULL);
+                    rc = prepare(db, query2, strlen(query2) + 1, &handle, NULL);
                     if (rc == SQLITE_OK)
                     {
                         int done = FALSE;
@@ -1666,7 +1640,7 @@ CCFUNCDATA *ccLookupFunctionList(int lineno, char *file, char *name)
                         sqlite3_bind_text(handle, 2, file, strlen(file), SQLITE_STATIC);
                         while (!done)
                         {
-                            switch(rc = sqlite3_step(handle))
+                            switch (rc = sqlite3_step(handle))
                             {
                                 case SQLITE_BUSY:
                                     done = TRUE;
@@ -1676,7 +1650,7 @@ CCFUNCDATA *ccLookupFunctionList(int lineno, char *file, char *name)
                                     break;
                                 case SQLITE_ROW:
                                 {
-                                    CCFUNCDATA *next = calloc(1, sizeof(CCFUNCDATA));
+                                    CCFUNCDATA* next = calloc(1, sizeof(CCFUNCDATA));
                                     ids[count] = -1;
                                     next->next = funcs;
                                     funcs = next;
@@ -1704,7 +1678,7 @@ CCFUNCDATA *ccLookupFunctionList(int lineno, char *file, char *name)
             }
             else
             {
-                CCFUNCDATA *toFree = *scan;
+                CCFUNCDATA* toFree = *scan;
                 *scan = (*scan)->next;
                 free(toFree->fullname);
                 free(toFree);
@@ -1713,11 +1687,11 @@ CCFUNCDATA *ccLookupFunctionList(int lineno, char *file, char *name)
     }
     return funcs;
 }
-void ccFreeFunctionList(CCFUNCDATA *data)
+void ccFreeFunctionList(CCFUNCDATA* data)
 {
     while (data)
     {
-        CCFUNCDATA *next = data->next;
+        CCFUNCDATA* next = data->next;
         ccFreeArgList(data->args);
         free(data->fullname);
         free(data);

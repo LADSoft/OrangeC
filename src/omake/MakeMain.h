@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #ifndef MAKEMAIN_H
@@ -32,24 +32,25 @@
 #include <string>
 class MakeMain
 {
-public:
-    MakeMain() : restarts(0), outputType(o_none) { }
-    int Run (int argc, char **argv);
-    
-protected:
-    void Dispatch(const char *data);
-    const char * GetStr(const char *data);
-    void SetVariable(const std::string &name, const std::string &value, Variable::Origin origin, bool toExport);
+  public:
+    MakeMain() : restarts(0), outputType(o_none) {}
+    int Run(int argc, char** argv);
+
+  protected:
+    void Dispatch(const char* data);
+    const char* GetStr(const char* data);
+    void SetVariable(const std::string& name, const std::string& value, Variable::Origin origin, bool toExport);
     void SetMakeFlags();
     void SetInternalVars();
     void SetupImplicit();
     void LoadJobArgs();
     void LoadEnvironment();
     void LoadCmdDefines();
-    void ShowRule(RuleList *ruleList);
+    void ShowRule(RuleList* ruleList);
     void ShowDatabase();
-    void SetTreePath(std::string &files);
-private:
+    void SetTreePath(std::string& files);
+
+  private:
     int restarts;
     OutputType outputType;
     static CmdSwitchParser switchParser;
@@ -59,7 +60,7 @@ private:
     static CmdSwitchBool query;
     static CmdSwitchCombineString newFiles;
     static CmdSwitchBool keepGoing;
-    static CmdSwitchBool ignoreErrors;	
+    static CmdSwitchBool ignoreErrors;
     static CmdSwitchDefine defines;
     static CmdSwitchDefine evals;
     static CmdSwitchBool rebuild;
@@ -79,13 +80,13 @@ private:
     static CmdSwitchBool warnUndef;
     static CmdSwitchBool treeBuild;
     static CmdSwitchBool keepResponseFiles;
-    static CmdSwitchInt  jobs;
+    static CmdSwitchInt jobs;
     static CmdSwitchCombineString jobOutputMode;
-    static const char *usageText;
-    static char *builtinVars;
-    static char *builtinRules;
-    
-    char **argvx;
+    static const char* usageText;
+    static char* builtinVars;
+    static char* builtinRules;
+
+    char** argvx;
     int argcx;
     std::string cwd;
 };

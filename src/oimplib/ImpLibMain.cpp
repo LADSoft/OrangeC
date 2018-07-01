@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "ObjTypes.h"
@@ -38,7 +38,7 @@
 #include <ctype.h>
 #include <iostream>
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     ImpLibMain librarian;
     return librarian.Run(argc, argv);
@@ -50,19 +50,20 @@ CmdSwitchBool ImpLibMain::caseSensitiveSwitch(SwitchParser, 'c', true);
 CmdSwitchBool ImpLibMain::CDLLSwitch(SwitchParser, 'C');
 CmdSwitchOutput ImpLibMain::OutputFile(SwitchParser, 'o', ".a");
 CmdSwitchFile ImpLibMain::File(SwitchParser, '@');
-const char *ImpLibMain::usageText = "[options] outputfile [+ files] [- files] [* files]\n"
-            "\n"
-            "/c-            Case insensitive library\n"
-            "/oxxx          Set output file name\n"
-            "/C             C language compatibility\n"
-            "/V, --version  Show version and date\n"
-            "/!, --nologo   No logo\n"
-            "@xxx           Read commands from file\n"
-            "\n"
-            "outputfile can be a library, object, or def file\n"
-            "the input files can be objects, def files, or dll files\n"
-            "\n"
-            "Time: " __TIME__ "  Date: " __DATE__;
+const char* ImpLibMain::usageText =
+    "[options] outputfile [+ files] [- files] [* files]\n"
+    "\n"
+    "/c-            Case insensitive library\n"
+    "/oxxx          Set output file name\n"
+    "/C             C language compatibility\n"
+    "/V, --version  Show version and date\n"
+    "/!, --nologo   No logo\n"
+    "@xxx           Read commands from file\n"
+    "\n"
+    "outputfile can be a library, object, or def file\n"
+    "the input files can be objects, def files, or dll files\n"
+    "\n"
+    "Time: " __TIME__ "  Date: " __DATE__;
 
 ImpLibMain::~ImpLibMain()
 {
@@ -70,9 +71,9 @@ ImpLibMain::~ImpLibMain()
         delete obj;
     objectData.clear();
 }
-void ImpLibMain::AddFile(LibManager &librarian, const char *arg)
+void ImpLibMain::AddFile(LibManager& librarian, const char* arg)
 {
-    const char *p = arg;
+    const char* p = arg;
     if (p[0] == '+')
     {
         if (p[1] == '-')
@@ -107,17 +108,17 @@ void ImpLibMain::AddFile(LibManager &librarian, const char *arg)
     if (*p)
     {
         std::string name = p;
-        switch(mode)
+        switch (mode)
         {
             case ADD:
                 modified = true;
                 {
                     std::string inputFile = arg;
                     int n = inputFile.find_last_of('.');
-                    if (n != std::string::npos && (n == 0 || inputFile[n-1] != '.'))
+                    if (n != std::string::npos && (n == 0 || inputFile[n - 1] != '.'))
                     {
                         std::string ext = inputFile.substr(n);
-                        for (int i=0; i < ext.size(); ++i)
+                        for (int i = 0; i < ext.size(); ++i)
                         {
                             ext[i] = tolower(ext[i]);
                         }
@@ -169,7 +170,7 @@ void ImpLibMain::AddFile(LibManager &librarian, const char *arg)
         }
     }
 }
-std::string ImpLibMain::GetInputFile(int argc, char **argv, bool &def)
+std::string ImpLibMain::GetInputFile(int argc, char** argv, bool& def)
 {
     std::string name;
     def = false;
@@ -194,7 +195,7 @@ std::string ImpLibMain::GetInputFile(int argc, char **argv, bool &def)
     else
     {
         std::string ext = name.substr(npos);
-        for (int i=0; i < ext.size(); i++)
+        for (int i = 0; i < ext.size(); i++)
             ext[i] = toupper(ext[i]);
         if (ext == ".DEF")
             def = true;
@@ -208,7 +209,7 @@ std::string ImpLibMain::GetInputFile(int argc, char **argv, bool &def)
     }
     return name;
 }
-int ImpLibMain::HandleDefFile(const std::string &outputFile, int argc, char **argv)
+int ImpLibMain::HandleDefFile(const std::string& outputFile, int argc, char** argv)
 {
     bool def;
     std::string inputFile = GetInputFile(argc, argv, def);
@@ -238,7 +239,7 @@ int ImpLibMain::HandleDefFile(const std::string &outputFile, int argc, char **ar
         defFile.SetLibraryName(inputFile.substr(npos));
         for (auto item : dllFile)
         {
-            DefFile::Export *exp = new DefFile::Export;
+            DefFile::Export* exp = new DefFile::Export;
             exp->id = item->name;
             exp->ord = item->ordinal;
             defFile.Add(exp);
@@ -246,15 +247,15 @@ int ImpLibMain::HandleDefFile(const std::string &outputFile, int argc, char **ar
         defFile.Write();
     }
     return 0;
-    
 }
-ObjFile *ImpLibMain::DefFileToObjFile(DefFile &def)
+ObjFile* ImpLibMain::DefFileToObjFile(DefFile& def)
 {
-    ObjectData *od = new ObjectData;
-    ObjFile *obj = new ObjFile(def.GetLibraryName());
+    ObjectData* od = new ObjectData;
+    ObjFile* obj = new ObjFile(def.GetLibraryName());
     for (DefFile::ExportIterator it = def.ExportBegin(); it != def.ExportEnd(); ++it)
     {
-        ObjImportSymbol *p = od->factory.MakeImportSymbol((CDLLSwitch.GetValue() ? "_" : "") + (*it)->id);
+        ObjImportSymbol* p = od->factory.MakeImportSymbol(
+            (CDLLSwitch.GetValue() && (*it)->id.find('@') == std::string::npos ? "_" : "") + (*it)->id);
         p->SetExternalName((*it)->entry);
         p->SetByOrdinal((*it)->byOrd);
         p->SetOrdinal((*it)->ord);
@@ -262,35 +263,36 @@ ObjFile *ImpLibMain::DefFileToObjFile(DefFile &def)
             p->SetDllName((*it)->module);
         else
             p->SetDllName(def.GetLibraryName());
-        obj->Add(p);		
+        obj->Add(p);
     }
     return obj;
 }
-ObjFile *ImpLibMain::DllFileToObjFile(DLLExportReader &dll)
+ObjFile* ImpLibMain::DllFileToObjFile(DLLExportReader& dll)
 {
     std::string name = dll.GetName();
     int npos = name.find_last_of('\\');
     if (npos == std::string::npos)
-    	npos = name.find_last_of('//');
+        npos = name.find_last_of('//');
     if (npos != std::string::npos)
         name.erase(0, npos + 1);
-    ObjectData *od = new ObjectData;
-    ObjFile *obj = new ObjFile(name);
+    ObjectData* od = new ObjectData;
+    ObjFile* obj = new ObjFile(name);
     for (auto exp : dll)
     {
-        ObjImportSymbol *p = od->factory.MakeImportSymbol((CDLLSwitch.GetValue() ? "_" : "" ) + exp->name);
+        ObjImportSymbol* p = od->factory.MakeImportSymbol(
+            (CDLLSwitch.GetValue() && exp->name.find("@") == std::string::npos ? "_" : "") + exp->name);
         p->SetExternalName(exp->name);
         p->SetByOrdinal(exp->byOrd);
         p->SetOrdinal(exp->ordinal);
         p->SetDllName(name);
-        obj->Add(p);		
+        obj->Add(p);
     }
     return obj;
 }
-int ImpLibMain::HandleObjFile(const std::string &outputFile, int argc, char **argv)
+int ImpLibMain::HandleObjFile(const std::string& outputFile, int argc, char** argv)
 {
     bool def;
-    ObjFile *obj = nullptr;
+    ObjFile* obj = nullptr;
     std::string inputFile = GetInputFile(argc, argv, def);
     if (inputFile == "")
         return 1;
@@ -311,7 +313,7 @@ int ImpLibMain::HandleObjFile(const std::string &outputFile, int argc, char **ar
     ObjIeeeIndexManager im1;
     ObjFactory fact1(&im1);
     ObjIeee ieee(outputFile.c_str());
-    FILE *stream = fopen(outputFile.c_str(), "wb");
+    FILE* stream = fopen(outputFile.c_str(), "wb");
     if (stream != nullptr)
     {
         ieee.Write(stream, obj, &fact1);
@@ -323,7 +325,7 @@ int ImpLibMain::HandleObjFile(const std::string &outputFile, int argc, char **ar
         return 1;
     }
 }
-int ImpLibMain::HandleLibrary(const std::string &outputFile, int argc, char **argv)
+int ImpLibMain::HandleLibrary(const std::string& outputFile, int argc, char** argv)
 {
     // only get here if it is a library
     LibManager librarian(outputFile, caseSensitiveSwitch.GetValue());
@@ -333,7 +335,7 @@ int ImpLibMain::HandleLibrary(const std::string &outputFile, int argc, char **ar
             std::cout << outputFile.c_str() << " is not a library" << std::endl;
             return 1;
         }
-    for (int i= 2; i < argc; i++)
+    for (int i = 2; i < argc; i++)
         AddFile(librarian, argv[i]);
     for (int i = 1; i < File.GetCount(); i++)
         AddFile(librarian, File.GetValue()[i]);
@@ -348,21 +350,21 @@ int ImpLibMain::HandleLibrary(const std::string &outputFile, int argc, char **ar
     if (modified)
         switch (librarian.SaveLibrary())
         {
-             case LibManager::CANNOT_CREATE:
+            case LibManager::CANNOT_CREATE:
                 std::cout << "Cannot open library file for 'write' access" << std::endl;
                 return 1;
-             case LibManager::CANNOT_WRITE:
+            case LibManager::CANNOT_WRITE:
                 std::cout << "Error while writing library file" << std::endl;
                 return 1;
-             case LibManager::CANNOT_READ:
+            case LibManager::CANNOT_READ:
                 std::cout << "Error while reading input files" << std::endl;
                 return 1;
-             default:
+            default:
                 break;
         }
     return 0;
 }
-int ImpLibMain::Run(int argc, char **argv)
+int ImpLibMain::Run(int argc, char** argv)
 {
     Utils::banner(argv[0]);
     Utils::SetEnvironmentToPathParent("ORANGEC");
@@ -383,7 +385,7 @@ int ImpLibMain::Run(int argc, char **argv)
     {
         Utils::usage(argv[0], usageText);
     }
-        
+
     // setup
     ObjString outputFile = argv[1];
     size_t n = outputFile.find_last_of('.');
@@ -394,7 +396,7 @@ int ImpLibMain::Run(int argc, char **argv)
     else if (n != std::string::npos)
     {
         std::string ext = outputFile.substr(n);
-        for (int i=0; i < ext.size(); ++i)
+        for (int i = 0; i < ext.size(); ++i)
         {
             ext[i] = tolower(ext[i]);
         }

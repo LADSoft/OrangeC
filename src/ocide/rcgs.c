@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /* scanner
@@ -45,33 +45,33 @@
 
 extern int inSymFile;
 extern char version[];
-extern FILE *inputFile;
+extern FILE* inputFile;
 extern int ifskip, elsetaken;
-extern IFSTRUCT *ifs;
-extern char *errfile;
+extern IFSTRUCT* ifs;
+extern char* errfile;
 extern int errlineno;
 extern int inSymFile;
-extern char *rcIdFile;
+extern char* rcIdFile;
 
-char *infile;
-extern WCHAR *lptr; /* shared with preproc */
-extern FILE *inclfile[10]; /* shared with preproc */
-extern char *inclfname[10]; /* shared with preproc */
-extern IFSTRUCT *ifshold[10];
+char* infile;
+extern WCHAR* lptr;         /* shared with preproc */
+extern FILE* inclfile[10];  /* shared with preproc */
+extern char* inclfname[10]; /* shared with preproc */
+extern IFSTRUCT* ifshold[10];
 extern int inclline[10]; /* shared with preproc */
-extern int incldepth; /* shared with preproc */
+extern int incldepth;    /* shared with preproc */
 extern int inclhfile[10];
 extern int inclInputLen[10];
-extern char *inclInputBuffer[10];
-extern char *inclibufPtr[10];
+extern char* inclInputBuffer[10];
+extern char* inclibufPtr[10];
 extern int inhfile;
 
 char intstring[50];
 int lineno;
 int laststrlen;
 WCHAR inputline[4096];
-char *inputBuffer;
-char *ibufPtr;
+char* inputBuffer;
+char* ibufPtr;
 int inputLen;
 int lastch;
 enum e_sym lastst;
@@ -79,31 +79,22 @@ char lastid[256] = "";
 char laststr[MAX_STRLEN + 1] = "";
 long ival = 0;
 long double rval = 0.0;
-WCHAR *linstack[20]; /* stack for substitutions */
-char chstack[20]; /* place to save lastch */
-int lstackptr = 0; /* substitution stack pointer */
+WCHAR* linstack[20]; /* stack for substitutions */
+char chstack[20];    /* place to save lastch */
+int lstackptr = 0;   /* substitution stack pointer */
 int cantnewline = FALSE;
 int incconst = FALSE;
 
-int backupchar =  - 1;
+int backupchar = -1;
 
 int demolines;
 static LIST *cachedLineHead, **cachedLineTail;
 static LIST *hCachedLineHead, **hCachedLineTail;
 static int commentlevel;
 
-BOOL iswhitespacechar(short x) 
-{
-    return ((x) == '\t' || isspace(x));
-}
-BOOL issymchar(short x) 
-{
-    return (isalnum(x) || (x) == '_');
-}
-BOOL isstartchar(short x) 
-{
-    return (isalpha(x) || (x) == '_');
-}
+BOOL iswhitespacechar(short x) { return ((x) == '\t' || isspace(x)); }
+BOOL issymchar(short x) { return (isalnum(x) || (x) == '_'); }
+BOOL isstartchar(short x) { return (isalpha(x) || (x) == '_'); }
 void initsym(void)
 {
     inputLen = 0;
@@ -117,38 +108,37 @@ void initsym(void)
     rval = 0.0;
     cantnewline = FALSE;
     incconst = FALSE;
-    backupchar =  - 1;
+    backupchar = -1;
     inputBuffer = calloc(INPUT_BUFFER_LEN, 1);
     cachedLineTail = &cachedLineHead;
     cachedLineHead = 0;
     hCachedLineTail = &hCachedLineHead;
     hCachedLineHead = 0;
-} 
-
+}
 
 /* Strips comments and also the newline char at the end of the line */
-static void stripcomment(WCHAR *line)
+static void stripcomment(WCHAR* line)
 {
-    WCHAR *s = line,  *e = s, instr = FALSE;
+    WCHAR *s = line, *e = s, instr = FALSE;
     while (*e)
     {
-        if (!instr &&  *e == '/' && !commentlevel)
+        if (!instr && *e == '/' && !commentlevel)
         {
-            if (*(e+1) == '*')
+            if (*(e + 1) == '*')
             {
                 e++;
                 commentlevel++;
             }
-            else if (*(e+1) == '/' && !commentlevel)
+            else if (*(e + 1) == '/' && !commentlevel)
             {
                 *s++ = '\n';
                 *s++ = 0;
-                return ;
+                return;
             }
             else if (!commentlevel)
-                *s++ =  *e;
+                *s++ = *e;
         }
-        else if (!instr && commentlevel &&  *e == '*' && *(e+1) == '/')
+        else if (!instr && commentlevel && *e == '*' && *(e + 1) == '/')
         {
             commentlevel--;
             e++;
@@ -164,23 +154,22 @@ static void stripcomment(WCHAR *line)
                 if (*e == instr)
                     instr = 0;
                 else if (*e == '\\')
-                    *s++ =  *e++;
+                    *s++ = *e++;
             }
             else if (*e == '"')
                 instr = '"';
             else if (*e == '\'')
                 instr = '\'';
-            *s++ =  *e;
+            *s++ = *e;
         }
         e++;
     }
     *s = 0;
 }
 
-
-int getstring(char *s, int len, FILE *file)
+int getstring(char* s, int len, FILE* file)
 {
-    char *olds = s;
+    char* olds = s;
     while (TRUE)
     {
         while (inputLen--)
@@ -193,7 +182,7 @@ int getstring(char *s, int len, FILE *file)
             }
             if (*ibufPtr != '\r')
             {
-                if ((*s++ =  *ibufPtr++) == '\n' || !--len)
+                if ((*s++ = *ibufPtr++) == '\n' || !--len)
                 {
                     *s = 0;
                     return 0;
@@ -212,9 +201,9 @@ int getstring(char *s, int len, FILE *file)
         }
     }
 }
-LIST *GetCachedLines(void)
+LIST* GetCachedLines(void)
 {
-    LIST *rv = NULL;
+    LIST* rv = NULL;
     if (inSymFile)
     {
         rv = hCachedLineHead;
@@ -229,19 +218,19 @@ LIST *GetCachedLines(void)
     }
     return rv;
 }
-static void CacheLine(WCHAR *lptr, char *xbuf)
+static void CacheLine(WCHAR* lptr, char* xbuf)
 {
     if (inSymFile)
     {
-        char *p = strchr(xbuf, '#');
+        char* p = strchr(xbuf, '#');
         if (p)
             return;
     }
     if ((incldepth == 0 && (!*lptr || *lptr == '#')) || inSymFile)
     {
-            
-        char *s = rcStrdup(xbuf);
-        LIST *x = rcAlloc(sizeof(LIST));
+
+        char* s = rcStrdup(xbuf);
+        LIST* x = rcAlloc(sizeof(LIST));
         x->data = s;
         if (inSymFile)
         {
@@ -265,19 +254,19 @@ int getline(int listflag)
 {
     int rv, rvc, prepping, temp;
     static int inpreprocess;
-    char ibuf[4096], xbuf[4096],  *xptr;
-    char *ptr = ibuf;
+    char ibuf[4096], xbuf[4096], *xptr;
+    char* ptr = ibuf;
     if (cantnewline)
     {
         return (0);
     }
-    repeatit: 
+repeatit:
     do
     {
         rv = FALSE;
         prepping = FALSE;
         rvc = 0;
-//        add: 
+        //        add:
         while (rvc + 131 < 4096 && !rv)
         {
             ++lineno;
@@ -344,7 +333,7 @@ int getline(int listflag)
         lptr = inputline;
         while (iswhitespacechar(*lptr))
             lptr++;
-        CacheLine((WCHAR *)lptr, xbuf);
+        CacheLine((WCHAR*)lptr, xbuf);
         if (lptr[0] == '#')
         {
             inpreprocess++;
@@ -355,9 +344,7 @@ int getline(int listflag)
         }
         if (incldepth)
             lastst = rceol;
-    }
-    while (ifskip || prepping || (inhfile && !inpreprocess))
-        ;
+    } while (ifskip || prepping || (inhfile && !inpreprocess));
     rvc = strlen(ibuf);
     /*
     if (defcheck(inputline) ==  - 10 && rvc + 131 < 4096)
@@ -375,7 +362,7 @@ int getline(int listflag)
  */
 int getch(void)
 {
-    while ((lastch =  *lptr++) == '\0')
+    while ((lastch = *lptr++) == '\0')
     {
         if (lstackptr > 0)
         {
@@ -390,7 +377,7 @@ int getch(void)
             break;
         }
         if (getline(incldepth == 0))
-            return lastch =  - 1;
+            return lastch = -1;
     }
     return lastch;
 }
@@ -406,7 +393,7 @@ void getid()
 {
     register int i;
     i = 0;
-     /* Mangling */
+    /* Mangling */
     if (lastch == 'L')
     {
         lastid[i++] = 'L';
@@ -420,19 +407,19 @@ void getid()
                 *(((short*)(laststr)) + i++) = lastch;
                 getch();
             }
-            if ((lastch &0x7f) != '\"')
+            if ((lastch & 0x7f) != '\"')
                 generror(ERR_NEEDCHAR, '\"');
             else
                 getch();
             *(((short*)(laststr)) + i) = 0;
             laststrlen = i;
             lastst = lsconst;
-            return ;
+            return;
         }
     }
     while (issymchar(lastch))
     {
-        if (i < sizeof(lastid)/sizeof(lastid[0]))
+        if (i < sizeof(lastid) / sizeof(lastid[0]))
             lastid[i++] = lastch;
         getch();
     }
@@ -450,7 +437,7 @@ int getsch(void) /* return an in-quote character */
 {
     register int i, j;
     if (lastch == '\n')
-        return  - 1;
+        return -1;
     if (incconst || lastch != '\\')
     {
         i = lastch;
@@ -496,31 +483,31 @@ int getsch(void) /* return an in-quote character */
         case '\\':
             return '\\';
         case 'x':
+        {
+            int n = 0, count = 0;
+            while (isxdigit(lastch))
             {
-                int n = 0, count = 0;
-                while (isxdigit(lastch))
-                {
-                    count++;
-                    lastch -= 0x30;
-                    if (lastch > 10)
-                        lastch -= 7;
-                    if (lastch > 15)
-                        lastch -= 32;
-                    n *= 16;
-                    n += lastch;
-                    getch();
-                }
-                if (count > 2)
-                    generror(ERR_CONSTTOOLARGE, 0);
-                return n;
+                count++;
+                lastch -= 0x30;
+                if (lastch > 10)
+                    lastch -= 7;
+                if (lastch > 15)
+                    lastch -= 32;
+                n *= 16;
+                n += lastch;
+                getch();
             }
+            if (count > 2)
+                generror(ERR_CONSTTOOLARGE, 0);
+            return n;
+        }
         default:
             if (isdigit(i) && i < '8')
             {
                 int n = 0;
                 while (isdigit(i) && i < '8')
                 {
-                    n = n * 8+(lastch - '0');
+                    n = n * 8 + (lastch - '0');
                     getch();
                 }
                 return n;
@@ -539,13 +526,13 @@ int radix36(char c)
         return c - 'a' + 10;
     if (c >= 'A' && c <= 'Z')
         return c - 'A' + 10;
-    return  - 1;
+    return -1;
 }
 
 /*
  *      getbase - get an integer in any base.
  */
-void getbase(int b, char **ptr)
+void getbase(int b, char** ptr)
 {
     register long i, j;
     int errd = 0;
@@ -555,11 +542,11 @@ void getbase(int b, char **ptr)
         if ((j = radix36(*(*ptr)++)) < b)
         {
             if (i > (ULONG_MAX - j) / b)
-            if (!errd)
-            {
-                generror(ERR_CONSTTOOLARGE, 0);
-                errd++;
-            }
+                if (!errd)
+                {
+                    generror(ERR_CONSTTOOLARGE, 0);
+                    errd++;
+                }
             i = i * b + j;
         }
         else
@@ -572,13 +559,13 @@ void getbase(int b, char **ptr)
 /*
  *      getfrac - get fraction part of a floating number.
  */
-void getfrac(char **ptr)
+void getfrac(char** ptr)
 {
     long double frmul;
     frmul = 0.1;
     while (isdigit(**ptr))
     {
-        rval += frmul *(*(*ptr)++ - '0');
+        rval += frmul * (*(*ptr)++ - '0');
         frmul *= 0.1;
     }
 }
@@ -590,7 +577,7 @@ void getfrac(char **ptr)
  *      exponents are limited to +/-255 but most hardware
  *      won't support more anyway.
  */
-void getexp(char **ptr)
+void getexp(char** ptr)
 {
     long double expo, exmul;
     expo = 1.0;
@@ -626,7 +613,7 @@ void getexp(char **ptr)
 void getnum(void)
 {
     int isfloat = FALSE;
-    char *ptr = intstring;
+    char* ptr = intstring;
 
     while (isxdigit(lastch) || lastch == 'x' || lastch == 'X')
     {
@@ -671,7 +658,7 @@ void getnum(void)
         if (*ptr == '0')
         {
             ptr++;
-            if (*ptr == 'x' ||  *ptr == 'X')
+            if (*ptr == 'x' || *ptr == 'X')
             {
                 ptr++;
                 getbase(16, &ptr);
@@ -708,11 +695,11 @@ void getnum(void)
         if (*ptr == '.')
         {
             ptr++;
-            rval = ival; /* float the integer part */
+            rval = ival;   /* float the integer part */
             getfrac(&ptr); /* add the fractional part */
             lastst = rconst;
         }
-        if (*ptr == 'e' ||  *ptr == 'E')
+        if (*ptr == 'e' || *ptr == 'E')
         {
             ptr++;
             getexp(&ptr); /* get the exponent */
@@ -747,8 +734,8 @@ int getsym2(void)
 {
     register int i, j, k;
     int size;
-//swlp: 
-	switch (lastch)
+    // swlp:
+    switch (lastch)
     {
         case '+':
             getch();
@@ -780,7 +767,7 @@ int getsym2(void)
             else if (lastch == '>')
             {
                 getch();
-                    lastst = pointsto;
+                lastst = pointsto;
             }
             else
                 lastst = minus;
@@ -821,7 +808,7 @@ int getsym2(void)
             break;
         case ':':
             getch();
-                lastst = colon;
+            lastst = colon;
             break;
         case '=':
             getch();
@@ -863,7 +850,7 @@ int getsym2(void)
                 {
                     if (lastch == '>')
                         break;
-                    if ((j = getsch()) ==  - 1)
+                    if ((j = getsch()) == -1)
                         break;
                     else
                         laststr[i] = j;
@@ -876,8 +863,7 @@ int getsym2(void)
                 else
                     getch();
             }
-            else
-            if (lastch == '=')
+            else if (lastch == '=')
             {
                 getch();
                 lastst = leq;
@@ -919,7 +905,7 @@ int getsym2(void)
             }
             else if (lastch != '\'')
             {
-                while (*lptr &&  *lptr != '\'')
+                while (*lptr && *lptr != '\'')
                     lptr++;
                 if (*lptr)
                     lptr++;
@@ -938,7 +924,7 @@ int getsym2(void)
                 {
                     if (lastch == '\"')
                         break;
-                    if ((j = getsch()) ==  - 1)
+                    if ((j = getsch()) == -1)
                         break;
                     else
                         laststr[i] = j;
@@ -954,7 +940,6 @@ int getsym2(void)
                     while (iswhitespacechar(lastch) && lastch >= 32)
                         getch();
                 }
-
             }
             break;
         case '!':
@@ -1037,7 +1022,7 @@ int getsym2(void)
                 getch();
             }
             else
-                lastst = or;
+                lastst = or ;
             break;
         case '(':
             getch();
@@ -1093,32 +1078,32 @@ int getsym2(void)
  */
 void getsym(void)
 {
-    if (backupchar !=  - 1)
+    if (backupchar != -1)
     {
         lastst = backupchar;
-        backupchar =  - 1;
-        return ;
+        backupchar = -1;
+        return;
     }
-    if (! *lptr)
+    if (!*lptr)
     {
-        if ((lastst == rceol && lastch ==  - 1) || lastst == rceof)
+        if ((lastst == rceol && lastch == -1) || lastst == rceof)
             lastst = rceof;
         else
             lastst = rceol;
         getch();
-        return ;
+        return;
     }
     while (iswhitespacechar(lastch))
     {
         getch();
-        if (! *lptr)
+        if (!*lptr)
         {
             lastst = rceol;
             getch();
-            return ;
+            return;
         }
     }
-    if (lastch ==  - 1)
+    if (lastch == -1)
         lastst = rceof;
     else if (isdigit(lastch))
         getnum();
@@ -1181,7 +1166,7 @@ int needpunc(enum e_sym p)
     {
         getsym();
         return (TRUE);
-    } 
+    }
     else
         expecttoken(p);
     return (FALSE);
@@ -1195,7 +1180,7 @@ int needpuncexp(enum e_sym p)
     {
         getsym();
         return (TRUE);
-    } 
+    }
     else
         expecttokenexp(p);
     return (FALSE);

@@ -1,5 +1,3 @@
-occ Version 6.0.37.1 Copyright (C) LADSoft 2006-2018
-
 Warning(141)  errpragma.c(8):  Parameter 'a' unused in function err_1
 Warning(105)  errpragma.c(8):  Function should return a value in function err_1
 Warning(141)  errpragma.c(13):  Parameter 'b' unused in function err_2

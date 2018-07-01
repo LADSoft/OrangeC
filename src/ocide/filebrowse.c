@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -39,11 +39,11 @@
 
 extern HWND hwndFrame, hwndClient;
 
-FILEBROWSE *fileBrowseCursor = NULL;
-FILEBROWSE *fileBrowseInfo;
+FILEBROWSE* fileBrowseCursor = NULL;
+FILEBROWSE* fileBrowseInfo;
 int fileBrowseCount;
 static HWND active;
-static FILEBROWSE *ordered[MAX_BROWSE];
+static FILEBROWSE* ordered[MAX_BROWSE];
 
 void FileBrowseLeft()
 {
@@ -98,17 +98,17 @@ void FileBrowseRight()
     }
     SendMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
 }
-void FileBrowseLineChange(DWINFO *info, int lineno, int delta)
+void FileBrowseLineChange(DWINFO* info, int lineno, int delta)
 {
-    FILEBROWSE *newBrowse;
-    FILEBROWSE **p = &fileBrowseInfo;
+    FILEBROWSE* newBrowse;
+    FILEBROWSE** p = &fileBrowseInfo;
     fileBrowseCursor = NULL;
     SendMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
     if (delta == 0 && fileBrowseInfo && fileBrowseInfo->info == info && fileBrowseInfo->lineno == lineno)
         return;
     while (*p)
     {
-        FILEBROWSE **next = &(*p)->next;
+        FILEBROWSE** next = &(*p)->next;
         if ((*p)->info == info)
         {
             if ((*p)->lineno > lineno)
@@ -119,13 +119,13 @@ void FileBrowseLineChange(DWINFO *info, int lineno, int delta)
                 }
                 else
                 {
-                    if ((*p)->lineno +delta < lineno)
+                    if ((*p)->lineno + delta < lineno)
                     {
-                        FILEBROWSE *q = *p;
+                        FILEBROWSE* q = *p;
                         if (q->next)
                             q->next->prev = q->prev;
                         *p = (*p)->next;
-                        
+
                         fileBrowseCount--;
                         free(q);
                         next = p;
@@ -142,13 +142,13 @@ void FileBrowseLineChange(DWINFO *info, int lineno, int delta)
     p = &fileBrowseInfo;
     while (*p)
     {
-        FILEBROWSE **next = &(*p)->next;
+        FILEBROWSE** next = &(*p)->next;
         if ((*p)->info == info)
         {
-            if (((*p)->lineno < lineno && (*p)->lineno + DELTA >= lineno)
-                || ((*p)->lineno >= lineno && (*p)->lineno - DELTA <= lineno))
+            if (((*p)->lineno < lineno && (*p)->lineno + DELTA >= lineno) ||
+                ((*p)->lineno >= lineno && (*p)->lineno - DELTA <= lineno))
             {
-                FILEBROWSE *q = *p;
+                FILEBROWSE* q = *p;
                 if (q->next)
                     q->next->prev = q->prev;
                 *p = (*p)->next;
@@ -166,7 +166,7 @@ void FileBrowseLineChange(DWINFO *info, int lineno, int delta)
         {
             if (!(*p)->next)
             {
-                FILEBROWSE *q = *p;
+                FILEBROWSE* q = *p;
                 if (q->next)
                     q->next->prev = q->prev;
                 *p = (*p)->next;
@@ -177,7 +177,7 @@ void FileBrowseLineChange(DWINFO *info, int lineno, int delta)
             p = &(*p)->next;
         }
     }
-    newBrowse = (FILEBROWSE *)malloc(sizeof(FILEBROWSE));
+    newBrowse = (FILEBROWSE*)malloc(sizeof(FILEBROWSE));
     if (newBrowse)
     {
         newBrowse->info = info;
@@ -190,15 +190,15 @@ void FileBrowseLineChange(DWINFO *info, int lineno, int delta)
         fileBrowseCount++;
     }
 }
-void FileBrowseClose(DWINFO *info)
+void FileBrowseClose(DWINFO* info)
 {
-    FILEBROWSE **p = &fileBrowseInfo;
+    FILEBROWSE** p = &fileBrowseInfo;
     fileBrowseCursor = NULL;
     while (*p)
     {
         if ((*p)->info == info)
         {
-            FILEBROWSE *q = *p;
+            FILEBROWSE* q = *p;
             if (q->next)
                 q->next->prev = q->prev;
             *p = (*p)->next;
@@ -213,21 +213,21 @@ void FileBrowseClose(DWINFO *info)
 }
 void FileBrowseCloseAll()
 {
-    FILEBROWSE *p = fileBrowseInfo;
+    FILEBROWSE* p = fileBrowseInfo;
     fileBrowseCursor = NULL;
     while (p)
     {
-        FILEBROWSE *next = p->next;
+        FILEBROWSE* next = p->next;
         free(p);
         p = next;
     }
     fileBrowseInfo = NULL;
     fileBrowseCount = 0;
 }
-static int fbcomp(const void *a, const void *b)
+static int fbcomp(const void* a, const void* b)
 {
-    const FILEBROWSE *ab = *(FILEBROWSE **)a;
-    const FILEBROWSE *bb = *(FILEBROWSE **)b;
+    const FILEBROWSE* ab = *(FILEBROWSE**)a;
+    const FILEBROWSE* bb = *(FILEBROWSE**)b;
     int n = strcmp(ab->info->dwName, bb->info->dwName);
     if (n != 0)
         return n;
@@ -237,36 +237,34 @@ static int fbcomp(const void *a, const void *b)
         return 1;
     return 0;
 }
-static char *GetName(int k)
+static char* GetName(int k)
 {
     static char names[MAX_BROWSE][20];
     char buf[256], *p;
     memset(buf, 0, 256);
     *(short*)buf = 256;
 
-    SendMessage(ordered[k]->info->dwHandle, EM_GETLINE, (WPARAM)ordered[k]->lineno - 1, (LPARAM)
-        buf);
+    SendMessage(ordered[k]->info->dwHandle, EM_GETLINE, (WPARAM)ordered[k]->lineno - 1, (LPARAM)buf);
     p = buf;
     while (isspace(*p))
         p++;
     if (*p)
     {
         int i;
-        for (i=0; i < sizeof(names[0])-1 && *p; i++)
+        for (i = 0; i < sizeof(names[0]) - 1 && *p; i++)
             names[k][i] = *p++;
         names[k][i] = 0;
     }
     else
         strcpy(names[k], "--");
     return names[k];
-    
 }
 void FileBrowseMenu(int x, int y, HWND hwndToolbar)
 {
     if (fileBrowseInfo)
     {
-        FILEBROWSE *p = fileBrowseInfo;
-        HMENU popup = CreatePopupMenu();    
+        FILEBROWSE* p = fileBrowseInfo;
+        HMENU popup = CreatePopupMenu();
         int i = 0, j;
         memset(ordered, 0, sizeof(ordered));
         while (p && i < MAX_BROWSE)
@@ -274,13 +272,13 @@ void FileBrowseMenu(int x, int y, HWND hwndToolbar)
             ordered[i++] = p;
             p = p->next;
         }
-        qsort(ordered, i, sizeof(FILEBROWSE *), fbcomp);
-    
-        for (j=0; j < i;)
+        qsort(ordered, i, sizeof(FILEBROWSE*), fbcomp);
+
+        for (j = 0; j < i;)
         {
-            FILEBROWSE *cur = ordered[j];
+            FILEBROWSE* cur = ordered[j];
             HMENU internalPop = CreatePopupMenu();
-            for ( ;j < i && cur->info == ordered[j]->info; j++)
+            for (; j < i && cur->info == ordered[j]->info; j++)
             {
                 InsertMenu(internalPop, -1, MF_BYPOSITION | MF_STRING, j + ID_FILEBROWSE_LIST, GetName(j));
             }
@@ -290,7 +288,7 @@ void FileBrowseMenu(int x, int y, HWND hwndToolbar)
         TrackPopupMenuEx(popup, TPM_TOPALIGN | TPM_LEFTBUTTON, x, y, hwndFrame, NULL);
         DestroyMenu(popup);
     }
-} 
+}
 void FileBrowseTrigger(int i)
 {
     if (ordered[i])

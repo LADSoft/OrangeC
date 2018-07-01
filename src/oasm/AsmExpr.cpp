@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "AsmExpr.h"
@@ -37,10 +37,18 @@
 KeywordHash AsmExpr::hash;
 bool AsmExpr::initted;
 std::string AsmExpr::currentLabel;
-Section *AsmExpr::section;
-std::map<std::string, AsmExprNode *> AsmExpr::equs;
+Section* AsmExpr::section;
+std::map<std::string, AsmExprNode*> AsmExpr::equs;
 
-enum { dollars = 300, dollarsdollars, sdivide, smod, SEG, WRT };
+enum
+{
+    dollars = 300,
+    dollarsdollars,
+    sdivide,
+    smod,
+    SEG,
+    WRT
+};
 void AsmExpr::ReInit()
 {
     currentLabel = "";
@@ -82,13 +90,13 @@ void AsmExpr::InitHash()
         hash["wrt"] = WRT;
     }
 }
-AsmExprNode * AsmExpr::Build(std::string &line)
+AsmExprNode* AsmExpr::Build(std::string& line)
 {
     tokenizer = new Tokenizer(line, &hash);
     token = tokenizer->Next();
     if (!token)
         return 0;
-    AsmExprNode * rv = logicalor();
+    AsmExprNode* rv = logicalor();
     if (!token->IsEnd())
         line = token->GetChars() + tokenizer->GetString();
     else
@@ -96,14 +104,14 @@ AsmExprNode * AsmExpr::Build(std::string &line)
     delete tokenizer;
     return rv;
 }
-AsmExprNode *AsmExpr::ConvertToBased(AsmExprNode *n, int pc)
+AsmExprNode* AsmExpr::ConvertToBased(AsmExprNode* n, int pc)
 {
     if (section)
     {
         if (n->GetLeft())
-            n->SetLeft(ConvertToBased(n->GetLeft(),pc));
+            n->SetLeft(ConvertToBased(n->GetLeft(), pc));
         if (n->GetRight())
-            n->SetRight(ConvertToBased(n->GetRight(),pc));
+            n->SetRight(ConvertToBased(n->GetRight(), pc));
         if (n->GetType() == AsmExprNode::PC)
         {
             delete n;
@@ -117,11 +125,11 @@ AsmExprNode *AsmExpr::ConvertToBased(AsmExprNode *n, int pc)
     }
     return n;
 }
-AsmExprNode *AsmExpr::Eval(AsmExprNode *n, int pc)
+AsmExprNode* AsmExpr::Eval(AsmExprNode* n, int pc)
 {
-    AsmExprNode *rv = nullptr;
+    AsmExprNode* rv = nullptr;
     FPF fv;
-    AsmExprNode *xleft=0, *xright=0;
+    AsmExprNode *xleft = 0, *xright = 0;
     if (n->GetLeft())
         xleft = Eval(n->GetLeft(), pc);
     if (n->GetRight())
@@ -135,12 +143,12 @@ AsmExprNode *AsmExpr::Eval(AsmExprNode *n, int pc)
             break;
         case AsmExprNode::LABEL:
         {
-            AsmExprNode *num = GetEqu(n->label);
+            AsmExprNode* num = GetEqu(n->label);
             if (num)
             {
                 rv = Eval(num, pc);
             }
-            else 
+            else
             {
                 auto it = section->Lookup(n->label);
                 if (it != section->GetLabels().end())
@@ -175,7 +183,7 @@ AsmExprNode *AsmExpr::Eval(AsmExprNode *n, int pc)
                     rv = new AsmExprNode(fv);
                     break;
                 case (AsmExprNode::FVAL << 8) + AsmExprNode::IVAL:
-                    fv =xright->ival ;
+                    fv = xright->ival;
                     fv += xleft->fval;
                     break;
                 case (AsmExprNode::FVAL << 8) + AsmExprNode::FVAL:
@@ -520,7 +528,6 @@ AsmExprNode *AsmExpr::Eval(AsmExprNode *n, int pc)
     {
         rv->SetLeft(xleft);
         rv->SetRight(xright);
-        
     }
     else
     {
@@ -531,13 +538,13 @@ AsmExprNode *AsmExpr::Eval(AsmExprNode *n, int pc)
     }
     return rv;
 }
-bool AsmExprNode::IsAbsoluteInternal(int &n)
+bool AsmExprNode::IsAbsoluteInternal(int& n)
 {
     bool rv = true;
     if (type == LABEL)
     {
         auto it = AsmExpr::GetSection()->Lookup(label);
-        AsmExprNode *num = AsmExpr::GetEqu(label);
+        AsmExprNode* num = AsmExpr::GetEqu(label);
         if (!num)
             if (it == AsmExpr::GetSection()->GetLabels().end())
             {
@@ -590,9 +597,9 @@ bool AsmExprNode::IsAbsolute()
     bool rv = IsAbsoluteInternal(n);
     return rv && n == 0;
 }
-AsmExprNode * AsmExpr::primary()
+AsmExprNode* AsmExpr::primary()
 {
-    AsmExprNode * rv = 0;
+    AsmExprNode* rv = 0;
     if (token->GetKeyword() == dollars)
     {
         rv = new AsmExprNode(AsmExprNode::PC);
@@ -606,7 +613,7 @@ AsmExprNode * AsmExpr::primary()
     else if (token->GetKeyword() == openpa)
     {
         token = tokenizer->Next();
-        if (!token->IsEnd() )
+        if (!token->IsEnd())
         {
             rv = logicalor();
             if (token->GetKeyword() == closepa)
@@ -619,8 +626,8 @@ AsmExprNode * AsmExpr::primary()
     {
         std::string line = token->GetChars();
         if (line[0] == '%')
-            line.erase(0,1);
-        if (line[0] == '.' && line.substr(0,3) != "..@")
+            line.erase(0, 1);
+        if (line[0] == '.' && line.substr(0, 3) != "..@")
             line = currentLabel + line;
         rv = new AsmExprNode(line);
         token = tokenizer->Next();
@@ -646,7 +653,7 @@ AsmExprNode * AsmExpr::primary()
     {
         int num = 0;
         std::wstring aa = token->GetString();
-        for (int i=0; i < 4 && i < aa.size() ; i++)
+        for (int i = 0; i < 4 && i < aa.size(); i++)
         {
             num += aa[i] << (i * 8);
         }
@@ -660,7 +667,7 @@ AsmExprNode * AsmExpr::primary()
     }
     return rv;
 }
-AsmExprNode * AsmExpr::unary()
+AsmExprNode* AsmExpr::unary()
 {
     if (!token->IsEnd())
     {
@@ -670,8 +677,8 @@ AsmExprNode * AsmExpr::unary()
             token = tokenizer->Next();
             if (!token->IsEnd())
             {
-                AsmExprNode * val1 = unary();
-                switch(kw)
+                AsmExprNode* val1 = unary();
+                switch (kw)
                 {
                     case SEG:
                         val1 = new AsmExprNode(AsmExprNode::DIV, val1, new AsmExprNode(16));
@@ -682,7 +689,7 @@ AsmExprNode * AsmExpr::unary()
                     case ::plus:
                         break;
                     case lnot:
-                        val1= new AsmExprNode(AsmExprNode::NOT, val1);
+                        val1 = new AsmExprNode(AsmExprNode::NOT, val1);
                         break;
                     case bcompl:
                         val1 = new AsmExprNode(AsmExprNode::CMPL, val1);
@@ -699,17 +706,17 @@ AsmExprNode * AsmExpr::unary()
     throw new std::runtime_error("Syntax error in constant expression");
     return 0;
 }
-AsmExprNode * AsmExpr::multiply()
+AsmExprNode* AsmExpr::multiply()
 {
-    AsmExprNode * val1 = unary();
+    AsmExprNode* val1 = unary();
     int kw = token->GetKeyword();
     while (kw == star || kw == divide || kw == mod || kw == sdivide || kw == smod)
     {
         token = tokenizer->Next();
         if (!token->IsEnd())
         {
-            AsmExprNode * val2 = unary();
-            switch(kw)
+            AsmExprNode* val2 = unary();
+            switch (kw)
             {
                 case star:
                     val1 = new AsmExprNode(AsmExprNode::MUL, val1, val2);
@@ -732,17 +739,17 @@ AsmExprNode * AsmExpr::multiply()
     }
     return val1;
 }
-AsmExprNode * AsmExpr::add()
+AsmExprNode* AsmExpr::add()
 {
-    AsmExprNode * val1 = multiply();
+    AsmExprNode* val1 = multiply();
     int kw = token->GetKeyword();
     while (kw == ::plus || kw == ::minus || kw == WRT)
     {
         token = tokenizer->Next();
         if (!token->IsEnd())
         {
-            AsmExprNode * val2 = multiply();
-            switch(kw)
+            AsmExprNode* val2 = multiply();
+            switch (kw)
             {
                 case ::plus:
                     val1 = new AsmExprNode(AsmExprNode::ADD, val1, val2);
@@ -757,17 +764,17 @@ AsmExprNode * AsmExpr::add()
     }
     return val1;
 }
-AsmExprNode * AsmExpr::shift()
+AsmExprNode* AsmExpr::shift()
 {
-    AsmExprNode * val1 = add();
+    AsmExprNode* val1 = add();
     int kw = token->GetKeyword();
     while (kw == leftshift || kw == rightshift)
     {
         token = tokenizer->Next();
         if (!token->IsEnd())
         {
-            AsmExprNode * val2 = add();
-            switch(kw)
+            AsmExprNode* val2 = add();
+            switch (kw)
             {
                 case leftshift:
                     val1 = new AsmExprNode(AsmExprNode::LSHIFT, val1, val2);
@@ -781,17 +788,17 @@ AsmExprNode * AsmExpr::shift()
     }
     return val1;
 }
-AsmExprNode * AsmExpr::relation()	
+AsmExprNode* AsmExpr::relation()
 {
-    AsmExprNode * val1 = shift();
+    AsmExprNode* val1 = shift();
     int kw = token->GetKeyword();
     while (kw == gt || kw == lt || kw == geq || kw == leq)
     {
         token = tokenizer->Next();
         if (!token->IsEnd())
         {
-            AsmExprNode * val2 = shift();
-            switch(kw)
+            AsmExprNode* val2 = shift();
+            switch (kw)
             {
                 case gt:
                     val1 = new AsmExprNode(AsmExprNode::GT, val1, val2);
@@ -811,17 +818,17 @@ AsmExprNode * AsmExpr::relation()
     }
     return val1;
 }
-AsmExprNode * AsmExpr::equal()
+AsmExprNode* AsmExpr::equal()
 {
-    AsmExprNode * val1 = relation();
+    AsmExprNode* val1 = relation();
     int kw = token->GetKeyword();
     while (kw == eq || kw == ne)
     {
         token = tokenizer->Next();
         if (!token->IsEnd())
         {
-            AsmExprNode * val2 = shift();
-            switch(kw)
+            AsmExprNode* val2 = shift();
+            switch (kw)
             {
                 case eq:
                     val1 = new AsmExprNode(AsmExprNode::EQ, val1, val2);
@@ -835,71 +842,71 @@ AsmExprNode * AsmExpr::equal()
     }
     return val1;
 }
-AsmExprNode * AsmExpr::and_()
+AsmExprNode* AsmExpr::and_()
 {
-    AsmExprNode * val1 = equal();
-    while (!token->IsEnd() && token->GetKeyword()== band)
+    AsmExprNode* val1 = equal();
+    while (!token->IsEnd() && token->GetKeyword() == band)
     {
         token = tokenizer->Next();
         if (!token->IsEnd())
         {
-            AsmExprNode * val2 = equal();
+            AsmExprNode* val2 = equal();
             val1 = new AsmExprNode(AsmExprNode::AND, val1, val2);
         }
     }
     return val1;
 }
-AsmExprNode * AsmExpr::xor_()
+AsmExprNode* AsmExpr::xor_()
 {
-    AsmExprNode * val1 = and_();
-    while (!token->IsEnd() && token->GetKeyword()== bxor)
+    AsmExprNode* val1 = and_();
+    while (!token->IsEnd() && token->GetKeyword() == bxor)
     {
         token = tokenizer->Next();
         if (!token->IsEnd())
         {
-            AsmExprNode * val2 = and_();
+            AsmExprNode* val2 = and_();
             val1 = new AsmExprNode(AsmExprNode::XOR, val1, val2);
         }
     }
     return val1;
 }
-AsmExprNode * AsmExpr::or_()
+AsmExprNode* AsmExpr::or_()
 {
-    AsmExprNode * val1 = xor_();
-    while (!token->IsEnd() && token->GetKeyword()== bor)
+    AsmExprNode* val1 = xor_();
+    while (!token->IsEnd() && token->GetKeyword() == bor)
     {
         token = tokenizer->Next();
         if (!token->IsEnd())
         {
-            AsmExprNode * val2 = xor_();
+            AsmExprNode* val2 = xor_();
             val1 = new AsmExprNode(AsmExprNode::OR, val1, val2);
         }
     }
     return val1;
 }
-AsmExprNode * AsmExpr::logicaland()
+AsmExprNode* AsmExpr::logicaland()
 {
-    AsmExprNode * val1 = or_();
-    while (!token->IsEnd() && token->GetKeyword()== land)
+    AsmExprNode* val1 = or_();
+    while (!token->IsEnd() && token->GetKeyword() == land)
     {
         token = tokenizer->Next();
         if (!token->IsEnd())
         {
-            AsmExprNode * val2 = or_();
+            AsmExprNode* val2 = or_();
             val1 = new AsmExprNode(AsmExprNode::LAND, val1, val2);
         }
     }
     return val1;
 }
-AsmExprNode * AsmExpr::logicalor()
+AsmExprNode* AsmExpr::logicalor()
 {
-    AsmExprNode * val1 = logicaland();
-    while (!token->IsEnd() && token->GetKeyword()== lor)
+    AsmExprNode* val1 = logicaland();
+    while (!token->IsEnd() && token->GetKeyword() == lor)
     {
         token = tokenizer->Next();
         if (!token->IsEnd())
         {
-            AsmExprNode * val2 = logicaland();
+            AsmExprNode* val2 = logicaland();
             val1 = new AsmExprNode(AsmExprNode::LOR, val1, val2);
         }
     }

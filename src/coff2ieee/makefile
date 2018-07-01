@@ -27,6 +27,7 @@ MAIN_FILE=Coff2ieeeMain.cpp
 INCLUDES=..\util ..\objlib ..\exefmt ..\olib
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=util objlib olib
+H_FILES=$(wildcard *.h)
 
 include ..\redirect.mak
 

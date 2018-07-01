@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -32,8 +32,8 @@
 
 #include "header.h"
 
-extern PROCESS *activeProcess;
-extern THREAD *activeThread;
+extern PROCESS* activeProcess;
+extern THREAD* activeThread;
 extern HWND hwndClient;
 extern HWND hwndASM;
 extern enum DebugState uState;
@@ -41,7 +41,6 @@ extern HANDLE BreakpointSem;
 
 BOOL SingleStepping;
 static int LastSkipAddr;
-
 
 //-------------------------------------------------------------------------
 
@@ -53,19 +52,16 @@ void SingleStep(DWORD procID, DWORD threadID)
 
 //-------------------------------------------------------------------------
 
-void ClearTraceFlag(DWORD procID, DWORD threadID)
-{
-    SingleStepping = FALSE;
-}
+void ClearTraceFlag(DWORD procID, DWORD threadID) { SingleStepping = FALSE; }
 
-int StepOverIncrement(DEBUG_EVENT *dbe)
+int StepOverIncrement(DEBUG_EVENT* dbe)
 {
     unsigned char buf[16];
     int word = 0;
     int address;
     int skiplen = 0;
-    ReadProcessMemory(activeProcess->hProcess, (LPVOID)(address = (int)dbe
-        ->u.Exception.ExceptionRecord.ExceptionAddress), (LPVOID)buf, 16, 0);
+    ReadProcessMemory(activeProcess->hProcess, (LPVOID)(address = (int)dbe->u.Exception.ExceptionRecord.ExceptionAddress),
+                      (LPVOID)buf, 16, 0);
     switch (buf[0])
     {
         case 0xCE:
@@ -78,15 +74,15 @@ int StepOverIncrement(DEBUG_EVENT *dbe)
             skiplen = 5;
             break;
         default:
-            word = (*(short*)buf) &0x38ff;
+            word = (*(short*)buf) & 0x38ff;
             if (word == 0x10ff || word == 0x18ff)
             {
                 skiplen = 2;
-                if ((word = (buf[1] &0xc7)) < 0xc0)
+                if ((word = (buf[1] & 0xc7)) < 0xc0)
                 {
                     // not indirect through reg
                     if (word == 6 || word == 5)
-                    // Offset
+                        // Offset
                         skiplen += 4;
                     else
                     {
@@ -104,10 +100,10 @@ int StepOverIncrement(DEBUG_EVENT *dbe)
                             if (*(buf + 1) < 0xc0)
                             {
                                 word = *(buf + 2);
-                                if ((word &7) == 5)
+                                if ((word & 7) == 5)
                                 {
-                                     /* EBP special cases */
-                                    if (*(buf + 1) &0x40)
+                                    /* EBP special cases */
+                                    if (*(buf + 1) & 0x40)
                                         skiplen += 4;
                                     else
                                         skiplen += 1;
@@ -126,12 +122,12 @@ int StepOverIncrement(DEBUG_EVENT *dbe)
 
 //-------------------------------------------------------------------------
 
-void DoStepOver(DEBUG_EVENT *dbe)
+void DoStepOver(DEBUG_EVENT* dbe)
 {
     int skipaddr = StepOverIncrement(dbe);
     if (skipaddr)
     {
-        int *p = calloc(2, sizeof(int));
+        int* p = calloc(2, sizeof(int));
         p[0] = skipaddr;
         SetTempBreakPoint(dbe->dwProcessId, dbe->dwThreadId, p);
     }
@@ -143,7 +139,7 @@ void DoStepOver(DEBUG_EVENT *dbe)
 
 //-------------------------------------------------------------------------
 
-void DoStepIn(DEBUG_EVENT *dbe)
+void DoStepIn(DEBUG_EVENT* dbe)
 {
     LastSkipAddr = StepOverIncrement(dbe);
     SingleStep(dbe->dwProcessId, dbe->dwThreadId);
@@ -151,15 +147,14 @@ void DoStepIn(DEBUG_EVENT *dbe)
 
 //-------------------------------------------------------------------------
 
-int IsStepping(DEBUG_EVENT *dbe)
+int IsStepping(DEBUG_EVENT* dbe)
 {
     char module[256];
     int line;
     if (uState == SteppingOver)
     {
         int v;
-        if ((v = GetBreakpointLine((int)dbe
-            ->u.Exception.ExceptionRecord.ExceptionAddress, module, &line,FALSE)) !=
+        if ((v = GetBreakpointLine((int)dbe->u.Exception.ExceptionRecord.ExceptionAddress, module, &line, FALSE)) !=
             (int)dbe->u.Exception.ExceptionRecord.ExceptionAddress)
         {
             DoStepOver(dbe);
@@ -173,8 +168,7 @@ int IsStepping(DEBUG_EVENT *dbe)
     }
     else if (uState == SteppingIn)
     {
-        int addr = GetBreakpointLine((int)dbe
-            ->u.Exception.ExceptionRecord.ExceptionAddress, module, &line, FALSE);
+        int addr = GetBreakpointLine((int)dbe->u.Exception.ExceptionRecord.ExceptionAddress, module, &line, FALSE);
         if (addr == (int)dbe->u.Exception.ExceptionRecord.ExceptionAddress)
         {
             uState = Running;
@@ -182,12 +176,11 @@ int IsStepping(DEBUG_EVENT *dbe)
         }
         else if (LastSkipAddr)
         {
-            if ((int)dbe->u.Exception.ExceptionRecord.ExceptionAddress !=
-                LastSkipAddr)
+            if ((int)dbe->u.Exception.ExceptionRecord.ExceptionAddress != LastSkipAddr)
             {
-//                if (addr)
+                //                if (addr)
                 {
-//                    uState = SteppingOver;
+                    //                    uState = SteppingOver;
                     DoStepOver(dbe);
                     return TRUE;
                 }
@@ -216,8 +209,7 @@ int IsStepping(DEBUG_EVENT *dbe)
     }
     else if (uState == StepInOut)
     {
-        int addr = GetBreakpointLine((int)dbe
-            ->u.Exception.ExceptionRecord.ExceptionAddress, module, &line, FALSE);
+        int addr = GetBreakpointLine((int)dbe->u.Exception.ExceptionRecord.ExceptionAddress, module, &line, FALSE);
         if (addr == (int)dbe->u.Exception.ExceptionRecord.ExceptionAddress)
         {
             uState = Running;
@@ -232,8 +224,7 @@ int IsStepping(DEBUG_EVENT *dbe)
     }
     else if (uState == FinishStepOut)
     {
-        int addr = GetBreakpointLine((int)dbe
-            ->u.Exception.ExceptionRecord.ExceptionAddress, module, &line, TRUE);
+        int addr = GetBreakpointLine((int)dbe->u.Exception.ExceptionRecord.ExceptionAddress, module, &line, TRUE);
         if (!addr || addr == (int)dbe->u.Exception.ExceptionRecord.ExceptionAddress)
         {
             uState = Running;
@@ -251,7 +242,7 @@ int IsStepping(DEBUG_EVENT *dbe)
 
 //-------------------------------------------------------------------------
 
-void StepOver(DEBUG_EVENT *dbe)
+void StepOver(DEBUG_EVENT* dbe)
 {
     if ((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) != hwndASM)
     {
@@ -266,7 +257,7 @@ void StepOver(DEBUG_EVENT *dbe)
 
 //-------------------------------------------------------------------------
 
-void StepOut(DEBUG_EVENT *dbe)
+void StepOut(DEBUG_EVENT* dbe)
 {
     uState = SteppingOut;
     SaveRegisterContext();
@@ -275,7 +266,7 @@ void StepOut(DEBUG_EVENT *dbe)
 
 //-------------------------------------------------------------------------
 
-void StepIn(DEBUG_EVENT *dbe)
+void StepIn(DEBUG_EVENT* dbe)
 {
     if ((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) != hwndASM)
     {
@@ -290,12 +281,12 @@ void StepIn(DEBUG_EVENT *dbe)
 
 //-------------------------------------------------------------------------
 
-int RunTo(DEBUG_EVENT *dbe)
+int RunTo(DEBUG_EVENT* dbe)
 {
     HWND wnd = GetFocus();
     if (wnd == hwndASM)
     {
-        int *p;
+        int* p;
         int addr;
         if (!(addr = SendMessage(hwndASM, WM_GETCURSORADDRESS, 0, 0)))
             return FALSE;
@@ -310,12 +301,11 @@ int RunTo(DEBUG_EVENT *dbe)
         wnd = GetParent(wnd);
         if (IsEditWindow(wnd))
         {
-            DWINFO *ptr = (DWINFO*)GetWindowLong(wnd, 0);
+            DWINFO* ptr = (DWINFO*)GetWindowLong(wnd, 0);
             int linenum;
-            int *addresses;
-            SendMessage(ptr->dwHandle, EM_GETSEL, (WPARAM) &linenum, 0);
-            linenum = SendMessage(ptr->dwHandle, EM_EXLINEFROMCHAR, 0, linenum)
-                + 1;
+            int* addresses;
+            SendMessage(ptr->dwHandle, EM_GETSEL, (WPARAM)&linenum, 0);
+            linenum = SendMessage(ptr->dwHandle, EM_EXLINEFROMCHAR, 0, linenum) + 1;
             linenum = TagOldLine(ptr->dwName, linenum);
             addresses = GetBreakpointAddresses(ptr->dwName, &linenum);
             if (addresses)
@@ -335,13 +325,12 @@ int RunTo(DEBUG_EVENT *dbe)
 
 //-------------------------------------------------------------------------
 
-int isSteppingOut(DEBUG_EVENT *dbe)
+int isSteppingOut(DEBUG_EVENT* dbe)
 {
     if (uState == SteppingOut)
     {
         unsigned char bf = 0;
-        ReadProcessMemory(activeProcess->hProcess, (LPVOID)activeThread
-            ->regs.Eip, (LPVOID) &bf, 1, 0);
+        ReadProcessMemory(activeProcess->hProcess, (LPVOID)activeThread->regs.Eip, (LPVOID)&bf, 1, 0);
         if (bf == 0xc2 || bf == 0xc3)
         {
             SingleStep(dbe->dwProcessId, dbe->dwThreadId);
@@ -353,4 +342,3 @@ int isSteppingOut(DEBUG_EVENT *dbe)
     }
     return FALSE;
 }
-

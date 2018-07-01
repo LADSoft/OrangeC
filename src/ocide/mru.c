@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -31,14 +31,13 @@
 extern HMENU hMenuMain;
 extern HWND hwndClient;
 
-DWINFO *mrulist[MAX_MRU],  *mruprojlist[MAX_MRU];
+DWINFO *mrulist[MAX_MRU], *mruprojlist[MAX_MRU];
 
 static HMENU hMRUSubMenu;
 
-
 void MRUToMenu(int which)
 {
-    DWINFO **list;
+    DWINFO** list;
     int base, base1;
     MENUITEMINFO mi;
     char buf[256];
@@ -49,13 +48,13 @@ void MRUToMenu(int which)
     {
         list = mruprojlist;
         base = ID_MRU_PROJ_LIST;
-        base1 = 2; // menu index.  Must change if RC file changes
+        base1 = 2;  // menu index.  Must change if RC file changes
     }
     else
     {
         list = mrulist;
         base = ID_MRU_LIST;
-        base1 = 9; // see above 
+        base1 = 9;  // see above
     }
 
     hMRUSubMenu = GetSubMenu(hMenuMain, maxed);
@@ -85,8 +84,8 @@ void MRUToMenu(int which)
 
 void MRUToProfile(int which)
 {
-    char key[20], buf[256],  *name;
-    DWINFO **list;
+    char key[20], buf[256], *name;
+    DWINFO** list;
     int i = 0;
     if (which)
     {
@@ -99,12 +98,12 @@ void MRUToProfile(int which)
         name = "MRU";
     }
     for (i = 0; i < MAX_MRU; i++)
-    if (list[i])
-    {
-        sprintf(key, "%s%d", name, i);
-        sprintf(buf, "%s;%s", list[i]->dwName, list[i]->dwTitle);
-        StringToProfile(key, buf);
-    }
+        if (list[i])
+        {
+            sprintf(key, "%s%d", name, i);
+            sprintf(buf, "%s;%s", list[i]->dwName, list[i]->dwTitle);
+            StringToProfile(key, buf);
+        }
 }
 
 //-------------------------------------------------------------------------
@@ -112,8 +111,8 @@ void MRUToProfile(int which)
 void ProfileToMRU(int which)
 {
     int i;
-    char key[50],  *buf,  *name;
-    DWINFO **list;
+    char key[50], *buf, *name;
+    DWINFO** list;
     if (which)
     {
         list = mruprojlist;
@@ -136,64 +135,62 @@ void ProfileToMRU(int which)
         buf = ProfileToString(key, "");
         if (buf[0])
         {
-            DWINFO *x = calloc(1,sizeof(DWINFO));
+            DWINFO* x = calloc(1, sizeof(DWINFO));
             int j = 0;
             memset(x, 0, sizeof(*x));
 
-            while (*buf &&  *buf != ';')
-                x->dwName[j++] =  *buf++;
+            while (*buf && *buf != ';')
+                x->dwName[j++] = *buf++;
             j = 0;
             if (*buf)
                 buf++;
             while (*buf)
-                x->dwTitle[j++] =  *buf++;
+                x->dwTitle[j++] = *buf++;
             list[i] = x;
         }
     }
-
 }
 
 //-------------------------------------------------------------------------
 
-void InsertMRU(DWINFO *data, int which)
+void InsertMRU(DWINFO* data, int which)
 {
     int i;
-    DWINFO *x = calloc(1,sizeof(DWINFO)),  **list;
+    DWINFO *x = calloc(1, sizeof(DWINFO)), **list;
     if (!x)
-        return ;
+        return;
     if (which)
         list = mruprojlist;
     else
         list = mrulist;
     memcpy(x, data, sizeof(DWINFO));
     for (i = 0; i < MAX_MRU; i++)
-    if (list[i] && !xstricmpz(x->dwName, list[i]->dwName))
-    {
-        if (i == 0)
-            return ;
-        free(list[i]);
-        memmove(list + 1, list, i *sizeof(DWINFO*));
-        list[0] = x;
-        return ;
-    }
+        if (list[i] && !xstricmpz(x->dwName, list[i]->dwName))
+        {
+            if (i == 0)
+                return;
+            free(list[i]);
+            memmove(list + 1, list, i * sizeof(DWINFO*));
+            list[0] = x;
+            return;
+        }
     if (list[MAX_MRU - 1])
         free(list[MAX_MRU - 1]);
-    memmove(list + 1, list, (MAX_MRU - 1) *sizeof(DWINFO*));
+    memmove(list + 1, list, (MAX_MRU - 1) * sizeof(DWINFO*));
     list[0] = x;
 }
 void MoveMRUUp(int index, int which)
 {
     DWINFO *xx, **list;
     if (index == 0)
-        return ;    
+        return;
     if (which)
         list = mruprojlist;
     else
         list = mrulist;
-    
+
     xx = list[index];
-    memmove( list+1, list, index *sizeof(DWINFO*));
+    memmove(list + 1, list, index * sizeof(DWINFO*));
     list[0] = xx;
     MRUToMenu(which);
-    
 }

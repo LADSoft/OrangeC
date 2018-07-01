@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "LinkTokenizer.h"
@@ -30,9 +30,9 @@
 #include <ctype.h>
 LinkTokenizer::eTokenType LinkTokenizer::NextToken()
 {
-    const char *str = data.c_str();
+    const char* str = data.c_str();
     int start = 0, end;
-    int base ;
+    int base;
     while (str[start])
     {
         while (isspace(str[start]))
@@ -47,69 +47,82 @@ LinkTokenizer::eTokenType LinkTokenizer::NextToken()
             token = eEOF;
             return token;
         }
-        switch(str[end++])
+        switch (str[end++])
         {
-        
+
             case '+':
-                data.replace(0,end,"");;
+                data.replace(0, end, "");
+                ;
                 token = eAdd;
                 return token;
             case '-':
-                data.replace(0,end,"");;
+                data.replace(0, end, "");
+                ;
                 token = eSub;
                 return token;
             case '*':
-                if (UTF8::IsAlnum(str + end) || str[end] == '.' || 
-                    str[end] == '_' || str[end] == '$')
+                if (UTF8::IsAlnum(str + end) || str[end] == '.' || str[end] == '_' || str[end] == '$')
                 {
                     end--;
                     goto alphajoin;
                 }
-                data.replace(0,end,"");;
+                data.replace(0, end, "");
+                ;
                 token = eMul;
                 return token;
             case '/':
-                data.replace(0,end,"");;
+                data.replace(0, end, "");
+                ;
                 token = eDiv;
                 return token;
             case '~':
-                data.replace(0,end,"");;
+                data.replace(0, end, "");
+                ;
                 token = eCmpl;
                 return token;
             case ',':
-                data.replace(0,end,"");;
+                data.replace(0, end, "");
+                ;
                 token = eComma;
                 return token;
             case '{':
-                data.replace(0,end,"");;
+                data.replace(0, end, "");
+                ;
                 token = eBegin;
                 return token;
             case '}':
-                data.replace(0,end,"");;
+                data.replace(0, end, "");
+                ;
                 token = eEnd;
                 return token;
             case ';':
-                data.replace(0,end,"");;
+                data.replace(0, end, "");
+                ;
                 token = eSemi;
                 return token;
             case '(':
-                data.replace(0,end,"");;
+                data.replace(0, end, "");
+                ;
                 token = eOpen;
                 return token;
             case ')':
-                data.replace(0,end,"");;
+                data.replace(0, end, "");
+                ;
                 token = eClose;
                 return token;
             case '[':
-                data.replace(0,end,"");;
+                data.replace(0, end, "");
+                ;
                 token = eBracketOpen;
                 return token;
             case ']':
-                data.replace(0,end,"");;
+                data.replace(0, end, "");
+                ;
                 token = eBracketClose;
                 return token;
             case '=':
-                data.replace(0,end,"");;
+                data.replace(0, end, "");
+                ;
                 token = eAssign;
                 return token;
             case '%':
@@ -130,7 +143,8 @@ LinkTokenizer::eTokenType LinkTokenizer::NextToken()
                 }
                 else
                 {
-                    data.replace(0,end,"");;
+                    data.replace(0, end, "");
+                    ;
                     token = ePC;
                 }
                 return token;
@@ -152,20 +166,24 @@ LinkTokenizer::eTokenType LinkTokenizer::NextToken()
                             start++;
                         }
                     }
-numberjoin:
-                    switch(base)
+                numberjoin:
+                    switch (base)
                     {
                         case 2:
-                            while(str[end] == '0' || str[end] == '1') end++;
+                            while (str[end] == '0' || str[end] == '1')
+                                end++;
                             break;
                         case 8:
-                            while (isdigit(str[end]) && str[end] < 8) end++;
+                            while (isdigit(str[end]) && str[end] < 8)
+                                end++;
                             break;
                         case 10:
-                            while (isdigit(str[end])) end++;
+                            while (isdigit(str[end]))
+                                end++;
                             break;
                         case 16:
-                            while (isxdigit(str[end])) end++;
+                            while (isxdigit(str[end]))
+                                end++;
                             break;
                     }
                     if (start == end)
@@ -174,8 +192,9 @@ numberjoin:
                         return token;
                     }
                     std::string sym = data.substr(start, end - start);
-                    data.replace(0,end,"");;
-                    switch(base)
+                    data.replace(0, end, "");
+                    ;
+                    switch (base)
                     {
                         case 2:
                             value = ObjUtil::FromBinary(sym.c_str());
@@ -199,62 +218,63 @@ numberjoin:
                 {
                     case '_':
                     case '.':
-alphajoin:
-                    while (UTF8::IsAlnum(str + end) || str[end] == '*' || str[end] == '?'
-                           || str[end] == '.' || str[end] == '_' || str[end] == '$')
-                    {
-                        int v = UTF8::CharSpan(str + end);
-                        for (int i=0; i < v && end < data.size(); i++)
-                            end++;
-                    }
-                    std::string sym = data.substr(start,end - start);
-                    data.replace(0,end,"");;
-                    if (sym == "region" || sym == "REGION")
-                    {
-                        token = eRegion;
-                    }
-                    else if (sym == "overlay" || sym == "OVERLAY")
-                    {
-                        token = eOverlay;
-                    }
-                    else if (sym == "partition" || sym == "PARTITION")
-                    {
-                        token = ePartition;
-                    }
-                    else if (sym == "addr" || sym == "ADDR")
-                    {
-                        token = eAddr;
-                    }
-                    else if (sym == "size" || sym == "SIZE")
-                    {
-                        token = eSize;
-                    }
-                    else if (sym == "maxsize" || sym == "MAXSIZE")
-                    {
-                        token = eMaxSize;
-                    }
-                    else if (sym == "align" || sym == "ALIGN")
-                    {
-                        token = eAlign;
-                    }
-                    else if (sym == "roundsize" || sym == "ROUNDSIZE")
-                    {
-                        token = eRoundSize;
-                    }
-                    else if (sym == "fill" || sym == "FILL")
-                    {
-                        token = eFill;
-                    }
-                    else if (sym == "virtual" || sym == "VIRTUAL")
-                    {
-                        token = eVirtual;
-                    }
-                    else
-                    {
-                        symbol = sym;
-                        token = eSymbol;
-                    }
-                    return token;
+                    alphajoin:
+                        while (UTF8::IsAlnum(str + end) || str[end] == '*' || str[end] == '?' || str[end] == '.' ||
+                               str[end] == '_' || str[end] == '$')
+                        {
+                            int v = UTF8::CharSpan(str + end);
+                            for (int i = 0; i < v && end < data.size(); i++)
+                                end++;
+                        }
+                        std::string sym = data.substr(start, end - start);
+                        data.replace(0, end, "");
+                        ;
+                        if (sym == "region" || sym == "REGION")
+                        {
+                            token = eRegion;
+                        }
+                        else if (sym == "overlay" || sym == "OVERLAY")
+                        {
+                            token = eOverlay;
+                        }
+                        else if (sym == "partition" || sym == "PARTITION")
+                        {
+                            token = ePartition;
+                        }
+                        else if (sym == "addr" || sym == "ADDR")
+                        {
+                            token = eAddr;
+                        }
+                        else if (sym == "size" || sym == "SIZE")
+                        {
+                            token = eSize;
+                        }
+                        else if (sym == "maxsize" || sym == "MAXSIZE")
+                        {
+                            token = eMaxSize;
+                        }
+                        else if (sym == "align" || sym == "ALIGN")
+                        {
+                            token = eAlign;
+                        }
+                        else if (sym == "roundsize" || sym == "ROUNDSIZE")
+                        {
+                            token = eRoundSize;
+                        }
+                        else if (sym == "fill" || sym == "FILL")
+                        {
+                            token = eFill;
+                        }
+                        else if (sym == "virtual" || sym == "VIRTUAL")
+                        {
+                            token = eVirtual;
+                        }
+                        else
+                        {
+                            symbol = sym;
+                            token = eSymbol;
+                        }
+                        return token;
                 }
                 token = eUnknown;
                 return token;
@@ -265,9 +285,9 @@ alphajoin:
     token = eUnknown;
     return token;
 }
-bool LinkTokenizer::GetPrimary(LinkExpression **exp, bool canUsePC)
+bool LinkTokenizer::GetPrimary(LinkExpression** exp, bool canUsePC)
 {
-    switch(token)
+    switch (token)
     {
         case eOpen:
             NextToken();
@@ -297,9 +317,9 @@ bool LinkTokenizer::GetPrimary(LinkExpression **exp, bool canUsePC)
     }
     return true;
 }
-bool LinkTokenizer::GetUnary(LinkExpression **exp, bool canUsePC)
+bool LinkTokenizer::GetUnary(LinkExpression** exp, bool canUsePC)
 {
-    switch(token)
+    switch (token)
     {
         case eAdd:
             NextToken();
@@ -321,26 +341,25 @@ bool LinkTokenizer::GetUnary(LinkExpression **exp, bool canUsePC)
     }
     return true;
 }
-bool LinkTokenizer::GetAdd(LinkExpression **exp, bool canUsePC)
+bool LinkTokenizer::GetAdd(LinkExpression** exp, bool canUsePC)
 {
     if (!GetUnary(exp, canUsePC))
         return false;
-    switch(token)
+    switch (token)
     {
         case eAdd:
         case eSub:
         {
             eTokenType cur = token;
             NextToken();
-            LinkExpression *right = nullptr;
+            LinkExpression* right = nullptr;
             if (!GetAdd(&right, canUsePC))
             {
-                
-                    delete right;
+
+                delete right;
                 return false;
             }
-            *exp = new LinkExpression(cur == eAdd ? LinkExpression::eAdd : LinkExpression::eSub,
-                                        *exp, right);
+            *exp = new LinkExpression(cur == eAdd ? LinkExpression::eAdd : LinkExpression::eSub, *exp, right);
             break;
         }
         default:
@@ -348,26 +367,25 @@ bool LinkTokenizer::GetAdd(LinkExpression **exp, bool canUsePC)
     }
     return true;
 }
-bool LinkTokenizer::GetMul(LinkExpression **exp, bool canUsePC)
+bool LinkTokenizer::GetMul(LinkExpression** exp, bool canUsePC)
 {
     if (!GetAdd(exp, canUsePC))
         return false;
-    switch(token)
+    switch (token)
     {
         case eMul:
         case eDiv:
         {
             eTokenType cur = token;
             NextToken();
-            LinkExpression *right = nullptr;
+            LinkExpression* right = nullptr;
             if (!GetAdd(&right, canUsePC))
             {
-                
-                    delete right;
+
+                delete right;
                 return false;
             }
-            *exp = new LinkExpression(cur == eMul ? LinkExpression::eMul : LinkExpression::eDiv,
-                                        *exp, right);
+            *exp = new LinkExpression(cur == eMul ? LinkExpression::eMul : LinkExpression::eDiv, *exp, right);
             break;
         }
         default:
@@ -375,13 +393,13 @@ bool LinkTokenizer::GetMul(LinkExpression **exp, bool canUsePC)
     }
     return true;
 }
-bool LinkTokenizer::GetExpression(LinkExpression **exp, bool canUsePC)
+bool LinkTokenizer::GetExpression(LinkExpression** exp, bool canUsePC)
 {
     *exp = nullptr;
     if (!GetMul(exp, canUsePC))
     {
-        
-            delete *exp;
+
+        delete *exp;
         *exp = nullptr;
         return false;
     }

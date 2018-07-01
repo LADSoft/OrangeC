@@ -68,16 +68,30 @@ DEFINES := $(addprefix /D,$(DEFINES))
 DEFINES := $(subst @, ,$(DEFINES))
 LIB_DEPENDENCIES := $(foreach file, $(addsuffix .l,$(LIB_DEPENDENCIES)), $(file))
 
-CCFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) /DMICROSOFT /DBORLAND /DWIN32
 ifeq "$(TARGET)" "GUI"
+ifneq "$(LSCRTL)" "YES"
 STARTUP=C0pe.o
 TYPE=/T:GUI32
 COMPLIB=clwin$(LIB_EXT) climp$(LIB_EXT)
 else
+STARTUP=C0ls.o
+TYPE=/T:GUI32
+COMPLIB=lscrtl$(LIB_EXT) climp$(LIB_EXT)
+CCFLAGS:=$(CCFLAGS) /Wgl
+endif
+else
+ifneq "$(LSCRTL)" "YES"
 STARTUP=C0Xpe.o
 TYPE=/T:CON32
 COMPLIB=clwin$(LIB_EXT) climp$(LIB_EXT)
+else
+STARTUP=C0xls.o
+TYPE=/T:CON32
+COMPLIB=lscrtl$(LIB_EXT) climp$(LIB_EXT)
+CCFLAGS:=$(CCFLAGS) /Wcl
 endif
+endif
+CCFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) /DMICROSOFT /DBORLAND /DWIN32
 
 vpath %.o $(_OUTPUTDIR)
 vpath %.l $(_LIBDIR)

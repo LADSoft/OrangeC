@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "LinkRegion.h"
@@ -47,7 +47,6 @@ LinkRegion::~LinkRegion()
         delete sect;
     for (auto sect : postponeData)
         delete sect;
-
 }
 ObjString LinkRegion::QualifiedRegionName()
 {
@@ -63,29 +62,31 @@ ObjString LinkRegion::QualifiedRegionName()
     }
     else
         return name;
-    
 }
-bool LinkRegion::ParseFiles(CmdFiles &files, LinkTokenizer &spec)
+bool LinkRegion::ParseFiles(CmdFiles& files, LinkTokenizer& spec)
 {
-    
+
     if (!spec.Matches(LinkTokenizer::eBegin))
         return false;
     bool done = false;
-    const char *p = spec.GetData();
-    const char *s = p;
+    const char* p = spec.GetData();
+    const char* s = p;
     while (!done)
     {
-        while (isspace(*s)) s++;
+        while (isspace(*s))
+            s++;
         char buf[256], *q = buf;
         bool quote = false;
         if (*s == '"')
         {
             s++;
-            while (*s && *s != '}' && *s != '"') *q++ = *s++;
+            while (*s && *s != '}' && *s != '"')
+                *q++ = *s++;
         }
         else
         {
-            while (*s && *s != '}' && !isspace(*s)) *q ++ = *s++;
+            while (*s && *s != '}' && !isspace(*s))
+                *q++ = *s++;
         }
         *q = 0;
         if (!buf[0])
@@ -102,15 +103,15 @@ bool LinkRegion::ParseFiles(CmdFiles &files, LinkTokenizer &spec)
     // not proceeding to next token here
     return spec.Matches(LinkTokenizer::eEnd);
 }
-bool LinkRegion::ParseName(LinkTokenizer &spec)
+bool LinkRegion::ParseName(LinkTokenizer& spec)
 {
     char buf[4096], *q = buf;
-    const char *p = spec.GetData();
-    while (isspace(*p) || UTF8::IsAlnum(p) || *p == '*' || *p == '?' || *p == '.' ||
-           *p == '|' || *p == '&' || *p == '!' || *p == '(' || *p == ')')
+    const char* p = spec.GetData();
+    while (isspace(*p) || UTF8::IsAlnum(p) || *p == '*' || *p == '?' || *p == '.' || *p == '|' || *p == '&' || *p == '!' ||
+           *p == '(' || *p == ')')
     {
         int v = UTF8::CharSpan(p);
-        for (int i=0; i < v && *p; i++)
+        for (int i = 0; i < v && *p; i++)
             *q++ = *p++;
     }
     *q = 0;
@@ -118,16 +119,16 @@ bool LinkRegion::ParseName(LinkTokenizer &spec)
     SetName(buf);
     return true;
 }
-bool LinkRegion::ParseValue(LinkTokenizer &spec, LinkExpression **rv)
+bool LinkRegion::ParseValue(LinkTokenizer& spec, LinkExpression** rv)
 {
     spec.NextToken();
     if (!spec.MustMatch(LinkTokenizer::eAssign))
         return false;
-    if (!spec.GetExpression(rv,false))
+    if (!spec.GetExpression(rv, false))
         return false;
     return true;
 }
-bool LinkRegion::ParseAttributes( LinkTokenizer &spec)
+bool LinkRegion::ParseAttributes(LinkTokenizer& spec)
 {
     /* optional */
     if (spec.Matches(LinkTokenizer::eBracketOpen))
@@ -136,9 +137,9 @@ bool LinkRegion::ParseAttributes( LinkTokenizer &spec)
         spec.NextToken();
         while (!done)
         {
-            switch(spec.GetTokenType())
+            switch (spec.GetTokenType())
             {
-                LinkExpression *value;
+                LinkExpression* value;
                 case LinkTokenizer::eAddr:
                     if (!ParseValue(spec, &value))
                         return false;
@@ -182,11 +183,11 @@ bool LinkRegion::ParseAttributes( LinkTokenizer &spec)
             else
                 spec.NextToken();
         }
-        return spec.MustMatch(LinkTokenizer:: eBracketClose);
+        return spec.MustMatch(LinkTokenizer::eBracketClose);
     }
     return true;
 }
-bool LinkRegion::ParseRegionSpec(LinkManager *manager, CmdFiles &files, LinkTokenizer &spec)
+bool LinkRegion::ParseRegionSpec(LinkManager* manager, CmdFiles& files, LinkTokenizer& spec)
 {
     if (!ParseFiles(files, spec))
         return false;
@@ -197,7 +198,7 @@ bool LinkRegion::ParseRegionSpec(LinkManager *manager, CmdFiles &files, LinkToke
     AddSection(manager);
     return true;
 }
-bool LinkRegion::HoldsFile(const ObjString &fileName)
+bool LinkRegion::HoldsFile(const ObjString& fileName)
 {
     for (auto name : sourceFiles)
     {
@@ -206,23 +207,23 @@ bool LinkRegion::HoldsFile(const ObjString &fileName)
     }
     return false;
 }
-bool LinkRegion::Matches(const ObjString &name, const ObjString &spec)
+bool LinkRegion::Matches(const ObjString& name, const ObjString& spec)
 {
     LinkRegionFileSpecContainer fs(spec);
     return fs.Matches(name);
 }
-void LinkRegion::AddSourceFile(CmdFiles &filelist, const ObjString &spec)
+void LinkRegion::AddSourceFile(CmdFiles& filelist, const ObjString& spec)
 {
-    for (CmdFiles::FileNameIterator it = filelist.FileNameBegin(); it != filelist.FileNameEnd(); ++it)		
+    for (CmdFiles::FileNameIterator it = filelist.FileNameBegin(); it != filelist.FileNameEnd(); ++it)
         if (Matches(**it, spec))
             sourceFiles.push_back(*it);
 }
-void LinkRegion::AddData(SectionData &data, LookasideBuf &lookaside, ObjFile *file, ObjSection *section)
+void LinkRegion::AddData(SectionData& data, LookasideBuf& lookaside, ObjFile* file, ObjSection* section)
 {
-    NamedSection *ns = nullptr;
+    NamedSection* ns = nullptr;
     NamedSection aa;
     aa.name = section->GetName();
-    LookasideBuf::iterator it= lookaside.find(&aa);
+    LookasideBuf::iterator it = lookaside.find(&aa);
     if (it != lookaside.end())
         ns = *it;
     if (ns == nullptr)
@@ -235,12 +236,12 @@ void LinkRegion::AddData(SectionData &data, LookasideBuf &lookaside, ObjFile *fi
     ns->sections.push_back(OneSection(file, section));
 }
 
-void LinkRegion::AddFile(ObjFile *file)
+void LinkRegion::AddFile(ObjFile* file)
 {
     LinkNameLogic logic(name);
     for (ObjFile::SectionIterator it = file->SectionBegin(); it != file->SectionEnd(); ++it)
     {
-        ObjSection *sect = *it;
+        ObjSection* sect = *it;
         if (logic.Matches(sect->GetName()))
         {
             ObjInt quals = sect->GetQuals();
@@ -250,10 +251,9 @@ void LinkRegion::AddFile(ObjFile *file)
             sect->SetUtilityFlag(true);
             if (quals & ObjSection::now)
             {
-                if (quals &ObjSection::postpone)
-                    LinkManager::LinkError("file " + file->GetName() + "Region " 
-                                             + QualifiedRegionName() + 
-                                " has both 'now' and 'postpone' qualifiers");
+                if (quals & ObjSection::postpone)
+                    LinkManager::LinkError("file " + file->GetName() + "Region " + QualifiedRegionName() +
+                                           " has both 'now' and 'postpone' qualifiers");
                 AddNowData(file, sect);
             }
             else if (quals & ObjSection::postpone)
@@ -267,24 +267,25 @@ void LinkRegion::AddFile(ObjFile *file)
         }
     }
 }
-void LinkRegion::AddSection(LinkManager *manager)
+void LinkRegion::AddSection(LinkManager* manager)
 {
     for (LinkManager::FileIterator it = manager->FileBegin(); it != manager->FileEnd(); ++it)
     {
-        ObjFile *file = *it;
+        ObjFile* file = *it;
         if (sourceFiles.size() == 0)
             AddFile(file);
-        else for (auto srcFile : sourceFiles)
-        {
-            if (*srcFile == file->GetInputName())
+        else
+            for (auto srcFile : sourceFiles)
             {
-                AddFile(file);
-                break;
+                if (*srcFile == file->GetInputName())
+                {
+                    AddFile(file);
+                    break;
+                }
             }
-        }
     }
 }
-#define max(x,y) (((x)>(y))?(x):(y))
+#define max(x, y) (((x) > (y)) ? (x) : (y))
 void LinkRegion::CheckAttributes()
 {
     int n = nowData.size() + postponeData.size() + normalData.size();
@@ -297,34 +298,35 @@ void LinkRegion::CheckAttributes()
         bool anyMax = false;
         bool anySeparate = false;
         bool notEqual = false;
+        bool used = false;
         ObjInt maxAlign = -1;
         for (auto data : nowData)
         {
             for (auto item : data->sections)
             {
-                ObjSection *sect = item.section;
+                ObjSection* sect = item.section;
                 ObjInt quals = sect->GetQuals();
                 if (maxSize != -1 && maxSize != sect->GetAbsSize())
                     notEqual = true;
                 maxSize = max(maxSize, sect->GetAbsSize());
                 maxAlign = max(maxAlign, sect->GetAlignment());
-                if (quals &ObjSection::equal)
+                if (quals & ObjSection::equal)
                 {
                     anyEqual = true;
                     anyCommon = true;
                 }
-                else if (quals &ObjSection::max)
+                else if (quals & ObjSection::max)
                 {
                     anyMax = true;
                     anyCommon = true;
                 }
                 else if (quals & ObjSection::common)
                     anyCommon = true;
-                else 
+                else
                     anyNonCommon = true;
-                if (quals &ObjSection::unique)
+                if (quals & ObjSection::unique)
                     anyUnique = true;
-                if (quals &ObjSection::separate)
+                if (quals & ObjSection::separate)
                     anySeparate = true;
             }
         }
@@ -332,29 +334,29 @@ void LinkRegion::CheckAttributes()
         {
             for (auto item : data->sections)
             {
-                ObjSection *sect = item.section;
+                ObjSection* sect = item.section;
                 ObjInt quals = sect->GetQuals();
                 if (maxSize != -1 && maxSize != sect->GetAbsSize())
                     notEqual = true;
                 maxSize = max(maxSize, sect->GetAbsSize());
                 maxAlign = max(maxAlign, sect->GetAlignment());
-                if (quals &ObjSection::equal)
+                if (quals & ObjSection::equal)
                 {
                     anyEqual = true;
                     anyCommon = true;
                 }
-                else if (quals &ObjSection::max)
+                else if (quals & ObjSection::max)
                 {
                     anyMax = true;
                     anyCommon = true;
                 }
                 else if (quals & ObjSection::common)
                     anyCommon = true;
-                else 
+                else
                     anyNonCommon = true;
-                if (quals &ObjSection::unique)
+                if (quals & ObjSection::unique)
                     anyUnique = true;
-                if (quals &ObjSection::separate)
+                if (quals & ObjSection::separate)
                     anySeparate = true;
             }
         }
@@ -362,27 +364,27 @@ void LinkRegion::CheckAttributes()
         {
             for (auto item : data->sections)
             {
-                ObjSection *sect = item.section;
+                ObjSection* sect = item.section;
                 ObjInt quals = sect->GetQuals();
                 if (maxSize != -1 && maxSize != sect->GetAbsSize())
                     notEqual = true;
                 maxSize = max(maxSize, sect->GetAbsSize());
                 maxAlign = max(maxAlign, sect->GetAlignment());
-                if (quals &ObjSection::equal)
+                if (quals & ObjSection::equal)
                 {
                     anyEqual = true;
                 }
-                else if (quals &ObjSection::max)
+                else if (quals & ObjSection::max)
                 {
                     anyMax = true;
                 }
                 else if (quals & ObjSection::common)
                     anyCommon = true;
-                else 
+                else
                     anyNonCommon = true;
-                if (quals &ObjSection::unique)
+                if (quals & ObjSection::unique)
                     anyUnique = true;
-                if (quals &ObjSection::separate)
+                if (quals & ObjSection::separate)
                     anySeparate = true;
             }
         }
@@ -391,9 +393,7 @@ void LinkRegion::CheckAttributes()
             common = true;
         if (n > 1 && anyUnique)
             LinkManager::LinkError("Region " + QualifiedRegionName() + " unique qualifier with multiple sections");
-        if ((anyCommon && anyNonCommon)
-            || (anyEqual && anyNonCommon)
-            || (anyMax && anyNonCommon))
+        if ((anyCommon && anyNonCommon) || (anyEqual && anyNonCommon) || (anyMax && anyNonCommon))
             LinkManager::LinkError("Region " + QualifiedRegionName() + " Mixing Common and NonCommon sections");
         if (anyEqual && anyMax)
             LinkManager::LinkError("Region " + QualifiedRegionName() + " Mixing equal and max characteristics");
@@ -405,22 +405,21 @@ void LinkRegion::CheckAttributes()
             attribs.SetAlign(new LinkExpression(maxAlign));
     }
 }
-#include <stdio.h>
-ObjInt LinkRegion::ArrangeOverlayed(LinkManager *manager, NamedSection *data, ObjInt address)
+ObjInt LinkRegion::ArrangeOverlayed(LinkManager* manager, NamedSection* data, ObjInt address)
 {
     // weeding
     auto test1 = data->sections.begin();
-    ObjSection *test2 = (*test1).section;
+    ObjSection* test2 = (*test1).section;
     if (!manager->HasVirtual(test2->GetName()))
     {
         data->sections.clear();
         return 0;
-    }    
-    ObjSection *curSection = nullptr;
-    ObjFile *curFile = nullptr;
+    }
+    ObjSection* curSection = nullptr;
+    ObjFile* curFile = nullptr;
     for (auto item : data->sections)
     {
-        ObjSection *sect = item.section;
+        ObjSection* sect = item.section;
         if (!curSection || sect->GetAbsSize() > curSection->GetAbsSize())
         {
             curSection = sect;
@@ -429,7 +428,7 @@ ObjInt LinkRegion::ArrangeOverlayed(LinkManager *manager, NamedSection *data, Ob
     }
     for (auto item : data->sections)
     {
-        ObjSection *sect = item.section;
+        ObjSection* sect = item.section;
         sect->SetAliasFor(curSection);
     }
     data->sections.clear();
@@ -442,7 +441,7 @@ ObjInt LinkRegion::ArrangeOverlayed(LinkManager *manager, NamedSection *data, Ob
     if (curSection->GetQuals() & ObjSection::virt)
     {
         int i;
-        for (i=0; i < curSection->GetName().size(); i++)
+        for (i = 0; i < curSection->GetName().size(); i++)
         {
             if (curSection->GetName()[i] == '@' || curSection->GetName()[i] == '_')
                 break;
@@ -450,7 +449,7 @@ ObjInt LinkRegion::ArrangeOverlayed(LinkManager *manager, NamedSection *data, Ob
         if (i < curSection->GetName().size())
         {
             std::string pubName = curSection->GetName().substr(i);
-            LinkExpressionSymbol *esym = new LinkExpressionSymbol(pubName, new LinkExpression(curSection)) ;
+            LinkExpressionSymbol* esym = new LinkExpressionSymbol(pubName, new LinkExpression(curSection));
             if (!LinkExpression::EnterSymbol(esym))
             {
                 delete esym;
@@ -466,7 +465,7 @@ ObjInt LinkRegion::ArrangeOverlayed(LinkManager *manager, NamedSection *data, Ob
         return curSection->GetAbsSize();
     return 0;
 }
-ObjInt LinkRegion::ArrangeSections(LinkManager *manager)
+ObjInt LinkRegion::ArrangeSections(LinkManager* manager)
 {
     ObjInt address = attribs.GetAddress(), oldAddress = address;
     ObjInt size;
@@ -481,7 +480,7 @@ ObjInt LinkRegion::ArrangeSections(LinkManager *manager)
         {
             for (auto item : data->sections)
             {
-                ObjSection *sect = item.section;
+                ObjSection* sect = item.section;
                 sect->SetBase(address);
                 if (attribs.GetVirtualOffsetSpecified())
                     sect->SetVirtualOffset(attribs.GetVirtualOffset());
@@ -491,7 +490,7 @@ ObjInt LinkRegion::ArrangeSections(LinkManager *manager)
         {
             for (auto item : data->sections)
             {
-                ObjSection *sect = item.section;
+                ObjSection* sect = item.section;
                 sect->SetBase(address);
                 if (attribs.GetVirtualOffsetSpecified())
                     sect->SetVirtualOffset(attribs.GetVirtualOffset());
@@ -501,7 +500,7 @@ ObjInt LinkRegion::ArrangeSections(LinkManager *manager)
         {
             for (auto item : data->sections)
             {
-                ObjSection *sect = item.section;
+                ObjSection* sect = item.section;
                 sect->SetBase(address);
                 if (attribs.GetVirtualOffsetSpecified())
                     sect->SetVirtualOffset(attribs.GetVirtualOffset());
@@ -543,7 +542,7 @@ ObjInt LinkRegion::ArrangeSections(LinkManager *manager)
         {
             for (auto item : data->sections)
             {
-                ObjSection *sect = item.section;
+                ObjSection* sect = item.section;
                 address += align - 1;
                 address /= align;
                 address *= align;
@@ -557,7 +556,7 @@ ObjInt LinkRegion::ArrangeSections(LinkManager *manager)
         {
             for (auto item : data->sections)
             {
-                ObjSection *sect = item.section;
+                ObjSection* sect = item.section;
                 address += align - 1;
                 address /= align;
                 address *= align;
@@ -571,7 +570,7 @@ ObjInt LinkRegion::ArrangeSections(LinkManager *manager)
         {
             for (auto item : data->sections)
             {
-                ObjSection *sect = item.section;
+                ObjSection* sect = item.section;
                 address += align - 1;
                 address /= align;
                 address *= align;
@@ -582,7 +581,6 @@ ObjInt LinkRegion::ArrangeSections(LinkManager *manager)
             }
         }
         size = address - oldAddress;
-        
     }
     if (attribs.GetRoundSize())
     {
@@ -594,20 +592,21 @@ ObjInt LinkRegion::ArrangeSections(LinkManager *manager)
         LinkManager::LinkError("Region " + QualifiedRegionName() + " overflowed region size");
     return size;
 }
-ObjInt LinkRegion::PlaceRegion(LinkManager *manager, LinkAttribs &partitionAttribs, ObjInt base)
+ObjInt LinkRegion::PlaceRegion(LinkManager* manager, LinkAttribs& partitionAttribs, ObjInt base)
 {
     int alignAdjust = 0;
     if (!attribs.GetVirtualOffsetSpecified())
         if (partitionAttribs.GetVirtualOffsetSpecified())
-            attribs.SetVirtualOffset(new LinkExpression(partitionAttribs.GetVirtualOffset() + base - partitionAttribs.GetAddress()));
+            attribs.SetVirtualOffset(
+                new LinkExpression(partitionAttribs.GetVirtualOffset() + base - partitionAttribs.GetAddress()));
     if (partitionAttribs.GetAlign() > attribs.GetAlign())
         attribs.SetAlign(new LinkExpression(partitionAttribs.GetAlign()));
-//	else if (attribs.GetAlign() > partitionAttribs.GetAlign())
-//		partitionAttribs.SetAlign(new LinkExpression(attribs.GetAlign()));
+    //	else if (attribs.GetAlign() > partitionAttribs.GetAlign())
+    //		partitionAttribs.SetAlign(new LinkExpression(attribs.GetAlign()));
     if (!attribs.GetHasFill())
         if (partitionAttribs.GetHasFill())
             attribs.SetFill(new LinkExpression(partitionAttribs.GetFill()));
-            
+
     if (attribs.GetAlign())
     {
         alignAdjust = base % attribs.GetAlign();
@@ -637,7 +636,7 @@ ObjInt LinkRegion::PlaceRegion(LinkManager *manager, LinkAttribs &partitionAttri
     if (attribs.GetMaxSize())
         if (size > attribs.GetMaxSize())
             LinkManager::LinkError("Region " + QualifiedRegionName() + " exceeds maximum size ");
-            
+
     attribs.SetSize(new LinkExpression(size));
     return size + alignAdjust;
 }

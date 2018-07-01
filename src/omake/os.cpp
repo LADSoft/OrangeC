@@ -1,33 +1,33 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
-#define _CRT_SECURE_NO_WARNINGS  
+#define _CRT_SECURE_NO_WARNINGS
 
 #include <windows.h>
 #undef WriteConsole
-#define __MT__ // BCC55 support
+#define __MT__  // BCC55 support
 #include <process.h>
 #include <direct.h>
 #include <stdio.h>
@@ -50,47 +50,50 @@ std::deque<int> OS::jobCounts;
 bool OS::isSHEXE;
 int OS::jobsLeft;
 
-
 static std::string QuoteCommand(std::string command)
 {
     std::string rv;
-    if (command.empty () == false &&
-        command.find_first_of (" \t\n\v\"") == command.npos)
+    if (command.empty() == false && command.find_first_of(" \t\n\v\"") == command.npos)
     {
         rv = command;
     }
-    else {
-        rv.push_back (L'"');
+    else
+    {
+        rv.push_back(L'"');
 
         for (auto it = command.begin(); it != command.end(); ++it)
         {
             unsigned slashcount = 0;
-            while (it != command.end () && *it == L'\\') {
+            while (it != command.end() && *it == L'\\')
+            {
                 ++it;
                 ++slashcount;
             }
-        
-            if (it == command.end ()) {
+
+            if (it == command.end())
+            {
                 // escape all the backslashes
-                rv.append (slashcount * 2, L'\\');
+                rv.append(slashcount * 2, L'\\');
                 break;
             }
-            else if (*it == L'"') {
+            else if (*it == L'"')
+            {
                 // escape all the backslashes and add a \"
-                rv.append (slashcount * 2 + 1, L'\\');
-                rv.push_back ('"');
+                rv.append(slashcount * 2 + 1, L'\\');
+                rv.push_back('"');
             }
-            else {
+            else
+            {
                 // no escape
-                rv.append (slashcount, L'\\');
-                rv.push_back (*it);
+                rv.append(slashcount, L'\\');
+                rv.push_back(*it);
             }
         }
-        rv.push_back (L'"');
+        rv.push_back(L'"');
     }
     return rv;
 }
-bool Time::operator >(const Time &last)
+bool Time::operator>(const Time& last)
 {
     if (this->seconds > last.seconds)
         return true;
@@ -99,13 +102,10 @@ bool Time::operator >(const Time &last)
             return true;
     return false;
 }
-void OS::Init()
-{
-    InitializeCriticalSection(&consoleSync);
-}
+void OS::Init() { InitializeCriticalSection(&consoleSync); }
 void OS::WriteConsole(std::string string)
 {
-    DWORD written; 
+    DWORD written;
     EnterCriticalSection(&consoleSync);
     WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), string.c_str(), string.size(), &written, nullptr);
     LeaveCriticalSection(&consoleSync);
@@ -115,7 +115,7 @@ void OS::ToConsole(std::deque<std::string>& strings)
     EnterCriticalSection(&consoleSync);
     for (auto s : strings)
     {
-	WriteConsole(s);
+        WriteConsole(s);
     }
     strings.clear();
     LeaveCriticalSection(&consoleSync);
@@ -141,17 +141,14 @@ bool OS::TakeJob()
     WaitForSingleObject(jobsSemaphore, INFINITE);
     return false;
 }
-void OS::GiveJob()
-{
-    ReleaseSemaphore(jobsSemaphore, 1, nullptr);
-}
+void OS::GiveJob() { ReleaseSemaphore(jobsSemaphore, 1, nullptr); }
 void OS::JobInit()
 {
     std::string name;
-    Variable *v = VariableContainer::Instance()->Lookup(".OMAKESEM");
+    Variable* v = VariableContainer::Instance()->Lookup(".OMAKESEM");
     if (v)
     {
-         name = v->GetValue(); 
+        name = v->GetValue();
     }
     else
     {
@@ -166,23 +163,14 @@ void OS::JobInit()
     name = std::string("OMAKE") + name;
     jobsSemaphore = CreateSemaphore(nullptr, jobsLeft, jobsLeft, name.c_str());
 }
-void OS::JobRundown()
-{
-    CloseHandle(jobsSemaphore);
-}
-void OS::Take()
-{
-   EnterCriticalSection(&consoleSync);
- }
-void OS::Give()
-{
-   LeaveCriticalSection(&consoleSync);
-}
-int OS::Spawn(const std::string command, EnvironmentStrings &environment, std::string *output)
+void OS::JobRundown() { CloseHandle(jobsSemaphore); }
+void OS::Take() { EnterCriticalSection(&consoleSync); }
+void OS::Give() { LeaveCriticalSection(&consoleSync); }
+int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::string* output)
 {
     std::string command1 = command;
 
-    Variable *v = VariableContainer::Instance()->Lookup("SHELL");
+    Variable* v = VariableContainer::Instance()->Lookup("SHELL");
     if (!v)
         return -1;
     std::string cmd = v->GetValue();
@@ -196,7 +184,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings &environment, std::s
     {
         cmd = "sh.exe -c ";
         // we couldn't simply set MAKE properly because they may change the shell in the script
-    	v = VariableContainer::Instance()->Lookup("MAKE");
+        v = VariableContainer::Instance()->Lookup("MAKE");
         if (v->GetValue().find_first_of("\\") != std::string::npos)
         {
             size_t n = command1.find(v->GetValue());
@@ -218,7 +206,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings &environment, std::s
     if (output)
     {
         CreatePipe(&pipeRead, &pipeWrite, nullptr, 4 * 1024 * 1024);
-        DuplicateHandle(GetCurrentProcess(),pipeWrite, GetCurrentProcess(), &pipeWriteDuplicate, 0, TRUE, DUPLICATE_SAME_ACCESS);
+        DuplicateHandle(GetCurrentProcess(), pipeWrite, GetCurrentProcess(), &pipeWriteDuplicate, 0, TRUE, DUPLICATE_SAME_ACCESS);
         CloseHandle(pipeWrite);
     }
     int rv;
@@ -242,16 +230,16 @@ int OS::Spawn(const std::string command, EnvironmentStrings &environment, std::s
         n += env.name.size() + env.value.size() + 2;
     }
     n++;
-    char *env = new char[n];
-    memset(env, 0, sizeof(char)*n); // !!!
-    char *p = env;
+    char* env = new char[n];
+    memset(env, 0, sizeof(char) * n);  // !!!
+    char* p = env;
     for (auto env : environment)
     {
         memcpy(p, env.name.c_str(), env.name.size());
-        p+= env.name.size();
+        p += env.name.size();
         *p++ = '=';
         memcpy(p, env.value.c_str(), env.value.size());
-        p+= env.value.size();
+        p += env.value.size();
         *p++ = '\0';
     }
     *p++ = '\0';
@@ -275,8 +263,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings &environment, std::s
     }
 
     // try as an app first
-    if (asapp && CreateProcess(nullptr, (char *)command1.c_str(), nullptr, nullptr, true, 0, env,
-                      nullptr, &startup, &pi))
+    if (asapp && CreateProcess(nullptr, (char*)command1.c_str(), nullptr, nullptr, true, 0, env, nullptr, &startup, &pi))
     {
         WaitForSingleObject(pi.hProcess, INFINITE);
         if (output)
@@ -285,14 +272,14 @@ int OS::Spawn(const std::string command, EnvironmentStrings &environment, std::s
             PeekNamedPipe(pipeRead, NULL, 0, NULL, &avail, NULL);
             if (avail > 0)
             {
-                char *buffer = new char[avail+1];
+                char* buffer = new char[avail + 1];
                 DWORD readlen = 0;
 
-                ReadFile(pipeRead,buffer, avail, &readlen, nullptr);
+                ReadFile(pipeRead, buffer, avail, &readlen, nullptr);
                 buffer[readlen] = 0;
                 *output = buffer;
-                delete [] buffer;
-             }
+                delete[] buffer;
+            }
         }
         DWORD x;
         GetExitCodeProcess(pi.hProcess, &x);
@@ -303,8 +290,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings &environment, std::s
     else
     {
         // not found, try running a shell to handle it...
-        if (CreateProcess(nullptr, (char *)cmd.c_str(), nullptr, nullptr, true, 0, env,
-                      nullptr, &startup, &pi))
+        if (CreateProcess(nullptr, (char*)cmd.c_str(), nullptr, nullptr, true, 0, env, nullptr, &startup, &pi))
         {
             WaitForSingleObject(pi.hProcess, INFINITE);
             if (output)
@@ -313,13 +299,13 @@ int OS::Spawn(const std::string command, EnvironmentStrings &environment, std::s
                 PeekNamedPipe(pipeRead, NULL, 0, NULL, &avail, NULL);
                 if (avail > 0)
                 {
-                    char *buffer = new char[avail+1];
+                    char* buffer = new char[avail + 1];
                     DWORD readlen = 0;
 
-                    ReadFile(pipeRead,buffer, avail, &readlen, nullptr);
+                    ReadFile(pipeRead, buffer, avail, &readlen, nullptr);
                     buffer[readlen] = 0;
                     *output = buffer;
-                    delete [] buffer;
+                    delete[] buffer;
                 }
             }
             DWORD x;
@@ -340,14 +326,14 @@ int OS::Spawn(const std::string command, EnvironmentStrings &environment, std::s
     }
     delete[] env;
 #ifdef DEBUG
-std::cout << rv << ":" << cmd << std::endl;
+    std::cout << rv << ":" << cmd << std::endl;
 #endif
     return rv;
 }
 std::string OS::SpawnWithRedirect(const std::string command)
 {
     std::string rv;
-    Variable *v = VariableContainer::Instance()->Lookup("SHELL");
+    Variable* v = VariableContainer::Instance()->Lookup("SHELL");
     if (!v)
         return "";
     std::string cmd = v->GetValue();
@@ -362,28 +348,27 @@ std::string OS::SpawnWithRedirect(const std::string command)
     PROCESS_INFORMATION pi;
     memset(&startup, 0, sizeof(startup));
     HANDLE pipeRead, pipeWrite, pipeWriteDuplicate;
-    CreatePipe(&pipeRead, &pipeWrite, nullptr, 1024*1024);
-    DuplicateHandle(GetCurrentProcess(),pipeWrite, GetCurrentProcess(), &pipeWriteDuplicate, 0, TRUE, DUPLICATE_SAME_ACCESS);
+    CreatePipe(&pipeRead, &pipeWrite, nullptr, 1024 * 1024);
+    DuplicateHandle(GetCurrentProcess(), pipeWrite, GetCurrentProcess(), &pipeWriteDuplicate, 0, TRUE, DUPLICATE_SAME_ACCESS);
     CloseHandle(pipeWrite);
     startup.cb = sizeof(STARTUPINFO);
     startup.dwFlags = STARTF_USESTDHANDLES;
     startup.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
     startup.hStdOutput = pipeWriteDuplicate;
     startup.hStdError = pipeWriteDuplicate;
-    if (CreateProcess(nullptr, (char *)cmd.c_str(), nullptr, nullptr, true, 0, nullptr,
-                      nullptr, &startup, &pi))
+    if (CreateProcess(nullptr, (char*)cmd.c_str(), nullptr, nullptr, true, 0, nullptr, nullptr, &startup, &pi))
     {
         WaitForSingleObject(pi.hProcess, INFINITE);
         DWORD avail = 0;
         PeekNamedPipe(pipeRead, NULL, 0, NULL, &avail, NULL);
         if (avail > 0)
         {
-            char *buffer = new char[avail+1];
+            char* buffer = new char[avail + 1];
             DWORD readlen = 0;
-            ReadFile(pipeRead,buffer, avail, &readlen, nullptr);
+            ReadFile(pipeRead, buffer, avail, &readlen, nullptr);
             buffer[readlen] = 0;
             rv = buffer;
-            delete [] buffer;
+            delete[] buffer;
         }
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
@@ -414,32 +399,25 @@ Time OS::GetCurrentTime()
 }
 Time OS::GetFileTime(const std::string fileName)
 {
-    FILETIME mod;
-    HANDLE h = CreateFile(fileName.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr,
-                          OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-                          
-    if (h != INVALID_HANDLE_VALUE)
+    WIN32_FILE_ATTRIBUTE_DATA data;
+    if (GetFileAttributesEx(fileName.c_str(), GetFileExInfoStandard, &data))
     {
-     	if (::GetFileTime(h, nullptr, nullptr, &mod))
-        {
-            CloseHandle(h);
-            FILETIME v;
-            SYSTEMTIME systemTime;
-            LocalFileTimeToFileTime(&mod, &v);
-            FileTimeToSystemTime(&v, &systemTime);
-            struct tm tmx;
-            memset(&tmx, 0, sizeof(tmx));
-            tmx.tm_hour = systemTime.wHour;
-            tmx.tm_min = systemTime.wMinute;
-            tmx.tm_sec = systemTime.wSecond;
-            tmx.tm_mday = systemTime.wDay;
-            tmx.tm_mon = systemTime.wMonth-1;
-            tmx.tm_year = systemTime.wYear - 1900;
-            time_t t = mktime(&tmx);
-            Time rv(t, systemTime.wMilliseconds);
-            return rv;
-        }
-        CloseHandle(h);
+        FILETIME mod = data.ftLastWriteTime;
+        FILETIME v;
+        SYSTEMTIME systemTime;
+        LocalFileTimeToFileTime(&mod, &v);
+        FileTimeToSystemTime(&v, &systemTime);
+        struct tm tmx;
+        memset(&tmx, 0, sizeof(tmx));
+        tmx.tm_hour = systemTime.wHour;
+        tmx.tm_min = systemTime.wMinute;
+        tmx.tm_sec = systemTime.wSecond;
+        tmx.tm_mday = systemTime.wDay;
+        tmx.tm_mon = systemTime.wMonth - 1;
+        tmx.tm_year = systemTime.wYear - 1900;
+        time_t t = mktime(&tmx);
+        Time rv(t, systemTime.wMilliseconds);
+        return rv;
     }
     Time rv;
     return rv;
@@ -447,15 +425,15 @@ Time OS::GetFileTime(const std::string fileName)
 void OS::SetFileTime(const std::string fileName, Time time)
 {
     FILETIME cr, ac, mod;
-    HANDLE h = CreateFile(fileName.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr,
-                          OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-                          
+    HANDLE h =
+        CreateFile(fileName.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+
     if (h != INVALID_HANDLE_VALUE)
     {
         time_t t = time.seconds;
-        struct tm *tmx = localtime(&t);
+        struct tm* tmx = localtime(&t);
         SYSTEMTIME systemTime;
-        
+
         systemTime.wHour = tmx->tm_hour;
         systemTime.wMinute = tmx->tm_min;
         systemTime.wSecond = tmx->tm_sec;
@@ -476,14 +454,8 @@ std::string OS::GetWorkingDir()
     getcwd(buf, MAX_PATH);
     return buf;
 }
-bool OS::SetWorkingDir(const std::string name)
-{
-    return !chdir(name.c_str());
-}
-void OS::RemoveFile(const std::string name)
-{
-    unlink(name.c_str());
-}
+bool OS::SetWorkingDir(const std::string name) { return !chdir(name.c_str()); }
+void OS::RemoveFile(const std::string name) { unlink(name.c_str()); }
 std::string OS::NormalizeFileName(const std::string file)
 {
     std::string name = file;
@@ -491,16 +463,16 @@ std::string OS::NormalizeFileName(const std::string file)
     // with '\\' when not in a string
     int stringchar = 0;
     bool escape = false;
-    for (size_t i=0; i < name.size(); i++)
+    for (size_t i = 0; i < name.size(); i++)
     {
         if (stringchar)
         {
-             if (name[i] == stringchar && !escape)
-                  stringchar = 0;
-             else if (escape)
-                  escape = false;
-             else if (name[i] == '\\')
-                  escape = true;
+            if (name[i] == stringchar && !escape)
+                stringchar = 0;
+            else if (escape)
+                escape = false;
+            else if (name[i] == '\\')
+                escape = true;
         }
         else if (name[i] == '\'' || name[i] == '"')
         {
@@ -511,18 +483,15 @@ std::string OS::NormalizeFileName(const std::string file)
             if (name[i] == '\\')
                 name[i] = '/';
         }
-        else if (name[i] == '/' && i > 0 && !isspace(name[i-1]))
+        else if (name[i] == '/' && i > 0 && !isspace(name[i - 1]))
         {
             name[i] = '\\';
         }
     }
     return name;
 }
-void OS::CreateThread(void *func, void *data)
+void OS::CreateThread(void* func, void* data)
 {
-    CloseHandle((HANDLE)_beginthreadex(nullptr, 0, (unsigned (CALLBACK *)(void *))func, data, 0, NULL));
+    CloseHandle((HANDLE)_beginthreadex(nullptr, 0, (unsigned(CALLBACK*)(void*))func, data, 0, NULL));
 }
-void OS::Yield()
-{
-    ::Sleep(10);
-}
+void OS::Yield() { ::Sleep(10); }

@@ -105,3 +105,5 @@ q2.*
 /test/
 /web/
 /xx/
+*-cppcheck-build-dir/
+src/.vs

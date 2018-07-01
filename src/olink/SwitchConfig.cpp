@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "SwitchConfig.h"
@@ -32,9 +32,9 @@
 #include <ctype.h>
 #include <string.h>
 
-#if defined(WIN32) || defined( MICROSOFT)
-#define system(x) winsystem(x)
-extern "C" int winsystem(const char *);
+#if defined(WIN32) || defined(MICROSOFT)
+#    define system(x) winsystem(x)
+extern "C" int winsystem(const char*);
 #endif
 
 ConfigData::~ConfigData()
@@ -43,7 +43,7 @@ ConfigData::~ConfigData()
         delete define;
     defines.clear();
 }
-bool ConfigData::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
+bool ConfigData::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData)
 {
     if (node == "Switch")
     {
@@ -96,13 +96,13 @@ bool ConfigData::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
     }
     return true;
 }
-bool ConfigData::VisitNode(xmlNode &node, xmlNode *child, void *userData)
+bool ConfigData::VisitNode(xmlNode& node, xmlNode* child, void* userData)
 {
     // buggy, defines can have defines as children :)
     if (*child == "Define")
     {
         currentDefine = new CmdSwitchDefine::define;
-        //if (currentDefine)
+        // if (currentDefine)
         {
             defines.push_back(currentDefine);
             child->Visit(*this);
@@ -114,14 +114,14 @@ bool ConfigData::VisitNode(xmlNode &node, xmlNode *child, void *userData)
     }
     return true;
 }
-void ConfigData::AddDefine(LinkManager &linker, const std::string &name, const std::string &value)
+void ConfigData::AddDefine(LinkManager& linker, const std::string& name, const std::string& value)
 {
     int n = strtoul(value.c_str(), nullptr, 0);
-    LinkExpression *lexp = new LinkExpression(n);
-    LinkExpressionSymbol *lsym = new LinkExpressionSymbol(name, lexp);
+    LinkExpression* lexp = new LinkExpression(n);
+    LinkExpressionSymbol* lsym = new LinkExpressionSymbol(name, lexp);
     LinkExpression::EnterSymbol(lsym, true);
 }
-void ConfigData::SetDefines(LinkManager &linker)
+void ConfigData::SetDefines(LinkManager& linker)
 {
     for (auto define : defines)
         AddDefine(linker, define->name, define->value);
@@ -132,10 +132,10 @@ SwitchConfig::~SwitchConfig()
         delete data;
     configData.clear();
 }
-int SwitchConfig::Parse(const char *data)
+int SwitchConfig::Parse(const char* data)
 {
     CmdSwitchString::Parse(data);
-    const char *p = GetValue().c_str();
+    const char* p = GetValue().c_str();
     char name[256], *q = name;
     while (*p && *p != ';')
         *q++ = *p++;
@@ -158,7 +158,7 @@ int SwitchConfig::Parse(const char *data)
             data->appFlags += " " + flags + " ";
             found = true;
         }
-    }	
+    }
     if (!found)
     {
         LinkManager::LinkError("Invalid target name");
@@ -171,18 +171,17 @@ bool SwitchConfig::ReadConfigFile(const std::string& file)
     std::fstream in(file.c_str(), std::ios::in);
     if (!in.fail())
     {
-        xmlNode *node = new xmlNode();
+        xmlNode* node = new xmlNode();
         if (!node->Read(in) || *node != "LinkerConfig")
         {
             delete node;
             return false;
         }
         node->Visit(*this);
-        delete node;			
+        delete node;
         return true;
     }
-    return true; // it is valid to run without a config file
-    
+    return true;  // it is valid to run without a config file
 }
 bool SwitchConfig::Validate()
 {
@@ -265,7 +264,7 @@ int SwitchConfig::GetMapMode()
     }
     return mode;
 }
-void SwitchConfig::SetDefines(LinkManager &linker)
+void SwitchConfig::SetDefines(LinkManager& linker)
 {
     for (auto data : configData)
     {
@@ -275,14 +274,14 @@ void SwitchConfig::SetDefines(LinkManager &linker)
         }
     }
 }
-bool SwitchConfig::InterceptFile(const std::string &file)
+bool SwitchConfig::InterceptFile(const std::string& file)
 {
     int npos = file.find_last_of(".");
     if (npos != std::string::npos)
     {
         std::string ext = file.substr(npos);
         // by convention the extensions in the APP file are lower case
-        for (int i=0; i < ext.size(); i++)
+        for (int i = 0; i < ext.size(); i++)
             ext[i] = tolower(ext[i]);
         for (auto data : configData)
         {
@@ -301,7 +300,7 @@ bool SwitchConfig::InterceptFile(const std::string &file)
     }
     return false;
 }
-int SwitchConfig::RunApp(const std::string &path, const std::string &file, const std::string &debugFile, bool verbose)
+int SwitchConfig::RunApp(const std::string& path, const std::string& file, const std::string& debugFile, bool verbose)
 {
     std::string flags;
     std::string name;
@@ -314,29 +313,26 @@ int SwitchConfig::RunApp(const std::string &path, const std::string &file, const
         }
     }
     if (name.size() == 0)
-        return 0; // nothing to do, all ok
-    std::string cmd = std::string("\"") + path + name + "\" -! " ;
+        return 0;  // nothing to do, all ok
+    std::string cmd = std::string("\"") + path + name + "\" -! ";
     if (debugFile.size())
-        cmd = cmd + "\"/v"+debugFile + "\" " ;
+        cmd = cmd + "\"/v" + debugFile + "\" ";
     cmd = cmd + flags + "\"" + file + "\"";
     for (auto name : files)
         cmd = cmd + " \"" + name + "\"";
     if (verbose)
-	    std::cout << "Running App: " << cmd << std::endl;
+        std::cout << "Running App: " << cmd << std::endl;
     return system(cmd.c_str());
 }
-bool SwitchConfig::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
-{
-    return false;
-}
-bool SwitchConfig::VisitNode(xmlNode &node, xmlNode *child, void *userData)
+bool SwitchConfig::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData) { return false; }
+bool SwitchConfig::VisitNode(xmlNode& node, xmlNode* child, void* userData)
 {
     if (node == "LinkerConfig")
     {
         if (*child == "Switch")
         {
-            ConfigData *config = new ConfigData(child);
-            //if (config)
+            ConfigData* config = new ConfigData(child);
+            // if (config)
             {
                 configData.push_back(config);
             }

@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
@@ -31,81 +31,80 @@
 #include <stdlib.h>
 
 #ifdef MSIL
-#include "..\version.h"
+#    include "..\version.h"
 #else
-#include "..\..\version.h"
+#    include "..\..\version.h"
 #endif
 #if defined(_MSC_VER) || defined(BORLAND) || defined(__ORANGEC__)
-#include <io.h>
+#    include <io.h>
 #endif
 
 #ifdef __CCDL__
-    int _stklen = 100 * 1024;
-    #ifdef MSDOS
-        int __dtabuflen = 32 * 1024;
-    #endif 
-#endif 
-
-#if defined(WIN32) || defined(MICROSOFT)
-char * __stdcall GetModuleFileNameA(void * handle, char *buf, int size);
+int _stklen = 100 * 1024;
+#    ifdef MSDOS
+int __dtabuflen = 32 * 1024;
+#    endif
 #endif
 
-extern COMPILER_PARAMS cparams ;
+#if defined(WIN32) || defined(MICROSOFT)
+char* __stdcall GetModuleFileNameA(void* handle, char* buf, int size);
+#endif
+
+extern COMPILER_PARAMS cparams;
 extern int total_errors;
 #ifndef CPREPROCESSOR
-extern ARCH_ASM *chosenAssembler;
+extern ARCH_ASM* chosenAssembler;
 extern int diagcount;
-extern NAMESPACEVALUES *globalNameSpace;
+extern NAMESPACEVALUES* globalNameSpace;
 extern char infile[];
 
 #endif
 
-FILE *outputFile;
-FILE *listFile;
+FILE* outputFile;
+FILE* listFile;
 char outfile[256];
-char *prm_searchpath = 0;
-char *sys_searchpath = 0;
-char *prm_libpath = 0;
+char* prm_searchpath = 0;
+char* sys_searchpath = 0;
+char* prm_libpath = 0;
 char version[256];
 char copyright[256];
-LIST *clist = 0;
+LIST* clist = 0;
 int showBanner = TRUE;
 int showVersion = FALSE;
 
 static BOOLEAN has_output_file;
 static LIST *deflist = 0, *undeflist = 0;
-static char **set_searchpath = &prm_searchpath;
-static char **set_libpath = &prm_libpath;
-void fatal(char *fmt, ...)
+static char** set_searchpath = &prm_searchpath;
+static char** set_libpath = &prm_libpath;
+void fatal(char* fmt, ...)
 {
     va_list argptr;
 
     va_start(argptr, fmt);
-    printf("Fatal error: ");
-    vprintf(fmt, argptr);
+    fprintf(stderr, "Fatal error: ");
+    vfprintf(stderr, fmt, argptr);
     va_end(argptr);
     extern void Cleanup();
     Cleanup();
     exit(1);
 }
-void banner(char *fmt, ...)
+void banner(char* fmt, ...)
 {
     va_list argptr;
 
-
     va_start(argptr, fmt);
-    vprintf(fmt, argptr);
+    vfprintf(stderr, fmt, argptr);
     va_end(argptr);
 
-    putc('\n', stdout);
-    putc('\n', stdout);
+    putc('\n', stderr);
+    putc('\n', stderr);
 }
 
 /* Print usage info */
-void usage(char *prog_name)
+void usage(char* prog_name)
 {
-    char *short_name;
-    char *extension;
+    char* short_name;
+    char* extension;
 
     short_name = strrchr(prog_name, '\\');
     if (short_name == NULL)
@@ -120,17 +119,16 @@ void usage(char *prog_name)
     extension = strrchr(short_name, '.');
     if (extension != NULL)
         *extension = '\0';
-    printf("Usage: %s %s", short_name, getUsageText());
+    fprintf(stderr, "Usage: %s %s", short_name, getUsageText());
 #ifndef CPREPROCESSOR
-    #ifndef USE_LONGLONG
-        printf("   long long not supported");
-    #endif 
+#    ifndef USE_LONGLONG
+    fprintf(stderr, "   long long not supported");
+#    endif
 #endif
 
     exit(1);
 }
-#ifndef __MINGW64__
-int strcasecmp(const char *left, const char *right)
+int strcasecmp_internal(const char* left, const char* right)
 {
     while (*left && *right)
     {
@@ -140,23 +138,22 @@ int strcasecmp(const char *left, const char *right)
     }
     return *left != *right;
 }
-#endif
 /*
  * If no extension, add the one specified
  */
-void AddExt(char *buffer, char *ext)
+void AddExt(char* buffer, char* ext)
 {
-    char *pos = strrchr(buffer, '.');
-    if (!pos || (*(pos - 1) == '.') || (*(pos+1) == '\\'))
+    char* pos = strrchr(buffer, '.');
+    if (!pos || (*(pos - 1) == '.') || (*(pos + 1) == '\\'))
         strcat(buffer, ext);
 }
 
 /*
  * Strip extension, if it has one
  */
-void StripExt(char *buffer)
+void StripExt(char* buffer)
 {
-    char *pos = strrchr(buffer, '.');
+    char* pos = strrchr(buffer, '.');
     if (pos && (*(pos - 1) != '.'))
         *pos = 0;
 }
@@ -164,9 +161,9 @@ void StripExt(char *buffer)
 /*
  * Return path of EXE file
  */
-void EXEPath(char *buffer, char *filename)
+void EXEPath(char* buffer, char* filename)
 {
-    char *temp;
+    char* temp;
     strcpy(buffer, filename);
     if ((temp = strrchr(buffer, '\\')) != 0)
         *(temp + 1) = 0;
@@ -176,21 +173,21 @@ void EXEPath(char *buffer, char *filename)
 
 /*-------------------------------------------------------------------------*/
 
-int HasExt(char *buffer, char *ext)
+int HasExt(char* buffer, char* ext)
 {
     int l = strlen(buffer), l1 = strlen(ext);
     if (l1 < l)
     {
-        return !strcasecmp(buffer + l - l1, ext);
+        return !strcasecmp_internal(buffer + l - l1, ext);
     }
     return 0;
 }
 /*
  * Pull the next path off the path search list
  */
-static char *parsepath(char *path, char *buffer)
+static char* parsepath(char* path, char* buffer)
 {
-    char *pos = path;
+    char* pos = path;
 
     /* Quit if hit a ';' */
     while (*pos)
@@ -200,7 +197,7 @@ static char *parsepath(char *path, char *buffer)
             pos++;
             break;
         }
-        *buffer++ =  *pos++;
+        *buffer++ = *pos++;
     }
     *buffer = 0;
 
@@ -215,10 +212,10 @@ static char *parsepath(char *path, char *buffer)
  * Search local directory and all directories in the search path
  *  until it is found or run out of directories
  */
-FILE *SrchPth3(char *string, char *searchpath, char *mode)
+FILE* SrchPth3(char* string, char* searchpath, char* mode)
 {
-    FILE *in;
-    char *newpath = searchpath;
+    FILE* in;
+    char* newpath = searchpath;
 
     /* If no path specified we search along the search path */
     if (string[0] != '\\' && string[1] != ':')
@@ -226,7 +223,8 @@ FILE *SrchPth3(char *string, char *searchpath, char *mode)
         char buffer[200];
         while (newpath)
         {
-            int n;;
+            int n;
+            ;
             /* Create a file name along this path */
             newpath = parsepath(newpath, buffer);
             n = strlen(buffer);
@@ -236,7 +234,7 @@ FILE *SrchPth3(char *string, char *searchpath, char *mode)
 
             /* Check this path */
             in = fopen(buffer, mode);
-            if (in !=  NULL)
+            if (in != NULL)
             {
                 strcpy(string, buffer);
                 return (in);
@@ -246,7 +244,7 @@ FILE *SrchPth3(char *string, char *searchpath, char *mode)
     else
     {
         in = fopen((char*)string, mode);
-        if (in !=  NULL)
+        if (in != NULL)
         {
             return (in);
         }
@@ -262,56 +260,56 @@ FILE *SrchPth3(char *string, char *searchpath, char *mode)
  * so first we search for the full filename, if that fails for the ~1 version, and if that
  * fails for the truncated 8.3 version
  */
-FILE *ccOpenFile(char *string, FILE *fil, char *mode);
-FILE *SrchPth2(char *name, char *path, char *attrib)
+FILE* ccOpenFile(char* string, FILE* fil, char* mode);
+FILE* SrchPth2(char* name, char* path, char* attrib)
 {
-    FILE *rv = SrchPth3(name, path, attrib);
+    FILE* rv = SrchPth3(name, path, attrib);
 #ifdef PARSER_ONLY
     rv = ccOpenFile(name, rv, attrib);
 #endif
-    #ifdef MSDOS
-        char buf[256],  *p;
-        if (rv !=  - 1)
-            return rv;
-        p = strrchr(name, '.');
-        if (!p)
-            p = name + strlen(name);
-        if (p - name < 9)
-            return rv;
-        strcpy(buf, name);
-        strcpy(buf + 6, "~1");
-        strcpy(buf + 8, p);
-        rv = SrchPth3(buf, path, attrib);
-        if (rv !=  - 1)
-        {
-            strcpy(name, buf);
-            return rv;
-        }
-        strcpy(buf, name);
-        strcpy(buf + 8, p);
-        rv = SrchPth3(name, path, attrib);
-        if (rv !=  - 1)
-        {
-            strcpy(name, buf);
-            return rv;
-        }
-        return  - 1; 
-    #else
+#ifdef MSDOS
+    char buf[256], *p;
+    if (rv != -1)
         return rv;
-    #endif 
+    p = strrchr(name, '.');
+    if (!p)
+        p = name + strlen(name);
+    if (p - name < 9)
+        return rv;
+    strcpy(buf, name);
+    strcpy(buf + 6, "~1");
+    strcpy(buf + 8, p);
+    rv = SrchPth3(buf, path, attrib);
+    if (rv != -1)
+    {
+        strcpy(name, buf);
+        return rv;
+    }
+    strcpy(buf, name);
+    strcpy(buf + 8, p);
+    rv = SrchPth3(name, path, attrib);
+    if (rv != -1)
+    {
+        strcpy(name, buf);
+        return rv;
+    }
+    return -1;
+#else
+    return rv;
+#endif
 }
 
 /*-------------------------------------------------------------------------*/
 
-FILE *SrchPth(char *name, char *path, char *attrib, BOOLEAN sys)
+FILE* SrchPth(char* name, char* path, char* attrib, BOOLEAN sys)
 {
-    FILE *rv = SrchPth2(name, path, attrib);
-    char buf[265],  *p;
+    FILE* rv = SrchPth2(name, path, attrib);
+    char buf[265], *p;
     if (rv || !sys)
         return rv;
     strcpy(buf, name);
     p = strrchr(buf, '.');
-    if (p && !strcasecmp(p, ".h"))
+    if (p && !strcasecmp_internal(p, ".h"))
     {
         *p = 0;
         rv = SrchPth2(buf, path, attrib);
@@ -321,15 +319,15 @@ FILE *SrchPth(char *name, char *path, char *attrib, BOOLEAN sys)
     return rv;
 }
 
-extern CMDLIST *ArgList;
+extern CMDLIST* ArgList;
 /*int parseParam(int bool, char *string); */
 
 static int use_case; /* Gets set for case sensitivity */
 
-/* 
+/*
  * Function that unlinks the argument from che argv[] chain
  */
-static void remove_arg(int pos, int *count, char *list[])
+static void remove_arg(int pos, int* count, char* list[])
 {
     int i;
 
@@ -337,9 +335,8 @@ static void remove_arg(int pos, int *count, char *list[])
     (*count)--;
 
     /* move items down */
-    for (i = pos; i <  *count; i++)
+    for (i = pos; i < *count; i++)
         list[i] = list[i + 1];
-
 }
 
 /*
@@ -361,9 +358,9 @@ static int cmatch(char t1, char t2)
  *   void switchcallback( char selectchar, int value)  ;; value always true
  *   void stringcallback( char selectchar, char *string)
  */
-static int scan_args(char *string, int index, char *arg)
+static int scan_args(char* string, int index, char* arg)
 {
-    int i =  - 1;
+    int i = -1;
     BOOLEAN legacyArguments = !!getenv("OCC_LEGACY_OPTIONS");
     while (ArgList[++i].id)
     {
@@ -412,7 +409,7 @@ static int scan_args(char *string, int index, char *arg)
             case ARG_COMBINESTRING:
                 if (cmatch(string[index], ArgList[i].id))
                 {
-                    if (string[index+1])
+                    if (string[index + 1])
                     {
                         (*ArgList[i].routine)(string[index], string + index + 1);
                         return (ARG_NEXTARG);
@@ -424,7 +421,6 @@ static int scan_args(char *string, int index, char *arg)
                         (*ArgList[i].routine)(string[index], arg);
                         return (ARG_NEXTNOCAT);
                     }
-
                 }
                 break;
         }
@@ -436,17 +432,16 @@ static int scan_args(char *string, int index, char *arg)
  * Main parse routine.  Scans for '-', then scan for arguments and
  * delete from the argv[] array if so.
  */
-BOOLEAN parse_args(int *argc, char *argv[], BOOLEAN case_sensitive)
+BOOLEAN parse_args(int* argc, char* argv[], BOOLEAN case_sensitive)
 {
 
     int pos = 0;
     BOOLEAN retval = TRUE;
     use_case = case_sensitive;
 
-    while (++pos <  *argc)
+    while (++pos < *argc)
     {
-        if ((argv[pos][0] == ARG_SEPSWITCH) || (argv[pos][0] == ARG_SEPFALSE) 
-            || (argv[pos][0] == ARG_SEPTRUE))
+        if ((argv[pos][0] == ARG_SEPSWITCH) || (argv[pos][0] == ARG_SEPFALSE) || (argv[pos][0] == ARG_SEPTRUE))
         {
             if (argv[pos][1] == '!' || !strcmp(argv[pos], "--nologo"))
             {
@@ -464,11 +459,11 @@ BOOLEAN parse_args(int *argc, char *argv[], BOOLEAN case_sensitive)
                 do
                 {
                     /* Scan the present arg */
-                    if (pos <  *argc - 1)
+                    if (pos < *argc - 1)
                         argmode = scan_args(argv[pos], index, argv[pos + 1]);
                     else
                         argmode = scan_args(argv[pos], index, 0);
-    
+
                     switch (argmode)
                     {
                         case ARG_NEXTCHAR:
@@ -486,40 +481,39 @@ BOOLEAN parse_args(int *argc, char *argv[], BOOLEAN case_sensitive)
                             break;
                         case ARG_NOMATCH:
                             /* No such arg, spit an error  */
-    #ifndef CPREPROCESSOR
-    #ifdef XXXXX
-                            switch( parseParam(argv[pos][index] != ARG_SEPFALSE, &argv[pos][index + 1])) {
+#ifndef CPREPROCESSOR
+#    ifdef XXXXX
+                            switch (parseParam(argv[pos][index] != ARG_SEPFALSE, &argv[pos][index + 1]))
+                            {
                                 case 0:
-    #endif
-    #endif
+#    endif
+#endif
                                     fprintf(stderr, "Invalid Arg: %s\n", argv[pos]);
                                     retval = FALSE;
                                     done = TRUE;
-    #ifndef CPREPROCESSORXX
-    #ifdef XXXXX
-                                    break ;
+#ifndef CPREPROCESSORXX
+#    ifdef XXXXX
+                                    break;
                                 case 1:
                                     if (!argv[pos][++index])
                                         done = TRUE;
-                                    break ;
+                                    break;
                                 case 2:
                                     done = TRUE;
                                     break;
                             }
-    #endif
-    #endif
+#    endif
+#endif
                             break;
                         case ARG_NOARG:
                             /* Missing the arg for a CONCAT type, spit the error */
-                            fprintf(stderr, "Missing string for Arg %s\n",
-                                argv[pos]);
+                            fprintf(stderr, "Missing string for Arg %s\n", argv[pos]);
                             done = TRUE;
                             retval = FALSE;
                             break;
                     };
 
-                }
-                while (!done);
+                } while (!done);
             }
             /* We'll always get rid of the present arg
              * And back up one
@@ -531,73 +525,71 @@ BOOLEAN parse_args(int *argc, char *argv[], BOOLEAN case_sensitive)
 }
 /*-------------------------------------------------------------------------*/
 
-void err_setup(char select, char *string)
+void err_setup(char select, char* string)
 /*
  * activation for the max errs argument
  */
 {
     int n;
-    (void) select;
+    (void)select;
     if (*string == '+')
     {
         cparams.prm_extwarning = TRUE;
         string++;
     }
-    else
-    if (*string == '-')
+    else if (*string == '-')
     {
         cparams.prm_warning = FALSE;
         string++;
     }
     n = atoi(string);
     if (n > 0)
-        cparams.prm_maxerr = n ;
+        cparams.prm_maxerr = n;
     DisableTrivialWarnings();
 }
-void warning_setup(char select, char *string)
+void warning_setup(char select, char* string)
 {
     if (string[0] == 0)
         AllWarningsDisable();
-    else switch (string[0])
-    {
-        case '+':
-            cparams.prm_extwarning = TRUE;
-            DisableTrivialWarnings();
-            break;
-        case 'd':
-            DisableWarning(atoi(string+1));
-            break;
-        case 'o':
-            WarningOnlyOnce(atoi(string+1));
-            break;
-        case 'x':
-            AllWarningsAsError();
-            break;
-        case 'e':
-            if (!strcmp(string, "error"))
+    else
+        switch (string[0])
+        {
+            case '+':
+                cparams.prm_extwarning = TRUE;
+                DisableTrivialWarnings();
+                break;
+            case 'd':
+                DisableWarning(atoi(string + 1));
+                break;
+            case 'o':
+                WarningOnlyOnce(atoi(string + 1));
+                break;
+            case 'x':
                 AllWarningsAsError();
-            else
-                WarningAsError(atoi(string + 1));
-            break;
-        default:
-            EnableWarning(atoi(string));
-            break;
-            
-    }
+                break;
+            case 'e':
+                if (!strcmp(string, "error"))
+                    AllWarningsAsError();
+                else
+                    WarningAsError(atoi(string + 1));
+                break;
+            default:
+                EnableWarning(atoi(string));
+                break;
+        }
 }
 
 /*-------------------------------------------------------------------------*/
 
-void incl_setup(char select, char *string)
+void incl_setup(char select, char* string)
 /*
  * activation for include paths
  */
 {
-    (void) select;
+    (void)select;
     if (*set_searchpath)
     {
-        *set_searchpath = realloc(*set_searchpath, strlen(string) + strlen
-            (*set_searchpath) + 2);
+        *set_searchpath = realloc(*set_searchpath, strlen(string) + strlen(*set_searchpath) + 2);
         strcat(*set_searchpath, ";");
     }
     else
@@ -608,13 +600,12 @@ void incl_setup(char select, char *string)
     fflush(stdout);
     strcat(*set_searchpath, string);
 }
-void libpath_setup(char select, char *string)
+void libpath_setup(char select, char* string)
 {
-    (void) select;
+    (void)select;
     if (*set_libpath)
     {
-        *set_libpath = realloc(*set_libpath, strlen(string) + strlen
-            (*set_libpath) + 2);
+        *set_libpath = realloc(*set_libpath, strlen(string) + strlen(*set_libpath) + 2);
         strcat(*set_libpath, ";");
     }
     else
@@ -625,34 +616,34 @@ void libpath_setup(char select, char *string)
     fflush(stdout);
     strcat(*set_libpath, string);
 }
-void tool_setup(char select, char *string)
+void tool_setup(char select, char* string)
 {
     char buf[2048];
     buf[0] = '$';
-    strcpy(buf+1, string);
+    strcpy(buf + 1, string);
     InsertAnyFile(buf, 0, -1, FALSE);
 }
 /*-------------------------------------------------------------------------*/
 
-void def_setup(char select, char *string)
+void def_setup(char select, char* string)
 /*
  * activation for command line #defines
  */
 {
-    char *s = malloc(strlen(string) + 1);
-    LIST *l = malloc(sizeof(LIST));
-    (void) select;
+    char* s = malloc(strlen(string) + 1);
+    LIST* l = malloc(sizeof(LIST));
+    (void)select;
     strcpy(s, string);
     l->next = deflist;
     deflist = l;
     l->data = s;
 }
 
-void undef_setup(char select, char *string)
+void undef_setup(char select, char* string)
 {
-    char *s = malloc(strlen(string) + 1);
-    LIST *l = malloc(sizeof(LIST));
-    (void) select;
+    char* s = malloc(strlen(string) + 1);
+    LIST* l = malloc(sizeof(LIST));
+    (void)select;
     strcpy(s, string);
     l->next = undeflist;
     undeflist = l;
@@ -661,9 +652,9 @@ void undef_setup(char select, char *string)
 
 /*-------------------------------------------------------------------------*/
 
-void output_setup(char select, char *string)
+void output_setup(char select, char* string)
 {
-    (void) select;
+    (void)select;
     strcpy(outfile, string);
     has_output_file = TRUE;
 }
@@ -678,22 +669,22 @@ void setglbdefs(void)
  */
 {
 #ifndef CPREPROCESSOR
-    ARCH_DEFINES *a = chosenAssembler->defines;
+    ARCH_DEFINES* a = chosenAssembler->defines;
 #endif
-    LIST *l = deflist;
-    char buf[256] ;
+    LIST* l = deflist;
+    char buf[256];
     int major, temp, minor, build;
     while (l)
     {
-        char *s = l->data;
-        char *n = s;
-        while (*s &&  *s != '=')
+        char* s = l->data;
+        char* n = s;
+        while (*s && *s != '=')
             s++;
         if (*s == '=')
             *s++ = 0;
         if (*s)
         {
-            char *q = calloc(1, strlen(s) + 3);
+            char* q = calloc(1, strlen(s) + 3);
             q[0] = MACRO_PLACEHOLDER;
             strcpy(q + 1, s);
             q[strlen(s) + 1] = MACRO_PLACEHOLDER;
@@ -711,9 +702,9 @@ void setglbdefs(void)
     l = undeflist;
     while (l)
     {
-        char *s = l->data;
-        char *n = s;
-        while (*s &&  *s != '=')
+        char* s = l->data;
+        char* n = s;
+        while (*s && *s != '=')
             s++;
         if (*s == '=')
             *s = 0;
@@ -721,7 +712,7 @@ void setglbdefs(void)
         l = l->next;
     }
     sscanf(STRING_VERSION, "%d.%d.%d.%d", &major, &temp, &minor, &build);
-    my_sprintf(buf, "%d", major *100+minor);
+    my_sprintf(buf, "%d", major * 100 + minor);
     glbdefine("__ORANGEC__", buf, TRUE);
     my_sprintf(buf, "%d", major);
     glbdefine("__ORANGEC_MAJOR__", buf, TRUE);
@@ -729,39 +720,42 @@ void setglbdefs(void)
     glbdefine("__ORANGEC_MINOR__", buf, TRUE);
     my_sprintf(buf, "%d", build);
     glbdefine("__ORANGEC_PATCHLEVEL__", buf, TRUE);
-    sprintf(buf,"\"%s\"", STRING_VERSION);
+    sprintf(buf, "\"%s\"", STRING_VERSION);
     glbdefine("__VERSION__", buf, TRUE);
     glbdefine("__CHAR_BIT__", "8", TRUE);
     if (cparams.prm_cplusplus)
     {
-        glbdefine("__cplusplus", "201402",TRUE);
+        glbdefine("__cplusplus", "201402", TRUE);
         if (cparams.prm_xcept)
-            glbdefine("__RTTI__", "1",TRUE);
+            glbdefine("__RTTI__", "1", TRUE);
     }
-    glbdefine("__STDC__", "1",TRUE);
-   
+    glbdefine("__STDC__", "1", TRUE);
+
     if (cparams.prm_c99 || cparams.prm_c1x)
     {
 #ifndef CPREPROCESSOR
-        glbdefine("__STDC_HOSTED__", chosenAssembler->hosted,TRUE); // hosted compiler, not embedded
+        glbdefine("__STDC_HOSTED__", chosenAssembler->hosted, TRUE);  // hosted compiler, not embedded
 #endif
     }
     if (cparams.prm_c1x)
     {
-        glbdefine("__STDC_VERSION__", "201112L",TRUE);
-    } 
+        glbdefine("__STDC_VERSION__", "201112L", TRUE);
+    }
     else if (cparams.prm_c99)
     {
-        glbdefine("__STDC_VERSION__", "199901L",TRUE);
+        glbdefine("__STDC_VERSION__", "199901L", TRUE);
     }
     /*   glbdefine("__STDC_IEC_599__","1");*/
     /*   glbdefine("__STDC_IEC_599_COMPLEX__","1");*/
     /*   glbdefine("__STDC_ISO_10646__","199712L");*/
 /*    glbdefine(GLBDEFINE, "");*/
 #ifndef CPREPROCESSOR
-    if (a) {
-        while (a->define) {
-            if (a->respect) {
+    if (a)
+    {
+        while (a->define)
+        {
+            if (a->respect)
+            {
                 glbdefine(a->define, a->value, a->permanent);
             }
             a++;
@@ -772,18 +766,18 @@ void setglbdefs(void)
 
 /*-------------------------------------------------------------------------*/
 
-void InsertOneFile(char *filename, char *path, int drive, BOOLEAN primary)
+void InsertOneFile(char* filename, char* path, int drive, BOOLEAN primary)
 /*
  * Insert a file name onto the list of files to process
  */
 
 {
     char a = 0;
-    char *newbuffer, buffer[260],  *p = buffer;
+    char *newbuffer, buffer[260], *p = buffer;
     BOOLEAN inserted;
     LIST **r = &clist, *s;
 
-    if (drive !=  - 1)
+    if (drive != -1)
     {
         *p++ = (char)(drive + 'A');
         *p++ = ':';
@@ -791,7 +785,7 @@ void InsertOneFile(char *filename, char *path, int drive, BOOLEAN primary)
     if (path)
     {
         strcpy(p, path);
-//        strcat(p, "\\");
+        //        strcat(p, "\\");
     }
     else
         *p = 0;
@@ -803,8 +797,7 @@ void InsertOneFile(char *filename, char *path, int drive, BOOLEAN primary)
         a = buffer[0];
         buffer[0] = 'a';
     }
-    inserted = chosenAssembler->insert_noncompile_file 
-        && chosenAssembler->insert_noncompile_file(buffer, primary);
+    inserted = chosenAssembler->insert_noncompile_file && chosenAssembler->insert_noncompile_file(buffer, primary);
     if (a)
         buffer[0] = a;
     if (!inserted)
@@ -813,7 +806,7 @@ void InsertOneFile(char *filename, char *path, int drive, BOOLEAN primary)
         AddExt(buffer, ".c");
         newbuffer = (char*)malloc(strlen(buffer) + 1);
         if (!newbuffer)
-            return ;
+            return;
         strcpy(newbuffer, buffer);
 
         while ((*r))
@@ -821,14 +814,14 @@ void InsertOneFile(char *filename, char *path, int drive, BOOLEAN primary)
         (*r) = malloc(sizeof(LIST));
         s = (*r);
         if (!s)
-            return ;
+            return;
         s->next = 0;
         s->data = newbuffer;
     }
 }
-void InsertAnyFile(char *filename, char *path, int drive, BOOLEAN primary)
+void InsertAnyFile(char* filename, char* path, int drive, BOOLEAN primary)
 {
-    char drv[256],dir[256],name[256],ext[256];
+    char drv[256], dir[256], name[256], ext[256];
 #if defined(_MSC_VER) || defined(BORLAND) || defined(__ORANGEC__)
     struct _finddata_t findbuf;
     size_t n;
@@ -836,8 +829,9 @@ void InsertAnyFile(char *filename, char *path, int drive, BOOLEAN primary)
     n = _findfirst(filename, &findbuf);
     if (n != -1)
     {
-        do {
-            InsertOneFile(findbuf.name, dir[0] ? dir : 0, drv[0] ? tolower(drv[0])-'a' : -1, primary);
+        do
+        {
+            InsertOneFile(findbuf.name, dir[0] ? dir : 0, drv[0] ? tolower(drv[0]) - 'a' : -1, primary);
         } while (_findnext(n, &findbuf) != -1);
         _findclose(n);
     }
@@ -851,14 +845,14 @@ void InsertAnyFile(char *filename, char *path, int drive, BOOLEAN primary)
 }
 /*-------------------------------------------------------------------------*/
 
-void dumperrs(FILE *file);
-void setfile(char *buf, char *orgbuf, char *ext)
+void dumperrs(FILE* file);
+void setfile(char* buf, char* orgbuf, char* ext)
 /*
  * Get rid of a file path an add an extension to the file name
  */
 {
-    char *p = strrchr(orgbuf, '\\');
-    char *p1 = strrchr(orgbuf, '/');
+    char* p = strrchr(orgbuf, '\\');
+    char* p1 = strrchr(orgbuf, '/');
     if (p1 > p)
         p = p1;
     else if (!p)
@@ -874,12 +868,12 @@ void setfile(char *buf, char *orgbuf, char *ext)
 
 /*-------------------------------------------------------------------------*/
 
-void outputfile(char *buf, char *orgbuf, char *ext)
+void outputfile(char* buf, char* orgbuf, char* ext)
 {
-   
-    if (buf[strlen(buf)-1] == '\\')
+
+    if (buf[strlen(buf) - 1] == '\\')
     {
-        char *p = strrchr(orgbuf, '\\');
+        char* p = strrchr(orgbuf, '\\');
         if (p)
             p++;
         else
@@ -900,17 +894,17 @@ void outputfile(char *buf, char *orgbuf, char *ext)
 
 /*-------------------------------------------------------------------------*/
 
-void scan_env(char *output, char *string)
+void scan_env(char* output, char* string)
 {
-    char name[256], *p ;
+    char name[256], *p;
     while (*string)
     {
         if (*string == '%')
         {
             p = name;
             string++;
-            while (*string &&  *string != '%')
-                *p++ =  *string++;
+            while (*string && *string != '%')
+                *p++ = *string++;
             if (*string)
                 string++;
             *p = 0;
@@ -920,27 +914,26 @@ void scan_env(char *output, char *string)
                 strcpy(output, p);
                 output += strlen(output);
             }
-
         }
         else
-            *output++ =  *string++;
+            *output++ = *string++;
     }
     *output = 0;
 }
 
 /*-------------------------------------------------------------------------*/
 
-int parse_arbitrary(char *string)
+int parse_arbitrary(char* string)
 /*
  * take a C string and and convert it to ARGC, ARGV format and then run
  * it through the argument parser
  */
 {
-    char *argv[40];
+    char* argv[40];
     char output[1024];
     int rv, i;
     int argc = 1;
-    if (!string || ! *string)
+    if (!string || !*string)
         return 1;
     scan_env(output, string);
     string = output;
@@ -949,33 +942,33 @@ int parse_arbitrary(char *string)
         int quoted = ' ';
         while (*string == ' ')
             string++;
-        if (! *string)
+        if (!*string)
             break;
         if (*string == '\"')
-            quoted =  *string++;
+            quoted = *string++;
         argv[argc++] = string;
-        while (*string &&  *string != quoted)
+        while (*string && *string != quoted)
             string++;
-        if (! *string)
+        if (!*string)
             break;
         *string = 0;
         string++;
     }
     rv = parse_args(&argc, argv, TRUE);
     for (i = 1; i < argc; i++)
-        InsertAnyFile(argv[i], 0,  - 1, TRUE);
+        InsertAnyFile(argv[i], 0, -1, TRUE);
     return rv;
 }
 
 /*-------------------------------------------------------------------------*/
 
-void parsefile(char select, char *string)
+void parsefile(char select, char* string)
 /*
  * parse arguments from an input file
  */
 {
-    FILE *temp = fopen(string, "r");
-    (void) select;
+    FILE* temp = fopen(string, "r");
+    (void)select;
     if (!temp)
         fatal("Response file not found");
     while (!feof(temp))
@@ -999,11 +992,11 @@ void addinclude(void)
  * search path
  */
 {
-    #ifdef COLDFIRE
-        char *string = getenv("cfccincl");
-    #else 
-        char *string = getenv("CCINCL");
-    #endif 
+#ifdef COLDFIRE
+    char* string = getenv("cfccincl");
+#else
+    char* string = getenv("CCINCL");
+#endif
     if (string && string[0])
     {
         char temp[1000];
@@ -1011,7 +1004,7 @@ void addinclude(void)
         if (*set_searchpath)
         {
             strcat(temp, ";");
-            strcat(temp,  *set_searchpath);
+            strcat(temp, *set_searchpath);
             free(*set_searchpath);
         }
         *set_searchpath = malloc(strlen(temp) + 1);
@@ -1025,7 +1018,7 @@ void addinclude(void)
         if (*set_searchpath)
         {
             strcat(temp, ";");
-            strcat(temp,  *set_searchpath);
+            strcat(temp, *set_searchpath);
             free(*set_searchpath);
         }
         *set_searchpath = malloc(strlen(temp) + 1);
@@ -1035,20 +1028,20 @@ void addinclude(void)
 
 /*-------------------------------------------------------------------------*/
 
-int parseenv(char *name)
+int parseenv(char* name)
 /*
  * Parse the environment argument string
  */
 {
-    char *string = getenv(name);
+    char* string = getenv(name);
     return parse_arbitrary(string);
 }
 
 /*-------------------------------------------------------------------------*/
 
-int parseconfigfile(char *name)
+int parseconfigfile(char* name)
 {
-    char buf[256],  *p;
+    char buf[256], *p;
 #ifndef CPREPROCESSOR
     if (!chosenAssembler->cfgname)
         return 0;
@@ -1057,7 +1050,7 @@ int parseconfigfile(char *name)
     p = strrchr(buf, '\\');
     if (p)
     {
-        FILE *temp;
+        FILE* temp;
 #ifdef CPREPROCESSOR
         strcpy(p + 1, "CPP");
 #else
@@ -1082,23 +1075,22 @@ int parseconfigfile(char *name)
         fclose(temp);
     }
     return 0;
-
 }
 
 /*-------------------------------------------------------------------------*/
 
-void dumperrs(FILE *file)
+void dumperrs(FILE* file)
 {
 #ifndef CPREPROCESSOR
     if (cparams.prm_listfile)
     {
-        fprintf(listFile,"******** Global Symbols ********\n");
-        list_table(globalNameSpace->syms,0);
-        fprintf(listFile,"******** Global Tags ********\n");
-        list_table(globalNameSpace->tags,0);
+        fprintf(listFile, "******** Global Symbols ********\n");
+        list_table(globalNameSpace->syms, 0);
+        fprintf(listFile, "******** Global Tags ********\n");
+        list_table(globalNameSpace->tags, 0);
     }
-        if (diagcount && !total_errors)
-            fprintf(file, "%d Diagnostics\n", diagcount);
+    if (diagcount && !total_errors)
+        fprintf(file, "%d Diagnostics\n", diagcount);
 #endif
     if (total_errors)
         fprintf(file, "%d Errors\n", total_errors);
@@ -1108,7 +1100,7 @@ void dumperrs(FILE *file)
 
 void ctrlchandler(int aa)
 {
-    printf("^C");
+    fprintf(stderr, "^C");
     extern void Cleanup();
     Cleanup();
     exit(1);
@@ -1118,21 +1110,21 @@ void ctrlchandler(int aa)
 
 void internalError(int a)
 {
-    (void) a;
+    (void)a;
     extern void Cleanup();
     Cleanup();
-    printf("Internal Error - Aborting compile");
+    fprintf(stderr, "Internal Error - Aborting compile");
     exit(1);
 }
 
 /*-------------------------------------------------------------------------*/
-void ccinit(int argc, char *argv[])
+void ccinit(int argc, char* argv[])
 {
     char buffer[260];
-    char *p;
+    char* p;
     int rv;
     int i;
-    
+
     strcpy(copyright, COPYRIGHT);
     strcpy(version, STRING_VERSION);
 
@@ -1147,7 +1139,7 @@ void ccinit(int argc, char *argv[])
             {
                 showVersion = TRUE;
             }
-    
+
     if (showBanner || showVersion)
     {
 #ifdef CPREPROCESSOR
@@ -1158,33 +1150,33 @@ void ccinit(int argc, char *argv[])
     }
     if (showVersion)
     {
-        printf("Compile date: " __DATE__ ", time: " __TIME__ "\n");
+        fprintf(stderr, "Compile date: " __DATE__ ", time: " __TIME__ "\n");
         exit(0);
     }
 #if defined(WIN32) || defined(MICROSOFT)
-    GetModuleFileNameA(NULL, buffer, sizeof(buffer));    
+    GetModuleFileNameA(NULL, buffer, sizeof(buffer));
 #else
     strcpy(buffer, argv[0]);
 #endif
 
     if (!getenv("ORANGEC"))
     {
-        char *p = strrchr(buffer, '\\');
+        char* p = strrchr(buffer, '\\');
         if (p)
         {
-             *p =0 ;
-             char *q = strrchr(buffer,'\\');
-             if (q)
-             {
-                  *q = 0;
-		char *buf1 = (char *)calloc(1,strlen("ORANGEC") + strlen(buffer) + 2);
-		strcpy(buf1, "ORANGEC");
-		strcat(buf1,"=");
+            *p = 0;
+            char* q = strrchr(buffer, '\\');
+            if (q)
+            {
+                *q = 0;
+                char* buf1 = (char*)calloc(1, strlen("ORANGEC") + strlen(buffer) + 2);
+                strcpy(buf1, "ORANGEC");
+                strcat(buf1, "=");
                 strcat(buf1, buffer);
                 putenv(buf1);
-                 *q = '\\';
-             }
-             *p = '\\';
+                *q = '\\';
+            }
+            *p = '\\';
         }
     }
     DisableTrivialWarnings();
@@ -1193,7 +1185,6 @@ void ccinit(int argc, char *argv[])
     if (chosenAssembler->envname && !parseenv(chosenAssembler->envname))
         usage(argv[0]);
 #endif
-        
 
     parseconfigfile(buffer);
     if (!parse_args(&argc, argv, TRUE) || (!clist && argc == 1))
@@ -1209,38 +1200,38 @@ void ccinit(int argc, char *argv[])
             if (argv[i][0] == '@')
                 parsefile(0, argv[i] + 1);
             else
-                InsertAnyFile(argv[i], 0,  - 1, TRUE);
+                InsertAnyFile(argv[i], 0, -1, TRUE);
     }
 
 #ifndef PARSER_ONLY
 
     if (has_output_file)
     {
-    #ifndef CPREPROCESSOR
-            if (chosenAssembler->insert_output_file)
-                chosenAssembler->insert_output_file(outfile);
-    #endif
+#    ifndef CPREPROCESSOR
+        if (chosenAssembler->insert_output_file)
+            chosenAssembler->insert_output_file(outfile);
+#    endif
         if (!cparams.prm_compileonly)
         {
             has_output_file = FALSE;
         }
         else
         {
-            if (clist && clist->next && outfile[strlen(outfile)-1] != '\\')
+            if (clist && clist->next && outfile[strlen(outfile) - 1] != '\\')
                 fatal("Cannot specify output file for multiple input files\n");
         }
     }
-    #else
+#else
     {
-        LIST *t = clist;
+        LIST* t = clist;
         while (t)
         {
             t->data = litlate(fullqualify(t->data));
             t = t->next;
         }
     }
-    #endif
-            
+#endif
+
     /* Set up a ctrl-C handler so we can exit the prog with cleanup */
     signal(SIGINT, ctrlchandler);
     signal(SIGSEGV, internalError);

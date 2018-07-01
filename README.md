@@ -11,7 +11,7 @@ Documentation status:
 
 The Orange C compiler is going to be a retargetable optimizing compiler and toolchain.  Work over the last few years has resulted in an optimizing compiler than generates working WIN32 programs.  The optimizations in the compiler follow some of the standard optimizations, and also perform some optimizations from the literature.
 
-Orange C is released under the GNU license version 3.
+Orange C is released under the GNU General Public License version 3.
 
 This compiler comes in an install package with an IDE suitable for developing WIN32 programs.  Help files are included; the source format for the help files is HELPSCRIBBLE's HSC format.
 

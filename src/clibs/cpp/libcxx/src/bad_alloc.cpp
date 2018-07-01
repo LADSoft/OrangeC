@@ -32,4 +32,30 @@ __throw_bad_alloc()
 #endif
 }
 
+bad_array_length::bad_array_length() : bad_alloc()
+{
+}
+
+bad_array_length::~bad_array_length() _NOEXCEPT
+{
+}
+
+const char *bad_array_length::what() const _NOEXCEPT
+{
+    return "bad_array_length";
+}
+
+bad_array_new_length::bad_array_new_length() : bad_alloc()
+{
+}
+
+bad_array_new_length::~bad_array_new_length() _NOEXCEPT
+{
+}
+
+const char *bad_array_new_length::what() const _NOEXCEPT
+{
+    return "bad_array_new_length";
+}
+
 }

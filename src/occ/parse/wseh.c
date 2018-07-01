@@ -1,31 +1,31 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
 
-extern ARCH_ASM *chosenAssembler;
+extern ARCH_ASM* chosenAssembler;
 extern enum e_kw skim_end[];
 extern NAMESPACEVALUES *globalNameSpace, *localNameSpace;
 extern TYPE stdvoid;
@@ -35,7 +35,7 @@ extern int retlab;
 extern int nextLabel;
 extern int codeLabel;
 
-static void ReorderSEHRecords(STATEMENT **xtry, BLOCKDATA *parent)
+static void ReorderSEHRecords(STATEMENT** xtry, BLOCKDATA* parent)
 {
     STATEMENT *xfinally = NULL, *xfault = NULL, **pass = xtry;
     while (*pass)
@@ -60,7 +60,7 @@ static void ReorderSEHRecords(STATEMENT **xtry, BLOCKDATA *parent)
         xfault->next = NULL;
         if ((*xtry)->next)
         {
-            STATEMENT *st = stmtNode(NULL, NULL, st___try);
+            STATEMENT* st = stmtNode(NULL, NULL, st___try);
             st->lower = *xtry;
             st->next = xfault;
             *xtry = st;
@@ -75,7 +75,7 @@ static void ReorderSEHRecords(STATEMENT **xtry, BLOCKDATA *parent)
         xfinally->next = NULL;
         if ((*xtry)->next)
         {
-            STATEMENT *st = stmtNode(NULL, NULL, st___try);
+            STATEMENT* st = stmtNode(NULL, NULL, st___try);
             st->lower = *xtry;
             st->next = xfinally;
             *xtry = st;
@@ -89,16 +89,16 @@ static void ReorderSEHRecords(STATEMENT **xtry, BLOCKDATA *parent)
     while (parent->tail->next)
         parent->tail = parent->tail->next;
 }
-static LEXEME *SEH_catch(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
+static LEXEME* SEH_catch(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 {
-    STATEMENT *st;
-    TYPE *tp = NULL;
-    BLOCKDATA *catchstmt = Alloc(sizeof(BLOCKDATA));
-    SYMBOL *sym = NULL;
+    STATEMENT* st;
+    TYPE* tp = NULL;
+    BLOCKDATA* catchstmt = Alloc(sizeof(BLOCKDATA));
+    SYMBOL* sym = NULL;
     lex = getsym();
     ParseAttributeSpecifiers(&lex, funcsp, TRUE);
     catchstmt->breaklabel = -1;
-    catchstmt->next = NULL; // so can't break or continue out of the block
+    catchstmt->next = NULL;       // so can't break or continue out of the block
     catchstmt->defaultlabel = -1; /* no default */
     catchstmt->type = kw_catch;
     catchstmt->table = localNameSpace->syms;
@@ -134,14 +134,14 @@ static LEXEME *SEH_catch(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     st->sym = sym;
     return lex;
 }
-static LEXEME *SEH_finally(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
+static LEXEME* SEH_finally(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 {
-    STATEMENT *st;
-    BLOCKDATA *catchstmt = Alloc(sizeof(BLOCKDATA));
+    STATEMENT* st;
+    BLOCKDATA* catchstmt = Alloc(sizeof(BLOCKDATA));
     lex = getsym();
     ParseAttributeSpecifiers(&lex, funcsp, TRUE);
     catchstmt->breaklabel = -1;
-    catchstmt->next = NULL; // so can't break or continue out of the block
+    catchstmt->next = NULL;       // so can't break or continue out of the block
     catchstmt->defaultlabel = -1; /* no default */
     catchstmt->type = kw_catch;
     catchstmt->table = localNameSpace->syms;
@@ -164,14 +164,14 @@ static LEXEME *SEH_finally(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     st->lower = catchstmt->head;
     return lex;
 }
-static LEXEME *SEH_fault(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
+static LEXEME* SEH_fault(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 {
-    STATEMENT *st;
-    BLOCKDATA *catchstmt = Alloc(sizeof(BLOCKDATA));
+    STATEMENT* st;
+    BLOCKDATA* catchstmt = Alloc(sizeof(BLOCKDATA));
     lex = getsym();
     ParseAttributeSpecifiers(&lex, funcsp, TRUE);
     catchstmt->breaklabel = -1;
-    catchstmt->next = NULL; // so can't break or continue out of the block
+    catchstmt->next = NULL;       // so can't break or continue out of the block
     catchstmt->defaultlabel = -1; /* no default */
     catchstmt->type = kw_catch;
     catchstmt->table = localNameSpace->syms;
@@ -194,12 +194,12 @@ static LEXEME *SEH_fault(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     st->lower = catchstmt->head;
     return lex;
 }
-static LEXEME *SEH_try(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
+static LEXEME* SEH_try(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 {
     STATEMENT *st, **tail = parent->head ? &parent->tail->next : &parent->head;
-    BLOCKDATA *trystmt = Alloc(sizeof(BLOCKDATA));
+    BLOCKDATA* trystmt = Alloc(sizeof(BLOCKDATA));
     trystmt->breaklabel = -1;
-    trystmt->next = NULL; // so we can't break or continue out of the block
+    trystmt->next = NULL;       // so we can't break or continue out of the block
     trystmt->defaultlabel = -1; /* no default */
     trystmt->type = kw_try;
     trystmt->table = localNameSpace->syms;
@@ -245,7 +245,7 @@ static LEXEME *SEH_try(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     return lex;
 }
 
-LEXEME *statement_SEH(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
+LEXEME* statement_SEH(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 {
     switch (KW(lex))
     {

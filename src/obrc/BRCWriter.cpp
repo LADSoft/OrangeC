@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "BRCDictionary.h"
@@ -48,8 +48,7 @@
 
 static int version_ok;
 
-char *BRCWriter::tables= 
-{
+char* BRCWriter::tables = {
     "PRAGMA journal_mode=MEMORY; PRAGMA temp_store = MEMORY; "
     "BEGIN; "
     "CREATE TABLE brPropertyBag ("
@@ -100,11 +99,10 @@ char *BRCWriter::tables=
     " ,complexId INTEGER"
     " );"
     "INSERT INTO brPropertyBag (property, value)"
-    " VALUES (\"brVersion\", " STRINGVERSION ");"
-    "COMMIT; "
-} ;
-char *BRCWriter::deletion =
-{
+    " VALUES (\"brVersion\", " STRINGVERSION
+    ");"
+    "COMMIT; "};
+char* BRCWriter::deletion = {
     "BEGIN;"
     "DELETE FROM Names;"
     "DELETE FROM FileNames;"
@@ -112,11 +110,8 @@ char *BRCWriter::deletion =
     "DELETE FROM Usages;"
     "DELETE FROM JumpTable;"
     "DELETE FROM CPPNameMapping;"
-    "COMMIT;"
-};
-BRCWriter::~BRCWriter()
-{
-}
+    "COMMIT;"};
+BRCWriter::~BRCWriter() {}
 bool BRCWriter::Begin(void)
 {
     bool rv = true;
@@ -126,7 +121,7 @@ bool BRCWriter::Begin(void)
     }
     return rv;
 }
-bool BRCWriter::End(void )
+bool BRCWriter::End(void)
 {
     bool rv = true;
     if (!SQLiteExec("COMMIT"))
@@ -135,19 +130,16 @@ bool BRCWriter::End(void )
     }
     return rv;
 }
-int BRCWriter::NullCallback(void *NotUsed, int argc, char **argv, char **azColName)
+int BRCWriter::NullCallback(void* NotUsed, int argc, char** argv, char** azColName) { return 0; }
+int BRCWriter::SQLiteExec(char* str)
 {
-    return 0;
-}
-int BRCWriter::SQLiteExec( char *str)
-{
-    char *zErrMsg  = 0;
+    char* zErrMsg = 0;
     int rv = false;
     int rc = sqlite3_exec(dbPointer, str, NullCallback, 0, &zErrMsg);
-    if( rc!=SQLITE_OK )
+    if (rc != SQLITE_OK)
     {
-      fprintf(stderr, "SQL error: %s\n", zErrMsg);
-      sqlite3_free(zErrMsg);
+        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        sqlite3_free(zErrMsg);
     }
     else
     {
@@ -155,9 +147,8 @@ int BRCWriter::SQLiteExec( char *str)
     }
     return rv;
 }
-int BRCWriter::VersionCallback(void *NotUsed, int argc, char **argv, char **azColName)
+int BRCWriter::VersionCallback(void* NotUsed, int argc, char** argv, char** azColName)
 {
-    int i;
     if (argc == 1)
     {
         if (atoi(argv[0]) >= DBVersion)
@@ -167,14 +158,14 @@ int BRCWriter::VersionCallback(void *NotUsed, int argc, char **argv, char **azCo
 }
 int BRCWriter::CheckDb(void)
 {
-    char *zErrMsg  = 0;
+    char* zErrMsg = 0;
     int rv = false;
-    int rc = sqlite3_exec(dbPointer, "SELECT value FROM brPropertyBag WHERE property = \"brVersion\"", 
-                          VersionCallback, 0, &zErrMsg);
-    if( rc!=SQLITE_OK )
+    int rc =
+        sqlite3_exec(dbPointer, "SELECT value FROM brPropertyBag WHERE property = \"brVersion\"", VersionCallback, 0, &zErrMsg);
+    if (rc != SQLITE_OK)
     {
-      fprintf(stderr, "SQL error: %s\n", zErrMsg);
-      sqlite3_free(zErrMsg);
+        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        sqlite3_free(zErrMsg);
     }
     else
     {
@@ -191,11 +182,11 @@ int BRCWriter::CreateTables(void)
     }
     return rv;
 }
-int BRCWriter::DBOpen(char *name)
+int BRCWriter::DBOpen(char* name)
 {
     int rv = false;
     _unlink(name);
-    if (sqlite3_open_v2(name, &dbPointer,SQLITE_OPEN_READWRITE, nullptr) == SQLITE_OK)
+    if (sqlite3_open_v2(name, &dbPointer, SQLITE_OPEN_READWRITE, nullptr) == SQLITE_OK)
     {
 #ifdef TEST
         printf("checkdb...");
@@ -208,11 +199,11 @@ int BRCWriter::DBOpen(char *name)
             goto doCreate;
         }
     }
-    else 
+    else
     {
         if (dbPointer)
             sqlite3_close(dbPointer);
-doCreate:
+    doCreate:
         dbPointer = nullptr;
         if (sqlite3_open_v2(name, &dbPointer, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr) == SQLITE_OK)
         {
@@ -234,12 +225,12 @@ doCreate:
 }
 bool BRCWriter::Insert(sqlite3_int64 simpleId, sqlite3_int64 complexId)
 {
-    static char *query = "INSERT INTO CPPNameMapping (simpleId, complexId) VALUES (?, ?)";
+    static char* query = "INSERT INTO CPPNameMapping (simpleId, complexId) VALUES (?, ?)";
     int rc = SQLITE_OK;
-    static sqlite3_stmt *handle;
+    static sqlite3_stmt* handle;
     if (!handle)
     {
-        rc = sqlite3_prepare_v2(dbPointer, query, strlen(query)+1, &handle, nullptr);
+        rc = sqlite3_prepare_v2(dbPointer, query, strlen(query) + 1, &handle, nullptr);
     }
     if (rc == SQLITE_OK)
     {
@@ -249,7 +240,7 @@ bool BRCWriter::Insert(sqlite3_int64 simpleId, sqlite3_int64 complexId)
         sqlite3_bind_int(handle, 2, complexId);
         while (!done)
         {
-            switch(rc = sqlite3_step(handle))
+            switch (rc = sqlite3_step(handle))
             {
                 case SQLITE_BUSY:
                     done = true;
@@ -262,18 +253,18 @@ bool BRCWriter::Insert(sqlite3_int64 simpleId, sqlite3_int64 complexId)
                     done = true;
                     break;
             }
-        }                        
+        }
     }
     return rc == SQLITE_OK;
 }
 bool BRCWriter::Insert(std::string fileName, int index)
 {
-    static char *query = "INSERT INTO FileNames (name) VALUES (?)";
+    static char* query = "INSERT INTO FileNames (name) VALUES (?)";
     int rc = SQLITE_OK;
-    static sqlite3_stmt *handle;
+    static sqlite3_stmt* handle;
     if (!handle)
     {
-        rc = sqlite3_prepare_v2(dbPointer, query, strlen(query)+1, &handle, nullptr);
+        rc = sqlite3_prepare_v2(dbPointer, query, strlen(query) + 1, &handle, nullptr);
     }
     if (rc == SQLITE_OK)
     {
@@ -282,7 +273,7 @@ bool BRCWriter::Insert(std::string fileName, int index)
         sqlite3_bind_text(handle, 1, fileName.c_str(), fileName.size(), SQLITE_STATIC);
         while (!done)
         {
-            switch(rc = sqlite3_step(handle))
+            switch (rc = sqlite3_step(handle))
             {
                 case SQLITE_BUSY:
                     done = true;
@@ -295,23 +286,22 @@ bool BRCWriter::Insert(std::string fileName, int index)
                     done = true;
                     break;
             }
-        }                        
+        }
     }
     if (rc == SQLITE_OK)
     {
         fileMap[index] = sqlite3_last_insert_rowid(dbPointer);
     }
     return rc == SQLITE_OK;
-    
 }
-bool BRCWriter::Insert(std::string symName, int type, sqlite3_int64 *id)
+bool BRCWriter::Insert(std::string symName, int type, sqlite3_int64* id)
 {
-    static char *query = "INSERT INTO Names (name, type) VALUES (?,?)";
+    static char* query = "INSERT INTO Names (name, type) VALUES (?,?)";
     int rc = SQLITE_OK;
-    static sqlite3_stmt *handle;
+    static sqlite3_stmt* handle;
     if (!handle)
     {
-        rc = sqlite3_prepare_v2(dbPointer, query, strlen(query)+1, &handle, nullptr);
+        rc = sqlite3_prepare_v2(dbPointer, query, strlen(query) + 1, &handle, nullptr);
     }
     if (rc == SQLITE_OK)
     {
@@ -321,7 +311,7 @@ bool BRCWriter::Insert(std::string symName, int type, sqlite3_int64 *id)
         sqlite3_bind_int(handle, 2, type);
         while (!done)
         {
-            switch(rc = sqlite3_step(handle))
+            switch (rc = sqlite3_step(handle))
             {
                 case SQLITE_BUSY:
                     done = true;
@@ -334,7 +324,7 @@ bool BRCWriter::Insert(std::string symName, int type, sqlite3_int64 *id)
                     done = true;
                     break;
             }
-        }                        
+        }
     }
     if (rc == SQLITE_OK)
     {
@@ -344,13 +334,14 @@ bool BRCWriter::Insert(std::string symName, int type, sqlite3_int64 *id)
 }
 bool BRCWriter::Insert(sqlite3_int64 fileId, int start, int end, sqlite3_int64 nameIndex)
 {
-    static char *query = "INSERT INTO JumpTable (symbolId, fileId, startLine, endLine)"
-                         " VALUES (?,?,?,?)";
+    static char* query =
+        "INSERT INTO JumpTable (symbolId, fileId, startLine, endLine)"
+        " VALUES (?,?,?,?)";
     int rc = SQLITE_OK;
-    static sqlite3_stmt *handle;
+    static sqlite3_stmt* handle;
     if (!handle)
     {
-        rc = sqlite3_prepare_v2(dbPointer, query, strlen(query)+1, &handle, nullptr);
+        rc = sqlite3_prepare_v2(dbPointer, query, strlen(query) + 1, &handle, nullptr);
     }
     if (rc == SQLITE_OK)
     {
@@ -362,7 +353,7 @@ bool BRCWriter::Insert(sqlite3_int64 fileId, int start, int end, sqlite3_int64 n
         sqlite3_bind_int(handle, 4, end);
         while (!done)
         {
-            switch(rc = sqlite3_step(handle))
+            switch (rc = sqlite3_step(handle))
             {
                 case SQLITE_BUSY:
                     done = true;
@@ -375,27 +366,29 @@ bool BRCWriter::Insert(sqlite3_int64 fileId, int start, int end, sqlite3_int64 n
                     done = true;
                     break;
             }
-        }                        
+        }
     }
     return rc == SQLITE_OK;
 }
-bool BRCWriter::Insert(sqlite3_int64 symIndex, BrowseData *b, bool usages)
+bool BRCWriter::Insert(sqlite3_int64 symIndex, BrowseData* b, bool usages)
 {
-    static char *query = "INSERT INTO LineNumbers (type, qual, symbolId, fileId, startLine, charPos, hint)"
-                         " VALUES (?,?,?,?,?,?,?)";
-    static char *query1 = "INSERT INTO Usages (type, qual, symbolId, fileId, startLine, charPos, hint)"
-                         " VALUES (?,?,?,?,?,?,?)";
+    static char* query =
+        "INSERT INTO LineNumbers (type, qual, symbolId, fileId, startLine, charPos, hint)"
+        " VALUES (?,?,?,?,?,?,?)";
+    static char* query1 =
+        "INSERT INTO Usages (type, qual, symbolId, fileId, startLine, charPos, hint)"
+        " VALUES (?,?,?,?,?,?,?)";
     int rc = SQLITE_OK;
     static sqlite3_stmt *handle, *handle1;
     if (!handle)
     {
-        rc = sqlite3_prepare_v2(dbPointer, query1, strlen(query1)+1, &handle1, nullptr);
-        rc = sqlite3_prepare_v2(dbPointer, query, strlen(query)+1, &handle, nullptr);
+        rc = sqlite3_prepare_v2(dbPointer, query1, strlen(query1) + 1, &handle1, nullptr);
+        rc = sqlite3_prepare_v2(dbPointer, query, strlen(query) + 1, &handle, nullptr);
     }
     if (rc == SQLITE_OK)
     {
         int done = false;
-        sqlite3_stmt *iHandle = usages ? handle1 : handle;
+        sqlite3_stmt* iHandle = usages ? handle1 : handle;
         sqlite3_reset(iHandle);
         sqlite3_bind_int(iHandle, 1, b->type | (b->blockLevel == 0 ? 0x4000 : 0));
         sqlite3_bind_int(iHandle, 2, b->qual);
@@ -406,7 +399,7 @@ bool BRCWriter::Insert(sqlite3_int64 symIndex, BrowseData *b, bool usages)
         sqlite3_bind_text(iHandle, 7, b->hint.c_str(), b->hint.size(), SQLITE_STATIC);
         while (!done)
         {
-            switch(rc = sqlite3_step(iHandle))
+            switch (rc = sqlite3_step(iHandle))
             {
                 case SQLITE_BUSY:
                     done = true;
@@ -419,23 +412,24 @@ bool BRCWriter::Insert(sqlite3_int64 symIndex, BrowseData *b, bool usages)
                     done = true;
                     break;
             }
-        }                        
+        }
     }
     return rc == SQLITE_OK;
 }
-char easytolower(char in){
-  if(in<='Z' && in>='A')
-    return in-('Z'-'z');
-  return in;
-} 
+char easytolower(char in)
+{
+    if (in <= 'Z' && in >= 'A')
+        return in - ('Z' - 'z');
+    return in;
+}
 bool BRCWriter::WriteFileList()
 {
     Begin();
-    std::map<std::string, int> &unsorted = loader.GetFileNames();
+    std::map<std::string, int>& unsorted = loader.GetFileNames();
     for (auto item : unsorted)
     {
         std::string myString = item.first;
-        std::transform(myString.begin(), myString.end(), myString.begin(), easytolower); 
+        std::transform(myString.begin(), myString.end(), myString.begin(), easytolower);
         if (!Insert(myString.c_str(), item.second))
             return false;
     }
@@ -443,16 +437,17 @@ bool BRCWriter::WriteFileList()
     return true;
 }
 
-void BRCWriter:: InsertMappingSym(std::string name, SymData *orig, std::map<std::string, SymData *> &syms,
-                 std::map<std::string, SymData *> &newSyms)
+void BRCWriter::InsertMappingSym(std::string name, SymData* orig, std::map<std::string, SymData*>& syms,
+                                 std::map<std::string, SymData*>& newSyms)
 {
-    SymData *sym = nullptr;
+    SymData* sym = nullptr;
     auto it = syms.find(name);
     if (it != syms.end())
     {
-         sym = it->second;
+        sym = it->second;
     }
-    else {
+    else
+    {
         it = newSyms.find(name);
         if (it != newSyms.end())
             sym = it->second;
@@ -464,21 +459,21 @@ void BRCWriter:: InsertMappingSym(std::string name, SymData *orig, std::map<std:
     }
     sym->mapping.push_back(orig);
 }
-void BRCWriter::PushCPPNames(std::string name, SymData * orig, std::map<std::string, SymData *> &syms, 
-                 std::map<std::string, SymData *> &newSyms)
+void BRCWriter::PushCPPNames(std::string name, SymData* orig, std::map<std::string, SymData*>& syms,
+                             std::map<std::string, SymData*>& newSyms)
 {
     if (name.find("@") != std::string::npos)
     {
         int first = 0;
         int last = name.size();
         int nested = 0;
-        for (int i =0; i < name.size(); i++)
+        for (int i = 0; i < name.size(); i++)
         {
             if (name[i] == '@')
             {
                 first = i;
-                if (name[i+1] == '$')
-                    i++; // past any '$'
+                if (name[i + 1] == '$')
+                    i++;  // past any '$'
             }
             else if (name[i] == '#')
             {
@@ -496,23 +491,23 @@ void BRCWriter::PushCPPNames(std::string name, SymData * orig, std::map<std::str
         }
         if (last != name.size())
         {
-            std::string simpleName = name.substr(first, last-first);
-            InsertMappingSym( simpleName, orig, syms, newSyms);
+            std::string simpleName = name.substr(first, last - first);
+            InsertMappingSym(simpleName, orig, syms, newSyms);
 
             if (first != 0)
             {
                 simpleName = name.substr(0, last);
-                InsertMappingSym( simpleName, orig, syms, newSyms);
+                InsertMappingSym(simpleName, orig, syms, newSyms);
             }
         }
     }
 }
-bool BRCWriter::WriteDictionary(Symbols &syms)
+bool BRCWriter::WriteDictionary(Symbols& syms)
 {
-    std::map<std::string, SymData *> newSyms;
+    std::map<std::string, SymData*> newSyms;
     for (auto sym : syms)
     {
-        PushCPPNames(sym.first, sym.second, syms, newSyms);        
+        PushCPPNames(sym.first, sym.second, syms, newSyms);
     }
     for (auto sym : newSyms)
     {
@@ -522,7 +517,7 @@ bool BRCWriter::WriteDictionary(Symbols &syms)
     Begin();
     for (auto sym1 : syms)
     {
-        SymData *sym = sym1.second;
+        SymData* sym = sym1.second;
         int type = sym->mapping.size() ? JT_MAPPING : 0;
         for (auto l : sym->data)
         {
@@ -555,32 +550,32 @@ bool BRCWriter::WriteDictionary(Symbols &syms)
                     type |= JT_NONE;
                     break;
             }
-        }	
+        }
         if (!Insert(sym1.first.c_str(), type, &sym->index))
             return false;
     }
     End();
     return true;
 }
-bool BRCWriter::WriteMapping(Symbols &syms)
+bool BRCWriter::WriteMapping(Symbols& syms)
 {
     Begin();
     for (auto sym : syms)
     {
-        SymData *s = sym.second;
+        SymData* s = sym.second;
         for (auto map : s->mapping)
             Insert(s->index, map->index);
     }
     End();
     return true;
 }
-bool BRCWriter::WriteLineData(Symbols &syms)
+bool BRCWriter::WriteLineData(Symbols& syms)
 {
     Begin();
     for (auto sym : syms)
     {
-        SymData *s = sym.second;
-        for (auto bd :s->data)
+        SymData* s = sym.second;
+        for (auto bd : s->data)
         {
             if (bd->qual != ObjBrowseInfo::eExternal || !s->globalCount)
                 if (!Insert(s->index, bd))
@@ -590,12 +585,12 @@ bool BRCWriter::WriteLineData(Symbols &syms)
     End();
     return true;
 }
-bool BRCWriter::WriteUsageData(Symbols &syms)
+bool BRCWriter::WriteUsageData(Symbols& syms)
 {
     Begin();
     for (auto sym : syms)
     {
-        SymData *s = sym.second;
+        SymData* s = sym.second;
         for (auto bd : s->usages)
         {
             if (bd->qual != ObjBrowseInfo::eExternal || !s->globalCount)
@@ -606,12 +601,12 @@ bool BRCWriter::WriteUsageData(Symbols &syms)
     End();
     return true;
 }
-bool BRCWriter::WriteJumpTable(Symbols &syms)
+bool BRCWriter::WriteJumpTable(Symbols& syms)
 {
     Begin();
     for (auto sym : syms)
     {
-        SymData *s = sym.second;
+        SymData* s = sym.second;
         if (s->data.size())
         {
             BrowseData *gl = nullptr, *ex = nullptr;
@@ -645,23 +640,23 @@ bool BRCWriter::WriteJumpTable(Symbols &syms)
 }
 bool BRCWriter::write()
 {
-    Symbols &syms = loader.GetSymbols();    
+    Symbols& syms = loader.GetSymbols();
 
-    bool ok = DBOpen((char *)outputFile.c_str());
+    bool ok = DBOpen((char*)outputFile.c_str());
 
     if (ok)
     {
         ok = false;
-//        if (Begin())
-            if (WriteFileList())
-                if (WriteDictionary(syms))
-                    if (WriteMapping(syms))
-                        if (WriteLineData(syms))
-                            if (WriteUsageData(syms))
-                                if (WriteJumpTable(syms))
-                                   ok = true;
-//        if (!End())
-            ok = false;
+        //        if (Begin())
+        if (WriteFileList())
+            if (WriteDictionary(syms))
+                if (WriteMapping(syms))
+                    if (WriteLineData(syms))
+                        if (WriteUsageData(syms))
+                            if (WriteJumpTable(syms))
+                                ok = true;
+        //        if (!End())
+        ok = false;
     }
     if (dbPointer)
         sqlite3_close(dbPointer);

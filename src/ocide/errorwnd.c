@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -50,41 +50,39 @@ static HWND hwndLV, hwndErrButton, hwndWarnButton, hwndBackground;
 static int curSel;
 static HBITMAP hIcoError, hIcoWarning;
 static HIMAGELIST tagImageList;
- 
-static char *szErrorTitle = "Error List";
 
-static ERRWNDDATA *errlist[1000];
+static char* szErrorTitle = "Error List";
+
+static ERRWNDDATA* errlist[1000];
 static int errcount, lasterrcount;
 static int errors, warnings;
 static void CopyText(HWND hwnd)
 {
-    char *p = NULL;
+    char* p = NULL;
     int sz = 1;
     int n = errcount;
     int btns = errorButtons;
     int i;
-    for (i=0; i < n && i < errcount; i++)
+    for (i = 0; i < n && i < errcount; i++)
     {
         char buf[1000];
-        if (errlist[i]->isWarning && (btns & ERR_WARNINGS)
-            || !errlist[i]->isWarning && (btns & ERR_ERRORS))
+        if (errlist[i]->isWarning && (btns & ERR_WARNINGS) || !errlist[i]->isWarning && (btns & ERR_ERRORS))
         {
-            sprintf(buf, "%d\t%s\t%s\t%d\t%s\n", i+1, errlist[i]->isWarning ? "Warn " : "Error",
-                    errlist[i]->file, errlist[i]->lineno, errlist[i]->error);
+            sprintf(buf, "%d\t%s\t%s\t%d\t%s\n", i + 1, errlist[i]->isWarning ? "Warn " : "Error", errlist[i]->file,
+                    errlist[i]->lineno, errlist[i]->error);
             sz += strlen(buf);
         }
     }
     p = calloc(sz, sizeof(char));
     if (p)
     {
-        for (i=0; i < n && i < errcount; i++)
+        for (i = 0; i < n && i < errcount; i++)
         {
             char buf[1000];
-            if (errlist[i]->isWarning && (btns & ERR_WARNINGS)
-                || !errlist[i]->isWarning && (btns & ERR_ERRORS))
+            if (errlist[i]->isWarning && (btns & ERR_WARNINGS) || !errlist[i]->isWarning && (btns & ERR_ERRORS))
             {
-                sprintf(buf, "%d\t%s\t%s\t%d\t%s\n", i+1, errlist[i]->isWarning ? "Warn " : "Error",
-                        errlist[i]->file, errlist[i]->lineno, errlist[i]->error);
+                sprintf(buf, "%d\t%s\t%s\t%d\t%s\n", i + 1, errlist[i]->isWarning ? "Warn " : "Error", errlist[i]->file,
+                        errlist[i]->lineno, errlist[i]->error);
                 strcat(p, buf);
             }
         }
@@ -95,8 +93,7 @@ static void CopyText(HWND hwnd)
 
 //-------------------------------------------------------------------------
 
-LRESULT CALLBACK ErrorProc(HWND hwnd, UINT iMessage, WPARAM
-    wParam, LPARAM lParam)
+LRESULT CALLBACK ErrorProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
     static HFONT font;
     LV_ITEM item;
@@ -107,11 +104,11 @@ LRESULT CALLBACK ErrorProc(HWND hwnd, UINT iMessage, WPARAM
     static LVITEM pressed;
     switch (iMessage)
     {
-        case WM_USER+1:
+        case WM_USER + 1:
         {
             DWINFO info;
-            char *q;
-            memset(&info,0, sizeof(info));
+            char* q;
+            memset(&info, 0, sizeof(info));
             strcpy(info.dwName, errlist[pressed.lParam]->file);
             q = strrchr(info.dwName, '\\');
             if (q)
@@ -142,12 +139,12 @@ LRESULT CALLBACK ErrorProc(HWND hwnd, UINT iMessage, WPARAM
             }
             else if (nmh->code == LVN_GETDISPINFO)
             {
-                LV_DISPINFO *p = (LV_DISPINFO *)lParam;
+                LV_DISPINFO* p = (LV_DISPINFO*)lParam;
                 char name[512] = "", *q;
                 switch (p->item.iSubItem)
                 {
                     case 1: /* id*/
-                        sprintf(name, "%d", p->item.lParam +1);
+                        sprintf(name, "%d", p->item.lParam + 1);
                         break;
                     case 2: /* error */
                         strcpy(name, errlist[p->item.lParam]->error);
@@ -199,14 +196,14 @@ LRESULT CALLBACK ErrorProc(HWND hwnd, UINT iMessage, WPARAM
                 switch (((LPNMLVKEYDOWN)lParam)->wVKey)
                 {
                     case 'C':
-                        if (GetKeyState(VK_CONTROL) &0x80000000)
+                        if (GetKeyState(VK_CONTROL) & 0x80000000)
                         {
                             CopyText(hwnd);
                         }
                         break;
                     case VK_UP:
                         if (curSel > 0)
-                            SendMessage(hwnd, WM_USER, curSel-1, 0);
+                            SendMessage(hwnd, WM_USER, curSel - 1, 0);
                         break;
                     case VK_DOWN:
                         if (curSel < ListView_GetItemCount(hwndLV) - 1)
@@ -233,12 +230,12 @@ LRESULT CALLBACK ErrorProc(HWND hwnd, UINT iMessage, WPARAM
         case WM_SETERRDATA:
             if (errcount >= 999)
             {
-                free((ERRWNDDATA *)lParam);
+                free((ERRWNDDATA*)lParam);
             }
             else
             {
-                errlist[errcount++] = (ERRWNDDATA *)lParam;
-                if (((ERRWNDDATA *)lParam)->isWarning)
+                errlist[errcount++] = (ERRWNDDATA*)lParam;
+                if (((ERRWNDDATA*)lParam)->isWarning)
                     warnings++;
                 else
                     errors++;
@@ -246,7 +243,7 @@ LRESULT CALLBACK ErrorProc(HWND hwnd, UINT iMessage, WPARAM
             }
             break;
         case WM_CLEARERRDATA:
-            for (i=0; i < errcount; i++)
+            for (i = 0; i < errcount; i++)
             {
                 free(errlist[i]);
                 errlist[i] = 0;
@@ -263,7 +260,7 @@ LRESULT CALLBACK ErrorProc(HWND hwnd, UINT iMessage, WPARAM
             SetWindowText(hwndErrButton, buf);
             sprintf(buf, "%d warnings", warnings);
             SetWindowText(hwndWarnButton, buf);
-            
+
             if (errcount != lasterrcount)
             {
                 lasterrcount = errcount;
@@ -271,8 +268,8 @@ LRESULT CALLBACK ErrorProc(HWND hwnd, UINT iMessage, WPARAM
                 memset(&item, 0, sizeof(item));
                 for (i = 0; i < errcount; i++)
                 {
-                    if (errlist[i]->isWarning && (errorButtons & ERR_WARNINGS)
-                        || !errlist[i]->isWarning && (errorButtons & ERR_ERRORS))
+                    if (errlist[i]->isWarning && (errorButtons & ERR_WARNINGS) ||
+                        !errlist[i]->isWarning && (errorButtons & ERR_ERRORS))
                     {
                         item.iItem = k++;
                         item.iSubItem = 0;
@@ -284,51 +281,48 @@ LRESULT CALLBACK ErrorProc(HWND hwnd, UINT iMessage, WPARAM
                 }
             }
         }
-            break;
+        break;
         case WM_DRAWITEM:
         {
             LPDRAWITEMSTRUCT pDis = (LPDRAWITEMSTRUCT)lParam;
             char staticText[256];
             HICON image = pDis->hwndItem == hwndErrButton ? hIcoError : hIcoWarning;
-            BOOL state = !! (pDis->hwndItem == hwndErrButton ? errorButtons & ERR_ERRORS : errorButtons & ERR_WARNINGS); 
-            int len = SendMessage(pDis->hwndItem, WM_GETTEXT, 
-                sizeof(staticText), (LPARAM)staticText);
+            BOOL state = !!(pDis->hwndItem == hwndErrButton ? errorButtons & ERR_ERRORS : errorButtons & ERR_WARNINGS);
+            int len = SendMessage(pDis->hwndItem, WM_GETTEXT, sizeof(staticText), (LPARAM)staticText);
             SIZE sz;
             RECT r;
             POINT textpos, iconpos;
             GetClientRect(pDis->hwndItem, &r);
             GetTextExtentPoint32(pDis->hDC, staticText, len, &sz);
-            SetBkMode(pDis->hDC, TRANSPARENT);   
+            SetBkMode(pDis->hDC, TRANSPARENT);
             iconpos.x = 4;
-            iconpos.y = (r.bottom - r.top - 20)/2;
+            iconpos.y = (r.bottom - r.top - 20) / 2;
             textpos.x = r.right - 4 - sz.cx;
-            textpos.y = (r.bottom - r.top - sz.cy)/2;
+            textpos.y = (r.bottom - r.top - sz.cy) / 2;
             DrawFrameControl(pDis->hDC, &pDis->rcItem, DFC_BUTTON, DFCS_BUTTONPUSH | (state ? DFCS_PUSHED : 0));
-            TextOut(pDis->hDC, pDis->rcItem.left+ textpos.x, pDis->rcItem.top+textpos.y, staticText, len);
-            DrawIconEx(pDis->hDC, pDis->rcItem.left+ iconpos.x, pDis->rcItem.top+iconpos.y, image, 20, 20,
-                       0,NULL, DI_NORMAL);
+            TextOut(pDis->hDC, pDis->rcItem.left + textpos.x, pDis->rcItem.top + textpos.y, staticText, len);
+            DrawIconEx(pDis->hDC, pDis->rcItem.left + iconpos.x, pDis->rcItem.top + iconpos.y, image, 20, 20, 0, NULL, DI_NORMAL);
         }
-        return 0;
+            return 0;
         case WM_CREATE:
             hwndError = hwnd;
             GetClientRect(hwnd, &r);
-            hwndBackground = CreateWindow("static", "", WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS,
-                                                0,0, r.right - r.bottom, BUTTONHEIGHT + 4, hwnd, 0, hInstance, 0);
-            hwndErrButton = CreateWindow("button", "0 errors",  WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
-                                         2,2,BUTTONWIDTH,BUTTONHEIGHT, hwnd, 0, hInstance, 0);
-            hwndWarnButton = CreateWindow("button", "0 warnings",  WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
-                                         4 + BUTTONWIDTH + 2,2, BUTTONWIDTH,BUTTONHEIGHT, hwnd, 0, hInstance, 0);
+            hwndBackground = CreateWindow("static", "", WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS, 0, 0, r.right - r.bottom,
+                                          BUTTONHEIGHT + 4, hwnd, 0, hInstance, 0);
+            hwndErrButton = CreateWindow("button", "0 errors", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, 2, 2, BUTTONWIDTH,
+                                         BUTTONHEIGHT, hwnd, 0, hInstance, 0);
+            hwndWarnButton = CreateWindow("button", "0 warnings", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, 4 + BUTTONWIDTH + 2, 2,
+                                          BUTTONWIDTH, BUTTONHEIGHT, hwnd, 0, hInstance, 0);
             BringWindowToTop(hwndErrButton);
             BringWindowToTop(hwndWarnButton);
             font = CreateFontIndirect(&systemDialogFont);
             SendMessage(hwndErrButton, WM_SETFONT, (WPARAM)font, 0);
             SendMessage(hwndWarnButton, WM_SETFONT, (WPARAM)font, 0);
-            hwndLV = CreateWindowEx(0, WC_LISTVIEW, "", 
-                           LVS_REPORT | LVS_SINGLESEL | WS_CHILD | WS_VISIBLE | WS_BORDER,
-                           0,BUTTONHEIGHT + 4,r.right-r.left, r.bottom - r.top-BUTTONHEIGHT-4, hwnd, 0, hInstance, 0);
+            hwndLV = CreateWindowEx(0, WC_LISTVIEW, "", LVS_REPORT | LVS_SINGLESEL | WS_CHILD | WS_VISIBLE | WS_BORDER, 0,
+                                    BUTTONHEIGHT + 4, r.right - r.left, r.bottom - r.top - BUTTONHEIGHT - 4, hwnd, 0, hInstance, 0);
             ListView_SetExtendedListViewStyle(hwndLV, LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES | LVS_EX_DOUBLEBUFFER);
             ApplyDialogFont(hwndLV);
-            lvC.mask = LVCF_WIDTH | LVCF_SUBITEM ;
+            lvC.mask = LVCF_WIDTH | LVCF_SUBITEM;
             lvC.cx = 30;
             lvC.iSubItem = 0;
             ListView_InsertColumn(hwndLV, 0, &lvC);
@@ -358,8 +352,7 @@ LRESULT CALLBACK ErrorProc(HWND hwnd, UINT iMessage, WPARAM
             r.left = r.top = 0;
             r.right = LOWORD(lParam);
             r.bottom = HIWORD(lParam);
-            MoveWindow(hwndLV, r.left, r.top+BUTTONHEIGHT + 4, r.right - r.left,
-                r.bottom - r.top-BUTTONHEIGHT - 4, 1);
+            MoveWindow(hwndLV, r.left, r.top + BUTTONHEIGHT + 4, r.right - r.left, r.bottom - r.top - BUTTONHEIGHT - 4, 1);
             MoveWindow(hwndBackground, r.left, r.top, r.right - r.left, BUTTONHEIGHT + 4, 1);
             lvC.mask = LVCF_WIDTH;
             lvC.cx = r.right - r.left - 270;

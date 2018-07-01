@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -41,9 +41,9 @@
 #include <string.h>
 #include <stdlib.h>
 
-#if defined( MICROSOFT) || defined __MINGW64__
-#define system(x) winsystem(x)
-extern "C" int winsystem(const char *);
+#if defined(MICROSOFT) || defined __MINGW64__
+#    define system(x) winsystem(x)
+extern "C" int winsystem(const char*);
 #endif
 
 CmdSwitchParser dlPeMain::SwitchParser;
@@ -62,50 +62,41 @@ int dlPeMain::subsysMinor = 0;
 
 int dlPeMain::subsysOverride = 0;
 
-int dlPeMain::dllFlags = 0;//0x8140; 
+int dlPeMain::dllFlags = 0;  // 0x8140;
 
-unsigned char dlPeMain::defaultStubData[] =
-{
-    0x4D,0x5A,0x6C,0x00,0x01,0x00,0x00,0x00,
-    0x04,0x00,0x11,0x00,0xFF,0xFF,0x03,0x00,
+unsigned char dlPeMain::defaultStubData[] = {
+    0x4D, 0x5A, 0x6C, 0x00, 0x01, 0x00, 0x00, 0x00, 0x04, 0x00, 0x11, 0x00, 0xFF, 0xFF, 0x03, 0x00,
 
-    0x00,0x01,0x00,0x00,0x00,0x00,0x00,0x00,
-    0x40,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+    0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 
-    0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-    0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 
-    0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-    0x00,0x00,0x00,0x00,0x70,0x00,0x00,0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x70, 0x00, 0x00, 0x00,
 
-    0x0E,0x1F,0xBA,0x0E,0x00,0xB4,0x09,0xCD,
-    0x21,0xB8,0x00,0x4C,0xCD,0x21,0x54,0x68,
+    0x0E, 0x1F, 0xBA, 0x0E, 0x00, 0xB4, 0x09, 0xCD, 0x21, 0xB8, 0x00, 0x4C, 0xCD, 0x21, 0x54, 0x68,
 
-    0x69,0x73,0x20,0x70,0x72,0x6F,0x67,0x72,
-    0x61,0x6D,0x20,0x72,0x65,0x71,0x75,0x69,
+    0x69, 0x73, 0x20, 0x70, 0x72, 0x6F, 0x67, 0x72, 0x61, 0x6D, 0x20, 0x72, 0x65, 0x71, 0x75, 0x69,
 
-    0x72,0x65,0x73,0x20,0x57,0x69,0x6E,0x33,
-    0x32,0x0D,0x0A,0x24,0x00,0x00,0x00,0x00
-} ;	
+    0x72, 0x65, 0x73, 0x20, 0x57, 0x69, 0x6E, 0x33, 0x32, 0x0D, 0x0A, 0x24, 0x00, 0x00, 0x00, 0x00};
 int dlPeMain::defaultStubSize = sizeof(defaultStubData);
 
-const char *dlPeMain::usageText = "[options] relfile\n"
-            "\n"
-            "/f             remove underscore from exports\n"
-            "/mxxx          Set output file type\n"
-            "/oxxx          Set output file name\n"
-            "/sxxx          Set stub file name\n"
-            "/V, --version  Show version and date\n"
-            "/!             No logo\n"
-            "\n"
-            "Available output file types:\n"
-            "   CON - Windows console (default)\n"
-            "   GUI - Windows GUI\n"
-            "   DLL - Windows DLL\n"
-            "\nTime: " __TIME__ "  Date: " __DATE__;
-            
+const char* dlPeMain::usageText =
+    "[options] relfile\n"
+    "\n"
+    "/f             remove underscore from exports\n"
+    "/mxxx          Set output file type\n"
+    "/oxxx          Set output file name\n"
+    "/sxxx          Set stub file name\n"
+    "/V, --version  Show version and date\n"
+    "/!             No logo\n"
+    "\n"
+    "Available output file types:\n"
+    "   CON - Windows console (default)\n"
+    "   GUI - Windows GUI\n"
+    "   DLL - Windows DLL\n"
+    "\nTime: " __TIME__ "  Date: " __DATE__;
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     dlPeMain downloader;
     return downloader.Run(argc, argv);
@@ -117,23 +108,23 @@ dlPeMain::~dlPeMain()
     delete stubData;
     delete factory;
 }
-void dlPeMain::ParseOutResourceFiles(int *argc, char **argv)
+void dlPeMain::ParseOutResourceFiles(int* argc, char** argv)
 {
     for (int i = 0; i < *argc; i++)
     {
         int npos = std::string(argv[i]).find_last_of(".");
         if (npos != std::string::npos)
         {
-            if (!stricmp(argv[i]+npos, ".res"))
+            if (!stricmp(argv[i] + npos, ".res"))
             {
                 resources.AddFile(argv[i]);
-                memcpy(argv + i , argv+ i + 1, sizeof(argv[0]) * *argc - i - 1);
+                memcpy(argv + i, argv + i + 1, sizeof(argv[0]) * *argc - i - 1);
                 (*argc)--, i--;
             }
         }
     }
 }
-bool dlPeMain::ParseOutDefFile(int *argc, char **argv)
+bool dlPeMain::ParseOutDefFile(int* argc, char** argv)
 {
     int n = 0;
     for (int i = 0; i < *argc; i++)
@@ -141,10 +132,10 @@ bool dlPeMain::ParseOutDefFile(int *argc, char **argv)
         int npos = std::string(argv[i]).find_last_of(".");
         if (npos != std::string::npos)
         {
-            if (!stricmp(argv[i]+npos, ".def"))
+            if (!stricmp(argv[i] + npos, ".def"))
             {
                 defFile = argv[i];
-                memcpy(argv+i, argv+i+1, sizeof(argv[0]) * *argc - i - 1);
+                memcpy(argv + i, argv + i + 1, sizeof(argv[0]) * *argc - i - 1);
                 (*argc)--, i--;
                 n++;
             }
@@ -155,7 +146,7 @@ bool dlPeMain::ParseOutDefFile(int *argc, char **argv)
 bool dlPeMain::GetMode()
 {
     mode = UNKNOWN;
-    const std::string &val = modeSwitch.GetValue();
+    const std::string& val = modeSwitch.GetValue();
     if (val.size() == 0)
     {
         mode = CONSOLE;
@@ -175,7 +166,7 @@ void dlPeMain::ReadValues()
 {
     for (ObjFile::SymbolIterator it = file->DefinitionBegin(); it != file->DefinitionEnd(); it++)
     {
-        ObjDefinitionSymbol *p = (ObjDefinitionSymbol *)(*it);
+        ObjDefinitionSymbol* p = (ObjDefinitionSymbol*)(*it);
         if (p->GetName() == "FILEALIGN")
         {
             fileAlign = p->GetValue();
@@ -234,10 +225,8 @@ void dlPeMain::ReadValues()
         }
     }
 }
-bool dlPeMain::LoadImports(ObjFile *file)
+bool dlPeMain::LoadImports(ObjFile* file)
 {
-    ObjInt base;
-    ObjInt offs;
     std::set<std::string> names;
     for (ObjFile::SymbolIterator it = file->ImportBegin(); it != file->ImportEnd(); ++it)
     {
@@ -249,18 +238,18 @@ bool dlPeMain::LoadImports(ObjFile *file)
         if (names.find((*it)->GetName()) == names.end())
             return false;
         // point to its thunk...
-//		(*it)->SetOffset(new ObjExpression(importThunkVA + 6 * (*it)->GetIndex()));
+        //		(*it)->SetOffset(new ObjExpression(importThunkVA + 6 * (*it)->GetIndex()));
     }
     return true;
 }
-bool dlPeMain::ReadSections(const std::string &path)
+bool dlPeMain::ReadSections(const std::string& path)
 {
     ObjIeeeIndexManager iml;
     factory = new ObjFactory(&iml);
     ObjIeee ieee("");
-    FILE *in = fopen(path.c_str(), "rb");
+    FILE* in = fopen(path.c_str(), "rb");
     if (!in)
-       Utils::fatal("Cannot open input file");
+        Utils::fatal("Cannot open input file");
     file = ieee.Read(in, ObjIeee::eAll, factory);
     fclose(in);
     if (!ieee.GetAbsolute())
@@ -282,7 +271,7 @@ bool dlPeMain::ReadSections(const std::string &path)
             PEObject::SetFile(file);
             for (ObjFile::SectionIterator it = file->SectionBegin(); it != file->SectionEnd(); ++it)
             {
-                PEDataObject *p = new PEDataObject(file, *it);
+                PEDataObject* p = new PEDataObject(file, *it);
                 objects.push_back(p);
                 (*it)->ResolveSymbols(factory);
             }
@@ -303,24 +292,24 @@ bool dlPeMain::ReadSections(const std::string &path)
             Utils::fatal("Input file internal error in import list");
         }
     }
-	else
-	{
-		std:: cout << "Invalid rel file format " << ieee.GetErrorQualifier().c_str() << std::endl;
-	}
+    else
+    {
+        std::cout << "Invalid rel file format " << ieee.GetErrorQualifier().c_str() << std::endl;
+    }
     return false;
 }
-std::string dlPeMain::GetOutputName(char *infile) const
+std::string dlPeMain::GetOutputName(char* infile) const
 {
     std::string name;
     if (outputFileSwitch.GetValue().size() != 0)
     {
         name = outputFileSwitch.GetValue();
-        const char *p = strrchr(name.c_str(), '.');
-        if (p  && p[-1] != '.' && p[1] != '\\')
+        const char* p = strrchr(name.c_str(), '.');
+        if (p && p[-1] != '.' && p[1] != '\\')
             return name;
     }
     else
-    { 
+    {
         name = infile;
     }
     if (mode == DLL)
@@ -328,56 +317,55 @@ std::string dlPeMain::GetOutputName(char *infile) const
     else
         name = Utils::QualifiedFile(name.c_str(), ".exe");
     return name;
-}			
+}
 void dlPeMain::InitHeader(unsigned headerSize, ObjInt endVa)
 {
     memset(&header, 0, sizeof(header));
-    header.signature = PESIG ;
-    header.magic = PE_MAGICNUM ;
-    header.cpu_type = PE_INTEL386 ;
+    header.signature = PESIG;
+    header.magic = PE_MAGICNUM;
+    header.cpu_type = PE_INTEL386;
     /* store time/date of creation */
-    header.time=(unsigned)time(nullptr);
-    header.nt_hdr_size = PE_OPTIONAL_HEADER_SIZE ;
+    header.time = (unsigned)time(nullptr);
+    header.nt_hdr_size = PE_OPTIONAL_HEADER_SIZE;
 
-    header.flags = PE_FILE_EXECUTABLE | PE_FILE_32BIT | PE_FILE_LOCAL_SYMBOLS_STRIPPED | PE_FILE_LINE_NUMBERS_STRIPPED
-                 | PE_FILE_REVERSE_BITS_HIGH | PE_FILE_REVERSE_BITS_LOW ;
+    header.flags = PE_FILE_EXECUTABLE | PE_FILE_32BIT | PE_FILE_LOCAL_SYMBOLS_STRIPPED | PE_FILE_LINE_NUMBERS_STRIPPED |
+                   PE_FILE_REVERSE_BITS_HIGH | PE_FILE_REVERSE_BITS_LOW;
     if (mode == DLL)
     {
         header.flags |= PE_FILE_LIBRARY;
     }
     header.dll_flags = dllFlags;
-    
-    header.image_base = imageBase ;
-    header.file_align = fileAlign ;
-    header.object_align = objectAlign ;
-    header.os_major_version = osMajor ;
-    header.os_minor_version = osMinor ;
-    header.user_major_version = userMajor ;
-    header.user_minor_version = userMinor ;
-    header.subsys_major_version = subsysMajor ;
-    header.subsys_minor_version = subsysMinor ;
+
+    header.image_base = imageBase;
+    header.file_align = fileAlign;
+    header.object_align = objectAlign;
+    header.os_major_version = osMajor;
+    header.os_minor_version = osMinor;
+    header.user_major_version = userMajor;
+    header.user_minor_version = userMinor;
+    header.subsys_major_version = subsysMajor;
+    header.subsys_minor_version = subsysMinor;
     if (subsysOverride != 0)
         header.subsystem = subsysOverride;
     else
-        header.subsystem = mode == GUI ? PE_SUBSYS_WINDOWS : PE_SUBSYS_CONSOLE ;
-    header.num_rvas = PE_NUM_VAS ;
+        header.subsystem = mode == GUI ? PE_SUBSYS_WINDOWS : PE_SUBSYS_CONSOLE;
+    header.num_rvas = PE_NUM_VAS;
     header.header_size = headerSize;
-    header.heap_size = heapSize ;
-    header.heap_commit = heapCommit ;
+    header.heap_size = heapSize;
+    header.heap_commit = heapCommit;
     if (mode != DLL)
     {
-        header.stack_size = stackSize ;
-        header.stack_commit = stackCommit ;
+        header.stack_size = stackSize;
+        header.stack_commit = stackCommit;
     }
     else
     {
-          /* flag that entry point should always be called */
-        header.dll_flags = 0 ;
+        /* flag that entry point should always be called */
+        header.dll_flags = 0;
     }
-    header.num_objects = objects.size() ;
-    header.entry_point = startAddress - imageBase ;
+    header.num_objects = objects.size();
+    header.entry_point = startAddress - imageBase;
 
-    
     header.image_size = endVa;
     for (auto obj : objects)
     {
@@ -404,8 +392,8 @@ void dlPeMain::InitHeader(unsigned headerSize, ObjInt endVa)
         }
         else if (obj->GetName() == ".reloc")
         {
-            header.fixup_rva  = obj->GetAddr();
-            header.fixup_size  = obj->GetRawSize();
+            header.fixup_rva = obj->GetAddr();
+            header.fixup_size = obj->GetRawSize();
         }
         else if (obj->GetName() == ".rsrc")
         {
@@ -419,13 +407,13 @@ void dlPeMain::InitHeader(unsigned headerSize, ObjInt endVa)
         }
     }
 }
-bool dlPeMain::LoadStub(const std::string &exeName)
+bool dlPeMain::LoadStub(const std::string& exeName)
 {
     std::string val = stubSwitch.GetValue();
     if (val.size() == 0)
         val = "dfstb32.exe";
     // look in current directory
-    std::fstream *file = new std::fstream(val.c_str(), std::ios::in | std::ios::binary);
+    std::fstream* file = new std::fstream(val.c_str(), std::ios::in | std::ios::binary);
     if (!file || !file->is_open())
     {
         if (file)
@@ -478,7 +466,7 @@ bool dlPeMain::LoadStub(const std::string &exeName)
     else
     {
         MZHeader mzHead;
-        file->read((char *)&mzHead, sizeof(mzHead));
+        file->read((char*)&mzHead, sizeof(mzHead));
         int bodySize = mzHead.image_length_MOD_512 + mzHead.image_length_DIV_512 * 512;
         int oldReloc = mzHead.offset_to_relocation_table;
         int oldHeader = mzHead.n_header_paragraphs * 16;
@@ -489,7 +477,7 @@ bool dlPeMain::LoadStub(const std::string &exeName)
         int preHeader = 0x40;
         int totalHeader = (preHeader + relocSize + 15) & ~15;
         stubSize = (totalHeader + bodySize + 15) & ~15;
-        stubData = new char [stubSize];
+        stubData = new char[stubSize];
         memset(stubData, 0, stubSize);
         int newSize = bodySize + totalHeader;
         if (newSize & 511)
@@ -497,9 +485,9 @@ bool dlPeMain::LoadStub(const std::string &exeName)
         mzHead.image_length_MOD_512 = newSize % 512;
         mzHead.image_length_DIV_512 = newSize / 512;
         mzHead.offset_to_relocation_table = 0x40;
-        mzHead.n_header_paragraphs = totalHeader/ 16;
+        mzHead.n_header_paragraphs = totalHeader / 16;
         memcpy(stubData, &mzHead, sizeof(mzHead));
-        *(unsigned *)(stubData + 0x3c) = stubSize;
+        *(unsigned*)(stubData + 0x3c) = stubSize;
         if (relocSize)
         {
             file->seekg(oldReloc, std::ios::beg);
@@ -516,15 +504,15 @@ bool dlPeMain::LoadStub(const std::string &exeName)
     }
     return true;
 }
-void dlPeMain::WriteStub(std::fstream &out)
+void dlPeMain::WriteStub(std::fstream& out)
 {
-    out.write((char *)stubData, stubSize);
+    out.write((char*)stubData, stubSize);
     out.flush();
 }
-void dlPeMain::PadHeader(std::fstream &out)
+void dlPeMain::PadHeader(std::fstream& out)
 {
     int n = out.tellg();
-    n = ObjectAlign(fileAlign, n) - n + fileAlign; // for secondary header
+    n = ObjectAlign(fileAlign, n) - n + fileAlign;  // for secondary header
     char buf[512];
     memset(buf, 0, sizeof(buf));
     while (n)
@@ -537,11 +525,11 @@ void dlPeMain::PadHeader(std::fstream &out)
     }
     out.flush();
 }
-int dlPeMain::Run(int argc, char **argv)
+int dlPeMain::Run(int argc, char** argv)
 {
     Utils::banner(argv[0]);
     Utils::SetEnvironmentToPathParent("ORANGEC");
-    char *modName = Utils::GetModuleName();
+    char* modName = Utils::GetModuleName();
     CmdSwitchFile internalConfig(SwitchParser);
     std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
     std::fstream configTest(configName.c_str(), std::ios::in);
@@ -560,7 +548,7 @@ int dlPeMain::Run(int argc, char **argv)
     {
         Utils::usage(argv[0], usageText);
     }
-    if (argc != 2)		
+    if (argc != 2)
     {
         Utils::usage(argv[0], usageText);
     }
@@ -570,13 +558,13 @@ int dlPeMain::Run(int argc, char **argv)
     }
     if (!LoadStub(argv[0]))
         Utils::fatal("Missing or invalid stub file");
-        
+
     outputName = GetOutputName(argv[1]);
     if (!ReadSections(std::string(argv[1])))
         Utils::fatal("Invalid .rel file");
-    
-    ObjInt endPhys = sizeof(PEHeader)+objects.size() * PEObject::HeaderSize + stubSize ;
-    endPhys = ObjectAlign(fileAlign, endPhys + fileAlign); // extra space for optional PE header
+
+    ObjInt endPhys = sizeof(PEHeader) + objects.size() * PEObject::HeaderSize + stubSize;
+    endPhys = ObjectAlign(fileAlign, endPhys + fileAlign);  // extra space for optional PE header
     ObjInt headerSize = endPhys;
     ObjInt endVa = objects[0]->GetAddr();
     if (endVa < endPhys)
@@ -594,7 +582,7 @@ int dlPeMain::Run(int argc, char **argv)
     if (!out.fail())
     {
         WriteStub(out);
-        out.write((char *)&header, sizeof(header));
+        out.write((char*)&header, sizeof(header));
         for (auto obj : objects)
         {
             obj->WriteHeader(out);
@@ -605,7 +593,7 @@ int dlPeMain::Run(int argc, char **argv)
         {
             obj->Write(out);
             out.flush();
-        }		
+        }
         out.flush();
         out.close();
         if (!out.fail())
@@ -617,10 +605,11 @@ int dlPeMain::Run(int argc, char **argv)
                 if (n == std::string::npos)
                     path = "";
                 else
-                    path.erase(n+1);
+                    path.erase(n + 1);
                 std::string usesC = exportObject && exportObject->ImportsNeedUnderscore() ? "/C " : "";
                 std::string implibName = Utils::QualifiedFile(outputName.c_str(), ".l");
-	                std::string cmd = std::string("\"") + path + "oimplib" + "\" /! " + usesC + "\"" + implibName + "\" \"" + outputName + "\"";
+                std::string cmd =
+                    std::string("\"") + path + "oimplib" + "\" /! " + usesC + "\"" + implibName + "\" \"" + outputName + "\"";
                 return system(cmd.c_str());
             }
             return 0;

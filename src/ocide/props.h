@@ -11,13 +11,13 @@ typedef struct propctl
 typedef struct proprow
 {
     int rowtype;
-    char *rowName;
-    void *rowData;
-    PROPCTL *controlInfo;
+    char* rowName;
+    void* rowData;
+    PROPCTL* controlInfo;
 } PROPROW;
 
 typedef struct propdesc
 {
-    PROPROW *rows;
-    void *userData;
+    PROPROW* rows;
+    void* userData;
 } PROPDESC;

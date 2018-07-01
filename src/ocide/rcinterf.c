@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -44,12 +44,12 @@ extern HWND hwndSrcTab;
 extern HWND hwndClient;
 extern HWND hwndFrame;
 extern char szInstallPath[];
-extern PROJECTITEM *activeProject;
+extern PROJECTITEM* activeProject;
 extern HTREEITEM prjSelectedItem;
 extern HINSTANCE hInstance;
 extern HIMAGELIST treeIml;
-extern PROJECTITEM *workArea;
-extern char *rcSearchPath;
+extern PROJECTITEM* workArea;
+extern char* rcSearchPath;
 extern char szBitmapFilter[];
 extern char szCursorFilter[];
 extern char szIconFilter[];
@@ -58,85 +58,81 @@ extern char szMessageTableFilter[];
 extern jmp_buf errjump;
 extern LOGFONT systemDialogFont;
 extern struct propertyFuncs imgFuncs;
-extern char sztreeDoubleBufferName[] ;
+extern char sztreeDoubleBufferName[];
 
-char *rcSearchPath;
-RESOURCE_DATA *currentResData;
+char* rcSearchPath;
+RESOURCE_DATA* currentResData;
 
 static HWND hwndRes;
-static char *szresEditClassName = "xccresEditClass";
-static PROJECTITEM *editItem;
+static char* szresEditClassName = "xccresEditClass";
+static PROJECTITEM* editItem;
 static HWND hwndEdit;
 static HTREEITEM resSelection;
-static struct resRes *rclickItem;
+static struct resRes* rclickItem;
 static HTREEITEM rclickSelection;
 static HFONT projFont, boldProjFont, italicProjFont;
 
 static HWND treeWindow;
-static char *szResourceClassName = "xccResource";
-static char *szResourceTitle = "Resources";
+static char* szResourceClassName = "xccResource";
+static char* szResourceTitle = "Resources";
 static char srchbuf[1024];
 static WNDPROC oldEditProc;
-static LIST *resourceWindows;
+static LIST* resourceWindows;
 
-static char *rcContents = {
+static char* rcContents = {
     "#include <windows.h>\n"
     "#include <commctrl.h>\n"
-    "#include \"%s\"\n\n"    
-    "LANGUAGE LANG_ENGLISH,SUBLANG_ENGLISH_US\n\n"
-};
-static char *headerContents = {
+    "#include \"%s\"\n\n"
+    "LANGUAGE LANG_ENGLISH,SUBLANG_ENGLISH_US\n\n"};
+static char* headerContents = {
     "#ifdef __IDE_RC_INVOKED\n"
     "#define __NEXT_CONTROL_ID\t1\n"
     "#define __NEXT_MENU_ID\t\t10000\n"
     "#define __NEXT_RESOURCE_ID\t10\n"
     "#define __NEXT_STRING_ID\t1000\n"
-    "#endif\n\n"
-} ;
-static char *DirNames[] =
-{
-    "", "Accelerators", "Bitmaps" , "Cursors",
-    "Dialogs", "DlgInclude", "Fonts",
-    "Icons", "", "Menus", "Message Tables",
-    "RCdata", "String Tables", "Userdata" ,"Version Info", 
-} ;
+    "#endif\n\n"};
+static char* DirNames[] = {
+    "", "Accelerators", "Bitmaps",        "Cursors", "Dialogs",       "DlgInclude", "Fonts",        "Icons",
+    "", "Menus",        "Message Tables", "RCdata",  "String Tables", "Userdata",   "Version Info",
+};
 
-static struct {
-    char *name;
-    char *resPrefix;
+static struct
+{
+    char* name;
+    char* resPrefix;
     int type;
 } AddNames[] = {
-    { "Acclerator", "IDA_ACCELERATOR", RESTYPE_ACCELERATOR },
-    { "Icon", "IDI_ICON", RESTYPE_ICON },
-    { "Cursor", "IDC_CURSOR", RESTYPE_CURSOR },
-    { "Bitmap", "IDB_BITMAP", RESTYPE_BITMAP },
-    { "Dialog", "IDD_DIALOG", RESTYPE_DIALOG },
-    { "Font", "IDF_FONT", RESTYPE_FONT },
-    { "Menu", "IDM_MENU", RESTYPE_MENU },
-    { "Message Table", "IDT_MESSAGETABLE", RESTYPE_MESSAGETABLE },
-    { "Version", "VS_VERSION_INFO", RESTYPE_VERSION },
-    { "String", "IDS_STRING", RESTYPE_STRING },
-    { "RCData", "IDR_RCDATA", RESTYPE_RCDATA },
-} ;
+    {"Acclerator", "IDA_ACCELERATOR", RESTYPE_ACCELERATOR},
+    {"Icon", "IDI_ICON", RESTYPE_ICON},
+    {"Cursor", "IDC_CURSOR", RESTYPE_CURSOR},
+    {"Bitmap", "IDB_BITMAP", RESTYPE_BITMAP},
+    {"Dialog", "IDD_DIALOG", RESTYPE_DIALOG},
+    {"Font", "IDF_FONT", RESTYPE_FONT},
+    {"Menu", "IDM_MENU", RESTYPE_MENU},
+    {"Message Table", "IDT_MESSAGETABLE", RESTYPE_MESSAGETABLE},
+    {"Version", "VS_VERSION_INFO", RESTYPE_VERSION},
+    {"String", "IDS_STRING", RESTYPE_STRING},
+    {"RCData", "IDR_RCDATA", RESTYPE_RCDATA},
+};
 
-static struct resRes dummies[sizeof(DirNames)/sizeof(DirNames[0])];
+static struct resRes dummies[sizeof(DirNames) / sizeof(DirNames[0])];
 
-static PROJECTITEM *GetItemInfo(HTREEITEM item);
+static PROJECTITEM* GetItemInfo(HTREEITEM item);
 void InsertRCWindow(HWND hwnd)
 {
-    LIST *l = malloc(sizeof(LIST));
-    l->data = (void *)hwnd;
+    LIST* l = malloc(sizeof(LIST));
+    l->data = (void*)hwnd;
     l->next = resourceWindows;
     resourceWindows = l;
 }
 void RemoveRCWindow(HWND hwnd)
 {
-    LIST **l = &resourceWindows;
+    LIST** l = &resourceWindows;
     while (*l)
     {
-        if ((*l)->data == (void *)hwnd)
+        if ((*l)->data == (void*)hwnd)
         {
-            LIST *q = *l;
+            LIST* q = *l;
             *l = (*l)->next;
             free(q);
             break;
@@ -149,7 +145,7 @@ void CloseAllResourceWindows(void)
     MSG msg;
     while (resourceWindows)
     {
-        LIST *l = resourceWindows;
+        LIST* l = resourceWindows;
         HWND hwnd = (HWND)l->data;
         SendMessage(hwnd, WM_CLOSE, 0, 0);
         // the close will get rid of the item from the list
@@ -162,22 +158,22 @@ void CloseAllResourceWindows(void)
     }
     resourceWindows = NULL;
 }
-static void GetProjectPath(char *buf)
+static void GetProjectPath(char* buf)
 {
-    PROJECTITEM *data = GetItemInfo(prjSelectedItem);
+    PROJECTITEM* data = GetItemInfo(prjSelectedItem);
     if (!data)
     {
         data = activeProject;
     }
     else
     {
-        while(data->type == PJ_FOLDER)
+        while (data->type == PJ_FOLDER)
             data = data->parent;
     }
-    
+
     if (data)
     {
-        char *p;
+        char* p;
         strcpy(buf, data->realName);
         p = strrchr(buf, '\\');
         if (p)
@@ -188,43 +184,43 @@ static void GetProjectPath(char *buf)
     }
     GetDefaultProjectsPath(buf);
 }
-static void SelectHeaderName(char *dest)
+static void SelectHeaderName(char* dest)
 {
     char path[MAX_PATH];
     int i = 0;
     GetProjectPath(path);
     while (TRUE)
     {
-        FILE *fil;
+        FILE* fil;
         if (i == 0)
         {
-            sprintf(dest, "%sResource.h",path);
+            sprintf(dest, "%sResource.h", path);
             i++;
         }
         else
         {
-            sprintf(dest, "%sResource%d.h",path, i++);
+            sprintf(dest, "%sResource%d.h", path, i++);
         }
-        if (!(fil =fopen(dest,"rb")))
+        if (!(fil = fopen(dest, "rb")))
         {
             return;
         }
         fclose(fil);
     }
 }
-void CreateNewResourceFile(PROJECTITEM *data, char *name, int flag)
+void CreateNewResourceFile(PROJECTITEM* data, char* name, int flag)
 {
     char rc[MAX_PATH];
     char hdr[MAX_PATH];
     char ppath[MAX_PATH];
-    FILE *fil;
+    FILE* fil;
     GetProjectPath(ppath);
     strcpy(rc, name);
     abspath(rc, ppath);
     fil = fopen(rc, "wb");
     if (fil)
     {
-        char *p;
+        char* p;
         SelectHeaderName(hdr);
         p = strrchr(hdr, '\\');
         if (p)
@@ -233,7 +229,7 @@ void CreateNewResourceFile(PROJECTITEM *data, char *name, int flag)
             p = hdr;
         fprintf(fil, rcContents, p);
         fclose(fil);
-        fil = fopen(hdr,"wb");        
+        fil = fopen(hdr, "wb");
         if (fil)
         {
             fprintf(fil, "%s", headerContents);
@@ -243,14 +239,14 @@ void CreateNewResourceFile(PROJECTITEM *data, char *name, int flag)
         AddFile(data, hdr, flag);
     }
 }
-static char *FormatExpInternal(char *buf, EXPRESSION *p, int n)
+static char* FormatExpInternal(char* buf, EXPRESSION* p, int n)
 {
     // well -1 is the outer layer, well this tries to omit the outer parenthesis
     // but it isn't perfect
     buf += strlen(buf);
     if (n == -1)
         n = p->type;
-    switch(p->type)
+    switch (p->type)
     {
         case hook:
             *buf++ = '(';
@@ -261,156 +257,156 @@ static char *FormatExpInternal(char *buf, EXPRESSION *p, int n)
             strcpy(buf, " : ");
             buf = FormatExpInternal(buf, p->left->left, hook);
             *buf++ = ')';
-			*buf = 0;
-            break;            
+            *buf = 0;
+            break;
         case land:
             buf = FormatExpInternal(buf, p->left, land);
-            strcpy(buf, " && ");            
+            strcpy(buf, " && ");
             buf = FormatExpInternal(buf, p->right, land);
-			*buf = 0;
+            *buf = 0;
             break;
         case lor:
             if (n != lor)
                 *buf++ = '(';
             *buf = 0;
             buf = FormatExpInternal(buf, p->left, lor);
-            strcpy(buf, " || ");            
+            strcpy(buf, " || ");
             buf = FormatExpInternal(buf, p->right, lor);
             if (n != lor)
                 *buf++ = ')';
-			*buf = 0;
+            *buf = 0;
             break;
         case or:
             if (n != or)
                 *buf++ = '(';
             *buf = 0;
             buf = FormatExpInternal(buf, p->left, or);
-            strcpy(buf, " | ");            
+            strcpy(buf, " | ");
             buf = FormatExpInternal(buf, p->right, or);
             if (n != or)
                 *buf++ = ')';
-			*buf = 0;
+            *buf = 0;
             break;
         case uparrow:
             if (n != uparrow)
                 *buf++ = '(';
             *buf = 0;
             buf = FormatExpInternal(buf, p->left, uparrow);
-            strcpy(buf, " ^ ");            
+            strcpy(buf, " ^ ");
             buf = FormatExpInternal(buf, p->right, uparrow);
             if (n != uparrow)
                 *buf++ = ')';
-			*buf = 0;
+            *buf = 0;
             break;
         case and:
             if (n != and)
                 *buf++ = '(';
             *buf = 0;
             buf = FormatExpInternal(buf, p->left, and);
-            strcpy(buf, " & ");            
+            strcpy(buf, " & ");
             buf = FormatExpInternal(buf, p->right, and);
             if (n != and)
                 *buf++ = ')';
-			*buf = 0;
+            *buf = 0;
             break;
         case eq:
             if (n != eq)
                 *buf++ = '(';
             *buf = 0;
             buf = FormatExpInternal(buf, p->left, eq);
-            strcpy(buf, " == ");            
+            strcpy(buf, " == ");
             buf = FormatExpInternal(buf, p->right, eq);
             if (n != eq)
                 *buf++ = ')';
-			*buf = 0;
+            *buf = 0;
             break;
         case neq:
             if (n != eq)
                 *buf++ = '(';
             *buf = 0;
             buf = FormatExpInternal(buf, p->left, eq);
-            strcpy(buf, " != ");            
+            strcpy(buf, " != ");
             buf = FormatExpInternal(buf, p->right, eq);
             if (n != eq)
                 *buf++ = ')';
-			*buf = 0;
+            *buf = 0;
             break;
         case lt:
             if (n != lt)
                 *buf++ = '(';
             *buf = 0;
             buf = FormatExpInternal(buf, p->left, lt);
-            strcpy(buf, " < ");            
+            strcpy(buf, " < ");
             buf = FormatExpInternal(buf, p->right, lt);
             if (n != lt)
                 *buf++ = ')';
-			*buf = 0;
+            *buf = 0;
             break;
         case gt:
             if (n != lt)
                 *buf++ = '(';
             *buf = 0;
             buf = FormatExpInternal(buf, p->left, lt);
-            strcpy(buf, " > ");            
+            strcpy(buf, " > ");
             buf = FormatExpInternal(buf, p->right, lt);
             if (n != lt)
                 *buf++ = ')';
-			*buf = 0;
+            *buf = 0;
             break;
         case leq:
             if (n != lt)
                 *buf++ = '(';
             *buf = 0;
             buf = FormatExpInternal(buf, p->left, lt);
-            strcpy(buf, " <= ");            
+            strcpy(buf, " <= ");
             buf = FormatExpInternal(buf, p->right, lt);
             if (n != lt)
                 *buf++ = ')';
-			*buf = 0;
+            *buf = 0;
             break;
         case geq:
             if (n != lt)
                 *buf++ = '(';
             *buf = 0;
             buf = FormatExpInternal(buf, p->left, lt);
-            strcpy(buf, " >= ");            
+            strcpy(buf, " >= ");
             buf = FormatExpInternal(buf, p->right, lt);
             if (n != lt)
                 *buf++ = ')';
-			*buf = 0;
+            *buf = 0;
             break;
         case lshift:
             if (n != lshift)
                 *buf++ = '(';
             *buf = 0;
             buf = FormatExpInternal(buf, p->left, lshift);
-            strcpy(buf, " << ");            
+            strcpy(buf, " << ");
             buf = FormatExpInternal(buf, p->right, lshift);
             if (n != lshift)
                 *buf++ = ')';
-			*buf = 0;
+            *buf = 0;
             break;
         case rshift:
             if (n != rshift)
                 *buf++ = '(';
             *buf = 0;
             buf = FormatExpInternal(buf, p->left, rshift);
-            strcpy(buf, " >> ");            
+            strcpy(buf, " >> ");
             buf = FormatExpInternal(buf, p->right, rshift);
             if (n != rshift)
                 *buf++ = ')';
-			*buf = 0;
+            *buf = 0;
             break;
         case plus:
             if (n != plus)
                 *buf++ = '(';
             *buf = 0;
             buf = FormatExpInternal(buf, p->left, plus);
-            strcpy(buf, " + ");            
+            strcpy(buf, " + ");
             buf = FormatExpInternal(buf, p->right, plus);
             if (n != plus)
                 *buf++ = ')';
-			*buf = 0;
+            *buf = 0;
             break;
         case minus:
             if (p->right)
@@ -419,7 +415,7 @@ static char *FormatExpInternal(char *buf, EXPRESSION *p, int n)
                     *buf++ = '(';
                 *buf = 0;
                 buf = FormatExpInternal(buf, p->left, plus);
-                strcpy(buf, " - ");            
+                strcpy(buf, " - ");
                 buf = FormatExpInternal(buf, p->right, plus);
                 if (n != plus)
                     *buf++ = ')';
@@ -430,80 +426,80 @@ static char *FormatExpInternal(char *buf, EXPRESSION *p, int n)
                 *buf = 0;
                 buf = FormatExpInternal(buf, p->left, minus);
             }
-			*buf = 0;
+            *buf = 0;
             break;
         case star:
             if (n != star)
                 *buf++ = '(';
             *buf = 0;
             buf = FormatExpInternal(buf, p->left, star);
-            strcpy(buf, " * ");            
+            strcpy(buf, " * ");
             buf = FormatExpInternal(buf, p->right, star);
             if (n != star)
                 *buf++ = ')';
-			*buf = 0;
+            *buf = 0;
             break;
         case divide:
             if (n != star)
                 *buf++ = '(';
             *buf = 0;
             buf = FormatExpInternal(buf, p->left, star);
-            strcpy(buf, " / ");            
+            strcpy(buf, " / ");
             buf = FormatExpInternal(buf, p->right, star);
             if (n != star)
                 *buf++ = ')';
-			*buf = 0;
+            *buf = 0;
             break;
         case modop:
             if (n != star)
                 *buf++ = '(';
             *buf = 0;
             buf = FormatExpInternal(buf, p->left, star);
-            strcpy(buf, " % ");            
+            strcpy(buf, " % ");
             buf = FormatExpInternal(buf, p->right, star);
             if (n != star)
                 *buf++ = ')';
-			*buf = 0;
+            *buf = 0;
             break;
         case not:
             *buf++ = '!';
             *buf = 0;
             buf = FormatExpInternal(buf, p->left, not);
-			*buf = 0;
+            *buf = 0;
             break;
         case kw_not:
             strcpy(buf, " NOT ");
             buf = FormatExpInternal(buf, p->left, not);
-			*buf = 0;
+            *buf = 0;
             break;
         case compl:
             *buf++ = '~';
             *buf = 0;
             buf = FormatExpInternal(buf, p->left, compl);
-			*buf = 0;
+            *buf = 0;
             break;
         case e_int:
             if (p->rendition)
-                sprintf(buf,"%s", p->rendition);
+                sprintf(buf, "%s", p->rendition);
             else
-                sprintf(buf,"%d", p->val);
+                sprintf(buf, "%d", p->val);
             break;
         default:
             break;
     }
 
-    return buf+strlen(buf);
+    return buf + strlen(buf);
 }
-void FormatExp(char *buf, EXPRESSION *exp)
+void FormatExp(char* buf, EXPRESSION* exp)
 {
     if (!exp)
         sprintf(buf, "0");
     else
-	{
+    {
         FormatExpInternal(buf, exp, -1);
-	}
+    }
 }
-void FormatResId(char *buf, IDENT *id)
+void FormatResId(char* buf, IDENT* id)
 {
     if (id->symbolic)
     {
@@ -523,7 +519,7 @@ void FormatResId(char *buf, IDENT *id)
         FormatExp(buf, id->u.id);
     }
 }
-static HTREEITEM InsertResourceTreeItem(TV_INSERTSTRUCT *t)
+static HTREEITEM InsertResourceTreeItem(TV_INSERTSTRUCT* t)
 {
     t->UNNAMED_UNION item.mask = TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE;
     t->UNNAMED_UNION item.hItem = 0;
@@ -531,30 +527,30 @@ static HTREEITEM InsertResourceTreeItem(TV_INSERTSTRUCT *t)
     t->UNNAMED_UNION item.iImage = t->UNNAMED_UNION item.iSelectedImage = IL_RC;
     return TreeView_InsertItem(treeWindow, t);
 }
-void ResShowSubTree(PROJECTITEM *file)
+void ResShowSubTree(PROJECTITEM* file)
 {
     if (file && file->resData)
     {
-        struct resDir *dirs = file->resData->dirs;
-        while(dirs)
+        struct resDir* dirs = file->resData->dirs;
+        while (dirs)
         {
-            struct resRes *res = dirs->children;
+            struct resRes* res = dirs->children;
             TV_INSERTSTRUCT t;
             memset(&t, 0, sizeof(t));
             t.hParent = file->hResTreeItem;
             t.hInsertAfter = TVI_LAST;
             t.UNNAMED_UNION item.pszText = DirNames[dirs->type];
             dummies[dirs->type].type = PJ_RESMENU + dirs->type;
-            t.UNNAMED_UNION item.lParam = (LPARAM)&dummies[dirs->type] ;
+            t.UNNAMED_UNION item.lParam = (LPARAM)&dummies[dirs->type];
             dirs->hTreeItem = InsertResourceTreeItem(&t);
             while (res)
             {
-                IDENT *id = &res->resource->id;
+                IDENT* id = &res->resource->id;
                 memset(&t, 0, sizeof(t));
                 t.hParent = dirs->hTreeItem;
                 t.hInsertAfter = TVI_LAST;
                 t.UNNAMED_UNION item.pszText = res->name;
-                t.UNNAMED_UNION item.lParam = (LPARAM)res ;
+                t.UNNAMED_UNION item.lParam = (LPARAM)res;
                 res->hTreeItem = InsertResourceTreeItem(&t);
                 res = res->next;
             }
@@ -562,30 +558,30 @@ void ResShowSubTree(PROJECTITEM *file)
         }
     }
 }
-struct resDir *FindResDir(struct resData *data, int type)
+struct resDir* FindResDir(struct resData* data, int type)
 {
-    struct resDir **dirs = &data->dirs;
+    struct resDir** dirs = &data->dirs;
     while (*dirs && type > (*dirs)->type)
         dirs = &(*dirs)->next;
     if (!*dirs || (*dirs)->type != type)
     {
-        struct resDir *newDir = calloc(1, sizeof(struct resDir));
+        struct resDir* newDir = calloc(1, sizeof(struct resDir));
         newDir->type = type;
         newDir->next = *dirs;
         *dirs = newDir;
     }
-    return *dirs;    
+    return *dirs;
 }
-void ResCreateSubTree(struct resData *data)
+void ResCreateSubTree(struct resData* data)
 {
-    RESOURCE *resource = data->resources->resources;
+    RESOURCE* resource = data->resources->resources;
     while (resource)
     {
         if (resource->itype != RESTYPE_LANGUAGE && resource->itype != RESTYPE_PLACEHOLDER)
         {
-            struct resDir *dir = FindResDir(data, resource->itype);
-            struct resRes **res = & dir->children;
-            struct resRes *newRes = calloc(1, sizeof(struct resRes));
+            struct resDir* dir = FindResDir(data, resource->itype);
+            struct resRes** res = &dir->children;
+            struct resRes* newRes = calloc(1, sizeof(struct resRes));
             char buf[512];
             memset(buf, 0, sizeof(buf));
             FormatResId(buf, &resource->id);
@@ -594,7 +590,7 @@ void ResCreateSubTree(struct resData *data)
             newRes->type = PJ_RES;
             while (*res && strcmp(newRes->name, (*res)->name) > 0)
             {
-                res = &(*res)->next;   
+                res = &(*res)->next;
             }
             newRes->next = *res;
             *res = newRes;
@@ -602,16 +598,16 @@ void ResCreateSubTree(struct resData *data)
         resource = resource->next;
     }
 }
-void ResFreeSubTree(struct resData *data)
+void ResFreeSubTree(struct resData* data)
 {
-    struct resDir *dirs = data->dirs;
-    while(dirs)
+    struct resDir* dirs = data->dirs;
+    while (dirs)
     {
-        struct resDir *next = dirs->next;
-        struct resRes *res = dirs->children;
+        struct resDir* next = dirs->next;
+        struct resRes* res = dirs->children;
         while (res)
         {
-            struct resRes *next = res->next;
+            struct resRes* next = res->next;
             if (res->activeHwnd)
             {
                 SendMessage(hwndClient, WM_MDIDESTROY, (WPARAM)res->activeHwnd, 0);
@@ -622,9 +618,9 @@ void ResFreeSubTree(struct resData *data)
         dirs = next;
     }
 }
-struct resData *ResLoad(char *name)
+struct resData* ResLoad(char* name)
 {
-    struct resData *data = calloc(1, sizeof(struct resData));
+    struct resData* data = calloc(1, sizeof(struct resData));
     data->resources = ReadResources(name);
     if (!data->resources)
     {
@@ -633,7 +629,7 @@ struct resData *ResLoad(char *name)
     }
     return data;
 }
-void ResRewriteTitle(struct resRes *res, BOOL dirty)
+void ResRewriteTitle(struct resRes* res, BOOL dirty)
 {
     char buf[512], obuf[512];
     GetWindowText(res->activeHwnd, obuf, 512);
@@ -649,7 +645,7 @@ void ResRewriteTitle(struct resRes *res, BOOL dirty)
     SendMessage(res->activeHwnd, WM_NCPAINT, 1, 0);
     SendMessage(hwndSrcTab, TABM_RENAME, (WPARAM)buf, (LPARAM)res->activeHwnd);
 }
-void ResSetDirty(struct resRes *res)
+void ResSetDirty(struct resRes* res)
 {
     if (!res->resource->changed)
     {
@@ -658,7 +654,7 @@ void ResSetDirty(struct resRes *res)
     }
     PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
 }
-void ResSetClean(struct resRes *res)
+void ResSetClean(struct resRes* res)
 {
     if (res->resource->changed && !res->resource->deleted)
     {
@@ -667,12 +663,12 @@ void ResSetClean(struct resRes *res)
     }
     PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
 }
-void ResSave(char *name, struct resData *data)
+void ResSave(char* name, struct resData* data)
 {
-    struct resDir *dirs = data->dirs;
+    struct resDir* dirs = data->dirs;
     while (dirs)
     {
-        struct resRes * res = dirs->children;
+        struct resRes* res = dirs->children;
         while (res)
         {
             if (res->activeHwnd)
@@ -689,7 +685,7 @@ void ResSave(char *name, struct resData *data)
     dirs = data->dirs;
     while (dirs)
     {
-        struct resRes * res = dirs->children;
+        struct resRes* res = dirs->children;
         while (res)
         {
             if (res->activeHwnd)
@@ -700,23 +696,23 @@ void ResSave(char *name, struct resData *data)
                 }
             }
             if (res->resource)
-                res->resource->changed = FALSE; // force clean in case deleted
+                res->resource->changed = FALSE;  // force clean in case deleted
             res = res->next;
         }
         dirs = dirs->next;
     }
 }
-HANDLE ResGetHeap(PROJECTITEM *pj, struct resRes *data)
+HANDLE ResGetHeap(PROJECTITEM* pj, struct resRes* data)
 {
     currentResData = NULL;
     if (pj->type == PJ_FILE)
     {
         if (pj->resData)
         {
-            struct resDir *dirs = pj->resData->dirs;
+            struct resDir* dirs = pj->resData->dirs;
             while (dirs)
             {
-                struct resRes * children = dirs->children;
+                struct resRes* children = dirs->children;
                 while (children)
                 {
                     if (children == data)
@@ -725,7 +721,7 @@ HANDLE ResGetHeap(PROJECTITEM *pj, struct resRes *data)
                         SetRCMallocScope(pj->resData->resources);
                         return pj->resData->resources->memHeap;
                     }
-                    children = children->next;            
+                    children = children->next;
                 }
                 dirs = dirs->next;
             }
@@ -733,31 +729,29 @@ HANDLE ResGetHeap(PROJECTITEM *pj, struct resRes *data)
     }
     else
     {
-        PROJECTITEM *cur = pj->children;
+        PROJECTITEM* cur = pj->children;
+        HANDLE heap;  // reuse instead of allocating again and again.
         while (cur)
         {
-            if (cur)
-            {
-                HANDLE heap = ResGetHeap(cur, data);
-                if (heap)
-                    return heap;
-            }
+            heap = ResGetHeap(cur, data);
+            if (heap)
+                return heap;
             cur = cur->next;
         }
     }
     return FALSE;
 }
 
-BOOL ResSaveCurrent(PROJECTITEM *pj, struct resRes *res)
+BOOL ResSaveCurrent(PROJECTITEM* pj, struct resRes* res)
 {
     if (pj->type == PJ_FILE)
     {
         if (pj->resData)
         {
-            struct resDir *dirs = pj->resData->dirs;
+            struct resDir* dirs = pj->resData->dirs;
             while (dirs)
             {
-                struct resRes * children = dirs->children;
+                struct resRes* children = dirs->children;
                 while (children)
                 {
                     if (children == res)
@@ -765,7 +759,7 @@ BOOL ResSaveCurrent(PROJECTITEM *pj, struct resRes *res)
                         ResSave(pj->realName, pj->resData);
                         return TRUE;
                     }
-                    children = children->next;            
+                    children = children->next;
                 }
                 dirs = dirs->next;
             }
@@ -773,21 +767,20 @@ BOOL ResSaveCurrent(PROJECTITEM *pj, struct resRes *res)
     }
     else
     {
-        PROJECTITEM *cur = pj->children;
+        PROJECTITEM* cur = pj->children;
         while (cur)
         {
-            if (cur)
-                if (ResSaveCurrent(cur, res))
-                    return TRUE;
+            if (ResSaveCurrent(cur, res))
+                return TRUE;
             cur = cur->next;
         }
     }
     return FALSE;
 }
 
-PROJECTITEM *GetResData(PROJECTITEM *cur)
+PROJECTITEM* GetResData(PROJECTITEM* cur)
 {
-    
+
     if (cur->type == PJ_FILE)
     {
         if (cur->resData)
@@ -799,7 +792,7 @@ PROJECTITEM *GetResData(PROJECTITEM *cur)
         cur = cur->children;
         while (cur)
         {
-            PROJECTITEM *rd;
+            PROJECTITEM* rd;
             if ((rd = GetResData(cur)))
                 return rd;
             cur = cur->next;
@@ -807,7 +800,7 @@ PROJECTITEM *GetResData(PROJECTITEM *cur)
     }
     return NULL;
 }
-static void ResSaveAllInternal(PROJECTITEM *cur)
+static void ResSaveAllInternal(PROJECTITEM* cur)
 {
     if (cur->type == PJ_FILE)
     {
@@ -824,11 +817,8 @@ static void ResSaveAllInternal(PROJECTITEM *cur)
         }
     }
 }
-void ResSaveAll(void)
-{
-    ResSaveAllInternal(workArea);
-}
-void ResOpen(PROJECTITEM *file)
+void ResSaveAll(void) { ResSaveAllInternal(workArea); }
+void ResOpen(PROJECTITEM* file)
 {
     if (file->type == PJ_FILE && !file->resData)
     {
@@ -837,7 +827,7 @@ void ResOpen(PROJECTITEM *file)
         strcat(buf, "\\include;");
         GetProjectPath(buf + strlen(buf));
         rcSearchPath = buf;
-        TreeView_Expand(treeWindow,workArea->hResTreeItem, TVE_COLLAPSE);
+        TreeView_Expand(treeWindow, workArea->hResTreeItem, TVE_COLLAPSE);
         file->resData = ResLoad(file->realName);
         if (file->resData)
         {
@@ -845,29 +835,29 @@ void ResOpen(PROJECTITEM *file)
             ResCreateSubTree(file->resData);
             ResShowSubTree(file);
         }
-        TreeView_Expand(treeWindow,workArea->hResTreeItem, TVE_EXPAND);
-        TreeView_Expand(treeWindow,file->hResTreeItem, TVE_EXPAND);
+        TreeView_Expand(treeWindow, workArea->hResTreeItem, TVE_EXPAND);
+        TreeView_Expand(treeWindow, file->hResTreeItem, TVE_EXPAND);
     }
 }
-static PROJECTITEM *GetItemInfo(HTREEITEM item)
+static PROJECTITEM* GetItemInfo(HTREEITEM item)
 {
-    TV_ITEM xx ;
+    TV_ITEM xx;
     if (!item)
         return NULL;
     xx.hItem = item;
-    xx.mask = TVIF_PARAM ;
-    if (SendMessage(treeWindow, TVM_GETITEM,0 ,(LPARAM)&xx))
-        return (PROJECTITEM *)xx.lParam ;
+    xx.mask = TVIF_PARAM;
+    if (SendMessage(treeWindow, TVM_GETITEM, 0, (LPARAM)&xx))
+        return (PROJECTITEM*)xx.lParam;
     return NULL;
 }
 void HandleDblClick(HTREEITEM item, BOOL err)
 {
-    PROJECTITEM *p = GetItemInfo(item);
+    PROJECTITEM* p = GetItemInfo(item);
     if (p)
     {
         if (p->type == PJ_RES)
         {
-            struct resRes *d = (struct resRes *) p;
+            struct resRes* d = (struct resRes*)p;
             if (d->activeHwnd)
             {
                 HWND active = (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0);
@@ -878,9 +868,9 @@ void HandleDblClick(HTREEITEM item, BOOL err)
                 else
                 {
                     PostMessage(hwndClient, WM_MDIACTIVATE, (WPARAM)d->activeHwnd, 0);
-                }                
+                }
             }
-            else 
+            else
             {
                 switch (d->resource->itype)
                 {
@@ -903,7 +893,7 @@ void HandleDblClick(HTREEITEM item, BOOL err)
                         break;
                     case RESTYPE_STRING:
                         CreateStringTableDrawWindow(d);
-                        break;                
+                        break;
                     case RESTYPE_RCDATA:
                         CreateRCDataDrawWindow(d);
                         break;
@@ -928,17 +918,15 @@ void HandleDblClick(HTREEITEM item, BOOL err)
     }
 }
 
-
-LRESULT CALLBACK NewResourceProc(HWND hWnd, UINT iMessage, WPARAM wParam,
-    LPARAM lParam)
+LRESULT CALLBACK NewResourceProc(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
-    POINT pt = { 5, 5};
+    POINT pt = {5, 5};
     switch (iMessage)
     {
         int i;
         case WM_INITDIALOG:
             CenterWindow(hWnd);
-            for (i=0; i < sizeof(AddNames)/sizeof(AddNames[0]); i++)
+            for (i = 0; i < sizeof(AddNames) / sizeof(AddNames[0]); i++)
             {
                 int v = SendDlgItemMessage(hWnd, IDC_NEWRESOURCE, LB_ADDSTRING, 0, (LPARAM)AddNames[i].name);
                 if (v != CB_ERR)
@@ -953,40 +941,41 @@ LRESULT CALLBACK NewResourceProc(HWND hWnd, UINT iMessage, WPARAM wParam,
             if (HIWORD(wParam) == LBN_SELCHANGE)
             {
                 int v = SendDlgItemMessage(hWnd, IDC_NEWRESOURCE, LB_GETCURSEL, 0, 0);
-                v = SendDlgItemMessage(hWnd, IDC_NEWRESOURCE, LB_GETITEMDATA, v, 0);  
+                v = SendDlgItemMessage(hWnd, IDC_NEWRESOURCE, LB_GETITEMDATA, v, 0);
                 SendDlgItemMessage(hWnd, IDC_EDITNEWRESOURCE, WM_SETTEXT, 0, (LPARAM)AddNames[v].name);
             }
-            else switch (LOWORD(wParam))
-            {
-                int v;
-                case IDC_NEWRESOURCE:
-                    if (HIWORD(wParam) == LBN_DBLCLK)
-                        PostMessage(hWnd, WM_COMMAND, IDOK, 0);
-                    break;
-                case IDOK:
-                    v = SendDlgItemMessage(hWnd, IDC_NEWRESOURCE, LB_GETCURSEL, 0, 0);
-                    if (v != LB_ERR)
-                    {
-                        v = SendDlgItemMessage(hWnd, IDC_NEWRESOURCE, LB_GETITEMDATA, v, 0);  
-                        v = AddNames[v].type;
-                        EndDialog(hWnd, v);
-                    }
-                    else
-                    {
+            else
+                switch (LOWORD(wParam))
+                {
+                    int v;
+                    case IDC_NEWRESOURCE:
+                        if (HIWORD(wParam) == LBN_DBLCLK)
+                            PostMessage(hWnd, WM_COMMAND, IDOK, 0);
+                        break;
+                    case IDOK:
+                        v = SendDlgItemMessage(hWnd, IDC_NEWRESOURCE, LB_GETCURSEL, 0, 0);
+                        if (v != LB_ERR)
+                        {
+                            v = SendDlgItemMessage(hWnd, IDC_NEWRESOURCE, LB_GETITEMDATA, v, 0);
+                            v = AddNames[v].type;
+                            EndDialog(hWnd, v);
+                        }
+                        else
+                        {
+                            EndDialog(hWnd, 0);
+                        }
+                        break;
+                    case IDCANCEL:
                         EndDialog(hWnd, 0);
-                    }
-                    break;
-                case IDCANCEL:
-                    EndDialog(hWnd, 0);
-                    break;
-            }
+                        break;
+                }
             break;
     }
     return 0;
 }
 void HandleRightClick(HWND hWnd, HTREEITEM item)
 {
-    PROJECTITEM *p = GetItemInfo(item);
+    PROJECTITEM* p = GetItemInfo(item);
     if (p)
     {
         if (p->type == PJ_FILE && p->resData)
@@ -1002,13 +991,13 @@ void HandleRightClick(HWND hWnd, HTREEITEM item)
         }
         else if (p->type == PJ_RES || (p->type >= PJ_RESMENU && p->type < PJ_RESMENU + 100))
         {
-            struct resRes *d = (struct resRes *) p;
-            char *newItem = NULL;
-            char *delItem = NULL;
-            HMENU popup ;
+            struct resRes* d = (struct resRes*)p;
+            char* newItem = NULL;
+            char* delItem = NULL;
+            HMENU popup;
             POINT pos;
             int n = p->type == PJ_RES ? d->resource->itype : p->type - PJ_RESMENU;
-            
+
             rclickItem = d;
             rclickSelection = item;
             switch (n)
@@ -1076,16 +1065,15 @@ void HandleRightClick(HWND hWnd, HTREEITEM item)
                 else if (delItem)
                 {
                     AppendMenu(popup, MF_STRING, ID_DELETE, delItem);
-//                    AppendMenu(popup, MF_STRING, IDM_RENAME, "Rename");
+                    //                    AppendMenu(popup, MF_STRING, IDM_RENAME, "Rename");
                 }
-                TrackPopupMenuEx(popup, TPM_TOPALIGN | TPM_LEFTBUTTON, pos.x,
-                    pos.y, hWnd, NULL);
+                TrackPopupMenuEx(popup, TPM_TOPALIGN | TPM_LEFTBUTTON, pos.x, pos.y, hWnd, NULL);
                 DestroyMenu(popup);
             }
         }
     }
 }
-BOOL ResCheckChanged(RESOURCE *resources)
+BOOL ResCheckChanged(RESOURCE* resources)
 {
     while (resources)
     {
@@ -1097,7 +1085,7 @@ BOOL ResCheckChanged(RESOURCE *resources)
     }
     return FALSE;
 }
-void ResFree(PROJECTITEM *file, BOOL toSave)
+void ResFree(PROJECTITEM* file, BOOL toSave)
 {
     CloseAllResourceWindows();
     if (file->resData)
@@ -1111,27 +1099,27 @@ void ResFree(PROJECTITEM *file, BOOL toSave)
         file->resData = NULL;
     }
 }
-void ResReload(PROJECTITEM *pj)
+void ResReload(PROJECTITEM* pj)
 {
     ResFree(pj, FALSE);
     ResOpen(pj);
 }
-void NavigateToResource(PROJECTITEM *file)
+void NavigateToResource(PROJECTITEM* file)
 {
     SelectWindow(DID_RESWND);
     TreeView_SelectItem(treeWindow, file->hResTreeItem);
     ResOpen(file);
     SelectWindow(DID_PROPSWND);
 }
-void ResAddItem(PROJECTITEM *file)
+void ResAddItem(PROJECTITEM* file)
 {
-    if (file->type != PJ_FILE || (strlen(file->realName) >= 3 && !stricmp(file->realName + strlen(file->realName) -3, ".rc")))
+    if (file->type != PJ_FILE || (strlen(file->realName) >= 3 && !stricmp(file->realName + strlen(file->realName) - 3, ".rc")))
     {
         char buf[256];
-        PROJECTITEM *parent = file->parent;
+        PROJECTITEM* parent = file->parent;
         HTREEITEM before = TVI_FIRST;
         TV_INSERTSTRUCT t;
-        char *name = file->displayName;
+        char* name = file->displayName;
         if (file->type == PJ_WS)
         {
             strcpy(buf, "(Resources) ");
@@ -1140,7 +1128,7 @@ void ResAddItem(PROJECTITEM *file)
         }
         if (parent)
         {
-            PROJECTITEM *p = parent->children;
+            PROJECTITEM* p = parent->children;
             while (p && p != file)
             {
                 before = p->hResTreeItem;
@@ -1154,13 +1142,14 @@ void ResAddItem(PROJECTITEM *file)
         t.UNNAMED_UNION item.hItem = 0;
         t.UNNAMED_UNION item.pszText = name;
         t.UNNAMED_UNION item.cchTextMax = strlen(file->displayName);
-        t.UNNAMED_UNION item.iImage = t.UNNAMED_UNION item.iSelectedImage = file->type == PJ_WS ? IL_RC : imageof(file, file->realName);
-        t.UNNAMED_UNION item.lParam = (LPARAM)file ;
+        t.UNNAMED_UNION item.iImage = t.UNNAMED_UNION item.iSelectedImage =
+            file->type == PJ_WS ? IL_RC : imageof(file, file->realName);
+        t.UNNAMED_UNION item.lParam = (LPARAM)file;
         file->hResTreeItem = TreeView_InsertItem(treeWindow, &t);
         ResShowSubTree(file);
     }
 }
-void ResDeleteItem(PROJECTITEM *data)
+void ResDeleteItem(PROJECTITEM* data)
 {
     if (data->hResTreeItem)
     {
@@ -1170,56 +1159,53 @@ void ResDeleteItem(PROJECTITEM *data)
         data->hResTreeItem = NULL;
     }
 }
-void ResDeleteAllItems(void)
-{
-    TreeView_DeleteAllItems(treeWindow);
-}
-void ResGetMenuItemName(EXPRESSION *id, char *text)
+void ResDeleteAllItems(void) { TreeView_DeleteAllItems(treeWindow); }
+void ResGetMenuItemName(EXPRESSION* id, char* text)
 {
     if (id->rendition && !strnicmp(id->rendition, "IDM_MENUITEM", 12))
     {
         char name[512], *p = name;
-        sprintf(name, "IDM_%s",text);
+        sprintf(name, "IDM_%s", text);
         while (*p)
         {
             if (*p == '&')
             {
-                strcpy (p, p+1);
+                strcpy(p, p + 1);
                 continue;
             }
             if (*p & 0x80)
-                *p &= 0x7f;           
+                *p &= 0x7f;
             if (!isalnum(*p))
                 *p = '_';
             p++;
-        }        
+        }
         id->rendition = rcStrdup(name);
         ResAddNewDef(name, id->val);
     }
 }
-void ResGetStringItemName(EXPRESSION *id, char *text)
+void ResGetStringItemName(EXPRESSION* id, char* text)
 {
     if (id->rendition && !strnicmp(id->rendition, "IDS_STRING", 9))
     {
         char name[512], *p = name;
-        sprintf(name, "IDS_%s",text);
+        sprintf(name, "IDS_%s", text);
         while (*p)
         {
             if (*p & 0x80)
-                *p &= 0x7f;           
+                *p &= 0x7f;
             if (!isalnum(*p))
                 *p = '_';
             p++;
-        }        
+        }
         id->rendition = ResAddNewDef(name, id->val);
     }
 }
-int ResChangeId(char *name, int id)
+int ResChangeId(char* name, int id)
 {
-    SYM *s = search(name, &currentResData->syms);
+    SYM* s = search(name, &currentResData->syms);
     if (s)
     {
-        DEFSTRUCT *d = (DEFSTRUCT *)s->value.s;
+        DEFSTRUCT* d = (DEFSTRUCT*)s->value.s;
         WCHAR buf[256];
         wsprintfW(buf, L"%d", id);
         if (wcscmp(buf, d->string))
@@ -1228,24 +1214,24 @@ int ResChangeId(char *name, int id)
     }
     return 0;
 }
-char *ResAddNewDef(char *name, int id)
+char* ResAddNewDef(char* name, int id)
 {
     if (!ResChangeId(name, id))
     {
-        SYM *sp;
-        DEFSTRUCT *def;
+        SYM* sp;
+        DEFSTRUCT* def;
         WCHAR wbuf[256];
-        
+
         sp = rcAlloc(sizeof(SYM));
         sp->name = rcStrdup(name);
         def = rcAlloc(sizeof(DEFSTRUCT));
-        sp->value.s = (char *)def;
+        sp->value.s = (char*)def;
 
         def->args = 0;
-        def->argcount = 0;        
+        def->argcount = 0;
         wsprintfW(wbuf, L"%d", id);
         def->string = prcStrdup(wbuf);
-        
+
         insert(sp, &currentResData->syms);
         sp->xref = currentResData->newDefinitions;
         currentResData->newDefinitions = sp;
@@ -1256,43 +1242,43 @@ char *ResAddNewDef(char *name, int id)
         return rcStrdup(name);
     }
 }
-EXPRESSION *ResAllocateMenuId()
+EXPRESSION* ResAllocateMenuId()
 {
     char name[256];
-    EXPRESSION *id = rcAlloc(sizeof(EXPRESSION));
+    EXPRESSION* id = rcAlloc(sizeof(EXPRESSION));
     id->type = e_int;
     id->val = currentResData->nextMenuId++;
     sprintf(name, "IDM_MENUITEM_%d", id->val);
     id->rendition = ResAddNewDef(name, id->val);
     return id;
 }
-EXPRESSION *ResAllocateStringId()
+EXPRESSION* ResAllocateStringId()
 {
     char name[256];
-    EXPRESSION *id = rcAlloc(sizeof(EXPRESSION));
+    EXPRESSION* id = rcAlloc(sizeof(EXPRESSION));
     id->type = e_int;
     id->val = currentResData->nextStringId++;
     sprintf(name, "IDS_STRING_%d", id->val);
     id->rendition = ResAddNewDef(name, id->val);
     return id;
 }
-int ResNextCtlId(CONTROL *ctls)
+int ResNextCtlId(CONTROL* ctls)
 {
     int max = 100;
     while (ctls)
     {
         int n = Eval(ctls->id);
         if (n >= max)
-            max = n+1;
+            max = n + 1;
         ctls = ctls->next;
     }
     return max;
 }
 
-EXPRESSION *ResAllocateControlId(struct resRes *dlgData, char *sel)
+EXPRESSION* ResAllocateControlId(struct resRes* dlgData, char* sel)
 {
     char name[256];
-    EXPRESSION *rv = rcAlloc(sizeof(EXPRESSION));
+    EXPRESSION* rv = rcAlloc(sizeof(EXPRESSION));
     rv->type = e_int;
     if (!strcmp(sel, "STATICTEXT"))
     {
@@ -1306,15 +1292,15 @@ EXPRESSION *ResAllocateControlId(struct resRes *dlgData, char *sel)
     }
     return rv;
 }
-EXPRESSION *ResAllocateResourceId(int type)
+EXPRESSION* ResAllocateResourceId(int type)
 {
-    char *prefix = "IDR_RESOURCE"; // fallback
+    char* prefix = "IDR_RESOURCE";  // fallback
     char name[256];
     int i;
-    EXPRESSION *rv = rcAlloc(sizeof(EXPRESSION));
+    EXPRESSION* rv = rcAlloc(sizeof(EXPRESSION));
     rv->type = e_int;
     rv->val = currentResData->nextResourceId++;
-    for (i=0; i < sizeof(AddNames)/sizeof(AddNames[0]); i++)
+    for (i = 0; i < sizeof(AddNames) / sizeof(AddNames[0]); i++)
         if (AddNames[i].type == type)
         {
             prefix = AddNames[i].resPrefix;
@@ -1325,34 +1311,34 @@ EXPRESSION *ResAllocateResourceId(int type)
     return rv;
 }
 
-EXPRESSION *ResReadExp(struct resRes *data, char *buf)
+EXPRESSION* ResReadExp(struct resRes* data, char* buf)
 {
-    EXPRESSION *id;
+    EXPRESSION* id;
     ResGetHeap(workArea, data);
     id = rcAlloc(sizeof(EXPRESSION));
     id->type = e_int;
-    id->val = atoi(buf);    
+    id->val = atoi(buf);
     return id;
 }
 static int CustomDraw(HWND hwnd, LPNMTVCUSTOMDRAW draw)
 {
-    PROJECTITEM *p;
-    switch(draw->nmcd.dwDrawStage)
+    PROJECTITEM* p;
+    switch (draw->nmcd.dwDrawStage)
     {
-        case CDDS_PREPAINT :
-            return CDRF_NOTIFYITEMDRAW ;
+        case CDDS_PREPAINT:
+            return CDRF_NOTIFYITEMDRAW;
         case CDDS_ITEMPREPAINT:
-            p = (PROJECTITEM *)draw->nmcd.lItemlParam;
+            p = (PROJECTITEM*)draw->nmcd.lItemlParam;
             if (!p)
             {
-                draw->clrText= RetrieveSysColor(COLOR_WINDOWTEXT);
+                draw->clrText = RetrieveSysColor(COLOR_WINDOWTEXT);
                 draw->clrTextBk = RetrieveSysColor(COLOR_WINDOW);
                 SelectObject(draw->nmcd.hdc, projFont);
-                return CDRF_NEWFONT;    
+                return CDRF_NEWFONT;
             }
             else if (p->type == PJ_PROJ && !p->loaded)
             {
-                draw->clrText= RetrieveSysColor(COLOR_GRAYTEXT);
+                draw->clrText = RetrieveSysColor(COLOR_GRAYTEXT);
                 draw->clrTextBk = RetrieveSysColor(COLOR_WINDOW);
                 SelectObject(draw->nmcd.hdc, italicProjFont);
                 return CDRF_NEWFONT;
@@ -1362,61 +1348,59 @@ static int CustomDraw(HWND hwnd, LPNMTVCUSTOMDRAW draw)
                 if (activeProject == p)
                 {
                     SelectObject(draw->nmcd.hdc, boldProjFont);
-                    return CDRF_NEWFONT;    
+                    return CDRF_NEWFONT;
                 }
-                else if (draw->nmcd.uItemState & (CDIS_SELECTED ))
+                else if (draw->nmcd.uItemState & (CDIS_SELECTED))
                 {
-                    draw->clrText= RetrieveSysColor(COLOR_HIGHLIGHT);
+                    draw->clrText = RetrieveSysColor(COLOR_HIGHLIGHT);
                     draw->clrTextBk = RetrieveSysColor(COLOR_WINDOW);
                 }
                 else if (draw->nmcd.uItemState & (CDIS_HOT))
                 {
-                    draw->clrText= RetrieveSysColor(COLOR_INFOTEXT);
+                    draw->clrText = RetrieveSysColor(COLOR_INFOTEXT);
                     draw->clrTextBk = RetrieveSysColor(COLOR_INFOBK);
                 }
                 else if (draw->nmcd.uItemState == 0)
                 {
-                    draw->clrText= RetrieveSysColor(COLOR_WINDOWTEXT);
+                    draw->clrText = RetrieveSysColor(COLOR_WINDOWTEXT);
                     draw->clrTextBk = RetrieveSysColor(COLOR_WINDOW);
                 }
                 SelectObject(draw->nmcd.hdc, projFont);
                 if (hwndEdit)
                     InvalidateRect(hwndEdit, 0, TRUE);
-                return CDRF_NEWFONT;    
+                return CDRF_NEWFONT;
             }
             return CDRF_DODEFAULT;
         default:
             return CDRF_DODEFAULT;
     }
 }
-static EXPRESSION *ResNewExp(int val, char *name)
+static EXPRESSION* ResNewExp(int val, char* name)
 {
-    EXPRESSION *temp = rcAlloc(sizeof(EXPRESSION));
+    EXPRESSION* temp = rcAlloc(sizeof(EXPRESSION));
     temp->type = e_int;
     temp->rendition = name ? rcStrdup(name) : name;
     temp->val = val;
     return temp;
 }
-static EXPRESSION *ResOrExp(EXPRESSION *left, EXPRESSION *right)
+static EXPRESSION* ResOrExp(EXPRESSION* left, EXPRESSION* right)
 {
-    EXPRESSION *temp = rcAlloc(sizeof(EXPRESSION));
-    temp->type = or;
+    EXPRESSION* temp = rcAlloc(sizeof(EXPRESSION));
+    temp->type = or ;
     temp->left = left;
-    temp->right = right; 
+    temp->right = right;
     return temp;
 }
-WCHAR *WStrDup(WCHAR *s)
+WCHAR* WStrDup(WCHAR* s)
 {
-    WCHAR *rv = rcAlloc((wcslen(s)+1) * sizeof(WCHAR));
+    WCHAR* rv = rcAlloc((wcslen(s) + 1) * sizeof(WCHAR));
     wcscpy(rv, s);
     return rv;
 }
-static void ResPrependDialogButton(CONTROL **ctl, char *text, int id, char *idname,
-                                    int x, int y, int width, int height)
+static void ResPrependDialogButton(CONTROL** ctl, char* text, int id, char* idname, int x, int y, int width, int height)
 {
-    EXPRESSION *curExp = NULL;
-    CONTROL *rv = rcAlloc(sizeof(CONTROL));
-    int n;
+    EXPRESSION* curExp = NULL;
+    CONTROL* rv = rcAlloc(sizeof(CONTROL));
     rv->next = *ctl;
     *ctl = rv;
     rv->generic = TRUE;
@@ -1430,16 +1414,16 @@ static void ResPrependDialogButton(CONTROL **ctl, char *text, int id, char *idna
     rv->width = ResNewExp(width, 0);
     rv->height = ResNewExp(height, 0);
     rv->style = ResNewExp(BS_PUSHBUTTON, "BS_PUSHBUTTON");
-    rv->style = ResOrExp(rv->style, ResNewExp( BS_CENTER, "BS_CENTER"));
-    rv->style = ResOrExp(rv->style, ResNewExp( WS_CHILD, "WS_CHILD"));
-    rv->style = ResOrExp(rv->style, ResNewExp( WS_VISIBLE, "WS_VISIBLE"));
-    rv->style = ResOrExp(rv->style, ResNewExp( WS_TABSTOP, "WS_TABSTOP"));
+    rv->style = ResOrExp(rv->style, ResNewExp(BS_CENTER, "BS_CENTER"));
+    rv->style = ResOrExp(rv->style, ResNewExp(WS_CHILD, "WS_CHILD"));
+    rv->style = ResOrExp(rv->style, ResNewExp(WS_VISIBLE, "WS_VISIBLE"));
+    rv->style = ResOrExp(rv->style, ResNewExp(WS_TABSTOP, "WS_TABSTOP"));
 }
-static DIALOG *ResNewDialog()
+static DIALOG* ResNewDialog()
 {
-    DIALOG *rv = rcAlloc(sizeof(DIALOG));
-    rv->exstyle = ResOrExp(ResNewExp(WS_EX_DLGMODALFRAME, "WS_EX_DLGMODALFRAME"),
-                           ResNewExp(WS_EX_CONTEXTHELP, "WS_EX_CONTEXTHELP"));
+    DIALOG* rv = rcAlloc(sizeof(DIALOG));
+    rv->exstyle =
+        ResOrExp(ResNewExp(WS_EX_DLGMODALFRAME, "WS_EX_DLGMODALFRAME"), ResNewExp(WS_EX_CONTEXTHELP, "WS_EX_CONTEXTHELP"));
     rv->style = ResNewExp(WS_VISIBLE, "DS_MODALFRAME");
     rv->style = ResOrExp(rv->style, ResNewExp(WS_VISIBLE, "DS_3DLOOK"));
     rv->style = ResOrExp(rv->style, ResNewExp(WS_VISIBLE, "DS_CONTEXTHELP"));
@@ -1460,24 +1444,23 @@ static DIALOG *ResNewDialog()
     ResPrependDialogButton(&rv->controls, "OK", IDOK, "IDOK", 186, 6, 50, 14);
     return rv;
 }
-static void ResPrependVerString(struct ver_stringinfo **s, char *name, char *val)
+static void ResPrependVerString(struct ver_stringinfo** s, char* name, char* val)
 {
     char buf[1024];
-    struct ver_stringinfo *rv;
+    struct ver_stringinfo* rv;
     rv = rcAlloc(sizeof(struct ver_stringinfo));
     rv->next = *s;
     *s = rv;
     StringAsciiToWChar(&rv->key, name, strlen(name));
     strcpy(buf, val);
     strcat(buf, "\0");
-    rv->length = StringAsciiToWChar(&rv->value, buf, strlen(buf)+1);
-    
+    rv->length = StringAsciiToWChar(&rv->value, buf, strlen(buf) + 1);
 }
-static VERSIONINFO *ResNewVersionInfo(PROJECTITEM *data)
+static VERSIONINFO* ResNewVersionInfo(PROJECTITEM* data)
 {
-    VERSIONINFO *rv = rcAlloc(sizeof(VERSIONINFO));
-    struct variable *string;
-    struct variable *var;
+    VERSIONINFO* rv = rcAlloc(sizeof(VERSIONINFO));
+    struct variable* string;
+    struct variable* var;
     char name[256], *p;
     while (data->type != PJ_PROJ)
     {
@@ -1515,16 +1498,16 @@ static VERSIONINFO *ResNewVersionInfo(PROJECTITEM *data)
     var->u.var.var = rcAlloc(sizeof(struct ver_varinfo));
     var->u.var.var->key = WStrDup(L"Translation");
     var->u.var.var->intident = rcAlloc(sizeof(struct ver_varlangchar));
-    var->u.var.var->intident->language = ResNewExp(0x409,0);
-    var->u.var.var->intident->charset = ResNewExp(0x4e4,0);
+    var->u.var.var->intident->language = ResNewExp(0x409, 0);
+    var->u.var.var->intident->charset = ResNewExp(0x4e4, 0);
     return rv;
 }
-static int ResGetImageName(PROJECTITEM *pj, char *name, char *title, char *filter)
+static int ResGetImageName(PROJECTITEM* pj, char* name, char* title, char* filter)
 {
     OPENFILENAME ofn;
     switch (OpenFileDialogWithCancel(&ofn, pj->realName, hwndFrame, TRUE, FALSE, filter, title))
     {
-        case 0: // file doesn't exist
+        case 0:  // file doesn't exist
             strcpy(name, ofn.lpstrFile);
             if (ExtendedMessageBox("New Image File", MB_YESNO, "File %s does not exist.  It will be created.", name) == IDYES)
                 return 2;
@@ -1534,13 +1517,13 @@ static int ResGetImageName(PROJECTITEM *pj, char *name, char *title, char *filte
             // file exists
             strcpy(name, ofn.lpstrFile);
             return 1;
-        case 2: // cancel
+        case 2:  // cancel
             return 0;
         default:
-            return 0;    
+            return 0;
     }
 }
-static FONT *ResNewFont(PROJECTITEM *pj, RESOURCE *newRes)
+static FONT* ResNewFont(PROJECTITEM* pj, RESOURCE* newRes)
 {
     OPENFILENAME ofn;
     if (OpenFileDialog(&ofn, pj->realName, hwndFrame, FALSE, FALSE, szFontFilter, "Load Font"))
@@ -1548,11 +1531,10 @@ static FONT *ResNewFont(PROJECTITEM *pj, RESOURCE *newRes)
         // file exists
         newRes->filename = rcStrdup(ofn.lpstrFile);
         return RCLoadFont(newRes->filename);
-        
     }
     return 0;
 }
-static BYTE *ResNewMessageTable(PROJECTITEM *pj, RESOURCE *newRes, int *size)
+static BYTE* ResNewMessageTable(PROJECTITEM* pj, RESOURCE* newRes, int* size)
 {
     OPENFILENAME ofn;
     if (OpenFileDialog(&ofn, pj->realName, hwndFrame, FALSE, FALSE, szMessageTableFilter, "Load Message Table"))
@@ -1560,14 +1542,13 @@ static BYTE *ResNewMessageTable(PROJECTITEM *pj, RESOURCE *newRes, int *size)
         // file exists
         newRes->filename = rcStrdup(ofn.lpstrFile);
         return RCLoadMessageTable(newRes->filename, size);
-        
     }
     return 0;
 }
-static BITMAP_ *ResNewBitmap(PROJECTITEM *pj, RESOURCE *newRes)
+static BITMAP_* ResNewBitmap(PROJECTITEM* pj, RESOURCE* newRes)
 {
     char name[MAX_PATH];
-    BITMAP_ *nbmp;
+    BITMAP_* nbmp;
     switch (ResGetImageName(pj, name, "Load Bitmap", szBitmapFilter))
     {
         default:
@@ -1580,11 +1561,11 @@ static BITMAP_ *ResNewBitmap(PROJECTITEM *pj, RESOURCE *newRes)
             newRes->filename = rcStrdup(name);
             nbmp = rcAlloc(sizeof(BITMAP_));
             {
-                BITMAPINFOHEADER *lpbih;
-                nbmp->headerSize = sizeof(BITMAPINFOHEADER)  ;//+ (1 << 4) * sizeof(RGBQUAD);
-                nbmp->headerData = (BYTE *)(lpbih = rcAlloc(nbmp->headerSize));
-                memset(nbmp->headerData + sizeof(BITMAPINFOHEADER), 0xff, 3); // COLOR WHITE
-                lpbih->biBitCount = 24; // 24-bit colors
+                BITMAPINFOHEADER* lpbih;
+                nbmp->headerSize = sizeof(BITMAPINFOHEADER);  //+ (1 << 4) * sizeof(RGBQUAD);
+                nbmp->headerData = (BYTE*)(lpbih = rcAlloc(nbmp->headerSize));
+                memset(nbmp->headerData + sizeof(BITMAPINFOHEADER), 0xff, 3);  // COLOR WHITE
+                lpbih->biBitCount = 24;                                        // 24-bit colors
                 lpbih->biHeight = 32;
                 lpbih->biWidth = 32;
                 lpbih->biPlanes = 1;
@@ -1592,17 +1573,17 @@ static BITMAP_ *ResNewBitmap(PROJECTITEM *pj, RESOURCE *newRes)
                 lpbih->biSizeImage = (((((DWORD)lpbih->biWidth * lpbih->biBitCount) + 31) & 0xffffffe0) >> 3) * lpbih->biHeight;
                 nbmp->pixelSize = lpbih->biSizeImage;
                 nbmp->pixelData = rcAlloc(nbmp->pixelSize);
-                memset(nbmp->pixelData, 0xff, nbmp->pixelSize); // set to white                
+                memset(nbmp->pixelData, 0xff, nbmp->pixelSize);  // set to white
             }
             return nbmp;
     }
 }
-static CURSOR *ResNewCursor(PROJECTITEM *pj, RESOURCE *newRes)
+static CURSOR* ResNewCursor(PROJECTITEM* pj, RESOURCE* newRes)
 {
     char name[MAX_PATH];
-    CURSOR *ncrs;
+    CURSOR* ncrs;
     int colorbits;
-    BYTE *p;
+    BYTE* p;
     switch (ResGetImageName(pj, name, "Load Cursor", szCursorFilter))
     {
         default:
@@ -1622,37 +1603,37 @@ static CURSOR *ResNewCursor(PROJECTITEM *pj, RESOURCE *newRes)
             ncrs->cursors->colorcount = colorbits == 8 ? 8 : 0;
             ncrs->cursors->xhotspot = 0;
             ncrs->cursors->yhotspot = 0;
-            ncrs->cursors->bytes = sizeof(BITMAPINFOHEADER) + (1 << colorbits) * sizeof(RGBQUAD) + 
-                (((((DWORD)ncrs->cursors->width * colorbits) + 31) & 0xffffffe0) >> 3) * ncrs->cursors->height +
-                (((((DWORD)ncrs->cursors->width) + 31) & 0xffffffe0) >> 3) * ncrs->cursors->height;
+            ncrs->cursors->bytes = sizeof(BITMAPINFOHEADER) + (1 << colorbits) * sizeof(RGBQUAD) +
+                                   (((((DWORD)ncrs->cursors->width * colorbits) + 31) & 0xffffffe0) >> 3) * ncrs->cursors->height +
+                                   (((((DWORD)ncrs->cursors->width) + 31) & 0xffffffe0) >> 3) * ncrs->cursors->height;
             ncrs->cursors->data = rcAlloc(ncrs->cursors->bytes);
-            p = ncrs->cursors->data + sizeof(BITMAPINFOHEADER) ;
+            p = ncrs->cursors->data + sizeof(BITMAPINFOHEADER);
             p[3] = p[4] = p[5] = 0xff;
             p += (1 << colorbits) * sizeof(RGBQUAD);
-//            memset (p, 0xff, (((((DWORD)ncrs->cursors->width * colorbits) + 31) & 0xffffffe0) >> 3) * ncrs->cursors->height);
+            //            memset (p, 0xff, (((((DWORD)ncrs->cursors->width * colorbits) + 31) & 0xffffffe0) >> 3) *
+            //            ncrs->cursors->height);
             p += (((((DWORD)ncrs->cursors->width * colorbits) + 31) & 0xffffffe0) >> 3) * ncrs->cursors->height;
-            memset (p, 0xff, (((((DWORD)ncrs->cursors->width) + 31) & 0xffffffe0) >> 3) * ncrs->cursors->height);
+            memset(p, 0xff, (((((DWORD)ncrs->cursors->width) + 31) & 0xffffffe0) >> 3) * ncrs->cursors->height);
 
             {
-                BITMAPINFOHEADER *lpbih = (BITMAPINFOHEADER *)ncrs->cursors->data;
-                lpbih->biBitCount = colorbits; // 2 colors
+                BITMAPINFOHEADER* lpbih = (BITMAPINFOHEADER*)ncrs->cursors->data;
+                lpbih->biBitCount = colorbits;  // 2 colors
                 lpbih->biHeight = ncrs->cursors->height * 2;
                 lpbih->biWidth = ncrs->cursors->width;
                 lpbih->biPlanes = 1;
                 lpbih->biSize = sizeof(BITMAPINFOHEADER);
                 // just the size of the XOR mask...
-                lpbih->biSizeImage = (((((DWORD)lpbih->biWidth * colorbits) + 31) & 0xffffffe0) >> 3) * lpbih->biHeight/2;
-           }
+                lpbih->biSizeImage = (((((DWORD)lpbih->biWidth * colorbits) + 31) & 0xffffffe0) >> 3) * lpbih->biHeight / 2;
+            }
             return ncrs;
             break;
     }
 }
-static ICON *ResNewIcon(PROJECTITEM *pj, RESOURCE *newRes)
+static ICON* ResNewIcon(PROJECTITEM* pj, RESOURCE* newRes)
 {
     char name[MAX_PATH];
-    ICON *nico;
-    int colorTableBytes;
-    char *p;
+    ICON* nico;
+    char* p;
     int colorbits;
     switch (ResGetImageName(pj, name, "Load Icon", szIconFilter))
     {
@@ -1673,36 +1654,37 @@ static ICON *ResNewIcon(PROJECTITEM *pj, RESOURCE *newRes)
             nico->icons->width = 32;
             nico->icons->colorcount = 0;
             nico->icons->bits = colorbits;
-            nico->icons->bytes = sizeof(BITMAPINFOHEADER) + (1 << nico->icons->bits) * sizeof(RGBQUAD) + 
-                (((((DWORD)nico->icons->width * nico->icons->bits) + 31) & 0xffffffe0) >> 3) * nico->icons->height
-                + (((((DWORD)nico->icons->width) + 31) & 0xffffffe0) >> 3) * nico->icons->height;
+            nico->icons->bytes =
+                sizeof(BITMAPINFOHEADER) + (1 << nico->icons->bits) * sizeof(RGBQUAD) +
+                (((((DWORD)nico->icons->width * nico->icons->bits) + 31) & 0xffffffe0) >> 3) * nico->icons->height +
+                (((((DWORD)nico->icons->width) + 31) & 0xffffffe0) >> 3) * nico->icons->height;
             nico->icons->data = rcAlloc(nico->icons->bytes);
-            p = (char *)nico->icons->data + sizeof(BITMAPINFOHEADER);
+            p = (char*)nico->icons->data + sizeof(BITMAPINFOHEADER);
             p += (1 << nico->icons->bits) * sizeof(RGBQUAD);
             p += (((((DWORD)nico->icons->width * nico->icons->bits) + 31) & 0xffffffe0) >> 3) * nico->icons->height;
             // this and the blackness will make it see through by default
             memset(p, 0xff, (((((DWORD)nico->icons->width) + 31) & 0xffffffe0) >> 3) * nico->icons->height);
             {
                 LPBITMAPINFOHEADER lpbih = (LPBITMAPINFOHEADER)nico->icons->data;
-                lpbih->biBitCount = colorbits; // 16 colors
+                lpbih->biBitCount = colorbits;  // 16 colors
                 lpbih->biHeight = nico->icons->height * 2;
                 lpbih->biWidth = nico->icons->width;
                 lpbih->biPlanes = 1;
                 lpbih->biSize = sizeof(BITMAPINFOHEADER);
-                lpbih->biSizeImage = (((((DWORD)lpbih->biWidth * lpbih->biBitCount) + 31) & 0xffffffe0) >> 3) * lpbih->biHeight/2;
+                lpbih->biSizeImage = (((((DWORD)lpbih->biWidth * lpbih->biBitCount) + 31) & 0xffffffe0) >> 3) * lpbih->biHeight / 2;
             }
             return nico;
     }
 }
-static MENU *ResNewMenu(void)
+static MENU* ResNewMenu(void)
 {
-    MENU *menu = rcAlloc(sizeof(MENU));
+    MENU* menu = rcAlloc(sizeof(MENU));
     menu->items = rcAlloc(sizeof(MENUITEM));
     StringAsciiToWChar(&menu->items->text, "New Item", 8);
     menu->items->id = ResAllocateMenuId();
     return menu;
 }
-static int ResSetData(PROJECTITEM *data, RESOURCE *newRes)
+static int ResSetData(PROJECTITEM* data, RESOURCE* newRes)
 {
     if (!setjmp(errjump))
     {
@@ -1754,7 +1736,7 @@ static int ResSetData(PROJECTITEM *data, RESOURCE *newRes)
     }
     return 1;
 }
-void ResSetTreeName(struct resRes *data, char *buf)
+void ResSetTreeName(struct resRes* data, char* buf)
 {
     TVITEM xx;
     memset(&xx, 0, sizeof(xx));
@@ -1766,12 +1748,12 @@ void ResSetTreeName(struct resRes *data, char *buf)
     TreeView_SetItem(treeWindow, &xx);
     ResRewriteTitle(data, data->resource->changed);
 }
-static void ResInsertNew(PROJECTITEM *pj, RESOURCE *newRes)
+static void ResInsertNew(PROJECTITEM* pj, RESOURCE* newRes)
 {
     TV_INSERTSTRUCT t;
-    struct resData *resData = pj->resData;
-    RESOURCE **curs = &resData->resources->resources;
-    struct resDir *dirs = FindResDir(resData, newRes->itype);
+    struct resData* resData = pj->resData;
+    RESOURCE** curs = &resData->resources->resources;
+    struct resDir* dirs = FindResDir(resData, newRes->itype);
     struct resRes *res = rcAlloc(sizeof(struct resRes)), **res2;
     res->type = PJ_RES;
     res->name = newRes->id.u.id->rendition;
@@ -1794,13 +1776,13 @@ static void ResInsertNew(PROJECTITEM *pj, RESOURCE *newRes)
         *curs = newRes;
     if (!dirs->hTreeItem)
     {
-        struct resDir *dir2;
+        struct resDir* dir2;
         memset(&t, 0, sizeof(t));
         dir2 = resData->dirs;
         t.hParent = pj->hResTreeItem;
         t.hInsertAfter = TVI_FIRST;
         dummies[dirs->type].type = PJ_RESMENU + dirs->type;
-        t.UNNAMED_UNION item.lParam = (LPARAM)&dummies[dirs->type] ;
+        t.UNNAMED_UNION item.lParam = (LPARAM)&dummies[dirs->type];
         t.UNNAMED_UNION item.pszText = DirNames[dirs->type];
         while (dir2 && dir2 != dirs)
         {
@@ -1813,7 +1795,7 @@ static void ResInsertNew(PROJECTITEM *pj, RESOURCE *newRes)
     memset(&t, 0, sizeof(t));
     t.hParent = dirs->hTreeItem;
     t.hInsertAfter = TVI_FIRST;
-    t.UNNAMED_UNION item.lParam = (LPARAM)res ;
+    t.UNNAMED_UNION item.lParam = (LPARAM)res;
     t.UNNAMED_UNION item.pszText = res->name;
     while (*res2 && stricmp((*res2)->name, res->name) < 0)
     {
@@ -1826,9 +1808,9 @@ static void ResInsertNew(PROJECTITEM *pj, RESOURCE *newRes)
     TreeView_EnsureVisible(treeWindow, res->hTreeItem);
     HandleDblClick(res->hTreeItem, FALSE);
 }
-PROJECTITEM *GetResProjectFile(HTREEITEM sel)
+PROJECTITEM* GetResProjectFile(HTREEITEM sel)
 {
-    PROJECTITEM *data = GetItemInfo(sel);
+    PROJECTITEM* data = GetItemInfo(sel);
     if (data)
     {
         while (data && data->type != PJ_FILE)
@@ -1839,15 +1821,15 @@ PROJECTITEM *GetResProjectFile(HTREEITEM sel)
     }
     return data;
 }
-static void NewResource(HTREEITEM sel, struct resRes *res)
+static void NewResource(HTREEITEM sel, struct resRes* res)
 {
-    PROJECTITEM *data = GetResProjectFile(sel);
+    PROJECTITEM* data = GetResProjectFile(sel);
     if (data)
     {
         // fix filename in insert
-        RESOURCE *newRes;
-        currentResData = ((PROJECTITEM *)data)->resData->resources;
-        SetRCMallocScope(((PROJECTITEM *)data)->resData->resources);
+        RESOURCE* newRes;
+        currentResData = ((PROJECTITEM*)data)->resData->resources;
+        SetRCMallocScope(((PROJECTITEM*)data)->resData->resources);
         newRes = rcAlloc(sizeof(RESOURCE));
         newRes->itype = res->type - PJ_RESMENU;
         if (ResSetData(data, newRes))
@@ -1867,27 +1849,24 @@ static void NewResource(HTREEITEM sel, struct resRes *res)
             }
             newRes->id.symbolic = FALSE;
             newRes->id.origName = NULL;
-            ResInsertNew(data,newRes);
+            ResInsertNew(data, newRes);
         }
         // this leaks memory but only into the file's local heap.
     }
-    
 }
 void ResRename(void)
 {
-    PROJECTITEM *data = GetItemInfo(resSelection);
+    PROJECTITEM* data = GetItemInfo(resSelection);
     if (data && data->type == PJ_RES)
     {
         RECT r, s;
         editItem = data;
         TreeView_GetItemRect(treeWindow, data->hTreeItem, &r, TRUE);
         TreeView_GetItemRect(treeWindow, data->hTreeItem, &s, FALSE);
-        hwndEdit = CreateWindow(szresEditClassName,
-            ((struct resRes *)data)->name, WS_CHILD | ES_AUTOHSCROLL | WS_BORDER, r.left, r.top,
-            s.right - r.left, r.bottom - r.top, hwndRes, (HMENU)
-            449, (HINSTANCE)GetWindowLong(GetParent(hwndRes),
-            GWL_HINSTANCE), 0);
-        SendMessage(hwndEdit, EM_SETSEL, 0, (LPARAM) - 1);
+        hwndEdit = CreateWindow(szresEditClassName, ((struct resRes*)data)->name, WS_CHILD | ES_AUTOHSCROLL | WS_BORDER, r.left,
+                                r.top, s.right - r.left, r.bottom - r.top, hwndRes, (HMENU)449,
+                                (HINSTANCE)GetWindowLong(GetParent(hwndRes), GWL_HINSTANCE), 0);
+        SendMessage(hwndEdit, EM_SETSEL, 0, (LPARAM)-1);
         SendMessage(hwndEdit, EM_SETLIMITTEXT, 64, 0);
         ShowWindow(hwndEdit, SW_SHOW);
         SetFocus(hwndEdit);
@@ -1900,19 +1879,18 @@ void ResDoneRenaming(void)
     GetWindowText(hwndEdit, buf, MAX_PATH);
     if (buf[0] != 0)
     {
-        if (strcmp(buf, ((struct resRes *)editItem)->name))
+        if (strcmp(buf, ((struct resRes*)editItem)->name))
         {
-            PropSetIdName((struct resRes *)editItem, buf, &((struct resRes *)editItem)->resource->id.u.id, NULL, TRUE);
+            PropSetIdName((struct resRes*)editItem, buf, &((struct resRes*)editItem)->resource->id.u.id, NULL, TRUE);
         }
     }
     DestroyWindow(hwndEdit);
     hwndEdit = NULL;
 }
-LRESULT CALLBACK ResourceProc(HWND hwnd, UINT iMessage, WPARAM wParam,
-    LPARAM lParam)
+LRESULT CALLBACK ResourceProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
     int i;
-    NM_TREEVIEW *nm;
+    NM_TREEVIEW* nm;
     RECT rs;
     TVHITTESTINFO hittest;
     switch (iMessage)
@@ -1956,20 +1934,20 @@ LRESULT CALLBACK ResourceProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     switch (key->wVKey)
                     {
                         case VK_INSERT:
-                            if (!(GetKeyState(VK_CONTROL) &0x80000000) && !(GetKeyState(VK_SHIFT) &0x8000000))
+                            if (!(GetKeyState(VK_CONTROL) & 0x80000000) && !(GetKeyState(VK_SHIFT) & 0x8000000))
                             {
-                                PROJECTITEM *data = GetItemInfo(resSelection);
+                                PROJECTITEM* data = GetItemInfo(resSelection);
                                 if (data && (data->type == PJ_RES))
                                     PostMessage(hwnd, WM_COMMAND, IDM_RENAME, 0);
                             }
                             break;
                         case VK_DELETE:
-                            if (!(GetKeyState(VK_CONTROL) &0x80000000) && !(GetKeyState(VK_SHIFT) &0x8000000))
+                            if (!(GetKeyState(VK_CONTROL) & 0x80000000) && !(GetKeyState(VK_SHIFT) & 0x8000000))
                             {
-                                PROJECTITEM *data = GetItemInfo(resSelection);
+                                PROJECTITEM* data = GetItemInfo(resSelection);
                                 if (data && (data->type == PJ_RES))
                                 {
-                                    rclickItem = (struct resRes *)data;
+                                    rclickItem = (struct resRes*)data;
                                     PostMessage(hwnd, WM_COMMAND, ID_DELETE, 0);
                                 }
                             }
@@ -1985,14 +1963,14 @@ LRESULT CALLBACK ResourceProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             }
             break;
         case WM_COMMAND:
-            switch(LOWORD(wParam))
+            switch (LOWORD(wParam))
             {
                 case IDM_NEWRESOURCE:
                 {
-                    PROJECTITEM *pj = GetResData(activeProject);
+                    PROJECTITEM* pj = GetResData(activeProject);
                     HandleRightClick(hwnd, pj->hResTreeItem);
                 }
-                    break;
+                break;
                 case ID_NEW:
                     NewResource(rclickSelection, rclickItem);
                     break;
@@ -2001,12 +1979,12 @@ LRESULT CALLBACK ResourceProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     {
                         if (rclickItem)
                         {
-                            struct resRes *res = rclickItem;
+                            struct resRes* res = rclickItem;
                             if (IsWindow(res->activeHwnd))
                             {
                                 SendMessage(res->activeHwnd, WM_CLOSE, 0, 0);
                             }
-                            
+
                             TreeView_DeleteItem(treeWindow, res->hTreeItem);
                             res->resource->deleted = TRUE;
                             res->resource->changed = TRUE;
@@ -2016,7 +1994,7 @@ LRESULT CALLBACK ResourceProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     }
                     break;
                 case IDM_RENAME:
-                    ResRename();                
+                    ResRename();
                     break;
             }
             break;
@@ -2025,10 +2003,9 @@ LRESULT CALLBACK ResourceProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             break;
         case WM_CREATE:
             GetClientRect(hwnd, &rs);
-            treeWindow = CreateWindowEx(0, sztreeDoubleBufferName, "", WS_VISIBLE |
-                WS_CHILD | TVS_HASLINES | TVS_LINESATROOT | TVS_HASBUTTONS | TVS_TRACKSELECT,
-                0, 0, rs.right, rs.bottom, hwnd, (HMENU)ID_TREEVIEW,
-                hInstance, NULL);
+            treeWindow = CreateWindowEx(0, sztreeDoubleBufferName, "",
+                                        WS_VISIBLE | WS_CHILD | TVS_HASLINES | TVS_LINESATROOT | TVS_HASBUTTONS | TVS_TRACKSELECT,
+                                        0, 0, rs.right, rs.bottom, hwnd, (HMENU)ID_TREEVIEW, hInstance, NULL);
             i = GetWindowLong(treeWindow, GWL_STYLE);
             TreeView_SetImageList(treeWindow, ImageList_Duplicate(treeIml), TVSIL_NORMAL);
             lf = systemDialogFont;
@@ -2048,8 +2025,7 @@ LRESULT CALLBACK ResourceProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     }
     return DefWindowProc(hwnd, iMessage, wParam, lParam);
 }
-static LRESULT CALLBACK extEditWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
-    LPARAM lParam)
+static LRESULT CALLBACK extEditWndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
     NMHDR nm;
     switch (iMessage)
@@ -2090,7 +2066,6 @@ void RegisterResourceWindow(HINSTANCE hInstance)
     wc.lpszMenuName = 0;
     wc.lpszClassName = szResourceClassName;
     RegisterClass(&wc);
-
 
     GetClassInfo(0, "edit", &wc);
     oldEditProc = wc.lpfnWndProc;

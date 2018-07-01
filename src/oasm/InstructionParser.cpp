@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "InstructionParser.h"
@@ -36,15 +36,14 @@
 extern bool IsSymbolStartChar(char ch);
 extern bool IsSymbolChar(char ch);
 
-static const unsigned mask[32] = { 
-    0x1, 0x3,0x7,0xf, 0x1f,0x3f,0x7f,0xff,
-    0x1ff, 0x3ff,0x7ff,0xfff, 0x1fff,0x3fff,0x7fff,0xffff,
-    0x1ffff, 0x3ffff,0x7ffff,0xfffff, 0x1fffff,0x3fffff,0x7fffff,0xffffff,
-    0x1ffffff, 0x3ffffff,0x7ffffff,0xfffffff, 0x1fffffff,0x3fffffff,0x7fffffff,0xffffffff,
+static const unsigned mask[32] = {
+    0x1,      0x3,      0x7,       0xf,       0x1f,      0x3f,      0x7f,       0xff,       0x1ff,      0x3ff,      0x7ff,
+    0xfff,    0x1fff,   0x3fff,    0x7fff,    0xffff,    0x1ffff,   0x3ffff,    0x7ffff,    0xfffff,    0x1fffff,   0x3fffff,
+    0x7fffff, 0xffffff, 0x1ffffff, 0x3ffffff, 0x7ffffff, 0xfffffff, 0x1fffffff, 0x3fffffff, 0x7fffffff, 0xffffffff,
 };
 int CodingHelper::DoMath(int val)
 {
-    switch(math)
+    switch (math)
     {
         case '!':
             return -val;
@@ -70,14 +69,14 @@ int CodingHelper::DoMath(int val)
 }
 void BitStream::Add(int val, int cnt)
 {
-    val &= mask[cnt-1];
-    int v = 8 - (bits &7);
-//	std::cout << val << ";" << cnt << std::endl;
+    val &= mask[cnt - 1];
+    int v = 8 - (bits & 7);
+    //	std::cout << val << ";" << cnt << std::endl;
     if (cnt > v)
     {
         if (v != 8)
         {
-            // assumes won't cross byte boundary 
+            // assumes won't cross byte boundary
             bytes[bits >> 3] |= (val >> (cnt - v));
             cnt -= v;
             bits += v;
@@ -96,7 +95,6 @@ void BitStream::Add(int val, int cnt)
         bytes[bits >> 3] |= val << (v - cnt);
         bits += (cnt);
     }
-        
 }
 bool InstructionParser::ParseNumber(int relOfs, int sign, int bits, int needConstant, int tokenPos)
 {
@@ -112,15 +110,15 @@ bool InstructionParser::ParseNumber(int relOfs, int sign, int bits, int needCons
                     return false;
                 if (sign)
                 {
-                    if (bits == 8 && (val->ival & ~mask[bits-2]) != 0)
-                        if ((val->ival & ~mask[bits-2]) != (~mask[bits-2]))
-                            if ((val->ival & ~mask[bits-2]) != 0)
+                    if (bits == 8 && (val->ival & ~mask[bits - 2]) != 0)
+                        if ((val->ival & ~mask[bits - 2]) != (~mask[bits - 2]))
+                            if ((val->ival & ~mask[bits - 2]) != 0)
                                 return false;
                 }
                 else
                 {
-                    if (bits == 8 && (val->ival & ~mask[bits-1]) != 0)
-                        if ((val->ival & ~mask[bits-2]) != (~mask[bits-2]))
+                    if (bits == 8 && (val->ival & ~mask[bits - 1]) != 0)
+                        if ((val->ival & ~mask[bits - 2]) != (~mask[bits - 2]))
                             return false;
                 }
             }
@@ -151,7 +149,7 @@ bool InstructionParser::SetNumber(int tokenPos, int oldVal, int newVal)
                     numeric = new Numeric;
                     memset(numeric, 0, sizeof(*numeric));
                     numeric->node = new AsmExprNode(newVal);
-                    rv = true;			
+                    rv = true;
                 }
             }
         }
@@ -162,7 +160,7 @@ bool InstructionParser::MatchesOpcode(std::string opcode)
 {
     return opcodeTable.end() != opcodeTable.find(opcode) || prefixTable.end() != prefixTable.find(opcode);
 }
-Instruction *InstructionParser::Parse(const std::string args, int PC)
+Instruction* InstructionParser::Parse(const std::string args, int PC)
 {
     int errLine = Errors::GetErrorLine();
     std::string errName = Errors::GetFileName();
@@ -170,7 +168,7 @@ Instruction *InstructionParser::Parse(const std::string args, int PC)
     std::string op;
     for (auto val : CleanupValues)
     {
-        delete []val; 
+        delete[] val;
     }
     for (auto val : operands)
     {
@@ -178,17 +176,17 @@ Instruction *InstructionParser::Parse(const std::string args, int PC)
     }
     for (int i = 0; i < inputTokens.size(); ++i)
     {
-        InputToken *t = inputTokens[i];
+        InputToken* t = inputTokens[i];
         delete t;
     }
     inputTokens.clear();
     // can't use clear in openwatcom, it is buggy
-    
+
     CleanupValues.clear();
     operands.clear();
     prefixes.clear();
     numeric = nullptr;
-//	std::cout << line << std::endl;
+    //	std::cout << line << std::endl;
     while (true)
     {
         int npos = line.find_first_of(" \t\v\r\n");
@@ -228,7 +226,7 @@ Instruction *InstructionParser::Parse(const std::string args, int PC)
         {
             unsigned char buf[32];
             bits.GetBytes(buf, 32);
-            return new Instruction(buf, (bits.GetBits() + 7)/8);
+            return new Instruction(buf, (bits.GetBits() + 7) / 8);
         }
     }
     else
@@ -243,30 +241,30 @@ Instruction *InstructionParser::Parse(const std::string args, int PC)
             }
             eol = false;
             bool rv = DispatchOpcode(it->second);
-            Instruction *s = nullptr;
+            Instruction* s = nullptr;
             if (rv)
             {
                 unsigned char buf[32];
                 bits.GetBytes(buf, 32);
-    #ifdef XXXXX
+#ifdef XXXXX
                 std::cout << std::hex << bits.GetBits() << " ";
-                for (int i=0; i < bits.GetBits() >> 3; i++)
+                for (int i = 0; i<bits.GetBits()>> 3; i++)
                     std::cout << std::hex << (int)buf[i] << " ";
                 std::cout << std::endl;
-    #endif
+#endif
                 if (!eol)
                     throw new std::runtime_error("Extra characters at end of line");
-                s = new Instruction(buf, (bits.GetBits() + 7)/8);
-    //			std::cout << bits.GetBits() << std::endl;
+                s = new Instruction(buf, (bits.GetBits() + 7) / 8);
+                //			std::cout << bits.GetBits() << std::endl;
                 for (auto operand : operands)
                 {
                     if (operand->used && operand->size)
                     {
                         int n = operand->relOfs;
                         if (n < 0)
-                            n = - n;
-                        Fixup *f = new Fixup(operand->node, (operand->size + 7)/8, operand->relOfs != 0, n, operand->relOfs>0);
-                        f->SetInsOffs((operand->pos + 7)/8);
+                            n = -n;
+                        Fixup* f = new Fixup(operand->node, (operand->size + 7) / 8, operand->relOfs != 0, n, operand->relOfs > 0);
+                        f->SetInsOffs((operand->pos + 7) / 8);
                         f->SetFileName(errName);
                         f->SetErrorLine(errLine);
                         s->Add(f);
@@ -282,7 +280,7 @@ Instruction *InstructionParser::Parse(const std::string args, int PC)
     }
     throw new std::runtime_error("Unrecognized opcode");
 }
-void InstructionParser::RenameRegisters(AsmExprNode *val)
+void InstructionParser::RenameRegisters(AsmExprNode* val)
 {
     if (val->GetType() == AsmExprNode::LABEL)
     {
@@ -305,9 +303,9 @@ void InstructionParser::RenameRegisters(AsmExprNode *val)
             RenameRegisters(val->GetRight());
     }
 }
-AsmExprNode *InstructionParser::ExtractReg(AsmExprNode **val)
+AsmExprNode* InstructionParser::ExtractReg(AsmExprNode** val)
 {
-    AsmExprNode *rv = nullptr;
+    AsmExprNode* rv = nullptr;
     switch ((*val)->GetType())
     {
         case AsmExprNode::REG:
@@ -318,7 +316,7 @@ AsmExprNode *InstructionParser::ExtractReg(AsmExprNode **val)
             if ((*val)->GetLeft()->GetType() == AsmExprNode::REG)
             {
                 rv = (*val)->GetLeft();
-                AsmExprNode *todel = (*val);
+                AsmExprNode* todel = (*val);
                 *val = (*val)->GetRight();
                 todel->SetLeft(nullptr);
                 todel->SetRight(nullptr);
@@ -327,7 +325,7 @@ AsmExprNode *InstructionParser::ExtractReg(AsmExprNode **val)
             else if ((*val)->GetRight()->GetType() == AsmExprNode::REG)
             {
                 rv = (*val)->GetRight();
-                AsmExprNode *todel = (*val);
+                AsmExprNode* todel = (*val);
                 *val = (*val)->GetLeft();
                 todel->SetLeft(nullptr);
                 todel->SetRight(nullptr);
@@ -335,7 +333,7 @@ AsmExprNode *InstructionParser::ExtractReg(AsmExprNode **val)
             }
             else
             {
-                AsmExprNode *v = (*val)->GetLeft();
+                AsmExprNode* v = (*val)->GetLeft();
                 if (!(rv = ExtractReg(&v)))
                 {
                     v = (*val)->GetRight();
@@ -361,7 +359,7 @@ AsmExprNode *InstructionParser::ExtractReg(AsmExprNode **val)
             }
             else
             {
-                AsmExprNode *v = (*val)->GetLeft();
+                AsmExprNode* v = (*val)->GetLeft();
                 rv = ExtractReg(&v);
                 if (rv)
                 {
@@ -374,7 +372,7 @@ AsmExprNode *InstructionParser::ExtractReg(AsmExprNode **val)
     }
     return rv;
 }
-bool InstructionParser::MatchesTimes(AsmExprNode *val)
+bool InstructionParser::MatchesTimes(AsmExprNode* val)
 {
     bool rv = false;
     if (val->GetType() == AsmExprNode::MUL)
@@ -385,9 +383,9 @@ bool InstructionParser::MatchesTimes(AsmExprNode *val)
     }
     return rv;
 }
-AsmExprNode *InstructionParser::ExtractTimes(AsmExprNode **val)
+AsmExprNode* InstructionParser::ExtractTimes(AsmExprNode** val)
 {
-    AsmExprNode *rv = nullptr;
+    AsmExprNode* rv = nullptr;
     switch ((*val)->GetType())
     {
         case AsmExprNode::MUL:
@@ -401,7 +399,7 @@ AsmExprNode *InstructionParser::ExtractTimes(AsmExprNode **val)
             if (MatchesTimes((*val)->GetLeft()))
             {
                 rv = (*val)->GetLeft();
-                AsmExprNode *todel = (*val);
+                AsmExprNode* todel = (*val);
                 *val = (*val)->GetRight();
                 todel->SetLeft(nullptr);
                 todel->SetRight(nullptr);
@@ -410,15 +408,15 @@ AsmExprNode *InstructionParser::ExtractTimes(AsmExprNode **val)
             else if (MatchesTimes((*val)->GetRight()))
             {
                 rv = (*val)->GetRight();
-                AsmExprNode *todel = (*val);
+                AsmExprNode* todel = (*val);
                 *val = (*val)->GetLeft();
                 todel->SetLeft(nullptr);
                 todel->SetRight(nullptr);
                 delete todel;
             }
-            else 
+            else
             {
-                AsmExprNode *v = (*val)->GetLeft();
+                AsmExprNode* v = (*val)->GetLeft();
                 if (!(rv = ExtractTimes(&v)))
                 {
                     v = (*val)->GetRight();
@@ -444,7 +442,7 @@ AsmExprNode *InstructionParser::ExtractTimes(AsmExprNode **val)
             }
             else
             {
-                AsmExprNode *v = (*val)->GetLeft();
+                AsmExprNode* v = (*val)->GetLeft();
                 rv = ExtractTimes(&v);
                 if (rv)
                 {
@@ -457,7 +455,7 @@ AsmExprNode *InstructionParser::ExtractTimes(AsmExprNode **val)
     }
     return rv;
 }
-bool InstructionParser::CheckRegs(AsmExprNode *val)
+bool InstructionParser::CheckRegs(AsmExprNode* val)
 {
     bool rv = true;
     if (val->GetType() == AsmExprNode::REG)
@@ -486,7 +484,7 @@ void InstructionParser::ParseNumeric(int PC)
     if (val->GetType() == AsmExprNode::LABEL)
     {
         auto it = tokenTable.find(val->label);
-        InputToken *next;
+        InputToken* next;
         if (it != tokenTable.end())
         {
             next = new InputToken;
@@ -508,8 +506,8 @@ void InstructionParser::ParseNumeric(int PC)
     }
     else
     {
-        AsmExprNode *cur = ExtractReg(&val);
-        InputToken *next ;
+        AsmExprNode* cur = ExtractReg(&val);
+        InputToken* next;
         bool found = false;
         if (cur)
         {
@@ -547,13 +545,12 @@ void InstructionParser::ParseNumeric(int PC)
                     inputTokens.push_back(next);
                 }
                 found = true;
-                AsmExprNode *reg;
-                AsmExprNode *mul;
+                AsmExprNode* reg;
+                AsmExprNode* mul;
                 if (cur->GetLeft()->GetType() == AsmExprNode::REG)
                 {
                     reg = cur->GetLeft();
                     mul = cur->GetRight();
-                    
                 }
                 else
                 {
@@ -598,8 +595,8 @@ bool InstructionParser::Tokenize(int PC)
     while (line.size())
     {
         NextToken(PC);
-        InputToken *next;
-        switch(id)
+        InputToken* next;
+        switch (id)
         {
             case -1:
                 return false;
@@ -621,17 +618,17 @@ bool InstructionParser::Tokenize(int PC)
     }
     return true;
 }
-bool InstructionParser::IsNumber() 
+bool InstructionParser::IsNumber()
 {
-    return line.size() && (isdigit(line[0]) || line[0] == '+' || line[0] == '-' ||
-                         line[0] == '~' || line[0] == '!' || line[0] == '(');
+    return line.size() &&
+           (isdigit(line[0]) || line[0] == '+' || line[0] == '-' || line[0] == '~' || line[0] == '!' || line[0] == '(');
 }
 void InstructionParser::NextToken(int PC)
 {
     id = -1;
     bool negate = false;
     int npos = line.find_first_not_of(" \t\r\n\v");
-    if (npos==std::string::npos)
+    if (npos == std::string::npos)
         line = "";
     else if (npos != 0)
         line = line.substr(npos);
@@ -644,18 +641,18 @@ void InstructionParser::NextToken(int PC)
             int accum = 0;
             int i;
             int quote = line[0];
-            for (i=1; i < line.size(); i++)
+            for (i = 1; i < line.size(); i++)
             {
                 if (line[i] == quote)
                     break;
-                if (i < 5) // endianness & sizing
-                    accum += line[i] << ((i-1) * 8);
+                if (i < 5)  // endianness & sizing
+                    accum += line[i] << ((i - 1) * 8);
             }
             if (i == line.size())
                 throw new std::runtime_error("Expected end quote");
             if (i == 1)
                 throw new std::runtime_error("Quoted string is empty");
-            line.erase(0, i+1);
+            line.erase(0, i + 1);
             id = TK_NUMERIC;
             val = new AsmExprNode(accum);
         }

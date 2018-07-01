@@ -6,29 +6,25 @@
 
 static int ClipboardFormat;
 
-void DeleteImageDC(IMAGEDATA *res);
-void ClearImageDC(IMAGEDATA *res);
-void SaveImage(IMAGEDATA *res);
+void DeleteImageDC(IMAGEDATA* res);
+void ClearImageDC(IMAGEDATA* res);
+void SaveImage(IMAGEDATA* res);
 void DrawLine(HDC hDC, POINT start, POINT end);
-void FreeImageResource(IMAGEDATA *res);
+void FreeImageResource(IMAGEDATA* res);
 
-void  imageInit()
-{
-    ClipboardFormat = RegisterClipboardFormat("xccIconFormat");
-}
+void imageInit() { ClipboardFormat = RegisterClipboardFormat("xccIconFormat"); }
 
-
-static void limit_undo(IMAGEDATA *res)
+static void limit_undo(IMAGEDATA* res)
 {
     int i;
     res = res->undo;
-    for (i=0; i< IMAGE_UNDO_MAX && res; i++)
+    for (i = 0; i < IMAGE_UNDO_MAX && res; i++)
     {
         res = res->undo;
-    }    
+    }
     if (res)
     {
-        IMAGEDATA *undo = res->undo;
+        IMAGEDATA* undo = res->undo;
         res->undo = 0;
         while (undo)
         {
@@ -39,11 +35,11 @@ static void limit_undo(IMAGEDATA *res)
         }
     }
 }
-void ResizeImage(HWND hwndParent, IMGDATA *p, IMAGEDATA *res, int width, int height, BOOL stretch)
+void ResizeImage(HWND hwndParent, IMGDATA* p, IMAGEDATA* res, int width, int height, BOOL stretch)
 {
     int maxx, maxy;
-    IMAGEDATA *undo ;
-    
+    IMAGEDATA* undo;
+
     maxx = width > res->width ? res->width : width;
     maxy = height > res->height ? res->height : height;
     undo = calloc(1, sizeof(IMAGEDATA));
@@ -51,10 +47,10 @@ void ResizeImage(HWND hwndParent, IMGDATA *p, IMAGEDATA *res, int width, int hei
         return;
     *undo = *res;
     undo->next = NULL;
-    
+
     limit_undo(res);
     res->undo = undo;
-    
+
     res->hdcAndMask = res->hdcImage = 0;
     res->hbmpAndMask = res->hbmpImage = 0;
     res->width = width;
@@ -62,11 +58,12 @@ void ResizeImage(HWND hwndParent, IMGDATA *p, IMAGEDATA *res, int width, int hei
     CreateImageDC(hwndParent, res);
     if (stretch)
     {
-        StretchBlt(res->hdcImage, 0,0, res->width, res->height, res->undo->hdcImage, 0, 0, res->undo->width, res->undo->height, SRCCOPY);
+        StretchBlt(res->hdcImage, 0, 0, res->width, res->height, res->undo->hdcImage, 0, 0, res->undo->width, res->undo->height,
+                   SRCCOPY);
     }
     else
     {
-        BitBlt(res->hdcImage, 0,0, maxx, maxy, res->undo->hdcImage, 0, 0, SRCCOPY);
+        BitBlt(res->hdcImage, 0, 0, maxx, maxy, res->undo->hdcImage, 0, 0, SRCCOPY);
     }
     if (!res->imageDirty)
     {
@@ -74,48 +71,48 @@ void ResizeImage(HWND hwndParent, IMGDATA *p, IMAGEDATA *res, int width, int hei
         ResSetDirty(p->resource);
     }
 }
-void InsertImageUndo(HWND hwndParent, IMAGEDATA *res)
+void InsertImageUndo(HWND hwndParent, IMAGEDATA* res)
 {
-    IMAGEDATA *undo ;
+    IMAGEDATA* undo;
     undo = calloc(1, sizeof(IMAGEDATA));
     if (!undo)
         return;
     *undo = *res;
     undo->next = NULL;
-    
+
     limit_undo(res);
     res->undo = undo;
-    
+
     res->hdcAndMask = res->hdcImage = 0;
     res->hbmpAndMask = res->hbmpImage = 0;
     CreateImageDC(hwndParent, res);
-    BitBlt(res->hdcImage, 0,0, res->width, res->height, res->undo->hdcImage, 0, 0, SRCCOPY);
+    BitBlt(res->hdcImage, 0, 0, res->width, res->height, res->undo->hdcImage, 0, 0, SRCCOPY);
 }
-void FreeImageUndo(IMAGEDATA *res)
+void FreeImageUndo(IMAGEDATA* res)
 {
-    IMAGEDATA *old = res;
+    IMAGEDATA* old = res;
     res = res->undo;
     while (res)
     {
-        IMAGEDATA *next = res->undo;
+        IMAGEDATA* next = res->undo;
         DeleteImageDC(res);
         free(res);
-        res = next ;
+        res = next;
     }
     old->undo = NULL;
 }
-void DirtyImageUndo(IMAGEDATA *res)
+void DirtyImageUndo(IMAGEDATA* res)
 {
-	IMAGEDATA *undoList = res->undo;
-	while (undoList)
-	{
-		undoList->imageDirty = TRUE;
-		undoList = undoList->next;
-	}
+    IMAGEDATA* undoList = res->undo;
+    while (undoList)
+    {
+        undoList->imageDirty = TRUE;
+        undoList = undoList->next;
+    }
 }
-void ApplyImageUndo(IMGDATA *p, IMAGEDATA *res)
+void ApplyImageUndo(IMGDATA* p, IMAGEDATA* res)
 {
-    IMAGEDATA * oldundo;
+    IMAGEDATA* oldundo;
     if (!res->undo)
         return;
     oldundo = res->undo;
@@ -129,28 +126,28 @@ void ApplyImageUndo(IMGDATA *p, IMAGEDATA *res)
         {
             ResSetClean(p->resource);
         }
-		else
-		{
-			ResSetDirty(p->resource);
-		}
+        else
+        {
+            ResSetDirty(p->resource);
+        }
     }
-}    
+}
 HBITMAP LocalCreateBitmap(HDC dc, int width, int height, int colors)
 {
     BITMAPINFOHEADER bmih;
 
-    if (colors == 2) 
+    if (colors == 2)
     {
         return CreateBitmap(width, height, 1, 1, NULL);
     }
-    else 
+    else
     {
-    
+
         bmih.biSize = sizeof(BITMAPINFOHEADER);
         bmih.biWidth = width;
         bmih.biHeight = height;
         bmih.biPlanes = 1;
-        switch(colors)
+        switch (colors)
         {
             case 16:
                 bmih.biBitCount = 4;
@@ -173,7 +170,7 @@ HBITMAP LocalCreateBitmap(HDC dc, int width, int height, int colors)
     }
 }
 
-int CreateImageDC(HWND hwndParent, IMAGEDATA *res)
+int CreateImageDC(HWND hwndParent, IMAGEDATA* res)
 {
     HDC hdcParent;
 
@@ -188,10 +185,11 @@ int CreateImageDC(HWND hwndParent, IMAGEDATA *res)
     if (!(res->hbmpImage = LocalCreateBitmap(hdcParent, res->width, res->height, res->colors)))
     {
         ReleaseDC(hwndParent, res->hdcImage);
-        return FALSE;   
+        return FALSE;
     }
 
-    if (res->type == FT_ICO || res->type == FT_CUR) {
+    if (res->type == FT_ICO || res->type == FT_CUR)
+    {
         if (!(res->hdcAndMask = CreateCompatibleDC(hdcParent)))
         {
             ReleaseDC(hwndParent, res->hdcImage);
@@ -212,20 +210,21 @@ int CreateImageDC(HWND hwndParent, IMAGEDATA *res)
 
     ClearImageDC(res);
 
-
     return TRUE;
 }
 
-void DeleteImageDC(IMAGEDATA *res)
+void DeleteImageDC(IMAGEDATA* res)
 {
-    if (res->hdcImage) {
+    if (res->hdcImage)
+    {
         DeleteDC(res->hdcImage);
         res->hdcImage = NULL;
         DeleteObject(res->hbmpImage);
         res->hbmpImage = NULL;
     }
 
-    if (res->hdcAndMask) {
+    if (res->hdcAndMask)
+    {
         DeleteDC(res->hdcAndMask);
         res->hdcAndMask = NULL;
         DeleteObject(res->hbmpAndMask);
@@ -233,9 +232,7 @@ void DeleteImageDC(IMAGEDATA *res)
     }
 }
 
-
-
-void ClearImageDC(IMAGEDATA *res)
+void ClearImageDC(IMAGEDATA* res)
 {
     PatBlt(res->hdcImage, 0, 0, res->width, res->height, WHITENESS);
 
@@ -243,23 +240,22 @@ void ClearImageDC(IMAGEDATA *res)
         PatBlt(res->hdcAndMask, 0, 0, res->width, res->height, BLACKNESS);
 }
 
-
-void RecoverAndMask(IMAGEDATA *res)
+void RecoverAndMask(IMAGEDATA* res)
 {
     PatBlt(res->hdcAndMask, 0, 0, res->width, res->height, BLACKNESS);
 
     SetBkColor(res->hdcImage, res->rgbScreen);
     BitBlt(res->hdcAndMask, 0, 0, res->width, res->height, res->hdcImage, 0, 0, SRCINVERT);
-//    SetBkColor(res->hdcImage, res->rgbScreen ^ 0xffffff);
-//    BitBlt(res->hdcAndMask, 0, 0, res->width, res->height, res->hdcImage, 0, 0, SRCPAINT);
+    //    SetBkColor(res->hdcImage, res->rgbScreen ^ 0xffffff);
+    //    BitBlt(res->hdcAndMask, 0, 0, res->width, res->height, res->hdcImage, 0, 0, SRCPAINT);
 }
-void SplitImageDC(IMAGEDATA *res)
+void SplitImageDC(IMAGEDATA* res)
 {
-    HBITMAP hbmTemp ;
-    HDC hdcTemp ;
-    HBITMAP hbmOld ;
+    HBITMAP hbmTemp;
+    HDC hdcTemp;
+    HBITMAP hbmOld;
 
-    /* 
+    /*
      *rebuild the and mask
      */
     RecoverAndMask(res);
@@ -286,10 +282,7 @@ void SplitImageDC(IMAGEDATA *res)
     DeleteObject(hbmTemp);
 }
 
-
-
-
-void CombineImageDC(IMAGEDATA *res)
+void CombineImageDC(IMAGEDATA* res)
 {
     HBITMAP hbmTemp;
     HDC hdcTemp;
@@ -309,11 +302,11 @@ void CombineImageDC(IMAGEDATA *res)
      * image DC is now the current screen color
      */
     hbrOld = SelectObject(res->hdcImage, hbrScreen);
-    PatBlt(res->hdcImage, 0, 0, res->width, res->height , PATCOPY);
+    PatBlt(res->hdcImage, 0, 0, res->width, res->height, PATCOPY);
     SelectObject(res->hdcImage, hbrOld);
 
     /*
-     * reconstruct the display image 
+     * reconstruct the display image
      */
     BitBlt(res->hdcImage, 0, 0, res->width, res->height, res->hdcAndMask, 0, 0, SRCAND);
     BitBlt(res->hdcImage, 0, 0, res->width, res->height, hdcTemp, 0, 0, SRCINVERT);
@@ -324,7 +317,7 @@ void CombineImageDC(IMAGEDATA *res)
     DeleteObject(hbrScreen);
 }
 
-void ChangeImageSize(IMAGEDATA *res, int width, int height)
+void ChangeImageSize(IMAGEDATA* res, int width, int height)
 {
     HBITMAP hbmTemp;
     HDC hdcTemp;
@@ -344,7 +337,7 @@ void ChangeImageSize(IMAGEDATA *res, int width, int height)
     res->hdcImage = hdcTemp;
     res->hbmpImage = hbmTemp;
 }
-void ChangeImageColorCount(IMAGEDATA *res, int colors)
+void ChangeImageColorCount(IMAGEDATA* res, int colors)
 {
     HBITMAP hbmTemp;
     HDC hdcTemp;
@@ -357,17 +350,14 @@ void ChangeImageColorCount(IMAGEDATA *res, int colors)
     BitBlt(hdcTemp, 0, 0, res->width, res->height, res->hdcImage, 0, 0, SRCCOPY);
 
     res->colors = colors < 16 ? 16 : colors;
-    res->saveColors = colors == 0 ? colors :res->colors;
+    res->saveColors = colors == 0 ? colors : res->colors;
     DeleteDC(res->hdcImage);
     DeleteObject(res->hbmpImage);
     res->hdcImage = hdcTemp;
     res->hbmpImage = hbmTemp;
 }
-    
-    
-    
-    
-int CopyImageToClipboard(HWND hwnd, IMAGEDATA *res, RECT *pick)
+
+int CopyImageToClipboard(HWND hwnd, IMAGEDATA* res, RECT* pick)
 {
     HBITMAP hBitmap;
     HDC hDC;
@@ -375,34 +365,31 @@ int CopyImageToClipboard(HWND hwnd, IMAGEDATA *res, RECT *pick)
     int cxPick, cyPick;
     HANDLE hClipboardMem = NULL;
 
-    cxPick = pick->right- pick->left;
+    cxPick = pick->right - pick->left;
     cyPick = pick->bottom - pick->top;
 
     hDC = CreateCompatibleDC(res->hdcImage);
-    hBitmap = LocalCreateBitmap(res->hdcImage,
-               cxPick, cyPick, res->colors);
+    hBitmap = LocalCreateBitmap(res->hdcImage, cxPick, cyPick, res->colors);
 
     hOldObj = SelectObject(hDC, hBitmap);
-    BitBlt(hDC, 0, 0, cxPick, cyPick, res->hdcImage,
-            pick->left, pick->top, SRCCOPY);
+    BitBlt(hDC, 0, 0, cxPick, cyPick, res->hdcImage, pick->left, pick->top, SRCCOPY);
     SelectObject(hDC, hOldObj);
 
-    if (res->type != FT_BMP) {
+    if (res->type != FT_BMP)
+    {
         LPSTR lpBytes;
-        HBITMAP hAndBitmap ;
+        HBITMAP hAndBitmap;
         RecoverAndMask(res);
-        hAndBitmap = CreateCompatibleBitmap(res->hdcAndMask, 
-                                                     cxPick, cyPick);
+        hAndBitmap = CreateCompatibleBitmap(res->hdcAndMask, cxPick, cyPick);
         hDC = CreateCompatibleDC(res->hdcAndMask);
 
         hOldObj = SelectObject(hDC, hAndBitmap);
-        BitBlt(hDC, 0, 0, cxPick, cyPick, res->hdcAndMask,
-                pick->left, pick->top, SRCCOPY);
+        BitBlt(hDC, 0, 0, cxPick, cyPick, res->hdcAndMask, pick->left, pick->top, SRCCOPY);
         SelectObject(hDC, hOldObj);
 
-        hClipboardMem = GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE,
-                (DWORD)((cxPick + 31) >> 3) * cyPick + sizeof(DWORD));
-        if (!hClipboardMem) {
+        hClipboardMem = GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, (DWORD)((cxPick + 31) >> 3) * cyPick + sizeof(DWORD));
+        if (!hClipboardMem)
+        {
             DeleteObject(hAndBitmap);
             DeleteObject(hBitmap);
             DeleteDC(hDC);
@@ -411,71 +398,72 @@ int CopyImageToClipboard(HWND hwnd, IMAGEDATA *res, RECT *pick)
 
         lpBytes = (LPSTR)GlobalLock(hClipboardMem);
 
-        *((DWORD FAR *)lpBytes) = res->rgbScreen;
+        *((DWORD FAR*)lpBytes) = res->rgbScreen;
 
-        GetBitmapBits(hAndBitmap, (DWORD)((cxPick + 31) >> 3) * cyPick,
-                (LPSTR)lpBytes + sizeof(DWORD));
-        
+        GetBitmapBits(hAndBitmap, (DWORD)((cxPick + 31) >> 3) * cyPick, (LPSTR)lpBytes + sizeof(DWORD));
+
         DeleteObject(hAndBitmap);
         GlobalUnlock(hClipboardMem);
-
     }
 
-    if (!OpenClipboard(hwnd)) {
+    if (!OpenClipboard(hwnd))
+    {
         GlobalFree(hClipboardMem);
         DeleteObject(hBitmap);
         DeleteDC(hDC);
-        return(FALSE);
+        return (FALSE);
     }
     /* should process WM_DESTROYCLIPBOARD */
     EmptyClipboard();
 
-    if (res->type != FT_BMP) {
-        if (!SetClipboardData(ClipboardFormat, hClipboardMem)) {
+    if (res->type != FT_BMP)
+    {
+        if (!SetClipboardData(ClipboardFormat, hClipboardMem))
+        {
             GlobalFree(hClipboardMem);
             DeleteObject(hBitmap);
             DeleteDC(hDC);
             CloseClipboard();
-            return(FALSE);
+            return (FALSE);
         }
     }
-    if (!SetClipboardData(CF_BITMAP, hBitmap)) {
+    if (!SetClipboardData(CF_BITMAP, hBitmap))
+    {
         DeleteObject(hBitmap);
         DeleteDC(hDC);
         CloseClipboard();
-        return(FALSE);
+        return (FALSE);
     }
 
     CloseClipboard();
     DeleteDC(hDC);
-    
+
     return TRUE;
 }
 
-
-
-
 /* make a new IMAGEDATA with the value on the clipboard */
 /* match gives data about DCs for matching the currently selected image */
-IMAGEDATA *PasteImageFromClipboard(HWND hwnd, IMAGEDATA *match)
+IMAGEDATA* PasteImageFromClipboard(HWND hwnd, IMAGEDATA* match)
 {
     INT cxClip;
     INT cyClip;
     INT colors;
-    
+
     DWORD rgbClipScreen = 0;
     HBITMAP hbmpClipAnd = NULL;
     HBITMAP hbmpImage, hbmpDest;
     HBITMAP hOldImage;
     HDC hdcDest, hdcSource;
-    IMAGEDATA *rv;
+    IMAGEDATA* rv;
     BITMAP bmClip;
 
-    if (!OpenClipboard(hwnd)) {
+    if (!OpenClipboard(hwnd))
+    {
         return NULL;
     }
 
-    if (!(hbmpImage = GetClipboardData(CF_BITMAP))) {
+    if (!(hbmpImage = GetClipboardData(CF_BITMAP)))
+    {
         CloseClipboard();
         return NULL;
     }
@@ -489,7 +477,7 @@ IMAGEDATA *PasteImageFromClipboard(HWND hwnd, IMAGEDATA *match)
     {
         case 1:
             colors = 2;
-            break ;
+            break;
         case 4:
             colors = 16;
             break;
@@ -499,35 +487,34 @@ IMAGEDATA *PasteImageFromClipboard(HWND hwnd, IMAGEDATA *match)
         case 24:
         case 32:
             colors = 0;
-            break ;
+            break;
         default:
             CloseClipboard();
             return NULL;
     }
     /* copy the clipboard bitmap */
-    hdcSource=CreateCompatibleDC(match->hdcImage);
-    hdcDest=CreateCompatibleDC(match->hdcImage);
+    hdcSource = CreateCompatibleDC(match->hdcImage);
+    hdcDest = CreateCompatibleDC(match->hdcImage);
     hbmpDest = CreateCompatibleBitmap(match->hdcImage, cxClip, cyClip);
     hOldImage = SelectObject(hdcSource, hbmpImage);
     SelectObject(hdcDest, hbmpDest);
     BitBlt(hdcDest, 0, 0, cxClip, cyClip, hdcSource, 0, 0, SRCCOPY);
     SelectObject(hdcSource, hOldImage);
     SelectObject(hdcDest, hOldImage);
-        DeleteDC(hdcSource);
+    DeleteDC(hdcSource);
 
     /* copy and mask from clipboard if it exists */
     if (IsClipboardFormatAvailable(ClipboardFormat))
     {
         HANDLE hClipData = GetClipboardData(ClipboardFormat);
         LPBYTE lpClipData = (LPBYTE)GlobalLock(hClipData);
-        rgbClipScreen = *((DWORD FAR *)lpClipData);
-        
-        hbmpClipAnd = CreateBitmap(cxClip, cyClip, (BYTE)1, (BYTE)1,
-                (LPSTR)lpClipData + sizeof(DWORD));
+        rgbClipScreen = *((DWORD FAR*)lpClipData);
+
+        hbmpClipAnd = CreateBitmap(cxClip, cyClip, (BYTE)1, (BYTE)1, (LPSTR)lpClipData + sizeof(DWORD));
         GlobalUnlock(hClipData);
-    }    
+    }
     CloseClipboard();
-    
+
     /* make an object to store the data in */
     rv = calloc(1, sizeof(IMAGEDATA));
     if (!rv)
@@ -537,7 +524,7 @@ IMAGEDATA *PasteImageFromClipboard(HWND hwnd, IMAGEDATA *match)
         DeleteDC(hdcDest);
         return NULL;
     }
-    
+
     /* everything ok, fill in our structure and return it */
     rv->colors = colors < 16 ? 16 : colors;
     rv->saveColors = colors == 0 ? colors : rv->colors;
@@ -549,7 +536,7 @@ IMAGEDATA *PasteImageFromClipboard(HWND hwnd, IMAGEDATA *match)
     rv->hdcImage = hdcDest;
     rv->type = match->type;
     rv->rgbScreen = rgbClipScreen;
-    
+
     SelectObject(rv->hdcAndMask, rv->hbmpAndMask);
     SelectObject(rv->hdcImage, rv->hbmpImage);
     return rv;
@@ -559,11 +546,13 @@ int Pastable(HWND hwnd)
 {
     HBITMAP hbmpImage;
     BITMAP bmClip;
-    if (!OpenClipboard(hwnd)) {
+    if (!OpenClipboard(hwnd))
+    {
         return FALSE;
     }
 
-    if (!(hbmpImage = GetClipboardData(CF_BITMAP))) {
+    if (!(hbmpImage = GetClipboardData(CF_BITMAP)))
+    {
         CloseClipboard();
         return FALSE;
     }
@@ -571,7 +560,7 @@ int Pastable(HWND hwnd)
     GetObject(hbmpImage, sizeof(BITMAP), (LPSTR)&bmClip);
 
     CloseClipboard();
-    
+
     switch (bmClip.bmBitsPixel)
     {
         case 1:
@@ -583,16 +572,16 @@ int Pastable(HWND hwnd)
             return FALSE;
     }
 }
-RUBBER *CreateRubberBand(IMAGEDATA *res, int type, int filltype, POINT pt)
+RUBBER* CreateRubberBand(IMAGEDATA* res, int type, int filltype, POINT pt)
 {
-    RUBBER *rv = calloc(1, sizeof(RUBBER));
+    RUBBER* rv = calloc(1, sizeof(RUBBER));
     LOGPEN lpen;
     LOGBRUSH lbrush;
     HPEN pen;
     HBRUSH brush;
     if (!rv)
         return NULL;
-    
+
     rv->hbmpRubberBorder = CreateBitmap(res->width, res->height, 1, 1, NULL);
     if (!rv->hbmpRubberBorder)
     {
@@ -626,7 +615,7 @@ RUBBER *CreateRubberBand(IMAGEDATA *res, int type, int filltype, POINT pt)
         return NULL;
     }
     SelectObject(rv->hdcRubberFill, rv->hbmpRubberFill);
-                 
+
     pen = CreatePen(PS_SOLID, 0, 0);
     pen = SelectObject(res->hdcImage, pen);
     GetObject(pen, sizeof(lpen), &lpen);
@@ -642,19 +631,19 @@ RUBBER *CreateRubberBand(IMAGEDATA *res, int type, int filltype, POINT pt)
     lpen.lopnColor = filltype == FT_BORDER || filltype == FT_HOLLOW ? RGB_WHITE : RGB_BLACK;
     pen = CreatePenIndirect(&lpen);
     DeleteObject(SelectObject(rv->hdcRubberBorder, pen));
-    
+
     lbrush.lbColor = RGB_BLACK;
     brush = CreateBrushIndirect(&lbrush);
     DeleteObject(SelectObject(rv->hdcRubberBorder, brush));
-    
+
     lpen.lopnColor = RGB_BLACK;
     pen = CreatePenIndirect(&lpen);
     DeleteObject(SelectObject(rv->hdcRubberFill, pen));
-    
+
     lbrush.lbColor = filltype == FT_BORDER || filltype == FT_FILL ? RGB_WHITE : RGB_BLACK;
     brush = CreateBrushIndirect(&lbrush);
     DeleteObject(SelectObject(rv->hdcRubberFill, brush));
-    
+
     rv->type = type;
     rv->filltype = filltype;
     rv->x = pt.x;
@@ -665,32 +654,32 @@ RUBBER *CreateRubberBand(IMAGEDATA *res, int type, int filltype, POINT pt)
     rv->bmpheight = res->height;
     return rv;
 }
-void DeleteRubberBand(IMGDATA *p, RUBBER *r)
+void DeleteRubberBand(IMGDATA* p, RUBBER* r)
 {
     DeleteDC(r->hdcRubberBorder);
     DeleteObject(r->hbmpRubberBorder);
     DeleteDC(r->hdcRubberFill);
     DeleteObject(r->hbmpRubberFill);
     free(r);
-    SendMessage(p->hwndStatus, SB_SETTEXT, 3, (LPARAM)"");
+    SendMessage(p->hwndStatus, SB_SETTEXT, 3, (LPARAM) "");
 }
-static void printRubberSize(IMGDATA *p, int w, int h)
+static void printRubberSize(IMGDATA* p, int w, int h)
 {
     char buf[256];
-    sprintf(buf,"%d x %d", w/p->zoom, h/p->zoom);
+    sprintf(buf, "%d x %d", w / p->zoom, h / p->zoom);
     SendMessage(p->hwndStatus, SB_SETTEXT, 3, (LPARAM)buf);
 }
-void RubberBand(IMGDATA *p, RUBBER *r, POINT pt)
+void RubberBand(IMGDATA* p, RUBBER* r, POINT pt)
 {
     POINT start;
-    r->width = pt.x - r->x ;
-    r->height = pt.y - r->y ;
-    
+    r->width = pt.x - r->x;
+    r->height = pt.y - r->y;
+
     printRubberSize(p, r->width, r->height);
-    
+
     PatBlt(r->hdcRubberBorder, 0, 0, r->bmpwidth, r->bmpheight, BLACKNESS);
     PatBlt(r->hdcRubberFill, 0, 0, r->bmpwidth, r->bmpheight, BLACKNESS);
-    switch(r->type)
+    switch (r->type)
     {
         case RT_LINE:
             start.x = r->x;
@@ -698,30 +687,30 @@ void RubberBand(IMGDATA *p, RUBBER *r, POINT pt)
             DrawLine(r->hdcRubberBorder, start, pt);
             break;
         case RT_RECTANGLE:
-            Rectangle(r->hdcRubberBorder, r->x, r->y, r->x + r->width +1, r->y + r->height+1);
-            Rectangle(r->hdcRubberFill, r->x, r->y, r->x + r->width +1, r->y + r->height +1);
+            Rectangle(r->hdcRubberBorder, r->x, r->y, r->x + r->width + 1, r->y + r->height + 1);
+            Rectangle(r->hdcRubberFill, r->x, r->y, r->x + r->width + 1, r->y + r->height + 1);
             break;
         case RT_ROUNDEDRECTANGLE:
-            RoundRect(r->hdcRubberBorder, r->x, r->y, r->x + r->width +1, r->y + r->height+1, 7, 7);
-            RoundRect(r->hdcRubberFill, r->x, r->y, r->x + r->width+1, r->y + r->height+1, 7, 7);
+            RoundRect(r->hdcRubberBorder, r->x, r->y, r->x + r->width + 1, r->y + r->height + 1, 7, 7);
+            RoundRect(r->hdcRubberFill, r->x, r->y, r->x + r->width + 1, r->y + r->height + 1, 7, 7);
             break;
         case RT_ELLIPSE:
-            Ellipse(r->hdcRubberBorder, r->x, r->y, r->x + r->width+1, r->y + r->height+1);
-            Ellipse(r->hdcRubberFill, r->x, r->y, r->x + r->width+1, r->y + r->height+1);
+            Ellipse(r->hdcRubberBorder, r->x, r->y, r->x + r->width + 1, r->y + r->height + 1);
+            Ellipse(r->hdcRubberFill, r->x, r->y, r->x + r->width + 1, r->y + r->height + 1);
             break;
     }
 }
-void InstantiateRubberBand(IMGDATA *p, IMAGEDATA *res, RUBBER *r)
+void InstantiateRubberBand(IMGDATA* p, IMAGEDATA* res, RUBBER* r)
 {
     HPEN pen;
     HBRUSH brush;
     LOGPEN lpen;
-    switch(r->type)
+    switch (r->type)
     {
-        POINT start,end;
+        POINT start, end;
         case RT_LINE:
             start.x = r->x;
-            start.y = r->y ;
+            start.y = r->y;
             end.x = r->x + r->width;
             end.y = r->y + r->height;
             DrawLine(res->hdcImage, start, end);
@@ -731,7 +720,7 @@ void InstantiateRubberBand(IMGDATA *p, IMAGEDATA *res, RUBBER *r)
         case RT_ELLIPSE:
             SetBkColor(res->hdcImage, RGB_WHITE);
             SetTextColor(res->hdcImage, RGB_BLACK);
-            BitBlt(res->hdcImage, 0, 0, res->width, res->height, r->hdcRubberFill, 0, 0, DSPDxax); 
+            BitBlt(res->hdcImage, 0, 0, res->width, res->height, r->hdcRubberFill, 0, 0, DSPDxax);
             pen = CreatePen(PS_SOLID, 0, 0);
             pen = SelectObject(res->hdcImage, pen);
             GetObject(pen, sizeof(lpen), &lpen);
@@ -739,7 +728,7 @@ void InstantiateRubberBand(IMGDATA *p, IMAGEDATA *res, RUBBER *r)
             DeleteObject(pen);
             brush = CreateSolidBrush(lpen.lopnColor);
             brush = SelectObject(res->hdcImage, brush);
-            BitBlt(res->hdcImage, 0, 0, res->width, res->height, r->hdcRubberBorder, 0, 0, DSPDxax); 
+            BitBlt(res->hdcImage, 0, 0, res->width, res->height, r->hdcRubberBorder, 0, 0, DSPDxax);
             brush = SelectObject(res->hdcImage, brush);
             DeleteObject(brush);
             break;
@@ -750,10 +739,10 @@ void InstantiateRubberBand(IMGDATA *p, IMAGEDATA *res, RUBBER *r)
         ResSetDirty(p->resource);
     }
 }
-void DrawPoint(IMGDATA *p, IMAGEDATA *res, POINT pt)
+void DrawPoint(IMGDATA* p, IMAGEDATA* res, POINT pt)
 {
     MoveToEx(res->hdcImage, pt.x, pt.y, NULL);
-    LineTo(res->hdcImage, pt.x+1, pt.y);
+    LineTo(res->hdcImage, pt.x + 1, pt.y);
 
     if (!res->imageDirty)
     {
@@ -771,12 +760,12 @@ void DrawLine(HDC hDC, POINT start, POINT end)
     int deltay = end.y - start.y;
     int incrementx = deltax > 0 ? 1 : -1;
     int incrementy = deltay > 0 ? 1 : -1;
-    int d ;
+    int d;
     int done = FALSE;
     if (deltax < 0)
-        deltax = - deltax;
+        deltax = -deltax;
     if (deltay < 0)
-        deltay = - deltay;
+        deltay = -deltay;
     if (deltax > deltay)
         d = 2 * deltay - deltax;
     else
@@ -784,7 +773,7 @@ void DrawLine(HDC hDC, POINT start, POINT end)
     while (!done)
     {
         MoveToEx(hDC, current.x, current.y, NULL);
-        LineTo(hDC, current.x+1, current.y);
+        LineTo(hDC, current.x + 1, current.y);
         if (deltax >= deltay)
         {
             if (d < 0)
@@ -813,21 +802,21 @@ void DrawLine(HDC hDC, POINT start, POINT end)
                 done = TRUE;
         }
         else if (current.x < end.x)
-                done = TRUE;
+            done = TRUE;
         if (end.y > start.y)
         {
             if (current.y > end.y)
                 done = TRUE;
         }
         else if (current.y < end.y)
-                done = TRUE;
+            done = TRUE;
     }
 }
 
-void Fill(IMGDATA *p, IMAGEDATA *res, POINT pt)
+void Fill(IMGDATA* p, IMAGEDATA* res, POINT pt)
 {
     DWORD color;
-    color = GetPixel(res->hdcImage, pt.x, pt.y);    
+    color = GetPixel(res->hdcImage, pt.x, pt.y);
     /* now flood fill the image */
     ExtFloodFill(res->hdcImage, pt.x, pt.y, color, FLOODFILLSURFACE);
     if (!res->imageDirty)
@@ -836,14 +825,14 @@ void Fill(IMGDATA *p, IMAGEDATA *res, POINT pt)
         ResSetDirty(p->resource);
     }
 }
-void FreeImageResource(IMAGEDATA *res)
+void FreeImageResource(IMAGEDATA* res)
 {
-//    while (res)
-//    {
-//        IMAGEDATA *next = res->next;
-//        FreeImageUndo(res);
-//        DeleteImageDC(res);
-//        free(res);
-//        res = next;
-//    }
+    //    while (res)
+    //    {
+    //        IMAGEDATA *next = res->next;
+    //        FreeImageUndo(res);
+    //        DeleteImageDC(res);
+    //        free(res);
+    //        res = next;
+    //    }
 }

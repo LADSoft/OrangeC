@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -41,14 +41,14 @@ extern HINSTANCE hInstance;
 extern HTREEITEM prjSelectedItem;
 extern HWND prjTreeWindow;
 
-PROJECTITEM *GetItemInfo(HTREEITEM item);
+PROJECTITEM* GetItemInfo(HTREEITEM item);
 
-PROJECTITEM *CreateFolder(PROJECTITEM *p, char *name, BOOL always )
+PROJECTITEM* CreateFolder(PROJECTITEM* p, char* name, BOOL always)
 {
-    PROJECTITEM *folder;
+    PROJECTITEM* folder;
     if (!always)
     {
-        PROJECTITEM **ins = &p->children;
+        PROJECTITEM** ins = &p->children;
         while (*ins && stricmp((*ins)->displayName, name) < 0 && (*ins)->type == PJ_FOLDER)
         {
             ins = &(*ins)->next;
@@ -60,7 +60,7 @@ PROJECTITEM *CreateFolder(PROJECTITEM *p, char *name, BOOL always )
     if (folder)
     {
         HTREEITEM pos = TVI_FIRST;
-        PROJECTITEM **ins = &p->children;
+        PROJECTITEM** ins = &p->children;
         while (*ins && stricmp((*ins)->displayName, name) < 0 && (*ins)->type == PJ_FOLDER)
         {
             pos = (*ins)->hTreeItem;
@@ -79,7 +79,7 @@ PROJECTITEM *CreateFolder(PROJECTITEM *p, char *name, BOOL always )
 }
 void ProjectNewFolder(void)
 {
-    PROJECTITEM *data = GetItemInfo(prjSelectedItem);
+    PROJECTITEM* data = GetItemInfo(prjSelectedItem);
     if (data && (data->type == PJ_FOLDER || data->type == PJ_PROJ))
     {
         CreateFolder(data, "New Folder", TRUE);

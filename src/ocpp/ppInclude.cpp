@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -30,13 +30,13 @@
 #include "Errors.h"
 #include "CmdFiles.h"
 #include <limits.h>
-#include <fstream>			  
+#include <fstream>
 ppInclude::~ppInclude()
 {
     while (current)
         popFile();
 }
-bool ppInclude::Check(int token, const std::string &args)
+bool ppInclude::Check(int token, const std::string& args)
 {
     if (!current || !current->Check(token, args, current->GetErrorLine()))
         if (!CheckInclude(token, args))
@@ -45,7 +45,7 @@ bool ppInclude::Check(int token, const std::string &args)
     return true;
 }
 
-bool ppInclude::CheckInclude(int token, const std::string &args)
+bool ppInclude::CheckInclude(int token, const std::string& args)
 {
     if (token == INCLUDE)
     {
@@ -58,7 +58,7 @@ bool ppInclude::CheckInclude(int token, const std::string &args)
     }
     return false;
 }
-bool ppInclude::CheckLine(int token, const std::string &args)
+bool ppInclude::CheckLine(int token, const std::string& args)
 {
     if (token == LINE)
     {
@@ -69,20 +69,20 @@ bool ppInclude::CheckLine(int token, const std::string &args)
         {
             int n = expr.Eval(line1);
             ParseName(line1);
-            current->SetErrlineInfo(name, n-1);
+            current->SetErrlineInfo(name, n - 1);
         }
         else
         {
             std::string temp = line1.substr(0, npos);
             int n = expr.Eval(temp);
-            ParseName(line1.substr(npos+1));
-            current->SetErrlineInfo(name, n-1);
+            ParseName(line1.substr(npos + 1));
+            current->SetErrlineInfo(name, n - 1);
         }
-        return true;		
+        return true;
     }
     return false;
 }
-void ppInclude::pushFile(const std::string &name)
+void ppInclude::pushFile(const std::string& name)
 {
     // gotta do the test first to get the error correct if it isn't there
     std::fstream in(name.c_str(), std::ios::in);
@@ -99,12 +99,12 @@ void ppInclude::pushFile(const std::string &name)
             current = nullptr;
         }
         current = new ppFile(fullname, trigraphs, extendedComment, name, define, *ctx, unsignedchar, c89, asmpp);
-        //if (current)
-            if (!current->Open())
-            {
-                Errors::Error(std::string("Could not open ") + name + " for input");
-                popFile();
-            }
+        // if (current)
+        if (!current->Open())
+        {
+            Errors::Error(std::string("Could not open ") + name + " for input");
+            popFile();
+        }
     }
 }
 bool ppInclude::popFile()
@@ -121,15 +121,15 @@ bool ppInclude::popFile()
     }
     return true;
 }
-void ppInclude::ParseName(const std::string &args)
+void ppInclude::ParseName(const std::string& args)
 {
-    const char *p = args.c_str();
+    const char* p = args.c_str();
     while (isspace(*p))
         p++;
     int stchr = *p++;
     if (stchr == '"' || stchr == '<')
     {
-        const char *q = p;
+        const char* q = p;
         system = stchr == '<';
         int enchr = '"';
         if (system)
@@ -142,7 +142,7 @@ void ppInclude::ParseName(const std::string &args)
         {
             char buf[260];
             strncpy(buf, q, p - q);
-            buf[p-q] = 0;
+            buf[p - q] = 0;
             name = buf;
         }
         else
@@ -153,14 +153,14 @@ void ppInclude::ParseName(const std::string &args)
     else
         Errors::Error("File name expected");
 }
-void ppInclude::FindFile(const std::string &args)
+void ppInclude::FindFile(const std::string& args)
 {
     if (!SrchPath(system))
         SrchPath(!system);
 }
 bool ppInclude::SrchPath(bool system)
 {
-    const char *path;
+    const char* path;
     if (system)
         path = sysSrchPath.c_str();
     else
@@ -170,11 +170,11 @@ bool ppInclude::SrchPath(bool system)
     {
         path = RetrievePath(buf, path);
         AddName(buf);
-        while (char *p = strchr(buf, '/'))
+        while (char* p = strchr(buf, '/'))
         {
             *p = CmdFiles::DIR_SEP[0];
         }
-        FILE *fil = fopen(buf, "rb");
+        FILE* fil = fopen(buf, "rb");
         if (fil)
         {
             fclose(fil);
@@ -184,7 +184,7 @@ bool ppInclude::SrchPath(bool system)
     } while (path);
     return false;
 }
-const char *ppInclude::RetrievePath(char *buf, const char *path)
+const char* ppInclude::RetrievePath(char* buf, const char* path)
 {
     while (*path && *path != ';')
     {
@@ -200,12 +200,12 @@ const char *ppInclude::RetrievePath(char *buf, const char *path)
         return nullptr;
     }
 }
-void ppInclude::AddName(char *buf)
+void ppInclude::AddName(char* buf)
 {
     int n = strlen(buf);
     if (n)
     {
-        if (buf[n-1] != '\\')
+        if (buf[n - 1] != '\\')
         {
             buf[n] = '\\';
             buf[++n] = 0;
@@ -213,11 +213,11 @@ void ppInclude::AddName(char *buf)
     }
     strcat(buf, name.c_str());
 }
-void ppInclude::StripAsmComment(std::string &line)
+void ppInclude::StripAsmComment(std::string& line)
 {
     int quote = 0;
     int n = line.size();
-    for (int i=0; i < n; i++)
+    for (int i = 0; i < n; i++)
     {
         if (line[i] == quote)
         {
@@ -225,7 +225,7 @@ void ppInclude::StripAsmComment(std::string &line)
         }
         else
         {
-            switch(line[i])
+            switch (line[i])
             {
                 case '"':
                 case '\'':
@@ -234,7 +234,7 @@ void ppInclude::StripAsmComment(std::string &line)
                 case ';':
                     if (!quote)
                     {
-                        while (i && isspace(line[i-1]))
+                        while (i && isspace(line[i - 1]))
                             i--;
                         line.erase(i);
                         return;
@@ -245,14 +245,14 @@ void ppInclude::StripAsmComment(std::string &line)
     }
     if (line.size())
     {
-        n = line.size()-1;
+        n = line.size() - 1;
         while (n && isspace(line[n]))
             n--;
-        if (n != line.size()-1)
-            line.erase(n+1);
+        if (n != line.size() - 1)
+            line.erase(n + 1);
     }
 }
-bool ppInclude::GetLine(std::string &line, int &lineno)
+bool ppInclude::GetLine(std::string& line, int& lineno)
 {
     while (current)
     {
@@ -275,5 +275,4 @@ bool ppInclude::GetLine(std::string &line, int &lineno)
         popFile();
     }
     return false;
-        
 }

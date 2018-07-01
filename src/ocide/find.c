@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -35,19 +35,18 @@
 #include "idewinconst.h"
 #include <ctype.h>
 
-
 #define EDITOR_OFFSET 35
 
 extern HINSTANCE hInstance;
 extern HWND hwndClient;
 extern HWND hwndTbFind;
 extern HWND hwndFrame;
-extern char highlightText[256] ;
+extern char highlightText[256];
 extern int highlightCaseSensitive;
 extern int highlightWholeWord;
-extern DWINFO *editWindows;
-extern PROJECTITEM *activeProject;
-extern PROJECTITEM *workArea;
+extern DWINFO* editWindows;
+extern PROJECTITEM* activeProject;
+extern PROJECTITEM* workArea;
 extern char szInstallPath[];
 
 DWORD BrowseForFile(HWND hwnd, LPSTR pszDisplayName, LPSTR pszPath, UINT cchPath);
@@ -55,10 +54,10 @@ DWORD BrowseForFile(HWND hwnd, LPSTR pszDisplayName, LPSTR pszPath, UINT cchPath
 HWND hwndFind = NULL, hwndFindInternal = NULL;
 int modifiedFind;
 
-char *findhist[MAX_COMBO_HISTORY];
-char *replacehist[MAX_COMBO_HISTORY];
-char *findbrowsehist[MAX_COMBO_HISTORY];
-char *replacebrowsehist[MAX_COMBO_HISTORY];
+char* findhist[MAX_COMBO_HISTORY];
+char* replacehist[MAX_COMBO_HISTORY];
+char* findbrowsehist[MAX_COMBO_HISTORY];
+char* replacebrowsehist[MAX_COMBO_HISTORY];
 
 POINT findDlgPos;
 BOOL finding = TRUE;
@@ -85,7 +84,7 @@ int replaceext = 0;
 typedef struct _bufList
 {
     struct _bufList *fwd, *back;
-    DWINFO *ptr;
+    DWINFO* ptr;
     CHARRANGE range;
 } BUFLIST;
 
@@ -94,24 +93,21 @@ char findText[256];
 static char replaceText[256];
 
 static CHARRANGE findPos, replacePos;
-static char *currentBuffer;
-static DWINFO *currentWindow;
-static BUFLIST *opened;
-static char *headerExt = ".h;.hxx";
+static char* currentBuffer;
+static DWINFO* currentWindow;
+static BUFLIST* opened;
+static char* headerExt = ".h;.hxx";
 
 static HANDLE findEvent;
-void findInit(void)
-{
-    findEvent = CreateEvent(0, FALSE, TRUE, 0);
-}
+void findInit(void) { findEvent = CreateEvent(0, FALSE, TRUE, 0); }
 //-------------------------------------------------------------------------
 
-static void nm_matches(char *search, int flags, char *buf, CHARRANGE *pos)
+static void nm_matches(char* search, int flags, char* buf, CHARRANGE* pos)
 {
-    if (flags &F_DOWN)
+    if (flags & F_DOWN)
     {
-        char *found;
-        if (flags &FR_MATCHCASE)
+        char* found;
+        if (flags & FR_MATCHCASE)
             found = strstr(buf + pos->cpMin, search);
         else
             found = stristr(buf + pos->cpMin, search);
@@ -125,37 +121,36 @@ static void nm_matches(char *search, int flags, char *buf, CHARRANGE *pos)
         int l = strlen(search);
         do
         {
-            if (flags &F_MATCHCASE)
+            if (flags & F_MATCHCASE)
             {
                 if (!strncmp(buf + pos->cpMax, search, l))
                     break;
             }
-            else
-                if (!strnicmp(buf + pos->cpMax, search, l))
-                    break;
+            else if (!strnicmp(buf + pos->cpMax, search, l))
+                break;
             pos->cpMax--;
         } while (pos->cpMax >= pos->cpMin && !canceled);
     }
 }
-static int getSegment(char *result, char **source)
+static int getSegment(char* result, char** source)
 {
     int n = 0;
     while (**source && **source != '?' && **source != '*')
     {
-        *result ++= *(*source)++;
+        *result++ = *(*source)++;
         n++;
     }
     *result = 0;
     return n;
 }
-static int matches_wc(char *search, int flags, char *buf, int pos, int *len)
+static int matches_wc(char* search, int flags, char* buf, int pos, int* len)
 {
     /* this assumes that a '*' will be prepended to whatever they ask for */
-    int start=-1;
+    int start = -1;
     char segment[1024];
-    char *orgsearch = search;
+    char* orgsearch = search;
     int orgpos = pos;
-    
+
     while (pos != -1 && *search && !canceled)
     {
         if (search == orgsearch)
@@ -173,12 +168,12 @@ static int matches_wc(char *search, int flags, char *buf, int pos, int *len)
             {
                 int l = getSegment(segment, &search);
                 char *q, *p;
-                p = strchr(buf+pos, '\n');
-                
-                if (flags &FR_MATCHCASE)
-                    q = strstr(buf+pos, segment);
+                p = strchr(buf + pos, '\n');
+
+                if (flags & FR_MATCHCASE)
+                    q = strstr(buf + pos, segment);
                 else
-                    q = stristr(buf+pos, segment);
+                    q = stristr(buf + pos, segment);
                 if (q)
                 {
                     if (p && q > p)
@@ -212,21 +207,21 @@ static int matches_wc(char *search, int flags, char *buf, int pos, int *len)
         }
         else
         {
-            char *q;
+            char* q;
             if (search == orgsearch)
             {
                 int l = getSegment(segment, &search);
                 if (flags & FR_DOWN)
                 {
-                    if (flags &FR_MATCHCASE)
-                        q = strstr(buf+pos, segment);
+                    if (flags & FR_MATCHCASE)
+                        q = strstr(buf + pos, segment);
                     else
-                        q = stristr(buf+pos, segment);
+                        q = stristr(buf + pos, segment);
                 }
                 else
                 {
                     q = 0;
-                    if (flags &FR_MATCHCASE)
+                    if (flags & FR_MATCHCASE)
                     {
                         if (!strncmp(buf + pos, segment, l))
                             q = buf + pos;
@@ -236,7 +231,6 @@ static int matches_wc(char *search, int flags, char *buf, int pos, int *len)
                         if (!strnicmp(buf + pos, segment, l))
                             q = buf + pos;
                     }
-                        
                 }
                 if (!q)
                     pos = -1;
@@ -252,7 +246,7 @@ static int matches_wc(char *search, int flags, char *buf, int pos, int *len)
             else
             {
                 int l = getSegment(segment, &search);
-                if (flags &F_MATCHCASE)
+                if (flags & F_MATCHCASE)
                 {
                     if (strncmp(buf + pos, segment, l) != 0)
                     {
@@ -290,10 +284,10 @@ static int matches_wc(char *search, int flags, char *buf, int pos, int *len)
     }
     return -1;
 }
-static void wc_matches(char *search, int flags, char *buf, CHARRANGE *pos, int *len)
+static void wc_matches(char* search, int flags, char* buf, CHARRANGE* pos, int* len)
 {
     if (flags & FR_DOWN)
-    {        
+    {
         pos->cpMin = matches_wc(search, flags, buf, pos->cpMin, len);
         if (pos->cpMin == -1)
             pos->cpMin = pos->cpMax;
@@ -313,9 +307,9 @@ static void wc_matches(char *search, int flags, char *buf, CHARRANGE *pos, int *
         } while (pos->cpMax >= pos->cpMin && !canceled);
     }
 }
-static void rex_matches(RE_CONTEXT *context, int flags, char *buf, CHARRANGE *pos, int *len)
+static void rex_matches(RE_CONTEXT* context, int flags, char* buf, CHARRANGE* pos, int* len)
 {
-    if (flags &F_DOWN)
+    if (flags & F_DOWN)
     {
         int i = re_matches(context, buf, pos->cpMin, pos->cpMax);
         if (!i)
@@ -323,7 +317,7 @@ static void rex_matches(RE_CONTEXT *context, int flags, char *buf, CHARRANGE *po
         else
             pos->cpMin += context->m_so;
     }
-    else   
+    else
     {
         int i = re_matches(context, buf, pos->cpMax, pos->cpMin);
         if (!i)
@@ -333,20 +327,19 @@ static void rex_matches(RE_CONTEXT *context, int flags, char *buf, CHARRANGE *po
     }
     *len = context->m_eo - context->m_so;
 }
-static int countLines(char *start, char *end)
+static int countLines(char* start, char* end)
 {
     int rv = 0;
-    char *p = start-1;
-    while(p && p < end)
+    char* p = start - 1;
+    while (p && p < end)
     {
-        p = strchr(p+1, '\n');
+        p = strchr(p + 1, '\n');
         if (p && p < end)
             rv++;
-        
     }
     return rv;
 }
-static void SendToOutput(char *fname, int flags, char *start, char *end)
+static void SendToOutput(char* fname, int flags, char* start, char* end)
 {
     if (flags & (F_OUTPUT1 | F_OUTPUT2))
     {
@@ -359,7 +352,7 @@ static void SendToOutput(char *fname, int flags, char *start, char *end)
         while (*le && *le != '\r' && *le != '\n')
             le++;
         if (le - ls > sizeof(line))
-            le = ls + sizeof(line)-1;
+            le = ls + sizeof(line) - 1;
         memcpy(line, ls, le - ls);
         line[le - ls] = 0;
         sprintf(buf, "%s:%7d %s\n", fname, n, line);
@@ -368,28 +361,28 @@ static void SendToOutput(char *fname, int flags, char *start, char *end)
     }
     else if (flags & F_OPENWINDOW)
     {
-        DWINFO *ptr = GetFileInfo(fname);
+        DWINFO* ptr = GetFileInfo(fname);
         if (!ptr)
         {
-            DWINFO *p = calloc(1, sizeof(DWINFO));
-            char *q = strrchr(fname, '\\');
+            DWINFO* p = calloc(1, sizeof(DWINFO));
+            char* q = strrchr(fname, '\\');
             if (q)
                 q++;
-            else 
+            else
                 q = fname;
-                
+
             strcpy(p->dwName, fname);
             strcpy(p->dwTitle, q);
             p->dwLineNo = countLines(start, end) + 1;
             p->logMRU = FALSE;
             p->newFile = FALSE;
             PostMessage(hwndFrame, WM_COMMAND, IDM_DEFERREDOPEN, (LPARAM)p);
-            while (!GetFileInfo(fname) && !canceled) Sleep(10);
+            while (!GetFileInfo(fname) && !canceled)
+                Sleep(10);
         }
     }
 }
-static int xfind(char *fname, char *search, int flags, char *buf, int *len, CHARRANGE *pos, 
-                 RE_CONTEXT *context)
+static int xfind(char* fname, char* search, int flags, char* buf, int* len, CHARRANGE* pos, RE_CONTEXT* context)
 {
     *len = strlen(search);
     while (!canceled)
@@ -408,33 +401,33 @@ static int xfind(char *fname, char *search, int flags, char *buf, int *len, CHAR
         }
         if (pos->cpMin >= pos->cpMax)
             return -1;
-            
-        if (flags &F_WHOLEWORD)
+
+        if (flags & F_WHOLEWORD)
         {
             if (flags & FR_DOWN)
             {
-            
+
                 if (pos->cpMin && isalnum(buf[pos->cpMin - 1]))
                 {
-                    pos->cpMin +=  *len;
+                    pos->cpMin += *len;
                 }
-                else if (!buf[pos->cpMin +  *len] || !isalnum(buf[pos->cpMin +  *len]))
+                else if (!buf[pos->cpMin + *len] || !isalnum(buf[pos->cpMin + *len]))
                 {
                     SendToOutput(fname, flags, buf, buf + pos->cpMin);
                     return pos->cpMin;
                 }
                 else
                 {
-                    pos->cpMin +=  *len;
+                    pos->cpMin += *len;
                 }
             }
             else
             {
                 if (pos->cpMax && isalnum(buf[pos->cpMax - 1]))
                 {
-                    pos->cpMax --;
+                    pos->cpMax--;
                 }
-                else if (!buf[pos->cpMax +  *len] || !isalnum(buf[pos->cpMax +  *len]))
+                else if (!buf[pos->cpMax + *len] || !isalnum(buf[pos->cpMax + *len]))
                 {
                     SendToOutput(fname, flags, buf, buf + pos->cpMax);
                     return pos->cpMax;
@@ -460,47 +453,44 @@ static int xfind(char *fname, char *search, int flags, char *buf, int *len, CHAR
             }
         }
     }
-    return -1; // canceled
+    return -1;  // canceled
 }
-static RE_CONTEXT * getREContext(char *search, int flags)
+static RE_CONTEXT* getREContext(char* search, int flags)
 {
-    RE_CONTEXT *rv = NULL;
+    RE_CONTEXT* rv = NULL;
     if (flags & F_REGULAR)
     {
-        rv = re_init(search, RE_F_REGULAR | 
-                          ((flags & F_MATCHCASE) ? 0 : RE_F_INSENSITIVE) |
-                          ((flags & F_WHOLEWORD) ? RE_F_WORD : 0), NULL);
+        rv = re_init(search,
+                     RE_F_REGULAR | ((flags & F_MATCHCASE) ? 0 : RE_F_INSENSITIVE) | ((flags & F_WHOLEWORD) ? RE_F_WORD : 0), NULL);
         if (!rv)
         {
-            ExtendedMessageBox("Error",
-                MB_SETFOREGROUND | MB_SYSTEMMODAL, "There is a problem with the regular expression");
-            rv = (RE_CONTEXT *)-1;
+            ExtendedMessageBox("Error", MB_SETFOREGROUND | MB_SYSTEMMODAL, "There is a problem with the regular expression");
+            rv = (RE_CONTEXT*)-1;
         }
     }
     return rv;
 }
-static void FindAllInBuffer(char *fname, char *buf, char *search, int flags)
+static void FindAllInBuffer(char* fname, char* buf, char* search, int flags)
 {
     CHARRANGE pos;
     int len = 0;
-    RE_CONTEXT *context = getREContext(search, flags);
-    if (context == (RE_CONTEXT *)-1)
+    RE_CONTEXT* context = getREContext(search, flags);
+    if (context == (RE_CONTEXT*)-1)
         return;
     pos.cpMin = 0;
     pos.cpMax = strlen(buf);
     flags |= F_DOWN;
-    while ((pos.cpMin = xfind(fname, search, flags, buf, &len, &pos, context)) >= 0) 
+    while ((pos.cpMin = xfind(fname, search, flags, buf, &len, &pos, context)) >= 0)
     {
         matchCount++;
-        pos.cpMin += len ;
+        pos.cpMin += len;
     }
     if (context)
         re_free(context);
-    
 }
 //-------------------------------------------------------------------------
 
-static int FindNextInDocument(DWINFO *ptr, char *buf, CHARRANGE *pos, int flags, char *search, RE_CONTEXT *context)
+static int FindNextInDocument(DWINFO* ptr, char* buf, CHARRANGE* pos, int flags, char* search, RE_CONTEXT* context)
 {
 
     BOOL rv = FALSE;
@@ -541,20 +531,20 @@ static int FindNextInDocument(DWINFO *ptr, char *buf, CHARRANGE *pos, int flags,
     }
     else
     {
-        SendMessage(ptr->dwHandle, EM_SETSEL,  - 1, 0);
+        SendMessage(ptr->dwHandle, EM_SETSEL, -1, 0);
         SendMessage(ptr->self, WM_COMMAND, ID_REDRAWSTATUS, 0);
     }
     return rv;
 }
-static BOOL matchesExt(char *name, char *extensions)
+static BOOL matchesExt(char* name, char* extensions)
 {
-    char *p = strrchr(name, '.');
+    char* p = strrchr(name, '.');
     if (p && p[-1] != '.')
     {
         char buf[MAX_PATH];
         while (*extensions)
         {
-            char *q = buf;
+            char* q = buf;
             while (*extensions && *extensions != ';')
             {
                 *q++ = *extensions++;
@@ -562,19 +552,18 @@ static BOOL matchesExt(char *name, char *extensions)
             *q = 0;
             if (*extensions)
                 extensions++;
-            if (!strcmp(buf+1, ".*"))
+            if (!strcmp(buf + 1, ".*"))
                 return TRUE;
-            if (!xstricmp(buf+1, p))
+            if (!xstricmp(buf + 1, p))
                 return TRUE;
-        } 
-        
+        }
     }
     else if (!p)
     {
         char buf[MAX_PATH];
         while (*extensions)
         {
-            char *q = buf;
+            char* q = buf;
             while (*extensions && *extensions != ';')
             {
                 *q++ = *extensions++;
@@ -582,25 +571,25 @@ static BOOL matchesExt(char *name, char *extensions)
             *q = 0;
             if (*extensions)
                 extensions++;
-            if (!strcmp(buf+1, ".*"))
+            if (!strcmp(buf + 1, ".*"))
                 return TRUE;
-        } 
+        }
     }
     return FALSE;
 }
-static int sortfunc(const void *Left, const void *Right)
+static int sortfunc(const void* Left, const void* Right)
 {
-    const DWINFO **left = (const DWINFO **)Left;
-    const DWINFO **right = (const DWINFO **)Right;
+    const DWINFO** left = (const DWINFO**)Left;
+    const DWINFO** right = (const DWINFO**)Right;
     return xstricmp((*left)->dwName, (*right)->dwName);
 }
-static BUFLIST **AddToTail(DWINFO **files, int count, BUFLIST **tail)
+static BUFLIST** AddToTail(DWINFO** files, int count, BUFLIST** tail)
 {
     int i;
-    qsort(files, count, sizeof(DWINFO *), sortfunc);
-    for (i=0; i < count; i++)
+    qsort(files, count, sizeof(DWINFO*), sortfunc);
+    for (i = 0; i < count; i++)
     {
-        BUFLIST *newBuf = calloc(1,sizeof(BUFLIST));
+        BUFLIST* newBuf = calloc(1, sizeof(BUFLIST));
         if (newBuf)
         {
             newBuf->back = *tail;
@@ -614,13 +603,12 @@ static BUFLIST **AddToTail(DWINFO **files, int count, BUFLIST **tail)
     }
     return tail;
 }
-void AddFileToArray(DWINFO ***files, int *count, int *max, char *name)
+void AddFileToArray(DWINFO*** files, int* count, int* max, char* name)
 {
-    DWINFO *ptr = GetFileInfo(name);
+    DWINFO* ptr = GetFileInfo(name);
     if (!ptr)
     {
-        HANDLE h = CreateFile(name, GENERIC_READ | GENERIC_WRITE, 0, 
-                              NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+        HANDLE h = CreateFile(name, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
         if (h != INVALID_HANDLE_VALUE)
         {
             DWORD hi;
@@ -630,7 +618,6 @@ void AddFileToArray(DWINFO ***files, int *count, int *max, char *name)
             ptr->temp = GetFileSize(h, &hi);
             CloseHandle(h);
         }
-            
     }
     else
     {
@@ -644,17 +631,16 @@ void AddFileToArray(DWINFO ***files, int *count, int *max, char *name)
                 *max = 100;
             else
                 *max *= 2;
-            *files = realloc(*files, sizeof(DWINFO *)* (*max));
+            *files = realloc(*files, sizeof(DWINFO*) * (*max));
         }
         if (*files)
             (*files)[(*count)++] = ptr;
     }
 }
-static BUFLIST **FindLoadProject(PROJECTITEM *pi, BUFLIST **tail, int flags, char *extensions)
+static BUFLIST** FindLoadProject(PROJECTITEM* pi, BUFLIST** tail, int flags, char* extensions)
 {
     static int max, count;
-    static DWINFO **files;
-    HANDLE handle;
+    static DWINFO** files;
     if (!pi)
         return tail;
     pi = pi->children;
@@ -662,7 +648,7 @@ static BUFLIST **FindLoadProject(PROJECTITEM *pi, BUFLIST **tail, int flags, cha
     {
         if (pi->type == PJ_FOLDER)
         {
-            
+
             if (flags & F_SUBDIR)
             {
                 tail = FindLoadProject(pi, tail, flags, extensions);
@@ -682,10 +668,10 @@ static BUFLIST **FindLoadProject(PROJECTITEM *pi, BUFLIST **tail, int flags, cha
     }
     return tail;
 }
-static void FindLoadPath(char *path, BUFLIST **tail, int flags, char *extensions)
+static void FindLoadPath(char* path, BUFLIST** tail, int flags, char* extensions)
 {
     static int max, count;
-    static DWINFO **files;
+    static DWINFO** files;
     char xpath[MAX_PATH];
     WIN32_FIND_DATA data;
     HANDLE hndl;
@@ -699,10 +685,11 @@ static void FindLoadPath(char *path, BUFLIST **tail, int flags, char *extensions
             char xpath[MAX_PATH];
             sprintf(xpath, "%s\\%s", path, data.cFileName);
             if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-            {                
+            {
                 if (flags & F_SUBDIR)
                 {
-                    if (data.cFileName[0] != '.' || (data.cFileName[1] != 0 && (data.cFileName[1] != '.' || data.cFileName[2] != 0)) )
+                    if (data.cFileName[0] != '.' ||
+                        (data.cFileName[1] != 0 && (data.cFileName[1] != '.' || data.cFileName[2] != 0)))
                         FindLoadPath(xpath, NULL, flags, extensions);
                 }
             }
@@ -724,13 +711,13 @@ void EndFind(void)
 {
     if (currentWindow && !inSetSel)
     {
-        SendMessage(currentWindow->dwHandle, EM_HIDESELECTION, 0,0);
+        SendMessage(currentWindow->dwHandle, EM_HIDESELECTION, 0, 0);
         currentWindow = NULL;
         free(currentBuffer);
         currentBuffer = NULL;
         while (opened)
         {
-            BUFLIST *next = opened->fwd;
+            BUFLIST* next = opened->fwd;
             if (opened->ptr->uninstantiated)
                 free(opened->ptr);
             free(opened);
@@ -738,53 +725,53 @@ void EndFind(void)
         }
     }
 }
-static char *LoadBuffer(DWINFO *ptr)
+static char* LoadBuffer(DWINFO* ptr)
 {
-    char *rv;
+    char* rv;
     if (IsWindow(ptr->self))
     {
         int n = SendMessage(ptr->dwHandle, WM_GETTEXTLENGTH, 0, 0);
         if (n)
         {
-            rv = calloc(1, n+1);
+            rv = calloc(1, n + 1);
             if (rv)
-                SendMessage(ptr->dwHandle, WM_GETTEXT, n+1, (LPARAM)rv);
+                SendMessage(ptr->dwHandle, WM_GETTEXT, n + 1, (LPARAM)rv);
         }
     }
     else
     {
-        FILE *fil = fopen(ptr->dwName, "r");
+        FILE* fil = fopen(ptr->dwName, "r");
         if (fil)
         {
             int n;
             fseek(fil, 0, SEEK_END);
             n = ftell(fil);
             fseek(fil, 0, SEEK_SET);
-            rv = calloc(1, n+1);
+            rv = calloc(1, n + 1);
             if (rv)
             {
-                fread(rv, 1, n+1, fil);
+                fread(rv, 1, n + 1, fil);
             }
             fclose(fil);
         }
-    }   
+    }
     return rv;
 }
 static void RestartFind()
 {
     if (currentWindow && currentBuffer)
     {
-        char *p = LoadBuffer(currentWindow);
+        char* p = LoadBuffer(currentWindow);
         if (p)
-        {            
+        {
             free(currentBuffer);
             currentBuffer = p;
         }
     }
 }
-static void GetSelectionPos(HWND hwnd, CHARRANGE *cr)
+static void GetSelectionPos(HWND hwnd, CHARRANGE* cr)
 {
-    SendMessage(hwnd, EM_EXGETSEL, 0 , (LPARAM)cr);
+    SendMessage(hwnd, EM_EXGETSEL, 0, (LPARAM)cr);
     if (cr->cpMax < cr->cpMin)
     {
         int n = cr->cpMax;
@@ -794,7 +781,7 @@ static void GetSelectionPos(HWND hwnd, CHARRANGE *cr)
 }
 void FindResetWindows()
 {
-    CHARRANGE *findPointer = &findPos;
+    CHARRANGE* findPointer = &findPos;
     int flags = findflags;
     int mode = findmode;
     if (!finding)
@@ -803,24 +790,25 @@ void FindResetWindows()
         flags = replaceflags;
         mode = replacemode;
     }
-    //select the currently active window as the first thing to search in
+    // select the currently active window as the first thing to search in
     if (currentWindow)
     {
         HWND hwnd;
         CHARRANGE a;
         GetSelectionPos(currentWindow->dwHandle, &a);
-        hwnd = (HWND)SendMessage(hwndClient,WM_MDIGETACTIVE, 0, 0);
+        hwnd = (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0);
         if (IsEditWindow(hwnd))
         {
-            DWINFO *info = (DWINFO *)GetWindowLong(hwnd, 0);
+            DWINFO* info = (DWINFO*)GetWindowLong(hwnd, 0);
             if (info != currentWindow)
             {
                 if (mode != F_M_OPENDOCUMENTS)
                 {
                     EndFind();
                 }
-                else {
-                    BUFLIST *p = opened;
+                else
+                {
+                    BUFLIST* p = opened;
                     BOOL found = FALSE;
                     while (p)
                     {
@@ -863,7 +851,7 @@ void FindResetWindows()
                         p->ptr = currentWindow;
                         p->range = *findPointer;
                         GetSelectionPos(info->dwHandle, &a);
-                        
+
                         free(currentBuffer);
                         currentBuffer = LoadBuffer(info);
                         currentWindow = info;
@@ -879,28 +867,28 @@ void FindResetWindows()
                 {
                     if (findflags & F_DOWN)
                     {
-//                        a.cpMin += strlen(findText);
+                        //                        a.cpMin += strlen(findText);
                     }
                     else
                     {
-                        a.cpMax -= strlen(findText)+1;
+                        a.cpMax -= strlen(findText) + 1;
                     }
                 }
                 else
                 {
                     if (replaceflags & F_DOWN)
                     {
-//                        if (!replacing)
-//                            a.cpMin += strlen(replaceText);
+                        //                        if (!replacing)
+                        //                            a.cpMin += strlen(replaceText);
                     }
                     else
                     {
                         if (!replacing)
-                            a.cpMax -= strlen(findText)+1;
+                            a.cpMax -= strlen(findText) + 1;
                     }
-                }    
+                }
             }
-        }    
+        }
         if (flags & F_DOWN)
         {
             findPointer->cpMin = a.cpMax;
@@ -910,29 +898,26 @@ void FindResetWindows()
             findPointer->cpMax = a.cpMax == -1 ? SendMessage(currentWindow->dwHandle, WM_GETTEXTLENGTH, 0, 0) : a.cpMax;
         }
     }
-    if (dirty) // else if dirty restart the find
+    if (dirty)  // else if dirty restart the find
     {
         dirty = FALSE;
         RestartFind();
     }
     replacing = FALSE;
 }
-void FindSetDirty()
-{
-    dirty = TRUE;
-}
-static char *GetNextFindDocument(CHARRANGE *pos, int mode, DWINFO **ptr, char *specifiedPath, char *specifiedExtensions, int flags)
+void FindSetDirty() { dirty = TRUE; }
+static char* GetNextFindDocument(CHARRANGE* pos, int mode, DWINFO** ptr, char* specifiedPath, char* specifiedExtensions, int flags)
 {
     if (!editWindows)
         return NULL;
     if (!*ptr)
     {
-        BUFLIST **tail = &opened;
-        DWINFO *eq = editWindows;
+        BUFLIST** tail = &opened;
+        DWINFO* eq = editWindows;
         switch (mode)
         {
-            BUFLIST *newBuf;
-            PROJECTITEM *pi;
+            BUFLIST* newBuf;
+            PROJECTITEM* pi;
             char path[MAX_PATH];
             case F_M_CURRENTDOCUMENT:
             case F_M_SELECTION:
@@ -957,7 +942,7 @@ static char *GetNextFindDocument(CHARRANGE *pos, int mode, DWINFO **ptr, char *s
                             newBuf->range.cpMax = SendMessage(editWindows->dwHandle, WM_GETTEXTLENGTH, 0, 0);
                             if (newBuf->range.cpMin != 0)
                             {
-                                BUFLIST *newBuf2 = calloc(1, sizeof(BUFLIST));
+                                BUFLIST* newBuf2 = calloc(1, sizeof(BUFLIST));
                                 if (newBuf2)
                                 {
                                     newBuf2->back = *tail;
@@ -975,7 +960,7 @@ static char *GetNextFindDocument(CHARRANGE *pos, int mode, DWINFO **ptr, char *s
                             int n = SendMessage(editWindows->dwHandle, WM_GETTEXTLENGTH, 0, 0);
                             if (newBuf->range.cpMax != n)
                             {
-                                BUFLIST *newBuf2 = calloc(1, sizeof(BUFLIST));
+                                BUFLIST* newBuf2 = calloc(1, sizeof(BUFLIST));
                                 if (newBuf2)
                                 {
                                     newBuf2->back = *tail;
@@ -1024,7 +1009,6 @@ static char *GetNextFindDocument(CHARRANGE *pos, int mode, DWINFO **ptr, char *s
                         }
                         newBuf->ptr = eq;
                         eq = eq->next;
-                        
                     }
                 }
                 while (eq && !canceled)
@@ -1048,7 +1032,7 @@ static char *GetNextFindDocument(CHARRANGE *pos, int mode, DWINFO **ptr, char *s
                 {
                     if (matchesExt(editWindows->dwName, specifiedExtensions))
                     {
-                        newBuf = calloc(1,sizeof(BUFLIST));
+                        newBuf = calloc(1, sizeof(BUFLIST));
                         if (newBuf)
                         {
                             newBuf->back = *tail;
@@ -1084,7 +1068,7 @@ static char *GetNextFindDocument(CHARRANGE *pos, int mode, DWINFO **ptr, char *s
             case F_M_INCLUDEDIR:
                 sprintf(path, "%s\\include", szInstallPath);
                 FindLoadPath(path, tail, flags, headerExt);
-                break;                
+                break;
             case F_M_SPECIFIEDPATH:
                 FindLoadPath(specifiedPath, tail, flags, specifiedExtensions);
                 break;
@@ -1093,9 +1077,9 @@ static char *GetNextFindDocument(CHARRANGE *pos, int mode, DWINFO **ptr, char *s
     }
     if (opened)
     {
-         BUFLIST *next =opened->fwd;
-         char *rv = NULL;
-        
+        BUFLIST* next = opened->fwd;
+        char* rv = NULL;
+
         *pos = opened->range;
         *ptr = opened->ptr;
         rv = LoadBuffer(opened->ptr);
@@ -1112,7 +1096,6 @@ static char *GetNextFindDocument(CHARRANGE *pos, int mode, DWINFO **ptr, char *s
             opened->back = NULL;
         }
         return currentBuffer;
-        
     }
     else
     {
@@ -1120,12 +1103,12 @@ static char *GetNextFindDocument(CHARRANGE *pos, int mode, DWINFO **ptr, char *s
         return NULL;
     }
 }
-void FindStringFromToolbar(char *search)
+void FindStringFromToolbar(char* search)
 {
     static char last[256];
-    RE_CONTEXT *context = getREContext(search, F_WILDCARD | F_DOWN);
-    char *buf = currentBuffer;
-    DWINFO *ptr = currentWindow;
+    RE_CONTEXT* context = getREContext(search, F_WILDCARD | F_DOWN);
+    char* buf = currentBuffer;
+    DWINFO* ptr = currentWindow;
     if (!search)
         search = last;
     if (!*search)
@@ -1136,24 +1119,24 @@ void FindStringFromToolbar(char *search)
         if (ptr)
             SendMessage(ptr->dwHandle, EM_SETSEL, -1, 0);
         ptr = NULL;
-        strncpy(last, search, sizeof(last)-1);
+        strncpy(last, search, sizeof(last) - 1);
     }
     finding = TRUE;
     findFromTB = TRUE;
-    
+
     if (!ptr || !buf || !FindNextInDocument(ptr, buf, &findPos, F_WILDCARD | F_DOWN, search, context))
         do
         {
             buf = GetNextFindDocument(&findPos, F_M_CURRENTDOCUMENT, &ptr, "", "*.*", F_WILDCARD | F_DOWN);
-        } while (buf && !FindNextInDocument(ptr, buf, &findPos, F_WILDCARD | F_DOWN, search, context) && !canceled); 
+        } while (buf && !FindNextInDocument(ptr, buf, &findPos, F_WILDCARD | F_DOWN, search, context) && !canceled);
     if (context)
         re_free(context);
 }
-static void FindStringFromFiles(int mode, int flags, char *search, char *specifiedPath, char *specifiedExtension)
+static void FindStringFromFiles(int mode, int flags, char* search, char* specifiedPath, char* specifiedExtension)
 {
-    RE_CONTEXT *context = getREContext(search, flags);
-    DWINFO *ptr = currentWindow;
-    char *buf;
+    RE_CONTEXT* context = getREContext(search, flags);
+    DWINFO* ptr = currentWindow;
+    char* buf;
     findFromTB = FALSE;
     if (flags & (F_OUTPUT1 | F_OUTPUT2))
     {
@@ -1167,7 +1150,7 @@ static void FindStringFromFiles(int mode, int flags, char *search, char *specifi
             buf = GetNextFindDocument(&findPos, mode, &ptr, specifiedPath, specifiedExtension, flags);
             if (buf)
                 FindAllInBuffer(ptr->dwName, buf, search, flags);
-        } while (buf && !canceled); 
+        } while (buf && !canceled);
         sprintf(msgbuf, "\nFinished.  %d Matches\n", matchCount);
         SendFindMessage(!!(flags & F_OUTPUT2), msgbuf);
     }
@@ -1188,9 +1171,9 @@ static void FindStringFromFiles(int mode, int flags, char *search, char *specifi
             do
             {
                 buf = GetNextFindDocument(finding ? &findPos : &replacePos, mode, &ptr, specifiedPath, specifiedExtension, flags);
-            } while (buf && !FindNextInDocument(ptr, buf, finding ? &findPos : &replacePos, flags, search, context) && !canceled); 
+            } while (buf && !FindNextInDocument(ptr, buf, finding ? &findPos : &replacePos, flags, search, context) && !canceled);
         }
-        if (!buf && !(flags &FR_REPLACEALL))
+        if (!buf && !(flags & FR_REPLACEALL))
         {
             SetStatusMessage("Search reached end of region.", FALSE);
         }
@@ -1200,7 +1183,7 @@ static void FindStringFromFiles(int mode, int flags, char *search, char *specifi
 }
 //-------------------------------------------------------------------------
 
-static void GetReplaceText(char *dest, char *replace, char *dta, int len, int flags, RE_CONTEXT *context)
+static void GetReplaceText(char* dest, char* replace, char* dta, int len, int flags, RE_CONTEXT* context)
 {
     if (replaceflags & F_REGULAR)
     {
@@ -1219,9 +1202,8 @@ static void GetReplaceText(char *dest, char *replace, char *dta, int len, int fl
                             if (context->matchOffsets[index][1] > 0)
                             {
                                 int j, k;
-                                for (k=0, j = context->matchOffsets[index][0]; j <
-                                    context->matchOffsets[index][1] &&  k <
-                                    255; j++, k++)
+                                for (k = 0, j = context->matchOffsets[index][0]; j < context->matchOffsets[index][1] && k < 255;
+                                     j++, k++)
                                     dest[k] = dta[j];
                             }
                         }
@@ -1244,7 +1226,8 @@ static void GetReplaceText(char *dest, char *replace, char *dta, int len, int fl
         strcpy(dest, replace);
     }
 }
-static int ReplaceNextInDocument(DWINFO *ptr, char *buf, int *ofs, CHARRANGE *pos, CHARRANGE *selection, int flags, char *search, char *replace, RE_CONTEXT *context)
+static int ReplaceNextInDocument(DWINFO* ptr, char* buf, int* ofs, CHARRANGE* pos, CHARRANGE* selection, int flags, char* search,
+                                 char* replace, RE_CONTEXT* context)
 {
     BOOL val;
     int len = 0;
@@ -1255,10 +1238,10 @@ static int ReplaceNextInDocument(DWINFO *ptr, char *buf, int *ofs, CHARRANGE *po
         int curpos;
         int l;
         CHARRANGE aa;
-        matchCount ++;
+        matchCount++;
         if (!ptr->self)
         {
-            DWINFO *ptrx = GetFileInfo(ptr->dwName);
+            DWINFO* ptrx = GetFileInfo(ptr->dwName);
             if (ptrx)
             {
                 ptr->self = ptrx->self;
@@ -1266,15 +1249,15 @@ static int ReplaceNextInDocument(DWINFO *ptr, char *buf, int *ofs, CHARRANGE *po
             }
         }
         if (flags & F_DOWN)
-            curpos = pos->cpMin;            
-        else 
+            curpos = pos->cpMin;
+        else
             curpos = pos->cpMax;
         GetReplaceText(repl, replace, buf, curpos, len, context);
         aa.cpMin = curpos + *ofs;
         aa.cpMax = curpos + *ofs + len;
         if (flags & F_DOWN)
         {
-//            if (flags & F_REPLACEALL)
+            //            if (flags & F_REPLACEALL)
             {
                 pos->cpMin += len;
             }
@@ -1282,14 +1265,14 @@ static int ReplaceNextInDocument(DWINFO *ptr, char *buf, int *ofs, CHARRANGE *po
         l = strlen(repl) - strlen(search);
         if (curpos + *ofs < selection->cpMin)
         {
-            if (curpos + *ofs +l > selection->cpMin)
+            if (curpos + *ofs + l > selection->cpMin)
                 selection->cpMin += selection->cpMin - curpos - *ofs;
             else
                 selection->cpMin += l;
         }
         if (curpos + *ofs < selection->cpMax)
         {
-            if (curpos + *ofs +l > selection->cpMax)
+            if (curpos + *ofs + l > selection->cpMax)
                 selection->cpMax += selection->cpMax - curpos - *ofs;
             else
                 selection->cpMax += l;
@@ -1297,7 +1280,7 @@ static int ReplaceNextInDocument(DWINFO *ptr, char *buf, int *ofs, CHARRANGE *po
         *ofs += l;
         inSetSel = TRUE;
         SendMessage(ptr->dwHandle, EM_HIDESELECTION, 1, 0);
-        SendMessage(ptr->dwHandle, EM_EXSETSEL, 0, (LPARAM) &aa);
+        SendMessage(ptr->dwHandle, EM_EXSETSEL, 0, (LPARAM)&aa);
         SendMessage(ptr->dwHandle, EM_REPLACESEL, 1, (LPARAM)repl);
         SendMessage(ptr->dwHandle, EM_HIDESELECTION, 0, 0);
         SendMessage(ptr->self, WM_COMMAND, ID_REDRAWSTATUS, 0);
@@ -1307,19 +1290,19 @@ static int ReplaceNextInDocument(DWINFO *ptr, char *buf, int *ofs, CHARRANGE *po
     }
     return FALSE;
 }
-static void ReplaceInDocuments(int mode, int flags, char *search, char *replace, char *specifiedPath, char *specifiedExtension)
+static void ReplaceInDocuments(int mode, int flags, char* search, char* replace, char* specifiedPath, char* specifiedExtension)
 {
-    RE_CONTEXT *context = getREContext(search, flags);
+    RE_CONTEXT* context = getREContext(search, flags);
     DWINFO *ptr = currentWindow, *lastPtr = 0;
-    char *buf = currentBuffer;
+    char* buf = currentBuffer;
     BOOL replaced = FALSE;
     BOOL needsUpdate = FALSE;
     int offset = 0, lastoffset = 0;
     int vis;
     int linepos;
-    CHARRANGE lastReplacePos = { 0, 0 };
-    CHARRANGE selection = { 0, 0 };
-    
+    CHARRANGE lastReplacePos = {0, 0};
+    CHARRANGE selection = {0, 0};
+
     // to guard against the EN_LINECHANGE message which does an EndFind();
     do
     {
@@ -1336,13 +1319,13 @@ static void ReplaceInDocuments(int mode, int flags, char *search, char *replace,
                     }
                     lastPtr = ptr;
                     vis = SendMessage(ptr->dwHandle, EM_GETFIRSTVISIBLELINE, 0, 0);
-                    SendMessage(ptr->dwHandle, EM_EXGETSEL, 0, (WPARAM) &selection);
+                    SendMessage(ptr->dwHandle, EM_EXGETSEL, 0, (WPARAM)&selection);
                 }
                 else
                 {
                     if (needsUpdate)
                     {
-    					offset = lastoffset;
+                        offset = lastoffset;
                         if (lastReplacePos.cpMin >= SendMessage(lastPtr->dwHandle, EM_GETSIZE, 0, 0) - offset)
                             lastReplacePos.cpMin = replacePos.cpMax = vis = offset = 0;
                         lastReplacePos.cpMin += offset;
@@ -1352,30 +1335,28 @@ static void ReplaceInDocuments(int mode, int flags, char *search, char *replace,
                         vis = linepos - vis;
                         SendMessage(lastPtr->dwHandle, EM_SETFIRSTVISIBLELINE, vis, 0);
                     }
-                    vis  = SendMessage(ptr->dwHandle, EM_GETFIRSTVISIBLELINE, 0, 0);
+                    vis = SendMessage(ptr->dwHandle, EM_GETFIRSTVISIBLELINE, 0, 0);
                     lastPtr = ptr;
-    				GetSelectionPos(ptr->dwHandle, &lastReplacePos);
+                    GetSelectionPos(ptr->dwHandle, &lastReplacePos);
                     linepos = SendMessage(ptr->dwHandle, EM_LINEFROMCHAR, lastReplacePos.cpMin, 0);
                     vis = linepos - vis;
                     needsUpdate = TRUE;
                 }
-                
             }
             offset = 0;
-			lastoffset = 0;
+            lastoffset = 0;
             if ((flags & F_REPLACEALL) && ptr)
-                insertautoundo(ptr->dwHandle, (EDITDATA *)GetWindowLong(ptr->dwHandle, 0), UNDO_AUTOCHAINEND);
-            do 
+                insertautoundo(ptr->dwHandle, (EDITDATA*)GetWindowLong(ptr->dwHandle, 0), UNDO_AUTOCHAINEND);
+            do
             {
-				BOOL doupdate = FALSE;
-				doupdate = replacePos.cpMin < lastReplacePos.cpMin;
+                BOOL doupdate = FALSE;
+                doupdate = replacePos.cpMin < lastReplacePos.cpMin;
                 replaced = ReplaceNextInDocument(ptr, buf, &offset, &replacePos, &selection, flags, search, replace, context);
-				if (doupdate)
-					lastoffset = offset;
-            }
-            while ((flags & F_REPLACEALL) && replaced && !canceled);
+                if (doupdate)
+                    lastoffset = offset;
+            } while ((flags & F_REPLACEALL) && replaced && !canceled);
             if ((flags & F_REPLACEALL) && ptr)
-                insertautoundo(ptr->dwHandle, (EDITDATA *)GetWindowLong(ptr->dwHandle, 0), UNDO_AUTOCHAINBEGIN);
+                insertautoundo(ptr->dwHandle, (EDITDATA*)GetWindowLong(ptr->dwHandle, 0), UNDO_AUTOCHAINBEGIN);
             if (replaced && !(flags & F_REPLACEALL))
             {
                 RestartFind();
@@ -1385,11 +1366,11 @@ static void ReplaceInDocuments(int mode, int flags, char *search, char *replace,
                     do
                     {
                         buf = GetNextFindDocument(&replacePos, mode, &ptr, specifiedPath, specifiedExtension, flags);
-                    } while (buf && !FindNextInDocument(ptr, buf, &replacePos, flags, search, context) && !canceled); 
+                    } while (buf && !FindNextInDocument(ptr, buf, &replacePos, flags, search, context) && !canceled);
                 }
             }
         }
-    } while ((!replaced || (flags & F_REPLACEALL) ) && !canceled &&         
+    } while ((!replaced || (flags & F_REPLACEALL)) && !canceled &&
              (buf = GetNextFindDocument(&replacePos, mode, &ptr, specifiedPath, specifiedExtension, flags)));
     if (selection.cpMin != selection.cpMax)
     {
@@ -1403,7 +1384,7 @@ static void ReplaceInDocuments(int mode, int flags, char *search, char *replace,
     {
         if (needsUpdate)
         {
-    		offset = lastoffset;
+            offset = lastoffset;
             if (replacePos.cpMin >= SendMessage(lastPtr->dwHandle, EM_GETSIZE, 0, 0) - offset)
                 replacePos.cpMin = replacePos.cpMax = vis = offset = 0;
             replacePos.cpMin += offset;
@@ -1431,7 +1412,7 @@ static void EnableWindows(HWND hwnd, BOOL state)
     EnableWindow(GetDlgItem(hwnd, IDC_CHECKFINDCASE), state);
     EnableWindow(GetDlgItem(hwnd, IDC_CHECKFINDRECURSIVE), state);
     EnableWindow(GetDlgItem(hwnd, IDC_CHECKFINDUP), state);
-    EnableWindow(GetDlgItem(hwnd, IDC_RADIOFINDDOCUMENT ), state);
+    EnableWindow(GetDlgItem(hwnd, IDC_RADIOFINDDOCUMENT), state);
     EnableWindow(GetDlgItem(hwnd, IDC_RADIOFIND1), state);
     EnableWindow(GetDlgItem(hwnd, IDC_RADIOFIND2), state);
 
@@ -1450,89 +1431,87 @@ static void EnableWindows(HWND hwnd, BOOL state)
     EnableWindow(GetDlgItem(hwnd, IDC_CHECKREPLACECASE), state);
     EnableWindow(GetDlgItem(hwnd, IDC_CHECKREPLACERECURSIVE), state);
 }
-void DoFindNext(void *p)
+void DoFindNext(void* p)
 {
     if (findflags & (F_OUTPUT1 | F_OUTPUT2))
     {
         SendFindMessage(!!(findflags & F_OUTPUT2), NULL);
     }
-	if (!infindorreplace)
-	{
-		HWND hwndDlg = p;
-		FindResetWindows();
-		infindorreplace = TRUE;
-		if (findFromTB)
-		{
-			FindStringFromToolbar(NULL);
-		}
-		else
-		{
-			PostMessage(hwndDlg, WM_ENABLEFIND, FALSE ,0);
-			canceled = FALSE;
-			if (findText[0])
-			{
-				FindStringFromFiles(findmode, findflags, findText,
-									browsePath, fileType);
-			}
-			if (canceled)
-				EndFind();
-			PostMessage(hwndDlg, WM_ENABLEFIND, TRUE ,0);
-		}
-        rehighlight(findText, findflags &FR_MATCHCASE, findflags &F_WHOLEWORD);
-		infindorreplace = FALSE;
-	}
+    if (!infindorreplace)
+    {
+        HWND hwndDlg = p;
+        FindResetWindows();
+        infindorreplace = TRUE;
+        if (findFromTB)
+        {
+            FindStringFromToolbar(NULL);
+        }
+        else
+        {
+            PostMessage(hwndDlg, WM_ENABLEFIND, FALSE, 0);
+            canceled = FALSE;
+            if (findText[0])
+            {
+                FindStringFromFiles(findmode, findflags, findText, browsePath, fileType);
+            }
+            if (canceled)
+                EndFind();
+            PostMessage(hwndDlg, WM_ENABLEFIND, TRUE, 0);
+        }
+        rehighlight(findText, findflags & FR_MATCHCASE, findflags & F_WHOLEWORD);
+        infindorreplace = FALSE;
+    }
 }
-void DoReplaceNext(void *p)
+void DoReplaceNext(void* p)
 {
-	if (!infindorreplace)
-	{
-		HWND hwndDlg = p;
-		PostMessage(hwndDlg, WM_ENABLEFIND, FALSE ,0);
-		canceled = FALSE;
-		replaceCount = 0;
-		replacing = TRUE;
-		infindorreplace = TRUE;
-		if (findText[0])
-			ReplaceInDocuments(replacemode, replaceflags, findText, replaceText,
-							   browsePath, fileType);
-		if (canceled)
-			EndFind();
-		infindorreplace = FALSE;
-		replacing = FALSE;
-		dirty = TRUE;
-		if (!canceled)
-		{
-			if (replaceflags & F_REPLACEALL)
+    if (!infindorreplace)
+    {
+        HWND hwndDlg = p;
+        PostMessage(hwndDlg, WM_ENABLEFIND, FALSE, 0);
+        canceled = FALSE;
+        replaceCount = 0;
+        replacing = TRUE;
+        infindorreplace = TRUE;
+        if (findText[0])
+            ReplaceInDocuments(replacemode, replaceflags, findText, replaceText, browsePath, fileType);
+        if (canceled)
+            EndFind();
+        infindorreplace = FALSE;
+        replacing = FALSE;
+        dirty = TRUE;
+        if (!canceled)
+        {
+            if (replaceflags & F_REPLACEALL)
             {
                 char buf[256];
-				sprintf(buf,"Replaced %d occurrences.", replaceCount);
+                sprintf(buf, "Replaced %d occurrences.", replaceCount);
                 SetStatusMessage(buf, FALSE);
             }
-		}
-		PostMessage(hwndDlg, WM_ENABLEFIND, TRUE ,0);
-	}
+        }
+        PostMessage(hwndDlg, WM_ENABLEFIND, TRUE, 0);
+    }
 }
-void SetFlags(HWND hwndDlg, DLGHDR *pHdr)
+void SetFlags(HWND hwndDlg, DLGHDR* pHdr)
 {
     if (!pHdr->iSel)
     {
         int flags = findflags;
         if (flags & F_REGULAR)
         {
-            SendDlgItemMessage(hwndDlg, IDC_COMBOFINDHOW, CB_SETCURSEL, 1 , 0);
+            SendDlgItemMessage(hwndDlg, IDC_COMBOFINDHOW, CB_SETCURSEL, 1, 0);
         }
         else if (flags & F_WILDCARD)
         {
-            SendDlgItemMessage(hwndDlg, IDC_COMBOFINDHOW, CB_SETCURSEL, 2 , 0);
+            SendDlgItemMessage(hwndDlg, IDC_COMBOFINDHOW, CB_SETCURSEL, 2, 0);
         }
         else
         {
-            SendDlgItemMessage(hwndDlg, IDC_COMBOFINDHOW, CB_SETCURSEL, 0 , 0);
+            SendDlgItemMessage(hwndDlg, IDC_COMBOFINDHOW, CB_SETCURSEL, 0, 0);
         }
-        CheckDlgButton(hwndDlg, IDC_CHECKFINDUP, (flags & F_DOWN) ? BST_UNCHECKED : BST_CHECKED); 
-        CheckDlgButton(hwndDlg, IDC_CHECKFINDWHOLE, (flags & F_WHOLEWORD) ? BST_CHECKED : BST_UNCHECKED); 
-        CheckDlgButton(hwndDlg, IDC_CHECKFINDCASE, (flags & F_MATCHCASE) ? BST_CHECKED : BST_UNCHECKED); 
-        CheckDlgButton(hwndDlg, IDC_CHECKFINDRECURSIVE, (flags & F_SUBDIR) ? BST_CHECKED : BST_UNCHECKED); 
+        CheckDlgButton(hwndDlg, IDC_CHECKFINDUP, (flags & F_DOWN) ? BST_UNCHECKED : BST_CHECKED);
+        CheckDlgButton(hwndDlg, IDC_CHECKFINDWHOLE, (flags & F_WHOLEWORD) ? BST_CHECKED : BST_UNCHECKED);
+        CheckDlgButton(hwndDlg, IDC_CHECKFINDCASE, (flags & F_MATCHCASE) ? BST_CHECKED : BST_UNCHECKED);
+        CheckDlgButton(hwndDlg, IDC_CHECKFINDRECURSIVE, (flags & F_SUBDIR) ? BST_CHECKED : BST_UNCHECKED);
         if (flags & F_OUTPUT1)
         {
             CheckRadioButton(hwndDlg, IDC_RADIOFINDDOCUMENT, IDC_RADIOFIND2, IDC_RADIOFIND1);
@@ -1551,19 +1530,19 @@ void SetFlags(HWND hwndDlg, DLGHDR *pHdr)
         int flags = replaceflags;
         if (flags & F_REGULAR)
         {
-            SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEHOW, CB_SETCURSEL, 1 , 0);
+            SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEHOW, CB_SETCURSEL, 1, 0);
         }
         else if (flags & F_WILDCARD)
         {
-            SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEHOW, CB_SETCURSEL, 2 , 0);
+            SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEHOW, CB_SETCURSEL, 2, 0);
         }
         else
         {
-            SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEHOW, CB_SETCURSEL, 0 , 0);
+            SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEHOW, CB_SETCURSEL, 0, 0);
         }
-        CheckDlgButton(hwndDlg, IDC_CHECKREPLACEWHOLE, (flags & F_WHOLEWORD) ? BST_CHECKED : BST_UNCHECKED); 
-        CheckDlgButton(hwndDlg, IDC_CHECKREPLACECASE, (flags & F_MATCHCASE) ? BST_CHECKED : BST_UNCHECKED); 
-        CheckDlgButton(hwndDlg, IDC_CHECKREPLACERECURSIVE, (flags & F_SUBDIR) ? BST_CHECKED : BST_UNCHECKED); 
+        CheckDlgButton(hwndDlg, IDC_CHECKREPLACEWHOLE, (flags & F_WHOLEWORD) ? BST_CHECKED : BST_UNCHECKED);
+        CheckDlgButton(hwndDlg, IDC_CHECKREPLACECASE, (flags & F_MATCHCASE) ? BST_CHECKED : BST_UNCHECKED);
+        CheckDlgButton(hwndDlg, IDC_CHECKREPLACERECURSIVE, (flags & F_SUBDIR) ? BST_CHECKED : BST_UNCHECKED);
     }
 }
 void LoadBrowsePath(HWND hwndDlg, int id)
@@ -1590,12 +1569,12 @@ void xGetFileType(HWND hwndDlg, int id)
     else
         SendDlgItemMessage(hwndDlg, id, CB_GETLBTEXT, n, (LPARAM)fileType);
 }
-DLGTEMPLATE * WINAPI DoLockDlgRes(LPCSTR lpszResName)
+DLGTEMPLATE* WINAPI DoLockDlgRes(LPCSTR lpszResName)
 
 {
     HRSRC hrsrc = FindResource(NULL, lpszResName, RT_DIALOG);
     HGLOBAL hglb = LoadResource(hInstance, hrsrc);
-    return (DLGTEMPLATE *) LockResource(hglb);
+    return (DLGTEMPLATE*)LockResource(hglb);
 }
 
 static void SetFindNextButton(HWND hwndDlg)
@@ -1612,11 +1591,10 @@ static void SetFindNextButton(HWND hwndDlg)
     }
 }
 VOID WINAPI OnSelChanged(HWND hwndDlg);
-LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LPARAM
-                                  lParam)
+LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
     static HWND hwndParent;
-    DLGHDR *pHdr;
+    DLGHDR* pHdr;
     switch (iMessage)
     {
         case WM_INITDIALOG:
@@ -1629,18 +1607,16 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
             }
             else
             {
-                HWND hwnd = (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0,0);
+                HWND hwnd = (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0);
                 if (IsWindow(hwnd))
                     SendMessage(hwnd, WM_WORDUNDERCURSOR, 0, (LPARAM)findText);
-				findText[sizeof(findText)-1] = 0;
+                findText[sizeof(findText) - 1] = 0;
             }
             hwndFindInternal = hwndDlg;
             hwndParent = GetParent(hwndDlg);
-            pHdr = (DLGHDR *) GetWindowLong(hwndParent, GWL_USERDATA);
+            pHdr = (DLGHDR*)GetWindowLong(hwndParent, GWL_USERDATA);
             SetWindowLong(hwndDlg, GWL_USERDATA, (long)pHdr);
-            SetWindowPos(hwndDlg, HWND_TOP,
-                         pHdr->rcDisplay.left, pHdr->rcDisplay.top,
-                         0, 0, SWP_NOSIZE);
+            SetWindowPos(hwndDlg, HWND_TOP, pHdr->rcDisplay.left, pHdr->rcDisplay.top, 0, 0, SWP_NOSIZE);
             SetFindNextButton(hwndDlg);
             if (!pHdr->iSel)
             {
@@ -1652,53 +1628,55 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
                 child = GetDlgItem(hwndDlg, IDC_COMBOFINDPATH);
                 if (IsWindow(child))
                 {
-                     SubClassHistoryCombo(child);
-                    SendMessage(child, WM_SETHISTORY,0, (LPARAM)findbrowsehist);
+                    SubClassHistoryCombo(child);
+                    SendMessage(child, WM_SETHISTORY, 0, (LPARAM)findbrowsehist);
                 }
-                SendDlgItemMessage(hwndDlg, IDC_ICONFINDOPTIONS, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)((pHdr->findOffs & 2) ? pHdr->minusBmp : pHdr->plusBmp));
-                SendDlgItemMessage(hwndDlg, IDC_ICONFINDOUTPUT, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)((pHdr->findOffs & 4) ? pHdr->minusBmp : pHdr->plusBmp));
-                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDTYPE, CB_ADDSTRING, 0, (LPARAM)"*.c;*.cpp;*.cxx;*.cc;*.h");
-                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDTYPE, CB_ADDSTRING, 0, (LPARAM)"*.asm;*.nas;*.s");
-                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDTYPE, CB_ADDSTRING, 0, (LPARAM)"*.def;*.rc");
-                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDTYPE, CB_ADDSTRING, 0, (LPARAM)"*.txt");
-                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDTYPE, CB_ADDSTRING, 0, (LPARAM)"*.*");
+                SendDlgItemMessage(hwndDlg, IDC_ICONFINDOPTIONS, STM_SETIMAGE, IMAGE_BITMAP,
+                                   (LPARAM)((pHdr->findOffs & 2) ? pHdr->minusBmp : pHdr->plusBmp));
+                SendDlgItemMessage(hwndDlg, IDC_ICONFINDOUTPUT, STM_SETIMAGE, IMAGE_BITMAP,
+                                   (LPARAM)((pHdr->findOffs & 4) ? pHdr->minusBmp : pHdr->plusBmp));
+                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDTYPE, CB_ADDSTRING, 0, (LPARAM) "*.c;*.cpp;*.cxx;*.cc;*.h");
+                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDTYPE, CB_ADDSTRING, 0, (LPARAM) "*.asm;*.nas;*.s");
+                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDTYPE, CB_ADDSTRING, 0, (LPARAM) "*.def;*.rc");
+                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDTYPE, CB_ADDSTRING, 0, (LPARAM) "*.txt");
+                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDTYPE, CB_ADDSTRING, 0, (LPARAM) "*.*");
                 SendDlgItemMessage(hwndDlg, IDC_COMBOFINDTYPE, CB_SETCURSEL, findext, 0);
-                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDWHERE, CB_ADDSTRING, 0, (LPARAM)"Current Document");
-                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDWHERE, CB_ADDSTRING, 0, (LPARAM)"Open Documents");
-                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDWHERE, CB_ADDSTRING, 0, (LPARAM)"Current Project");
-                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDWHERE, CB_ADDSTRING, 0, (LPARAM)"All Projects");
-                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDWHERE, CB_ADDSTRING, 0, (LPARAM)"Orange C Include Path");
-                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDWHERE, CB_ADDSTRING, 0, (LPARAM)"User-specified Path");
+                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDWHERE, CB_ADDSTRING, 0, (LPARAM) "Current Document");
+                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDWHERE, CB_ADDSTRING, 0, (LPARAM) "Open Documents");
+                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDWHERE, CB_ADDSTRING, 0, (LPARAM) "Current Project");
+                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDWHERE, CB_ADDSTRING, 0, (LPARAM) "All Projects");
+                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDWHERE, CB_ADDSTRING, 0, (LPARAM) "Orange C Include Path");
+                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDWHERE, CB_ADDSTRING, 0, (LPARAM) "User-specified Path");
                 SendDlgItemMessage(hwndDlg, IDC_COMBOFINDWHERE, CB_SETCURSEL, findmode, 0);
-                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDHOW, CB_ADDSTRING, 0, (LPARAM)"Direct Match");
-                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDHOW, CB_ADDSTRING, 0, (LPARAM)"Regular Expression");
-                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDHOW, CB_ADDSTRING, 0, (LPARAM)"Wildcard");
+                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDHOW, CB_ADDSTRING, 0, (LPARAM) "Direct Match");
+                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDHOW, CB_ADDSTRING, 0, (LPARAM) "Regular Expression");
+                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDHOW, CB_ADDSTRING, 0, (LPARAM) "Wildcard");
                 finding = TRUE;
             }
             else
             {
                 HWND child = GetDlgItem(hwndDlg, IDC_COMBOREPLACEFIND);
                 SubClassHistoryCombo(child);
-                SendMessage(child, WM_SETHISTORY, 0, (LPARAM)findhist);				
+                SendMessage(child, WM_SETHISTORY, 0, (LPARAM)findhist);
                 if (findText[0])
                     SendMessage(child, WM_SETTEXT, 0, (LPARAM)findText);
                 child = GetDlgItem(hwndDlg, IDC_COMBOREPLACE);
                 SubClassHistoryCombo(child);
-                SendMessage(child, WM_SETHISTORY, 0, (LPARAM)replacehist);				
+                SendMessage(child, WM_SETHISTORY, 0, (LPARAM)replacehist);
                 if (replaceText[0])
                     SendMessage(child, WM_SETTEXT, 0, (LPARAM)replaceText);
                 child = GetDlgItem(hwndDlg, IDC_COMBOREPLACEPATH);
                 if (IsWindow(child))
                 {
                     SubClassHistoryCombo(child);
-                    SendMessage(child, WM_SETHISTORY,0, (LPARAM)replacebrowsehist);
+                    SendMessage(child, WM_SETHISTORY, 0, (LPARAM)replacebrowsehist);
                 }
-                child = (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE,    0, 0);
+                child = (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0);
                 if (IsWindow(child))
                 {
                     CHARRANGE range;
                     memset(&range, 0, sizeof(range));
-                    SendMessage(child, EM_EXGETSEL,0, (LPARAM)&range);
+                    SendMessage(child, EM_EXGETSEL, 0, (LPARAM)&range);
                     if (range.cpMax != range.cpMin)
                     {
                         replacemode = F_M_SELECTION;
@@ -1708,22 +1686,23 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
                         replacemode = F_M_CURRENTDOCUMENT;
                     }
                 }
-                SendDlgItemMessage(hwndDlg, IDC_ICONREPLACEOPTIONS, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)((pHdr->replaceOffs & 2) ? pHdr->minusBmp : pHdr->plusBmp));
-                SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACETYPE, CB_ADDSTRING, 0, (LPARAM)"*.c;*.cpp;*.cxx;*.cc;*.h");
-                SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACETYPE, CB_ADDSTRING, 0, (LPARAM)"*.def;*.rc");
-                SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACETYPE, CB_ADDSTRING, 0, (LPARAM)"*.*");
+                SendDlgItemMessage(hwndDlg, IDC_ICONREPLACEOPTIONS, STM_SETIMAGE, IMAGE_BITMAP,
+                                   (LPARAM)((pHdr->replaceOffs & 2) ? pHdr->minusBmp : pHdr->plusBmp));
+                SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACETYPE, CB_ADDSTRING, 0, (LPARAM) "*.c;*.cpp;*.cxx;*.cc;*.h");
+                SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACETYPE, CB_ADDSTRING, 0, (LPARAM) "*.def;*.rc");
+                SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACETYPE, CB_ADDSTRING, 0, (LPARAM) "*.*");
                 SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACETYPE, CB_SETCURSEL, replaceext, 0);
-                SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEWHERE, CB_ADDSTRING, 0, (LPARAM)"Current Document");
-                SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEWHERE, CB_ADDSTRING, 0, (LPARAM)"Open Documents");
-                SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEWHERE, CB_ADDSTRING, 0, (LPARAM)"Current Project");
-                SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEWHERE, CB_ADDSTRING, 0, (LPARAM)"All Projects");
-                SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEWHERE, CB_ADDSTRING, 0, (LPARAM)"Orange C Include Path");
-                SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEWHERE, CB_ADDSTRING, 0, (LPARAM)"User-specified Path");
-                SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEWHERE, CB_ADDSTRING, 0, (LPARAM)"Selection");
+                SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEWHERE, CB_ADDSTRING, 0, (LPARAM) "Current Document");
+                SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEWHERE, CB_ADDSTRING, 0, (LPARAM) "Open Documents");
+                SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEWHERE, CB_ADDSTRING, 0, (LPARAM) "Current Project");
+                SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEWHERE, CB_ADDSTRING, 0, (LPARAM) "All Projects");
+                SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEWHERE, CB_ADDSTRING, 0, (LPARAM) "Orange C Include Path");
+                SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEWHERE, CB_ADDSTRING, 0, (LPARAM) "User-specified Path");
+                SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEWHERE, CB_ADDSTRING, 0, (LPARAM) "Selection");
                 SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEWHERE, CB_SETCURSEL, replacemode, 0);
-                SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEHOW, CB_ADDSTRING, 0, (LPARAM)"Direct Match");
-                SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEHOW, CB_ADDSTRING, 0, (LPARAM)"Regular Expression");
-                SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEHOW, CB_ADDSTRING, 0, (LPARAM)"Wildcard");
+                SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEHOW, CB_ADDSTRING, 0, (LPARAM) "Direct Match");
+                SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEHOW, CB_ADDSTRING, 0, (LPARAM) "Regular Expression");
+                SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEHOW, CB_ADDSTRING, 0, (LPARAM) "Wildcard");
                 finding = FALSE;
             }
             EnableWindows(hwndDlg, pHdr->findEnabled);
@@ -1731,13 +1710,13 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
             modifiedFind = FALSE;
             return 1;
         case WM_ENABLEFIND:
-            pHdr = (DLGHDR *) GetWindowLong(hwndDlg, GWL_USERDATA);
+            pHdr = (DLGHDR*)GetWindowLong(hwndDlg, GWL_USERDATA);
             pHdr->findEnabled = wParam;
             EnableWindows(hwndDlg, wParam);
-            SetFocus((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0,0));
+            SetFocus((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0));
             break;
         case WM_USER:
-            pHdr = (DLGHDR *) GetWindowLong(hwndParent, GWL_USERDATA);
+            pHdr = (DLGHDR*)GetWindowLong(hwndParent, GWL_USERDATA);
             if (!pHdr->iSel)
             {
                 HWND child = GetDlgItem(hwndDlg, IDC_COMBOFINDFIND);
@@ -1758,7 +1737,7 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
             MessageBeep(0);
             break;
         case WM_COMMAND:
-            pHdr = (DLGHDR *) GetWindowLong(hwndDlg, GWL_USERDATA);
+            pHdr = (DLGHDR*)GetWindowLong(hwndDlg, GWL_USERDATA);
             // this is needed to handle the default behavior
             if (LOWORD(wParam) == IDOK)
             {
@@ -1782,7 +1761,7 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
                     break;
                 case IDC_REPLACEBROWSE:
                     GetBrowsePath(hwndDlg, IDC_COMBOREPLACEPATH);
-                    BrowseForFile(hwndFrame, "Replace", browsePath, MAX_PATH);                
+                    BrowseForFile(hwndFrame, "Replace", browsePath, MAX_PATH);
                     LoadBrowsePath(hwndDlg, IDC_COMBOREPLACEPATH);
                     EndFind();
                     break;
@@ -1949,7 +1928,6 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
                 case IDC_REPLACEFINDNEXT:
                 {
                     HWND child;
-                    DWORD id;
                     if (LOWORD(wParam) == IDC_FINDNEXT)
                     {
                         child = GetDlgItem(hwndDlg, IDC_COMBOFINDFIND);
@@ -1972,11 +1950,10 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
                     }
                     _beginthread((BEGINTHREAD_FUNC)DoFindNext, 0, (LPVOID)hwndDlg);
                 }
-                    break;
+                break;
                 case IDC_REPLACENEXT:
                 {
                     HWND child = GetDlgItem(hwndDlg, IDC_COMBOREPLACEFIND);
-                    DWORD id;
                     SendMessage(child, WM_GETTEXT, 256, (LPARAM)findText);
                     child = GetDlgItem(hwndDlg, IDC_COMBOREPLACE);
                     SendMessage(child, WM_GETTEXT, 256, (LPARAM)replaceText);
@@ -1986,11 +1963,10 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
                     xGetFileType(hwndDlg, IDC_COMBOREPLACETYPE);
                     _beginthread((BEGINTHREAD_FUNC)DoReplaceNext, 0, (LPVOID)hwndDlg);
                 }
-                    break;
+                break;
                 case IDC_REPLACEALL:
                 {
                     HWND child = GetDlgItem(hwndDlg, IDC_COMBOREPLACEFIND);
-                    DWORD id;
                     EndFind();
                     SendMessage(child, WM_GETTEXT, 256, (LPARAM)findText);
                     child = GetDlgItem(hwndDlg, IDC_COMBOREPLACE);
@@ -2005,7 +1981,7 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
                     xGetFileType(hwndDlg, IDC_COMBOREPLACETYPE);
                     _beginthread((BEGINTHREAD_FUNC)DoReplaceNext, 0, (LPVOID)hwndDlg);
                 }
-                    break;
+                break;
             }
             break;
     }
@@ -2014,7 +1990,7 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
 VOID WINAPI OnSelChanged(HWND hwndDlg)
 
 {
-    DLGHDR *pHdr = (DLGHDR *) GetWindowLong(hwndDlg, GWL_USERDATA);
+    DLGHDR* pHdr = (DLGHDR*)GetWindowLong(hwndDlg, GWL_USERDATA);
     int iSel = pHdr->iSel = TabCtrl_GetCurSel(pHdr->hwndTab);
     DWORD dwDlgBase = GetDialogBaseUnits();
     int cxMargin = LOWORD(dwDlgBase) / 4;
@@ -2040,7 +2016,7 @@ VOID WINAPI OnSelChanged(HWND hwndDlg)
         }
         iSel = 8 + pHdr->replaceOffs;
     }
-        
+
     if (pHdr->hwndDisplay != NULL)
         DestroyWindow(pHdr->hwndDisplay);
 
@@ -2056,24 +2032,17 @@ VOID WINAPI OnSelChanged(HWND hwndDlg)
     CopyRect(&pHdr->rcDisplay, &rcTab);
     TabCtrl_AdjustRect(pHdr->hwndTab, FALSE, &pHdr->rcDisplay);
 
-    SetWindowPos(pHdr->hwndTab, NULL, rcTab.left, rcTab.top,
-        rcTab.right - rcTab.left, rcTab.bottom - rcTab.top, 
-        SWP_NOZORDER);
+    SetWindowPos(pHdr->hwndTab, NULL, rcTab.left, rcTab.top, rcTab.right - rcTab.left, rcTab.bottom - rcTab.top, SWP_NOZORDER);
 
-    SetWindowPos(hwndDlg, NULL, findDlgPos.x, findDlgPos.y,
-        rcTab.right + 2 * cxMargin + 2 * GetSystemMetrics(SM_CXDLGFRAME),
-        rcTab.bottom + 2 * cyMargin + 2 * GetSystemMetrics(SM_CYDLGFRAME) + GetSystemMetrics(SM_CYCAPTION),
-        SWP_NOZORDER);
-    pHdr->hwndDisplay = CreateDialogIndirect(hInstance, pHdr->apRes[iSel], hwndDlg, 
-                                             (DLGPROC)FindChildDlgProc);
+    SetWindowPos(hwndDlg, NULL, findDlgPos.x, findDlgPos.y, rcTab.right + 2 * cxMargin + 2 * GetSystemMetrics(SM_CXDLGFRAME),
+                 rcTab.bottom + 2 * cyMargin + 2 * GetSystemMetrics(SM_CYDLGFRAME) + GetSystemMetrics(SM_CYCAPTION), SWP_NOZORDER);
+    pHdr->hwndDisplay = CreateDialogIndirect(hInstance, pHdr->apRes[iSel], hwndDlg, (DLGPROC)FindChildDlgProc);
 }
-LRESULT CALLBACK FindDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LPARAM
-    lParam)
+LRESULT CALLBACK FindDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
-    DLGHDR *pHdr;
+    DLGHDR* pHdr;
     TC_ITEM tie;
     int i;
-    char buf[512];
     switch (iMessage)
     {
         case WM_INITDIALOG:
@@ -2091,7 +2060,6 @@ LRESULT CALLBACK FindDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LPARAM
                 }
                 else if (!(findflags & (F_OUTPUT1 | F_OUTPUT2)))
                     findflags |= F_OUTPUT1;
-
             }
             else
             {
@@ -2104,35 +2072,33 @@ LRESULT CALLBACK FindDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LPARAM
                 replacemode = F_M_CURRENTDOCUMENT;
             }
             hwndFind = hwndDlg;
-            pHdr = (DLGHDR *) calloc(1, sizeof(DLGHDR));
-            SetWindowLong(hwndDlg, GWL_USERDATA, (LONG) pHdr);
-            pHdr->hwndTab = CreateWindow(WC_TABCONTROL, "",
-                                WS_CHILD | WS_CLIPSIBLINGS | WS_VISIBLE,
-                                0, 0, 100, 100,
-                                hwndDlg, NULL, hInstance, NULL);
+            pHdr = (DLGHDR*)calloc(1, sizeof(DLGHDR));
+            SetWindowLong(hwndDlg, GWL_USERDATA, (LONG)pHdr);
+            pHdr->hwndTab = CreateWindow(WC_TABCONTROL, "", WS_CHILD | WS_CLIPSIBLINGS | WS_VISIBLE, 0, 0, 100, 100, hwndDlg, NULL,
+                                         hInstance, NULL);
             tie.mask = TCIF_TEXT | TCIF_IMAGE;
             tie.iImage = -1;
             tie.pszText = "Find";
             TabCtrl_InsertItem(pHdr->hwndTab, 0, &tie);
             tie.pszText = "Replace";
             TabCtrl_InsertItem(pHdr->hwndTab, 1, &tie);
-            for (i=0; i < 8; i++)
+            for (i = 0; i < 8; i++)
                 pHdr->apRes[i] = DoLockDlgRes(MAKEINTRESOURCE(FINDDLG_0 + i));
-            for (i=0; i < 4; i++)
-                pHdr->apRes[i+8] = DoLockDlgRes(MAKEINTRESOURCE(REPLACEDLG_0 + i));
+            for (i = 0; i < 4; i++)
+                pHdr->apRes[i + 8] = DoLockDlgRes(MAKEINTRESOURCE(REPLACEDLG_0 + i));
             pHdr->plusBmp = LoadBitmap(hInstance, "ID_PLUS99");
             pHdr->minusBmp = LoadBitmap(hInstance, "ID_MINUS99");
             pHdr->findEnabled = TRUE;
             if (lParam)
                 TabCtrl_SetCurSel(pHdr->hwndTab, 1);
             if (findmode == F_M_SPECIFIEDPATH)
-                pHdr->findOffs = 1; // select the path dialog
+                pHdr->findOffs = 1;  // select the path dialog
             if (replacemode == F_M_SPECIFIEDPATH)
                 pHdr->replaceOffs = 1;
             OnSelChanged(hwndDlg);
             return TRUE;
         case WM_DESTROY:
-            pHdr = (DLGHDR *) GetWindowLong(hwndDlg, GWL_USERDATA);
+            pHdr = (DLGHDR*)GetWindowLong(hwndDlg, GWL_USERDATA);
             DestroyWindow(pHdr->hwndTab);
             DestroyWindow(pHdr->hwndDisplay);
             free(pHdr);
@@ -2140,7 +2106,7 @@ LRESULT CALLBACK FindDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LPARAM
             hwndFindInternal = NULL;
             break;
         case WM_FOCUSFIND:
-            pHdr = (DLGHDR *) GetWindowLong(hwndDlg, GWL_USERDATA);
+            pHdr = (DLGHDR*)GetWindowLong(hwndDlg, GWL_USERDATA);
             inSetSel = FALSE;
             if (wParam)
             {
@@ -2175,7 +2141,7 @@ LRESULT CALLBACK FindDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LPARAM
         case WM_MOVE:
             findDlgPos.x = LOWORD(lParam);
             findDlgPos.y = HIWORD(lParam);
-//            ScreenToClient(hwndFrame, &findDlgPos);
+            //            ScreenToClient(hwndFrame, &findDlgPos);
             findDlgPos.x -= GetSystemMetrics(SM_CXDLGFRAME);
             findDlgPos.y -= GetSystemMetrics(SM_CYCAPTION) + GetSystemMetrics(SM_CYDLGFRAME);
             break;
@@ -2183,25 +2149,23 @@ LRESULT CALLBACK FindDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LPARAM
             switch (LOWORD(wParam))
             {
                 case IDOK:
-                    pHdr = (DLGHDR *) GetWindowLong(hwndDlg, GWL_USERDATA);
+                    pHdr = (DLGHDR*)GetWindowLong(hwndDlg, GWL_USERDATA);
                     return FindChildDlgProc(pHdr->hwndDisplay, iMessage, wParam, lParam);
                 case IDCANCEL:
                     SetEvent(findEvent);
                     SetFocus((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0));
                     rehighlight("", 0, 0);
                     EndDialog(hwndDlg, 0);
-                    pHdr = (DLGHDR *) GetWindowLong(hwndDlg, GWL_USERDATA);
+                    pHdr = (DLGHDR*)GetWindowLong(hwndDlg, GWL_USERDATA);
                     FindChildDlgProc(pHdr->hwndDisplay, WM_USER, 0, 0);
                     break;
                 case IDHELP:
                     ContextHelp(IDH_FIND_REPLACE_DIALOG);
                     break;
-                    
             }
             break;
     }
     return 0;
-    
 }
 
 void OpenFindDialog(void)
@@ -2224,7 +2188,6 @@ void OpenReplaceDialog(void)
     else
     {
         SendMessage(hwndFind, WM_FOCUSFIND, TRUE, 0);
-        
     }
 }
 void OpenFindInFilesDialog(void)

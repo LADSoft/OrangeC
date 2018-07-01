@@ -3,6 +3,13 @@
 #include "PEHeader.h"
 #include "sqlite3.h"
 
+BOOL __stdcall GetModuleHandleExW(
+  DWORD   dwFlags,
+  LPCTSTR lpModuleName,
+  HMODULE *phModule
+);
+#define GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS 4
+
 char *unmangle(char *val, char *name);
 
 #define DBVersion 100
@@ -458,7 +465,24 @@ static int GetGlobalName(sqlite3 *db, char *name, int *type, int Address, int eq
         return gaddr;
     }
 }
-
+void GetModuleName(char *buf, unsigned addr, unsigned *base)
+{
+    buf[0] = 0;
+    HMODULE module;
+    if (GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCTSTR)addr, &module))
+    {
+        DWORD dbgBase;
+        DWORD read;
+        *base = (unsigned)module;
+        dbgBase = *(DWORD *)((BYTE *)module + 0x3c);
+        dbgBase = ((struct PEHeader *)((BYTE *)module + dbgBase))->export_rva;
+        if (dbgBase)
+        {
+            dbgBase = *(DWORD *)((BYTE *)module + dbgBase + 12);
+            strcpy(buf, (char *)((BYTE *)module + dbgBase));
+        }
+    }
+}
 BOOL IsConsoleApp()
 {
     BYTE *base = 0x400000;
@@ -470,6 +494,7 @@ BOOL IsConsoleApp()
 __declspec(dllexport) void CALLBACK StackTrace(char *text, char *prog, PCONTEXT regs, void *base, void *stacktop)
 {
    sqlite3 *db = NULL;
+   unsigned currentBase = 0;
    DWORD linkbase = 0;
    char buf[10000] ;
       sprintf(buf,"\n%s:(%s)\n",text, prog);
@@ -481,10 +506,6 @@ __declspec(dllexport) void CALLBACK StackTrace(char *text, char *prog, PCONTEXT 
          regs->SegDs,regs->SegEs,regs->SegFs,regs->SegGs);
 
     char dbname[MAX_PATH];
-    if (DebugFileName(dbname, base))
-    {
-        db = DBOpen(dbname, &linkbase);
-    }
     DWORD *sp = regs->Ebp;
     BOOL first = TRUE;
     while ((DWORD)sp >= regs->Esp && (DWORD)sp < stacktop)
@@ -493,20 +514,36 @@ __declspec(dllexport) void CALLBACK StackTrace(char *text, char *prog, PCONTEXT 
             break;
         if (sp[1])
         {
+            unsigned xbase;
             char name[4096];
             char unmangled[4096];
             int type;
             if (first)
             {
                 strcat(buf, "\nStack trace:\n");
-                sprintf(buf + strlen(buf), "\t%x", regs->Eip);
-		DWORD funcaddr = GetGlobalName(db, name, &type, regs->Eip, 0);
+                GetModuleName(name, regs->Eip, &xbase);
+                if (xbase != currentBase)
+                {
+                    DBClose(db);
+                    if (DebugFileName(dbname, (BYTE *)xbase))
+                    {
+                        db = DBOpen(dbname, &linkbase);
+                    }
+                    else
+                    {
+                         db = NULL;
+                    }
+                    currentBase = xbase;
+                }
+                sprintf(buf + strlen(buf), "\t%15s ", name);
+                sprintf(buf + strlen(buf), "%x", regs->Eip);
+		DWORD funcaddr = GetGlobalName(db, name, &type, regs->Eip - xbase + linkbase, 0);
                 if (funcaddr)
                 {
                     unmangle(unmangled, name);
-                    sprintf(buf + strlen(buf), ": %s + 0x%x", unmangled, regs->Eip - funcaddr);
+                    sprintf(buf + strlen(buf), ": %s + 0x%x", unmangled, regs->Eip - xbase + linkbase - funcaddr);
                     int linenum = 0;
-                    GetEqualsBreakpoint(db, regs->Eip, name, &linenum);
+                    GetEqualsBreakpoint(db, regs->Eip - xbase + linkbase, name, &linenum);
                     if (linenum)
                     {
                         char *p = strrchr(name, '\\');
@@ -520,17 +557,32 @@ __declspec(dllexport) void CALLBACK StackTrace(char *text, char *prog, PCONTEXT 
                 strcat(buf, "\n");
             }
             first = FALSE;
-            sprintf(buf + strlen(buf), "\t%x", sp[1]);
+            GetModuleName(name, sp[1], &xbase);
+            if (xbase != currentBase)
+            {
+                DBClose(db);
+                if (DebugFileName(dbname, (BYTE *)xbase))
+                {
+                    db = DBOpen(dbname, &linkbase);
+                }
+                else
+                {
+                     db = NULL;
+                }
+                currentBase = xbase;
+            }
+            sprintf(buf + strlen(buf), "\t%15s ", name);
+            sprintf(buf + strlen(buf), "%x", sp[1]);
             if (db)
             {
-		DWORD funcaddr = GetGlobalName(db, name, &type, sp[1], 0);
+		DWORD funcaddr = GetGlobalName(db, name, &type, sp[1] - xbase + linkbase, 0);
                 if (funcaddr)
                 {
                     unmangle(unmangled, name);
-                    sprintf(buf + strlen(buf), ": %s + 0x%x", unmangled, sp[1] - funcaddr);
+                    sprintf(buf + strlen(buf), ": %s + 0x%x", unmangled, sp[1] - xbase + linkbase - funcaddr);
                     int linenum = 0;
                     // a function taking no args and having no return value will calculate the next line, if we don't subtract 1
-                    GetEqualsBreakpoint(db, sp[1]-1, name, &linenum);
+                    GetEqualsBreakpoint(db, sp[1] - xbase + linkbase - 1, name, &linenum);
                     if (linenum)
                     {
                         char *p = strrchr(name, '\\');
@@ -546,8 +598,7 @@ __declspec(dllexport) void CALLBACK StackTrace(char *text, char *prog, PCONTEXT 
         }
         sp = sp[0];
     }
-    if (db)
-        DBClose(db);      
+    DBClose(db);      
     if (IsConsoleApp())
     {
       fputs(buf, stderr);

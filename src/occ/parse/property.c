@@ -1,49 +1,49 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
 
-extern ARCH_ASM *chosenAssembler;
+extern ARCH_ASM* chosenAssembler;
 extern enum e_kw skim_end[];
-extern NAMESPACEVALUES *globalNameSpace;
+extern NAMESPACEVALUES* globalNameSpace;
 extern TYPE stdvoid;
 extern int total_errors;
 extern int startlab;
 extern int retlab;
 extern int nextLabel;
 
-static SYMBOL *CreateSetterPrototype(SYMBOL *sp)
+static SYMBOL* CreateSetterPrototype(SYMBOL* sp)
 {
     SYMBOL *rv, *value;
     char name[512];
     sprintf(name, "set_%s", sp->name);
     rv = makeID(sp->storage_class, NULL, NULL, litlate(name));
     value = makeID(sc_parameter, sp->tp, NULL, "value");
-    value->used = TRUE; // to avoid unused variable errors
+    value->used = TRUE;  // to avoid unused variable errors
     rv->access = ac_public;
-    rv->tp = (TYPE *)Alloc(sizeof(TYPE));
+    rv->tp = (TYPE*)Alloc(sizeof(TYPE));
     rv->tp->sp = rv;
     rv->tp->type = bt_func;
     rv->tp->btp = &stdvoid;
@@ -53,15 +53,15 @@ static SYMBOL *CreateSetterPrototype(SYMBOL *sp)
     SetLinkerNames(rv, lk_cdecl);
     return rv;
 }
-static SYMBOL *CreateGetterPrototype(SYMBOL *sp)
+static SYMBOL* CreateGetterPrototype(SYMBOL* sp)
 {
     SYMBOL *rv, *nullparam;
     char name[512];
     sprintf(name, "get_%s", sp->name);
     rv = makeID(sp->storage_class, NULL, NULL, litlate(name));
-    nullparam= makeID(sc_parameter, &stdvoid, NULL, "__void");
+    nullparam = makeID(sc_parameter, &stdvoid, NULL, "__void");
     rv->access = ac_public;
-    rv->tp = (TYPE *)Alloc(sizeof(TYPE));
+    rv->tp = (TYPE*)Alloc(sizeof(TYPE));
     rv->tp->sp = rv;
     rv->tp->type = bt_func;
     rv->tp->btp = sp->tp;
@@ -70,18 +70,17 @@ static SYMBOL *CreateGetterPrototype(SYMBOL *sp)
     insert(nullparam, rv->tp->syms);
     SetLinkerNames(rv, lk_cdecl);
     return rv;
-
 }
-static void insertfunc(SYMBOL *in, HASHTABLE *syms)
+static void insertfunc(SYMBOL* in, HASHTABLE* syms)
 {
 
-    HASHREC **hr = LookupName(in->name, syms);
-    SYMBOL *funcs = NULL;
+    HASHREC** hr = LookupName(in->name, syms);
+    SYMBOL* funcs = NULL;
     if (hr)
-        funcs = (SYMBOL *)((*hr)->p);
+        funcs = (SYMBOL*)((*hr)->p);
     if (!funcs)
     {
-        TYPE *tp = (TYPE *)Alloc(sizeof(TYPE));
+        TYPE* tp = (TYPE*)Alloc(sizeof(TYPE));
         tp->type = bt_aggregate;
         tp->rootType = tp;
         funcs = makeID(sc_overloads, tp, 0, litlate(in->name));
@@ -101,25 +100,24 @@ static void insertfunc(SYMBOL *in, HASHTABLE *syms)
     {
         fatal("insertfuncs: invalid overload tab");
     }
-
 }
-static SYMBOL *CreateBackingVariable(SYMBOL *sp)
+static SYMBOL* CreateBackingVariable(SYMBOL* sp)
 {
     char name[512];
-    SYMBOL *rv;
+    SYMBOL* rv;
     sprintf(name, "__backing_%s", sp->name);
     rv = makeID(sc_static, sp->tp, NULL, litlate(name));
     rv->label = nextLabel++;
     SetLinkerNames(rv, lk_cdecl);
     return rv;
 }
-static SYMBOL *CreateBackingSetter(SYMBOL *sp, SYMBOL *backing)
+static SYMBOL* CreateBackingSetter(SYMBOL* sp, SYMBOL* backing)
 {
-    SYMBOL *p = CreateSetterPrototype(sp);
-    STATEMENT *st;
+    SYMBOL* p = CreateSetterPrototype(sp);
+    STATEMENT* st;
     BLOCKDATA b;
-    EXPRESSION *left = varNode(en_global, backing);
-    EXPRESSION *right = varNode(en_global, (SYMBOL *)p->tp->syms->table[0]->p);
+    EXPRESSION* left = varNode(en_global, backing);
+    EXPRESSION* right = varNode(en_global, (SYMBOL*)p->tp->syms->table[0]->p);
     p->tp->type = bt_ifunc;
     memset(&b, 0, sizeof(b));
     deref(sp->tp, &left);
@@ -131,10 +129,10 @@ static SYMBOL *CreateBackingSetter(SYMBOL *sp, SYMBOL *backing)
     p->inlineFunc.syms = p->tp->syms;
     return p;
 }
-static SYMBOL *CreateBackingGetter(SYMBOL *sp, SYMBOL *backing)
+static SYMBOL* CreateBackingGetter(SYMBOL* sp, SYMBOL* backing)
 {
-    SYMBOL *p = CreateGetterPrototype(sp);
-    STATEMENT *st;
+    SYMBOL* p = CreateGetterPrototype(sp);
+    STATEMENT* st;
     BLOCKDATA b;
     p->tp->type = bt_ifunc;
     memset(&b, 0, sizeof(b));
@@ -146,7 +144,7 @@ static SYMBOL *CreateBackingGetter(SYMBOL *sp, SYMBOL *backing)
     p->inlineFunc.syms = p->tp->syms;
     return p;
 }
-LEXEME *initialize_property(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_class_in, BOOLEAN asExpression, int flags)
+LEXEME* initialize_property(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_sc storage_class_in, BOOLEAN asExpression, int flags)
 {
     if (isstructured(sp->tp))
         error(ERR_ONLY_SIMPLE_PROPERTIES_SUPPORTED);
@@ -156,8 +154,8 @@ LEXEME *initialize_property(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc s
     {
         if (MATCHKW(lex, begin))
         {
-            SYMBOL *get=NULL, *set = NULL;
-            SYMBOL *prototype;
+            SYMBOL *get = NULL, *set = NULL;
+            SYMBOL* prototype;
             lex = getsym();
             while (ISID(lex))
             {
@@ -214,11 +212,11 @@ LEXEME *initialize_property(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc s
             chosenAssembler->msil->create_property(sp, get, set);
             needkw(&lex, end);
         }
-        else // create default getter and setter
+        else  // create default getter and setter
         {
-            SYMBOL *backing = CreateBackingVariable(sp);
-            SYMBOL *setter = CreateBackingSetter(sp, backing);
-            SYMBOL *getter = CreateBackingGetter(sp, backing);
+            SYMBOL* backing = CreateBackingVariable(sp);
+            SYMBOL* setter = CreateBackingSetter(sp, backing);
+            SYMBOL* getter = CreateBackingGetter(sp, backing);
             GENREF(backing);
             GENREF(setter);
             GENREF(getter);

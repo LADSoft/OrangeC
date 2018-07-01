@@ -145,6 +145,7 @@ void GatherPackedVars(int *count, SYMBOL **arg, EXPRESSION *packedExp);
 INITLIST **expandPackedInitList(INITLIST **lptr, SYMBOL *funcsp, LEXEME *start, EXPRESSION *packedExp);
 MEMBERINITIALIZERS *expandPackedBaseClasses(SYMBOL *cls, SYMBOL *funcsp, MEMBERINITIALIZERS **init, BASECLASS *bc, VBASEENTRY *vbase);
 void expandPackedMemberInitializers(SYMBOL *cls, SYMBOL *funcsp, TEMPLATEPARAMLIST *templatePack, MEMBERINITIALIZERS **p, LEXEME *start, INITLIST *list);
+LEXEME *parse_declspec(LEXEME *lex, enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3);
 void checkOperatorArgs(SYMBOL *sp, BOOLEAN asFriend);
 SYMBOL *getCopyCons(SYMBOL *base, BOOLEAN move);
 void ConsDestDeclarationErrors(SYMBOL *sp, BOOLEAN notype);
@@ -370,6 +371,7 @@ int FPFToLongDouble(unsigned char *dest, FPF *src);
 void FPFTruncate(FPF *value, int bits, int maxexp, int minexp);
 
                                /* Help.c */
+void helpinit();
 void deprecateMessage(SYMBOL *sp);
 BOOLEAN ismember(SYMBOL *sym);
 BOOLEAN istype(SYMBOL *sym);

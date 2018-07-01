@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "opcodes.h"
@@ -38,16 +38,10 @@ static uint segs, total_prefixes;
 static char mnemonic[10];
 static OPERAND extraoperand, source, dest;
 
-static char *based[8] = 
-{
-    "bx+si", "bx+di", "bp+si", "bp+di", "si", "di", "bp", "bx"
-};
-static char *st[8] = 
-{
-    "dword", "dword", "qword", "word", "tbyte"
-};
+static char* based[8] = {"bx+si", "bx+di", "bp+si", "bp+di", "si", "di", "bp", "bx"};
+static char* st[8] = {"dword", "dword", "qword", "word", "tbyte"};
 
-static void SetSeg(OPERAND *record, uint seg)
+static void SetSeg(OPERAND* record, uint seg)
 {
     strict = FALSE;
     record->code = OM_SEGMENT;
@@ -56,7 +50,7 @@ static void SetSeg(OPERAND *record, uint seg)
 
 //-------------------------------------------------------------------------
 
-static void SetReg(OPERAND *record, uint reg)
+static void SetReg(OPERAND* record, uint reg)
 {
     strict = FALSE;
     record->code = OM_REG;
@@ -65,7 +59,7 @@ static void SetReg(OPERAND *record, uint reg)
 
 //-------------------------------------------------------------------------
 
-uint ReadRM(BYTE *stream, OPERAND *record)
+uint ReadRM(BYTE* stream, OPERAND* record)
 {
     int mod, ofs = 2;
 
@@ -79,37 +73,36 @@ uint ReadRM(BYTE *stream, OPERAND *record)
         strict = FALSE;
         return (0);
     }
-    if (record->flags &OMF_ADR32)
-    /* If is scaled op */
-    if (record->reg == RM_32_SCALED)
-    {
-        /* bump the index ptr and get the SIB ops */
-        ofs++;
-        record->reg = RM(stream + 1);
-        record->scalereg = REG(stream + 1);
-        record->scale = MOD(stream + 1);
-        /* Can only scale if scale reg not SP */
-        if (!(record->scalereg == RM_32_STACKINDEX))
-            record->flags |= OMF_SCALED;
-        /* now see if it is absolute scaled */
-        if ((record->reg == RM_32_ABSOLUTE) && (mod == MOD_NOOFS))
+    if (record->flags & OMF_ADR32)
+        /* If is scaled op */
+        if (record->reg == RM_32_SCALED)
         {
-            record->code = OM_ABSOLUTE;
-            record->address = LONG(stream + 3);
-            return (5);
+            /* bump the index ptr and get the SIB ops */
+            ofs++;
+            record->reg = RM(stream + 1);
+            record->scalereg = REG(stream + 1);
+            record->scale = MOD(stream + 1);
+            /* Can only scale if scale reg not SP */
+            if (!(record->scalereg == RM_32_STACKINDEX))
+                record->flags |= OMF_SCALED;
+            /* now see if it is absolute scaled */
+            if ((record->reg == RM_32_ABSOLUTE) && (mod == MOD_NOOFS))
+            {
+                record->code = OM_ABSOLUTE;
+                record->address = LONG(stream + 3);
+                return (5);
+            }
         }
-    }
-    else
-    {
-        if ((mod == MOD_NOOFS) && (record->reg == RM_32_ABSOLUTE))
+        else
         {
-            record->code = OM_ABSOLUTE;
-            record->address = LONG(stream + 2);
-            return (4);
+            if ((mod == MOD_NOOFS) && (record->reg == RM_32_ABSOLUTE))
+            {
+                record->code = OM_ABSOLUTE;
+                record->address = LONG(stream + 2);
+                return (4);
+            }
         }
-    }
-    else
-    if ((mod == MOD_NOOFS) && (record->reg == RM_16_ABSOLUTE))
+    else if ((mod == MOD_NOOFS) && (record->reg == RM_16_ABSOLUTE))
     {
         record->code = OM_ABSOLUTE;
         record->address = UINT(stream + 2);
@@ -122,7 +115,7 @@ uint ReadRM(BYTE *stream, OPERAND *record)
     if (mod == MOD_ADDR)
     {
         record->flags |= OMF_WORD_OFFSET;
-        if (record->flags &OMF_ADR32)
+        if (record->flags & OMF_ADR32)
         {
             record->address = LONG(stream + ofs);
             ofs += 4;
@@ -133,8 +126,7 @@ uint ReadRM(BYTE *stream, OPERAND *record)
             ofs += 2;
         }
     }
-    else
-    if (mod == MOD_SIGNED)
+    else if (mod == MOD_SIGNED)
     {
         record->flags |= OMF_SIGNED_OFFSET;
         record->address = SIGNEDOFS(stream + ofs);
@@ -145,7 +137,7 @@ uint ReadRM(BYTE *stream, OPERAND *record)
 
 //-------------------------------------------------------------------------
 
-uint RegRM(BYTE *stream, OPERAND *reg, OPERAND *rm)
+uint RegRM(BYTE* stream, OPERAND* reg, OPERAND* rm)
 {
     SetReg(reg, REG(stream));
     return (ReadRM(stream, rm));
@@ -153,14 +145,13 @@ uint RegRM(BYTE *stream, OPERAND *reg, OPERAND *rm)
 
 //-------------------------------------------------------------------------
 
-uint Immediate(BYTE *stream, OPERAND *imm)
+uint Immediate(BYTE* stream, OPERAND* imm)
 {
     int ofs = 0;
     imm->code = OM_IMMEDIATE;
-    if (imm->flags &OMF_BYTE)
+    if (imm->flags & OMF_BYTE)
         imm->address = *(stream + (ofs++));
-    else
-    if (imm->flags &OMF_OP32)
+    else if (imm->flags & OMF_OP32)
     {
         imm->address = LONG(stream + ofs);
         ofs += 4;
@@ -183,7 +174,7 @@ static void MnemonicChar(char theChar)
 }
 
 /* op 1- word reg from bits 0 - 2 of opcode */
-static uint OP1(BYTE *stream, OPERAND *dest)
+static uint OP1(BYTE* stream, OPERAND* dest)
 {
     dest->flags &= ~OMF_BYTE;
     SetReg(dest, B02(*stream));
@@ -191,7 +182,7 @@ static uint OP1(BYTE *stream, OPERAND *dest)
 }
 
 /* OP1 acc, reg bits 0-2 of opcode */
-static uint OP2(BYTE *stream, OPERAND *dest, OPERAND *source)
+static uint OP2(BYTE* stream, OPERAND* dest, OPERAND* source)
 {
     source->flags = dest->flags = 0;
     SetReg(dest, REG_eAX);
@@ -200,29 +191,26 @@ static uint OP2(BYTE *stream, OPERAND *dest, OPERAND *source)
 }
 
 /* op3 - seg from b3-5 of opcode */
-static uint OP3(BYTE *stream, OPERAND *dest)
+static uint OP3(BYTE* stream, OPERAND* dest)
 {
     SetSeg(dest, B35(*stream));
     return (0);
 }
 
 /* op4 - REGRM with b1 of opcode set reg is dest else source */
-static uint OP4(BYTE *stream, OPERAND *dest, OPERAND *source)
+static uint OP4(BYTE* stream, OPERAND* dest, OPERAND* source)
 {
     if (B1(*stream))
         return (RegRM(stream, dest, source));
-     /* Reg is dest */
+    /* Reg is dest */
     return (RegRM(stream, source, dest)); /* Reg is source */
 }
 
 /* op5 - use RM only */
-static uint OP5(BYTE *stream, OPERAND *dest)
-{
-    return (ReadRM(stream, dest));
-}
+static uint OP5(BYTE* stream, OPERAND* dest) { return (ReadRM(stream, dest)); }
 
 /* op6 READRM for shift */
-static uint OP6(BYTE *stream, OPERAND *dest, OPERAND *source)
+static uint OP6(BYTE* stream, OPERAND* dest, OPERAND* source)
 {
     int ofs = ReadRM(stream, dest);
     source->code = OM_SHIFT;
@@ -231,20 +219,17 @@ static uint OP6(BYTE *stream, OPERAND *dest, OPERAND *source)
             source->flags |= OMF_CL;
         else
             source->address = 1;
-        else
-            source->address = *(stream + 2+(ofs++));
+    else
+        source->address = *(stream + 2 + (ofs++));
 
     return (ofs);
 }
 
 /* op 7 regrm with reg dest */
-static uint OP7(BYTE *stream, OPERAND *dest, OPERAND *source)
-{
-    return (RegRM(stream, dest, source));
-}
+static uint OP7(BYTE* stream, OPERAND* dest, OPERAND* source) { return (RegRM(stream, dest, source)); }
 
 /* OP8 - word regrm with reg dest */
-static uint OP8(BYTE *stream, OPERAND *dest, OPERAND *source)
+static uint OP8(BYTE* stream, OPERAND* dest, OPERAND* source)
 {
     dest->flags &= ~OMF_BYTE;
     source->flags &= ~OMF_BYTE;
@@ -252,7 +237,7 @@ static uint OP8(BYTE *stream, OPERAND *dest, OPERAND *source)
 }
 
 /* op 9 - interrupts */
-static uint OP9(BYTE *stream, OPERAND *dest)
+static uint OP9(BYTE* stream, OPERAND* dest)
 {
     strict = FALSE;
     dest->code = OM_INT;
@@ -267,18 +252,18 @@ static uint OP9(BYTE *stream, OPERAND *dest)
 }
 
 /* op 10, short relative branch */
-static uint OP10(BYTE *stream, OPERAND *dest)
+static uint OP10(BYTE* stream, OPERAND* dest)
 {
     strict = FALSE;
     dest->code = OM_SHORTBRANCH;
-    dest->address = code_address + SIGNEDOFS(stream + 1) + 2+total_prefixes;
-    if (!(dest->flags &OMF_OP32))
-        dest->address = dest->address &0xffff;
+    dest->address = code_address + SIGNEDOFS(stream + 1) + 2 + total_prefixes;
+    if (!(dest->flags & OMF_OP32))
+        dest->address = dest->address & 0xffff;
     return (0);
 }
 
 /* op 11 RM, immediate */
-static uint OP11(BYTE *stream, OPERAND *dest, OPERAND *source)
+static uint OP11(BYTE* stream, OPERAND* dest, OPERAND* source)
 {
     int ofs = ReadRM(stream, dest);
     ofs += Immediate(stream + ofs + 2, source);
@@ -286,7 +271,7 @@ static uint OP11(BYTE *stream, OPERAND *dest, OPERAND *source)
 }
 
 /* op 12 - acc, immediate */
-static uint OP12(BYTE *stream, OPERAND *dest, OPERAND *source)
+static uint OP12(BYTE* stream, OPERAND* dest, OPERAND* source)
 {
     int ofs;
     SetReg(dest, REG_eAX);
@@ -295,11 +280,11 @@ static uint OP12(BYTE *stream, OPERAND *dest, OPERAND *source)
 }
 
 /* op 13 absolute, acc*/
-static uint OP13(BYTE *stream, OPERAND *dest, OPERAND *source)
+static uint OP13(BYTE* stream, OPERAND* dest, OPERAND* source)
 {
     int ofs = 0;
     dest->code = OM_ABSOLUTE;
-    if (dest->flags &OMF_ADR32)
+    if (dest->flags & OMF_ADR32)
     {
         dest->address = LONG(stream + 1);
         ofs += 2;
@@ -311,7 +296,7 @@ static uint OP13(BYTE *stream, OPERAND *dest, OPERAND *source)
 }
 
 /* op 14 - RM, immediate, b01 of opcode != 1 for byte */
-static uint OP14(BYTE *stream, OPERAND *dest, OPERAND *source)
+static uint OP14(BYTE* stream, OPERAND* dest, OPERAND* source)
 {
     int ofs = ReadRM(stream, dest);
 
@@ -328,8 +313,8 @@ static uint OP14(BYTE *stream, OPERAND *dest, OPERAND *source)
             source->flags |= OMF_BYTE;
         dest->flags &= ~OMF_BYTE;
     }
-    ofs += Immediate(stream + 2+ofs, source);
-    if (((*stream &3) == 3) && (source->flags &OMF_BYTE))
+    ofs += Immediate(stream + 2 + ofs, source);
+    if (((*stream & 3) == 3) && (source->flags & OMF_BYTE))
     {
         source->flags |= OMF_SIGNED;
         source->address = (long)((char)source->address);
@@ -338,7 +323,7 @@ static uint OP14(BYTE *stream, OPERAND *dest, OPERAND *source)
 }
 
 /* op 15 - acc, immediate, B3 of opcode clear for byte */
-static uint OP15(BYTE *stream, OPERAND *dest, OPERAND *source)
+static uint OP15(BYTE* stream, OPERAND* dest, OPERAND* source)
 {
     SetReg(dest, B02(*stream)); /* Not using OPSIZ */
     if (B3(*stream))
@@ -356,7 +341,7 @@ static uint OP15(BYTE *stream, OPERAND *dest, OPERAND *source)
 }
 
 /* op 16 - seg,readrm, if B1 of opcode seg is dest else source */
-static uint OP16(BYTE *stream, OPERAND *dest, OPERAND *source)
+static uint OP16(BYTE* stream, OPERAND* dest, OPERAND* source)
 {
     int ofs;
     if (B1(*stream))
@@ -375,7 +360,7 @@ static uint OP16(BYTE *stream, OPERAND *dest, OPERAND *source)
 }
 
 /* op 17, far return */
-static uint OP17(BYTE *stream, OPERAND *dest)
+static uint OP17(BYTE* stream, OPERAND* dest)
 {
     strict = FALSE;
     dest->code = OM_RETURN;
@@ -385,13 +370,13 @@ static uint OP17(BYTE *stream, OPERAND *dest)
 }
 
 /* op 18, far branch/call */
-static uint OP18(BYTE *stream, OPERAND *dest)
+static uint OP18(BYTE* stream, OPERAND* dest)
 {
     int ofs = 0;
     strict = FALSE;
     dest->code = OM_FARBRANCH;
     dest->flags &= ~OMF_BYTE;
-    if (dest->flags &OMF_OP32)
+    if (dest->flags & OMF_OP32)
     {
         dest->address = LONG(stream + 1);
         ofs += 2;
@@ -403,36 +388,36 @@ static uint OP18(BYTE *stream, OPERAND *dest)
 }
 
 /* op 19 - ESC, mnem of bits 0-2 of opcode, imm,readrm */
-static uint OP19(BYTE *stream, OPERAND *dest, OPERAND *source)
+static uint OP19(BYTE* stream, OPERAND* dest, OPERAND* source)
 {
     dest->code = OM_IMMEDIATE;
     dest->flags |= OMF_BYTE;
-    dest->address = ((*(stream) &7) << 3) + ((*(stream + 1) >> 3) &7);
+    dest->address = ((*(stream)&7) << 3) + ((*(stream + 1) >> 3) & 7);
 
     /* Note that byte mode and ESC code use the same bit... */
     return (ReadRM(stream, source));
 }
 
 /* op 20 - long branch */
-static uint OP20(BYTE *stream, OPERAND *dest)
+static uint OP20(BYTE* stream, OPERAND* dest)
 {
     strict = FALSE;
     dest->code = OM_LONGBRANCH;
-    if (dest->flags &OMF_OP32)
+    if (dest->flags & OMF_OP32)
     {
-        dest->address = code_address + LONG(stream + 1) + 5+total_prefixes;
+        dest->address = code_address + LONG(stream + 1) + 5 + total_prefixes;
         return (2);
     }
     else
     {
-        dest->address = code_address + UINT(stream + 1) + 3+total_prefixes;
-        dest->address = dest->address &0xffff;
+        dest->address = code_address + UINT(stream + 1) + 3 + total_prefixes;
+        dest->address = dest->address & 0xffff;
     }
     return (0);
 }
 
 /* op21 acc,dx */
-static uint OP21(BYTE *stream, OPERAND *dest, OPERAND *source)
+static uint OP21(BYTE* stream, OPERAND* dest, OPERAND* source)
 {
     stream++;
     SetReg(dest, REG_eAX);
@@ -442,7 +427,7 @@ static uint OP21(BYTE *stream, OPERAND *dest, OPERAND *source)
 }
 
 /* op22 - dx,acc */
-static uint OP22(BYTE *stream, OPERAND *dest, OPERAND *source)
+static uint OP22(BYTE* stream, OPERAND* dest, OPERAND* source)
 {
     stream++;
     dest->flags &= ~(OMF_OP32 | OMF_BYTE);
@@ -452,7 +437,7 @@ static uint OP22(BYTE *stream, OPERAND *dest, OPERAND *source)
 }
 
 /* op23 - port,acc where B1 of opcode set is port dest */
-static uint OP23(BYTE *stream, OPERAND *dest, OPERAND *source)
+static uint OP23(BYTE* stream, OPERAND* dest, OPERAND* source)
 {
     if (B1(*stream))
     {
@@ -473,12 +458,12 @@ static uint OP23(BYTE *stream, OPERAND *dest, OPERAND *source)
 }
 
 /* op 24 acc, absolute */
-static uint OP24(BYTE *stream, OPERAND *dest, OPERAND *source)
+static uint OP24(BYTE* stream, OPERAND* dest, OPERAND* source)
 {
     int ofs = 0;
     SetReg(dest, REG_eAX);
     source->code = OM_ABSOLUTE;
-    if (source->flags &OMF_ADR32)
+    if (source->flags & OMF_ADR32)
     {
         source->address = LONG(stream + 1);
         ofs += 2;
@@ -489,7 +474,7 @@ static uint OP24(BYTE *stream, OPERAND *dest, OPERAND *source)
 }
 
 /* op 25 - immediate byte or word */
-static uint OP25(BYTE *stream, OPERAND *dest)
+static uint OP25(BYTE* stream, OPERAND* dest)
 {
     strict = FALSE;
     if (B1(*stream))
@@ -501,7 +486,7 @@ static uint OP25(BYTE *stream, OPERAND *dest)
 }
 
 /* op 26, immediate 2byte,byte */
-static uint OP26(BYTE *stream, OPERAND *dest, OPERAND *source)
+static uint OP26(BYTE* stream, OPERAND* dest, OPERAND* source)
 {
     strict = FALSE;
     dest->flags &= ~(OMF_BYTE | OMF_OP32);
@@ -513,12 +498,12 @@ static uint OP26(BYTE *stream, OPERAND *dest, OPERAND *source)
 }
 
 /* op 27 - string */
-static uint OP27(BYTE *stream, OPERAND *dest)
+static uint OP27(BYTE* stream, OPERAND* dest)
 {
     stream++;
-    if (segs &SG_OPSIZ)
+    if (segs & SG_OPSIZ)
     {
-        if (dest->flags &OMF_OP32)
+        if (dest->flags & OMF_OP32)
             MnemonicChar('d');
         else
             MnemonicChar('w');
@@ -527,7 +512,7 @@ static uint OP27(BYTE *stream, OPERAND *dest)
 }
 
 /* op 28 - source = REG, dest = RM */
-static uint OP28(BYTE *stream, OPERAND *dest, OPERAND *source)
+static uint OP28(BYTE* stream, OPERAND* dest, OPERAND* source)
 {
     SetReg(dest, REG(stream));
     SetReg(source, RM(stream));
@@ -535,7 +520,7 @@ static uint OP28(BYTE *stream, OPERAND *dest, OPERAND *source)
 }
 
 /* op 29 - dest = RM, immediate */
-static uint OP29(BYTE *stream, OPERAND *dest, OPERAND *source)
+static uint OP29(BYTE* stream, OPERAND* dest, OPERAND* source)
 {
     dest->flags |= OMF_BYTE;
     SetReg(dest, RM(stream));
@@ -545,13 +530,13 @@ static uint OP29(BYTE *stream, OPERAND *dest, OPERAND *source)
 }
 
 /* op30 - RM, shift with B3 of stream selecting COUNT or CL*/
-static uint OP30(BYTE *stream, OPERAND *dest, OPERAND *source)
+static uint OP30(BYTE* stream, OPERAND* dest, OPERAND* source)
 {
     int ofs = ReadRM(stream, dest);
 
     source->code = OM_SHIFT;
     if (B3(*stream))
-    /* The original author didn't let the RM field have any offsets... */
+        /* The original author didn't let the RM field have any offsets... */
         source->address = *(stream + (ofs++) + 2);
     else
         source->flags |= OMF_CL;
@@ -560,10 +545,10 @@ static uint OP30(BYTE *stream, OPERAND *dest, OPERAND *source)
 }
 
 /* op 31- reg, rm, count wher B1 of opcode = byte/word */
-static uint OP31(BYTE *stream, OPERAND *dest, OPERAND *source)
+static uint OP31(BYTE* stream, OPERAND* dest, OPERAND* source)
 {
     int ofs;
-    extraoperand =  *dest;
+    extraoperand = *dest;
 
     SetReg(dest, REG(stream));
 
@@ -578,19 +563,17 @@ static uint OP31(BYTE *stream, OPERAND *dest, OPERAND *source)
 }
 
 /* op32 - 386 special regs */
-static uint OP32(BYTE *stream, OPERAND *dest, OPERAND *source)
+static uint OP32(BYTE* stream, OPERAND* dest, OPERAND* source)
 {
-    uint id = *((uint*)(stream)) &0xc005;
+    uint id = *((uint*)(stream)) & 0xc005;
     if (id == 0xc000)
         id = OM_CRX;
+    else if (id == 0xc001)
+        id = OM_DRX;
+    else if (id == 0xc004)
+        id = OM_TRX;
     else
-        if (id == 0xc001)
-            id = OM_DRX;
-        else
-            if (id == 0xc004)
-                id = OM_TRX;
-            else
-                id = OM_SUD;
+        id = OM_SUD;
 
     dest->flags &= ~OMF_BYTE;
     source->flags &= ~OMF_BYTE;
@@ -612,36 +595,36 @@ static uint OP32(BYTE *stream, OPERAND *dest, OPERAND *source)
 }
 
 /* op33 - reg,rm,shiftcnt where B3 = reg source, b0 = shift cl */
-static uint OP33(BYTE *stream, OPERAND *dest, OPERAND *source)
+static uint OP33(BYTE* stream, OPERAND* dest, OPERAND* source)
 {
     int ofs;
     dest->flags &= ~OMF_BYTE;
     source->flags &= ~OMF_BYTE;
-    extraoperand =  *dest;
+    extraoperand = *dest;
     extraoperand.code |= OM_SHIFT;
     ofs = ReadRM(stream, dest);
     SetReg(source, REG(stream));
     if (B0(*stream))
         extraoperand.flags |= OMF_CL;
     else
-        extraoperand.address = *(stream + 2+ofs);
+        extraoperand.address = *(stream + 2 + ofs);
 
     return (ofs);
 }
 
 /* op 34 - push & pop word */
-static uint OP34(BYTE *stream, OPERAND *dest)
+static uint OP34(BYTE* stream, OPERAND* dest)
 {
-    if ((segs &SG_TWOBYTEOP) || !(segs &SG_OPSIZ))
+    if ((segs & SG_TWOBYTEOP) || !(segs & SG_OPSIZ))
         strict = FALSE;
     return (ReadRM(stream, dest));
 }
 
 /* op 35 -floating RM */
-static uint OP35(BYTE *stream, OPERAND *dest)
+static uint OP35(BYTE* stream, OPERAND* dest)
 {
     strict = FALSE;
-    if ((*((uint*)stream) &0xd0de) == 0xd0de)
+    if ((*((uint*)stream) & 0xd0de) == 0xd0de)
         MnemonicChar('p');
     if (MOD(stream) != 3)
         dest->flags |= OMF_FSTTAB | (B12(*stream) << OM_FTAB);
@@ -651,12 +634,12 @@ static uint OP35(BYTE *stream, OPERAND *dest)
 }
 
 /* op 36 - sized floating RM */
-static uint OP36(BYTE *stream, OPERAND *dest)
+static uint OP36(BYTE* stream, OPERAND* dest)
 {
     int size = SZ_QWORD;
     strict = FALSE;
 
-    if ((*((uint*)stream) &0x2807) != 0x2807)
+    if ((*((uint*)stream) & 0x2807) != 0x2807)
         size = SZ_TBYTE;
 
     dest->flags |= OMF_FSTTAB | ((size) << OM_FTAB);
@@ -664,13 +647,13 @@ static uint OP36(BYTE *stream, OPERAND *dest)
 }
 
 /* OP 37 - floating MATH */
-static uint OP37(BYTE *stream, OPERAND *dest, OPERAND *source)
+static uint OP37(BYTE* stream, OPERAND* dest, OPERAND* source)
 {
     int ofs = 0, flop = 0;
     strict = FALSE;
-    if ((*((uint*)stream) &0xc0de) == 0xc0de)
+    if ((*((uint*)stream) & 0xc0de) == 0xc0de)
         flop = 1;
-    if (((REG(stream) &5) ^ flop) == 5)
+    if (((REG(stream) & 5) ^ flop) == 5)
         MnemonicChar('r');
 
     if (MOD(stream) != 3)
@@ -680,9 +663,9 @@ static uint OP37(BYTE *stream, OPERAND *dest, OPERAND *source)
     }
     else
     {
-        if (*stream &6)
+        if (*stream & 6)
             MnemonicChar('p');
-        if (*stream &4)
+        if (*stream & 4)
         {
             SetReg(dest, RM(stream));
             dest->flags |= OMF_FST;
@@ -700,7 +683,7 @@ static uint OP37(BYTE *stream, OPERAND *dest, OPERAND *source)
 
 //-------------------------------------------------------------------------
 
-static uint OP38(BYTE *stream, OPERAND *dest)
+static uint OP38(BYTE* stream, OPERAND* dest)
 {
     /* This is how we get a DWORD PTR for the far jump */
     strict = FALSE;
@@ -709,7 +692,7 @@ static uint OP38(BYTE *stream, OPERAND *dest)
 }
 
 /* OP39 - word regrm with reg source */
-static uint OP39(BYTE *stream, OPERAND *dest, OPERAND *source)
+static uint OP39(BYTE* stream, OPERAND* dest, OPERAND* source)
 {
     dest->flags &= ~OMF_BYTE;
     source->flags &= ~OMF_BYTE;
@@ -717,24 +700,21 @@ static uint OP39(BYTE *stream, OPERAND *dest, OPERAND *source)
 }
 
 /* op 40 regrm with reg source */
-static uint OP40(BYTE *stream, OPERAND *dest, OPERAND *source)
-{
-    return (RegRM(stream, source, dest));
-}
+static uint OP40(BYTE* stream, OPERAND* dest, OPERAND* source) { return (RegRM(stream, source, dest)); }
 
 /* op 41 reg, bitnum */
-static uint OP41(BYTE *stream, OPERAND *dest, OPERAND *source)
+static uint OP41(BYTE* stream, OPERAND* dest, OPERAND* source)
 {
     int ofs;
     dest->flags &= ~OMF_BYTE;
     ofs = ReadRM(stream, dest);
     source->flags |= OMF_BYTE;
-    Immediate(stream + 2+ofs, source);
+    Immediate(stream + 2 + ofs, source);
     return (ofs);
 }
 
 /* op 42 mixed regrm with reg dest & strictness enforced */
-static uint OP42(BYTE *stream, OPERAND *dest, OPERAND *source)
+static uint OP42(BYTE* stream, OPERAND* dest, OPERAND* source)
 {
     int ofs = RegRM(stream, dest, source);
     dest->flags &= ~OMF_BYTE;
@@ -744,7 +724,7 @@ static uint OP42(BYTE *stream, OPERAND *dest, OPERAND *source)
 }
 
 /* op43 - REGRM with b0 of opcode set reg is word else byte */
-static uint OP43(BYTE *stream, OPERAND *dest, OPERAND *source)
+static uint OP43(BYTE* stream, OPERAND* dest, OPERAND* source)
 {
     if (!B0(*stream))
     {
@@ -756,22 +736,18 @@ static uint OP43(BYTE *stream, OPERAND *dest, OPERAND *source)
 
 //-------------------------------------------------------------------------
 
-static FUNC optable[44] = 
-{
-    0, OP1, OP2, OP3, OP4, OP5, OP6, OP7, OP8, OP9, OP10, OP11, OP12, OP13,
-        OP14, OP15, OP16, OP17, OP18, OP19, OP20, OP21, OP22, OP23, OP24, OP25,
-        OP26, OP27, OP28, OP29, OP30, OP31, OP32, OP33, OP34, OP35, OP36, OP37,
-        OP38, OP39, OP40, OP41, OP42, OP43
-};
+static FUNC optable[44] = {0,    OP1,  OP2,  OP3,  OP4,  OP5,  OP6,  OP7,  OP8,  OP9,  OP10, OP11, OP12, OP13, OP14,
+                           OP15, OP16, OP17, OP18, OP19, OP20, OP21, OP22, OP23, OP24, OP25, OP26, OP27, OP28, OP29,
+                           OP30, OP31, OP32, OP33, OP34, OP35, OP36, OP37, OP38, OP39, OP40, OP41, OP42, OP43};
 
-BYTE *ReadOverrides(BYTE *stream, uint validator)
+BYTE* ReadOverrides(BYTE* stream, uint validator)
 {
     segs = 0;
     total_prefixes = 0;
 
     for (;; stream++)
     {
-        if (validator &VAL_VX)
+        if (validator & VAL_VX)
         {
             if ((uint)(*stream - 0x64) < 2)
             {
@@ -780,7 +756,7 @@ BYTE *ReadOverrides(BYTE *stream, uint validator)
                 continue;
             }
         }
-        if (validator &VAL_386)
+        if (validator & VAL_386)
         {
             if ((uint)(*stream - 0x64) < 4)
             {
@@ -789,9 +765,9 @@ BYTE *ReadOverrides(BYTE *stream, uint validator)
                 continue;
             }
         }
-        if ((*stream &0xe7) == 0x26)
+        if ((*stream & 0xe7) == 0x26)
         {
-            segs |= 1 << ((*stream >> 3) &3);
+            segs |= 1 << ((*stream >> 3) & 3);
             total_prefixes++;
             continue;
         }
@@ -808,7 +784,7 @@ BYTE *ReadOverrides(BYTE *stream, uint validator)
 
 //-------------------------------------------------------------------------
 
-BYTE *DispatchOperand(BYTE *stream, OPTABLE *opcode, BOOL adr32)
+BYTE* DispatchOperand(BYTE* stream, OPTABLE* opcode, BOOL adr32)
 {
     BOOL op32 = adr32;
     strcpy(mnemonic, opcode->mnemonic);
@@ -822,13 +798,13 @@ BYTE *DispatchOperand(BYTE *stream, OPTABLE *opcode, BOOL adr32)
         total_prefixes++;
         stream++;
     }
-    if (segs &SG_ADRSIZ)
+    if (segs & SG_ADRSIZ)
         adr32 = !adr32;
 
-    if (segs &SG_OPSIZ)
+    if (segs & SG_OPSIZ)
         op32 = !op32;
 
-    if (*stream &1)
+    if (*stream & 1)
     {
         source.flags = 0;
         dest.flags = 0;
@@ -858,26 +834,23 @@ BYTE *DispatchOperand(BYTE *stream, OPTABLE *opcode, BOOL adr32)
 
 //-------------------------------------------------------------------------
 
-static char *DoStrict(char *buffer, OPERAND *record)
+static char* DoStrict(char* buffer, OPERAND* record)
 {
     if (strict)
-        if (record->flags &OMF_BYTE)
+        if (record->flags & OMF_BYTE)
             strcat(buffer, "byte ptr ");
+        else if (record->flags & OMF_OP32)
+            strcat(buffer, "dword ptr ");
         else
-            if (record->flags &OMF_OP32)
-                strcat(buffer, "dword ptr ");
-            else
-                strcat(buffer, "word ptr ");
-            else
-                if (record->flags &OMF_FSTTAB)
-                    sprintf(buffer, "%s ptr ", st[(record->flags >> OM_FTAB)
-                        &7]);
+            strcat(buffer, "word ptr ");
+    else if (record->flags & OMF_FSTTAB)
+        sprintf(buffer, "%s ptr ", st[(record->flags >> OM_FTAB) & 7]);
     return (buffer + strlen(buffer));
 }
 
 //-------------------------------------------------------------------------
 
-char *TabTo(char *buffer, int pos)
+char* TabTo(char* buffer, int pos)
 {
     int temp = pos - strlen(buffer);
     buffer += pos - temp;
@@ -885,14 +858,13 @@ char *TabTo(char *buffer, int pos)
     {
         *buffer++ = ' ';
         *buffer = '\0';
-    }
-    while (--temp > 0);
+    } while (--temp > 0);
     return (buffer);
 }
 
 //-------------------------------------------------------------------------
 
-static char *GetST(char *buffer, OPERAND *record)
+static char* GetST(char* buffer, OPERAND* record)
 {
     sprintf(buffer, "st(%x)", record->reg);
     return (buffer + strlen(buffer));
@@ -900,9 +872,9 @@ static char *GetST(char *buffer, OPERAND *record)
 
 //-------------------------------------------------------------------------
 
-static char *GetStdReg(char *buffer, int reg, BOOL use32)
+static char* GetStdReg(char* buffer, int reg, BOOL use32)
 {
-    char *pos;
+    char* pos;
 
     if (use32)
     {
@@ -910,28 +882,28 @@ static char *GetStdReg(char *buffer, int reg, BOOL use32)
         reg |= 8;
     }
     pos = &"alcldlblahchdhbhaxcxdxbxspbpsidi"[reg * 2];
-    *buffer++ =  *pos++;
-    *buffer++ =  *pos;
+    *buffer++ = *pos++;
+    *buffer++ = *pos;
     *buffer = '\0';
     return (buffer);
 }
 
 //-------------------------------------------------------------------------
 
-static char *GetReg(char *buffer, OPERAND *record, int reg)
+static char* GetReg(char* buffer, OPERAND* record, int reg)
 {
-    BOOL use32 = ((record->flags &(OMF_OP32 | OMF_BYTE)) == OMF_OP32);
-    if (!(record->flags &OMF_BYTE))
+    BOOL use32 = ((record->flags & (OMF_OP32 | OMF_BYTE)) == OMF_OP32);
+    if (!(record->flags & OMF_BYTE))
         reg |= 8;
     return (GetStdReg(buffer, reg, use32));
 }
 
 //-------------------------------------------------------------------------
 
-static char *GetSpecial(char *buffer, OPERAND *record, char *name)
+static char* GetSpecial(char* buffer, OPERAND* record, char* name)
 {
-    *buffer++ =  *name++;
-    *buffer++ =  *name++;
+    *buffer++ = *name++;
+    *buffer++ = *name++;
     *buffer++ = name[record->reg];
     *buffer = '\0';
     return (buffer);
@@ -939,11 +911,11 @@ static char *GetSpecial(char *buffer, OPERAND *record, char *name)
 
 //-------------------------------------------------------------------------
 
-static char *GetSeg(char *buffer, int seg, BOOL override)
+static char* GetSeg(char* buffer, int seg, BOOL override)
 {
-    char *pos = &"escsssdsfsgs"[seg * 2];
-    *buffer++ =  *pos++;
-    *buffer++ =  *pos++;
+    char* pos = &"escsssdsfsgs"[seg * 2];
+    *buffer++ = *pos++;
+    *buffer++ = *pos++;
     if (override)
         *buffer++ = ':';
     *buffer = '\0';
@@ -952,19 +924,19 @@ static char *GetSeg(char *buffer, int seg, BOOL override)
 
 //-------------------------------------------------------------------------
 
-static char *SegOverride(char *buffer)
+static char* SegOverride(char* buffer)
 {
-    if (segs &SG_ES)
+    if (segs & SG_ES)
         buffer = GetSeg(buffer, 0, TRUE);
-    if (segs &SG_CS)
+    if (segs & SG_CS)
         buffer = GetSeg(buffer, 1, TRUE);
-    if (segs &SG_SS)
+    if (segs & SG_SS)
         buffer = GetSeg(buffer, 2, TRUE);
-    if (segs &SG_DS)
+    if (segs & SG_DS)
         buffer = GetSeg(buffer, 3, TRUE);
-    if (segs &SG_FS)
+    if (segs & SG_FS)
         buffer = GetSeg(buffer, 4, TRUE);
-    if (segs &SG_GS)
+    if (segs & SG_GS)
         buffer = GetSeg(buffer, 5, TRUE);
     segs = 0;
     return (buffer);
@@ -972,19 +944,19 @@ static char *SegOverride(char *buffer)
 
 //-------------------------------------------------------------------------
 
-static void Scaled(char *buffer, OPERAND *record, BOOL based)
+static void Scaled(char* buffer, OPERAND* record, BOOL based)
 {
     uint flags = record->flags;
     record->flags &= ~OMF_BYTE;
     record->flags |= OMF_OP32;
     if (based)
         buffer = GetStdReg(buffer, record->reg, TRUE);
-    if (record->flags &OMF_SCALED)
+    if (record->flags & OMF_SCALED)
     {
-        char *pos = &" + +2*+4*+8*"[record->scale *3];
-        *buffer++ =  *pos++;
-        *buffer++ =  *pos++;
-        *buffer++ =  *pos++;
+        char* pos = &" + +2*+4*+8*"[record->scale * 3];
+        *buffer++ = *pos++;
+        *buffer++ = *pos++;
+        *buffer++ = *pos++;
         buffer = GetStdReg(buffer, record->scalereg, TRUE);
     }
     record->flags = flags;
@@ -992,7 +964,7 @@ static void Scaled(char *buffer, OPERAND *record, BOOL based)
 
 //-------------------------------------------------------------------------
 
-static void PutOperand(char *buffer, OPERAND *record)
+static void PutOperand(char* buffer, OPERAND* record)
 {
     buffer += strlen(buffer);
     switch (record->code)
@@ -1019,13 +991,12 @@ static void PutOperand(char *buffer, OPERAND *record)
             FormatValue(buffer, record, segs, SY_INTR);
             break;
         case OM_SHIFT:
-            if (record->flags &OMF_CL)
+            if (record->flags & OMF_CL)
                 strcpy(buffer, "cl");
+            else if (record->address == 1)
+                strcpy(buffer, "1");
             else
-                if (record->address == 1)
-                    strcpy(buffer, "1");
-                else
-                    FormatValue(buffer, record, segs, SY_SHIFT);
+                FormatValue(buffer, record, segs, SY_SHIFT);
             break;
         case OM_RETURN:
             FormatValue(buffer, record, segs, SY_RETURN);
@@ -1048,7 +1019,7 @@ static void PutOperand(char *buffer, OPERAND *record)
             buffer = SegOverride(buffer);
             *buffer++ = '[';
             *buffer = '\0';
-            if (record->flags &OMF_SCALED)
+            if (record->flags & OMF_SCALED)
             {
                 FormatValue(buffer, record, segs, SY_WORDOFS);
                 while (*buffer)
@@ -1060,16 +1031,16 @@ static void PutOperand(char *buffer, OPERAND *record)
             strcat(buffer, "]");
             break;
         case OM_IMMEDIATE:
-            if (record->flags &OMF_BYTE)
-                if (record->flags &OMF_SIGNED)
+            if (record->flags & OMF_BYTE)
+                if (record->flags & OMF_SIGNED)
                     FormatValue(buffer, record, segs, SY_SIGNEDIMM);
                 else
                     FormatValue(buffer, record, segs, SY_BYTEIMM);
-                else
-                    FormatValue(buffer, record, segs, SY_WORDIMM);
+            else
+                FormatValue(buffer, record, segs, SY_WORDIMM);
             break;
         case OM_REG:
-            if (record->flags &OMF_FST)
+            if (record->flags & OMF_FST)
                 buffer = GetST(buffer, record);
             else
                 buffer = GetReg(buffer, record, record->reg);
@@ -1079,19 +1050,19 @@ static void PutOperand(char *buffer, OPERAND *record)
             buffer = SegOverride(buffer);
             *buffer++ = '[';
             *buffer = '\0';
-            if (record->flags &OMF_ADR32)
+            if (record->flags & OMF_ADR32)
                 Scaled(buffer, record, TRUE);
             else
                 strcpy(buffer, based[record->reg]);
             while (*buffer)
                 buffer++;
-            if (record->flags &OMF_OFFSET)
+            if (record->flags & OMF_OFFSET)
             {
-                if (record->flags &OMF_SIGNED_OFFSET)
+                if (record->flags & OMF_SIGNED_OFFSET)
                     FormatValue(buffer, record, segs, SY_SIGNEDOFS);
                 else
                 {
-                    if (record->flags &OMF_WORD_OFFSET)
+                    if (record->flags & OMF_WORD_OFFSET)
                         FormatValue(buffer, record, segs, SY_WORDOFS);
                     else
                         FormatValue(buffer, record, segs, SY_BYTEOFS);
@@ -1107,23 +1078,23 @@ static void PutOperand(char *buffer, OPERAND *record)
 
 //-------------------------------------------------------------------------
 
-void FormatDissassembly(char *buffer)
+void FormatDissassembly(char* buffer)
 {
-    char lbuf[256],  *localbuffer = lbuf;
+    char lbuf[256], *localbuffer = lbuf;
     localbuffer[0] = '\0';
-    #ifdef DEBUG
-        if (segs &SG_ADRSIZ)
-            strcat(localbuffer, "adrsiz: ");
-        if (segs &SG_OPSIZ)
-            strcat(localbuffer, "opsiz: ");
-    #endif /* DEBUG */
-    if (segs &SG_REPZ)
+#ifdef DEBUG
+    if (segs & SG_ADRSIZ)
+        strcat(localbuffer, "adrsiz: ");
+    if (segs & SG_OPSIZ)
+        strcat(localbuffer, "opsiz: ");
+#endif /* DEBUG */
+    if (segs & SG_REPZ)
         strcat(localbuffer, "repz ");
-    if (segs &SG_REPNZ)
+    if (segs & SG_REPNZ)
         strcat(localbuffer, "repnz ");
-    if (segs &SG_REPNC)
+    if (segs & SG_REPNC)
         strcat(localbuffer, "repnc ");
-    if (segs &SG_REPC)
+    if (segs & SG_REPC)
         strcat(localbuffer, "repc ");
     strcat(localbuffer, mnemonic);
     localbuffer = TabTo(localbuffer, TAB_ARGPOS);
@@ -1150,7 +1121,7 @@ void FormatDissassembly(char *buffer)
 
 //-------------------------------------------------------------------------
 
-static void RegisterSymbol(OPERAND *record)
+static void RegisterSymbol(OPERAND* record)
 {
     record->override = segs;
     switch (record->code)
@@ -1168,7 +1139,7 @@ static void RegisterSymbol(OPERAND *record)
             AddSymbol(record, SY_INTR);
             break;
         case OM_SHIFT:
-            if (!(record->flags &OMF_CL) && (record->address != 1))
+            if (!(record->flags & OMF_CL) && (record->address != 1))
                 AddSymbol(record, SY_SHIFT);
             break;
         case OM_RETURN:
@@ -1188,24 +1159,24 @@ static void RegisterSymbol(OPERAND *record)
             AddSymbol(record, SY_ABSOLUTE);
             break;
         case OM_IMMEDIATE:
-            if (record->flags &OMF_BYTE)
-                if (record->flags &OMF_SIGNED_OFFSET)
+            if (record->flags & OMF_BYTE)
+                if (record->flags & OMF_SIGNED_OFFSET)
                     AddSymbol(record, SY_SIGNEDIMM);
                 else
                     AddSymbol(record, SY_BYTEIMM);
-                else
-                    AddSymbol(record, SY_WORDIMM);
+            else
+                AddSymbol(record, SY_WORDIMM);
             break;
         case OM_REG:
             break;
         case OM_BASED:
-            if (record->flags &OMF_OFFSET)
+            if (record->flags & OMF_OFFSET)
             {
-                if (record->flags &OMF_SIGNED_OFFSET)
+                if (record->flags & OMF_SIGNED_OFFSET)
                     AddSymbol(record, SY_SIGNEDOFS);
                 else
                 {
-                    if (record->flags &OMF_WORD_OFFSET)
+                    if (record->flags & OMF_WORD_OFFSET)
                         AddSymbol(record, SY_WORDOFS);
                     else
                         AddSymbol(record, SY_BYTEOFS);

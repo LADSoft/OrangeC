@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #ifndef LINKOVERLAY_H
@@ -39,49 +39,51 @@ class ObjFile;
 
 class LinkOverlay
 {
-    typedef std::vector<LinkRegionSpecifier *> RegionContainer;
-    public:
-        LinkOverlay(LinkPartition *Parent) : parent(Parent) {}
-        ~LinkOverlay();
-        
-        ObjString &GetName() { return name; }
-        void SetName(const ObjString &Name) { name = Name; }
-                
-        LinkAttribs &GetAttribs() { return attribs; }
+    typedef std::vector<LinkRegionSpecifier*> RegionContainer;
 
-        LinkPartition *GetParent() { return parent; }
-        void SetParent(LinkPartition *Parent) { parent = Parent; }
+  public:
+    LinkOverlay(LinkPartition* Parent) : parent(Parent) {}
+    ~LinkOverlay();
 
-        typedef RegionContainer::iterator RegionIterator;
-        
-        RegionIterator RegionBegin() { return regions.begin(); }
-        RegionIterator RegionEnd() { return regions.end(); }
-        
-        void Add(LinkRegionSpecifier *region) { regions.push_back(region); }
-        bool ParseOverlaySpec(LinkManager *manager, CmdFiles &files, LinkTokenizer &spec);
+    ObjString& GetName() { return name; }
+    void SetName(const ObjString& Name) { name = Name; }
 
-        ObjInt PlaceOverlay(LinkManager *manager, LinkAttribs &partitionAttribs, bool completeLink, int overlayNum);
-        
-    private:
-        bool ParseAssignment(LinkTokenizer &spec);
-        bool ParseName(LinkTokenizer &spec);
-        bool ParseValue(LinkTokenizer &spec, LinkExpression **rv, bool alreadyassign = false);
-        bool ParseAttributes( LinkTokenizer &spec);
-        ObjString name;
-        LinkPartition *parent;
-        RegionContainer regions;
-        LinkAttribs attribs;
+    LinkAttribs& GetAttribs() { return attribs; }
+
+    LinkPartition* GetParent() { return parent; }
+    void SetParent(LinkPartition* Parent) { parent = Parent; }
+
+    typedef RegionContainer::iterator RegionIterator;
+
+    RegionIterator RegionBegin() { return regions.begin(); }
+    RegionIterator RegionEnd() { return regions.end(); }
+
+    void Add(LinkRegionSpecifier* region) { regions.push_back(region); }
+    bool ParseOverlaySpec(LinkManager* manager, CmdFiles& files, LinkTokenizer& spec);
+
+    ObjInt PlaceOverlay(LinkManager* manager, LinkAttribs& partitionAttribs, bool completeLink, int overlayNum);
+
+  private:
+    bool ParseAssignment(LinkTokenizer& spec);
+    bool ParseName(LinkTokenizer& spec);
+    bool ParseValue(LinkTokenizer& spec, LinkExpression** rv, bool alreadyassign = false);
+    bool ParseAttributes(LinkTokenizer& spec);
+    ObjString name;
+    LinkPartition* parent;
+    RegionContainer regions;
+    LinkAttribs attribs;
 };
 class LinkRegionSpecifier
 {
-    public:
-        LinkRegionSpecifier(LinkRegion *Region) : region(Region), symbol(nullptr) {}
-        LinkRegionSpecifier(LinkExpressionSymbol *Symbol) : region(nullptr), symbol(Symbol) {}
-        ~LinkRegionSpecifier();
-        LinkRegion *GetRegion() { return region; }
-        LinkExpressionSymbol *GetSymbol() { return symbol; }
-    private:
-        LinkRegion *region;
-        LinkExpressionSymbol *symbol;
+  public:
+    LinkRegionSpecifier(LinkRegion* Region) : region(Region), symbol(nullptr) {}
+    LinkRegionSpecifier(LinkExpressionSymbol* Symbol) : region(nullptr), symbol(Symbol) {}
+    ~LinkRegionSpecifier();
+    LinkRegion* GetRegion() { return region; }
+    LinkExpressionSymbol* GetSymbol() { return symbol; }
+
+  private:
+    LinkRegion* region;
+    LinkExpressionSymbol* symbol;
 };
 #endif

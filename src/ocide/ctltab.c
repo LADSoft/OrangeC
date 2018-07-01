@@ -1,33 +1,33 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
 #include <commctrl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "math.h" 
+#include "math.h"
 #include "header.h"
 #include "ctl.h"
 
@@ -39,8 +39,8 @@
 
 #define CLOSEICONWIDTH 10
 #define WINDOWICONWIDTH 16
-#define WINDOWICONTOP - 24
-#define WINDOWICONLEFT - 19
+#define WINDOWICONTOP -24
+#define WINDOWICONLEFT -19
 
 #define ROUNDWIDTH 3
 
@@ -49,16 +49,15 @@
 
 extern LOGFONT systemDialogFont;
 
-static char *szTabClassName = "ladSoftTabWindow";
-static char *szMenuClassName = "ladSoftMenuWindow";
+static char* szTabClassName = "ladSoftTabWindow";
+static char* szMenuClassName = "ladSoftMenuWindow";
 static HBITMAP closeBitmap;
 static HCURSOR dragCur, noCur;
 static HIMAGELIST mainIml;
 
-
-struct _singleTab *CreateItem(char *name, LPARAM lParam)
+struct _singleTab* CreateItem(char* name, LPARAM lParam)
 {
-    struct _singleTab *newItem = calloc(1, sizeof(struct _singleTab));
+    struct _singleTab* newItem = calloc(1, sizeof(struct _singleTab));
     if (newItem)
     {
         newItem->text = strdup(name);
@@ -75,7 +74,7 @@ struct _singleTab *CreateItem(char *name, LPARAM lParam)
     }
     return newItem;
 }
-void RemoveFromActive(struct _tabStruct *ptr, struct _singleTab *tabs)
+void RemoveFromActive(struct _tabStruct* ptr, struct _singleTab* tabs)
 {
     if (tabs->chain.prev)
     {
@@ -95,7 +94,7 @@ void RemoveFromActive(struct _tabStruct *ptr, struct _singleTab *tabs)
         ptr->active.head = ptr->active.tail = NULL;
     }
 }
-void RemoveFromSelected(struct _tabStruct *ptr, struct _singleTab *tabs)
+void RemoveFromSelected(struct _tabStruct* ptr, struct _singleTab* tabs)
 {
     if (tabs->selectedChain.prev)
     {
@@ -115,12 +114,12 @@ void RemoveFromSelected(struct _tabStruct *ptr, struct _singleTab *tabs)
         ptr->selected.head = ptr->selected.tail = NULL;
     }
 }
-void AddToActive(struct _tabStruct *ptr, int pos, struct _singleTab *tabs)
+void AddToActive(struct _tabStruct* ptr, int pos, struct _singleTab* tabs)
 {
     if (ptr->active.head)
     {
-        struct _singleTab *prev = NULL;
-        struct _singleTab *chk = ptr->active.head;
+        struct _singleTab* prev = NULL;
+        struct _singleTab* chk = ptr->active.head;
         while (pos-- && chk)
         {
             prev = chk;
@@ -149,12 +148,12 @@ void AddToActive(struct _tabStruct *ptr, int pos, struct _singleTab *tabs)
         ptr->active.head = ptr->active.tail = tabs;
     }
 }
-void AddToSelected(struct _tabStruct *ptr, int pos,struct _singleTab *tabs)
+void AddToSelected(struct _tabStruct* ptr, int pos, struct _singleTab* tabs)
 {
     if (ptr->selected.head)
     {
-        struct _singleTab *prev = NULL;
-        struct _singleTab *chk = ptr->selected.head;
+        struct _singleTab* prev = NULL;
+        struct _singleTab* chk = ptr->selected.head;
         while (pos-- && chk)
         {
             prev = chk;
@@ -183,7 +182,7 @@ void AddToSelected(struct _tabStruct *ptr, int pos,struct _singleTab *tabs)
         ptr->selected.head = ptr->selected.tail = tabs;
     }
 }
-void MyDrawEdge(HDC hDc, struct _tabStruct *ptr, int xStart, int yStart, int xEnd, int yEnd, int inc)
+void MyDrawEdge(HDC hDc, struct _tabStruct* ptr, int xStart, int yStart, int xEnd, int yEnd, int inc)
 {
     HPEN pen = SelectObject(hDc, ptr->greyPen);
     MoveToEx(hDc, xStart, yStart, NULL);
@@ -194,46 +193,40 @@ void MyDrawEdge(HDC hDc, struct _tabStruct *ptr, int xStart, int yStart, int xEn
         pen = SelectObject(hDc, ptr->whitePen);
         if (xStart == xEnd)
         {
-            MoveToEx(hDc, xStart+inc, yStart, NULL);
-            LineTo(hDc, xEnd+inc, yEnd);
+            MoveToEx(hDc, xStart + inc, yStart, NULL);
+            LineTo(hDc, xEnd + inc, yEnd);
         }
-        else 
+        else
         {
-            MoveToEx(hDc, xStart, yStart+inc, NULL);
-            LineTo(hDc, xEnd, yEnd+inc);
+            MoveToEx(hDc, xStart, yStart + inc, NULL);
+            LineTo(hDc, xEnd, yEnd + inc);
         }
         SelectObject(hDc, pen);
     }
 }
-void MyDrawArc(HDC hDc, struct _tabStruct *ptr, int x, int y, int inc)
+void MyDrawArc(HDC hDc, struct _tabStruct* ptr, int x, int y, int inc)
 {
     HPEN pen = SelectObject(hDc, ptr->greyPen);
     if (inc < 0)
     {
-        Arc(hDc, x - ROUNDWIDTH, y - ROUNDWIDTH, 
-            x + ROUNDWIDTH, y + ROUNDWIDTH,
-            x + ROUNDWIDTH, y, x, y - ROUNDWIDTH);
+        Arc(hDc, x - ROUNDWIDTH, y - ROUNDWIDTH, x + ROUNDWIDTH, y + ROUNDWIDTH, x + ROUNDWIDTH, y, x, y - ROUNDWIDTH);
         if (!ptr->flat)
         {
             SelectObject(hDc, pen);
             pen = SelectObject(hDc, ptr->whitePen);
-            Arc(hDc, x+1 - ROUNDWIDTH, y-1 - ROUNDWIDTH, 
-                x+1 + ROUNDWIDTH, y-1 + ROUNDWIDTH,
-                x+1 + ROUNDWIDTH, y-1, x+1, y-1 - ROUNDWIDTH);
+            Arc(hDc, x + 1 - ROUNDWIDTH, y - 1 - ROUNDWIDTH, x + 1 + ROUNDWIDTH, y - 1 + ROUNDWIDTH, x + 1 + ROUNDWIDTH, y - 1,
+                x + 1, y - 1 - ROUNDWIDTH);
         }
     }
     else
     {
-        Arc(hDc, x - ROUNDWIDTH, y - ROUNDWIDTH, 
-            x + ROUNDWIDTH, y + ROUNDWIDTH,
-            x, y + ROUNDWIDTH, x + ROUNDWIDTH, y);		
+        Arc(hDc, x - ROUNDWIDTH, y - ROUNDWIDTH, x + ROUNDWIDTH, y + ROUNDWIDTH, x, y + ROUNDWIDTH, x + ROUNDWIDTH, y);
         if (!ptr->flat)
         {
             SelectObject(hDc, pen);
             pen = SelectObject(hDc, ptr->whitePen);
-            Arc(hDc, x+1 - ROUNDWIDTH, y+1 - ROUNDWIDTH, 
-                x+1 + ROUNDWIDTH, y+1 + ROUNDWIDTH,
-                x+1, y+1 + ROUNDWIDTH, x+1 + ROUNDWIDTH, y+1);		
+            Arc(hDc, x + 1 - ROUNDWIDTH, y + 1 - ROUNDWIDTH, x + 1 + ROUNDWIDTH, y + 1 + ROUNDWIDTH, x + 1, y + 1 + ROUNDWIDTH,
+                x + 1 + ROUNDWIDTH, y + 1);
         }
     }
     if (!ptr->flat)
@@ -241,29 +234,29 @@ void MyDrawArc(HDC hDc, struct _tabStruct *ptr, int x, int y, int inc)
         SelectObject(hDc, pen);
     }
 }
-void DrawWindowBmp(HWND hwnd, struct _tabStruct *ptr, HDC hDc, int bordertype)
+void DrawWindowBmp(HWND hwnd, struct _tabStruct* ptr, HDC hDc, int bordertype)
 {
     RECT r;
     HDC dcmem = CreateCompatibleDC(hDc);
     HBITMAP old;
-     if (ptr->displayMenu)
-          old = SelectObject(dcmem, ptr->menuBitmap2);
-     else
-          old = SelectObject(dcmem, ptr->menuBitmap);
+    if (ptr->displayMenu)
+        old = SelectObject(dcmem, ptr->menuBitmap2);
+    else
+        old = SelectObject(dcmem, ptr->menuBitmap);
     GetClientRect(hwnd, &r);
-    BitBlt(hDc, r.right+WINDOWICONLEFT, r.bottom+WINDOWICONTOP, WINDOWICONWIDTH, WINDOWICONWIDTH, dcmem,0,0, SRCCOPY);
+    BitBlt(hDc, r.right + WINDOWICONLEFT, r.bottom + WINDOWICONTOP, WINDOWICONWIDTH, WINDOWICONWIDTH, dcmem, 0, 0, SRCCOPY);
     SelectObject(dcmem, old);
     DeleteDC(dcmem);
     if (bordertype)
     {
         r.left = r.right + WINDOWICONLEFT;
-        r.right = r.left + WINDOWICONWIDTH-2;
+        r.right = r.left + WINDOWICONWIDTH - 2;
         r.top = r.bottom + WINDOWICONTOP;
-        r.bottom = r.top + WINDOWICONWIDTH-2;
+        r.bottom = r.top + WINDOWICONWIDTH - 2;
         DrawEdge(hDc, &r, bordertype, BF_RECT);
     }
 }
-static void DrawBar(HDC dc, RECT *r1)
+static void DrawBar(HDC dc, RECT* r1)
 {
     HPEN pen1, pen2, pen3, oldpen;
     RECT r = *r1;
@@ -279,40 +272,40 @@ static void DrawBar(HDC dc, RECT *r1)
     LineTo(dc, r.right - 2, r.bottom - BARLEFT + 1);
     SelectObject(dc, pen3);
     */
-    MoveToEx(dc, r.right -1, r.top, 0);
-    LineTo(dc, r.right -1, r.bottom -1);
+    MoveToEx(dc, r.right - 1, r.top, 0);
+    LineTo(dc, r.right - 1, r.bottom - 1);
     SelectObject(dc, oldpen);
     DeleteObject(pen1);
     DeleteObject(pen2);
     DeleteObject(pen3);
 }
-void DrawTabs(HWND hwnd, HDC hDc, RECT *r, struct _tabStruct *ptr)
+void DrawTabs(HWND hwnd, HDC hDc, RECT* r, struct _tabStruct* ptr)
 {
     DWORD darkcolor = GetSysColor(COLOR_BTNHIGHLIGHT);
     HPEN darkpen = CreatePen(PS_SOLID, 0, GetSysColor(COLOR_BTNSHADOW));
     HBRUSH darkbrush;
     int bottom = GetWindowLong(hwnd, GWL_STYLE) & TABS_BOTTOM;
-    struct _singleTab *tab = ptr->active.head;
+    struct _singleTab* tab = ptr->active.head;
     SIZE size;
     int right = r->right;
     int oldbk, oldfg;
     int x = LEFTHALF;
     int y = 0;
-    int rightInset = RIGHTBORDER/2;
+    int rightInset = RIGHTBORDER / 2;
     HPEN pen = GetStockObject(WHITE_PEN);
     HBRUSH oldbr;
     int n = darkcolor & 0xff;
     darkcolor &= 0xffff00;
-    n = n * 9 /10;
+    n = n * 9 / 10;
     darkcolor |= n;
     n = darkcolor & 0xff00;
     darkcolor &= 0xff00ff;
-    n = n * 9 /10;
+    n = n * 9 / 10;
     n &= 0xff00;
     darkcolor |= n;
     n = darkcolor & 0xff0000;
     darkcolor &= 0xffff;
-    n = n * 9 /10;
+    n = n * 9 / 10;
     n &= 0xff0000;
     darkcolor |= n;
     darkbrush = CreateSolidBrush(darkcolor);
@@ -326,33 +319,30 @@ void DrawTabs(HWND hwnd, HDC hDc, RECT *r, struct _tabStruct *ptr)
     }
     if (!bottom)
     {
-        y = r->bottom - r->top - ptr->fontHeight - BOTTOMBORDER ;
-        MyDrawEdge(hDc, ptr, r->left, r->bottom - BOTTOMBORDER+1, 
-                   r->right, r->bottom-BOTTOMBORDER+1, 1);
-        MyDrawEdge(hDc, ptr, r->left, r->bottom - 1, 
-                   r->right, r->bottom- 1, 1);
+        y = r->bottom - r->top - ptr->fontHeight - BOTTOMBORDER;
+        MyDrawEdge(hDc, ptr, r->left, r->bottom - BOTTOMBORDER + 1, r->right, r->bottom - BOTTOMBORDER + 1, 1);
+        MyDrawEdge(hDc, ptr, r->left, r->bottom - 1, r->right, r->bottom - 1, 1);
     }
     else
     {
-        y = BOTTOMBORDER-4;
+        y = BOTTOMBORDER - 4;
         /*
-        MyDrawEdge(hDc, ptr, r->left, BOTTOMBORDER-1, 
+        MyDrawEdge(hDc, ptr, r->left, BOTTOMBORDER-1,
                    r->right, BOTTOMBORDER-1, 1);
         */
-        MyDrawEdge(hDc, ptr, r->left, 0, 
-                   r->right, 0, 1);
+        MyDrawEdge(hDc, ptr, r->left, 0, r->right, 0, 1);
     }
     oldbr = CreateSolidBrush(RetrieveSysColor(COLOR_WINDOW));
     oldbr = SelectObject(hDc, oldbr);
     while (tab)
     {
         HFONT xfont;
-        char *p = strrchr(tab->text, '\\');
+        char* p = strrchr(tab->text, '\\');
         if (p)
             p++;
         else
             p = tab->text;
-        
+
         if (ptr->selected.head == tab)
         {
             xfont = SelectObject(hDc, ptr->boldFont);
@@ -370,20 +360,20 @@ void DrawTabs(HWND hwnd, HDC hDc, RECT *r, struct _tabStruct *ptr)
             int xfirst, yfirst;
             MyDrawEdge(hDc, ptr, x, y - TOPBORDER, x + size.cx + RIGHTBORDER + rightInset - ROUNDWIDTH, y - TOPBORDER, -1);
             xfirst = x - RIGHTBORDER;
-            yfirst = y + (ptr->fontHeight + TOPBORDER)/2;
+            yfirst = y + (ptr->fontHeight + TOPBORDER) / 2;
             if (tab == ptr->selected.head)
             {
                 HPEN pen = GetStockObject(WHITE_PEN);
                 pen = SelectObject(hDc, pen);
                 xfirst -= RIGHTBORDER - MINEND;
-                yfirst =  r->bottom - r->top- MINEND - BOTTOMBORDER;
+                yfirst = r->bottom - r->top - MINEND - BOTTOMBORDER;
                 MoveToEx(hDc, xfirst, r->bottom - BOTTOMBORDER + 1, NULL);
-                LineTo(hDc, x + size.cx + RIGHTBORDER + rightInset, r->bottom-BOTTOMBORDER + 1);
+                LineTo(hDc, x + size.cx + RIGHTBORDER + rightInset, r->bottom - BOTTOMBORDER + 1);
                 pen = SelectObject(hDc, pen);
-            } 
-            MyDrawEdge(hDc, ptr, xfirst,yfirst, x, y - TOPBORDER, -1);
-            MyDrawEdge(hDc, ptr, xfirst, r->bottom - BOTTOMBORDER, xfirst, yfirst,1);
-            MyDrawArc(hDc, ptr, x + size.cx + RIGHTBORDER + rightInset - ROUNDWIDTH, y + TOPBORDER+1, -1);
+            }
+            MyDrawEdge(hDc, ptr, xfirst, yfirst, x, y - TOPBORDER, -1);
+            MyDrawEdge(hDc, ptr, xfirst, r->bottom - BOTTOMBORDER, xfirst, yfirst, 1);
+            MyDrawArc(hDc, ptr, x + size.cx + RIGHTBORDER + rightInset - ROUNDWIDTH, y + TOPBORDER + 1, -1);
             tab->displayRect.left = xfirst;
             tab->displayRect.right = x + size.cx + RIGHTBORDER + rightInset;
             tab->displayRect.top = y;
@@ -393,33 +383,32 @@ void DrawTabs(HWND hwnd, HDC hDc, RECT *r, struct _tabStruct *ptr)
         {
             int xfirst, yfirst;
             RECT r1;
-            xfirst = x - RIGHTBORDER -LEFTHALF;
-            yfirst = (ptr->fontHeight + TOPBORDER + BOTTOMBORDER)/2;
+            xfirst = x - RIGHTBORDER - LEFTHALF;
+            yfirst = (ptr->fontHeight + TOPBORDER + BOTTOMBORDER) / 2;
             r1 = *r;
-            r1.left =  xfirst;
+            r1.left = xfirst;
             r1.top += 1;
-            r1.right = x + size.cx + RIGHTBORDER + rightInset-LEFTHALF;
-//            if (tab->iImage >= 0)
-//                r1.right += 20;
+            r1.right = x + size.cx + RIGHTBORDER + rightInset - LEFTHALF;
+            //            if (tab->iImage >= 0)
+            //                r1.right += 20;
             if (tab == ptr->selected.head)
             {
                 FillRect(hDc, &r1, (HBRUSH)(COLOR_WINDOW + 1));
-//                r1.left -= 10;
+                //                r1.left -= 10;
             }
             else
             {
                 FillRect(hDc, &r1, darkbrush);
-                
             }
-//            if (tab != ptr->active.head)
-                DrawBar(hDc, &r1);
-                darkpen = SelectObject(hDc, darkpen);
-                MoveToEx(hDc, r1.left, r1.bottom-1, NULL);
-                LineTo(hDc, r1.right-1, r1.bottom-1);
-                darkpen = SelectObject(hDc, darkpen);
+            //            if (tab != ptr->active.head)
+            DrawBar(hDc, &r1);
+            darkpen = SelectObject(hDc, darkpen);
+            MoveToEx(hDc, r1.left, r1.bottom - 1, NULL);
+            LineTo(hDc, r1.right - 1, r1.bottom - 1);
+            darkpen = SelectObject(hDc, darkpen);
             /*
-            MyDrawEdge(hDc, ptr, x, ptr->fontHeight + TOPBORDER + BOTTOMBORDER, x + size.cx + RIGHTBORDER + rightInset - ROUNDWIDTH, ptr->fontHeight + TOPBORDER + BOTTOMBORDER,1);
-            if (tab == ptr->selected.head)
+            MyDrawEdge(hDc, ptr, x, ptr->fontHeight + TOPBORDER + BOTTOMBORDER, x + size.cx + RIGHTBORDER + rightInset - ROUNDWIDTH,
+            ptr->fontHeight + TOPBORDER + BOTTOMBORDER,1); if (tab == ptr->selected.head)
             {
                 HPEN pen = GetStockObject(WHITE_PEN);
                 pen = SelectObject(hDc, pen);
@@ -428,39 +417,39 @@ void DrawTabs(HWND hwnd, HDC hDc, RECT *r, struct _tabStruct *ptr)
                 MoveToEx(hDc, xfirst, BOTTOMBORDER - 1, NULL);
                 LineTo(hDc, x + size.cx + RIGHTBORDER + rightInset, BOTTOMBORDER - 1);
                 pen = SelectObject(hDc, pen);
-            } 
+            }
             MyDrawEdge(hDc, ptr, xfirst,yfirst, x, ptr->fontHeight + TOPBORDER + BOTTOMBORDER,1);
             MyDrawEdge(hDc, ptr, xfirst, BOTTOMBORDER, xfirst, yfirst,1);
-            MyDrawArc(hDc, ptr, x + size.cx + RIGHTBORDER + rightInset - ROUNDWIDTH, ptr->fontHeight - TOPBORDER + BOTTOMBORDER -1, 1);
+            MyDrawArc(hDc, ptr, x + size.cx + RIGHTBORDER + rightInset - ROUNDWIDTH, ptr->fontHeight - TOPBORDER + BOTTOMBORDER -1,
+            1);
             */
             tab->displayRect.left = xfirst;
             tab->displayRect.right = x + size.cx + RIGHTBORDER + rightInset;
             tab->displayRect.top = y;
-            tab->displayRect.bottom = y + ptr->fontHeight + TOPBORDER + BOTTOMBORDER;			
-        }	
+            tab->displayRect.bottom = y + ptr->fontHeight + TOPBORDER + BOTTOMBORDER;
+        }
         if (tab->chain.next == ptr->selected.head)
             if (!bottom)
             {
-                MyDrawEdge(hDc, ptr, x + size.cx + RIGHTBORDER + rightInset, y + ROUNDWIDTH,
-                    x + size.cx + RIGHTBORDER + rightInset, y + (ptr->fontHeight + TOPBORDER)/2,1);
+                MyDrawEdge(hDc, ptr, x + size.cx + RIGHTBORDER + rightInset, y + ROUNDWIDTH, x + size.cx + RIGHTBORDER + rightInset,
+                           y + (ptr->fontHeight + TOPBORDER) / 2, 1);
             }
             else
             {
-//                MyDrawEdge(hDc, ptr, x + size.cx + RIGHTBORDER + rightInset, y + (ptr->fontHeight + TOPBORDER)/2,
-//                    x + size.cx + RIGHTBORDER + rightInset, y + ptr->fontHeight + TOPBORDER - ROUNDWIDTH,1);
+                //                MyDrawEdge(hDc, ptr, x + size.cx + RIGHTBORDER + rightInset, y + (ptr->fontHeight + TOPBORDER)/2,
+                //                    x + size.cx + RIGHTBORDER + rightInset, y + ptr->fontHeight + TOPBORDER - ROUNDWIDTH,1);
             }
+        else if (!bottom)
+        {
+
+            MyDrawEdge(hDc, ptr, x + size.cx + RIGHTBORDER + rightInset, y - TOPBORDER + ROUNDWIDTH,
+                       x + size.cx + RIGHTBORDER + rightInset, y + ptr->fontHeight + 1, 1);
+        }
         else
-            if (!bottom)
-            {
-                
-                MyDrawEdge(hDc, ptr, x + size.cx + RIGHTBORDER + rightInset, y - TOPBORDER + ROUNDWIDTH, 
-                    x + size.cx + RIGHTBORDER + rightInset, y + ptr->fontHeight + 1,1);
-            }
-            else
-            {
-//                MyDrawEdge(hDc, ptr, x + size.cx + RIGHTBORDER + rightInset, BOTTOMBORDER, 
-//                    x + size.cx + RIGHTBORDER + rightInset, y + ptr->fontHeight + TOPBORDER - ROUNDWIDTH,1);
-            }
+        {
+            //                MyDrawEdge(hDc, ptr, x + size.cx + RIGHTBORDER + rightInset, BOTTOMBORDER,
+            //                    x + size.cx + RIGHTBORDER + rightInset, y + ptr->fontHeight + TOPBORDER - ROUNDWIDTH,1);
+        }
 
         if (ptr->selected.head == tab)
         {
@@ -468,21 +457,21 @@ void DrawTabs(HWND hwnd, HDC hDc, RECT *r, struct _tabStruct *ptr)
             oldfg = SetTextColor(hDc, RetrieveSysColor(COLOR_WINDOWTEXT));
             // making an assumption the fill color is corrrect
             if (!bottom)
-                ExtFloodFill(hDc, x + RIGHTBORDER/2, y + 2, RetrieveSysColor(COLOR_WINDOWTEXT), FLOODFILLBORDER);
+                ExtFloodFill(hDc, x + RIGHTBORDER / 2, y + 2, RetrieveSysColor(COLOR_WINDOWTEXT), FLOODFILLBORDER);
         }
         else
         {
             oldfg = SetTextColor(hDc, RetrieveSysColor(COLOR_BTNTEXT));
             oldbk = SetBkColor(hDc, bottom ? darkcolor : RetrieveSysColor(COLOR_BTNFACE));
         }
-        TextOut(hDc, x + LEFTHALF/2 - (bottom ? LEFTHALF-2 : 0), y, p, strlen(p));		
+        TextOut(hDc, x + LEFTHALF / 2 - (bottom ? LEFTHALF - 2 : 0), y, p, strlen(p));
         if (tab->modified)
         {
-            TextOut(hDc, x + 2+ (tab->iImage ? 20 : 0) + size.cx - (bottom ? LEFTHALF : 0) - LEFTHALF, y, "*", strlen("*"));
+            TextOut(hDc, x + 2 + (tab->iImage ? 20 : 0) + size.cx - (bottom ? LEFTHALF : 0) - LEFTHALF, y, "*", strlen("*"));
         }
         if (bottom && tab->iImage >= 0)
         {
-            ImageList_Draw(ptr->hImageList, tab->iImage, hDc, x - RIGHTBORDER -LEFTHALF + 2 , y, ILD_TRANSPARENT);
+            ImageList_Draw(ptr->hImageList, tab->iImage, hDc, x - RIGHTBORDER - LEFTHALF + 2, y, ILD_TRANSPARENT);
         }
         SelectObject(hDc, xfont);
         SetTextColor(hDc, oldfg);
@@ -506,18 +495,19 @@ void DrawTabs(HWND hwnd, HDC hDc, RECT *r, struct _tabStruct *ptr)
     DeleteObject(darkbrush);
     DeleteObject(darkpen);
 }
-int GetItem(struct _tabStruct *ptr , int index)
+int GetItem(struct _tabStruct* ptr, int index)
 {
-    struct _singleTab *tabs = ptr->active.head;
+    struct _singleTab* tabs = ptr->active.head;
     int i;
-    for (i = 0; i < index && tabs; i++, tabs = tabs->chain.next);
+    for (i = 0; i < index && tabs; i++, tabs = tabs->chain.next)
+        ;
     if (!tabs)
         return 0;
     return tabs->lParam;
 }
-struct _singleTab *AddTab(struct _tabStruct *ptr, int pos, char *name, LPARAM lParam)
+struct _singleTab* AddTab(struct _tabStruct* ptr, int pos, char* name, LPARAM lParam)
 {
-    struct _singleTab *tabs = ptr->active.head;
+    struct _singleTab* tabs = ptr->active.head;
     while (tabs)
     {
         if (tabs->lParam == lParam)
@@ -532,10 +522,10 @@ struct _singleTab *AddTab(struct _tabStruct *ptr, int pos, char *name, LPARAM lP
     }
     return tabs;
 }
-struct _singleTab *RemoveTab(struct _tabStruct *ptr, LPARAM lParam)
+struct _singleTab* RemoveTab(struct _tabStruct* ptr, LPARAM lParam)
 {
-    
-    struct _singleTab *tabs = ptr->active.head;
+
+    struct _singleTab* tabs = ptr->active.head;
     while (tabs)
     {
         if (tabs->lParam == lParam)
@@ -556,10 +546,10 @@ struct _singleTab *RemoveTab(struct _tabStruct *ptr, LPARAM lParam)
     }
     return NULL;
 }
-BOOL ModifyTab(struct _tabStruct *ptr, WPARAM modified, LPARAM lParam)
+BOOL ModifyTab(struct _tabStruct* ptr, WPARAM modified, LPARAM lParam)
 {
     BOOL rv = FALSE;
-    struct _singleTab *tabs = ptr->active.head;
+    struct _singleTab* tabs = ptr->active.head;
     while (tabs)
     {
         if (tabs->lParam == lParam)
@@ -573,9 +563,9 @@ BOOL ModifyTab(struct _tabStruct *ptr, WPARAM modified, LPARAM lParam)
     }
     return rv;
 }
-void SetImage(struct _tabStruct *ptr, LPARAM lParam, int iImage)
+void SetImage(struct _tabStruct* ptr, LPARAM lParam, int iImage)
 {
-    struct _singleTab *tabs = ptr->active.head;
+    struct _singleTab* tabs = ptr->active.head;
     while (tabs)
     {
         if (tabs->lParam == lParam)
@@ -585,9 +575,9 @@ void SetImage(struct _tabStruct *ptr, LPARAM lParam, int iImage)
         tabs = tabs->chain.next;
     }
 }
-void SelectTab(struct _tabStruct *ptr, LPARAM lParam)
+void SelectTab(struct _tabStruct* ptr, LPARAM lParam)
 {
-    struct _singleTab *tabs = ptr->active.head;
+    struct _singleTab* tabs = ptr->active.head;
     while (tabs)
     {
         if (lParam == tabs->lParam)
@@ -595,21 +585,21 @@ void SelectTab(struct _tabStruct *ptr, LPARAM lParam)
             if (!tabs->displayed)
             {
                 RemoveFromActive(ptr, tabs);
-                AddToActive(ptr, 0, tabs);				
+                AddToActive(ptr, 0, tabs);
             }
             RemoveFromSelected(ptr, tabs);
             AddToSelected(ptr, 0, tabs);
-                
+
             return;
         }
         tabs = tabs->chain.next;
     }
 }
-void RemoveAllTabs(struct _tabStruct *ptr)
+void RemoveAllTabs(struct _tabStruct* ptr)
 {
     while (ptr->active.head)
     {
-        struct _singleTab *next =ptr->active.head->chain.next;
+        struct _singleTab* next = ptr->active.head->chain.next;
         free(ptr->active.head->text);
         free(ptr->active.head);
         ptr->active.head = next;
@@ -617,9 +607,9 @@ void RemoveAllTabs(struct _tabStruct *ptr)
     ptr->active.head = ptr->active.tail = NULL;
     ptr->selected.head = ptr->selected.tail = NULL;
 }
-struct _singleTab * FindTabByPos(HWND hwnd, struct _tabStruct *ptr, LPARAM lParam)
+struct _singleTab* FindTabByPos(HWND hwnd, struct _tabStruct* ptr, LPARAM lParam)
 {
-    struct _singleTab *tabs = ptr->active.head;
+    struct _singleTab* tabs = ptr->active.head;
     POINT pt;
     pt.x = (long)(short)LOWORD(lParam);
     pt.y = (long)(short)HIWORD(lParam);
@@ -633,7 +623,7 @@ struct _singleTab * FindTabByPos(HWND hwnd, struct _tabStruct *ptr, LPARAM lPara
     }
     return NULL;
 }
-BOOL IsCloseButton(HWND hwnd, struct _tabStruct *ptr, struct _singleTab *tab, LPARAM lParam)
+BOOL IsCloseButton(HWND hwnd, struct _tabStruct* ptr, struct _singleTab* tab, LPARAM lParam)
 {
     if (GetWindowLong(hwnd, GWL_STYLE) & TABS_CLOSEBTN)
     {
@@ -642,16 +632,16 @@ BOOL IsCloseButton(HWND hwnd, struct _tabStruct *ptr, struct _singleTab *tab, LP
         int mid;
         pt.x = (long)(short)LOWORD(lParam);
         pt.y = (long)(short)HIWORD(lParam);
-        mid = (r.bottom + r.top)/2;
-        r.top = mid - CLOSEICONWIDTH/2;
-        r.bottom = mid + CLOSEICONWIDTH/2;
-        r.left = r.right - CLOSEICONWIDTH-2;
+        mid = (r.bottom + r.top) / 2;
+        r.top = mid - CLOSEICONWIDTH / 2;
+        r.bottom = mid + CLOSEICONWIDTH / 2;
+        r.left = r.right - CLOSEICONWIDTH - 2;
         r.right -= 2;
         return PtInRect(&r, pt);
     }
     return FALSE;
 }
-void ShowCloseButton(HWND hwnd, struct _tabStruct *ptr, struct _singleTab *tab, BOOL open, LPARAM lParam)
+void ShowCloseButton(HWND hwnd, struct _tabStruct* ptr, struct _singleTab* tab, BOOL open, LPARAM lParam)
 {
     if (ptr->xBitmap)
     {
@@ -662,16 +652,16 @@ void ShowCloseButton(HWND hwnd, struct _tabStruct *ptr, struct _singleTab *tab, 
             HBITMAP oldBitmap;
             dc = GetDC(hwnd);
             ptr->xRect = tab->displayRect;
-            
-            mid = (ptr->xRect.bottom + ptr->xRect.top)/2;
-            ptr->xRect.top = mid - CLOSEICONWIDTH/2;
-            ptr->xRect.bottom = mid + CLOSEICONWIDTH/2;
-            ptr->xRect.left = ptr->xRect.right - CLOSEICONWIDTH-2;
+
+            mid = (ptr->xRect.bottom + ptr->xRect.top) / 2;
+            ptr->xRect.top = mid - CLOSEICONWIDTH / 2;
+            ptr->xRect.bottom = mid + CLOSEICONWIDTH / 2;
+            ptr->xRect.left = ptr->xRect.right - CLOSEICONWIDTH - 2;
             ptr->xRect.right -= 2;
             ptr->xBack = CreateCompatibleBitmap(dc, CLOSEICONWIDTH, CLOSEICONWIDTH);
             cdc = CreateCompatibleDC(dc);
             ptr->xBack = SelectObject(cdc, ptr->xBack);
-            BitBlt(cdc, 0,0, CLOSEICONWIDTH, CLOSEICONWIDTH, dc, ptr->xRect.left, ptr->xRect.top, SRCCOPY);
+            BitBlt(cdc, 0, 0, CLOSEICONWIDTH, CLOSEICONWIDTH, dc, ptr->xRect.left, ptr->xRect.top, SRCCOPY);
             ptr->xBack = SelectObject(cdc, ptr->xBack);
             if (tab == ptr->selected.head)
             {
@@ -683,7 +673,7 @@ void ShowCloseButton(HWND hwnd, struct _tabStruct *ptr, struct _singleTab *tab, 
             }
             BitBlt(dc, ptr->xRect.left, ptr->xRect.top, CLOSEICONWIDTH, CLOSEICONWIDTH, cdc, 0, 0, SRCCOPY);
             SelectObject(cdc, oldBitmap);
-            DeleteDC(cdc);			
+            DeleteDC(cdc);
             ReleaseDC(hwnd, dc);
         }
         else
@@ -693,9 +683,9 @@ void ShowCloseButton(HWND hwnd, struct _tabStruct *ptr, struct _singleTab *tab, 
                 POINT pt;
                 GetCursorPos(&pt);
                 ScreenToClient(hwnd, &pt);
-                if  (!PtInRect(&ptr->xRect, pt))
+                if (!PtInRect(&ptr->xRect, pt))
                 {
-                    HDC dc,cdc;
+                    HDC dc, cdc;
                     dc = GetDC(hwnd);
                     cdc = CreateCompatibleDC(dc);
                     ptr->xBack = SelectObject(cdc, ptr->xBack);
@@ -710,7 +700,7 @@ void ShowCloseButton(HWND hwnd, struct _tabStruct *ptr, struct _singleTab *tab, 
         }
     }
 }
-BOOL IsWindowButton(HWND hwnd, struct _tabStruct *ptr, LPARAM lParam)
+BOOL IsWindowButton(HWND hwnd, struct _tabStruct* ptr, LPARAM lParam)
 {
     if (GetWindowLong(hwnd, GWL_STYLE) & TABS_WINDOWBTN)
     {
@@ -727,7 +717,7 @@ BOOL IsWindowButton(HWND hwnd, struct _tabStruct *ptr, LPARAM lParam)
     }
     return FALSE;
 }
-void ShowWindowButton(HWND hwnd, struct _tabStruct *ptr, int flags)
+void ShowWindowButton(HWND hwnd, struct _tabStruct* ptr, int flags)
 {
     HDC dc;
     if (GetWindowLong(hwnd, GWL_STYLE) & TABS_WINDOWBTN)
@@ -738,11 +728,8 @@ void ShowWindowButton(HWND hwnd, struct _tabStruct *ptr, int flags)
         ptr->windowBtnMode = flags;
     }
 }
-BOOL ChangeHighLight(HWND hwnd, struct _tabStruct *ptr, struct _singleTab *tab)
-{
-    return FALSE;
-}
-void SetFonts(HWND hwnd, struct _tabStruct *ptr, HFONT font)
+BOOL ChangeHighLight(HWND hwnd, struct _tabStruct* ptr, struct _singleTab* tab) { return FALSE; }
+void SetFonts(HWND hwnd, struct _tabStruct* ptr, HFONT font)
 {
     LOGFONT lf;
     HDC dc;
@@ -763,7 +750,7 @@ void SetFonts(HWND hwnd, struct _tabStruct *ptr, HFONT font)
     SelectObject(dc, xfont);
     ReleaseDC(hwnd, dc);
 }
-int Notify(HWND hwnd, struct _singleTab *tab, int notifyCode)
+int Notify(HWND hwnd, struct _singleTab* tab, int notifyCode)
 {
     LSTABNOTIFY notify;
     notify.hdr.hwndFrom = hwnd;
@@ -774,7 +761,7 @@ int Notify(HWND hwnd, struct _singleTab *tab, int notifyCode)
     return SendMessage((HWND)GetWindowLong(hwnd, GWL_HWNDPARENT), WM_NOTIFY, 0, (LPARAM)&notify);
 }
 
-static void DeleteMenuList(struct _tabStruct *ptr)
+static void DeleteMenuList(struct _tabStruct* ptr)
 {
     if (ptr->menuList)
     {
@@ -790,7 +777,7 @@ static BOOL InMenuWnd(HWND hwnd)
     GetWindowRect(hwnd, &r);
     return PtInRect(&r, pt);
 }
-static int tabimageof(char *name)
+static int tabimageof(char* name)
 {
     name = strrchr(name, '.');
     if (!name)
@@ -805,10 +792,9 @@ static int tabimageof(char *name)
         return IL_ASM;
     if (!xstricmpz(name, ".c"))
         return IL_C;
-    if  (!xstricmpz(name, ".cpp") || !xstricmpz(name, ".cxx") || !xstricmpz(name, ".cc"))
+    if (!xstricmpz(name, ".cpp") || !xstricmpz(name, ".cxx") || !xstricmpz(name, ".cc"))
         return IL_CPP;
-    if (!xstricmpz(name, ".rc") || !xstricmpz(name, ".bmp") 
-            || !xstricmpz(name, ".cur") || !xstricmpz(name, ".ico"))
+    if (!xstricmpz(name, ".rc") || !xstricmpz(name, ".bmp") || !xstricmpz(name, ".cur") || !xstricmpz(name, ".ico"))
         return IL_RES;
     if (!xstricmpz(name, ".h"))
         return IL_H;
@@ -816,12 +802,12 @@ static int tabimageof(char *name)
         return IL_CWA;
     return IL_FILES;
 }
-static void DrawMenuItem(HDC hDC, struct ttrack *pTrack, int index, BOOL highlighted)
+static void DrawMenuItem(HDC hDC, struct ttrack* pTrack, int index, BOOL highlighted)
 {
     MENUITEMINFO info;
     int oldbk, oldtx;
     RECT r;
-    int row,col;
+    int row, col;
     HBRUSH hbr = RetrieveSysBrush(COLOR_MENU);
     memset(&info, 0, sizeof(info));
     info.cbSize = sizeof(info);
@@ -845,9 +831,9 @@ static void DrawMenuItem(HDC hDC, struct ttrack *pTrack, int index, BOOL highlig
         {
             if (highlighted)
             {
-                HPEN pen = CreatePen(PS_SOLID,0, RetrieveSysColor(COLOR_HIGHLIGHT));
-                HBRUSH brush = CreateSolidBrush(RetrieveSysColor(COLOR_HIGHLIGHT));			
-                pen = SelectObject(hDC, pen); 
+                HPEN pen = CreatePen(PS_SOLID, 0, RetrieveSysColor(COLOR_HIGHLIGHT));
+                HBRUSH brush = CreateSolidBrush(RetrieveSysColor(COLOR_HIGHLIGHT));
+                pen = SelectObject(hDC, pen);
                 brush = SelectObject(hDC, brush);
                 r.left += 25;
                 r.right -= 4;
@@ -874,20 +860,20 @@ static void DrawMenuItem(HDC hDC, struct ttrack *pTrack, int index, BOOL highlig
                 oldbk = SetBkColor(hDC, RetrieveSysColor(COLOR_MENU));
                 oldtx = SetTextColor(hDC, RetrieveSysColor(COLOR_WINDOWTEXT));
             }
-            DrawText(hDC, text, strlen(text),&r, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+            DrawText(hDC, text, strlen(text), &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
             SetBkColor(hDC, oldbk);
             SetTextColor(hDC, oldtx);
         }
-    } 
+    }
 }
-static void DrawMenu(HDC hDC, struct ttrack *pTrack)
+static void DrawMenu(HDC hDC, struct ttrack* pTrack)
 {
     int i;
     int itemCount = GetMenuItemCount(pTrack->menu);
     HBRUSH old;
-    HFONT font = CreateFontIndirect(&systemDialogFont);    
+    HFONT font = CreateFontIndirect(&systemDialogFont);
     font = SelectObject(hDC, font);
-    for (i=0; i < itemCount; i++)
+    for (i = 0; i < itemCount; i++)
     {
         DrawMenuItem(hDC, pTrack, i, FALSE);
     }
@@ -895,24 +881,24 @@ static void DrawMenu(HDC hDC, struct ttrack *pTrack)
     DeleteObject(font);
     old = CreateSolidBrush(RetrieveSysColor(COLOR_3DSHADOW));
     old = SelectObject(hDC, old);
-    for (i=0; i < (itemCount + pTrack->rows - 1)/pTrack->rows; i++)
+    for (i = 0; i < (itemCount + pTrack->rows - 1) / pTrack->rows; i++)
     {
         RECT r;
         r.left = i * pTrack->rowWidth;
-        r.top =  0;
+        r.top = 0;
         r.right = i * pTrack->rowWidth;
         r.bottom = r.top + pTrack->rowHeight * pTrack->rows;
         MoveToEx(hDC, r.left, r.top, NULL);
-        LineTo(hDC, r.left , r.bottom);
+        LineTo(hDC, r.left, r.bottom);
         MoveToEx(hDC, r.left + 1, r.top, NULL);
         LineTo(hDC, r.left + 1, r.bottom);
         MoveToEx(hDC, r.left + 20, r.top, NULL);
         LineTo(hDC, r.left + 20, r.bottom);
-        ExtFloodFill(hDC, r.left + 3,r.top + 2, 0, FLOODFILLBORDER);
+        ExtFloodFill(hDC, r.left + 3, r.top + 2, 0, FLOODFILLBORDER);
     }
     old = SelectObject(hDC, old);
     DeleteObject(old);
-    for (i=0; i < itemCount; i++)
+    for (i = 0; i < itemCount; i++)
     {
         MENUITEMINFO info;
         char text[1024];
@@ -932,27 +918,26 @@ static void DrawMenu(HDC hDC, struct ttrack *pTrack)
                 r.top = row * pTrack->rowHeight;
                 r.right = r.left + pTrack->rowWidth;
                 r.bottom = r.top + pTrack->rowHeight;
-                ImageList_Draw(mainIml,tabimageof(text), hDC, r.left + 2, r.top + 2, ILD_NORMAL);
+                ImageList_Draw(mainIml, tabimageof(text), hDC, r.left + 2, r.top + 2, ILD_NORMAL);
             }
         }
     }
 }
 static LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
-    struct ttrack *pTrack;
-    PAINTSTRUCT ps;
+    struct ttrack* pTrack;
     HDC hDC;
-    switch( iMessage)
+    switch (iMessage)
     {
         case WM_MOUSEMOVE:
-            pTrack = (struct ttrack *)GetWindowLong(hwnd, 0);
+            pTrack = (struct ttrack*)GetWindowLong(hwnd, 0);
             if (pTrack->inWindow)
             {
                 if (!InMenuWnd(hwnd))
                 {
                     pTrack->inWindow = FALSE;
-//                  ReleaseCapture(hwnd);
-//					DestroyWindow(hwnd);
+                    //                  ReleaseCapture(hwnd);
+                    //					DestroyWindow(hwnd);
                 }
             }
             else
@@ -976,7 +961,7 @@ static LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPA
                     DrawMenuItem(hDC, pTrack, pTrack->oldTrack, FALSE);
                 pTrack->oldTrack = -1;
                 if (row < GetMenuItemCount(pTrack->menu))
-                {					
+                {
                     pTrack->oldTrack = row;
                     DrawMenuItem(hDC, pTrack, row, TRUE);
                 }
@@ -992,7 +977,7 @@ static LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPA
             }
             break;
         case WM_LBUTTONUP:
-            pTrack = (struct ttrack *)GetWindowLong(hwnd, 0);
+            pTrack = (struct ttrack*)GetWindowLong(hwnd, 0);
             {
                 POINT pt;
                 if (InMenuWnd(hwnd))
@@ -1004,7 +989,7 @@ static LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPA
                     row = pt.y / pTrack->rowHeight;
                     col = pt.x / pTrack->rowWidth;
                     row = col * pTrack->rows + row;
-                    memset(&info, 0 , sizeof(info));
+                    memset(&info, 0, sizeof(info));
                     info.cbSize = sizeof(info);
                     info.fMask = MIIM_ID;
                     if (GetMenuItemInfo(pTrack->menu, row, TRUE, &info))
@@ -1012,7 +997,7 @@ static LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPA
                         pTrack->id = info.wID;
                         ReleaseCapture();
                         DestroyWindow(hwnd);
-                    } 
+                    }
                     return 0;
                 }
             }
@@ -1022,7 +1007,7 @@ static LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPA
             if (!InMenuWnd(hwnd))
             {
                 POINT pt;
-                pTrack = (struct ttrack *)GetWindowLong(hwnd, 0);
+                pTrack = (struct ttrack*)GetWindowLong(hwnd, 0);
                 pTrack->inWindow = FALSE;
                 pt.x = (long)(short)LOWORD(lParam);
                 pt.y = (long)(short)HIWORD(lParam);
@@ -1031,7 +1016,7 @@ static LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPA
                 DestroyWindow(hwnd);
             }
             return 0;
-            
+
         case WM_PAINT:
         {
             RECT rect;
@@ -1043,7 +1028,7 @@ static LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPA
             hdouble = CreateCompatibleDC(hDC);
             bitmap = CreateCompatibleBitmap(hDC, rect.right, rect.bottom);
             SelectObject(hdouble, bitmap);
-            pTrack = (struct ttrack *)GetWindowLong(hwnd, 0);
+            pTrack = (struct ttrack*)GetWindowLong(hwnd, 0);
             FillRect(hdouble, &rect, (HBRUSH)(COLOR_MENU + 1));
             DrawMenu(hdouble, pTrack);
             BitBlt(hDC, 0, 0, rect.right, rect.bottom, hdouble, 0, 0, SRCCOPY);
@@ -1051,16 +1036,16 @@ static LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPA
             DeleteObject(hdouble);
             EndPaint(hwnd, &ps);
         }
-        return 0;
+            return 0;
             break;
         case WM_CREATE:
-            pTrack = (struct ttrack *)(((LPCREATESTRUCT)lParam)->lpCreateParams);
+            pTrack = (struct ttrack*)(((LPCREATESTRUCT)lParam)->lpCreateParams);
             SetWindowLong(hwnd, 0, (long)pTrack);
             pTrack->oldTrack = -1;
             SetCapture(hwnd);
             break;
         case WM_DESTROY:
-            pTrack = (struct ttrack *)GetWindowLong(hwnd, 0);
+            pTrack = (struct ttrack*)GetWindowLong(hwnd, 0);
             SetEvent(pTrack->tWait);
             break;
         case WM_SIZE:
@@ -1071,7 +1056,7 @@ static LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPA
 static void TrackTabMenuEx(HMENU hMenu, int flags, int x, int y, HWND hwnd, int reserved)
 {
     static struct ttrack xx;
-    int itemCount = GetMenuItemCount(hMenu) ;
+    int itemCount = GetMenuItemCount(hMenu);
     int startX, startY, width, height;
     int i;
     HFONT font = CreateFontIndirect(&systemDialogFont);
@@ -1083,15 +1068,15 @@ static void TrackTabMenuEx(HMENU hMenu, int flags, int x, int y, HWND hwnd, int 
     memset(&xx, 0, sizeof(xx));
     xx.id = -1;
     xx.menu = hMenu;
-    xx.tWait = CreateEvent(0,0,0,0);
-    xx.hwnd = CreateWindowEx(0, szMenuClassName, "", WS_POPUP | WS_BORDER, 0,0,10,10, 
-                             hwnd, 0, (HINSTANCE)GetWindowLong(hwnd, GWL_HINSTANCE), (LPVOID)&xx);
+    xx.tWait = CreateEvent(0, 0, 0, 0);
+    xx.hwnd = CreateWindowEx(0, szMenuClassName, "", WS_POPUP | WS_BORDER, 0, 0, 10, 10, hwnd, 0,
+                             (HINSTANCE)GetWindowLong(hwnd, GWL_HINSTANCE), (LPVOID)&xx);
     font = (HFONT)SendMessage(xx.hwnd, WM_SETFONT, (WPARAM)font, 0);
     dc = GetDC(xx.hwnd);
     font = SelectObject(dc, font);
     GetTextMetrics(dc, &tm);
-    xx.rowHeight = tm.tmHeight+6;
-    for (i=0; i < itemCount; i++)
+    xx.rowHeight = tm.tmHeight + 6;
+    for (i = 0; i < itemCount; i++)
     {
         MENUITEMINFO info;
         memset(&info, 0, sizeof(info));
@@ -1105,12 +1090,12 @@ static void TrackTabMenuEx(HMENU hMenu, int flags, int x, int y, HWND hwnd, int 
             if (GetMenuItemInfo(xx.menu, i, TRUE, &info))
             {
                 SIZE sz;
-                char *text = info.dwTypeData;
+                char* text = info.dwTypeData;
                 GetTextExtentPoint32(dc, text, strlen(text), &sz);
                 if (sz.cx + 40 > xx.rowWidth)
                     xx.rowWidth = sz.cx + 40;
             }
-        } 
+        }
     }
     ReleaseDC(hwnd, dc);
     font = SelectObject(dc, font);
@@ -1125,12 +1110,12 @@ static void TrackTabMenuEx(HMENU hMenu, int flags, int x, int y, HWND hwnd, int 
     if (xx.rows > itemCount)
         xx.rows = itemCount;
     width = xx.cols * xx.rowWidth;
-    height = xx.rows * xx.rowHeight+2;
+    height = xx.rows * xx.rowHeight + 2;
     // ignoring flags member, assuming top right & lbutton for now...
     startX = x - width;
-    startY = y ;
-//	MoveWindow(xx.hwnd, startX, startY, width, height, 0);
-//	ShowWindow(xx.hwnd, SW_SHOW);
+    startY = y;
+    //	MoveWindow(xx.hwnd, startX, startY, width, height, 0);
+    //	ShowWindow(xx.hwnd, SW_SHOW);
     SetWindowPos(xx.hwnd, 0, startX, startY, width, height, SWP_NOACTIVATE | SWP_NOZORDER | SWP_SHOWWINDOW);
     while (!done)
     {
@@ -1142,22 +1127,22 @@ static void TrackTabMenuEx(HMENU hMenu, int flags, int x, int y, HWND hwnd, int 
             case WAIT_OBJECT_0 + 1:
             {
                 MSG msg;
-                GetMessage(&msg,NULL,0,0);
+                GetMessage(&msg, NULL, 0, 0);
                 ProcessMessage(&msg);
                 break;
             }
         }
     }
     CloseHandle(xx.tWait);
-    
+
     if (xx.id != -1)
         PostMessage(hwnd, WM_COMMAND, xx.id, 0);
     xx.hwnd = NULL;
 }
-static int SortFunc(const struct _singleTab **left, const struct _singleTab **right)
+static int SortFunc(const struct _singleTab** left, const struct _singleTab** right)
 {
-    char *pleft = strrchr((*left)->text, '\\');
-    char *pright = strrchr((*right)->text, '\\');
+    char* pleft = strrchr((*left)->text, '\\');
+    char* pright = strrchr((*right)->text, '\\');
     if (pleft)
         pleft++;
     else
@@ -1168,29 +1153,29 @@ static int SortFunc(const struct _singleTab **left, const struct _singleTab **ri
         pright = (*right)->text;
     return stricmp(pleft, pright);
 }
-static int CreateMenuList(struct _tabStruct *ptr)
+static int CreateMenuList(struct _tabStruct* ptr)
 {
-    int count=0;
-    struct _singleTab *p =ptr->active.head;
+    int count = 0;
+    struct _singleTab* p = ptr->active.head;
     while (p)
-        count++, p=p->chain.next;
+        count++, p = p->chain.next;
     DeleteMenuList(ptr);
     if (count)
     {
-        ptr->menuList = calloc(count, sizeof(struct _tabStruct *));
+        ptr->menuList = calloc(count, sizeof(struct _tabStruct*));
         if (ptr->menuList)
         {
-        
+
             p = ptr->active.head;
             count = 0;
             while (p)
                 ptr->menuList[count++] = p, p = p->chain.next;
-            qsort(ptr->menuList, count, sizeof(struct _singleItem *), (int (*)(const void *, const void *))SortFunc);
+            qsort(ptr->menuList, count, sizeof(struct _singleItem*), (int (*)(const void*, const void*))SortFunc);
         }
     }
     return count;
 }
-static HMENU MyCreateMenu(HWND hwnd, struct _tabStruct *ptr)
+static HMENU MyCreateMenu(HWND hwnd, struct _tabStruct* ptr)
 {
     HMENU rv = NULL;
     if (ptr->menuList)
@@ -1199,13 +1184,13 @@ static HMENU MyCreateMenu(HWND hwnd, struct _tabStruct *ptr)
         if (rv)
         {
             int count = 0, i;
-            struct _singleTab *p = ptr->active.head;
+            struct _singleTab* p = ptr->active.head;
             while (p)
                 p = p->chain.next, count++;
             for (i = 0; i < count; i++)
             {
-                char *q;
-                struct _singleTab *s ;
+                char* q;
+                struct _singleTab* s;
                 s = ptr->menuList[i];
                 q = strrchr(s->text, '\\');
                 if (q)
@@ -1218,7 +1203,7 @@ static HMENU MyCreateMenu(HWND hwnd, struct _tabStruct *ptr)
     }
     return rv;
 }
-static void DisplayTabMenu(HWND hwnd, struct _tabStruct *ptr)
+static void DisplayTabMenu(HWND hwnd, struct _tabStruct* ptr)
 {
     HMENU hMenu;
     if (CreateMenuList(ptr))
@@ -1228,20 +1213,19 @@ static void DisplayTabMenu(HWND hwnd, struct _tabStruct *ptr)
         {
             POINT pos;
             GetCursorPos(&pos);
-            TrackTabMenuEx(hMenu, TPM_TOPALIGN | TPM_RIGHTALIGN | TPM_LEFTBUTTON, pos.x,
-                pos.y, hwnd, 0);
+            TrackTabMenuEx(hMenu, TPM_TOPALIGN | TPM_RIGHTALIGN | TPM_LEFTBUTTON, pos.x, pos.y, hwnd, 0);
             DestroyMenu(hMenu);
-        }	
+        }
     }
 }
-static void tabRename(HWND hwnd, struct _tabStruct *ptr, char *newName, LPARAM lParam)
+static void tabRename(HWND hwnd, struct _tabStruct* ptr, char* newName, LPARAM lParam)
 {
-    struct _singleTab *tabs = ptr->active.head;
+    struct _singleTab* tabs = ptr->active.head;
     while (tabs)
     {
         if (tabs->lParam == lParam)
         {
-            char *p = strdup(newName);
+            char* p = strdup(newName);
             if (p)
             {
                 free(tabs->text);
@@ -1254,9 +1238,9 @@ static void tabRename(HWND hwnd, struct _tabStruct *ptr, char *newName, LPARAM l
         tabs = tabs->chain.next;
     }
 }
-static void DragTo(HWND hwnd, struct _tabStruct *ptr, struct _singleTab *tab)
+static void DragTo(HWND hwnd, struct _tabStruct* ptr, struct _singleTab* tab)
 {
-    struct _singleTab *find = ptr->dragSrc;
+    struct _singleTab* find = ptr->dragSrc;
     BOOL left;
     while (find)
     {
@@ -1290,19 +1274,15 @@ static void DragTo(HWND hwnd, struct _tabStruct *ptr, struct _singleTab *tab)
     }
     InvalidateRect(hwnd, 0, 1);
 }
-static LRESULT CALLBACK TabWndProc(HWND hwnd, UINT iMessage,
-    WPARAM wParam, LPARAM lParam)
+static LRESULT CALLBACK TabWndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
-    RECT r;
-    PAINTSTRUCT ps;
-    HDC dc;
     LRESULT rv;
     BOOLEAN notDragging;
-    struct _tabStruct *ptr;
-    struct _singleTab *tab;
+    struct _tabStruct* ptr;
+    struct _singleTab* tab;
     switch (iMessage)
     {
-        TOOLTIPTEXT *lpnhead;
+        TOOLTIPTEXT* lpnhead;
         case WM_NOTIFY:
             lpnhead = (TOOLTIPTEXT*)lParam;
             switch (lpnhead->hdr.code)
@@ -1314,7 +1294,7 @@ static LRESULT CALLBACK TabWndProc(HWND hwnd, UINT iMessage,
                 {
                     // tooltip
                     POINT pt;
-                    ptr = (struct _tabStruct *)GetWindowLong(hwnd, 0);
+                    ptr = (struct _tabStruct*)GetWindowLong(hwnd, 0);
                     GetCursorPos(&pt);
                     ScreenToClient(hwnd, &pt);
                     tab = FindTabByPos(hwnd, ptr, MAKEWORD(pt.y, pt.x));
@@ -1327,59 +1307,59 @@ static LRESULT CALLBACK TabWndProc(HWND hwnd, UINT iMessage,
             }
             break;
         case TABM_SETIMAGE:
-            ptr = (struct _tabStruct *)GetWindowLong(hwnd, 0);
+            ptr = (struct _tabStruct*)GetWindowLong(hwnd, 0);
             SetImage(ptr, lParam, wParam);
             break;
         case TABM_SETIMAGELIST:
-            ptr = (struct _tabStruct *)GetWindowLong(hwnd, 0);
+            ptr = (struct _tabStruct*)GetWindowLong(hwnd, 0);
             ptr->hImageList = (HIMAGELIST)lParam;
             break;
         case TABM_GETITEM:
-            ptr = (struct _tabStruct *)GetWindowLong(hwnd, 0);
+            ptr = (struct _tabStruct*)GetWindowLong(hwnd, 0);
             return GetItem(ptr, wParam);
         case TABM_ADD:
-            ptr = (struct _tabStruct *)GetWindowLong(hwnd, 0);
-            AddTab(ptr, 0, (char *)wParam, lParam);
+            ptr = (struct _tabStruct*)GetWindowLong(hwnd, 0);
+            AddTab(ptr, 0, (char*)wParam, lParam);
             InvalidateRect(hwnd, 0, 1);
             break;
         case TABM_INSERT:
         {
             char buf[256];
             GetWindowText((HWND)lParam, buf, sizeof(buf));
-            ptr = (struct _tabStruct *)GetWindowLong(hwnd, 0);
+            ptr = (struct _tabStruct*)GetWindowLong(hwnd, 0);
             AddTab(ptr, wParam, buf, lParam);
             InvalidateRect(hwnd, 0, 1);
             break;
         }
         case TABM_REMOVE:
-            ptr = (struct _tabStruct *)GetWindowLong(hwnd, 0);
+            ptr = (struct _tabStruct*)GetWindowLong(hwnd, 0);
             RemoveTab(ptr, lParam);
             InvalidateRect(hwnd, 0, 1);
             break;
         case TABM_REMOVEALL:
-            ptr = (struct _tabStruct *)GetWindowLong(hwnd, 0);
+            ptr = (struct _tabStruct*)GetWindowLong(hwnd, 0);
             RemoveAllTabs(ptr);
             InvalidateRect(hwnd, 0, 1);
             break;
         case TABM_SELECT:
-            ptr = (struct _tabStruct *)GetWindowLong(hwnd, 0);
+            ptr = (struct _tabStruct*)GetWindowLong(hwnd, 0);
             SelectTab(ptr, lParam);
             InvalidateRect(hwnd, 0, 1);
             break;
         case TABM_GETCURSEL:
-            ptr = (struct _tabStruct *)GetWindowLong(hwnd, 0);
+            ptr = (struct _tabStruct*)GetWindowLong(hwnd, 0);
             return (LRESULT)ptr->selected.head;
         case TABM_RENAME:
-            ptr = (struct _tabStruct *)GetWindowLong(hwnd, 0);
-            tabRename(hwnd, ptr, (char *)wParam, lParam);
+            ptr = (struct _tabStruct*)GetWindowLong(hwnd, 0);
+            tabRename(hwnd, ptr, (char*)wParam, lParam);
             return 0;
         case TABM_SETMODIFY:
-            ptr = (struct _tabStruct *)GetWindowLong(hwnd, 0);
+            ptr = (struct _tabStruct*)GetWindowLong(hwnd, 0);
             if (ModifyTab(ptr, wParam, lParam))
                 InvalidateRect(hwnd, 0, 1);
             return 0;
         case WM_LBUTTONDOWN:
-            ptr = (struct _tabStruct *)GetWindowLong(hwnd, 0);
+            ptr = (struct _tabStruct*)GetWindowLong(hwnd, 0);
             if (IsWindowButton(hwnd, ptr, lParam))
             {
                 ShowWindowButton(hwnd, ptr, BDR_SUNKEN);
@@ -1397,7 +1377,7 @@ static LRESULT CALLBACK TabWndProc(HWND hwnd, UINT iMessage,
             }
             return 0;
         case WM_LBUTTONUP:
-            ptr = (struct _tabStruct *)GetWindowLong(hwnd, 0);
+            ptr = (struct _tabStruct*)GetWindowLong(hwnd, 0);
             tab = FindTabByPos(hwnd, ptr, lParam);
             notDragging = TRUE;
             if (ptr->dragging && ptr->oldCursor)
@@ -1407,7 +1387,7 @@ static LRESULT CALLBACK TabWndProc(HWND hwnd, UINT iMessage,
                     notDragging = FALSE;
                     DragTo(hwnd, ptr, tab);
                 }
-//                SetCursor(ptr->oldCursor);
+                //                SetCursor(ptr->oldCursor);
                 ptr->oldCursor = NULL;
             }
             if (tab && notDragging)
@@ -1421,7 +1401,7 @@ static LRESULT CALLBACK TabWndProc(HWND hwnd, UINT iMessage,
                 {
                     SelectTab(ptr, tab->lParam);
                     Notify(hwnd, tab, TABN_SELECTED);
-                    InvalidateRect(hwnd, 0,1 );
+                    InvalidateRect(hwnd, 0, 1);
                 }
             }
             else if (IsWindowButton(hwnd, ptr, lParam))
@@ -1440,10 +1420,10 @@ static LRESULT CALLBACK TabWndProc(HWND hwnd, UINT iMessage,
         case WM_MBUTTONUP:
         case WM_RBUTTONDOWN:
         case WM_RBUTTONUP:
-            ptr = (struct _tabStruct *)GetWindowLong(hwnd, 0);
+            ptr = (struct _tabStruct*)GetWindowLong(hwnd, 0);
             return 0;
         case WM_MOUSEMOVE:
-            ptr = (struct _tabStruct *)GetWindowLong(hwnd, 0);
+            ptr = (struct _tabStruct*)GetWindowLong(hwnd, 0);
             tab = FindTabByPos(hwnd, ptr, lParam);
             if (GetWindowLong(hwnd, GWL_STYLE) & TABS_HOTTRACK)
             {
@@ -1458,18 +1438,17 @@ static LRESULT CALLBACK TabWndProc(HWND hwnd, UINT iMessage,
             }
             if (ptr->dragging)
             {
-                HCURSOR old;
                 if (tab)
                 {
-//                    old = SetCursor(dragCur);
+                    //                    old = SetCursor(dragCur);
                 }
                 else
                 {
                     POINT pt;
                     RECT r;
-//                    old = SetCursor(noCur);
+                    //                    old = SetCursor(noCur);
                     GetCursorPos(&pt);
-                    GetWindowRect(hwnd,&r);
+                    GetWindowRect(hwnd, &r);
                     if (!PtInRect(&r, pt))
                     {
                         if (Notify(hwnd, ptr->dragSrc, TABN_STARTDRAG))
@@ -1480,37 +1459,37 @@ static LRESULT CALLBACK TabWndProc(HWND hwnd, UINT iMessage,
                         }
                     }
                 }
-//                if (!ptr->oldCursor)
-//                    ptr->oldCursor = old;
+                //                if (!ptr->oldCursor)
+                //                    ptr->oldCursor = old;
             }
             ShowCloseButton(hwnd, ptr, tab, TRUE, lParam);
-            ShowWindowButton(hwnd, ptr, IsWindowButton(hwnd, ptr,lParam)? BDR_RAISED : 0);
+            ShowWindowButton(hwnd, ptr, IsWindowButton(hwnd, ptr, lParam) ? BDR_RAISED : 0);
             break;
         case WM_PAINT:
-            ptr = (struct _tabStruct *)GetWindowLong(hwnd, 0);
+            ptr = (struct _tabStruct*)GetWindowLong(hwnd, 0);
             if (ptr->xBack)
             {
                 DeleteObject(ptr->xBack);
                 ptr->xBack = NULL;
             }
-        {
-            RECT rect;
-            HDC hDC, hdouble;
-            HBITMAP bitmap;
-            PAINTSTRUCT ps;
-            GetClientRect(hwnd, &rect);
-            hDC = BeginPaint(hwnd, &ps);
-            hdouble = CreateCompatibleDC(hDC);
-            bitmap = CreateCompatibleBitmap(hDC, rect.right, rect.bottom);
-            SelectObject(hdouble, bitmap);
-            FillRect(hdouble, &rect, (HBRUSH)(COLOR_MENUBAR + 1));
-            DrawTabs(hwnd, hdouble, &rect, ptr);
-            BitBlt(hDC, 0, 0, rect.right, rect.bottom, hdouble, 0, 0, SRCCOPY);
-            DeleteObject(bitmap);
-            DeleteObject(hdouble);
-            EndPaint(hwnd, &ps);
-        }
-        return 0;
+            {
+                RECT rect;
+                HDC hDC, hdouble;
+                HBITMAP bitmap;
+                PAINTSTRUCT ps;
+                GetClientRect(hwnd, &rect);
+                hDC = BeginPaint(hwnd, &ps);
+                hdouble = CreateCompatibleDC(hDC);
+                bitmap = CreateCompatibleBitmap(hDC, rect.right, rect.bottom);
+                SelectObject(hdouble, bitmap);
+                FillRect(hdouble, &rect, (HBRUSH)(COLOR_MENUBAR + 1));
+                DrawTabs(hwnd, hdouble, &rect, ptr);
+                BitBlt(hDC, 0, 0, rect.right, rect.bottom, hdouble, 0, 0, SRCCOPY);
+                DeleteObject(bitmap);
+                DeleteObject(hdouble);
+                EndPaint(hwnd, &ps);
+            }
+            return 0;
         case WM_CREATE:
             ptr = calloc(1, sizeof(struct _tabStruct));
             if (!ptr)
@@ -1525,7 +1504,7 @@ static LRESULT CALLBACK TabWndProc(HWND hwnd, UINT iMessage,
             if (GetWindowLong(hwnd, GWL_STYLE) & TABS_HINT)
             {
                 ptr->toolTip = CreateTTIPWindow(hwnd, 0);
-                SendMessage(ptr->toolTip, WM_SETFONT, (WPARAM)ptr->normalFont,0);
+                SendMessage(ptr->toolTip, WM_SETFONT, (WPARAM)ptr->normalFont, 0);
             }
             if (GetWindowLong(hwnd, GWL_STYLE) & TABS_CLOSEBTN)
             {
@@ -1541,10 +1520,10 @@ static LRESULT CALLBACK TabWndProc(HWND hwnd, UINT iMessage,
                 ptr->menuBitmap2 = LoadBitmap((HINSTANCE)GetWindowLong(hwnd, GWL_HINSTANCE), "ID_DOWNSRC2");
                 ChangeBitmapColor(ptr->menuBitmap2, 0xc0c0c0, RetrieveSysColor(COLOR_3DFACE));
             }
-            ptr->flat = !! (GetWindowLong(hwnd, GWL_STYLE) & TABS_FLAT);
+            ptr->flat = !!(GetWindowLong(hwnd, GWL_STYLE) & TABS_FLAT);
             return rv;
         case WM_DESTROY:
-            ptr = (struct _tabStruct *)GetWindowLong(hwnd, 0);
+            ptr = (struct _tabStruct*)GetWindowLong(hwnd, 0);
             RemoveAllTabs(ptr);
             DeleteMenuList(ptr);
             DeleteObject(ptr->boldFont);
@@ -1555,20 +1534,20 @@ static LRESULT CALLBACK TabWndProc(HWND hwnd, UINT iMessage,
                 DeleteObject(ptr->xBitmap);
                 DeleteObject(ptr->xBitmapSelected);
             }
-            if (ptr->menuBitmap)			
+            if (ptr->menuBitmap)
                 DeleteObject(ptr->menuBitmap);
             if (ptr->toolTip)
                 DestroyWindow(ptr->toolTip);
             free(ptr);
             break;
         case WM_SETFONT:
-            ptr = (struct _tabStruct *)GetWindowLong(hwnd, 0);
+            ptr = (struct _tabStruct*)GetWindowLong(hwnd, 0);
             SetFonts(hwnd, ptr, (HFONT)wParam);
             if (ptr->toolTip)
-                SendMessage(ptr->toolTip, WM_SETFONT, (WPARAM)ptr->normalFont,0);
+                SendMessage(ptr->toolTip, WM_SETFONT, (WPARAM)ptr->normalFont, 0);
             return 0;
         case WM_GETFONT:
-            ptr = (struct _tabStruct *)GetWindowLong(hwnd, 0);
+            ptr = (struct _tabStruct*)GetWindowLong(hwnd, 0);
             if (ptr->normalFont)
                 return (LRESULT)ptr->normalFont;
             // otherwise we get the original font e.g. for the create message
@@ -1576,19 +1555,19 @@ static LRESULT CALLBACK TabWndProc(HWND hwnd, UINT iMessage,
         case WM_CLOSE:
             break;
         case WM_SIZE:
-//			InvalidateRect(hwnd, 0, 1);
+            //			InvalidateRect(hwnd, 0, 1);
             break;
         case WM_MOVE:
             break;
         case WM_COMMAND:
             if (wParam >= ID_MENUITEMS)
             {
-                struct _singleTab *tab;
-                ptr = (struct _tabStruct *)GetWindowLong(hwnd, 0);
+                struct _singleTab* tab;
+                ptr = (struct _tabStruct*)GetWindowLong(hwnd, 0);
                 tab = ptr->menuList[wParam - ID_MENUITEMS];
                 SelectTab(ptr, tab->lParam);
                 Notify(hwnd, tab, TABN_SELECTED);
-                InvalidateRect(hwnd, 0,1 );
+                InvalidateRect(hwnd, 0, 1);
                 DeleteMenuList(ptr);
             }
             break;
@@ -1607,22 +1586,22 @@ void RegisterLsTabWindow(HINSTANCE hInstance)
     wc.cbClsExtra = 0;
     wc.cbWndExtra = sizeof(LPVOID);
     wc.hInstance = hInstance;
-    wc.hIcon = 0; //LoadIcon(0, IDI_APPLICATION);
+    wc.hIcon = 0;  // LoadIcon(0, IDI_APPLICATION);
     wc.hCursor = LoadCursor(0, IDC_ARROW);
-    wc.hbrBackground = 0; //RetrieveSysBrush(COLOR_MENUBAR);
+    wc.hbrBackground = 0;  // RetrieveSysBrush(COLOR_MENUBAR);
     wc.lpszMenuName = 0;
     wc.lpszClassName = szTabClassName;
     RegisterClass(&wc);
-    
+
     wc.lpszClassName = szMenuClassName;
     wc.lpfnWndProc = &MenuWndProc;
     wc.hbrBackground = (HBRUSH)(COLOR_MENU + 1);
     RegisterClass(&wc);
-    
+
     dragCur = LoadCursor(hInstance, "ID_DRAGCUR");
     noCur = LoadCursor(hInstance, "ID_NODRAGCUR");
 
-    mainIml = ImageList_Create(16, 16, ILC_COLOR24, IL_IMAGECOUNT, 0);    
+    mainIml = ImageList_Create(16, 16, ILC_COLOR24, IL_IMAGECOUNT, 0);
     bmp = LoadBitmap(hInstance, "ID_FILES");
     ChangeBitmapColor(bmp, 0xffffff, RetrieveSysColor(COLOR_3DSHADOW));
     ImageList_Add(mainIml, bmp, NULL);
@@ -1630,8 +1609,6 @@ void RegisterLsTabWindow(HINSTANCE hInstance)
 }
 HWND CreateLsTabWindow(HWND parent, int style)
 {
-    return CreateWindow(szTabClassName, 0, WS_CLIPSIBLINGS |
-            WS_CLIPCHILDREN | WS_CHILD | style, 0, 0, 10, 10, parent, 0, 
-            (HINSTANCE)GetWindowLong(parent, GWL_HINSTANCE), NULL);
-
+    return CreateWindow(szTabClassName, 0, WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_CHILD | style, 0, 0, 10, 10, parent, 0,
+                        (HINSTANCE)GetWindowLong(parent, GWL_HINSTANCE), NULL);
 }

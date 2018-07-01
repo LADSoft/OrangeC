@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -32,29 +32,28 @@
 
 #define PAGE_SIZE 4096
 
-extern PROCESS *activeProcess;
-extern THREAD *activeThread;
+extern PROCESS* activeProcess;
+extern THREAD* activeThread;
 extern enum DebugState uState;
 extern HINSTANCE hInstance;
 extern HWND hwndFrame;
 extern POINT rightclickPos;
 extern SCOPE lastScope;
 
-
-char *databphist[MAX_COMBO_HISTORY];
-DATABREAK *dataBpList;
+char* databphist[MAX_COMBO_HISTORY];
+DATABREAK* dataBpList;
 
 static struct _pages
 {
-    struct _pages *next;
+    struct _pages* next;
     DWORD page;
     DWORD oldProtect;
-} *activePages;
+} * activePages;
 
-static int resolvenametoaddr(char *name, int doErrors, DWORD *size, DWORD *addr)
+static int resolvenametoaddr(char* name, int doErrors, DWORD* size, DWORD* addr)
 {
-    DEBUG_INFO *dbg;
-    VARINFO *var;
+    DEBUG_INFO* dbg;
+    VARINFO* var;
     var = EvalExpr(&dbg, &lastScope, name, doErrors);
     if (var)
     {
@@ -66,14 +65,14 @@ static int resolvenametoaddr(char *name, int doErrors, DWORD *size, DWORD *addr)
         else if (var->address < 0x1000)
         {
             char data[20];
-            //if (!var->explicitreg)
-                //ExtendedMessageBox("Address error", MB_SETFOREGROUND |
-                    //MB_SYSTEMMODAL, 
-                    //"Address is a register.  Using its value as the address.");
+            // if (!var->explicitreg)
+            // ExtendedMessageBox("Address error", MB_SETFOREGROUND |
+            // MB_SYSTEMMODAL,
+            //"Address is a register.  Using its value as the address.");
             ReadValue(var->address, &data, 4, var);
             *addr = *(int*)data;
             *size = 4;
-        } 
+        }
         else
         {
             *addr = var->address;
@@ -91,17 +90,18 @@ void databpInit(void)
 {
     while (dataBpList)
     {
-        DATABREAK *next = dataBpList->next;
+        DATABREAK* next = dataBpList->next;
         free(dataBpList);
         dataBpList = next;
     }
 }
-void databpDelete(DATABREAK *data)
+void databpDelete(DATABREAK* data)
 {
-    DATABREAK *p = dataBpList;
+    DATABREAK* p = dataBpList;
     if (p == data)
         dataBpList = dataBpList->next;
-    else {
+    else
+    {
         while (p && p->next && p->next != data)
         {
             p = p->next;
@@ -111,13 +111,10 @@ void databpDelete(DATABREAK *data)
     }
     free(data);
 }
-BOOL databpAnyBreakpoints(void)
-{
-    return !!dataBpList;
-}
+BOOL databpAnyBreakpoints(void) { return !!dataBpList; }
 BOOL databpAnyDisabledBreakpoints(void)
 {
-    DATABREAK *find = dataBpList;
+    DATABREAK* find = dataBpList;
     while (find)
     {
         if (find->disable)
@@ -128,7 +125,7 @@ BOOL databpAnyDisabledBreakpoints(void)
 }
 void databpEnableAllBreakpoints(BOOL enableState)
 {
-    DATABREAK *find = dataBpList;
+    DATABREAK* find = dataBpList;
     while (find)
     {
         find->disable = !enableState;
@@ -141,7 +138,7 @@ void databpRemove(void)
 {
     while (dataBpList)
     {
-        DATABREAK *next = dataBpList->next;
+        DATABREAK* next = dataBpList->next;
         free(dataBpList);
         dataBpList = next;
     }
@@ -151,7 +148,7 @@ void databpSetBP(HANDLE hProcess)
     // may be called multiple time during DLL load..
     if (!activePages)
     {
-        DATABREAK *search = dataBpList;
+        DATABREAK* search = dataBpList;
         struct _pages **prot, *toAdd;
         while (search)
         {
@@ -159,16 +156,16 @@ void databpSetBP(HANDLE hProcess)
             {
                 if (resolvenametoaddr(search->name, FALSE, &search->size, &search->address))
                 {
-                    DWORD base = search->address & - PAGE_SIZE;
-                    DWORD pages = ((search->address + search->size + PAGE_SIZE - 1 ) - base)/PAGE_SIZE;
-                    prot = &activePages;	
+                    DWORD base = search->address & -PAGE_SIZE;
+                    DWORD pages = ((search->address + search->size + PAGE_SIZE - 1) - base) / PAGE_SIZE;
+                    prot = &activePages;
                     while (pages)
                     {
                         while (*prot && (*prot)->page < base)
                             prot = &(*prot)->next;
                         if (!*prot || (*prot)->page != base)
                         {
-                            toAdd = calloc(1,sizeof(struct _pages));
+                            toAdd = calloc(1, sizeof(struct _pages));
                             if (toAdd)
                             {
                                 toAdd->next = *prot;
@@ -176,7 +173,7 @@ void databpSetBP(HANDLE hProcess)
                                 toAdd->page = base;
                             }
                         }
-                        prot = & (*prot)->next;
+                        prot = &(*prot)->next;
                         base += PAGE_SIZE;
                         pages--;
                     }
@@ -184,7 +181,7 @@ void databpSetBP(HANDLE hProcess)
             }
             search = search->next;
         }
-        toAdd= activePages;
+        toAdd = activePages;
         while (toAdd)
         {
             VirtualProtectEx(hProcess, (LPVOID)toAdd->page, PAGE_SIZE, PAGE_NOACCESS, &toAdd->oldProtect);
@@ -194,7 +191,7 @@ void databpSetBP(HANDLE hProcess)
 }
 void databpResetBP(HANDLE hProcess)
 {
-    struct _pages *prot = activePages;
+    struct _pages* prot = activePages;
     while (prot)
     {
         DWORD old;
@@ -208,22 +205,21 @@ void databpResetBP(HANDLE hProcess)
         activePages = prot;
     }
 }
-void databpEnd(void)
+void databpEnd(void) {}
+int databpCheck(DEBUG_EVENT* stDE)
 {
-}
-int databpCheck(DEBUG_EVENT *stDE)
-{
-    int rv = 0; // real exception
+    int rv = 0;  // real exception
     DWORD address = stDE->u.Exception.ExceptionRecord.ExceptionInformation[1];
-    DATABREAK *search = dataBpList;
+    DATABREAK* search = dataBpList;
     while (search)
     {
-        if (search->active && !search->disable && (search->address & - PAGE_SIZE) <= address && address < ((search->address + search->size + PAGE_SIZE - 1) & - PAGE_SIZE))
+        if (search->active && !search->disable && (search->address & -PAGE_SIZE) <= address &&
+            address < ((search->address + search->size + PAGE_SIZE - 1) & -PAGE_SIZE))
         {
-            rv = 2; // in a paged out page, but assume not a real bp
+            rv = 2;  // in a paged out page, but assume not a real bp
             if (search->address <= address && address < search->address + search->size)
             {
-                rv = 1; // ok a real bp, quit the search and let the UI know...
+                rv = 1;  // ok a real bp, quit the search and let the UI know...
                 break;
             }
         }
@@ -234,12 +230,11 @@ int databpCheck(DEBUG_EVENT *stDE)
 int LoadDataBreakpoints(HWND hwnd)
 {
     int items = 0;
-    int i;
     LV_ITEM item;
     RECT r;
     HWND hwndLV = GetDlgItem(hwnd, IDC_BPLIST);
     LV_COLUMN lvC;
-    DATABREAK *search;
+    DATABREAK* search;
     ListView_SetExtendedListViewStyle(hwndLV, LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
 
     GetWindowRect(hwndLV, &r);
@@ -256,7 +251,6 @@ int LoadDataBreakpoints(HWND hwnd)
     lvC.cx = r.right - r.left - 56;
     lvC.iSubItem = 2;
     ListView_InsertColumn(hwndLV, 2, &lvC);
-
 
     search = dataBpList;
     while (search)
@@ -285,8 +279,8 @@ void RemoveDataBp(HWND hwnd)
     HWND hwndLV = GetDlgItem(hwnd, IDC_BPLIST);
     int k = ListView_GetSelectionMark(hwndLV);
     int n = ListView_GetItemCount(hwndLV);
-    int i,j;
-    for (i=n-1; i >=0; i--)
+    int i, j;
+    for (i = n - 1; i >= 0; i--)
     {
         DATABREAK **search = &dataBpList, *found;
         LVITEM item;
@@ -294,11 +288,11 @@ void RemoveDataBp(HWND hwnd)
         item.iItem = i;
         item.iSubItem = 0;
         item.mask = LVIF_STATE;
-        item.stateMask = LVIS_SELECTED;	
+        item.stateMask = LVIS_SELECTED;
         ListView_GetItem(hwndLV, &item);
         if (item.state & LVIS_SELECTED)
         {
-            for (j=0; j <i; j++)
+            for (j = 0; j < i; j++)
                 search = &(*search)->next;
             found = *search;
             *search = found->next;
@@ -309,8 +303,7 @@ void RemoveDataBp(HWND hwnd)
         ListView_SetItemState(hwndLV, i, LVIS_SELECTED, LVIS_SELECTED);
     }
 }
-INT_PTR CALLBACK DataBpAddProc(HWND hwnd, UINT iMessage, WPARAM wParam,
-    LPARAM lParam)
+INT_PTR CALLBACK DataBpAddProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
     static char buf[256];
     HWND editwnd;
@@ -319,26 +312,24 @@ INT_PTR CALLBACK DataBpAddProc(HWND hwnd, UINT iMessage, WPARAM wParam,
         case WM_COMMAND:
             switch (LOWORD(wParam))
             {
-            case IDOK: 
-                editwnd = GetDlgItem(hwnd, IDC_EDDATABP);
-                GetWindowText(editwnd, buf, 256);
-                SendMessage(editwnd, WM_SAVEHISTORY, 0, 0);
-                EndDialog(hwnd, (int)buf);
-                break;
-            case IDCANCEL:
-                EndDialog(hwnd, 0);
-                break;
-
+                case IDOK:
+                    editwnd = GetDlgItem(hwnd, IDC_EDDATABP);
+                    GetWindowText(editwnd, buf, 256);
+                    SendMessage(editwnd, WM_SAVEHISTORY, 0, 0);
+                    EndDialog(hwnd, (int)buf);
+                    break;
+                case IDCANCEL:
+                    EndDialog(hwnd, 0);
+                    break;
             }
             switch (HIWORD(wParam))
             {
-            case CBN_SELCHANGE:
-                EnableWindow(GetDlgItem(hwnd, IDOK), TRUE);
-                break;
-            case CBN_EDITCHANGE:
-                EnableWindow(GetDlgItem(hwnd, IDOK), GetWindowText((HWND)lParam,
-                    buf, 2));
-                break;
+                case CBN_SELCHANGE:
+                    EnableWindow(GetDlgItem(hwnd, IDOK), TRUE);
+                    break;
+                case CBN_EDITCHANGE:
+                    EnableWindow(GetDlgItem(hwnd, IDOK), GetWindowText((HWND)lParam, buf, 2));
+                    break;
             }
             break;
         case WM_CLOSE:
@@ -356,12 +347,11 @@ INT_PTR CALLBACK DataBpAddProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 }
 void AddDataBp(HWND hwnd)
 {
-    char *name = (char *)DialogBoxParam(hInstance, "ADDDATABPDIALOG", hwnd, 
-        (DLGPROC)DataBpAddProc, 0);
+    char* name = (char*)DialogBoxParam(hInstance, "ADDDATABPDIALOG", hwnd, (DLGPROC)DataBpAddProc, 0);
     if (name)
     {
-        DATABREAK **search = &dataBpList;
-        DATABREAK *b = calloc(1, sizeof(DATABREAK));
+        DATABREAK** search = &dataBpList;
+        DATABREAK* b = calloc(1, sizeof(DATABREAK));
         int v;
         HWND hwndLV = GetDlgItem(hwnd, IDC_BPLIST);
         LV_ITEM item;
@@ -380,11 +370,9 @@ void AddDataBp(HWND hwnd)
         ListView_SetCheckState(hwndLV, v, TRUE);
         ListView_SetSelectionMark(hwndLV, i);
         ListView_SetItemState(hwndLV, i, LVIS_SELECTED, LVIS_SELECTED);
-        
     }
 }
-LRESULT CALLBACK DataBpProc(HWND hwnd, UINT iMessage, WPARAM wParam,
-    LPARAM lParam)
+LRESULT CALLBACK DataBpProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
     switch (iMessage)
     {
@@ -402,7 +390,7 @@ LRESULT CALLBACK DataBpProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     AddDataBp(hwnd);
                     break;
                 case IDHELP:
-                ContextHelp(IDH_DATA_BREAKPOINTS_DIALOG);
+                    ContextHelp(IDH_DATA_BREAKPOINTS_DIALOG);
                     break;
             }
             break;
@@ -450,25 +438,25 @@ LRESULT CALLBACK DataBpProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             {
                 if (((LPNMHDR)lParam)->code == LVN_GETDISPINFO)
                 {
-                    LV_DISPINFO *plvdi = (LV_DISPINFO*)lParam;
-                    DWINFO *ptr;
+                    LV_DISPINFO* plvdi = (LV_DISPINFO*)lParam;
                     plvdi->item.mask |= LVIF_TEXT | LVIF_DI_SETITEM;
                     plvdi->item.mask &= ~LVIF_STATE;
                     switch (plvdi->item.iSubItem)
                     {
-                    case 2:
-                        plvdi->item.pszText = ((DATABREAK *)plvdi->item.lParam)->name;
-                        break;
-                    default:
-                        plvdi->item.pszText = "";
-                        break;
+                        case 2:
+                            plvdi->item.pszText = ((DATABREAK*)plvdi->item.lParam)->name;
+                            break;
+                        default:
+                            plvdi->item.pszText = "";
+                            break;
                     }
                 }
                 else if (((LPNMHDR)lParam)->code == LVN_ITEMCHANGED)
                 {
-                    LPNMLISTVIEW  lpnmListView = (LPNMLISTVIEW)lParam;
+                    LPNMLISTVIEW lpnmListView = (LPNMLISTVIEW)lParam;
                     HWND hwndLV = GetDlgItem(hwnd, IDC_BPLIST);
-                    ((DATABREAK *)lpnmListView->lParam)->disable = !(((DATABREAK *)lpnmListView->lParam)->active = ListView_GetCheckState(hwndLV, lpnmListView->iItem));
+                    ((DATABREAK*)lpnmListView->lParam)->disable =
+                        !(((DATABREAK*)lpnmListView->lParam)->active = ListView_GetCheckState(hwndLV, lpnmListView->iItem));
                 }
             }
             break;
@@ -479,16 +467,15 @@ void databp(HWND hwnd)
 {
     if (hwnd == NULL)
     {
-        DialogBoxParam(hInstance, "DATABPDLG", hwndFrame, 
-            (DLGPROC)DataBpProc, 0);
+        DialogBoxParam(hInstance, "DATABPDLG", hwndFrame, (DLGPROC)DataBpProc, 0);
     }
     else
     {
-        DATABREAK *b = (DATABREAK *)calloc(sizeof(DATABREAK),1);
-           BOOL doit = SendMessage(hwnd, WM_WORDUNDERPOINT, (WPARAM)&rightclickPos, (LPARAM)b->name);
+        DATABREAK* b = (DATABREAK*)calloc(sizeof(DATABREAK), 1);
+        BOOL doit = SendMessage(hwnd, WM_WORDUNDERPOINT, (WPARAM)&rightclickPos, (LPARAM)b->name);
         if (doit)
         {
-            DATABREAK **search = &dataBpList;
+            DATABREAK** search = &dataBpList;
             while (*search)
                 search = &(*search)->next;
             b->active = TRUE;

@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
@@ -28,44 +28,44 @@
 extern int templateNestingCount;
 extern TYPE stdvoid;
 
-extern char *tn_void;
-extern char *tn_bool;
-extern char *tn_char;
-extern char *tn_int;
-extern char *tn_long;
-extern char *tn_longlong;
-extern char *tn_short;
-extern char *tn_unsigned;
-extern char *tn_signed;
-extern char *tn_ellipse;
-extern char *tn_floatimaginary;
-extern char *tn_doubleimaginary;
-extern char *tn_longdoubleimaginary;
-extern char *tn_floatcomplex;
-extern char *tn_doublecomplex;
-extern char *tn_longdoublecomplex;
-extern char *tn_float;
-extern char *tn_double;
-extern char *tn_longdouble;
-extern char *tn_const;
-extern char *tn_volatile;
-extern char *tn_class;
-extern char *tn_union;
-extern char *tn_struct;
-extern char *tn_wchar_t;
-extern char *tn_char16_t;
-extern char *tn_char32_t;
+extern char* tn_void;
+extern char* tn_bool;
+extern char* tn_char;
+extern char* tn_int;
+extern char* tn_long;
+extern char* tn_longlong;
+extern char* tn_short;
+extern char* tn_unsigned;
+extern char* tn_signed;
+extern char* tn_ellipse;
+extern char* tn_floatimaginary;
+extern char* tn_doubleimaginary;
+extern char* tn_longdoubleimaginary;
+extern char* tn_floatcomplex;
+extern char* tn_doublecomplex;
+extern char* tn_longdoublecomplex;
+extern char* tn_float;
+extern char* tn_double;
+extern char* tn_longdouble;
+extern char* tn_const;
+extern char* tn_volatile;
+extern char* tn_class;
+extern char* tn_union;
+extern char* tn_struct;
+extern char* tn_wchar_t;
+extern char* tn_char16_t;
+extern char* tn_char32_t;
 
-TYPE *typenum(char *buf, TYPE *tp);
+TYPE* typenum(char* buf, TYPE* tp);
 
-static TYPE *replaceTemplateSelector (TYPE *tp)
+static TYPE* replaceTemplateSelector(TYPE* tp)
 {
     if (!templateNestingCount && tp->type == bt_templateselector && tp->sp->templateSelector->next->isTemplate)
     {
-        SYMBOL *sp2 = tp->sp->templateSelector->next->sym;
+        SYMBOL* sp2 = tp->sp->templateSelector->next->sym;
         if (sp2)
         {
-            SYMBOL *sp1 = GetClassTemplate(sp2, tp->sp->templateSelector->next->templateParams, TRUE);
+            SYMBOL* sp1 = GetClassTemplate(sp2, tp->sp->templateSelector->next->templateParams, TRUE);
             if (sp1)
             {
                 sp1 = search(tp->sp->templateSelector->next->next->name, sp1->tp->syms);
@@ -78,7 +78,7 @@ static TYPE *replaceTemplateSelector (TYPE *tp)
     }
     return tp;
 }
-BOOLEAN comparetypes(TYPE *typ1, TYPE *typ2, int exact)
+BOOLEAN comparetypes(TYPE* typ1, TYPE* typ2, int exact)
 {
     if (typ1->type == bt_any || typ2->type == bt_any)
         return TRUE;
@@ -122,19 +122,19 @@ BOOLEAN comparetypes(TYPE *typ1, TYPE *typ2, int exact)
                     return FALSE;
                 if (typ1->msil != typ2->msil)
                     return FALSE;
-                if (arr && (typ1->array != typ2->array))	
+                if (arr && (typ1->array != typ2->array))
                     return FALSE;
                 if (arr && typ1->size != typ2->size)
                     return FALSE;
                 arr |= typ1->array | typ2->array;
                 typ1 = typ1->btp;
-                typ2 = typ2->btp;				
+                typ2 = typ2->btp;
             }
             if (exact == 1 && ((isconst(typ2) && !isconst(typ1)) || (isvolatile(typ2) && !isvolatile(typ1))))
                 return FALSE;
             return comparetypes(typ1, typ2, TRUE);
         }
-            
+
         else
             return TRUE;
     }
@@ -142,8 +142,6 @@ BOOLEAN comparetypes(TYPE *typ1, TYPE *typ2, int exact)
     typ2 = basetype(typ2);
     if (exact && (isfunction(typ1) || isfuncptr(typ1)) && (isfunction(typ2) || isfuncptr(typ2)))
     {
-        HASHREC *hr1;
-        HASHREC *hr2;
         typ1 = basetype(typ1);
         typ2 = basetype(typ2);
         if (ispointer(typ1))
@@ -183,18 +181,17 @@ BOOLEAN comparetypes(TYPE *typ1, TYPE *typ2, int exact)
     }
     if (typ1->type == typ2->type && typ1->type == bt___string)
         return TRUE;
-    if (typ1->type == bt___object) // object matches anything
+    if (typ1->type == bt___object)  // object matches anything
         return TRUE;
     if (typ1->type == typ2->type && (isstructured(typ1) || (exact && typ1->type == bt_enum)))
         return typ1->sp == typ2->sp;
     if (typ1->type == typ2->type || (!exact && isarithmetic(typ2) && isarithmetic(typ1)))
         return TRUE;
-    if (isfunction(typ1) && isfunction(typ2) && 
-        typ1->sp->linkage == typ2->sp->linkage)
+    if (isfunction(typ1) && isfunction(typ2) && typ1->sp->linkage == typ2->sp->linkage)
         return TRUE;
-    else if (!exact && ((ispointer(typ1) && (isfuncptr(typ2) || isfunction(typ2) || isint(typ2)))
-             || (ispointer(typ2) && (isfuncptr(typ1) || isfunction(typ1) || isint(typ1)))))
-            return (TRUE);
+    else if (!exact && ((ispointer(typ1) && (isfuncptr(typ2) || isfunction(typ2) || isint(typ2))) ||
+                        (ispointer(typ2) && (isfuncptr(typ1) || isfunction(typ1) || isint(typ1)))))
+        return (TRUE);
     else if (typ1->type == bt_enum && isint(typ2))
     {
         return TRUE;
@@ -205,13 +202,13 @@ BOOLEAN comparetypes(TYPE *typ1, TYPE *typ2, int exact)
     }
     return FALSE;
 }
-BOOLEAN matchingCharTypes(TYPE *typ1, TYPE *typ2)
+BOOLEAN matchingCharTypes(TYPE* typ1, TYPE* typ2)
 {
     if (isref(typ1))
         typ1 = basetype(typ1)->btp;
     if (isref(typ2))
         typ2 = basetype(typ2)->btp;
-        
+
     while (ispointer(typ1) && ispointer(typ2))
     {
         typ1 = basetype(typ1)->btp;
@@ -233,7 +230,7 @@ BOOLEAN matchingCharTypes(TYPE *typ1, TYPE *typ2)
         }
     }
     else if (typ2->type == bt_char)
-    {   
+    {
         if (cparams.prm_charisunsigned)
         {
             if (typ1->type == bt_unsigned_char)
@@ -247,34 +244,33 @@ BOOLEAN matchingCharTypes(TYPE *typ1, TYPE *typ2)
     }
     return FALSE;
 }
-static char *putpointer(char *p, TYPE *tp)
+static char* putpointer(char* p, TYPE* tp)
 {
     *p = 0;
     if (tp->type == bt_far)
-        my_sprintf(p,"far ");
-    p = p +strlen(p);
+        my_sprintf(p, "far ");
+    p = p + strlen(p);
     if (tp->array)
-        if (tp->btp->size && (! tp->esize || tp->esize->type == en_c_i))
+        if (tp->btp->size && (!tp->esize || tp->esize->type == en_c_i))
         {
-            my_sprintf(p,"[%d]",tp->size/tp->btp->size);
+            my_sprintf(p, "[%d]", tp->size / tp->btp->size);
         }
         else
         {
-            my_sprintf(p,"[]");
+            my_sprintf(p, "[]");
         }
     else if (tp->vla)
         my_sprintf(p, "[*]");
     else
-        my_sprintf(p," *");
+        my_sprintf(p, " *");
     return p + strlen(p);
 }
-    
 
-static TYPE *enumConst(char *buf, TYPE *tp)
+static TYPE* enumConst(char* buf, TYPE* tp)
 {
     while (tp && (isconst(tp) || isvolatile(tp) || isrestrict(tp) || tp->type == bt_derivedfromtemplate))
     {
-        switch(tp->type)
+        switch (tp->type)
         {
             case bt_lrqual:
                 strcat(buf, "& ");
@@ -290,7 +286,7 @@ static TYPE *enumConst(char *buf, TYPE *tp)
                 break;
             case bt_restrict:
             case bt_derivedfromtemplate:
-/*				strcat(buf, tn_restrict); */
+                /*				strcat(buf, tn_restrict); */
                 break;
             default:
                 break;
@@ -299,7 +295,7 @@ static TYPE *enumConst(char *buf, TYPE *tp)
     }
     return tp;
 }
-void typenumptr(char *buf, TYPE *tp)
+void typenumptr(char* buf, TYPE* tp)
 {
     char bf[256], *p = bf;
     p = putpointer(p, tp);
@@ -310,19 +306,20 @@ void typenumptr(char *buf, TYPE *tp)
     {
         p = putpointer(p, tp);
         tp = enumConst(buf, tp->btp);
-//		tp = tp->btp;
+        //		tp = tp->btp;
     }
     typenum(buf, tp);
     strcat(buf, bf);
 }
-void RenderExpr(char *buf, EXPRESSION *exp)
+void RenderExpr(char* buf, EXPRESSION* exp)
 {
-    strcpy (buf, "decltype(...)");
+    (void)exp;
+    strcpy(buf, "decltype(...)");
 }
-TYPE *typenum(char *buf, TYPE *tp)
+TYPE* typenum(char* buf, TYPE* tp)
 {
-    SYMBOL *sp;
-    HASHREC *hr;
+    SYMBOL* sp;
+    HASHREC* hr;
     char name[4096];
     if (tp == NULL)
     {
@@ -344,10 +341,10 @@ TYPE *typenum(char *buf, TYPE *tp)
             if (!tp->syms)
                 break;
             hr = tp->syms->table[0];
-            sp = (SYMBOL *)hr->p;
-            if (hr->next || !strcmp(sp->name, tp->sp->name)) // the tail is to prevent a problem when there are a lot of errors
+            sp = (SYMBOL*)hr->p;
+            if (hr->next || !strcmp(sp->name, tp->sp->name))  // the tail is to prevent a problem when there are a lot of errors
             {
-                strcpy(buf," (*)(\?\?\?)");
+                strcpy(buf, " (*)(\?\?\?)");
                 break;
             }
             tp = sp->tp;
@@ -361,30 +358,30 @@ TYPE *typenum(char *buf, TYPE *tp)
                 hr = tp->syms->table[0];
                 if (hr && hr->p)
                 {
-                    if (((SYMBOL *)hr->p)->thisPtr)
+                    if (((SYMBOL*)hr->p)->thisPtr)
                     {
-                        SYMBOL *thisptr = (SYMBOL *)hr->p;
+                        SYMBOL* thisptr = (SYMBOL*)hr->p;
                         *buf++ = ' ';
-                        *buf++='(';
-                        getcls(buf, basetype (basetype(thisptr->tp)->btp)->sp);
+                        *buf++ = '(';
+                        getcls(buf, basetype(basetype(thisptr->tp)->btp)->sp);
                         strcat(buf, "::*)(");
                         buf += strlen(buf);
                         hr = hr->next;
                     }
                     else
                     {
-                       strcat(buf," (*)(");
+                        strcat(buf, " (*)(");
                         buf += strlen(buf);
                     }
                 }
                 else
                 {
-                    strcat(buf," (*)(");
+                    strcat(buf, " (*)(");
                     buf += strlen(buf);
                 }
                 while (hr)
                 {
-                    sp = (SYMBOL *)hr->p;
+                    sp = (SYMBOL*)hr->p;
                     *buf = 0;
                     typenum(buf, sp->tp);
                     buf = buf + strlen(buf);
@@ -395,7 +392,7 @@ TYPE *typenum(char *buf, TYPE *tp)
             }
             else
             {
-                strcat(buf," (*)(");
+                strcat(buf, " (*)(");
                 buf += strlen(buf);
             }
             *buf++ = ')';
@@ -506,7 +503,7 @@ TYPE *typenum(char *buf, TYPE *tp)
         case bt_memberptr:
             if (isfunction(basetype(tp)->btp))
             {
-                TYPE *func = basetype(tp)->btp;
+                TYPE* func = basetype(tp)->btp;
                 typenum(buf, basetype(func)->btp);
                 strcat(buf, " (");
                 buf += strlen(buf);
@@ -519,7 +516,7 @@ TYPE *typenum(char *buf, TYPE *tp)
                     hr = basetype(func)->syms->table[0];
                     while (hr)
                     {
-                        sp = (SYMBOL *)hr->p;
+                        sp = (SYMBOL*)hr->p;
                         *buf = 0;
                         typenum(buf, sp->tp);
                         buf = buf + strlen(buf);
@@ -568,28 +565,28 @@ TYPE *typenum(char *buf, TYPE *tp)
             strcpy(buf, "???");
             break;
         case bt_class:
-/*                strcpy(buf, tn_class); */
+            /*                strcpy(buf, tn_class); */
             unmangle(name, tp->sp->errname ? tp->sp->errname : tp->sp->name);
             strcpy(buf, name);
             break;
         case bt_struct:
-/*                strcpy(buf, tn_struct); */
+            /*                strcpy(buf, tn_struct); */
             unmangle(name, tp->sp->errname ? tp->sp->errname : tp->sp->name);
             strcpy(buf, name);
             break;
         case bt_union:
-/*                strcpy(buf, tn_union); */
+            /*                strcpy(buf, tn_union); */
             unmangle(name, tp->sp->errname ? tp->sp->errname : tp->sp->name);
             strcpy(buf, name);
             break;
         case bt_enum:
-/*                strcpy(buf, tn_enum);  */
+            /*                strcpy(buf, tn_enum);  */
             unmangle(name, tp->sp->errname ? tp->sp->errname : tp->sp->name);
             strcpy(buf, name);
             break;
         case bt_templateselector:
         {
-            TEMPLATESELECTOR *ts = tp->sp->templateSelector->next;
+            TEMPLATESELECTOR* ts = tp->sp->templateSelector->next;
             if (ts->sym)
             {
                 strcpy(buf, ts->sym->name);
@@ -614,7 +611,7 @@ TYPE *typenum(char *buf, TYPE *tp)
     }
     return 0;
 }
-void typeToString(char *buf, TYPE *typ)
+void typeToString(char* buf, TYPE* typ)
 {
     *buf = 0;
     while (typ)

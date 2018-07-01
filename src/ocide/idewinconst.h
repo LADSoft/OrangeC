@@ -1,29 +1,29 @@
 #ifdef __IDE_RC_INVOKED
-#define __NEXT_CONTROL_ID	2
-#define __NEXT_MENU_ID		10003
-#define __NEXT_RESOURCE_ID	10
-#define __NEXT_STRING_ID	1000
+#    define __NEXT_CONTROL_ID 2
+#    define __NEXT_MENU_ID 10003
+#    define __NEXT_RESOURCE_ID 10
+#    define __NEXT_STRING_ID 1000
 #endif
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
  */
@@ -163,7 +163,7 @@
 #define MAX_WINMENU 10
 
 #define EXTENSION_BASE 10000
-#define WM_WINMENU (EXTENSION_BASE +100)
+#define WM_WINMENU (EXTENSION_BASE + 100)
 #define EM_GETINSERTSTATUS (EXTENSION_BASE + 101)
 #define WM_REDRAWTOOLBAR (EXTENSION_BASE + 102)
 #define IDC_CHECKBOX2 103
@@ -172,10 +172,10 @@
 #define WM_SETEDITORSETTINGS (EXTENSION_BASE + 105)
 #define WM_BREAKPOINT (EXTENSION_BASE + 106)
 #define WM_EXCEPTION (EXTENSION_BASE + 107)
-#define WM_GETCURSORADDRESS (EXTENSION_BASE +108)
+#define WM_GETCURSORADDRESS (EXTENSION_BASE + 108)
 #define WM_UNUSED (EXTENSION_BASE + 109)
 #define WM_UNUSED1 (EXTENSION_BASE + 110)
-#define WM_UNUSED2 (EXTENSION_BASE + 111) 
+#define WM_UNUSED2 (EXTENSION_BASE + 111)
 #define WM_WORDUNDERCURSOR (EXTENSION_BASE + 112)
 #define WM_ADDWATCH (EXTENSION_BASE + 113)
 #define WM_RESTACK (EXTENSION_BASE + 114)
@@ -186,20 +186,19 @@
 #define WM_FILETITLE (EXTENSION_BASE + 119)
 #define WM_FILENAME (EXTENSION_BASE + 120)
 
-
-#define EM_LANGUAGE (EXTENSION_BASE+122)
+#define EM_LANGUAGE (EXTENSION_BASE + 122)
 #define EM_GETTEXTHEIGHT (EXTENSION_BASE + 123)
 #define EN_LINECHANGE (EXTENSION_BASE + 124)
-#define EM_GETCOLUMN (EXTENSION_BASE +125)
+#define EM_GETCOLUMN (EXTENSION_BASE + 125)
 #define WM_RESETTABS (EXTENSION_BASE + 126)
 #define WM_GETHEIGHT (EXTENSION_BASE + 127)
 #define WM_SETACTIVETAB (EXTENSION_BASE + 128)
 #define EM_GETREADONLY (EXTENSION_BASE + 129)
 #define EM_TOUPPER (EXTENSION_BASE + 130)
 #define EM_TOLOWER (EXTENSION_BASE + 131)
-#define WM_ADDWATCHINDIRECT (EXTENSION_BASE+132)
+#define WM_ADDWATCHINDIRECT (EXTENSION_BASE + 132)
 #define EM_SELECTINDENT (EXTENSION_BASE + 133)
-#define EN_SETCURSOR (EXTENSION_BASE + 134) 
+#define EN_SETCURSOR (EXTENSION_BASE + 134)
 #define EM_GETEDITDATA (EXTENSION_BASE + 135)
 #define EM_UPDATESIBLING (EXTENSION_BASE + 136)
 #define WM_SETCOLOR (EXTENSION_BASE + 137)
@@ -344,7 +343,6 @@
 #define IDM_ARRANGE 158
 #define IDM_CLOSEWINDOW 159
 
-
 #define IDM_CUT 160
 #define IDM_COPY 161
 #define IDM_PASTE 162
@@ -383,7 +381,7 @@
 #define IDM_REDO 192
 #define IDM_NEWFILE 193
 #define IDM_EXISTINGFILE 194
-#define IDM_NEWFOLDER 195 
+#define IDM_NEWFOLDER 195
 #define IDM_EXISTINGFOLDER 196
 #define IDM_RENAME 197
 #define IDM_REMOVE 198
@@ -468,7 +466,7 @@
 
 #define IDC_DEBUGEXCEPTION 340
 #define IDC_BREAKDLL 341
-#define IDC_DEBUGTOOLTIPS 343 
+#define IDC_DEBUGTOOLTIPS 343
 #define IDC_EDITCMDLINE 344
 #define IDC_SHOWRETURNCODE 345
 
@@ -534,8 +532,6 @@
 #define IDM_MI32328 497
 #define IDM_MI323224 498
 
-
-
 #define IDM_NEWRESOURCE 499
 
 #define IDM_VIEWRES 700
@@ -562,7 +558,6 @@
 #define ID_SETADDRESS 900
 #define ID_SETCONTEXT 901
 #define ID_CHECKCHANGE 902
-
 
 #define IDM_BYTE 910
 #define IDM_WORD 911
@@ -597,7 +592,6 @@
 #define ID_WINDOW_LIST 5000
 #define ID_TOOLBARCUSTOM 5000
 #define IDM_WINDOW_MORE (ID_WINDOW_LIST + MAX_WINMENU)
-
 
 #define ID_FILEBROWSE_LIST 6000
 

@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #ifndef PEObject_H
@@ -39,22 +39,24 @@ class ObjFile;
 
 class ResourceContainer;
 class ObjExpression;
-inline ObjInt ObjectAlign(ObjInt alignment, ObjInt value)
-{
-    return (value + alignment - 1) & ~(alignment - 1);
-}
-
+inline ObjInt ObjectAlign(ObjInt alignment, ObjInt value) { return (value + alignment - 1) & ~(alignment - 1); }
 
 class PEObject
 {
-public:
-    enum { HeaderSize = 40 } ;
-    PEObject(std::string Name) : data(nullptr), name(Name), size(0), initSize(0),
-        virtual_addr(0), raw_addr(0), flags(0) { }
-    virtual ~PEObject() { if (data) delete[] data; }
-    virtual void Setup(ObjInt &endVa, ObjInt &endPhys) = 0;
-    virtual void Fill() { }
-    const std::string &GetName() { return name; }
+  public:
+    enum
+    {
+        HeaderSize = 40
+    };
+    PEObject(std::string Name) : data(nullptr), name(Name), size(0), initSize(0), virtual_addr(0), raw_addr(0), flags(0) {}
+    virtual ~PEObject()
+    {
+        if (data)
+            delete[] data;
+    }
+    virtual void Setup(ObjInt& endVa, ObjInt& endPhys) = 0;
+    virtual void Fill() {}
+    const std::string& GetName() { return name; }
     unsigned GetAddr() { return virtual_addr; }
     unsigned GetSize() { return size; }
     unsigned GetRawSize() { return initSize; }
@@ -64,63 +66,73 @@ public:
     void SetRawAddr(unsigned addr) { raw_addr = addr; }
     unsigned GetFlags() { return flags; }
     void SetFlags(unsigned Flags) { flags = Flags; }
-    void WriteHeader(std::fstream &stream);
-    void Write(std::fstream &stream);
+    void WriteHeader(std::fstream& stream);
+    void Write(std::fstream& stream);
     unsigned GetNextVirtual() { return (virtual_addr + size + objectAlign - 1) & ~(objectAlign - 1); }
     unsigned GetNextRaw() { return (virtual_addr + initSize + fileAlign - 1) & ~(fileAlign - 1); }
-    static void SetFile(ObjFile *File);
+    static void SetFile(ObjFile* File);
     virtual ObjInt SetThunk(int index, unsigned val) { return -1; }
-protected:
+
+  protected:
     std::string name;
     unsigned size;
     unsigned initSize;
     unsigned virtual_addr;
     unsigned raw_addr;
     unsigned flags;
-    unsigned char *data;
+    unsigned char* data;
     static unsigned objectAlign;
     static unsigned fileAlign;
     static unsigned imageBase;
     static unsigned dataInitSize;
     static unsigned importThunkVA;
     static unsigned importCount;
-    static ObjFile *file;
-private:
+    static ObjFile* file;
+
+  private:
 };
 
 class PEDataObject : public PEObject
 {
-public:
-    PEDataObject(ObjFile *File, ObjSection *Sect) : file(File), PEObject(Sect->GetName()), sect(Sect) { InitFlags(); }
-    virtual void Setup(ObjInt &endVa, ObjInt &endPhys);
+  public:
+    PEDataObject(ObjFile* File, ObjSection* Sect) : file(File), PEObject(Sect->GetName()), sect(Sect) { InitFlags(); }
+    virtual void Setup(ObjInt& endVa, ObjInt& endPhys);
     virtual void Fill();
     void InitFlags();
     virtual ObjInt SetThunk(int index, unsigned va);
-    bool hasPC(ObjExpression *exp);
-    ObjExpression* getExtern(ObjExpression *exp);
-    ObjInt EvalFixup(ObjExpression *fixup, ObjInt base);
+    bool hasPC(ObjExpression* exp);
+    ObjExpression* getExtern(ObjExpression* exp);
+    ObjInt EvalFixup(ObjExpression* fixup, ObjInt base);
     void GetImportNames();
-private:
-    ObjFile *file;
-    ObjSection *sect;
+
+  private:
+    ObjFile* file;
+    ObjSection* sect;
     std::set<std::string> importNames;
 };
 class PEImportObject : public PEObject
 {
-public:
-    PEImportObject(std::deque<PEObject *> &Objects) : PEObject(".idata"), objects(Objects) { SetFlags(WINF_INITDATA | WINF_READABLE | WINF_WRITEABLE | WINF_NEG_FLAGS); }
-    virtual void Setup(ObjInt &endVa, ObjInt &endPhys);
-private:
+  public:
+    PEImportObject(std::deque<PEObject*>& Objects) : PEObject(".idata"), objects(Objects)
+    {
+        SetFlags(WINF_INITDATA | WINF_READABLE | WINF_WRITEABLE | WINF_NEG_FLAGS);
+    }
+    virtual void Setup(ObjInt& endVa, ObjInt& endPhys);
+
+  private:
     struct Dir
     {
-        int thunkPos2; // address thunk
+        int thunkPos2;  // address thunk
         int time;
         int version;
         int dllName;
-        int thunkPos; // name thunk
+        int thunkPos;  // name thunk
     };
 
-    enum { IMPORT_BY_ORDINAL = 0x80000000 } ;
+    enum
+    {
+        IMPORT_BY_ORDINAL = 0x80000000
+    };
     struct Entry
     {
         int ord_or_rva;
@@ -132,16 +144,19 @@ private:
         std::deque<std::string> publicNames;
         std::deque<int> ordinals;
     };
-    std::deque<PEObject *> &objects;
+    std::deque<PEObject*>& objects;
 };
 class PEExportObject : public PEObject
 {
-public:
-    PEExportObject(const std::string &name, bool Flat) : PEObject(".edata"), moduleName(name), flat(Flat)
-        { SetFlags(WINF_INITDATA | WINF_READABLE | WINF_NEG_FLAGS); }
-    virtual void Setup(ObjInt &endVa, ObjInt &endPhys);
+  public:
+    PEExportObject(const std::string& name, bool Flat) : PEObject(".edata"), moduleName(name), flat(Flat)
+    {
+        SetFlags(WINF_INITDATA | WINF_READABLE | WINF_NEG_FLAGS);
+    }
+    virtual void Setup(ObjInt& endVa, ObjInt& endPhys);
     bool ImportsNeedUnderscore() const { return flat && appliedFlat; }
-private:
+
+  private:
     struct Header
     {
         int flags;
@@ -161,14 +176,23 @@ private:
 };
 class PEFixupObject : public PEObject
 {
-public:
-    PEFixupObject() : PEObject(".reloc") { SetFlags(WINF_INITDATA | WINF_READABLE | WINF_SHARED | WINF_NEG_FLAGS); LoadFixups(); }
-    virtual void Setup(ObjInt &endVa, ObjInt &endPhys);
-    virtual ObjInt SetThunk(int index, unsigned va) { fixups.insert(importThunkVA + 6 * index + 2); return -1; }
-private:
+  public:
+    PEFixupObject() : PEObject(".reloc")
+    {
+        SetFlags(WINF_INITDATA | WINF_READABLE | WINF_SHARED | WINF_NEG_FLAGS);
+        LoadFixups();
+    }
+    virtual void Setup(ObjInt& endVa, ObjInt& endPhys);
+    virtual ObjInt SetThunk(int index, unsigned va)
+    {
+        fixups.insert(importThunkVA + 6 * index + 2);
+        return -1;
+    }
+
+  private:
     // load fixups is called right off the bat because once the setup for the data objects
     // runs, the fixups will be eval'd and lose their seg-relativeness.
-    bool IsRel(ObjExpression *e);
+    bool IsRel(ObjExpression* e);
     void LoadFixups();
     struct Block
     {
@@ -180,10 +204,14 @@ private:
 };
 class PEResourceObject : public PEObject
 {
-public:
-    PEResourceObject(ResourceContainer &Resources) : PEObject(".rsrc"), resources(Resources) { SetFlags(WINF_INITDATA | WINF_READABLE | WINF_NEG_FLAGS); }
-    virtual void Setup(ObjInt &endVa, ObjInt &endPhys);
-private:
+  public:
+    PEResourceObject(ResourceContainer& Resources) : PEObject(".rsrc"), resources(Resources)
+    {
+        SetFlags(WINF_INITDATA | WINF_READABLE | WINF_NEG_FLAGS);
+    }
+    virtual void Setup(ObjInt& endVa, ObjInt& endPhys);
+
+  private:
     struct Dir
     {
         int resource_flags;
@@ -192,17 +220,18 @@ private:
         short name_entry;
         short ident_entry;
     };
-    
-    enum {
+
+    enum
+    {
         SUBDIR = 0x80000000,
         RVA = 0x80000000
-    } ;
+    };
     struct Entry
     {
         int rva_or_id;
         int subdir_or_data;
     };
-    
+
     struct DataEntry
     {
         int rva;
@@ -210,20 +239,23 @@ private:
         int codepage;
         int reserved;
     };
-    ResourceContainer &resources;
+    ResourceContainer& resources;
 };
 class PEDebugObject : public PEObject
 {
-public:
-    PEDebugObject(const ObjString &fname, ObjInt base) : PEObject(".debug"), 
-        fileName(fname)
-         { SetFlags(WINF_INITDATA | WINF_READABLE | WINF_SHARED | WINF_NEG_FLAGS);
-           SetDebugInfo(fileName, base); }
-    virtual void Setup(ObjInt &endVa, ObjInt &endPhys);
-protected:
+  public:
+    PEDebugObject(const ObjString& fname, ObjInt base) : PEObject(".debug"), fileName(fname)
+    {
+        SetFlags(WINF_INITDATA | WINF_READABLE | WINF_SHARED | WINF_NEG_FLAGS);
+        SetDebugInfo(fileName, base);
+    }
+    virtual void Setup(ObjInt& endVa, ObjInt& endPhys);
+
+  protected:
     void SetDebugInfo(ObjString fileName, ObjInt base);
-    static int NullCallback(void *NotUsed, int argc, char **argv, char **azColName);
-private:
+    static int NullCallback(void* NotUsed, int argc, char** argv, char** azColName);
+
+  private:
     ObjString fileName;
 };
 

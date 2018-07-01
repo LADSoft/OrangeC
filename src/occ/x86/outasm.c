@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdio.h>
@@ -31,7 +31,7 @@
 
 #define IEEE
 
-extern ARCH_ASM *chosenAssembler;
+extern ARCH_ASM* chosenAssembler;
 extern int prm_nodos;
 extern int prm_flat;
 extern OPCODE popn_aaa;
@@ -328,7 +328,6 @@ extern OPCODE popn_fxtract;
 extern OPCODE popn_fyl2x;
 extern OPCODE popn_fyl2xp1;
 
-
 int skipsize = 0;
 int addsize = 0;
 
@@ -340,1263 +339,332 @@ extern int prm_assembler;
 
 static int uses_float;
 
-MULDIV *muldivlink = 0;
+MULDIV* muldivlink = 0;
 static enum e_gt oa_gentype = nogen; /* Current DC type */
-enum e_sg oa_currentSeg = noseg; /* Current seg */
-static int oa_outcol = 0; /* Curront col (roughly) */
+enum e_sg oa_currentSeg = noseg;     /* Current seg */
+static int oa_outcol = 0;            /* Curront col (roughly) */
 int newlabel;
 int needpointer;
 static int nosize = 0;
 static int virtual_mode;
 
 /* List of opcodes
- * This list MUST be in the same order as the op_ enums 
+ * This list MUST be in the same order as the op_ enums
  */
-ASMNAME oplst[] = 
-{
-    {
-        "reserved", op_reserved, 0, 0
-    } , 
-    {
-        "line#", op_reserved, 0, 0
-    }
-    , 
-    {
-        "blks#", op_reserved, 0, 0
-    }
-    , 
-    {
-        "blke#", op_reserved, 0, 0
-    }
-    , 
-    {
-        "vars#", op_reserved, 0, 0
-    }
-    , 
-    {
-        "funcs#", op_reserved, 0, 0
-    }
-    , 
-    {
-        "funce#", op_reserved, 0, 0
-    }
-    , 
-    {
-        "void#", op_void, 0, 0
-    }
-    , 
-    {
-        "cmt#", op_reserved, 0, 0
-    }
-    , 
-    {
-        "label#", op_reserved, 0, 0
-    }
-    , 
-    {
-        "flabel#", op_reserved, 0, 0
-    }
-    , 
-    {
-        "seq@", op_reserved, 0, 0
-    }
-    , 
-    {
-        "db", op_reserved, 0, 0
-    }
-    , 
-    {
-        "dd", op_reserved, 0, 0
-    }
-    , 
-    {
-        "aaa", op_aaa, 0, &popn_aaa
-    }
-    , 
-    {
-        "aad", op_aad, 0, &popn_aad
-    }
-    , 
-    {
-        "aam", op_aam, 0, &popn_aam
-    }
-    , 
-    {
-        "aas", op_aas, 0, &popn_aas
-    }
-    , 
-    {
-        "add", op_add, OPE_MATH, &popn_add
-    }
-    , 
-    {
-        "adc", op_adc, OPE_MATH, &popn_adc
-    }
-    , 
-    {
-        "and", op_and, OPE_MATH, &popn_and
-    }
-    , 
-    {
-        "arpl", op_arpl, OPE_ARPL, &popn_arpl
-    }
-    , 
-    {
-        "bound", op_bound, OPE_BOUND, &popn_bound
-    }
-    , 
-    {
-        "bsf", op_bsf, OPE_BITSCAN, &popn_bsf
-    }
-    , 
-    {
-        "bsr", op_bsr, OPE_BITSCAN, &popn_bsr
-    }
-    , 
-    {
-        "bswap", op_bswap, OPE_REG32, &popn_bswap
-    }
-    , 
-    {
-        "btc", op_btc, OPE_BIT, &popn_btc
-    }
-    , 
-    {
-        "bt", op_bt, OPE_BIT, &popn_bt
-    }
-    , 
-    {
-        "btr", op_btr, OPE_BIT, &popn_btr
-    }
-    , 
-    {
-        "bts", op_bts, OPE_BIT, &popn_bts
-    }
-    , 
-    {
-        "call", op_call, OPE_CALL, &popn_call
-    }
-    , 
-    {
-        "cbw", op_cbw, 0, &popn_cbw
-    }
-    , 
-    {
-        "cwde", op_cwde, 0, &popn_cwde
-    }
-    , 
-    {
-        "cwd", op_cwd, 0, &popn_cwd
-    }
-    , 
-    {
-        "cdq", op_cdq, 0, &popn_cdq
-    }
-    , 
-    {
-        "clc", op_clc, 0, &popn_clc
-    }
-    , 
-    {
-        "cld", op_cld, 0, &popn_cld
-    }
-    , 
-    {
-        "cli", op_cli, 0, &popn_cli
-    }
-    , 
-    {
-        "clts", op_clts, 0, &popn_clts
-    }
-    , 
-    {
-        "cmc", op_cmc, 0, &popn_cmc
-    }
-    , 
-    {
-        "cmp", op_cmp, OPE_MATH, &popn_cmp
-    }
-    , 
-    {
-        "cmpxchg", op_cmp, OPE_MATH, &popn_cmpxchg
-    }
-    , 
-    {
-        "cmpxchg8b", op_cmp, 0, &popn_cmpxchg8b // fixme, the inline assembler is broke
-    }
-    , 
-    {
-        "cmps", op_cmps, OPE_CMPS, &popn_cmps
-    }
-    , 
-    {
-        "cmpsb", op_cmpsb, 0, &popn_cmpsb
-    }
-    , 
-    {
-        "cmpsw", op_cmpsw, 0, &popn_cmpsw
-    }
-    , 
-    {
-        "cmpsd", op_cmpsd, 0, &popn_cmpsd
-    }
-    , 
-    {
-        "daa", op_daa, 0, &popn_daa
-    }
-    , 
-    {
-        "das", op_das, 0, &popn_das
-    }
-    , 
-    {
-        "dec", op_dec, OPE_INCDEC, &popn_dec
-    }
-    , 
-    {
-        "div", op_div, OPE_RM, &popn_div
-    }
-    , 
-    {
-        "enter", op_enter, OPE_ENTER, &popn_enter
-    }
-    , 
-    {
-        "hlt", op_hlt, 0, &popn_hlt
-    }
-    , 
-    {
-        "idiv", op_idiv, OPE_RM, &popn_idiv
-    }
-    , 
-    {
-        "imul", op_imul, OPE_IMUL, &popn_imul
-    }
-    , 
-    {
-        "in", op_in, OPE_IN, &popn_in
-    }
-    , 
-    {
-        "inc", op_inc, OPE_INCDEC, &popn_inc
-    }
-    , 
-    {
-        "ins", op_ins, OPE_INS, &popn_ins
-    }
-    , 
-    {
-        "insb", op_insb, 0, &popn_insb
-    }
-    , 
-    {
-        "insw", op_insw, 0, &popn_insw
-    }
-    , 
-    {
-        "insd", op_insd, 0, &popn_insd
-    }
-    , 
-    {
-        "int", op_int, OPE_IMM8, &popn_int
-    }
-    , 
-    {
-        "int3", op_int3, 0, &popn_int3
-    }
-    , 
-    {
-        "into", op_into, 0, &popn_into
-    }
-    , 
-    {
-        "invd", op_invd, 0, &popn_invd
-    }
-    , 
-    {
-        "iret", op_iret, 0, &popn_iret
-    }
-    , 
-    {
-        "iretd", op_iretd, 0, &popn_iretd
-    }
-    , 
-    {
-        "jecxz", op_jecxz, OPE_RELBR8, &popn_jcxz
-    }
-    , 
-    {
-        "ja", op_ja, OPE_RELBRA, &popn_ja
-    }
-    , 
-    {
-        "jnbe", op_jnbe, OPE_RELBRA, &popn_jnbe
-    }
-    , 
-    {
-        "jae", op_jae, OPE_RELBRA, &popn_jae
-    }
-    , 
-    {
-        "jnb", op_jnb, OPE_RELBRA, &popn_jnb
-    }
-    , 
-    {
-        "jnc", op_jnc, OPE_RELBRA, &popn_jnc
-    }
-    , 
-    {
-        "jb", op_jb, OPE_RELBRA, &popn_jb
-    }
-    , 
-    {
-        "jc", op_jc, OPE_RELBRA, &popn_jc
-    }
-    , 
-    {
-        "jnae", op_jnae, OPE_RELBRA, &popn_jnae
-    }
-    , 
-    {
-        "jbe", op_jbe, OPE_RELBRA, &popn_jbe
-    }
-    , 
-    {
-        "jna", op_jna, OPE_RELBRA, &popn_jna
-    }
-    , 
-    {
-        "je", op_je, OPE_RELBRA, &popn_je
-    }
-    , 
-    {
-        "jz", op_jz, OPE_RELBRA, &popn_jz
-    }
-    , 
-    {
-        "jg", op_jg, OPE_RELBRA, &popn_jg
-    }
-    , 
-    {
-        "jnle", op_jnle, OPE_RELBRA, &popn_jnle
-    }
-    , 
-    {
-        "jl", op_jl, OPE_RELBRA, &popn_jl
-    }
-    , 
-    {
-        "jnge", op_jnge, OPE_RELBRA, &popn_jnge
-    }
-    , 
-    {
-        "jge", op_jge, OPE_RELBRA, &popn_jge
-    }
-    , 
-    {
-        "jnl", op_jnl, OPE_RELBRA, &popn_jnl
-    }
-    , 
-    {
-        "jle", op_jle, OPE_RELBRA, &popn_jle
-    }
-    , 
-    {
-        "jng", op_jng, OPE_RELBRA, &popn_jng
-    }
-    , 
-    {
-        "jne", op_jne, OPE_RELBRA, &popn_jne
-    }
-    , 
-    {
-        "jnz", op_jnz, OPE_RELBRA, &popn_jnz
-    }
-    , 
-    {
-        "jo", op_jo, OPE_RELBRA, &popn_jo
-    }
-    , 
-    {
-        "jno", op_jno, OPE_RELBRA, &popn_jno
-    }
-    , 
-    {
-        "jp", op_jp, OPE_RELBRA, &popn_jp
-    }
-    , 
-    {
-        "jnp", op_jnp, OPE_RELBRA, &popn_jnp
-    }
-    , 
-    {
-        "jpe", op_jpe, OPE_RELBRA, &popn_jpe
-    }
-    , 
-    {
-        "jpo", op_jpo, OPE_RELBRA, &popn_jpo
-    }
-    , 
-    {
-        "js", op_js, OPE_RELBRA, &popn_js
-    }
-    , 
-    {
-        "jns", op_jns, OPE_RELBRA, &popn_jns
-    }
-    , 
-    {
-        "jmp", op_jmp, OPE_JMP, &popn_jmp
-    }
-    , 
-    {
-        "lahf", op_lahf, 0, &popn_lahf
-    }
-    , 
-    {
-        "lar", op_lar, OPE_REGRM, &popn_lar
-    }
-    , 
-    {
-        "lds", op_lds, OPE_LOADSEG, &popn_lds
-    }
-    , 
-    {
-        "les", op_les, OPE_LOADSEG, &popn_les
-    }
-    , 
-    {
-        "lfs", op_lfs, OPE_LOADSEG, &popn_lfs
-    }
-    , 
-    {
-        "lgs", op_lgs, OPE_LOADSEG, &popn_lgs
-    }
-    , 
-    {
-        "lss", op_lss, OPE_LOADSEG, &popn_lss
-    }
-    , 
-    {
-        "lea", op_lea, OPE_REGRM, &popn_lea
-    }
-    , 
-    {
-        "leave", op_leave, 0, &popn_leave
-    }
-    , 
-    {
-        "lfence", op_lfence, 0, &popn_lfence
-    }
-    , 
-    {
-        "lgdt", op_lgdt, OPE_LGDT, &popn_lgdt
-    }
-    , 
-    {
-        "lidt", op_lidt, OPE_LIDT, &popn_lidt
-    }
-    , 
-    {
-        "lldt", op_lldt, OPE_RM16, &popn_lldt
-    }
-    , 
-    {
-        "lmsw", op_lmsw, OPE_RM16, &popn_lmsw
-    }
-    , 
-    {
-        "lock", op_lock, 0, &popn_lock
-    }
-    , 
-    {
-        "lods", op_lods, OPE_LODS, &popn_lods
-    }
-    , 
-    {
-        "lodsb", op_lodsb, 0, &popn_lodsb
-    }
-    , 
-    {
-        "lodsw", op_lodsw, 0, &popn_lodsw
-    }
-    , 
-    {
-        "lodsd", op_lodsd, 0, &popn_lodsd
-    }
-    , 
-    {
-        "loop", op_loop, OPE_RELBR8, &popn_loop
-    }
-    , 
-    {
-        "loope", op_loope, OPE_RELBR8, &popn_loope
-    }
-    , 
-    {
-        "loopz", op_loopz, OPE_RELBR8, &popn_loopz
-    }
-    , 
-    {
-        "loopne", op_loopne, OPE_RELBR8, &popn_loopne
-    }
-    , 
-    {
-        "loopnz", op_loopnz, OPE_RELBR8, &popn_loopnz
-    }
-    , 
-    {
-        "lsl", op_lsl, OPE_REGRM, &popn_lsl
-    }
-    , 
-    {
-        "ltr", op_ltr, OPE_RM16, &popn_ltr
-    }
-    , 
-    {
-        "mfence", op_mfence, 0, &popn_mfence
-    }
-    , 
-    {
-        "mov", op_mov, OPE_MOV, &popn_mov
-    }
-    , 
-    {
-        "movs", op_movs, OPE_MOVS, &popn_movs
-    }
-    , 
-    {
-        "movsb", op_movsb, 0, &popn_movsb
-    }
-    , 
-    {
-        "movsw", op_movsw, 0, &popn_movsw
-    }
-    , 
-    {
-        "movsd", op_movsd, 0, &popn_movsd
-    }
-    , 
-    {
-        "movsx", op_movsx, OPE_MOVSX, &popn_movsx
-    }
-    , 
-    {
-        "movzx", op_movzx, OPE_MOVSX, &popn_movzx
-    }
-    , 
-    {
-        "mul", op_mul, OPE_RM, &popn_mul
-    }
-    , 
-    {
-        "neg", op_neg, OPE_RM, &popn_neg
-    }
-    , 
-    {
-        "not", op_not, OPE_RM, &popn_not
-    }
-    , 
-    {
-        "nop", op_nop, 0, &popn_nop
-    }
-    , 
-    {
-        "or", op_or, OPE_MATH, &popn_or
-    }
-    , 
-    {
-        "out", op_out, OPE_OUT, &popn_out
-    }
-    , 
-    {
-        "outs", op_outs, OPE_OUTS, &popn_outs
-    }
-    , 
-    {
-        "outsb", op_outsb, 0, &popn_outsb
-    }
-    , 
-    {
-        "outsw", op_outsw, 0, &popn_outsw
-    }
-    , 
-    {
-        "outsd", op_outsd, 0, &popn_outsd
-    }
-    , 
-    {
-        "pop", op_pop, OPE_PUSHPOP, &popn_pop
-    }
-    , 
-    {
-        "popa", op_popa, 0, &popn_popa
-    }
-    , 
-    {
-        "popad", op_popad, 0, &popn_popad
-    }
-    , 
-    {
-        "popf", op_popf, 0, &popn_popf
-    }
-    , 
-    {
-        "popfd", op_popfd, 0, &popn_popfd
-    }
-    , 
-    {
-        "push", op_push, OPE_PUSHPOP, &popn_push
-    }
-    , 
-    {
-        "pusha", op_pusha, 0, &popn_pusha
-    }
-    , 
-    {
-        "pushad", op_pushad, 0, &popn_pushad
-    }
-    , 
-    {
-        "pushf", op_pushf, 0, &popn_pushf
-    }
-    , 
-    {
-        "pushfd", op_pushfd, 0, &popn_pushfd
-    }
-    , 
-    {
-        "rcl", op_rcl, OPE_SHIFT, &popn_rcl
-    }
-    , 
-    {
-        "rcr", op_rcr, OPE_SHIFT, &popn_rcr
-    }
-    , 
-    {
-        "rdmsr", op_rdmsr, 0, &popn_rdmsr
-    }
-    , 
-    {
-        "rdpmc", op_rdpmc, 0, &popn_rdpmc
-    }
-    , 
-    {
-        "rdtsc", op_rdtsc, 0, &popn_rdtsc
-    }
-    , 
-    {
-        "rol", op_rol, OPE_SHIFT, &popn_rol
-    }
-    , 
-    {
-        "ror", op_ror, OPE_SHIFT, &popn_ror
-    }
-    , 
-    {
-        "rep", op_rep, 0, &popn_repz
-    }
-    , 
-    {
-        "repne", op_repne, 0, &popn_repnz
-    }
-    , 
-    {
-        "repe", op_repe, 0, &popn_repz
-    }
-    , 
-    {
-        "repnz", op_repnz, 0, &popn_repnz
-    }
-    , 
-    {
-        "repz", op_repz, 0, &popn_repz
-    }
-    , 
-    {
-        "ret", op_ret, OPE_RET, &popn_ret
-    }
-    , 
-    {
-        "retf", op_retf, OPE_RET, &popn_retf
-    }
-    , 
-    {
-        "sahf", op_sahf, 0, &popn_sahf
-    }
-    , 
-    {
-        "sal", op_sal, OPE_SHIFT, &popn_sal
-    }
-    , 
-    {
-        "sar", op_sar, OPE_SHIFT, &popn_sar
-    }
-    , 
-    {
-        "shl", op_shl, OPE_SHIFT, &popn_shl
-    }
-    , 
-    {
-        "shr", op_shr, OPE_SHIFT, &popn_shr
-    }
-    , 
-    {
-        "sbb", op_sbb, OPE_MATH, &popn_sbb
-    }
-    , 
-    {
-        "scas", op_scas, OPE_SCAS, &popn_scas
-    }
-    , 
-    {
-        "scasb", op_scasb, 0, &popn_scasb
-    }
-    , 
-    {
-        "scasw", op_scasw, 0, &popn_scasw
-    }
-    , 
-    {
-        "scasd", op_scasd, 0, &popn_scasd
-    }
-    , 
-    {
-        "seta", op_seta, OPE_SET, &popn_seta
-    }
-    , 
-    {
-        "setnbe", op_setnbe, OPE_SET, &popn_setnbe
-    }
-    , 
-    {
-        "setae", op_setae, OPE_SET, &popn_setae
-    }
-    , 
-    {
-        "setnb", op_setnb, OPE_SET, &popn_setnb
-    }
-    , 
-    {
-        "setnc", op_setnc, OPE_SET, &popn_setnc
-    }
-    , 
-    {
-        "setb", op_setb, OPE_SET, &popn_setb
-    }
-    , 
-    {
-        "setc", op_setc, OPE_SET, &popn_setc
-    }
-    , 
-    {
-        "setnae", op_setnae, OPE_SET, &popn_setnae
-    }
-    , 
-    {
-        "setbe", op_setbe, OPE_SET, &popn_setbe
-    }
-    , 
-    {
-        "setna", op_setna, OPE_SET, &popn_setna
-    }
-    , 
-    {
-        "sete", op_sete, OPE_SET, &popn_sete
-    }
-    , 
-    {
-        "setz", op_setz, OPE_SET, &popn_setz
-    }
-    , 
-    {
-        "setg", op_setg, OPE_SET, &popn_setg
-    }
-    , 
-    {
-        "setnle", op_setnle, OPE_SET, &popn_setnle
-    }
-    , 
-    {
-        "setl", op_setl, OPE_SET, &popn_setl
-    }
-    , 
-    {
-        "setnge", op_setnge, OPE_SET, &popn_setnge
-    }
-    , 
-    {
-        "setge", op_setge, OPE_SET, &popn_setge
-    }
-    , 
-    {
-        "setnl", op_setnl, OPE_SET, &popn_setnl
-    }
-    , 
-    {
-        "setle", op_setle, OPE_SET, &popn_setle
-    }
-    , 
-    {
-        "setng", op_setng, OPE_SET, &popn_setng
-    }
-    , 
-    {
-        "setne", op_setne, OPE_SET, &popn_setne
-    }
-    , 
-    {
-        "setnz", op_setnz, OPE_SET, &popn_setnz
-    }
-    , 
-    {
-        "seto", op_seto, OPE_SET, &popn_seto
-    }
-    , 
-    {
-        "setno", op_setno, OPE_SET, &popn_setno
-    }
-    , 
-    {
-        "setp", op_setp, OPE_SET, &popn_setp
-    }
-    , 
-    {
-        "setnp", op_setnp, OPE_SET, &popn_setnp
-    }
-    , 
-    {
-        "setpe", op_setpe, OPE_SET, &popn_setpe
-    }
-    , 
-    {
-        "setpo", op_setpo, OPE_SET, &popn_setpo
-    }
-    , 
-    {
-        "sets", op_sets, OPE_SET, &popn_sets
-    }
-    , 
-    {
-        "setns", op_setns, OPE_SET, &popn_setns
-    }
-    , 
-    {
-        "sfence", op_sfence, 0, &popn_sfence
-    }
-    , 
-    {
-        "sgdt", op_sgdt, OPE_LGDT, &popn_sgdt
-    }
-    , 
-    {
-        "sidt", op_sidt, OPE_LIDT, &popn_sidt
-    }
-    , 
-    {
-        "sldt", op_sldt, OPE_RM16, &popn_sldt
-    }
-    , 
-    {
-        "smsw", op_smsw, OPE_RM16, &popn_smsw
-    }
-    , 
-    {
-        "shld", op_shld, OPE_SHLD, &popn_shld
-    }
-    , 
-    {
-        "shrd", op_shrd, OPE_SHLD, &popn_shrd
-    }
-    , 
-    {
-        "stc", op_stc, 0, &popn_stc
-    }
-    , 
-    {
-        "std", op_std, 0, &popn_std
-    }
-    , 
-    {
-        "sti", op_sti, 0, &popn_sti
-    }
-    , 
-    {
-        "stos", op_stos, OPE_STOS, &popn_stos
-    }
-    , 
-    {
-        "stosb", op_stosb, 0, &popn_stosb
-    }
-    , 
-    {
-        "stosw", op_stosw, 0, &popn_stosw
-    }
-    , 
-    {
-        "stosd", op_stosd, 0, &popn_stosd
-    }
-    , 
-    {
-        "str", op_str, OPE_RM16, &popn_str
-    }
-    , 
-    {
-        "sub", op_sub, OPE_MATH, &popn_sub
-    }
-    , 
-    {
-        "test", op_test, OPE_TEST, &popn_test
-    }
-    , 
-    {
-        "verr", op_verr, OPE_RM16, &popn_verr
-    }
-    , 
-    {
-        "verw", op_verw, OPE_RM16, &popn_verw
-    }
-    , 
-    {
-        "wait", op_wait, 0, &popn_wait
-    }
-    , 
-    {
-        "wbinvd", op_wbinvd, 0, &popn_wbinvd
-    }
-    , 
-    {
-        "wrmsr", op_wrmsr, 0, &popn_wrmsr
-    }
-    , 
-    {
-        "xchg", op_xchg, OPE_XCHG, &popn_xchg
-    }
-    , 
-    {
-        "xlat", op_xlat, OPE_XLAT, &popn_xlat
-    }
-    , 
-    {
-        "xlatb", op_xlatb, 0, &popn_xlatb
-    }
-    , 
-    {
-        "xor", op_xor, OPE_MATH, &popn_xor
-    }
-    , 
-    {
-        "f2xm1", op_f2xm1, 0, &popn_f2xm1
-    }
-    , 
-    {
-        "fabs", op_fabs, 0, &popn_fabs
-    }
-    , 
-    {
-        "fadd", op_fadd, OPE_FMATH, &popn_fadd
-    }
-    , 
-    {
-        "faddp", op_faddp, OPE_FMATHP, &popn_faddp
-    }
-    , 
-    {
-        "fiadd", op_fiadd, OPE_FMATHI, &popn_fiadd
-    }
-    , 
-    {
-        "fchs", op_fchs, 0, &popn_fchs
-    }
-    , 
-    {
-        "fclex", op_fclex, 0, &popn_fclex
-    }
-    , 
-    {
-        "fnclex", op_fnclex, 0, &popn_fnclex
-    }
-    , 
-    {
-        "fcom", op_fcom, OPE_FCOM, &popn_fcom
-    }
-    , 
-    {
-        "fcomp", op_fcomp, OPE_FCOM, &popn_fcomp
-    }
-    , 
-    {
-        "fcompp", op_fcompp, 0, &popn_fcompp
-    }
-    , 
-    {
-        "fcos", op_fcos, 0, &popn_fcos
-    }
-    , 
-    {
-        "fdecstp", op_fdecstp, 0, &popn_fdecstp
-    }
-    , 
-    {
-        "fdiv", op_fdiv, OPE_FMATH, &popn_fdiv
-    }
-    , 
-    {
-        "fdivp", op_fdivp, OPE_FMATHP, &popn_fdivp
-    }
-    , 
-    {
-        "fidiv", op_fidiv, OPE_FMATHI, &popn_fidiv
-    }
-    , 
-    {
-        "fdivr", op_fdivr, OPE_FMATH, &popn_fdivr
-    }
-    , 
-    {
-        "fdivrp", op_fdivrp, OPE_FMATHP, &popn_fdivrp
-    }
-    , 
-    {
-        "fidivr", op_fidivr, OPE_FMATHI, &popn_fidivr
-    }
-    , 
-    {
-        "ffree", op_ffre, OPE_FREG, &popn_ffree
-    }
-    , 
-    {
-        "ficom", op_ficom, OPE_FICOM, &popn_ficom
-    }
-    , 
-    {
-        "ficomp", op_ficomp, OPE_FICOM, &popn_ficomp
-    }
-    , 
-    {
-        "fild", op_fild, OPE_FILD, &popn_fild
-    }
-    , 
-    {
-        "fincstp", op_fincstp, 0, &popn_fincstp
-    }
-    , 
-    {
-        "finit", op_finit, 0, &popn_finit
-    }
-    , 
-    {
-        "fninit", op_fninit, 0, &popn_fninit
-    }
-    , 
-    {
-        "fist", op_fist, OPE_FIST, &popn_fist
-    }
-    , 
-    {
-        "fistp", op_fistp, OPE_FILD, &popn_fistp
-    }
-    , 
-    {
-        "fld", op_fld, OPE_FLD, &popn_fld
-    }
-    , 
-    {
-        "fldz", op_fldz, 0, &popn_fldz
-    }
-    , 
-    {
-        "fldpi", op_fldpi, 0, &popn_fldpi
-    }
-    , 
-    {
-        "fld1", op_fld1, 0, &popn_fld1
-    }
-    , 
-    {
-        "fldl2t", op_fld2t, 0, &popn_fldl2t
-    }
-    , 
-    {
-        "fldl2e", op_fld2e, 0, &popn_fldl2e
-    }
-    , 
-    {
-        "fldlg2", op_fldlg2, 0, &popn_fldlg2
-    }
-    , 
-    {
-        "fldln2", op_fldln2, 0, &popn_fldln2
-    }
-    , 
-    {
-        "fldcw", op_fldcw, OPE_M16, &popn_fldcw
-    }
-    , 
-    {
-        "fldenv", op_fldenv, OPE_MN, &popn_fldenv
-    }
-    , 
-    {
-        "fmul", op_fmul, OPE_FMATH, &popn_fmul
-    }
-    , 
-    {
-        "fmulp", op_fmulp, OPE_FMATHP, &popn_fmulp
-    }
-    , 
-    {
-        "fimul", op_fimul, OPE_FMATHI, &popn_fimul
-    }
-    , 
-    {
-        "fpatan", op_fpatan, 0, &popn_fpatan
-    }
-    , 
-    {
-        "fprem", op_fprem, 0, &popn_fprem
-    }
-    , 
-    {
-        "fprem1", op_fprem1, 0, &popn_fprem1
-    }
-    , 
-    {
-        "fptan", op_fptan, 0, &popn_fptan
-    }
-    , 
-    {
-        "frndint", op_frndint, 0, &popn_frndint
-    }
-    , 
-    {
-        "frstor", op_frstor, OPE_MN, &popn_frstor
-    }
-    , 
-    {
-        "fsave", op_fsave, OPE_MN, &popn_fsave
-    }
-    , 
-    {
-        "fnsave", op_fnsave, OPE_MN, &popn_fnsave
-    }
-    , 
-    {
-        "fscale", op_fscale, 0, &popn_fscale
-    }
-    , 
-    {
-        "fsin", op_fsin, 0, &popn_fsin
-    }
-    , 
-    {
-        "fsincos", op_fsincos, 0, &popn_fsincos
-    }
-    , 
-    {
-        "fsqrt", op_fsqrt, 0, &popn_fsqrt
-    }
-    , 
-    {
-        "fst", op_fst, OPE_FST, &popn_fst
-    }
-    , 
-    {
-        "fstp", op_fstp, OPE_FSTP, &popn_fstp
-    }
-    , 
-    {
-        "fstcw", op_fstcw, OPE_M16, &popn_fstcw
-    }
-    , 
-    {
-        "fstsw", op_fstsw, OPE_M16, &popn_fstsw
-    }
-    , 
-    {
-        "fnstcw", op_fnstcw, OPE_M16, &popn_fnstcw
-    }
-    , 
-    {
-        "fnstsw", op_fnstsw, OPE_M16, &popn_fnstsw
-    }
-    , 
-    {
-        "fstenv", op_fstenv, OPE_MN, &popn_fstenv
-    }
-    , 
-    {
-        "fnstenv", op_fsntenv, OPE_MN, &popn_fnstenv
-    }
-    , 
-    {
-        "fsub", op_fsub, OPE_FMATH, &popn_fsub
-    }
-    , 
-    {
-        "fsubp", op_fsubp, OPE_FMATHP, &popn_fsubp
-    }
-    , 
-    {
-        "fisub", op_fisub, OPE_FMATHI, &popn_fisub
-    }
-    , 
-    {
-        "fsubr", op_fsubr, OPE_FMATH, &popn_fsubr
-    }
-    , 
-    {
-        "fsubrp", op_fsubrp, OPE_FMATHP, &popn_fsubrp
-    }
-    , 
-    {
-        "fisubr", op_fisubr, OPE_FMATHI, &popn_fisubr
-    }
-    , 
-    {
-        "ftst", op_ftst, 0, &popn_ftst
-    }
-    , 
-    {
-        "fucom", op_fucom, OPE_FUCOM, &popn_fucom
-    }
-    , 
-    {
-        "fucomp", op_fucomp, OPE_FUCOM, &popn_fucomp
-    }
-    , 
-    {
-        "fucompp", op_fucompp, 0, &popn_fucompp
-    }
-    , 
-    {
-        "fwait", op_fwait, 0, &popn_fwait
-    }
-    , 
-    {
-        "fxam", op_fxam, 0, &popn_fxam
-    }
-    , 
-    {
-        "fxch", op_fxch, OPE_FXCH, &popn_fxch
-    }
-    , 
-    {
-        "fxtract", op_fxtract, 0, &popn_fxtract
-    }
-    , 
-    {
-        "fyl2x", op_fyl2x, 0, &popn_fyl2x
-    }
-    , 
-    {
-        "fyl2xp1", op_fyl2xp1, 0, &popn_fyl2xp1
-    }
-    , 
-    {
-        0, 0, 0
-    }
-    , 
+ASMNAME oplst[] = {
+    {"reserved", op_reserved, 0, 0},
+    {"line#", op_reserved, 0, 0},
+    {"blks#", op_reserved, 0, 0},
+    {"blke#", op_reserved, 0, 0},
+    {"vars#", op_reserved, 0, 0},
+    {"funcs#", op_reserved, 0, 0},
+    {"funce#", op_reserved, 0, 0},
+    {"void#", op_void, 0, 0},
+    {"cmt#", op_reserved, 0, 0},
+    {"label#", op_reserved, 0, 0},
+    {"flabel#", op_reserved, 0, 0},
+    {"seq@", op_reserved, 0, 0},
+    {"db", op_reserved, 0, 0},
+    {"dd", op_reserved, 0, 0},
+    {"aaa", op_aaa, 0, &popn_aaa},
+    {"aad", op_aad, 0, &popn_aad},
+    {"aam", op_aam, 0, &popn_aam},
+    {"aas", op_aas, 0, &popn_aas},
+    {"add", op_add, OPE_MATH, &popn_add},
+    {"adc", op_adc, OPE_MATH, &popn_adc},
+    {"and", op_and, OPE_MATH, &popn_and},
+    {"arpl", op_arpl, OPE_ARPL, &popn_arpl},
+    {"bound", op_bound, OPE_BOUND, &popn_bound},
+    {"bsf", op_bsf, OPE_BITSCAN, &popn_bsf},
+    {"bsr", op_bsr, OPE_BITSCAN, &popn_bsr},
+    {"bswap", op_bswap, OPE_REG32, &popn_bswap},
+    {"btc", op_btc, OPE_BIT, &popn_btc},
+    {"bt", op_bt, OPE_BIT, &popn_bt},
+    {"btr", op_btr, OPE_BIT, &popn_btr},
+    {"bts", op_bts, OPE_BIT, &popn_bts},
+    {"call", op_call, OPE_CALL, &popn_call},
+    {"cbw", op_cbw, 0, &popn_cbw},
+    {"cwde", op_cwde, 0, &popn_cwde},
+    {"cwd", op_cwd, 0, &popn_cwd},
+    {"cdq", op_cdq, 0, &popn_cdq},
+    {"clc", op_clc, 0, &popn_clc},
+    {"cld", op_cld, 0, &popn_cld},
+    {"cli", op_cli, 0, &popn_cli},
+    {"clts", op_clts, 0, &popn_clts},
+    {"cmc", op_cmc, 0, &popn_cmc},
+    {"cmp", op_cmp, OPE_MATH, &popn_cmp},
+    {"cmpxchg", op_cmp, OPE_MATH, &popn_cmpxchg},
+    {
+        "cmpxchg8b", op_cmp, 0, &popn_cmpxchg8b  // fixme, the inline assembler is broke
+    },
+    {"cmps", op_cmps, OPE_CMPS, &popn_cmps},
+    {"cmpsb", op_cmpsb, 0, &popn_cmpsb},
+    {"cmpsw", op_cmpsw, 0, &popn_cmpsw},
+    {"cmpsd", op_cmpsd, 0, &popn_cmpsd},
+    {"daa", op_daa, 0, &popn_daa},
+    {"das", op_das, 0, &popn_das},
+    {"dec", op_dec, OPE_INCDEC, &popn_dec},
+    {"div", op_div, OPE_RM, &popn_div},
+    {"enter", op_enter, OPE_ENTER, &popn_enter},
+    {"hlt", op_hlt, 0, &popn_hlt},
+    {"idiv", op_idiv, OPE_RM, &popn_idiv},
+    {"imul", op_imul, OPE_IMUL, &popn_imul},
+    {"in", op_in, OPE_IN, &popn_in},
+    {"inc", op_inc, OPE_INCDEC, &popn_inc},
+    {"ins", op_ins, OPE_INS, &popn_ins},
+    {"insb", op_insb, 0, &popn_insb},
+    {"insw", op_insw, 0, &popn_insw},
+    {"insd", op_insd, 0, &popn_insd},
+    {"int", op_int, OPE_IMM8, &popn_int},
+    {"int3", op_int3, 0, &popn_int3},
+    {"into", op_into, 0, &popn_into},
+    {"invd", op_invd, 0, &popn_invd},
+    {"iret", op_iret, 0, &popn_iret},
+    {"iretd", op_iretd, 0, &popn_iretd},
+    {"jecxz", op_jecxz, OPE_RELBR8, &popn_jcxz},
+    {"ja", op_ja, OPE_RELBRA, &popn_ja},
+    {"jnbe", op_jnbe, OPE_RELBRA, &popn_jnbe},
+    {"jae", op_jae, OPE_RELBRA, &popn_jae},
+    {"jnb", op_jnb, OPE_RELBRA, &popn_jnb},
+    {"jnc", op_jnc, OPE_RELBRA, &popn_jnc},
+    {"jb", op_jb, OPE_RELBRA, &popn_jb},
+    {"jc", op_jc, OPE_RELBRA, &popn_jc},
+    {"jnae", op_jnae, OPE_RELBRA, &popn_jnae},
+    {"jbe", op_jbe, OPE_RELBRA, &popn_jbe},
+    {"jna", op_jna, OPE_RELBRA, &popn_jna},
+    {"je", op_je, OPE_RELBRA, &popn_je},
+    {"jz", op_jz, OPE_RELBRA, &popn_jz},
+    {"jg", op_jg, OPE_RELBRA, &popn_jg},
+    {"jnle", op_jnle, OPE_RELBRA, &popn_jnle},
+    {"jl", op_jl, OPE_RELBRA, &popn_jl},
+    {"jnge", op_jnge, OPE_RELBRA, &popn_jnge},
+    {"jge", op_jge, OPE_RELBRA, &popn_jge},
+    {"jnl", op_jnl, OPE_RELBRA, &popn_jnl},
+    {"jle", op_jle, OPE_RELBRA, &popn_jle},
+    {"jng", op_jng, OPE_RELBRA, &popn_jng},
+    {"jne", op_jne, OPE_RELBRA, &popn_jne},
+    {"jnz", op_jnz, OPE_RELBRA, &popn_jnz},
+    {"jo", op_jo, OPE_RELBRA, &popn_jo},
+    {"jno", op_jno, OPE_RELBRA, &popn_jno},
+    {"jp", op_jp, OPE_RELBRA, &popn_jp},
+    {"jnp", op_jnp, OPE_RELBRA, &popn_jnp},
+    {"jpe", op_jpe, OPE_RELBRA, &popn_jpe},
+    {"jpo", op_jpo, OPE_RELBRA, &popn_jpo},
+    {"js", op_js, OPE_RELBRA, &popn_js},
+    {"jns", op_jns, OPE_RELBRA, &popn_jns},
+    {"jmp", op_jmp, OPE_JMP, &popn_jmp},
+    {"lahf", op_lahf, 0, &popn_lahf},
+    {"lar", op_lar, OPE_REGRM, &popn_lar},
+    {"lds", op_lds, OPE_LOADSEG, &popn_lds},
+    {"les", op_les, OPE_LOADSEG, &popn_les},
+    {"lfs", op_lfs, OPE_LOADSEG, &popn_lfs},
+    {"lgs", op_lgs, OPE_LOADSEG, &popn_lgs},
+    {"lss", op_lss, OPE_LOADSEG, &popn_lss},
+    {"lea", op_lea, OPE_REGRM, &popn_lea},
+    {"leave", op_leave, 0, &popn_leave},
+    {"lfence", op_lfence, 0, &popn_lfence},
+    {"lgdt", op_lgdt, OPE_LGDT, &popn_lgdt},
+    {"lidt", op_lidt, OPE_LIDT, &popn_lidt},
+    {"lldt", op_lldt, OPE_RM16, &popn_lldt},
+    {"lmsw", op_lmsw, OPE_RM16, &popn_lmsw},
+    {"lock", op_lock, 0, &popn_lock},
+    {"lods", op_lods, OPE_LODS, &popn_lods},
+    {"lodsb", op_lodsb, 0, &popn_lodsb},
+    {"lodsw", op_lodsw, 0, &popn_lodsw},
+    {"lodsd", op_lodsd, 0, &popn_lodsd},
+    {"loop", op_loop, OPE_RELBR8, &popn_loop},
+    {"loope", op_loope, OPE_RELBR8, &popn_loope},
+    {"loopz", op_loopz, OPE_RELBR8, &popn_loopz},
+    {"loopne", op_loopne, OPE_RELBR8, &popn_loopne},
+    {"loopnz", op_loopnz, OPE_RELBR8, &popn_loopnz},
+    {"lsl", op_lsl, OPE_REGRM, &popn_lsl},
+    {"ltr", op_ltr, OPE_RM16, &popn_ltr},
+    {"mfence", op_mfence, 0, &popn_mfence},
+    {"mov", op_mov, OPE_MOV, &popn_mov},
+    {"movs", op_movs, OPE_MOVS, &popn_movs},
+    {"movsb", op_movsb, 0, &popn_movsb},
+    {"movsw", op_movsw, 0, &popn_movsw},
+    {"movsd", op_movsd, 0, &popn_movsd},
+    {"movsx", op_movsx, OPE_MOVSX, &popn_movsx},
+    {"movzx", op_movzx, OPE_MOVSX, &popn_movzx},
+    {"mul", op_mul, OPE_RM, &popn_mul},
+    {"neg", op_neg, OPE_RM, &popn_neg},
+    {"not", op_not, OPE_RM, &popn_not},
+    {"nop", op_nop, 0, &popn_nop},
+    {"or", op_or, OPE_MATH, &popn_or},
+    {"out", op_out, OPE_OUT, &popn_out},
+    {"outs", op_outs, OPE_OUTS, &popn_outs},
+    {"outsb", op_outsb, 0, &popn_outsb},
+    {"outsw", op_outsw, 0, &popn_outsw},
+    {"outsd", op_outsd, 0, &popn_outsd},
+    {"pop", op_pop, OPE_PUSHPOP, &popn_pop},
+    {"popa", op_popa, 0, &popn_popa},
+    {"popad", op_popad, 0, &popn_popad},
+    {"popf", op_popf, 0, &popn_popf},
+    {"popfd", op_popfd, 0, &popn_popfd},
+    {"push", op_push, OPE_PUSHPOP, &popn_push},
+    {"pusha", op_pusha, 0, &popn_pusha},
+    {"pushad", op_pushad, 0, &popn_pushad},
+    {"pushf", op_pushf, 0, &popn_pushf},
+    {"pushfd", op_pushfd, 0, &popn_pushfd},
+    {"rcl", op_rcl, OPE_SHIFT, &popn_rcl},
+    {"rcr", op_rcr, OPE_SHIFT, &popn_rcr},
+    {"rdmsr", op_rdmsr, 0, &popn_rdmsr},
+    {"rdpmc", op_rdpmc, 0, &popn_rdpmc},
+    {"rdtsc", op_rdtsc, 0, &popn_rdtsc},
+    {"rol", op_rol, OPE_SHIFT, &popn_rol},
+    {"ror", op_ror, OPE_SHIFT, &popn_ror},
+    {"rep", op_rep, 0, &popn_repz},
+    {"repne", op_repne, 0, &popn_repnz},
+    {"repe", op_repe, 0, &popn_repz},
+    {"repnz", op_repnz, 0, &popn_repnz},
+    {"repz", op_repz, 0, &popn_repz},
+    {"ret", op_ret, OPE_RET, &popn_ret},
+    {"retf", op_retf, OPE_RET, &popn_retf},
+    {"sahf", op_sahf, 0, &popn_sahf},
+    {"sal", op_sal, OPE_SHIFT, &popn_sal},
+    {"sar", op_sar, OPE_SHIFT, &popn_sar},
+    {"shl", op_shl, OPE_SHIFT, &popn_shl},
+    {"shr", op_shr, OPE_SHIFT, &popn_shr},
+    {"sbb", op_sbb, OPE_MATH, &popn_sbb},
+    {"scas", op_scas, OPE_SCAS, &popn_scas},
+    {"scasb", op_scasb, 0, &popn_scasb},
+    {"scasw", op_scasw, 0, &popn_scasw},
+    {"scasd", op_scasd, 0, &popn_scasd},
+    {"seta", op_seta, OPE_SET, &popn_seta},
+    {"setnbe", op_setnbe, OPE_SET, &popn_setnbe},
+    {"setae", op_setae, OPE_SET, &popn_setae},
+    {"setnb", op_setnb, OPE_SET, &popn_setnb},
+    {"setnc", op_setnc, OPE_SET, &popn_setnc},
+    {"setb", op_setb, OPE_SET, &popn_setb},
+    {"setc", op_setc, OPE_SET, &popn_setc},
+    {"setnae", op_setnae, OPE_SET, &popn_setnae},
+    {"setbe", op_setbe, OPE_SET, &popn_setbe},
+    {"setna", op_setna, OPE_SET, &popn_setna},
+    {"sete", op_sete, OPE_SET, &popn_sete},
+    {"setz", op_setz, OPE_SET, &popn_setz},
+    {"setg", op_setg, OPE_SET, &popn_setg},
+    {"setnle", op_setnle, OPE_SET, &popn_setnle},
+    {"setl", op_setl, OPE_SET, &popn_setl},
+    {"setnge", op_setnge, OPE_SET, &popn_setnge},
+    {"setge", op_setge, OPE_SET, &popn_setge},
+    {"setnl", op_setnl, OPE_SET, &popn_setnl},
+    {"setle", op_setle, OPE_SET, &popn_setle},
+    {"setng", op_setng, OPE_SET, &popn_setng},
+    {"setne", op_setne, OPE_SET, &popn_setne},
+    {"setnz", op_setnz, OPE_SET, &popn_setnz},
+    {"seto", op_seto, OPE_SET, &popn_seto},
+    {"setno", op_setno, OPE_SET, &popn_setno},
+    {"setp", op_setp, OPE_SET, &popn_setp},
+    {"setnp", op_setnp, OPE_SET, &popn_setnp},
+    {"setpe", op_setpe, OPE_SET, &popn_setpe},
+    {"setpo", op_setpo, OPE_SET, &popn_setpo},
+    {"sets", op_sets, OPE_SET, &popn_sets},
+    {"setns", op_setns, OPE_SET, &popn_setns},
+    {"sfence", op_sfence, 0, &popn_sfence},
+    {"sgdt", op_sgdt, OPE_LGDT, &popn_sgdt},
+    {"sidt", op_sidt, OPE_LIDT, &popn_sidt},
+    {"sldt", op_sldt, OPE_RM16, &popn_sldt},
+    {"smsw", op_smsw, OPE_RM16, &popn_smsw},
+    {"shld", op_shld, OPE_SHLD, &popn_shld},
+    {"shrd", op_shrd, OPE_SHLD, &popn_shrd},
+    {"stc", op_stc, 0, &popn_stc},
+    {"std", op_std, 0, &popn_std},
+    {"sti", op_sti, 0, &popn_sti},
+    {"stos", op_stos, OPE_STOS, &popn_stos},
+    {"stosb", op_stosb, 0, &popn_stosb},
+    {"stosw", op_stosw, 0, &popn_stosw},
+    {"stosd", op_stosd, 0, &popn_stosd},
+    {"str", op_str, OPE_RM16, &popn_str},
+    {"sub", op_sub, OPE_MATH, &popn_sub},
+    {"test", op_test, OPE_TEST, &popn_test},
+    {"verr", op_verr, OPE_RM16, &popn_verr},
+    {"verw", op_verw, OPE_RM16, &popn_verw},
+    {"wait", op_wait, 0, &popn_wait},
+    {"wbinvd", op_wbinvd, 0, &popn_wbinvd},
+    {"wrmsr", op_wrmsr, 0, &popn_wrmsr},
+    {"xchg", op_xchg, OPE_XCHG, &popn_xchg},
+    {"xlat", op_xlat, OPE_XLAT, &popn_xlat},
+    {"xlatb", op_xlatb, 0, &popn_xlatb},
+    {"xor", op_xor, OPE_MATH, &popn_xor},
+    {"f2xm1", op_f2xm1, 0, &popn_f2xm1},
+    {"fabs", op_fabs, 0, &popn_fabs},
+    {"fadd", op_fadd, OPE_FMATH, &popn_fadd},
+    {"faddp", op_faddp, OPE_FMATHP, &popn_faddp},
+    {"fiadd", op_fiadd, OPE_FMATHI, &popn_fiadd},
+    {"fchs", op_fchs, 0, &popn_fchs},
+    {"fclex", op_fclex, 0, &popn_fclex},
+    {"fnclex", op_fnclex, 0, &popn_fnclex},
+    {"fcom", op_fcom, OPE_FCOM, &popn_fcom},
+    {"fcomp", op_fcomp, OPE_FCOM, &popn_fcomp},
+    {"fcompp", op_fcompp, 0, &popn_fcompp},
+    {"fcos", op_fcos, 0, &popn_fcos},
+    {"fdecstp", op_fdecstp, 0, &popn_fdecstp},
+    {"fdiv", op_fdiv, OPE_FMATH, &popn_fdiv},
+    {"fdivp", op_fdivp, OPE_FMATHP, &popn_fdivp},
+    {"fidiv", op_fidiv, OPE_FMATHI, &popn_fidiv},
+    {"fdivr", op_fdivr, OPE_FMATH, &popn_fdivr},
+    {"fdivrp", op_fdivrp, OPE_FMATHP, &popn_fdivrp},
+    {"fidivr", op_fidivr, OPE_FMATHI, &popn_fidivr},
+    {"ffree", op_ffre, OPE_FREG, &popn_ffree},
+    {"ficom", op_ficom, OPE_FICOM, &popn_ficom},
+    {"ficomp", op_ficomp, OPE_FICOM, &popn_ficomp},
+    {"fild", op_fild, OPE_FILD, &popn_fild},
+    {"fincstp", op_fincstp, 0, &popn_fincstp},
+    {"finit", op_finit, 0, &popn_finit},
+    {"fninit", op_fninit, 0, &popn_fninit},
+    {"fist", op_fist, OPE_FIST, &popn_fist},
+    {"fistp", op_fistp, OPE_FILD, &popn_fistp},
+    {"fld", op_fld, OPE_FLD, &popn_fld},
+    {"fldz", op_fldz, 0, &popn_fldz},
+    {"fldpi", op_fldpi, 0, &popn_fldpi},
+    {"fld1", op_fld1, 0, &popn_fld1},
+    {"fldl2t", op_fld2t, 0, &popn_fldl2t},
+    {"fldl2e", op_fld2e, 0, &popn_fldl2e},
+    {"fldlg2", op_fldlg2, 0, &popn_fldlg2},
+    {"fldln2", op_fldln2, 0, &popn_fldln2},
+    {"fldcw", op_fldcw, OPE_M16, &popn_fldcw},
+    {"fldenv", op_fldenv, OPE_MN, &popn_fldenv},
+    {"fmul", op_fmul, OPE_FMATH, &popn_fmul},
+    {"fmulp", op_fmulp, OPE_FMATHP, &popn_fmulp},
+    {"fimul", op_fimul, OPE_FMATHI, &popn_fimul},
+    {"fpatan", op_fpatan, 0, &popn_fpatan},
+    {"fprem", op_fprem, 0, &popn_fprem},
+    {"fprem1", op_fprem1, 0, &popn_fprem1},
+    {"fptan", op_fptan, 0, &popn_fptan},
+    {"frndint", op_frndint, 0, &popn_frndint},
+    {"frstor", op_frstor, OPE_MN, &popn_frstor},
+    {"fsave", op_fsave, OPE_MN, &popn_fsave},
+    {"fnsave", op_fnsave, OPE_MN, &popn_fnsave},
+    {"fscale", op_fscale, 0, &popn_fscale},
+    {"fsin", op_fsin, 0, &popn_fsin},
+    {"fsincos", op_fsincos, 0, &popn_fsincos},
+    {"fsqrt", op_fsqrt, 0, &popn_fsqrt},
+    {"fst", op_fst, OPE_FST, &popn_fst},
+    {"fstp", op_fstp, OPE_FSTP, &popn_fstp},
+    {"fstcw", op_fstcw, OPE_M16, &popn_fstcw},
+    {"fstsw", op_fstsw, OPE_M16, &popn_fstsw},
+    {"fnstcw", op_fnstcw, OPE_M16, &popn_fnstcw},
+    {"fnstsw", op_fnstsw, OPE_M16, &popn_fnstsw},
+    {"fstenv", op_fstenv, OPE_MN, &popn_fstenv},
+    {"fnstenv", op_fsntenv, OPE_MN, &popn_fnstenv},
+    {"fsub", op_fsub, OPE_FMATH, &popn_fsub},
+    {"fsubp", op_fsubp, OPE_FMATHP, &popn_fsubp},
+    {"fisub", op_fisub, OPE_FMATHI, &popn_fisub},
+    {"fsubr", op_fsubr, OPE_FMATH, &popn_fsubr},
+    {"fsubrp", op_fsubrp, OPE_FMATHP, &popn_fsubrp},
+    {"fisubr", op_fisubr, OPE_FMATHI, &popn_fisubr},
+    {"ftst", op_ftst, 0, &popn_ftst},
+    {"fucom", op_fucom, OPE_FUCOM, &popn_fucom},
+    {"fucomp", op_fucomp, OPE_FUCOM, &popn_fucomp},
+    {"fucompp", op_fucompp, 0, &popn_fucompp},
+    {"fwait", op_fwait, 0, &popn_fwait},
+    {"fxam", op_fxam, 0, &popn_fxam},
+    {"fxch", op_fxch, OPE_FXCH, &popn_fxch},
+    {"fxtract", op_fxtract, 0, &popn_fxtract},
+    {"fyl2x", op_fyl2x, 0, &popn_fyl2x},
+    {"fyl2xp1", op_fyl2xp1, 0, &popn_fyl2xp1},
+    {0, 0, 0},
 };
 /* Init module */
 void oa_ini(void)
@@ -1628,7 +696,7 @@ void oa_nl(void)
 
 /* Put an opcode
  */
-void outop(char *name)
+void outop(char* name)
 {
     beputc('\t');
     while (*name)
@@ -1637,7 +705,7 @@ void outop(char *name)
 
 /*-------------------------------------------------------------------------*/
 
-void putop(enum e_op op, AMODE *aps, AMODE *apd, int nooptx)
+void putop(enum e_op op, AMODE* aps, AMODE* apd, int nooptx)
 {
     if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
     {
@@ -1658,7 +726,7 @@ void putop(enum e_op op, AMODE *aps, AMODE *apd, int nooptx)
             case op_adc:
             case op_sbb:
             case op_imul:
-                 /* yes you can size an imul constant !!!! */
+                /* yes you can size an imul constant !!!! */
             case op_cmp:
             case op_and:
             case op_or:
@@ -1679,7 +747,7 @@ void putop(enum e_op op, AMODE *aps, AMODE *apd, int nooptx)
         if (op == op_fwait)
         {
             outop(oplst[op_fwait].name + 1);
-            return ;
+            return;
         }
         if (!nooptx)
         {
@@ -1687,24 +755,23 @@ void putop(enum e_op op, AMODE *aps, AMODE *apd, int nooptx)
             {
                 case op_iretd:
                     outop("iret");
-                    return ;
+                    return;
                 case op_pushad:
                     outop("pusha");
-                    return ;
+                    return;
                 case op_popad:
                     outop("popa");
-                    return ;
+                    return;
                 case op_pushfd:
                     outop("pushf");
-                    return ;
+                    return;
                 case op_popfd:
                     outop("popf");
-                    return ;
+                    return;
                 default:
                     break;
             }
         }
-
     }
     if (op > op_fyl2xp1)
         diag("illegal opcode.");
@@ -1715,13 +782,13 @@ void putop(enum e_op op, AMODE *aps, AMODE *apd, int nooptx)
 
 /*-------------------------------------------------------------------------*/
 
-void oa_putconst(int sz, EXPRESSION *offset, BOOLEAN doSign)
+void oa_putconst(int sz, EXPRESSION* offset, BOOLEAN doSign)
 /*
  *      put a constant to the outputFile file.
  */
 {
     char buf[4096];
-    SYMBOL *sp;
+    SYMBOL* sp;
     char buf1[100];
     int toffs;
     switch (offset->type)
@@ -1730,13 +797,13 @@ void oa_putconst(int sz, EXPRESSION *offset, BOOLEAN doSign)
             if (doSign)
             {
                 if ((int)offset->v.sp->offset < 0)
-                    bePrintf( "-0%lxh", -offset->v.sp->offset);
+                    bePrintf("-0%lxh", -offset->v.sp->offset);
                 else
-                    bePrintf( "+0%lxh", offset->v.sp->offset);
+                    bePrintf("+0%lxh", offset->v.sp->offset);
             }
             else
-                bePrintf( "0%lxh", offset->v.sp->offset);
-                
+                bePrintf("0%lxh", offset->v.sp->offset);
+
             break;
         case en_c_i:
         case en_c_l:
@@ -1761,11 +828,11 @@ void oa_putconst(int sz, EXPRESSION *offset, BOOLEAN doSign)
             }
             {
                 int n = offset->v.i;
-//				if (sz == ISZ_UCHAR || sz == -ISZ_UCHAR)
-//					n &= 0xff;
-//				if (sz == ISZ_USHORT || sz == -ISZ_USHORT)
-//					n &= 0xffff;
-                bePrintf( "0%xh", n);
+                //				if (sz == ISZ_UCHAR || sz == -ISZ_UCHAR)
+                //					n &= 0xff;
+                //				if (sz == ISZ_USHORT || sz == -ISZ_USHORT)
+                //					n &= 0xffff;
+                bePrintf("0%xh", n);
             }
             break;
         case en_c_fc:
@@ -1773,9 +840,9 @@ void oa_putconst(int sz, EXPRESSION *offset, BOOLEAN doSign)
         case en_c_ldc:
             if (doSign)
                 beputc('+');
-            FPFToString(buf,&offset->v.c.r);
+            FPFToString(buf, &offset->v.c.r);
             FPFToString(buf1, &offset->v.c.i);
-            bePrintf( "%s,%s", buf, buf1);
+            bePrintf("%s,%s", buf, buf1);
             break;
         case en_c_f:
         case en_c_d:
@@ -1785,13 +852,13 @@ void oa_putconst(int sz, EXPRESSION *offset, BOOLEAN doSign)
         case en_c_ldi:
             if (doSign)
                 beputc('+');
-            FPFToString(buf,&offset->v.f);
-            bePrintf( "%s", buf);
+            FPFToString(buf, &offset->v.f);
+            bePrintf("%s", buf);
             break;
         case en_labcon:
             if (doSign)
                 beputc('+');
-            bePrintf( "L_%d", offset->v.i);
+            bePrintf("L_%d", offset->v.i);
             break;
         case en_pc:
         case en_global:
@@ -1800,7 +867,7 @@ void oa_putconst(int sz, EXPRESSION *offset, BOOLEAN doSign)
                 beputc('+');
             sp = offset->v.sp;
             beDecorateSymName(buf, sp);
-            bePrintf( "%s", buf);
+            bePrintf("%s", buf);
             break;
         case en_add:
         case en_structadd:
@@ -1810,11 +877,11 @@ void oa_putconst(int sz, EXPRESSION *offset, BOOLEAN doSign)
             break;
         case en_sub:
             oa_putconst(ISZ_ADDR, offset->left, doSign);
-            bePrintf( "-");
+            bePrintf("-");
             oa_putconst(ISZ_ADDR, offset->right, FALSE);
             break;
         case en_uminus:
-            bePrintf( "-");
+            bePrintf("-");
             oa_putconst(ISZ_ADDR, offset->left, FALSE);
             break;
         default:
@@ -1831,8 +898,9 @@ void oa_putlen(int l)
  */
 {
     if (l < 0)
-        l =  - l;
-    switch(l) {
+        l = -l;
+    switch (l)
+    {
         case ISZ_BOOLEAN:
         case ISZ_UCHAR:
         case ISZ_USHORT:
@@ -1859,93 +927,85 @@ void oa_putlen(int l)
 
 /*-------------------------------------------------------------------------*/
 
-void putsizedreg(char *string, int reg, int size)
+void putsizedreg(char* string, int reg, int size)
 {
-    static char *byteregs[] = 
-    {
-        "al", "cl", "dl", "bl", "ah", "ch", "dh", "bh"
-    };
-    static char *wordregs[] = 
-    {
-        "ax", "cx", "dx", "bx", "sp", "bp", "si", "di"
-    };
-    static char *longregs[] = 
-    {
-        "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi"
-    };
+    static char* byteregs[] = {"al", "cl", "dl", "bl", "ah", "ch", "dh", "bh"};
+    static char* wordregs[] = {"ax", "cx", "dx", "bx", "sp", "bp", "si", "di"};
+    static char* longregs[] = {"eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi"};
     if (size < 0)
-        size =  - size;
-    if (size == ISZ_UINT || size == ISZ_ULONG || size == ISZ_ADDR|| size == ISZ_U32)
-        bePrintf( string, longregs[reg]);
+        size = -size;
+    if (size == ISZ_UINT || size == ISZ_ULONG || size == ISZ_ADDR || size == ISZ_U32)
+        bePrintf(string, longregs[reg]);
     else if (size == ISZ_BOOLEAN || size == ISZ_UCHAR)
     {
-        bePrintf( string, byteregs[reg]);
+        bePrintf(string, byteregs[reg]);
     }
     else
-        bePrintf( string, wordregs[reg]);
+        bePrintf(string, wordregs[reg]);
 }
 
 /*-------------------------------------------------------------------------*/
 
 void pointersize(int size)
 {
-    if ((prm_assembler == pa_nasm  || prm_assembler == pa_fasm) && skipsize)
-        return ;
+    if ((prm_assembler == pa_nasm || prm_assembler == pa_fasm) && skipsize)
+        return;
     if (size < 0)
-        size =  - size;
+        size = -size;
     /*      if (needpointer)
-     */switch (size)
+     */
+    switch (size)
     {
         case ISZ_LDOUBLE:
         case ISZ_ILDOUBLE:
             if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
-                bePrintf( "tword ");
+                bePrintf("tword ");
             else
-                bePrintf( "tbyte ");
+                bePrintf("tbyte ");
             break;
         case ISZ_ULONGLONG:
         case ISZ_DOUBLE:
         case ISZ_IDOUBLE:
             /* should never happen                      */
-            bePrintf( "qword ");
+            bePrintf("qword ");
             break;
         case ISZ_FLOAT:
         case ISZ_IFLOAT:
             if (!uses_float)
             {
                 if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
-                    bePrintf( "dword far ");
+                    bePrintf("dword far ");
                 else
-                    bePrintf( "fword ");
+                    bePrintf("fword ");
                 break;
             }
         case ISZ_U32:
         case ISZ_UINT:
         case ISZ_ULONG:
         case ISZ_ADDR:
-            bePrintf( "dword ");
+            bePrintf("dword ");
             break;
         case ISZ_U16:
         case ISZ_USHORT:
         case ISZ_WCHAR:
-            bePrintf( "word ");
+            bePrintf("word ");
             break;
         case ISZ_BOOLEAN:
         case ISZ_UCHAR:
-            bePrintf( "byte ");
+            bePrintf("byte ");
             break;
         case ISZ_NONE:
-             /* for NASM with certain FP ops */
+            /* for NASM with certain FP ops */
             break;
-    case ISZ_FARPTR:
-        bePrintf("far ");
-        break;
+        case ISZ_FARPTR:
+            bePrintf("far ");
+            break;
         default:
             diag("Bad pointer");
             break;
     }
-    if (!(prm_assembler == pa_nasm  || prm_assembler == pa_fasm) && size)
-        bePrintf( "ptr ");
+    if (!(prm_assembler == pa_nasm || prm_assembler == pa_fasm) && size)
+        bePrintf("ptr ");
 }
 
 /*-------------------------------------------------------------------------*/
@@ -1953,7 +1013,7 @@ void pointersize(int size)
 void putseg(int seg, int usecolon)
 {
     if (!seg)
-        return ;
+        return;
     seg -= 1;
     seg <<= 1;
     beputc(segregs[seg]);
@@ -1964,7 +1024,7 @@ void putseg(int seg, int usecolon)
 
 /*-------------------------------------------------------------------------*/
 
-int islabeled(EXPRESSION *n)
+int islabeled(EXPRESSION* n)
 {
     int rv = 0;
     switch (n->type)
@@ -1973,7 +1033,7 @@ int islabeled(EXPRESSION *n)
         case en_structadd:
         case en_arrayadd:
         case en_sub:
-//        case en_addstruc:
+            //        case en_addstruc:
             rv |= islabeled(n->left);
             rv |= islabeled(n->right);
             break;
@@ -2006,7 +1066,7 @@ int islabeled(EXPRESSION *n)
 
 /*-------------------------------------------------------------------------*/
 
-void oa_putamode(AMODE *ap)
+void oa_putamode(AMODE* ap)
 /*
  *      output a general addressing mode.
  */
@@ -2019,19 +1079,19 @@ void oa_putamode(AMODE *ap)
             putseg(ap->seg, 0);
             break;
         case am_screg:
-            bePrintf( "cr%d", ap->preg);
+            bePrintf("cr%d", ap->preg);
             break;
         case am_sdreg:
-            bePrintf( "dr%d", ap->preg);
+            bePrintf("dr%d", ap->preg);
             break;
         case am_streg:
-            bePrintf( "tr%d", ap->preg);
+            bePrintf("tr%d", ap->preg);
             break;
         case am_immed:
             if (ap->length > 0 && islabeled(ap->offset))
             {
                 if (!(prm_assembler == pa_nasm || prm_assembler == pa_fasm))
-                    bePrintf( "offset ");
+                    bePrintf("offset ");
                 else if (!nosize)
                 {
                     if (ap->length == -ISZ_UCHAR || ap->length == ISZ_UCHAR)
@@ -2044,7 +1104,7 @@ void oa_putamode(AMODE *ap)
                     }
                     else
                     {
-                        bePrintf( "dword ");
+                        bePrintf("dword ");
                     }
                 }
             }
@@ -2060,7 +1120,7 @@ void oa_putamode(AMODE *ap)
             oldnasm = prm_assembler;
             if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
                 putseg(ap->seg, TRUE);
-            prm_assembler = pa_nasm ;
+            prm_assembler = pa_nasm;
             oa_putconst(ap->length, ap->offset, FALSE);
             beputc(']');
             prm_assembler = oldnasm;
@@ -2070,9 +1130,9 @@ void oa_putamode(AMODE *ap)
             break;
         case am_freg:
             if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
-                bePrintf( "st%d", ap->preg);
+                bePrintf("st%d", ap->preg);
             else
-                bePrintf( "st(%d)", ap->preg);
+                bePrintf("st(%d)", ap->preg);
             break;
         case am_indisp:
             pointersize(ap->length);
@@ -2084,34 +1144,34 @@ void oa_putamode(AMODE *ap)
             putsizedreg("%s", ap->preg, ISZ_ADDR);
             if (ap->offset)
             {
-                   oa_putconst(ap->length, ap->offset, TRUE);
+                oa_putconst(ap->length, ap->offset, TRUE);
             }
             beputc(']');
             break;
         case am_indispscale:
-            {
-                int scale = 1, t = ap->scale;
+        {
+            int scale = 1, t = ap->scale;
 
-                while (t--)
-                    scale <<= 1;
-                pointersize(ap->length);
-                if (!(prm_assembler == pa_nasm || prm_assembler == pa_fasm))
-                    putseg(ap->seg, TRUE);
-                beputc('[');
-                if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
-                    putseg(ap->seg, TRUE);
-                if (ap->preg !=  - 1)
-                    putsizedreg("%s+", ap->preg, ISZ_ADDR);
-                putsizedreg("%s", ap->sreg, ISZ_ADDR);
-                if (scale != 1)
-                    bePrintf( "*%d", scale);
-                if (ap->offset)
-                {
-                    oa_putconst(ap->length, ap->offset, TRUE);
-                }
-                beputc(']');
+            while (t--)
+                scale <<= 1;
+            pointersize(ap->length);
+            if (!(prm_assembler == pa_nasm || prm_assembler == pa_fasm))
+                putseg(ap->seg, TRUE);
+            beputc('[');
+            if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+                putseg(ap->seg, TRUE);
+            if (ap->preg != -1)
+                putsizedreg("%s+", ap->preg, ISZ_ADDR);
+            putsizedreg("%s", ap->sreg, ISZ_ADDR);
+            if (scale != 1)
+                bePrintf("*%d", scale);
+            if (ap->offset)
+            {
+                oa_putconst(ap->length, ap->offset, TRUE);
             }
-            break;
+            beputc(']');
+        }
+        break;
         default:
             diag("illegal address mode.");
             break;
@@ -2120,59 +1180,56 @@ void oa_putamode(AMODE *ap)
 
 /*-------------------------------------------------------------------------*/
 
-void oa_put_code(OCODE *cd)
+void oa_put_code(OCODE* cd)
 /*
  *      outputFile a generic instruction.
  */
 {
     int op = cd->opcode, len = 0, len2 = 0;
-    AMODE *aps = cd->oper1,  *apd = cd->oper2,  *ap3 = cd->oper3;
+    AMODE *aps = cd->oper1, *apd = cd->oper2, *ap3 = cd->oper3;
 
     if (!cparams.prm_asmfile)
-        return ;
+        return;
     if (op == op_blockstart || op == op_blockend || op == op_varstart || op == op_funcstart || op == op_funcend)
         return;
     if (op == op_line)
     {
-        LINEDATA *ld = (LINEDATA *)aps;
+        LINEDATA* ld = (LINEDATA*)aps;
         oa_nl();
         while (ld)
         {
-            bePrintf( "; Line %d:\t%s\n", ld->lineno, ld->line);
+            bePrintf("; Line %d:\t%s\n", ld->lineno, ld->line);
             ld = ld->next;
         }
-        return ;
+        return;
     }
     else if (op == op_comment)
     {
         if (!cparams.prm_lines)
-            return ;
-        bePrintf( "%s", aps);
-        return ;
+            return;
+        bePrintf("%s", aps);
+        return;
     }
     else if (op == op_void)
-        return ;
+        return;
     if (aps)
         len = aps->length;
     if (apd)
         len2 = apd->length;
-    needpointer = (len != len2) || ((!aps || aps->mode != am_dreg) && (!apd ||
-        apd->mode != am_dreg));
+    needpointer = (len != len2) || ((!aps || aps->mode != am_dreg) && (!apd || apd->mode != am_dreg));
     putop(op, aps, apd, cd->noopt);
-    if ((prm_assembler == pa_nasm  || prm_assembler == pa_fasm)
-        && ((op >= op_ja && op <= op_jns && op != op_jecxz) || (op ==
-        op_jmp && aps->mode == am_immed && !apd)))
+    if ((prm_assembler == pa_nasm || prm_assembler == pa_fasm) &&
+        ((op >= op_ja && op <= op_jns && op != op_jecxz) || (op == op_jmp && aps->mode == am_immed && !apd)))
     {
         if (cd->branched & BR_SHORT)
-            bePrintf( "\tshort");
+            bePrintf("\tshort");
         else
-            bePrintf( "\tnear");
+            bePrintf("\tnear");
         nosize = TRUE;
     }
-    else if (op == op_jmp && aps->mode == am_immed && aps->offset->type ==
-        en_labcon && (cd->branched &BR_SHORT))
+    else if (op == op_jmp && aps->mode == am_immed && aps->offset->type == en_labcon && (cd->branched & BR_SHORT))
     {
-        bePrintf( "\tshort");
+        bePrintf("\tshort");
         nosize = TRUE;
     }
     switch (op)
@@ -2183,13 +1240,13 @@ void oa_put_code(OCODE *cd)
         case op_repnz:
         case op_repne:
         case op_lock:
-            return ;
+            return;
     }
     oa_putlen(len);
     if (aps != 0)
     {
         int separator;
-        bePrintf( "\t");
+        bePrintf("\t");
         if ((op == op_jmp || op == op_call) && aps && apd)
         {
             separator = ':';
@@ -2213,12 +1270,12 @@ void oa_put_code(OCODE *cd)
             oa_putamode(ap3);
         }
     }
-    bePrintf( "\n");
+    bePrintf("\n");
 }
 
 /*-------------------------------------------------------------------------*/
 
-void oa_gen_strlab(SYMBOL *sp)
+void oa_gen_strlab(SYMBOL* sp)
 /*
  *      generate a named label.
  */
@@ -2230,11 +1287,11 @@ void oa_gen_strlab(SYMBOL *sp)
         if (oa_currentSeg == dataseg || oa_currentSeg == bssxseg)
         {
             newlabel = TRUE;
-            bePrintf( "\n%s", buf);
+            bePrintf("\n%s", buf);
             oa_outcol = strlen(buf) + 1;
         }
         else
-            bePrintf( "%s:\n", buf);
+            bePrintf("%s:\n", buf);
     }
 }
 
@@ -2245,28 +1302,26 @@ void oa_put_label(int lab)
  *      outputFile a compiler generated label.
  */
 {
-    if (cparams.prm_asmfile) {
+    if (cparams.prm_asmfile)
+    {
         oa_nl();
         if (oa_currentSeg == dataseg || oa_currentSeg == bssxseg)
         {
             newlabel = TRUE;
-            bePrintf( "\nL_%ld", lab);
+            bePrintf("\nL_%ld", lab);
             oa_outcol = 8;
         }
         else
-            bePrintf( "L_%ld:\n", lab);
+            bePrintf("L_%ld:\n", lab);
     }
     else
         outcode_put_label(lab);
 }
-void oa_put_string_label(int lab, int type)
-{
-    oa_put_label(lab);
-}
+void oa_put_string_label(int lab, int type) { oa_put_label(lab); }
 
 /*-------------------------------------------------------------------------*/
 
-void oa_genfloat(enum e_gt type, FPF *val)
+void oa_genfloat(enum e_gt type, FPF* val)
 /*
  * Output a float value
  */
@@ -2274,69 +1329,68 @@ void oa_genfloat(enum e_gt type, FPF *val)
     if (cparams.prm_asmfile)
     {
         char buf[256];
-        FPFToString(buf,val);
-        switch(type) {
+        FPFToString(buf, val);
+        switch (type)
+        {
             case floatgen:
-                if (!strcmp(buf,"inf") || !strcmp(buf, "nan")
-                    || !strcmp(buf,"-inf") || !strcmp(buf, "-nan"))
+                if (!strcmp(buf, "inf") || !strcmp(buf, "nan") || !strcmp(buf, "-inf") || !strcmp(buf, "-nan"))
                 {
                     UBYTE dta[4];
                     int i;
                     FPFToFloat(dta, val);
                     bePrintf("\tdb\t");
-                    for (i=0; i < 4; i++)
+                    for (i = 0; i < 4; i++)
                     {
-                        bePrintf( "0%02XH", dta[i]);
+                        bePrintf("0%02XH", dta[i]);
                         if (i != 3)
                             bePrintf(", ");
                     }
                 }
                 else
-                    bePrintf( "\tdd\t%s\n", buf);
+                    bePrintf("\tdd\t%s\n", buf);
                 break;
             case doublegen:
-                if (!strcmp(buf,"inf") || !strcmp(buf, "nan")
-                    || !strcmp(buf,"-inf") || !strcmp(buf, "-nan"))
+                if (!strcmp(buf, "inf") || !strcmp(buf, "nan") || !strcmp(buf, "-inf") || !strcmp(buf, "-nan"))
                 {
                     UBYTE dta[8];
                     int i;
                     FPFToDouble(dta, val);
                     bePrintf("\tdb\t");
-                    for (i=0; i < 8; i++)
+                    for (i = 0; i < 8; i++)
                     {
-                        bePrintf( "0%02XH", dta[i]);
+                        bePrintf("0%02XH", dta[i]);
                         if (i != 7)
                             bePrintf(", ");
                     }
                 }
                 else
-                    bePrintf( "\tdq\t%s\n", buf);
+                    bePrintf("\tdq\t%s\n", buf);
                 break;
             case longdoublegen:
-                if (!strcmp(buf,"inf") || !strcmp(buf, "nan")
-                    || !strcmp(buf,"-inf") || !strcmp(buf, "-nan"))
+                if (!strcmp(buf, "inf") || !strcmp(buf, "nan") || !strcmp(buf, "-inf") || !strcmp(buf, "-nan"))
                 {
                     UBYTE dta[10];
                     int i;
                     FPFToLongDouble(dta, val);
                     bePrintf("\tdb\t");
-                    for (i=0; i < 10; i++)
+                    for (i = 0; i < 10; i++)
                     {
-                        bePrintf( "0%02XH", dta[i]);
+                        bePrintf("0%02XH", dta[i]);
                         if (i != 9)
                             bePrintf(", ");
                     }
                 }
                 else
-                    bePrintf( "\tdt\t%s\n", buf);
+                    bePrintf("\tdt\t%s\n", buf);
                 break;
             default:
                 diag("floatgen - invalid type");
-                break ;
+                break;
         }
     }
     else
-        switch(type) {
+        switch (type)
+        {
             case floatgen:
                 outcode_genfloat(val);
                 break;
@@ -2348,12 +1402,12 @@ void oa_genfloat(enum e_gt type, FPF *val)
                 break;
             default:
                 diag("floatgen - invalid type");
-                break ;
+                break;
         }
 }
 /*-------------------------------------------------------------------------*/
 
-void oa_genstring(LCHAR *str, int len)
+void oa_genstring(LCHAR* str, int len)
 /*
  * Generate a string literal
  */
@@ -2364,7 +1418,7 @@ void oa_genstring(LCHAR *str, int len)
         int nlen = len;
         while (nlen--)
             if (*str >= ' ' && *str < 0x7f && *str != '\'' && *str != '\"')
-            {	
+            {
                 if (!instring)
                 {
                     oa_gentype = nogen;
@@ -2374,7 +1428,8 @@ void oa_genstring(LCHAR *str, int len)
                 }
                 bePrintf("%c", *str++);
             }
-            else {
+            else
+            {
                 if (instring)
                 {
                     bePrintf("\"\n");
@@ -2393,77 +1448,79 @@ void oa_genstring(LCHAR *str, int len)
 
 void oa_genint(enum e_gt type, LLONG_TYPE val)
 {
-    if (cparams.prm_asmfile) {
-        switch (type) {
+    if (cparams.prm_asmfile)
+    {
+        switch (type)
+        {
             case chargen:
-                bePrintf( "\tdb\t0%xh\n", val &0x00ff);
-                break ;
+                bePrintf("\tdb\t0%xh\n", val & 0x00ff);
+                break;
             case shortgen:
             case u16gen:
-                bePrintf( "\tdw\t0%xh\n", val &0x0ffff);
-                break ;
+                bePrintf("\tdw\t0%xh\n", val & 0x0ffff);
+                break;
             case longgen:
             case enumgen:
             case intgen:
             case u32gen:
-                bePrintf( "\tdd\t0%lxh\n", val);
-                break ;
+                bePrintf("\tdd\t0%lxh\n", val);
+                break;
             case longlonggen:
-                #ifndef USE_LONGLONG
-                    bePrintf( "\tdd\t0%lxh,0%lxh\n", val, val < 0 ?  - 1: 0);
-                #else 
-                    bePrintf( "\tdd\t0%lxh,0%lxh\n", val, val >> 32);
-                #endif 
-                break ;
+#ifndef USE_LONGLONG
+                bePrintf("\tdd\t0%lxh,0%lxh\n", val, val < 0 ? -1 : 0);
+#else
+                bePrintf("\tdd\t0%lxh,0%lxh\n", val, val >> 32);
+#endif
+                break;
             case wchar_tgen:
-                   bePrintf( "\tdw\t0%lxh\n", val);
-                break ;
+                bePrintf("\tdw\t0%lxh\n", val);
+                break;
             default:
                 diag("genint - unknown type");
-                break ;
+                break;
         }
-    } else {
-        switch (type) {
-/*            case chargen:*/
+    }
+    else
+    {
+        switch (type)
+        {
+                /*            case chargen:*/
             case chargen:
                 outcode_genbyte(val);
-                break ;
+                break;
             case shortgen:
             case u16gen:
                 outcode_genword(val);
-                break ;
+                break;
             case longgen:
             case enumgen:
             case intgen:
             case u32gen:
                 outcode_genlong(val);
-                break ;
+                break;
             case longlonggen:
                 outcode_genlonglong(val);
-                break ;
+                break;
             case wchar_tgen:
                 outcode_genword(val);
-                break ;			
+                break;
             default:
                 diag("genint - unknown type");
         }
     }
 }
-void oa_genaddress(ULLONG_TYPE val)
-{
-    oa_genint(longgen,val);
-}
+void oa_genaddress(ULLONG_TYPE val) { oa_genint(longgen, val); }
 /*-------------------------------------------------------------------------*/
 
-void oa_gensrref(SYMBOL *sp, int val, int type)
+void oa_gensrref(SYMBOL* sp, int val, int type)
 {
     char buf[4096];
     if (cparams.prm_asmfile)
     {
         beDecorateSymName(buf, sp);
         oa_nl();
-        bePrintf( "\tdb\t0,%d\n", val);
-        bePrintf( "\tdd\t%s\n", buf);
+        bePrintf("\tdb\t0,%d\n", val);
+        bePrintf("\tdd\t%s\n", buf);
         oa_gentype = srrefgen;
     }
     else
@@ -2472,7 +1529,7 @@ void oa_gensrref(SYMBOL *sp, int val, int type)
 
 /*-------------------------------------------------------------------------*/
 
-void oa_genref(SYMBOL *sp, int offset)
+void oa_genref(SYMBOL* sp, int offset)
 /*
  * Output a reference to the data area (also gens fixups )
  */
@@ -2484,7 +1541,7 @@ void oa_genref(SYMBOL *sp, int offset)
         if (offset < 0)
         {
             sign = '-';
-            offset =  - offset;
+            offset = -offset;
         }
         else
             sign = '+';
@@ -2496,18 +1553,17 @@ void oa_genref(SYMBOL *sp, int offset)
                 oa_nl();
             else
                 newlabel = FALSE;
-            bePrintf( "\tdd\t%s\n", buf1);
+            bePrintf("\tdd\t%s\n", buf1);
             oa_gentype = longgen;
         }
     }
     else
         outcode_genref(sp, offset);
-
 }
 
 /*-------------------------------------------------------------------------*/
 
-void oa_genpcref(SYMBOL *sp, int offset)
+void oa_genpcref(SYMBOL* sp, int offset)
 /*
  * Output a reference to the code area (also gens fixups )
  */
@@ -2529,9 +1585,9 @@ void oa_genstorage(int nbytes)
         else
             newlabel = FALSE;
         if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
-            bePrintf( "\tresb\t0%xh\n", nbytes);
+            bePrintf("\tresb\t0%xh\n", nbytes);
         else
-            bePrintf( "\tdb\t0%xh DUP (?)\n", nbytes);
+            bePrintf("\tdb\t0%xh DUP (?)\n", nbytes);
         oa_gentype = nogen;
     }
     else
@@ -2548,12 +1604,12 @@ void oa_gen_labref(int n)
     if (cparams.prm_asmfile)
     {
 
-            if (!newlabel)
-                oa_nl();
-            else
-                newlabel = FALSE;
-            bePrintf( "\tdd\tL_%d\n", n);
-            oa_gentype = longgen;
+        if (!newlabel)
+            oa_nl();
+        else
+            newlabel = FALSE;
+        bePrintf("\tdd\tL_%d\n", n);
+        oa_gentype = longgen;
     }
     else
         outcode_gen_labref(n);
@@ -2565,12 +1621,12 @@ void oa_gen_labdifref(int n1, int n2)
 {
     if (cparams.prm_asmfile)
     {
-            if (!newlabel)
-                oa_nl();
-            else
-                newlabel = FALSE;
-            bePrintf( "\tdd\tL_%d-L_%d\n", n1, n2);
-            oa_gentype = longgen;
+        if (!newlabel)
+            oa_nl();
+        else
+            newlabel = FALSE;
+        bePrintf("\tdd\tL_%d-L_%d\n", n1, n2);
+        oa_gentype = longgen;
     }
     else
         outcode_gen_labdifref(n1, n2);
@@ -2587,31 +1643,31 @@ void oa_exitseg(enum e_sg seg)
         {
             if (seg == startupxseg)
             {
-                bePrintf( "cstartup\tENDS\n");
+                bePrintf("cstartup\tENDS\n");
             }
             else if (seg == rundownxseg)
             {
-                bePrintf( "crundown\tENDS\n");
+                bePrintf("crundown\tENDS\n");
             }
             else if (seg == constseg)
             {
-                bePrintf( "_CONST\tENDS\n");
+                bePrintf("_CONST\tENDS\n");
             }
             else if (seg == stringseg)
             {
-                bePrintf( "_STRING\tENDS\n");
+                bePrintf("_STRING\tENDS\n");
             }
             else if (seg == tlsseg)
             {
-                bePrintf( "_TLS\tENDS\n");
+                bePrintf("_TLS\tENDS\n");
             }
             else if (seg == tlssuseg)
             {
-                bePrintf( "tlsstartup\tENDS\n");
+                bePrintf("tlsstartup\tENDS\n");
             }
             else if (seg == tlsrdseg)
             {
-                bePrintf( "tlsrundown\tENDS\n");
+                bePrintf("tlsrundown\tENDS\n");
             }
         }
         oa_nl();
@@ -2619,11 +1675,11 @@ void oa_exitseg(enum e_sg seg)
 }
 
 /*
- * Switch to cseg 
+ * Switch to cseg
  */
 void oa_enterseg(enum e_sg seg)
 {
-    oa_currentSeg = seg ;
+    oa_currentSeg = seg;
     if (cparams.prm_asmfile)
     {
         if (seg == codeseg)
@@ -2631,181 +1687,191 @@ void oa_enterseg(enum e_sg seg)
             oa_nl();
             if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
                 if (!prm_nodos)
-                    bePrintf( "section code\n");
-                else
-            {
-                bePrintf( "section .text\n");
-                bePrintf( "[bits 32]\n");
-            }
-            else
-                bePrintf( "\t.code\n");
-        } else if (seg == constseg) {
-           if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
-            {
-                if (!prm_nodos)
-                    bePrintf( "section const\n");
+                    bePrintf("section code\n");
                 else
                 {
-                    bePrintf( "section .text\n");
-                    bePrintf( "[bits 32]\n");
+                    bePrintf("section .text\n");
+                    bePrintf("[bits 32]\n");
                 }
-            }
             else
-                bePrintf( 
-                    "_CONST\tsegment use32 public dword \042CONST\042\n");
-         } else if (seg == stringseg) {
+                bePrintf("\t.code\n");
+        }
+        else if (seg == constseg)
+        {
             if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
             {
                 if (!prm_nodos)
-                    bePrintf( "section string\n");
+                    bePrintf("section const\n");
                 else
                 {
-                    bePrintf( "section .data\n");
-                    bePrintf( "[bits 32]\n");
+                    bePrintf("section .text\n");
+                    bePrintf("[bits 32]\n");
                 }
             }
             else
-                bePrintf( 
-                    "_STRING\tsegment use32 public dword \042STRING\042\n");
-         } else if (seg == dataseg) {
-            if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
-                if (!prm_nodos)
-                    bePrintf( "section data\n");
-                else
-                {
-                    bePrintf( "section .data\n");
-                    bePrintf( "[bits 32]\n");
-                }
-            else
-                bePrintf( "\t.DATA\n");
-         } else if (seg == tlsseg) {
-            if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
-                if (!prm_nodos)
-                    bePrintf( "section tls\n");
-                else
-                {
-                    bePrintf( "section .data\n");
-                    bePrintf( "[bits 32]\n");
-                }
-            else
-                bePrintf( 
-                    "_TLS\tsegment use32 public dword \042TLS\042\n");
-         } else if (seg == tlssuseg) {
-            if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
-                if (!prm_nodos)
-                    bePrintf( "section tlsstartup\n");
-                else
-                {
-                    bePrintf( "section .data\n");
-                    bePrintf( "[bits 32]\n");
-                }
-            else
-                bePrintf( 
-                    "_TLS\tsegment use32 public dword \042TLS\042\n");
-         } else if (seg == tlsrdseg) {
-            if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
-                if (!prm_nodos)
-                    bePrintf( "section tlsrundown\n");
-                else
-                {
-                    bePrintf( "section .data\n");
-                    bePrintf( "[bits 32]\n");
-                }
-            else
-                bePrintf( 
-                    "_TLS\tsegment use32 public dword \042TLS\042\n");
-         } else if (seg == bssxseg) {
-            if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
-                if (!prm_nodos)
-                    bePrintf( "section bss\n");
-                else
-                    bePrintf( "section .bss\n");
-            else
-                bePrintf( "\t.data?\n");
-         } else if (seg == startupxseg) {
+                bePrintf("_CONST\tsegment use32 public dword \042CONST\042\n");
+        }
+        else if (seg == stringseg)
+        {
             if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
             {
                 if (!prm_nodos)
-                    bePrintf( "section cstartup\n");
+                    bePrintf("section string\n");
                 else
                 {
-                    bePrintf( "section .text\n");
-                    bePrintf( "[bits 32]\n");
+                    bePrintf("section .data\n");
+                    bePrintf("[bits 32]\n");
                 }
             }
             else
-                bePrintf( 
-                    "cstartup\tsegment use32 public dword \042INITDATA\042\n");
-         } else if (seg == rundownxseg) {
+                bePrintf("_STRING\tsegment use32 public dword \042STRING\042\n");
+        }
+        else if (seg == dataseg)
+        {
+            if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+                if (!prm_nodos)
+                    bePrintf("section data\n");
+                else
+                {
+                    bePrintf("section .data\n");
+                    bePrintf("[bits 32]\n");
+                }
+            else
+                bePrintf("\t.DATA\n");
+        }
+        else if (seg == tlsseg)
+        {
+            if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+                if (!prm_nodos)
+                    bePrintf("section tls\n");
+                else
+                {
+                    bePrintf("section .data\n");
+                    bePrintf("[bits 32]\n");
+                }
+            else
+                bePrintf("_TLS\tsegment use32 public dword \042TLS\042\n");
+        }
+        else if (seg == tlssuseg)
+        {
+            if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+                if (!prm_nodos)
+                    bePrintf("section tlsstartup\n");
+                else
+                {
+                    bePrintf("section .data\n");
+                    bePrintf("[bits 32]\n");
+                }
+            else
+                bePrintf("_TLS\tsegment use32 public dword \042TLS\042\n");
+        }
+        else if (seg == tlsrdseg)
+        {
+            if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+                if (!prm_nodos)
+                    bePrintf("section tlsrundown\n");
+                else
+                {
+                    bePrintf("section .data\n");
+                    bePrintf("[bits 32]\n");
+                }
+            else
+                bePrintf("_TLS\tsegment use32 public dword \042TLS\042\n");
+        }
+        else if (seg == bssxseg)
+        {
+            if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+                if (!prm_nodos)
+                    bePrintf("section bss\n");
+                else
+                    bePrintf("section .bss\n");
+            else
+                bePrintf("\t.data?\n");
+        }
+        else if (seg == startupxseg)
+        {
             if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
             {
                 if (!prm_nodos)
-                    bePrintf( "section crundown\n");
+                    bePrintf("section cstartup\n");
                 else
                 {
-                    bePrintf( "section .text\n");
-                    bePrintf( "[bits 32]\n");
+                    bePrintf("section .text\n");
+                    bePrintf("[bits 32]\n");
                 }
             }
             else
-                bePrintf( 
-                    "crundown\tsegment use32 public dword \042EXITDATA\042\n");
-         }
+                bePrintf("cstartup\tsegment use32 public dword \042INITDATA\042\n");
+        }
+        else if (seg == rundownxseg)
+        {
+            if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+            {
+                if (!prm_nodos)
+                    bePrintf("section crundown\n");
+                else
+                {
+                    bePrintf("section .text\n");
+                    bePrintf("[bits 32]\n");
+                }
+            }
+            else
+                bePrintf("crundown\tsegment use32 public dword \042EXITDATA\042\n");
+        }
     }
 }
 
 /*-------------------------------------------------------------------------*/
 
-    void oa_gen_virtual(SYMBOL *sp, int data)
+void oa_gen_virtual(SYMBOL* sp, int data)
+{
+    virtual_mode = data;
+    oa_currentSeg = virtseg;
+    if (cparams.prm_asmfile)
     {
-        virtual_mode = data;
-        oa_currentSeg = virtseg;
-        if (cparams.prm_asmfile)
+        oa_nl();
+        if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
         {
-            oa_nl();
-            if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
-            {
-                oa_currentSeg = noseg;
+            oa_currentSeg = noseg;
 #ifdef IEEE
-                if (virtual_mode)
-                    bePrintf( "\tsection vsd%s virtual\n", sp->decoratedName);
-                else
-                    bePrintf( "\tsection vsc%s virtual\n", sp->decoratedName);
-#else
-                bePrintf( "\tSECTION @%s VIRTUAL\n", sp->decoratedName);
-#endif
-            }
-            else
-                bePrintf( "@%s\tsegment virtual\n", sp->decoratedName);
-            bePrintf( "%s:\n", sp->decoratedName);
-        }
-        else
-            outcode_start_virtual_seg(sp, data);
-    }
-    void oa_gen_endvirtual(SYMBOL *sp)
-    {
-        if (cparams.prm_asmfile)
-        {
-            oa_nl();
-            if (!(prm_assembler == pa_nasm || prm_assembler == pa_fasm))
-            {
-                bePrintf( "@%s\tends\n", sp->decoratedName);
-            }
-            else
-                if (virtual_mode)
-                    oa_enterseg(dataseg);
-                else
-                    oa_enterseg(codeseg);
-        }
-        else
-        {
             if (virtual_mode)
-                oa_enterseg(dataseg);
+                bePrintf("\tsection vsd%s virtual\n", sp->decoratedName);
             else
-                oa_enterseg(codeseg);
-            outcode_end_virtual_seg(sp);
+                bePrintf("\tsection vsc%s virtual\n", sp->decoratedName);
+#else
+            bePrintf("\tSECTION @%s VIRTUAL\n", sp->decoratedName);
+#endif
         }
+        else
+            bePrintf("@%s\tsegment virtual\n", sp->decoratedName);
+        bePrintf("%s:\n", sp->decoratedName);
     }
+    else
+        outcode_start_virtual_seg(sp, data);
+}
+void oa_gen_endvirtual(SYMBOL* sp)
+{
+    if (cparams.prm_asmfile)
+    {
+        oa_nl();
+        if (!(prm_assembler == pa_nasm || prm_assembler == pa_fasm))
+        {
+            bePrintf("@%s\tends\n", sp->decoratedName);
+        }
+        else if (virtual_mode)
+            oa_enterseg(dataseg);
+        else
+            oa_enterseg(codeseg);
+    }
+    else
+    {
+        if (virtual_mode)
+            oa_enterseg(dataseg);
+        else
+            oa_enterseg(codeseg);
+        outcode_end_virtual_seg(sp);
+    }
+}
 /*
  * Align
  * not really honorign the size... all alignments are mod 4...
@@ -2816,12 +1882,12 @@ void oa_align(int size)
     {
         oa_nl();
         if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
-        /* NASM 0.91 wouldn't let me use parenthesis but this should work
-         * according to the documented precedence levels
-         */
-            bePrintf( "\ttimes $$-$ & %d nop\n", size-1);
+            /* NASM 0.91 wouldn't let me use parenthesis but this should work
+             * according to the documented precedence levels
+             */
+            bePrintf("\ttimes $$-$ & %d nop\n", size - 1);
         else
-            bePrintf( "\talign\t%d\n", size);
+            bePrintf("\talign\t%d\n", size);
     }
     else
         outcode_align(size);
@@ -2854,7 +1920,7 @@ long queue_muldivval(long number)
 
 /*-------------------------------------------------------------------------*/
 
-long queue_floatval(FPF *number, int size)
+long queue_floatval(FPF* number, int size)
 {
     MULDIV *p = muldivlink, **q = &muldivlink;
     if (cparams.prm_mergestrings)
@@ -2884,7 +1950,7 @@ void dump_muldivval(void)
     xconstseg();
     if (cparams.prm_asmfile)
     {
-        bePrintf( "\n");
+        bePrintf("\n");
         if (muldivlink)
         {
             tag = TRUE;
@@ -2894,16 +1960,16 @@ void dump_muldivval(void)
             oa_align(8);
             oa_put_label(muldivlink->label);
             if (muldivlink->size == ISZ_NONE)
-                bePrintf( "\tdd\t0%xh\n", muldivlink->value);
-            else {
+                bePrintf("\tdd\t0%xh\n", muldivlink->value);
+            else
+            {
                 char buf[256];
-                if (muldivlink->floatvalue.type == IFPF_IS_INFINITY
-                    || muldivlink->floatvalue.type == IFPF_IS_NAN)
+                if (muldivlink->floatvalue.type == IFPF_IS_INFINITY || muldivlink->floatvalue.type == IFPF_IS_NAN)
                 {
                     UBYTE data[12];
                     int len = 0;
                     int i;
-                    switch(muldivlink->size)
+                    switch (muldivlink->size)
                     {
                         case ISZ_FLOAT:
                         case ISZ_IFLOAT:
@@ -2922,33 +1988,32 @@ void dump_muldivval(void)
                             break;
                     }
                     bePrintf("\tdb\t");
-                    for (i=0; i < len; i++)
+                    for (i = 0; i < len; i++)
                     {
                         bePrintf("0%02XH", data[i]);
-                        if (i != len-1)
+                        if (i != len - 1)
                             bePrintf(",");
                     }
                     bePrintf("\n");
-                    
                 }
                 else
-                {	
+                {
                     FPFToString(buf, &muldivlink->floatvalue);
                     if (muldivlink->size == ISZ_FLOAT || muldivlink->size == ISZ_IFLOAT)
-                        
+
                     {
-                        bePrintf( "\tdd\t%s\n", buf);
+                        bePrintf("\tdd\t%s\n", buf);
                     }
                     else if (muldivlink->size == ISZ_DOUBLE || muldivlink->size == ISZ_IDOUBLE)
-                        bePrintf( "\tdq\t%s\n", buf);
+                        bePrintf("\tdq\t%s\n", buf);
                     else
-                        bePrintf( "\tdt\t%s\n", buf);
+                        bePrintf("\tdt\t%s\n", buf);
                 }
             }
             muldivlink = muldivlink->next;
         }
         if (tag)
-            bePrintf( "\n");
+            bePrintf("\n");
     }
     else
         outcode_dump_muldivval();
@@ -2956,12 +2021,12 @@ void dump_muldivval(void)
 
 /*-------------------------------------------------------------------------*/
 
-void dump_browsedata(BROWSEINFO *bri)
+void dump_browsedata(BROWSEINFO* bri)
 {
     if (!cparams.prm_asmfile)
         omf_dump_browsedata(bri);
 }
-void dump_browsefile(BROWSEFILE *brf)
+void dump_browsefile(BROWSEFILE* brf)
 {
     if (!cparams.prm_asmfile)
         omf_dump_browsefile(brf);
@@ -2969,50 +2034,45 @@ void dump_browsefile(BROWSEFILE *brf)
 
 /*-------------------------------------------------------------------------*/
 
-void oa_header(char *filename, char *compiler_version)
+void oa_header(char* filename, char* compiler_version)
 {
     oa_nl();
-    bePrintf(";File %s\n",filename);
-    bePrintf(";Compiler version %s\n",compiler_version);
+    bePrintf(";File %s\n", filename);
+    bePrintf(";Compiler version %s\n", compiler_version);
     if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
     {
         if (!prm_nodos)
         {
-            bePrintf( "\tsection code align=16 class=CODE use32\n");
-            bePrintf( "\tsection data align=8 class=DATA use32\n");
-            bePrintf( "\tsection bss  align=8 class=BSS use32\n");
-            bePrintf( "\tsection const  align=8 class=CONST use32\n");
-            bePrintf( "\tsection string  align=2 class=STRING use32\n")
-                ;
-            bePrintf( "\tsection tls  align=8 class=TLS use32\n")
-                ;
-            bePrintf( 
-                "\tsection cstartup align=2 class=INITDATA use32\n");
-            bePrintf( 
-                "\tsection crundown align=2 class=EXITDATA use32\n");
-//            bePrintf( 
- //               "\tSECTION cppinit  align=4 CLASS=CPPINIT USE32\n");
-  //          bePrintf( 
-   //             "\tSECTION cppexit  align=4 CLASS=CPPEXIT USE32\n");
-    //        bePrintf( "\tGROUP DGROUP _DATA _BSS _CONST _STRING\n\n");
+            bePrintf("\tsection code align=16 class=CODE use32\n");
+            bePrintf("\tsection data align=8 class=DATA use32\n");
+            bePrintf("\tsection bss  align=8 class=BSS use32\n");
+            bePrintf("\tsection const  align=8 class=CONST use32\n");
+            bePrintf("\tsection string  align=2 class=STRING use32\n");
+            bePrintf("\tsection tls  align=8 class=TLS use32\n");
+            bePrintf("\tsection cstartup align=2 class=INITDATA use32\n");
+            bePrintf("\tsection crundown align=2 class=EXITDATA use32\n");
+            //            bePrintf(
+            //               "\tSECTION cppinit  align=4 CLASS=CPPINIT USE32\n");
+            //          bePrintf(
+            //             "\tSECTION cppexit  align=4 CLASS=CPPEXIT USE32\n");
+            //        bePrintf( "\tGROUP DGROUP _DATA _BSS _CONST _STRING\n\n");
         }
         else
         {
-            bePrintf( "\tsection .text\n");
-            bePrintf( "\tsection .data\n");
-            bePrintf( "\tsection .bss\n");
+            bePrintf("\tsection .text\n");
+            bePrintf("\tsection .data\n");
+            bePrintf("\tsection .bss\n");
         }
     }
     else
     {
-        bePrintf( "\ttitle\t'%s'\n", filename);
+        bePrintf("\ttitle\t'%s'\n", filename);
         if (prm_flat)
-            bePrintf( "\t.486p\n\t.model flat\n\n");
+            bePrintf("\t.486p\n\t.model flat\n\n");
+        else if (prm_assembler == pa_masm)
+            bePrintf("\t.486p\n\t.model small\n\n");
         else
-            if (prm_assembler == pa_masm)
-                bePrintf( "\t.486p\n\t.model small\n\n");
-            else
-                bePrintf( "\t.486p\n\t.model use32 small\n\n");
+            bePrintf("\t.486p\n\t.model use32 small\n\n");
     }
 }
 void oa_trailer(void)
@@ -3021,76 +2081,78 @@ void oa_trailer(void)
         bePrintf("\tend\n");
 }
 /*-------------------------------------------------------------------------*/
-void oa_localdef(SYMBOL *sp)
+void oa_localdef(SYMBOL* sp)
 {
     if (!cparams.prm_asmfile)
     {
         omf_globaldef(sp);
     }
 }
-void oa_localstaticdef(SYMBOL *sp)
+void oa_localstaticdef(SYMBOL* sp)
 {
     if (!cparams.prm_asmfile)
     {
         omf_globaldef(sp);
     }
 }
-void oa_globaldef(SYMBOL *sp)
+void oa_globaldef(SYMBOL* sp)
 {
     if (cparams.prm_asmfile)
     {
         oa_nl();
         if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
-            bePrintf( "[global\t%s]\n", sp->decoratedName);
+            bePrintf("[global\t%s]\n", sp->decoratedName);
         else
-            bePrintf( "\tpublic\t%s\n", sp->decoratedName);
-    } else
+            bePrintf("\tpublic\t%s\n", sp->decoratedName);
+    }
+    else
         omf_globaldef(sp);
 }
 
 /*-------------------------------------------------------------------------*/
 
-void oa_output_alias(char *name, char *alias)
+void oa_output_alias(char* name, char* alias)
 {
     if (cparams.prm_asmfile)
     {
         oa_nl();
         if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
-            bePrintf( "%%define %s %s\n", name, alias);
+            bePrintf("%%define %s %s\n", name, alias);
         else
-            bePrintf( "%s equ\t<%s>\n", name, alias);
+            bePrintf("%s equ\t<%s>\n", name, alias);
     }
 }
 
-
 /*-------------------------------------------------------------------------*/
 
-void oa_put_extern(SYMBOL *sp, int code)
+void oa_put_extern(SYMBOL* sp, int code)
 {
-    if (cparams.prm_asmfile) {
+    if (cparams.prm_asmfile)
+    {
         oa_nl();
         if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
         {
-            bePrintf( "[extern\t%s]\n", sp->decoratedName);
+            bePrintf("[extern\t%s]\n", sp->decoratedName);
         }
         else
         {
             if (code)
-                bePrintf( "\textrn\t%s:proc\n", sp->decoratedName);
+                bePrintf("\textrn\t%s:proc\n", sp->decoratedName);
             else
-                bePrintf( "\textrn\t%s:byte\n", sp->decoratedName); 
+                bePrintf("\textrn\t%s:byte\n", sp->decoratedName);
         }
-    } else
+    }
+    else
         omf_put_extern(sp, code);
 }
 /*-------------------------------------------------------------------------*/
 
-void oa_put_impfunc(SYMBOL *sp, char *file)
+void oa_put_impfunc(SYMBOL* sp, char* file)
 {
-    if (cparams.prm_asmfile) 
+    if (cparams.prm_asmfile)
     {
-        bePrintf( "\timport %s %s\n", sp->decoratedName, file);
-    } 
+        bePrintf("\timport %s %s\n", sp->decoratedName, file);
+    }
     else
     {
         omf_put_impfunc(sp, file);
@@ -3099,29 +2161,29 @@ void oa_put_impfunc(SYMBOL *sp, char *file)
 
 /*-------------------------------------------------------------------------*/
 
-void oa_put_expfunc(SYMBOL *sp)
+void oa_put_expfunc(SYMBOL* sp)
 {
     char buf[4096];
-    if (cparams.prm_asmfile) {
+    if (cparams.prm_asmfile)
+    {
         beDecorateSymName(buf, sp);
         if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
-            bePrintf( "\texport %s\n", buf);
+            bePrintf("\texport %s\n", buf);
         else
-            bePrintf( "\tpublicdll %s\n", buf);
-    } else
+            bePrintf("\tpublicdll %s\n", buf);
+    }
+    else
         omf_put_expfunc(sp);
 }
 
-void oa_output_includelib(char *name)
+void oa_output_includelib(char* name)
 {
     if (cparams.prm_asmfile)
     {
         if (!(prm_assembler == pa_nasm || prm_assembler == pa_fasm))
-            bePrintf( "\tincludelib %s\n", name);
-    } else
+            bePrintf("\tincludelib %s\n", name);
+    }
+    else
         omf_put_includelib(name);
 }
-void oa_end_generation(void)
-{
-    dump_muldivval();
-}
+void oa_end_generation(void) { dump_muldivval(); }

@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #ifndef OBJTYPE_H
@@ -33,8 +33,10 @@ class ObjField;
 
 class ObjType : public ObjWrapper
 {
-    typedef std::vector<ObjField *> FieldContainer;
-public:
+    typedef std::vector<ObjField*> FieldContainer;
+
+  public:
+    // clang-format off
     enum eType { eNone = 0, ePointer, eFunction, eBitField,
                  eStruct, eUnion, eArray, eVla, eEnum,
                  eField, eTypeDef, eLRef, eRRef,
@@ -55,34 +57,58 @@ public:
                  ePComplex = 112, ePComplexDouble, ePComplexLongDouble,
                  eReservedTop = 1023
     } ;
-    ObjType(eType Type, ObjInt Index) : name(""), type(Type), base(0), top(1), 
-                constVal(0), baseType(nullptr), index(Index),
-                indexType(&defaultIndexType) {}
-    ObjType(eType Type, ObjType *BaseType, ObjInt Index) : name(""), type(Type), base(0), top(1), 
-                index(Index), constVal(0), baseType(BaseType), 
-                indexType(&defaultIndexType) {}
-    ObjType(ObjString Name, eType Type, ObjType *BaseType, ObjInt Index) 
-                : name(Name), type(Type), base(0), top(1), index(Index),
-                constVal(0), baseType(BaseType), 
-                indexType(&defaultIndexType) {}
+    // clang-format on
+    ObjType(eType Type, ObjInt Index) :
+        name(""),
+        type(Type),
+        base(0),
+        top(1),
+        constVal(0),
+        baseType(nullptr),
+        index(Index),
+        indexType(&defaultIndexType)
+    {
+    }
+    ObjType(eType Type, ObjType* BaseType, ObjInt Index) :
+        name(""),
+        type(Type),
+        base(0),
+        top(1),
+        index(Index),
+        constVal(0),
+        baseType(BaseType),
+        indexType(&defaultIndexType)
+    {
+    }
+    ObjType(ObjString Name, eType Type, ObjType* BaseType, ObjInt Index) :
+        name(Name),
+        type(Type),
+        base(0),
+        top(1),
+        index(Index),
+        constVal(0),
+        baseType(BaseType),
+        indexType(&defaultIndexType)
+    {
+    }
     virtual ~ObjType() {}
-    ObjString &GetName() { return name; }
-    void SetName(ObjString Name) {name = Name; }
+    ObjString& GetName() { return name; }
+    void SetName(ObjString Name) { name = Name; }
     ObjInt GetIndex() { return index; }
     void SetIndex(ObjInt Index) { index = Index; }
     eType GetType() { return type; }
     void SetType(eType Type) { type = Type; }
     ObjInt GetBase() { return base; }
-    void SetBase(ObjInt Base) { base = Base; }	
+    void SetBase(ObjInt Base) { base = Base; }
     ObjInt GetTop() { return top; }
-    void SetTop(ObjInt Top) { top = Top; }	
+    void SetTop(ObjInt Top) { top = Top; }
     ObjInt GetConstVal() { return constVal; }
-    void SetConstVal(ObjInt ConstVal) { constVal = ConstVal; }	
-    ObjType *GetBaseType() { return baseType; }
-    void SetBaseType(ObjType *BaseType) { baseType = BaseType; }
-    ObjType *GetIndexType() { return indexType; }
-    void SetIndexType(ObjType *IndexType) { indexType = IndexType; }
-    void Add(ObjField *Field)
+    void SetConstVal(ObjInt ConstVal) { constVal = ConstVal; }
+    ObjType* GetBaseType() { return baseType; }
+    void SetBaseType(ObjType* BaseType) { baseType = BaseType; }
+    ObjType* GetIndexType() { return indexType; }
+    void SetIndexType(ObjType* IndexType) { indexType = IndexType; }
+    void Add(ObjField* Field)
     {
         if (Field)
             fields.push_back(Field);
@@ -93,20 +119,20 @@ public:
     int GetStartBit() { return startBit; }
     void SetBitCount(int bc) { bitCount = bc; }
     int GetBitCount() { return bitCount; }
-    
+
     ObjInt GetFieldSize() { return fields.size(); }
     typedef FieldContainer::iterator FieldIterator;
     typedef FieldContainer::const_iterator const_FieldIterator;
-    
+
     FieldIterator FieldBegin() { return fields.begin(); }
     FieldIterator FieldEnd() { return fields.end(); }
 
-private:
+  private:
     ObjString name;
     ObjInt index; /* index only makes sense for derived types */
     enum eType type;
-    ObjType *baseType;
-    ObjType *indexType;
+    ObjType* baseType;
+    ObjType* indexType;
     ObjInt base;
     ObjInt top;
     ObjInt constVal;
@@ -116,27 +142,32 @@ private:
     FieldContainer fields;
     static ObjType defaultIndexType;
 };
-class ObjField: public ObjWrapper
+class ObjField : public ObjWrapper
 {
-public:
-    ObjField(ObjString Name, ObjType *Base, ObjInt ConstVal, ObjInt index)
-        : name(Name), base(Base), constVal(ConstVal), typeIndex(index) {}
-        
-    ObjString &GetName() { return name; }
+  public:
+    ObjField(ObjString Name, ObjType* Base, ObjInt ConstVal, ObjInt index) :
+        name(Name),
+        base(Base),
+        constVal(ConstVal),
+        typeIndex(index)
+    {
+    }
+
+    ObjString& GetName() { return name; }
     void SetName(ObjString Name) { name = Name; }
-        
-    ObjType *GetBase() { return base; }
-    void SetBase(ObjType *Base) { base = Base; }
-    
+
+    ObjType* GetBase() { return base; }
+    void SetBase(ObjType* Base) { base = Base; }
+
     ObjInt GetConstVal() { return constVal; }
     void SetConstVal(ObjInt ConstVal) { constVal = ConstVal; }
 
     ObjInt GetTypeIndex() { return typeIndex; }
     void SetTypeIndex(ObjInt index) { typeIndex = index; }
-    
-private:
+
+  private:
     ObjString name;
-    ObjType *base;
+    ObjType* base;
     ObjInt constVal;
     ObjInt typeIndex;
 };

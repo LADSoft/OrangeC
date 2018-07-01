@@ -55,12 +55,12 @@ endif
 endif
 
 %.o: %.cpp
-	$(CC) /c $(CFLAGS) $(BUILDING_DLL) $(STDINCLUDE) -o$(OBJECT)\$@ $^
+	$(CC) /c /C-E $(CFLAGS) $(BUILDING_DLL) /D_LIBCPP_BUILDING_SYSTEM_ERROR $(STDINCLUDE) -o$(OBJECT)\$@ $^
 #	$(CC) /S $(CFLAGS) $(BUILDING_DLL) $(STDINCLUDE) $^
 #	$(ASM) $(ASMFLAGS) $(BUILDING_DLL) -o$(OBJECT)\$@ $*
 
 %.o: %.c
-	$(CC) /1 /c $(CFLAGS) $(BUILDING_DLL) $(STDINCLUDE) -o$(OBJECT)\$@ $^
+	$(CC) /1 /c /C-E $(CFLAGS) $(BUILDING_DLL) $(STDINCLUDE) -o$(OBJECT)\$@ $^
 #	$(CC) /S $(CFLAGS) $(BUILDING_DLL) $(STDINCLUDE) $^
 #	$(ASM) $(ASMFLAGS) $(BUILDING_DLL) -o$(OBJECT)\$@ $*
 %.o: %.nas

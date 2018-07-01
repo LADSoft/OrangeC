@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -29,36 +29,37 @@
 #include <process.h>
 #include "header.h"
 #include "helpid.h"
- 
+
 extern HMENU hMenuMain;
 extern HANDLE hInstance;
 extern HWND hwndFrame, hwndClient;
 extern char szWorkAreaName[];
-extern PROJECTITEM *workArea;
+extern PROJECTITEM* workArea;
 
 typedef struct _tool
 {
-    struct _tool *next;
-    char *cmd;
-    char *wd;
-    char *name;
-    char *args;
+    struct _tool* next;
+    char* cmd;
+    char* wd;
+    char* name;
+    char* args;
     BOOL CommandWindow;
     BOOL enabled;
     BOOL removing;
     BOOL adding;
-    
+
 } TOOL;
 
-static TOOL *tools;
+static TOOL* tools;
 static BOOL start;
 
-DWORD RunExternalToolThread(void *p)
+DWORD RunExternalToolThread(void* p)
 {
     int i;
     int id = (int)p;
-    TOOL *curTools = tools;
-    for (i=0; i < id - ID_EXTERNALTOOLS &&curTools; curTools = curTools->next, i++) ;
+    TOOL* curTools = tools;
+    for (i = 0; i < id - ID_EXTERNALTOOLS && curTools; curTools = curTools->next, i++)
+        ;
     if (curTools)
     {
         if (curTools->CommandWindow)
@@ -69,7 +70,7 @@ DWORD RunExternalToolThread(void *p)
         }
         else
         {
-            DWORD bRet;			
+            DWORD bRet;
             char name[256];
             STARTUPINFO stStartInfo;
             PROCESS_INFORMATION stProcessInfo;
@@ -81,20 +82,17 @@ DWORD RunExternalToolThread(void *p)
             memset(&stProcessInfo, 0, sizeof(PROCESS_INFORMATION));
 
             stStartInfo.cb = sizeof(STARTUPINFO);
-            bRet = CreateProcess(NULL, cmd, NULL, NULL, TRUE, 0, 0, 
-                    curTools->wd,  &stStartInfo, &stProcessInfo);
+            bRet = CreateProcess(NULL, cmd, NULL, NULL, TRUE, 0, 0, curTools->wd, &stStartInfo, &stProcessInfo);
             if (!bRet)
             {
-                ExtendedMessageBox("Command Execution", MB_SETFOREGROUND | MB_SYSTEMMODAL, 
-                    "Could not execute %s.", cmd);
+                ExtendedMessageBox("Command Execution", MB_SETFOREGROUND | MB_SYSTEMMODAL, "Could not execute %s.", cmd);
                 return 0;
             }
             WaitForSingleObject(stProcessInfo.hProcess, INFINITE);
             GetExitCodeProcess(stProcessInfo.hProcess, &retCode);
             if (retCode)
             {
-                ExtendedMessageBox("Command Execution", MB_SETFOREGROUND | MB_SYSTEMMODAL, 
-                    "Command %s returned %d", name, retCode);
+                ExtendedMessageBox("Command Execution", MB_SETFOREGROUND | MB_SYSTEMMODAL, "Command %s returned %d", name, retCode);
             }
             CloseHandle(stProcessInfo.hProcess);
             CloseHandle(stProcessInfo.hThread);
@@ -102,21 +100,18 @@ DWORD RunExternalToolThread(void *p)
     }
     return 0;
 }
-void RunExternalTool(int id)
-{
-      _beginthread((BEGINTHREAD_FUNC)RunExternalToolThread, 0, (LPVOID)id);
-}
+void RunExternalTool(int id) { _beginthread((BEGINTHREAD_FUNC)RunExternalToolThread, 0, (LPVOID)id); }
 void ExternalToolsToMenu(void)
 {
-    TOOL *curTools = tools;
+    TOOL* curTools = tools;
     int base, base1;
     MENUITEMINFO mi;
     int i, currentOffset;
     HMENU hMRUSubMenu;
     int maxed;
     SendMessage(hwndClient, WM_MDIGETACTIVE, 0, (LPARAM)&maxed);
-       base = ID_EXTERNALTOOLS;
-    base1 = 3; // menu index.  Must change if RC file changes
+    base = ID_EXTERNALTOOLS;
+    base1 = 3;  // menu index.  Must change if RC file changes
 
     hMRUSubMenu = GetSubMenu(hMenuMain, ToolsMenuItem + maxed);
     hMRUSubMenu = GetSubMenu(hMRUSubMenu, base1);
@@ -132,14 +127,14 @@ void ExternalToolsToMenu(void)
         {
             mi.wID = i + base;
             mi.dwTypeData = curTools->name;
-            if (i >= currentOffset-2)
+            if (i >= currentOffset - 2)
                 InsertMenuItem(hMRUSubMenu, i, TRUE, &mi);
             else
                 SetMenuItemInfo(hMRUSubMenu, i, TRUE, &mi);
             i++;
         }
     }
-    while (i < currentOffset-2)
+    while (i < currentOffset - 2)
     {
         DeleteMenu(hMRUSubMenu, i, MF_BYPOSITION);
         currentOffset--;
@@ -147,7 +142,7 @@ void ExternalToolsToMenu(void)
 }
 void ExternalToolsToProfile(void)
 {
-    TOOL *curTools = tools;
+    TOOL* curTools = tools;
     int i;
     for (i = 0; curTools; curTools = curTools->next, i++)
     {
@@ -160,21 +155,21 @@ void ExternalToolsToProfile(void)
         StringToProfile(buf, curTools->wd);
         sprintf(buf, "EXTOOL_ARGS_%d", i);
         StringToProfile(buf, curTools->args);
-        sprintf(buf, "EXTOOL_CMDWND_%d",  i);
+        sprintf(buf, "EXTOOL_CMDWND_%d", i);
         IntToProfile(buf, curTools->CommandWindow);
-        sprintf(buf, "EXTOOL_ENABLED_%d",  i);
+        sprintf(buf, "EXTOOL_ENABLED_%d", i);
         IntToProfile(buf, curTools->enabled);
     }
     IntToProfile("EXTOOL_COUNT", i);
 }
 void ProfileToExternalTools(void)
 {
-    TOOL *curTools = tools , **add = &tools;
+    TOOL *curTools = tools, **add = &tools;
     int i;
     int max = ProfileToInt("EXTOOL_COUNT", 0);
     while (curTools)
     {
-        TOOL *next = curTools->next;
+        TOOL* next = curTools->next;
         free(curTools->name);
         free(curTools->cmd);
         free(curTools->wd);
@@ -185,37 +180,36 @@ void ProfileToExternalTools(void)
     for (i = 0; i < max; i++)
     {
         char buf[4096], dflt[256];
-        TOOL *newTool = calloc(1, sizeof(TOOL));
+        TOOL* newTool = calloc(1, sizeof(TOOL));
         sprintf(buf, "EXTOOL_NAME_%d", i);
-        sprintf(dflt," Tool %d", i);
+        sprintf(dflt, " Tool %d", i);
         newTool->name = strdup(ProfileToString(buf, dflt));
         sprintf(buf, "EXTOOL_CMDLINE_%d", i);
         dflt[0] = 0;
-        newTool->cmd =strdup(ProfileToString(buf, dflt));
+        newTool->cmd = strdup(ProfileToString(buf, dflt));
         sprintf(buf, "EXTOOL_WD_%d", i);
         dflt[0] = 0;
-        newTool->wd = strdup( ProfileToString(buf, dflt));
+        newTool->wd = strdup(ProfileToString(buf, dflt));
         sprintf(buf, "EXTOOL_ARGS_%d", i);
         dflt[0] = 0;
-        newTool->args = strdup( ProfileToString(buf, dflt));
-        sprintf(buf, "EXTOOL_CMDWND_%d",  i);
+        newTool->args = strdup(ProfileToString(buf, dflt));
+        sprintf(buf, "EXTOOL_CMDWND_%d", i);
         newTool->CommandWindow = ProfileToInt(buf, 0);
-        sprintf(buf, "EXTOOL_ENABLED_%d",  i);
+        sprintf(buf, "EXTOOL_ENABLED_%d", i);
         newTool->enabled = ProfileToInt(buf, 1);
         *add = newTool;
         add = &newTool->next;
     }
 }
-LRESULT CALLBACK ExToolsEditProc(HWND hwnd, UINT iMessage, WPARAM wParam,
-    LPARAM lParam)
+LRESULT CALLBACK ExToolsEditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
-    static TOOL *item = NULL;
+    static TOOL* item = NULL;
     char buf[4096];
     switch (iMessage)
     {
         case WM_INITDIALOG:
         {
-            item = (TOOL *)lParam;
+            item = (TOOL*)lParam;
             SetDlgItemText(hwnd, IDC_EXT_NAME, item->name);
             SetDlgItemText(hwnd, IDC_EXT_COMMAND, item->cmd);
             SetDlgItemText(hwnd, IDC_EXT_ARG, item->args);
@@ -225,7 +219,7 @@ LRESULT CALLBACK ExToolsEditProc(HWND hwnd, UINT iMessage, WPARAM wParam,
         }
         case WM_COMMAND:
         {
-            switch(LOWORD(wParam))
+            switch (LOWORD(wParam))
             {
                 case IDOK:
                     GetDlgItemText(hwnd, IDC_EXT_NAME, buf, sizeof(buf));
@@ -254,18 +248,18 @@ LRESULT CALLBACK ExToolsEditProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     break;
             }
         }
-            break;
+        break;
     }
     return 0;
 }
 static int GetSelected(HWND hwnd)
 {
 
-    int n ;
+    int n;
     int i;
     hwnd = GetDlgItem(hwnd, IDC_EXTOOLCUSTOM);
     n = ListView_GetItemCount(hwnd);
-    for (i=0; i < n; i++)
+    for (i = 0; i < n; i++)
     {
         int v = ListView_GetItemState(hwnd, i, LVIS_SELECTED);
         if (v)
@@ -276,21 +270,24 @@ static int GetSelected(HWND hwnd)
 static int CreateNewExTool(HWND hwnd)
 {
     static int pos = 0;
-    TOOL **current = &tools;
-    TOOL *newTool = calloc(1, sizeof(TOOL));
-    int count=0;
+    TOOL** current = &tools;
+    TOOL* newTool = calloc(1, sizeof(TOOL));
+    int count = 0;
     char buf[MAX_PATH];
     while (*current)
     {
-        if (!(*current)->removing)		
+        if (!(*current)->removing)
             count++;
-        current =  & (*current)->next;
+        current = &(*current)->next;
     }
     if (count >= MAX_EXTERNALTOOLS)
+    {
+        free(newTool);
         return GetSelected(hwnd);
+    }
     if (workArea && workArea->children)
     {
-        char *p;
+        char* p;
         strcpy(buf, szWorkAreaName);
         p = strrchr(buf, '\\');
         if (p)
@@ -302,7 +299,7 @@ static int CreateNewExTool(HWND hwnd)
     {
         GetCurrentDirectory(sizeof(buf), buf);
     }
-            
+
     newTool->adding = TRUE;
     newTool->cmd = strdup("");
     newTool->args = strdup("");
@@ -318,7 +315,7 @@ static int RemoveExTool(HWND hwnd)
 {
     int n = GetSelected(hwnd), len;
     int i = 0;
-    TOOL *curTool;
+    TOOL* curTool;
     hwnd = GetDlgItem(hwnd, IDC_EXTOOLCUSTOM);
     len = ListView_GetItemCount(hwnd);
     for (curTool = tools; (i < n || curTool->removing) && curTool; curTool = curTool->next)
@@ -326,7 +323,7 @@ static int RemoveExTool(HWND hwnd)
             i++;
     if (curTool)
         curTool->removing = TRUE;
-    if (n >= len-1)
+    if (n >= len - 1)
         n--;
     return n;
 }
@@ -334,13 +331,13 @@ static void Edit(HWND hwnd)
 {
     int n = GetSelected(hwnd);
     int i = 0;
-    TOOL *curTool;
+    TOOL* curTool;
     hwnd = GetDlgItem(hwnd, IDC_EXTOOLCUSTOM);
     for (curTool = tools; (i < n || curTool->removing) && curTool; curTool = curTool->next)
         if (!curTool->removing)
             i++;
     if (curTool)
-        DialogBoxParam(hInstance,"DLG_EXTOOLSEDIT", hwnd, (DLGPROC)ExToolsEditProc, (DWORD)curTool);
+        DialogBoxParam(hInstance, "DLG_EXTOOLSEDIT", hwnd, (DLGPROC)ExToolsEditProc, (DWORD)curTool);
 }
 static int MoveExTool(HWND hwnd, BOOL up)
 {
@@ -379,20 +376,20 @@ static int MoveExTool(HWND hwnd, BOOL up)
 }
 static void PopulateExToolsView(HWND hwnd, int sel, BOOL first)
 {
-    TOOL *curTools = tools;
+    TOOL* curTools = tools;
     int items = 0;
     int i;
     LV_ITEM item;
     RECT r;
     HWND hwndLV = GetDlgItem(hwnd, IDC_EXTOOLCUSTOM);
-    
+
     if (first)
     {
         LV_COLUMN lvC;
         ListView_SetExtendedListViewStyle(hwndLV, LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
-    
+
         GetWindowRect(hwndLV, &r);
-        lvC.mask = LVCF_WIDTH | LVCF_SUBITEM ;
+        lvC.mask = LVCF_WIDTH | LVCF_SUBITEM;
         lvC.cx = 20;
         lvC.iSubItem = 0;
         ListView_InsertColumn(hwndLV, 0, &lvC);
@@ -410,18 +407,18 @@ static void PopulateExToolsView(HWND hwnd, int sel, BOOL first)
     {
         ListView_DeleteAllItems(hwndLV);
     }
-    
+
     start = TRUE;
-    for (i=0; curTools; curTools = curTools->next, i++)
+    for (i = 0; curTools; curTools = curTools->next, i++)
     {
         if (!curTools->removing)
         {
             int v;
             item.iItem = items++;
             item.iSubItem = 0;
-            item.mask = LVIF_PARAM ;
+            item.mask = LVIF_PARAM;
             item.lParam = (LPARAM)i;
-            item.pszText = ""; // LPSTR_TEXTCALLBACK ;
+            item.pszText = "";  // LPSTR_TEXTCALLBACK ;
             v = ListView_InsertItem(hwndLV, &item);
             ListView_SetCheckState(hwndLV, v, curTools->enabled ? 1 : 0);
         }
@@ -432,12 +429,11 @@ static void PopulateExToolsView(HWND hwnd, int sel, BOOL first)
         ListView_SetSelectionMark(hwndLV, sel);
         ListView_SetItemState(hwndLV, sel, LVIS_SELECTED, LVIS_SELECTED);
     }
-
 }
-LRESULT CALLBACK ExToolsCustomizeProc(HWND hwnd, UINT iMessage, WPARAM wParam,
-    LPARAM lParam)
-{	static int oldCount;
-    static TOOL **oldOrder;
+LRESULT CALLBACK ExToolsCustomizeProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
+{
+    static int oldCount;
+    static TOOL** oldOrder;
     switch (iMessage)
     {
         case WM_NOTIFY:
@@ -445,24 +441,24 @@ LRESULT CALLBACK ExToolsCustomizeProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             {
                 if (((LPNMHDR)lParam)->code == LVN_GETDISPINFO)
                 {
-                    LV_DISPINFO *plvdi = (LV_DISPINFO*)lParam;
+                    LV_DISPINFO* plvdi = (LV_DISPINFO*)lParam;
                     plvdi->item.mask |= LVIF_TEXT | LVIF_DI_SETITEM;
                     plvdi->item.mask &= ~LVIF_STATE;
                     switch (plvdi->item.iSubItem)
                     {
-                        TOOL *curTools;
+                        TOOL* curTools;
                         int i;
-                    case 2:
-                        curTools = tools;
-                        for (i = plvdi->item.iItem; curTools && (i || curTools->removing); curTools = curTools->next)
-                            if (!curTools->removing)
-                                i--;
-                        if (curTools)
-                            plvdi->item.pszText = curTools->name;
-                        break;
-                    default:
-                        plvdi->item.pszText = "";
-                        break;
+                        case 2:
+                            curTools = tools;
+                            for (i = plvdi->item.iItem; curTools && (i || curTools->removing); curTools = curTools->next)
+                                if (!curTools->removing)
+                                    i--;
+                            if (curTools)
+                                plvdi->item.pszText = curTools->name;
+                            break;
+                        default:
+                            plvdi->item.pszText = "";
+                            break;
                     }
                 }
                 else if (((LPNMHDR)lParam)->code == LVN_ITEMCHANGED)
@@ -470,7 +466,7 @@ LRESULT CALLBACK ExToolsCustomizeProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     if (!start)
                     {
                         LPNMLISTVIEW lp = (LPNMLISTVIEW)lParam;
-                        TOOL *curTools = tools;
+                        TOOL* curTools = tools;
                         int i;
                         for (i = lp->iItem; curTools && (i || curTools->removing); curTools = curTools->next)
                             if (!curTools->removing)
@@ -523,7 +519,7 @@ LRESULT CALLBACK ExToolsCustomizeProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     EnableWindow(GetDlgItem(hwnd, IDC_EXTOOLSREMOVE), TRUE);
                     EnableWindow(GetDlgItem(hwnd, IDC_EXTOOLSMOVEUP), TRUE);
                     EnableWindow(GetDlgItem(hwnd, IDC_EXTOOLSMOVEDOWN), TRUE);
-                    SendMessage(hwnd, WM_COMMAND, IDC_EXTOOLSEDIT, 0);					
+                    SendMessage(hwnd, WM_COMMAND, IDC_EXTOOLSEDIT, 0);
                     break;
                 case IDC_EXTOOLSEDIT:
                     Edit(hwnd);
@@ -551,14 +547,14 @@ LRESULT CALLBACK ExToolsCustomizeProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     break;
                 case IDOK:
                 {
-                    TOOL **curTools = &tools;
+                    TOOL** curTools = &tools;
                     while (*curTools)
                     {
                         (*curTools)->adding = FALSE;
                         if ((*curTools)->removing)
                         {
-                            TOOL *cur = *curTools;
-                            TOOL *next = cur->next;
+                            TOOL* cur = *curTools;
+                            TOOL* next = cur->next;
                             free(cur->args);
                             free(cur->cmd);
                             free(cur->name);
@@ -579,14 +575,14 @@ LRESULT CALLBACK ExToolsCustomizeProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 case IDCANCEL:
                 {
                     int i;
-                    TOOL **curTools = &tools;
+                    TOOL** curTools = &tools;
                     while (*curTools)
                     {
                         (*curTools)->removing = FALSE;
                         if ((*curTools)->adding)
                         {
-                            TOOL *cur = *curTools;
-                            TOOL *next = cur->next;
+                            TOOL* cur = *curTools;
+                            TOOL* next = cur->next;
                             free(cur->args);
                             free(cur->cmd);
                             free(cur->name);
@@ -600,7 +596,7 @@ LRESULT CALLBACK ExToolsCustomizeProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                         }
                     }
                     curTools = &tools;
-                    for (i=0; i < oldCount ;i++)
+                    for (i = 0; i < oldCount; i++)
                     {
                         *curTools = oldOrder[i];
                         (*curTools)->next = NULL;
@@ -619,18 +615,19 @@ LRESULT CALLBACK ExToolsCustomizeProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             break;
         case WM_INITDIALOG:
         {
-            TOOL *curTools = tools;
+            TOOL* curTools = tools;
             HWND hwndLV = GetDlgItem(hwnd, IDC_EXTOOLCUSTOM);
             oldCount = 0;
-            for (oldCount = 0; curTools; curTools=curTools->next, oldCount++);
+            for (oldCount = 0; curTools; curTools = curTools->next, oldCount++)
+                ;
             if (oldCount)
             {
-                oldOrder = calloc(oldCount, sizeof(TOOL *));
+                oldOrder = calloc(oldCount, sizeof(TOOL*));
                 oldCount = 0;
-                for (curTools = tools; curTools; curTools= curTools->next, oldCount++)
+                for (curTools = tools; curTools; curTools = curTools->next, oldCount++)
                 {
                     oldOrder[oldCount] = curTools;
-                } 
+                }
             }
             else
             {
@@ -642,15 +639,12 @@ LRESULT CALLBACK ExToolsCustomizeProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 EnableWindow(GetDlgItem(hwnd, IDC_EXTOOLSMOVEDOWN), FALSE);
             }
             CenterWindow(hwnd);
-            
-            PopulateExToolsView(hwnd,0, TRUE);
-            
+
+            PopulateExToolsView(hwnd, 0, TRUE);
+
             break;
         }
     }
     return 0;
 }
-void EditExternalTools(void)
-{
-    DialogBox(hInstance, "DLG_EXTOOLS", hwndFrame, (DLGPROC)ExToolsCustomizeProc);
-}
+void EditExternalTools(void) { DialogBox(hInstance, "DLG_EXTOOLS", hwndFrame, (DLGPROC)ExToolsCustomizeProc); }

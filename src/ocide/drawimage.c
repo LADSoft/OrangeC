@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -38,35 +38,27 @@
 extern HWND hwndSrcTab;
 extern HWND hwndClient;
 extern HINSTANCE hInstance;
-extern PROJECTITEM *workArea;
+extern PROJECTITEM* workArea;
 extern char szimageClassName[];
 
-static char *szImageDrawClassName = "xccImageDrawClass";
-static char *szUntitled = "Image";
+static char* szImageDrawClassName = "xccImageDrawClass";
+static char* szUntitled = "Image";
 
-
-
-static void InsertImgProperties(HWND lv, struct resRes *data);
-static void GetImgPropText(char *buf, HWND lv, struct resRes *data, int row);
-static HWND ImgPropStartEdit(HWND lv, int row, struct resRes *data);
-static void ImgPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data);
+static void InsertImgProperties(HWND lv, struct resRes* data);
+static void GetImgPropText(char* buf, HWND lv, struct resRes* data, int row);
+static HWND ImgPropStartEdit(HWND lv, int row, struct resRes* data);
+static void ImgPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes* data);
 // callbacks to populate the properties window for this resource editor
-struct propertyFuncs imgFuncs = 
-{ 
-    InsertImgProperties,
-    GetImgPropText,
-    ImgPropStartEdit,
-    ImgPropEndEdit
-} ;
+struct propertyFuncs imgFuncs = {InsertImgProperties, GetImgPropText, ImgPropStartEdit, ImgPropEndEdit};
 
-static void InsertImgProperties(HWND lv, struct resRes *data)
+static void InsertImgProperties(HWND lv, struct resRes* data)
 {
     PropSetGroup(lv, 101, L"General Characteristics");
     PropSetItem(lv, 0, 101, "Resource Identifier");
     PropSetItem(lv, 1, 101, "File");
     PropSetItem(lv, 2, 101, "Full Path");
 }
-static void GetImgPropText(char *buf, HWND lv, struct resRes *data, int row)
+static void GetImgPropText(char* buf, HWND lv, struct resRes* data, int row)
 {
     buf[0] = 0;
     switch (row)
@@ -76,16 +68,16 @@ static void GetImgPropText(char *buf, HWND lv, struct resRes *data, int row)
             break;
         case 1:
         {
-            PROJECTITEM *pj = GetResProjectFile(data->hTreeItem);
+            PROJECTITEM* pj = GetResProjectFile(data->hTreeItem);
             strcpy(buf, relpath2(data->resource->filename, pj->realName));
         }
-            break;
+        break;
         case 2:
             strcpy(buf, data->resource->filename);
             break;
     }
 }
-static HWND ImgPropStartEdit(HWND lv, int row, struct resRes *data)
+static HWND ImgPropStartEdit(HWND lv, int row, struct resRes* data)
 {
     if (row == 1 || row == 0)
     {
@@ -100,7 +92,7 @@ static HWND ImgPropStartEdit(HWND lv, int row, struct resRes *data)
     }
     return NULL;
 }
-static void ImgPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data)
+static void ImgPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes* data)
 {
     if (row == 1 || row == 0)
     {
@@ -110,11 +102,11 @@ static void ImgPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data)
         GetImgPropText(buf1, lv, data, row);
         if (strcmp(buf, buf1) != 0)
         {
-            switch(row)
+            switch (row)
             {
                 case 0:
                     PropSetIdName(data, buf, &data->resource->id.u.id, NULL, TRUE);
-                    break;                
+                    break;
                 case 1:
                     PropSetExp(data, buf, &data->resource->info.language_high);
                     break;
@@ -127,13 +119,9 @@ static void ImgPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data)
     }
 }
 
-
-int LoadImageToDC(HWND hwndParent, IMAGEDATA *res)
+int LoadImageToDC(HWND hwndParent, IMAGEDATA* res)
 {
-    static DWORD monoBmpColorTable[] = {
-        RGB(0, 0, 0),
-        RGB(255, 255, 255)
-    };
+    static DWORD monoBmpColorTable[] = {RGB(0, 0, 0), RGB(255, 255, 255)};
     LPBITMAPINFO lpbi;
     INT bitCount;
     DWORD colorTableBytes;
@@ -158,8 +146,7 @@ int LoadImageToDC(HWND hwndParent, IMAGEDATA *res)
         colorTableBytes = 0;
     else
         colorTableBytes = (1 << bitCount) * sizeof(RGBQUAD);
-        
-        
+
     DIBBits = res->bits;
     bits = (((((DWORD)res->width * bitCount) + 31) & 0xffffffe0) >> 3) * res->height;
 
@@ -176,8 +163,7 @@ int LoadImageToDC(HWND hwndParent, IMAGEDATA *res)
     {
         // must be two...
         HDC cdc = CreateCompatibleDC(res->hdcImage);
-        SetDIBits(cdc, hbmMono, 0, res->height, 
-                  DIBBits, pbi, DIB_RGB_COLORS);
+        SetDIBits(cdc, hbmMono, 0, res->height, DIBBits, pbi, DIB_RGB_COLORS);
         hbmpImage = SelectObject(cdc, hbmMono);
         BitBlt(res->hdcImage, 0, 0, res->width, res->height, cdc, 0, 0, SRCCOPY);
         hbmpImage = SelectObject(cdc, hbmpImage);
@@ -186,13 +172,13 @@ int LoadImageToDC(HWND hwndParent, IMAGEDATA *res)
     else
     {
         hbmpImage = SelectObject(res->hdcImage, hbmMono);
-        SetDIBits(res->hdcImage, hbmpImage, 0, res->height, 
-                  DIBBits, pbi, DIB_RGB_COLORS);
+        SetDIBits(res->hdcImage, hbmpImage, 0, res->height, DIBBits, pbi, DIB_RGB_COLORS);
         SelectObject(res->hdcImage, hbmpImage);
     }
 
-    /* and the and mask */    
-    if (res->type != FT_BMP) {
+    /* and the and mask */
+    if (res->type != FT_BMP)
+    {
         DIBBits += bits;
 
         colorTableBytes = 2 * sizeof(RGBQUAD);
@@ -201,16 +187,14 @@ int LoadImageToDC(HWND hwndParent, IMAGEDATA *res)
          * to have a monochrom bitmap
          */
         pbi->bmiHeader.biBitCount = 1;
-        pbi->bmiHeader.biSizeImage =
-                res->height * ((((DWORD)res->width + 31) & 0xffffffe0) >> 3);
+        pbi->bmiHeader.biSizeImage = res->height * ((((DWORD)res->width + 31) & 0xffffffe0) >> 3);
         pbi->bmiHeader.biClrImportant = 0;
         pbi->bmiHeader.biClrUsed = 0;
         memcpy(pbi->bmiColors, &monoBmpColorTable[0], sizeof(monoBmpColorTable));
 
         /* move the bits into the and mask */
         hbmpImage = SelectObject(res->hdcAndMask, hbmMono);
-        SetDIBits(res->hdcAndMask, hbmpImage, 0, res->height, 
-                    DIBBits, pbi, DIB_RGB_COLORS);
+        SetDIBits(res->hdcAndMask, hbmpImage, 0, res->height, DIBBits, pbi, DIB_RGB_COLORS);
         SelectObject(res->hdcAndMask, hbmpImage);
 
         /* make the viewable image */
@@ -221,23 +205,19 @@ int LoadImageToDC(HWND hwndParent, IMAGEDATA *res)
     DeleteObject(hbmMono);
     free(pbi);
     return TRUE;
-
 }
 
-
-
-
 /************************************************************************
-* ImageSave
-*
-* Saves the state of the current image into the image list (if it
-* is dirty).
-*
-* History:
-*
-************************************************************************/
+ * ImageSave
+ *
+ * Saves the state of the current image into the image list (if it
+ * is dirty).
+ *
+ * History:
+ *
+ ************************************************************************/
 
-void SaveImage(IMAGEDATA *res)
+void SaveImage(IMAGEDATA* res)
 {
     INT bitCount;
     DWORD colorTableBytes;
@@ -247,10 +227,10 @@ void SaveImage(IMAGEDATA *res)
     DWORD DIBSize;
     DWORD bitsSize;
     LPBITMAPINFOHEADER lpbih;
-    LPBYTE lpBits,lpBPtr;
+    LPBYTE lpBits, lpBPtr;
     HBITMAP hbmMono;
     HBITMAP hbmpImage;
-    
+
     if (!res->imageDirty)
         return;
 
@@ -263,7 +243,8 @@ void SaveImage(IMAGEDATA *res)
     if (!(hbmMono = CreateBitmap(res->width, res->height, 1, 1, NULL)))
         return;
 
-    switch (res->saveColors) {
+    switch (res->saveColors)
+    {
         case 2:
             bitCount = 1;
             break;
@@ -284,18 +265,17 @@ void SaveImage(IMAGEDATA *res)
     }
 
     colorTableBytes = (DWORD)res->saveColors * sizeof(RGBQUAD);
-    XORBits = ((((res->width * bitCount) + 31)
-            & 0xffffffe0) >> 3) * res->height;
+    XORBits = ((((res->width * bitCount) + 31) & 0xffffffe0) >> 3) * res->height;
 
-    switch (res->type) {
+    switch (res->type)
+    {
         case FT_BMP:
             ANDBits = 0;
             break;
 
         case FT_ICO:
         case FT_CUR:
-            ANDBits = res->height *
-                    (((res->width + 31) & 0xffffffe0) >> 3);
+            ANDBits = res->height * (((res->width + 31) & 0xffffffe0) >> 3);
             break;
     }
 
@@ -304,11 +284,13 @@ void SaveImage(IMAGEDATA *res)
 
     if (res->type == FT_BMP)
     {
-        if (!(DIBInfo = rcAlloc(DIBSize))) {
+        if (!(DIBInfo = rcAlloc(DIBSize)))
+        {
             DeleteObject(hbmMono);
             return;
         }
-        if (!(lpBPtr = rcAlloc(bitsSize))) {
+        if (!(lpBPtr = rcAlloc(bitsSize)))
+        {
             DeleteObject(hbmMono);
             free(DIBInfo);
             return;
@@ -316,7 +298,8 @@ void SaveImage(IMAGEDATA *res)
     }
     else
     {
-        if (!(DIBInfo = rcAlloc(DIBSize + bitsSize))) {
+        if (!(DIBInfo = rcAlloc(DIBSize + bitsSize)))
+        {
             DeleteObject(hbmMono);
             return;
         }
@@ -325,42 +308,42 @@ void SaveImage(IMAGEDATA *res)
 
     lpbih = (LPBITMAPINFOHEADER)DIBInfo;
 
-    if (res->type != FT_BMP) {
+    if (res->type != FT_BMP)
+    {
         /* get the and bits */
         lpBits = lpBPtr + XORBits;
 
-        lpbih->biSize          = sizeof(BITMAPINFOHEADER);
-        lpbih->biWidth         = res->width;
-        lpbih->biHeight        = res->height;
-        lpbih->biPlanes        = 1;
-        lpbih->biBitCount      = 1;
-        lpbih->biCompression   = BI_RGB;
-        lpbih->biSizeImage     = ANDBits;
+        lpbih->biSize = sizeof(BITMAPINFOHEADER);
+        lpbih->biWidth = res->width;
+        lpbih->biHeight = res->height;
+        lpbih->biPlanes = 1;
+        lpbih->biBitCount = 1;
+        lpbih->biCompression = BI_RGB;
+        lpbih->biSizeImage = ANDBits;
         lpbih->biXPelsPerMeter = 0;
         lpbih->biYPelsPerMeter = 0;
-        lpbih->biClrImportant  = 0;
-        lpbih->biClrUsed       = 0;
+        lpbih->biClrImportant = 0;
+        lpbih->biClrUsed = 0;
 
         hbmpImage = SelectObject(res->hdcAndMask, hbmMono);
-        GetDIBits(res->hdcAndMask, hbmpImage, 0, res->height, lpBits,
-                (LPBITMAPINFO)lpbih, DIB_RGB_COLORS);
+        GetDIBits(res->hdcAndMask, hbmpImage, 0, res->height, lpBits, (LPBITMAPINFO)lpbih, DIB_RGB_COLORS);
         SelectObject(res->hdcAndMask, hbmpImage);
     }
 
     /*
      * XOR mask
      */
-    lpbih->biSize          = sizeof(BITMAPINFOHEADER);
-    lpbih->biWidth         = res->width;
-    lpbih->biHeight        = res->height;
-    lpbih->biPlanes        = 1;
-    lpbih->biBitCount      = bitCount;
-    lpbih->biCompression   = BI_RGB;
-    lpbih->biSizeImage     = XORBits;
+    lpbih->biSize = sizeof(BITMAPINFOHEADER);
+    lpbih->biWidth = res->width;
+    lpbih->biHeight = res->height;
+    lpbih->biPlanes = 1;
+    lpbih->biBitCount = bitCount;
+    lpbih->biCompression = BI_RGB;
+    lpbih->biSizeImage = XORBits;
     lpbih->biXPelsPerMeter = 0;
     lpbih->biYPelsPerMeter = 0;
-    lpbih->biClrImportant  = 0;
-    lpbih->biClrUsed       = 0;
+    lpbih->biClrImportant = 0;
+    lpbih->biClrUsed = 0;
 
     lpBits = lpBPtr;
 
@@ -368,28 +351,26 @@ void SaveImage(IMAGEDATA *res)
     {
         // must be two...
         HDC cdc = CreateCompatibleDC(res->hdcImage);
-		int color = SetBkColor(res->hdcImage, 0xffffff);
+        int color = SetBkColor(res->hdcImage, 0xffffff);
         hbmpImage = SelectObject(cdc, hbmMono);
         BitBlt(cdc, 0, 0, res->width, res->height, res->hdcImage, 0, 0, SRCCOPY);
-		SetBkColor(res->hdcImage, color);
+        SetBkColor(res->hdcImage, color);
         hbmpImage = SelectObject(cdc, hbmpImage);
-        GetDIBits(cdc, hbmpImage, 0, res->height, lpBits,
-                (LPBITMAPINFO)lpbih, DIB_RGB_COLORS);
+        GetDIBits(cdc, hbmpImage, 0, res->height, lpBits, (LPBITMAPINFO)lpbih, DIB_RGB_COLORS);
         DeleteDC(cdc);
-
     }
     else
     {
         hbmpImage = SelectObject(res->hdcImage, hbmMono);
-        GetDIBits(res->hdcImage, hbmpImage, 0, res->height, lpBits,
-                (LPBITMAPINFO)lpbih, DIB_RGB_COLORS);
+        GetDIBits(res->hdcImage, hbmpImage, 0, res->height, lpBits, (LPBITMAPINFO)lpbih, DIB_RGB_COLORS);
         SelectObject(res->hdcImage, hbmpImage);
     }
 
     /*
      * For icons and cursors, we have a few extra steps.
      */
-    if (res->type != FT_BMP) {
+    if (res->type != FT_BMP)
+    {
         lpbih->biHeight *= 2;
         lpbih->biSizeImage = XORBits + ANDBits;
 
@@ -405,26 +386,26 @@ void SaveImage(IMAGEDATA *res)
     {
         case FT_BMP:
         {
-            BITMAP_ *bm = res->origData;
+            BITMAP_* bm = res->origData;
             bm->headerData = DIBInfo;
             bm->pixelData = lpBPtr;
             bm->headerSize = DIBSize;
             bm->pixelSize = bitsSize;
         }
-            break;
+        break;
         case FT_ICO:
         {
-            ICONDATA *ic = res->origData;
+            ICONDATA* ic = res->origData;
             ic->data = DIBInfo;
             ic->bytes = DIBSize + bitsSize;
             ic->width = res->width;
             ic->height = res->height;
             ic->colorcount = res->saveColors;
         }
-            break;
+        break;
         case FT_CUR:
         {
-            CURSORDATA *cc = res->origData;
+            CURSORDATA* cc = res->origData;
             cc->data = DIBInfo;
             cc->bytes = DIBSize + bitsSize;
             cc->width = res->width;
@@ -433,11 +414,11 @@ void SaveImage(IMAGEDATA *res)
             cc->yhotspot = res->hotspotY;
             cc->colorcount = 0;
         }
-            break;
+        break;
     }
 
     res->bits = lpBPtr;
-    res->bitmapInfo = (BITMAPINFO *)DIBInfo;
+    res->bitmapInfo = (BITMAPINFO*)DIBInfo;
     res->DIBSize = DIBSize + bitsSize;
 
     res->fileDirty = TRUE;
@@ -445,9 +426,9 @@ void SaveImage(IMAGEDATA *res)
 
     DeleteObject(hbmMono);
 }
-IMAGEDATA *NewImage(HWND hwndParent, IMAGEDATA *res)
+IMAGEDATA* NewImage(HWND hwndParent, IMAGEDATA* res)
 {
-    IMAGEDATA *id;
+    IMAGEDATA* id;
     id = calloc(1, sizeof(IMAGEDATA));
     if (!id)
     {
@@ -456,13 +437,13 @@ IMAGEDATA *NewImage(HWND hwndParent, IMAGEDATA *res)
     id->colors = res->colors;
     id->saveColors = res->saveColors;
     id->height = res->height;
-    id->width = res->width; 
+    id->width = res->width;
     id->type = res->type;
     id->hotspotX = res->hotspotX;
     id->hotspotY = res->hotspotY;
     id->imageDirty = TRUE;
     id->rgbScreen = RGB_DEFAULT_BACKGROUND;
-        
+
     if (!CreateImageDC(hwndParent, id))
     {
         free(id);
@@ -471,10 +452,7 @@ IMAGEDATA *NewImage(HWND hwndParent, IMAGEDATA *res)
     id->imageDirty = TRUE;
     return id;
 }
-static int validDIB(
-    LPBITMAPINFOHEADER DIB,
-    DWORD DIBSize,
-    int bitmap)
+static int validDIB(LPBITMAPINFOHEADER DIB, DWORD DIBSize, int bitmap)
 {
     DWORD ANDMaskBytes;
     DWORD XORMaskBytes;
@@ -490,61 +468,56 @@ static int validDIB(
     if (DIB->biPlanes != 1)
         return FALSE;
 
-    if (DIB->biBitCount != 1 &&
-            DIB->biBitCount != 4 &&
-            DIB->biBitCount != 8 &&
-            DIB->biBitCount != 24 &&
-            DIB->biBitCount != 32)
+    if (DIB->biBitCount != 1 && DIB->biBitCount != 4 && DIB->biBitCount != 8 && DIB->biBitCount != 24 && DIB->biBitCount != 32)
         return FALSE;
 
-    if (bitmap) {
+    if (bitmap)
+    {
         height = DIB->biHeight;
         ANDMaskBytes = 0;
     }
-    else {
+    else
+    {
         height = DIB->biHeight / 2;
-        ANDMaskBytes = (((DIB->biWidth + 31) & 0xffffffe0) >> 3) *
-                height;
+        ANDMaskBytes = (((DIB->biWidth + 31) & 0xffffffe0) >> 3) * height;
     }
     if (DIB->biBitCount >= 24)
         colorTableBytes = 0;
     else
         colorTableBytes = (1 << DIB->biBitCount) * sizeof(RGBQUAD);
-    XORMaskBytes = ((((DIB->biWidth * DIB->biBitCount) +
-            31) & 0xffffffe0) >> 3) * height;
+    XORMaskBytes = ((((DIB->biWidth * DIB->biBitCount) + 31) & 0xffffffe0) >> 3) * height;
 
-    if (DIB->biSizeImage &&
-            DIB->biSizeImage != XORMaskBytes + ANDMaskBytes &&
-            DIB->biSizeImage != XORMaskBytes)
+    if (DIB->biSizeImage && DIB->biSizeImage != XORMaskBytes + ANDMaskBytes && DIB->biSizeImage != XORMaskBytes)
         return FALSE;
 
-    if (DIBSize != sizeof(BITMAPINFOHEADER) + colorTableBytes +
-            XORMaskBytes + ANDMaskBytes)
+    if (DIBSize != sizeof(BITMAPINFOHEADER) + colorTableBytes + XORMaskBytes + ANDMaskBytes)
         return FALSE;
 
     return TRUE;
 }
 
-static IMAGEDATA *LoadBitmapImage(HWND hwndParent, struct resRes *imageData)
+static IMAGEDATA* LoadBitmapImage(HWND hwndParent, struct resRes* imageData)
 {
-    BITMAP_ *bitmapData = imageData->resource->u.bitmap;
+    BITMAP_* bitmapData = imageData->resource->u.bitmap;
     DWORD DIBSize;
     BITMAPINFOHEADER bih;
     INT colors;
-    IMAGEDATA *id;
+    IMAGEDATA* id;
 
     DIBSize = bitmapData->headerSize + bitmapData->pixelSize;
-    bih = *(BITMAPINFOHEADER *)(bitmapData->headerData);
-    if (!validDIB( &bih, DIBSize, TRUE))
+    bih = *(BITMAPINFOHEADER*)(bitmapData->headerData);
+    if (!validDIB(&bih, DIBSize, TRUE))
     {
         return NULL;
     }
     /* maximum image = 256 * 256 */
-    if (bih.biWidth > 1024 || bih.biHeight > 1024) {
+    if (bih.biWidth > 1024 || bih.biHeight > 1024)
+    {
         return NULL;
     }
 
-    switch (bih.biBitCount) {
+    switch (bih.biBitCount)
+    {
         case 1:
             colors = 2;
             break;
@@ -574,7 +547,7 @@ static IMAGEDATA *LoadBitmapImage(HWND hwndParent, struct resRes *imageData)
         return NULL;
     }
     id->bits = bitmapData->pixelData;
-    id->bitmapInfo = (BITMAPINFO *)bitmapData->headerData;
+    id->bitmapInfo = (BITMAPINFO*)bitmapData->headerData;
     id->type = FT_BMP;
     id->height = bih.biHeight;
     id->width = bih.biWidth;
@@ -591,27 +564,27 @@ static IMAGEDATA *LoadBitmapImage(HWND hwndParent, struct resRes *imageData)
     }
     return id;
 }
-static IMAGEDATA *LoadCursorImage(HWND hwndParent, struct resRes * imageData, int icon)
+static IMAGEDATA* LoadCursorImage(HWND hwndParent, struct resRes* imageData, int icon)
 {
-    CURSORDATA *cursors = imageData->resource->u.cursor->cursors;
+    CURSORDATA* cursors = imageData->resource->u.cursor->cursors;
     int imageCount = imageData->resource->u.cursor->count;
     int i;
     LPBITMAPINFO lpBitmapInfo;
     int resType;
     int colorTableBytes;
-    IMAGEDATA *id, *head =0, **tail = &head;
-        resType = FT_CUR;
+    IMAGEDATA *id, *head = 0, **tail = &head;
+    resType = FT_CUR;
     /*
      * Get number of images in the file.
      */
-    for (i=0; i < imageCount; i++, cursors++)
-    {    
-        id = calloc(1,sizeof(IMAGEDATA));
+    for (i = 0; i < imageCount; i++, cursors++)
+    {
+        id = calloc(1, sizeof(IMAGEDATA));
         if (!id)
         {
             while (head)
             {
-                IMAGEDATA *next = head->next;
+                IMAGEDATA* next = head->next;
                 free(head);
                 head = next;
             }
@@ -619,7 +592,7 @@ static IMAGEDATA *LoadCursorImage(HWND hwndParent, struct resRes * imageData, in
         }
         *tail = id;
         tail = &(*tail)->next;
-        id->bitmapInfo = (BITMAPINFO *)cursors->data;
+        id->bitmapInfo = (BITMAPINFO*)cursors->data;
         id->type = resType;
         id->height = cursors->height;
         id->width = cursors->width;
@@ -633,7 +606,7 @@ static IMAGEDATA *LoadCursorImage(HWND hwndParent, struct resRes * imageData, in
         lpBitmapInfo = id->bitmapInfo;
         if (id->colors == 0)
         {
-            id->colors = 1 << lpBitmapInfo->bmiHeader.biBitCount ;
+            id->colors = 1 << lpBitmapInfo->bmiHeader.biBitCount;
         }
         id->saveColors = id->colors;
         if (id->colors < 8)
@@ -645,10 +618,11 @@ static IMAGEDATA *LoadCursorImage(HWND hwndParent, struct resRes * imageData, in
             colorTableBytes = (1 << lpBitmapInfo->bmiHeader.biBitCount) * sizeof(RGBQUAD);
         id->bits = cursors->data + sizeof(BITMAPINFOHEADER) + colorTableBytes;
 
-        if (!validDIB(&lpBitmapInfo->bmiHeader, id->DIBSize, FALSE) || !LoadImageToDC(hwndParent, id)) {
+        if (!validDIB(&lpBitmapInfo->bmiHeader, id->DIBSize, FALSE) || !LoadImageToDC(hwndParent, id))
+        {
             while (head)
             {
-                IMAGEDATA *next = head->next;
+                IMAGEDATA* next = head->next;
                 free(head);
                 head = next;
             }
@@ -657,28 +631,28 @@ static IMAGEDATA *LoadCursorImage(HWND hwndParent, struct resRes * imageData, in
     }
     return head;
 }
-static IMAGEDATA *LoadIconImage(HWND hwndParent, struct resRes * imageData, int icon)
+static IMAGEDATA* LoadIconImage(HWND hwndParent, struct resRes* imageData, int icon)
 {
-    ICONDATA *icons = imageData->resource->u.icon->icons;
+    ICONDATA* icons = imageData->resource->u.icon->icons;
     int imageCount = imageData->resource->u.icon->count;
     int i;
     LPBITMAPINFO lpBitmapInfo;
     int resType;
     int colorTableBytes;
-    IMAGEDATA *id, *head =0, **tail = &head;
+    IMAGEDATA *id, *head = 0, **tail = &head;
 
     resType = FT_ICO;
     /*
      * Get number of images in the file.
      */
-    for (i=0; i < imageCount; i++, icons++)
-    {    
-        id = calloc(1,sizeof(IMAGEDATA));
+    for (i = 0; i < imageCount; i++, icons++)
+    {
+        id = calloc(1, sizeof(IMAGEDATA));
         if (!id)
         {
             while (head)
             {
-                IMAGEDATA *next = head->next;
+                IMAGEDATA* next = head->next;
                 free(head);
                 head = next;
             }
@@ -686,7 +660,7 @@ static IMAGEDATA *LoadIconImage(HWND hwndParent, struct resRes * imageData, int 
         }
         *tail = id;
         tail = &(*tail)->next;
-        id->bitmapInfo = (BITMAPINFO *)icons->data;
+        id->bitmapInfo = (BITMAPINFO*)icons->data;
         id->type = resType;
         id->height = icons->height;
         id->width = icons->width;
@@ -698,22 +672,23 @@ static IMAGEDATA *LoadIconImage(HWND hwndParent, struct resRes * imageData, int 
         lpBitmapInfo = id->bitmapInfo;
         if (id->colors == 0)
         {
-            id->colors = 1 << lpBitmapInfo->bmiHeader.biBitCount ;
+            id->colors = 1 << lpBitmapInfo->bmiHeader.biBitCount;
         }
         id->saveColors = id->colors;
         if (id->colors < 8)
             id->colors = 8;
-        
+
         if (lpBitmapInfo->bmiHeader.biBitCount == 24)
             colorTableBytes = 0;
         else
             colorTableBytes = (1 << lpBitmapInfo->bmiHeader.biBitCount) * sizeof(RGBQUAD);
         id->bits = icons->data + sizeof(BITMAPINFOHEADER) + colorTableBytes;
 
-        if (!validDIB(&lpBitmapInfo->bmiHeader, id->DIBSize, FALSE) || !LoadImageToDC(hwndParent, id)) {
+        if (!validDIB(&lpBitmapInfo->bmiHeader, id->DIBSize, FALSE) || !LoadImageToDC(hwndParent, id))
+        {
             while (head)
             {
-                IMAGEDATA *next = head->next;
+                IMAGEDATA* next = head->next;
                 free(head);
                 head = next;
             }
@@ -722,16 +697,15 @@ static IMAGEDATA *LoadIconImage(HWND hwndParent, struct resRes * imageData, int 
     }
     return head;
 }
-static void DoPaint(HWND hwnd, HDC hDc, IMAGEDATA *data, RECT *r)
+static void DoPaint(HWND hwnd, HDC hDc, IMAGEDATA* data, RECT* r)
 {
-    BitBlt(hDc, (r->right - r->left - data->width)/2,
-           (r->bottom - r->top - data->height)/2, data->width, data->height,
-           data->hdcImage,0,0,SRCCOPY);
+    BitBlt(hDc, (r->right - r->left - data->width) / 2, (r->bottom - r->top - data->height) / 2, data->width, data->height,
+           data->hdcImage, 0, 0, SRCCOPY);
 }
-static IMAGEDATA * CreateImages(HWND hwnd, struct resRes *imageData)
+static IMAGEDATA* CreateImages(HWND hwnd, struct resRes* imageData)
 {
-    IMAGEDATA *rv = NULL;
-    switch(imageData->resource->itype)
+    IMAGEDATA* rv = NULL;
+    switch (imageData->resource->itype)
     {
         case RESTYPE_CURSOR:
             rv = LoadCursorImage(hwnd, imageData, FALSE);
@@ -745,12 +719,11 @@ static IMAGEDATA * CreateImages(HWND hwnd, struct resRes *imageData)
     }
     return rv;
 }
-LRESULT CALLBACK ImageDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
-    LPARAM lParam)
+LRESULT CALLBACK ImageDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
     RECT r;
     LPCREATESTRUCT createStruct;
-    struct resRes *imageData;
+    struct resRes* imageData;
     switch (iMessage)
     {
         case WM_MDIACTIVATE:
@@ -760,19 +733,19 @@ LRESULT CALLBACK ImageDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             }
             break;
         case WM_SETFOCUS:
-            imageData = (struct resRes *)GetWindowLong(hwnd, 0);
+            imageData = (struct resRes*)GetWindowLong(hwnd, 0);
             SetFocus(imageData->gd.childWindow);
             break;
         case WM_NCACTIVATE:
-             PaintMDITitleBar(hwnd, iMessage, wParam, lParam);
-             return TRUE;
+            PaintMDITitleBar(hwnd, iMessage, wParam, lParam);
+            return TRUE;
         case WM_NCPAINT:
-             return PaintMDITitleBar(hwnd, iMessage, wParam, lParam);
+            return PaintMDITitleBar(hwnd, iMessage, wParam, lParam);
         case WM_CREATE:
             SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_TOOLWINDOW);
             GetClientRect(hwnd, &r);
             createStruct = (LPCREATESTRUCT)lParam;
-            imageData = (struct resRes *)((LPMDICREATESTRUCT)(createStruct->lpCreateParams))->lParam;
+            imageData = (struct resRes*)((LPMDICREATESTRUCT)(createStruct->lpCreateParams))->lParam;
             SetWindowLong(hwnd, 0, (long)imageData);
             imageData->activeHwnd = hwnd;
             imageData->gd.images = CreateImages(hwnd, imageData);
@@ -781,28 +754,27 @@ LRESULT CALLBACK ImageDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 ExtendedMessageBox("Error", 0, "Could not load image");
                 return -1;
             }
-            
-            imageData->gd.childWindow = CreateWindowEx(0, szimageClassName, "Image Editor",
-                WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE,
-                CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-                hwnd, NULL, hInstance, (void *)imageData);
+
+            imageData->gd.childWindow =
+                CreateWindowEx(0, szimageClassName, "Image Editor", WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE,
+                               CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwnd, NULL, hInstance, (void*)imageData);
             InsertRCWindow(hwnd);
             break;
         case WM_RESCOMMIT:
-            imageData = (struct resRes *)GetWindowLong(hwnd, 0);
-        {
-            IMAGEDATA *res = imageData->gd.images;
-            ResGetHeap(workArea, imageData);
-            while (res)
+            imageData = (struct resRes*)GetWindowLong(hwnd, 0);
             {
-                SaveImage(res);
-				DirtyImageUndo(res);
-                res = res->next;
+                IMAGEDATA* res = imageData->gd.images;
+                ResGetHeap(workArea, imageData);
+                while (res)
+                {
+                    SaveImage(res);
+                    DirtyImageUndo(res);
+                    res = res->next;
+                }
             }
-        }
             break;
         case EM_CANUNDO:
-            imageData = (struct resRes *)GetWindowLong(hwnd, 0);
+            imageData = (struct resRes*)GetWindowLong(hwnd, 0);
             return SendMessage(imageData->gd.childWindow, iMessage, wParam, lParam);
         case WM_CLOSE:
             RemoveRCWindow(hwnd);
@@ -810,11 +782,11 @@ LRESULT CALLBACK ImageDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             SendMessage(hwnd, WM_RESCOMMIT, 0, 0);
             break;
         case WM_DESTROY:
-            imageData = (struct resRes *)GetWindowLong(hwnd, 0);
+            imageData = (struct resRes*)GetWindowLong(hwnd, 0);
             imageData->activeHwnd = NULL;
             while (imageData->gd.images)
             {
-                IMAGEDATA *next = imageData->gd.images->next;
+                IMAGEDATA* next = imageData->gd.images->next;
                 FreeImageUndo(imageData->gd.images);
                 DeleteImageDC(imageData->gd.images);
                 free(imageData->gd.images);
@@ -843,7 +815,7 @@ LRESULT CALLBACK ImageDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             break;
 #endif
         case WM_SIZE:
-            imageData = (struct resRes *)GetWindowLong(hwnd, 0);
+            imageData = (struct resRes*)GetWindowLong(hwnd, 0);
             MoveWindow(imageData->gd.childWindow, 0, 0, LOWORD(lParam), HIWORD(lParam), TRUE);
             break;
         default:
@@ -870,7 +842,7 @@ void RegisterImageDrawWindow(HINSTANCE hInstance)
 
     imageInit();
 }
-void CreateImageDrawWindow(struct resRes *info)
+void CreateImageDrawWindow(struct resRes* info)
 {
     char name[512];
     int maximized;
@@ -888,13 +860,12 @@ void CreateImageDrawWindow(struct resRes *info)
             sprintf(name, "%s - %s", "BITMAP", info->name);
             break;
     }
-    SendMessage(hwndClient, WM_MDIGETACTIVE, 0, (LPARAM) &maximized);
-    hwnd = CreateMDIWindow(szImageDrawClassName, name, WS_VISIBLE |
-           WS_CHILD | WS_OVERLAPPED | WS_CAPTION | WS_THICKFRAME | MDIS_ALLCHILDSTYLES | 
-        WS_CLIPSIBLINGS | WS_CLIPCHILDREN |
-        WS_SIZEBOX | (PropGetInt(NULL, "TABBED_WINDOWS") ? WS_MAXIMIZE : WS_SYSMENU),
-        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwndClient, hInstance, 
-        (LPARAM)info); 
+    SendMessage(hwndClient, WM_MDIGETACTIVE, 0, (LPARAM)&maximized);
+    hwnd =
+        CreateMDIWindow(szImageDrawClassName, name,
+                        WS_VISIBLE | WS_CHILD | WS_OVERLAPPED | WS_CAPTION | WS_THICKFRAME | MDIS_ALLCHILDSTYLES | WS_CLIPSIBLINGS |
+                            WS_CLIPCHILDREN | WS_SIZEBOX | (PropGetInt(NULL, "TABBED_WINDOWS") ? WS_MAXIMIZE : WS_SYSMENU),
+                        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwndClient, hInstance, (LPARAM)info);
     if (hwnd)
     {
         SendMessage(hwndSrcTab, TABM_ADD, (WPARAM)name, (LPARAM)hwnd);

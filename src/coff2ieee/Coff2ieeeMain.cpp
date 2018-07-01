@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "Coff2ieeeMain.h"
@@ -41,35 +41,33 @@
 CmdSwitchParser Coff2ieeeMain::SwitchParser;
 CmdSwitchCombineString Coff2ieeeMain::outputFileSwitch(SwitchParser, 'o');
 
-const char *Coff2ieeeMain::usageText = "[options] <coff file>\n"
-            "\n"
-            "/oxxx          Set output file name\n"
-            "/V, --version  Show version and date\n"
-            "/!, --nologo   No logo\n"
-            "\n"
-            "\nTime: " __TIME__ "  Date: " __DATE__;
-            
+const char* Coff2ieeeMain::usageText =
+    "[options] <coff file>\n"
+    "\n"
+    "/oxxx          Set output file name\n"
+    "/V, --version  Show version and date\n"
+    "/!, --nologo   No logo\n"
+    "\n"
+    "\nTime: " __TIME__ "  Date: " __DATE__;
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     Coff2ieeeMain translator;
     return translator.Run(argc, argv);
 }
-Coff2ieeeMain::~Coff2ieeeMain()
-{
-}
-std::string Coff2ieeeMain::GetOutputName(char *infile) const
+Coff2ieeeMain::~Coff2ieeeMain() {}
+std::string Coff2ieeeMain::GetOutputName(char* infile) const
 {
     std::string name;
     if (outputFileSwitch.GetValue().size() != 0)
     {
         name = outputFileSwitch.GetValue();
-        const char *p = strrchr(name.c_str(), '.');
-        if (p  && p[-1] != '.' && p[1] != '\\')
+        const char* p = strrchr(name.c_str(), '.');
+        if (p && p[-1] != '.' && p[1] != '\\')
             return name;
     }
     else
-    { 
+    {
         name = infile;
     }
     if (mode == lib)
@@ -77,28 +75,28 @@ std::string Coff2ieeeMain::GetOutputName(char *infile) const
     else
         name = Utils::QualifiedFile(name.c_str(), ".o");
     return name;
-}			
-bool Coff2ieeeMain::GetMode(char *infile) 
+}
+bool Coff2ieeeMain::GetMode(char* infile)
 {
     std::fstream fil(infile, std::ios::in | std::ios::binary);
     char buf[256];
-    fil.read(buf,32);
-    if (*(unsigned short *)buf == IMAGE_FILE_MACHINE_I386)
+    fil.read(buf, 32);
+    if (*(unsigned short*)buf == IMAGE_FILE_MACHINE_I386)
     {
         mode = obj;
         return true;
     }
-    if (!strncmp(buf, "!<arch>\n",8))
+    if (!strncmp(buf, "!<arch>\n", 8))
     {
         mode = lib;
         return true;
     }
     return false;
 }
-int Coff2ieeeMain::Run(int argc, char **argv)
+int Coff2ieeeMain::Run(int argc, char** argv)
 {
     Utils::banner(argv[0]);
-    char *modName = Utils::GetModuleName();
+    char* modName = Utils::GetModuleName();
     CmdSwitchFile internalConfig(SwitchParser);
     std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
     std::fstream configTest(configName.c_str(), std::ios::in);
@@ -112,7 +110,7 @@ int Coff2ieeeMain::Run(int argc, char **argv)
     {
         Utils::usage(argv[0], usageText);
     }
-    if (argc != 2)		
+    if (argc != 2)
     {
         Utils::usage(argv[0], usageText);
     }
@@ -130,14 +128,14 @@ int Coff2ieeeMain::Run(int argc, char **argv)
         {
             ObjIeeeIndexManager im1;
             ObjFactory factory(&im1);
-            ObjFile *file = object.ConvertToObject(outputName, factory);
+            ObjFile* file = object.ConvertToObject(outputName, factory);
             if (file)
             {
                 ObjIeee il = outputName;
-    			il.SetTranslatorName("Coff2ieee");
-    			il.SetDebugInfoFlag(false);
-                FILE *c = fopen(outputName.c_str(), "w");
-                il.Write(c, file, &factory);    
+                il.SetTranslatorName("Coff2ieee");
+                il.SetDebugInfoFlag(false);
+                FILE* c = fopen(outputName.c_str(), "w");
+                il.Write(c, file, &factory);
                 fclose(c);
                 return 0;
             }

@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "InputFile.h"
@@ -33,7 +33,7 @@ void InputFile::CheckErrors()
     if (endedWithoutEOL)
         Errors::TrivialWarning("File not terminated with End Of Line character");
 }
-bool InputFile::GetLine(std::string &line)
+bool InputFile::GetLine(std::string& line)
 {
     char buf[LINE_WIDTH];
     while (inComment)
@@ -51,7 +51,7 @@ bool InputFile::GetLine(std::string &line)
     line = std::string(buf);
     return true;
 }
-std::string InputFile::GetErrorName(bool full, std::string &name)
+std::string InputFile::GetErrorName(bool full, std::string& name)
 {
     if (full)
     {
@@ -59,15 +59,15 @@ std::string InputFile::GetErrorName(bool full, std::string &name)
     }
     else
     {
-        const char *p = name.c_str();
-        const char *q = strrchr(p, '\\');
+        const char* p = name.c_str();
+        const char* q = strrchr(p, '\\');
         if (!q)
         {
             q = strrchr(p, ':');
             if (q)
                 q++;
             else
-                q = p;	
+                q = p;
         }
         else
         {
@@ -76,18 +76,18 @@ std::string InputFile::GetErrorName(bool full, std::string &name)
         return std::string(q);
     }
 }
-bool InputFile::ReadLine(char *line)
+bool InputFile::ReadLine(char* line)
 {
     line[0] = 0;
-    lineno ++;
+    lineno++;
     fgets(line, LINE_WIDTH, file);
     int n = strlen(line);
     if (n)
     {
-        if (line[n-1] != '\n')
+        if (line[n - 1] != '\n')
             endedWithoutEOL = true;
         else
-            line[n-1] = 0;
+            line[n - 1] = 0;
         return true;
     }
     return false;

@@ -56,9 +56,10 @@ class Import
 class AsmFile
 {
   public:
-    AsmFile(PreProcessor& pp, bool CaseInsensitive, Listing& List) :
+    AsmFile(PreProcessor& pp, bool CaseInsensitive, bool BinaryOutput, Listing& List) :
         preProcessor(pp),
         caseInsensitive(CaseInsensitive),
+        binaryOutput(BinaryOutput),
         lexer(pp),
         expr(false),
         asmexpr(nullptr),
@@ -152,6 +153,7 @@ class AsmFile
     std::set<std::string> externs;
     Listing& listing;
     bool bigEndian;
+    bool binaryOutput;
 };
 
 #endif

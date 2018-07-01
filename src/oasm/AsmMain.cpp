@@ -42,15 +42,17 @@ CmdSwitchBool AsmMain::PreprocessOnly(SwitchParser, 'e');
 CmdSwitchOutput AsmMain::OutputFile(SwitchParser, 'o', ".o");
 CmdSwitchDefine AsmMain::Defines(SwitchParser, 'D');
 CmdSwitchCombineString AsmMain::includePath(SwitchParser, 'I', ';');
+CmdSwitchBool AsmMain::BinaryOutput(SwitchParser, 'b');
 
 const char* AsmMain::usageText =
     "[options] file"
     "\n"
     "  @filename  use response file\n"
-    "  /e              Preprocess only                  /i     Case Insensitive Labels\n"
-    "  /l[m]           Listing file [macro expansions]  /oxxx  Set output file name\n"
-    "  /Dxxx           Define something                 /Ixxx  Set include file path\n"
-    "  /V, --version   Show version and date            /!,--nologo No logo\n"
+    "  /b     binary output                             /e              Preprocess only\n"
+    "  /i     Case Insensitive Labels                   /l[m]           Listing file [macro expansions]\n"
+    "  /oxxx  Set output file name                      /Dxxx           Define something\n"
+    "  /Ixxx  Set include file path                     /V, --version   Show version and date\n"
+    "  /!,--nologo No logo\n"
     "\n"
     "Time: " __TIME__ "  Date: " __DATE__;
 
@@ -214,7 +216,7 @@ int AsmMain::Run(int argc, char* argv[])
         else
         {
             Listing listing;
-            AsmFile asmFile(pp, CaseInsensitive.GetValue(), listing);
+            AsmFile asmFile(pp, CaseInsensitive.GetValue(), BinaryOutput.GetValue(), listing);
             if (asmFile.Read())
             {
                 if (!asmFile.Write(outName, inName) || Errors::ErrorCount())

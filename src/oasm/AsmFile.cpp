@@ -748,19 +748,26 @@ bool AsmFile::Write(std::string& fileName, std::string& srcName)
         FILE* out = fopen(fileName.c_str(), "wb");
         if (out != nullptr)
         {
-
             ObjIeee i(fileName.c_str());
-            i.SetTranslatorName(ObjString("oasm"));
-            i.SetDebugInfoFlag(false);
-
-            if (startSection)
+            if (binaryOutput)
             {
-                ObjExpression* left = f.MakeExpression(startSection);
-                ObjExpression* right = f.MakeExpression(startupLabel->GetOffset()->ival);
-                ObjExpression* sa = f.MakeExpression(ObjExpression::eAdd, left, right);
-                i.SetStartAddress(fi, sa);
+                i.BinaryWrite(out, fi, &f);
             }
-            i.Write(out, fi, &f);
+            else
+            {
+
+                i.SetTranslatorName(ObjString("oasm"));
+                i.SetDebugInfoFlag(false);
+
+                if (startSection)
+                {
+                    ObjExpression* left = f.MakeExpression(startSection);
+                    ObjExpression* right = f.MakeExpression(startupLabel->GetOffset()->ival);
+                    ObjExpression* sa = f.MakeExpression(ObjExpression::eAdd, left, right);
+                    i.SetStartAddress(fi, sa);
+                }
+                i.Write(out, fi, &f);
+            }
             fclose(out);
             //            out.close();
         }

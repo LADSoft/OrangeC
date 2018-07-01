@@ -295,6 +295,13 @@ class ObjIeeeAscii : public ObjIOBase
         file = nullptr;
         return HandleRead(ParseType);
     }
+    virtual bool BinaryWrite(FILE* fil, ObjFile* File, ObjFactory* Factory)
+    {
+        sfile = fil;
+        factory = Factory;
+        file = File;
+        return BinaryWrite();
+    }
     virtual std::string GetErrorQualifier() { return std::string("in line ") + Utils::NumberToString(lineno); }
 
     struct ParseDataLT
@@ -349,6 +356,7 @@ class ObjIeeeAscii : public ObjIOBase
     };
     friend class ObjIeeeAscii::ParseData;
     bool HandleWrite();
+    bool BinaryWrite();
     ObjFile* HandleRead(eParseType Type);
 
     void GatherCS(const char* cstr);
@@ -450,6 +458,7 @@ class ObjIeeeAscii : public ObjIOBase
     void RenderSection(ObjSection* Section);
     void RenderDebugTag(ObjDebugTag* Tag);
     void RenderMemory(ObjMemoryManager* Memory);
+    void RenderMemoryBinary(ObjMemoryManager* Memory);
     void RenderBrowseInfo(ObjBrowseInfo* Memory);
     void RenderExpression(ObjExpression* Expression);
     void PutSymbol(SymbolMap& map, int index, ObjSymbol* sym);

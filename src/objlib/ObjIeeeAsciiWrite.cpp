@@ -449,6 +449,37 @@ void ObjIeeeAscii::RenderMemory(ObjMemoryManager* Memory)
         endl();
     }
 }
+void ObjIeeeAscii::RenderMemoryBinary(ObjMemoryManager* Memory)
+{
+    char scratch[256];
+    int n;
+    ObjMemoryManager::MemoryIterator itmem;
+    n = 0;
+    for (itmem = Memory->MemoryBegin(); itmem != Memory->MemoryEnd(); ++itmem)
+    {
+        ObjMemory* memory = (*itmem);
+        if (memory->GetFixup())
+        {
+             memset(scratch, 0, memory->GetSize());
+             bufferup(scratch, memory->GetSize());
+        }
+        if (memory->IsEnumerated())
+        {
+            memset(scratch, memory->GetFill(), sizeof(scratch));
+            int len  = memory->GetSize();
+            while (len > sizeof(scratch))
+            {
+                bufferup(scratch, sizeof(scratch));
+                len -= sizeof(scratch);
+            }
+            bufferup(scratch, len);
+        }
+        else if (memory->GetData())
+        {
+            bufferup((char *)memory->GetData(), memory->GetSize());
+        }
+    }
+}
 void ObjIeeeAscii::RenderBrowseInfo(ObjBrowseInfo* BrowseInfo)
 {
     ObjString data;
@@ -667,6 +698,20 @@ void ObjIeeeAscii::WriteSections()
         endl();
         RenderMemory(&(*it)->GetMemoryManager());
     }
+}
+bool ObjIeeeAscii::BinaryWrite()
+{
+    ioBuffer = new char[BUFFERSIZE];
+    if (!ioBuffer)
+        return false;
+    for (ObjFile ::SectionIterator it = file->SectionBegin(); it != file->SectionEnd(); ++it)
+    {
+        RenderMemoryBinary(&(*it)->GetMemoryManager());
+    }
+    flush();
+    delete[] ioBuffer;
+    ioBuffer = nullptr;
+    return true;
 }
 void ObjIeeeAscii::WriteBrowseInfo()
 {

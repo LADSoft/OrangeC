@@ -80,7 +80,9 @@ const ObjString& LinkerMain::GetOutputFile(CmdFiles& files)
     if (OutputFile.GetValue().size() != 0)
     {
         outputFile = OutputFile.GetValue();
-        if (outputFile.find(".rel") == std::string::npos)
+        if (outputFile.find(".exe") != std::string::npos || outputFile.find(".dll") != std::string::npos)
+            outputFile = Utils::QualifiedFile(outputFile.c_str(), ".rel");
+        else if (outputFile.find(".rel") == std::string::npos)
             outputFile += ".rel";
     }
     else if (files.GetSize())

@@ -3036,10 +3036,24 @@ static void balancedAttributeParameter(LEXEME** lex)
         needkw(lex, endp);
     }
 }
+void ParseOut__attribute__(LEXEME **lex, SYMBOL *funcsp)
+{
+    if (MATCHKW(*lex, kw__attribute))
+    {
+        *lex = getsym();
+        if (needkw(lex, openpa))
+        {
+            errskim(lex, skim_closepa);
+            skip(lex, closepa);
+            error(ERR_IGNORING__ATTRIBUTE);
+        }
+    }
+    }
 BOOLEAN ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, BOOLEAN always)
 {
     (void)always;
     BOOLEAN rv = FALSE;
+    ParseOut__attribute__(lex, funcsp);
     if (cparams.prm_cplusplus || cparams.prm_c1x)
     {
         while (MATCHKW(*lex, kw_alignas) || cparams.prm_cplusplus && MATCHKW(*lex, openbr))
@@ -3204,6 +3218,7 @@ BOOLEAN ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, BOOLEAN always)
             }
         }
     }
+    ParseOut__attribute__(lex, funcsp);
     return rv;
 }
 // these tests fall flat because they don't test the specific constructor

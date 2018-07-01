@@ -561,6 +561,8 @@ static struct
     {"Cannot deduce auto type from '%s'", ERROR},
     {"%s: dll interface member may not be declared in dll interface class", ERROR},
     {"%s: attempting to redefine dll interface linkage for class", WARNING},
+    {"Ignoring __attribute__ specifier", WARNING},
+    {"Ignoring __declspec specifier", WARNING},
 #endif
 };
 

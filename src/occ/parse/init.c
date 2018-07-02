@@ -3344,6 +3344,12 @@ LEXEME* initType(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, INITIALI
         default:
             if (!templateNestingCount)
                 errortype(ERR_CANNOT_INITIALIZE, tp, NULL);
+            else if (MATCHKW(lex, begin))
+            {
+                lex = getsym();
+                errskim(&lex, skim_end);
+                skip(&lex, end);
+            }
             break;
     }
     return lex;

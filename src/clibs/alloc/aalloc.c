@@ -30,7 +30,7 @@ void *_RTL_FUNC aligned_alloc(size_t __align, size_t __size)
 {
     // this is brute force and uses too much memory...
     // i don't have time to rewrite the entire allocation algorithm though...
-    int sz = __align + __size;
+    size_t sz = __align + __size;
     void *t = malloc(sz);
     if (t)
     {

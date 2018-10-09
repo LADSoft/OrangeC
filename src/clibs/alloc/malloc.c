@@ -29,6 +29,7 @@
 #include <time.h>
 #include <locale.h>
 #include <wchar.h>
+#include <stdbool.h>
 #include "libp.h"
 
 FREELIST *__mallocchains[MEMCHAINS];
@@ -51,7 +52,7 @@ static void memdelete(void)
    __ll_exit_critical() ;
 }
 
-static int init_block(size_t size)
+static bool init_block(size_t size)
 {
     size_t ns = size+sizeof(BLKHEAD);
     BLKHEAD *nb;
@@ -60,19 +61,18 @@ static int init_block(size_t size)
         ns = ALLOCSIZE;
     nb = __ll_malloc(ns);
     if (!nb)
-        return NULL;
+        return false;
     nb->next = _allocbloc;
     _allocbloc = nb;
     list = nb->freemem = nb + 1 ;
     list->size = ns - sizeof(BLKHEAD) ;
     list->next = 0;
     _newfree = nb;
-    return 1;
+    return true;
 }
 static FREELIST *split(FREELIST *p, int size, FREELIST **slist)
 {
     FREELIST *rv;
-    int ch;
     rv = (FREELIST *)(((char *)p)+size);
     rv->size = p->size - size ;
     rv->next = 0;
@@ -83,22 +83,20 @@ static FREELIST *split(FREELIST *p, int size, FREELIST **slist)
 }
 void * _RTL_FUNC malloc(size_t size)
 {
-    BLKHEAD *head ;
     FREELIST **slist;
     register FREELIST *p;
     register int siz1 ;
     if (!size)
         return NULL;
     size += 7;	/* must be the same as in realloc for comparison purposes */
-    size &= 0xfffffff8;
+    size &= MALLOC_MASK;
 
     siz1 = size + sizeof(FREELIST);
 
    __ll_enter_critical() ;
     if (!__mallocchains[0])
     {
-        int i;
-        for (i=0; i < MEMCHAINS; i++)
+        for (int i=0; i < MEMCHAINS; i++)
         {
             __mallocchains[i] = 1; // nonzero to help the 'double free' situation
         }
@@ -116,8 +114,7 @@ void * _RTL_FUNC malloc(size_t size)
         slist = &p->next;
     }
     /* search the free blocks for free mem */
-    head = _newfree ;
-    while (head) {
+    for (BLKHEAD* head = _newfree; head != NULL; head = head->next ) {
         p = head->freemem ;
         if (p) {
             if (p->size == siz1) {
@@ -132,7 +129,6 @@ void * _RTL_FUNC malloc(size_t size)
             return p ;
          }
         }
-        head = head->next ;
     }
     /* now get a new block */
     if (!init_block(siz1)) {

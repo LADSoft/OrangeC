@@ -36,7 +36,7 @@ void * _RTL_FUNC realloc(void *buf, size_t size)
     int oldsize, newsize = size ;
     char *ptr ;
     newsize +=7; /* must be the same as in malloc for comparison purposes */
-    newsize &= 0xfffffff8;
+    newsize &= MALLOC_MASK;
     if (buf)
         oldsize = (((FREELIST *)buf)-1)->size - sizeof(FREELIST);
     else 

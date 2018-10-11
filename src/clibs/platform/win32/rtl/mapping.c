@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdlib.h>
@@ -35,9 +35,9 @@ int _RTL_FUNC sysconf(int type)
     assert(type == _SC_PAGESIZE);
     return 4096;
 }
-void * _RTL_FUNC mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
+void* _RTL_FUNC mmap(void* addr, size_t len, int prot, int flags, int fildes, off_t off)
 {
-    void *rv = NULL;
+    void* rv = NULL;
     HANDLE map;
     assert(addr == 0 && prot == PROT_READ && flags == MAP_PRIVATE);
     map = CreateFileMapping((HANDLE)_get_osfhandle(fildes), NULL, PAGE_READONLY | SEC_RESERVE, 0, 0, NULL);
@@ -48,7 +48,7 @@ void * _RTL_FUNC mmap(void *addr, size_t len, int prot, int flags, int fildes, o
     }
     return rv;
 }
-int	_RTL_FUNC munmap(void *addr, size_t len)
+int _RTL_FUNC munmap(void* addr, size_t len)
 {
     UnmapViewOfFile(addr);
     return 0;

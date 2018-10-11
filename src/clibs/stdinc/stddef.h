@@ -65,11 +65,11 @@ typedef int ssize_t;
 typedef unsigned short wchar_t;
 #endif
 #endif
-
+/*
 #ifndef FAR
 #define FAR _FAR
 #endif
-
+*/
 #ifndef NULL
 #define NULL 0
 #endif

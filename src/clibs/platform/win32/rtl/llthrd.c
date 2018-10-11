@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -50,25 +50,25 @@ extern char _TLSINITSTART[], _TLSINITEND[];
 #if !defined(__MSIL__)
 void _RTL_FUNC __tlsaddr(int n)
 {
-    asm push eax
-    asm push ecx
-    asm push edx
-    struct __rtl_data *r = __getRtlData();
-    n = (int) r->thread_local_data + n; // return value is on stack for this one...
-    asm pop edx
-    asm pop ecx
-    asm pop eax
+    asm push eax;
+    asm push ecx;
+    asm push edx;
+    struct __rtl_data* r = __getRtlData();
+    n = (int)r->thread_local_data + n;  // return value is on stack for this one...
+    asm pop edx;
+    asm pop ecx;
+    asm pop eax;
 }
 #endif
 static void load_local_data(void)
 {
-    struct __rtl_data *r = __getRtlData();
+    struct __rtl_data* r = __getRtlData();
     int n = _TLSINITEND - _TLSINITSTART;
     if (!n)
     {
         n = 4;
     }
-    char *p = malloc(n);
+    char* p = malloc(n);
     if (!p)
         abort();
     memcpy(p, _TLSINITSTART, n);
@@ -76,17 +76,17 @@ static void load_local_data(void)
 }
 static void thrd_init(void)
 {
-    load_local_data(); // main thread
+    load_local_data();  // main thread
 }
 
 void __ll_thrdexit(unsigned retval)
 {
-    struct __rtl_data *r = __getRtlData(); // allocate the local storage
-    struct ithrd *p = (struct ithrd *)r->thrd_id;
-    __tss_run_dtors((thrd_t)p); // do this immediately on exit in case the thread
-                                // languishes waiting for a detatch.
-                                // it also allows us to free the local storage immediately
-                                // which is good because once the thread exits we don't have access to that
+    struct __rtl_data* r = __getRtlData();  // allocate the local storage
+    struct ithrd* p = (struct ithrd*)r->thrd_id;
+    __tss_run_dtors((thrd_t)p);  // do this immediately on exit in case the thread
+                                 // languishes waiting for a detatch.
+                                 // it also allows us to free the local storage immediately
+                                 // which is good because once the thread exits we don't have access to that
     __ll_enter_critical();
     free(r->thread_local_data);
     if (p && p->detach)
@@ -102,31 +102,33 @@ void __ll_thrdexit(unsigned retval)
     ExitThread(retval);
 }
 
-static int WINAPI thrdstart(struct ithrd *h)
+static int WINAPI thrdstart(struct ithrd* h)
 {
     int rv;
-    struct __rtl_data *r = __getRtlData(); // allocate the local storage
+    struct __rtl_data* r = __getRtlData();  // allocate the local storage
     r->thrd_id = h;
     load_local_data();
     SetEvent((HANDLE)h->stevent);
-    rv = ((unsigned (*)(void *))h->start)(h->arglist);
+    rv = ((unsigned (*)(void*))h->start)(h->arglist);
     __ll_thrdexit(rv);
     return 0;
 }
 
-int __ll_thrdstart(struct ithrd **thr, thrd_start_t *func, void *arglist )
+int __ll_thrdstart(struct ithrd** thr, thrd_start_t* func, void* arglist)
 {
     DWORD id;
-    struct ithrd *mem = calloc(1, sizeof(struct ithrd));
-    
-    if (mem) {
-        mem->start = func ;
+    struct ithrd* mem = calloc(1, sizeof(struct ithrd));
+
+    if (mem)
+    {
+        mem->start = func;
         mem->arglist = arglist;
-        mem->stevent = (void *)CreateEvent(0,0,0,0);
+        mem->stevent = (void*)CreateEvent(0, 0, 0, 0);
         __ll_enter_critical();
-        mem->handle = CreateThread(0,0,(LPTHREAD_START_ROUTINE)thrdstart,mem,0,&id);
+        mem->handle = CreateThread(0, 0, (LPTHREAD_START_ROUTINE)thrdstart, mem, 0, &id);
         __ll_exit_critical();
-        if (mem->handle != NULL) {
+        if (mem->handle != NULL)
+        {
             WaitForSingleObject((HANDLE)mem->stevent, INFINITE);
             CloseHandle((HANDLE)mem->stevent);
             *thr = mem;
@@ -141,18 +143,18 @@ int __ll_thrdstart(struct ithrd **thr, thrd_start_t *func, void *arglist )
     }
     return thrd_nomem;
 }
-int __ll_thrdwait(struct ithrd *thrd)
+int __ll_thrdwait(struct ithrd* thrd)
 {
     if (WaitForSingleObject(thrd->handle, INFINITE) == WAIT_OBJECT_0)
         return thrd_success;
     return thrd_error;
 }
-struct ithrd *__ll_thrdcurrent(void)
+struct ithrd* __ll_thrdcurrent(void)
 {
-    struct __rtl_data *r = __getRtlData(); // allocate the local storage
+    struct __rtl_data* r = __getRtlData();  // allocate the local storage
     return r->thrd_id;
 }
-int __ll_thrdexitcode(struct ithrd *thrd, int *rv)
+int __ll_thrdexitcode(struct ithrd* thrd, int* rv)
 {
     DWORD val;
     if (GetExitCodeThread(thrd->handle, &val))
@@ -161,9 +163,8 @@ int __ll_thrdexitcode(struct ithrd *thrd, int *rv)
         return thrd_success;
     }
     return thrd_error;
-        
 }
-int __ll_thrd_detach(struct ithrd *thrd)
+int __ll_thrd_detach(struct ithrd* thrd)
 {
     __ll_enter_critical();
     switch (WaitForSingleObject(thrd->handle, 0))
@@ -184,7 +185,4 @@ int __ll_thrd_detach(struct ithrd *thrd)
             return thrd_error;
     }
 }
-void __ll_thrdsleep(unsigned ms)
-{
-    Sleep(ms);
-}
+void __ll_thrdsleep(unsigned ms) { Sleep(ms); }

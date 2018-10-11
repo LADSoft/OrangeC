@@ -865,6 +865,7 @@ FILE *SrchPth(char *name, char *path, char *attrib, BOOLEAN sys);
 BOOLEAN parse_args(int *argc, char *argv[], BOOLEAN case_sensitive);
 void err_setup(char select, char *string);
 void incl_setup(char select, char *string);
+void sysincl_setup(char select, char *string);
 void def_setup(char select, char *string);
 void undef_setup(char select, char *string);
 void output_setup(char select, char *string);

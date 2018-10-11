@@ -3075,7 +3075,7 @@ static LEXEME* getArrayType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc st
             tpp->esize = intNode(en_c_i, tpp->btp->size);
             *tp = tpp;
         }
-        if (isstructured(typein))
+        if (typein && isstructured(typein))
         {
             checkIncompleteArray(typein, lex->file, lex->line);
         }

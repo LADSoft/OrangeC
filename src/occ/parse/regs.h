@@ -43,8 +43,7 @@ int regmap[REG_MAX][2] = {
     {0, -1}, {1, -1}, {2, -1}, {3, -1}, {4, -1}, {5, -1}, {6, -1},  {7, -1},
 
 };
-static ARCH_REGDESC regNames[] = {
-    {"EAX", 0, 0, -1, 5, {8, 9, 16, 20, 24}},
+static ARCH_REGDESC regNames[] = {{"EAX", 0, 0, -1, 5, {8, 9, 16, 20, 24}},
     {"ECX", 0, 1, -1, 5, {9, 10, 17, 21, 25}},
     {"EDX", 0, 2, -1, 5, {8, 10, 18, 22, 26}},
     {"EBX", 8, 3, -1, 5, {11, 12, 19, 23, 27}},
@@ -75,8 +74,7 @@ static ARCH_REGDESC regNames[] = {
     {"", 0},
     {"", 0},
     {"SI", 64, 6, -1, 3, {6, 11, 13}},
-    {"DI", 128, 7, -1, 3, {7, 12, 13}},
-};
+                                  {"DI", 128, 7, -1, 3, {7, 12, 13}}};
 
 static unsigned short pushedDoubleRegsArray[] = {11, 12, 13};
 static ARCH_REGCLASS pushedDoubleRegs = {NULL, 3, pushedDoubleRegsArray};

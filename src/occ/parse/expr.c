@@ -7197,7 +7197,7 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
             error(ERR_CANNOT_MODIFY_CONST_OBJECT);
         else if (isvoid(*tp) || isvoid(tp1) || (*tp)->type == bt_aggregate || tp1->type == bt_aggregate)
             error(ERR_NOT_AN_ALLOWED_TYPE);
-        else if (!isstructured(*tp) && (!isarray(*tp) || !basetype(*tp)->msil) && basetype(*tp)->type != bt_memberptr &&
+        else if (!isstructured(*tp) && ((*tp)->btp && !ispointer((*tp)->btp)) && (!isarray(*tp) || !basetype(*tp)->msil) && basetype(*tp)->type != bt_memberptr &&
                  basetype(*tp)->type != bt_templateparam && !lvalue(*exp) && (*exp)->type != en_msil_array_access)
             error(ERR_LVALUE);
         else if (symRef && symRef->v.sp->linkage2 == lk_property && !symRef->v.sp->has_property_setter)
@@ -7345,8 +7345,12 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                                 error(ERR_NONPORTABLE_POINTER_CONVERSION);
                             }
                         }
-                        else if (ispointer(tp1))
+                        else if (ispointer(basetype(tp1)) || tp1->type == bt_any)
                         {
+                            while (tp1->type == bt_any)
+                                tp1 = tp1->btp;
+                            if (!ispointer(basetype(tp1)))
+                                goto end;
                             if (!comparetypes(*tp, tp1, TRUE))
                             {
                                 BOOLEAN found = FALSE;
@@ -7425,6 +7429,7 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                             else
                                 error(ERR_INVALID_POINTER_CONVERSION);
                         }
+                    end:;
                     }
                     else if (ispointer(tp1))
                     {

@@ -119,6 +119,7 @@ void verbose_setup(char select, char* string);
 void library_setup(char select, char* string);
 void tool_setup(char select, char* string);
 void warning_setup(char select, char* string);
+void sysincl_setup(char select, char* string);
 /* setup for ARGS.C */
 static CMDLIST Args[] = {{'8', ARG_BOOL, bool_setup},
                          {'9', ARG_BOOL, bool_setup},
@@ -126,6 +127,7 @@ static CMDLIST Args[] = {{'8', ARG_BOOL, bool_setup},
                          {'A', ARG_BOOL, bool_setup},
                          {'E', ARG_CONCATSTRING, err_setup},
                          {'I', ARG_COMBINESTRING, incl_setup},
+                         {'z', ARG_COMBINESTRING, sysincl_setup},
                          {'L', ARG_COMBINESTRING, libpath_setup},
                          {'D', ARG_CONCATSTRING, def_setup},
                          {'U', ARG_CONCATSTRING, undef_setup},

@@ -1441,7 +1441,7 @@ static LEXEME* initialize_pointer_type(LEXEME* lex, SYMBOL* funcsp, int offset, 
                 error(ERR_MANAGED_OBJECT_NO_ADDRESS);
             else if (isstructured(tp))
                 error(ERR_ILL_STRUCTURE_ASSIGNMENT);
-            else if (!ispointer(tp) && !isfunction(tp) && !isint(tp) && tp->type != bt_aggregate)
+            else if (!ispointer(tp) && (tp->btp && !ispointer(tp->btp)) && !isfunction(tp) && !isint(tp) && tp->type != bt_aggregate)
                 error(ERR_INVALID_POINTER_CONVERSION);
             else if (isfunction(tp) || tp->type == bt_aggregate)
             {
@@ -4009,8 +4009,11 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_sc storage_cl
                     if (sp->storage_class != sc_external && sp->storage_class != sc_typedef && sp->storage_class != sc_member &&
                         sp->storage_class != sc_mutable)
                     {
-                        if (!isstructured(tp) || !cparams.prm_cplusplus || (basetype(tp)->sp->trivialCons && hasData(tp)))
+                        if (!sp->assigned &&
+                            (!isstructured(tp) || !cparams.prm_cplusplus || (basetype(tp)->sp->trivialCons && hasData(tp))))
+                        {
                             errorsym(ERR_CONSTANT_MUST_BE_INITIALIZED, sp);
+                        }
                     }
                 }
             }
@@ -4056,11 +4059,12 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_sc storage_cl
             SYMBOL* tmpl;
             tmpl = sp;
             while (tmpl)
+            {
                 if (tmpl->templateLevel)
                     break;
                 else
-
                     tmpl = tmpl->parentClass;
+            }
             if (!tmpl)
             {
                 insertInitSym(sp);

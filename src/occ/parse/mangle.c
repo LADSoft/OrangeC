@@ -35,9 +35,7 @@ char* overloadNameTab[] = {"$bctr",  "$bdtr",   "$bcast",  "$bnew",   "$bdel",  
                            "$basn",  "$basadd", "$bassub", "$basmul", "$basdiv", "$basmod", "$basshl", "$bsasshr", "$basand",
                            "$basor", "$basxor", "$binc",   "$bdec",   "$barray", "$bcall",  "$bstar",  "$barrow",  "$bcomma",
                            "$blor",  "$bland",  "$bnot",   "$bor",    "$band",   "$bxor",   "$bcpl",   "$bnwa",    "$bdla",
-                           "$blit",  "$badd",   "$bsub",   "$bmul",   "$band"
-
-};
+                           "$blit",  "$badd",   "$bsub",   "$bmul",   "$band"};
 char* msiloverloadNameTab[] = {".ctor",
                                ".dtor",
                                ".bcast",
@@ -91,8 +89,7 @@ char* msiloverloadNameTab[] = {".ctor",
 char* overloadXlateTab[] = {
     0,    0,   0,    "new", "delete", "+",  "-",  "*",   "/",   "<<",    ">>",       "%",    "==", "!=", "<",  "<=", ">",
     ">=", "=", "+=", "-=",  "*=",     "/=", "%=", "<<=", ">>=", "&=",    "|=",       "^=",   "++", "--", "[]", "()", "->*",
-    "->", ",", "||", "&&",  "!",      "|",  "&",  "^",   "~",   "new[]", "delete[]", "\"\"", "+",  "-",  "*",  "&",
-};
+    "->", ",", "||", "&&",  "!",      "|",  "&",  "^",   "~",   "new[]", "delete[]", "\"\"", "+",  "-",  "*",  "&"};
 #define IT_THRESHOLD 2
 #define IT_OV_THRESHOLD 2
 #define IT_SIZE (sizeof(cpp_funcname_tab) / sizeof(char*))

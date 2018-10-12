@@ -460,13 +460,13 @@ void ObjIeeeAscii::RenderMemoryBinary(ObjMemoryManager* Memory)
         ObjMemory* memory = (*itmem);
         if (memory->GetFixup())
         {
-             memset(scratch, 0, memory->GetSize());
-             bufferup(scratch, memory->GetSize());
+            memset(scratch, 0, memory->GetSize());
+            bufferup(scratch, memory->GetSize());
         }
         if (memory->IsEnumerated())
         {
             memset(scratch, memory->GetFill(), sizeof(scratch));
-            int len  = memory->GetSize();
+            int len = memory->GetSize();
             while (len > sizeof(scratch))
             {
                 bufferup(scratch, sizeof(scratch));
@@ -476,7 +476,7 @@ void ObjIeeeAscii::RenderMemoryBinary(ObjMemoryManager* Memory)
         }
         else if (memory->GetData())
         {
-            bufferup((char *)memory->GetData(), memory->GetSize());
+            bufferup((char*)memory->GetData(), memory->GetSize());
         }
     }
 }

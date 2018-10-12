@@ -1909,7 +1909,7 @@ LEXEME* parse_declspec(LEXEME* lex, enum e_lk* linkage, enum e_lk* linkage2, enu
                 }
                 else
                 {
-	            error(ERR_IGNORING__DECLSPEC);
+                    error(ERR_IGNORING__DECLSPEC);
                 }
             }
             else if (MATCHKW(lex, kw_noreturn))
@@ -1920,7 +1920,7 @@ LEXEME* parse_declspec(LEXEME* lex, enum e_lk* linkage, enum e_lk* linkage2, enu
             }
             else
             {
-	        error(ERR_IGNORING__DECLSPEC);
+                error(ERR_IGNORING__DECLSPEC);
                 break;
             }
             lex = getsym();

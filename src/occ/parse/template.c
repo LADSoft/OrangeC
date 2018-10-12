@@ -1628,6 +1628,9 @@ SYMBOL* LookupFunctionSpecialization(SYMBOL* overloads, SYMBOL* sp)
 
 
 
+
+
+
     spList = (SYMBOL **)Alloc(n * sizeof(SYMBOL *));
     n = 0;
     hr = overloads->tp->syms->table[0];
@@ -5323,6 +5326,10 @@ void TemplatePartialOrdering(SYMBOL** table, int count, FUNCTIONCALL* funcparams
 
 
 
+
+
+
+
                             }
                             else
                             {
@@ -5591,6 +5598,10 @@ static void TemplateTransferClassDeferred(SYMBOL* newCls, SYMBOL* tmpl)
                                             tpn = tpn->next;
                                         }
                                         
+
+
+
+
 
 
 

@@ -1441,7 +1441,8 @@ static LEXEME* initialize_pointer_type(LEXEME* lex, SYMBOL* funcsp, int offset, 
                 error(ERR_MANAGED_OBJECT_NO_ADDRESS);
             else if (isstructured(tp))
                 error(ERR_ILL_STRUCTURE_ASSIGNMENT);
-            else if (!ispointer(tp) && (tp->btp && !ispointer(tp->btp)) && !isfunction(tp) && !isint(tp) && tp->type != bt_aggregate)
+            else if (!ispointer(tp) && (tp->btp && !ispointer(tp->btp)) && !isfunction(tp) && !isint(tp) &&
+                     tp->type != bt_aggregate)
                 error(ERR_INVALID_POINTER_CONVERSION);
             else if (isfunction(tp) || tp->type == bt_aggregate)
             {

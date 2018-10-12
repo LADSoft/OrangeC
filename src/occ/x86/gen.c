@@ -4395,7 +4395,7 @@ void asm_atomic(QUAD* q)
                                         zf              nz
                                         true            false
                 rm32       eax        rm32      reg     eax        rm32
-                
+                
 
 
 

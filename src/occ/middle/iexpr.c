@@ -2435,7 +2435,7 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
             *ap1 = *ap;
             ap1->retval = FALSE;
             ap = ap1;
-//            ap->mode = i_ind;
+            //            ap->mode = i_ind;
             ap->mode = i_direct;
         }
         if (f->callLab && xcexp)

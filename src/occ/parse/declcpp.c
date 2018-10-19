@@ -1229,7 +1229,9 @@ LEXEME* baseClasses(LEXEME* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac defa
                         // throwaway
                         TEMPLATEPARAMLIST* lst = NULL;
                         SYMBOL* sp1;
-                        lex = GetTemplateArguments(lex, funcsp, NULL, &lst);
+                        inTemplateSpecialization++;
+                        lex = GetTemplateArguments(lex, funcsp, bcsym, &lst);
+                        inTemplateSpecialization--;
                         sp1 = GetTypedefSpecialization(bcsym, lst);
                         if (sp1)
                         {
@@ -1238,8 +1240,8 @@ LEXEME* baseClasses(LEXEME* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac defa
                                 bcsym->tp = PerformDeferredInitialization(bcsym->tp, funcsp);
                             else
                                 bcsym->tp = SynthesizeType(bcsym->tp, NULL, FALSE);
-                            if (isstructured(bcsym->tp))
-                                bcsym = bcsym->tp->sp;
+//                            if (isstructured(bcsym->tp))
+//                                bcsym = basetype(bcsym->tp)->sp;
                         }
                     }
                     else

@@ -419,6 +419,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
     }
     if (sp)
     {
+
         HASHREC* hr;
         static int count;
         browse_usage(sp, lex->filenum);

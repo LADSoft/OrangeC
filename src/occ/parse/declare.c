@@ -3121,6 +3121,7 @@ static void matchFunctionDeclaration(LEXEME* lex, SYMBOL* sp, SYMBOL* spo, BOOLE
                 !comparetypes(basetype(spo->tp)->btp, basetype(sp->tp)->btp, TRUE) &&
                 !sameTemplatePointedTo(basetype(spo->tp)->btp, basetype(sp->tp)->btp))
             {
+                comparetypes(basetype(spo->tp)->btp, basetype(sp->tp)->btp, TRUE);
                 preverrorsym(ERR_TYPE_MISMATCH_FUNC_DECLARATION, spo, spo->declfile, spo->declline);
             }
             else

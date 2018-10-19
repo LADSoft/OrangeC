@@ -319,29 +319,22 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUES** ns, BOOLEAN* thr
                     sp = classsearch(buf, FALSE, FALSE);
                     if (sp && sp->tp->type == bt_templateparam)
                     {
-                        if (sp->tp->templateParam->p->packed)
+                        TEMPLATEPARAMLIST* params = sp->tp->templateParam;
+                        if (params->p->type == kw_typename)
                         {
-                            break;
+                            if (params->p->byClass.val)
+                            {
+                                sp = basetype(params->p->byClass.val)->sp;
+                                dependentType = params->p->byClass.val;
+                            }
+                        }
+                        else if (params->p->type == kw_template)
+                        {
+                            templateParamAsTemplate = params;
+                            sp = params->p->byTemplate.val;
                         }
                         else
-                        {
-                            TEMPLATEPARAMLIST* params = sp->tp->templateParam;
-                            if (params->p->type == kw_typename)
-                            {
-                                if (params->p->byClass.val)
-                                {
-                                    sp = basetype(params->p->byClass.val)->sp;
-                                    dependentType = params->p->byClass.val;
-                                }
-                            }
-                            else if (params->p->type == kw_template)
-                            {
-                                templateParamAsTemplate = params;
-                                sp = params->p->byTemplate.val;
-                            }
-                            else
-                                break;
-                        }
+                            break;
                     }
                     if (sp && throughClass)
                         *throughClass = TRUE;
@@ -517,9 +510,14 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUES** ns, BOOLEAN* thr
                             {
                                 SYMBOL* sp1 = GetTypedefSpecialization(sp->mainsym, current);
                                 if (sp1 && sp1->instantiated)
+                                {
                                     sp = sp1;
+                                    qualified = FALSE;
+                                }
                                 else
+                                {
                                     deferred = TRUE;
+                                }
                             }
                             else
                             {
@@ -541,7 +539,14 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUES** ns, BOOLEAN* thr
                             if (!deferred)
                             {
                                 SYMBOL* sp1 = sp;
-                                sp = GetClassTemplate(sp, current, FALSE);
+                                if (sp->storage_class == sc_typedef)
+                                {
+                                    sp = GetTypedefSpecialization(sp, current);
+                                    if (isstructured(sp->tp))
+                                        sp = basetype(sp->tp)->sp;
+                                }
+                                else
+                                    sp = GetClassTemplate(sp, current, FALSE);
                                 if (!sp)
                                 {
                                     if (templateNestingCount)

@@ -153,7 +153,6 @@ static int isAvailable(imtx *mtx)
 int     _RTL_FUNC mtx_timedlock(mtx_t *mtx, const timespec *xt)
 {
     imtx *p = (imtx *)*mtx;
-    int n = p->mode & ~mtx_recursive;
     __ll_enter_critical();
     if (p->sig == MTX_SIG && (xt == (void *)-1 || (xt != (void *)-1 && (p->mode == mtx_try || xt != NULL && p->mode == mtx_timed))))
     {

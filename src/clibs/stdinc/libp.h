@@ -84,6 +84,7 @@ int __ll_remove(const char *__name);
 int __ll_rmdir(const char *name);
 
 /* malloc stuff */
+#define MALLOC_MASK 0xfffffff8
 void *__ll_malloc(size_t __size);
 void __ll_free(void *__blk);
 

@@ -158,8 +158,8 @@ int _RTL_FUNC _IMPORT _unlink(const char *);
 int _RTL_FUNC _IMPORT _write(int, const void *, unsigned int);
 
 #ifdef __cplusplus
-} ;
-} ;
+};
+};
 #endif
 
 #pragma pack()

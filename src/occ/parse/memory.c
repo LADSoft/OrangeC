@@ -154,9 +154,8 @@ void* Alloc(int size)
 #ifndef PARSER_ONLY
     if (!globalFlag)
         return memAlloc(&locals, size);
-    else
 #endif
-        return memAlloc(&globals, size);
+    return memAlloc(&globals, size);
 }
 void* oAlloc(int size) { return memAlloc(&opts, size); }
 void oFree(void) { memFree(&opts, &optPeak); }

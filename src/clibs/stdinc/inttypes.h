@@ -173,6 +173,22 @@
 #define PRIxPTR64           "llx"
 #define PRIXPTR64           "llX"
 
+#ifdef UINTPTR_MAX == INT32_MAX
+#define PRIdPTR             PRIdPTR32
+#define PRIiPTR             PRIiPTR32
+#define PRIoPTR             PRIoPTR32
+#define PRIuPTR             PRIuPTR32
+#define PRIxPTR             PRIxPTR32
+#define PRIXPTR             PRIXPTR32
+#else
+#define PRIdPTR             PRIdPTR64
+#define PRIiPTR             PRIiPTR64
+#define PRIoPTR             PRIoPTR64
+#define PRIuPTR             PRIuPTR64
+#define PRIxPTR             PRIxPTR64
+#define PRIXPTR             PRIXPTR64
+#endif
+
 #define SCNd8               "hhd"
 #define SCNi8               "hhi"
 #define SCNo8               "hho"

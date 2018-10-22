@@ -3,34 +3,31 @@
 #include "PEHeader.h"
 #include "sqlite3.h"
 
-BOOL __stdcall GetModuleHandleExW(
-  DWORD   dwFlags,
-  LPCTSTR lpModuleName,
-  HMODULE *phModule
-);
+BOOL __stdcall GetModuleHandleExW(DWORD dwFlags, LPCTSTR lpModuleName, HMODULE* phModule);
 #define GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS 4
 
-char *unmangle(char *val, char *name);
+char* unmangle(char* val, char* name);
 
 #define DBVersion 100
 
 int version_ok;
-static BOOL DebugFileName(char *buf, BYTE *base)
+static BOOL DebugFileName(char* buf, BYTE* base)
 {
     DWORD dbgBase;
     DWORD read;
-    dbgBase = *(DWORD *)(base + 0x3c);
-    dbgBase = ((struct PEHeader *)(base + dbgBase))->debug_rva;
+    dbgBase = *(DWORD*)(base + 0x3c);
+    dbgBase = ((struct PEHeader*)(base + dbgBase))->debug_rva;
     if (dbgBase && !memcmp(base + dbgBase, "LS14", 4))
     {
-        memcpy(buf, base + dbgBase + 33, *(BYTE*)(base + dbgBase+32));
-        buf[*(BYTE*)(base + dbgBase+32)] = 0;
-        return 1;                            
+        memcpy(buf, base + dbgBase + 33, *(BYTE*)(base + dbgBase + 32));
+        buf[*(BYTE*)(base + dbgBase + 32)] = 0;
+        return 1;
     }
     return 0;
 }
 
-static int verscallback(void *NotUsed, int argc, char **argv, char **azColName){
+static int verscallback(void* NotUsed, int argc, char** argv, char** azColName)
+{
     int i;
     if (argc == 1)
     {
@@ -39,23 +36,21 @@ static int verscallback(void *NotUsed, int argc, char **argv, char **azColName){
     }
     return 0;
 }
-static DWORD ReadImageBase(sqlite3 *db)
+static DWORD ReadImageBase(sqlite3* db)
 {
-    static char *query = {
-        "SELECT value FROM dbPropertyBag WHERE property = \"ImageBase\";"
-    };
+    static char* query = {"SELECT value FROM dbPropertyBag WHERE property = \"ImageBase\";"};
     int rc = SQLITE_OK;
     DWORD rv = -1;
-    sqlite3_stmt *handle;
-    
-    rc = sqlite3_prepare_v2(db, query, strlen(query)+1, &handle, NULL);
+    sqlite3_stmt* handle;
+
+    rc = sqlite3_prepare_v2(db, query, strlen(query) + 1, &handle, NULL);
     if (rc == SQLITE_OK)
     {
         int done = FALSE;
         rc = SQLITE_DONE;
         while (!done)
         {
-            switch(rc = sqlite3_step(handle))
+            switch (rc = sqlite3_step(handle))
             {
                 case SQLITE_BUSY:
                     done = TRUE;
@@ -64,7 +59,7 @@ static DWORD ReadImageBase(sqlite3 *db)
                     done = TRUE;
                     break;
                 case SQLITE_ROW:
-                    rv = atoi((char *)sqlite3_column_text(handle, 0));
+                    rv = atoi((char*)sqlite3_column_text(handle, 0));
                     rc = SQLITE_OK;
                     done = TRUE;
                     break;
@@ -78,23 +73,24 @@ static DWORD ReadImageBase(sqlite3 *db)
     return rv;
 }
 
-static void DBClose(sqlite3 *db)
+static void DBClose(sqlite3* db)
 {
     if (db)
         sqlite3_close(db);
 }
 
-static sqlite3 *DBOpen(char *name, DWORD *linkbase)
+static sqlite3* DBOpen(char* name, DWORD* linkbase)
 {
-    sqlite3 *db = NULL;
-    if (sqlite3_open_v2(name, &db,SQLITE_OPEN_READWRITE, NULL) == SQLITE_OK)
+    sqlite3* db = NULL;
+    if (sqlite3_open_v2(name, &db, SQLITE_OPEN_READWRITE, NULL) == SQLITE_OK)
     {
-        char *zErrMsg = NULL;
+        char* zErrMsg = NULL;
         version_ok = FALSE;
-        if (sqlite3_exec(db, "SELECT value FROM dbPropertyBag WHERE property = \"dbVersion\"", 
-                              verscallback, 0, &zErrMsg) != SQLITE_OK  || !version_ok)
+        if (sqlite3_exec(db, "SELECT value FROM dbPropertyBag WHERE property = \"dbVersion\"", verscallback, 0, &zErrMsg) !=
+                SQLITE_OK ||
+            !version_ok)
         {
-           sqlite3_free(zErrMsg);
+            sqlite3_free(zErrMsg);
         }
         else
         {
@@ -102,38 +98,35 @@ static sqlite3 *DBOpen(char *name, DWORD *linkbase)
             *linkbase = ReadImageBase(db);
             if (*linkbase == (DWORD)-1)
             {
-                    
+
                 DBClose(db);
                 db = NULL;
-            }            
+            }
         }
     }
     return db;
 }
-static int GetFuncId(sqlite3 *db, int Address)
+static int GetFuncId(sqlite3* db, int Address)
 {
-    static char *query = {
+    static char* query = {
         "SELECT Names.id, globals.varAddress FROM Names"
         "    JOIN globals on globals.symbolId = Names.id"
-        "    WHERE globals.varAddress <= ?" 
-        "       ORDER BY globals.varAddress DESC;"
-    };
-    static char *lquery = {
+        "    WHERE globals.varAddress <= ?"
+        "       ORDER BY globals.varAddress DESC;"};
+    static char* lquery = {
         "SELECT Names.id, Locals.varAddress FROM Names"
         "    JOIN Locals on Locals.symbolId = Names.id"
-        "    WHERE Locals.varAddress <= ?" 
-        "       ORDER BY Locals.varAddress DESC;"
-    };
-    static char *vquery = {
+        "    WHERE Locals.varAddress <= ?"
+        "       ORDER BY Locals.varAddress DESC;"};
+    static char* vquery = {
         "SELECT Names.id, virtuals.varAddress FROM Names"
         "    JOIN virtuals on virtuals.symbolId = Names.id"
-        "    WHERE virtuals.varAddress <= ?" 
-        "       ORDER BY virtuals.varAddress DESC;"
-    };
-    int rv = 0, gbl=0, lcl=0, vir = 0, agbl =0, alcl=0, avir = 0;
+        "    WHERE virtuals.varAddress <= ?"
+        "       ORDER BY virtuals.varAddress DESC;"};
+    int rv = 0, gbl = 0, lcl = 0, vir = 0, agbl = 0, alcl = 0, avir = 0;
     int rc = SQLITE_OK;
-    sqlite3_stmt *handle;
-    rc = sqlite3_prepare_v2(db, query, strlen(query)+1, &handle, NULL);
+    sqlite3_stmt* handle;
+    rc = sqlite3_prepare_v2(db, query, strlen(query) + 1, &handle, NULL);
     if (rc == SQLITE_OK)
     {
         int done = FALSE;
@@ -141,7 +134,7 @@ static int GetFuncId(sqlite3 *db, int Address)
         sqlite3_bind_int(handle, 1, Address);
         while (!done)
         {
-            switch(rc = sqlite3_step(handle))
+            switch (rc = sqlite3_step(handle))
             {
                 case SQLITE_BUSY:
                     done = TRUE;
@@ -162,7 +155,7 @@ static int GetFuncId(sqlite3 *db, int Address)
         }
         sqlite3_finalize(handle);
     }
-    rc = sqlite3_prepare_v2(db, lquery, strlen(lquery)+1, &handle, NULL);
+    rc = sqlite3_prepare_v2(db, lquery, strlen(lquery) + 1, &handle, NULL);
     if (rc == SQLITE_OK)
     {
         int done = FALSE;
@@ -170,7 +163,7 @@ static int GetFuncId(sqlite3 *db, int Address)
         sqlite3_bind_int(handle, 1, Address);
         while (!done)
         {
-            switch(rc = sqlite3_step(handle))
+            switch (rc = sqlite3_step(handle))
             {
                 case SQLITE_BUSY:
                     done = TRUE;
@@ -191,7 +184,7 @@ static int GetFuncId(sqlite3 *db, int Address)
         }
         sqlite3_finalize(handle);
     }
-    rc = sqlite3_prepare_v2(db, vquery, strlen(vquery)+1, &handle, NULL);
+    rc = sqlite3_prepare_v2(db, vquery, strlen(vquery) + 1, &handle, NULL);
     if (rc == SQLITE_OK)
     {
         int done = FALSE;
@@ -199,7 +192,7 @@ static int GetFuncId(sqlite3 *db, int Address)
         sqlite3_bind_int(handle, 1, Address);
         while (!done)
         {
-            switch(rc = sqlite3_step(handle))
+            switch (rc = sqlite3_step(handle))
             {
                 case SQLITE_BUSY:
                     done = TRUE;
@@ -221,26 +214,27 @@ static int GetFuncId(sqlite3 *db, int Address)
         sqlite3_finalize(handle);
     }
     if (agbl < alcl)
+    {
         if (avir < alcl)
+        {
             return lcl;
-        else
-            return vir;
-    else if (agbl < avir)
+        }
         return vir;
-    else
-        return gbl;
+    }
+    if (agbl < avir)
+        return vir;
+    return gbl;
 }
-static int GetEqualsBreakpoint(sqlite3 *db, DWORD Address, char *module, int *linenum)
+static int GetEqualsBreakpoint(sqlite3* db, DWORD Address, char* module, int* linenum)
 {
-    static char *query = {
+    static char* query = {
         "SELECT FileNames.name, LineNumbers.line, LineNumbers.address FROM  LineNumbers"
         "    JOIN FileNames on LineNumbers.fileId = FileNames.id"
-        "    WHERE LineNumbers.address <= ? ORDER BY LineNumbers.address DESC ;"
-    };
+        "    WHERE LineNumbers.address <= ? ORDER BY LineNumbers.address DESC ;"};
     int rv = 0;
     int rc = SQLITE_OK;
-    sqlite3_stmt *handle;
-    rc = sqlite3_prepare_v2(db, query, strlen(query)+1, &handle, NULL);
+    sqlite3_stmt* handle;
+    rc = sqlite3_prepare_v2(db, query, strlen(query) + 1, &handle, NULL);
     if (rc == SQLITE_OK)
     {
         int done = FALSE;
@@ -248,7 +242,7 @@ static int GetEqualsBreakpoint(sqlite3 *db, DWORD Address, char *module, int *li
         sqlite3_bind_int(handle, 1, Address);
         while (!done)
         {
-            switch(rc = sqlite3_step(handle))
+            switch (rc = sqlite3_step(handle))
             {
                 case SQLITE_BUSY:
                     done = TRUE;
@@ -260,7 +254,7 @@ static int GetEqualsBreakpoint(sqlite3 *db, DWORD Address, char *module, int *li
                     // skim to last listed line number...
                     if (rv == 0 || sqlite3_column_int(handle, 2) == rv)
                     {
-                        strcpy(module, (char *) sqlite3_column_text(handle, 0));
+                        strcpy(module, (char*)sqlite3_column_text(handle, 0));
                         *linenum = sqlite3_column_int(handle, 1);
                         if (!rv)
                             rv = sqlite3_column_int(handle, 2);
@@ -285,7 +279,7 @@ static int GetEqualsBreakpoint(sqlite3 *db, DWORD Address, char *module, int *li
     }
     return rv;
 }
-static int GetGlobalName(sqlite3 *db, char *name, int *type, int Address, int equals)
+static int GetGlobalName(sqlite3* db, char* name, int* type, int Address, int equals)
 {
     char gname[512];
     int gtype;
@@ -296,50 +290,44 @@ static int GetGlobalName(sqlite3 *db, char *name, int *type, int Address, int eq
     char vname[512];
     int vtype;
     int vaddr;
-    static char *eqquery = {
+    static char* eqquery = {
         "SELECT Names.name, globals.varAddress, globals.typeId FROM Names"
         "    JOIN globals on globals.symbolId = Names.id"
-        "    WHERE globals.varAddress = ?" 
-        "       ORDER BY globals.varAddress DESC;"
-    };
-    static char *lequery = {
+        "    WHERE globals.varAddress = ?"
+        "       ORDER BY globals.varAddress DESC;"};
+    static char* lequery = {
         "SELECT Names.name, globals.varAddress, globals.typeId FROM Names"
         "    JOIN globals on globals.symbolId = Names.id"
-        "    WHERE globals.varAddress <= ?" 
-        "       ORDER BY globals.varAddress DESC;"
-    };
-    static char *leqquery = {
+        "    WHERE globals.varAddress <= ?"
+        "       ORDER BY globals.varAddress DESC;"};
+    static char* leqquery = {
         "SELECT Names.name, Locals.varAddress, Locals.typeId FROM Names"
         "    JOIN Locals on Locals.symbolId = Names.id"
-        "    WHERE Locals.varAddress = ?" 
-        "       ORDER BY Locals.varAddress DESC;"
-    };
-    static char *llequery = {
+        "    WHERE Locals.varAddress = ?"
+        "       ORDER BY Locals.varAddress DESC;"};
+    static char* llequery = {
         "SELECT Names.name, Locals.varAddress, Locals.typeId FROM Names"
         "    JOIN Locals on Locals.symbolId = Names.id"
-        "    WHERE Locals.varAddress <= ?" 
-        "       ORDER BY Locals.varAddress DESC;"
-    };
-    static char *veqquery = {
+        "    WHERE Locals.varAddress <= ?"
+        "       ORDER BY Locals.varAddress DESC;"};
+    static char* veqquery = {
         "SELECT Names.name, virtuals.varAddress, virtuals.typeId FROM Names"
         "    JOIN virtuals on virtuals.symbolId = Names.id"
-        "    WHERE virtuals.varAddress = ?" 
-        "       ORDER BY virtuals.varAddress DESC;"
-    };
-    static char *vlequery = {
+        "    WHERE virtuals.varAddress = ?"
+        "       ORDER BY virtuals.varAddress DESC;"};
+    static char* vlequery = {
         "SELECT Names.name, virtuals.varAddress, virtuals.typeId FROM Names"
         "    JOIN virtuals on virtuals.symbolId = Names.id"
-        "    WHERE virtuals.varAddress <= ?" 
-        "       ORDER BY virtuals.varAddress DESC;"
-    };
-    char *query = equals ? eqquery : lequery;
+        "    WHERE virtuals.varAddress <= ?"
+        "       ORDER BY virtuals.varAddress DESC;"};
+    char* query = equals ? eqquery : lequery;
     int rv = 0;
     int rc = SQLITE_OK;
-    sqlite3_stmt *handle;
+    sqlite3_stmt* handle;
     gname[0] = lname[0] = 0;
     gaddr = laddr = vaddr = 0;
     gtype = ltype = vtype = 0;
-    rc = sqlite3_prepare_v2(db, query, strlen(query)+1, &handle, NULL);
+    rc = sqlite3_prepare_v2(db, query, strlen(query) + 1, &handle, NULL);
     if (rc == SQLITE_OK)
     {
         int done = FALSE;
@@ -347,7 +335,7 @@ static int GetGlobalName(sqlite3 *db, char *name, int *type, int Address, int eq
         sqlite3_bind_int(handle, 1, Address);
         while (!done)
         {
-            switch(rc = sqlite3_step(handle))
+            switch (rc = sqlite3_step(handle))
             {
                 case SQLITE_BUSY:
                     done = TRUE;
@@ -356,7 +344,7 @@ static int GetGlobalName(sqlite3 *db, char *name, int *type, int Address, int eq
                     done = TRUE;
                     break;
                 case SQLITE_ROW:
-                    strcpy(gname, (char *)sqlite3_column_text(handle, 0));
+                    strcpy(gname, (char*)sqlite3_column_text(handle, 0));
                     gaddr = sqlite3_column_int(handle, 1);
                     gtype = sqlite3_column_int(handle, 2);
                     rc = SQLITE_OK;
@@ -371,7 +359,7 @@ static int GetGlobalName(sqlite3 *db, char *name, int *type, int Address, int eq
     }
     query = equals ? leqquery : llequery;
     rc = SQLITE_OK;
-    rc = sqlite3_prepare_v2(db, query, strlen(query)+1, &handle, NULL);
+    rc = sqlite3_prepare_v2(db, query, strlen(query) + 1, &handle, NULL);
     if (rc == SQLITE_OK)
     {
         int done = FALSE;
@@ -379,7 +367,7 @@ static int GetGlobalName(sqlite3 *db, char *name, int *type, int Address, int eq
         sqlite3_bind_int(handle, 1, Address);
         while (!done)
         {
-            switch(rc = sqlite3_step(handle))
+            switch (rc = sqlite3_step(handle))
             {
                 case SQLITE_BUSY:
                     done = TRUE;
@@ -388,7 +376,7 @@ static int GetGlobalName(sqlite3 *db, char *name, int *type, int Address, int eq
                     done = TRUE;
                     break;
                 case SQLITE_ROW:
-                    strcpy(lname, (char *)sqlite3_column_text(handle, 0));
+                    strcpy(lname, (char*)sqlite3_column_text(handle, 0));
                     laddr = sqlite3_column_int(handle, 1);
                     ltype = sqlite3_column_int(handle, 2);
                     rc = SQLITE_OK;
@@ -403,7 +391,7 @@ static int GetGlobalName(sqlite3 *db, char *name, int *type, int Address, int eq
     }
     query = equals ? veqquery : vlequery;
     rc = SQLITE_OK;
-    rc = sqlite3_prepare_v2(db, query, strlen(query)+1, &handle, NULL);
+    rc = sqlite3_prepare_v2(db, query, strlen(query) + 1, &handle, NULL);
     if (rc == SQLITE_OK)
     {
         int done = FALSE;
@@ -411,7 +399,7 @@ static int GetGlobalName(sqlite3 *db, char *name, int *type, int Address, int eq
         sqlite3_bind_int(handle, 1, Address);
         while (!done)
         {
-            switch(rc = sqlite3_step(handle))
+            switch (rc = sqlite3_step(handle))
             {
                 case SQLITE_BUSY:
                     done = TRUE;
@@ -420,7 +408,7 @@ static int GetGlobalName(sqlite3 *db, char *name, int *type, int Address, int eq
                     done = TRUE;
                     break;
                 case SQLITE_ROW:
-                    strcpy(vname, (char *)sqlite3_column_text(handle, 0));
+                    strcpy(vname, (char*)sqlite3_column_text(handle, 0));
                     vaddr = sqlite3_column_int(handle, 1);
                     vtype = sqlite3_column_int(handle, 2);
                     rc = SQLITE_OK;
@@ -465,7 +453,7 @@ static int GetGlobalName(sqlite3 *db, char *name, int *type, int Address, int eq
         return gaddr;
     }
 }
-void GetModuleName(char *buf, unsigned addr, unsigned *base)
+void GetModuleName(char* buf, unsigned addr, unsigned* base)
 {
     buf[0] = 0;
     HMODULE module;
@@ -474,43 +462,43 @@ void GetModuleName(char *buf, unsigned addr, unsigned *base)
         DWORD dbgBase;
         DWORD read;
         *base = (unsigned)module;
-        dbgBase = *(DWORD *)((BYTE *)module + 0x3c);
-        dbgBase = ((struct PEHeader *)((BYTE *)module + dbgBase))->export_rva;
+        dbgBase = *(DWORD*)((BYTE*)module + 0x3c);
+        dbgBase = ((struct PEHeader*)((BYTE*)module + dbgBase))->export_rva;
         if (dbgBase)
         {
-            dbgBase = *(DWORD *)((BYTE *)module + dbgBase + 12);
-            strcpy(buf, (char *)((BYTE *)module + dbgBase));
+            dbgBase = *(DWORD*)((BYTE*)module + dbgBase + 12);
+            strcpy(buf, (char*)((BYTE*)module + dbgBase));
         }
     }
 }
 BOOL IsConsoleApp()
 {
-    BYTE *base = 0x400000;
+    BYTE* base = 0x400000;
     DWORD dbgBase;
     DWORD read;
-    dbgBase = *(DWORD *)(base + 0x3c);
-    return ((struct PEHeader *)(base + dbgBase))->subsystem == PE_SUBSYS_CONSOLE;
+    dbgBase = *(DWORD*)(base + 0x3c);
+    return ((struct PEHeader*)(base + dbgBase))->subsystem == PE_SUBSYS_CONSOLE;
 }
-__declspec(dllexport) void CALLBACK StackTrace(char *text, char *prog, PCONTEXT regs, void *base, void *stacktop)
+__declspec(dllexport) void CALLBACK StackTrace(char* text, char* prog, PCONTEXT regs, void* base, void* stacktop)
 {
-   sqlite3 *db = NULL;
-   unsigned currentBase = 0;
-   DWORD linkbase = 0;
-   char buf[10000] ;
-      sprintf(buf,"\n%s:(%s)\n",text, prog);
-      sprintf(buf+strlen(buf),"CS:EIP %04X:%08X  SS:ESP %04X:%08X\n",regs->SegCs,regs->Eip,regs->SegSs,regs->Esp);
-      sprintf(buf+strlen(buf),"EAX: %08X  EBX: %08X  ECX: %08X  EDX: %08X  flags: %08X\n",
-            regs->Eax, regs->Ebx, regs->Ecx, regs->Edx, regs->EFlags);
-      sprintf(buf+strlen(buf),"EBP: %08X  ESI: %08X  EDI: %08X\n",regs->Ebp,regs->Esi,regs->Edi);
-      sprintf(buf+strlen(buf)," DS:     %04X   ES:     %04X   FS:     %04X   GS:     %04X\n",
-         regs->SegDs,regs->SegEs,regs->SegFs,regs->SegGs);
+    sqlite3* db = NULL;
+    unsigned currentBase = 0;
+    DWORD linkbase = 0;
+    char buf[10000];
+    sprintf(buf, "\n%s:(%s)\n", text, prog);
+    sprintf(buf + strlen(buf), "CS:EIP %04X:%08X  SS:ESP %04X:%08X\n", regs->SegCs, regs->Eip, regs->SegSs, regs->Esp);
+    sprintf(buf + strlen(buf), "EAX: %08X  EBX: %08X  ECX: %08X  EDX: %08X  flags: %08X\n", regs->Eax, regs->Ebx, regs->Ecx,
+            regs->Edx, regs->EFlags);
+    sprintf(buf + strlen(buf), "EBP: %08X  ESI: %08X  EDI: %08X\n", regs->Ebp, regs->Esi, regs->Edi);
+    sprintf(buf + strlen(buf), " DS:     %04X   ES:     %04X   FS:     %04X   GS:     %04X\n", regs->SegDs, regs->SegEs,
+            regs->SegFs, regs->SegGs);
 
     char dbname[MAX_PATH];
-    DWORD *sp = regs->Ebp;
+    DWORD* sp = regs->Ebp;
     BOOL first = TRUE;
     while ((DWORD)sp >= regs->Esp && (DWORD)sp < stacktop)
     {
-        if (strlen(buf) > sizeof(buf)-1000)
+        if (strlen(buf) > sizeof(buf) - 1000)
             break;
         if (sp[1])
         {
@@ -525,19 +513,19 @@ __declspec(dllexport) void CALLBACK StackTrace(char *text, char *prog, PCONTEXT 
                 if (xbase != currentBase)
                 {
                     DBClose(db);
-                    if (DebugFileName(dbname, (BYTE *)xbase))
+                    if (DebugFileName(dbname, (BYTE*)xbase))
                     {
                         db = DBOpen(dbname, &linkbase);
                     }
                     else
                     {
-                         db = NULL;
+                        db = NULL;
                     }
                     currentBase = xbase;
                 }
                 sprintf(buf + strlen(buf), "\t%15s ", name);
                 sprintf(buf + strlen(buf), "%x", regs->Eip);
-		DWORD funcaddr = GetGlobalName(db, name, &type, regs->Eip - xbase + linkbase, 0);
+                DWORD funcaddr = GetGlobalName(db, name, &type, regs->Eip - xbase + linkbase, 0);
                 if (funcaddr)
                 {
                     unmangle(unmangled, name);
@@ -546,7 +534,7 @@ __declspec(dllexport) void CALLBACK StackTrace(char *text, char *prog, PCONTEXT 
                     GetEqualsBreakpoint(db, regs->Eip - xbase + linkbase, name, &linenum);
                     if (linenum)
                     {
-                        char *p = strrchr(name, '\\');
+                        char* p = strrchr(name, '\\');
                         if (p)
                             p++;
                         else
@@ -561,13 +549,13 @@ __declspec(dllexport) void CALLBACK StackTrace(char *text, char *prog, PCONTEXT 
             if (xbase != currentBase)
             {
                 DBClose(db);
-                if (DebugFileName(dbname, (BYTE *)xbase))
+                if (DebugFileName(dbname, (BYTE*)xbase))
                 {
                     db = DBOpen(dbname, &linkbase);
                 }
                 else
                 {
-                     db = NULL;
+                    db = NULL;
                 }
                 currentBase = xbase;
             }
@@ -575,7 +563,7 @@ __declspec(dllexport) void CALLBACK StackTrace(char *text, char *prog, PCONTEXT 
             sprintf(buf + strlen(buf), "%x", sp[1]);
             if (db)
             {
-		DWORD funcaddr = GetGlobalName(db, name, &type, sp[1] - xbase + linkbase, 0);
+                DWORD funcaddr = GetGlobalName(db, name, &type, sp[1] - xbase + linkbase, 0);
                 if (funcaddr)
                 {
                     unmangle(unmangled, name);
@@ -585,7 +573,7 @@ __declspec(dllexport) void CALLBACK StackTrace(char *text, char *prog, PCONTEXT 
                     GetEqualsBreakpoint(db, sp[1] - xbase + linkbase - 1, name, &linenum);
                     if (linenum)
                     {
-                        char *p = strrchr(name, '\\');
+                        char* p = strrchr(name, '\\');
                         if (p)
                             p++;
                         else
@@ -598,14 +586,14 @@ __declspec(dllexport) void CALLBACK StackTrace(char *text, char *prog, PCONTEXT 
         }
         sp = sp[0];
     }
-    DBClose(db);      
+    DBClose(db);
     if (IsConsoleApp())
     {
-      fputs(buf, stderr);
-      fflush(stderr);
+        fputs(buf, stderr);
+        fflush(stderr);
     }
     else
     {
-       MessageBoxA(0, buf, text, 0);
+        MessageBoxA(0, buf, text, 0);
     }
 }

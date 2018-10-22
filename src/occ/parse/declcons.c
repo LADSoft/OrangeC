@@ -642,7 +642,12 @@ SYMBOL* getCopyCons(SYMBOL* base, BOOLEAN move)
                 {
                     tp = basetype(tp->btp);
                     if (isstructured(tp))
-                    {
+                    {                        
+                        if (!base->tp->sp)
+                        {
+                            hr = hr->next;
+                            continue;
+                        }
                         if (tp->sp == base->tp->sp || tp->sp == base->tp->sp->mainsym || sameTemplate(tp, base->tp))
                         {
                             return (SYMBOL*)hr->p;

@@ -581,6 +581,22 @@ void warning_setup(char select, char* string)
 
 /*-------------------------------------------------------------------------*/
 
+void sysincl_setup(char select, char* string)
+{
+    (void)select;
+    if (sys_searchpath)
+    {
+        sys_searchpath = realloc(sys_searchpath, strlen(string) + strlen(sys_searchpath) + 2);
+        strcat(sys_searchpath, ";");
+    }
+    else
+    {
+        sys_searchpath = malloc(strlen(string) + 1);
+        sys_searchpath[0] = 0;
+    }
+    fflush(stdout);
+    strcat(sys_searchpath, string);
+}
 void incl_setup(char select, char* string)
 /*
  * activation for include paths

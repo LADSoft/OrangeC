@@ -78,12 +78,12 @@ int equalnode(EXPRESSION* node1, EXPRESSION* node2)
         case en_auto:
         case en_absolute:
         case en_threadlocal:
+        case en_tempref:
             return node1->v.sp == node2->v.sp;
-        case en_labcon:
-            return node1->v.i == node2->v.i;
         default:
             return (!node1->left || equalnode(node1->left, node2->left)) &&
                    (!node1->right || equalnode(node1->right, node2->right));
+        case en_labcon:
         case en_c_i:
         case en_c_l:
         case en_c_ul:
@@ -109,8 +109,6 @@ int equalnode(EXPRESSION* node1, EXPRESSION* node2)
         case en_c_fc:
         case en_c_ldc:
             return FPFEQ(&node1->v.c.r, &node2->v.c.r) && FPFEQ(&node1->v.c.i, &node2->v.c.i);
-        case en_tempref:
-            return node1->v.sp == node2->v.sp;
     }
 }
 char* GetSymName(SYMBOL* sp, SYMBOL* parent)

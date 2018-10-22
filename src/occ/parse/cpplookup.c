@@ -1357,10 +1357,10 @@ static BOOLEAN isAccessibleInternal(SYMBOL* derived, SYMBOL* currentBase, SYMBOL
         }
         else if (sym->storage_class == sc_typedef && sym->instantiations)
         {
-            LIST *data = sym->instantiations;
+            LIST* data = sym->instantiations;
             while (data)
             {
-                if ((SYMBOL *)data->data == member)
+                if ((SYMBOL*)data->data == member)
                 {
                     break;
                 }

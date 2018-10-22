@@ -53,18 +53,15 @@ static enum e_op op;
 #define ERR_INVALID_SCALE_SPECIFIER 6
 #define ERR_USE_LEA 7
 #define ERR_TOO_MANY_SEGMENTS 8
-static char* errors[] = {
-    "Lable expected",
-    "Illegal address mode",
-    "Address mode expected",
-    "Invalid opcode",
-    "Invalid instruction size",
-    "Invalid index mode",
-    "Invalid scale specifier",
-    "Use LEA to take address of auto variable",
-    "Too many segment specifiers",
-
-};
+static char* errors[] = {"Lable expected",
+                         "Illegal address mode",
+                         "Address mode expected",
+                         "Invalid opcode",
+                         "Invalid instruction size",
+                         "Invalid index mode",
+                         "Invalid scale specifier",
+                         "Use LEA to take address of auto variable",
+                         "Too many segment specifiers"};
 ASMNAME directiveLst[] = {{"db", op_reserved, ISZ_UCHAR, 0},
                           {"dw", op_reserved, ISZ_USHORT, 0},
                           {"dd", op_reserved, ISZ_ULONG, 0},
@@ -72,40 +69,38 @@ ASMNAME directiveLst[] = {{"db", op_reserved, ISZ_UCHAR, 0},
                           {"dt", op_reserved, ISZ_LDOUBLE, 0},
                           {"label", op_label, 0, 0},
                           {0}};
-ASMREG reglst[] = {
-    {"cs", am_seg, 1, ISZ_USHORT},     {"ds", am_seg, 2, ISZ_USHORT},
-    {"es", am_seg, 3, ISZ_USHORT},     {"fs", am_seg, 4, ISZ_USHORT},
-    {"gs", am_seg, 5, ISZ_USHORT},     {"ss", am_seg, 6, ISZ_USHORT},
-    {"al", am_dreg, 0, ISZ_UCHAR},     {"cl", am_dreg, 1, ISZ_UCHAR},
-    {"dl", am_dreg, 2, ISZ_UCHAR},     {"bl", am_dreg, 3, ISZ_UCHAR},
-    {"ah", am_dreg, 4, ISZ_UCHAR},     {"ch", am_dreg, 5, ISZ_UCHAR},
-    {"dh", am_dreg, 6, ISZ_UCHAR},     {"bh", am_dreg, 7, ISZ_UCHAR},
-    {"ax", am_dreg, 0, ISZ_USHORT},    {"cx", am_dreg, 1, ISZ_USHORT},
-    {"dx", am_dreg, 2, ISZ_USHORT},    {"bx", am_dreg, 3, ISZ_USHORT},
-    {"sp", am_dreg, 4, ISZ_USHORT},    {"bp", am_dreg, 5, ISZ_USHORT},
-    {"si", am_dreg, 6, ISZ_USHORT},    {"di", am_dreg, 7, ISZ_USHORT},
-    {"eax", am_dreg, 0, ISZ_UINT},     {"ecx", am_dreg, 1, ISZ_UINT},
-    {"edx", am_dreg, 2, ISZ_UINT},     {"ebx", am_dreg, 3, ISZ_UINT},
-    {"esp", am_dreg, 4, ISZ_UINT},     {"ebp", am_dreg, 5, ISZ_UINT},
-    {"esi", am_dreg, 6, ISZ_UINT},     {"edi", am_dreg, 7, ISZ_UINT},
-    {"st", am_freg, 0, ISZ_LDOUBLE},   {"cr0", am_screg, 0, ISZ_UINT},
-    {"cr1", am_screg, 1, ISZ_UINT},    {"cr2", am_screg, 2, ISZ_UINT},
-    {"cr3", am_screg, 3, ISZ_UINT},    {"cr4", am_screg, 4, ISZ_UINT},
-    {"cr5", am_screg, 5, ISZ_UINT},    {"cr6", am_screg, 6, ISZ_UINT},
-    {"cr7", am_screg, 7, ISZ_UINT},    {"dr0", am_sdreg, 0, ISZ_UINT},
-    {"dr1", am_sdreg, 1, ISZ_UINT},    {"dr2", am_sdreg, 2, ISZ_UINT},
-    {"dr3", am_sdreg, 3, ISZ_UINT},    {"dr4", am_sdreg, 4, ISZ_UINT},
-    {"dr5", am_sdreg, 5, ISZ_UINT},    {"dr6", am_sdreg, 6, ISZ_UINT},
-    {"dr7", am_sdreg, 7, ISZ_UINT},    {"tr0", am_streg, 0, ISZ_UINT},
-    {"tr1", am_streg, 1, ISZ_UINT},    {"tr2", am_streg, 2, ISZ_UINT},
-    {"tr3", am_streg, 3, ISZ_UINT},    {"tr4", am_streg, 4, ISZ_UINT},
-    {"tr5", am_streg, 5, ISZ_UINT},    {"tr6", am_streg, 6, ISZ_UINT},
-    {"tr7", am_streg, 7, ISZ_UINT},    {"byte", am_ext, akw_byte, 0},
-    {"word", am_ext, akw_word, 0},     {"dword", am_ext, akw_dword, 0},
-    {"fword", am_ext, akw_fword, 0},   {"qword", am_ext, akw_qword, 0},
-    {"tbyte", am_ext, akw_tbyte, 0},   {"ptr", am_ext, akw_ptr, 0},
-    {"offset", am_ext, akw_offset, 0}, {0, 0, 0},
-};
+ASMREG reglst[] = {{"cs", am_seg, 1, ISZ_USHORT},     {"ds", am_seg, 2, ISZ_USHORT},
+                   {"es", am_seg, 3, ISZ_USHORT},     {"fs", am_seg, 4, ISZ_USHORT},
+                   {"gs", am_seg, 5, ISZ_USHORT},     {"ss", am_seg, 6, ISZ_USHORT},
+                   {"al", am_dreg, 0, ISZ_UCHAR},     {"cl", am_dreg, 1, ISZ_UCHAR},
+                   {"dl", am_dreg, 2, ISZ_UCHAR},     {"bl", am_dreg, 3, ISZ_UCHAR},
+                   {"ah", am_dreg, 4, ISZ_UCHAR},     {"ch", am_dreg, 5, ISZ_UCHAR},
+                   {"dh", am_dreg, 6, ISZ_UCHAR},     {"bh", am_dreg, 7, ISZ_UCHAR},
+                   {"ax", am_dreg, 0, ISZ_USHORT},    {"cx", am_dreg, 1, ISZ_USHORT},
+                   {"dx", am_dreg, 2, ISZ_USHORT},    {"bx", am_dreg, 3, ISZ_USHORT},
+                   {"sp", am_dreg, 4, ISZ_USHORT},    {"bp", am_dreg, 5, ISZ_USHORT},
+                   {"si", am_dreg, 6, ISZ_USHORT},    {"di", am_dreg, 7, ISZ_USHORT},
+                   {"eax", am_dreg, 0, ISZ_UINT},     {"ecx", am_dreg, 1, ISZ_UINT},
+                   {"edx", am_dreg, 2, ISZ_UINT},     {"ebx", am_dreg, 3, ISZ_UINT},
+                   {"esp", am_dreg, 4, ISZ_UINT},     {"ebp", am_dreg, 5, ISZ_UINT},
+                   {"esi", am_dreg, 6, ISZ_UINT},     {"edi", am_dreg, 7, ISZ_UINT},
+                   {"st", am_freg, 0, ISZ_LDOUBLE},   {"cr0", am_screg, 0, ISZ_UINT},
+                   {"cr1", am_screg, 1, ISZ_UINT},    {"cr2", am_screg, 2, ISZ_UINT},
+                   {"cr3", am_screg, 3, ISZ_UINT},    {"cr4", am_screg, 4, ISZ_UINT},
+                   {"cr5", am_screg, 5, ISZ_UINT},    {"cr6", am_screg, 6, ISZ_UINT},
+                   {"cr7", am_screg, 7, ISZ_UINT},    {"dr0", am_sdreg, 0, ISZ_UINT},
+                   {"dr1", am_sdreg, 1, ISZ_UINT},    {"dr2", am_sdreg, 2, ISZ_UINT},
+                   {"dr3", am_sdreg, 3, ISZ_UINT},    {"dr4", am_sdreg, 4, ISZ_UINT},
+                   {"dr5", am_sdreg, 5, ISZ_UINT},    {"dr6", am_sdreg, 6, ISZ_UINT},
+                   {"dr7", am_sdreg, 7, ISZ_UINT},    {"tr0", am_streg, 0, ISZ_UINT},
+                   {"tr1", am_streg, 1, ISZ_UINT},    {"tr2", am_streg, 2, ISZ_UINT},
+                   {"tr3", am_streg, 3, ISZ_UINT},    {"tr4", am_streg, 4, ISZ_UINT},
+                   {"tr5", am_streg, 5, ISZ_UINT},    {"tr6", am_streg, 6, ISZ_UINT},
+                   {"tr7", am_streg, 7, ISZ_UINT},    {"byte", am_ext, akw_byte, 0},
+                   {"word", am_ext, akw_word, 0},     {"dword", am_ext, akw_dword, 0},
+                   {"fword", am_ext, akw_fword, 0},   {"qword", am_ext, akw_qword, 0},
+                   {"tbyte", am_ext, akw_tbyte, 0},   {"ptr", am_ext, akw_ptr, 0},
+                   {"offset", am_ext, akw_offset, 0}, {0, 0, 0}};
 
 typedef struct
 {
@@ -262,9 +257,6 @@ static EXPRESSION* inasm_ident(void)
                     ((SYMBOL*)(sp->tp->syms->table[0]->p))->genreffed = TRUE;
                     break;
                 case sc_localstatic:
-                    sp->genreffed = TRUE;
-                    node = varNode(en_global, sp);
-                    break;
                 case sc_global:
                 case sc_external:
                 case sc_static:
@@ -279,15 +271,12 @@ static EXPRESSION* inasm_ident(void)
                 case sc_ulabel:
                     node = intNode(en_labcon, sp->offset);
                     break;
+                case sc_auto:
+                case sc_register:
+                    sp->allocate = TRUE;
                 case sc_parameter:
                     node = varNode(en_auto, sp);
                     sp->inasm = TRUE;
-                    break;
-                case sc_auto:
-                case sc_register:
-                    node = varNode(en_auto, sp);
-                    sp->inasm = TRUE;
-                    sp->allocate = TRUE;
                     break;
                 default:
                     errorstr(ERR_INVALID_STORAGE_CLASS, "");
@@ -467,10 +456,7 @@ int inasm_enterauto(EXPRESSION* node, int* reg1, int* reg2)
             inasm_err(ERR_ILLEGAL_ADDRESS_MODE);
             return 0;
         }
-        if (*reg1 < 0)
-            vreg = reg1;
-        else
-            vreg = reg2;
+        vreg = *reg1 < 0 ? reg1 : reg2;
         *vreg = EBP;
         return 1;
     }
@@ -2217,7 +2203,6 @@ LEXEME* inasm_statement(LEXEME* inlex, BLOCKDATA* parent)
                     snp->label =  rv->oper1->offset->v.i;
                 }
                 break;
-            
         }
         */
     } while (op == op_rep || op == op_repnz || op == op_repz || op == op_repe || op == op_repne || op == op_lock);

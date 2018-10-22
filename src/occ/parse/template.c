@@ -5386,6 +5386,10 @@ void TemplatePartialOrdering(SYMBOL** table, int count, FUNCTIONCALL* funcparams
 
 
 
+
+
+
+
                             }
                             else
                             {
@@ -5654,6 +5658,10 @@ static void TemplateTransferClassDeferred(SYMBOL* newCls, SYMBOL* tmpl)
                                             tpn = tpn->next;
                                         }
                                         
+
+
+
+
 
 
 

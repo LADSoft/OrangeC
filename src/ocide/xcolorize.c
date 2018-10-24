@@ -1053,7 +1053,8 @@ void SyntaxCheck(HWND hWnd, EDITDATA* p)
                                 semiState = IN_MATCH;
                             else if (IsOperator(ptr))
                                 semiState = FOUND_OPERATOR;
-                            else if (ptr->ch == ';' || ptr->ch == ',' && !matchCount || ptr->ch == ':' || ptr->ch == '}' || ptr->ch == '{')
+                            else if (ptr->ch == ';' || ptr->ch == ',' && !matchCount || ptr->ch == ':' || ptr->ch == '}' ||
+                                     ptr->ch == '{')
                                 semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
                             else
                                 semiState = NEED_SEMI;
@@ -1077,7 +1078,8 @@ void SyntaxCheck(HWND hWnd, EDITDATA* p)
                                 semiState = IN_MATCH;
                             else if (IsOperator(ptr))
                                 semiState = FOUND_OPERATOR;
-                            else if (ptr->ch == ';' || ptr->ch == ',' && !matchCount || ptr->ch == ':' || ptr->ch == '}' || ptr->ch == '{')
+                            else if (ptr->ch == ';' || ptr->ch == ',' && !matchCount || ptr->ch == ':' || ptr->ch == '}' ||
+                                     ptr->ch == '{')
                                 semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
                             else if (!isspace(ptr->ch))
                                 semiState = NEED_SEMI;
@@ -1092,7 +1094,8 @@ void SyntaxCheck(HWND hWnd, EDITDATA* p)
                                 semiState = IN_MATCH;
                             else if (IsOperator(ptr))
                                 semiState = FOUND_OPERATOR;
-                            else if (ptr->ch == ';' || ptr->ch == ',' && !matchCount || ptr->ch == ':' || ptr->ch == '}' || ptr->ch == '{')
+                            else if (ptr->ch == ';' || ptr->ch == ',' && !matchCount || ptr->ch == ':' || ptr->ch == '}' ||
+                                     ptr->ch == '{')
                                 semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
                             break;
                         case FOUND_ID_END:
@@ -1110,7 +1113,8 @@ void SyntaxCheck(HWND hWnd, EDITDATA* p)
                                 semiState = FOUND_ID_END;
                             else if (IsOperator(ptr))
                                 semiState = FOUND_OPERATOR;
-                            else if (ptr->ch == ';' || ptr->ch == ',' && !matchCount || ptr->ch == ':' || ptr->ch == '}' || ptr->ch == '{')
+                            else if (ptr->ch == ';' || ptr->ch == ',' && !matchCount || ptr->ch == ':' || ptr->ch == '}' ||
+                                     ptr->ch == '{')
                                 semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
                             else if (!isspace(ptr->ch))
                                 semiState = NEED_SEMI;

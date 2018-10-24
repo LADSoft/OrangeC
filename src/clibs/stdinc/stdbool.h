@@ -26,18 +26,14 @@
 #ifndef __STDBOOL_H
 #define __STDBOOL_H
 
-#ifndef __STDDEF_H
-#include <stddef.h>
-#endif
-
 #define __bool_true_false_are_defined 1
 
 #ifndef __cplusplus
 
 #define bool _Bool
 
-#define true ((_Bool)1)
-#define false ((_Bool)0)
+#define true 1
+#define false 0
 #endif
 
 #endif /* __STDBOOL_H */

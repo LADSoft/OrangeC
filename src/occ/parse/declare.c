@@ -1909,7 +1909,7 @@ LEXEME* parse_declspec(LEXEME* lex, enum e_lk* linkage, enum e_lk* linkage2, enu
                 }
                 else
                 {
-	            error(ERR_IGNORING__DECLSPEC);
+                    error(ERR_IGNORING__DECLSPEC);
                 }
             }
             else if (MATCHKW(lex, kw_noreturn))
@@ -1920,7 +1920,7 @@ LEXEME* parse_declspec(LEXEME* lex, enum e_lk* linkage, enum e_lk* linkage2, enu
             }
             else
             {
-	        error(ERR_IGNORING__DECLSPEC);
+                error(ERR_IGNORING__DECLSPEC);
                 break;
             }
             lex = getsym();
@@ -3075,7 +3075,7 @@ static LEXEME* getArrayType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc st
             tpp->esize = intNode(en_c_i, tpp->btp->size);
             *tp = tpp;
         }
-        if (isstructured(typein))
+        if (typein && isstructured(typein))
         {
             checkIncompleteArray(typein, lex->file, lex->line);
         }

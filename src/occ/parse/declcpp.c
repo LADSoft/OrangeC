@@ -134,7 +134,7 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, VTABENTRY* ent
                     thunks[count].entry = entry;
                     if (vf->func->linkage2 == lk_import)
                     {
-                        EXPRESSION *exp = varNode(en_pc, vf->func);
+                        EXPRESSION* exp = varNode(en_pc, vf->func);
                         thunkForImportTable(&exp);
                         thunks[count].func = exp->v.sp;
                     }
@@ -155,7 +155,7 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, VTABENTRY* ent
                 {
                     if (vf->func->linkage2 == lk_import)
                     {
-                        EXPRESSION *exp = varNode(en_pc, vf->func);
+                        EXPRESSION* exp = varNode(en_pc, vf->func);
                         thunkForImportTable(&exp);
                         genref(exp->v.sp, 0);
                     }
@@ -3038,7 +3038,7 @@ static void balancedAttributeParameter(LEXEME** lex)
         needkw(lex, endp);
     }
 }
-void ParseOut__attribute__(LEXEME **lex, SYMBOL *funcsp)
+void ParseOut__attribute__(LEXEME** lex, SYMBOL* funcsp)
 {
     if (MATCHKW(*lex, kw__attribute))
     {
@@ -3050,7 +3050,7 @@ void ParseOut__attribute__(LEXEME **lex, SYMBOL *funcsp)
             error(ERR_IGNORING__ATTRIBUTE);
         }
     }
-    }
+}
 BOOLEAN ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, BOOLEAN always)
 {
     (void)always;

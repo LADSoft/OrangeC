@@ -180,14 +180,7 @@ AMODE* make_offset(EXPRESSION* node)
     }
     if (isauto(node))
     {
-        if (usingEsp)
-        {
-            ap->preg = ESP;
-        }
-        else
-        {
-            ap->preg = EBP;
-        }
+        ap->preg = usingEsp ? ESP : EBP;
         ap->mode = am_indisp;
     }
     else
@@ -4402,7 +4395,11 @@ void asm_atomic(QUAD* q)
                                         zf              nz
                                         true            false
                 rm32       eax        rm32      reg     eax        rm32
-                
+                
+
+
+
+
               */
             {
                 int sz = q->ans->size;

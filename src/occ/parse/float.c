@@ -1309,7 +1309,7 @@ LLONG_TYPE FPFToLongLong(FPF* src)
                     return LONG_MAX;
             if (stemp.exp < 0)
                 return 0;
-            while (exp++ != 32)
+            while (stemp.exp++ != 32)
             {
                 uf16 carry = 0;
                 ShiftMantRight1(&carry, tmant);

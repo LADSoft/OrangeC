@@ -186,7 +186,7 @@ KEYWORD keywords[] = {
     {"__atomic_modify", 15, kw_atomic_modify, 0, TT_VAR},
     {"__atomic_store", 14, kw_atomic_store, 0, TT_VAR},
     {"__atomic_var_init", 17, kw_atomic_var_init, 0, TT_VAR},
-    {"__attribute__", 13, kw__attribute, 0, TT_VAR },
+    {"__attribute__", 13, kw__attribute, 0, TT_VAR},
     {"__catch", 7, kw___catch, KW_MSIL, TT_CONTROL},
     {"__cdecl", 7, kw__cdecl, 0, TT_LINKAGE},
     {"__char16_t", 10, kw_char16_t, KW_CPLUSPLUS | KW_C1X, TT_BASETYPE | TT_INT},

@@ -107,3 +107,6 @@ q2.*
 /xx/
 *-cppcheck-build-dir/
 src/.vs
+*.xhf
+*.xcppf
+*.xcf

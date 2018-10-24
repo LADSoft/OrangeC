@@ -59,6 +59,5 @@ class GrepMain
     static char* helpText;
 
     static void usage(const char* prog_name, const char* text, int retcode);
-
 };
 #endif

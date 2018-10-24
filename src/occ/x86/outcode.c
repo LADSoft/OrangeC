@@ -243,7 +243,7 @@ OPCODE popn_cmpsw[] = {
     {0, 0, 0},
 };
 OPCODE popn_cmpxchg[] = {
-    {OP_BYTERMREG, 0x00b0, 0x0a04},
+    {OP_RMREG, 0x00b0, 0x0a04},
     {0, 0, 0},
 };
 OPCODE popn_cmpxchg8b[] = {
@@ -2373,7 +2373,7 @@ int AOP11(OPCODE* descript, OCODE* data, UBYTE** p)
 int AOP12(OPCODE* descript, OCODE* data, UBYTE** p)
 {
     int val, word = FALSE, resolved = 1;
-    if (data->oper3)
+    if (data->oper3 || !data->oper1)
         return 0;
     if (data->oper1->length > ISZ_ADDR || data->oper1->length == ISZ_ULONGLONG)
         return 0;

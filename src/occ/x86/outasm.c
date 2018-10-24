@@ -393,10 +393,8 @@ ASMNAME oplst[] = {
     {"clts", op_clts, 0, &popn_clts},
     {"cmc", op_cmc, 0, &popn_cmc},
     {"cmp", op_cmp, OPE_MATH, &popn_cmp},
-    {"cmpxchg", op_cmp, OPE_MATH, &popn_cmpxchg},
-    {
-        "cmpxchg8b", op_cmp, 0, &popn_cmpxchg8b  // fixme, the inline assembler is broke
-    },
+    {"cmpxchg", op_cmpxchg, OPE_MATH, &popn_cmpxchg},
+    { "cmpxchg8b", op_cmpxchg8b, OPE_RM, &popn_cmpxchg8b },
     {"cmps", op_cmps, OPE_CMPS, &popn_cmps},
     {"cmpsb", op_cmpsb, 0, &popn_cmpsb},
     {"cmpsw", op_cmpsw, 0, &popn_cmpsw},

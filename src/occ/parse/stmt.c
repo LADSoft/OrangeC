@@ -2400,7 +2400,10 @@ static LEXEME* statement_expr(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     st = stmtNode(lex, parent, st_expr);
     st->select = select;
     if (!tp)
+    {
+        lex = getsym();
         error(ERR_EXPRESSION_SYNTAX);
+    }
     else if (tp->type != bt_void && tp->type != bt_any)
     {
         if (checkNoEffect(st->select))

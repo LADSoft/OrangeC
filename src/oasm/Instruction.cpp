@@ -65,7 +65,6 @@ int Instruction::GetNext(Fixup& fixup, unsigned char* buf)
     }
     else
     {
-
         if (pos >= size)
             return 0;
         int top = size;

@@ -780,7 +780,7 @@ void putop(enum e_op op, AMODE* aps, AMODE* apd, int nooptx)
 
 /*-------------------------------------------------------------------------*/
 
-void oa_putconst(int sz, EXPRESSION* offset, BOOLEAN doSign)
+void oa_putconst(int op, int sz, EXPRESSION* offset, BOOLEAN doSign)
 /*
  *      put a constant to the outputFile file.
  */
@@ -826,10 +826,13 @@ void oa_putconst(int sz, EXPRESSION* offset, BOOLEAN doSign)
             }
             {
                 int n = offset->v.i;
-                //				if (sz == ISZ_UCHAR || sz == -ISZ_UCHAR)
-                //					n &= 0xff;
-                //				if (sz == ISZ_USHORT || sz == -ISZ_USHORT)
-                //					n &= 0xffff;
+                if (op == op_mov)
+                {
+                    if (sz == ISZ_UCHAR || sz == -ISZ_UCHAR)
+                        n &= 0xff;
+                    if (sz == ISZ_USHORT || sz == -ISZ_USHORT)
+                        n &= 0xffff;
+                }
                 bePrintf("0%xh", n);
             }
             break;
@@ -870,17 +873,17 @@ void oa_putconst(int sz, EXPRESSION* offset, BOOLEAN doSign)
         case en_add:
         case en_structadd:
         case en_arrayadd:
-            oa_putconst(ISZ_ADDR, offset->left, doSign);
-            oa_putconst(ISZ_ADDR, offset->right, TRUE);
+            oa_putconst(0, ISZ_ADDR, offset->left, doSign);
+            oa_putconst(0, ISZ_ADDR, offset->right, TRUE);
             break;
         case en_sub:
-            oa_putconst(ISZ_ADDR, offset->left, doSign);
+            oa_putconst(0, ISZ_ADDR, offset->left, doSign);
             bePrintf("-");
-            oa_putconst(ISZ_ADDR, offset->right, FALSE);
+            oa_putconst(0, ISZ_ADDR, offset->right, FALSE);
             break;
         case en_uminus:
             bePrintf("-");
-            oa_putconst(ISZ_ADDR, offset->left, FALSE);
+            oa_putconst(0, ISZ_ADDR, offset->left, FALSE);
             break;
         default:
             diag("illegal constant node.");
@@ -1064,7 +1067,7 @@ int islabeled(EXPRESSION* n)
 
 /*-------------------------------------------------------------------------*/
 
-void oa_putamode(AMODE* ap)
+void oa_putamode(int op, int szalt, AMODE* ap)
 /*
  *      output a general addressing mode.
  */
@@ -1108,7 +1111,7 @@ void oa_putamode(AMODE* ap)
             }
             else if ((prm_assembler == pa_nasm) && addsize)
                 pointersize(ap->length);
-            oa_putconst(ap->length, ap->offset, FALSE);
+            oa_putconst(op, op == op_mov ? szalt : ap->length, ap->offset, FALSE);
             break;
         case am_direct:
             pointersize(ap->length);
@@ -1119,7 +1122,7 @@ void oa_putamode(AMODE* ap)
             if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
                 putseg(ap->seg, TRUE);
             prm_assembler = pa_nasm;
-            oa_putconst(ap->length, ap->offset, FALSE);
+            oa_putconst(0, ap->length, ap->offset, FALSE);
             beputc(']');
             prm_assembler = oldnasm;
             break;
@@ -1142,7 +1145,7 @@ void oa_putamode(AMODE* ap)
             putsizedreg("%s", ap->preg, ISZ_ADDR);
             if (ap->offset)
             {
-                oa_putconst(ap->length, ap->offset, TRUE);
+                oa_putconst(0, ap->length, ap->offset, TRUE);
             }
             beputc(']');
             break;
@@ -1165,7 +1168,7 @@ void oa_putamode(AMODE* ap)
                 bePrintf("*%d", scale);
             if (ap->offset)
             {
-                oa_putconst(ap->length, ap->offset, TRUE);
+                oa_putconst(0, ap->length, ap->offset, TRUE);
             }
             beputc(']');
         }
@@ -1255,17 +1258,17 @@ void oa_put_code(OCODE* cd)
         }
         if (op == op_dd)
             nosize = TRUE;
-        oa_putamode(aps);
+        oa_putamode(op, aps->length, aps);
         nosize = FALSE;
         if (apd != 0)
         {
             beputc(separator);
-            oa_putamode(apd);
+            oa_putamode(op, aps->length, apd);
         }
         if (ap3 != 0)
         {
             beputc(separator);
-            oa_putamode(ap3);
+            oa_putamode(op, aps->length, ap3);
         }
     }
     bePrintf("\n");

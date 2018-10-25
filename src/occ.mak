@@ -42,8 +42,11 @@ LLIB_DEPENDENCIES = $(notdir $(filter-out $(addsuffix .o,$(EXCLUDE)) $(MAIN_DEPE
 
 
 CC=$(COMPILER_PATH)\bin\occ
+ifeq "$(VIAASSEMBLY)" ""
 CCFLAGS = /c /E- /!
-
+else
+CCFLAGS = /S /E- /!
+endif
 LINK=$(COMPILER_PATH)\bin\olink
 LFLAGS=-c -mx /L$(_LIBDIR) /!
 
@@ -97,11 +100,21 @@ vpath %.o $(_OUTPUTDIR)
 vpath %.l $(_LIBDIR)
 vpath %.res $(_OUTPUTDIR)
 
+ifeq "$(VIAASSEMBLY)" ""
 %.o: %.cpp
 	$(CC) $(CCFLAGS) -o$(_OUTPUTDIR)/$@ $^
 
 %.o: %.c
 	$(CC) /9 $(CCFLAGS) -o$(_OUTPUTDIR)/$@ $^
+
+else
+%.o: %.cpp
+	$(CC) $(CCFLAGS) -o$(_OUTPUTDIR)/$*.nas $^
+	$(ASM) $(ASMFLAGS) -o$(_OUTPUTDIR)/$@ $(_OUTPUTDIR)/$*.nas
+%.o: %.c
+	$(CC) /9 $(CCFLAGS) -o$(_OUTPUTDIR)/$*.nas $^
+	$(ASM) $(ASMFLAGS) -o$(_OUTPUTDIR)/$@ $(_OUTPUTDIR)/$*.nas
+endif
 
 %.o: %.nas
 	$(ASM) $(ASMFLAGS) -o$(_OUTPUTDIR)/$@ $^

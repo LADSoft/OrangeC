@@ -347,7 +347,7 @@ bool Section::MakeData(ObjFactory& factory, AsmFile* fil)
 int Section::GetNext(Fixup& f, unsigned char* buf, int len)
 {
     static int blen = 0;
-    char buf2[256];
+    static char buf2[256];
     if (!blen)
     {
         while (instructionPos < instructions.size() &&

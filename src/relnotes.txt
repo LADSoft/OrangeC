@@ -37,6 +37,8 @@ version 6.0.38:
     occ: line numbers in c++ code were off by one.
     occ: when a template defined in a template using statement was used as the specialization of another template,
          it wasn't evaluated properly.
+    occ: fix various problems with generating assembly code that oasm couldn't parse
+    oasm: fix bug where too-full buffer could modify generated code stream
     olink: fix a crash if occ failed to output line information properly
     dlpe: fix the fixup of relative branch to import thunks, to allow the thunks to be relocated
     dlpe: use --nologo when invokeing oimplib

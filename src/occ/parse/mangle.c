@@ -932,6 +932,9 @@ void SetLinkerNames(SYMBOL* sym, enum e_lk linkage)
                 strcpy(errbuf, sym->parent->decoratedName);
                 strcat(errbuf, "_");
                 strcat(errbuf, sym->name);
+                if (sym->label == 0)
+                    sym->label = nextLabel++;
+                sprintf(errbuf + strlen(errbuf), "_%d", sym->label);
             }
             else
             {

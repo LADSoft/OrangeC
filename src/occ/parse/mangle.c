@@ -101,9 +101,11 @@ int mangledNamesCount;
 
 static int declTypeIndex;
 static char* lookupName(char* in, char* name);
+static int uniqueID;
 
 void mangleInit()
 {
+    uniqueID = 0;
     if (chosenAssembler->msil)
     {
         memcpy(overloadNameTab, msiloverloadNameTab, sizeof(msiloverloadNameTab));
@@ -932,9 +934,9 @@ void SetLinkerNames(SYMBOL* sym, enum e_lk linkage)
                 strcpy(errbuf, sym->parent->decoratedName);
                 strcat(errbuf, "_");
                 strcat(errbuf, sym->name);
-                if (sym->label == 0)
-                    sym->label = nextLabel++;
-                sprintf(errbuf + strlen(errbuf), "_%d", sym->label);
+                if (sym->uniqueID == 0)
+                    sym->uniqueID = uniqueID++;
+                sprintf(errbuf + strlen(errbuf), "_%d", sym->uniqueID);
             }
             else
             {

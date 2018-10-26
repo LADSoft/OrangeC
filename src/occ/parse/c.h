@@ -657,6 +657,7 @@ typedef struct sym
     int offset;                                           /* address offset of data in the given seg, or optimize register */
     int vtaboffset;                                       /* vtab offset for virtual functions */
     int label;                                            /* label number for statics */
+    int uniqueID;                                         /* unique index for local statics */
     int startLine, endLine;                               /* line numbers spanning the function */
     short paramsize;                                      /* Size of parameter list for stdcall functions */
     short structAlign;                                    /* alignment of structures/ unions */

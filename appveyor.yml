@@ -30,19 +30,19 @@ build_script:
         - mkdir \orangec\temp
         - cd orangec\src
         - copy omake.exe \orangec\temp
-        - mingw32-make fullbuild --eval="COMPILER=$(BUILD_PROFILE)" -j 4
+#        - mingw32-make fullbuild --eval="COMPILER=$(BUILD_PROFILE)" -j 4
         - c:\orangec\bin\occ /V
         - copy omake\omake.exe \orangec\temp
-        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% -B fullbuild -j:4
+#        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% -B fullbuild -j:4
         - c:\orangec\bin\occ /V
         - copy omake\omake.exe \orangec\temp
-        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% -B fullbuild -j:4
+#        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% -B fullbuild -j:4
         - c:\orangec\bin\occ /V
         - copy omake\omake.exe \orangec\temp
-        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% -B fullbuild -j:4
+#        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% -B fullbuild -j:4
         - path=%ORIGPATH%
         - cd ..\tests
-        - omake -B -j:4
+#        - omake -B -j:4
         - cd ..\.. 
         - move orangec projects
 

@@ -24,10 +24,9 @@
  */
 
 #ifndef GCCLINUX
-#include <windows.h>
+#include "io.h"
 #endif
 
-#include <io.h>
 #include "CmdFiles.h"
 using namespace std;  // borland puts the io stuff in the std namespace...
                       // microsoft does not seem to.
@@ -54,7 +53,9 @@ bool CmdFiles::Add(char** array, bool recurseDirs)
 bool CmdFiles::RecurseDirs(const std::string& path, const std::string& name, bool recurseDirs)
 {
     bool rv = false;
+#ifndef GCCLINUX
     struct _finddata_t find;
+#endif
     std::string q = path + "*.*";
     size_t handle;
     // borland does not define the char * as const...
@@ -81,7 +82,9 @@ bool CmdFiles::RecurseDirs(const std::string& path, const std::string& name, boo
 bool CmdFiles::Add(const std::string& name, bool recurseDirs)
 {
     bool rv = false;
+#ifndef GCCLINUX
     struct _finddata_t find;
+#endif
     std::string path, lname;
     size_t n = name.find_last_of(DIR_SEP[0]);
     size_t n1 = name.find_last_of('/');

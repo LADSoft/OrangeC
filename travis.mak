@@ -1,5 +1,5 @@
 export COMPILER:=CLANG
 
 all:
-	make -f ./makefile
+	make -C src -f ./makefile
 

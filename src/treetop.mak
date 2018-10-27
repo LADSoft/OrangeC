@@ -53,7 +53,7 @@ COMPARE := dirs.mak
 endif
 
 ifeq "$(TEST)" "$(COMPARE)"
-include $(_TARGETDIR)\dirs.mak
+include $(call PATHSWAP, $(_TARGETDIR)\dirs.mak)
 endif
 	
 

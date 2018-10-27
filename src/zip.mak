@@ -22,7 +22,9 @@
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
 
+ifneq "$(COMPILER)" "gcc-linux"
 SHELL=cmd.exe
+endif
 
 ZIP:="c:/program files/7-zip/7z" -tzip 
 

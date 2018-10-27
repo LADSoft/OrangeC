@@ -24,7 +24,6 @@
 
 NAME=occ
 MAIN_FILE=ccmain.c
-INCLUDES=..\parse ..\preproc ..\middle
 C_DEPENDENCIES= \
     $(BACKEND_FILES) \
     ccmain.c \
@@ -86,7 +85,11 @@ C_DEPENDENCIES= \
     winsystem.c \
     wseh.c
 
+ifeq "$(COMPILER)" "gcc-linux"
+H_FILES=$(wildcard *.h) $(wildcard ../parse/*.h) $(wildcard ../middle/*.h) $(wildcard ../preproc/*.h)
+else
 H_FILES=$(wildcard *.h) $(wildcard ..\parse\*.h) $(wildcard ..\middle\*.h) $(wildcard ..\preproc\*.h)
+endif
 
 #LIB_DEPENDENCIES=util.lib objlib.lib
 #determine if we can ignore the banner for a batch compile
@@ -95,15 +98,22 @@ WIN32 = WIN32
 LL = USE_LONGLONG
 DEFINES=$(i386) $(LL) $(MSDOS) $(WIN32)
 
-SOURCE = ..\parse;..\preproc;..\middle
-
-SRCPATH=$(BACKEND_INCLUDE_PATH);$(SOURCE);..;..\..\util
-BACKEND_FILES = config.c gen.c inasm.c invoke.c objieeea.c outasm.c outcode.c peep.c rewrite.c
-
 BACKEND_INCLUDE_PATH=.
+
+ifeq "$(COMPILER)" "gcc-linux"
+SOURCE = ../parse:../preproc:../middle
+INCLUDES=../parse ../preproc ../middle
+SRCPATH=$(SOURCE):..:../../util
+else
+SOURCE = ..\parse:..\preproc:..\middle
+INCLUDES=..\parse ..\preproc ..\middle
+SRCPATH=$(BACKEND_INCLUDE_PATH);$(SOURCE);..;..\..\util
+endif
+BACKEND_FILES = config.c gen.c inasm.c invoke.c objieeea.c outasm.c outcode.c peep.c rewrite.c
 
 
 vpath %.c $(SRCPATH)
+
 
 ifndef _TREEROOT
 _TREEROOT := $(CURDIR)\..\..\treetop.mak

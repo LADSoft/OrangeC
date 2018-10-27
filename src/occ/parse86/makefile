@@ -24,7 +24,6 @@
 
 NAME=occpr
 MAIN_FILE=ccmain.c
-INCLUDES=..\parse ..\preproc ..\middle
 C_DEPENDENCIES= \
     $(BACKEND_FILES) \
     ccmain.c \
@@ -73,10 +72,17 @@ WIN32 = WIN32
 LL = USE_LONGLONG
 DEFINES=$(i386) $(LL) $(MSDOS) $(WIN32) PARSER_ONLY 
 
-SOURCE = ..\parse;..\preproc;..\middle
-
 BACKEND_INCLUDE_PATH=.
+
+ifeq "$(COMPILER)" "gcc-linux"
+SOURCE = ../parse:../preproc:../middle
+INCLUDES=../parse ../preproc ../middle
+SRCPATH:=$(SOURCE)
+else
+SOURCE = ..\parse;..\preproc;..\middle
+INCLUDES=..\parse ..\preproc ..\middle
 SRCPATH:=$(BACKEND_INCLUDE_PATH);$(SOURCE);..
+endif
 BACKEND_FILES = config.c
 
 

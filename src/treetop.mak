@@ -22,12 +22,18 @@
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
 
+ifneq "$(COMPILER)" "gcc-linux"
 SHELL=cmd.exe
 export SHELL
+endif
 
 all:
 
+ifeq "$(COMPILER)" "gcc-linux"
+PATHSWAP = $(subst \,/,$(1))
+else
 PATHSWAP = $(subst /,\,$(1))
+endif
 export PATHSWAP
 
 TREETOP := $(call PATHSWAP,$(dir $(_TREEROOT)))
@@ -38,10 +44,18 @@ export DISTROOT
 
 _TARGETDIR:= $(call PATHSWAP,$(CURDIR))
 
+ifeq "$(COMPILER)" "gcc-linux"
+TEST := $(shell ls "$(_TARGETDIR)/dirs.mak")
+COMPARE := $(_TARGETDIR)/dirs.mak
+else
 TEST := $(shell dir /b "$(_TARGETDIR)\dirs.mak")
-ifeq "$(TEST)" "dirs.mak"
+COMPARE := dirs.mak
+endif
+
+ifeq "$(TEST)" "$(COMPARE)"
 include $(_TARGETDIR)\dirs.mak
 endif
+	
 
 
 LIBS:= $(addsuffix .library,$(DIRS))
@@ -56,7 +70,7 @@ NULLDEV := NUL
 
 
 del:
-	-del /Q  $(_OUTPUTDIR)\*.* 2> $(NULLDEV)
+	-del /Q  $(call PATHSWAP, $(_OUTPUTDIR)\*.*) 2> $(NULLDEV)
 	-del /Q *.exe 2> $(NULLDEV)
 mkdir:
 	-mkdir  $(_OUTPUTDIR) 2> $(NULLDEV)
@@ -64,10 +78,16 @@ rmdir:
 	-rmdir  $(_OUTPUTDIR) 2> $(NULLDEV)
 
 
+ifeq "$(COMPILER)" "gcc-linux"
+TEST := $(shell ls "$(_TARGETDIR)/makefile")
+COMPARE := $(_TARGETDIR)/makefile
+else
 TEST := $(shell dir /b "$(_TARGETDIR)\makefile")
-ifeq "$(TEST)" "makefile"
-include $(_TARGETDIR)\makefile
-include $(DISTROOT)\src\dist.mak
+COMPARE := makefile
+endif
+ifeq "$(TEST)" "$(COMPARE)"
+include $(call PATHSWAP, $(_TARGETDIR)\makefile)
+include $(call PATHSWAP, $(DISTROOT)\src\dist.mak)
 else
 DISTRIBUTE:
 
@@ -80,9 +100,14 @@ else
 link: $(NAME).exe
 endif
 
-_OUTPUTDIR=$(_TARGETDIR)\obj\$(OBJ_IND_PATH)
+ifeq "$(COMPILER)" "gcc-linux"
+_OUTPUTDIR = $(_TARGETDIR)/obj/$(OBJ_IND_PATH)
+_LIBDIR = $(DISTROOT)/src/lib/$(OBJ_IND_PATH)
+else
+_OUTPUTDIR = $(_TARGETDIR)\obj\$(OBJ_IND_PATH)
+_LIBDIR = $(DISTROOT)\src\lib\$(OBJ_IND_PATH)
+endif
 export _OUTPUTDIR
-_LIBDIR=$(DISTROOT)\src\lib\$(OBJ_IND_PATH)
 export _LIBDIR
 
 include $(TREETOP)config.mak
@@ -93,7 +118,7 @@ export LIB_PREFIX
 ifeq "$(NAME)" ""
 compile:
 else
-compile: $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT)
+compile: $(call PATHSWAP, $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT))
 endif
 
 
@@ -263,9 +288,13 @@ ifdef WITHMSDOS
 endif
 	@$(MAKE) -C\ -f $(realpath .\zip.mak)
 
+ifeq "$(COMPILER)" "gcc-linux"
+$(CDIRS): %.dirs :
+	-mkdir $*/obj/$(OBJ_IND_PATH) 2> $(NULLDEV)
+else
 $(CDIRS): %.dirs :
 	-mkdir $*\obj\$(OBJ_IND_PATH) 2> $(NULLDEV)
-
+endif
 $(LIBS): %.library : $(CDIRS)
 	$(MAKE) library compile -f $(_TREEROOT) -C$*
 $(EXES): %.exefile :

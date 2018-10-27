@@ -32,6 +32,13 @@ extern char szInstallPath[1024];
 
 static char selPath[MAX_PATH];
 static char tempPath[MAX_PATH];
+
+#ifdef GCCLINUX
+
+const IID IID_IShellLinkA = { 0 };
+const IID IID_IShellFolder = { 0 };
+
+#endif
 // Macros for interface casts
 #ifdef __cplusplus
 #    define IID_PPV_ARG(IType, ppType) IID_##IType, reinterpret_cast<void**>(ppType)

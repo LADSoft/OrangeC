@@ -1,5 +1,4 @@
-choco install mingw
-move ladsoft\orangec .
-path=\mingw64\bin;\orangec\bin;%PATH%
-set ORANGEC=\orangec
-cd orangec\src
+mv ~/ladsoft/orangec ~/
+path=$PATH:~/orangec/bin
+export ORANGEC="/c/orangec"
+cd ~/orangec/src

@@ -1,12 +1,17 @@
 #include <string.h>
 #include <ctype.h>
+#ifndef GCCLINUX
 #include <windows.h>
-
+#endif
+#include <stdlib.h>
 // this is to get around a buggy command.com on freedos...
 // it is implemented this way to prevent the IDE from popping up a console window
 // when it is used...
 int winsystem(char* cmd)
 {
+#ifdef GCCLINUX
+    return system(cmd);
+#else
     STARTUPINFO stStartInfo;
     PROCESS_INFORMATION stProcessInfo;
     BOOL bRet;
@@ -32,4 +37,5 @@ int winsystem(char* cmd)
     CloseHandle(stProcessInfo.hProcess);
     CloseHandle(stProcessInfo.hThread);
     return rv;
+#endif
 }

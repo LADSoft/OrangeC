@@ -46,7 +46,7 @@
 
 char* Utils::ShortName(const char* v)
 {
-    static char prog_name[MAX_PATH], *short_name, *extension;
+    static char prog_name[260], *short_name, *extension;
     strcpy(prog_name, v);
     short_name = strrchr(prog_name, '\\');
     if (short_name == nullptr)
@@ -157,7 +157,7 @@ std::string Utils::FullPath(const std::string& path, const std::string& name)
 }
 std::string Utils::QualifiedFile(const char* path, const char* ext)
 {
-    char buf[MAX_PATH];
+    char buf[260];
     strcpy(buf, path);
     char* p = strrchr(buf, '.');
     if (!p || p[-1] == '.' || p[1] == '\\')

@@ -31,11 +31,15 @@ DEFINES=CPREPROCESSOR USE_LONGLONG
 H_FILES=$(wildcard *.h)
 
 ifndef _TREEROOT
-redirect:
-	@$(MAKE) /T
+_TREEROOT := $(CURDIR)\..\..\treetop.mak
+_TREETARGET := $(CURDIR)
+export _TREEROOT
+export _TREETARGET
 
+redirect:
+	@$(MAKE) -f$(_TREEROOT)
 format:
-	@$(MAKE) /T format
+	@$(MAKE) -f $(_TREEROOT) format
 endif
 
 DISTRIBUTE: copyexe

@@ -30,6 +30,6 @@ LIB_DEPENDENCIES=sqlite3 ocpplib olib olink objlib util
 DEFINES=L_INT=__int64
 H_FILES=$(wildcard *.h)
 
-include ..\redirect.mak
+include ../redirect.mak
 
 DISTRIBUTE: copyexe

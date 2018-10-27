@@ -36,7 +36,7 @@ H_FILES=$(wildcard *.h)
 
 vpath %.c ..\util
 
-include ..\redirect.mak
+include ../redirect.mak
 
 DISTRIBUTE: copyexe
 	copy rule\*.rul $(DISTROOT)\rule

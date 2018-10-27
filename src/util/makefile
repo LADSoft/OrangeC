@@ -30,6 +30,6 @@ C_DEPENDENCIES=$(wildcard *.c)
 LIB_DEPENDENCIES=
 H_FILES=$(wildcard *.h)
 
-include ..\redirect.mak
+include ../redirect.mak
 
 DISTRIBUTE:

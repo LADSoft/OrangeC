@@ -30,7 +30,7 @@ LIB_DEPENDENCIES=sqlite3 util objlib olib
 DEFINES=SQLITE_THREADSAFE=0
 H_FILES=$(wildcard *.h)
 
-include ..\redirect.mak
+include ../redirect.mak
 
 DISTRIBUTE: copyexe
 	copy *.app $(DISTBIN)

@@ -31,7 +31,7 @@ H_FILES=$(wildcard *.h)
 
 EXCLUDE=ledump
 
-include ..\redirect.mak
+include ../redirect.mak
 
 DISTRIBUTE: copyexe
 	copy *.spc $(DISTBIN)

@@ -30,6 +30,6 @@ LIB_DEPENDENCIES=util
 EXCLUDE=ObjIO test2
 H_FILES=$(wildcard *.h)
 
-include ..\redirect.mak
+include ../redirect.mak
 
 DISTRIBUTE:

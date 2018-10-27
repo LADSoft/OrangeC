@@ -29,7 +29,7 @@ CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=util objlib olink olib
 H_FILES=$(wildcard *.h)
 
-include ..\redirect.mak
+include ../redirect.mak
 
 DISTRIBUTE: copyexe
 

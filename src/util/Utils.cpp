@@ -67,12 +67,15 @@ void Utils::banner(const char* progName)
 {
     // no banner if they specify -!, this is also caught in the cmd switch module
     // so it is transparent to the proggy
+#ifndef GCCLINUX
     for (int i = 1; i < __argc && __argv[i]; i++)
         if (__argv[i] && (__argv[i][0] == '/' || __argv[i][0] == '-'))
             if (__argv[i][1] == '!' || !strcmp(__argv[i], "--nologo"))
                 return;
+#endif
     fprintf(stderr, "%s Version " STRING_VERSION " " COPYRIGHT "\n", ShortName(progName));
 
+#ifndef GCCLINUX
     // handle /V switch
     for (int i = 1; i < __argc && __argv[i]; i++)
         if (__argv[i] && (__argv[i][0] == '/' || __argv[i][0] == '-'))
@@ -81,6 +84,7 @@ void Utils::banner(const char* progName)
                 fprintf(stderr, "\nCompile date: " __DATE__ " time: " __TIME__ "\n");
                 exit(0);
             }
+#endif
 }
 void Utils::usage(const char* prog_name, const char* text)
 {
@@ -104,7 +108,11 @@ char* Utils::GetModuleName()
 #if defined(WIN32) || defined(MICROSOFT)
     GetModuleFileNameA(nullptr, buf, sizeof(buf));
 #else
+#ifdef GCCLINUX
+    strcpy(buf, "unknown");
+#else
     strcpy(buf, __argv[0]);
+#endif
 #endif
     return buf;
 }

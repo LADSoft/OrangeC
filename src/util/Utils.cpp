@@ -29,6 +29,7 @@
 #include <stdarg.h>
 #include <fstream>
 #include <stdlib.h>
+#include <string.h>
 #ifdef MICROSOFT
 #    include <windows.h>
 #endif

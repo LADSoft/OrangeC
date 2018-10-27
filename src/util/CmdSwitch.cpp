@@ -31,6 +31,8 @@
 #include <fstream>
 #include <limits.h>
 
+#include <string.h>
+
 CmdSwitchBase::CmdSwitchBase(CmdSwitchParser& parser, char SwitchChar) : exists(false), switchChar(SwitchChar) { parser += this; }
 int CmdSwitchBool::Parse(const char* data)
 {

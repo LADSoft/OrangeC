@@ -48,7 +48,7 @@ LINK=ld
 LFLAGS=-L$(_LIBDIR)
 
 LIB=ar
-LIBFLAGS=-r -s
+LIBFLAGS= crs 
 LIB_EXT:=.a
 LIB_PREFIX:=lib
 

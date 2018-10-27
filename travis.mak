@@ -1,2 +1,4 @@
 export COMPILER:=CLANG
-make -f makefile -j2
+
+all:
+	make -f makefile -j2

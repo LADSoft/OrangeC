@@ -23,7 +23,10 @@
  *
  */
 
+#ifndef GCCLINUX
 #include <windows.h>
+#endif
+
 #include <io.h>
 #include "CmdFiles.h"
 using namespace std;  // borland puts the io stuff in the std namespace...
@@ -55,6 +58,7 @@ bool CmdFiles::RecurseDirs(const std::string& path, const std::string& name, boo
     std::string q = path + "*.*";
     size_t handle;
     // borland does not define the char * as const...
+#ifndef GCCLINUX
     if ((handle = _findfirst(const_cast<char*>(q.c_str()), &find)) != -1)
     {
         do
@@ -71,6 +75,7 @@ bool CmdFiles::RecurseDirs(const std::string& path, const std::string& name, boo
         } while (_findnext(handle, &find) != -1);
         _findclose(handle);
     }
+#endif
     return rv;
 }
 bool CmdFiles::Add(const std::string& name, bool recurseDirs)
@@ -104,6 +109,7 @@ bool CmdFiles::Add(const std::string& name, bool recurseDirs)
     }
     size_t handle;
     // borland does not define the char * as const...
+#ifndef GCCLINUX
     if ((handle = _findfirst(const_cast<char*>(name.c_str()), &find)) != -1)
     {
         do
@@ -118,6 +124,7 @@ bool CmdFiles::Add(const std::string& name, bool recurseDirs)
         } while (_findnext(handle, &find) != -1);
         _findclose(handle);
     }
+#endif
     if (recurseDirs)
     {
         rv |= RecurseDirs(path, lname, recurseDirs);

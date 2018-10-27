@@ -25,7 +25,6 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 
-#include <windows.h>
 #include "CmdSwitch.h"
 #include "Utils.h"
 #include <ctype.h>

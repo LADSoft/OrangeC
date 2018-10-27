@@ -102,6 +102,7 @@ endif
 
 ifeq "$(COMPILER)" "gcc-linux"
 _OUTPUTDIR = $(_TARGETDIR)/obj/$(OBJ_IND_PATH)
+_LIBDIR_0 = $(DISTROOT)/src/lib
 _LIBDIR = $(DISTROOT)/src/lib/$(OBJ_IND_PATH)
 else
 _OUTPUTDIR = $(_TARGETDIR)\obj\$(OBJ_IND_PATH)
@@ -310,8 +311,14 @@ distribute_clibs_no_binary:
 distribute_clibs:
 	@$(MAKE) -Cclibs DISTRIBUTE
 
+ifeq "$(COMPILER)" "gcc-linux"
+makelibdir:
+	-mkdir  $(_LIBDIR_0) 2> $(NULLDEV)
+	-mkdir  $(_LIBDIR) 2> $(NULLDEV)
+else
 makelibdir:
 	-mkdir  $(_LIBDIR) 2> $(NULLDEV)
+endif
 
 library: makelibdir $(LIBS)
 

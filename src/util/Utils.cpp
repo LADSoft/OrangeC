@@ -33,7 +33,7 @@
 #ifdef MICROSOFT
 #    include <windows.h>
 #endif
-#include "utils.h"
+#include "Utils.h"
 #include "CmdFiles.h"
 
 #ifdef OPENWATCOM

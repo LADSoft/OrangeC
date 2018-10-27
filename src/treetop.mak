@@ -290,7 +290,8 @@ endif
 
 ifeq "$(COMPILER)" "gcc-linux"
 $(CDIRS): %.dirs :
-	-mkdir $*/obj/$(OBJ_IND_PATH) #2> $(NULLDEV)
+	-mkdir $*/obj 2> $(NULLDEV)
+	-mkdir $*/obj/$(OBJ_IND_PATH) 2> $(NULLDEV)
 else
 $(CDIRS): %.dirs :
 	-mkdir $*\obj\$(OBJ_IND_PATH) 2> $(NULLDEV)

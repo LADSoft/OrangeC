@@ -1,9 +1,13 @@
-os:windows
+os: windows
+language: c
+compiler:
+ - clang
+
 env:
   global:
    #   The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
    #   via the "travis encrypt" command using the project repo's public key
-   - secure: "CJQZtLgj9Z5yhmgY3h1NoIa+dMlbwEIPKRTA2XQfQeIE8o4rGNQVv6vWBFw1GAfYBF37FshZKAf2lzUc3odt1GWm5JQGVySYr3fPP6XGrAP4xwDL825QAUU2BXN8G/woSVL9WqBehyS/PelVvK9TleUP+iOYnQSxpMblq1m1p1OAiRBOLDYenCyqT/YCe1AVQDzN6Ls1VorJHb6C80slSKqeNKTcUYv4TTGNdb55fLwk3wxD70c1S4cSXPS7AxM1IUk+Tcsf7VzLeJ4QS0auuAGXLjNzF+3wxHKeEj4sc0pemFHbcD5xz0Dua4vIinnU6E/IlXDnd/L6UqiVO4tvtxi24hMPLvuUlRtIiIP1jbMhOeUybDtIXJa1ZbSz7YWDBKiOQOpRErLKnh840izqEf8nDZX8jlgciqz/FrZQ9EoUzJ6PqY0gLV46F5i5gvvsOYWzcPbHbubsUm4esDK36a63ett2u9M+xCPmEKEGIx8yt1xAfvaUt2t4onYZG4di+68/JLgoRI3rpNTAqHfPjHLrq8uf70YlbF1ny7rLibs7+wXClLaiLCdXuOgTQYgBJhv+umR9Zpv764VOA2PY44pr1uyuQJOTQr4uoyT0FhfZFmqvJ9rz/l3DyS1XcUMB8tCPP4MqR52psE6AAuBN5/B6PB6SZ1idStH5by3ioloM="
+   - secure: "hT16bO0CRUWw/9aN2J9cOX90O8K/psKe8T8mp5cIq39ImK1D5PpAzyGylNaODPKo4YOl4yHBU90M9Q4nVIb+n7eSD4wH3OqpvFXbHaJNuD6N7/DcyC1sm+j+ZnwYcpC1j0ahvuts6L6iDKwtSCB95NsqnJGJhWY70/5PUTMI4LT3MKCP7s3uMzvBSC9HVuwr4+wKY4fYGIkfxzS2pwphTZvhA0hXQunXncE5z/D71pP2/BvAJtyEjTIZikWZqPHobSbBIJnR68DBdWZtWZ3u5IpiI3a8rc35TwVkaA9L9COFIRPioUlmG7FINtXZtjs5WZCrBgW+ofud+dwm7WQENSiGPlPMs8hAwC/y5cwvfMlk4sPIkqBppGQ/3XNZFuJNiQYnmxvl6/5j++Hrpa8UQgd4vZdmXs5T/fyi4+P9Q2NojKnqwCnrX4izX4vrFNFyiVERXsb+lD1kmwBPHC4UwTklAFaxtDI1e6n7iw5LmF2ylAIfC4e3JqKE4qgfOpPGPXJQGFlT7+KLNE+pgqptbva8zeS8DZI503Nj2vsIG7bsa3LcZWiNe1p+OlJbxsR4K8IYmtoBiiKPxWNRwXShv3arSFI5S1S/Nt9U+XnGI1K1tC8u3JY8vhZhceSlqgkndy9O+9K2hUKK01G4qSBlPgMVnMvFqXRkbvD+HPTPcMU="
 
 before_install:
   - echo -n | openssl s_client -connect https://scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
@@ -17,10 +21,6 @@ addons:
       name: "LADSoft/OrangeC"
       description: "Orange C compiler"
     notification_email: touchstone222@runbox.com
-    build_command_prepend: 
-	- move ladsoft\orangec .
-        - path=\mingw\bin;\orangec\bin;%PATH%
-        - set ORANGEC=\orangec
-        - cd orangec\src
-    build_command: mingw32-make --eval="COMPILER := MINGW"
+    build_command_prepend: ./travis-configure
+    build_command: omake --eval="COMPILER := CLANG"
     branch_pattern: coverity_scan

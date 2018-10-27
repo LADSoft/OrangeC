@@ -41,7 +41,7 @@
 #else
 #    include <sstream>
 #endif
-#include "..\version.h"
+#include "../version.h"
 #include <iostream>
 
 char* Utils::ShortName(const char* v)

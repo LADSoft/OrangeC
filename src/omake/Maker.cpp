@@ -30,7 +30,7 @@
 #include "Eval.h"
 #include "Parser.h"
 #include "CmdFiles.h"
-#include "utils.h"
+#include "Utils.h"
 #include <fstream>
 #include <list>
 #include <stdlib.h>

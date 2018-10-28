@@ -31,7 +31,7 @@
 #include <iostream>
 #include <deque>
 #include "Variable.h"
-#include "utils.h"
+#include "Utils.h"
 #include <algorithm>
 
 const char Spawner::escapeStart = '\x1';

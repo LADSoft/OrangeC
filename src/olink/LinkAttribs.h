@@ -26,7 +26,7 @@
 #ifndef LINKATTRIBS_H
 #define LINKATTRIBS_H
 
-#include "Objtypes.h"
+#include "ObjTypes.h"
 #include "LinkExpression.h"
 
 class LinkAttribs

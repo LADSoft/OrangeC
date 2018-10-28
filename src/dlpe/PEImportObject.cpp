@@ -26,7 +26,7 @@
 #include "PEObject.h"
 #include "Utils.h"
 #include "ObjSymbol.h"
-#include "Objfile.h"
+#include "ObjFile.h"
 #include "ObjExpression.h"
 
 #include <ctype.h>

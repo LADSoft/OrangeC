@@ -25,7 +25,7 @@
 
 #include "rcMain.h"
 #include "RCFile.h"
-#include "resFile.h"
+#include "ResFile.h"
 
 #include "Utils.h"
 #include "CmdFiles.h"

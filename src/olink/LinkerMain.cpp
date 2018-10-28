@@ -40,7 +40,7 @@
 #include <string.h>
 #ifdef GCCLINUX
 #include <unistd.h>
-else
+#else
 #include <io.h>
 #endif
 
@@ -119,7 +119,6 @@ const ObjString& LinkerMain::GetMapFile(CmdFiles& files)
     }
     return mapFile;
 }
-#include <stdio.h>
 void LinkerMain::AddFile(LinkManager& linker, std::string& name)
 {
     if (!TargetConfig.InterceptFile(name))

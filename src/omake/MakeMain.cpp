@@ -282,7 +282,11 @@ void MakeMain::LoadJobArgs()
 }
 void MakeMain::LoadEnvironment()
 {
+#ifdef GCCLInux
+    char** env = 0;
+#else
     char** env = environ;
+#endif
     Variable::Origin origin;
     if (environOverride.GetValue())
         origin = Variable::o_environ_override;

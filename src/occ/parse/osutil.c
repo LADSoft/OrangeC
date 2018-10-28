@@ -31,9 +31,9 @@
 #include <stdlib.h>
 
 #ifdef MSIL
-#    include "..\version.h"
+#    include "../version.h"
 #else
-#    include "..\..\version.h"
+#    include "../../version.h"
 #endif
 #if defined(_MSC_VER) || defined(BORLAND) || defined(__ORANGEC__)
 #    include <io.h>

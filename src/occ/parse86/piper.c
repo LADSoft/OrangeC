@@ -14,9 +14,10 @@ struct data
     int level;
     int length;
 };
+#ifndef GCCLINUX
+
 static void WaitForPipeData(HANDLE hPipe, int size)
 {
-#ifndef GCCLINUX
     int xx = GetTickCount();
     while (xx + 10000 > GetTickCount())
     {
@@ -31,9 +32,9 @@ static void WaitForPipeData(HANDLE hPipe, int size)
         }
         Sleep(0);
     }
-#endif
     fatal("Broken pipe");
 }
+#endif
 static struct data* readFileFromPipe(char* filname)
 {
     char pipe[260];

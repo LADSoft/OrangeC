@@ -246,7 +246,7 @@ static void CacheLine(WCHAR* lptr, char* xbuf)
 }
 //-------------------------------------------------------------------------
 
-int getline(int listflag)
+int GetLine(int listflag)
 /*
  * Read in a line, preprocess it, and dump it to the list and preproc files
  * Also strip comments and alter trigraphs
@@ -376,7 +376,7 @@ int getch(void)
             lastch = ' ';
             break;
         }
-        if (getline(incldepth == 0))
+        if (GetLine(incldepth == 0))
             return lastch = -1;
     }
     return lastch;

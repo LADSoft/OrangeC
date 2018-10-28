@@ -466,7 +466,7 @@ int getstring(unsigned char* s, int len, FILE* file)
     }
 }
 void ccCloseFile(FILE*);
-BOOLEAN getline(void)
+BOOLEAN GetLine(void)
 /*
  * Read in a line, preprocess it, and dump it to the list and preproc files
  * Also strip comments and alter trigraphs

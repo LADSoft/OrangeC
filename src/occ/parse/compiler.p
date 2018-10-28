@@ -915,7 +915,7 @@ BOOLEAN expectid(char *buf);
 BOOLEAN expectstring(char *buf, unsigned char **in, BOOLEAN angle);
 LLONG_TYPE expectnum(BOOLEAN *uns);
 int getstring(unsigned char *s, int len, FILE *file);
-BOOLEAN getline(void);
+BOOLEAN GetLine(void);
 void preprocess(void);
 void doerror(void);
 void dowarning(void);

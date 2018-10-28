@@ -107,7 +107,7 @@ void GetCodeLine(char* s)
 
 //-------------------------------------------------------------------------
 
-static char* getline(char* module, int lineno)
+static char* GetLine(char* module, int lineno)
 {
     static char line[256];
     static char oldmodule[256];
@@ -187,7 +187,7 @@ void CalculateDisassembly(int moving)
                 {
                     linenos[i] = lineno;
                     addrs[i] = code_address;
-                    sprintf(lines[i++], "%s", getline(buf1, lineno));
+                    sprintf(lines[i++], "%s", GetLine(buf1, lineno));
                 }
                 else
                 {
@@ -196,7 +196,7 @@ void CalculateDisassembly(int moving)
                     {
                         linenos[i] = j;
                         addrs[i] = code_address;
-                        sprintf(lines[i++], "%s", getline(buf1, j));
+                        sprintf(lines[i++], "%s", GetLine(buf1, j));
                     }
                     if (i >= LINES)
                         break;
@@ -230,7 +230,7 @@ void CalculateDisassembly(int moving)
     while (shownLine && addrs[shownLine - 1] == addrs[shownLine])
         shownLine--;
     asmAddress = addrs[shownLine];
-    getline("", 0);
+    GetLine("", 0);
 }
 
 //-------------------------------------------------------------------------

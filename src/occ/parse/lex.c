@@ -1335,7 +1335,7 @@ LEXEME* getsym(void)
                 return NULL;
             if (!includes->lptr || !*includes->lptr)
             {
-                if (getline())
+                if (GetLine())
                 {
                     return NULL;
                 }

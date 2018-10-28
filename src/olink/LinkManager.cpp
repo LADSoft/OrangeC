@@ -25,7 +25,7 @@
 
 #include "ObjSection.h"
 #include "ObjFile.h"
-#include "ObjIo.h"
+#include "ObjIO.h"
 #include "ObjFactory.h"
 #include "ObjUtil.h"
 #include "ObjType.h"

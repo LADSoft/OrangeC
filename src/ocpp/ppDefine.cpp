@@ -27,7 +27,7 @@
 
 #include "ppDefine.h"
 #include "Token.h"
-#include "Preprocessor.h"
+#include "PreProcessor.h"
 #include "Errors.h"
 #include "SymbolTable.h"
 #include "UTF8.h"

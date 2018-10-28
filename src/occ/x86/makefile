@@ -22,7 +22,7 @@
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
 
-Winclude ../../pathext2.mak
+include ../../pathext2.mak
 
 NAME=occ
 MAIN_FILE=ccmain.c

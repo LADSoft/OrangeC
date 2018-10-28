@@ -19,7 +19,7 @@
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
  *
  *     contact information:
- *         email: TouchStone222@runbox.com <David Lindauer>
+ *         email: TouchStone222@runbox.com <David Lindauer>_
  *
  */
 
@@ -254,9 +254,9 @@ void GrepMain::usage(const char* prog_name, const char* text, int retcode)
 int GrepMain::Run(int argc, char** argv)
 {
     // handle /V switch
-    for (int i = 1; i < __argc; i++)
-        if (__argv[i] && (__argv[i][0] == '/' || __argv[i][0] == '-'))
-            if (__argv[i][1] == 'V' && __argv[i][2] == 0 || !strcmp(__argv[i], "--version"))
+    for (int i = 1; i < argc; i++)
+        if (argv[i] && (argv[i][0] == '/' || argv[i][0] == '-'))
+            if (argv[i][1] == 'V' && argv[i][2] == 0 || !strcmp(argv[i], "--version"))
             {
                 Utils::banner(argv[0]);
                 exit(0);

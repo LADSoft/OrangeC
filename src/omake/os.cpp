@@ -29,10 +29,10 @@
 #include <unistd.h>
 #else
 #include <windows.h>
+#include <process.h>
 #endif
 #undef WriteConsole
 #define __MT__  // BCC55 support
-#include <process.h>
 #include <direct.h>
 #include <stdio.h>
 #include <time.h>

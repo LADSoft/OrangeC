@@ -37,7 +37,7 @@
 #include "ObjIndexManager.h"
 #include "ObjType.h"
 #include "ObjMemory.h"
-#include "ObjIEeeConstants.h"
+#include "ObjIeeeConstants.h"
 class ObjSymbol;
 class ObjSection;
 class ObjSourceFile;

@@ -53,7 +53,7 @@ void abspath(char* name)
     {
         getcwd(projname, 256);
         strcat(projname, "\\");
-        strcat(projname, name);get
+        strcat(projname, name);
         strcpy(name, projname);
     }
     else if (strstr(name, "..\\"))

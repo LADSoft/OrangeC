@@ -75,7 +75,7 @@ ifeq "$(TARGET)" "GUI"
 LFLAGS := $(LFLAGS) -s -Wl,--subsystem,windows
 endif
 
-COMPLIB=-lstdc++
+COMPLIB=-lstdc++ -lpthread -ldl
 
 
 vpath %.o $(_OUTPUTDIR)

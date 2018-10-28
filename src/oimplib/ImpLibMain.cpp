@@ -33,7 +33,7 @@
 #include "Utils.h"
 #include "ImpLibMain.h"
 #include "DefFile.h"
-#include "DllExportReader.h"
+#include "DLLExportReader.h"
 
 #include <ctype.h>
 #include <iostream>

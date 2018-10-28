@@ -68,10 +68,9 @@ C_DEPENDENCIES= \
     wseh.c
 LIB_DEPENDENCIES=sqlite3
 #determine if we can ignore the banner for a batch compile
-WIN32 = WIN32
 #use long long type
 LL = USE_LONGLONG
-DEFINES=$(i386) $(LL) $(MSDOS) $(WIN32) PARSER_ONLY 
+DEFINES=$(i386) $(LL) $(MSDOS) PARSER_ONLY 
 
 BACKEND_INCLUDE_PATH=.
 

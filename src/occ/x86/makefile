@@ -22,7 +22,7 @@
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
 
-include ../../pathext2.mak
+Winclude ../../pathext2.mak
 
 NAME=occ
 MAIN_FILE=ccmain.c
@@ -95,10 +95,9 @@ endif
 
 #LIB_DEPENDENCIES=util.lib objlib.lib
 #determine if we can ignore the banner for a batch compile
-WIN32 = WIN32
 #use long long type
 LL = USE_LONGLONG
-DEFINES=$(i386) $(LL) $(MSDOS) $(WIN32)
+DEFINES=$(i386) $(LL) $(MSDOS)
 
 BACKEND_INCLUDE_PATH=.
 

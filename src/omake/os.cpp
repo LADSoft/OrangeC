@@ -509,8 +509,8 @@ void OS::SetFileTime(const std::string fileName, Time time)
 }
 std::string OS::GetWorkingDir()
 {
-    char buf[MAX_PATH];
-    getcwd(buf, MAX_PATH);
+    char buf[260];
+    getcwd(buf, 260);
     return buf;
 }
 bool OS::SetWorkingDir(const std::string name) { return !chdir(name.c_str()); }

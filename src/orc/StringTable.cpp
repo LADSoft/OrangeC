@@ -27,7 +27,6 @@
 #include "ResFile.h"
 #include "RCFile.h"
 #include "Errors.h"
-#include <windows.h>
 #include <stdexcept>
 
 std::map<int, StringTable*> StringTable::stringTables;

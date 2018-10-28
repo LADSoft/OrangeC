@@ -27,7 +27,9 @@
 #include "RCFile.h"
 #include "ResFile.h"
 #include "ResourceData.h"
+#ifndef GCCLINUX
 #include <windows.h>
+#endif
 #include <stdexcept>
 Control::~Control()
 {
@@ -107,7 +109,9 @@ bool Control::ValidType(RCFile& rcFile)
 }
 void Control::ReadStandard(RCFile& rcFile, int clss, int addStyle, int extended, int hasText)
 {
+#ifndef GCCLINUX
     addStyle |= WS_CHILD | WS_VISIBLE;
+#endif
     cls.SetId(clss);
     if (hasText)
     {
@@ -141,11 +145,13 @@ void Control::ReadStandard(RCFile& rcFile, int clss, int addStyle, int extended,
         helpIndex = rcFile.GetNumber();
         rcFile.SkipComma();
     }
+#ifndef GCCLINUX
     if (cls == Scrollbar)
     {
         if (style & SBS_VERT)
             style &= ~SBS_HORZ;
     }
+#endif
 }
 void Control::GetClass(RCFile& rcFile)
 {
@@ -216,7 +222,11 @@ void Control::ReadGeneric(RCFile& rcFile, bool extended)
     rcFile.SkipComma();
     GetClass(rcFile);
     rcFile.SkipComma();
+#ifndef GCCLINUX
     style = rcFile.GetNumber() | WS_CHILD | WS_VISIBLE;
+#else
+    style = rcFile.GetNumber();
+#endif
     rcFile.SkipComma();
     pos.x = rcFile.GetNumber();
     rcFile.SkipComma();
@@ -239,6 +249,7 @@ void Control::ReadGeneric(RCFile& rcFile, bool extended)
 
 void Control::ReadRC(RCFile& rcFile, bool extended)
 {
+#ifndef GCCLINUX
     switch (rcFile.GetTokenId())
     {
         case Lexer::AUTO3STATE:
@@ -301,6 +312,7 @@ void Control::ReadRC(RCFile& rcFile, bool extended)
             // shouldn't get here
             break;
     }
+#endif
     rcFile.NeedEol();
 }
 Dialog::~Dialog()
@@ -336,6 +348,7 @@ void Dialog::WriteRes(ResFile& resFile)
 
     resFile.WriteString(caption);
 
+#ifndef GCCLINUX
     if (style & DS_SETFONT)
     {
         resFile.WriteWord(pointSize);
@@ -347,6 +360,7 @@ void Dialog::WriteRes(ResFile& resFile)
         }
         resFile.WriteString(font);
     }
+#endif
     int count = controls.size();
     for (auto res : *this)
     {
@@ -455,12 +469,14 @@ void Dialog::ReadSettings(RCFile& rcFile)
             rcFile.NeedEol();
         }
     }
+#ifndef GCCLINUX
     if (hascaption)
         style |= WS_CAPTION;
     if (!hasstyle)
         style |= WS_POPUPWINDOW;
     if (hasfont)
         style |= DS_SETFONT;
+#endif
 }
 void Dialog::ReadRC(RCFile& rcFile)
 {

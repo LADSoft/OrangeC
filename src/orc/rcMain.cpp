@@ -31,7 +31,9 @@
 #include "CmdFiles.h"
 #include "PreProcessor.h"
 
+#ifndef GCCLINUX
 #include <windows.h>
+#endif
 
 CmdSwitchParser rcMain::SwitchParser;
 CmdSwitchFile rcMain::File(SwitchParser, '@');
@@ -64,7 +66,11 @@ int main(int argc, char* argv[])
 int rcMain::Run(int argc, char* argv[])
 {
     int rv = 0;
+#ifndef GCCLINUX
     int language = LANG_ENGLISH + (SUBLANG_ENGLISH_US << 10);
+#else
+    int language = 0;
+#endif
     Utils::banner(argv[0]);
     Utils::SetEnvironmentToPathParent("ORANGEC");
     CmdSwitchFile internalConfig(SwitchParser);

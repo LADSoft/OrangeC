@@ -24,7 +24,7 @@
 ifeq "$(COMPILER)" "gcc-linux"
 
 DIRS = sqlite3 util objlib obrc ocpp ogrep oasm dlhex dlle dlmz dlpe dlpm olib olink \
-       oimplib omake onm occ coff2ieee
+       oimplib omake onm orc occ coff2ieee
 else
 DIRS = sqlite3 util objlib obrc ocpp ogrep oasm dlhex dlle dlmz dlpe dlpm olib olink \
        oimplib omake onm orc ocl ocide occ coff2ieee help MSDNHelp

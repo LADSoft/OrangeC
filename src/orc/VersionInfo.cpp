@@ -26,7 +26,9 @@
 #include "VersionInfo.h"
 #include "ResFile.h"
 #include "RCFile.h"
+#ifndef GCCLINUX
 #include <windows.h>
+#endif
 #include <stdexcept>
 
 void StringVerInfo::WriteRes(ResFile& resFile)
@@ -166,8 +168,13 @@ void VersionInfo::WriteRes(ResFile& resFile)
     resFile.Align();
     if (fixed)
     {
+#ifndef GCCLINUX
         resFile.WriteDWord(VS_FFI_SIGNATURE);
         resFile.WriteDWord(VS_FFI_STRUCVERSION);
+#else
+        resFile.WriteDWord(0);
+        resFile.WriteDWord(0);
+#endif
         resFile.WriteDWord(fileVersionMS);
         resFile.WriteDWord(fileVersionLS);
         resFile.WriteDWord(productVersionMS);

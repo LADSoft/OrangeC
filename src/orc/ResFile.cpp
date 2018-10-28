@@ -29,11 +29,10 @@
 #include "Icon.h"
 #include "Cursor.h"
 #include "StringTable.h"
-
-#include <fstream>
 #ifdef WIN32
-#    include <windows.h>
+#include <windows.h>
 #endif
+#include <fstream>
 
 ResFile::~ResFile()
 {
@@ -101,7 +100,7 @@ void ResFile::WriteString(const std::wstring& str)
     {
         int i;
         char buf[256];
-        WCHAR wbuf[256], *p = wbuf;
+        wchar_t wbuf[256], *p = wbuf;
         for (i = 0; i < n; i++)
             buf[i] = str[i];
         buf[i] = 0;

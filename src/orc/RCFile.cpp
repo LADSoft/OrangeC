@@ -43,7 +43,6 @@
 #include "StringTable.h"
 #include "VersionInfo.h"
 #include "Utils.h"
-#include <windows.h>
 #include <iostream>
 
 #include <stdexcept>
@@ -51,7 +50,7 @@
 std::string RCFile::CvtString(const std::wstring& str)
 {
     char buf[1024], *q = buf;
-    const WCHAR* p = str.c_str();
+    const wchar_t* p = str.c_str();
     while (*p)
         *q++ = *p++;
     *q = 0;
@@ -59,7 +58,7 @@ std::string RCFile::CvtString(const std::wstring& str)
 }
 std::wstring RCFile::CvtString(const std::string& str)
 {
-    WCHAR buf[1024], *q = buf;
+    wchar_t buf[1024], *q = buf;
     const char* p = str.c_str();
     while (*p)
         *q++ = *p++;

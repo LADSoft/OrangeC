@@ -25,7 +25,6 @@
 
 #include "ResourceContainer.h"
 #include "Utils.h"
-#include <windows.h>
 #include <fstream>
 #include <iostream>
 
@@ -70,7 +69,7 @@ int ResourceContainer::GetId(unsigned short* hdrdata, int& i, int& id, std::wstr
     }
     else
     {
-        WCHAR buf[65535];
+        wchar_t buf[65535];
         int k = 0;
         while (hdrdata[i] != 0)
         {

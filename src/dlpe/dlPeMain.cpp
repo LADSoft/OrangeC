@@ -23,7 +23,6 @@
  *
  */
 
-#include <windows.h>
 #include "dlPeMain.h"
 #include "CmdSwitch.h"
 #include "CmdFiles.h"

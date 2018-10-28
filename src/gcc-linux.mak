@@ -83,7 +83,7 @@ $(_OUTPUTDIR)/%.o: %.cpp
 	$(CC) -std=c++11 $(CCFLAGS) -o $@ $^
 
 $(_OUTPUTDIR)/%.o: %.c
-	$(CC) $(CCFLAGS) -o $@ $^
+	$(CC) -std=c99 $(CCFLAGS) -o $@ $^
 
 $(_OUTPUTDIR)/%.o: %.asm
 	$(ASM) $(ASMFLAGS) -o $@ $^

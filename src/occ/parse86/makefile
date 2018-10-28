@@ -75,9 +75,15 @@ DEFINES=$(i386) $(LL) $(MSDOS) $(WIN32) PARSER_ONLY
 
 BACKEND_INCLUDE_PATH=.
 
+ifeq "$(COMPILER)" "gcc-linux"
+SOURCE = ..$(PATHEXT2)parse:..$(PATHEXT2)preproc:..$(PATHEXT2)middle
+INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle
+SRCPATH:=$(BACKEND_INCLUDE_PATH):$(SOURCE):..
+else
 SOURCE = ..$(PATHEXT2)parse;..$(PATHEXT2)preproc;..$(PATHEXT2)middle
 INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle
 SRCPATH:=$(BACKEND_INCLUDE_PATH);$(SOURCE);..
+endif
 BACKEND_FILES = config.c
 
 

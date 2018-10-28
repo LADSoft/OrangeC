@@ -102,9 +102,15 @@ DEFINES=$(i386) $(LL) $(MSDOS) $(WIN32)
 
 BACKEND_INCLUDE_PATH=.
 
+ifeq "$(COMPILER)" "gcc-linux"
 SOURCE = ..$(PATHEXT2)parse:..$(PATHEXT2)preproc:..$(PATHEXT2)middle
 INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle
+SRCPATH=$(BACKEND_INCLUDE_PATH):$(SOURCE):..:..$(PATHEXT2)..$(PATHEXT2)util
+else
+SOURCE = ..$(PATHEXT2)parse;..$(PATHEXT2)preproc;..$(PATHEXT2)middle
+INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle
 SRCPATH=$(BACKEND_INCLUDE_PATH);$(SOURCE);..;..$(PATHEXT2)..$(PATHEXT2)util
+endif
 BACKEND_FILES = config.c gen.c inasm.c invoke.c objieeea.c outasm.c outcode.c peep.c rewrite.c
 
 

@@ -48,9 +48,12 @@
 
 //#define DEBUG
 
+#ifndef GCCLINUX
 static HANDLE jobsSemaphore;
 
 static CRITICAL_SECTION consoleSync;
+#endif
+
 std::deque<int> OS::jobCounts;
 bool OS::isSHEXE;
 int OS::jobsLeft;
@@ -202,7 +205,9 @@ void OS::JobRundown()
 }
 void OS::Take() 
 { 
+#ifdef _WIN32
     EnterCriticalSection(&consoleSync); 
+#endif
 }
 void OS::Give() 
 { 
@@ -435,10 +440,10 @@ std::string OS::SpawnWithRedirect(const std::string command)
 }
 Time OS::GetCurrentTime()
 {
-    SYSTEMTIME systemTime;
 #ifdef _WIN32
+
+    SYSTEMTIME systemTime;
     ::GetLocalTime(&systemTime);
-#endif
     struct tm tmx;
     memset(&tmx, 0, sizeof(tmx));
     tmx.tm_hour = systemTime.wHour;
@@ -450,6 +455,10 @@ Time OS::GetCurrentTime()
     time_t t = mktime(&tmx);
     Time rv(t, systemTime.wMilliseconds);
     return rv;
+#else
+    Time rv;
+    return rv;
+#endif
 }
 Time OS::GetFileTime(const std::string fileName)
 {

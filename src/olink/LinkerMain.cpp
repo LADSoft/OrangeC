@@ -39,7 +39,6 @@
 #include <fstream>
 #include <stdio.h>
 #include <string.h>
-#include <io.h>
 
 int main(int argc, char** argv)
 {

@@ -30,7 +30,6 @@
 #include <algorithm>
 #include <string.h>
 #include <stdlib.h>
-#include <io.h>
 
 #define STRINGVERSION "120"
 

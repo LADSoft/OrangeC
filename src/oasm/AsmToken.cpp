@@ -31,7 +31,6 @@
 #include <limits.h>
 #include <fstream>
 
-typedef unsigned L_INT L_UINT;
 
 bool CharacterToken::unsignedchar;
 bool NumericToken::ansi;
@@ -115,11 +114,11 @@ void CharacterToken::Parse(std::string& line)
     line.erase(0, start - line.c_str());
 }
 int CharacterToken::QuotedChar(int bytes, const char** source) { return *(*source)++; }
-L_INT NumericToken::GetInteger() const
+long long NumericToken::GetInteger() const
 {
     if (parsedAsFloat)
     {
-        return (L_INT)floatValue;
+        return (long long)floatValue;
     }
     return intValue;
 }
@@ -150,9 +149,9 @@ int NumericToken::Radix36(char c)
         return c - 'A' + 10;
     return INT_MAX;
 }
-L_INT NumericToken::GetBase(int b, char** ptr)
+long long NumericToken::GetBase(int b, char** ptr)
 {
-    L_INT i;
+    long long i;
     int j;
     int errd = 0;
     i = 0;
@@ -407,13 +406,13 @@ int NumericToken::GetNumber(const char** ptr)
             if (intValue > INT_MAX)
             {
                 type = t_unsignedint;
-                if (radix == 10 || (L_UINT)intValue > UINT_MAX)
+                if (radix == 10 || (unsigned long long)intValue > UINT_MAX)
                 {
                     type = t_longint;
                     if (intValue > LONG_MAX)
                     {
                         type = t_unsignedlongint;
-                        if (radix == 10 || (L_UINT)intValue > ULONG_MAX)
+                        if (radix == 10 || (unsigned long long)intValue > ULONG_MAX)
                         {
                             if (radix == 10)
                             {

@@ -32,7 +32,7 @@
 class ppDefine;
 class Section;
 
-typedef L_INT PPINT;
+typedef long long PPINT;
 
 class AsmExprNode
 {

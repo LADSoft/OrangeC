@@ -32,7 +32,6 @@
 #include "Listing.h"
 #include "UTF8.h"
 #include <stdlib.h>
-#include <io.h>
 
 CmdSwitchParser AsmMain::SwitchParser;
 CmdSwitchBool AsmMain::CaseInsensitive(SwitchParser, 'i');

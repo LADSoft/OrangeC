@@ -31,7 +31,11 @@
 #include <iomanip>
 #include <iostream>
 #include <algorithm>
+#ifdef GCCLINUX
+#include <unistd.h>
+#else
 #include <io.h>
+#endif
 #ifdef OPENWATCOM
 namespace std
 {

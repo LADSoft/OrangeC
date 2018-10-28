@@ -209,7 +209,7 @@ void Instruction::Optimize(int pc, bool last)
                     if (expr->GetType() == AsmExprNode::IVAL)
                         o = expr->ival;
                     else
-                        o = (L_INT)expr->fval;
+                        o = (long long)expr->fval;
                     if (fixup->IsRel())
                     {
                         o -= size + pc;

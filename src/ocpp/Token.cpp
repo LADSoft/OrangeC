@@ -30,7 +30,7 @@
 #include <float.h>
 #include <limits.h>
 
-typedef unsigned L_INT L_UINT;
+typedef unsigned long long L_UINT;
 
 bool CharacterToken::unsignedchar;
 bool NumericToken::ansi;
@@ -221,11 +221,11 @@ int CharacterToken::QuotedChar(int bytes, const char** source)
             return (char)i;
     }
 }
-L_INT NumericToken::GetInteger() const
+long long NumericToken::GetInteger() const
 {
     if (parsedAsFloat)
     {
-        return (L_INT)floatValue;
+        return (long long)floatValue;
     }
     return intValue;
 }
@@ -237,10 +237,10 @@ const FPF* NumericToken::GetFloat() const
             case t_int:
             case t_longint:
             case t_longlongint:
-                const_cast<FPF&>(floatValue) = (L_INT)intValue;
+                const_cast<FPF&>(floatValue) = (long long)intValue;
                 break;
             default:
-                const_cast<FPF&>(floatValue) = (unsigned L_INT)intValue;
+                const_cast<FPF&>(floatValue) = (unsigned long long)intValue;
                 break;
         }
     return &floatValue;
@@ -256,9 +256,9 @@ int NumericToken::Radix36(char c)
         return c - 'A' + 10;
     return INT_MAX;
 }
-L_INT NumericToken::GetBase(int b, char** ptr)
+long long NumericToken::GetBase(int b, char** ptr)
 {
-    L_INT i;
+    long long i;
     int j;
     int errd = 0;
     i = 0;

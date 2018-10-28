@@ -28,7 +28,7 @@ MAIN_FILE=rcMain.cpp
 INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)ocpp
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=ocpplib util
-DEFINES=L_INT=__int64
+DEFINES=
 H_FILES=$(wildcard *.h)
 
 include ../redirect.mak

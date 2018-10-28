@@ -29,7 +29,7 @@ MAIN_FILE=ppMain.cpp
 INCLUDES=..$(PATHEXT2)util
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=util
-DEFINES=L_INT=__int64
+DEFINES=
 H_FILES=$(wildcard *.h)
 
 include ../redirect.mak

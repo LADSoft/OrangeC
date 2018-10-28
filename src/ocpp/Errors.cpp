@@ -118,6 +118,6 @@ void Errors::FileName()
         std::cout << filname.c_str() << "(" << include->GetLineNo() << "): ";
     }
 }
-std::string Errors::ToNum(L_INT num) { return Utils::NumberToString(num); }
+std::string Errors::ToNum(long long num) { return Utils::NumberToString(num); }
 int Errors::GetErrorLine() { return include->GetLineNo(); }
 std::string Errors::GetFileName() { return include->GetFile(); }

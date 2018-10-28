@@ -28,7 +28,7 @@ MAIN_FILE=ImpLibMain.cpp
 INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)objlib ..$(PATHEXT2)olib ..$(PATHEXT2)olink ..$(PATHEXT2)ocpp ..$(PATHEXT2)exefmt
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=sqlite3 ocpplib olib olink objlib util
-DEFINES=L_INT=__int64
+DEFINES=
 H_FILES=$(wildcard *.h)
 
 include ../redirect.mak

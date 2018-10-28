@@ -58,7 +58,7 @@ class Token
     virtual bool IsWide() const { return false; }
     virtual std::wstring GetString() const { return L""; }
     virtual std::wstring GetRawString() const { return L""; }
-    virtual L_INT GetInteger() const { return 0; }
+    virtual long long GetInteger() const { return 0; }
     virtual Type GetNumericType() const { return t_int; }
     virtual const FPF* GetFloat() const { return 0; }
     virtual int GetKeyword() const { return -1; }
@@ -105,7 +105,7 @@ class CharacterToken : public Token
   public:
     CharacterToken(std::string& line) : value(0) { Parse(line); }
     virtual bool IsCharacter() const { return true; }
-    virtual L_INT GetInteger() const { return value; }
+    virtual long long GetInteger() const { return value; }
     static bool Start(const std::string& line);
     static void SetUnsigned(bool flag) { unsignedchar = flag; }
 
@@ -114,7 +114,7 @@ class CharacterToken : public Token
     static int QuotedChar(int len, const char** buf);
 
   private:
-    L_INT value;
+    long long value;
     static bool unsignedchar;
 };
 class NumericToken : public Token
@@ -123,7 +123,7 @@ class NumericToken : public Token
     NumericToken(std::string& line) : intValue(0), type(t_int), parsedAsFloat(false) { Parse(line); }
     virtual bool IsNumeric() const { return true; }
     virtual bool IsFloating() const { return parsedAsFloat; }
-    virtual L_INT GetInteger() const;
+    virtual long long GetInteger() const;
     virtual const FPF* GetFloat() const;
     virtual Type GetNumericType() const { return type; }
     static bool Start(const std::string& line);
@@ -133,7 +133,7 @@ class NumericToken : public Token
   protected:
     virtual void Parse(std::string& line);
     int Radix36(char c);
-    L_INT GetBase(int b, char** ptr);
+    long long GetBase(int b, char** ptr);
     void GetFraction(int radix, char** ptr, FPF& rval);
     int GetExponent(char** ptr);
     void GetFloating(FPF& floatValue, int radix, char** ptr);
@@ -141,7 +141,7 @@ class NumericToken : public Token
 
   private:
     bool parsedAsFloat;
-    L_INT intValue;
+    long long intValue;
     FPF floatValue;
     Type type;
     static bool ansi;

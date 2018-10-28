@@ -139,12 +139,12 @@ class FPF
         type = right.type;
         return *this;
     }
-    FPF& operator=(L_INT right)
+    FPF& operator=(long long right)
     {
         FromLongLong(right);
         return *this;
     }
-    FPF& operator=(unsigned L_INT right)
+    FPF& operator=(unsigned long long right)
     {
         FromUnsignedLongLong(right);
         return *this;
@@ -160,7 +160,7 @@ class FPF
         return *this;
     }
 
-    operator L_INT() const { return ToLongLong(); }
+    operator long long() const { return ToLongLong(); }
     operator std::string() const
     {
         std::string rv;
@@ -190,9 +190,9 @@ class FPF
     static FPF& AddSub(int flag, FPF& dest, const FPF& left, const FPF& right);
     static FPF& Multiply(FPF& dest, const FPF& left, const FPF& right);
     static FPF& Divide(FPF& dest, const FPF& left, const FPF& right);
-    void FromLongLong(L_INT right);
-    void FromUnsignedLongLong(unsigned L_INT right);
-    L_INT ToLongLong() const;
+    void FromLongLong(long long right);
+    void FromUnsignedLongLong(unsigned long long right);
+    long long ToLongLong() const;
     void ToString(std::string& dest) const;
 
   private:

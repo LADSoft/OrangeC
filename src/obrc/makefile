@@ -28,7 +28,7 @@ MAIN_FILE=BRCMain.cpp
 INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)ocpp ..$(PATHEXT2)objlib ..$(PATHEXT2)sqlite3
 CPP_DEPENDENCIES=$(wildcard *.cpp) 
 LIB_DEPENDENCIES=sqlite3 util ocpplib objlib
-DEFINES=L_INT=__int64 SQLITE_THREADSAFE=0
+DEFINES=SQLITE_THREADSAFE=0
 H_FILES=$(wildcard *.h)
 
 include ../redirect.mak

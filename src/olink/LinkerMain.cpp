@@ -39,6 +39,9 @@
 #include <fstream>
 #include <stdio.h>
 #include <string.h>
+#ifdef GCCLINUX
+#include <unistd.h>
+#endif
 
 int main(int argc, char** argv)
 {

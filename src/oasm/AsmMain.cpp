@@ -32,6 +32,9 @@
 #include "Listing.h"
 #include "UTF8.h"
 #include <stdlib.h>
+#ifdef GCCLINUX
+#include <unistd.h>
+#endif
 
 CmdSwitchParser AsmMain::SwitchParser;
 CmdSwitchBool AsmMain::CaseInsensitive(SwitchParser, 'i');

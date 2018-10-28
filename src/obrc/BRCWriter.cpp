@@ -30,6 +30,9 @@
 #include <algorithm>
 #include <string.h>
 #include <stdlib.h>
+#ifdef GCCLINUX
+#include <unistd.h>
+#endif
 
 #define STRINGVERSION "120"
 

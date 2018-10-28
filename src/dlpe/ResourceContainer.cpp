@@ -27,6 +27,7 @@
 #include "Utils.h"
 #include <fstream>
 #include <iostream>
+#include <string.h>
 
 unsigned char ResourceContainer::resourceHeader[32] = {0, 0, 0, 0, 0x20, 0, 0, 0, 0xff, 0xff, 0, 0, 0xff, 0xff, 0, 0,
                                                        0, 0, 0, 0, 0,    0, 0, 0, 0,    0,    0, 0, 0,    0,    0, 0};

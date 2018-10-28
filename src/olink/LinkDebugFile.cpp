@@ -41,7 +41,9 @@
 #include <set>
 #include <ctype.h>
 #include <fstream>
-
+#ifdef GCCLINUX
+#include <unistd.h>
+#endif
 #define STRINGVERSION "120"
 #define DBVersion atoi(STRINGVERSION)
 

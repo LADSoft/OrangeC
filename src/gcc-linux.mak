@@ -22,6 +22,9 @@
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
 
+
+# the gcc-linux compile probably won't actually run, it is primarily to support the compile needed by coverity
+#
 ifeq "$(COMPILER)" "gcc-linux"
 
 COMPILER_PATH := 

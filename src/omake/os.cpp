@@ -30,10 +30,10 @@
 #else
 #include <windows.h>
 #include <process.h>
+#include <direct.h>
 #endif
 #undef WriteConsole
 #define __MT__  // BCC55 support
-#include <direct.h>
 #include <stdio.h>
 #include <time.h>
 #include <string>

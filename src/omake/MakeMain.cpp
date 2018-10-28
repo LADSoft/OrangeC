@@ -282,7 +282,7 @@ void MakeMain::LoadJobArgs()
 }
 void MakeMain::LoadEnvironment()
 {
-#ifdef GCCLInux
+#ifdef GCCLINUX
     char** env = 0;
 #else
     char** env = environ;

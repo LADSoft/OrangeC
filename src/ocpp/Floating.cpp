@@ -24,7 +24,7 @@
  */
 
 #include "Utils.h"
-#include "floating.h"
+#include "Floating.h"
 #include <iostream>
 #include <fstream>
 #include <limits.h>

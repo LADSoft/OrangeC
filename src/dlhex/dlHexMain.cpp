@@ -23,7 +23,7 @@
  *
  */
 
-#include "dlHexMain.h"
+#include "dlhexmain.h"
 #include "CmdSwitch.h"
 #include "Utils.h"
 #include "OutputObjects.h"

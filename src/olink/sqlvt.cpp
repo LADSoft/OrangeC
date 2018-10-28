@@ -1,5 +1,5 @@
 
-#include "..\sqlite3\sqlite3.h"
+#include "../sqlite3/sqlite3.h"
 #include "sqlvt.h"
 #include <stdio.h>
 #include <string.h>

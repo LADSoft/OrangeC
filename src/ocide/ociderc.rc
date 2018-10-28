@@ -1,7 +1,7 @@
 #include <winuser.h>
 #include <windows.h>
 #include <commctrl.h>
-#include "..\version.h"
+#include "../version.h"
 #include "idewinconst.h"
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 

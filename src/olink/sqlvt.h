@@ -1,6 +1,6 @@
 #ifndef SQLVT_H
 #define SQLVT_H
-#include "..\sqlite3\sqlite3.h"
+#include "../sqlite3/sqlite3.h"
 #include <vector>
 #include <string>
 class SQL3VirtualTable;

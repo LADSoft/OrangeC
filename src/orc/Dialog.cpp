@@ -373,7 +373,7 @@ void Dialog::ReadSettings(RCFile& rcFile)
 {
     bool hascaption = false, hasstyle = false, hasfont = false;
     resInfo.SetLanguage(rcFile.GetLanguage());
-    bool done = FALSE;
+    bool done = false;
     while (!done && rcFile.IsKeyword())
     {
         switch (rcFile.GetToken()->GetKeyword())
@@ -461,7 +461,7 @@ void Dialog::ReadSettings(RCFile& rcFile)
                 italics = rcFile.GetNumber();
                 break;
             default:
-                done = TRUE;
+                done = true;
                 break;
         }
         if (!done)

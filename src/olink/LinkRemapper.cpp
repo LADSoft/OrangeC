@@ -23,7 +23,7 @@
  *
  */
 
-#include "Linkmanager.h"
+#include "LinkManager.h"
 #include "LinkRemapper.h"
 #include "LinkPartition.h"
 #include "LinkOverlay.h"

@@ -105,7 +105,7 @@ void VarVerInfo::WriteRes(ResFile& resFile)
         resFile.Align();
         size_t pos3 = resFile.GetPos();
         resFile.WriteWord(0);
-        resFile.WriteWord(item.languages.size() * sizeof(WORD));
+        resFile.WriteWord(item.languages.size() * sizeof(wchar_t));
         resFile.WriteWord(0);
         resFile.WriteString(item.key);
         resFile.Align();

@@ -27,7 +27,7 @@
 #include "RCFile.h"
 #include "ResourceData.h"
 #include "ResFile.h"
-#ifndef GCCLINIUX
+#ifndef GCCLINUX
 #include <windows.h>
 #endif
 #include <stdexcept>

@@ -35,7 +35,6 @@
 #include "xml.h"
 #include "Utils.h"
 #include "LinkerMain.h"
-#include <windows.h>
 #include <fstream>
 #include <stdio.h>
 #include <string.h>

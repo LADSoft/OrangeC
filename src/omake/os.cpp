@@ -25,13 +25,18 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 
+#ifdef GCCLINUX
+#include <unistd.h>
+#else
 #include <windows.h>
+#endif
 #undef WriteConsole
 #define __MT__  // BCC55 support
 #include <process.h>
 #include <direct.h>
 #include <stdio.h>
 #include <time.h>
+#include <string>
 #undef min
 #undef max
 #include "Variable.h"
@@ -102,29 +107,46 @@ bool Time::operator>(const Time& last)
             return true;
     return false;
 }
-void OS::Init() { InitializeCriticalSection(&consoleSync); }
+void OS::Init() 
+{ 
+#ifdef _WIN32
+	InitializeCriticalSection(&consoleSync); 
+#endif
+}
 void OS::WriteConsole(std::string string)
 {
+#ifdef _WIN32
     DWORD written;
     EnterCriticalSection(&consoleSync);
     WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), string.c_str(), string.size(), &written, nullptr);
     LeaveCriticalSection(&consoleSync);
+#else
+    printf("%s\n", string.c_str());
+#endif
 }
 void OS::ToConsole(std::deque<std::string>& strings)
 {
+#ifdef _WIN32
     EnterCriticalSection(&consoleSync);
+#endif
     for (auto s : strings)
     {
         WriteConsole(s);
     }
     strings.clear();
+#ifdef _WIN32
     LeaveCriticalSection(&consoleSync);
+#endif
 }
 void OS::AddConsole(std::deque<std::string>& strings, std::string string)
 {
+#ifdef _WIN32
     EnterCriticalSection(&consoleSync);
+#endif
     strings.push_back(string);
+#ifdef _WIN32
     LeaveCriticalSection(&consoleSync);
+#endif
 }
 void OS::PushJobCount(int jobs)
 {
@@ -138,10 +160,17 @@ void OS::PopJobCount()
 }
 bool OS::TakeJob()
 {
+#ifdef _WIN32
     WaitForSingleObject(jobsSemaphore, INFINITE);
+#endif
     return false;
 }
-void OS::GiveJob() { ReleaseSemaphore(jobsSemaphore, 1, nullptr); }
+void OS::GiveJob() 
+{ 
+#ifdef _WIN32
+    ReleaseSemaphore(jobsSemaphore, 1, nullptr); 
+#endif
+}
 void OS::JobInit()
 {
     std::string name;
@@ -161,13 +190,29 @@ void OS::JobInit()
     }
     v->SetExport(true);
     name = std::string("OMAKE") + name;
+#ifdef _WIN32
     jobsSemaphore = CreateSemaphore(nullptr, jobsLeft, jobsLeft, name.c_str());
+#endif
 }
-void OS::JobRundown() { CloseHandle(jobsSemaphore); }
-void OS::Take() { EnterCriticalSection(&consoleSync); }
-void OS::Give() { LeaveCriticalSection(&consoleSync); }
+void OS::JobRundown() 
+{
+#ifdef _WIN32 
+    CloseHandle(jobsSemaphore); 
+#endif
+}
+void OS::Take() 
+{ 
+    EnterCriticalSection(&consoleSync); 
+}
+void OS::Give() 
+{ 
+#ifdef _WIN32
+    LeaveCriticalSection(&consoleSync); 
+#endif
+}
 int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::string* output)
 {
+#ifdef _WIN32
     std::string command1 = command;
 
     Variable* v = VariableContainer::Instance()->Lookup("SHELL");
@@ -329,9 +374,13 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
     std::cout << rv << ":" << cmd << std::endl;
 #endif
     return rv;
+#else
+    return -1;
+#endif
 }
 std::string OS::SpawnWithRedirect(const std::string command)
 {
+#ifdef _WIN32
     std::string rv;
     Variable* v = VariableContainer::Instance()->Lookup("SHELL");
     if (!v)
@@ -380,11 +429,16 @@ std::string OS::SpawnWithRedirect(const std::string command)
     CloseHandle(pipeRead);
     CloseHandle(pipeWriteDuplicate);
     return rv;
+#else
+    return "";
+#endif
 }
 Time OS::GetCurrentTime()
 {
     SYSTEMTIME systemTime;
+#ifdef _WIN32
     ::GetLocalTime(&systemTime);
+#endif
     struct tm tmx;
     memset(&tmx, 0, sizeof(tmx));
     tmx.tm_hour = systemTime.wHour;
@@ -399,6 +453,7 @@ Time OS::GetCurrentTime()
 }
 Time OS::GetFileTime(const std::string fileName)
 {
+#ifdef _WIN32
     WIN32_FILE_ATTRIBUTE_DATA data;
     if (GetFileAttributesEx(fileName.c_str(), GetFileExInfoStandard, &data))
     {
@@ -419,11 +474,14 @@ Time OS::GetFileTime(const std::string fileName)
         Time rv(t, systemTime.wMilliseconds);
         return rv;
     }
+#endif
     Time rv;
     return rv;
+
 }
 void OS::SetFileTime(const std::string fileName, Time time)
 {
+#ifdef _WIN32
     FILETIME cr, ac, mod;
     HANDLE h =
         CreateFile(fileName.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
@@ -447,6 +505,7 @@ void OS::SetFileTime(const std::string fileName, Time time)
         ::SetFileTime(h, nullptr, nullptr, &mod);
         CloseHandle(h);
     }
+#endif
 }
 std::string OS::GetWorkingDir()
 {
@@ -492,6 +551,13 @@ std::string OS::NormalizeFileName(const std::string file)
 }
 void OS::CreateThread(void* func, void* data)
 {
+#ifdef _WIN32
     CloseHandle((HANDLE)_beginthreadex(nullptr, 0, (unsigned(CALLBACK*)(void*))func, data, 0, NULL));
+#endif
 }
-void OS::Yield() { ::Sleep(10); }
+void OS::Yield() 
+{ 
+#ifdef _WIN32
+    ::Sleep(10); 
+#endif
+}

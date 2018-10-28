@@ -377,6 +377,7 @@ int _RTL_FUNC _IMPORT _setmaxstdio(int);
     using __STD_NS_QUALIFIER vsprintf;
     using __STD_NS_QUALIFIER vsscanf;
     using __STD_NS_QUALIFIER unlink;
+    using __STD_NS_QUALIFIER _unlink;
     using __STD_NS_QUALIFIER getc;
     using __STD_NS_QUALIFIER getchar;
     using __STD_NS_QUALIFIER putchar;

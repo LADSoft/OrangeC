@@ -41,6 +41,8 @@
 #include <string.h>
 #ifdef GCCLINUX
 #include <unistd.h>
+else
+#include <io.h>
 #endif
 
 int main(int argc, char** argv)

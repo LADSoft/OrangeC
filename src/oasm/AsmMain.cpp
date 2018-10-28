@@ -34,6 +34,8 @@
 #include <stdlib.h>
 #ifdef GCCLINUX
 #include <unistd.h>
+#else
+#include <io.h>
 #endif
 
 CmdSwitchParser AsmMain::SwitchParser;

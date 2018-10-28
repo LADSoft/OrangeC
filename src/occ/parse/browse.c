@@ -53,7 +53,7 @@ void abspath(char* name)
     {
         getcwd(projname, 256);
         strcat(projname, "\\");
-        strcat(projname, name);
+        strcat(projname, name);get
         strcpy(name, projname);
     }
     else if (strstr(name, "..\\"))
@@ -75,6 +75,7 @@ void abspath(char* name)
         strcpy(p, name);
         strcpy(nname, projname);
     }
+#ifdef WIN32
     else
     {
         projname[0] = _getdrive() + 'A' - 1;
@@ -82,6 +83,7 @@ void abspath(char* name)
         strcpy(projname + 2, name);
         strcpy(name, projname);
     }
+#endif
 }
 
 /*-------------------------------------------------------------------------*/

@@ -29,7 +29,7 @@
 #include "Variable.h"
 #include "Parser.h"
 #include "Spawner.h"
-#include "OS.h"
+#include "os.h"
 #include "Maker.h"
 #include <ctype.h>
 #include <iostream>

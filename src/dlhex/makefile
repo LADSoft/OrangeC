@@ -21,10 +21,11 @@
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
+include ../pathext2.mak
 
 NAME=dlhex
 MAIN_FILE=dlHexMain.cpp
-INCLUDES=..\util ..\objlib
+INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)objlib
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=util objlib
 H_FILES=$(wildcard *.h)

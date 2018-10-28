@@ -21,11 +21,12 @@
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
+include ../pathext2.mak
 
 NAME=ocpplib
 DISTNAME=ocpp
 MAIN_FILE=ppMain.cpp
-INCLUDES=..\util
+INCLUDES=..$(PATHEXT2)util
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=util
 DEFINES=L_INT=__int64

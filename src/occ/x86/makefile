@@ -22,6 +22,8 @@
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
 
+include ../../pathext2.mak
+
 NAME=occ
 MAIN_FILE=ccmain.c
 C_DEPENDENCIES= \
@@ -81,14 +83,14 @@ C_DEPENDENCIES= \
     symtab.c \
     template.c \
     types.c \
-    unmangle.c\
+    unmangle.c \
     winsystem.c \
     wseh.c
 
 ifeq "$(COMPILER)" "gcc-linux"
 H_FILES=$(wildcard *.h) $(wildcard ../parse/*.h) $(wildcard ../middle/*.h) $(wildcard ../preproc/*.h)
 else
-H_FILES=$(wildcard *.h) $(wildcard ..\parse\*.h) $(wildcard ..\middle\*.h) $(wildcard ..\preproc\*.h)
+H_FILES=$(wildcard *.h) $(wildcard ..$(PATHEXT2)parse$(PATHEXT2)*.h) $(wildcard ..$(PATHEXT2)middle$(PATHEXT2)*.h) $(wildcard ..$(PATHEXT2)preproc$(PATHEXT2)*.h)
 endif
 
 #LIB_DEPENDENCIES=util.lib objlib.lib
@@ -100,15 +102,9 @@ DEFINES=$(i386) $(LL) $(MSDOS) $(WIN32)
 
 BACKEND_INCLUDE_PATH=.
 
-ifeq "$(COMPILER)" "gcc-linux"
-SOURCE = ../parse:../preproc:../middle
-INCLUDES=../parse ../preproc ../middle
-SRCPATH=$(SOURCE):..:../../util
-else
-SOURCE = ..\parse:..\preproc:..\middle
-INCLUDES=..\parse ..\preproc ..\middle
-SRCPATH=$(BACKEND_INCLUDE_PATH);$(SOURCE);..;..\..\util
-endif
+SOURCE = ..$(PATHEXT2)parse:..$(PATHEXT2)preproc:..$(PATHEXT2)middle
+INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle
+SRCPATH=$(BACKEND_INCLUDE_PATH);$(SOURCE);..;..$(PATHEXT2)..$(PATHEXT2)util
 BACKEND_FILES = config.c gen.c inasm.c invoke.c objieeea.c outasm.c outcode.c peep.c rewrite.c
 
 
@@ -116,7 +112,7 @@ vpath %.c $(SRCPATH)
 
 
 ifndef _TREEROOT
-_TREEROOT := $(CURDIR)\..\..\treetop.mak
+_TREEROOT := $(CURDIR)$(PATHEXT2)..$(PATHEXT2)..$(PATHEXT2)treetop.mak
 _TREETARGET := $(CURDIR)
 export _TREEROOT
 export _TREETARGET
@@ -128,4 +124,4 @@ format:
 endif
 
 DISTRIBUTE: copyexe
-	copy target.cfg $(DISTBIN)\occ.cfg
+	copy target.cfg $(DISTBIN)$(PATHEXT2)occ.cfg

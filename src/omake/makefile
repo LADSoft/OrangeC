@@ -21,10 +21,11 @@
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
+include ../pathext2.mak
 
 NAME=omake
 MAIN_FILE=MakeMain.cpp
-INCLUDES=..\util
+INCLUDES=..$(PATHEXT2)util
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=util
 H_FILES=$(wildcard *.h)

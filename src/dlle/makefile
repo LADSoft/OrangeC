@@ -21,10 +21,11 @@
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
+include ../pathext2.mak
 
 NAME=dlle
 MAIN_FILE=dlLeMain.cpp
-INCLUDES=..\util ..\objlib ..\exefmt
+INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)objlib ..$(PATHEXT2)exefmt
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=util objlib
 H_FILES=$(wildcard *.h)

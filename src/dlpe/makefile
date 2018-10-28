@@ -21,16 +21,17 @@
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
+include ../pathext2.mak
 
 NAME=dlpe
 MAIN_FILE=dlPeMain.cpp
-INCLUDES=..\util ..\objlib ..\sqlite3 ..\exefmt
+INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)objlib ..$(PATHEXT2)sqlite3 ..$(PATHEXT2)exefmt
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=sqlite3 util objlib
 DEFINES=SQLITE_THREADSAFE=0
 H_FILES=$(wildcard *.h)
 
-include ..\redirect.mak
+include ..$(PATHEXT2)redirect.mak
 
 DISTRIBUTE: copyexe
 	copy *.spc $(DISTBIN)

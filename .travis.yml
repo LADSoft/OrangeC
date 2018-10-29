@@ -21,5 +21,5 @@ addons:
       description: "Orange C compiler"
     notification_email: touchstone222@runbox.com
     build_command_prepend: ./travis-configure
-    build_command: omake --eval="COMPILER := CLANG"
-s    branch_pattern: coverity_scan
+    build_command: make -f ./travis.mak
+    branch_pattern: coverity_scan

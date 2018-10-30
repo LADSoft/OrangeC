@@ -26,8 +26,10 @@ ifneq "$(COMPILER)" "gcc-linux"
 SHELL=cmd.exe
 endif
 
+include pathext2.mak
+
 ifndef _TREEROOT
-_TREEROOT := $(CURDIR)/treetop.mak
+_TREEROOT := $(CURDIR)$(PATHEXT2)treetop.mak
 _TREETARGET := $(CURDIR)
 export _TREEROOT
 export _TREETARGET

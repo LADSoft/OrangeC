@@ -1,16 +1,15 @@
-language: c
-compiler:
- - gcc
-
 env:
   global:
-   #   The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
    #   via the "travis encrypt" command using the project repo's public key
-   - secure: "hT16bO0CRUWw/9aN2J9cOX90O8K/psKe8T8mp5cIq39ImK1D5PpAzyGylNaODPKo4YOl4yHBU90M9Q4nVIb+n7eSD4wH3OqpvFXbHaJNuD6N7/DcyC1sm+j+ZnwYcpC1j0ahvuts6L6iDKwtSCB95NsqnJGJhWY70/5PUTMI4LT3MKCP7s3uMzvBSC9HVuwr4+wKY4fYGIkfxzS2pwphTZvhA0hXQunXncE5z/D71pP2/BvAJtyEjTIZikWZqPHobSbBIJnR68DBdWZtWZ3u5IpiI3a8rc35TwVkaA9L9COFIRPioUlmG7FINtXZtjs5WZCrBgW+ofud+dwm7WQENSiGPlPMs8hAwC/y5cwvfMlk4sPIkqBppGQ/3XNZFuJNiQYnmxvl6/5j++Hrpa8UQgd4vZdmXs5T/fyi4+P9Q2NojKnqwCnrX4izX4vrFNFyiVERXsb+lD1kmwBPHC4UwTklAFaxtDI1e6n7iw5LmF2ylAIfC4e3JqKE4qgfOpPGPXJQGFlT7+KLNE+pgqptbva8zeS8DZI503Nj2vsIG7bsa3LcZWiNe1p+OlJbxsR4K8IYmtoBiiKPxWNRwXShv3arSFI5S1S/Nt9U+XnGI1K1tC8u3JY8vhZhceSlqgkndy9O+9K2hUKK01G4qSBlPgMVnMvFqXRkbvD+HPTPcMU="
+   - secure: "L5Z1gufQ8H8TEoTpmyYU+jfhawo8LfuWf0sVJNaN/k3A4ZmgPvx2Op32NLoN+QPHGCe6pcN6P09z1ch5pOdXhlFaSrivHvbzuFSYix1GJWCyr5WTnzeFioFQ1BxVmL01idIuoNUgj0vP0ALO42Jz4buL/rlKqFocdNhJowzFW4i+pgayqrKS0QI/1W3GC9oAVUz5jltZD1bDB5quSfSI9GXarWa3crlQ938nnpUozSQYzi6pnHxRVwSHDjWAasWgoADJ4CyFJtYrUeg0N5zwHTLh/gTuCY/FT4/NuevN2UL+i5ITPyeqdHJxfVAsUT2OeA1DD7PLn2qUpygzy0CX0vK0nZTwai6lpUIXWzwjL/e5wlRtmtILmY5nNiAom98oBzE/EbJeGYyX1yfQUTr+lqy7yXkLhSWCMwPwSe+V7TP3Wnn/2kuT6qDAHmDw1UPtjQhXoYnkStZUuJ/AJsP8P7/WsxmNKNPMmESy9V+f3dYZEYxyGgoVVnL+GpAxkLM++qY0fgmWVpGE+GQRaaorVJPbVFFUSgoxDWMXYCm7Ln0UQyeo+n4lpp9GsXpQPUvVtKJHzU/NWJh6yzHPu7XPtmA2NOW1nvNDHpLX4OppV7YvY3PGkTGr1QVn61H/Rxu0PI4WZgZS12Y24Wg5wq3Tjf/U3m+fIK4+XyQznOrmIx8="
 
 before_install:
   - echo -n | openssl s_client -connect https://scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
-#  - choco install mingw
+
+language: c
+compiler:
+ - gcc
 
 script: if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then make -f ./travis.mak; fi
 

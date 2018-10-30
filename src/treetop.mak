@@ -45,7 +45,14 @@ DISTROOT := $(TREETOP)..
 
 export DISTROOT
 
-_TARGETDIR:= $(CURDIR)
+ifeq "$(COMPILER)" "gcc-linux"
+CURRENT := $(CURDIR)
+else
+CURRENT := $(subst /,\,$(CURDIR))
+
+endif
+
+_TARGETDIR:= $(CURRENT)
 
 ifeq "$(COMPILER)" "gcc-linux"
 TEST := $(shell ls "$(_TARGETDIR)$(PATHEXT2)dirs.mak")

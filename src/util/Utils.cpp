@@ -30,7 +30,7 @@
 #include <fstream>
 #include <stdlib.h>
 #include <string.h>
-#ifdef MICROSOFT
+#ifdef _WIN32
 #    include <windows.h>
 #endif
 #include "Utils.h"
@@ -105,7 +105,7 @@ void Utils::fatal(const char* format, ...)
 char* Utils::GetModuleName()
 {
     static char buf[256];
-#if defined(WIN32) || defined(MICROSOFT)
+#if defined(_WIN32)
     GetModuleFileNameA(nullptr, buf, sizeof(buf));
 #else
 #ifdef GCCLINUX

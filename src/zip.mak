@@ -36,8 +36,8 @@ DISTEXE=/orangec/dist/occ$(VERNAME)e.zip
 DISTSRC=/orangec/dist/occ$(VERNAME)s.zip
 
 DISTRIBUTE:
-	-del $(DISTEXE)
-	-del $(DISTSRC)
+	-del $(subst /,\,$(DISTEXE))
+	-del $(subst /,\,$(DISTSRC))
 	-mkdir $(DISTROOT)\appdata
 	$(ZIP) -r0 a $(DISTEXE) orangec/bin/*.exe orangec/bin/*.app orangec/bin/*.spc orangec/bin/*.dll orangec/bin/*.cfg  orangec/bin/general.props
 	$(ZIP) a $(DISTEXE) orangec/lib/*.* orangec/include/*.* orangec/examples/*.* orangec/doc/*.* orangec/license/*.* 

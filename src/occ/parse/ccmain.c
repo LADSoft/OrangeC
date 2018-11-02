@@ -38,7 +38,7 @@ extern char version[256];
 extern int optflags;
 extern LIST* nonSysIncludeFiles;
 
-#ifdef MICROSOFT
+#ifdef _WIN32
 char* __stdcall GetModuleFileNameA(int handle, char* buf, int size);
 #endif
 
@@ -799,7 +799,7 @@ int main(int argc, char* argv[])
             rv = 0;
             if (chosenAssembler->compiler_postprocess)
             {
-#ifdef MICROSOFT
+#ifdef _WIN32
                 GetModuleFileNameA(NULL, buffer, sizeof(buffer));
 #else
                 strcpy(buffer, argv[0]);

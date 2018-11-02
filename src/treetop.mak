@@ -294,8 +294,11 @@ ifdef WITHMSDOS
 	@$(MAKE) -C$(DISTROOT)$(PATHEXT2)src$(PATHEXT2)..$(PATHEXT2) -f $(realpath .$(PATHEXT2)doszip.mak)
 	@$(MAKE) -C$(DISTROOT)$(PATHEXT2)src$(PATHEXT2)dos$(PATHEXT2)install -fmakefile.le
 endif
-	@$(MAKE) -C$(PATHEXT2) -f $(realpath .$(PATHEXT2)zip.mak)
-
+ifeq "$(COMPILER)" "gcc-linux"
+	@$(MAKE) -C/ -f $(realpath .$(PATHEXT2)zip.mak)
+else
+	@$(MAKE) -C\ -f $(realpath .$(PATHEXT2)zip.mak)
+endif
 $(CDIRS): %.dirs :
 	-$(MKDIR) $*$(PATHEXT2)obj$(PATHEXT2)$(OBJ_IND_PATH) 2> $(NULLDEV)
 

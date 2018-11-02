@@ -47,8 +47,8 @@ char* winc0[] = {"c0xpe.o", "c0pe.o", "c0dpe.o", "c0pm.o", "c0wat.o", "", "c0xpe
 LIST *objlist, *asmlist, *liblist, *reslist, *rclist;
 static char outputFileName[256];
 static char *asm_params, *rc_params, *link_params;
-#ifdef MICROSOFT
-#    define system(x) winsystem(x)
+#ifdef _WIN32
+#   define system(x) winsystem(x)
 extern int winsystem(const char*);
 #endif
 static BOOLEAN InsertOption(char* name)
@@ -255,8 +255,15 @@ int RunExternalFiles(char* rootPath)
     }
     if (!cparams.prm_compileonly && objlist)
     {
+
         char tempFile[260];
         tmpnam(tempFile);
+        if (tempFile[0] == '\\')
+        {
+            // fix for buggy mingw on windows
+            strcpy(tempFile,getenv("TMP"));
+            tmpnam(tempFile + strlen(tempFile));
+        }
         FILE* fil = fopen(tempFile, "w");
         if (!fil)
             return 1;

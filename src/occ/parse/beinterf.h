@@ -188,6 +188,8 @@ typedef struct
     ARCH_SIZING* regCosts;      /* defines register costs */
     UBYTE* regOrder;            /* register allocation order */
     ARCH_PEEP* peephole_defs;   /* defines peephole information */
+    int fastcallRegCount;       /* Max number of regs considered for fastcall */
+    char *fastcallRegs;         /* register list for regs used in fastcall */
     int preferopts;             /* preferred optimizations */
     int denyopts;               /* optimizations we don't want */
 #define DO_NOGLOBAL 1

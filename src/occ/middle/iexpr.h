@@ -195,6 +195,7 @@ typedef struct quad
     int beforeGosub : 1;
     int nullvararg : 1;
     int blockassign : 1;
+    char fastcall; /* index for fastcall-related arg, positive for call sites and negative as callee */
     char oldmode;
     char novalue;
     char temps;

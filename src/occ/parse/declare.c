@@ -1689,6 +1689,8 @@ static LEXEME* getStorageClass(LEXEME* lex, SYMBOL* funcsp, enum e_sc* storage_c
                             next = lk_pascal;
                         if (!strcmp(buf, "stdcall"))
                             next = lk_stdcall;
+                        if (!strcmp(buf, "stdcall"))
+                            next = lk_fastcall;
                         if (next != lk_none)
                         {
                             *linkage = next;
@@ -1953,6 +1955,11 @@ static LEXEME* getLinkageQualifiers(LEXEME* lex, enum e_lk* linkage, enum e_lk* 
                 if (*linkage != lk_none && *linkage != lk_stdcall && (!cparams.prm_cplusplus || *linkage != lk_c))
                     error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
                 *linkage = lk_stdcall;
+                break;
+            case kw__fastcall:
+                if (*linkage != lk_none && *linkage != lk_fastcall)
+                    error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                *linkage = lk_fastcall;
                 break;
             case kw__interrupt:
                 if (*linkage != lk_none && *linkage != lk_interrupt)

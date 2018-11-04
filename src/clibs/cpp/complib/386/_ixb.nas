@@ -33,13 +33,16 @@
 
 SECTION code CLASS=CODE USE32
 @_InitializeException$qpvpv:
-    mov eax,[esp+4] ; pointer to xception block
+    push eax
+    push ecx
+    push edx
+    mov eax,[esp+4 + 12] ; pointer to xception block
     mov ecx,[fs:0]      ; next pointer in chain
     mov [eax],ecx
     mov DWORD [eax+4], ___cppexceptionhandle
     lea ecx,[esp + 12] ; pointer to what ESP should be when a catch block is entered
     mov [eax + 8],ecx
-    mov ecx,[esp+8]  ; function xcept block
+    mov ecx,[esp+8 + 12]  ; function xcept block
     mov edx, eax
     sub edx, [ecx + 4] ; offset from start of xcept block to where EBP would be
     mov [eax+12], edx   ; pointer to ebp
@@ -47,6 +50,9 @@ SECTION code CLASS=CODE USE32
     mov DWORD [eax + 20], 0 ; constructor progress
     mov DWORD [eax + 24], 0 ; throw flags
     mov [fs:0],eax
+    pop edx
+    pop ecx
+    pop eax
     ret
 @_RundownException$qv:
     mov ecx,[fs:0]      ; has to be ECX to avoid killing the function return value

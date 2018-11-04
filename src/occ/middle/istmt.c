@@ -65,6 +65,7 @@ extern LIST* temporarySymbols;
 extern int inlinesym_count;
 extern int tempBottom, nextTemp;
 extern TYPE stdint;
+extern SYMBOL *baseThisPtr;
 
 IMODE* returnImode;
 int retcount;
@@ -1089,6 +1090,13 @@ void genfunc(SYMBOL* funcsp, BOOLEAN doOptimize)
             gen_varstart(exp);
         }
     }
+    else
+    {
+        if (basetype(funcsp->tp)->syms->table[0] && ((SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p)->thisPtr)
+        {
+            baseThisPtr = (SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p;
+        }
+    }
     gen_label(startlab);
     AddProfilerData(funcsp);
     if (cparams.prm_xcept && funcsp->xc && funcsp->xc->xcInitializeFunc)
@@ -1160,6 +1168,7 @@ void genfunc(SYMBOL* funcsp, BOOLEAN doOptimize)
         }
         hr = hr->next;
     }
+    baseThisPtr = NULL;
 }
 void genASM(STATEMENT* st)
 {

@@ -57,6 +57,12 @@ extern EXPRESSION* inlinesym_thisptr[MAX_INLINE_NESTING];
 extern LIST* temporarySymbols;
 extern TYPE stdpointer;
 extern TYPE stdint;
+extern int fastcallAlias;
+extern BOOLEAN setjmp_used;
+extern BOOLEAN functionHasAssembly;
+
+
+SYMBOL *baseThisPtr;
 
 int calling_inline;
 
@@ -890,6 +896,15 @@ IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
                         EXPRESSION* exp = inlinesym_thisptr[inlinesym_count - 1];
                         if (exp)
                             return gen_expr(funcsp, exp, 0, natural_size(exp));
+                    }
+                    else if (baseThisPtr ) // for this ptrs inherited in a constructor
+                    {
+                        if (sp != baseThisPtr)
+                        {
+                            sp = baseThisPtr;
+                            node = varNode(en_auto, sp);
+                            node = exprNode(en_l_p, node, 0);
+                        }
                     }
                 }
                 if (sp->storage_class == sc_parameter && sp->inlineFunc.stmt)
@@ -2245,12 +2260,97 @@ static void gen_arg_destructors(SYMBOL* funcsp, INITLIST* arg)
             gen_expr(funcsp, arg->dest, F_NOVALUE, ISZ_UINT);
     }
 }
+static int MarkFastcall(SYMBOL *sym, TYPE *functp, BOOLEAN thisptr)
+{
+#ifndef CPPTHISCALL
+    if (sym->linkage != lk_fastcall)
+        return 0;
+#endif
+
+    if ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) && !functionHasAssembly)
+    {
+        /* if there is a setjmp in the function, no variable gets moved into a reg */
+        if (!(setjmp_used))
+        {
+
+            QUAD *tail = intermed_tail;
+            int i = 0;
+            HASHREC *hr;
+            if (isfunction(functp))
+            {
+                if (basetype(functp)->sp)
+                    sym = basetype(functp)->sp;
+                hr = basetype(functp)->syms->table[0];
+                if (!ismember(sym) && sym->linkage != lk_fastcall && basetype(sym->tp)->type != bt_memberptr)
+                    return 0;
+            }
+            else
+            {
+                return 0;
+            }
+
+            BOOLEAN structret = !!isstructured(basetype(sym->tp)->btp);
+
+            while (hr && tail && tail->dc.opcode != i_block)
+            {
+
+                if (tail->dc.opcode == i_parm)
+                {
+                    // change it to a move
+                    SYMBOL *sp = (SYMBOL *)hr->p;
+                    TYPE *tp = basetype(sp->tp);
+                    if (thisptr || (tp->type < bt_float ||
+                        (tp->type == bt_pointer && basetype(basetype(tp)->btp)->type != bt_func) || isref(tp)) &&
+                        sp->offset - (chosenAssembler->arch->fastcallRegCount + structret) * chosenAssembler->arch->parmwidth < chosenAssembler->arch->retblocksize)
+                    {
+                        IMODE *temp = tempreg(tail->dc.left->size, 0);
+                        QUAD *q = (QUAD *)Alloc(sizeof(QUAD));
+                        *q = *tail;
+                        q->dc.opcode = i_assn;
+                        q->ans = temp;
+                        tail->dc.left = temp;
+                        tail->fastcall = ++i;
+                        q->back = tail->back;
+                        q->fwd = tail;
+                        q->back->fwd = q;
+                        q->fwd->back = q;
+                        q->genConflict = TRUE;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                    if (sym->linkage != lk_fastcall)
+                        break;
+                    if (thisptr)
+                    {
+                        if (((SYMBOL *)hr->p)->thisPtr)
+                            hr = hr->next;
+                        thisptr = FALSE;
+                    }
+                    else
+                    {
+                        hr = hr->next;
+                    }
+                }
+                else if (tail->dc.opcode == i_gosub)
+                {
+                    break;
+                }
+                tail = tail->back;
+            }
+            return i * chosenAssembler->arch->parmwidth;
+        }
+    }
+    return 0;
+}
 IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
 /*
  *      generate a function call node and return the address mode
  *      of the result.
  */
 {
+    int fastcallSize = 0;
     IMODE* ap3;
     FUNCTIONCALL* f = node->v.func;
     BOOLEAN managed = FALSE;
@@ -2384,6 +2484,7 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
             f->callLab = ++consIndex;
             genCallLab(f->arguments, f->callLab);
         }
+        fastcallSize = MarkFastcall(f->sp, f->functp, !!f->thisptr);
         if (!(chosenAssembler->arch->preferopts & OPT_REVERSEPARAM))
         {
             if (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr)
@@ -2413,9 +2514,6 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         if (node->type == en_intcall)
             type = i_int;
         ap = ap3 = gen_expr(funcsp, f->fcall, 0, ISZ_UINT);
-        //		ap = LookupLoadTemp(NULL, ap3);
-        //		if (ap != ap3)
-        //			gen_icode(i_assn, ap, ap3, NULL);
         if (ap->mode == i_immed && ap->offset->type == en_pc)
         {
             if (f->sp && f->sp->linkage2 == lk_import && (!chosenAssembler->msil))
@@ -2446,6 +2544,7 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         gosub = gen_igosub(type, ap);
     }
     gosub->altdata = f;
+    
     if ((flags & F_NOVALUE) && !isstructured(basetype(f->functp)->btp) && basetype(f->functp)->btp->type != bt_memberptr)
     {
         if (basetype(f->functp)->btp->type == bt_void)
@@ -2480,11 +2579,18 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
     }
     else
     {
+        adjust -= fastcallSize;
+        if (adjust < 0)
+            adjust = 0;
+        adjust2 -= fastcallSize;
+        if (adjust2 < 0)
+            adjust2 = 0;
         if (f->sp->linkage != lk_stdcall && f->sp->linkage != lk_pascal)
             gen_nodag(i_parmadj, 0, make_parmadj(adjust), make_parmadj(adjust));
         else
             gen_nodag(i_parmadj, 0, make_parmadj(adjust2), make_parmadj(adjust));
     }
+
     push_nesting -= adjust;
     if (f->returnEXP && managed && isstructured(basetype(f->functp)->btp))
     {

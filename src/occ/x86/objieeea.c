@@ -555,6 +555,9 @@ int dumpFunction(TYPE* tp)
                 case lk_pascal:
                     v = 3;
                     break;
+                case lk_fastcall:
+                    v = 4;
+                    break;
             }
             break;
     }

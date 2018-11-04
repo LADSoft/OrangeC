@@ -34,6 +34,9 @@
 extern ARCH_ASM* chosenAssembler;
 extern int prm_nodos;
 extern int prm_flat;
+extern int fastcallAlias;
+extern SYMBOL *theCurrentFunc;
+
 extern OPCODE popn_aaa;
 extern OPCODE popn_aad;
 extern OPCODE popn_aam;
@@ -791,16 +794,30 @@ void oa_putconst(int op, int sz, EXPRESSION* offset, BOOLEAN doSign)
     int toffs;
     switch (offset->type)
     {
+        int m;
         case en_auto:
+            m = offset->v.sp->offset;
+            if (offset->v.sp->storage_class == sc_parameter && fastcallAlias)
+            {
+                if (!isstructured(basetype(theCurrentFunc->tp)->btp) || offset->v.sp->offset != chosenAssembler->arch->retblocksize)
+                {
+                    m -= fastcallAlias * chosenAssembler->arch->parmwidth;
+                    if (m < chosenAssembler->arch->retblocksize)
+                    {
+                        m = 0;
+                    }
+                }
+            }
+
             if (doSign)
             {
                 if ((int)offset->v.sp->offset < 0)
                     bePrintf("-0%lxh", -offset->v.sp->offset);
                 else
-                    bePrintf("+0%lxh", offset->v.sp->offset);
+                    bePrintf("+0%lxh", m);
             }
             else
-                bePrintf("0%lxh", offset->v.sp->offset);
+                bePrintf("0%lxh", m);
 
             break;
         case en_c_i:

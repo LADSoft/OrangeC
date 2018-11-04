@@ -37,6 +37,7 @@ extern ASMNAME oplst[];
 extern enum e_sg oa_currentSeg;
 extern DBGBLOCK* DbgBlocks[];
 extern SYMBOL* theCurrentFunc;
+extern int fastcallAlias;
 
 int outcode_base_address;
 
@@ -1873,7 +1874,26 @@ int resolveoffset(OCODE* ins, EXPRESSION* n, int* resolved)
                 rv += n->v.i;
                 break;
             case en_auto:
-                rv += n->v.sp->offset;
+                if (n->v.sp->storage_class == sc_parameter && fastcallAlias)
+                {
+                    if (!isstructured(basetype(theCurrentFunc->tp)->btp) || n->v.sp->offset != chosenAssembler->arch->retblocksize)
+                    {
+
+                        int m = n->v.sp->offset - fastcallAlias * chosenAssembler->arch->parmwidth;
+                        if (m >= chosenAssembler->arch->retblocksize)
+                        {
+                            rv += m;
+                        }
+                    }
+                    else
+                    {
+                        rv += n->v.sp->offset;
+                    }
+                }
+                else
+                {
+                    rv += n->v.sp->offset;
+                }
                 break;
             case en_labcon:
             case en_global:

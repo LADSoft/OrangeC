@@ -2608,6 +2608,7 @@ void createAssignment(SYMBOL* sym, SYMBOL* asnfunc)
     thunkAssignments(&b, sym, asnfunc, basetype(asnfunc->tp)->syms, move, isConst);
     asnfunc->inlineFunc.stmt = stmtNode(NULL, NULL, st_block);
     asnfunc->inlineFunc.stmt->lower = b.head;
+    asnfunc->inlineFunc.syms = basetype(asnfunc->tp)->syms;
     //    asnfunc->inlineFunc.stmt->blockTail = b.tail;
     InsertInline(asnfunc);
     localNameSpace->syms = syms;

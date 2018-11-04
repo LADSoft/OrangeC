@@ -796,6 +796,9 @@ static void iop_setge(QUAD* q)
 
 static void iop_parm(QUAD* q)
 {
+    // for fastcall, the moves generated before the push are sufficient.
+    if (q->fastcall)
+        return;
     if (chosenAssembler->gen->asm_parm)
         chosenAssembler->gen->asm_parm(q);
     if (!icdFile)

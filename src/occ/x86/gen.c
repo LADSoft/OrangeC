@@ -239,7 +239,8 @@ void oa_gen_vc1(SYMBOL* func)
     AMODE* ofs = makedreg(EAX);
     ofs->offset = intNode(en_c_i, 0);
     ofs->mode = am_indisp;
-    gen_code(op_mov, makedreg(EAX), make_stack(-4));
+    gen_code(op_mov, makedreg(EAX), makedreg(ECX));
+    // gen_code(op_mov, makedreg(EAX), make_stack(-4));
     gen_code(op_mov, makedreg(EAX), ofs);
     ofs->offset = intNode(en_c_i, func->offset);
     gen_code(op_jmp, ofs, NULL);
@@ -4395,7 +4396,9 @@ void asm_atomic(QUAD* q)
                                         zf              nz
                                         true            false
                 rm32       eax        rm32      reg     eax        rm32
-                
+                
+
+
 
 
 

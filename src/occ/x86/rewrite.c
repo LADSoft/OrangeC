@@ -24,6 +24,7 @@
  */
 
 #include "be.h"
+extern ARCH_ASM* chosenAssembler;
 extern int tempCount;
 extern TEMP_INFO** tempInfo;
 extern BLOCKLIST** blockArray;
@@ -84,7 +85,46 @@ static void rvColor(IMODE* ip)
 }
 void precolor(QUAD* head) /* precolor an instruction */
 {
-    if (head->dc.opcode == i_sdiv || head->dc.opcode == i_udiv)
+    if (head->fastcall)
+    {
+        int ta;
+        if (head->fastcall < 0)
+        {
+            // callee
+            ta = head->dc.left->offset->v.sp->value.i;
+            head->precolored |= TEMP_LEFT;
+            tempInfo[ta]->precolored = TRUE;
+            tempInfo[ta]->enode->v.sp->regmode = 2;
+            tempInfo[ta]->color = chosenAssembler->arch->fastcallRegs[(head->fastcall > 0 ? head->fastcall : -head->fastcall) - 1];
+
+        }
+        else
+        {
+            // call site
+            if (head->dc.left->mode != i_direct || head->dc.left->offset->type != en_tempref)
+            {
+                IMODE *temp = InitTempOpt(head->dc.left->size, head->dc.left->size);
+                QUAD *q = (QUAD *)Alloc(sizeof(QUAD));
+                *q = *head;
+                q->dc.opcode = i_assn;
+                q->ans = temp;
+                head->dc.left = temp;
+                InsertInstruction(head->back, q);
+            }
+            if (head->dc.left->offset && head->dc.left->offset->type == en_tempref)
+            {
+                ta = head->dc.left->offset->v.sp->value.i;
+                head->precolored |= TEMP_LEFT;
+
+                //            ta = head->ans->offset->v.sp->value.i;
+                //            head->precolored |= TEMP_ANS;
+                tempInfo[ta]->precolored = TRUE;
+                tempInfo[ta]->enode->v.sp->regmode = 2;
+                tempInfo[ta]->color = chosenAssembler->arch->fastcallRegs[(head->fastcall > 0 ? head->fastcall : -head->fastcall) - 1];
+            }
+        }
+    }
+    else if (head->dc.opcode == i_sdiv || head->dc.opcode == i_udiv)
     {
         if (head->temps & TEMP_ANS)
         {

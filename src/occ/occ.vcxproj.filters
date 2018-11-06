@@ -221,6 +221,9 @@
     <ClCompile Include="parse\wseh.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="x86\beIntrins.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="parse\beinterf.h">

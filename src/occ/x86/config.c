@@ -35,6 +35,7 @@
 extern int dbgblocknum;
 extern ASMNAME oplst[];
 extern ASMREG reglst[];
+extern char BackendIntrinsicPrototypes[];
 
 #ifndef WIN32
 int prm_targettype = DOS32A;
@@ -649,7 +650,7 @@ ARCH_ASM assemblerInterface[] = {
         &architecture,                  /* architecture characteristics */
         &outputfunctions,               /* pointer to backend function linkages */
         NULL,                           /* pointer to MSIL-specific data and functions */
-        NULL,                           /* pointer to extra builtin data */
+        BackendIntrinsicPrototypes,     /* pointer to extra builtin data */
         initnasm,                       /* return 1 to proceed */
         0,                              /* precompile function, or NULL */
         0,                              /* postcompile function, or NULL */
@@ -692,7 +693,7 @@ ARCH_ASM assemblerInterface[] = {
         &architecture,                  /* architecture characteristics */
         &outputfunctions,               /* pointer to backend function linkages */
         NULL,                           /* pointer to MSIL-specific data and functions */
-        NULL,                           /* pointer to extra builtin data */
+        BackendIntrinsicPrototypes,     /* pointer to extra builtin data */
         initfasm,                       /* return 1 to proceed */
         0,                              /* precompile function, or NULL */
         0,                              /* postcompile function, or NULL */
@@ -735,7 +736,7 @@ ARCH_ASM assemblerInterface[] = {
         &architecture,                  /* architecture characteristics */
         &outputfunctions,               /* pointer to backend function linkages */
         NULL,                           /* pointer to MSIL-specific data and functions */
-        NULL,                           /* pointer to extra builtin data */
+        BackendIntrinsicPrototypes,     /* pointer to extra builtin data */
         inittasm,                       /* return 1 to proceed */
         0,                              /* precompile function, or NULL */
         0,                              /* postcompile function, or NULL */
@@ -778,7 +779,7 @@ ARCH_ASM assemblerInterface[] = {
         &architecture,                  /* architecture characteristics */
         &outputfunctions,               /* pointer to backend function linkages */
         NULL,                           /* pointer to MSIL-specific data and functions */
-        NULL,                           /* pointer to extra builtin data */
+        BackendIntrinsicPrototypes,     /* pointer to extra builtin data */
         initmasm,                       /* return 1 to proceed */
         0,                              /* precompile function, or NULL */
         0,                              /* postcompile function, or NULL */

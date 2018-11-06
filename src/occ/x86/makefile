@@ -31,6 +31,7 @@ C_DEPENDENCIES= \
     ccmain.c \
     crc.c \
     beinterf.c \
+    beIntrins.c \
     browse.c \
     ccerr.c \
     constopt.c \

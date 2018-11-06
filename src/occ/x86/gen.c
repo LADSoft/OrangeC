@@ -56,6 +56,7 @@ static int switchTreePos;
 /* map the icode version of the regs to the processor version */
 extern int regmap[REG_MAX][2];
 
+BOOLEAN BackendIntrinsic(QUAD *q);
 //-------------------------------------------------------------------------
 
 AMODE* make_muldivval(AMODE* ap)
@@ -2235,34 +2236,36 @@ void asm_gosub(QUAD* q) /* normal gosub to an immediate label or through a var *
     EXPRESSION* en = NULL;
     enum e_op op;
     AMODE *apl, *aph;
-    if (q->dc.left->offset)
-        en = GetSymRef(q->dc.left->offset);
-    if (!en && q->dc.left->offset2)
-        en = GetSymRef(q->dc.left->offset2);
-    if (!en && q->dc.left->offset3)
-        en = GetSymRef(q->dc.left->offset3);
-    getAmodes(q, &op, q->dc.left, &apl, &aph);
-
-    if (en)
-        tp = en->v.sp->tp;
-
-    if (q->dc.left->mode == i_immed)
+    if (!q->dc.left->offset || q->dc.left->offset->type != en_pc || !BackendIntrinsic(q))
     {
-        apl->length = 0;
-        gen_code(op_call, apl, 0);
-    }
-    else
-    {
-        apl->liveRegs = q->liveRegs;
-        gen_code(op_call, apl, 0);
-    }
+        if (q->dc.left->offset)
+            en = GetSymRef(q->dc.left->offset);
+        if (!en && q->dc.left->offset2)
+            en = GetSymRef(q->dc.left->offset2);
+        if (!en && q->dc.left->offset3)
+            en = GetSymRef(q->dc.left->offset3);
+        getAmodes(q, &op, q->dc.left, &apl, &aph);
 
-    // pop the stack if returning from a function returning floating point
-    // whose return value lies unused.
-    if (q->novalue >= 0)
-    {
-        switch (q->novalue)
+        if (en)
+            tp = en->v.sp->tp;
+
+        if (q->dc.left->mode == i_immed)
         {
+            apl->length = 0;
+            gen_code(op_call, apl, 0);
+        }
+        else
+        {
+            apl->liveRegs = q->liveRegs;
+            gen_code(op_call, apl, 0);
+        }
+
+        // pop the stack if returning from a function returning floating point
+        // whose return value lies unused.
+        if (q->novalue >= 0)
+        {
+            switch (q->novalue)
+            {
             case ISZ_CFLOAT:
             case ISZ_CDOUBLE:
             case ISZ_CLDOUBLE:
@@ -2276,6 +2279,7 @@ void asm_gosub(QUAD* q) /* normal gosub to an immediate label or through a var *
             case ISZ_ILDOUBLE:
                 gen_codes(op_fstp, ISZ_LDOUBLE, makefreg(0), 0);
                 break;
+            }
         }
     }
 }

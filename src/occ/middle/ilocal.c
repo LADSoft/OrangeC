@@ -57,7 +57,7 @@ static void CalculateFastcall(SYMBOL *funcsp)
 {
 #ifndef CPPTHISCALL
     if (funcsp->linkage != lk_fastcall)
-        return 0;
+        return;
 #endif
 
     fastcallAlias = 0;

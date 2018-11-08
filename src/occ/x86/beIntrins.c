@@ -34,19 +34,98 @@ typedef struct builtins
     char* name;
     BUILTIN func;
 } BUILTINS;
-BOOLEAN handleROTL();
-BOOLEAN handleROTR();
-BOOLEAN handleCTZ();
-BOOLEAN handleCLZ();
-static BUILTINS builtins[] = {{"__builtin_clz", handleCLZ},  {"__builtin_clzl", handleCLZ}, {"__builtin_ctz", handleCTZ},
-                              {"__builtin_ctzl", handleCTZ}, {"__rotl", handleROTL},        {"__rotr", handleROTR}};
+#define PROTO(PROT, NAME, FUNC) BOOLEAN FUNC();
+#include "beIntrinsicProtos.h"
+#define PROTO(PROT, NAME, FUNC) {#NAME, FUNC},
+static BUILTINS builtins[] = {
+#include "beIntrinsicProtos.h"
+};
 char BackendIntrinsicPrototypes[] =
-    "unsigned __fastcall __builtin_clz(unsigned val);"
-    "unsigned __fastcall __builtin_clzl(unsigned long val);"
-    "unsigned __fastcall __builtin_ctz(unsigned val);"
-    "unsigned __fastcall __builtin_ctzl(unsigned long val);"
-    "unsigned __fastcall __rotl(unsigned val, int count);"
-    "unsigned __fastcall __rotr(unsigned val, int count);";
+#include "beIntrinsicProtos.h"
+    ;
+
+// This function moves the ZF flag to EAX, same method MSVC does, used for BSR and BSF from MSVC
+// These do the same thing as CLZ and CTZ, but more direct
+void promoteToBoolean(AMODE* addr)
+{
+    addr->length = ISZ_UCHAR;
+    gen_code(op_setne, addr, NULL);
+    gen_code(op_movzx, makedreg(EAX), addr);
+}
+BOOLEAN handleBSR()
+{
+    AMODE* al = makedreg(EAX);
+    gen_code(op_bsr, makedreg(ECX), makedreg(EDX));
+    promoteToBoolean(al);
+    return TRUE;
+}
+BOOLEAN handleBSF()
+{
+    AMODE* al = makedreg(EAX);
+    gen_code(op_bsf, makedreg(ECX), makedreg(EDX));
+    promoteToBoolean(al);
+    return TRUE;
+}
+BOOLEAN handleINB()
+{
+    AMODE* dx = makedreg(EDX);
+    AMODE* al = makedreg(EAX);
+    al->length = ISZ_UCHAR;
+    gen_code(op_mov, dx, makedreg(ECX));
+    gen_code(op_in, al, dx);
+    gen_code(op_movzx, makedreg(EAX), al);
+    return TRUE;
+}
+BOOLEAN handleINW()
+{
+    AMODE* dx = makedreg(EDX);
+    AMODE* ax = makedreg(EAX);
+    ax->length = ISZ_USHORT;
+    gen_code(op_mov, dx, makedreg(ECX));
+    gen_code(op_in, ax, dx);
+    gen_code(op_movzx, makedreg(EAX), ax);
+    return TRUE;
+}
+BOOLEAN handleIND()
+{
+    AMODE* dx = makedreg(EDX);
+    AMODE* eax = makedreg(EAX);
+    gen_code(op_mov, dx, makedreg(ECX));
+    gen_code(op_in, eax, dx);
+    return TRUE;
+}
+BOOLEAN handleOUTB()
+{
+    AMODE* al = makedreg(EAX);
+    al->length = ISZ_UCHAR;
+    AMODE* dx = makedreg(EDX);
+    dx->length = ISZ_USHORT;
+    gen_code(op_mov, al, makedreg(EDX));
+    gen_code(op_mov, dx, makedreg(ECX));
+    gen_code(op_out, dx, al);
+    return TRUE;
+}
+BOOLEAN handleOUTW()
+{
+    AMODE* ax = makedreg(EAX);
+    ax->length = ISZ_USHORT;
+    AMODE* dx = makedreg(EDX);
+    dx->length = ISZ_USHORT;
+    gen_code(op_mov, makedreg(EAX), makedreg(EDX));
+    gen_code(op_mov, dx, makedreg(ECX));
+    gen_code(op_out, dx, ax);
+    return TRUE;
+}
+BOOLEAN handleOUTD()
+{
+    AMODE* eax = makedreg(EAX);
+    AMODE* dx = makedreg(EDX);
+    dx->length = ISZ_USHORT;
+    gen_code(op_mov, eax, makedreg(EDX));
+    gen_code(op_mov, dx, makedreg(ECX));
+    gen_code(op_out, dx, eax);
+    return TRUE;
+}
 BOOLEAN handleROTL()
 {
     AMODE* cl = makedreg(ECX);

@@ -122,6 +122,10 @@
 #define FLT_HAS_SUBNORM     1
 #define LDBL_HAS_SUBNORM    1
 
+#define DBL_TRUE_MIN        0x1P-1075
+#define FLT_TRUE_MIN        0x1P-150
+#define LDBL_TRUE_MIN       0x1P-16446L
+
 #ifdef __cplusplus
 namespace __STD_NS__ {
 extern "C" {

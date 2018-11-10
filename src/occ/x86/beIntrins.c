@@ -50,19 +50,24 @@ void promoteToBoolean(AMODE* addr)
 {
     addr->length = ISZ_UCHAR;
     gen_code(op_setne, addr, NULL);
-    gen_code(op_movzx, makedreg(EAX), addr);
 }
 BOOLEAN handleBSR()
 {
     AMODE* al = makedreg(EAX);
-    gen_code(op_bsr, makedreg(ECX), makedreg(EDX));
+    AMODE* ecx = makedreg(ECX);
+    ecx->mode = am_indisp;
+    gen_code(op_bsr, makedreg(EAX), makedreg(EDX));
+    gen_code(op_mov, ecx, makedreg(EAX));
     promoteToBoolean(al);
     return TRUE;
 }
 BOOLEAN handleBSF()
 {
     AMODE* al = makedreg(EAX);
-    gen_code(op_bsf, makedreg(ECX), makedreg(EDX));
+    AMODE* ecx = makedreg(ECX);
+    ecx->mode = am_indisp;
+    gen_code(op_bsf, makedreg(EAX), makedreg(EDX));
+    gen_code(op_mov, ecx, makedreg(EAX));
     promoteToBoolean(al);
     return TRUE;
 }

@@ -1,5 +1,5 @@
 #ifndef PROTO
-#define PROTO(PROT, NAME, FUNC) PROT
+#    define PROTO(PROT, NAME, FUNC) PROT
 #endif
 PROTO("unsigned __fastcall __builtin_clz(unsigned val);", __builtin_clz, handleCLZ)
 PROTO("unsigned __fastcall __builtin_clzl(unsigned long val);", __builtin_clzl, handleCLZ)

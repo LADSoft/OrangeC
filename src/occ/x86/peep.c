@@ -62,7 +62,12 @@ void oa_adjust_codelab(void* select, int offset)
         if (peep->oper3->offset->v.i < 0)
             peep->oper3->offset->v.i += offset;
 }
-
+AMODE* makedregSZ(int r, char size)
+{
+    AMODE* reg = makedreg(r);
+    reg->length = size;
+    return reg;
+}
 AMODE* makedreg(int r)
 /*
  *      make an address reference to a data register.

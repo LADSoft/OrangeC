@@ -1,6 +1,6 @@
 Release notes:
 
-version 6.0.38:
+version 6.0.38: 11/11/2018
     occ: speed up slow symbol table searches in classes with a lot of members
     occ: fix problems compiling C++ regex header
     occ: fix various problems where template specializations *should* have been instantantiated even though they weren't
@@ -90,7 +90,9 @@ version 6.0.38:
     rtl: fix strerror(), was adding a line feed to end of string
     rtl: fix problems with LSCRTL: double load issue and issue where DLLs couldn't use it
     rtl: precision on integers in sprintf did not have the desired effect
+    rtl: add _TRUE_MIN constants to float.h
     all: add 'clang' to continuous integration builds
+    all: add compile-via-assembly to continuous integration builds
     documentation: add minimal documentation for ancilliary projects
 Version 6.0.37: 5/20/2018
     documentation:   various upgrades

@@ -38,6 +38,9 @@ version 6.0.38:
     occ: when a template defined in a template using statement was used as the specialization of another template,
          it wasn't evaluated properly.
     occ: fix various problems with generating assembly code that oasm couldn't parse
+    occ: add fastcall and switch some of the STL support functions to being intrinsics
+    occ: fix vagaray in debug format, sometimes function types would not be emitted (could cause link problems)
+    occ: fix problem generating code for debug mode, sometimes the resulting code would not run
     oasm: fix bug where too-full buffer could modify generated code stream
     olink: fix a crash if occ failed to output line information properly
     dlpe: fix the fixup of relative branch to import thunks, to allow the thunks to be relocated

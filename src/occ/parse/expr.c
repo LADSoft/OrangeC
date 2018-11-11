@@ -2874,8 +2874,21 @@ void AdjustParams(SYMBOL* func, HASHREC* hr, INITLIST** lptr, BOOLEAN operands, 
                                 {
                                     if (!lvalue(exp))
                                     {
+                                        TYPE *tp1 = basetype(sym->tp)->btp;
                                         // make numeric temp and perform cast
-                                        exp = createTemporary(sym->tp, exp);
+                                        if (isarray(tp1))
+                                        {
+                                            TYPE tp2 = { 0 };
+                                            tp2.type = bt_lref;
+                                            tp2.size = getSize(bt_pointer);
+                                            tp2.btp = &stdpointer;
+                                            tp2.rootType = &tp2;
+                                            exp = createTemporary(&tp2, exp);
+                                        }
+                                        else
+                                        {
+                                            exp = createTemporary(sym->tp, exp);
+                                        }
                                     }
                                     else
                                     {

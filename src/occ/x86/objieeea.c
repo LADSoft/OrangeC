@@ -990,7 +990,11 @@ void link_putpub(SYMBOL* sp, char sel)
         emit_record_ieee("AS%c%X,R%X,%X,+.\r\n", sel, index, seg, sp->offset);
     }
     if (cparams.prm_debug)
+    {
+        if (sp->tp->dbgindex == 0)
+            link_extendedtype(sp->tp);
         emit_record_ieee("AT%c%X,T%lX.\r\n", sel, index, sp->tp->dbgindex);
+    }
 }
 
 //-------------------------------------------------------------------------

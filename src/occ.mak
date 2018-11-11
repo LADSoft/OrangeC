@@ -42,13 +42,17 @@ LLIB_DEPENDENCIES = $(notdir $(filter-out $(addsuffix .o,$(EXCLUDE)) $(MAIN_DEPE
 
 
 CC=$(COMPILER_PATH)\bin\occ
+ifneq "$(WITHDEBUG)" ""
+DEBUGFLAG := /v
+endif
+
 ifeq "$(VIAASSEMBLY)" ""
-CCFLAGS = /c /E- /!
+CCFLAGS = /c /E- /! $(DEBUGFLAG)
 else
 CCFLAGS = /S /E- /!
 endif
 LINK=$(COMPILER_PATH)\bin\olink
-LFLAGS=-c -mx /L$(_LIBDIR) /!
+LFLAGS=-c -mx /L$(_LIBDIR) /! $(DEBUGFLAG)
 
 LIB=$(COMPILER_PATH)\bin\olib
 LIB_EXT:=.l

@@ -521,7 +521,7 @@ BOOLEAN isarray(TYPE* tp)
 {
     tp = basetype(tp);
     if (tp)
-        return ispointer(tp) && tp->array;
+        return ispointer(tp) && basetype(tp)->array;
     return FALSE;
 }
 BOOLEAN isunion(TYPE* tp)

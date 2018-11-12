@@ -40,6 +40,8 @@ crtdll.l: .\crtdmain.o .\c0.o
 	$(LIB) $(LIBFLAGS) $@ +- .\c0.o .\crtdmain.o
 	$(LIB) $(LIBFLAGS) $@ +- $(CLIBOBJECT)\srproc.o $(CLIBOBJECT)\lxsar.o $(CLIBOBJECT)\lxshr.o $(CLIBOBJECT)\lxshl.o $(CLIBOBJECT)\lxmul.o $(CLIBOBJECT)\lxdiv.o $(CLIBOBJECT)\substk.o $(CLIBOBJECT)\stkchk.o $(OBJECT)\vsconio.o $(OBJECT)\dllmain.o
 	$(IMPLIB) $@ .\crtdll.def
+	move crtdll.l $(LSCRTLOBJECT)
 
 DISTRIBUTE:
 	copy *.c $(DISTSTARTUPWIN)
+

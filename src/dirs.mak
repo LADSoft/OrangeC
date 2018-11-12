@@ -28,7 +28,7 @@ DIRS = sqlite3 util objlib obrc ocpp ogrep oasm dlhex dlle dlmz dlpe dlpm olib o
 else
 ifeq "$(COMPILER)" "MINGW64"
 DIRS = sqlite3 util objlib obrc ocpp ogrep oasm dlhex dlle dlmz dlpe dlpm olib olink \
-       oimplib omake onm orc occ coff2ieee
+       oimplib omake onm orc ocl occ coff2ieee help MSDNHelp
 else
 DIRS = sqlite3 util objlib obrc ocpp ogrep oasm dlhex dlle dlmz dlpe dlpm olib olink \
        oimplib omake onm orc ocl ocide occ coff2ieee help MSDNHelp

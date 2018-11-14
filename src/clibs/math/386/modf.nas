@@ -38,18 +38,24 @@ nm	db	"modf",0
 
 SECTION code CLASS=CODE USE32
 _modff:
-    fld	dword[esp+4]
-    mov	ecx,[esp+8]
+    push ebp
+	mov ebp,esp
+    fld	dword[ebp+8]
+    mov	ecx,[ebp+12]
     sub dl,dl
     jmp short modf
 _modfl:
-    fld	tword[esp+4]
-    mov	ecx,[esp+16]
+    push ebp
+	mov ebp,esp
+    fld	tword[ebp+8]
+    mov	ecx,[ebp+20]
     mov dl,2
     jmp short modf
 _modf:
-    fld	qword[esp+4]
-    mov	ecx,[esp+12]
+    push ebp
+	mov ebp,esp
+    fld	qword[ebp+8]
+    mov	ecx,[ebp+16]
     mov dl,1
 modf:
     lea eax,[nm]
@@ -83,4 +89,6 @@ join:
 
     fldcw	[esp]
     add esp,4
-    jmp wrapmath
+    call wrapmath
+	pop ebp
+	ret

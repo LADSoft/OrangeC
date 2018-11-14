@@ -38,12 +38,14 @@ nmo db  "polevlf",0
 nm1 db  "p1evlf" , 0
 SECTION code CLASS=CODE USE32
 _polyf:
+    push ebp
+	mov ebp,esp
     lea	eax,[nm]
     call clearmath
-    mov	ecx,[esp+8]
-    mov	eax,[esp+12]
+    mov	ecx,[ebp+12]
+    mov	eax,[ebp+16]
     lea	eax,[eax + ecx * 4]
-    fld	dword [esp+4]
+    fld	dword [ebp+8]
     fld	dword [eax]
     sub	eax,4
 lp:
@@ -55,14 +57,17 @@ lp:
     fxch
     popone
     mov dl,1
-    jmp wrapmath
-
+    call wrapmath
+	pop ebp
+	ret
 _polevlf:
+    push ebp
+	mov ebp,esp
     lea	eax,[nmo]
     call clearmath
-    mov	eax,[esp+8]
-    mov	ecx,[esp+12]
-    fld	dword [esp+4]
+    mov	eax,[ebp+12]
+    mov	ecx,[ebp+16]
+    fld	dword [ebp+8]
     fld	dword [eax]
     add	eax,4
 lpo:
@@ -74,13 +79,18 @@ lpo:
     fxch
     popone
     mov dl,1
-    jmp wrapmath
+    call wrapmath
+	pop ebp
+	ret
 _p1evlf:
+    push ebp
+	mov ebp,esp
+
     lea	eax,[nm1]
     call clearmath
-    mov	eax,[esp+8]
-    mov	ecx,[esp+12]
-    fld	dword [esp+4]
+    mov	eax,[ebp+12]
+    mov	ecx,[ebp+16]
+    fld	dword [ebp+8]
     fld	st0
     jmp	intoo
 lp1:
@@ -93,4 +103,6 @@ intoo:
     fxch
     popone
     mov dl,1
-    jmp wrapmath
+    call wrapmath
+	pop ebp
+	ret

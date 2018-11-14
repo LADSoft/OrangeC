@@ -29,8 +29,10 @@
 SECTION code CLASS=CODE USE32
 
 _strcspn:
+	push	ebp
+	mov		ebp, esp
     push	ebx
-    mov	ecx,[esp+8]
+    mov	ecx,[ebp+8]
     sub	eax,eax
     dec eax
 lp:
@@ -38,7 +40,7 @@ lp:
     mov	bl,[ecx]
     or	bl,bl
     je	exit
-    mov edx,[esp+12]
+    mov edx,[ebp+12]
     dec edx
     inc	ecx
 lp1:
@@ -49,4 +51,5 @@ lp1:
     jne	lp1
 exit:
     pop	ebx
+	pop ebp
     ret

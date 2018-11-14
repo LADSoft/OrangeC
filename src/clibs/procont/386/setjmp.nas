@@ -34,7 +34,9 @@
 SECTION code CLASS=CODE USE32
 __setjmp:
 _setjmp:
-    mov	eax,[esp+4]
+    push ebp
+	mov ebp, esp
+    mov	eax,[ebp+8]
     mov	[eax],ecx
     mov	[eax+4],edx
     mov	[eax+8],ebx
@@ -43,17 +45,21 @@ _setjmp:
     mov	[eax+16],ebp
     mov	[eax+20],esi
     mov	[eax+24],edi
-    mov	ecx,[esp]
+    mov	ecx,[ebp+4]
     mov	[eax+32],ecx
     mov	ecx,eax
     sub	eax,eax
     lahf
     mov	[ecx+28],eax
     sub	eax,eax
+	pop ebp
     ret
 _longjmp:
-    mov	eax,[esp+4]
-    mov	ecx,[esp+8]
+    push ebp
+	mov ebp, esp
+    mov	eax,[ebp+8]
+    mov	ecx,[ebp+12]
+	; reloading esp, the push of ebp above will be discarded
     mov	esp,[eax+12]
     push	ecx
     mov	ecx,[eax+32]

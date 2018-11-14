@@ -30,12 +30,14 @@
 section code CLASS=CODE USE32
 
 _strstr:
+	push	ebp
+	mov		ebp, esp
 	push	ebx
-	mov		ebx,[esp+8]
+	mov		ebx,[ebp+8]
 	mov		ecx,ebx
 	dec		ebx
 lp:
-	mov		edx,[esp+12]
+	mov		edx,[ebp+12]
 	test		edx,edx
 	jz		x1
 	mov		al,[edx]
@@ -63,8 +65,10 @@ lp3:
 x1:
 	mov		eax,ecx
 	pop		ebx
+	pop		ebp
 	ret
 none:
 	sub		eax,eax
 	pop		ebx
+	pop     ebp
 	ret

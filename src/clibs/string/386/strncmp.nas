@@ -29,13 +29,15 @@
 SECTION code CLASS=CODE USE32
 
 _strncmp:
+    push 	ebp
+	mov		ebp, esp
     push	ebx
-    mov		ecx,[esp+16]
+    mov		ecx,[ebp+16]
     sub		eax,eax
     jecxz	x1
-    mov		ebx,[esp+12]
+    mov		ebx,[ebp+12]
     dec		ebx
-    mov		edx,[esp+8]
+    mov		edx,[ebp+8]
     dec		edx
 lp:
     inc		edx
@@ -48,9 +50,11 @@ lp:
 x1:
     movsx	eax,al
     pop	ebx
+	pop ebp
     ret
 x2:
     sub		al,[ebx]
     movsx	eax,al
     pop	ebx
+	pop ebp
     ret

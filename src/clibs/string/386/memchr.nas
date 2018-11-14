@@ -29,17 +29,21 @@
 SECTION code CLASS=CODE USE32
 
 _memchr:
-    mov ecx,[esp + 12]
+    push ebp
+	mov ebp, esp
+    mov ecx,[ebp + 16]
     jecxz x1
-    mov  eax,[esp + 4]
+    mov  eax,[ebp + 8]
     dec eax
-    mov edx,[ esp + 8]
+    mov edx,[ ebp + 12]
 lp:
     inc eax
     cmp	dl,[eax]
     loopnz	lp
     jnz	x1
+	pop ebp
     ret
 x1:
     sub	eax,eax
+	pop ebp
     ret

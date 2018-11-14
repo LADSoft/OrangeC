@@ -29,16 +29,18 @@
 
 SECTION code CLASS=CODE USE32
 _memset:
-    mov	ecx,[esp+12]
+    push ebp
+	mov ebp, esp
+    mov	ecx,[ebp+16]
     jecxz	x2
-    mov	eax,[esp+8]
+    mov	eax,[ebp+12]
     mov     ah,al
     movzx   edx,ax
     shl     eax,16
     add     eax,edx
 join:
     cld
-    mov	edx,[esp + 4]
+    mov	edx,[ebp + 8]
     push	edi
     mov	edi,edx
     xchg ecx,edx
@@ -68,6 +70,7 @@ notwo:
 x1:
     pop	edi
 x2:
-    mov eax,[esp+4]
+    mov eax,[ebp+8]
+	pop ebp
     ret
     

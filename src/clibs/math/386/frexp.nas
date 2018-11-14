@@ -40,21 +40,27 @@ SECTION code CLASS=CODE USE32
 two	dw	2
 
 _frexpf:
-    lea	ecx,[esp+4]
+    push ebp
+	mov ebp,esp
+    lea	ecx,[ebp+8]
     fld	dword[ecx]
-    mov	ecx,[esp+8]
+    mov	ecx,[ebp+12]
     sub dl,dl
     jmp short frexp
 _frexpl:
-    lea	ecx,[esp+4]
+    push ebp
+	mov ebp,esp
+    lea	ecx,[ebp+8]
     fld	tword[ecx]
-    mov	ecx,[esp+16]
+    mov	ecx,[ebp+20]
     mov dl,2
     jmp short frexp
 _frexp:
-    lea	ecx,[esp+4]
+    push ebp
+	mov ebp,esp
+    lea	ecx,[ebp+8]
     fld	qword[ecx]
-    mov	ecx,[esp+12]
+    mov	ecx,[ebp+16]
     mov dl,1
 frexp:
     lea eax,[nm]
@@ -75,4 +81,6 @@ join:
     fistp   dword[ecx]
     fild	word[two]
     fdivp	st1
-    jmp wrapmath
+    call wrapmath
+	pop ebp
+	ret

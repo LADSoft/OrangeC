@@ -29,9 +29,11 @@
 SECTION code CLASS=CODE USE32
 
 _strchr:
-    mov  eax,[esp + 4]
+    push ebp
+	mov ebp,esp
+    mov  eax,[ebp + 8]
     dec eax
-    mov edx,[ esp + 8]
+    mov edx,[ ebp + 12]
 lp:
     inc eax
     mov dh,[eax]
@@ -39,10 +41,12 @@ lp:
     jz	x1
     cmp	dh,dl
     jnz	lp
+	pop ebp
     ret
 x1:
     cmp	dh,dl
         jz      xx
     sub	eax,eax
 xx:
+	pop ebp
     ret

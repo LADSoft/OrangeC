@@ -496,13 +496,14 @@ __declspec(dllexport) void CALLBACK StackTrace(char* text, char* prog, PCONTEXT 
     char dbname[MAX_PATH];
     DWORD* sp = regs->Ebp;
     BOOL first = TRUE;
-    while ((DWORD)sp >= regs->Esp && (DWORD)sp < stacktop)
+
+    while ((DWORD)sp > regs->Esp && (DWORD)sp < stacktop)
     {
         if (strlen(buf) > sizeof(buf) - 1000)
             break;
         if (sp[1])
         {
-            unsigned xbase;
+            unsigned xbase = 0;
             char name[4096];
             char unmangled[4096];
             int type;

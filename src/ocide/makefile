@@ -23,6 +23,7 @@
 # 
 include ../pathext2.mak
 
+ifneq "$(COMPILER)" "MINGW64"
 NAME=ocide
 TARGET=GUI
 MAIN_FILE= ocide.c
@@ -40,6 +41,9 @@ vpath %.c ..$(PATHEXT2)util
 include ../redirect.mak
 
 DISTRIBUTE: copyexe
+else
+DISTRIBUTE:
+endif
 	copy rule$(PATHEXT2)*.rul $(DISTROOT)$(PATHEXT2)rule
 	copy rule$(PATHEXT2)*.props $(DISTBIN)
 	copy fonts$(PATHEXT2)ttf-bitstream-vera-1.10$(PATHEXT2)veramono.ttf $(DISTBIN)

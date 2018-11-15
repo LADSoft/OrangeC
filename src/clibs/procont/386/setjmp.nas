@@ -41,7 +41,7 @@ _setjmp:
     mov	[eax+4],edx
     mov	[eax+8],ebx
     mov	[eax+12],esp
-    add	dword [eax+12],4
+    add	dword [eax+12],8
     mov	[eax+16],ebp
     mov	[eax+20],esi
     mov	[eax+24],edi

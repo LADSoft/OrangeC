@@ -52,3 +52,7 @@
 For example, if the tools are installed in c:\\orangec, the following command line command is enough to set up the OrangeC environment:
 
 >     PATH=c:\\orangec\\bin;%PATH%
+
+There is also an ORANGEC environment variable.   Usually it doesn't need to be set, but if you have multiple installations of orange c on the path you may want to set it to avoid ambiguity.   It is set to the OrangeC root directory:
+
+>     set ORANGEC=c:\\orangec

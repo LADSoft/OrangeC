@@ -1,9 +1,9 @@
-if [ "${OS}" != "Windows_NT ]; then 
+if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
 export COMPILER:=gcc-linux
 
 all:
 	make -C src -f ./makefile
- 
+; 
 else
 all:
 	mkdir /c/orangec
@@ -11,4 +11,5 @@ all:
         cd /c/orangec/src
         PATH=$PATH:/c/orangec/bin:/c/program files/7-zip:/c/program files (x86)/inno setup 5
 	omake fullbuild
+;
 fi

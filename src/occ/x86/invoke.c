@@ -266,7 +266,15 @@ int RunExternalFiles(char* rootPath)
         }
         FILE* fil = fopen(tempFile, "w");
         if (!fil)
-            return 1;
+        {
+            strcpy(tempFile,".\\");
+            tmpnam(tempFile + strlen(tempFile));
+            fil = fopen(tempFile, "w");
+            if (!fil)
+            {
+                fatal("TMP environment variable not set or invalid");
+            }
+        }
         if (prm_libpath)
         {
             fprintf(fil, "\"/L%s\" ", prm_libpath);

@@ -26,7 +26,7 @@ ifneq "$(COMPILER)" "gcc-linux"
 SHELL=cmd.exe
 endif
 
-ZIP:="c:/program files/7-zip/7z" -tzip 
+ZIP:="c:/program files/7-zip/7z" -tzip -bd
 
 VERNAME := $(word 3, $(shell type,\orangec\src\version.h))
 VERNAME := $(subst ",,$(VERNAME))
@@ -53,5 +53,5 @@ DISTRIBUTE:
 	$(ZIP) a $(DISTSRC) orangec/src/*.exe orangec/src/*.iss orangec/src/*.bmp orangec/src/config.bat orangec/src/ocidehld.bat
 	$(ZIP) a $(DISTSRC) orangec/src/LICENSE.TXT orangec/license/*.* orangec/src/readme.txt orangec/src/relnotes.txt
 	$(ZIP) a $(DISTSRC) orangec/src/clibs/repobj.bat orangec/src/copying orangec/src/ocl.lic orangec/src/addon.txt
-	"/program files (x86)/inno setup 5/iscc" /Focc$(VERNAME) /O/orangec/dist orangec/src/occ.iss
+	"/program files (x86)/inno setup 5/iscc" /Q /Focc$(VERNAME) /O/orangec/dist orangec/src/occ.iss
 	-rmdir $(DISTROOT)\appdata

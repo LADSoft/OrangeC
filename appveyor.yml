@@ -23,6 +23,13 @@ environment:
     - type: CLANG
       BUILD_PROFILE: CLANG
  
+skip-commit:
+  files:
+    - **/*.txt
+    - **/*.doc
+    - **/*.md
+    - **/*.html
+ 
 build_script:
 # the appveyor virtual machine reported two processors, so, lets try running parallel compile!
         - cd ..\..

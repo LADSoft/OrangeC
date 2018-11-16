@@ -1,5 +1,8 @@
 Release notes:
 
+verions 6.0.39: 11/15/2018
+    rtl: add msvcrt.l and crtdll.l back into the project
+    rtl: improve stack trace for certain edge cases
 version 6.0.38: 11/11/2018
     occ: speed up slow symbol table searches in classes with a lot of members
     occ: fix problems compiling C++ regex header

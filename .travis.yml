@@ -15,7 +15,6 @@ before_install:
 language: c
 compiler:
  - gcc
- - vs
 
 script: if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then make -f ./travis.mak; fi
 

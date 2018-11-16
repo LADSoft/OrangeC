@@ -42,10 +42,11 @@ _setjmp:
     mov	[eax+8],ebx
     mov	[eax+12],esp
     add	dword [eax+12],8
-    mov	[eax+16],ebp
+	mov ecx,[ebp] ; ebp
+    mov	[eax+16],ecx
     mov	[eax+20],esi
     mov	[eax+24],edi
-    mov	ecx,[ebp+4]
+    mov	ecx,[ebp+4] ; eip
     mov	[eax+32],ecx
     mov	ecx,eax
     sub	eax,eax

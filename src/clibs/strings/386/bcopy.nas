@@ -32,6 +32,7 @@
 SECTION code CLASS=CODE USE32
 _bcopy:
 	push	ebp
+	mov		ebp, esp
     push	ebx
     mov	ecx,[ebp+16]
     jecxz	x1

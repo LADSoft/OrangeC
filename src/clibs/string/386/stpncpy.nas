@@ -46,6 +46,7 @@ lp:
     loopnz	lp
     jnz		x1
     pop	ebx
+	pop ebp
     ret
 x1:
     inc	eax

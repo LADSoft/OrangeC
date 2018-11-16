@@ -29,6 +29,7 @@ skip_commits:
     - '**/*.doc'
     - '**/*.md'
     - '**/*.html'
+    - '*.yml'
  
 build_script:
 # the appveyor virtual machine reported two processors, so, lets try running parallel compile!

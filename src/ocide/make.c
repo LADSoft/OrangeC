@@ -578,8 +578,12 @@ void Maker(PROJECTITEM* pj, BOOL clean)
     pj->clean |= clean;
     _beginthread((BEGINTHREAD_FUNC)MakerThread, 0, (LPVOID)pj);
 }
-void dbgRebuildMainThread(int cmd)
+void dbgRebuildMainThread(void *v)
 {
+    void **aa = v;
+    int cmd = (int)aa[0];
+    PROJECTITEM *pj = (PROJECTITEM *)aa[1];
+    free(v);
     static int sem;
     if (++sem != 1)
     {
@@ -615,15 +619,18 @@ void dbgRebuildMainThread(int cmd)
                     return;
             }
         }
-        initiateDebug(!TagAnyBreakpoints() || cmd == IDM_STEPIN || cmd == IDM_STEPOUT || cmd == IDM_STEPOVER);
+        initiateDebug(pj, !TagAnyBreakpoints() || cmd == IDM_STEPIN || cmd == IDM_STEPOUT || cmd == IDM_STEPOVER);
     }
     --sem;
 }
 
 //-------------------------------------------------------------------------
 
-void dbgRebuildMain(int cmd)
+void dbgRebuildMain(int cmd, PROJECTITEM *pj)
 {
     DWORD threadhand;
-    _beginthread((BEGINTHREAD_FUNC)dbgRebuildMainThread, 0, (LPVOID)cmd);
+    void **aa = malloc(sizeof(void *) * 2);
+    aa[0] = (void *)cmd;
+    aa[1] = pj;
+    _beginthread((BEGINTHREAD_FUNC)dbgRebuildMainThread, 0, aa);
 }

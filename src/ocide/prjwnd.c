@@ -722,7 +722,7 @@ LRESULT CALLBACK ProjectProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lPa
                 break;
                 case IDM_RUN:
                     SaveWorkArea(workArea);
-                    dbgRebuildMain(wParam);
+                    dbgRebuildMain(wParam, activeProject);
                     break;
                 case IDM_SETACTIVEPROJECT:
                     ProjectSetActive();
@@ -890,6 +890,18 @@ LRESULT CALLBACK ProjectProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lPa
                 {
                     SaveWorkArea(workArea);
                     RunProgram(activeProject);
+                    break;
+                }
+                case IDM_RUNNODEBUGPROJ:
+                {
+                    SaveWorkArea(workArea);
+                    RunProgram(prjSelectedItem ? GetItemInfo(prjSelectedItem) : activeProject);
+                    break;
+                }
+                case IDM_RUNPROJ:
+                {
+                    SaveWorkArea(workArea);
+                    dbgRebuildMain(IDM_RUN, prjSelectedItem ? GetItemInfo(prjSelectedItem) : activeProject);
                     break;
                 }
                 case IDM_SELECTPROFILE:

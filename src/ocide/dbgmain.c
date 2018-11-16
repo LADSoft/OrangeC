@@ -70,19 +70,19 @@ void RunProgram(PROJECTITEM* plist)
     free(exeName);
     free(exeArgs);
 }
-int initiateDebug(int stopimmediately)
+int initiateDebug(PROJECTITEM *pj, int stopimmediately)
 {
     static char cmd[4096];
-    if (uState == notDebugging && activeProject)
+    if (uState == notDebugging && pj)
     {
         int val = 0;
         char *exe, *args, *wd;
         char wdbuf[MAX_PATH];
-        SetOutputNames(activeProject, TRUE);
-        AddRootTables(activeProject, FALSE);
-        exe = Lookup("__DEBUG_EXECUTABLE", activeProject, NULL);
-        args = Lookup("__DEBUG_ARGUMENTS", activeProject, NULL);
-        wd = Lookup("__DEBUG_WORKING_DIR", activeProject, NULL);
+        SetOutputNames(pj, TRUE);
+        AddRootTables(pj, FALSE);
+        exe = Lookup("__DEBUG_EXECUTABLE", pj, NULL);
+        args = Lookup("__DEBUG_ARGUMENTS", pj, NULL);
+        wd = Lookup("__DEBUG_WORKING_DIR", pj, NULL);
         strcpy(wdbuf, wd);
         free(wd);
         if (wdbuf[0] == 0)

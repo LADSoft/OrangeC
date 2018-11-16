@@ -252,7 +252,7 @@ HWND CreateLocalsWindow(void);
                               /* Dbgmain.c */
 
 void RunProgram(PROJECTITEM *plist);
-int initiateDebug(int stopimmediately);
+int initiateDebug(PROJECTITEM *pj, int stopimmediately);
 BOOL CALLBACK topenumfunc(HWND wnd, LPARAM value);
 void ProcessToTop(DWORD processid);
 BOOL CALLBACK consoleMenuFunc(HWND wnd, LPARAM value);
@@ -718,8 +718,9 @@ void SetOutputNames(PROJECTITEM *pj, BOOL first);
 void SetOutputExtensions(PROJECTITEM *pj, BOOL first);
 void StopBuild(void);
 void Maker(PROJECTITEM *pj, BOOL clean);
-void dbgRebuildMainThread(int cmd);
-void dbgRebuildMain(int cmd);
+void dbgRebuildMainThread(int cmd, PROJECTITEM *pj);
+void dbgRebuildMain(int cmd, PROJECTITEM *pt);
+
 
                             /* Makecommon.c */
 

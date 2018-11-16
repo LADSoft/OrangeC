@@ -477,7 +477,13 @@ void InitMenuPopup(HMENU menu)
     if (!activeProject)
         mf_state = MF_GRAYED;
     EnableMenuItem(menu, IDM_PROJECTDEPENDS, mf_state);
+    if (uState == notDebugging)
+        mf_state = MF_ENABLED;
+    else
+        mf_state = MF_GRAYED;
     EnableMenuItem(menu, IDM_RUNNODEBUG, mf_state);
+    EnableMenuItem(menu, IDM_RUNNODEBUGPROJ, mf_state);
+    EnableMenuItem(menu, IDM_RUNPROJ, mf_state);
     if (making)
         mf_state = MF_ENABLED;
     else

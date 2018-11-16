@@ -23,7 +23,7 @@ environment:
     - type: CLANG
       BUILD_PROFILE: CLANG
  
-skip-commits:
+skip_commits:
   files:
     - **/*.txt
     - **/*.doc

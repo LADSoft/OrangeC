@@ -56,7 +56,7 @@ int main(int argc, char **argv)
                 if (p)
                     p++;
                 else
-                    p = existingFile;
+                    p = existingFile ;
                 strcpy(p, blk.cFileName);
                 printf("copying %s to %s\n", existingFile, newFile);
                 CopyFile(existingFile, newFile, FALSE);

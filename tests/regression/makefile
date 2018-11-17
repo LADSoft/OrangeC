@@ -5,6 +5,7 @@ TESTS := $(DEPENDENCIES:.cpp=.tst)
 TESTS := $(TESTS:.c=.tst)
 TESTS := $(TESTS:.asm=.tst)
 
+all: $(TESTS)
 
 $(info $(TESTS))
 
@@ -24,5 +25,7 @@ $(info $(TESTS))
 	$< > $*.tst
 	fc /b $*.cmpx $*.tst
 
-
-all: $(TESTS)
+clean:
+	del *.tst
+	del *.o
+	del *.exe

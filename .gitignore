@@ -110,3 +110,6 @@ src/.vs
 *.xhf
 *.xcppf
 *.xcf
+*.tst
+*.err
+*.out

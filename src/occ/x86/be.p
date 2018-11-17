@@ -322,6 +322,7 @@ void outcode_gen(OCODE *peeplist);
                                /* Peep.c */
 
 void o_peepini(void);
+AMODE *makedregSZ(int r, char size);
 AMODE *makedreg(int r);
 AMODE *makefreg(int r);
 AMODE *copy_addr(AMODE *ap);

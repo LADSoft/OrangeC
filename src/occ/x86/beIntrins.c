@@ -74,8 +74,7 @@ BOOLEAN handleBSF()
 BOOLEAN handleINB()
 {
     AMODE* dx = makedreg(EDX);
-    AMODE* al = makedreg(EAX);
-    al->length = ISZ_UCHAR;
+    AMODE* al = makedregSZ(EAX, ISZ_UCHAR);
     gen_code(op_mov, dx, makedreg(ECX));
     gen_code(op_in, al, dx);
     gen_code(op_movzx, makedreg(EAX), al);
@@ -84,8 +83,7 @@ BOOLEAN handleINB()
 BOOLEAN handleINW()
 {
     AMODE* dx = makedreg(EDX);
-    AMODE* ax = makedreg(EAX);
-    ax->length = ISZ_USHORT;
+    AMODE* ax = makedregSZ(EAX, ISZ_USHORT);
     gen_code(op_mov, dx, makedreg(ECX));
     gen_code(op_in, ax, dx);
     gen_code(op_movzx, makedreg(EAX), ax);
@@ -101,10 +99,8 @@ BOOLEAN handleIND()
 }
 BOOLEAN handleOUTB()
 {
-    AMODE* al = makedreg(EAX);
-    al->length = ISZ_UCHAR;
-    AMODE* dx = makedreg(EDX);
-    dx->length = ISZ_USHORT;
+    AMODE* al = makedregSZ(EAX, ISZ_UCHAR);
+    AMODE* dx = makedregSZ(EDX, ISZ_USHORT);
     gen_code(op_mov, al, makedreg(EDX));
     gen_code(op_mov, dx, makedreg(ECX));
     gen_code(op_out, dx, al);
@@ -112,13 +108,10 @@ BOOLEAN handleOUTB()
 }
 BOOLEAN handleOUTW()
 {
-    AMODE* ax = makedreg(EAX);
-    ax->length = ISZ_USHORT;
-    AMODE* dx = makedreg(EDX);
-    dx->length = ISZ_USHORT;
+    AMODE* dx = makedregSZ(EDX, ISZ_USHORT);
     gen_code(op_mov, makedreg(EAX), makedreg(EDX));
     gen_code(op_mov, dx, makedreg(ECX));
-    gen_code(op_out, dx, ax);
+    gen_code(op_out, dx, makedregSZ(EAX, ISZ_USHORT));
     return TRUE;
 }
 BOOLEAN handleOUTD()
@@ -131,22 +124,52 @@ BOOLEAN handleOUTD()
     gen_code(op_out, dx, eax);
     return TRUE;
 }
+BOOLEAN handleROTL8()
+{
+    AMODE* cl = makedregSZ(ECX, ISZ_UCHAR);
+    AMODE* al = makedregSZ(EAX, ISZ_UCHAR);
+    gen_code(op_mov, al, cl);
+    gen_code(op_mov, cl, makedregSZ(EDX, ISZ_UCHAR));
+    gen_code(op_rol, al, cl);
+    return TRUE;
+}
+BOOLEAN handleROTL16()
+{
+    AMODE* cl = makedregSZ(ECX, ISZ_UCHAR);
+    gen_code(op_movzx, makedreg(EAX), cl);
+    gen_code(op_mov, cl, makedregSZ(EDX, ISZ_UCHAR));
+    gen_code(op_rol, makedregSZ(EAX, ISZ_USHORT), cl);
+    return TRUE;
+}
+BOOLEAN handleROTR8()
+{
+    AMODE* cl = makedregSZ(ECX, ISZ_UCHAR);
+    AMODE* al = makedregSZ(EAX, ISZ_UCHAR);
+    gen_code(op_mov, al, cl);
+    gen_code(op_mov, cl, makedregSZ(EDX, ISZ_UCHAR));
+    gen_code(op_ror, al, cl);
+    return TRUE;
+}
+BOOLEAN handleROTR16()
+{
+    AMODE* cl = makedregSZ(ECX, ISZ_UCHAR);
+    gen_code(op_movzx, makedreg(EAX), cl);
+    gen_code(op_mov, cl, makedregSZ(EDX, ISZ_UCHAR));
+    gen_code(op_ror, makedregSZ(EAX, ISZ_USHORT), cl);
+    return TRUE;
+}
 BOOLEAN handleROTL()
 {
-    AMODE* cl = makedreg(ECX);
-    cl->length = ISZ_UCHAR;
     gen_code(op_xchg, makedreg(EAX), makedreg(EDX));
     gen_code(op_xchg, makedreg(EAX), makedreg(ECX));
-    gen_code(op_rol, makedreg(EAX), cl);
+    gen_code(op_rol, makedreg(EAX), makedregSZ(ECX, ISZ_UCHAR));
     return TRUE;
 }
 BOOLEAN handleROTR()
 {
-    AMODE* cl = makedreg(ECX);
-    cl->length = ISZ_UCHAR;
     gen_code(op_xchg, makedreg(EAX), makedreg(EDX));
     gen_code(op_xchg, makedreg(EAX), makedreg(ECX));
-    gen_code(op_ror, makedreg(EAX), cl);
+    gen_code(op_ror, makedreg(EAX), makedregSZ(ECX, ISZ_UCHAR));
     return TRUE;
 }
 BOOLEAN handleCTZ()

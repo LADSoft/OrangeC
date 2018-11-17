@@ -718,7 +718,7 @@ void SetOutputNames(PROJECTITEM *pj, BOOL first);
 void SetOutputExtensions(PROJECTITEM *pj, BOOL first);
 void StopBuild(void);
 void Maker(PROJECTITEM *pj, BOOL clean);
-void dbgRebuildMainThread(int cmd, PROJECTITEM *pj);
+void dbgRebuildMainThread(void *v);
 void dbgRebuildMain(int cmd, PROJECTITEM *pt);
 
 

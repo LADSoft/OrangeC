@@ -99,7 +99,7 @@ DoAlign:
 		inc	edx
 		mov	[ecx],al
 		inc	ecx
-        dec dword [esp+12]
+        dec dword [ebp+16]
         jz  CpyDone
 		test	al,al
 		jnz	TestEdx

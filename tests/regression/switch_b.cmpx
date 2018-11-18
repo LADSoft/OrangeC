@@ -1,1 +1,1 @@
-result: 'SWITCH B _' (test was: 'SWITCH B     ', suffix was: '')
+result: 'SWITCH_B' (test was: 'SWITCH B     ', suffix was: 'B')

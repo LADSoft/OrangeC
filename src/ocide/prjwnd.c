@@ -885,6 +885,7 @@ LRESULT CALLBACK ProjectProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lPa
                     break;
                 case IDM_CALCULATEDEPENDS:
                     CalculateProjectDepends(GetItemInfo(prjSelectedItem));
+                    SetStatusMessage("", FALSE);
                     break;
                 case IDM_RUNNODEBUG:
                 {

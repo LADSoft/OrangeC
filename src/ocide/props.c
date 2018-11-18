@@ -1469,6 +1469,7 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage, WPARAM wParam, 
             if (pd != &generalProps)
             {
                 CalculateProjectDepends(pd->saveTo);
+                SetStatusMessage("", FALSE);
             }
             ResyncProjectIcons();
             break;

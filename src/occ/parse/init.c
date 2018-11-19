@@ -3990,6 +3990,15 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_sc storage_cl
                 l = l->next;
             }
         }
+        else if (!isfunction(tp))
+        {
+            TYPE* t = (TYPE*)Alloc(sizeof(TYPE));
+            t->btp = tp;
+            t->type = bt_const;
+            t->size = tp->size;
+            UpdateRootTypes(t);
+            tp = t;
+        }
         else
         {
             if (!IsConstantExpression(sp->init->exp, FALSE, TRUE))

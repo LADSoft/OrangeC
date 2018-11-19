@@ -171,8 +171,18 @@ int IsStepping(DEBUG_EVENT* dbe)
         int addr = GetBreakpointLine((int)dbe->u.Exception.ExceptionRecord.ExceptionAddress, module, &line, FALSE);
         if (addr == (int)dbe->u.Exception.ExceptionRecord.ExceptionAddress)
         {
-            uState = Running;
-            return FALSE;
+            if (LastSkipAddr && LastSkipAddr != addr)
+            {
+                // beginning of function, step over prologue...
+                LastSkipAddr = 0;
+                DoStepOver(dbe);
+                return TRUE;
+            }
+            else
+            {
+                uState = Running;
+                return FALSE;
+            }
         }
         else if (LastSkipAddr)
         {

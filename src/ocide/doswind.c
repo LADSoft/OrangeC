@@ -48,7 +48,7 @@ char* GetCmd(void)
     //		a = searchpath("cmd.exe");
     return a;
 }
-static LPTCH GetEnv(void)
+LPTCH GetEnv(void)
 {
     char buffer2[32768];
     GetEnvironmentVariable("PATH", oldPath, sizeof(oldPath));

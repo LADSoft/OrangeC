@@ -355,6 +355,7 @@ HWND CreateCtlTbWindow(void);
                               /* Doswind.c */
 
 char *GetCmd(void);
+LPTCH GetEnv(void);
 void FreeEnv(LPTCH env);
 DWORD DosWindowThread(void *xx);
 void DosWindow(char *path, char *exec, char *args, char *rvTitle, char *rvBody);

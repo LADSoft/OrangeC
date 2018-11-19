@@ -226,6 +226,7 @@ class Tokenizer
     }
     const Token* Next();
     std::string& GetString() { return line; }
+    void SetString(const std::string &Line) { line = Line; }
     static void SetUnsigned(bool flag) { CharacterToken::SetUnsigned(flag); }
     static void SetAnsi(bool flag) { NumericToken::SetAnsi(flag); }
     static void SetC99(bool flag) { NumericToken::SetC99(flag); }

@@ -31,6 +31,10 @@
 #include "CmdFiles.h"
 #include <limits.h>
 #include <fstream>
+
+bool ppInclude::system;
+std::string ppInclude::srchPath, ppInclude::sysSrchPath;
+
 ppInclude::~ppInclude()
 {
     while (current)
@@ -51,12 +55,19 @@ bool ppInclude::CheckInclude(int token, const std::string& args)
     {
         std::string line1 = args;
         define->Process(line1);
-        ParseName(line1);
-        FindFile(args);
+        std::string name = ParseName(line1);
+        name = FindFile(name);
         pushFile(name);
         return true;
     }
     return false;
+}
+bool ppInclude::__has_include(const std::string& args)
+{
+    std::string line1 = args;
+    std::string name = ParseName(line1);
+    name = FindFile(name);
+    return name.size() != 0;
 }
 bool ppInclude::CheckLine(int token, const std::string& args)
 {
@@ -68,14 +79,14 @@ bool ppInclude::CheckLine(int token, const std::string& args)
         if (npos == std::string::npos)
         {
             int n = expr.Eval(line1);
-            ParseName(line1);
+            std::string name = ParseName(line1);
             current->SetErrlineInfo(name, n - 1);
         }
         else
         {
             std::string temp = line1.substr(0, npos);
             int n = expr.Eval(temp);
-            ParseName(line1.substr(npos + 1));
+            std::string name = ParseName(line1.substr(npos + 1));
             current->SetErrlineInfo(name, n - 1);
         }
         return true;
@@ -121,8 +132,9 @@ bool ppInclude::popFile()
     }
     return true;
 }
-void ppInclude::ParseName(const std::string& args)
+std::string ppInclude::ParseName(const std::string& args)
 {
+    std::string name = "";
     const char* p = args.c_str();
     while (isspace(*p))
         p++;
@@ -152,13 +164,16 @@ void ppInclude::ParseName(const std::string& args)
     }
     else
         Errors::Error("File name expected");
+    return name;
 }
-void ppInclude::FindFile(const std::string& args)
+std::string ppInclude::FindFile(const std::string& name)
 {
-    if (!SrchPath(system))
-        SrchPath(!system);
+    std::string rv = SrchPath(system, name);
+    if (rv.size() == 0)
+        rv = SrchPath(!system, name);
+    return rv;
 }
-bool ppInclude::SrchPath(bool system)
+std::string ppInclude::SrchPath(bool system, const std::string& name)
 {
     const char* path;
     if (system)
@@ -169,7 +184,7 @@ bool ppInclude::SrchPath(bool system)
     do
     {
         path = RetrievePath(buf, path);
-        AddName(buf);
+        AddName(buf, name);
         while (char* p = strchr(buf, '/'))
         {
             *p = CmdFiles::DIR_SEP[0];
@@ -178,11 +193,10 @@ bool ppInclude::SrchPath(bool system)
         if (fil)
         {
             fclose(fil);
-            name = buf;
-            return true;
+            return buf;
         }
     } while (path);
-    return false;
+    return "";
 }
 const char* ppInclude::RetrievePath(char* buf, const char* path)
 {
@@ -200,7 +214,7 @@ const char* ppInclude::RetrievePath(char* buf, const char* path)
         return nullptr;
     }
 }
-void ppInclude::AddName(char* buf)
+void ppInclude::AddName(char* buf, const std::string& name)
 {
     int n = strlen(buf);
     if (n)

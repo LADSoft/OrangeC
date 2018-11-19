@@ -50,10 +50,10 @@ class ppInclude
         extendedComment(extended || !C89),
         fullname(Fullname),
         current(nullptr),
-        expr(unsignedchar),
-        srchPath(SrchPth),
-        sysSrchPath(SysSrchPth)
+        expr(unsignedchar)
     {
+        srchPath = SrchPth;
+        sysSrchPath = SysSrchPth;
     }
 
     ~ppInclude();
@@ -92,6 +92,7 @@ class ppInclude
     void Mark() { current->Mark(); }
     void Drop() { current->Drop(); }
     void Release() { current->Release(); }
+    static bool __has_include(const std::string &args);
 
   protected:
     void StripAsmComment(std::string& line);
@@ -99,15 +100,14 @@ class ppInclude
     bool CheckLine(int token, const std::string& line);
     void pushFile(const std::string& name);
     bool popFile();
-    void ParseName(const std::string& args);
-    void FindFile(const std::string& args);
-    bool SrchPath(bool system);
-    const char* RetrievePath(char* buf, const char* path);
-    void AddName(char* buf);
+    static std::string ParseName(const std::string& args);
+    static std::string FindFile(const std::string& name);
+    static std::string SrchPath(bool system, const std::string& name);
+    static const char* RetrievePath(char* buf, const char* path);
+    static void AddName(char* buf, const std::string& name);
 
   private:
-    std::string name;
-    bool system;
+    static bool system;
     std::list<ppFile*> files;
     ppFile* current;
     ppDefine* define;
@@ -117,7 +117,7 @@ class ppInclude
     bool extendedComment;
     bool fullname;
     ppExpr expr;
-    std::string srchPath, sysSrchPath;
+    static std::string srchPath, sysSrchPath;
     ppCtx* ctx;
     std::string inProc;
     bool asmpp;

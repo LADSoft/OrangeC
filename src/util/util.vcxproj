@@ -124,6 +124,7 @@
   <ItemGroup>
     <ClCompile Include="CmdFiles.cpp" />
     <ClCompile Include="CmdSwitch.cpp" />
+    <ClCompile Include="crc.cpp" />
     <ClCompile Include="UTF8.cpp" />
     <ClCompile Include="UTF8Table.cpp" />
     <ClCompile Include="UTF8Upper.cpp" />

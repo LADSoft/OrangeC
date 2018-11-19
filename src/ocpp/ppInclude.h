@@ -50,7 +50,8 @@ class ppInclude
         extendedComment(extended || !C89),
         fullname(Fullname),
         current(nullptr),
-        expr(unsignedchar)
+        expr(unsignedchar),
+        forcedEOF(false)
     {
         srchPath = SrchPth;
         sysSrchPath = SysSrchPth;
@@ -93,7 +94,7 @@ class ppInclude
     void Drop() { current->Drop(); }
     void Release() { current->Release(); }
     static bool __has_include(const std::string &args);
-
+    void ForceEOF() { forcedEOF = true; }
   protected:
     void StripAsmComment(std::string& line);
     bool CheckInclude(int token, const std::string& line);
@@ -121,5 +122,6 @@ class ppInclude
     ppCtx* ctx;
     std::string inProc;
     bool asmpp;
+    bool forcedEOF;
 };
 #endif

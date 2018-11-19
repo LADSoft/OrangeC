@@ -45,5 +45,10 @@ class Utils
     static int StringToNumberHex(std::string str);
 
     static char* ShortName(const char* v);
+
+    static unsigned PartialCRC32(unsigned crc, unsigned char* data, size_t len);
+    static unsigned CRC32(unsigned char* data, size_t len);
+
+    static unsigned crctab[256]; 
 };
 #endif

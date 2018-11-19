@@ -98,7 +98,8 @@ class PreProcessor
         define(extensions, &include, C89, PPStart == '%'),
         macro(include, define),
         ctx(define),
-        trigraphs(Trigraph)
+        trigraphs(Trigraph),
+        pragma(&include)
     {
         InitHash();
         Errors::SetInclude(&include);

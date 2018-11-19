@@ -130,6 +130,7 @@ bool ppInclude::popFile()
         current = files.front();
         files.pop_front();
     }
+    forcedEOF = false;
     return true;
 }
 std::string ppInclude::ParseName(const std::string& args)
@@ -270,17 +271,20 @@ bool ppInclude::GetLine(std::string& line, int& lineno)
 {
     while (current)
     {
-        if (current->GetLine(line))
+        if (!forcedEOF)
         {
-            if (current && files.size() == 0)
-                lineno = GetLineNo();
-            else
-                lineno = INT_MIN;
-            if (asmpp)
-                StripAsmComment(line);
-            return true;
+            if (current->GetLine(line))
+            {
+                if (current && files.size() == 0)
+                    lineno = GetLineNo();
+                else
+                    lineno = INT_MIN;
+                if (asmpp)
+                    StripAsmComment(line);
+                return true;
+            }
+            current->CheckErrors();
         }
-        current->CheckErrors();
         if (inProc.size())
         {
             Errors::Error(std::string("File ended with ") + inProc + " in progress");

@@ -251,7 +251,7 @@ class Once
     }
     ~Once();
 
-    void SetInclude(ppInclude *Include) { include=Include; }
+    void SetInclude(ppInclude *Include) { include=Include; items.clear(); }
     void CheckForMultiple()
     {
         if (!AddToList())
@@ -264,12 +264,11 @@ class Once
   private:
     struct OnceItem
     {
-        OnceItem(const std::string& FileName) :fileName(FileName) { SetParams(); }
+        OnceItem(const std::string& fileName) { SetParams(fileName); }
         OnceItem(const OnceItem& right) = default;
         bool operator< (const OnceItem& right) const;
-        void SetParams();
+        void SetParams(const std::string& fileName);
 
-        std::string fileName;
         long filesize;
         time_t filetime;
         unsigned crc;

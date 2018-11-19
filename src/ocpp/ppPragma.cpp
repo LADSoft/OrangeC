@@ -197,21 +197,18 @@ void Once::TriggerEOF()
 
 bool Once::OnceItem::operator< (const OnceItem& right) const
 {
-    if (fileName < right.fileName)
+    if (filesize < right.filesize)
         return true;
-    else if (fileName == right.fileName)
-        if (filesize < right.filesize)
+    else if (filesize == right.filesize)
+        if (filetime < right.filetime)
             return true;
-        else if (filesize == right.filesize)
-            if (filetime < right.filetime)
+        else if (filetime == right.filetime)
+            if (crc < right.crc)
                 return true;
-            else if (filetime == right.filetime)
-                if (crc < right.crc)
-                    return true;
 
     return false;
 }
-void Once::OnceItem::SetParams()
+void Once::OnceItem::SetParams(const std::string& fileName)
 {
     FILE *fil = fopen(fileName.c_str(), "rb");
     if (fil)

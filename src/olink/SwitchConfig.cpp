@@ -314,9 +314,13 @@ int SwitchConfig::RunApp(const std::string& path, const std::string& file, const
     }
     if (name.size() == 0)
         return 0;  // nothing to do, all ok
-    std::string cmd = std::string("\"") + path + name + "\" -! ";
+    std::string cmd = std::string("\"") + path + name + "\" ";
+    if (!verbose)
+        cmd = cmd + "/! ";
     if (debugFile.size())
         cmd = cmd + "\"/v" + debugFile + "\" ";
+    if (verbose)
+        cmd = cmd + "/y ";
     cmd = cmd + flags + "\"" + file + "\"";
     for (auto name : files)
         cmd = cmd + " \"" + name + "\"";

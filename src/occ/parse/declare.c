@@ -285,7 +285,7 @@ void InsertSymbol(SYMBOL* sp, enum e_sc storage_class, enum e_lk linkage, BOOLEA
         diag("InsertSymbol: cannot insert");
     }
 }
-static LEXEME* tagsearch(LEXEME* lex, char* name, SYMBOL** rsp, HASHTABLE** table, SYMBOL** strSym_out, NAMESPACEVALUES** nsv_out,
+LEXEME* tagsearch(LEXEME* lex, char* name, SYMBOL** rsp, HASHTABLE** table, SYMBOL** strSym_out, NAMESPACEVALUES** nsv_out,
                          enum e_sc storage_class)
 {
     NAMESPACEVALUES* nsv = NULL;

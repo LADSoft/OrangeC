@@ -75,7 +75,7 @@ typedef unsigned short wchar_t;
 #endif
 
 #ifndef offsetof
-#define offsetof( s_name, m_name )  (size_t)&(((s_name *)0)->m_name)
+#define offsetof( s_name, m_name )  (size_t)__offsetof(s_name, m_name)
 #endif
 
 #ifndef _WCTYPE_T_DEFINED

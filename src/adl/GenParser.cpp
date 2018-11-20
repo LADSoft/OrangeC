@@ -28,10 +28,12 @@
 #include "TokenNode.h"
 #include "Utils.h"
 #include <ctype.h>
-#include <stdlib>
+#include <stdlib.h>
 #include <fstream>
 #include <sstream>
 #include <assert.h>
+#include <iostream>
+
 bool GenParser::Generate()
 {
     bool rv = false;

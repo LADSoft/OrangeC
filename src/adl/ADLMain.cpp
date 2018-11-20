@@ -30,6 +30,7 @@
 #include "Loader.h"
 #include "GenParser.h"
 #include <fstream>
+#include <iostream>
 
 char *ADLMain::usageText = "[options] inputfile\n"
             "\n"

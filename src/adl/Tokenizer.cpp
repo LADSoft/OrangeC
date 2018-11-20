@@ -26,6 +26,7 @@
 #include "Loader.h"
 #include "TokenNode.h"
 #include <ctype.h>
+#include <iostream>
 
 int TokenNode::tk_next;
 int TokenNode::tn_next = 1;

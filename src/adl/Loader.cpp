@@ -27,6 +27,7 @@
 
 #include <stdlib.h>
 #include <fstream>
+#include <iostream>
 
 void Parser::DumpDB()
 {

@@ -41,7 +41,7 @@ bool IsSymbolStartChar(char data)
         return data == '_' || UTF8::IsAlpha(data);
     }
 }
-bool IsSymbolStartChar(const char* data) { IsSymbolStartChar(*data); }
+bool IsSymbolStartChar(const char* data) { return IsSymbolStartChar(*data); }
 bool IsSymbolChar(char data)
 {
     if (asmMode)
@@ -54,7 +54,7 @@ bool IsSymbolChar(char data)
         return data == '_' || UTF8::IsAlnum(data);
     }
 }
-bool IsSymbolChar(const char* data) { IsSymbolChar(*data); }
+bool IsSymbolChar(const char* data) { return IsSymbolChar(*data); }
 void PreProcessor::InitHash()
 {
     hash["define"] = DEFINE;

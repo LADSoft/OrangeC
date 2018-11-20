@@ -1,6 +1,22 @@
 Release notes:
 
-verions 6.0.39: 11/15/2018
+version 6.0.40:
+    occ: fix stack frame in the presence of try/catch processing: don't optimize out the EBP references
+    orc: fix crash when compiled with package, when processing invalid input file
+    ocpp: (c++ version) allow # without a directive
+    ocpp: (c++ version) default to C99
+    ocpp: (c++ version) add #warning
+    ocpp: (c++ version) add __has_include and #pragma once
+    ocide: fix function prototype popup when compiled with package, does not go away 
+    ocide: when stopping on step into function, don't stop until stack frame is set up
+    ocide: when parsing RC file can't redefine keywords with preprocessing...
+    ocide: when processing strings in RC files, limit '\x##' to two hex digits
+    ocide: add orangec\bin to the path when running/debugging executables
+    ocide: empty status bar after scanning for dependencies
+    ocide: bad DOCKS entry in user prefs file leads to hang
+    rtl: fix recently broken strncpy to work properly again
+
+version 6.0.39: 11/15/2018
     rtl: add msvcrt.l and crtdll.l back into the project
     rtl: improve stack trace for certain edge cases
 version 6.0.38: 11/11/2018

@@ -3998,6 +3998,11 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_sc storage_cl
             t->size = tp->size;
             UpdateRootTypes(t);
             tp = t;
+            if (!IsConstantExpression(sp->init->exp, FALSE, TRUE))
+            {
+                sp->init->exp = intNode(en_c_i, 0);
+                error(ERR_CONSTANT_EXPRESSION_EXPECTED);
+            }
         }
         else
         {

@@ -77,7 +77,7 @@ static const int ELIFNCTX = 65;
 static const int IDEFINE = 66;
 static const int IASSIGN = 67;
 static const int IMACRO = 68;
-
+static const int WARNING = 70;
 #include "ppDefine.h"
 #include "ppError.h"
 #include "ppFile.h"

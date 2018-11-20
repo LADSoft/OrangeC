@@ -33,7 +33,7 @@
 CmdSwitchParser ppMain::SwitchParser;
 CmdSwitchBool ppMain::assembly(SwitchParser, 'a', false);
 CmdSwitchBool ppMain::disableExtensions(SwitchParser, 'A', false);
-CmdSwitchBool ppMain::c99Mode(SwitchParser, '9', false);
+CmdSwitchBool ppMain::c99Mode(SwitchParser, '9', true);
 CmdSwitchBool ppMain::trigraphs(SwitchParser, 'T', false);
 CmdSwitchDefine ppMain::defines(SwitchParser, 'D');
 CmdSwitchString ppMain::undefines(SwitchParser, 'U', ';');

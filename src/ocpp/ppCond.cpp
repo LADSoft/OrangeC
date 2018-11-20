@@ -192,6 +192,19 @@ void ppCond::HandleElif(bool val, const std::string& line)
 }
 void ppCond::HandleElse(std::string& line)
 {
+    int npos = line.find_first_not_of(" \r\n\t\v");
+    if (npos != std::string::npos)
+    {
+        std::string line1 = line;
+        if (line1.substr(npos, 2) == "if")
+        {
+            line1 = line1.substr(npos+2);
+            define->replaceDefined(line1);
+            define->Process(line1);
+            HandleElif(expr.Eval(line1), line1);
+            return;
+        }
+    }
     ansieol(line);
     if (!current)
     {

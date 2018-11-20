@@ -57,7 +57,7 @@ bool ppInclude::CheckInclude(int token, const std::string& args)
         define->Process(line1);
         std::string name = ParseName(line1);
         name = FindFile(name);
-        pushFile(name);
+        pushFile(name, line1);
         return true;
     }
     return false;
@@ -93,13 +93,13 @@ bool ppInclude::CheckLine(int token, const std::string& args)
     }
     return false;
 }
-void ppInclude::pushFile(const std::string& name)
+void ppInclude::pushFile(const std::string& name, const std::string& errname)
 {
     // gotta do the test first to get the error correct if it isn't there
     std::fstream in(name.c_str(), std::ios::in);
     if (name[0] != '-' && !in.is_open())
     {
-        Errors::Error(std::string("Could not open ") + name + " for input");
+        Errors::Error(std::string("Could not open ") + errname + " for input");
     }
     else
     {
@@ -113,7 +113,7 @@ void ppInclude::pushFile(const std::string& name)
         // if (current)
         if (!current->Open())
         {
-            Errors::Error(std::string("Could not open ") + name + " for input");
+            Errors::Error(std::string("Could not open ") + errname + " for input");
             popFile();
         }
     }

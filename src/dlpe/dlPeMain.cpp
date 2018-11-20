@@ -51,6 +51,7 @@ CmdSwitchString dlPeMain::modeSwitch(SwitchParser, 'm');
 CmdSwitchString dlPeMain::outputFileSwitch(SwitchParser, 'o');
 CmdSwitchString dlPeMain::DebugFile(SwitchParser, 'v');
 CmdSwitchBool dlPeMain::FlatExports(SwitchParser, 'f');
+CmdSwitchBool dlPeMain::Verbose(SwitchParser, 'y');
 
 int dlPeMain::osMajor = 4;
 int dlPeMain::osMinor = 0;
@@ -608,7 +609,12 @@ int dlPeMain::Run(int argc, char** argv)
                 std::string usesC = exportObject && exportObject->ImportsNeedUnderscore() ? "/C " : "";
                 std::string implibName = Utils::QualifiedFile(outputName.c_str(), ".l");
                 std::string cmd =
-                    std::string("\"") + path + "oimplib" + "\" /! " + usesC + "\"" + implibName + "\" \"" + outputName + "\"";
+                    std::string("\"") + path + "oimplib" + "\" "; 
+                if (!Verbose.GetExists())
+                    cmd += "/! ";
+                cmd += usesC + "\"" + implibName + "\" \"" + outputName + "\"";
+                if (Verbose.GetExists())
+                    std::cout << "Running: " << cmd << std::endl;
                 return system(cmd.c_str());
             }
             return 0;

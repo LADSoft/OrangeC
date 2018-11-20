@@ -209,6 +209,7 @@ KEYWORD keywords[] = {
     {"__kill_dependency", 17, kw_atomic_kill_dependency, 0, TT_VAR},
     {"__msil_rtl", 10, kw__msil_rtl, KW_NONANSI | KW_ALL, TT_LINKAGE},
     {"__object", 8, kw___object, KW_MSIL, TT_BASETYPE},
+    {"__offsetof", 10, kw___offsetof, 0, TT_VAR},
     {"__pascal", 8, kw__pascal, KW_NONANSI | KW_ALL, TT_LINKAGE},
     {"__property", 10, kw__property, KW_MSIL, TT_LINKAGE},
     {"__rtllinkage", 12, kw__rtllinkage, KW_NONANSI | KW_ALL, TT_LINKAGE},

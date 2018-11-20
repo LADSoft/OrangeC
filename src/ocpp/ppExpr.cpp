@@ -152,7 +152,7 @@ PPINT ppExpr::primary(std::string& line)
                         std::string arg= line.substr(0,n);
                         define->Process(arg);
 			
-                        rv = ppInclude::__has_include(arg);
+                        rv = ppInclude::__has_include_func(arg);
                         tokenizer->SetString(line.substr(n+1));
                         token = tokenizer->Next();                    
                     }

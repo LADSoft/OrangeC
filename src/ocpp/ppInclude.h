@@ -93,7 +93,7 @@ class ppInclude
     void Mark() { current->Mark(); }
     void Drop() { current->Drop(); }
     void Release() { current->Release(); }
-    static bool __has_include(const std::string &args);
+    static bool __has_include_func(const std::string &args);
     void ForceEOF() { forcedEOF = true; }
   protected:
     void StripAsmComment(std::string& line);

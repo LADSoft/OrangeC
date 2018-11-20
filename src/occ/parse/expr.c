@@ -3717,6 +3717,88 @@ static LEXEME* expression_alloca(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
     }
     return lex;
 }
+static LEXEME* expression_offsetof(LEXEME* lex, SYMBOL *funcsp, TYPE**tp, EXPRESSION**exp)
+{
+    *tp = &stdunsigned;
+    *exp = NULL;
+    lex = getsym();
+    if (needkw(&lex, openpa))
+    {
+        // this is naive, not checking the actual type of the sym when these are present
+        if (MATCHKW(lex, kw_struct) || MATCHKW(lex, kw_class))
+            lex = getsym();
+        if (ISID(lex))
+        {
+            char name[512];
+            SYMBOL *sym;
+            HASHTABLE *table;
+            SYMBOL *strSym;
+            SYMBOL *nsv;
+            strcpy(name, lex->value.s.a);
+            lex = tagsearch(lex, name, &sym, &table, &strSym, &nsv, sc_global);
+            if (!sym) // might be a typedef
+            {
+                sym = namespacesearch(name, globalNameSpace, FALSE, FALSE);
+                if (sym->tp->type == bt_typedef)
+                {
+                    sym = basetype(sym->tp->btp)->sp;
+                }
+                else
+                {
+                    sym = NULL;
+                }
+            }
+            if (sym && isstructured(sym->tp))
+            {
+                if (needkw(&lex, comma))
+                {
+                    if (ISID(lex))
+                    {
+                        STRUCTSYM s = { 0, sym };
+                        addStructureDeclaration(&s);
+                        SYMBOL *mem = classsearch(lex->value.s.a, FALSE, TRUE);
+                        if (mem)
+                        {
+                            if (ismemberdata(mem))
+                            {
+                                TYPE *tp1;
+                                *exp = getMemberNode(mem, sym, &tp1, NULL);
+                                optimize_for_constants(exp);
+                                *exp = (*exp)->right;
+                            }
+                            else
+                            {
+                                error(ERR_NEED_NONSTATIC_MEMBER);
+                            }
+                        }
+                        else
+                        {
+                            errorstrsym(ERR_NOT_A_MEMBER_OR_BASE_CLASS, lex->value.s.a, sym);
+                        }
+                        dropStructureDeclaration();
+                        lex = getsym();
+                    }
+                    else
+                    {
+                        error(ERR_IDENTIFIER_EXPECTED);
+                    }
+                }
+            }
+            else
+            {
+                error(ERR_CLASS_TYPE_EXPECTED);
+            }
+        }
+        else
+        {
+           error(ERR_IDENTIFIER_EXPECTED);
+        }
+        needkw(&lex, closepa);
+    }
+    if (!*exp)
+        *exp = intNode(en_c_i, 0);
+    return lex;
+} 
 static LEXEME* expression_msilfunc(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, int flags)
 {
     enum e_kw kw = lex->kw->key;
@@ -4578,6 +4660,9 @@ static LEXEME* expression_primary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
                     (*exp)->pragmas = stdpragmas;
                     lex = getsym();
                     break;
+                case kw___offsetof:
+                    lex = expression_offsetof(lex, funcsp, tp, exp);
+                    break; 
                 case kw_true:
                     lex = getsym();
                     *exp = intNode(en_c_i, 1);

@@ -130,6 +130,8 @@ BOOLEAN hasVTab(SYMBOL *sp);
 BOOLEAN sameTemplatePointedTo(TYPE *tnew, TYPE *told);
 BOOLEAN sameTemplate(TYPE *P, TYPE *A);
 void ParseBuiltins(void);
+LEXEME* tagsearch(LEXEME* lex, char* name, SYMBOL** rsp, HASHTABLE** table, SYMBOL** strSym_out, NAMESPACEVALUES** nsv_out,
+                         enum e_sc storage_class);
 BOOLEAN ParseAttributeSpecifiers(LEXEME **lex, SYMBOL *funcsp, BOOLEAN always);
 void declare_init(void);
 void addStructureDeclaration(STRUCTSYM *decl);

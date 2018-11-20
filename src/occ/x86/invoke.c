@@ -338,6 +338,7 @@ int RunExternalFiles(char* rootPath)
                 while ((len = fread(buffer, 1, 8192, fil)) > 0)
                     fwrite(buffer, 1, len, stdout);
                 fclose(fil);
+                fputc('\n', stdout);
             }
         }
         rv = system(spname);

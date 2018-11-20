@@ -68,8 +68,7 @@ class ppDefine
         {
             if (!argList)
                 return 0;
-            else
-                return argList->size();
+            return argList->size();
         }
         DefinitionArgList* GetArg(int count)
         {
@@ -77,8 +76,7 @@ class ppDefine
                 return nullptr;
             else if (count < argList->size())
                 return &argList[count];
-            else
-                return nullptr;
+            return nullptr;
         }
         DefinitionArgList* GetArgList() const { return argList; }
         std::string& GetValue() { return value; }

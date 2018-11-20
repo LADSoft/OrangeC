@@ -54,7 +54,7 @@ class Symbol
     void DefinedError(const std::string& msg)
     {
         Errors::Error(name + " " + msg);
-        if (lineNo && fileName.size())
+        if (lineNo && !fileName.empty())
             Errors::Previous(name, lineNo, fileName);
     }
 

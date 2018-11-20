@@ -43,7 +43,7 @@ class ppCtx
     ~ppCtx();
     int GetTopId()
     {
-        if (stack.size())
+        if (!stack.empty())
             return stack.front()->id;
         else
             return -1;
@@ -51,7 +51,7 @@ class ppCtx
     bool Check(int token, std::string& line);
     bool Matches(const std::string& Name) const
     {
-        if (stack.size())
+        if (!stack.empty())
             return stack.front()->name == Name;
         else
             return false;

@@ -81,7 +81,7 @@ int ppMain::Run(int argc, char* argv[])
 
     std::string sysSrchPth;
     std::string srchPth;
-    if (includePath.GetValue().size())
+    if (!includePath.GetValue().empty())
     {
         size_t n = includePath.GetValue().find_first_of(';');
         if (n == std::string::npos)
@@ -112,7 +112,7 @@ int ppMain::Run(int argc, char* argv[])
             pp.Define("__STDC_VERSION__", ver, true);
         }
         std::string working = undefines.GetValue();
-        while (working.size())
+        while (!working.empty())
         {
             size_t n = working.find_first_of(';');
             if (n == std::string::npos)
@@ -128,7 +128,7 @@ int ppMain::Run(int argc, char* argv[])
             }
         }
         working = errorMax.GetValue();
-        if (working.size())
+        if (!working.empty())
         {
             if (working[0] == '+')
             {
@@ -141,14 +141,14 @@ int ppMain::Run(int argc, char* argv[])
                 Errors::SetMaxErrors(n);
             }
         }
-        if (outputPath.GetValue().size())
+        if (!outputPath.GetValue().empty())
             working = outputPath.GetValue();
         else if (getenv("OCC_LEGACY_OPTIONS"))
             working = Utils::QualifiedFile((*it)->c_str(), ".i");
 
         std::ostream* outstream = nullptr;
-        if (working.size())
-            outstream = new std::fstream(working.c_str(), std::ios::out);
+        if (!working.empty())
+            outstream = new std::fstream(working, std::ios::out);
         else
             outstream = &std::cout;
         while (pp.GetLine(working))
@@ -181,7 +181,7 @@ int ppMain::Run(int argc, char* argv[])
                             std::string name;
                             PPINT value = 0;
                             npos = working.find_first_not_of(" \t\r\b\v", npos + 6 + (caseInsensitive ? 1 : 0));
-                            if (npos == std::string::npos || !IsSymbolStartChar(working.c_str() + npos))
+                            if (npos == std::string::npos || !IsSymbolStartChar(working[npos]))
                             {
                                 Errors::Error("Expected identifier");
                             }
@@ -189,7 +189,7 @@ int ppMain::Run(int argc, char* argv[])
                             {
                                 int npos1 = npos;
 
-                                while (npos1 != working.size() && IsSymbolChar(working.c_str() + npos1))
+                                while (npos1 != working.size() && IsSymbolChar(working[npos1]))
                                     npos1++;
                                 name = working.substr(npos, npos1 - npos);
                                 if (!isspace(working[npos1]))
@@ -219,7 +219,7 @@ int ppMain::Run(int argc, char* argv[])
                     }
                 }
             }
-            (*outstream) << working.c_str() << std::endl;
+            (*outstream) << working << std::endl;
         }
         if (outstream != &std::cout)
         {

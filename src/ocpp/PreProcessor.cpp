@@ -30,29 +30,31 @@
 #include <limits.h>
 
 bool asmMode = false;
-bool IsSymbolStartChar(const char* data)
+bool IsSymbolStartChar(char data)
 {
     if (asmMode)
     {
-        return *data == '@' || *data == '_' || *data == '?' || *data == '.' || UTF8::IsAlpha(data);
+        return data == '@' || data == '_' || data == '?' || data == '.' || UTF8::IsAlpha(data);
     }
     else
     {
-        return *data == '_' || UTF8::IsAlpha(data);
+        return data == '_' || UTF8::IsAlpha(data);
     }
 }
-bool IsSymbolChar(const char* data)
+bool IsSymbolStartChar(const char* data) { IsSymbolStartChar(*data); }
+bool IsSymbolChar(char data)
 {
     if (asmMode)
     {
-        return *data == '_' || *data == '$' || *data == '#' || *data == '@' || *data == '~' || *data == '?' || *data == '.' ||
-               *data == '&' || UTF8::IsAlnum(data);
+        return data == '_' || data == '$' || data == '#' || data == '@' || data == '~' || data == '?' || data == '.' ||
+               data == '&' || UTF8::IsAlnum(data);
     }
     else
     {
-        return *data == '_' || UTF8::IsAlnum(data);
+        return data == '_' || UTF8::IsAlnum(data);
     }
 }
+bool IsSymbolChar(const char* data) { IsSymbolChar(*data); }
 void PreProcessor::InitHash()
 {
     hash["define"] = DEFINE;
@@ -116,7 +118,7 @@ bool PreProcessor::GetPreLine(std::string& line)
 {
     if (preData)
     {
-        if (preData->size())
+        if (!preData->empty())
         {
             int npos = preData->find_first_of("\n");
             if (npos == std::string::npos)
@@ -206,7 +208,7 @@ bool PreProcessor::GetLine(std::string& line)
     {
         if (!GetPreLine(line))
             return false;
-        if (last.size())
+        if (!last.empty())
             line = last + " " + line;
         size_t n = line.find_first_not_of(" \n\t\v\r");
         if (n != std::string::npos)

@@ -29,7 +29,7 @@
 #include "PreProcessor.h"
 #include "Errors.h"
 #include "CmdFiles.h"
-#include <limits.h>
+#include <climits>
 #include <fstream>
 
 bool ppInclude::system;
@@ -62,12 +62,12 @@ bool ppInclude::CheckInclude(int token, const std::string& args)
     }
     return false;
 }
-bool ppInclude::__has_include(const std::string& args)
+bool ppInclude::has_include(const std::string& args)
 {
     std::string line1 = args;
     std::string name = ParseName(line1);
     name = FindFile(name);
-    return name.size() != 0;
+    return !name.empty();
 }
 bool ppInclude::CheckLine(int token, const std::string& args)
 {
@@ -96,7 +96,7 @@ bool ppInclude::CheckLine(int token, const std::string& args)
 void ppInclude::pushFile(const std::string& name, const std::string& errname)
 {
     // gotta do the test first to get the error correct if it isn't there
-    std::fstream in(name.c_str(), std::ios::in);
+    std::fstream in(name, std::ios::in);
     if (name[0] != '-' && !in.is_open())
     {
         Errors::Error(std::string("Could not open ") + errname + " for input");
@@ -125,7 +125,7 @@ bool ppInclude::popFile()
         delete current;
         current = nullptr;
     }
-    if (files.size())
+    if (!files.empty())
     {
         current = files.front();
         files.pop_front();
@@ -170,7 +170,7 @@ std::string ppInclude::ParseName(const std::string& args)
 std::string ppInclude::FindFile(const std::string& name)
 {
     std::string rv = SrchPath(system, name);
-    if (rv.size() == 0)
+    if (rv.empty())
         rv = SrchPath(!system, name);
     return rv;
 }
@@ -258,7 +258,7 @@ void ppInclude::StripAsmComment(std::string& line)
             }
         }
     }
-    if (line.size())
+    if (!line.empty())
     {
         n = line.size() - 1;
         while (n && isspace(line[n]))
@@ -275,7 +275,7 @@ bool ppInclude::GetLine(std::string& line, int& lineno)
         {
             if (current->GetLine(line))
             {
-                if (current && files.size() == 0)
+                if (current && !files.empty())
                     lineno = GetLineNo();
                 else
                     lineno = INT_MIN;
@@ -285,7 +285,7 @@ bool ppInclude::GetLine(std::string& line, int& lineno)
             }
             current->CheckErrors();
         }
-        if (inProc.size())
+        if (!inProc.empty())
         {
             Errors::Error(std::string("File ended with ") + inProc + " in progress");
             inProc = "";

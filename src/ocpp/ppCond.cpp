@@ -27,13 +27,13 @@
 #include "Errors.h"
 #include "PreProcessor.h"
 #include "UTF8.h"
-#include <ctype.h>
+#include <cctype>
 
 ppCond::~ppCond()
 {
 
     delete current;
-    while (skipList.size())
+    while (!skipList.empty())
     {
         current = skipList.front();
         skipList.pop_front();
@@ -177,7 +177,7 @@ void ppCond::HandleElif(bool val, const std::string& line)
     else
     {
         skip* old = nullptr;
-        if (skipList.size())
+        if (!skipList.empty())
             old = skipList.front();
         if ((!old || !old->skipping) && current->takeElse && val)
         {
@@ -237,7 +237,7 @@ void ppCond::HandleEndIf(std::string& line)
     else
     {
         delete current;
-        if (skipList.size())
+        if (!skipList.empty())
         {
             current = skipList.front();
             skipList.pop_front();
@@ -427,7 +427,7 @@ void ppCond::ansieol(const std::string& line)
 }
 void ppCond::CheckErrors()
 {
-    if (skipList.size() || current)
+    if (!skipList.empty() || current)
     {
         Errors::Error("Non-terminated preprocessor conditional started in line " + Errors::ToNum(current->line));
     }

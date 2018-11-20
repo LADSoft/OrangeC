@@ -27,7 +27,7 @@
 
 SymbolTable::~SymbolTable()
 {
-    while (symList.size())
+    while (!symList.empty())
     {
         Symbol* t = symList.front();
         symList.pop_front();

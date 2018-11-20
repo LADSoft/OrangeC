@@ -26,7 +26,7 @@
 #include "ppFile.h"
 bool ppFile::GetLine(std::string& line)
 {
-    line = std::string("");
+    line = "";
     while (true)
     {
         char buf[LINE_WIDTH];

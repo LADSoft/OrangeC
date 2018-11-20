@@ -27,8 +27,8 @@
 #include "Errors.h"
 #include "SymbolTable.h"
 #include "UTF8.h"
-#include <float.h>
-#include <limits.h>
+#include <cfloat>
+#include <climits>
 
 typedef unsigned long long L_UINT;
 
@@ -601,12 +601,12 @@ void KeywordToken::Parse(std::string& line)
         }
     }
 }
-bool IdentifierToken::Start(const std::string& line) { return IsSymbolStartChar(line.c_str()) != 0; }
+bool IdentifierToken::Start(const std::string& line) { return IsSymbolStartChar(line[0]); }
 void IdentifierToken::Parse(std::string& line)
 {
     char buf[256], *p = buf;
     int i, n;
-    for (i = 0; (p == buf || p - buf - 1 < sizeof(buf)) && p - buf < line.size() && IsSymbolChar(line.c_str() + i);)
+    for (i = 0; (p == buf || p - buf - 1 < sizeof(buf)) && p - buf < line.size() && IsSymbolChar(line[i]);)
     {
         n = UTF8::CharSpan(line.c_str() + i);
         for (int j = 0; j < n && i < line.size(); j++)
@@ -646,7 +646,7 @@ const Token* Tokenizer::Next()
     size_t n = line.find_first_not_of("\t \v");
     line.erase(0, n);
     delete currentToken;
-    if (line.size() == 0)
+    if (!line.empty())
         currentToken = new EndToken;
     else if (NumericToken::Start(line))
         currentToken = new NumericToken(line);

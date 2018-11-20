@@ -43,7 +43,7 @@ class DLLExportReader
   public:
     DLLExportReader(const std::string& fname) : name(fname) {}
     ~DLLExportReader();
-    bool Read();
+    int Read();
 
     std::string GetName() { return name; }
     typedef std::deque<DLLExport*>::iterator iterator;

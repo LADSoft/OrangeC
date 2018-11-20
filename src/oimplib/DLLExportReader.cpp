@@ -70,10 +70,12 @@ bool DLLExportReader::doExports(std::fstream& in, int phys, int rva)
     }
     return !in.fail();
 }
-bool DLLExportReader::Read()
+int DLLExportReader::Read()
 {
-    bool rv = false;
+    int rv = 2;
     std::fstream in(name.c_str(), std::ios::in | std::ios::binary);
+    if (!in.is_open())
+        return 1; // can't find file
     if (!in.fail())
     {
         MZHeader mzh;
@@ -93,6 +95,7 @@ bool DLLExportReader::Read()
                     in.read((char*)&peh, sizeof(peh));
                     if (!in.fail() && peh.signature == PESIG)
                     {
+                        rv = 3; // no export table
                         for (int i = 0; i < peh.num_objects; i++)
                         {
                             PEObject obj;

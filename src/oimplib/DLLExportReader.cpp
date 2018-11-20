@@ -73,7 +73,7 @@ bool DLLExportReader::doExports(std::fstream& in, int phys, int rva)
 bool DLLExportReader::Read()
 {
     bool rv = false;
-    std::fstream in(name.c_str(), std::ios::in | std::ios::binary);
+    std::fstream in(name, std::ios::in | std::ios::binary);
     if (!in.fail())
     {
         MZHeader mzh;

@@ -121,7 +121,7 @@ int LibMain::Run(int argc, char** argv)
     Utils::SetEnvironmentToPathParent("ORANGEC");
     CmdSwitchFile internalConfig(SwitchParser);
     std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
-    std::fstream configTest(configName.c_str(), std::ios::in);
+    std::fstream configTest(configName, std::ios::in);
     if (!configTest.fail())
     {
         configTest.close();
@@ -146,7 +146,7 @@ int LibMain::Run(int argc, char** argv)
         --argc;
     }
     ObjString outputFile = OutputFile.GetValue();
-    if (!outputFile.size())
+    if (outputFile.empty())
     {
         outputFile = argv[1];
         memcpy(argv + 1, argv + 2, (argc - 1) * sizeof(char*));
@@ -169,7 +169,7 @@ int LibMain::Run(int argc, char** argv)
     if (librarian.IsOpen())
         if (!librarian.LoadLibrary())
         {
-            std::cout << outputFile.c_str() << " is not a library" << std::endl;
+            std::cout << outputFile << " is not a library" << std::endl;
             return 1;
         }
     for (int i = 1; i < argc; i++)

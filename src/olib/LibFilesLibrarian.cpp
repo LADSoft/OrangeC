@@ -30,14 +30,14 @@
 #include "ObjFactory.h"
 #include "CmdFiles.h"
 #include <iostream>
-#include <string.h>
+#include <cstring>
 
 void LibFiles::Add(ObjFile& obj)
 {
     for (int i = 0; i < files.size(); i++)
         if (files[i]->name == obj.GetName())
         {
-            std::cout << "Warning: module '" << files[i]->name.c_str() << "' already exists in library, it won't be added"
+            std::cout << "Warning: module '" << files[i]->name << "' already exists in library, it won't be added"
                       << std::endl;
             return;
         }
@@ -57,7 +57,7 @@ void LibFiles::Add(const ObjString& Name)
     for (int i = 0; i < files.size(); i++)
         if (files[i]->name == internalName)
         {
-            std::cout << "Warning: module '" << Name.c_str() << "' already exists in library, it won't be added" << std::endl;
+            std::cout << "Warning: module '" << Name << "' already exists in library, it won't be added" << std::endl;
             return;
         }
     FileDescriptor* newFile = new FileDescriptor(Name);
@@ -79,7 +79,7 @@ void LibFiles::Remove(const ObjString& Name)
             return;
         }
     }
-    std::cout << "Warning: Module '" << Name.c_str() << "' not in library and could not be removed" << std::endl;
+    std::cout << "Warning: Module '" << Name << "' not in library and could not be removed" << std::endl;
     ;
 }
 void LibFiles::Extract(FILE* stream, const ObjString& Name)
@@ -106,17 +106,17 @@ void LibFiles::Extract(FILE* stream, const ObjString& Name)
                 }
                 else
                 {
-                    std::cout << "Warning: Module '" << Name.c_str() << "' not extracted, could not open output file" << std::endl;
+                    std::cout << "Warning: Module '" << Name << "' not extracted, could not open output file" << std::endl;
                 }
             }
             else
             {
-                std::cout << "Warning: Module '" << Name.c_str() << "' not extracted, library corrupt" << std::endl;
+                std::cout << "Warning: Module '" << Name << "' not extracted, library corrupt" << std::endl;
             }
             return;
         }
     }
-    std::cout << "Warning: Module '" << Name.c_str() << "' not in library and could not be extracted" << std::endl;
+    std::cout << "Warning: Module '" << Name << "' not in library and could not be extracted" << std::endl;
 }
 void LibFiles::Replace(ObjFile& obj)
 {
@@ -224,7 +224,7 @@ bool LibFiles::ReadFiles(FILE* stream, ObjFactory* factory)
                     (*itn)->data = ReadData(stream, (*itn)->name, factory);
                     if (!(*itn)->data)
                     {
-                        std::cout << "Error: Syntax error in module '" << (*itn)->name.c_str() << "'" << std::endl;
+                        std::cout << "Error: Syntax error in module '" << (*itn)->name << "'" << std::endl;
                         FileDescriptor* t = *itn;
                         delete t;
                         files.erase(itn);
@@ -242,7 +242,7 @@ bool LibFiles::ReadFiles(FILE* stream, ObjFactory* factory)
                         fclose(istr);
                         if (!(*itn)->data)
                         {
-                            std::cout << "Error: Syntax error in module '" << (*itn)->name.c_str() << "'" << std::endl;
+                            std::cout << "Error: Syntax error in module '" << (*itn)->name << "'" << std::endl;
                             FileDescriptor* t = *itn;
                             delete t;
                             files.erase(itn);
@@ -253,7 +253,7 @@ bool LibFiles::ReadFiles(FILE* stream, ObjFactory* factory)
                     }
                     else
                     {
-                        std::cout << "Error: Module '" << (*itn)->name.c_str() << "' does not exist" << std::endl;
+                        std::cout << "Error: Module '" << (*itn)->name << "' does not exist" << std::endl;
                         FileDescriptor* t = *itn;
                         delete t;
                         files.erase(itn);

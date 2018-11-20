@@ -27,7 +27,7 @@
 #define LIBFILES_H
 #include "ObjTypes.h"
 #include <deque>
-#include <stdio.h>
+#include <cstdio>
 class ObjFile;
 class ObjFactory;
 class LibFiles

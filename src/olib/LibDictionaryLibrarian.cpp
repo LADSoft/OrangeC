@@ -29,9 +29,9 @@
 #include "ObjSymbol.h"
 #include "ObjSection.h"
 #include "Utils.h"
-#include <ctype.h>
+#include <cctype>
 #include <iostream>
-#include <string.h>
+#include <cstring>
 
 void LibDictionary::CreateDictionary(LibFiles& files)
 {

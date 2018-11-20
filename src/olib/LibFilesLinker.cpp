@@ -28,7 +28,7 @@
 #include "ObjFile.h"
 #include "ObjIeee.h"
 #include "ObjFactory.h"
-#include <assert.h>
+#include <cassert>
 
 ObjFile* LibFiles::ReadData(FILE* stream, const ObjString& name, ObjFactory* factory)
 {

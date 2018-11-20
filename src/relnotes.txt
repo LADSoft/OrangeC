@@ -2,6 +2,8 @@ Release notes:
 
 version 6.0.40:
     occ: fix stack frame in the presence of try/catch processing: don't optimize out the EBP references
+    occ: add __offsetof and use in library
+    dlpe/oimplib: handle -y switch
     orc: fix crash when compiled with package, when processing invalid input file
     ocpp: (c++ version) allow # without a directive
     ocpp: (c++ version) default to C99

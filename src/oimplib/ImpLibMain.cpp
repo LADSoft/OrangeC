@@ -138,7 +138,7 @@ void ImpLibMain::AddFile(LibManager& librarian, const char* arg)
                             DLLExportReader dllFile(inputFile);
                             if (!dllFile.Read())
                             {
-                                std::cout << "Dll file '" << inputFile.c_str() << "' is missing or in wrong format" << std::endl;
+                                std::cout << "Dll file '" << inputFile.c_str() << "' is missing, unreadable, or has no exports" << std::endl;
                                 return;
                             }
                             librarian.ReplaceFile(*DllFileToObjFile(dllFile));

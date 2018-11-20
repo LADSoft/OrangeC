@@ -28,7 +28,8 @@
 
 void LibManager::InitHeader()
 {
-    header = {.sig = LibHeader::LIB_SIG};
+    header = {};
+    header.sig = LibHeader::LIB_SIG;
 }
 bool LibManager::LoadLibrary()
 {

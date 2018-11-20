@@ -1077,7 +1077,9 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
 {
     TYPE *typein = *tp, *typein2 = isarray(typein) ? typein : NULL;
     BOOLEAN points = FALSE;
-    char* tokenName = lex->kw->name;
+    char* tokenName = ".";
+    if (ISKW(lex))
+        tokenName = lex->kw->name;
     (void)funcsp;
     // find structured version of arithmetic types for msil member matching
     if (chosenAssembler->msil && chosenAssembler->msil->allowExtensions &&

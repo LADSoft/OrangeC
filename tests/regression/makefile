@@ -7,8 +7,6 @@ TESTS := $(TESTS:.asm=.tst)
 
 all: $(TESTS)
 
-$(info $(TESTS))
-
 %.o: %.c
 	occ /1 /c /! $<
 

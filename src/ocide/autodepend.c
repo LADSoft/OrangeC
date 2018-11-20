@@ -327,6 +327,7 @@ void CalculateFileAutoDepends(char* fileName)
     PROJECTITEM* item = HasFile(workArea, fileName);
     if (item)
         CalculateProjectDepends(item);
+    SetStatusMessage("", FALSE);
 }
 PROJECTITEM* RetrieveInternalDepend(char* fileName)
 {

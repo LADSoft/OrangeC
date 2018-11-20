@@ -158,7 +158,6 @@
 #define IDC_EXT_CW 106
 #define IDC_BUTTON1 101
 
-#define MAX_CHILDREN 100
 #define MAX_MRU 5
 #define MAX_WINMENU 10
 

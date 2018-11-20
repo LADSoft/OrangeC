@@ -29,6 +29,7 @@ extern int tempCount;
 extern TEMP_INFO** tempInfo;
 extern BLOCKLIST** blockArray;
 extern int prm_useesp;
+extern BOOLEAN hasXCInfo;
 
 int uses_substack;
 
@@ -1932,7 +1933,7 @@ int examine_icode(QUAD* head)
     if (prm_useesp)
     {
         extern void SetUsesESP(BOOLEAN yes);
-        SetUsesESP(!uses_substack);
+        SetUsesESP(!uses_substack&&!hasXCInfo);
     }
     return changed;
 }

@@ -59,6 +59,7 @@ void PreProcessor::InitHash()
     hash["undef"] = UNDEF;
     hash["pragma"] = PRAGMA;
     hash["error"] = ERROR;
+    hash["warning"] = WARNING;
     hash["line"] = LINE;
     hash["include"] = INCLUDE;
     hash["if"] = IF;
@@ -214,73 +215,80 @@ bool PreProcessor::GetLine(std::string& line)
                 (trigraphs && n < line.size() - 1 && line[n] == '%' && line[n + 1] == ':'))
             {
                 int n1 = line.find_first_not_of(" \n\t\v\r", n + 1);
-                if (!isdigit(line[n1]))
+                if (n1 != std::string::npos)
                 {
-                    if (trigraphs)
-                        line = StripDigraphs(line);
-                    Tokenizer tk(line.substr(n + 1), &hash);
-                    const Token* t = tk.Next();
-                    if (t->IsKeyword())
+                    if (!isdigit(line[n1]))
                     {
-                        if (t->GetKeyword() == ASSIGN || t->GetKeyword() == IASSIGN)
+                        if (trigraphs)
+                            line = StripDigraphs(line);
+                        Tokenizer tk(line.substr(n + 1), &hash);
+                        const Token* t = tk.Next();
+                        if (t->IsKeyword())
                         {
-                            if (include.Skipping())
-                                line.erase(0, line.size());
-                            else
+                            if (t->GetKeyword() == ASSIGN || t->GetKeyword() == IASSIGN)
                             {
-                                int npos = line.find("assign");
-                                if (npos != std::string::npos)
+                                if (include.Skipping())
+                                    line.erase(0, line.size());
+                                else
                                 {
-                                    npos = line.find_first_not_of(" \t\r\n\v", npos + 6);
+                                    int npos = line.find("assign");
                                     if (npos != std::string::npos)
                                     {
-                                        npos = line.find_first_of(" \t\r\n\v", npos);
+                                        npos = line.find_first_not_of(" \t\r\n\v", npos + 6);
                                         if (npos != std::string::npos)
                                         {
-                                            std::string left = line.substr(0, npos);
-                                            std::string right = line.substr(npos);
-                                            define.Process(right);
-                                            line = left + right;
+                                            npos = line.find_first_of(" \t\r\n\v", npos);
+                                            if (npos != std::string::npos)
+                                            {
+                                                std::string left = line.substr(0, npos);
+                                                std::string right = line.substr(npos);
+                                                define.Process(right);
+                                                line = left + right;
+                                            }
+                                        }
+                                    }
+                                }
+                                return true;
+                            }
+                            else
+                            {
+                                line = tk.GetString();
+                                int token = t->GetKeyword();
+                                // must come first
+                                if (!include.Check(token, line))
+                                {
+                                    if (!define.Check(token, line))
+                                    {
+                                        if (!ppErr.Check(token, line))
+                                        {
+                                            if (!pragma.Check(token, line))
+                                            {
+                                                if (ppStart != '%' || (!macro.Check(token, line) && !ctx.Check(token, line)))
+                                                    Errors::Error("Unknown preprocessor directive");
+                                            }
                                         }
                                     }
                                 }
                             }
-                            return true;
                         }
                         else
                         {
-                            line = tk.GetString();
-                            int token = t->GetKeyword();
-                            // must come first
-                            if (!include.Check(token, line))
+                            if (ppStart == '%')
                             {
-                                if (!define.Check(token, line))
-                                {
-                                    if (!ppErr.Check(token, line))
-                                    {
-                                        if (!pragma.Check(token, line))
-                                        {
-                                            if (ppStart != '%' || (!macro.Check(token, line) && !ctx.Check(token, line)))
-                                                Errors::Error("Unknown preprocessor directive");
-                                        }
-                                    }
-                                }
+                                goto join;
                             }
+                            Errors::Error("Invalid preprocessor directive");
                         }
+                        line.erase(0, line.size());
                     }
                     else
                     {
-                        if (ppStart == '%')
-                        {
-                            goto join;
-                        }
-                        Errors::Error("Invalid preprocessor directive");
+                        goto join;
                     }
-                    line.erase(0, line.size());
                 }
                 else
                 {
-                    goto join;
+                    line.erase(0, line.size());
                 }
             }
             else

@@ -26,6 +26,7 @@
 #include "ppExpr.h"
 #include "ppDefine.h"
 #include "Errors.h"
+#include "ppInclude.h"
 
 KeywordHash ppExpr::hash;
 bool ppExpr::initted;
@@ -130,6 +131,35 @@ PPINT ppExpr::primary(std::string& line)
                             }
                         }
                     }
+                }
+            }
+        }
+        else if (token->GetId() == "__has_include")
+        {
+            token = tokenizer->Next();
+            if (!token->IsEnd())
+            {
+                if (token->GetKeyword() == openpa)
+                {
+                    std::string& line = tokenizer->GetString();
+                    int n = line.find(")");
+                    if (n == std::string::npos)
+                    {
+                        Errors::Error("Expected ')'");
+                    }
+                    else
+                    {
+                        std::string arg= line.substr(0,n);
+                        define->Process(arg);
+			
+                        rv = ppInclude::__has_include(arg);
+                        tokenizer->SetString(line.substr(n+1));
+                        token = tokenizer->Next();                    
+                    }
+                }
+                else
+                {
+                    Errors::Error("Expected '('");
                 }
             }
         }

@@ -27,7 +27,10 @@
 
 #include "ppPragma.h"
 #include "PreProcessor.h"
+#include "ppInclude.h"
 #include "Errors.h"
+#include "sys/stat.h"
+#include <algorithm>
 
 Packing* Packing::instance;
 FenvAccess* FenvAccess::instance;
@@ -36,6 +39,7 @@ FPContract* FPContract::instance;
 Libraries* Libraries::instance;
 Aliases* Aliases::instance;
 Startups* Startups::instance;
+Once* Once::instance;
 
 void ppPragma::InitHash()
 {
@@ -59,24 +63,28 @@ void ppPragma::ParsePragma(const std::string& args)
     const Token* id = tk.Next();
     if (id->IsIdentifier())
     {
-        if (*id == "STDC")
+        std::string str = id->GetId();
+        std::transform(str.begin(), str.end(),str.begin(), ::toupper);
+        if (str == "STDC")
             HandleSTDC(tk);
-        else if (*id == "AUX")
+        else if (str == "AUX")
             HandleAlias(tk);
-        else if (*id == "PACK")
+        else if (str == "PACK")
             HandlePack(tk);
-        else if (*id == "LIBRARY")
+        else if (str == "LIBRARY")
             HandleLibrary(tk);
-        else if (*id == "STARTUP")
+        else if (str == "STARTUP")
             HandleStartup(tk);
-        else if (*id == "RUNDOWN")
+        else if (str == "RUNDOWN")
             HandleRundown(tk);
-        else if (*id == "WARNING")
+        else if (str == "WARNING")
             HandleWarning(tk);
-        else if (*id == "ERROR")
+        else if (str == "ERROR")
             HandleError(tk);
-        else if (*id == "FARKEYWORD")
+        else if (str == "FARKEYWORD")
             HandleFar(tk);
+        else if (str == "ONCE")
+            HandleOnce(tk);
         // unmatched is not an error
     }
 }
@@ -173,6 +181,59 @@ Startups::~Startups()
     }
     list.clear();
 }
+
+bool Once::AddToList()
+{
+    OnceItem item(include->GetFile());
+    if (items.find(item) != items.end())
+        return false;
+    items.insert(item);
+    return true;
+}
+void Once::TriggerEOF()
+{
+    include->ForceEOF();
+}
+
+bool Once::OnceItem::operator< (const OnceItem& right) const
+{
+    if (filesize < right.filesize)
+        return true;
+    else if (filesize == right.filesize)
+        if (filetime < right.filetime)
+            return true;
+        else if (filetime == right.filetime)
+            if (crc < right.crc)
+                return true;
+
+    return false;
+}
+void Once::OnceItem::SetParams(const std::string& fileName)
+{
+    FILE *fil = fopen(fileName.c_str(), "rb");
+    if (fil)
+    {
+        filesize = 0;
+        crc = 0;
+        int n;
+        unsigned char buf[8192];
+        while ((n = fread(buf, 1, sizeof(buf), fil)) > 0)
+        {
+            filesize += n;
+            crc = Utils::PartialCRC32(crc, buf, n);
+        }
+        fclose(fil);
+        struct stat statbuf;
+        stat(fileName.c_str(), &statbuf);
+        filetime = statbuf.st_mtime;
+    }
+    else
+    {
+        filetime = 0;
+        filesize = 0;
+        crc = 0;
+    }
+}
 void ppPragma::HandleLibrary(Tokenizer& tk)
 {
     char buf[260 + 10];
@@ -218,4 +279,8 @@ void ppPragma::HandleAlias(Tokenizer& tk)
 void ppPragma::HandleFar(Tokenizer& tk)
 {
     // fixme
+}
+void ppPragma::HandleOnce(Tokenizer& tk)
+{
+    Once::Instance()->CheckForMultiple();
 }

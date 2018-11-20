@@ -31,6 +31,10 @@
 #include "CmdFiles.h"
 #include <limits.h>
 #include <fstream>
+
+bool ppInclude::system;
+std::string ppInclude::srchPath, ppInclude::sysSrchPath;
+
 ppInclude::~ppInclude()
 {
     while (current)
@@ -51,12 +55,19 @@ bool ppInclude::CheckInclude(int token, const std::string& args)
     {
         std::string line1 = args;
         define->Process(line1);
-        ParseName(line1);
-        FindFile(args);
-        pushFile(name);
+        std::string name = ParseName(line1);
+        name = FindFile(name);
+        pushFile(name, line1);
         return true;
     }
     return false;
+}
+bool ppInclude::__has_include(const std::string& args)
+{
+    std::string line1 = args;
+    std::string name = ParseName(line1);
+    name = FindFile(name);
+    return name.size() != 0;
 }
 bool ppInclude::CheckLine(int token, const std::string& args)
 {
@@ -68,27 +79,27 @@ bool ppInclude::CheckLine(int token, const std::string& args)
         if (npos == std::string::npos)
         {
             int n = expr.Eval(line1);
-            ParseName(line1);
+            std::string name = ParseName(line1);
             current->SetErrlineInfo(name, n - 1);
         }
         else
         {
             std::string temp = line1.substr(0, npos);
             int n = expr.Eval(temp);
-            ParseName(line1.substr(npos + 1));
+            std::string name = ParseName(line1.substr(npos + 1));
             current->SetErrlineInfo(name, n - 1);
         }
         return true;
     }
     return false;
 }
-void ppInclude::pushFile(const std::string& name)
+void ppInclude::pushFile(const std::string& name, const std::string& errname)
 {
     // gotta do the test first to get the error correct if it isn't there
     std::fstream in(name.c_str(), std::ios::in);
     if (name[0] != '-' && !in.is_open())
     {
-        Errors::Error(std::string("Could not open ") + name + " for input");
+        Errors::Error(std::string("Could not open ") + errname + " for input");
     }
     else
     {
@@ -102,7 +113,7 @@ void ppInclude::pushFile(const std::string& name)
         // if (current)
         if (!current->Open())
         {
-            Errors::Error(std::string("Could not open ") + name + " for input");
+            Errors::Error(std::string("Could not open ") + errname + " for input");
             popFile();
         }
     }
@@ -119,10 +130,12 @@ bool ppInclude::popFile()
         current = files.front();
         files.pop_front();
     }
+    forcedEOF = false;
     return true;
 }
-void ppInclude::ParseName(const std::string& args)
+std::string ppInclude::ParseName(const std::string& args)
 {
+    std::string name = "";
     const char* p = args.c_str();
     while (isspace(*p))
         p++;
@@ -152,13 +165,16 @@ void ppInclude::ParseName(const std::string& args)
     }
     else
         Errors::Error("File name expected");
+    return name;
 }
-void ppInclude::FindFile(const std::string& args)
+std::string ppInclude::FindFile(const std::string& name)
 {
-    if (!SrchPath(system))
-        SrchPath(!system);
+    std::string rv = SrchPath(system, name);
+    if (rv.size() == 0)
+        rv = SrchPath(!system, name);
+    return rv;
 }
-bool ppInclude::SrchPath(bool system)
+std::string ppInclude::SrchPath(bool system, const std::string& name)
 {
     const char* path;
     if (system)
@@ -169,7 +185,7 @@ bool ppInclude::SrchPath(bool system)
     do
     {
         path = RetrievePath(buf, path);
-        AddName(buf);
+        AddName(buf, name);
         while (char* p = strchr(buf, '/'))
         {
             *p = CmdFiles::DIR_SEP[0];
@@ -178,11 +194,10 @@ bool ppInclude::SrchPath(bool system)
         if (fil)
         {
             fclose(fil);
-            name = buf;
-            return true;
+            return buf;
         }
     } while (path);
-    return false;
+    return "";
 }
 const char* ppInclude::RetrievePath(char* buf, const char* path)
 {
@@ -200,7 +215,7 @@ const char* ppInclude::RetrievePath(char* buf, const char* path)
         return nullptr;
     }
 }
-void ppInclude::AddName(char* buf)
+void ppInclude::AddName(char* buf, const std::string& name)
 {
     int n = strlen(buf);
     if (n)
@@ -256,17 +271,20 @@ bool ppInclude::GetLine(std::string& line, int& lineno)
 {
     while (current)
     {
-        if (current->GetLine(line))
+        if (!forcedEOF)
         {
-            if (current && files.size() == 0)
-                lineno = GetLineNo();
-            else
-                lineno = INT_MIN;
-            if (asmpp)
-                StripAsmComment(line);
-            return true;
+            if (current->GetLine(line))
+            {
+                if (current && files.size() == 0)
+                    lineno = GetLineNo();
+                else
+                    lineno = INT_MIN;
+                if (asmpp)
+                    StripAsmComment(line);
+                return true;
+            }
+            current->CheckErrors();
         }
-        current->CheckErrors();
         if (inProc.size())
         {
             Errors::Error(std::string("File ended with ") + inProc + " in progress");

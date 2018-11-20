@@ -92,6 +92,7 @@ class Lexer
         TIMES,
         USE16,
         USE32,
+        USE64,
         VIRTUAL
     };
     Lexer(PreProcessor& PP);

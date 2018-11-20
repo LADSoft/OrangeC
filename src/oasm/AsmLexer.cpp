@@ -103,6 +103,7 @@ void Lexer::InitHash()
         hash["TIMES"] = TIMES;
         hash["USE16"] = USE16;
         hash["USE32"] = USE32;
+        hash["USE64"] = USE64;
         hash["VIRTUAL"] = VIRTUAL;
         hashInitted = true;
     }

@@ -27,11 +27,11 @@
 
 #include "CmdSwitch.h"
 #include "Utils.h"
-#include <ctype.h>
+#include <cctype>
 #include <fstream>
-#include <limits.h>
+#include <climits>
 
-#include <string.h>
+#include <cstring>
 
 CmdSwitchBase::CmdSwitchBase(CmdSwitchParser& parser, char SwitchChar) : exists(false), switchChar(SwitchChar) { parser += this; }
 int CmdSwitchBool::Parse(const char* data)
@@ -179,7 +179,6 @@ int CmdSwitchFile::Parse(const char* data)
         size_t size = in.tellg();
         in.seekg(0, std::ios::beg);
         char* data1 = new char[size + 1];
-        memset(data1, 0, size + 1);
         in.read(data1, size);
         data1[size] = 0;
         in.close();

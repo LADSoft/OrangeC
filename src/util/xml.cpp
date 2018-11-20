@@ -24,8 +24,8 @@
  */
 
 #include "xml.h"
-#include "ctype.h"
-#include <string.h>
+#include <cctype>
+#include <cstring>
 bool xmlAttrib::Read(std::fstream& stream)
 {
     char t;

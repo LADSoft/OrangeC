@@ -36,11 +36,7 @@
 #include "Utils.h"
 #include "CmdFiles.h"
 
-#ifdef OPENWATCOM
-#    include <strstream>
-#else
-#    include <sstream>
-#endif
+#include <sstream>
 #include "../version.h"
 #include <iostream>
 
@@ -108,11 +104,11 @@ char* Utils::GetModuleName()
 #if defined(_WIN32)
     GetModuleFileNameA(nullptr, buf, sizeof(buf));
 #else
-#ifdef GCCLINUX
+#    ifdef GCCLINUX
     strcpy(buf, "unknown");
-#else
+#    else
     strcpy(buf, __argv[0]);
-#endif
+#    endif
 #endif
     return buf;
 }
@@ -141,7 +137,7 @@ void Utils::SetEnvironmentToPathParent(const char* name)
 }
 std::string Utils::FullPath(const std::string& path, const std::string& name)
 {
-    std::fstream in(name.c_str(), std::ios::in);
+    std::fstream in(name, std::ios::in);
     if (!in.fail())
     {
         return name;
@@ -150,12 +146,12 @@ std::string Utils::FullPath(const std::string& path, const std::string& name)
     {
         std::string fpath = path;
         //        if (path.c_str()[strlen(path.c_str())-1] != '\\')
-        if (path.c_str()[path.length() - 1] != '\\')
+        if (path[path.length() - 1] != '\\')
         {
-            fpath += std::string("\\");
+            fpath += "\\";
         }
         fpath += name;
-        std::fstream in(fpath.c_str(), std::ios::in);
+        std::fstream in(fpath, std::ios::in);
         if (!in.fail())
         {
             return fpath;
@@ -210,65 +206,12 @@ std::string Utils::SearchForFile(const std::string& path, const std::string& nam
     }
     return name;
 }
-std::string Utils::NumberToString(int num)
-{
-#ifdef OPENWATCOM
-    std::ostrstream aa;
-    aa << num;
-    return std::string(aa.rdbuf()->str());
-#else
-    std::stringstream aa;
-    aa << num;
-    std::string rv;
-    aa >> rv;
-    return rv;
-#endif
-}
+std::string Utils::NumberToString(int num) { return std::to_string(num); }
 std::string Utils::NumberToStringHex(int num)
 {
-#ifdef OPENWATCOM
-    std::ostrstream aa;
-    aa << std::hex << num;
-    return std::string(aa.rdbuf()->str());
-#else
     std::stringstream aa;
     aa << std::hex << num;
-    std::string rv;
-    aa >> rv;
-    return rv;
-#endif
+    return aa.str();
 }
-int Utils::StringToNumber(std::string str)
-{
-#ifdef OPENWATCOM
-    std::ostrstream aa;
-    aa << str.c_str();
-    std::istrstream bb(aa.rdbuf()->str());
-    int rv;
-    bb >> rv;
-    return rv;
-#else
-    std::stringstream aa;
-    aa << str;
-    int rv;
-    aa >> rv;
-    return rv;
-#endif
-}
-int Utils::StringToNumberHex(std::string str)
-{
-#ifdef OPENWATCOM
-    std::ostrstream aa;
-    aa << str.c_str();
-    std::istrstream bb(aa.rdbuf()->str());
-    int rv;
-    bb >> std::hex >> rv;
-    return rv;
-#else
-    std::stringstream aa;
-    aa << str;
-    int rv;
-    aa >> std::hex >> rv;
-    return rv;
-#endif
-}
+int Utils::StringToNumber(std::string str) { return std::stoi(str); }
+int Utils::StringToNumberHex(std::string str) { return std::stoi(str, 0, 16); }

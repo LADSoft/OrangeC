@@ -79,13 +79,12 @@ bool GenParser::Generate()
 }
 void GenParser::GatherVars(std::map<std::string, std::string> &values, std::string name)
 {
-    for (std::map<std::string, std::string>::iterator it1 = values.begin();
-         it1 != values.end(); ++it1)
+    for (auto &x : values)
     {
-        std::map<std::string, int>::iterator it2 = valueTags.find(it1->first);
-        if (it2 == valueTags.end())
+        std::map<std::string, int>::iterator itm = valueTags.find(x.first);
+        if (itm == valueTags.end())
         {
-            valueTags[it1->first] = valueTags.size();
+            valueTags[x.first] = valueTags.size();
         }
     }
     while (name.size())
@@ -106,8 +105,8 @@ void GenParser::GatherVars(std::map<std::string, std::string> &values, std::stri
                 if (n2 != std::string::npos && n2 < n1)
                 {
                     std::string var = name.substr(n+1, n2 -n -1);
-                    std::map<std::string, int>::iterator it2 = valueTags.find(var);
-                    if (it2 == valueTags.end())
+                    std::map<std::string, int>::iterator itm = valueTags.find(var);
+                    if (itm == valueTags.end())
                     {
                         valueTags[var] = valueTags.size();
                     }					
@@ -122,30 +121,26 @@ void GenParser::GatherVars(std::map<std::string, std::string> &values, std::stri
 }
 bool GenParser::GenerateOperandHeader()
 {
-    for (std::deque<Address *>::iterator it = parser.addresses.begin();
-         it != parser.addresses.end(); ++it)
+    for (auto x : parser.addresses)
     {
-        GatherVars((*it)->values, (*it)->name);
+        GatherVars(x->values, x->name);
     }
-    for (std::deque<Operand *>::iterator it = parser.operands.begin();
-         it != parser.operands.end(); ++it)
+    for (auto x : parser.operands)
     {
-        GatherVars((*it)->values, (*it)->name);
+        GatherVars(x->values, x->name);
     }
-    for (std::deque<Opcode *>::iterator it = parser.opcodes.begin();
-         it != parser.opcodes.end(); ++it)
+    for (auto x : parser.opcodes)
     {
-        GatherVars((*it)->values, "");
+        GatherVars(x->values, "");
     }
-    for (std::deque<TokenNode *>::iterator it = TokenNode::tokenList.begin();
-         it != TokenNode::tokenList.end(); ++it)
+    for (auto x : TokenNode::tokenList)
     {
-        if ((*it)->name != "")
+        if (x->name != "")
         {
-            std::map<std::string, int>::iterator it2 = valueTags.find((*it)->name);
-            if (it2 == valueTags.end())
+            std::map<std::string, int>::iterator itm = valueTags.find(x->name);
+            if (itm == valueTags.end())
             {
-                valueTags[(*it)->name] = valueTags.size();
+                valueTags[x->name] = valueTags.size();
             }
         }
     }
@@ -199,12 +194,12 @@ bool GenParser::GenerateHeader()
     (*file) << "public:" << std::endl;
     (*file) << "\t" << className << "() { Init(); }" << std::endl;
     int i = 0;
-    for (std::map<std::string, std::string>::iterator it= parser.stateVars.begin();
-         it != parser.stateVars.end(); ++it, ++i)
+    for (auto &x : parser.stateVars)
     {
-        stateVarTags[it->first] = i;
-        (*file) << "\tvoid Set" << it->first << "(int v) { stateVars[" << i << "] = v; }" << std::endl;
-        (*file) << "\tint Get" << it->first << "() { return stateVars[" << i << "]; }" << std::endl;
+        stateVarTags[x.first] = i;
+        (*file) << "\tvoid Set" << x.first << "(int v) { stateVars[" << i << "] = v; }" << std::endl;
+        (*file) << "\tint Get" << x.first << "() { return stateVars[" << i << "]; }" << std::endl;
+
     }
     (*file) << "\tvirtual void Setup(Section *sect);" << std::endl;
     (*file) << "\tvirtual void Init();" << std::endl;
@@ -231,11 +226,11 @@ bool GenParser::GenerateHeader()
     (*file) << "\ttypedef Coding * (" << className << "::*StateFuncDispatchType)();" << std::endl;
     (*file) << "\tstatic StateFuncDispatchType stateFuncs[];" << std::endl;
     i = 1;
-    for (std::deque<State *>::iterator it = parser.states.begin();
-         it != parser.states.end(); ++it, ++i)
+    for (auto x : parser.states)
     {
-        stateFuncTags[(*it)->name] = stateFuncTags.size();
+        stateFuncTags[x->name] = stateFuncTags.size();
         (*file) << "\tCoding *StateFunc" << i << "();" << std::endl;
+        ++i;
     }
     (*file) << std::endl;
     (*file) << "private:" << std::endl;
@@ -243,111 +238,102 @@ bool GenParser::GenerateHeader()
     (*file) << std::endl;
     i = 1;
     (*file) << "\tstatic Coding stateCoding_eot[];" << std::endl;
-    for (std::deque<State *>::iterator it = parser.states.begin();
-         it != parser.states.end(); ++it, ++i)
+    for (auto x : parser.states)
     {
         int j = 1;
-        for (std::map<std::string, std::string>::iterator it1 = (*it)->clauses.begin();
-             it1 != (*it)->clauses.end(); ++it1, ++j)
-             
+        for (auto& m : x->clauses)
         {
             (*file) << "\tstatic Coding stateCoding" << i << "_" << j << "[];" << std::endl;
+            ++j;
         }
+        ++i;
     }
     (*file) << std::endl;
     (*file) << "\ttypedef bool (" << className << "::*NumberDispatchType)(int tokenPos);" << std::endl;
     (*file) << "\tstatic NumberDispatchType numberFuncs[];" << std::endl;
-    for (std::deque<Number *>::iterator it = parser.numbers.begin();
-         it != parser.numbers.end(); ++ it)
+    for (auto x : parser.numbers)
     {
-        (*file) << "\tbool Number" << (*it)->id + 1 << "(int tokenPos);" << std::endl;
+        (*file) << "\tbool Number" << x->id + 1 << "(int tokenPos);" << std::endl;
     }
     (*file) << std::endl;
     int nextToken = 1;
     int n = (parser.addressClasses.size() + 7)/8;
-    for (std::deque<TokenNode *>::iterator it = TokenNode::tokenList.begin() ;
-             it != TokenNode::tokenList.end(); ++it)
+    for (auto t : TokenNode::tokenList)
     {
-        if ((*it)->used && (*it)->bytes)
+        if (t->used && t->bytes)
         {
             int x = nextToken;
             int i = 1;
-            for (std::deque<BYTE *>::iterator it1 = tokenData.begin(); it1 != tokenData.end(); it1++, i++)
+            for (auto x1 : tokenData)
             {
-                if (!memcmp(*it1, (*it)->bytes, n))
+                if (!memcmp(x1, t->bytes, n))
                 {
                     x = i;
                     break;
                 }
+                ++i;
             }
             if (x == nextToken)
             {
                 (*file) << "\tstatic unsigned char RegClassData" << x << "[];" <<std::endl;
                 nextToken++;
-                tokenData.push_back((*it)->bytes);
+                tokenData.push_back(t->bytes);
             }
-            (*it)->tokenId = x;
+            t->tokenId = x;
         }
     }
     (*file) << std::endl;
-    for (std::map<std::string, RegClass *>::iterator it = parser.registerClasses.begin();
-         it != parser.registerClasses.end(); ++it)
+    for (auto& m : parser.registerClasses)
     {
-        (*file) << "\tstatic unsigned char registerData" << it->second->id << "[];" << std::endl;
+        (*file) << "\tstatic unsigned char registerData" << m.second->id << "[];" << std::endl;
     }
     (*file) << "\tstatic unsigned char *registerDataIndirect[];" << std::endl;
     (*file) << std::endl;
-    for (std::deque<Register *>::iterator it = parser.registers.begin();
-         it != parser.registers.end(); ++it)
+    for (auto x : parser.registers)
     {
-        for (std::map<std::string, std::string>:: iterator it1 = (*it)->values.begin();
-             it1 != (*it)->values.end(); ++it1)
+        for (auto& m : x->values)
         {
-            std::map<std::string, int>::iterator it2 = registerTags.find(it1->first);
-            if (it2 == registerTags.end())
+            std::map<std::string, int>::iterator itm = registerTags.find(m.first);
+            if (itm == registerTags.end())
             {
-                registerTags[it1->first] = registerTags.size();
+                registerTags[m.first] = registerTags.size();
             }
         }
     }
     (*file) << "\tstatic int registerValues[][" << registerTags.size() << "];" << std::endl;
     (*file) << std::endl;
-    for (std::deque<TokenNode *>::iterator it = TokenNode::tokenList.begin() ;
-             it != TokenNode::tokenList.end(); ++it)
+    for (auto x : TokenNode::tokenList)
     {
-        if ((*it)->used)
+        if (x->used)
         {
             std::map<std::string, std::string> *vals = NULL;
-            if ((*it)->values || (*it)->coding != -1 || (*it)->type == TokenNode::tk_regclass || (*it)->type == TokenNode::tk_number)
+            if (x->values || x->coding != -1 || x->type == TokenNode::tk_regclass || x->type == TokenNode::tk_number)
             {
-                if ((*it)->values)
+                if (x->values)
                 {
-                    for (std::map<std::string, std::string>::iterator it1 =
-                         (*it)->values->begin(); it1 != (*it)->values->end(); ++it1)
+                    for (auto& m : *x->values)
                     {
-                        int n = valueTags[it1->first];
-                        (*file) << "\tstatic Coding tokenCoding" << (*it)->id << "_" << n << "[];" << std::endl;
+                        int n = valueTags[m.first];
+                        (*file) << "\tstatic Coding tokenCoding" << x->id << "_" << n << "[];" << std::endl;
                     }
                 }
-                (*file) << "\tvoid TokenFunc" << (*it)->id << "(" << operandClassName << " &operand, int tokenPos);" << std::endl;
+                (*file) << "\tvoid TokenFunc" << x->id << "(" << operandClassName << " &operand, int tokenPos);" << std::endl;
             }
-            if ((*it)->branches.size())
+            if (x->branches.size())
             {
-                (*file) << "\tstatic " << tokenClassName << " tokenBranches" << (*it)->id << "[];" << std::endl;
+                (*file) << "\tstatic " << tokenClassName << " tokenBranches" << x->id << "[];" << std::endl;
             }
         }
     }
     (*file) << std::endl;	
-    for (std::deque<Opcode *>::iterator it = parser.opcodes.begin();
-         it != parser.opcodes.end(); ++it)
+    for (auto x : parser.opcodes)
     {
-        for (std::map<std::string, std::string> :: iterator it1 = (*it)->values.begin();
-             it1 != (*it)->values.end(); ++ it1)
+        for (auto& m : x->values)
         {
-            int n = valueTags[it1->first];
-            (*file) << "\tstatic Coding OpcodeCodings" << (*it)->id << "_" << n << "[];" << std::endl;
+            int n = valueTags[m.first];
+            (*file) << "\tstatic Coding OpcodeCodings" << x->id << "_" << n << "[];" << std::endl;
         }
-        (*file) << "\tbool Opcode" << (*it)->id << "(" << operandClassName << " &operand);" << std::endl;
+        (*file) << "\tbool Opcode" << x->id << "(" << operandClassName << " &operand);" << std::endl;
     }
     (*file) << std::endl;	
     for (int i=0; i < parser.codings.size(); i++)
@@ -359,10 +345,10 @@ bool GenParser::GenerateHeader()
     if (parser.prefixes.size())
     {
         i = 1;
-        for (std::deque<Prefix *>::iterator it = parser.prefixes.begin();
-             it != parser.prefixes.end(); ++it, ++i)
+        for (auto x : parser.prefixes)
         {
             (*file) << "\tstatic Coding prefixCoding" << i << "[];" << std::endl;
+            i++;
         }
         (*file) << "\tstatic Coding *prefixCodings" << "[];" << std::endl;
         (*file) << std::endl;	
@@ -388,51 +374,48 @@ bool GenParser::GenerateStateFuncs()
 {
     int i = 1;
     (*file) << "Coding " << className << "::stateCoding_eot[] = { { Coding::eot } };" << std::endl;
-    for (std::deque<State *>::iterator it = parser.states.begin();
-         it != parser.states.end(); ++it, ++i)
+    for (auto x : parser.states)
     {
         int j = 1;
-        for (std::map<std::string, std::string>::iterator it1 = (*it)->clauses.begin();
-             it1 != (*it)->clauses.end(); ++it1, ++j)
+        for (auto& m : x->clauses)
              
         {
             (*file) << "Coding " << className << "::stateCoding" << i << "_" << j << "[] = {" << std::endl;
-            GenerateCoding(it1->second);
+            GenerateCoding(m.second);
             (*file) << "};" << std::endl;
+            ++j;
         }
+        i++;
     }
     i = 1;
-    for (std::deque<State *>::iterator it = parser.states.begin();
-         it != parser.states.end(); ++it, ++i)
+    for (auto x : parser.states)
     {
         (*file) << "Coding *" << className << "::StateFunc" << i << "()" << std::endl;
         (*file) << "{" << std::endl;
         int j = 1;
-        for (std::map<std::string, std::string>::iterator it1 = (*it)->clauses.begin();
-             it1 != (*it)->clauses.end(); ++it1, ++j)
-             
+        for (auto& m : x->clauses)
         {
-            std::string sel = it1->first;
+            std::string sel = m.first;
             int npos = sel.find_first_of("'");
             while (npos != std::string::npos)
             {
                 int n1 = sel.find_first_of("'", npos+1);
                 if (n1 == std::string::npos)
                 {
-                    std::cout << "Error { " << it1->first << "} Invalid when clause in state" << std::endl;
+                    std::cout << "Error { " << m.first << "} Invalid when clause in state" << std::endl;
                     break;
                 }
                 std::string val = sel.substr(npos + 1, n1 - npos - 1);
-                std::map<std::string, int>:: iterator it2 = stateVarTags.find(val);
-                if (it2 == stateVarTags.end())
+                std::map<std::string, int>:: iterator itm = stateVarTags.find(val);
+                if (itm == stateVarTags.end())
                 {
-                    std::cout << "Error { " << it1->first << " } Unknown state var '" << val << "'" << std::endl;
+                    std::cout << "Error { " << m.first << " } Unknown state var '" << val << "'" << std::endl;
                     break;
                 }
                 else
                 {
                     std::stringstream t ;
-                    t << "stateVars[" << it2->second << "]";
+                    t << "stateVars[" << itm->second << "]";
                     val = "";
                     t >> val;
                     sel.replace(npos, n1 - npos + 1, val);
@@ -443,29 +426,28 @@ bool GenParser::GenerateStateFuncs()
             (*file) << "\t{" << std::endl;
             (*file) << "\t\treturn stateCoding" << i << "_" << j << ";" << std::endl;
             (*file) << "\t}" << std::endl;
-            
+            ++j;
         }
         (*file) << "\treturn stateCoding_eot;" << std::endl;
         (*file) << "}" << std::endl;
+        ++i;
     }
     (*file) << className << "::StateFuncDispatchType " << className << "::stateFuncs[] = {" << std::endl;
     i = 1;
-    for (std::deque<State *>::iterator it = parser.states.begin();
-         it != parser.states.end(); ++it, ++i)
+    for (auto x : parser.states)
     {
         (*file) << "\t&" << className << "::StateFunc" << i << "," << std::endl;
+        ++i;
     }
     (*file) << "};" << std::endl;
-    for (std::deque<Number *>::iterator it = parser.numbers.begin();
-         it != parser.numbers.end(); ++ it)
+    for (auto x : parser.numbers)
     {
-        (*file) << "bool " << className << "::Number" << (*it)->id + 1 << "(int tokenPos)" << std::endl;
+        (*file) << "bool " << className << "::Number" << x->id + 1 << "(int tokenPos)" << std::endl;
         (*file) << "{" << std::endl;
         (*file) << "\tbool rv = false;" << std::endl;
-        for (std::deque<std::string>::iterator it1 = (*it)->values.begin();
-             it1 != (*it)->values.end(); ++ it1)
+        for (auto &x1: x->values)
         {
-            std::string temp = (*it1);
+            std::string temp = x1;
             std::string sel;
             int npos = temp.find("&");
             if (npos != std::string::npos)
@@ -484,8 +466,8 @@ bool GenParser::GenerateStateFuncs()
                         break;
                     }
                     std::string val = sel.substr(npos + 1, n1 - npos - 1);
-                    std::map<std::string, int>:: iterator it2 = stateVarTags.find(val);
-                    if (it2 == stateVarTags.end())
+                    std::map<std::string, int>:: iterator itm = stateVarTags.find(val);
+                    if (itm == stateVarTags.end())
                     {
                         std::cout << "Error { " << err << " } Unknown state var '" << val << "'" << std::endl;
                         break;
@@ -493,7 +475,7 @@ bool GenParser::GenerateStateFuncs()
                     else
                     {
                         std::stringstream t ;
-                        t << "stateVars[" << it2->second << "]";
+                        t << "stateVars[" << itm->second << "]";
                         val = "";
                         t >> val;
                         sel.replace(npos, n1 - npos + 1, val);
@@ -556,12 +538,12 @@ bool GenParser::GenerateStateFuncs()
                 /*
                 if (label)
                 {
-                    (*file) << "\t\trv = ParseLabel(" << (*it)->relOfs << ", " << (xsigned ? 1 : 0) << ", " << bits << ");" << std::endl;
+                    (*file) << "\t\trv = ParseLabel(" << x->relOfs << ", " << (xsigned ? 1 : 0) << ", " << bits << ");" << std::endl;
                 }
                 else
                 */
                 {
-                    (*file) << "\t\trv = ParseNumber(" << (*it)->relOfs << ", " << (xsigned ? 1 : 0) << ", " << bits << ", " << (label ? 0 : 1) << ", tokenPos);" << std::endl;
+                    (*file) << "\t\trv = ParseNumber(" << x->relOfs << ", " << (xsigned ? 1 : 0) << ", " << bits << ", " << (label ? 0 : 1) << ", tokenPos);" << std::endl;
                 }
                 (*file) << "\t}" << std::endl;
             }
@@ -570,10 +552,9 @@ bool GenParser::GenerateStateFuncs()
         (*file) << "}" << std::endl;
     }
     (*file) << className << "::NumberDispatchType " << className << "::numberFuncs[] = {" << std::endl;
-    for (std::deque<Number *>::iterator it = parser.numbers.begin();
-         it != parser.numbers.end(); ++ it)
+    for (auto x : parser.numbers)
     {
-        (*file) << "\t&" << className << "::Number" << (*it)->id + 1 << "," << std::endl;
+        (*file) << "\t&" << className << "::Number" << x->id + 1 << "," << std::endl;
     }
     (*file) << "};" << std::endl;
     (*file) << std::endl;
@@ -585,38 +566,38 @@ bool GenParser::GenerateTokenizer()
     (*file) << "{" << std::endl;
     (*file) << "\tmemset(&stateVars, 0, sizeof(stateVars));" << std::endl;
     int i = 0;
-    for (std::map<std::string, std::string>::iterator it = parser.stateVars.begin();
-         it != parser.stateVars.end(); ++it, ++i)
+    for (auto& m :  parser.stateVars)
     {
-        if (it->second == "")
-            it->second = "0";
-        (*file) << "\tstateVars[" << i << "] = " << it->second << ";" << std::endl;
+        if (m.second == "")
+            m.second = "0";
+        (*file) << "\tstateVars[" << i << "] = " << m.second << ";" << std::endl;
+        ++i;
     }
-    for (std::map<std::string, int>::iterator it = TokenNode::tokenTable.begin();
-         it != TokenNode::tokenTable.end(); ++it)
+    for (auto& m : TokenNode::tokenTable)
     {
-        if (it->first != "empty")
-            (*file) << "\t" << "tokenTable[\"" << it->first << "\"] = " << it->second + TokenNode::TOKEN_BASE << ";" << std::endl;
+        if (m.first != "empty")
+            (*file) << "\t" << "tokenTable[\"" << m.first << "\"] = " << m.second + TokenNode::TOKEN_BASE << ";" << std::endl;
     }
-    for (std::deque<Register *>::iterator it = parser.registers.begin();
-         it != parser.registers.end(); ++it)
+    for (auto x : parser.registers)
     {
-          (*file) << "\t" << "tokenTable[\"" << (*it)->name << "\"] = " << (*it)->id + TokenNode::REGISTER_BASE << ";" << std::endl;
+          (*file) << "\t" << "tokenTable[\"" << x->name << "\"] = " << x->id + TokenNode::REGISTER_BASE << ";" << std::endl;
     }
     i = 0;
-    for (std::deque<Opcode *>::iterator it = parser.opcodes.begin(); it != parser.opcodes.end(); ++it, ++i)
+    for (auto x : parser.opcodes)
     {
-        if ((*it)->name != "")
+        if (x->name != "")
         {
-            (*file) << "\t" << "opcodeTable[\"" << (*it)->name << "\"] = " << i << ";" << std::endl;
+            (*file) << "\t" << "opcodeTable[\"" << x->name << "\"] = " << i << ";" << std::endl;
         }
+        i++;
     }
     if (parser.prefixes.size())
     {
         i = 0;
-        for (std::deque<Prefix *>::iterator it = parser.prefixes.begin(); it != parser.prefixes.end(); ++it, ++i)
+        for (auto x : parser.prefixes)
         {
-            (*file) << "\t" << "prefixTable[\"" << (*it)->name << "\"] = " << i << ";" << std::endl;
+            (*file) << "\t" << "prefixTable[\"" << x->name << "\"] = " << i << ";" << std::endl;
+            i++;
         }
         (*file) << "}" << std::endl;
         (*file) << std::endl;
@@ -627,25 +608,24 @@ bool GenParser::GenerateTokenTables()
 {
     int n = (parser.addressClasses.size() + 7) / 8;
     int i = 1;
-    for (std::deque<BYTE *>::iterator it = tokenData.begin() ;
-             it != tokenData.end(); ++it, ++i)
+    for (auto x : tokenData)
     {
         (*file) << "unsigned char " << className << "::RegClassData" << i << "[] = {" ;
         for (int j=0; j < n; j++)
         {
-            (*file) << (int)((*it)[j]) << ", " ;
+            (*file) << (int)((x)[j]) << ", " ;
         }
         (*file) << "};" << std::endl;
+        i++;
     }
     (*file) << std::endl;
     n = (parser.registers.size() + 7)/ 8;
-    for (std::map<std::string, RegClass *>::iterator it = parser.registerClasses.begin();
-         it != parser.registerClasses.end(); ++it)
+    for (auto& m : parser.registerClasses)
     {
-        (*file) << "unsigned char " << className << "::registerData" << it->second->id << "[] = {";
+        (*file) << "unsigned char " << className << "::registerData" << m.second->id << "[] = {";
         for (int j=0; j < n; j++)
         {
-            (*file) << (int)(it->second->regs[j]) << ", " ;
+            (*file) << (int)(m.second->regs[j]) << ", " ;
         }
         (*file) << "};" << std::endl;		
     }
@@ -659,14 +639,12 @@ bool GenParser::GenerateTokenTables()
     (*file) << std::endl;
     int *vals = new int[registerTags.size() * parser.registers.size()];
     memset(vals, 0xff, (registerTags.size() * parser.registers.size()) * sizeof(int));
-    for (std::deque<Register *>::iterator it = parser.registers.begin();
-         it != parser.registers.end(); ++it)
+    for (auto x : parser.registers)
     {
-        for (std::map<std::string, std::string>:: iterator it1 = (*it)->values.begin();
-             it1 != (*it)->values.end(); ++it1)
+        for (auto& m : x->values)
         {
-            int n = registerTags[it1->first];
-            vals[(*it)->id * registerTags.size() + n] = strtol(it1->second.c_str(), NULL, 0);
+            int n = registerTags[m.first];
+            vals[x->id * registerTags.size() + n] = strtol(m.second.c_str(), NULL, 0);
         }
     }
     (*file) << "int " << className << "::registerValues[][" << registerTags.size() << "] = {" << std::endl;
@@ -743,12 +721,11 @@ void GenParser::GenerateAddressFuncs(TokenNode *value, std::string coding)
     {
         if (value->values)
         {
-            for (std::map<std::string, std::string>::iterator it1 =
-                 value->values->begin(); it1 != value->values->end(); ++it1)
+            for (auto& m : *value->values)
             {
-                int n = valueTags[it1->first];
+                int n = valueTags[m.first];
                 (*file) << "Coding " << className << "::tokenCoding" << value->id << "_" << n << "[] = {" << std::endl;
-                GenerateCoding(it1->second);
+                GenerateCoding(m.second);
                 (*file) << "};" << std::endl;
             }
         }
@@ -787,10 +764,9 @@ void GenParser::GenerateAddressFuncs(TokenNode *value, std::string coding)
         }
         if (value->values)
         {
-            for (std::map<std::string, std::string>::iterator it1 =
-                 value->values->begin(); it1 != value->values->end(); ++it1)
+            for (auto& m : *value->values)
             {
-                int n = valueTags[it1->first];
+                int n = valueTags[m.first];
                 (*file) << "\toperand.values[" << n << "] = tokenCoding" << value->id << "_" << n << ";" << std::endl;			
             }
         }
@@ -799,33 +775,29 @@ void GenParser::GenerateAddressFuncs(TokenNode *value, std::string coding)
 }
 void GenParser::GenerateAddressTokenTree(TokenNode *value)
 {
-    for (std::deque<TokenNode *>::iterator it = value->branches.begin();
-         it != value->branches.end(); it++)
+    for (auto x : value->branches)
     {
-        GenerateAddressTokenTree(*it);
+        GenerateAddressTokenTree(x);
     }
-    for (std::deque<TokenNode *>::iterator it = value->branches.begin();
-         it != value->branches.end(); it++)
+    for (auto x : value->branches)
     {
-        GenerateAddressFuncs(*it, "addressCoding");
+        GenerateAddressFuncs(x, "addressCoding");
     }
     if (value->branches.size())
     {
         (*file) << tokenClassName << " " << className << "::tokenBranches" << value->id << "[] = {" << std::endl;
-        for (std::deque<TokenNode *>::iterator it = value->branches.begin();
-             it != value->branches.end(); it++)
+        for (auto x : value->branches)
         {
-            if ((*it)->type == TokenNode::tk_reg)
+            if (x->type == TokenNode::tk_reg)
             {
-                GenerateAddressData((*it), "addressCoding");
+                GenerateAddressData((x), "addressCoding");
             }
         }
-        for (std::deque<TokenNode *>::iterator it = value->branches.begin();
-             it != value->branches.end(); it++)
+        for (auto x : value->branches)
         {
-            if ((*it)->type != TokenNode::tk_reg)
+            if (x->type != TokenNode::tk_reg)
             {
-                GenerateAddressData((*it), "addressCoding");
+                GenerateAddressData((x), "addressCoding");
             }
         }
         (*file) << "\t{" << tokenClassName << "::EOT }" << std::endl;
@@ -840,23 +812,20 @@ bool GenParser::GenerateAddresses()
 }
 void GenParser::GenerateOperandTokenTree(TokenNode *value)
 {
-    for (std::deque<TokenNode *>::iterator it = value->branches.begin();
-         it != value->branches.end(); it++)
+    for (auto x : value->branches)
     {
-        GenerateOperandTokenTree(*it);
+        GenerateOperandTokenTree(x);
     }
-    for (std::deque<TokenNode *>::iterator it = value->branches.begin();
-         it != value->branches.end(); it++)
+    for (auto x : value->branches)
     {
-        GenerateAddressFuncs(*it, "operandCoding");
+        GenerateAddressFuncs(x, "operandCoding");
     }
     if (value->branches.size())
     {
         (*file) << tokenClassName << " " << className << "::tokenBranches" << value->id << "[] = {" << std::endl;
-        for (std::deque<TokenNode *>::iterator it = value->branches.begin();
-             it != value->branches.end(); it++)
+        for (auto x : value->branches)
         {
-            GenerateAddressData((*it), "operandCoding");
+            GenerateAddressData((x), "operandCoding");
         }
         (*file) << "\t{" << tokenClassName << "::EOT }" << std::endl;
         (*file) << "};" << std::endl;
@@ -865,44 +834,40 @@ void GenParser::GenerateOperandTokenTree(TokenNode *value)
 }
 bool GenParser::GenerateOperands()
 {
-    for (std::deque<Opcode *>::iterator it = parser.opcodes.begin();
-         it != parser.opcodes.end(); ++it)
+    for (auto x : parser.opcodes)
     {
-        GenerateOperandTokenTree((*it)->tokenRoot);
+        GenerateOperandTokenTree(x->tokenRoot);
     }
     return true;
 }
 bool GenParser::GenerateOpcodes()
 {
-    for (std::deque<Opcode *>::iterator it = parser.opcodes.begin();
-         it != parser.opcodes.end(); ++it)
+    for (auto x : parser.opcodes)
     {
-        for (std::map<std::string, std::string> :: iterator it1 = (*it)->values.begin();
-             it1 != (*it)->values.end(); ++ it1)
+        for (auto& m : x->values)
         {
-            int n = valueTags[it1->first];
-            (*file) << "Coding " << className << "::OpcodeCodings" << (*it)->id << "_" << n << "[] = {" << std::endl;
-            GenerateCoding(it1->second);
+            int n = valueTags[m.first];
+            (*file) << "Coding " << className << "::OpcodeCodings" << x->id << "_" << n << "[] = {" << std::endl;
+            GenerateCoding(m.second);
             (*file) << "};" << std::endl;
         }
-        (*file) << "bool "<<className<<"::Opcode"<<(*it)->id<<"(" << operandClassName << " &operand)" << std::endl;
+        (*file) << "bool "<<className<<"::Opcode"<<x->id<<"(" << operandClassName << " &operand)" << std::endl;
         (*file) << "{" << std::endl;
-        for (std::map<std::string, std::string> :: iterator it1 = (*it)->values.begin();
-             it1 != (*it)->values.end(); ++ it1)
+        for (auto& m : x->values)
         {
-            int n = valueTags[it1->first];
-            (*file) << "\toperand.values[" << n << "] = OpcodeCodings" << (*it)->id << "_" << n << ";" << std::endl;			
+            int n = valueTags[m.first];
+            (*file) << "\toperand.values[" << n << "] = OpcodeCodings" << x->id << "_" << n << ";" << std::endl;			
         }
-        if ((*it)->tokenRoot->branches.size())
+        if (x->tokenRoot->branches.size())
         {
-            (*file) << "\tbool rv = ParseOperands(tokenBranches" << (*it)->tokenRoot->id << ", operand);" << std::endl;
+            (*file) << "\tbool rv = ParseOperands(tokenBranches" << x->tokenRoot->id << ", operand);" << std::endl;
         }
-        if ((*it)->name != "" && (*it)->cclass != "")
+        if (x->name != "" && x->cclass != "")
         {
-            Opcode *op = parser.opcodeClasses[(*it)->cclass];
+            Opcode *op = parser.opcodeClasses[x->cclass];
             if (op)
             {
-                if ((*it)->operands.size())
+                if (x->operands.size())
                 {
                     (*file) << "\tif (!rv)" << std::endl;
                 }
@@ -917,33 +882,31 @@ bool GenParser::GenerateOpcodes()
             }
             else
             {
-                std::cout << "Undefined opcode class '" << (*it)->cclass <<
-                               "' in definition of opcode '" << (*it)->name << "'";
+                std::cout << "Undefined opcode class '" << x->cclass <<
+                               "' in definition of opcode '" << x->name << "'";
             }
         }
         else
         {
-            if (!(*it)->operands.size())
+            if (!x->operands.size())
                 (*file) << "\tbool rv = true;" << std::endl;
         }
         (*file) << "\treturn rv;" << std::endl;
         (*file) << "}" << std::endl;
     }	
     (*file) << className<<"::DispatchType "<<className<<"::DispatchTable["<<parser.opcodes.size()<<"] = {" << std::endl;
-    for (std::deque<Opcode *>::iterator it = parser.opcodes.begin();
-         it != parser.opcodes.end(); ++it)
+    for (auto x : parser.opcodes)
     {
-        if ((*it)->name == "")
+        if (x->name == "")
             (*file) << "\tNULL," << std::endl;
         else
-            (*file) << "\t&" << className << "::Opcode" << (*it)->id << "," << std::endl;
+            (*file) << "\t&" << className << "::Opcode" << x->id << "," << std::endl;
     }	
     (*file) << "};" << std::endl;
     const std::string **codingNames = new const std::string *[parser.codings.size()];
-    for (std::map<std::string,int>::iterator it = parser.codings.begin();
-         it != parser.codings.end(); ++it)
+    for (auto& m : parser.codings)
     {
-        codingNames[it->second-1] = &it->first;
+        codingNames[m.second-1] = &m.first;
     }
     for (int i=0; i < parser.codings.size(); i++)
     {
@@ -958,19 +921,19 @@ bool GenParser::GenerateOpcodes()
     if (parser.prefixes.size())
     {
         int i = 1;
-        for (std::deque<Prefix *>::iterator it = parser.prefixes.begin();
-             it != parser.prefixes.end(); ++it, ++i)
+        for (auto x : parser.prefixes)
         {
             (*file) << "Coding " << className << "::prefixCoding" << i << "[] = {" << std::endl;
-            GenerateCoding((*it)->coding);
+            GenerateCoding(x->coding);
             (*file) << "};" << std::endl;
+            i++;
         }
         (*file) << "Coding *" << className << "::prefixCodings" << "[] = {" << std::endl;
         i = 1;
-        for (std::deque<Prefix *>::iterator it = parser.prefixes.begin();
-             it != parser.prefixes.end(); ++it, ++i)
+        for (auto x : parser.prefixes)
         {
             (*file) << "\t" << className << "::prefixCoding" << i << "," << std::endl;
+            i++;
         }
         (*file) << "};";
         (*file) << std::endl;
@@ -1431,7 +1394,7 @@ bool GenParser::GenerateCodingProcessor()
     (*file) << "\t\telse if (coding->type & Coding::number)" << std::endl;
     (*file) << "\t\t{" << std::endl;
     (*file) << "\t\t\tint n = coding->val;" << std::endl;
-    (*file) << "\t\t\tstd::deque<Numeric *>::iterator it = operands.begin();" << std::endl;
+    (*file) << "\t\t\tauto it = operands.begin();" << std::endl;
     (*file) << "\t\t\tfor (int i=0; i < n; i++)" << std::endl;
     (*file) << "\t\t\t{" << std::endl;
     (*file) << "\t\t\t\t++it;" << std::endl;
@@ -1479,8 +1442,8 @@ bool GenParser::GenerateDispatcher()
     (*file) << "\t\trv = true;" << std::endl;
     (*file) << "\t\t" << operandClassName << " operand;" << std::endl;
     (*file) << "\t\tCodingHelper base;" << std::endl;
-    (*file) << "\t\tfor (std::deque<int>::iterator it = prefixes.begin(); rv && it !=prefixes.end(); ++it)" << std::endl;
-    (*file) << "\t\t\trv &= ProcessCoding(base, operand, prefixCodings[*it]);" << std::endl;
+    (*file) << "\t\tfor (auto& a : prefixes)" << std::endl;
+    (*file) << "\t\t\trv &= ProcessCoding(base, operand, prefixCodings[a]);" << std::endl;
     (*file) << "\t}" << std::endl;
     (*file) << "\telse" << std::endl;
     (*file) << "\t{" << std::endl;
@@ -1492,8 +1455,8 @@ bool GenParser::GenerateDispatcher()
     (*file) << "\t\t\tCodingHelper base;" << std::endl;
     if (parser.prefixes.size())
     {
-        (*file) << "\t\t\tfor (std::deque<int>::iterator it = prefixes.begin(); rv && it !=prefixes.end(); ++it)" << std::endl;
-        (*file) << "\t\t\t\trv &= ProcessCoding(base, operand, prefixCodings[*it]);" << std::endl;
+        (*file) << "\t\t\tfor (auto& a : prefixes)" << std::endl;
+        (*file) << "\t\t\t\trv &= ProcessCoding(base, operand, prefixCodings[a]);" << std::endl;
         (*file) << "\t\t\tif (rv)" << std::endl;
     }
     (*file) << "\t\t\t{" << std::endl;

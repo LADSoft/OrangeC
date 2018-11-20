@@ -39,7 +39,7 @@ public:
     int Run(int argc, char **argv);
 protected:
 private:
-    static char *usageText;
+    static const char *usageText;
     static CmdSwitchParser SwitchParser;
     static CmdSwitchBool DumpDB;
 } ;

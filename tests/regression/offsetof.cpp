@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stddef.h> // for offsetof
 struct aa
 {
 	int b,c ;
@@ -26,5 +27,5 @@ struct zz {
 };
 main()
 {
-	printf("%d %d %d %d %d\n", __offsetof(struct aa, c), __offsetof(xx, y), __offsetof(xx,d), __offsetof(AA,s), __offsetof(zz, vv.b));
+	printf("%d %d %d %d %d\n", offsetof(struct aa, c), offsetof(xx, y), offsetof(xx,d), offsetof(AA,s), offsetof(zz, vv.b));
 }

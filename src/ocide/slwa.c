@@ -1160,6 +1160,33 @@ void RestoreProfileNames(struct xmlNode* node, int version, PROJECTITEM* wa)
     }
     SendDIDMessage(DID_PROJWND, WM_COMMAND, IDM_RESETPROFILECOMBOS, 0);
 }
+
+// this is in here because sometimes the IDE corrupts the docks portion of the file
+// detect it on power up and leave the windows in their default state if it is corrupt
+BOOLEAN ValidateDocks(struct xmlNode *node, int version)
+{
+    node = node->children;
+    while (node)
+    {
+        if (IsNode(node, "DOCKWND"))
+        {
+            struct xmlAttr* attribs = node->attribs;
+            char* name = NULL;
+
+            while (attribs)
+            {
+                if (IsAttrib(attribs, "POS"))
+                    if (strchr(attribs->value, '-'))
+                    {
+                        return FALSE;
+                    }
+                attribs = attribs->next;
+            }
+        }
+        node = node->next;
+    }
+    return TRUE;
+}
 //-------------------------------------------------------------------------
 
 PROJECTITEM* RestoreWorkArea(char* name)
@@ -1275,7 +1302,10 @@ PROJECTITEM* RestoreWorkArea(char* name)
         else if (IsNode(nodes, "TOOLLAYOUT"))
             RestoreToolbarLayout(nodes, version);
         else if (IsNode(nodes, "DOCKS"))
-            RestoreDocks(nodes, version);
+        {
+            if (ValidateDocks(nodes, version))
+                RestoreDocks(nodes, version);
+        }
         else if (IsNode(nodes, "PROJECTS"))
         {
             struct xmlAttr* attribs = nodes->attribs;
@@ -1377,7 +1407,10 @@ PROJECTITEM* RestoreWorkArea(char* name)
                 else if (IsNode(nodes, "TOOLLAYOUT"))
                     RestoreToolbarLayout(nodes, version);
                 else if (IsNode(nodes, "DOCKS"))
-                    RestoreDocks(nodes, version);
+                {
+                    if (ValidateDocks(nodes, version))
+                        RestoreDocks(nodes, version);
+                }
                 nodes = nodes->next;
             }
             xmlFree(root);

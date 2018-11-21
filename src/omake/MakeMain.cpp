@@ -41,12 +41,6 @@
 #include <stdio.h>
 #include <algorithm>
 
-#ifdef OPENWATCOM
-namespace std
-{
-ios& right(ios& in) { return in; }
-}  // namespace std
-#endif
 CmdSwitchParser MakeMain::switchParser;
 CmdSwitchCombineString MakeMain::specifiedFiles(switchParser, 'f', ' ');
 CmdSwitchBool MakeMain::displayOnly(switchParser, 'n');
@@ -663,7 +657,7 @@ int MakeMain::Run(int argc, char** argv)
     }
     if (printDir.GetValue())
     {
-        std::cout << OS::GetWorkingDir().c_str() << std::endl;
+        std::cout << OS::GetWorkingDir() << std::endl;
     }
 #ifdef OPENWATCOM
     else

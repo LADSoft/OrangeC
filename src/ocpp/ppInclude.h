@@ -70,31 +70,29 @@ class ppInclude
     {
         if (current)
             return current->GetErrorLine();
-        else
-            return 0;
+        return 0;
     }
     std::string GetFile()
     {
         if (current)
             return current->GetErrorFile();
-        else
-            return "";
+        return "";
     }
     bool GetLine(std::string& line, int& lineno);
     bool Skipping()
     {
         if (current)
             return current->Skipping();
-        else
-            return false;
+        return false;
     }
     void IncludeFile(const std::string& name) { pushFile(name, name); }
     void SetInProc(const std::string& name) { inProc = name; }
     void Mark() { current->Mark(); }
     void Drop() { current->Drop(); }
     void Release() { current->Release(); }
-    static bool has_include_func(const std::string &args);
+    static bool has_include_func(const std::string& args);
     void ForceEOF() { forcedEOF = true; }
+
   protected:
     void StripAsmComment(std::string& line);
     bool CheckInclude(int token, const std::string& line);

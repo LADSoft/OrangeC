@@ -545,7 +545,7 @@ void Maker::EnterSuffixTerminals()
         for (auto rule : *rl)
         {
             std::string value = rule->GetPrerequisites();
-            while (value.size())
+            while (!value.empty())
             {
                 std::string target = "%" + Eval::ExtractFirst(value, " ");
                 RuleList* ruleList = RuleContainer::Instance()->Lookup(target);
@@ -584,7 +584,7 @@ int Maker::RunCommands(bool keepGoing)
     int count;
     Runner runner(silent, displayOnly, ignoreResults, touch, outputType, keepResponseFiles, firstGoal, filePaths);
 
-    for (std::list<Depends*>::iterator it = depends.begin(); it != depends.end(); ++it)
+    for (auto it = depends.begin(); it != depends.end(); ++it)
     {
         runner.CancelOne(*it);
     }
@@ -594,7 +594,7 @@ int Maker::RunCommands(bool keepGoing)
     do
     {
         rv = 0;
-        for (std::list<Depends*>::iterator it = depends.begin(); (rv <= 0 || keepGoing) && it != depends.end(); ++it)
+        for (auto it = depends.begin(); (rv <= 0 || keepGoing) && it != depends.end(); ++it)
         {
             int rv1 = runner.RunOne(*it, env, keepGoing);
             if (rv <= 0 && rv1 != 0)

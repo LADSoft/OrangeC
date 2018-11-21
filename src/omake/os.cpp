@@ -34,26 +34,20 @@
 #endif
 #undef WriteConsole
 #define __MT__  // BCC55 support
-#include <stdio.h>
-#include <time.h>
+#include <cstdio>
+#include <ctime>
 #include <string>
-#undef min
-#undef max
 #include "Variable.h"
 #include "Eval.h"
 #include "os.h"
 #include <algorithm>
 #include <iostream>
 #include <sstream>
-
+#include <mutex>
+#include "semaphores.h"
 //#define DEBUG
-
-#ifndef GCCLINUX
-static HANDLE jobsSemaphore;
-
-static CRITICAL_SECTION consoleSync;
-#endif
-
+static Semaphore sema;
+static std::recursive_mutex consoleMut;
 std::deque<int> OS::jobCounts;
 bool OS::isSHEXE;
 int OS::jobsLeft;
@@ -111,45 +105,31 @@ bool Time::operator>(const Time& last)
     return false;
 }
 void OS::Init() 
-{ 
-#ifdef _WIN32
-	InitializeCriticalSection(&consoleSync); 
-#endif
+{
 }
 void OS::WriteConsole(std::string string)
 {
+    std::lock_guard<decltype(consoleMut)> lg(consoleMut);
 #ifdef _WIN32
     DWORD written;
-    EnterCriticalSection(&consoleSync);
     WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), string.c_str(), string.size(), &written, nullptr);
-    LeaveCriticalSection(&consoleSync);
 #else
     printf("%s\n", string.c_str());
 #endif
 }
 void OS::ToConsole(std::deque<std::string>& strings)
 {
-#ifdef _WIN32
-    EnterCriticalSection(&consoleSync);
-#endif
+    std::lock_guard<decltype(consoleMut)> lg(consoleMut);    
     for (auto s : strings)
     {
         WriteConsole(s);
     }
     strings.clear();
-#ifdef _WIN32
-    LeaveCriticalSection(&consoleSync);
-#endif
 }
 void OS::AddConsole(std::deque<std::string>& strings, std::string string)
 {
-#ifdef _WIN32
-    EnterCriticalSection(&consoleSync);
-#endif
+    std::lock_guard<decltype(consoleMut)> lg(consoleMut);    
     strings.push_back(string);
-#ifdef _WIN32
-    LeaveCriticalSection(&consoleSync);
-#endif
 }
 void OS::PushJobCount(int jobs)
 {
@@ -163,16 +143,12 @@ void OS::PopJobCount()
 }
 bool OS::TakeJob()
 {
-#ifdef _WIN32
-    WaitForSingleObject(jobsSemaphore, INFINITE);
-#endif
+    sema.Wait();
     return false;
 }
 void OS::GiveJob() 
 { 
-#ifdef _WIN32
-    ReleaseSemaphore(jobsSemaphore, 1, nullptr); 
-#endif
+    sema.Post();
 }
 void OS::JobInit()
 {
@@ -185,7 +161,7 @@ void OS::JobInit()
     else
     {
         std::ostringstream t;
-        srand((unsigned)time(NULL));
+        srand((unsigned)time(nullptr));
         t << rand() << rand();
         name = t.str();
         v = new Variable(".OMAKESEM", name, Variable::f_recursive, Variable::o_environ);
@@ -193,27 +169,19 @@ void OS::JobInit()
     }
     v->SetExport(true);
     name = std::string("OMAKE") + name;
-#ifdef _WIN32
-    jobsSemaphore = CreateSemaphore(nullptr, jobsLeft, jobsLeft, name.c_str());
-#endif
+    sema = Semaphore(jobsLeft);
 }
 void OS::JobRundown() 
 {
-#ifdef _WIN32 
-    CloseHandle(jobsSemaphore); 
-#endif
+    sema.~Semaphore();
 }
 void OS::Take() 
 { 
-#ifdef _WIN32
-    EnterCriticalSection(&consoleSync); 
-#endif
+    consoleMut.lock();
 }
 void OS::Give() 
 { 
-#ifdef _WIN32
-    LeaveCriticalSection(&consoleSync); 
-#endif
+    consoleMut.unlock();
 }
 int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::string* output)
 {
@@ -250,7 +218,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         cmd += " /c ";
     }
     cmd += QuoteCommand(command1);
-    STARTUPINFO startup;
+    STARTUPINFO startup = {};
     PROCESS_INFORMATION pi;
     HANDLE pipeRead, pipeWrite, pipeWriteDuplicate;
     if (output)
@@ -260,7 +228,6 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         CloseHandle(pipeWrite);
     }
     int rv;
-    memset(&startup, 0, sizeof(startup));
     startup.cb = sizeof(STARTUPINFO);
     startup.dwFlags = STARTF_USESTDHANDLES;
     startup.hStdInput = GetStdHandle(STD_INPUT_HANDLE);

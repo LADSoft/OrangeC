@@ -87,17 +87,6 @@ void Utils::usage(const char* prog_name, const char* text)
     fprintf(stderr, "\nUsage: %s %s", ShortName(prog_name), text);
     exit(1);
 }
-void Utils::fatal(const char* format, ...)
-{
-    va_list argptr;
-
-    va_start(argptr, format);
-    fprintf(stderr, "Fatal error: ");
-    vfprintf(stderr, format, argptr);
-    va_end(argptr);
-    fputc('\n', stderr);
-    exit(1);
-}
 char* Utils::GetModuleName()
 {
     static char buf[256];

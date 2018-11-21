@@ -214,10 +214,12 @@ bool GenParser::GenerateHeader()
     (*file) << "\tbool ParseAddresses("<<operandClassName<<" &operand, int addrClass, int &tokenPos);" << std::endl;
     (*file) << "\tbool ParseOperands2(" << tokenClassName << " *tokenList, "<<operandClassName<<" &operand, int tokenPos, int level);" << std::endl;
     (*file) << "\tbool ParseOperands(" << tokenClassName << " *tokenList, "<<operandClassName<<" &operand);" << std::endl;
-    (*file) << "\tbool ProcessCoding(CodingHelper &base, "<<operandClassName<<" &operand, Coding *coding);" << std::endl;
+    (*file) << "\tbool ProcessCoding("<<operandClassName<<" &operand, Coding *coding);" << std::endl;
+    (*file) << "\tbool ProcessCoding(" << operandClassName << " &operand, Coding *coding, int& endVal, int& endBits);" << std::endl;
     (*file) << "\tbool MatchesToken(int token, int tokenPos);" << std::endl;
     (*file) << "\tbool MatchesRegister(int reg, int tokenPos);" << std::endl;
     (*file) << "\tbool MatchesRegisterClass(int cclass, int tokenPos);" << std::endl;
+    (*file) << "\tint DoMath(char op, int left, int right);" << std::endl;
     (*file) << "\tvirtual bool DispatchOpcode(int opcode);" << std::endl;
     (*file) << std::endl;	
     (*file) << "\ttypedef bool ("<<className<<"::*DispatchType)(" << operandClassName << " &);" << std::endl;
@@ -744,8 +746,8 @@ void GenParser::GenerateAddressFuncs(TokenNode *value, std::string coding)
             (*file) << "\toperand.values[" << n << "]->val = inputTokens[tokenPos]->val->ival;" << std::endl;
             (*file) << "\toperand.values[" << n << "]->bits = 0;" << std::endl;
             (*file) << "\toperand.values[" << n << "]->field = 0;" << std::endl;
-            (*file) << "\toperand.values[" << n << "]->math = 0;" << std::endl;
-            (*file) << "\toperand.values[" << n << "]->mathval = 0;" << std::endl;
+            (*file) << "\toperand.values[" << n << "]->unary = 0;" << std::endl;
+            (*file) << "\toperand.values[" << n << "]->binary = 0;" << std::endl;
             (*file) << "\toperand.values[" << n << "][1].type = Coding::eot;" << std::endl;
         }
         else if (value->type == TokenNode::tk_number)
@@ -757,8 +759,8 @@ void GenParser::GenerateAddressFuncs(TokenNode *value, std::string coding)
             (*file) << "\toperand.values[" << n << "]->val = operands.size();" << std::endl;
             (*file) << "\toperand.values[" << n << "]->bits = 0;" << std::endl;
             (*file) << "\toperand.values[" << n << "]->field = 0;" << std::endl;
-            (*file) << "\toperand.values[" << n << "]->math = 0;" << std::endl;
-            (*file) << "\toperand.values[" << n << "]->mathval = 0;" << std::endl;
+            (*file) << "\toperand.values[" << n << "]->unary = 0;" << std::endl;
+            (*file) << "\toperand.values[" << n << "]->binary = 0;" << std::endl;
             (*file) << "\toperand.values[" << n << "][1].type = Coding::eot;" << std::endl;
             (*file) << "\toperands.push_back(numeric);" << std::endl;
         }
@@ -943,6 +945,7 @@ bool GenParser::GenerateOpcodes()
 }
 void GenParser::GenerateCoding(const std::string coding) 
 {
+    bool needsMore = false;
     std::string temp = coding;
     while (temp.size())
     {
@@ -953,242 +956,235 @@ void GenParser::GenerateCoding(const std::string coding)
         }
         else
         {
+            char unary = 0;
+            char binary = 0;
+            int value = 0;
+            int variable = -1;
+            int field =- 1;
+            std::string fieldName;
+            bool hasVal = false;
+            bool native = false;
+            bool illegal = false;
+            bool stateFunc = false;
+            bool stateVar = false;
+            bool optional = false;
+            int bits = -1;
+            needsMore = false;
             if (npos != 0)
                 temp = temp.substr(npos);
-            if (isdigit(temp[0]))
+            switch (temp[0])
             {
-                int n = 0;
-                char *pch;
-                int bits = -1;
-                int val = strtol(temp.c_str(), &pch, 0);
-                n = pch - temp.c_str();
-                if (temp[n] == ':')
-                {
-                    bits = strtol(temp.c_str() + n + 1, &pch, 0);
-                    if (pch - temp.c_str() == temp.size())
-                        temp = "";
-                    else
-                        temp = temp.substr(pch - temp.c_str());
-                }
-                else
-                {
-                    if (n == temp.size())
-                        temp = "";
-                    else
-                        temp = temp.substr(n);
-                }
-                if (bits != -1)
-                {
-                    (*file) << "\t{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), " << val << ", " << bits << "}," << std::endl;
-                }
-                else
-                {
-                    (*file) << "\t{ Coding::valSpecified, " << val << "}," << std::endl;
-                }
+                case '+':
+                case '-':
+                case '!':
+                case '~':
+                    unary = temp[0];
+                    temp = temp.substr(1);
+                    break;
+                case '*':
+                    optional = true;
+                    temp = temp.substr(1);
+                    break;
             }
-            else if (temp[0] == '\'')
+            npos = temp.find_first_not_of(" ,\t\v\r\n");
+            if (npos == std::string::npos)
             {
-                int n = 1;
-                char *pch;
-                while (isalnum(temp[n]))
-                    n++;
-                std::string name = temp.substr(1, n-1);
-                std::map<std::string, int>::iterator itst = stateFuncTags.find(name);
-                if (itst != stateFuncTags.end())
+                temp = "";
+                needsMore = true;
+            }
+            else
+            {
+                if (npos != 0)
+                    temp = temp.substr(npos);
+
+                if (isdigit(temp[0]))
                 {
-                    if (n == temp.size() || temp[n] != '\'')
-                    {
-                        std::cout << "Error { " << coding << " } missing close quote " << std::endl;
-                        if (n == temp.size())
-                            temp = "";
-                        else
-                            temp = temp.substr(n);
-                    }
-                    else
-                    {
-                        if (n+1 == temp.size())
-                            temp = "";
-                        else
-                            temp = temp.substr(n+1);
-                        (*file) << "\t{ Coding::stateFunc, " << itst->second << " }," << std::endl;
-                    }
+                    char *pch;
+                    value = strtol(temp.c_str(), &pch, 0);
+                    hasVal = true;
+                    temp = temp.substr(pch - temp.c_str());
                 }
-                else
+                else if (temp[0] == '\'')
                 {
-                    std::map<std::string, int>::iterator itst = stateVarTags.find(name);
-                    if (itst != stateVarTags.end())
+                    int n = 1;
+                    char *pch;
+                    while (isalnum(temp[n]))
+                        n++;
+                    std::string name = temp.substr(1, n - 1);
+                    temp = temp.substr(n);
+                    std::map<std::string, int>::iterator itst = stateFuncTags.find(name);
+                    if (itst != stateFuncTags.end())
                     {
-                        if (n == temp.size() || temp[n] != '\'')
-                        {
-                            std::cout << "Error { " << coding << " } missing close quote " << std::endl;
-                            if (n == temp.size())
-                                temp = "";
-                            else
-                                temp = temp.substr(n);
-                        }
-                        else
-                        {
-                            if (n+1 == temp.size())
-                                temp = "";
-                            else
-                                temp = temp.substr(n+1);
-                            (*file) << "\t{ Coding::stateVar, " << itst->second << " }," << std::endl;
-                        }
+                        value = itst->second;
                     }
                     else
                     {
-                        std::string field;
-                        if (temp[n] == '.')
+                        std::map<std::string, int>::iterator itst = stateVarTags.find(name);
+                        if (itst != stateVarTags.end())
                         {
-                            int m = ++n;
-                            while (isalnum(temp[n]))
-                                n++;
-                            field = temp.substr(m, n-m);
-                        }
-                        if (n == temp.size() || temp[n] != '\'')
-                        {
-                            std::cout << "Error { " << coding << " } missing close quote " << std::endl;
-                            if (n == temp.size())
-                                temp = "";
-                            else
-                                temp = temp.substr(n);
+                            value = itst->second;
                         }
                         else
                         {
-                            n++;
-                            int sel = 0;
-                            switch (temp[n])
+                            if (temp[0] == '.')
                             {
-                                case '!':
-                                case '~':
-                                case '+':
-                                case '-':
-                                case '&':
-                                case '|':
-                                case '^':
-                                    sel = temp[n];
+                                int m = 1, n = 1;
+                                while (isalnum(temp[n]))
                                     n++;
-                                    break;
-                                case '>':
-                                    if (temp[n+1] == '>')
-                                    {
-                                        sel = temp[n];
-                                        n+=2;
-                                    }
-                                    break;
-                                case '<':
-                                    if (temp[n+1] == '<')
-                                    {
-                                        sel = temp[n];
-                                        n+=2;
-                                    }
-                                    break;
-                                default:
-                                    break;
+                                fieldName = temp.substr(m, n - m);
+                                temp = temp.substr(n);
                             }
-                            int selval = 0;
-                            if (sel != 0 && sel != '!' && sel != '~')
-                            {
-                                char *pch;
-                                selval = strtol(temp.c_str() + n, &pch, 0);
-                                n = pch - temp.c_str();
-                            }
-                            int n1 = 0;
-                            char *pch;
-                            int bits = -1;
-                            if (temp[n] == ':')
-                            {
-                                bits = strtol(temp.c_str() + n + 1, &pch, 0);
-                                if (pch - temp.c_str() == temp.size())
-                                    temp = "";
-                                else
-                                    temp = temp.substr(pch - temp.c_str());
-                            }
-                            else
-                            {
-                                if (n == temp.size())
-                                    temp = "";
-                                else
-                                    temp = temp.substr(n);
-                            }
-                            int p=0,f=0;
-                            std::map<std::string, int> :: iterator itp = valueTags.find(name);
+                            std::map<std::string, int> ::iterator itp = valueTags.find(name);
                             if (itp == valueTags.end())
                             {
                                 std::cout << "Error in coding: unknown variable '" << name << "'" << temp.substr(0, npos) << std::endl;
                             }
                             else
                             {
-                                p = itp->second;
+                                variable = itp->second;
                             }
-                            if (field != "")
+                            if (fieldName != "")
                             {
-                                std::map<std::string, int> :: iterator itf = registerTags.find(field);
+                                std::map<std::string, int> ::iterator itf = registerTags.find(fieldName);
                                 if (itf == registerTags.end())
                                 {
-                                    std::cout << "Error in coding: unknown variable field '" << field << "'" << temp.substr(0, npos) << std::endl;
+                                    std::cout << "Error in coding: unknown variable field '" << fieldName << "'" << temp.substr(0, npos) << std::endl;
                                 }
                                 else
                                 {
-                                    f = itf->second;
+                                    field = itf->second;
                                 }
                             }
-                            if (bits == -1 && field.size() == 0)
-                            {
-                                (*file) << "\t{ Coding::indirect, " << p << ", -1, 0";
-                            }
-                            else if (bits == -1 && field.size())
-                            {
-                                (*file) << "\t{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), " << p << ", " << bits << ", " << f;
-                            }
-                            else if (bits != -1 && field.size() == 0)
-                            {
-                                (*file) << "\t{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), " << p << ", " << bits << ", 0";
-                            }
-                            else
-                            {
-                                (*file) << "\t{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), " << p << ", " << bits << ", " << f;
-                            }
-                            if (sel)
-                            {
-                                (*file) << ", " << sel << ", " << selval;
-                            }
-                            (*file) << " }," << std::endl;
                         }
                     }
-                }
-            }
-            else
-            {
-                if (temp.substr(0, 6) == "native")
-                {
-                    (*file) << "\t{ Coding::native " << "}," << std::endl;
-                    if (temp.size() == 6)
-                        temp = "";
+                    if (temp.size() == 0 || temp[0] != '\'')
+                    {
+                        std::cout << "Error { " << coding << " } missing close quote " << std::endl;
+                        break;
+                    }
                     else
-                        temp = temp.substr(6);
+                    {
+                        temp = temp.substr(1);
+                    }
                 }
-                else if (temp.substr(0, 7) == "illegal")
+                else if (temp.size() >= 6 && temp.substr(0, 6) == "native")
                 {
-                    (*file) << "\t{ Coding::illegal " << "}," << std::endl;
-                    if (temp.size() == 7)
-                        temp = "";
-                    else
-                        temp = temp.substr(7);
+                    native = true;
+                    temp = temp.substr(6);
+                }
+                else if (temp.size() >= 7 && temp.substr(0, 7) == "illegal")
+                {
+                    illegal = true;
+                    temp = temp.substr(7);
+                }
+                npos = temp.find_first_not_of(" ,\t\v\r\n");
+                if (npos == std::string::npos)
+                {
+                    temp = "";
                 }
                 else
                 {
-                    npos = temp.find_first_of(", \t\r\v\n");
-                    std::cout << "Error { " << coding << " } unknown token sequence " << temp.substr(0, npos) << std::endl;
-                    if (npos == std::string::npos)
-                        temp = "";
-                    else
+                    if (npos != 0)
                         temp = temp.substr(npos);
+                    switch (temp[0])
+                    {
+                    case '+':
+                    case '-':
+                    case '&':
+                    case '|':
+                    case '^':
+                        binary = temp[0];
+                        temp = temp.substr(1);
+                        break;
+                    case '>':
+                        if (temp[1] == '>')
+                        {
+                            binary = '>';
+                            temp = temp.substr(2);
+                        }
+                        break;
+                    case '<':
+                        if (temp[1] == '>')
+                        {
+                            binary = '<';
+                            temp = temp.substr(2);
+                        }
+                        break;
+                    }
+                    if (binary)
+                        needsMore = true;
+                    npos = temp.find_first_not_of(" ,\t\v\r\n");
+                    if (npos == std::string::npos)
+                    {
+                        temp = "";
+                    }
+                    else
+                    {
+                        if (npos != 0)
+                            temp = temp.substr(npos);
+                        if (!needsMore && temp[0] == ':')
+                        {
+                            char *pch;
+                            bits = strtol(temp.c_str()+1, &pch, 0);
+                            temp = temp.substr(pch - temp.c_str());
+                        }
+                    }
                 }
-            }	
+
+                if (native)
+                {
+                    (*file) << "\t{ Coding::native " << "}," << std::endl;
+                }
+                else if (illegal)
+                {
+                    (*file) << "\t{ Coding::illegal " << "}," << std::endl;
+                }
+                else if (stateVar)
+                {
+                    (*file) << "\t{ Coding::stateVar, " << value << " }," << std::endl;
+                }
+                else if (stateFunc)
+                {
+                    (*file) << "\t{ Coding::stateFunc, " << value << " }," << std::endl;
+                }
+                else
+                {
+                    (*file) << "\t{ (Coding::Type)(";
+                    if (optional)
+                        (*file) << "Coding::optional | ";
+                    if (bits != -1)
+                        (*file) << "Coding::bitSpecified | ";
+                    if (hasVal)
+                    {
+                        (*file) << "Coding::valSpecified), ";
+                    }
+                    else if (field == -1)
+                    {
+                        (*file) << "Coding::indirect), ";
+                    }
+                    else
+                    {
+                        (*file) << "Coding::indirect | Coding::fieldSpecified), ";
+                    }
+                    (*file) << value << ", " << bits << ", " << field << ", ";
+                    if (unary)
+                        (*file) << "'" << unary << "', ";
+                    else
+                        (*file << "0, ");
+                    if (binary)
+                        (*file) << "'" << binary << "'";
+                    else
+                        (*file) << "0";
+                    (*file) << " }, " << std::endl;
+                }
+            }
         }
     }
     (*file) << "\t{ Coding::eot " << "}," << std::endl;
+    if (needsMore)
+    {
+        std::cout << "Error { " << coding << " } premature end of coding sequence" << std::endl;
+    }
 }
 bool GenParser::GenerateUtilityFuncs()
 {
@@ -1351,70 +1347,60 @@ bool GenParser::GenerateOperandParser()
 }
 bool GenParser::GenerateCodingProcessor()
 {
-    (*file) << "bool " << className << "::ProcessCoding(CodingHelper &base, "<<operandClassName<<" &operand, Coding *coding)" << std::endl;
+    (*file) << "bool " << className << "::ProcessCoding("<<operandClassName<<" &operand, Coding *coding, int& endVal, int& endBits)" << std::endl;
     (*file) << "{" << std::endl;
-    (*file) << "\tCodingHelper current;" << std::endl;
     (*file) << std::endl;
+    (*file) << "\tint acc = 0, binary = 0;" << std::endl;
     (*file) << "\twhile (coding->type != Coding::eot)" << std::endl;
     (*file) << "\t{" << std::endl;
-    (*file) << "\t\tcurrent = base;" << std::endl;
+    (*file) << "\t\tint n = 0;" << std::endl;
+    (*file) << "\t\tint bitcount = endBits;" << std::endl;
     (*file) << "\t\tif (coding->type & Coding::bitSpecified)" << std::endl;
-    (*file) << "\t\t\tcurrent.bits = coding->bits;" << std::endl;
-    (*file) << "\t\tif (coding->type & Coding::fieldSpecified)" << std::endl;
-    (*file) << "\t\t\tcurrent.field = coding->field;" << std::endl;
-    (*file) << "\t\tif (coding->math)" << std::endl;
-    (*file) << "\t\t{" << std::endl;
-    (*file) << "\t\t\tcurrent.math = coding->math;" << std::endl;
-    (*file) << "\t\t\tcurrent.mathval = coding->mathval;" << std::endl;
-    (*file) << "\t\t}" << std::endl;
+    (*file) << "\t\t\tbitcount = coding->bits;" << std::endl;
     (*file) << "\t\tif (coding->type & Coding::valSpecified)" << std::endl;
     (*file) << "\t\t{" << std::endl;
-    (*file) << "\t\t\tint n = current.DoMath(coding->val);" << std::endl;
-    (*file) << "\t\t\tbits.Add(n, current.bits);" << std::endl;
+    (*file) << "\t\t\tn = coding->val;" << std::endl;
     (*file) << "\t\t}" << std::endl;
     (*file) << "\t\telse if (coding->type & Coding::reg)" << std::endl;
     (*file) << "\t\t{" << std::endl;
-    (*file) << "\t\t\tint n = coding->val;" << std::endl;
-    (*file) << "\t\t\tif (current.field != -1)" << std::endl;
-    (*file) << "\t\t\t\tn = registerValues[n][current.field];" << std::endl;
-    (*file) << "\t\t\tn = current.DoMath(n);" << std::endl;
-    (*file) << "\t\t\tbits.Add(n, current.bits);" << std::endl;
+    (*file) << "\t\t\tn = coding->val;" << std::endl;
+    (*file) << "\t\t\tif (coding->field != -1)" << std::endl;
+    (*file) << "\t\t\t\tn = registerValues[n][coding->field];" << std::endl;
     (*file) << "\t\t}" << std::endl;
     (*file) << "\t\telse if (coding->type & Coding::stateFunc)" << std::endl;
     (*file) << "\t\t{" << std::endl;
     (*file) << "\t\t\tCoding *c = (this->*stateFuncs[coding->val])();" << std::endl;
-    (*file) << "\t\t\tif (!ProcessCoding(current, operand,c))" << std::endl;
+    (*file) << "\t\t\tif (!ProcessCoding(operand, c, n, bitcount))" << std::endl;
     (*file) << "\t\t\t\treturn false;" << std::endl;
     (*file) << "\t\t}" << std::endl;
     (*file) << "\t\telse if (coding->type & Coding::stateVar)" << std::endl;
     (*file) << "\t\t{" << std::endl;
-    (*file) << "\t\t\tint n = current.DoMath(stateVars[coding->val]);" << std::endl;
-    (*file) << "\t\t\tbits.Add(n, current.bits);" << std::endl;
+    (*file) << "\t\t\tn = stateVars[coding->val];" << std::endl;
     (*file) << "\t\t}" << std::endl;
     (*file) << "\t\telse if (coding->type & Coding::number)" << std::endl;
     (*file) << "\t\t{" << std::endl;
     (*file) << "\t\t\tint n = coding->val;" << std::endl;
     (*file) << "\t\t\tauto it = operands.begin();" << std::endl;
-    (*file) << "\t\t\tfor (int i=0; i < n; i++)" << std::endl;
+    (*file) << "\t\t\tfor (int i = 0; i < n; i++)" << std::endl;
     (*file) << "\t\t\t{" << std::endl;
     (*file) << "\t\t\t\t++it;" << std::endl;
     (*file) << "\t\t\t}" << std::endl;
     (*file) << "\t\t\t(*it)->used = true;" << std::endl;
     (*file) << "\t\t\t(*it)->pos = this->bits.GetBits();" << std::endl;
-    (*file) << "\t\t\tbits.Add((*it)->node->ival, current.bits);" << std::endl;
+    (*file) << "\t\t\tn = (*it)->node->ival;" << std::endl;
     (*file) << "\t\t}" << std::endl;
     (*file) << "\t\telse if (coding->type & Coding::native)" << std::endl;
     (*file) << "\t\t{" << std::endl;
     (*file) << "\t\t\tif (operand.addressCoding == -1)" << std::endl;
     (*file) << "\t\t\t\treturn false;" << std::endl;
-    (*file) << "\t\t\tif (!ProcessCoding(current, operand, Codings[operand.addressCoding]))" << std::endl;
+    (*file) << "\t\t\tif (!ProcessCoding(operand, Codings[operand.addressCoding], n, bitcount))" << std::endl;
     (*file) << "\t\t\t\treturn false;" << std::endl;
     (*file) << "\t\t}" << std::endl;
     (*file) << "\t\telse if (coding->type & Coding::indirect)" << std::endl;
     (*file) << "\t\t{" << std::endl;
     (*file) << "\t\t\tif (!operand.values[coding->val])" << std::endl;
     (*file) << "\t\t\t\treturn false;" << std::endl;
-    (*file) << "\t\t\tif (!ProcessCoding(current, operand, operand.values[coding->val]))" << std::endl;
+    (*file) << "\t\t\tif (!ProcessCoding(operand, operand.values[coding->val], n, bitcount))" << std::endl;
     (*file) << "\t\t\t\treturn false;" << std::endl;
     (*file) << "\t\t}" << std::endl;
     (*file) << "\t\telse if (coding->type & Coding::illegal)" << std::endl;
@@ -1425,11 +1411,48 @@ bool GenParser::GenerateCodingProcessor()
     (*file) << "\t\t{" << std::endl;
     (*file) << "\t\t\treturn false;" << std::endl;
     (*file) << "\t\t}" << std::endl;
+    (*file) << "\t\tif (binary)" << std::endl;
+    (*file) << "\t\t{" << std::endl;
+    (*file) << "\t\t\tacc = DoMath(binary, acc, n);" << std::endl;
+    (*file) << "\t\t\tbinary = 0;" << std::endl;
+    (*file) << "\t\t}" << std::endl;
+    (*file) << "\t\telse" << std::endl;
+    (*file) << "\t\t{" << std::endl;
+    (*file) << "\t\t\tacc = n;" << std::endl;
+    (*file) << "\t\t}" << std::endl;
+    (*file) << "\t\tif (coding[1].type == Coding::eot)" << std::endl;
+    (*file) << "\t\t{" << std::endl;
+    (*file) << "\t\t\tendVal = acc;" << std::endl;
+    (*file) << "\t\t\tendBits = bitcount;" << std::endl;
+    (*file) << "\t\t}" << std::endl;
+    (*file) << "\t\telse if (coding->binary)" << std::endl;
+    (*file) << "\t\t{" << std::endl;
+    (*file) << "\t\t\tbinary = coding->binary;" << std::endl;
+    (*file) << "\t\t}" << std::endl;
+    (*file) << "\t\telse" << std::endl;
+    (*file) << "\t\t{" << std::endl;
+    (*file) << "\t\t\tbits.Add(acc, bitcount);" << std::endl;
+    (*file) << "\t\t\tacc = 0;" << std::endl;
+    (*file) << "\t\t}" << std::endl;
     (*file) << "\t\tcoding++;" << std::endl;
     (*file) << "\t}" << std::endl;
     (*file) << "\treturn true;" << std::endl;
     (*file) << "}" << std::endl;
-    (*file) << std::endl;
+
+
+    (*file) << "bool " << className << "::ProcessCoding(" << operandClassName << " &operand, Coding *coding)" << std::endl;
+    (*file) << "{" << std::endl;
+    (*file) << "\tif (coding->type == Coding::eot)" << std::endl;
+    (*file) << "\t\treturn true;" << std::endl;
+    (*file) << "\tint val = 0, bitcount = -1;" << std::endl;
+    (*file) << "\tbool rv = ProcessCoding(operand, coding, val, bitcount);" << std::endl;
+    (*file) << "\tif (rv)" << std::endl;
+    (*file) << "\t{" << std::endl;
+    (*file) << "\t\tbits.Add(val, bitcount);" << std::endl;
+    (*file) << "\t}" << std::endl;
+    (*file) << "\treturn rv;" << std::endl;
+    (*file) << "}" << std::endl;
+
     return true;
 }
 bool GenParser::GenerateDispatcher()
@@ -1441,9 +1464,8 @@ bool GenParser::GenerateDispatcher()
     (*file) << "\t{" << std::endl;
     (*file) << "\t\trv = true;" << std::endl;
     (*file) << "\t\t" << operandClassName << " operand;" << std::endl;
-    (*file) << "\t\tCodingHelper base;" << std::endl;
     (*file) << "\t\tfor (auto& a : prefixes)" << std::endl;
-    (*file) << "\t\t\trv &= ProcessCoding(base, operand, prefixCodings[a]);" << std::endl;
+    (*file) << "\t\t\trv &= ProcessCoding(operand, prefixCodings[a]);" << std::endl;
     (*file) << "\t}" << std::endl;
     (*file) << "\telse" << std::endl;
     (*file) << "\t{" << std::endl;
@@ -1452,18 +1474,17 @@ bool GenParser::GenerateDispatcher()
     (*file) << "\t\trv = (this->*DispatchTable[opcode])(operand);" << std::endl;
     (*file) << "\t\tif (rv)" << std::endl;
     (*file) << "\t\t{" << std::endl;
-    (*file) << "\t\t\tCodingHelper base;" << std::endl;
     if (parser.prefixes.size())
     {
         (*file) << "\t\t\tfor (auto& a : prefixes)" << std::endl;
-        (*file) << "\t\t\t\trv &= ProcessCoding(base, operand, prefixCodings[a]);" << std::endl;
+        (*file) << "\t\t\t\trv &= ProcessCoding(operand, prefixCodings[a]);" << std::endl;
         (*file) << "\t\t\tif (rv)" << std::endl;
     }
     (*file) << "\t\t\t{" << std::endl;
     (*file) << "\t\t\t\tif (operand.operandCoding != -1)" << std::endl;
-    (*file) << "\t\t\t\t\trv = ProcessCoding(base, operand, Codings[operand.operandCoding]);" << std::endl;
+    (*file) << "\t\t\t\t\trv = ProcessCoding(operand, Codings[operand.operandCoding]);" << std::endl;
     (*file) << "\t\t\t\telse if (operand.addressCoding != -1)" << std::endl;
-    (*file) << "\t\t\t\t\trv = ProcessCoding(base, operand, Codings[operand.addressCoding]);" << std::endl;
+    (*file) << "\t\t\t\t\trv = ProcessCoding(operand, Codings[operand.addressCoding]);" << std::endl;
     (*file) << "\t\t\t\telse rv = false;" << std::endl;
     (*file) << "\t\t\t}" << std::endl;
     (*file) << "\t\t}" << std::endl;

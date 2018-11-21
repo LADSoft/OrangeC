@@ -41,32 +41,6 @@ static const unsigned mask[32] = {
     0xfff,    0x1fff,   0x3fff,    0x7fff,    0xffff,    0x1ffff,   0x3ffff,    0x7ffff,    0xfffff,    0x1fffff,   0x3fffff,
     0x7fffff, 0xffffff, 0x1ffffff, 0x3ffffff, 0x7ffffff, 0xfffffff, 0x1fffffff, 0x3fffffff, 0x7fffffff, 0xffffffff,
 };
-int CodingHelper::DoMath(int val)
-{
-    switch (math)
-    {
-        case '!':
-            return -val;
-        case '~':
-            return ~val;
-        case '+':
-            return val + mathval;
-        case '-':
-            return val - mathval;
-        case '>':
-            return val >> mathval;
-        case '<':
-            return val << mathval;
-        case '&':
-            return val & mathval;
-        case '|':
-            return val | mathval;
-        case '^':
-            return val ^ mathval;
-        default:
-            return val;
-    }
-}
 void BitStream::Add(int val, int cnt)
 {
     val &= mask[cnt - 1];

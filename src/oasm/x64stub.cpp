@@ -318,7 +318,38 @@ void Instruction::Optimize(int pc, bool last)
         }
     }
 }
-void x64Parser::Setup(Section* sect) { Setprocessorbits(sect->beValues[0]); }
+int x64Parser::DoMath(char op, int left, int right)
+{
+    switch (op)
+    {
+        case '!':
+            return -left;
+        case '~':
+            return ~left;
+        case '+':
+            return left + right;
+        case '-':
+            return left - right;
+        case '>':
+            return left >> right;
+        case '<':
+            return left << right;
+        case '&':
+            return left & right;
+        case '|':
+            return left | right;
+        case '^':
+            return left ^ right;
+        default:
+            return left;
+    }
+}
+void x64Parser::Setup(Section* sect) 
+{
+	sect->beValues[0] = 16; // 16 bit mode is the default 
+	Setprocessorbits(sect->beValues[0]); 
+}
+
 bool x64Parser::ParseSection(AsmFile* fil, Section* sect)
 {
     bool rv = false;

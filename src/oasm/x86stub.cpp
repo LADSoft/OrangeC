@@ -318,6 +318,32 @@ void Instruction::Optimize(int pc, bool last)
         }
     }
 }
+int x86Stub::DoMath(char op, int left, int right)
+{
+    switch (op)
+    {
+        case '!':
+            return -left;
+        case '~':
+            return ~left;
+        case '+':
+            return left + right;
+        case '-':
+            return left - right;
+        case '>':
+            return left >> right;
+        case '<':
+            return left << right;
+        case '&':
+            return left & right;
+        case '|':
+            return left | right;
+        case '^':
+            return left ^ right;
+        default:
+            return left;
+    }
+}
 void x86Parser::Setup(Section* sect) { Setseg32(sect->beValues[0]); }
 bool x86Parser::ParseSection(AsmFile* fil, Section* sect)
 {

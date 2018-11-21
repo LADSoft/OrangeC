@@ -52,39 +52,15 @@ class Coding
         stateFunc = 32,
         stateVar = 64,
         number = 128,
-        native = 256,
-        illegal = 512
+        optional = 256,
+        native = 512,
+        illegal = 1024
     } type;
     int val;
-    int bits;
-    int field;
-    int math;
-    int mathval;
-};
-class CodingHelper
-{
-  public:
-    CodingHelper() : bits(8), math(0), mathval(0), field(-1) {}
-    CodingHelper(const CodingHelper& old)
-    {
-        bits = old.bits;
-        math = old.math;
-        mathval = old.mathval;
-        field = old.field;
-    }
-    CodingHelper& operator=(const CodingHelper& old)
-    {
-        bits = old.bits;
-        math = old.math;
-        mathval = old.mathval;
-        field = old.field;
-        return *this;
-    }
-    int DoMath(int val);
-    int bits;
-    int math;
-    int mathval;
-    int field;
+    unsigned char bits;
+    unsigned char field;
+    char unary;
+    char binary;
 };
 class Numeric
 {

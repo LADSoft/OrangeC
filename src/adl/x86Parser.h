@@ -19,10 +19,12 @@ protected:
 	bool ParseAddresses(x86Operand &operand, int addrClass, int &tokenPos);
 	bool ParseOperands2(x86Token *tokenList, x86Operand &operand, int tokenPos, int level);
 	bool ParseOperands(x86Token *tokenList, x86Operand &operand);
-	bool ProcessCoding(CodingHelper &base, x86Operand &operand, Coding *coding);
+	bool ProcessCoding(x86Operand &operand, Coding *coding);
+	bool ProcessCoding(x86Operand &operand, Coding *coding, int& endVal, int& endBits);
 	bool MatchesToken(int token, int tokenPos);
 	bool MatchesRegister(int reg, int tokenPos);
 	bool MatchesRegisterClass(int cclass, int tokenPos);
+	int DoMath(char op, int left, int right);
 	virtual bool DispatchOpcode(int opcode);
 
 	typedef bool (x86Parser::*DispatchType)(x86Operand &);

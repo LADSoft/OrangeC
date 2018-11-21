@@ -29,30 +29,6 @@
 #include <fstream>
 #include <limits.h>
 
-bool asmMode = false;
-bool IsSymbolStartChar(const char* data)
-{
-    if (asmMode)
-    {
-        return *data == '@' || *data == '_' || *data == '?' || *data == '.' || UTF8::IsAlpha(data);
-    }
-    else
-    {
-        return *data == '_' || UTF8::IsAlpha(data);
-    }
-}
-bool IsSymbolChar(const char* data)
-{
-    if (asmMode)
-    {
-        return *data == '_' || *data == '$' || *data == '#' || *data == '@' || *data == '~' || *data == '?' || *data == '.' ||
-               *data == '&' || UTF8::IsAlnum(data);
-    }
-    else
-    {
-        return *data == '_' || UTF8::IsAlnum(data);
-    }
-}
 void PreProcessor::InitHash()
 {
     hash["define"] = DEFINE;
@@ -70,7 +46,6 @@ void PreProcessor::InitHash()
     hash["endif"] = ENDIF;
     if (ppStart == '%')
     {
-        asmMode = true;
         hash["idefine"] = IDEFINE;
         hash["iassign"] = IASSIGN;
         hash["ifctx"] = IFCTX;

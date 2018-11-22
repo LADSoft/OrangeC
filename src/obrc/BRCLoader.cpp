@@ -31,7 +31,7 @@
 #include "ObjIeee.h"
 #include "ObjFactory.h"
 #include "ObjSourceFile.h"
-#include <stdio.h>
+#include <cstdio>
 #include <iostream>
 
 SymData::~SymData()
@@ -184,7 +184,7 @@ void BRCLoader::StartBlock(int line)
 
 void BRCLoader::EndBlock(int line)
 {
-    if (blocks.size())
+    if (!blocks.empty())
     {
         BlockData* b = blocks.back();
         blocks.pop_back();

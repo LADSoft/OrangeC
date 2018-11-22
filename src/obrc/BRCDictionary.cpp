@@ -130,7 +130,7 @@ void BRCDictionary::CreateDictionary(void)
         Clear();
     for (auto sym : symbols)
     {
-        int n = strlen(sym.first.c_str()) + 1;
+        int n = sym.first.length() + 1;
         if (n & 1)
             n++;
         total += n;

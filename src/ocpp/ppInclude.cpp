@@ -62,7 +62,7 @@ bool ppInclude::CheckInclude(int token, const std::string& args)
     }
     return false;
 }
-bool ppInclude::has_include_func(const std::string& args)
+bool ppInclude::has_include(const std::string& args)
 {
     std::string line1 = args;
     std::string name = ParseName(line1);

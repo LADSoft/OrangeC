@@ -239,7 +239,7 @@ class Tokenizer
     bool caseInsensitive;
 };
 bool IsSymbolStartChar(char data);
-bool IsSymbolStartChar(const char* data);
-bool IsSymbolChar(const char* data);
+inline bool IsSymbolStartChar(const char* data) { return IsSymbolStartChar(*data); }
 bool IsSymbolChar(char data);
+inline bool IsSymbolChar(const char* data) { return IsSymbolChar(*data); } 
 #endif

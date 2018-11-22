@@ -38,13 +38,13 @@ KeywordHash DefFile::keywords;
 
 #define SPACES " \t\v\f\r\n"
 #define COMMA ","
-bool IsSymbolStartChar(const char* data)
+bool IsSymbolStartChar(char data)
 {
-    return *data == '_' || *data == '$' || *data == '?' || *data == '.' || UTF8::IsAlpha(data);
+    return data == '_' || data == '$' || data == '?' || data == '.' || UTF8::IsAlpha(data);
 }
-bool IsSymbolChar(const char* data)
+bool IsSymbolChar(char data)
 {
-    return *data == '_' || *data == '$' || *data == '#' || *data == '@' || *data == '~' || *data == '?' || *data == '.' ||
+    return data == '_' || data == '$' || data == '#' || data == '@' || data == '~' || data == '?' || data == '.' ||
            UTF8::IsAlnum(data);
 }
 DefFile::~DefFile()

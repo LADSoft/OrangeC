@@ -8,40 +8,40 @@ InstructionParser *InstructionParser::GetInstance()
 }
 Coding x86Parser::stateCoding_eot[] = { { Coding::eot } };
 Coding x86Parser::stateCoding1_1[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 103, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::stateCoding1_2[] = {
-	{ Coding::eot },
-};
-Coding x86Parser::stateCoding2_1[] = {
-	{ Coding::eot },
-};
-Coding x86Parser::stateCoding2_2[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 103, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
+Coding x86Parser::stateCoding2_1[] = {
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 103, 8, -1, 0, 0 }, 
+	{ Coding::eot },
+};
+Coding x86Parser::stateCoding2_2[] = {
+	{ Coding::eot },
+};
 Coding x86Parser::stateCoding3_1[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 102, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::stateCoding3_2[] = {
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 102, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::stateCoding4_1[] = {
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 102, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::stateCoding4_2[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 102, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding *x86Parser::StateFunc1()
 {
-	if (stateVars[0]!=0)
+	if (stateVars[0]==16)
 	{
 		return stateCoding1_1;
 	}
-	if (stateVars[0]==0)
+	if (stateVars[0]==32)
 	{
 		return stateCoding1_2;
 	}
@@ -49,11 +49,11 @@ Coding *x86Parser::StateFunc1()
 }
 Coding *x86Parser::StateFunc2()
 {
-	if (stateVars[0]!=0)
+	if (stateVars[0]==16)
 	{
 		return stateCoding2_1;
 	}
-	if (stateVars[0]==0)
+	if (stateVars[0]==32)
 	{
 		return stateCoding2_2;
 	}
@@ -61,11 +61,11 @@ Coding *x86Parser::StateFunc2()
 }
 Coding *x86Parser::StateFunc3()
 {
-	if (stateVars[0]!=0)
+	if (stateVars[0]==16)
 	{
 		return stateCoding3_1;
 	}
-	if (stateVars[0]==0)
+	if (stateVars[0]==32)
 	{
 		return stateCoding3_2;
 	}
@@ -73,11 +73,11 @@ Coding *x86Parser::StateFunc3()
 }
 Coding *x86Parser::StateFunc4()
 {
-	if (stateVars[0]!=0)
+	if (stateVars[0]==16)
 	{
 		return stateCoding4_1;
 	}
-	if (stateVars[0]==0)
+	if (stateVars[0]==32)
 	{
 		return stateCoding4_2;
 	}
@@ -146,7 +146,7 @@ bool x86Parser::Number6(int tokenPos)
 bool x86Parser::Number7(int tokenPos)
 {
 	bool rv = false;
-	if (!rv && stateVars[0]==0)
+	if (!rv && stateVars[0]==16)
 	{
 		rv = ParseNumber(0, 0, 16, 0, tokenPos);
 	}
@@ -155,7 +155,7 @@ bool x86Parser::Number7(int tokenPos)
 bool x86Parser::Number8(int tokenPos)
 {
 	bool rv = false;
-	if (!rv && stateVars[0]==1)
+	if (!rv && stateVars[0]==32)
 	{
 		rv = ParseNumber(0, 0, 32, 0, tokenPos);
 	}
@@ -182,7 +182,7 @@ bool x86Parser::Number10(int tokenPos)
 bool x86Parser::Number11(int tokenPos)
 {
 	bool rv = false;
-	if (!rv && stateVars[0]==0)
+	if (!rv && stateVars[0]==16)
 	{
 		rv = ParseNumber(2, 1, 16, 0, tokenPos);
 	}
@@ -191,7 +191,7 @@ bool x86Parser::Number11(int tokenPos)
 bool x86Parser::Number12(int tokenPos)
 {
 	bool rv = false;
-	if (!rv && stateVars[0]==0)
+	if (!rv && stateVars[0]==16)
 	{
 		rv = ParseNumber(-2, 1, 16, 0, tokenPos);
 	}
@@ -200,7 +200,7 @@ bool x86Parser::Number12(int tokenPos)
 bool x86Parser::Number13(int tokenPos)
 {
 	bool rv = false;
-	if (!rv && stateVars[0]==0)
+	if (!rv && stateVars[0]==16)
 	{
 		rv = ParseNumber(2, 1, 16, 0, tokenPos);
 	}
@@ -209,7 +209,7 @@ bool x86Parser::Number13(int tokenPos)
 bool x86Parser::Number14(int tokenPos)
 {
 	bool rv = false;
-	if (!rv && stateVars[0]==0)
+	if (!rv && stateVars[0]==16)
 	{
 		rv = ParseNumber(-2, 1, 16, 0, tokenPos);
 	}
@@ -218,7 +218,7 @@ bool x86Parser::Number14(int tokenPos)
 bool x86Parser::Number15(int tokenPos)
 {
 	bool rv = false;
-	if (!rv && stateVars[0]!=0)
+	if (!rv && stateVars[0]==32)
 	{
 		rv = ParseNumber(4, 1, 32, 0, tokenPos);
 	}
@@ -6223,12 +6223,12 @@ x86Token x86Parser::tokenBranches1766[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1772_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding1772_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ (Coding::Type)(Coding::indirect), 23, -1, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 void x86Parser::TokenFunc1772(x86Operand &operand, int tokenPos)
@@ -6249,12 +6249,12 @@ x86Token x86Parser::tokenBranches1769[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1776_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding1776_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ (Coding::Type)(Coding::indirect), 23, -1, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 void x86Parser::TokenFunc1776(x86Operand &operand, int tokenPos)
@@ -6304,12 +6304,12 @@ x86Token x86Parser::tokenBranches1768[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1781_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding1781_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ (Coding::Type)(Coding::indirect), 23, -1, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 void x86Parser::TokenFunc1781(x86Operand &operand, int tokenPos)
@@ -6330,12 +6330,12 @@ x86Token x86Parser::tokenBranches1778[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1785_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding1785_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ (Coding::Type)(Coding::indirect), 23, -1, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 void x86Parser::TokenFunc1785(x86Operand &operand, int tokenPos)
@@ -6463,11 +6463,11 @@ x86Token x86Parser::tokenBranches1795[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1802_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding1802_9[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, '+' }, 
+	{ (Coding::Type)(Coding::indirect), 24, -1, -1, 0, '+' }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -6489,12 +6489,12 @@ x86Token x86Parser::tokenBranches1799[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1806_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding1806_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, '+' }, 
+	{ Coding::stateFunc, 2 },
+	{ (Coding::Type)(Coding::indirect), 24, -1, -1, 0, '+' }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 3, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -6516,12 +6516,12 @@ x86Token x86Parser::tokenBranches1803[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1810_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding1810_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, '+' }, 
+	{ Coding::stateFunc, 3 },
+	{ (Coding::Type)(Coding::indirect), 24, -1, -1, 0, '+' }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 3, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -6543,11 +6543,11 @@ x86Token x86Parser::tokenBranches1807[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1814_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding1814_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 24, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 void x86Parser::TokenFunc1814(x86Operand &operand, int tokenPos)
@@ -6577,12 +6577,12 @@ x86Token x86Parser::tokenBranches1811[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1818_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding1818_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, '+' }, 
+	{ Coding::stateFunc, 2 },
+	{ (Coding::Type)(Coding::indirect), 24, -1, -1, 0, '+' }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -6613,12 +6613,12 @@ x86Token x86Parser::tokenBranches1815[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1822_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding1822_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, '+' }, 
+	{ Coding::stateFunc, 3 },
+	{ (Coding::Type)(Coding::indirect), 24, -1, -1, 0, '+' }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -6997,7 +6997,7 @@ x86Token x86Parser::tokenBranches1786[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1873_9[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 23, -1, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 void x86Parser::TokenFunc1873(x86Operand &operand, int tokenPos)
@@ -7020,12 +7020,12 @@ x86Token x86Parser::tokenBranches1872[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1882_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding1882_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ (Coding::Type)(Coding::indirect), 24, -1, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 void x86Parser::TokenFunc1882(x86Operand &operand, int tokenPos)
@@ -7056,7 +7056,7 @@ x86Token x86Parser::tokenBranches1869[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1878_9[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 23, -1, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 void x86Parser::TokenFunc1878(x86Operand &operand, int tokenPos)
@@ -7079,12 +7079,12 @@ x86Token x86Parser::tokenBranches1877[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1886_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding1886_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ (Coding::Type)(Coding::indirect), 24, -1, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 void x86Parser::TokenFunc1886(x86Operand &operand, int tokenPos)
@@ -7132,7 +7132,7 @@ x86Token x86Parser::tokenBranches1891[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1894_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 255, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -7145,7 +7145,7 @@ x86Token x86Parser::tokenBranches1893[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1896_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 255, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -7213,7 +7213,7 @@ x86Token x86Parser::tokenBranches1901[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1904_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 247, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -7226,7 +7226,7 @@ x86Token x86Parser::tokenBranches1903[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1906_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 247, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -7247,7 +7247,7 @@ void x86Parser::TokenFunc1898(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding1898_9;
 }
 Coding x86Parser::tokenCoding1899_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 247, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -7256,7 +7256,7 @@ void x86Parser::TokenFunc1899(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding1899_9;
 }
 Coding x86Parser::tokenCoding1900_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 247, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -7307,7 +7307,7 @@ x86Token x86Parser::tokenBranches1911[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1916_9[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 23, -1, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 void x86Parser::TokenFunc1916(x86Operand &operand, int tokenPos)
@@ -7319,7 +7319,7 @@ x86Token x86Parser::tokenBranches1915[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1918_9[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, '+' }, 
+	{ (Coding::Type)(Coding::indirect), 23, -1, -1, 0, '+' }, 
 	{ (Coding::Type)(Coding::valSpecified), 4, -1, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -7386,7 +7386,7 @@ x86Token x86Parser::tokenBranches1919[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1927_9[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, '+' }, 
+	{ (Coding::Type)(Coding::indirect), 23, -1, -1, 0, '+' }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -7399,7 +7399,7 @@ x86Token x86Parser::tokenBranches1926[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1929_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 23, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 void x86Parser::TokenFunc1929(x86Operand &operand, int tokenPos)
@@ -7510,14 +7510,14 @@ x86Token x86Parser::tokenBranches1933[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1946_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding1946_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 4, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 4, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 25, 4, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 void x86Parser::TokenFunc1946(x86Operand &operand, int tokenPos)
@@ -7538,14 +7538,14 @@ x86Token x86Parser::tokenBranches1943[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1950_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding1950_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 4, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 4, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 25, 4, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 void x86Parser::TokenFunc1950(x86Operand &operand, int tokenPos)
@@ -7601,7 +7601,7 @@ Coding x86Parser::tokenCoding1953_8[] = {
 Coding x86Parser::tokenCoding1953_9[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 9, 4, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 4, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 25, 4, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 void x86Parser::TokenFunc1953(x86Operand &operand, int tokenPos)
@@ -7618,13 +7618,13 @@ x86Token x86Parser::tokenBranches1951[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1967_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding1967_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 23, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 void x86Parser::TokenFunc1967(x86Operand &operand, int tokenPos)
@@ -7637,13 +7637,13 @@ x86Token x86Parser::tokenBranches1966[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1957_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding1957_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 23, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 void x86Parser::TokenFunc1957(x86Operand &operand, int tokenPos)
@@ -7661,13 +7661,13 @@ x86Token x86Parser::tokenBranches1955[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1971_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding1971_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 23, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 void x86Parser::TokenFunc1971(x86Operand &operand, int tokenPos)
@@ -7680,13 +7680,13 @@ x86Token x86Parser::tokenBranches1970[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1975_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding1975_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, '+' }, 
+	{ (Coding::Type)(Coding::indirect), 23, -1, -1, 0, '+' }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -7700,13 +7700,13 @@ x86Token x86Parser::tokenBranches1974[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1960_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding1960_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 23, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 void x86Parser::TokenFunc1960(x86Operand &operand, int tokenPos)
@@ -7715,13 +7715,13 @@ void x86Parser::TokenFunc1960(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding1960_9;
 }
 Coding x86Parser::tokenCoding1963_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding1963_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, '+' }, 
+	{ (Coding::Type)(Coding::indirect), 23, -1, -1, 0, '+' }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -7889,7 +7889,7 @@ x86Token x86Parser::tokenBranches1986[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding2002_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 209, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -7908,7 +7908,7 @@ void x86Parser::TokenFunc2002(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding2002_9;
 }
 Coding x86Parser::tokenCoding2005_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 193, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -7928,7 +7928,7 @@ void x86Parser::TokenFunc2005(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding2005_9;
 }
 Coding x86Parser::tokenCoding2008_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 211, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -7947,7 +7947,7 @@ x86Token x86Parser::tokenBranches2000[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding2013_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 209, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -7966,7 +7966,7 @@ void x86Parser::TokenFunc2013(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding2013_9;
 }
 Coding x86Parser::tokenCoding2018_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 193, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -7991,7 +7991,7 @@ x86Token x86Parser::tokenBranches2012[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding2022_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 211, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -8013,7 +8013,7 @@ x86Token x86Parser::tokenBranches2009[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding2029_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 193, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -8037,7 +8037,7 @@ x86Token x86Parser::tokenBranches2028[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding2025_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 209, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -8056,7 +8056,7 @@ void x86Parser::TokenFunc2025(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding2025_9;
 }
 Coding x86Parser::tokenCoding2032_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 211, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -8075,7 +8075,7 @@ x86Token x86Parser::tokenBranches2023[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding2037_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 209, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -8094,7 +8094,7 @@ void x86Parser::TokenFunc2037(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding2037_9;
 }
 Coding x86Parser::tokenCoding2042_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 193, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -8119,7 +8119,7 @@ x86Token x86Parser::tokenBranches2036[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding2046_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 211, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -8150,13 +8150,13 @@ x86Token x86Parser::tokenBranches1976[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding2053_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2053_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 23, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 void x86Parser::TokenFunc2053(x86Operand &operand, int tokenPos)
@@ -8176,13 +8176,13 @@ void x86Parser::TokenFunc2053(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding2053_9;
 }
 Coding x86Parser::tokenCoding2059_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2059_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, '+' }, 
+	{ (Coding::Type)(Coding::indirect), 23, -1, -1, 0, '+' }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -8225,13 +8225,13 @@ x86Token x86Parser::tokenBranches2048[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding2065_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2065_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 23, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 void x86Parser::TokenFunc2065(x86Operand &operand, int tokenPos)
@@ -8251,13 +8251,13 @@ void x86Parser::TokenFunc2065(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding2065_9;
 }
 Coding x86Parser::tokenCoding2071_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2071_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, '+' }, 
+	{ (Coding::Type)(Coding::indirect), 23, -1, -1, 0, '+' }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -8309,7 +8309,7 @@ x86Token x86Parser::tokenBranches2072[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding2084_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2084_9[] = {
@@ -8343,7 +8343,7 @@ x86Token x86Parser::tokenBranches2081[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding2089_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 void x86Parser::TokenFunc2089(x86Operand &operand, int tokenPos)
@@ -8414,7 +8414,7 @@ Coding x86Parser::tokenCoding2108_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2108_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 255, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -8432,7 +8432,7 @@ Coding x86Parser::tokenCoding2110_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2110_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 255, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -8478,7 +8478,7 @@ Coding x86Parser::tokenCoding2116_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2116_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 255, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -8492,7 +8492,7 @@ Coding x86Parser::tokenCoding2118_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2118_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 255, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -8554,7 +8554,7 @@ Coding x86Parser::tokenCoding2105_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2105_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 255, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -8568,7 +8568,7 @@ Coding x86Parser::tokenCoding2106_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2106_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 255, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -9144,7 +9144,7 @@ x86Token x86Parser::tokenBranches2157[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding2321_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2321_9[] = {
@@ -9229,13 +9229,13 @@ x86Token x86Parser::tokenBranches2330[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding2339_8[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, '&' }, 
+	{ (Coding::Type)(Coding::indirect), 12, -1, -1, 0, '&' }, 
 	{ (Coding::Type)(Coding::valSpecified), 7, -1, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2339_9[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 27, 5, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, '>' }, 
+	{ (Coding::Type)(Coding::indirect), 12, -1, -1, 0, '>' }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 3, 3, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -9291,7 +9291,7 @@ x86Token x86Parser::tokenBranches2350[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding2355_9[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 23, -1, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 void x86Parser::TokenFunc2355(x86Operand &operand, int tokenPos)
@@ -9303,7 +9303,7 @@ x86Token x86Parser::tokenBranches2354[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding2357_9[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, '+' }, 
+	{ (Coding::Type)(Coding::indirect), 23, -1, -1, 0, '+' }, 
 	{ (Coding::Type)(Coding::valSpecified), 4, -1, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -9336,7 +9336,7 @@ x86Token x86Parser::tokenBranches2349[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding2361_9[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 23, -1, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 void x86Parser::TokenFunc2361(x86Operand &operand, int tokenPos)
@@ -9348,7 +9348,7 @@ x86Token x86Parser::tokenBranches2360[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding2363_9[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, '+' }, 
+	{ (Coding::Type)(Coding::indirect), 23, -1, -1, 0, '+' }, 
 	{ (Coding::Type)(Coding::valSpecified), 4, -1, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -9855,11 +9855,11 @@ x86Token x86Parser::tokenBranches2460[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding2488_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2488_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 107, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -9884,11 +9884,11 @@ x86Token x86Parser::tokenBranches2487[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding2494_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2494_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 105, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -9918,11 +9918,11 @@ x86Token x86Parser::tokenBranches2485[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding2485_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2485_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 175, 8, -1, 0, 0 }, 
 	{ Coding::eot },
@@ -9979,11 +9979,11 @@ x86Token x86Parser::tokenBranches2482[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding2505_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2505_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 107, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -10008,11 +10008,11 @@ x86Token x86Parser::tokenBranches2504[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding2511_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2511_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 105, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -10042,11 +10042,11 @@ x86Token x86Parser::tokenBranches2502[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding2502_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2502_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 175, 8, -1, 0, 0 }, 
 	{ Coding::eot },
@@ -10724,7 +10724,7 @@ Coding x86Parser::tokenCoding2697_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2697_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 255, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -10738,7 +10738,7 @@ Coding x86Parser::tokenCoding2699_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2699_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 255, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -10811,7 +10811,7 @@ Coding x86Parser::tokenCoding2711_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2711_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 255, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -10829,7 +10829,7 @@ Coding x86Parser::tokenCoding2713_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2713_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 255, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -10875,7 +10875,7 @@ Coding x86Parser::tokenCoding2708_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2708_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 255, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -10889,7 +10889,7 @@ Coding x86Parser::tokenCoding2709_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2709_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 255, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -10915,7 +10915,7 @@ Coding x86Parser::tokenCoding2746_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2746_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 8, -1, 0, 0 }, 
 	{ Coding::eot },
@@ -10930,7 +10930,7 @@ Coding x86Parser::tokenCoding2747_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2747_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 8, -1, 0, 0 }, 
 	{ Coding::eot },
@@ -11273,7 +11273,7 @@ x86Token x86Parser::tokenBranches2836[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding2842_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2842_9[] = {
@@ -11295,7 +11295,7 @@ x86Token x86Parser::tokenBranches2840[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding2845_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 20, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2845_9[] = {
@@ -11317,7 +11317,7 @@ x86Token x86Parser::tokenBranches2843[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding2848_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 21, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2848_9[] = {
@@ -11722,7 +11722,7 @@ void x86Parser::TokenFunc2936(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 Coding x86Parser::tokenCoding2948_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2948_9[] = {
@@ -11762,11 +11762,11 @@ void x86Parser::TokenFunc2940(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 Coding x86Parser::tokenCoding2952_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2952_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 139, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -11803,11 +11803,11 @@ void x86Parser::TokenFunc2944(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 Coding x86Parser::tokenCoding2956_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2956_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 139, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -11874,7 +11874,7 @@ Coding x86Parser::tokenCoding2966_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2966_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 199, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -11915,7 +11915,7 @@ Coding x86Parser::tokenCoding2971_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2971_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 199, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -11956,7 +11956,7 @@ Coding x86Parser::tokenCoding3104_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3104_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 199, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -11981,7 +11981,7 @@ x86Token x86Parser::tokenBranches3103[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding2974_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2974_9[] = {
@@ -12004,7 +12004,7 @@ void x86Parser::TokenFunc2974(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding2974_9;
 }
 Coding x86Parser::tokenCoding2977_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 20, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2977_9[] = {
@@ -12027,7 +12027,7 @@ void x86Parser::TokenFunc2977(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding2977_9;
 }
 Coding x86Parser::tokenCoding2980_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 21, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2980_9[] = {
@@ -12204,7 +12204,7 @@ x86Token x86Parser::tokenBranches2982[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding3068_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3068_9[] = {
@@ -12382,11 +12382,11 @@ x86Token x86Parser::tokenBranches3010[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding3072_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3072_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 137, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -12405,7 +12405,7 @@ void x86Parser::TokenFunc3072(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding3072_9;
 }
 Coding x86Parser::tokenCoding3088_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 22, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3088_9[] = {
@@ -12584,11 +12584,11 @@ x86Token x86Parser::tokenBranches3038[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding3076_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3076_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 137, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -12615,7 +12615,7 @@ x86Token x86Parser::tokenBranches3074[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding3092_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 22, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3092_9[] = {
@@ -12651,7 +12651,7 @@ x86Token x86Parser::tokenBranches3037[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding3080_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 22, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3080_9[] = {
@@ -12668,7 +12668,7 @@ x86Token x86Parser::tokenBranches3079[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding3084_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 22, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3084_9[] = {
@@ -12734,7 +12734,7 @@ Coding x86Parser::tokenCoding3100_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3100_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 199, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -13617,7 +13617,7 @@ Coding x86Parser::tokenCoding3398_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3398_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 143, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -13635,7 +13635,7 @@ Coding x86Parser::tokenCoding3400_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3400_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 143, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -14159,7 +14159,7 @@ Coding x86Parser::tokenCoding3566_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3566_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 8, -1, 0, 0 }, 
 	{ Coding::eot },
@@ -14174,7 +14174,7 @@ Coding x86Parser::tokenCoding3567_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3567_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 8, -1, 0, 0 }, 
 	{ Coding::eot },
@@ -14425,7 +14425,7 @@ Coding x86Parser::tokenCoding3648_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3648_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, -1, 0, 0 }, 
 	{ Coding::eot },
@@ -14440,7 +14440,7 @@ Coding x86Parser::tokenCoding3649_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3649_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, -1, 0, 0 }, 
 	{ Coding::eot },
@@ -14534,7 +14534,7 @@ x86Token x86Parser::tokenBranches3660[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding3667_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3667_9[] = {
@@ -14568,11 +14568,11 @@ x86Token x86Parser::tokenBranches3664[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding3671_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3671_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 133, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -14603,11 +14603,11 @@ x86Token x86Parser::tokenBranches3668[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding3675_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3675_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 133, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -14638,7 +14638,7 @@ x86Token x86Parser::tokenBranches3672[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding3679_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3679_9[] = {
@@ -14663,11 +14663,11 @@ x86Token x86Parser::tokenBranches3676[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding3683_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3683_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 133, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -14689,11 +14689,11 @@ x86Token x86Parser::tokenBranches3680[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding3687_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3687_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 133, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -14751,7 +14751,7 @@ Coding x86Parser::tokenCoding3693_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3693_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 247, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -14784,7 +14784,7 @@ Coding x86Parser::tokenCoding3696_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3696_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 247, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -14853,7 +14853,7 @@ Coding x86Parser::tokenCoding3704_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3704_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 247, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -14890,7 +14890,7 @@ Coding x86Parser::tokenCoding3708_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3708_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 247, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -14981,7 +14981,7 @@ Coding x86Parser::tokenCoding3711_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3711_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, -1, 0, 0 }, 
 	{ Coding::eot },
@@ -14996,7 +14996,7 @@ Coding x86Parser::tokenCoding3712_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3712_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, -1, 0, 0 }, 
 	{ Coding::eot },
@@ -15016,7 +15016,7 @@ Coding x86Parser::tokenCoding3714_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3714_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, -1, 0, 0 }, 
 	{ Coding::eot },
@@ -15031,7 +15031,7 @@ Coding x86Parser::tokenCoding3715_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3715_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, -1, 0, 0 }, 
 	{ Coding::eot },
@@ -15047,7 +15047,7 @@ x86Token x86Parser::tokenBranches3713[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding3723_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3723_9[] = {
@@ -15086,11 +15086,11 @@ x86Token x86Parser::tokenBranches3719[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding3728_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3728_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 166, 8, -1, 0, 0 }, 
 	{ Coding::eot },
@@ -15113,11 +15113,11 @@ x86Token x86Parser::tokenBranches3725[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding3732_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3732_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 166, 8, -1, 0, 0 }, 
 	{ Coding::eot },
@@ -15211,11 +15211,11 @@ x86Token x86Parser::tokenBranches3737[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding3753_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3753_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 135, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -15242,11 +15242,11 @@ x86Token x86Parser::tokenBranches3740[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding3757_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3757_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 135, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -15273,7 +15273,7 @@ x86Token x86Parser::tokenBranches3743[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding3749_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3749_9[] = {
@@ -15298,7 +15298,7 @@ x86Token x86Parser::tokenBranches3746[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding3761_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3761_9[] = {
@@ -15332,11 +15332,11 @@ x86Token x86Parser::tokenBranches3758[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding3765_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3765_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 135, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -15367,11 +15367,11 @@ x86Token x86Parser::tokenBranches3762[] = {
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding3769_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3769_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 135, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -15903,7 +15903,7 @@ bool x86Parser::Opcode35(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings36_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 152, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -15917,7 +15917,7 @@ bool x86Parser::Opcode36(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings37_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 153, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -16427,7 +16427,7 @@ bool x86Parser::Opcode75(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings76_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 167, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -16441,7 +16441,7 @@ bool x86Parser::Opcode76(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings77_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 167, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -16478,7 +16478,7 @@ bool x86Parser::Opcode80(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings81_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 153, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -16492,7 +16492,7 @@ bool x86Parser::Opcode81(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings82_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 152, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -17823,7 +17823,7 @@ bool x86Parser::Opcode178(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings179_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 109, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -17837,7 +17837,7 @@ bool x86Parser::Opcode179(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings180_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 109, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -17944,7 +17944,7 @@ bool x86Parser::Opcode188(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings189_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::valSpecified), 207, -1, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -17958,7 +17958,7 @@ bool x86Parser::Opcode189(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings190_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::valSpecified), 207, -1, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -18575,7 +18575,7 @@ bool x86Parser::Opcode237(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings238_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 173, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -18589,7 +18589,7 @@ bool x86Parser::Opcode238(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings239_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 173, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -18714,7 +18714,7 @@ bool x86Parser::Opcode251(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings252_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 165, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -18728,7 +18728,7 @@ bool x86Parser::Opcode252(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings253_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 165, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -18866,7 +18866,7 @@ bool x86Parser::Opcode263(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings264_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 111, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -18880,7 +18880,7 @@ bool x86Parser::Opcode264(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings265_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 111, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -18912,7 +18912,7 @@ bool x86Parser::Opcode267(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings268_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 97, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -18926,7 +18926,7 @@ bool x86Parser::Opcode268(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings269_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 97, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -18953,7 +18953,7 @@ bool x86Parser::Opcode270(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings271_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 157, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -18967,7 +18967,7 @@ bool x86Parser::Opcode271(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings272_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 157, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -18999,7 +18999,7 @@ bool x86Parser::Opcode274(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings275_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 96, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -19013,7 +19013,7 @@ bool x86Parser::Opcode275(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings276_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 96, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -19040,7 +19040,7 @@ bool x86Parser::Opcode277(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings278_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 156, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -19054,7 +19054,7 @@ bool x86Parser::Opcode278(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings279_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 156, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -19262,7 +19262,7 @@ bool x86Parser::Opcode295(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings296_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 175, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -19276,7 +19276,7 @@ bool x86Parser::Opcode296(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings297_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 175, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -19862,7 +19862,7 @@ bool x86Parser::Opcode340(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings341_9[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 171, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -19876,7 +19876,7 @@ bool x86Parser::Opcode341(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings342_9[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 171, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -20446,499 +20446,499 @@ x86Parser::DispatchType x86Parser::DispatchTable[358] = {
 	&x86Parser::Opcode357,
 };
 Coding x86Parser::Coding1[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 6, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding2[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 6, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding3[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 6, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding4[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 6, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding5[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 1, 2, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 1, 2, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding6[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 1, 2, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 1, 2, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding7[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 1, 2, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 1, 2, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding8[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 1, 2, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 1, 2, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 1, 2, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 1, 2, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding10[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 1, 2, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 1, 2, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding11[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 2, 0, '+' }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 2, -1, 2, 0, '+' }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding12[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 2, 0, '+' }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 2, -1, 2, 0, '+' }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding13[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 2, 0, '+' }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 2, -1, 2, 0, '+' }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding14[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 7, 3, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding15[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 7, 3, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding16[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 7, 3, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding17[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 6, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding18[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 6, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding19[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 6, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding20[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 1, 2, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 1, 2, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 4, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding21[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 1, 2, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 1, 2, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 4, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding22[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 1, 2, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 1, 2, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 4, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding23[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 1, 2, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 1, 2, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 4, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding24[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 11, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 1, 2, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 1, 2, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 4, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding25[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 1, 2, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 1, 2, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 4, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding26[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 2, 0, '+' }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 2, -1, 2, 0, '+' }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 4, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding27[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 2, 0, '+' }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 2, -1, 2, 0, '+' }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 4, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding28[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 2, 0, '+' }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 2, -1, 2, 0, '+' }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 4, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding29[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 7, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 4, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding30[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::valSpecified), 54, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 7, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 4, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding31[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 7, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 4, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding32[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 6, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 4, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding33[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::valSpecified), 62, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 6, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 4, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding34[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 6, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 4, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding35[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 1, 2, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 1, 2, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding36[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 1, 2, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 1, 2, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding37[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 1, 2, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 1, 2, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding38[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 1, 2, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 1, 2, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding39[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 1, 2, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 1, 2, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding40[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 1, 2, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 1, 2, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding41[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 2, 0, '+' }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 2, -1, 2, 0, '+' }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding42[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 2, 0, '+' }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 2, -1, 2, 0, '+' }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding43[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 2, 0, '+' }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 2, -1, 2, 0, '+' }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding44[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 7, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding45[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 7, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding46[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 7, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding47[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 6, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding48[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 6, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding49[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 6, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding50[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
@@ -20946,38 +20946,38 @@ Coding x86Parser::Coding50[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::Coding51[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding52[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 5, 3, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding53[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding54[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
@@ -20985,21 +20985,21 @@ Coding x86Parser::Coding54[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::Coding55[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding56[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
@@ -21007,182 +21007,182 @@ Coding x86Parser::Coding56[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::Coding57[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding58[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 5, 3, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding59[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding60[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding61[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding62[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding63[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 4, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding64[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 4, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding65[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 5, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 4, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding66[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 4, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding67[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 3, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 4, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding68[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 4, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding69[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 4, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding70[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 4, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding71[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 4, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding72[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 5, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 4, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding73[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding74[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
@@ -21191,38 +21191,38 @@ Coding x86Parser::Coding74[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::Coding75[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 5, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding76[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding77[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 5, 3, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding78[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
@@ -21231,31 +21231,31 @@ Coding x86Parser::Coding78[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::Coding79[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding80[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding81[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
@@ -21264,1107 +21264,1107 @@ Coding x86Parser::Coding81[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::Coding82[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 5, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding83[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding84[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding85[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 5, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding86[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 5, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding87[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding88[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding89[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 5, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding90[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 5, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding91[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding92[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding93[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 5, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding94[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 5, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding95[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding96[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding97[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding98[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding99[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 5, 3, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding100[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 5, 3, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding101[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 5, 3, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding102[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 5, 3, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding103[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding104[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding105[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding106[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding107[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding108[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding109[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding110[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding111[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 5, 3, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding112[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 5, 3, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding113[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 4, 8, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding114[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 4, 8, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding115[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 4, 8, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding116[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 4, 8, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding117[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 5, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 4, 8, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding118[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 5, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 4, 8, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding119[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 5, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 4, 8, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding120[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 5, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 4, 8, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding121[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 4, 8, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding122[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 4, 8, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding123[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 4, 8, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding124[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 4, 8, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding125[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 4, 8, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding126[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 4, 8, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding127[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 4, 8, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding128[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 4, 8, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding129[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 5, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 4, 8, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding130[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 5, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 4, 8, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding131[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding132[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding133[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding134[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding135[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 5, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding136[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 5, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding137[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 5, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding138[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 5, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding139[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding140[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding141[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding142[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding143[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding144[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding145[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding146[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding147[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 6, 2, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 5, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding148[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 2, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 5, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding149[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 3, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 7, 3, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding150[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding151[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding152[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 23, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding153[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, '+' }, 
+	{ Coding::stateFunc, 2 },
+	{ (Coding::Type)(Coding::indirect), 23, -1, -1, 0, '+' }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding154[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, '+' }, 
+	{ Coding::stateFunc, 3 },
+	{ (Coding::Type)(Coding::indirect), 23, -1, -1, 0, '+' }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding155[] = {
 	{ Coding::native },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding156[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ Coding::native },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 13, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding157[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ Coding::native },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding158[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ Coding::native },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 13, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding159[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ Coding::native },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding160[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ Coding::native },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding161[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ Coding::native },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding162[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 5, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 9, 5, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 10, 3, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding163[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 5, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 9, 5, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 10, 3, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding164[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 23, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 3, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 7, 3, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding165[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, '+' }, 
+	{ (Coding::Type)(Coding::indirect), 23, -1, -1, 0, '+' }, 
 	{ (Coding::Type)(Coding::valSpecified), 4, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 3, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 26, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 7, 3, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding166[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 23, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 3, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 26, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 7, 3, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding167[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::indirect), 9, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 3, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 3, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 8, 3, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 3, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding168[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 7, 4, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 4, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 25, 4, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 14, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding169[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::valSpecified), 15, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 8, 4, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 4, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 25, 4, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 14, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding170[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::valSpecified), 15, -1, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 8, 4, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 4, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 25, 4, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 14, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding171[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 25, 5, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 10, 3, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding172[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 154, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 16, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 1, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding173[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 154, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 32, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 1, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding174[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 232, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 14, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding175[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 232, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 14, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding176[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 154, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 16, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding177[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 154, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 32, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding178[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 166, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding179[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 166, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding180[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 166, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding181[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 166, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding182[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 167, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding183[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 167, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding184[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 167, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding185[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 167, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding186[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 167, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding187[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 167, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding188[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 167, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding189[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 167, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding190[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 200, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 16, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 16, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding191[] = {
@@ -22380,70 +22380,70 @@ Coding x86Parser::Coding192[] = {
 };
 Coding x86Parser::Coding193[] = {
 	{ Coding::native },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 17, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding194[] = {
 	{ Coding::native },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding195[] = {
 	{ Coding::native },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding196[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 107, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 3, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 10, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 10, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 13, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding197[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 105, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 3, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 10, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 10, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding198[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 107, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 3, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 10, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 10, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 13, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding199[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 105, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 3, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 10, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 10, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding200[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 228, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 18, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding201[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 229, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 18, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding202[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 229, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 18, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding203[] = {
@@ -22451,537 +22451,537 @@ Coding x86Parser::Coding203[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::Coding204[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 237, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding205[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 237, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding206[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 108, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding207[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 108, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding208[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 108, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding209[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 108, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding210[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 109, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding211[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 109, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding212[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 109, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding213[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 109, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding214[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 109, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding215[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 109, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding216[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 109, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding217[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 109, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding218[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 205, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding219[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 227, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 14, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding220[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 227, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 14, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding221[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 234, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 16, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 1, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding222[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 234, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 32, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 1, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding223[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 234, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 16, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding224[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 234, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 32, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding225[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 235, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 14, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding226[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 233, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 14, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding227[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 233, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 14, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding228[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 172, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding229[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 172, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding230[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 172, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding231[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 172, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding232[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 173, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding233[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 173, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding234[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 173, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding235[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 173, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding236[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 173, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding237[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 173, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding238[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 173, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding239[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 173, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding240[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 226, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 14, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding241[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 225, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 14, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding242[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 224, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 14, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding243[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 160, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding244[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 160, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding245[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 160, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding246[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 160, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding247[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 161, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding248[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 161, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding249[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 161, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding250[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 161, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding251[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 161, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding252[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 161, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding253[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 161, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding254[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 161, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding255[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 22, 5, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 10, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding256[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 23, 5, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 10, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding257[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 23, 5, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 10, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding258[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 162, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding259[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 162, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding260[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 162, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding261[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 162, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding262[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 163, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding263[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 163, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding264[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 163, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding265[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 163, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding266[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 163, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding267[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 163, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding268[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 163, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding269[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 163, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding270[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 164, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding271[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 164, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding272[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 164, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding273[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 164, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding274[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 165, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding275[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 165, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding276[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 165, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding277[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 165, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding278[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 165, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding279[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 165, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding280[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 165, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding281[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 165, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding282[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 230, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 18, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding283[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 231, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 18, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding284[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 231, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 18, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding285[] = {
@@ -22989,111 +22989,111 @@ Coding x86Parser::Coding285[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::Coding286[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 239, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding287[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 239, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding288[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 110, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding289[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 110, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding290[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 110, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding291[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 110, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding292[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 111, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding293[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 111, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding294[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 111, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding295[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 111, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding296[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 111, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding297[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 111, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding298[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 111, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding299[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, -1, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 111, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding300[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 11, 5, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 10, 3, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding301[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 11, 5, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 10, 3, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding302[] = {
@@ -23108,46 +23108,46 @@ Coding x86Parser::Coding303[] = {
 };
 Coding x86Parser::Coding304[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 7, 3, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding305[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 10, 5, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 10, 3, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding306[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 10, 5, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 10, 3, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding307[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 106, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding308[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 104, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding309[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 104, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding310[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ Coding::native },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding311[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ Coding::native },
 	{ Coding::eot },
 };
@@ -23163,13 +23163,13 @@ Coding x86Parser::Coding313[] = {
 };
 Coding x86Parser::Coding314[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 3, 0, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 6, 3, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding315[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 194, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding316[] = {
@@ -23178,7 +23178,7 @@ Coding x86Parser::Coding316[] = {
 };
 Coding x86Parser::Coding317[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 202, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding318[] = {
@@ -23186,201 +23186,201 @@ Coding x86Parser::Coding318[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::Coding319[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 174, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding320[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 174, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding321[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 174, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding322[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 174, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding323[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 175, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding324[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 175, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding325[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 175, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding326[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 175, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding327[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 175, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding328[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 175, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding329[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 175, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding330[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 175, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding331[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 170, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding332[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 170, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding333[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 170, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding334[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 170, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding335[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 171, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding336[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 171, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding337[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 171, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding338[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 171, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding339[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 171, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding340[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 171, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding341[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 171, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding342[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 8, 3, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 1, 8, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 171, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding343[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 168, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 8, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding344[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 169, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 16, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 16, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding345[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 169, 8, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 0, 32, -1, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect), 12, 32, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding346[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 18, 5, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 10, 3, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding347[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 18, 5, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 0, 3, 0, 0, 0 }, 
+	{ (Coding::Type)(Coding::bitSpecified | Coding::indirect | Coding::fieldSpecified), 10, 3, 0, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding348[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 215, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding349[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 3, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 1, -1, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 215, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding350[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 215, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 Coding x86Parser::Coding351[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 0, -1, 3, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 1, -1, 3, 0, 0 }, 
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 215, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
@@ -23743,11 +23743,11 @@ Coding * x86Parser::Codings[352] = {
 	x86Parser::Coding352,
 };
 Coding x86Parser::prefixCoding1[] = {
-	{ (Coding::Type)(Coding::indirect), 0, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::prefixCoding2[] = {
-	{ (Coding::Type)(Coding::indirect), 1, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 1 },
 	{ Coding::eot },
 };
 Coding x86Parser::prefixCoding3[] = {
@@ -23755,11 +23755,11 @@ Coding x86Parser::prefixCoding3[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::prefixCoding4[] = {
-	{ (Coding::Type)(Coding::indirect), 2, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 2 },
 	{ Coding::eot },
 };
 Coding x86Parser::prefixCoding5[] = {
-	{ (Coding::Type)(Coding::indirect), 3, -1, -1, 0, 0 }, 
+	{ Coding::stateFunc, 3 },
 	{ Coding::eot },
 };
 Coding x86Parser::prefixCoding6[] = {
@@ -23993,9 +23993,20 @@ bool x86Parser::ProcessCoding(x86Operand &operand, Coding *coding, int& endVal, 
 		else if (coding->type & Coding::indirect)
 		{
 			if (!operand.values[coding->val])
-				return false;
-			if (!ProcessCoding(operand, operand.values[coding->val], n, bitcount))
-				return false;
+			{
+				if (!(coding->type & Coding::optional))
+				{
+					return false;
+				}
+				else
+				{
+					coding++;
+					continue;
+				}
+			}
+			else
+				if (!ProcessCoding(operand, operand.values[coding->val], n, bitcount))
+					return false;
 		}
 		else if (coding->type & Coding::illegal)
 		{
@@ -24036,7 +24047,7 @@ bool x86Parser::ProcessCoding(x86Operand &operand, Coding *coding)
 {
 	if (coding->type == Coding::eot)
 		return true;
-	int val = 0, bitcount = -1;
+	int val = 0, bitcount = 8;
 	bool rv = ProcessCoding(operand, coding, val, bitcount);
 	if (rv)
 	{

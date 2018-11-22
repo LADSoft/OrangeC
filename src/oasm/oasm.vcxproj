@@ -159,8 +159,8 @@
     <ClCompile Include="InstructionParser.cpp" />
     <ClCompile Include="Listing.cpp" />
     <ClCompile Include="Section.cpp" />
-    <ClCompile Include="x86Parser.cpp" />
-    <ClCompile Include="x86stub.cpp" />
+    <ClCompile Include="x64Parser.cpp" />
+    <ClCompile Include="x64stub.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AsmExpr.h" />
@@ -172,8 +172,8 @@
     <ClInclude Include="Label.h" />
     <ClInclude Include="Listing.h" />
     <ClInclude Include="Section.h" />
-    <ClInclude Include="x86Operand.h" />
-    <ClInclude Include="x86Parser.h" />
+    <ClInclude Include="x64Operand.h" />
+    <ClInclude Include="x64Parser.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\util\util.vcxproj">

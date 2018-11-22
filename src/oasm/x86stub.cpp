@@ -318,7 +318,7 @@ void Instruction::Optimize(int pc, bool last)
         }
     }
 }
-int x86Stub::DoMath(char op, int left, int right)
+int x86Parser::DoMath(char op, int left, int right)
 {
     switch (op)
     {
@@ -344,19 +344,19 @@ int x86Stub::DoMath(char op, int left, int right)
             return left;
     }
 }
-void x86Parser::Setup(Section* sect) { Setseg32(sect->beValues[0]); }
+void x86Parser::Setup(Section* sect) { sect->beValues[0]=16; Setprocessorbits(sect->beValues[0]); }
 bool x86Parser::ParseSection(AsmFile* fil, Section* sect)
 {
     bool rv = false;
     if (fil->GetKeyword() == Lexer::USE16)
     {
-        sect->beValues[0] = 0;
+        sect->beValues[0] = 16;
         fil->NextToken();
         rv = true;
     }
     else if (fil->GetKeyword() == Lexer::USE32)
     {
-        sect->beValues[0] = 1;
+        sect->beValues[0] = 32;
         fil->NextToken();
         rv = true;
     }

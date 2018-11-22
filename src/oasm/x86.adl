@@ -24,10 +24,10 @@
 			<Instance Value="$#:32"/>
 		</Number>
 		<Number Name="address16">
-			<Instance Value="$#:16" Cond="'seg32'==0"/>
+			<Instance Value="$#:16" Cond="'processorbits'==16"/>
 		</Number>
 		<Number Name="address32">
-			<Instance Value="$#:32" Cond="'seg32'==1"/>
+			<Instance Value="$#:32" Cond="'processorbits'==32"/>
 		</Number>
 		<Number Name="rel8" relOfs="1">
 			<Instance Value="-$#:8"/>
@@ -36,19 +36,19 @@
 			<Instance Value="-$#:8"/>
 		</Number>
 		<Number Name="rel16" relOfs="2">
-			<Instance Value="-$#:16" Cond="'seg32'==0"/>
+			<Instance Value="-$#:16" Cond="'processorbits'==16"/>
 		</Number>
 		<Number Name="rel16n" relOfs="-2">
-			<Instance Value="-$#:16" Cond="'seg32'==0"/>
+			<Instance Value="-$#:16" Cond="'processorbits'==16"/>
 		</Number>
 		<Number Name="rel16j" relOfs="2">
-			<Instance Value="-$#:16" Cond="'seg32'==0"/>
+			<Instance Value="-$#:16" Cond="'processorbits'==16"/>
 		</Number>
 		<Number Name="rel16jn" relOfs="-2">
-			<Instance Value="-$#:16" Cond="'seg32'==0"/>
+			<Instance Value="-$#:16" Cond="'processorbits'==16"/>
 		</Number>
 		<Number Name="rel32" relOfs="4">
-			<Instance Value="-$#:32" Cond="'seg32'!=0"/>
+			<Instance Value="-$#:32" Cond="'processorbits'==32"/>
 		</Number>
 		<Number Name="scale">
 			<Instance Value="1;0"/>
@@ -63,23 +63,23 @@
 			<Instance Value="1;1"/>
 		</Number>
 		<StateVars>
-			<Instance  Name="seg32" Init="0"/>
+			<Instance  Name="processorbits" Init="0"/>
 		</StateVars>
 		<State Name="addr16">
-			<When Cond="'seg32'==0" Value=""/>
-			<When Cond="'seg32'!=0" Value="0x67:8"/>
+			<When Cond="'processorbits'==16" Value=""/>
+			<When Cond="'processorbits'==32" Value="0x67:8"/>
 		</State>
 		<State Name="addr32">
-			<When Cond="'seg32'!=0" Value=""/>
-			<When Cond="'seg32'==0" Value="0x67:8"/>
+			<When Cond="'processorbits'==32" Value=""/>
+			<When Cond="'processorbits'==16" Value="0x67:8"/>
 		</State>
 		<State Name="data16">
-			<When Cond="'seg32'==0" Value=""/>
-			<When Cond="'seg32'!=0" Value="0x66:8"/>
+			<When Cond="'processorbits'==16" Value=""/>
+			<When Cond="'processorbits'==32" Value="0x66:8"/>
 		</State>
 		<State Name="data32">
-			<When Cond="'seg32'!=0" Value=""/>
-			<When Cond="'seg32'==0" Value="0x66:8"/>
+			<When Cond="'processorbits'==32" Value=""/>
+			<When Cond="'processorbits'==16" Value="0x66:8"/>
 		</State>
 		<Register Class="general">
 			<Instance Name="al" Ord="0" Class="reg8,low"/>

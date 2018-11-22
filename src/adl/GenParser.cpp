@@ -215,7 +215,7 @@ bool GenParser::GenerateHeader()
     (*file) << "\tbool ParseOperands2(" << tokenClassName << " *tokenList, "<<operandClassName<<" &operand, int tokenPos, int level);" << std::endl;
     (*file) << "\tbool ParseOperands(" << tokenClassName << " *tokenList, "<<operandClassName<<" &operand);" << std::endl;
     (*file) << "\tbool ProcessCoding("<<operandClassName<<" &operand, Coding *coding);" << std::endl;
-    (*file) << "\tbool ProcessCoding(" << operandClassName << " &operand, Coding *coding, int& endVal, int& endBits);" << std::endl;
+    (*file) << "\tbool ProcessCoding(" << operandClassName << " &operand, Coding *coding, int field, int bits, int* arr, char* bitcounts, char *func, int &index);" << std::endl;
     (*file) << "\tbool MatchesToken(int token, int tokenPos);" << std::endl;
     (*file) << "\tbool MatchesRegister(int reg, int tokenPos);" << std::endl;
     (*file) << "\tbool MatchesRegisterClass(int cclass, int tokenPos);" << std::endl;
@@ -959,7 +959,6 @@ void GenParser::GenerateCoding(const std::string coding)
             char unary = 0;
             char binary = 0;
             int value = 0;
-            int variable = -1;
             int field =- 1;
             std::string fieldName;
             bool hasVal = false;
@@ -974,8 +973,6 @@ void GenParser::GenerateCoding(const std::string coding)
                 temp = temp.substr(npos);
             switch (temp[0])
             {
-                case '+':
-                case '-':
                 case '!':
                 case '~':
                     unary = temp[0];
@@ -1016,6 +1013,7 @@ void GenParser::GenerateCoding(const std::string coding)
                     if (itst != stateFuncTags.end())
                     {
                         value = itst->second;
+                        stateFunc = true;
                     }
                     else
                     {
@@ -1023,6 +1021,7 @@ void GenParser::GenerateCoding(const std::string coding)
                         if (itst != stateVarTags.end())
                         {
                             value = itst->second;
+                            stateVar = true;
                         }
                         else
                         {
@@ -1041,7 +1040,7 @@ void GenParser::GenerateCoding(const std::string coding)
                             }
                             else
                             {
-                                variable = itp->second;
+                                value = itp->second;
                             }
                             if (fieldName != "")
                             {
@@ -1347,35 +1346,42 @@ bool GenParser::GenerateOperandParser()
 }
 bool GenParser::GenerateCodingProcessor()
 {
-    (*file) << "bool " << className << "::ProcessCoding("<<operandClassName<<" &operand, Coding *coding, int& endVal, int& endBits)" << std::endl;
+    (*file) << "bool " << className << "::ProcessCoding("<<operandClassName<<" &operand, Coding *coding, int field, int bits, int* arr, char* bitcounts, char *func, int &index)" << std::endl;
     (*file) << "{" << std::endl;
-    (*file) << std::endl;
     (*file) << "\tint acc = 0, binary = 0;" << std::endl;
     (*file) << "\twhile (coding->type != Coding::eot)" << std::endl;
     (*file) << "\t{" << std::endl;
-    (*file) << "\t\tint n = 0;" << std::endl;
-    (*file) << "\t\tint bitcount = endBits;" << std::endl;
     (*file) << "\t\tif (coding->type & Coding::bitSpecified)" << std::endl;
-    (*file) << "\t\t\tbitcount = coding->bits;" << std::endl;
+    (*file) << "\t\t\tbits = coding->bits;" << std::endl;
     (*file) << "\t\tif (coding->type & Coding::valSpecified)" << std::endl;
     (*file) << "\t\t{" << std::endl;
-    (*file) << "\t\t\tn = coding->val;" << std::endl;
+    (*file) << "\t\t\tfunc[index] = coding->binary;" << std::endl;
+    (*file) << "\t\t\tbitcounts[index] = bits;" << std::endl;
+    (*file) << "\t\t\tarr[index++] = coding->val;" << std::endl;
     (*file) << "\t\t}" << std::endl;
     (*file) << "\t\telse if (coding->type & Coding::reg)" << std::endl;
     (*file) << "\t\t{" << std::endl;
-    (*file) << "\t\t\tn = coding->val;" << std::endl;
-    (*file) << "\t\t\tif (coding->field != -1)" << std::endl;
-    (*file) << "\t\t\t\tn = registerValues[n][coding->field];" << std::endl;
+    (*file) << "\t\t\tint n = coding->val;" << std::endl;
+    (*file) << "\t\t\tif (field != -1)" << std::endl;
+    (*file) << "\t\t\t\tn = registerValues[n][field];" << std::endl;
+    (*file) << "\t\t\tfunc[index] = coding->binary;" << std::endl;
+    (*file) << "\t\t\tbitcounts[index] = bits;" << std::endl;
+    (*file) << "\t\t\tarr[index++] = n;" << std::endl;
     (*file) << "\t\t}" << std::endl;
     (*file) << "\t\telse if (coding->type & Coding::stateFunc)" << std::endl;
     (*file) << "\t\t{" << std::endl;
     (*file) << "\t\t\tCoding *c = (this->*stateFuncs[coding->val])();" << std::endl;
-    (*file) << "\t\t\tif (!ProcessCoding(operand, c, n, bitcount))" << std::endl;
+    (*file) << "\t\t\tint index1 = index;" << std::endl;
+    (*file) << "\t\t\tif (!ProcessCoding(operand, c, coding->field, bits, arr, bitcounts, func, index))" << std::endl;
     (*file) << "\t\t\t\treturn false;" << std::endl;
+    (*file) << "\t\t\tif (index != index1 && coding->binary)" << std::endl;
+    (*file) << "\t\t\t\tfunc[index - 1] = coding->binary;" << std::endl;
     (*file) << "\t\t}" << std::endl;
     (*file) << "\t\telse if (coding->type & Coding::stateVar)" << std::endl;
     (*file) << "\t\t{" << std::endl;
-    (*file) << "\t\t\tn = stateVars[coding->val];" << std::endl;
+    (*file) << "\t\t\tfunc[index] = coding->binary;" << std::endl;
+    (*file) << "\t\t\tbitcounts[index] = bits;" << std::endl;
+    (*file) << "\t\t\tarr[index++] = stateVars[coding->val];" << std::endl;
     (*file) << "\t\t}" << std::endl;
     (*file) << "\t\telse if (coding->type & Coding::number)" << std::endl;
     (*file) << "\t\t{" << std::endl;
@@ -1387,21 +1393,38 @@ bool GenParser::GenerateCodingProcessor()
     (*file) << "\t\t\t}" << std::endl;
     (*file) << "\t\t\t(*it)->used = true;" << std::endl;
     (*file) << "\t\t\t(*it)->pos = this->bits.GetBits();" << std::endl;
-    (*file) << "\t\t\tn = (*it)->node->ival;" << std::endl;
+    (*file) << "\t\t\tfunc[index] = coding->binary;" << std::endl;
+    (*file) << "\t\t\tbitcounts[index] = bits;" << std::endl;
+    (*file) << "\t\t\tarr[index++] = (*it)->node->ival;" << std::endl;
     (*file) << "\t\t}" << std::endl;
     (*file) << "\t\telse if (coding->type & Coding::native)" << std::endl;
     (*file) << "\t\t{" << std::endl;
     (*file) << "\t\t\tif (operand.addressCoding == -1)" << std::endl;
     (*file) << "\t\t\t\treturn false;" << std::endl;
-    (*file) << "\t\t\tif (!ProcessCoding(operand, Codings[operand.addressCoding], n, bitcount))" << std::endl;
+    (*file) << "\t\t\tint index1 = index;" << std::endl;
+    (*file) << "\t\t\tif (!ProcessCoding(operand, Codings[operand.addressCoding], coding->field, bits, arr, bitcounts, func, index))" << std::endl;
     (*file) << "\t\t\t\treturn false;" << std::endl;
+    (*file) << "\t\t\tif (index != index1 && coding->binary)" << std::endl;
+    (*file) << "\t\t\t\tfunc[index - 1] = coding->binary;" << std::endl;
     (*file) << "\t\t}" << std::endl;
     (*file) << "\t\telse if (coding->type & Coding::indirect)" << std::endl;
     (*file) << "\t\t{" << std::endl;
     (*file) << "\t\t\tif (!operand.values[coding->val])" << std::endl;
-    (*file) << "\t\t\t\treturn false;" << std::endl;
-    (*file) << "\t\t\tif (!ProcessCoding(operand, operand.values[coding->val], n, bitcount))" << std::endl;
-    (*file) << "\t\t\t\treturn false;" << std::endl;
+    (*file) << "\t\t\t{" << std::endl;
+    (*file) << "\t\t\t\tif (!(coding->type & Coding::optional))" << std::endl;
+    (*file) << "\t\t\t\t{" << std::endl;
+    (*file) << "\t\t\t\t\treturn false;" << std::endl;
+    (*file) << "\t\t\t\t}" << std::endl;
+    (*file) << "\t\t\t}" << std::endl;
+    (*file) << "\t\t\telse" << std::endl;
+    (*file) << "\t\t\t{" << std::endl;
+    (*file) << "\t\t\t\tint index1 = index;" << std::endl;
+    (*file) << "\t\t\t\tif (!ProcessCoding(operand, operand.values[coding->val], coding->field, bits, arr, bitcounts, func, index))" << std::endl;
+    (*file) << "\t\t\t\t\treturn false;" << std::endl;
+    (*file) << "\t\t\t\tif (index != index1 && coding->binary)" << std::endl;
+    (*file) << "\t\t\t\t\tfunc[index - 1] = coding->binary;" << std::endl;
+    (*file) << "\t\t\t}" << std::endl;
+
     (*file) << "\t\t}" << std::endl;
     (*file) << "\t\telse if (coding->type & Coding::illegal)" << std::endl;
     (*file) << "\t\t{" << std::endl;
@@ -1411,29 +1434,6 @@ bool GenParser::GenerateCodingProcessor()
     (*file) << "\t\t{" << std::endl;
     (*file) << "\t\t\treturn false;" << std::endl;
     (*file) << "\t\t}" << std::endl;
-    (*file) << "\t\tif (binary)" << std::endl;
-    (*file) << "\t\t{" << std::endl;
-    (*file) << "\t\t\tacc = DoMath(binary, acc, n);" << std::endl;
-    (*file) << "\t\t\tbinary = 0;" << std::endl;
-    (*file) << "\t\t}" << std::endl;
-    (*file) << "\t\telse" << std::endl;
-    (*file) << "\t\t{" << std::endl;
-    (*file) << "\t\t\tacc = n;" << std::endl;
-    (*file) << "\t\t}" << std::endl;
-    (*file) << "\t\tif (coding[1].type == Coding::eot)" << std::endl;
-    (*file) << "\t\t{" << std::endl;
-    (*file) << "\t\t\tendVal = acc;" << std::endl;
-    (*file) << "\t\t\tendBits = bitcount;" << std::endl;
-    (*file) << "\t\t}" << std::endl;
-    (*file) << "\t\telse if (coding->binary)" << std::endl;
-    (*file) << "\t\t{" << std::endl;
-    (*file) << "\t\t\tbinary = coding->binary;" << std::endl;
-    (*file) << "\t\t}" << std::endl;
-    (*file) << "\t\telse" << std::endl;
-    (*file) << "\t\t{" << std::endl;
-    (*file) << "\t\t\tbits.Add(acc, bitcount);" << std::endl;
-    (*file) << "\t\t\tacc = 0;" << std::endl;
-    (*file) << "\t\t}" << std::endl;
     (*file) << "\t\tcoding++;" << std::endl;
     (*file) << "\t}" << std::endl;
     (*file) << "\treturn true;" << std::endl;
@@ -1442,13 +1442,23 @@ bool GenParser::GenerateCodingProcessor()
 
     (*file) << "bool " << className << "::ProcessCoding(" << operandClassName << " &operand, Coding *coding)" << std::endl;
     (*file) << "{" << std::endl;
+    (*file) << "\tint arr[1000];" << std::endl;
+    (*file) << "\tchar bitcount[1000];" << std::endl;
+    (*file) << "\tchar func[1000];" << std::endl;
+    (*file) << "\tint index = 0;" << std::endl;
     (*file) << "\tif (coding->type == Coding::eot)" << std::endl;
     (*file) << "\t\treturn true;" << std::endl;
-    (*file) << "\tint val = 0, bitcount = -1;" << std::endl;
-    (*file) << "\tbool rv = ProcessCoding(operand, coding, val, bitcount);" << std::endl;
+    (*file) << "\tint defaultBits = 8;" << std::endl;
+    (*file) << "\tbool rv = ProcessCoding(operand, coding, -1, defaultBits, arr, bitcount, func, index);" << std::endl;
     (*file) << "\tif (rv)" << std::endl;
     (*file) << "\t{" << std::endl;
-    (*file) << "\t\tbits.Add(val, bitcount);" << std::endl;
+    (*file) << "\t\tfor (int i = 0; i < index; i++)" << std::endl;
+    (*file) << "\t\t{" << std::endl;
+    (*file) << "\t\t\tif (func[i])" << std::endl;
+    (*file) << "\t\t\t\tarr[i + 1] = DoMath(func[i], arr[i], arr[i + 1]);" << std::endl;
+    (*file) << "\t\t\telse" << std::endl;
+    (*file) << "\t\t\t\tbits.Add(arr[i], bitcount[i]);" << std::endl;
+    (*file) << "\t\t}" << std::endl;
     (*file) << "\t}" << std::endl;
     (*file) << "\treturn rv;" << std::endl;
     (*file) << "}" << std::endl;

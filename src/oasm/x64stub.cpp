@@ -346,7 +346,8 @@ int x64Parser::DoMath(char op, int left, int right)
 }
 void x64Parser::Setup(Section* sect) 
 {
-	sect->beValues[0] = 16; // 16 bit mode is the default 
+    if (sect->beValues[0] == 0)
+    	sect->beValues[0] = 16; // 16 bit mode is the default 
 	Setprocessorbits(sect->beValues[0]); 
 }
 

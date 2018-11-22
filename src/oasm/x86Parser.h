@@ -8,8 +8,8 @@ class x86Parser : public InstructionParser
 { 
 public:
 	x86Parser() { Init(); }
-	void Setseg32(int v) { stateVars[0] = v; }
-	int Getseg32() { return stateVars[0]; }
+	void Setprocessorbits(int v) { stateVars[0] = v; }
+	int Getprocessorbits() { return stateVars[0]; }
 	virtual void Setup(Section *sect);
 	virtual void Init();
 	virtual bool ParseSection(AsmFile *fil, Section *sect);

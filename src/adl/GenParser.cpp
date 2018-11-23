@@ -1076,6 +1076,11 @@ void GenParser::GenerateCoding(const std::string coding)
                     illegal = true;
                     temp = temp.substr(7);
                 }
+                else
+                {
+                    std::cout << "Error { " << coding << " } invalid coding sequence" << std::endl;
+                    break;
+                }
                 npos = temp.find_first_not_of(" ,\t\v\r\n");
                 if (npos == std::string::npos)
                 {

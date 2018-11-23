@@ -27,6 +27,7 @@
 #include "Label.h"
 #include "Fixup.h"
 #include "AsmFile.h"
+#include <iostream>
 
 bool Instruction::bigEndian;
 
@@ -40,6 +41,40 @@ Instruction::~Instruction()
         delete f;
     }
 }
+unsigned char * Instruction::LoadData(bool isCode, unsigned char *data, size_t size)
+{
+    bool lost = false;
+#ifdef x64
+    bool found = !isCode;
+#else
+    bool found = true;
+#endif
+    unsigned char *d = new unsigned char[size], *rv = d;
+    for (unsigned char *s=data; size; size--)
+    {
+        if (found || (*s & 0xf0) != 0x40)// null REX prefix
+            *d++ = *s++;
+        else
+        {
+            found = true;
+            if (*s == 0x40)
+            {
+                lost = true;
+                s++;
+            }
+            else
+            {
+                *d++ = *s++;
+            }
+        }
+    }
+    if (!found)
+        std::cerr << "Diag: missing REX prefix" << std::endl;
+    if (lost)
+        this->size--;
+    return rv;
+}
+
 int Instruction::GetNext(Fixup& fixup, unsigned char* buf)
 {
     if (type == RESERVE)

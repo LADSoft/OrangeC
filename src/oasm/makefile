@@ -28,7 +28,7 @@ MAIN_FILE=AsmMain.cpp
 INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)ocpp ..$(PATHEXT2)objlib
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=ocpplib objlib util
-DEFINES=
+DEFINES=x64
 H_FILES=$(wildcard *.h)
 EXCLUDE=x86Parser x86stub
 

@@ -57,8 +57,7 @@ class Instruction
         size(Size),
         offs(0)
     {
-        data = new unsigned char[size];
-        memcpy(data, Data, size);
+        data = LoadData(!isData, Data, Size);
     }
     Instruction(int aln) : data(nullptr), type(ALIGN), label(nullptr), pos(0), fpos(0), size(aln), offs(0), repeat(1) {}
     Instruction(int Repeat, int Size) : type(RESERVE), label(nullptr), pos(0), fpos(0), size(Size), repeat(Repeat), offs(0)
@@ -97,6 +96,7 @@ class Instruction
     unsigned char* GetBytes() { return data; }
     FixupContainer* GetFixups() { return &fixups; }
     static void SetBigEndian(bool be) { bigEndian = be; }
+    unsigned char * LoadData(bool isCode, unsigned char *data, size_t size);
 
   private:
     enum iType type;

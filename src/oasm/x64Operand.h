@@ -3,7 +3,7 @@
 
 class x64Parser;
 class Coding;
-static const int OPARRAY_SIZE = 35;
+static const int OPARRAY_SIZE = 34;
 class x64Operand
 { 
 public:

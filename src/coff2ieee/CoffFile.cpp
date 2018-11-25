@@ -48,7 +48,7 @@ CoffFile::~CoffFile()
 bool CoffFile::Load()
 {
     if (name.size())
-        inputFile = new std::fstream(name.c_str(), std::ios::binary | std::ios::in);
+        inputFile = new std::fstream(name, std::ios::binary | std::ios::in);
     if (inputFile && inputFile->is_open())
     {
         inputFile->read((char*)&header, sizeof(header));

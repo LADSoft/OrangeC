@@ -29,9 +29,9 @@
 #include "ObjSymbol.h"
 #include "ObjSection.h"
 #include "Utils.h"
-#include <ctype.h>
+#include <cctype>
 #include <iostream>
-#include <string.h>
+#include <cstring>
 #include "CoffLibrary.h"
 
 void LibDictionary::CreateDictionary(std::map<int, Module*>& Modules)

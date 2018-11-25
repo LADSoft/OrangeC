@@ -48,7 +48,7 @@ BRCLoader::~BRCLoader()
 void BRCLoader::InsertSymData(std::string s, BrowseData* ldata, bool func)
 {
     SymData* sym;
-    Symbols::iterator it = syms.find(s);
+    auto it = syms.find(s);
     if (it != syms.end())
     {
         sym = it->second;
@@ -132,7 +132,7 @@ void BRCLoader::Usages(ObjBrowseInfo& p)
     ldata->blockLevel = blocks.size() - blockHead;
     ldata->fileIndex = indexMap[p.GetLineNo()->GetFile()->GetIndex()];
     SymData* sym;
-    Symbols::iterator it = syms.find(name);
+    auto it = syms.find(name);
     if (it != syms.end())
     {
         sym = it->second;
@@ -200,7 +200,7 @@ void BRCLoader::EndBlock(int line)
 void BRCLoader::ParseData(ObjFile& f)
 {
     blocks.clear();
-    for (ObjFile::BrowseInfoIterator it = f.BrowseInfoBegin(); it != f.BrowseInfoEnd(); ++it)
+    for (auto it = f.BrowseInfoBegin(); it != f.BrowseInfoEnd(); ++it)
     {
         ObjBrowseInfo* p = *it;
         switch (p->GetType())
@@ -241,7 +241,7 @@ void BRCLoader::ParseData(ObjFile& f)
 void BRCLoader::LoadSourceFiles(ObjFile& fil)
 {
     indexMap.clear();
-    for (ObjFile::SourceFileIterator it = fil.SourceFileBegin(); it != fil.SourceFileEnd(); ++it)
+    for (auto it = fil.SourceFileBegin(); it != fil.SourceFileEnd(); ++it)
     {
         int index;
         auto it1 = nameMap.find((*it)->GetName());
@@ -262,7 +262,7 @@ void BRCLoader::LoadSourceFiles(ObjFile& fil)
 bool BRCLoader::load()
 {
     bool rv = true;
-    for (CmdFiles::FileNameIterator it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
+    for (auto it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
     {
         std::string name = **it;
         ObjIeeeIndexManager im1;
@@ -282,14 +282,12 @@ bool BRCLoader::load()
             }
             else
             {
-                std::string temp = std::string("Invalid browse information file ") + name.c_str();
-                std::cout << temp.c_str() << std::endl;
+                std::cout << "Invalid browse information file " << name << std::endl;
             }
         }
         else
         {
-            std::string temp = std::string("Could not open file ") + name.c_str();
-            std::cout << temp.c_str() << std::endl;
+            std::cout << "Could not open file " << name << std::endl;
             rv = false;
         }
     }

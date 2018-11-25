@@ -219,7 +219,7 @@ ObjExpression* ObjIeeeAscii::GetExpression(const char* buffer, int* pos)
 }
 bool ObjIeeeAscii::Parse(const char* buffer, eParseType ParseType)
 {
-    if (!parseTree.size())
+    if (parseTree.empty())
     {
         ParseData* parser = &parseData[0];
         for (int i = 0; i < sizeof(parseData) / sizeof(parseData[0]); i++)

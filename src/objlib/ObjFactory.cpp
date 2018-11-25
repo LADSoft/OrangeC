@@ -27,7 +27,7 @@
 
 void ObjFactory::Deallocate()
 {
-    for (MemoryIterator it = MemoryBegin(); it != MemoryEnd(); ++it)
+    for (auto it = MemoryBegin(); it != MemoryEnd(); ++it)
     {
         delete *it;
     }

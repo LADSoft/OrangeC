@@ -29,7 +29,7 @@
 
 void ObjFile::ResolveSymbols(ObjFactory* Factory)
 {
-    for (SectionIterator it = SectionBegin(); it != SectionEnd(); ++it)
+    for (auto it = SectionBegin(); it != SectionEnd(); ++it)
         (*it)->ResolveSymbols(Factory);
 }
 void ObjFile::Add(ObjSymbol* Symbol)

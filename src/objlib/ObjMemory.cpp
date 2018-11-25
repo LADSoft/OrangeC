@@ -63,11 +63,11 @@ void ObjMemory::SetData(ObjExpression* Data, ObjInt Size)
 void ObjMemoryManager::ResolveSymbols(ObjFactory* Factory, ObjSection* Section)
 {
     int offset = 0;
-    for (MemoryIterator itm = MemoryBegin(); itm != MemoryEnd(); ++itm)
+    for (auto itm = MemoryBegin(); itm != MemoryEnd(); ++itm)
     {
         if ((*itm)->HasDebugTags())
         {
-            for (ObjMemory::DebugTagIterator itd = (*itm)->DebugTagBegin(); itd != (*itm)->DebugTagEnd(); ++itd)
+            for (auto itd = (*itm)->DebugTagBegin(); itd != (*itm)->DebugTagEnd(); ++itd)
             {
                 if ((*itd)->GetType() == ObjDebugTag::eVar)
                 {

@@ -204,6 +204,7 @@ bool GenParser::GenerateHeader()
     (*file) << "\tvirtual void Setup(Section *sect);" << std::endl;
     (*file) << "\tvirtual void Init();" << std::endl;
     (*file) << "\tvirtual bool ParseSection(AsmFile *fil, Section *sect);" << std::endl;
+    (*file) << "\tvirtual bool ParseDirective(AsmFile *fil, Section *sect);" << std::endl;
     int be = 0;
     std::string bes = parser.parameters["Endian"];
     if (bes.size())
@@ -1397,7 +1398,11 @@ bool GenParser::GenerateCodingProcessor()
     (*file) << "\t\t\t\t++it;" << std::endl;
     (*file) << "\t\t\t}" << std::endl;
     (*file) << "\t\t\t(*it)->used = true;" << std::endl;
-    (*file) << "\t\t\t(*it)->pos = this->bits.GetBits();" << std::endl;
+    (*file) << "\t\t\tn = 0;" << std::endl;
+    (*file) << "\t\t\tfor (int i = 0; i < index; i++)" << std::endl;
+    (*file) << "\t\t\t\tif (!func[i])" << std::endl;
+    (*file) << "\t\t\t\t\tn += bitcounts[i];" << std::endl;
+    (*file) << "\t\t\t(*it)->pos = n;" << std::endl;
     (*file) << "\t\t\tfunc[index] = coding->binary;" << std::endl;
     (*file) << "\t\t\tbitcounts[index] = bits;" << std::endl;
     (*file) << "\t\t\tarr[index++] = (*it)->node->ival;" << std::endl;

@@ -13,6 +13,7 @@ public:
 	virtual void Setup(Section *sect);
 	virtual void Init();
 	virtual bool ParseSection(AsmFile *fil, Section *sect);
+	virtual bool ParseDirective(AsmFile *fil, Section *sect);
 	virtual bool IsBigEndian() { return 0; }
 
 protected:
@@ -20,7 +21,7 @@ protected:
 	bool ParseOperands2(x86Token *tokenList, x86Operand &operand, int tokenPos, int level);
 	bool ParseOperands(x86Token *tokenList, x86Operand &operand);
 	bool ProcessCoding(x86Operand &operand, Coding *coding);
-	bool ProcessCoding(x86Operand &operand, Coding *coding, int& endVal, int& endBits);
+	bool ProcessCoding(x86Operand &operand, Coding *coding, int field, int bits, int* arr, char* bitcounts, char *func, int &index);
 	bool MatchesToken(int token, int tokenPos);
 	bool MatchesRegister(int reg, int tokenPos);
 	bool MatchesRegisterClass(int cclass, int tokenPos);

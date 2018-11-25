@@ -80,6 +80,7 @@ void Lexer::InitHash()
         hash["]"] = closebr;
         hash["ABSOLUTE"] = ABSOLUTE;
         hash["ALIGN"] = ALIGN;
+        hash["BITS"] = BITS;
         hash["CLASS"] = CLASS;
         hash["DB"] = DB;
         hash["DD"] = DD;

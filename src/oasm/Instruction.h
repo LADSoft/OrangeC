@@ -55,7 +55,8 @@ class Instruction
         fpos(0),
         repeat(1),
         size(Size),
-        offs(0)
+        offs(0),
+        lost(false)
     {
         data = LoadData(!isData, Data, Size);
     }
@@ -97,7 +98,7 @@ class Instruction
     FixupContainer* GetFixups() { return &fixups; }
     static void SetBigEndian(bool be) { bigEndian = be; }
     unsigned char * LoadData(bool isCode, unsigned char *data, size_t size);
-
+    bool Lost() const { return lost; }
   private:
     enum iType type;
     unsigned char* data;
@@ -107,6 +108,7 @@ class Instruction
     int pos;
     int fpos;
     int repeat, xrepeat;
+    bool lost;
 
     FixupContainer fixups;
     static bool bigEndian;

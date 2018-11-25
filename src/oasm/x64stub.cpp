@@ -374,3 +374,24 @@ bool x64Parser::ParseSection(AsmFile* fil, Section* sect)
     }
     return rv;
 }
+bool x64Parser::ParseDirective(AsmFile* fil, Section* sect)
+{
+    bool rv = false;
+    if (fil->GetKeyword() == Lexer::BITS)
+    {
+        fil->NextToken();
+        if (fil->IsNumber())
+        {
+            int n = static_cast<const NumericToken*>(fil->GetToken())->GetInteger();
+            if (n == 16 || n == 32 || n == 64)
+            {        
+                sect->beValues[0] = n;
+                Setprocessorbits(sect->beValues[0]);
+                rv = true;
+
+            }
+            fil->NextToken();
+        }
+    }
+    return rv;
+}

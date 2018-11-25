@@ -67,6 +67,7 @@ class Lexer
         // must be after punctuation
         ABSOLUTE,
         ALIGN,
+        BITS,
         CLASS,
         DB,
         DD,

@@ -72,6 +72,7 @@ void BitStream::Add(int val, int cnt)
 }
 bool InstructionParser::ParseNumber(int relOfs, int sign, int bits, int needConstant, int tokenPos)
 {
+
     if (inputTokens[tokenPos]->type == InputToken::NUMBER)
     {
         val = inputTokens[tokenPos]->val;
@@ -234,6 +235,8 @@ Instruction* InstructionParser::Parse(const std::string args, int PC)
                 {
                     if (operand->used && operand->size)
                     {
+                        if (s->Lost() && operand->pos)
+                            operand->pos-=8;
                         int n = operand->relOfs;
                         if (n < 0)
                             n = -n;

@@ -23941,35 +23941,42 @@ bool x86Parser::ParseOperands(x86Token *tokenList, x86Operand &operand)
 	return ParseOperands2(tokenList, operand, 0, 0);
 }
 
-bool x86Parser::ProcessCoding(x86Operand &operand, Coding *coding, int& endVal, int& endBits)
+bool x86Parser::ProcessCoding(x86Operand &operand, Coding *coding, int field, int bits, int* arr, char* bitcounts, char *func, int &index)
 {
-
 	int acc = 0, binary = 0;
 	while (coding->type != Coding::eot)
 	{
-		int n = 0;
-		int bitcount = endBits;
 		if (coding->type & Coding::bitSpecified)
-			bitcount = coding->bits;
+			bits = coding->bits;
 		if (coding->type & Coding::valSpecified)
 		{
-			n = coding->val;
+			func[index] = coding->binary;
+			bitcounts[index] = bits;
+			arr[index++] = coding->val;
 		}
 		else if (coding->type & Coding::reg)
 		{
-			n = coding->val;
-			if (coding->field != -1)
-				n = registerValues[n][coding->field];
+			int n = coding->val;
+			if (field != -1)
+				n = registerValues[n][field];
+			func[index] = coding->binary;
+			bitcounts[index] = bits;
+			arr[index++] = n;
 		}
 		else if (coding->type & Coding::stateFunc)
 		{
 			Coding *c = (this->*stateFuncs[coding->val])();
-			if (!ProcessCoding(operand, c, n, bitcount))
+			int index1 = index;
+			if (!ProcessCoding(operand, c, coding->field, bits, arr, bitcounts, func, index))
 				return false;
+			if (index != index1 && coding->binary)
+				func[index - 1] = coding->binary;
 		}
 		else if (coding->type & Coding::stateVar)
 		{
-			n = stateVars[coding->val];
+			func[index] = coding->binary;
+			bitcounts[index] = bits;
+			arr[index++] = stateVars[coding->val];
 		}
 		else if (coding->type & Coding::number)
 		{
@@ -23980,15 +23987,23 @@ bool x86Parser::ProcessCoding(x86Operand &operand, Coding *coding, int& endVal, 
 				++it;
 			}
 			(*it)->used = true;
-			(*it)->pos = this->bits.GetBits();
-			n = (*it)->node->ival;
+			n = 0;
+			for (int i = 0; i < index; i++)
+				n += bitcounts[i];
+			(*it)->pos = n;
+			func[index] = coding->binary;
+			bitcounts[index] = bits;
+			arr[index++] = (*it)->node->ival;
 		}
 		else if (coding->type & Coding::native)
 		{
 			if (operand.addressCoding == -1)
 				return false;
-			if (!ProcessCoding(operand, Codings[operand.addressCoding], n, bitcount))
+			int index1 = index;
+			if (!ProcessCoding(operand, Codings[operand.addressCoding], coding->field, bits, arr, bitcounts, func, index))
 				return false;
+			if (index != index1 && coding->binary)
+				func[index - 1] = coding->binary;
 		}
 		else if (coding->type & Coding::indirect)
 		{
@@ -23998,15 +24013,15 @@ bool x86Parser::ProcessCoding(x86Operand &operand, Coding *coding, int& endVal, 
 				{
 					return false;
 				}
-				else
-				{
-					coding++;
-					continue;
-				}
 			}
 			else
-				if (!ProcessCoding(operand, operand.values[coding->val], n, bitcount))
+			{
+				int index1 = index;
+				if (!ProcessCoding(operand, operand.values[coding->val], coding->field, bits, arr, bitcounts, func, index))
 					return false;
+				if (index != index1 && coding->binary)
+					func[index - 1] = coding->binary;
+			}
 		}
 		else if (coding->type & Coding::illegal)
 		{
@@ -24016,42 +24031,29 @@ bool x86Parser::ProcessCoding(x86Operand &operand, Coding *coding, int& endVal, 
 		{
 			return false;
 		}
-		if (binary)
-		{
-			acc = DoMath(binary, acc, n);
-			binary = 0;
-		}
-		else
-		{
-			acc = n;
-		}
-		if (coding[1].type == Coding::eot)
-		{
-			endVal = acc;
-			endBits = bitcount;
-		}
-		else if (coding->binary)
-		{
-			binary = coding->binary;
-		}
-		else
-		{
-			bits.Add(acc, bitcount);
-			acc = 0;
-		}
 		coding++;
 	}
 	return true;
 }
 bool x86Parser::ProcessCoding(x86Operand &operand, Coding *coding)
 {
+	int arr[1000];
+	char bitcount[1000];
+	char func[1000];
+	int index = 0;
 	if (coding->type == Coding::eot)
 		return true;
-	int val = 0, bitcount = 8;
-	bool rv = ProcessCoding(operand, coding, val, bitcount);
+	int defaultBits = 8;
+	bool rv = ProcessCoding(operand, coding, -1, defaultBits, arr, bitcount, func, index);
 	if (rv)
 	{
-		bits.Add(val, bitcount);
+		for (int i = 0; i < index; i++)
+		{
+			if (func[i])
+				arr[i + 1] = DoMath(func[i], arr[i], arr[i + 1]);
+			else
+				bits.Add(arr[i], bitcount[i]);
+		}
 	}
 	return rv;
 }

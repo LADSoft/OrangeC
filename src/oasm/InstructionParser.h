@@ -115,6 +115,7 @@ class InstructionParser
     virtual void Setup(Section* sect) = 0;
     virtual void Init() = 0;
     virtual bool ParseSection(AsmFile* fil, Section* sect) = 0;
+    virtual bool ParseDirective(AsmFile*fil, Section* sect) = 0;
     virtual bool IsBigEndian() = 0;
     bool SetNumber(int tokenPos, int oldVal, int newVal);
 

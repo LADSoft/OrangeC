@@ -509,7 +509,9 @@ void AsmFile::Directive()
             TimesDirective();  // timesdirective eats the ']'
             return;
         default:
-            throw new std::runtime_error("Expected directive");
+            NeedSection();
+            if (!GetParser()->ParseDirective(this, currentSection))
+                throw new std::runtime_error("Expected directive");
     }
     if (GetKeyword() == Lexer::closebr)
     {

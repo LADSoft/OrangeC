@@ -27,7 +27,7 @@
 #include "LinkExpression.h"
 #include "ObjUtil.h"
 #include "UTF8.h"
-#include <ctype.h>
+#include <cctype>
 LinkTokenizer::eTokenType LinkTokenizer::NextToken()
 {
     const char* str = data.c_str();
@@ -193,7 +193,6 @@ LinkTokenizer::eTokenType LinkTokenizer::NextToken()
                     }
                     std::string sym = data.substr(start, end - start);
                     data.replace(0, end, "");
-                    ;
                     switch (base)
                     {
                         case 2:

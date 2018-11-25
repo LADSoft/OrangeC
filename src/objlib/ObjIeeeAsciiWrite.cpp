@@ -25,7 +25,7 @@
 
 #include "ObjFactory.h"
 #include "ObjIeee.h"
-#include <stdio.h>
+#include <cstdio>
 #include <deque>
 
 char ObjIeeeAscii::lineend[2] = {10};

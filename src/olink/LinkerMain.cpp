@@ -36,8 +36,8 @@
 #include "Utils.h"
 #include "LinkerMain.h"
 #include <fstream>
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 #ifdef GCCLINUX
 #include <unistd.h>
 #else
@@ -109,7 +109,7 @@ const ObjString& LinkerMain::GetMapFile(CmdFiles& files)
     }
     else if (files.GetSize())
     {
-        CmdFiles::FileNameIterator it = files.FileNameBegin();
+        auto it = files.FileNameBegin();
         mapFile = Utils::QualifiedFile((*it)->c_str(), ".map");
     }
     else
@@ -186,7 +186,7 @@ int LinkerMain::Run(int argc, char** argv)
     }
     CmdSwitchFile internalConfig(SwitchParser);
     std::string configName = Utils::QualifiedFile(modName, ".cfg");
-    std::fstream configTest(configName.c_str(), std::ios::in);
+    std::fstream configTest(configName, std::ios::in);
     if (!configTest.fail())
     {
         configTest.close();

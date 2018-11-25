@@ -28,7 +28,7 @@
 #include <io.h>
 #include <fcntl.h>
 #endif
-#include <time.h>
+#include <ctime>
 #include <sys/stat.h>
 void ObjSourceFile::RetrieveFileTime(const ObjString name)
 {

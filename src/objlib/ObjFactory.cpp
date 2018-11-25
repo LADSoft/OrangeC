@@ -29,7 +29,7 @@ void ObjFactory::Deallocate()
 {
     for (MemoryIterator it = MemoryBegin(); it != MemoryEnd(); ++it)
     {
-        delete (*it);
+        delete *it;
     }
     allocated.clear();
 }

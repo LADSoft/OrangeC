@@ -26,7 +26,7 @@
 #ifndef ObjFile_H
 #define ObjFile_H
 
-#include <string.h>
+#include <cstring>
 #include <vector>
 #include <ctime>
 

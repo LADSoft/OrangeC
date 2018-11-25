@@ -27,10 +27,11 @@
 
 #include "ObjFactory.h"
 #include "ObjIeee.h"
-#include <stdio.h>
+#include <cstdio>
 #include <stack>
-#include <ctype.h>
-#include <stdio.h>
+#include <cctype>
+#include <cstdio>
+#include <algorithm>
 void DebugThrowHook() {}
 ObjIeeeAscii::ParseData ObjIeeeAscii::parseData[] = {
     ObjIeeeAscii::ParseData("LD", &ObjIeeeAscii::Data),
@@ -86,16 +87,7 @@ ObjString ObjIeeeAscii::GetSymbolName(const char* buffer, int* index)
     CheckTerm(buffer + pos);
     if (!GetCaseSensitiveFlag())
     {
-        char buf[4096];
-        strncpy(buf, rv.c_str(), sizeof(buf));
-        buf[sizeof(buf) - 1] = 0;
-        char* p = buf;
-        while (*p)
-        {
-            *p = toupper(*p);
-            p++;
-        }
-        rv = buf;
+        std::transform(rv.begin(), rv.end(), rv.begin(), ::toupper);
     }
     return rv;
 }

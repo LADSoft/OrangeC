@@ -28,9 +28,9 @@
 #include "ObjExpression.h"
 #include "LinkExpression.h"
 #include <fstream>
-#include <stdlib.h>
-#include <ctype.h>
-#include <string.h>
+#include <cstdlib>
+#include <cctype>
+#include <cstring>
 
 #if defined(WIN32) || defined(MICROSOFT)
 #    define system(x) winsystem(x)
@@ -65,15 +65,15 @@ bool ConfigData::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData)
         }
         else if (*attrib == "Rel")
         {
-            relFile = atoi(attrib->GetValue().c_str());
+            relFile = std::stoi(attrib->GetValue());
         }
         else if (*attrib == "MapMode")
         {
-            mapMode = atoi(attrib->GetValue().c_str());
+            mapMode = std::stoi(attrib->GetValue());
         }
         else if (*attrib == "DebugPassThrough")
         {
-            debugPassThrough = atoi(attrib->GetValue().c_str());
+            debugPassThrough = std::stoi(attrib->GetValue());
         }
     }
     else if (node == "Define")
@@ -168,7 +168,7 @@ int SwitchConfig::Parse(const char* data)
 }
 bool SwitchConfig::ReadConfigFile(const std::string& file)
 {
-    std::fstream in(file.c_str(), std::ios::in);
+    std::fstream in(file, std::ios::in);
     if (!in.fail())
     {
         xmlNode* node = new xmlNode();

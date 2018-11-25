@@ -27,7 +27,7 @@
 #include "LinkRegionFileSpec.h"
 #include "UTF8.h"
 #include <fstream>
-#include <ctype.h>
+#include <cctype>
 #include <iostream>
 bool LinkNameLogic::ParseItem::Matches(const std::string& name)
 {
@@ -80,7 +80,7 @@ void LinkNameLogic::ParseOut(std::string spec)
 {
     top = ParseOutOr(spec);
     if (!top)
-        std::cout << "Warning: region specifier '" << spec.c_str() << "' is invalid" << std::endl;
+        std::cout << "Warning: region specifier '" << spec << "' is invalid" << std::endl;
 }
 LinkNameLogic::ParseItem* LinkNameLogic::ParseOutOr(std::string& spec)
 {
@@ -184,7 +184,7 @@ LinkNameLogic::ParseItem* LinkNameLogic::ParseOutPrimary(std::string& spec)
     }
     char buf[4096], *q = buf;
     n = 0;
-    while ((UTF8::IsAlnum(spec.c_str() + n) || spec[n] == '*' || spec[n] == '?') && spec.size() > n)
+    while ((UTF8::IsAlnum(spec[n]) || spec[n] == '*' || spec[n] == '?') && spec.size() > n)
     {
         int v = UTF8::CharSpan(spec.c_str() + n);
         for (int i = 0; i < v && spec.size() >= v + n; i++)

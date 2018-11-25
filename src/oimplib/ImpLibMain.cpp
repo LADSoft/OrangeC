@@ -262,7 +262,7 @@ ObjFile* ImpLibMain::DefFileToObjFile(DefFile& def)
 {
     ObjectData* od = new ObjectData;
     ObjFile* obj = new ObjFile(def.GetLibraryName());
-    for (DefFile::ExportIterator it = def.ExportBegin(); it != def.ExportEnd(); ++it)
+    for (auto it = def.ExportBegin(); it != def.ExportEnd(); ++it)
     {
         ObjImportSymbol* p = od->factory.MakeImportSymbol(
             (CDLLSwitch.GetValue() && (*it)->id.find('@') == std::string::npos ? "_" : "") + (*it)->id);
@@ -349,11 +349,11 @@ int ImpLibMain::HandleLibrary(const std::string& outputFile, int argc, char** ar
         AddFile(librarian, argv[i]);
     for (int i = 1; i < File.GetCount(); i++)
         AddFile(librarian, File.GetValue()[i]);
-    for (CmdFiles::FileNameIterator it = addFiles.FileNameBegin(); it != addFiles.FileNameEnd(); ++it)
+    for (auto it = addFiles.FileNameBegin(); it != addFiles.FileNameEnd(); ++it)
     {
         librarian.AddFile(*(*it));
     }
-    for (CmdFiles::FileNameIterator it = replaceFiles.FileNameBegin(); it != replaceFiles.FileNameEnd(); ++it)
+    for (auto it = replaceFiles.FileNameBegin(); it != replaceFiles.FileNameEnd(); ++it)
     {
         librarian.ReplaceFile(*(*it));
     }

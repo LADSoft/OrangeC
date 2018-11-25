@@ -29,7 +29,7 @@
 
 DLLExportReader::~DLLExportReader()
 {
-    for (iterator it = begin(); it != end(); ++it)
+    for (auto it = begin(); it != end(); ++it)
     {
         DLLExport* p = *it;
         delete p;
@@ -75,7 +75,7 @@ int DLLExportReader::Read()
     int rv = 2;
     std::fstream in(name, std::ios::in | std::ios::binary);
     if (!in.is_open())
-        return 1; // can't find file
+        return 1;  // can't find file
     if (!in.fail())
     {
         MZHeader mzh;
@@ -95,7 +95,7 @@ int DLLExportReader::Read()
                     in.read((char*)&peh, sizeof(peh));
                     if (!in.fail() && peh.signature == PESIG)
                     {
-                        rv = 3; // no export table
+                        rv = 3;  // no export table
                         for (int i = 0; i < peh.num_objects; i++)
                         {
                             PEObject obj;

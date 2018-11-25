@@ -444,7 +444,7 @@ void xmlNode::WriteTextChar(std::fstream& stream, char t)
 }
 void xmlNode::RemoveAttrib(const xmlAttrib* attrib)
 {
-    for (std::deque<xmlAttrib*>::iterator it = attribs.begin(); it != attribs.end(); ++it)
+    for (auto it = attribs.begin(); it != attribs.end(); ++it)
     {
         if (*it == attrib)
         {
@@ -455,7 +455,7 @@ void xmlNode::RemoveAttrib(const xmlAttrib* attrib)
 }
 void xmlNode::RemoveChild(const xmlNode* child)
 {
-    for (std::deque<xmlNode*>::iterator it = children.begin(); it != children.end(); ++it)
+    for (auto it = children.begin(); it != children.end(); ++it)
     {
         if (*it == child)
         {

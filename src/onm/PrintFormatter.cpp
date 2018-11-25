@@ -52,7 +52,7 @@ void PrintFormatter::Print(SymbolTable& symbols)
             maxOffs = s->offset;
     }
     int rad = 16;
-    if (radix.size())
+    if (!radix.empty())
         if (radix[0] == 'd')
             rad = 10;
         else if (radix[0] == 'o')

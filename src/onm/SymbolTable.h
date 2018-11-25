@@ -30,8 +30,6 @@
 #include <set>
 #include "ObjTypes.h"
 
-#include <string>
-
 class ObjSymbol;
 class ObjFile;
 class ObjSection;

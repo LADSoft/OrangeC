@@ -39,21 +39,21 @@ void LibDictionary::CreateDictionary(LibFiles& files)
     int symbols = 0;
     Clear();
     int i = 0;
-    for (LibFiles::FileIterator it = files.FileBegin(); it != files.FileEnd(); ++it)
+    for (auto it = files.FileBegin(); it != files.FileEnd(); ++it)
     {
         const LibFiles::FileDescriptor* fd = (*it);
         if (fd->data)
         {
-            for (ObjFile::SymbolIterator pi = fd->data->PublicBegin(); pi != fd->data->PublicEnd(); ++pi)
+            for (auto pi = fd->data->PublicBegin(); pi != fd->data->PublicEnd(); ++pi)
             {
                 InsertInDictionary((*pi)->GetName().c_str(), i);
             }
-            for (ObjFile::SymbolIterator pi = fd->data->ImportBegin(); pi != fd->data->ImportEnd(); ++pi)
+            for (auto pi = fd->data->ImportBegin(); pi != fd->data->ImportEnd(); ++pi)
             {
                 InsertInDictionary((*pi)->GetName().c_str(), i);
             }
             // support for virtual sections
-            for (ObjFile::SectionIterator si = fd->data->SectionBegin(); si != fd->data->SectionEnd(); ++si)
+            for (auto si = fd->data->SectionBegin(); si != fd->data->SectionEnd(); ++si)
             {
                 if ((*si)->GetQuals() & ObjSection::virt)
                 {

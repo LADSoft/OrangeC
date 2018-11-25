@@ -69,7 +69,7 @@ void LibFiles::Remove(const ObjString& Name)
     std::string internalName = Name;
     if (npos != std::string::npos)
         internalName = Name.substr(npos + 1);
-    for (FileIterator it = FileBegin(); it != FileEnd(); ++it)
+    for (auto it = FileBegin(); it != FileEnd(); ++it)
     {
         if ((*it)->name == internalName)
         {
@@ -80,7 +80,6 @@ void LibFiles::Remove(const ObjString& Name)
         }
     }
     std::cout << "Warning: Module '" << Name << "' not in library and could not be removed" << std::endl;
-    ;
 }
 void LibFiles::Extract(FILE* stream, const ObjString& Name)
 {
@@ -91,7 +90,7 @@ void LibFiles::Extract(FILE* stream, const ObjString& Name)
     int count = 0;
     ObjIeeeIndexManager im1;
     ObjFactory fact1(&im1);
-    for (FileIterator it = FileBegin(); it != FileEnd(); ++it)
+    for (auto it = FileBegin(); it != FileEnd(); ++it)
     {
         if ((*it)->name == internalName)
         {
@@ -173,7 +172,7 @@ void LibFiles::WriteData(FILE* stream, ObjFile* file, const ObjString& name)
 }
 void LibFiles::WriteNames(FILE* stream)
 {
-    for (FileIterator it = FileBegin(); it != FileEnd(); ++it)
+    for (auto it = FileBegin(); it != FileEnd(); ++it)
     {
         const char* p = (*it)->name.c_str();
         const char* q = strrchr(p, '\\');
@@ -212,9 +211,9 @@ bool LibFiles::ReadFiles(FILE* stream, ObjFactory* factory)
     while (!done)
     {
         done = true;
-        for (FileIterator it = FileBegin(); it != FileEnd();)
+        for (auto it = FileBegin(); it != FileEnd();)
         {
-            FileIterator itn = it;
+            auto itn = it;
             ++it;
             if (!(*itn)->data)
             {
@@ -270,7 +269,7 @@ bool LibFiles::ReadFiles(FILE* stream, ObjFactory* factory)
 void LibFiles::WriteFiles(FILE* stream, ObjInt align)
 {
     int i = 0;
-    for (FileIterator it = FileBegin(); it != FileEnd(); ++it)
+    for (auto it = FileBegin(); it != FileEnd(); ++it)
     {
         Align(stream, align);
         (*it)->offset = ftell(stream);

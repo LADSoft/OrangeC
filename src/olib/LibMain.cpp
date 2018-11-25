@@ -176,11 +176,11 @@ int LibMain::Run(int argc, char** argv)
         AddFile(librarian, argv[i]);
     for (int i = 1; i < File.GetCount(); i++)
         AddFile(librarian, File.GetValue()[i]);
-    for (CmdFiles::FileNameIterator it = addFiles.FileNameBegin(); it != addFiles.FileNameEnd(); ++it)
+    for (auto it = addFiles.FileNameBegin(); it != addFiles.FileNameEnd(); ++it)
     {
         librarian.AddFile(*(*it));
     }
-    for (CmdFiles::FileNameIterator it = replaceFiles.FileNameBegin(); it != replaceFiles.FileNameEnd(); ++it)
+    for (auto it = replaceFiles.FileNameBegin(); it != replaceFiles.FileNameEnd(); ++it)
     {
         librarian.ReplaceFile(*(*it));
     }

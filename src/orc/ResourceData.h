@@ -26,9 +26,9 @@
 #ifndef ResourceData_h
 #define ResourceData_h
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <string>
-#include <string.h>
+#include <cstring>
 
 class RCFile;
 class ResFile;

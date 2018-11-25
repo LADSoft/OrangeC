@@ -33,7 +33,7 @@
 #include <stdexcept>
 Control::~Control()
 {
-    for (iterator it = begin(); it != end(); ++it)
+    for (auto it = begin(); it != end(); ++it)
     {
         ResourceData* d = *it;
         delete d;
@@ -317,7 +317,7 @@ void Control::ReadRC(RCFile& rcFile, bool extended)
 }
 Dialog::~Dialog()
 {
-    for (iterator it = begin(); it != end(); ++it)
+    for (auto it = begin(); it != end(); ++it)
     {
         Control* c = *it;
         delete c;

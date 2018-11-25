@@ -96,7 +96,7 @@ int ppMain::Run(int argc, char* argv[])
     }
     Tokenizer::SetAnsi(disableExtensions.GetValue());
     Tokenizer::SetC99(c99Mode.GetValue());
-    for (CmdFiles::FileNameIterator it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
+    for (auto it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
     {
         PreProcessor pp(*(*it), srchPth, sysSrchPth, false, trigraphs.GetValue(), assembly.GetValue() ? '%' : '#', false,
                         !c99Mode.GetValue(), !disableExtensions.GetValue());

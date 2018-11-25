@@ -48,7 +48,7 @@ void LEObject::Setup(unsigned& offs)
     data = new unsigned char[initSize];
     ObjMemoryManager& m = sect->GetMemoryManager();
     int ofs = 0;
-    for (ObjMemoryManager::MemoryIterator it = m.MemoryBegin(); it != m.MemoryEnd() && ofs < initSize; ++it)
+    for (auto it = m.MemoryBegin(); it != m.MemoryEnd() && ofs < initSize; ++it)
     {
         int msize = (*it)->GetSize();
         ObjByte* mdata = (*it)->GetData();

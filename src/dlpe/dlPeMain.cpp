@@ -37,8 +37,8 @@
 #include "PEObject.h"
 #include "MZHeader.h"
 #include <iostream>
-#include <string.h>
-#include <stdlib.h>
+#include <cstring>
+#include <cstdlib>
 
 #if defined(MICROSOFT) || defined __MINGW64__
 #    define system(x) winsystem(x)
@@ -147,7 +147,7 @@ bool dlPeMain::GetMode()
 {
     mode = UNKNOWN;
     const std::string& val = modeSwitch.GetValue();
-    if (val.size() == 0)
+    if (val.empty())
     {
         mode = CONSOLE;
     }
@@ -164,7 +164,7 @@ bool dlPeMain::GetMode()
 }
 void dlPeMain::ReadValues()
 {
-    for (ObjFile::SymbolIterator it = file->DefinitionBegin(); it != file->DefinitionEnd(); it++)
+    for (auto it = file->DefinitionBegin(); it != file->DefinitionEnd(); it++)
     {
         ObjDefinitionSymbol* p = (ObjDefinitionSymbol*)(*it);
         if (p->GetName() == "FILEALIGN")
@@ -228,12 +228,12 @@ void dlPeMain::ReadValues()
 bool dlPeMain::LoadImports(ObjFile* file)
 {
     std::set<std::string> names;
-    for (ObjFile::SymbolIterator it = file->ImportBegin(); it != file->ImportEnd(); ++it)
+    for (auto it = file->ImportBegin(); it != file->ImportEnd(); ++it)
     {
         names.insert((*it)->GetName());
     }
     // every external better have an import declaration... otherwise it is a malformed file
-    for (ObjFile::SymbolIterator it = file->ExternalBegin(); it != file->ExternalEnd(); ++it)
+    for (auto it = file->ExternalBegin(); it != file->ExternalEnd(); ++it)
     {
         if (names.find((*it)->GetName()) == names.end())
             return false;
@@ -269,7 +269,7 @@ bool dlPeMain::ReadSections(const std::string& path)
         if (LoadImports(file))
         {
             PEObject::SetFile(file);
-            for (ObjFile::SectionIterator it = file->SectionBegin(); it != file->SectionEnd(); ++it)
+            for (auto it = file->SectionBegin(); it != file->SectionEnd(); ++it)
             {
                 PEDataObject* p = new PEDataObject(file, *it);
                 objects.push_back(p);
@@ -280,9 +280,9 @@ bool dlPeMain::ReadSections(const std::string& path)
             if (file->ExportBegin() != file->ExportEnd())
                 objects.push_back(exportObject = new PEExportObject(outputName, FlatExports.GetValue()));
             objects.push_back(new PEFixupObject());
-            if (resources.size())
+            if (!resources.empty())
                 objects.push_back(new PEResourceObject(resources));
-            if (DebugFile.GetValue().size())
+            if (!DebugFile.GetValue().empty())
                 objects.push_back(new PEDebugObject(DebugFile.GetValue(), imageBase));
             return true;
         }
@@ -294,14 +294,14 @@ bool dlPeMain::ReadSections(const std::string& path)
     }
     else
     {
-        std::cout << "Invalid rel file format " << ieee.GetErrorQualifier().c_str() << std::endl;
+        std::cout << "Invalid rel file format " << ieee.GetErrorQualifier() << std::endl;
     }
     return false;
 }
 std::string dlPeMain::GetOutputName(char* infile) const
 {
     std::string name;
-    if (outputFileSwitch.GetValue().size() != 0)
+    if (!outputFileSwitch.GetValue().empty())
     {
         name = outputFileSwitch.GetValue();
         const char* p = strrchr(name.c_str(), '.');
@@ -413,7 +413,7 @@ bool dlPeMain::LoadStub(const std::string& exeName)
     if (val.size() == 0)
         val = "dfstb32.exe";
     // look in current directory
-    std::fstream* file = new std::fstream(val.c_str(), std::ios::in | std::ios::binary);
+    std::fstream* file = new std::fstream(val, std::ios::in | std::ios::binary);
     if (!file || !file->is_open())
     {
         if (file)
@@ -426,7 +426,7 @@ bool dlPeMain::LoadStub(const std::string& exeName)
         if (npos != std::string::npos)
         {
             std::string val1 = exeName.substr(0, npos + 1) + "..\\lib\\" + val;
-            file = new std::fstream(val1.c_str(), std::ios::in | std::ios::binary);
+            file = new std::fstream(val1, std::ios::in | std::ios::binary);
         }
         // look in bin directory if not there
         if (!file || !file->is_open())
@@ -441,7 +441,7 @@ bool dlPeMain::LoadStub(const std::string& exeName)
             if (npos != std::string::npos)
             {
                 std::string val1 = exeName.substr(0, npos + 1) + "..\\bin\\" + val;
-                file = new std::fstream(val1.c_str(), std::ios::in | std::ios::binary);
+                file = new std::fstream(val1, std::ios::in | std::ios::binary);
             }
         }
     }
@@ -452,7 +452,7 @@ bool dlPeMain::LoadStub(const std::string& exeName)
             delete file;
             file = nullptr;
         }
-        if (stubSwitch.GetValue().size() == 0)
+        if (stubSwitch.GetValue().empty())
         {
             stubData = new char[defaultStubSize];
             memcpy(stubData, defaultStubData, defaultStubSize);
@@ -532,7 +532,7 @@ int dlPeMain::Run(int argc, char** argv)
     char* modName = Utils::GetModuleName();
     CmdSwitchFile internalConfig(SwitchParser);
     std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
-    std::fstream configTest(configName.c_str(), std::ios::in);
+    std::fstream configTest(configName, std::ios::in);
     if (!configTest.fail())
     {
         configTest.close();
@@ -578,7 +578,7 @@ int dlPeMain::Run(int argc, char** argv)
         obj->Fill();
     }
     InitHeader(headerSize, endVa);
-    std::fstream out(outputName.c_str(), std::ios::out | std::ios::binary);
+    std::fstream out(outputName, std::ios::out | std::ios::binary);
     if (!out.fail())
     {
         WriteStub(out);
@@ -608,8 +608,7 @@ int dlPeMain::Run(int argc, char** argv)
                     path.erase(n + 1);
                 std::string usesC = exportObject && exportObject->ImportsNeedUnderscore() ? "/C " : "";
                 std::string implibName = Utils::QualifiedFile(outputName.c_str(), ".l");
-                std::string cmd =
-                    std::string("\"") + path + "oimplib" + "\" "; 
+                std::string cmd = std::string("\"") + path + "oimplib" + "\" ";
                 if (!Verbose.GetExists())
                     cmd += "/! ";
                 cmd += usesC + "\"" + implibName + "\" \"" + outputName + "\"";
@@ -621,8 +620,5 @@ int dlPeMain::Run(int argc, char** argv)
         }
         return 1;
     }
-    else
-    {
-        return 1;
-    }
+    return 1;
 }

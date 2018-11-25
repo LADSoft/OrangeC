@@ -63,7 +63,7 @@ bool dlMzMain::GetMode()
 {
     mode = UNKNOWN;
     const std::string& val = modeSwitch.GetValue();
-    if (val.size() == 0)
+    if (val.empty())
     {
         mode = REAL;
     }
@@ -109,7 +109,7 @@ bool dlMzMain::ReadSections(const std::string& path)
 std::string dlMzMain::GetOutputName(char* infile) const
 {
     std::string name;
-    if (outputFileSwitch.GetValue().size() != 0)
+    if (!outputFileSwitch.GetValue().empty())
     {
         name = outputFileSwitch.GetValue();
         const char* p = strrchr(name.c_str(), '.');
@@ -120,11 +120,7 @@ std::string dlMzMain::GetOutputName(char* infile) const
     {
         name = infile;
     }
-    if (mode == TINY)
-        name = Utils::QualifiedFile(name.c_str(), ".com");
-    else
-        name = Utils::QualifiedFile(name.c_str(), ".exe");
-    return name;
+    return Utils::QualifiedFile(name.c_str(), mode == TINY ? ".com" : ".exe");
 }
 int dlMzMain::Run(int argc, char** argv)
 {
@@ -132,7 +128,7 @@ int dlMzMain::Run(int argc, char** argv)
     Utils::SetEnvironmentToPathParent("ORANGEC");
     CmdSwitchFile internalConfig(SwitchParser);
     std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
-    std::fstream configTest(configName.c_str(), std::ios::in);
+    std::fstream configTest(configName, std::ios::in);
     if (!configTest.fail())
     {
         configTest.close();
@@ -150,14 +146,11 @@ int dlMzMain::Run(int argc, char** argv)
     if (!ReadSections(std::string(argv[1])))
         Utils::fatal("Invalid .rel file");
     std::string outputName = GetOutputName(argv[1]);
-    std::fstream out(outputName.c_str(), std::ios::out | std::ios::binary);
+    std::fstream out(outputName, std::ios::out | std::ios::binary);
     if (!out.fail())
     {
         data->Write(out);
         return !!out.fail();
     }
-    else
-    {
-        return 1;
-    }
+    return 1;
 }

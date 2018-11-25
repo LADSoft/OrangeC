@@ -28,7 +28,7 @@
 #include "ObjFile.h"
 #include "ObjSymbol.h"
 #include "ResourceContainer.h"
-#include <string.h>
+#include <cstring>
 
 unsigned PEObject::objectAlign = 0x1000;
 unsigned PEObject::fileAlign = 0x200;
@@ -76,7 +76,7 @@ void PEObject::Write(std::fstream& stream)
 void PEObject::SetFile(ObjFile* File)
 {
     file = File;
-    for (ObjFile::SymbolIterator it = file->DefinitionBegin(); it != file->DefinitionEnd(); it++)
+    for (auto it = file->DefinitionBegin(); it != file->DefinitionEnd(); it++)
     {
         ObjDefinitionSymbol* p = (ObjDefinitionSymbol*)(*it);
         if (p->GetName() == "FILEALIGN")

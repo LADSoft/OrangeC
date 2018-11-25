@@ -30,7 +30,7 @@
 #include "ObjUtil.h"
 #include "Utils.h"
 #include "ObjSymbol.h"
-#include <string.h>
+#include <cstring>
 
 void PEDataObject::Setup(ObjInt& endVa, ObjInt& endPhys)
 {
@@ -80,7 +80,7 @@ void PEDataObject::GetImportNames()
 {
     if (!importNames.size())
     {
-        for (ObjFile::SymbolIterator it = file->ImportBegin(); it != file->ImportEnd(); ++it)
+        for (auto it = file->ImportBegin(); it != file->ImportEnd(); ++it)
         {
             importNames.insert((*it)->GetName());
         }
@@ -124,7 +124,7 @@ void PEDataObject::Fill()
     int ofs = 0;
     bool hasVA = name == ".text";
     int top = importThunkVA - virtual_addr - imageBase;
-    for (ObjMemoryManager::MemoryIterator it = m.MemoryBegin(); it != m.MemoryEnd(); ++it)
+    for (auto it = m.MemoryBegin(); it != m.MemoryEnd(); ++it)
     {
         int msize = (*it)->GetSize();
         ObjByte* mdata = (*it)->GetData();

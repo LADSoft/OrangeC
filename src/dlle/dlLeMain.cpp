@@ -38,7 +38,7 @@
 #include "LEFixup.h"
 #include "ResidentNameTable.h"
 #include "MZHeader.h"
-#include <string.h>
+#include <cstring>
 
 CmdSwitchParser dlLeMain::SwitchParser;
 CmdSwitchString dlLeMain::stubSwitch(SwitchParser, 's');
@@ -72,7 +72,7 @@ bool dlLeMain::GetMode()
 {
     mode = UNKNOWN;
     const std::string& val = modeSwitch.GetValue();
-    if (val.size() == 0)
+    if (val.empty())
     {
         mode = eLe;
     }
@@ -87,7 +87,7 @@ bool dlLeMain::GetMode()
 }
 void dlLeMain::ReadValues()
 {
-    for (ObjFile::SymbolIterator it = file->DefinitionBegin(); it != file->DefinitionEnd(); ++it)
+    for (auto it = file->DefinitionBegin(); it != file->DefinitionEnd(); ++it)
     {
         ObjDefinitionSymbol* p = (ObjDefinitionSymbol*)*it;
         if (p->GetName() == "STACKSIZE")
@@ -121,7 +121,7 @@ bool dlLeMain::ReadSections(const std::string& path, const std::string& exeName)
     {
         LEObject::SetFile(file);
         ReadValues();
-        for (ObjFile::SectionIterator it = file->SectionBegin(); it != file->SectionEnd(); ++it)
+        for (auto it = file->SectionBegin(); it != file->SectionEnd(); ++it)
         {
             LEObject* p = new LEObject(*it);
             objects.push_back(p);
@@ -231,7 +231,7 @@ bool dlLeMain::LoadStub(const std::string& exeName)
     if (val.size() == 0)
         val = "dos32a.exe";
     // look in current directory
-    std::fstream* file = new std::fstream(val.c_str(), std::ios::in | std::ios::binary);
+    std::fstream* file = new std::fstream(val, std::ios::in | std::ios::binary);
     if (file == nullptr || !file->is_open())
     {
         if (file)
@@ -244,7 +244,7 @@ bool dlLeMain::LoadStub(const std::string& exeName)
         if (npos != std::string::npos)
         {
             val = exeName.substr(0, npos + 1) + "..\\lib\\" + val;
-            file = new std::fstream(val.c_str(), std::ios::in | std::ios::binary);
+            file = new std::fstream(val, std::ios::in | std::ios::binary);
         }
     }
     if (file == nullptr || !file->is_open())
@@ -304,7 +304,7 @@ int dlLeMain::Run(int argc, char** argv)
     Utils::SetEnvironmentToPathParent("ORANGEC");
     CmdSwitchFile internalConfig(SwitchParser);
     std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
-    std::fstream configTest(configName.c_str(), std::ios::in);
+    std::fstream configTest(configName, std::ios::in);
     if (!configTest.fail())
     {
         configTest.close();
@@ -340,7 +340,7 @@ int dlLeMain::Run(int argc, char** argv)
     if (rnt)
         rnt->Setup();
     InitHeader();
-    std::fstream out(outputName.c_str(), std::ios::out | std::ios::binary);
+    std::fstream out(outputName, std::ios::out | std::ios::binary);
     if (!out.fail())
     {
         WriteStub(out);
@@ -362,8 +362,5 @@ int dlLeMain::Run(int argc, char** argv)
         out.close();
         return !!out.fail();
     }
-    else
-    {
-        return 1;
-    }
+    return 1;
 }

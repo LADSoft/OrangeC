@@ -312,7 +312,7 @@ int SwitchConfig::RunApp(const std::string& path, const std::string& file, const
             flags = flags + " " + data->appFlags;
         }
     }
-    if (!name.empty())
+    if (name.empty())
         return 0;  // nothing to do, all ok
     std::string cmd = std::string("\"") + path + name + "\" ";
     if (!verbose)

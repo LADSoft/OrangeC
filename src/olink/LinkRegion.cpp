@@ -272,7 +272,7 @@ void LinkRegion::AddSection(LinkManager* manager)
     for (auto it = manager->FileBegin(); it != manager->FileEnd(); ++it)
     {
         ObjFile* file = *it;
-        if (!sourceFiles.empty())
+        if (sourceFiles.empty())
             AddFile(file);
         else
             for (auto srcFile : sourceFiles)

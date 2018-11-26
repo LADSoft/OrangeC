@@ -330,7 +330,10 @@ void ppDefine::DoDefine(std::string& line, bool caseInsensitive)
         }
     }
     if (!failed)
-        Define(name, tk.GetString(), da, false, hasEllipses, !asmpp, caseInsensitive);
+    {
+        std::string ref = tk.GetString();
+        Define(name, ref, da, false, hasEllipses, !asmpp, caseInsensitive);
+    }
     else
         Errors::Error("Macro argument syntax error");
 }

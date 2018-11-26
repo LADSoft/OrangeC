@@ -25,11 +25,11 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 
-#include <stdio.h>
-#include <stdarg.h>
+#include <cstdio>
+#include <cstdarg>
 #include <fstream>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 #ifdef _WIN32
 #    include <windows.h>
 #endif

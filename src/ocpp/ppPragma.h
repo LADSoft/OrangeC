@@ -30,7 +30,7 @@
 #include <string>
 #include <map>
 #include <set>
-#include <time.h>
+#include <ctime>
 #include "Token.h"
 
 class ppInclude;

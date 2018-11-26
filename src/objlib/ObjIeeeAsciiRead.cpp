@@ -228,7 +228,7 @@ bool ObjIeeeAscii::Parse(const char* buffer, eParseType ParseType)
             parser++;
         }
     }
-    std::map<const char*, ObjIeeeAscii::ParseData*, ObjIeeeAscii::ParseDataLT>::iterator it = parseTree.find(buffer);
+    auto it = parseTree.find(buffer);
     if (it != parseTree.end())
     {
         return it->second->Dispatch(this, buffer, ParseType);
@@ -663,7 +663,7 @@ void ObjIeeeAscii::DefineStruct(ObjType::eType stype, int index, const char* buf
         // chaining to next field definition?
         if (fieldTypeBase->GetType() == ObjType::eField)
         {
-            for (ObjType::FieldIterator it = fieldTypeBase->FieldBegin(); it != fieldTypeBase->FieldEnd(); ++it)
+            for (auto it = fieldTypeBase->FieldBegin(); it != fieldTypeBase->FieldEnd(); ++it)
                 type->Add(*it);
             break;
         }

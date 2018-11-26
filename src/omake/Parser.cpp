@@ -60,10 +60,10 @@ bool Parser::AlwaysEval(const std::string& line)
 bool Parser::Parse()
 {
     bool rv = true;
-    while (remaining.size())
+    while (!remaining.empty())
     {
         std::string line = GetLine(false);
-        if (!skips.size() || !skips.front() || AlwaysEval(line))
+        if (skips.empty() || !skips.front() || AlwaysEval(line))
         {
             if (line.find_first_not_of(" \t") != std::string::npos)
             {
@@ -73,7 +73,7 @@ bool Parser::Parse()
             }
         }
     }
-    if (skips.size())
+    if (!skips.empty())
     {
         Eval::SetFile(file);
         Eval::SetLine(lineno);
@@ -97,7 +97,7 @@ std::string Parser::GetLine(bool inCommand)
         inCommand = true;
 
     // concatenate lines
-    if (rv.size())
+    if (!rv.empty())
     {
         while (rv[rv.size() - 1] == '\\')
         {
@@ -105,7 +105,7 @@ std::string Parser::GetLine(bool inCommand)
             {
                 break;
             }
-            if (!remaining.size())
+            if (remaining.empty())
             {
                 Eval::error("backslash-newline at end of input stream");
                 break;
@@ -114,7 +114,7 @@ std::string Parser::GetLine(bool inCommand)
             lineno++;
             std::string next = Eval::ExtractFirst(remaining, "\n");
             rv += next;
-            if (!next.size())
+            if (next.empty())
                 break;
         }
     }
@@ -198,7 +198,7 @@ size_t Parser::UnfetteredChar(const std::string& line, char ch) const
             charInWord++;
             if (ch == ':')
             {
-                if (line[i] == ':' && (charInWord != 2 || !UTF8::IsAlpha(line.c_str() + i - 1) || isspace(line[i + 1])))
+                if (line[i] == ':' && (charInWord != 2 || !UTF8::IsAlpha(line[i-1]) || isspace(line[i + 1])))
                     return i;
             }
             else
@@ -218,7 +218,7 @@ std::string Parser::FirstWord(const std::string& line, size_t& n)
     if (s != std::string::npos)
     {
         int t = s;
-        while (UTF8::IsAlnum(line.c_str() + t) || line[t] == '_' || line[t] == '-')
+        while (UTF8::IsAlnum(line[t] + t) || line[t] == '_' || line[t] == '-')
         {
             int v = UTF8::CharSpan(line.c_str() + t);
             for (int i = 0; i < v && t < line.size(); i++)
@@ -346,7 +346,7 @@ bool Parser::ParseLine(const std::string& line)
         else
         {
             Eval l(line, false);
-            if (l.Evaluate().size())
+            if (!l.Evaluate().empty())
             {
                 if (dooverride)
                     Eval::error("Expected variable assignment");
@@ -566,7 +566,7 @@ bool Parser::ParseRule(const std::string& left, const std::string& line)
         Eval l1(l, false);
         l = l1.strip(l);
         r = line.substr(n + 1);
-        while (ls.size() && rv)
+        while (!ls.empty() && rv)
         {
             std::string cur = Eval::ExtractFirst(ls, std::string(" "));
             RuleList* ruleList = RuleContainer::Instance()->Lookup(cur);
@@ -617,10 +617,10 @@ bool Parser::ParseRule(const std::string& left, const std::string& line)
             }
             if (ruleList)
             {
-                for (RuleList::iterator it = ruleList->begin(); it != ruleList->end() && (!found1 || !found2); ++it)
+                for (auto it = ruleList->begin(); it != ruleList->end() && (!found1 || !found2); ++it)
                 {
                     std::string working = (*it)->GetPrerequisites();
-                    while (working.size())
+                    while (!working.empty())
                     {
                         std::string a = Eval::ExtractFirst(working, " ");
                         if (a == one)
@@ -634,13 +634,13 @@ bool Parser::ParseRule(const std::string& left, const std::string& line)
                 goto join;
             // suffix rule, should not have any characters other than a possible double colon
             // in line - if it does treat it as a normal rule
-            if (line.size() && line[0] != ':')
+            if (!line.empty() && line[0] != ':')
             {
                 m = line.find_first_not_of(' ');
                 if (m != std::string::npos && line[m] != ';')
                     goto join;
             }
-            if (two.size() == 0)
+            if (two.empty())
             {
                 ls = "%";
                 prereqs = "%" + one;
@@ -668,7 +668,7 @@ bool Parser::ParseRule(const std::string& left, const std::string& line)
             }
             std::string iparsed;
             precious = Double;
-            while (iline.size())
+            while (!iline.empty())
             {
                 std::string cur = Eval::ExtractFirst(iline, std::string(" "));
                 if (cur[0] != '.')
@@ -742,7 +742,7 @@ bool Parser::ParseRule(const std::string& left, const std::string& line)
             std::string aa = ls;
             Maker::SetFirstGoal(Eval::ExtractFirst(aa, " "));
         }
-        while (ls.size())
+        while (!ls.empty())
         {
             std::string cur = Eval::ExtractFirst(ls, std::string(" "));
             std::string stem;
@@ -752,7 +752,7 @@ bool Parser::ParseRule(const std::string& left, const std::string& line)
                 ps1 = "%";
             else
                 ps1 = ps;
-            if (ps.size() == 0 && cur == ".SUFFIXES")
+            if (ps.empty() && cur == ".SUFFIXES")
             {
                 // clears all rules...
                 RuleList* ruleList = RuleContainer::Instance()->Lookup(cur);
@@ -761,7 +761,7 @@ bool Parser::ParseRule(const std::string& left, const std::string& line)
             }
             else
             {
-                if (targetPattern.size())
+                if (!targetPattern.empty())
                 {
                     size_t start;
                     if (Eval::MatchesPattern(cur, targetPattern, start) != std::string::npos)
@@ -806,7 +806,7 @@ bool Parser::ParseDefine(const std::string& line, bool dooverride)
 
     std::string rs;
     bool found = false;
-    while (remaining.size())
+    while (!remaining.empty())
     {
         std::string l = GetLine(false);
         size_t n;
@@ -825,7 +825,7 @@ bool Parser::ParseDefine(const std::string& line, bool dooverride)
     }
     size_t n = ls.find_first_not_of(' ');
     ls = ls.substr(n);
-    while (ls.size() && ls[ls.size() - 1] == '=' || isspace(ls[ls.size() - 1]))
+    while (!ls.empty() && ls[ls.size() - 1] == '=' || isspace(ls[ls.size() - 1]))
         ls = ls.substr(0, ls.size() - 1);
     Variable* v = VariableContainer::Instance()->Lookup(ls);
     if (v)
@@ -841,7 +841,7 @@ bool Parser::ParseDefine(const std::string& line, bool dooverride)
 }
 bool Parser::Parsevpath(const std::string& line)
 {
-    if (line.size() == 0 || line.find_first_not_of(' ') == std::string::npos)
+    if (line.empty() || line.find_first_not_of(' ') == std::string::npos)
     {
         Eval::RemoveAllVPaths();
     }
@@ -849,7 +849,7 @@ bool Parser::Parsevpath(const std::string& line)
     {
         std::string iline = line;
         std::string first = Eval::ExtractFirst(iline, " ");
-        if (iline.size() == 0 || iline.find_first_not_of(' ') == std::string::npos)
+        if (iline.empty() || iline.find_first_not_of(' ') == std::string::npos)
         {
             Eval::RemoveVPath(first);
         }
@@ -882,7 +882,7 @@ bool Parser::ParseCommand(const std::string& line)
                 {
                     char match = line[n + 2];
                     bool found = false;
-                    while (remaining.size() && !found)
+                    while (!remaining.empty() && !found)
                     {
                         std::string iline = GetLine(false);
                         *lastCommand += iline;
@@ -931,7 +931,7 @@ bool Parser::ConditionalArgument(std::string& line)
 bool Parser::ParseCond(const std::string& line, bool eq)
 {
     bool rv = true;
-    if (skips.size() && skips.front())
+    if (!skips.empty() && skips.front())
         skips.push_front(true);
     else
     {
@@ -1011,7 +1011,7 @@ bool Parser::ParseCond(const std::string& line, bool eq)
 }
 bool Parser::ParseDef(const std::string& line, bool def)
 {
-    if (skips.size() && skips.front())
+    if (!skips.empty() && skips.front())
         skips.push_front(true);
     else
     {
@@ -1031,7 +1031,7 @@ bool Parser::ParseDef(const std::string& line, bool def)
 bool Parser::ParseElse(const std::string& line)
 {
     bool rv = true;
-    if (!skips.size())
+    if (skips.empty())
     {
         Eval::error("else without conditional");
         rv = false;
@@ -1040,7 +1040,7 @@ bool Parser::ParseElse(const std::string& line)
     {
         bool b = skips.front();
         skips.pop_front();
-        if (skips.size() && skips.front())
+        if (!skips.empty() && skips.front())
             skips.push_front(true);
         else
             skips.push_front(!b);
@@ -1050,7 +1050,7 @@ bool Parser::ParseElse(const std::string& line)
 bool Parser::ParseEndif(const std::string& line)
 {
     bool rv = true;
-    if (!skips.size())
+    if (skips.empty())
     {
         Eval::error("endif without conditional");
         rv = false;
@@ -1065,7 +1065,7 @@ bool Parser::ParseExport(const std::string& line, bool exp)
 {
     Eval r(line, false);
     std::string working = r.Evaluate();
-    while (working.size())
+    while (!working.empty())
     {
         std::string temp = Eval::ExtractFirst(working, " ");
         Variable* v = VariableContainer::Instance()->Lookup(temp);

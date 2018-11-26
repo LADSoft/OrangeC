@@ -27,7 +27,7 @@
 #include "Errors.h"
 #include "UTF8.h"
 #include <fstream>
-#include <limits.h>
+#include <climits>
 
 void PreProcessor::InitHash()
 {

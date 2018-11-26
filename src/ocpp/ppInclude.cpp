@@ -210,10 +210,7 @@ const char* ppInclude::RetrievePath(char* buf, const char* path)
     {
         return path + 1;
     }
-    else
-    {
-        return nullptr;
-    }
+    return nullptr;
 }
 void ppInclude::AddName(char* buf, const std::string& name)
 {
@@ -287,7 +284,7 @@ bool ppInclude::GetLine(std::string& line, int& lineno)
         }
         if (!inProc.empty())
         {
-            Errors::Error(std::string("File ended with ") + inProc + " in progress");
+            Errors::Error("File ended with " + inProc + " in progress");
             inProc = "";
         }
         popFile();

@@ -28,7 +28,7 @@
 #include "CmdFiles.h"
 #include "PreProcessor.h"
 #include "Errors.h"
-#include <stdlib.h>
+#include <cstdlib>
 
 CmdSwitchParser ppMain::SwitchParser;
 CmdSwitchBool ppMain::assembly(SwitchParser, 'a', false);
@@ -64,7 +64,7 @@ int ppMain::Run(int argc, char* argv[])
     Utils::SetEnvironmentToPathParent("ORANGEC");
     CmdSwitchFile internalConfig(SwitchParser);
     std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
-    std::fstream configTest(configName.c_str(), std::ios::in);
+    std::fstream configTest(configName, std::ios::in);
     if (!configTest.fail())
     {
         configTest.close();

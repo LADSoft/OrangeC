@@ -29,7 +29,7 @@
 #include <map>
 #include <deque>
 #include <string>
-#include <ctype.h>
+#include <cctype>
 #include "Errors.h"
 #include "Token.h"
 class Symbol

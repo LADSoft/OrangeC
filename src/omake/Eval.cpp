@@ -130,7 +130,7 @@ std::string Eval::GetVPATH(const std::string& goal)
             rv = v->GetValue();
         }
     }
-    if (goal.size())
+    if (!goal.empty())
     {
         for (auto path : vpaths)
         {
@@ -139,7 +139,7 @@ std::string Eval::GetVPATH(const std::string& goal)
             len = MatchesPattern(goal, path.first, start, 0);
             if (len == goal.size())
             {
-                if (rv.size())
+                if (!rv.empty())
                     rv += " ";
                 rv += path.second;
             }
@@ -212,7 +212,7 @@ int Eval::MacroSpan(const std::string line, int pos)
         else if (line[pos1] == stack.front())
         {
             stack.pop_front();
-            if (stack.size() == 0)
+            if (stack.empty())
                 return pos1 - pos + 1;
         }
     }
@@ -278,14 +278,14 @@ std::string Eval::ParseMacroLine(const std::string& in)
 Variable* Eval::LookupVariable(const std::string& name)
 {
     Variable* v = nullptr;
-    for (std::list<Variable*>::iterator it = foreachVars.begin(); it != foreachVars.end() && v == nullptr; ++it)
+    for (auto it = foreachVars.begin(); it != foreachVars.end() && v == nullptr; ++it)
     {
         if ((*it)->GetName() == name)
             v = (*it);
     }
     if (!v)
     {
-        for (std::list<RuleList*>::iterator it = ruleStack.begin(); it != ruleStack.end() && v == nullptr; ++it)
+        for (auto it = ruleStack.begin(); it != ruleStack.end() && v == nullptr; ++it)
 
         {
             v = (*it)->Lookup(name);
@@ -338,13 +338,13 @@ bool Eval::AutomaticVar(const std::string& name, std::string& rv)
                 if (item == rule)
                     break;
                 extra = item->GetPrerequisites();
-                while (extra.size())
+                while (!extra.empty())
                 {
                     std::string temp = ExtractFirst(extra, " ");
                     if (set.find(temp) == set.end())
                     {
                         set.insert(temp);
-                        if (rv.size() != 0)
+                        if (!rv.empty())
                             rv += " ";
                         rv += Maker::GetFullName(temp);
                     }
@@ -359,10 +359,10 @@ bool Eval::AutomaticVar(const std::string& name, std::string& rv)
                 if (item == rule)
                     break;
                 extra = item->GetPrerequisites();
-                while (extra.size())
+                while (!extra.empty())
                 {
                     std::string temp = ExtractFirst(extra, " ");
-                    if (rv.size() != 0)
+                    if (!rv.empty())
                         rv += " ";
                     rv += Maker::GetFullName(temp);
                 }
@@ -372,7 +372,7 @@ bool Eval::AutomaticVar(const std::string& name, std::string& rv)
         else if (name[0] == '*')  // implicit rule stem/target name - recognized suffix or target stem
         {
             rv = ruleList->GetTargetPatternStem();
-            if (!rv.size())
+            if (rv.empty())
             {
                 rv = ruleList->GetTarget();
                 size_t n = rv.find_last_of('.');
@@ -383,10 +383,10 @@ bool Eval::AutomaticVar(const std::string& name, std::string& rv)
                     {
                         std::string sfx = rv.substr(n);
                         bool found = false;
-                        for (RuleList::iterator it = rl->begin(); !found && it != rl->end(); ++it)
+                        for (auto it = rl->begin(); !found && it != rl->end(); ++it)
                         {
                             std::string working = (*it)->GetPrerequisites();
-                            while (working.size())
+                            while (!working.empty())
                             {
                                 extra = ExtractFirst(working, " ");
                                 if (extra == sfx)
@@ -404,9 +404,9 @@ bool Eval::AutomaticVar(const std::string& name, std::string& rv)
         else if (name[0] == '?')  // or names of prereqs newer than target
         {
             extra = ruleList->GetNewerPrerequisites();
-            while (extra.size())
+            while (!extra.empty())
             {
-                if (rv.size())
+                if (!rv.empty())
                     rv += " ";
                 rv += Maker::GetFullName(ExtractFirst(extra, " "));
             }
@@ -420,13 +420,13 @@ bool Eval::AutomaticVar(const std::string& name, std::string& rv)
                 if (item == rule)
                     break;
                 extra = item->GetOrderPrerequisites();
-                while (extra.size())
+                while (!extra.empty())
                 {
                     std::string temp = ExtractFirst(extra, " ");
                     if (set.find(temp) == set.end())
                     {
                         set.insert(temp);
-                        if (rv.size() != 0)
+                        if (!rv.empty())
                             rv += " ";
                         rv += Maker::GetFullName(temp);
                     }
@@ -440,11 +440,11 @@ bool Eval::AutomaticVar(const std::string& name, std::string& rv)
             {
                 extra = rv;
                 rv = "";
-                while (extra.size())
+                while (!extra.empty())
                 {
                     std::string temp = ExtractFirst(extra, " ");
                     size_t n = temp.find_last_of("/\\");
-                    if (rv.size())
+                    if (!rv.empty())
                         rv += " ";
                     if (n != std::string::npos)
                     {
@@ -460,11 +460,11 @@ bool Eval::AutomaticVar(const std::string& name, std::string& rv)
             {
                 extra = rv;
                 rv = "";
-                while (extra.size())
+                while (!extra.empty())
                 {
                     std::string temp = ExtractFirst(extra, " ");
                     size_t n = temp.find_last_of("/\\");
-                    if (rv.size())
+                    if (!rv.empty())
                         rv += " ";
                     if (n != std::string::npos)
                     {
@@ -496,7 +496,7 @@ std::string Eval::ExpandMacro(const std::string& name)
     {
         for (auto var : *VariableContainer::Instance())
         {
-            if (rv.size())
+            if (!rv.empty())
                 rv += " ";
             rv += *(var.first);
         }
@@ -570,7 +570,7 @@ std::string Eval::ExpandMacro(const std::string& name)
             }
         }
     }
-    if (extra.size())
+    if (!extra.empty())
     {
         int m = extra.find_first_not_of(' ');
         if (extra[m] != ':')
@@ -626,7 +626,7 @@ size_t Eval::FindPercent(const std::string& name, size_t pos)
 std::string Eval::FindStem(const std::string& name, const std::string& pattern)
 {
     int n = FindPercent(pattern);
-    if (n != std::string::npos && name.size())
+    if (n != std::string::npos && !name.empty())
     {
         int m1 = pattern.find_first_not_of(' ');
         int m2 = pattern.find_last_not_of(' ');
@@ -833,7 +833,7 @@ std::string Eval::patsubst(const std::string& arglist)
         size_t start;
         size_t n = 0;
         std::string rv;
-        while (text.size())
+        while (!text.empty())
         {
             std::string thisOne = ExtractFirst(text, " ");
             if (MatchesPattern(thisOne, pattern, start, 0) != std::string::npos)
@@ -841,7 +841,7 @@ std::string Eval::patsubst(const std::string& arglist)
                 std::string stem = FindStem(thisOne, pattern);
                 thisOne = ReplaceStem(stem, replacement);
             }
-            if (rv.size())
+            if (!rv.empty())
                 rv += " ";
             rv += thisOne;
         }
@@ -896,17 +896,17 @@ std::string Eval::filter(const std::string& arglist)
         pattern = p.Evaluate();
         Eval t(text, false, ruleList, rule);
         text = t.Evaluate();
-        while (text.size())
+        while (!text.empty())
         {
             std::string working = pattern;
             std::string fw = ExtractFirst(text, " ");
-            while (working.size())
+            while (!working.empty())
             {
                 std::string p = ExtractFirst(working, " ");
                 size_t xx = 0;
                 if (MatchesPattern(fw, p, xx) == fw.size())
                 {
-                    if (rv.size())
+                    if (!rv.empty())
                         rv += " ";
                     rv += fw;
                 }
@@ -926,12 +926,12 @@ std::string Eval::filterout(const std::string& arglist)
         pattern = p.Evaluate();
         Eval t(text, false, ruleList, rule);
         text = t.Evaluate();
-        while (text.size())
+        while (!text.empty())
         {
             std::string working = pattern;
             std::string fw = ExtractFirst(text, " ");
             bool notfound = true;
-            while (working.size())
+            while (!working.empty())
             {
                 std::string p = ExtractFirst(working, " ");
                 size_t xx = 0;
@@ -939,7 +939,7 @@ std::string Eval::filterout(const std::string& arglist)
             }
             if (notfound)
             {
-                if (rv.size())
+                if (!rv.empty())
                     rv += " ";
                 rv += fw;
             }
@@ -952,14 +952,14 @@ std::string Eval::sort(const std::string& arglist)
     std::set<std::string> sortList;
     Eval a(arglist, false, ruleList, rule);
     std::string working = a.Evaluate();
-    while (working.size())
+    while (!working.empty())
     {
         sortList.insert(ExtractFirst(working, " "));
     }
     std::string rv;
     for (auto strng : sortList)
     {
-        if (rv.size())
+        if (!rv.empty())
             rv += " ";
         rv += strng;
     }
@@ -979,7 +979,7 @@ std::string Eval::word(const std::string& arglist)
         int n = GetNumber(count);
         for (int i = 0; i < n; i++)
         {
-            if (text.size() == 0)
+            if (text.empty())
             {
                 rv = "";
                 break;
@@ -1007,7 +1007,7 @@ std::string Eval::wordlist(const std::string& arglist)
         int en = GetNumber(end);
         for (int i = 1; i < sn; i++)
         {
-            if (text.size() == 0)
+            if (text.empty())
             {
                 break;
             }
@@ -1015,11 +1015,11 @@ std::string Eval::wordlist(const std::string& arglist)
         }
         for (int i = sn; i <= en; i++)
         {
-            if (text.size() == 0)
+            if (text.empty())
             {
                 break;
             }
-            if (rv.size())
+            if (!rv.empty())
                 rv += " ";
             rv += ExtractFirst(text, " ");
         }
@@ -1036,7 +1036,7 @@ std::string Eval::words(const std::string& arglist)
     n = text.find_first_not_of(' ');
     if (n != std::string::npos)
     {
-        while (text.size())
+        while (!text.empty())
         {
             count++;
             ExtractFirst(text, " ");
@@ -1076,11 +1076,11 @@ std::string Eval::dir(const std::string& names)
     Eval w(working, false, ruleList, rule);
     working = w.Evaluate();
     std::string rv;
-    while (working.size())
+    while (!working.empty())
     {
         std::string p = ExtractFirst(working, " ");
         size_t n = p.find_last_of("/\\");
-        if (rv.size())
+        if (!rv.empty())
             rv += " ";
         if (n != std::string::npos)
             rv += p.substr(0, n + 1);
@@ -1096,7 +1096,7 @@ std::string Eval::notdir(const std::string& names)
     Eval w(working, false, ruleList, rule);
     working = w.Evaluate();
     std::string rv;
-    while (working.size())
+    while (!working.empty())
     {
         std::string p = ExtractFirst(working, " ");
         size_t n = p.find_last_of("/\\");
@@ -1105,7 +1105,7 @@ std::string Eval::notdir(const std::string& names)
             intermed = p.substr(n + 1);
         else
             intermed = p;
-        if (rv.size() && intermed.size())
+        if (!rv.empty() && !intermed.empty())
             rv += " ";
         rv += intermed;
     }
@@ -1118,13 +1118,13 @@ std::string Eval::suffix(const std::string& names)
     Eval w(working, false, ruleList, rule);
     working = w.Evaluate();
     std::string rv;
-    while (working.size())
+    while (!working.empty())
     {
         std::string p = ExtractFirst(working, " ");
         size_t n = p.find_last_of('.');
         if (n != std::string::npos && (n == p.size() - 1 || p[n + 1] != '\\' && p[n + 1] != '/'))
         {
-            if (rv.size())
+            if (!rv.empty())
                 rv += " ";
             rv += p.substr(n);
         }
@@ -1138,11 +1138,11 @@ std::string Eval::basename(const std::string& names)
     Eval w(working, false, ruleList, rule);
     working = w.Evaluate();
     std::string rv;
-    while (working.size())
+    while (!working.empty())
     {
         std::string p = ExtractFirst(working, " ");
         size_t n = p.find_last_of('.');
-        if (rv.size())
+        if (!rv.empty())
             rv += " ";
         if (n != std::string::npos && (n == p.size() - 1 || p[n + 1] != '\\' && p[n + 1] != '/'))
         {
@@ -1169,9 +1169,9 @@ std::string Eval::addsuffix(const std::string& arglist)
         names = n.Evaluate();
         if (names.find_last_not_of(' ') != std::string::npos)
         {
-            while (names.size())
+            while (!names.empty())
             {
-                if (rv.size())
+                if (!rv.empty())
                     rv += " ";
                 rv += ExtractFirst(names, " ");
                 rv += suffix;
@@ -1194,9 +1194,9 @@ std::string Eval::addprefix(const std::string& arglist)
         names = n.Evaluate();
         if (names.find_last_not_of(' ') != std::string::npos)
         {
-            while (names.size())
+            while (!names.empty())
             {
-                if (rv.size())
+                if (!rv.empty())
                     rv += " ";
                 rv += prefix;
                 rv += ExtractFirst(names, " ");
@@ -1214,15 +1214,15 @@ std::string Eval::wildcard(const std::string& arglist)
 std::string Eval::wildcardinternal(std::string& names)
 {
     CmdFiles files;
-    while (names.size())
+    while (!names.empty())
     {
         std::string current = ExtractFirst(names, " ");
         files.Add(current);
     }
     std::string rv;
-    for (CmdFiles::FileNameIterator it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
+    for (auto it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
     {
-        if (rv.size())
+        if (!rv.empty())
             rv += " ";
         rv += *(*it);
     }
@@ -1240,9 +1240,9 @@ std::string Eval::join(const std::string& arglist)
         listone = strip(l1.Evaluate());
         Eval l2(listtwo, false, ruleList, rule);
         listtwo = strip(l2.Evaluate());
-        while (listone.size() || listtwo.size())
+        while (!listone.empty() || listtwo.empty())
         {
-            if (rv.size())
+            if (!rv.empty())
                 rv += " ";
             rv += ExtractFirst(listone, " ");
             rv += ExtractFirst(listtwo, " ");
@@ -1257,12 +1257,12 @@ std::string Eval::realpath(const std::string& arglist)
     Eval t(arglist, false);
     std::string text = t.Evaluate();
     std::string rv;
-    while (text.size())
+    while (!text.empty())
     {
         std::string thisOne = ExtractFirst(text, " ");
         if (thisOne[0] != '\\' && thisOne[1] != ':' && thisOne[0] != '/')  // windows specific
             thisOne = OS::GetWorkingDir() + '/' + thisOne;
-        if (rv.size())
+        if (!rv.empty())
             rv += " ";
         rv += thisOne;
     }
@@ -1311,7 +1311,7 @@ std::string Eval::condIf(const std::string& arglist)
         }
         else
         {
-            if (els.size())
+            if (!els.empty())
             {
                 Eval e(els, false, ruleList, rule);
                 rv = e.Evaluate();
@@ -1332,7 +1332,7 @@ std::string Eval::condOr(const std::string& arglist)
         right.replace(0, n + 1, "");
         Eval l(left, false, ruleList, rule);
         left = l.Evaluate();
-        if (left.size())
+        if (!left.empty())
             return left;
         n = arglist.find_first_of(',');
     }
@@ -1351,7 +1351,7 @@ std::string Eval::condAnd(const std::string& arglist)
         right.replace(0, n + 1, "");
         Eval l(left, false, ruleList, rule);
         left = l.Evaluate();
-        if (!left.size())
+        if (left.empty())
             return left;
         n = right.find_first_of(',');
     }
@@ -1375,12 +1375,12 @@ std::string Eval::foreach (const std::string& arglist)
         {
             Variable* v = new Variable(var, list, Variable::f_simple, Variable::o_file);
             foreachVars.push_front(v);
-            while (list.size())
+            while (!list.empty())
             {
                 std::string value = ExtractFirst(list, " ");
                 v->SetValue(value);
                 Eval t(next, false, ruleList, rule);
-                if (rv.size())
+                if (!rv.empty())
                     rv += " ";
                 rv += t.Evaluate();
             }
@@ -1437,7 +1437,7 @@ std::string Eval::call(const std::string& arglist)
                 l.PushCallArg(left);
                 n = args.find_first_of(',');
             }
-            if (args.size())
+            if (!args.empty())
             {
                 Eval l1(args, false, ruleList, rule);
                 args = l1.Evaluate();
@@ -1542,17 +1542,17 @@ std::string Eval::shell(const std::string& arglist)
 std::string Eval::error(const std::string& arglist, const std::string fileOverride, int lineOverride)
 {
     std::ostringstream os;
-    if (fileOverride.size())
+    if (!fileOverride.empty())
     {
-        os << "Error " << fileOverride.c_str() << "(" << lineOverride << "): " << arglist.c_str() << std::endl;
+        os << "Error " << fileOverride << "(" << lineOverride << "): " << arglist << std::endl;
     }
     else if (lineOverride != -1)
     {
-        os << "Error " << file.c_str() << "(" << lineno << "): " << arglist.c_str() << std::endl;
+        os << "Error " << file << "(" << lineno << "): " << arglist << std::endl;
     }
     else
     {
-        os << "Error: " << arglist.c_str() << std::endl;
+        os << "Error: " << arglist << std::endl;
     }
     OS::WriteConsole(os.str());
     errcount++;
@@ -1562,7 +1562,7 @@ std::string Eval::errorx(const std::string& arglist)
 {
     Eval a(arglist, false, nullptr, nullptr);
     std::ostringstream os;
-    std::cout << "Error " << file.c_str() << "(" << lineno << "): " << a.Evaluate().c_str() << std::endl;
+    std::cout << "Error " << file << "(" << lineno << "): " << a.Evaluate() << std::endl;
     OS::WriteConsole(os.str());
     errcount++;
     return "";
@@ -1570,17 +1570,17 @@ std::string Eval::errorx(const std::string& arglist)
 std::string Eval::warning(const std::string& arglist, const std::string fileOverride, int lineOverride)
 {
     std::ostringstream os;
-    if (fileOverride.size())
+    if (!fileOverride.empty())
     {
-        os << "Warning " << fileOverride.c_str() << "(" << lineOverride << "): " << arglist.c_str() << std::endl;
+        os << "Warning " << fileOverride << "(" << lineOverride << "): " << arglist << std::endl;
     }
     else if (lineOverride != -1)
     {
-        os << "Warning " << file.c_str() << "(" << lineno << "): " << arglist.c_str() << std::endl;
+        os << "Warning " << file << "(" << lineno << "): " << arglist << std::endl;
     }
     else
     {
-        os << "Warning: " << arglist.c_str() << std::endl;
+        os << "Warning: " << arglist << std::endl;
     }
     OS::WriteConsole(os.str());
     return "";
@@ -1589,7 +1589,7 @@ std::string Eval::warningx(const std::string& arglist)
 {
     Eval a(arglist, false, nullptr, nullptr);
     std::ostringstream os;
-    os << "Warning " << file.c_str() << "(" << lineno << "): " << a.Evaluate().c_str() << std::endl;
+    os << "Warning " << file << "(" << lineno << "): " << a.Evaluate() << std::endl;
     OS::WriteConsole(os.str());
     return "";
 }
@@ -1598,7 +1598,7 @@ std::string Eval::info(const std::string& arglist)
 {
     Eval a(arglist, false, ruleList, rule);
     std::ostringstream os;
-    os << a.Evaluate().c_str() << std::endl;
+    os << a.Evaluate() << std::endl;
     OS::WriteConsole(os.str());
     return "";
 }
@@ -1606,9 +1606,8 @@ std::string Eval::exists(const std::string& arglist)
 {
     Eval a(arglist, false, ruleList, rule);
     std::string fileName = a.Evaluate();
-    std::fstream aa(fileName.c_str(), std::ios::in);
+    std::fstream aa(fileName, std::ios::in);
     if (aa.is_open())
         return "1";
-    else
-        return "0";
+    return "0";
 }

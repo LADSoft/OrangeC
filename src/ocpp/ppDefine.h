@@ -29,7 +29,7 @@
 #include <string>
 #include <vector>
 #include <set>
-#include <time.h>
+#include <ctime>
 #include "Utils.h"
 #include "SymbolTable.h"
 #include "Token.h"

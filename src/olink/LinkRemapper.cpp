@@ -240,7 +240,7 @@ ObjExpression* LinkRemapper::ScanExpression(ObjExpression* offset, LinkSymbolDat
             if (d && offset->GetSymbol()->GetType() == ObjSymbol::eExternal)
             {
                 d->SetSymbol(offset->GetSymbol());
-                LinkManager::SymbolIterator it = manager->PublicFind(d);
+                auto it = manager->PublicFind(d);
                 if (it != manager->PublicEnd())
                 {
                     return (*it)->GetSymbol()->GetOffset();
@@ -363,7 +363,7 @@ ObjInt LinkRemapper::MapType(ObjFile* file, ObjType* type)
             // structure name different ways in differnet files..
             unsigned crc = 0xffffffff;
             {
-                for (ObjType::FieldIterator it = type->FieldBegin(); it != type->FieldEnd(); ++it)
+                for (auto it = type->FieldBegin(); it != type->FieldEnd(); ++it)
                 {
                     sprintf(name, "%s;%d;", (*it)->GetName().c_str(), (*it)->GetConstVal());
                     crc = crc32((unsigned char*)name, strlen(name), crc);

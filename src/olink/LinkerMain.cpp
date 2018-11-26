@@ -90,7 +90,7 @@ const ObjString& LinkerMain::GetOutputFile(CmdFiles& files)
     }
     else if (files.GetSize())
     {
-        CmdFiles::FileNameIterator it = files.FileNameBegin();
+        auto it = files.FileNameBegin();
         outputFile = Utils::QualifiedFile((*it)->c_str(), ".rel");
     }
     else
@@ -138,7 +138,7 @@ void LinkerMain::AddFile(LinkManager& linker, std::string& name)
 }
 void LinkerMain::AddFiles(LinkManager& linker, CmdFiles& files)
 {
-    for (CmdFiles::FileNameIterator it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
+    for (auto it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
         AddFile(linker, (*(*it)));
 }
 void LinkerMain::SetDefines(LinkManager& linker)

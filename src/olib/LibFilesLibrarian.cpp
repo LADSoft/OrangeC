@@ -124,7 +124,7 @@ void LibFiles::Replace(ObjFile& obj)
     std::string internalName = Name;
     if (npos != std::string::npos)
         internalName = Name.substr(npos + 1);
-    for (FileIterator it = FileBegin(); it != FileEnd(); ++it)
+    for (auto it = FileBegin(); it != FileEnd(); ++it)
     {
         if ((*it)->name == internalName)
         {
@@ -147,7 +147,7 @@ void LibFiles::Replace(const ObjString& Name)
     std::string internalName = Name;
     if (npos != std::string::npos)
         internalName = Name.substr(npos + 1);
-    for (FileIterator it = FileBegin(); it != FileEnd(); ++it)
+    for (auto it = FileBegin(); it != FileEnd(); ++it)
     {
         if ((*it)->name == internalName)
         {
@@ -190,7 +190,7 @@ void LibFiles::WriteNames(FILE* stream)
 }
 void LibFiles::WriteOffsets(FILE* stream)
 {
-    for (FileIterator it = FileBegin(); it != FileEnd(); ++it)
+    for (auto it = FileBegin(); it != FileEnd(); ++it)
     {
         ObjInt ofs = (*it)->offset;
         fwrite(&ofs, 4, 1, stream);

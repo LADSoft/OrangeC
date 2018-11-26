@@ -98,7 +98,7 @@ void ObjIeeeAscii::RenderStructure(ObjType* Type)
 {
     const int MaxPerLine = 15;
     std::deque<ObjField*> fields;
-    for (ObjType::FieldIterator it = Type->FieldBegin(); it != Type->FieldEnd(); ++it)
+    for (auto it = Type->FieldBegin(); it != Type->FieldEnd(); ++it)
     {
         fields.push_front(*it);
     }
@@ -150,7 +150,7 @@ void ObjIeeeAscii::RenderFunction(ObjFunction* Function)
     RenderString(ObjUtil::ToHex(Function->GetLinkage()));
     // assuming a reasonable number of parameters
     // parameters are TYPES
-    for (ObjFunction::ParameterIterator it = Function->ParameterBegin(); it != Function->ParameterEnd(); ++it)
+    for (auto it = Function->ParameterBegin(); it != Function->ParameterEnd(); ++it)
     {
         RenderString(",T" + GetTypeIndex(*it));
     }
@@ -365,9 +365,8 @@ void ObjIeeeAscii::RenderMemory(ObjMemoryManager* Memory)
     int n;
     scratch[0] = 'L';
     scratch[1] = 'D';
-    ObjMemoryManager::MemoryIterator itmem;
     n = 2;
-    for (itmem = Memory->MemoryBegin(); itmem != Memory->MemoryEnd(); ++itmem)
+    for (auto itmem = Memory->MemoryBegin(); itmem != Memory->MemoryEnd(); ++itmem)
     {
         ObjMemory* memory = (*itmem);
         if ((memory->HasDebugTags() && GetDebugInfoFlag()) || memory->GetFixup())
@@ -382,8 +381,7 @@ void ObjIeeeAscii::RenderMemory(ObjMemoryManager* Memory)
             }
             if (GetDebugInfoFlag() && memory->HasDebugTags())
             {
-                ObjMemory::DebugTagIterator it;
-                for (it = memory->DebugTagBegin(); it != memory->DebugTagEnd(); ++it)
+                for (auto it = memory->DebugTagBegin(); it != memory->DebugTagEnd(); ++it)
                 {
                     RenderDebugTag(*it);
                 }

@@ -32,9 +32,9 @@
 #include "SymbolTable.h"
 #include "UTF8.h"
 #include "Utils.h"
-#include <time.h>
-#include <limits.h>
-#include <stdlib.h>
+#include <ctime>
+#include <climits>
+#include <cstdlib>
 
 static const int ellipses = 100;
 

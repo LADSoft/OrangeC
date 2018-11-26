@@ -141,7 +141,7 @@ PPINT ppExpr::primary(std::string& line)
             {
                 if (token->GetKeyword() == openpa)
                 {
-                    std::string& line = tokenizer->GetString();
+                    std::string line = tokenizer->GetString();
                     int n = line.find(")");
                     if (n == std::string::npos)
                     {

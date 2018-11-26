@@ -90,7 +90,7 @@ LinkNameLogic::ParseItem* LinkNameLogic::ParseOutOr(std::string& spec)
     {
         spec.erase(0, n);
     }
-    while (rv && spec.size() && spec[0] == '|')
+    while (rv && spec.empty() && spec[0] == '|')
     {
         spec.erase(0, 1);
         ParseItem* right = ParseOutAnd(spec);
@@ -115,7 +115,7 @@ LinkNameLogic::ParseItem* LinkNameLogic::ParseOutAnd(std::string& spec)
     {
         spec.erase(0, n);
     }
-    while (rv && spec.size() && spec[0] == '&')
+    while (rv && !spec.empty() && spec[0] == '&')
     {
         spec.erase(0, 1);
         ParseItem* right = ParseOutAnd(spec);
@@ -141,7 +141,7 @@ LinkNameLogic::ParseItem* LinkNameLogic::ParseOutNot(std::string& spec)
     {
         spec.erase(0, n);
     }
-    while (spec.size() && spec[0] == '!')
+    while (!spec.empty() && spec[0] == '!')
     {
         spec.erase(0, 1);
         invert = !invert;
@@ -177,7 +177,7 @@ LinkNameLogic::ParseItem* LinkNameLogic::ParseOutPrimary(std::string& spec)
         {
             spec.erase(0, n);
         }
-        if (!spec.size() || spec[0] != ')')
+        if (spec.empty() || spec[0] != ')')
             return nullptr;
         spec.erase(0, 1);
         return rv;

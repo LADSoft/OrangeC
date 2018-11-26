@@ -80,7 +80,7 @@ const char* LinkerMain::usageText =
 const ObjString& LinkerMain::GetOutputFile(CmdFiles& files)
 {
     static ObjString outputFile;
-    if (OutputFile.GetValue().size() != 0)
+    if (!OutputFile.GetValue().empty())
     {
         outputFile = OutputFile.GetValue();
         if (outputFile.find(".exe") != std::string::npos || outputFile.find(".dll") != std::string::npos)
@@ -103,7 +103,7 @@ const ObjString& LinkerMain::GetOutputFile(CmdFiles& files)
 const ObjString& LinkerMain::GetMapFile(CmdFiles& files)
 {
     static ObjString mapFile;
-    if (OutputFile.GetValue().size() != 0)
+    if (!OutputFile.GetValue().empty())
     {
         mapFile = Utils::QualifiedFile(OutputFile.GetValue().c_str(), ".map");
     }
@@ -153,9 +153,9 @@ void LinkerMain::SetDefines(LinkManager& linker)
 std::string LinkerMain::SpecFileContents(const std::string& specFile)
 {
     std::string rv;
-    if (specFile.size() != 0)
+    if (!specFile.empty())
     {
-        std::fstream fil(specFile.c_str(), std::ios::in);
+        std::fstream fil(specFile, std::ios::in);
         if (!fil.fail())
         {
             fil.seekg(0, std::ios::end);
@@ -210,10 +210,10 @@ int LinkerMain::Run(int argc, char** argv)
     unlink(outputFile.c_str());
     const ObjString& mapFile = GetMapFile(files);
     ObjString specificationFile = Specification.GetValue();
-    if (specificationFile.size() == 0)
+    if (specificationFile.empty())
     {
         std::string val = TargetConfig.GetSpecFile();
-        if (val.size())
+        if (!val.empty())
         {
             std::string prefix = modName;
             size_t n = prefix.find_last_of('\\');
@@ -241,7 +241,7 @@ int LinkerMain::Run(int argc, char** argv)
     char* lpath = getenv("LIBRARY_PATH");
     if (lpath)
     {
-        if (LibPath.GetValue().size())
+        if (!LibPath.GetValue().empty())
             LibPath += ";";
         LibPath += lpath;
     }

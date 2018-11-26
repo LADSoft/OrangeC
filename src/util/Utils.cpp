@@ -131,7 +131,7 @@ std::string Utils::FullPath(const std::string& path, const std::string& name)
     {
         return name;
     }
-    if (path.size())
+    if (!path.empty())
     {
         std::string fpath = path;
         //        if (path.c_str()[strlen(path.c_str())-1] != '\\')
@@ -167,7 +167,7 @@ std::string Utils::SearchForFile(const std::string& path, const std::string& nam
         return name;
     }
     std::string fpath = path;
-    while (fpath.size())
+    while (!fpath.empty())
     {
         int npos = fpath.find_first_of(CmdFiles::PATH_SEP[0]);
         std::string current;

@@ -123,7 +123,7 @@ void PEImportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
         for (int i = 0; i < module.second->externalNames.size(); i++)
         {
             const std::string& str = module.second->externalNames[i];
-            if (str.size())
+            if (!str.empty())
             {
                 lookupPos->ord_or_rva = (unsigned char*)hintPos - data + virtual_addr;
                 addressPos->ord_or_rva = (unsigned char*)hintPos - data + virtual_addr;

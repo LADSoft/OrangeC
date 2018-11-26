@@ -85,7 +85,7 @@ int CmdSwitchString::Parse(const char* data)
         data++;
     if (concat)
     {
-        if (concat != '+' && value.size())
+        if (concat != '+' && !value.empty())
             value += concat;
         value += data;
     }
@@ -172,7 +172,7 @@ int CmdSwitchFile::Parse(const char* data)
     int n = CmdSwitchString::Parse(data);
     if (n < 0 || argv)
         return n;
-    std::fstream in(CmdSwitchString::GetValue().c_str(), std::ios::in);
+    std::fstream in(CmdSwitchString::GetValue(), std::ios::in);
     if (!in.fail())
     {
         in.seekg(0, std::ios::end);

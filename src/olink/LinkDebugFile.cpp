@@ -592,7 +592,7 @@ bool LinkDebugFile::WriteVariableNames()
     for (auto it = file->TypeBegin(); it != file->TypeEnd(); ++it)
     {
         ObjString name = (*it)->GetName();
-        if (name.size())
+        if (!name.empty())
         {
             int index = (*it)->GetIndex();
             int n = GetSQLNameId(name);
@@ -820,7 +820,7 @@ bool LinkDebugFile::WriteTypeNamesTable()
     for (auto it = file->TypeBegin(); it != file->TypeEnd(); ++it)
     {
         ObjString name = (*it)->GetName();
-        if (name.size())
+        if (!name.empty())
         {
             int index = (*it)->GetIndex();
             v.push_back(typeMap[index]);

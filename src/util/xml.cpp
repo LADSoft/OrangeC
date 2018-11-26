@@ -78,7 +78,7 @@ bool xmlAttrib::Read(std::fstream& stream)
 }
 bool xmlAttrib::Write(std::fstream& stream)
 {
-    stream << ' ' << name.c_str() << " = \"";
+    stream << ' ' << name << " = \"";
     const char* p = value.c_str();
     while (*p)
         WriteTextChar(stream, *p++);
@@ -396,18 +396,18 @@ bool xmlNode::Write(std::fstream& stream, int indent)
 {
     for (int i = 0; i < indent; i++)
         stream << "  ";
-    stream << '<' << elementType.c_str();
-    if (attribs.size())
+    stream << '<' << elementType;
+    if (!attribs.empty())
     {
         for (auto attrib : attribs)
             attrib->Write(stream);
     }
-    if (children.size() || text.size())
+    if (!children.empty() || !text.empty())
     {
         stream << '>' << std::endl;
         for (auto child : children)
             child->Write(stream, indent + 1);
-        if (text.size())
+        if (!text.empty())
         {
             const char* p = text.c_str();
             while (*p)
@@ -416,7 +416,7 @@ bool xmlNode::Write(std::fstream& stream, int indent)
         }
         for (int i = 0; i < indent; i++)
             stream << "  ";
-        stream << "</" << elementType.c_str() << '>' << std::endl;
+        stream << "</" << elementType << '>' << std::endl;
     }
     else
     {

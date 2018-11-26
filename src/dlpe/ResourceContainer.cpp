@@ -55,7 +55,7 @@ bool ResourceContainer::LoadFiles()
     {
         if (!LoadFile(name))
         {
-            std::cout << "Error loading resource file '" << name.c_str() << "'" << std::endl;
+            std::cout << "Error loading resource file '" << name << "'" << std::endl;
             rv = false;
         }
     }

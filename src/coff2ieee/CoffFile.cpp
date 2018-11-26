@@ -33,7 +33,7 @@
 
 CoffFile::~CoffFile()
 {
-    if (name.size() && inputFile)
+    if (!name.empty() && inputFile)
         delete inputFile;
 
     delete[] sections;
@@ -47,7 +47,7 @@ CoffFile::~CoffFile()
 }
 bool CoffFile::Load()
 {
-    if (name.size())
+    if (!name.empty())
         inputFile = new std::fstream(name, std::ios::binary | std::ios::in);
     if (inputFile && inputFile->is_open())
     {

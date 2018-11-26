@@ -410,7 +410,7 @@ void dlPeMain::InitHeader(unsigned headerSize, ObjInt endVa)
 bool dlPeMain::LoadStub(const std::string& exeName)
 {
     std::string val = stubSwitch.GetValue();
-    if (val.size() == 0)
+    if (val.empty())
         val = "dfstb32.exe";
     // look in current directory
     std::fstream* file = new std::fstream(val, std::ios::in | std::ios::binary);

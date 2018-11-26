@@ -171,7 +171,7 @@ void PEExportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
         *stringTable++ = 0;
     }
     // throw in the DLL name
-    if (name.size())
+    if (!name.empty())
     {
         header->exe_name_rva = (unsigned)((unsigned char*)stringTable - data + virtual_addr);
         for (int i = 0; i < name.size(); i++)

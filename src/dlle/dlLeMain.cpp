@@ -144,7 +144,7 @@ bool dlLeMain::ReadSections(const std::string& path, const std::string& exeName)
 std::string dlLeMain::GetOutputName(char* infile) const
 {
     std::string name;
-    if (outputFileSwitch.GetValue().size() != 0)
+    if (!outputFileSwitch.GetValue().empty())
     {
         name = outputFileSwitch.GetValue();
         const char* p = strrchr(name.c_str(), '.');
@@ -228,7 +228,7 @@ void dlLeMain::InitHeader()
 bool dlLeMain::LoadStub(const std::string& exeName)
 {
     std::string val = stubSwitch.GetValue();
-    if (val.size() == 0)
+    if (val.empty())
         val = "dos32a.exe";
     // look in current directory
     std::fstream* file = new std::fstream(val, std::ios::in | std::ios::binary);

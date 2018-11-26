@@ -78,7 +78,7 @@ ObjExpression* PEDataObject::getExtern(ObjExpression* exp)
 }
 void PEDataObject::GetImportNames()
 {
-    if (!importNames.size())
+    if (importNames.empty())
     {
         for (auto it = file->ImportBegin(); it != file->ImportEnd(); ++it)
         {

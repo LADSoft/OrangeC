@@ -377,7 +377,7 @@ void LinkManager::LoadFiles()
         if (!infile)
         {
             std::string hold = libPath;
-            while (hold.size())
+            while (!hold.empty())
             {
                 std::string next;
                 size_t npos = hold.find(";");
@@ -439,7 +439,7 @@ LinkLibrary* LinkManager::OpenLibrary(const ObjString& name)
         }
         std::string hold = libPath;
         std::string next;
-        while (hold.size())
+        while (!hold.empty())
         {
             size_t npos = hold.find(";");
             if (npos == std::string::npos)
@@ -545,7 +545,7 @@ bool LinkManager::ResolveLibrary(LinkLibrary* lib, std::string& name)
 void LinkManager::ScanLibraries()
 {
     SymbolData dt;
-    while (externals.size())
+    while (!externals.empty())
     {
         bool found = false;
         auto extit = externals.begin();
@@ -854,7 +854,7 @@ void LinkManager::CreateOutputFile()
                 if (!debugPassThrough)
                 {
                     ioBase->SetDebugInfoFlag(false);
-                    if (debugFile.size())
+                    if (!debugFile.empty())
                     {
                         LinkDebugFile df(debugFile, file, this->virtualSections, this->parentSections);
                         df.CreateOutput();
@@ -880,7 +880,7 @@ void LinkManager::Link()
     LoadFiles();
     if (completeLink)
     {
-        if (externals.size())
+        if (!externals.empty())
         {
             LoadLibraries();
             do
@@ -889,7 +889,7 @@ void LinkManager::Link()
             } while (ScanVirtuals());
         }
     }
-    if (!specName.size())
+    if (specName.empty())
     {
         CreatePartitions();
     }

@@ -85,7 +85,7 @@ class Semaphore
 #elif defined(__linux__)
         for (int i = 0; i < value; i++)
         {
-            sem_post(value);
+            sem_post(handle);
         }
 #endif
     }

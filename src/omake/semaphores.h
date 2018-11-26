@@ -3,7 +3,7 @@
 #    include <windows.h>
 #elif defined(__linux__)
 #    include <semaphore.h>
-#    include <fnctl.h>
+#    include <fcntl.h>
 #    include <sys/stat.h>
 // reason it doesn't work well: POSIX semaphores mandate that you unlink the semaphore first, which means that no new semaphores
 // that reference that one can be made This would mean we would be creating about a million semaphores just for this

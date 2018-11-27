@@ -646,7 +646,7 @@ const Token* Tokenizer::Next()
     size_t n = line.find_first_not_of("\t \v");
     line.erase(0, n);
     delete currentToken;
-    if (!line.empty())
+    if (line.empty())
         currentToken = new EndToken;
     else if (NumericToken::Start(line))
         currentToken = new NumericToken(line);

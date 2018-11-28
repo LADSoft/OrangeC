@@ -38,6 +38,8 @@ class Instruction;
 class Section;
 class AsmFile;
 
+enum asmError { AERR_NONE, AERR_SYNTAX, AERR_OPERAND, AERR_BADCOMBINATIONOFOPERANDS, AERR_UNKNOWNOPCODE, AERR_INVALIDINSTRUCTIONUSE };
+
 class Coding
 {
   public:
@@ -134,7 +136,7 @@ class InstructionParser
         TOKEN_BASE = 0,
         REGISTER_BASE = 1000
     };
-    virtual bool DispatchOpcode(int opcode) = 0;
+    virtual asmError DispatchOpcode(int opcode) = 0;
     void NextToken(int PC);
     enum
     {

@@ -32,6 +32,7 @@
 #include "Fixup.h"
 #include "UTF8.h"
 #include <stdexcept>
+#include <iostream>
 
 extern bool IsSymbolStartChar(char ch);
 extern bool IsSymbolChar(char ch);
@@ -196,8 +197,8 @@ Instruction* InstructionParser::Parse(const std::string args, int PC)
     }
     if (op == "")
     {
-        bool rv = DispatchOpcode(-1);
-        if (rv)
+        auto rv = DispatchOpcode(-1);
+        if (rv == AERR_NONE)
         {
             unsigned char buf[32];
             bits.GetBytes(buf, 32);
@@ -212,45 +213,57 @@ Instruction* InstructionParser::Parse(const std::string args, int PC)
             bits.Reset();
             if (!Tokenize(PC))
             {
-                throw new std::runtime_error("Syntax error");
+                throw new std::runtime_error("Unknown token sequence");
             }
             eol = false;
-            bool rv = DispatchOpcode(it->second);
+            auto rv = DispatchOpcode(it->second);
             Instruction* s = nullptr;
-            if (rv)
+            switch (rv)
             {
-                unsigned char buf[32];
-                bits.GetBytes(buf, 32);
-#ifdef XXXXX
-                std::cout << std::hex << bits.GetBits() << " ";
-                for (int i = 0; i<bits.GetBits()>> 3; i++)
-                    std::cout << std::hex << (int)buf[i] << " ";
-                std::cout << std::endl;
-#endif
-                if (!eol)
-                    throw new std::runtime_error("Extra characters at end of line");
-                s = new Instruction(buf, (bits.GetBits() + 7) / 8);
-                //			std::cout << bits.GetBits() << std::endl;
-                for (auto operand : operands)
+                case AERR_NONE:
                 {
-                    if (operand->used && operand->size)
+                    unsigned char buf[32];
+                    bits.GetBytes(buf, 32);
+    #ifdef XXXXX
+                    std::cout << std::hex << bits.GetBits() << " ";
+                    for (int i = 0; i<bits.GetBits()>> 3; i++)
+                        std::cout << std::hex << (int)buf[i] << " ";
+                    std::cout << std::endl;
+    #endif
+                    if (!eol)
+                        throw new std::runtime_error("Extra characters at end of line");
+                    s = new Instruction(buf, (bits.GetBits() + 7) / 8);
+                    //			std::cout << bits.GetBits() << std::endl;
+                    for (auto operand : operands)
                     {
-                        if (s->Lost() && operand->pos)
-                            operand->pos-=8;
-                        int n = operand->relOfs;
-                        if (n < 0)
-                            n = -n;
-                        Fixup* f = new Fixup(operand->node, (operand->size + 7) / 8, operand->relOfs != 0, n, operand->relOfs > 0);
-                        f->SetInsOffs((operand->pos + 7) / 8);
-                        f->SetFileName(errName);
-                        f->SetErrorLine(errLine);
-                        s->Add(f);
+                        if (operand->used && operand->size)
+                        {
+                            if (s->Lost() && operand->pos)
+                                operand->pos-=8;
+                            int n = operand->relOfs;
+                            if (n < 0)
+                                n = -n;
+                            Fixup* f = new Fixup(operand->node, (operand->size + 7) / 8, operand->relOfs != 0, n, operand->relOfs > 0);
+                            f->SetInsOffs((operand->pos + 7) / 8);
+                            f->SetFileName(errName);
+                            f->SetErrorLine(errLine);
+                            s->Add(f);
+                        }
                     }
                 }
-            }
-            else
-            {
-                throw new std::runtime_error("Syntax error");
+                    break;
+                case AERR_SYNTAX:
+                    throw new std::runtime_error("Syntax error while parsing instruction");
+                case AERR_OPERAND:
+                    throw new std::runtime_error("Unknown operand");
+                case AERR_BADCOMBINATIONOFOPERANDS:
+                    throw new std::runtime_error("Bad combination of operands");
+                case AERR_UNKNOWNOPCODE:
+                    throw new std::runtime_error("Unrecognized opcode");
+                case AERR_INVALIDINSTRUCTIONUSE:
+                    throw new std::runtime_error("Invalid use of instruction");
+                default:
+                    throw new std::runtime_error("unknown error");
             }
             return s;
         }

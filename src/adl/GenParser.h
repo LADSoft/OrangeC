@@ -55,6 +55,7 @@ protected:
     bool GenerateAddresses();
     void GenerateOperandTokenTree(TokenNode *value);
     bool GenerateOperands();
+    void GenerateAddressTable(TokenNode *value);
     bool GenerateOpcodes();
     void GenerateCoding(const std::string coding);
     bool GenerateUtilityFuncs();

@@ -213,18 +213,20 @@ bool GenParser::GenerateHeader()
     (*file) << std::endl;
     (*file) << "protected:" << std::endl;
     (*file) << "\tbool ParseAddresses("<<operandClassName<<" &operand, int addrClass, int &tokenPos);" << std::endl;
-    (*file) << "\tbool ParseOperands2(" << tokenClassName << " *tokenList, "<<operandClassName<<" &operand, int tokenPos, int level);" << std::endl;
-    (*file) << "\tbool ParseOperands(" << tokenClassName << " *tokenList, "<<operandClassName<<" &operand);" << std::endl;
+    (*file) << "\tasmError ParseOperands2(" << tokenClassName << " *tokenList, "<<operandClassName<<" &operand, int tokenPos, int level);" << std::endl;
+    (*file) << "\tasmError ParseOperands(" << tokenClassName << " *tokenList, "<<operandClassName<<" &operand);" << std::endl;
     (*file) << "\tbool ProcessCoding("<<operandClassName<<" &operand, Coding *coding);" << std::endl;
     (*file) << "\tbool ProcessCoding(" << operandClassName << " &operand, Coding *coding, int field, int bits, int* arr, char* bitcounts, char *func, int &index);" << std::endl;
     (*file) << "\tbool MatchesToken(int token, int tokenPos);" << std::endl;
     (*file) << "\tbool MatchesRegister(int reg, int tokenPos);" << std::endl;
     (*file) << "\tbool MatchesRegisterClass(int cclass, int tokenPos);" << std::endl;
     (*file) << "\tint DoMath(char op, int left, int right);" << std::endl;
-    (*file) << "\tvirtual bool DispatchOpcode(int opcode);" << std::endl;
+    (*file) << "\tvirtual asmError DispatchOpcode(int opcode);" << std::endl;
     (*file) << std::endl;	
-    (*file) << "\ttypedef bool ("<<className<<"::*DispatchType)(" << operandClassName << " &);" << std::endl;
+    (*file) << "\ttypedef asmError ("<<className<<"::*DispatchType)(" << operandClassName << " &);" << std::endl;
     (*file) << "\tstatic DispatchType DispatchTable[];" << std::endl;
+    (*file) << std::endl;
+    (*file) << "\tstatic " << tokenClassName << " *addressTable[];" << std::endl;
     (*file) << std::endl;
     (*file) << "\ttypedef Coding * (" << className << "::*StateFuncDispatchType)();" << std::endl;
     (*file) << "\tstatic StateFuncDispatchType stateFuncs[];" << std::endl;
@@ -336,7 +338,7 @@ bool GenParser::GenerateHeader()
             int n = valueTags[m.first];
             (*file) << "\tstatic Coding OpcodeCodings" << x->id << "_" << n << "[];" << std::endl;
         }
-        (*file) << "\tbool Opcode" << x->id << "(" << operandClassName << " &operand);" << std::endl;
+        (*file) << "\tasmError Opcode" << x->id << "(" << operandClassName << " &operand);" << std::endl;
     }
     (*file) << std::endl;	
     for (int i=0; i < parser.codings.size(); i++)
@@ -843,6 +845,19 @@ bool GenParser::GenerateOperands()
     }
     return true;
 }
+void GenParser::GenerateAddressTable(TokenNode *value)
+{
+    for (auto x : value->branches)
+    {
+        GenerateAddressTable(x);
+    }
+    if (value->branches.size())
+    {
+        (*file) << "\t&" << className << "::tokenBranches" << value->id << "[0]," << std::endl;
+    }
+
+}
+
 bool GenParser::GenerateOpcodes()
 {
     for (auto x : parser.opcodes)
@@ -854,7 +869,7 @@ bool GenParser::GenerateOpcodes()
             GenerateCoding(m.second);
             (*file) << "};" << std::endl;
         }
-        (*file) << "bool "<<className<<"::Opcode"<<x->id<<"(" << operandClassName << " &operand)" << std::endl;
+        (*file) << "asmError "<<className<<"::Opcode"<<x->id<<"(" << operandClassName << " &operand)" << std::endl;
         (*file) << "{" << std::endl;
         for (auto& m : x->values)
         {
@@ -863,7 +878,7 @@ bool GenParser::GenerateOpcodes()
         }
         if (x->tokenRoot->branches.size())
         {
-            (*file) << "\tbool rv = ParseOperands(tokenBranches" << x->tokenRoot->id << ", operand);" << std::endl;
+            (*file) << "\tasmError rv = ParseOperands(tokenBranches" << x->tokenRoot->id << ", operand);" << std::endl;
         }
         if (x->name != "" && x->cclass != "")
         {
@@ -872,11 +887,11 @@ bool GenParser::GenerateOpcodes()
             {
                 if (x->operands.size())
                 {
-                    (*file) << "\tif (!rv)" << std::endl;
+                    (*file) << "\tif (rv == AERR_NONE)" << std::endl;
                 }
                 else
                 {
-                    (*file) << "\tbool rv;" << std::endl;
+                    (*file) << "\tasmError rv;" << std::endl;
                 }
                     
                 (*file) << "\t{" << std::endl;
@@ -892,7 +907,7 @@ bool GenParser::GenerateOpcodes()
         else
         {
             if (!x->operands.size())
-                (*file) << "\tbool rv = true;" << std::endl;
+                (*file) << "\tasmError rv = AERR_NONE;" << std::endl;
         }
         (*file) << "\treturn rv;" << std::endl;
         (*file) << "}" << std::endl;
@@ -906,6 +921,13 @@ bool GenParser::GenerateOpcodes()
             (*file) << "\t&" << className << "::Opcode" << x->id << "," << std::endl;
     }	
     (*file) << "};" << std::endl;
+    (*file) << std::endl;
+
+    (*file) << tokenClassName << " *" << className << "::addressTable[] = {" << std::endl;
+    GenerateAddressTable(parser.addressRoot);
+    (*file) << "};" << std::endl;
+    (*file) << std::endl;
+
     const std::string **codingNames = new const std::string *[parser.codings.size()];
     for (auto& m : parser.codings)
     {
@@ -1276,9 +1298,9 @@ bool GenParser::GenerateAddressParser()
 }
 bool GenParser::GenerateOperandParser()
 {
-    (*file) << "bool " << className << "::ParseOperands2(" << tokenClassName << " *tokenList, "<<operandClassName<<" &operand, int tokenPos, int level)" << std::endl;
+    (*file) << "asmError " << className << "::ParseOperands2(" << tokenClassName << " *tokenList, "<<operandClassName<<" &operand, int tokenPos, int level)" << std::endl;
     (*file) << "{" << std::endl;
-    (*file) << "\tbool rv = false;" << std::endl;
+    (*file) << "\tasmError rv = AERR_OPERAND;" << std::endl;
     (*file) << "\t" << tokenClassName << " *t = tokenList;" << std::endl;
     (*file) << "\twhile (t && t->type != " << tokenClassName << "::EOT)" << std::endl;
     (*file) << "\t{" << std::endl;
@@ -1313,11 +1335,9 @@ bool GenParser::GenerateOperandParser()
     (*file) << "\t\t{" << std::endl;
     (*file) << "\t\t\tif (t->level > level)" << std::endl;
     (*file) << "\t\t\t{" << std::endl;
-    (*file) << "\t\t\t\tif (ParseOperands2(t->next, operand, tokenPos, t->level))" << std::endl;
-    (*file) << "\t\t\t\t{" << std::endl;
-    (*file) << "\t\t\t\t\trv = true;" << std::endl;
+    (*file) << "\t\t\t\trv = ParseOperands2(t->next, operand, tokenPos, t->level);" << std::endl;
+    (*file) << "\t\t\t\tif (rv == AERR_NONE)" << std::endl;
     (*file) << "\t\t\t\t\tbreak;" << std::endl;
-    (*file) << "\t\t\t\t}" << std::endl;
     (*file) << "\t\t\t}" << std::endl;
     (*file) << "\t\t}" << std::endl;
     (*file) << "\t\telse" << std::endl;
@@ -1328,14 +1348,15 @@ bool GenParser::GenerateOperandParser()
     (*file) << "\t\t\t{" << std::endl;
     (*file) << "\t\t\t\tif (tokenPos >= (int)(inputTokens.size()-1))" << std::endl;
     (*file) << "\t\t\t\t\teol = true;" << std::endl;
-    (*file) << "\t\t\t\trv = true;" << std::endl;
+    (*file) << "\t\t\t\trv = AERR_NONE;" << std::endl;
     (*file) << "\t\t\t\tbreak;" << std::endl;
     (*file) << "\t\t\t}" << std::endl;
-    (*file) << "\t\t\tif (tokenPos < inputTokens.size() && ParseOperands2(t->next, operand, tokenPos+1, t->level))" << std::endl;	
-    (*file) << "\t\t\t{" << std::endl;	
-    (*file) << "\t\t\t\trv = true;" << std::endl;	
-    (*file) << "\t\t\t\tbreak;" << std::endl;	
-    (*file) << "\t\t\t}" << std::endl;	
+    (*file) << "\t\t\tif (tokenPos < inputTokens.size())" << std::endl;
+    (*file) << "\t\t\t{" << std::endl;
+    (*file) << "\t\t\t\trv = ParseOperands2(t->next, operand, tokenPos + 1, t->level);" << std::endl;
+    (*file) << "\t\t\t\tif (rv == AERR_NONE)" << std::endl;
+    (*file) << "\t\t\t\t\tbreak;" << std::endl;	
+    (*file) << "\t\t\t}" << std::endl;
     (*file) << "\t\t}" << std::endl;
     (*file) << "\t\ttokenPos = last;" << std::endl;
     (*file) << "\t\tt++;" << std::endl;
@@ -1343,9 +1364,38 @@ bool GenParser::GenerateOperandParser()
     (*file) << "\treturn rv;" << std::endl;
     (*file) << "}" << std::endl;
     (*file) << std::endl;
-    (*file) << "bool " << className << "::ParseOperands(" << tokenClassName << " *tokenList, "<<operandClassName<<" &operand)" << std::endl;
+    (*file) << "asmError " << className << "::ParseOperands(" << tokenClassName << " *tokenList, "<<operandClassName<<" &operand)" << std::endl;
     (*file) << "{" << std::endl;
-    (*file) << "\treturn ParseOperands2(tokenList, operand, 0, 0);" << std::endl;
+    (*file) << "\tasmError rv = ParseOperands2(tokenList, operand, 0, 0);" << std::endl;
+    (*file) << "\tif (rv != AERR_NONE)" << std::endl;
+    (*file) << "\t{" << std::endl;
+    (*file) << "\t\tint n = tokenTable[\",\"];" << std::endl;
+    (*file) << "\t\tstd::vector<InputToken* >fullList = inputTokens;" << std::endl;
+    (*file) << "\t\tfor (int i = 0; i < fullList.size();)" << std::endl;
+    (*file) << "\t\t{" << std::endl;
+    (*file) << "\t\t\tinputTokens.clear();" << std::endl;
+    (*file) << "\t\t\twhile (i < fullList.size() && (fullList[i]->type != InputToken::TOKEN || fullList[i]->val->ival != n))" << std::endl;
+    (*file) << "\t\t\t\tinputTokens.push_back(fullList[i++]);" << std::endl;
+    (*file) << "\t\t\tint j;" << std::endl;
+    (*file) << "\t\t\tfor (j = 0; j < sizeof(addressTable) / sizeof(addressTable[0]); j++)" << std::endl;
+    (*file) << "\t\t\t{" << std::endl;
+    (*file) << "\t\t\t\tif (ParseOperands2(addressTable[j], operand, 0, 0) == AERR_NONE)" << std::endl;
+    (*file) << "\t\t\t\t\tbreak;" << std::endl;
+    (*file) << "\t\t\t}" << std::endl;
+    (*file) << "\t\t\tif (j == sizeof(addressTable) / sizeof(addressTable[0]))" << std::endl;
+    (*file) << "\t\t\t{" << std::endl;
+    (*file) << "\t\t\t\treturn AERR_OPERAND;" << std::endl;
+    (*file) << "\t\t\t}" << std::endl;
+    (*file) << "\t\t\tif (i < fullList.size())" << std::endl;
+    (*file) << "\t\t\t{" << std::endl;
+    (*file) << "\t\t\t\ti++;" << std::endl;
+    (*file) << "\t\t\t\tif (i == fullList.size())" << std::endl;
+    (*file) << "\t\t\t\t\treturn AERR_SYNTAX;" << std::endl;
+    (*file) << "\t\t\t}" << std::endl;
+    (*file) << "\t\t}" << std::endl;
+    (*file) << "\t\treturn AERR_BADCOMBINATIONOFOPERANDS;" << std::endl;
+    (*file) << "\t}" << std::endl;
+    (*file) << "\treturn rv;" << std::endl;
     (*file) << "}" << std::endl;
     (*file) << std::endl;	
     return true;
@@ -1477,22 +1527,24 @@ bool GenParser::GenerateCodingProcessor()
 }
 bool GenParser::GenerateDispatcher()
 {
-    (*file) << "bool "<<className<<"::DispatchOpcode(int opcode)" << std::endl;
+    (*file) << "asmError "<<className<<"::DispatchOpcode(int opcode)" << std::endl;
     (*file) << "{" << std::endl;
-    (*file) << "\tbool rv;" << std::endl;
+    (*file) << "\tbool rv=true;" << std::endl;
     (*file) << "\tif (opcode == -1)" << std::endl;
     (*file) << "\t{" << std::endl;
-    (*file) << "\t\trv = true;" << std::endl;
     (*file) << "\t\t" << operandClassName << " operand;" << std::endl;
     (*file) << "\t\tfor (auto& a : prefixes)" << std::endl;
     (*file) << "\t\t\trv &= ProcessCoding(operand, prefixCodings[a]);" << std::endl;
+    (*file) << "\t\tif (!rv)" << std::endl;
+    (*file) << "\t\t\treturn AERR_UNKNOWNOPCODE;" << std::endl;
+
     (*file) << "\t}" << std::endl;
     (*file) << "\telse" << std::endl;
     (*file) << "\t{" << std::endl;
     (*file) << "\t\t" << operandClassName << " operand;" << std::endl;
     (*file) << "\t\toperand.opcode = opcode;" << std::endl;
-    (*file) << "\t\trv = (this->*DispatchTable[opcode])(operand);" << std::endl;
-    (*file) << "\t\tif (rv)" << std::endl;
+    (*file) << "\t\tauto err = (this->*DispatchTable[opcode])(operand);" << std::endl;
+    (*file) << "\t\tif (err == AERR_NONE)" << std::endl;
     (*file) << "\t\t{" << std::endl;
     if (parser.prefixes.size())
     {
@@ -1506,10 +1558,16 @@ bool GenParser::GenerateDispatcher()
     (*file) << "\t\t\t\telse if (operand.addressCoding != -1)" << std::endl;
     (*file) << "\t\t\t\t\trv = ProcessCoding(operand, Codings[operand.addressCoding]);" << std::endl;
     (*file) << "\t\t\t\telse rv = false;" << std::endl;
+    (*file) << "\t\t\t\tif (!rv)" << std::endl;
+    (*file) << "\t\t\t\t\treturn AERR_INVALIDINSTRUCTIONUSE;" << std::endl;
     (*file) << "\t\t\t}" << std::endl;
     (*file) << "\t\t}" << std::endl;
+    (*file) << "\t\telse" << std::endl;
+    (*file) << "\t\t{" << std::endl;
+    (*file) << "\t\t\t return err;" << std::endl;
+    (*file) << "\t\t}" << std::endl;
     (*file) << "\t}" << std::endl;
-    (*file) << "\treturn rv;" << std::endl;
+    (*file) << "\treturn AERR_NONE;" << std::endl;
     (*file) << "}" << std::endl;
     return true;
 }

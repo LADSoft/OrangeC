@@ -4561,6 +4561,94 @@ static LEXEME* expression_atomic_func(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EX
     }
     return lex;
 }
+static LEXEME *expression___typeid(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp)
+{
+    lex = getsym();
+    if (needkw(&lex, openpa))
+    {
+        lex = expression_comma(lex, funcsp, NULL, tp, exp, NULL, _F_SIZEOF);
+        if (!*tp)
+        {
+            error(ERR_TYPE_NAME_EXPECTED);
+            *exp = intNode(en_c_i, 0);
+        }
+        else
+        {
+            int id = 100000;
+            TYPE *tp1 = *tp;
+            if (isref(tp1))
+                 tp = basetype(tp1)->btp;
+            switch (tp1->type)
+            {
+
+
+                case bt_bool:
+                case bt_char:
+                    id = -1;
+                    break;
+                case bt_short:
+                    id = -2;
+                    break;
+                case bt_int:
+                    id = -3;
+                    break;
+                case bt_long:
+                    id = -4;
+                    break;
+        	case bt_long_long:
+                    id = -5;
+                    break;
+                case bt_unsigned_char:
+                    id = 1;
+                    break;
+                case bt_unsigned_short:
+                    id = 2;
+                    break;
+                case bt_unsigned:
+                    id = 3;
+                    break;
+                case bt_unsigned_long:
+                    id = 4;
+                    break;
+                case bt_unsigned_long_long:
+                    id = 5;
+                    break;
+                case bt_float:
+                    id = 7;
+                    break;
+                case bt_double:
+                    id = 8;
+                    break;
+                case bt_long_double:
+                    id = 10;
+                    break;
+                case bt_float_imaginary:
+                    id = 15;
+                    break;
+                case bt_double_imaginary:
+                    id = 16;
+                    break;
+                case bt_long_double_imaginary:
+                    id = 17;
+                    break;
+                case bt_float_complex:
+                    id = 20;
+                    break;
+                case bt_double_complex:
+                    id = 21;
+                    break;
+                case bt_long_double_complex:
+                    id = 22;
+                    break;
+            }
+            *exp = intNode(en_c_i, id);
+        }
+        *tp = &stdint;
+        needkw(&lex, closepa);
+    }
+    return lex;
+}
+
 static LEXEME* expression_primary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, BOOLEAN* ismutable,
                                   int flags)
 {
@@ -4742,6 +4830,9 @@ static LEXEME* expression_primary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
                     error(ERR_TYPE_NAME_EXPECTED);
                     *exp = intNode(en_c_i, 0);
                     *tp = &stdint;
+                    break;
+                case kw___typeid:
+                    lex = expression___typeid(lex, funcsp, tp, exp);
                     break;
                 case kw_D0:
                 case kw_D1:

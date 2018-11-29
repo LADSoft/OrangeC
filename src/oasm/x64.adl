@@ -907,20 +907,20 @@
       <Operands Name="{word} 'rm:rm16', 'modreg:reg16'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" op="'data16' 'op2'+1:8" />
       <Operands Name="{dword} 'rm:rm32', 'modreg:reg32'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" op="'data32' 'op2'+1:8" />
       <Operands Name="{dword} 'rm:rm32', 'modreg:reg64'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" op="'data64' 'op2'+1:8" />
-      <Operands Name="byte 'rm:rm8',  {byte} 'omem:mem8'" op="0x80:8" Coding="native 'omem':8"/>
-      <Operands Name="word 'rm:rm16', byte 'signedimm:signed8'" op="0x83:8" Coding="'data16' native 'signedimm':8"/>
-      <Operands Name="word 'rm:rm16', {word} 'omem:mem16'" op="0x81:8" Coding="'data16' native 'omem':16"/>
-      <Operands Name="dword 'rm:rm32', byte 'signedimm:signed8'" op="0x83:8" Coding="'data32' native 'signedimm':8"/>
-      <Operands Name="dword 'rm:rm32', {dword} 'omem:mem32'" op="0x81:8" Coding="'data32' native 'omem':32"/>
-      <Operands Name="qword 'rm:rm64', byte 'signedimm:signed8'" op="0x83:8" Coding="'data32' native 'signedimm':8"/>
-      <Operands Name="qword 'rm:rm64', {qword} 'omem:mem32'" op="0x81:8" Coding="'data32' native 'omem':32"/>
-      <Operands Name="'modreg:reg8rm', {byte} 'omem:mem8'" op="0x80:8" Coding="native 'omem':8"/>
-      <Operands Name="'modreg:reg16rm', byte 'signedimm:signed8'" op="0x83:8" Coding="'data16' native 'signedimm':8"/>
-      <Operands Name="'modreg:reg16rm', {word} 'omem:mem16'" op="0x81:8" Coding="'data16' native 'omem':16"/>
-      <Operands Name="'modreg:reg32rm', byte 'signedimm:signed8'" op="0x83:8" Coding="'data32' native 'signedimm':8"/>
-      <Operands Name="'modreg:reg32rm', {dword} 'omem:mem32'" op="0x81:8" Coding="'data32' native 'omem':32"/>
-      <Operands Name="'modreg:reg64rm', byte 'signedimm:signed8'" op="0x83:8" Coding="0x48+'modreg.R':8 'data64' native 'signedimm':8"/>
-      <Operands Name="'modreg:reg64rm', {qword} 'omem:mem32'" op="0x81:8" Coding="0x48+'modreg.R':8 'data64' native 'omem':32"/>
+      <Operands Name="byte 'rm:rm8',  {byte} 'omem:mem8'" op="0x80:8" R="0" W="0" Coding="native 'omem':8"/>
+      <Operands Name="word 'rm:rm16', byte 'signedimm:signed8'" op="0x83:8" R="0" W="0" Coding="'data16' native 'signedimm':8"/>
+      <Operands Name="word 'rm:rm16', {word} 'omem:mem16'" op="0x81:8"  R="0" W="0" Coding="'data16' native 'omem':16"/>
+      <Operands Name="dword 'rm:rm32', byte 'signedimm:signed8'" op="0x83:8" R="0" W="0" Coding="'data32' native 'signedimm':8"/>
+      <Operands Name="dword 'rm:rm32', {dword} 'omem:mem32'" op="0x81:8" R="0" W="0" Coding="'data32' native 'omem':32"/>
+      <Operands Name="qword 'rm:rm64', byte 'signedimm:signed8'" op="0x83:8" R="0" W="8" Coding="'data32' native 'signedimm':8"/>
+      <Operands Name="qword 'rm:rm64', {qword} 'omem:mem32'" op="0x81:8" R="0" W="0" Coding="'data32' native 'omem':32"/>
+      <Operands Name="'modreg:reg8rm', {byte} 'omem:mem8'" op="0x80:8" R="0" W="0" Coding="native 'omem':8"/>
+      <Operands Name="'modreg:reg16rm', byte 'signedimm:signed8'" op="0x83:8" R="0" W="0" Coding="'data16' native 'signedimm':8"/>
+      <Operands Name="'modreg:reg16rm', {word} 'omem:mem16'" op="0x81:8" R="0" W="0" Coding="'data16' native 'omem':16"/>
+      <Operands Name="'modreg:reg32rm', byte 'signedimm:signed8'" op="0x83:8" R="0" W="0" Coding="'data32' native 'signedimm':8"/>
+      <Operands Name="'modreg:reg32rm', {dword} 'omem:mem32'" op="0x81:8" R="0" W="0" Coding="'data32' native 'omem':32"/>
+      <Operands Name="'modreg:reg64rm', byte 'signedimm:signed8'" op="0x83:8" R="0" W="8" Coding="0x48+'modreg.R':8 'data64' native 'signedimm':8"/>
+      <Operands Name="'modreg:reg64rm', {qword} 'omem:mem32'" op="0x81:8" R="0" W="8" Coding="0x48+'modreg.R':8 'data64' native 'omem':32"/>
     </Opcode>
     <Opcode Class="bit">
       <Operands Name="{word} 'rm:rm16', {word} 'omem:mem8'" op="'op1'" Coding="'data16' native 'omem':8"/>
@@ -931,15 +931,15 @@
       <Operands Name="{qword} 'rm:rm64', 'modreg:reg64'" op="'data32' 'op2'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
     </Opcode>
     <Opcode Class="incdec">
-      <Operands Name="'modreg:reg8rm'" op="0xfe:8"/>
+      <Operands Name="'modreg:reg8rm'" op="0xfe:8" R="'modreg.R'" W="'modreg.W'"/>
       <!--
       <Operands Name="'modreg:reg16'" Coding="'no64' 'data16' 0x40+'modreg.R':8 'op':5 'modreg.Ord':3"/>
       <Operands Name="'modreg:reg32'" Coding="'no64' 'data32' 0x40+'modreg.R':8 'op':5 'modreg.Ord':3"/>
       <Operands Name="'modreg:reg64'" Coding="'no64' 0x48+'modreg.R':8 'data64' 'op':5 'modreg.Ord':3"/>
       -->
-      <Operands Name="'modreg:reg16rm'" op="'data16' 0xff:8"/>
-      <Operands Name="'modreg:reg32rm'" op="'data32' 0xff:8"/>
-      <Operands Name="'modreg:reg64rm'" op="'data64' 0xff:8"/>
+      <Operands Name="'modreg:reg16rm'" op="'data16' 0xff:8" R="0" W="0"/>
+      <Operands Name="'modreg:reg32rm'" op="'data32' 0xff:8" R="0" W="0""/>
+      <Operands Name="'modreg:reg64rm'" op="'data64' 0xff:8" R="0" W="8""/>
 
       <Operands Name="byte 'rm:rm8'" op="0xfe:8" />
       <Operands Name="word 'rm:rm16'" op="'data16' 0xff:8"/>

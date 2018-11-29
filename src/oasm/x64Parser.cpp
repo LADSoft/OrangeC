@@ -13434,14 +13434,32 @@ x64Token x64Parser::tokenBranches3744[] = {
 	{x64Token::ADDRESSCLASS, 7, 1, 0, NULL,&x64Parser::TokenFunc3745,  },
 	{x64Token::EOT }
 };
+Coding x64Parser::tokenCoding3734_10[] = {
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 14, -1, 2, 0, 0 }, 
+	{ Coding::eot },
+};
+Coding x64Parser::tokenCoding3734_11[] = {
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 14, -1, 4, 0, 0 }, 
+	{ Coding::eot },
+};
 Coding x64Parser::tokenCoding3734_13[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 254, 8, -1, 0, 0 }, 
 	{ Coding::eot },
 };
 void x64Parser::TokenFunc3734(x64Operand &operand, int tokenPos)
 {
+	operand.values[10] = tokenCoding3734_10;
+	operand.values[11] = tokenCoding3734_11;
 	operand.values[13] = tokenCoding3734_13;
 }
+Coding x64Parser::tokenCoding3735_10[] = {
+	{ (Coding::Type)(Coding::valSpecified), 0, -1, -1, 0, 0 }, 
+	{ Coding::eot },
+};
+Coding x64Parser::tokenCoding3735_11[] = {
+	{ (Coding::Type)(Coding::valSpecified), 0, -1, -1, 0, 0 }, 
+	{ Coding::eot },
+};
 Coding x64Parser::tokenCoding3735_13[] = {
 	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 255, 8, -1, 0, 0 }, 
@@ -13449,8 +13467,18 @@ Coding x64Parser::tokenCoding3735_13[] = {
 };
 void x64Parser::TokenFunc3735(x64Operand &operand, int tokenPos)
 {
+	operand.values[10] = tokenCoding3735_10;
+	operand.values[11] = tokenCoding3735_11;
 	operand.values[13] = tokenCoding3735_13;
 }
+Coding x64Parser::tokenCoding3736_10[] = {
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 14, -1, 2, 0, 0 }, 
+	{ Coding::eot },
+};
+Coding x64Parser::tokenCoding3736_11[] = {
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 14, -1, 4, 0, 0 }, 
+	{ Coding::eot },
+};
 Coding x64Parser::tokenCoding3736_13[] = {
 	{ Coding::stateFunc, 4 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 255, 8, -1, 0, 0 }, 
@@ -13458,8 +13486,18 @@ Coding x64Parser::tokenCoding3736_13[] = {
 };
 void x64Parser::TokenFunc3736(x64Operand &operand, int tokenPos)
 {
+	operand.values[10] = tokenCoding3736_10;
+	operand.values[11] = tokenCoding3736_11;
 	operand.values[13] = tokenCoding3736_13;
 }
+Coding x64Parser::tokenCoding3737_10[] = {
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 14, -1, 2, 0, 0 }, 
+	{ Coding::eot },
+};
+Coding x64Parser::tokenCoding3737_11[] = {
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 14, -1, 4, 0, 0 }, 
+	{ Coding::eot },
+};
 Coding x64Parser::tokenCoding3737_13[] = {
 	{ Coding::stateFunc, 5 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 255, 8, -1, 0, 0 }, 
@@ -13467,6 +13505,8 @@ Coding x64Parser::tokenCoding3737_13[] = {
 };
 void x64Parser::TokenFunc3737(x64Operand &operand, int tokenPos)
 {
+	operand.values[10] = tokenCoding3737_10;
+	operand.values[11] = tokenCoding3737_11;
 	operand.values[13] = tokenCoding3737_13;
 }
 x64Token x64Parser::tokenBranches3733[] = {

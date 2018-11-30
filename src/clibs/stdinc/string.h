@@ -37,7 +37,6 @@
 #endif
 
 #ifdef __cplusplus
-// namespace __STD_NS__ {
 extern "C"
 {
 #endif
@@ -125,7 +124,6 @@ extern "C"
 #endif /* __USELOCALES__ */
 
 #ifdef __cplusplus
-    //};
 };
 #endif
 

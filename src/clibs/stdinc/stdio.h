@@ -172,8 +172,10 @@ extern "C"
 
     /* Standard I/O predefined streams
      */
-
+#ifndef _NFILE_EXT
+#    define _NFILE_EXT
     extern unsigned _RTL_DATA _nfile;
+#endif
     FILE* _RTL_FUNC _IMPORT __getStream(int stream);
 
 #define _IOFBF 1

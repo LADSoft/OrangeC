@@ -33,8 +33,6 @@
 #endif
 
 #ifdef __cplusplus
-namespace __STD_NS__
-{
 extern "C"
 {
 #endif
@@ -96,7 +94,7 @@ extern "C"
     int _RTL_FUNC _IMPORT atoi(const char* __s);
     long _RTL_FUNC _IMPORT atol(const char* __s);
     __int64 _RTL_FUNC _IMPORT _atoi64(const char* __s);
-#if __STDC_VERSION__ >= 199901L
+#if __STDC_VERSION__ >= 199901L || defined(__cplusplus)
     long long _RTL_FUNC _IMPORT atoll(const char* __s);
 #endif
 
@@ -160,12 +158,18 @@ extern "C"
 
 #if defined(__LSCRTL_DLL)
     extern char _IMPORT** _environ;
+#    ifndef _FMODE_EXT
+#        define _FMODE_EXT
     extern int _IMPORT _fmode;
+#    endif
     extern unsigned char _IMPORT _osmajor;
     extern unsigned char _IMPORT _osminor;
 #else
 extern char _RTL_DATA** _environ;
+#    ifndef _FMODE_EXT
+#        define _FMODE_EXT
 extern int _RTL_DATA _fmode;
+#    endif
 extern unsigned char _RTL_DATA _osmajor;
 extern unsigned char _RTL_DATA _osminor;
 #endif
@@ -316,111 +320,8 @@ extern char _RTL_DATA** __argv;
 
 #ifdef __cplusplus
 };
-};
 #endif
 
 #pragma pack()
 
 #endif /* __STDLIB_H */
-
-#if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__STDLIB_H_USING_LIST)
-#define __STDLIB_H_USING_LIST
-using __STD_NS_QUALIFIER abort;
-using __STD_NS_QUALIFIER _abort;
-using __STD_NS_QUALIFIER abs;
-using __STD_NS_QUALIFIER labs;
-using __STD_NS_QUALIFIER llabs;
-using __STD_NS_QUALIFIER atexit;
-using __STD_NS_QUALIFIER at_quick_exit;
-using __STD_NS_QUALIFIER atof;
-using __STD_NS_QUALIFIER atoi;
-using __STD_NS_QUALIFIER atol;
-using __STD_NS_QUALIFIER _atoi64;
-using __STD_NS_QUALIFIER bsearch;
-using __STD_NS_QUALIFIER calloc;
-using __STD_NS_QUALIFIER div;
-using __STD_NS_QUALIFIER ldiv;
-using __STD_NS_QUALIFIER lldiv;
-using __STD_NS_QUALIFIER quick_exit;
-using __STD_NS_QUALIFIER exit;
-using __STD_NS_QUALIFIER _Exit;
-using __STD_NS_QUALIFIER free;
-using __STD_NS_QUALIFIER getenv;
-using __STD_NS_QUALIFIER lfind;
-using __STD_NS_QUALIFIER lsearch;
-using __STD_NS_QUALIFIER _lfind;
-using __STD_NS_QUALIFIER _lsearch;
-using __STD_NS_QUALIFIER aligned_alloc;
-using __STD_NS_QUALIFIER malloc;
-using __STD_NS_QUALIFIER mblen;
-using __STD_NS_QUALIFIER mbstowcs;
-using __STD_NS_QUALIFIER mbtowc;
-using __STD_NS_QUALIFIER qsort;
-using __STD_NS_QUALIFIER rand;
-using __STD_NS_QUALIFIER realloc;
-using __STD_NS_QUALIFIER srand;
-using __STD_NS_QUALIFIER strdup;
-using __STD_NS_QUALIFIER strtod;
-using __STD_NS_QUALIFIER strtof;
-using __STD_NS_QUALIFIER strtol;
-using __STD_NS_QUALIFIER strtoll;
-using __STD_NS_QUALIFIER _strtold;
-using __STD_NS_QUALIFIER strtold;
-using __STD_NS_QUALIFIER strtoul;
-using __STD_NS_QUALIFIER strtoull;
-using __STD_NS_QUALIFIER system;
-using __STD_NS_QUALIFIER wcstombs;
-using __STD_NS_QUALIFIER wctomb;
-using __STD_NS_QUALIFIER wctombflush;
-using __STD_NS_QUALIFIER _atold;
-using __STD_NS_QUALIFIER _crotl;
-using __STD_NS_QUALIFIER _crotr;
-using __STD_NS_QUALIFIER _exit;
-using __STD_NS_QUALIFIER itoa;
-using __STD_NS_QUALIFIER ltoa;
-using __STD_NS_QUALIFIER lltoa;
-using __STD_NS_QUALIFIER _lltoa;
-using __STD_NS_QUALIFIER _itoa;
-using __STD_NS_QUALIFIER _ltoa;
-using __STD_NS_QUALIFIER _i64toa;
-using __STD_NS_QUALIFIER _makepath;
-using __STD_NS_QUALIFIER _fullpath;
-using __STD_NS_QUALIFIER putenv;
-using __STD_NS_QUALIFIER _putenv;
-using __STD_NS_QUALIFIER _putenv_s;
-using __STD_NS_QUALIFIER _rotl;
-using __STD_NS_QUALIFIER _rotr;
-using __STD_NS_QUALIFIER _lrotl;
-using __STD_NS_QUALIFIER _lrotr;
-using __STD_NS_QUALIFIER _searchenv;
-using __STD_NS_QUALIFIER _searchstr;
-using __STD_NS_QUALIFIER _splitpath;
-using __STD_NS_QUALIFIER _splitpath2;
-using __STD_NS_QUALIFIER swab;
-using __STD_NS_QUALIFIER _swab;
-using __STD_NS_QUALIFIER ultoa;
-using __STD_NS_QUALIFIER _ultoa;
-using __STD_NS_QUALIFIER _ui64toa;
-using __STD_NS_QUALIFIER ulltoa;
-using __STD_NS_QUALIFIER _ulltoa;
-using __STD_NS_QUALIFIER utoa;
-using __STD_NS_QUALIFIER _utoa;
-using __STD_NS_QUALIFIER perror;
-using __STD_NS_QUALIFIER time;
-using __STD_NS_QUALIFIER randomize;
-using __STD_NS_QUALIFIER random;
-using __STD_NS_QUALIFIER _strdup;
-using __STD_NS_QUALIFIER _ecvt;
-using __STD_NS_QUALIFIER ecvt;
-using __STD_NS_QUALIFIER _fcvt;
-using __STD_NS_QUALIFIER fcvt;
-using __STD_NS_QUALIFIER _gcvt;
-using __STD_NS_QUALIFIER gcvt;
-using __STD_NS_QUALIFIER _onexit;
-using __STD_NS_QUALIFIER onexit;
-using __STD_NS_QUALIFIER _beep;
-using __STD_NS_QUALIFIER _sleep;
-using __STD_NS_QUALIFIER __argc;
-using __STD_NS_QUALIFIER __argv;
-using __STD_NS_QUALIFIER _environ;
-#endif /* __USING_CNAME__ */

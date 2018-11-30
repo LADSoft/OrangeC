@@ -72,12 +72,12 @@ extern "C"
         int tm_isdst;
     };
 #if __STDC_VERSION__ >= 201112L || defined(__cplusplus)
+#    define TIME_UTC 1
     struct timespec
     {
         time_t sec;
         long nsec;
     };
-#    define TIME_UTC 1
     int timespec_get(struct timespec* ts, int base);
 #endif
     char* _RTL_FUNC _IMPORT asctime(const struct tm* __tblock);

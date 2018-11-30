@@ -201,8 +201,10 @@ using __STD_NS_QUALIFIER _findclose;
 using __STD_NS_QUALIFIER _get_osfhandle;
 using __STD_NS_QUALIFIER _open_osfhandle;
 using __STD_NS_QUALIFIER ftime;
-#ifndef _USING_NFILE
+#if !defined(_USING_NFILE) && !defined(_NFILE_EXT)
+#define _NFILE_EXT
 #    define _USING_NFILE
+
 using __STD_NS_QUALIFIER _nfile;
 #endif
 using __STD_NS_QUALIFIER _finddata_t;

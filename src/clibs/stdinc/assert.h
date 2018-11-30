@@ -55,7 +55,7 @@ extern "C"
 #        define assert(p) ((void)0)
 #    endif
 
-#    if !defined(__cplusplus) && __STDC_VERSION__ >= 201112
+#    if !defined(__cplusplus) && __STDC_VERSION__ >= 201112L
 #        define static_assert _Static_assert
 #    endif
 

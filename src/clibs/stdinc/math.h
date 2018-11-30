@@ -43,8 +43,6 @@
 #endif
 
 #ifdef __cplusplus
-namespace __STD_NS__
-{
 extern "C"
 {
 #endif
@@ -57,7 +55,7 @@ extern "C"
 #endif
 
 #ifndef __cplusplus
-#    if __STDC_VERSION__ != 0 && __STDC_VERSION__ < 199901L
+#    if defined(__STDC_VERSION__) && __STDC_VERSION__ < 199901L
     struct complex /* as used by "_cabs" function */
     {
         double x, y;
@@ -376,16 +374,13 @@ extern "C"
     long double _RTL_FUNC _IMPORTMM polyl(long double __x, int __degree, long double* __coeffs);
     long double _RTL_FUNC _IMPORTMM pow10l(int __p);
 
-#ifndef __cplusplus
-#    if !defined(__ABS_DEFINED)
-#        define __ABS_DEFINED
+#if !defined(__ABS_DEFINED)
+#    define __ABS_DEFINED
     int _RTL_INTRINS _IMPORTMM abs(int __x);
     long _RTL_INTRINS _IMPORTMM labs(long __x);
-#        if __STDC_VERSION__ >= 199901L
+#    if __STDC_VERSION__ >= 199901L
     long long _RTL_FUNC _IMPORTMM llabs(long long __x);
-#        endif
 #    endif
-
 #endif
 
     double _RTL_FUNC _IMPORT atof(const char* __s);
@@ -393,17 +388,6 @@ extern "C"
 
     long double _RTL_FUNC _IMPORT _atold(const char* __s);
 #ifdef __cplusplus
-};
-
-namespace __1
-{
-inline float abs(float f) { return fabsf(f); }
-inline double abs(double f) { return fabs(f); }
-inline long double abs(long double f) { return fabsl(f); }
-inline int abs(int f) { return fabs(f); }
-inline long abs(long f) { return fabs(f); }
-inline long long abs(long long f) { return fabs(f); }
-}  // namespace __1
 };
 #endif
 

@@ -1,6 +1,0 @@
-#pragma once
-#include <stdarg.h>
-namespace __STD_NS__
-{
-using va_list = ::va_list;
-}

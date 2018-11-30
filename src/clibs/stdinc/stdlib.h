@@ -83,14 +83,10 @@ extern "C"
     void _RTL_FUNC _IMPORT abort(void);
     void _RTL_FUNC _IMPORT _abort(void);
 
-#if !defined(__ABS_DEFINED)
-#    define __ABS_DEFINED
-
     int _RTL_INTRINS _IMPORT abs(int __x);
     long _RTL_INTRINS _IMPORT labs(long __x);
-#    if __STDC_VERSION__ >= 199901L
+#if __STDC_VERSION__ >= 199901L || defined(__cplusplus)
     long long _RTL_FUNC _IMPORT llabs(long long __x);
-#    endif
 
 #endif /* __ABS_DEFINED */
 
@@ -109,7 +105,7 @@ extern "C"
     void* _RTL_FUNC _IMPORT _MSIL_RTL calloc(size_t __nitems, size_t __size);
     div_t _RTL_INTRINS _IMPORT div(int __numer, int __denom);
     ldiv_t _RTL_INTRINS _IMPORT ldiv(long __numer, long __denom);
-#if __STDC_VERSION__ >= 199901L
+#if __STDC_VERSION__ >= 199901L || defined(__cplusplus)
     lldiv_t _RTL_FUNC _IMPORT lldiv(long long __numer, long long __denom);
 #endif
     void _RTL_FUNC _IMPORT quick_exit(int __status);
@@ -199,7 +195,7 @@ extern unsigned char _RTL_DATA _osminor;
     char* _RTL_FUNC _IMPORTMM _i64toa(__int64 __value, char* __stringValue, int __radix);
     char* _RTL_FUNC _IMPORTMM ltoa(long __value, char* __stringValue, int __radix);
     char* _RTL_FUNC _IMPORTMM _ltoa(long __value, char* __stringValue, int __radix);
-#if __STDC_VERSION__ >= 199901L
+#if __STDC_VERSION__ >= 199901L || defined(__cplusplus)
     char* _RTL_FUNC _IMPORT lltoa(long long __value, char* __stringValue, int __radix);
     char* _RTL_FUNC _IMPORT _lltoa(long long __value, char* __stringValue, int __radix);
 #endif
@@ -222,7 +218,7 @@ extern unsigned char _RTL_DATA _osminor;
     char* _RTL_FUNC _IMPORT _ui64toa(unsigned __int64 __value, char* __stringValue, int __radix);
     char* _RTL_FUNC _IMPORT utoa(unsigned __value, char* __stringValue, int __radix);
     char* _RTL_FUNC _IMPORT _utoa(unsigned __value, char* __stringValue, int __radix);
-#if __STDC_VERSION__ >= 199901L
+#if __STDC_VERSION__ >= 199901L || defined(__cplusplus)
     char* _RTL_FUNC _IMPORT ulltoa(unsigned __int64 __value, char* __stringValue, int __radix);
     char* _RTL_FUNC _IMPORT _ulltoa(unsigned __int64 __value, char* __stringValue, int __radix);
 #endif
@@ -247,7 +243,7 @@ extern unsigned char _RTL_DATA _osminor;
     unsigned int _RTL_FUNC _IMPORT _rotl(unsigned int, int);
     unsigned int _RTL_FUNC _IMPORT _rotr(unsigned int, int);
     unsigned long _RTL_FUNC _IMPORT _lrotl(unsigned long, int);
-    unsigned long _RTL_FUNC _IMPORT _lr otr(unsigned long, int);
+    unsigned long _RTL_FUNC _IMPORT _lrotr(unsigned long, int);
 
 #define atoi(s) ((int)atol(s))
 

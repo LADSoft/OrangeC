@@ -130,10 +130,10 @@ typedef uint64_t uintmax_t;
 #    define PTRDIFF_MAX INT32_MAX
 
 #    define SIZE_MAX UINT32_MAX
-
-#    define WCHAR_MIN ((wchar_t)0)
-#    define WCHAR_MAX ((wchar_t)(~WCHAR_MIN))
-
+#    ifndef WCHAR_MIN
+#        define WCHAR_MIN ((wchar_t)0)
+#        define WCHAR_MAX ((wchar_t)(~WCHAR_MIN))
+#    endif
 #    define SIG_ATOMIC_MIN INT_MIN
 #    define SIG_ATOMIC_MAX INT_MAX
 

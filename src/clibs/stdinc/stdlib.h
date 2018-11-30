@@ -289,12 +289,8 @@ extern char _RTL_DATA** __argv;
 #if defined(__cplusplus)
 
 #    ifndef _TIME_T
+#        define _TIME_T
     typedef long time_t;
-#        ifdef __cplusplus
-#            define _TIME_T __STD_NS_QUALIFIER time_t
-#        else
-#            define _TIME_T time_t
-#        endif /* __cplusplus */
 #    endif
 
     time_t _RTL_FUNC _IMPORT time(time_t*);

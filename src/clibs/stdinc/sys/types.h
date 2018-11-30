@@ -41,6 +41,7 @@ typedef int ssize_t;
 
 #    ifndef _TIME_T
 #        define _USING_TYPES_H_TIME_T
+#        define _TIME_T
 typedef long time_t;
 #    endif
 

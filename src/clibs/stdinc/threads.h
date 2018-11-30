@@ -1,6 +1,8 @@
 #ifndef __THREADS_H
 #define __THREADS_H
-
+#if __STDC_VERSION__ < 201112L
+#pragma error "threads.h is a C11 and up header"
+#endif
 #ifndef __STDDEF_H
 #    include <stddef.h>
 #endif
@@ -30,15 +32,6 @@ extern "C"
         char called;
     } once_flag;
 
-#ifndef _TIMESPEC_DEFINED
-#    define _TIMESPEC_DEFINED
-    typedef struct
-    {
-        time_t sec;
-        long nsec;
-    } timespec;
-#endif
-
     enum mtx_e
     {
         mtx_plain,
@@ -63,13 +56,13 @@ extern "C"
     void _RTL_FUNC _IMPORT cnd_destroy(cnd_t* cond);
     int _RTL_FUNC _IMPORT cnd_init(cnd_t* cond);
     int _RTL_FUNC _IMPORT cnd_signal(cnd_t* cond);
-    int _RTL_FUNC _IMPORT cnd_timedwait(cnd_t* cond, mtx_t* mtx, const timespec* xt);
+    int _RTL_FUNC _IMPORT cnd_timedwait(cnd_t* cond, mtx_t* mtx, const struct timespec* xt);
     int _RTL_FUNC _IMPORT cnd_wait(cnd_t* cond, mtx_t* mtx);
 
     void _RTL_FUNC _IMPORT mtx_destroy(mtx_t* mtx);
     int _RTL_FUNC _IMPORT mtx_init(mtx_t* mtx, int type);
     int _RTL_FUNC _IMPORT mtx_lock(mtx_t* mtx);
-    int _RTL_FUNC _IMPORT mtx_timedlock(mtx_t* mtx, const timespec* xt);
+    int _RTL_FUNC _IMPORT mtx_timedlock(mtx_t* mtx, const struct timespec* xt);
     int _RTL_FUNC _IMPORT mtx_trylock(mtx_t* mtx);
     int _RTL_FUNC _IMPORT mtx_unlock(mtx_t* mtx);
 
@@ -79,7 +72,7 @@ extern "C"
     int _RTL_FUNC _IMPORT thrd_equal(thrd_t thr0, thrd_t thr1);
     void _RTL_FUNC _IMPORT thrd_exit(int res);
     int _RTL_FUNC _IMPORT thrd_join(thrd_t thr, int* res);
-    void _RTL_FUNC _IMPORT thrd_sleep(const timespec* duration, timespec* remaining);
+    void _RTL_FUNC _IMPORT thrd_sleep(const struct timespec* duration, struct timespec* remaining);
     void _RTL_FUNC _IMPORT thrd_yield(void);
 
     int _RTL_FUNC _IMPORT tss_create(tss_t* key, tss_dtor_t dtor);
@@ -87,7 +80,6 @@ extern "C"
     void* _RTL_FUNC _IMPORT tss_get(tss_t key);
     int _RTL_FUNC _IMPORT tss_set(tss_t key, void* val);
 
-    int _RTL_FUNC _IMPORT timespec_get(timespec* xt, int base);
 #ifdef __cplusplus
 }
 #endif

@@ -71,17 +71,15 @@ extern "C"
         int tm_yday;
         int tm_isdst;
     };
-
-#ifndef _TIMESPEC_DEFINED
-#    define _TIMESPEC_DEFINED
-    typedef struct
+#if __STDC_VERSION__ >= 201112L || defined(__cplusplus)
+    struct timespec
     {
         time_t sec;
         long nsec;
-    } timespec;
+    };
 #    define TIME_UTC 1
+    int timespec_get(struct timespec* ts, int base);
 #endif
-
     char* _RTL_FUNC _IMPORT asctime(const struct tm* __tblock);
     char* _RTL_FUNC _IMPORT ctime(const time_t* __time);
     double _RTL_FUNC _IMPORT difftime(time_t __time2, time_t __time1);

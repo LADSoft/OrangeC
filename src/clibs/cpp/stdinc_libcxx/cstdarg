@@ -1,3 +1,6 @@
-#define __USING_CNAME__
+#pragma once
 #include <stdarg.h>
-#undef __USING_CNAME__
+namespace __STD_NS__
+{
+using va_list = ::va_list;
+}

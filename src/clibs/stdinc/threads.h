@@ -4,21 +4,10 @@
 #ifndef __STDDEF_H
 #    include <stddef.h>
 #endif
-
+#include <time.h>
 #ifdef __cplusplus
-namespace __STD_NS__
-{
 extern "C"
 {
-#endif
-
-#ifndef _TIME_T
-    typedef long time_t;
-#    ifdef __cplusplus
-#        define _TIME_T __STD_NS_QUALIFIER time_t
-#    else
-#        define _TIME_T time_t
-#    endif /* __cplusplus */
 #endif
 
 #define ONCE_FLAG_INIT \
@@ -26,8 +15,6 @@ extern "C"
         0              \
     }
 #define TSS_DTOR_ITERATIONS 20
-
-#define TIME_UTC 1
 
     typedef void* _THAND;
     typedef _THAND* cnd_t;
@@ -102,7 +89,6 @@ extern "C"
 
     int _RTL_FUNC _IMPORT timespec_get(timespec* xt, int base);
 #ifdef __cplusplus
-}
 }
 #endif
 

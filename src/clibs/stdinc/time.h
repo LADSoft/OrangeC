@@ -44,8 +44,8 @@ extern "C"
 #endif
 
 #ifndef _TIME_T
-    typedef long time_t;
 #    define _TIME_T
+    typedef long time_t;
 #endif
 
 #ifndef _CLOCK_T

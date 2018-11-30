@@ -9,6 +9,7 @@ version 6.0.40:
     ocpp: (c++ version) default to C99
     ocpp: (c++ version) add #warning
     ocpp: (c++ version) add __has_include and #pragma once
+    ocpp: (c++ version) reorganize sources for better interoperability with other packages
     ocide: fix function prototype popup when compiled with package, does not go away 
     ocide: when stopping on step into function, don't stop until stack frame is set up
     ocide: when parsing RC file can't redefine keywords with preprocessing...

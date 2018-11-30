@@ -3308,7 +3308,9 @@ IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
         case en_l_ull:
         case en_l_fi:
         case en_l_fc:
+        case en_l_di:
         case en_l_dc:
+        case en_l_ldi:
         case en_l_ldc:
         case en_l_fp:
         case en_l_sp:

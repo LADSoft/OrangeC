@@ -217,6 +217,7 @@ bool GenParser::GenerateHeader()
     (*file) << "\tasmError ParseOperands(" << tokenClassName << " *tokenList, "<<operandClassName<<" &operand);" << std::endl;
     (*file) << "\tbool ProcessCoding("<<operandClassName<<" &operand, Coding *coding);" << std::endl;
     (*file) << "\tbool ProcessCoding(" << operandClassName << " &operand, Coding *coding, int field, int bits, int* arr, char* bitcounts, char *func, int &index);" << std::endl;
+    (*file) << "\tbool CheckCoding(" << operandClassName << " &operand,Coding *coding);" << std::endl;
     (*file) << "\tbool MatchesToken(int token, int tokenPos);" << std::endl;
     (*file) << "\tbool MatchesRegister(int reg, int tokenPos);" << std::endl;
     (*file) << "\tbool MatchesRegisterClass(int cclass, int tokenPos);" << std::endl;
@@ -1298,7 +1299,7 @@ bool GenParser::GenerateAddressParser()
 }
 bool GenParser::GenerateOperandParser()
 {
-    (*file) << "asmError " << className << "::ParseOperands2(" << tokenClassName << " *tokenList, "<<operandClassName<<" &operand, int tokenPos, int level)" << std::endl;
+    (*file) << "asmError " << className << "::ParseOperands2(" << tokenClassName << " *tokenList, " << operandClassName << " &operand, int tokenPos, int level)" << std::endl;
     (*file) << "{" << std::endl;
     (*file) << "\tasmError rv = AERR_OPERAND;" << std::endl;
     (*file) << "\t" << tokenClassName << " *t = tokenList;" << std::endl;
@@ -1346,10 +1347,20 @@ bool GenParser::GenerateOperandParser()
     (*file) << "\t\t\t\t(this->*(t->tokenFunc))(operand, last);" << std::endl;
     (*file) << "\t\t\tif (t->eos && (!t->next || tokenPos == inputTokens.size()-1))" << std::endl;
     (*file) << "\t\t\t{" << std::endl;
-    (*file) << "\t\t\t\tif (tokenPos >= (int)(inputTokens.size()-1))" << std::endl;
-    (*file) << "\t\t\t\t\teol = true;" << std::endl;
-    (*file) << "\t\t\t\trv = AERR_NONE;" << std::endl;
-    (*file) << "\t\t\t\tbreak;" << std::endl;
+    (*file) << "\t\t\t\tbool ok = false;" << std::endl;
+    (*file) << "\t\t\t\tif (operand.operandCoding != -1)" << std::endl;
+    (*file) << "\t\t\t\t\tok = CheckCoding(operand, Codings[operand.operandCoding]);" << std::endl;
+    (*file) << "\t\t\t\telse if (operand.addressCoding != -1)" << std::endl;
+    (*file) << "\t\t\t\t\tok = CheckCoding(operand, Codings[operand.addressCoding]);" << std::endl;
+    (*file) << "\t\t\t\tif (ok)" << std::endl;
+    (*file) << "\t\t\t\t{" << std::endl;
+    (*file) << "\t\t\t\t\tif (tokenPos >= (int)(inputTokens.size()-1))" << std::endl;
+    (*file) << "\t\t\t\t\t\teol = true;" << std::endl;
+    (*file) << "\t\t\t\t\trv = AERR_NONE;" << std::endl;
+    (*file) << "\t\t\t\t\tbreak;" << std::endl;
+    (*file) << "\t\t\t\t}" << std::endl;
+    (*file) << "\t\t\t\toperand.operandCoding = -1;" << std::endl;
+    (*file) << "\t\t\t\toperand.addressCoding = -1;" << std::endl;
     (*file) << "\t\t\t}" << std::endl;
     (*file) << "\t\t\tif (tokenPos < inputTokens.size())" << std::endl;
     (*file) << "\t\t\t{" << std::endl;
@@ -1402,6 +1413,49 @@ bool GenParser::GenerateOperandParser()
 }
 bool GenParser::GenerateCodingProcessor()
 {
+
+    (*file) << "bool " << className << "::CheckCoding(" << operandClassName << " &operand,Coding *coding)" << std::endl;
+    (*file) << "{" << std::endl;
+    (*file) << "\twhile (coding->type != Coding::eot)" << std::endl;
+    (*file) << "\t{" << std::endl;
+    (*file) << "\t\tif (coding->type & Coding::stateFunc)" << std::endl;
+    (*file) << "\t\t{" << std::endl;
+    (*file) << "\t\t\tCoding *c = (this->*stateFuncs[coding->val])();" << std::endl;
+    (*file) << "\t\t\tif (!CheckCoding(operand, c))" << std::endl;
+    (*file) << "\t\t\t\treturn false;" << std::endl;
+    (*file) << "\t\t}" << std::endl;
+    (*file) << "\t\telse if (coding->type & Coding::native)" << std::endl;
+    (*file) << "\t\t{" << std::endl;
+    (*file) << "\t\t\tif (operand.addressCoding == -1)" << std::endl;
+    (*file) << "\t\t\t\treturn false;" << std::endl;
+    (*file) << "\t\t\tif (!CheckCoding(operand, Codings[operand.addressCoding]))" << std::endl;
+    (*file) << "\t\t\t\treturn false;" << std::endl;
+    (*file) << "\t\t}" << std::endl;
+    (*file) << "\t\telse if (coding->type & Coding::indirect)" << std::endl;
+    (*file) << "\t\t{" << std::endl;
+    (*file) << "\t\t\tif (!operand.values[coding->val])" << std::endl;
+    (*file) << "\t\t\t{" << std::endl;
+    (*file) << "\t\t\t\tif (!(coding->type & Coding::optional))" << std::endl;
+    (*file) << "\t\t\t\t{" << std::endl;
+    (*file) << "\t\t\t\t\treturn false;" << std::endl;
+    (*file) << "\t\t\t\t}" << std::endl;
+    (*file) << "\t\t\t}" << std::endl;
+    (*file) << "\t\t\telse" << std::endl;
+    (*file) << "\t\t\t{" << std::endl;
+    (*file) << "\t\t\t\tif (!CheckCoding(operand, operand.values[coding->val]))" << std::endl;
+    (*file) << "\t\t\t\t\treturn false;" << std::endl;
+    (*file) << "\t\t\t}" << std::endl;
+    (*file) << "\t\t}" << std::endl;
+    (*file) << "\t\telse if (coding->type & Coding::illegal)" << std::endl;
+    (*file) << "\t\t{" << std::endl;
+    (*file) << "\t\t\treturn false;" << std::endl;
+    (*file) << "\t\t}" << std::endl;
+    (*file) << "\t\tcoding++;" << std::endl;
+    (*file) << "\t}" << std::endl;
+    (*file) << "\treturn true;" << std::endl;
+    (*file) << "}" << std::endl;
+
+
     (*file) << "bool " << className << "::ProcessCoding("<<operandClassName<<" &operand, Coding *coding, int field, int bits, int* arr, char* bitcounts, char *func, int &index)" << std::endl;
     (*file) << "{" << std::endl;
     (*file) << "\tint acc = 0, binary = 0;" << std::endl;

@@ -947,11 +947,9 @@
     </Opcode>
     <Opcode Class="incdec">
       <Operands Name="'modreg:reg8rm'" op="0xfe:8" R="0" W="0"/>
-      <!--
       <Operands Name="'modreg:reg16'" Coding="'no64' 'data16' 0x40+'modreg.R':8 'op':5 'modreg.Ord':3"/>
       <Operands Name="'modreg:reg32'" Coding="'no64' 'data32' 0x40+'modreg.R':8 'op':5 'modreg.Ord':3"/>
       <Operands Name="'modreg:reg64'" Coding="'no64' 0x48+'modreg.R':8 'data64' 'op':5 'modreg.Ord':3"/>
-      -->
       <Operands Name="'modreg:reg16rm'" op="'data16' 0xff:8" R="0" W="0"/>
       <Operands Name="'modreg:reg32rm'" op="'data32' 0xff:8" R="0" W="0"/>
       <Operands Name="'modreg:reg64rm'" op="'data64' 0xff:8" R="0" W="8"/>
@@ -1821,7 +1819,7 @@
       <Operands Name="'rm:rm'" op="0x0f:8 0x18:8" mod="1" B="0" X="0" R="0" W="0"/>
     </Opcode>
     <Opcode Name="prefetcht1">
-      <Operands Name="'rm:rm'" op="0x0f:8 0x18:8" mod="2" B="0" X="0" R="0" W=""/>
+      <Operands Name="'rm:rm'" op="0x0f:8 0x18:8" mod="2" B="0" X="0" R="0" W="0"/>
     </Opcode>
     
     <Opcode Name="prefetcht2">

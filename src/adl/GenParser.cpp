@@ -386,7 +386,7 @@ bool GenParser::GenerateStateFuncs()
              
         {
             (*file) << "Coding " << className << "::stateCoding" << i << "_" << j << "[] = {" << std::endl;
-            GenerateCoding(m.second);
+            GenerateCoding(m.second, x->name);
             (*file) << "};" << std::endl;
             ++j;
         }
@@ -730,7 +730,7 @@ void GenParser::GenerateAddressFuncs(TokenNode *value, std::string coding)
             {
                 int n = valueTags[m.first];
                 (*file) << "Coding " << className << "::tokenCoding" << value->id << "_" << n << "[] = {" << std::endl;
-                GenerateCoding(m.second);
+                GenerateCoding(m.second, value->name);
                 (*file) << "};" << std::endl;
             }
         }
@@ -866,7 +866,7 @@ bool GenParser::GenerateOpcodes()
         {
             int n = valueTags[m.first];
             (*file) << "Coding " << className << "::OpcodeCodings" << x->id << "_" << n << "[] = {" << std::endl;
-            GenerateCoding(m.second);
+            GenerateCoding(m.second, x->name);
             (*file) << "};" << std::endl;
         }
         (*file) << "asmError "<<className<<"::Opcode"<<x->id<<"(" << operandClassName << " &operand)" << std::endl;
@@ -936,7 +936,7 @@ bool GenParser::GenerateOpcodes()
     for (int i=0; i < parser.codings.size(); i++)
     {
         (*file) << "Coding " << className << "::Coding" << i + 1 << "[] = {" << std::endl;
-        GenerateCoding(*codingNames[i]);
+        GenerateCoding(*codingNames[i], "unknown");
         (*file) << "};" << std::endl;
     }
     (*file) <<"Coding * "<<className<<"::Codings["<<parser.codings.size()<<"] = {" << std::endl;
@@ -949,7 +949,7 @@ bool GenParser::GenerateOpcodes()
         for (auto x : parser.prefixes)
         {
             (*file) << "Coding " << className << "::prefixCoding" << i << "[] = {" << std::endl;
-            GenerateCoding(x->coding);
+            GenerateCoding(x->coding, x->name);
             (*file) << "};" << std::endl;
             i++;
         }
@@ -966,7 +966,7 @@ bool GenParser::GenerateOpcodes()
     delete codingNames;
     return true;
 }
-void GenParser::GenerateCoding(const std::string coding) 
+void GenParser::GenerateCoding(const std::string coding, const std::string name) 
 {
     bool needsMore = false;
     std::string temp = coding;
@@ -1164,19 +1164,19 @@ void GenParser::GenerateCoding(const std::string coding)
                 }
                 else if (illegal)
                 {
-                    (*file) << "\t{ Coding::illegal " << "}," << std::endl;
+                    (*file) << "\t{ CODING_NAME(\"" << name << "\")  Coding::illegal " << "}," << std::endl;
                 }
                 else if (stateVar)
                 {
-                    (*file) << "\t{ Coding::stateVar, " << value << " }," << std::endl;
+                    (*file) << "\t{ CODING_NAME(\"" << name << "\")  Coding::stateVar, " << value << " }," << std::endl;
                 }
                 else if (stateFunc)
                 {
-                    (*file) << "\t{ Coding::stateFunc, " << value << " }," << std::endl;
+                    (*file) << "\t{ CODING_NAME(\"" << name << "\")  Coding::stateFunc, " << value << " }," << std::endl;
                 }
                 else
                 {
-                    (*file) << "\t{ (Coding::Type)(";
+                    (*file) << "\t{ CODING_NAME(\"" << name << "\")  (Coding::Type)(";
                     if (optional)
                         (*file) << "Coding::optional | ";
                     if (bits != -1)
@@ -1207,7 +1207,7 @@ void GenParser::GenerateCoding(const std::string coding)
             }
         }
     }
-    (*file) << "\t{ Coding::eot " << "}," << std::endl;
+    (*file) << "\t{ CODING_NAME(\"eot\") Coding::eot " << "}," << std::endl;
     if (needsMore)
     {
         std::cout << "Error { " << coding << " } premature end of coding sequence" << std::endl;

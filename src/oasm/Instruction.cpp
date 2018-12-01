@@ -58,6 +58,7 @@ unsigned char * Instruction::LoadData(bool isCode, unsigned char *data, size_t s
             found = true;
             if (*s == 0x40)
             {
+                this->size--;
                 lost = true;
                 s++;
             }
@@ -69,10 +70,6 @@ unsigned char * Instruction::LoadData(bool isCode, unsigned char *data, size_t s
     }
     if (!found)
         std::cerr << "Diag: missing REX prefix" << std::endl;
-    if (lost)
-    {
-        this->size--;
-    }
     return rv;
 }
 

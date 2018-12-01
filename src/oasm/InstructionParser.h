@@ -43,6 +43,9 @@ enum asmError { AERR_NONE, AERR_SYNTAX, AERR_OPERAND, AERR_BADCOMBINATIONOFOPERA
 class Coding
 {
   public:
+#ifdef DEBUG
+    std::string name;
+#endif
     enum Type
     {
         eot,
@@ -64,6 +67,12 @@ class Coding
     char unary;
     char binary;
 };
+#ifdef DEBUG
+#define CODING_NAME(x) x,
+#else
+#define CODING_NAME(x)
+#endif
+
 class Numeric
 {
   public:

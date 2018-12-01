@@ -741,7 +741,7 @@ bool AsmFile::Write(std::string& fileName, std::string& srcName)
     bool rv = true;
     ObjIeeeIndexManager im;
     ObjFactory f(&im);
-    ObjFile* fi = MakeFile(f, srcName);
+    ObjFile* fi =  MakeFile(f, srcName);
     if (fi)
     {
         fi->ResolveSymbols(&f);
@@ -808,6 +808,7 @@ ObjFile* AsmFile::MakeFile(ObjFactory& factory, std::string& name)
                 fi->Add(s);
             }
         }
+        
         if (objSections.size())
         {
             for (int i = 0; i < numericLabels.size(); ++i)

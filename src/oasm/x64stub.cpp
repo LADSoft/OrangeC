@@ -269,8 +269,8 @@ void Instruction::Optimize(int pc, bool last)
                                 {
                                     if (last)
                                     {
-                                        Errors::IncrementCount();
-                                        std::cout << "Error " << fixup->GetFileName().c_str() << "(" << fixup->GetErrorLine()
+//                                        Errors::IncrementCount();
+                                        std::cout << "Warning " << fixup->GetFileName().c_str() << "(" << fixup->GetErrorLine()
                                                   << "):"
                                                   << "Value out of range" << std::endl;
                                     }

@@ -71,7 +71,7 @@ class Instruction
     Label* GetLabel() { return label; }
     bool IsLabel() { return type == LABEL; }
     int GetType() { return type; }
-    void Optimize(int pc, bool doErrors);
+    void Optimize(Section *sect, int pc, bool doErrors);
     void SetOffset(int Offs) { offs = Offs; }
     int GetOffset() { return offs; }
     int GetSize()

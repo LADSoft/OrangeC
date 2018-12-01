@@ -460,7 +460,7 @@ void ObjIeeeAscii::RenderMemoryBinary(ObjMemoryManager* Memory)
         ObjMemory* memory = (*itmem);
         if (memory->GetFixup())
         {
-            memset(scratch, 0, memory->GetSize());
+            *(unsigned *)scratch = memory->GetFixup()->Eval(0);
             bufferup(scratch, memory->GetSize());
         }
         if (memory->IsEnumerated())

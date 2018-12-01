@@ -1,4 +1,4 @@
-<ADL>
+  <ADL>
 	<Processor Name="x64">
 	</Processor>
   <Coding>
@@ -102,129 +102,132 @@
       <When Cond="true" Value="0x4:4"/>
     </State>
     <Register Class="general">
-      <Instance Name="al" Ord="0" B="0" X="0" R="0" W="0" T="0"  Class="reg8,low"/>
-      <Instance Name="ah" Ord="4" B="0" X="0" R="0" W="0" T="0"  Class="reg8,high"/>
-      <Instance Name="ax" Ord="0" B="0" X="0" R="0" W="0" T="0"  Class="reg16"/>
-      <Instance Name="eax" Ord="0" B="0" X="0" R="0" W="0" T="0"  Class="base32, index32, reg32"/>
-      <Instance Name="rax" Ord="0" B="0" X="0" R="0" W="8" T="0"  Class="base64, index64, reg64"/>
-      <Instance Name="r8b" Ord="0" B="1" X="2" R="4" W="0" T="0"  Class="reg8,low"/>
-      <Instance Name="r8w" Ord="0" B="1" X="2" R="4" W="0" T="0"  Class="reg16"/>
-      <Instance Name="r8d" Ord="0" B="1" X="2" R="4" W="0" T="0"  Class="base32, index32, reg32"/>
-      <Instance Name="r8" Ord="0" B="1" X="2" R="4" W="8" T="0"  Class="base64, index64, reg64"/>
+      <Instance Name="al" Ord="0" B="0" X="0" R="0" W="0" Class="reg8,low"/>
+      <Instance Name="ah" Ord="4" B="0" X="0" R="0" W="0" Class="reg8,high"/>
+      <Instance Name="ax" Ord="0" B="0" X="0" R="0" W="0" Class="reg16"/>
+      <Instance Name="eax" Ord="0" B="0" X="0" R="0" W="0" Class="base32, index32, reg32"/>
+      <Instance Name="rax" Ord="0" B="0" X="0" R="0" W="8" Class="base64, index64, reg64"/>
+      <Instance Name="r8b" Ord="0" B="1" X="2" R="4" W="0" Class="reg8,low"/>
+      <Instance Name="r8w" Ord="0" B="1" X="2" R="4" W="0" Class="reg16"/>
+      <Instance Name="r8d" Ord="0" B="1" X="2" R="4" W="0" Class="base32, index32, reg32"/>
+      <Instance Name="r8" Ord="0" B="1" X="2" R="4" W="8" Class="base64, index64, reg64"/>
     </Register>
     <Register Class="general">
-      <Instance Name="cl" Ord="1" B="0" X="0" R="0" W="0" T="0"  Class="reg8,low"/>
-      <Instance Name="ch" Ord="5" B="0" X="0" R="0" W="0" T="0"  Class="reg8,high"/>
-      <Instance Name="cx" Ord="1" B="0" X="0" R="0" W="0" T="0"  Class="reg16"/>
-      <Instance Name="ecx" Ord="1" B="0" X="0" R="0" W="0" T="0"  Class="base32, index32, reg32"/>
-      <Instance Name="rcx" Ord="1" B="0" X="0" R="0" W="8" T="0"  Class="base64, index64, reg64"/>
-      <Instance Name="r9b" Ord="1" B="1" X="2" R="4" W="0" T="0"  Class="reg8,low"/>
-      <Instance Name="r9w" Ord="1" B="1" X="2" R="4" W="0" T="0"  Class="reg16"/>
-      <Instance Name="r9d" Ord="1" B="1" X="2" R="4" W="0" T="0"  Class="base32, index32, reg32"/>
-      <Instance Name="r9" Ord="1" B="1" X="2" R="4" W="8" T="0"  Class="base64, index64, reg64"/>
+      <Instance Name="cl" Ord="1" B="0" X="0" R="0" W="0" Class="reg8,low"/>
+      <Instance Name="ch" Ord="5" B="0" X="0" R="0" W="0" Class="reg8,high"/>
+      <Instance Name="cx" Ord="1" B="0" X="0" R="0" W="0" Class="reg16"/>
+      <Instance Name="ecx" Ord="1" B="0" X="0" R="0" W="0" Class="base32, index32, reg32"/>
+      <Instance Name="rcx" Ord="1" B="0" X="0" R="0" W="8" Class="base64, index64, reg64"/>
+      <Instance Name="r9b" Ord="1" B="1" X="2" R="4" W="0" Class="reg8,low"/>
+      <Instance Name="r9w" Ord="1" B="1" X="2" R="4" W="0" Class="reg16"/>
+      <Instance Name="r9d" Ord="1" B="1" X="2" R="4" W="0" Class="base32, index32, reg32"/>
+      <Instance Name="r9" Ord="1" B="1" X="2" R="4" W="8" Class="base64, index64, reg64"/>
     </Register>
     <Register Class="general">
-      <Instance Name="dl" Ord="2" B="0" X="0" R="0" W="0" T="0"  Class="reg8,low"/>
-      <Instance Name="dh" Ord="6" B="0" X="0" R="0" W="0" T="0"  Class="reg8,high"/>
-      <Instance Name="dx" Ord="2" B="0" X="0" R="0" W="0" T="0"  Class="reg16"/>
-      <Instance Name="edx" Ord="2" B="0" X="0" R="0" W="0" T="0"  Class="base32, index32, reg32"/>
-      <Instance Name="rdx" Ord="2" B="0" X="0" R="0" W="8" T="0"  Class="base64, index64, reg64"/>
-      <Instance Name="r10b" Ord="2" B="1" X="2" R="4" W="0" T="0"  Class="reg8,low"/>
-      <Instance Name="r10w" Ord="2" B="1" X="2" R="4" W="0" T="0"  Class="reg16"/>
-      <Instance Name="r10d" Ord="2" B="1" X="2" R="4" W="0" T="0"  Class="base32, index32, reg32"/>
-      <Instance Name="r10" Ord="2" B="1" X="2" R="4" W="8" T="0"  Class="base64, index64, reg64"/>
+      <Instance Name="dl" Ord="2" B="0" X="0" R="0" W="0" Class="reg8,low"/>
+      <Instance Name="dh" Ord="6" B="0" X="0" R="0" W="0" Class="reg8,high"/>
+      <Instance Name="dx" Ord="2" B="0" X="0" R="0" W="0" Class="reg16"/>
+      <Instance Name="edx" Ord="2" B="0" X="0" R="0" W="0" Class="base32, index32, reg32"/>
+      <Instance Name="rdx" Ord="2" B="0" X="0" R="0" W="8" Class="base64, index64, reg64"/>
+      <Instance Name="r10b" Ord="2" B="1" X="2" R="4" W="0" Class="reg8,low"/>
+      <Instance Name="r10w" Ord="2" B="1" X="2" R="4" W="0" Class="reg16"/>
+      <Instance Name="r10d" Ord="2" B="1" X="2" R="4" W="0" Class="base32, index32, reg32"/>
+      <Instance Name="r10" Ord="2" B="1" X="2" R="4" W="8" Class="base64, index64, reg64"/>
     </Register>
     <Register Class="general">
-      <Instance Name="bl" Ord="3" B="0" X="0" R="0" W="0" T="0"  Class="reg8,low,pushed"/>
-      <Instance Name="bh" Ord="7" B="0" X="0" R="0" W="0" T="0"  Class="reg8,high,pushed"/>
-      <Instance Name="bx" Ord="3" base="0" B="0" X="0" R="0" W="0" T="0"  Class="base16, reg16, pushed"/>
-      <Instance Name="ebx" Ord="3" B="0" X="0" R="0" W="0" T="0"  Class="base32, index32, reg32,pushed"/>
-      <Instance Name="rbx" Ord="3" B="0" X="0" R="0" W="8" T="0"  Class="base64, index64, reg64"/>
-      <Instance Name="r11b" Ord="3" B="1" X="2" R="4" W="0" T="0"  Class="reg8,low"/>
-      <Instance Name="r11w" Ord="3" B="1" X="2" R="4" W="0" T="0"  Class="reg16"/>
-      <Instance Name="r11d" Ord="3" B="1" X="2" R="4" W="0" T="0"  Class="base32, index32, reg32"/>
-      <Instance Name="r11" Ord="3" B="1" X="2" R="4" W="8" T="0"  Class="base64, index64, reg64"/>
+      <Instance Name="bl" Ord="3" B="0" X="0" R="0" W="0" Class="reg8,low,pushed"/>
+      <Instance Name="bh" Ord="7" B="0" X="0" R="0" W="0" Class="reg8,high,pushed"/>
+      <Instance Name="bx" Ord="3" base="0" B="0" X="0" R="0" W="0" Class="base16, reg16, pushed"/>
+      <Instance Name="ebx" Ord="3" B="0" X="0" R="0" W="0" Class="base32, index32, reg32,pushed"/>
+      <Instance Name="rbx" Ord="3" B="0" X="0" R="0" W="8" Class="base64, index64, reg64"/>
+      <Instance Name="r11b" Ord="3" B="1" X="2" R="4" W="0" Class="reg8,low"/>
+      <Instance Name="r11w" Ord="3" B="1" X="2" R="4" W="0" Class="reg16"/>
+      <Instance Name="r11d" Ord="3" B="1" X="2" R="4" W="0" Class="base32, index32, reg32"/>
+      <Instance Name="r11" Ord="3" B="1" X="2" R="4" W="8" Class="base64, index64, reg64"/>
     </Register>
     <Register Class="stack">
-      <Instance Name="spl" Ord="4" B="0" X="0" R="0" W="0" T="2"  Class="reg8,low"/>
-      <Instance Name="sp" Ord="4" B="0" X="0" R="0" W="0" T="0"  Class="reg16"/>
-      <Instance Name="esp" Ord="4" B="0" X="0" R="0" W="0" T="0"  Class="base32, reg32"/>
-      <Instance Name="rsp" Ord="4" B="0" X="0" R="0" W="8" T="0"  Class="base64, reg64"/>
-      <Instance Name="r12b" Ord="4" B="1" X="2" R="4" W="0" T="0"  Class="reg8,low"/>
-      <Instance Name="r12w" Ord="4" B="1" X="2" R="4" W="0" T="0"  Class="reg16"/>
-      <Instance Name="r12d" Ord="4" B="1" X="2" R="4" W="0" T="0"  Class="base32, index32, reg32"/>
-      <Instance Name="r12" Ord="4" B="1" X="2" R="4" W="8" T="0"  Class="base64, index64, reg64"/>
+      <Instance Name="spl" Ord="4" B="0" X="0" R="0" W="0" Class="reg8t,low"/>
+      <Instance Name="sp" Ord="4" B="0" X="0" R="0" W="0" Class="reg16"/>
+      <Instance Name="esp" Ord="4" B="0" X="0" R="0" W="0" Class="base32, reg32"/>
+      <Instance Name="rsp" Ord="4" B="0" X="0" R="0" W="8" Class="base64, reg64"/>
+      <Instance Name="r12b" Ord="4" B="1" X="2" R="4" W="0" Class="reg8,low"/>
+      <Instance Name="r12w" Ord="4" B="1" X="2" R="4" W="0" Class="reg16"/>
+      <Instance Name="r12d" Ord="4" B="1" X="2" R="4" W="0" Class="base32, index32, reg32"/>
+      <Instance Name="r12" Ord="4" B="1" X="2" R="4" W="8" Class="base64, index64, reg64"/>
     </Register>
     <Register Class="stack">
-      <Instance Name="bpl" Ord="5" B="0" X="0" R="0" W="0" T="2"  Class="reg8,low"/>
-      <Instance Name="bp" Ord="5" base="1" B="0" X="0" R="0" W="0" T="0"  Class="base16, reg16"/>
-      <Instance Name="ebp" Ord="5" B="0" X="0" R="0" W="0" T="0"  Class="base32, index32, reg32"/>
-      <Instance Name="rbp" Ord="5" B="0" X="0" R="0" W="8" T="0"  Class="base64, index64, reg64"/>
-      <Instance Name="r13b" Ord="5" B="1" X="2" R="4" W="0" T="0"  Class="reg8,low"/>
-      <Instance Name="r13w" Ord="5" B="1" X="2" R="4" W="0" T="0"  Class="reg16"/>
-      <Instance Name="r13d" Ord="5" B="1" X="2" R="4" W="0" T="0"  Class="base32, index32, reg32"/>
-      <Instance Name="r13" Ord="5" B="1" X="2" R="4" W="8" T="0"  Class="base64, index64, reg64"/>
+      <Instance Name="bpl" Ord="5" B="0" X="0" R="0" W="0" Class="reg8t,low"/>
+      <Instance Name="bp" Ord="5" base="1" B="0" X="0" R="0" W="0" Class="base16, reg16"/>
+      <Instance Name="ebp" Ord="5" B="0" X="0" R="0" W="0" Class="base32, index32, reg32"/>
+      <Instance Name="rbp" Ord="5" B="0" X="0" R="0" W="8" Class="base64, index64, reg64"/>
+      <Instance Name="r13b" Ord="5" B="1" X="2" R="4" W="0" Class="reg8,low"/>
+      <Instance Name="r13w" Ord="5" B="1" X="2" R="4" W="0" Class="reg16"/>
+      <Instance Name="r13d" Ord="5" B="1" X="2" R="4" W="0" Class="base32, index32, reg32"/>
+      <Instance Name="r13" Ord="5" B="1" X="2" R="4" W="8" Class="base64, index64, reg64"/>
     </Register>       
     <Register Class="general">
-      <Instance Name="sil" Ord="6" B="0" X="0" R="0" W="0" T="2"  Class="reg8,low"/>
-      <Instance Name="si" Ord="6" index="0" B="0" X="0" R="0" W="0" T="0"  Class="reg16,index16,pushed"/>
-      <Instance Name="esi" Ord="6" B="0" X="0" R="0" W="0" T="0"  Class="base32, index32, reg32,pushed"/>
-      <Instance Name="rsi" Ord="6" B="0" X="0" R="0" W="8" T="0"  Class="base64, index64, reg64"/>
-      <Instance Name="r14b" Ord="6" B="1" X="2" R="4" W="0" T="0"  Class="reg8,low"/>
-      <Instance Name="r14w" Ord="6" B="1" X="2" R="4" W="0" T="0"  Class="reg16"/>
-      <Instance Name="r14d" Ord="6" B="1" X="2" R="4" W="0" T="0"  Class="base32, index32, reg32"/>
-      <Instance Name="r14" Ord="6" B="1" X="2" R="4" W="8" T="0"  Class="base64, index64, reg64"/>
+      <Instance Name="sil" Ord="6" B="0" X="0" R="0" W="0" Class="reg8t,low"/>
+      <Instance Name="si" Ord="6" index="0" B="0" X="0" R="0" W="0" Class="reg16,index16,pushed"/>
+      <Instance Name="esi" Ord="6" B="0" X="0" R="0" W="0" Class="base32, index32, reg32,pushed"/>
+      <Instance Name="rsi" Ord="6" B="0" X="0" R="0" W="8" Class="base64, index64, reg64"/>
+      <Instance Name="r14b" Ord="6" B="1" X="2" R="4" W="0" Class="reg8,low"/>
+      <Instance Name="r14w" Ord="6" B="1" X="2" R="4" W="0" Class="reg16"/>
+      <Instance Name="r14d" Ord="6" B="1" X="2" R="4" W="0" Class="base32, index32, reg32"/>
+      <Instance Name="r14" Ord="6" B="1" X="2" R="4" W="8" Class="base64, index64, reg64"/>
     </Register>
     <Register Class="general">
-      <Instance Name="dil" Ord="7" B="0" X="0" R="0" W="0" T="2"  Class="reg8,low"/>
-      <Instance Name="di" Ord="7" index="1" B="0" X="0" R="0" W="0" T="0"  Class="reg16,index16, pushed"/>
-      <Instance Name="edi" Ord="7" B="0" X="0" R="0" W="0" T="0"  Class="base32, index32, reg32, pushed"/>
-      <Instance Name="rdi" Ord="7" B="0" X="0" R="0" W="8" T="0"  Class="base64, index64, reg64"/>
-      <Instance Name="r15b" Ord="7" B="1" X="2" R="4" W="0" T="0"  Class="reg8,low"/>
-      <Instance Name="r15w" Ord="7" B="1" X="2" R="4" W="0" T="0"  Class="reg16"/>
-      <Instance Name="r15d" Ord="7" B="1" X="2" R="4" W="0" T="0"  Class="base32, index32, reg32"/>
-      <Instance Name="r15" Ord="7" B="1" X="2" R="4" W="8" T="0"  Class="base64, index64, reg64"/>
+      <Instance Name="dil" Ord="7" B="0" X="0" R="0" W="0" Class="reg8t,low"/>
+      <Instance Name="di" Ord="7" index="1" B="0" X="0" R="0" W="0" Class="reg16,index16, pushed"/>
+      <Instance Name="edi" Ord="7" B="0" X="0" R="0" W="0" Class="base32, index32, reg32, pushed"/>
+      <Instance Name="rdi" Ord="7" B="0" X="0" R="0" W="8" Class="base64, index64, reg64"/>
+      <Instance Name="r15b" Ord="7" B="1" X="2" R="4" W="0" Class="reg8,low"/>
+      <Instance Name="r15w" Ord="7" B="1" X="2" R="4" W="0" Class="reg16"/>
+      <Instance Name="r15d" Ord="7" B="1" X="2" R="4" W="0" Class="base32, index32, reg32"/>
+      <Instance Name="r15" Ord="7" B="1" X="2" R="4" W="8" Class="base64, index64, reg64"/>
+    </Register>
+    <Register Class="RIP">
+      <Instance Name="rip"/>
+    </Register>"
+    <Register Class="regsse">
+      <Instance Name="mm0" Ord="0" B="0" X="0" R="0" W="0" Class="regmm"/>
+      <Instance Name="xmm0" Ord="0" B="0" X="0" R="0" W="0" Class="regsse"/>
+      <Instance Name="xmm8" Ord="0" B="1" X="2" R="4" W="0" Class="regsse"/>
     </Register>
     <Register Class="regsse">
-      <Instance Name="mm0" Ord="0" B="0" X="0" R="0" W="0" T="0"  Class="regmm"/>
-      <Instance Name="xmm0" Ord="0" B="0" X="0" R="0" W="0" T="0"  Class="regsse"/>
-      <Instance Name="xmm8" Ord="0" B="1" X="2" R="4" W="0" T="0"  Class="regsse"/>
+      <Instance Name="mm1" Ord="1" B="0" X="0" R="0" W="0" Class="regmm"/>
+      <Instance Name="xmm1" Ord="1" B="0" X="0" R="0" W="0" Class="regsse"/>
+      <Instance Name="xmm9" Ord="1" B="1" X="2" R="4" W="0" Class="regsse"/>
     </Register>
     <Register Class="regsse">
-      <Instance Name="mm1" Ord="1" B="0" X="0" R="0" W="0" T="0"  Class="regmm"/>
-      <Instance Name="xmm1" Ord="1" B="0" X="0" R="0" W="0" T="0"  Class="regsse"/>
-      <Instance Name="xmm9" Ord="1" B="1" X="2" R="4" W="0" T="0"  Class="regsse"/>
+      <Instance Name="mm2" Ord="2" B="0" X="0" R="0" W="0" Class="regmm"/>
+      <Instance Name="xmm2" Ord="2" B="0" X="0" R="0" W="0" Class="regsse"/>
+      <Instance Name="xmm10" Ord="2" B="1" X="2" R="4" W="0" Class="regsse"/>
     </Register>
     <Register Class="regsse">
-      <Instance Name="mm2" Ord="2" B="0" X="0" R="0" W="0" T="0"  Class="regmm"/>
-      <Instance Name="xmm2" Ord="2" B="0" X="0" R="0" W="0" T="0"  Class="regsse"/>
-      <Instance Name="xmm10" Ord="2" B="1" X="2" R="4" W="0" T="0"  Class="regsse"/>
-    </Register>
-    <Register Class="regsse">
-      <Instance Name="mm3" Ord="3" B="0" X="0" R="0" W="0" T="0"  Class="regmm"/>
-      <Instance Name="xmm3" Ord="3" B="0" X="0" R="0" W="0" T="0"  Class="regsse"/>
-      <Instance Name="xmm11" Ord="3" B="1" X="2" R="4" W="0" T="0"  Class="regsse"/>
+      <Instance Name="mm3" Ord="3" B="0" X="0" R="0" W="0" Class="regmm"/>
+      <Instance Name="xmm3" Ord="3" B="0" X="0" R="0" W="0" Class="regsse"/>
+      <Instance Name="xmm11" Ord="3" B="1" X="2" R="4" W="0" Class="regsse"/>
     </Register>
 
     <Register Class="regsse">
-      <Instance Name="mm4" Ord="4" B="0" X="0" R="0" W="0" T="0"  Class="regmm"/>
-      <Instance Name="xmm4" Ord="4" B="0" X="0" R="0" W="0" T="0"  Class="regsse"/>
-      <Instance Name="xmm12" Ord="4" B="1" X="2" R="4" W="0" T="0"  Class="regsse"/>
+      <Instance Name="mm4" Ord="4" B="0" X="0" R="0" W="0" Class="regmm"/>
+      <Instance Name="xmm4" Ord="4" B="0" X="0" R="0" W="0" Class="regsse"/>
+      <Instance Name="xmm12" Ord="4" B="1" X="2" R="4" W="0" Class="regsse"/>
     </Register>
     <Register Class="regsse">
-      <Instance Name="mm5" Ord="5" B="0" X="0" R="0" W="0" T="0"  Class="regmm"/>
-      <Instance Name="xmm5" Ord="5" B="0" X="0" R="0" W="0" T="0"  Class="regsse"/>
-      <Instance Name="xmm13" Ord="5" B="1" X="2" R="4" W="0" T="0"  Class="regsse"/>
+      <Instance Name="mm5" Ord="5" B="0" X="0" R="0" W="0" Class="regmm"/>
+      <Instance Name="xmm5" Ord="5" B="0" X="0" R="0" W="0" Class="regsse"/>
+      <Instance Name="xmm13" Ord="5" B="1" X="2" R="4" W="0" Class="regsse"/>
     </Register>
     <Register Class="regsse">
-      <Instance Name="mm6" Ord="6" B="0" X="0" R="0" W="0" T="0"  Class="regmm"/>
-      <Instance Name="xmm6" Ord="6" B="0" X="0" R="0" W="0" T="0"  Class="regsse"/>
-      <Instance Name="xmm14" Ord="6" B="1" X="2" R="4" W="0" T="0"  Class="regsse"/>
+      <Instance Name="mm6" Ord="6" B="0" X="0" R="0" W="0" Class="regmm"/>
+      <Instance Name="xmm6" Ord="6" B="0" X="0" R="0" W="0" Class="regsse"/>
+      <Instance Name="xmm14" Ord="6" B="1" X="2" R="4" W="0" Class="regsse"/>
     </Register>
     <Register Class="regsse">
-      <Instance Name="mm7" Ord="7" B="0" X="0" R="0" W="0" T="0"  Class="regmm"/>
-      <Instance Name="xmm7" Ord="7" B="0" X="0" R="0" W="0" T="0"  Class="regsse"/>
-      <Instance Name="xmm15" Ord="7" B="1" X="2" R="4" W="0" T="0"  Class="regsse"/>
+      <Instance Name="mm7" Ord="7" B="0" X="0" R="0" W="0" Class="regmm"/>
+      <Instance Name="xmm7" Ord="7" B="0" X="0" R="0" W="0" Class="regsse"/>
+      <Instance Name="xmm15" Ord="7" B="1" X="2" R="4" W="0" Class="regsse"/>
     </Register>
     <Register Class="segment">
       <Instance Name="es" Ord="0" Prefix="0x26"/>
@@ -422,10 +425,6 @@
     <Address Name="[ss:bp + 'mem:mem16']" Class="rmx,rm,frm,rm8,rm16,rm32,rm16it" Coding = "'addr16' *'mand' 0x40:8 'op' 2:2 'mod':3 6:3 'mem':16"/>
     <Address Name="[ds:bp + 'mem:mem16']" Class="rmx,rm,frm,rm8,rm16,rm32,rm16it" Coding = "'addr16' 0x3e:8 *'mand' 0x40:8 'op' 2:2 'mod':3 6:3 'mem':16"/>
     <Address Name="['seg:segment':bp + 'mem:mem16']" Class="rmx,rm,frm,rm8,rm16,rm32,rm16it"  Coding = "'seg.Prefix':8 'addr16' *'mand' 0x40:8 'op' 2:2 'mod':3 6:3 'mem':16"/>
-
- 
-    
-    
     
 
 
@@ -696,9 +695,9 @@
     <!--fixme a small inaccuracy in 64 bit mode 
     <Address Name="[eip+'mem:rel32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x5:3 'mem':32"/>
 -->
-    <Address Name="[rip+'rel:rel32']" Class="rmx,rm,frm,rm8,rm16,rm32,rm32bit" Coding="'addr64' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x05:3 'rel':32"/>
-    <Address Name="['mem:address64']" Class="rmx,rm,frm,rm8,rm16,rm32,rm32bit" Coding="'addr64' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x04:3 0:2 4:2 5:2 'mem':32"/>
-    <Address Name="['seg:segment':'mem:address64']" Class="rmx,rm,frm,rm8,rm16,rm32,rm32bit" Coding="'seg.Prefix':8 'addr64' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x04:3 0:2 4:2 5:2 'mem':32"/>
+    <Address Name="[rip+'rel:rel32']" Class="rmx,rm,frm,rm8,rm16,rm32,rm64,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x05:3 'rel':32"/>
+    <Address Name="['mem:address64']" Class="rmx,rm,frm,rm8,rm16,rm32,rm64,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x04:3 0:2 4:3 5:3 'mem':32"/>
+    <Address Name="['seg:segment':'mem:address64']" Class="rmx,rm,frm,rm8,rm16,rm32,rm64,rm32bit,rm64bit" Coding="'seg.Prefix':8 'addr64' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x04:3 0:2 4:3 5:3 'mem':32"/>
 
     <Address Name="[rsp+'z:zero']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 0:2 0x4:3 0x4:3"/>
     <Address Name="[r12'z:zero']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x41+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 0:2 0x4:3 0x4:3"/>
@@ -870,13 +869,14 @@
 
 
     <Address Name="'reg:floatreg'" Class="frm, regfloat" Coding="0x40:8 'op' 3:2 'mod':3 'reg.Ord':3"/>
-    <Address Name="'reg:reg8'" Class="rm8, reg8, reg8rm" Coding="0x40+'reg.B'+'reg.T'+'R'+'W':8 'op' 3:2 'mod':3 'reg.Ord':3"/>
-    <Address Name="'reg:reg16'" Class="rm16, reg16, reg16rm" Coding="0x40+'reg.B'+'R'+'W':8 'op' 3:2 'mod':3 'reg.Ord':3"/>
-    <Address Name="'reg:reg32'" Class="rm32, reg32, reg32rm" Coding="0x40+'reg.B'+'R'+'W':8 'op' 3:2 'mod':3 'reg.Ord':3"/>
-    <Address Name="'reg:reg64'" Class="rm64, reg64, reg64rm" Coding="0x40+'reg.B'+'R'+'W':8 'op' 3:2 'mod':3 'reg.Ord':3"/>
+    <Address Name="'reg:reg8'" Class="rm8, reg8, reg8rm" Coding="*'mand' 0x40+'reg.B'+'R'+'W':8 'op' 3:2 'mod':3 'reg.Ord':3"/>
+    <Address Name="'reg:reg8t'" Class="rm8, reg8, reg8rm" Coding="*'mand' 0x40:8 0x40+'reg.B'+'R'+'W':8 'op' 3:2 'mod':3 'reg.Ord':3"/>
+    <Address Name="'reg:reg16'" Class="rm16, reg16, reg16rm" Coding="*'mand' 0x40+'reg.B'+'R'+'W':8 'op' 3:2 'mod':3 'reg.Ord':3"/>
+    <Address Name="'reg:reg32'" Class="rm32, reg32, reg32rm" Coding="*'mand' 0x40+'reg.B'+'R'+'W':8 'op' 3:2 'mod':3 'reg.Ord':3"/>
+    <Address Name="'reg:reg64'" Class="rm64, reg64, reg64rm" Coding="*'mand' 0x40+'reg.B'+'R'+'W':8 'op' 3:2 'mod':3 'reg.Ord':3"/>
 
-    <Address Name="'reg:regmm'" Class="mmr, regmmr, mmrm, regmmrm" Coding="*'mand' 0x40:8 'op' 3:2 'mod':3 'reg.Ord':3"/>
-    <Address Name="'reg:regsse'" Class="mmx, regmmx, sserm, regsserm" Coding="*'mand' 0x40+'reg.R':8 'op' 3:2 'mod':3 'reg.Ord':3"/>
+    <Address Name="'reg:regmm'" Class="mmr, regmmr, mmrm, regmmrm" Coding="*'mand' 0x40+'R'+'W':8 'op' 3:2 'mod':3 'reg.Ord':3"/>
+    <Address Name="'reg:regsse'" Class="mmx, regmmx, sserm, regsserm" Coding="*'mand' 0x40+'reg.B'+'R'+'W':8 'op' 3:2 'mod':3 'reg.Ord':3"/>
     
   
     <Opcode Class="single">
@@ -901,26 +901,40 @@
       <Operands Name="eax, {dword} 'omem:mem32'" Coding="'data32' 0x40 'op1'+1:8 'omem':32"/>
       <Operands Name="rax, {qword} 'omem:mem32'" Coding="'data64' 0x48:8 'op1'+1:8 'omem':32"/>
       <Operands Name="'modreg:reg8', {byte} 'rm:rm8'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" op="'op2'+2:8" />
+      <Operands Name="'modreg:reg8t', {byte} 'rm:rm8'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" mand="0x40" op="'op2'+2:8" />
       <Operands Name="'modreg:reg16', {word} 'rm:rm16'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" op="'data16' 'op2'+3:8" />
       <Operands Name="'modreg:reg32', {dword} 'rm:rm32'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" op="'data32' 'op2'+3:8" />
       <Operands Name="'modreg:reg64', {qword} 'rm:rm64'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" op="'data64' 'op2'+3:8" />
       <Operands Name="{byte} 'rm:rm8', 'modreg:reg8'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" op="'op2':8" />
+      <Operands Name="{byte} 'rm:rm8', 'modreg:reg8t'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" mand="0x40" op="'op2':8" />
       <Operands Name="{word} 'rm:rm16', 'modreg:reg16'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" op="'data16' 'op2'+1:8" />
       <Operands Name="{dword} 'rm:rm32', 'modreg:reg32'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" op="'data32' 'op2'+1:8" />
       <Operands Name="{qword} 'rm:rm32', 'modreg:reg64'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" op="'data64' 'op2'+1:8" />
       <Operands Name="byte 'rm:rm8',  {byte} 'omem:mem8'" op="0x80:8" R="0" W="0" Coding="native 'omem':8"/>
-      <Operands Name="word 'rm:rm16', byte 'signedimm:signed8'" op="0x83:8" R="0" W="0" Coding="'data16' native 'signedimm':8"/>
+      <Operands Name="word 'rm:rm16', {byte} 'signedimm:signed8'" op="0x83:8" R="0" W="0" Coding="'data16' native 'signedimm':8"/>
+      <Operands Name="word 'rm:rm16', {word} 'signedimm:signed8'" op="0x83:8" R="0" W="0" Coding="'data16' native 'signedimm':8"/>
       <Operands Name="word 'rm:rm16', {word} 'omem:mem16'" op="0x81:8" R="0" W="0" Coding="'data16' native 'omem':16"/>
-      <Operands Name="dword 'rm:rm32', byte 'signedimm:signed8'" op="0x83:8" R="0" W="0" Coding="'data32' native 'signedimm':8"/>
+      <Operands Name="dword 'rm:rm32', {byte} 'signedimm:signed8'" op="0x83:8" R="0" W="0" Coding="'data32' native 'signedimm':8"/>
+      <Operands Name="dword 'rm:rm32', {word} 'signedimm:signed8'" op="0x83:8" R="0" W="0" Coding="'data32' native 'signedimm':8"/>
+      <Operands Name="dword 'rm:rm32', {dword} 'signedimm:signed8'" op="0x83:8" R="0" W="0" Coding="'data32' native 'signedimm':8"/>
       <Operands Name="dword 'rm:rm32', {dword} 'omem:mem32'" op="0x81:8" R="0" W="0" Coding="'data32' native 'omem':32"/>
-      <Operands Name="qword 'rm:rm64', byte 'signedimm:signed8'" op="0x83:8" R="0" W="8" Coding="'data32' native 'signedimm':8"/>
+      <Operands Name="qword 'rm:rm64', {byte} 'signedimm:signed8'" op="0x83:8" R="0" W="8" Coding="'data32' native 'signedimm':8"/>
+      <Operands Name="qword 'rm:rm64', {word} 'signedimm:signed8'" op="0x83:8" R="0" W="8" Coding="'data32' native 'signedimm':8"/>
+      <Operands Name="qword 'rm:rm64', {dword} 'signedimm:signed8'" op="0x83:8" R="0" W="8" Coding="'data32' native 'signedimm':8"/>
+      <Operands Name="qword 'rm:rm64', {qword} 'signedimm:signed8'" op="0x83:8" R="0" W="8" Coding="'data32' native 'signedimm':8"/>
       <Operands Name="qword 'rm:rm64', {qword} 'omem:mem32'" op="0x81:8" R="0" W="0" Coding="'data32' native 'omem':32"/>
       <Operands Name="'modreg:reg8rm', {byte} 'omem:mem8'" op="0x80:8" R="0" W="0" Coding="native 'omem':8"/>
-      <Operands Name="'modreg:reg16rm', byte 'signedimm:signed8'" op="0x83:8" R="0" W="0" Coding="'data16' native 'signedimm':8"/>
+      <Operands Name="'modreg:reg16rm', {byte} 'signedimm:signed8'" op="0x83:8" R="0" W="0" Coding="'data16' native 'signedimm':8"/>
+      <Operands Name="'modreg:reg16rm', {word} 'signedimm:signed8'" op="0x83:8" R="0" W="0" Coding="'data16' native 'signedimm':8"/>
       <Operands Name="'modreg:reg16rm', {word} 'omem:mem16'" op="0x81:8" R="0" W="0" Coding="'data16' native 'omem':16"/>
-      <Operands Name="'modreg:reg32rm', byte 'signedimm:signed8'" op="0x83:8" R="0" W="0" Coding="'data32' native 'signedimm':8"/>
+      <Operands Name="'modreg:reg32rm', {byte} 'signedimm:signed8'" op="0x83:8" R="0" W="0" Coding="'data32' native 'signedimm':8"/>
+      <Operands Name="'modreg:reg32rm', {word} 'signedimm:signed8'" op="0x83:8" R="0" W="0" Coding="'data32' native 'signedimm':8"/>
+      <Operands Name="'modreg:reg32rm', {dword} 'signedimm:signed8'" op="0x83:8" R="0" W="0" Coding="'data32' native 'signedimm':8"/>
       <Operands Name="'modreg:reg32rm', {dword} 'omem:mem32'" op="0x81:8" R="0" W="0" Coding="'data32' native 'omem':32"/>
-      <Operands Name="'modreg:reg64rm', byte 'signedimm:signed8'" op="0x83:8" R="0" W="8" Coding="0x48+'modreg.R':8 'data64' native 'signedimm':8"/>
+      <Operands Name="'modreg:reg64rm', {byte} 'signedimm:signed8'" op="0x83:8" R="0" W="8" Coding="'data64' native 'signedimm':8"/>
+      <Operands Name="'modreg:reg64rm', {word} 'signedimm:signed8'" op="0x83:8" R="0" W="8" Coding="'data64' native 'signedimm':8"/>
+      <Operands Name="'modreg:reg64rm', {dword} 'signedimm:signed8'" op="0x83:8" R="0" W="8" Coding="'data64' native 'signedimm':8"/>
+      <Operands Name="'modreg:reg64rm', {qword} 'signedimm:signed8'" op="0x83:8" R="0" W="8" Coding="'data64' native 'signedimm':8"/>
       <Operands Name="'modreg:reg64rm', {qword} 'omem:mem32'" op="0x81:8" R="0" W="8" Coding="0x48+'modreg.R':8 'data64' native 'omem':32"/>
     </Opcode>
     <Opcode Class="bit">
@@ -961,7 +975,7 @@
     <Opcode Class="floatmath">
       <Operands Name="st0,'reg:floatreg'" Coding="0x40:8 'op1' 3:2 'mod':3 'reg.Ord':3"/>
       <Operands Name="'reg:floatreg', st0" Coding="0x40:8 'op1'+4 3:2 'mod1':3 'reg.Ord':3"/>
-      <Operands Name="'reg:floatreg'" Coding="0x40:8 'op1' 3:2 'mod1':3 'reg.Ord':3"/>
+      <Operands Name="'reg:floatreg'" Coding="0x40:8 'op1' 3:2 'mod':3 'reg.Ord':3"/>
       <Operands Name="dword 'reg:frm'" op="'op1'" R="0" W="0"/>
       <Operands Name="qword 'reg:frm'" op="'op1'+4" R="0" W="0"/>
     </Opcode>
@@ -1034,11 +1048,11 @@
     </Opcode>
     <Opcode Class="regshift">
       <Operands Name="{word}'rm:rm16', 'modreg:reg16', 'omem:mem8'" op="'data16' 0x0f:8 'op1':8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" Coding="native 'omem':8"/>
-      <Operands Name="{word}'rm:rm16', 'modreg:reg16', cl" op="'data16' 0x0f:8 'op1'+1:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" R="0" W="0"/>
+      <Operands Name="{word}'rm:rm16', 'modreg:reg16', cl" op="'data16' 0x0f:8 'op1'+1:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'"/>
       <Operands Name="{dword}'rm:rm32', 'modreg:reg32', 'omem:mem8'" op="'data32' 0x0f:8 'op1':8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" Coding="native 'omem':8" />
-      <Operands Name="{dword}'rm:rm32', 'modreg:reg32', cl" op="'data32' 0x0f:8 'op1'+1:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" R="0" W="0"/>
+      <Operands Name="{dword}'rm:rm32', 'modreg:reg32', cl" op="'data32' 0x0f:8 'op1'+1:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'"/>
       <Operands Name="{qword}'rm:rm64', 'modreg:reg64', 'omem:mem8'" op="'data32' 0x0f:8 'op1':8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" Coding="native 'omem':8" />
-      <Operands Name="{qword}'rm:rm64', 'modreg:reg64', cl" op="'data32' 0x0f:8 'op1'+1:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" R="0" W="8"/>
+      <Operands Name="{qword}'rm:rm64', 'modreg:reg64', cl" op="'data32' 0x0f:8 'op1'+1:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'"/>
     </Opcode>
     <Opcode Class="nostrictrm">
       <Operands Name="'rm:rm'" R="0" W="0"/>
@@ -1069,8 +1083,8 @@
       <Operands Name="'modreg:reg64', 'rm:regsserm'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
     </Opcode>
     <Opcode Class="sserm">
-      <Operands Name="'modreg:regsse', dword 'rm:rm32'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
-      <Operands Name="'modreg:regsse', qword 'rm:rm64'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
+      <Operands Name="'modreg:regsse', dword 'rm:rm32'" mod="'modreg.Ord'" R="'modreg.R'" W="0" />
+      <Operands Name="'modreg:regsse', qword 'rm:rm64'" mod="'modreg.Ord'" R="'modreg.R'" W="8" />
     </Opcode>
     <Opcode Class="ssepack">
       <Operands Name="'modreg:regmm', 'rm:mmrm'" mand="" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
@@ -1106,8 +1120,8 @@
     <Opcode Name="bsf" op1="0x0f:8 0xbc:8" Class="reg16rmx"/>
     <Opcode Name="bsr" op1="0x0f:8 0xbd:8" Class="reg16rmx"/>
     <Opcode Name="bswap">
-      <Operands Name="'modreg:reg32'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" Coding="'data32' 0x40+'modreg.R':8 0x0f:8 0x19:5 'modreg.Ord':3"/>
-      <Operands Name="'modreg:reg64'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" Coding="'data64' 0x48+'modreg.R':8 0x0f:8 0x19:5 'modreg.Ord':3"/>
+      <Operands Name="'modreg:reg32'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" Coding="'data32' 0x40+'modreg.B':8 0x0f:8 0x19:5 'modreg.Ord':3"/>
+      <Operands Name="'modreg:reg64'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" Coding="'data64' 0x48+'modreg.B':8 0x0f:8 0x19:5 'modreg.Ord':3"/>
     </Opcode>
     <Opcode Name="bt" Class="bit" op1= "0x0f:8 0xba:8" op2="0x0f:8 0xa3:8" mod="4"/>
     <Opcode Name="btc" Class="bit" op1= "0x0f:8 0xba:8" op2="0x0f:8 0xbb:8" mod="7"/>
@@ -1121,9 +1135,10 @@
       <Operands Name="'modreg:reg16rm'" op="'data16' 0xff:8" mod="2" R="0" W="0" />
       <Operands Name="'modreg:reg32rm'" op="'data32' 0xff:8" mod="2" R="0" W="0" />
       <Operands Name="'modreg:reg64rm'" op="'data64' 0xff:8" mod="2" R="0" W="0" />
-      <Operands Name="{word} 'rm:rm'" op="'data16' 0xff:8" mod="2" R="0" W="0"/>
-      <Operands Name="{dword} 'rm:rm'" op="'data32' 0xff:8" mod="2" R="0" W="0"/>
-      <Operands Name="{qword} 'rm:rm'" op="'data32' 0xff:8" mod="2" R="0" W="0"/>
+      <Operands Name="'rm:rm'" op="0xff:8" mod="2" R="0" W="0"/>
+      <Operands Name="word 'rm:rm'" op="'data16' 0xff:8" mod="2" R="0" W="0"/>
+      <Operands Name="dword 'rm:rm'" op="'data32' 0xff:8" mod="2" R="0" W="0"/>
+      <Operands Name="qword 'rm:rm'" op="'data32' 0xff:8" mod="2" R="0" W="0"/>
       <Operands Name="far 'omem:address16'" Coding="'data16' 0x40:8 0x0f:8 0x0f:8 0x9a:8 'omem':16 0:16"/>
       <Operands Name="far 'omem:address32'" Coding="'data32' 0x40:8 0x0f:8 0x0f:8 0x9a:8 'omem':32 0:16"/>
       <Operands Name="far word 'rm:rm'" op= "'data16' 0xff:8" mod="3" R="0" W="0"/>
@@ -1132,7 +1147,7 @@
     <Opcode Name="cbw" op="'data16' 0x98:8" Class="single"/>
     <Opcode Name="cdq" op="'data32' 0x99:8" Class="single"/>
     <Opcode Name="cdqe">
-      <Operands Name="empty" Coding="0x48:8 'data64' 0x99:8"/>
+      <Operands Name="empty" Coding="0x48:8 'data64' 0x98:8"/>
     </Opcode>
 
     <Opcode Name="clc" op="0xf8:8" Class="single"/>
@@ -1205,11 +1220,12 @@
           <Operands Name="empty" Coding="0x48:8 'data64' 0xa7:8"/>
     </Opcode>
 
-    <Opcode Name="cmpxchg" op="0x0f:8 0xb0:8">
-      <Operands Name="{byte} 'rm:rm8', 'modreg:reg8'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'"/>
-      <Operands Name="{word} 'rm:rm16', 'modreg:reg16'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'"/>
-      <Operands Name="{dword} 'rm:rm32', 'modreg:reg32'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'"/>
-      <Operands Name="{qword} 'rm:rm64', 'modreg:reg64'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'"/>
+    <Opcode Name="cmpxchg" op1="0x0f:8 0xb0:8">
+      <Operands Name="{byte} 'rm:rm8', 'modreg:reg8'" op="'op1'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'"/>
+      <Operands Name="{byte} 'rm:rm8', 'modreg:reg8t'" mand="0x40:8" op="'op1'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'"/>
+      <Operands Name="{word} 'rm:rm16', 'modreg:reg16'" op="'data16' 'op1'+1:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'"/>
+      <Operands Name="{dword} 'rm:rm32', 'modreg:reg32'" op="'data32' 'op1'+1:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'"/>
+      <Operands Name="{qword} 'rm:rm64', 'modreg:reg64'" op="'data64' 'op1'+1:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'"/>
     </Opcode>
     <Opcode Name="cmpxchg8b">
       <Operands Name="'rm:rm'" mod="1" op="0x0f:8 0xc7:8" R="0" W="0"/>
@@ -1286,12 +1302,12 @@
     <Opcode Name="fcompp" op="0xde:8 0xd9:8" Class="single"/>
     <Opcode Name="fcos" op="0xd9:8 0xff:8" Class="single"/>
     <Opcode Name="fdecstp" op="0xd9:8 0xf6:8" Class="single"/>
-    <Opcode Name="fdisi" op="0xdb:8 0xe1:8" Class="single"/>
+    <Opcode Name="fdisi" op="0x9b:8 0xdb:8 0xe1:8" Class="single"/>
     <Opcode Name="fdiv" op1="0xd8:8" mod="6" mod1="7" Class="floatmath"/>
     <Opcode Name="fdivp" op="0xde:8" mod="7" Class="floatmathp"/>
     <Opcode Name="fdivr" op1="0xd8:8" mod="7" mod1="6" Class="floatmath"/>
     <Opcode Name="fdivrp" op="0xde:8" mod="6" Class="floatmathp"/>
-    <Opcode Name="feni" op="0xdb:8 0xe0:8" Class="single"/>
+    <Opcode Name="feni" op="0x9b:8 0xdb:8 0xe0:8" Class="single"/>
     <Opcode Name="ffree">
       <Operands Name="'reg:regfloat'" op="0xdd" mod="0"/>
     </Opcode>
@@ -1423,13 +1439,13 @@
     <Opcode Name="hlt" op="0xf4:8" Class="single"/>
     <Opcode Name="icebp" op="0xf1:8" Class="single"/>
     <Opcode Name="idiv" mod="7" Class="sizedrm"/>
-    <Opcode Name="imul" mod="5" Class="sizedrm">
-      <Operands Name="'modreg:reg16', {byte} 'signedimm:signed8'" Coding="'data16' 0x40+'modreg.R':8 0x6b:8 0x3:2 'modreg.Ord':3 'modreg.Ord':3 'signedimm':8"/>
-      <Operands Name="'modreg:reg16', {word} 'omem:mem16'" Coding="'data16' 0x40+'modreg.R':8 0x69:8 0x3:2 'modreg.Ord':3 'modreg.Ord':3 'omem':16"/>
-      <Operands Name="'modreg:reg32', {byte} 'signedimm:signed8'" Coding="'data32' 0x40+'modreg.R':8 0x6b:8 0x3:2 'modreg.Ord':3 'modreg.Ord':3 'signedimm':8"/>
-      <Operands Name="'modreg:reg32', {dword} 'omem:mem32'" Coding="'data32' 0x40+'modreg.R':8 0x69:8 0x3:2 'modreg.Ord':3 'modreg.Ord':3 'omem':32"/>
-      <Operands Name="'modreg:reg64', {byte} 'signedimm:signed8'" Coding="'data64' 0x48+'modreg.R':8 0x6b:8 0x3:2 'modreg.Ord':3 'modreg.Ord':3 'signedimm':8"/>
-      <Operands Name="'modreg:reg64', {qword} 'omem:mem32'" Coding="'data64' 0x48+'modreg.R':8 0x69:8 0x3:2 'modreg.Ord':3 'modreg.Ord':3 'omem':32"/>
+    <Opcode Name="imul">
+      <Operands Name="'modreg:reg16', {byte} 'signedimm:signed8'" Coding="'data16' 0x40+'modreg.R'+'modreg.B':8 0x6b:8 0x3:2 'modreg.Ord':3 'modreg.Ord':3 'signedimm':8"/>
+      <Operands Name="'modreg:reg16', {word} 'omem:mem16'" Coding="'data16' 0x40+'modreg.R'+'modreg.B':8 0x69:8 0x3:2 'modreg.Ord':3 'modreg.Ord':3 'omem':16"/>
+      <Operands Name="'modreg:reg32', {byte} 'signedimm:signed8'" Coding="'data32' 0x40+'modreg.R'+'modreg.B':8 0x6b:8 0x3:2 'modreg.Ord':3 'modreg.Ord':3 'signedimm':8"/>
+      <Operands Name="'modreg:reg32', {dword} 'omem:mem32'" Coding="'data32' 0x40+'modreg.R'+'modreg.B':8 0x69:8 0x3:2 'modreg.Ord':3 'modreg.Ord':3 'omem':32"/>
+      <Operands Name="'modreg:reg64', {byte} 'signedimm:signed8'" Coding="'data64' 0x48+'modreg.R'+'modreg.B':8 0x6b:8 0x3:2 'modreg.Ord':3 'modreg.Ord':3 'signedimm':8"/>
+      <Operands Name="'modreg:reg64', {qword} 'omem:mem32'" Coding="'data64' 0x48+'modreg.R'+'modreg.B':8 0x69:8 0x3:2 'modreg.Ord':3 'modreg.Ord':3 'omem':32"/>
       <Operands Name="'modreg:reg16', {word} 'rm:rm16', {byte} 'isigned:signed8'" op="'data16' 0x6b:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" Coding="native 'isigned':8"/>
       <Operands Name="'modreg:reg16', {word} 'rm:rm16', 'omem:mem16'" op="'data16' 0x69:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" Coding="native 'omem':16"/>
       <Operands Name="'modreg:reg16', {word} 'rm:rm16'" op="'data16' 0x0f:8 0xaf:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
@@ -1472,9 +1488,9 @@
       <Operands Name="dword [rdi],dx" Coding="'data32' 'addr64' 0x40:8 0x0f:8 0x6d:8"/>
       <Operands Name="dword ['seg:segment':rdi],dx" Coding="'data32' 'addr64' 'seg.Prefix':8 0x40:8 0x0f:8 0x6d:8"/>
     </Opcode>
-    <Opcode Name="insb" op="0x6c:8" Class="twobyte"/>
-    <Opcode Name="insw" op="'data16' 0x6d:8" Class="twobyte"/>
-    <Opcode Name="insd" op="'data32' 0x6d:8" Class="twobyte"/>
+    <Opcode Name="insb" op="0x6c:8" Class="single"/>
+    <Opcode Name="insw" op="'data16' 0x6d:8" Class="single"/>
+    <Opcode Name="insd" op="'data32' 0x6d:8" Class="single"/>
     <Opcode Name="inc" op="0x8" mod="0" Class="incdec"/>
     <Opcode Name="int">
       <Operands Name="{byte}'omem:mem8'" Coding="0x40:8 0xcd:8 'omem':8"/>
@@ -1489,8 +1505,9 @@
     <Opcode Name="iret" op="0xcf" Class="single"/>
     <Opcode Name="iretw" op="'data16' 0xcf" Class="single"/>
     <Opcode Name="iretd">
-      <Operands Name="empty" Coding="'data32' 0x48:8 0x99:8"/>
+      <Operands Name="empty" Coding="'data32' 0x40:8 0xcf:8"/>
     </Opcode>
+    <Opcode Name="iretq" op="0x48:8 0xcf:8" Class="single"/>
     <Opcode Name="ja" sel="7" Class="branch"/>
     <Opcode Name="jae" sel="3" Class="branch"/>
     <Opcode Name="jb" sel="2" Class="branch"/>
@@ -1523,9 +1540,10 @@
       <Operands Name="'modreg:reg16rm'" op="'data16' 0xff:8" mod="4" R="0" W="0"/>
       <Operands Name="'modreg:reg32rm'" op="'data32' 0xff:8" mod="4" R="0" W="0"/>
       <Operands Name="'modreg:reg64rm'" op="'data64' 0xff:8" mod="4" R="0" W="0"/>
-      <Operands Name="{word} 'rm:rm'" op="'data16' 0xff:8" mod="4" R="0" W="0"/>
-      <Operands Name="{dword} 'rm:rm'" op="'data32' 0xff:8" mod="4" R="0" W="0"/>
-      <Operands Name="{qword} 'rm:rm'" op="'data32' 0xff:8" mod="2" R="0" W="8"/>
+      <Operands Name="'rm:rm'" op="0xff:8" mod="4" R="0" W="0"/>
+      <Operands Name="word 'rm:rm'" op="'data16' 0xff:8" mod="4" R="0" W="0"/>
+      <Operands Name="dword 'rm:rm'" op="'data32' 0xff:8" mod="4" R="0" W="0"/>
+      <Operands Name="qword 'rm:rm'" op="'data64' 0xff:8" mod="4" R="0" W="0"/>
     </Opcode>
     <Opcode Name="jna" sel="6" Class="branch"/>
     <Opcode Name="jnae" sel="2" Class="branch"/>
@@ -1560,7 +1578,7 @@
     <Opcode Name="lidt" op="0x0f:8 1:8" mod="3" Class="nostrictrm"/>
     <Opcode Name="lldt" op="0x0f:8 0  :8" mod="2" Class="nostrictrm"/>
     <Opcode Name="lmsw" op="0x0f:8 1:8" mod="6">
-      <Operands Name="'reg:reg16rm'" op="'data16' 0x0f:8 1:8" mod="6" R="0" W="0"/>
+      <Operands Name="'reg:reg16rm'" op="0x0f:8 1:8" mod="6" R="0" W="0"/>
     </Opcode>
     <Opcode Name="lods">
       <Operands Name="byte [ds:si]" Coding="'addr16' 0x40:8 0xac:8"/>
@@ -1624,27 +1642,24 @@
       <Operands Name="al, {byte}['seg:segment':'omem:address16']" Coding="'seg.Prefix':8 'addr16' 0x40:8 0xa0:8 'omem':16"/>
       <Operands Name="al, {byte}['omem:address32']" Coding="'addr32' 0x40:8 0xa0:8 'omem':32"/>
       <Operands Name="al, {byte}['seg:segment':'omem:address32']" Coding="'seg.Prefix':8 'addr32' 0x40:8 0xa0:8 'omem':32"/>
-      <Operands Name="al, {byte}['omem:address64']" Coding="'addr64' 0x40:8 0xa0:8 'omem':32"/>
 
       <Operands Name="ax, {word}['omem:address16']" Coding="'data16' 'addr16' 0x40:8 0xa1:8 'omem':16"/>
       <Operands Name="ax, {word}['seg:segment':'omem:address16']" Coding="'seg.Prefix':8 'data16' 'addr16' 0x40:8 0xa1:8 'omem':16"/>
       <Operands Name="ax, {word}['omem:address32']" Coding="'data16' 'addr32' 0x40:8 0xa1:8 'omem':32"/>
       <Operands Name="ax, {word}['seg:segment':'omem:address32']" Coding="'seg.Prefix':8 'data16' 'addr32' 0x40:8 0xa1:8 'omem':32"/>
-      <Operands Name="ax, {word}['omem:address64']" Coding="'data16' 'addr64' 0x40:8 0xa1:8 'omem':32"/>
 
       <Operands Name="eax, {dword}['omem:address16']" Coding="'data32' 'addr16' 0x40:8 0xa1:8 'omem':16"/>
       <Operands Name="eax, {dword}['seg:segment':'omem:address16']" Coding="'seg.Prefix':8 'data32' 'addr16' 0x40:8 0xa1:8 'omem':16"/>
       <Operands Name="eax, {dword}['omem:address32']" Coding="'data32' 'addr32' 0x40:8 0xa1:8 'omem':32"/>
       <Operands Name="eax, {dword}['seg:segment':'omem:address32']" Coding="'seg.Prefix':8 'data32' 'addr32' 0x40:8 0xa1:8 'omem':32"/>
-      <Operands Name="eax, {dword}['omem:address64']" Coding="'data32' 'addr64' 0x40:8 0xa1:8 'omem':32"/>
 
-      <Operands Name="rax, {qword}['omem:address64']" Coding="'data64' 'addr32' 0x48:8 0xa1:8 'omem':32"/>
-      <Operands Name="rax, {qword}['seg:segment':'omem:address64']" Coding="'seg.Prefix':8 'data64' 'addr32' 0x48:8 0xa1:8 'omem':32"/>
-      <Operands Name="'modreg:reg8', {byte}'omem:mem8'" Coding="0x40+'modreg.R':8 0x16:5 'modreg.Ord':3 'omem':8"/>
-      <Operands Name="'modreg:reg16', {word} 'omem:mem16'" Coding="'data16' 0x40+'modreg.R':8 0x17:5 'modreg.Ord':3 'omem':16"/>
-      <Operands Name="'modreg:reg32', {dword} 'omem:mem32'" Coding="'data32' 0x40+'modreg.R':8 0x17:5 'modreg.Ord':3 'omem':32"/>
-      <Operands Name="'modreg:reg64', {qword} 'omem:mem32'" Coding="'data64' 0x48+'modreg.R':8 0x17:5 'modreg.Ord':3 'omem':32"/>
+      <Operands Name="'modreg:reg8', {byte}'omem:mem8'" Coding="0x40+'modreg.B':8 0x16:5 'modreg.Ord':3 'omem':8"/>
+      <Operands Name="'modreg:reg8t', {byte}'omem:mem8'" Coding="0x40 0x40+'modreg.B':8 0x16:5 'modreg.Ord':3 'omem':8"/>
+      <Operands Name="'modreg:reg16', {word} 'omem:mem16'" Coding="'data16' 0x40+'modreg.B':8 0x17:5 'modreg.Ord':3 'omem':16"/>
+      <Operands Name="'modreg:reg32', {dword} 'omem:mem32'" Coding="'data32' 0x40+'modreg.B':8 0x17:5 'modreg.Ord':3 'omem':32"/>
+      <Operands Name="'modreg:reg64', {qword} 'omem:mem32'" Coding="'data64' 0x40+'modreg.B':8 0x17:5 'modreg.Ord':3 'omem':32"/>
       <Operands Name="'modreg:reg8', {byte} 'rm:rm8'" op="0x8a:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
+      <Operands Name="'modreg:reg8t', {byte} 'rm:rm8'" mand="0x40:8" op="0x8a:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
       <Operands Name="'modreg:reg16', {word} 'rm:rm16'" op="'data16' 0x8b:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
       <Operands Name="'modreg:reg32', {dword} 'rm:rm32'" op="'data32' 0x8b:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
       <Operands Name="'modreg:reg64', {qword} 'rm:rm64'" op="'data64' 0x8b:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
@@ -1659,20 +1674,17 @@
       <Operands Name="{byte} ['seg:segment':'omem:address16'],al" Coding="'seg.Prefix':8 'addr16' 0x40:8 0xa2:8 'omem':16"/>
       <Operands Name="{byte} ['omem:address32'],al" Coding="'addr32' 0x40:8 0xa2:8 'omem':32"/>
       <Operands Name="{byte} ['seg:segment':'omem:address32'],al" Coding="'seg.Prefix':8 'addr32' 0x40:8 0xa2:8 'omem':32"/>
-      <Operands Name="{byte} ['omem:address64'],al" Coding="'addr64' 0x40:8 0xa2:8 'omem':32"/>
       <Operands Name="{word} ['omem:address16'],ax" Coding="'data16' 'addr16' 0x40:8 0xa3:8 'omem':16"/>
       <Operands Name="{word} ['seg:segment':'omem:address16'],ax" Coding="'seg.Prefix':8 'data16' 'addr16' 0x40:8 0xa3:8 'omem':16"/>
       <Operands Name="{word} ['omem:address32'],ax" Coding="'data16' 'addr32' 0x40:8 0xa3:8 'omem':32"/>
       <Operands Name="{word} ['seg:segment':'omem:address32'],ax" Coding="'seg.Prefix':8 'data16' 'addr32' 0x40:8 0xa3:8 'omem':32"/>
-      <Operands Name="{word} ['omem:address64'],ax" Coding="'data16' 'addr64' 0x40:8 0xa3:8 'omem':32"/>
       <Operands Name="{dword} ['omem:address16'],eax" Coding="'data32' 'addr16' 0x40:8 0xa3:8 'omem':16"/>
       <Operands Name="{dword} ['seg:segment':'omem:address16'],eax" Coding="'seg.Prefix':8 'data32' 'addr16' 0x40:8 0xa3:8 'omem':16"/>
       <Operands Name="{dword} ['omem:address32'],eax" Coding="'data32' 'addr32' 0x40:8 0xa3:8 'omem':32"/>
-      <Operands Name="{dword} ['omem:address64'],eax" Coding="'data32' 'addr64' 0x40:8 0xa3:8 'omem':32"/>
       <Operands Name="{dword} ['seg:segment':'omem:address32'],eax" Coding="'seg.Prefix':8 'data32' 'addr32' 0x40:8 0xa3:8 'omem':32"/>
-      <Operands Name="{qword} ['omem:address64'],rax" Coding="'data64' 'addr32' 0x48:8 0xa3:8 'omem':16"/>
-      <Operands Name="{qword} ['seg:segment':'omem:address64'],rax" Coding="'seg.Prefix':8 'data64' 'addr32' 0x48:8 0xa3:8 'omem':16"/>
+
       <Operands Name="{byte} 'rm:rm', 'modreg:reg8'" op="0x88:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
+      <Operands Name="{byte} 'rm:rm', 'modreg:reg8t'" mand="0x40:8" op="0x88:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
       <Operands Name="{word} 'rm:rm', 'modreg:reg16'" op="'data16' 0x89:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
       <Operands Name="{dword} 'rm:rm', 'modreg:reg32'" op="'data32' 0x89:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
       <Operands Name="{qword} 'rm:rm', 'modreg:reg64'" op="'data64' 0x89:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
@@ -1681,7 +1693,7 @@
       <Operands Name="'segm:segment','modreg:reg32rm'" op="0x8e:8" mod="'segm.Ord'" R="0" W="0"/>
       <Operands Name="'segm:segment','modreg:reg64rm'" op="0x8e:8" mod="'segm.Ord'" R="0" W="0"/>
       <Operands Name="{word} 'rm:rm','segm:segment'" op="0x8c:8" mod="'segm.Ord'" R="0" W="0"/>
-      <Operands Name="'modreg:reg16rm','segm:segment'" op="0x8c:8" mod="'segm.Ord'" R="0" W="0"/>
+      <Operands Name="'modreg:reg16rm','segm:segment'" op="'data16' 0x8c:8" mod="'segm.Ord'" R="0" W="0"/>
       <Operands Name="'modreg:reg32rm','segm:segment'" op="0x8c:8" mod="'segm.Ord'" R="0" W="0"/>
       <Operands Name="'modreg:reg64rm','segm:segment'" op="0x8c:8" mod="'segm.Ord'" R="0" W="0"/>
       <Operands Name="'rm:reg8rm', {byte}'omem:mem8'" op="0xc6:8" mod="0" Coding="native 'omem':8"/>
@@ -1720,9 +1732,9 @@
       <Operands Name="'modreg:reg16', {word} 'rm:rm16'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" op="'data16' 'op1'" />
       <Operands Name="'modreg:reg32', {dword} 'rm:rm32'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" op="'data32' 'op1'" />
       <Operands Name="'modreg:reg64', {qword} 'rm:rm64'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" op="'data64' 'op1'" />
-      <Operands Name="{word} 'rm:rm16', 'modreg:reg16'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" op="'data16' 'op1'" />
-      <Operands Name="{dword} 'rm:rm32', 'modreg:reg32'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" op="'data32'  'op1'" />
-      <Operands Name="{qword} 'rm:rm64', 'modreg:reg64'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" op="'data64'  'op1'" />
+      <Operands Name="{word} 'rm:rm16', 'modreg:reg16'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" op="'data16' 'op1'+1:8" />
+      <Operands Name="{dword} 'rm:rm32', 'modreg:reg32'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" op="'data32'  'op1'+1:8" />
+      <Operands Name="{qword} 'rm:rm64', 'modreg:reg64'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" op="'data64'  'op1'+1:8" />
     </Opcode>
     <Opcode Name="movsb" op="0xa4:8" Class="single"/>
     <Opcode Name="movsw" op="'data16' 0xa5" Class="single"/>
@@ -1780,13 +1792,13 @@
       <Operands Name="dx,dword [rsi]" Coding="'data32' 'addr64' 0x40:8 0x0f:8 0x6f:8"/>
       <Operands Name="dx,dword ['seg:segment':rsi]" Coding="'data64' 'addr32' 'seg.Prefix':8 0x40:8 0x0f:8 0x6f:8"/>
     </Opcode>
-    <Opcode Name="outsb" op="0x6e:8" Class="twobyte"/>
-    <Opcode Name="outsw" op="'data16' 0x6f:8" Class="twobyte"/>
-    <Opcode Name="outsd" op="'data32' 0x6f:8" Class="twobyte"/>
+    <Opcode Name="outsb" op="0x6e:8" Class="single"/>
+    <Opcode Name="outsw" op="'data16' 0x6f:8" Class="single"/>
+    <Opcode Name="outsd" op="'data32' 0x6f:8" Class="single"/>
     <Opcode Name="pop">
-      <Operands Name="'modreg:reg16'" Coding="'data16' 0x48+'modreg.R':8 0xb:5 'modreg.Ord':3"/>
-      <Operands Name="'modreg:reg32'" Coding="'data32' 0x48+'modreg.R':8 0xb:5 'modreg.Ord':3"/>
-      <Operands Name="'modreg:reg64'" Coding="'data64' 0x40+'modreg.R':8 0xb:5 'modreg.Ord':3"/>
+      <Operands Name="'modreg:reg16'" Coding="'data16' 0x40+'modreg.B':8 0xb:5 'modreg.Ord':3"/>
+      <Operands Name="'modreg:reg32'" Coding="'data32' 0x40+'modreg.B':8 0xb:5 'modreg.Ord':3"/>
+      <Operands Name="'modreg:reg64'" Coding="'data64' 0x40+'modreg.B':8 0xb:5 'modreg.Ord':3"/>
       <Operands Name="word 'rm:rm'" op="'data16' 0x8f:8" mod="0" R="0" W="0"/>
       <Operands Name="dword 'rm:rm'" op="'data32' 0x8f:8" mod="0" R="0" W="0"/>
       <Operands Name="qword 'rm:rm'" op="'data64' 0x8f:8" mod="0" R="0" W="0"/>
@@ -1801,9 +1813,7 @@
     <Opcode Name="popf" op="0x9d:8" Class="single"/>
     <Opcode Name="popfw" op="'data16' 0x9d:8" Class="single"/>
     <Opcode Name="popfd" op="'data32' 0x9d:8" Class="single"/>
-    <Opcode Name="popfq" >
-      <Operands Name="empty" Coding="'data64' 0x48:8 0x9d:8"/>
-    </Opcode>
+    <Opcode Name="popfq" op="0x9d:8" Class="single"/>
     <Opcode Name="prefetchnta">
       <Operands Name="'rm:rm'" op="0x0f:8 0x18:8" mod="0" B="0" X="0" R="0" W="0"/>
     </Opcode>
@@ -1818,13 +1828,13 @@
       <Operands Name="'rm:rm'" op="0x0f:8 0x18:8" mod="3" B="0" X="0" R="0" W="0"/>
     </Opcode>
     <Opcode Name="push">
-      <Operands Name="'modreg:reg16'" Coding="'data16' 0x48+'modreg.R':8 0xa:5 'modreg.Ord':3"/>
-      <Operands Name="'modreg:reg32'" Coding="'data32' 0x48+'modreg.R':8 0xa:5 'modreg.Ord':3"/>
-      <Operands Name="'modreg:reg64'" Coding="'data64' 0x40+'modreg.R':8  0xa:5 'modreg.Ord':3"/>
+      <Operands Name="'modreg:reg16'" Coding="'data16' 0x40+'modreg.B':8 0xa:5 'modreg.Ord':3"/>
+      <Operands Name="'modreg:reg32'" Coding="'data32' 0x40+'modreg.B':8 0xa:5 'modreg.Ord':3"/>
+      <Operands Name="'modreg:reg64'" Coding="'data64' 0x40+'modreg.B':8  0xa:5 'modreg.Ord':3"/>
       <Operands Name="{byte} 'omem:signed8'" Coding="0x40:8 0x6a:8 'omem':8"/>
       <Operands Name="'omem:address16'" Coding="'data16' 0x40:8 0x68:8 'omem':16"/>
       <Operands Name="'omem:address32'" Coding="'data32' 0x40:8 0x68:8 'omem':32"/>
-      <Operands Name="'omem:address64'" Coding="'data64' 0x40:8 0x68:8 'omem'32"/>
+      <Operands Name="'omem:address64'" Coding="'data64' 0x40:8 0x68:8 'omem':32"/>
       <Operands Name="word 'omem:mem16'" Coding="'data16' 0x40:8 0x68:8 'omem':16"/>
       <Operands Name="dword 'omem:mem32'" Coding="'data32' 0x40:8 0x68:8 'omem':32"/>
       <Operands Name="qword 'omem:mem32'" Coding="'data64' 0x40:8 0x68:8 'omem':32"/>
@@ -1859,7 +1869,7 @@
     <Opcode Name="ror" mod="1" Class="shift"/>
     <Opcode Name="rsm" op="0xaa:8" Class="twobyte"/>
     <Opcode Name="sahf" op="0x9e:8" Class="single"/>
-    <Opcode Name="sal" mod="6" Class="shift"/>
+    <Opcode Name="sal" mod="4" Class="shift"/>
     <Opcode Name="sar" mod="7" Class="shift"/>
     <Opcode Name="sbb" op1="0x1c:8" op2="0x18" mod="3" Class="math"/>
     <Opcode Name="scas">
@@ -1986,12 +1996,14 @@
       <Operands Name="al, {byte} 'omem:mem8'" Coding="0x40:8 0xa8:8 'omem':8"/>
       <Operands Name="ax, {word} 'omem:mem16'" Coding="'data16' 0x40:8 0xa9:8 'omem':16"/>
       <Operands Name="eax, {dword} 'omem:mem32'" Coding="'data32' 0x40:8 0xa9:8 'omem':32"/>
-      <Operands Name="rax, {qword} 'omem:mem32'" Coding="'data32' 0x48:8 0xa9:8 'omem'32"/>
+      <Operands Name="rax, {qword} 'omem:mem32'" Coding="'data32' 0x48:8 0xa9:8 'omem':32"/>
       <Operands Name="{byte}'rm:rm', 'modreg:reg8'" op="0x84:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
+      <Operands Name="{byte}'rm:rm', 'modreg:reg8t'" mand="0x40:8" op="0x84:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
       <Operands Name="{word}'rm:rm', 'modreg:reg16'" op="'data16' 0x85" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
       <Operands Name="{dword}'rm:rm', 'modreg:reg32'" op="'data32' 0x85" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
       <Operands Name="{qword}'rm:rm', 'modreg:reg64'" op="'data64' 0x85" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
       <Operands Name="'modreg:reg8', {byte}'rm:rm'" op="0x84:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
+      <Operands Name="'modreg:reg8t', {byte}'rm:rm'" mand="0x40:8" op="0x84:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
       <Operands Name="'modreg:reg16', {word}'rm:rm'" op="'data16' 0x85" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
       <Operands Name="'modreg:reg32', {dword}'rm:rm'" op="'data32' 0x85" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
       <Operands Name="'modreg:reg64', {qword}'rm:rm'" op="'data64' 0x85" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
@@ -2002,37 +2014,40 @@
       <Operands Name="byte 'rm:rm', {byte} 'omem:mem8'" op="0xf6:8" mod="0" Coding="native 'omem':8" R="0" W="0"/>
       <Operands Name="word 'rm:rm', {word} 'omem:mem16'" op="'data16' 0xf7:8" mod="0" Coding="native 'omem':16" R="0" W="0"/>
       <Operands Name="dword 'rm:rm', {dword} 'omem:mem32'" op="'data32' 0xf7:8" mod="0" Coding="native 'omem':32" R="0" W="0"/>
-      <Operands Name="qword 'rm:rm', {qword} 'omem:mem32'" op="'data64' 0xf7:8" mod="0" Coding="native 'omem':32" R="0" W="0"/>
+      <Operands Name="qword 'rm:rm', {qword} 'omem:mem32'" op="'data64' 0xf7:8" mod="0" Coding="native 'omem':32" R="0" W="8"/>
     </Opcode>
     <Opcode Name="ud2" op="0x0b:8" Class="twobyte"/>
     <Opcode Name="verr" op="0x0f:8 0:8" mod="4">
-      <Operands Name="'reg:reg16rm'" op="'data16' 0x0f:8 0:8" mod="4" R="0" W="0"/>
+      <Operands Name="'reg:reg16rm'" op="0x0f:8 0:8" mod="4" R="0" W="0"/>
     </Opcode>
     <Opcode Name="verw" op="0x0f:8 0:8" mod="5">
-      <Operands Name="'reg:reg16rm'" op="'data16' 0x0f:8 0:8" mod="5" R="0" W="0"/>
+      <Operands Name="'reg:reg16rm'" op="0x0f:8 0:8" mod="5" R="0" W="0"/>
     </Opcode>
     <Opcode Name="wait" op="0x9b:8" Class="single"/>
     <Opcode Name="wbinvd" op="0x09:8" Class="twobyte"/>
     <Opcode Name="wrmsr" op="0x30:8" Class="twobyte"/>
     <Opcode Name="xadd">
       <Operands Name="{byte} 'rm:rm8','modreg:reg8'" op="0x0f:8 0xc0:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
+      <Operands Name="{byte} 'rm:rm8','modreg:reg8t'" mand="0x40:8" op="0x0f:8 0xc0:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
       <Operands Name="{word} 'rm:rm16','modreg:reg16'" op="'data16' 0x0f:8 0xc1:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
       <Operands Name="{dword} 'rm:rm32','modreg:reg32'" op="'data32' 0x0f:8 0xc1:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
       <Operands Name="{qword} 'rm:rm64','modreg:reg64'" op="'data64' 0x0f:8 0xc1:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
     </Opcode>
 
     <Opcode Name="xchg">
-      <Operands Name="ax, 'modreg:reg16'" Coding="'data16' 0x40+'modreg.R':8 0x12:5 'modreg.Ord':3"/>
-      <Operands Name="eax, 'modreg:reg32'" Coding="'data32' 0x40+'modreg.R':8 0x12:5 'modreg.Ord':3"/>
-      <Operands Name="rax, 'modreg:reg64'" Coding="'data64' 0x48+'modreg.R':8 0x12:5 'modreg.Ord':3"/>
-      <Operands Name="'modreg:reg16', ax" Coding="'data16' 0x40+'modreg.R':8 0x12:5 'modreg.Ord':3"/>
-      <Operands Name="'modreg:reg32', eax" Coding="'data32' 0x40+'modreg.R':8 0x12:5 'modreg.Ord':3"/>
-      <Operands Name="'modreg:reg64', rax" Coding="'data64' 0x48+'modreg.R':8 0x12:5 'modreg.Ord':3"/>
+      <Operands Name="ax, 'modreg:reg16'" Coding="'data16' 0x40+'modreg.B':8 0x12:5 'modreg.Ord':3"/>
+      <Operands Name="eax, 'modreg:reg32'" Coding="'data32' 0x40+'modreg.B':8 0x12:5 'modreg.Ord':3"/>
+      <Operands Name="rax, 'modreg:reg64'" Coding="'data64' 0x48+'modreg.B':8 0x12:5 'modreg.Ord':3"/>
+      <Operands Name="'modreg:reg16', ax" Coding="'data16' 0x40+'modreg.B':8 0x12:5 'modreg.Ord':3"/>
+      <Operands Name="'modreg:reg32', eax" Coding="'data32' 0x40+'modreg.B':8 0x12:5 'modreg.Ord':3"/>
+      <Operands Name="'modreg:reg64', rax" Coding="'data64' 0x48+'modreg.B':8 0x12:5 'modreg.Ord':3"/>
       <Operands Name="'modreg:reg8', {byte}'rm:rm8'" op="0x86:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
+      <Operands Name="'modreg:reg8t', {byte}'rm:rm8'" mand="0x40:8" op="0x86:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
       <Operands Name="'modreg:reg16', {word}'rm:rm16'" op="'data16' 0x87:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
       <Operands Name="'modreg:reg32', {dword}'rm:rm32'" op="'data32' 0x87:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
       <Operands Name="'modreg:reg64', {qword}'rm:rm64'" op="'data64' 0x87:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
       <Operands Name="{byte}'rm:rm8', 'modreg:reg8'" op="0x86:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
+      <Operands Name="{byte}'rm:rm8', 'modreg:reg8t'" mand="0x40:8" op="0x86:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
       <Operands Name="{word}'rm:rm16', 'modreg:reg16'" op="'data16' 0x87:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
       <Operands Name="{dword}'rm:rm32', 'modreg:reg32'" op="'data32' 0x87:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
       <Operands Name="{qword}'rm:rm64', 'modreg:reg64'" op="'data64' 0x87:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
@@ -2073,7 +2088,7 @@
     <Opcode Name="andpd" mand="0x66:8" op="0x0f:8 0x54:8" Class="ssemmxrm"/>
     <Opcode Name="andps" mand="" op="0x0f:8 0x54:8" Class="ssemmxrm"/>
     <Opcode Name="blendpd" mand="0x66:8" op="0x0f:8 0x3a:8 0x0d:8" Class="sseimm"/>
-    <Opcode Name="blendps" mand="" op="0x0f:8 0x3a:8 0x0d:8" Class="sseimm"/>
+    <Opcode Name="blendps" mand="0x66" op="0x0f:8 0x3a:8 0x0c:8" Class="sseimm"/>
     <Opcode Name="cmppd" mand="0x66:8" op="0x0f:8 0xc2:8" Class="ssepshu"/>
     <Opcode Name="cmpps" mand="" op="0x0f:8 0xc2:8" Class="ssepshu"/>
     <Opcode Name="cvtdq2pd" mand="0xf3:8" op="0x0f:8 0xe6:8" Class="ssemmxrm"/>
@@ -2101,7 +2116,7 @@
     <Opcode Name="divpd" mand="0x66:8" op="0x0f:8 0x5e:8" Class="ssemmxrm"/>
     <Opcode Name="divps" mand="" op="0x0f:8 0x5e:8" Class="ssemmxrm"/>
     <Opcode Name="divsd" mand="0xf2:8" op="0x0f:8 0x5e:8" Class="ssemmxrm"/>
-    <Opcode Name="divss" mand="0xf3:7" op="0x0f:8 0x5e:8" Class="ssemmxrm"/>
+    <Opcode Name="divss" mand="0xf3:8" op="0x0f:8 0x5e:8" Class="ssemmxrm"/>
     <Opcode Name="dppd" mand="0x66:8" op="0x0f:8 0x3a:8 0x40:8" Class="sseimm"/>
     <Opcode Name="dpps" mand="" op="0x0f:8 0x3a:8 0x40:8"  Class="sseimm"/>
     <Opcode Name="hsubpd" mand="0x66:8" op="0x0f:8 0x7d:8" Class="ssemmxrm"/>
@@ -2109,22 +2124,22 @@
     <Opcode Name="insertps" mand="0x66:8" op="0x0f:8 0x3a:8 0x21:8" Class="sseimm"/>
     <Opcode Name="lddqu" mand="0xf2:8" op="0x0f:8 0xf0:8" Class="ssemmxrm"/>
     <Opcode Name="maskmovdqu">
-      <Operands Name="'rm:sserm','modreg:regsse'" mand="0x66:8" op="0x0f:8 0xf7:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'"/>
+      <Operands Name="'modreg:regsse','rm:sserm'" mand="0x66:8" op="0x0f:8 0xf7:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'"/>
     </Opcode>
     <Opcode Name="maskmovq">
-      <Operands Name="'rm:mmrm','modreg:regmm'" mand="0x66:8" op="0x0f:8 0xf7:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'"/>
+      <Operands Name="'modreg:regmm','rm:mmrm'" mand="" op="0x0f:8 0xf7:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'"/>
     </Opcode>
 
     <Opcode Name="maxps" mand="" op="0x0f:8 0x5f:8" Class="ssemmxrm"/>
     <Opcode Name="maxpd" mand="0x66:8" op="0x0f:8 0x5f:8" Class="ssemmxrm"/>
     <Opcode Name="maxps" mand="" op="0x0f:8 0x5f:8" Class="ssemmxrm"/>
     <Opcode Name="maxsd" mand="0xf2:8" op="0x0f:8 0x5f:8" Class="ssemmxrm"/>
-    <Opcode Name="maxss" mand="0xf3:7" op="0x0f:8 0x5f:8" Class="ssemmxrm"/>
+    <Opcode Name="maxss" mand="0xf3:8" op="0x0f:8 0x5f:8" Class="ssemmxrm"/>
     <Opcode Name="mfence" op="0x0f:8 0xae:8 0xf0:8" Class="single"/>
     <Opcode Name="minpd" mand="0x66:8" op="0x0f:8 0x5d:8" Class="ssemmxrm"/>
     <Opcode Name="minps" mand="" op="0x0f:8 0x5d:8" Class="ssemmxrm"/>
     <Opcode Name="minsd" mand="0xf2:8" op="0x0f:8 0x5d:8" Class="ssemmxrm"/>
-    <Opcode Name="minss" mand="0xf3:7" op="0x0f:8 0x5d:8" Class="ssemmxrm"/>
+    <Opcode Name="minss" mand="0xf3:8" op="0x0f:8 0x5d:8" Class="ssemmxrm"/>
     <Opcode Name="monitor" op="0x0f:8 0x01:8 0xc8:8" Class="single"/>
     <Opcode Name="movapd" mand="0x66" op1="0x28:8" Class="ssemove"/>
     <Opcode Name="movaps" mand="" op1="0x28:8" Class="ssemove"/>
@@ -2136,26 +2151,30 @@
 
     </Opcode>
     <Opcode Name="movq">
-      <Operands Name="'modreg:regmm','rm:rm64'" mand="" op="0x0f:8 0x6e:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'"/>
-      <Operands Name="'modreg:regsse','rm:rm64'" mand="0x66:8" op="0x0f:8 0x6e:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'"/>
-      <Operands Name="'rm:rm64','modreg:regmm'" mand="" op="0x0f:8 0x7e:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'"/>
-      <Operands Name="'rm:rm64','modreg:regsse'" mand="0x66:8" op="0x0f:8 0x7e:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'"/>
+      <Operands Name="'rm:regmmrm','modreg:reg64'" mand="" op="0x0f:8 0x6e:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'"/>
+      <Operands Name="'modreg:regmm','rm:rm64'" mand="" op="0x0f:8 0x6f:8" mod="'modreg.Ord'" R="'modreg.R'" W="0"/>
+      <Operands Name="'modreg:regsse','rm:reg64rm'" mand="0x66:8" op="0x0f:8 0x6e:8" mod="'modreg.Ord'" R="'modreg.R'" W="8"/>
+      <Operands Name="'modreg:regsse','rm:rm64'" mand="0xf3" op="0x0f:8 0x7e:8" mod="'modreg.Ord'" R="'modreg.R'" W="0"/>
+      <Operands Name="'rm:reg64rm','modreg:regmm'" mand="" op="0x0f:8 0x7e:8" mod="'modreg.Ord'" R="'modreg.R'" W="8"/>
+      <Operands Name="'rm:rm64','modreg:regmm'" mand="" op="0x0f:8 0x7f:8" mod="'modreg.Ord'" R="'modreg.R'" W="0"/>
+      <Operands Name="'modreg:reg64rm','modreg:regsse'" mand="0x66:8" op="0x0f:8 0x7e:8" mod="'modreg.Ord'" R="'modreg.R'" W="8"/>
+      <Operands Name="'rm:rm64','modreg:regsse'" mand="0x66:8" op="0x0f:8 0xd6:8" mod="'modreg.Ord'" R="'modreg.R'" W="0"/>
 
     </Opcode>
     <Opcode Name="movddup" mand="0xf2:8" op="0x0f:8 0x12:8" Class="ssemmxrm"/>
     <Opcode Name="movdq2q" mand="0xf2:8" op="0x0f:8 0xd6:8" Class="mmsserm"/>
-    <Opcode Name="movdqa" mand="0x66:8" op1="0x0f:8 0x6f:8" Class="ssemove2"/>
-    <Opcode Name="movdqu" mand="0xf3:8" op1="0x0f:8 0x6f:8" Class="ssemove2"/>
+    <Opcode Name="movdqa" mand="0x66:8" op1="0x6f:8" Class="ssemove2"/>
+    <Opcode Name="movdqu" mand="0xf3:8" op1="0x6f:8" Class="ssemove2"/>
     <Opcode Name="movhlps">
       <Operands Name="'modreg:regsse','rm:regsserm'"  mand="" op="0x0f:8 0x12:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'"/>
     </Opcode>
-    <Opcode Name="movhpd" mand="0x66:8" op1="0x0f:8 0x16:8" Class="ssemove3"/>
-    <Opcode Name="movhps" mand="" op1="0x0f:8 0x16:8" Class="ssemove3"/>
+    <Opcode Name="movhpd" mand="0x66:8" op1="0x16:8" Class="ssemove3"/>
+    <Opcode Name="movhps" mand="" op1="0x16:8" Class="ssemove3"/>
     <Opcode Name="movlhps">
       <Operands Name="'modreg:regsse','rm:regsserm'"  mand="" op="0x0f:8 0x16:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'"/>
     </Opcode>
-    <Opcode Name="movlpd" mand="0x66:8" op1="0x0f:8 0x12:8" Class="ssemove3"/>
-    <Opcode Name="movlps" mand="" op1="0x0f:8 0x12:8" Class="ssemove3"/>
+    <Opcode Name="movlpd" mand="0x66:8" op1="0x12:8" Class="ssemove3"/>
+    <Opcode Name="movlps" mand="" op1="0x12:8" Class="ssemove3"/>
     <Opcode Name="movmskpd" mand="0x66" op="0x0f:8 0x50:8" Class="regsse"/>
     <Opcode Name="movmskps" mand="" op="0x0f:8 0x50:8" Class="regsse"/>
     <Opcode Name="movntdq">
@@ -2179,7 +2198,7 @@
     </Opcode>
 
     <Opcode Name="movq2dq">
-      <Operands Name="'reg:regsserm','modreg:regmm'" mand="0xf3:8" op="0x0f:8 0xd6:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'"/>
+      <Operands Name="'modreg:regsse', 'reg:regmmrm'" mand="0xf3:8" op="0x0f:8 0xd6:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'"/>
     </Opcode>
     <Opcode Name="movshdup" mand="0xf3:8" op="0x0f:8 0x16:8" Class="ssemmxrm"/>
     <Opcode Name="movsldup" mand="0xf3:8" op="0x0f:8 0x12:8" Class="ssemmxrm"/>
@@ -2195,7 +2214,7 @@
     <Opcode Name="orps" mand="" op="0x0f:8 0x56:8" Class="ssemmxrm"/>
     <Opcode Name="packssdw" op="0x0f:8 0x6b:8" Class="ssepack"/>
     <Opcode Name="packsswb" op="0x0f:8 0x63:8" Class="ssepack"/>
-    <Opcode Name="packusdw" op="0x0f:8 0x67:8" Class="ssemmxrm"/>
+    <Opcode Name="packusdw" mand="0x66:8" op="0x0f:8 0x38:8 0x2b:8" Class="ssemmxrm"/>
     <Opcode Name="paddb" op="0x0f:8 0xfc:8" Class="ssepack"/>
     <Opcode Name="paddd" op="0x0f:8 0xfe:8" Class="ssepack"/>
     <Opcode Name="paddq" op="0x0f:8 0xd4:8" Class="ssepack"/>
@@ -2204,54 +2223,53 @@
     <Opcode Name="paddusw" op="0x0f:8 0xdd:8" Class="ssepack"/>
     <Opcode Name="paddw" op="0x0f:8 0xfd:8" Class="ssepack"/>
     <Opcode Name="palignr" op="0x0f:8 0x3a:8 0x0f:8">
-      <Operands Name="'modreg:regsse', 'rm:sserm', 'imm:mem8'" mand="0x66:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" Coding="native 'imm':8"/>
       <Operands Name="'modreg:regmm', 'rm:mmrm', 'imm:mem8'" mand="" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" Coding="native 'imm':8"/>
+      <Operands Name="'modreg:regsse', 'rm:sserm', 'imm:mem8'" mand="0x66:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" Coding="native 'imm':8"/>
     </Opcode>
     <Opcode Name="pand" op="0x0f:8 0xdb:8" Class="ssepack"/>
     <Opcode Name="pandn" op="0x0f:8 0xdf:8" Class="ssepack"/>
     <Opcode Name="pavgb" op="0x0f:8 0xe0:8" Class="ssepack"/>
     <Opcode Name="pavgw" op="0x0f:8 0xe3:8" Class="ssepack"/>
     <Opcode Name="pblendw" mand="0x66:8" op="0x0f:8 0x3a:8 0x0e:8" Class="sseimm"/>
-    <Opcode Name="pcmpeqb" op="0x0f:8 0xd4:8" Class="ssepack"/>
-    <Opcode Name="pcmpeqd" op="0x0f:8 0xd6:8" Class="ssepack"/>
-    <Opcode Name="pcmpeqw" op="0x0f:8 0xd5:8" Class="ssepack"/>
+    <Opcode Name="pcmpeqb" op="0x0f:8 0x74:8" Class="ssepack"/>
+    <Opcode Name="pcmpeqd" op="0x0f:8 0x76:8" Class="ssepack"/>
+    <Opcode Name="pcmpeqw" op="0x0f:8 0x75:8" Class="ssepack"/>
     <Opcode Name="pcmpestri" mand="0x66:8" op="0x0f:8 0x3a:8 0x61:8" Class="sseimm"/>
     <Opcode Name="pcmpestrm" mand="0x66:8" op="0x0f:8 0x3a:8 0x60:8" Class="sseimm"/>
     <Opcode Name="pcmpgtb" op="0x0f:8 0x64:8" Class="ssepack"/>
     <Opcode Name="pcmpgtd" op="0x0f:8 0x66:8" Class="ssepack"/>
     <Opcode Name="pcmpgtw" op="0x0f:8 0x65:8" Class="ssepack"/>
-    <Opcode Name="pcmpestri" mand="0x66:8" op="0x0f:8 0x3a:8 0x63:8" Class="sseimm"/>
-    <Opcode Name="pcmpestrm" mand="0x66:8" op="0x0f:8 0x3a:8 0x62:8" Class="sseimm"/>
     <Opcode Name="pextrb" op="0x0f:8 0x3a:8 0x14:8">
       <Operands Name="'rm:rm32', 'modreg:regsse', 'imm:mem8'" mand="0x66:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" Coding="native 'imm':8"/>
     </Opcode>
     <Opcode Name="pextrd" op="0x0f:8 0x3a:8 0x16:8">
       <Operands Name="'rm:rm32', 'modreg:regsse', 'imm:mem8'" mand="0x66:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" Coding="native 'imm':8"/>
     </Opcode>
-    <Opcode Name="pextrq" op=" 0x0f:8 0x3a:8 0x14:8">
-      <Operands Name="'rm:rm64', 'modreg:regsse', 'imm:mem8'" mand="0x66:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" Coding="native 'imm':8"/>
+    <Opcode Name="pextrq" op=" 0x0f:8 0x3a:8 0x16:8">
+      <Operands Name="'rm:rm64', 'modreg:regsse', 'imm:mem8'" mand="0x66:8" mod="'modreg.Ord'" R="'modreg.R'" W="8" Coding="native 'imm':8"/>
     </Opcode>
     <Opcode Name="pextrw">
       <Operands Name="'rm:reg32rm', 'modreg:regmm', 'imm:mem8'" mand="" op="0x0f:8 0xc5:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" Coding="native 'imm':8"/>
-      <Operands Name="'rm:reg32rm', 'modreg:regsse', 'imm:mem8'" mand="" op="0x0f:8 0xc5:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" Coding="native 'imm':8"/>
-      <Operands Name="'rm:reg64rm', 'modreg:regsse', 'imm:mem8'" mand="" op="0x0f:8 0xc5:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" Coding="native 'imm':8"/>
+      <Operands Name="'modreg:reg32', 'rm:regsserm', 'imm:mem8'" mand="0x66:8" op="0x0f:8 0xc5:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" Coding="native 'imm':8"/>
+      <Operands Name="'modreg:reg64', 'rm:regsserm', 'imm:mem8'" mand="0x66:8" op="0x0f:8 0xc5:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" Coding="native 'imm':8"/>
 
       <Operands Name="'rm:rm', 'modreg:regsse', 'imm:mem8'" mand="0x66:8" op="0x0f:8 0x3a:8 0x15:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" Coding="native 'imm':8"/>
     </Opcode>
 
-    <Opcode Name="pinsrb" op="0x0f:8 0x3a:8 0x14:8">
+    <Opcode Name="pinsrb" op="0x0f:8 0x3a:8 0x20:8">
       <Operands Name="'modreg:regsse', 'rm:rm32', 'imm:mem8'" mand="0x66:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" Coding="native 'imm':8"/>
     </Opcode>
-    <Opcode Name="pinsrd" op="0x0f:8 0x3a:8 0x16:8">
+    <Opcode Name="pinsrd" op="0x0f:8 0x3a:8 0x22:8">
       <Operands Name="'modreg:regsse', 'rm:rm32', 'imm:mem8'" mand="0x66:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" Coding="native 'imm':8"/>
     </Opcode>
-    <Opcode Name="pinsrq" op=" 0x0f:8 0x3a:8 0x14:8">
-      <Operands Name="'modreg:regsse', 'rm:rm64', 'imm:mem8'" mand="0x66:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" Coding="native 'imm':8"/>
+    <Opcode Name="pinsrq" op=" 0x0f:8 0x3a:8 0x22:8">
+      <Operands Name="'modreg:regsse', 'rm:rm64', 'imm:mem8'" mand="0x66:8" mod="'modreg.Ord'" R="'modreg.R'" W="8" Coding="native 'imm':8"/>
     </Opcode>
     <Opcode Name="pinsrw">
-      <Operands Name="'modreg:regsse', 'rm:rm32', 'imm:mem8'" mand="0x66:8" op ="0x0f:8 0xc4:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" Coding="native 'imm':8"/>
-      <Operands Name="'modreg:regsse', 'rm:rm64', 'imm:mem8'" mand="0x66:8" op ="0x0f:8 0xc4:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" Coding="native 'imm':8"/>
       <Operands Name="'modreg:regmm', 'rm:rm32', 'imm:mem8'" mand="" op ="0x0f:8 0xc4:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" Coding="native 'imm':8"/>
+      <Operands Name="'modreg:regsse', 'rm:rm32', 'imm:mem8'" mand="0x66:8" op ="0x0f:8 0xc4:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" Coding="native 'imm':8"/>
+      <Operands Name="'modreg:regsse', 'rm:reg64rm', 'imm:mem8'" mand="0x66:8" op ="0x0f:8 0xc4:8" mod="'modreg.Ord'" R="'modreg.R'" W="8" Coding="native 'imm':8"/>
+      <Operands Name="'modreg:regsse', 'rm:rm64', 'imm:mem8'" mand="0x66:8" op ="0x0f:8 0xc4:8" mod="'modreg.Ord'" R="'modreg.R'" W="0" Coding="native 'imm':8"/>
     </Opcode>
     <Opcode Name="pmaddwd" op="0x0f:8 0xf5:8" Class="ssepack"/>
     <Opcode Name="pmaxsw" op="0x0f:8 0xee:8" Class="ssepack"/>
@@ -2277,7 +2295,7 @@
       <Operands Name="'modreg:regmm', 'rm:mmrm', 'imm:mem8'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" Coding="native 'imm':8"/>
     </Opcode>
     <Opcode Name="pslld" op1="0x72:8"  op2="0xf2" mod1="6" Class="sseps"/>
-    <Opcode Name="pslldq" mand="" op="0x0f:8 0x70:8" >
+    <Opcode Name="pslldq" mand="0x66:8" op="0x0f:8 0x73:8" >
       <Operands Name="'modreg:regsserm', 'imm:mem8'" mod="7" Coding="native 'imm':8" R="0" W="0"/>
     </Opcode>
     <Opcode Name="psllq" op1="0x73:8"  op2="0xf3" mod1="6" Class="sseps"/>
@@ -2285,10 +2303,10 @@
     <Opcode Name="psrad" op1="0x72:8"  op2="0xe2" mod1="4" Class="sseps"/>
     <Opcode Name="psraw" op1="0x71:8"  op2="0xe1" mod1="4" Class="sseps"/>
     <Opcode Name="psrld" op1="0x72:8"  op2="0xd2" mod1="2" Class="sseps"/>
-    <Opcode Name="psrldq" mand="" op="0x0f:8 0x73:8" >
+    <Opcode Name="psrldq" mand="0x66:8" op="0x0f:8 0x73:8" >
       <Operands Name="'modreg:regsserm', 'imm:mem8'" mod="3" Coding="native 'imm':8" R="0" W="0"/>
     </Opcode>
-    <Opcode Name="psrlq" op1="0x71:8"  op2="0xd3" mod1="2" Class="sseps"/>
+    <Opcode Name="psrlq" op1="0x73:8"  op2="0xd3" mod1="2" Class="sseps"/>
     <Opcode Name="psrlw" op1="0x71:8"  op2="0xd1" mod1="2" Class="sseps"/>
     <Opcode Name="psubb" op="0x0f:8 0xf8:8" Class="ssepack"/>
     <Opcode Name="psubd" op="0x0f:8 0xfa:8" Class="ssepack"/>
@@ -2299,25 +2317,25 @@
     <Opcode Name="psubusw" op="0x0f:8 0xd9:8" Class="ssepack"/>
     <Opcode Name="punpckhbw" op="0x0f:8 0x68:8" Class="ssepack"/>
     <Opcode Name="punpckhdq" op="0x0f:8 0x6a:8" Class="ssepack"/>
-    <Opcode Name="punpckhqdq" mand="0x66:8" op="0x40:8 0x0f:8 0x6d:8" Class="ssemmxrm"/>
+    <Opcode Name="punpckhqdq" mand="0x66:8" op="0x0f:8 0x6d:8" Class="ssemmxrm"/>
     <Opcode Name="punpckhwd" op="0x0f:8 0x69:8" Class="ssepack"/>
     <Opcode Name="punpcklbw" op="0x0f:8 0x60:8" Class="ssepack"/>
     <Opcode Name="punpckldq" op="0x0f:8 0x62:8" Class="ssepack"/>
-    <Opcode Name="punpcklqdq" mand="0x66:8" op="0x40:8 0x0f:8 0x6c:8" Class="ssemmxrm"/>
+    <Opcode Name="punpcklqdq" mand="0x66:8" op="0x0f:8 0x6c:8" Class="ssemmxrm"/>
     <Opcode Name="punpcklwd" op="0x0f:8 0x61:8" Class="ssepack"/>
     <Opcode Name="pxor" op="0x0f:8 0xef:8" Class="ssepack"/>
     <Opcode Name="rcpps" mand="" op="0x0f:8 0x53:8" Class="ssemmxrm"/>
     <Opcode Name="rcpss" mand="0xf3:8" op="0x0f:8 0x53:8" Class="ssemmxrm"/>
     <Opcode Name="roundpd" mand="0x66:8" op="0x0f:8 0x3a:8 0x09:8" Class="sseimm"/>
-    <Opcode Name="roundps" mand="" op="0x0f:8 0x3a:8 0x08:8" Class="sseimm"/>
-    <Opcode Name="roundsd" mand="0xf2:8" op="0x0f:8 0x3a:8 0x0b:8" Class="sseimm"/>
-    <Opcode Name="roundss" mand="0xf3:8" op="0x0f:8 0x3a:8 0x0a:8" Class="sseimm"/>
+    <Opcode Name="roundps" mand="0x66:8" op="0x0f:8 0x3a:8 0x08:8" Class="sseimm"/>
+    <Opcode Name="roundsd" mand="0x66:8" op="0x0f:8 0x3a:8 0x0b:8" Class="sseimm"/>
+    <Opcode Name="roundss" mand="0x66:8" op="0x0f:8 0x3a:8 0x0a:8" Class="sseimm"/>
     <Opcode Name="rsqrtps" mand="" op="0x0f:8 0x52:8" Class="ssemmxrm"/>
     <Opcode Name="rsqrtss" mand="0xf3:8" op="0x0f:8 0x52:8" Class="ssemmxrm"/>
 
     <Opcode Name="shufpd" mand="0x66" op="0x0f:8 0xc6:8" Class="sseimm"/>
     <Opcode Name="shufps" mand="" op="0x0f:8 0xc6:8" Class="sseimm"/>
-    <Opcode Name="sqrtpd" mand="0x66:8" op="0x0f:8 0x52:8" Class="ssemmxrm"/>
+    <Opcode Name="sqrtpd" mand="0x66:8" op="0x0f:8 0x51:8" Class="ssemmxrm"/>
     <Opcode Name="sqrtps" mand="" op="0x0f:8 0x51:8" Class="ssemmxrm"/>
     <Opcode Name="sqrtsd" mand="0xf2:8" op="0x0f:8 0x51:8" Class="ssemmxrm"/>
     <Opcode Name="sqrtss" mand="0xf3:8" op="0x0f:8 0x51:8" Class="ssemmxrm"/>

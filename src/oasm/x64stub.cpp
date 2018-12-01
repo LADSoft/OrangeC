@@ -149,7 +149,7 @@ char* Lexer::preData =
     "__SECT__\n"
     "%endmacro\n";
 
-void Instruction::Optimize(int pc, bool last)
+void Instruction::Optimize(Section *sect, int pc, bool last)
 {
     if (data && size >= 3 && data[0] == 0x0f && data[1] == 0x0f && (data[2] == 0x9a || data[2] == 0xea))
     {

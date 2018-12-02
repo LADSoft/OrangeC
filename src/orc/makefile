@@ -34,5 +34,5 @@ H_FILES=$(wildcard *.h)
 include ../redirect.mak
 
 DISTRIBUTE: copyexe
-	copy orc.exe ../
+	copy orc.exe ..$(PATHEXT2)
 	copy target.cfg $(DISTBIN)$(PATHEXT2)orc.cfg

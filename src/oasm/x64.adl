@@ -65,6 +65,15 @@
     <Number Name="one">
       <Instance Value="1;1"/>
     </Number>
+    <Number Name="two">
+      <Instance Value="2;2"/>
+    </Number>
+    <Number Name="four">
+      <Instance Value="4;4"/>
+    </Number>
+    <Number Name="eight">
+      <Instance Value="8;8"/>
+    </Number>
     <StateVars>
       <Instance  Name="processorbits" Init="16"/>
     </StateVars>
@@ -446,9 +455,6 @@
     <Address Name="[ss:'base:base32'+esp]" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x36 *'mand' 0x40+'W'+'R'+'base.X':8 'op' 0:2 'mod':3 0x4:3 0:2 'base.Ord':3 4:3"/>
     <Address Name="['seg:segment':'base:base32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix' *'mand' 0x40+'W'+'R'+'base.B':8 'op' 0:2 'mod':3 'base.Ord':3"/>
     <Address Name="['seg:segment':'base:base32'+esp]" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix' *'mand' 0x40+'W'+'R'+'base.X':8 'op' 0:2 'mod':3 0x4:3 0:2 'base.Ord':3 4:3"/>
-    <!--fixme a small inaccuracy in 64 bit mode 
-    <Address Name="[eip+'mem:rel32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x5:3 'mem':32"/>
--->
 	<Address Name="['mem:address32']" Class="rmx,rm,frm,rm8,rm16,rm32,rm32bit" Coding="'addr32' *'mand' 0x40+'W'+'R':8  'op' 0:2 'mod':3 0x05:3 'mem':32"/>
 	<Address Name="[ds:'mem:address32']" Class="rmx,rm,frm,rm8,rm16,rm32,rm32bit" Coding="0x3e:8 'addr32' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x05:3 'mem':32"/>
 	<Address Name="[ss:'mem:address32']" Class="rmx,rm,frm,rm8,rm16,rm32,rm32bit" Coding="0x36:8 'addr32' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x05:3 'mem':32"/>
@@ -510,36 +516,151 @@
     <Address Name="['seg:segment':'base:base32'+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix' *'mand' 0x40+'W'+'R'+'base.B':8 'op' 2:2 'mod':3 'base.Ord':3 'mem':32"/>
 
 
+    <Address Name="[ebp*'o:one']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 5:3 0:8"/>
+    <Address Name="[ebp*'o:one'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 5:3 0:8"/>
+    <Address Name="[ebp*'o:one'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 5:3 'signed':8"/>
+    <Address Name="[ebp*'o:one'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R':8 'op' 2:2 'mod':3 5:3 'mem':32"/>
+    <Address Name="[ds:ebp*'o:one']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x3e:8 *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 5:3 0:8"/>
+    <Address Name="[ds:ebp*'o:one'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x3e:8 *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 5:3 0:8"/>
+    <Address Name="[ds:ebp*'o:one'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x3e:8 *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 5:3 'signed':8"/>
+    <Address Name="[ds:ebp*'o:one'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x3e:8 *'mand' 0x40+'W'+'R':8 'op' 2:2 'mod':3 5:3 'mem':32"/>
+    <Address Name="[ss:ebp*'o:one']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 5:3 0:8"/>
+    <Address Name="[ss:ebp*'o:one'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 5:3 0:8"/>
+    <Address Name="[ss:ebp*'o:one'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 5:3 'signed':8"/>
+    <Address Name="[ss:ebp*'o:one'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R':8 'op' 2:2 'mod':3 5:3 'mem':32"/>
+    <Address Name="['seg:segment':ebp*'o:one']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix':8 *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 5:3 0:8"/>
+    <Address Name="['seg:segment':ebp*'o:one'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix':8 *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 5:3 0:8"/>
+    <Address Name="['seg:segment':ebp*'o:one'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix':8 *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 5:3 'signed':8"/>
+    <Address Name="['seg:segment':ebp*'o:one'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix':8 *'mand' 0x40+'W'+'R':8 'op' 2:2 'mod':3 5:3 'mem':32"/>
+
+    <Address Name="[ebp*'t:two']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 0:8"/>
+    <Address Name="[ebp*'t:two'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 0:8"/>
+    <Address Name="[ebp*'t:two'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 'signed':8"/>
+    <Address Name="[ebp*'t:two'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R':8 'op' 2:2 'mod':3 4:3 0:2 5:3 5:3 'mem':32"/>
+    <Address Name="[ds:ebp*'t:two']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x3e:8 *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 0:8"/>
+    <Address Name="[ds:ebp*'t:two'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x3e:8 *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 0:8"/>
+    <Address Name="[ds:ebp*'t:two'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x3e:8 *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 'signed':8"/>
+    <Address Name="[ds:ebp*'t:two'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x3e:8 *'mand' 0x40+'W'+'R':8 'op' 2:2 'mod':3 4:3 0:2 5:3 5:3 'mem':32"/>
+    <Address Name="[ss:ebp*'t:two']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 0:8"/>
+    <Address Name="[ss:ebp*'t:two'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 0:8"/>
+    <Address Name="[ss:ebp*'t:two'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 'signed':8"/>
+    <Address Name="[ss:ebp*'t:two'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R':8 'op' 2:2 'mod':3 4:3 0:2 5:3 5:3 'mem':32"/>
+    <Address Name="['seg:segment':ebp*'t:two']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix':8 *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 0:8"/>
+    <Address Name="['seg:segment':ebp*'t:two'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix':8 *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 0:8"/>
+    <Address Name="['seg:segment':ebp*'t:two'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix':8 *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 'signed':8"/>
+    <Address Name="['seg:segment':ebp*'t:two'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix':8 *'mand' 0x40+'W'+'R':8 'op' 2:2 'mod':3 4:3 0:2 5:3 5:3 'mem':32"/>
+
+    <Address Name="[r13d*'o:one']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+1:8 'op' 1:2 'mod':3 5:3 0:8"/>
+    <Address Name="[r13d*'o:one'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+1:8 'op' 1:2 'mod':3 5:3 0:8"/>
+    <Address Name="[r13d*'o:one'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+1:8 'op' 1:2 'mod':3 5:3 'signed':8"/>
+    <Address Name="[r13d*'o:one'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+1:8 'op' 2:2 'mod':3 5:3 'mem':32"/>
+    <Address Name="[ds:r13d*'o:one']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x3e:8 *'mand' 0x40+'W'+'R'+1:8 'op' 1:2 'mod':3 5:3 0:8"/>
+    <Address Name="[ds:r13d*'o:one'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x3e:8 *'mand' 0x40+'W'+'R'+1:8 'op' 1:2 'mod':3 5:3 0:8"/>
+    <Address Name="[ds:r13d*'o:one'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x3e:8 *'mand' 0x40+'W'+'R'+1:8 'op' 1:2 'mod':3 5:3 'signed':8"/>
+    <Address Name="[ds:r13d*'o:one'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x3e:8 *'mand' 0x40+'W'+'R'+1:8 'op' 2:2 'mod':3 5:3 'mem':32"/>
+    <Address Name="[ss:r13d*'o:one']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+1:8 'op' 1:2 'mod':3 5:3 0:8"/>
+    <Address Name="[ss:r13d*'o:one'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+1:8 'op' 1:2 'mod':3 5:3 0:8"/>
+    <Address Name="[ss:r13d*'o:one'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+1:8 'op' 1:2 'mod':3 5:3 'signed':8"/>
+    <Address Name="[ss:r13d*'o:one'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+1:8 'op' 2:2 'mod':3 5:3 'mem':32"/>
+    <Address Name="['seg:segment':r13d*'o:one']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix':8 *'mand' 0x40+'W'+'R'+1:8 'op' 1:2 'mod':3 5:3 0:8"/>
+    <Address Name="['seg:segment':r13d*'o:one'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix':8 *'mand' 0x40+'W'+'R'+1:8 'op' 1:2 'mod':3 5:3 0:8"/>
+    <Address Name="['seg:segment':r13d*'o:one'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix':8 *'mand' 0x40+'W'+'R'+1:8 'op' 1:2 'mod':3 5:3 'signed':8"/>
+    <Address Name="['seg:segment':r13d*'o:one'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix':8 *'mand' 0x40+'W'+'R'+1:8 'op' 2:2 'mod':3 5:3 'mem':32"/>
+
+    <Address Name="[r13d*'t:two']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+3:8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 0:8"/>
+    <Address Name="[r13d*'t:two'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+3:8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 0:8"/>
+    <Address Name="[r13d*'t:two'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+3:8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 'signed':8"/>
+    <Address Name="[r13d*'t:two'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+3:8 'op' 2:2 'mod':3 4:3 0:2 5:3 5:3 'mem':32"/>
+    <Address Name="[ds:r13d*'t:two']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x3e:8 *'mand' 0x40+'W'+'R'+3:8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 0:8"/>
+    <Address Name="[ds:r13d*'t:two'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x3e:8 *'mand' 0x40+'W'+'R'+3:8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 0:8"/>
+    <Address Name="[ds:r13d*'t:two'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x3e:8 *'mand' 0x40+'W'+'R'+3:8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 'signed':8"/>
+    <Address Name="[ds:r13d*'t:two'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x3e:8 *'mand' 0x40+'W'+'R'+3:8 'op' 2:2 'mod':3 4:3 0:2 5:3 5:3 'mem':32"/>
+    <Address Name="[ss:r13d*'t:two']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+3:8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 0:8"/>
+    <Address Name="[ss:r13d*'t:two'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+3:8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 0:8"/>
+    <Address Name="[ss:r13d*'t:two'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+3:8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 'signed':8"/>
+    <Address Name="[ss:r13d*'t:two'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+3:8 'op' 2:2 'mod':3 4:3 0:2 5:3 5:3 'mem':32"/>
+    <Address Name="['seg:segment':r13d*'t:two']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix':8 *'mand' 0x40+'W'+'R'+3:8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 0:8"/>
+    <Address Name="['seg:segment':r13d*'t:two'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix':8 *'mand' 0x40+'W'+'R'+3:8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 0:8"/>
+    <Address Name="['seg:segment':r13d*'t:two'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix':8 *'mand' 0x40+'W'+'R'+3:8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 'signed':8"/>
+    <Address Name="['seg:segment':r13d*'t:two'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix':8 *'mand' 0x40+'W'+'R'+3:8 'op' 2:2 'mod':3 4:3 0:2 5:3 5:3 'mem':32"/>
 
     <Address Name="[ebp*'sc:scale']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 'sc':2 0x5:3 0x5:3 0:32"/>
+    <Address Name="[ebp*'sc:scale'+'z:zero']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 'sc':2 0x5:3 0x5:3 0:32"/>
     <Address Name="[ebp*'sc:scale'+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 'sc':2 0x5:3 0x5:3 'mem':32"/>
     <Address Name="[ds:ebp*'sc:scale']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x3e *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 'sc':2 0x5:3 0x5:3 0:32"/>
+    <Address Name="[ds:ebp*'sc:scale'+'z:zero']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x3e *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 'sc':2 0x5:3 0x5:3 0:32"/>
     <Address Name="[ds:ebp*'sc:scale'+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x3e *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 'sc':2 0x5:3 0x5:3 'mem':32"/>
     <Address Name="[ss:ebp*'sc:scale']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 'sc':2 0x5:3 0x5:3 0:32"/>
+    <Address Name="[ss:ebp*'sc:scale'+'z:zero']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 'sc':2 0x5:3 0x5:3 0:32"/>
     <Address Name="[ss:ebp*'sc:scale'+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 'sc':2 0x5:3 0x5:3 'mem':32"/>
     <Address Name="['seg:segment':ebp*'sc:scale']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 'sc':2 0x5:3 0x5:3 0:32"/>
+    <Address Name="['seg:segment':ebp*'sc:scale'+'z:zero']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 'sc':2 0x5:3 0x5:3 0:32"/>
     <Address Name="['seg:segment':ebp*'sc:scale'+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 'sc':2 0x5:3 0x5:3 'mem':32"/>
     <Address Name="[r13d*'sc:scale']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x42+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 'sc':2 0x5:3 0x5:3 0:32"/>
+    <Address Name="[r13d*'sc:scale'+'z:zero']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x42+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 'sc':2 0x5:3 0x5:3 0:32"/>
     <Address Name="[r13d*'sc:scale'+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 'sc':2 0x5:3 0x5:3 'mem':32"/>
     <Address Name="['seg:segment':r13d*'sc:scale']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix' *'mand' 0x42+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 'sc':2 0x5:3 0x5:3 0:32"/>
+    <Address Name="['seg:segment':r13d*'sc:scale'+'z:zero']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix' *'mand' 0x42+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 'sc':2 0x5:3 0x5:3 0:32"/>
     <Address Name="['seg:segment':r13d*'sc:scale'+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix' *'mand' 0x42+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 'sc':2 0x5:3 0x5:3 'mem':32"/>
 
-    <Address Name="['index:index32'*'sc:scale']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x420'W'+'R'+'index.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'index.Ord':3 0x5:3 0:32"/>
-    <Address Name="['index:index32'*'sc:scale'+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x42+'W'+'R'+'index.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'index.Ord':3 0x5:3 'mem':32"/>
-    <Address Name="['index:index32'*'sc:scale'+esp]" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'index.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'index.Ord':3 4:3"/>
-    <Address Name="['index:index32'*'sc:scale'+esp+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'index.X':8 'op' 2:2 'mod':3 0x4:3 'sc':2 'index.Ord':3 4:3 'mem':32"/>
-    <Address Name="[ds:'index:index32'*'sc:scale']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'index.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'index.Ord':3 0x5:3 0:32"/>
-    <Address Name="[ds:'index:index32'*'sc:scale'+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'index.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'index.Ord':3 0x5:3 'mem':32"/>
-    <Address Name="[ds:'index:index32'*'sc:scale'+esp]" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'index.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'index.Ord':3 4:3"/>
-    <Address Name="[ds:'index:index32'*'sc:scale'+esp+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'index.X':8 'op' 2:2 'mod':3 0x4:3 'sc':2 'index.Ord':3 4:3 'mem':32"/>
-    <Address Name="[ss:'index:index32'*'sc:scale']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x3e *'mand' 0x40+'W'+'R'+'index.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'index.Ord':3 0x5:3 0:32"/>
-    <Address Name="[ss:'index:index32'*'sc:scale'+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x3e *'mand' 0x40+'W'+'R'+'index.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'index.Ord':3 0x5:3 'mem':32"/>
-    <Address Name="[ss:'index:index32'*'sc:scale'+esp]" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x3e *'mand' 0x40+'W'+'R'+'index.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'index.Ord':3 4:3"/>
-    <Address Name="[ss:'index:index32'*'sc:scale'+esp+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x3e *'mand' 0x40+'W'+'R'+'index.X':8 'op' 2:2 'mod':3 0x4:3 'sc':2 'index.Ord':3 4:3 'mem':32"/>
-    <Address Name="['seg:segment':'index:index32'*'sc:scale']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix' *'mand' 0x40+'W'+'R'+'index.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'index.Ord':3 0x5:3 0:32"/>
-    <Address Name="['seg:segment':'index:index32'*'sc:scale'+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix' *'mand' 0x40+'W'+'R'+'index.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'index.Ord':3 0x5:3 'mem':32"/>
-    <Address Name="['seg:segment':'index:index32'*'sc:scale'+esp]" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix' *'mand' 0x40+'W'+'R'+'index.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'index.Ord':3 4:3"/>
-    <Address Name="['seg:segment':'index:index32'*'sc:scale'+esp+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix' *'mand' 0x40+'W'+'R'+'index.X':8 'op' 2:2 'mod':3 0x4:3 'sc':2 'index.Ord':3 4:3 'mem':32"/>
+    <Address Name="['base:base32'*'o:one']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'base.B':8 'op' 0:2 'mod':3 'base.Ord':3"/>
+    <Address Name="['base:base32'*'o:one'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'base.B':8 'op' 0:2 'mod':3 'base.Ord':3"/>
+    <Address Name="['base:base32'*'o:one'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'base.B':8 'op' 1:2 'mod':3 'base.Ord':3 'signed':8"/>
+    <Address Name="['base:base32'*'o:one'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'base.B':8 'op' 2:2 'mod':3 'base.Ord':3 'mem':32"/>
+    <Address Name="[ds:'base:base32'*'o:one']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'base.B':8 'op' 0:2 'mod':3 'base.Ord':3"/>
+    <Address Name="[ds:'base:base32'*'o:one'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'base.B':8 'op' 0:2 'mod':3 'base.Ord':3"/>
+    <Address Name="[ds:'base:base32'*'o:one'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'base.B':8 'op' 1:2 'mod':3 'base.Ord':3 'signed':8"/>
+    <Address Name="[ds:'base:base32'*'o:one'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'base.B':8 'op' 2:2 'mod':3 'base.Ord':3 'mem':32"/>
+    <Address Name="[ss:'base:base32'*'o:one']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x36:8 *'mand' 0x40+'W'+'R'+'base.B':8 'op' 0:2 'mod':3 'base.Ord':3"/>
+    <Address Name="[ss:'base:base32'*'o:one'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x36:8 *'mand' 0x40+'W'+'R'+'base.B':8 'op' 0:2 'mod':3 'base.Ord':3"/>
+    <Address Name="[ss:'base:base32'*'o:one'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x36:8 *'mand' 0x40+'W'+'R'+'base.B':8 'op' 1:2 'mod':3 'base.Ord':3 'signed':8"/>
+    <Address Name="[ss:'base:base32'*'o:one'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x36:8 *'mand' 0x40+'W'+'R'+'base.B':8 'op' 2:2 'mod':3 'base.Ord':3 'mem':32"/>
+    <Address Name="['seg:segment':'base:base32'*'o:one']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix':8 *'mand' 0x40+'W'+'R'+'base.B':8 'op' 0:2 'mod':3 'base.Ord':3"/>
+    <Address Name="['seg:segment':'base:base32'*'o:one'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix':8 *'mand' 0x40+'W'+'R'+'base.B':8 'op' 0:2 'mod':3 'base.Ord':3"/>
+    <Address Name="['seg:segment':'base:base32'*'o:one'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix':8 *'mand' 0x40+'W'+'R'+'base.B':8 'op' 1:2 'mod':3 'base.Ord':3 'signed':8"/>
+    <Address Name="['seg:segment':'base:base32'*'o:one'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix':8 *'mand' 0x40+'W'+'R'+'base.B':8 'op' 2:2 'mod':3 'base.Ord':3 'mem':32"/>
+
+    <Address Name="['base:base32'*'t:two']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'base.B':8 'op' 0:2 'mod':3 4:3 0:2 'base.Ord':3 'base.Ord':3"/>
+    <Address Name="['base:base32'*'t:two'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'base.B':8 'op' 0:2 'mod':3 4:3 0:2 'base.Ord':3 'base.Ord':3"/>
+    <Address Name="['base:base32'*'t:two'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'base.B':8 'op' 1:2 'mod':3 4:3 0:2 'base.Ord':3 'base.Ord':3 'signed':8"/>
+    <Address Name="['base:base32'*'t:two'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'base.B':8 'op' 2:2 'mod':3 4:3 0:2 'base.Ord':3 'base.Ord':3 'mem':32"/>
+    <Address Name="[ds:'base:base32'*'t:two']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'base.B':8 'op' 0:2 'mod':3 4:3 0:2 'base.Ord':3 'base.Ord':3"/>
+    <Address Name="[ds:'base:base32'*'t:two'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'base.B':8 'op' 0:2 'mod':3 4:3 0:2 'base.Ord':3 'base.Ord':3"/>
+    <Address Name="[ds:'base:base32'*'t:two'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'base.B':8 'op' 1:2 'mod':3 4:3 0:2 'base.Ord':3 'base.Ord':3 'signed':8"/>
+    <Address Name="[ds:'base:base32'*'t:two'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'base.B':8 'op' 2:2 'mod':3 4:3 0:2 'base.Ord':3 'base.Ord':3 'mem':32"/>
+    <Address Name="[ss:'base:base32'*'t:two']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x36:8 *'mand' 0x40+'W'+'R'+'base.B':8 'op' 0:2 'mod':3 4:3 0:2 'base.Ord':3 'base.Ord':3"/>
+    <Address Name="[ss:'base:base32'*'t:two'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x36:8 *'mand' 0x40+'W'+'R'+'base.B':8 'op' 0:2 'mod':3 4:3 0:2 'base.Ord':3 'base.Ord':3"/>
+    <Address Name="[ss:'base:base32'*'t:two'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x36:8 *'mand' 0x40+'W'+'R'+'base.B':8 'op' 1:2 'mod':3 4:3 0:2 'base.Ord':3 'base.Ord':3 'signed':8"/>
+    <Address Name="[ss:'base:base32'*'t:two'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x36:8 *'mand' 0x40+'W'+'R'+'base.B':8 'op' 2:2 'mod':3 4:3 0:2 'base.Ord':3 'base.Ord':3 'mem':32"/>
+    <Address Name="['seg:segment':'base:base32'*'t:two']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix':8 *'mand' 0x40+'W'+'R'+'base.B':8 'op' 0:2 'mod':3 4:3 0:2 'base.Ord':3 'base.Ord':3"/>
+    <Address Name="['seg:segment':'base:base32'*'t:two'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix':8 *'mand' 0x40+'W'+'R'+'base.B':8 'op' 0:2 'mod':3 4:3 0:2 'base.Ord':3 'base.Ord':3"/>
+    <Address Name="['seg:segment':'base:base32'*'t:two'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix':8 *'mand' 0x40+'W'+'R'+'base.B':8 'op' 1:2 'mod':3 4:3 0:2 'base.Ord':3 'base.Ord':3 'signed':8"/>
+    <Address Name="['seg:segment':'base:base32'*'t:two'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix':8 *'mand' 0x40+'W'+'R'+'base.B':8 'op' 2:2 'mod':3 4:3 0:2 'base.Ord':3 'base.Ord':3 'mem':32"/>
+    
+    <Address Name="['base:base32'*'sc:scale']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'base.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'base.Ord':3 0x5:3 0:32"/>
+    <Address Name="['base:base32'*'sc:scale'+'z:zero']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'base.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'base.Ord':3 0x5:3 0:32"/>
+    <Address Name="['base:base32'*'sc:scale'+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'base.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'base.Ord':3 0x5:3 'mem':32"/>
+    <Address Name="['base:base32'*'sc:scale'+esp]" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'base.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'base.Ord':3 4:3"/>
+    <Address Name="['base:base32'*'sc:scale'+esp+'z:zero']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'base.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'base.Ord':3 4:3"/>
+    <Address Name="['base:base32'*'sc:scale'+esp+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'base.X':8 'op' 2:2 'mod':3 0x4:3 'sc':2 'base.Ord':3 4:3 'mem':32"/>
+    <Address Name="[ds:'base:base32'*'sc:scale']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'base.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'base.Ord':3 0x5:3 0:32"/>
+    <Address Name="[ds:'base:base32'*'sc:scale'+'z:zero']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'base.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'base.Ord':3 0x5:3 0:32"/>
+    <Address Name="[ds:'base:base32'*'sc:scale'+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'base.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'base.Ord':3 0x5:3 'mem':32"/>
+    <Address Name="[ds:'base:base32'*'sc:scale'+esp]" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'base.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'base.Ord':3 4:3"/>
+    <Address Name="[ds:'base:base32'*'sc:scale'+esp+'z:zero']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'base.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'base.Ord':3 4:3"/>
+    <Address Name="[ds:'base:base32'*'sc:scale'+esp+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'base.X':8 'op' 2:2 'mod':3 0x4:3 'sc':2 'base.Ord':3 4:3 'mem':32"/>
+    <Address Name="[ss:'base:base32'*'sc:scale']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x36:8 *'mand' 0x40+'W'+'R'+'base.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'base.Ord':3 0x5:3 0:32"/>
+    <Address Name="[ss:'base:base32'*'sc:scale'+'z:zero']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32'0x36:8  *'mand' 0x40+'W'+'R'+'base.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'base.Ord':3 0x5:3 0:32"/>
+    <Address Name="[ss:'base:base32'*'sc:scale'+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x36:8 *'mand' 0x40+'W'+'R'+'base.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'base.Ord':3 0x5:3 'mem':32"/>
+    <Address Name="[ss:'base:base32'*'sc:scale'+esp]" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x36:8 *'mand' 0x40+'W'+'R'+'base.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'base.Ord':3 4:3"/>
+    <Address Name="[ss:'base:base32'*'sc:scale'+esp+'z:zero']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x36:8 *'mand' 0x40+'W'+'R'+'base.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'base.Ord':3 4:3"/>
+    <Address Name="[ss:'base:base32'*'sc:scale'+esp+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x36:8 *'mand' 0x40+'W'+'R'+'base.X':8 'op' 2:2 'mod':3 0x4:3 'sc':2 'base.Ord':3 4:3 'mem':32"/>
+    <Address Name="['seg:segment':'base:base32'*'sc:scale']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix' *'mand' 0x40+'W'+'R'+'base.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'base.Ord':3 0x5:3 0:32"/>
+    <Address Name="['seg:segment':'base:base32'*'sc:scale'+'z:zero']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix' *'mand' 0x40+'W'+'R'+'base.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'base.Ord':3 0x5:3 0:32"/>
+    <Address Name="['seg:segment':'base:base32'*'sc:scale'+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix' *'mand' 0x40+'W'+'R'+'base.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'base.Ord':3 0x5:3 'mem':32"/>
+    <Address Name="['seg:segment':'base:base32'*'sc:scale'+esp]" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix' *'mand' 0x40+'W'+'R'+'base.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'base.Ord':3 4:3"/>
+    <Address Name="['seg:segment':'base:base32'*'sc:scale'+esp+'z:zero']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix' *'mand' 0x40+'W'+'R'+'base.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'base.Ord':3 4:3"/>
+    <Address Name="['seg:segment':'base:base32'*'sc:scale'+esp+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix' *'mand' 0x40+'W'+'R'+'base.X':8 'op' 2:2 'mod':3 0x4:3 'sc':2 'base.Ord':3 4:3 'mem':32"/>
 
     <Address Name="[ebp+esp+'z:zero']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 0:2 5:3 4:3"/>
     <Address Name="[ebp+'index:index32'*'sc:scale'+'z:zero']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R'+'index.X':8 'op' 1:2 'mod':3 0x4:3 'sc':2 'index.Ord':3 0x5:3 0:8"/>
@@ -700,7 +821,7 @@
     <Address Name="['seg:segment':'mem:address64']" Class="rmx,rm,frm,rm8,rm16,rm32,rm64,rm32bit,rm64bit" Coding="'seg.Prefix':8 'addr64' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x04:3 0:2 4:3 5:3 'mem':32"/>
 
     <Address Name="[rsp+'z:zero']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 0:2 0x4:3 0x4:3"/>
-    <Address Name="[r12'z:zero']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x41+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 0:2 0x4:3 0x4:3"/>
+    <Address Name="[r12'+z:zero']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x41+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 0:2 0x4:3 0x4:3"/>
     <Address Name="[rbp+'z:zero']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 0x5:3 0x0:8"/>
     <Address Name="['seg:segment':rsp+'z:zero']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 0:2 0x4:3 0x4:3"/>
     <Address Name="['seg:segment':r12'z:zero']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix' *'mand' 0x41+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 0:2 0x4:3 0x4:3"/>
@@ -745,24 +866,139 @@
     <Address Name="['seg:segment':'base:base64'+rsp+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix' *'mand' 0x40+'W'+'R'+'base.X':8 'op' 2:2 'mod':3 0x4:3 0:2 'base.Ord':3 4:3 'mem':32"/>
 
 
+    <Address Name="[r12*'o:one']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x41+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 0:2 0x4:3 0x4:3"/>
+    <Address Name="[r12*'o:one'+'z:zero']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x41+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 0:2 0x4:3 0x4:3"/>
+    <Address Name="[r12*'o:one'+'signed:signed8offset']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x41+'W'+'R':8 'op' 1:2 'mod':3 0x4:3 0:2 0x4:3 0x4:3 'signed':8"/>
+    <Address Name="[r12*'o:one'+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x41+'W'+'R':8 'op' 2:2 'mod':3 0x4:3 0:2 0x4:3 0x4:3 'mem':32"/>
+    <Address Name="['seg:segment':r12*'o:one']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x41+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 0:2 0x4:3 0x4:3"/>
+    <Address Name="['seg:segment':r12*'o:one'+'z:zero']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x41+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 0:2 0x4:3 0x4:3"/>
+    <Address Name="['seg:segment':r12*'o:one'+'signed:signed8offset']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x41+'W'+'R':8 'op' 1:2 'mod':3 0x4:3 0:2 0x4:3 0x4:3 'signed':8"/>
+    <Address Name="['seg:segment':r12*'o:one'+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x41+'W'+'R':8 'op' 2:2 'mod':3 0x4:3 0:2 0x4:3 0x4:3 'mem':32"/>
+
+    <Address Name="[r12*'t:two']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x43+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 0:2 0x4:3 0x4:3"/>
+    <Address Name="[r12*'t:two'+'z:zero']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x43+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 0:2 0x4:3 0x4:3"/>
+    <Address Name="[r12*'t:two'+'signed:signed8offset']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x43+'W'+'R':8 'op' 1:2 'mod':3 0x4:3 0:2 0x4:3 0x4:3 'signed':8"/>
+    <Address Name="[r12*'t:two'+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x43+'W'+'R':8 'op' 2:2 'mod':3 0x4:3 0:2 0x4:3 0x4:3 'mem':32"/>
+    <Address Name="['seg:segment':r12*'t:two']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x43+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 0:2 0x4:3 0x4:3"/>
+    <Address Name="['seg:segment':r12*'t:two'+'z:zero']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x43+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 0:2 0x4:3 0x4:3"/>
+    <Address Name="['seg:segment':r12*'t:two'+'signed:signed8offset']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x43+'W'+'R':8 'op' 1:2 'mod':3 0x4:3 0:2 0x4:3 0x4:3 'signed':8"/>
+    <Address Name="['seg:segment':r12*'t:two'+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x43+'W'+'R':8 'op' 2:2 'mod':3 0x4:3 0:2 0x4:3 0x4:3 'mem':32"/>
+
+    <Address Name="[r12*'f:four']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x42+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 2:2 0x4:3 0x5:3 0:32"/>
+    <Address Name="[r12*'f:four'+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x42+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 2:2 0x4:3 0x5:3 'mem':32"/>
+    <Address Name="['seg:segment':r12*'f:four']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x42+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 2:2 0x4:3 0x5:3 0:32"/>
+    <Address Name="['seg:segment':r12*'f:four'+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x42+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 2:2 0x4:3 0x5:3 'mem':32"/>
+    <Address Name="[r12*'e:eight']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x42+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 3:2 0x4:3 0x5:3 0:32"/>
+    <Address Name="[r12*'e:eight'+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x42+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 3:2 0x4:3 0x5:3 'mem':32"/>
+    <Address Name="['seg:segment':r12*'e:eight']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x42+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 3:2 0x4:3 0x5:3 0:32"/>
+    <Address Name="['seg:segment':r12*'e:eight'+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x42+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 3:2 0x4:3 0x5:3 'mem':32"/>
+
+    
+    <Address Name="[rbp*'o:one']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 5:3 0:8"/>
+    <Address Name="[rbp*'o:one'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 5:3 0:8"/>
+    <Address Name="[rbp*'o:one'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 5:3 'signed':8"/>
+    <Address Name="[rbp*'o:one'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R':8 'op' 2:2 'mod':3 5:3 'mem':32"/>
+    <Address Name="[ds:rbp*'o:one']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 0x3e:8 *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 5:3 0:8"/>
+    <Address Name="[ds:rbp*'o:one'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 0x3e:8 *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 5:3 0:8"/>
+    <Address Name="[ds:rbp*'o:one'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 0x3e:8 *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 5:3 'signed':8"/>
+    <Address Name="[ds:rbp*'o:one'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 0x3e:8 *'mand' 0x40+'W'+'R':8 'op' 2:2 'mod':3 5:3 'mem':32"/>
+    <Address Name="[ss:rbp*'o:one']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 5:3 0:8"/>
+    <Address Name="[ss:rbp*'o:one'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 5:3 0:8"/>
+    <Address Name="[ss:rbp*'o:one'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 5:3 'signed':8"/>
+    <Address Name="[ss:rbp*'o:one'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R':8 'op' 2:2 'mod':3 5:3 'mem':32"/>
+    <Address Name="['seg:segment':rbp*'o:one']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 5:3 0:8"/>
+    <Address Name="['seg:segment':rbp*'o:one'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 5:3 0:8"/>
+    <Address Name="['seg:segment':rbp*'o:one'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 5:3 'signed':8"/>
+    <Address Name="['seg:segment':rbp*'o:one'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x40+'W'+'R':8 'op' 2:2 'mod':3 5:3 'mem':32"/>
+
+    <Address Name="[rbp*'t:two']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 0:8"/>
+    <Address Name="[rbp*'t:two'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 0:8"/>
+    <Address Name="[rbp*'t:two'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 'signed':8"/>
+    <Address Name="[rbp*'t:two'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R':8 'op' 2:2 'mod':3 4:3 0:2 5:3 5:3 'mem':32"/>
+    <Address Name="[ds:rbp*'t:two']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 0x3e:8 *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 0:8"/>
+    <Address Name="[ds:rbp*'t:two'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 0x3e:8 *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 0:8"/>
+    <Address Name="[ds:rbp*'t:two'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 0x3e:8 *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 'signed':8"/>
+    <Address Name="[ds:rbp*'t:two'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 0x3e:8 *'mand' 0x40+'W'+'R':8 'op' 2:2 'mod':3 4:3 0:2 5:3 5:3 'mem':32"/>
+    <Address Name="[ss:rbp*'t:two']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 0:8"/>
+    <Address Name="[ss:rbp*'t:two'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 0:8"/>
+    <Address Name="[ss:rbp*'t:two'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 'signed':8"/>
+    <Address Name="[ss:rbp*'t:two'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R':8 'op' 2:2 'mod':3 4:3 0:2 5:3 5:3 'mem':32"/>
+    <Address Name="['seg:segment':rbp*'t:two']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 0:8"/>
+    <Address Name="['seg:segment':rbp*'t:two'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 0:8"/>
+    <Address Name="['seg:segment':rbp*'t:two'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 'signed':8"/>
+    <Address Name="['seg:segment':rbp*'t:two'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x40+'W'+'R':8 'op' 2:2 'mod':3 4:3 0:2 5:3 5:3 'mem':32"/>
+
+    <Address Name="[r13*'o:one']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R'+1:8 'op' 1:2 'mod':3 5:3 0:8"/>
+    <Address Name="[r13*'o:one'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R'+1:8 'op' 1:2 'mod':3 5:3 0:8"/>
+    <Address Name="[r13*'o:one'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R'+1:8 'op' 1:2 'mod':3 5:3 'signed':8"/>
+    <Address Name="[r13*'o:one'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R'+1:8 'op' 2:2 'mod':3 5:3 'mem':32"/>
+    <Address Name="[ds:r13*'o:one']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 0x3e:8 *'mand' 0x40+'W'+'R'+1:8 'op' 1:2 'mod':3 5:3 0:8"/>
+    <Address Name="[ds:r13*'o:one'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 0x3e:8 *'mand' 0x40+'W'+'R'+1:8 'op' 1:2 'mod':3 5:3 0:8"/>
+    <Address Name="[ds:r13*'o:one'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 0x3e:8 *'mand' 0x40+'W'+'R'+1:8 'op' 1:2 'mod':3 5:3 'signed':8"/>
+    <Address Name="[ds:r13*'o:one'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 0x3e:8 *'mand' 0x40+'W'+'R'+1:8 'op' 2:2 'mod':3 5:3 'mem':32"/>
+    <Address Name="[ss:r13*'o:one']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R'+1:8 'op' 1:2 'mod':3 5:3 0:8"/>
+    <Address Name="[ss:r13*'o:one'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R'+1:8 'op' 1:2 'mod':3 5:3 0:8"/>
+    <Address Name="[ss:r13*'o:one'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R'+1:8 'op' 1:2 'mod':3 5:3 'signed':8"/>
+    <Address Name="[ss:r13*'o:one'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R'+1:8 'op' 2:2 'mod':3 5:3 'mem':32"/>
+    <Address Name="['seg:segment':r13*'o:one']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x40+'W'+'R'+1:8 'op' 1:2 'mod':3 5:3 0:8"/>
+    <Address Name="['seg:segment':r13*'o:one'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x40+'W'+'R'+1:8 'op' 1:2 'mod':3 5:3 0:8"/>
+    <Address Name="['seg:segment':r13*'o:one'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x40+'W'+'R'+1:8 'op' 1:2 'mod':3 5:3 'signed':8"/>
+    <Address Name="['seg:segment':r13*'o:one'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x40+'W'+'R'+1:8 'op' 2:2 'mod':3 5:3 'mem':32"/>
+
+    <Address Name="[r13*'t:two']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R'+3:8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 0:8"/>
+    <Address Name="[r13*'t:two'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R'+3:8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 0:8"/>
+    <Address Name="[r13*'t:two'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R'+3:8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 'signed':8"/>
+    <Address Name="[r13*'t:two'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R'+3:8 'op' 2:2 'mod':3 4:3 0:2 5:3 5:3 'mem':32"/>
+    <Address Name="[ds:r13*'t:two']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 0x3e:8 *'mand' 0x40+'W'+'R'+3:8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 0:8"/>
+    <Address Name="[ds:r13*'t:two'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 0x3e:8 *'mand' 0x40+'W'+'R'+3:8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 0:8"/>
+    <Address Name="[ds:r13*'t:two'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 0x3e:8 *'mand' 0x40+'W'+'R'+3:8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 'signed':8"/>
+    <Address Name="[ds:r13*'t:two'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 0x3e:8 *'mand' 0x40+'W'+'R'+3:8 'op' 2:2 'mod':3 4:3 0:2 5:3 5:3 'mem':32"/>
+    <Address Name="[ss:r13*'t:two']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R'+3:8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 0:8"/>
+    <Address Name="[ss:r13*'t:two'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R'+3:8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 0:8"/>
+    <Address Name="[ss:r13*'t:two'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R'+3:8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 'signed':8"/>
+    <Address Name="[ss:r13*'t:two'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R'+3:8 'op' 2:2 'mod':3 4:3 0:2 5:3 5:3 'mem':32"/>
+    <Address Name="['seg:segment':r13*'t:two']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x40+'W'+'R'+3:8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 0:8"/>
+    <Address Name="['seg:segment':r13*'t:two'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x40+'W'+'R'+3:8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 0:8"/>
+    <Address Name="['seg:segment':r13*'t:two'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x40+'W'+'R'+3:8 'op' 1:2 'mod':3 4:3 0:2 5:3 5:3 'signed':8"/>
+    <Address Name="['seg:segment':r13*'t:two'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x40+'W'+'R'+3:8 'op' 2:2 'mod':3 4:3 0:2 5:3 5:3 'mem':32"/>
+
 
     <Address Name="[rbp*'sc:scale']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 'sc':2 0x5:3 0x5:3 0:32"/>
     <Address Name="[rbp*'sc:scale'+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 'sc':2 0x5:3 0x5:3 'mem':32"/>
     <Address Name="['seg:segment':rbp*'sc:scale']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 'sc':2 0x5:3 0x5:3 0:32"/>
     <Address Name="['seg:segment':rbp*'sc:scale'+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 'sc':2 0x5:3 0x5:3 'mem':32"/>
     <Address Name="[r13*'sc:scale']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x42+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 'sc':2 0x5:3 0x5:3 0:32"/>
-    <Address Name="[r13*'sc:scale'+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 'sc':2 0x5:3 0x5:3 'mem':32"/>
+    <Address Name="[r13*'sc:scale'+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x42+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 'sc':2 0x5:3 0x5:3 'mem':32"/>
     <Address Name="['seg:segment':r13*'sc:scale']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix' *'mand' 0x42+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 'sc':2 0x5:3 0x5:3 0:32"/>
     <Address Name="['seg:segment':r13*'sc:scale'+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix' *'mand' 0x42+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 'sc':2 0x5:3 0x5:3 'mem':32"/>
 
-    <Address Name="['index:index64'*'sc:scale']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x420'W'+'R'+'index.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'index.Ord':3 0x5:3 0:32"/>
-    <Address Name="['index:index64'*'sc:scale'+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x42+'W'+'R'+'index.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'index.Ord':3 0x5:3 'mem':32"/>
-    <Address Name="['index:index64'*'sc:scale'+rsp]" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R'+'index.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'index.Ord':3 4:3"/>
-    <Address Name="['index:index64'*'sc:scale'+rsp+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R'+'index.X':8 'op' 2:2 'mod':3 0x4:3 'sc':2 'index.Ord':3 4:3 'mem':32"/>
-    <Address Name="['seg:segment':'index:index64'*'sc:scale']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix' *'mand' 0x40+'W'+'R'+'index.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'index.Ord':3 0x5:3 0:32"/>
-    <Address Name="['seg:segment':'index:index64'*'sc:scale'+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix' *'mand' 0x40+'W'+'R'+'index.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'index.Ord':3 0x5:3 'mem':32"/>
-    <Address Name="['seg:segment':'index:index64'*'sc:scale'+rsp]" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix' *'mand' 0x40+'W'+'R'+'index.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'index.Ord':3 4:3"/>
-    <Address Name="['seg:segment':'index:index64'*'sc:scale'+rsp+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix' *'mand' 0x40+'W'+'R'+'index.X':8 'op' 2:2 'mod':3 0x4:3 'sc':2 'index.Ord':3 4:3 'mem':32"/>
+    
+    <Address Name="['base:base64'*'o:one']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R'+'base.B':8 'op' 0:2 'mod':3 'base.Ord':3"/>
+    <Address Name="['base:base64'*'o:one'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R'+'base.B':8 'op' 0:2 'mod':3 'base.Ord':3"/>
+    <Address Name="['base:base64'*'o:one'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R'+'base.B':8 'op' 1:2 'mod':3 'base.Ord':3 'signed':8"/>
+    <Address Name="['base:base64'*'o:one'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R'+'base.B':8 'op' 2:2 'mod':3 'base.Ord':3 'mem':32"/>
+    <Address Name="['seg:segment':'base:base64'*'o:one']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x40+'W'+'R'+'base.B':8 'op' 0:2 'mod':3 'base.Ord':3"/>
+    <Address Name="['seg:segment':'base:base64'*'o:one'+'z:zero']"	Class="rm,frm,rm8,rm16  rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x40+'W'+'R'+'base.B':8 'op' 0:2 'mod':3 'base.Ord':3"/>
+    <Address Name="['seg:segment':'base:base64'*'o:one'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x40+'W'+'R'+'base.B':8 'op' 1:2 'mod':3 'base.Ord':3 'signed':8"/>
+    <Address Name="['seg:segment':'base:base64'*'o:one'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x40+'W'+'R'+'base.B':8 'op' 2:2 'mod':3 'base.Ord':3 'mem':32"/>
+
+    <Address Name="['base:base64'*'t:two']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R'+'base.X'+'base.B':8 'op' 0:2 'mod':3 4:3 0:2 'base.Ord':3 'base.Ord':3"/>
+    <Address Name="['base:base64'*'t:two'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R'+'base.X'+'base.B':8 'op' 0:2 'mod':3 4:3 0:2 'base.Ord':3 'base.Ord':3"/>
+    <Address Name="['base:base64'*'t:two'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R'+'base.X'+'base.B':8 'op' 1:2 'mod':3 4:3 0:2 'base.Ord':3 'base.Ord':3 'signed':8"/>
+    <Address Name="['base:base64'*'t:two'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R'+'base.X'+'base.B':8 'op' 2:2 'mod':3 4:3 0:2 'base.Ord':3 'base.Ord':3 'mem':32"/>
+    <Address Name="['seg:segment':'base:base64'*'t:two']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x40+'W'+'R'+'base.X'+'base.B':8 'op' 0:2 'mod':3 4:3 0:2 'base.Ord':3 'base.Ord':3"/>
+    <Address Name="['seg:segment':'base:base64'*'t:two'+'z:zero']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x40+'W'+'R'+'base.X'+'base.B':8 'op' 0:2 'mod':3 4:3 0:2 'base.Ord':3 'base.Ord':3"/>
+    <Address Name="['seg:segment':'base:base64'*'t:two'+'signed:signed8offset']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x40+'W'+'R'+'base.X'+'base.B':8 'op' 1:2 'mod':3 4:3 0:2 'base.Ord':3 'base.Ord':3 'signed':8"/>
+    <Address Name="['seg:segment':'base:base64'*'t:two'+'mem:mem32']"	Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix':8 *'mand' 0x40+'W'+'R'+'base.X'+'base.B':8 'op' 2:2 'mod':3 4:3 0:2 'base.Ord':3 'base.Ord':3 'mem':32"/>
+    
+    <Address Name="['base:base64'*'sc:scale']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R'+'base.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'base.Ord':3 0x5:3 0:32"/>
+    <Address Name="['base:base64'*'sc:scale'+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R'+'base.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'base.Ord':3 0x5:3 'mem':32"/>
+    <Address Name="['base:base64'*'sc:scale'+rsp]" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R'+'base.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'base.Ord':3 4:3"/>
+    <Address Name="['base:base64'*'sc:scale'+rsp+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R'+'base.X':8 'op' 2:2 'mod':3 0x4:3 'sc':2 'base.Ord':3 4:3 'mem':32"/>
+    <Address Name="['seg:segment':'base:base64'*'sc:scale']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix' *'mand' 0x40+'W'+'R'+'base.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'base.Ord':3 0x5:3 0:32"/>
+    <Address Name="['seg:segment':'base:base64'*'sc:scale'+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix' *'mand' 0x40+'W'+'R'+'base.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'base.Ord':3 0x5:3 'mem':32"/>
+    <Address Name="['seg:segment':'base:base64'*'sc:scale'+rsp]" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix' *'mand' 0x40+'W'+'R'+'base.X':8 'op' 0:2 'mod':3 0x4:3 'sc':2 'base.Ord':3 4:3"/>
+    <Address Name="['seg:segment':'base:base64'*'sc:scale'+rsp+'mem:mem32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' 'seg.Prefix' *'mand' 0x40+'W'+'R'+'base.X':8 'op' 2:2 'mod':3 0x4:3 'sc':2 'base.Ord':3 4:3 'mem':32"/>
 
     <Address Name="[rbp+rsp+'z:zero']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 0:2 5:3 4:3"/>
     <Address Name="[r13+rsp+'z:zero']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr64' *'mand' 0x42+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 0:2 5:3 4:3"/>
@@ -870,7 +1106,7 @@
 
     <Address Name="'reg:floatreg'" Class="frm, regfloat" Coding="0x40:8 'op' 3:2 'mod':3 'reg.Ord':3"/>
     <Address Name="'reg:reg8'" Class="rm8, reg8, reg8rm" Coding="*'mand' 0x40+'reg.B'+'R'+'W':8 'op' 3:2 'mod':3 'reg.Ord':3"/>
-    <Address Name="'reg:reg8t'" Class="rm8, reg8, reg8rm" Coding="*'mand' 0x40:8 0x40+'reg.B'+'R'+'W':8 'op' 3:2 'mod':3 'reg.Ord':3"/>
+    <Address Name="'reg:reg8t'" Class="rm8, reg8, reg8rm,reg8trm" Coding="*'mand' 0x40:8 0x40+'reg.B'+'R'+'W':8 'op' 3:2 'mod':3 'reg.Ord':3"/>
     <Address Name="'reg:reg16'" Class="rm16, reg16, reg16rm" Coding="*'mand' 0x40+'reg.B'+'R'+'W':8 'op' 3:2 'mod':3 'reg.Ord':3"/>
     <Address Name="'reg:reg32'" Class="rm32, reg32, reg32rm" Coding="*'mand' 0x40+'reg.B'+'R'+'W':8 'op' 3:2 'mod':3 'reg.Ord':3"/>
     <Address Name="'reg:reg64'" Class="rm64, reg64, reg64rm" Coding="*'mand' 0x40+'reg.B'+'R'+'W':8 'op' 3:2 'mod':3 'reg.Ord':3"/>
@@ -886,6 +1122,9 @@
       <Operands Name="empty" Coding="0x40:8 0x0f:8 'op'"/>
     </Opcode>
     <Opcode Class="reg16rmx">
+      <Operands Name="'modreg:reg16', {word} 'rm:reg16rm'" op="'data16' 'op1'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
+      <Operands Name="'modreg:reg32', {dword} 'rm:reg32rm'" op="'data32' 'op1'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
+      <Operands Name="'modreg:reg64', {qword} 'rm:reg64rm'" op="'data64' 'op1'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'"/>
       <Operands Name="'modreg:reg16', {word} 'rm:rm'" op="'data16' 'op1'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
       <Operands Name="'modreg:reg32', {dword} 'rm:rm'" op="'data32' 'op1'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
       <Operands Name="'modreg:reg64', {qword} 'rm:rm'" op="'data64' 'op1'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'"/>
@@ -1139,6 +1378,7 @@
       <Operands Name="qword 'rm:rm'" op="'data32' 0xff:8" mod="2" R="0" W="0"/>
       <Operands Name="far 'omem:address16'" Coding="'data16' 0x40:8 0x0f:8 0x0f:8 0x9a:8 'omem':16 0:16"/>
       <Operands Name="far 'omem:address32'" Coding="'data32' 0x40:8 0x0f:8 0x0f:8 0x9a:8 'omem':32 0:16"/>
+      <Operands Name="far 'rm:rm'" op= "0xff:8" mod="3" R="0" W="0"/>
       <Operands Name="far word 'rm:rm'" op= "'data16' 0xff:8" mod="3" R="0" W="0"/>
       <Operands Name="far dword 'rm:rm'" op= "'data32' 0xff:8" mod="3" R="0" W="0"/>
     </Opcode>
@@ -1318,6 +1558,8 @@
     <Opcode Name="fidiv" op1="0xda:8" mod="6" Class="floatimath"/>
     <Opcode Name="fidivr" op1="0xda:8" mod="7" Class="floatimath"/>
     <Opcode Name="fild" op1="0xdb:8" mod="0">
+      <Operands Name="word 'rm:rm'" op="0xdf:8" mod="0" R="0" W="0"/>
+      <Operands Name="dword 'rm:rm'" op="0xdb:8" mod="0" R="0" W="0"/>
       <Operands Name="qword 'rm:rm'" op="0xdf:8" mod="5" R="0" W="0"/>
     </Opcode>
     <Opcode Name="fimul" op1="0xda:8" mod="1" Class="floatimath"/>
@@ -1326,6 +1568,7 @@
     <Opcode Name="fninit" op="0xdb:8 0xe3:8" Class="single"/>
     <Opcode Name="fist" op1="0xdb:8" mod="2" Class="floatimath"/>
     <Opcode Name="fistp" op1="0xdb:8" mod="3">
+      <Operands Name="dword 'rm:rm'" op="0xdb:8" mod="3" R="0" W="0"/>
       <Operands Name="qword 'rm:rm'" op="0xdf:8" mod="7" R="0" W="0"/>
     </Opcode>
     <Opcode Name="fisub" op1="0xda:8" mod="4" Class="floatimath"/>
@@ -1453,6 +1696,10 @@
       <Operands Name="'modreg:reg64', {qword} 'rm:rm64', {byte} 'isigned:signed8'" op="'data64' 0x6b:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" Coding="native 'isigned':8"/>
       <Operands Name="'modreg:reg64', {qword} 'rm:rm64', 'omem:mem32'" op="'data64' 0x69:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" Coding="native 'omem':32"/>
       <Operands Name="'modreg:reg64', {qword} 'rm:rm64'" op="'data64' 0x0f:8 0xaf:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
+      <Operands Name="byte 'rm:rm'" op="0xf6:8" mod="5" R="0" W="0"/>
+      <Operands Name="word 'rm:rm'" op="'data16' 0xf7:8" mod="5" R="0" W="0"/>
+      <Operands Name="dword 'rm:rm'" op="'data32' 0xf7:8" mod="5" R="0" W="0"/>
+      <Operands Name="qword 'rm:rm'" op="'data64' 0xf7:8" mod="5" R="0" W="8"/>
     </Opcode>
     <Opcode Name="in">
       <Operands Name="al, {byte}'port:mem8'" Coding="0x40:8 0xe4:8 'port':8"/>
@@ -1528,6 +1775,7 @@
       <Operands Name="far 'seg:mem16':{dword}'omem:address32'" Coding="'data32' 0x40:8 0xea:8 'omem':32 'seg':16"/>
       <Operands Name="far 'omem:address16'" Coding="'data16' 0x40:8 0xf:8 0xf:8 0xea:8 'omem':16 0:16"/>
       <Operands Name="far 'omem:address32'" Coding="'data32' 0x40:8 0xf:8 0xf:8 0xea:8 'omem':32 0:16"/>
+      <Operands Name="far 'rm:rm'" op= "0xff:8" mod="5" R="0" W="0" />
       <Operands Name="far word 'rm:rm'" op= "'data16' 0xff:8" mod="5" R="0" W="0" />
       <Operands Name="far dword 'rm:rm'" op= "'data32' 0xff:8" mod="5" R="0" W="0"/>
       <Operands Name="short 'rel:rel8'" Coding="0x40:8 0xeb:8 'rel':8"/>
@@ -2000,6 +2248,13 @@
       <Operands Name="{word}'rm:rm', 'modreg:reg16'" op="'data16' 0x85" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
       <Operands Name="{dword}'rm:rm', 'modreg:reg32'" op="'data32' 0x85" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
       <Operands Name="{qword}'rm:rm', 'modreg:reg64'" op="'data64' 0x85" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
+      <Operands Name="'rm:reg8rm', 'modreg:reg8'" op="0x84:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
+      <Operands Name="'rm:reg8trm', 'modreg:reg8'" mand="0x40:8" op="0x84:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
+      <Operands Name="'rm:reg8rm', 'modreg:reg8t'" mand="0x40:8" op="0x84:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
+      <Operands Name="'rm:reg8trm', 'modreg:reg8t'" mand="0x40:8" op="0x84:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
+      <Operands Name="'rm:reg16rm', 'modreg:reg16'" op="'data16' 0x85" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
+      <Operands Name="'rm:reg32rm', 'modreg:reg32'" op="'data32' 0x85" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
+      <Operands Name="'rm:reg64rm', 'modreg:reg64'" op="'data64' 0x85" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
       <Operands Name="'modreg:reg8', {byte}'rm:rm'" op="0x84:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
       <Operands Name="'modreg:reg8t', {byte}'rm:rm'" mand="0x40:8" op="0x84:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
       <Operands Name="'modreg:reg16', {word}'rm:rm'" op="'data16' 0x85" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />

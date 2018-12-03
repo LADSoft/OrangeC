@@ -674,8 +674,7 @@ bool LinkManager::ParsePartitions()
     bool done = false;
     int numImports = 0;
     for (auto import : imports)
-        if (import->GetUsed())
-            numImports++;
+        numImports++;
 
     LinkExpression* value = new LinkExpression(numImports);
     LinkExpressionSymbol* esym = new LinkExpressionSymbol("IMPORTCOUNT", value);

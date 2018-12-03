@@ -31,6 +31,7 @@
 #include "CmdFiles.h"
 #include <climits>
 #include <fstream>
+#include <iostream>
 
 bool ppInclude::system;
 std::string ppInclude::srchPath, ppInclude::sysSrchPath;
@@ -169,6 +170,12 @@ std::string ppInclude::ParseName(const std::string& args)
 }
 std::string ppInclude::FindFile(const std::string& name)
 {
+    FILE *fil = fopen(name.c_str(), "rb");
+    if (fil)
+    {
+        fclose(fil);
+        return name;
+    }
     std::string rv = SrchPath(system, name);
     if (rv.empty())
         rv = SrchPath(!system, name);
@@ -186,6 +193,7 @@ std::string ppInclude::SrchPath(bool system, const std::string& name)
     {
         path = RetrievePath(buf, path);
         AddName(buf, name);
+
         while (char* p = strchr(buf, '/'))
         {
             *p = CmdFiles::DIR_SEP[0];

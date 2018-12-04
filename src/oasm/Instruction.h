@@ -28,12 +28,11 @@
 
 #include "Label.h"
 #include "AsmExpr.h"
+#include <vector>
+#include <string>
 
 class Fixup;
 class AsmFile;
-
-#include <vector>
-#include <string>
 
 typedef std::vector<Fixup*> FixupContainer;
 class Instruction

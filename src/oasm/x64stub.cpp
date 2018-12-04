@@ -156,7 +156,7 @@ void Instruction::Optimize(Section *sect, int pc, bool last)
         if (fixups.size() != 1)
         {
             std::cout << "Far branch cannot be resolved" << std::endl;
-            memcpy(data, data + 2, size - 2);
+            memmove(data, data + 2, size - 2);
             size -= 2;
         }
         else
@@ -165,7 +165,7 @@ void Instruction::Optimize(Section *sect, int pc, bool last)
             AsmExprNode* expr = AsmExpr::Eval(f->GetExpr(), pc);
             if (expr->IsAbsolute())
             {
-                memcpy(data, data + 1, size - 1);
+                memmove(data, data + 1, size - 1);
                 size -= 3;
                 f->SetInsOffs(f->GetInsOffs() - 1);
                 data[0] = 0x0e;  // push cs
@@ -181,7 +181,7 @@ void Instruction::Optimize(Section *sect, int pc, bool last)
             }
             else
             {
-                memcpy(data, data + 2, size - 2);
+                memmove(data, data + 2, size - 2);
                 size -= 2;
                 f->SetInsOffs(f->GetInsOffs() - 2);
                 AsmExprNode* n = new AsmExprNode(AsmExprNode::DIV, f->GetExpr(), new AsmExprNode(16));
@@ -270,7 +270,7 @@ void Instruction::Optimize(Section *sect, int pc, bool last)
                                     if (last)
                                     {
 //                                        Errors::IncrementCount();
-                                        std::cout << "Warning " << fixup->GetFileName().c_str() << "(" << fixup->GetErrorLine()
+                                        std::cout << "Warning " << fixup->GetFileName() << "(" << fixup->GetErrorLine()
                                                   << "):"
                                                   << "Value out of range" << std::endl;
                                     }

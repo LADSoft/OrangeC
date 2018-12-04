@@ -31,7 +31,7 @@
 #include <list>
 #include <vector>
 #include <stdlib.h>
-#include <limits.h>
+#include <climits>
 #include "AsmExpr.h"
 
 class Instruction;

@@ -42,8 +42,8 @@ extern HWND hwndShowFunc;
 
 #define TRANSPARENT_COLOR 0x872395
 
-HWND codecompleteBox;
-BOOL inStructBox;
+extern HWND codecompleteBox;
+extern BOOL inStructBox;
 
 BOOL GetContainerData(int lineno, char* file, char* ns, char* func)
 {

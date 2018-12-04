@@ -38,9 +38,14 @@ class Instruction;
 class Section;
 class AsmFile;
 
+enum asmError { AERR_NONE, AERR_SYNTAX, AERR_OPERAND, AERR_BADCOMBINATIONOFOPERANDS, AERR_UNKNOWNOPCODE, AERR_INVALIDINSTRUCTIONUSE };
+
 class Coding
 {
   public:
+#ifdef DEBUG
+    std::string name;
+#endif
     enum Type
     {
         eot,
@@ -52,40 +57,22 @@ class Coding
         stateFunc = 32,
         stateVar = 64,
         number = 128,
-        native = 256,
-        illegal = 512
+        optional = 256,
+        native = 512,
+        illegal = 1024
     } type;
     int val;
-    int bits;
-    int field;
-    int math;
-    int mathval;
+    unsigned char bits;
+    unsigned char field;
+    char unary;
+    char binary;
 };
-class CodingHelper
-{
-  public:
-    CodingHelper() : bits(8), math(0), mathval(0), field(-1) {}
-    CodingHelper(const CodingHelper& old)
-    {
-        bits = old.bits;
-        math = old.math;
-        mathval = old.mathval;
-        field = old.field;
-    }
-    CodingHelper& operator=(const CodingHelper& old)
-    {
-        bits = old.bits;
-        math = old.math;
-        mathval = old.mathval;
-        field = old.field;
-        return *this;
-    }
-    int DoMath(int val);
-    int bits;
-    int math;
-    int mathval;
-    int field;
-};
+#ifdef DEBUG
+#define CODING_NAME(x) x,
+#else
+#define CODING_NAME(x)
+#endif
+
 class Numeric
 {
   public:
@@ -139,6 +126,7 @@ class InstructionParser
     virtual void Setup(Section* sect) = 0;
     virtual void Init() = 0;
     virtual bool ParseSection(AsmFile* fil, Section* sect) = 0;
+    virtual bool ParseDirective(AsmFile*fil, Section* sect) = 0;
     virtual bool IsBigEndian() = 0;
     bool SetNumber(int tokenPos, int oldVal, int newVal);
 
@@ -157,7 +145,7 @@ class InstructionParser
         TOKEN_BASE = 0,
         REGISTER_BASE = 1000
     };
-    virtual bool DispatchOpcode(int opcode) = 0;
+    virtual asmError DispatchOpcode(int opcode) = 0;
     void NextToken(int PC);
     enum
     {

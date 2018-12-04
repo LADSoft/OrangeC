@@ -27,86 +27,77 @@
 
 #include <stdlib.h>
 #include <fstream>
+#include <iostream>
 
 void Parser::DumpDB()
 {
     std::cout << "Name: " << processorName << std::endl;
-    for (std::map<std::string, std::string>::iterator it = parameters.begin();
-         it != parameters.end(); ++it)
+    for (auto& m : parameters)
     {
-        std::cout << "Param: " << it->first << " Value: " << it->second << std::endl;
+        std::cout << "Param: " << m.first << " Value: " << m.second << std::endl;
     }
-    for (std::deque<Number *>::iterator it = numbers.begin(); it != numbers.end();
-         ++it)
+    for (auto x : numbers)
     {
-        Number *n = (*it);
+        Number *n = (x);
         std::cout << "Number: " << n->name << std::endl;
-        for (std::deque<std::string>::iterator it1 = n->values.begin();
-             it1 != n->values.end(); ++it1)
+        for (auto n : n->values)
         {
-            std::cout << "\t" << (*it1) << std::endl;
+            std::cout << "\t" << n << std::endl;
         }
     }
-    for (std::map<std::string, std::string>::iterator it = stateVars.begin();
-         it != stateVars.end(); ++it)
+    for (auto& m : stateVars)
     {
-        std::cout << "State Var: " << it->first << " Init: " << it->second << std::endl;
+        std::cout << "State Var: " << m.first << " Init: " << m.second << std::endl;
     }
-    for (std::deque<State *>::iterator it = states.begin(); it != states.end(); ++it)
+    for (auto x : states)
     {
-        State *s = *it;
+        State *s = x;
         std::cout << "State: " << s->name << std::endl;
-        for (std::map<std::string, std::string>::iterator it1 = s->clauses.begin();
-             it1 != s->clauses.end(); ++it1)
+        for (auto& m : s->clauses)
         {
-            std::cout << "\t if (" <<it1->first << "): '" << it1->second << "'" << std::endl;
+            std::cout << "\t if (" << m.first << "): '" << m.second << "'" << std::endl;
         }
     }
-    for (std::deque<Register *>::iterator it = registers.begin(); it != registers.end(); ++it)
+    for (auto x : registers)
     {
-        Register *r = *it;
+        Register *r = x;
         std::cout << "Register: " << r->name << " Classes: " << r->cclass << std::endl;
-        for (std::map<std::string, std::string>::iterator it1 = r->values.begin();
-             it1 != r->values.end(); ++it1)
+        for (auto& m : r->values)
         {
-            std::cout << "\tExpr: " << it1->first << " Value: " << it1->second << std::endl;
+            std::cout << "\texpr: " << m.first << " Value: " << m.second << std::endl;
         }
     }
-    for (std::deque<Address *>::iterator it = addresses.begin(); it != addresses.end(); ++it)
+    for (auto x : addresses)
     {
-        Address *r = *it;
+        Address *r = x;
         std::cout << "Address: " << r->name << " Classes: " << r->cclass << std::endl;
         std::cout << "\tCoding: " << r->coding << std::endl;
-        for (std::map<std::string, std::string>::iterator it1 = r->values.begin();
-             it1 != r->values.end(); ++it1)
+        for (auto& m : r->values)
         {
-            std::cout << "\tExpr: " << it1->first << " Value: " << it1->second << std::endl;
+            std::cout << "\texpr: " << m.first << " Value: " << m.second << std::endl;
         }
     }
-    for (std::deque<Opcode *>::iterator it = opcodes.begin(); it != opcodes.end(); ++it)
+    for (auto x : opcodes)
     {
-        Opcode *r = *it;
+        Opcode *r = x;
         std::cout << "Opcode: " << r->name << " Classes: " << r->cclass << std::endl;
-        for (std::map<std::string, std::string>::iterator it1 = r->values.begin();
-             it1 != r->values.end(); ++it1)
+        for (auto& m : r->values)
         {
-            std::cout << "\tExpr: " << it1->first << " Value: " << it1->second << std::endl;
+            std::cout << "\texpr: " << m.first << " Value: " << m.second << std::endl;
         }
-        for (std::deque<Operand *>::iterator it1 = r->operands.begin();
-             it1 != r->operands.end(); ++ it1)
+        for (auto o : r->operands)
         {
-            Operand *o = *it1;
             std::cout << "Operand: " << o->name << " Coding: " << o->coding << std::endl;
-            for (std::map<std::string, std::string>::iterator it2 = o->values.begin();
-                 it2 != o->values.end(); ++it2)
+            for (std::map<std::string, std::string>::iterator itm = o->values.begin();
+                 itm != o->values.end(); ++itm)
             {
-                std::cout << "\tExpr: " << it2->first << " Value: " << it2->second << std::endl;
+                std::cout << "\texpr: " << itm->first << " Value: " << itm->second << std::endl;
             }
         }
     }
-    for (std::deque<Prefix *>::iterator it = prefixes.begin(); it != prefixes.end(); ++it)
+    for (auto x : prefixes)
     {
-        Prefix *p = *it;
+        Prefix *p = x;
         std::cout << "Prefix: " << p->name << " Coding: " << p->coding << std::endl;
     }
 }
@@ -224,11 +215,10 @@ bool Parser::CodingParser::VisitNode(xmlNode &node, xmlNode *child, void *userDa
         parser->opcodes.push_back(o);
         if (o->name == "")
             parser->opcodeClasses[o->cclass] = o;
-        for (std::deque<Operand *>::iterator it = o->operands.begin();
-             it != o->operands.end(); ++it)
+        for (auto x : o->operands)
         {
-            (*it)->id = parser->operands.size();
-            parser->operands.push_back(*it);
+            x->id = parser->operands.size();
+            parser->operands.push_back(x);
         }
     }
     else if (child->GetName() == "Prefix")
@@ -478,6 +468,7 @@ bool Parser::CodingOpcodeParser::VisitNode(xmlNode &node, xmlNode *child, void *
         child->Visit(p, o);
         opcodes->operands.push_back(o);
     }
+    return true;
 }
 bool Parser::CodingOpcodeOperandParser::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
 {

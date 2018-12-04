@@ -27,6 +27,7 @@
 #define Parser_h
 
 #include "xml.h"
+#include "deque"
 
 typedef unsigned char BYTE;
 
@@ -93,7 +94,7 @@ public:
 class RegClass
 {
 public:
-    RegClass(std::string Name, int bits) : name(Name) { regs = new BYTE((bits +7)/8); memset(regs, 0, (bits +7)/8); }
+    RegClass(std::string Name, int bits) : name(Name) { regs = new BYTE[(bits +7)/8]; memset(regs, 0, (bits +7)/8); }
     ~RegClass() { if (regs) delete regs; }
     int id;
     BYTE *regs;

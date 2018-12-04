@@ -108,7 +108,7 @@ void Section::Optimize(AsmFile* fil)
             {
                 int n = instructions[i]->GetSize();
                 instructions[i]->SetOffset(pc);
-                instructions[i]->Optimize(pc, false);
+                instructions[i]->Optimize(this, pc, false);
                 int m = instructions[i]->GetSize();
                 pc += m;
                 if (n != m)
@@ -119,7 +119,7 @@ void Section::Optimize(AsmFile* fil)
     int pc = 0;
     for (int i = 0; i < instructions.size(); i++)
     {
-        instructions[i]->Optimize(pc, true);
+        instructions[i]->Optimize(this, pc, true);
         pc += instructions[i]->GetSize();
     }
 }

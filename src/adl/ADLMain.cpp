@@ -30,8 +30,9 @@
 #include "Loader.h"
 #include "GenParser.h"
 #include <fstream>
+#include <iostream>
 
-char *ADLMain::usageText = "[options] inputfile\n"
+const char *ADLMain::usageText = "[options] inputfile\n"
             "\n"
             "  -d    dump database\n"
             "\nTime: " __TIME__ "  Date: " __DATE__;
@@ -63,10 +64,11 @@ int ADLMain::Run(int argc, char **argv)
     if (in)
     {
         xmlNode node;
+        node.Reset();
         node.SetStripSpaces(false);
         if (!node.Read(in))
         {
-            Utils::fatal("Invalid file format");
+            Utils::fatal("Invalid file format in line %d", node.Line());
         }
         else
         {

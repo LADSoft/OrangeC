@@ -55,10 +55,10 @@ class Instruction
         fpos(0),
         repeat(1),
         size(Size),
-        offs(0)
+        offs(0),
+        lost(false)
     {
-        data = new unsigned char[size];
-        memcpy(data, Data, size);
+        data = LoadData(!isData, Data, Size);
     }
     Instruction(int aln) : data(nullptr), type(ALIGN), label(nullptr), pos(0), fpos(0), size(aln), offs(0), repeat(1) {}
     Instruction(int Repeat, int Size) : type(RESERVE), label(nullptr), pos(0), fpos(0), size(Size), repeat(Repeat), offs(0)
@@ -71,7 +71,7 @@ class Instruction
     Label* GetLabel() { return label; }
     bool IsLabel() { return type == LABEL; }
     int GetType() { return type; }
-    void Optimize(int pc, bool doErrors);
+    void Optimize(Section *sect, int pc, bool doErrors);
     void SetOffset(int Offs) { offs = Offs; }
     int GetOffset() { return offs; }
     int GetSize()
@@ -97,7 +97,8 @@ class Instruction
     unsigned char* GetBytes() { return data; }
     FixupContainer* GetFixups() { return &fixups; }
     static void SetBigEndian(bool be) { bigEndian = be; }
-
+    unsigned char * LoadData(bool isCode, unsigned char *data, size_t size);
+    bool Lost() const { return lost; }
   private:
     enum iType type;
     unsigned char* data;
@@ -107,6 +108,7 @@ class Instruction
     int pos;
     int fpos;
     int repeat, xrepeat;
+    bool lost;
 
     FixupContainer fixups;
     static bool bigEndian;

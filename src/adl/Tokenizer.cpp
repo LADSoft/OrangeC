@@ -26,6 +26,7 @@
 #include "Loader.h"
 #include "TokenNode.h"
 #include <ctype.h>
+#include <iostream>
 
 int TokenNode::tk_next;
 int TokenNode::tn_next = 1;
@@ -77,10 +78,9 @@ void Parser::EnterRegisterClasses(Register *reg)
 }
 bool Parser::LoadRegisterClasses()
 {
-    for (std::deque<Register *>::iterator it = registers.begin(); it != registers.end();
-         ++it)
+    for (auto x : registers)
     {
-        EnterRegisterClasses(*it);
+        EnterRegisterClasses(x);
     }
     return true;
 }
@@ -110,10 +110,9 @@ void Parser::EnterAddressClasses(Address *address)
 }
 bool Parser::LoadAddressClasses()
 {
-    for (std::deque<Address *>::iterator it = addresses.begin(); it != addresses.end();
-         ++it)
+    for (auto x : addresses)
     {
-        EnterAddressClasses(*it);
+        EnterAddressClasses(x);
     }
     return true;
 }
@@ -121,6 +120,7 @@ bool Parser::LoadAddressClasses()
 // todo, support a TOKEN field in the ADL file for compound tokens...
 bool Parser::LoadAddressTokens(std::string name, std::deque<TokenNode *> &nodes)
 {
+    std::string origname = name;
     int beginLevel = 0;
     bool rv= true;
     std::string expr = name;
@@ -145,19 +145,22 @@ bool Parser::LoadAddressTokens(std::string name, std::deque<TokenNode *> &nodes)
                         break;
                 }
                 std::string label;
+                std::string oname = name;
                 label = name.substr(0, i);
                 name = name.substr(i);
-                for (std::deque<Register *>::iterator it = registers.begin(); it != registers.end(); ++it)
+                for (auto x : registers)
                 {
-                    if ((*it)->name == label)
+                    if (x->name == label)
                     {
-                        token = new TokenNode((*it), beginLevel);
+                        token = new TokenNode((x), beginLevel);
+                        token->errname = origname;
                         break;
                     }
                 }
                 if (!token)
                 {
-                    token = new TokenNode(label, beginLevel);
+                    token = new TokenNode(label, label + name, beginLevel);
+                    token->errname = origname;
                 }
             }
             else if (name[0] == '\'')
@@ -179,22 +182,24 @@ bool Parser::LoadAddressTokens(std::string name, std::deque<TokenNode *> &nodes)
                         label = label.substr(npos+1);
                     }
                 }
-                std::map<std::string, RegClass *>::iterator it = registerClasses.find(label);
-                if (it != registerClasses.end())
+                std::map<std::string, RegClass *>::iterator itm = registerClasses.find(label);
+                if (itm != registerClasses.end())
                 {
-                    token = new TokenNode(it->second, beginLevel);
+                    token = new TokenNode(itm->second, beginLevel);
                     token->name = var;
+                    token->errname = origname;
                 }
                 else
                 {
                     bool found = false;
-                    for (std::deque<Number *>::iterator it = numbers.begin(); it != numbers.end(); ++ it)
+                    for (auto x : numbers)
                     {
-                        if ((*it)->name == label)
+                        if (x->name == label)
                         {
                             found = true;
-                            token = new TokenNode(*it, beginLevel);
+                            token = new TokenNode(x, beginLevel);
                             token->name = var;
+                            token->errname = origname;
                         }
                     }
                     if (!found)
@@ -224,8 +229,9 @@ bool Parser::LoadAddressTokens(std::string name, std::deque<TokenNode *> &nodes)
             }
             else if (ispunct(name[0]) || isdigit(name[0]))
             {
-                token = new TokenNode(name.substr(0, 1), beginLevel);
+                token = new TokenNode(name.substr(0, 1), name, beginLevel);
                 name = name.substr(1);
+                token->errname = origname;
             }
             else
             {
@@ -274,20 +280,20 @@ void Parser::TagClasses(std::string &cclass, std::string coding,
         }
         b[(p->id-1)/8] |= (1 << ((p->id-1) & 7));
     }
-    for (std::deque<TokenNode *>::iterator it = nodes.begin(); it != nodes.end(); ++it)
+    for (auto x : nodes)
     {
-        (*it)->SetBytes(b, bytes);
+        x->SetBytes(b, bytes);
     }
     if (nodes.size())
     {
         if (coding != "")
         {
-            std::map<std::string, int>::iterator it = codings.find(coding);
+            std::map<std::string, int>::iterator itm = codings.find(coding);
             n = codings.size() + 1;
-            if (it == codings.end())
+            if (itm == codings.end())
                 codings[coding] = n;
             else
-                n = it->second;
+                n = itm->second;
             nodes.back()->coding = n;			
         }
         nodes.back()->eos = 1;
@@ -302,33 +308,33 @@ void Parser::EnterInTokenTree(TokenNode *root, std::deque<TokenNode *> &nodes)
     int bytes = (n + 7)/8;
     std::deque<TokenNode *> *container = &root->branches;
     root->used = true;
-    for (std::deque<TokenNode *>::iterator it = nodes.begin(); it != nodes.end(); ++it)
+    for (auto x : nodes)
     {
         bool found = false;
         for (std::deque<TokenNode *>::iterator itb = container->begin(); itb != container->end(); ++ itb)
         {
-            if ((*itb)->type == (*it)->type && (*itb)->opaque == (*it)->opaque && (*itb)->optionLevel == (*it)->optionLevel)
+            if ((*itb)->type == x->type && (*itb)->opaque == x->opaque && (*itb)->optionLevel == x->optionLevel)
             {
                 found = true;
                 if (root == addressRoot)
                 {
                     for (int i=0; i < bytes; i++)
-                        (*itb)->bytes[i] |= (*it)->bytes[i];
+                        (*itb)->bytes[i] |= x->bytes[i];
                 }
-                if ((*it)->eos)
+                if (x->eos)
                 {
                     (*itb)->eos = 1;
-                    if ((*it)->coding != -1)
+                    if (x->coding != -1)
                     {
                         if ((*itb)->coding != -1)
-                            std::cout << "Error { " << (*itb)->name << " } already has a coding" << std::endl;
-                        (*itb)->coding = (*it)->coding;
+                            std::cout << "Error { " << (*itb)->errname << " } already has a coding" << std::endl;
+                        (*itb)->coding = x->coding;
                     }
-                    if ((*it)->values != NULL)
+                    if (x->values != NULL)
                     {
                         if ((*itb)->values != NULL)
-                            std::cout << "Error { " << (*itb)->name << " } already has values" << std::endl;
-                        (*itb)->values = (*it)->values;
+                            std::cout << "Error { " << (*itb)->errname << " } already has values" << std::endl;
+                        (*itb)->values = x->values;
                     }
                 }
                 container = &(*itb)->branches;
@@ -337,22 +343,21 @@ void Parser::EnterInTokenTree(TokenNode *root, std::deque<TokenNode *> &nodes)
         }
         if (!found)
         {
-            (*it)->used = true;
-            container->push_back((*it));
-            container = &(*it)->branches;
+            x->used = true;
+            container->push_back((x));
+            container = &x->branches;
         }
     }
 }
 bool Parser::LoadAddresses()
 {
     bool rv = true;
-    addressRoot = new TokenNode("",0);
-    for (std::deque<Address *>::iterator it = addresses.begin(); it != addresses.end();
-         ++it)
+    addressRoot = new TokenNode("","", 0);
+    for (auto x : addresses)
     {
         std::deque<TokenNode *> nodes;
-        rv &= LoadAddressTokens((*it)->name, nodes);
-        TagClasses((*it)->cclass, (*it)->coding, &(*it)->values, nodes);
+        rv &= LoadAddressTokens(x->name, nodes);
+        TagClasses(x->cclass, x->coding, &x->values, nodes);
         EnterInTokenTree(addressRoot, nodes);
         nodes.clear();
     }
@@ -388,17 +393,17 @@ bool Parser::LoadOperandTokens(std::string name, std::string coding,
                 std::string label;
                 label = name.substr(0, i);
                 name = name.substr(i);
-                for (std::deque<Register *>::iterator it = registers.begin(); it != registers.end(); ++it)
+                for (auto x : registers)
                 {
-                    if ((*it)->name == label)
+                    if (x->name == label)
                     {
-                        token = new TokenNode((*it), beginLevel);
+                        token = new TokenNode((x), beginLevel);
                         break;
                     }
                 }
                 if (!token)
                 {
-                    token = new TokenNode(label, beginLevel);
+                    token = new TokenNode(label, label, beginLevel);
                 }
             }
             else if (name[0] == '\'')
@@ -420,29 +425,29 @@ bool Parser::LoadOperandTokens(std::string name, std::string coding,
                         label = label.substr(npos+1);
                     }
                 }
-                std::map<std::string, RegClass *>::iterator it = registerClasses.find(label);
-                if (it != registerClasses.end())
+                std::map<std::string, RegClass *>::iterator itm = registerClasses.find(label);
+                if (itm != registerClasses.end())
                 {
-                    token = new TokenNode(it->second, beginLevel);
+                    token = new TokenNode(itm->second, beginLevel);
                     token->name = var;
                 }
                 else
                 {
-                    std::map<std::string, AddressClass *>::iterator it = addressClasses.find(label);
-                    if (it != addressClasses.end())
+                    std::map<std::string, AddressClass *>::iterator itm = addressClasses.find(label);
+                    if (itm != addressClasses.end())
                     {
-                        token = new TokenNode(it->second, beginLevel);
+                        token = new TokenNode(itm->second, beginLevel);
                         token->name = var;
                     }
                     else
                     {
                         bool found = false;
-                        for (std::deque<Number *>::iterator it = numbers.begin(); it != numbers.end(); ++ it)
+                        for (auto x : numbers)
                         {
-                            if ((*it)->name == label)
+                            if (x->name == label)
                             {
                                 found = true;
-                                token = new TokenNode(*it, beginLevel);
+                                token = new TokenNode(x, beginLevel);
                                 token->name = var;
                             }
                         }
@@ -474,7 +479,7 @@ bool Parser::LoadOperandTokens(std::string name, std::string coding,
             }
             else if (ispunct(name[0])|| isdigit(name[0]))
             {
-                token = new TokenNode(name.substr(0, 1), beginLevel);
+                token = new TokenNode(name.substr(0, 1), name, beginLevel);
                 name = name.substr(1);
             }
             else
@@ -497,12 +502,12 @@ bool Parser::LoadOperandTokens(std::string name, std::string coding,
     {
         if (coding != "")
         {
-            std::map<std::string, int>::iterator it = codings.find(coding);
+            std::map<std::string, int>::iterator itm = codings.find(coding);
             int n = codings.size() + 1;
-            if (it == codings.end())
+            if (itm == codings.end())
                 codings[coding] = n;
             else
-                n = it->second;		
+                n = itm->second;		
             nodes.back()->coding = n;
         }
         nodes.back()->eos = 1;
@@ -514,15 +519,14 @@ bool Parser::LoadOperandTokens(std::string name, std::string coding,
 bool Parser::LoadOperands()
 {
     bool rv = true;
-    for (std::deque<Opcode *>::iterator it = opcodes.begin(); it != opcodes.end(); ++it)
+    for (auto x : opcodes)
     {
-        (*it)->tokenRoot = new TokenNode("", 0);
-        for (std::deque<Operand *>::iterator it1 = (*it)->operands.begin();
-             it1 != (*it)->operands.end(); ++it1)
+        x->tokenRoot = new TokenNode("", "", 0);
+        for (auto o : x->operands)
         {
             std::deque<TokenNode *>nodes;
-            rv &= LoadOperandTokens((*it1)->name, (*it1)->coding, &(*it1)->values, nodes);
-            EnterInTokenTree((*it)->tokenRoot, nodes);
+            rv &= LoadOperandTokens(o->name, o->coding, &o->values, nodes);
+            EnterInTokenTree(x->tokenRoot, nodes);
         }
     }
     return rv;

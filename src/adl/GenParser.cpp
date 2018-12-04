@@ -28,10 +28,12 @@
 #include "TokenNode.h"
 #include "Utils.h"
 #include <ctype.h>
-#include <stdlib>
+#include <stdlib.h>
 #include <fstream>
 #include <sstream>
 #include <assert.h>
+#include <iostream>
+
 bool GenParser::Generate()
 {
     bool rv = false;
@@ -77,13 +79,12 @@ bool GenParser::Generate()
 }
 void GenParser::GatherVars(std::map<std::string, std::string> &values, std::string name)
 {
-    for (std::map<std::string, std::string>::iterator it1 = values.begin();
-         it1 != values.end(); ++it1)
+    for (auto &x : values)
     {
-        std::map<std::string, int>::iterator it2 = valueTags.find(it1->first);
-        if (it2 == valueTags.end())
+        std::map<std::string, int>::iterator itm = valueTags.find(x.first);
+        if (itm == valueTags.end())
         {
-            valueTags[it1->first] = valueTags.size();
+            valueTags[x.first] = valueTags.size();
         }
     }
     while (name.size())
@@ -104,8 +105,8 @@ void GenParser::GatherVars(std::map<std::string, std::string> &values, std::stri
                 if (n2 != std::string::npos && n2 < n1)
                 {
                     std::string var = name.substr(n+1, n2 -n -1);
-                    std::map<std::string, int>::iterator it2 = valueTags.find(var);
-                    if (it2 == valueTags.end())
+                    std::map<std::string, int>::iterator itm = valueTags.find(var);
+                    if (itm == valueTags.end())
                     {
                         valueTags[var] = valueTags.size();
                     }					
@@ -120,30 +121,26 @@ void GenParser::GatherVars(std::map<std::string, std::string> &values, std::stri
 }
 bool GenParser::GenerateOperandHeader()
 {
-    for (std::deque<Address *>::iterator it = parser.addresses.begin();
-         it != parser.addresses.end(); ++it)
+    for (auto x : parser.addresses)
     {
-        GatherVars((*it)->values, (*it)->name);
+        GatherVars(x->values, x->name);
     }
-    for (std::deque<Operand *>::iterator it = parser.operands.begin();
-         it != parser.operands.end(); ++it)
+    for (auto x : parser.operands)
     {
-        GatherVars((*it)->values, (*it)->name);
+        GatherVars(x->values, x->name);
     }
-    for (std::deque<Opcode *>::iterator it = parser.opcodes.begin();
-         it != parser.opcodes.end(); ++it)
+    for (auto x : parser.opcodes)
     {
-        GatherVars((*it)->values, "");
+        GatherVars(x->values, "");
     }
-    for (std::deque<TokenNode *>::iterator it = TokenNode::tokenList.begin();
-         it != TokenNode::tokenList.end(); ++it)
+    for (auto x : TokenNode::tokenList)
     {
-        if ((*it)->name != "")
+        if (x->name != "")
         {
-            std::map<std::string, int>::iterator it2 = valueTags.find((*it)->name);
-            if (it2 == valueTags.end())
+            std::map<std::string, int>::iterator itm = valueTags.find(x->name);
+            if (itm == valueTags.end())
             {
-                valueTags[(*it)->name] = valueTags.size();
+                valueTags[x->name] = valueTags.size();
             }
         }
     }
@@ -197,16 +194,17 @@ bool GenParser::GenerateHeader()
     (*file) << "public:" << std::endl;
     (*file) << "\t" << className << "() { Init(); }" << std::endl;
     int i = 0;
-    for (std::map<std::string, std::string>::iterator it= parser.stateVars.begin();
-         it != parser.stateVars.end(); ++it, ++i)
+    for (auto &x : parser.stateVars)
     {
-        stateVarTags[it->first] = i;
-        (*file) << "\tvoid Set" << it->first << "(int v) { stateVars[" << i << "] = v; }" << std::endl;
-        (*file) << "\tint Get" << it->first << "() { return stateVars[" << i << "]; }" << std::endl;
+        stateVarTags[x.first] = i;
+        (*file) << "\tvoid Set" << x.first << "(int v) { stateVars[" << i << "] = v; }" << std::endl;
+        (*file) << "\tint Get" << x.first << "() { return stateVars[" << i << "]; }" << std::endl;
+
     }
     (*file) << "\tvirtual void Setup(Section *sect);" << std::endl;
     (*file) << "\tvirtual void Init();" << std::endl;
     (*file) << "\tvirtual bool ParseSection(AsmFile *fil, Section *sect);" << std::endl;
+    (*file) << "\tvirtual bool ParseDirective(AsmFile *fil, Section *sect);" << std::endl;
     int be = 0;
     std::string bes = parser.parameters["Endian"];
     if (bes.size())
@@ -215,25 +213,30 @@ bool GenParser::GenerateHeader()
     (*file) << std::endl;
     (*file) << "protected:" << std::endl;
     (*file) << "\tbool ParseAddresses("<<operandClassName<<" &operand, int addrClass, int &tokenPos);" << std::endl;
-    (*file) << "\tbool ParseOperands2(" << tokenClassName << " *tokenList, "<<operandClassName<<" &operand, int tokenPos, int level);" << std::endl;
-    (*file) << "\tbool ParseOperands(" << tokenClassName << " *tokenList, "<<operandClassName<<" &operand);" << std::endl;
-    (*file) << "\tbool ProcessCoding(CodingHelper &base, "<<operandClassName<<" &operand, Coding *coding);" << std::endl;
+    (*file) << "\tasmError ParseOperands2(" << tokenClassName << " *tokenList, "<<operandClassName<<" &operand, int tokenPos, int level);" << std::endl;
+    (*file) << "\tasmError ParseOperands(" << tokenClassName << " *tokenList, "<<operandClassName<<" &operand);" << std::endl;
+    (*file) << "\tbool ProcessCoding("<<operandClassName<<" &operand, Coding *coding);" << std::endl;
+    (*file) << "\tbool ProcessCoding(" << operandClassName << " &operand, Coding *coding, int field, int bits, int* arr, char* bitcounts, char *func, int &index);" << std::endl;
+    (*file) << "\tbool CheckCoding(" << operandClassName << " &operand,Coding *coding);" << std::endl;
     (*file) << "\tbool MatchesToken(int token, int tokenPos);" << std::endl;
     (*file) << "\tbool MatchesRegister(int reg, int tokenPos);" << std::endl;
     (*file) << "\tbool MatchesRegisterClass(int cclass, int tokenPos);" << std::endl;
-    (*file) << "\tvirtual bool DispatchOpcode(int opcode);" << std::endl;
+    (*file) << "\tint DoMath(char op, int left, int right);" << std::endl;
+    (*file) << "\tvirtual asmError DispatchOpcode(int opcode);" << std::endl;
     (*file) << std::endl;	
-    (*file) << "\ttypedef bool ("<<className<<"::*DispatchType)(" << operandClassName << " &);" << std::endl;
+    (*file) << "\ttypedef asmError ("<<className<<"::*DispatchType)(" << operandClassName << " &);" << std::endl;
     (*file) << "\tstatic DispatchType DispatchTable[];" << std::endl;
+    (*file) << std::endl;
+    (*file) << "\tstatic " << tokenClassName << " *addressTable[];" << std::endl;
     (*file) << std::endl;
     (*file) << "\ttypedef Coding * (" << className << "::*StateFuncDispatchType)();" << std::endl;
     (*file) << "\tstatic StateFuncDispatchType stateFuncs[];" << std::endl;
     i = 1;
-    for (std::deque<State *>::iterator it = parser.states.begin();
-         it != parser.states.end(); ++it, ++i)
+    for (auto x : parser.states)
     {
-        stateFuncTags[(*it)->name] = stateFuncTags.size();
+        stateFuncTags[x->name] = stateFuncTags.size();
         (*file) << "\tCoding *StateFunc" << i << "();" << std::endl;
+        ++i;
     }
     (*file) << std::endl;
     (*file) << "private:" << std::endl;
@@ -241,111 +244,102 @@ bool GenParser::GenerateHeader()
     (*file) << std::endl;
     i = 1;
     (*file) << "\tstatic Coding stateCoding_eot[];" << std::endl;
-    for (std::deque<State *>::iterator it = parser.states.begin();
-         it != parser.states.end(); ++it, ++i)
+    for (auto x : parser.states)
     {
         int j = 1;
-        for (std::map<std::string, std::string>::iterator it1 = (*it)->clauses.begin();
-             it1 != (*it)->clauses.end(); ++it1, ++j)
-             
+        for (auto& m : x->clauses)
         {
             (*file) << "\tstatic Coding stateCoding" << i << "_" << j << "[];" << std::endl;
+            ++j;
         }
+        ++i;
     }
     (*file) << std::endl;
     (*file) << "\ttypedef bool (" << className << "::*NumberDispatchType)(int tokenPos);" << std::endl;
     (*file) << "\tstatic NumberDispatchType numberFuncs[];" << std::endl;
-    for (std::deque<Number *>::iterator it = parser.numbers.begin();
-         it != parser.numbers.end(); ++ it)
+    for (auto x : parser.numbers)
     {
-        (*file) << "\tbool Number" << (*it)->id + 1 << "(int tokenPos);" << std::endl;
+        (*file) << "\tbool Number" << x->id + 1 << "(int tokenPos);" << std::endl;
     }
     (*file) << std::endl;
     int nextToken = 1;
     int n = (parser.addressClasses.size() + 7)/8;
-    for (std::deque<TokenNode *>::iterator it = TokenNode::tokenList.begin() ;
-             it != TokenNode::tokenList.end(); ++it)
+    for (auto t : TokenNode::tokenList)
     {
-        if ((*it)->used && (*it)->bytes)
+        if (t->used && t->bytes)
         {
             int x = nextToken;
             int i = 1;
-            for (std::deque<BYTE *>::iterator it1 = tokenData.begin(); it1 != tokenData.end(); it1++, i++)
+            for (auto x1 : tokenData)
             {
-                if (!memcmp(*it1, (*it)->bytes, n))
+                if (!memcmp(x1, t->bytes, n))
                 {
                     x = i;
                     break;
                 }
+                ++i;
             }
             if (x == nextToken)
             {
                 (*file) << "\tstatic unsigned char RegClassData" << x << "[];" <<std::endl;
                 nextToken++;
-                tokenData.push_back((*it)->bytes);
+                tokenData.push_back(t->bytes);
             }
-            (*it)->tokenId = x;
+            t->tokenId = x;
         }
     }
     (*file) << std::endl;
-    for (std::map<std::string, RegClass *>::iterator it = parser.registerClasses.begin();
-         it != parser.registerClasses.end(); ++it)
+    for (auto& m : parser.registerClasses)
     {
-        (*file) << "\tstatic unsigned char registerData" << it->second->id << "[];" << std::endl;
+        (*file) << "\tstatic unsigned char registerData" << m.second->id << "[];" << std::endl;
     }
     (*file) << "\tstatic unsigned char *registerDataIndirect[];" << std::endl;
     (*file) << std::endl;
-    for (std::deque<Register *>::iterator it = parser.registers.begin();
-         it != parser.registers.end(); ++it)
+    for (auto x : parser.registers)
     {
-        for (std::map<std::string, std::string>:: iterator it1 = (*it)->values.begin();
-             it1 != (*it)->values.end(); ++it1)
+        for (auto& m : x->values)
         {
-            std::map<std::string, int>::iterator it2 = registerTags.find(it1->first);
-            if (it2 == registerTags.end())
+            std::map<std::string, int>::iterator itm = registerTags.find(m.first);
+            if (itm == registerTags.end())
             {
-                registerTags[it1->first] = registerTags.size();
+                registerTags[m.first] = registerTags.size();
             }
         }
     }
     (*file) << "\tstatic int registerValues[][" << registerTags.size() << "];" << std::endl;
     (*file) << std::endl;
-    for (std::deque<TokenNode *>::iterator it = TokenNode::tokenList.begin() ;
-             it != TokenNode::tokenList.end(); ++it)
+    for (auto x : TokenNode::tokenList)
     {
-        if ((*it)->used)
+        if (x->used)
         {
             std::map<std::string, std::string> *vals = NULL;
-            if ((*it)->values || (*it)->coding != -1 || (*it)->type == TokenNode::tk_regclass || (*it)->type == TokenNode::tk_number)
+            if (x->values || x->coding != -1 || x->type == TokenNode::tk_regclass || x->type == TokenNode::tk_number)
             {
-                if ((*it)->values)
+                if (x->values)
                 {
-                    for (std::map<std::string, std::string>::iterator it1 =
-                         (*it)->values->begin(); it1 != (*it)->values->end(); ++it1)
+                    for (auto& m : *x->values)
                     {
-                        int n = valueTags[it1->first];
-                        (*file) << "\tstatic Coding tokenCoding" << (*it)->id << "_" << n << "[];" << std::endl;
+                        int n = valueTags[m.first];
+                        (*file) << "\tstatic Coding tokenCoding" << x->id << "_" << n << "[];" << std::endl;
                     }
                 }
-                (*file) << "\tvoid TokenFunc" << (*it)->id << "(" << operandClassName << " &operand, int tokenPos);" << std::endl;
+                (*file) << "\tvoid TokenFunc" << x->id << "(" << operandClassName << " &operand, int tokenPos);" << std::endl;
             }
-            if ((*it)->branches.size())
+            if (x->branches.size())
             {
-                (*file) << "\tstatic " << tokenClassName << " tokenBranches" << (*it)->id << "[];" << std::endl;
+                (*file) << "\tstatic " << tokenClassName << " tokenBranches" << x->id << "[];" << std::endl;
             }
         }
     }
     (*file) << std::endl;	
-    for (std::deque<Opcode *>::iterator it = parser.opcodes.begin();
-         it != parser.opcodes.end(); ++it)
+    for (auto x : parser.opcodes)
     {
-        for (std::map<std::string, std::string> :: iterator it1 = (*it)->values.begin();
-             it1 != (*it)->values.end(); ++ it1)
+        for (auto& m : x->values)
         {
-            int n = valueTags[it1->first];
-            (*file) << "\tstatic Coding OpcodeCodings" << (*it)->id << "_" << n << "[];" << std::endl;
+            int n = valueTags[m.first];
+            (*file) << "\tstatic Coding OpcodeCodings" << x->id << "_" << n << "[];" << std::endl;
         }
-        (*file) << "\tbool Opcode" << (*it)->id << "(" << operandClassName << " &operand);" << std::endl;
+        (*file) << "\tasmError Opcode" << x->id << "(" << operandClassName << " &operand);" << std::endl;
     }
     (*file) << std::endl;	
     for (int i=0; i < parser.codings.size(); i++)
@@ -357,10 +351,10 @@ bool GenParser::GenerateHeader()
     if (parser.prefixes.size())
     {
         i = 1;
-        for (std::deque<Prefix *>::iterator it = parser.prefixes.begin();
-             it != parser.prefixes.end(); ++it, ++i)
+        for (auto x : parser.prefixes)
         {
             (*file) << "\tstatic Coding prefixCoding" << i << "[];" << std::endl;
+            i++;
         }
         (*file) << "\tstatic Coding *prefixCodings" << "[];" << std::endl;
         (*file) << std::endl;	
@@ -386,51 +380,48 @@ bool GenParser::GenerateStateFuncs()
 {
     int i = 1;
     (*file) << "Coding " << className << "::stateCoding_eot[] = { { Coding::eot } };" << std::endl;
-    for (std::deque<State *>::iterator it = parser.states.begin();
-         it != parser.states.end(); ++it, ++i)
+    for (auto x : parser.states)
     {
         int j = 1;
-        for (std::map<std::string, std::string>::iterator it1 = (*it)->clauses.begin();
-             it1 != (*it)->clauses.end(); ++it1, ++j)
+        for (auto& m : x->clauses)
              
         {
             (*file) << "Coding " << className << "::stateCoding" << i << "_" << j << "[] = {" << std::endl;
-            GenerateCoding(it1->second);
+            GenerateCoding(m.second, x->name);
             (*file) << "};" << std::endl;
+            ++j;
         }
+        i++;
     }
     i = 1;
-    for (std::deque<State *>::iterator it = parser.states.begin();
-         it != parser.states.end(); ++it, ++i)
+    for (auto x : parser.states)
     {
         (*file) << "Coding *" << className << "::StateFunc" << i << "()" << std::endl;
         (*file) << "{" << std::endl;
         int j = 1;
-        for (std::map<std::string, std::string>::iterator it1 = (*it)->clauses.begin();
-             it1 != (*it)->clauses.end(); ++it1, ++j)
-             
+        for (auto& m : x->clauses)
         {
-            std::string sel = it1->first;
+            std::string sel = m.first;
             int npos = sel.find_first_of("'");
             while (npos != std::string::npos)
             {
                 int n1 = sel.find_first_of("'", npos+1);
                 if (n1 == std::string::npos)
                 {
-                    std::cout << "Error { " << it1->first << "} Invalid when clause in state" << std::endl;
+                    std::cout << "Error { " << m.first << "} Invalid when clause in state" << std::endl;
                     break;
                 }
                 std::string val = sel.substr(npos + 1, n1 - npos - 1);
-                std::map<std::string, int>:: iterator it2 = stateVarTags.find(val);
-                if (it2 == stateVarTags.end())
+                std::map<std::string, int>:: iterator itm = stateVarTags.find(val);
+                if (itm == stateVarTags.end())
                 {
-                    std::cout << "Error { " << it1->first << " } Unknown state var '" << val << "'" << std::endl;
+                    std::cout << "Error { " << m.first << " } Unknown state var '" << val << "'" << std::endl;
                     break;
                 }
                 else
                 {
                     std::stringstream t ;
-                    t << "stateVars[" << it2->second << "]";
+                    t << "stateVars[" << itm->second << "]";
                     val = "";
                     t >> val;
                     sel.replace(npos, n1 - npos + 1, val);
@@ -441,29 +432,28 @@ bool GenParser::GenerateStateFuncs()
             (*file) << "\t{" << std::endl;
             (*file) << "\t\treturn stateCoding" << i << "_" << j << ";" << std::endl;
             (*file) << "\t}" << std::endl;
-            
+            ++j;
         }
         (*file) << "\treturn stateCoding_eot;" << std::endl;
         (*file) << "}" << std::endl;
+        ++i;
     }
     (*file) << className << "::StateFuncDispatchType " << className << "::stateFuncs[] = {" << std::endl;
     i = 1;
-    for (std::deque<State *>::iterator it = parser.states.begin();
-         it != parser.states.end(); ++it, ++i)
+    for (auto x : parser.states)
     {
         (*file) << "\t&" << className << "::StateFunc" << i << "," << std::endl;
+        ++i;
     }
     (*file) << "};" << std::endl;
-    for (std::deque<Number *>::iterator it = parser.numbers.begin();
-         it != parser.numbers.end(); ++ it)
+    for (auto x : parser.numbers)
     {
-        (*file) << "bool " << className << "::Number" << (*it)->id + 1 << "(int tokenPos)" << std::endl;
+        (*file) << "bool " << className << "::Number" << x->id + 1 << "(int tokenPos)" << std::endl;
         (*file) << "{" << std::endl;
         (*file) << "\tbool rv = false;" << std::endl;
-        for (std::deque<std::string>::iterator it1 = (*it)->values.begin();
-             it1 != (*it)->values.end(); ++ it1)
+        for (auto &x1: x->values)
         {
-            std::string temp = (*it1);
+            std::string temp = x1;
             std::string sel;
             int npos = temp.find("&");
             if (npos != std::string::npos)
@@ -482,8 +472,8 @@ bool GenParser::GenerateStateFuncs()
                         break;
                     }
                     std::string val = sel.substr(npos + 1, n1 - npos - 1);
-                    std::map<std::string, int>:: iterator it2 = stateVarTags.find(val);
-                    if (it2 == stateVarTags.end())
+                    std::map<std::string, int>:: iterator itm = stateVarTags.find(val);
+                    if (itm == stateVarTags.end())
                     {
                         std::cout << "Error { " << err << " } Unknown state var '" << val << "'" << std::endl;
                         break;
@@ -491,7 +481,7 @@ bool GenParser::GenerateStateFuncs()
                     else
                     {
                         std::stringstream t ;
-                        t << "stateVars[" << it2->second << "]";
+                        t << "stateVars[" << itm->second << "]";
                         val = "";
                         t >> val;
                         sel.replace(npos, n1 - npos + 1, val);
@@ -554,12 +544,12 @@ bool GenParser::GenerateStateFuncs()
                 /*
                 if (label)
                 {
-                    (*file) << "\t\trv = ParseLabel(" << (*it)->relOfs << ", " << (xsigned ? 1 : 0) << ", " << bits << ");" << std::endl;
+                    (*file) << "\t\trv = ParseLabel(" << x->relOfs << ", " << (xsigned ? 1 : 0) << ", " << bits << ");" << std::endl;
                 }
                 else
                 */
                 {
-                    (*file) << "\t\trv = ParseNumber(" << (*it)->relOfs << ", " << (xsigned ? 1 : 0) << ", " << bits << ", " << (label ? 0 : 1) << ", tokenPos);" << std::endl;
+                    (*file) << "\t\trv = ParseNumber(" << x->relOfs << ", " << (xsigned ? 1 : 0) << ", " << bits << ", " << (label ? 0 : 1) << ", tokenPos);" << std::endl;
                 }
                 (*file) << "\t}" << std::endl;
             }
@@ -568,10 +558,9 @@ bool GenParser::GenerateStateFuncs()
         (*file) << "}" << std::endl;
     }
     (*file) << className << "::NumberDispatchType " << className << "::numberFuncs[] = {" << std::endl;
-    for (std::deque<Number *>::iterator it = parser.numbers.begin();
-         it != parser.numbers.end(); ++ it)
+    for (auto x : parser.numbers)
     {
-        (*file) << "\t&" << className << "::Number" << (*it)->id + 1 << "," << std::endl;
+        (*file) << "\t&" << className << "::Number" << x->id + 1 << "," << std::endl;
     }
     (*file) << "};" << std::endl;
     (*file) << std::endl;
@@ -583,38 +572,38 @@ bool GenParser::GenerateTokenizer()
     (*file) << "{" << std::endl;
     (*file) << "\tmemset(&stateVars, 0, sizeof(stateVars));" << std::endl;
     int i = 0;
-    for (std::map<std::string, std::string>::iterator it = parser.stateVars.begin();
-         it != parser.stateVars.end(); ++it, ++i)
+    for (auto& m :  parser.stateVars)
     {
-        if (it->second == "")
-            it->second = "0";
-        (*file) << "\tstateVars[" << i << "] = " << it->second << ";" << std::endl;
+        if (m.second == "")
+            m.second = "0";
+        (*file) << "\tstateVars[" << i << "] = " << m.second << ";" << std::endl;
+        ++i;
     }
-    for (std::map<std::string, int>::iterator it = TokenNode::tokenTable.begin();
-         it != TokenNode::tokenTable.end(); ++it)
+    for (auto& m : TokenNode::tokenTable)
     {
-        if (it->first != "empty")
-            (*file) << "\t" << "tokenTable[\"" << it->first << "\"] = " << it->second + TokenNode::TOKEN_BASE << ";" << std::endl;
+        if (m.first != "empty")
+            (*file) << "\t" << "tokenTable[\"" << m.first << "\"] = " << m.second + TokenNode::TOKEN_BASE << ";" << std::endl;
     }
-    for (std::deque<Register *>::iterator it = parser.registers.begin();
-         it != parser.registers.end(); ++it)
+    for (auto x : parser.registers)
     {
-          (*file) << "\t" << "tokenTable[\"" << (*it)->name << "\"] = " << (*it)->id + TokenNode::REGISTER_BASE << ";" << std::endl;
+          (*file) << "\t" << "tokenTable[\"" << x->name << "\"] = " << x->id + TokenNode::REGISTER_BASE << ";" << std::endl;
     }
     i = 0;
-    for (std::deque<Opcode *>::iterator it = parser.opcodes.begin(); it != parser.opcodes.end(); ++it, ++i)
+    for (auto x : parser.opcodes)
     {
-        if ((*it)->name != "")
+        if (x->name != "")
         {
-            (*file) << "\t" << "opcodeTable[\"" << (*it)->name << "\"] = " << i << ";" << std::endl;
+            (*file) << "\t" << "opcodeTable[\"" << x->name << "\"] = " << i << ";" << std::endl;
         }
+        i++;
     }
     if (parser.prefixes.size())
     {
         i = 0;
-        for (std::deque<Prefix *>::iterator it = parser.prefixes.begin(); it != parser.prefixes.end(); ++it, ++i)
+        for (auto x : parser.prefixes)
         {
-            (*file) << "\t" << "prefixTable[\"" << (*it)->name << "\"] = " << i << ";" << std::endl;
+            (*file) << "\t" << "prefixTable[\"" << x->name << "\"] = " << i << ";" << std::endl;
+            i++;
         }
         (*file) << "}" << std::endl;
         (*file) << std::endl;
@@ -625,25 +614,24 @@ bool GenParser::GenerateTokenTables()
 {
     int n = (parser.addressClasses.size() + 7) / 8;
     int i = 1;
-    for (std::deque<BYTE *>::iterator it = tokenData.begin() ;
-             it != tokenData.end(); ++it, ++i)
+    for (auto x : tokenData)
     {
         (*file) << "unsigned char " << className << "::RegClassData" << i << "[] = {" ;
         for (int j=0; j < n; j++)
         {
-            (*file) << (int)((*it)[j]) << ", " ;
+            (*file) << (int)((x)[j]) << ", " ;
         }
         (*file) << "};" << std::endl;
+        i++;
     }
     (*file) << std::endl;
     n = (parser.registers.size() + 7)/ 8;
-    for (std::map<std::string, RegClass *>::iterator it = parser.registerClasses.begin();
-         it != parser.registerClasses.end(); ++it)
+    for (auto& m : parser.registerClasses)
     {
-        (*file) << "unsigned char " << className << "::registerData" << it->second->id << "[] = {";
+        (*file) << "unsigned char " << className << "::registerData" << m.second->id << "[] = {";
         for (int j=0; j < n; j++)
         {
-            (*file) << (int)(it->second->regs[j]) << ", " ;
+            (*file) << (int)(m.second->regs[j]) << ", " ;
         }
         (*file) << "};" << std::endl;		
     }
@@ -657,14 +645,12 @@ bool GenParser::GenerateTokenTables()
     (*file) << std::endl;
     int *vals = new int[registerTags.size() * parser.registers.size()];
     memset(vals, 0xff, (registerTags.size() * parser.registers.size()) * sizeof(int));
-    for (std::deque<Register *>::iterator it = parser.registers.begin();
-         it != parser.registers.end(); ++it)
+    for (auto x : parser.registers)
     {
-        for (std::map<std::string, std::string>:: iterator it1 = (*it)->values.begin();
-             it1 != (*it)->values.end(); ++it1)
+        for (auto& m : x->values)
         {
-            int n = registerTags[it1->first];
-            vals[(*it)->id * registerTags.size() + n] = strtol(it1->second.c_str(), NULL, 0);
+            int n = registerTags[m.first];
+            vals[x->id * registerTags.size() + n] = strtol(m.second.c_str(), NULL, 0);
         }
     }
     (*file) << "int " << className << "::registerValues[][" << registerTags.size() << "] = {" << std::endl;
@@ -741,12 +727,11 @@ void GenParser::GenerateAddressFuncs(TokenNode *value, std::string coding)
     {
         if (value->values)
         {
-            for (std::map<std::string, std::string>::iterator it1 =
-                 value->values->begin(); it1 != value->values->end(); ++it1)
+            for (auto& m : *value->values)
             {
-                int n = valueTags[it1->first];
+                int n = valueTags[m.first];
                 (*file) << "Coding " << className << "::tokenCoding" << value->id << "_" << n << "[] = {" << std::endl;
-                GenerateCoding(it1->second);
+                GenerateCoding(m.second, value->name);
                 (*file) << "};" << std::endl;
             }
         }
@@ -765,8 +750,8 @@ void GenParser::GenerateAddressFuncs(TokenNode *value, std::string coding)
             (*file) << "\toperand.values[" << n << "]->val = inputTokens[tokenPos]->val->ival;" << std::endl;
             (*file) << "\toperand.values[" << n << "]->bits = 0;" << std::endl;
             (*file) << "\toperand.values[" << n << "]->field = 0;" << std::endl;
-            (*file) << "\toperand.values[" << n << "]->math = 0;" << std::endl;
-            (*file) << "\toperand.values[" << n << "]->mathval = 0;" << std::endl;
+            (*file) << "\toperand.values[" << n << "]->unary = 0;" << std::endl;
+            (*file) << "\toperand.values[" << n << "]->binary = 0;" << std::endl;
             (*file) << "\toperand.values[" << n << "][1].type = Coding::eot;" << std::endl;
         }
         else if (value->type == TokenNode::tk_number)
@@ -778,17 +763,16 @@ void GenParser::GenerateAddressFuncs(TokenNode *value, std::string coding)
             (*file) << "\toperand.values[" << n << "]->val = operands.size();" << std::endl;
             (*file) << "\toperand.values[" << n << "]->bits = 0;" << std::endl;
             (*file) << "\toperand.values[" << n << "]->field = 0;" << std::endl;
-            (*file) << "\toperand.values[" << n << "]->math = 0;" << std::endl;
-            (*file) << "\toperand.values[" << n << "]->mathval = 0;" << std::endl;
+            (*file) << "\toperand.values[" << n << "]->unary = 0;" << std::endl;
+            (*file) << "\toperand.values[" << n << "]->binary = 0;" << std::endl;
             (*file) << "\toperand.values[" << n << "][1].type = Coding::eot;" << std::endl;
             (*file) << "\toperands.push_back(numeric);" << std::endl;
         }
         if (value->values)
         {
-            for (std::map<std::string, std::string>::iterator it1 =
-                 value->values->begin(); it1 != value->values->end(); ++it1)
+            for (auto& m : *value->values)
             {
-                int n = valueTags[it1->first];
+                int n = valueTags[m.first];
                 (*file) << "\toperand.values[" << n << "] = tokenCoding" << value->id << "_" << n << ";" << std::endl;			
             }
         }
@@ -797,33 +781,29 @@ void GenParser::GenerateAddressFuncs(TokenNode *value, std::string coding)
 }
 void GenParser::GenerateAddressTokenTree(TokenNode *value)
 {
-    for (std::deque<TokenNode *>::iterator it = value->branches.begin();
-         it != value->branches.end(); it++)
+    for (auto x : value->branches)
     {
-        GenerateAddressTokenTree(*it);
+        GenerateAddressTokenTree(x);
     }
-    for (std::deque<TokenNode *>::iterator it = value->branches.begin();
-         it != value->branches.end(); it++)
+    for (auto x : value->branches)
     {
-        GenerateAddressFuncs(*it, "addressCoding");
+        GenerateAddressFuncs(x, "addressCoding");
     }
     if (value->branches.size())
     {
         (*file) << tokenClassName << " " << className << "::tokenBranches" << value->id << "[] = {" << std::endl;
-        for (std::deque<TokenNode *>::iterator it = value->branches.begin();
-             it != value->branches.end(); it++)
+        for (auto x : value->branches)
         {
-            if ((*it)->type == TokenNode::tk_reg)
+            if (x->type == TokenNode::tk_reg)
             {
-                GenerateAddressData((*it), "addressCoding");
+                GenerateAddressData((x), "addressCoding");
             }
         }
-        for (std::deque<TokenNode *>::iterator it = value->branches.begin();
-             it != value->branches.end(); it++)
+        for (auto x : value->branches)
         {
-            if ((*it)->type != TokenNode::tk_reg)
+            if (x->type != TokenNode::tk_reg)
             {
-                GenerateAddressData((*it), "addressCoding");
+                GenerateAddressData((x), "addressCoding");
             }
         }
         (*file) << "\t{" << tokenClassName << "::EOT }" << std::endl;
@@ -838,23 +818,20 @@ bool GenParser::GenerateAddresses()
 }
 void GenParser::GenerateOperandTokenTree(TokenNode *value)
 {
-    for (std::deque<TokenNode *>::iterator it = value->branches.begin();
-         it != value->branches.end(); it++)
+    for (auto x : value->branches)
     {
-        GenerateOperandTokenTree(*it);
+        GenerateOperandTokenTree(x);
     }
-    for (std::deque<TokenNode *>::iterator it = value->branches.begin();
-         it != value->branches.end(); it++)
+    for (auto x : value->branches)
     {
-        GenerateAddressFuncs(*it, "operandCoding");
+        GenerateAddressFuncs(x, "operandCoding");
     }
     if (value->branches.size())
     {
         (*file) << tokenClassName << " " << className << "::tokenBranches" << value->id << "[] = {" << std::endl;
-        for (std::deque<TokenNode *>::iterator it = value->branches.begin();
-             it != value->branches.end(); it++)
+        for (auto x : value->branches)
         {
-            GenerateAddressData((*it), "operandCoding");
+            GenerateAddressData((x), "operandCoding");
         }
         (*file) << "\t{" << tokenClassName << "::EOT }" << std::endl;
         (*file) << "};" << std::endl;
@@ -863,50 +840,59 @@ void GenParser::GenerateOperandTokenTree(TokenNode *value)
 }
 bool GenParser::GenerateOperands()
 {
-    for (std::deque<Opcode *>::iterator it = parser.opcodes.begin();
-         it != parser.opcodes.end(); ++it)
+    for (auto x : parser.opcodes)
     {
-        GenerateOperandTokenTree((*it)->tokenRoot);
+        GenerateOperandTokenTree(x->tokenRoot);
     }
     return true;
 }
+void GenParser::GenerateAddressTable(TokenNode *value)
+{
+    for (auto x : value->branches)
+    {
+        GenerateAddressTable(x);
+    }
+    if (value->branches.size())
+    {
+        (*file) << "\t&" << className << "::tokenBranches" << value->id << "[0]," << std::endl;
+    }
+
+}
+
 bool GenParser::GenerateOpcodes()
 {
-    for (std::deque<Opcode *>::iterator it = parser.opcodes.begin();
-         it != parser.opcodes.end(); ++it)
+    for (auto x : parser.opcodes)
     {
-        for (std::map<std::string, std::string> :: iterator it1 = (*it)->values.begin();
-             it1 != (*it)->values.end(); ++ it1)
+        for (auto& m : x->values)
         {
-            int n = valueTags[it1->first];
-            (*file) << "Coding " << className << "::OpcodeCodings" << (*it)->id << "_" << n << "[] = {" << std::endl;
-            GenerateCoding(it1->second);
+            int n = valueTags[m.first];
+            (*file) << "Coding " << className << "::OpcodeCodings" << x->id << "_" << n << "[] = {" << std::endl;
+            GenerateCoding(m.second, x->name);
             (*file) << "};" << std::endl;
         }
-        (*file) << "bool "<<className<<"::Opcode"<<(*it)->id<<"(" << operandClassName << " &operand)" << std::endl;
+        (*file) << "asmError "<<className<<"::Opcode"<<x->id<<"(" << operandClassName << " &operand)" << std::endl;
         (*file) << "{" << std::endl;
-        for (std::map<std::string, std::string> :: iterator it1 = (*it)->values.begin();
-             it1 != (*it)->values.end(); ++ it1)
+        for (auto& m : x->values)
         {
-            int n = valueTags[it1->first];
-            (*file) << "\toperand.values[" << n << "] = OpcodeCodings" << (*it)->id << "_" << n << ";" << std::endl;			
+            int n = valueTags[m.first];
+            (*file) << "\toperand.values[" << n << "] = OpcodeCodings" << x->id << "_" << n << ";" << std::endl;			
         }
-        if ((*it)->tokenRoot->branches.size())
+        if (x->tokenRoot->branches.size())
         {
-            (*file) << "\tbool rv = ParseOperands(tokenBranches" << (*it)->tokenRoot->id << ", operand);" << std::endl;
+            (*file) << "\tasmError rv = ParseOperands(tokenBranches" << x->tokenRoot->id << ", operand);" << std::endl;
         }
-        if ((*it)->name != "" && (*it)->cclass != "")
+        if (x->name != "" && x->cclass != "")
         {
-            Opcode *op = parser.opcodeClasses[(*it)->cclass];
+            Opcode *op = parser.opcodeClasses[x->cclass];
             if (op)
             {
-                if ((*it)->operands.size())
+                if (x->operands.size())
                 {
-                    (*file) << "\tif (!rv)" << std::endl;
+                    (*file) << "\tif (rv == AERR_NONE)" << std::endl;
                 }
                 else
                 {
-                    (*file) << "\tbool rv;" << std::endl;
+                    (*file) << "\tasmError rv;" << std::endl;
                 }
                     
                 (*file) << "\t{" << std::endl;
@@ -915,38 +901,43 @@ bool GenParser::GenerateOpcodes()
             }
             else
             {
-                std::cout << "Undefined opcode class '" << (*it)->cclass <<
-                               "' in definition of opcode '" << (*it)->name << "'";
+                std::cout << "Undefined opcode class '" << x->cclass <<
+                               "' in definition of opcode '" << x->name << "'";
             }
         }
         else
         {
-            if (!(*it)->operands.size())
-                (*file) << "\tbool rv = true;" << std::endl;
+            if (!x->operands.size())
+                (*file) << "\tasmError rv = AERR_NONE;" << std::endl;
         }
         (*file) << "\treturn rv;" << std::endl;
         (*file) << "}" << std::endl;
     }	
     (*file) << className<<"::DispatchType "<<className<<"::DispatchTable["<<parser.opcodes.size()<<"] = {" << std::endl;
-    for (std::deque<Opcode *>::iterator it = parser.opcodes.begin();
-         it != parser.opcodes.end(); ++it)
+    for (auto x : parser.opcodes)
     {
-        if ((*it)->name == "")
+        if (x->name == "")
             (*file) << "\tNULL," << std::endl;
         else
-            (*file) << "\t&" << className << "::Opcode" << (*it)->id << "," << std::endl;
+            (*file) << "\t&" << className << "::Opcode" << x->id << "," << std::endl;
     }	
     (*file) << "};" << std::endl;
+    (*file) << std::endl;
+
+    (*file) << tokenClassName << " *" << className << "::addressTable[] = {" << std::endl;
+    GenerateAddressTable(parser.addressRoot);
+    (*file) << "};" << std::endl;
+    (*file) << std::endl;
+
     const std::string **codingNames = new const std::string *[parser.codings.size()];
-    for (std::map<std::string,int>::iterator it = parser.codings.begin();
-         it != parser.codings.end(); ++it)
+    for (auto& m : parser.codings)
     {
-        codingNames[it->second-1] = &it->first;
+        codingNames[m.second-1] = &m.first;
     }
     for (int i=0; i < parser.codings.size(); i++)
     {
         (*file) << "Coding " << className << "::Coding" << i + 1 << "[] = {" << std::endl;
-        GenerateCoding(*codingNames[i]);
+        GenerateCoding(*codingNames[i], "unknown");
         (*file) << "};" << std::endl;
     }
     (*file) <<"Coding * "<<className<<"::Codings["<<parser.codings.size()<<"] = {" << std::endl;
@@ -956,19 +947,19 @@ bool GenParser::GenerateOpcodes()
     if (parser.prefixes.size())
     {
         int i = 1;
-        for (std::deque<Prefix *>::iterator it = parser.prefixes.begin();
-             it != parser.prefixes.end(); ++it, ++i)
+        for (auto x : parser.prefixes)
         {
             (*file) << "Coding " << className << "::prefixCoding" << i << "[] = {" << std::endl;
-            GenerateCoding((*it)->coding);
+            GenerateCoding(x->coding, x->name);
             (*file) << "};" << std::endl;
+            i++;
         }
         (*file) << "Coding *" << className << "::prefixCodings" << "[] = {" << std::endl;
         i = 1;
-        for (std::deque<Prefix *>::iterator it = parser.prefixes.begin();
-             it != parser.prefixes.end(); ++it, ++i)
+        for (auto x : parser.prefixes)
         {
             (*file) << "\t" << className << "::prefixCoding" << i << "," << std::endl;
+            i++;
         }
         (*file) << "};";
         (*file) << std::endl;
@@ -976,8 +967,9 @@ bool GenParser::GenerateOpcodes()
     delete codingNames;
     return true;
 }
-void GenParser::GenerateCoding(const std::string coding) 
+void GenParser::GenerateCoding(const std::string coding, const std::string name) 
 {
+    bool needsMore = false;
     std::string temp = coding;
     while (temp.size())
     {
@@ -988,242 +980,239 @@ void GenParser::GenerateCoding(const std::string coding)
         }
         else
         {
+            char unary = 0;
+            char binary = 0;
+            int value = 0;
+            int field =- 1;
+            std::string fieldName;
+            bool hasVal = false;
+            bool native = false;
+            bool illegal = false;
+            bool stateFunc = false;
+            bool stateVar = false;
+            bool optional = false;
+            int bits = -1;
+            needsMore = false;
             if (npos != 0)
                 temp = temp.substr(npos);
-            if (isdigit(temp[0]))
+            switch (temp[0])
             {
-                int n = 0;
-                char *pch;
-                int bits = -1;
-                int val = strtol(temp.c_str(), &pch, 0);
-                n = pch - temp.c_str();
-                if (temp[n] == ':')
-                {
-                    bits = strtol(temp.c_str() + n + 1, &pch, 0);
-                    if (pch - temp.c_str() == temp.size())
-                        temp = "";
-                    else
-                        temp = temp.substr(pch - temp.c_str());
-                }
-                else
-                {
-                    if (n == temp.size())
-                        temp = "";
-                    else
-                        temp = temp.substr(n);
-                }
-                if (bits != -1)
-                {
-                    (*file) << "\t{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), " << val << ", " << bits << "}," << std::endl;
-                }
-                else
-                {
-                    (*file) << "\t{ Coding::valSpecified, " << val << "}," << std::endl;
-                }
+                case '!':
+                case '~':
+                    unary = temp[0];
+                    temp = temp.substr(1);
+                    break;
+                case '*':
+                    optional = true;
+                    temp = temp.substr(1);
+                    break;
             }
-            else if (temp[0] == '\'')
+            npos = temp.find_first_not_of(" ,\t\v\r\n");
+            if (npos == std::string::npos)
             {
-                int n = 1;
-                char *pch;
-                while (isalnum(temp[n]))
-                    n++;
-                std::string name = temp.substr(1, n-1);
-                std::map<std::string, int>::iterator itst = stateFuncTags.find(name);
-                if (itst != stateFuncTags.end())
+                temp = "";
+                needsMore = true;
+            }
+            else
+            {
+                if (npos != 0)
+                    temp = temp.substr(npos);
+
+                if (isdigit(temp[0]))
                 {
-                    if (n == temp.size() || temp[n] != '\'')
-                    {
-                        std::cout << "Error { " << coding << " } missing close quote " << std::endl;
-                        if (n == temp.size())
-                            temp = "";
-                        else
-                            temp = temp.substr(n);
-                    }
-                    else
-                    {
-                        if (n+1 == temp.size())
-                            temp = "";
-                        else
-                            temp = temp.substr(n+1);
-                        (*file) << "\t{ Coding::stateFunc, " << itst->second << " }," << std::endl;
-                    }
+                    char *pch;
+                    value = strtol(temp.c_str(), &pch, 0);
+                    hasVal = true;
+                    temp = temp.substr(pch - temp.c_str());
                 }
-                else
+                else if (temp[0] == '\'')
                 {
-                    std::map<std::string, int>::iterator itst = stateVarTags.find(name);
-                    if (itst != stateVarTags.end())
+                    int n = 1;
+                    char *pch;
+                    while (isalnum(temp[n]))
+                        n++;
+                    std::string name = temp.substr(1, n - 1);
+                    temp = temp.substr(n);
+                    std::map<std::string, int>::iterator itst = stateFuncTags.find(name);
+                    if (itst != stateFuncTags.end())
                     {
-                        if (n == temp.size() || temp[n] != '\'')
-                        {
-                            std::cout << "Error { " << coding << " } missing close quote " << std::endl;
-                            if (n == temp.size())
-                                temp = "";
-                            else
-                                temp = temp.substr(n);
-                        }
-                        else
-                        {
-                            if (n+1 == temp.size())
-                                temp = "";
-                            else
-                                temp = temp.substr(n+1);
-                            (*file) << "\t{ Coding::stateVar, " << itst->second << " }," << std::endl;
-                        }
+                        value = itst->second;
+                        stateFunc = true;
                     }
                     else
                     {
-                        std::string field;
-                        if (temp[n] == '.')
+                        std::map<std::string, int>::iterator itst = stateVarTags.find(name);
+                        if (itst != stateVarTags.end())
                         {
-                            int m = ++n;
-                            while (isalnum(temp[n]))
-                                n++;
-                            field = temp.substr(m, n-m);
-                        }
-                        if (n == temp.size() || temp[n] != '\'')
-                        {
-                            std::cout << "Error { " << coding << " } missing close quote " << std::endl;
-                            if (n == temp.size())
-                                temp = "";
-                            else
-                                temp = temp.substr(n);
+                            value = itst->second;
+                            stateVar = true;
                         }
                         else
                         {
-                            n++;
-                            int sel = 0;
-                            switch (temp[n])
+                            if (temp[0] == '.')
                             {
-                                case '!':
-                                case '~':
-                                case '+':
-                                case '-':
-                                case '&':
-                                case '|':
-                                case '^':
-                                    sel = temp[n];
+                                int m = 1, n = 1;
+                                while (isalnum(temp[n]))
                                     n++;
-                                    break;
-                                case '>':
-                                    if (temp[n+1] == '>')
-                                    {
-                                        sel = temp[n];
-                                        n+=2;
-                                    }
-                                    break;
-                                case '<':
-                                    if (temp[n+1] == '<')
-                                    {
-                                        sel = temp[n];
-                                        n+=2;
-                                    }
-                                    break;
-                                default:
-                                    break;
+                                fieldName = temp.substr(m, n - m);
+                                temp = temp.substr(n);
                             }
-                            int selval = 0;
-                            if (sel != 0 && sel != '!' && sel != '~')
-                            {
-                                char *pch;
-                                selval = strtol(temp.c_str() + n, &pch, 0);
-                                n = pch - temp.c_str();
-                            }
-                            int n1 = 0;
-                            char *pch;
-                            int bits = -1;
-                            if (temp[n] == ':')
-                            {
-                                bits = strtol(temp.c_str() + n + 1, &pch, 0);
-                                if (pch - temp.c_str() == temp.size())
-                                    temp = "";
-                                else
-                                    temp = temp.substr(pch - temp.c_str());
-                            }
-                            else
-                            {
-                                if (n == temp.size())
-                                    temp = "";
-                                else
-                                    temp = temp.substr(n);
-                            }
-                            int p=0,f=0;
-                            std::map<std::string, int> :: iterator itp = valueTags.find(name);
+                            std::map<std::string, int> ::iterator itp = valueTags.find(name);
                             if (itp == valueTags.end())
                             {
                                 std::cout << "Error in coding: unknown variable '" << name << "'" << temp.substr(0, npos) << std::endl;
                             }
                             else
                             {
-                                p = itp->second;
+                                value = itp->second;
                             }
-                            if (field != "")
+                            if (fieldName != "")
                             {
-                                std::map<std::string, int> :: iterator itf = registerTags.find(field);
+                                std::map<std::string, int> ::iterator itf = registerTags.find(fieldName);
                                 if (itf == registerTags.end())
                                 {
-                                    std::cout << "Error in coding: unknown variable field '" << field << "'" << temp.substr(0, npos) << std::endl;
+                                    std::cout << "Error in coding: unknown variable field '" << fieldName << "'" << temp.substr(0, npos) << std::endl;
                                 }
                                 else
                                 {
-                                    f = itf->second;
+                                    field = itf->second;
                                 }
                             }
-                            if (bits == -1 && field.size() == 0)
-                            {
-                                (*file) << "\t{ Coding::indirect, " << p << ", -1, 0";
-                            }
-                            else if (bits == -1 && field.size())
-                            {
-                                (*file) << "\t{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), " << p << ", " << bits << ", " << f;
-                            }
-                            else if (bits != -1 && field.size() == 0)
-                            {
-                                (*file) << "\t{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), " << p << ", " << bits << ", 0";
-                            }
-                            else
-                            {
-                                (*file) << "\t{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), " << p << ", " << bits << ", " << f;
-                            }
-                            if (sel)
-                            {
-                                (*file) << ", " << sel << ", " << selval;
-                            }
-                            (*file) << " }," << std::endl;
                         }
                     }
-                }
-            }
-            else
-            {
-                if (temp.substr(0, 6) == "native")
-                {
-                    (*file) << "\t{ Coding::native " << "}," << std::endl;
-                    if (temp.size() == 6)
-                        temp = "";
+                    if (temp.size() == 0 || temp[0] != '\'')
+                    {
+                        std::cout << "Error { " << coding << " } missing close quote " << std::endl;
+                        break;
+                    }
                     else
-                        temp = temp.substr(6);
+                    {
+                        temp = temp.substr(1);
+                    }
                 }
-                else if (temp.substr(0, 7) == "illegal")
+                else if (temp.size() >= 6 && temp.substr(0, 6) == "native")
                 {
-                    (*file) << "\t{ Coding::illegal " << "}," << std::endl;
-                    if (temp.size() == 7)
-                        temp = "";
-                    else
-                        temp = temp.substr(7);
+                    native = true;
+                    temp = temp.substr(6);
+                }
+                else if (temp.size() >= 7 && temp.substr(0, 7) == "illegal")
+                {
+                    illegal = true;
+                    temp = temp.substr(7);
                 }
                 else
                 {
-                    npos = temp.find_first_of(", \t\r\v\n");
-                    std::cout << "Error { " << coding << " } unknown token sequence " << temp.substr(0, npos) << std::endl;
-                    if (npos == std::string::npos)
-                        temp = "";
-                    else
-                        temp = temp.substr(npos);
+                    std::cout << "Error { " << coding << " } invalid coding sequence" << std::endl;
+                    break;
                 }
-            }	
+                npos = temp.find_first_not_of(" ,\t\v\r\n");
+                if (npos == std::string::npos)
+                {
+                    temp = "";
+                }
+                else
+                {
+                    if (npos != 0)
+                        temp = temp.substr(npos);
+                    switch (temp[0])
+                    {
+                    case '+':
+                    case '-':
+                    case '&':
+                    case '|':
+                    case '^':
+                        binary = temp[0];
+                        temp = temp.substr(1);
+                        break;
+                    case '>':
+                        if (temp[1] == '>')
+                        {
+                            binary = '>';
+                            temp = temp.substr(2);
+                        }
+                        break;
+                    case '<':
+                        if (temp[1] == '>')
+                        {
+                            binary = '<';
+                            temp = temp.substr(2);
+                        }
+                        break;
+                    }
+                    if (binary)
+                        needsMore = true;
+                    npos = temp.find_first_not_of(" ,\t\v\r\n");
+                    if (npos == std::string::npos)
+                    {
+                        temp = "";
+                    }
+                    else
+                    {
+                        if (npos != 0)
+                            temp = temp.substr(npos);
+                        if (!needsMore && temp[0] == ':')
+                        {
+                            char *pch;
+                            bits = strtol(temp.c_str()+1, &pch, 0);
+                            temp = temp.substr(pch - temp.c_str());
+                        }
+                    }
+                }
+
+                if (native)
+                {
+                    (*file) << "\t{ Coding::native " << "}," << std::endl;
+                }
+                else if (illegal)
+                {
+                    (*file) << "\t{ CODING_NAME(\"" << name << "\")  Coding::illegal " << "}," << std::endl;
+                }
+                else if (stateVar)
+                {
+                    (*file) << "\t{ CODING_NAME(\"" << name << "\")  Coding::stateVar, " << value << " }," << std::endl;
+                }
+                else if (stateFunc)
+                {
+                    (*file) << "\t{ CODING_NAME(\"" << name << "\")  Coding::stateFunc, " << value << " }," << std::endl;
+                }
+                else
+                {
+                    (*file) << "\t{ CODING_NAME(\"" << name << "\")  (Coding::Type)(";
+                    if (optional)
+                        (*file) << "Coding::optional | ";
+                    if (bits != -1)
+                        (*file) << "Coding::bitSpecified | ";
+                    if (hasVal)
+                    {
+                        (*file) << "Coding::valSpecified), ";
+                    }
+                    else if (field == -1)
+                    {
+                        (*file) << "Coding::indirect), ";
+                    }
+                    else
+                    {
+                        (*file) << "Coding::indirect | Coding::fieldSpecified), ";
+                    }
+                    (*file) << value << ", " << bits << ", " << field << ", ";
+                    if (unary)
+                        (*file) << "'" << unary << "', ";
+                    else
+                        (*file << "0, ");
+                    if (binary)
+                        (*file) << "'" << binary << "'";
+                    else
+                        (*file) << "0";
+                    (*file) << " }, " << std::endl;
+                }
+            }
         }
     }
-    (*file) << "\t{ Coding::eot " << "}," << std::endl;
+    (*file) << "\t{ CODING_NAME(\"eot\") Coding::eot " << "}," << std::endl;
+    if (needsMore)
+    {
+        std::cout << "Error { " << coding << " } premature end of coding sequence" << std::endl;
+    }
 }
 bool GenParser::GenerateUtilityFuncs()
 {
@@ -1310,9 +1299,9 @@ bool GenParser::GenerateAddressParser()
 }
 bool GenParser::GenerateOperandParser()
 {
-    (*file) << "bool " << className << "::ParseOperands2(" << tokenClassName << " *tokenList, "<<operandClassName<<" &operand, int tokenPos, int level)" << std::endl;
+    (*file) << "asmError " << className << "::ParseOperands2(" << tokenClassName << " *tokenList, " << operandClassName << " &operand, int tokenPos, int level)" << std::endl;
     (*file) << "{" << std::endl;
-    (*file) << "\tbool rv = false;" << std::endl;
+    (*file) << "\tasmError rv = AERR_OPERAND;" << std::endl;
     (*file) << "\t" << tokenClassName << " *t = tokenList;" << std::endl;
     (*file) << "\twhile (t && t->type != " << tokenClassName << "::EOT)" << std::endl;
     (*file) << "\t{" << std::endl;
@@ -1347,11 +1336,9 @@ bool GenParser::GenerateOperandParser()
     (*file) << "\t\t{" << std::endl;
     (*file) << "\t\t\tif (t->level > level)" << std::endl;
     (*file) << "\t\t\t{" << std::endl;
-    (*file) << "\t\t\t\tif (ParseOperands2(t->next, operand, tokenPos, t->level))" << std::endl;
-    (*file) << "\t\t\t\t{" << std::endl;
-    (*file) << "\t\t\t\t\trv = true;" << std::endl;
+    (*file) << "\t\t\t\trv = ParseOperands2(t->next, operand, tokenPos, t->level);" << std::endl;
+    (*file) << "\t\t\t\tif (rv == AERR_NONE)" << std::endl;
     (*file) << "\t\t\t\t\tbreak;" << std::endl;
-    (*file) << "\t\t\t\t}" << std::endl;
     (*file) << "\t\t\t}" << std::endl;
     (*file) << "\t\t}" << std::endl;
     (*file) << "\t\telse" << std::endl;
@@ -1360,16 +1347,27 @@ bool GenParser::GenerateOperandParser()
     (*file) << "\t\t\t\t(this->*(t->tokenFunc))(operand, last);" << std::endl;
     (*file) << "\t\t\tif (t->eos && (!t->next || tokenPos == inputTokens.size()-1))" << std::endl;
     (*file) << "\t\t\t{" << std::endl;
-    (*file) << "\t\t\t\tif (tokenPos >= (int)(inputTokens.size()-1))" << std::endl;
-    (*file) << "\t\t\t\t\teol = true;" << std::endl;
-    (*file) << "\t\t\t\trv = true;" << std::endl;
-    (*file) << "\t\t\t\tbreak;" << std::endl;
+    (*file) << "\t\t\t\tbool ok = false;" << std::endl;
+    (*file) << "\t\t\t\tif (operand.operandCoding != -1)" << std::endl;
+    (*file) << "\t\t\t\t\tok = CheckCoding(operand, Codings[operand.operandCoding]);" << std::endl;
+    (*file) << "\t\t\t\telse if (operand.addressCoding != -1)" << std::endl;
+    (*file) << "\t\t\t\t\tok = CheckCoding(operand, Codings[operand.addressCoding]);" << std::endl;
+    (*file) << "\t\t\t\tif (ok)" << std::endl;
+    (*file) << "\t\t\t\t{" << std::endl;
+    (*file) << "\t\t\t\t\tif (tokenPos >= (int)(inputTokens.size()-1))" << std::endl;
+    (*file) << "\t\t\t\t\t\teol = true;" << std::endl;
+    (*file) << "\t\t\t\t\trv = AERR_NONE;" << std::endl;
+    (*file) << "\t\t\t\t\tbreak;" << std::endl;
+    (*file) << "\t\t\t\t}" << std::endl;
+    (*file) << "\t\t\t\toperand.operandCoding = -1;" << std::endl;
+    (*file) << "\t\t\t\toperand.addressCoding = -1;" << std::endl;
     (*file) << "\t\t\t}" << std::endl;
-    (*file) << "\t\t\tif (tokenPos < inputTokens.size() && ParseOperands2(t->next, operand, tokenPos+1, t->level))" << std::endl;	
-    (*file) << "\t\t\t{" << std::endl;	
-    (*file) << "\t\t\t\trv = true;" << std::endl;	
-    (*file) << "\t\t\t\tbreak;" << std::endl;	
-    (*file) << "\t\t\t}" << std::endl;	
+    (*file) << "\t\t\tif (tokenPos < inputTokens.size())" << std::endl;
+    (*file) << "\t\t\t{" << std::endl;
+    (*file) << "\t\t\t\trv = ParseOperands2(t->next, operand, tokenPos + 1, t->level);" << std::endl;
+    (*file) << "\t\t\t\tif (rv == AERR_NONE)" << std::endl;
+    (*file) << "\t\t\t\t\tbreak;" << std::endl;	
+    (*file) << "\t\t\t}" << std::endl;
     (*file) << "\t\t}" << std::endl;
     (*file) << "\t\ttokenPos = last;" << std::endl;
     (*file) << "\t\tt++;" << std::endl;
@@ -1377,80 +1375,170 @@ bool GenParser::GenerateOperandParser()
     (*file) << "\treturn rv;" << std::endl;
     (*file) << "}" << std::endl;
     (*file) << std::endl;
-    (*file) << "bool " << className << "::ParseOperands(" << tokenClassName << " *tokenList, "<<operandClassName<<" &operand)" << std::endl;
+    (*file) << "asmError " << className << "::ParseOperands(" << tokenClassName << " *tokenList, "<<operandClassName<<" &operand)" << std::endl;
     (*file) << "{" << std::endl;
-    (*file) << "\treturn ParseOperands2(tokenList, operand, 0, 0);" << std::endl;
+    (*file) << "\tasmError rv = ParseOperands2(tokenList, operand, 0, 0);" << std::endl;
+    (*file) << "\tif (rv != AERR_NONE)" << std::endl;
+    (*file) << "\t{" << std::endl;
+    (*file) << "\t\tint n = tokenTable[\",\"];" << std::endl;
+    (*file) << "\t\tstd::vector<InputToken* >fullList = inputTokens;" << std::endl;
+    (*file) << "\t\tfor (int i = 0; i < fullList.size();)" << std::endl;
+    (*file) << "\t\t{" << std::endl;
+    (*file) << "\t\t\tinputTokens.clear();" << std::endl;
+    (*file) << "\t\t\twhile (i < fullList.size() && (fullList[i]->type != InputToken::TOKEN || fullList[i]->val->ival != n))" << std::endl;
+    (*file) << "\t\t\t\tinputTokens.push_back(fullList[i++]);" << std::endl;
+    (*file) << "\t\t\tint j;" << std::endl;
+    (*file) << "\t\t\tfor (j = 0; j < sizeof(addressTable) / sizeof(addressTable[0]); j++)" << std::endl;
+    (*file) << "\t\t\t{" << std::endl;
+    (*file) << "\t\t\t\tif (ParseOperands2(addressTable[j], operand, 0, 0) == AERR_NONE)" << std::endl;
+    (*file) << "\t\t\t\t\tbreak;" << std::endl;
+    (*file) << "\t\t\t}" << std::endl;
+    (*file) << "\t\t\tif (j == sizeof(addressTable) / sizeof(addressTable[0]))" << std::endl;
+    (*file) << "\t\t\t{" << std::endl;
+    (*file) << "\t\t\t\treturn AERR_OPERAND;" << std::endl;
+    (*file) << "\t\t\t}" << std::endl;
+    (*file) << "\t\t\tif (i < fullList.size())" << std::endl;
+    (*file) << "\t\t\t{" << std::endl;
+    (*file) << "\t\t\t\ti++;" << std::endl;
+    (*file) << "\t\t\t\tif (i == fullList.size())" << std::endl;
+    (*file) << "\t\t\t\t\treturn AERR_SYNTAX;" << std::endl;
+    (*file) << "\t\t\t}" << std::endl;
+    (*file) << "\t\t}" << std::endl;
+    (*file) << "\t\treturn AERR_BADCOMBINATIONOFOPERANDS;" << std::endl;
+    (*file) << "\t}" << std::endl;
+    (*file) << "\treturn rv;" << std::endl;
     (*file) << "}" << std::endl;
     (*file) << std::endl;	
     return true;
 }
 bool GenParser::GenerateCodingProcessor()
 {
-    (*file) << "bool " << className << "::ProcessCoding(CodingHelper &base, "<<operandClassName<<" &operand, Coding *coding)" << std::endl;
+
+    (*file) << "bool " << className << "::CheckCoding(" << operandClassName << " &operand,Coding *coding)" << std::endl;
     (*file) << "{" << std::endl;
-    (*file) << "\tCodingHelper current;" << std::endl;
-    (*file) << std::endl;
     (*file) << "\twhile (coding->type != Coding::eot)" << std::endl;
     (*file) << "\t{" << std::endl;
-    (*file) << "\t\tcurrent = base;" << std::endl;
-    (*file) << "\t\tif (coding->type & Coding::bitSpecified)" << std::endl;
-    (*file) << "\t\t\tcurrent.bits = coding->bits;" << std::endl;
-    (*file) << "\t\tif (coding->type & Coding::fieldSpecified)" << std::endl;
-    (*file) << "\t\t\tcurrent.field = coding->field;" << std::endl;
-    (*file) << "\t\tif (coding->math)" << std::endl;
-    (*file) << "\t\t{" << std::endl;
-    (*file) << "\t\t\tcurrent.math = coding->math;" << std::endl;
-    (*file) << "\t\t\tcurrent.mathval = coding->mathval;" << std::endl;
-    (*file) << "\t\t}" << std::endl;
-    (*file) << "\t\tif (coding->type & Coding::valSpecified)" << std::endl;
-    (*file) << "\t\t{" << std::endl;
-    (*file) << "\t\t\tint n = current.DoMath(coding->val);" << std::endl;
-    (*file) << "\t\t\tbits.Add(n, current.bits);" << std::endl;
-    (*file) << "\t\t}" << std::endl;
-    (*file) << "\t\telse if (coding->type & Coding::reg)" << std::endl;
-    (*file) << "\t\t{" << std::endl;
-    (*file) << "\t\t\tint n = coding->val;" << std::endl;
-    (*file) << "\t\t\tif (current.field != -1)" << std::endl;
-    (*file) << "\t\t\t\tn = registerValues[n][current.field];" << std::endl;
-    (*file) << "\t\t\tn = current.DoMath(n);" << std::endl;
-    (*file) << "\t\t\tbits.Add(n, current.bits);" << std::endl;
-    (*file) << "\t\t}" << std::endl;
-    (*file) << "\t\telse if (coding->type & Coding::stateFunc)" << std::endl;
+    (*file) << "\t\tif (coding->type & Coding::stateFunc)" << std::endl;
     (*file) << "\t\t{" << std::endl;
     (*file) << "\t\t\tCoding *c = (this->*stateFuncs[coding->val])();" << std::endl;
-    (*file) << "\t\t\tif (!ProcessCoding(current, operand,c))" << std::endl;
+    (*file) << "\t\t\tif (!CheckCoding(operand, c))" << std::endl;
     (*file) << "\t\t\t\treturn false;" << std::endl;
-    (*file) << "\t\t}" << std::endl;
-    (*file) << "\t\telse if (coding->type & Coding::stateVar)" << std::endl;
-    (*file) << "\t\t{" << std::endl;
-    (*file) << "\t\t\tint n = current.DoMath(stateVars[coding->val]);" << std::endl;
-    (*file) << "\t\t\tbits.Add(n, current.bits);" << std::endl;
-    (*file) << "\t\t}" << std::endl;
-    (*file) << "\t\telse if (coding->type & Coding::number)" << std::endl;
-    (*file) << "\t\t{" << std::endl;
-    (*file) << "\t\t\tint n = coding->val;" << std::endl;
-    (*file) << "\t\t\tstd::deque<Numeric *>::iterator it = operands.begin();" << std::endl;
-    (*file) << "\t\t\tfor (int i=0; i < n; i++)" << std::endl;
-    (*file) << "\t\t\t{" << std::endl;
-    (*file) << "\t\t\t\t++it;" << std::endl;
-    (*file) << "\t\t\t}" << std::endl;
-    (*file) << "\t\t\t(*it)->used = true;" << std::endl;
-    (*file) << "\t\t\t(*it)->pos = this->bits.GetBits();" << std::endl;
-    (*file) << "\t\t\tbits.Add((*it)->node->ival, current.bits);" << std::endl;
     (*file) << "\t\t}" << std::endl;
     (*file) << "\t\telse if (coding->type & Coding::native)" << std::endl;
     (*file) << "\t\t{" << std::endl;
     (*file) << "\t\t\tif (operand.addressCoding == -1)" << std::endl;
     (*file) << "\t\t\t\treturn false;" << std::endl;
-    (*file) << "\t\t\tif (!ProcessCoding(current, operand, Codings[operand.addressCoding]))" << std::endl;
+    (*file) << "\t\t\tif (!CheckCoding(operand, Codings[operand.addressCoding]))" << std::endl;
     (*file) << "\t\t\t\treturn false;" << std::endl;
     (*file) << "\t\t}" << std::endl;
     (*file) << "\t\telse if (coding->type & Coding::indirect)" << std::endl;
     (*file) << "\t\t{" << std::endl;
     (*file) << "\t\t\tif (!operand.values[coding->val])" << std::endl;
+    (*file) << "\t\t\t{" << std::endl;
+    (*file) << "\t\t\t\tif (!(coding->type & Coding::optional))" << std::endl;
+    (*file) << "\t\t\t\t{" << std::endl;
+    (*file) << "\t\t\t\t\treturn false;" << std::endl;
+    (*file) << "\t\t\t\t}" << std::endl;
+    (*file) << "\t\t\t}" << std::endl;
+    (*file) << "\t\t\telse" << std::endl;
+    (*file) << "\t\t\t{" << std::endl;
+    (*file) << "\t\t\t\tif (!CheckCoding(operand, operand.values[coding->val]))" << std::endl;
+    (*file) << "\t\t\t\t\treturn false;" << std::endl;
+    (*file) << "\t\t\t}" << std::endl;
+    (*file) << "\t\t}" << std::endl;
+    (*file) << "\t\telse if (coding->type & Coding::illegal)" << std::endl;
+    (*file) << "\t\t{" << std::endl;
+    (*file) << "\t\t\treturn false;" << std::endl;
+    (*file) << "\t\t}" << std::endl;
+    (*file) << "\t\tcoding++;" << std::endl;
+    (*file) << "\t}" << std::endl;
+    (*file) << "\treturn true;" << std::endl;
+    (*file) << "}" << std::endl;
+
+
+    (*file) << "bool " << className << "::ProcessCoding("<<operandClassName<<" &operand, Coding *coding, int field, int bits, int* arr, char* bitcounts, char *func, int &index)" << std::endl;
+    (*file) << "{" << std::endl;
+    (*file) << "\tint acc = 0, binary = 0;" << std::endl;
+    (*file) << "\twhile (coding->type != Coding::eot)" << std::endl;
+    (*file) << "\t{" << std::endl;
+    (*file) << "\t\tif (coding->type & Coding::bitSpecified)" << std::endl;
+    (*file) << "\t\t\tbits = coding->bits;" << std::endl;
+    (*file) << "\t\tif (coding->type & Coding::valSpecified)" << std::endl;
+    (*file) << "\t\t{" << std::endl;
+    (*file) << "\t\t\tfunc[index] = coding->binary;" << std::endl;
+    (*file) << "\t\t\tbitcounts[index] = bits;" << std::endl;
+    (*file) << "\t\t\tarr[index++] = coding->val;" << std::endl;
+    (*file) << "\t\t}" << std::endl;
+    (*file) << "\t\telse if (coding->type & Coding::reg)" << std::endl;
+    (*file) << "\t\t{" << std::endl;
+    (*file) << "\t\t\tint n = coding->val;" << std::endl;
+    (*file) << "\t\t\tif (field != -1)" << std::endl;
+    (*file) << "\t\t\t\tn = registerValues[n][field];" << std::endl;
+    (*file) << "\t\t\tfunc[index] = coding->binary;" << std::endl;
+    (*file) << "\t\t\tbitcounts[index] = bits;" << std::endl;
+    (*file) << "\t\t\tarr[index++] = n;" << std::endl;
+    (*file) << "\t\t}" << std::endl;
+    (*file) << "\t\telse if (coding->type & Coding::stateFunc)" << std::endl;
+    (*file) << "\t\t{" << std::endl;
+    (*file) << "\t\t\tCoding *c = (this->*stateFuncs[coding->val])();" << std::endl;
+    (*file) << "\t\t\tint index1 = index;" << std::endl;
+    (*file) << "\t\t\tif (!ProcessCoding(operand, c, coding->field, bits, arr, bitcounts, func, index))" << std::endl;
     (*file) << "\t\t\t\treturn false;" << std::endl;
-    (*file) << "\t\t\tif (!ProcessCoding(current, operand, operand.values[coding->val]))" << std::endl;
+    (*file) << "\t\t\tif (index != index1 && coding->binary)" << std::endl;
+    (*file) << "\t\t\t\tfunc[index - 1] = coding->binary;" << std::endl;
+    (*file) << "\t\t}" << std::endl;
+    (*file) << "\t\telse if (coding->type & Coding::stateVar)" << std::endl;
+    (*file) << "\t\t{" << std::endl;
+    (*file) << "\t\t\tfunc[index] = coding->binary;" << std::endl;
+    (*file) << "\t\t\tbitcounts[index] = bits;" << std::endl;
+    (*file) << "\t\t\tarr[index++] = stateVars[coding->val];" << std::endl;
+    (*file) << "\t\t}" << std::endl;
+    (*file) << "\t\telse if (coding->type & Coding::number)" << std::endl;
+    (*file) << "\t\t{" << std::endl;
+    (*file) << "\t\t\tint n = coding->val;" << std::endl;
+    (*file) << "\t\t\tauto it = operands.begin();" << std::endl;
+    (*file) << "\t\t\tfor (int i = 0; i < n; i++)" << std::endl;
+    (*file) << "\t\t\t{" << std::endl;
+    (*file) << "\t\t\t\t++it;" << std::endl;
+    (*file) << "\t\t\t}" << std::endl;
+    (*file) << "\t\t\t(*it)->used = true;" << std::endl;
+    (*file) << "\t\t\tn = 0;" << std::endl;
+    (*file) << "\t\t\tfor (int i = 0; i < index; i++)" << std::endl;
+    (*file) << "\t\t\t\tif (!func[i])" << std::endl;
+    (*file) << "\t\t\t\t\tn += bitcounts[i];" << std::endl;
+    (*file) << "\t\t\t(*it)->pos = n;" << std::endl;
+    (*file) << "\t\t\tfunc[index] = coding->binary;" << std::endl;
+    (*file) << "\t\t\tbitcounts[index] = bits;" << std::endl;
+    (*file) << "\t\t\tarr[index++] = (*it)->node->ival;" << std::endl;
+    (*file) << "\t\t}" << std::endl;
+    (*file) << "\t\telse if (coding->type & Coding::native)" << std::endl;
+    (*file) << "\t\t{" << std::endl;
+    (*file) << "\t\t\tif (operand.addressCoding == -1)" << std::endl;
     (*file) << "\t\t\t\treturn false;" << std::endl;
+    (*file) << "\t\t\tint index1 = index;" << std::endl;
+    (*file) << "\t\t\tif (!ProcessCoding(operand, Codings[operand.addressCoding], coding->field, bits, arr, bitcounts, func, index))" << std::endl;
+    (*file) << "\t\t\t\treturn false;" << std::endl;
+    (*file) << "\t\t\tif (index != index1 && coding->binary)" << std::endl;
+    (*file) << "\t\t\t\tfunc[index - 1] = coding->binary;" << std::endl;
+    (*file) << "\t\t}" << std::endl;
+    (*file) << "\t\telse if (coding->type & Coding::indirect)" << std::endl;
+    (*file) << "\t\t{" << std::endl;
+    (*file) << "\t\t\tif (!operand.values[coding->val])" << std::endl;
+    (*file) << "\t\t\t{" << std::endl;
+    (*file) << "\t\t\t\tif (!(coding->type & Coding::optional))" << std::endl;
+    (*file) << "\t\t\t\t{" << std::endl;
+    (*file) << "\t\t\t\t\treturn false;" << std::endl;
+    (*file) << "\t\t\t\t}" << std::endl;
+    (*file) << "\t\t\t}" << std::endl;
+    (*file) << "\t\t\telse" << std::endl;
+    (*file) << "\t\t\t{" << std::endl;
+    (*file) << "\t\t\t\tint index1 = index;" << std::endl;
+    (*file) << "\t\t\t\tif (!ProcessCoding(operand, operand.values[coding->val], coding->field, bits, arr, bitcounts, func, index))" << std::endl;
+    (*file) << "\t\t\t\t\treturn false;" << std::endl;
+    (*file) << "\t\t\t\tif (index != index1 && coding->binary)" << std::endl;
+    (*file) << "\t\t\t\t\tfunc[index - 1] = coding->binary;" << std::endl;
+    (*file) << "\t\t\t}" << std::endl;
+
     (*file) << "\t\t}" << std::endl;
     (*file) << "\t\telse if (coding->type & Coding::illegal)" << std::endl;
     (*file) << "\t\t{" << std::endl;
@@ -1464,46 +1552,76 @@ bool GenParser::GenerateCodingProcessor()
     (*file) << "\t}" << std::endl;
     (*file) << "\treturn true;" << std::endl;
     (*file) << "}" << std::endl;
-    (*file) << std::endl;
+
+
+    (*file) << "bool " << className << "::ProcessCoding(" << operandClassName << " &operand, Coding *coding)" << std::endl;
+    (*file) << "{" << std::endl;
+    (*file) << "\tint arr[1000];" << std::endl;
+    (*file) << "\tchar bitcount[1000];" << std::endl;
+    (*file) << "\tchar func[1000];" << std::endl;
+    (*file) << "\tint index = 0;" << std::endl;
+    (*file) << "\tif (coding->type == Coding::eot)" << std::endl;
+    (*file) << "\t\treturn true;" << std::endl;
+    (*file) << "\tint defaultBits = 8;" << std::endl;
+    (*file) << "\tbool rv = ProcessCoding(operand, coding, -1, defaultBits, arr, bitcount, func, index);" << std::endl;
+    (*file) << "\tif (rv)" << std::endl;
+    (*file) << "\t{" << std::endl;
+    (*file) << "\t\tfor (int i = 0; i < index; i++)" << std::endl;
+    (*file) << "\t\t{" << std::endl;
+    (*file) << "\t\t\tif (func[i])" << std::endl;
+    (*file) << "\t\t\t\tarr[i + 1] = DoMath(func[i], arr[i], arr[i + 1]);" << std::endl;
+    (*file) << "\t\t\telse" << std::endl;
+    (*file) << "\t\t\t\tbits.Add(arr[i], bitcount[i]);" << std::endl;
+    (*file) << "\t\t}" << std::endl;
+    (*file) << "\t}" << std::endl;
+    (*file) << "\treturn rv;" << std::endl;
+    (*file) << "}" << std::endl;
+
     return true;
 }
 bool GenParser::GenerateDispatcher()
 {
-    (*file) << "bool "<<className<<"::DispatchOpcode(int opcode)" << std::endl;
+    (*file) << "asmError "<<className<<"::DispatchOpcode(int opcode)" << std::endl;
     (*file) << "{" << std::endl;
-    (*file) << "\tbool rv;" << std::endl;
+    (*file) << "\tbool rv=true;" << std::endl;
     (*file) << "\tif (opcode == -1)" << std::endl;
     (*file) << "\t{" << std::endl;
-    (*file) << "\t\trv = true;" << std::endl;
     (*file) << "\t\t" << operandClassName << " operand;" << std::endl;
-    (*file) << "\t\tCodingHelper base;" << std::endl;
-    (*file) << "\t\tfor (std::deque<int>::iterator it = prefixes.begin(); rv && it !=prefixes.end(); ++it)" << std::endl;
-    (*file) << "\t\t\trv &= ProcessCoding(base, operand, prefixCodings[*it]);" << std::endl;
+    (*file) << "\t\tfor (auto& a : prefixes)" << std::endl;
+    (*file) << "\t\t\trv &= ProcessCoding(operand, prefixCodings[a]);" << std::endl;
+    (*file) << "\t\tif (!rv)" << std::endl;
+    (*file) << "\t\t\treturn AERR_UNKNOWNOPCODE;" << std::endl;
+
     (*file) << "\t}" << std::endl;
     (*file) << "\telse" << std::endl;
     (*file) << "\t{" << std::endl;
     (*file) << "\t\t" << operandClassName << " operand;" << std::endl;
     (*file) << "\t\toperand.opcode = opcode;" << std::endl;
-    (*file) << "\t\trv = (this->*DispatchTable[opcode])(operand);" << std::endl;
-    (*file) << "\t\tif (rv)" << std::endl;
+    (*file) << "\t\tauto err = (this->*DispatchTable[opcode])(operand);" << std::endl;
+    (*file) << "\t\tif (err == AERR_NONE)" << std::endl;
     (*file) << "\t\t{" << std::endl;
-    (*file) << "\t\t\tCodingHelper base;" << std::endl;
     if (parser.prefixes.size())
     {
-        (*file) << "\t\t\tfor (std::deque<int>::iterator it = prefixes.begin(); rv && it !=prefixes.end(); ++it)" << std::endl;
-        (*file) << "\t\t\t\trv &= ProcessCoding(base, operand, prefixCodings[*it]);" << std::endl;
+        (*file) << "\t\t\tfor (auto& a : prefixes)" << std::endl;
+        (*file) << "\t\t\t\trv &= ProcessCoding(operand, prefixCodings[a]);" << std::endl;
         (*file) << "\t\t\tif (rv)" << std::endl;
     }
     (*file) << "\t\t\t{" << std::endl;
     (*file) << "\t\t\t\tif (operand.operandCoding != -1)" << std::endl;
-    (*file) << "\t\t\t\t\trv = ProcessCoding(base, operand, Codings[operand.operandCoding]);" << std::endl;
+    (*file) << "\t\t\t\t\trv = ProcessCoding(operand, Codings[operand.operandCoding]);" << std::endl;
     (*file) << "\t\t\t\telse if (operand.addressCoding != -1)" << std::endl;
-    (*file) << "\t\t\t\t\trv = ProcessCoding(base, operand, Codings[operand.addressCoding]);" << std::endl;
+    (*file) << "\t\t\t\t\trv = ProcessCoding(operand, Codings[operand.addressCoding]);" << std::endl;
     (*file) << "\t\t\t\telse rv = false;" << std::endl;
+    (*file) << "\t\t\t\tif (!rv)" << std::endl;
+    (*file) << "\t\t\t\t\treturn AERR_INVALIDINSTRUCTIONUSE;" << std::endl;
     (*file) << "\t\t\t}" << std::endl;
     (*file) << "\t\t}" << std::endl;
+    (*file) << "\t\telse" << std::endl;
+    (*file) << "\t\t{" << std::endl;
+    (*file) << "\t\t\t return err;" << std::endl;
+    (*file) << "\t\t}" << std::endl;
     (*file) << "\t}" << std::endl;
-    (*file) << "\treturn rv;" << std::endl;
+    (*file) << "\treturn AERR_NONE;" << std::endl;
     (*file) << "}" << std::endl;
     return true;
 }

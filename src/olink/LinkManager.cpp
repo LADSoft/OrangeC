@@ -144,6 +144,26 @@ void LinkManager::LoadSectionExternals(ObjFile* file, ObjSection* section)
         }
     }
 }
+void LinkManager::MarkExternals(ObjFile *file)
+{
+    for (ObjFile::SymbolIterator it = file->ExternalBegin(); it != file->ExternalEnd(); ++it)
+    {
+        LinkSymbolData sym(*it);
+        SymbolIterator it1 = publics.find(&sym);
+        if (it1 != publics.end())
+        {
+            (*it1)->SetUsed(true);
+        }
+        SymbolIterator its = imports.find(&sym);
+        if (its != imports.end())
+        {
+            (*its)->SetUsed(true);
+        }
+
+    }
+
+
+}
 void LinkManager::MergePublics(ObjFile* file, bool toerr)
 {
     for (auto it = file->PublicBegin(); it != file->PublicEnd(); ++it)
@@ -673,6 +693,8 @@ bool LinkManager::ParsePartitions()
 {
     bool done = false;
     int numImports = 0;
+    for (auto file : fileData)
+        MarkExternals(file);
     for (auto import : imports)
         if (import->GetUsed())
             numImports++;

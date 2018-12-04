@@ -26,13 +26,22 @@
 #include "xml.h"
 #include <cctype>
 #include <cstring>
+
+int xmlNode::lineno = 1;
+
+inline bool isspaceline(char ch)
+{
+    if (ch == '\n')
+        xmlNode::IncLine();
+    return isspace(ch);
+}
 bool xmlAttrib::Read(std::fstream& stream)
 {
     char t;
     stream >> t;
     if (stream.fail())
         return false;
-    while (isspace(t))
+    while (isspaceline(t))
     {
         stream >> t;
         if (stream.fail())
@@ -52,7 +61,7 @@ bool xmlAttrib::Read(std::fstream& stream)
         }
         *p = 0;
         name = buf;
-        while (isspace(t))
+        while (isspaceline(t))
         {
             stream >> t;
             if (stream.fail())
@@ -63,7 +72,7 @@ bool xmlAttrib::Read(std::fstream& stream)
         stream >> t;
         if (stream.fail())
             return false;
-        while (isspace(t))
+        while (isspaceline(t))
         {
             stream >> t;
             if (stream.fail())
@@ -185,7 +194,7 @@ bool xmlNode::Read(std::fstream& stream, char v)
         stream >> t;
         if (stream.fail())
             return false;
-        while (isspace(t))
+        while (isspaceline(t))
         {
             stream >> t;
             if (stream.fail())
@@ -196,7 +205,7 @@ bool xmlNode::Read(std::fstream& stream, char v)
         stream >> t;
         if (stream.fail())
             return false;
-        while (isspace(t))
+        while (isspaceline(t))
         {
             stream >> t;
             if (stream.fail())
@@ -218,7 +227,7 @@ bool xmlNode::Read(std::fstream& stream, char v)
     elementType = buf;
     while (!stream.fail())
     {
-        while (isspace(t))
+        while (isspaceline(t))
         {
             stream >> t;
             if (stream.fail())
@@ -255,7 +264,7 @@ bool xmlNode::Read(std::fstream& stream, char v)
         while (!stream.fail())
         {
             stream >> t;
-            while (isspace(t))
+            while (isspaceline(t))
             {
                 stream >> t;
                 if (stream.fail())
@@ -272,7 +281,7 @@ bool xmlNode::Read(std::fstream& stream, char v)
                 stream >> t;
                 if (stream.fail())
                     return false;
-                while (isspace(t))
+                while (isspaceline(t))
                 {
                     stream >> t;
                     if (stream.fail())
@@ -292,7 +301,7 @@ bool xmlNode::Read(std::fstream& stream, char v)
                 *p = 0;
                 if (elementType != buf)
                     return false;
-                while (isspace(t))
+                while (isspaceline(t))
                 {
                     stream >> t;
                     if (stream.fail())
@@ -357,9 +366,9 @@ void xmlNode::Strip()
     {
         const char* p = text.c_str();
         const char *q = p, *r = p + strlen(p);
-        while (*q && isspace(*q))
+        while (*q && isspaceline(*q))
             q++;
-        while (r > p && isspace(*(r - 1)))
+        while (r > p && isspaceline(*(r - 1)))
             r--;
         if (r > q)
             text = text.substr(q - p, r - p);
@@ -388,7 +397,10 @@ bool xmlNode::ReadTextString(std::fstream& stream, std::string& str)
             return true;
         }
         else if (t == '\n')
+        {
             *p++ = ' ';
+            lineno++;
+        }
     }
     return false;
 }

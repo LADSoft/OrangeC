@@ -85,7 +85,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;L_INT=__int64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;L_INT=__int64;x64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\ocpp;..\util;..\objlib;..\sqlite3</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
@@ -100,7 +100,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;L_INT=__int64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;L_INT=__int64;x64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\ocpp;..\util;..\objlib;..\sqlite3</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
@@ -117,7 +117,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;L_INT=__int64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;L_INT=__int64;x64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\ocpp;..\util;..\objlib;..\sqlite3</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
@@ -137,7 +137,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;L_INT=__int64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;L_INT=__int64;x64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\ocpp;..\util;..\objlib;..\sqlite3</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
@@ -159,8 +159,8 @@
     <ClCompile Include="InstructionParser.cpp" />
     <ClCompile Include="Listing.cpp" />
     <ClCompile Include="Section.cpp" />
-    <ClCompile Include="x86Parser.cpp" />
-    <ClCompile Include="x86stub.cpp" />
+    <ClCompile Include="x64Parser.cpp" />
+    <ClCompile Include="x64stub.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AsmExpr.h" />
@@ -172,8 +172,8 @@
     <ClInclude Include="Label.h" />
     <ClInclude Include="Listing.h" />
     <ClInclude Include="Section.h" />
-    <ClInclude Include="x86Operand.h" />
-    <ClInclude Include="x86Parser.h" />
+    <ClInclude Include="x64Operand.h" />
+    <ClInclude Include="x64Parser.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\util\util.vcxproj">

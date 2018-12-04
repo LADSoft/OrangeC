@@ -1,20 +1,17 @@
-# This makefile is for Borland make (IBM PC/80386+)
+# this makefile for microsoft C++
+#
 
-#		*Translator Definitions*
-# Comment this next line out to generate the 68k compiler
-# leave it in to generate the 386 compiler
-#i386 = -Di386
+CC=cl.exe
+CCFLAGS = /O2 /EHs /c /nologo /I../util
 
-CC = \bcc55\bin\bcc32 -c -v -DBORLANDC -w- /I..\util
-ASM = TASM /zi /ml /m2
-LIB = tlib
-LINK = \bcc55\bin\ilink32 -Gn -Gi
-INCLUDEPATH = C:\bc45\INCLUDE;..\include
+LINK=link.exe
+LFLAGS=/LTCG:incremental /nologo /NXCOMPAT /DYNAMICBASE /MACHINE:x86 /OPT:REF /SAFESEH  /OPT:ICF /TLBID:1
+COMPLIB:="kernel32.lib" "user32.lib" "gdi32.lib" "winspool.lib" "comdlg32.lib" "advapi32.lib" "shell32.lib" "ole32.lib" "oleaut32.lib" "odbc32.lib" "odbccp32.lib" "uxtheme.lib" "comctl32.lib" "msimg32.lib"
+UCRTPATH=C:\Program Files (x86)\Windows Kits\10\Lib\10.0.10240.0\ucrt\x86
 
-.path.cpp=.\;..\obj;..\lib;..\util
-.cpp.obj:
-  $(CC) $*
-#		*List Macros*
+vpath %.cpp ..\util
+%.obj: %.cpp
+	$(CC) $(CCFLAGS) $<
 
 EXE_dependencies = \
 		CmdSwitch.obj \
@@ -25,11 +22,6 @@ EXE_dependencies = \
 		Loader.obj \
 		Tokenizer.obj \
 		ADLMain.obj
-#		*Explicit Rules*
+
 adl.exe: $(EXE_dependencies)
-  $(LINK) /Tpe /ap /c/v/s/L\bcc55\lib @&&|
-c0x32.obj $(EXE_dependencies)
-adl.exe
-adl.map
-import32.lib cw32.lib
-|
+	$(LINK) $(TYPE) $(LFLAGS) $(COMPLIB) /LIBPATH:"$(UCRTPATH)" /LIBPATH:"$(VCINSTALLDIR)\lib" /OUT:$@  $(EXE_dependencies) 

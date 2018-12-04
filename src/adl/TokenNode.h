@@ -32,35 +32,36 @@
 class TokenNode
 {
 public:
-    TokenNode(std::string Str, int ol) : type(tk_string), optionLevel(ol), bytes(NULL), used(false), coding(-1), values(NULL), eos(0)
+    TokenNode(std::string Str, std::string Errname, int ol) : type(tk_string), optionLevel(ol), bytes(NULL), used(false), coding(-1), values(NULL), eos(0), errname(Errname)
                                          { str = new std::string(Str); id = tn_next++; tokenList.push_back(this); 
-                                            std::map<std::string, int>::iterator it = tokenTable.find(Str);
-                                            if (it == tokenTable.end())
+                                            std::map<std::string, int>::iterator itm = tokenTable.find(Str);
+                                            if (itm == tokenTable.end())
                                             {
                                                 tokenTable[Str] = token = tk_next++;
                                             }
                                             else
                                             {
-                                                token = it->second;
+                                                token = itm->second;
                                             }
                                         }
-    TokenNode(Register *Reg, int ol) : type(tk_reg), reg(Reg), optionLevel(ol), bytes(NULL), used(false), coding(-1), values(NULL), eos(0)
+    TokenNode(Register *Reg, int ol) : errname(Reg->name), type(tk_reg), reg(Reg), optionLevel(ol), bytes(NULL), used(false), coding(-1), values(NULL), eos(0)
                                         { id = tn_next++; tokenList.push_back(this); }
-    TokenNode(RegClass *rClass, int ol) : type(tk_regclass), regClass(rClass), optionLevel(ol), bytes(NULL), used(false), coding(-1), values(NULL), eos(0)
+    TokenNode(RegClass *rClass, int ol) : errname(rClass->name), type(tk_regclass), regClass(rClass), optionLevel(ol), bytes(NULL), used(false), coding(-1), values(NULL), eos(0)
                                         { id = tn_next++; tokenList.push_back(this); }
-    TokenNode(AddressClass *AddrClass, int ol) : type(tk_addrclass), addrClass(AddrClass), optionLevel(ol), bytes(NULL), used(false), coding(-1), values(NULL), eos(0)
+    TokenNode(AddressClass *AddrClass, int ol) : errname(AddrClass->name), type(tk_addrclass), addrClass(AddrClass), optionLevel(ol), bytes(NULL), used(false), coding(-1), values(NULL), eos(0)
                                         { id = tn_next++; tokenList.push_back(this); }
-    TokenNode(Opcode *OpCode, int ol) : type(tk_opcode), opcode(OpCode), optionLevel(ol), bytes(NULL), used(false), coding(-1), values(NULL), eos(0)
+    TokenNode(Opcode *OpCode, int ol) : errname(OpCode->name), type(tk_opcode), opcode(OpCode), optionLevel(ol), bytes(NULL), used(false), coding(-1), values(NULL), eos(0)
                                         { id = tn_next++; tokenList.push_back(this); }
-    TokenNode(Number *nNumber, int ol) : type(tk_number), number(nNumber), optionLevel(ol), bytes(NULL), used(false), coding(-1), values(NULL), eos(0)
+    TokenNode(Number *nNumber, int ol) : errname(nNumber->name), type(tk_number), number(nNumber), optionLevel(ol), bytes(NULL), used(false), coding(-1), values(NULL), eos(0)
                                         { id = tn_next++; tokenList.push_back(this); }
-    ~TokenNode() { if (bytes) delete bytes; }
+    ~TokenNode() { delete bytes; delete str; }
     void SetBytes(BYTE *data, int n)
     {
         bytes = new BYTE[n];
         memcpy(bytes, data, n);
     }
     std::string name;
+    std::string errname;
     std::deque<TokenNode *> branches;
     int optionLevel;
     BYTE *bytes;

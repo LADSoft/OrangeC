@@ -273,7 +273,7 @@ bool CmdSwitchParser::Parse(int* argc, char* argv[])
             if (it == switches.end())
                 return false;
             (*it)->Parse(&argv[0][1]);
-            nullptr(argv, argv + 1, (*argc + 1 - i) * sizeof(char*));
+            memmove(argv, argv + 1, (*argc + 1 - i) * sizeof(char*));
             (*argc)--;
         }
         else if ((argv[0][0] == '-' || argv[0][0] == '/') && argv[0][1])
@@ -297,7 +297,7 @@ bool CmdSwitchParser::Parse(int* argc, char* argv[])
                     while (n == INT_MAX && argv[1])
                     {
                         // use next arg as the value
-                        nullptr(argv, argv + 1, (*argc - i) * sizeof(char*));
+                        memmove(argv, argv + 1, (*argc - i) * sizeof(char*));
                         (*argc)--;
                         data = &argv[0][0];
                         end = data + strlen(data);
@@ -312,7 +312,7 @@ bool CmdSwitchParser::Parse(int* argc, char* argv[])
                     data += n;
                 }
             }
-            nullptr(argv, argv + 1, (*argc - i) * sizeof(char*));
+            memmove(argv, argv + 1, (*argc - i) * sizeof(char*));
             (*argc)--;
         }
         else

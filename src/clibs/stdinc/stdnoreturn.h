@@ -29,7 +29,7 @@
 #ifndef __STDDEF_H
 #    include <stddef.h>
 #endif
-
-#define noreturn _Noreturn
-
+#ifndef __cplusplus
+#    define noreturn _Noreturn
+#endif
 #endif /* __STDNORETURN_H */

@@ -22,15 +22,16 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-
+// This file contains a lot of comments that use mutexes, this is because OrangeC currently does not have C++ mutexes but once it
+// does it'll be done
 #define _CRT_SECURE_NO_WARNINGS
 
 #ifdef GCCLINUX
-#include <unistd.h>
+#    include <unistd.h>
 #else
-#include <windows.h>
-#include <process.h>
-#include <direct.h>
+#    include <windows.h>
+#    include <process.h>
+#    include <direct.h>
 #endif
 #undef WriteConsole
 #define __MT__  // BCC55 support
@@ -43,11 +44,14 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
-#include <mutex>
+//#include <mutex>
 #include "semaphores.h"
 //#define DEBUG
 static Semaphore sema;
-static std::recursive_mutex consoleMut;
+#ifdef _WIN32
+static CRITICAL_SECTION consoleSync;
+#endif
+// static std::recursive_mutex consoleMut;
 std::deque<int> OS::jobCounts;
 bool OS::isSHEXE;
 int OS::jobsLeft;
@@ -104,32 +108,47 @@ bool Time::operator>(const Time& last)
             return true;
     return false;
 }
-void OS::Init() 
+void OS::Init()
 {
+#ifdef _WIN32
+    InitializeCriticalSection(&consoleSync);
+#endif
 }
+
 void OS::WriteConsole(std::string string)
 {
-    std::lock_guard<decltype(consoleMut)> lg(consoleMut);
+    // std::lock_guard<decltype(consoleMut)> lg(consoleMut);
 #ifdef _WIN32
+    EnterCriticalSection(&consoleSync);
+
     DWORD written;
     WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), string.c_str(), string.size(), &written, nullptr);
+    LeaveCriticalSection(&consoleSync);
 #else
     printf("%s\n", string.c_str());
 #endif
 }
 void OS::ToConsole(std::deque<std::string>& strings)
 {
-    std::lock_guard<decltype(consoleMut)> lg(consoleMut);    
+    // std::lock_guard<decltype(consoleMut)> lg(consoleMut);
+    EnterCriticalSection(&consoleSync);
     for (auto s : strings)
     {
         WriteConsole(s);
     }
     strings.clear();
+    LeaveCriticalSection(&consoleSync);
 }
 void OS::AddConsole(std::deque<std::string>& strings, std::string string)
 {
-    std::lock_guard<decltype(consoleMut)> lg(consoleMut);    
+// std::lock_guard<decltype(consoleMut)> lg(consoleMut);
+#ifdef _WIN32
+    EnterCriticalSection(&consoleSync);
+#endif
     strings.push_back(string);
+#ifdef _WIN32
+    LeaveCriticalSection(&consoleSync);
+#endif
 }
 void OS::PushJobCount(int jobs)
 {
@@ -146,10 +165,7 @@ bool OS::TakeJob()
     sema.Wait();
     return false;
 }
-void OS::GiveJob() 
-{ 
-    sema.Post();
-}
+void OS::GiveJob() { sema.Post(); }
 void OS::JobInit()
 {
     std::string name;
@@ -171,17 +187,18 @@ void OS::JobInit()
     name = std::string("OMAKE") + name;
     sema = Semaphore(jobsLeft);
 }
-void OS::JobRundown() 
+void OS::JobRundown() { sema.~Semaphore(); }
+void OS::Take()
 {
-    sema.~Semaphore();
+#ifdef _WIN32
+    EnterCriticalSection(&consoleSync);
+#endif
 }
-void OS::Take() 
-{ 
-    consoleMut.lock();
-}
-void OS::Give() 
-{ 
-    consoleMut.unlock();
+void OS::Give()
+{
+#ifdef _WIN32
+    LeaveCriticalSection(&consoleSync);
+#endif
 }
 int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::string* output)
 {
@@ -342,9 +359,9 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         CloseHandle(pipeWriteDuplicate);
     }
     delete[] env;
-#ifdef DEBUG
+#    ifdef DEBUG
     std::cout << rv << ":" << cmd << std::endl;
-#endif
+#    endif
     return rv;
 #else
     return -1;
@@ -453,7 +470,6 @@ Time OS::GetFileTime(const std::string fileName)
 #endif
     Time rv;
     return rv;
-
 }
 void OS::SetFileTime(const std::string fileName, Time time)
 {
@@ -531,9 +547,9 @@ void OS::CreateThread(void* func, void* data)
     CloseHandle((HANDLE)_beginthreadex(nullptr, 0, (unsigned(CALLBACK*)(void*))func, data, 0, NULL));
 #endif
 }
-void OS::Yield() 
-{ 
+void OS::Yield()
+{
 #ifdef _WIN32
-    ::Sleep(10); 
+    ::Sleep(10);
 #endif
 }

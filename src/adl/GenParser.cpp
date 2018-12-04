@@ -1194,7 +1194,7 @@ void GenParser::GenerateCoding(const std::string coding, const std::string name)
                     {
                         (*file) << "Coding::indirect | Coding::fieldSpecified), ";
                     }
-                    (*file) << value << ", " << bits << ", " << field << ", ";
+                    (*file) << value << ", " << (bits == -1 ? 0 : bits) << ", " << (field == -1 ? 0 : field) << ", ";
                     if (unary)
                         (*file) << "'" << unary << "', ";
                     else
@@ -1207,7 +1207,7 @@ void GenParser::GenerateCoding(const std::string coding, const std::string name)
                 }
             }
         }
-    }
+    } 
     (*file) << "\t{ CODING_NAME(\"eot\") Coding::eot " << "}," << std::endl;
     if (needsMore)
     {

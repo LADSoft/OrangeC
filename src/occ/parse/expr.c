@@ -2638,12 +2638,10 @@ void AdjustParams(SYMBOL* func, HASHREC* hr, INITLIST** lptr, BOOLEAN operands, 
                     }
                     else
                     {
-                        FUNCTIONCALL* funcparams = Alloc(sizeof(FUNCTIONCALL));
                         TYPE* ctype = sp->tp;
                         EXPRESSION* dexp = thisptr;
-                        funcparams->arguments = pinit;
                         p->exp = thisptr;
-                        callConstructor(&ctype, &p->exp, funcparams, FALSE, NULL, TRUE, TRUE, implicit, FALSE, FALSE);
+                        callConstructorParam(&ctype, &p->exp, pinit->tp, pinit->exp, TRUE, TRUE, implicit, FALSE);
                         if (!isref(sym->tp))
                         {
                             sp->stackblock = TRUE;
@@ -2740,31 +2738,23 @@ void AdjustParams(SYMBOL* func, HASHREC* hr, INITLIST** lptr, BOOLEAN operands, 
                         EXPRESSION* consexp;
                         // copy constructor...
                         TYPE* ctype = sym->tp;
-                        FUNCTIONCALL* funcparams = Alloc(sizeof(FUNCTIONCALL));
-                        INITLIST* arg = Alloc(sizeof(INITLIST));
+                        EXPRESSION *paramexp;
                         consexp = anonymousVar(sc_auto, sym->tp);  // sc_parameter to push it...
                         esp = consexp->v.sp;
                         esp->stackblock = TRUE;
                         consexp = varNode(en_auto, esp);
-                        arg->exp = temp->v.func->returnEXP ? temp->v.func->returnEXP : temp->v.func->thisptr;
-                        arg->tp = sym->tp;
-                        arg->exp = DerivedToBase(sym->tp, tpx, arg->exp, _F_VALIDPOINTER);
-                        funcparams->arguments = arg;
-                        callConstructor(&ctype, &consexp, funcparams, FALSE, NULL, TRUE, TRUE, implicit, FALSE, FALSE);
+                        paramexp = temp->v.func->returnEXP ? temp->v.func->returnEXP : temp->v.func->thisptr;
+                        paramexp = DerivedToBase(sym->tp, tpx, paramexp, _F_VALIDPOINTER);
+                        callConstructorParam(&ctype, &consexp, sym->tp, paramexp, TRUE, TRUE, implicit, FALSE);
                         p->exp = exprNode(en_void, p->exp, consexp);
                     }
                     else
                     {
                         TYPE* ctype = sym->tp;
-                        FUNCTIONCALL* funcparams = Alloc(sizeof(FUNCTIONCALL));
-                        INITLIST* arg = Alloc(sizeof(INITLIST));
                         EXPRESSION* consexp = anonymousVar(sc_auto, sym->tp);  // sc_parameter to push it...
                         SYMBOL* esp = consexp->v.sp;
                         esp->stackblock = TRUE;
-                        arg->exp = p->exp;
-                        arg->tp = p->tp;
-                        funcparams->arguments = arg;
-                        callConstructor(&ctype, &consexp, funcparams, FALSE, NULL, TRUE, TRUE, implicit, FALSE, FALSE);
+                        callConstructorParam(&ctype, &consexp, p->tp, p->exp, TRUE, TRUE, implicit, FALSE);
                         p->exp = consexp;
                     }
                     p->tp = sym->tp;
@@ -2784,13 +2774,9 @@ void AdjustParams(SYMBOL* func, HASHREC* hr, INITLIST** lptr, BOOLEAN operands, 
                             EXPRESSION* consexp = anonymousVar(sc_auto, basetype(sym->tp)->btp);  // sc_parameter to push it...
                             SYMBOL* esp = consexp->v.sp;
                             TYPE* ctype = basetype(sym->tp)->btp;
-                            FUNCTIONCALL* funcparams = Alloc(sizeof(FUNCTIONCALL));
-                            INITLIST* arg = Alloc(sizeof(INITLIST));
-                            arg->exp = p->exp;
-                            arg->tp = basetype(p->tp);
-                            funcparams->arguments = arg;
+                            EXPRESSION *paramexp = p->exp;
                             p->exp = consexp;
-                            callConstructor(&ctype, &p->exp, funcparams, FALSE, NULL, TRUE, TRUE, FALSE, FALSE, FALSE);
+                            callConstructorParam(&ctype, &p->exp, basetype(p->tp), paramexp, TRUE, TRUE, FALSE, FALSE);
                             if (p->exp->type == en_func)
                             {
                                 SYMBOL* spx = p->exp->v.func->sp;
@@ -3070,13 +3056,9 @@ void AdjustParams(SYMBOL* func, HASHREC* hr, INITLIST** lptr, BOOLEAN operands, 
                     {
                         // make a 'string' object and initialize it with the string
                         TYPE* ctype = chosenAssembler->msil->find_boxed_type(basetype(sym->tp));
-                        FUNCTIONCALL* funcparams = Alloc(sizeof(FUNCTIONCALL));
                         EXPRESSION *exp1, *exp2;
                         exp1 = exp2 = anonymousVar(sc_auto, &std__string);
-                        funcparams->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
-                        funcparams->arguments->tp = p->tp;
-                        funcparams->arguments->exp = p->exp;
-                        callConstructor(&ctype, &exp2, funcparams, FALSE, NULL, TRUE, TRUE, FALSE, FALSE, FALSE);
+                        callConstructorParam(&ctype, &exp2, p->tp, p->exp, TRUE, TRUE, FALSE, FALSE);
                         exp2 = exprNode(en_l_string, exp2, NULL);
                         p->exp = exp2;
                         p->tp = &std__string;

@@ -1378,11 +1378,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
                     else if ((cparams.prm_cplusplus) && !basetype(init->basetp)->sp->trivialCons)
                     {
                         TYPE* ctype = init->basetp;
-                        FUNCTIONCALL* funcparams = Alloc(sizeof(FUNCTIONCALL));
-                        funcparams->arguments = Alloc(sizeof(INITLIST));
-                        funcparams->arguments->tp = ctype;
-                        funcparams->arguments->exp = exp2;
-                        callConstructor(&ctype, &expsym, funcparams, FALSE, NULL, TRUE, FALSE, FALSE, FALSE, FALSE);
+                        callConstructorParam(&ctype, &expsym, ctype, exp2, TRUE, FALSE, FALSE, FALSE);
                         exp = expsym;
                     }
                     else
@@ -1460,11 +1456,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
                             if (cparams.prm_cplusplus && isstructured(init->basetp) && !init->basetp->sp->trivialCons)
                             {
                                 TYPE* ctype = init->basetp;
-                                FUNCTIONCALL* funcparams = Alloc(sizeof(FUNCTIONCALL));
-                                funcparams->arguments = Alloc(sizeof(INITLIST));
-                                funcparams->arguments->tp = ctype;
-                                funcparams->arguments->exp = exp;
-                                callConstructor(&ctype, &expsym, funcparams, FALSE, NULL, TRUE, FALSE, FALSE, FALSE, FALSE);
+                                callConstructorParam(&ctype, &expsym, ctype, exp, TRUE, FALSE, FALSE, FALSE);
                                 exp = expsym;
                             }
                             else

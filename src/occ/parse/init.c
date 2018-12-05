@@ -1862,14 +1862,11 @@ static LEXEME* initialize_reference_type(LEXEME* lex, SYMBOL* funcsp, int offset
         {
             if (isstructured(itype->btp))
             {
-                FUNCTIONCALL* funcparams = Alloc(sizeof(FUNCTIONCALL));
                 EXPRESSION* ths = anonymousVar(sc_auto, tp);
+                EXPRESSION* paramexp = exp;
                 TYPE* ctype = basetype(itype->btp);
-                funcparams->arguments = Alloc(sizeof(INITLIST));
-                funcparams->arguments->tp = tp;
-                funcparams->arguments->exp = exp;
                 exp = ths;
-                callConstructor(&ctype, &exp, funcparams, FALSE, NULL, TRUE, FALSE, FALSE, FALSE, FALSE);
+                callConstructorParam(&ctype, &exp, tp, paramexp, TRUE, FALSE, FALSE, FALSE);
             }
             else
             {

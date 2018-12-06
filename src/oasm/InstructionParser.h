@@ -76,12 +76,13 @@ class Coding
 class Numeric
 {
   public:
+    Numeric(AsmExprNode* n) : node(n) {}
     Numeric() : node(nullptr) {}
     AsmExprNode* node;
-    int pos;
-    int relOfs;
-    int size;
-    int used;
+    int pos = 0;
+    int relOfs = 0;
+    int size = 0;
+    int used = 0;
 };
 class BitStream
 {

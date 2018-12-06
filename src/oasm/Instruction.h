@@ -70,7 +70,7 @@ class Instruction
     Label* GetLabel() { return label; }
     bool IsLabel() { return type == LABEL; }
     int GetType() { return type; }
-    void Optimize(Section *sect, int pc, bool doErrors);
+    void Optimize(Section* sect, int pc, bool doErrors);
     void SetOffset(int Offs) { offs = Offs; }
     int GetOffset() { return offs; }
     int GetSize()
@@ -80,13 +80,11 @@ class Instruction
             int n = size - offs % size;
             if (n == size)
                 return 0;
-            else
-                return n;
+            return n;
         }
         else if (type == RESERVE)
             return size * repeat;
-        else
-            return size;
+        return size;
     }
     int GetRepeat() { return repeat; }
     int GetNext(Fixup& fixup, unsigned char* buf);
@@ -96,8 +94,9 @@ class Instruction
     unsigned char* GetBytes() { return data; }
     FixupContainer* GetFixups() { return &fixups; }
     static void SetBigEndian(bool be) { bigEndian = be; }
-    unsigned char * LoadData(bool isCode, unsigned char *data, size_t size);
+    unsigned char* LoadData(bool isCode, unsigned char* data, size_t size);
     bool Lost() const { return lost; }
+
   private:
     enum iType type;
     unsigned char* data;

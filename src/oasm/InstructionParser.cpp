@@ -122,9 +122,7 @@ bool InstructionParser::SetNumber(int tokenPos, int oldVal, int newVal)
             {
                 if (val->ival == oldVal)
                 {
-                    numeric = new Numeric;
-                    memset(numeric, 0, sizeof(*numeric));
-                    numeric->node = new AsmExprNode(newVal);
+                    numeric = new Numeric(new AsmExprNode(newVal));
                     rv = true;
                 }
             }
@@ -224,12 +222,12 @@ Instruction* InstructionParser::Parse(const std::string args, int PC)
                 {
                     unsigned char buf[32];
                     bits.GetBytes(buf, 32);
-    #ifdef XXXXX
+#ifdef XXXXX
                     std::cout << std::hex << bits.GetBits() << " ";
                     for (int i = 0; i<bits.GetBits()>> 3; i++)
                         std::cout << std::hex << (int)buf[i] << " ";
                     std::cout << std::endl;
-    #endif
+#endif
                     if (!eol)
                         throw new std::runtime_error("Extra characters at end of line");
                     s = new Instruction(buf, (bits.GetBits() + 7) / 8);
@@ -239,11 +237,12 @@ Instruction* InstructionParser::Parse(const std::string args, int PC)
                         if (operand->used && operand->size)
                         {
                             if (s->Lost() && operand->pos)
-                                operand->pos-=8;
+                                operand->pos -= 8;
                             int n = operand->relOfs;
                             if (n < 0)
                                 n = -n;
-                            Fixup* f = new Fixup(operand->node, (operand->size + 7) / 8, operand->relOfs != 0, n, operand->relOfs > 0);
+                            Fixup* f =
+                                new Fixup(operand->node, (operand->size + 7) / 8, operand->relOfs != 0, n, operand->relOfs > 0);
                             f->SetInsOffs((operand->pos + 7) / 8);
                             f->SetFileName(errName);
                             f->SetErrorLine(errLine);
@@ -251,7 +250,7 @@ Instruction* InstructionParser::Parse(const std::string args, int PC)
                         }
                     }
                 }
-                    break;
+                break;
                 case AERR_SYNTAX:
                     throw new std::runtime_error("Syntax error while parsing instruction");
                 case AERR_OPERAND:
@@ -646,7 +645,7 @@ void InstructionParser::NextToken(int PC)
             id = TK_NUMERIC;
             val = new AsmExprNode(accum);
         }
-        else if (IsSymbolStartChar(line.c_str()) || IsNumber() || line[0] == '$')
+        else if (IsSymbolStartChar(line[0]) || IsNumber() || line[0] == '$')
         {
             val = expr.Build(line);
             id = TK_NUMERIC;

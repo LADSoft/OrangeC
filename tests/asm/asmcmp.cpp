@@ -86,7 +86,7 @@ int main(int argc, char **argv)
 	}
 	char *name = argv[1];
         char asmfile[256], nasmfile[256], oasmfile[256];
-	sprintf(asmfile, "%s.asm", name);	
+	sprintf(asmfile, "%s.nas", name);	
 	sprintf(nasmfile, "%s1.cmpx", name);	
 	sprintf(oasmfile, "%s.o", name);
 	inasm = fopen(asmfile, "r");

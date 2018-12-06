@@ -3,7 +3,7 @@ all: alltests
 asmcmp.exe : asmcmp.cpp
 	occ $^
 
-%.o: %.asm
+%.o: %.nas
 	oasm /b $^
 
 %.tst: %.o %1.cmpx

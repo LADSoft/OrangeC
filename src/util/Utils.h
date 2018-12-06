@@ -47,6 +47,10 @@ class Utils
         fputc('\n', stderr);
         exit(1);
     }
+    static void fatal(const std::string& format)
+    {
+        fatal(format.c_str());
+    }
     template <typename... Args>
     static void fatal(const std::string& format, Args... arg)
     {

@@ -33,9 +33,8 @@
 #include "UTF8.h"
 #include <stdexcept>
 #include <iostream>
+#include "Token.h"
 
-extern bool IsSymbolStartChar(char ch);
-extern bool IsSymbolChar(char ch);
 
 static const unsigned mask[32] = {
     0x1,      0x3,      0x7,       0xf,       0x1f,      0x3f,      0x7f,       0xff,       0x1ff,      0x3ff,      0x7ff,
@@ -646,7 +645,7 @@ void InstructionParser::NextToken(int PC)
             id = TK_NUMERIC;
             val = new AsmExprNode(accum);
         }
-        else if (IsSymbolStartChar(line.c_str()) || IsNumber() || line[0] == '$')
+        else if (Tokenizer::IsSymbolChar(line.c_str(), true) || IsNumber() || line[0] == '$')
         {
             val = expr.Build(line);
             id = TK_NUMERIC;

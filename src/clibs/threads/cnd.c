@@ -8,12 +8,11 @@
 #include <locale.h>
 #include <threads.h>
 #include <sys\timeb.h>
-#include <threads.h>
 #include <stdlib.h>
 #include "libp.h"
 
 extern int __mtxThisThread(mtx_t *mtx);
-extern int __thrd_rel_delay(const timespec *xt);
+extern int __thrd_rel_delay(const struct timespec *xt);
 
 typedef struct _tlist {
     struct _tlist *next;
@@ -154,7 +153,7 @@ int     _RTL_FUNC cnd_signal(cnd_t *cond)
     __ll_exit_critical();
     return thrd_error;
 }
-int     _RTL_FUNC cnd_timedwait(cnd_t *cond, mtx_t *mtx, const timespec *xt)
+int     _RTL_FUNC cnd_timedwait(cnd_t *cond, mtx_t *mtx, const struct timespec *xt)
 {
     icnd *p = (icnd *)*cond;
     __ll_enter_critical();
@@ -226,7 +225,7 @@ int     _RTL_FUNC cnd_wait(cnd_t *cond, mtx_t *mtx)
         default:
             return thrd_error;
         case thrd_success:
-            return cnd_timedwait(cond, mtx, (timespec *)-1);
+            return cnd_timedwait(cond, mtx, (struct timespec *)-1);
         case thrd_busy:
             abort();
             // never gets here

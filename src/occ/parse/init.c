@@ -25,6 +25,7 @@
 
 #include "compiler.h"
 #include <assert.h>
+#include <limits.h>
 /* initializers, local... can do w/out c99 */
 
 extern ARCH_DEBUG* chosenDebugger;
@@ -1299,9 +1300,41 @@ static LEXEME* initialize_arithmetic_type(LEXEME* lex, SYMBOL* funcsp, int offse
                     checkscope(tp, itype);
                 if (!comparetypes(itype, tp, TRUE))
                 {
-                    if (cparams.prm_cplusplus && needend && basetype(tp)->type > bt_int)
+                    if (cparams.prm_cplusplus && needend)
                         if (basetype(itype)->type < basetype(tp)->type)
-                            error(ERR_INIT_NARROWING);
+                        {
+                            if (isintconst(exp))
+                            {
+
+                                int val = exp->v.i;
+                                switch (basetype(itype)->type)
+                                {
+                                    case bt_char:
+                                        if (val < CHAR_MIN || val > CHAR_MAX)
+                                            error(ERR_INIT_NARROWING);
+                                        break;
+                                    case bt_unsigned_char:
+                                        if (val < 0 || val > UCHAR_MAX)
+                                            error(ERR_INIT_NARROWING);
+                                        break;
+                                    case bt_short:
+                                        if (val < SHRT_MIN || val > SHRT_MAX)
+                                            error(ERR_INIT_NARROWING);
+                                        break;
+                                    case bt_unsigned_short:
+                                        if (val < 0 || val > USHRT_MAX)
+                                            error(ERR_INIT_NARROWING);
+                                        break;
+                                    default:
+                                        error(ERR_INIT_NARROWING);
+                                        break;
+                                }
+                            }
+                            else
+                            {
+                                error(ERR_INIT_NARROWING);
+                            }
+                        }
                     cast(itype, &exp);
                     optimize_for_constants(&exp);
                 }

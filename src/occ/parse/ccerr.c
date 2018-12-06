@@ -441,7 +441,7 @@ static struct
     {"For-range array expression unsized", ERROR},
     {"For-range declarator cannot be initialized", ERROR},
     {"For declarator must be initialized", ERROR},
-    {"Initialization from higher type", WARNING},
+    {"Value narrowing within { } is not allowed", ERROR},
     {"Nonstructured initializer list expected", ERROR},
     {"Cannot use initializer list here", ERROR},
     {"Initializer list requires overloaded operator []", ERROR},

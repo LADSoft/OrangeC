@@ -2933,6 +2933,8 @@ void AdjustParams(SYMBOL* func, HASHREC* hr, INITLIST** lptr, BOOLEAN operands, 
                     // handle base class conversion
                     TYPE* tpb = basetype(sym->tp)->btp;
                     TYPE* tpd = basetype(p->tp)->btp;
+                    if (cparams.prm_cplusplus && !isconst(sym->tp) && basetype(p->tp)->stringconst)
+                        error(ERR_INVALID_CHARACTER_STRING_CONVERSION);
                     if (!comparetypes(basetype(tpb), basetype(tpd), TRUE))
                     {
                         if (isstructured(tpb) && isstructured(tpd))
@@ -3916,6 +3918,7 @@ static LEXEME* expression_string(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
     {
         (*tp)->type = bt_pointer;
         (*tp)->array = TRUE;
+        (*tp)->stringconst = TRUE;
         (*tp)->rootType = (*tp);
         (*tp)->esize = intNode(en_c_i, elems + 1);
         switch (data->strtype)
@@ -7525,6 +7528,9 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                         }
                         else if (ispointer(basetype(tp1)) || tp1->type == bt_any)
                         {
+                            if (cparams.prm_cplusplus && !isconst(*tp) && basetype(tp1)->stringconst)
+                                error(ERR_INVALID_CHARACTER_STRING_CONVERSION);
+
                             while (tp1->type == bt_any)
                                 tp1 = tp1->btp;
                             if (!ispointer(basetype(tp1)))

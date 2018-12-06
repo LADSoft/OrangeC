@@ -564,6 +564,7 @@ static struct
     {"Ignoring __attribute__ specifier", WARNING},
     {"Ignoring __declspec specifier", WARNING},
     {"Invalid alignment value", ERROR },
+    {"Conversion of character string to 'char *' deprecated", WARNING },
 #endif
 };
 

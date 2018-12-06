@@ -1407,6 +1407,7 @@ static LEXEME* initialize_pointer_type(LEXEME* lex, SYMBOL* funcsp, int offset, 
 {
     TYPE* tp;
     EXPRESSION* exp;
+    BOOLEAN string = FALSE;
     BOOLEAN needend = FALSE;
     if (MATCHKW(lex, begin))
     {
@@ -1436,6 +1437,7 @@ static LEXEME* initialize_pointer_type(LEXEME* lex, SYMBOL* funcsp, int offset, 
         else
         {
             lex = initialize_string(lex, funcsp, &tp, &exp);
+            string = TRUE;
         }
         castToPointer(&tp, &exp, (enum e_kw) - 1, itype);
         DeduceAuto(&itype, tp);
@@ -1470,6 +1472,9 @@ static LEXEME* initialize_pointer_type(LEXEME* lex, SYMBOL* funcsp, int offset, 
             {
                 errortype(ERR_CANNOT_CONVERT_TYPE, tp, itype);
             }
+            if (cparams.prm_cplusplus && !isconst(itype) && string)
+                error(ERR_INVALID_CHARACTER_STRING_CONVERSION);
+
             if (isarray(tp) && (tp)->msil)
                 error(ERR_MANAGED_OBJECT_NO_ADDRESS);
             else if (isstructured(tp))

@@ -996,11 +996,15 @@ void dumpInitGroup(SYMBOL* sp, TYPE* tp)
 static void dumpStaticInitializers(void)
 {
 #ifndef PARSER_ONLY
+    int abss = 0;
+    int adata = 0;
+    int aconst = 0;
+    int anull = 0;
     int sconst = 0;
     int bss = 0;
     int data = 0;
     int thread = 0;
-    int* sizep;
+    int* sizep, *alignp;
     symListTail = symListHead;
     while (symListTail)
     {
@@ -1017,26 +1021,33 @@ static void dumpStaticInitializers(void)
             {
                 xconstseg();
                 sizep = &sconst;
+                alignp = &aconst;
             }
             else if (sp->linkage3 == lk_threadlocal)
             {
                 tseg();
                 sizep = &thread;
+                alignp = &anull;
             }
             else if (sp->init || !cparams.prm_bss)
             {
                 dseg();
                 sizep = &data;
+                alignp = &adata;
             }
             else
             {
                 bssseg();
                 sizep = &bss;
+                alignp = &abss;
             }
             if (sp->structAlign)
                 al = sp->structAlign;
             else
                 al = getAlign(sc_global, basetype(tp));
+
+            if (*alignp < al)
+                *alignp = al;
             if (*sizep % al)
             {
                 int n = al - *sizep % al;
@@ -1085,6 +1096,7 @@ static void dumpStaticInitializers(void)
         symListTail = symListTail->next;
     }
     symListHead = NULL;
+    chosenAssembler->gen->setalign(0, adata, abss, aconst);
 #endif
 }
 void dumpInitializers(void)

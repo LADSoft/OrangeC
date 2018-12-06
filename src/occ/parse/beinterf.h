@@ -298,6 +298,7 @@ typedef struct _arch_gen
     void (*gen_importThunk)(SYMBOL* func);                  /* import thunk entry */
     void (*gen_storage)(int size);                          /* generate uninitialized storage */
     void (*align)(int size);                                /* put an alignment command */
+    void (*setalign)(int code, int data, int bss, int constant); /* put alignment sizes */
     void (*enterseg)(enum e_sg segnum);                     /* enter a new segment */
     void (*exitseg)(enum e_sg segnum);                      /* exit current segment */
     void (*global_define)(SYMBOL* sp);                      /* put a global definition */

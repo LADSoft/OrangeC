@@ -36,6 +36,7 @@ extern int prm_nodos;
 extern int prm_flat;
 extern int fastcallAlias;
 extern SYMBOL *theCurrentFunc;
+extern int segAligns[];
 
 extern OPCODE popn_aaa;
 extern OPCODE popn_aad;
@@ -1910,6 +1911,18 @@ void oa_align(int size)
     else
         outcode_align(size);
 }
+void oa_setalign(int code, int data, int bss, int constant)
+{
+	if (code > 0)
+		segAligns[codeseg] = code;
+	if (data > 0)
+		segAligns[dataseg] = data;
+	if (bss > 0)
+		segAligns[bssxseg] = bss;
+	if (constant > 0)
+		segAligns[constseg] = constant;
+}
+
 
 /*
  * queue muldiv val
@@ -2051,9 +2064,12 @@ void dump_browsefile(BROWSEFILE* brf)
 }
 
 /*-------------------------------------------------------------------------*/
-
+char asmfile[256];
+char compilerversion[256];
 void oa_header(char* filename, char* compiler_version)
 {
+    strcpy(asmfile,filename);
+    strcpy(compilerversion, compiler_version);
     oa_nl();
     bePrintf(";File %s\n", filename);
     bePrintf(";Compiler version %s\n", compiler_version);
@@ -2061,11 +2077,11 @@ void oa_header(char* filename, char* compiler_version)
     {
         if (!prm_nodos)
         {
-            bePrintf("\tsection code align=16 class=CODE use32\n");
-            bePrintf("\tsection data align=8 class=DATA use32\n");
-            bePrintf("\tsection bss  align=8 class=BSS use32\n");
-            bePrintf("\tsection const  align=8 class=CONST use32\n");
-            bePrintf("\tsection string  align=2 class=STRING use32\n");
+            bePrintf("\tsection code align=%-8d class=CODE use32\n", segAligns[codeseg]);
+            bePrintf("\tsection data align=%-8d class=DATA use32\n", segAligns[dataseg]);
+            bePrintf("\tsection bss  align=%-8d class=BSS use32\n", segAligns[bssxseg]);
+            bePrintf("\tsection const  align=%-8d class=CONST use32\n", segAligns[constseg]);
+            bePrintf("\tsection string  align=%-8d class=STRING use32\n", segAligns[stringseg]);
             bePrintf("\tsection tls  align=8 class=TLS use32\n");
             bePrintf("\tsection cstartup align=2 class=INITDATA use32\n");
             bePrintf("\tsection crundown align=2 class=EXITDATA use32\n");
@@ -2097,6 +2113,8 @@ void oa_trailer(void)
 {
     if (!(prm_assembler == pa_nasm || prm_assembler == pa_fasm))
         bePrintf("\tend\n");
+    beRewind();
+    oa_header(asmfile, compilerversion);
 }
 /*-------------------------------------------------------------------------*/
 void oa_localdef(SYMBOL* sp)

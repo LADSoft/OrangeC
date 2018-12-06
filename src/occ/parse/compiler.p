@@ -899,7 +899,7 @@ void owrite(char *buf, size_t size, int n, FILE *fil);
 void beWrite(char *buf, size_t size);
 void oprintf(FILE *file, char *format, ...);
 void bePrintf(char *format, ...);
-
+void beRewind(void);
                               /* Ppexpr.c */
 
 int getsch(int UBYTEs, unsigned char **source) ;

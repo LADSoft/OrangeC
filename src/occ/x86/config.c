@@ -538,6 +538,7 @@ ARCH_GEN outputfunctions = {
     oa_gen_importThunk,   /* do an import thunk entry */
     oa_genstorage,        /* generate uninitialized storage */
     oa_align,             /* put an alignment command */
+    oa_setalign,          /* put alignment sizes */
     oa_enterseg,          /* switch to new seg */
     oa_exitseg,           /* exit current segment */
     oa_globaldef,         /* put a global definition */

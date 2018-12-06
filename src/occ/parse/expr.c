@@ -5239,10 +5239,7 @@ static LEXEME* expression_alignof(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
                 itp = (basetype(itp)->btp);
             while (itp->array)
                 itp = itp->btp;
-            if (isstructured(*tp))
-                *exp = intNode(en_c_i, basetype(*tp)->sp->structAlign);
-            else
-                *exp = intNode(en_c_i, getAlign(sc_global, *tp));
+            *exp = intNode(en_c_i, getAlign(sc_global, *tp));
         }
     }
     *tp = &stdint;

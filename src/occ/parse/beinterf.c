@@ -507,6 +507,8 @@ int getAlign(int sc, TYPE* tp)
             align = packdata[packlevel];
     if (chosenAssembler->arch->align)
         align = chosenAssembler->arch->align(align);
+    if (isstructured(tp) && tp->sp->structAlign > align)
+        align = tp->sp->structAlign;
     return align;
 }
 char* getUsageText(void) { return chosenAssembler->usage_text; }

@@ -38,14 +38,18 @@ KeywordHash DefFile::keywords;
 
 #define SPACES " \t\v\f\r\n"
 #define COMMA ","
-bool IsSymbolStartChar(const char* data)
+static bool IsSymbolStartChar(const char* data)
 {
     return *data == '_' || *data == '$' || *data == '?' || *data == '.' || UTF8::IsAlpha(data);
 }
-bool IsSymbolChar(const char* data)
+static bool IsSymbolChar(const char* data)
 {
     return *data == '_' || *data == '$' || *data == '#' || *data == '@' || *data == '~' || *data == '?' || *data == '.' ||
            UTF8::IsAlnum(data);
+}
+static bool IsSymbolChar(const char *data, bool start)
+{
+    return start ? IsSymbolStartChar(data) : IsSymbolChar(data);
 }
 DefFile::~DefFile()
 {
@@ -87,6 +91,7 @@ void DefFile::Init()
         keywords["WRITE"] = edt_write;
         keywords["EXECUTE"] = edt_execute;
         keywords["SHARED"] = edt_shared;
+        Tokenizer::IsSymbolChar = IsSymbolChar;
     }
 }
 bool DefFile::Read()

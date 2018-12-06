@@ -6996,6 +6996,28 @@ static LEXEME* expression_hook(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp
                     tph = tpc;
                 else if (tpc->type == bt_void)
                     tpc = tph;
+                if (cparams.prm_cplusplus && (isstructured(tpc) || isstructured(tph)) && !comparetypes(tph, tpc, FALSE))
+                {
+                    // call a constructor?
+                    if (isstructured(tph))
+                    {
+                        EXPRESSION *rv = eph;
+                        TYPE *ctype = tph;
+                        callConstructorParam(&ctype, &rv, tpc, epc, TRUE, FALSE, FALSE, FALSE);
+                        epc = rv;
+                        tpc = tph;
+
+                    }
+                    else
+                    {
+                        EXPRESSION *rv = epc;
+                        TYPE *ctype = tpc;
+                        callConstructorParam(&ctype, &rv, tph, eph, TRUE, FALSE, FALSE, FALSE);
+                        eph = rv;
+                        tph = tpc;
+
+                    }
+                }
                 if (ispointer(tph) || ispointer(tpc))
                     if (!comparetypes(tph, tpc, FALSE))
                         if (!isconstzero(tph, eph) && !isconstzero(tpc, epc))

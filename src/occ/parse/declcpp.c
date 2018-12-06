@@ -3129,6 +3129,29 @@ BOOLEAN ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, BOOLEAN always)
                     }
                     needkw(lex, closepa);
                     alignas_value = align;
+                    switch (alignas_value)
+                    {
+                        // we are accepting all these because libcpp needs them...
+                    case 1:
+                    case 2:
+                    case 4:
+                    case 8:
+                    case 16:
+                    case 32:
+                    case 64:
+                    case 128:
+                    case 256:
+                    case 512:
+                    case 1024:
+                    case 2048:
+                    case 4096:
+                    case 8192:
+                    case 16384:
+                        break;
+                    default:
+                        error(ERR_INVALID_ALIGNMENT);
+                        break;
+                    }
                 }
             }
             else if (MATCHKW(*lex, openbr))

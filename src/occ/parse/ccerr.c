@@ -563,6 +563,7 @@ static struct
     {"%s: attempting to redefine dll interface linkage for class", WARNING},
     {"Ignoring __attribute__ specifier", WARNING},
     {"Ignoring __declspec specifier", WARNING},
+    {"Invalid alignment value", ERROR },
 #endif
 };
 

@@ -343,6 +343,8 @@ int RunExternalFiles(char* rootPath)
         }
         rv = system(spname);
         unlink(tempFile);
+        if (verbosity > 1)
+            printf("Return code: %d\n", rv);
 
         if (rv)
             return rv;

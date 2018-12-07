@@ -1,6 +1,0 @@
-Warning(141)  errpragma.c(8):  Parameter 'a' unused in function err_1
-Warning(105)  errpragma.c(8):  Function should return a value in function err_1
-Warning(141)  errpragma.c(13):  Parameter 'b' unused in function err_2
-Warning( 73)  errpragma.c(16):  Missing type in declaration
-Warning(141)  errpragma.c(17):  Parameter 'c' unused in function err_3
-Warning(105)  errpragma.c(17):  Function should return a value in function err_3

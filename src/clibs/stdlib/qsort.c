@@ -22,57 +22,76 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-
+#include <stdio.h>
 #include <stdlib.h>
-#include <memory.h>
 
-void _RTL_FUNC quicksort(const void* base, int lo, int hi, size_t width, int (*compare)(const void* elem1, const void* elem2),
-                         char* buf)
+typedef int cmpfunc(void *, void *);
+
+static size_t partition(unsigned char *data, size_t width, cmpfunc *func, size_t low, size_t high)
 {
+    // pivot (Element to be placed at right position)
+    unsigned char *pivot = data + high;
 
-    if (hi > lo)
+    size_t i = low - width;
+    for (size_t j = low; j <= high-width; j += width)
     {
-        int i = lo, j = hi;
-        char* celem = buf + width;
-        memcpy(celem, ((char*)base) + width * ((lo + hi) / 2), width);
-
-        while (i <= j)
+        // If current element is smaller than or
+        // equal to pivot
+        if (func(data + j, pivot) <= 0)
         {
-            while (i <= hi && (*compare)((char*)base + i * width, celem) < 0)
-                i++;
-            while (j >= lo && (*compare)((char*)base + j * width, celem) > 0)
-                j--;
-            if (i <= j)
+            i += width;    // increment index of smaller element
+            if (i != j)
             {
-                memcpy(buf, (char*)base + i * width, width);
-                memcpy((char*)base + i * width, (char*)base + j * width, width);
-                memcpy((char*)base + j * width, buf, width);
-                i++;
-                j--;
+                for (int k = 0; k < width; k++)
+                {
+                    unsigned char temp = data[i + k];
+                    data[i + k] = data[j + k];
+                    data[j + k] = temp;
+                }
             }
         }
-        if (lo < j)
-            quicksort(base, lo, j, width, compare, buf);
-        if (i < hi)
-            quicksort(base, i, hi, width, compare, buf);
+    }
+    i += width;
+    for (int k = 0; k < width; k++)
+    {
+        unsigned char temp = data[i + k];
+        data[i + k] = pivot[k];
+        pivot[k] = temp;
+    }
+    return i;
+}
+static void quicksort(void *data, size_t width, cmpfunc *func, size_t high)
+{
+    int staticheap[4096 * 4];
+
+    int *heap = staticheap;
+    if (high >= 4096)
+        heap  = (int *)malloc(high*sizeof(int) * 4);
+    if (heap)
+    {
+        heap[0] = 0;
+        heap[1] = (high-1) * width;
+        size_t heapStart = 0;
+        size_t heapSize = 2;
+        while (heapStart < heapSize)
+        {
+            size_t pivot=0;
+            if (heap[heapStart] < heap[heapStart + 1])
+            {
+                pivot = partition((unsigned char *)data, width, func, heap[heapStart], heap[heapStart + 1]);
+                heap[heapSize++] = heap[heapStart + 0];
+                heap[heapSize++] = pivot - width;
+                heap[heapSize++] = pivot + width;
+                heap[heapSize++] = heap[heapStart + 1];
+            }
+            heapStart += 2;
+        }
+        if (heap != staticheap)
+            free(heap);
     }
 }
+
 void _RTL_FUNC qsort(void* base, size_t num, size_t width, int (*compare)(const void* elem1, const void* elem2))
 {
-    char data[512];
-    char* buf;
-
-    if (width <= sizeof(data) / 2)
-        buf = data;
-    else
-    {
-        buf = malloc(width);
-        if (!buf)
-            return;
-    }
-
-    quicksort(base, 0, num - 1, width, compare, buf);
-
-    if (buf != data)
-        free(buf);
+    quicksort(base, width, compare, num);
 }

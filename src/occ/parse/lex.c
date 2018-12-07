@@ -277,7 +277,7 @@ KEYWORD keywords[] = {
     //	{ "far", 3,  kw__far, KW_NONANSI | KW_ALL, TT_POINTERQUAL | TT_TYPEQUAL},
     {"float", 5, kw_float, 0, TT_BASETYPE | TT_FLOAT},
     {"for", 3, kw_for, 0, TT_CONTROL},
-    {"friend", 6, kw_friend, KW_CPLUSPLUS, TT_DECLARE},
+    {"friend", 6, kw_friend, KW_CPLUSPLUS, TT_LINKAGE},
     {"goto", 4, kw_goto, 0, TT_CONTROL},
     {"if", 2, kw_if, 0, TT_CONTROL},
     {"inline", 6, kw_inline, KW_C99 | KW_CPLUSPLUS, TT_LINKAGE},

@@ -200,7 +200,7 @@ LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defa
 void resolveAnonymousUnions(SYMBOL *sp);
 SYMBOL * calculateStructAbstractness(SYMBOL *top, SYMBOL *sp);
 LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp, BOOLEAN inTemplate, enum e_sc storage_class);
-LEXEME *getQualifiers(LEXEME *lex, TYPE **tp, enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3);
+LEXEME *getQualifiers(LEXEME *lex, TYPE **tp, enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3, BOOLEAN *asFriend);
 LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym, BOOLEAN isTemplate, enum e_sc storage_class, 
 					enum e_lk *linkage_in, enum e_lk *linkage2_in, enum e_lk *linkage3, 
                     enum e_ac access, BOOLEAN *notype, BOOLEAN *defd, int *consdest, 
@@ -258,7 +258,7 @@ LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum 
 BOOLEAN isConstexprConstructor(SYMBOL *sym);
 BOOLEAN MatchesConstFunction(SYMBOL *sp);
 LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_class, enum e_lk defaultLinkage,
-					   BLOCKDATA *parent, BOOLEAN needsemi, int asExpression, BOOLEAN asfriend, BOOLEAN isTemplate, enum e_ac access );
+					   BLOCKDATA *parent, BOOLEAN needsemi, int asExpression, BOOLEAN isTemplate, enum e_ac access );
 
                                /* Expr.c */
 

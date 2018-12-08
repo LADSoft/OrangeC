@@ -3039,7 +3039,6 @@ BOOLEAN callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, BOOLE
                 e1->v.func = params;
             }
         }
-        checkArgs(params, theCurrentFunc);
 
         *exp = e1;
         if (chosenAssembler->msil && *exp)
@@ -3057,6 +3056,23 @@ BOOLEAN callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, BOOLE
             (*exp)->v.t.thisptr = params->thisptr;
             (*exp)->v.t.tp = sp->tp;
             // hasXCInfo = TRUE;
+        }
+        {
+            HASHREC* hr = basetype(cons1->tp)->syms->table[0];
+            if (((SYMBOL*)hr->p)->thisPtr)
+                hr = hr->next;
+            INITLIST *args = params->arguments;
+            while (hr && args)
+            {
+                SYMBOL *sp = (SYMBOL *)hr->p;
+                if (isarithmetic(sp->tp) && isarithmetic(args->tp))
+                {
+                    if (sp->tp->type != args->tp->type)
+                        cast(sp->tp, &args->exp);
+                }
+                hr = hr->next;
+                args = args->next;
+            }
         }
 
         return TRUE;

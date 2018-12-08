@@ -141,7 +141,6 @@
     <ClCompile Include="ppPragma.cpp" />
     <ClCompile Include="PreProcessor.cpp" />
     <ClCompile Include="SymbolTable.cpp" />
-    <ClCompile Include="SymChar.cpp" />
     <ClCompile Include="Token.cpp" />
   </ItemGroup>
   <ItemGroup>

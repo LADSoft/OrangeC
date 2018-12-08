@@ -1603,7 +1603,6 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
         EXPRESSION* exp = exprNode(en_add, thisptr, intNode(en_c_i, memberOffs));
         if (doCopy && matchesCopy(parentCons, FALSE))
         {
-            FUNCTIONCALL* params = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
             TYPE* tp = (TYPE*)Alloc(sizeof(TYPE));
             EXPRESSION* other = exprNode(en_add, otherptr, intNode(en_c_i, memberOffs));
             if (basetype(parentCons->tp)->type == bt_rref)
@@ -1619,17 +1618,13 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
             {
                 tp = member->tp;
             }
-            params->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
-            params->arguments->tp = tp;
-            params->arguments->exp = other;
             //			member->tp->lref = TRUE;
-            if (!callConstructor(&ctype, &exp, params, FALSE, NULL, top, FALSE, FALSE, FALSE, FALSE))
+            if (!callConstructorParam(&ctype, &exp, tp, other, top, FALSE, FALSE, FALSE))
                 errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, member);
             //			member->tp->lref = FALSE;
         }
         else if (doCopy && matchesCopy(parentCons, TRUE))
         {
-            FUNCTIONCALL* params = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
             TYPE* tp = (TYPE*)Alloc(sizeof(TYPE));
             EXPRESSION* other = exprNode(en_add, otherptr, intNode(en_c_i, memberOffs));
             if (basetype(parentCons->tp)->type == bt_rref)
@@ -1645,11 +1640,8 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
             {
                 tp = member->tp;
             }
-            params->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
-            params->arguments->tp = tp;
-            params->arguments->exp = other;
             //			member->tp->rref = TRUE;
-            if (!callConstructor(&ctype, &exp, params, FALSE, NULL, top, FALSE, FALSE, FALSE, FALSE))
+            if (!callConstructorParam(&ctype, &exp, tp, other, top, FALSE, FALSE, FALSE))
                 errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, member);
             //			member->tp->rref = FALSE;
         }
@@ -2863,7 +2855,7 @@ void callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
     }
 }
 BOOLEAN callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, BOOLEAN checkcopy, EXPRESSION* arrayElms, BOOLEAN top,
-                        BOOLEAN maybeConversion, BOOLEAN implicit, BOOLEAN pointer, BOOLEAN flags)
+                        BOOLEAN maybeConversion, BOOLEAN implicit, BOOLEAN pointer, BOOLEAN usesInitList)
 {
     (void)checkcopy;
     TYPE* stp = *tp;
@@ -2910,7 +2902,7 @@ BOOLEAN callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, BOOLE
     params->thistp->rootType = params->thistp;
     params->thistp->size = getSize(bt_pointer);
     params->ascall = TRUE;
-    cons1 = GetOverloadedFunction(tp, &params->fcall, cons, params, NULL, TRUE, maybeConversion, TRUE, flags);
+    cons1 = GetOverloadedFunction(tp, &params->fcall, cons, params, NULL, TRUE, maybeConversion, TRUE, usesInitList);
 
     if (cons1 && isfunction(cons1->tp))
     {
@@ -3068,4 +3060,16 @@ BOOLEAN callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, BOOLE
         return TRUE;
     }
     return FALSE;
+}
+BOOLEAN callConstructorParam(TYPE** tp, EXPRESSION** exp, TYPE *paramTP, EXPRESSION *paramExp, BOOLEAN top,
+    BOOLEAN maybeConversion, BOOLEAN implicit, BOOLEAN pointer)
+{
+    FUNCTIONCALL *params = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+    if (paramTP && paramExp)
+    {
+        params->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
+        params->arguments->tp = paramTP;
+        params->arguments->exp = paramExp;
+    }
+    return callConstructor(tp, exp, params, FALSE, NULL, top, maybeConversion, implicit, pointer, FALSE);
 }

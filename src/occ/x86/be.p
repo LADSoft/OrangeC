@@ -194,6 +194,7 @@ void oa_gen_vtt(VTABENTRY *entry, SYMBOL *func);
 void oa_gen_vc1(SYMBOL *func);
 void oa_gen_importThunk(SYMBOL *func);
 void oa_align(int size);
+void oa_setalign(int code, int data, int bss, int constant);
 long queue_muldivval(long number);
 long queue_floatval(FPF *number, int size);
 void dump_muldivval(void);

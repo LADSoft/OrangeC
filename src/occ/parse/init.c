@@ -25,6 +25,7 @@
 
 #include "compiler.h"
 #include <assert.h>
+#include <limits.h>
 /* initializers, local... can do w/out c99 */
 
 extern ARCH_DEBUG* chosenDebugger;
@@ -995,11 +996,15 @@ void dumpInitGroup(SYMBOL* sp, TYPE* tp)
 static void dumpStaticInitializers(void)
 {
 #ifndef PARSER_ONLY
+    int abss = 0;
+    int adata = 0;
+    int aconst = 0;
+    int anull = 0;
     int sconst = 0;
     int bss = 0;
     int data = 0;
     int thread = 0;
-    int* sizep;
+    int* sizep, *alignp;
     symListTail = symListHead;
     while (symListTail)
     {
@@ -1016,26 +1021,33 @@ static void dumpStaticInitializers(void)
             {
                 xconstseg();
                 sizep = &sconst;
+                alignp = &aconst;
             }
             else if (sp->linkage3 == lk_threadlocal)
             {
                 tseg();
                 sizep = &thread;
+                alignp = &anull;
             }
             else if (sp->init || !cparams.prm_bss)
             {
                 dseg();
                 sizep = &data;
+                alignp = &adata;
             }
             else
             {
                 bssseg();
                 sizep = &bss;
+                alignp = &abss;
             }
             if (sp->structAlign)
                 al = sp->structAlign;
             else
                 al = getAlign(sc_global, basetype(tp));
+
+            if (*alignp < al)
+                *alignp = al;
             if (*sizep % al)
             {
                 int n = al - *sizep % al;
@@ -1084,6 +1096,7 @@ static void dumpStaticInitializers(void)
         symListTail = symListTail->next;
     }
     symListHead = NULL;
+    chosenAssembler->gen->setalign(0, adata, abss, aconst);
 #endif
 }
 void dumpInitializers(void)
@@ -1299,9 +1312,41 @@ static LEXEME* initialize_arithmetic_type(LEXEME* lex, SYMBOL* funcsp, int offse
                     checkscope(tp, itype);
                 if (!comparetypes(itype, tp, TRUE))
                 {
-                    if (cparams.prm_cplusplus && needend && basetype(tp)->type > bt_int)
+                    if (cparams.prm_cplusplus && needend)
                         if (basetype(itype)->type < basetype(tp)->type)
-                            error(ERR_INIT_NARROWING);
+                        {
+                            if (isintconst(exp))
+                            {
+
+                                int val = exp->v.i;
+                                switch (basetype(itype)->type)
+                                {
+                                    case bt_char:
+                                        if (val < CHAR_MIN || val > CHAR_MAX)
+                                            error(ERR_INIT_NARROWING);
+                                        break;
+                                    case bt_unsigned_char:
+                                        if (val < 0 || val > UCHAR_MAX)
+                                            error(ERR_INIT_NARROWING);
+                                        break;
+                                    case bt_short:
+                                        if (val < SHRT_MIN || val > SHRT_MAX)
+                                            error(ERR_INIT_NARROWING);
+                                        break;
+                                    case bt_unsigned_short:
+                                        if (val < 0 || val > USHRT_MAX)
+                                            error(ERR_INIT_NARROWING);
+                                        break;
+                                    default:
+                                        error(ERR_INIT_NARROWING);
+                                        break;
+                                }
+                            }
+                            else
+                            {
+                                error(ERR_INIT_NARROWING);
+                            }
+                        }
                     cast(itype, &exp);
                     optimize_for_constants(&exp);
                 }
@@ -1374,6 +1419,7 @@ static LEXEME* initialize_pointer_type(LEXEME* lex, SYMBOL* funcsp, int offset, 
 {
     TYPE* tp;
     EXPRESSION* exp;
+    BOOLEAN string = FALSE;
     BOOLEAN needend = FALSE;
     if (MATCHKW(lex, begin))
     {
@@ -1403,6 +1449,7 @@ static LEXEME* initialize_pointer_type(LEXEME* lex, SYMBOL* funcsp, int offset, 
         else
         {
             lex = initialize_string(lex, funcsp, &tp, &exp);
+            string = TRUE;
         }
         castToPointer(&tp, &exp, (enum e_kw) - 1, itype);
         DeduceAuto(&itype, tp);
@@ -1437,6 +1484,9 @@ static LEXEME* initialize_pointer_type(LEXEME* lex, SYMBOL* funcsp, int offset, 
             {
                 errortype(ERR_CANNOT_CONVERT_TYPE, tp, itype);
             }
+            if (cparams.prm_cplusplus && !isconst(itype) && string)
+                error(ERR_INVALID_CHARACTER_STRING_CONVERSION);
+
             if (isarray(tp) && (tp)->msil)
                 error(ERR_MANAGED_OBJECT_NO_ADDRESS);
             else if (isstructured(tp))
@@ -1862,14 +1912,11 @@ static LEXEME* initialize_reference_type(LEXEME* lex, SYMBOL* funcsp, int offset
         {
             if (isstructured(itype->btp))
             {
-                FUNCTIONCALL* funcparams = Alloc(sizeof(FUNCTIONCALL));
                 EXPRESSION* ths = anonymousVar(sc_auto, tp);
+                EXPRESSION* paramexp = exp;
                 TYPE* ctype = basetype(itype->btp);
-                funcparams->arguments = Alloc(sizeof(INITLIST));
-                funcparams->arguments->tp = tp;
-                funcparams->arguments->exp = exp;
                 exp = ths;
-                callConstructor(&ctype, &exp, funcparams, FALSE, NULL, TRUE, FALSE, FALSE, FALSE, FALSE);
+                callConstructorParam(&ctype, &exp, tp, paramexp, TRUE, FALSE, FALSE, FALSE);
             }
             else
             {

@@ -170,6 +170,9 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
                     BOOLEAN checkcopy, EXPRESSION *arrayElms, BOOLEAN top, 
                     BOOLEAN maybeConversion, BOOLEAN implicit, BOOLEAN pointer,
                     BOOLEAN usesInitList);
+BOOLEAN callConstructorParam(TYPE** tp, EXPRESSION** exp, TYPE *paramTP, EXPRESSION *paramExp, BOOLEAN top,
+    BOOLEAN maybeConversion, BOOLEAN implicit, BOOLEAN pointer);
+
 LEXEME *getDeclType(LEXEME *lex, SYMBOL *funcsp, TYPE **tn);
 LEXEME *insertNamespace(LEXEME *lex, enum e_lk linkage, enum e_sc storage_class, BOOLEAN *linked);
 LEXEME *insertUsing(LEXEME *lex, SYMBOL **sp, enum e_ac access, enum e_sc storage_class, BOOLEAN inTemplate, BOOLEAN hasAttribs);
@@ -197,7 +200,7 @@ LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defa
 void resolveAnonymousUnions(SYMBOL *sp);
 SYMBOL * calculateStructAbstractness(SYMBOL *top, SYMBOL *sp);
 LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp, BOOLEAN inTemplate, enum e_sc storage_class);
-LEXEME *getQualifiers(LEXEME *lex, TYPE **tp, enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3);
+LEXEME *getQualifiers(LEXEME *lex, TYPE **tp, enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3, BOOLEAN *asFriend);
 LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym, BOOLEAN isTemplate, enum e_sc storage_class, 
 					enum e_lk *linkage_in, enum e_lk *linkage2_in, enum e_lk *linkage3, 
                     enum e_ac access, BOOLEAN *notype, BOOLEAN *defd, int *consdest, 
@@ -255,7 +258,7 @@ LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum 
 BOOLEAN isConstexprConstructor(SYMBOL *sym);
 BOOLEAN MatchesConstFunction(SYMBOL *sp);
 LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_class, enum e_lk defaultLinkage,
-					   BLOCKDATA *parent, BOOLEAN needsemi, int asExpression, BOOLEAN asfriend, BOOLEAN isTemplate, enum e_ac access );
+					   BLOCKDATA *parent, BOOLEAN needsemi, int asExpression, BOOLEAN isTemplate, enum e_ac access );
 
                                /* Expr.c */
 
@@ -896,7 +899,7 @@ void owrite(char *buf, size_t size, int n, FILE *fil);
 void beWrite(char *buf, size_t size);
 void oprintf(FILE *file, char *format, ...);
 void bePrintf(char *format, ...);
-
+void beRewind(void);
                               /* Ppexpr.c */
 
 int getsch(int UBYTEs, unsigned char **source) ;

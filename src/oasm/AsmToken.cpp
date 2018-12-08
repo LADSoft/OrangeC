@@ -37,15 +37,23 @@ bool NumericToken::ansi;
 bool NumericToken::c99;
 
 unsigned llminus1 = -1;
-bool IsSymbolStartChar(char data)
+static bool IsSymbolStartChar(const char* data)
 {
-    return data == '@' || data == '_' || data == '?' || data == '.' || UTF8::IsAlpha(data);
+    return *data == '@' || *data == '_' || *data == '?' || *data == '.' || UTF8::IsAlpha(data);
 }
-bool IsSymbolChar(char data)
+static bool IsSymbolChar(const char* data)
 {
-    return data == '_' || data == '$' || data == '#' || data == '@' || data == '~' || data == '?' || data == '.' ||
-        data == '&' || UTF8::IsAlnum(data);
+    return *data == '_' || *data == '$' || *data == '#' || *data == '@' || *data == '~' || *data == '?' || *data == '.' ||
+        *data == '&' || UTF8::IsAlnum(data);
 }
+
+static bool IsSymbolCharRoutine(const char *data, bool startOnly)
+{
+    return startOnly ? IsSymbolStartChar(data) : IsSymbolChar(data);
+}
+
+bool(*Tokenizer::IsSymbolChar)(const char*, bool) = IsSymbolCharRoutine;
+
 bool StringToken::Start(const std::string& line)
 {
     if (line[0] == '"' || line[0] == '\'')

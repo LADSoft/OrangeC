@@ -181,7 +181,7 @@ int ppMain::Run(int argc, char* argv[])
                             std::string name;
                             PPINT value = 0;
                             npos = working.find_first_not_of(" \t\r\b\v", npos + 6 + (caseInsensitive ? 1 : 0));
-                            if (npos == std::string::npos || !IsSymbolStartChar(working[npos]))
+                            if (npos == std::string::npos || !Tokenizer::IsSymbolChar(working.c_str() + npos, true))
                             {
                                 Errors::Error("Expected identifier");
                             }
@@ -189,7 +189,7 @@ int ppMain::Run(int argc, char* argv[])
                             {
                                 int npos1 = npos;
 
-                                while (npos1 != working.size() && IsSymbolChar(working[npos1]))
+                                while (npos1 != working.size() && Tokenizer::IsSymbolChar(working.c_str() + npos1, false))
                                     npos1++;
                                 name = working.substr(npos, npos1 - npos);
                                 if (!isspace(working[npos1]))

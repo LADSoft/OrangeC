@@ -86,7 +86,7 @@ static LEXEME* getStorageAndType(LEXEME* lex, SYMBOL* funcsp, SYMBOL** strSym, B
                                  enum e_sc* storage_class, enum e_sc* storage_class_in, ADDRESS* address, BOOLEAN* blocked,
                                  BOOLEAN* isExplicit, BOOLEAN* constexpression, TYPE** tp, enum e_lk* linkage, enum e_lk* linkage2,
                                  enum e_lk* linkage3, enum e_ac access, BOOLEAN* notype, BOOLEAN* defd, int* consdest,
-                                 BOOLEAN* templateArg);
+                                 BOOLEAN* templateArg, BOOLEAN* asFriend);
 
 void declare_init(void)
 {
@@ -397,10 +397,10 @@ LEXEME* get_type_id(LEXEME* lex, TYPE** tp, SYMBOL* funcsp, enum e_sc storage_cl
     BOOLEAN oldTemplateType = inTemplateType;
     *tp = NULL;
 
-    lex = getQualifiers(lex, tp, &linkage, &linkage2, &linkage3);
+    lex = getQualifiers(lex, tp, &linkage, &linkage2, &linkage3, NULL);
     lex = getBasicType(lex, funcsp, tp, NULL, FALSE, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public,
                        &notype, &defd, NULL, NULL, FALSE, FALSE);
-    lex = getQualifiers(lex, tp, &linkage, &linkage2, &linkage3);
+    lex = getQualifiers(lex, tp, &linkage, &linkage2, &linkage3, NULL);
     lex = getBeforeType(lex, funcsp, tp, &sp, NULL, NULL, FALSE, storage_class, &linkage, &linkage2, &linkage3, FALSE, FALSE,
                         beforeOnly, FALSE); /* fixme at file scope init */
     sizeQualifiers(*tp);
@@ -926,12 +926,8 @@ static LEXEME* structbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac cur
                 lex = getsym();
                 needkw(&lex, colon);
                 break;
-            case kw_friend:
-                lex = getsym();
-                lex = declare(lex, NULL, NULL, sc_member, lk_none, NULL, TRUE, FALSE, TRUE, FALSE, currentAccess);
-                break;
             default:
-                lex = declare(lex, NULL, NULL, sc_member, lk_none, NULL, TRUE, FALSE, FALSE, FALSE, currentAccess);
+                lex = declare(lex, NULL, NULL, sc_member, lk_none, NULL, TRUE, FALSE, FALSE, currentAccess);
                 break;
         }
     }
@@ -1701,7 +1697,7 @@ static LEXEME* getStorageClass(LEXEME* lex, SYMBOL* funcsp, enum e_sc* storage_c
                                 lex = getsym();
                                 while (lex && !MATCHKW(lex, end))
                                 {
-                                    lex = declare(lex, NULL, NULL, sc_global, *linkage, NULL, TRUE, FALSE, FALSE, FALSE, ac_public);
+                                    lex = declare(lex, NULL, NULL, sc_global, *linkage, NULL, TRUE, FALSE, FALSE, ac_public);
                                 }
                                 needkw(&lex, end);
                                 return lex;
@@ -2044,14 +2040,22 @@ static LEXEME* getLinkageQualifiers(LEXEME* lex, enum e_lk* linkage, enum e_lk* 
     }
     return lex;
 }
-LEXEME* getQualifiers(LEXEME* lex, TYPE** tp, enum e_lk* linkage, enum e_lk* linkage2, enum e_lk* linkage3)
+LEXEME* getQualifiers(LEXEME* lex, TYPE** tp, enum e_lk* linkage, enum e_lk* linkage2, enum e_lk* linkage3, BOOLEAN *asFriend)
 {
     while (KWTYPE(lex, (TT_TYPEQUAL | TT_LINKAGE)))
     {
-        lex = getPointerQualifiers(lex, tp, FALSE);
-        if (MATCHKW(lex, kw_atomic))
-            break;
-        lex = getLinkageQualifiers(lex, linkage, linkage2, linkage3);
+        if (asFriend && MATCHKW(lex, kw_friend))
+        {
+            *asFriend = TRUE;
+            lex = getsym();
+        }
+        else
+        {
+            lex = getPointerQualifiers(lex, tp, FALSE);
+            if (MATCHKW(lex, kw_atomic))
+                break;
+            lex = getLinkageQualifiers(lex, linkage, linkage2, linkage3);
+        }
     }
     return lex;
 }
@@ -2498,7 +2502,7 @@ LEXEME* getBasicType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_out
         }
         foundsomething = TRUE;
         lex = getsym();
-        lex = getQualifiers(lex, &quals, &linkage, &linkage2, &linkage3);
+        lex = getQualifiers(lex, &quals, &linkage, &linkage2, &linkage3, NULL);
         if (linkage != lk_none)
         {
             *linkage_in = linkage;
@@ -2743,7 +2747,7 @@ founddecltype:
                     }
                     else
                     {
-                        lex = getQualifiers(lex, &quals, &linkage, &linkage2, &linkage3);
+                        lex = getQualifiers(lex, &quals, &linkage, &linkage2, &linkage3, NULL);
                         if (linkage != lk_none)
                         {
                             *linkage_in = linkage;
@@ -3400,7 +3404,7 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
                 tp1 = NULL;
                 lex = getStorageAndType(lex, funcsp, NULL, FALSE, TRUE, &storage_class, &storage_class, &address, &blocked, NULL,
                                         &constexpression, &tp1, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL,
-                                        NULL);
+                                        NULL, NULL);
                 if (!basetype(tp1))
                     error(ERR_TYPE_NAME_EXPECTED);
                 else if (isautotype(tp1) && !lambdas)
@@ -3708,7 +3712,7 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
                 tp1 = NULL;
                 lex = getStorageAndType(lex, funcsp, NULL, FALSE, FALSE, &storage_class, &storage_class, &address, &blocked, NULL,
                                         &constexpression, &tp1, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL,
-                                        NULL);
+                                        NULL, NULL);
 
                 while (1)
                 {
@@ -4375,7 +4379,7 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                 ptype->btp = *tp;
                 UpdateRootTypes(*tp);
                 *tp = ptype;
-                lex = getQualifiers(lex, tp, linkage, linkage2, linkage3);
+                lex = getQualifiers(lex, tp, linkage, linkage2, linkage3, NULL);
                 if (strSym)
                     *strSym = NULL;
                 if (nsv)
@@ -4585,7 +4589,7 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                      * we are treating them both the same, e.g. the resulting
                      * pointer-to-function will be stdcall linkage either way
                      */
-                    lex = getQualifiers(lex, tp, linkage, linkage2, linkage3);
+                    lex = getQualifiers(lex, tp, linkage, linkage2, linkage3, NULL);
                     lex = getBeforeType(lex, funcsp, &ptype, spi, strSym, nsv, inTemplate, storage_class, linkage, linkage2,
                                         linkage3, asFriend, FALSE, beforeOnly, TRUE);
                     if (!ptype ||
@@ -4680,7 +4684,7 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                 ptype->rootType = ptype;
                 ptype->size = getSize(xtype);
                 *tp = ptype;
-                lex = getQualifiers(lex, tp, linkage, linkage2, linkage3);
+                lex = getQualifiers(lex, tp, linkage, linkage2, linkage3, NULL);
                 lex = getBeforeType(lex, funcsp, tp, spi, strSym, nsv, inTemplate, storage_class, linkage, linkage2, linkage3,
                                     asFriend, FALSE, beforeOnly, FALSE);
                 /*
@@ -4706,7 +4710,7 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                     // already a ref;
                     lex = getsym();
                     ParseAttributeSpecifiers(&lex, funcsp, TRUE);
-                    lex = getQualifiers(lex, tp, linkage, linkage2, linkage3);
+                    lex = getQualifiers(lex, tp, linkage, linkage2, linkage3, NULL);
                     lex = getBeforeType(lex, funcsp, tp, spi, strSym, nsv, inTemplate, storage_class, linkage, linkage2, linkage3,
                                         asFriend, FALSE, beforeOnly, FALSE);
                     break;
@@ -4727,7 +4731,7 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                     *tp = ptype;
                     lex = getsym();
                     ParseAttributeSpecifiers(&lex, funcsp, TRUE);
-                    lex = getQualifiers(lex, tp, linkage, linkage2, linkage3);
+                    lex = getQualifiers(lex, tp, linkage, linkage2, linkage3, NULL);
                     lex = getBeforeType(lex, funcsp, tp, spi, strSym, nsv, inTemplate, storage_class, linkage, linkage2, linkage3,
                                         asFriend, FALSE, beforeOnly, FALSE);
                     if (*tp)
@@ -5023,7 +5027,7 @@ static LEXEME* getStorageAndType(LEXEME* lex, SYMBOL* funcsp, SYMBOL** strSym, B
                                  enum e_sc* storage_class, enum e_sc* storage_class_in, ADDRESS* address, BOOLEAN* blocked,
                                  BOOLEAN* isExplicit, BOOLEAN* constexpression, TYPE** tp, enum e_lk* linkage, enum e_lk* linkage2,
                                  enum e_lk* linkage3, enum e_ac access, BOOLEAN* notype, BOOLEAN* defd, int* consdest,
-                                 BOOLEAN* templateArg)
+                                 BOOLEAN* templateArg, BOOLEAN *asFriend)
 {
     BOOLEAN foundType = FALSE;
     BOOLEAN first = TRUE;
@@ -5053,7 +5057,7 @@ static LEXEME* getStorageAndType(LEXEME* lex, SYMBOL* funcsp, SYMBOL** strSym, B
         }
         else if (KWTYPE(lex, TT_POINTERQUAL | TT_LINKAGE))
         {
-            lex = getQualifiers(lex, tp, linkage, linkage2, linkage3);
+            lex = getQualifiers(lex, tp, linkage, linkage2, linkage3, asFriend);
             if (MATCHKW(lex, kw_atomic))
             {
                 foundType = TRUE;
@@ -5158,7 +5162,7 @@ static BOOLEAN differentTemplateNames(TEMPLATEPARAMLIST* a, TEMPLATEPARAMLIST* b
     return FALSE;
 }
 LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_class, enum e_lk defaultLinkage, BLOCKDATA* block,
-                BOOLEAN needsemi, int asExpression, BOOLEAN asFriend, BOOLEAN inTemplate, enum e_ac access)
+                BOOLEAN needsemi, int asExpression, BOOLEAN inTemplate, enum e_ac access)
 {
     BOOLEAN isExtern = FALSE;
     TYPE* btp;
@@ -5232,7 +5236,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                 {
                     while (lex && !MATCHKW(lex, end))
                     {
-                        lex = declare(lex, NULL, NULL, storage_class, defaultLinkage, NULL, TRUE, FALSE, FALSE, FALSE, access);
+                        lex = declare(lex, NULL, NULL, storage_class, defaultLinkage, NULL, TRUE, FALSE, FALSE, access);
                     }
                 }
 #ifdef PARSER_ONLY
@@ -5279,12 +5283,13 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
             BOOLEAN notype = FALSE;
             BOOLEAN isExplicit = FALSE;
             BOOLEAN templateArg = FALSE;
+            BOOLEAN asFriend = FALSE;
             int consdest = CT_NONE;
 
             IncGlobalFlag(); /* in case we have to initialize a func level static */
             lex = getStorageAndType(lex, funcsp, &strSym, inTemplate, FALSE, &storage_class, &storage_class_in, &address, &blocked,
                                     &isExplicit, &constexpression, &tp, &linkage, &linkage2, &linkage3, access, &notype, &defd,
-                                    &consdest, &templateArg);
+                                    &consdest, &templateArg, &asFriend);
             if (blocked)
             {
                 if (tp != NULL)
@@ -5346,7 +5351,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                             isTemplatedCast = TRUE;
                         }
                     }
-                    lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3);
+                    lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, &asFriend);
                     lex = getBeforeType(lex, funcsp, &tp1, &sp, &strSym, &nsv, inTemplate, storage_class, &linkage, &linkage2,
                                         &linkage3, asFriend, consdest, FALSE, FALSE);
                     if (sp)

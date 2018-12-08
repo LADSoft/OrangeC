@@ -82,7 +82,8 @@ char* segnames[] = {0,         "code",     "data",     "bss",        "string",  
 char* segclasses[] = {0,         "code",     "data",     "bss",        "string",     "const",
                       "tls",     "cstartup", "crundown", "tlsstartup", "tlsrundown", "codefix",
                       "datafix", "lines",    "types",    "symbols",    "browse"};
-int segAligns[] = {1, 2, 8, 8, 2, 8, 8, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+int segAlignsDefault[] = {1, 2, 8, 8, 2, 8, 8, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+int segAligns[sizeof(segAlignsDefault)/sizeof(segAlignsDefault[0])];
 static char* segchars[] = {0, "R", "W", "W", "R", "R", "R", "R", "R", "R", "R", "R", "R", "R", "R", "R", "R", "R", "R"};
 #define TYPE_HASH_SIZE 128
 struct _type_hash
@@ -107,6 +108,7 @@ void omfInit(void)
     importNames = 0;
     browseInfo = browseInfoTail = NULL;
     browseFiles = NULL;
+    memcpy(segAligns, segAlignsDefault, sizeof(segAligns));
 }
 static void emit_record_ieee(char* format, ...)
 {

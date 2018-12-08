@@ -870,7 +870,7 @@ BOOLEAN constructedInt(LEXEME* lex, SYMBOL* funcsp)
     BOOLEAN cont = FALSE;
     tp = NULL;
 
-    lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3);
+    lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, NULL);
     if (lex->type == l_id || MATCHKW(lex, classsel))
     {
         SYMBOL *sp, *strSym = NULL;
@@ -891,7 +891,7 @@ BOOLEAN constructedInt(LEXEME* lex, SYMBOL* funcsp)
     {
         lex = getBasicType(lex, funcsp, &tp, NULL, FALSE, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public,
                            &notype, &defd, NULL, NULL, FALSE, FALSE);
-        lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3);
+        lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, NULL);
         if (isint(tp))
         {
             if (MATCHKW(lex, openpa))
@@ -2006,10 +2006,10 @@ static LEXEME* TemplateArg(LEXEME* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST* arg, 
             arg->p->packed = FALSE;
             tp = NULL;
             sp = NULL;
-            lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3);
+            lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, NULL);
             lex = getBasicType(lex, funcsp, &tp, NULL, FALSE, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3,
                                ac_public, &notype, &defd, NULL, NULL, FALSE, TRUE);
-            lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3);
+            lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, NULL);
             if (MATCHKW(lex, ellipse))
             {
                 arg->p->packed = TRUE;
@@ -8503,21 +8503,11 @@ LEXEME* TemplateDeclaration(LEXEME* lex, SYMBOL* funcsp, enum e_ac access, enum 
             }
         }
         templateNestingCount--;
-        if (MATCHKW(lex, kw_friend))
-        {
-            lex = getsym();
-            templateNestingCount++;
-            inTemplateType = TRUE;
-            lex = declare(lex, NULL, NULL, sc_global, lk_none, NULL, TRUE, FALSE, TRUE, TRUE, access);
-            inTemplateType = FALSE;
-            templateNestingCount--;
-            instantiatingTemplate = oldInstantiatingTemplate;
-        }
-        else if (lex)
+        if (lex)
         {
             templateNestingCount++;
             inTemplateType = TRUE;
-            lex = declare(lex, funcsp, &tp, storage_class, lk_none, NULL, TRUE, FALSE, FALSE, TRUE, access);
+            lex = declare(lex, funcsp, &tp, storage_class, lk_none, NULL, TRUE, FALSE, TRUE, access);
             inTemplateType = FALSE;
             templateNestingCount--;
             instantiatingTemplate = oldInstantiatingTemplate;
@@ -8621,10 +8611,10 @@ LEXEME* TemplateDeclaration(LEXEME* lex, SYMBOL* funcsp, enum e_ac access, enum 
             SYMBOL* strSym = NULL;
             STRUCTSYM s;
             int consdest = 0;
-            lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3);
+            lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, NULL);
             lex = getBasicType(lex, funcsp, &tp, &strSym, TRUE, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3,
                                ac_public, &notype, &defd, &consdest, NULL, FALSE, TRUE);
-            lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3);
+            lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, NULL);
             lex = getBeforeType(lex, funcsp, &tp, &sym, &strSym, &nsv, TRUE, sc_cast, &linkage, &linkage2, &linkage3, FALSE,
                                 consdest, FALSE, FALSE);
             sizeQualifiers(tp);

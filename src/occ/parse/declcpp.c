@@ -3129,6 +3129,8 @@ BOOLEAN ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, BOOLEAN always)
                     }
                     needkw(lex, closepa);
                     alignas_value = align;
+                    if (alignas_value > 0x10000 || (alignas_value & (alignas_value -1)) != 0)              
+                        error(ERR_INVALID_ALIGNMENT);
                 }
             }
             else if (MATCHKW(*lex, openbr))

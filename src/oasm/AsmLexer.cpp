@@ -150,7 +150,7 @@ void Lexer::CheckAssign(std::string& line, PreProcessor& pp)
                 std::string name;
                 int value = 0;
                 npos = line.find_first_not_of(" \t\r\b\v", npos + 6 + (caseInsensitive ? 1 : 0));
-                if (npos == std::string::npos || !IsSymbolStartChar(line.c_str() + npos))
+                if (npos == std::string::npos || !Tokenizer::IsSymbolChar(line.c_str() + npos, true))
                 {
                     Errors::Error("Expected identifier");
                 }
@@ -158,7 +158,7 @@ void Lexer::CheckAssign(std::string& line, PreProcessor& pp)
                 {
                     int npos1 = npos;
 
-                    while (npos1 != line.size() && IsSymbolChar(line.c_str() + npos1))
+                    while (npos1 != line.size() && Tokenizer::IsSymbolChar(line.c_str() + npos1, false))
                     {
                         int n = UTF8::CharSpan(line.c_str() + npos1);
                         while (n-- && npos1 < line.size())

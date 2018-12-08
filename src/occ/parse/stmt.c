@@ -2505,7 +2505,7 @@ LEXEME* statement_catch(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, int labe
             }
             else
             {
-                lex = declare(lex, funcsp, &tp, sc_catchvar, lk_none, catchstmt, FALSE, TRUE, FALSE, FALSE, ac_public);
+                lex = declare(lex, funcsp, &tp, sc_catchvar, lk_none, catchstmt, FALSE, TRUE, FALSE, ac_public);
             }
             if (needkw(&lex, closepa))
             {
@@ -2674,7 +2674,7 @@ static LEXEME* autodeclare(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** 
     (void)parent;
     declareAndInitialize = FALSE;
     memset(&block, 0, sizeof(block));
-    lex = declare(lex, funcsp, tp, sc_auto, lk_none, &block, FALSE, asExpression, FALSE, FALSE, ac_public);
+    lex = declare(lex, funcsp, tp, sc_auto, lk_none, &block, FALSE, asExpression, FALSE, ac_public);
 
     // move any auto assignments
     reverseAssign(block.head, exp);
@@ -2920,7 +2920,7 @@ LEXEME* statement(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, BOOLEAN viacon
                         lex = prevsym(start);
                         start = NULL;
                     }
-                    lex = declare(lex, funcsp, NULL, sc_auto, lk_none, parent, FALSE, FALSE, FALSE, FALSE, ac_public);
+                    lex = declare(lex, funcsp, NULL, sc_auto, lk_none, parent, FALSE, FALSE, FALSE, ac_public);
                     markInitializers(current);
                     if (MATCHKW(lex, semicolon))
                     {
@@ -3069,7 +3069,7 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, BOOLEAN first)
         {
             STATEMENT* current = blockstmt->tail;
             declareAndInitialize = FALSE;
-            lex = declare(lex, funcsp, NULL, sc_auto, lk_none, blockstmt, FALSE, FALSE, FALSE, FALSE, ac_public);
+            lex = declare(lex, funcsp, NULL, sc_auto, lk_none, blockstmt, FALSE, FALSE, FALSE, ac_public);
             markInitializers(current);
             if (MATCHKW(lex, semicolon))
             {

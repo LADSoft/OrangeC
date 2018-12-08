@@ -232,14 +232,17 @@ class Tokenizer
     static void SetC99(bool flag) { NumericToken::SetC99(flag); }
     void SetCaseInsensitive(bool flag) { caseInsensitive = flag; }
 
-  private:
+
+    // I so want to use std::function here but this call has to be fast...
+    static bool (*IsSymbolChar)(const char*, bool);
+protected:
+    static bool IsSymbolCharDefault(const char* data, bool startOnly);
+private:
     KeywordHash* keywordTable;
     std::string line;
     Token* currentToken;
     bool caseInsensitive;
 };
-bool IsSymbolStartChar(char data);
-inline bool IsSymbolStartChar(const char* data) { return IsSymbolStartChar(*data); }
-bool IsSymbolChar(char data);
-inline bool IsSymbolChar(const char* data) { return IsSymbolChar(*data); } 
+
+
 #endif

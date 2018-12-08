@@ -117,6 +117,7 @@ class Lexer
     }
     void StopAtEol(bool stop) { stopAtEol = stop; }
 
+
   protected:
     void CheckAssign(std::string& line, PreProcessor& pp);
     void InitHash();

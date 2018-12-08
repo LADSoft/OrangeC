@@ -1631,7 +1631,7 @@ static void validateGotos(VLASHIM* shim, VLASHIM* root)
             case v_branch:
                 break;
             case v_goto:
-                if (shim->checkme)
+                if (shim->checkme && shim->fwd)
                 {
                     VLASHIM* sgoto = shim;
                     VLASHIM* fwd = sgoto->fwd;

@@ -994,7 +994,7 @@ void link_putpub(SYMBOL* sp, char sel)
     if (cparams.prm_debug)
     {
         if (sp->tp->dbgindex == 0)
-            link_extendedtype(sp->tp);
+            link_puttype(sp->tp);
         emit_record_ieee("AT%c%X,T%lX.\r\n", sel, index, sp->tp->dbgindex);
     }
 }

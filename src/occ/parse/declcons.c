@@ -1678,6 +1678,7 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
                 }
                 if (!callConstructor(&ctype, &exp, funcparams, FALSE, NULL, top, FALSE, FALSE, FALSE, FALSE))
                     errorsym(ERR_NO_DEFAULT_CONSTRUCTOR, member);
+                PromoteConstructorArgs(funcparams->sp, funcparams);
             }
             else
             {
@@ -3039,6 +3040,7 @@ BOOLEAN callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, BOOLE
                 e1->v.func = params;
             }
         }
+
         *exp = e1;
         if (chosenAssembler->msil && *exp)
         {
@@ -3072,4 +3074,24 @@ BOOLEAN callConstructorParam(TYPE** tp, EXPRESSION** exp, TYPE *paramTP, EXPRESS
         params->arguments->exp = paramExp;
     }
     return callConstructor(tp, exp, params, FALSE, NULL, top, maybeConversion, implicit, pointer, FALSE);
+}
+
+void PromoteConstructorArgs(SYMBOL *cons1, FUNCTIONCALL *params)
+{
+    HASHREC* hr = basetype(cons1->tp)->syms->table[0];
+    if (((SYMBOL*)hr->p)->thisPtr)
+        hr = hr->next;
+    INITLIST *args = params->arguments;
+    while (hr && args)
+    {
+        SYMBOL *sp = (SYMBOL *)hr->p;
+        if (isarithmetic(sp->tp) && isarithmetic(args->tp))
+        {
+            if (basetype(sp->tp)->type != basetype(args->tp)->type && basetype(sp->tp)->type > bt_int)
+                cast(sp->tp, &args->exp);
+        }
+        hr = hr->next;
+        args = args->next;
+    }
+
 }

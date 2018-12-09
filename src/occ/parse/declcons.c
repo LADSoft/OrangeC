@@ -3039,8 +3039,6 @@ BOOLEAN callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, BOOLE
                 e1->v.func = params;
             }
         }
-        checkArgs(params, theCurrentFunc);
-
         *exp = e1;
         if (chosenAssembler->msil && *exp)
         {

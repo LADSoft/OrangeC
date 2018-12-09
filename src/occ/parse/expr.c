@@ -1759,7 +1759,7 @@ static LEXEME* expression_bracket(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
     *tp = PerformDeferredInitialization(*tp, funcsp);
     return lex;
 }
-void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
+static void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
 {
     HASHREC* hr = basetype(params->functp)->syms->table[0];
     INITLIST* list = params->arguments;

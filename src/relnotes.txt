@@ -4,7 +4,12 @@ version 6.0.40:
     occ: fix stack frame in the presence of try/catch processing: don't optimize out the EBP references
     occ: add __offsetof and use in library
     occ: add __typeid and fix tgmath.h
-    dlpe/oimplib: handle -y switch
+    occ: fix alignas and alignof, propagate section alignment through to linker
+    occ: when putting a qualifier in front of the friend keyword, the friend keyword got ignored
+    occ: fix problem with hook; when one side is a structure the other side might need a constructor call to coerce to the same type
+    occ: print return code of linker when calling --y
+    occ: faster evaluation when constexpr functions are used
+    dlpe/oimplib: handle -y switch 
     orc: fix crash when compiled with package, when processing invalid input file
     ocpp: (c++ version) allow # without a directive
     ocpp: (c++ version) default to C99
@@ -19,7 +24,9 @@ version 6.0.40:
     ocide: empty status bar after scanning for dependencies
     ocide: bad DOCKS entry in user prefs file leads to hang
     rtl: fix recently broken strncpy to work properly again
-
+    rtl: fix tgmath.h
+    rtl: fix chrono::system_clock::now();
+    rtl: rewrite qsort to make it non-recursive
 version 6.0.39: 11/15/2018
     rtl: add msvcrt.l and crtdll.l back into the project
     rtl: improve stack trace for certain edge cases

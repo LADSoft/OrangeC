@@ -90,7 +90,7 @@ LinkNameLogic::ParseItem* LinkNameLogic::ParseOutOr(std::string& spec)
     {
         spec.erase(0, n);
     }
-    while (rv && spec.empty() && spec[0] == '|')
+    while (rv && !spec.empty() && spec[0] == '|')
     {
         spec.erase(0, 1);
         ParseItem* right = ParseOutAnd(spec);

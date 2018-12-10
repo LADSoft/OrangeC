@@ -65,15 +65,15 @@ bool ConfigData::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData)
         }
         else if (*attrib == "Rel")
         {
-            relFile = std::stoi(attrib->GetValue());
+            relFile = atoi(attrib->GetValue().c_str());
         }
         else if (*attrib == "MapMode")
         {
-            mapMode = std::stoi(attrib->GetValue());
+            mapMode = atoi(attrib->GetValue().c_str());
         }
         else if (*attrib == "DebugPassThrough")
         {
-            debugPassThrough = std::stoi(attrib->GetValue());
+            debugPassThrough = atoi(attrib->GetValue().c_str());
         }
     }
     else if (node == "Define")

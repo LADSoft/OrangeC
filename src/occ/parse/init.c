@@ -1484,7 +1484,7 @@ static LEXEME* initialize_pointer_type(LEXEME* lex, SYMBOL* funcsp, int offset, 
             {
                 errortype(ERR_CANNOT_CONVERT_TYPE, tp, itype);
             }
-            if (cparams.prm_cplusplus && !isconst(itype) && string)
+            if (cparams.prm_cplusplus && !isconst(basetype(itype)->btp) && string)
                 error(ERR_INVALID_CHARACTER_STRING_CONVERSION);
 
             if (isarray(tp) && (tp)->msil)

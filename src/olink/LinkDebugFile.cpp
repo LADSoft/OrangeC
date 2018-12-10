@@ -40,7 +40,7 @@
 #include <deque>
 #include <set>
 #include <cctype>
-#include <fstream>
+#include <iostream>
 #ifdef GCCLINUX
 #    include <unistd.h>
 #endif
@@ -744,7 +744,11 @@ bool LinkDebugFile::WriteAutosTable()
                 {
                     switch ((*it2)->GetType())
                     {
+                        case ObjDebugTag::eLineNo:
+                            currentLine = (*it2)->GetLineNo();
+                            break;
                         case ObjDebugTag::eVar:
+
                             currentContext->vars[(*it2)->GetSymbol()] = currentLine;
                             break;
                         case ObjDebugTag::eVirtualFunctionStart:
@@ -768,6 +772,7 @@ bool LinkDebugFile::WriteAutosTable()
                             }
                             // fallthrough
                         case ObjDebugTag::eBlockStart:
+
                             contexts.push_back(currentContext);
                             currentContext = new context;
                             currentContext->startLine = currentContext->currentLine = currentLine;
@@ -776,6 +781,7 @@ bool LinkDebugFile::WriteAutosTable()
                         case ObjDebugTag::eBlockEnd:
                         case ObjDebugTag::eFunctionEnd:
                         {
+
                             int end = currentLine->GetLineNumber();
                             // this next line is a safety, used to use start line
                             int fileId = currentLine->GetFile()->GetIndex();

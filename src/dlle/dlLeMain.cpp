@@ -328,7 +328,7 @@ int dlLeMain::Run(int argc, char** argv)
         Utils::fatal("Missing or invalid stub file");
 
     if (!ReadSections(std::string(argv[1]), outputName))
-        Utils::fatal("Invalid .rel file");
+        Utils::fatal("Invalid .rel file failed to read sections");
 
     unsigned ofs = 0;
     for (auto obj : objects)

@@ -561,7 +561,7 @@ int dlPeMain::Run(int argc, char** argv)
 
     outputName = GetOutputName(argv[1]);
     if (!ReadSections(std::string(argv[1])))
-        Utils::fatal("Invalid .rel file");
+        Utils::fatal("Invalid .rel file failed to read sections");
 
     ObjInt endPhys = sizeof(PEHeader) + objects.size() * PEObject::HeaderSize + stubSize;
     endPhys = ObjectAlign(fileAlign, endPhys + fileAlign);  // extra space for optional PE header

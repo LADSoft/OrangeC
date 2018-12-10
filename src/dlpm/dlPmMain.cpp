@@ -291,9 +291,9 @@ int dlPmMain::Run(int argc, char** argv)
     if (!LoadStub(argv[0]))
         Utils::fatal("Missing or invalid stub file");
     if (!ReadSections(std::string(argv[1])))
-        Utils::fatal("Invalid .rel file");
+        Utils::fatal("Invalid .rel file failed to read sections");
     if (sections.size() != 1)
-        Utils::fatal("Invalid .rel file");
+        Utils::fatal("Invalid .rel file invalid section count");
     std::string outputName = GetOutputName(argv[1]);
     std::fstream out(outputName, std::ios::out | std::ios::binary);
     if (!out.fail())

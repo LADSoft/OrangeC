@@ -63,6 +63,7 @@ protected:
     bool GenerateOperandParser();
     bool GenerateCodingProcessor();
     bool GenerateDispatcher();
+    bool GenerateCompilerStubs();
 private:
     
     std::fstream *file;

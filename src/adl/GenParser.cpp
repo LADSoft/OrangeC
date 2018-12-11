@@ -68,14 +68,50 @@ bool GenParser::Generate()
                                                         if (GenerateOperandParser())
                                                             if (GenerateCodingProcessor())
                                                                 if (GenerateDispatcher())
-                                                                {
-                                                                    rv = true;
-                                                                }
+                                                                    if (GenerateCompilerStubs())
+                                                                    {
+                                                                        rv = true;
+                                                                    }
                 }
             }
         }
     }
     return rv;
+}
+bool GenParser::GenerateCompilerStubs()
+{
+    std::string name = parser.processorName + "Instructions";
+    file = new std::fstream(name + ".h", std::ios::out);
+    (*file) << "enum e_op {" << std::endl;
+    size_t i = 0;
+    for (auto x : parser.opcodes)
+    {
+        if (x->name != "")
+        {
+            (*file) << "\t" << "op_" << x->name << " = " << i << "," << std::endl;
+        }
+            i++;
+    }
+    (*file) << "};" << std::endl << std::endl;
+    (*file) << "const char * const opcodeTable[" << i << "];" << std::endl;
+    file->close();
+    delete file;
+    file = new std::fstream(name + ".cpp", std::ios::out);
+    (*file) << "#include \"" << name + ".h\"" << std::endl << std::endl; 
+    (*file) << "const char * const opcodeTable[" << i << "] = {" << std::endl;
+    i = 0;
+    for (auto x : parser.opcodes)
+    {
+//        if (x->name != "")
+        {
+            (*file) << "\t\"" << x->name <<  "\"," << std::endl;
+            i++;
+        }
+    }
+    (*file) << "};" << std::endl << std::endl;
+
+
+    return true;
 }
 void GenParser::GatherVars(std::map<std::string, std::string> &values, std::string name)
 {

@@ -2742,6 +2742,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
             {
                 callConstructor(&ctype, &exp, funcparams, FALSE, NULL, TRUE, maybeConversion, FALSE, FALSE,
                                 isList ? _F_INITLIST : 0);
+                PromoteConstructorArgs(funcparams->sp, funcparams);
             }
             initInsert(&it, itype, exp, offset, TRUE);
             if (sc != sc_auto && sc != sc_localstatic && sc != sc_parameter && sc != sc_member && sc != sc_mutable && !arrayMember)
@@ -2841,6 +2842,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
                     funcparams->thistp = ttp;
                     exp1 = baseexp;
                     callConstructor(&tp1, &exp1, funcparams, FALSE, NULL, TRUE, FALSE, FALSE, FALSE, 0);
+                    PromoteConstructorArgs(funcparams->sp, funcparams);
                     initInsert(&it, itype, exp1, offset, TRUE);
                 }
                 if (sc != sc_auto && sc != sc_localstatic && sc != sc_parameter && sc != sc_member && sc != sc_mutable &&

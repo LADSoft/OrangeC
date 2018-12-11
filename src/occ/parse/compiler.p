@@ -172,6 +172,7 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
                     BOOLEAN usesInitList);
 BOOLEAN callConstructorParam(TYPE** tp, EXPRESSION** exp, TYPE *paramTP, EXPRESSION *paramExp, BOOLEAN top,
     BOOLEAN maybeConversion, BOOLEAN implicit, BOOLEAN pointer);
+void PromoteConstructorArgs(SYMBOL *cons1, FUNCTIONCALL *params);
 
 LEXEME *getDeclType(LEXEME *lex, SYMBOL *funcsp, TYPE **tn);
 LEXEME *insertNamespace(LEXEME *lex, enum e_lk linkage, enum e_sc storage_class, BOOLEAN *linked);

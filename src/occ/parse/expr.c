@@ -1759,8 +1759,10 @@ static LEXEME* expression_bracket(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
     *tp = PerformDeferredInitialization(*tp, funcsp);
     return lex;
 }
-static void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
+void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
 {
+    if (params->sp && !strcmp(params->sp->name, "imax"))
+        printf("hi");
     HASHREC* hr = basetype(params->functp)->syms->table[0];
     INITLIST* list = params->arguments;
     BOOLEAN matching = TRUE;
@@ -1933,8 +1935,18 @@ static void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
                                 }
                             }
                             else if (ispointer(list->tp))
+                            {
                                 if (!ispointer(decl->tp))
                                     errorarg(ERR_TYPE_MISMATCH_IN_ARGUMENT, argnum, decl, params->sp);
+                            }
+                            else if (isarithmetic(list->tp) && isarithmetic(decl->tp))
+                            {
+                                if (basetype(decl->tp)->type != basetype(list->tp)->type && basetype(decl->tp)->type > bt_int)
+                                {
+                                    cast(decl->tp, &list->exp);
+                                }
+                            }
+
                         }
                         dest = decl->tp;
                     }

@@ -33,6 +33,7 @@
 #include "Variable.h"
 #include "Utils.h"
 #include <algorithm>
+#include <chrono>
 
 const char Spawner::escapeStart = '\x1';
 const char Spawner::escapeEnd = '\x2';
@@ -49,11 +50,13 @@ unsigned WINFUNC Spawner::Thread(void* cls)
 }
 void Spawner::WaitForDone()
 {
-    int count = 30 * 100;
-    while (runningProcesses > 0 && --count > 0)
+    auto begin = std::chrono::system_clock::now();
+    while (runningProcesses > 0 && std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - begin).count() < 30)
     {
         OS::Yield();
     }
+    if (runningProcesses > 0)
+        std::cout << "omake: aborting due to timeout" << std::endl;
 }
 void Spawner::Run(Command& Commands, OutputType Type, RuleList* RuleListx, Rule* Rulex)
 {
@@ -205,7 +208,10 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
         int rv = 0;
         for (auto command : cmdList)
         {
-            if (!make)
+            bool make1 = make;
+            if (command.find("omake") != std::string::npos)
+                make1 = true;
+            if (!make1)
                 OS::TakeJob();
             if (!silent)
                 OS::WriteConsole(std::string("\t") + command + "\n");
@@ -219,7 +225,7 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
                 if (!rv)
                     rv = rv1;
             }
-            if (!make)
+            if (!make1)
                 OS::GiveJob();
             if (rv && posix)
                 return rv;

@@ -205,8 +205,8 @@ void CalculateConflictGraph(BRIGGS_SET* nodes, BOOLEAN optimize)
                             {
                                 if (tail->dc.left->mode == i_ind)
                                 {
-                                    if (tail->dc.left->offset)
-                                        insertConflict(tnum, tail->dc.left->offset->v.sp->value.i);
+//                                    if (tail->dc.left->offset)
+//                                        insertConflict(tnum, tail->dc.left->offset->v.sp->value.i);
                                     if (tail->dc.left->offset2)
                                         insertConflict(tnum, tail->dc.left->offset2->v.sp->value.i);
                                 }

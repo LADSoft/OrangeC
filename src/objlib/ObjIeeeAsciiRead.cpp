@@ -87,7 +87,16 @@ ObjString ObjIeeeAscii::GetSymbolName(const char* buffer, int* index)
     CheckTerm(buffer + pos);
     if (!GetCaseSensitiveFlag())
     {
-        std::transform(rv.begin(), rv.end(), rv.begin(), ::toupper);
+        char buf[4096];
+        strncpy(buf, rv.c_str(), sizeof(buf));
+        buf[sizeof(buf) - 1] = 0;
+        char* p = buf;
+        while (*p)
+        {
+            *p = toupper(*p);
+            p++;
+        }
+        rv = buf;
     }
     return rv;
 }

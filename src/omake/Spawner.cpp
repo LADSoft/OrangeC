@@ -209,8 +209,8 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
         for (auto command : cmdList)
         {
             bool make1 = make;
-            if (command.find("omake") != std::string::npos)
-                make1 = true;
+//            if (command.find("omake") != std::string::npos)
+//                make1 = true;
             if (!make1)
                 OS::TakeJob();
             if (!silent)

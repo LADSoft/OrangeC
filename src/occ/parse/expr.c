@@ -1761,8 +1761,6 @@ static LEXEME* expression_bracket(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
 }
 void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
 {
-    if (params->sp && !strcmp(params->sp->name, "imax"))
-        printf("hi");
     HASHREC* hr = basetype(params->functp)->syms->table[0];
     INITLIST* list = params->arguments;
     BOOLEAN matching = TRUE;

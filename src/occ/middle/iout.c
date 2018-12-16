@@ -1754,7 +1754,7 @@ void put_staticlabel(long label) { put_label(label); }
 
 /*-------------------------------------------------------------------------*/
 
-void genfloat(FPF* val)
+void genfloat(FPFC* val)
 /*
  * Output a float value
  */
@@ -1781,7 +1781,7 @@ void genfloat(FPF* val)
 
 /*-------------------------------------------------------------------------*/
 
-void gendouble(FPF* val)
+void gendouble(FPFC* val)
 /*
  * Output a double value
  */
@@ -1808,7 +1808,7 @@ void gendouble(FPF* val)
 
 /*-------------------------------------------------------------------------*/
 
-void genlongdouble(FPF* val)
+void genlongdouble(FPFC* val)
 /*
  * Output a double value
  */

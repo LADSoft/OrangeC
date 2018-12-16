@@ -38,7 +38,7 @@ q2.*
 /src/MSDNHelp/
 /src/occ/ideprj/*.*
 /src/occ/ideprj/win32
-/src/occ/x86/*.cpp
+/src/occ/x86/q*.cpp
 /src/occ/x86/q*.h
 /src/debug
 /src/release

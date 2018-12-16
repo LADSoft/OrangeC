@@ -37,6 +37,9 @@
 class Instruction;
 class Section;
 class AsmFile;
+struct ocode;
+struct amode;
+struct expr;
 
 enum asmError { AERR_NONE, AERR_SYNTAX, AERR_OPERAND, AERR_BADCOMBINATIONOFOPERANDS, AERR_UNKNOWNOPCODE, AERR_INVALIDINSTRUCTIONUSE };
 
@@ -129,33 +132,27 @@ class InstructionParser
     virtual bool ParseDirective(AsmFile*fil, Section* sect) = 0;
     virtual bool IsBigEndian() = 0;
     bool SetNumber(int tokenPos, int oldVal, int newVal);
+    asmError GetInstruction(ocode *ins, Instruction *&newIns, std::list<Numeric*> operands);
 
   protected:
-    void RenameRegisters(AsmExprNode* val);
-    AsmExprNode* ExtractReg(AsmExprNode** val);
-    bool MatchesTimes(AsmExprNode* val);
-    AsmExprNode* ExtractTimes(AsmExprNode** val);
-    bool CheckRegs(AsmExprNode* val);
-    void ParseNumeric(int PC);
-    bool ParseNumber(int relOfs, int sign, int bits, int needConstant, int tokenPos);
-    bool Tokenize(int PC);
-    bool IsNumber();
     enum
     {
         TOKEN_BASE = 0,
         REGISTER_BASE = 1000
     };
+    bool ParseNumber(int relOfs, int sign, int bits, int needConstant, int tokenPos);
     virtual asmError DispatchOpcode(int opcode) = 0;
-    void NextToken(int PC);
-    enum
-    {
-        TK_ID = INT_MIN,
-        TK_REG = INT_MIN + 1,
-        TK_NUMERIC = INT_MIN + 2,
-    };
-    std::string token;
-    std::string line;
-    bool eol;
+    void SetOperandTokens(amode *operand);
+    void SetTokens(ocode *ins);
+    void SetRegToken(int reg, int sz);
+    void SetNumberToken(int n);
+    bool SetNumberToken(expr *offset, int &n);
+
+    void SetSize(int sz);
+
+    void SetExpressionToken(expr *offset);
+    void SetBracketSequence(bool open, int sz, int seg);
+
     int id;
     AsmExprNode* val;
     int tokenPos;

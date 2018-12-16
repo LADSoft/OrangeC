@@ -27,11 +27,10 @@ include ../../pathext2.mak
 NAME=occ
 MAIN_FILE=ccmain.c
 C_DEPENDENCIES= \
-    $(BACKEND_FILES) \
     ccmain.c \
+    config.c \
     crc.c \
     beinterf.c \
-    beIntrins.c \
     browse.c \
     ccerr.c \
     constopt.c \
@@ -59,6 +58,7 @@ C_DEPENDENCIES= \
     iloop.c \
     init.c \
     inline.c \
+    invoke.c \
     ioptutil.c \
     iout.c \
     ipeep.c \
@@ -73,14 +73,15 @@ C_DEPENDENCIES= \
     libcxx.c \
     list.c \
     mangle.c \
-    memory.c \
     osutil.c \
     output.c \
     preproc.c \
     property.c \
     ppexpr.c \
+    rewrite.c \
     rtti.c \
     stmt.c \
+    stubs.c \
     symtab.c \
     template.c \
     types.c \
@@ -88,34 +89,43 @@ C_DEPENDENCIES= \
     winsystem.c \
     wseh.c
 
+CPP_DEPENDENCIES = \
+    beIntrins.cpp \
+    gen.cpp \
+    outasm.cpp \
+    outcode.cpp \
+    inasm.cpp \
+    peep.cpp \
+    InstructionParser.cpp \
+    memory.cpp \
+    x64Stub.cpp \
+    x64Parser.cpp
+
 ifeq "$(COMPILER)" "gcc-linux"
 H_FILES=$(wildcard *.h) $(wildcard ../parse/*.h) $(wildcard ../middle/*.h) $(wildcard ../preproc/*.h)
 else
 H_FILES=$(wildcard *.h) $(wildcard ..$(PATHEXT2)parse$(PATHEXT2)*.h) $(wildcard ..$(PATHEXT2)middle$(PATHEXT2)*.h) $(wildcard ..$(PATHEXT2)preproc$(PATHEXT2)*.h)
 endif
 
-#LIB_DEPENDENCIES=util.lib objlib.lib
+LIB_DEPENDENCIES=util ocpplib objlib oasm
 #determine if we can ignore the banner for a batch compile
 #use long long type
 LL = USE_LONGLONG
 DEFINES=$(i386) $(LL) $(MSDOS)
 
-BACKEND_INCLUDE_PATH=.
-
 ifeq "$(COMPILER)" "gcc-linux"
 SOURCE = ..$(PATHEXT2)parse:..$(PATHEXT2)preproc:..$(PATHEXT2)middle
-INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle
-SRCPATH=$(BACKEND_INCLUDE_PATH):$(SOURCE):..:..$(PATHEXT2)..$(PATHEXT2)util
+INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle ..$(PATHEXT2)..$(PATHEXT2)ocpp ..$(PATHEXT2)..$(PATHEXT2)oasm ..$(PATHEXT2)..$(PATHEXT2)util ..$(PATHEXT2)..$(PATHEXT2)objlib
+SRCPATH=.$(PATHEXT2):$(SOURCE):..:..$(PATHEXT2)..$(PATHEXT2)util:..$(PATHEXT2)..$(PATHEXT2)oasm
 else
 SOURCE = ..$(PATHEXT2)parse;..$(PATHEXT2)preproc;..$(PATHEXT2)middle
-INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle
-SRCPATH=$(BACKEND_INCLUDE_PATH);$(SOURCE);..;..$(PATHEXT2)..$(PATHEXT2)util
+INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle ..$(PATHEXT2)..$(PATHEXT2)ocpp ..$(PATHEXT2)..$(PATHEXT2)oasm ..$(PATHEXT2)..$(PATHEXT2)util ..$(PATHEXT2)..$(PATHEXT2)objlib
+SRCPATH=.$(PATHEXT2);$(SOURCE);..;..$(PATHEXT2)..$(PATHEXT2)util;..$(PATHEXT2)..$(PATHEXT2)oasm
 endif
-BACKEND_FILES = config.c gen.c inasm.c invoke.c objieeea.c outasm.c outcode.c peep.c rewrite.c
 
 
 vpath %.c $(SRCPATH)
-
+vpath %.cpp $(SRCPATH)
 
 ifndef _TREEROOT
 _TREEROOT := $(CURDIR)$(PATHEXT2)..$(PATHEXT2)..$(PATHEXT2)treetop.mak

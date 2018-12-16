@@ -135,11 +135,11 @@ typedef struct quad
         {
             /* values for constant nodes */
             LLONG_TYPE i;
-            FPF f;
+            FPFC f;
             struct
             {
-                FPF r;
-                FPF i;
+                FPFC r;
+                FPFC i;
             } c;
             void* data; /* generic data, won't be filled in until after LCSE */
             PHIDATA* phi;

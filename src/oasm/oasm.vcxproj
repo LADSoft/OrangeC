@@ -159,6 +159,7 @@
     <ClCompile Include="InstructionParser.cpp" />
     <ClCompile Include="Listing.cpp" />
     <ClCompile Include="Section.cpp" />
+    <ClCompile Include="x64Instructions.cpp" />
     <ClCompile Include="x64Parser.cpp" />
     <ClCompile Include="x64stub.cpp" />
   </ItemGroup>
@@ -172,6 +173,7 @@
     <ClInclude Include="Label.h" />
     <ClInclude Include="Listing.h" />
     <ClInclude Include="Section.h" />
+    <ClInclude Include="x64Instructions.h" />
     <ClInclude Include="x64Operand.h" />
     <ClInclude Include="x64Parser.h" />
   </ItemGroup>

@@ -100,7 +100,7 @@ bool GenParser::GenerateCompilerStubs()
     file = new std::fstream(name + ".h", std::ios::out);
     (*file) << "#include <map>" << std::endl << std::endl;
     (*file) << "#include \"InstructionParser.h\"" << std::endl << std::endl;
-    (*file) << "enum e_op {" << std::endl;
+    (*file) << "enum e_opcode {" << std::endl;
     size_t i = 0;
     for (auto x : parser.opcodes)
     {
@@ -110,6 +110,13 @@ bool GenParser::GenerateCompilerStubs()
         }
             i++;
     }
+
+    for (auto x : parser.prefixes)
+    {
+        (*file) << "\t" << "op_" << x->name << " = " << i << "," << std::endl;
+        i++;
+    }
+
     (*file) << "};" << std::endl << std::endl;
 
     (*file) << "enum e_tk {" << std::endl;
@@ -125,7 +132,7 @@ bool GenParser::GenerateCompilerStubs()
     }
     (*file) << "};" << std::endl << std::endl;
 
-    (*file) << "const char * const opcodeTable[" << i << "];" << std::endl << std::endl;
+    (*file) << "extern const char * const opcodeTable[" << i << "];" << std::endl << std::endl;
 
     for (auto& m : TokenNode::tokenTable)
     {
@@ -151,6 +158,12 @@ bool GenParser::GenerateCompilerStubs()
             i++;
         }
     }
+    for (auto x : parser.prefixes)
+    {
+        (*file) << "\t\"" << x->name << "\"," << std::endl;
+        i++;
+    }
+
     (*file) << "};" << std::endl << std::endl;
 
     (*file) << "std::map<enum e_tk, const char *> tokenNames = {" << std::endl;

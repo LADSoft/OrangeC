@@ -30,19 +30,17 @@
 #include <string.h>
 #include "be.h"
 
-extern ASMNAME oplst[];
-
-extern int codeLabel;
-extern int prm_assembler;
-extern HASHTABLE* labelSyms;
-extern int usingEsp;
+extern "C" int codeLabel;
+extern "C" int prm_assembler;
+extern "C" HASHTABLE* labelSyms;
+extern "C" int usingEsp;
 
 static ASMREG* regimage;
 static ASMNAME* insdata;
 static LEXEME* lex;
 
 static SYMBOL* lastsym;
-static enum e_op op;
+static enum e_opcode op;
 
 #define ERR_LABEL_EXPECTED 0
 #define ERR_ILLEGAL_ADDRESS_MODE 1
@@ -69,7 +67,7 @@ ASMNAME directiveLst[] = {{"db", op_reserved, ISZ_UCHAR, 0},
                           {"dt", op_reserved, ISZ_LDOUBLE, 0},
                           {"label", op_label, 0, 0},
                           {0}};
-ASMREG reglst[] = {{"cs", am_seg, 1, ISZ_USHORT},     {"ds", am_seg, 2, ISZ_USHORT},
+extern "C" ASMREG reglst[] = {{"cs", am_seg, 1, ISZ_USHORT},     {"ds", am_seg, 2, ISZ_USHORT},
                    {"es", am_seg, 3, ISZ_USHORT},     {"fs", am_seg, 4, ISZ_USHORT},
                    {"gs", am_seg, 5, ISZ_USHORT},     {"ss", am_seg, 6, ISZ_USHORT},
                    {"al", am_dreg, 0, ISZ_UCHAR},     {"cl", am_dreg, 1, ISZ_UCHAR},
@@ -101,6 +99,323 @@ ASMREG reglst[] = {{"cs", am_seg, 1, ISZ_USHORT},     {"ds", am_seg, 2, ISZ_USHO
                    {"fword", am_ext, akw_fword, 0},   {"qword", am_ext, akw_qword, 0},
                    {"tbyte", am_ext, akw_tbyte, 0},   {"ptr", am_ext, akw_ptr, 0},
                    {"offset", am_ext, akw_offset, 0}, {0, 0, 0}};
+/* List of opcodes
+* This list MUST be in the same order as the op_ enums
+*/
+#define ENTRY(x,y,z,w) { x, y }
+extern "C" ASMNAME oplst[] = {
+    ENTRY("reserved", op_reserved, 0, 0),
+    ENTRY("line#", op_reserved, 0, 0),
+    ENTRY("blks#", op_reserved, 0, 0),
+    ENTRY("blke#", op_reserved, 0, 0),
+    ENTRY("vars#", op_reserved, 0, 0),
+    ENTRY("funcs#", op_reserved, 0, 0),
+    ENTRY("funce#", op_reserved, 0, 0),
+    ENTRY("void#", op_void, 0, 0),
+    ENTRY("cmt#", op_reserved, 0, 0),
+    ENTRY("label#", op_reserved, 0, 0),
+    ENTRY("flabel#", op_reserved, 0, 0),
+    ENTRY("seq@", op_reserved, 0, 0),
+    ENTRY("db", op_reserved, 0, 0),
+    ENTRY("dd", op_reserved, 0, 0),
+    ENTRY("aaa", op_aaa, 0, &popn_aaa),
+    ENTRY("aad", op_aad, 0, &popn_aad),
+    ENTRY("aam", op_aam, 0, &popn_aam),
+    ENTRY("aas", op_aas, 0, &popn_aas),
+    ENTRY("add", op_add, OPE_MATH, &popn_add),
+    ENTRY("adc", op_adc, OPE_MATH, &popn_adc),
+    ENTRY("and", op_and, OPE_MATH, &popn_and),
+    ENTRY("arpl", op_arpl, OPE_ARPL, &popn_arpl),
+    ENTRY("bound", op_bound, OPE_BOUND, &popn_bound),
+    ENTRY("bsf", op_bsf, OPE_BITSCAN, &popn_bsf),
+    ENTRY("bsr", op_bsr, OPE_BITSCAN, &popn_bsr),
+    ENTRY("bswap", op_bswap, OPE_REG32, &popn_bswap),
+    ENTRY("btc", op_btc, OPE_BIT, &popn_btc),
+    ENTRY("bt", op_bt, OPE_BIT, &popn_bt),
+    ENTRY("btr", op_btr, OPE_BIT, &popn_btr),
+    ENTRY("bts", op_bts, OPE_BIT, &popn_bts),
+    ENTRY("call", op_call, OPE_CALL, &popn_call),
+    ENTRY("cbw", op_cbw, 0, &popn_cbw),
+    ENTRY("cwde", op_cwde, 0, &popn_cwde),
+    ENTRY("cwd", op_cwd, 0, &popn_cwd),
+    ENTRY("cdq", op_cdq, 0, &popn_cdq),
+    ENTRY("clc", op_clc, 0, &popn_clc),
+    ENTRY("cld", op_cld, 0, &popn_cld),
+    ENTRY("cli", op_cli, 0, &popn_cli),
+    ENTRY("clts", op_clts, 0, &popn_clts),
+    ENTRY("cmc", op_cmc, 0, &popn_cmc),
+    ENTRY("cmp", op_cmp, OPE_MATH, &popn_cmp),
+    ENTRY("cmpxchg", op_cmpxchg, OPE_MATH, &popn_cmpxchg),
+    ENTRY("cmpxchg8b", op_cmpxchg8b, OPE_RM, &popn_cmpxchg8b),
+    ENTRY("cmps", op_cmps, OPE_CMPS, &popn_cmps),
+    ENTRY("cmpsb", op_cmpsb, 0, &popn_cmpsb),
+    ENTRY("cmpsw", op_cmpsw, 0, &popn_cmpsw),
+    ENTRY("cmpsd", op_cmpsd, 0, &popn_cmpsd),
+    ENTRY("daa", op_daa, 0, &popn_daa),
+    ENTRY("das", op_das, 0, &popn_das),
+    ENTRY("dec", op_dec, OPE_INCDEC, &popn_dec),
+    ENTRY("div", op_div, OPE_RM, &popn_div),
+    ENTRY("enter", op_enter, OPE_ENTER, &popn_enter),
+    ENTRY("hlt", op_hlt, 0, &popn_hlt),
+    ENTRY("idiv", op_idiv, OPE_RM, &popn_idiv),
+    ENTRY("imul", op_imul, OPE_IMUL, &popn_imul),
+    ENTRY("in", op_in, OPE_IN, &popn_in),
+    ENTRY("inc", op_inc, OPE_INCDEC, &popn_inc),
+    ENTRY("ins", op_ins, OPE_INS, &popn_ins),
+    ENTRY("insb", op_insb, 0, &popn_insb),
+    ENTRY("insw", op_insw, 0, &popn_insw),
+    ENTRY("insd", op_insd, 0, &popn_insd),
+    ENTRY("int", op_int, OPE_IMM8, &popn_int),
+    ENTRY("int3", op_int3, 0, &popn_int3),
+    ENTRY("into", op_into, 0, &popn_into),
+    ENTRY("invd", op_invd, 0, &popn_invd),
+    ENTRY("iret", op_iret, 0, &popn_iret),
+    ENTRY("iretd", op_iretd, 0, &popn_iretd),
+    ENTRY("jecxz", op_jecxz, OPE_RELBR8, &popn_jcxz),
+    ENTRY("ja", op_ja, OPE_RELBRA, &popn_ja),
+    ENTRY("jnbe", op_jnbe, OPE_RELBRA, &popn_jnbe),
+    ENTRY("jae", op_jae, OPE_RELBRA, &popn_jae),
+    ENTRY("jnb", op_jnb, OPE_RELBRA, &popn_jnb),
+    ENTRY("jnc", op_jnc, OPE_RELBRA, &popn_jnc),
+    ENTRY("jb", op_jb, OPE_RELBRA, &popn_jb),
+    ENTRY("jc", op_jc, OPE_RELBRA, &popn_jc),
+    ENTRY("jnae", op_jnae, OPE_RELBRA, &popn_jnae),
+    ENTRY("jbe", op_jbe, OPE_RELBRA, &popn_jbe),
+    ENTRY("jna", op_jna, OPE_RELBRA, &popn_jna),
+    ENTRY("je", op_je, OPE_RELBRA, &popn_je),
+    ENTRY("jz", op_jz, OPE_RELBRA, &popn_jz),
+    ENTRY("jg", op_jg, OPE_RELBRA, &popn_jg),
+    ENTRY("jnle", op_jnle, OPE_RELBRA, &popn_jnle),
+    ENTRY("jl", op_jl, OPE_RELBRA, &popn_jl),
+    ENTRY("jnge", op_jnge, OPE_RELBRA, &popn_jnge),
+    ENTRY("jge", op_jge, OPE_RELBRA, &popn_jge),
+    ENTRY("jnl", op_jnl, OPE_RELBRA, &popn_jnl),
+    ENTRY("jle", op_jle, OPE_RELBRA, &popn_jle),
+    ENTRY("jng", op_jng, OPE_RELBRA, &popn_jng),
+    ENTRY("jne", op_jne, OPE_RELBRA, &popn_jne),
+    ENTRY("jnz", op_jnz, OPE_RELBRA, &popn_jnz),
+    ENTRY("jo", op_jo, OPE_RELBRA, &popn_jo),
+    ENTRY("jno", op_jno, OPE_RELBRA, &popn_jno),
+    ENTRY("jp", op_jp, OPE_RELBRA, &popn_jp),
+    ENTRY("jnp", op_jnp, OPE_RELBRA, &popn_jnp),
+    ENTRY("jpe", op_jpe, OPE_RELBRA, &popn_jpe),
+    ENTRY("jpo", op_jpo, OPE_RELBRA, &popn_jpo),
+    ENTRY("js", op_js, OPE_RELBRA, &popn_js),
+    ENTRY("jns", op_jns, OPE_RELBRA, &popn_jns),
+    ENTRY("jmp", op_jmp, OPE_JMP, &popn_jmp),
+    ENTRY("lahf", op_lahf, 0, &popn_lahf),
+    ENTRY("lar", op_lar, OPE_REGRM, &popn_lar),
+    ENTRY("lds", op_lds, OPE_LOADSEG, &popn_lds),
+    ENTRY("les", op_les, OPE_LOADSEG, &popn_les),
+    ENTRY("lfs", op_lfs, OPE_LOADSEG, &popn_lfs),
+    ENTRY("lgs", op_lgs, OPE_LOADSEG, &popn_lgs),
+    ENTRY("lss", op_lss, OPE_LOADSEG, &popn_lss),
+    ENTRY("lea", op_lea, OPE_REGRM, &popn_lea),
+    ENTRY("leave", op_leave, 0, &popn_leave),
+    ENTRY("lfence", op_lfence, 0, &popn_lfence),
+    ENTRY("lgdt", op_lgdt, OPE_LGDT, &popn_lgdt),
+    ENTRY("lidt", op_lidt, OPE_LIDT, &popn_lidt),
+    ENTRY("lldt", op_lldt, OPE_RM16, &popn_lldt),
+    ENTRY("lmsw", op_lmsw, OPE_RM16, &popn_lmsw),
+    ENTRY("lock", op_lock, 0, &popn_lock),
+    ENTRY("lods", op_lods, OPE_LODS, &popn_lods),
+    ENTRY("lodsb", op_lodsb, 0, &popn_lodsb),
+    ENTRY("lodsw", op_lodsw, 0, &popn_lodsw),
+    ENTRY("lodsd", op_lodsd, 0, &popn_lodsd),
+    ENTRY("loop", op_loop, OPE_RELBR8, &popn_loop),
+    ENTRY("loope", op_loope, OPE_RELBR8, &popn_loope),
+    ENTRY("loopz", op_loopz, OPE_RELBR8, &popn_loopz),
+    ENTRY("loopne", op_loopne, OPE_RELBR8, &popn_loopne),
+    ENTRY("loopnz", op_loopnz, OPE_RELBR8, &popn_loopnz),
+    ENTRY("lsl", op_lsl, OPE_REGRM, &popn_lsl),
+    ENTRY("ltr", op_ltr, OPE_RM16, &popn_ltr),
+    ENTRY("mfence", op_mfence, 0, &popn_mfence),
+    ENTRY("mov", op_mov, OPE_MOV, &popn_mov),
+    ENTRY("movs", op_movs, OPE_MOVS, &popn_movs),
+    ENTRY("movsb", op_movsb, 0, &popn_movsb),
+    ENTRY("movsw", op_movsw, 0, &popn_movsw),
+    ENTRY("movsd", op_movsd, 0, &popn_movsd),
+    ENTRY("movsx", op_movsx, OPE_MOVSX, &popn_movsx),
+    ENTRY("movzx", op_movzx, OPE_MOVSX, &popn_movzx),
+    ENTRY("mul", op_mul, OPE_RM, &popn_mul),
+    ENTRY("neg", op_neg, OPE_RM, &popn_neg),
+    ENTRY("not", op_not, OPE_RM, &popn_not),
+    ENTRY("nop", op_nop, 0, &popn_nop),
+    ENTRY("or", op_or, OPE_MATH, &popn_or),
+    ENTRY("out", op_out, OPE_OUT, &popn_out),
+    ENTRY("outs", op_outs, OPE_OUTS, &popn_outs),
+    ENTRY("outsb", op_outsb, 0, &popn_outsb),
+    ENTRY("outsw", op_outsw, 0, &popn_outsw),
+    ENTRY("outsd", op_outsd, 0, &popn_outsd),
+    ENTRY("pop", op_pop, OPE_PUSHPOP, &popn_pop),
+    ENTRY("popa", op_popa, 0, &popn_popa),
+    ENTRY("popad", op_popad, 0, &popn_popad),
+    ENTRY("popf", op_popf, 0, &popn_popf),
+    ENTRY("popfd", op_popfd, 0, &popn_popfd),
+    ENTRY("push", op_push, OPE_PUSHPOP, &popn_push),
+    ENTRY("pusha", op_pusha, 0, &popn_pusha),
+    ENTRY("pushad", op_pushad, 0, &popn_pushad),
+    ENTRY("pushf", op_pushf, 0, &popn_pushf),
+    ENTRY("pushfd", op_pushfd, 0, &popn_pushfd),
+    ENTRY("rcl", op_rcl, OPE_SHIFT, &popn_rcl),
+    ENTRY("rcr", op_rcr, OPE_SHIFT, &popn_rcr),
+    ENTRY("rdmsr", op_rdmsr, 0, &popn_rdmsr),
+    ENTRY("rdpmc", op_rdpmc, 0, &popn_rdpmc),
+    ENTRY("rdtsc", op_rdtsc, 0, &popn_rdtsc),
+    ENTRY("rol", op_rol, OPE_SHIFT, &popn_rol),
+    ENTRY("ror", op_ror, OPE_SHIFT, &popn_ror),
+    ENTRY("rep", op_rep, 0, &popn_repz),
+    ENTRY("repne", op_repne, 0, &popn_repnz),
+    ENTRY("repe", op_repe, 0, &popn_repz),
+    ENTRY("repnz", op_repnz, 0, &popn_repnz),
+    ENTRY("repz", op_repz, 0, &popn_repz),
+    ENTRY("ret", op_ret, OPE_RET, &popn_ret),
+    ENTRY("retf", op_retf, OPE_RET, &popn_retf),
+    ENTRY("sahf", op_sahf, 0, &popn_sahf),
+    ENTRY("sal", op_sal, OPE_SHIFT, &popn_sal),
+    ENTRY("sar", op_sar, OPE_SHIFT, &popn_sar),
+    ENTRY("shl", op_shl, OPE_SHIFT, &popn_shl),
+    ENTRY("shr", op_shr, OPE_SHIFT, &popn_shr),
+    ENTRY("sbb", op_sbb, OPE_MATH, &popn_sbb),
+    ENTRY("scas", op_scas, OPE_SCAS, &popn_scas),
+    ENTRY("scasb", op_scasb, 0, &popn_scasb),
+    ENTRY("scasw", op_scasw, 0, &popn_scasw),
+    ENTRY("scasd", op_scasd, 0, &popn_scasd),
+    ENTRY("seta", op_seta, OPE_SET, &popn_seta),
+    ENTRY("setnbe", op_setnbe, OPE_SET, &popn_setnbe),
+    ENTRY("setae", op_setae, OPE_SET, &popn_setae),
+    ENTRY("setnb", op_setnb, OPE_SET, &popn_setnb),
+    ENTRY("setnc", op_setnc, OPE_SET, &popn_setnc),
+    ENTRY("setb", op_setb, OPE_SET, &popn_setb),
+    ENTRY("setc", op_setc, OPE_SET, &popn_setc),
+    ENTRY("setnae", op_setnae, OPE_SET, &popn_setnae),
+    ENTRY("setbe", op_setbe, OPE_SET, &popn_setbe),
+    ENTRY("setna", op_setna, OPE_SET, &popn_setna),
+    ENTRY("sete", op_sete, OPE_SET, &popn_sete),
+    ENTRY("setz", op_setz, OPE_SET, &popn_setz),
+    ENTRY("setg", op_setg, OPE_SET, &popn_setg),
+    ENTRY("setnle", op_setnle, OPE_SET, &popn_setnle),
+    ENTRY("setl", op_setl, OPE_SET, &popn_setl),
+    ENTRY("setnge", op_setnge, OPE_SET, &popn_setnge),
+    ENTRY("setge", op_setge, OPE_SET, &popn_setge),
+    ENTRY("setnl", op_setnl, OPE_SET, &popn_setnl),
+    ENTRY("setle", op_setle, OPE_SET, &popn_setle),
+    ENTRY("setng", op_setng, OPE_SET, &popn_setng),
+    ENTRY("setne", op_setne, OPE_SET, &popn_setne),
+    ENTRY("setnz", op_setnz, OPE_SET, &popn_setnz),
+    ENTRY("seto", op_seto, OPE_SET, &popn_seto),
+    ENTRY("setno", op_setno, OPE_SET, &popn_setno),
+    ENTRY("setp", op_setp, OPE_SET, &popn_setp),
+    ENTRY("setnp", op_setnp, OPE_SET, &popn_setnp),
+    ENTRY("setpe", op_setpe, OPE_SET, &popn_setpe),
+    ENTRY("setpo", op_setpo, OPE_SET, &popn_setpo),
+    ENTRY("sets", op_sets, OPE_SET, &popn_sets),
+    ENTRY("setns", op_setns, OPE_SET, &popn_setns),
+    ENTRY("sfence", op_sfence, 0, &popn_sfence),
+    ENTRY("sgdt", op_sgdt, OPE_LGDT, &popn_sgdt),
+    ENTRY("sidt", op_sidt, OPE_LIDT, &popn_sidt),
+    ENTRY("sldt", op_sldt, OPE_RM16, &popn_sldt),
+    ENTRY("smsw", op_smsw, OPE_RM16, &popn_smsw),
+    ENTRY("shld", op_shld, OPE_SHLD, &popn_shld),
+    ENTRY("shrd", op_shrd, OPE_SHLD, &popn_shrd),
+    ENTRY("stc", op_stc, 0, &popn_stc),
+    ENTRY("std", op_std, 0, &popn_std),
+    ENTRY("sti", op_sti, 0, &popn_sti),
+    ENTRY("stos", op_stos, OPE_STOS, &popn_stos),
+    ENTRY("stosb", op_stosb, 0, &popn_stosb),
+    ENTRY("stosw", op_stosw, 0, &popn_stosw),
+    ENTRY("stosd", op_stosd, 0, &popn_stosd),
+    ENTRY("str", op_str, OPE_RM16, &popn_str),
+    ENTRY("sub", op_sub, OPE_MATH, &popn_sub),
+    ENTRY("test", op_test, OPE_TEST, &popn_test),
+    ENTRY("verr", op_verr, OPE_RM16, &popn_verr),
+    ENTRY("verw", op_verw, OPE_RM16, &popn_verw),
+    ENTRY("wait", op_wait, 0, &popn_wait),
+    ENTRY("wbinvd", op_wbinvd, 0, &popn_wbinvd),
+    ENTRY("wrmsr", op_wrmsr, 0, &popn_wrmsr),
+    ENTRY("xchg", op_xchg, OPE_XCHG, &popn_xchg),
+    ENTRY("xlat", op_xlat, OPE_XLAT, &popn_xlat),
+    ENTRY("xlatb", op_xlatb, 0, &popn_xlatb),
+    ENTRY("xor", op_xor, OPE_MATH, &popn_xor),
+    ENTRY("f2xm1", op_f2xm1, 0, &popn_f2xm1),
+    ENTRY("fabs", op_fabs, 0, &popn_fabs),
+    ENTRY("fadd", op_fadd, OPE_FMATH, &popn_fadd),
+    ENTRY("faddp", op_faddp, OPE_FMATHP, &popn_faddp),
+    ENTRY("fiadd", op_fiadd, OPE_FMATHI, &popn_fiadd),
+    ENTRY("fchs", op_fchs, 0, &popn_fchs),
+    ENTRY("fclex", op_fclex, 0, &popn_fclex),
+    ENTRY("fnclex", op_fnclex, 0, &popn_fnclex),
+    ENTRY("fcom", op_fcom, OPE_FCOM, &popn_fcom),
+    ENTRY("fcomp", op_fcomp, OPE_FCOM, &popn_fcomp),
+    ENTRY("fcompp", op_fcompp, 0, &popn_fcompp),
+    ENTRY("fcos", op_fcos, 0, &popn_fcos),
+    ENTRY("fdecstp", op_fdecstp, 0, &popn_fdecstp),
+    ENTRY("fdiv", op_fdiv, OPE_FMATH, &popn_fdiv),
+    ENTRY("fdivp", op_fdivp, OPE_FMATHP, &popn_fdivp),
+    ENTRY("fidiv", op_fidiv, OPE_FMATHI, &popn_fidiv),
+    ENTRY("fdivr", op_fdivr, OPE_FMATH, &popn_fdivr),
+    ENTRY("fdivrp", op_fdivrp, OPE_FMATHP, &popn_fdivrp),
+    ENTRY("fidivr", op_fidivr, OPE_FMATHI, &popn_fidivr),
+    ENTRY("ffree", op_ffree, OPE_FREG, &popn_ffree),
+    ENTRY("ficom", op_ficom, OPE_FICOM, &popn_ficom),
+    ENTRY("ficomp", op_ficomp, OPE_FICOM, &popn_ficomp),
+    ENTRY("fild", op_fild, OPE_FILD, &popn_fild),
+    ENTRY("fincstp", op_fincstp, 0, &popn_fincstp),
+    ENTRY("finit", op_finit, 0, &popn_finit),
+    ENTRY("fninit", op_fninit, 0, &popn_fninit),
+    ENTRY("fist", op_fist, OPE_FIST, &popn_fist),
+    ENTRY("fistp", op_fistp, OPE_FILD, &popn_fistp),
+    ENTRY("fld", op_fld, OPE_FLD, &popn_fld),
+    ENTRY("fldz", op_fldz, 0, &popn_fldz),
+    ENTRY("fldpi", op_fldpi, 0, &popn_fldpi),
+    ENTRY("fld1", op_fld1, 0, &popn_fld1),
+    ENTRY("fldl2t", op_fldl2t, 0, &popn_fldl2t),
+    ENTRY("fldl2e", op_fldl2e, 0, &popn_fldl2e),
+    ENTRY("fldlg2", op_fldlg2, 0, &popn_fldlg2),
+    ENTRY("fldln2", op_fldln2, 0, &popn_fldln2),
+    ENTRY("fldcw", op_fldcw, OPE_M16, &popn_fldcw),
+    ENTRY("fldenv", op_fldenv, OPE_MN, &popn_fldenv),
+    ENTRY("fmul", op_fmul, OPE_FMATH, &popn_fmul),
+    ENTRY("fmulp", op_fmulp, OPE_FMATHP, &popn_fmulp),
+    ENTRY("fimul", op_fimul, OPE_FMATHI, &popn_fimul),
+    ENTRY("fpatan", op_fpatan, 0, &popn_fpatan),
+    ENTRY("fprem", op_fprem, 0, &popn_fprem),
+    ENTRY("fprem1", op_fprem1, 0, &popn_fprem1),
+    ENTRY("fptan", op_fptan, 0, &popn_fptan),
+    ENTRY("frndint", op_frndint, 0, &popn_frndint),
+    ENTRY("frstor", op_frstor, OPE_MN, &popn_frstor),
+    ENTRY("fsave", op_fsave, OPE_MN, &popn_fsave),
+    ENTRY("fnsave", op_fnsave, OPE_MN, &popn_fnsave),
+    ENTRY("fscale", op_fscale, 0, &popn_fscale),
+    ENTRY("fsin", op_fsin, 0, &popn_fsin),
+    ENTRY("fsincos", op_fsincos, 0, &popn_fsincos),
+    ENTRY("fsqrt", op_fsqrt, 0, &popn_fsqrt),
+    ENTRY("fst", op_fst, OPE_FST, &popn_fst),
+    ENTRY("fstp", op_fstp, OPE_FSTP, &popn_fstp),
+    ENTRY("fstcw", op_fstcw, OPE_M16, &popn_fstcw),
+    ENTRY("fstsw", op_fstsw, OPE_M16, &popn_fstsw),
+    ENTRY("fnstcw", op_fnstcw, OPE_M16, &popn_fnstcw),
+    ENTRY("fnstsw", op_fnstsw, OPE_M16, &popn_fnstsw),
+    ENTRY("fstenv", op_fstenv, OPE_MN, &popn_fstenv),
+    ENTRY("fnstenv", op_fnstenv, OPE_MN, &popn_fnstenv),
+    ENTRY("fsub", op_fsub, OPE_FMATH, &popn_fsub),
+    ENTRY("fsubp", op_fsubp, OPE_FMATHP, &popn_fsubp),
+    ENTRY("fisub", op_fisub, OPE_FMATHI, &popn_fisub),
+    ENTRY("fsubr", op_fsubr, OPE_FMATH, &popn_fsubr),
+    ENTRY("fsubrp", op_fsubrp, OPE_FMATHP, &popn_fsubrp),
+    ENTRY("fisubr", op_fisubr, OPE_FMATHI, &popn_fisubr),
+    ENTRY("ftst", op_ftst, 0, &popn_ftst),
+    ENTRY("fucom", op_fucom, OPE_FUCOM, &popn_fucom),
+    ENTRY("fucomp", op_fucomp, OPE_FUCOM, &popn_fucomp),
+    ENTRY("fucompp", op_fucompp, 0, &popn_fucompp),
+    ENTRY("fwait", op_fwait, 0, &popn_fwait),
+    ENTRY("fxam", op_fxam, 0, &popn_fxam),
+    ENTRY("fxch", op_fxch, OPE_FXCH, &popn_fxch),
+    ENTRY("fxtract", op_fxtract, 0, &popn_fxtract),
+    ENTRY("fyl2x", op_fyl2x, 0, &popn_fyl2x),
+    ENTRY("fyl2xp1", op_fyl2xp1, 0, &popn_fyl2xp1),
+    ENTRY(0, 0, 0, 0),
+};
 
 typedef struct
 {
@@ -183,7 +498,7 @@ static void inasm_getsym(void)
 }
 static void inasm_needkw(LEXEME** lex, int Keyword)
 {
-    needkw(lex, Keyword);
+    needkw(lex, (e_kw)Keyword);
     inasm_txsym();
 }
 static AMODE* inasm_const(void)
@@ -202,7 +517,7 @@ static AMODE* inasm_const(void)
     }
     else
     {
-        rv = Alloc(sizeof(AMODE));
+        rv = (AMODE *) Alloc(sizeof(AMODE));
         rv->mode = am_immed;
         rv->offset = exp;
     }
@@ -226,7 +541,7 @@ static EXPRESSION* inasm_ident(void)
         /* label, put it in the symbol table */
         if ((sp = search(nm, labelSyms)) == 0 && (sp = gsearch(nm)) == 0)
         {
-            sp = Alloc(sizeof(SYMBOL));
+            sp = (SYMBOL *)Alloc(sizeof(SYMBOL));
             sp->storage_class = sc_ulabel;
             sp->name = litlate(nm);
             sp->declfile = sp->origdeclfile = lex->file;
@@ -234,7 +549,7 @@ static EXPRESSION* inasm_ident(void)
             sp->realdeclline = lex->realline;
             sp->declfilenum = lex->filenum;
             sp->used = TRUE;
-            sp->tp = beLocalAlloc(sizeof(TYPE));
+            sp->tp = (TYPE *)beLocalAlloc(sizeof(TYPE));
             sp->tp->type = bt_unsigned;
             sp->tp->bits = sp->tp->startbit = -1;
             sp->offset = codeLabel++;
@@ -303,14 +618,14 @@ static EXPRESSION* inasm_label(void)
     /* label, put it in the symbol table */
     if ((sp = search(lex->value.s.a, labelSyms)) == 0)
     {
-        sp = Alloc(sizeof(SYMBOL));
+        sp = (SYMBOL *)Alloc(sizeof(SYMBOL));
         sp->storage_class = sc_label;
         sp->name = litlate(lex->value.s.a);
         sp->declfile = sp->origdeclfile = lex->file;
         sp->declline = sp->origdeclline = lex->line;
         sp->realdeclline = lex->realline;
         sp->declfilenum = lex->filenum;
-        sp->tp = beLocalAlloc(sizeof(TYPE));
+        sp->tp = (TYPE *)beLocalAlloc(sizeof(TYPE));
         sp->tp->type = bt_unsigned;
         sp->tp->bits = sp->tp->startbit = -1;
         sp->offset = codeLabel++;
@@ -671,7 +986,7 @@ static AMODE* inasm_mem(void)
         inasm_err(ERR_INVALID_INDEX_MODE);
         return 0;
     }
-    rv = beLocalAlloc(sizeof(AMODE));
+    rv = (AMODE *)beLocalAlloc(sizeof(AMODE));
     if (node)
     {
         rv->offset = node;
@@ -707,7 +1022,7 @@ static AMODE* inasm_mem(void)
 
 static AMODE* inasm_amode(int nosegreg)
 {
-    AMODE* rv = beLocalAlloc(sizeof(AMODE));
+    AMODE* rv = (AMODE *)beLocalAlloc(sizeof(AMODE));
     int sz = 0, seg = 0;
     BOOLEAN done = FALSE;
     lastsym = 0;
@@ -803,7 +1118,7 @@ static AMODE* inasm_amode(int nosegreg)
                     else
                     {
                         rv->preg = regimage->regnum;
-                        rv->mode = regimage->regtype;
+                        rv->mode = (e_am)regimage->regtype;
                         sz = rv->length = regimage->size;
                         inasm_getsym();
                     }
@@ -939,25 +1254,25 @@ AMODE* getimmed(void)
 
 /*-------------------------------------------------------------------------*/
 
-enum e_op inasm_op(void)
+enum e_opcode inasm_op(void)
 {
     int op;
     if (!lex || lex->type != l_asminst)
     {
         inasm_err(ERR_INVALID_OPCODE);
-        return -1;
+        return (e_opcode)-1;
     }
     op = insdata->atype;
     inasm_getsym();
     floating = op >= op_f2xm1;
-    return op;
+    return (e_opcode)op;
 }
 
 /*-------------------------------------------------------------------------*/
 
 static OCODE* make_ocode(AMODE* ap1, AMODE* ap2, AMODE* ap3)
 {
-    OCODE* o = beLocalAlloc(sizeof(OCODE));
+    OCODE* o = (OCODE *)beLocalAlloc(sizeof(OCODE));
     if (ap1 && (ap1->length == ISZ_UCHAR || ap1->length == -ISZ_UCHAR))
         if (ap2 && ap2->mode == am_immed)
             ap2->length = ap1->length;
@@ -1992,7 +2307,7 @@ static OCODE* ope_stos(void) { return ope_scas(); }
 
 void* inlineAsmStmt(void* param)
 {
-    OCODE* rv = beLocalAlloc(sizeof(OCODE));
+    OCODE* rv = (OCODE *)beLocalAlloc(sizeof(OCODE));
     memcpy(rv, param, sizeof(*rv));
     if (rv->opcode != op_label && rv->opcode != op_line)
     {
@@ -2117,14 +2432,14 @@ LEXEME* inasm_statement(LEXEME* inlex, BLOCKDATA* parent)
             return lex;
         }
         op = inasm_op();
-        if (op == (enum e_op) - 1)
+        if (op == (enum e_opcode) - 1)
         {
 
             return lex;
         }
         if (insdata->amode == 0)
         {
-            rv = beLocalAlloc(sizeof(OCODE));
+            rv = (OCODE *)beLocalAlloc(sizeof(OCODE));
             rv->oper1 = rv->oper2 = rv->oper3 = 0;
         }
         else

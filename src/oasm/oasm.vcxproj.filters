@@ -48,6 +48,9 @@
     <ClCompile Include="x64stub.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="x64Instructions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AsmExpr.h">
@@ -81,6 +84,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="x64Parser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="x64Instructions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

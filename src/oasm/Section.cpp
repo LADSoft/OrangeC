@@ -85,7 +85,7 @@ void Section::Parse(AsmFile* fil)
             throw new std::runtime_error("Invalid section qualifier");
     }
 }
-void Section::Optimize(AsmFile* fil)
+void Section::Optimize()
 {
     AsmExpr::SetSection(this);
     bool done = false;
@@ -123,7 +123,7 @@ void Section::Optimize(AsmFile* fil)
         pc += instructions[i]->GetSize();
     }
 }
-void Section::Resolve(AsmFile* fil) { Optimize(fil); }
+void Section::Resolve() { Optimize(); }
 ObjSection* Section::CreateObject(ObjFactory& factory)
 {
     objectSection = factory.MakeSection(name);

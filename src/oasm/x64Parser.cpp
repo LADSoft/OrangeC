@@ -1077,93 +1077,93 @@ void x64Parser::Init()
 	opcodeTable["sets"] = 373;
 	opcodeTable["setz"] = 374;
 	opcodeTable["sfence"] = 375;
-	opcodeTable["shl"] = 376;
-	opcodeTable["shld"] = 377;
-	opcodeTable["shr"] = 378;
-	opcodeTable["shrd"] = 379;
-	opcodeTable["sidt"] = 380;
-	opcodeTable["sldt"] = 381;
-	opcodeTable["smsw"] = 382;
-	opcodeTable["stc"] = 383;
-	opcodeTable["std"] = 384;
-	opcodeTable["sti"] = 385;
-	opcodeTable["stos"] = 386;
-	opcodeTable["stosb"] = 387;
-	opcodeTable["stosw"] = 388;
-	opcodeTable["stosd"] = 389;
-	opcodeTable["stosq"] = 390;
-	opcodeTable["str"] = 391;
-	opcodeTable["sub"] = 392;
-	opcodeTable["syscall"] = 393;
-	opcodeTable["sysenter"] = 394;
-	opcodeTable["sysexit"] = 395;
-	opcodeTable["sysret"] = 396;
-	opcodeTable["test"] = 397;
-	opcodeTable["ud2"] = 398;
-	opcodeTable["verr"] = 399;
-	opcodeTable["verw"] = 400;
-	opcodeTable["wait"] = 401;
-	opcodeTable["wbinvd"] = 402;
-	opcodeTable["wrmsr"] = 403;
-	opcodeTable["xadd"] = 404;
-	opcodeTable["xchg"] = 405;
-	opcodeTable["xlat"] = 406;
-	opcodeTable["xlatb"] = 407;
-	opcodeTable["xor"] = 408;
-	opcodeTable["xrstor"] = 409;
-	opcodeTable["xrstor64"] = 410;
-	opcodeTable["xsave"] = 411;
-	opcodeTable["xsave64"] = 412;
-	opcodeTable["xsetbv"] = 413;
-	opcodeTable["addpd"] = 414;
-	opcodeTable["addps"] = 415;
-	opcodeTable["addsd"] = 416;
-	opcodeTable["addss"] = 417;
-	opcodeTable["addsubpd"] = 418;
-	opcodeTable["addsubps"] = 419;
-	opcodeTable["andnpd"] = 420;
-	opcodeTable["andnps"] = 421;
-	opcodeTable["andpd"] = 422;
-	opcodeTable["andps"] = 423;
-	opcodeTable["blendpd"] = 424;
-	opcodeTable["blendps"] = 425;
-	opcodeTable["cmppd"] = 426;
-	opcodeTable["cmpps"] = 427;
-	opcodeTable["cvtdq2pd"] = 428;
-	opcodeTable["cvtdq2ps"] = 429;
-	opcodeTable["cvtpd2dq"] = 430;
-	opcodeTable["cvtpd2pi"] = 431;
-	opcodeTable["cvtpd2ps"] = 432;
-	opcodeTable["cvtpi2pd"] = 433;
-	opcodeTable["cvtpi2ps"] = 434;
-	opcodeTable["cvtps2dq"] = 435;
-	opcodeTable["cvtps2pd"] = 436;
-	opcodeTable["cvtps2pi"] = 437;
-	opcodeTable["cvtsd2si"] = 438;
-	opcodeTable["cvtsd2ss"] = 439;
-	opcodeTable["cvtsi2sd"] = 440;
-	opcodeTable["cvtsi2ss"] = 441;
-	opcodeTable["cvtss2sd"] = 442;
-	opcodeTable["cvtss2si"] = 443;
-	opcodeTable["cvttpd2dq"] = 444;
-	opcodeTable["cvttpd2pi"] = 445;
-	opcodeTable["cvttps2dq"] = 446;
-	opcodeTable["cvttps2pi"] = 447;
-	opcodeTable["cvttsd2si"] = 448;
-	opcodeTable["cvttss2si"] = 449;
-	opcodeTable["divpd"] = 450;
-	opcodeTable["divps"] = 451;
-	opcodeTable["divsd"] = 452;
-	opcodeTable["divss"] = 453;
-	opcodeTable["dppd"] = 454;
-	opcodeTable["dpps"] = 455;
-	opcodeTable["hsubpd"] = 456;
-	opcodeTable["hsubps"] = 457;
-	opcodeTable["insertps"] = 458;
-	opcodeTable["lddqu"] = 459;
-	opcodeTable["maskmovdqu"] = 460;
-	opcodeTable["maskmovq"] = 461;
-	opcodeTable["maxps"] = 462;
+	opcodeTable["sgdt"] = 376;
+	opcodeTable["shl"] = 377;
+	opcodeTable["shld"] = 378;
+	opcodeTable["shr"] = 379;
+	opcodeTable["shrd"] = 380;
+	opcodeTable["sidt"] = 381;
+	opcodeTable["sldt"] = 382;
+	opcodeTable["smsw"] = 383;
+	opcodeTable["stc"] = 384;
+	opcodeTable["std"] = 385;
+	opcodeTable["sti"] = 386;
+	opcodeTable["stos"] = 387;
+	opcodeTable["stosb"] = 388;
+	opcodeTable["stosw"] = 389;
+	opcodeTable["stosd"] = 390;
+	opcodeTable["stosq"] = 391;
+	opcodeTable["str"] = 392;
+	opcodeTable["sub"] = 393;
+	opcodeTable["syscall"] = 394;
+	opcodeTable["sysenter"] = 395;
+	opcodeTable["sysexit"] = 396;
+	opcodeTable["sysret"] = 397;
+	opcodeTable["test"] = 398;
+	opcodeTable["ud2"] = 399;
+	opcodeTable["verr"] = 400;
+	opcodeTable["verw"] = 401;
+	opcodeTable["wait"] = 402;
+	opcodeTable["wbinvd"] = 403;
+	opcodeTable["wrmsr"] = 404;
+	opcodeTable["xadd"] = 405;
+	opcodeTable["xchg"] = 406;
+	opcodeTable["xlat"] = 407;
+	opcodeTable["xlatb"] = 408;
+	opcodeTable["xor"] = 409;
+	opcodeTable["xrstor"] = 410;
+	opcodeTable["xrstor64"] = 411;
+	opcodeTable["xsave"] = 412;
+	opcodeTable["xsave64"] = 413;
+	opcodeTable["xsetbv"] = 414;
+	opcodeTable["addpd"] = 415;
+	opcodeTable["addps"] = 416;
+	opcodeTable["addsd"] = 417;
+	opcodeTable["addss"] = 418;
+	opcodeTable["addsubpd"] = 419;
+	opcodeTable["addsubps"] = 420;
+	opcodeTable["andnpd"] = 421;
+	opcodeTable["andnps"] = 422;
+	opcodeTable["andpd"] = 423;
+	opcodeTable["andps"] = 424;
+	opcodeTable["blendpd"] = 425;
+	opcodeTable["blendps"] = 426;
+	opcodeTable["cmppd"] = 427;
+	opcodeTable["cmpps"] = 428;
+	opcodeTable["cvtdq2pd"] = 429;
+	opcodeTable["cvtdq2ps"] = 430;
+	opcodeTable["cvtpd2dq"] = 431;
+	opcodeTable["cvtpd2pi"] = 432;
+	opcodeTable["cvtpd2ps"] = 433;
+	opcodeTable["cvtpi2pd"] = 434;
+	opcodeTable["cvtpi2ps"] = 435;
+	opcodeTable["cvtps2dq"] = 436;
+	opcodeTable["cvtps2pd"] = 437;
+	opcodeTable["cvtps2pi"] = 438;
+	opcodeTable["cvtsd2si"] = 439;
+	opcodeTable["cvtsd2ss"] = 440;
+	opcodeTable["cvtsi2sd"] = 441;
+	opcodeTable["cvtsi2ss"] = 442;
+	opcodeTable["cvtss2sd"] = 443;
+	opcodeTable["cvtss2si"] = 444;
+	opcodeTable["cvttpd2dq"] = 445;
+	opcodeTable["cvttpd2pi"] = 446;
+	opcodeTable["cvttps2dq"] = 447;
+	opcodeTable["cvttps2pi"] = 448;
+	opcodeTable["cvttsd2si"] = 449;
+	opcodeTable["cvttss2si"] = 450;
+	opcodeTable["divpd"] = 451;
+	opcodeTable["divps"] = 452;
+	opcodeTable["divsd"] = 453;
+	opcodeTable["divss"] = 454;
+	opcodeTable["dppd"] = 455;
+	opcodeTable["dpps"] = 456;
+	opcodeTable["hsubpd"] = 457;
+	opcodeTable["hsubps"] = 458;
+	opcodeTable["insertps"] = 459;
+	opcodeTable["lddqu"] = 460;
+	opcodeTable["maskmovdqu"] = 461;
+	opcodeTable["maskmovq"] = 462;
 	opcodeTable["maxpd"] = 463;
 	opcodeTable["maxps"] = 464;
 	opcodeTable["maxsd"] = 465;
@@ -1315,7 +1315,7 @@ void x64Parser::Init()
 	opcodeTable["vmread"] = 611;
 	opcodeTable["vmresume"] = 612;
 	opcodeTable["vmwrite"] = 613;
-	opcodeTable["vmx0ff"] = 614;
+	opcodeTable["vmxoff"] = 614;
 	opcodeTable["vmxon"] = 615;
 	prefixTable["a16"] = 0;
 	prefixTable["a32"] = 1;
@@ -32727,107 +32727,107 @@ x64Token x64Parser::tokenBranches7983[] = {
 	{x64Token::EMPTY, 0, 1, 0, NULL,&x64Parser::TokenFunc7984,  },
 	{x64Token::EOT }
 };
-Coding x64Parser::tokenCoding8023_15[] = {
+Coding x64Parser::tokenCoding8024_15[] = {
 	{ CODING_NAME("reg")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8023_16[] = {
+Coding x64Parser::tokenCoding8024_16[] = {
 	{ CODING_NAME("reg")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8023_17[] = {
+Coding x64Parser::tokenCoding8024_17[] = {
 	{ CODING_NAME("reg")  (Coding::Type)(Coding::valSpecified), 4, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8023_18[] = {
+Coding x64Parser::tokenCoding8024_18[] = {
 	{ CODING_NAME("reg")  Coding::stateFunc, 3 },
 	{ CODING_NAME("reg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
 	{ CODING_NAME("reg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-void x64Parser::TokenFunc8023(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8024(x64Operand &operand, int tokenPos)
 {
-	operand.values[15] = tokenCoding8023_15;
-	operand.values[16] = tokenCoding8023_16;
-	operand.values[17] = tokenCoding8023_17;
-	operand.values[18] = tokenCoding8023_18;
+	operand.values[15] = tokenCoding8024_15;
+	operand.values[16] = tokenCoding8024_16;
+	operand.values[17] = tokenCoding8024_17;
+	operand.values[18] = tokenCoding8024_18;
 }
-x64Token x64Parser::tokenBranches8022[] = {
-	{x64Token::ADDRESSCLASS, 17, 1, 0, NULL,&x64Parser::TokenFunc8023,  },
+x64Token x64Parser::tokenBranches8023[] = {
+	{x64Token::ADDRESSCLASS, 17, 1, 0, NULL,&x64Parser::TokenFunc8024,  },
 	{x64Token::EOT }
 };
-void x64Parser::TokenFunc8033(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8034(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 697;
 }
-x64Token x64Parser::tokenBranches8032[] = {
-	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8033,  },
+x64Token x64Parser::tokenBranches8033[] = {
+	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8034,  },
 	{x64Token::EOT }
 };
-void x64Parser::TokenFunc8045(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8046(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 699;
 }
-x64Token x64Parser::tokenBranches8044[] = {
-	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8045,  },
+x64Token x64Parser::tokenBranches8045[] = {
+	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8046,  },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8032[] = {
+	{x64Token::REGISTER, 61, 0, 0, NULL, NULL, x64Parser::tokenBranches8033 },
+	{x64Token::REGISTER, 62, 0, 0, NULL, NULL, x64Parser::tokenBranches8045 },
 	{x64Token::EOT }
 };
 x64Token x64Parser::tokenBranches8031[] = {
-	{x64Token::REGISTER, 61, 0, 0, NULL, NULL, x64Parser::tokenBranches8032 },
-	{x64Token::REGISTER, 62, 0, 0, NULL, NULL, x64Parser::tokenBranches8044 },
+	{x64Token::TOKEN, 1, 0, 0, NULL, NULL, x64Parser::tokenBranches8032 },
 	{x64Token::EOT }
 };
 x64Token x64Parser::tokenBranches8030[] = {
-	{x64Token::TOKEN, 1, 0, 0, NULL, NULL, x64Parser::tokenBranches8031 },
+	{x64Token::TOKEN, 3, 0, 0, NULL, NULL, x64Parser::tokenBranches8031 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8029[] = {
-	{x64Token::TOKEN, 3, 0, 0, NULL, NULL, x64Parser::tokenBranches8030 },
-	{x64Token::EOT }
-};
-void x64Parser::TokenFunc8039(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8040(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 698;
 }
-x64Token x64Parser::tokenBranches8038[] = {
-	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8039,  },
+x64Token x64Parser::tokenBranches8039[] = {
+	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8040,  },
 	{x64Token::EOT }
 };
-void x64Parser::TokenFunc8051(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8052(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 700;
 }
-x64Token x64Parser::tokenBranches8050[] = {
-	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8051,  },
+x64Token x64Parser::tokenBranches8051[] = {
+	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8052,  },
 	{x64Token::EOT }
 };
-void x64Parser::TokenFunc8061(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8062(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 702;
 }
-x64Token x64Parser::tokenBranches8060[] = {
-	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8061,  },
+x64Token x64Parser::tokenBranches8061[] = {
+	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8062,  },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8038[] = {
+	{x64Token::REGISTER, 61, 0, 0, NULL, NULL, x64Parser::tokenBranches8039 },
+	{x64Token::REGISTER, 62, 0, 0, NULL, NULL, x64Parser::tokenBranches8051 },
+	{x64Token::REGISTER, 63, 0, 0, NULL, NULL, x64Parser::tokenBranches8061 },
 	{x64Token::EOT }
 };
 x64Token x64Parser::tokenBranches8037[] = {
-	{x64Token::REGISTER, 61, 0, 0, NULL, NULL, x64Parser::tokenBranches8038 },
-	{x64Token::REGISTER, 62, 0, 0, NULL, NULL, x64Parser::tokenBranches8050 },
-	{x64Token::REGISTER, 63, 0, 0, NULL, NULL, x64Parser::tokenBranches8060 },
+	{x64Token::TOKEN, 3, 0, 0, NULL, NULL, x64Parser::tokenBranches8038 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8036[] = {
-	{x64Token::TOKEN, 3, 0, 0, NULL, NULL, x64Parser::tokenBranches8037 },
-	{x64Token::EOT }
-};
-void x64Parser::TokenFunc8055(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8056(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 701;
 }
-x64Token x64Parser::tokenBranches8054[] = {
-	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8055,  },
+x64Token x64Parser::tokenBranches8055[] = {
+	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8056,  },
 	{x64Token::EOT }
 };
-void x64Parser::TokenFunc8036(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8037(x64Operand &operand, int tokenPos)
 {
 	operand.values[1] = new Coding[2];
 	CleanupValues.push_back(operand.values[1]);
@@ -32839,88 +32839,88 @@ void x64Parser::TokenFunc8036(x64Operand &operand, int tokenPos)
 	operand.values[1]->binary = 0;
 	operand.values[1][1].type = Coding::eot;
 }
-x64Token x64Parser::tokenBranches8035[] = {
-	{x64Token::REGISTERCLASS, 19, 0, 0, NULL,&x64Parser::TokenFunc8036, x64Parser::tokenBranches8036 },
-	{x64Token::REGISTER, 63, 0, 0, NULL, NULL, x64Parser::tokenBranches8054 },
+x64Token x64Parser::tokenBranches8036[] = {
+	{x64Token::REGISTERCLASS, 19, 0, 0, NULL,&x64Parser::TokenFunc8037, x64Parser::tokenBranches8037 },
+	{x64Token::REGISTER, 63, 0, 0, NULL, NULL, x64Parser::tokenBranches8055 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8028[] = {
-	{x64Token::REGISTER, 93, 0, 0, NULL, NULL, x64Parser::tokenBranches8029 },
-	{x64Token::TOKEN, 1, 0, 0, NULL, NULL, x64Parser::tokenBranches8035 },
+x64Token x64Parser::tokenBranches8029[] = {
+	{x64Token::REGISTER, 93, 0, 0, NULL, NULL, x64Parser::tokenBranches8030 },
+	{x64Token::TOKEN, 1, 0, 0, NULL, NULL, x64Parser::tokenBranches8036 },
 	{x64Token::EOT }
 };
-void x64Parser::TokenFunc8067(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8068(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 703;
 }
-x64Token x64Parser::tokenBranches8066[] = {
-	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8067,  },
+x64Token x64Parser::tokenBranches8067[] = {
+	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8068,  },
 	{x64Token::EOT }
 };
-void x64Parser::TokenFunc8079(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8080(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 705;
 }
-x64Token x64Parser::tokenBranches8078[] = {
-	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8079,  },
+x64Token x64Parser::tokenBranches8079[] = {
+	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8080,  },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8066[] = {
+	{x64Token::REGISTER, 61, 0, 0, NULL, NULL, x64Parser::tokenBranches8067 },
+	{x64Token::REGISTER, 62, 0, 0, NULL, NULL, x64Parser::tokenBranches8079 },
 	{x64Token::EOT }
 };
 x64Token x64Parser::tokenBranches8065[] = {
-	{x64Token::REGISTER, 61, 0, 0, NULL, NULL, x64Parser::tokenBranches8066 },
-	{x64Token::REGISTER, 62, 0, 0, NULL, NULL, x64Parser::tokenBranches8078 },
+	{x64Token::TOKEN, 1, 0, 0, NULL, NULL, x64Parser::tokenBranches8066 },
 	{x64Token::EOT }
 };
 x64Token x64Parser::tokenBranches8064[] = {
-	{x64Token::TOKEN, 1, 0, 0, NULL, NULL, x64Parser::tokenBranches8065 },
+	{x64Token::TOKEN, 3, 0, 0, NULL, NULL, x64Parser::tokenBranches8065 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8063[] = {
-	{x64Token::TOKEN, 3, 0, 0, NULL, NULL, x64Parser::tokenBranches8064 },
-	{x64Token::EOT }
-};
-void x64Parser::TokenFunc8073(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8074(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 704;
 }
-x64Token x64Parser::tokenBranches8072[] = {
-	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8073,  },
+x64Token x64Parser::tokenBranches8073[] = {
+	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8074,  },
 	{x64Token::EOT }
 };
-void x64Parser::TokenFunc8085(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8086(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 706;
 }
-x64Token x64Parser::tokenBranches8084[] = {
-	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8085,  },
+x64Token x64Parser::tokenBranches8085[] = {
+	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8086,  },
 	{x64Token::EOT }
 };
-void x64Parser::TokenFunc8095(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8096(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 708;
 }
-x64Token x64Parser::tokenBranches8094[] = {
-	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8095,  },
+x64Token x64Parser::tokenBranches8095[] = {
+	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8096,  },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8072[] = {
+	{x64Token::REGISTER, 61, 0, 0, NULL, NULL, x64Parser::tokenBranches8073 },
+	{x64Token::REGISTER, 62, 0, 0, NULL, NULL, x64Parser::tokenBranches8085 },
+	{x64Token::REGISTER, 63, 0, 0, NULL, NULL, x64Parser::tokenBranches8095 },
 	{x64Token::EOT }
 };
 x64Token x64Parser::tokenBranches8071[] = {
-	{x64Token::REGISTER, 61, 0, 0, NULL, NULL, x64Parser::tokenBranches8072 },
-	{x64Token::REGISTER, 62, 0, 0, NULL, NULL, x64Parser::tokenBranches8084 },
-	{x64Token::REGISTER, 63, 0, 0, NULL, NULL, x64Parser::tokenBranches8094 },
+	{x64Token::TOKEN, 3, 0, 0, NULL, NULL, x64Parser::tokenBranches8072 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8070[] = {
-	{x64Token::TOKEN, 3, 0, 0, NULL, NULL, x64Parser::tokenBranches8071 },
-	{x64Token::EOT }
-};
-void x64Parser::TokenFunc8089(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8090(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 707;
 }
-x64Token x64Parser::tokenBranches8088[] = {
-	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8089,  },
+x64Token x64Parser::tokenBranches8089[] = {
+	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8090,  },
 	{x64Token::EOT }
 };
-void x64Parser::TokenFunc8070(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8071(x64Operand &operand, int tokenPos)
 {
 	operand.values[1] = new Coding[2];
 	CleanupValues.push_back(operand.values[1]);
@@ -32932,88 +32932,88 @@ void x64Parser::TokenFunc8070(x64Operand &operand, int tokenPos)
 	operand.values[1]->binary = 0;
 	operand.values[1][1].type = Coding::eot;
 }
-x64Token x64Parser::tokenBranches8069[] = {
-	{x64Token::REGISTERCLASS, 19, 0, 0, NULL,&x64Parser::TokenFunc8070, x64Parser::tokenBranches8070 },
-	{x64Token::REGISTER, 63, 0, 0, NULL, NULL, x64Parser::tokenBranches8088 },
+x64Token x64Parser::tokenBranches8070[] = {
+	{x64Token::REGISTERCLASS, 19, 0, 0, NULL,&x64Parser::TokenFunc8071, x64Parser::tokenBranches8071 },
+	{x64Token::REGISTER, 63, 0, 0, NULL, NULL, x64Parser::tokenBranches8089 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8062[] = {
-	{x64Token::REGISTER, 93, 0, 0, NULL, NULL, x64Parser::tokenBranches8063 },
-	{x64Token::TOKEN, 1, 0, 0, NULL, NULL, x64Parser::tokenBranches8069 },
+x64Token x64Parser::tokenBranches8063[] = {
+	{x64Token::REGISTER, 93, 0, 0, NULL, NULL, x64Parser::tokenBranches8064 },
+	{x64Token::TOKEN, 1, 0, 0, NULL, NULL, x64Parser::tokenBranches8070 },
 	{x64Token::EOT }
 };
-void x64Parser::TokenFunc8101(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8102(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 709;
 }
-x64Token x64Parser::tokenBranches8100[] = {
-	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8101,  },
+x64Token x64Parser::tokenBranches8101[] = {
+	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8102,  },
 	{x64Token::EOT }
 };
-void x64Parser::TokenFunc8113(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8114(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 711;
 }
-x64Token x64Parser::tokenBranches8112[] = {
-	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8113,  },
+x64Token x64Parser::tokenBranches8113[] = {
+	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8114,  },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8100[] = {
+	{x64Token::REGISTER, 61, 0, 0, NULL, NULL, x64Parser::tokenBranches8101 },
+	{x64Token::REGISTER, 62, 0, 0, NULL, NULL, x64Parser::tokenBranches8113 },
 	{x64Token::EOT }
 };
 x64Token x64Parser::tokenBranches8099[] = {
-	{x64Token::REGISTER, 61, 0, 0, NULL, NULL, x64Parser::tokenBranches8100 },
-	{x64Token::REGISTER, 62, 0, 0, NULL, NULL, x64Parser::tokenBranches8112 },
+	{x64Token::TOKEN, 1, 0, 0, NULL, NULL, x64Parser::tokenBranches8100 },
 	{x64Token::EOT }
 };
 x64Token x64Parser::tokenBranches8098[] = {
-	{x64Token::TOKEN, 1, 0, 0, NULL, NULL, x64Parser::tokenBranches8099 },
+	{x64Token::TOKEN, 3, 0, 0, NULL, NULL, x64Parser::tokenBranches8099 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8097[] = {
-	{x64Token::TOKEN, 3, 0, 0, NULL, NULL, x64Parser::tokenBranches8098 },
-	{x64Token::EOT }
-};
-void x64Parser::TokenFunc8107(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8108(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 710;
 }
-x64Token x64Parser::tokenBranches8106[] = {
-	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8107,  },
+x64Token x64Parser::tokenBranches8107[] = {
+	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8108,  },
 	{x64Token::EOT }
 };
-void x64Parser::TokenFunc8119(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8120(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 712;
 }
-x64Token x64Parser::tokenBranches8118[] = {
-	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8119,  },
+x64Token x64Parser::tokenBranches8119[] = {
+	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8120,  },
 	{x64Token::EOT }
 };
-void x64Parser::TokenFunc8129(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8130(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 714;
 }
-x64Token x64Parser::tokenBranches8128[] = {
-	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8129,  },
+x64Token x64Parser::tokenBranches8129[] = {
+	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8130,  },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8106[] = {
+	{x64Token::REGISTER, 61, 0, 0, NULL, NULL, x64Parser::tokenBranches8107 },
+	{x64Token::REGISTER, 62, 0, 0, NULL, NULL, x64Parser::tokenBranches8119 },
+	{x64Token::REGISTER, 63, 0, 0, NULL, NULL, x64Parser::tokenBranches8129 },
 	{x64Token::EOT }
 };
 x64Token x64Parser::tokenBranches8105[] = {
-	{x64Token::REGISTER, 61, 0, 0, NULL, NULL, x64Parser::tokenBranches8106 },
-	{x64Token::REGISTER, 62, 0, 0, NULL, NULL, x64Parser::tokenBranches8118 },
-	{x64Token::REGISTER, 63, 0, 0, NULL, NULL, x64Parser::tokenBranches8128 },
+	{x64Token::TOKEN, 3, 0, 0, NULL, NULL, x64Parser::tokenBranches8106 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8104[] = {
-	{x64Token::TOKEN, 3, 0, 0, NULL, NULL, x64Parser::tokenBranches8105 },
-	{x64Token::EOT }
-};
-void x64Parser::TokenFunc8123(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8124(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 713;
 }
-x64Token x64Parser::tokenBranches8122[] = {
-	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8123,  },
+x64Token x64Parser::tokenBranches8123[] = {
+	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8124,  },
 	{x64Token::EOT }
 };
-void x64Parser::TokenFunc8104(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8105(x64Operand &operand, int tokenPos)
 {
 	operand.values[1] = new Coding[2];
 	CleanupValues.push_back(operand.values[1]);
@@ -33025,70 +33025,70 @@ void x64Parser::TokenFunc8104(x64Operand &operand, int tokenPos)
 	operand.values[1]->binary = 0;
 	operand.values[1][1].type = Coding::eot;
 }
-x64Token x64Parser::tokenBranches8103[] = {
-	{x64Token::REGISTERCLASS, 19, 0, 0, NULL,&x64Parser::TokenFunc8104, x64Parser::tokenBranches8104 },
-	{x64Token::REGISTER, 63, 0, 0, NULL, NULL, x64Parser::tokenBranches8122 },
+x64Token x64Parser::tokenBranches8104[] = {
+	{x64Token::REGISTERCLASS, 19, 0, 0, NULL,&x64Parser::TokenFunc8105, x64Parser::tokenBranches8105 },
+	{x64Token::REGISTER, 63, 0, 0, NULL, NULL, x64Parser::tokenBranches8123 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8096[] = {
-	{x64Token::REGISTER, 93, 0, 0, NULL, NULL, x64Parser::tokenBranches8097 },
-	{x64Token::TOKEN, 1, 0, 0, NULL, NULL, x64Parser::tokenBranches8103 },
+x64Token x64Parser::tokenBranches8097[] = {
+	{x64Token::REGISTER, 93, 0, 0, NULL, NULL, x64Parser::tokenBranches8098 },
+	{x64Token::TOKEN, 1, 0, 0, NULL, NULL, x64Parser::tokenBranches8104 },
 	{x64Token::EOT }
 };
-void x64Parser::TokenFunc8135(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8136(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 715;
 }
+x64Token x64Parser::tokenBranches8135[] = {
+	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8136,  },
+	{x64Token::EOT }
+};
 x64Token x64Parser::tokenBranches8134[] = {
-	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8135,  },
+	{x64Token::REGISTER, 62, 0, 0, NULL, NULL, x64Parser::tokenBranches8135 },
 	{x64Token::EOT }
 };
 x64Token x64Parser::tokenBranches8133[] = {
-	{x64Token::REGISTER, 62, 0, 0, NULL, NULL, x64Parser::tokenBranches8134 },
+	{x64Token::TOKEN, 1, 0, 0, NULL, NULL, x64Parser::tokenBranches8134 },
 	{x64Token::EOT }
 };
 x64Token x64Parser::tokenBranches8132[] = {
-	{x64Token::TOKEN, 1, 0, 0, NULL, NULL, x64Parser::tokenBranches8133 },
+	{x64Token::TOKEN, 3, 0, 0, NULL, NULL, x64Parser::tokenBranches8133 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8131[] = {
-	{x64Token::TOKEN, 3, 0, 0, NULL, NULL, x64Parser::tokenBranches8132 },
-	{x64Token::EOT }
-};
-void x64Parser::TokenFunc8141(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8142(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 716;
 }
+x64Token x64Parser::tokenBranches8141[] = {
+	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8142,  },
+	{x64Token::EOT }
+};
+void x64Parser::TokenFunc8152(x64Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 716;
+}
+x64Token x64Parser::tokenBranches8151[] = {
+	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8152,  },
+	{x64Token::EOT }
+};
 x64Token x64Parser::tokenBranches8140[] = {
-	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8141,  },
-	{x64Token::EOT }
-};
-void x64Parser::TokenFunc8151(x64Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 716;
-}
-x64Token x64Parser::tokenBranches8150[] = {
-	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8151,  },
+	{x64Token::REGISTER, 62, 0, 0, NULL, NULL, x64Parser::tokenBranches8141 },
+	{x64Token::REGISTER, 63, 0, 0, NULL, NULL, x64Parser::tokenBranches8151 },
 	{x64Token::EOT }
 };
 x64Token x64Parser::tokenBranches8139[] = {
-	{x64Token::REGISTER, 62, 0, 0, NULL, NULL, x64Parser::tokenBranches8140 },
-	{x64Token::REGISTER, 63, 0, 0, NULL, NULL, x64Parser::tokenBranches8150 },
+	{x64Token::TOKEN, 3, 0, 0, NULL, NULL, x64Parser::tokenBranches8140 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8138[] = {
-	{x64Token::TOKEN, 3, 0, 0, NULL, NULL, x64Parser::tokenBranches8139 },
-	{x64Token::EOT }
-};
-void x64Parser::TokenFunc8145(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8146(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 715;
 }
-x64Token x64Parser::tokenBranches8144[] = {
-	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8145,  },
+x64Token x64Parser::tokenBranches8145[] = {
+	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8146,  },
 	{x64Token::EOT }
 };
-void x64Parser::TokenFunc8138(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8139(x64Operand &operand, int tokenPos)
 {
 	operand.values[1] = new Coding[2];
 	CleanupValues.push_back(operand.values[1]);
@@ -33100,56 +33100,31 @@ void x64Parser::TokenFunc8138(x64Operand &operand, int tokenPos)
 	operand.values[1]->binary = 0;
 	operand.values[1][1].type = Coding::eot;
 }
-x64Token x64Parser::tokenBranches8137[] = {
-	{x64Token::REGISTERCLASS, 19, 0, 0, NULL,&x64Parser::TokenFunc8138, x64Parser::tokenBranches8138 },
-	{x64Token::REGISTER, 63, 0, 0, NULL, NULL, x64Parser::tokenBranches8144 },
+x64Token x64Parser::tokenBranches8138[] = {
+	{x64Token::REGISTERCLASS, 19, 0, 0, NULL,&x64Parser::TokenFunc8139, x64Parser::tokenBranches8139 },
+	{x64Token::REGISTER, 63, 0, 0, NULL, NULL, x64Parser::tokenBranches8145 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8130[] = {
-	{x64Token::REGISTER, 93, 0, 0, NULL, NULL, x64Parser::tokenBranches8131 },
-	{x64Token::TOKEN, 1, 0, 0, NULL, NULL, x64Parser::tokenBranches8137 },
+x64Token x64Parser::tokenBranches8131[] = {
+	{x64Token::REGISTER, 93, 0, 0, NULL, NULL, x64Parser::tokenBranches8132 },
+	{x64Token::TOKEN, 1, 0, 0, NULL, NULL, x64Parser::tokenBranches8138 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8027[] = {
-	{x64Token::TOKEN, 11, 0, 0, NULL, NULL, x64Parser::tokenBranches8028 },
-	{x64Token::TOKEN, 8, 0, 0, NULL, NULL, x64Parser::tokenBranches8062 },
-	{x64Token::TOKEN, 9, 0, 0, NULL, NULL, x64Parser::tokenBranches8096 },
-	{x64Token::TOKEN, 10, 0, 0, NULL, NULL, x64Parser::tokenBranches8130 },
+x64Token x64Parser::tokenBranches8028[] = {
+	{x64Token::TOKEN, 11, 0, 0, NULL, NULL, x64Parser::tokenBranches8029 },
+	{x64Token::TOKEN, 8, 0, 0, NULL, NULL, x64Parser::tokenBranches8063 },
+	{x64Token::TOKEN, 9, 0, 0, NULL, NULL, x64Parser::tokenBranches8097 },
+	{x64Token::TOKEN, 10, 0, 0, NULL, NULL, x64Parser::tokenBranches8131 },
 	{x64Token::EOT }
 };
-void x64Parser::TokenFunc8156(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8157(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 717;
 }
-x64Token x64Parser::tokenBranches8155[] = {
-	{x64Token::EMPTY, 0, 1, 0, NULL,&x64Parser::TokenFunc8156,  },
+x64Token x64Parser::tokenBranches8156[] = {
+	{x64Token::EMPTY, 0, 1, 0, NULL,&x64Parser::TokenFunc8157,  },
 	{x64Token::EOT }
 };
-Coding x64Parser::tokenCoding8158_15[] = {
-	{ CODING_NAME("reg")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8158_16[] = {
-	{ CODING_NAME("reg")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8158_17[] = {
-	{ CODING_NAME("reg")  (Coding::Type)(Coding::valSpecified), 1, 0, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8158_18[] = {
-	{ CODING_NAME("reg")  Coding::stateFunc, 3 },
-	{ CODING_NAME("reg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("reg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-void x64Parser::TokenFunc8158(x64Operand &operand, int tokenPos)
-{
-	operand.values[15] = tokenCoding8158_15;
-	operand.values[16] = tokenCoding8158_16;
-	operand.values[17] = tokenCoding8158_17;
-	operand.values[18] = tokenCoding8158_18;
-}
 Coding x64Parser::tokenCoding8159_15[] = {
 	{ CODING_NAME("reg")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
@@ -33163,7 +33138,7 @@ Coding x64Parser::tokenCoding8159_17[] = {
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::tokenCoding8159_18[] = {
-	{ CODING_NAME("reg")  Coding::stateFunc, 4 },
+	{ CODING_NAME("reg")  Coding::stateFunc, 3 },
 	{ CODING_NAME("reg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
 	{ CODING_NAME("reg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
@@ -33180,7 +33155,7 @@ Coding x64Parser::tokenCoding8160_15[] = {
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::tokenCoding8160_16[] = {
-	{ CODING_NAME("reg")  (Coding::Type)(Coding::valSpecified), 8, 0, 0, 0, 0 }, 
+	{ CODING_NAME("reg")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::tokenCoding8160_17[] = {
@@ -33188,7 +33163,7 @@ Coding x64Parser::tokenCoding8160_17[] = {
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::tokenCoding8160_18[] = {
-	{ CODING_NAME("reg")  Coding::stateFunc, 5 },
+	{ CODING_NAME("reg")  Coding::stateFunc, 4 },
 	{ CODING_NAME("reg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
 	{ CODING_NAME("reg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
@@ -33200,13 +33175,38 @@ void x64Parser::TokenFunc8160(x64Operand &operand, int tokenPos)
 	operand.values[17] = tokenCoding8160_17;
 	operand.values[18] = tokenCoding8160_18;
 }
-x64Token x64Parser::tokenBranches8157[] = {
-	{x64Token::ADDRESSCLASS, 17, 1, 0, NULL,&x64Parser::TokenFunc8158,  },
-	{x64Token::ADDRESSCLASS, 19, 1, 0, NULL,&x64Parser::TokenFunc8159,  },
-	{x64Token::ADDRESSCLASS, 21, 1, 0, NULL,&x64Parser::TokenFunc8160,  },
+Coding x64Parser::tokenCoding8161_15[] = {
+	{ CODING_NAME("reg")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8161_16[] = {
+	{ CODING_NAME("reg")  (Coding::Type)(Coding::valSpecified), 8, 0, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8161_17[] = {
+	{ CODING_NAME("reg")  (Coding::Type)(Coding::valSpecified), 1, 0, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8161_18[] = {
+	{ CODING_NAME("reg")  Coding::stateFunc, 5 },
+	{ CODING_NAME("reg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("reg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+void x64Parser::TokenFunc8161(x64Operand &operand, int tokenPos)
+{
+	operand.values[15] = tokenCoding8161_15;
+	operand.values[16] = tokenCoding8161_16;
+	operand.values[17] = tokenCoding8161_17;
+	operand.values[18] = tokenCoding8161_18;
+}
+x64Token x64Parser::tokenBranches8158[] = {
+	{x64Token::ADDRESSCLASS, 17, 1, 0, NULL,&x64Parser::TokenFunc8159,  },
+	{x64Token::ADDRESSCLASS, 19, 1, 0, NULL,&x64Parser::TokenFunc8160,  },
+	{x64Token::ADDRESSCLASS, 21, 1, 0, NULL,&x64Parser::TokenFunc8161,  },
 	{x64Token::EOT }
 };
-void x64Parser::TokenFunc8170(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8171(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 718;
 	operand.values[21] = new Coding[2];
@@ -33220,19 +33220,19 @@ void x64Parser::TokenFunc8170(x64Operand &operand, int tokenPos)
 	operand.values[21][1].type = Coding::eot;
 	operands.push_back(numeric);
 }
+x64Token x64Parser::tokenBranches8170[] = {
+	{x64Token::NUMBER, 3, 1, 0, NULL,&x64Parser::TokenFunc8171,  },
+	{x64Token::EOT }
+};
 x64Token x64Parser::tokenBranches8169[] = {
-	{x64Token::NUMBER, 3, 1, 0, NULL,&x64Parser::TokenFunc8170,  },
+	{x64Token::TOKEN, 11, 0, 1, NULL, NULL, x64Parser::tokenBranches8170 },
 	{x64Token::EOT }
 };
 x64Token x64Parser::tokenBranches8168[] = {
-	{x64Token::TOKEN, 11, 0, 1, NULL, NULL, x64Parser::tokenBranches8169 },
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8169 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8167[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8168 },
-	{x64Token::EOT }
-};
-void x64Parser::TokenFunc8174(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8175(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 719;
 	operand.values[21] = new Coding[2];
@@ -33246,19 +33246,19 @@ void x64Parser::TokenFunc8174(x64Operand &operand, int tokenPos)
 	operand.values[21][1].type = Coding::eot;
 	operands.push_back(numeric);
 }
+x64Token x64Parser::tokenBranches8174[] = {
+	{x64Token::NUMBER, 4, 1, 0, NULL,&x64Parser::TokenFunc8175,  },
+	{x64Token::EOT }
+};
 x64Token x64Parser::tokenBranches8173[] = {
-	{x64Token::NUMBER, 4, 1, 0, NULL,&x64Parser::TokenFunc8174,  },
+	{x64Token::TOKEN, 8, 0, 1, NULL, NULL, x64Parser::tokenBranches8174 },
 	{x64Token::EOT }
 };
 x64Token x64Parser::tokenBranches8172[] = {
-	{x64Token::TOKEN, 8, 0, 1, NULL, NULL, x64Parser::tokenBranches8173 },
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8173 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8171[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8172 },
-	{x64Token::EOT }
-};
-void x64Parser::TokenFunc8178(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8179(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 720;
 	operand.values[21] = new Coding[2];
@@ -33272,19 +33272,19 @@ void x64Parser::TokenFunc8178(x64Operand &operand, int tokenPos)
 	operand.values[21][1].type = Coding::eot;
 	operands.push_back(numeric);
 }
+x64Token x64Parser::tokenBranches8178[] = {
+	{x64Token::NUMBER, 5, 1, 0, NULL,&x64Parser::TokenFunc8179,  },
+	{x64Token::EOT }
+};
 x64Token x64Parser::tokenBranches8177[] = {
-	{x64Token::NUMBER, 5, 1, 0, NULL,&x64Parser::TokenFunc8178,  },
+	{x64Token::TOKEN, 9, 0, 1, NULL, NULL, x64Parser::tokenBranches8178 },
 	{x64Token::EOT }
 };
 x64Token x64Parser::tokenBranches8176[] = {
-	{x64Token::TOKEN, 9, 0, 1, NULL, NULL, x64Parser::tokenBranches8177 },
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8177 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8175[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8176 },
-	{x64Token::EOT }
-};
-void x64Parser::TokenFunc8182(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8183(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 721;
 	operand.values[21] = new Coding[2];
@@ -33298,35 +33298,35 @@ void x64Parser::TokenFunc8182(x64Operand &operand, int tokenPos)
 	operand.values[21][1].type = Coding::eot;
 	operands.push_back(numeric);
 }
+x64Token x64Parser::tokenBranches8182[] = {
+	{x64Token::NUMBER, 5, 1, 0, NULL,&x64Parser::TokenFunc8183,  },
+	{x64Token::EOT }
+};
 x64Token x64Parser::tokenBranches8181[] = {
-	{x64Token::NUMBER, 5, 1, 0, NULL,&x64Parser::TokenFunc8182,  },
+	{x64Token::TOKEN, 10, 0, 1, NULL, NULL, x64Parser::tokenBranches8182 },
 	{x64Token::EOT }
 };
 x64Token x64Parser::tokenBranches8180[] = {
-	{x64Token::TOKEN, 10, 0, 1, NULL, NULL, x64Parser::tokenBranches8181 },
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8181 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8179[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8180 },
-	{x64Token::EOT }
-};
-Coding x64Parser::tokenCoding8186_15[] = {
+Coding x64Parser::tokenCoding8187_15[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8186_16[] = {
+Coding x64Parser::tokenCoding8187_16[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8186_17[] = {
+Coding x64Parser::tokenCoding8187_17[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8186_18[] = {
+Coding x64Parser::tokenCoding8187_18[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 132, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-void x64Parser::TokenFunc8186(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8187(x64Operand &operand, int tokenPos)
 {
 	operand.values[19] = new Coding[2];
 	CleanupValues.push_back(operand.values[19]);
@@ -33337,32 +33337,32 @@ void x64Parser::TokenFunc8186(x64Operand &operand, int tokenPos)
 	operand.values[19]->unary = 0;
 	operand.values[19]->binary = 0;
 	operand.values[19][1].type = Coding::eot;
-	operand.values[15] = tokenCoding8186_15;
-	operand.values[16] = tokenCoding8186_16;
-	operand.values[17] = tokenCoding8186_17;
-	operand.values[18] = tokenCoding8186_18;
+	operand.values[15] = tokenCoding8187_15;
+	operand.values[16] = tokenCoding8187_16;
+	operand.values[17] = tokenCoding8187_17;
+	operand.values[18] = tokenCoding8187_18;
 }
-Coding x64Parser::tokenCoding8190_15[] = {
+Coding x64Parser::tokenCoding8191_15[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8190_16[] = {
+Coding x64Parser::tokenCoding8191_16[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8190_22[] = {
+Coding x64Parser::tokenCoding8191_22[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 64, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8190_17[] = {
+Coding x64Parser::tokenCoding8191_17[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8190_18[] = {
+Coding x64Parser::tokenCoding8191_18[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 132, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-void x64Parser::TokenFunc8190(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8191(x64Operand &operand, int tokenPos)
 {
 	operand.values[19] = new Coding[2];
 	CleanupValues.push_back(operand.values[19]);
@@ -33373,43 +33373,43 @@ void x64Parser::TokenFunc8190(x64Operand &operand, int tokenPos)
 	operand.values[19]->unary = 0;
 	operand.values[19]->binary = 0;
 	operand.values[19][1].type = Coding::eot;
-	operand.values[15] = tokenCoding8190_15;
-	operand.values[16] = tokenCoding8190_16;
-	operand.values[22] = tokenCoding8190_22;
-	operand.values[17] = tokenCoding8190_17;
-	operand.values[18] = tokenCoding8190_18;
+	operand.values[15] = tokenCoding8191_15;
+	operand.values[16] = tokenCoding8191_16;
+	operand.values[22] = tokenCoding8191_22;
+	operand.values[17] = tokenCoding8191_17;
+	operand.values[18] = tokenCoding8191_18;
 }
+x64Token x64Parser::tokenBranches8186[] = {
+	{x64Token::REGISTERCLASS, 1, 1, 0, NULL,&x64Parser::TokenFunc8187,  },
+	{x64Token::REGISTERCLASS, 14, 1, 0, NULL,&x64Parser::TokenFunc8191,  },
+	{x64Token::EOT }
+};
 x64Token x64Parser::tokenBranches8185[] = {
-	{x64Token::REGISTERCLASS, 1, 1, 0, NULL,&x64Parser::TokenFunc8186,  },
-	{x64Token::REGISTERCLASS, 14, 1, 0, NULL,&x64Parser::TokenFunc8190,  },
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8186 },
 	{x64Token::EOT }
 };
 x64Token x64Parser::tokenBranches8184[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8185 },
+	{x64Token::ADDRESSCLASS, 1, 0, 0, NULL, NULL, x64Parser::tokenBranches8185 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8183[] = {
-	{x64Token::ADDRESSCLASS, 1, 0, 0, NULL, NULL, x64Parser::tokenBranches8184 },
-	{x64Token::EOT }
-};
-Coding x64Parser::tokenCoding8194_15[] = {
+Coding x64Parser::tokenCoding8195_15[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8194_16[] = {
+Coding x64Parser::tokenCoding8195_16[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8194_17[] = {
+Coding x64Parser::tokenCoding8195_17[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8194_18[] = {
+Coding x64Parser::tokenCoding8195_18[] = {
 	{ CODING_NAME("modreg")  Coding::stateFunc, 3 },
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::valSpecified), 133, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-void x64Parser::TokenFunc8194(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8195(x64Operand &operand, int tokenPos)
 {
 	operand.values[19] = new Coding[2];
 	CleanupValues.push_back(operand.values[19]);
@@ -33420,41 +33420,41 @@ void x64Parser::TokenFunc8194(x64Operand &operand, int tokenPos)
 	operand.values[19]->unary = 0;
 	operand.values[19]->binary = 0;
 	operand.values[19][1].type = Coding::eot;
-	operand.values[15] = tokenCoding8194_15;
-	operand.values[16] = tokenCoding8194_16;
-	operand.values[17] = tokenCoding8194_17;
-	operand.values[18] = tokenCoding8194_18;
+	operand.values[15] = tokenCoding8195_15;
+	operand.values[16] = tokenCoding8195_16;
+	operand.values[17] = tokenCoding8195_17;
+	operand.values[18] = tokenCoding8195_18;
 }
+x64Token x64Parser::tokenBranches8194[] = {
+	{x64Token::REGISTERCLASS, 4, 1, 0, NULL,&x64Parser::TokenFunc8195,  },
+	{x64Token::EOT }
+};
 x64Token x64Parser::tokenBranches8193[] = {
-	{x64Token::REGISTERCLASS, 4, 1, 0, NULL,&x64Parser::TokenFunc8194,  },
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8194 },
 	{x64Token::EOT }
 };
 x64Token x64Parser::tokenBranches8192[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8193 },
+	{x64Token::ADDRESSCLASS, 1, 0, 0, NULL, NULL, x64Parser::tokenBranches8193 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8191[] = {
-	{x64Token::ADDRESSCLASS, 1, 0, 0, NULL, NULL, x64Parser::tokenBranches8192 },
-	{x64Token::EOT }
-};
-Coding x64Parser::tokenCoding8198_15[] = {
+Coding x64Parser::tokenCoding8199_15[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8198_16[] = {
+Coding x64Parser::tokenCoding8199_16[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8198_17[] = {
+Coding x64Parser::tokenCoding8199_17[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8198_18[] = {
+Coding x64Parser::tokenCoding8199_18[] = {
 	{ CODING_NAME("modreg")  Coding::stateFunc, 4 },
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::valSpecified), 133, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-void x64Parser::TokenFunc8198(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8199(x64Operand &operand, int tokenPos)
 {
 	operand.values[19] = new Coding[2];
 	CleanupValues.push_back(operand.values[19]);
@@ -33465,41 +33465,41 @@ void x64Parser::TokenFunc8198(x64Operand &operand, int tokenPos)
 	operand.values[19]->unary = 0;
 	operand.values[19]->binary = 0;
 	operand.values[19][1].type = Coding::eot;
-	operand.values[15] = tokenCoding8198_15;
-	operand.values[16] = tokenCoding8198_16;
-	operand.values[17] = tokenCoding8198_17;
-	operand.values[18] = tokenCoding8198_18;
+	operand.values[15] = tokenCoding8199_15;
+	operand.values[16] = tokenCoding8199_16;
+	operand.values[17] = tokenCoding8199_17;
+	operand.values[18] = tokenCoding8199_18;
 }
+x64Token x64Parser::tokenBranches8198[] = {
+	{x64Token::REGISTERCLASS, 7, 1, 0, NULL,&x64Parser::TokenFunc8199,  },
+	{x64Token::EOT }
+};
 x64Token x64Parser::tokenBranches8197[] = {
-	{x64Token::REGISTERCLASS, 7, 1, 0, NULL,&x64Parser::TokenFunc8198,  },
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8198 },
 	{x64Token::EOT }
 };
 x64Token x64Parser::tokenBranches8196[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8197 },
+	{x64Token::ADDRESSCLASS, 1, 0, 0, NULL, NULL, x64Parser::tokenBranches8197 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8195[] = {
-	{x64Token::ADDRESSCLASS, 1, 0, 0, NULL, NULL, x64Parser::tokenBranches8196 },
-	{x64Token::EOT }
-};
-Coding x64Parser::tokenCoding8202_15[] = {
+Coding x64Parser::tokenCoding8203_15[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8202_16[] = {
+Coding x64Parser::tokenCoding8203_16[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8202_17[] = {
+Coding x64Parser::tokenCoding8203_17[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8202_18[] = {
+Coding x64Parser::tokenCoding8203_18[] = {
 	{ CODING_NAME("modreg")  Coding::stateFunc, 5 },
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::valSpecified), 133, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-void x64Parser::TokenFunc8202(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8203(x64Operand &operand, int tokenPos)
 {
 	operand.values[19] = new Coding[2];
 	CleanupValues.push_back(operand.values[19]);
@@ -33510,40 +33510,40 @@ void x64Parser::TokenFunc8202(x64Operand &operand, int tokenPos)
 	operand.values[19]->unary = 0;
 	operand.values[19]->binary = 0;
 	operand.values[19][1].type = Coding::eot;
-	operand.values[15] = tokenCoding8202_15;
-	operand.values[16] = tokenCoding8202_16;
-	operand.values[17] = tokenCoding8202_17;
-	operand.values[18] = tokenCoding8202_18;
+	operand.values[15] = tokenCoding8203_15;
+	operand.values[16] = tokenCoding8203_16;
+	operand.values[17] = tokenCoding8203_17;
+	operand.values[18] = tokenCoding8203_18;
 }
+x64Token x64Parser::tokenBranches8202[] = {
+	{x64Token::REGISTERCLASS, 10, 1, 0, NULL,&x64Parser::TokenFunc8203,  },
+	{x64Token::EOT }
+};
 x64Token x64Parser::tokenBranches8201[] = {
-	{x64Token::REGISTERCLASS, 10, 1, 0, NULL,&x64Parser::TokenFunc8202,  },
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8202 },
 	{x64Token::EOT }
 };
 x64Token x64Parser::tokenBranches8200[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8201 },
+	{x64Token::ADDRESSCLASS, 1, 0, 0, NULL, NULL, x64Parser::tokenBranches8201 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8199[] = {
-	{x64Token::ADDRESSCLASS, 1, 0, 0, NULL, NULL, x64Parser::tokenBranches8200 },
-	{x64Token::EOT }
-};
-Coding x64Parser::tokenCoding8247_15[] = {
+Coding x64Parser::tokenCoding8248_15[] = {
 	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8247_16[] = {
+Coding x64Parser::tokenCoding8248_16[] = {
 	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8247_17[] = {
+Coding x64Parser::tokenCoding8248_17[] = {
 	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8247_18[] = {
+Coding x64Parser::tokenCoding8248_18[] = {
 	{ CODING_NAME("omem")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 246, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-void x64Parser::TokenFunc8247(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8248(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 449;
 	operand.values[21] = new Coding[2];
@@ -33556,32 +33556,32 @@ void x64Parser::TokenFunc8247(x64Operand &operand, int tokenPos)
 	operand.values[21]->binary = 0;
 	operand.values[21][1].type = Coding::eot;
 	operands.push_back(numeric);
-	operand.values[15] = tokenCoding8247_15;
-	operand.values[16] = tokenCoding8247_16;
-	operand.values[17] = tokenCoding8247_17;
-	operand.values[18] = tokenCoding8247_18;
+	operand.values[15] = tokenCoding8248_15;
+	operand.values[16] = tokenCoding8248_16;
+	operand.values[17] = tokenCoding8248_17;
+	operand.values[18] = tokenCoding8248_18;
 }
-x64Token x64Parser::tokenBranches8246[] = {
-	{x64Token::NUMBER, 3, 1, 0, NULL,&x64Parser::TokenFunc8247,  },
+x64Token x64Parser::tokenBranches8247[] = {
+	{x64Token::NUMBER, 3, 1, 0, NULL,&x64Parser::TokenFunc8248,  },
 	{x64Token::EOT }
 };
-Coding x64Parser::tokenCoding8205_15[] = {
+Coding x64Parser::tokenCoding8206_15[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8205_16[] = {
+Coding x64Parser::tokenCoding8206_16[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8205_17[] = {
+Coding x64Parser::tokenCoding8206_17[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8205_18[] = {
+Coding x64Parser::tokenCoding8206_18[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 132, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-void x64Parser::TokenFunc8205(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8206(x64Operand &operand, int tokenPos)
 {
 	operand.values[19] = new Coding[2];
 	CleanupValues.push_back(operand.values[19]);
@@ -33592,32 +33592,32 @@ void x64Parser::TokenFunc8205(x64Operand &operand, int tokenPos)
 	operand.values[19]->unary = 0;
 	operand.values[19]->binary = 0;
 	operand.values[19][1].type = Coding::eot;
-	operand.values[15] = tokenCoding8205_15;
-	operand.values[16] = tokenCoding8205_16;
-	operand.values[17] = tokenCoding8205_17;
-	operand.values[18] = tokenCoding8205_18;
+	operand.values[15] = tokenCoding8206_15;
+	operand.values[16] = tokenCoding8206_16;
+	operand.values[17] = tokenCoding8206_17;
+	operand.values[18] = tokenCoding8206_18;
 }
-Coding x64Parser::tokenCoding8211_15[] = {
+Coding x64Parser::tokenCoding8212_15[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8211_16[] = {
+Coding x64Parser::tokenCoding8212_16[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8211_22[] = {
+Coding x64Parser::tokenCoding8212_22[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 64, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8211_17[] = {
+Coding x64Parser::tokenCoding8212_17[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8211_18[] = {
+Coding x64Parser::tokenCoding8212_18[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 132, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-void x64Parser::TokenFunc8211(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8212(x64Operand &operand, int tokenPos)
 {
 	operand.values[19] = new Coding[2];
 	CleanupValues.push_back(operand.values[19]);
@@ -33628,43 +33628,43 @@ void x64Parser::TokenFunc8211(x64Operand &operand, int tokenPos)
 	operand.values[19]->unary = 0;
 	operand.values[19]->binary = 0;
 	operand.values[19][1].type = Coding::eot;
-	operand.values[15] = tokenCoding8211_15;
-	operand.values[16] = tokenCoding8211_16;
-	operand.values[22] = tokenCoding8211_22;
-	operand.values[17] = tokenCoding8211_17;
-	operand.values[18] = tokenCoding8211_18;
+	operand.values[15] = tokenCoding8212_15;
+	operand.values[16] = tokenCoding8212_16;
+	operand.values[22] = tokenCoding8212_22;
+	operand.values[17] = tokenCoding8212_17;
+	operand.values[18] = tokenCoding8212_18;
 }
+x64Token x64Parser::tokenBranches8205[] = {
+	{x64Token::REGISTERCLASS, 1, 1, 0, NULL,&x64Parser::TokenFunc8206,  },
+	{x64Token::REGISTERCLASS, 14, 1, 0, NULL,&x64Parser::TokenFunc8212,  },
+	{x64Token::TOKEN, 11, 0, 1, NULL, NULL, x64Parser::tokenBranches8247 },
+	{x64Token::EOT }
+};
 x64Token x64Parser::tokenBranches8204[] = {
-	{x64Token::REGISTERCLASS, 1, 1, 0, NULL,&x64Parser::TokenFunc8205,  },
-	{x64Token::REGISTERCLASS, 14, 1, 0, NULL,&x64Parser::TokenFunc8211,  },
-	{x64Token::TOKEN, 11, 0, 1, NULL, NULL, x64Parser::tokenBranches8246 },
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8205 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8203[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8204 },
-	{x64Token::EOT }
-};
-Coding x64Parser::tokenCoding8208_15[] = {
+Coding x64Parser::tokenCoding8209_15[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8208_16[] = {
+Coding x64Parser::tokenCoding8209_16[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8208_22[] = {
+Coding x64Parser::tokenCoding8209_22[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 64, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8208_17[] = {
+Coding x64Parser::tokenCoding8209_17[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8208_18[] = {
+Coding x64Parser::tokenCoding8209_18[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 132, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-void x64Parser::TokenFunc8208(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8209(x64Operand &operand, int tokenPos)
 {
 	operand.values[19] = new Coding[2];
 	CleanupValues.push_back(operand.values[19]);
@@ -33675,33 +33675,33 @@ void x64Parser::TokenFunc8208(x64Operand &operand, int tokenPos)
 	operand.values[19]->unary = 0;
 	operand.values[19]->binary = 0;
 	operand.values[19][1].type = Coding::eot;
-	operand.values[15] = tokenCoding8208_15;
-	operand.values[16] = tokenCoding8208_16;
-	operand.values[22] = tokenCoding8208_22;
-	operand.values[17] = tokenCoding8208_17;
-	operand.values[18] = tokenCoding8208_18;
+	operand.values[15] = tokenCoding8209_15;
+	operand.values[16] = tokenCoding8209_16;
+	operand.values[22] = tokenCoding8209_22;
+	operand.values[17] = tokenCoding8209_17;
+	operand.values[18] = tokenCoding8209_18;
 }
-Coding x64Parser::tokenCoding8214_15[] = {
+Coding x64Parser::tokenCoding8215_15[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8214_16[] = {
+Coding x64Parser::tokenCoding8215_16[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8214_22[] = {
+Coding x64Parser::tokenCoding8215_22[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 64, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8214_17[] = {
+Coding x64Parser::tokenCoding8215_17[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8214_18[] = {
+Coding x64Parser::tokenCoding8215_18[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 132, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-void x64Parser::TokenFunc8214(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8215(x64Operand &operand, int tokenPos)
 {
 	operand.values[19] = new Coding[2];
 	CleanupValues.push_back(operand.values[19]);
@@ -33712,39 +33712,39 @@ void x64Parser::TokenFunc8214(x64Operand &operand, int tokenPos)
 	operand.values[19]->unary = 0;
 	operand.values[19]->binary = 0;
 	operand.values[19][1].type = Coding::eot;
-	operand.values[15] = tokenCoding8214_15;
-	operand.values[16] = tokenCoding8214_16;
-	operand.values[22] = tokenCoding8214_22;
-	operand.values[17] = tokenCoding8214_17;
-	operand.values[18] = tokenCoding8214_18;
+	operand.values[15] = tokenCoding8215_15;
+	operand.values[16] = tokenCoding8215_16;
+	operand.values[22] = tokenCoding8215_22;
+	operand.values[17] = tokenCoding8215_17;
+	operand.values[18] = tokenCoding8215_18;
 }
+x64Token x64Parser::tokenBranches8208[] = {
+	{x64Token::REGISTERCLASS, 1, 1, 0, NULL,&x64Parser::TokenFunc8209,  },
+	{x64Token::REGISTERCLASS, 14, 1, 0, NULL,&x64Parser::TokenFunc8215,  },
+	{x64Token::EOT }
+};
 x64Token x64Parser::tokenBranches8207[] = {
-	{x64Token::REGISTERCLASS, 1, 1, 0, NULL,&x64Parser::TokenFunc8208,  },
-	{x64Token::REGISTERCLASS, 14, 1, 0, NULL,&x64Parser::TokenFunc8214,  },
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8208 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8206[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8207 },
-	{x64Token::EOT }
-};
-Coding x64Parser::tokenCoding8251_15[] = {
+Coding x64Parser::tokenCoding8252_15[] = {
 	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8251_16[] = {
+Coding x64Parser::tokenCoding8252_16[] = {
 	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8251_17[] = {
+Coding x64Parser::tokenCoding8252_17[] = {
 	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8251_18[] = {
+Coding x64Parser::tokenCoding8252_18[] = {
 	{ CODING_NAME("omem")  Coding::stateFunc, 3 },
 	{ CODING_NAME("omem")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 247, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-void x64Parser::TokenFunc8251(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8252(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 512;
 	operand.values[21] = new Coding[2];
@@ -33757,33 +33757,33 @@ void x64Parser::TokenFunc8251(x64Operand &operand, int tokenPos)
 	operand.values[21]->binary = 0;
 	operand.values[21][1].type = Coding::eot;
 	operands.push_back(numeric);
-	operand.values[15] = tokenCoding8251_15;
-	operand.values[16] = tokenCoding8251_16;
-	operand.values[17] = tokenCoding8251_17;
-	operand.values[18] = tokenCoding8251_18;
+	operand.values[15] = tokenCoding8252_15;
+	operand.values[16] = tokenCoding8252_16;
+	operand.values[17] = tokenCoding8252_17;
+	operand.values[18] = tokenCoding8252_18;
 }
-x64Token x64Parser::tokenBranches8250[] = {
-	{x64Token::NUMBER, 4, 1, 0, NULL,&x64Parser::TokenFunc8251,  },
+x64Token x64Parser::tokenBranches8251[] = {
+	{x64Token::NUMBER, 4, 1, 0, NULL,&x64Parser::TokenFunc8252,  },
 	{x64Token::EOT }
 };
-Coding x64Parser::tokenCoding8217_15[] = {
+Coding x64Parser::tokenCoding8218_15[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8217_16[] = {
+Coding x64Parser::tokenCoding8218_16[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8217_17[] = {
+Coding x64Parser::tokenCoding8218_17[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8217_18[] = {
+Coding x64Parser::tokenCoding8218_18[] = {
 	{ CODING_NAME("modreg")  Coding::stateFunc, 3 },
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::valSpecified), 133, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-void x64Parser::TokenFunc8217(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8218(x64Operand &operand, int tokenPos)
 {
 	operand.values[19] = new Coding[2];
 	CleanupValues.push_back(operand.values[19]);
@@ -33794,38 +33794,38 @@ void x64Parser::TokenFunc8217(x64Operand &operand, int tokenPos)
 	operand.values[19]->unary = 0;
 	operand.values[19]->binary = 0;
 	operand.values[19][1].type = Coding::eot;
-	operand.values[15] = tokenCoding8217_15;
-	operand.values[16] = tokenCoding8217_16;
-	operand.values[17] = tokenCoding8217_17;
-	operand.values[18] = tokenCoding8217_18;
+	operand.values[15] = tokenCoding8218_15;
+	operand.values[16] = tokenCoding8218_16;
+	operand.values[17] = tokenCoding8218_17;
+	operand.values[18] = tokenCoding8218_18;
 }
+x64Token x64Parser::tokenBranches8217[] = {
+	{x64Token::REGISTERCLASS, 4, 1, 0, NULL,&x64Parser::TokenFunc8218,  },
+	{x64Token::TOKEN, 8, 0, 1, NULL, NULL, x64Parser::tokenBranches8251 },
+	{x64Token::EOT }
+};
 x64Token x64Parser::tokenBranches8216[] = {
-	{x64Token::REGISTERCLASS, 4, 1, 0, NULL,&x64Parser::TokenFunc8217,  },
-	{x64Token::TOKEN, 8, 0, 1, NULL, NULL, x64Parser::tokenBranches8250 },
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8217 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8215[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8216 },
-	{x64Token::EOT }
-};
-Coding x64Parser::tokenCoding8255_15[] = {
+Coding x64Parser::tokenCoding8256_15[] = {
 	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8255_16[] = {
+Coding x64Parser::tokenCoding8256_16[] = {
 	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8255_17[] = {
+Coding x64Parser::tokenCoding8256_17[] = {
 	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8255_18[] = {
+Coding x64Parser::tokenCoding8256_18[] = {
 	{ CODING_NAME("omem")  Coding::stateFunc, 4 },
 	{ CODING_NAME("omem")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 247, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-void x64Parser::TokenFunc8255(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8256(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 513;
 	operand.values[21] = new Coding[2];
@@ -33838,33 +33838,33 @@ void x64Parser::TokenFunc8255(x64Operand &operand, int tokenPos)
 	operand.values[21]->binary = 0;
 	operand.values[21][1].type = Coding::eot;
 	operands.push_back(numeric);
-	operand.values[15] = tokenCoding8255_15;
-	operand.values[16] = tokenCoding8255_16;
-	operand.values[17] = tokenCoding8255_17;
-	operand.values[18] = tokenCoding8255_18;
+	operand.values[15] = tokenCoding8256_15;
+	operand.values[16] = tokenCoding8256_16;
+	operand.values[17] = tokenCoding8256_17;
+	operand.values[18] = tokenCoding8256_18;
 }
-x64Token x64Parser::tokenBranches8254[] = {
-	{x64Token::NUMBER, 5, 1, 0, NULL,&x64Parser::TokenFunc8255,  },
+x64Token x64Parser::tokenBranches8255[] = {
+	{x64Token::NUMBER, 5, 1, 0, NULL,&x64Parser::TokenFunc8256,  },
 	{x64Token::EOT }
 };
-Coding x64Parser::tokenCoding8220_15[] = {
+Coding x64Parser::tokenCoding8221_15[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8220_16[] = {
+Coding x64Parser::tokenCoding8221_16[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8220_17[] = {
+Coding x64Parser::tokenCoding8221_17[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8220_18[] = {
+Coding x64Parser::tokenCoding8221_18[] = {
 	{ CODING_NAME("modreg")  Coding::stateFunc, 4 },
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::valSpecified), 133, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-void x64Parser::TokenFunc8220(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8221(x64Operand &operand, int tokenPos)
 {
 	operand.values[19] = new Coding[2];
 	CleanupValues.push_back(operand.values[19]);
@@ -33875,38 +33875,38 @@ void x64Parser::TokenFunc8220(x64Operand &operand, int tokenPos)
 	operand.values[19]->unary = 0;
 	operand.values[19]->binary = 0;
 	operand.values[19][1].type = Coding::eot;
-	operand.values[15] = tokenCoding8220_15;
-	operand.values[16] = tokenCoding8220_16;
-	operand.values[17] = tokenCoding8220_17;
-	operand.values[18] = tokenCoding8220_18;
+	operand.values[15] = tokenCoding8221_15;
+	operand.values[16] = tokenCoding8221_16;
+	operand.values[17] = tokenCoding8221_17;
+	operand.values[18] = tokenCoding8221_18;
 }
+x64Token x64Parser::tokenBranches8220[] = {
+	{x64Token::REGISTERCLASS, 7, 1, 0, NULL,&x64Parser::TokenFunc8221,  },
+	{x64Token::TOKEN, 9, 0, 1, NULL, NULL, x64Parser::tokenBranches8255 },
+	{x64Token::EOT }
+};
 x64Token x64Parser::tokenBranches8219[] = {
-	{x64Token::REGISTERCLASS, 7, 1, 0, NULL,&x64Parser::TokenFunc8220,  },
-	{x64Token::TOKEN, 9, 0, 1, NULL, NULL, x64Parser::tokenBranches8254 },
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8220 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8218[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8219 },
-	{x64Token::EOT }
-};
-Coding x64Parser::tokenCoding8259_15[] = {
+Coding x64Parser::tokenCoding8260_15[] = {
 	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8259_16[] = {
+Coding x64Parser::tokenCoding8260_16[] = {
 	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 8, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8259_17[] = {
+Coding x64Parser::tokenCoding8260_17[] = {
 	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8259_18[] = {
+Coding x64Parser::tokenCoding8260_18[] = {
 	{ CODING_NAME("omem")  Coding::stateFunc, 5 },
 	{ CODING_NAME("omem")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 247, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-void x64Parser::TokenFunc8259(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8260(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 513;
 	operand.values[21] = new Coding[2];
@@ -33919,442 +33919,31 @@ void x64Parser::TokenFunc8259(x64Operand &operand, int tokenPos)
 	operand.values[21]->binary = 0;
 	operand.values[21][1].type = Coding::eot;
 	operands.push_back(numeric);
-	operand.values[15] = tokenCoding8259_15;
-	operand.values[16] = tokenCoding8259_16;
-	operand.values[17] = tokenCoding8259_17;
-	operand.values[18] = tokenCoding8259_18;
+	operand.values[15] = tokenCoding8260_15;
+	operand.values[16] = tokenCoding8260_16;
+	operand.values[17] = tokenCoding8260_17;
+	operand.values[18] = tokenCoding8260_18;
 }
-x64Token x64Parser::tokenBranches8258[] = {
-	{x64Token::NUMBER, 5, 1, 0, NULL,&x64Parser::TokenFunc8259,  },
+x64Token x64Parser::tokenBranches8259[] = {
+	{x64Token::NUMBER, 5, 1, 0, NULL,&x64Parser::TokenFunc8260,  },
 	{x64Token::EOT }
 };
-Coding x64Parser::tokenCoding8223_15[] = {
+Coding x64Parser::tokenCoding8224_15[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8223_16[] = {
+Coding x64Parser::tokenCoding8224_16[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8223_17[] = {
+Coding x64Parser::tokenCoding8224_17[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8223_18[] = {
+Coding x64Parser::tokenCoding8224_18[] = {
 	{ CODING_NAME("modreg")  Coding::stateFunc, 5 },
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::valSpecified), 133, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
-};
-void x64Parser::TokenFunc8223(x64Operand &operand, int tokenPos)
-{
-	operand.values[19] = new Coding[2];
-	CleanupValues.push_back(operand.values[19]);
-	operand.values[19]->type = Coding::reg;
-	operand.values[19]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[19]->bits = 0;
-	operand.values[19]->field = 0;
-	operand.values[19]->unary = 0;
-	operand.values[19]->binary = 0;
-	operand.values[19][1].type = Coding::eot;
-	operand.values[15] = tokenCoding8223_15;
-	operand.values[16] = tokenCoding8223_16;
-	operand.values[17] = tokenCoding8223_17;
-	operand.values[18] = tokenCoding8223_18;
-}
-x64Token x64Parser::tokenBranches8222[] = {
-	{x64Token::REGISTERCLASS, 10, 1, 0, NULL,&x64Parser::TokenFunc8223,  },
-	{x64Token::TOKEN, 10, 0, 1, NULL, NULL, x64Parser::tokenBranches8258 },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8221[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8222 },
-	{x64Token::EOT }
-};
-Coding x64Parser::tokenCoding8227_15[] = {
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8227_16[] = {
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8227_17[] = {
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8227_18[] = {
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 132, 8, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-void x64Parser::TokenFunc8227(x64Operand &operand, int tokenPos)
-{
-	operand.values[15] = tokenCoding8227_15;
-	operand.values[16] = tokenCoding8227_16;
-	operand.values[17] = tokenCoding8227_17;
-	operand.values[18] = tokenCoding8227_18;
-}
-x64Token x64Parser::tokenBranches8226[] = {
-	{x64Token::ADDRESSCLASS, 1, 1, 0, NULL,&x64Parser::TokenFunc8227,  },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8225[] = {
-	{x64Token::TOKEN, 11, 0, 1, NULL, NULL, x64Parser::tokenBranches8226 },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8224[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8225 },
-	{x64Token::EOT }
-};
-Coding x64Parser::tokenCoding8231_15[] = {
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8231_16[] = {
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8231_22[] = {
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 64, 8, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8231_17[] = {
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8231_18[] = {
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 132, 8, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-void x64Parser::TokenFunc8231(x64Operand &operand, int tokenPos)
-{
-	operand.values[15] = tokenCoding8231_15;
-	operand.values[16] = tokenCoding8231_16;
-	operand.values[22] = tokenCoding8231_22;
-	operand.values[17] = tokenCoding8231_17;
-	operand.values[18] = tokenCoding8231_18;
-}
-x64Token x64Parser::tokenBranches8230[] = {
-	{x64Token::ADDRESSCLASS, 1, 1, 0, NULL,&x64Parser::TokenFunc8231,  },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8229[] = {
-	{x64Token::TOKEN, 11, 0, 1, NULL, NULL, x64Parser::tokenBranches8230 },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8228[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8229 },
-	{x64Token::EOT }
-};
-Coding x64Parser::tokenCoding8235_15[] = {
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8235_16[] = {
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8235_17[] = {
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8235_18[] = {
-	{ CODING_NAME("rm")  Coding::stateFunc, 3 },
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::valSpecified), 133, 0, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-void x64Parser::TokenFunc8235(x64Operand &operand, int tokenPos)
-{
-	operand.values[15] = tokenCoding8235_15;
-	operand.values[16] = tokenCoding8235_16;
-	operand.values[17] = tokenCoding8235_17;
-	operand.values[18] = tokenCoding8235_18;
-}
-x64Token x64Parser::tokenBranches8234[] = {
-	{x64Token::ADDRESSCLASS, 1, 1, 0, NULL,&x64Parser::TokenFunc8235,  },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8233[] = {
-	{x64Token::TOKEN, 8, 0, 1, NULL, NULL, x64Parser::tokenBranches8234 },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8232[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8233 },
-	{x64Token::EOT }
-};
-Coding x64Parser::tokenCoding8239_15[] = {
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8239_16[] = {
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8239_17[] = {
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8239_18[] = {
-	{ CODING_NAME("rm")  Coding::stateFunc, 4 },
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::valSpecified), 133, 0, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-void x64Parser::TokenFunc8239(x64Operand &operand, int tokenPos)
-{
-	operand.values[15] = tokenCoding8239_15;
-	operand.values[16] = tokenCoding8239_16;
-	operand.values[17] = tokenCoding8239_17;
-	operand.values[18] = tokenCoding8239_18;
-}
-x64Token x64Parser::tokenBranches8238[] = {
-	{x64Token::ADDRESSCLASS, 1, 1, 0, NULL,&x64Parser::TokenFunc8239,  },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8237[] = {
-	{x64Token::TOKEN, 9, 0, 1, NULL, NULL, x64Parser::tokenBranches8238 },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8236[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8237 },
-	{x64Token::EOT }
-};
-Coding x64Parser::tokenCoding8243_15[] = {
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8243_16[] = {
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8243_17[] = {
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8243_18[] = {
-	{ CODING_NAME("rm")  Coding::stateFunc, 5 },
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::valSpecified), 133, 0, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-void x64Parser::TokenFunc8243(x64Operand &operand, int tokenPos)
-{
-	operand.values[15] = tokenCoding8243_15;
-	operand.values[16] = tokenCoding8243_16;
-	operand.values[17] = tokenCoding8243_17;
-	operand.values[18] = tokenCoding8243_18;
-}
-x64Token x64Parser::tokenBranches8242[] = {
-	{x64Token::ADDRESSCLASS, 1, 1, 0, NULL,&x64Parser::TokenFunc8243,  },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8241[] = {
-	{x64Token::TOKEN, 10, 0, 1, NULL, NULL, x64Parser::tokenBranches8242 },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8240[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8241 },
-	{x64Token::EOT }
-};
-Coding x64Parser::tokenCoding8264_15[] = {
-	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8264_16[] = {
-	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8264_17[] = {
-	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8264_18[] = {
-	{ CODING_NAME("omem")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 246, 8, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-void x64Parser::TokenFunc8264(x64Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 449;
-	operand.values[21] = new Coding[2];
-	CleanupValues.push_back(operand.values[21]);
-	operand.values[21]->type = Coding::number;
-	operand.values[21]->val = operands.size();
-	operand.values[21]->bits = 0;
-	operand.values[21]->field = 0;
-	operand.values[21]->unary = 0;
-	operand.values[21]->binary = 0;
-	operand.values[21][1].type = Coding::eot;
-	operands.push_back(numeric);
-	operand.values[15] = tokenCoding8264_15;
-	operand.values[16] = tokenCoding8264_16;
-	operand.values[17] = tokenCoding8264_17;
-	operand.values[18] = tokenCoding8264_18;
-}
-x64Token x64Parser::tokenBranches8263[] = {
-	{x64Token::NUMBER, 3, 1, 0, NULL,&x64Parser::TokenFunc8264,  },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8262[] = {
-	{x64Token::TOKEN, 11, 0, 1, NULL, NULL, x64Parser::tokenBranches8263 },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8261[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8262 },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8260[] = {
-	{x64Token::ADDRESSCLASS, 1, 0, 0, NULL, NULL, x64Parser::tokenBranches8261 },
-	{x64Token::EOT }
-};
-Coding x64Parser::tokenCoding8269_15[] = {
-	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8269_16[] = {
-	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8269_17[] = {
-	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8269_18[] = {
-	{ CODING_NAME("omem")  Coding::stateFunc, 3 },
-	{ CODING_NAME("omem")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 247, 8, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-void x64Parser::TokenFunc8269(x64Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 512;
-	operand.values[21] = new Coding[2];
-	CleanupValues.push_back(operand.values[21]);
-	operand.values[21]->type = Coding::number;
-	operand.values[21]->val = operands.size();
-	operand.values[21]->bits = 0;
-	operand.values[21]->field = 0;
-	operand.values[21]->unary = 0;
-	operand.values[21]->binary = 0;
-	operand.values[21][1].type = Coding::eot;
-	operands.push_back(numeric);
-	operand.values[15] = tokenCoding8269_15;
-	operand.values[16] = tokenCoding8269_16;
-	operand.values[17] = tokenCoding8269_17;
-	operand.values[18] = tokenCoding8269_18;
-}
-x64Token x64Parser::tokenBranches8268[] = {
-	{x64Token::NUMBER, 4, 1, 0, NULL,&x64Parser::TokenFunc8269,  },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8267[] = {
-	{x64Token::TOKEN, 8, 0, 1, NULL, NULL, x64Parser::tokenBranches8268 },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8266[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8267 },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8265[] = {
-	{x64Token::ADDRESSCLASS, 1, 0, 0, NULL, NULL, x64Parser::tokenBranches8266 },
-	{x64Token::EOT }
-};
-Coding x64Parser::tokenCoding8274_15[] = {
-	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8274_16[] = {
-	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8274_17[] = {
-	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8274_18[] = {
-	{ CODING_NAME("omem")  Coding::stateFunc, 4 },
-	{ CODING_NAME("omem")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 247, 8, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-void x64Parser::TokenFunc8274(x64Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 513;
-	operand.values[21] = new Coding[2];
-	CleanupValues.push_back(operand.values[21]);
-	operand.values[21]->type = Coding::number;
-	operand.values[21]->val = operands.size();
-	operand.values[21]->bits = 0;
-	operand.values[21]->field = 0;
-	operand.values[21]->unary = 0;
-	operand.values[21]->binary = 0;
-	operand.values[21][1].type = Coding::eot;
-	operands.push_back(numeric);
-	operand.values[15] = tokenCoding8274_15;
-	operand.values[16] = tokenCoding8274_16;
-	operand.values[17] = tokenCoding8274_17;
-	operand.values[18] = tokenCoding8274_18;
-}
-x64Token x64Parser::tokenBranches8273[] = {
-	{x64Token::NUMBER, 5, 1, 0, NULL,&x64Parser::TokenFunc8274,  },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8272[] = {
-	{x64Token::TOKEN, 9, 0, 1, NULL, NULL, x64Parser::tokenBranches8273 },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8271[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8272 },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8270[] = {
-	{x64Token::ADDRESSCLASS, 1, 0, 0, NULL, NULL, x64Parser::tokenBranches8271 },
-	{x64Token::EOT }
-};
-Coding x64Parser::tokenCoding8279_15[] = {
-	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8279_16[] = {
-	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 8, 0, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8279_17[] = {
-	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8279_18[] = {
-	{ CODING_NAME("omem")  Coding::stateFunc, 5 },
-	{ CODING_NAME("omem")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 247, 8, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-void x64Parser::TokenFunc8279(x64Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 513;
-	operand.values[21] = new Coding[2];
-	CleanupValues.push_back(operand.values[21]);
-	operand.values[21]->type = Coding::number;
-	operand.values[21]->val = operands.size();
-	operand.values[21]->bits = 0;
-	operand.values[21]->field = 0;
-	operand.values[21]->unary = 0;
-	operand.values[21]->binary = 0;
-	operand.values[21][1].type = Coding::eot;
-	operands.push_back(numeric);
-	operand.values[15] = tokenCoding8279_15;
-	operand.values[16] = tokenCoding8279_16;
-	operand.values[17] = tokenCoding8279_17;
-	operand.values[18] = tokenCoding8279_18;
-}
-x64Token x64Parser::tokenBranches8278[] = {
-	{x64Token::NUMBER, 5, 1, 0, NULL,&x64Parser::TokenFunc8279,  },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8277[] = {
-	{x64Token::TOKEN, 10, 0, 1, NULL, NULL, x64Parser::tokenBranches8278 },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8276[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8277 },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8275[] = {
-	{x64Token::ADDRESSCLASS, 1, 0, 0, NULL, NULL, x64Parser::tokenBranches8276 },
-	{x64Token::EOT }
 };
 void x64Parser::TokenFunc8224(x64Operand &operand, int tokenPos)
 {
@@ -34367,643 +33956,407 @@ void x64Parser::TokenFunc8224(x64Operand &operand, int tokenPos)
 	operand.values[19]->unary = 0;
 	operand.values[19]->binary = 0;
 	operand.values[19][1].type = Coding::eot;
+	operand.values[15] = tokenCoding8224_15;
+	operand.values[16] = tokenCoding8224_16;
+	operand.values[17] = tokenCoding8224_17;
+	operand.values[18] = tokenCoding8224_18;
 }
+x64Token x64Parser::tokenBranches8223[] = {
+	{x64Token::REGISTERCLASS, 10, 1, 0, NULL,&x64Parser::TokenFunc8224,  },
+	{x64Token::TOKEN, 10, 0, 1, NULL, NULL, x64Parser::tokenBranches8259 },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8222[] = {
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8223 },
+	{x64Token::EOT }
+};
+Coding x64Parser::tokenCoding8228_15[] = {
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8228_16[] = {
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8228_17[] = {
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8228_18[] = {
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 132, 8, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
 void x64Parser::TokenFunc8228(x64Operand &operand, int tokenPos)
 {
-	operand.values[19] = new Coding[2];
-	CleanupValues.push_back(operand.values[19]);
-	operand.values[19]->type = Coding::reg;
-	operand.values[19]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[19]->bits = 0;
-	operand.values[19]->field = 0;
-	operand.values[19]->unary = 0;
-	operand.values[19]->binary = 0;
-	operand.values[19][1].type = Coding::eot;
+	operand.values[15] = tokenCoding8228_15;
+	operand.values[16] = tokenCoding8228_16;
+	operand.values[17] = tokenCoding8228_17;
+	operand.values[18] = tokenCoding8228_18;
 }
-void x64Parser::TokenFunc8232(x64Operand &operand, int tokenPos)
-{
-	operand.values[19] = new Coding[2];
-	CleanupValues.push_back(operand.values[19]);
-	operand.values[19]->type = Coding::reg;
-	operand.values[19]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[19]->bits = 0;
-	operand.values[19]->field = 0;
-	operand.values[19]->unary = 0;
-	operand.values[19]->binary = 0;
-	operand.values[19][1].type = Coding::eot;
-}
-void x64Parser::TokenFunc8236(x64Operand &operand, int tokenPos)
-{
-	operand.values[19] = new Coding[2];
-	CleanupValues.push_back(operand.values[19]);
-	operand.values[19]->type = Coding::reg;
-	operand.values[19]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[19]->bits = 0;
-	operand.values[19]->field = 0;
-	operand.values[19]->unary = 0;
-	operand.values[19]->binary = 0;
-	operand.values[19][1].type = Coding::eot;
-}
-void x64Parser::TokenFunc8240(x64Operand &operand, int tokenPos)
-{
-	operand.values[19] = new Coding[2];
-	CleanupValues.push_back(operand.values[19]);
-	operand.values[19]->type = Coding::reg;
-	operand.values[19]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[19]->bits = 0;
-	operand.values[19]->field = 0;
-	operand.values[19]->unary = 0;
-	operand.values[19]->binary = 0;
-	operand.values[19][1].type = Coding::eot;
-}
-x64Token x64Parser::tokenBranches8166[] = {
-	{x64Token::REGISTER, 0, 0, 0, NULL, NULL, x64Parser::tokenBranches8167 },
-	{x64Token::REGISTER, 2, 0, 0, NULL, NULL, x64Parser::tokenBranches8171 },
-	{x64Token::REGISTER, 3, 0, 0, NULL, NULL, x64Parser::tokenBranches8175 },
-	{x64Token::REGISTER, 4, 0, 0, NULL, NULL, x64Parser::tokenBranches8179 },
-	{x64Token::TOKEN, 11, 0, 1, NULL, NULL, x64Parser::tokenBranches8183 },
-	{x64Token::TOKEN, 8, 0, 1, NULL, NULL, x64Parser::tokenBranches8191 },
-	{x64Token::TOKEN, 9, 0, 1, NULL, NULL, x64Parser::tokenBranches8195 },
-	{x64Token::TOKEN, 10, 0, 1, NULL, NULL, x64Parser::tokenBranches8199 },
-	{x64Token::ADDRESSCLASS, 14, 0, 0, NULL, NULL, x64Parser::tokenBranches8203 },
-	{x64Token::ADDRESSCLASS, 15, 0, 0, NULL, NULL, x64Parser::tokenBranches8206 },
-	{x64Token::ADDRESSCLASS, 17, 0, 0, NULL, NULL, x64Parser::tokenBranches8215 },
-	{x64Token::ADDRESSCLASS, 19, 0, 0, NULL, NULL, x64Parser::tokenBranches8218 },
-	{x64Token::ADDRESSCLASS, 21, 0, 0, NULL, NULL, x64Parser::tokenBranches8221 },
-	{x64Token::REGISTERCLASS, 1, 0, 0, NULL,&x64Parser::TokenFunc8224, x64Parser::tokenBranches8224 },
-	{x64Token::REGISTERCLASS, 14, 0, 0, NULL,&x64Parser::TokenFunc8228, x64Parser::tokenBranches8228 },
-	{x64Token::REGISTERCLASS, 4, 0, 0, NULL,&x64Parser::TokenFunc8232, x64Parser::tokenBranches8232 },
-	{x64Token::REGISTERCLASS, 7, 0, 0, NULL,&x64Parser::TokenFunc8236, x64Parser::tokenBranches8236 },
-	{x64Token::REGISTERCLASS, 10, 0, 0, NULL,&x64Parser::TokenFunc8240, x64Parser::tokenBranches8240 },
-	{x64Token::TOKEN, 11, 0, 0, NULL, NULL, x64Parser::tokenBranches8260 },
-	{x64Token::TOKEN, 8, 0, 0, NULL, NULL, x64Parser::tokenBranches8265 },
-	{x64Token::TOKEN, 9, 0, 0, NULL, NULL, x64Parser::tokenBranches8270 },
-	{x64Token::TOKEN, 10, 0, 0, NULL, NULL, x64Parser::tokenBranches8275 },
+x64Token x64Parser::tokenBranches8227[] = {
+	{x64Token::ADDRESSCLASS, 1, 1, 0, NULL,&x64Parser::TokenFunc8228,  },
 	{x64Token::EOT }
 };
-Coding x64Parser::tokenCoding8282_15[] = {
-	{ CODING_NAME("reg")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8282_16[] = {
-	{ CODING_NAME("reg")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8282_17[] = {
-	{ CODING_NAME("reg")  (Coding::Type)(Coding::valSpecified), 4, 0, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8282_18[] = {
-	{ CODING_NAME("reg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("reg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-void x64Parser::TokenFunc8282(x64Operand &operand, int tokenPos)
-{
-	operand.values[15] = tokenCoding8282_15;
-	operand.values[16] = tokenCoding8282_16;
-	operand.values[17] = tokenCoding8282_17;
-	operand.values[18] = tokenCoding8282_18;
-}
-x64Token x64Parser::tokenBranches8281[] = {
-	{x64Token::ADDRESSCLASS, 17, 1, 0, NULL,&x64Parser::TokenFunc8282,  },
+x64Token x64Parser::tokenBranches8226[] = {
+	{x64Token::TOKEN, 11, 0, 1, NULL, NULL, x64Parser::tokenBranches8227 },
 	{x64Token::EOT }
 };
-Coding x64Parser::tokenCoding8284_15[] = {
-	{ CODING_NAME("reg")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8284_16[] = {
-	{ CODING_NAME("reg")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8284_17[] = {
-	{ CODING_NAME("reg")  (Coding::Type)(Coding::valSpecified), 5, 0, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8284_18[] = {
-	{ CODING_NAME("reg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("reg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-void x64Parser::TokenFunc8284(x64Operand &operand, int tokenPos)
-{
-	operand.values[15] = tokenCoding8284_15;
-	operand.values[16] = tokenCoding8284_16;
-	operand.values[17] = tokenCoding8284_17;
-	operand.values[18] = tokenCoding8284_18;
-}
-x64Token x64Parser::tokenBranches8283[] = {
-	{x64Token::ADDRESSCLASS, 17, 1, 0, NULL,&x64Parser::TokenFunc8284,  },
+x64Token x64Parser::tokenBranches8225[] = {
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8226 },
 	{x64Token::EOT }
 };
-Coding x64Parser::tokenCoding8292_15[] = {
-	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8292_16[] = {
-	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8292_17[] = {
-	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8292_18[] = {
-	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 192, 8, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-void x64Parser::TokenFunc8292(x64Operand &operand, int tokenPos)
-{
-	operand.values[19] = new Coding[2];
-	CleanupValues.push_back(operand.values[19]);
-	operand.values[19]->type = Coding::reg;
-	operand.values[19]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[19]->bits = 0;
-	operand.values[19]->field = 0;
-	operand.values[19]->unary = 0;
-	operand.values[19]->binary = 0;
-	operand.values[19][1].type = Coding::eot;
-	operand.values[15] = tokenCoding8292_15;
-	operand.values[16] = tokenCoding8292_16;
-	operand.values[17] = tokenCoding8292_17;
-	operand.values[18] = tokenCoding8292_18;
-}
-Coding x64Parser::tokenCoding8296_15[] = {
-	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8296_16[] = {
-	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8296_22[] = {
-	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 64, 8, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8296_17[] = {
-	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8296_18[] = {
-	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 192, 8, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-void x64Parser::TokenFunc8296(x64Operand &operand, int tokenPos)
-{
-	operand.values[19] = new Coding[2];
-	CleanupValues.push_back(operand.values[19]);
-	operand.values[19]->type = Coding::reg;
-	operand.values[19]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[19]->bits = 0;
-	operand.values[19]->field = 0;
-	operand.values[19]->unary = 0;
-	operand.values[19]->binary = 0;
-	operand.values[19][1].type = Coding::eot;
-	operand.values[15] = tokenCoding8296_15;
-	operand.values[16] = tokenCoding8296_16;
-	operand.values[22] = tokenCoding8296_22;
-	operand.values[17] = tokenCoding8296_17;
-	operand.values[18] = tokenCoding8296_18;
-}
-x64Token x64Parser::tokenBranches8291[] = {
-	{x64Token::REGISTERCLASS, 1, 1, 0, NULL,&x64Parser::TokenFunc8292,  },
-	{x64Token::REGISTERCLASS, 14, 1, 0, NULL,&x64Parser::TokenFunc8296,  },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8290[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8291 },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8289[] = {
-	{x64Token::ADDRESSCLASS, 3, 0, 0, NULL, NULL, x64Parser::tokenBranches8290 },
-	{x64Token::EOT }
-};
-Coding x64Parser::tokenCoding8300_15[] = {
-	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8300_16[] = {
-	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8300_17[] = {
-	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8300_18[] = {
-	{ CODING_NAME("modreg")  Coding::stateFunc, 3 },
-	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 193, 8, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-void x64Parser::TokenFunc8300(x64Operand &operand, int tokenPos)
-{
-	operand.values[19] = new Coding[2];
-	CleanupValues.push_back(operand.values[19]);
-	operand.values[19]->type = Coding::reg;
-	operand.values[19]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[19]->bits = 0;
-	operand.values[19]->field = 0;
-	operand.values[19]->unary = 0;
-	operand.values[19]->binary = 0;
-	operand.values[19][1].type = Coding::eot;
-	operand.values[15] = tokenCoding8300_15;
-	operand.values[16] = tokenCoding8300_16;
-	operand.values[17] = tokenCoding8300_17;
-	operand.values[18] = tokenCoding8300_18;
-}
-x64Token x64Parser::tokenBranches8299[] = {
-	{x64Token::REGISTERCLASS, 4, 1, 0, NULL,&x64Parser::TokenFunc8300,  },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8298[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8299 },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8297[] = {
-	{x64Token::ADDRESSCLASS, 4, 0, 0, NULL, NULL, x64Parser::tokenBranches8298 },
-	{x64Token::EOT }
-};
-Coding x64Parser::tokenCoding8304_15[] = {
-	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8304_16[] = {
-	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8304_17[] = {
-	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8304_18[] = {
-	{ CODING_NAME("modreg")  Coding::stateFunc, 4 },
-	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 193, 8, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-void x64Parser::TokenFunc8304(x64Operand &operand, int tokenPos)
-{
-	operand.values[19] = new Coding[2];
-	CleanupValues.push_back(operand.values[19]);
-	operand.values[19]->type = Coding::reg;
-	operand.values[19]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[19]->bits = 0;
-	operand.values[19]->field = 0;
-	operand.values[19]->unary = 0;
-	operand.values[19]->binary = 0;
-	operand.values[19][1].type = Coding::eot;
-	operand.values[15] = tokenCoding8304_15;
-	operand.values[16] = tokenCoding8304_16;
-	operand.values[17] = tokenCoding8304_17;
-	operand.values[18] = tokenCoding8304_18;
-}
-x64Token x64Parser::tokenBranches8303[] = {
-	{x64Token::REGISTERCLASS, 7, 1, 0, NULL,&x64Parser::TokenFunc8304,  },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8302[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8303 },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8301[] = {
-	{x64Token::ADDRESSCLASS, 5, 0, 0, NULL, NULL, x64Parser::tokenBranches8302 },
-	{x64Token::EOT }
-};
-Coding x64Parser::tokenCoding8308_15[] = {
-	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8308_16[] = {
-	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8308_17[] = {
-	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8308_18[] = {
-	{ CODING_NAME("modreg")  Coding::stateFunc, 5 },
-	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 193, 8, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-void x64Parser::TokenFunc8308(x64Operand &operand, int tokenPos)
-{
-	operand.values[19] = new Coding[2];
-	CleanupValues.push_back(operand.values[19]);
-	operand.values[19]->type = Coding::reg;
-	operand.values[19]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[19]->bits = 0;
-	operand.values[19]->field = 0;
-	operand.values[19]->unary = 0;
-	operand.values[19]->binary = 0;
-	operand.values[19][1].type = Coding::eot;
-	operand.values[15] = tokenCoding8308_15;
-	operand.values[16] = tokenCoding8308_16;
-	operand.values[17] = tokenCoding8308_17;
-	operand.values[18] = tokenCoding8308_18;
-}
-x64Token x64Parser::tokenBranches8307[] = {
-	{x64Token::REGISTERCLASS, 10, 1, 0, NULL,&x64Parser::TokenFunc8308,  },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8306[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8307 },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8305[] = {
-	{x64Token::ADDRESSCLASS, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8306 },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8288[] = {
-	{x64Token::TOKEN, 11, 0, 1, NULL, NULL, x64Parser::tokenBranches8289 },
-	{x64Token::TOKEN, 8, 0, 1, NULL, NULL, x64Parser::tokenBranches8297 },
-	{x64Token::TOKEN, 9, 0, 1, NULL, NULL, x64Parser::tokenBranches8301 },
-	{x64Token::TOKEN, 10, 0, 1, NULL, NULL, x64Parser::tokenBranches8305 },
-	{x64Token::EOT }
-};
-void x64Parser::TokenFunc8312(x64Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 722;
-	operand.values[19] = new Coding[2];
-	CleanupValues.push_back(operand.values[19]);
-	operand.values[19]->type = Coding::reg;
-	operand.values[19]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[19]->bits = 0;
-	operand.values[19]->field = 0;
-	operand.values[19]->unary = 0;
-	operand.values[19]->binary = 0;
-	operand.values[19][1].type = Coding::eot;
-}
-x64Token x64Parser::tokenBranches8311[] = {
-	{x64Token::REGISTERCLASS, 4, 1, 0, NULL,&x64Parser::TokenFunc8312,  },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8310[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8311 },
-	{x64Token::EOT }
-};
-void x64Parser::TokenFunc8315(x64Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 723;
-	operand.values[19] = new Coding[2];
-	CleanupValues.push_back(operand.values[19]);
-	operand.values[19]->type = Coding::reg;
-	operand.values[19]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[19]->bits = 0;
-	operand.values[19]->field = 0;
-	operand.values[19]->unary = 0;
-	operand.values[19]->binary = 0;
-	operand.values[19][1].type = Coding::eot;
-}
-x64Token x64Parser::tokenBranches8314[] = {
-	{x64Token::REGISTERCLASS, 7, 1, 0, NULL,&x64Parser::TokenFunc8315,  },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8313[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8314 },
-	{x64Token::EOT }
-};
-void x64Parser::TokenFunc8318(x64Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 724;
-	operand.values[19] = new Coding[2];
-	CleanupValues.push_back(operand.values[19]);
-	operand.values[19]->type = Coding::reg;
-	operand.values[19]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[19]->bits = 0;
-	operand.values[19]->field = 0;
-	operand.values[19]->unary = 0;
-	operand.values[19]->binary = 0;
-	operand.values[19][1].type = Coding::eot;
-}
-x64Token x64Parser::tokenBranches8317[] = {
-	{x64Token::REGISTERCLASS, 10, 1, 0, NULL,&x64Parser::TokenFunc8318,  },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8316[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8317 },
-	{x64Token::EOT }
-};
-Coding x64Parser::tokenCoding8339_15[] = {
+Coding x64Parser::tokenCoding8232_15[] = {
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8339_16[] = {
+Coding x64Parser::tokenCoding8232_16[] = {
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8339_17[] = {
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8339_18[] = {
-	{ CODING_NAME("rm")  Coding::stateFunc, 3 },
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 135, 8, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-void x64Parser::TokenFunc8339(x64Operand &operand, int tokenPos)
-{
-	operand.values[15] = tokenCoding8339_15;
-	operand.values[16] = tokenCoding8339_16;
-	operand.values[17] = tokenCoding8339_17;
-	operand.values[18] = tokenCoding8339_18;
-}
-x64Token x64Parser::tokenBranches8338[] = {
-	{x64Token::ADDRESSCLASS, 4, 1, 0, NULL,&x64Parser::TokenFunc8339,  },
-	{x64Token::EOT }
-};
-void x64Parser::TokenFunc8321(x64Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 722;
-}
-x64Token x64Parser::tokenBranches8320[] = {
-	{x64Token::REGISTER, 2, 1, 0, NULL,&x64Parser::TokenFunc8321,  },
-	{x64Token::TOKEN, 8, 0, 1, NULL, NULL, x64Parser::tokenBranches8338 },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8319[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8320 },
-	{x64Token::EOT }
-};
-Coding x64Parser::tokenCoding8343_15[] = {
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8343_16[] = {
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8343_17[] = {
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8343_18[] = {
-	{ CODING_NAME("rm")  Coding::stateFunc, 4 },
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 135, 8, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-void x64Parser::TokenFunc8343(x64Operand &operand, int tokenPos)
-{
-	operand.values[15] = tokenCoding8343_15;
-	operand.values[16] = tokenCoding8343_16;
-	operand.values[17] = tokenCoding8343_17;
-	operand.values[18] = tokenCoding8343_18;
-}
-x64Token x64Parser::tokenBranches8342[] = {
-	{x64Token::ADDRESSCLASS, 5, 1, 0, NULL,&x64Parser::TokenFunc8343,  },
-	{x64Token::EOT }
-};
-void x64Parser::TokenFunc8324(x64Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 723;
-}
-x64Token x64Parser::tokenBranches8323[] = {
-	{x64Token::REGISTER, 3, 1, 0, NULL,&x64Parser::TokenFunc8324,  },
-	{x64Token::TOKEN, 9, 0, 1, NULL, NULL, x64Parser::tokenBranches8342 },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8322[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8323 },
-	{x64Token::EOT }
-};
-Coding x64Parser::tokenCoding8347_15[] = {
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8347_16[] = {
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8347_17[] = {
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8347_18[] = {
-	{ CODING_NAME("rm")  Coding::stateFunc, 5 },
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 135, 8, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-void x64Parser::TokenFunc8347(x64Operand &operand, int tokenPos)
-{
-	operand.values[15] = tokenCoding8347_15;
-	operand.values[16] = tokenCoding8347_16;
-	operand.values[17] = tokenCoding8347_17;
-	operand.values[18] = tokenCoding8347_18;
-}
-x64Token x64Parser::tokenBranches8346[] = {
-	{x64Token::ADDRESSCLASS, 7, 1, 0, NULL,&x64Parser::TokenFunc8347,  },
-	{x64Token::EOT }
-};
-void x64Parser::TokenFunc8327(x64Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 724;
-}
-x64Token x64Parser::tokenBranches8326[] = {
-	{x64Token::REGISTER, 4, 1, 0, NULL,&x64Parser::TokenFunc8327,  },
-	{x64Token::TOKEN, 10, 0, 1, NULL, NULL, x64Parser::tokenBranches8346 },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8325[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8326 },
-	{x64Token::EOT }
-};
-Coding x64Parser::tokenCoding8331_15[] = {
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8331_16[] = {
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8331_17[] = {
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8331_18[] = {
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 134, 8, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-void x64Parser::TokenFunc8331(x64Operand &operand, int tokenPos)
-{
-	operand.values[15] = tokenCoding8331_15;
-	operand.values[16] = tokenCoding8331_16;
-	operand.values[17] = tokenCoding8331_17;
-	operand.values[18] = tokenCoding8331_18;
-}
-x64Token x64Parser::tokenBranches8330[] = {
-	{x64Token::ADDRESSCLASS, 3, 1, 0, NULL,&x64Parser::TokenFunc8331,  },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8329[] = {
-	{x64Token::TOKEN, 11, 0, 1, NULL, NULL, x64Parser::tokenBranches8330 },
-	{x64Token::EOT }
-};
-x64Token x64Parser::tokenBranches8328[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8329 },
-	{x64Token::EOT }
-};
-Coding x64Parser::tokenCoding8335_15[] = {
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8335_16[] = {
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::tokenCoding8335_22[] = {
+Coding x64Parser::tokenCoding8232_22[] = {
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 64, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8335_17[] = {
+Coding x64Parser::tokenCoding8232_17[] = {
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8335_18[] = {
-	{ CODING_NAME("rm")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 134, 8, 0, 0, 0 }, 
+Coding x64Parser::tokenCoding8232_18[] = {
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 132, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-void x64Parser::TokenFunc8335(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8232(x64Operand &operand, int tokenPos)
 {
-	operand.values[15] = tokenCoding8335_15;
-	operand.values[16] = tokenCoding8335_16;
-	operand.values[22] = tokenCoding8335_22;
-	operand.values[17] = tokenCoding8335_17;
-	operand.values[18] = tokenCoding8335_18;
+	operand.values[15] = tokenCoding8232_15;
+	operand.values[16] = tokenCoding8232_16;
+	operand.values[22] = tokenCoding8232_22;
+	operand.values[17] = tokenCoding8232_17;
+	operand.values[18] = tokenCoding8232_18;
 }
-x64Token x64Parser::tokenBranches8334[] = {
-	{x64Token::ADDRESSCLASS, 3, 1, 0, NULL,&x64Parser::TokenFunc8335,  },
+x64Token x64Parser::tokenBranches8231[] = {
+	{x64Token::ADDRESSCLASS, 1, 1, 0, NULL,&x64Parser::TokenFunc8232,  },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8333[] = {
-	{x64Token::TOKEN, 11, 0, 1, NULL, NULL, x64Parser::tokenBranches8334 },
+x64Token x64Parser::tokenBranches8230[] = {
+	{x64Token::TOKEN, 11, 0, 1, NULL, NULL, x64Parser::tokenBranches8231 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8332[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8333 },
+x64Token x64Parser::tokenBranches8229[] = {
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8230 },
 	{x64Token::EOT }
 };
-Coding x64Parser::tokenCoding8351_15[] = {
-	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
+Coding x64Parser::tokenCoding8236_15[] = {
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8351_16[] = {
-	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
+Coding x64Parser::tokenCoding8236_16[] = {
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8351_17[] = {
-	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
+Coding x64Parser::tokenCoding8236_17[] = {
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8351_18[] = {
-	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 134, 8, 0, 0, 0 }, 
+Coding x64Parser::tokenCoding8236_18[] = {
+	{ CODING_NAME("rm")  Coding::stateFunc, 3 },
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::valSpecified), 133, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-void x64Parser::TokenFunc8351(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8236(x64Operand &operand, int tokenPos)
+{
+	operand.values[15] = tokenCoding8236_15;
+	operand.values[16] = tokenCoding8236_16;
+	operand.values[17] = tokenCoding8236_17;
+	operand.values[18] = tokenCoding8236_18;
+}
+x64Token x64Parser::tokenBranches8235[] = {
+	{x64Token::ADDRESSCLASS, 1, 1, 0, NULL,&x64Parser::TokenFunc8236,  },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8234[] = {
+	{x64Token::TOKEN, 8, 0, 1, NULL, NULL, x64Parser::tokenBranches8235 },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8233[] = {
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8234 },
+	{x64Token::EOT }
+};
+Coding x64Parser::tokenCoding8240_15[] = {
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8240_16[] = {
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8240_17[] = {
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8240_18[] = {
+	{ CODING_NAME("rm")  Coding::stateFunc, 4 },
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::valSpecified), 133, 0, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+void x64Parser::TokenFunc8240(x64Operand &operand, int tokenPos)
+{
+	operand.values[15] = tokenCoding8240_15;
+	operand.values[16] = tokenCoding8240_16;
+	operand.values[17] = tokenCoding8240_17;
+	operand.values[18] = tokenCoding8240_18;
+}
+x64Token x64Parser::tokenBranches8239[] = {
+	{x64Token::ADDRESSCLASS, 1, 1, 0, NULL,&x64Parser::TokenFunc8240,  },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8238[] = {
+	{x64Token::TOKEN, 9, 0, 1, NULL, NULL, x64Parser::tokenBranches8239 },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8237[] = {
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8238 },
+	{x64Token::EOT }
+};
+Coding x64Parser::tokenCoding8244_15[] = {
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8244_16[] = {
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8244_17[] = {
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8244_18[] = {
+	{ CODING_NAME("rm")  Coding::stateFunc, 5 },
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::valSpecified), 133, 0, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+void x64Parser::TokenFunc8244(x64Operand &operand, int tokenPos)
+{
+	operand.values[15] = tokenCoding8244_15;
+	operand.values[16] = tokenCoding8244_16;
+	operand.values[17] = tokenCoding8244_17;
+	operand.values[18] = tokenCoding8244_18;
+}
+x64Token x64Parser::tokenBranches8243[] = {
+	{x64Token::ADDRESSCLASS, 1, 1, 0, NULL,&x64Parser::TokenFunc8244,  },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8242[] = {
+	{x64Token::TOKEN, 10, 0, 1, NULL, NULL, x64Parser::tokenBranches8243 },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8241[] = {
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8242 },
+	{x64Token::EOT }
+};
+Coding x64Parser::tokenCoding8265_15[] = {
+	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8265_16[] = {
+	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8265_17[] = {
+	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8265_18[] = {
+	{ CODING_NAME("omem")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 246, 8, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+void x64Parser::TokenFunc8265(x64Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 449;
+	operand.values[21] = new Coding[2];
+	CleanupValues.push_back(operand.values[21]);
+	operand.values[21]->type = Coding::number;
+	operand.values[21]->val = operands.size();
+	operand.values[21]->bits = 0;
+	operand.values[21]->field = 0;
+	operand.values[21]->unary = 0;
+	operand.values[21]->binary = 0;
+	operand.values[21][1].type = Coding::eot;
+	operands.push_back(numeric);
+	operand.values[15] = tokenCoding8265_15;
+	operand.values[16] = tokenCoding8265_16;
+	operand.values[17] = tokenCoding8265_17;
+	operand.values[18] = tokenCoding8265_18;
+}
+x64Token x64Parser::tokenBranches8264[] = {
+	{x64Token::NUMBER, 3, 1, 0, NULL,&x64Parser::TokenFunc8265,  },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8263[] = {
+	{x64Token::TOKEN, 11, 0, 1, NULL, NULL, x64Parser::tokenBranches8264 },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8262[] = {
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8263 },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8261[] = {
+	{x64Token::ADDRESSCLASS, 1, 0, 0, NULL, NULL, x64Parser::tokenBranches8262 },
+	{x64Token::EOT }
+};
+Coding x64Parser::tokenCoding8270_15[] = {
+	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8270_16[] = {
+	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8270_17[] = {
+	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8270_18[] = {
+	{ CODING_NAME("omem")  Coding::stateFunc, 3 },
+	{ CODING_NAME("omem")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 247, 8, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+void x64Parser::TokenFunc8270(x64Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 512;
+	operand.values[21] = new Coding[2];
+	CleanupValues.push_back(operand.values[21]);
+	operand.values[21]->type = Coding::number;
+	operand.values[21]->val = operands.size();
+	operand.values[21]->bits = 0;
+	operand.values[21]->field = 0;
+	operand.values[21]->unary = 0;
+	operand.values[21]->binary = 0;
+	operand.values[21][1].type = Coding::eot;
+	operands.push_back(numeric);
+	operand.values[15] = tokenCoding8270_15;
+	operand.values[16] = tokenCoding8270_16;
+	operand.values[17] = tokenCoding8270_17;
+	operand.values[18] = tokenCoding8270_18;
+}
+x64Token x64Parser::tokenBranches8269[] = {
+	{x64Token::NUMBER, 4, 1, 0, NULL,&x64Parser::TokenFunc8270,  },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8268[] = {
+	{x64Token::TOKEN, 8, 0, 1, NULL, NULL, x64Parser::tokenBranches8269 },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8267[] = {
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8268 },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8266[] = {
+	{x64Token::ADDRESSCLASS, 1, 0, 0, NULL, NULL, x64Parser::tokenBranches8267 },
+	{x64Token::EOT }
+};
+Coding x64Parser::tokenCoding8275_15[] = {
+	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8275_16[] = {
+	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8275_17[] = {
+	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8275_18[] = {
+	{ CODING_NAME("omem")  Coding::stateFunc, 4 },
+	{ CODING_NAME("omem")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 247, 8, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+void x64Parser::TokenFunc8275(x64Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 513;
+	operand.values[21] = new Coding[2];
+	CleanupValues.push_back(operand.values[21]);
+	operand.values[21]->type = Coding::number;
+	operand.values[21]->val = operands.size();
+	operand.values[21]->bits = 0;
+	operand.values[21]->field = 0;
+	operand.values[21]->unary = 0;
+	operand.values[21]->binary = 0;
+	operand.values[21][1].type = Coding::eot;
+	operands.push_back(numeric);
+	operand.values[15] = tokenCoding8275_15;
+	operand.values[16] = tokenCoding8275_16;
+	operand.values[17] = tokenCoding8275_17;
+	operand.values[18] = tokenCoding8275_18;
+}
+x64Token x64Parser::tokenBranches8274[] = {
+	{x64Token::NUMBER, 5, 1, 0, NULL,&x64Parser::TokenFunc8275,  },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8273[] = {
+	{x64Token::TOKEN, 9, 0, 1, NULL, NULL, x64Parser::tokenBranches8274 },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8272[] = {
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8273 },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8271[] = {
+	{x64Token::ADDRESSCLASS, 1, 0, 0, NULL, NULL, x64Parser::tokenBranches8272 },
+	{x64Token::EOT }
+};
+Coding x64Parser::tokenCoding8280_15[] = {
+	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8280_16[] = {
+	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 8, 0, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8280_17[] = {
+	{ CODING_NAME("omem")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8280_18[] = {
+	{ CODING_NAME("omem")  Coding::stateFunc, 5 },
+	{ CODING_NAME("omem")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 247, 8, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+void x64Parser::TokenFunc8280(x64Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 513;
+	operand.values[21] = new Coding[2];
+	CleanupValues.push_back(operand.values[21]);
+	operand.values[21]->type = Coding::number;
+	operand.values[21]->val = operands.size();
+	operand.values[21]->bits = 0;
+	operand.values[21]->field = 0;
+	operand.values[21]->unary = 0;
+	operand.values[21]->binary = 0;
+	operand.values[21][1].type = Coding::eot;
+	operands.push_back(numeric);
+	operand.values[15] = tokenCoding8280_15;
+	operand.values[16] = tokenCoding8280_16;
+	operand.values[17] = tokenCoding8280_17;
+	operand.values[18] = tokenCoding8280_18;
+}
+x64Token x64Parser::tokenBranches8279[] = {
+	{x64Token::NUMBER, 5, 1, 0, NULL,&x64Parser::TokenFunc8280,  },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8278[] = {
+	{x64Token::TOKEN, 10, 0, 1, NULL, NULL, x64Parser::tokenBranches8279 },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8277[] = {
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8278 },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8276[] = {
+	{x64Token::ADDRESSCLASS, 1, 0, 0, NULL, NULL, x64Parser::tokenBranches8277 },
+	{x64Token::EOT }
+};
+void x64Parser::TokenFunc8225(x64Operand &operand, int tokenPos)
 {
 	operand.values[19] = new Coding[2];
 	CleanupValues.push_back(operand.values[19]);
@@ -35014,32 +34367,191 @@ void x64Parser::TokenFunc8351(x64Operand &operand, int tokenPos)
 	operand.values[19]->unary = 0;
 	operand.values[19]->binary = 0;
 	operand.values[19][1].type = Coding::eot;
-	operand.values[15] = tokenCoding8351_15;
-	operand.values[16] = tokenCoding8351_16;
-	operand.values[17] = tokenCoding8351_17;
-	operand.values[18] = tokenCoding8351_18;
 }
-Coding x64Parser::tokenCoding8355_15[] = {
+void x64Parser::TokenFunc8229(x64Operand &operand, int tokenPos)
+{
+	operand.values[19] = new Coding[2];
+	CleanupValues.push_back(operand.values[19]);
+	operand.values[19]->type = Coding::reg;
+	operand.values[19]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[19]->bits = 0;
+	operand.values[19]->field = 0;
+	operand.values[19]->unary = 0;
+	operand.values[19]->binary = 0;
+	operand.values[19][1].type = Coding::eot;
+}
+void x64Parser::TokenFunc8233(x64Operand &operand, int tokenPos)
+{
+	operand.values[19] = new Coding[2];
+	CleanupValues.push_back(operand.values[19]);
+	operand.values[19]->type = Coding::reg;
+	operand.values[19]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[19]->bits = 0;
+	operand.values[19]->field = 0;
+	operand.values[19]->unary = 0;
+	operand.values[19]->binary = 0;
+	operand.values[19][1].type = Coding::eot;
+}
+void x64Parser::TokenFunc8237(x64Operand &operand, int tokenPos)
+{
+	operand.values[19] = new Coding[2];
+	CleanupValues.push_back(operand.values[19]);
+	operand.values[19]->type = Coding::reg;
+	operand.values[19]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[19]->bits = 0;
+	operand.values[19]->field = 0;
+	operand.values[19]->unary = 0;
+	operand.values[19]->binary = 0;
+	operand.values[19][1].type = Coding::eot;
+}
+void x64Parser::TokenFunc8241(x64Operand &operand, int tokenPos)
+{
+	operand.values[19] = new Coding[2];
+	CleanupValues.push_back(operand.values[19]);
+	operand.values[19]->type = Coding::reg;
+	operand.values[19]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[19]->bits = 0;
+	operand.values[19]->field = 0;
+	operand.values[19]->unary = 0;
+	operand.values[19]->binary = 0;
+	operand.values[19][1].type = Coding::eot;
+}
+x64Token x64Parser::tokenBranches8167[] = {
+	{x64Token::REGISTER, 0, 0, 0, NULL, NULL, x64Parser::tokenBranches8168 },
+	{x64Token::REGISTER, 2, 0, 0, NULL, NULL, x64Parser::tokenBranches8172 },
+	{x64Token::REGISTER, 3, 0, 0, NULL, NULL, x64Parser::tokenBranches8176 },
+	{x64Token::REGISTER, 4, 0, 0, NULL, NULL, x64Parser::tokenBranches8180 },
+	{x64Token::TOKEN, 11, 0, 1, NULL, NULL, x64Parser::tokenBranches8184 },
+	{x64Token::TOKEN, 8, 0, 1, NULL, NULL, x64Parser::tokenBranches8192 },
+	{x64Token::TOKEN, 9, 0, 1, NULL, NULL, x64Parser::tokenBranches8196 },
+	{x64Token::TOKEN, 10, 0, 1, NULL, NULL, x64Parser::tokenBranches8200 },
+	{x64Token::ADDRESSCLASS, 14, 0, 0, NULL, NULL, x64Parser::tokenBranches8204 },
+	{x64Token::ADDRESSCLASS, 15, 0, 0, NULL, NULL, x64Parser::tokenBranches8207 },
+	{x64Token::ADDRESSCLASS, 17, 0, 0, NULL, NULL, x64Parser::tokenBranches8216 },
+	{x64Token::ADDRESSCLASS, 19, 0, 0, NULL, NULL, x64Parser::tokenBranches8219 },
+	{x64Token::ADDRESSCLASS, 21, 0, 0, NULL, NULL, x64Parser::tokenBranches8222 },
+	{x64Token::REGISTERCLASS, 1, 0, 0, NULL,&x64Parser::TokenFunc8225, x64Parser::tokenBranches8225 },
+	{x64Token::REGISTERCLASS, 14, 0, 0, NULL,&x64Parser::TokenFunc8229, x64Parser::tokenBranches8229 },
+	{x64Token::REGISTERCLASS, 4, 0, 0, NULL,&x64Parser::TokenFunc8233, x64Parser::tokenBranches8233 },
+	{x64Token::REGISTERCLASS, 7, 0, 0, NULL,&x64Parser::TokenFunc8237, x64Parser::tokenBranches8237 },
+	{x64Token::REGISTERCLASS, 10, 0, 0, NULL,&x64Parser::TokenFunc8241, x64Parser::tokenBranches8241 },
+	{x64Token::TOKEN, 11, 0, 0, NULL, NULL, x64Parser::tokenBranches8261 },
+	{x64Token::TOKEN, 8, 0, 0, NULL, NULL, x64Parser::tokenBranches8266 },
+	{x64Token::TOKEN, 9, 0, 0, NULL, NULL, x64Parser::tokenBranches8271 },
+	{x64Token::TOKEN, 10, 0, 0, NULL, NULL, x64Parser::tokenBranches8276 },
+	{x64Token::EOT }
+};
+Coding x64Parser::tokenCoding8283_15[] = {
+	{ CODING_NAME("reg")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8283_16[] = {
+	{ CODING_NAME("reg")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8283_17[] = {
+	{ CODING_NAME("reg")  (Coding::Type)(Coding::valSpecified), 4, 0, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8283_18[] = {
+	{ CODING_NAME("reg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("reg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+void x64Parser::TokenFunc8283(x64Operand &operand, int tokenPos)
+{
+	operand.values[15] = tokenCoding8283_15;
+	operand.values[16] = tokenCoding8283_16;
+	operand.values[17] = tokenCoding8283_17;
+	operand.values[18] = tokenCoding8283_18;
+}
+x64Token x64Parser::tokenBranches8282[] = {
+	{x64Token::ADDRESSCLASS, 17, 1, 0, NULL,&x64Parser::TokenFunc8283,  },
+	{x64Token::EOT }
+};
+Coding x64Parser::tokenCoding8285_15[] = {
+	{ CODING_NAME("reg")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8285_16[] = {
+	{ CODING_NAME("reg")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8285_17[] = {
+	{ CODING_NAME("reg")  (Coding::Type)(Coding::valSpecified), 5, 0, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8285_18[] = {
+	{ CODING_NAME("reg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("reg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+void x64Parser::TokenFunc8285(x64Operand &operand, int tokenPos)
+{
+	operand.values[15] = tokenCoding8285_15;
+	operand.values[16] = tokenCoding8285_16;
+	operand.values[17] = tokenCoding8285_17;
+	operand.values[18] = tokenCoding8285_18;
+}
+x64Token x64Parser::tokenBranches8284[] = {
+	{x64Token::ADDRESSCLASS, 17, 1, 0, NULL,&x64Parser::TokenFunc8285,  },
+	{x64Token::EOT }
+};
+Coding x64Parser::tokenCoding8293_15[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8355_16[] = {
+Coding x64Parser::tokenCoding8293_16[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8355_22[] = {
+Coding x64Parser::tokenCoding8293_17[] = {
+	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8293_18[] = {
+	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 192, 8, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+void x64Parser::TokenFunc8293(x64Operand &operand, int tokenPos)
+{
+	operand.values[19] = new Coding[2];
+	CleanupValues.push_back(operand.values[19]);
+	operand.values[19]->type = Coding::reg;
+	operand.values[19]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[19]->bits = 0;
+	operand.values[19]->field = 0;
+	operand.values[19]->unary = 0;
+	operand.values[19]->binary = 0;
+	operand.values[19][1].type = Coding::eot;
+	operand.values[15] = tokenCoding8293_15;
+	operand.values[16] = tokenCoding8293_16;
+	operand.values[17] = tokenCoding8293_17;
+	operand.values[18] = tokenCoding8293_18;
+}
+Coding x64Parser::tokenCoding8297_15[] = {
+	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8297_16[] = {
+	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8297_22[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 64, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8355_17[] = {
+Coding x64Parser::tokenCoding8297_17[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8355_18[] = {
-	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 134, 8, 0, 0, 0 }, 
+Coding x64Parser::tokenCoding8297_18[] = {
+	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 192, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-void x64Parser::TokenFunc8355(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8297(x64Operand &operand, int tokenPos)
 {
 	operand.values[19] = new Coding[2];
 	CleanupValues.push_back(operand.values[19]);
@@ -35050,43 +34562,44 @@ void x64Parser::TokenFunc8355(x64Operand &operand, int tokenPos)
 	operand.values[19]->unary = 0;
 	operand.values[19]->binary = 0;
 	operand.values[19][1].type = Coding::eot;
-	operand.values[15] = tokenCoding8355_15;
-	operand.values[16] = tokenCoding8355_16;
-	operand.values[22] = tokenCoding8355_22;
-	operand.values[17] = tokenCoding8355_17;
-	operand.values[18] = tokenCoding8355_18;
+	operand.values[15] = tokenCoding8297_15;
+	operand.values[16] = tokenCoding8297_16;
+	operand.values[22] = tokenCoding8297_22;
+	operand.values[17] = tokenCoding8297_17;
+	operand.values[18] = tokenCoding8297_18;
 }
-x64Token x64Parser::tokenBranches8350[] = {
-	{x64Token::REGISTERCLASS, 1, 1, 0, NULL,&x64Parser::TokenFunc8351,  },
-	{x64Token::REGISTERCLASS, 14, 1, 0, NULL,&x64Parser::TokenFunc8355,  },
+x64Token x64Parser::tokenBranches8292[] = {
+	{x64Token::REGISTERCLASS, 1, 1, 0, NULL,&x64Parser::TokenFunc8293,  },
+	{x64Token::REGISTERCLASS, 14, 1, 0, NULL,&x64Parser::TokenFunc8297,  },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8349[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8350 },
+x64Token x64Parser::tokenBranches8291[] = {
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8292 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8348[] = {
-	{x64Token::ADDRESSCLASS, 3, 0, 0, NULL, NULL, x64Parser::tokenBranches8349 },
+x64Token x64Parser::tokenBranches8290[] = {
+	{x64Token::ADDRESSCLASS, 3, 0, 0, NULL, NULL, x64Parser::tokenBranches8291 },
 	{x64Token::EOT }
 };
-Coding x64Parser::tokenCoding8359_15[] = {
+Coding x64Parser::tokenCoding8301_15[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8359_16[] = {
+Coding x64Parser::tokenCoding8301_16[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8359_17[] = {
+Coding x64Parser::tokenCoding8301_17[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8359_18[] = {
+Coding x64Parser::tokenCoding8301_18[] = {
 	{ CODING_NAME("modreg")  Coding::stateFunc, 3 },
-	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 135, 8, 0, 0, 0 }, 
+	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 193, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-void x64Parser::TokenFunc8359(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8301(x64Operand &operand, int tokenPos)
 {
 	operand.values[19] = new Coding[2];
 	CleanupValues.push_back(operand.values[19]);
@@ -35097,41 +34610,42 @@ void x64Parser::TokenFunc8359(x64Operand &operand, int tokenPos)
 	operand.values[19]->unary = 0;
 	operand.values[19]->binary = 0;
 	operand.values[19][1].type = Coding::eot;
-	operand.values[15] = tokenCoding8359_15;
-	operand.values[16] = tokenCoding8359_16;
-	operand.values[17] = tokenCoding8359_17;
-	operand.values[18] = tokenCoding8359_18;
+	operand.values[15] = tokenCoding8301_15;
+	operand.values[16] = tokenCoding8301_16;
+	operand.values[17] = tokenCoding8301_17;
+	operand.values[18] = tokenCoding8301_18;
 }
-x64Token x64Parser::tokenBranches8358[] = {
-	{x64Token::REGISTERCLASS, 4, 1, 0, NULL,&x64Parser::TokenFunc8359,  },
+x64Token x64Parser::tokenBranches8300[] = {
+	{x64Token::REGISTERCLASS, 4, 1, 0, NULL,&x64Parser::TokenFunc8301,  },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8357[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8358 },
+x64Token x64Parser::tokenBranches8299[] = {
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8300 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8356[] = {
-	{x64Token::ADDRESSCLASS, 4, 0, 0, NULL, NULL, x64Parser::tokenBranches8357 },
+x64Token x64Parser::tokenBranches8298[] = {
+	{x64Token::ADDRESSCLASS, 4, 0, 0, NULL, NULL, x64Parser::tokenBranches8299 },
 	{x64Token::EOT }
 };
-Coding x64Parser::tokenCoding8363_15[] = {
+Coding x64Parser::tokenCoding8305_15[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8363_16[] = {
+Coding x64Parser::tokenCoding8305_16[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8363_17[] = {
+Coding x64Parser::tokenCoding8305_17[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8363_18[] = {
+Coding x64Parser::tokenCoding8305_18[] = {
 	{ CODING_NAME("modreg")  Coding::stateFunc, 4 },
-	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 135, 8, 0, 0, 0 }, 
+	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 193, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-void x64Parser::TokenFunc8363(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8305(x64Operand &operand, int tokenPos)
 {
 	operand.values[19] = new Coding[2];
 	CleanupValues.push_back(operand.values[19]);
@@ -35142,41 +34656,42 @@ void x64Parser::TokenFunc8363(x64Operand &operand, int tokenPos)
 	operand.values[19]->unary = 0;
 	operand.values[19]->binary = 0;
 	operand.values[19][1].type = Coding::eot;
-	operand.values[15] = tokenCoding8363_15;
-	operand.values[16] = tokenCoding8363_16;
-	operand.values[17] = tokenCoding8363_17;
-	operand.values[18] = tokenCoding8363_18;
+	operand.values[15] = tokenCoding8305_15;
+	operand.values[16] = tokenCoding8305_16;
+	operand.values[17] = tokenCoding8305_17;
+	operand.values[18] = tokenCoding8305_18;
 }
-x64Token x64Parser::tokenBranches8362[] = {
-	{x64Token::REGISTERCLASS, 7, 1, 0, NULL,&x64Parser::TokenFunc8363,  },
+x64Token x64Parser::tokenBranches8304[] = {
+	{x64Token::REGISTERCLASS, 7, 1, 0, NULL,&x64Parser::TokenFunc8305,  },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8361[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8362 },
+x64Token x64Parser::tokenBranches8303[] = {
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8304 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8360[] = {
-	{x64Token::ADDRESSCLASS, 5, 0, 0, NULL, NULL, x64Parser::tokenBranches8361 },
+x64Token x64Parser::tokenBranches8302[] = {
+	{x64Token::ADDRESSCLASS, 5, 0, 0, NULL, NULL, x64Parser::tokenBranches8303 },
 	{x64Token::EOT }
 };
-Coding x64Parser::tokenCoding8367_15[] = {
+Coding x64Parser::tokenCoding8309_15[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8367_16[] = {
+Coding x64Parser::tokenCoding8309_16[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8367_17[] = {
+Coding x64Parser::tokenCoding8309_17[] = {
 	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8367_18[] = {
+Coding x64Parser::tokenCoding8309_18[] = {
 	{ CODING_NAME("modreg")  Coding::stateFunc, 5 },
-	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 135, 8, 0, 0, 0 }, 
+	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 193, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-void x64Parser::TokenFunc8367(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8309(x64Operand &operand, int tokenPos)
 {
 	operand.values[19] = new Coding[2];
 	CleanupValues.push_back(operand.values[19]);
@@ -35187,25 +34702,75 @@ void x64Parser::TokenFunc8367(x64Operand &operand, int tokenPos)
 	operand.values[19]->unary = 0;
 	operand.values[19]->binary = 0;
 	operand.values[19][1].type = Coding::eot;
-	operand.values[15] = tokenCoding8367_15;
-	operand.values[16] = tokenCoding8367_16;
-	operand.values[17] = tokenCoding8367_17;
-	operand.values[18] = tokenCoding8367_18;
+	operand.values[15] = tokenCoding8309_15;
+	operand.values[16] = tokenCoding8309_16;
+	operand.values[17] = tokenCoding8309_17;
+	operand.values[18] = tokenCoding8309_18;
 }
-x64Token x64Parser::tokenBranches8366[] = {
-	{x64Token::REGISTERCLASS, 10, 1, 0, NULL,&x64Parser::TokenFunc8367,  },
+x64Token x64Parser::tokenBranches8308[] = {
+	{x64Token::REGISTERCLASS, 10, 1, 0, NULL,&x64Parser::TokenFunc8309,  },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8365[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8366 },
+x64Token x64Parser::tokenBranches8307[] = {
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8308 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8364[] = {
-	{x64Token::ADDRESSCLASS, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8365 },
+x64Token x64Parser::tokenBranches8306[] = {
+	{x64Token::ADDRESSCLASS, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8307 },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8289[] = {
+	{x64Token::TOKEN, 11, 0, 1, NULL, NULL, x64Parser::tokenBranches8290 },
+	{x64Token::TOKEN, 8, 0, 1, NULL, NULL, x64Parser::tokenBranches8298 },
+	{x64Token::TOKEN, 9, 0, 1, NULL, NULL, x64Parser::tokenBranches8302 },
+	{x64Token::TOKEN, 10, 0, 1, NULL, NULL, x64Parser::tokenBranches8306 },
+	{x64Token::EOT }
+};
+void x64Parser::TokenFunc8313(x64Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 722;
+	operand.values[19] = new Coding[2];
+	CleanupValues.push_back(operand.values[19]);
+	operand.values[19]->type = Coding::reg;
+	operand.values[19]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[19]->bits = 0;
+	operand.values[19]->field = 0;
+	operand.values[19]->unary = 0;
+	operand.values[19]->binary = 0;
+	operand.values[19][1].type = Coding::eot;
+}
+x64Token x64Parser::tokenBranches8312[] = {
+	{x64Token::REGISTERCLASS, 4, 1, 0, NULL,&x64Parser::TokenFunc8313,  },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8311[] = {
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8312 },
+	{x64Token::EOT }
+};
+void x64Parser::TokenFunc8316(x64Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 723;
+	operand.values[19] = new Coding[2];
+	CleanupValues.push_back(operand.values[19]);
+	operand.values[19]->type = Coding::reg;
+	operand.values[19]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[19]->bits = 0;
+	operand.values[19]->field = 0;
+	operand.values[19]->unary = 0;
+	operand.values[19]->binary = 0;
+	operand.values[19][1].type = Coding::eot;
+}
+x64Token x64Parser::tokenBranches8315[] = {
+	{x64Token::REGISTERCLASS, 7, 1, 0, NULL,&x64Parser::TokenFunc8316,  },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8314[] = {
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8315 },
 	{x64Token::EOT }
 };
 void x64Parser::TokenFunc8319(x64Operand &operand, int tokenPos)
 {
+	operand.operandCoding = 724;
 	operand.values[19] = new Coding[2];
 	CleanupValues.push_back(operand.values[19]);
 	operand.values[19]->type = Coding::reg;
@@ -35216,138 +34781,573 @@ void x64Parser::TokenFunc8319(x64Operand &operand, int tokenPos)
 	operand.values[19]->binary = 0;
 	operand.values[19][1].type = Coding::eot;
 }
-void x64Parser::TokenFunc8322(x64Operand &operand, int tokenPos)
-{
-	operand.values[19] = new Coding[2];
-	CleanupValues.push_back(operand.values[19]);
-	operand.values[19]->type = Coding::reg;
-	operand.values[19]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[19]->bits = 0;
-	operand.values[19]->field = 0;
-	operand.values[19]->unary = 0;
-	operand.values[19]->binary = 0;
-	operand.values[19][1].type = Coding::eot;
-}
-void x64Parser::TokenFunc8325(x64Operand &operand, int tokenPos)
-{
-	operand.values[19] = new Coding[2];
-	CleanupValues.push_back(operand.values[19]);
-	operand.values[19]->type = Coding::reg;
-	operand.values[19]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[19]->bits = 0;
-	operand.values[19]->field = 0;
-	operand.values[19]->unary = 0;
-	operand.values[19]->binary = 0;
-	operand.values[19][1].type = Coding::eot;
-}
-void x64Parser::TokenFunc8328(x64Operand &operand, int tokenPos)
-{
-	operand.values[19] = new Coding[2];
-	CleanupValues.push_back(operand.values[19]);
-	operand.values[19]->type = Coding::reg;
-	operand.values[19]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[19]->bits = 0;
-	operand.values[19]->field = 0;
-	operand.values[19]->unary = 0;
-	operand.values[19]->binary = 0;
-	operand.values[19][1].type = Coding::eot;
-}
-void x64Parser::TokenFunc8332(x64Operand &operand, int tokenPos)
-{
-	operand.values[19] = new Coding[2];
-	CleanupValues.push_back(operand.values[19]);
-	operand.values[19]->type = Coding::reg;
-	operand.values[19]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[19]->bits = 0;
-	operand.values[19]->field = 0;
-	operand.values[19]->unary = 0;
-	operand.values[19]->binary = 0;
-	operand.values[19][1].type = Coding::eot;
-}
-x64Token x64Parser::tokenBranches8309[] = {
-	{x64Token::REGISTER, 2, 0, 0, NULL, NULL, x64Parser::tokenBranches8310 },
-	{x64Token::REGISTER, 3, 0, 0, NULL, NULL, x64Parser::tokenBranches8313 },
-	{x64Token::REGISTER, 4, 0, 0, NULL, NULL, x64Parser::tokenBranches8316 },
-	{x64Token::REGISTERCLASS, 4, 0, 0, NULL,&x64Parser::TokenFunc8319, x64Parser::tokenBranches8319 },
-	{x64Token::REGISTERCLASS, 7, 0, 0, NULL,&x64Parser::TokenFunc8322, x64Parser::tokenBranches8322 },
-	{x64Token::REGISTERCLASS, 10, 0, 0, NULL,&x64Parser::TokenFunc8325, x64Parser::tokenBranches8325 },
-	{x64Token::REGISTERCLASS, 1, 0, 0, NULL,&x64Parser::TokenFunc8328, x64Parser::tokenBranches8328 },
-	{x64Token::REGISTERCLASS, 14, 0, 0, NULL,&x64Parser::TokenFunc8332, x64Parser::tokenBranches8332 },
-	{x64Token::TOKEN, 11, 0, 1, NULL, NULL, x64Parser::tokenBranches8348 },
-	{x64Token::TOKEN, 8, 0, 1, NULL, NULL, x64Parser::tokenBranches8356 },
-	{x64Token::TOKEN, 9, 0, 1, NULL, NULL, x64Parser::tokenBranches8360 },
-	{x64Token::TOKEN, 10, 0, 1, NULL, NULL, x64Parser::tokenBranches8364 },
+x64Token x64Parser::tokenBranches8318[] = {
+	{x64Token::REGISTERCLASS, 10, 1, 0, NULL,&x64Parser::TokenFunc8319,  },
 	{x64Token::EOT }
 };
-void x64Parser::TokenFunc8374(x64Operand &operand, int tokenPos)
+x64Token x64Parser::tokenBranches8317[] = {
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8318 },
+	{x64Token::EOT }
+};
+Coding x64Parser::tokenCoding8340_15[] = {
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8340_16[] = {
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8340_17[] = {
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8340_18[] = {
+	{ CODING_NAME("rm")  Coding::stateFunc, 3 },
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 135, 8, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+void x64Parser::TokenFunc8340(x64Operand &operand, int tokenPos)
+{
+	operand.values[15] = tokenCoding8340_15;
+	operand.values[16] = tokenCoding8340_16;
+	operand.values[17] = tokenCoding8340_17;
+	operand.values[18] = tokenCoding8340_18;
+}
+x64Token x64Parser::tokenBranches8339[] = {
+	{x64Token::ADDRESSCLASS, 4, 1, 0, NULL,&x64Parser::TokenFunc8340,  },
+	{x64Token::EOT }
+};
+void x64Parser::TokenFunc8322(x64Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 722;
+}
+x64Token x64Parser::tokenBranches8321[] = {
+	{x64Token::REGISTER, 2, 1, 0, NULL,&x64Parser::TokenFunc8322,  },
+	{x64Token::TOKEN, 8, 0, 1, NULL, NULL, x64Parser::tokenBranches8339 },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8320[] = {
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8321 },
+	{x64Token::EOT }
+};
+Coding x64Parser::tokenCoding8344_15[] = {
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8344_16[] = {
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8344_17[] = {
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8344_18[] = {
+	{ CODING_NAME("rm")  Coding::stateFunc, 4 },
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 135, 8, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+void x64Parser::TokenFunc8344(x64Operand &operand, int tokenPos)
+{
+	operand.values[15] = tokenCoding8344_15;
+	operand.values[16] = tokenCoding8344_16;
+	operand.values[17] = tokenCoding8344_17;
+	operand.values[18] = tokenCoding8344_18;
+}
+x64Token x64Parser::tokenBranches8343[] = {
+	{x64Token::ADDRESSCLASS, 5, 1, 0, NULL,&x64Parser::TokenFunc8344,  },
+	{x64Token::EOT }
+};
+void x64Parser::TokenFunc8325(x64Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 723;
+}
+x64Token x64Parser::tokenBranches8324[] = {
+	{x64Token::REGISTER, 3, 1, 0, NULL,&x64Parser::TokenFunc8325,  },
+	{x64Token::TOKEN, 9, 0, 1, NULL, NULL, x64Parser::tokenBranches8343 },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8323[] = {
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8324 },
+	{x64Token::EOT }
+};
+Coding x64Parser::tokenCoding8348_15[] = {
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8348_16[] = {
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8348_17[] = {
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8348_18[] = {
+	{ CODING_NAME("rm")  Coding::stateFunc, 5 },
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 135, 8, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+void x64Parser::TokenFunc8348(x64Operand &operand, int tokenPos)
+{
+	operand.values[15] = tokenCoding8348_15;
+	operand.values[16] = tokenCoding8348_16;
+	operand.values[17] = tokenCoding8348_17;
+	operand.values[18] = tokenCoding8348_18;
+}
+x64Token x64Parser::tokenBranches8347[] = {
+	{x64Token::ADDRESSCLASS, 7, 1, 0, NULL,&x64Parser::TokenFunc8348,  },
+	{x64Token::EOT }
+};
+void x64Parser::TokenFunc8328(x64Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 724;
+}
+x64Token x64Parser::tokenBranches8327[] = {
+	{x64Token::REGISTER, 4, 1, 0, NULL,&x64Parser::TokenFunc8328,  },
+	{x64Token::TOKEN, 10, 0, 1, NULL, NULL, x64Parser::tokenBranches8347 },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8326[] = {
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8327 },
+	{x64Token::EOT }
+};
+Coding x64Parser::tokenCoding8332_15[] = {
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8332_16[] = {
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8332_17[] = {
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8332_18[] = {
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 134, 8, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+void x64Parser::TokenFunc8332(x64Operand &operand, int tokenPos)
+{
+	operand.values[15] = tokenCoding8332_15;
+	operand.values[16] = tokenCoding8332_16;
+	operand.values[17] = tokenCoding8332_17;
+	operand.values[18] = tokenCoding8332_18;
+}
+x64Token x64Parser::tokenBranches8331[] = {
+	{x64Token::ADDRESSCLASS, 3, 1, 0, NULL,&x64Parser::TokenFunc8332,  },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8330[] = {
+	{x64Token::TOKEN, 11, 0, 1, NULL, NULL, x64Parser::tokenBranches8331 },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8329[] = {
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8330 },
+	{x64Token::EOT }
+};
+Coding x64Parser::tokenCoding8336_15[] = {
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8336_16[] = {
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8336_22[] = {
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 64, 8, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8336_17[] = {
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8336_18[] = {
+	{ CODING_NAME("rm")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 134, 8, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+void x64Parser::TokenFunc8336(x64Operand &operand, int tokenPos)
+{
+	operand.values[15] = tokenCoding8336_15;
+	operand.values[16] = tokenCoding8336_16;
+	operand.values[22] = tokenCoding8336_22;
+	operand.values[17] = tokenCoding8336_17;
+	operand.values[18] = tokenCoding8336_18;
+}
+x64Token x64Parser::tokenBranches8335[] = {
+	{x64Token::ADDRESSCLASS, 3, 1, 0, NULL,&x64Parser::TokenFunc8336,  },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8334[] = {
+	{x64Token::TOKEN, 11, 0, 1, NULL, NULL, x64Parser::tokenBranches8335 },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8333[] = {
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8334 },
+	{x64Token::EOT }
+};
+Coding x64Parser::tokenCoding8352_15[] = {
+	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8352_16[] = {
+	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8352_17[] = {
+	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8352_18[] = {
+	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 134, 8, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+void x64Parser::TokenFunc8352(x64Operand &operand, int tokenPos)
+{
+	operand.values[19] = new Coding[2];
+	CleanupValues.push_back(operand.values[19]);
+	operand.values[19]->type = Coding::reg;
+	operand.values[19]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[19]->bits = 0;
+	operand.values[19]->field = 0;
+	operand.values[19]->unary = 0;
+	operand.values[19]->binary = 0;
+	operand.values[19][1].type = Coding::eot;
+	operand.values[15] = tokenCoding8352_15;
+	operand.values[16] = tokenCoding8352_16;
+	operand.values[17] = tokenCoding8352_17;
+	operand.values[18] = tokenCoding8352_18;
+}
+Coding x64Parser::tokenCoding8356_15[] = {
+	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8356_16[] = {
+	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8356_22[] = {
+	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 64, 8, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8356_17[] = {
+	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8356_18[] = {
+	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 134, 8, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+void x64Parser::TokenFunc8356(x64Operand &operand, int tokenPos)
+{
+	operand.values[19] = new Coding[2];
+	CleanupValues.push_back(operand.values[19]);
+	operand.values[19]->type = Coding::reg;
+	operand.values[19]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[19]->bits = 0;
+	operand.values[19]->field = 0;
+	operand.values[19]->unary = 0;
+	operand.values[19]->binary = 0;
+	operand.values[19][1].type = Coding::eot;
+	operand.values[15] = tokenCoding8356_15;
+	operand.values[16] = tokenCoding8356_16;
+	operand.values[22] = tokenCoding8356_22;
+	operand.values[17] = tokenCoding8356_17;
+	operand.values[18] = tokenCoding8356_18;
+}
+x64Token x64Parser::tokenBranches8351[] = {
+	{x64Token::REGISTERCLASS, 1, 1, 0, NULL,&x64Parser::TokenFunc8352,  },
+	{x64Token::REGISTERCLASS, 14, 1, 0, NULL,&x64Parser::TokenFunc8356,  },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8350[] = {
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8351 },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8349[] = {
+	{x64Token::ADDRESSCLASS, 3, 0, 0, NULL, NULL, x64Parser::tokenBranches8350 },
+	{x64Token::EOT }
+};
+Coding x64Parser::tokenCoding8360_15[] = {
+	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8360_16[] = {
+	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8360_17[] = {
+	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8360_18[] = {
+	{ CODING_NAME("modreg")  Coding::stateFunc, 3 },
+	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 135, 8, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+void x64Parser::TokenFunc8360(x64Operand &operand, int tokenPos)
+{
+	operand.values[19] = new Coding[2];
+	CleanupValues.push_back(operand.values[19]);
+	operand.values[19]->type = Coding::reg;
+	operand.values[19]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[19]->bits = 0;
+	operand.values[19]->field = 0;
+	operand.values[19]->unary = 0;
+	operand.values[19]->binary = 0;
+	operand.values[19][1].type = Coding::eot;
+	operand.values[15] = tokenCoding8360_15;
+	operand.values[16] = tokenCoding8360_16;
+	operand.values[17] = tokenCoding8360_17;
+	operand.values[18] = tokenCoding8360_18;
+}
+x64Token x64Parser::tokenBranches8359[] = {
+	{x64Token::REGISTERCLASS, 4, 1, 0, NULL,&x64Parser::TokenFunc8360,  },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8358[] = {
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8359 },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8357[] = {
+	{x64Token::ADDRESSCLASS, 4, 0, 0, NULL, NULL, x64Parser::tokenBranches8358 },
+	{x64Token::EOT }
+};
+Coding x64Parser::tokenCoding8364_15[] = {
+	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8364_16[] = {
+	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8364_17[] = {
+	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8364_18[] = {
+	{ CODING_NAME("modreg")  Coding::stateFunc, 4 },
+	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 135, 8, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+void x64Parser::TokenFunc8364(x64Operand &operand, int tokenPos)
+{
+	operand.values[19] = new Coding[2];
+	CleanupValues.push_back(operand.values[19]);
+	operand.values[19]->type = Coding::reg;
+	operand.values[19]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[19]->bits = 0;
+	operand.values[19]->field = 0;
+	operand.values[19]->unary = 0;
+	operand.values[19]->binary = 0;
+	operand.values[19][1].type = Coding::eot;
+	operand.values[15] = tokenCoding8364_15;
+	operand.values[16] = tokenCoding8364_16;
+	operand.values[17] = tokenCoding8364_17;
+	operand.values[18] = tokenCoding8364_18;
+}
+x64Token x64Parser::tokenBranches8363[] = {
+	{x64Token::REGISTERCLASS, 7, 1, 0, NULL,&x64Parser::TokenFunc8364,  },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8362[] = {
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8363 },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8361[] = {
+	{x64Token::ADDRESSCLASS, 5, 0, 0, NULL, NULL, x64Parser::tokenBranches8362 },
+	{x64Token::EOT }
+};
+Coding x64Parser::tokenCoding8368_15[] = {
+	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8368_16[] = {
+	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8368_17[] = {
+	{ CODING_NAME("modreg")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::tokenCoding8368_18[] = {
+	{ CODING_NAME("modreg")  Coding::stateFunc, 5 },
+	{ CODING_NAME("modreg")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 135, 8, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+void x64Parser::TokenFunc8368(x64Operand &operand, int tokenPos)
+{
+	operand.values[19] = new Coding[2];
+	CleanupValues.push_back(operand.values[19]);
+	operand.values[19]->type = Coding::reg;
+	operand.values[19]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[19]->bits = 0;
+	operand.values[19]->field = 0;
+	operand.values[19]->unary = 0;
+	operand.values[19]->binary = 0;
+	operand.values[19][1].type = Coding::eot;
+	operand.values[15] = tokenCoding8368_15;
+	operand.values[16] = tokenCoding8368_16;
+	operand.values[17] = tokenCoding8368_17;
+	operand.values[18] = tokenCoding8368_18;
+}
+x64Token x64Parser::tokenBranches8367[] = {
+	{x64Token::REGISTERCLASS, 10, 1, 0, NULL,&x64Parser::TokenFunc8368,  },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8366[] = {
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8367 },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8365[] = {
+	{x64Token::ADDRESSCLASS, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8366 },
+	{x64Token::EOT }
+};
+void x64Parser::TokenFunc8320(x64Operand &operand, int tokenPos)
+{
+	operand.values[19] = new Coding[2];
+	CleanupValues.push_back(operand.values[19]);
+	operand.values[19]->type = Coding::reg;
+	operand.values[19]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[19]->bits = 0;
+	operand.values[19]->field = 0;
+	operand.values[19]->unary = 0;
+	operand.values[19]->binary = 0;
+	operand.values[19][1].type = Coding::eot;
+}
+void x64Parser::TokenFunc8323(x64Operand &operand, int tokenPos)
+{
+	operand.values[19] = new Coding[2];
+	CleanupValues.push_back(operand.values[19]);
+	operand.values[19]->type = Coding::reg;
+	operand.values[19]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[19]->bits = 0;
+	operand.values[19]->field = 0;
+	operand.values[19]->unary = 0;
+	operand.values[19]->binary = 0;
+	operand.values[19][1].type = Coding::eot;
+}
+void x64Parser::TokenFunc8326(x64Operand &operand, int tokenPos)
+{
+	operand.values[19] = new Coding[2];
+	CleanupValues.push_back(operand.values[19]);
+	operand.values[19]->type = Coding::reg;
+	operand.values[19]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[19]->bits = 0;
+	operand.values[19]->field = 0;
+	operand.values[19]->unary = 0;
+	operand.values[19]->binary = 0;
+	operand.values[19][1].type = Coding::eot;
+}
+void x64Parser::TokenFunc8329(x64Operand &operand, int tokenPos)
+{
+	operand.values[19] = new Coding[2];
+	CleanupValues.push_back(operand.values[19]);
+	operand.values[19]->type = Coding::reg;
+	operand.values[19]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[19]->bits = 0;
+	operand.values[19]->field = 0;
+	operand.values[19]->unary = 0;
+	operand.values[19]->binary = 0;
+	operand.values[19][1].type = Coding::eot;
+}
+void x64Parser::TokenFunc8333(x64Operand &operand, int tokenPos)
+{
+	operand.values[19] = new Coding[2];
+	CleanupValues.push_back(operand.values[19]);
+	operand.values[19]->type = Coding::reg;
+	operand.values[19]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[19]->bits = 0;
+	operand.values[19]->field = 0;
+	operand.values[19]->unary = 0;
+	operand.values[19]->binary = 0;
+	operand.values[19][1].type = Coding::eot;
+}
+x64Token x64Parser::tokenBranches8310[] = {
+	{x64Token::REGISTER, 2, 0, 0, NULL, NULL, x64Parser::tokenBranches8311 },
+	{x64Token::REGISTER, 3, 0, 0, NULL, NULL, x64Parser::tokenBranches8314 },
+	{x64Token::REGISTER, 4, 0, 0, NULL, NULL, x64Parser::tokenBranches8317 },
+	{x64Token::REGISTERCLASS, 4, 0, 0, NULL,&x64Parser::TokenFunc8320, x64Parser::tokenBranches8320 },
+	{x64Token::REGISTERCLASS, 7, 0, 0, NULL,&x64Parser::TokenFunc8323, x64Parser::tokenBranches8323 },
+	{x64Token::REGISTERCLASS, 10, 0, 0, NULL,&x64Parser::TokenFunc8326, x64Parser::tokenBranches8326 },
+	{x64Token::REGISTERCLASS, 1, 0, 0, NULL,&x64Parser::TokenFunc8329, x64Parser::tokenBranches8329 },
+	{x64Token::REGISTERCLASS, 14, 0, 0, NULL,&x64Parser::TokenFunc8333, x64Parser::tokenBranches8333 },
+	{x64Token::TOKEN, 11, 0, 1, NULL, NULL, x64Parser::tokenBranches8349 },
+	{x64Token::TOKEN, 8, 0, 1, NULL, NULL, x64Parser::tokenBranches8357 },
+	{x64Token::TOKEN, 9, 0, 1, NULL, NULL, x64Parser::tokenBranches8361 },
+	{x64Token::TOKEN, 10, 0, 1, NULL, NULL, x64Parser::tokenBranches8365 },
+	{x64Token::EOT }
+};
+void x64Parser::TokenFunc8375(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 725;
 }
-x64Token x64Parser::tokenBranches8373[] = {
-	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8374,  },
+x64Token x64Parser::tokenBranches8374[] = {
+	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8375,  },
 	{x64Token::EOT }
 };
-void x64Parser::TokenFunc8386(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8387(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 727;
 }
-x64Token x64Parser::tokenBranches8385[] = {
-	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8386,  },
+x64Token x64Parser::tokenBranches8386[] = {
+	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8387,  },
 	{x64Token::EOT }
 };
-void x64Parser::TokenFunc8398(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8399(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 729;
 }
-x64Token x64Parser::tokenBranches8397[] = {
-	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8398,  },
+x64Token x64Parser::tokenBranches8398[] = {
+	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8399,  },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8373[] = {
+	{x64Token::REGISTER, 29, 0, 0, NULL, NULL, x64Parser::tokenBranches8374 },
+	{x64Token::REGISTER, 30, 0, 0, NULL, NULL, x64Parser::tokenBranches8386 },
+	{x64Token::REGISTER, 31, 0, 0, NULL, NULL, x64Parser::tokenBranches8398 },
 	{x64Token::EOT }
 };
 x64Token x64Parser::tokenBranches8372[] = {
-	{x64Token::REGISTER, 29, 0, 0, NULL, NULL, x64Parser::tokenBranches8373 },
-	{x64Token::REGISTER, 30, 0, 0, NULL, NULL, x64Parser::tokenBranches8385 },
-	{x64Token::REGISTER, 31, 0, 0, NULL, NULL, x64Parser::tokenBranches8397 },
+	{x64Token::TOKEN, 3, 0, 0, NULL, NULL, x64Parser::tokenBranches8373 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8371[] = {
-	{x64Token::TOKEN, 3, 0, 0, NULL, NULL, x64Parser::tokenBranches8372 },
-	{x64Token::EOT }
-};
-void x64Parser::TokenFunc8380(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8381(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 726;
 }
-x64Token x64Parser::tokenBranches8379[] = {
-	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8380,  },
+x64Token x64Parser::tokenBranches8380[] = {
+	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8381,  },
 	{x64Token::EOT }
 };
-void x64Parser::TokenFunc8392(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8393(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 728;
 }
-x64Token x64Parser::tokenBranches8391[] = {
-	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8392,  },
+x64Token x64Parser::tokenBranches8392[] = {
+	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8393,  },
 	{x64Token::EOT }
 };
-void x64Parser::TokenFunc8404(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8405(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 730;
 }
-x64Token x64Parser::tokenBranches8403[] = {
-	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8404,  },
+x64Token x64Parser::tokenBranches8404[] = {
+	{x64Token::TOKEN, 2, 1, 0, NULL,&x64Parser::TokenFunc8405,  },
+	{x64Token::EOT }
+};
+x64Token x64Parser::tokenBranches8379[] = {
+	{x64Token::REGISTER, 29, 0, 0, NULL, NULL, x64Parser::tokenBranches8380 },
+	{x64Token::REGISTER, 30, 0, 0, NULL, NULL, x64Parser::tokenBranches8392 },
+	{x64Token::REGISTER, 31, 0, 0, NULL, NULL, x64Parser::tokenBranches8404 },
 	{x64Token::EOT }
 };
 x64Token x64Parser::tokenBranches8378[] = {
-	{x64Token::REGISTER, 29, 0, 0, NULL, NULL, x64Parser::tokenBranches8379 },
-	{x64Token::REGISTER, 30, 0, 0, NULL, NULL, x64Parser::tokenBranches8391 },
-	{x64Token::REGISTER, 31, 0, 0, NULL, NULL, x64Parser::tokenBranches8403 },
+	{x64Token::TOKEN, 3, 0, 0, NULL, NULL, x64Parser::tokenBranches8379 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8377[] = {
-	{x64Token::TOKEN, 3, 0, 0, NULL, NULL, x64Parser::tokenBranches8378 },
-	{x64Token::EOT }
-};
-void x64Parser::TokenFunc8377(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8378(x64Operand &operand, int tokenPos)
 {
 	operand.values[1] = new Coding[2];
 	CleanupValues.push_back(operand.values[1]);
@@ -35359,174 +35359,174 @@ void x64Parser::TokenFunc8377(x64Operand &operand, int tokenPos)
 	operand.values[1]->binary = 0;
 	operand.values[1][1].type = Coding::eot;
 }
+x64Token x64Parser::tokenBranches8371[] = {
+	{x64Token::REGISTER, 96, 0, 0, NULL, NULL, x64Parser::tokenBranches8372 },
+	{x64Token::REGISTERCLASS, 19, 0, 0, NULL,&x64Parser::TokenFunc8378, x64Parser::tokenBranches8378 },
+	{x64Token::EOT }
+};
 x64Token x64Parser::tokenBranches8370[] = {
-	{x64Token::REGISTER, 96, 0, 0, NULL, NULL, x64Parser::tokenBranches8371 },
-	{x64Token::REGISTERCLASS, 19, 0, 0, NULL,&x64Parser::TokenFunc8377, x64Parser::tokenBranches8377 },
+	{x64Token::TOKEN, 1, 0, 0, NULL, NULL, x64Parser::tokenBranches8371 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8369[] = {
-	{x64Token::TOKEN, 1, 0, 0, NULL, NULL, x64Parser::tokenBranches8370 },
-	{x64Token::EOT }
-};
-void x64Parser::TokenFunc8405(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8406(x64Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 731;
 }
-x64Token x64Parser::tokenBranches8368[] = {
-	{x64Token::TOKEN, 11, 0, 1, NULL, NULL, x64Parser::tokenBranches8369 },
-	{x64Token::EMPTY, 0, 1, 0, NULL,&x64Parser::TokenFunc8405,  },
+x64Token x64Parser::tokenBranches8369[] = {
+	{x64Token::TOKEN, 11, 0, 1, NULL, NULL, x64Parser::tokenBranches8370 },
+	{x64Token::EMPTY, 0, 1, 0, NULL,&x64Parser::TokenFunc8406,  },
 	{x64Token::EOT }
 };
-Coding x64Parser::tokenCoding8409_15[] = {
+Coding x64Parser::tokenCoding8410_15[] = {
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8409_16[] = {
+Coding x64Parser::tokenCoding8410_16[] = {
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8409_17[] = {
+Coding x64Parser::tokenCoding8410_17[] = {
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::valSpecified), 5, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8409_18[] = {
+Coding x64Parser::tokenCoding8410_18[] = {
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 174, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-void x64Parser::TokenFunc8409(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8410(x64Operand &operand, int tokenPos)
 {
-	operand.values[15] = tokenCoding8409_15;
-	operand.values[16] = tokenCoding8409_16;
-	operand.values[17] = tokenCoding8409_17;
-	operand.values[18] = tokenCoding8409_18;
+	operand.values[15] = tokenCoding8410_15;
+	operand.values[16] = tokenCoding8410_16;
+	operand.values[17] = tokenCoding8410_17;
+	operand.values[18] = tokenCoding8410_18;
 }
-x64Token x64Parser::tokenBranches8408[] = {
-	{x64Token::ADDRESSCLASS, 1, 1, 0, NULL,&x64Parser::TokenFunc8409,  },
+x64Token x64Parser::tokenBranches8409[] = {
+	{x64Token::ADDRESSCLASS, 1, 1, 0, NULL,&x64Parser::TokenFunc8410,  },
 	{x64Token::EOT }
 };
-Coding x64Parser::tokenCoding8411_15[] = {
+Coding x64Parser::tokenCoding8412_15[] = {
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8411_16[] = {
+Coding x64Parser::tokenCoding8412_16[] = {
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::valSpecified), 8, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8411_17[] = {
+Coding x64Parser::tokenCoding8412_17[] = {
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::valSpecified), 5, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8411_18[] = {
+Coding x64Parser::tokenCoding8412_18[] = {
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 174, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-void x64Parser::TokenFunc8411(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8412(x64Operand &operand, int tokenPos)
 {
-	operand.values[15] = tokenCoding8411_15;
-	operand.values[16] = tokenCoding8411_16;
-	operand.values[17] = tokenCoding8411_17;
-	operand.values[18] = tokenCoding8411_18;
+	operand.values[15] = tokenCoding8412_15;
+	operand.values[16] = tokenCoding8412_16;
+	operand.values[17] = tokenCoding8412_17;
+	operand.values[18] = tokenCoding8412_18;
 }
-x64Token x64Parser::tokenBranches8410[] = {
-	{x64Token::ADDRESSCLASS, 1, 1, 0, NULL,&x64Parser::TokenFunc8411,  },
+x64Token x64Parser::tokenBranches8411[] = {
+	{x64Token::ADDRESSCLASS, 1, 1, 0, NULL,&x64Parser::TokenFunc8412,  },
 	{x64Token::EOT }
 };
-Coding x64Parser::tokenCoding8413_15[] = {
+Coding x64Parser::tokenCoding8414_15[] = {
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8413_16[] = {
+Coding x64Parser::tokenCoding8414_16[] = {
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8413_17[] = {
+Coding x64Parser::tokenCoding8414_17[] = {
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::valSpecified), 4, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8413_18[] = {
+Coding x64Parser::tokenCoding8414_18[] = {
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 174, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-void x64Parser::TokenFunc8413(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8414(x64Operand &operand, int tokenPos)
 {
-	operand.values[15] = tokenCoding8413_15;
-	operand.values[16] = tokenCoding8413_16;
-	operand.values[17] = tokenCoding8413_17;
-	operand.values[18] = tokenCoding8413_18;
+	operand.values[15] = tokenCoding8414_15;
+	operand.values[16] = tokenCoding8414_16;
+	operand.values[17] = tokenCoding8414_17;
+	operand.values[18] = tokenCoding8414_18;
 }
-x64Token x64Parser::tokenBranches8412[] = {
-	{x64Token::ADDRESSCLASS, 1, 1, 0, NULL,&x64Parser::TokenFunc8413,  },
+x64Token x64Parser::tokenBranches8413[] = {
+	{x64Token::ADDRESSCLASS, 1, 1, 0, NULL,&x64Parser::TokenFunc8414,  },
 	{x64Token::EOT }
 };
-Coding x64Parser::tokenCoding8415_15[] = {
+Coding x64Parser::tokenCoding8416_15[] = {
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8415_16[] = {
+Coding x64Parser::tokenCoding8416_16[] = {
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::valSpecified), 8, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8415_17[] = {
+Coding x64Parser::tokenCoding8416_17[] = {
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::valSpecified), 4, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8415_18[] = {
+Coding x64Parser::tokenCoding8416_18[] = {
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 174, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-void x64Parser::TokenFunc8415(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8416(x64Operand &operand, int tokenPos)
 {
-	operand.values[15] = tokenCoding8415_15;
-	operand.values[16] = tokenCoding8415_16;
-	operand.values[17] = tokenCoding8415_17;
-	operand.values[18] = tokenCoding8415_18;
+	operand.values[15] = tokenCoding8416_15;
+	operand.values[16] = tokenCoding8416_16;
+	operand.values[17] = tokenCoding8416_17;
+	operand.values[18] = tokenCoding8416_18;
 }
-x64Token x64Parser::tokenBranches8414[] = {
-	{x64Token::ADDRESSCLASS, 1, 1, 0, NULL,&x64Parser::TokenFunc8415,  },
+x64Token x64Parser::tokenBranches8415[] = {
+	{x64Token::ADDRESSCLASS, 1, 1, 0, NULL,&x64Parser::TokenFunc8416,  },
 	{x64Token::EOT }
 };
-Coding x64Parser::tokenCoding8466_15[] = {
+Coding x64Parser::tokenCoding8467_15[] = {
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8466_16[] = {
+Coding x64Parser::tokenCoding8467_16[] = {
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8466_22[] = {
+Coding x64Parser::tokenCoding8467_22[] = {
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 102, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8466_17[] = {
+Coding x64Parser::tokenCoding8467_17[] = {
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8466_18[] = {
+Coding x64Parser::tokenCoding8467_18[] = {
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 247, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-void x64Parser::TokenFunc8466(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8467(x64Operand &operand, int tokenPos)
 {
-	operand.values[15] = tokenCoding8466_15;
-	operand.values[16] = tokenCoding8466_16;
-	operand.values[22] = tokenCoding8466_22;
-	operand.values[17] = tokenCoding8466_17;
-	operand.values[18] = tokenCoding8466_18;
+	operand.values[15] = tokenCoding8467_15;
+	operand.values[16] = tokenCoding8467_16;
+	operand.values[22] = tokenCoding8467_22;
+	operand.values[17] = tokenCoding8467_17;
+	operand.values[18] = tokenCoding8467_18;
 }
+x64Token x64Parser::tokenBranches8466[] = {
+	{x64Token::ADDRESSCLASS, 9, 1, 0, NULL,&x64Parser::TokenFunc8467,  },
+	{x64Token::EOT }
+};
 x64Token x64Parser::tokenBranches8465[] = {
-	{x64Token::ADDRESSCLASS, 9, 1, 0, NULL,&x64Parser::TokenFunc8466,  },
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8466 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8464[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8465 },
-	{x64Token::EOT }
-};
-void x64Parser::TokenFunc8464(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8465(x64Operand &operand, int tokenPos)
 {
 	operand.values[19] = new Coding[2];
 	CleanupValues.push_back(operand.values[19]);
@@ -35538,47 +35538,47 @@ void x64Parser::TokenFunc8464(x64Operand &operand, int tokenPos)
 	operand.values[19]->binary = 0;
 	operand.values[19][1].type = Coding::eot;
 }
-x64Token x64Parser::tokenBranches8463[] = {
-	{x64Token::REGISTERCLASS, 17, 0, 0, NULL,&x64Parser::TokenFunc8464, x64Parser::tokenBranches8464 },
+x64Token x64Parser::tokenBranches8464[] = {
+	{x64Token::REGISTERCLASS, 17, 0, 0, NULL,&x64Parser::TokenFunc8465, x64Parser::tokenBranches8465 },
 	{x64Token::EOT }
 };
-Coding x64Parser::tokenCoding8470_15[] = {
+Coding x64Parser::tokenCoding8471_15[] = {
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 2, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8470_16[] = {
+Coding x64Parser::tokenCoding8471_16[] = {
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 3, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8470_22[] = {
+Coding x64Parser::tokenCoding8471_22[] = {
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8470_17[] = {
+Coding x64Parser::tokenCoding8471_17[] = {
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, 0, 1, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::tokenCoding8470_18[] = {
+Coding x64Parser::tokenCoding8471_18[] = {
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
 	{ CODING_NAME("rm")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 247, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-void x64Parser::TokenFunc8470(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8471(x64Operand &operand, int tokenPos)
 {
-	operand.values[15] = tokenCoding8470_15;
-	operand.values[16] = tokenCoding8470_16;
-	operand.values[22] = tokenCoding8470_22;
-	operand.values[17] = tokenCoding8470_17;
-	operand.values[18] = tokenCoding8470_18;
+	operand.values[15] = tokenCoding8471_15;
+	operand.values[16] = tokenCoding8471_16;
+	operand.values[22] = tokenCoding8471_22;
+	operand.values[17] = tokenCoding8471_17;
+	operand.values[18] = tokenCoding8471_18;
 }
+x64Token x64Parser::tokenBranches8470[] = {
+	{x64Token::ADDRESSCLASS, 8, 1, 0, NULL,&x64Parser::TokenFunc8471,  },
+	{x64Token::EOT }
+};
 x64Token x64Parser::tokenBranches8469[] = {
-	{x64Token::ADDRESSCLASS, 8, 1, 0, NULL,&x64Parser::TokenFunc8470,  },
+	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8470 },
 	{x64Token::EOT }
 };
-x64Token x64Parser::tokenBranches8468[] = {
-	{x64Token::TOKEN, 7, 0, 0, NULL, NULL, x64Parser::tokenBranches8469 },
-	{x64Token::EOT }
-};
-void x64Parser::TokenFunc8468(x64Operand &operand, int tokenPos)
+void x64Parser::TokenFunc8469(x64Operand &operand, int tokenPos)
 {
 	operand.values[19] = new Coding[2];
 	CleanupValues.push_back(operand.values[19]);
@@ -35590,8 +35590,8 @@ void x64Parser::TokenFunc8468(x64Operand &operand, int tokenPos)
 	operand.values[19]->binary = 0;
 	operand.values[19][1].type = Coding::eot;
 }
-x64Token x64Parser::tokenBranches8467[] = {
-	{x64Token::REGISTERCLASS, 18, 0, 0, NULL,&x64Parser::TokenFunc8468, x64Parser::tokenBranches8468 },
+x64Token x64Parser::tokenBranches8468[] = {
+	{x64Token::REGISTERCLASS, 18, 0, 0, NULL,&x64Parser::TokenFunc8469, x64Parser::tokenBranches8469 },
 	{x64Token::EOT }
 };
 Coding x64Parser::tokenCoding8487_15[] = {
@@ -42449,83 +42449,83 @@ asmError x64Parser::Opcode375(x64Operand &operand)
 	return rv;
 }
 Coding x64Parser::OpcodeCodings376_17[] = {
-	{ CODING_NAME("shl")  (Coding::Type)(Coding::valSpecified), 4, 0, 0, 0, 0 }, 
+	{ CODING_NAME("sgdt")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::OpcodeCodings376_18[] = {
+	{ CODING_NAME("sgdt")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("sgdt")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode376(x64Operand &operand)
 {
 	operand.values[17] = OpcodeCodings376_17;
-	asmError rv;
-	{
-		rv = Opcode16(operand);
-	}
-	return rv;
-}
-Coding x64Parser::OpcodeCodings377_35[] = {
-	{ CODING_NAME("shld")  (Coding::Type)(Coding::valSpecified), 164, 0, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-asmError x64Parser::Opcode377(x64Operand &operand)
-{
-	operand.values[35] = OpcodeCodings377_35;
-	asmError rv;
-	{
-		rv = Opcode17(operand);
-	}
-	return rv;
-}
-Coding x64Parser::OpcodeCodings378_17[] = {
-	{ CODING_NAME("shr")  (Coding::Type)(Coding::valSpecified), 5, 0, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-asmError x64Parser::Opcode378(x64Operand &operand)
-{
-	operand.values[17] = OpcodeCodings378_17;
-	asmError rv;
-	{
-		rv = Opcode16(operand);
-	}
-	return rv;
-}
-Coding x64Parser::OpcodeCodings379_35[] = {
-	{ CODING_NAME("shrd")  (Coding::Type)(Coding::valSpecified), 172, 0, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-asmError x64Parser::Opcode379(x64Operand &operand)
-{
-	operand.values[35] = OpcodeCodings379_35;
-	asmError rv;
-	{
-		rv = Opcode17(operand);
-	}
-	return rv;
-}
-Coding x64Parser::OpcodeCodings380_17[] = {
-	{ CODING_NAME("sidt")  (Coding::Type)(Coding::valSpecified), 1, 0, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::OpcodeCodings380_18[] = {
-	{ CODING_NAME("sidt")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("sidt")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 8, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-asmError x64Parser::Opcode380(x64Operand &operand)
-{
-	operand.values[17] = OpcodeCodings380_17;
-	operand.values[18] = OpcodeCodings380_18;
+	operand.values[18] = OpcodeCodings376_18;
 	asmError rv;
 	{
 		rv = Opcode18(operand);
 	}
 	return rv;
 }
+Coding x64Parser::OpcodeCodings377_17[] = {
+	{ CODING_NAME("shl")  (Coding::Type)(Coding::valSpecified), 4, 0, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+asmError x64Parser::Opcode377(x64Operand &operand)
+{
+	operand.values[17] = OpcodeCodings377_17;
+	asmError rv;
+	{
+		rv = Opcode16(operand);
+	}
+	return rv;
+}
+Coding x64Parser::OpcodeCodings378_35[] = {
+	{ CODING_NAME("shld")  (Coding::Type)(Coding::valSpecified), 164, 0, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+asmError x64Parser::Opcode378(x64Operand &operand)
+{
+	operand.values[35] = OpcodeCodings378_35;
+	asmError rv;
+	{
+		rv = Opcode17(operand);
+	}
+	return rv;
+}
+Coding x64Parser::OpcodeCodings379_17[] = {
+	{ CODING_NAME("shr")  (Coding::Type)(Coding::valSpecified), 5, 0, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+asmError x64Parser::Opcode379(x64Operand &operand)
+{
+	operand.values[17] = OpcodeCodings379_17;
+	asmError rv;
+	{
+		rv = Opcode16(operand);
+	}
+	return rv;
+}
+Coding x64Parser::OpcodeCodings380_35[] = {
+	{ CODING_NAME("shrd")  (Coding::Type)(Coding::valSpecified), 172, 0, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+asmError x64Parser::Opcode380(x64Operand &operand)
+{
+	operand.values[35] = OpcodeCodings380_35;
+	asmError rv;
+	{
+		rv = Opcode17(operand);
+	}
+	return rv;
+}
 Coding x64Parser::OpcodeCodings381_17[] = {
-	{ CODING_NAME("sldt")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
+	{ CODING_NAME("sidt")  (Coding::Type)(Coding::valSpecified), 1, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings381_18[] = {
-	{ CODING_NAME("sldt")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("sldt")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, 0, 0, 0 }, 
+	{ CODING_NAME("sidt")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("sidt")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode381(x64Operand &operand)
@@ -42539,36 +42539,42 @@ asmError x64Parser::Opcode381(x64Operand &operand)
 	return rv;
 }
 Coding x64Parser::OpcodeCodings382_17[] = {
-	{ CODING_NAME("smsw")  (Coding::Type)(Coding::valSpecified), 4, 0, 0, 0, 0 }, 
+	{ CODING_NAME("sldt")  (Coding::Type)(Coding::valSpecified), 0, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings382_18[] = {
-	{ CODING_NAME("smsw")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("smsw")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 8, 0, 0, 0 }, 
+	{ CODING_NAME("sldt")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("sldt")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode382(x64Operand &operand)
 {
 	operand.values[17] = OpcodeCodings382_17;
 	operand.values[18] = OpcodeCodings382_18;
-	asmError rv = ParseOperands(tokenBranches8022, operand);
+	asmError rv;
+	{
+		rv = Opcode18(operand);
+	}
 	return rv;
 }
+Coding x64Parser::OpcodeCodings383_17[] = {
+	{ CODING_NAME("smsw")  (Coding::Type)(Coding::valSpecified), 4, 0, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
 Coding x64Parser::OpcodeCodings383_18[] = {
-	{ CODING_NAME("stc")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 249, 8, 0, 0, 0 }, 
+	{ CODING_NAME("smsw")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("smsw")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode383(x64Operand &operand)
 {
+	operand.values[17] = OpcodeCodings383_17;
 	operand.values[18] = OpcodeCodings383_18;
-	asmError rv;
-	{
-		rv = Opcode0(operand);
-	}
+	asmError rv = ParseOperands(tokenBranches8023, operand);
 	return rv;
 }
 Coding x64Parser::OpcodeCodings384_18[] = {
-	{ CODING_NAME("std")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 253, 8, 0, 0, 0 }, 
+	{ CODING_NAME("stc")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 249, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode384(x64Operand &operand)
@@ -42581,7 +42587,7 @@ asmError x64Parser::Opcode384(x64Operand &operand)
 	return rv;
 }
 Coding x64Parser::OpcodeCodings385_18[] = {
-	{ CODING_NAME("sti")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 251, 8, 0, 0, 0 }, 
+	{ CODING_NAME("std")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 253, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode385(x64Operand &operand)
@@ -42593,27 +42599,26 @@ asmError x64Parser::Opcode385(x64Operand &operand)
 	}
 	return rv;
 }
-asmError x64Parser::Opcode386(x64Operand &operand)
-{
-	asmError rv = ParseOperands(tokenBranches8027, operand);
-	return rv;
-}
-Coding x64Parser::OpcodeCodings387_18[] = {
-	{ CODING_NAME("stosb")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 170, 8, 0, 0, 0 }, 
+Coding x64Parser::OpcodeCodings386_18[] = {
+	{ CODING_NAME("sti")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 251, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-asmError x64Parser::Opcode387(x64Operand &operand)
+asmError x64Parser::Opcode386(x64Operand &operand)
 {
-	operand.values[18] = OpcodeCodings387_18;
+	operand.values[18] = OpcodeCodings386_18;
 	asmError rv;
 	{
 		rv = Opcode0(operand);
 	}
 	return rv;
 }
+asmError x64Parser::Opcode387(x64Operand &operand)
+{
+	asmError rv = ParseOperands(tokenBranches8028, operand);
+	return rv;
+}
 Coding x64Parser::OpcodeCodings388_18[] = {
-	{ CODING_NAME("stosw")  Coding::stateFunc, 3 },
-	{ CODING_NAME("stosw")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 171, 8, 0, 0, 0 }, 
+	{ CODING_NAME("stosb")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 170, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode388(x64Operand &operand)
@@ -42626,8 +42631,8 @@ asmError x64Parser::Opcode388(x64Operand &operand)
 	return rv;
 }
 Coding x64Parser::OpcodeCodings389_18[] = {
-	{ CODING_NAME("stosd")  Coding::stateFunc, 4 },
-	{ CODING_NAME("stosd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 171, 8, 0, 0, 0 }, 
+	{ CODING_NAME("stosw")  Coding::stateFunc, 3 },
+	{ CODING_NAME("stosw")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 171, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode389(x64Operand &operand)
@@ -42639,65 +42644,66 @@ asmError x64Parser::Opcode389(x64Operand &operand)
 	}
 	return rv;
 }
+Coding x64Parser::OpcodeCodings390_18[] = {
+	{ CODING_NAME("stosd")  Coding::stateFunc, 4 },
+	{ CODING_NAME("stosd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 171, 8, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
 asmError x64Parser::Opcode390(x64Operand &operand)
 {
-	asmError rv = ParseOperands(tokenBranches8155, operand);
+	operand.values[18] = OpcodeCodings390_18;
+	asmError rv;
+	{
+		rv = Opcode0(operand);
+	}
 	return rv;
 }
-Coding x64Parser::OpcodeCodings391_17[] = {
-	{ CODING_NAME("str")  (Coding::Type)(Coding::valSpecified), 1, 0, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::OpcodeCodings391_18[] = {
-	{ CODING_NAME("str")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("str")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
 asmError x64Parser::Opcode391(x64Operand &operand)
 {
-	operand.values[17] = OpcodeCodings391_17;
-	operand.values[18] = OpcodeCodings391_18;
-	asmError rv = ParseOperands(tokenBranches8157, operand);
+	asmError rv = ParseOperands(tokenBranches8156, operand);
 	return rv;
 }
 Coding x64Parser::OpcodeCodings392_17[] = {
-	{ CODING_NAME("sub")  (Coding::Type)(Coding::valSpecified), 5, 0, 0, 0, 0 }, 
+	{ CODING_NAME("str")  (Coding::Type)(Coding::valSpecified), 1, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-Coding x64Parser::OpcodeCodings392_35[] = {
-	{ CODING_NAME("sub")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 44, 8, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::OpcodeCodings392_36[] = {
-	{ CODING_NAME("sub")  (Coding::Type)(Coding::valSpecified), 40, 0, 0, 0, 0 }, 
+Coding x64Parser::OpcodeCodings392_18[] = {
+	{ CODING_NAME("str")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("str")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode392(x64Operand &operand)
 {
 	operand.values[17] = OpcodeCodings392_17;
-	operand.values[35] = OpcodeCodings392_35;
-	operand.values[36] = OpcodeCodings392_36;
+	operand.values[18] = OpcodeCodings392_18;
+	asmError rv = ParseOperands(tokenBranches8158, operand);
+	return rv;
+}
+Coding x64Parser::OpcodeCodings393_17[] = {
+	{ CODING_NAME("sub")  (Coding::Type)(Coding::valSpecified), 5, 0, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::OpcodeCodings393_35[] = {
+	{ CODING_NAME("sub")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 44, 8, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::OpcodeCodings393_36[] = {
+	{ CODING_NAME("sub")  (Coding::Type)(Coding::valSpecified), 40, 0, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+asmError x64Parser::Opcode393(x64Operand &operand)
+{
+	operand.values[17] = OpcodeCodings393_17;
+	operand.values[35] = OpcodeCodings393_35;
+	operand.values[36] = OpcodeCodings393_36;
 	asmError rv;
 	{
 		rv = Opcode4(operand);
 	}
 	return rv;
 }
-Coding x64Parser::OpcodeCodings393_18[] = {
-	{ CODING_NAME("syscall")  (Coding::Type)(Coding::valSpecified), 5, 0, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-asmError x64Parser::Opcode393(x64Operand &operand)
-{
-	operand.values[18] = OpcodeCodings393_18;
-	asmError rv;
-	{
-		rv = Opcode1(operand);
-	}
-	return rv;
-}
 Coding x64Parser::OpcodeCodings394_18[] = {
-	{ CODING_NAME("sysenter")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 52, 8, 0, 0, 0 }, 
+	{ CODING_NAME("syscall")  (Coding::Type)(Coding::valSpecified), 5, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode394(x64Operand &operand)
@@ -42710,7 +42716,7 @@ asmError x64Parser::Opcode394(x64Operand &operand)
 	return rv;
 }
 Coding x64Parser::OpcodeCodings395_18[] = {
-	{ CODING_NAME("sysexit")  (Coding::Type)(Coding::valSpecified), 53, 0, 0, 0, 0 }, 
+	{ CODING_NAME("sysenter")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 52, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode395(x64Operand &operand)
@@ -42723,7 +42729,7 @@ asmError x64Parser::Opcode395(x64Operand &operand)
 	return rv;
 }
 Coding x64Parser::OpcodeCodings396_18[] = {
-	{ CODING_NAME("sysret")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 7, 8, 0, 0, 0 }, 
+	{ CODING_NAME("sysexit")  (Coding::Type)(Coding::valSpecified), 53, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode396(x64Operand &operand)
@@ -42735,71 +42741,71 @@ asmError x64Parser::Opcode396(x64Operand &operand)
 	}
 	return rv;
 }
-asmError x64Parser::Opcode397(x64Operand &operand)
-{
-	asmError rv = ParseOperands(tokenBranches8166, operand);
-	return rv;
-}
-Coding x64Parser::OpcodeCodings398_18[] = {
-	{ CODING_NAME("ud2")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 11, 8, 0, 0, 0 }, 
+Coding x64Parser::OpcodeCodings397_18[] = {
+	{ CODING_NAME("sysret")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 7, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
-asmError x64Parser::Opcode398(x64Operand &operand)
+asmError x64Parser::Opcode397(x64Operand &operand)
 {
-	operand.values[18] = OpcodeCodings398_18;
+	operand.values[18] = OpcodeCodings397_18;
 	asmError rv;
 	{
 		rv = Opcode1(operand);
 	}
 	return rv;
 }
-Coding x64Parser::OpcodeCodings399_17[] = {
-	{ CODING_NAME("verr")  (Coding::Type)(Coding::valSpecified), 4, 0, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
+asmError x64Parser::Opcode398(x64Operand &operand)
+{
+	asmError rv = ParseOperands(tokenBranches8167, operand);
+	return rv;
+}
 Coding x64Parser::OpcodeCodings399_18[] = {
-	{ CODING_NAME("verr")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("verr")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, 0, 0, 0 }, 
+	{ CODING_NAME("ud2")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 11, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode399(x64Operand &operand)
 {
-	operand.values[17] = OpcodeCodings399_17;
 	operand.values[18] = OpcodeCodings399_18;
-	asmError rv = ParseOperands(tokenBranches8281, operand);
+	asmError rv;
+	{
+		rv = Opcode1(operand);
+	}
 	return rv;
 }
 Coding x64Parser::OpcodeCodings400_17[] = {
-	{ CODING_NAME("verw")  (Coding::Type)(Coding::valSpecified), 5, 0, 0, 0, 0 }, 
+	{ CODING_NAME("verr")  (Coding::Type)(Coding::valSpecified), 4, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings400_18[] = {
-	{ CODING_NAME("verw")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("verw")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, 0, 0, 0 }, 
+	{ CODING_NAME("verr")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("verr")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode400(x64Operand &operand)
 {
 	operand.values[17] = OpcodeCodings400_17;
 	operand.values[18] = OpcodeCodings400_18;
-	asmError rv = ParseOperands(tokenBranches8283, operand);
+	asmError rv = ParseOperands(tokenBranches8282, operand);
 	return rv;
 }
+Coding x64Parser::OpcodeCodings401_17[] = {
+	{ CODING_NAME("verw")  (Coding::Type)(Coding::valSpecified), 5, 0, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
 Coding x64Parser::OpcodeCodings401_18[] = {
-	{ CODING_NAME("wait")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 155, 8, 0, 0, 0 }, 
+	{ CODING_NAME("verw")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("verw")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode401(x64Operand &operand)
 {
+	operand.values[17] = OpcodeCodings401_17;
 	operand.values[18] = OpcodeCodings401_18;
-	asmError rv;
-	{
-		rv = Opcode0(operand);
-	}
+	asmError rv = ParseOperands(tokenBranches8284, operand);
 	return rv;
 }
 Coding x64Parser::OpcodeCodings402_18[] = {
-	{ CODING_NAME("wbinvd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 9, 8, 0, 0, 0 }, 
+	{ CODING_NAME("wait")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 155, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode402(x64Operand &operand)
@@ -42807,12 +42813,12 @@ asmError x64Parser::Opcode402(x64Operand &operand)
 	operand.values[18] = OpcodeCodings402_18;
 	asmError rv;
 	{
-		rv = Opcode1(operand);
+		rv = Opcode0(operand);
 	}
 	return rv;
 }
 Coding x64Parser::OpcodeCodings403_18[] = {
-	{ CODING_NAME("wrmsr")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 48, 8, 0, 0, 0 }, 
+	{ CODING_NAME("wbinvd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 9, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode403(x64Operand &operand)
@@ -42824,116 +42830,111 @@ asmError x64Parser::Opcode403(x64Operand &operand)
 	}
 	return rv;
 }
+Coding x64Parser::OpcodeCodings404_18[] = {
+	{ CODING_NAME("wrmsr")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 48, 8, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
 asmError x64Parser::Opcode404(x64Operand &operand)
 {
-	asmError rv = ParseOperands(tokenBranches8288, operand);
-	return rv;
-}
-asmError x64Parser::Opcode405(x64Operand &operand)
-{
-	asmError rv = ParseOperands(tokenBranches8309, operand);
-	return rv;
-}
-asmError x64Parser::Opcode406(x64Operand &operand)
-{
-	asmError rv = ParseOperands(tokenBranches8368, operand);
-	return rv;
-}
-Coding x64Parser::OpcodeCodings407_18[] = {
-	{ CODING_NAME("xlatb")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 215, 8, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-asmError x64Parser::Opcode407(x64Operand &operand)
-{
-	operand.values[18] = OpcodeCodings407_18;
-	asmError rv;
-	{
-		rv = Opcode0(operand);
-	}
-	return rv;
-}
-Coding x64Parser::OpcodeCodings408_17[] = {
-	{ CODING_NAME("xor")  (Coding::Type)(Coding::valSpecified), 6, 0, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::OpcodeCodings408_35[] = {
-	{ CODING_NAME("xor")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 52, 8, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::OpcodeCodings408_36[] = {
-	{ CODING_NAME("xor")  (Coding::Type)(Coding::valSpecified), 48, 0, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-asmError x64Parser::Opcode408(x64Operand &operand)
-{
-	operand.values[17] = OpcodeCodings408_17;
-	operand.values[35] = OpcodeCodings408_35;
-	operand.values[36] = OpcodeCodings408_36;
-	asmError rv;
-	{
-		rv = Opcode4(operand);
-	}
-	return rv;
-}
-asmError x64Parser::Opcode409(x64Operand &operand)
-{
-	asmError rv = ParseOperands(tokenBranches8408, operand);
-	return rv;
-}
-asmError x64Parser::Opcode410(x64Operand &operand)
-{
-	asmError rv = ParseOperands(tokenBranches8410, operand);
-	return rv;
-}
-asmError x64Parser::Opcode411(x64Operand &operand)
-{
-	asmError rv = ParseOperands(tokenBranches8412, operand);
-	return rv;
-}
-asmError x64Parser::Opcode412(x64Operand &operand)
-{
-	asmError rv = ParseOperands(tokenBranches8414, operand);
-	return rv;
-}
-Coding x64Parser::OpcodeCodings413_18[] = {
-	{ CODING_NAME("xsetbv")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 8, 0, 0, 0 }, 
-	{ CODING_NAME("xsetbv")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 209, 8, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-asmError x64Parser::Opcode413(x64Operand &operand)
-{
-	operand.values[18] = OpcodeCodings413_18;
+	operand.values[18] = OpcodeCodings404_18;
 	asmError rv;
 	{
 		rv = Opcode1(operand);
 	}
 	return rv;
 }
-Coding x64Parser::OpcodeCodings414_22[] = {
-	{ CODING_NAME("addpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 102, 8, 0, 0, 0 }, 
+asmError x64Parser::Opcode405(x64Operand &operand)
+{
+	asmError rv = ParseOperands(tokenBranches8289, operand);
+	return rv;
+}
+asmError x64Parser::Opcode406(x64Operand &operand)
+{
+	asmError rv = ParseOperands(tokenBranches8310, operand);
+	return rv;
+}
+asmError x64Parser::Opcode407(x64Operand &operand)
+{
+	asmError rv = ParseOperands(tokenBranches8369, operand);
+	return rv;
+}
+Coding x64Parser::OpcodeCodings408_18[] = {
+	{ CODING_NAME("xlatb")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 215, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
+asmError x64Parser::Opcode408(x64Operand &operand)
+{
+	operand.values[18] = OpcodeCodings408_18;
+	asmError rv;
+	{
+		rv = Opcode0(operand);
+	}
+	return rv;
+}
+Coding x64Parser::OpcodeCodings409_17[] = {
+	{ CODING_NAME("xor")  (Coding::Type)(Coding::valSpecified), 6, 0, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::OpcodeCodings409_35[] = {
+	{ CODING_NAME("xor")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 52, 8, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::OpcodeCodings409_36[] = {
+	{ CODING_NAME("xor")  (Coding::Type)(Coding::valSpecified), 48, 0, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+asmError x64Parser::Opcode409(x64Operand &operand)
+{
+	operand.values[17] = OpcodeCodings409_17;
+	operand.values[35] = OpcodeCodings409_35;
+	operand.values[36] = OpcodeCodings409_36;
+	asmError rv;
+	{
+		rv = Opcode4(operand);
+	}
+	return rv;
+}
+asmError x64Parser::Opcode410(x64Operand &operand)
+{
+	asmError rv = ParseOperands(tokenBranches8409, operand);
+	return rv;
+}
+asmError x64Parser::Opcode411(x64Operand &operand)
+{
+	asmError rv = ParseOperands(tokenBranches8411, operand);
+	return rv;
+}
+asmError x64Parser::Opcode412(x64Operand &operand)
+{
+	asmError rv = ParseOperands(tokenBranches8413, operand);
+	return rv;
+}
+asmError x64Parser::Opcode413(x64Operand &operand)
+{
+	asmError rv = ParseOperands(tokenBranches8415, operand);
+	return rv;
+}
 Coding x64Parser::OpcodeCodings414_18[] = {
-	{ CODING_NAME("addpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("addpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 88, 8, 0, 0, 0 }, 
+	{ CODING_NAME("xsetbv")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 8, 0, 0, 0 }, 
+	{ CODING_NAME("xsetbv")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 209, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode414(x64Operand &operand)
 {
-	operand.values[22] = OpcodeCodings414_22;
 	operand.values[18] = OpcodeCodings414_18;
 	asmError rv;
 	{
-		rv = Opcode19(operand);
+		rv = Opcode1(operand);
 	}
 	return rv;
 }
 Coding x64Parser::OpcodeCodings415_22[] = {
+	{ CODING_NAME("addpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 102, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings415_18[] = {
-	{ CODING_NAME("addps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("addps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 88, 8, 0, 0, 0 }, 
+	{ CODING_NAME("addpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("addpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 88, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode415(x64Operand &operand)
@@ -42947,12 +42948,11 @@ asmError x64Parser::Opcode415(x64Operand &operand)
 	return rv;
 }
 Coding x64Parser::OpcodeCodings416_22[] = {
-	{ CODING_NAME("addsd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 242, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings416_18[] = {
-	{ CODING_NAME("addsd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("addsd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 88, 8, 0, 0, 0 }, 
+	{ CODING_NAME("addps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("addps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 88, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode416(x64Operand &operand)
@@ -42966,12 +42966,12 @@ asmError x64Parser::Opcode416(x64Operand &operand)
 	return rv;
 }
 Coding x64Parser::OpcodeCodings417_22[] = {
-	{ CODING_NAME("addss")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 243, 8, 0, 0, 0 }, 
+	{ CODING_NAME("addsd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 242, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings417_18[] = {
-	{ CODING_NAME("addss")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("addss")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 88, 8, 0, 0, 0 }, 
+	{ CODING_NAME("addsd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("addsd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 88, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode417(x64Operand &operand)
@@ -42985,12 +42985,12 @@ asmError x64Parser::Opcode417(x64Operand &operand)
 	return rv;
 }
 Coding x64Parser::OpcodeCodings418_22[] = {
-	{ CODING_NAME("addsubpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 102, 8, 0, 0, 0 }, 
+	{ CODING_NAME("addss")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 243, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings418_18[] = {
-	{ CODING_NAME("addsubpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("addsubpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 208, 8, 0, 0, 0 }, 
+	{ CODING_NAME("addss")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("addss")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 88, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode418(x64Operand &operand)
@@ -43004,12 +43004,12 @@ asmError x64Parser::Opcode418(x64Operand &operand)
 	return rv;
 }
 Coding x64Parser::OpcodeCodings419_22[] = {
-	{ CODING_NAME("addsubps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 242, 8, 0, 0, 0 }, 
+	{ CODING_NAME("addsubpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 102, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings419_18[] = {
-	{ CODING_NAME("addsubps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("addsubps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 208, 8, 0, 0, 0 }, 
+	{ CODING_NAME("addsubpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("addsubpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 208, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode419(x64Operand &operand)
@@ -43023,12 +43023,12 @@ asmError x64Parser::Opcode419(x64Operand &operand)
 	return rv;
 }
 Coding x64Parser::OpcodeCodings420_22[] = {
-	{ CODING_NAME("andnpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 102, 8, 0, 0, 0 }, 
+	{ CODING_NAME("addsubps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 242, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings420_18[] = {
-	{ CODING_NAME("andnpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("andnpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 85, 8, 0, 0, 0 }, 
+	{ CODING_NAME("addsubps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("addsubps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 208, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode420(x64Operand &operand)
@@ -43042,11 +43042,12 @@ asmError x64Parser::Opcode420(x64Operand &operand)
 	return rv;
 }
 Coding x64Parser::OpcodeCodings421_22[] = {
+	{ CODING_NAME("andnpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 102, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings421_18[] = {
-	{ CODING_NAME("andnps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("andnps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 85, 8, 0, 0, 0 }, 
+	{ CODING_NAME("andnpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("andnpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 85, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode421(x64Operand &operand)
@@ -43060,12 +43061,11 @@ asmError x64Parser::Opcode421(x64Operand &operand)
 	return rv;
 }
 Coding x64Parser::OpcodeCodings422_22[] = {
-	{ CODING_NAME("andpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 102, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings422_18[] = {
-	{ CODING_NAME("andpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("andpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 84, 8, 0, 0, 0 }, 
+	{ CODING_NAME("andnps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("andnps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 85, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode422(x64Operand &operand)
@@ -43079,11 +43079,12 @@ asmError x64Parser::Opcode422(x64Operand &operand)
 	return rv;
 }
 Coding x64Parser::OpcodeCodings423_22[] = {
+	{ CODING_NAME("andpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 102, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings423_18[] = {
-	{ CODING_NAME("andps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("andps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 84, 8, 0, 0, 0 }, 
+	{ CODING_NAME("andpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("andpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 84, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode423(x64Operand &operand)
@@ -43097,13 +43098,11 @@ asmError x64Parser::Opcode423(x64Operand &operand)
 	return rv;
 }
 Coding x64Parser::OpcodeCodings424_22[] = {
-	{ CODING_NAME("blendpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 102, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings424_18[] = {
-	{ CODING_NAME("blendpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("blendpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 58, 8, 0, 0, 0 }, 
-	{ CODING_NAME("blendpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 13, 8, 0, 0, 0 }, 
+	{ CODING_NAME("andps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("andps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 84, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode424(x64Operand &operand)
@@ -43112,18 +43111,18 @@ asmError x64Parser::Opcode424(x64Operand &operand)
 	operand.values[18] = OpcodeCodings424_18;
 	asmError rv;
 	{
-		rv = Opcode30(operand);
+		rv = Opcode19(operand);
 	}
 	return rv;
 }
 Coding x64Parser::OpcodeCodings425_22[] = {
-	{ CODING_NAME("blendps")  (Coding::Type)(Coding::valSpecified), 102, 0, 0, 0, 0 }, 
+	{ CODING_NAME("blendpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 102, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings425_18[] = {
-	{ CODING_NAME("blendps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("blendps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 58, 8, 0, 0, 0 }, 
-	{ CODING_NAME("blendps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 12, 8, 0, 0, 0 }, 
+	{ CODING_NAME("blendpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("blendpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 58, 8, 0, 0, 0 }, 
+	{ CODING_NAME("blendpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 13, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode425(x64Operand &operand)
@@ -43137,12 +43136,13 @@ asmError x64Parser::Opcode425(x64Operand &operand)
 	return rv;
 }
 Coding x64Parser::OpcodeCodings426_22[] = {
-	{ CODING_NAME("cmppd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 102, 8, 0, 0, 0 }, 
+	{ CODING_NAME("blendps")  (Coding::Type)(Coding::valSpecified), 102, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings426_18[] = {
-	{ CODING_NAME("cmppd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("cmppd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 194, 8, 0, 0, 0 }, 
+	{ CODING_NAME("blendps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("blendps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 58, 8, 0, 0, 0 }, 
+	{ CODING_NAME("blendps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 12, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode426(x64Operand &operand)
@@ -43151,16 +43151,17 @@ asmError x64Parser::Opcode426(x64Operand &operand)
 	operand.values[18] = OpcodeCodings426_18;
 	asmError rv;
 	{
-		rv = Opcode28(operand);
+		rv = Opcode30(operand);
 	}
 	return rv;
 }
 Coding x64Parser::OpcodeCodings427_22[] = {
+	{ CODING_NAME("cmppd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 102, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings427_18[] = {
-	{ CODING_NAME("cmpps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("cmpps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 194, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cmppd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cmppd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 194, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode427(x64Operand &operand)
@@ -43174,12 +43175,11 @@ asmError x64Parser::Opcode427(x64Operand &operand)
 	return rv;
 }
 Coding x64Parser::OpcodeCodings428_22[] = {
-	{ CODING_NAME("cvtdq2pd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 243, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings428_18[] = {
-	{ CODING_NAME("cvtdq2pd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("cvtdq2pd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 230, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cmpps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cmpps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 194, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode428(x64Operand &operand)
@@ -43188,16 +43188,17 @@ asmError x64Parser::Opcode428(x64Operand &operand)
 	operand.values[18] = OpcodeCodings428_18;
 	asmError rv;
 	{
-		rv = Opcode19(operand);
+		rv = Opcode28(operand);
 	}
 	return rv;
 }
 Coding x64Parser::OpcodeCodings429_22[] = {
+	{ CODING_NAME("cvtdq2pd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 243, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings429_18[] = {
-	{ CODING_NAME("cvtdq2ps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("cvtdq2ps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 91, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtdq2pd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtdq2pd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 230, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode429(x64Operand &operand)
@@ -43211,12 +43212,11 @@ asmError x64Parser::Opcode429(x64Operand &operand)
 	return rv;
 }
 Coding x64Parser::OpcodeCodings430_22[] = {
-	{ CODING_NAME("cvtpd2dq")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 242, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings430_18[] = {
-	{ CODING_NAME("cvtpd2dq")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("cvtpd2dq")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 230, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtdq2ps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtdq2ps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 91, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode430(x64Operand &operand)
@@ -43230,12 +43230,12 @@ asmError x64Parser::Opcode430(x64Operand &operand)
 	return rv;
 }
 Coding x64Parser::OpcodeCodings431_22[] = {
-	{ CODING_NAME("cvtpd2pi")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 102, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtpd2dq")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 242, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings431_18[] = {
-	{ CODING_NAME("cvtpd2pi")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("cvtpd2pi")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 45, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtpd2dq")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtpd2dq")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 230, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode431(x64Operand &operand)
@@ -43244,17 +43244,17 @@ asmError x64Parser::Opcode431(x64Operand &operand)
 	operand.values[18] = OpcodeCodings431_18;
 	asmError rv;
 	{
-		rv = Opcode23(operand);
+		rv = Opcode19(operand);
 	}
 	return rv;
 }
 Coding x64Parser::OpcodeCodings432_22[] = {
-	{ CODING_NAME("cvtpd2ps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 102, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtpd2pi")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 102, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings432_18[] = {
-	{ CODING_NAME("cvtpd2ps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("cvtpd2ps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 90, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtpd2pi")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtpd2pi")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 45, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode432(x64Operand &operand)
@@ -43263,17 +43263,17 @@ asmError x64Parser::Opcode432(x64Operand &operand)
 	operand.values[18] = OpcodeCodings432_18;
 	asmError rv;
 	{
-		rv = Opcode19(operand);
+		rv = Opcode23(operand);
 	}
 	return rv;
 }
 Coding x64Parser::OpcodeCodings433_22[] = {
-	{ CODING_NAME("cvtpi2pd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 102, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtpd2ps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 102, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings433_18[] = {
-	{ CODING_NAME("cvtpi2pd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("cvtpi2pd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 42, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtpd2ps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtpd2ps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 90, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode433(x64Operand &operand)
@@ -43282,16 +43282,17 @@ asmError x64Parser::Opcode433(x64Operand &operand)
 	operand.values[18] = OpcodeCodings433_18;
 	asmError rv;
 	{
-		rv = Opcode24(operand);
+		rv = Opcode19(operand);
 	}
 	return rv;
 }
 Coding x64Parser::OpcodeCodings434_22[] = {
+	{ CODING_NAME("cvtpi2pd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 102, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings434_18[] = {
-	{ CODING_NAME("cvtpi2ps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("cvtpi2ps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 42, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtpi2pd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtpi2pd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 42, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode434(x64Operand &operand)
@@ -43305,12 +43306,11 @@ asmError x64Parser::Opcode434(x64Operand &operand)
 	return rv;
 }
 Coding x64Parser::OpcodeCodings435_22[] = {
-	{ CODING_NAME("cvtps2dq")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 102, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings435_18[] = {
-	{ CODING_NAME("cvtps2dq")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("cvtps2dq")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 91, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtpi2ps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtpi2ps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 42, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode435(x64Operand &operand)
@@ -43319,16 +43319,17 @@ asmError x64Parser::Opcode435(x64Operand &operand)
 	operand.values[18] = OpcodeCodings435_18;
 	asmError rv;
 	{
-		rv = Opcode19(operand);
+		rv = Opcode24(operand);
 	}
 	return rv;
 }
 Coding x64Parser::OpcodeCodings436_22[] = {
+	{ CODING_NAME("cvtps2dq")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 102, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings436_18[] = {
-	{ CODING_NAME("cvtps2pd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("cvtps2pd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 90, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtps2dq")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtps2dq")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 91, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode436(x64Operand &operand)
@@ -43345,8 +43346,8 @@ Coding x64Parser::OpcodeCodings437_22[] = {
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings437_18[] = {
-	{ CODING_NAME("cvtps2pi")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("cvtps2pi")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 45, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtps2pd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtps2pd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 90, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode437(x64Operand &operand)
@@ -43355,17 +43356,16 @@ asmError x64Parser::Opcode437(x64Operand &operand)
 	operand.values[18] = OpcodeCodings437_18;
 	asmError rv;
 	{
-		rv = Opcode23(operand);
+		rv = Opcode19(operand);
 	}
 	return rv;
 }
 Coding x64Parser::OpcodeCodings438_22[] = {
-	{ CODING_NAME("cvtsd2si")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 242, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings438_18[] = {
-	{ CODING_NAME("cvtsd2si")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("cvtsd2si")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 45, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtps2pi")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtps2pi")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 45, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode438(x64Operand &operand)
@@ -43374,17 +43374,17 @@ asmError x64Parser::Opcode438(x64Operand &operand)
 	operand.values[18] = OpcodeCodings438_18;
 	asmError rv;
 	{
-		rv = Opcode25(operand);
+		rv = Opcode23(operand);
 	}
 	return rv;
 }
 Coding x64Parser::OpcodeCodings439_22[] = {
-	{ CODING_NAME("cvtsd2ss")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 242, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtsd2si")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 242, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings439_18[] = {
-	{ CODING_NAME("cvtsd2ss")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("cvtsd2ss")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 90, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtsd2si")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtsd2si")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 45, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode439(x64Operand &operand)
@@ -43393,17 +43393,17 @@ asmError x64Parser::Opcode439(x64Operand &operand)
 	operand.values[18] = OpcodeCodings439_18;
 	asmError rv;
 	{
-		rv = Opcode19(operand);
+		rv = Opcode25(operand);
 	}
 	return rv;
 }
 Coding x64Parser::OpcodeCodings440_22[] = {
-	{ CODING_NAME("cvtsi2sd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 242, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtsd2ss")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 242, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings440_18[] = {
-	{ CODING_NAME("cvtsi2sd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("cvtsi2sd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 42, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtsd2ss")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtsd2ss")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 90, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode440(x64Operand &operand)
@@ -43412,17 +43412,17 @@ asmError x64Parser::Opcode440(x64Operand &operand)
 	operand.values[18] = OpcodeCodings440_18;
 	asmError rv;
 	{
-		rv = Opcode26(operand);
+		rv = Opcode19(operand);
 	}
 	return rv;
 }
 Coding x64Parser::OpcodeCodings441_22[] = {
-	{ CODING_NAME("cvtsi2ss")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 243, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtsi2sd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 242, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings441_18[] = {
-	{ CODING_NAME("cvtsi2ss")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("cvtsi2ss")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 42, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtsi2sd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtsi2sd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 42, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode441(x64Operand &operand)
@@ -43436,12 +43436,12 @@ asmError x64Parser::Opcode441(x64Operand &operand)
 	return rv;
 }
 Coding x64Parser::OpcodeCodings442_22[] = {
-	{ CODING_NAME("cvtss2sd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 243, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtsi2ss")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 243, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings442_18[] = {
-	{ CODING_NAME("cvtss2sd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("cvtss2sd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 90, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtsi2ss")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtsi2ss")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 42, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode442(x64Operand &operand)
@@ -43450,17 +43450,17 @@ asmError x64Parser::Opcode442(x64Operand &operand)
 	operand.values[18] = OpcodeCodings442_18;
 	asmError rv;
 	{
-		rv = Opcode19(operand);
+		rv = Opcode26(operand);
 	}
 	return rv;
 }
 Coding x64Parser::OpcodeCodings443_22[] = {
-	{ CODING_NAME("cvtss2si")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 243, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtss2sd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 243, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings443_18[] = {
-	{ CODING_NAME("cvtss2si")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("cvtss2si")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 45, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtss2sd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtss2sd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 90, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode443(x64Operand &operand)
@@ -43469,17 +43469,17 @@ asmError x64Parser::Opcode443(x64Operand &operand)
 	operand.values[18] = OpcodeCodings443_18;
 	asmError rv;
 	{
-		rv = Opcode25(operand);
+		rv = Opcode19(operand);
 	}
 	return rv;
 }
 Coding x64Parser::OpcodeCodings444_22[] = {
-	{ CODING_NAME("cvttpd2dq")  (Coding::Type)(Coding::valSpecified), 102, 0, 0, 0, 0 }, 
+	{ CODING_NAME("cvtss2si")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 243, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings444_18[] = {
-	{ CODING_NAME("cvttpd2dq")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("cvttpd2dq")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 230, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtss2si")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvtss2si")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 45, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode444(x64Operand &operand)
@@ -43488,17 +43488,17 @@ asmError x64Parser::Opcode444(x64Operand &operand)
 	operand.values[18] = OpcodeCodings444_18;
 	asmError rv;
 	{
-		rv = Opcode19(operand);
+		rv = Opcode25(operand);
 	}
 	return rv;
 }
 Coding x64Parser::OpcodeCodings445_22[] = {
-	{ CODING_NAME("cvttpd2pi")  (Coding::Type)(Coding::valSpecified), 102, 0, 0, 0, 0 }, 
+	{ CODING_NAME("cvttpd2dq")  (Coding::Type)(Coding::valSpecified), 102, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings445_18[] = {
-	{ CODING_NAME("cvttpd2pi")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("cvttpd2pi")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 44, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvttpd2dq")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvttpd2dq")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 230, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode445(x64Operand &operand)
@@ -43507,17 +43507,17 @@ asmError x64Parser::Opcode445(x64Operand &operand)
 	operand.values[18] = OpcodeCodings445_18;
 	asmError rv;
 	{
-		rv = Opcode23(operand);
+		rv = Opcode19(operand);
 	}
 	return rv;
 }
 Coding x64Parser::OpcodeCodings446_22[] = {
-	{ CODING_NAME("cvttps2dq")  (Coding::Type)(Coding::valSpecified), 243, 0, 0, 0, 0 }, 
+	{ CODING_NAME("cvttpd2pi")  (Coding::Type)(Coding::valSpecified), 102, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings446_18[] = {
-	{ CODING_NAME("cvttps2dq")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("cvttps2dq")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 91, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvttpd2pi")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvttpd2pi")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 44, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode446(x64Operand &operand)
@@ -43526,16 +43526,17 @@ asmError x64Parser::Opcode446(x64Operand &operand)
 	operand.values[18] = OpcodeCodings446_18;
 	asmError rv;
 	{
-		rv = Opcode19(operand);
+		rv = Opcode23(operand);
 	}
 	return rv;
 }
 Coding x64Parser::OpcodeCodings447_22[] = {
+	{ CODING_NAME("cvttps2dq")  (Coding::Type)(Coding::valSpecified), 243, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings447_18[] = {
-	{ CODING_NAME("cvttps2pi")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("cvttps2pi")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 44, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvttps2dq")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvttps2dq")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 91, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode447(x64Operand &operand)
@@ -43544,17 +43545,16 @@ asmError x64Parser::Opcode447(x64Operand &operand)
 	operand.values[18] = OpcodeCodings447_18;
 	asmError rv;
 	{
-		rv = Opcode23(operand);
+		rv = Opcode19(operand);
 	}
 	return rv;
 }
 Coding x64Parser::OpcodeCodings448_22[] = {
-	{ CODING_NAME("cvttsd2si")  (Coding::Type)(Coding::valSpecified), 242, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings448_18[] = {
-	{ CODING_NAME("cvttsd2si")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("cvttsd2si")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 44, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvttps2pi")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvttps2pi")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 44, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode448(x64Operand &operand)
@@ -43563,17 +43563,17 @@ asmError x64Parser::Opcode448(x64Operand &operand)
 	operand.values[18] = OpcodeCodings448_18;
 	asmError rv;
 	{
-		rv = Opcode25(operand);
+		rv = Opcode23(operand);
 	}
 	return rv;
 }
 Coding x64Parser::OpcodeCodings449_22[] = {
-	{ CODING_NAME("cvttss2si")  (Coding::Type)(Coding::valSpecified), 243, 0, 0, 0, 0 }, 
+	{ CODING_NAME("cvttsd2si")  (Coding::Type)(Coding::valSpecified), 242, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings449_18[] = {
-	{ CODING_NAME("cvttss2si")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("cvttss2si")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 44, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvttsd2si")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvttsd2si")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 44, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode449(x64Operand &operand)
@@ -43587,12 +43587,12 @@ asmError x64Parser::Opcode449(x64Operand &operand)
 	return rv;
 }
 Coding x64Parser::OpcodeCodings450_22[] = {
-	{ CODING_NAME("divpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 102, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvttss2si")  (Coding::Type)(Coding::valSpecified), 243, 0, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings450_18[] = {
-	{ CODING_NAME("divpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("divpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 94, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvttss2si")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("cvttss2si")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 44, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode450(x64Operand &operand)
@@ -43601,16 +43601,17 @@ asmError x64Parser::Opcode450(x64Operand &operand)
 	operand.values[18] = OpcodeCodings450_18;
 	asmError rv;
 	{
-		rv = Opcode19(operand);
+		rv = Opcode25(operand);
 	}
 	return rv;
 }
 Coding x64Parser::OpcodeCodings451_22[] = {
+	{ CODING_NAME("divpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 102, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings451_18[] = {
-	{ CODING_NAME("divps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("divps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 94, 8, 0, 0, 0 }, 
+	{ CODING_NAME("divpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("divpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 94, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode451(x64Operand &operand)
@@ -43624,12 +43625,11 @@ asmError x64Parser::Opcode451(x64Operand &operand)
 	return rv;
 }
 Coding x64Parser::OpcodeCodings452_22[] = {
-	{ CODING_NAME("divsd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 242, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings452_18[] = {
-	{ CODING_NAME("divsd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("divsd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 94, 8, 0, 0, 0 }, 
+	{ CODING_NAME("divps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("divps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 94, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode452(x64Operand &operand)
@@ -43643,12 +43643,12 @@ asmError x64Parser::Opcode452(x64Operand &operand)
 	return rv;
 }
 Coding x64Parser::OpcodeCodings453_22[] = {
-	{ CODING_NAME("divss")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 243, 8, 0, 0, 0 }, 
+	{ CODING_NAME("divsd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 242, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings453_18[] = {
-	{ CODING_NAME("divss")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("divss")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 94, 8, 0, 0, 0 }, 
+	{ CODING_NAME("divsd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("divsd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 94, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode453(x64Operand &operand)
@@ -43662,13 +43662,12 @@ asmError x64Parser::Opcode453(x64Operand &operand)
 	return rv;
 }
 Coding x64Parser::OpcodeCodings454_22[] = {
-	{ CODING_NAME("dppd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 102, 8, 0, 0, 0 }, 
+	{ CODING_NAME("divss")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 243, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings454_18[] = {
-	{ CODING_NAME("dppd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("dppd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 58, 8, 0, 0, 0 }, 
-	{ CODING_NAME("dppd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 64, 8, 0, 0, 0 }, 
+	{ CODING_NAME("divss")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("divss")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 94, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode454(x64Operand &operand)
@@ -43677,17 +43676,18 @@ asmError x64Parser::Opcode454(x64Operand &operand)
 	operand.values[18] = OpcodeCodings454_18;
 	asmError rv;
 	{
-		rv = Opcode30(operand);
+		rv = Opcode19(operand);
 	}
 	return rv;
 }
 Coding x64Parser::OpcodeCodings455_22[] = {
+	{ CODING_NAME("dppd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 102, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings455_18[] = {
-	{ CODING_NAME("dpps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("dpps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 58, 8, 0, 0, 0 }, 
-	{ CODING_NAME("dpps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 64, 8, 0, 0, 0 }, 
+	{ CODING_NAME("dppd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("dppd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 58, 8, 0, 0, 0 }, 
+	{ CODING_NAME("dppd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 64, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode455(x64Operand &operand)
@@ -43701,12 +43701,12 @@ asmError x64Parser::Opcode455(x64Operand &operand)
 	return rv;
 }
 Coding x64Parser::OpcodeCodings456_22[] = {
-	{ CODING_NAME("hsubpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 102, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings456_18[] = {
-	{ CODING_NAME("hsubpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("hsubpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 125, 8, 0, 0, 0 }, 
+	{ CODING_NAME("dpps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("dpps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 58, 8, 0, 0, 0 }, 
+	{ CODING_NAME("dpps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 64, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode456(x64Operand &operand)
@@ -43715,17 +43715,17 @@ asmError x64Parser::Opcode456(x64Operand &operand)
 	operand.values[18] = OpcodeCodings456_18;
 	asmError rv;
 	{
-		rv = Opcode19(operand);
+		rv = Opcode30(operand);
 	}
 	return rv;
 }
 Coding x64Parser::OpcodeCodings457_22[] = {
-	{ CODING_NAME("hsubps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 242, 8, 0, 0, 0 }, 
+	{ CODING_NAME("hsubpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 102, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings457_18[] = {
-	{ CODING_NAME("hsubps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("hsubps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 125, 8, 0, 0, 0 }, 
+	{ CODING_NAME("hsubpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("hsubpd")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 125, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode457(x64Operand &operand)
@@ -43739,13 +43739,12 @@ asmError x64Parser::Opcode457(x64Operand &operand)
 	return rv;
 }
 Coding x64Parser::OpcodeCodings458_22[] = {
-	{ CODING_NAME("insertps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 102, 8, 0, 0, 0 }, 
+	{ CODING_NAME("hsubps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 242, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings458_18[] = {
-	{ CODING_NAME("insertps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("insertps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 58, 8, 0, 0, 0 }, 
-	{ CODING_NAME("insertps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 33, 8, 0, 0, 0 }, 
+	{ CODING_NAME("hsubps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("hsubps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 125, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode458(x64Operand &operand)
@@ -43754,17 +43753,18 @@ asmError x64Parser::Opcode458(x64Operand &operand)
 	operand.values[18] = OpcodeCodings458_18;
 	asmError rv;
 	{
-		rv = Opcode30(operand);
+		rv = Opcode19(operand);
 	}
 	return rv;
 }
 Coding x64Parser::OpcodeCodings459_22[] = {
-	{ CODING_NAME("lddqu")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 242, 8, 0, 0, 0 }, 
+	{ CODING_NAME("insertps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 102, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 Coding x64Parser::OpcodeCodings459_18[] = {
-	{ CODING_NAME("lddqu")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("lddqu")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 240, 8, 0, 0, 0 }, 
+	{ CODING_NAME("insertps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("insertps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 58, 8, 0, 0, 0 }, 
+	{ CODING_NAME("insertps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 33, 8, 0, 0, 0 }, 
 	{ CODING_NAME("eot") Coding::eot },
 };
 asmError x64Parser::Opcode459(x64Operand &operand)
@@ -43773,36 +43773,37 @@ asmError x64Parser::Opcode459(x64Operand &operand)
 	operand.values[18] = OpcodeCodings459_18;
 	asmError rv;
 	{
-		rv = Opcode19(operand);
+		rv = Opcode30(operand);
 	}
 	return rv;
 }
+Coding x64Parser::OpcodeCodings460_22[] = {
+	{ CODING_NAME("lddqu")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 242, 8, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
+Coding x64Parser::OpcodeCodings460_18[] = {
+	{ CODING_NAME("lddqu")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
+	{ CODING_NAME("lddqu")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 240, 8, 0, 0, 0 }, 
+	{ CODING_NAME("eot") Coding::eot },
+};
 asmError x64Parser::Opcode460(x64Operand &operand)
 {
-	asmError rv = ParseOperands(tokenBranches8463, operand);
-	return rv;
-}
-asmError x64Parser::Opcode461(x64Operand &operand)
-{
-	asmError rv = ParseOperands(tokenBranches8467, operand);
-	return rv;
-}
-Coding x64Parser::OpcodeCodings462_22[] = {
-	{ CODING_NAME("eot") Coding::eot },
-};
-Coding x64Parser::OpcodeCodings462_18[] = {
-	{ CODING_NAME("maxps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8, 0, 0, 0 }, 
-	{ CODING_NAME("maxps")  (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 95, 8, 0, 0, 0 }, 
-	{ CODING_NAME("eot") Coding::eot },
-};
-asmError x64Parser::Opcode462(x64Operand &operand)
-{
-	operand.values[22] = OpcodeCodings462_22;
-	operand.values[18] = OpcodeCodings462_18;
+	operand.values[22] = OpcodeCodings460_22;
+	operand.values[18] = OpcodeCodings460_18;
 	asmError rv;
 	{
 		rv = Opcode19(operand);
 	}
+	return rv;
+}
+asmError x64Parser::Opcode461(x64Operand &operand)
+{
+	asmError rv = ParseOperands(tokenBranches8464, operand);
+	return rv;
+}
+asmError x64Parser::Opcode462(x64Operand &operand)
+{
+	asmError rv = ParseOperands(tokenBranches8468, operand);
 	return rv;
 }
 Coding x64Parser::OpcodeCodings463_22[] = {

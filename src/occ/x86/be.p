@@ -1,4 +1,6 @@
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 /* Protogen Version 2.1.1.17Friday October 28, 2005  17:44:50 */
 
 enum e_lk get_dll_linkage();                /* get dll linkage corresponding to command line switches */
@@ -107,7 +109,7 @@ void inasmini(void);
 int inasm_enterauto(EXPRESSION *node, int *reg1, int *reg2);
 int isrm(AMODE *ap, int dreg_allowed);
 AMODE *getimmed(void);
-enum e_op inasm_op(void);
+enum e_opcode inasm_op(void);
 LEXEME *inasm_statement(LEXEME *inlex, BLOCKDATA *parent);
 void *inlineAsmStmt(void *);
                               /* Invoke.c */
@@ -149,7 +151,6 @@ void omfPublics(void);
 void omfputexport(SYMBOL *sp);
 void omfExports(void);
 void omfPassSeperator(void);
-int omfFixups(int seg, EMIT_LIST *rec, char *data, char *buf, int *len);
 void omfComDefData(void);
 void omfData(void);
 void omfSourceFile(char *file, int num);
@@ -175,7 +176,7 @@ void oa_put_code(OCODE *cd);
 void oa_gen_strlab(SYMBOL *sp);
 void oa_put_label(int lab);
 void oa_put_string_label(int lab, int type);
-void oa_genfloat(enum e_gt type, FPF *val);
+void oa_genfloat(enum e_gt type, FPFC *val);
 void oa_genstring(LCHAR *str, int len);
 void oa_genint(enum e_gt type, LLONG_TYPE val);
 void oa_genaddress(ULLONG_TYPE val);
@@ -196,7 +197,7 @@ void oa_gen_importThunk(SYMBOL *func);
 void oa_align(int size);
 void oa_setalign(int code, int data, int bss, int constant);
 long queue_muldivval(long number);
-long queue_floatval(FPF *number, int size);
+long queue_floatval(FPFC *number, int size);
 void dump_muldivval(void);
 void dump_browsedata(BROWSEINFO *bri);
 void dump_browsefile(BROWSEFILE *brf);
@@ -222,8 +223,8 @@ void include_start(char *name, int num);
 void InsertLabel(int lbl, int address, int seg);
 int LabelAddress(int lbl);
 int LabelSeg(int lbl);
+void outcode_enterseg(e_sg seg);
 void InsertLine(int address, LINEDATA *linedata);
-EMIT_TAB *gettab(int seg);
 void emit(int seg, void *data, int len);
 void write_to_seg(int seg, int offset, void *value, int len);
 void gen_symbol_fixup(enum mode xmode, int seg, int address, SYMBOL *pub);
@@ -233,9 +234,9 @@ void outcode_gen_labref(int n);
 void outcode_gen_labdifref(int n1, int n2);
 void outcode_gensrref(SYMBOL *sp, int val);
 void outcode_genstorage(int len);
-void outcode_genfloat(FPF *val);
-void outcode_gendouble(FPF *val);
-void outcode_genlongdouble(FPF *val);
+void outcode_genfloat(FPFC *val);
+void outcode_gendouble(FPFC *val);
+void outcode_genlongdouble(FPFC *val);
 void outcode_genstring(LCHAR *string, int len);
 void outcode_genbyte(int val);
 void outcode_genword(int val);
@@ -246,7 +247,7 @@ void outcode_put_label(int lab);
 void outcode_start_virtual_seg(SYMBOL *sp, int data);
 void outcode_end_virtual_seg(SYMBOL *sp);
 EXPRESSION *GetSymRef(EXPRESSION *n);
-int resolveoffset(OCODE *ins, EXPRESSION *n, int *resolved);
+int resolveoffset(EXPRESSION *n, int *resolved);
 int asmrm(int reg, OCODE *ins, AMODE *data, UBYTE **p);
 int asmfrm(int reg, OCODE *ins, AMODE *data, UBYTE **p);
 int AOP0(OPCODE *descript, OCODE *data, UBYTE **p);
@@ -338,7 +339,7 @@ void gen_code2(int op, int len1, int len2, AMODE *ap1, AMODE *ap2);
 void gen_codelab(SYMBOL *lab);
 void gen_branch(int op, int label);
 void gen_comment(char *txt);
-void add_peep(OCODE *new);
+void add_peep(OCODE *newop);
 void oa_gen_label(int labno);
 void flush_peep(SYMBOL *funcsp, QUAD *list);
 void peep_add(OCODE *ip);
@@ -366,3 +367,7 @@ void peep_call(OCODE *ip);
 void peep_pop(OCODE *ip);
 void remove_peep_entry(OCODE *ip);
 void oa_peep(void);
+
+#ifdef __cplusplus
+}
+#endif

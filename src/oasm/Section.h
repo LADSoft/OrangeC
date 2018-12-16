@@ -49,7 +49,7 @@ class Section
     ObjSection* CreateObject(ObjFactory& factory);
     bool MakeData(ObjFactory& factory, AsmFile* fil);
     void Parse(AsmFile* fil);
-    void Resolve(AsmFile* fil);
+    void Resolve();
     void SetAlign(int aln) { align = aln; }
     int GetAlign() { return align; }
     void InsertInstruction(Instruction* ins)
@@ -83,7 +83,7 @@ class Section
   protected:
     ObjExpression* ConvertExpression(AsmExprNode* node, AsmFile* fil, ObjFactory& factory);
     bool SwapSectionIntoPlace(ObjExpression* t);
-    void Optimize(AsmFile* fil);
+    void Optimize();
 
   private:
     std::string name;

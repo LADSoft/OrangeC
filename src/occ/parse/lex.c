@@ -872,10 +872,10 @@ static LLONG_TYPE getbase(int b, char** ptr)
     return i;
 }
 
-static void getfloatingbase(int b, FPF* rval, char** ptr)
+static void getfloatingbase(int b, FPFC* rval, char** ptr)
 {
     int j;
-    FPF temp, temp1;
+    FPFC temp, temp1;
     SetFPFZero(rval, 0);
     while ((j = radix36(**ptr)) < b)
     {
@@ -892,11 +892,11 @@ static void getfloatingbase(int b, FPF* rval, char** ptr)
 /*
  *      getfrac - get fraction part of a floating number.
  */
-static int getfrac(int radix, char** ptr, FPF* rval)
+static int getfrac(int radix, char** ptr, FPFC* rval)
 {
     ULLONG_TYPE i = 0;
     int j, k = 0;
-    FPF temp, temp1;
+    FPFC temp, temp1;
     int digits = 0;
     while ((j = radix36(**ptr)) < radix)
     {
@@ -956,7 +956,7 @@ static int getexp(char** ptr)
  *      getnum handles all of the numeric input. it accepts
  *      decimal, octal, hexidecimal, and floating point numbers.
  */
-int getNumber(unsigned char** ptr, unsigned char** end, unsigned char* suffix, FPF* rval, LLONG_TYPE* ival)
+int getNumber(unsigned char** ptr, unsigned char** end, unsigned char* suffix, FPFC* rval, LLONG_TYPE* ival)
 {
     char buf[200], *p = buf;
     int radix = 10;
@@ -1288,7 +1288,7 @@ LEXEME* getsym(void)
     KEYWORD* kw;
     enum e_lexType tp;
     BOOLEAN contin;
-    FPF rval;
+    FPFC rval;
     LLONG_TYPE ival;
     static unsigned char buf[16384];
     static int pos = 0;

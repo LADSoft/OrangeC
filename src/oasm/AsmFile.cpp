@@ -796,7 +796,7 @@ ObjFile* AsmFile::MakeFile(ObjFactory& factory, std::string& name)
         fi->Add(sf);
         for (int i = 0; i < numericSections.size(); ++i)
         {
-            numericSections[i]->Resolve(this);
+            numericSections[i]->Resolve();
             ObjSection* s = numericSections[i]->CreateObject(factory);
             if (s)
             {

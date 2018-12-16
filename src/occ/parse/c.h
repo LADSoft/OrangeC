@@ -145,8 +145,8 @@ enum ovcl
 
 typedef struct
 {
-    FPF r;
-    FPF i;
+    FPFC r;
+    FPFC i;
 } _COMPLEX_S;
 
 // clang-format off
@@ -307,7 +307,7 @@ typedef struct expr
     union
     {
         LLONG_TYPE i;
-        FPF f;
+        FPFC f;
         _COMPLEX_S c;
         struct sym* sp; /* sym will be defined later */
         char* name;     /* name during base class processing */
@@ -371,7 +371,7 @@ union u_val
 {
     LLONG_TYPE i;  /* int val */
     ULLONG_TYPE u; /* nsigned val */
-    FPF f;         /* float val */
+    FPFC f;         /* float val */
     _COMPLEX_S c;
     union
     {
@@ -998,16 +998,19 @@ typedef struct kwblk
      (((lex)->kw->key == kw_auto ? (cparams.prm_cplusplus ? TT_BASETYPE : TT_STORAGE_CLASS) : (lex)->kw->tokenTypes) & (types)))
 #define KW(lex) (ISKW(lex) ? (lex)->kw->key : kw_none)
 
+enum e_lexType {
+    l_none, l_i, l_ui, l_l, l_ul, l_ll, l_ull, l_f, l_d, l_ld, l_I,
+    l_id, l_kw,
+    l_astr, l_wstr, l_ustr, l_Ustr, l_u8str, l_msilstr,
+    l_achr, l_wchr, l_uchr, l_Uchr,
+    l_qualifiedname, l_asminst, l_asmreg
+};
+
 typedef struct lexeme
 {
     struct lexeme *next, *prev;
     // clang-format off
-    enum e_lexType { l_none, l_i, l_ui, l_l, l_ul, l_ll, l_ull, l_f, l_d, l_ld, l_I, 
-            l_id, l_kw, 
-            l_astr, l_wstr,  l_ustr, l_Ustr, l_u8str, l_msilstr, 
-            l_achr, l_wchr, l_uchr, l_Uchr, 
-            l_qualifiedname, l_asminst, l_asmreg
-         } type;
+    enum e_lexType type;
     // clang-format on
     union u_val value;
     char* litaslit;

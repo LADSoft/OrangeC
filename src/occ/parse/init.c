@@ -659,7 +659,7 @@ int dumpInit(SYMBOL* sp, INITIALIZER* init)
     TYPE* tp = basetype(init->basetp);
     int rv;
     LLONG_TYPE i;
-    FPF f, im;
+    FPFC f, im;
     if (tp->type == bt_templateparam)
         tp = tp->templateParam->p->byClass.val;
     if (isstructured(tp))

@@ -32,21 +32,21 @@
  * the compiler actually generated risc-like instruction sequences
  * and some of the things in this module re-cisc it :)
  */
-extern COMPILER_PARAMS cparams;
-extern int regmap[REG_MAX][2];
+extern "C" COMPILER_PARAMS cparams;
+extern "C" int regmap[REG_MAX][2];
 
-extern int prm_assembler;
-extern int prm_asmfile;
-extern int prm_bepeep;
-extern int prm_useesp;
-extern int usingEsp;
-extern int pushlevel;
-extern int funcstackheight;
+extern "C" int prm_assembler;
+extern "C" int prm_asmfile;
+extern "C" int prm_bepeep;
+extern "C" int prm_useesp;
+extern "C" int usingEsp;
+extern "C" int pushlevel;
+extern "C" int funcstackheight;
 
 #define live(mask, reg) (mask & (1 << reg))
 
-OCODE *peep_head = 0, *peep_tail = 0, *peep_insert;
-void insert_peep_entry(OCODE* after, enum e_op opcode, int size, AMODE* ap1, AMODE* ap2);
+extern "C" OCODE *peep_head = 0, *peep_tail = 0, *peep_insert = 0;
+void insert_peep_entry(OCODE* after, enum e_opcode opcode, int size, AMODE* ap1, AMODE* ap2);
 
 void o_peepini(void) { peep_head = peep_tail = 0; }
 void oa_adjust_codelab(void* select, int offset)
@@ -74,7 +74,7 @@ AMODE* makedreg(int r)
  */
 {
     AMODE* ap;
-    ap = beLocalAlloc(sizeof(AMODE));
+    ap = (AMODE *)beLocalAlloc(sizeof(AMODE));
     ap->mode = am_dreg;
     ap->preg = r;
     ap->length = ISZ_UINT;
@@ -88,7 +88,7 @@ AMODE* makefreg(int r)
  */
 {
     AMODE* ap;
-    ap = beLocalAlloc(sizeof(AMODE));
+    ap = (AMODE *)beLocalAlloc(sizeof(AMODE));
     ap->mode = am_freg;
     ap->preg = r;
     ap->length = ISZ_LDOUBLE;
@@ -104,7 +104,7 @@ AMODE* copy_addr(AMODE* ap)
     AMODE* newap;
     if (ap == 0)
         return 0;
-    newap = beLocalAlloc(sizeof(AMODE));
+    newap = (AMODE *)beLocalAlloc(sizeof(AMODE));
     newap->mode = ap->mode;
     newap->preg = ap->preg;
     newap->sreg = ap->sreg;
@@ -157,7 +157,7 @@ static void fixlen(AMODE* ap)
                 if (ap->preg == EBP)
                 {
                     int resolved = 0;
-                    int n = resolveoffset(NULL, ap->offset, &resolved);
+                    int n = resolveoffset(ap->offset, &resolved);
                     if (resolved)
                     {
                         diag("fixlen: resolveoffset failed");
@@ -182,17 +182,17 @@ OCODE* gen_code(int op, AMODE* ap1, AMODE* ap2)
  *      generate a code sequence into the peep list.
  */
 {
-    OCODE* new;
-    new = beLocalAlloc(sizeof(OCODE));
-    new->opcode = op;
-    new->oper1 = copy_addr(ap1);
-    new->oper2 = copy_addr(ap2);
+    OCODE* newitem;
+    newitem = (OCODE *)beLocalAlloc(sizeof(OCODE));
+    newitem->opcode = (e_opcode)op;
+    newitem->oper1 = copy_addr(ap1);
+    newitem->oper2 = copy_addr(ap2);
     if (op == op_lea)
-        new->oper2->seg = 0;
-    fixlen(new->oper1);
-    fixlen(new->oper2);
-    add_peep(new);
-    return new;
+        newitem->oper2->seg = 0;
+    fixlen(newitem->oper1);
+    fixlen(newitem->oper2);
+    add_peep(newitem);
+    return newitem;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -202,39 +202,39 @@ OCODE* gen_code3(int op, AMODE* ap1, AMODE* ap2, AMODE* ap3)
  *      generate a code sequence into the peep list.
  */
 {
-    OCODE* new;
-    new = beLocalAlloc(sizeof(OCODE));
-    new->opcode = op;
-    new->oper1 = copy_addr(ap1);
-    new->oper2 = copy_addr(ap2);
-    new->oper3 = copy_addr(ap3);
-    fixlen(new->oper1);
-    fixlen(new->oper2);
-    fixlen(new->oper3);
-    add_peep(new);
-    return new;
+    OCODE* newitem;
+    newitem = (OCODE *)beLocalAlloc(sizeof(OCODE));
+    newitem->opcode = (e_opcode)op;
+    newitem->oper1 = copy_addr(ap1);
+    newitem->oper2 = copy_addr(ap2);
+    newitem->oper3 = copy_addr(ap3);
+    fixlen(newitem->oper1);
+    fixlen(newitem->oper2);
+    fixlen(newitem->oper3);
+    add_peep(newitem);
+    return newitem;
 }
 
 /*-------------------------------------------------------------------------*/
 
 OCODE* gen_codes(int op, int len, AMODE* ap1, AMODE* ap2)
 {
-    OCODE* new = gen_code(op, ap1, ap2);
+    OCODE* newitem = gen_code(op, ap1, ap2);
     if (len < 0)
         len = -len;
-    if (new->oper1)
-        new->oper1->length = len;
-    if (new->oper2 && ((len != ISZ_UINT && len != ISZ_U32) || !new->oper2->offset || new->oper2->mode != am_immed))
-        new->oper2->length = len;
-    return new;
+    if (newitem->oper1)
+        newitem->oper1->length = len;
+    if (newitem->oper2 && ((len != ISZ_UINT && len != ISZ_U32) || !newitem->oper2->offset || newitem->oper2->mode != am_immed))
+        newitem->oper2->length = len;
+    return newitem;
 }
 
 /*-------------------------------------------------------------------------*/
 
 void gen_coden(int op, int len, AMODE* ap1, AMODE* ap2)
 {
-    OCODE* new = gen_codes(op, len, ap1, ap2);
-    new->noopt = TRUE;
+    OCODE* newitem = gen_codes(op, len, ap1, ap2);
+    newitem->noopt = TRUE;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -260,25 +260,25 @@ void gen_codef(int op, AMODE* ap1, AMODE* ap2)
 
 void gen_codes2(int op, int len, AMODE* ap1, AMODE* ap2)
 {
-    OCODE* new = gen_code(op, ap1, ap2);
+    OCODE* newitem = gen_code(op, ap1, ap2);
     if (len < 0)
         len = -len;
-    if (new->oper2)
-        new->oper2->length = len;
+    if (newitem->oper2)
+        newitem->oper2->length = len;
 }
 
 /*-------------------------------------------------------------------------*/
 
 void gen_code2(int op, int len1, int len2, AMODE* ap1, AMODE* ap2)
 {
-    OCODE* new = gen_code(op, ap1, ap2);
+    OCODE* newitem = gen_code(op, ap1, ap2);
     if (len1 < 0)
         len1 = -len1;
     if (len2 < 0)
         len2 = -len2;
-    new->oper1->length = len1;
-    if (new->oper2)
-        new->oper2->length = len2;
+    newitem->oper1->length = len1;
+    if (newitem->oper2)
+        newitem->oper2->length = len2;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -288,12 +288,12 @@ void gen_codelab(SYMBOL* lab)
  *      generate a code sequence into the peep list.
  */
 {
-    OCODE* new;
-    new = beLocalAlloc(sizeof(OCODE));
-    new->opcode = op_funclabel;
-    new->oper1 = (AMODE*)lab;
-    new->oper2 = 0;
-    add_peep(new);
+    OCODE* newitem;
+    newitem = (OCODE *)beLocalAlloc(sizeof(OCODE));
+    newitem->opcode = (e_opcode)op_funclabel;
+    newitem->oper1 = (AMODE*)lab;
+    newitem->oper2 = 0;
+    add_peep(newitem);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -308,32 +308,32 @@ void gen_branch(int op, int label)
 
 void gen_comment(char* txt)
 {
-    OCODE* new = beLocalAlloc(sizeof(OCODE));
-    new->opcode = op_comment;
-    new->oper2 = 0;
-    new->oper1 = (AMODE*)txt;
-    add_peep(new);
+    OCODE* newitem = (OCODE *)beLocalAlloc(sizeof(OCODE));
+    newitem->opcode = (e_opcode)op_comment;
+    newitem->oper2 = 0;
+    newitem->oper1 = (AMODE*)txt;
+    add_peep(newitem);
 }
 
 /*-------------------------------------------------------------------------*/
 
-void add_peep(OCODE* new)
+void add_peep(OCODE* newitem)
 /*
- *      add the instruction pointed to by new to the peep list.
+ *      add the instruction pointed to by newitem to the peep list.
  */
 {
     if (peep_head == 0)
     {
-        peep_head = peep_tail = new;
-        new->fwd = 0;
-        new->back = 0;
+        peep_head = peep_tail = newitem;
+        newitem->fwd = 0;
+        newitem->back = 0;
     }
     else
     {
-        new->fwd = 0;
-        new->back = peep_tail;
-        peep_tail->fwd = new;
-        peep_tail = new;
+        newitem->fwd = 0;
+        newitem->back = peep_tail;
+        peep_tail->fwd = newitem;
+        peep_tail = newitem;
     }
 }
 
@@ -344,11 +344,11 @@ void oa_gen_label(int labno)
  *      add a compiler generated label to the peep list.
  */
 {
-    OCODE* new;
-    new = beLocalAlloc(sizeof(OCODE));
-    new->opcode = op_label;
-    new->oper1 = (AMODE*)labno;
-    add_peep(new);
+    OCODE* newitem;
+    newitem = (OCODE *)beLocalAlloc(sizeof(OCODE));
+    newitem->opcode = (e_opcode)op_label;
+    newitem->oper1 = (AMODE*)labno;
+    add_peep(newitem);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -391,7 +391,7 @@ void flush_peep(SYMBOL* funcsp, QUAD* list)
 void peep_add(OCODE* ip)
 /*
  * Turn add,1 into inc
- * turn add,0 into nothing (can be genned by the new structure mechanism)
+ * turn add,0 into nothing (can be genned by the newitem structure mechanism)
  */
 {
     if (ip->oper2->mode != am_immed)
@@ -1081,7 +1081,7 @@ void peep_movzx2(OCODE* ip)
                 }
                 else if (ip->oper1->preg <= EBX && (ip->oper2->preg & 3) != ip->oper1->preg)
                 {
-                    OCODE* c1 = beLocalAlloc(sizeof(OCODE));
+                    OCODE* c1 = (OCODE *)beLocalAlloc(sizeof(OCODE));
                     c1->opcode = op_xor;
                     c1->oper1 = makedreg(ip->oper1->preg);
                     c1->oper2 = makedreg(ip->oper1->preg);
@@ -1106,7 +1106,7 @@ void peep_movzx2(OCODE* ip)
                 }
                 else
                 {
-                    OCODE* c1 = beLocalAlloc(sizeof(OCODE));
+                    OCODE* c1 = (OCODE *)beLocalAlloc(sizeof(OCODE));
                     c1->opcode = op_xor;
                     c1->oper1 = makedreg(ip->oper1->preg);
                     c1->oper2 = makedreg(ip->oper1->preg);
@@ -1127,7 +1127,7 @@ void peep_movzx2(OCODE* ip)
                 if (((ip->oper2->mode != am_indisp && ip->oper2->mode != am_indispscale) || ip->oper2->preg != ip->oper1->preg) &&
                     (ip->oper2->mode != am_indispscale || ip->oper2->sreg != ip->oper1->preg))
                 {
-                    OCODE* c1 = beLocalAlloc(sizeof(OCODE));
+                    OCODE* c1 = (OCODE *)beLocalAlloc(sizeof(OCODE));
                     c1->opcode = op_xor;
                     c1->oper1 = makedreg(ip->oper1->preg);
                     c1->oper2 = makedreg(ip->oper1->preg);
@@ -1141,7 +1141,7 @@ void peep_movzx2(OCODE* ip)
                 }
                 else
                 {
-                    OCODE* c1 = beLocalAlloc(sizeof(OCODE));
+                    OCODE* c1 = (OCODE *)beLocalAlloc(sizeof(OCODE));
                     c1->opcode = op_and;
                     c1->oper1 = makedreg(ip->oper1->preg);
                     if (ip->oper2->length == ISZ_UCHAR)
@@ -1744,9 +1744,9 @@ void peep_call(OCODE* ip)
         }
     }
 }
-void insert_peep_entry(OCODE* after, enum e_op opcode, int size, AMODE* ap1, AMODE* ap2)
+void insert_peep_entry(OCODE* after, enum e_opcode opcode, int size, AMODE* ap1, AMODE* ap2)
 {
-    OCODE* a = beLocalAlloc(sizeof(OCODE));
+    OCODE* a = (OCODE *)beLocalAlloc(sizeof(OCODE));
     a->opcode = opcode;
     a->oper1 = ap1;
     a->oper2 = ap2;

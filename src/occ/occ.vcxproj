@@ -86,7 +86,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;WIN32;USE_LONGLONG;BORLAND;MICROSOFT;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>parse;preproc;middle;x86</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>parse;preproc;middle;x86;..\ocpp;..\oasm;..\util;..\objlib</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -120,7 +120,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;WIN32;USE_LONGLONG;BORLAND;MICROSOFT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>parse;preproc;middle;x86</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>parse;preproc;middle;x86;..\ocpp;..\oasm;..\util;..\objlib</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -151,8 +151,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="parse\compiler.p" />
+    <None Include="x86\be.p" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\oasm\AsmExpr.cpp" />
+    <ClCompile Include="..\oasm\Instruction.cpp" />
+    <ClCompile Include="..\oasm\Section.cpp" />
+    <ClCompile Include="..\oasm\x64Instructions.cpp" />
+    <ClCompile Include="..\oasm\x64Parser.cpp" />
     <ClCompile Include="..\util\winsystem.c" />
     <ClCompile Include="middle\ialias.c" />
     <ClCompile Include="middle\iblock.c" />
@@ -211,18 +217,28 @@
     <ClCompile Include="parse\wseh.c" />
     <ClCompile Include="preproc\ppexpr.c" />
     <ClCompile Include="preproc\preproc.c" />
-    <ClCompile Include="x86\beIntrins.c" />
+    <ClCompile Include="x86\beIntrins.cpp" />
     <ClCompile Include="x86\config.c" />
-    <ClCompile Include="x86\gen.c" />
-    <ClCompile Include="x86\inasm.c" />
+    <ClCompile Include="x86\gen.cpp" />
+    <ClCompile Include="x86\inasm.cpp" />
+    <ClCompile Include="x86\InstructionParser.cpp" />
     <ClCompile Include="x86\invoke.c" />
-    <ClCompile Include="x86\objieeea.c" />
-    <ClCompile Include="x86\outasm.c" />
-    <ClCompile Include="x86\outcode.c" />
-    <ClCompile Include="x86\peep.c" />
+    <ClCompile Include="x86\outasm.cpp" />
+    <ClCompile Include="x86\outcode.cpp" />
+    <ClCompile Include="x86\peep.cpp" />
     <ClCompile Include="x86\rewrite.c" />
+    <ClCompile Include="x86\stubs.c" />
+    <ClCompile Include="x86\x64stub.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\oasm\AsmExpr.h" />
+    <ClInclude Include="..\oasm\Fixup.h" />
+    <ClInclude Include="..\oasm\Instruction.h" />
+    <ClInclude Include="..\oasm\Label.h" />
+    <ClInclude Include="..\oasm\Section.h" />
+    <ClInclude Include="..\oasm\x64Instructions.h" />
+    <ClInclude Include="..\oasm\x64Operand.h" />
+    <ClInclude Include="..\oasm\x64Parser.h" />
     <ClInclude Include="middle\iexpr.h" />
     <ClInclude Include="middle\iopt.h" />
     <ClInclude Include="parse\beinterf.h" />
@@ -234,9 +250,23 @@
     <ClInclude Include="parse\osutil.h" />
     <ClInclude Include="parse\rtti.h" />
     <ClInclude Include="parse\winmode.h" />
+    <ClInclude Include="x86\AsmExpr.h" />
     <ClInclude Include="x86\be.h" />
+    <ClInclude Include="x86\beIntrinsicProtos.h" />
     <ClInclude Include="x86\Cvinfo.h" />
+    <ClInclude Include="x86\InstructionParser.h" />
     <ClInclude Include="x86\x86regs.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\oasm\oasm.vcxproj">
+      <Project>{3314a225-370e-4a64-b25c-9be9e7ce1db1}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\objlib\obj.vcxproj">
+      <Project>{22e147d5-e684-4b10-9cb4-d6cd8ef02118}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\ocpp\ocpp.vcxproj">
+      <Project>{15b031ac-a404-4064-be4e-cd5705b6293c}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

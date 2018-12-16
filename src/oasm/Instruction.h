@@ -48,7 +48,7 @@ class Instruction
         RESERVE
     };
     Instruction(Label* lbl) : data(nullptr), label(lbl), type(LABEL), pos(0), fpos(0), size(0), offs(0), repeat(1) {}
-    Instruction(unsigned char* Data, int Size, bool isData = false) :
+    Instruction(void* Data, int Size, bool isData = false) :
         type(isData ? DATA : CODE),
         label(nullptr),
         pos(0),
@@ -58,7 +58,7 @@ class Instruction
         offs(0),
         lost(false)
     {
-        data = LoadData(!isData, Data, Size);
+        data = LoadData(!isData, (unsigned char *)Data, Size);
     }
     Instruction(int aln) : data(nullptr), type(ALIGN), label(nullptr), pos(0), fpos(0), size(aln), offs(0), repeat(1) {}
     Instruction(int Repeat, int Size) : type(RESERVE), label(nullptr), pos(0), fpos(0), size(Size), repeat(Repeat), offs(0)
@@ -89,6 +89,7 @@ class Instruction
         else
             return size;
     }
+    unsigned char *GetData() { return data;  }
     int GetRepeat() { return repeat; }
     int GetNext(Fixup& fixup, unsigned char* buf);
     void Rewind() { pos = fpos = 0; }

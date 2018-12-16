@@ -24,7 +24,10 @@
  */
 
 #include "compiler.h"
-
+#ifdef __cplusplus
+#include "InstructionParser.h"
+#include "x64Instructions.h"
+#endif
 #define live(mask, reg) (mask & (1 << reg))
 
 /*
@@ -122,303 +125,7 @@ enum e_op
     op_funclabel,
     op_seq,
     op_genword,
-    op_dd,
-    op_aaa,
-    op_aad,
-    op_aam,
-    op_aas,
-    op_add,
-    op_adc,
-    op_and,
-    op_arpl,
-    op_bound,
-    op_bsf,
-    op_bsr,
-    op_bswap,
-    op_btc,
-    op_bt,
-    op_btr,
-    op_bts,
-    op_call,
-    op_cbw,
-    op_cwde,
-    op_cwd,
-    op_cdq,
-    op_clc,
-    op_cld,
-    op_cli,
-    op_clts,
-    op_cmc,
-    op_cmp,
-    op_cmpxchg,
-    op_cmpxchg8b,
-    op_cmps,
-    op_cmpsb,
-    op_cmpsw,
-    op_cmpsd,
-    op_daa,
-    op_das,
-    op_dec,
-    op_div,
-    op_enter,
-    op_hlt,
-    op_idiv,
-    op_imul,
-    op_in,
-    op_inc,
-    op_ins,
-    op_insb,
-    op_insw,
-    op_insd,
-    op_int,
-    op_int3,
-    op_into,
-    op_invd,
-    op_iret,
-    op_iretd,
-    op_jecxz,
-    op_ja,
-    op_jnbe,
-    op_jae,
-    op_jnb,
-    op_jnc,
-    op_jb,
-    op_jc,
-    op_jnae,
-    op_jbe,
-    op_jna,
-    op_je,
-    op_jz,
-    op_jg,
-    op_jnle,
-    op_jl,
-    op_jnge,
-    op_jge,
-    op_jnl,
-    op_jle,
-    op_jng,
-    op_jne,
-    op_jnz,
-    op_jo,
-    op_jno,
-    op_jp,
-    op_jnp,
-    op_jpe,
-    op_jpo,
-    op_js,
-    op_jns,
-    op_jmp,
-    op_lahf,
-    op_lar,
-    op_lds,
-    op_les,
-    op_lfs,
-    op_lgs,
-    op_lss,
-    op_lea,
-    op_leave,
-    op_lfence,
-    op_lgdt,
-    op_lidt,
-    op_lldt,
-    op_lmsw,
-    op_lock,
-    op_lods,
-    op_lodsb,
-    op_lodsw,
-    op_lodsd,
-    op_loop,
-    op_loope,
-    op_loopz,
-    op_loopne,
-    op_loopnz,
-    op_lsl,
-    op_ltr,
-    op_mfence,
-    op_mov,
-    op_movs,
-    op_movsb,
-    op_movsw,
-    op_movsd,
-    op_movsx,
-    op_movzx,
-    op_mul,
-    op_neg,
-    op_not,
-    op_nop,
-    op_or,
-    op_out,
-    op_outs,
-    op_outsb,
-    op_outsw,
-    op_outsd,
-    op_pop,
-    op_popa,
-    op_popad,
-    op_popf,
-    op_popfd,
-    op_push,
-    op_pusha,
-    op_pushad,
-    op_pushf,
-    op_pushfd,
-    op_rcl,
-    op_rcr,
-    op_rdmsr,
-    op_rdpmc,
-    op_rdtsc,
-    op_rol,
-    op_ror,
-    op_rep,
-    op_repne,
-    op_repe,
-    op_repnz,
-    op_repz,
-    op_ret,
-    op_retf,
-    op_sahf,
-    op_sal,
-    op_sar,
-    op_shl,
-    op_shr,
-    op_sbb,
-    op_scas,
-    op_scasb,
-    op_scasw,
-    op_scasd,
-    op_seta,
-    op_setnbe,
-    op_setae,
-    op_setnb,
-    op_setnc,
-    op_setb,
-    op_setc,
-    op_setnae,
-    op_setbe,
-    op_setna,
-    op_sete,
-    op_setz,
-    op_setg,
-    op_setnle,
-    op_setl,
-    op_setnge,
-    op_setge,
-    op_setnl,
-    op_setle,
-    op_setng,
-    op_setne,
-    op_setnz,
-    op_seto,
-    op_setno,
-    op_setp,
-    op_setnp,
-    op_setpe,
-    op_setpo,
-    op_sets,
-    op_setns,
-    op_sfence,
-    op_sgdt,
-    op_sidt,
-    op_sldt,
-    op_smsw,
-    op_shld,
-    op_shrd,
-    op_stc,
-    op_std,
-    op_sti,
-    op_stos,
-    op_stosb,
-    op_stosw,
-    op_stosd,
-    op_str,
-    op_sub,
-    op_test,
-    op_verr,
-    op_verw,
-    op_wait,
-    op_wbinvd,
-    op_wrmsr,
-    op_xchg,
-    op_xlat,
-    op_xlatb,
-    op_xor,
-    op_f2xm1,
-    op_fabs,
-    op_fadd,
-    op_faddp,
-    op_fiadd,
-    op_fchs,
-    op_fclex,
-    op_fnclex,
-    op_fcom,
-    op_fcomp,
-    op_fcompp,
-    op_fcos,
-    op_fdecstp,
-    op_fdiv,
-    op_fdivp,
-    op_fidiv,
-    op_fdivr,
-    op_fdivrp,
-    op_fidivr,
-    op_ffre,
-    op_ficom,
-    op_ficomp,
-    op_fild,
-    op_fincstp,
-    op_finit,
-    op_fninit,
-    op_fist,
-    op_fistp,
-    op_fld,
-    op_fldz,
-    op_fldpi,
-    op_fld1,
-    op_fld2t,
-    op_fld2e,
-    op_fldlg2,
-    op_fldln2,
-    op_fldcw,
-    op_fldenv,
-    op_fmul,
-    op_fmulp,
-    op_fimul,
-    op_fpatan,
-    op_fprem,
-    op_fprem1,
-    op_fptan,
-    op_frndint,
-    op_frstor,
-    op_fsave,
-    op_fnsave,
-    op_fscale,
-    op_fsin,
-    op_fsincos,
-    op_fsqrt,
-    op_fst,
-    op_fstp,
-    op_fstcw,
-    op_fstsw,
-    op_fnstcw,
-    op_fnstsw,
-    op_fstenv,
-    op_fsntenv,
-    op_fsub,
-    op_fsubp,
-    op_fisub,
-    op_fsubr,
-    op_fsubrp,
-    op_fisubr,
-    op_ftst,
-    op_fucom,
-    op_fucomp,
-    op_fucompp,
-    op_fwait,
-    op_fxam,
-    op_fxch,
-    op_fxtract,
-    op_fyl2x,
-    op_fyl2xp1
+    op_dd
 };
 enum e_asmw
 {
@@ -474,16 +181,14 @@ struct amode
     char scale;
     char length;
     char addrlen;
-    enum
-    {
-        e_default,
-        e_cs,
-        e_ds,
-        e_es,
-        e_fs,
-        e_gs,
-        e_ss
-    } seg;
+    char seg;
+    #define e_default 0
+#define         e_cs 1
+#define         e_ds 2
+#define         e_es 3
+#define         e_fs 4
+#define         e_gs 5
+#define         e_ss 6
     EXPRESSION* offset;
     int liveRegs;
     int keepesp : 1;
@@ -494,19 +199,13 @@ struct amode
 struct ocode
 {
     struct ocode *fwd, *back;
-    enum e_op opcode;
+    enum e_opcode opcode;
     struct amode *oper1, *oper2, *oper3;
-    int address;
+    void *ins;
     int size;
     int blocknum;
-    UBYTE outbuf[16];
     char diag;
     char noopt;
-    char resolved;
-    UBYTE addroffset;
-    UBYTE outlen;
-    UBYTE branched;
-    UBYTE resobyte;
 };
 
 /* Used for fixup gen */
@@ -631,81 +330,21 @@ typedef struct muldiv
 {
     struct muldiv* next;
     long value;
-    FPF floatvalue;
+    FPFC floatvalue;
     int size;
     int label;
 } MULDIV;
 
-#define BR_LONG 1
-#define BR_SHORT 2
-typedef struct
+enum mode
 {
-    int address;
-    int seg;
-} LABEL;
+    fm_label,
+    fm_symbol,
+    fm_rellabel,
+    fm_relsymbol,
+    fm_threadlocal
+};
 
-typedef struct fixup
-{
-    struct fixup* next;
-    int address;
-    enum mode
-    {
-        fm_label,
-        fm_symbol,
-        fm_rellabel,
-        fm_relsymbol,
-        fm_threadlocal
-    } fmode;
-    SYMBOL *sym, *base;
-    int label;
-} FIXUP;
 
-/*-------------------------------------------------------------------------*/
-
-typedef struct emitlist
-{
-    struct emitlist* next;
-    int filled, lastfilled;
-    int address;
-    UBYTE data[65536];
-    FIXUP *fixups, *lastfixup;
-} EMIT_LIST;
-
-typedef struct _attribdata
-{
-    struct _attribdata* next;
-    enum e_adtype
-    {
-        e_ad_linedata,
-        e_ad_blockdata,
-        e_ad_funcdata,
-        e_ad_vardata
-    } type;
-    union
-    {
-        LINEDATA* ld;
-        SYMBOL* sp;
-    } v;
-    int address;
-    int start;
-} ATTRIBDATA;
-typedef struct
-{
-    int curbase;
-    int curlast;
-    EMIT_LIST* first;
-    EMIT_LIST* last;
-    ATTRIBDATA* attriblist;
-    ATTRIBDATA* attribtail;
-} EMIT_TAB;
-
-typedef struct _virtual_list
-{
-    struct _virtual_list* next;
-    SYMBOL* sp;
-    EMIT_TAB* seg;
-    int data;
-} VIRTUAL_LIST;
 
 typedef struct _dbgblock
 {
@@ -723,29 +362,6 @@ enum asmTypes
     pa_fasm,
     pa_masm,
     pa_tasm
-};
-
-enum omf_type
-{
-    THEADR = 0x80, /* module header */
-    COMENT = 0x88, /* comment record */
-
-    LINNUM = 0x95, /* line number record */
-    LNAMES = 0x96, /* list of names */
-
-    SEGDEF = 0x99, /* segment definition */
-    GRPDEF = 0x9A, /* group definition */
-    EXTDEF = 0x8C, /* external definition */
-    PUBDEF = 0x91, /* public definition */
-    COMDEF = 0xB0, /* common definition */
-
-    LEDATA16 = 0xA0,
-    LEDATA = 0xA1, /* logical enumerated data */
-    FIXUPP = 0x9D, /* fixups (relocations) */
-    LIDATA16 = 0xA2,
-    LIDATA = 0xA3,
-
-    MODEND = 0x8A /* module end */
 };
 
 #define REG_MAX 32

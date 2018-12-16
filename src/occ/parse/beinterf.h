@@ -283,7 +283,7 @@ typedef struct _arch_gen
     void (*gen_string_label)(int labnum, int type);         /* generate a numbered label */
     void (*gen_bit)(SYMBOL* sp, LLONG_TYPE val);            /* reserve space for a bit */
     void (*gen_int)(enum e_gt type, LLONG_TYPE val);        /* initialize one of the integer types */
-    void (*gen_float)(enum e_gt type, FPF* val);            /* initialize a float */
+    void (*gen_float)(enum e_gt type, FPFC* val);            /* initialize a float */
     void (*gen_address)(ULLONG_TYPE val);                   /* initializae a pointer */
     void (*gen_string)(LCHAR* string, int len);             /* initialize a string */
     void (*gen_ref)(SYMBOL* sp, int offset);                /* put a reference to a variable */
@@ -491,8 +491,8 @@ typedef struct
         LLONG_TYPE i;
         struct
         {
-            FPF* r;
-            FPF* i;
+            FPFC* r;
+            FPFC* i;
         } f;
         struct
         {

@@ -425,7 +425,7 @@ void outcode_start_virtual_seg(SYMBOL* sp, int data)
         strcpy(buf, "vsd@");
     else
         strcpy(buf, "vsc@");
-    beDecorateSymName(buf + 3 + sp->decoratedName != @, sp);
+    beDecorateSymName(buf + 3 + sp->decoratedName != '@', sp);
     Section *sect = new Section()
     VIRTUAL_LIST* x;
     x = beGlobalAlloc(sizeof(VIRTUAL_LIST));

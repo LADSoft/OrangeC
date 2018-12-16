@@ -216,7 +216,8 @@ SYMBOL* namespacesearch(char* name, NAMESPACEVALUES* ns, BOOLEAN qualified, BOOL
             {
                 if (test != lst1->data && test->mainsym != lst1->data && ((SYMBOL*)lst1->data)->mainsym != test)
                 {
-                    errorsym2(ERR_AMBIGUITY_BETWEEN, test, (SYMBOL*)lst1->data);
+                    if (test->mainsym && test->mainsym != ((SYMBOL*)lst1->data)->mainsym)
+                        errorsym2(ERR_AMBIGUITY_BETWEEN, test, (SYMBOL*)lst1->data);
                 }
                 lst1 = lst1->next;
             }

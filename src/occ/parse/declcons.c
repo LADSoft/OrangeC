@@ -3085,9 +3085,11 @@ void PromoteConstructorArgs(SYMBOL *cons1, FUNCTIONCALL *params)
     while (hr && args)
     {
         SYMBOL *sp = (SYMBOL *)hr->p;
-        if (isarithmetic(sp->tp) && isarithmetic(args->tp))
+        TYPE *tps = basetype(sp->tp);
+        TYPE *tpa = basetype(args->tp);
+        if (isarithmetic(tps) && isarithmetic(tpa))
         {
-            if (basetype(sp->tp)->type != basetype(args->tp)->type && basetype(sp->tp)->type > bt_int)
+            if (tps->type > bt_int && tps->type != tpa->type)
                 cast(sp->tp, &args->exp);
         }
         hr = hr->next;

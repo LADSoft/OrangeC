@@ -2975,9 +2975,10 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                         ssp1 = sp1->parentClass;
                         if (ssp && ismember(sp1))
                             sp1->parentClass = ssp;
-                        sp1->mainsym = sym;
-                        while (sp1->mainsym->mainsym)
-                            sp1->mainsym = sp1->mainsym->mainsym;
+                        //sp1->mainsym = sym;
+                        //while (sp1->mainsym->mainsym)
+                        //    sp1->mainsym = sp1->mainsym->mainsym;
+                        sym->mainsym - sp1;
                         sp1->access = access;
                         InsertSymbol(sp1, storage_class, sp1->linkage, TRUE);
                         InsertExtern(sp1);

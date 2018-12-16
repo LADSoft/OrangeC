@@ -1255,10 +1255,16 @@ void oa_gen_virtual(SYMBOL* sp, int data)
         {
             oa_currentSeg = noseg;
 #ifdef IEEE
-            if (virtual_mode)
-                bePrintf("\tsection vsd@%s virtual\n", sp->decoratedName);
+            if (sp->decoratedName[0] == '@')
+                if (virtual_mode)
+                    bePrintf("\tsection vsd%s virtual\n", sp->decoratedName);
+                else
+                    bePrintf("\tsection vsc%s virtual\n", sp->decoratedName);
             else
-                bePrintf("\tsection vsc@%s virtual\n", sp->decoratedName);
+                if (virtual_mode)
+                    bePrintf("\tsection vsd@%s virtual\n", sp->decoratedName);
+                else
+                    bePrintf("\tsection vsc@%s virtual\n", sp->decoratedName);
 #else
             bePrintf("\tSECTION @%s VIRTUAL\n", sp->decoratedName);
 #endif

@@ -33,7 +33,7 @@
 #include "AsmFile.h"
 
 #include <stdexcept>
-#include <limits.h>
+#include <climits>
 #include <fstream>
 #include <iostream>
 
@@ -85,7 +85,7 @@ void Section::Parse(AsmFile* fil)
             throw new std::runtime_error("Invalid section qualifier");
     }
 }
-void Section::Optimize()
+void Section::Optimize(AsmFile* fil)
 {
     AsmExpr::SetSection(this);
     bool done = false;
@@ -123,7 +123,7 @@ void Section::Optimize()
         pc += instructions[i]->GetSize();
     }
 }
-void Section::Resolve() { Optimize(); }
+void Section::Resolve(AsmFile* fil) { Optimize(fil); }
 ObjSection* Section::CreateObject(ObjFactory& factory)
 {
     objectSection = factory.MakeSection(name);
@@ -131,14 +131,14 @@ ObjSection* Section::CreateObject(ObjFactory& factory)
         objectSection->SetQuals(objectSection->GetQuals() | ObjSection::max | ObjSection::virt);
     return objectSection;
 }
-ObjExpression* Section::ConvertExpression(AsmExprNode* node, std::function<Label*(std::string&)> Lookup, std::function<ObjSection *(std::string&)>   SectLookup,  ObjFactory& factory)
+ObjExpression* Section::ConvertExpression(AsmExprNode* node, AsmFile* fil, ObjFactory& factory)
 {
     ObjExpression* xleft = nullptr;
     ObjExpression* xright = nullptr;
     if (node->GetLeft())
-        xleft = ConvertExpression(node->GetLeft(), Lookup, SectLookup, factory);
+        xleft = ConvertExpression(node->GetLeft(), fil, factory);
     if (node->GetRight())
-        xright = ConvertExpression(node->GetRight(), Lookup, SectLookup, factory);
+        xright = ConvertExpression(node->GetRight(), fil, factory);
     switch (node->GetType())
     {
         case AsmExprNode::IVAL:
@@ -161,11 +161,11 @@ ObjExpression* Section::ConvertExpression(AsmExprNode* node, std::function<Label
             AsmExprNode* num = AsmExpr::GetEqu(node->label);
             if (num)
             {
-                return ConvertExpression(num, Lookup, SectLookup, factory);
+                return ConvertExpression(num, fil, factory);
             }
             else
             {
-                Label* label = Lookup(node->label);
+                Label* label = fil->Lookup(node->label);
                 if (label != nullptr)
                 {
 
@@ -177,14 +177,14 @@ ObjExpression* Section::ConvertExpression(AsmExprNode* node, std::function<Label
                     else
                     {
                         ObjExpression* left = factory.MakeExpression(label->GetObjectSection());
-                        ObjExpression* right = ConvertExpression(label->GetOffset(), Lookup, SectLookup, factory);
+                        ObjExpression* right = ConvertExpression(label->GetOffset(), fil, factory);
                         t = factory.MakeExpression(ObjExpression::eAdd, left, right);
                     }
                     return t;
                 }
                 else
                 {
-                    ObjSection* s = SectLookup(node->label);
+                    ObjSection* s = fil->GetSectionByName(node->label);
                     if (s)
                     {
                         ObjExpression* left = factory.MakeExpression(s);
@@ -271,7 +271,7 @@ bool Section::SwapSectionIntoPlace(ObjExpression* t)
         return t->GetOperator() == ObjExpression::eSection;
     }
 }
-bool Section::MakeData(ObjFactory& factory, std::function<Label*(std::string&)> Lookup, std::function<ObjSection*(std::string&)> SectLookup)
+bool Section::MakeData(ObjFactory& factory, AsmFile* fil)
 {
     bool rv = true;
     int pc = 0;
@@ -308,7 +308,7 @@ bool Section::MakeData(ObjFactory& factory, std::function<Label*(std::string&)> 
                 ObjExpression* t;
                 try
                 {
-                    t = ConvertExpression(f.GetExpr(), Lookup, SectLookup, factory);
+                    t = ConvertExpression(f.GetExpr(), fil, factory);
                     SwapSectionIntoPlace(t);
                 }
                 catch (std::runtime_error* e)
@@ -371,7 +371,7 @@ int Section::GetNext(Fixup& f, unsigned char* buf, int len)
     else
     {
         memcpy(buf, buf2, len);
-        memcpy(buf2, buf2 + len, blen - len);
+        memmove(buf2, buf2 + len, blen - len);
         blen -= len;
         return len;
     }

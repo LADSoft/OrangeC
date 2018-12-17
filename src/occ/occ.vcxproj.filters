@@ -191,9 +191,6 @@
     <ClCompile Include="parse\libcxx.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\crc.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="parse\ccerr.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -201,9 +198,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="parse\wseh.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="x86\stubs.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="x86\beIntrins.cpp">
@@ -236,9 +230,6 @@
     <ClCompile Include="..\oasm\x64Instructions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\oasm\x64Parser.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="x86\x64stub.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -246,6 +237,18 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\oasm\Section.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\oasm\AsmFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\oasm\AsmLexer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parse\crc32.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x86\x64Parser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -323,6 +326,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\oasm\Section.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\oasm\AsmFile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\oasm\AsmLexer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -40,7 +40,7 @@
 #include <exception>
 #include <fstream>
 #include <iostream>
-#include <limits.h>
+#include <climits>
 
 AsmFile::~AsmFile()
 {
@@ -796,7 +796,7 @@ ObjFile* AsmFile::MakeFile(ObjFactory& factory, std::string& name)
         fi->Add(sf);
         for (int i = 0; i < numericSections.size(); ++i)
         {
-            numericSections[i]->Resolve();
+            numericSections[i]->Resolve(this);
             ObjSection* s = numericSections[i]->CreateObject(factory);
             if (s)
             {
@@ -857,7 +857,7 @@ ObjFile* AsmFile::MakeFile(ObjFactory& factory, std::string& name)
         }
         for (int i = 0; i < numericSections.size(); i++)
         {
-            if (!numericSections[i]->MakeData(factory, [this](std::string aa) { return Lookup(aa); }, [this](std::string aa) { return GetSectionByName(aa); }))
+            if (!numericSections[i]->MakeData(factory, this))
                 rv = false;
         }
     }

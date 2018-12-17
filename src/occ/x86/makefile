@@ -29,7 +29,7 @@ MAIN_FILE=ccmain.c
 C_DEPENDENCIES= \
     ccmain.c \
     config.c \
-    crc.c \
+    crc32.c \
     beinterf.c \
     browse.c \
     ccerr.c \
@@ -81,7 +81,6 @@ C_DEPENDENCIES= \
     rewrite.c \
     rtti.c \
     stmt.c \
-    stubs.c \
     symtab.c \
     template.c \
     types.c \
@@ -111,16 +110,16 @@ LIB_DEPENDENCIES=util ocpplib objlib oasm
 #determine if we can ignore the banner for a batch compile
 #use long long type
 LL = USE_LONGLONG
-DEFINES=$(i386) $(LL) $(MSDOS)
+DEFINES=$(i386) $(LL) $(MSDOS) x64
 
 ifeq "$(COMPILER)" "gcc-linux"
 SOURCE = ..$(PATHEXT2)parse:..$(PATHEXT2)preproc:..$(PATHEXT2)middle
 INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle ..$(PATHEXT2)..$(PATHEXT2)ocpp ..$(PATHEXT2)..$(PATHEXT2)oasm ..$(PATHEXT2)..$(PATHEXT2)util ..$(PATHEXT2)..$(PATHEXT2)objlib
-SRCPATH=.$(PATHEXT2):$(SOURCE):..:..$(PATHEXT2)..$(PATHEXT2)util:..$(PATHEXT2)..$(PATHEXT2)oasm
+SRCPATH=.$(PATHEXT2):$(SOURCE):..:..$(PATHEXT2)..$(PATHEXT2)util:..$(PATHEXT2)
 else
 SOURCE = ..$(PATHEXT2)parse;..$(PATHEXT2)preproc;..$(PATHEXT2)middle
 INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle ..$(PATHEXT2)..$(PATHEXT2)ocpp ..$(PATHEXT2)..$(PATHEXT2)oasm ..$(PATHEXT2)..$(PATHEXT2)util ..$(PATHEXT2)..$(PATHEXT2)objlib
-SRCPATH=.$(PATHEXT2);$(SOURCE);..;..$(PATHEXT2)..$(PATHEXT2)util;..$(PATHEXT2)..$(PATHEXT2)oasm
+SRCPATH=.$(PATHEXT2);$(SOURCE);..;..$(PATHEXT2)..$(PATHEXT2)util;..$(PATHEXT2)
 endif
 
 

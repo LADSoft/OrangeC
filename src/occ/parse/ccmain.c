@@ -59,7 +59,7 @@ FILE *errFile, *icdFile;
 char infile[256];
 
 static char tempOutFile[260];
-static char realOutFile[260];
+char realOutFile[260];
 static char oldOutFile[260];
 
 static FILE* inputFile = 0;
@@ -697,7 +697,7 @@ int main(int argc, char* argv[])
             if (cparams.prm_browse)
             {
                 char name[260];
-                strcpy(name, outfile);
+                strcpy(name, realOutFile);
                 StripExt(name);
                 AddExt(name, ".cbr");
                 browseFile = fopen(name, "wb");

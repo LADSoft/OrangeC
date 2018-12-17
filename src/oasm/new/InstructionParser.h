@@ -31,15 +31,12 @@
 #include <list>
 #include <vector>
 #include <stdlib.h>
-#include <limits.h>
+#include <climits>
 #include "AsmExpr.h"
 
 class Instruction;
 class Section;
 class AsmFile;
-struct ocode;
-struct amode;
-struct expr;
 
 enum asmError { AERR_NONE, AERR_SYNTAX, AERR_OPERAND, AERR_BADCOMBINATIONOFOPERANDS, AERR_UNKNOWNOPCODE, AERR_INVALIDINSTRUCTIONUSE };
 
@@ -79,12 +76,13 @@ class Coding
 class Numeric
 {
   public:
+    Numeric(AsmExprNode* n) : node(n) {}
     Numeric() : node(nullptr) {}
     AsmExprNode* node;
-    int pos;
-    int relOfs;
-    int size;
-    int used;
+    int pos = 0;
+    int relOfs = 0;
+    int size = 0;
+    int used = 0;
 };
 class BitStream
 {
@@ -119,7 +117,7 @@ class InputToken
 class InstructionParser
 {
   public:
-    InstructionParser() : expr(nullptr), eol(false) {}
+    InstructionParser() : expr(nullptr) {}
 
     static InstructionParser* GetInstance();
 
@@ -132,35 +130,47 @@ class InstructionParser
     virtual bool ParseDirective(AsmFile*fil, Section* sect) = 0;
     virtual bool IsBigEndian() = 0;
     bool SetNumber(int tokenPos, int oldVal, int newVal);
-    asmError GetInstruction(ocode *ins, Instruction *&newIns, std::list<Numeric*>& operands);
 
   protected:
+    void RenameRegisters(AsmExprNode* val);
+    AsmExprNode* ExtractReg(AsmExprNode** val);
+    bool MatchesTimes(AsmExprNode* val);
+    AsmExprNode* ExtractTimes(AsmExprNode** val);
+    bool CheckRegs(AsmExprNode* val);
+    void ParseNumeric(int PC);
+    bool ParseNumber(int relOfs, int sign, int bits, int needConstant, int tokenPos);
+    bool Tokenize(int PC);
+    bool IsNumber();
     enum
     {
         TOKEN_BASE = 0,
         REGISTER_BASE = 1000
     };
-    bool ParseNumber(int relOfs, int sign, int bits, int needConstant, int tokenPos);
     virtual asmError DispatchOpcode(int opcode) = 0;
-    void SetOperandTokens(amode *operand);
-    void SetTokens(ocode *ins);
-    void SetRegToken(int reg, int sz);
-    void SetNumberToken(int n);
-    bool SetNumberToken(expr *offset, int &n);
-
-    void SetSize(int sz);
-
-    void SetExpressionToken(expr *offset);
-    void SetBracketSequence(bool open, int sz, int seg);
-
+    void NextToken(int PC);
+    enum
+    {
+        TK_ID = INT_MIN,
+        TK_REG = INT_MIN + 1,
+        TK_NUMERIC = INT_MIN + 2,
+    };
+    std::string token;
+    std::string line;
+    bool eol;
     int id;
     AsmExprNode* val;
     int tokenPos;
-    bool eol;
     Numeric* numeric;
-    std::map<std::string, int> tokenTable;
-    std::map<std::string, int> opcodeTable;
-    std::map<std::string, int> prefixTable;
+    struct lt
+    {
+        bool operator()(const std::string& left, const std::string& right) const
+        {
+            return stricmp(left.c_str(), right.c_str()) < 0;
+        }
+    };
+    std::map<std::string, int, lt> tokenTable;
+    std::map<std::string, int, lt> opcodeTable;
+    std::map<std::string, int, lt> prefixTable;
     std::list<Numeric*> operands;
     std::list<Coding*> CleanupValues;
     std::list<int> prefixes;

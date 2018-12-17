@@ -85,7 +85,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;WIN32;USE_LONGLONG;BORLAND;MICROSOFT;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;WIN32;USE_LONGLONG;BORLAND;MICROSOFT;_CRT_SECURE_NO_WARNINGS;x64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>parse;preproc;middle;x86;..\ocpp;..\oasm;..\util;..\objlib</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
@@ -119,7 +119,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;WIN32;USE_LONGLONG;BORLAND;MICROSOFT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;WIN32;USE_LONGLONG;BORLAND;MICROSOFT;x64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>parse;preproc;middle;x86;..\ocpp;..\oasm;..\util;..\objlib</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
@@ -155,10 +155,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\oasm\AsmExpr.cpp" />
+    <ClCompile Include="..\oasm\AsmFile.cpp" />
+    <ClCompile Include="..\oasm\AsmLexer.cpp" />
     <ClCompile Include="..\oasm\Instruction.cpp" />
     <ClCompile Include="..\oasm\Section.cpp" />
     <ClCompile Include="..\oasm\x64Instructions.cpp" />
-    <ClCompile Include="..\oasm\x64Parser.cpp" />
     <ClCompile Include="..\util\winsystem.c" />
     <ClCompile Include="middle\ialias.c" />
     <ClCompile Include="middle\iblock.c" />
@@ -188,7 +189,7 @@
     <ClCompile Include="parse\constopt.c" />
     <ClCompile Include="parse\cppbltin.c" />
     <ClCompile Include="parse\cpplookup.c" />
-    <ClCompile Include="parse\crc.c" />
+    <ClCompile Include="parse\crc32.c" />
     <ClCompile Include="parse\debug.c" />
     <ClCompile Include="parse\declare.c" />
     <ClCompile Include="parse\declcons.c" />
@@ -227,11 +228,13 @@
     <ClCompile Include="x86\outcode.cpp" />
     <ClCompile Include="x86\peep.cpp" />
     <ClCompile Include="x86\rewrite.c" />
-    <ClCompile Include="x86\stubs.c" />
+    <ClCompile Include="x86\x64Parser.cpp" />
     <ClCompile Include="x86\x64stub.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\oasm\AsmExpr.h" />
+    <ClInclude Include="..\oasm\AsmFile.h" />
+    <ClInclude Include="..\oasm\AsmLexer.h" />
     <ClInclude Include="..\oasm\Fixup.h" />
     <ClInclude Include="..\oasm\Instruction.h" />
     <ClInclude Include="..\oasm\Label.h" />

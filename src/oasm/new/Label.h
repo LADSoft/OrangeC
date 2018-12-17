@@ -35,7 +35,7 @@ class Section;
 class Label
 {
   public:
-    Label(std::string& Name, int Label, int Sect) : name(Name), label(Label), sect(Sect), publc(false), extrn(false), node(nullptr), sym(nullptr), objSection(nullptr)
+    Label(std::string& Name, int Label, int Sect) : name(Name), label(Label), sect(Sect), publc(false), extrn(false), node(nullptr)
     {
     }
     ~Label()
@@ -44,7 +44,7 @@ class Label
             delete node;
     }
     int GetLabel() { return label; }
-    std::string GetName() const { return name; }
+    std::string GetName() { return name; }
     AsmExprNode* GetOffset() { return node; }
     void SetOffset(AsmExprNode* Offset)
     {

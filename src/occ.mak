@@ -109,7 +109,7 @@ ifeq "$(VIAASSEMBLY)" ""
 	$(CC) $(CCFLAGS) -o$(_OUTPUTDIR)/$@ $^
 
 %.o: %.c
-	$(CC) /9 $(CCFLAGS) -o$(_OUTPUTDIR)/$@ $^
+	$(CC) $(CCFLAGS) -o$(_OUTPUTDIR)/$@ $^
 
 else
 %.o: %.cpp

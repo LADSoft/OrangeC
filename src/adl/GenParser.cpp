@@ -186,7 +186,7 @@ bool GenParser::GenerateCompilerStubs()
     }
     for (auto x : parser.registers)
     {
-        (*file) << "InputToken Token" << x->name << "{ InputToken::REGISTER, new AsmExprNode(tk_" << x->name << ") };" << std::endl;
+        (*file) << "InputToken Token" << x->name << "{ InputToken::REGISTER, new AsmExprNode(tk_" << x->name << " - " << TokenNode::REGISTER_BASE<< ", true) };" << std::endl;
     }
 
 

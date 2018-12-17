@@ -149,7 +149,7 @@ char* Lexer::preData =
     "__SECT__\n"
     "%endmacro\n";
 
-void Instruction::Optimize(Section *sect, int pc, bool last)
+void Instruction::Optimize(int pc, bool last)
 {
     if (data && size >= 3 && data[0] == 0x0f && data[1] == 0x0f && (data[2] == 0x9a || data[2] == 0xea))
     {
@@ -269,8 +269,8 @@ void Instruction::Optimize(Section *sect, int pc, bool last)
                                 {
                                     if (last)
                                     {
-//                                        Errors::IncrementCount();
-                                        std::cout << "Warning " << fixup->GetFileName().c_str() << "(" << fixup->GetErrorLine()
+                                        Errors::IncrementCount();
+                                        std::cout << "Error " << fixup->GetFileName().c_str() << "(" << fixup->GetErrorLine()
                                                   << "):"
                                                   << "Value out of range" << std::endl;
                                     }
@@ -347,15 +347,51 @@ int x64Parser::DoMath(char op, int left, int right)
 void x64Parser::Setup(Section* sect) 
 {
     if (sect->beValues[0] == 0)
-    	sect->beValues[0] = 32; // 32 bit mode is the default 
+    	sect->beValues[0] = 16; // 16 bit mode is the default 
 	Setprocessorbits(sect->beValues[0]); 
 }
 
 bool x64Parser::ParseSection(AsmFile* fil, Section* sect)
 {
-    return false;
+    bool rv = false;
+    if (fil->GetKeyword() == Lexer::USE16)
+    {
+        sect->beValues[0] = 16;
+        fil->NextToken();
+        rv = true;
+    }
+    else if (fil->GetKeyword() == Lexer::USE32)
+    {
+        sect->beValues[0] = 32;
+        fil->NextToken();
+        rv = true;
+    }
+    else if (fil->GetKeyword() == Lexer::USE64)
+    {
+        sect->beValues[0] = 64;
+        fil->NextToken();
+        rv = true;
+    }
+    return rv;
 }
 bool x64Parser::ParseDirective(AsmFile* fil, Section* sect)
 {
-    return false;
+    bool rv = false;
+    if (fil->GetKeyword() == Lexer::BITS)
+    {
+        fil->NextToken();
+        if (fil->IsNumber())
+        {
+            int n = static_cast<const NumericToken*>(fil->GetToken())->GetInteger();
+            if (n == 16 || n == 32 || n == 64)
+            {        
+                sect->beValues[0] = n;
+                Setprocessorbits(sect->beValues[0]);
+                rv = true;
+
+            }
+            fil->NextToken();
+        }
+    }
+    return rv;
 }

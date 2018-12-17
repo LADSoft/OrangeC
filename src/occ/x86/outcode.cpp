@@ -33,8 +33,15 @@
 #include "Fixup.h"
 #include "Instruction.h"
 #include "Section.h"
+#include "ObjIeee.h"
+#include "ObjFile.h"
+#include "ObjFactory.h"
+#include "ObjSection.h"
 #include <map>
+#include <set>
+#include <deque>
 
+#if 0
 #include <new>
 void * operator new(std::size_t n) throw(std::bad_alloc)
 {
@@ -44,9 +51,11 @@ void operator delete(void * p) throw()
 {
     // noop
 }
-
+#endif
 #define FULLVERSION
 
+
+extern "C" char realOutFile[260];
 extern "C" ARCH_ASM* chosenAssembler;
 extern "C" MULDIV* muldivlink;
 extern "C" ASMNAME oplst[];
@@ -54,6 +63,8 @@ extern "C" enum e_sg oa_currentSeg;
 extern "C" DBGBLOCK* DbgBlocks[];
 extern "C" SYMBOL* theCurrentFunc;
 extern "C" int fastcallAlias;
+extern "C" FILE *outputFile, *browseFile;
+extern "C" char infile[];
 
 LIST* includedFiles;
 
@@ -62,31 +73,96 @@ static char* segnames[] = { 0,         "code",     "data",     "bss",        "st
 "datafix", "lines",    "types",    "symbols",    "browse" };
 
 
-int segAlignsDefault[] = { 1, 2, 8, 8, 2, 8, 8, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
-int segAligns[sizeof(segAlignsDefault) / sizeof(segAlignsDefault[0])];
+static int segAlignsDefault[] = { 1, 2, 8, 8, 2, 8, 8, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+static int segFlags [] = { 0, ObjSection::rom, ObjSection::ram, ObjSection::ram, ObjSection::rom, ObjSection::rom, ObjSection::rom, ObjSection::rom, ObjSection::rom, ObjSection::rom, ObjSection::rom, ObjSection::rom, ObjSection::rom, ObjSection::rom, ObjSection::rom, ObjSection::rom, ObjSection::rom, ObjSection::rom, ObjSection::rom };
+static int virtualSegFlags = ObjSection::max | ObjSection::virt;
+
+extern "C" int segAligns[MAX_SEGS] = {};
 
 static int virtualSegmentNumber;
 static int lastIncludeNum;
 
+static int sectionMap[MAX_SEGS];
 static std::map<int, Label *> labelMap;
 
+static std::vector<Label *> strlabs;
+static std::map<std::string, Label *> lblpubs;
+static std::map<std::string, Label *> lbllabs;
+static std::map<std::string, Label*> lblExterns;
+static std::map<std::string, Label *> lblvirt;
 static std::vector<Section *> virtuals;
+static InstructionParser *instructionParser;
 
 static Section *sections[MAX_SEGS];
 
 static Section *currentSection;
 
+struct symname
+{
+    bool operator() (const SYMBOL *left, const SYMBOL *right) const
+    {
+        return strcmp(left->decoratedName, right->decoratedName) < 0;
+    }
+};
+static std::set<SYMBOL *, symname> globals;
+static std::set<SYMBOL *, symname> externs;
+static std::map<SYMBOL *, ObjSymbol *> objExterns;
+static std::vector<SYMBOL *> impfuncs;
+static std::vector<SYMBOL *> expfuncs;
+static std::vector<std::string> includelibs;
+
+static std::map<std::string, ObjSection *> objSectionsByName;
+static std::map<int, ObjSection *> objSectionsByNumber;
+
+static std::deque<BROWSEINFO *> browseInfo;
+static BROWSEFILE * browseFiles;
+static std::map<int, ObjSourceFile *> sourceFiles;
+
 extern "C" void adjustUsesESP();
+extern "C" int dbgblocknum = 0;
+
+void omfInit(void)
+{
+    browseInfo.clear();
+    browseFiles = nullptr;
+    globals.clear();
+    externs.clear();
+    objExterns.clear();
+    lblExterns.clear();
+    impfuncs.clear();
+    expfuncs.clear();
+    includelibs.clear();
+    objSectionsByNumber.clear();
+    objSectionsByName.clear();
+    sourceFiles.clear();
+
+}
+void dbginit(void)
+{
+    dbgblocknum = 0;
+}
+
+void debug_outputtypedef(SYMBOL* sp)
+{
+
+}
+
 void outcode_file_init(void)
 {
     int i;
+    instructionParser = InstructionParser::GetInstance();
     adjustUsesESP();
     lastIncludeNum = 0;
     virtualSegmentNumber = MAX_SEGS;
     labelMap.clear();
+    lbllabs.clear();
+    lblpubs.clear();
+    lblvirt.clear();
+    strlabs.clear();
     memset(sections, 0, sizeof(sections));
     virtuals.clear();
     currentSection = 0;
+    memcpy(segAligns, segAlignsDefault, sizeof(segAligns));
 }
 
 /*-------------------------------------------------------------------------*/
@@ -97,6 +173,281 @@ void outcode_func_init(void)
 #define NOP 0x90
 
 }
+
+
+void omf_dump_browsefile(BROWSEFILE *brf)
+{
+    browseFiles = brf;
+}
+void omf_dump_browsedata(BROWSEINFO* bri)
+{
+    browseInfo.push_back(bri);
+}   
+void omf_globaldef(SYMBOL* sp)
+{
+    globals.insert(sp);
+}
+void omf_put_extern(SYMBOL* sp, int code)
+{
+    externs.insert(sp);
+    char buf[4096];
+    beDecorateSymName(buf, sp);
+    std::string name = buf;
+    Label * l = new Label(name, lblExterns.size(), 0);
+    l->SetExtern(true);
+    lblExterns[l->GetName()] = l;
+}
+void omf_put_impfunc(SYMBOL* sp, char* file)
+{
+    impfuncs.push_back(sp);
+}
+void omf_put_expfunc(SYMBOL* sp)
+{
+    expfuncs.push_back(sp);
+}
+void omf_put_includelib(char* name)
+{
+    includelibs.push_back(name);
+}
+
+Label *LookupLabel(std::string string)
+{
+    auto z1 = lbllabs.find(string);
+    if (z1 != lbllabs.end())
+        return z1->second;
+    auto z2 = lblpubs.find(string);
+    if (z2 != lblpubs.end())
+        return z2->second;
+    auto z3 = lblExterns.find(string);
+    if (z3 != lblExterns.end())
+        return z3->second;
+    auto z4 = lblvirt.find(string);
+    if (z4 != lblvirt.end())
+        return z4->second;
+    return nullptr;
+}
+void Release()
+{
+    for (auto v : lblExterns)
+        delete v.second;
+    for (auto v : lblpubs)
+        delete v.second;
+    for (auto v : lbllabs)
+        delete v.second;
+    for (auto v : lblvirt)
+        delete v.second;
+    for (auto v : sections)
+        delete v;
+    for (auto v : virtuals)
+        delete v;
+}
+
+ObjSection *LookupSection(std::string string)
+{
+    auto it = objSectionsByName.find(string);
+    if (it != objSectionsByName.end())
+        return it->second;
+    return nullptr;
+}
+inline int GETSECT(Label * l, int sectofs)
+{
+    int n = l->GetSect();
+    if (n < MAX_SEGS)
+        return sectionMap[n];
+    return n - sectofs;
+}
+static void DumpFileList(ObjFactory& f,ObjFile *fi)
+{
+    BROWSEFILE *bf = browseFiles;
+    while (bf)
+    {
+        ObjSourceFile* sf = f.MakeSourceFile(ObjString(bf->name));
+        sourceFiles[bf->filenum] = sf;
+        fi->Add(sf);
+        bf = bf->next;
+    }
+}
+ObjFile* MakeFile(ObjFactory& factory, std::string& name)
+{
+    bool rv = true;
+    int sectofs = 0;
+    ObjFile* fi = factory.MakeFile(name);
+    if (fi)
+    {
+        for (int i = 0; i < MAX_SEGS; ++i)
+        {
+            sectionMap[i] = 0;
+            if (sections[i])
+            {
+                if (i != codeseg)
+                    sections[i]->Resolve();
+
+                ObjSection* s = sections[i]->CreateObject(factory);
+                if (s)
+                {
+                    s->SetQuals(segFlags[i]);
+                    s->SetAlignment(segAligns[i]);
+                    objSectionsByName[s->GetName()] = s;
+                    objSectionsByNumber[s->GetIndex()] = s;
+                    fi->Add(s);
+                }
+                sectionMap[i] = sectofs ++;
+            }
+        }
+        sectofs = MAX_SEGS - sectofs;
+        for (auto v : virtuals)
+        {
+            ObjSection* s = v->CreateObject(factory);
+            if (s)
+            {
+                bool cseg = s->GetName()[2] == 'c';
+                s->SetQuals((cseg ? segFlags[codeseg] : segFlags[dataseg]) + virtualSegFlags);
+                s->SetAlignment(cseg ? segAligns[codeseg] : segAligns[dataseg]);
+                objSectionsByName[s->GetName()] = s;
+                objSectionsByNumber[s->GetIndex()] = s;
+                fi->Add(s);
+            }
+        }
+
+        if (objSectionsByNumber.size())
+        {
+            SYMBOL s = {};
+
+            for (auto l : strlabs)
+            {
+                std::string name = l->GetName();
+                s.decoratedName = (char *)name.c_str();
+                auto g = globals.find(&s);
+                if (g != globals.end())
+                {
+                    ObjSymbol* s1;
+                    if ((*g)->storage_class == sc_static && !cparams.prm_debug)
+                        continue;
+                    if ((*g)->storage_class == sc_localstatic || (*g)->storage_class == sc_static)
+                        s1 = factory.MakeLocalSymbol(l->GetName());
+                    else
+                        s1 = factory.MakePublicSymbol(l->GetName());
+                    ObjExpression* left = factory.MakeExpression(objSectionsByNumber[GETSECT(l, sectofs)]);
+                    ObjExpression* right = factory.MakeExpression(l->GetOffset()->ival);
+                    ObjExpression* sum = factory.MakeExpression(ObjExpression::eAdd, left, right);
+                    s1->SetOffset(sum);
+                    fi->Add(s1);
+                    l->SetObjSymbol(s1);
+                    l->SetObjectSection(objSectionsByNumber[GETSECT(l, sectofs)]);
+                }
+
+            }
+            for (auto e : externs)
+            {
+                ObjSymbol* s1 = factory.MakeExternalSymbol(e->decoratedName);
+                fi->Add(s1);
+                objExterns[e] = s1;
+                auto it = lblExterns.find(e->decoratedName);
+                if (it != lblExterns.end())
+                    it->second->SetObjSymbol(s1);
+            }
+            for (auto e : labelMap)
+            {
+                Label *l = e.second;
+                l->SetObjectSection(objSectionsByNumber[GETSECT(l, sectofs)]);
+            }
+            for (auto e : lblvirt)
+            {
+                Label *l = e.second;
+                l->SetObjectSection(objSectionsByNumber[GETSECT(l, sectofs)]);
+            }
+        }
+
+        for (auto exp : expfuncs)
+        {
+            ObjExportSymbol* p = factory.MakeExportSymbol(exp->decoratedName);
+            p->SetExternalName(exp->decoratedName);
+            fi->Add(p);
+        }
+        for (auto import : impfuncs)
+        {
+            ObjImportSymbol* p = factory.MakeImportSymbol(import->decoratedName);
+            p->SetExternalName(import->decoratedName);
+            p->SetDllName(import->importfile);
+            fi->Add(p);
+        }
+        for (int i = 0; i < MAX_SEGS; ++i)
+        {
+            if (sections[i])
+            {
+                if (!sections[i]->MakeData(factory, [](std::string aa) { return LookupLabel(aa); }, [](std::string aa) {return LookupSection(aa); }))
+                    rv = false;
+            }
+        }
+        for (auto v : virtuals)
+        {
+            if (!v->MakeData(factory, [](std::string aa) { return LookupLabel(aa); }, [](std::string aa) {return LookupSection(aa); }))
+                rv = false;
+        }
+
+    }
+    if (!rv)
+    {
+        fi = nullptr;
+    }
+    return fi;
+}
+
+static void DumpFile(ObjFactory &f, ObjFile *fi, FILE *outputFile)
+{
+    if (fi)
+    {
+
+        std::time_t x = std::time(0);
+        fi->SetFileTime(*std::localtime(&x));
+
+        fi->ResolveSymbols(&f);
+
+        if (outputFile != nullptr)
+        {
+            ObjIeee i(realOutFile);
+
+            i.SetTranslatorName(ObjString("occ"));
+            i.SetDebugInfoFlag(false);
+
+            i.Write(outputFile, fi, &f);
+        }
+    }
+
+}
+ObjFile *MakeBrowseFile(ObjFactory &factory, std::string name)
+{
+    bool rv = true;
+    int sectofs = 0;
+    ObjFile* fi = factory.MakeFile(name);
+    DumpFileList(factory, fi);
+    for (auto bi : browseInfo)
+    {
+        ObjLineNo *lineno = factory.MakeLineNo(sourceFiles[bi->filenum], bi->lineno);
+        ObjBrowseInfo *bd = factory.MakeBrowseInfo((ObjBrowseInfo::eType)bi->type, (ObjBrowseInfo::eQual)bi->flags, lineno, bi->charpos, bi->name);
+        fi->Add(bd);
+    }
+    return fi;
+}
+void output_obj_file(void)
+{
+    ObjIeeeIndexManager im;
+    ObjFactory f(&im);
+    std::string name = infile;
+    ObjFile* fi = MakeFile(f, name);
+    DumpFile(f, fi, outputFile);
+
+    if (cparams.prm_browse)
+    {
+        ObjIeeeIndexManager im1;
+        ObjFactory f1(&im1);
+        name = infile;
+        fi = MakeBrowseFile(f1, name);
+        DumpFile(f1, fi, browseFile);
+    }
+    Release();
+}
+
 
 void compile_start(char* name)
 {
@@ -131,17 +482,20 @@ void include_start(char* name, int num)
 }
 /*-------------------------------------------------------------------------*/
 
-void outcode_enterseg(e_sg seg)
+void outcode_enterseg(int seg)
 {
     if (!sections[seg])
     {
         sections[seg] = new Section(segnames[seg], seg);
+        instructionParser->Setup(sections[seg]);
     }
     currentSection = sections[seg];
+    AsmExpr::SetSection(currentSection);
 }
 
 void InsertInstruction(Instruction *ins)
 {
+    currentSection->InsertInstruction(ins);
 }
 static Label *GetLabel(int lbl)
 {
@@ -151,15 +505,26 @@ static Label *GetLabel(int lbl)
         char buf[256];
         sprintf(buf, "L_%d", lbl);
         std::string name = buf;
-        l = new Label(name, labelMap.size(), 0);//currentSection()->GetSect());
+        l = new Label(name, labelMap.size(), currentSection->GetSect());
         labelMap[lbl] = l;
+        lbllabs[l->GetName()] = l;
     }
     return l;
+}
+void outcode_gen_strlab(SYMBOL *sp)
+{
+    char buf[4096];
+    beDecorateSymName(buf, sp);
+    std::string name = buf;
+    Label * l = new Label(name, strlabs.size(), currentSection->GetSect());
+    strlabs.push_back(l);
+    lblpubs[name] = l;
+    InsertInstruction(new Instruction(l));
 }
 void InsertLabel(int lbl)
 {
     Label *l = GetLabel(lbl);
-    //l->SetSect(currentSection()->GetSect());
+    l->SetSect(currentSection->GetSect());
     Instruction *newIns = new Instruction(l);
     InsertInstruction(newIns);
 }
@@ -425,19 +790,16 @@ void outcode_start_virtual_seg(SYMBOL* sp, int data)
         strcpy(buf, "vsd@");
     else
         strcpy(buf, "vsc@");
-    beDecorateSymName(buf + 3 + sp->decoratedName != '@', sp);
-    Section *sect = new Section()
-    VIRTUAL_LIST* x;
-    x = beGlobalAlloc(sizeof(VIRTUAL_LIST));
-    x->sp = sp;
-    x->seg = beGlobalAlloc(sizeof(EMIT_TAB));
-    x->data = data;
-    sp->value.i = virtualSegmentNumber++;
-    if (virtualFirst)
-        virtualLast = virtualLast->next = x;
-    else
-        virtualFirst = virtualLast = x;
-
+    beDecorateSymName(buf + 3 + (sp->decoratedName[0] != '@'), sp);
+    Section *virtsect = new Section(buf, virtualSegmentNumber++);
+    virtuals.push_back(virtsect);
+    currentSection = virtsect;
+    instructionParser->Setup(virtsect);
+    AsmExpr::SetSection(virtsect);
+    std::string name = sp->decoratedName;
+    Label *l = new Label(name, lblvirt.size(), virtualSegmentNumber - 1);
+    l->SetOffset(0);
+    lblvirt[name] = l;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -537,7 +899,17 @@ AsmExprNode *MakeFixup(EXPRESSION *offset)
         else
         {
             EXPRESSION *node = GetSymRef(offset);
-            std::string name = node->v.sp->decoratedName;
+            std::string name;
+            if (node->type == en_labcon)
+            {
+                char buf[256];
+                sprintf(buf, "L_%d", node->v.i);
+                name = buf;
+            }
+            else
+            {
+                name = node->v.sp->decoratedName;
+            }
             rv = new AsmExprNode(name);
             
         }
@@ -554,8 +926,6 @@ AsmExprNode *MakeFixup(EXPRESSION *offset)
 }
 void AddFixup(Instruction *newIns, OCODE *ins, const std::list<Numeric*>& operands)
 {
-    AMODE *amodes[4] = { ins->oper1, ins->oper2, ins->oper3 };
-    AMODE **p = &amodes[0];
     if (ins->opcode == op_dd)
     {
         int resolved = 1;
@@ -572,7 +942,7 @@ void AddFixup(Instruction *newIns, OCODE *ins, const std::list<Numeric*>& operan
     {
         for (auto operand : operands)
         {
-            if (operand->used && operand->size)
+            if (operand->used && operand->size && (operand->node->GetType() == AsmExprNode::LABEL || operand->node->GetType() == AsmExprNode::SUB) )
             {
                 if (newIns->Lost() && operand->pos)
                     operand->pos -= 8;
@@ -582,7 +952,6 @@ void AddFixup(Instruction *newIns, OCODE *ins, const std::list<Numeric*>& operan
                 Fixup* f = new Fixup(operand->node, (operand->size + 7) / 8, operand->relOfs != 0, n, operand->relOfs > 0);
                 f->SetInsOffs((operand->pos + 7) / 8);
                 newIns->Add(f);
-                p++;
             }
         }
     }
@@ -602,7 +971,7 @@ void outcode_AssembleIns(OCODE* ins)
     {
         Instruction *newIns = nullptr;
         std::list<Numeric*> operands;
-        asmError err = InstructionParser::GetInstance()->GetInstruction(ins, newIns, operands);
+        asmError err = instructionParser->GetInstruction(ins, newIns, operands);
         switch (err)
         {
 
@@ -676,4 +1045,5 @@ void outcode_gen(OCODE* peeplist)
         outcode_AssembleIns(head);
         head = head->fwd;
     }
+    currentSection->Resolve();
 }

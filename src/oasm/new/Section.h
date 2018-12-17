@@ -29,7 +29,6 @@
 #include <vector>
 #include <string>
 #include <map>
-#include <functional>
 
 #include "Instruction.h"
 class Label;
@@ -48,9 +47,9 @@ class Section
     }
     virtual ~Section();
     ObjSection* CreateObject(ObjFactory& factory);
-    bool Section::MakeData(ObjFactory& factory, std::function<Label*(std::string&)> Lookup, std::function<ObjSection*(std::string&)> SectLookup);
+    bool MakeData(ObjFactory& factory, AsmFile* fil);
     void Parse(AsmFile* fil);
-    void Resolve();
+    void Resolve(AsmFile* fil);
     void SetAlign(int aln) { align = aln; }
     int GetAlign() { return align; }
     void InsertInstruction(Instruction* ins)
@@ -82,9 +81,9 @@ class Section
     int GetPC() { return pc; }
 
   protected:
-    ObjExpression* ConvertExpression(AsmExprNode* node, std::function<Label*(std::string&)> Lookup, std::function<ObjSection *(std::string&)>   SectLookup, ObjFactory& factory);
+    ObjExpression* ConvertExpression(AsmExprNode* node, AsmFile* fil, ObjFactory& factory);
     bool SwapSectionIntoPlace(ObjExpression* t);
-    void Optimize();
+    void Optimize(AsmFile* fil);
 
   private:
     std::string name;

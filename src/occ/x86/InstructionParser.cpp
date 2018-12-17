@@ -34,7 +34,7 @@
 #include <iostream>
 #include "Token.h"
 #include "be.h"
-
+extern "C" TYPE stdint;
 
 static const unsigned mask[32] = {
     0x1,      0x3,      0x7,       0xf,       0x1f,      0x3f,      0x7f,       0xff,       0x1ff,      0x3ff,      0x7ff,
@@ -135,13 +135,13 @@ bool InstructionParser::MatchesOpcode(std::string opcode)
 {
     return opcodeTable.end() != opcodeTable.find(opcode) || prefixTable.end() != prefixTable.find(opcode);
 }
-asmError InstructionParser::GetInstruction(OCODE *ins, Instruction *&newIns, std::list<Numeric*> operands)
+asmError InstructionParser::GetInstruction(OCODE *ins, Instruction *&newIns, std::list<Numeric*>& operands)
 {
     inputTokens.clear();
     // can't use clear in openwatcom, it is buggy
 
     CleanupValues.clear();
-    operands.clear();
+    this->operands.clear();
     prefixes.clear();
     numeric = nullptr;
     switch (ins->opcode)
@@ -149,20 +149,31 @@ asmError InstructionParser::GetInstruction(OCODE *ins, Instruction *&newIns, std
     case op_repz:
     case op_repe:
     case op_rep:
-        newIns = new Instruction("\xf3", 1, false);
+        newIns = new Instruction("\xf3", 1, true);
         break;
     case op_repnz:
     case op_repne:
-        newIns = new Instruction("\xf2", 1, false);
+        newIns = new Instruction("\xf2", 1, true);
         break;
     case op_lock:
-        newIns = new Instruction("\xf0", 1, false);
+        newIns = new Instruction("\xf0", 1, true);
         break;
     default:
     {
+        if (ins->opcode == op_lea)
+            ins->oper2->length = 0;
+        if (ins->opcode >= op_ja && ins->opcode <= op_jz)
+            ins->oper1->length = 0;
         SetTokens(ins);
+        bits.Reset();
         asmError rv = DispatchOpcode(ins->opcode);
-        operands = this->operands;
+        if (rv == AERR_NONE)
+        {
+            unsigned char buf[32];
+            bits.GetBytes(buf, 32);
+            newIns = new Instruction(buf, (bits.GetBits() + 7) / 8);
+            operands = this->operands;
+        }
         return rv;
     }
     }
@@ -170,17 +181,17 @@ asmError InstructionParser::GetInstruction(OCODE *ins, Instruction *&newIns, std
 }
 void InstructionParser::SetRegToken(int reg, int sz)
 {
-    InputToken *segs[] = { 0, &Tokencs, &Tokends, &Tokenes, &Tokenfs, &Tokengs, &Tokenss };
-    InputToken *dword[] = { &Tokeneax, &Tokenecx, &Tokenedx, &Tokenebx, &Tokenesp, &Tokenebp, &Tokenesi, &Tokenedi };
-    InputToken *word[] = { &Tokenax, &Tokencx, &Tokendx, &Tokenbx, &Tokensp, &Tokenbp, &Tokensi, &Tokendi };
-    InputToken *byte[] = { &Tokenal, &Tokencl, &Tokendl, &Tokenbl, &Tokenah, &Tokench, &Tokendh, &Tokenbh };
-    InputToken *floats[] = { &Tokenst0, &Tokenst1, &Tokenst2, &Tokenst3, &Tokenst4, &Tokenst5, &Tokenst6, &Tokenst7 };
-    InputToken *creg[] = { &Tokencr0, &Tokencr1, &Tokencr2, &Tokencr3, &Tokencr4, &Tokencr5, &Tokencr6, &Tokencr7 };
-    InputToken *dreg[] = { &Tokendr0, &Tokendr1, &Tokendr2, &Tokendr3, &Tokendr4, &Tokendr5, &Tokendr6, &Tokendr7 };
-    InputToken *treg[] = { &Tokentr0, &Tokentr1, &Tokentr2, &Tokentr3, &Tokentr4, &Tokentr5, &Tokentr6, &Tokentr7 };
-    InputToken *mmreg[] = { &Tokenmm0, &Tokenmm1, &Tokenmm2, &Tokenmm3, &Tokenmm4, &Tokenmm5, &Tokenmm6, &Tokenmm7 };
-    InputToken *xmmreg[] = { &Tokenxmm0, &Tokenxmm1, &Tokenxmm2, &Tokenxmm3, &Tokenxmm4, &Tokenxmm5, &Tokenxmm6, &Tokenxmm7 };
-    InputToken **check;
+    static InputToken *segs[] = { 0, &Tokencs, &Tokends, &Tokenes, &Tokenfs, &Tokengs, &Tokenss };
+    static InputToken *dword[] = { &Tokeneax, &Tokenecx, &Tokenedx, &Tokenebx, &Tokenesp, &Tokenebp, &Tokenesi, &Tokenedi };
+    static InputToken *word[] = { &Tokenax, &Tokencx, &Tokendx, &Tokenbx, &Tokensp, &Tokenbp, &Tokensi, &Tokendi };
+    static InputToken *byte[] = { &Tokenal, &Tokencl, &Tokendl, &Tokenbl, &Tokenah, &Tokench, &Tokendh, &Tokenbh };
+    static InputToken *floats[] = { &Tokenst0, &Tokenst1, &Tokenst2, &Tokenst3, &Tokenst4, &Tokenst5, &Tokenst6, &Tokenst7 };
+    static InputToken *creg[] = { &Tokencr0, &Tokencr1, &Tokencr2, &Tokencr3, &Tokencr4, &Tokencr5, &Tokencr6, &Tokencr7 };
+    static InputToken *dreg[] = { &Tokendr0, &Tokendr1, &Tokendr2, &Tokendr3, &Tokendr4, &Tokendr5, &Tokendr6, &Tokendr7 };
+    static InputToken *treg[] = { &Tokentr0, &Tokentr1, &Tokentr2, &Tokentr3, &Tokentr4, &Tokentr5, &Tokentr6, &Tokentr7 };
+    static InputToken *mmreg[] = { &Tokenmm0, &Tokenmm1, &Tokenmm2, &Tokenmm3, &Tokenmm4, &Tokenmm5, &Tokenmm6, &Tokenmm7 };
+    static InputToken *xmmreg[] = { &Tokenxmm0, &Tokenxmm1, &Tokenxmm2, &Tokenxmm3, &Tokenxmm4, &Tokenxmm5, &Tokenxmm6, &Tokenxmm7 };
+    static InputToken **check;
 
     if (sz < 0)
         sz = -sz;
@@ -188,13 +199,16 @@ void InstructionParser::SetRegToken(int reg, int sz)
         sz = 4;
     switch (sz)
     {
-    case 1:
+    case ISZ_UCHAR:
+    case ISZ_BOOLEAN:
         check = byte;
         break;
-    case 2:
+    case ISZ_USHORT:
         check = word;
         break;
-    case 4:
+    case ISZ_UINT:
+    case ISZ_ULONG:
+    case ISZ_ADDR:
         check = dword;
         break;
     case 10:
@@ -246,7 +260,7 @@ void InstructionParser::SetExpressionToken(EXPRESSION *offset)
     {
         AsmExprNode *expr = MakeFixup(offset);
         InputToken *next = new InputToken;
-        next->type = InputToken::LABEL;
+        next->type = InputToken::NUMBER;
         next->val = expr;
         inputTokens.push_back(next);
         if (n)
@@ -264,19 +278,27 @@ void InstructionParser::SetSize(int sz)
             sz = -sz;
         switch (sz)
         {
-        case 1:
+        case ISZ_UCHAR:
+        case ISZ_BOOLEAN:
             inputTokens.push_back(&Tokenbyte);
             break;
-        case 2:
+        case ISZ_USHORT:
             inputTokens.push_back(&Tokenword);
             break;
-        case 4:
+        case ISZ_UINT:
+        case ISZ_ULONG:
+        case ISZ_ADDR:
+        case ISZ_FLOAT:
+        case ISZ_IFLOAT:
             inputTokens.push_back(&Tokendword);
             break;
-        case 8:
+        case ISZ_ULONGLONG:
+        case ISZ_DOUBLE:
+        case ISZ_IDOUBLE:
             inputTokens.push_back(&Tokenqword);
             break;
-        case 10:
+        case ISZ_LDOUBLE:
+        case ISZ_ILDOUBLE:
             inputTokens.push_back(&Tokentword);
             break;
 
@@ -325,8 +347,8 @@ void InstructionParser::SetOperandTokens(amode *operand)
             break;
         case am_indisp:
             SetBracketSequence(true, operand->length, operand->seg);
-            SetRegToken(operand->preg, 4);
-            if (operand->offset)
+            SetRegToken(operand->preg, ISZ_UINT);
+            if (operand->offset && !isconstzero(&stdint, operand->offset))
             {
                 inputTokens.push_back(&Tokenplus);
                 SetExpressionToken(operand->offset);
@@ -337,16 +359,16 @@ void InstructionParser::SetOperandTokens(amode *operand)
             SetBracketSequence(true, operand->length, operand->seg);
             if (operand->preg != -1)
             {
-                SetRegToken(operand->preg, 4);
+                SetRegToken(operand->preg, ISZ_UINT);
                 inputTokens.push_back(&Tokenplus);
             }
-            SetRegToken(operand->sreg, 4);
+            SetRegToken(operand->sreg, ISZ_UINT);
             if (operand->scale != 1)
             {
                 inputTokens.push_back(&Tokenstar);
                 SetNumberToken(operand->scale);
             }
-            if (operand->offset)
+            if (operand->offset && !isconstzero(&stdint, operand->offset))
             {
                 inputTokens.push_back(&Tokenplus);
                 SetExpressionToken(operand->offset);
@@ -382,4 +404,8 @@ void InstructionParser::SetTokens(ocode *ins)
         inputTokens.push_back(&Tokencomma);
         SetOperandTokens(ins->oper3);
     }
+}
+Instruction* InstructionParser::Parse(const std::string args, int PC)
+{
+    return nullptr;
 }

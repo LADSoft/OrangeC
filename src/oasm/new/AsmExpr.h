@@ -78,7 +78,7 @@ class AsmExprNode
         sect(nullptr)
     {
     }
-    AsmExprNode(PPINT Ival, bool reg = false) : type(reg? REG : IVAL), ival(Ival), left(nullptr), right(nullptr), sect(nullptr) {}
+    AsmExprNode(PPINT Ival) : type(IVAL), ival(Ival), left(nullptr), right(nullptr), sect(nullptr) {}
     AsmExprNode(const FPF& Fval) : type(FVAL), ival(0), fval(Fval), left(nullptr), right(nullptr), sect(nullptr) {}
     AsmExprNode(std::string lbl) : type(LABEL), ival(0), left(nullptr), right(nullptr), label(lbl), sect(nullptr) {}
     AsmExprNode(Section* Sect, int offs) : type(BASED), ival(offs), left(nullptr), right(nullptr), sect(Sect) {}

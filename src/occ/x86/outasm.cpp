@@ -53,7 +53,7 @@ static int uses_float;
 
 extern "C" MULDIV* muldivlink = 0;
 static enum e_gt oa_gentype = nogen; /* Current DC type */
-enum e_sg oa_currentSeg = noseg;     /* Current seg */
+extern "C" enum e_sg oa_currentSeg = noseg;     /* Current seg */
 static int oa_outcol = 0;            /* Curront col (roughly) */
 int newlabel;
 int needpointer;
@@ -691,6 +691,7 @@ void oa_put_code(OCODE* cd)
         }
     }
     bePrintf("\n");
+
 }
 
 /*-------------------------------------------------------------------------*/
@@ -713,6 +714,7 @@ void oa_gen_strlab(SYMBOL* sp)
         else
             bePrintf("%s:\n", buf);
     }
+    outcode_gen_strlab(sp);
 }
 
 /*-------------------------------------------------------------------------*/

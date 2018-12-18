@@ -400,8 +400,6 @@ ARCH_ASM assemblerInterface[] = {{
                                      usage_text, /* pointer to usage text */
                                      args,       /* extra args */
                                      sizeof(args) / sizeof(args[0]), /* number of args */
-                                     NULL,                           /* inline assembler opcode list, or null */
-                                     NULL,                           /* inline assembler register list, or null */
                                      prockeywords,     /* specific keywords, e.g. allow a 'bit' keyword and so forth */
                                      defines,          /* defines list to create at compile time, or null */
                                      NULL,             /* debug structure, or NULL */
@@ -442,8 +440,6 @@ ARCH_ASM assemblerInterface[] = {{
                                      usage_text, /* pointer to usage text */
                                      args,       /* extra args */
                                      sizeof(args) / sizeof(args[0]), /* number of args */
-                                     NULL,                           /* inline assembler opcode list, or null */
-                                     NULL,                           /* inline assembler register list, or null */
                                      prockeywords,     /* specific keywords, e.g. allow a 'bit' keyword and so forth */
                                      defines,          /* defines list to create at compile time, or null */
                                      NULL,             /* debug structure, or NULL */
@@ -484,8 +480,6 @@ ARCH_ASM assemblerInterface[] = {{
                                      usage_text, /* pointer to usage text */
                                      args,       /* extra args */
                                      sizeof(args) / sizeof(args[0]), /* number of args */
-                                     NULL,                           /* inline assembler opcode list, or null */
-                                     NULL,                           /* inline assembler register list, or null */
                                      prockeywords,     /* specific keywords, e.g. allow a 'bit' keyword and so forth */
                                      defines,          /* defines list to create at compile time, or null */
                                      NULL,             /* debug structure, or NULL */

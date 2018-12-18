@@ -749,6 +749,8 @@ enum e_tk {
 
 extern const char * const opcodeTable[626];
 
+extern std::map<enum e_tk, const char *> tokenNames;
+
 extern InputToken Tokenstar;
 extern InputToken Tokenplus;
 extern InputToken Tokencomma;

@@ -857,7 +857,7 @@ ObjFile* AsmFile::MakeFile(ObjFactory& factory, std::string& name)
         }
         for (int i = 0; i < numericSections.size(); i++)
         {
-            if (!numericSections[i]->MakeData(factory, [this](std::string aa) { return Lookup(aa); }, [this](std::string aa) { return GetSectionByName(aa); }))
+            if (!numericSections[i]->MakeData(factory, [this](std::string aa) { return Lookup(aa); }, [this](std::string aa) { return GetSectionByName(aa); }, [](ObjFactory&, Section *, Instruction *) {}))
                 rv = false;
         }
     }

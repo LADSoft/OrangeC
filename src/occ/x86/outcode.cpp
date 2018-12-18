@@ -28,7 +28,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "be.h"
-
 #include "Label.h"
 #include "Fixup.h"
 #include "Instruction.h"
@@ -37,6 +36,9 @@
 #include "ObjFile.h"
 #include "ObjFactory.h"
 #include "ObjSection.h"
+#include "ObjDebugTag.h"
+#include "ObjMemory.h"
+#include "ObjLineNo.h"
 #include <map>
 #include <set>
 #include <deque>
@@ -67,6 +69,8 @@ extern "C" FILE *outputFile, *browseFile;
 extern "C" char infile[];
 
 LIST* includedFiles;
+InstructionParser *instructionParser;
+Section *currentSection;
 
 static char* segnames[] = { 0,         "code",     "data",     "bss",        "string",     "const",
 "tls",     "cstartup", "crundown", "tlsstartup", "tlsrundown", "codefix",
@@ -85,17 +89,17 @@ static int lastIncludeNum;
 static int sectionMap[MAX_SEGS];
 static std::map<int, Label *> labelMap;
 
+static std::vector<SYMBOL *> autotab;
 static std::vector<Label *> strlabs;
 static std::map<std::string, Label *> lblpubs;
 static std::map<std::string, Label *> lbllabs;
 static std::map<std::string, Label*> lblExterns;
 static std::map<std::string, Label *> lblvirt;
 static std::vector<Section *> virtuals;
-static InstructionParser *instructionParser;
 
 static Section *sections[MAX_SEGS];
 
-static Section *currentSection;
+static int autoCount;
 
 struct symname
 {
@@ -106,7 +110,11 @@ struct symname
 };
 static std::set<SYMBOL *, symname> globals;
 static std::set<SYMBOL *, symname> externs;
+static std::map<SYMBOL *, int> autos;
+static std::vector<ObjSymbol*> autovector;
 static std::map<SYMBOL *, ObjSymbol *> objExterns;
+static std::map<SYMBOL *, ObjSymbol* > objGlobals;
+
 static std::vector<SYMBOL *> impfuncs;
 static std::vector<SYMBOL *> expfuncs;
 static std::vector<std::string> includelibs;
@@ -121,13 +129,19 @@ static std::map<int, ObjSourceFile *> sourceFiles;
 extern "C" void adjustUsesESP();
 extern "C" int dbgblocknum = 0;
 
+static int sectofs;
+
 void omfInit(void)
 {
     browseInfo.clear();
     browseFiles = nullptr;
     globals.clear();
     externs.clear();
+    autos.clear();
+    autotab.clear();
+    autovector.clear();
     objExterns.clear();
+    objGlobals.clear();
     lblExterns.clear();
     impfuncs.clear();
     expfuncs.clear();
@@ -140,6 +154,7 @@ void omfInit(void)
 void dbginit(void)
 {
     dbgblocknum = 0;
+    autoCount = 0;
 }
 
 void debug_outputtypedef(SYMBOL* sp)
@@ -191,6 +206,7 @@ void omf_put_extern(SYMBOL* sp, int code)
 {
     externs.insert(sp);
     char buf[4096];
+    buf[0] = 0;
     beDecorateSymName(buf, sp);
     std::string name = buf;
     Label * l = new Label(name, lblExterns.size(), 0);
@@ -224,6 +240,7 @@ Label *LookupLabel(std::string string)
     auto z4 = lblvirt.find(string);
     if (z4 != lblvirt.end())
         return z4->second;
+
     return nullptr;
 }
 void Release()
@@ -267,13 +284,79 @@ static void DumpFileList(ObjFactory& f,ObjFile *fi)
         bf = bf->next;
     }
 }
+
+void HandleDebugInfo(ObjFactory& factory, Section* sect, Instruction* ins)
+{
+    int n = sect->GetSect();
+    if (n < MAX_SEGS)
+        n = sectionMap[n];
+    else
+        n -= sectofs;
+
+    ObjSection *objSection = objSectionsByNumber[n];
+    ATTRIBDATA *d = (ATTRIBDATA *)ins->GetAltData();
+    if (d)
+    {
+        ObjMemory::DebugTagContainer* dc = new ObjMemory::DebugTagContainer;
+        switch (d->type)
+        { 
+        case e_ad_blockdata:
+        {
+            ObjDebugTag *tag = factory.MakeDebugTag(d->start);
+            dc->push_back(tag);
+            objSection->GetMemoryManager().Add(dc);
+        }
+        break;
+        case e_ad_funcdata:
+        {
+            ObjDebugTag *tag = factory.MakeDebugTag(objGlobals[d->v.sp], d->start);
+            dc->push_back(tag);
+            objSection->GetMemoryManager().Add(dc);
+        }
+        break;
+        case e_ad_vfuncdata:
+        {
+            Section *s = (Section *)d->v.section;
+            n = sect->GetSect();
+            if (n < MAX_SEGS)
+                n = sectionMap[n];
+            else
+                n -= sectofs;
+            ObjDebugTag *tag = factory.MakeDebugTag(objSectionsByNumber[n], d->start);
+            dc->push_back(tag);
+            objSection->GetMemoryManager().Add(dc);
+        }
+        break;
+        case e_ad_linedata:
+        {
+            ObjLineNo *line = factory.MakeLineNo(sourceFiles[d->v.ld->fileindex], d->v.ld->lineno);
+            ObjDebugTag *tag = factory.MakeDebugTag(line);
+            dc->push_back(tag);
+            objSection->GetMemoryManager().Add(dc);
+        }
+            break;
+        case e_ad_vardata:
+            if (autos.find(d->v.sp) != autos.end())
+            {
+                ObjSymbol * autosp = autovector[autos[d->v.sp]];
+                ObjDebugTag *tag = factory.MakeDebugTag(autosp);
+                dc->push_back(tag);
+                objSection->GetMemoryManager().Add(dc);
+            }
+            break;
+        }
+    }
+
+}
 ObjFile* MakeFile(ObjFactory& factory, std::string& name)
 {
     bool rv = true;
-    int sectofs = 0;
+    sectofs = 0;
     ObjFile* fi = factory.MakeFile(name);
     if (fi)
     {
+        if (cparams.prm_debug)
+            DumpFileList(factory, fi);
         for (int i = 0; i < MAX_SEGS; ++i)
         {
             sectionMap[i] = 0;
@@ -334,6 +417,7 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
                     fi->Add(s1);
                     l->SetObjSymbol(s1);
                     l->SetObjectSection(objSectionsByNumber[GETSECT(l, sectofs)]);
+                    objGlobals[*g] = s1;
                 }
 
             }
@@ -345,6 +429,12 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
                 auto it = lblExterns.find(e->decoratedName);
                 if (it != lblExterns.end())
                     it->second->SetObjSymbol(s1);
+            }
+            for (auto e : autotab)
+            { 
+                ObjSymbol* s1 = factory.MakeAutoSymbol(e->decoratedName);
+                fi->Add(s1);
+                autovector.push_back(s1);
             }
             for (auto e : labelMap)
             {
@@ -375,13 +465,13 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
         {
             if (sections[i])
             {
-                if (!sections[i]->MakeData(factory, [](std::string aa) { return LookupLabel(aa); }, [](std::string aa) {return LookupSection(aa); }))
+                if (!sections[i]->MakeData(factory, LookupLabel, LookupSection, HandleDebugInfo))
                     rv = false;
             }
         }
         for (auto v : virtuals)
         {
-            if (!v->MakeData(factory, [](std::string aa) { return LookupLabel(aa); }, [](std::string aa) {return LookupSection(aa); }))
+            if (!v->MakeData(factory, LookupLabel, LookupSection, HandleDebugInfo))
                 rv = false;
         }
 
@@ -408,7 +498,7 @@ static void DumpFile(ObjFactory &f, ObjFile *fi, FILE *outputFile)
             ObjIeee i(realOutFile);
 
             i.SetTranslatorName(ObjString("occ"));
-            i.SetDebugInfoFlag(false);
+            i.SetDebugInfoFlag(cparams.prm_debug && outputFile == ::outputFile);
 
             i.Write(outputFile, fi, &f);
         }
@@ -514,6 +604,7 @@ static Label *GetLabel(int lbl)
 void outcode_gen_strlab(SYMBOL *sp)
 {
     char buf[4096];
+    buf[0] = 0;
     beDecorateSymName(buf, sp);
     std::string name = buf;
     Label * l = new Label(name, strlabs.size(), currentSection->GetSect());
@@ -529,10 +620,6 @@ void InsertLabel(int lbl)
     InsertInstruction(newIns);
 }
 
-void InsertLine(LINEDATA* linedata) {  }
-void InsertVarStart(SYMBOL* sp) { }
-void InsertFunc(SYMBOL* sp, int start) { }
-void InsertBlock(int start) { }
 
 void emit(void* data, int len)
 {
@@ -576,6 +663,7 @@ void emit(int size)
 Fixup * gen_symbol_fixup(SYMBOL* pub, int offset, bool PC)
 {
     char buf[4096];
+    buf[0] = 0;
     beDecorateSymName(buf, pub);
     AsmExprNode *expr = new AsmExprNode(buf);
     if (offset)
@@ -601,8 +689,10 @@ Fixup *gen_label_fixup(int lab, int offset, bool PC)
 Fixup *gen_threadlocal_fixup(SYMBOL* tls, SYMBOL* base, int offset)
 {
     char buf[4096];
+    buf[0] = 0;
     beDecorateSymName(buf, base);
     AsmExprNode *expr = new AsmExprNode(buf);
+    buf[0] = 0;
     beDecorateSymName(buf, tls);
     AsmExprNode *expr1 = new AsmExprNode(buf);
     expr = new AsmExprNode(AsmExprNode::SUB, expr1, expr);
@@ -924,6 +1014,60 @@ AsmExprNode *MakeFixup(EXPRESSION *offset)
         return new AsmExprNode(n);
     }
 }
+void InsertAttrib(ATTRIBDATA *ad)
+{
+    InsertInstruction(new Instruction(ad));
+}
+void InsertLine(LINEDATA* linedata)
+{
+    ATTRIBDATA *attrib = (ATTRIBDATA *)Alloc(sizeof(ATTRIBDATA));
+    attrib->type = e_ad_linedata;
+    attrib->v.ld = linedata;
+    InsertAttrib(attrib);
+
+}
+void InsertVarStart(SYMBOL* sp)
+{
+    if (!strstr(sp->name, "++"))
+    {
+        ATTRIBDATA *attrib = (ATTRIBDATA *)Alloc(sizeof(ATTRIBDATA));
+        attrib->type = e_ad_vardata;
+        attrib->v.sp = sp;
+
+        InsertAttrib(attrib);
+        autos[sp] = autos.size();
+        autotab.push_back(sp);
+    }
+}
+void InsertFunc(SYMBOL* sp, int start) 
+{ 
+    if (oa_currentSeg == virtseg)
+    {
+        ATTRIBDATA *attrib = (ATTRIBDATA *)Alloc(sizeof(ATTRIBDATA));
+        attrib->type = e_ad_vfuncdata;
+        attrib->v.section = currentSection;
+        attrib->start = !!start;
+        InsertAttrib(attrib);
+    }
+    else
+    {
+        ATTRIBDATA *attrib = (ATTRIBDATA *)Alloc(sizeof(ATTRIBDATA));
+        attrib->type = e_ad_funcdata;
+        attrib->v.sp = sp;
+        attrib->start = !!start;
+        InsertAttrib(attrib);
+    }
+}
+void InsertBlock(int start) 
+{ 
+    ATTRIBDATA *attrib = (ATTRIBDATA *)Alloc(sizeof(ATTRIBDATA));
+    attrib->type = e_ad_blockdata;
+    attrib->start = !!start;
+    InsertAttrib(attrib);
+
+}
+
+
 void AddFixup(Instruction *newIns, OCODE *ins, const std::list<Numeric*>& operands)
 {
     if (ins->opcode == op_dd)
@@ -942,7 +1086,7 @@ void AddFixup(Instruction *newIns, OCODE *ins, const std::list<Numeric*>& operan
     {
         for (auto operand : operands)
         {
-            if (operand->used && operand->size && (operand->node->GetType() == AsmExprNode::LABEL || operand->node->GetType() == AsmExprNode::SUB) )
+            if (operand->used && operand->size && (operand->node->GetType() == AsmExprNode::LABEL || operand->node->GetType() == AsmExprNode::SUB || operand->node->GetType() == AsmExprNode::ADD) )
             {
                 if (newIns->Lost() && operand->pos)
                     operand->pos -= 8;
@@ -959,9 +1103,9 @@ void AddFixup(Instruction *newIns, OCODE *ins, const std::list<Numeric*>& operan
 
 void outcode_diag(OCODE *ins, char *str)
 {
-    char buf[512];
-    sprintf(buf, "Assembly instruction %s: %s", opcodeTable[ins->opcode], str);
-    diag(buf);
+    std::string instruction = instructionParser->FormatInstruction(ins);
+    std::string name("Error compiling assembly instruction \"" + instruction + "\": " + str);
+    diag(name.c_str());
 }
 /*-------------------------------------------------------------------------*/
 
@@ -1004,14 +1148,38 @@ void outcode_AssembleIns(OCODE* ins)
     else
     {
         switch (ins->opcode)
-        {
+        {    
         case op_label:
             InsertLabel((int)ins->oper1);
             return;
         case op_line:
-        case op_blockstart:
-        case op_blockend:
+            if (cparams.prm_debug)
+            {
+                LINEDATA* ld = (LINEDATA*)ins->oper1;
+                while (ld->next)
+                    ld = ld->next;
+                InsertLine(ld);
+            }
+            break;
         case op_varstart:
+            if (cparams.prm_debug)
+                InsertVarStart((SYMBOL*)ins->oper1);
+            break;
+        case op_blockstart:
+            if (cparams.prm_debug)
+                InsertBlock(1);
+            break;
+        case op_blockend:
+            if (cparams.prm_debug)
+                InsertBlock(0);
+            break;
+        case op_funcstart:
+            if (cparams.prm_debug)
+                InsertFunc((SYMBOL*)ins->oper1, 1);
+            break;
+        case op_funcend:
+            if (cparams.prm_debug)
+                InsertFunc((SYMBOL*)ins->oper1, 0);
             break;
         case op_genword:
             outcode_genbyte(ins->oper1->offset->v.i);

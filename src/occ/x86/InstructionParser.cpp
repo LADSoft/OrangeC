@@ -135,6 +135,53 @@ bool InstructionParser::MatchesOpcode(std::string opcode)
 {
     return opcodeTable.end() != opcodeTable.find(opcode) || prefixTable.end() != prefixTable.find(opcode);
 }
+
+std::string InstructionParser::FormatInstruction(ocode *ins)
+{
+    std::string rv = ::opcodeTable[ins->opcode];
+    rv += " ";
+    for (auto t : inputTokens)
+    {
+        switch (t->type)
+        {
+        case InputToken::LABEL:
+            rv += t->val->label;
+            break;
+        case InputToken::NUMBER:
+        {
+            if (t->val->GetType() == AsmExprNode::ADD)
+            {
+                rv += t->val->GetLeft()->label + "+";
+                char buf[256];
+                sprintf(buf, "%d", t->val->GetRight()->ival);
+                rv += buf;
+            }
+            else if (t->val->GetType() == AsmExprNode::LABEL)
+            {
+                rv += t->val->label;
+            }
+            else
+            {
+                char buf[256];
+                sprintf(buf, "%d", t->val->ival);
+                rv += buf;
+            }
+            break;
+        }
+        case InputToken::REGISTER:
+            rv += tokenNames[(e_tk)(t->val->ival + 1000)];
+            break;
+        case InputToken::TOKEN:
+            rv += tokenNames[(e_tk)t->val->ival];
+            break;
+        default:
+            rv += "unknown";
+            break;
+        }
+    }
+    return rv;
+}
+
 asmError InstructionParser::GetInstruction(OCODE *ins, Instruction *&newIns, std::list<Numeric*>& operands)
 {
     inputTokens.clear();
@@ -164,6 +211,8 @@ asmError InstructionParser::GetInstruction(OCODE *ins, Instruction *&newIns, std
             ins->oper2->length = 0;
         if (ins->opcode >= op_ja && ins->opcode <= op_jz)
             ins->oper1->length = 0;
+        if (ins->opcode == op_mov && ins->oper2 && ins->oper2->mode == am_immed)
+            ins->oper2->length = 0;
         SetTokens(ins);
         bits.Reset();
         asmError rv = DispatchOpcode(ins->opcode);
@@ -253,21 +302,18 @@ bool InstructionParser::SetNumberToken(EXPRESSION *offset, int &n)
         SetNumberToken(n);
     return !!resolved;
 }
+#include <string.h>
 void InstructionParser::SetExpressionToken(EXPRESSION *offset)
 {
     int n;
     if (!SetNumberToken(offset, n))
     {
+        EXPRESSION *exp = GetSymRef(offset);
         AsmExprNode *expr = MakeFixup(offset);
         InputToken *next = new InputToken;
         next->type = InputToken::NUMBER;
         next->val = expr;
         inputTokens.push_back(next);
-        if (n)
-        {
-            inputTokens.push_back(&Tokenplus);
-            SetNumberToken(n);
-        }
     }
 }
 void InstructionParser::SetSize(int sz)
@@ -363,10 +409,10 @@ void InstructionParser::SetOperandTokens(amode *operand)
                 inputTokens.push_back(&Tokenplus);
             }
             SetRegToken(operand->sreg, ISZ_UINT);
-            if (operand->scale != 1)
+            if (operand->scale != 0)
             {
                 inputTokens.push_back(&Tokenstar);
-                SetNumberToken(operand->scale);
+                SetNumberToken(1 << operand->scale);
             }
             if (operand->offset && !isconstzero(&stdint, operand->offset))
             {

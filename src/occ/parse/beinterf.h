@@ -393,7 +393,7 @@ typedef struct _arch_gen
 
 typedef struct
 {
-    char* name;
+    const char* name;
     short atype;
     short amode;
     void* data;
@@ -427,8 +427,6 @@ typedef struct _arch_asm
     char* usage_text;           /* pointer to usage text */
     CMDLIST* Args;              /* argument handling */
     int ArgCount;               /* number of arguments */
-    ASMNAME* oplst;             /* inline assembler opcode list, or null */
-    ASMREG* reglst;             /* inline assembler register list, or null */
     KEYWORD* keywords;          /* specific keywords, e.g. allow a 'bit' keyword and so forth */
     ARCH_DEFINES* defines;      /* defines list to create at compile time, or null */
     ARCH_DEBUG* debug;          /* debug structure, or NULL */

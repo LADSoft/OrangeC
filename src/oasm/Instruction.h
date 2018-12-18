@@ -45,9 +45,10 @@ class Instruction
         DATA,
         CODE,
         ALIGN,
-        RESERVE
+        RESERVE,
+        ALT
     };
-    Instruction(Label* lbl) : data(nullptr), label(lbl), type(LABEL), pos(0), fpos(0), size(0), offs(0), repeat(1) {}
+    Instruction(Label* lbl) : data(nullptr), label(lbl), type(LABEL), altdata(nullptr), pos(0), fpos(0), size(0), offs(0), repeat(1) {}
     Instruction(void* Data, int Size, bool isData = false) :
         type(isData ? DATA : CODE),
         label(nullptr),
@@ -60,14 +61,19 @@ class Instruction
     {
         data = LoadData(!isData, (unsigned char *)Data, Size);
     }
-    Instruction(int aln) : data(nullptr), type(ALIGN), label(nullptr), pos(0), fpos(0), size(aln), offs(0), repeat(1) {}
-    Instruction(int Repeat, int Size) : type(RESERVE), label(nullptr), pos(0), fpos(0), size(Size), repeat(Repeat), offs(0)
+    Instruction(int aln) : data(nullptr), type(ALIGN), label(nullptr), altdata(nullptr), pos(0), fpos(0), size(aln), offs(0), repeat(1) {}
+    Instruction(int Repeat, int Size) : type(RESERVE), label(nullptr), altdata(nullptr), pos(0), fpos(0), size(Size), repeat(Repeat), offs(0)
     {
         data = new unsigned char[size];
         memset(data, 0, size);
     }
+    Instruction(void *data) : data(nullptr), type(ALT), label(nullptr), altdata(data), pos(0), fpos(0), size(0), offs(0), repeat(1)
+    {
+
+    }
     virtual ~Instruction();
 
+    void *GetAltData() { return altdata; }
     Label* GetLabel() { return label; }
     bool IsLabel() { return type == LABEL; }
     int GetType() { return type; }
@@ -109,6 +115,7 @@ class Instruction
     int pos;
     int fpos;
     int repeat, xrepeat;
+    void *altdata;
     bool lost;
 
     FixupContainer fixups;

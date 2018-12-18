@@ -1163,7 +1163,7 @@ BOOLEAN needkw(LEXEME** lex, enum e_kw kw)
     }
 }
 void specerror(int err, char* name, char* file, int line) { printerr(err, file, line, name); }
-void diag(char* fmt, ...)
+void diag(const char* fmt, ...)
 {
     if (cparams.prm_diag)
     {

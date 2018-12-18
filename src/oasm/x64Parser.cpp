@@ -57784,15 +57784,20 @@ asmError x64Parser::ParseOperands(x64Token *tokenList, x64Operand &operand)
 			}
 			if (j == sizeof(addressTable) / sizeof(addressTable[0]))
 			{
+				inputTokens= fullList;
 				return AERR_OPERAND;
 			}
 			if (i < fullList.size())
 			{
 				i++;
 				if (i == fullList.size())
+				{
+					inputTokens= fullList;
 					return AERR_SYNTAX;
+				}
 			}
 		}
+		inputTokens= fullList;
 		return AERR_BADCOMBINATIONOFOPERANDS;
 	}
 	return rv;

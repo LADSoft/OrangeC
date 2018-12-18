@@ -68,7 +68,7 @@ void errortype (int err, TYPE *tp1, TYPE *tp2);
 void membererror(char *name, TYPE *tp1);
 void errorarg(int err, int argnum, SYMBOL *declsp, SYMBOL *funcsp);
 void specerror(int err, char *name, char *file, int line);
-void diag(char *fmt, ...);
+void diag(const char *fmt, ...);
 void printToListFile(char *fmt, ...);
 void ErrorsToListFile(void);
 void AddErrorToList(char *tag, char *str);

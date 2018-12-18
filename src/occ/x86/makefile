@@ -138,5 +138,8 @@ format:
 	@$(MAKE) -f $(_TREEROOT) format
 endif
 
+x64Parser.cpp: ..$(PATHEXT2)..$(PATHEXT2)oasm$(PATHEXT2)x64parser.cpp
+	copy $< $@
+
 DISTRIBUTE: copyexe
 	copy target.cfg $(DISTBIN)$(PATHEXT2)occ.cfg

@@ -35,79 +35,6 @@
  */
 
 /* address mode specifications */
-#ifdef XXXXX
-#    define F_VOL 1                                  /* need volitile operand */
-#    define F_NOVALUE 2                              /* dont need result value */
-#    define F_DREG 4                                 /* data register direct mode allowed */
-#    define F_AREG 8                                 /* address register direct mode allowed */
-#    define F_MEM 16                                 /* memory alterable modes allowed */
-#    define F_IMMED 32                               /* immediate mode allowed */
-#    define F_ALT (F_DREG | F_AREG | F_MEM)          /* alterable modes */
-#    define F_DALT (F_DREG | F_MEM)                  /* data alterable modes */
-#    define F_FREG 64                                /* FP register */
-#    define F_INDX 128                               /* indexed memory alterable mode allowed */
-#    define F_ALL (F_ALT | F_IMMED | F_REG | F_INDX) /* all modes allowed */
-#    define F_NOBIT 256                              /* Don't get the bit val, get the address */
-#    define F_DEST 512                               /* Is going to be used as a destination */
-#    define F_AXDX 1024                              /* longlong in dx,ax */
-#    define F_NOREUSE 2048                           /* don't reuse the register */
-#endif
-
-#define OPE_MATH 1
-#define OPE_ARPL 2
-#define OPE_BOUND 3
-#define OPE_BITSCAN 4
-#define OPE_BIT 5
-#define OPE_CALL 6
-#define OPE_INCDEC 7
-#define OPE_RM 8
-#define OPE_ENTER 9
-#define OPE_IMUL 10
-#define OPE_IN 11
-#define OPE_IMM8 12
-#define OPE_RELBRA 13
-#define OPE_RELBR8 14
-#define OPE_JMP 15
-#define OPE_REGRM 16
-#define OPE_LOADSEG 17
-#define OPE_LGDT 18
-#define OPE_LIDT 19
-#define OPE_RM16 20
-#define OPE_MOV 21
-#define OPE_MOVSX 22
-#define OPE_OUT 23
-#define OPE_PUSHPOP 24
-#define OPE_SHIFT 25
-#define OPE_RET 26
-#define OPE_SET 27
-#define OPE_SHLD 28
-#define OPE_TEST 29
-#define OPE_XCHG 30
-#define OPE_FMATH 31
-#define OPE_FMATHP 32
-#define OPE_FMATHI 33
-#define OPE_FCOM 34
-#define OPE_FREG 35
-#define OPE_FICOM 36
-#define OPE_FILD 37
-#define OPE_FIST 38
-#define OPE_FLD 39
-#define OPE_FST 40
-#define OPE_FSTP 41
-#define OPE_FUCOM 42
-#define OPE_FXCH 43
-#define OPE_MN 44
-#define OPE_M16 45
-#define OPE_CMPS 46
-#define OPE_INS 47
-#define OPE_LODS 48
-#define OPE_MOVS 49
-#define OPE_OUTS 50
-#define OPE_SCAS 51
-#define OPE_STOS 52
-#define OPE_XLAT 53
-#define OPE_REG32 54
-
 #define MAX_SEGS browseseg + 1
 
 enum e_op
@@ -375,5 +302,25 @@ enum asmTypes
 #define R_CL 17
 #define R_AX 24
 #define R_CX 25
+enum e_adtype
+{
+    e_ad_linedata,
+    e_ad_blockdata,
+    e_ad_funcdata,
+    e_ad_vfuncdata,
+    e_ad_vardata
+} ;
+
+typedef struct _attribdata
+{
+    enum e_adtype type;
+    union
+    {
+        LINEDATA* ld;
+        SYMBOL* sp;
+        void *section;
+    } v;
+    BOOLEAN start;
+} ATTRIBDATA;
 
 #include "be.p"

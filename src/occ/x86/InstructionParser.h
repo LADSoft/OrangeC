@@ -133,6 +133,7 @@ class InstructionParser
     virtual bool IsBigEndian() = 0;
     bool SetNumber(int tokenPos, int oldVal, int newVal);
     asmError GetInstruction(ocode *ins, Instruction *&newIns, std::list<Numeric*>& operands);
+    std::string FormatInstruction(ocode *ins);
 
   protected:
     enum

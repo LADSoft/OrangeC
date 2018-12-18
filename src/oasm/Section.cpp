@@ -271,7 +271,7 @@ bool Section::SwapSectionIntoPlace(ObjExpression* t)
         return t->GetOperator() == ObjExpression::eSection;
     }
 }
-bool Section::MakeData(ObjFactory& factory, std::function<Label*(std::string&)> Lookup, std::function<ObjSection*(std::string&)> SectLookup)
+bool Section::MakeData(ObjFactory& factory, std::function<Label*(std::string&)> Lookup, std::function<ObjSection*(std::string&)> SectLookup, std::function<void(ObjFactory&, Section *, Instruction *)> HandleAlt)
 {
     bool rv = true;
     int pc = 0;
@@ -299,41 +299,49 @@ bool Section::MakeData(ObjFactory& factory, std::function<Label*(std::string&)> 
             }
             else
             {
-                if (pos)
+                if (pos || n == -2)
                 {
                     ObjMemory* mem = factory.MakeData(buf, pos);
                     sect->Add(mem);
                     pos = 0;
                 }
-                ObjExpression* t;
-                try
+                if (n == -2)
                 {
-                    t = ConvertExpression(f.GetExpr(), Lookup, SectLookup, factory);
-                    SwapSectionIntoPlace(t);
+                    while (instructionPos < instructions.size() && instructions[instructionPos]->GetType() == Instruction::ALT)
+                        HandleAlt(factory, this, instructions[instructionPos++]);
                 }
-                catch (std::runtime_error* e)
+                else
                 {
-                    Errors::IncrementCount();
-                    std::cout << "Error " << f.GetFileName().c_str() << "(" << f.GetErrorLine() << "):" << e->what() << std::endl;
-                    delete e;
-                    t = nullptr;
-                    rv = false;
-                }
-                if (t && f.IsRel())
-                {
-                    ObjExpression* left = factory.MakeExpression(f.GetRelOffs());
-                    t = factory.MakeExpression(ObjExpression::eSub, t, left);
-                    left = factory.MakeExpression(ObjExpression::ePC);
-                    t = factory.MakeExpression(ObjExpression::eSub, t, left);
-                }
-                if (t)
-                {
+                    ObjExpression* t;
+                    try
+                    {
+                        t = ConvertExpression(f.GetExpr(), Lookup, SectLookup, factory);
+                        SwapSectionIntoPlace(t);
+                    }
+                    catch (std::runtime_error* e)
+                    {
+                        Errors::IncrementCount();
+                        std::cout << "Error " << f.GetFileName().c_str() << "(" << f.GetErrorLine() << "):" << e->what() << std::endl;
+                        delete e;
+                        t = nullptr;
+                        rv = false;
+                    }
+                    if (t && f.IsRel())
+                    {
+                        ObjExpression* left = factory.MakeExpression(f.GetRelOffs());
+                        t = factory.MakeExpression(ObjExpression::eSub, t, left);
+                        left = factory.MakeExpression(ObjExpression::ePC);
+                        t = factory.MakeExpression(ObjExpression::eSub, t, left);
+                    }
+                    if (t)
+                    {
 
-                    ObjMemory* mem = factory.MakeFixup(t, f.GetSize());
-                    if (mem)
-                        sect->Add(mem);
+                        ObjMemory* mem = factory.MakeFixup(t, f.GetSize());
+                        if (mem)
+                            sect->Add(mem);
+                    }
+                    pc += f.GetSize();
                 }
-                pc += f.GetSize();
             }
         }
         if (pos)
@@ -350,9 +358,14 @@ int Section::GetNext(Fixup& f, unsigned char* buf, int len)
     static char buf2[256];
     if (!blen)
     {
+
         while (instructionPos < instructions.size() &&
-               (blen = instructions[instructionPos]->GetNext(f, (unsigned char*)&buf2[0])) == 0)
+            (blen = instructions[instructionPos]->GetNext(f, (unsigned char*)&buf2[0])) == 0)
+        {
+            if (instructions[instructionPos]->GetType() == Instruction::ALT)
+                return -2;
             instructionPos++;
+        }
         if (instructionPos >= instructions.size())
             return 0;
     }

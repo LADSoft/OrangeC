@@ -543,19 +543,24 @@ bool AsmExprNode::IsAbsoluteInternal(int& n)
     bool rv = true;
     if (type == LABEL)
     {
-        auto it = AsmExpr::GetSection()->Lookup(label);
-        AsmExprNode* num = AsmExpr::GetEqu(label);
-        if (!num)
-            if (it == AsmExpr::GetSection()->GetLabels().end())
-            {
-                rv = false;
-            }
-            else
-            {
-                n++;
-            }
+        if (!GetSection())
+            rv = false;
         else
-            rv = num->IsAbsoluteInternal(n);
+        {
+            auto it = AsmExpr::GetSection()->Lookup(label);
+            AsmExprNode* num = AsmExpr::GetEqu(label);
+            if (!num)
+                if (it == AsmExpr::GetSection()->GetLabels().end())
+                {
+                    rv = false;
+                }
+                else
+                {
+                    n++;
+                }
+            else
+                rv = num->IsAbsoluteInternal(n);
+        }
     }
     else if (type == PC)
     {

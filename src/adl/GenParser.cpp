@@ -133,6 +133,7 @@ bool GenParser::GenerateCompilerStubs()
     (*file) << "};" << std::endl << std::endl;
 
     (*file) << "extern const char * const opcodeTable[" << i << "];" << std::endl << std::endl;
+    (*file) << "extern std::map<enum e_tk, const char *> tokenNames;" << std::endl << std::endl;
 
     for (auto& m : TokenNode::tokenTable)
     {
@@ -1510,15 +1511,20 @@ bool GenParser::GenerateOperandParser()
     (*file) << "\t\t\t}" << std::endl;
     (*file) << "\t\t\tif (j == sizeof(addressTable) / sizeof(addressTable[0]))" << std::endl;
     (*file) << "\t\t\t{" << std::endl;
+    (*file) << "\t\t\t\tinputTokens= fullList;" << std::endl;
     (*file) << "\t\t\t\treturn AERR_OPERAND;" << std::endl;
     (*file) << "\t\t\t}" << std::endl;
     (*file) << "\t\t\tif (i < fullList.size())" << std::endl;
     (*file) << "\t\t\t{" << std::endl;
     (*file) << "\t\t\t\ti++;" << std::endl;
     (*file) << "\t\t\t\tif (i == fullList.size())" << std::endl;
+    (*file) << "\t\t\t\t{" << std::endl;
+    (*file) << "\t\t\t\t\tinputTokens= fullList;" << std::endl;
     (*file) << "\t\t\t\t\treturn AERR_SYNTAX;" << std::endl;
+    (*file) << "\t\t\t\t}" << std::endl;
     (*file) << "\t\t\t}" << std::endl;
     (*file) << "\t\t}" << std::endl;
+    (*file) << "\t\tinputTokens= fullList;" << std::endl;
     (*file) << "\t\treturn AERR_BADCOMBINATIONOFOPERANDS;" << std::endl;
     (*file) << "\t}" << std::endl;
     (*file) << "\treturn rv;" << std::endl;

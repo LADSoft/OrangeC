@@ -39,6 +39,7 @@
 #include "ObjDebugTag.h"
 #include "ObjMemory.h"
 #include "ObjLineNo.h"
+#include "dbgtypes.h"
 #include <map>
 #include <set>
 #include <deque>
@@ -96,6 +97,7 @@ static std::map<std::string, Label *> lbllabs;
 static std::map<std::string, Label*> lblExterns;
 static std::map<std::string, Label *> lblvirt;
 static std::vector<Section *> virtuals;
+static std::map<Section *, SYMBOL *> virtualSyms;
 
 static Section *sections[MAX_SEGS];
 
@@ -131,6 +133,8 @@ extern "C" int dbgblocknum = 0;
 
 static int sectofs;
 
+static std::deque<SYMBOL *> typedefs;
+
 void omfInit(void)
 {
     browseInfo.clear();
@@ -149,6 +153,7 @@ void omfInit(void)
     objSectionsByNumber.clear();
     objSectionsByName.clear();
     sourceFiles.clear();
+    typedefs.clear();
 
 }
 void dbginit(void)
@@ -159,7 +164,7 @@ void dbginit(void)
 
 void debug_outputtypedef(SYMBOL* sp)
 {
-
+    typedefs.push_back(sp);
 }
 
 void outcode_file_init(void)
@@ -176,6 +181,7 @@ void outcode_file_init(void)
     strlabs.clear();
     memset(sections, 0, sizeof(sections));
     virtuals.clear();
+    virtualSyms.clear();
     currentSection = 0;
     memcpy(segAligns, segAlignsDefault, sizeof(segAligns));
 }
@@ -355,6 +361,7 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
     ObjFile* fi = factory.MakeFile(name);
     if (fi)
     {
+        dbgtypes types(factory, fi);
         if (cparams.prm_debug)
             DumpFileList(factory, fi);
         for (int i = 0; i < MAX_SEGS; ++i)
@@ -383,6 +390,8 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
             ObjSection* s = v->CreateObject(factory);
             if (s)
             {
+                if (cparams.prm_debug)
+                    s->SetVirtualType(types.Put(virtualSyms[v]->tp));
                 bool cseg = s->GetName()[2] == 'c';
                 s->SetQuals((cseg ? segFlags[codeseg] : segFlags[dataseg]) + virtualSegFlags);
                 s->SetAlignment(cseg ? segAligns[codeseg] : segAligns[dataseg]);
@@ -414,6 +423,8 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
                     ObjExpression* right = factory.MakeExpression(l->GetOffset()->ival);
                     ObjExpression* sum = factory.MakeExpression(ObjExpression::eAdd, left, right);
                     s1->SetOffset(sum);
+                    if (cparams.prm_debug)
+                        s1->SetBaseType(types.Put((*g)->tp));
                     fi->Add(s1);
                     l->SetObjSymbol(s1);
                     l->SetObjectSection(objSectionsByNumber[GETSECT(l, sectofs)]);
@@ -433,6 +444,9 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
             for (auto e : autotab)
             { 
                 ObjSymbol* s1 = factory.MakeAutoSymbol(e->decoratedName);
+                if (cparams.prm_debug)
+                    s1->SetBaseType(types.Put(e->tp));
+                s1->SetOffset(new ObjExpression(e->offset));
                 fi->Add(s1);
                 autovector.push_back(s1);
             }
@@ -444,7 +458,8 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
             for (auto e : lblvirt)
             {
                 Label *l = e.second;
-                l->SetObjectSection(objSectionsByNumber[GETSECT(l, sectofs)]);
+                auto o = objSectionsByNumber[GETSECT(l, sectofs)];
+                l->SetObjectSection(o);
             }
         }
 
@@ -474,7 +489,13 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
             if (!v->MakeData(factory, LookupLabel, LookupSection, HandleDebugInfo))
                 rv = false;
         }
-
+        if (cparams.prm_debug)
+        {
+            for (auto v : typedefs)
+            {
+                types.OutputTypedef(v);
+            }
+        }
     }
     if (!rv)
     {
@@ -882,6 +903,7 @@ void outcode_start_virtual_seg(SYMBOL* sp, int data)
         strcpy(buf, "vsc@");
     beDecorateSymName(buf + 3 + (sp->decoratedName[0] != '@'), sp);
     Section *virtsect = new Section(buf, virtualSegmentNumber++);
+    virtualSyms[virtsect] = sp;
     virtuals.push_back(virtsect);
     currentSection = virtsect;
     instructionParser->Setup(virtsect);

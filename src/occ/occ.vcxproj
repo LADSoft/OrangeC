@@ -232,6 +232,7 @@
     <ClCompile Include="preproc\preproc.c" />
     <ClCompile Include="x86\beIntrins.cpp" />
     <ClCompile Include="x86\config.c" />
+    <ClCompile Include="x86\dbgtypes.cpp" />
     <ClCompile Include="x86\gen.cpp" />
     <ClCompile Include="x86\inasm.cpp" />
     <ClCompile Include="x86\InstructionParser.cpp" />
@@ -269,6 +270,7 @@
     <ClInclude Include="x86\be.h" />
     <ClInclude Include="x86\beIntrinsicProtos.h" />
     <ClInclude Include="x86\Cvinfo.h" />
+    <ClInclude Include="x86\dbgtypes.h" />
     <ClInclude Include="x86\InstructionParser.h" />
     <ClInclude Include="x86\x86regs.h" />
   </ItemGroup>

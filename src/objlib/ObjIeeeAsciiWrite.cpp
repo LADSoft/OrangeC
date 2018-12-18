@@ -317,10 +317,14 @@ void ObjIeeeAscii::RenderSection(ObjSection* Section)
     endl();
     RenderString("ASS" + ObjUtil::ToHex(Section->GetIndex()) + "," + ObjUtil::ToHex(Section->GetMemoryManager().GetSize()) + ".");
     endl();
+    if (Section->GetVirtualType())
+    {
+        RenderString("ATR" + ObjUtil::ToHex(Section->GetIndex()) + ",T" + ObjUtil::ToHex(Section->GetVirtualType()->GetIndex()) + ".");
+        endl();
+    }
     if (quals & ObjSection::absolute)
     {
-        RenderString("ASL" + ObjUtil::ToHex(Section->GetIndex()) + "," + ObjUtil::ToHex(Section->GetMemoryManager().GetBase()) +
-                     ".");
+        RenderString("ASL" + ObjUtil::ToHex(Section->GetIndex()) + "," + ObjUtil::ToHex(Section->GetMemoryManager().GetBase()) + ".");
         endl();
     }
 }
@@ -580,10 +584,10 @@ bool ObjIeeeAscii::HandleWrite()
     RenderComment(eMakePass, ObjString("Make Pass Separator"));
     RenderCS();
     ResetCS();
-    WriteSectionHeaders();
+    WriteTypes();
     RenderCS();
     ResetCS();
-    WriteTypes();
+    WriteSectionHeaders();
     RenderCS();
     ResetCS();
     WriteSymbols();

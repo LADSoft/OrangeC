@@ -90,6 +90,7 @@ C_DEPENDENCIES= \
 
 CPP_DEPENDENCIES = \
     beIntrins.cpp \
+    dbgtypes.cpp \
     gen.cpp \
     outasm.cpp \
     outcode.cpp \

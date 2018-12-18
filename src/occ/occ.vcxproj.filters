@@ -251,6 +251,9 @@
     <ClCompile Include="x86\x64Parser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="x86\dbgtypes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="parse\beinterf.h">
@@ -332,6 +335,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\oasm\AsmLexer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="x86\dbgtypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

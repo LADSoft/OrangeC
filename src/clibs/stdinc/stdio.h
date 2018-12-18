@@ -287,10 +287,6 @@ extern "C"
  */
 #define getc(f) fgetc(f)
 #define putc(c, f) fputc((c), f)
-#define getchar() getc(stdin)
-#define putchar(c) putc((c), stdout)
-
-#define ungetc(c, f) ungetc((c), f) /* traditionally a macro */
 
 #pragma pack()
 

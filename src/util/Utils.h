@@ -43,7 +43,7 @@ class Utils
     static void fatal(const char* format, Args... arg)
     {
         fprintf(stderr, "Fatal error: ");
-        vfprintf(stderr, format, arg...);
+        fprintf(stderr, format, arg...);
         fputc('\n', stderr);
         exit(1);
     }

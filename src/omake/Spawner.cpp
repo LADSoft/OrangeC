@@ -51,7 +51,8 @@ unsigned WINFUNC Spawner::Thread(void* cls)
 void Spawner::WaitForDone()
 {
     auto begin = std::chrono::system_clock::now();
-    while (runningProcesses > 0 && std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - begin).count() < 30)
+    while (runningProcesses > 0 &&
+           std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - begin).count() < 30)
     {
         OS::Yield();
     }
@@ -209,8 +210,8 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
         for (auto command : cmdList)
         {
             bool make1 = make;
-            if (command.find("omake") != std::string::npos)
-                make1 = true;
+            //            if (command.find("omake") != std::string::npos)
+            //                make1 = true;
             if (!make1)
                 OS::TakeJob();
             if (!silent)

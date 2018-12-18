@@ -299,6 +299,12 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
     // try as an app first
     if (asapp && CreateProcess(nullptr, (char*)command1.c_str(), nullptr, nullptr, true, 0, env, nullptr, &startup, &pi))
     {
+        OS::WriteConsole("Command made asapp: ");
+        OS::WriteConsole(command1);
+        OS::WriteConsole("\n");
+        OS::WriteConsole("Environment: ");
+        OS::WriteConsole(env);
+        OS::WriteConsole("\n");
         WaitForSingleObject(pi.hProcess, INFINITE);
         if (output)
         {
@@ -326,6 +332,10 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         // not found, try running a shell to handle it...
         if (CreateProcess(nullptr, (char*)cmd.c_str(), nullptr, nullptr, true, 0, env, nullptr, &startup, &pi))
         {
+            OS::WriteConsole("Command made ascmd: ");
+            OS::WriteConsole(cmd);
+            OS::WriteConsole("\n");
+
             WaitForSingleObject(pi.hProcess, INFINITE);
             if (output)
             {

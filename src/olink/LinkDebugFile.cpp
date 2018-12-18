@@ -177,18 +177,14 @@ bool LinkDebugFile::End(void) { return SQLiteExec("END"); }
 bool LinkDebugFile::SQLiteExec(char* str)
 {
     char* zErrMsg = 0;
-    bool rv = false;
     int rc = sqlite3_exec(dbPointer, str, 0, 0, &zErrMsg);
     if (rc != SQLITE_OK)
     {
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
         sqlite3_free(zErrMsg);
+        return false;
     }
-    else
-    {
-        rv = true;
-    }
-    return rv;
+    return true;
 }
 bool LinkDebugFile::CreateTables(void)
 {

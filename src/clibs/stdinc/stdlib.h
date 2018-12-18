@@ -249,8 +249,6 @@ extern unsigned char _RTL_DATA _osminor;
     unsigned long _RTL_FUNC _IMPORT _lrotl(unsigned long, int);
     unsigned long _RTL_FUNC _IMPORT _lrotr(unsigned long, int);
 
-#define atoi(s) ((int)atol(s))
-
 #if defined(__MSIL__)
     int* _RTL_FUNC _IMPORT _errno(void);
 #else

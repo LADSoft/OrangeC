@@ -136,7 +136,7 @@ void ImpLibMain::AddFile(LibManager& librarian, const char* arg)
                         else if (ext == ".dll")
                         {
                             DLLExportReader dllFile(inputFile);
-                            switch(dllFile.Read())
+                            switch (dllFile.Read())
                             {
                                 case 0:
                                     break;
@@ -149,7 +149,7 @@ void ImpLibMain::AddFile(LibManager& librarian, const char* arg)
                                 case 3:
                                     std::cout << "Dll file '" << inputFile << "' exports are missing or invalid" << std::endl;
                                     break;
-                                return;
+                                    return;
                             }
                             librarian.ReplaceFile(*DllFileToObjFile(dllFile));
                         }

@@ -194,11 +194,6 @@ int _RTL_FUNC vswprintf(wchar_t* restrict s, size_t n, const wchar_t* restrict _
     wint_t _RTL_FUNC ungetwc(wint_t c, FILE* __stream);
     int fwide(FILE* __stream, int __mode);
 
-#define getwc(f) fgetwc(f)
-#define putwc(c, f) fputwc((c), f)
-#define getwchar() getwc(stdin)
-#define putwchar(c) putwc((c), stdout)
-
 #ifdef __cplusplus
 };
 #endif

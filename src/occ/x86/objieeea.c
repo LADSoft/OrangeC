@@ -341,13 +341,13 @@ void link_Segs(void)
         i = v->sp->value.i;
         if (v->data)
         {
-            strcpy(buf, "vsd");
+            strcpy(buf, "vsd@");
         }
         else
         {
-            strcpy(buf, "vsc");
+            strcpy(buf, "vsc@");
         }
-        beDecorateSymName(buf + 3, v->sp);
+        beDecorateSymName(buf + 3 + (v->sp->decoratedName[0] != '@'), v->sp);
         emit_record_ieee("ST%X,%s,M,V,%03X%s.\r\n", i, v->data ? segchars[dataseg] : segchars[codeseg], strlen(buf), buf);
         emit_record_ieee("SA%X,%x.\r\n", i, 4);
         emit_record_ieee("ASS%X,%lX.\r\n", i++, v->seg->curlast);

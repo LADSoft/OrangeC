@@ -218,7 +218,7 @@ std::string Parser::FirstWord(const std::string& line, size_t& n)
     if (s != std::string::npos)
     {
         int t = s;
-        while (UTF8::IsAlnum(line[t] + t) || line[t] == '_' || line[t] == '-')
+        while (UTF8::IsAlnum(line[t]) || line[t] == '_' || line[t] == '-')
         {
             int v = UTF8::CharSpan(line.c_str() + t);
             for (int i = 0; i < v && t < line.size(); i++)

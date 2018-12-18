@@ -179,6 +179,7 @@ int CmdSwitchFile::Parse(const char* data)
         size_t size = in.tellg();
         in.seekg(0, std::ios::beg);
         char* data1 = new char[size + 1];
+        memset(data1, 0, size + 1);
         in.read(data1, size);
         data1[size] = 0;
         in.close();

@@ -330,10 +330,7 @@ int ImpLibMain::HandleObjFile(const std::string& outputFile, int argc, char** ar
         fclose(stream);
         return 0;
     }
-    else
-    {
-        return 1;
-    }
+    return 1;
 }
 int ImpLibMain::HandleLibrary(const std::string& outputFile, int argc, char** argv)
 {

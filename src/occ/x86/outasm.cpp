@@ -114,6 +114,8 @@ void putop(enum e_op op, AMODE* aps, AMODE* apd, int nooptx)
                 addsize = TRUE;
                 if (!aps->length)
                     aps->length = ISZ_UINT;
+                if (aps->mode == am_immed && isintconst(aps->offset) && aps->offset->v.i >= CHAR_MIN && aps->offset->v.i <= CHAR_MAX)
+                    aps->length = ISZ_UCHAR;
                 break;
             case op_add:
             case op_sub:
@@ -126,13 +128,19 @@ void putop(enum e_op op, AMODE* aps, AMODE* apd, int nooptx)
             case op_or:
             case op_xor:
             case op_idiv:
+
                 if (apd)
+                {
+                    if (apd->mode == am_immed && (apd->offset) && apd->offset->v.i >= CHAR_MIN && apd->offset->v.i <= CHAR_MAX)
+                        apd->length = ISZ_UCHAR;
                     addsize = apd->length != 0;
+                }
                 else
                 {
                     addsize = TRUE;
                     if (!aps->length)
                         aps->length = ISZ_UINT;
+
                 }
                 break;
             default:
@@ -634,7 +642,7 @@ void oa_put_code(OCODE* cd)
     {
         if (cd->ins)
         {
-            if ((((Instruction *)cd->ins)->GetData()[0] & 0x70) == 0x70)
+            if ((((Instruction *)cd->ins)->GetData()[0] & 0x70) == 0x70 || ((Instruction *)cd->ins)->GetData()[0] == 0xeb)
                 bePrintf("\tshort");
             else
                 bePrintf("\tnear");

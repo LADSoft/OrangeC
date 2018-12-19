@@ -183,6 +183,7 @@ OCODE* gen_code(int op, AMODE* ap1, AMODE* ap2)
  */
 {
     OCODE* newitem;
+
     newitem = (OCODE *)beLocalAlloc(sizeof(OCODE));
     newitem->opcode = (e_opcode)op;
     newitem->oper1 = copy_addr(ap1);
@@ -219,11 +220,14 @@ OCODE* gen_code3(int op, AMODE* ap1, AMODE* ap2, AMODE* ap3)
 
 OCODE* gen_codes(int op, int len, AMODE* ap1, AMODE* ap2)
 {
+
     OCODE* newitem = gen_code(op, ap1, ap2);
+
     if (len < 0)
         len = -len;
     if (newitem->oper1)
         newitem->oper1->length = len;
+
     if (newitem->oper2 && ((len != ISZ_UINT && len != ISZ_U32) || !newitem->oper2->offset || newitem->oper2->mode != am_immed))
         newitem->oper2->length = len;
     return newitem;

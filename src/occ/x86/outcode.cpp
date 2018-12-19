@@ -369,6 +369,8 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
             sectionMap[i] = 0;
             if (sections[i])
             {
+                sections[i]->SetAlign(segAligns[i]);
+
                 if (i != codeseg)
                     sections[i]->Resolve();
 
@@ -376,7 +378,6 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
                 if (s)
                 {
                     s->SetQuals(segFlags[i]);
-                    s->SetAlignment(segAligns[i]);
                     objSectionsByName[s->GetName()] = s;
                     objSectionsByNumber[s->GetIndex()] = s;
                     fi->Add(s);
@@ -387,6 +388,8 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
         sectofs = MAX_SEGS - sectofs;
         for (auto v : virtuals)
         {
+            v->SetAlign(cseg ? segAligns[codeseg] : segAligns[dataseg]);
+
             ObjSection* s = v->CreateObject(factory);
             if (s)
             {
@@ -394,7 +397,6 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
                     s->SetVirtualType(types.Put(virtualSyms[v]->tp));
                 bool cseg = s->GetName()[2] == 'c';
                 s->SetQuals((cseg ? segFlags[codeseg] : segFlags[dataseg]) + virtualSegFlags);
-                s->SetAlignment(cseg ? segAligns[codeseg] : segAligns[dataseg]);
                 objSectionsByName[s->GetName()] = s;
                 objSectionsByNumber[s->GetIndex()] = s;
                 fi->Add(s);
@@ -413,8 +415,6 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
                 if (g != globals.end())
                 {
                     ObjSymbol* s1;
-                    if ((*g)->storage_class == sc_static && !cparams.prm_debug)
-                        continue;
                     if ((*g)->storage_class == sc_localstatic || (*g)->storage_class == sc_static)
                         s1 = factory.MakeLocalSymbol(l->GetName());
                     else
@@ -454,6 +454,7 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
             {
                 Label *l = e.second;
                 l->SetObjectSection(objSectionsByNumber[GETSECT(l, sectofs)]);
+
             }
             for (auto e : lblvirt)
             {
@@ -1002,9 +1003,9 @@ AsmExprNode *MakeFixup(EXPRESSION *offset)
         {
             EXPRESSION * node = GetSymRef(offset->left);
             EXPRESSION *node1 = GetSymRef(offset->right);
-            std::string name = node->v.sp->name;
+            std::string name = node->v.sp->decoratedName;
             AsmExprNode *left = new AsmExprNode(name);
-            name = node1->v.sp->name;
+            name = node1->v.sp->decoratedName;
             AsmExprNode *right = new AsmExprNode(name);
             rv = new AsmExprNode(AsmExprNode::SUB, left, right);
         }
@@ -1138,6 +1139,7 @@ void outcode_AssembleIns(OCODE* ins)
         Instruction *newIns = nullptr;
         std::list<Numeric*> operands;
         asmError err = instructionParser->GetInstruction(ins, newIns, operands);
+
         switch (err)
         {
 
@@ -1233,6 +1235,7 @@ void outcode_gen(OCODE* peeplist)
     while (head)
     {
         outcode_AssembleIns(head);
+
         head = head->fwd;
     }
     currentSection->Resolve();

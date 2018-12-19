@@ -46,8 +46,10 @@ bool dbgtypes::typecompare::operator () (const TYPE *left, const TYPE *right) co
         return true;
     else if (left->type == right->type)
     {
-        if (left->type == bt_func || left->type == bt_ifunc)
+        switch (left->type)
         {
+        case bt_func:
+        case bt_ifunc:
             if (operator()(left->btp, right->btp))
                 return true;
             if (left->syms->table && right->syms->table)
@@ -68,18 +70,23 @@ bool dbgtypes::typecompare::operator () (const TYPE *left, const TYPE *right) co
                 if (hr2)
                     return true;
             }
-        }
-        else if (left->type == bt_class || left->type == bt_struct || left->type == bt_union || left->type == bt_enum)
-        {
+            break;
+        case bt_struct:
+        case bt_union:
+        case bt_class:
+        case bt_enum:
             if (strcmp(left->sp->name, right->sp->name) < 0)
                 return true;
-        }
-        else if (left->type == bt_pointer)
-        {
+            break;
+        case bt_pointer:
             if (left->array && !right->array)
                 return true;
+            // fallthrough
+        case bt_lref:
+        case bt_rref:
             if (operator()(left->btp, right->btp))
                 return true;
+            break;
         }
     }
     return false;
@@ -160,10 +167,13 @@ ObjType * dbgtypes::TypeName(ObjType *val, char* nm)
 {
     if (nm[0] == '_')
         nm++;
-    return factory.MakeType(nm, ObjType::eNone, val);
+    fi->Add(val);
+    return factory.MakeType(nm, ObjType::eNone, val, val->GetIndex());
 }
 void dbgtypes::StructFields(ObjType::eType sel, ObjType *val, int sz, SYMBOL* parent, HASHREC* hr)
 {
+    int index = val->GetIndex();
+    int i = 0;
     if (parent->baseClasses)
     {
         BASECLASS *bc = parent->baseClasses;
@@ -188,14 +198,18 @@ void dbgtypes::StructFields(ObjType::eType sel, ObjType *val, int sz, SYMBOL* pa
                 tpl->size = getSize(bt_pointer);
                 tpl->btp = sp->tp;
                 ObjType *base = Put(tpl);
-                ObjField *field = factory.MakeField(sp->name, base, -1, 0);
+                ObjField *field = factory.MakeField(sp->name, base, -1, index);
                 val->Add(field);
             }
             else
             {
                 ObjType *base = Put(sp->tp);
-                ObjField *field = factory.MakeField(sp->name, base, bc->offset, 0);
+                ObjField *field = factory.MakeField(sp->name, base, bc->offset, index);
                 val->Add(field);
+            }
+            if ((++i % 16) == 0)
+            {
+                index = factory.GetIndexManager()->NextType();
             }
             bc = bc->next;
         }
@@ -206,8 +220,12 @@ void dbgtypes::StructFields(ObjType::eType sel, ObjType *val, int sz, SYMBOL* pa
         if (!istype(sp) && sp->tp->type != bt_aggregate)
         {
             ObjType *base = Put(sp->tp);
-            ObjField *field = factory.MakeField(sp->name, base, sp->offset, 0);
+            ObjField *field = factory.MakeField(sp->name, base, sp->offset, index);
             val->Add(field);
+        }
+        if ((++i % 16) == 0)
+        {
+            index = factory.GetIndexManager()->NextType();
         }
         hr = hr->next;
     }
@@ -215,12 +233,18 @@ void dbgtypes::StructFields(ObjType::eType sel, ObjType *val, int sz, SYMBOL* pa
 }
 void dbgtypes::EnumFields(ObjType *val, ObjType* base, int sz, HASHREC* hr)
 {
+    int index = val->GetIndex();
+    int i = 0;
     while (hr)
     {
-        SYMBOL *sym = (SYMBOL *)hr;
-        ObjField *field = factory.MakeField(sym->name, base, sym->value.i,0);
+        SYMBOL *sym = (SYMBOL *)hr->p;
+        ObjField *field = factory.MakeField(sym->name, base, sym->value.i, index);
         val->SetConstVal(sym->value.i);
         val->Add(field);
+        if ((++i % 16) == 0)
+        {
+            index = factory.GetIndexManager()->NextType();
+        }
         hr = hr->next;
     }
 }
@@ -332,6 +356,7 @@ ObjType * dbgtypes::ExtendedType(TYPE *tp)
                 sel = ObjType::eStruct;
             }
             val = factory.MakeType(sel);
+            hash[tp] = val; // for self-referencing
             if (tp->syms)
                 StructFields(sel, val, tp->size, tp->sp, tp->syms->table[0]);
             else

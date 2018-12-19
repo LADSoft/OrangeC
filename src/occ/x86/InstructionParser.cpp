@@ -253,14 +253,21 @@ void InstructionParser::SetRegToken(int reg, int sz)
         check = byte;
         break;
     case ISZ_USHORT:
+    case ISZ_U16:
         check = word;
         break;
     case ISZ_UINT:
     case ISZ_ULONG:
     case ISZ_ADDR:
+    case ISZ_U32:
         check = dword;
         break;
-    case 10:
+    case ISZ_FLOAT:
+    case ISZ_IFLOAT:
+    case ISZ_DOUBLE:
+    case ISZ_IDOUBLE:
+    case ISZ_LDOUBLE:
+    case ISZ_ILDOUBLE:
         check = floats;
         break;
     case 100:
@@ -280,6 +287,9 @@ void InstructionParser::SetRegToken(int reg, int sz)
         break;
     case 301:
         check = xmmreg;
+        break;
+    default:
+        diag("SetRegToken: unknown enum");
         break;
     }
     inputTokens.push_back(check[reg]);
@@ -329,6 +339,7 @@ void InstructionParser::SetSize(int sz)
             inputTokens.push_back(&Tokenbyte);
             break;
         case ISZ_USHORT:
+        case ISZ_U16:
             inputTokens.push_back(&Tokenword);
             break;
         case ISZ_UINT:
@@ -336,6 +347,7 @@ void InstructionParser::SetSize(int sz)
         case ISZ_ADDR:
         case ISZ_FLOAT:
         case ISZ_IFLOAT:
+        case ISZ_U32:
             inputTokens.push_back(&Tokendword);
             break;
         case ISZ_ULONGLONG:
@@ -346,6 +358,9 @@ void InstructionParser::SetSize(int sz)
         case ISZ_LDOUBLE:
         case ISZ_ILDOUBLE:
             inputTokens.push_back(&Tokentword);
+            break;
+        default:
+            diag("SetSize: unknown enum");
             break;
 
         }

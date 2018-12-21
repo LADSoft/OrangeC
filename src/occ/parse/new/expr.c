@@ -6,7 +6,7 @@
  *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
- *     the Free Softwoccare Foundation, either version 3 of the License, or
+ *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
  *
@@ -612,35 +612,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
 
                                 SYMBOL* sym = getStructureDeclaration();
                                 if (!sym || sym != sp->parentClass)
-                                    if (!lambdas || !lambdas->captureThis)
-                                    { 
-                                        funcparams->noobject = TRUE;
-                                    }
-                                    else
-                                    {
-                                        lambda_capture(NULL, cmThis, FALSE);
-                                        if (lambdas->captureThis)
-                                        {
-                                            SYMBOL* ths = search("$this", lambdas->cls->tp->syms);
-                                            if (ths)
-                                            {
-                                                TYPE* t1 = Alloc(sizeof(TYPE));
-                                                t1->type = bt_pointer;
-                                                t1->size = getSize(bt_pointer);
-                                                t1->btp = basetype(lambdas->lthis->tp)->btp;
-                                                t1->rootType = t1;
-                                                funcparams->thistp = t1;
-                                                funcparams->thisptr = varNode(en_auto, (SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p);  // this ptr
-                                                deref(&stdpointer, exp);
-                                                funcparams->thisptr = exprNode(en_add, funcparams->thisptr, intNode(en_c_i, ths->offset));
-                                                deref(&stdpointer, &funcparams->thisptr);
-                                            }
-                                            else
-                                            {
-                                                diag("variable_name: missing lambda this");
-                                            }
-                                        }
-                                    }
+                                    funcparams->noobject = TRUE;
                                 funcparams->ascall = MATCHKW(lex, openpa);
                             }
                             funcparams->sp = sp;
@@ -1162,7 +1134,7 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
     *tp = PerformDeferredInitialization(*tp, funcsp);
     if (MATCHKW(lex, dot) || MATCHKW(lex, pointsto))
         lex = getsym();
-    if (cparams.prm_cplusplus && MATCHKW(lex, complx))
+    if (cparams.prm_cplusplus && MATCHKW(lex, compl))
     {
         // direct destructor or psuedo-destructor
         enum e_lk linkage = lk_none, linkage2 = lk_none, linkage3 = lk_none;
@@ -1226,7 +1198,7 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
             else
             {
                 lex = getsym();
-                if (!MATCHKW(lex, complx))
+                if (!MATCHKW(lex, compl))
                 {
                     error(ERR_INVALID_PSUEDO_DESTRUCTOR);
                 }
@@ -1626,18 +1598,6 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
     }
     return lex;
 }
-static void LookupSingleAggregate(TYPE *tp, EXPRESSION **exp)
-{
-    if (tp->type == bt_aggregate)
-    {
-        HASHREC *hr = tp->syms->table[0];
-        *exp = varNode(en_pc, (SYMBOL *)hr->p);
-        if (hr->next)
-            errorsym(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, tp->sp);
-//        else // commented out because of std::endl
-//            error(ERR_FUNCTION_CALL_NEEDS_ARGUMENT_LIST);
-    }
-}
 static LEXEME* expression_bracket(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, int flags)
 {
     TYPE* tp2;
@@ -1661,12 +1621,11 @@ static LEXEME* expression_bracket(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
         lex = expression_comma(lex, funcsp, NULL, &tp2, &expr2, NULL, flags);
         if (tp2)
         {
-            LookupSingleAggregate(tp2, &expr2);
             if ((cparams.prm_cplusplus || chosenAssembler->msil) &&
                 insertOperatorFunc(ovcl_openbr, openbr, funcsp, tp, exp, tp2, expr2, NULL, flags))
             {
             }
-            else if (isvoid(*tp) || isvoid(tp2) || (*tp)->type == bt_aggregate || ismsil(*tp) ||
+            else if (isvoid(*tp) || isvoid(tp2) || (*tp)->type == bt_aggregate || tp2->type == bt_aggregate || ismsil(*tp) ||
                      ismsil(tp2))
                 error(ERR_NOT_AN_ALLOWED_TYPE);
             else if (basetype(tp2)->type == bt_memberptr || basetype(*tp)->type == bt_memberptr)
@@ -2976,7 +2935,8 @@ void AdjustParams(SYMBOL* func, HASHREC* hr, INITLIST** lptr, BOOLEAN operands, 
                 }
                 else if (isvoidptr(sym->tp) && p->tp->type == bt_aggregate)
                 {
-                    LookupSingleAggregate(p->tp, &p->exp);
+                    HASHREC* hr = p->tp->syms->table[0];
+                    p->exp = varNode(en_pc, (SYMBOL*)hr->p);
                 }
                 else if (ispointer(sym->tp) && ispointer(p->tp))
                 {
@@ -5309,7 +5269,6 @@ static LEXEME* expression_ampersand(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE
             exp1 = exp1->left;
         symRef = chosenAssembler->msil ? GetSymRef(exp1) : NULL;
         btp = basetype(*tp);
-        LookupSingleAggregate(btp, exp1);
         if ((cparams.prm_cplusplus || chosenAssembler->msil) &&
             insertOperatorFunc(ovcl_unary_any, and_unary, funcsp, tp, exp, NULL, NULL, NULL, flags))
         {
@@ -5712,11 +5671,10 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
                 }
                 else
                 {
-                    LookupSingleAggregate(*tp, exp);
                     castToArithmetic(FALSE, tp, exp, kw, NULL, TRUE);
                     if (isstructured(*tp))
                         error(ERR_ILL_STRUCTURE_OPERATION);
-                    else if (isvoid(*tp) || ismsil(*tp))
+                    else if (isvoid(*tp) || (*tp)->type == bt_aggregate || ismsil(*tp))
                         error(ERR_NOT_AN_ALLOWED_TYPE);
                     else if (basetype(*tp)->type == bt_memberptr)
                         error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
@@ -5740,7 +5698,6 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
         case minus:
             lex = getsym();
             lex = expression_cast(lex, funcsp, atp, tp, exp, NULL, flags);
-            LookupSingleAggregate(*tp, exp);
             if (*tp)
             {
                 if ((cparams.prm_cplusplus || chosenAssembler->msil) &&
@@ -5752,7 +5709,7 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
                     castToArithmetic(FALSE, tp, exp, kw, NULL, TRUE);
                     if (isstructured(*tp))
                         error(ERR_ILL_STRUCTURE_OPERATION);
-                    else if (isvoid(*tp) || ismsil(*tp))
+                    else if (isvoid(*tp) || (*tp)->type == bt_aggregate || ismsil(*tp))
                         error(ERR_NOT_AN_ALLOWED_TYPE);
                     else if (basetype(*tp)->type == bt_memberptr)
                         error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
@@ -5777,17 +5734,16 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
         case star:
             lex = expression_deref(lex, funcsp, tp, exp, flags);
             break;
-        case andx:
+        case and:
             lex = expression_ampersand(lex, funcsp, atp, tp, exp, flags);
             break;
-        case notx:
+        case not:
             lex = getsym();
             lex = expression_cast(lex, funcsp, atp, tp, exp, NULL, flags);
-            LookupSingleAggregate(*tp, exp);
             if (*tp)
             {
                 if ((cparams.prm_cplusplus || chosenAssembler->msil) &&
-                    insertOperatorFunc(ovcl_unary_numericptr, notx, funcsp, tp, exp, NULL, NULL, NULL, flags))
+                    insertOperatorFunc(ovcl_unary_numericptr, not, funcsp, tp, exp, NULL, NULL, NULL, flags))
                 {
                 }
                 else
@@ -5795,7 +5751,7 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
                     castToArithmetic(FALSE, tp, exp, kw, NULL, FALSE);
                     if (isstructured(*tp))
                         error(ERR_ILL_STRUCTURE_OPERATION);
-                    else if (isvoid(*tp) || ismsil(*tp))
+                    else if (isvoid(*tp) || (*tp)->type == bt_aggregate || ismsil(*tp))
                         error(ERR_NOT_AN_ALLOWED_TYPE);
                     else if (basetype(*tp)->scoped)
                         error(ERR_SCOPED_TYPE_MISMATCH);
@@ -5824,14 +5780,13 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
                     *tp = &stdint;
             }
             break;
-        case complx:
+        case compl:
             lex = getsym();
             lex = expression_cast(lex, funcsp, atp, tp, exp, NULL, flags);
-            LookupSingleAggregate(*tp, exp);
             if (*tp)
             {
                 if ((cparams.prm_cplusplus || chosenAssembler->msil) &&
-                    insertOperatorFunc(ovcl_unary_int, complx, funcsp, tp, exp, NULL, NULL, NULL, flags))
+                    insertOperatorFunc(ovcl_unary_int, compl, funcsp, tp, exp, NULL, NULL, NULL, flags))
                 {
                 }
                 else
@@ -5845,7 +5800,7 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
                         error(ERR_ILL_USE_OF_FLOATING);
                     else if (ispointer(*tp))
                         error(ERR_ILL_POINTER_OPERATION);
-                    else if (isvoid(*tp) || ismsil(*tp))
+                    else if (isvoid(*tp) || (*tp)->type == bt_aggregate || ismsil(*tp))
                         error(ERR_NOT_AN_ALLOWED_TYPE);
                     else if (basetype(*tp)->type == bt_memberptr)
                         error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
@@ -6308,11 +6263,9 @@ static LEXEME* expression_times(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** t
         {
             castToArithmetic(kw == mod, tp, exp, kw, tp1, TRUE);
             castToArithmetic(kw == mod, &tp1, &exp1, (enum e_kw) - 1, *tp, TRUE);
-            LookupSingleAggregate(*tp, exp);
-            LookupSingleAggregate(tp1, &exp1);
             if (isstructured(*tp) || isstructured(tp1))
                 error(ERR_ILL_STRUCTURE_OPERATION);
-            else if (isvoid(*tp) || isvoid(tp1) || ismsil(*tp) ||
+            else if (isvoid(*tp) || isvoid(tp1) || (*tp)->type == bt_aggregate || tp1->type == bt_aggregate || ismsil(*tp) ||
                      ismsil(tp1))
                 error(ERR_NOT_AN_ALLOWED_TYPE);
             else if (basetype(*tp)->type == bt_memberptr || basetype(tp1)->type == bt_memberptr)
@@ -6378,8 +6331,6 @@ static LEXEME* expression_add(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                 castToArithmetic(FALSE, tp, exp, kw, tp1, TRUE);
                 castToArithmetic(FALSE, &tp1, &exp1, (enum e_kw) - 1, *tp, TRUE);
             }
-            LookupSingleAggregate(*tp, exp);
-            LookupSingleAggregate(tp1, &exp1);
             if (chosenAssembler->msil && chosenAssembler->msil->allowExtensions && kw == plus &&
                 (basetype(*tp)->type == bt___string || basetype(tp1)->type == bt___string ||
                  atp && basetype(atp)->type == bt___string))
@@ -6396,7 +6347,8 @@ static LEXEME* expression_add(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
             }
             else if (kw == plus && ispointer(*tp) && ispointer(tp1))
                 error(ERR_ILL_POINTER_ADDITION);
-            else if (isvoid(*tp) || isvoid(tp1) || ismsil(*tp) || ismsil(tp1))
+            else if (isvoid(*tp) || isvoid(tp1) || (*tp)->type == bt_aggregate || tp1->type == bt_aggregate || ismsil(*tp) ||
+                     ismsil(tp1))
                 error(ERR_NOT_AN_ALLOWED_TYPE);
             else if (basetype(*tp)->type == bt_memberptr || basetype(tp1)->type == bt_memberptr)
                 error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
@@ -6510,8 +6462,6 @@ static LEXEME* expression_shift(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** t
         }
         ResolveTemplateVariable(tp, exp, tp1, atp);
         ResolveTemplateVariable(&tp1, &exp1, *tp, atp);
-        LookupSingleAggregate(*tp, exp);
-        LookupSingleAggregate(tp1, &exp1);
         if ((cparams.prm_cplusplus || chosenAssembler->msil) &&
             insertOperatorFunc(ovcl_binary_int, kw, funcsp, tp, exp, tp1, exp1, NULL, flags))
         {
@@ -6522,7 +6472,8 @@ static LEXEME* expression_shift(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** t
             castToArithmetic(TRUE, &tp1, &exp1, (enum e_kw) - 1, *tp, TRUE);
             if (isstructured(*tp) || isstructured(tp1))
                 error(ERR_ILL_STRUCTURE_OPERATION);
-            else if (isvoid(*tp) || isvoid(tp1) || ismsil(*tp) || ismsil(tp1))
+            else if (isvoid(*tp) || isvoid(tp1) || (*tp)->type == bt_aggregate || tp1->type == bt_aggregate || ismsil(*tp) ||
+                     ismsil(tp1))
                 error(ERR_NOT_AN_ALLOWED_TYPE);
             else if (basetype(*tp)->type == bt_memberptr || basetype(tp1)->type == bt_memberptr)
                 error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
@@ -6604,9 +6555,6 @@ static LEXEME* expression_inequality(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYP
                 checkscope(*tp, tp1);
                 castToArithmetic(FALSE, tp, exp, kw, tp1, TRUE);
                 castToArithmetic(FALSE, &tp1, &exp1, (enum e_kw) - 1, *tp, TRUE);
-                LookupSingleAggregate(*tp, exp);
-                LookupSingleAggregate(tp1, &exp1);
-
                 if (cparams.prm_cplusplus)
                 {
                     SYMBOL* funcsp = NULL;
@@ -6633,7 +6581,8 @@ static LEXEME* expression_inequality(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYP
                     thunkForImportTable(&exp1);
                 if (isstructured(*tp) || isstructured(tp1))
                     error(ERR_ILL_STRUCTURE_OPERATION);
-                else if (isvoid(*tp) || isvoid(tp1) || ismsil(*tp) || ismsil(tp1))
+                else if (isvoid(*tp) || isvoid(tp1) || (*tp)->type == bt_aggregate || tp1->type == bt_aggregate || ismsil(*tp) ||
+                         ismsil(tp1))
                     error(ERR_NOT_AN_ALLOWED_TYPE);
                 else if (basetype(*tp)->type == bt_memberptr || basetype(tp1)->type == bt_memberptr)
                     error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
@@ -6943,12 +6892,9 @@ static LEXEME* binop(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSI
         }
         castToArithmetic(kw != land && kw != lor, tp, exp, kw, tp1, kw != land && kw != lor);
         castToArithmetic(kw != land && kw != lor, &tp1, &exp1, (enum e_kw) - 1, *tp, kw != land && kw != lor);
-        LookupSingleAggregate(*tp, exp);
-        LookupSingleAggregate(tp1, &exp1);
-
         if (isstructured(*tp) || isstructured(tp1))
             error(ERR_ILL_STRUCTURE_OPERATION);
-        else if (isvoid(*tp) || isvoid(tp1) || ismsil(*tp) ||
+        else if (isvoid(*tp) || isvoid(tp1) || (*tp)->type == bt_aggregate || tp1->type == bt_aggregate || ismsil(*tp) ||
                  ismsil(tp1))
             error(ERR_NOT_AN_ALLOWED_TYPE);
         else if ((basetype(*tp)->scoped || basetype(tp1)->scoped) &&
@@ -6989,7 +6935,7 @@ static LEXEME* binop(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSI
 }
 static LEXEME* expression_and(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, BOOLEAN* ismutable, int flags)
 {
-    return binop(lex, funcsp, atp, tp, exp, andx, en_and, expression_equality, ismutable, flags);
+    return binop(lex, funcsp, atp, tp, exp, and, en_and, expression_equality, ismutable, flags);
 }
 static LEXEME* expression_xor(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, BOOLEAN* ismutable, int flags)
 {
@@ -6997,7 +6943,7 @@ static LEXEME* expression_xor(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
 }
 static LEXEME* expression_or(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, BOOLEAN* ismutable, int flags)
 {
-    return binop(lex, funcsp, atp, tp, exp, orx, en_or, expression_xor, ismutable, flags);
+    return binop(lex, funcsp, atp, tp, exp, or, en_or, expression_xor, ismutable, flags);
 }
 static LEXEME* expression_land(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, BOOLEAN* ismutable, int flags)
 {
@@ -7019,11 +6965,9 @@ static LEXEME* expression_hook(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp
         EXPRESSION *eph = NULL, *epc = NULL;
         castToArithmetic(FALSE, tp, exp, (enum e_kw) - 1, &stdint, TRUE);
         GetLogicalDestructors(*exp, *exp);
-        LookupSingleAggregate(*tp, exp);
-
         if (isstructured(*tp))
             error(ERR_ILL_STRUCTURE_OPERATION);
-        else if (isvoid(*tp) || ismsil(*tp))
+        else if (isvoid(*tp) || (*tp)->type == bt_aggregate || ismsil(*tp))
             error(ERR_NOT_AN_ALLOWED_TYPE);
         lex = getsym();
         if (MATCHKW(lex, colon))
@@ -7436,11 +7380,9 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
             }
         }
         symRef = chosenAssembler->msil ? GetSymRef(*exp) : NULL;
-        LookupSingleAggregate(tp1, &exp1);
-
         if (isconstraw(*tp, TRUE) && !localMutable)
             error(ERR_CANNOT_MODIFY_CONST_OBJECT);
-        else if (isvoid(*tp) || isvoid(tp1) || (*tp)->type == bt_aggregate)
+        else if (isvoid(*tp) || isvoid(tp1) || (*tp)->type == bt_aggregate || tp1->type == bt_aggregate)
             error(ERR_NOT_AN_ALLOWED_TYPE);
         else if (!isstructured(*tp) && ((*tp)->btp && !ispointer((*tp)->btp)) && (!isarray(*tp) || !basetype(*tp)->msil) &&
                  basetype(*tp)->type != bt_memberptr && basetype(*tp)->type != bt_templateparam && !lvalue(*exp) &&

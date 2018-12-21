@@ -31,9 +31,9 @@
 #define CI_NEW 3
 #define CI_DELETE 4
 #define CI_FUNC (openpa + 3)
-#define CI_NEWA (complx+1 + 3)
-#define CI_DELETEA (complx+2 + 3)
-#define CI_LIT (complx+3 + 3)
+#define CI_NEWA (compl+1 + 3)
+#define CI_DELETEA (compl+2 + 3)
+#define CI_LIT (compl+3 + 3)
 
 #define issymchar(x) (((x) >= 0) && (isalnum(x) || (x) == '_'))
 #define isstartchar(x) (((x) >= 0) && (isalpha(x) || (x) == '_'))
@@ -84,8 +84,8 @@ enum e_kw
     kw_new, kw_delete, plus, minus, star, divide, leftshift, rightshift, mod, eq,
         neq, lt, leq, gt, geq, assign, asplus, asminus, astimes, asdivide,
         asmod, asleftshift, asrightshift, asand, asor, asxor, autoinc, autodec,
-        openbr, openpa, pointstar, pointsto, comma, lor, land, notx, orx, andx, uparrow,
-        complx, kw_newa, kw_dela, quot,
+        openbr, openpa, pointstar, pointsto, comma, lor, land, not, or, and, uparrow,
+        compl, kw_newa, kw_dela, quot,
         plus_unary, minus_unary, star_unary, and_unary,
     /* then generic stuff that isn't overloadable or is internal */
     id, hook, colon, begin, end, dot,
@@ -145,8 +145,8 @@ enum ovcl
 
 typedef struct
 {
-    FPFC r;
-    FPFC i;
+    FPF r;
+    FPF i;
 } _COMPLEX_S;
 
 // clang-format off
@@ -307,7 +307,7 @@ typedef struct expr
     union
     {
         LLONG_TYPE i;
-        FPFC f;
+        FPF f;
         _COMPLEX_S c;
         struct sym* sp; /* sym will be defined later */
         char* name;     /* name during base class processing */
@@ -371,7 +371,7 @@ union u_val
 {
     LLONG_TYPE i;  /* int val */
     ULLONG_TYPE u; /* nsigned val */
-    FPFC f;         /* float val */
+    FPF f;         /* float val */
     _COMPLEX_S c;
     union
     {
@@ -998,19 +998,16 @@ typedef struct kwblk
      (((lex)->kw->key == kw_auto ? (cparams.prm_cplusplus ? TT_BASETYPE : TT_STORAGE_CLASS) : (lex)->kw->tokenTypes) & (types)))
 #define KW(lex) (ISKW(lex) ? (lex)->kw->key : kw_none)
 
-enum e_lexType {
-    l_none, l_i, l_ui, l_l, l_ul, l_ll, l_ull, l_f, l_d, l_ld, l_I,
-    l_id, l_kw,
-    l_astr, l_wstr, l_ustr, l_Ustr, l_u8str, l_msilstr,
-    l_achr, l_wchr, l_uchr, l_Uchr,
-    l_qualifiedname, l_asminst, l_asmreg
-};
-
 typedef struct lexeme
 {
     struct lexeme *next, *prev;
     // clang-format off
-    enum e_lexType type;
+    enum e_lexType { l_none, l_i, l_ui, l_l, l_ul, l_ll, l_ull, l_f, l_d, l_ld, l_I, 
+            l_id, l_kw, 
+            l_astr, l_wstr,  l_ustr, l_Ustr, l_u8str, l_msilstr, 
+            l_achr, l_wchr, l_uchr, l_Uchr, 
+            l_qualifiedname, l_asminst, l_asmreg
+         } type;
     // clang-format on
     union u_val value;
     char* litaslit;

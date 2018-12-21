@@ -1924,7 +1924,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
         if (!first && hasDelegate)
             error(ERR_DELEGATING_CONSTRUCTOR_ONLY_INITIALIZER);
         init->sp = search(init->name, basetype(cls->tp)->syms);
-        if (init->sp && (!init->basesym || !istype(init->sp)))
+        if (init->sp && !init->basesym)
         {
             if (init->sp->storage_class == sc_typedef)
             {
@@ -1936,7 +1936,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                 }
             }
         }
-        if (init->sp && (!init->basesym || !istype(init->sp)))
+        if (init->sp && !init->basesym)
         {
             if (init->sp != cls && init->sp->storage_class != sc_member && init->sp->storage_class != sc_mutable)
             {

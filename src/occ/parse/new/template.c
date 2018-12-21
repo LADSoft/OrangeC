@@ -2732,8 +2732,27 @@ static TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclos
                 {
                     rv = basetype(rve)->btp;
                 }
+                else if (isstructured(rve))
+                {
+                    //                     this needs some work
+                    rv = rve;
+                    if (!exp->v.func || !insertOperatorParams(NULL, &rv, &exp1, exp->v.func, 0))
+                        rv = &stdint;
+                    if (isconst(rve))
+                    {
+                        // to make LIBCXX happy
+                        rve = Alloc(sizeof(TYPE));
+                        rve->type = bt_const;
+                        rve->size = rv->size;
+                        rve->btp = rv;
+                        rve->rootType = rv->rootType;
+                        rv = rve;
+                    }
+                }
                 else
-                    break;
+                {
+                    rv = rve;
+                }
             }
             return rv;
         }

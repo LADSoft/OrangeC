@@ -2213,7 +2213,7 @@ void checkOperatorArgs(SYMBOL* sp, BOOLEAN asFriend)
                     case plus:
                     case minus:
                     case star:
-                    case andx:
+                    case and:
                         // needs zero or one argument
                         if (hr && hr->next)
                         {
@@ -2232,14 +2232,14 @@ void checkOperatorArgs(SYMBOL* sp, BOOLEAN asFriend)
                                 case star:
                                     sp->operatorId = star_unary;
                                     break;
-                                case andx:
+                                case and:
                                     sp->operatorId = and_unary;
                                     break;
                             }
                         }
                         break;
-                    case notx:
-                    case complx:
+                    case not:
+                    case compl:
                         // needs no argument
                         sym = (SYMBOL*)hr->p;
                         if (sym->tp->type != bt_void)
@@ -2259,7 +2259,7 @@ void checkOperatorArgs(SYMBOL* sp, BOOLEAN asFriend)
                     case geq:
                     case land:
                     case lor:
-                    case orx:
+                    case or:
                     case uparrow:
                     case comma:
                     case pointstar:
@@ -2361,7 +2361,7 @@ void checkOperatorArgs(SYMBOL* sp, BOOLEAN asFriend)
                 case plus:
                 case minus:
                 case star:
-                case andx:
+                case and:
                 case asplus:
                 case asminus:
                 case astimes:
@@ -2384,8 +2384,8 @@ void checkOperatorArgs(SYMBOL* sp, BOOLEAN asFriend)
                             errorstr(ERR_OPERATOR_NEEDS_A_CLASS_OR_ENUMERATION_PARAMETER, overloadXlateTab[sp->operatorId]);
                     }
                     break;
-                case notx:
-                case complx:
+                case not:
+                case compl:
                     // needs one arg of class or enum type
                     sym = (SYMBOL*)hr->p;
                     if (sym->tp->type == bt_void || hr->next)
@@ -2411,7 +2411,7 @@ void checkOperatorArgs(SYMBOL* sp, BOOLEAN asFriend)
                 case geq:
                 case land:
                 case lor:
-                case orx:
+                case or:
                 case uparrow:
                 case comma:
                     // needs two args, one of class or enum type
@@ -3348,7 +3348,7 @@ LEXEME* getDeclType(LEXEME* lex, SYMBOL* funcsp, TYPE** tn)
     lex = getsym();
     needkw(&lex, openpa);
     BOOLEAN extended = MATCHKW(lex, openpa);
-    hasAmpersand = MATCHKW(lex, andx);
+    hasAmpersand = MATCHKW(lex, and);
     if (extended || hasAmpersand)
     {
         lex = getsym();
@@ -3364,7 +3364,7 @@ LEXEME* getDeclType(LEXEME* lex, SYMBOL* funcsp, TYPE** tn)
         if (extended || hasAmpersand)
             lex = getsym();
         lex = getsym();
-        if (MATCHKW(lex, andx) || MATCHKW(lex, land))
+        if (MATCHKW(lex, and) || MATCHKW(lex, land))
         {
             lex = getsym();
             error(ERR_DECLTYPE_AUTO_NO_REFERENCE);

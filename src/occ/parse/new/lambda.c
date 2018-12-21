@@ -901,7 +901,7 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                 lex = backupsym();
             }
         }
-        else if (MATCHKW(lex, andx))
+        else if (MATCHKW(lex, and))
         {
             lex = getsym();
             if (MATCHKW(lex, comma) || MATCHKW(lex, closebr))
@@ -939,7 +939,7 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                     }
                     continue;
                 }
-                else if (MATCHKW(lex, andx))
+                else if (MATCHKW(lex, and))
                 {
                     if (localMode == cmRef)
                     {

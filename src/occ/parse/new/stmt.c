@@ -1706,15 +1706,13 @@ static EXPRESSION* ConvertReturnToRef(EXPRESSION* exp, TYPE* tp, TYPE* boundTP)
         {
             error(ERR_LVALUE);
         }
-        else if (exp->type == en_auto && exp->v.sp->storage_class == sc_auto)
+        else if (exp->type == en_auto)
         {
-            error(ERR_REF_RETURN_LOCAL);
+            if (exp->v.sp->storage_class == sc_auto)
+            {
+                error(ERR_REF_RETURN_LOCAL);
+            }
         }
-        else if (isintconst(exp) || isfloatconst(exp) || isimaginaryconst(exp) || iscomplexconst(exp))
-        {
-            error(ERR_REF_RETURN_TEMPORARY);
-        }
-        // this probably needs a little more work, I think if the two structures don't match types it will give an error...
     }
     return exp;
 }

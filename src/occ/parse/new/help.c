@@ -1224,7 +1224,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
     BOOLEAN local = FALSE;
     EXPRESSION *rv = NULL, **pos = &rv;
     EXPRESSION *exp = NULL, **expp;
-    EXPRESSION* expsym, *base;
+    EXPRESSION* expsym;
     BOOLEAN noClear = FALSE;
     if (sp)
         sp->destructed = FALSE;
@@ -1313,7 +1313,6 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
                 expsym = intNode(en_c_i, 0);
                 break;
         }
-    base = copy_expression(expsym);
     if (sp && isarray(sp->tp) && sp->tp->msil && !init->noassign)
     {
         exp = intNode(en_msil_array_init, 0);
@@ -1532,7 +1531,6 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
                     exps = exprNode(en_add, exps, intNode(en_c_i, init->offset));
                 if (exps->type != en_msil_array_access)
                     deref(init->basetp, &exps);
-                optimize_for_constants(&exps);
                 exp = init->exp;
                 if (exp->type == en_void)
                 {
@@ -1593,9 +1591,8 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
     if (sp && !noClear && !isdest &&
         (isarray(tp) || isstructured(tp) && (!cparams.prm_cplusplus && !chosenAssembler->msil || basetype(tp)->sp->trivialCons)))
     {
-        EXPRESSION* fexp =  base;
+        EXPRESSION* fexp = expsym;
         EXPRESSION* exp;
-        optimize_for_constants(&fexp);
         if (fexp->type == en_thisref)
             fexp = fexp->left->v.func->thisptr;
         exp = exprNode(en_blockclear, fexp, NULL);
@@ -1616,7 +1613,6 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
     }
     if (!rv)
         rv = intNode(en_c_i, 0);
-
     return rv;
 }
 BOOLEAN assignDiscardsConst(TYPE* dest, TYPE* source)

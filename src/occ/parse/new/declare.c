@@ -2076,7 +2076,7 @@ static BOOLEAN isPointer(LEXEME* lex)
     if (ISKW(lex))
         switch (KW(lex))
         {
-            case andx:
+            case and:
             case land:
             case star:
                 return TRUE;
@@ -2527,7 +2527,7 @@ founddecltype:
         }
         if (iscomplex || imaginary)
             error(ERR_MISSING_TYPE_SPECIFIER);
-        else if (ISID(lex) || MATCHKW(lex, classsel) || MATCHKW(lex, complx) || MATCHKW(lex, kw_decltype))
+        else if (ISID(lex) || MATCHKW(lex, classsel) || MATCHKW(lex, compl) || MATCHKW(lex, kw_decltype))
         {
             NAMESPACEVALUES* nsv = NULL;
             SYMBOL* strSym = NULL;
@@ -3413,7 +3413,7 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
                 {
                     LEXEME* cur = lex;
                     lex = getsym();
-                    if (!MATCHKW(lex, star) && !MATCHKW(lex, andx) && !startOfType(lex, TRUE))
+                    if (!MATCHKW(lex, star) && !MATCHKW(lex, and) && !startOfType(lex, TRUE))
                     {
                         if (*spin)
                         {
@@ -4063,7 +4063,7 @@ static LEXEME* getAfterType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** sp,
                                             foundVolatile = TRUE;
                                             lex = getsym();
                                             break;
-                                        case andx:
+                                        case and:
                                             foundand = TRUE;
                                             lex = getsym();
                                             break;
@@ -4405,7 +4405,7 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                 char buf[512];
                 int ov = 0;
                 TYPE* castType = NULL;
-                if (MATCHKW(lex, complx))
+                if (MATCHKW(lex, compl))
                 {
                     lex = getsym();
                     if (!ISID(lex) || !*strSym || strcmp((*strSym)->name, lex->value.s.a))
@@ -4703,7 +4703,7 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                 }
             }
             break;
-            case andx:
+            case and:
             case land:
                 if (storage_class == sc_catchvar)
                 {
@@ -4717,11 +4717,11 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                 }
                 // using the C++ reference operator as the ref keyword...
                 if (cparams.prm_cplusplus || chosenAssembler->msil && chosenAssembler->msil->allowExtensions &&
-                                                 storage_class == sc_parameter && KW(lex) == andx)
+                                                 storage_class == sc_parameter && KW(lex) == and)
                 {
                     TYPE* tp2;
                     ptype = Alloc(sizeof(TYPE));
-                    if (MATCHKW(lex, andx))
+                    if (MATCHKW(lex, and))
                         ptype->type = bt_lref;
                     else
                         ptype->type = bt_rref;
@@ -5035,7 +5035,7 @@ static LEXEME* getStorageAndType(LEXEME* lex, SYMBOL* funcsp, SYMBOL** strSym, B
     *constexpression = FALSE;
 
     while (KWTYPE(lex, TT_STORAGE_CLASS | TT_POINTERQUAL | TT_LINKAGE | TT_DECLARE) ||
-           (!foundType && startOfType(lex, assumeType)) || MATCHKW(lex, complx) || (*storage_class == sc_typedef && !foundType))
+           (!foundType && startOfType(lex, assumeType)) || MATCHKW(lex, compl) || (*storage_class == sc_typedef && !foundType))
     {
         if (KWTYPE(lex, TT_DECLARE))
         {

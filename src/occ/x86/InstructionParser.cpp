@@ -207,12 +207,85 @@ asmError InstructionParser::GetInstruction(OCODE *ins, Instruction *&newIns, std
         break;
     default:
     {
-        if (ins->opcode == op_lea)
+        switch (ins->opcode)
+        {
+        case op_lea:
             ins->oper2->length = 0;
-        if (ins->opcode >= op_ja && ins->opcode <= op_jz)
-            ins->oper1->length = 0;
-        if (ins->opcode == op_mov && ins->oper2 && ins->oper2->mode == am_immed)
-            ins->oper2->length = 0;
+            break;
+        case op_push:
+        {
+            AMODE *aps = ins->oper1;
+            if (!aps->length)
+                aps->length = ISZ_UINT;
+            if (aps->mode == am_immed && isintconst(aps->offset) && aps->offset->v.i >= CHAR_MIN && aps->offset->v.i <= CHAR_MAX)
+                aps->length = ISZ_UCHAR;
+            break;
+        }
+        case op_add:
+        case op_sub:
+        case op_adc:
+        case op_sbb:
+        case op_imul:
+            /* yes you can size an imul constant !!!! */
+        case op_cmp:
+        case op_and:
+        case op_or:
+        case op_xor:
+        case op_idiv:
+        {
+            AMODE *aps = ins->oper1;
+            AMODE *apd = ins->oper2;
+            if (apd)
+            {
+                if (apd->mode == am_immed && isintconst(apd->offset) && apd->offset->v.i >= CHAR_MIN && apd->offset->v.i <= CHAR_MAX)
+                    apd->length = ISZ_UCHAR;
+            }
+            else
+            {
+                if (!aps->length)
+                    aps->length = ISZ_UINT;
+
+            }
+        }
+        break;
+        case op_mov:
+            if (ins->oper2 && ins->oper2->mode == am_immed)
+            {
+                ins->oper2->length = 0;
+                if (isintconst(ins->oper2->offset))
+                {
+                    if (ins->oper1->length == ISZ_UCHAR)
+                        ins->oper2->offset->v.i &=0xff;
+                    else if (ins->oper1->length == ISZ_USHORT || ins->oper1->length == ISZ_U16)
+                        ins->oper2->offset->v.i &=0xffff;
+                }
+            }
+            break;
+        case op_btr:
+        case op_bts:
+        case op_bt:
+        case op_shl:
+        case op_shr:
+        case op_sal:
+        case op_sar:
+        case op_rol:
+        case op_ror:
+        case op_rcl:
+        case op_rcr:
+            if (ins->oper2 && ins->oper2->mode == am_immed)
+                ins->oper2->length = 0;
+            break;
+        case op_shrd:
+        case op_shld:
+            if (ins->oper3)
+                ins->oper3->length = 0;
+            break;
+        default:
+            if (ins->opcode >= op_ja && ins->opcode <= op_jz)
+                ins->oper1->length = 0;
+
+            break;
+        }
         SetTokens(ins);
         bits.Reset();
         asmError rv = DispatchOpcode(ins->opcode);
@@ -312,7 +385,6 @@ bool InstructionParser::SetNumberToken(EXPRESSION *offset, int &n)
         SetNumberToken(n);
     return !!resolved;
 }
-#include <string.h>
 void InstructionParser::SetExpressionToken(EXPRESSION *offset)
 {
     int n;
@@ -392,7 +464,7 @@ void InstructionParser::SetOperandTokens(amode *operand)
             SetRegToken(operand->preg, operand->length);
             break;
         case am_freg:
-            SetRegToken(operand->preg, 10);
+            SetRegToken(operand->preg, ISZ_LDOUBLE);
             break;
         case am_screg:
             SetRegToken(operand->preg, 200);

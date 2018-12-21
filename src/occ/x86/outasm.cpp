@@ -131,7 +131,7 @@ void putop(enum e_op op, AMODE* aps, AMODE* apd, int nooptx)
 
                 if (apd)
                 {
-                    if (apd->mode == am_immed && (apd->offset) && apd->offset->v.i >= CHAR_MIN && apd->offset->v.i <= CHAR_MAX)
+                    if (apd->mode == am_immed && isintconst(apd->offset) && apd->offset->v.i >= CHAR_MIN && apd->offset->v.i <= CHAR_MAX)
                         apd->length = ISZ_UCHAR;
                     addsize = apd->length != 0;
                 }
@@ -629,6 +629,11 @@ void oa_put_code(OCODE* cd)
         bePrintf("%s", aps);
         return;
     }
+    else if (op == op_align)
+    {
+        oa_align(aps->offset->v.i);
+        return;
+    }
     else if (op == op_void)
         return;
     if (aps)
@@ -638,14 +643,18 @@ void oa_put_code(OCODE* cd)
     needpointer = (len != len2) || ((!aps || aps->mode != am_dreg) && (!apd || apd->mode != am_dreg));
     putop((e_op)op, aps, apd, cd->noopt);
     if ((prm_assembler == pa_nasm || prm_assembler == pa_fasm) &&
-        ((op >= op_ja && op <= op_jns && op != op_jecxz) || (op == op_jmp && aps->mode == am_immed && !apd)))
+        (op >= op_ja && op <= op_jz && op != op_jecxz && (op != op_jmp || aps->mode == am_immed)))
     {
         if (cd->ins)
         {
-            if ((((Instruction *)cd->ins)->GetData()[0] & 0x70) == 0x70 || ((Instruction *)cd->ins)->GetData()[0] == 0xeb)
+            if ((((Instruction *)cd->ins)->GetData()[0] & 0xf0) == 0x70 || ((Instruction *)cd->ins)->GetData()[0] == 0xeb)
+            {
                 bePrintf("\tshort");
+            }
             else
+            {
                 bePrintf("\tnear");
+            }
         }
         nosize = TRUE;
     }
@@ -1327,7 +1336,9 @@ void oa_align(int size)
             bePrintf("\talign\t%d\n", size);
     }
     else
+    {
         outcode_align(size);
+    }
 }
 void oa_setalign(int code, int data, int bss, int constant)
 {

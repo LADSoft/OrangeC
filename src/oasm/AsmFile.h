@@ -61,7 +61,6 @@ class AsmFile
         caseInsensitive(CaseInsensitive),
         binaryOutput(BinaryOutput),
         lexer(pp),
-        expr(false),
         asmexpr(nullptr),
         startSection(nullptr),
         startupLabel(nullptr),
@@ -139,7 +138,6 @@ class AsmFile
     ObjSection* startSection;
     PreProcessor& preProcessor;
     Lexer lexer;
-    ppExpr expr;
     AsmExpr asmexpr;
     InstructionParser* parser;
     std::map<ObjString, Section*> sections;

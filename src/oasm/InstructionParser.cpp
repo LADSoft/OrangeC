@@ -237,16 +237,19 @@ Instruction* InstructionParser::Parse(const std::string args, int PC)
                     {
                         if (operand->used && operand->size)
                         {
-                            if (s->Lost() && operand->pos)
-                                operand->pos-=8;
-                            int n = operand->relOfs;
-                            if (n < 0)
-                                n = -n;
-                            Fixup* f = new Fixup(operand->node, (operand->size + 7) / 8, operand->relOfs != 0, n, operand->relOfs > 0);
-                            f->SetInsOffs((operand->pos + 7) / 8);
-                            f->SetFileName(errName);
-                            f->SetErrorLine(errLine);
-                            s->Add(f);
+                            if (operand->node->GetType() != AsmExprNode::IVAL && operand->node->GetType() != AsmExprNode::FVAL)
+                            {
+                                if (s->Lost() && operand->pos)
+                                    operand->pos -= 8;
+                                int n = operand->relOfs;
+                                if (n < 0)
+                                    n = -n;
+                                Fixup* f = new Fixup(operand->node, (operand->size + 7) / 8, operand->relOfs != 0, n, operand->relOfs > 0);
+                                f->SetInsOffs((operand->pos + 7) / 8);
+                                f->SetFileName(errName);
+                                f->SetErrorLine(errLine);
+                                s->Add(f);
+                            }
                         }
                     }
                 }
@@ -647,7 +650,7 @@ void InstructionParser::NextToken(int PC)
         }
         else if (Tokenizer::IsSymbolChar(line.c_str(), true) || IsNumber() || line[0] == '$')
         {
-            val = expr.Build(line);
+            val = asmexpr.Build(line);
             id = TK_NUMERIC;
         }
         else if (ispunct(line[0]))

@@ -1695,7 +1695,6 @@ void gen_importThunk(SYMBOL* func)
 }
 void gen_vc1(SYMBOL* func)
 {
-    gen_strlab(func);
     if (chosenAssembler->gen->gen_vc1)
         chosenAssembler->gen->gen_vc1(func);
     if (!icdFile)

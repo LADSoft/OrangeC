@@ -89,10 +89,24 @@ void Section::Optimize()
 {
     AsmExpr::SetSection(this);
     bool done = false;
+    int pc = 0;
+    for (int i = 0; i < instructions.size(); i++)
+    {
+        if (instructions[i]->IsLabel())
+        {
+            Label* l = instructions[i]->GetLabel();
+            if (l)
+            {
+                l->SetOffset(pc);
+                labels[l->GetName()] = pc;
+            }
+        }
+        pc += instructions[i]->GetSize();
+    }
     while (!done)
     {
-        int pc = 0;
         done = true;
+        pc = 0;
         for (int i = 0; i < instructions.size(); i++)
         {
             if (instructions[i]->IsLabel())
@@ -112,13 +126,25 @@ void Section::Optimize()
                 int m = instructions[i]->GetSize();
                 pc += m;
                 if (n != m)
+                {
                     done = false;
+                }
             }
         }
     }
-    int pc = 0;
+    pc = 0;
     for (int i = 0; i < instructions.size(); i++)
     {
+        if (instructions[i]->IsLabel())
+        {
+            Label* l = instructions[i]->GetLabel();
+            if (l)
+            {
+                l->SetOffset(pc);
+                labels[l->GetName()] = pc;
+            }
+        }
+        instructions[i]->SetOffset(pc);
         instructions[i]->Optimize(this, pc, true);
         pc += instructions[i]->GetSize();
     }

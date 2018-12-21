@@ -298,13 +298,7 @@
     <ClInclude Include="x86\x86regs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="x86\AsmExpr.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="x86\beIntrinsicProtos.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="x86\InstructionParser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\oasm\AsmExpr.h">
@@ -338,6 +332,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="x86\dbgtypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\oasm\InstructionParser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

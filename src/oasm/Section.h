@@ -72,14 +72,17 @@ class Section
         delete v;
         instructions.pop_back();
     }
+    std::vector<Instruction *>& GetInstructions() { return instructions; }
+    void ClearInstructions() { instructions.clear(); }
     int GetSect() { return sect; }
     ObjSection* GetObjectSection() { return objectSection; }
     std::string GetName() { return name; }
     int GetNext(Fixup& fixup, unsigned char* buf, int len);
     int beValues[10];
-    std::map<std::string, int>::iterator Lookup(std::string name) { return labels.find(name); }
+    std::map<std::string, int>::iterator Lookup(std::string& name) { return labels.find(name); }
     std::map<std::string, int>& GetLabels() { return labels; }
     int GetPC() { return pc; }
+    bool HasInstructions() const { return instructions.size() != 0; }
 
   protected:
     ObjExpression* ConvertExpression(AsmExprNode* node, std::function<Label*(std::string&)> Lookup, std::function<ObjSection *(std::string&)>   SectLookup, ObjFactory& factory);

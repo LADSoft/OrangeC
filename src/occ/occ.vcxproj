@@ -250,6 +250,7 @@
     <ClInclude Include="..\oasm\AsmLexer.h" />
     <ClInclude Include="..\oasm\Fixup.h" />
     <ClInclude Include="..\oasm\Instruction.h" />
+    <ClInclude Include="..\oasm\InstructionParser.h" />
     <ClInclude Include="..\oasm\Label.h" />
     <ClInclude Include="..\oasm\Section.h" />
     <ClInclude Include="..\oasm\x64Instructions.h" />
@@ -266,12 +267,10 @@
     <ClInclude Include="parse\osutil.h" />
     <ClInclude Include="parse\rtti.h" />
     <ClInclude Include="parse\winmode.h" />
-    <ClInclude Include="x86\AsmExpr.h" />
     <ClInclude Include="x86\be.h" />
     <ClInclude Include="x86\beIntrinsicProtos.h" />
     <ClInclude Include="x86\Cvinfo.h" />
     <ClInclude Include="x86\dbgtypes.h" />
-    <ClInclude Include="x86\InstructionParser.h" />
     <ClInclude Include="x86\x86regs.h" />
   </ItemGroup>
   <ItemGroup>

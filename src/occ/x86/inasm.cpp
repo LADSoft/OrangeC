@@ -1105,6 +1105,7 @@ LEXEME* inasm_statement(LEXEME* inlex, BLOCKDATA* parent)
         {
             return lex;
         }
+        bool atend;
         if (lex->type != l_asminst)
         {
             if (MATCHKW(lex, kw_int))
@@ -1130,7 +1131,7 @@ LEXEME* inasm_statement(LEXEME* inlex, BLOCKDATA* parent)
             getData(snp);
             return lex;
         }
-        bool atend = ateol();
+        atend = ateol();
         op = inasm_op();
         if (op == (enum e_opcode) - 1)
         {
@@ -1139,7 +1140,7 @@ LEXEME* inasm_statement(LEXEME* inlex, BLOCKDATA* parent)
         }
         {
             rv = (OCODE *)beLocalAlloc(sizeof(OCODE));
-            if (!atend)
+            if (!atend && !MATCHKW(lex, semicolon))
             {
                 rv->oper1 = inasm_amode(false);
                 if (MATCHKW(lex, comma))

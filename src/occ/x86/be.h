@@ -52,7 +52,8 @@ enum e_op
     op_funclabel,
     op_seq,
     op_genword,
-    op_dd
+    op_dd,
+    op_align
 };
 enum e_asmw
 {

@@ -38,6 +38,10 @@ class Instruction;
 class Section;
 class AsmFile;
 
+struct ocode; // compiler support
+struct expr; // compiler support
+struct amode; // compiler support
+
 enum asmError { AERR_NONE, AERR_SYNTAX, AERR_OPERAND, AERR_BADCOMBINATIONOFOPERANDS, AERR_UNKNOWNOPCODE, AERR_INVALIDINSTRUCTIONUSE };
 
 class Coding
@@ -116,7 +120,7 @@ class InputToken
 class InstructionParser
 {
   public:
-    InstructionParser() : expr(nullptr) {}
+    InstructionParser() : asmexpr(nullptr) {}
 
     static InstructionParser* GetInstance();
 
@@ -168,6 +172,23 @@ class InstructionParser
     std::list<int> prefixes;
     std::vector<InputToken*> inputTokens;
     BitStream bits;
-    AsmExpr expr;
+    AsmExpr asmexpr;
+
+    // c compiler support
+
+public:
+
+    std::string FormatInstruction(ocode *ins);
+    asmError GetInstruction(ocode *ins, Instruction *&newIns, std::list<Numeric*>& operands);
+protected:
+    void SetRegToken(int reg, int sz);
+    void SetNumberToken(int val);
+    bool SetNumberToken(expr *offset, int &n);
+    void SetExpressionToken(expr *offset);
+    void SetSize(int sz);
+    void SetBracketSequence(bool open, int sz, int seg);
+    void SetOperandTokens(amode *operand);
+    void SetTokens(ocode *ins);
+
 };
 #endif

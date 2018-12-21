@@ -30,8 +30,6 @@ CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=ocpplib objlib util
 DEFINES=x64
 H_FILES=$(wildcard *.h)
-EXCLUDE=x86Parser x86stub
-#EXCLUDE=x64Parser x64stub
 
 include ../redirect.mak
 

@@ -123,6 +123,7 @@ class AsmExprNode
 class AsmExpr
 {
   public:
+    AsmExpr() : define(nullptr) { }
     AsmExpr(ppDefine* Define) : define(Define) { InitHash(); }
     ~AsmExpr() {}
     AsmExprNode* Build(std::string& line);

@@ -44,7 +44,7 @@ class Label
             delete node;
     }
     int GetLabel() { return label; }
-    std::string GetName() const { return name; }
+    std::string& GetName() { return name; }
     AsmExprNode* GetOffset() { return node; }
     void SetOffset(AsmExprNode* Offset)
     {

@@ -135,6 +135,8 @@ static int sectofs;
 
 static std::deque<SYMBOL *> typedefs;
 
+static Section dummySection("dummy", -1);
+
 void omfInit(void)
 {
     browseInfo.clear();
@@ -232,7 +234,7 @@ void omf_put_includelib(char* name)
     includelibs.push_back(name);
 }
 
-Label *LookupLabel(std::string string)
+Label *LookupLabel(const std::string& string)
 {
     auto z1 = lbllabs.find(string);
     if (z1 != lbllabs.end())
@@ -265,7 +267,7 @@ void Release()
         delete v;
 }
 
-ObjSection *LookupSection(std::string string)
+ObjSection *LookupSection(std::string& string)
 {
     auto it = objSectionsByName.find(string);
     if (it != objSectionsByName.end())
@@ -371,8 +373,7 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
             {
                 sections[i]->SetAlign(segAligns[i]);
 
-                if (i != codeseg)
-                    sections[i]->Resolve();
+                sections[i]->Resolve();
 
                 ObjSection* s = sections[i]->CreateObject(factory);
                 if (s)
@@ -388,7 +389,7 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
         sectofs = MAX_SEGS - sectofs;
         for (auto v : virtuals)
         {
-            v->SetAlign(cseg ? segAligns[codeseg] : segAligns[dataseg]);
+            v->SetAlign(v->GetName()[2] == 'c' ? segAligns[codeseg] : segAligns[dataseg]);
 
             ObjSection* s = v->CreateObject(factory);
             if (s)
@@ -602,12 +603,18 @@ void outcode_enterseg(int seg)
         instructionParser->Setup(sections[seg]);
     }
     currentSection = sections[seg];
-    AsmExpr::SetSection(currentSection);
+    if (oa_currentSeg == codeseg)
+        AsmExpr::SetSection(&dummySection);
+    else
+        AsmExpr::SetSection(currentSection);
 }
 
 void InsertInstruction(Instruction *ins)
 {
-    currentSection->InsertInstruction(ins);
+    if (oa_currentSeg == codeseg)
+        dummySection.InsertInstruction(ins);
+    else
+        currentSection->InsertInstruction(ins);
 }
 static Label *GetLabel(int lbl)
 {
@@ -1138,6 +1145,7 @@ void outcode_AssembleIns(OCODE* ins)
     {
         Instruction *newIns = nullptr;
         std::list<Numeric*> operands;
+
         asmError err = instructionParser->GetInstruction(ins, newIns, operands);
 
         switch (err)
@@ -1207,8 +1215,13 @@ void outcode_AssembleIns(OCODE* ins)
             break;
         case op_genword:
             outcode_genbyte(ins->oper1->offset->v.i);
-            return;
             break;
+        case op_align:
+        {
+            Instruction * newIns = new Instruction(ins->oper1->offset->v.i);
+            InsertInstruction(newIns);
+            break;
+            }
         case op_dd:
         {
             int i = 0;
@@ -1238,5 +1251,20 @@ void outcode_gen(OCODE* peeplist)
 
         head = head->fwd;
     }
-    currentSection->Resolve();
+    if (oa_currentSeg == codeseg)
+    {
+        // all this dancing around so that when compiling things into the main code segment, we don't spend an inordinate amound of time
+        // in Resolve()...
+        //
+        dummySection.Resolve();
+        for (auto d : dummySection.GetInstructions())
+        {
+            currentSection->InsertInstruction(d);
+        }
+        dummySection.ClearInstructions();
+    }
+    else
+    {
+        currentSection->Resolve();
+    }
 }

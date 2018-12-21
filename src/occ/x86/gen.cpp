@@ -1809,7 +1809,7 @@ static void compactSwitchHeader(LLONG_TYPE bottom)
     gen_codes(op_xchg, ISZ_UINT, switch_apl, make_stack(0));
     gen_codes(op_ret, 0, 0, 0);
     pushlevel -= 4;
-    oa_align(4);
+    gen_code(op_align, aimmed(4), 0);
     oa_gen_label(tablab);
 }
 //-------------------------------------------------------------------------

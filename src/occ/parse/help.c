@@ -1602,7 +1602,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
         exp->size = sp->tp->size;
         rv = exprNode(en_void, exp, rv);
     }
-    if (isstructured(tp) && !cparams.prm_cplusplus)
+    if (isstructured(tp))
     {
         if (*pos)
         {

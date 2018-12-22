@@ -123,7 +123,7 @@ static int floating;
 static HASHTABLE* asmHash;
 void inasmini(void)
 {
-    assembling = true;
+    assembling = false;
     ASMREG* r = reglst;
     ASM_HASH_ENTRY* s;
     asmHash = CreateHashTable(1021);

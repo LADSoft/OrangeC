@@ -17,6 +17,7 @@ version 6.0.40:
     occ: c++: allow function name to be used in arithmetic expressions, warn when this is being done
     occ: consider strings as const pointers for purposes of function argument matching
     occ: when a member name matched a structure at global scope, various problems would occur
+    occ: assignment of constant data to a structure crashed the generated program (C++ mode only)
     oasm: speed up assembly of large files
     dlpe/oimplib: handle -y switch 
     orc: fix crash when compiled with package, when processing invalid input file

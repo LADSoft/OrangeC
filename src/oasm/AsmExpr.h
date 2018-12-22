@@ -135,7 +135,7 @@ class AsmExpr
     static Section* GetSection() { return section; }
     static void SetEqu(std::string name, AsmExprNode* n) { equs[name] = n; }
     static AsmExprNode* ConvertToBased(AsmExprNode* n, int pc);
-    static AsmExprNode* GetEqu(std::string name)
+    static AsmExprNode* GetEqu(std::string& name)
     {
         auto it = equs.find(name);
         if (it != equs.end())

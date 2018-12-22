@@ -99,6 +99,7 @@ void Section::Optimize()
             {
                 l->SetOffset(pc);
                 labels[l->GetName()] = pc;
+
             }
         }
         pc += instructions[i]->GetSize();

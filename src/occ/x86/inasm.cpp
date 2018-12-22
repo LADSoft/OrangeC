@@ -37,6 +37,7 @@ extern "C" HASHTABLE* labelSyms;
 extern "C" int usingEsp;
 extern InstructionParser *instructionParser;
 
+bool assembling;
 static ASMREG* regimage;
 static ASMNAME* insdata;
 static LEXEME* lex;
@@ -122,6 +123,7 @@ static int floating;
 static HASHTABLE* asmHash;
 void inasmini(void)
 {
+    assembling = true;
     ASMREG* r = reglst;
     ASM_HASH_ENTRY* s;
     asmHash = CreateHashTable(1021);
@@ -1062,7 +1064,9 @@ static void AssembleInstruction(OCODE* ins)
     {
         Instruction *newIns = nullptr;
         std::list<Numeric*> operands;
+        assembling = true;
         asmError err = instructionParser->GetInstruction(ins, newIns, operands);
+        assembling = false;
         delete newIns;
         switch (err)
         {
@@ -1140,17 +1144,20 @@ LEXEME* inasm_statement(LEXEME* inlex, BLOCKDATA* parent)
         }
         {
             rv = (OCODE *)beLocalAlloc(sizeof(OCODE));
-            if (!atend && !MATCHKW(lex, semicolon))
+            if (!(op == op_rep || op == op_repnz || op == op_repz || op == op_repe || op == op_repne || op == op_lock))
             {
-                rv->oper1 = inasm_amode(false);
-                if (MATCHKW(lex, comma))
+                if (!atend && !MATCHKW(lex, semicolon))
                 {
-                    inasm_getsym();
-                    rv->oper2 = inasm_amode(false);
+                    rv->oper1 = inasm_amode(false);
                     if (MATCHKW(lex, comma))
                     {
                         inasm_getsym();
-                        rv->oper3 = inasm_amode(false);
+                        rv->oper2 = inasm_amode(false);
+                        if (MATCHKW(lex, comma))
+                        {
+                            inasm_getsym();
+                            rv->oper3 = inasm_amode(false);
+                        }
                     }
                 }
             }

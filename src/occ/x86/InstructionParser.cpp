@@ -35,6 +35,7 @@
 #include "Token.h"
 #include "be.h"
 extern "C" TYPE stdint;
+extern bool assembling;
 
 static const unsigned mask[32] = {
     0x1,      0x3,      0x7,       0xf,       0x1f,      0x3f,      0x7f,       0xff,       0x1ff,      0x3ff,      0x7ff,
@@ -303,7 +304,7 @@ asmError InstructionParser::GetInstruction(OCODE *ins, Instruction *&newIns, std
 }
 void InstructionParser::SetRegToken(int reg, int sz)
 {
-    static InputToken *segs[] = { 0, &Tokencs, &Tokends, &Tokenes, &Tokenfs, &Tokengs, &Tokenss };
+    static InputToken *segs[] = { &Tokencs, &Tokends, &Tokenes, &Tokenfs, &Tokengs, &Tokenss };
     static InputToken *dword[] = { &Tokeneax, &Tokenecx, &Tokenedx, &Tokenebx, &Tokenesp, &Tokenebp, &Tokenesi, &Tokenedi };
     static InputToken *word[] = { &Tokenax, &Tokencx, &Tokendx, &Tokenbx, &Tokensp, &Tokenbp, &Tokensi, &Tokendi };
     static InputToken *byte[] = { &Tokenal, &Tokencl, &Tokendl, &Tokenbl, &Tokenah, &Tokench, &Tokendh, &Tokenbh };
@@ -327,6 +328,7 @@ void InstructionParser::SetRegToken(int reg, int sz)
         break;
     case ISZ_USHORT:
     case ISZ_U16:
+    case ISZ_WCHAR:
         check = word;
         break;
     case ISZ_UINT:
@@ -381,6 +383,7 @@ bool InstructionParser::SetNumberToken(EXPRESSION *offset, int &n)
 {
     int resolved = 1;
     n = resolveoffset(offset, &resolved);
+    resolved |= assembling;
     if (resolved)
         SetNumberToken(n);
     return !!resolved;
@@ -410,6 +413,7 @@ void InstructionParser::SetSize(int sz)
         case ISZ_BOOLEAN:
             inputTokens.push_back(&Tokenbyte);
             break;
+        case ISZ_WCHAR:
         case ISZ_USHORT:
         case ISZ_U16:
             inputTokens.push_back(&Tokenword);

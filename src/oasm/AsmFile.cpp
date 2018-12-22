@@ -568,6 +568,10 @@ void AsmFile::TimesDirective()
         else if (parser->MatchesOpcode(GetToken()->GetChars()))
         {
             Instruction* ins = parser->Parse(lexer.GetRestOfLine(), currentSection->GetPC());
+            for (auto f : *ins->GetFixups())
+            {
+                f->SetExpr(AsmExpr::Eval(f->GetExpr(), currentSection->GetPC()));
+            }
             currentSection->InsertInstruction(ins);
         }
         else

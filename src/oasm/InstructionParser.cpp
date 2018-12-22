@@ -28,6 +28,7 @@
 #include <ctype.h>
 #include <fstream>
 #include <stdio.h>
+#include <algorithm>
 #include "Instruction.h"
 #include "Fixup.h"
 #include "UTF8.h"
@@ -133,6 +134,8 @@ bool InstructionParser::SetNumber(int tokenPos, int oldVal, int newVal)
 }
 bool InstructionParser::MatchesOpcode(std::string opcode)
 {
+    std::transform(opcode.begin(), opcode.end(), opcode.begin(), ::tolower);
+
     return opcodeTable.end() != opcodeTable.find(opcode) || prefixTable.end() != prefixTable.find(opcode);
 }
 Instruction* InstructionParser::Parse(const std::string args, int PC)
@@ -194,6 +197,8 @@ Instruction* InstructionParser::Parse(const std::string args, int PC)
             break;
         }
     }
+    std::transform(op.begin(), op.end(), op.begin(), ::tolower);
+
     if (op == "")
     {
         auto rv = DispatchOpcode(-1);
@@ -276,7 +281,9 @@ void InstructionParser::RenameRegisters(AsmExprNode* val)
 {
     if (val->GetType() == AsmExprNode::LABEL)
     {
-        auto it = tokenTable.find(val->label);
+        auto test = val->label;
+        std::transform(test.begin(), test.end(), test.begin(), ::tolower);
+        auto it = tokenTable.find(test);
         if (it != tokenTable.end())
         {
             int n = it->second;
@@ -475,7 +482,10 @@ void InstructionParser::ParseNumeric(int PC)
     RenameRegisters(val);
     if (val->GetType() == AsmExprNode::LABEL)
     {
-        auto it = tokenTable.find(val->label);
+        auto test = val->label;
+        std::transform(test.begin(), test.end(), test.begin(), ::tolower);
+        auto it = tokenTable.find(test);
+
         InputToken* next;
         if (it != tokenTable.end())
         {

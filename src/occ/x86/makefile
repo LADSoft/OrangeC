@@ -126,8 +126,6 @@ SRCPATH:=$(subst $(PATHEXT2),/,$(SRCPATH))
 endif
 endif
 
-$(info $(SRCPATH))
-
 vpath %.c $(SRCPATH)
 vpath %.cpp $(SRCPATH)
 

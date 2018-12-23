@@ -122,7 +122,6 @@ int RunExternalFiles(char *);
 
 void omfInit(void);
 int put_ident(char *buf, int ident);
-void emit_record(enum omf_type type, char *data, int len);
 void omf_dump_browsedata(BROWSEINFO *bri);
 void omf_dump_browsefile(BROWSEFILE *brf);
 void omf_globaldef(SYMBOL *sp);

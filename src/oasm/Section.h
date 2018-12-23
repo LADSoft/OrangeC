@@ -48,7 +48,7 @@ class Section
     }
     virtual ~Section();
     ObjSection* CreateObject(ObjFactory& factory);
-    bool Section::MakeData(ObjFactory& factory, std::function<Label*(std::string&)> Lookup, std::function<ObjSection*(std::string&)> SectLookup, std::function<void(ObjFactory&, Section *, Instruction *)> HandleAlt);
+    bool MakeData(ObjFactory& factory, std::function<Label*(std::string&)> Lookup, std::function<ObjSection*(std::string&)> SectLookup, std::function<void(ObjFactory&, Section *, Instruction *)> HandleAlt);
     void Parse(AsmFile* fil);
     void Resolve();
     void SetAlign(int aln) { align = aln; }

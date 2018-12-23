@@ -5,7 +5,7 @@
  *     This file is part of the Orange C Compiler package.
  *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
- *     it under the terms of the GNU General Public License as published by
+ *     it under the terms of the GNU General Public License as published bye
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
@@ -124,6 +124,7 @@ struct amode
 
 /*      output code structure   */
 
+#ifdef __cplusplus
 struct ocode
 {
     struct ocode *fwd, *back;
@@ -135,7 +136,7 @@ struct ocode
     char diag;
     char noopt;
 };
-
+#endif
 /* Used for fixup gen */
 typedef struct dl
 {

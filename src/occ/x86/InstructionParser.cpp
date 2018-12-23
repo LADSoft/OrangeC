@@ -197,14 +197,14 @@ asmError InstructionParser::GetInstruction(OCODE *ins, Instruction *&newIns, std
     case op_repz:
     case op_repe:
     case op_rep:
-        newIns = new Instruction("\xf3", 1, true);
+        newIns = new Instruction((unsigned char *)"\xf3", 1, true);
         break;
     case op_repnz:
     case op_repne:
-        newIns = new Instruction("\xf2", 1, true);
+        newIns = new Instruction((unsigned char *)"\xf2", 1, true);
         break;
     case op_lock:
-        newIns = new Instruction("\xf0", 1, true);
+        newIns = new Instruction((unsigned char *)"\xf0", 1, true);
         break;
     default:
     {

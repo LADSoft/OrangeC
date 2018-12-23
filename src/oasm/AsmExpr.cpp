@@ -548,10 +548,10 @@ AsmExprNode* AsmExpr::Eval(AsmExprNode* n, int pc)
 bool AsmExprNode::IsAbsoluteInternal(int& n)
 {
     bool rv = true;
-;
+    ;
     if (type == LABEL)
     {
-        AsmExprNode *num = AsmExpr::GetEqu(label);
+        AsmExprNode* num = AsmExpr::GetEqu(label);
         if (!num)
         {
             auto it = AsmExpr::GetSection()->Lookup(label);

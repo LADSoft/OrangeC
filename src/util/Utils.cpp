@@ -108,11 +108,11 @@ char* Utils::GetModuleName()
 #if defined(_WIN32)
     GetModuleFileNameA(nullptr, buf, sizeof(buf));
 #else
-#ifdef GCCLINUX
+#    ifdef GCCLINUX
     strcpy(buf, "unknown");
-#else
+#    else
     strcpy(buf, __argv[0]);
-#endif
+#    endif
 #endif
     return buf;
 }

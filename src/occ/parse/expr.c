@@ -613,7 +613,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                                 SYMBOL* sym = getStructureDeclaration();
                                 if (!sym || sym != sp->parentClass)
                                     if (!lambdas || !lambdas->captureThis)
-                                    { 
+                                    {
                                         funcparams->noobject = TRUE;
                                     }
                                     else
@@ -630,9 +630,11 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                                                 t1->btp = basetype(lambdas->lthis->tp)->btp;
                                                 t1->rootType = t1;
                                                 funcparams->thistp = t1;
-                                                funcparams->thisptr = varNode(en_auto, (SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p);  // this ptr
+                                                funcparams->thisptr =
+                                                    varNode(en_auto, (SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p);  // this ptr
                                                 deref(&stdpointer, exp);
-                                                funcparams->thisptr = exprNode(en_add, funcparams->thisptr, intNode(en_c_i, ths->offset));
+                                                funcparams->thisptr =
+                                                    exprNode(en_add, funcparams->thisptr, intNode(en_c_i, ths->offset));
                                                 deref(&stdpointer, &funcparams->thisptr);
                                             }
                                             else
@@ -1501,7 +1503,7 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
                         sp3 = sp3->mainsym;
                     if (sp4 && sp4->mainsym)
                         sp4 = sp4->mainsym;
-                        
+                        
 
 
 
@@ -1626,16 +1628,16 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
     }
     return lex;
 }
-static void LookupSingleAggregate(TYPE *tp, EXPRESSION **exp)
+static void LookupSingleAggregate(TYPE* tp, EXPRESSION** exp)
 {
     if (tp->type == bt_aggregate)
     {
-        HASHREC *hr = tp->syms->table[0];
-        *exp = varNode(en_pc, (SYMBOL *)hr->p);
+        HASHREC* hr = tp->syms->table[0];
+        *exp = varNode(en_pc, (SYMBOL*)hr->p);
         if (hr->next)
             errorsym(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, tp->sp);
-//        else // commented out because of std::endl
-//            error(ERR_FUNCTION_CALL_NEEDS_ARGUMENT_LIST);
+        //        else // commented out because of std::endl
+        //            error(ERR_FUNCTION_CALL_NEEDS_ARGUMENT_LIST);
     }
 }
 static LEXEME* expression_bracket(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, int flags)
@@ -1666,8 +1668,7 @@ static LEXEME* expression_bracket(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
                 insertOperatorFunc(ovcl_openbr, openbr, funcsp, tp, exp, tp2, expr2, NULL, flags))
             {
             }
-            else if (isvoid(*tp) || isvoid(tp2) || (*tp)->type == bt_aggregate || ismsil(*tp) ||
-                     ismsil(tp2))
+            else if (isvoid(*tp) || isvoid(tp2) || (*tp)->type == bt_aggregate || ismsil(*tp) || ismsil(tp2))
                 error(ERR_NOT_AN_ALLOWED_TYPE);
             else if (basetype(tp2)->type == bt_memberptr || basetype(*tp)->type == bt_memberptr)
                 error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
@@ -1985,7 +1986,6 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
                                     cast(decl->tp, &list->exp);
                                 }
                             }
-
                         }
                         dest = decl->tp;
                     }
@@ -2789,7 +2789,7 @@ void AdjustParams(SYMBOL* func, HASHREC* hr, INITLIST** lptr, BOOLEAN operands, 
                         EXPRESSION* consexp;
                         // copy constructor...
                         TYPE* ctype = sym->tp;
-                        EXPRESSION *paramexp;
+                        EXPRESSION* paramexp;
                         consexp = anonymousVar(sc_auto, sym->tp);  // sc_parameter to push it...
                         esp = consexp->v.sp;
                         esp->stackblock = TRUE;
@@ -2825,7 +2825,7 @@ void AdjustParams(SYMBOL* func, HASHREC* hr, INITLIST** lptr, BOOLEAN operands, 
                             EXPRESSION* consexp = anonymousVar(sc_auto, basetype(sym->tp)->btp);  // sc_parameter to push it...
                             SYMBOL* esp = consexp->v.sp;
                             TYPE* ctype = basetype(sym->tp)->btp;
-                            EXPRESSION *paramexp = p->exp;
+                            EXPRESSION* paramexp = p->exp;
                             p->exp = consexp;
                             callConstructorParam(&ctype, &p->exp, basetype(p->tp), paramexp, TRUE, TRUE, FALSE, FALSE);
                             if (p->exp->type == en_func)
@@ -2914,11 +2914,11 @@ void AdjustParams(SYMBOL* func, HASHREC* hr, INITLIST** lptr, BOOLEAN operands, 
                                 {
                                     if (!lvalue(exp))
                                     {
-                                        TYPE *tp1 = basetype(sym->tp)->btp;
+                                        TYPE* tp1 = basetype(sym->tp)->btp;
                                         // make numeric temp and perform cast
                                         if (isarray(tp1))
                                         {
-                                            TYPE tp2 = { 0 };
+                                            TYPE tp2 = {0};
                                             tp2.type = bt_lref;
                                             tp2.size = getSize(bt_pointer);
                                             tp2.btp = &stdpointer;
@@ -3754,7 +3754,7 @@ static LEXEME* expression_alloca(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
     }
     return lex;
 }
-static LEXEME* expression_offsetof(LEXEME* lex, SYMBOL *funcsp, TYPE**tp, EXPRESSION**exp, BOOLEAN *ismutable, int flags)
+static LEXEME* expression_offsetof(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, BOOLEAN* ismutable, int flags)
 {
     *exp = intNode(en_c_i, 0);
     lex = getsym();
@@ -3766,13 +3766,13 @@ static LEXEME* expression_offsetof(LEXEME* lex, SYMBOL *funcsp, TYPE**tp, EXPRES
         if (ISID(lex))
         {
             char name[512];
-            SYMBOL *sym;
-            HASHTABLE *table;
-            SYMBOL *strSym;
-            SYMBOL *nsv;
+            SYMBOL* sym;
+            HASHTABLE* table;
+            SYMBOL* strSym;
+            SYMBOL* nsv;
             strcpy(name, lex->value.s.a);
             lex = tagsearch(lex, name, &sym, &table, &strSym, &nsv, sc_global);
-            if (!sym) // might be a typedef
+            if (!sym)  // might be a typedef
             {
 
                 sym = namespacesearch(name, globalNameSpace, FALSE, FALSE);
@@ -3786,15 +3786,15 @@ static LEXEME* expression_offsetof(LEXEME* lex, SYMBOL *funcsp, TYPE**tp, EXPRES
                 }
             }
             if (sym && isstructured(sym->tp))
-            {      
+            {
                 if (needkw(&lex, comma))
                 {
-                    *tp = sym->tp;         
+                    *tp = sym->tp;
                     do
                     {
-                       lex = expression_member(lex, funcsp, tp, exp, ismutable, flags | _F_AMPERSAND);
-                       if (lvalue(*exp))
-                           *exp = (*exp)->left;
+                        lex = expression_member(lex, funcsp, tp, exp, ismutable, flags | _F_AMPERSAND);
+                        if (lvalue(*exp))
+                            *exp = (*exp)->left;
                     } while (MATCHKW(lex, dot));
                 }
             }
@@ -3805,14 +3805,14 @@ static LEXEME* expression_offsetof(LEXEME* lex, SYMBOL *funcsp, TYPE**tp, EXPRES
         }
         else
         {
-           error(ERR_IDENTIFIER_EXPECTED);
+            error(ERR_IDENTIFIER_EXPECTED);
         }
         needkw(&lex, closepa);
     }
     *tp = &stdunsigned;
 
     return lex;
-} 
+}
 static LEXEME* expression_msilfunc(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, int flags)
 {
     enum e_kw kw = lex->kw->key;
@@ -4596,7 +4596,7 @@ static LEXEME* expression_atomic_func(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EX
     }
     return lex;
 }
-static LEXEME *expression___typeid(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp)
+static LEXEME* expression___typeid(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp)
 {
     lex = getsym();
     if (needkw(&lex, openpa))
@@ -4610,12 +4610,11 @@ static LEXEME *expression___typeid(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
         else
         {
             int id = 100000;
-            TYPE *tp1 = *tp;
+            TYPE* tp1 = *tp;
             if (isref(tp1))
-                 tp = basetype(tp1)->btp;
+                tp = basetype(tp1)->btp;
             switch (tp1->type)
             {
-
 
                 case bt_bool:
                 case bt_char:
@@ -4630,7 +4629,7 @@ static LEXEME *expression___typeid(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
                 case bt_long:
                     id = -4;
                     break;
-        	case bt_long_long:
+                case bt_long_long:
                     id = -5;
                     break;
                 case bt_unsigned_char:
@@ -4765,7 +4764,7 @@ static LEXEME* expression_primary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
                     break;
                 case kw___offsetof:
                     lex = expression_offsetof(lex, funcsp, tp, exp, ismutable, flags);
-                    break; 
+                    break;
                 case kw_true:
                     lex = getsym();
                     *exp = intNode(en_c_i, 1);
@@ -6312,8 +6311,7 @@ static LEXEME* expression_times(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** t
             LookupSingleAggregate(tp1, &exp1);
             if (isstructured(*tp) || isstructured(tp1))
                 error(ERR_ILL_STRUCTURE_OPERATION);
-            else if (isvoid(*tp) || isvoid(tp1) || ismsil(*tp) ||
-                     ismsil(tp1))
+            else if (isvoid(*tp) || isvoid(tp1) || ismsil(*tp) || ismsil(tp1))
                 error(ERR_NOT_AN_ALLOWED_TYPE);
             else if (basetype(*tp)->type == bt_memberptr || basetype(tp1)->type == bt_memberptr)
                 error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
@@ -6948,8 +6946,7 @@ static LEXEME* binop(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSI
 
         if (isstructured(*tp) || isstructured(tp1))
             error(ERR_ILL_STRUCTURE_OPERATION);
-        else if (isvoid(*tp) || isvoid(tp1) || ismsil(*tp) ||
-                 ismsil(tp1))
+        else if (isvoid(*tp) || isvoid(tp1) || ismsil(*tp) || ismsil(tp1))
             error(ERR_NOT_AN_ALLOWED_TYPE);
         else if ((basetype(*tp)->scoped || basetype(tp1)->scoped) &&
                  (!chosenAssembler->msil || !chosenAssembler->msil->allowExtensions))
@@ -7070,21 +7067,19 @@ static LEXEME* expression_hook(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp
                     // call a constructor?
                     if (isstructured(tph))
                     {
-                        EXPRESSION *rv = eph;
-                        TYPE *ctype = tph;
+                        EXPRESSION* rv = eph;
+                        TYPE* ctype = tph;
                         callConstructorParam(&ctype, &rv, tpc, epc, TRUE, FALSE, FALSE, FALSE);
                         epc = rv;
                         tpc = tph;
-
                     }
                     else
                     {
-                        EXPRESSION *rv = epc;
-                        TYPE *ctype = tpc;
+                        EXPRESSION* rv = epc;
+                        TYPE* ctype = tpc;
                         callConstructorParam(&ctype, &rv, tph, eph, TRUE, FALSE, FALSE, FALSE);
                         eph = rv;
                         tph = tpc;
-
                     }
                 }
                 if (ispointer(tph) || ispointer(tpc))

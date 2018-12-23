@@ -31,7 +31,6 @@
 #include <limits.h>
 #include <fstream>
 
-
 bool CharacterToken::unsignedchar;
 bool NumericToken::ansi;
 bool NumericToken::c99;
@@ -44,15 +43,15 @@ static bool IsSymbolStartChar(const char* data)
 static bool IsSymbolChar(const char* data)
 {
     return *data == '_' || *data == '$' || *data == '#' || *data == '@' || *data == '~' || *data == '?' || *data == '.' ||
-        *data == '&' || UTF8::IsAlnum(data);
+           *data == '&' || UTF8::IsAlnum(data);
 }
 
-static bool IsSymbolCharRoutine(const char *data, bool startOnly)
+static bool IsSymbolCharRoutine(const char* data, bool startOnly)
 {
     return startOnly ? IsSymbolStartChar(data) : IsSymbolChar(data);
 }
 
-bool(*Tokenizer::IsSymbolChar)(const char*, bool) = IsSymbolCharRoutine;
+bool (*Tokenizer::IsSymbolChar)(const char*, bool) = IsSymbolCharRoutine;
 
 bool StringToken::Start(const std::string& line)
 {

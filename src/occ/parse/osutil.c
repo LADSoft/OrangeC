@@ -1250,5 +1250,5 @@ void ccinit(int argc, char* argv[])
 
     /* Set up a ctrl-C handler so we can exit the prog with cleanup */
     signal(SIGINT, ctrlchandler);
-//    signal(SIGSEGV, internalError);
+    //    signal(SIGSEGV, internalError);
 }

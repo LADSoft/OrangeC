@@ -38,7 +38,7 @@ extern "C" TYPE stdvoid;
 
 #define DEBUG_VERSION 4.0
 
-bool dbgtypes::typecompare::operator () (const TYPE *left, const TYPE *right) const
+bool dbgtypes::typecompare::operator()(const TYPE* left, const TYPE* right) const
 {
     while (left->type == bt_typedef)
         left = left->btp;
@@ -60,50 +60,50 @@ bool dbgtypes::typecompare::operator () (const TYPE *left, const TYPE *right) co
             {
                 switch (left->type)
                 {
-                case bt_func:
-                case bt_ifunc:
-                    if (operator()(left->btp, right->btp))
-                        return true;
-                    else if (!operator()(right->btp, left->btp))
-                    {
-                        if (left->syms->table && right->syms->table)
+                    case bt_func:
+                    case bt_ifunc:
+                        if (operator()(left->btp, right->btp))
+                            return true;
+                        else if (!operator()(right->btp, left->btp))
                         {
-                            const HASHREC *hr1 = left->syms->table[0];
-                            const HASHREC *hr2 = right->syms->table[0];
-                            while (hr1 && hr2)
+                            if (left->syms->table && right->syms->table)
                             {
-                                SYMBOL *sym1 = (SYMBOL *)hr1->p;
-                                SYMBOL *sym2 = (SYMBOL *)hr2->p;
-                                if (operator()(sym1->tp, sym2->tp))
+                                const HASHREC* hr1 = left->syms->table[0];
+                                const HASHREC* hr2 = right->syms->table[0];
+                                while (hr1 && hr2)
+                                {
+                                    SYMBOL* sym1 = (SYMBOL*)hr1->p;
+                                    SYMBOL* sym2 = (SYMBOL*)hr2->p;
+                                    if (operator()(sym1->tp, sym2->tp))
+                                        return true;
+                                    else if (operator()(sym2->tp, (sym1->tp)))
+                                        return false;
+                                    hr1 = hr1->next;
+                                    hr2 = hr2->next;
+                                }
+                                if (hr2)
                                     return true;
-                                else if (operator()(sym2->tp, (sym1->tp)))
-                                    return false;
-                                hr1 = hr1->next;
-                                hr2 = hr2->next;
                             }
-                            if (hr2)
-                                return true;
                         }
-                    }
-                    break;
-                case bt_struct:
-                case bt_union:
-                case bt_class:
-                case bt_enum:
-                    if (strcmp(left->sp->name, right->sp->name) < 0)
-                        return true;
-                    break;
-                case bt_pointer:
-                    if (left->array && !right->array)
-                        return true;
-                    else if (left->array != right->array)
-                        return false;
-                    // fallthrough
-                case bt_lref:
-                case bt_rref:
-                    if (operator()(left->btp, right->btp))
-                        return true;
-                    break;
+                        break;
+                    case bt_struct:
+                    case bt_union:
+                    case bt_class:
+                    case bt_enum:
+                        if (strcmp(left->sp->name, right->sp->name) < 0)
+                            return true;
+                        break;
+                    case bt_pointer:
+                        if (left->array && !right->array)
+                            return true;
+                        else if (left->array != right->array)
+                            return false;
+                        // fallthrough
+                    case bt_lref:
+                    case bt_rref:
+                        if (operator()(left->btp, right->btp))
+                            return true;
+                        break;
                 }
             }
         }
@@ -111,7 +111,7 @@ bool dbgtypes::typecompare::operator () (const TYPE *left, const TYPE *right) co
     return false;
 }
 
-ObjType *dbgtypes::Put(TYPE *tp)
+ObjType* dbgtypes::Put(TYPE* tp)
 {
     auto val = Lookup(tp);
     if (val)
@@ -142,13 +142,9 @@ ObjType *dbgtypes::Put(TYPE *tp)
 
     hash[tp] = val;
     return val;
-
 }
-void dbgtypes::OutputTypedef(SYMBOL *sp)
-{
-    Put(sp->tp);
-}
-ObjType * dbgtypes::Lookup(TYPE *tp)
+void dbgtypes::OutputTypedef(SYMBOL* sp) { Put(sp->tp); }
+ObjType* dbgtypes::Lookup(TYPE* tp)
 {
 
     auto it = hash.find(tp);
@@ -156,13 +152,13 @@ ObjType * dbgtypes::Lookup(TYPE *tp)
         return it->second;
     return nullptr;
 }
-ObjType *dbgtypes::BasicType(TYPE* tp)
+ObjType* dbgtypes::BasicType(TYPE* tp)
 {
-    static int basicTypes[] = { 35, 34, 40, 40, 48, 41, 46, 49, 45, 0,  42, 42, 47, 50, 50,
-        43, 51, 44, 52, 72, 73, 74, 80, 81, 82, 88, 89, 90, 32 };
-    static int pointedTypes[] = { 0,       0,       40 + 16, 40 + 16, 48 + 16, 41 + 16, 46 + 16, 49 + 16, 45 + 16, 0,
-        42 + 16, 42 + 16, 47 + 16, 50 + 16, 50 + 16, 43 + 16, 51 + 16, 44 + 16, 52 + 16, 72 + 16,
-        73 + 16, 74 + 16, 80 + 16, 81 + 16, 82 + 16, 88 + 16, 89 + 16, 90 + 16, 33 };
+    static int basicTypes[] = {35, 34, 40, 40, 48, 41, 46, 49, 45, 0,  42, 42, 47, 50, 50,
+                               43, 51, 44, 52, 72, 73, 74, 80, 81, 82, 88, 89, 90, 32};
+    static int pointedTypes[] = {0,       0,       40 + 16, 40 + 16, 48 + 16, 41 + 16, 46 + 16, 49 + 16, 45 + 16, 0,
+                                 42 + 16, 42 + 16, 47 + 16, 50 + 16, 50 + 16, 43 + 16, 51 + 16, 44 + 16, 52 + 16, 72 + 16,
+                                 73 + 16, 74 + 16, 80 + 16, 81 + 16, 82 + 16, 88 + 16, 89 + 16, 90 + 16, 33};
     int n = 0;
     TYPE* tp1 = basetype(tp);
     if (tp1->type <= bt_void)
@@ -180,22 +176,21 @@ ObjType *dbgtypes::BasicType(TYPE* tp)
     if (n)
         return factory.MakeType((ObjType::eType)n);
     return nullptr;
-
 }
-ObjType * dbgtypes::TypeName(ObjType *val, char* nm)
+ObjType* dbgtypes::TypeName(ObjType* val, char* nm)
 {
     if (nm[0] == '_')
         nm++;
     fi->Add(val);
     return factory.MakeType(nm, ObjType::eNone, val, val->GetIndex());
 }
-void dbgtypes::StructFields(ObjType::eType sel, ObjType *val, int sz, SYMBOL* parent, HASHREC* hr)
+void dbgtypes::StructFields(ObjType::eType sel, ObjType* val, int sz, SYMBOL* parent, HASHREC* hr)
 {
     int index = val->GetIndex();
     int i = 0;
     if (parent->baseClasses)
     {
-        BASECLASS *bc = parent->baseClasses;
+        BASECLASS* bc = parent->baseClasses;
         while (bc)
         {
             SYMBOL* sp = (SYMBOL*)bc->cls;
@@ -212,18 +207,18 @@ void dbgtypes::StructFields(ObjType::eType sel, ObjType *val, int sz, SYMBOL* pa
                     }
                     vbase = vbase->next;
                 }
-                TYPE *tpl = (TYPE *)Alloc(sizeof(TYPE));
+                TYPE* tpl = (TYPE*)Alloc(sizeof(TYPE));
                 tpl->type = bt_pointer;
                 tpl->size = getSize(bt_pointer);
                 tpl->btp = sp->tp;
-                ObjType *base = Put(tpl);
-                ObjField *field = factory.MakeField(sp->name, base, -1, index);
+                ObjType* base = Put(tpl);
+                ObjField* field = factory.MakeField(sp->name, base, -1, index);
                 val->Add(field);
             }
             else
             {
-                ObjType *base = Put(sp->tp);
-                ObjField *field = factory.MakeField(sp->name, base, bc->offset, index);
+                ObjType* base = Put(sp->tp);
+                ObjField* field = factory.MakeField(sp->name, base, bc->offset, index);
                 val->Add(field);
             }
             if ((++i % 16) == 0)
@@ -238,8 +233,8 @@ void dbgtypes::StructFields(ObjType::eType sel, ObjType *val, int sz, SYMBOL* pa
         SYMBOL* sp = (SYMBOL*)hr->p;
         if (!istype(sp) && sp->tp->type != bt_aggregate)
         {
-            ObjType *base = Put(sp->tp);
-            ObjField *field = factory.MakeField(sp->name, base, sp->offset, index);
+            ObjType* base = Put(sp->tp);
+            ObjField* field = factory.MakeField(sp->name, base, sp->offset, index);
             val->Add(field);
         }
         if ((++i % 16) == 0)
@@ -248,16 +243,15 @@ void dbgtypes::StructFields(ObjType::eType sel, ObjType *val, int sz, SYMBOL* pa
         }
         hr = hr->next;
     }
-
 }
-void dbgtypes::EnumFields(ObjType *val, ObjType* base, int sz, HASHREC* hr)
+void dbgtypes::EnumFields(ObjType* val, ObjType* base, int sz, HASHREC* hr)
 {
     int index = val->GetIndex();
     int i = 0;
     while (hr)
     {
-        SYMBOL *sym = (SYMBOL *)hr->p;
-        ObjField *field = factory.MakeField(sym->name, base, sym->value.i, index);
+        SYMBOL* sym = (SYMBOL*)hr->p;
+        ObjField* field = factory.MakeField(sym->name, base, sym->value.i, index);
         val->SetConstVal(sym->value.i);
         val->Add(field);
         if ((++i % 16) == 0)
@@ -267,37 +261,37 @@ void dbgtypes::EnumFields(ObjType *val, ObjType* base, int sz, HASHREC* hr)
         hr = hr->next;
     }
 }
-ObjType *dbgtypes::Function(TYPE* tp)
+ObjType* dbgtypes::Function(TYPE* tp)
 {
-    ObjFunction *val = nullptr;
-    ObjType *rv = Put(basetype(tp)->btp);
+    ObjFunction* val = nullptr;
+    ObjType* rv = Put(basetype(tp)->btp);
     int v = 0;
     if (basetype(tp)->sp)
         switch (basetype(tp)->sp->storage_class)
         {
-        case sc_virtual:
-        case sc_member:
-        case sc_mutable:
-            v = 4;  // has a this pointer
-            break;
-        default:
-            switch (basetype(tp)->sp->linkage)
-            {
+            case sc_virtual:
+            case sc_member:
+            case sc_mutable:
+                v = 4;  // has a this pointer
+                break;
             default:
-            case lk_cdecl:
-                v = 1;
+                switch (basetype(tp)->sp->linkage)
+                {
+                    default:
+                    case lk_cdecl:
+                        v = 1;
+                        break;
+                    case lk_stdcall:
+                        v = 2;
+                        break;
+                    case lk_pascal:
+                        v = 3;
+                        break;
+                    case lk_fastcall:
+                        v = 4;
+                        break;
+                }
                 break;
-            case lk_stdcall:
-                v = 2;
-                break;
-            case lk_pascal:
-                v = 3;
-                break;
-            case lk_fastcall:
-                v = 4;
-                break;
-            }
-            break;
         }
     else
         v = 1;
@@ -305,7 +299,7 @@ ObjType *dbgtypes::Function(TYPE* tp)
         v |= 32;  // structured return value
     val = factory.MakeFunction("", rv);
     val->SetLinkage((ObjFunction::eLinkage)v);
-    HASHREC *hr = basetype(tp)->syms->table[0];
+    HASHREC* hr = basetype(tp)->syms->table[0];
     while (hr)
     {
         SYMBOL* s = (SYMBOL*)hr->p;
@@ -313,12 +307,11 @@ ObjType *dbgtypes::Function(TYPE* tp)
         hr = hr->next;
     }
     return val;
-
 }
-ObjType * dbgtypes::ExtendedType(TYPE *tp)
+ObjType* dbgtypes::ExtendedType(TYPE* tp)
 {
     tp = basetype(tp);
-    ObjType *val = nullptr;
+    ObjType* val = nullptr;
     if (tp->type == bt_pointer)
     {
         val = Put(tp->btp);
@@ -378,7 +371,7 @@ ObjType * dbgtypes::ExtendedType(TYPE *tp)
                 sel = ObjType::eStruct;
             }
             val = factory.MakeType(sel);
-            hash[tp] = val; // for self-referencing
+            hash[tp] = val;  // for self-referencing
             if (tp->syms)
                 StructFields(sel, val, tp->size, tp->sp, tp->syms->table[0]);
             else
@@ -395,7 +388,7 @@ ObjType * dbgtypes::ExtendedType(TYPE *tp)
         }
         else  // enum
         {
-            ObjType *base;
+            ObjType* base;
             if (tp->type == bt_enum)
                 if (tp->btp)
                     base = Put(tp->btp);
@@ -410,8 +403,7 @@ ObjType * dbgtypes::ExtendedType(TYPE *tp)
             else
                 EnumFields(val, base, tp->size, NULL);
             val = TypeName(val, tp->sp->decoratedName);
-       }
+        }
     }
     return val;
 }
-

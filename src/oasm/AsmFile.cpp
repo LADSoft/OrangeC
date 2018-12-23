@@ -745,7 +745,7 @@ bool AsmFile::Write(std::string& fileName, std::string& srcName)
     bool rv = true;
     ObjIeeeIndexManager im;
     ObjFactory f(&im);
-    ObjFile* fi =  MakeFile(f, srcName);
+    ObjFile* fi = MakeFile(f, srcName);
     if (fi)
     {
         fi->ResolveSymbols(&f);
@@ -812,7 +812,7 @@ ObjFile* AsmFile::MakeFile(ObjFactory& factory, std::string& name)
                 fi->Add(s);
             }
         }
-        
+
         if (objSections.size())
         {
             for (int i = 0; i < numericLabels.size(); ++i)
@@ -861,7 +861,9 @@ ObjFile* AsmFile::MakeFile(ObjFactory& factory, std::string& name)
         }
         for (int i = 0; i < numericSections.size(); i++)
         {
-            if (!numericSections[i]->MakeData(factory, [this](std::string& aa) { return Lookup(aa); }, [this](std::string& aa) { return GetSectionByName(aa); }, [](ObjFactory&, Section *, Instruction *) {}))
+            if (!numericSections[i]->MakeData(factory, [this](std::string& aa) { return Lookup(aa); },
+                                              [this](std::string& aa) { return GetSectionByName(aa); },
+                                              [](ObjFactory&, Section*, Instruction*) {}))
                 rv = false;
         }
     }

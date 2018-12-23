@@ -30,7 +30,7 @@
 #include "Cursor.h"
 #include "StringTable.h"
 #ifdef WIN32
-#include <windows.h>
+#    include <windows.h>
 #endif
 #include <fstream>
 

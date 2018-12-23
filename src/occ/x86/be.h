@@ -25,8 +25,8 @@
 
 #include "compiler.h"
 #ifdef __cplusplus
-#include "InstructionParser.h"
-#include "x64Instructions.h"
+#    include "InstructionParser.h"
+#    include "x64Instructions.h"
 #endif
 #define live(mask, reg) (mask & (1 << reg))
 
@@ -110,13 +110,13 @@ struct amode
     char length;
     char addrlen;
     char seg;
-    #define e_default 0
-#define         e_cs 1
-#define         e_ds 2
-#define         e_es 3
-#define         e_fs 4
-#define         e_gs 5
-#define         e_ss 6
+#define e_default 0
+#define e_cs 1
+#define e_ds 2
+#define e_es 3
+#define e_fs 4
+#define e_gs 5
+#define e_ss 6
     EXPRESSION* offset;
     int liveRegs;
     int keepesp : 1;
@@ -130,7 +130,7 @@ struct ocode
     struct ocode *fwd, *back;
     enum e_opcode opcode;
     struct amode *oper1, *oper2, *oper3;
-    void *ins;
+    void* ins;
     int size;
     int blocknum;
     char diag;
@@ -273,8 +273,6 @@ enum mode
     fm_threadlocal
 };
 
-
-
 typedef struct _dbgblock
 {
     struct _dbgblock* next;
@@ -311,7 +309,7 @@ enum e_adtype
     e_ad_funcdata,
     e_ad_vfuncdata,
     e_ad_vardata
-} ;
+};
 
 typedef struct _attribdata
 {
@@ -320,7 +318,7 @@ typedef struct _attribdata
     {
         LINEDATA* ld;
         SYMBOL* sp;
-        void *section;
+        void* section;
     } v;
     BOOLEAN start;
 } ATTRIBDATA;

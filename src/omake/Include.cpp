@@ -35,9 +35,9 @@
 #include <string.h>
 #include <algorithm>
 #ifdef GCCLINUX
-#include <unistd.h>
+#    include <unistd.h>
 #else
-#include <io.h>
+#    include <io.h>
 #endif
 
 Include* Include::instance = nullptr;

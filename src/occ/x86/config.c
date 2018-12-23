@@ -228,7 +228,7 @@ static ARCH_FLOAT aflt = {-126, 126, 128, 24};
 static ARCH_FLOAT adbl = {-1022, 1022, 1024, 53};
 static ARCH_FLOAT aldbl = {-16382, 16382, 16384, 64};
 static ARCH_PEEP peeps[] = {0};
-static char fastcallRegs[3] = { ECX, EDX, EAX };
+static char fastcallRegs[3] = {ECX, EDX, EAX};
 static ARCH_CHARACTERISTICS architecture = {
     &alignments, /* alignments */
     0,           /* custom alignment routine */
@@ -248,7 +248,7 @@ static ARCH_CHARACTERISTICS architecture = {
     &regNames[0],                                                        /* defines registers */
     1,                                                                   /* register trees count */
     &regRoot, (ARCH_REGCLASS**)regClasses, &regCosts, allocOrder, peeps, /* defines peephole information */
-    sizeof(fastcallRegs)/sizeof(fastcallRegs[0]),                        /* Max number of regs considered for fastcall */
+    sizeof(fastcallRegs) / sizeof(fastcallRegs[0]),                      /* Max number of regs considered for fastcall */
     fastcallRegs,                                                        /* register list for regs used in fastcall */
     OPT_BYTECOMPARE,                                                     /* preferred optimizations */
     0,                                                                   /* optimizations we don't want */

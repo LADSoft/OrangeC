@@ -36,7 +36,6 @@
 #include <iostream>
 #include "Token.h"
 
-
 static const unsigned mask[32] = {
     0x1,      0x3,      0x7,       0xf,       0x1f,      0x3f,      0x7f,       0xff,       0x1ff,      0x3ff,      0x7ff,
     0xfff,    0x1fff,   0x3fff,    0x7fff,    0xffff,    0x1ffff,   0x3ffff,    0x7ffff,    0xfffff,    0x1fffff,   0x3fffff,
@@ -228,12 +227,12 @@ Instruction* InstructionParser::Parse(const std::string args, int PC)
                 {
                     unsigned char buf[32];
                     bits.GetBytes(buf, 32);
-    #ifdef XXXXX
+#ifdef XXXXX
                     std::cout << std::hex << bits.GetBits() << " ";
                     for (int i = 0; i<bits.GetBits()>> 3; i++)
                         std::cout << std::hex << (int)buf[i] << " ";
                     std::cout << std::endl;
-    #endif
+#endif
                     if (!eol)
                         throw new std::runtime_error("Extra characters at end of line");
                     s = new Instruction(buf, (bits.GetBits() + 7) / 8);
@@ -249,7 +248,8 @@ Instruction* InstructionParser::Parse(const std::string args, int PC)
                                 int n = operand->relOfs;
                                 if (n < 0)
                                     n = -n;
-                                Fixup* f = new Fixup(operand->node, (operand->size + 7) / 8, operand->relOfs != 0, n, operand->relOfs > 0);
+                                Fixup* f =
+                                    new Fixup(operand->node, (operand->size + 7) / 8, operand->relOfs != 0, n, operand->relOfs > 0);
                                 f->SetInsOffs((operand->pos + 7) / 8);
                                 f->SetFileName(errName);
                                 f->SetErrorLine(errLine);
@@ -258,7 +258,7 @@ Instruction* InstructionParser::Parse(const std::string args, int PC)
                         }
                     }
                 }
-                    break;
+                break;
                 case AERR_SYNTAX:
                     throw new std::runtime_error("Syntax error while parsing instruction");
                 case AERR_OPERAND:

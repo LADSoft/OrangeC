@@ -48,7 +48,9 @@ class Section
     }
     virtual ~Section();
     ObjSection* CreateObject(ObjFactory& factory);
-    bool MakeData(ObjFactory& factory, std::function<Label*(std::string&)> Lookup, std::function<ObjSection*(std::string&)> SectLookup, std::function<void(ObjFactory&, Section *, Instruction *)> HandleAlt);
+    bool MakeData(ObjFactory& factory, std::function<Label*(std::string&)> Lookup,
+                  std::function<ObjSection*(std::string&)> SectLookup,
+                  std::function<void(ObjFactory&, Section*, Instruction*)> HandleAlt);
     void Parse(AsmFile* fil);
     void Resolve();
     void SetAlign(int aln) { align = aln; }
@@ -72,7 +74,7 @@ class Section
         delete v;
         instructions.pop_back();
     }
-    std::vector<Instruction *>& GetInstructions() { return instructions; }
+    std::vector<Instruction*>& GetInstructions() { return instructions; }
     void ClearInstructions() { instructions.clear(); }
     int GetSect() { return sect; }
     ObjSection* GetObjectSection() { return objectSection; }
@@ -85,7 +87,8 @@ class Section
     bool HasInstructions() const { return instructions.size() != 0; }
 
   protected:
-    ObjExpression* ConvertExpression(AsmExprNode* node, std::function<Label*(std::string&)> Lookup, std::function<ObjSection *(std::string&)>   SectLookup, ObjFactory& factory);
+    ObjExpression* ConvertExpression(AsmExprNode* node, std::function<Label*(std::string&)> Lookup,
+                                     std::function<ObjSection*(std::string&)> SectLookup, ObjFactory& factory);
     bool SwapSectionIntoPlace(ObjExpression* t);
     void Optimize();
 

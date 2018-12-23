@@ -39,9 +39,9 @@
 #include <stdio.h>
 #include <string.h>
 #ifdef GCCLINUX
-#include <unistd.h>
+#    include <unistd.h>
 #else
-#include <io.h>
+#    include <io.h>
 #endif
 
 int main(int argc, char** argv)

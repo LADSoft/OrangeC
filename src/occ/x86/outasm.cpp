@@ -32,13 +32,12 @@
 
 #define IEEE
 
-extern "C"  ARCH_ASM* chosenAssembler;
+extern "C" ARCH_ASM* chosenAssembler;
 extern "C" int prm_nodos;
 extern "C" int prm_flat;
 extern "C" int fastcallAlias;
-extern "C" SYMBOL *theCurrentFunc;
+extern "C" SYMBOL* theCurrentFunc;
 extern "C" int segAligns[];
-
 
 int skipsize = 0;
 int addsize = 0;
@@ -47,14 +46,14 @@ int addsize = 0;
 
 char segregs[] = "csdsesfsgsss";
 
-extern "C"  int prm_assembler;
+extern "C" int prm_assembler;
 
 static int uses_float;
 
 extern "C" MULDIV* muldivlink = 0;
-static enum e_gt oa_gentype = nogen; /* Current DC type */
-extern "C" enum e_sg oa_currentSeg = noseg;     /* Current seg */
-static int oa_outcol = 0;            /* Curront col (roughly) */
+static enum e_gt oa_gentype = nogen;        /* Current DC type */
+extern "C" enum e_sg oa_currentSeg = noseg; /* Current seg */
+static int oa_outcol = 0;                   /* Curront col (roughly) */
 int newlabel;
 int needpointer;
 static int nosize = 0;
@@ -114,7 +113,8 @@ void putop(enum e_op op, AMODE* aps, AMODE* apd, int nooptx)
                 addsize = TRUE;
                 if (!aps->length)
                     aps->length = ISZ_UINT;
-                if (aps->mode == am_immed && isintconst(aps->offset) && aps->offset->v.i >= CHAR_MIN && aps->offset->v.i <= CHAR_MAX)
+                if (aps->mode == am_immed && isintconst(aps->offset) && aps->offset->v.i >= CHAR_MIN &&
+                    aps->offset->v.i <= CHAR_MAX)
                     aps->length = ISZ_UCHAR;
                 break;
             case op_add:
@@ -131,7 +131,8 @@ void putop(enum e_op op, AMODE* aps, AMODE* apd, int nooptx)
 
                 if (apd)
                 {
-                    if (apd->mode == am_immed && isintconst(apd->offset) && apd->offset->v.i >= CHAR_MIN && apd->offset->v.i <= CHAR_MAX)
+                    if (apd->mode == am_immed && isintconst(apd->offset) && apd->offset->v.i >= CHAR_MIN &&
+                        apd->offset->v.i <= CHAR_MAX)
                         apd->length = ISZ_UCHAR;
                     addsize = apd->length != 0;
                 }
@@ -140,7 +141,6 @@ void putop(enum e_op op, AMODE* aps, AMODE* apd, int nooptx)
                     addsize = TRUE;
                     if (!aps->length)
                         aps->length = ISZ_UINT;
-
                 }
                 break;
             default:
@@ -175,7 +175,7 @@ void putop(enum e_op op, AMODE* aps, AMODE* apd, int nooptx)
             }
         }
     }
-    if (op > sizeof(opcodeTable)/sizeof(opcodeTable[0]))
+    if (op > sizeof(opcodeTable) / sizeof(opcodeTable[0]))
         diag("illegal opcode.");
     else
         outop(opcodeTable[op]);
@@ -647,7 +647,7 @@ void oa_put_code(OCODE* cd)
     {
         if (cd->ins)
         {
-            if ((((Instruction *)cd->ins)->GetData()[0] & 0xf0) == 0x70 || ((Instruction *)cd->ins)->GetData()[0] == 0xeb)
+            if ((((Instruction*)cd->ins)->GetData()[0] & 0xf0) == 0x70 || ((Instruction*)cd->ins)->GetData()[0] == 0xeb)
             {
                 bePrintf("\tshort");
             }
@@ -662,7 +662,7 @@ void oa_put_code(OCODE* cd)
     {
         if (cd->ins)
         {
-            if (((Instruction *)cd->ins)->GetData()[0] == 0xeb)
+            if (((Instruction*)cd->ins)->GetData()[0] == 0xeb)
             {
                 bePrintf("\tshort");
                 nosize = TRUE;
@@ -708,7 +708,6 @@ void oa_put_code(OCODE* cd)
         }
     }
     bePrintf("\n");
-
 }
 
 /*-------------------------------------------------------------------------*/
@@ -1279,11 +1278,10 @@ void oa_gen_virtual(SYMBOL* sp, int data)
                     bePrintf("\tsection vsd%s virtual\n", sp->decoratedName);
                 else
                     bePrintf("\tsection vsc%s virtual\n", sp->decoratedName);
+            else if (virtual_mode)
+                bePrintf("\tsection vsd@%s virtual\n", sp->decoratedName);
             else
-                if (virtual_mode)
-                    bePrintf("\tsection vsd@%s virtual\n", sp->decoratedName);
-                else
-                    bePrintf("\tsection vsc@%s virtual\n", sp->decoratedName);
+                bePrintf("\tsection vsc@%s virtual\n", sp->decoratedName);
 #else
             bePrintf("\tSECTION @%s VIRTUAL\n", sp->decoratedName);
 #endif
@@ -1342,16 +1340,15 @@ void oa_align(int size)
 }
 void oa_setalign(int code, int data, int bss, int constant)
 {
-	if (code > 0)
-		segAligns[codeseg] = code;
-	if (data > 0)
-		segAligns[dataseg] = data;
-	if (bss > 0)
-		segAligns[bssxseg] = bss;
-	if (constant > 0)
-		segAligns[constseg] = constant;
+    if (code > 0)
+        segAligns[codeseg] = code;
+    if (data > 0)
+        segAligns[dataseg] = data;
+    if (bss > 0)
+        segAligns[bssxseg] = bss;
+    if (constant > 0)
+        segAligns[constseg] = constant;
 }
-
 
 /*
  * queue muldiv val
@@ -1368,7 +1365,7 @@ long queue_muldivval(long number)
             p = p->next;
         }
     }
-    p = (MULDIV *)beGlobalAlloc(sizeof(MULDIV));
+    p = (MULDIV*)beGlobalAlloc(sizeof(MULDIV));
     p->next = 0;
     p->value = number;
     p->size = 0;
@@ -1392,7 +1389,7 @@ long queue_floatval(FPFC* number, int size)
             p = p->next;
         }
     }
-    p = (MULDIV *)beGlobalAlloc(sizeof(MULDIV));
+    p = (MULDIV*)beGlobalAlloc(sizeof(MULDIV));
     p->next = 0;
     p->floatvalue = *number;
     p->size = size;
@@ -1497,7 +1494,7 @@ char asmfile[256];
 char compilerversion[256];
 void oa_header(char* filename, char* compiler_version)
 {
-    strcpy(asmfile,filename);
+    strcpy(asmfile, filename);
     strcpy(compilerversion, compiler_version);
     oa_nl();
     bePrintf(";File %s\n", filename);

@@ -149,7 +149,7 @@ char* Lexer::preData =
     "__SECT__\n"
     "%endmacro\n";
 
-void Instruction::Optimize(Section *sect, int pc, bool last)
+void Instruction::Optimize(Section* sect, int pc, bool last)
 {
     if (data && size >= 3 && data[0] == 0x0f && data[1] == 0x0f && (data[2] == 0x9a || data[2] == 0xea))
     {
@@ -269,7 +269,7 @@ void Instruction::Optimize(Section *sect, int pc, bool last)
                                 {
                                     if (last)
                                     {
-//                                        Errors::IncrementCount();
+                                        //                                        Errors::IncrementCount();
                                         std::cout << "Warning " << fixup->GetFileName().c_str() << "(" << fixup->GetErrorLine()
                                                   << "):"
                                                   << "Value out of range" << std::endl;
@@ -344,18 +344,12 @@ int x64Parser::DoMath(char op, int left, int right)
             return left;
     }
 }
-void x64Parser::Setup(Section* sect) 
+void x64Parser::Setup(Section* sect)
 {
     if (sect->beValues[0] == 0)
-    	sect->beValues[0] = 32; // 32 bit mode is the default 
-	Setprocessorbits(sect->beValues[0]); 
+        sect->beValues[0] = 32;  // 32 bit mode is the default
+    Setprocessorbits(sect->beValues[0]);
 }
 
-bool x64Parser::ParseSection(AsmFile* fil, Section* sect)
-{
-    return false;
-}
-bool x64Parser::ParseDirective(AsmFile* fil, Section* sect)
-{
-    return false;
-}
+bool x64Parser::ParseSection(AsmFile* fil, Section* sect) { return false; }
+bool x64Parser::ParseDirective(AsmFile* fil, Section* sect) { return false; }

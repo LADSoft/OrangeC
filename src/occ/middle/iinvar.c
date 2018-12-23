@@ -282,7 +282,7 @@ void ScanForInvariants(BLOCK* b)
                                 }
                             }
                         }
-                        
+                        
                     }
                 }
                 */

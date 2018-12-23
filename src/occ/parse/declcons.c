@@ -642,7 +642,7 @@ SYMBOL* getCopyCons(SYMBOL* base, BOOLEAN move)
                 {
                     tp = basetype(tp->btp);
                     if (isstructured(tp))
-                    {                        
+                    {
                         if (!base->tp->sp)
                         {
                             hr = hr->next;
@@ -3063,30 +3063,30 @@ BOOLEAN callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, BOOLE
     }
     return FALSE;
 }
-BOOLEAN callConstructorParam(TYPE** tp, EXPRESSION** exp, TYPE *paramTP, EXPRESSION *paramExp, BOOLEAN top,
-    BOOLEAN maybeConversion, BOOLEAN implicit, BOOLEAN pointer)
+BOOLEAN callConstructorParam(TYPE** tp, EXPRESSION** exp, TYPE* paramTP, EXPRESSION* paramExp, BOOLEAN top, BOOLEAN maybeConversion,
+                             BOOLEAN implicit, BOOLEAN pointer)
 {
-    FUNCTIONCALL *params = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+    FUNCTIONCALL* params = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
     if (paramTP && paramExp)
     {
-        params->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
+        params->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
         params->arguments->tp = paramTP;
         params->arguments->exp = paramExp;
     }
     return callConstructor(tp, exp, params, FALSE, NULL, top, maybeConversion, implicit, pointer, FALSE);
 }
 
-void PromoteConstructorArgs(SYMBOL *cons1, FUNCTIONCALL *params)
+void PromoteConstructorArgs(SYMBOL* cons1, FUNCTIONCALL* params)
 {
     HASHREC* hr = basetype(cons1->tp)->syms->table[0];
     if (((SYMBOL*)hr->p)->thisPtr)
         hr = hr->next;
-    INITLIST *args = params->arguments;
+    INITLIST* args = params->arguments;
     while (hr && args)
     {
-        SYMBOL *sp = (SYMBOL *)hr->p;
-        TYPE *tps = basetype(sp->tp);
-        TYPE *tpa = basetype(args->tp);
+        SYMBOL* sp = (SYMBOL*)hr->p;
+        TYPE* tps = basetype(sp->tp);
+        TYPE* tpa = basetype(args->tp);
         if (isarithmetic(tps) && isarithmetic(tpa))
         {
             if (tps->type > bt_int && tps->type != tpa->type)
@@ -3095,5 +3095,4 @@ void PromoteConstructorArgs(SYMBOL *cons1, FUNCTIONCALL *params)
         hr = hr->next;
         args = args->next;
     }
-
 }

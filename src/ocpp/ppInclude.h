@@ -93,8 +93,9 @@ class ppInclude
     void Mark() { current->Mark(); }
     void Drop() { current->Drop(); }
     void Release() { current->Release(); }
-    static bool has_include(const std::string &args);
+    static bool has_include(const std::string& args);
     void ForceEOF() { forcedEOF = true; }
+
   protected:
     void StripAsmComment(std::string& line);
     bool CheckInclude(int token, const std::string& line);

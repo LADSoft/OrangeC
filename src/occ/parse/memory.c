@@ -77,7 +77,7 @@ static MEMBLK* galloc(MEMBLK** arena, int size)
         static HANDLE heap;
         if (!heap)
             heap = HeapCreate(HEAP_NO_SERIALIZE, 0, 0);
-        selected = (MEMBLK *) HeapAlloc(heap, 0, allocsize + sizeof(MEMBLK) - 1);
+        selected = (MEMBLK*)HeapAlloc(heap, 0, allocsize + sizeof(MEMBLK) - 1);
 #else
         selected = (MEMBLK*)malloc(allocsize + sizeof(MEMBLK) - 1);
 #endif
@@ -174,7 +174,7 @@ int GetGlobalFlag(void) { return globalFlag; }
 char* litlate(char* name)
 {
     int l;
-    char* rv = (char *)Alloc((l = strlen(name)) + 1);
+    char* rv = (char*)Alloc((l = strlen(name)) + 1);
     memcpy(rv, name, l);
     return rv;
 }

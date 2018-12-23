@@ -78,7 +78,4 @@ void bePrintf(char* format, ...)
     vfprintf(outputFile, format, arg);
     va_end(arg);
 }
-void beRewind(void)
-{
-    fseek(outputFile, 0, SEEK_SET);
-}
+void beRewind(void) { fseek(outputFile, 0, SEEK_SET); }

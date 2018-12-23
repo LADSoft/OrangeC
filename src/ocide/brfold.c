@@ -35,8 +35,8 @@ static char tempPath[MAX_PATH];
 
 #ifdef GCCLINUX
 
-const IID IID_IShellLinkA = { 0 };
-const IID IID_IShellFolder = { 0 };
+const IID IID_IShellLinkA = {0};
+const IID IID_IShellFolder = {0};
 
 #endif
 // Macros for interface casts

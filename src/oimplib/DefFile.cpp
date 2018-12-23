@@ -47,10 +47,7 @@ static bool IsSymbolChar(const char* data)
     return *data == '_' || *data == '$' || *data == '#' || *data == '@' || *data == '~' || *data == '?' || *data == '.' ||
            UTF8::IsAlnum(data);
 }
-static bool IsSymbolChar(const char *data, bool start)
-{
-    return start ? IsSymbolStartChar(data) : IsSymbolChar(data);
-}
+static bool IsSymbolChar(const char* data, bool start) { return start ? IsSymbolStartChar(data) : IsSymbolChar(data); }
 DefFile::~DefFile()
 {
     while (exports.size())

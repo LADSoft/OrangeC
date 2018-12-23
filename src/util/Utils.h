@@ -49,6 +49,6 @@ class Utils
     static unsigned PartialCRC32(unsigned crc, unsigned char* data, size_t len);
     static unsigned CRC32(unsigned char* data, size_t len);
 
-    static unsigned crctab[256]; 
+    static unsigned crctab[256];
 };
 #endif

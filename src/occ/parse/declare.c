@@ -286,7 +286,7 @@ void InsertSymbol(SYMBOL* sp, enum e_sc storage_class, enum e_lk linkage, BOOLEA
     }
 }
 LEXEME* tagsearch(LEXEME* lex, char* name, SYMBOL** rsp, HASHTABLE** table, SYMBOL** strSym_out, NAMESPACEVALUES** nsv_out,
-                         enum e_sc storage_class)
+                  enum e_sc storage_class)
 {
     NAMESPACEVALUES* nsv = NULL;
     SYMBOL* strSym = NULL;
@@ -2040,7 +2040,7 @@ static LEXEME* getLinkageQualifiers(LEXEME* lex, enum e_lk* linkage, enum e_lk* 
     }
     return lex;
 }
-LEXEME* getQualifiers(LEXEME* lex, TYPE** tp, enum e_lk* linkage, enum e_lk* linkage2, enum e_lk* linkage3, BOOLEAN *asFriend)
+LEXEME* getQualifiers(LEXEME* lex, TYPE** tp, enum e_lk* linkage, enum e_lk* linkage2, enum e_lk* linkage3, BOOLEAN* asFriend)
 {
     while (KWTYPE(lex, (TT_TYPEQUAL | TT_LINKAGE)))
     {
@@ -5027,7 +5027,7 @@ static LEXEME* getStorageAndType(LEXEME* lex, SYMBOL* funcsp, SYMBOL** strSym, B
                                  enum e_sc* storage_class, enum e_sc* storage_class_in, ADDRESS* address, BOOLEAN* blocked,
                                  BOOLEAN* isExplicit, BOOLEAN* constexpression, TYPE** tp, enum e_lk* linkage, enum e_lk* linkage2,
                                  enum e_lk* linkage3, enum e_ac access, BOOLEAN* notype, BOOLEAN* defd, int* consdest,
-                                 BOOLEAN* templateArg, BOOLEAN *asFriend)
+                                 BOOLEAN* templateArg, BOOLEAN* asFriend)
 {
     BOOLEAN foundType = FALSE;
     BOOLEAN first = TRUE;

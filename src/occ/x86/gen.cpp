@@ -56,7 +56,7 @@ static int switchTreePos;
 /* map the icode version of the regs to the processor version */
 extern "C" int regmap[REG_MAX][2];
 
-BOOLEAN BackendIntrinsic(QUAD *q);
+BOOLEAN BackendIntrinsic(QUAD* q);
 //-------------------------------------------------------------------------
 
 AMODE* make_muldivval(AMODE* ap)
@@ -75,10 +75,10 @@ AMODE* make_label(int lab)
 {
     EXPRESSION* lnode;
     AMODE* ap;
-    lnode = (EXPRESSION *)beLocalAlloc(sizeof(EXPRESSION));
+    lnode = (EXPRESSION*)beLocalAlloc(sizeof(EXPRESSION));
     lnode->type = en_labcon;
     lnode->v.i = lab;
-    ap = (AMODE *)beLocalAlloc(sizeof(AMODE));
+    ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
     ap->mode = am_immed;
     ap->offset = lnode;
     ap->length = ISZ_UINT;
@@ -89,7 +89,7 @@ AMODE* make_label(int lab)
 
 AMODE* makesegreg(int seg)
 {
-    AMODE* ap = (AMODE *)beLocalAlloc(sizeof(AMODE));
+    AMODE* ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
     ap->mode = am_seg;
     ap->seg = seg;
     ap->length = ISZ_SEG;
@@ -113,10 +113,10 @@ AMODE* aimmed(ULLONG_TYPE i)
     AMODE* ap;
     EXPRESSION* ep;
     i &= 0xffffffffU;
-    ep = (EXPRESSION *)beLocalAlloc(sizeof(EXPRESSION));
+    ep = (EXPRESSION*)beLocalAlloc(sizeof(EXPRESSION));
     ep->type = en_c_i;
     ep->v.i = i;
-    ap = (AMODE *)beLocalAlloc(sizeof(AMODE));
+    ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
     ap->mode = am_immed;
     ap->offset = ep;
     ap->length = ISZ_ADDR;
@@ -174,7 +174,7 @@ AMODE* make_offset(EXPRESSION* node)
  */
 {
     AMODE* ap;
-    ap = (AMODE *)beLocalAlloc(sizeof(AMODE));
+    ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
     if (node->type == en_tempref)
     {
         diag("make_offset: orignode");
@@ -194,8 +194,8 @@ AMODE* make_offset(EXPRESSION* node)
 
 AMODE* make_stack(int number)
 {
-    AMODE* ap = (AMODE *)beLocalAlloc(sizeof(AMODE));
-    EXPRESSION* ep = (EXPRESSION *)beLocalAlloc(sizeof(EXPRESSION));
+    AMODE* ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
+    EXPRESSION* ep = (EXPRESSION*)beLocalAlloc(sizeof(EXPRESSION));
     ep->type = en_c_i;
     ep->v.i = -number;
     ap->mode = am_indisp;
@@ -207,12 +207,12 @@ AMODE* make_stack(int number)
 }
 AMODE* fstack(void)
 {
-    AMODE* ap = (AMODE *)beLocalAlloc(sizeof(AMODE));
+    AMODE* ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
     ap->mode = am_freg;
     ap->length = ISZ_LDOUBLE;
     ap->preg = 0;
     ap->sreg = 0;
-    ap->offset = (EXPRESSION *)fstackid;
+    ap->offset = (EXPRESSION*)fstackid;
     ap->tempflag = TRUE;
     return (ap);
 }
@@ -1314,8 +1314,8 @@ void gen_xset(QUAD* q, enum e_opcode pos, enum e_opcode neg, enum e_opcode flt)
             gen_codes(op_and, ISZ_UINT, apal, aimmed(1));
     }
 }
-void gen_goto(QUAD* q, enum e_opcode pos, enum e_opcode neg, enum e_opcode llpos, enum e_opcode llneg, enum e_opcode llintermpos, enum e_opcode llintermneg,
-              enum e_opcode flt)
+void gen_goto(QUAD* q, enum e_opcode pos, enum e_opcode neg, enum e_opcode llpos, enum e_opcode llneg, enum e_opcode llintermpos,
+              enum e_opcode llintermneg, enum e_opcode flt)
 {
     enum e_opcode sop = pos, sop1 = llpos, top = llneg, top1 = llintermpos, opa;
     IMODE* left = q->dc.left;
@@ -1792,14 +1792,14 @@ static void compactSwitchHeader(LLONG_TYPE bottom)
     }
 
     peep_tail->noopt = TRUE;
-    lnode = (EXPRESSION *)beLocalAlloc(sizeof(EXPRESSION));
+    lnode = (EXPRESSION*)beLocalAlloc(sizeof(EXPRESSION));
     lnode->type = en_labcon;
     lnode->v.i = tablab;
     if (bottom)
     {
         lnode = exprNode(en_add, lnode, intNode(en_c_i, -bottom * 4));
     }
-    ap = (AMODE *)beLocalAlloc(sizeof(AMODE));
+    ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
     ap->mode = am_indispscale;
     ap->preg = -1;
     ap->scale = 2;
@@ -1856,33 +1856,33 @@ int getPushMask(int i)
 }
 void asm_line(QUAD* q) /* line number information and text */
 {
-    OCODE* newitem = (OCODE *)beLocalAlloc(sizeof(OCODE));
+    OCODE* newitem = (OCODE*)beLocalAlloc(sizeof(OCODE));
     newitem->opcode = (e_opcode)op_line;
     newitem->oper1 = (AMODE*)(q->dc.left); /* line data */
     add_peep(newitem);
 }
 void asm_blockstart(QUAD* q) /* line number information and text */
 {
-    OCODE* newitem = (OCODE *)beLocalAlloc(sizeof(OCODE));
+    OCODE* newitem = (OCODE*)beLocalAlloc(sizeof(OCODE));
     newitem->opcode = (e_opcode)op_blockstart;
     add_peep(newitem);
 }
 void asm_blockend(QUAD* q) /* line number information and text */
 {
-    OCODE* newitem = (OCODE *)beLocalAlloc(sizeof(OCODE));
+    OCODE* newitem = (OCODE*)beLocalAlloc(sizeof(OCODE));
     newitem->opcode = (e_opcode)op_blockend;
     add_peep(newitem);
 }
 void asm_varstart(QUAD* q) /* line number information and text */
 {
-    OCODE* newitem = (OCODE *)beLocalAlloc(sizeof(OCODE));
+    OCODE* newitem = (OCODE*)beLocalAlloc(sizeof(OCODE));
     newitem->opcode = (e_opcode)op_varstart;
     newitem->oper1 = (AMODE*)(q->dc.left->offset->v.sp); /* line data */
     add_peep(newitem);
 }
 void asm_func(QUAD* q) /* line number information and text */
 {
-    OCODE* newitem =(OCODE *) beLocalAlloc(sizeof(OCODE));
+    OCODE* newitem = (OCODE*)beLocalAlloc(sizeof(OCODE));
     newitem->opcode = (e_opcode)(q->dc.v.label ? op_funcstart : op_funcend);
     newitem->oper1 = (AMODE*)(q->dc.left->offset->v.sp); /* line data */
     add_peep(newitem);
@@ -1932,7 +1932,7 @@ void asm_passthrough(QUAD* q) /* reserved */
 void asm_datapassthrough(QUAD* q) /* reserved */ { (void)q; }
 void asm_label(QUAD* q) /* put a label in the code stream */
 {
-    OCODE* out = (OCODE *)beLocalAlloc(sizeof(OCODE));
+    OCODE* out = (OCODE*)beLocalAlloc(sizeof(OCODE));
     out->opcode = (e_opcode)op_label;
     out->oper1 = (AMODE*)q->dc.v.label;
     add_peep(out);
@@ -2265,19 +2265,19 @@ void asm_gosub(QUAD* q) /* normal gosub to an immediate label or through a var *
         {
             switch (q->novalue)
             {
-            case ISZ_CFLOAT:
-            case ISZ_CDOUBLE:
-            case ISZ_CLDOUBLE:
-                gen_codes(op_fstp, ISZ_LDOUBLE, makefreg(0), 0);
-                // fall through
-            case ISZ_FLOAT:
-            case ISZ_DOUBLE:
-            case ISZ_LDOUBLE:
-            case ISZ_IFLOAT:
-            case ISZ_IDOUBLE:
-            case ISZ_ILDOUBLE:
-                gen_codes(op_fstp, ISZ_LDOUBLE, makefreg(0), 0);
-                break;
+                case ISZ_CFLOAT:
+                case ISZ_CDOUBLE:
+                case ISZ_CLDOUBLE:
+                    gen_codes(op_fstp, ISZ_LDOUBLE, makefreg(0), 0);
+                    // fall through
+                case ISZ_FLOAT:
+                case ISZ_DOUBLE:
+                case ISZ_LDOUBLE:
+                case ISZ_IFLOAT:
+                case ISZ_IDOUBLE:
+                case ISZ_ILDOUBLE:
+                    gen_codes(op_fstp, ISZ_LDOUBLE, makefreg(0), 0);
+                    break;
             }
         }
     }
@@ -4199,7 +4199,7 @@ void asm_unloadcontext(QUAD* q) /* load register context (e.g. at interrupt leve
 }
 void asm_tryblock(QUAD* q) /* try/catch */
 {
-    AMODE* ap1 = (AMODE *)beLocalAlloc(sizeof(AMODE));
+    AMODE* ap1 = (AMODE*)beLocalAlloc(sizeof(AMODE));
     ap1->mode = am_indisp;
     if (usingEsp)
     {
@@ -4399,7 +4399,7 @@ void asm_atomic(QUAD* q)
                                         zf              nz
                                         true            false
                 rm32       eax        rm32      reg     eax        rm32
-                
+                
 
 
 

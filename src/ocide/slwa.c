@@ -1163,7 +1163,7 @@ void RestoreProfileNames(struct xmlNode* node, int version, PROJECTITEM* wa)
 
 // this is in here because sometimes the IDE corrupts the docks portion of the file
 // detect it on power up and leave the windows in their default state if it is corrupt
-BOOLEAN ValidateDocks(struct xmlNode *node, int version)
+BOOLEAN ValidateDocks(struct xmlNode* node, int version)
 {
     node = node->children;
     while (node)

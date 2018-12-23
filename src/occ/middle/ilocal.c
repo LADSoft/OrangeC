@@ -53,7 +53,7 @@ int tempBottom, nextTemp;
 
 int fastcallAlias;
 
-static void CalculateFastcall(SYMBOL *funcsp)
+static void CalculateFastcall(SYMBOL* funcsp)
 {
 #ifndef CPPTHISCALL
     if (funcsp->linkage != lk_fastcall)
@@ -63,10 +63,10 @@ static void CalculateFastcall(SYMBOL *funcsp)
     fastcallAlias = 0;
     if (chosenAssembler->arch->fastcallRegCount)
     {
-        HASHREC *hr = basetype(funcsp->tp)->syms->table[0];
+        HASHREC* hr = basetype(funcsp->tp)->syms->table[0];
         while (hr)
         {
-            SYMBOL *sp = (SYMBOL *)hr->p;
+            SYMBOL* sp = (SYMBOL*)hr->p;
             if (sp->thisPtr)
             {
                 fastcallAlias++;
@@ -77,11 +77,11 @@ static void CalculateFastcall(SYMBOL *funcsp)
                     break;
                 if (fastcallAlias >= chosenAssembler->arch->fastcallRegCount)
                     break;
-                TYPE *tp = basetype(sp->tp);
-                
-                if  ((tp->type < bt_float ||
-                    (tp->type == bt_pointer && basetype(basetype(tp)->btp)->type != bt_func) || isref(tp)) &&
-                        (sp->storage_class == sc_parameter))
+                TYPE* tp = basetype(sp->tp);
+
+                if ((tp->type < bt_float || (tp->type == bt_pointer && basetype(basetype(tp)->btp)->type != bt_func) ||
+                     isref(tp)) &&
+                    (sp->storage_class == sc_parameter))
                 {
                     if (sp->tp->size > chosenAssembler->arch->parmwidth)
                         break;
@@ -136,13 +136,15 @@ static void renameOneSym(SYMBOL* sp, BOOLEAN structret)
         tp = tp->btp;
     tp = basetype(tp);
 
-    BOOLEAN fastcallCandidate = sp->storage_class == sc_parameter && fastcallAlias &&
+    BOOLEAN fastcallCandidate =
+        sp->storage_class == sc_parameter && fastcallAlias &&
         (sp->offset - fastcallAlias * chosenAssembler->arch->parmwidth < chosenAssembler->arch->retblocksize);
 
     if (!sp->pushedtotemp && (!sp->imaddress || fastcallCandidate) && !sp->inasm && (!sp->inCatch || fastcallCandidate) &&
         (((chosenAssembler->arch->hasFloatRegs || tp->type < bt_float) && tp->type < bt_void) ||
-        (tp->type == bt_pointer && basetype(basetype(tp)->btp)->type != bt_func) || isref(tp)) &&
-            (sp->storage_class == sc_auto || sp->storage_class == sc_register || sp->storage_class == sc_parameter) && (!sp->usedasbit || fastcallCandidate))
+         (tp->type == bt_pointer && basetype(basetype(tp)->btp)->type != bt_func) || isref(tp)) &&
+        (sp->storage_class == sc_auto || sp->storage_class == sc_register || sp->storage_class == sc_parameter) &&
+        (!sp->usedasbit || fastcallCandidate))
     {
         /* this works because all IMODES refering to the same
          * variable are the same, at least until this point
@@ -152,7 +154,7 @@ static void renameOneSym(SYMBOL* sp, BOOLEAN structret)
         EXPRESSION* ep;
         if (sp->imaddress || sp->inCatch)
         {
-            ep = anonymousVar(sc_auto, sp->tp); // fastcall which takes an address
+            ep = anonymousVar(sc_auto, sp->tp);  // fastcall which takes an address
         }
         else
         {
@@ -173,8 +175,9 @@ static void renameOneSym(SYMBOL* sp, BOOLEAN structret)
             {
                 // for fastcall, rename the affected parameter nodes with
                 // a temp.   It will later be precolored...
-                if (sp->offset - (fastcallAlias + structret) * chosenAssembler->arch->parmwidth < chosenAssembler->arch->retblocksize
-                    && (!structret || sp->offset != chosenAssembler->arch->retblocksize))
+                if (sp->offset - (fastcallAlias + structret) * chosenAssembler->arch->parmwidth <
+                        chosenAssembler->arch->retblocksize &&
+                    (!structret || sp->offset != chosenAssembler->arch->retblocksize))
                 {
                     parmName = tempreg(sp->imvalue->size, 0);
                     dofastcall = TRUE;
@@ -184,7 +187,6 @@ static void renameOneSym(SYMBOL* sp, BOOLEAN structret)
                     parmName = (IMODE*)Alloc(sizeof(IMODE));
                     *parmName = *sp->imvalue;
                 }
-
             }
             else
             {
@@ -226,7 +228,8 @@ static void renameOneSym(SYMBOL* sp, BOOLEAN structret)
             if (dofastcall)
             {
                 intermed_tail->alwayslive = TRUE;
-                intermed_tail->fastcall = -(sp->offset - chosenAssembler->arch->retblocksize) / chosenAssembler->arch->parmwidth - 1 + structret;
+                intermed_tail->fastcall =
+                    -(sp->offset - chosenAssembler->arch->retblocksize) / chosenAssembler->arch->parmwidth - 1 + structret;
             }
             q = intermed_tail;
             q->back->fwd = NULL;

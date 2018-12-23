@@ -33,25 +33,26 @@ class ObjFile;
 
 class dbgtypes
 {
-public:
-    dbgtypes(ObjFactory &Factory, ObjFile *FI) : factory(Factory), fi(FI) { }
-    ObjType *Put(TYPE *tp);
-    void OutputTypedef(SYMBOL *sp);
-protected:
-    ObjType *Lookup(TYPE *tp);
-    ObjType *BasicType(TYPE* tp);
-    ObjType *TypeName(ObjType *val, char* nm);
-    void StructFields(ObjType::eType sel, ObjType *val, int sz, SYMBOL* parent, HASHREC* hr);
-    void EnumFields(ObjType *val, ObjType *base, int sz, HASHREC* hr);
-    ObjType *Function(TYPE* tp);
-    ObjType* ExtendedType(TYPE *tp);
-private:
+  public:
+    dbgtypes(ObjFactory& Factory, ObjFile* FI) : factory(Factory), fi(FI) {}
+    ObjType* Put(TYPE* tp);
+    void OutputTypedef(SYMBOL* sp);
+
+  protected:
+    ObjType* Lookup(TYPE* tp);
+    ObjType* BasicType(TYPE* tp);
+    ObjType* TypeName(ObjType* val, char* nm);
+    void StructFields(ObjType::eType sel, ObjType* val, int sz, SYMBOL* parent, HASHREC* hr);
+    void EnumFields(ObjType* val, ObjType* base, int sz, HASHREC* hr);
+    ObjType* Function(TYPE* tp);
+    ObjType* ExtendedType(TYPE* tp);
+
+  private:
     struct typecompare
     {
-        bool operator ()(const TYPE *left, const TYPE *right) const;
+        bool operator()(const TYPE* left, const TYPE* right) const;
     };
-    std::map<TYPE *, ObjType*, typecompare> hash;
+    std::map<TYPE*, ObjType*, typecompare> hash;
     ObjFactory& factory;
     ObjFile* fi;
 };
-

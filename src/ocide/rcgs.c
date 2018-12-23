@@ -1113,7 +1113,7 @@ void getsym(void)
     {
         getid();
         if (!needingID)
-           searchkw();
+            searchkw();
     }
     else
         getsym2();

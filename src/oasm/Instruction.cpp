@@ -41,7 +41,7 @@ Instruction::~Instruction()
         delete f;
     }
 }
-unsigned char * Instruction::LoadData(bool isCode, unsigned char *data, size_t size)
+unsigned char* Instruction::LoadData(bool isCode, unsigned char* data, size_t size)
 {
 #ifdef x64
     bool found = !isCode;
@@ -49,9 +49,9 @@ unsigned char * Instruction::LoadData(bool isCode, unsigned char *data, size_t s
     bool found = true;
 #endif
     unsigned char *d = new unsigned char[size], *rv = d;
-    for (unsigned char *s=data; size; size--)
+    for (unsigned char* s = data; size; size--)
     {
-        if (found || (*s & 0xf0) != 0x40)// null REX prefix
+        if (found || (*s & 0xf0) != 0x40)  // null REX prefix
             *d++ = *s++;
         else
         {

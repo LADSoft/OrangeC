@@ -720,7 +720,8 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr)
             if (line[p] == waiting && NotSlashed(line, p))
                 waiting = 0;
         }
-        else if (Tokenizer::Tokenizer::Tokenizer::IsSymbolChar(line.c_str() + p, true) && (p == begin || line[p - 1] == '$' || !Tokenizer::Tokenizer::Tokenizer::IsSymbolChar(line.c_str() + p - 1, false)))
+        else if (Tokenizer::Tokenizer::Tokenizer::IsSymbolChar(line.c_str() + p, true) &&
+                 (p == begin || line[p - 1] == '$' || !Tokenizer::Tokenizer::Tokenizer::IsSymbolChar(line.c_str() + p - 1, false)))
         {
             name = defid(line, q, p);
             Symbol* sym = symtab.Lookup(name);
@@ -944,7 +945,8 @@ void ppDefine::ParseAsmSubstitutions(std::string& line)
                 }
                 else if (n == 0)
                 {
-                    if ((n < line.size() - 2) && line[n + 1] == '$' && Tokenizer::Tokenizer::Tokenizer::IsSymbolChar(line.c_str() + n + 2, true))
+                    if ((n < line.size() - 2) && line[n + 1] == '$' &&
+                        Tokenizer::Tokenizer::Tokenizer::IsSymbolChar(line.c_str() + n + 2, true))
                     {
                         int n1 = ctx->GetTopId();
                         if (n1 != -1)

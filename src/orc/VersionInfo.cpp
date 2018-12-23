@@ -27,7 +27,7 @@
 #include "ResFile.h"
 #include "RCFile.h"
 #ifndef GCCLINUX
-#include <windows.h>
+#    include <windows.h>
 #endif
 #include <stdexcept>
 

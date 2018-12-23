@@ -26,12 +26,12 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #ifdef GCCLINUX
-#include <unistd.h>
+#    include <unistd.h>
 #else
-#include <windows.h>
-#define __MT__  // BCC55 support
-#include <process.h>
-#include <direct.h>
+#    include <windows.h>
+#    define __MT__  // BCC55 support
+#    include <process.h>
+#    include <direct.h>
 #endif
 #undef WriteConsole
 #include <stdio.h>
@@ -110,10 +110,10 @@ bool Time::operator>(const Time& last)
             return true;
     return false;
 }
-void OS::Init() 
-{ 
+void OS::Init()
+{
 #ifdef _WIN32
-	InitializeCriticalSection(&consoleSync); 
+    InitializeCriticalSection(&consoleSync);
 #endif
 }
 void OS::WriteConsole(std::string string)
@@ -168,10 +168,10 @@ bool OS::TakeJob()
 #endif
     return false;
 }
-void OS::GiveJob() 
-{ 
+void OS::GiveJob()
+{
 #ifdef _WIN32
-    ReleaseSemaphore(jobsSemaphore, 1, nullptr); 
+    ReleaseSemaphore(jobsSemaphore, 1, nullptr);
 #endif
 }
 void OS::JobInit()
@@ -197,22 +197,22 @@ void OS::JobInit()
     jobsSemaphore = CreateSemaphore(nullptr, jobsLeft, jobsLeft, name.c_str());
 #endif
 }
-void OS::JobRundown() 
+void OS::JobRundown()
 {
-#ifdef _WIN32 
-    CloseHandle(jobsSemaphore); 
+#ifdef _WIN32
+    CloseHandle(jobsSemaphore);
 #endif
 }
-void OS::Take() 
-{ 
+void OS::Take()
+{
 #ifdef _WIN32
-    EnterCriticalSection(&consoleSync); 
+    EnterCriticalSection(&consoleSync);
 #endif
 }
-void OS::Give() 
-{ 
+void OS::Give()
+{
 #ifdef _WIN32
-    LeaveCriticalSection(&consoleSync); 
+    LeaveCriticalSection(&consoleSync);
 #endif
 }
 int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::string* output)
@@ -375,9 +375,9 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         CloseHandle(pipeWriteDuplicate);
     }
     delete[] env;
-#ifdef DEBUG
+#    ifdef DEBUG
     std::cout << rv << ":" << cmd << std::endl;
-#endif
+#    endif
     return rv;
 #else
     return -1;
@@ -486,7 +486,6 @@ Time OS::GetFileTime(const std::string fileName)
 #endif
     Time rv;
     return rv;
-
 }
 void OS::SetFileTime(const std::string fileName, Time time)
 {
@@ -564,9 +563,9 @@ void OS::CreateThread(void* func, void* data)
     CloseHandle((HANDLE)_beginthreadex(nullptr, 0, (unsigned(CALLBACK*)(void*))func, data, 0, NULL));
 #endif
 }
-void OS::Yield() 
-{ 
+void OS::Yield()
+{
 #ifdef _WIN32
-    ::Sleep(10); 
+    ::Sleep(10);
 #endif
 }

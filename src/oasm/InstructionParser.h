@@ -38,11 +38,19 @@ class Instruction;
 class Section;
 class AsmFile;
 
-struct ocode; // compiler support
-struct expr; // compiler support
-struct amode; // compiler support
+struct ocode;  // compiler support
+struct expr;   // compiler support
+struct amode;  // compiler support
 
-enum asmError { AERR_NONE, AERR_SYNTAX, AERR_OPERAND, AERR_BADCOMBINATIONOFOPERANDS, AERR_UNKNOWNOPCODE, AERR_INVALIDINSTRUCTIONUSE };
+enum asmError
+{
+    AERR_NONE,
+    AERR_SYNTAX,
+    AERR_OPERAND,
+    AERR_BADCOMBINATIONOFOPERANDS,
+    AERR_UNKNOWNOPCODE,
+    AERR_INVALIDINSTRUCTIONUSE
+};
 
 class Coding
 {
@@ -72,9 +80,9 @@ class Coding
     char binary;
 };
 #ifdef DEBUG
-#define CODING_NAME(x) x,
+#    define CODING_NAME(x) x,
 #else
-#define CODING_NAME(x)
+#    define CODING_NAME(x)
 #endif
 
 class Numeric
@@ -130,7 +138,7 @@ class InstructionParser
     virtual void Setup(Section* sect) = 0;
     virtual void Init() = 0;
     virtual bool ParseSection(AsmFile* fil, Section* sect) = 0;
-    virtual bool ParseDirective(AsmFile*fil, Section* sect) = 0;
+    virtual bool ParseDirective(AsmFile* fil, Section* sect) = 0;
     virtual bool IsBigEndian() = 0;
     bool SetNumber(int tokenPos, int oldVal, int newVal);
 
@@ -176,19 +184,18 @@ class InstructionParser
 
     // c compiler support
 
-public:
+  public:
+    std::string FormatInstruction(ocode* ins);
+    asmError GetInstruction(ocode* ins, Instruction*& newIns, std::list<Numeric*>& operands);
 
-    std::string FormatInstruction(ocode *ins);
-    asmError GetInstruction(ocode *ins, Instruction *&newIns, std::list<Numeric*>& operands);
-protected:
+  protected:
     void SetRegToken(int reg, int sz);
     void SetNumberToken(int val);
-    bool SetNumberToken(expr *offset, int &n);
-    void SetExpressionToken(expr *offset);
+    bool SetNumberToken(expr* offset, int& n);
+    void SetExpressionToken(expr* offset);
     void SetSize(int sz);
     void SetBracketSequence(bool open, int sz, int seg);
-    void SetOperandTokens(amode *operand);
-    void SetTokens(ocode *ins);
-
+    void SetOperandTokens(amode* operand);
+    void SetTokens(ocode* ins);
 };
 #endif

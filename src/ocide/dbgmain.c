@@ -70,7 +70,7 @@ void RunProgram(PROJECTITEM* plist)
     free(exeName);
     free(exeArgs);
 }
-int initiateDebug(PROJECTITEM *pj, int stopimmediately)
+int initiateDebug(PROJECTITEM* pj, int stopimmediately)
 {
     static char cmd[4096];
     if (uState == notDebugging && pj)

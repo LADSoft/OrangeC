@@ -61,8 +61,7 @@ extern int fastcallAlias;
 extern BOOLEAN setjmp_used;
 extern BOOLEAN functionHasAssembly;
 
-
-SYMBOL *baseThisPtr;
+SYMBOL* baseThisPtr;
 
 int calling_inline;
 
@@ -897,7 +896,7 @@ IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
                         if (exp)
                             return gen_expr(funcsp, exp, 0, natural_size(exp));
                     }
-                    else if (baseThisPtr ) // for this ptrs inherited in a constructor
+                    else if (baseThisPtr)  // for this ptrs inherited in a constructor
                     {
                         if (sp != baseThisPtr)
                         {
@@ -2260,7 +2259,7 @@ static void gen_arg_destructors(SYMBOL* funcsp, INITLIST* arg)
             gen_expr(funcsp, arg->dest, F_NOVALUE, ISZ_UINT);
     }
 }
-static int MarkFastcall(SYMBOL *sym, TYPE *functp, BOOLEAN thisptr)
+static int MarkFastcall(SYMBOL* sym, TYPE* functp, BOOLEAN thisptr)
 {
 #ifndef CPPTHISCALL
     if (sym->linkage != lk_fastcall)
@@ -2273,9 +2272,9 @@ static int MarkFastcall(SYMBOL *sym, TYPE *functp, BOOLEAN thisptr)
         if (!(setjmp_used))
         {
 
-            QUAD *tail = intermed_tail;
+            QUAD* tail = intermed_tail;
             int i = 0;
-            HASHREC *hr;
+            HASHREC* hr;
             if (isfunction(functp))
             {
                 if (basetype(functp)->sp)
@@ -2297,14 +2296,16 @@ static int MarkFastcall(SYMBOL *sym, TYPE *functp, BOOLEAN thisptr)
                 if (tail->dc.opcode == i_parm)
                 {
                     // change it to a move
-                    SYMBOL *sp = (SYMBOL *)hr->p;
-                    TYPE *tp = basetype(sp->tp);
-                    if (thisptr || (tp->type < bt_float ||
-                        (tp->type == bt_pointer && basetype(basetype(tp)->btp)->type != bt_func) || isref(tp)) &&
-                        sp->offset - (chosenAssembler->arch->fastcallRegCount + structret) * chosenAssembler->arch->parmwidth < chosenAssembler->arch->retblocksize)
+                    SYMBOL* sp = (SYMBOL*)hr->p;
+                    TYPE* tp = basetype(sp->tp);
+                    if (thisptr ||
+                        (tp->type < bt_float || (tp->type == bt_pointer && basetype(basetype(tp)->btp)->type != bt_func) ||
+                         isref(tp)) &&
+                            sp->offset - (chosenAssembler->arch->fastcallRegCount + structret) * chosenAssembler->arch->parmwidth <
+                                chosenAssembler->arch->retblocksize)
                     {
-                        IMODE *temp = tempreg(tail->dc.left->size, 0);
-                        QUAD *q = (QUAD *)Alloc(sizeof(QUAD));
+                        IMODE* temp = tempreg(tail->dc.left->size, 0);
+                        QUAD* q = (QUAD*)Alloc(sizeof(QUAD));
                         *q = *tail;
                         q->dc.opcode = i_assn;
                         q->ans = temp;
@@ -2324,7 +2325,7 @@ static int MarkFastcall(SYMBOL *sym, TYPE *functp, BOOLEAN thisptr)
                         break;
                     if (thisptr)
                     {
-                        if (((SYMBOL *)hr->p)->thisPtr)
+                        if (((SYMBOL*)hr->p)->thisPtr)
                             hr = hr->next;
                         thisptr = FALSE;
                     }
@@ -2544,7 +2545,7 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         gosub = gen_igosub(type, ap);
     }
     gosub->altdata = f;
-    
+
     if ((flags & F_NOVALUE) && !isstructured(basetype(f->functp)->btp) && basetype(f->functp)->btp->type != bt_memberptr)
     {
         if (basetype(f->functp)->btp->type == bt_void)

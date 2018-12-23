@@ -1224,7 +1224,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
     BOOLEAN local = FALSE;
     EXPRESSION *rv = NULL, **pos = &rv;
     EXPRESSION *exp = NULL, **expp;
-    EXPRESSION* expsym, *base;
+    EXPRESSION *expsym, *base;
     BOOLEAN noClear = FALSE;
     if (sp)
         sp->destructed = FALSE;
@@ -1593,7 +1593,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
     if (sp && !noClear && !isdest &&
         (isarray(tp) || isstructured(tp) && (!cparams.prm_cplusplus && !chosenAssembler->msil || basetype(tp)->sp->trivialCons)))
     {
-        EXPRESSION* fexp =  base;
+        EXPRESSION* fexp = base;
         EXPRESSION* exp;
         optimize_for_constants(&fexp);
         if (fexp->type == en_thisref)

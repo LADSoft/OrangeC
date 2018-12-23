@@ -31,9 +31,9 @@
 #define CI_NEW 3
 #define CI_DELETE 4
 #define CI_FUNC (openpa + 3)
-#define CI_NEWA (complx+1 + 3)
-#define CI_DELETEA (complx+2 + 3)
-#define CI_LIT (complx+3 + 3)
+#define CI_NEWA (complx + 1 + 3)
+#define CI_DELETEA (complx + 2 + 3)
+#define CI_LIT (complx + 3 + 3)
 
 #define issymchar(x) (((x) >= 0) && (isalnum(x) || (x) == '_'))
 #define isstartchar(x) (((x) >= 0) && (isalpha(x) || (x) == '_'))
@@ -371,7 +371,7 @@ union u_val
 {
     LLONG_TYPE i;  /* int val */
     ULLONG_TYPE u; /* nsigned val */
-    FPFC f;         /* float val */
+    FPFC f;        /* float val */
     _COMPLEX_S c;
     union
     {
@@ -998,12 +998,34 @@ typedef struct kwblk
      (((lex)->kw->key == kw_auto ? (cparams.prm_cplusplus ? TT_BASETYPE : TT_STORAGE_CLASS) : (lex)->kw->tokenTypes) & (types)))
 #define KW(lex) (ISKW(lex) ? (lex)->kw->key : kw_none)
 
-enum e_lexType {
-    l_none, l_i, l_ui, l_l, l_ul, l_ll, l_ull, l_f, l_d, l_ld, l_I,
-    l_id, l_kw,
-    l_astr, l_wstr, l_ustr, l_Ustr, l_u8str, l_msilstr,
-    l_achr, l_wchr, l_uchr, l_Uchr,
-    l_qualifiedname, l_asminst, l_asmreg
+enum e_lexType
+{
+    l_none,
+    l_i,
+    l_ui,
+    l_l,
+    l_ul,
+    l_ll,
+    l_ull,
+    l_f,
+    l_d,
+    l_ld,
+    l_I,
+    l_id,
+    l_kw,
+    l_astr,
+    l_wstr,
+    l_ustr,
+    l_Ustr,
+    l_u8str,
+    l_msilstr,
+    l_achr,
+    l_wchr,
+    l_uchr,
+    l_Uchr,
+    l_qualifiedname,
+    l_asminst,
+    l_asmreg
 };
 
 typedef struct lexeme

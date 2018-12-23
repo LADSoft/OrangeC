@@ -170,7 +170,7 @@ std::string ppInclude::ParseName(const std::string& args)
 }
 std::string ppInclude::FindFile(const std::string& name)
 {
-    FILE *fil = fopen(name.c_str(), "rb");
+    FILE* fil = fopen(name.c_str(), "rb");
     if (fil)
     {
         fclose(fil);

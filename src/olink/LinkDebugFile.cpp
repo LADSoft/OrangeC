@@ -42,7 +42,7 @@
 #include <ctype.h>
 #include <iostream>
 #ifdef GCCLINUX
-#include <unistd.h>
+#    include <unistd.h>
 #endif
 #define STRINGVERSION "120"
 #define DBVersion atoi(STRINGVERSION)

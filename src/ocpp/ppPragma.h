@@ -251,38 +251,47 @@ class Once
     }
     ~Once();
 
-    void SetInclude(ppInclude *Include) { include=Include; items.clear(); }
+    void SetInclude(ppInclude* Include)
+    {
+        include = Include;
+        items.clear();
+    }
     void CheckForMultiple()
     {
         if (!AddToList())
             TriggerEOF();
     }
+
   protected:
     Once() : include(nullptr) {}
     bool AddToList();
     void TriggerEOF();
+
   private:
     struct OnceItem
     {
         OnceItem(const std::string& fileName) { SetParams(fileName); }
         OnceItem(const OnceItem& right) = default;
-        bool operator< (const OnceItem& right) const;
+        bool operator<(const OnceItem& right) const;
         void SetParams(const std::string& fileName);
 
         long filesize;
         time_t filetime;
         unsigned crc;
-
     };
 
     static Once* instance;
     std::set<OnceItem> items;
-    ppInclude *include;
+    ppInclude* include;
 };
 class ppPragma
 {
   public:
-    ppPragma(ppInclude *Include) { InitHash(); Once::Instance()->SetInclude(Include); }
+    ppPragma(ppInclude* Include)
+    {
+        InitHash();
+        Once::Instance()->SetInclude(Include);
+    }
     void InitHash();
     bool Check(int token, const std::string& args);
     void ParsePragma(const std::string& args);

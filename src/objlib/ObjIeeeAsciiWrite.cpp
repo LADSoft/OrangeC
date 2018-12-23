@@ -319,12 +319,14 @@ void ObjIeeeAscii::RenderSection(ObjSection* Section)
     endl();
     if (Section->GetVirtualType())
     {
-        RenderString("ATR" + ObjUtil::ToHex(Section->GetIndex()) + ",T" + ObjUtil::ToHex(Section->GetVirtualType()->GetIndex()) + ".");
+        RenderString("ATR" + ObjUtil::ToHex(Section->GetIndex()) + ",T" + ObjUtil::ToHex(Section->GetVirtualType()->GetIndex()) +
+                     ".");
         endl();
     }
     if (quals & ObjSection::absolute)
     {
-        RenderString("ASL" + ObjUtil::ToHex(Section->GetIndex()) + "," + ObjUtil::ToHex(Section->GetMemoryManager().GetBase()) + ".");
+        RenderString("ASL" + ObjUtil::ToHex(Section->GetIndex()) + "," + ObjUtil::ToHex(Section->GetMemoryManager().GetBase()) +
+                     ".");
         endl();
     }
 }
@@ -464,7 +466,7 @@ void ObjIeeeAscii::RenderMemoryBinary(ObjMemoryManager* Memory)
         ObjMemory* memory = (*itmem);
         if (memory->GetFixup())
         {
-            *(unsigned *)scratch = memory->GetFixup()->Eval(0);
+            *(unsigned*)scratch = memory->GetFixup()->Eval(0);
             bufferup(scratch, memory->GetSize());
         }
         if (memory->IsEnumerated())

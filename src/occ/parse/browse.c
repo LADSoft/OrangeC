@@ -30,9 +30,9 @@
 #include "compiler.h"
 #include "browse.h"
 #ifndef GCCLINUX
-#include <direct.h>
+#    include <direct.h>
 #else
-#include <unistd.h>
+#    include <unistd.h>
 #endif
 extern COMPILER_PARAMS cparams;
 extern ARCH_DEBUG* chosenDebugger;

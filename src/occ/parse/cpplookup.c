@@ -74,8 +74,8 @@ LIST* tablesearchone(char* name, NAMESPACEVALUES* ns, BOOLEAN tagsOnly)
     if (!tagsOnly)
         rv = search(name, ns->syms);
     if (!rv)
-    if (!rv)
-        rv = search(name, ns->tags);
+        if (!rv)
+            rv = search(name, ns->tags);
     if (rv)
     {
         LIST* l = Alloc(sizeof(LIST));
@@ -1070,7 +1070,7 @@ LEXEME* getIdName(LEXEME* lex, SYMBOL* funcsp, char* buf, int* ov, TYPE** castTy
                     }
                     else
                     {
-                        kw = kw - kw_new + complx+1;
+                        kw = kw - kw_new + complx + 1;
                         lex = getsym();
                         if (!MATCHKW(lex, closebr))
                         {
@@ -1924,7 +1924,7 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, enum e_cvsrn* seq
                     }
                 }
             }
-            
+
             if (basetype(ta)->type == bt_memberptr && basetype(tl)->type == bt_memberptr && basetype(tr)->type == bt_memberptr)
             {
                 ta = basetype(ta);
@@ -2730,7 +2730,7 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
         seq[(*n)++] = CV_NONE;
     return NULL;
 }
-static void getQualConversion(TYPE* tpp, TYPE* tpa, EXPRESSION *exp, int* n, enum e_cvsrn* seq)
+static void getQualConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* exp, int* n, enum e_cvsrn* seq)
 {
     BOOLEAN hasconst = TRUE, hasvol = TRUE;
     BOOLEAN sameconst = TRUE, samevol = TRUE;
@@ -2741,7 +2741,7 @@ static void getQualConversion(TYPE* tpp, TYPE* tpa, EXPRESSION *exp, int* n, enu
     while (tpa && tpp)  // && ispointer(tpa) && ispointer(tpp))
     {
         strconst = exp && exp->type == en_labcon && basetype(tpa)->type == bt_char;
-        if (isconst(tpp) != isconst(tpa) )
+        if (isconst(tpp) != isconst(tpa))
         {
             sameconst = FALSE;
             if (isconst(tpa) && !isconst(tpp))

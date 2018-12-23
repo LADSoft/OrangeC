@@ -1,7 +1,7 @@
 #ifndef GCCLINUX
-#include <windows.h>
+#    include <windows.h>
 #else
-#include <string.h>
+#    include <string.h>
 #endif
 #include <stdio.h>
 

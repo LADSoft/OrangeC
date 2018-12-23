@@ -28,7 +28,7 @@
 #include "ResFile.h"
 #include "ResourceData.h"
 #ifndef GCCLINUX
-#include <windows.h>
+#    include <windows.h>
 #endif
 #include <stdexcept>
 Control::~Control()

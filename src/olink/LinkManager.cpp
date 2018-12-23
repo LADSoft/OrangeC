@@ -144,7 +144,7 @@ void LinkManager::LoadSectionExternals(ObjFile* file, ObjSection* section)
         }
     }
 }
-void LinkManager::MarkExternals(ObjFile *file)
+void LinkManager::MarkExternals(ObjFile* file)
 {
     for (ObjFile::SymbolIterator it = file->ExternalBegin(); it != file->ExternalEnd(); ++it)
     {
@@ -163,12 +163,9 @@ void LinkManager::MarkExternals(ObjFile *file)
         if (itv != virtsections.end())
         {
             (*itv)->SetUsed(true);
-               (*itv)->SetRemapped(true);
+            (*itv)->SetRemapped(true);
         }
-
     }
-
-
 }
 void LinkManager::MergePublics(ObjFile* file, bool toerr)
 {

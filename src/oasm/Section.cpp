@@ -99,7 +99,6 @@ void Section::Optimize()
             {
                 l->SetOffset(pc);
                 labels[l->GetName()] = pc;
-
             }
         }
         pc += instructions[i]->GetSize();
@@ -158,7 +157,8 @@ ObjSection* Section::CreateObject(ObjFactory& factory)
         objectSection->SetQuals(objectSection->GetQuals() | ObjSection::max | ObjSection::virt);
     return objectSection;
 }
-ObjExpression* Section::ConvertExpression(AsmExprNode* node, std::function<Label*(std::string&)> Lookup, std::function<ObjSection *(std::string&)>   SectLookup,  ObjFactory& factory)
+ObjExpression* Section::ConvertExpression(AsmExprNode* node, std::function<Label*(std::string&)> Lookup,
+                                          std::function<ObjSection*(std::string&)> SectLookup, ObjFactory& factory)
 {
     ObjExpression* xleft = nullptr;
     ObjExpression* xright = nullptr;
@@ -298,7 +298,9 @@ bool Section::SwapSectionIntoPlace(ObjExpression* t)
         return t->GetOperator() == ObjExpression::eSection;
     }
 }
-bool Section::MakeData(ObjFactory& factory, std::function<Label*(std::string&)> Lookup, std::function<ObjSection*(std::string&)> SectLookup, std::function<void(ObjFactory&, Section *, Instruction *)> HandleAlt)
+bool Section::MakeData(ObjFactory& factory, std::function<Label*(std::string&)> Lookup,
+                       std::function<ObjSection*(std::string&)> SectLookup,
+                       std::function<void(ObjFactory&, Section*, Instruction*)> HandleAlt)
 {
     bool rv = true;
     int pc = 0;
@@ -334,7 +336,7 @@ bool Section::MakeData(ObjFactory& factory, std::function<Label*(std::string&)> 
                 }
                 if (n == -2)
                 {
-                    ObjMemory *mem = factory.MakeData(buf, 0);
+                    ObjMemory* mem = factory.MakeData(buf, 0);
                     sect->Add(mem);
                     while (instructionPos < instructions.size() && instructions[instructionPos]->GetType() == Instruction::ALT)
                         HandleAlt(factory, this, instructions[instructionPos++]);
@@ -350,7 +352,8 @@ bool Section::MakeData(ObjFactory& factory, std::function<Label*(std::string&)> 
                     catch (std::runtime_error* e)
                     {
                         Errors::IncrementCount();
-                        std::cout << "Error " << f.GetFileName().c_str() << "(" << f.GetErrorLine() << "):" << e->what() << std::endl;
+                        std::cout << "Error " << f.GetFileName().c_str() << "(" << f.GetErrorLine() << "):" << e->what()
+                                  << std::endl;
                         delete e;
                         t = nullptr;
                         rv = false;
@@ -389,7 +392,7 @@ int Section::GetNext(Fixup& f, unsigned char* buf, int len)
     {
 
         while (instructionPos < instructions.size() &&
-            (blen = instructions[instructionPos]->GetNext(f, (unsigned char*)&buf2[0])) == 0)
+               (blen = instructions[instructionPos]->GetNext(f, (unsigned char*)&buf2[0])) == 0)
         {
             if (instructions[instructionPos]->GetType() == Instruction::ALT)
                 return -2;

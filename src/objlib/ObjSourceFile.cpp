@@ -25,8 +25,8 @@
 
 #include "ObjSourceFile.h"
 #ifndef GCCLINUX
-#include <io.h>
-#include <fcntl.h>
+#    include <io.h>
+#    include <fcntl.h>
 #endif
 #include <time.h>
 #include <sys/stat.h>

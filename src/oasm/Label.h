@@ -35,7 +35,15 @@ class Section;
 class Label
 {
   public:
-    Label(std::string& Name, int Label, int Sect) : name(Name), label(Label), sect(Sect), publc(false), extrn(false), node(nullptr), sym(nullptr), objSection(nullptr)
+    Label(std::string& Name, int Label, int Sect) :
+        name(Name),
+        label(Label),
+        sect(Sect),
+        publc(false),
+        extrn(false),
+        node(nullptr),
+        sym(nullptr),
+        objSection(nullptr)
     {
     }
     ~Label()

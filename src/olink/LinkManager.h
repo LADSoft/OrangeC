@@ -191,7 +191,7 @@ class LinkManager
   private:
     void LoadExterns(ObjFile* file, ObjExpression* exp);
     void LoadSectionExternals(ObjFile* file, ObjSection* section);
-    void MarkExternals(ObjFile *file);
+    void MarkExternals(ObjFile* file);
     void MergePublics(ObjFile* file, bool toerr);
     bool ScanVirtuals();
     void LoadFiles();

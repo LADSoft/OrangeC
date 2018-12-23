@@ -1240,8 +1240,8 @@ LEXEME* baseClasses(LEXEME* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac defa
                                 bcsym->tp = PerformDeferredInitialization(bcsym->tp, funcsp);
                             else
                                 bcsym->tp = SynthesizeType(bcsym->tp, NULL, FALSE);
-//                            if (isstructured(bcsym->tp))
-//                                bcsym = basetype(bcsym->tp)->sp;
+                            //                            if (isstructured(bcsym->tp))
+                            //                                bcsym = basetype(bcsym->tp)->sp;
                         }
                     }
                     else
@@ -2975,8 +2975,8 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                         ssp1 = sp1->parentClass;
                         if (ssp && ismember(sp1))
                             sp1->parentClass = ssp;
-                        //sp1->mainsym = sym;
-                        //while (sp1->mainsym->mainsym)
+                        // sp1->mainsym = sym;
+                        // while (sp1->mainsym->mainsym)
                         //    sp1->mainsym = sp1->mainsym->mainsym;
                         sym->mainsym - sp1;
                         sp1->access = access;
@@ -3130,7 +3130,7 @@ BOOLEAN ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, BOOLEAN always)
                     }
                     needkw(lex, closepa);
                     alignas_value = align;
-                    if (alignas_value > 0x10000 || (alignas_value & (alignas_value -1)) != 0)              
+                    if (alignas_value > 0x10000 || (alignas_value & (alignas_value - 1)) != 0)
                         error(ERR_INVALID_ALIGNMENT);
                 }
             }

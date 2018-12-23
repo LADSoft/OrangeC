@@ -24,7 +24,7 @@
  */
 
 #ifndef GCCLINUX
-#include "io.h"
+#    include "io.h"
 #endif
 
 #include "CmdFiles.h"

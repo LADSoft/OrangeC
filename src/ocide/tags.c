@@ -36,7 +36,6 @@ extern HWND hwndFrame;
 extern HINSTANCE hInstance;
 extern enum DebugState uState;
 
-
 static char bpModule[256];
 static int bpLine;
 

@@ -65,7 +65,7 @@ extern LIST* temporarySymbols;
 extern int inlinesym_count;
 extern int tempBottom, nextTemp;
 extern TYPE stdint;
-extern SYMBOL *baseThisPtr;
+extern SYMBOL* baseThisPtr;
 
 IMODE* returnImode;
 int retcount;

@@ -2915,7 +2915,7 @@ int fold_const(EXPRESSION* node)
                                 if (i >= functionnestingcount)
                                 {
                                     functionnesting[functionnestingcount++] = st->select;
-                                    //optimize_for_constants(&st->select);
+                                    // optimize_for_constants(&st->select);
                                     functionnestingcount--;
                                     if (IsConstantExpression(st->select, FALSE, FALSE))
                                     {

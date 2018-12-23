@@ -35,7 +35,7 @@ extern "C" int codeLabel;
 extern "C" int prm_assembler;
 extern "C" HASHTABLE* labelSyms;
 extern "C" int usingEsp;
-extern InstructionParser *instructionParser;
+extern InstructionParser* instructionParser;
 
 bool assembling;
 static ASMREG* regimage;
@@ -81,37 +81,37 @@ ASMNAME directiveLst[] = {{"db", op_reserved, ISZ_UCHAR, 0},
                           {"label", op_label, 0, 0},
                           {0}};
 extern "C" ASMREG reglst[] = {{"cs", am_seg, 1, ISZ_USHORT},     {"ds", am_seg, 2, ISZ_USHORT},
-                   {"es", am_seg, 3, ISZ_USHORT},     {"fs", am_seg, 4, ISZ_USHORT},
-                   {"gs", am_seg, 5, ISZ_USHORT},     {"ss", am_seg, 6, ISZ_USHORT},
-                   {"al", am_dreg, 0, ISZ_UCHAR},     {"cl", am_dreg, 1, ISZ_UCHAR},
-                   {"dl", am_dreg, 2, ISZ_UCHAR},     {"bl", am_dreg, 3, ISZ_UCHAR},
-                   {"ah", am_dreg, 4, ISZ_UCHAR},     {"ch", am_dreg, 5, ISZ_UCHAR},
-                   {"dh", am_dreg, 6, ISZ_UCHAR},     {"bh", am_dreg, 7, ISZ_UCHAR},
-                   {"ax", am_dreg, 0, ISZ_USHORT},    {"cx", am_dreg, 1, ISZ_USHORT},
-                   {"dx", am_dreg, 2, ISZ_USHORT},    {"bx", am_dreg, 3, ISZ_USHORT},
-                   {"sp", am_dreg, 4, ISZ_USHORT},    {"bp", am_dreg, 5, ISZ_USHORT},
-                   {"si", am_dreg, 6, ISZ_USHORT},    {"di", am_dreg, 7, ISZ_USHORT},
-                   {"eax", am_dreg, 0, ISZ_UINT},     {"ecx", am_dreg, 1, ISZ_UINT},
-                   {"edx", am_dreg, 2, ISZ_UINT},     {"ebx", am_dreg, 3, ISZ_UINT},
-                   {"esp", am_dreg, 4, ISZ_UINT},     {"ebp", am_dreg, 5, ISZ_UINT},
-                   {"esi", am_dreg, 6, ISZ_UINT},     {"edi", am_dreg, 7, ISZ_UINT},
-                   {"st", am_freg, 0, ISZ_LDOUBLE},   {"cr0", am_screg, 0, ISZ_UINT},
-                   {"cr1", am_screg, 1, ISZ_UINT},    {"cr2", am_screg, 2, ISZ_UINT},
-                   {"cr3", am_screg, 3, ISZ_UINT},    {"cr4", am_screg, 4, ISZ_UINT},
-                   {"cr5", am_screg, 5, ISZ_UINT},    {"cr6", am_screg, 6, ISZ_UINT},
-                   {"cr7", am_screg, 7, ISZ_UINT},    {"dr0", am_sdreg, 0, ISZ_UINT},
-                   {"dr1", am_sdreg, 1, ISZ_UINT},    {"dr2", am_sdreg, 2, ISZ_UINT},
-                   {"dr3", am_sdreg, 3, ISZ_UINT},    {"dr4", am_sdreg, 4, ISZ_UINT},
-                   {"dr5", am_sdreg, 5, ISZ_UINT},    {"dr6", am_sdreg, 6, ISZ_UINT},
-                   {"dr7", am_sdreg, 7, ISZ_UINT},    {"tr0", am_streg, 0, ISZ_UINT},
-                   {"tr1", am_streg, 1, ISZ_UINT},    {"tr2", am_streg, 2, ISZ_UINT},
-                   {"tr3", am_streg, 3, ISZ_UINT},    {"tr4", am_streg, 4, ISZ_UINT},
-                   {"tr5", am_streg, 5, ISZ_UINT},    {"tr6", am_streg, 6, ISZ_UINT},
-                   {"tr7", am_streg, 7, ISZ_UINT},    {"byte", am_ext, akw_byte, 0},
-                   {"word", am_ext, akw_word, 0},     {"dword", am_ext, akw_dword, 0},
-                   {"fword", am_ext, akw_fword, 0},   {"qword", am_ext, akw_qword, 0},
-                   {"tbyte", am_ext, akw_tbyte, 0},   {"ptr", am_ext, akw_ptr, 0},
-                   {"offset", am_ext, akw_offset, 0}, {0, 0, 0}};
+                              {"es", am_seg, 3, ISZ_USHORT},     {"fs", am_seg, 4, ISZ_USHORT},
+                              {"gs", am_seg, 5, ISZ_USHORT},     {"ss", am_seg, 6, ISZ_USHORT},
+                              {"al", am_dreg, 0, ISZ_UCHAR},     {"cl", am_dreg, 1, ISZ_UCHAR},
+                              {"dl", am_dreg, 2, ISZ_UCHAR},     {"bl", am_dreg, 3, ISZ_UCHAR},
+                              {"ah", am_dreg, 4, ISZ_UCHAR},     {"ch", am_dreg, 5, ISZ_UCHAR},
+                              {"dh", am_dreg, 6, ISZ_UCHAR},     {"bh", am_dreg, 7, ISZ_UCHAR},
+                              {"ax", am_dreg, 0, ISZ_USHORT},    {"cx", am_dreg, 1, ISZ_USHORT},
+                              {"dx", am_dreg, 2, ISZ_USHORT},    {"bx", am_dreg, 3, ISZ_USHORT},
+                              {"sp", am_dreg, 4, ISZ_USHORT},    {"bp", am_dreg, 5, ISZ_USHORT},
+                              {"si", am_dreg, 6, ISZ_USHORT},    {"di", am_dreg, 7, ISZ_USHORT},
+                              {"eax", am_dreg, 0, ISZ_UINT},     {"ecx", am_dreg, 1, ISZ_UINT},
+                              {"edx", am_dreg, 2, ISZ_UINT},     {"ebx", am_dreg, 3, ISZ_UINT},
+                              {"esp", am_dreg, 4, ISZ_UINT},     {"ebp", am_dreg, 5, ISZ_UINT},
+                              {"esi", am_dreg, 6, ISZ_UINT},     {"edi", am_dreg, 7, ISZ_UINT},
+                              {"st", am_freg, 0, ISZ_LDOUBLE},   {"cr0", am_screg, 0, ISZ_UINT},
+                              {"cr1", am_screg, 1, ISZ_UINT},    {"cr2", am_screg, 2, ISZ_UINT},
+                              {"cr3", am_screg, 3, ISZ_UINT},    {"cr4", am_screg, 4, ISZ_UINT},
+                              {"cr5", am_screg, 5, ISZ_UINT},    {"cr6", am_screg, 6, ISZ_UINT},
+                              {"cr7", am_screg, 7, ISZ_UINT},    {"dr0", am_sdreg, 0, ISZ_UINT},
+                              {"dr1", am_sdreg, 1, ISZ_UINT},    {"dr2", am_sdreg, 2, ISZ_UINT},
+                              {"dr3", am_sdreg, 3, ISZ_UINT},    {"dr4", am_sdreg, 4, ISZ_UINT},
+                              {"dr5", am_sdreg, 5, ISZ_UINT},    {"dr6", am_sdreg, 6, ISZ_UINT},
+                              {"dr7", am_sdreg, 7, ISZ_UINT},    {"tr0", am_streg, 0, ISZ_UINT},
+                              {"tr1", am_streg, 1, ISZ_UINT},    {"tr2", am_streg, 2, ISZ_UINT},
+                              {"tr3", am_streg, 3, ISZ_UINT},    {"tr4", am_streg, 4, ISZ_UINT},
+                              {"tr5", am_streg, 5, ISZ_UINT},    {"tr6", am_streg, 6, ISZ_UINT},
+                              {"tr7", am_streg, 7, ISZ_UINT},    {"byte", am_ext, akw_byte, 0},
+                              {"word", am_ext, akw_word, 0},     {"dword", am_ext, akw_dword, 0},
+                              {"fword", am_ext, akw_fword, 0},   {"qword", am_ext, akw_qword, 0},
+                              {"tbyte", am_ext, akw_tbyte, 0},   {"ptr", am_ext, akw_ptr, 0},
+                              {"offset", am_ext, akw_offset, 0}, {0, 0, 0}};
 
 typedef struct
 {
@@ -143,18 +143,17 @@ void inasmini(void)
         {
             s = (ASM_HASH_ENTRY*)Alloc(sizeof(ASM_HASH_ENTRY));
             s->name = v;
-            s->data = (ASMNAME *)Alloc(sizeof(ASMNAME));
-            ((ASMNAME *)s->data)->name = v;
-            ((ASMNAME *)s->data)->atype = i;
+            s->data = (ASMNAME*)Alloc(sizeof(ASMNAME));
+            ((ASMNAME*)s->data)->name = v;
+            ((ASMNAME*)s->data)->atype = i;
             s->instruction = TRUE;
             insert((SYMBOL*)s, asmHash);
-
         }
         i++;
     }
     if (cparams.prm_assemble)
     {
-       ASMNAME *o = directiveLst;
+        ASMNAME* o = directiveLst;
         while (o->name)
         {
             s = (ASM_HASH_ENTRY*)Alloc(sizeof(ASM_HASH_ENTRY));
@@ -220,7 +219,7 @@ static AMODE* inasm_const(void)
     }
     else
     {
-        rv = (AMODE *) Alloc(sizeof(AMODE));
+        rv = (AMODE*)Alloc(sizeof(AMODE));
         rv->mode = am_immed;
         rv->offset = exp;
     }
@@ -244,7 +243,7 @@ static EXPRESSION* inasm_ident(void)
         /* label, put it in the symbol table */
         if ((sp = search(nm, labelSyms)) == 0 && (sp = gsearch(nm)) == 0)
         {
-            sp = (SYMBOL *)Alloc(sizeof(SYMBOL));
+            sp = (SYMBOL*)Alloc(sizeof(SYMBOL));
             sp->storage_class = sc_ulabel;
             sp->name = litlate(nm);
             sp->declfile = sp->origdeclfile = lex->file;
@@ -252,7 +251,7 @@ static EXPRESSION* inasm_ident(void)
             sp->realdeclline = lex->realline;
             sp->declfilenum = lex->filenum;
             sp->used = TRUE;
-            sp->tp = (TYPE *)beLocalAlloc(sizeof(TYPE));
+            sp->tp = (TYPE*)beLocalAlloc(sizeof(TYPE));
             sp->tp->type = bt_unsigned;
             sp->tp->bits = sp->tp->startbit = -1;
             sp->offset = codeLabel++;
@@ -321,14 +320,14 @@ static EXPRESSION* inasm_label(void)
     /* label, put it in the symbol table */
     if ((sp = search(lex->value.s.a, labelSyms)) == 0)
     {
-        sp = (SYMBOL *)Alloc(sizeof(SYMBOL));
+        sp = (SYMBOL*)Alloc(sizeof(SYMBOL));
         sp->storage_class = sc_label;
         sp->name = litlate(lex->value.s.a);
         sp->declfile = sp->origdeclfile = lex->file;
         sp->declline = sp->origdeclline = lex->line;
         sp->realdeclline = lex->realline;
         sp->declfilenum = lex->filenum;
-        sp->tp = (TYPE *)beLocalAlloc(sizeof(TYPE));
+        sp->tp = (TYPE*)beLocalAlloc(sizeof(TYPE));
         sp->tp->type = bt_unsigned;
         sp->tp->bits = sp->tp->startbit = -1;
         sp->offset = codeLabel++;
@@ -689,7 +688,7 @@ static AMODE* inasm_mem(void)
         inasm_err(ERR_INVALID_INDEX_MODE);
         return 0;
     }
-    rv = (AMODE *)beLocalAlloc(sizeof(AMODE));
+    rv = (AMODE*)beLocalAlloc(sizeof(AMODE));
     if (node)
     {
         rv->offset = node;
@@ -725,7 +724,7 @@ static AMODE* inasm_mem(void)
 
 static AMODE* inasm_amode(int nosegreg)
 {
-    AMODE* rv = (AMODE *)beLocalAlloc(sizeof(AMODE));
+    AMODE* rv = (AMODE*)beLocalAlloc(sizeof(AMODE));
     int sz = 0, seg = 0;
     BOOLEAN done = FALSE;
     lastsym = 0;
@@ -975,7 +974,7 @@ enum e_opcode inasm_op(void)
 
 static OCODE* make_ocode(AMODE* ap1, AMODE* ap2, AMODE* ap3)
 {
-    OCODE* o = (OCODE *)beLocalAlloc(sizeof(OCODE));
+    OCODE* o = (OCODE*)beLocalAlloc(sizeof(OCODE));
     if (ap1 && (ap1->length == ISZ_UCHAR || ap1->length == -ISZ_UCHAR))
         if (ap2 && ap2->mode == am_immed)
             ap2->length = ap1->length;
@@ -1049,7 +1048,7 @@ static int getData(STATEMENT* snp)
 }
 BOOLEAN ateol(void)
 {
-    unsigned char *p = includes->lptr;
+    unsigned char* p = includes->lptr;
     while (*p)
     {
         if (!isspace(*p) && *p != 0)
@@ -1062,7 +1061,7 @@ static void AssembleInstruction(OCODE* ins)
 {
     if (ins->opcode >= op_aaa)
     {
-        Instruction *newIns = nullptr;
+        Instruction* newIns = nullptr;
         std::list<Numeric*> operands;
         assembling = true;
         asmError err = instructionParser->GetInstruction(ins, newIns, operands);
@@ -1071,26 +1070,25 @@ static void AssembleInstruction(OCODE* ins)
         switch (err)
         {
 
-        case AERR_NONE:
-            break;
-        case AERR_SYNTAX:
-            inasm_err(ERR_SYNTAX);
-            break;
-        case AERR_OPERAND:
-            inasm_err(ERR_UNKNOWN_OP);
-            break;
-        case AERR_BADCOMBINATIONOFOPERANDS:
-            inasm_err(ERR_BAD_OPERAND_COMBO);
-            break;
-        case AERR_UNKNOWNOPCODE:
-            inasm_err(ERR_INVALID_OPCODE);
-            break;
-        case AERR_INVALIDINSTRUCTIONUSE:
-            inasm_err(ERR_INVALID_USE_OF_INSTRUCTION);
-            break;
-        default:
-            break;
-
+            case AERR_NONE:
+                break;
+            case AERR_SYNTAX:
+                inasm_err(ERR_SYNTAX);
+                break;
+            case AERR_OPERAND:
+                inasm_err(ERR_UNKNOWN_OP);
+                break;
+            case AERR_BADCOMBINATIONOFOPERANDS:
+                inasm_err(ERR_BAD_OPERAND_COMBO);
+                break;
+            case AERR_UNKNOWNOPCODE:
+                inasm_err(ERR_INVALID_OPCODE);
+                break;
+            case AERR_INVALIDINSTRUCTIONUSE:
+                inasm_err(ERR_INVALID_USE_OF_INSTRUCTION);
+                break;
+            default:
+                break;
         }
     }
 }
@@ -1116,7 +1114,7 @@ LEXEME* inasm_statement(LEXEME* inlex, BLOCKDATA* parent)
             {
                 inasm_getsym();
                 op = op_int;
-                rv = (OCODE *)beLocalAlloc(sizeof(OCODE));
+                rv = (OCODE*)beLocalAlloc(sizeof(OCODE));
                 rv->oper1 = inasm_amode(TRUE);
                 goto join;
             }
@@ -1143,7 +1141,7 @@ LEXEME* inasm_statement(LEXEME* inlex, BLOCKDATA* parent)
             return lex;
         }
         {
-            rv = (OCODE *)beLocalAlloc(sizeof(OCODE));
+            rv = (OCODE*)beLocalAlloc(sizeof(OCODE));
             if (!(op == op_rep || op == op_repnz || op == op_repz || op == op_repe || op == op_repne || op == op_lock))
             {
                 if (!atend && !MATCHKW(lex, semicolon))
@@ -1180,8 +1178,8 @@ LEXEME* inasm_statement(LEXEME* inlex, BLOCKDATA* parent)
                 }
                 else
                     rv->oper1->length = rv->oper2->length;
-            //else if (!rv->oper2->length && insdata->amode != OPE_BOUND && insdata->amode != OPE_LOADSEG)
-                //rv->oper2->length = rv->oper1->length;
+            // else if (!rv->oper2->length && insdata->amode != OPE_BOUND && insdata->amode != OPE_LOADSEG)
+            // rv->oper2->length = rv->oper1->length;
         }
         rv->noopt = TRUE;
         rv->opcode = op;
@@ -1194,7 +1192,7 @@ LEXEME* inasm_statement(LEXEME* inlex, BLOCKDATA* parent)
 }
 void* inlineAsmStmt(void* param)
 {
-    OCODE* rv = (OCODE *)beLocalAlloc(sizeof(OCODE));
+    OCODE* rv = (OCODE*)beLocalAlloc(sizeof(OCODE));
     memcpy(rv, param, sizeof(*rv));
     if (rv->opcode != op_label && rv->opcode != op_line)
     {

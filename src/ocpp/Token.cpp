@@ -36,11 +36,11 @@ bool CharacterToken::unsignedchar;
 bool NumericToken::ansi;
 bool NumericToken::c99;
 
-bool(*Tokenizer::IsSymbolChar)(const char*, bool) = Tokenizer::IsSymbolCharDefault;
+bool (*Tokenizer::IsSymbolChar)(const char*, bool) = Tokenizer::IsSymbolCharDefault;
 
 bool Tokenizer::IsSymbolCharDefault(const char* data, bool startOnly)
 {
-    return *data == '_' || (startOnly? UTF8::IsAlpha(data) : UTF8::IsAlnum(data));
+    return *data == '_' || (startOnly ? UTF8::IsAlpha(data) : UTF8::IsAlnum(data));
 }
 
 unsigned llminus1 = -1;
@@ -613,7 +613,8 @@ void IdentifierToken::Parse(std::string& line)
 {
     char buf[256], *p = buf;
     int i, n;
-    for (i = 0; (p == buf || p - buf - 1 < sizeof(buf)) && p - buf < line.size() && Tokenizer::IsSymbolChar(line.c_str() + i, false);)
+    for (i = 0;
+         (p == buf || p - buf - 1 < sizeof(buf)) && p - buf < line.size() && Tokenizer::IsSymbolChar(line.c_str() + i, false);)
     {
         n = UTF8::CharSpan(line.c_str() + i);
         for (int j = 0; j < n && i < line.size(); j++)

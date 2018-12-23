@@ -6275,7 +6275,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                         TYPE* tp = Alloc(sizeof(TYPE));
                         tp->type = bt_typedef;
                         tp->btp = sp->tp;
-                        tp->rootType = sp->tp->rootType;
+                        UpdateRootTypes(tp);
                         sp->tp = tp;
                         tp->sp = sp;
                         tp->size = tp->btp->size;

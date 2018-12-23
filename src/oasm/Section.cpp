@@ -334,6 +334,8 @@ bool Section::MakeData(ObjFactory& factory, std::function<Label*(std::string&)> 
                 }
                 if (n == -2)
                 {
+                    ObjMemory *mem = factory.MakeData(buf, 0);
+                    sect->Add(mem);
                     while (instructionPos < instructions.size() && instructions[instructionPos]->GetType() == Instruction::ALT)
                         HandleAlt(factory, this, instructions[instructionPos++]);
                 }

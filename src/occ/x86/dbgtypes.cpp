@@ -40,53 +40,72 @@ extern "C" TYPE stdvoid;
 
 bool dbgtypes::typecompare::operator () (const TYPE *left, const TYPE *right) const
 {
-    left = basetype(left);
-    right = basetype(right);
-    if (left->type < right->type)
+    while (left->type == bt_typedef)
+        left = left->btp;
+    while (right->type == bt_typedef)
+        right = right->btp;
+    if (isconst(left) && !isconst(right))
         return true;
-    else if (left->type == right->type)
+    else if (isconst(left) == isconst(right))
     {
-        switch (left->type)
+        if (isvolatile(left) && !isvolatile(right))
+            return true;
+        else if (isvolatile(left) == isvolatile(right))
         {
-        case bt_func:
-        case bt_ifunc:
-            if (operator()(left->btp, right->btp))
+            left = basetype(left);
+            right = basetype(right);
+            if (left->type < right->type)
                 return true;
-            if (left->syms->table && right->syms->table)
+            else if (left->type == right->type)
             {
-                const HASHREC *hr1 = left->syms->table[0];
-                const HASHREC *hr2 = right->syms->table[0];
-                while (hr1 && hr2)
+                switch (left->type)
                 {
-                    SYMBOL *sym1 = (SYMBOL *)hr1->p;
-                    SYMBOL *sym2 = (SYMBOL *)hr2->p;
-                    if (operator()(sym1->tp, sym2->tp))
+                case bt_func:
+                case bt_ifunc:
+                    if (operator()(left->btp, right->btp))
                         return true;
-                    else if (operator()(sym2->tp, (sym1->tp)))
-                            return false;
-                    hr1 = hr1->next;
-                    hr2 = hr2->next;
+                    else if (!operator()(right->btp, left->btp))
+                    {
+                        if (left->syms->table && right->syms->table)
+                        {
+                            const HASHREC *hr1 = left->syms->table[0];
+                            const HASHREC *hr2 = right->syms->table[0];
+                            while (hr1 && hr2)
+                            {
+                                SYMBOL *sym1 = (SYMBOL *)hr1->p;
+                                SYMBOL *sym2 = (SYMBOL *)hr2->p;
+                                if (operator()(sym1->tp, sym2->tp))
+                                    return true;
+                                else if (operator()(sym2->tp, (sym1->tp)))
+                                    return false;
+                                hr1 = hr1->next;
+                                hr2 = hr2->next;
+                            }
+                            if (hr2)
+                                return true;
+                        }
+                    }
+                    break;
+                case bt_struct:
+                case bt_union:
+                case bt_class:
+                case bt_enum:
+                    if (strcmp(left->sp->name, right->sp->name) < 0)
+                        return true;
+                    break;
+                case bt_pointer:
+                    if (left->array && !right->array)
+                        return true;
+                    else if (left->array != right->array)
+                        return false;
+                    // fallthrough
+                case bt_lref:
+                case bt_rref:
+                    if (operator()(left->btp, right->btp))
+                        return true;
+                    break;
                 }
-                if (hr2)
-                    return true;
             }
-            break;
-        case bt_struct:
-        case bt_union:
-        case bt_class:
-        case bt_enum:
-            if (strcmp(left->sp->name, right->sp->name) < 0)
-                return true;
-            break;
-        case bt_pointer:
-            if (left->array && !right->array)
-                return true;
-            // fallthrough
-        case bt_lref:
-        case bt_rref:
-            if (operator()(left->btp, right->btp))
-                return true;
-            break;
         }
     }
     return false;
@@ -253,32 +272,35 @@ ObjType *dbgtypes::Function(TYPE* tp)
     ObjFunction *val = nullptr;
     ObjType *rv = Put(basetype(tp)->btp);
     int v = 0;
-    switch (basetype(tp)->sp->storage_class)
-    {
-    case sc_virtual:
-    case sc_member:
-    case sc_mutable:
-        v = 4;  // has a this pointer
-        break;
-    default:
-        switch (basetype(tp)->sp->linkage)
+    if (basetype(tp)->sp)
+        switch (basetype(tp)->sp->storage_class)
         {
+        case sc_virtual:
+        case sc_member:
+        case sc_mutable:
+            v = 4;  // has a this pointer
+            break;
         default:
-        case lk_cdecl:
-            v = 1;
-            break;
-        case lk_stdcall:
-            v = 2;
-            break;
-        case lk_pascal:
-            v = 3;
-            break;
-        case lk_fastcall:
-            v = 4;
+            switch (basetype(tp)->sp->linkage)
+            {
+            default:
+            case lk_cdecl:
+                v = 1;
+                break;
+            case lk_stdcall:
+                v = 2;
+                break;
+            case lk_pascal:
+                v = 3;
+                break;
+            case lk_fastcall:
+                v = 4;
+                break;
+            }
             break;
         }
-        break;
-    }
+    else
+        v = 1;
     if (isstructured(basetype(tp)->btp))
         v |= 32;  // structured return value
     val = factory.MakeFunction("", rv);

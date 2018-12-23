@@ -323,7 +323,7 @@ BOOLEAN ismsil(TYPE* tp)
     tp = basetype(tp);
     return tp->type == bt___string || tp->type == bt___object;
 }
-BOOLEAN isconstraw(TYPE* tp, BOOLEAN useTemplate)
+BOOLEAN isconstraw(const TYPE* tp, BOOLEAN useTemplate)
 {
     BOOLEAN done = FALSE;
     BOOLEAN rv = FALSE;
@@ -364,8 +364,8 @@ BOOLEAN isconstraw(TYPE* tp, BOOLEAN useTemplate)
     }
     return rv;
 }
-BOOLEAN isconst(TYPE* tp) { return isconstraw(tp, FALSE); }
-BOOLEAN isvolatile(TYPE* tp)
+BOOLEAN isconst(const TYPE* tp) { return isconstraw(tp, FALSE); }
+BOOLEAN isvolatile(const TYPE* tp)
 {
     while (tp)
     {

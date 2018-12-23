@@ -4495,6 +4495,10 @@ void asm_atomic(QUAD* q)
                         }
                         gen_codes(op_mov, sz, makedreg(reg), apll);
                     }
+                    else
+                    {
+                        reg = apll->preg;
+                    }
                     if ((aprl->mode == am_indisp && aprl->preg == EAX) ||
                         (aprl->mode == am_indispscale && (aprl->preg == EAX || aprl->sreg == EAX)))
                     {

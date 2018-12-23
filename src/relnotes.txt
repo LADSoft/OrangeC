@@ -33,6 +33,7 @@ version 6.0.40:
     ocide: add orangec\bin to the path when running/debugging executables
     ocide: empty status bar after scanning for dependencies
     ocide: bad DOCKS entry in user prefs file leads to hang
+    ocide: when starting the debugger with no windows open, the disassembly window would open instead of the source file window
     rtl: fix recently broken strncpy to work properly again
     rtl: fix tgmath.h
     rtl: fix chrono::system_clock::now();

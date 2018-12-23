@@ -108,7 +108,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;WIN32;USE_LONGLONG;BORLAND;MICROSOFT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>parse;preproc;middle;x86</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>parse;preproc;middle;x86;..\ocpp;..\oasm;..\util;..\objlib</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -151,7 +151,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;WIN32;USE_LONGLONG;BORLAND;MICROSOFT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>parse;preproc;middle;x86</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>parse;preproc;middle;x86;..\ocpp;..\oasm;..\util;..\objlib</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>

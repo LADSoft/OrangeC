@@ -151,6 +151,11 @@ void putop(enum e_op op, AMODE* aps, AMODE* apd, int nooptx)
             outop(opcodeTable[op_wait]);
             return;
         }
+        if (op == op_dd)
+        {
+            outop("dd");
+            return;
+        }
         if (!nooptx)
         {
             switch (op)

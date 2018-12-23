@@ -819,7 +819,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
                         dbgRebuildMain(wParam, activeProject);
                     else if (uState != notDebugging && uState != Running)
                     {
-                        if ((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwndASM)
+                        if (hwndASM && (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwndASM)
                             StepFromASM = TRUE;
                         StepIn(dbe);
                         if (hwndASM)
@@ -834,7 +834,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
                     }
                     break;
                 case IDM_RUN:
-                    if ((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwndASM)
+                    if (hwndASM && (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwndASM)
                         StepFromASM = TRUE;
                     else
                         StepFromASM = FALSE;
@@ -864,7 +864,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
                         dbgRebuildMain(wParam, activeProject);
                     else if (uState != notDebugging && uState != Running)
                     {
-                        if ((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwndASM)
+                        if (hwndASM && (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwndASM)
                             StepFromASM = TRUE;
                         StepOver(dbe);
                         if (hwndASM)
@@ -876,7 +876,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
                         dbgRebuildMain(wParam, activeProject);
                     else if (uState != notDebugging && uState != Running)
                     {
-                        if ((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwndASM)
+                        if (hwndASM && (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwndASM)
                             StepFromASM = TRUE;
                         StepOut(dbe);
                         if (hwndASM)
@@ -884,7 +884,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
                     }
                     return 0;
                 case IDM_RUNTO:
-                    if ((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwndASM)
+                    if (hwndASM && (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwndASM)
                         StepFromASM = TRUE;
                     if (RunTo(dbe))
                     {

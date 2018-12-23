@@ -2163,7 +2163,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
         if (!init->sp)
         {
             // might be a typedef?
-            init->sp = finishSearch(init->name, NULL, NULL, FALSE, FALSE);
+            init->sp = finishSearch(init->name, NULL, NULL, FALSE, FALSE, FALSE);
             if (init->sp && init->sp->storage_class == sc_typedef)
             {
                 int offset = 0;

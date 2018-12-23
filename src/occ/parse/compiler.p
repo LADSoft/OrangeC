@@ -117,6 +117,8 @@ unsigned CRC32(unsigned char *data, size_t len);
 void displayLexeme(LEXEME *lex);
 
                               /* Declare.c */
+SYMBOL* finishSearch(char* name, SYMBOL* encloser, NAMESPACEVALUES* ns, BOOLEAN tagsOnly, BOOLEAN throughClass,
+                     BOOLEAN namespaceOnly);
 
 BOOLEAN intcmp(TYPE *t1, TYPE *t2);
 EXPRESSION *GetSymRef(EXPRESSION *n);

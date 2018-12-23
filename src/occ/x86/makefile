@@ -73,6 +73,7 @@ C_DEPENDENCIES= \
     libcxx.c \
     list.c \
     mangle.c \
+    memory.c \
     osutil.c \
     output.c \
     preproc.c \
@@ -97,7 +98,6 @@ CPP_DEPENDENCIES = \
     inasm.cpp \
     peep.cpp \
     InstructionParser.cpp \
-    memory.cpp \
     x64Stub.cpp \
     x64Parser.cpp
 

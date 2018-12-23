@@ -1295,8 +1295,7 @@ void oa_gen_virtual(SYMBOL* sp, int data)
             bePrintf("@%s\tsegment virtual\n", sp->decoratedName);
         bePrintf("%s:\n", sp->decoratedName);
     }
-    else
-        outcode_start_virtual_seg(sp, data);
+    outcode_start_virtual_seg(sp, data);
 }
 void oa_gen_endvirtual(SYMBOL* sp)
 {

@@ -54,7 +54,7 @@ LIBEXE=lib.exe
 LIBFLAGS=/MACHINE:x86 /LTCG /nologo
 LIB_EXT:=.lib
 LIB_PREFIX:=
-TASM=$(COMPILER_PATH)\bin\\tasm32
+TASM=$(COMPILER_PATH)\bin\tasm32
 
 ASM=nasm
 ASMFLAGS = -fwin32

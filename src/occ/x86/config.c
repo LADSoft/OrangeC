@@ -263,10 +263,11 @@ static ARCH_CHARACTERISTICS architecture = {
     FALSE, /* locals in stack memory*/
     FALSE, /* stack pointer grows down */
     FALSE, /* preallocate locals */
-    8,     /* size of a return block on stack (e.g. function ret addr & frame ptr) */
+    4,     /* size of a return block on stack (e.g. function ret addr & frame ptr) */
     4,     /* minimium width/ padding of passed parameters in maus */
     4,     /* minimum stack alignment */
     FALSE, /* library functions should bes genned as import calls */
+    0,     /* ret block param adjust */
 };
 extern ARCH_GEN outputfunctions;
 ARCH_GEN outputfunctions;
@@ -483,11 +484,6 @@ void adjustUsesESP()
     if (cparams.prm_debug || cparams.prm_stackalign || !cparams.prm_optimize_for_speed)
     {
         prm_useesp = FALSE;
-    }
-    else
-    {
-        if (prm_useesp)
-            architecture.retblocksize = 4;
     }
     SetUsesESP(prm_useesp);
 }

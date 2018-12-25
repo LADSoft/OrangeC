@@ -83,7 +83,7 @@ static LIST* incdecListLast;
 static int push_nesting;
 static EXPRESSION* this_bound;
 static int inline_level;
-
+static int stackblockOfs;
 IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size);
 IMODE* gen_void(EXPRESSION* node, SYMBOL* funcsp);
 IMODE* gen_relat(EXPRESSION* node, SYMBOL* funcsp);
@@ -92,6 +92,7 @@ void falsejp(EXPRESSION* node, SYMBOL* funcsp, int label);
 
 void iexpr_init(void)
 {
+    stackblockOfs = 0;
     calling_inline = 0;
     inlinesp_count = 0;
     push_nesting = 0;
@@ -2167,7 +2168,12 @@ static int genCdeclArgs(INITLIST* args, SYMBOL* funcsp)
     if (args)
     {
         rv = genCdeclArgs(args->next, funcsp);
-        rv += gen_parm(args, funcsp);
+        int n = gen_parm(args, funcsp);
+        rv += n;
+        stackblockOfs -= n;
+        if (args->exp->type == en_auto)
+            if (args->exp->v.sp->stackblock)
+                args->exp->v.sp->offset = stackblockOfs;
     }
     return rv;
 }
@@ -2429,6 +2435,7 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
             gen_icode(i_substack, NULL, make_immed(ISZ_UINT, n), NULL);
         }
     }
+    int cdeclare = stackblockOfs;
     if (f->sp->linkage == lk_pascal)
     {
         if (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr)
@@ -2450,6 +2457,8 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
                 rv = rv + chosenAssembler->arch->stackalign - rv % chosenAssembler->arch->stackalign;
             gen_icode(i_parmstack, ap = tempreg(ISZ_ADDR, 0), make_immed(ISZ_UINT, rv), NULL);
             exp->v.sp->imvalue = ap;
+            exp->v.sp->offset = -rv + stackblockOfs;
+            cacheTempSymbol(exp->v.sp);
             genCdeclArgs(f->arguments, funcsp);
             ap3 = gen_expr(funcsp, exp, 0, ISZ_UINT);
             ap = LookupLoadTemp(NULL, ap3);
@@ -2564,6 +2573,7 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
     {
         gosub->novalue = -1;
     }
+    stackblockOfs = cdeclare;
     /* undo pars and make a temp for the result */
     if (chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE)
     {

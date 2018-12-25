@@ -38,7 +38,7 @@ extern "C" int prm_flat;
 extern "C" int fastcallAlias;
 extern "C" SYMBOL* theCurrentFunc;
 extern "C" int segAligns[];
-
+extern "C" BOOLEAN usingEsp;
 int skipsize = 0;
 int addsize = 0;
 
@@ -203,6 +203,8 @@ void oa_putconst(int op, int sz, EXPRESSION* offset, BOOLEAN doSign)
         int m;
         case en_auto:
             m = offset->v.sp->offset;
+            if (!usingEsp && m > 0)
+                m += 4;
             if (offset->v.sp->storage_class == sc_parameter && fastcallAlias)
             {
                 if (!isstructured(basetype(theCurrentFunc->tp)->btp) || offset->v.sp->offset != chosenAssembler->arch->retblocksize)
@@ -214,7 +216,6 @@ void oa_putconst(int op, int sz, EXPRESSION* offset, BOOLEAN doSign)
                     }
                 }
             }
-
             if (doSign)
             {
                 if ((int)offset->v.sp->offset < 0)

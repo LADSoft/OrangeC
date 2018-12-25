@@ -608,43 +608,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                         }
                         if (hr->next || cparams.prm_cplusplus)
                         {
-                            {
-
-                                SYMBOL* sym = getStructureDeclaration();
-                                if (!sym || sym != sp->parentClass)
-                                    if (!lambdas || !lambdas->captureThis)
-                                    {
-                                        funcparams->noobject = TRUE;
-                                    }
-                                    else
-                                    {
-                                        lambda_capture(NULL, cmThis, FALSE);
-                                        if (lambdas->captureThis)
-                                        {
-                                            SYMBOL* ths = search("$this", lambdas->cls->tp->syms);
-                                            if (ths)
-                                            {
-                                                TYPE* t1 = Alloc(sizeof(TYPE));
-                                                t1->type = bt_pointer;
-                                                t1->size = getSize(bt_pointer);
-                                                t1->btp = basetype(lambdas->lthis->tp)->btp;
-                                                t1->rootType = t1;
-                                                funcparams->thistp = t1;
-                                                funcparams->thisptr =
-                                                    varNode(en_auto, (SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p);  // this ptr
-                                                deref(&stdpointer, exp);
-                                                funcparams->thisptr =
-                                                    exprNode(en_add, funcparams->thisptr, intNode(en_c_i, ths->offset));
-                                                deref(&stdpointer, &funcparams->thisptr);
-                                            }
-                                            else
-                                            {
-                                                diag("variable_name: missing lambda this");
-                                            }
-                                        }
-                                    }
-                                funcparams->ascall = MATCHKW(lex, openpa);
-                            }
+                            funcparams->ascall = MATCHKW(lex, openpa);
                             funcparams->sp = sp;
                         }
                         else
@@ -1503,7 +1467,9 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
                         sp3 = sp3->mainsym;
                     if (sp4 && sp4->mainsym)
                         sp4 = sp4->mainsym;
-                        
+                        
+
+
 
 
 
@@ -3276,12 +3242,12 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
     }
     if (*tp)
         getFunctionSP(tp);
-    //    if ((*exp)->type == en_funcret)
-    //    {
-    //        (*exp)->v.func = funcparams;
-    //        *exp = exprNode(en_funcret, *exp, NULL);
-    //        return lex;
-    //    }
+        if ((*exp)->type == en_funcret)
+        {
+            (*exp)->v.func = funcparams;
+            *exp = exprNode(en_funcret, *exp, NULL);
+            return lex;
+        }
     if (chosenAssembler->msil && funcparams->sp)
     {
         if (funcparams->sp->storage_class == sc_overloads)

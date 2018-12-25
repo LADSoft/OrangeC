@@ -230,6 +230,8 @@ typedef struct
     char parmwidth;                   /* minimium width/ padding of passed parameters in maus */
     char stackalign;                  /* minimum stack alignment */
     char libsasimports;               /* library functions should be genned as import calls */
+    char retblockparamadjust;                            /* Adjustment for retblock parameters */
+
 } ARCH_CHARACTERISTICS;
 
 /* debugger characteristics */

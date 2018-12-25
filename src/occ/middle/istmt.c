@@ -1143,6 +1143,7 @@ void genfunc(SYMBOL* funcsp, BOOLEAN doOptimize)
     if (funcsp->linkage == lk_virtual || tmpl)
         gen_endvirtual(funcsp);
     AllocateLocalContext(NULL, funcsp, nextLabel++);
+    funcsp->retblockparamadjust = chosenAssembler->arch->retblockparamadjust;
     XTDumpTab(funcsp);
     FreeLocalContext(NULL, funcsp, nextLabel++);
     intermed_head = NULL;

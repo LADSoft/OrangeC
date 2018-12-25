@@ -29,6 +29,8 @@
 #include <limits.h>
 #include "be.h"
 
+extern "C" ARCH_ASM* chosenAssembler;
+
 extern "C" OCODE* peep_tail;
 extern "C" int startlab, retlab;
 extern "C" int usingEsp;
@@ -4010,8 +4012,7 @@ void asm_jc(QUAD* q) /* branch if a U< b */ { gen_goto(q, op_jc, op_ja, op_jc, o
 void asm_ja(QUAD* q) /* branch if a U> b */ { gen_goto(q, op_ja, op_jc, op_ja, op_jc, op_ja, op_jb, op_ja); }
 void asm_je(QUAD* q) /* branch if a == b */ { gen_goto(q, op_je, op_jne, op_je, op_jne, op_je, op_jne, op_je); }
 void asm_jnc(QUAD* q) /* branch if a U>= b */ { gen_goto(q, op_jnc, op_jbe, op_ja, op_jc, op_jae, op_jbe, op_jae); }
-void asm_jbe(QUAD* q) /* branch if a U<= b */ { gen_goto(q, op_jbe, op_jnc, op_jc, op_ja, op_jbe, op_jnc, op_jbe); }
-void asm_jne(QUAD* q) /* branch if a != b */ { gen_goto(q, op_jne, op_je, op_jne, op_je, op_jne, op_je, op_jne); }
+void asm_jbe(QUAD* q) /* branch if a U<= b */ { gen_goto(q, op_jbe, op_jnc, op_jc, op_ja, op_jbe, op_jnc, op_jbe); }void asm_jne(QUAD* q) /* branch if a != b */ { gen_goto(q, op_jne, op_je, op_jne, op_je, op_jne, op_je, op_jne); }
 void asm_jl(QUAD* q) /* branch if a S< b */ { gen_goto(q, op_jl, op_jg, op_jl, op_jg, op_jb, op_ja, op_jb); }
 void asm_jg(QUAD* q) /* branch if a S> b */ { gen_goto(q, op_jg, op_jl, op_jg, op_jl, op_ja, op_jb, op_ja); }
 void asm_jle(QUAD* q) /* branch if a S<= b */ { gen_goto(q, op_jle, op_jge, op_jl, op_jg, op_jbe, op_jae, op_jbe); }
@@ -4026,6 +4027,7 @@ void asm_cppini(QUAD* q) /* cplusplus initialization (historic)*/ { (void)q; }
  */
 void asm_prologue(QUAD* q) /* function prologue */
 {
+    chosenAssembler->arch->retblockparamadjust = usingEsp ? 0 : 4;
     inframe = !!(beGetIcon(q->dc.left) & FRAME_FLAG_NEEDS_FRAME) || cparams.prm_debug || cparams.prm_stackalign;
     if (inframe)
     {
@@ -4399,7 +4401,8 @@ void asm_atomic(QUAD* q)
                                         zf              nz
                                         true            false
                 rm32       eax        rm32      reg     eax        rm32
-                
+                
+
 
 
 

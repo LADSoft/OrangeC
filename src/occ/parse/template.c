@@ -2491,7 +2491,55 @@ static TYPE* SynthesizeStructure(TYPE* tp_in, TEMPLATEPARAMLIST* enclosing)
     }
     return NULL;
 }
-static TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, BOOLEAN alt)
+static INITLIST *ExpandArguments(EXPRESSION *exp)
+{
+    INITLIST *rv = NULL, **ptr = &rv;
+    INITLIST *arguments = exp->v.func->arguments;
+    while (arguments)
+    {
+        if (arguments->exp->type == en_func)
+        {
+            FUNCTIONCALL *call = arguments->exp->v.func;
+            INITLIST *args2 = call->arguments;
+            if (args2->tp->type == bt_templateparam && args2->tp->templateParam->p->packed)
+            {
+                INITLIST *rv = NULL;
+                INITLIST **ptr = &rv;
+                TEMPLATEPARAMLIST *scan = args2->tp->templateParam->p->byPack.pack;
+                *ptr = NULL;
+                TEMPLATEPARAMLIST *old1 = call->templateParams;
+                INITLIST *old2 = call->arguments;
+                TEMPLATEPARAMLIST tpl = { 0 };
+                TEMPLATEPARAM pm = { 0 };
+                tpl.p = &pm;
+                pm.type = kw_typename;
+                call->templateParams = &tpl;
+                while (scan)
+                {
+                    INITLIST *rv1 = Alloc(sizeof(INITLIST));
+                    rv1->exp = intNode(en_c_i, 0);
+                    rv1->tp = scan->p->byClass.val;
+                    call->arguments = rv1;
+                    call->templateParams->p->byClass.val = call->templateParams->p->byClass.dflt =  rv1->tp;
+                    rv1->tp = LookupTypeFromExpression(arguments->exp, NULL, FALSE);
+                    *ptr = rv1;
+                    ptr = &(*ptr)->next;
+                    scan = scan->next;
+                }
+                call->arguments - old2;
+                call->templateParams = old1;
+                return rv;
+            }
+            else
+            {
+                args2->tp = LookupTypeFromExpression(args2->exp, NULL, FALSE);
+            }
+        }
+        arguments = arguments->next;
+    }
+    return exp->v.func->arguments;
+}
+TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, BOOLEAN alt)
 {
     EXPRESSION* funcList[100];
     int count = 0;
@@ -2731,6 +2779,29 @@ static TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclos
                 else if (isfunction(rve))
                 {
                     rv = basetype(rve)->btp;
+                }
+                else if (isstructured(rve))
+                {
+                    if (exp->v.func)
+                    {
+                        exp->v.func->arguments = ExpandArguments(exp);
+
+                    }
+                    rv = rve;
+//                    exp->v.func->sp = basetype(rve)->sp;
+ //                   exp->v.func->functp = exp->v.func->sp->tp;
+                    if (!exp->v.func || !insertOperatorParams(NULL, &rv, &exp1, exp->v.func, 0))
+                        rv = &stdvoid;
+                    if (isconst(rve))
+                    {
+                        // to make LIBCXX happy
+                        rve = Alloc(sizeof(TYPE));
+                        rve->type = bt_const;
+                        rve->size = rv->size;
+                        rve->btp = rv;
+                        rve->rootType = rv->rootType;
+                        rv = rve;
+                    }
                 }
                 else
                     break;
@@ -5362,7 +5433,9 @@ void TemplatePartialOrdering(SYMBOL** table, int count, FUNCTIONCALL* funcparams
                             {
                                 params->p->byNonType.temp = (EXPRESSION *)exprchk->data;
                                 exprchk = exprchk->next;
-                                
+                                
+
+
 
 
 
@@ -5638,7 +5711,9 @@ static void TemplateTransferClassDeferred(SYMBOL* newCls, SYMBOL* tmpl)
                                             tpo = tpo->next;
                                             tpn = tpn->next;
                                         }
-                                        
+                                        
+
+
 
 
 

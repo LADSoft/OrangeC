@@ -665,7 +665,8 @@ typedef struct sym
     short structAlign;                                    /* alignment of structures/ unions */
     short accessibleTemplateArgument;                     /* something used as a template argument was validated for
                                                            * accessibility before instantiating the template */
-    int retcount;                                         /* number of return statements in a function */
+    short retblockparamadjust;                            /* Adjustment for retblock parameters */
+    short retcount;                                         /* number of return statements in a function */
     /* Also name for CPP overload lists */
     /* also default for template parameters, is a TYP */
     char* importfile;    /* import name */

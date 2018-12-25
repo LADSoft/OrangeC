@@ -18,6 +18,8 @@ version 6.0.40:
     occ: consider strings as const pointers for purposes of function argument matching
     occ: when a member name matched a structure at global scope, various problems would occur
     occ: assignment of constant data to a structure crashed the generated program (C++ mode only)
+    occ: when a structure is copy-constructed into a function argument, a throw in the function resulted in undefined behavior
+    occ: fix some problems with lambda functions being force fit into std::function
     oasm: speed up assembly of large files
     dlpe/oimplib: handle -y switch 
     orc: fix crash when compiled with package, when processing invalid input file

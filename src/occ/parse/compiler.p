@@ -217,6 +217,7 @@ void SetParams(SYMBOL *cons);
 void unvisitUsingDirectives(NAMESPACEVALUES *v);
 void injectThisPtr(SYMBOL *sp, HASHTABLE *syms);
 void TemplateValidateSpecialization(TEMPLATEPARAMLIST *arg);
+TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, BOOLEAN alt);
 TYPE *TemplateLookupTypeFromDeclType(TYPE *tp);
 void propagateTemplateDefinition(SYMBOL *sym);
 int PushTemplateNamespace(SYMBOL *sym);
@@ -739,6 +740,7 @@ void peep_icode(BOOLEAN branches);
 
 void regInit(void);
 void alloc_init(void);
+void cacheTempSymbol(SYMBOL* sp);
 void AllocateStackSpace(SYMBOL *funcsp);
 void FillInPrologue(QUAD *head, SYMBOL *funcsp);
 void Precolor(void);

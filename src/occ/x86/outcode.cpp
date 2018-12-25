@@ -67,6 +67,7 @@ extern "C" SYMBOL* theCurrentFunc;
 extern "C" int fastcallAlias;
 extern "C" FILE *outputFile, *browseFile;
 extern "C" char infile[];
+extern "C" BOOLEAN usingEsp;
 
 LIST* includedFiles;
 InstructionParser* instructionParser;
@@ -929,12 +930,18 @@ int resolveoffset(EXPRESSION* n, int* resolved)
                 rv += n->v.i;
                 break;
             case en_auto:
+            {
+                int m = n->v.sp->offset;
+
+                if (!usingEsp && m> 0)
+                    m += 4;
+
                 if (n->v.sp->storage_class == sc_parameter && fastcallAlias)
                 {
                     if (!isstructured(basetype(theCurrentFunc->tp)->btp) || n->v.sp->offset != chosenAssembler->arch->retblocksize)
                     {
 
-                        int m = n->v.sp->offset - fastcallAlias * chosenAssembler->arch->parmwidth;
+                        m-= fastcallAlias * chosenAssembler->arch->parmwidth;
                         if (m >= chosenAssembler->arch->retblocksize)
                         {
                             rv += m;
@@ -942,14 +949,15 @@ int resolveoffset(EXPRESSION* n, int* resolved)
                     }
                     else
                     {
-                        rv += n->v.sp->offset;
+                        rv += m;
                     }
                 }
                 else
                 {
-                    rv += n->v.sp->offset;
+                    rv += m;
                 }
-                break;
+            }
+            break;
             case en_labcon:
             case en_global:
             case en_pc:

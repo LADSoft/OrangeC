@@ -151,26 +151,6 @@ static void fixlen(AMODE* ap)
                 if (ap->preg == ESP && !ap->keepesp)
                     ap->offset = exprNode(en_add, ap->offset, intNode(en_c_i, pushlevel + funcstackheight));
             }
-            else
-            {
-                // this is to adjust for the frame pointer being smaller
-                if (ap->preg == EBP)
-                {
-                    int resolved = 0;
-                    int n = resolveoffset(ap->offset, &resolved);
-                    if (resolved)
-                    {
-                        diag("fixlen: resolveoffset failed");
-                    }
-                    else
-                    {
-                        if (n > 0)
-                        {
-                            ap->offset = exprNode(en_add, ap->offset, intNode(en_c_i, 4));
-                        }
-                    }
-                }
-            }
         }
     }
 }

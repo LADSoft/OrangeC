@@ -2345,6 +2345,8 @@
     <Opcode Name="blendps" mand="0x66" op="0x0f:8 0x3a:8 0x0c:8" Class="sseimm"/>
     <Opcode Name="cmppd" mand="0x66:8" op="0x0f:8 0xc2:8" Class="ssepshu"/>
     <Opcode Name="cmpps" mand="" op="0x0f:8 0xc2:8" Class="ssepshu"/>
+    <Opcode Name="comisd" mand="0x66:8" op="0x0f:8 0x2f:8" Class="ssemmxrm"/>
+    <Opcode Name="comiss" mand="" op="0x0f:8 0x2f:8" Class="ssemmxrm"/>
     <Opcode Name="cvtdq2pd" mand="0xf3:8" op="0x0f:8 0xe6:8" Class="ssemmxrm"/>
     <Opcode Name="cvtdq2ps" mand="" op="0x0f:8 0x5b:8" Class="ssemmxrm"/>
     <Opcode Name="cvtpd2dq" mand="0xf2:8" op="0x0f:8 0xe6:8" Class="ssemmxrm"/>
@@ -2596,6 +2598,8 @@
     <Opcode Name="subps" mand="" op="0x0f:8 0x5c:8" Class="ssemmxrm"/>
     <Opcode Name="subsd" mand="0xf2:8" op="0x0f:8 0x5c:8" Class="ssemmxrm"/>
     <Opcode Name="subss" mand="0xf3:8" op="0x0f:8 0x5c:8" Class="ssemmxrm"/>
+    <Opcode Name="ucomisd" mand="0x66:8" op="0x0f:8 0x2e:8" Class="ssemmxrm"/>
+    <Opcode Name="ucomiss" mand="" op="0x0f:8 0x2e:8" Class="ssemmxrm"/>
     <Opcode Name="unpckhpd" mand="0x66:8" op="0x0f:8 0x15:8" Class="ssemmxrm"/>
     <Opcode Name="unpckhps" mand="" op="0x0f:8 0x15:8" Class="ssemmxrm"/>
     <Opcode Name="unpcklpd" mand="0x66:8" op="0x0f:8 0x14:8" Class="ssemmxrm"/>

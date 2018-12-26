@@ -36,6 +36,7 @@ void regrm(bool with64)
     char *names[] = { 
         "addps", "andps", "divps",
         "cvtdq2ps",
+        "comiss", "comisd", "ucomiss", "ucomisd",
         "maxps","minps","mulps","orps","sqrtps",
         "subps","unpckhps","unpcklps","xorps",
         "addpd", "addsd", "addss", "addsubpd", "addsubps",

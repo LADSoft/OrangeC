@@ -130,14 +130,18 @@ void OS::WriteConsole(std::string string)
 }
 void OS::ToConsole(std::deque<std::string>& strings)
 {
-    // std::lock_guard<decltype(consoleMut)> lg(consoleMut);
+// std::lock_guard<decltype(consoleMut)> lg(consoleMut);
+#ifdef _WIN32
     EnterCriticalSection(&consoleSync);
+#endif
     for (auto s : strings)
     {
         WriteConsole(s);
     }
     strings.clear();
+#ifdef _WIN32
     LeaveCriticalSection(&consoleSync);
+#endif
 }
 void OS::AddConsole(std::deque<std::string>& strings, std::string string)
 {

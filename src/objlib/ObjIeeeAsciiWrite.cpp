@@ -319,7 +319,10 @@ void ObjIeeeAscii::RenderSection(ObjSection* Section)
     endl();
     if (Section->GetVirtualType())
     {
-        RenderString("ATR" + ObjUtil::ToHex(Section->GetIndex()) + ",T" + ObjUtil::ToHex(Section->GetVirtualType()->GetIndex()) +
+        int n = Section->GetVirtualType()->GetIndex();
+        if (n < ObjType::eReservedTop + 1)
+            n = Section->GetVirtualType()->GetType();
+        RenderString("ATR" + ObjUtil::ToHex(Section->GetIndex()) + ",T" + ObjUtil::ToHex(n) +
                      ".");
         endl();
     }

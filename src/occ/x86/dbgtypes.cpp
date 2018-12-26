@@ -35,11 +35,17 @@
 #include "ObjFile.h"
 
 extern "C" TYPE stdvoid;
-
+extern "C" TYPE stdint;
 #define DEBUG_VERSION 4.0
 
 bool dbgtypes::typecompare::operator()(const TYPE* left, const TYPE* right) const
 {
+    if (left->type == bt_typedef)
+        if (right->type != bt_typedef)
+            return true;
+    if (right->type == bt_typedef)
+        if (left->type != bt_typedef)
+            return false;
     while (left->type == bt_typedef)
         left = left->btp;
     while (right->type == bt_typedef)
@@ -66,7 +72,12 @@ bool dbgtypes::typecompare::operator()(const TYPE* left, const TYPE* right) cons
                             return true;
                         else if (!operator()(right->btp, left->btp))
                         {
-                            if (left->syms->table && right->syms->table)
+                            if (!!left->syms != !!right->syms)
+                            {
+                                if (!left->syms)
+                                    return true;
+                            }
+                            else if (left->syms && right->syms && left->syms->table && right->syms->table)
                             {
                                 const HASHREC* hr1 = left->syms->table[0];
                                 const HASHREC* hr2 = right->syms->table[0];
@@ -299,12 +310,15 @@ ObjType* dbgtypes::Function(TYPE* tp)
         v |= 32;  // structured return value
     val = factory.MakeFunction("", rv);
     val->SetLinkage((ObjFunction::eLinkage)v);
-    HASHREC* hr = basetype(tp)->syms->table[0];
-    while (hr)
+    if (basetype(tp)->syms)
     {
-        SYMBOL* s = (SYMBOL*)hr->p;
-        val->Add(Put(s->tp));
-        hr = hr->next;
+        HASHREC* hr = basetype(tp)->syms->table[0];
+        while (hr)
+        {
+            SYMBOL* s = (SYMBOL*)hr->p;
+            val->Add(Put(s->tp));
+            hr = hr->next;
+        }
     }
     return val;
 }
@@ -371,6 +385,7 @@ ObjType* dbgtypes::ExtendedType(TYPE* tp)
                 sel = ObjType::eStruct;
             }
             val = factory.MakeType(sel);
+            val->SetSize(basetype(tp)->size);
             hash[tp] = val;  // for self-referencing
             if (tp->syms)
                 StructFields(sel, val, tp->size, tp->sp, tp->syms->table[0]);
@@ -386,7 +401,9 @@ ObjType* dbgtypes::ExtendedType(TYPE* tp)
         {
             val = factory.MakeType((ObjType::eType)42);
         }
-        else  // enum
+        else  if (tp->type == bt_memberptr)
+            val = Put(&stdint); // fixme
+        else// enum
         {
             ObjType* base;
             if (tp->type == bt_enum)
@@ -398,6 +415,7 @@ ObjType* dbgtypes::ExtendedType(TYPE* tp)
                 base = Put(tp);
 
             val = factory.MakeType(ObjType::eEnum);
+            val->SetSize(basetype(tp)->size);
             if (tp->syms)
                 EnumFields(val, base, tp->size, tp->syms->table[0]);
             else
@@ -405,5 +423,5 @@ ObjType* dbgtypes::ExtendedType(TYPE* tp)
             val = TypeName(val, tp->sp->decoratedName);
         }
     }
-    return val;
+    return val;                                                                                 
 }

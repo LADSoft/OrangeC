@@ -3090,7 +3090,10 @@ void PromoteConstructorArgs(SYMBOL* cons1, FUNCTIONCALL* params)
         if (isarithmetic(tps) && isarithmetic(tpa))
         {
             if (tps->type > bt_int && tps->type != tpa->type)
+            {
+                args->tp = sp->tp;
                 cast(sp->tp, &args->exp);
+            }
         }
         hr = hr->next;
         args = args->next;

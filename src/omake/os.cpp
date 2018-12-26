@@ -185,7 +185,7 @@ void OS::JobInit()
     }
     v->SetExport(true);
     name = std::string("OMAKE") + name;
-    sema = Semaphore(jobsLeft);
+    sema = Semaphore(name, jobsLeft);
 }
 void OS::JobRundown() { sema.~Semaphore(); }
 void OS::Take()

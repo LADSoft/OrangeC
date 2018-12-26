@@ -228,7 +228,7 @@ static ARCH_FLOAT aflt = {-126, 126, 128, 24};
 static ARCH_FLOAT adbl = {-1022, 1022, 1024, 53};
 static ARCH_FLOAT aldbl = {-16382, 16382, 16384, 64};
 static ARCH_PEEP peeps[] = {0};
-static char fastcallRegs[3] = { ECX, EDX, EAX };
+static char fastcallRegs[3] = {ECX, EDX, EAX};
 static ARCH_CHARACTERISTICS architecture = {
     &alignments, /* alignments */
     0,           /* custom alignment routine */
@@ -248,7 +248,7 @@ static ARCH_CHARACTERISTICS architecture = {
     &regNames[0],                                                        /* defines registers */
     1,                                                                   /* register trees count */
     &regRoot, (ARCH_REGCLASS**)regClasses, &regCosts, allocOrder, peeps, /* defines peephole information */
-    sizeof(fastcallRegs)/sizeof(fastcallRegs[0]),                        /* Max number of regs considered for fastcall */
+    sizeof(fastcallRegs) / sizeof(fastcallRegs[0]),                      /* Max number of regs considered for fastcall */
     fastcallRegs,                                                        /* register list for regs used in fastcall */
     OPT_BYTECOMPARE,                                                     /* preferred optimizations */
     0,                                                                   /* optimizations we don't want */
@@ -263,10 +263,11 @@ static ARCH_CHARACTERISTICS architecture = {
     FALSE, /* locals in stack memory*/
     FALSE, /* stack pointer grows down */
     FALSE, /* preallocate locals */
-    8,     /* size of a return block on stack (e.g. function ret addr & frame ptr) */
+    4,     /* size of a return block on stack (e.g. function ret addr & frame ptr) */
     4,     /* minimium width/ padding of passed parameters in maus */
     4,     /* minimum stack alignment */
     FALSE, /* library functions should bes genned as import calls */
+    0,     /* ret block param adjust */
 };
 extern ARCH_GEN outputfunctions;
 ARCH_GEN outputfunctions;
@@ -484,11 +485,6 @@ void adjustUsesESP()
     {
         prm_useesp = FALSE;
     }
-    else
-    {
-        if (prm_useesp)
-            architecture.retblocksize = 4;
-    }
     SetUsesESP(prm_useesp);
 }
 ARCH_DEBUG dbgStruct[] = {{
@@ -643,8 +639,6 @@ ARCH_ASM assemblerInterface[] = {
         usage_text,                     /* pointer to usage text */
         args,                           /* extra args */
         sizeof(args) / sizeof(args[0]), /* number of args */
-        oplst,                          /* inline assembler opcode list, or null */
-        reglst,                         /* inline assembler register list, or null */
         prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
         defines,                        /* defines list to create at compile time, or null */
         &dbgStruct[0],                  /* debug structure, or NULL */
@@ -686,8 +680,6 @@ ARCH_ASM assemblerInterface[] = {
         usage_text,                     /* pointer to usage text */
         args,                           /* extra args */
         sizeof(args) / sizeof(args[0]), /* number of args */
-        oplst,                          /* inline assembler opcode list, or null */
-        reglst,                         /* inline assembler register list, or null */
         prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
         defines,                        /* defines list to create at compile time, or null */
         &dbgStruct[0],                  /* debug structure, or NULL */
@@ -729,8 +721,6 @@ ARCH_ASM assemblerInterface[] = {
         usage_text,                     /* pointer to usage text */
         args,                           /* extra args */
         sizeof(args) / sizeof(args[0]), /* number of args */
-        oplst,                          /* inline assembler opcode list, or null */
-        reglst,                         /* inline assembler register list, or null */
         prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
         defines,                        /* defines list to create at compile time, or null */
         &dbgStruct[0],                  /* debug structure, or NULL */
@@ -772,8 +762,6 @@ ARCH_ASM assemblerInterface[] = {
         usage_text,                     /* pointer to usage text */
         args,                           /* extra args */
         sizeof(args) / sizeof(args[0]), /* number of args */
-        oplst,                          /* inline assembler opcode list, or null */
-        reglst,                         /* inline assembler register list, or null */
         prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
         defines,                        /* defines list to create at compile time, or null */
         &dbgStruct[0],                  /* debug structure, or NULL */
@@ -815,8 +803,6 @@ ARCH_ASM assemblerInterface[] = {
         usage_text,                     /* pointer to usage text */
         args,                           /* extra args */
         sizeof(args) / sizeof(args[0]), /* number of args */
-        oplst,                          /* inline assembler opcode list, or null */
-        reglst,                         /* inline assembler register list, or null */
         prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
         defines,                        /* defines list to create at compile time, or null */
         &dbgStruct[0],                  /* debug structure, or NULL */

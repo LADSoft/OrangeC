@@ -65,7 +65,7 @@ extern LIST* temporarySymbols;
 extern int inlinesym_count;
 extern int tempBottom, nextTemp;
 extern TYPE stdint;
-extern SYMBOL *baseThisPtr;
+extern SYMBOL* baseThisPtr;
 
 IMODE* returnImode;
 int retcount;
@@ -1143,6 +1143,7 @@ void genfunc(SYMBOL* funcsp, BOOLEAN doOptimize)
     if (funcsp->linkage == lk_virtual || tmpl)
         gen_endvirtual(funcsp);
     AllocateLocalContext(NULL, funcsp, nextLabel++);
+    funcsp->retblockparamadjust = chosenAssembler->arch->retblockparamadjust;
     XTDumpTab(funcsp);
     FreeLocalContext(NULL, funcsp, nextLabel++);
     intermed_head = NULL;

@@ -144,7 +144,7 @@ void LinkManager::LoadSectionExternals(ObjFile* file, ObjSection* section)
         }
     }
 }
-void LinkManager::MarkExternals(ObjFile *file)
+void LinkManager::MarkExternals(ObjFile* file)
 {
     for (ObjFile::SymbolIterator it = file->ExternalBegin(); it != file->ExternalEnd(); ++it)
     {
@@ -159,10 +159,13 @@ void LinkManager::MarkExternals(ObjFile *file)
         {
             (*its)->SetUsed(true);
         }
-
+        SymbolIterator itv = virtsections.find(&sym);
+        if (itv != virtsections.end())
+        {
+            (*itv)->SetUsed(true);
+            (*itv)->SetRemapped(true);
+        }
     }
-
-
 }
 void LinkManager::MergePublics(ObjFile* file, bool toerr)
 {
@@ -693,8 +696,6 @@ bool LinkManager::ParsePartitions()
 {
     bool done = false;
     int numImports = 0;
-    for (auto file : fileData)
-        MarkExternals(file);
     for (auto import : imports)
         if (import->GetUsed())
             numImports++;
@@ -904,6 +905,8 @@ void LinkManager::Link()
     {
         if (!externals.empty())
         {
+            for (auto file : fileData)
+                MarkExternals(file);
             LoadLibraries();
             do
             {

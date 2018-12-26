@@ -80,7 +80,7 @@ static void ReassignInt(QUAD* d, LLONG_TYPE val)
         d->dc.left->size = d->ans->size;
     }
 }
-static void ReassignFloat(QUAD* d, FPF val)
+static void ReassignFloat(QUAD* d, FPFC val)
 {
     IMODE* ip = make_fimmed(ISZ_LDOUBLE, val);
     d->dc.left = ip;
@@ -93,7 +93,7 @@ static void ReassignFloat(QUAD* d, FPF val)
 static void setFloatZero(QUAD* d)
 {
     IMODE* ip;
-    FPF val;
+    FPFC val;
     memset(&val, 0, sizeof(val));
     val.type = IFPF_IS_ZERO;
     ip = make_fimmed(ISZ_LDOUBLE, val);
@@ -316,7 +316,7 @@ QUAD* ReCast(int size, QUAD* in, QUAD* newMode)
         }
         else if (size >= ISZ_FLOAT)
         {
-            FPF f, temp;
+            FPFC f, temp;
             if (in->dc.opcode == i_icon)
                 f = CastToFloat(size, IntToFloat(&temp, ISZ_ULONGLONG, in->dc.v.i));
             else
@@ -345,7 +345,7 @@ void ConstantFold(QUAD* d, BOOLEAN reflow)
 {
     int index; /*, shift; */
     int shift;
-    FPF temp;
+    FPFC temp;
     EXPRESSION *left = 0, *right = 0;
     switch (d->dc.opcode)
     {

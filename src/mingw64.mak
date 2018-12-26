@@ -41,8 +41,8 @@ LLIB_DEPENDENCIES = $(notdir $(filter-out $(EXCLUDE) $(MAIN_DEPENDENCIES), $(CPP
 
 
 CC=x86_64-w64-mingw32-gcc
-CCFLAGS = -c -D__MSVCRT__ -U__STRICT_ANSI__
-
+CCFLAGS = -c -D__MSVCRT__ -U__STRICT_ANSI__ -fpermissive
+CPPFLAGS = -std=c++11
 LINK=ld
 LFLAGS=-L$(_LIBDIR)
 
@@ -79,7 +79,7 @@ vpath %.a $(_LIBDIR)
 vpath %.res $(_OUTPUTDIR)
 
 %.o: %.cpp
-	$(CC) -std=c++11 $(CCFLAGS) -o$(_OUTPUTDIR)/$@ $^
+	$(CC) $(CPPFLAGS) $(CCFLAGS) -o$(_OUTPUTDIR)/$@ $^
 
 %.o: %.c
 	$(CC) $(CCFLAGS) -o$(_OUTPUTDIR)/$@ $^

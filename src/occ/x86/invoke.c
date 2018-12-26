@@ -48,7 +48,7 @@ LIST *objlist, *asmlist, *liblist, *reslist, *rclist;
 static char outputFileName[256];
 static char *asm_params, *rc_params, *link_params;
 #ifdef _WIN32
-#   define system(x) winsystem(x)
+#    define system(x) winsystem(x)
 extern int winsystem(const char*);
 #endif
 static BOOLEAN InsertOption(char* name)
@@ -261,13 +261,13 @@ int RunExternalFiles(char* rootPath)
         if (tempFile[0] == '\\')
         {
             // fix for buggy mingw on windows
-            strcpy(tempFile,getenv("TMP"));
+            strcpy(tempFile, getenv("TMP"));
             tmpnam(tempFile + strlen(tempFile));
         }
         FILE* fil = fopen(tempFile, "w");
         if (!fil)
         {
-            strcpy(tempFile,".\\");
+            strcpy(tempFile, ".\\");
             tmpnam(tempFile + strlen(tempFile));
             fil = fopen(tempFile, "w");
             if (!fil)

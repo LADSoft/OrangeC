@@ -9,6 +9,18 @@ version 6.0.40:
     occ: fix problem with hook; when one side is a structure the other side might need a constructor call to coerce to the same type
     occ: print return code of linker when calling --y
     occ: faster evaluation when constexpr functions are used
+    occ: rewrite backend to use assembler core
+    occ: fix bug in assembly output when virtual function patches are applied to an overridden virtual table
+    occ: allow implicit use of captured this in lambda expressions
+    occ: fix problem with constructor initializers: direct initialization of a structure member resulted in bad code
+    occ: handle return of reference values properly, by generating an error if generating the return value requires a temporary
+    occ: c++: allow function name to be used in arithmetic expressions, warn when this is being done
+    occ: consider strings as const pointers for purposes of function argument matching
+    occ: when a member name matched a structure at global scope, various problems would occur
+    occ: assignment of constant data to a structure crashed the generated program (C++ mode only)
+    occ: when a structure is copy-constructed into a function argument, a throw in the function resulted in undefined behavior
+    occ: fix some problems with lambda functions being force fit into std::function
+    oasm: speed up assembly of large files
     dlpe/oimplib: handle -y switch 
     orc: fix crash when compiled with package, when processing invalid input file
     ocpp: (c++ version) allow # without a directive
@@ -23,6 +35,7 @@ version 6.0.40:
     ocide: add orangec\bin to the path when running/debugging executables
     ocide: empty status bar after scanning for dependencies
     ocide: bad DOCKS entry in user prefs file leads to hang
+    ocide: when starting the debugger with no windows open, the disassembly window would open instead of the source file window
     rtl: fix recently broken strncpy to work properly again
     rtl: fix tgmath.h
     rtl: fix chrono::system_clock::now();

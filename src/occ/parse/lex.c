@@ -53,12 +53,12 @@ HASHTABLE* kwhash;
 #endif
 
 KEYWORD keywords[] = {
-    {"!", 1, not, KW_ASSEMBLER, TT_UNARY | TT_OPERATOR},
+    {"!", 1, notx, KW_ASSEMBLER, TT_UNARY | TT_OPERATOR},
     {"!=", 2, neq, 0, TT_RELATION | TT_EQUALITY},
     {"#", 1, hash, 0, TT_UNKNOWN},
     {"%", 1, mod, KW_ASSEMBLER, TT_BINARY | TT_OPERATOR},
     {"%=", 2, asmod, 0, TT_ASSIGN | TT_OPERATOR},
-    {"&", 1, and, KW_ASSEMBLER, TT_BINARY | TT_OPERATOR},
+    {"&", 1, andx, KW_ASSEMBLER, TT_BINARY | TT_OPERATOR},
     {"&&", 2, land, 0, TT_BINARY | TT_OPERATOR},
     {"&=", 2, asand, 0, TT_ASSIGN | TT_OPERATOR},
     {"(", 1, openpa, KW_ASSEMBLER, TT_PRIMARY},
@@ -195,7 +195,7 @@ KEYWORD keywords[] = {
     {"__declspec", 10, kw__declspec, KW_NONANSI | KW_ALL, TT_LINKAGE},
     {"__entrypoint", 12, kw__entrypoint, KW_MSIL, TT_LINKAGE},
     {"__export", 8, kw__export, KW_NONANSI | KW_ALL, TT_LINKAGE},
-    {"__fastcall", 10, kw__fastcall, KW_NONANSI | KW_ALL, TT_LINKAGE },
+    {"__fastcall", 10, kw__fastcall, KW_NONANSI | KW_ALL, TT_LINKAGE},
     {"__fault", 7, kw___fault, KW_MSIL, TT_CONTROL},
     {"__finally", 9, kw___finally, KW_MSIL, TT_CONTROL},
     {"__func__", 8, kw___func__, KW_C99 | KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
@@ -246,8 +246,8 @@ KEYWORD keywords[] = {
     {"and_eq", 6, asand, KW_CPLUSPLUS, TT_ASSIGN | TT_OPERATOR},
     {"asm", 3, kw_asm, KW_NONANSI | KW_ALL, TT_CONTROL},
     {"auto", 4, kw_auto, 0, TT_STORAGE_CLASS},
-    {"bitand", 6, and, KW_CPLUSPLUS, TT_BINARY | TT_OPERATOR},
-    {"bitor", 5, or, KW_CPLUSPLUS, TT_BINARY | TT_OPERATOR},
+    {"bitand", 6, andx, KW_CPLUSPLUS, TT_BINARY | TT_OPERATOR},
+    {"bitor", 5, orx, KW_CPLUSPLUS, TT_BINARY | TT_OPERATOR},
     {"bool", 4, kw_bool, KW_CPLUSPLUS, TT_BASETYPE | TT_BOOL},
     {"break", 5, kw_break, 0, TT_CONTROL},
     {"case", 4, kw_case, 0, TT_CONTROL | TT_SWITCH},
@@ -257,7 +257,7 @@ KEYWORD keywords[] = {
     {"char16_t", 8, kw_char16_t, KW_CPLUSPLUS, TT_BASETYPE | TT_INT},
     {"char32_t", 8, kw_char32_t, KW_CPLUSPLUS, TT_BASETYPE | TT_INT},
     {"class", 5, kw_class, KW_CPLUSPLUS, TT_BASETYPE | TT_STRUCT},
-    {"compl", 5, compl, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
+    {"compl", 5, complx, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
     {"const", 5, kw_const, KW_ASSEMBLER, TT_POINTERQUAL | TT_TYPEQUAL},
     {"const_cast", 10, kw_const_cast, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
     {"constexpr", 9, kw_constexpr, KW_CPLUSPLUS, TT_DECLARE},
@@ -289,7 +289,7 @@ KEYWORD keywords[] = {
     //	{ "near", 4,  kw__near, KW_NONANSI | KW_ALL, TT_POINTERQUAL | TT_TYPEQUAL},
     {"new", 3, kw_new, KW_CPLUSPLUS, TT_OPERATOR | TT_UNARY},
     {"noexcept", 8, kw_noexcept, KW_CPLUSPLUS, TT_CONTROL},
-    {"not", 3, not, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
+    {"not", 3, notx, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
     {"not_eq", 6, neq, KW_CPLUSPLUS, TT_RELATION | TT_EQUALITY},
     {"nullptr", 7, kw_nullptr, KW_CPLUSPLUS, TT_VAR},
     {"operator", 8, kw_operator, KW_CPLUSPLUS, TT_OPERATOR},
@@ -331,11 +331,11 @@ KEYWORD keywords[] = {
     {"xor", 3, uparrow, KW_CPLUSPLUS, TT_BINARY | TT_OPERATOR},
     {"xor_eq", 6, asxor, KW_CPLUSPLUS, TT_ASSIGN | TT_OPERATOR},
     {"{", 1, begin, 0, TT_CONTROL | TT_BLOCK},
-    {"|", 1, or, KW_ASSEMBLER, TT_BINARY | TT_OPERATOR},
+    {"|", 1, orx, KW_ASSEMBLER, TT_BINARY | TT_OPERATOR},
     {"|=", 2, asor, 0, TT_ASSIGN | TT_OPERATOR},
     {"||", 2, lor, 0, TT_BINARY | TT_OPERATOR},
     {"}", 1, end, 0, TT_CONTROL | TT_BLOCK},
-    {"~", 1, compl, KW_ASSEMBLER, TT_UNARY | TT_OPERATOR},
+    {"~", 1, complx, KW_ASSEMBLER, TT_UNARY | TT_OPERATOR},
 };
 
 #define TABSIZE (sizeof(keywords) / sizeof(keywords[0]))
@@ -872,10 +872,10 @@ static LLONG_TYPE getbase(int b, char** ptr)
     return i;
 }
 
-static void getfloatingbase(int b, FPF* rval, char** ptr)
+static void getfloatingbase(int b, FPFC* rval, char** ptr)
 {
     int j;
-    FPF temp, temp1;
+    FPFC temp, temp1;
     SetFPFZero(rval, 0);
     while ((j = radix36(**ptr)) < b)
     {
@@ -892,11 +892,11 @@ static void getfloatingbase(int b, FPF* rval, char** ptr)
 /*
  *      getfrac - get fraction part of a floating number.
  */
-static int getfrac(int radix, char** ptr, FPF* rval)
+static int getfrac(int radix, char** ptr, FPFC* rval)
 {
     ULLONG_TYPE i = 0;
     int j, k = 0;
-    FPF temp, temp1;
+    FPFC temp, temp1;
     int digits = 0;
     while ((j = radix36(**ptr)) < radix)
     {
@@ -956,7 +956,7 @@ static int getexp(char** ptr)
  *      getnum handles all of the numeric input. it accepts
  *      decimal, octal, hexidecimal, and floating point numbers.
  */
-int getNumber(unsigned char** ptr, unsigned char** end, unsigned char* suffix, FPF* rval, LLONG_TYPE* ival)
+int getNumber(unsigned char** ptr, unsigned char** end, unsigned char* suffix, FPFC* rval, LLONG_TYPE* ival)
 {
     char buf[200], *p = buf;
     int radix = 10;
@@ -1288,7 +1288,7 @@ LEXEME* getsym(void)
     KEYWORD* kw;
     enum e_lexType tp;
     BOOLEAN contin;
-    FPF rval;
+    FPFC rval;
     LLONG_TYPE ival;
     static unsigned char buf[16384];
     static int pos = 0;

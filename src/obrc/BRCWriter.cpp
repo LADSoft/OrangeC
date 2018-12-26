@@ -31,9 +31,9 @@
 #include <cstring>
 #include <cstdlib>
 #ifdef GCCLINUX
-#include <unistd.h>
+#    include <unistd.h>
 #else
-#include <io.h>
+#    include <io.h>
 #endif
 
 #define STRINGVERSION "120"

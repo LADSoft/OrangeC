@@ -97,15 +97,14 @@ void precolor(QUAD* head) /* precolor an instruction */
             tempInfo[ta]->precolored = TRUE;
             tempInfo[ta]->enode->v.sp->regmode = 2;
             tempInfo[ta]->color = chosenAssembler->arch->fastcallRegs[(head->fastcall > 0 ? head->fastcall : -head->fastcall) - 1];
-
         }
         else
         {
             // call site
             if (head->dc.left->mode != i_direct || head->dc.left->offset->type != en_tempref)
             {
-                IMODE *temp = InitTempOpt(head->dc.left->size, head->dc.left->size);
-                QUAD *q = (QUAD *)Alloc(sizeof(QUAD));
+                IMODE* temp = InitTempOpt(head->dc.left->size, head->dc.left->size);
+                QUAD* q = (QUAD*)Alloc(sizeof(QUAD));
                 *q = *head;
                 q->dc.opcode = i_assn;
                 q->ans = temp;
@@ -121,7 +120,8 @@ void precolor(QUAD* head) /* precolor an instruction */
                 //            head->precolored |= TEMP_ANS;
                 tempInfo[ta]->precolored = TRUE;
                 tempInfo[ta]->enode->v.sp->regmode = 2;
-                tempInfo[ta]->color = chosenAssembler->arch->fastcallRegs[(head->fastcall > 0 ? head->fastcall : -head->fastcall) - 1];
+                tempInfo[ta]->color =
+                    chosenAssembler->arch->fastcallRegs[(head->fastcall > 0 ? head->fastcall : -head->fastcall) - 1];
             }
         }
     }
@@ -1933,7 +1933,7 @@ int examine_icode(QUAD* head)
     if (prm_useesp)
     {
         extern void SetUsesESP(BOOLEAN yes);
-        SetUsesESP(!uses_substack&&!hasXCInfo);
+        SetUsesESP(!uses_substack && !hasXCInfo);
     }
     return changed;
 }

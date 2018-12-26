@@ -64,7 +64,7 @@ void ppPragma::ParsePragma(const std::string& args)
     if (id->IsIdentifier())
     {
         std::string str = id->GetId();
-        std::transform(str.begin(), str.end(),str.begin(), ::toupper);
+        std::transform(str.begin(), str.end(), str.begin(), ::toupper);
         if (str == "STDC")
             HandleSTDC(tk);
         else if (str == "AUX")
@@ -190,12 +190,9 @@ bool Once::AddToList()
     items.insert(item);
     return true;
 }
-void Once::TriggerEOF()
-{
-    include->ForceEOF();
-}
+void Once::TriggerEOF() { include->ForceEOF(); }
 
-bool Once::OnceItem::operator< (const OnceItem& right) const
+bool Once::OnceItem::operator<(const OnceItem& right) const
 {
     if (filesize < right.filesize)
         return true;
@@ -210,7 +207,7 @@ bool Once::OnceItem::operator< (const OnceItem& right) const
 }
 void Once::OnceItem::SetParams(const std::string& fileName)
 {
-    FILE *fil = fopen(fileName.c_str(), "rb");
+    FILE* fil = fopen(fileName.c_str(), "rb");
     if (fil)
     {
         filesize = 0;
@@ -280,7 +277,4 @@ void ppPragma::HandleFar(Tokenizer& tk)
 {
     // fixme
 }
-void ppPragma::HandleOnce(Tokenizer& tk)
-{
-    Once::Instance()->CheckForMultiple();
-}
+void ppPragma::HandleOnce(Tokenizer& tk) { Once::Instance()->CheckForMultiple(); }

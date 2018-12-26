@@ -39,9 +39,9 @@
 #include <cstdio>
 #include <cstring>
 #ifdef GCCLINUX
-#include <unistd.h>
+#    include <unistd.h>
 #else
-#include <io.h>
+#    include <io.h>
 #endif
 
 int main(int argc, char** argv)
@@ -282,7 +282,8 @@ int LinkerMain::Run(int argc, char** argv)
             else
                 path.erase(n + 1);
             int rv = TargetConfig.RunApp(path, outputFile, debugFile, Verbosity.GetExists());
-            _unlink(outputFile.c_str());
+            if (!Verbosity.GetExists())
+                _unlink(outputFile.c_str());
             return rv;
         }
     }

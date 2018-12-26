@@ -313,6 +313,15 @@ void ObjIeeeAscii::RenderSection(ObjSection* Section)
     endl();
     RenderString("ASS" + ObjUtil::ToHex(Section->GetIndex()) + "," + ObjUtil::ToHex(Section->GetMemoryManager().GetSize()) + ".");
     endl();
+    if (Section->GetVirtualType())
+    {
+        int n = Section->GetVirtualType()->GetIndex();
+        if (n < ObjType::eReservedTop + 1)
+            n = Section->GetVirtualType()->GetType();
+        RenderString("ATR" + ObjUtil::ToHex(Section->GetIndex()) + ",T" + ObjUtil::ToHex(n) +
+                     ".");
+        endl();
+    }
     if (quals & ObjSection::absolute)
     {
         RenderString("ASL" + ObjUtil::ToHex(Section->GetIndex()) + "," + ObjUtil::ToHex(Section->GetMemoryManager().GetBase()) +
@@ -451,7 +460,7 @@ void ObjIeeeAscii::RenderMemoryBinary(ObjMemoryManager* Memory)
         ObjMemory* memory = (*itmem);
         if (memory->GetFixup())
         {
-            *(unsigned *)scratch = memory->GetFixup()->Eval(0);
+            *(unsigned*)scratch = memory->GetFixup()->Eval(0);
             bufferup(scratch, memory->GetSize());
         }
         if (memory->IsEnumerated())
@@ -571,10 +580,10 @@ bool ObjIeeeAscii::HandleWrite()
     RenderComment(eMakePass, ObjString("Make Pass Separator"));
     RenderCS();
     ResetCS();
-    WriteSectionHeaders();
+    WriteTypes();
     RenderCS();
     ResetCS();
-    WriteTypes();
+    WriteSectionHeaders();
     RenderCS();
     ResetCS();
     WriteSymbols();

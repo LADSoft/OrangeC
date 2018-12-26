@@ -198,7 +198,7 @@ void ppCond::HandleElse(std::string& line)
         std::string line1 = line;
         if (line1.substr(npos, 2) == "if")
         {
-            line1 = line1.substr(npos+2);
+            line1 = line1.substr(npos + 2);
             define->replaceDefined(line1);
             define->Process(line1);
             HandleElif(expr.Eval(line1), line1);

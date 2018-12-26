@@ -1,9 +1,9 @@
 #include <string.h>
 #include <ctype.h>
 #ifdef GCCLINUX
-#include <stdlib.h>
+#    include <stdlib.h>
 #else
-#include <windows.h>
+#    include <windows.h>
 #endif
 namespace std
 

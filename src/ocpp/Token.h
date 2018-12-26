@@ -226,23 +226,23 @@ class Tokenizer
     }
     const Token* Next();
     std::string GetString() { return line; }
-    void SetString(const std::string &Line) { line = Line; }
+    void SetString(const std::string& Line) { line = Line; }
     static void SetUnsigned(bool flag) { CharacterToken::SetUnsigned(flag); }
     static void SetAnsi(bool flag) { NumericToken::SetAnsi(flag); }
     static void SetC99(bool flag) { NumericToken::SetC99(flag); }
     void SetCaseInsensitive(bool flag) { caseInsensitive = flag; }
 
-
     // I so want to use std::function here but this call has to be fast...
     static bool (*IsSymbolChar)(const char*, bool);
-protected:
+
+  protected:
     static bool IsSymbolCharDefault(const char* data, bool startOnly);
-private:
+
+  private:
     KeywordHash* keywordTable;
     std::string line;
     Token* currentToken;
     bool caseInsensitive;
 };
-
 
 #endif

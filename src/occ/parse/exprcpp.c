@@ -364,7 +364,7 @@ void castToArithmetic(BOOLEAN integer, TYPE** tp, EXPRESSION** exp, enum e_kw kw
         if (!castToArithmeticInternal(integer, tp, exp, kw, other, implicit))
         {
             // failed at conversion
-            if (kw >= kw_new && kw <= compl)
+            if (kw >= kw_new && kw <= complx)
             {
                 // LHS, put up an operator whatever message
                 char buf[256];

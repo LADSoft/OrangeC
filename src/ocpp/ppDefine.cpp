@@ -287,7 +287,7 @@ void ppDefine::DoDefine(std::string& line, bool caseInsensitive)
             name = next->GetId();
         }
         if (tk.GetString()[0] == '(')  // yes it HAS to be the first character, no spaces
-                                               // or other characters allowed
+                                       // or other characters allowed
         {
             // the below is ok because the first one gets the '(' and the next one gets the next token
             next = tk.Next();  // get '('
@@ -723,7 +723,8 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr)
             if (line[p] == waiting && NotSlashed(line, p))
                 waiting = 0;
         }
-        else if (Tokenizer::IsSymbolChar(line.c_str() + p, true) && (p == begin || line[p - 1] == '$' || !Tokenizer::IsSymbolChar(line.c_str() + p - 1, false)))
+        else if (Tokenizer::IsSymbolChar(line.c_str() + p, true) &&
+                 (p == begin || line[p - 1] == '$' || !Tokenizer::IsSymbolChar(line.c_str() + p - 1, false)))
         {
             name = defid(line, q, p);
             Symbol* sym = symtab.Lookup(name);

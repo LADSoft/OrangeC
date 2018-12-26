@@ -28,13 +28,13 @@
 #include <cctype>
 #include <fstream>
 #include <cstdio>
+#include <algorithm>
 #include "Instruction.h"
 #include "Fixup.h"
 #include "UTF8.h"
 #include <stdexcept>
 #include <iostream>
 #include "Token.h"
-
 
 static const unsigned mask[32] = {
     0x1,      0x3,      0x7,       0xf,       0x1f,      0x3f,      0x7f,       0xff,       0x1ff,      0x3ff,      0x7ff,
@@ -131,6 +131,8 @@ bool InstructionParser::SetNumber(int tokenPos, int oldVal, int newVal)
 }
 bool InstructionParser::MatchesOpcode(std::string opcode)
 {
+    std::transform(opcode.begin(), opcode.end(), opcode.begin(), ::tolower);
+
     return opcodeTable.end() != opcodeTable.find(opcode) || prefixTable.end() != prefixTable.find(opcode);
 }
 Instruction* InstructionParser::Parse(const std::string args, int PC)
@@ -192,6 +194,8 @@ Instruction* InstructionParser::Parse(const std::string args, int PC)
             break;
         }
     }
+    std::transform(op.begin(), op.end(), op.begin(), ::tolower);
+
     if (op == "")
     {
         auto rv = DispatchOpcode(-1);
@@ -235,17 +239,20 @@ Instruction* InstructionParser::Parse(const std::string args, int PC)
                     {
                         if (operand->used && operand->size)
                         {
-                            if (s->Lost() && operand->pos)
-                                operand->pos -= 8;
-                            int n = operand->relOfs;
-                            if (n < 0)
-                                n = -n;
-                            Fixup* f =
-                                new Fixup(operand->node, (operand->size + 7) / 8, operand->relOfs != 0, n, operand->relOfs > 0);
-                            f->SetInsOffs((operand->pos + 7) / 8);
-                            f->SetFileName(errName);
-                            f->SetErrorLine(errLine);
-                            s->Add(f);
+                            if (operand->node->GetType() != AsmExprNode::IVAL && operand->node->GetType() != AsmExprNode::FVAL)
+                            {
+                                if (s->Lost() && operand->pos)
+                                    operand->pos -= 8;
+                                int n = operand->relOfs;
+                                if (n < 0)
+                                    n = -n;
+                                Fixup* f =
+                                    new Fixup(operand->node, (operand->size + 7) / 8, operand->relOfs != 0, n, operand->relOfs > 0);
+                                f->SetInsOffs((operand->pos + 7) / 8);
+                                f->SetFileName(errName);
+                                f->SetErrorLine(errLine);
+                                s->Add(f);
+                            }
                         }
                     }
                 }
@@ -272,7 +279,9 @@ void InstructionParser::RenameRegisters(AsmExprNode* val)
 {
     if (val->GetType() == AsmExprNode::LABEL)
     {
-        auto it = tokenTable.find(val->label);
+        auto test = val->label;
+        std::transform(test.begin(), test.end(), test.begin(), ::tolower);
+        auto it = tokenTable.find(test);
         if (it != tokenTable.end())
         {
             int n = it->second;
@@ -471,7 +480,10 @@ void InstructionParser::ParseNumeric(int PC)
     RenameRegisters(val);
     if (val->GetType() == AsmExprNode::LABEL)
     {
-        auto it = tokenTable.find(val->label);
+        auto test = val->label;
+        std::transform(test.begin(), test.end(), test.begin(), ::tolower);
+        auto it = tokenTable.find(test);
+
         InputToken* next;
         if (it != tokenTable.end())
         {
@@ -646,7 +658,7 @@ void InstructionParser::NextToken(int PC)
         }
         else if (Tokenizer::IsSymbolChar(line.c_str(), true) || IsNumber() || line[0] == '$')
         {
-            val = expr.Build(line);
+            val = asmexpr.Build(line);
             id = TK_NUMERIC;
         }
         else if (ispunct(line[0]))

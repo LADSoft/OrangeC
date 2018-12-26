@@ -286,7 +286,7 @@ void InsertSymbol(SYMBOL* sp, enum e_sc storage_class, enum e_lk linkage, BOOLEA
     }
 }
 LEXEME* tagsearch(LEXEME* lex, char* name, SYMBOL** rsp, HASHTABLE** table, SYMBOL** strSym_out, NAMESPACEVALUES** nsv_out,
-                         enum e_sc storage_class)
+                  enum e_sc storage_class)
 {
     NAMESPACEVALUES* nsv = NULL;
     SYMBOL* strSym = NULL;
@@ -2040,7 +2040,7 @@ static LEXEME* getLinkageQualifiers(LEXEME* lex, enum e_lk* linkage, enum e_lk* 
     }
     return lex;
 }
-LEXEME* getQualifiers(LEXEME* lex, TYPE** tp, enum e_lk* linkage, enum e_lk* linkage2, enum e_lk* linkage3, BOOLEAN *asFriend)
+LEXEME* getQualifiers(LEXEME* lex, TYPE** tp, enum e_lk* linkage, enum e_lk* linkage2, enum e_lk* linkage3, BOOLEAN* asFriend)
 {
     while (KWTYPE(lex, (TT_TYPEQUAL | TT_LINKAGE)))
     {
@@ -2076,7 +2076,7 @@ static BOOLEAN isPointer(LEXEME* lex)
     if (ISKW(lex))
         switch (KW(lex))
         {
-            case and:
+            case andx:
             case land:
             case star:
                 return TRUE;
@@ -2527,7 +2527,7 @@ founddecltype:
         }
         if (iscomplex || imaginary)
             error(ERR_MISSING_TYPE_SPECIFIER);
-        else if (ISID(lex) || MATCHKW(lex, classsel) || MATCHKW(lex, compl) || MATCHKW(lex, kw_decltype))
+        else if (ISID(lex) || MATCHKW(lex, classsel) || MATCHKW(lex, complx) || MATCHKW(lex, kw_decltype))
         {
             NAMESPACEVALUES* nsv = NULL;
             SYMBOL* strSym = NULL;
@@ -3413,7 +3413,7 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
                 {
                     LEXEME* cur = lex;
                     lex = getsym();
-                    if (!MATCHKW(lex, star) && !MATCHKW(lex, and) && !startOfType(lex, TRUE))
+                    if (!MATCHKW(lex, star) && !MATCHKW(lex, andx) && !startOfType(lex, TRUE))
                     {
                         if (*spin)
                         {
@@ -4063,7 +4063,7 @@ static LEXEME* getAfterType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** sp,
                                             foundVolatile = TRUE;
                                             lex = getsym();
                                             break;
-                                        case and:
+                                        case andx:
                                             foundand = TRUE;
                                             lex = getsym();
                                             break;
@@ -4405,7 +4405,7 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                 char buf[512];
                 int ov = 0;
                 TYPE* castType = NULL;
-                if (MATCHKW(lex, compl))
+                if (MATCHKW(lex, complx))
                 {
                     lex = getsym();
                     if (!ISID(lex) || !*strSym || strcmp((*strSym)->name, lex->value.s.a))
@@ -4703,7 +4703,7 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                 }
             }
             break;
-            case and:
+            case andx:
             case land:
                 if (storage_class == sc_catchvar)
                 {
@@ -4717,11 +4717,11 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                 }
                 // using the C++ reference operator as the ref keyword...
                 if (cparams.prm_cplusplus || chosenAssembler->msil && chosenAssembler->msil->allowExtensions &&
-                                                 storage_class == sc_parameter && KW(lex) == and)
+                                                 storage_class == sc_parameter && KW(lex) == andx)
                 {
                     TYPE* tp2;
                     ptype = Alloc(sizeof(TYPE));
-                    if (MATCHKW(lex, and))
+                    if (MATCHKW(lex, andx))
                         ptype->type = bt_lref;
                     else
                         ptype->type = bt_rref;
@@ -5027,7 +5027,7 @@ static LEXEME* getStorageAndType(LEXEME* lex, SYMBOL* funcsp, SYMBOL** strSym, B
                                  enum e_sc* storage_class, enum e_sc* storage_class_in, ADDRESS* address, BOOLEAN* blocked,
                                  BOOLEAN* isExplicit, BOOLEAN* constexpression, TYPE** tp, enum e_lk* linkage, enum e_lk* linkage2,
                                  enum e_lk* linkage3, enum e_ac access, BOOLEAN* notype, BOOLEAN* defd, int* consdest,
-                                 BOOLEAN* templateArg, BOOLEAN *asFriend)
+                                 BOOLEAN* templateArg, BOOLEAN* asFriend)
 {
     BOOLEAN foundType = FALSE;
     BOOLEAN first = TRUE;
@@ -5035,7 +5035,7 @@ static LEXEME* getStorageAndType(LEXEME* lex, SYMBOL* funcsp, SYMBOL** strSym, B
     *constexpression = FALSE;
 
     while (KWTYPE(lex, TT_STORAGE_CLASS | TT_POINTERQUAL | TT_LINKAGE | TT_DECLARE) ||
-           (!foundType && startOfType(lex, assumeType)) || MATCHKW(lex, compl) || (*storage_class == sc_typedef && !foundType))
+           (!foundType && startOfType(lex, assumeType)) || MATCHKW(lex, complx) || (*storage_class == sc_typedef && !foundType))
     {
         if (KWTYPE(lex, TT_DECLARE))
         {
@@ -6275,7 +6275,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                         TYPE* tp = Alloc(sizeof(TYPE));
                         tp->type = bt_typedef;
                         tp->btp = sp->tp;
-                        tp->rootType = sp->tp->rootType;
+                        UpdateRootTypes(tp);
                         sp->tp = tp;
                         tp->sp = sp;
                         tp->size = tp->btp->size;

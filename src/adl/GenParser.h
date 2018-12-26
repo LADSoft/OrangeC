@@ -68,6 +68,8 @@ class GenParser
     bool GenerateOperandParser();
     bool GenerateCodingProcessor();
     bool GenerateDispatcher();
+    bool GenerateCompilerStubs();
+    std::string convertname(const std::string& name);
 
   private:
     std::fstream* file;

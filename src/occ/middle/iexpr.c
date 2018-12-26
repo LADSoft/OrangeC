@@ -61,8 +61,7 @@ extern int fastcallAlias;
 extern BOOLEAN setjmp_used;
 extern BOOLEAN functionHasAssembly;
 
-
-SYMBOL *baseThisPtr;
+SYMBOL* baseThisPtr;
 
 int calling_inline;
 
@@ -84,7 +83,7 @@ static LIST* incdecListLast;
 static int push_nesting;
 static EXPRESSION* this_bound;
 static int inline_level;
-
+static int stackblockOfs;
 IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size);
 IMODE* gen_void(EXPRESSION* node, SYMBOL* funcsp);
 IMODE* gen_relat(EXPRESSION* node, SYMBOL* funcsp);
@@ -93,6 +92,7 @@ void falsejp(EXPRESSION* node, SYMBOL* funcsp, int label);
 
 void iexpr_init(void)
 {
+    stackblockOfs = 0;
     calling_inline = 0;
     inlinesp_count = 0;
     push_nesting = 0;
@@ -441,7 +441,7 @@ IMODE* make_immed(int size, LLONG_TYPE i)
 
 /*-------------------------------------------------------------------------*/
 
-IMODE* make_fimmed(int size, FPF f)
+IMODE* make_fimmed(int size, FPFC f)
 /*
  *      make a node to reference an immediate value i.
  */
@@ -897,7 +897,7 @@ IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
                         if (exp)
                             return gen_expr(funcsp, exp, 0, natural_size(exp));
                     }
-                    else if (baseThisPtr ) // for this ptrs inherited in a constructor
+                    else if (baseThisPtr)  // for this ptrs inherited in a constructor
                     {
                         if (sp != baseThisPtr)
                         {
@@ -2168,7 +2168,12 @@ static int genCdeclArgs(INITLIST* args, SYMBOL* funcsp)
     if (args)
     {
         rv = genCdeclArgs(args->next, funcsp);
-        rv += gen_parm(args, funcsp);
+        int n = gen_parm(args, funcsp);
+        rv += n;
+        stackblockOfs -= n;
+        if (args->exp->type == en_auto)
+            if (args->exp->v.sp->stackblock)
+                args->exp->v.sp->offset = stackblockOfs;
     }
     return rv;
 }
@@ -2260,7 +2265,7 @@ static void gen_arg_destructors(SYMBOL* funcsp, INITLIST* arg)
             gen_expr(funcsp, arg->dest, F_NOVALUE, ISZ_UINT);
     }
 }
-static int MarkFastcall(SYMBOL *sym, TYPE *functp, BOOLEAN thisptr)
+static int MarkFastcall(SYMBOL* sym, TYPE* functp, BOOLEAN thisptr)
 {
 #ifndef CPPTHISCALL
     if (sym->linkage != lk_fastcall)
@@ -2273,9 +2278,9 @@ static int MarkFastcall(SYMBOL *sym, TYPE *functp, BOOLEAN thisptr)
         if (!(setjmp_used))
         {
 
-            QUAD *tail = intermed_tail;
+            QUAD* tail = intermed_tail;
             int i = 0;
-            HASHREC *hr;
+            HASHREC* hr;
             if (isfunction(functp))
             {
                 if (basetype(functp)->sp)
@@ -2297,14 +2302,16 @@ static int MarkFastcall(SYMBOL *sym, TYPE *functp, BOOLEAN thisptr)
                 if (tail->dc.opcode == i_parm)
                 {
                     // change it to a move
-                    SYMBOL *sp = (SYMBOL *)hr->p;
-                    TYPE *tp = basetype(sp->tp);
-                    if (thisptr || (tp->type < bt_float ||
-                        (tp->type == bt_pointer && basetype(basetype(tp)->btp)->type != bt_func) || isref(tp)) &&
-                        sp->offset - (chosenAssembler->arch->fastcallRegCount + structret) * chosenAssembler->arch->parmwidth < chosenAssembler->arch->retblocksize)
+                    SYMBOL* sp = (SYMBOL*)hr->p;
+                    TYPE* tp = basetype(sp->tp);
+                    if (thisptr ||
+                        (tp->type < bt_float || (tp->type == bt_pointer && basetype(basetype(tp)->btp)->type != bt_func) ||
+                         isref(tp)) &&
+                            sp->offset - (chosenAssembler->arch->fastcallRegCount + structret) * chosenAssembler->arch->parmwidth <
+                                chosenAssembler->arch->retblocksize)
                     {
-                        IMODE *temp = tempreg(tail->dc.left->size, 0);
-                        QUAD *q = (QUAD *)Alloc(sizeof(QUAD));
+                        IMODE* temp = tempreg(tail->dc.left->size, 0);
+                        QUAD* q = (QUAD*)Alloc(sizeof(QUAD));
                         *q = *tail;
                         q->dc.opcode = i_assn;
                         q->ans = temp;
@@ -2324,7 +2331,7 @@ static int MarkFastcall(SYMBOL *sym, TYPE *functp, BOOLEAN thisptr)
                         break;
                     if (thisptr)
                     {
-                        if (((SYMBOL *)hr->p)->thisPtr)
+                        if (((SYMBOL*)hr->p)->thisPtr)
                             hr = hr->next;
                         thisptr = FALSE;
                     }
@@ -2428,6 +2435,7 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
             gen_icode(i_substack, NULL, make_immed(ISZ_UINT, n), NULL);
         }
     }
+    int cdeclare = stackblockOfs;
     if (f->sp->linkage == lk_pascal)
     {
         if (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr)
@@ -2449,6 +2457,8 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
                 rv = rv + chosenAssembler->arch->stackalign - rv % chosenAssembler->arch->stackalign;
             gen_icode(i_parmstack, ap = tempreg(ISZ_ADDR, 0), make_immed(ISZ_UINT, rv), NULL);
             exp->v.sp->imvalue = ap;
+            exp->v.sp->offset = -rv + stackblockOfs;
+            cacheTempSymbol(exp->v.sp);
             genCdeclArgs(f->arguments, funcsp);
             ap3 = gen_expr(funcsp, exp, 0, ISZ_UINT);
             ap = LookupLoadTemp(NULL, ap3);
@@ -2544,7 +2554,7 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         gosub = gen_igosub(type, ap);
     }
     gosub->altdata = f;
-    
+
     if ((flags & F_NOVALUE) && !isstructured(basetype(f->functp)->btp) && basetype(f->functp)->btp->type != bt_memberptr)
     {
         if (basetype(f->functp)->btp->type == bt_void)
@@ -2563,6 +2573,7 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
     {
         gosub->novalue = -1;
     }
+    stackblockOfs = cdeclare;
     /* undo pars and make a temp for the result */
     if (chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE)
     {
@@ -3044,7 +3055,7 @@ IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
                 {
                     if (siz1 >= ISZ_FLOAT)
                     {
-                        FPF f;
+                        FPFC f;
                         IntToFloat(&f, natural_size(node->left), ap1->offset->v.i);
                         ap1 = make_fimmed(siz1, f);
                     }
@@ -3207,7 +3218,7 @@ IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
         case en_nullptr:
             if (size >= ISZ_FLOAT)
             {
-                FPF f;
+                FPFC f;
                 LongLongToFPF(&f, node->v.i);
                 ap1 = make_fimmed(size, f);
             }

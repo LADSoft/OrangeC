@@ -72,7 +72,7 @@ class ObjSection : public ObjWrapper
     {
     }
     virtual ~ObjSection(){};
-    ObjString& GetName() { return name; }
+    ObjString GetName() const { return name; }
     void SetName(ObjString Name) { name = Name; }
     ObjString GetDisplayName();
     ObjString GetExternalName() { return externalName; }

@@ -1,7 +1,7 @@
 #include <string.h>
 #include <ctype.h>
 #ifndef GCCLINUX
-#include <windows.h>
+#    include <windows.h>
 #endif
 #include <stdlib.h>
 // this is to get around a buggy command.com on freedos...

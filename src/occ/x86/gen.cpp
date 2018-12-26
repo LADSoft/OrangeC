@@ -29,13 +29,15 @@
 #include <limits.h>
 #include "be.h"
 
-extern OCODE* peep_tail;
-extern int startlab, retlab;
-extern int usingEsp;
+extern "C" ARCH_ASM* chosenAssembler;
+
+extern "C" OCODE* peep_tail;
+extern "C" int startlab, retlab;
+extern "C" int usingEsp;
 
 #define MAX_ALIGNS 50
-int pushlevel;
-int funcstackheight;
+extern "C" int pushlevel = 0;
+extern "C" int funcstackheight = 0;
 
 static int floatpop;
 static int fstackid;
@@ -54,9 +56,9 @@ static int switchTreePos;
 /*static int floatArea; */
 
 /* map the icode version of the regs to the processor version */
-extern int regmap[REG_MAX][2];
+extern "C" int regmap[REG_MAX][2];
 
-BOOLEAN BackendIntrinsic(QUAD *q);
+BOOLEAN BackendIntrinsic(QUAD* q);
 //-------------------------------------------------------------------------
 
 AMODE* make_muldivval(AMODE* ap)
@@ -75,10 +77,10 @@ AMODE* make_label(int lab)
 {
     EXPRESSION* lnode;
     AMODE* ap;
-    lnode = beLocalAlloc(sizeof(EXPRESSION));
+    lnode = (EXPRESSION*)beLocalAlloc(sizeof(EXPRESSION));
     lnode->type = en_labcon;
     lnode->v.i = lab;
-    ap = beLocalAlloc(sizeof(AMODE));
+    ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
     ap->mode = am_immed;
     ap->offset = lnode;
     ap->length = ISZ_UINT;
@@ -89,13 +91,13 @@ AMODE* make_label(int lab)
 
 AMODE* makesegreg(int seg)
 {
-    AMODE* ap = beLocalAlloc(sizeof(AMODE));
+    AMODE* ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
     ap->mode = am_seg;
     ap->seg = seg;
     ap->length = ISZ_SEG;
     return ap;
 }
-AMODE* makefloat(FPF* f, int size)
+AMODE* makefloat(FPFC* f, int size)
 {
     AMODE* ap = make_label(queue_floatval(f, size));
     ap->mode = am_direct;
@@ -113,10 +115,10 @@ AMODE* aimmed(ULLONG_TYPE i)
     AMODE* ap;
     EXPRESSION* ep;
     i &= 0xffffffffU;
-    ep = beLocalAlloc(sizeof(EXPRESSION));
+    ep = (EXPRESSION*)beLocalAlloc(sizeof(EXPRESSION));
     ep->type = en_c_i;
     ep->v.i = i;
-    ap = beLocalAlloc(sizeof(AMODE));
+    ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
     ap->mode = am_immed;
     ap->offset = ep;
     ap->length = ISZ_ADDR;
@@ -174,7 +176,7 @@ AMODE* make_offset(EXPRESSION* node)
  */
 {
     AMODE* ap;
-    ap = beLocalAlloc(sizeof(AMODE));
+    ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
     if (node->type == en_tempref)
     {
         diag("make_offset: orignode");
@@ -194,8 +196,8 @@ AMODE* make_offset(EXPRESSION* node)
 
 AMODE* make_stack(int number)
 {
-    AMODE* ap = beLocalAlloc(sizeof(AMODE));
-    EXPRESSION* ep = beLocalAlloc(sizeof(EXPRESSION));
+    AMODE* ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
+    EXPRESSION* ep = (EXPRESSION*)beLocalAlloc(sizeof(EXPRESSION));
     ep->type = en_c_i;
     ep->v.i = -number;
     ap->mode = am_indisp;
@@ -207,12 +209,12 @@ AMODE* make_stack(int number)
 }
 AMODE* fstack(void)
 {
-    AMODE* ap = beLocalAlloc(sizeof(AMODE));
+    AMODE* ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
     ap->mode = am_freg;
     ap->length = ISZ_LDOUBLE;
     ap->preg = 0;
     ap->sreg = 0;
-    ap->offset = (void*)fstackid;
+    ap->offset = (EXPRESSION*)fstackid;
     ap->tempflag = TRUE;
     return (ap);
 }
@@ -241,7 +243,6 @@ void oa_gen_vc1(SYMBOL* func)
     ofs->offset = intNode(en_c_i, 0);
     ofs->mode = am_indisp;
     gen_code(op_mov, makedreg(EAX), makedreg(ECX));
-    // gen_code(op_mov, makedreg(EAX), make_stack(-4));
     gen_code(op_mov, makedreg(EAX), ofs);
     ofs->offset = intNode(en_c_i, func->offset);
     gen_code(op_jmp, ofs, NULL);
@@ -573,7 +574,7 @@ int samereg(AMODE* ap1, AMODE* ap2)
     }
     return FALSE;
 }
-void getAmodes(QUAD* q, enum e_op* op, IMODE* im, AMODE** apl, AMODE** aph)
+void getAmodes(QUAD* q, enum e_opcode* op, IMODE* im, AMODE** apl, AMODE** aph)
 {
     *op = op_mov;
     *aph = 0;
@@ -915,9 +916,9 @@ BOOLEAN overlaps(AMODE* apal, AMODE* apah, AMODE* apll, AMODE* aplh)
         overlap = overlap || apll->sreg == apal->preg || apll->sreg == apah->preg;
     return overlap;
 }
-void func_axdx(enum e_op func, AMODE* apal, AMODE* apah, AMODE* apll, AMODE* aplh)
+void func_axdx(enum e_opcode func, AMODE* apal, AMODE* apah, AMODE* apll, AMODE* aplh)
 {
-    enum e_op func1 = func;
+    enum e_opcode func1 = func;
     liveQualify(apal, apal, apah);
     liveQualify(apah, apal, apah);
     if (apll->mode == am_immed && !aplh)
@@ -981,7 +982,7 @@ void func_axdx(enum e_op func, AMODE* apal, AMODE* apah, AMODE* apll, AMODE* apl
         gen_codes(func1, ISZ_UINT, apah, aplh);
     }
 }
-void func_axdx_mov(enum e_op op, AMODE* apal, AMODE* apah, AMODE* apll, AMODE* aplh, AMODE* aprl, AMODE* aprh)
+void func_axdx_mov(enum e_opcode op, AMODE* apal, AMODE* apah, AMODE* apll, AMODE* aplh, AMODE* aprl, AMODE* aprh)
 {
     if (overlaps(apal, apah, aprl, aprh))
     {
@@ -1000,7 +1001,7 @@ void func_axdx_mov(enum e_op op, AMODE* apal, AMODE* apah, AMODE* apll, AMODE* a
         func_axdx(op, apal, apah, aprl, aprh);
     }
 }
-void gen_lshift(enum e_op op, AMODE* aph, AMODE* apl, AMODE* n)
+void gen_lshift(enum e_opcode op, AMODE* aph, AMODE* apl, AMODE* n)
 {
     if (apl->mode != am_dreg || aph->mode != am_dreg)
     {
@@ -1052,9 +1053,9 @@ void gen_lshift(enum e_op op, AMODE* aph, AMODE* apl, AMODE* n)
         gen_code3(op, aph, apl, n);
     }
 }
-void gen_xset(QUAD* q, enum e_op pos, enum e_op neg, enum e_op flt)
+void gen_xset(QUAD* q, enum e_opcode pos, enum e_opcode neg, enum e_opcode flt)
 {
-    enum e_op op = pos, opa;
+    enum e_opcode op = pos, opa;
     IMODE* left = q->dc.left;
     IMODE* right = q->dc.right;
     AMODE *apll, *aplh, *aprl, *aprh, *apal, *apah;
@@ -1315,10 +1316,10 @@ void gen_xset(QUAD* q, enum e_op pos, enum e_op neg, enum e_op flt)
             gen_codes(op_and, ISZ_UINT, apal, aimmed(1));
     }
 }
-void gen_goto(QUAD* q, enum e_op pos, enum e_op neg, enum e_op llpos, enum e_op llneg, enum e_op llintermpos, enum e_op llintermneg,
-              enum e_op flt)
+void gen_goto(QUAD* q, enum e_opcode pos, enum e_opcode neg, enum e_opcode llpos, enum e_opcode llneg, enum e_opcode llintermpos,
+              enum e_opcode llintermneg, enum e_opcode flt)
 {
-    enum e_op sop = pos, sop1 = llpos, top = llneg, top1 = llintermpos, opa;
+    enum e_opcode sop = pos, sop1 = llpos, top = llneg, top1 = llintermpos, opa;
     IMODE* left = q->dc.left;
     IMODE* right = q->dc.right;
     AMODE *apll, *aplh, *aprl, *aprh;
@@ -1461,9 +1462,9 @@ void gen_goto(QUAD* q, enum e_op pos, enum e_op neg, enum e_op llpos, enum e_op 
         }
     }
 }
-static void gen_div(QUAD* q, enum e_op op) /* unsigned division */
+static void gen_div(QUAD* q, enum e_opcode op) /* unsigned division */
 {
-    enum e_op opa, opl, opr;
+    enum e_opcode opa, opl, opr;
     AMODE *apal, *apah, *apll, *aplh, *aprl, *aprh;
     int mod = q->dc.opcode == i_umod || q->dc.opcode == i_smod;
     getAmodes(q, &opl, q->dc.left, &apll, &aplh);
@@ -1503,9 +1504,9 @@ static void gen_div(QUAD* q, enum e_op op) /* unsigned division */
         gen_codes(op, q->ans->size, divby, 0);
     }
 }
-static void gen_mulxh(QUAD* q, enum e_op op) /* unsigned division */
+static void gen_mulxh(QUAD* q, enum e_opcode op) /* unsigned division */
 {
-    enum e_op opa, opl, opr;
+    enum e_opcode opa, opl, opr;
     AMODE *apal, *apah, *apll, *aplh, *aprl, *aprh;
     int mod = q->dc.opcode == i_umod || q->dc.opcode == i_smod;
     getAmodes(q, &opl, q->dc.left, &apll, &aplh);
@@ -1536,7 +1537,7 @@ static void gen_mulxh(QUAD* q, enum e_op op) /* unsigned division */
         gen_codes(op, q->ans->size, mulby, 0);
     }
 }
-static void gen_shift(QUAD* q, enum e_op op, AMODE* apal, AMODE* apll, AMODE* aprl)
+static void gen_shift(QUAD* q, enum e_opcode op, AMODE* apal, AMODE* apll, AMODE* aprl)
 {
     AMODE* cx = makedreg(ECX);
     cx->liveRegs = q->liveRegs;
@@ -1793,14 +1794,14 @@ static void compactSwitchHeader(LLONG_TYPE bottom)
     }
 
     peep_tail->noopt = TRUE;
-    lnode = beLocalAlloc(sizeof(EXPRESSION));
+    lnode = (EXPRESSION*)beLocalAlloc(sizeof(EXPRESSION));
     lnode->type = en_labcon;
     lnode->v.i = tablab;
     if (bottom)
     {
         lnode = exprNode(en_add, lnode, intNode(en_c_i, -bottom * 4));
     }
-    ap = beLocalAlloc(sizeof(AMODE));
+    ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
     ap->mode = am_indispscale;
     ap->preg = -1;
     ap->scale = 2;
@@ -1810,7 +1811,7 @@ static void compactSwitchHeader(LLONG_TYPE bottom)
     gen_codes(op_xchg, ISZ_UINT, switch_apl, make_stack(0));
     gen_codes(op_ret, 0, 0, 0);
     pushlevel -= 4;
-    oa_align(4);
+    gen_code(op_align, aimmed(4), 0);
     oa_gen_label(tablab);
 }
 //-------------------------------------------------------------------------
@@ -1857,36 +1858,36 @@ int getPushMask(int i)
 }
 void asm_line(QUAD* q) /* line number information and text */
 {
-    OCODE* new = beLocalAlloc(sizeof(OCODE));
-    new->opcode = op_line;
-    new->oper1 = (AMODE*)(q->dc.left); /* line data */
-    add_peep(new);
+    OCODE* newitem = (OCODE*)beLocalAlloc(sizeof(OCODE));
+    newitem->opcode = (e_opcode)op_line;
+    newitem->oper1 = (AMODE*)(q->dc.left); /* line data */
+    add_peep(newitem);
 }
 void asm_blockstart(QUAD* q) /* line number information and text */
 {
-    OCODE* new = beLocalAlloc(sizeof(OCODE));
-    new->opcode = op_blockstart;
-    add_peep(new);
+    OCODE* newitem = (OCODE*)beLocalAlloc(sizeof(OCODE));
+    newitem->opcode = (e_opcode)op_blockstart;
+    add_peep(newitem);
 }
 void asm_blockend(QUAD* q) /* line number information and text */
 {
-    OCODE* new = beLocalAlloc(sizeof(OCODE));
-    new->opcode = op_blockend;
-    add_peep(new);
+    OCODE* newitem = (OCODE*)beLocalAlloc(sizeof(OCODE));
+    newitem->opcode = (e_opcode)op_blockend;
+    add_peep(newitem);
 }
 void asm_varstart(QUAD* q) /* line number information and text */
 {
-    OCODE* new = beLocalAlloc(sizeof(OCODE));
-    new->opcode = op_varstart;
-    new->oper1 = (AMODE*)(q->dc.left->offset->v.sp); /* line data */
-    add_peep(new);
+    OCODE* newitem = (OCODE*)beLocalAlloc(sizeof(OCODE));
+    newitem->opcode = (e_opcode)op_varstart;
+    newitem->oper1 = (AMODE*)(q->dc.left->offset->v.sp); /* line data */
+    add_peep(newitem);
 }
 void asm_func(QUAD* q) /* line number information and text */
 {
-    OCODE* new = beLocalAlloc(sizeof(OCODE));
-    new->opcode = q->dc.v.label ? op_funcstart : op_funcend;
-    new->oper1 = (AMODE*)(q->dc.left->offset->v.sp); /* line data */
-    add_peep(new);
+    OCODE* newitem = (OCODE*)beLocalAlloc(sizeof(OCODE));
+    newitem->opcode = (e_opcode)(q->dc.v.label ? op_funcstart : op_funcend);
+    newitem->oper1 = (AMODE*)(q->dc.left->offset->v.sp); /* line data */
+    add_peep(newitem);
 }
 void asm_passthrough(QUAD* q) /* reserved */
 {
@@ -1933,8 +1934,8 @@ void asm_passthrough(QUAD* q) /* reserved */
 void asm_datapassthrough(QUAD* q) /* reserved */ { (void)q; }
 void asm_label(QUAD* q) /* put a label in the code stream */
 {
-    OCODE* out = beLocalAlloc(sizeof(OCODE));
-    out->opcode = op_label;
+    OCODE* out = (OCODE*)beLocalAlloc(sizeof(OCODE));
+    out->opcode = (e_opcode)op_label;
     out->oper1 = (AMODE*)q->dc.v.label;
     add_peep(out);
 }
@@ -1968,7 +1969,7 @@ void asm_goto(QUAD* q) /* unconditional branch */
 }
 void asm_parm(QUAD* q) /* push a parameter*/
 {
-    enum e_op op;
+    enum e_opcode op;
     AMODE *apl, *aph;
     getAmodes(q, &op, q->dc.left, &apl, &aph);
     if (q->dc.left->mode == i_immed)
@@ -2135,7 +2136,7 @@ void asm_parmblock(QUAD* q) /* push a block of memory */
 {
     int n = q->dc.right->offset->v.i;
     AMODE *apl, *aph;
-    enum e_op op;
+    enum e_opcode op;
     EXPRESSION* ofs;
 
     getAmodes(q, &op, q->dc.left, &apl, &aph);
@@ -2234,7 +2235,7 @@ void asm_gosub(QUAD* q) /* normal gosub to an immediate label or through a var *
 {
     TYPE* tp = NULL;
     EXPRESSION* en = NULL;
-    enum e_op op;
+    enum e_opcode op;
     AMODE *apl, *aph;
     if (!q->dc.left->offset || q->dc.left->offset->type != en_pc || !BackendIntrinsic(q))
     {
@@ -2266,19 +2267,19 @@ void asm_gosub(QUAD* q) /* normal gosub to an immediate label or through a var *
         {
             switch (q->novalue)
             {
-            case ISZ_CFLOAT:
-            case ISZ_CDOUBLE:
-            case ISZ_CLDOUBLE:
-                gen_codes(op_fstp, ISZ_LDOUBLE, makefreg(0), 0);
-                // fall through
-            case ISZ_FLOAT:
-            case ISZ_DOUBLE:
-            case ISZ_LDOUBLE:
-            case ISZ_IFLOAT:
-            case ISZ_IDOUBLE:
-            case ISZ_ILDOUBLE:
-                gen_codes(op_fstp, ISZ_LDOUBLE, makefreg(0), 0);
-                break;
+                case ISZ_CFLOAT:
+                case ISZ_CDOUBLE:
+                case ISZ_CLDOUBLE:
+                    gen_codes(op_fstp, ISZ_LDOUBLE, makefreg(0), 0);
+                    // fall through
+                case ISZ_FLOAT:
+                case ISZ_DOUBLE:
+                case ISZ_LDOUBLE:
+                case ISZ_IFLOAT:
+                case ISZ_IDOUBLE:
+                case ISZ_ILDOUBLE:
+                    gen_codes(op_fstp, ISZ_LDOUBLE, makefreg(0), 0);
+                    break;
             }
         }
     }
@@ -2333,7 +2334,7 @@ void asm_rett(QUAD* q) /* return from trap or int */
 }
 void asm_add(QUAD* q) /* evaluate an addition */
 {
-    enum e_op opa, opl, opr;
+    enum e_opcode opa, opl, opr;
     AMODE *apal, *apah, *apll, *aplh, *aprl, *aprh;
     getAmodes(q, &opl, q->dc.left, &apll, &aplh);
     getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
@@ -2456,7 +2457,7 @@ void asm_add(QUAD* q) /* evaluate an addition */
 }
 void asm_sub(QUAD* q) /* evaluate a subtraction */
 {
-    enum e_op opa, opl, opr;
+    enum e_opcode opa, opl, opr;
     AMODE *apal, *apah, *apll, *aplh, *aprl, *aprh;
     getAmodes(q, &opl, q->dc.left, &apll, &aplh);
     getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
@@ -2545,7 +2546,7 @@ void asm_muluh(QUAD* q) { gen_mulxh(q, op_mul); }
 void asm_mulsh(QUAD* q) { gen_mulxh(q, op_imul); }
 void asm_mul(QUAD* q) /* signed multiply */
 {
-    enum e_op opa, opl, opr;
+    enum e_opcode opa, opl, opr;
     AMODE *apal, *apah, *apll, *aplh, *aprl, *aprh;
     getAmodes(q, &opl, q->dc.left, &apll, &aplh);
     getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
@@ -2602,7 +2603,7 @@ void asm_mul(QUAD* q) /* signed multiply */
 }
 void asm_lsr(QUAD* q) /* unsigned shift right */
 {
-    enum e_op opa, opl, opr;
+    enum e_opcode opa, opl, opr;
     AMODE *apal, *apah, *apll, *aplh, *aprl, *aprh;
     getAmodes(q, &opl, q->dc.left, &apll, &aplh);
     getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
@@ -2644,7 +2645,7 @@ void asm_lsr(QUAD* q) /* unsigned shift right */
 }
 void asm_lsl(QUAD* q) /* signed shift left */
 {
-    enum e_op opa, opl, opr;
+    enum e_opcode opa, opl, opr;
     AMODE *apal, *apah, *apll, *aplh, *aprl, *aprh;
     getAmodes(q, &opl, q->dc.left, &apll, &aplh);
     getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
@@ -2686,7 +2687,7 @@ void asm_lsl(QUAD* q) /* signed shift left */
 }
 void asm_asr(QUAD* q) /* signed shift right */
 {
-    enum e_op opa, opl, opr;
+    enum e_opcode opa, opl, opr;
     AMODE *apal, *apah, *apll, *aplh, *aprl, *aprh;
     getAmodes(q, &opl, q->dc.left, &apll, &aplh);
     getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
@@ -2731,7 +2732,7 @@ void asm_asr(QUAD* q) /* signed shift right */
 }
 void asm_neg(QUAD* q) /* negation */
 {
-    enum e_op opa, opl;
+    enum e_opcode opa, opl;
     AMODE *apal, *apah, *apll, *aplh;
     getAmodes(q, &opl, q->dc.left, &apll, &aplh);
     getAmodes(q, &opa, q->ans, &apal, &apah);
@@ -2776,7 +2777,7 @@ void asm_neg(QUAD* q) /* negation */
 }
 void asm_not(QUAD* q) /* complement */
 {
-    enum e_op opa, opl;
+    enum e_opcode opa, opl;
     AMODE *apal, *apah, *apll, *aplh;
     getAmodes(q, &opl, q->dc.left, &apll, &aplh);
     getAmodes(q, &opa, q->ans, &apal, &apah);
@@ -2801,7 +2802,7 @@ void asm_not(QUAD* q) /* complement */
 }
 void asm_and(QUAD* q) /* binary and */
 {
-    enum e_op opa, opl, opr;
+    enum e_opcode opa, opl, opr;
     AMODE *apal, *apah, *apll, *aplh, *aprl, *aprh;
     getAmodes(q, &opl, q->dc.left, &apll, &aplh);
     getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
@@ -2852,7 +2853,7 @@ void asm_and(QUAD* q) /* binary and */
 }
 void asm_or(QUAD* q) /* binary or */
 {
-    enum e_op opa, opl, opr;
+    enum e_opcode opa, opl, opr;
     AMODE *apal, *apah, *apll, *aplh, *aprl, *aprh;
     getAmodes(q, &opl, q->dc.left, &apll, &aplh);
     getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
@@ -2903,7 +2904,7 @@ void asm_or(QUAD* q) /* binary or */
 }
 void asm_eor(QUAD* q) /* binary exclusive or */
 {
-    enum e_op opa, opl, opr;
+    enum e_opcode opa, opl, opr;
     AMODE *apal, *apah, *apll, *aplh, *aprl, *aprh;
     getAmodes(q, &opl, q->dc.left, &apll, &aplh);
     getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
@@ -2965,7 +2966,7 @@ void asm_setge(QUAD* q) /* evaluate a = b S>= c */ { gen_xset(q, op_setge, op_se
 void asm_assn(QUAD* q) /* assignment */
 {
     AMODE *apa, *apa1, *apl, *apl1;
-    enum e_op opa, opl;
+    enum e_opcode opa, opl;
     /* when we get here, one side or the other is in a register */
     int szl;
     int sza = q->ans->size;
@@ -3629,7 +3630,7 @@ void asm_genword(QUAD* q) /* put a byte or word into the code stream */
 
 void asm_coswitch(QUAD* q) /* switch characteristics */
 {
-    enum e_op op;
+    enum e_opcode op;
     switch_deflab = q->dc.v.label;
     switch_range = q->dc.right->offset->v.i;
     switch_case_max = switch_case_count = q->ans->offset->v.i;
@@ -3740,7 +3741,7 @@ void asm_assnblock(QUAD* q) /* copy block of memory*/
 {
     int n = q->ans->offset->v.i;
     AMODE *apl, *aph, *apal, *apah;
-    enum e_op op, opa;
+    enum e_opcode op, opa;
     EXPRESSION *ofs, *ofsa;
 
     getAmodes(q, &op, q->dc.right, &apl, &aph);
@@ -3918,7 +3919,7 @@ void asm_clrblock(QUAD* q) /* clear block of memory */
     int n = q->dc.right->offset->v.i;
     AMODE *apl, *aph;
     AMODE *aprl, *aprh;
-    enum e_op op, opr;
+    enum e_opcode op, opr;
     EXPRESSION* ofs;
 
     getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
@@ -4011,8 +4012,7 @@ void asm_jc(QUAD* q) /* branch if a U< b */ { gen_goto(q, op_jc, op_ja, op_jc, o
 void asm_ja(QUAD* q) /* branch if a U> b */ { gen_goto(q, op_ja, op_jc, op_ja, op_jc, op_ja, op_jb, op_ja); }
 void asm_je(QUAD* q) /* branch if a == b */ { gen_goto(q, op_je, op_jne, op_je, op_jne, op_je, op_jne, op_je); }
 void asm_jnc(QUAD* q) /* branch if a U>= b */ { gen_goto(q, op_jnc, op_jbe, op_ja, op_jc, op_jae, op_jbe, op_jae); }
-void asm_jbe(QUAD* q) /* branch if a U<= b */ { gen_goto(q, op_jbe, op_jnc, op_jc, op_ja, op_jbe, op_jnc, op_jbe); }
-void asm_jne(QUAD* q) /* branch if a != b */ { gen_goto(q, op_jne, op_je, op_jne, op_je, op_jne, op_je, op_jne); }
+void asm_jbe(QUAD* q) /* branch if a U<= b */ { gen_goto(q, op_jbe, op_jnc, op_jc, op_ja, op_jbe, op_jnc, op_jbe); }void asm_jne(QUAD* q) /* branch if a != b */ { gen_goto(q, op_jne, op_je, op_jne, op_je, op_jne, op_je, op_jne); }
 void asm_jl(QUAD* q) /* branch if a S< b */ { gen_goto(q, op_jl, op_jg, op_jl, op_jg, op_jb, op_ja, op_jb); }
 void asm_jg(QUAD* q) /* branch if a S> b */ { gen_goto(q, op_jg, op_jl, op_jg, op_jl, op_ja, op_jb, op_ja); }
 void asm_jle(QUAD* q) /* branch if a S<= b */ { gen_goto(q, op_jle, op_jge, op_jl, op_jg, op_jbe, op_jae, op_jbe); }
@@ -4027,6 +4027,7 @@ void asm_cppini(QUAD* q) /* cplusplus initialization (historic)*/ { (void)q; }
  */
 void asm_prologue(QUAD* q) /* function prologue */
 {
+    chosenAssembler->arch->retblockparamadjust = usingEsp ? 0 : 4;
     inframe = !!(beGetIcon(q->dc.left) & FRAME_FLAG_NEEDS_FRAME) || cparams.prm_debug || cparams.prm_stackalign;
     if (inframe)
     {
@@ -4200,7 +4201,7 @@ void asm_unloadcontext(QUAD* q) /* load register context (e.g. at interrupt leve
 }
 void asm_tryblock(QUAD* q) /* try/catch */
 {
-    AMODE* ap1 = beLocalAlloc(sizeof(IMODE));
+    AMODE* ap1 = (AMODE*)beLocalAlloc(sizeof(AMODE));
     ap1->mode = am_indisp;
     if (usingEsp)
     {
@@ -4234,7 +4235,7 @@ void asm_tryblock(QUAD* q) /* try/catch */
 }
 void asm_stackalloc(QUAD* q) /* allocate stack space - positive value = allocate(QUAD *q) negative value deallocate */
 {
-    enum e_op op;
+    enum e_opcode op;
     AMODE *apl, *aph;
     getAmodes(q, &op, q->dc.left, &apl, &aph);
     if (apl->mode == am_immed)
@@ -4289,7 +4290,7 @@ void asm_stackalloc(QUAD* q) /* allocate stack space - positive value = allocate
 void asm_loadstack(QUAD* q) /* load the stack pointer from a var */
 {
     AMODE *apl, *aph;
-    enum e_op op;
+    enum e_opcode op;
 
     getAmodes(q, &op, q->dc.left, &apl, &aph);
     apl->liveRegs = q->liveRegs;
@@ -4298,7 +4299,7 @@ void asm_loadstack(QUAD* q) /* load the stack pointer from a var */
 void asm_savestack(QUAD* q) /* save the stack pointer to a var */
 {
     AMODE *apl, *aph;
-    enum e_op op;
+    enum e_opcode op;
 
     getAmodes(q, &op, q->dc.left, &apl, &aph);
     apl->liveRegs = q->liveRegs;
@@ -4306,7 +4307,7 @@ void asm_savestack(QUAD* q) /* save the stack pointer to a var */
 }
 void asm_functail(QUAD* q, int begin, int size) /* functail start or end */
 {
-    enum e_op op = op_push;
+    enum e_opcode op = op_push;
     (void)q;
     if (!begin)
         op = op_pop;
@@ -4337,9 +4338,9 @@ void asm_atomic(QUAD* q)
         gen_code(op_lfence, NULL, NULL);
     switch (q->dc.opcode)
     {
-        enum e_op opa;
-        enum e_op opl;
-        enum e_op opr;
+        enum e_opcode opa;
+        enum e_opcode opl;
+        enum e_opcode opr;
         AMODE *apal, *apah, *apll, *aplh, *aprl, *aprh;
         int lbl1, lbl2;
         case i_atomic_fence:
@@ -4401,6 +4402,7 @@ void asm_atomic(QUAD* q)
                                         true            false
                 rm32       eax        rm32      reg     eax        rm32
                 
+
 
 
 
@@ -4495,6 +4497,10 @@ void asm_atomic(QUAD* q)
                             pushlevel += 4;
                         }
                         gen_codes(op_mov, sz, makedreg(reg), apll);
+                    }
+                    else
+                    {
+                        reg = apll->preg;
                     }
                     if ((aprl->mode == am_indisp && aprl->preg == EAX) ||
                         (aprl->mode == am_indispscale && (aprl->preg == EAX || aprl->sreg == EAX)))

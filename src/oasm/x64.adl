@@ -2183,6 +2183,7 @@
     <Opcode Name="sets" sel="8" Class="set"/>
     <Opcode Name="setz" sel="4" Class="set"/>
     <Opcode Name="sfence" op="0x0f:8 0xae:8 0xf8:8" Class="single"/>
+    <Opcode Name="sgdt" op="0x0f:8 1:8" mod="0" Class="nostrictrm"/>
     <Opcode Name="shl" mod="4" Class="shift"/>
     <Opcode Name="shld" op1="0xa4" Class="regshift"/>
     <Opcode Name="shr" mod="5" Class="shift"/>
@@ -2344,6 +2345,8 @@
     <Opcode Name="blendps" mand="0x66" op="0x0f:8 0x3a:8 0x0c:8" Class="sseimm"/>
     <Opcode Name="cmppd" mand="0x66:8" op="0x0f:8 0xc2:8" Class="ssepshu"/>
     <Opcode Name="cmpps" mand="" op="0x0f:8 0xc2:8" Class="ssepshu"/>
+    <Opcode Name="comisd" mand="0x66:8" op="0x0f:8 0x2f:8" Class="ssemmxrm"/>
+    <Opcode Name="comiss" mand="" op="0x0f:8 0x2f:8" Class="ssemmxrm"/>
     <Opcode Name="cvtdq2pd" mand="0xf3:8" op="0x0f:8 0xe6:8" Class="ssemmxrm"/>
     <Opcode Name="cvtdq2ps" mand="" op="0x0f:8 0x5b:8" Class="ssemmxrm"/>
     <Opcode Name="cvtpd2dq" mand="0xf2:8" op="0x0f:8 0xe6:8" Class="ssemmxrm"/>
@@ -2383,7 +2386,6 @@
       <Operands Name="'modreg:regmm','rm:mmrm'" mand="" op="0x0f:8 0xf7:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'"/>
     </Opcode>
 
-    <Opcode Name="maxps" mand="" op="0x0f:8 0x5f:8" Class="ssemmxrm"/>
     <Opcode Name="maxpd" mand="0x66:8" op="0x0f:8 0x5f:8" Class="ssemmxrm"/>
     <Opcode Name="maxps" mand="" op="0x0f:8 0x5f:8" Class="ssemmxrm"/>
     <Opcode Name="maxsd" mand="0xf2:8" op="0x0f:8 0x5f:8" Class="ssemmxrm"/>
@@ -2596,6 +2598,8 @@
     <Opcode Name="subps" mand="" op="0x0f:8 0x5c:8" Class="ssemmxrm"/>
     <Opcode Name="subsd" mand="0xf2:8" op="0x0f:8 0x5c:8" Class="ssemmxrm"/>
     <Opcode Name="subss" mand="0xf3:8" op="0x0f:8 0x5c:8" Class="ssemmxrm"/>
+    <Opcode Name="ucomisd" mand="0x66:8" op="0x0f:8 0x2e:8" Class="ssemmxrm"/>
+    <Opcode Name="ucomiss" mand="" op="0x0f:8 0x2e:8" Class="ssemmxrm"/>
     <Opcode Name="unpckhpd" mand="0x66:8" op="0x0f:8 0x15:8" Class="ssemmxrm"/>
     <Opcode Name="unpckhps" mand="" op="0x0f:8 0x15:8" Class="ssemmxrm"/>
     <Opcode Name="unpcklpd" mand="0x66:8" op="0x0f:8 0x14:8" Class="ssemmxrm"/>
@@ -2615,7 +2619,7 @@
     <Opcode Name="vmread"/><!--fixme-->
     <Opcode Name="vmresume"/><!--fixme-->
     <Opcode Name="vmwrite"/><!--fixme-->
-    <Opcode Name="vmx0ff"/><!--fixme-->
+    <Opcode Name="vmxoff"/><!--fixme-->
     <Opcode Name="vmxon"/><!--fixme-->
 
     <Prefix Name="a16" Coding="'addr16'"/>

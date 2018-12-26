@@ -55,6 +55,7 @@ class Fixup
     void SetInsOffs(int offs) { insOffs = offs; }
     int GetInsOffs() { return insOffs; }
     AsmExprNode* GetExpr() { return expr; }
+    void SetExpr(AsmExprNode* newExpr) { expr = newExpr; }
     void SetResolved() { resolved = true; }
     bool IsResolved() { return resolved; }
     void SetAdjustable(bool adj) { adjustable = adj; }

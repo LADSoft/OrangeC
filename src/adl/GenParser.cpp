@@ -68,14 +68,137 @@ bool GenParser::Generate()
                                                         if (GenerateOperandParser())
                                                             if (GenerateCodingProcessor())
                                                                 if (GenerateDispatcher())
-                                                                {
-                                                                    rv = true;
-                                                                }
+                                                                    if (GenerateCompilerStubs())
+                                                                    {
+                                                                        rv = true;
+                                                                    }
                 }
             }
         }
     }
     return rv;
+}
+std::string GenParser::convertname(const std::string& name)
+{
+    if (name == ",")
+        return "comma";
+    if (name == "*")
+        return "star";
+    if (name == "+")
+        return "plus";
+    if (name == "[")
+        return "openbr";
+    if (name == "]")
+        return "closebr";
+    if (name == ":")
+        return "colon";
+    return name;
+}
+bool GenParser::GenerateCompilerStubs()
+{
+    std::string name = parser.processorName + "Instructions";
+    file = new std::fstream(name + ".h", std::ios::out);
+    (*file) << "#include <map>" << std::endl << std::endl;
+    (*file) << "#include \"InstructionParser.h\"" << std::endl << std::endl;
+    (*file) << "enum e_opcode {" << std::endl;
+    size_t i = 0;
+    for (auto x : parser.opcodes)
+    {
+        if (x->name != "")
+        {
+            (*file) << "\t"
+                    << "op_" << x->name << " = " << i << "," << std::endl;
+        }
+        i++;
+    }
+
+    for (auto x : parser.prefixes)
+    {
+        (*file) << "\t"
+                << "op_" << x->name << " = " << i << "," << std::endl;
+        i++;
+    }
+
+    (*file) << "};" << std::endl << std::endl;
+
+    (*file) << "enum e_tk {" << std::endl;
+
+    for (auto& m : TokenNode::tokenTable)
+    {
+        if (m.first != "empty" && m.first != "")
+            (*file) << "\t"
+                    << "tk_" << convertname(m.first) << "= " << m.second + TokenNode::TOKEN_BASE << "," << std::endl;
+    }
+    for (auto x : parser.registers)
+    {
+        (*file) << "\t"
+                << "tk_" << x->name << " = " << x->id + TokenNode::REGISTER_BASE << "," << std::endl;
+    }
+    (*file) << "};" << std::endl << std::endl;
+
+    (*file) << "extern const char * const opcodeTable[" << i << "];" << std::endl << std::endl;
+    (*file) << "extern std::map<enum e_tk, const char *> tokenNames;" << std::endl << std::endl;
+
+    for (auto& m : TokenNode::tokenTable)
+    {
+        if (m.first != "empty)" && m.first != "")
+            (*file) << "extern InputToken Token" << convertname(m.first) << ";" << std::endl;
+    }
+    for (auto x : parser.registers)
+    {
+        (*file) << "extern InputToken Token" << x->name << ";" << std::endl;
+    }
+
+    file->close();
+    delete file;
+    file = new std::fstream(name + ".cpp", std::ios::out);
+    (*file) << "#include \"" << name + ".h\"" << std::endl << std::endl;
+    (*file) << "const char * const opcodeTable[" << i << "] = {" << std::endl;
+    i = 0;
+    for (auto x : parser.opcodes)
+    {
+        //        if (x->name != "")
+        {
+            (*file) << "\t\"" << x->name << "\"," << std::endl;
+            i++;
+        }
+    }
+    for (auto x : parser.prefixes)
+    {
+        (*file) << "\t\"" << x->name << "\"," << std::endl;
+        i++;
+    }
+
+    (*file) << "};" << std::endl << std::endl;
+
+    (*file) << "std::map<enum e_tk, const char *> tokenNames = {" << std::endl;
+    for (auto& m : TokenNode::tokenTable)
+    {
+        if (m.first != "empty" && m.first != "")
+            (*file) << "\t"
+                    << "{ tk_" << convertname(m.first) << ", "
+                    << "\"" << m.first << "\" }," << std::endl;
+    }
+    for (auto x : parser.registers)
+    {
+        (*file) << "\t"
+                << "{ tk_" << x->name << ", \"" << x->name << "\" }," << std::endl;
+    }
+    (*file) << "};" << std::endl << std::endl;
+
+    for (auto& m : TokenNode::tokenTable)
+    {
+        if (m.first != "empty" && m.first != "")
+            (*file) << "InputToken Token" << convertname(m.first) << "{ InputToken::TOKEN, new AsmExprNode(tk_"
+                    << convertname(m.first) << ") };" << std::endl;
+    }
+    for (auto x : parser.registers)
+    {
+        (*file) << "InputToken Token" << x->name << "{ InputToken::REGISTER, new AsmExprNode(tk_" << x->name << " - "
+                << TokenNode::REGISTER_BASE << ", true) };" << std::endl;
+    }
+
+    return true;
 }
 void GenParser::GatherVars(std::map<std::string, std::string>& values, std::string name)
 {
@@ -1419,15 +1542,20 @@ bool GenParser::GenerateOperandParser()
     (*file) << "\t\t\t}" << std::endl;
     (*file) << "\t\t\tif (j == sizeof(addressTable) / sizeof(addressTable[0]))" << std::endl;
     (*file) << "\t\t\t{" << std::endl;
+    (*file) << "\t\t\t\tinputTokens= fullList;" << std::endl;
     (*file) << "\t\t\t\treturn AERR_OPERAND;" << std::endl;
     (*file) << "\t\t\t}" << std::endl;
     (*file) << "\t\t\tif (i < fullList.size())" << std::endl;
     (*file) << "\t\t\t{" << std::endl;
     (*file) << "\t\t\t\ti++;" << std::endl;
     (*file) << "\t\t\t\tif (i == fullList.size())" << std::endl;
+    (*file) << "\t\t\t\t{" << std::endl;
+    (*file) << "\t\t\t\t\tinputTokens= fullList;" << std::endl;
     (*file) << "\t\t\t\t\treturn AERR_SYNTAX;" << std::endl;
+    (*file) << "\t\t\t\t}" << std::endl;
     (*file) << "\t\t\t}" << std::endl;
     (*file) << "\t\t}" << std::endl;
+    (*file) << "\t\tinputTokens= fullList;" << std::endl;
     (*file) << "\t\treturn AERR_BADCOMBINATIONOFOPERANDS;" << std::endl;
     (*file) << "\t}" << std::endl;
     (*file) << "\treturn rv;" << std::endl;

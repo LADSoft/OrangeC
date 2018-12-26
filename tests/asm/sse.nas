@@ -87,6 +87,86 @@ nop
 nop
 nop
 nop
+	comiss	xmm1, xmm10
+nop
+nop
+nop
+	comiss	xmm1, [rcx]
+nop
+nop
+nop
+	comiss	xmm10, xmm1
+nop
+nop
+nop
+	comiss	xmm10, [rcx]
+nop
+nop
+nop
+	comiss	xmm2, xmm1
+nop
+nop
+nop
+	comisd	xmm1, xmm10
+nop
+nop
+nop
+	comisd	xmm1, [rcx]
+nop
+nop
+nop
+	comisd	xmm10, xmm1
+nop
+nop
+nop
+	comisd	xmm10, [rcx]
+nop
+nop
+nop
+	comisd	xmm2, xmm1
+nop
+nop
+nop
+	ucomiss	xmm1, xmm10
+nop
+nop
+nop
+	ucomiss	xmm1, [rcx]
+nop
+nop
+nop
+	ucomiss	xmm10, xmm1
+nop
+nop
+nop
+	ucomiss	xmm10, [rcx]
+nop
+nop
+nop
+	ucomiss	xmm2, xmm1
+nop
+nop
+nop
+	ucomisd	xmm1, xmm10
+nop
+nop
+nop
+	ucomisd	xmm1, [rcx]
+nop
+nop
+nop
+	ucomisd	xmm10, xmm1
+nop
+nop
+nop
+	ucomisd	xmm10, [rcx]
+nop
+nop
+nop
+	ucomisd	xmm2, xmm1
+nop
+nop
+nop
 	maxps	xmm1, xmm10
 nop
 nop

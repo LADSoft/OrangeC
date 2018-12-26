@@ -642,7 +642,7 @@ SYMBOL* getCopyCons(SYMBOL* base, BOOLEAN move)
                 {
                     tp = basetype(tp->btp);
                     if (isstructured(tp))
-                    {                        
+                    {
                         if (!base->tp->sp)
                         {
                             hr = hr->next;
@@ -1924,7 +1924,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
         if (!first && hasDelegate)
             error(ERR_DELEGATING_CONSTRUCTOR_ONLY_INITIALIZER);
         init->sp = search(init->name, basetype(cls->tp)->syms);
-        if (init->sp && !init->basesym)
+        if (init->sp && (!init->basesym || !istype(init->sp)))
         {
             if (init->sp->storage_class == sc_typedef)
             {
@@ -1936,7 +1936,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                 }
             }
         }
-        if (init->sp && !init->basesym)
+        if (init->sp && (!init->basesym || !istype(init->sp)))
         {
             if (init->sp != cls && init->sp->storage_class != sc_member && init->sp->storage_class != sc_mutable)
             {
@@ -2163,7 +2163,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
         if (!init->sp)
         {
             // might be a typedef?
-            init->sp = finishSearch(init->name, NULL, NULL, FALSE, FALSE);
+            init->sp = finishSearch(init->name, NULL, NULL, FALSE, FALSE, FALSE);
             if (init->sp && init->sp->storage_class == sc_typedef)
             {
                 int offset = 0;
@@ -3063,37 +3063,39 @@ BOOLEAN callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, BOOLE
     }
     return FALSE;
 }
-BOOLEAN callConstructorParam(TYPE** tp, EXPRESSION** exp, TYPE *paramTP, EXPRESSION *paramExp, BOOLEAN top,
-    BOOLEAN maybeConversion, BOOLEAN implicit, BOOLEAN pointer)
+BOOLEAN callConstructorParam(TYPE** tp, EXPRESSION** exp, TYPE* paramTP, EXPRESSION* paramExp, BOOLEAN top, BOOLEAN maybeConversion,
+                             BOOLEAN implicit, BOOLEAN pointer)
 {
-    FUNCTIONCALL *params = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+    FUNCTIONCALL* params = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
     if (paramTP && paramExp)
     {
-        params->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
+        params->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
         params->arguments->tp = paramTP;
         params->arguments->exp = paramExp;
     }
     return callConstructor(tp, exp, params, FALSE, NULL, top, maybeConversion, implicit, pointer, FALSE);
 }
 
-void PromoteConstructorArgs(SYMBOL *cons1, FUNCTIONCALL *params)
+void PromoteConstructorArgs(SYMBOL* cons1, FUNCTIONCALL* params)
 {
     HASHREC* hr = basetype(cons1->tp)->syms->table[0];
     if (((SYMBOL*)hr->p)->thisPtr)
         hr = hr->next;
-    INITLIST *args = params->arguments;
+    INITLIST* args = params->arguments;
     while (hr && args)
     {
-        SYMBOL *sp = (SYMBOL *)hr->p;
-        TYPE *tps = basetype(sp->tp);
-        TYPE *tpa = basetype(args->tp);
+        SYMBOL* sp = (SYMBOL*)hr->p;
+        TYPE* tps = basetype(sp->tp);
+        TYPE* tpa = basetype(args->tp);
         if (isarithmetic(tps) && isarithmetic(tpa))
         {
             if (tps->type > bt_int && tps->type != tpa->type)
+            {
+                args->tp = sp->tp;
                 cast(sp->tp, &args->exp);
+            }
         }
         hr = hr->next;
         args = args->next;
     }
-
 }

@@ -24,6 +24,6 @@
 
 ASM_DEPENDENCIES = $(wildcard 386/*.nas)
 CPP_DEPENDENCIES = $(wildcard *.cpp)
-
+EXCLUDE = optional.o
 all: $(DEPENDENCIES)
 

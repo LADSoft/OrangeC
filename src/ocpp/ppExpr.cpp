@@ -149,12 +149,12 @@ PPINT ppExpr::primary(std::string& line)
                     }
                     else
                     {
-                        std::string arg= line.substr(0,n);
+                        std::string arg = line.substr(0, n);
                         define->Process(arg);
-			
+
                         rv = ppInclude::has_include(arg);
-                        tokenizer->SetString(line.substr(n+1));
-                        token = tokenizer->Next();                    
+                        tokenizer->SetString(line.substr(n + 1));
+                        token = tokenizer->Next();
                     }
                 }
                 else

@@ -29,7 +29,7 @@ C_DEPENDENCIES= \
     $(BACKEND_FILES) \
     ccmain.c \
     ccif.c \
-    crc.c \
+    crc32.c \
     db.c \
     piper.c \
     beinterf.c \

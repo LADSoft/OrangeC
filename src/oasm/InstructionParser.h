@@ -38,7 +38,19 @@ class Instruction;
 class Section;
 class AsmFile;
 
-enum asmError { AERR_NONE, AERR_SYNTAX, AERR_OPERAND, AERR_BADCOMBINATIONOFOPERANDS, AERR_UNKNOWNOPCODE, AERR_INVALIDINSTRUCTIONUSE };
+struct ocode;  // compiler support
+struct expr;   // compiler support
+struct amode;  // compiler support
+
+enum asmError
+{
+    AERR_NONE,
+    AERR_SYNTAX,
+    AERR_OPERAND,
+    AERR_BADCOMBINATIONOFOPERANDS,
+    AERR_UNKNOWNOPCODE,
+    AERR_INVALIDINSTRUCTIONUSE
+};
 
 class Coding
 {
@@ -68,9 +80,9 @@ class Coding
     char binary;
 };
 #ifdef DEBUG
-#define CODING_NAME(x) x,
+#    define CODING_NAME(x) x,
 #else
-#define CODING_NAME(x)
+#    define CODING_NAME(x)
 #endif
 
 class Numeric
@@ -117,7 +129,7 @@ class InputToken
 class InstructionParser
 {
   public:
-    InstructionParser() : expr(nullptr) {}
+    InstructionParser() : asmexpr(nullptr) {}
 
     static InstructionParser* GetInstance();
 
@@ -127,7 +139,7 @@ class InstructionParser
     virtual void Setup(Section* sect) = 0;
     virtual void Init() = 0;
     virtual bool ParseSection(AsmFile* fil, Section* sect) = 0;
-    virtual bool ParseDirective(AsmFile*fil, Section* sect) = 0;
+    virtual bool ParseDirective(AsmFile* fil, Section* sect) = 0;
     virtual bool IsBigEndian() = 0;
     bool SetNumber(int tokenPos, int oldVal, int newVal);
 
@@ -161,21 +173,30 @@ class InstructionParser
     AsmExprNode* val;
     int tokenPos;
     Numeric* numeric;
-    struct lt
-    {
-        bool operator()(const std::string& left, const std::string& right) const
-        {
-            return stricmp(left.c_str(), right.c_str()) < 0;
-        }
-    };
-    std::map<std::string, int, lt> tokenTable;
-    std::map<std::string, int, lt> opcodeTable;
-    std::map<std::string, int, lt> prefixTable;
+    std::map<std::string, int> tokenTable;
+    std::map<std::string, int> opcodeTable;
+    std::map<std::string, int> prefixTable;
     std::list<Numeric*> operands;
     std::list<Coding*> CleanupValues;
     std::list<int> prefixes;
     std::vector<InputToken*> inputTokens;
     BitStream bits;
-    AsmExpr expr;
+    AsmExpr asmexpr;
+
+    // c compiler support
+
+  public:
+    std::string FormatInstruction(ocode* ins);
+    asmError GetInstruction(ocode* ins, Instruction*& newIns, std::list<Numeric*>& operands);
+
+  protected:
+    void SetRegToken(int reg, int sz);
+    void SetNumberToken(int val);
+    bool SetNumberToken(expr* offset, int& n);
+    void SetExpressionToken(expr* offset);
+    void SetSize(int sz);
+    void SetBracketSequence(bool open, int sz, int seg);
+    void SetOperandTokens(amode* operand);
+    void SetTokens(ocode* ins);
 };
 #endif

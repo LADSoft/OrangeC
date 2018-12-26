@@ -32,9 +32,9 @@
 #include <iostream>
 #include <algorithm>
 #ifdef GCCLINUX
-#include <unistd.h>
+#    include <unistd.h>
 #else
-#include <io.h>
+#    include <io.h>
 #endif
 CmdSwitchParser GrepMain::SwitchParser;
 

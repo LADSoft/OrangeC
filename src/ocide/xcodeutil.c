@@ -39,7 +39,6 @@ extern HINSTANCE hInstance;
 extern KEYLIST C_keywordList[1];
 extern HWND hwndShowFunc;
 
-
 #define TRANSPARENT_COLOR 0x872395
 
 extern HWND codecompleteBox;

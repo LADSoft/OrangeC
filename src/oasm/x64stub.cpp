@@ -149,7 +149,7 @@ char* Lexer::preData =
     "__SECT__\n"
     "%endmacro\n";
 
-void Instruction::Optimize(Section *sect, int pc, bool last)
+void Instruction::Optimize(Section* sect, int pc, bool last)
 {
     if (data && size >= 3 && data[0] == 0x0f && data[1] == 0x0f && (data[2] == 0x9a || data[2] == 0xea))
     {
@@ -269,9 +269,8 @@ void Instruction::Optimize(Section *sect, int pc, bool last)
                                 {
                                     if (last)
                                     {
-//                                        Errors::IncrementCount();
-                                        std::cout << "Warning " << fixup->GetFileName() << "(" << fixup->GetErrorLine()
-                                                  << "):"
+                                        //                                        Errors::IncrementCount();
+                                        std::cout << "Warning " << fixup->GetFileName() << "(" << fixup->GetErrorLine() << "):"
                                                   << "Value out of range" << std::endl;
                                     }
                                 }
@@ -344,11 +343,11 @@ int x64Parser::DoMath(char op, int left, int right)
             return left;
     }
 }
-void x64Parser::Setup(Section* sect) 
+void x64Parser::Setup(Section* sect)
 {
     if (sect->beValues[0] == 0)
-    	sect->beValues[0] = 16; // 16 bit mode is the default 
-	Setprocessorbits(sect->beValues[0]); 
+        sect->beValues[0] = 16;  // 16 bit mode is the default
+    Setprocessorbits(sect->beValues[0]);
 }
 
 bool x64Parser::ParseSection(AsmFile* fil, Section* sect)
@@ -384,11 +383,10 @@ bool x64Parser::ParseDirective(AsmFile* fil, Section* sect)
         {
             int n = static_cast<const NumericToken*>(fil->GetToken())->GetInteger();
             if (n == 16 || n == 32 || n == 64)
-            {        
+            {
                 sect->beValues[0] = n;
                 Setprocessorbits(sect->beValues[0]);
                 rv = true;
-
             }
             fil->NextToken();
         }

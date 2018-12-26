@@ -676,7 +676,7 @@ void gen_iiconst(IMODE* res, LLONG_TYPE val)
 
 /*-------------------------------------------------------------------------*/
 
-void gen_ifconst(IMODE* res, FPF val)
+void gen_ifconst(IMODE* res, FPFC val)
 /*
  *      generate an integer constant sequence into the peep list.
  */

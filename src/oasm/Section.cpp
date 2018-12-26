@@ -85,14 +85,28 @@ void Section::Parse(AsmFile* fil)
             throw new std::runtime_error("Invalid section qualifier");
     }
 }
-void Section::Optimize(AsmFile* fil)
+void Section::Optimize()
 {
     AsmExpr::SetSection(this);
     bool done = false;
+    int pc = 0;
+    for (int i = 0; i < instructions.size(); i++)
+    {
+        if (instructions[i]->IsLabel())
+        {
+            Label* l = instructions[i]->GetLabel();
+            if (l)
+            {
+                l->SetOffset(pc);
+                labels[l->GetName()] = pc;
+            }
+        }
+        pc += instructions[i]->GetSize();
+    }
     while (!done)
     {
-        int pc = 0;
         done = true;
+        pc = 0;
         for (int i = 0; i < instructions.size(); i++)
         {
             if (instructions[i]->IsLabel())
@@ -112,18 +126,30 @@ void Section::Optimize(AsmFile* fil)
                 int m = instructions[i]->GetSize();
                 pc += m;
                 if (n != m)
+                {
                     done = false;
+                }
             }
         }
     }
-    int pc = 0;
+    pc = 0;
     for (int i = 0; i < instructions.size(); i++)
     {
+        if (instructions[i]->IsLabel())
+        {
+            Label* l = instructions[i]->GetLabel();
+            if (l)
+            {
+                l->SetOffset(pc);
+                labels[l->GetName()] = pc;
+            }
+        }
+        instructions[i]->SetOffset(pc);
         instructions[i]->Optimize(this, pc, true);
         pc += instructions[i]->GetSize();
     }
 }
-void Section::Resolve(AsmFile* fil) { Optimize(fil); }
+void Section::Resolve() { Optimize(); }
 ObjSection* Section::CreateObject(ObjFactory& factory)
 {
     objectSection = factory.MakeSection(name);
@@ -131,14 +157,15 @@ ObjSection* Section::CreateObject(ObjFactory& factory)
         objectSection->SetQuals(objectSection->GetQuals() | ObjSection::max | ObjSection::virt);
     return objectSection;
 }
-ObjExpression* Section::ConvertExpression(AsmExprNode* node, AsmFile* fil, ObjFactory& factory)
+ObjExpression* Section::ConvertExpression(AsmExprNode* node, std::function<Label*(std::string&)> Lookup,
+                                          std::function<ObjSection*(std::string&)> SectLookup, ObjFactory& factory)
 {
     ObjExpression* xleft = nullptr;
     ObjExpression* xright = nullptr;
     if (node->GetLeft())
-        xleft = ConvertExpression(node->GetLeft(), fil, factory);
+        xleft = ConvertExpression(node->GetLeft(), Lookup, SectLookup, factory);
     if (node->GetRight())
-        xright = ConvertExpression(node->GetRight(), fil, factory);
+        xright = ConvertExpression(node->GetRight(), Lookup, SectLookup, factory);
     switch (node->GetType())
     {
         case AsmExprNode::IVAL:
@@ -161,11 +188,11 @@ ObjExpression* Section::ConvertExpression(AsmExprNode* node, AsmFile* fil, ObjFa
             AsmExprNode* num = AsmExpr::GetEqu(node->label);
             if (num)
             {
-                return ConvertExpression(num, fil, factory);
+                return ConvertExpression(num, Lookup, SectLookup, factory);
             }
             else
             {
-                Label* label = fil->Lookup(node->label);
+                Label* label = Lookup(node->label);
                 if (label != nullptr)
                 {
 
@@ -177,14 +204,14 @@ ObjExpression* Section::ConvertExpression(AsmExprNode* node, AsmFile* fil, ObjFa
                     else
                     {
                         ObjExpression* left = factory.MakeExpression(label->GetObjectSection());
-                        ObjExpression* right = ConvertExpression(label->GetOffset(), fil, factory);
+                        ObjExpression* right = ConvertExpression(label->GetOffset(), Lookup, SectLookup, factory);
                         t = factory.MakeExpression(ObjExpression::eAdd, left, right);
                     }
                     return t;
                 }
                 else
                 {
-                    ObjSection* s = fil->GetSectionByName(node->label);
+                    ObjSection* s = SectLookup(node->label);
                     if (s)
                     {
                         ObjExpression* left = factory.MakeExpression(s);
@@ -271,7 +298,9 @@ bool Section::SwapSectionIntoPlace(ObjExpression* t)
         return t->GetOperator() == ObjExpression::eSection;
     }
 }
-bool Section::MakeData(ObjFactory& factory, AsmFile* fil)
+bool Section::MakeData(ObjFactory& factory, std::function<Label*(std::string&)> Lookup,
+                       std::function<ObjSection*(std::string&)> SectLookup,
+                       std::function<void(ObjFactory&, Section*, Instruction*)> HandleAlt)
 {
     bool rv = true;
     int pc = 0;
@@ -299,41 +328,52 @@ bool Section::MakeData(ObjFactory& factory, AsmFile* fil)
             }
             else
             {
-                if (pos)
+                if (pos || n == -2)
                 {
                     ObjMemory* mem = factory.MakeData(buf, pos);
                     sect->Add(mem);
                     pos = 0;
                 }
-                ObjExpression* t;
-                try
+                if (n == -2)
                 {
-                    t = ConvertExpression(f.GetExpr(), fil, factory);
-                    SwapSectionIntoPlace(t);
+                    ObjMemory* mem = factory.MakeData(buf, 0);
+                    sect->Add(mem);
+                    while (instructionPos < instructions.size() && instructions[instructionPos]->GetType() == Instruction::ALT)
+                        HandleAlt(factory, this, instructions[instructionPos++]);
                 }
-                catch (std::runtime_error* e)
+                else
                 {
-                    Errors::IncrementCount();
-                    std::cout << "Error " << f.GetFileName().c_str() << "(" << f.GetErrorLine() << "):" << e->what() << std::endl;
-                    delete e;
-                    t = nullptr;
-                    rv = false;
-                }
-                if (t && f.IsRel())
-                {
-                    ObjExpression* left = factory.MakeExpression(f.GetRelOffs());
-                    t = factory.MakeExpression(ObjExpression::eSub, t, left);
-                    left = factory.MakeExpression(ObjExpression::ePC);
-                    t = factory.MakeExpression(ObjExpression::eSub, t, left);
-                }
-                if (t)
-                {
+                    ObjExpression* t;
+                    try
+                    {
+                        t = ConvertExpression(f.GetExpr(), Lookup, SectLookup, factory);
+                        SwapSectionIntoPlace(t);
+                    }
+                    catch (std::runtime_error* e)
+                    {
+                        Errors::IncrementCount();
+                        std::cout << "Error " << f.GetFileName().c_str() << "(" << f.GetErrorLine() << "):" << e->what()
+                                  << std::endl;
+                        delete e;
+                        t = nullptr;
+                        rv = false;
+                    }
+                    if (t && f.IsRel())
+                    {
+                        ObjExpression* left = factory.MakeExpression(f.GetRelOffs());
+                        t = factory.MakeExpression(ObjExpression::eSub, t, left);
+                        left = factory.MakeExpression(ObjExpression::ePC);
+                        t = factory.MakeExpression(ObjExpression::eSub, t, left);
+                    }
+                    if (t)
+                    {
 
-                    ObjMemory* mem = factory.MakeFixup(t, f.GetSize());
-                    if (mem)
-                        sect->Add(mem);
+                        ObjMemory* mem = factory.MakeFixup(t, f.GetSize());
+                        if (mem)
+                            sect->Add(mem);
+                    }
+                    pc += f.GetSize();
                 }
-                pc += f.GetSize();
             }
         }
         if (pos)
@@ -350,9 +390,14 @@ int Section::GetNext(Fixup& f, unsigned char* buf, int len)
     static char buf2[256];
     if (!blen)
     {
+
         while (instructionPos < instructions.size() &&
                (blen = instructions[instructionPos]->GetNext(f, (unsigned char*)&buf2[0])) == 0)
+        {
+            if (instructions[instructionPos]->GetType() == Instruction::ALT)
+                return -2;
             instructionPos++;
+        }
         if (instructionPos >= instructions.size())
             return 0;
     }

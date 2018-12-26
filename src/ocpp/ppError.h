@@ -52,6 +52,7 @@ class ppError
   protected:
     void IssueError(const std::string& msg) { Errors::Error("Error directive:" + msg); }
     void IssueWarning(const std::string& msg) { Errors::Warning("Warning directive:" + msg); }
+
   private:
 };
 #endif

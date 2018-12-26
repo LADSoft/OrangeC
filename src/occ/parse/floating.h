@@ -92,7 +92,7 @@ typedef struct
     uf8 sign; /* Mantissa sign */
     long exp; /* Signed exponent...no bias */
     uf16 mantissa[INTERNAL_FPF_PRECISION];
-} FPF;
+} FPFC;
 
 /*
 ** PROTOTYPES
@@ -102,35 +102,35 @@ extern "C"
 {
 #endif
 #ifdef XXXXX
-    void SetupCPUEmFloatArrays(FPF* abase, FPF* bbase, FPF* cbase, ulong arraysize);
-    ulong DoEmFloatIteration(FPF* abase, FPF* bbase, FPF* cbase, ulong arraysize, ulong loops);
+    void SetupCPUEmFloatArrays(FPFC* abase, FPFC* bbase, FPFC* cbase, ulong arraysize);
+    ulong DoEmFloatIteration(FPFC* abase, FPFC* bbase, FPFC* cbase, ulong arraysize, ulong loops);
 #endif
-    void SetFPFZero(FPF* dest, uchar sign);
-    void SetFPFInfinity(FPF* dest, uchar sign);
-    void SetFPFNaN(FPF* dest);
+    void SetFPFZero(FPFC* dest, uchar sign);
+    void SetFPFInfinity(FPFC* dest, uchar sign);
+    void SetFPFNaN(FPFC* dest);
     int IsMantissaZero(uf16* mant);
     int IsMantissaOne(uf16* mant);
     void Add16Bits(uf16* carry, uf16* a, uf16 b, uf16 c);
     void Sub16Bits(uf16* borrow, uf16* a, uf16 b, uf16 c);
     void ShiftMantLeft1(uf16* carry, uf16* mantissa);
     void ShiftMantRight1(uf16* carry, uf16* mantissa);
-    void StickyShiftRightMant(FPF* ptr, int amount);
-    void normalize(FPF* ptr);
-    void denormalize(FPF* ptr, int minimum_exponent);
-    void RoundFPF(FPF* ptr);
-    void choose_nan(FPF* x, FPF* y, FPF* z, int intel_flag);
-    void AddSubFPF(uchar operation, FPF* x, FPF* y, FPF* z);
-    void MultiplyFPF(FPF* x, FPF* y, FPF* z);
-    void DivideFPF(FPF* x, FPF* y, FPF* z);
-    void LongToFPF(long mylong, FPF* dest);
-    int FPFTensExponent(FPF* value);
-    void FPFMultiplyPowTen(FPF* value, int power);
-    char* FPFToString(char* dest, FPF* src);
-    void LongLongToFPF(FPF* value, LLONG_TYPE i);
-    void UnsignedLongLongToFPF(FPF* value, LLONG_TYPE i);
-    int FPFToLongDouble(unsigned char* dest, FPF* src);
-    void FPFTruncate(FPF* value, int bits, int maxexp, int minexp);
-    int LongDoubleToFPF(FPF* dest, unsigned char* src);
+    void StickyShiftRightMant(FPFC* ptr, int amount);
+    void normalize(FPFC* ptr);
+    void denormalize(FPFC* ptr, int minimum_exponent);
+    void RoundFPF(FPFC* ptr);
+    void choose_nan(FPFC* x, FPFC* y, FPFC* z, int intel_flag);
+    void AddSubFPF(uchar operation, FPFC* x, FPFC* y, FPFC* z);
+    void MultiplyFPF(FPFC* x, FPFC* y, FPFC* z);
+    void DivideFPF(FPFC* x, FPFC* y, FPFC* z);
+    void LongToFPF(long mylong, FPFC* dest);
+    int FPFTensExponent(FPFC* value);
+    void FPFMultiplyPowTen(FPFC* value, int power);
+    char* FPFToString(char* dest, FPFC* src);
+    void LongLongToFPF(FPFC* value, LLONG_TYPE i);
+    void UnsignedLongLongToFPF(FPFC* value, LLONG_TYPE i);
+    int FPFToLongDouble(unsigned char* dest, FPFC* src);
+    void FPFTruncate(FPFC* value, int bits, int maxexp, int minexp);
+    int LongDoubleToFPF(FPFC* dest, unsigned char* src);
 #ifdef __cplusplus
 }
 #endif

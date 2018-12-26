@@ -189,7 +189,7 @@ typedef struct
     UBYTE* regOrder;            /* register allocation order */
     ARCH_PEEP* peephole_defs;   /* defines peephole information */
     int fastcallRegCount;       /* Max number of regs considered for fastcall */
-    char *fastcallRegs;         /* register list for regs used in fastcall */
+    char* fastcallRegs;         /* register list for regs used in fastcall */
     int preferopts;             /* preferred optimizations */
     int denyopts;               /* optimizations we don't want */
 #define DO_NOGLOBAL 1
@@ -230,6 +230,8 @@ typedef struct
     char parmwidth;                   /* minimium width/ padding of passed parameters in maus */
     char stackalign;                  /* minimum stack alignment */
     char libsasimports;               /* library functions should be genned as import calls */
+    char retblockparamadjust;                            /* Adjustment for retblock parameters */
+
 } ARCH_CHARACTERISTICS;
 
 /* debugger characteristics */
@@ -276,124 +278,124 @@ typedef struct _arch_gen
     void (*finalGen)(void);                                /* end of code generation, lits have been dumped */
     void (*internalConflict)(QUAD* q);                     /* enter a conflict for this instruction if necessary */
     int (*preRegAlloc)(QUAD* ins, BRIGGS_SET* globals, BRIGGS_SET* eobGlobals,
-                       int pass);                           /* allow access to the quad list before register allocation */
-    void (*preColor)(QUAD* q);                              /* precolor an instruction */
-    void (*gen_strlab)(SYMBOL* sp);                         /* generate a named label */
-    void (*gen_label)(int labnum);                          /* generate a numbered label */
-    void (*gen_string_label)(int labnum, int type);         /* generate a numbered label */
-    void (*gen_bit)(SYMBOL* sp, LLONG_TYPE val);            /* reserve space for a bit */
-    void (*gen_int)(enum e_gt type, LLONG_TYPE val);        /* initialize one of the integer types */
-    void (*gen_float)(enum e_gt type, FPF* val);            /* initialize a float */
-    void (*gen_address)(ULLONG_TYPE val);                   /* initializae a pointer */
-    void (*gen_string)(LCHAR* string, int len);             /* initialize a string */
-    void (*gen_ref)(SYMBOL* sp, int offset);                /* put a reference to a variable */
-    void (*gen_pcref)(SYMBOL* sp, int offset);              /* put a reference to something in the code segment */
-    void (*gen_srref)(SYMBOL* sp, int val, int type);       /* put a reference to the startup.rundown */
-    void (*gen_labref)(int label);                          /* put a reference to a label */
-    void (*gen_labdifref)(int left, int right);             /* put the difference of two labels */
-    void (*gen_virtual)(SYMBOL* sp, int data);              /* start a virtual segment */
-    void (*gen_endvirtual)(SYMBOL* sp);                     /* end a virtual segment */
-    void (*gen_vtt)(VTABENTRY* vt, SYMBOL* func);           /* vttthunk entry */
-    void (*gen_vc1)(SYMBOL* func);                          /* vc1thunk entry */
-    void (*gen_importThunk)(SYMBOL* func);                  /* import thunk entry */
-    void (*gen_storage)(int size);                          /* generate uninitialized storage */
-    void (*align)(int size);                                /* put an alignment command */
+                       int pass);                                /* allow access to the quad list before register allocation */
+    void (*preColor)(QUAD* q);                                   /* precolor an instruction */
+    void (*gen_strlab)(SYMBOL* sp);                              /* generate a named label */
+    void (*gen_label)(int labnum);                               /* generate a numbered label */
+    void (*gen_string_label)(int labnum, int type);              /* generate a numbered label */
+    void (*gen_bit)(SYMBOL* sp, LLONG_TYPE val);                 /* reserve space for a bit */
+    void (*gen_int)(enum e_gt type, LLONG_TYPE val);             /* initialize one of the integer types */
+    void (*gen_float)(enum e_gt type, FPFC* val);                /* initialize a float */
+    void (*gen_address)(ULLONG_TYPE val);                        /* initializae a pointer */
+    void (*gen_string)(LCHAR* string, int len);                  /* initialize a string */
+    void (*gen_ref)(SYMBOL* sp, int offset);                     /* put a reference to a variable */
+    void (*gen_pcref)(SYMBOL* sp, int offset);                   /* put a reference to something in the code segment */
+    void (*gen_srref)(SYMBOL* sp, int val, int type);            /* put a reference to the startup.rundown */
+    void (*gen_labref)(int label);                               /* put a reference to a label */
+    void (*gen_labdifref)(int left, int right);                  /* put the difference of two labels */
+    void (*gen_virtual)(SYMBOL* sp, int data);                   /* start a virtual segment */
+    void (*gen_endvirtual)(SYMBOL* sp);                          /* end a virtual segment */
+    void (*gen_vtt)(VTABENTRY* vt, SYMBOL* func);                /* vttthunk entry */
+    void (*gen_vc1)(SYMBOL* func);                               /* vc1thunk entry */
+    void (*gen_importThunk)(SYMBOL* func);                       /* import thunk entry */
+    void (*gen_storage)(int size);                               /* generate uninitialized storage */
+    void (*align)(int size);                                     /* put an alignment command */
     void (*setalign)(int code, int data, int bss, int constant); /* put alignment sizes */
-    void (*enterseg)(enum e_sg segnum);                     /* enter a new segment */
-    void (*exitseg)(enum e_sg segnum);                      /* exit current segment */
-    void (*global_define)(SYMBOL* sp);                      /* put a global definition */
-    void (*local_define)(SYMBOL* sp);                       /* put a global definition */
-    void (*local_static_define)(SYMBOL* sp);                /* put a function local definition */
-    void (*extern_define)(SYMBOL* sp, int code);            /* put an external definition */
-    void (*import_define)(SYMBOL* sp, char* file);          /* put an import definition */
-    void (*export_define)(SYMBOL* sp);                      /* put an export definition */
-    void (*output_alias)(char* sp, char* alias);            /* put an alias */
-    void (*output_includelib)(char* name);                  /* put an included library name */
-    IMODE* (*handleIntrins)(EXPRESSION* node, int novalue); /* backend handle intrinsic */
-    CGFUNC asm_exprtag;                                     /* expression tag */
-    CGFUNC asm_tag;                                         /* tag */
-    CGFUNC asm_line;                                        /* line number information and text */
-    CGFUNC asm_blockstart;                                  /* block start */
-    CGFUNC asm_blockend;                                    /* block end */
-    CGFUNC asm_varstart;                                    /* local var start */
-    CGFUNC asm_func;                                        /* function start or end */
-    CGFUNC asm_passthrough;                                 /* reserved */
-    CGFUNC asm_datapassthrough;                             /* reserved */
-    CGFUNC asm_label;                                       /* put a label in the code stream */
-    CGFUNC asm_atomic;                                      /* atomic primitives */
-    CGFUNC asm_goto;                                        /* unconditional branch */
-    CGFUNC asm_gosub;                                       /* normal gosub to an immediate label or through a var */
-    CGFUNC asm_fargosub;                                    /* far version of gosub */
-    CGFUNC asm_trap;                                        /* 'trap' instruction - the arg will be an immediate # */
-    CGFUNC asm_int;                                         /* 'int' instruction, calls a labeled function which is an interrupt */
-    CGFUNC asm_ret;                                         /* return from subroutine */
-    CGFUNC asm_fret;                                        /* far return from subroutine */
-    CGFUNC asm_rett;                                        /* return from trap or int */
-    CGFUNC asm_add;                                         /* evaluate an addition */
-    CGFUNC asm_sub;                                         /* evaluate a subtraction */
-    CGFUNC asm_udiv;                                        /* unsigned division */
-    CGFUNC asm_umod;                                        /* unsigned modulous */
-    CGFUNC asm_sdiv;                                        /* signed division */
-    CGFUNC asm_smod;                                        /* signed modulous */
-    CGFUNC asm_muluh;                                       /* multiply highword unsigned*/
-    CGFUNC asm_mulsh;                                       /* multiply highword signed*/
-    CGFUNC asm_mul;                                         /* multiply */
-    CGFUNC asm_lsl;                                         /* unsigned shift left */
-    CGFUNC asm_lsr;                                         /* unsigned shift right */
-    CGFUNC asm_asr;                                         /* signed shift right */
-    CGFUNC asm_neg;                                         /* negation */
-    CGFUNC asm_not;                                         /* complement */
-    CGFUNC asm_and;                                         /* binary and */
-    CGFUNC asm_or;                                          /* binary or */
-    CGFUNC asm_eor;                                         /* binary exclusive or */
-    CGFUNC asm_setne;                                       /* evaluate a = b != c */
-    CGFUNC asm_sete;                                        /* evaluate a = b == c */
-    CGFUNC asm_setc;                                        /* evaluate a = b U< c */
-    CGFUNC asm_seta;                                        /* evaluate a = b U> c */
-    CGFUNC asm_setnc;                                       /* evaluate a = b U>= c */
-    CGFUNC asm_setbe;                                       /* evaluate a = b U<= c */
-    CGFUNC asm_setl;                                        /* evaluate a = b S< c */
-    CGFUNC asm_setg;                                        /* evaluate a = b s> c */
-    CGFUNC asm_setle;                                       /* evaluate a = b S<= c */
-    CGFUNC asm_setge;                                       /* evaluate a = b S>= c */
-    CGFUNC asm_assn;                                        /* assignment */
-    CGFUNC asm_genword;                                     /* put a byte or word into the code stream */
-    CGFUNC asm_coswitch;                                    /* switch characteristics */
-    CGFUNC asm_swbranch;                                    /* case characteristics */
-    CGFUNC asm_dc;                                          /* unused */
-    CGFUNC asm_assnblock;                                   /* copy block of memory*/
-    CGFUNC asm_clrblock;                                    /* clear block of memory */
-    CGFUNC asm_jc;                                          /* branch if a U< b */
-    CGFUNC asm_ja;                                          /* branch if a U> b */
-    CGFUNC asm_je;                                          /* branch if a == b */
-    CGFUNC asm_jnc;                                         /* branch if a U>= b */
-    CGFUNC asm_jbe;                                         /* branch if a U<= b */
-    CGFUNC asm_jne;                                         /* branch if a != b */
-    CGFUNC asm_jl;                                          /* branch if a S< b */
-    CGFUNC asm_jg;                                          /* branch if a S> b */
-    CGFUNC asm_jle;                                         /* branch if a S<= b */
-    CGFUNC asm_jge;                                         /* branch if a S>= b */
-    CGFUNC asm_parm;                                        /* push a parameter*/
-    CGFUNC asm_parmadj;                                     /* adjust stack after function call */
-    CGFUNC asm_parmblock;                                   /* push a block of memory */
-    CGFUNC asm_cppini;                                      /* cplusplus initialization (historic)*/
-    CGFUNC asm_prologue;                                    /* function prologue */
-    CGFUNC asm_epilogue;                                    /* function epilogue */
-    CGFUNC asm_pushcontext;                                 /* push register context */
-    CGFUNC asm_popcontext;                                  /* pop register context */
-    CGFUNC asm_loadcontext;                                 /* load register context (e.g. at interrupt level ) */
-    CGFUNC asm_unloadcontext;                               /* unload register context (e.g. at interrupt level ) */
-    CGFUNC asm_tryblock;                                    /* try/catch/ exit try block */
-    CGFUNC asm_stackalloc; /* allocate stack space - positive value = allocate, negative value deallocate */
-    CGFUNC asm_loadstack;  /* load the stack pointer */
-    CGFUNC asm_savestack;  /* save the stack pointer */
-    CGFUNC asm_seh;        /* seh */
+    void (*enterseg)(enum e_sg segnum);                          /* enter a new segment */
+    void (*exitseg)(enum e_sg segnum);                           /* exit current segment */
+    void (*global_define)(SYMBOL* sp);                           /* put a global definition */
+    void (*local_define)(SYMBOL* sp);                            /* put a global definition */
+    void (*local_static_define)(SYMBOL* sp);                     /* put a function local definition */
+    void (*extern_define)(SYMBOL* sp, int code);                 /* put an external definition */
+    void (*import_define)(SYMBOL* sp, char* file);               /* put an import definition */
+    void (*export_define)(SYMBOL* sp);                           /* put an export definition */
+    void (*output_alias)(char* sp, char* alias);                 /* put an alias */
+    void (*output_includelib)(char* name);                       /* put an included library name */
+    IMODE* (*handleIntrins)(EXPRESSION* node, int novalue);      /* backend handle intrinsic */
+    CGFUNC asm_exprtag;                                          /* expression tag */
+    CGFUNC asm_tag;                                              /* tag */
+    CGFUNC asm_line;                                             /* line number information and text */
+    CGFUNC asm_blockstart;                                       /* block start */
+    CGFUNC asm_blockend;                                         /* block end */
+    CGFUNC asm_varstart;                                         /* local var start */
+    CGFUNC asm_func;                                             /* function start or end */
+    CGFUNC asm_passthrough;                                      /* reserved */
+    CGFUNC asm_datapassthrough;                                  /* reserved */
+    CGFUNC asm_label;                                            /* put a label in the code stream */
+    CGFUNC asm_atomic;                                           /* atomic primitives */
+    CGFUNC asm_goto;                                             /* unconditional branch */
+    CGFUNC asm_gosub;                                            /* normal gosub to an immediate label or through a var */
+    CGFUNC asm_fargosub;                                         /* far version of gosub */
+    CGFUNC asm_trap;                                             /* 'trap' instruction - the arg will be an immediate # */
+    CGFUNC asm_int;           /* 'int' instruction, calls a labeled function which is an interrupt */
+    CGFUNC asm_ret;           /* return from subroutine */
+    CGFUNC asm_fret;          /* far return from subroutine */
+    CGFUNC asm_rett;          /* return from trap or int */
+    CGFUNC asm_add;           /* evaluate an addition */
+    CGFUNC asm_sub;           /* evaluate a subtraction */
+    CGFUNC asm_udiv;          /* unsigned division */
+    CGFUNC asm_umod;          /* unsigned modulous */
+    CGFUNC asm_sdiv;          /* signed division */
+    CGFUNC asm_smod;          /* signed modulous */
+    CGFUNC asm_muluh;         /* multiply highword unsigned*/
+    CGFUNC asm_mulsh;         /* multiply highword signed*/
+    CGFUNC asm_mul;           /* multiply */
+    CGFUNC asm_lsl;           /* unsigned shift left */
+    CGFUNC asm_lsr;           /* unsigned shift right */
+    CGFUNC asm_asr;           /* signed shift right */
+    CGFUNC asm_neg;           /* negation */
+    CGFUNC asm_not;           /* complement */
+    CGFUNC asm_and;           /* binary and */
+    CGFUNC asm_or;            /* binary or */
+    CGFUNC asm_eor;           /* binary exclusive or */
+    CGFUNC asm_setne;         /* evaluate a = b != c */
+    CGFUNC asm_sete;          /* evaluate a = b == c */
+    CGFUNC asm_setc;          /* evaluate a = b U< c */
+    CGFUNC asm_seta;          /* evaluate a = b U> c */
+    CGFUNC asm_setnc;         /* evaluate a = b U>= c */
+    CGFUNC asm_setbe;         /* evaluate a = b U<= c */
+    CGFUNC asm_setl;          /* evaluate a = b S< c */
+    CGFUNC asm_setg;          /* evaluate a = b s> c */
+    CGFUNC asm_setle;         /* evaluate a = b S<= c */
+    CGFUNC asm_setge;         /* evaluate a = b S>= c */
+    CGFUNC asm_assn;          /* assignment */
+    CGFUNC asm_genword;       /* put a byte or word into the code stream */
+    CGFUNC asm_coswitch;      /* switch characteristics */
+    CGFUNC asm_swbranch;      /* case characteristics */
+    CGFUNC asm_dc;            /* unused */
+    CGFUNC asm_assnblock;     /* copy block of memory*/
+    CGFUNC asm_clrblock;      /* clear block of memory */
+    CGFUNC asm_jc;            /* branch if a U< b */
+    CGFUNC asm_ja;            /* branch if a U> b */
+    CGFUNC asm_je;            /* branch if a == b */
+    CGFUNC asm_jnc;           /* branch if a U>= b */
+    CGFUNC asm_jbe;           /* branch if a U<= b */
+    CGFUNC asm_jne;           /* branch if a != b */
+    CGFUNC asm_jl;            /* branch if a S< b */
+    CGFUNC asm_jg;            /* branch if a S> b */
+    CGFUNC asm_jle;           /* branch if a S<= b */
+    CGFUNC asm_jge;           /* branch if a S>= b */
+    CGFUNC asm_parm;          /* push a parameter*/
+    CGFUNC asm_parmadj;       /* adjust stack after function call */
+    CGFUNC asm_parmblock;     /* push a block of memory */
+    CGFUNC asm_cppini;        /* cplusplus initialization (historic)*/
+    CGFUNC asm_prologue;      /* function prologue */
+    CGFUNC asm_epilogue;      /* function epilogue */
+    CGFUNC asm_pushcontext;   /* push register context */
+    CGFUNC asm_popcontext;    /* pop register context */
+    CGFUNC asm_loadcontext;   /* load register context (e.g. at interrupt level ) */
+    CGFUNC asm_unloadcontext; /* unload register context (e.g. at interrupt level ) */
+    CGFUNC asm_tryblock;      /* try/catch/ exit try block */
+    CGFUNC asm_stackalloc;    /* allocate stack space - positive value = allocate, negative value deallocate */
+    CGFUNC asm_loadstack;     /* load the stack pointer */
+    CGFUNC asm_savestack;     /* save the stack pointer */
+    CGFUNC asm_seh;           /* seh */
     void (*asm_functail)(QUAD* q, int begin, int size); /* functail start or end */
 } ARCH_GEN;
 
 typedef struct
 {
-    char* name;
+    const char* name;
     short atype;
     short amode;
     void* data;
@@ -427,8 +429,6 @@ typedef struct _arch_asm
     char* usage_text;           /* pointer to usage text */
     CMDLIST* Args;              /* argument handling */
     int ArgCount;               /* number of arguments */
-    ASMNAME* oplst;             /* inline assembler opcode list, or null */
-    ASMREG* reglst;             /* inline assembler register list, or null */
     KEYWORD* keywords;          /* specific keywords, e.g. allow a 'bit' keyword and so forth */
     ARCH_DEFINES* defines;      /* defines list to create at compile time, or null */
     ARCH_DEBUG* debug;          /* debug structure, or NULL */
@@ -491,8 +491,8 @@ typedef struct
         LLONG_TYPE i;
         struct
         {
-            FPF* r;
-            FPF* i;
+            FPFC* r;
+            FPFC* i;
         } f;
         struct
         {

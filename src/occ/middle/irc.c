@@ -289,9 +289,9 @@ void regInit(void)
 }
 
 void alloc_init(void) { spillcount = maxAllocationSpills = 0; }
-static void cacheTempSymbol(SYMBOL* sp)
+void cacheTempSymbol(SYMBOL* sp)
 {
-    if (sp->anonymous && !sp->stackblock && sp->storage_class != sc_parameter)
+    if (sp->anonymous && sp->storage_class != sc_parameter)
     {
         if (sp->allocate && !sp->inAllocTable)
         {
@@ -416,7 +416,7 @@ void AllocateStackSpace(SYMBOL* funcsp)
         while (*temps)
         {
             SYMBOL* sp = (SYMBOL*)(*temps)->data;
-            if (sp->storage_class != sc_static && (sp->storage_class == sc_constant || sp->value.i == i))
+            if (sp->storage_class != sc_static && (sp->storage_class == sc_constant || sp->value.i == i) && !sp->stackblock)
             {
                 int val, align = sp->structAlign ? sp->structAlign : getAlign(sc_auto, basetype(sp->tp));
                 lc_maxauto += basetype(sp->tp)->size;
@@ -429,6 +429,20 @@ void AllocateStackSpace(SYMBOL* funcsp)
                 oldauto = max;
                 *temps = (*temps)->next;
                 sp->inAllocTable = FALSE;  // needed because due to inlining a temp may be used across multiple function bodies
+            }
+            else
+            {
+                temps = &(*temps)->next;
+            }
+        }
+        temps = &temporarySymbols;
+        while (*temps)
+        {
+            SYMBOL* sp = (SYMBOL*)(*temps)->data;
+            if (sp->stackblock)
+            {
+                sp->offset -= max;
+                *temps = (*temps)->next;
             }
             else
             {

@@ -39,7 +39,7 @@ class Utils
         fputs(format, stderr);
         exit(1);
     }
-    template <typename... Args> // templates are MUCH more portable than varargs
+    template <typename... Args>  // templates are MUCH more portable than varargs
     static void fatal(const char* format, Args... arg)
     {
         fprintf(stderr, "Fatal error: ");
@@ -47,10 +47,7 @@ class Utils
         fputc('\n', stderr);
         exit(1);
     }
-    static void fatal(const std::string& format)
-    {
-        fatal(format.c_str());
-    }
+    static void fatal(const std::string& format) { fatal(format.c_str()); }
     template <typename... Args>
     static void fatal(const std::string& format, Args... arg)
     {

@@ -74,7 +74,8 @@ LIST* tablesearchone(char* name, NAMESPACEVALUES* ns, BOOLEAN tagsOnly)
     if (!tagsOnly)
         rv = search(name, ns->syms);
     if (!rv)
-        rv = search(name, ns->tags);
+        if (!rv)
+            rv = search(name, ns->tags);
     if (rv)
     {
         LIST* l = Alloc(sizeof(LIST));
@@ -918,7 +919,7 @@ LEXEME* nestedSearch(LEXEME* lex, SYMBOL** sym, SYMBOL** strSym, NAMESPACEVALUES
     if (cparams.prm_cplusplus)
     {
 
-        if (MATCHKW(lex, compl))
+        if (MATCHKW(lex, complx))
         {
             if (destructor)
             {
@@ -1039,7 +1040,7 @@ LEXEME* getIdName(LEXEME* lex, SYMBOL* funcsp, char* buf, int* ov, TYPE** castTy
     else if (MATCHKW(lex, kw_operator))
     {
         lex = getsym();
-        if (ISKW(lex) && lex->kw->key >= kw_new && lex->kw->key <= compl)
+        if (ISKW(lex) && lex->kw->key >= kw_new && lex->kw->key <= complx)
         {
             enum e_kw kw = lex->kw->key;
             switch (kw)
@@ -1069,7 +1070,7 @@ LEXEME* getIdName(LEXEME* lex, SYMBOL* funcsp, char* buf, int* ov, TYPE** castTy
                     }
                     else
                     {
-                        kw = kw - kw_new + compl+1;
+                        kw = kw - kw_new + complx + 1;
                         lex = getsym();
                         if (!MATCHKW(lex, closebr))
                         {
@@ -1179,7 +1180,7 @@ LEXEME* id_expression(LEXEME* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strSym
         return lex;
     }
     lex = nestedPath(lex, &encloser, &ns, &throughClass, tagsOnly, sc_global, FALSE);
-    if (MATCHKW(lex, compl))
+    if (MATCHKW(lex, complx))
     {
         lex = getsym();
         if (ISID(lex))
@@ -1854,6 +1855,17 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, enum e_cvsrn* seq
                 ta = basetype(ta)->btp;
                 tl = basetype(tl)->btp;
                 tr = basetype(tr)->btp;
+                // prefer a const function when the expression is a string literal
+                if (expa->type == en_labcon)
+                {
+                    if (isconst(tl))
+                    {
+                        if (!isconst(tr))
+                            return -1;
+                    }
+                    else if (isconst(tr))
+                        return 1;
+                }
             }
             else
             {
@@ -1912,6 +1924,7 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, enum e_cvsrn* seq
                     }
                 }
             }
+
             if (basetype(ta)->type == bt_memberptr && basetype(tl)->type == bt_memberptr && basetype(tr)->type == bt_memberptr)
             {
                 ta = basetype(ta);
@@ -2379,8 +2392,8 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
 static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_cvsrn* seq, SYMBOL* candidate_in,
                                  SYMBOL** userFunc, BOOLEAN honorExplicit)
 {
-    static BOOLEAN infunc = FALSE;
-    if (!infunc)
+    static int infunc = 0;
+    if (infunc < 1)
     {
         LIST* gather = NULL;
         TYPE* tppp;
@@ -2389,7 +2402,7 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
         tppp = tpp;
         if (isref(tppp))
             tppp = basetype(tppp)->btp;
-        infunc = TRUE;
+        infunc++;
         if (flags & F_WITHCONS)
         {
             if (isstructured(tppp))
@@ -2504,6 +2517,8 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
                         if (candidate->castoperator)
                         {
                             TYPE* tpc = basetype(candidate->tp)->btp;
+                            if (tpc->type == bt_typedef)
+                                tpc = tpc->btp;
                             if (isref(tpc))
                                 tpc = basetype(tpc)->btp;
                             if (tpc->type != bt_auto &&
@@ -2519,6 +2534,8 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
                                 HASHREC* args = basetype(candidate->tp)->syms->table[0];
                                 BOOLEAN lref = FALSE;
                                 TYPE* tpn = basetype(candidate->tp)->btp;
+                                if (tpn->type == bt_typedef)
+                                    tpn = tpn->btp;
                                 if (isref(tpn))
                                 {
                                     if (basetype(tpn)->type == bt_lref)
@@ -2687,7 +2704,7 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
                         if (userFunc)
                             *userFunc = found1;
                     }
-                    infunc = FALSE;
+                    infunc--;
                     if (flags & F_CONVERSION)
                     {
                         GENREF(found1);
@@ -2707,19 +2724,23 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
                 }
             }
         }
-        infunc = FALSE;
+        infunc--;
     }
     if (seq)
         seq[(*n)++] = CV_NONE;
     return NULL;
 }
-static void getQualConversion(TYPE* tpp, TYPE* tpa, int* n, enum e_cvsrn* seq)
+static void getQualConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* exp, int* n, enum e_cvsrn* seq)
 {
     BOOLEAN hasconst = TRUE, hasvol = TRUE;
     BOOLEAN sameconst = TRUE, samevol = TRUE;
     BOOLEAN first = TRUE;
+    while (exp && castvalue(exp))
+        exp = exp->left;
+    BOOLEAN strconst = FALSE;
     while (tpa && tpp)  // && ispointer(tpa) && ispointer(tpp))
     {
+        strconst = exp && exp->type == en_labcon && basetype(tpa)->type == bt_char;
         if (isconst(tpp) != isconst(tpa))
         {
             sameconst = FALSE;
@@ -2753,6 +2774,8 @@ static void getQualConversion(TYPE* tpp, TYPE* tpa, int* n, enum e_cvsrn* seq)
         if (tpa && tpp && ((hasconst && isconst(tpa) && !isconst(tpp)) || (hasvol && isvolatile(tpa) && !isvolatile(tpp))))
             seq[(*n)++] = CV_NONE;
         else if (!sameconst || !samevol)
+            seq[(*n)++] = CV_QUALS;
+        else if (strconst && !isconst(tpp))
             seq[(*n)++] = CV_QUALS;
         else
             seq[(*n)++] = CV_IDENTITY;
@@ -2816,7 +2839,7 @@ static void getPointerConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* exp, int* n, 
         {
             seq[(*n)++] = CV_NONE;
         }
-        getQualConversion(tpp, tpa, n, seq);
+        getQualConversion(tpp, tpa, exp, n, seq);
     }
 }
 BOOLEAN sameTemplatePointedTo(TYPE* tnew, TYPE* told)

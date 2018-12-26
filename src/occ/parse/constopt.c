@@ -431,7 +431,7 @@ ULLONG_TYPE CastToInt(int size, LLONG_TYPE value)
             value |= ~mod_mask(bits);
     return value;
 }
-FPF CastToFloat(int size, FPF* value)
+FPFC CastToFloat(int size, FPFC* value)
 {
     switch (size)
     {
@@ -468,7 +468,7 @@ FPF CastToFloat(int size, FPF* value)
     }
     return *value;
 }
-FPF* IntToFloat(FPF* temp, int size, LLONG_TYPE value)
+FPFC* IntToFloat(FPFC* temp, int size, LLONG_TYPE value)
 {
     LLONG_TYPE t = CastToInt(size, value);
     if (size < 0)
@@ -477,10 +477,10 @@ FPF* IntToFloat(FPF* temp, int size, LLONG_TYPE value)
         UnsignedLongLongToFPF(temp, t);
     return temp;
 }
-FPF refloat(EXPRESSION* node)
+FPFC refloat(EXPRESSION* node)
 {
-    FPF rv;
-    FPF temp;
+    FPFC rv;
+    FPFC temp;
     switch (node->type)
     {
         case en_c_i:
@@ -616,7 +616,7 @@ void dooper(EXPRESSION** node, int mode)
  */
 {
     EXPRESSION *ep, *ep1, *ep2;
-    FPF temp;
+    FPFC temp;
     ep = *node;
     ep1 = ep->left;
     ep2 = ep->right;
@@ -1177,7 +1177,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 8:  // convert to a multiply
                     {
-                        FPF temp1;
+                        FPFC temp1;
                         UnsignedLongLongToFPF(&temp1, 1);
                         DivideFPF(&temp1, &ep2->v.f, &temp1);
                         ep2->v.f = temp1;
@@ -1398,7 +1398,7 @@ int opt0(EXPRESSION** node)
     LLONG_TYPE val;
     int rv = FALSE;
     int mode;
-    FPF dval;
+    FPFC dval;
     int negtype = en_uminus;
 
     ep = *node;
@@ -2915,7 +2915,7 @@ int fold_const(EXPRESSION* node)
                                 if (i >= functionnestingcount)
                                 {
                                     functionnesting[functionnestingcount++] = st->select;
-                                    //optimize_for_constants(&st->select);
+                                    // optimize_for_constants(&st->select);
                                     functionnestingcount--;
                                     if (IsConstantExpression(st->select, FALSE, FALSE))
                                     {
@@ -3295,7 +3295,7 @@ int typedconsts(EXPRESSION* node1)
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
-                FPF temp = refloat(node1->left);
+                FPFC temp = refloat(node1->left);
                 rv = TRUE;
                 node1->v.f = CastToFloat(ISZ_FLOAT, &temp);
                 node1->type = en_c_f;
@@ -3305,7 +3305,7 @@ int typedconsts(EXPRESSION* node1)
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
-                FPF temp = refloat(node1->left);
+                FPFC temp = refloat(node1->left);
                 rv = TRUE;
                 node1->v.f = CastToFloat(ISZ_IFLOAT, &temp);
                 node1->type = en_c_fi;
@@ -3315,7 +3315,7 @@ int typedconsts(EXPRESSION* node1)
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
-                FPF temp = refloat(node1->left);
+                FPFC temp = refloat(node1->left);
                 rv = TRUE;
                 node1->v.f = CastToFloat(ISZ_DOUBLE, &temp);
                 node1->type = en_c_d;
@@ -3325,7 +3325,7 @@ int typedconsts(EXPRESSION* node1)
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
-                FPF temp = refloat(node1->left);
+                FPFC temp = refloat(node1->left);
                 rv = TRUE;
                 node1->v.f = CastToFloat(ISZ_IDOUBLE, &temp);
                 node1->type = en_c_di;
@@ -3335,7 +3335,7 @@ int typedconsts(EXPRESSION* node1)
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
-                FPF temp = refloat(node1->left);
+                FPFC temp = refloat(node1->left);
                 rv = TRUE;
                 node1->v.f = CastToFloat(ISZ_LDOUBLE, &temp);
                 node1->type = en_c_ld;
@@ -3345,7 +3345,7 @@ int typedconsts(EXPRESSION* node1)
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
-                FPF temp = refloat(node1->left);
+                FPFC temp = refloat(node1->left);
                 rv = TRUE;
                 node1->v.f = CastToFloat(ISZ_ILDOUBLE, &temp);
                 node1->type = en_c_ldi;
@@ -3358,13 +3358,13 @@ int typedconsts(EXPRESSION* node1)
                 rv = TRUE;
                 if (isintconst(node1->left) || isfloatconst(node1->left))
                 {
-                    FPF temp = refloat(node1->left);
+                    FPFC temp = refloat(node1->left);
                     node1->v.c.r = CastToFloat(ISZ_ILDOUBLE, &temp);
                     SetFPFZero(&node1->v.c.i, 0);
                 }
                 else if (isimaginaryconst(node1->left))
                 {
-                    FPF temp;
+                    FPFC temp;
                     node1->left->type = en_c_ld;
                     temp = refloat(node1->left);
                     node1->v.c.i = CastToFloat(ISZ_ILDOUBLE, &temp);
@@ -3384,13 +3384,13 @@ int typedconsts(EXPRESSION* node1)
                 rv = TRUE;
                 if (isintconst(node1->left) || isfloatconst(node1->left))
                 {
-                    FPF temp = refloat(node1->left);
+                    FPFC temp = refloat(node1->left);
                     node1->v.c.r = CastToFloat(ISZ_ILDOUBLE, &temp);
                     SetFPFZero(&node1->v.c.i, 0);
                 }
                 else if (isimaginaryconst(node1->left))
                 {
-                    FPF temp;
+                    FPFC temp;
                     node1->left->type = en_c_ld;
                     temp = refloat(node1->left);
                     node1->v.c.i = CastToFloat(ISZ_ILDOUBLE, &temp);
@@ -3410,13 +3410,13 @@ int typedconsts(EXPRESSION* node1)
                 rv = TRUE;
                 if (isintconst(node1->left) || isfloatconst(node1->left))
                 {
-                    FPF temp = refloat(node1->left);
+                    FPFC temp = refloat(node1->left);
                     node1->v.c.r = CastToFloat(ISZ_ILDOUBLE, &temp);
                     SetFPFZero(&node1->v.c.i, 0);
                 }
                 else if (isimaginaryconst(node1->left))
                 {
-                    FPF temp;
+                    FPFC temp;
                     node1->left->type = en_c_ld;
                     temp = refloat(node1->left);
                     node1->v.c.i = CastToFloat(ISZ_ILDOUBLE, &temp);

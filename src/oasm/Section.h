@@ -29,6 +29,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <functional>
 
 #include "Instruction.h"
 class Label;
@@ -47,9 +48,11 @@ class Section
     }
     virtual ~Section();
     ObjSection* CreateObject(ObjFactory& factory);
-    bool MakeData(ObjFactory& factory, AsmFile* fil);
+    bool MakeData(ObjFactory& factory, std::function<Label*(std::string&)> Lookup,
+                  std::function<ObjSection*(std::string&)> SectLookup,
+                  std::function<void(ObjFactory&, Section*, Instruction*)> HandleAlt);
     void Parse(AsmFile* fil);
-    void Resolve(AsmFile* fil);
+    void Resolve();
     void SetAlign(int aln) { align = aln; }
     int GetAlign() { return align; }
     void InsertInstruction(Instruction* ins)
@@ -71,19 +74,23 @@ class Section
         delete v;
         instructions.pop_back();
     }
+    std::vector<Instruction*>& GetInstructions() { return instructions; }
+    void ClearInstructions() { instructions.clear(); }
     int GetSect() { return sect; }
     ObjSection* GetObjectSection() { return objectSection; }
     std::string GetName() { return name; }
     int GetNext(Fixup& fixup, unsigned char* buf, int len);
     int beValues[10];
-    std::map<std::string, int>::iterator Lookup(std::string name) { return labels.find(name); }
+    std::map<std::string, int>::iterator Lookup(std::string& name) { return labels.find(name); }
     std::map<std::string, int>& GetLabels() { return labels; }
     int GetPC() { return pc; }
+    bool HasInstructions() const { return instructions.size() != 0; }
 
   protected:
-    ObjExpression* ConvertExpression(AsmExprNode* node, AsmFile* fil, ObjFactory& factory);
+    ObjExpression* ConvertExpression(AsmExprNode* node, std::function<Label*(std::string&)> Lookup,
+                                     std::function<ObjSection*(std::string&)> SectLookup, ObjFactory& factory);
     bool SwapSectionIntoPlace(ObjExpression* t);
-    void Optimize(AsmFile* fil);
+    void Optimize();
 
   private:
     std::string name;

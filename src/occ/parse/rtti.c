@@ -786,18 +786,19 @@ static BOOLEAN allocatedXC(EXPRESSION* exp)
             return FALSE;
     }
 }
-static int evalofs(EXPRESSION* exp)
+static int evalofs(EXPRESSION* exp, SYMBOL *funcsp)
 {
     switch (exp->type)
     {
         case en_add:
-            return evalofs(exp->left) + evalofs(exp->right);
+            return evalofs(exp->left, funcsp) + evalofs(exp->right, funcsp);
         case en_c_i:
         case en_c_ui:
         case en_c_l:
         case en_c_ul:
             return exp->v.i;
         case en_auto:
+            return exp->v.sp->offset + (exp->v.sp->offset > 0 ? funcsp->retblockparamadjust : 0);
         case en_structelem:
             return exp->v.sp->offset;
         default:
@@ -888,7 +889,7 @@ void XTDumpTab(SYMBOL* funcsp)
                         q->used = TRUE;
                     genint(XD_CL_PRIMARY | (throughThis(p->exp) ? XD_THIS : 0));
                     genref(p->xtSym, 0);
-                    genint(evalofs(p->exp->v.t.thisptr));
+                    genint(evalofs(p->exp->v.t.thisptr, funcsp));
                     genint(p->exp->v.t.thisptr->xcInit);
                     genint(p->exp->v.t.thisptr->xcDest);
                 }
@@ -904,7 +905,7 @@ void XTDumpTab(SYMBOL* funcsp)
                 p->used = TRUE;
                 genint(XD_CL_PRIMARY | (throughThis(p->exp) ? XD_THIS : 0));
                 genref(p->xtSym, 0);
-                genint(evalofs(p->exp->v.t.thisptr));
+                genint(evalofs(p->exp->v.t.thisptr, funcsp));
                 genint(0);
                 genint(p->exp->v.t.thisptr->xcDest);
             }

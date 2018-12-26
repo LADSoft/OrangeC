@@ -32,7 +32,7 @@
 #include "PreProcessor.h"
 
 #ifndef GCCLINUX
-#include <windows.h>
+#    include <windows.h>
 #endif
 
 CmdSwitchParser rcMain::SwitchParser;

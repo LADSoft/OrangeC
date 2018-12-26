@@ -85,6 +85,7 @@ endif
 del:
 	-del /Q  $(_OUTPUTDIR)$(PATHEXT2)*.* 2> $(NULLDEV)
 	-del /Q *.exe 2> $(NULLDEV)
+	-del /Q *.o 2> $(NULLDEV)
 mkdir:
 	-$(MKDIR)  $(_OUTPUTDIR) 2> $(NULLDEV)
 rmdir:

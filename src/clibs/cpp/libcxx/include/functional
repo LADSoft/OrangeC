@@ -1258,7 +1258,6 @@ template<class _Rp, class ..._ArgTypes>
 struct __maybe_derive_from_unary_function
 {
 };
-
 template<class _Rp, class _A1>
 struct __maybe_derive_from_unary_function<_Rp(_A1)>
     : public unary_function<_A1, _Rp>

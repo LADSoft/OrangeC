@@ -317,7 +317,6 @@ typedef struct {
 } imaxdiv_t;
 
 #ifdef __cplusplus
-namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -337,16 +336,6 @@ uintmax_t _RTL_FUNC _IMPORT wcstoumax(const wchar_t * restrict __nptr,
 
 #ifdef __cplusplus
 }
-}
 #endif
 
-#endif
-#if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__INTTYPES_H_USING_LIST)
-#define __INTTYPES_H_USING_LIST
-    using __STD_NS_QUALIFIER imaxabs ;
-    using __STD_NS_QUALIFIER imaxdiv ;
-    using __STD_NS_QUALIFIER strtoimax;
-    using __STD_NS_QUALIFIER strtoumax;
-    using __STD_NS_QUALIFIER wcstoimax;
-    using __STD_NS_QUALIFIER wcstoumax;
 #endif

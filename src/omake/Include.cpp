@@ -92,14 +92,14 @@ bool Include::Parse(const std::string& name, bool ignoreOk, bool MakeFiles)
                     includeDirs = r.Evaluate();
                 }
             }
-            while (includeDirs.size())
+            while (!includeDirs.empty())
             {
                 current = Eval::ExtractFirst(includeDirs, ";") + "\\" + name;
                 if (access(current.c_str(), 0) != -1)
                     break;
             }
         }
-        std::fstream in(current.c_str(), std::ios::in | std::ios::binary);
+        std::fstream in(current, std::ios::in | std::ios::binary);
         if (!in.fail())
         {
             in.seekg(0, std::ios::end);
@@ -159,12 +159,12 @@ bool Include::AddFileList(const std::string& name, bool ignoreOk, bool MakeFile)
             includeDirs = r.Evaluate();
         }
     }
-    while (iname.size())
+    while (!iname.empty())
     {
         std::string current = Eval::ExtractFirst(iname, seps);
         cmdFiles.AddFromPath(current, includeDirs);
     }
-    for (CmdFiles::FileNameIterator it = cmdFiles.FileNameBegin(); rv && it != cmdFiles.FileNameEnd(); ++it)
+    for (auto it = cmdFiles.FileNameBegin(); rv && it != cmdFiles.FileNameEnd(); ++it)
     {
         Variable* v = VariableContainer::Instance()->Lookup("MAKEFILE_LIST");
         if (!v)

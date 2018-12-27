@@ -26,7 +26,7 @@
 #ifndef OBJIO_H
 #define OBJIO_H
 
-#include <stdio.h>
+#include <cstdio>
 #include <vector>
 #include "ObjTypes.h"
 

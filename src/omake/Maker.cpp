@@ -61,7 +61,7 @@ Maker::Maker(bool Silent, bool DisplayOnly, bool IgnoreResults, bool Touch, Outp
 Maker::~Maker() { Clear(); }
 void Maker::SetFirstGoal(const std::string& name)
 {
-    if (firstGoal.size() == 0)
+    if (firstGoal.empty())
     {
         if (name != ".SUFFIXES" && name != ".DEFAULT" && name != ".EXPORT_ALL_VARIABLES")
             if (name != ".INTERMEDIATE" && name != ".PRECIOUS" && name != ".SECONDARY")
@@ -78,11 +78,11 @@ void Maker::SetFirstGoal(const std::string& name)
 }
 bool Maker::CreateDependencyTree()
 {
-    if (goals.size() == 0)
+    if (goals.empty())
     {
         Variable* dg = VariableContainer::Instance()->Lookup(".DEFAULT_GOAL");
         std::string value;
-        if (dg && dg->GetValue().size() != 0)
+        if (dg && !dg->GetValue().empty())
         {
             value = dg->GetValue();
             if (dg->GetFlavor() == Variable::f_recursive)
@@ -95,7 +95,7 @@ bool Maker::CreateDependencyTree()
         {
             value = firstGoal;
         }
-        if (value.size() == 0)
+        if (value.empty())
             return true;  // nothing to do
         AddGoal(value);
     }
@@ -170,7 +170,7 @@ Depends* Maker::Dependencies(const std::string& goal, const std::string& preferr
             {
                 std::string working = rule->GetPrerequisites();
                 bool remakeThis = false;
-                while (working.size())
+                while (!working.empty())
                 {
                     Time current;
                     std::string thisOne = Eval::ExtractFirst(working, " ");
@@ -185,14 +185,14 @@ Depends* Maker::Dependencies(const std::string& goal, const std::string& preferr
                     }
                     if (current > goalTime || rebuildAll)
                     {
-                        if (newerPrereqs.size())
+                        if (!newerPrereqs.empty())
                             newerPrereqs += " ";
                         newerPrereqs += thisOne;
                         remakeThis = true;
                     }
                 }
                 working = rule->GetOrderPrerequisites();
-                while (working.size())
+                while (!working.empty())
                 {
                     Time current;
                     std::string thisOne = Eval::ExtractFirst(working, " ");
@@ -266,7 +266,7 @@ Depends* Maker::Dependencies(const std::string& goal, const std::string& preferr
             else
             {
                 bool check = true;
-                for (Depends::iterator it = rv->begin(); check && it != rv->end(); ++it)
+                for (auto it = rv->begin(); check && it != rv->end(); ++it)
                 {
                     check &= (*it)->IsSecondary();
                 }
@@ -305,7 +305,7 @@ std::string Maker::GetFileTime(const std::string& goal, const std::string& prefe
     }
     std::string vpath = preferredPath + std::string(" ./ ") + Eval::GetVPATH(internalGoal);
     std::string sep = std::string(" ") + CmdFiles::PATH_SEP;
-    while (vpath.size())
+    while (!vpath.empty())
     {
         std::string cur = Eval::ExtractFirst(vpath, sep);
         if (cur[cur.size() - 1] != '/' && cur[cur.size() - 1] != '\\')
@@ -345,10 +345,10 @@ bool Maker::ExistsOrMentioned(const std::string& stem, RuleList* ruleList, const
                               bool implicit, bool outerMost)
 {
     bool found = true;
-    for (RuleList::iterator itr = ruleList->begin(); found && itr != ruleList->end(); ++itr)
+    for (auto itr = ruleList->begin(); found && itr != ruleList->end(); ++itr)
     {
         std::string working = (*itr)->GetPrerequisites();
-        while (working.size() && found)
+        while (!working.empty() && found)
         {
             std::string thisOne = dir + Eval::ExtractFirst(working, " ");
             thisOne = Eval::ReplaceStem(stem, thisOne);
@@ -405,22 +405,22 @@ void Maker::EnterSpecificRule(RuleList* l, const std::string& stem, const std::s
         if (!commands)
             commands = rule->GetCommands();
         std::string working = rule->GetPrerequisites();
-        while (working.size())
+        while (!working.empty())
         {
             std::string thisOne = dir + Eval::ExtractFirst(working, " ");
             thisOne = Eval::ReplaceStem(stem, thisOne);
             thisOne = GetFileTime(thisOne, preferredPath, theTime) + thisOne;
-            if (prereq.size())
+            if (!prereq.empty())
                 prereq += " ";
             prereq += thisOne;
         }
         working = rule->GetOrderPrerequisites();
-        while (working.size())
+        while (!working.empty())
         {
             std::string thisOne = dir + Eval::ExtractFirst(working, " ");
             thisOne = Eval::ReplaceStem(stem, thisOne);
             thisOne = GetFileTime(thisOne, preferredPath, theTime) + thisOne;
-            if (orderPrereq.size())
+            if (!orderPrereq.empty())
                 orderPrereq += " ";
             orderPrereq += thisOne;
         }
@@ -438,7 +438,7 @@ void Maker::EnterDefaultRule(const std::string& goal, RuleList* dflt)
     if (!RuleContainer::Instance()->Lookup(goal))
     {
         Command* commands = nullptr;
-        for (RuleList::iterator it = dflt->begin(); !commands && it != dflt->end(); ++it)
+        for (auto it = dflt->begin(); !commands && it != dflt->end(); ++it)
             commands = (*it)->GetCommands();
         RuleList* ruleList = new RuleList(goal);
         *RuleContainer::Instance() += ruleList;
@@ -462,7 +462,7 @@ bool Maker::SearchImplicitRules(const std::string& goal, const std::string& pref
         name = goal;
     }
     bool nonMatchAnything = false;
-    for (RuleContainer::ImplicitIterator it = RuleContainer::Instance()->ImplicitBegin();
+    for (auto it = RuleContainer::Instance()->ImplicitBegin();
          it != RuleContainer::Instance()->ImplicitEnd(); ++it)
     {
         if ((*it)->GetTarget().find_first_of("/\\") != std::string::npos)
@@ -490,7 +490,7 @@ bool Maker::SearchImplicitRules(const std::string& goal, const std::string& pref
     }
     if (nonMatchAnything)
     {
-        for (std::list<RuleList*>::iterator it = matchedRules.begin(); it != matchedRules.end();)
+        for (auto it = matchedRules.begin(); it != matchedRules.end();)
         {
             auto it1 = it;
             ++it;
@@ -499,7 +499,7 @@ bool Maker::SearchImplicitRules(const std::string& goal, const std::string& pref
                     matchedRules.erase(it1);
         }
     }
-    for (std::list<RuleList*>::iterator it = matchedRules.begin(); it != matchedRules.end();)
+    for (auto it = matchedRules.begin(); it != matchedRules.end();)
     {
         auto it1 = it;
         ++it;
@@ -545,7 +545,7 @@ void Maker::EnterSuffixTerminals()
         for (auto rule : *rl)
         {
             std::string value = rule->GetPrerequisites();
-            while (value.size())
+            while (!value.empty())
             {
                 std::string target = "%" + Eval::ExtractFirst(value, " ");
                 RuleList* ruleList = RuleContainer::Instance()->Lookup(target);
@@ -584,7 +584,7 @@ int Maker::RunCommands(bool keepGoing)
     int count;
     Runner runner(silent, displayOnly, ignoreResults, touch, outputType, keepResponseFiles, firstGoal, filePaths);
 
-    for (std::list<Depends*>::iterator it = depends.begin(); it != depends.end(); ++it)
+    for (auto it = depends.begin(); it != depends.end(); ++it)
     {
         runner.CancelOne(*it);
     }
@@ -594,7 +594,7 @@ int Maker::RunCommands(bool keepGoing)
     do
     {
         rv = 0;
-        for (std::list<Depends*>::iterator it = depends.begin(); (rv <= 0 || keepGoing) && it != depends.end(); ++it)
+        for (auto it = depends.begin(); (rv <= 0 || keepGoing) && it != depends.end(); ++it)
         {
             int rv1 = runner.RunOne(*it, env, keepGoing);
             if (rv <= 0 && rv1 != 0)
@@ -627,7 +627,7 @@ void Maker::Clear()
 std::string Maker::GetFullName(std::string name)
 {
     std::string rv = name;
-    std::map<std::string, std::string>::iterator it = filePaths.find(name);
+    auto it = filePaths.find(name);
     if (it != filePaths.end())
         rv = it->second + name;
     return rv;

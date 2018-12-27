@@ -60,7 +60,7 @@ int ADLMain::Run(int argc, char **argv)
     std::string name = argv[1];
     if (name.find_first_of(".") == std::string::npos)
         name += ".adl";
-    std::fstream in(name.c_str(), std::ios::in);
+    std::fstream in(name, std::ios::in);
     if (in)
     {
         xmlNode node;

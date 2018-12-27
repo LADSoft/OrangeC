@@ -30,7 +30,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <fstream>
-#include <stdlib.h>
+#include <cstdlib>
 #include "UTF8.h"
 
 bool DefFile::initted;
@@ -50,13 +50,13 @@ static bool IsSymbolChar(const char* data)
 static bool IsSymbolChar(const char* data, bool start) { return start ? IsSymbolStartChar(data) : IsSymbolChar(data); }
 DefFile::~DefFile()
 {
-    while (exports.size())
+    while (!exports.empty())
     {
         Export* one = exports.front();
         exports.pop_front();
         delete one;
     }
-    while (imports.size())
+    while (!imports.empty())
     {
         Import* one = imports.front();
         imports.pop_front();
@@ -93,7 +93,7 @@ void DefFile::Init()
 }
 bool DefFile::Read()
 {
-    stream = new std::fstream(fileName.c_str(), std::ios::in);
+    stream = new std::fstream(fileName, std::ios::in);
     if (!stream->fail())
     {
         try
@@ -152,20 +152,20 @@ bool DefFile::Read()
         }
         catch (std::runtime_error* e)
         {
-            std::cout << fileName.c_str() << "(" << lineno << "): " << e->what() << std::endl;
+            std::cout << fileName << "(" << lineno << "): " << e->what() << std::endl;
             delete e;
         }
         delete stream;
     }
     else
     {
-        std::cout << "File '" << fileName.c_str() << "' not found." << std::endl;
+        std::cout << "File '" << fileName << "' not found." << std::endl;
     }
     return true;
 }
 bool DefFile::Write()
 {
-    stream = new std::fstream(fileName.c_str(), std::ios::out);
+    stream = new std::fstream(fileName, std::ios::out);
     // if (!stream->fail())
     {
         WriteName();
@@ -225,7 +225,7 @@ void DefFile::ReadName()
         int npos3 = line.find_first_not_of(COMMA SPACES, npos2);
         if (npos3 != std::string::npos)
         {
-            imageBase = strtoul(line.substr(npos3).c_str(), nullptr, 0);
+            imageBase = stoul(line.substr(npos3), nullptr, 0);
         }
     }
 }
@@ -250,7 +250,7 @@ void DefFile::ReadLibrary()
         int npos3 = line.find_first_not_of(COMMA SPACES, npos2);
         if (npos3 != std::string::npos)
         {
-            imageBase = strtoul(line.substr(npos3).c_str(), nullptr, 0);
+            imageBase = stoul(line.substr(npos3), nullptr, 0);
         }
     }
 }
@@ -394,7 +394,7 @@ void DefFile::ReadImports()
 void DefFile::ReadDescription()
 {
     description = tokenizer.GetString();
-    if (!description.size())
+    if (description.empty())
         throw new std::runtime_error("Expected Description");
     tokenizer.Reset("");
     token = nullptr;
@@ -483,9 +483,9 @@ void DefFile::ReadSections()
 }
 void DefFile::WriteName()
 {
-    if (name.size())
+    if (!name.empty())
     {
-        *stream << "NAME " << name.c_str();
+        *stream << "NAME " << name;
         if (imageBase != -1)
         {
             *stream << ", " << imageBase;
@@ -495,9 +495,9 @@ void DefFile::WriteName()
 }
 void DefFile::WriteLibrary()
 {
-    if (library.size())
+    if (!library.empty())
     {
-        *stream << "LIBRARY " << library.c_str();
+        *stream << "LIBRARY " << library;
         if (imageBase != -1)
         {
             *stream << ", " << imageBase;
@@ -516,13 +516,13 @@ void DefFile::WriteExports()
             first = false;
         }
         if (cdll && !exp->byOrd)
-            *stream << "\t_" << exp->id.c_str();
-        *stream << "\t" << exp->id.c_str();
-        if ((exp->entry.size() && exp->entry != exp->id) || exp->module.size())
+            *stream << "\t_" << exp->id;
+        *stream << "\t" << exp->id;
+        if ((!exp->entry.empty() && exp->entry != exp->id) || !exp->module.empty())
         {
-            *stream << "=" << exp->entry.c_str();
-            if (exp->module.size())
-                *stream << "." << exp->module.c_str();
+            *stream << "=" << exp->entry;
+            if (!exp->module.empty())
+                *stream << "." << exp->module;
         }
         if ((!cdll || exp->byOrd) && exp->ord != -1)
             *stream << " @" << exp->ord;
@@ -542,28 +542,28 @@ void DefFile::WriteImports()
             *stream << "IMPORTS" << std::endl;
             first = false;
         }
-        if (import->module.size())
+        if (!import->module.empty())
         {
             if (import->entry == import->id)
             {
-                *stream << "\t" << import->module.c_str() << "." << import->id.c_str();
+                *stream << "\t" << import->module << "." << import->id;
             }
             else
             {
-                *stream << "\t" << import->id.c_str() << "=" << import->module.c_str() << "." << import->entry.c_str();
+                *stream << "\t" << import->id << "=" << import->module << "." << import->entry;
             }
         }
         else
         {
-            *stream << "\t" << import->id.c_str();
+            *stream << "\t" << import->id;
         }
         *stream << std::endl;
     }
 }
 void DefFile::WriteDescription()
 {
-    if (description.size())
-        *stream << description.c_str() << std::endl;
+    if (!description.empty())
+        *stream << description << std::endl;
 }
 void DefFile::WriteStacksize()
 {
@@ -627,7 +627,7 @@ void DefFile::WriteSections()
                 std::cout << "SECTIONS" << std::endl;
                 first = false;
             }
-            *stream << "\t" << section.first.c_str() << " ";
+            *stream << "\t" << section.first << " ";
             WriteSectionBits(section.second);
             break;
         }

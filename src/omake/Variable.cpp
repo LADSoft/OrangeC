@@ -69,7 +69,7 @@ Variable* VariableContainer::Lookup(const std::string& name)
     Variable* rv = nullptr;
     if (name.find_first_of('%') != std::string::npos)
     {
-        for (PatternIterator it = PatternBegin(); it != PatternEnd(); ++it)
+        for (auto it = PatternBegin(); it != PatternEnd(); ++it)
         {
             if ((*it)->GetName() == name)
             {
@@ -101,7 +101,7 @@ void VariableContainer::operator+(Variable* variable)
 }
 void VariableContainer::Clear()
 {
-    for (PatternIterator it = PatternBegin(); it != PatternEnd(); ++it)
+    for (auto it = PatternBegin(); it != PatternEnd(); ++it)
     {
         Variable* p = (*it);
         delete p;

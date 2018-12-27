@@ -59,7 +59,7 @@ LIB_EXT:=.l
 LIB_PREFIX:=
 LIBFLAGS= /!
 
-ASM=$(COMPILER_PATH)\bin\\oasm
+ASM=$(COMPILER_PATH)\bin\oasm
 
 ASM=oasm
 ASMFLAGS= /!

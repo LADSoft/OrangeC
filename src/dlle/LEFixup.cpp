@@ -65,12 +65,12 @@ void LEFixup::LoadFixups(ObjFile& file)
             pages += ObjectAlign(4096, obj->GetInitSize()) / 4096;
     }
     int i = 0;
-    for (ObjFile::SectionIterator it = file.SectionBegin(); it != file.SectionEnd(); ++it)
+    for (auto it = file.SectionBegin(); it != file.SectionEnd(); ++it)
     {
         ObjInt base = (*it)->GetOffset()->Eval(0);
         ObjMemoryManager& m = (*it)->GetMemoryManager();
         int ofs = 0;
-        for (ObjMemoryManager::MemoryIterator it = m.MemoryBegin(); it != m.MemoryEnd(); ++it)
+        for (auto it = m.MemoryBegin(); it != m.MemoryEnd(); ++it)
         {
             int msize = (*it)->GetSize();
             ObjByte* mdata = (*it)->GetData();

@@ -1,26 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*  ctype.h
@@ -29,40 +29,39 @@
 
 */
 
-
 #ifndef __pctype_H
 #define __pctype_H
 
 #ifndef __STDDEF_H
-#include <stddef.h>
+#    include <stddef.h>
 #endif
 
 #ifdef __cplusplus
-//namespace __STD_NS__ {
-extern "C" {
+extern "C"
+{
 #endif
 
-extern unsigned short const _IMPORT _RTL_DATA * _pctype;
+    extern unsigned short const _IMPORT _RTL_DATA* _pctype;
 
-/* character classes */
+    /* character classes */
 
 #ifndef _IS_CONSTANTS
-#define _IS_CONSTANTS
+#    define _IS_CONSTANTS
 
-#define _IS_UPP     1           /* upper case */
-#define _IS_LOW     2           /* lower case */
-#define _IS_DIG     4           /* digit */
-#define _IS_SP      8           /* space */
-#define _IS_PUN    16           /* punctuation */
-#define _IS_CTL    32           /* control */
-#define _IS_BLK    64           /* blank */
-#define _IS_HEX   128           /* [0..9] or [A-F] or [a-f] */
-#define _IS_GPH   512
+#    define _IS_UPP 1   /* upper case */
+#    define _IS_LOW 2   /* lower case */
+#    define _IS_DIG 4   /* digit */
+#    define _IS_SP 8    /* space */
+#    define _IS_PUN 16  /* punctuation */
+#    define _IS_CTL 32  /* control */
+#    define _IS_BLK 64  /* blank */
+#    define _IS_HEX 128 /* [0..9] or [A-F] or [a-f] */
+#    define _IS_GPH 512
 
-#define _IS_ALPHA    (0x100 | _IS_UPP | _IS_LOW)
-#define _IS_ALNUM    (_IS_DIG | _IS_ALPHA)
-#define _IS_GRAPH    (_IS_ALNUM | _IS_HEX | _IS_PUN)
-#define _IS_PRINT    (_IS_GRAPH | _IS_BLK)
+#    define _IS_ALPHA (0x100 | _IS_UPP | _IS_LOW)
+#    define _IS_ALNUM (_IS_DIG | _IS_ALPHA)
+#    define _IS_GRAPH (_IS_ALNUM | _IS_HEX | _IS_PUN)
+#    define _IS_PRINT (_IS_GRAPH | _IS_BLK)
 #endif
 
 #define _SPACE _IS_SP
@@ -75,97 +74,64 @@ extern unsigned short const _IMPORT _RTL_DATA * _pctype;
 #define _LOWER _IS_LOW
 #define _HEX _IS_HEX
 
-int      _RTL_FUNC _IMPORT isalnum (int __c);
-int      _RTL_FUNC _IMPORT isalpha (int __c);
-int      _RTL_FUNC _IMPORT isblank (int __c);
-int      _RTL_FUNC _IMPORT iscntrl (int __c);
-int      _RTL_FUNC _IMPORT isdigit (int __c);
-int      _RTL_FUNC _IMPORT isgraph (int __c);
-int      _RTL_FUNC _IMPORT islower (int __c);
-int      _RTL_FUNC _IMPORT isprint (int __c);
-int      _RTL_FUNC _IMPORT ispunct (int __c);
-int      _RTL_FUNC _IMPORT isspace (int __c);
-int      _RTL_FUNC _IMPORT isupper (int __c);
-int      _RTL_FUNC _IMPORT isxdigit(int __c);
-int      _RTL_FUNC _IMPORT isascii (int __c);
-int 	 _RTL_FUNC _IMPORT toascii(int);
-int		 _RTL_FUNC _IMPORT __isascii(int);
-int		 _RTL_FUNC _IMPORT __toascii(int);
+    int _RTL_FUNC _IMPORT isalnum(int __c);
+    int _RTL_FUNC _IMPORT isalpha(int __c);
+    int _RTL_FUNC _IMPORT isblank(int __c);
+    int _RTL_FUNC _IMPORT iscntrl(int __c);
+    int _RTL_FUNC _IMPORT isdigit(int __c);
+    int _RTL_FUNC _IMPORT isgraph(int __c);
+    int _RTL_FUNC _IMPORT islower(int __c);
+    int _RTL_FUNC _IMPORT isprint(int __c);
+    int _RTL_FUNC _IMPORT ispunct(int __c);
+    int _RTL_FUNC _IMPORT isspace(int __c);
+    int _RTL_FUNC _IMPORT isupper(int __c);
+    int _RTL_FUNC _IMPORT isxdigit(int __c);
+    int _RTL_FUNC _IMPORT isascii(int __c);
+    int _RTL_FUNC _IMPORT toascii(int);
+    int _RTL_FUNC _IMPORT __isascii(int);
+    int _RTL_FUNC _IMPORT __toascii(int);
 
-int      _RTL_FUNC _IMPORT tolower(int __ch);
-int      _RTL_FUNC _IMPORT _ltolower(int __ch);
-int      _RTL_FUNC _IMPORT toupper(int __ch);
-int      _RTL_FUNC _IMPORT _ltoupper(int __ch);
+    int _RTL_FUNC _IMPORT tolower(int __ch);
+    int _RTL_FUNC _IMPORT _ltolower(int __ch);
+    int _RTL_FUNC _IMPORT toupper(int __ch);
+    int _RTL_FUNC _IMPORT _ltoupper(int __ch);
 
-int		 _RTL_FUNC _IMPORT _isctype(int, int);
-int		 _RTL_FUNC _IMPORT __iscsymf(int);
-int		 _RTL_FUNC _IMPORT __iscsym(int);
+    int _RTL_FUNC _IMPORT _isctype(int, int);
+    int _RTL_FUNC _IMPORT __iscsymf(int);
+    int _RTL_FUNC _IMPORT __iscsym(int);
 #ifdef __cplusplus
 };
-//};
 #endif
 
 #ifndef __cplusplus
-#define isalnum(c)   ( __STD_NS_QUALIFIER  _pctype[ (c) ] & (_IS_ALNUM))
-                     
-#define isalpha(c)   ( __STD_NS_QUALIFIER  _pctype[ (c) ] & (_IS_ALPHA))
-                     
-#define isblank(c)   ( __STD_NS_QUALIFIER  _pctype[ (c) ] & (_IS_BLK))
-                     
-#define iscntrl(c)   ( __STD_NS_QUALIFIER  _pctype[ (c) ] & (_IS_CTL))
-                     
-#define isdigit(c)   ( __STD_NS_QUALIFIER  _pctype[ (c) ] & (_IS_DIG))
-                     
-#define isgraph(c)   ( __STD_NS_QUALIFIER  _pctype[ (c) ] & (_IS_GRAPH))
-                     
-#define islower(c)   ( __STD_NS_QUALIFIER  _pctype[ (c) ] & (_IS_LOW))
-                     
-#define isprint(c)   ( __STD_NS_QUALIFIER  _pctype[ (c) ] & (_IS_PRINT))
-                     
-#define ispunct(c)   ( __STD_NS_QUALIFIER  _pctype[ (c) ] & (_IS_PUN))
-                     
-#define isspace(c)   ( __STD_NS_QUALIFIER  _pctype[ (c) ] & (_IS_SP))
-                     
-#define isupper(c)   ( __STD_NS_QUALIFIER  _pctype[ (c) ] & (_IS_UPP))
-                     
-#define isxdigit(c)  ( __STD_NS_QUALIFIER  _pctype[ (c) ] & (_IS_HEX))
+#    define isalnum(c) (_pctype[(c)] & (_IS_ALNUM))
 
-#define _toupper(c) ((c) + 'A' - 'a')
-#define _tolower(c) ((c) + 'a' - 'A')
-#define isascii(c)  ((unsigned)(c) < 128)
-#define toascii(c)  ((c) & 0x7f)
+#    define isalpha(c) (_pctype[(c)] & (_IS_ALPHA))
+
+#    define isblank(c) (_pctype[(c)] & (_IS_BLK))
+
+#    define iscntrl(c) (_pctype[(c)] & (_IS_CTL))
+
+#    define isdigit(c) (_pctype[(c)] & (_IS_DIG))
+
+#    define isgraph(c) (_pctype[(c)] & (_IS_GRAPH))
+
+#    define islower(c) (_pctype[(c)] & (_IS_LOW))
+
+#    define isprint(c) (_pctype[(c)] & (_IS_PRINT))
+
+#    define ispunct(c) (_pctype[(c)] & (_IS_PUN))
+
+#    define isspace(c) (_pctype[(c)] & (_IS_SP))
+
+#    define isupper(c) (_pctype[(c)] & (_IS_UPP))
+
+#    define isxdigit(c) (_pctype[(c)] & (_IS_HEX))
+
+#    define _toupper(c) ((c) + 'A' - 'a')
+#    define _tolower(c) ((c) + 'a' - 'A')
+#    define isascii(c) ((unsigned)(c) < 128)
+#    define toascii(c) ((c)&0x7f)
 #endif
 
-
-#endif 
-
-/*
-#if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__pctype_H_USING_LIST)
-#define __pctype_H_USING_LIST
-    using __STD_NS_QUALIFIER isalnum;
-    using __STD_NS_QUALIFIER isalpha;
-    using __STD_NS_QUALIFIER isblank;
-    using __STD_NS_QUALIFIER iscntrl;
-    using __STD_NS_QUALIFIER isdigit;
-    using __STD_NS_QUALIFIER isgraph;
-    using __STD_NS_QUALIFIER islower;
-    using __STD_NS_QUALIFIER isprint;
-    using __STD_NS_QUALIFIER ispunct;
-    using __STD_NS_QUALIFIER isspace;
-    using __STD_NS_QUALIFIER isupper;
-    using __STD_NS_QUALIFIER isxdigit;
-    using __STD_NS_QUALIFIER isascii;
-    using __STD_NS_QUALIFIER toascii;
-    using __STD_NS_QUALIFIER __isascii;
-    using __STD_NS_QUALIFIER __toascii;
-    using __STD_NS_QUALIFIER tolower;
-    using __STD_NS_QUALIFIER _ltolower;
-    using __STD_NS_QUALIFIER toupper;
-    using __STD_NS_QUALIFIER _ltoupper;
-    using __STD_NS_QUALIFIER _pctype;
-    using __STD_NS_QUALIFIER _isctype;
-    using __STD_NS_QUALIFIER __iscsymf;
-    using __STD_NS_QUALIFIER __iscsym;
 #endif
-
-*/

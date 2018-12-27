@@ -48,8 +48,7 @@ class LinkAttribs
     {
         if (address)
             return address->Eval(0);
-        else
-            return 0;
+        return 0;
     }
     void SetAddress(LinkExpression* Address)
     {
@@ -60,8 +59,7 @@ class LinkAttribs
     {
         if (align)
             return align->Eval(0);
-        else
-            return 1;
+        return 1;
     }
     void SetAlign(LinkExpression* Align)
     {
@@ -72,8 +70,7 @@ class LinkAttribs
     {
         if (maxSize)
             return maxSize->Eval(0);
-        else
-            return 0;
+        return 0;
     }
     void SetMaxSize(LinkExpression* Size)
     {
@@ -84,8 +81,7 @@ class LinkAttribs
     {
         if (size)
             return size->Eval(0);
-        else
-            return 0;
+        return 0;
     }
     void SetSize(LinkExpression* Size)
     {
@@ -96,8 +92,7 @@ class LinkAttribs
     {
         if (roundSize)
             return roundSize->Eval(0);
-        else
-            return 0;
+        return 0;
     }
     void SetRoundSize(LinkExpression* RoundSize)
     {
@@ -108,8 +103,7 @@ class LinkAttribs
     {
         if (virtualOffset)
             return virtualOffset->Eval(0);
-        else
-            return 0;
+        return 0;
     }
     void SetVirtualOffset(LinkExpression* VirtualOffset)
     {
@@ -120,8 +114,7 @@ class LinkAttribs
     {
         if (fill)
             return fill->Eval(0);
-        else
-            return 0;
+        return 0;
     }
     void SetFill(LinkExpression* Fill)
     {

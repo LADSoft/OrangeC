@@ -2275,7 +2275,7 @@ static void quicksort(const void* base, int lo, int hi, size_t width, int (*comp
             if (i <= j)
             {
                 memcpy(buf, (char*)base + i * width, width);
-                memcpy((char*)base + i * width, (char*)base + j * width, width);
+                memmove((char*)base + i * width, (char*)base + j * width, width);
                 memcpy((char*)base + j * width, buf, width);
                 i++;
                 j--;

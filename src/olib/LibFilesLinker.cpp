@@ -28,7 +28,7 @@
 #include "ObjFile.h"
 #include "ObjIeee.h"
 #include "ObjFactory.h"
-#include <assert.h>
+#include <cassert>
 
 ObjFile* LibFiles::ReadData(FILE* stream, const ObjString& name, ObjFactory* factory)
 {
@@ -58,7 +58,7 @@ bool LibFiles::ReadNames(FILE* stream, int count)
 void LibFiles::ReadOffsets(FILE* stream, int count)
 {
     assert(count == files.size());
-    for (FileIterator it = FileBegin(); it != FileEnd(); ++it)
+    for (auto it = FileBegin(); it != FileEnd(); ++it)
     {
         unsigned ofs;
         fread(&ofs, 4, 1, stream);

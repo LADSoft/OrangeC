@@ -27,7 +27,7 @@
 #include "Errors.h"
 #include "UTF8.h"
 #include <fstream>
-#include <limits.h>
+#include <climits>
 
 void PreProcessor::InitHash()
 {
@@ -91,7 +91,7 @@ bool PreProcessor::GetPreLine(std::string& line)
 {
     if (preData)
     {
-        if (preData->size())
+        if (!preData->empty())
         {
             int npos = preData->find_first_of("\n");
             if (npos == std::string::npos)
@@ -181,7 +181,7 @@ bool PreProcessor::GetLine(std::string& line)
     {
         if (!GetPreLine(line))
             return false;
-        if (last.size())
+        if (!last.empty())
             line = last + " " + line;
         size_t n = line.find_first_not_of(" \n\t\v\r");
         if (n != std::string::npos)

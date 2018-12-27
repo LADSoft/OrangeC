@@ -33,7 +33,7 @@
 #include "AsmFile.h"
 
 #include <stdexcept>
-#include <limits.h>
+#include <climits>
 #include <fstream>
 #include <iostream>
 
@@ -416,7 +416,7 @@ int Section::GetNext(Fixup& f, unsigned char* buf, int len)
     else
     {
         memcpy(buf, buf2, len);
-        memcpy(buf2, buf2 + len, blen - len);
+        memmove(buf2, buf2 + len, blen - len);
         blen -= len;
         return len;
     }

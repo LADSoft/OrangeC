@@ -543,7 +543,7 @@ int init_backend(int* argc, char** argv)
                     *q++ = *p++;
                 *q = 0;
             }
-            memcpy(argv + i, argv + i + 1, sizeof(char**) * (*argc - i + 1));
+            memmove(argv + i, argv + i + 1, sizeof(char**) * (*argc - i + 1));
             (*argc)--;
             break;
         }

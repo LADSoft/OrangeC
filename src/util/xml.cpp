@@ -24,8 +24,8 @@
  */
 
 #include "xml.h"
-#include "ctype.h"
-#include <string.h>
+#include <cctype>
+#include <cstring>
 
 int xmlNode::lineno = 1;
 
@@ -87,7 +87,7 @@ bool xmlAttrib::Read(std::fstream& stream)
 }
 bool xmlAttrib::Write(std::fstream& stream)
 {
-    stream << ' ' << name.c_str() << " = \"";
+    stream << ' ' << name << " = \"";
     const char* p = value.c_str();
     while (*p)
         WriteTextChar(stream, *p++);
@@ -408,18 +408,18 @@ bool xmlNode::Write(std::fstream& stream, int indent)
 {
     for (int i = 0; i < indent; i++)
         stream << "  ";
-    stream << '<' << elementType.c_str();
-    if (attribs.size())
+    stream << '<' << elementType;
+    if (!attribs.empty())
     {
         for (auto attrib : attribs)
             attrib->Write(stream);
     }
-    if (children.size() || text.size())
+    if (!children.empty() || !text.empty())
     {
         stream << '>' << std::endl;
         for (auto child : children)
             child->Write(stream, indent + 1);
-        if (text.size())
+        if (!text.empty())
         {
             const char* p = text.c_str();
             while (*p)
@@ -428,7 +428,7 @@ bool xmlNode::Write(std::fstream& stream, int indent)
         }
         for (int i = 0; i < indent; i++)
             stream << "  ";
-        stream << "</" << elementType.c_str() << '>' << std::endl;
+        stream << "</" << elementType << '>' << std::endl;
     }
     else
     {
@@ -456,7 +456,7 @@ void xmlNode::WriteTextChar(std::fstream& stream, char t)
 }
 void xmlNode::RemoveAttrib(const xmlAttrib* attrib)
 {
-    for (std::deque<xmlAttrib*>::iterator it = attribs.begin(); it != attribs.end(); ++it)
+    for (auto it = attribs.begin(); it != attribs.end(); ++it)
     {
         if (*it == attrib)
         {
@@ -467,7 +467,7 @@ void xmlNode::RemoveAttrib(const xmlAttrib* attrib)
 }
 void xmlNode::RemoveChild(const xmlNode* child)
 {
-    for (std::deque<xmlNode*>::iterator it = children.begin(); it != children.end(); ++it)
+    for (auto it = children.begin(); it != children.end(); ++it)
     {
         if (*it == child)
         {

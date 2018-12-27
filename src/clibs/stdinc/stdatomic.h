@@ -26,6 +26,11 @@
 #ifndef __STDATOMIC_H
 #define __STDATOMIC_H
 
+#ifdef __cplusplus
+#    pragma error \
+        "This header uses C11 and greater constructs at this time, this error is to inform you of this so you understand why it breaks instantly"
+#endif
+
 #ifndef __STDDEF_H
 #    include <stddef.h>
 #endif
@@ -36,11 +41,6 @@
 
 #ifndef __STDINT_H
 #    include <stdint.h>
-#endif
-
-#ifdef __cplusplus
-namespace __STD_NS__
-{
 #endif
 
 typedef enum memory_order
@@ -92,7 +92,10 @@ typedef enum memory_order
     char32_t *: ATOMIC_POINTER_LOCK_FREE,\
     default: 0)
 
-#define ATOMIC_FLAG_INIT {0}
+#define ATOMIC_FLAG_INIT \
+    {                    \
+        0                \
+    }
 #define ATOMIC_VAR_INIT(x) __atomic_var_init(x)
 
 typedef struct atomic_flag
@@ -189,7 +192,4 @@ __ATOMIC_TYPE__(uintmax_t, atomic_uintmax_t);
 
 #define atomic_fetch_xor(__a__, __m__) __atomic_modify(__a__, ^=, __m__, memory_order_seq_cst)
 
-#ifdef __cplusplus
-}
-#endif
 #endif

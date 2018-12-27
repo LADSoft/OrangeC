@@ -119,7 +119,7 @@ void ResFile::WriteString(const std::wstring& str)
 
 bool ResFile::Write(const std::string& name)
 {
-    stream = new std::fstream(name.c_str(), std::ios::out | std::ios::binary);
+    stream = new std::fstream(name, std::ios::out | std::ios::binary);
     // if (!stream->fail())
     {
         for (auto res : resources)

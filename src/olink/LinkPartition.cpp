@@ -151,7 +151,7 @@ bool LinkPartition::CreateSeparateRegions(LinkManager* manager, CmdFiles& files,
         return false;
     if (!spec.MustMatch(LinkTokenizer::eSemi))
         return false;
-    for (LinkRegion::SectionDataIterator itr = newRegion->NowDataBegin(); itr != newRegion->NowDataEnd(); ++itr)
+    for (auto itr = newRegion->NowDataBegin(); itr != newRegion->NowDataEnd(); ++itr)
     {
         for (auto sect : (*itr)->sections)
         {
@@ -165,7 +165,7 @@ bool LinkPartition::CreateSeparateRegions(LinkManager* manager, CmdFiles& files,
             region->AddNormalData(sect.file, sect.section);
         }
     }
-    for (LinkRegion::SectionDataIterator itr = newRegion->NormalDataBegin(); itr != newRegion->NormalDataEnd(); ++itr)
+    for (auto itr = newRegion->NormalDataBegin(); itr != newRegion->NormalDataEnd(); ++itr)
     {
         for (auto sect : (*itr)->sections)
         {
@@ -179,7 +179,7 @@ bool LinkPartition::CreateSeparateRegions(LinkManager* manager, CmdFiles& files,
             region->AddNormalData(sect.file, sect.section);
         }
     }
-    for (LinkRegion::SectionDataIterator itr = newRegion->PostponeDataBegin(); itr != newRegion->PostponeDataEnd(); ++itr)
+    for (auto itr = newRegion->PostponeDataBegin(); itr != newRegion->PostponeDataEnd(); ++itr)
     {
         for (auto sect : (*itr)->sections)
         {

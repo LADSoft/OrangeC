@@ -27,7 +27,7 @@
 #include "Floating.h"
 #include <iostream>
 #include <fstream>
-#include <limits.h>
+#include <climits>
 
 bool FPF::bigEndian = false;
 

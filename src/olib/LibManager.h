@@ -28,7 +28,7 @@
 
 #include <vector>
 #include <set>
-#include <stdio.h>
+#include <cstdio>
 #include "ObjTypes.h"
 #include "LibDictionary.h"
 #include "LibFiles.h"

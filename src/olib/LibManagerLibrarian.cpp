@@ -26,7 +26,7 @@
 #include "LibManager.h"
 #include "ObjIeee.h"
 #include "ObjFactory.h"
-#include <string.h>
+#include <cstring>
 
 int LibManager::SaveLibrary()
 {

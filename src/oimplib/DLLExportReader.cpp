@@ -29,7 +29,7 @@
 
 DLLExportReader::~DLLExportReader()
 {
-    for (iterator it = begin(); it != end(); ++it)
+    for (auto it = begin(); it != end(); ++it)
     {
         DLLExport* p = *it;
         delete p;
@@ -73,7 +73,7 @@ bool DLLExportReader::doExports(std::fstream& in, int phys, int rva)
 int DLLExportReader::Read()
 {
     int rv = 2;
-    std::fstream in(name.c_str(), std::ios::in | std::ios::binary);
+    std::fstream in(name, std::ios::in | std::ios::binary);
     if (!in.is_open())
         return 1;  // can't find file
     if (!in.fail())

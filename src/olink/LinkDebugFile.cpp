@@ -36,10 +36,10 @@
 #include "LinkDebugFile.h"
 #include "Utils.h"
 #include "LinkDebugAux.h"
-#include <stdio.h>
+#include <cstdio>
 #include <deque>
 #include <set>
-#include <ctype.h>
+#include <cctype>
 #include <iostream>
 #ifdef GCCLINUX
 #    include <unistd.h>
@@ -172,39 +172,19 @@ char* LinkDebugFile::indexes = {
     "CREATE INDEX AUTIndex ON Autos(symbolId, fileId, funcId);"
     "COMMIT; "};
 LinkDebugFile::~LinkDebugFile() {}
-bool LinkDebugFile::Begin(void)
-{
-    bool rv = true;
-    if (!SQLiteExec("BEGIN"))
-    {
-        rv = false;
-    }
-    return rv;
-}
-bool LinkDebugFile::End(void)
-{
-    bool rv = true;
-    if (!SQLiteExec("END"))
-    {
-        rv = false;
-    }
-    return rv;
-}
+bool LinkDebugFile::Begin(void) { return SQLiteExec("BEGIN"); }
+bool LinkDebugFile::End(void) { return SQLiteExec("END"); }
 bool LinkDebugFile::SQLiteExec(char* str)
 {
     char* zErrMsg = 0;
-    bool rv = false;
     int rc = sqlite3_exec(dbPointer, str, 0, 0, &zErrMsg);
     if (rc != SQLITE_OK)
     {
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
         sqlite3_free(zErrMsg);
+        return false;
     }
-    else
-    {
-        rv = true;
-    }
-    return rv;
+    return true;
 }
 bool LinkDebugFile::CreateTables(void)
 {
@@ -215,19 +195,11 @@ bool LinkDebugFile::CreateTables(void)
     }
     if (!SQLiteExec(tables))
     {
-        rv = false;
+        return false;
     }
     return rv;
 }
-bool LinkDebugFile::CreateIndexes(void)
-{
-    bool rv = true;
-    if (!SQLiteExec(indexes))
-    {
-        rv = false;
-    }
-    return rv;
-}
+bool LinkDebugFile::CreateIndexes(void) { return SQLiteExec(indexes); }
 bool LinkDebugFile::DBOpen(char* name)
 {
     bool rv = false;
@@ -240,7 +212,7 @@ bool LinkDebugFile::DBOpen(char* name)
     else
     {
         // we don't want to reuse a database for a variety of reasons...
-        rv = false;
+        return false;
     }
     if (rv)
         sqlite3_busy_timeout(dbPointer, 100);
@@ -250,7 +222,7 @@ bool LinkDebugFile::WriteFileNames()
 {
     std::vector<sqlite3_int64> v;
     std::vector<ObjString*> n;
-    for (ObjFile::SourceFileIterator it = file->SourceFileBegin(); it != file->SourceFileEnd(); ++it)
+    for (auto it = file->SourceFileBegin(); it != file->SourceFileEnd(); ++it)
     {
         ObjString name = (*it)->GetName();
         int index = (*it)->GetIndex();
@@ -278,17 +250,17 @@ bool LinkDebugFile::WriteLineNumbers()
 {
     std::vector<sqlite3_int64> v;
     //    std::vector<sqlite3_int64> a;
-    for (ObjFile::SectionIterator it = file->SectionBegin(); it != file->SectionEnd(); ++it)
+    for (auto it = file->SectionBegin(); it != file->SectionEnd(); ++it)
     {
         ObjMemoryManager& m = (*it)->GetMemoryManager();
         ObjInt address = m.GetBase();
-        for (ObjMemoryManager::MemoryIterator it1 = m.MemoryBegin(); it1 != m.MemoryEnd(); ++it1)
+        for (auto it1 = m.MemoryBegin(); it1 != m.MemoryEnd(); ++it1)
         {
             if ((*it1)->HasDebugTags())
             {
                 ObjLineNo* ln = nullptr;
                 // full list of line numbers needed for symbol data...
-                for (ObjMemory::DebugTagIterator it2 = (*it1)->DebugTagBegin(); it2 != (*it1)->DebugTagEnd(); ++it2)
+                for (auto it2 = (*it1)->DebugTagBegin(); it2 != (*it1)->DebugTagEnd(); ++it2)
                 {
                     ObjLineNo* ln2 = (*it2)->GetLineNo();
                     if (ln2)
@@ -420,7 +392,7 @@ bool LinkDebugFile::WriteVariableTypes()
     ObjString empty = "";
     std::vector<sqlite3_int64> v;
     std::vector<ObjString*> n;
-    for (ObjFile::TypeIterator it = file->TypeBegin(); it != file->TypeEnd(); ++it)
+    for (auto it = file->TypeBegin(); it != file->TypeEnd(); ++it)
     {
         ObjType* type = *it;
         switch (type->GetType())
@@ -528,7 +500,7 @@ bool LinkDebugFile::WriteVariableTypes()
             delete s;
     }
     v.clear();
-    for (ObjFile::TypeIterator it = file->TypeBegin(); it != file->TypeEnd(); ++it)
+    for (auto it = file->TypeBegin(); it != file->TypeEnd(); ++it)
     {
         ObjType* type = *it;
         switch (type->GetType())
@@ -537,7 +509,7 @@ bool LinkDebugFile::WriteVariableTypes()
             {
                 ObjFunction* func = static_cast<ObjFunction*>(type);
                 int order = 0;
-                for (ObjFunction::ParameterIterator it = func->ParameterBegin(); it != func->ParameterEnd(); ++it)
+                for (auto it = func->ParameterBegin(); it != func->ParameterEnd(); ++it)
                 {
                     v.push_back(func->GetIndex());
                     v.push_back(GetTypeIndex((*it)));
@@ -554,7 +526,7 @@ bool LinkDebugFile::WriteVariableTypes()
     args.InsertIntoFrom("args");
     args.Stop();
     v.clear();
-    for (ObjFile::TypeIterator it = file->TypeBegin(); it != file->TypeEnd(); ++it)
+    for (auto it = file->TypeBegin(); it != file->TypeEnd(); ++it)
     {
         ObjType* type = *it;
         switch (type->GetType())
@@ -564,7 +536,7 @@ bool LinkDebugFile::WriteVariableTypes()
             case ObjType::eEnum:
             {
                 int order = 0;
-                for (ObjType::FieldIterator it = type->FieldBegin(); it != type->FieldEnd(); ++it)
+                for (auto it = type->FieldBegin(); it != type->FieldEnd(); ++it)
                 {
                     v.push_back(type->GetIndex());
                     v.push_back(GetTypeIndex((*it)->GetBase()));
@@ -586,7 +558,7 @@ bool LinkDebugFile::WriteVariableTypes()
 }
 bool LinkDebugFile::WriteVariableNames()
 {
-    for (ObjFile::SymbolIterator it = file->PublicBegin(); it != file->PublicEnd(); ++it)
+    for (auto it = file->PublicBegin(); it != file->PublicEnd(); ++it)
     {
         int index = (*it)->GetIndex();
         ObjString name = (*it)->GetName();
@@ -595,7 +567,7 @@ bool LinkDebugFile::WriteVariableNames()
             return false;
         publicMap[index] = n;
     }
-    for (ObjFile::SymbolIterator it = file->LocalBegin(); it != file->LocalEnd(); ++it)
+    for (auto it = file->LocalBegin(); it != file->LocalEnd(); ++it)
     {
         int index = (*it)->GetIndex();
         ObjString name = (*it)->GetName();
@@ -604,7 +576,7 @@ bool LinkDebugFile::WriteVariableNames()
             return false;
         localMap[index] = n;
     }
-    for (ObjFile::SymbolIterator it = file->AutoBegin(); it != file->AutoEnd(); ++it)
+    for (auto it = file->AutoBegin(); it != file->AutoEnd(); ++it)
     {
         int index = (*it)->GetIndex();
         ObjString name = (*it)->GetName();
@@ -613,10 +585,10 @@ bool LinkDebugFile::WriteVariableNames()
             return false;
         autoMap[index] = n;
     }
-    for (ObjFile::TypeIterator it = file->TypeBegin(); it != file->TypeEnd(); ++it)
+    for (auto it = file->TypeBegin(); it != file->TypeEnd(); ++it)
     {
         ObjString name = (*it)->GetName();
-        if (name.size())
+        if (!name.empty())
         {
             int index = (*it)->GetIndex();
             int n = GetSQLNameId(name);
@@ -663,7 +635,7 @@ ObjInt LinkDebugFile::GetSectionBase(ObjExpression* e)
 bool LinkDebugFile::WriteGlobalsTable()
 {
     std::vector<sqlite3_int64> v;
-    for (ObjFile::SymbolIterator it = file->PublicBegin(); it != file->PublicEnd(); ++it)
+    for (auto it = file->PublicBegin(); it != file->PublicEnd(); ++it)
     {
         int index = (*it)->GetIndex();
         // ObjString name = (*it)->GetName();
@@ -685,7 +657,7 @@ bool LinkDebugFile::WriteGlobalsTable()
     globals.Stop();
 
     v.clear();
-    for (ObjFile::SymbolIterator it = file->LocalBegin(); it != file->LocalEnd(); ++it)
+    for (auto it = file->LocalBegin(); it != file->LocalEnd(); ++it)
     {
         int index = (*it)->GetIndex();
         // ObjString name = (*it)->GetName();
@@ -741,18 +713,18 @@ bool LinkDebugFile::WriteAutosTable()
     std::deque<context*> contexts;
     context* currentContext = nullptr;
     int funcId = 0;
-    for (ObjFile::SectionIterator it = file->SectionBegin(); it != file->SectionEnd(); ++it)
+    for (auto it = file->SectionBegin(); it != file->SectionEnd(); ++it)
     {
         ObjMemoryManager& m = (*it)->GetMemoryManager();
         ObjInt address = m.GetBase();
         ObjLineNo* currentLine = nullptr;
-        for (ObjMemoryManager::MemoryIterator it1 = m.MemoryBegin(); it1 != m.MemoryEnd(); ++it1)
+        for (auto it1 = m.MemoryBegin(); it1 != m.MemoryEnd(); ++it1)
         {
             // find the line number first.  This is because it is difficult to get the line number
             // out of the compiler before the variable name is listed.
             if ((*it1)->HasDebugTags())
             {
-                for (ObjMemory::DebugTagIterator it2 = (*it1)->DebugTagBegin(); it2 != (*it1)->DebugTagEnd(); ++it2)
+                for (auto it2 = (*it1)->DebugTagBegin(); it2 != (*it1)->DebugTagEnd(); ++it2)
                 {
                     switch ((*it2)->GetType())
                     {
@@ -764,7 +736,7 @@ bool LinkDebugFile::WriteAutosTable()
                             break;
                     }
                 }
-                for (ObjMemory::DebugTagIterator it2 = (*it1)->DebugTagBegin(); it2 != (*it1)->DebugTagEnd(); ++it2)
+                for (auto it2 = (*it1)->DebugTagBegin(); it2 != (*it1)->DebugTagEnd(); ++it2)
                 {
                     switch ((*it2)->GetType())
                     {
@@ -847,10 +819,10 @@ bool LinkDebugFile::WriteAutosTable()
 bool LinkDebugFile::WriteTypeNamesTable()
 {
     std::vector<sqlite3_int64> v;
-    for (ObjFile::TypeIterator it = file->TypeBegin(); it != file->TypeEnd(); ++it)
+    for (auto it = file->TypeBegin(); it != file->TypeEnd(); ++it)
     {
         ObjString name = (*it)->GetName();
-        if (name.size())
+        if (!name.empty())
         {
             int index = (*it)->GetIndex();
             v.push_back(typeMap[index]);

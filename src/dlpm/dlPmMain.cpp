@@ -60,7 +60,7 @@ dlPmMain::~dlPmMain()
 }
 void dlPmMain::GetSectionNames(std::vector<std::string>& names, ObjFile* file)
 {
-    for (ObjFile::SectionIterator it = file->SectionBegin(); it != file->SectionEnd(); ++it)
+    for (auto it = file->SectionBegin(); it != file->SectionEnd(); ++it)
     {
         names.push_back((*it)->GetName());
     }
@@ -79,7 +79,7 @@ void dlPmMain::GetInputSections(const std::vector<std::string>& names, ObjFile* 
         s->ResolveSymbols(factory);
         ObjMemoryManager& m = s->GetMemoryManager();
         int ofs = 0;
-        for (ObjMemoryManager::MemoryIterator it = m.MemoryBegin(); it != m.MemoryEnd(); ++it)
+        for (auto it = m.MemoryBegin(); it != m.MemoryEnd(); ++it)
         {
             int msize = (*it)->GetSize();
             ObjByte* mdata = (*it)->GetData();
@@ -188,7 +188,7 @@ std::string dlPmMain::GetOutputName(char* infile) const
 }
 void dlPmMain::LoadVars(ObjFile* file)
 {
-    for (ObjFile::SymbolIterator it = file->DefinitionBegin(); it != file->DefinitionEnd(); it++)
+    for (auto it = file->DefinitionBegin(); it != file->DefinitionEnd(); it++)
     {
         ObjDefinitionSymbol* p = (ObjDefinitionSymbol*)*it;
         if (p->GetName() == "STACKTOP")
@@ -205,7 +205,7 @@ bool dlPmMain::LoadStub(const std::string& exeName)
 {
     std::string val = "pmstb.exe";
     // look in current directory
-    std::fstream* file = new std::fstream(val.c_str(), std::ios::in | std::ios::binary);
+    std::fstream* file = new std::fstream(val, std::ios::in | std::ios::binary);
     if (file == nullptr || !file->is_open())
     {
         if (file)
@@ -218,7 +218,7 @@ bool dlPmMain::LoadStub(const std::string& exeName)
         if (npos != std::string::npos)
         {
             val = exeName.substr(0, npos + 1) + "..\\lib\\" + val;
-            file = new std::fstream(val.c_str(), std::ios::in | std::ios::binary);
+            file = new std::fstream(val, std::ios::in | std::ios::binary);
         }
     }
     if (file == nullptr || !file->is_open())
@@ -277,7 +277,7 @@ int dlPmMain::Run(int argc, char** argv)
     Utils::SetEnvironmentToPathParent("ORANGEC");
     CmdSwitchFile internalConfig(SwitchParser);
     std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
-    std::fstream configTest(configName.c_str(), std::ios::in);
+    std::fstream configTest(configName, std::ios::in);
     if (!configTest.fail())
     {
         configTest.close();
@@ -291,11 +291,11 @@ int dlPmMain::Run(int argc, char** argv)
     if (!LoadStub(argv[0]))
         Utils::fatal("Missing or invalid stub file");
     if (!ReadSections(std::string(argv[1])))
-        Utils::fatal("Invalid .rel file");
+        Utils::fatal("Invalid .rel file failed to read sections");
     if (sections.size() != 1)
-        Utils::fatal("Invalid .rel file");
+        Utils::fatal("Invalid .rel file invalid section count");
     std::string outputName = GetOutputName(argv[1]);
-    std::fstream out(outputName.c_str(), std::ios::out | std::ios::binary);
+    std::fstream out(outputName, std::ios::out | std::ios::binary);
     if (!out.fail())
     {
         Section* s = sections[0];
@@ -313,8 +313,5 @@ int dlPmMain::Run(int argc, char** argv)
         out.close();
         return !!out.fail();
     }
-    else
-    {
-        return 1;
-    }
+    return 1;
 }

@@ -27,8 +27,8 @@
 
 #include "ObjUtil.h"
 #include <iomanip>
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 /*
  * C++ stream objects are not used here, because these functions are called
  * a lot and the resultant memory allocations fragment memory to such an extent

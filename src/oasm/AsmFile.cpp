@@ -40,7 +40,7 @@
 #include <exception>
 #include <fstream>
 #include <iostream>
-#include <limits.h>
+#include <climits>
 
 AsmFile::~AsmFile()
 {

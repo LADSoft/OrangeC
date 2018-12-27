@@ -40,8 +40,8 @@ bool Errors::showTrivialWarnings;
 void Errors::ErrorWithLine(const std::string& msg, std::string& filname, int lineno)
 {
     std::cout << "Error ";
-    std::cout << filname.c_str() << "(" << lineno << "): ";
-    std::cout << msg.c_str() << std::endl;
+    std::cout << filname << "(" << lineno << "): ";
+    std::cout << msg << std::endl;
     if (errorCount++ > maxErrors)
     {
         Utils::fatal("Too Many Errors");
@@ -51,7 +51,7 @@ void Errors::Error(const std::string& msg)
 {
     std::cout << "Error ";
     FileName();
-    std::cout << msg.c_str() << std::endl;
+    std::cout << msg << std::endl;
     if (errorCount++ > maxErrors)
     {
         Utils::fatal("Too Many Errors");
@@ -63,8 +63,8 @@ void Errors::WarningWithLine(const std::string& msg, std::string& filname, int l
     {
         warningCount++;
         std::cout << "Warning ";
-        std::cout << filname.c_str() << "(" << lineno << "): ";
-        std::cout << msg.c_str() << std::endl;
+        std::cout << filname << "(" << lineno << "): ";
+        std::cout << msg << std::endl;
     }
 }
 void Errors::Warning(const std::string& msg)
@@ -74,7 +74,7 @@ void Errors::Warning(const std::string& msg)
         warningCount++;
         std::cout << "Warning ";
         FileName();
-        std::cout << msg.c_str() << std::endl;
+        std::cout << msg << std::endl;
     }
 }
 void Errors::TrivialWarningWithLine(const std::string& msg, std::string& filname, int lineno)
@@ -83,8 +83,8 @@ void Errors::TrivialWarningWithLine(const std::string& msg, std::string& filname
     {
         warningCount++;
         std::cout << "Warning ";
-        std::cout << filname.c_str() << "(" << lineno << "): ";
-        std::cout << msg.c_str() << std::endl;
+        std::cout << filname << "(" << lineno << "): ";
+        std::cout << msg << std::endl;
     }
 }
 void Errors::TrivialWarning(const std::string& msg)
@@ -94,12 +94,12 @@ void Errors::TrivialWarning(const std::string& msg)
         warningCount++;
         std::cout << "Warning ";
         FileName();
-        std::cout << msg.c_str() << std::endl;
+        std::cout << msg << std::endl;
     }
 }
 void Errors::Previous(const std::string& name, int lineNo, const std::string& file)
 {
-    std::cout << "Warning " << file.c_str() << "(" << lineNo << "): Previous definition here" << std::endl;
+    std::cout << "Warning " << file << "(" << lineNo << "): Previous definition here" << std::endl;
 }
 bool Errors::ErrorCount()
 {
@@ -115,7 +115,7 @@ void Errors::FileName()
     if (include)
     {
         std::string filname = include->GetFile();
-        std::cout << filname.c_str() << "(" << include->GetLineNo() << "): ";
+        std::cout << filname << "(" << include->GetLineNo() << "): ";
     }
 }
 std::string Errors::ToNum(long long num) { return Utils::NumberToString(num); }

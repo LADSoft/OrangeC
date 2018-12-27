@@ -29,7 +29,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #include <string>
-#include <stdio.h>
+#include <cstdio>
 #include "ppDefine.h"
 
 class InputFile

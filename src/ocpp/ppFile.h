@@ -27,7 +27,7 @@
 #define ppFile_h
 
 #include <string>
-#include <stdio.h>
+#include <cstdio>
 
 #include "InputFile.h"
 #include "ppCond.h"

@@ -29,9 +29,9 @@
 #include "ObjFile.h"
 #include "ObjExpression.h"
 
-#include <ctype.h>
+#include <cctype>
 #include <map>
-#include <string.h>
+#include <cstring>
 
 void PEImportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
 {
@@ -47,7 +47,7 @@ void PEImportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     size = 0;
     raw_addr = endPhys;
     std::map<ObjString, ObjSymbol*> externs;
-    for (ObjFile::SymbolIterator it = file->ExternalBegin(); it != file->ExternalEnd(); ++it)
+    for (auto it = file->ExternalBegin(); it != file->ExternalEnd(); ++it)
     {
         externs[(*it)->GetName()] = (*it);
     }
@@ -57,7 +57,7 @@ void PEImportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     int importCount = 0;
     int dllCount = 0;
     std::string name;  // moved out of loop because of annoying OPENWATCOM bug
-    for (ObjFile::SymbolIterator it = file->ImportBegin(); it != file->ImportEnd(); ++it)
+    for (auto it = file->ImportBegin(); it != file->ImportEnd(); ++it)
     {
         ObjImportSymbol* s = (ObjImportSymbol*)(*it);
         // uppercase the module name for NT... 98 doesn't need it but can accept it
@@ -123,7 +123,7 @@ void PEImportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
         for (int i = 0; i < module.second->externalNames.size(); i++)
         {
             const std::string& str = module.second->externalNames[i];
-            if (str.size())
+            if (!str.empty())
             {
                 lookupPos->ord_or_rva = (unsigned char*)hintPos - data + virtual_addr;
                 addressPos->ord_or_rva = (unsigned char*)hintPos - data + virtual_addr;

@@ -27,10 +27,10 @@
 #include "RCFile.h"
 #include "ResFile.h"
 #include "ResourceData.h"
-#include <string.h>
+#include <cstring>
 RCData::~RCData()
 {
-    for (iterator it = begin(); it != end(); ++it)
+    for (auto it = begin(); it != end(); ++it)
     {
         ResourceData* r = (*it);
         delete r;

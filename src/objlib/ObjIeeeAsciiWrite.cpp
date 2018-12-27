@@ -25,17 +25,14 @@
 
 #include "ObjFactory.h"
 #include "ObjIeee.h"
-#include <stdio.h>
+#include <cstdio>
 #include <deque>
 
 char ObjIeeeAscii::lineend[2] = {10};
-
-inline int min(int x, int y)
+template<typename T>
+inline constexpr int min(T x, T y)
 {
-    if (x < y)
-        return x;
-    else
-        return y;
+    return x < y ? x : y;
 }
 void ObjIeeeAscii::bufferup(const char* data, int len)
 {
@@ -95,19 +92,18 @@ ObjString ObjIeeeAscii::GetTypeIndex(ObjType* Type)
 {
     if (Type->GetType() < ObjType::eVoid)
         return ObjUtil::ToHex(Type->GetIndex());
-    else
         return ObjUtil::ToHex((int)Type->GetType());
 }
 void ObjIeeeAscii::RenderStructure(ObjType* Type)
 {
     const int MaxPerLine = 15;
     std::deque<ObjField*> fields;
-    for (ObjType::FieldIterator it = Type->FieldBegin(); it != Type->FieldEnd(); ++it)
+    for (auto it = Type->FieldBegin(); it != Type->FieldEnd(); ++it)
     {
         fields.push_front(*it);
     }
     ObjString lastIndex;
-    while (fields.size())
+    while (!fields.empty())
     {
         int bottom;
         ObjString index;
@@ -154,7 +150,7 @@ void ObjIeeeAscii::RenderFunction(ObjFunction* Function)
     RenderString(ObjUtil::ToHex(Function->GetLinkage()));
     // assuming a reasonable number of parameters
     // parameters are TYPES
-    for (ObjFunction::ParameterIterator it = Function->ParameterBegin(); it != Function->ParameterEnd(); ++it)
+    for (auto it = Function->ParameterBegin(); it != Function->ParameterEnd(); ++it)
     {
         RenderString(",T" + GetTypeIndex(*it));
     }
@@ -163,7 +159,7 @@ void ObjIeeeAscii::RenderFunction(ObjFunction* Function)
 }
 void ObjIeeeAscii::RenderType(ObjType* Type)
 {
-    if (Type->GetType() < ObjType::eVoid && Type->GetName().size())
+    if (Type->GetType() < ObjType::eVoid && !Type->GetName().empty())
     {
         RenderString("NT" + ObjUtil::ToHex(Type->GetIndex()));
         RenderString("," + ToString(Type->GetName()) + ".");
@@ -252,7 +248,7 @@ void ObjIeeeAscii::RenderSymbol(ObjSymbol* Symbol)
             data = "O," + ToString(esym->GetName()) + "," + ObjUtil::ToDecimal(esym->GetOrdinal());
         else
             data = "N," + ToString(esym->GetName()) + "," + ToString(esym->GetExternalName());
-        if (esym->GetDllName().size())
+        if (!esym->GetDllName().empty())
             data = data + "," + esym->GetDllName();
         RenderComment(eExport, data);
     }
@@ -378,9 +374,8 @@ void ObjIeeeAscii::RenderMemory(ObjMemoryManager* Memory)
     int n;
     scratch[0] = 'L';
     scratch[1] = 'D';
-    ObjMemoryManager::MemoryIterator itmem;
     n = 2;
-    for (itmem = Memory->MemoryBegin(); itmem != Memory->MemoryEnd(); ++itmem)
+    for (auto itmem = Memory->MemoryBegin(); itmem != Memory->MemoryEnd(); ++itmem)
     {
         ObjMemory* memory = (*itmem);
         if ((memory->HasDebugTags() && GetDebugInfoFlag()) || memory->GetFixup())
@@ -395,8 +390,7 @@ void ObjIeeeAscii::RenderMemory(ObjMemoryManager* Memory)
             }
             if (GetDebugInfoFlag() && memory->HasDebugTags())
             {
-                ObjMemory::DebugTagIterator it;
-                for (it = memory->DebugTagBegin(); it != memory->DebugTagEnd(); ++it)
+                for (auto it = memory->DebugTagBegin(); it != memory->DebugTagEnd(); ++it)
                 {
                     RenderDebugTag(*it);
                 }
@@ -461,10 +455,7 @@ void ObjIeeeAscii::RenderMemory(ObjMemoryManager* Memory)
 void ObjIeeeAscii::RenderMemoryBinary(ObjMemoryManager* Memory)
 {
     char scratch[256];
-    int n;
-    ObjMemoryManager::MemoryIterator itmem;
-    n = 0;
-    for (itmem = Memory->MemoryBegin(); itmem != Memory->MemoryEnd(); ++itmem)
+    for (auto itmem = Memory->MemoryBegin(); itmem != Memory->MemoryEnd(); ++itmem)
     {
         ObjMemory* memory = (*itmem);
         if (memory->GetFixup())
@@ -633,14 +624,14 @@ void ObjIeeeAscii::WriteHeader()
 }
 void ObjIeeeAscii::WriteFiles()
 {
-    for (ObjFile ::SourceFileIterator it = file->SourceFileBegin(); it != file->SourceFileEnd(); ++it)
+    for (auto it = file->SourceFileBegin(); it != file->SourceFileEnd(); ++it)
     {
         RenderFile(*it);
     }
 }
 void ObjIeeeAscii::WriteSectionHeaders()
 {
-    for (ObjFile ::SectionIterator it = file->SectionBegin(); it != file->SectionEnd(); ++it)
+    for (auto it = file->SectionBegin(); it != file->SectionEnd(); ++it)
     {
         RenderSection(*it);
     }
@@ -649,7 +640,7 @@ void ObjIeeeAscii::WriteTypes()
 {
     if (GetDebugInfoFlag())
     {
-        for (ObjFile ::TypeIterator it = file->TypeBegin(); it != file->TypeEnd(); ++it)
+        for (auto it = file->TypeBegin(); it != file->TypeEnd(); ++it)
         {
             RenderType(*it);
         }
@@ -659,7 +650,7 @@ void ObjIeeeAscii::WriteVirtualTypes()
 {
     if (GetDebugInfoFlag())
     {
-        for (ObjFile ::SectionIterator it = file->SectionBegin(); it != file->SectionEnd(); ++it)
+        for (auto it = file->SectionBegin(); it != file->SectionEnd(); ++it)
         {
             ObjType* type = (*it)->GetVirtualType();
             if (type)
@@ -672,21 +663,21 @@ void ObjIeeeAscii::WriteVirtualTypes()
 }
 void ObjIeeeAscii::WriteSymbols()
 {
-    for (ObjFile ::SymbolIterator it = file->PublicBegin(); it != file->PublicEnd(); ++it)
+    for (auto it = file->PublicBegin(); it != file->PublicEnd(); ++it)
         RenderSymbol(*it);
-    for (ObjFile ::SymbolIterator it = file->ExternalBegin(); it != file->ExternalEnd(); ++it)
+    for (auto it = file->ExternalBegin(); it != file->ExternalEnd(); ++it)
         RenderSymbol(*it);
-    for (ObjFile ::SymbolIterator it = file->LocalBegin(); it != file->LocalEnd(); ++it)
+    for (auto it = file->LocalBegin(); it != file->LocalEnd(); ++it)
         RenderSymbol(*it);
-    for (ObjFile ::SymbolIterator it = file->AutoBegin(); it != file->AutoEnd(); ++it)
+    for (auto it = file->AutoBegin(); it != file->AutoEnd(); ++it)
         RenderSymbol(*it);
-    for (ObjFile ::SymbolIterator it = file->RegBegin(); it != file->RegEnd(); ++it)
+    for (auto it = file->RegBegin(); it != file->RegEnd(); ++it)
         RenderSymbol(*it);
-    for (ObjFile ::SymbolIterator it = file->DefinitionBegin(); it != file->DefinitionEnd(); ++it)
+    for (auto it = file->DefinitionBegin(); it != file->DefinitionEnd(); ++it)
         RenderSymbol(*it);
-    for (ObjFile ::SymbolIterator it = file->ImportBegin(); it != file->ImportEnd(); ++it)
+    for (auto it = file->ImportBegin(); it != file->ImportEnd(); ++it)
         RenderSymbol(*it);
-    for (ObjFile ::SymbolIterator it = file->ExportBegin(); it != file->ExportEnd(); ++it)
+    for (auto it = file->ExportBegin(); it != file->ExportEnd(); ++it)
         RenderSymbol(*it);
 }
 void ObjIeeeAscii::WriteStartAddress()
@@ -701,7 +692,7 @@ void ObjIeeeAscii::WriteStartAddress()
 }
 void ObjIeeeAscii::WriteSections()
 {
-    for (ObjFile ::SectionIterator it = file->SectionBegin(); it != file->SectionEnd(); ++it)
+    for (auto it = file->SectionBegin(); it != file->SectionEnd(); ++it)
     {
         RenderString("SB" + ObjUtil::ToHex((*it)->GetIndex()) + ".");
         endl();
@@ -713,7 +704,7 @@ bool ObjIeeeAscii::BinaryWrite()
     ioBuffer = new char[BUFFERSIZE];
     if (!ioBuffer)
         return false;
-    for (ObjFile ::SectionIterator it = file->SectionBegin(); it != file->SectionEnd(); ++it)
+    for (auto it = file->SectionBegin(); it != file->SectionEnd(); ++it)
     {
         RenderMemoryBinary(&(*it)->GetMemoryManager());
     }
@@ -724,7 +715,7 @@ bool ObjIeeeAscii::BinaryWrite()
 }
 void ObjIeeeAscii::WriteBrowseInfo()
 {
-    for (ObjFile ::BrowseInfoIterator it = file->BrowseInfoBegin(); it != file->BrowseInfoEnd(); ++it)
+    for (auto it = file->BrowseInfoBegin(); it != file->BrowseInfoEnd(); ++it)
     {
         RenderBrowseInfo(*it);
     }

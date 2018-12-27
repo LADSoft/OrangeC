@@ -695,12 +695,8 @@ bool LinkManager::CreateSeparateRegions(LinkManager* manager, CmdFiles& files, L
 bool LinkManager::ParsePartitions()
 {
     bool done = false;
-    int numImports = 0;
-    for (auto import : imports)
-        if (import->GetUsed())
-            numImports++;
 
-    LinkExpression* value = new LinkExpression(numImports);
+    LinkExpression* value = new LinkExpression(externals.size());
     LinkExpressionSymbol* esym = new LinkExpressionSymbol("IMPORTCOUNT", value);
     LinkExpression::EnterSymbol(esym);
     while (!done)

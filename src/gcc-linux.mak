@@ -45,7 +45,9 @@ LLIB_DEPENDENCIES = $(notdir $(filter-out $(EXCLUDE) $(MAIN_DEPENDENCIES), $(CPP
 
 
 CC=gcc
+CCPP=g++
 CCFLAGS = -c -D__MSVCRT__ -U__STRICT_ANSI__ -DGCCLINUX -DSQLITE_OS_UNIX -D_unlink=unlink -Dstricmp=strcasecmp -Dstrnicmp=strncasecmp
+
 CPPFLAGS = -std=c++11
 LINK=ld
 LFLAGS=-L$(_LIBDIR)
@@ -83,7 +85,7 @@ vpath %.a $(_LIBDIR)
 vpath %.res $(_OUTPUTDIR)
 
 $(_OUTPUTDIR)/%.o: %.cpp
-	$(CC) $(CPPFLAGS) $(CCFLAGS) -o $@ $^
+	$(CCPP) -std=c++11 $(CCFLAGS) -o $@ $^
 
 $(_OUTPUTDIR)/%.o: %.c
 	$(CC) -std=c99 $(CCFLAGS) -o $@ $^

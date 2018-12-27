@@ -1240,6 +1240,13 @@ mem_fn(_Rp _Tp::* __pm)
 class _LIBCPP_EXCEPTION_ABI bad_function_call
     : public exception
 {
+#ifdef __BUILDING_LSCRTL_DLL
+public:
+// the compiler needs to be worked on to fix this problem, it is too big of a project right now though...
+	bad_function_call();
+	bad_function_call(const bad_function_call&);
+	~bad_function_call();
+#endif
 };
 
 template<class _Fp> class _LIBCPP_TYPE_VIS_ONLY function; // undefined
@@ -1251,7 +1258,6 @@ template<class _Rp, class ..._ArgTypes>
 struct __maybe_derive_from_unary_function
 {
 };
-
 template<class _Rp, class _A1>
 struct __maybe_derive_from_unary_function<_Rp(_A1)>
     : public unary_function<_A1, _Rp>

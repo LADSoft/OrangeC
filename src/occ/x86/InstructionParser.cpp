@@ -285,6 +285,8 @@ asmError InstructionParser::GetInstruction(OCODE* ins, Instruction*& newIns, std
                 default:
                     if (ins->opcode >= op_ja && ins->opcode <= op_jz)
                         ins->oper1->length = 0;
+                    if (ins->opcode == op_ret && ins->oper1)
+                        ins->oper1->length = 0;
 
                     break;
             }

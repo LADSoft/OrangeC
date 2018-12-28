@@ -78,6 +78,8 @@ enum e_am
     am_screg,
     am_sdreg,
     am_streg,
+    am_mmreg,
+    am_xmmreg,
     am_seg,
     am_indisp,
     am_indispscale,

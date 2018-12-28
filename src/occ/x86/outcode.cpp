@@ -68,7 +68,7 @@ extern "C" int fastcallAlias;
 extern "C" FILE *outputFile, *browseFile;
 extern "C" char infile[];
 extern "C" BOOLEAN usingEsp;
-
+extern AMODE* singleLabel, *doubleLabel, *zerolabel;
 LIST* includedFiles;
 InstructionParser* instructionParser;
 Section* currentSection;
@@ -196,6 +196,7 @@ void outcode_file_init(void)
     virtualSyms.clear();
     currentSection = 0;
     memcpy(segAligns, segAlignsDefault, sizeof(segAligns));
+    singleLabel = doubleLabel = zerolabel = 0;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -734,7 +735,8 @@ void outcode_dump_muldivval(void)
     while (v)
     {
         oa_align(8);
-        InsertLabel(v->label);
+        if (v->label)
+            InsertLabel(v->label);
         if (v->size == 0)
         {
             *(int*)buf = v->value;
@@ -745,15 +747,10 @@ void outcode_dump_muldivval(void)
             FPFToFloat(buf, &v->floatvalue);
             emit(buf, 4);
         }
-        else if (v->size == ISZ_DOUBLE || v->size == ISZ_IDOUBLE)
+        else
         {
             FPFToDouble(buf, &v->floatvalue);
             emit(buf, 8);
-        }
-        else
-        {
-            FPFToLongDouble(buf, &v->floatvalue);
-            emit(buf, 10);
         }
         v = v->next;
     }

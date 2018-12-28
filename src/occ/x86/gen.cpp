@@ -2,7 +2,7 @@
  *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
  *
- *     This file is part of the Orange C Compiler package.
+ *     This file is part of the Orange C Compiler package.o
  *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@
 #include "be.h"
 
 extern "C" ARCH_ASM* chosenAssembler;
-
+extern "C" EXPRESSION* fltexp;
 extern "C" OCODE* peep_tail;
 extern "C" int startlab, retlab;
 extern "C" int usingEsp;
@@ -38,6 +38,8 @@ extern "C" int usingEsp;
 #define MAX_ALIGNS 50
 extern "C" int pushlevel = 0;
 extern "C" int funcstackheight = 0;
+
+AMODE* singleLabel, *doubleLabel, *zerolabel;
 
 static int floatpop;
 static int fstackid;
@@ -105,6 +107,63 @@ AMODE* makefloat(FPFC* f, int size)
     return ap;
 }
 
+AMODE *makeSSE(int reg)
+{
+    AMODE* ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
+    ap->mode = am_xmmreg;
+    ap->preg = reg;
+    ap->length = 0;
+    return ap;
+}
+void make_floatconst(AMODE* ap)
+{
+    int size = ap->length;
+    if (isintconst(ap->offset))
+    {
+        LongLongToFPF(&ap->offset->v.f, ap->offset->v.i);
+        ap->offset->type = en_c_d;
+        size = ISZ_DOUBLE;
+    }
+    else
+    {
+        switch (ap->offset->type)
+        {
+        case en_c_f:
+            size = ISZ_FLOAT;
+            break;
+        case en_c_d:
+            size = ISZ_DOUBLE;
+            break;
+        case en_c_ld:
+            size = ISZ_LDOUBLE;
+            break;
+        case en_c_fi:
+            size = ISZ_IFLOAT;
+            break;
+        case en_c_di:
+            size = ISZ_IDOUBLE;
+            break;
+        case en_c_ldi:
+            size = ISZ_ILDOUBLE;
+            break;
+        case en_c_fc:
+            size = ISZ_CFLOAT;
+            break;
+        case en_c_dc:
+            size = ISZ_CDOUBLE;
+            break;
+        case en_c_ldc:
+            size = ISZ_CLDOUBLE;
+            break;
+        default:
+            break;
+        }
+    }
+    AMODE* ap1 = make_label(queue_floatval(&ap->offset->v.f, size));
+    ap->mode = am_direct;
+    ap->length = 0;
+    ap->offset = ap1->offset;
+}
 /*-------------------------------------------------------------------------*/
 
 AMODE* aimmed(ULLONG_TYPE i)
@@ -207,17 +266,6 @@ AMODE* make_stack(int number)
     ap->keepesp = TRUE;
     return (ap);
 }
-AMODE* fstack(void)
-{
-    AMODE* ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
-    ap->mode = am_freg;
-    ap->length = ISZ_LDOUBLE;
-    ap->preg = 0;
-    ap->sreg = 0;
-    ap->offset = (EXPRESSION*)fstackid;
-    ap->tempflag = TRUE;
-    return (ap);
-}
 static void callLibrary(char* name, int size)
 {
     /* so it will get in the external list */
@@ -255,71 +303,6 @@ void oa_gen_importThunk(SYMBOL* func)
     ofs->offset = varNode(en_pc, func->mainsym);
     gen_code(op_jmp, ofs, NULL);
     flush_peep(NULL, NULL);
-}
-void make_floatconst(AMODE* ap)
-{
-    int size = ap->length;
-    if (isintconst(ap->offset))
-    {
-        LongLongToFPF(&ap->offset->v.f, ap->offset->v.i);
-        ap->offset->type = en_c_d;
-        size = ISZ_DOUBLE;
-    }
-    else
-    {
-        switch (ap->offset->type)
-        {
-            case en_c_f:
-                size = ISZ_FLOAT;
-                break;
-            case en_c_d:
-                size = ISZ_DOUBLE;
-                break;
-            case en_c_ld:
-                size = ISZ_LDOUBLE;
-                break;
-            case en_c_fi:
-                size = ISZ_IFLOAT;
-                break;
-            case en_c_di:
-                size = ISZ_IDOUBLE;
-                break;
-            case en_c_ldi:
-                size = ISZ_ILDOUBLE;
-                break;
-            case en_c_fc:
-                size = ISZ_CFLOAT;
-                break;
-            case en_c_dc:
-                size = ISZ_CDOUBLE;
-                break;
-            case en_c_ldc:
-                size = ISZ_CLDOUBLE;
-                break;
-            default:
-                break;
-        }
-    }
-    if (ValueIsOne(&ap->offset->v.f))
-    {
-        ap->mode = am_fconst;
-        if (ap->offset->v.f.sign)
-            ap->preg = fcmone;
-        else
-            ap->preg = fcone;
-    }
-    else if (ap->offset->v.f.type == IFPF_IS_ZERO)
-    {
-        ap->mode = am_fconst;
-        ap->preg = fczero;
-    }
-    else
-    {
-        AMODE* ap1 = make_label(queue_floatval(&ap->offset->v.f, size));
-        ap->mode = am_direct;
-        ap->length = size;
-        ap->offset = ap1->offset;
-    }
 }
 
 void make_complexconst(AMODE* ap, AMODE* api)
@@ -385,106 +368,54 @@ void make_complexconst(AMODE* ap, AMODE* api)
     make_floatconst(ap);
     make_floatconst(api);
 }
-void floatStore(AMODE* ap, int sz)
+void floatchs(AMODE *ap, int sz)
 {
-    if (ap->mode != am_freg)
-        gen_codes(op_fstp, sz, ap, 0);
-}
-void complexStore(AMODE* ap, AMODE* api, int sz)
-{
-    floatStore(ap, sz - ISZ_CFLOAT + ISZ_FLOAT);
-    floatStore(api, sz - ISZ_CFLOAT + ISZ_FLOAT);
-}
-void floatLoad(AMODE* ap, int sz, int okind)
-{
-    if (ap->mode != am_freg)
+    AMODE* lbl;
+    e_opcode op;
+    if (sz == ISZ_FLOAT || sz == ISZ_IFLOAT || sz == ISZ_CFLOAT)
     {
-        if (ap->mode == am_fconst)
+        if (!singleLabel)
         {
-            if (ap->preg == fczero)
-            {
-                gen_code(op_fldz, 0, 0);
-                if (ap->offset->v.f.sign)
-                    gen_code(op_fchs, 0, 0);
-            }
-            else
-            {
-                gen_code(op_fld1, 0, 0);
-                if (ap->preg == fcmone)
-                    gen_code(op_fchs, 0, 0);
-            }
+            IMODE* ip = beSetProcSymbol("__fschsmask");
+            AMODE* an = (AMODE*)beLocalAlloc(sizeof(AMODE));
+            an->offset = ip->offset;
+            an->mode = am_direct;
+            singleLabel = an;
         }
-        else if (!okind || sz == ISZ_LDOUBLE)
-        {
-            gen_codes(op_fld, sz, ap, 0);
-        }
-    }
-}
-BOOLEAN sameTemp(QUAD* head);
-void float_gen(QUAD* q, AMODE* apll, AMODE* aprl, int op, int rop, int pop, int prop)
-{
-    if (sameTemp(q))
-    {
-        if (apll->mode != am_freg)
-            floatLoad(apll, q->dc.left->size, FALSE);
-        gen_code(op_fld, makefreg(0), NULL);
-        gen_codes(pop, ISZ_LDOUBLE, makefreg(1), 0);
+        lbl = singleLabel;
+        op = op_xorps;
     }
     else
     {
-        BOOLEAN doleft = FALSE;
-        if (apll->mode != am_freg && aprl->mode != am_freg)
+        if (!doubleLabel)
         {
-            floatLoad(apll, q->dc.left->size, FALSE);
-            doleft = TRUE;
+            IMODE* ip = beSetProcSymbol("__fdchsmask");
+            AMODE* an = (AMODE*)beLocalAlloc(sizeof(AMODE));
+            an->offset = ip->offset;
+            an->mode = am_direct;
+            doubleLabel = an;
         }
-        if (doleft || apll->mode == am_freg)
-        {
-            switch (aprl->mode)
-            {
-                default:
-                    if (q->dc.right->size != ISZ_LDOUBLE)
-                    {
-                        gen_codes(op, q->dc.right->size, aprl, 0);
-                        break;
-                    }
-                    // fall through
-                case am_fconst:
-                    floatLoad(aprl, q->dc.left->size, FALSE);
-                    /* fall through */
-                case am_freg:
-                    gen_codes(pop, ISZ_LDOUBLE, makefreg(1), 0);
-                    break;
-            }
-        }
-        else
-        {
-            switch (apll->mode)
-            {
-                default:
-                    if (q->dc.left->size != ISZ_LDOUBLE)
-                    {
-                        gen_codes(rop, q->dc.left->size, apll, 0);
-                        break;
-                    }
-                    // fall through
-                case am_fconst:
-                    floatLoad(apll, q->dc.left->size, FALSE);
-                    gen_codes(prop, ISZ_LDOUBLE, makefreg(1), 0);
-                    break;
-                case am_freg:
-                    /* can't get here */
-                    break;
-            }
-        }
+        lbl = doubleLabel;
+        op = op_xorps;
     }
+    gen_code(op, ap, lbl);
 }
 
-void complexLoad(AMODE* ap, AMODE* api, int sz)
+AMODE *floatzero(void)
 {
-    floatLoad(api, sz - ISZ_CFLOAT + ISZ_FLOAT, FALSE);
-    floatLoad(ap, sz - ISZ_CFLOAT + ISZ_FLOAT, FALSE);
+    if (!zerolabel)
+    {
+        IMODE* ip = beSetProcSymbol("__fzero");
+        AMODE* an = (AMODE*)beLocalAlloc(sizeof(AMODE));
+        an->offset = ip->offset;
+        an->mode = am_direct;
+        zerolabel = an;
+
+    }
+    return zerolabel;
 }
+
+BOOLEAN sameTemp(QUAD* head);
 int beRegFromTempInd(QUAD* q, IMODE* im, int which)
 {
     if (which)
@@ -528,11 +459,9 @@ int imaginary_offset(int sz)
             size = 4;
             break;
         case ISZ_CDOUBLE:
-            size = 8;
-            break;
-        default:
         case ISZ_CLDOUBLE:
-            size = 10;
+        default:
+            size = 8;
             break;
     }
     return size;
@@ -785,8 +714,13 @@ void getAmodes(QUAD* q, enum e_opcode* op, IMODE* im, AMODE** apl, AMODE** aph)
             {
                 if (im->offset->type == en_tempref && !im->offset->right)
                 {
-                    *aph = fstack();
-                    *apl = fstack();
+                    int clr = beRegFromTemp(q, im);
+                    int reg1, reg2;
+                    reg1 = regmap[clr & 0xff][1];
+                    reg2 = regmap[clr & 0xff][0];
+                    *apl = makeSSE(reg2);
+                    *aph = makeSSE(reg1);
+//                    (*apl)->liveRegs = (*aph)->liveRegs = (1 << reg1) | (1 << reg2);
                 }
                 else
                 {
@@ -797,7 +731,10 @@ void getAmodes(QUAD* q, enum e_opcode* op, IMODE* im, AMODE** apl, AMODE** aph)
             }
             else if (im->offset->type == en_tempref && !im->offset->right)
             {
-                *apl = fstack();
+                int clr = beRegFromTemp(q, im);
+                int reg;
+                reg = regmap[clr & 0xff][0];
+                *apl = makeSSE(reg);
             }
             else
                 *apl = make_offset(im->offset);
@@ -1107,64 +1044,9 @@ void gen_xset(QUAD* q, enum e_opcode pos, enum e_opcode neg, enum e_opcode flt)
     }
     if (left->size >= ISZ_FLOAT)
     {
-        int ulbl = beGetLabel;
-        if (left->mode == i_direct && left->offset->type == en_tempref)
-        {
-            if (right->offset && right->offset->type != en_tempref)
-            {
-                switch (flt)
-                {
-                    case op_seta:
-                        flt = op_setb;
-                        break;
-                    case op_setae:
-                        flt = op_setbe;
-                        break;
-                    case op_setb:
-                        flt = op_seta;
-                        break;
-                    case op_setbe:
-                        flt = op_setae;
-                        break;
-                    default:
-                        break;
-                }
-            }
-        }
         getAmodes(q, &opa, right, &aprl, &aprh);
-        floatLoad(aprl, left->size, FALSE);
         getAmodes(q, &opa, left, &apll, &aplh);
-        if (sameTemp(q))
-        {
-            gen_code(op_fld, makefreg(0), NULL);
-            gen_code(op_fucompp, 0, 0);
-        }
-        else
-        {
-            floatLoad(apll, left->size, FALSE);
-            //			if (apll->mode == am_freg)
-            {
-                gen_code(op_fucompp, 0, 0);
-            }
-            //			else
-            //			{
-            //				gen_codes(op_fcomp, left->size, apll, 0);
-            //			}
-        }
-        if (apll->liveRegs & (1 << EAX))
-            gen_code(op_push, makedreg(EAX), 0);
-        gen_codes(op_fstsw, ISZ_USHORT, makedreg(EAX), 0);
-        gen_codes(op_bt, ISZ_UINT, makedreg(EAX), aimmed(10));
-        gen_code(op_jnc, make_label(ulbl), 0);
-        gen_codes(op_btr, ISZ_UINT, makedreg(EAX), aimmed(14));
-        if (flt == op_ja || flt == op_jae || flt == op_seta || flt == op_setae)
-            gen_codes(op_bts, ISZ_UINT, makedreg(EAX), aimmed(8));
-        if (flt == op_jb || flt == op_jbe || flt == op_setb || flt == op_setbe)
-            gen_codes(op_btr, ISZ_UINT, makedreg(EAX), aimmed(8));
-        oa_gen_label(ulbl);
-        gen_code(op_sahf, 0, 0);
-        if (apll->liveRegs & (1 << EAX))
-            gen_code(op_pop, makedreg(EAX), 0);
+        gen_code_sse(op_ucomiss, op_ucomisd, apll->length, apll, aprl);
         getAmodes(q, &opa, q->ans, &apal, &apah);
         gen_codes(flt, ISZ_UCHAR, apal, 0);
         gen_codes(op_and, ISZ_UINT, apal, aimmed(1));
@@ -1371,65 +1253,11 @@ void gen_goto(QUAD* q, enum e_opcode pos, enum e_opcode neg, enum e_opcode llpos
     }
     if (left->size >= ISZ_FLOAT)
     {
-        int ulbl = beGetLabel;
-        if (left->mode == i_direct && left->offset->type == en_tempref)
-        {
-            if (right->offset && right->offset->type != en_tempref)
-            {
-                switch (flt)
-                {
-                    case op_ja:
-                        flt = op_jb;
-                        break;
-                    case op_jae:
-                        flt = op_jbe;
-                        break;
-                    case op_jb:
-                        flt = op_ja;
-                        break;
-                    case op_jbe:
-                        flt = op_jae;
-                        break;
-                    default:
-                        break;
-                }
-            }
-        }
+
         getAmodes(q, &opa, right, &aprl, &aprh);
-        floatLoad(aprl, left->size, FALSE);
         getAmodes(q, &opa, left, &apll, &aplh);
-        if (sameTemp(q))
-        {
-            gen_code(op_fld, makefreg(0), NULL);
-            gen_code(op_fucompp, 0, 0);
-        }
-        else
-        {
-            floatLoad(apll, left->size, FALSE);
-            //			if (apll->mode == am_freg)
-            {
-                gen_code(op_fucompp, 0, 0);
-            }
-            //			else
-            //			{
-            //				gen_codes(op_fcomp, left->size, apll, 0);
-            //			}
-        }
-        if (apll->liveRegs & (1 << EAX))
-            gen_code(op_push, makedreg(EAX), 0);
-        gen_codes(op_fstsw, ISZ_USHORT, makedreg(EAX), 0);
-        gen_codes(op_bt, ISZ_UINT, makedreg(EAX), aimmed(10));
-        gen_code(op_jnc, make_label(ulbl), 0);
-        gen_codes(op_btr, ISZ_UINT, makedreg(EAX), aimmed(14));
-        if (flt == op_ja || flt == op_jae)
-            gen_codes(op_btr, ISZ_UINT, makedreg(EAX), aimmed(8));
-        if (flt == op_jb || flt == op_jbe)
-            gen_codes(op_bts, ISZ_UINT, makedreg(EAX), aimmed(8));
-        oa_gen_label(ulbl);
-        gen_code(op_sahf, 0, 0);
-        if (apll->liveRegs & (1 << EAX))
-            gen_code(op_pop, makedreg(EAX), 0);
-        gen_branch(flt, q->dc.v.label);
+        gen_code_sse(op_ucomiss, op_ucomisd, apll->length, apll, aprl);
+        gen_branch(flt , q->dc.v.label);
     }
     else
     {
@@ -1476,8 +1304,15 @@ static void gen_div(QUAD* q, enum e_opcode op) /* unsigned division */
         {
             diag("gen_div: floating point in mod operation");
         }
-        float_gen(q, apll, aprl, op_fdiv, op_fdivr, op_fdivp, op_fdivrp);
-        floatStore(apal, q->ans->size);
+        if (equal_address(apal, apll))
+        {
+            gen_code_sse(op_divss, op_divsd, q->ans->size, apal, aprl);
+        }
+        else
+        {
+            gen_code_sse(op_movss, op_movsd, q->ans->size, apal, apll);
+            gen_code_sse(op_divss, op_divsd, q->ans->size, apal, aprl);
+        }
     }
     else if (q->ans->size == ISZ_ULONGLONG || q->ans->size == -ISZ_ULONGLONG)
     {
@@ -1976,28 +1811,34 @@ void asm_parm(QUAD* q) /* push a parameter*/
     {
         if (q->dc.left->size >= ISZ_CFLOAT)
         {
-            int sz = q->dc.left->size, sz1;
-            sz1 = sizeFromISZ(sz);
-            gen_codes(op_sub, ISZ_UINT, makedreg(ESP), aimmed(sz1));
-            pushlevel += sz1;
-            floatLoad(aph, sz - ISZ_CFLOAT + ISZ_FLOAT, FALSE);
-            floatStore(make_stack(-imaginary_offset(sz)), sz - ISZ_CFLOAT + ISZ_FLOAT);
-            pushlevel += sz1;
-            floatLoad(apl, sz - ISZ_CFLOAT + ISZ_FLOAT, FALSE);
-            floatStore(make_stack(0), sz - ISZ_CFLOAT + ISZ_FLOAT);
+            int sz = 8;
+            if (q->dc.left->size == ISZ_FLOAT || q->dc.left->size == ISZ_IFLOAT)
+                sz = 4;
+            gen_codes(op_sub, ISZ_UINT, makedreg(ESP), aimmed(sz*2));
+            pushlevel += sz * 2;
+            gen_code_sse(op_movss, op_movsd, q->dc.left->size, make_stack(-sz), aph);
+            gen_code_sse(op_movss, op_movsd, q->dc.left->size, make_stack(0), apl);
         }
         else if (q->dc.left->size >= ISZ_FLOAT)
         {
-            int sz = q->dc.left->size, sz1;
-            if (sz >= ISZ_IFLOAT)
-                sz = sz - ISZ_IFLOAT + ISZ_FLOAT;
-            sz1 = sizeFromISZ(sz);
-            floatLoad(apl, sz, FALSE);
-            if (sz1 == 10)
-                sz1 = 12;
-            gen_codes(op_sub, ISZ_UINT, makedreg(ESP), aimmed(sz1));
-            pushlevel += sz1;
-            floatStore(make_stack(0), sz);
+            int sz = 8;
+            if (q->dc.left->size == ISZ_FLOAT || q->dc.left->size == ISZ_IFLOAT)
+                sz = 4;
+            pushlevel += sz;
+            if (apl->mode == am_xmmreg)
+            {
+                if (sz == 4)
+                    gen_code(op_push, makedreg(ECX), NULL);
+                else
+                    gen_codes(op_sub, ISZ_UINT, makedreg(ESP), aimmed(sz));
+                gen_code_sse(op_movss, op_movsd, q->dc.left->size, make_stack(0), apl);
+            }
+            else
+            {
+                if (pushlevel == 8)
+                    gen_codes(op_push, ISZ_UINT, make_offset(exprNode(en_add, apl->offset, intNode(en_c_i, 4))), NULL);
+                gen_codes(op_push, ISZ_UINT, apl, NULL);
+            }
         }
         else
         {
@@ -2047,27 +1888,25 @@ void asm_parm(QUAD* q) /* push a parameter*/
     {
         if (q->dc.left->size >= ISZ_CFLOAT)
         {
-            int sz = q->dc.left->size, sz1;
-            sz1 = sizeFromISZ(sz);
-            gen_codes(op_sub, ISZ_UINT, makedreg(ESP), aimmed(sz1));
-            pushlevel += sz1;
-            floatLoad(aph, sz - ISZ_CFLOAT + ISZ_FLOAT, FALSE);
-            floatStore(make_stack(-imaginary_offset(sz)), sz - ISZ_CFLOAT + ISZ_FLOAT);
-            floatLoad(apl, sz - ISZ_CFLOAT + ISZ_FLOAT, FALSE);
-            floatStore(make_stack(0), sz - ISZ_CFLOAT + ISZ_FLOAT);
+            int sz = 8;
+            if (q->dc.left->size == ISZ_FLOAT || q->dc.left->size == ISZ_IFLOAT)
+                sz = 4;
+            gen_codes(op_sub, ISZ_UINT, makedreg(ESP), aimmed(sz * 2));
+            pushlevel += sz * 2;
+            gen_code_sse(op_movss, op_movsd, apl->length, make_stack(-sz), aph);
+            gen_code_sse(op_movss, op_movsd, apl->length, make_stack(0), apl);
         }
         else if (q->dc.left->size >= ISZ_FLOAT)
         {
-            int sz = q->dc.left->size, sz1;
-            sz1 = sizeFromISZ(sz);
-            if (sz1 == 10)
-                sz1 = 12;
-            if (sz >= ISZ_IFLOAT)
-                sz = sz - ISZ_IFLOAT + ISZ_FLOAT;
-            gen_codes(op_sub, ISZ_UINT, makedreg(ESP), aimmed(sz1));
-            pushlevel += sz1;
-            floatLoad(apl, sz, FALSE);
-            floatStore(make_stack(0), sz);
+            int sz = 8;
+            if (q->dc.left->size == ISZ_FLOAT || q->dc.left->size == ISZ_IFLOAT)
+                sz = 4;
+            if (sz == 4)
+                gen_code(op_push, makedreg(ECX), NULL);
+            else
+                gen_codes(op_sub, ISZ_UINT, makedreg(ESP), aimmed(sz));
+            pushlevel += sz;
+            gen_code_sse(op_movss, op_movsd, q->dc.left->size, make_stack(0), apl);
         }
         else
         {
@@ -2341,19 +2180,45 @@ void asm_add(QUAD* q) /* evaluate an addition */
     getAmodes(q, &opa, q->ans, &apal, &apah);
     if (q->ans->size >= ISZ_CFLOAT)
     {
-        floatLoad(aplh, q->dc.left->size - ISZ_CFLOAT + ISZ_FLOAT, FALSE);
-        floatLoad(apll, q->dc.left->size - ISZ_CFLOAT + ISZ_FLOAT, FALSE);
-        floatLoad(aprh, q->dc.right->size - ISZ_CFLOAT + ISZ_FLOAT, FALSE);
-        floatLoad(aprl, q->dc.right->size - ISZ_CFLOAT + ISZ_FLOAT, FALSE);
-        gen_codes(op_faddp, ISZ_LDOUBLE, makefreg(2), 0);
-        gen_codes(op_faddp, ISZ_LDOUBLE, makefreg(2), 0);
-        floatStore(apal, q->ans->size - ISZ_CFLOAT + ISZ_FLOAT);
-        floatStore(apah, q->ans->size - ISZ_CFLOAT + ISZ_FLOAT);
+        int sz = 8;
+        if (q->dc.left->size == ISZ_FLOAT || q->dc.left->size == ISZ_IFLOAT)
+            sz = 4;
+        gen_codes(op_sub, ISZ_UINT, makedreg(ESP), aimmed(sz * 2));
+        pushlevel += sz * 2;
+
+        if (equal_address(apal, apll))
+        {
+            gen_code_sse(op_addss, op_addsd, q->ans->size, apal, aprl);
+            gen_code_sse(op_addss, op_addsd, q->ans->size, apah, aprh);
+        }
+        else if (equal_address(apal, aprl))
+        {
+            gen_code_sse(op_addss, op_addsd, q->ans->size, apal, apll);
+            gen_code_sse(op_addss, op_addsd, q->ans->size, apah, aplh);
+        }
+        else
+        {
+            gen_code_sse(op_movss, op_movsd, q->ans->size, apal, apll);
+            gen_code_sse(op_addss, op_addsd, q->ans->size, apal, aprl);
+            gen_code_sse(op_movss, op_movsd, q->ans->size, apah, aplh);
+            gen_code_sse(op_addss, op_addsd, q->ans->size, apah, aprh);
+        }
     }
     else if (q->ans->size >= ISZ_FLOAT)
     {
-        float_gen(q, apll, aprl, op_fadd, op_fadd, op_faddp, op_faddp);
-        floatStore(apal, q->ans->size);
+        if (equal_address(apal, apll))
+        {
+            gen_code_sse(op_addss, op_addsd, q->ans->size, apal, aprl);
+        }
+        else if (equal_address(apal, aprl))
+        {
+            gen_code_sse(op_addss, op_addsd, q->ans->size, apal, apll);
+        }
+        else
+        {
+            gen_code_sse(op_movss, op_movsd, q->ans->size, apal, apll);
+            gen_code_sse(op_addss, op_addsd, q->ans->size, apal, aprl);
+        }
     }
     else if (q->ans->size == ISZ_ULONGLONG || q->ans->size == -ISZ_ULONGLONG)
     {
@@ -2464,27 +2329,38 @@ void asm_sub(QUAD* q) /* evaluate a subtraction */
     getAmodes(q, &opa, q->ans, &apal, &apah);
     if (q->ans->size >= ISZ_CFLOAT)
     {
-        floatLoad(aplh, q->dc.left->size - ISZ_CFLOAT + ISZ_FLOAT, FALSE);
-        floatLoad(apll, q->dc.left->size - ISZ_CFLOAT + ISZ_FLOAT, FALSE);
-        floatLoad(aprh, q->dc.right->size - ISZ_CFLOAT + ISZ_FLOAT, FALSE);
-        floatLoad(aprl, q->dc.right->size - ISZ_CFLOAT + ISZ_FLOAT, FALSE);
-        if (aprl->mode == am_freg && apll->mode != am_freg)
+        int sz = 8;
+        if (q->dc.left->size == ISZ_FLOAT || q->dc.left->size == ISZ_IFLOAT)
+            sz = 4;
+        gen_codes(op_sub, ISZ_UINT, makedreg(ESP), aimmed(sz * 2));
+        pushlevel += sz * 2;
+
+        if (equal_address(apal, apll))
         {
-            gen_codes(op_fsubrp, ISZ_LDOUBLE, makefreg(2), 0);
-            gen_codes(op_fsubrp, ISZ_LDOUBLE, makefreg(2), 0);
+            gen_code_sse(op_subss, op_subsd, q->ans->size, apal, aprl);
+            gen_code_sse(op_subss, op_subsd, q->ans->size, apah, aprh);
         }
         else
         {
-            gen_codes(op_fsubp, ISZ_LDOUBLE, makefreg(2), 0);
-            gen_codes(op_fsubp, ISZ_LDOUBLE, makefreg(2), 0);
+            gen_code_sse(op_movss, op_movsd, q->ans->size, apal, apll);
+            gen_code_sse(op_subss, op_subsd, q->ans->size, apal, aprl);
+            gen_code_sse(op_movss, op_movsd, q->ans->size, apah, aplh);
+            gen_code_sse(op_subss, op_subsd, q->ans->size, apah, aprh);
         }
-        floatStore(apal, q->ans->size - ISZ_CFLOAT + ISZ_FLOAT);
-        floatStore(apah, q->ans->size - ISZ_CFLOAT + ISZ_FLOAT);
+
     }
     else if (q->ans->size >= ISZ_FLOAT)
     {
-        float_gen(q, apll, aprl, op_fsub, op_fsubr, op_fsubp, op_fsubrp);
-        floatStore(apal, q->ans->size);
+        if (equal_address(apal, apll))
+        {
+            gen_code_sse(op_subss, op_subsd, q->ans->size, apal, aprl);
+        }
+        else
+        {
+            gen_code_sse(op_movss, op_movsd, q->ans->size, apal, apll);
+            gen_code_sse(op_subss, op_subsd, q->ans->size, apal, aprl);
+        }
+
     }
     else if (q->ans->size == ISZ_ULONGLONG || q->ans->size == -ISZ_ULONGLONG)
     {
@@ -2553,8 +2429,19 @@ void asm_mul(QUAD* q) /* signed multiply */
     getAmodes(q, &opa, q->ans, &apal, &apah);
     if (q->ans->size >= ISZ_FLOAT)
     {
-        float_gen(q, apll, aprl, op_fmul, op_fmul, op_fmulp, op_fmulp);
-        floatStore(apal, q->ans->size);
+        if (equal_address(apal, apll))
+        {
+            gen_code_sse(op_mulss, op_mulsd, q->ans->size, apal, aprl);
+        }
+        else if (equal_address(apal, aprl))
+        {
+            gen_code_sse(op_mulss, op_mulsd, q->ans->size, apal, apll);
+        }
+        else
+        {
+            gen_code_sse(op_movss, op_movsd, q->ans->size, apal, apll);
+            gen_code_sse(op_mulss, op_mulsd, q->ans->size, apal, aprl);
+        }
     }
     else if (q->ans->size == ISZ_ULONGLONG || q->ans->size == -ISZ_ULONGLONG)
     {
@@ -2738,20 +2625,30 @@ void asm_neg(QUAD* q) /* negation */
     getAmodes(q, &opa, q->ans, &apal, &apah);
     if (q->ans->size >= ISZ_CFLOAT)
     {
-        floatLoad(aplh, q->dc.left->size - ISZ_CFLOAT + ISZ_FLOAT, FALSE);
-        floatLoad(apll, q->dc.left->size - ISZ_CFLOAT + ISZ_FLOAT, FALSE);
-        gen_code(op_fchs, 0, 0);
-        gen_code(op_fxch, 0, 0);
-        gen_code(op_fchs, 0, 0);
-        gen_code(op_fxch, 0, 0);
-        floatStore(apal, q->ans->size - ISZ_CFLOAT + ISZ_FLOAT);
-        floatStore(apah, q->ans->size - ISZ_CFLOAT + ISZ_FLOAT);
+        if (equal_address(apal, apll))
+        {
+            floatchs(apal, q->ans->size);
+            floatchs(apah, q->ans->size);
+        }
+        else
+        {
+            gen_code_sse(op_movss, op_movsd, apll->length, apal, apll);
+            floatchs(apal, q->ans->size);
+            gen_code_sse(op_movss, op_movsd, aplh->length, apal, aplh);
+            floatchs(apah, q->ans->size);
+        }
     }
     else if (q->ans->size >= ISZ_FLOAT)
     {
-        floatLoad(apll, q->dc.left->size, FALSE);
-        gen_code(op_fchs, 0, 0);
-        floatStore(apal, q->ans->size);
+        if (equal_address(apal, apll))
+        {
+            floatchs(apal, q->ans->size);
+        }
+        else
+        {
+            gen_code_sse(op_movss, op_movsd, apll->length, apal, apll);
+            floatchs(apal, q->ans->size);
+        }
     }
     else if (q->ans->size == ISZ_ULONGLONG || q->ans->size == -ISZ_ULONGLONG)
     {
@@ -3017,7 +2914,91 @@ void asm_assn(QUAD* q) /* assignment */
         diag("asm_assn: unknown opcode");
     if (sza == szl || (q->dc.left->mode == i_immed && szl < ISZ_FLOAT))
     {
-        if (q->ans->size >= ISZ_CFLOAT)
+        if (q->ans->retval && q->ans->size >= ISZ_FLOAT)
+        {
+            if (fltexp)
+            {
+                AMODE *ap = make_offset(fltexp);
+                if (q->ans->size >= ISZ_CFLOAT)
+                {
+                    int sz = 8;
+                    if (q->ans->size == ISZ_CFLOAT)
+                        sz = 4;
+                    AMODE *ap1 = make_offset(exprNode(en_add, fltexp, intNode(en_c_i, sz)));
+                    gen_code_sse(op_movss, op_movsd, q->ans->size, ap, apa);
+                    gen_code_sse(op_movss, op_movsd, q->ans->size, ap1, apa1);
+                    ap1->length = ap->length = q->ans->size - ISZ_CFLOAT + ISZ_FLOAT;
+                    gen_codef(op_fld, ap1, NULL);
+                    gen_codef(op_fld, ap, NULL);
+                }
+                else
+                {
+                    if (apl->mode == am_xmmreg)
+                    {
+                        apa = apl;
+                    }
+                    else
+                    {
+                        if (apl->mode == am_immed)
+                        {
+                            make_floatconst(apl);
+                        }
+                        gen_code_sse(op_movss, op_movsd, q->ans->size, apa, apl);
+
+                    }
+                    gen_code_sse(op_movss, op_movsd, q->ans->size, ap, apa);
+                    ap->length = q->ans->size >= ISZ_IFLOAT ? q->ans->size - ISZ_IFLOAT + ISZ_FLOAT : q->ans->size;
+                    gen_codef(op_fld, ap, NULL);
+
+                }
+            }
+            else
+            {
+                diag("asm_assn: no float store area");
+            }
+        }
+        else if (q->dc.left->retval && q->dc.left->size >= ISZ_FLOAT)
+        {
+            if (q->dc.left->altretval)
+            {
+                if (apa->preg != 0)
+                    gen_code_sse(op_movss, op_movsd, q->ans->size, apa, makeSSE(0));
+            }
+            else
+            {
+                if (fltexp)
+                {
+                    AMODE *ap = make_offset(fltexp);
+                    if (q->ans->size >= ISZ_CFLOAT)
+                    {
+                        int sz = 8;
+                        if (q->ans->size == ISZ_CFLOAT)
+                            sz = 4;
+                        AMODE *ap1 = make_offset(exprNode(en_add, fltexp, intNode(en_c_i, sz)));
+                        ap1->length = ap->length = q->ans->size - ISZ_CFLOAT + ISZ_FLOAT;
+                        gen_codef(op_fstp, ap, NULL);
+                        gen_codef(op_fstp, ap1, NULL);
+                        ap1->length = ap->length = 0;
+                        gen_code_sse(op_movss, op_movsd, q->ans->size, apa, ap);
+                        gen_code_sse(op_movss, op_movsd, q->ans->size, apa1, ap1);
+                        ap1->length = ap->length = q->ans->size - ISZ_CFLOAT + ISZ_FLOAT;
+                    }
+                    else
+                    {
+                        ap->length = q->ans->size >= ISZ_IFLOAT ? q->ans->size - ISZ_IFLOAT + ISZ_FLOAT : q->ans->size;
+                        gen_codef(op_fstp, ap, NULL);
+                        ap->length = 0;
+                        gen_code_sse(op_movss, op_movsd, q->ans->size, apa, ap);
+
+                    }
+                }
+                else
+                {
+                    diag("asm_assn: no float store area");
+                }
+            }
+        }
+        else if (q->ans->size >= ISZ_CFLOAT)
         {
             if (apl1->offset && apl1->mode == am_immed && isintconst(apl1->offset))
                 make_floatconst(apl1);
@@ -3027,10 +3008,8 @@ void asm_assn(QUAD* q) /* assignment */
                 make_floatconst(apl);
             if (apl->offset && (isfloatconst(apl->offset)))
                 make_floatconst(apl);
-            floatLoad(apl1, sza - ISZ_CFLOAT + ISZ_FLOAT, FALSE);
-            floatLoad(apl, sza - ISZ_CFLOAT + ISZ_FLOAT, FALSE);
-            floatStore(apa, sza - ISZ_CFLOAT + ISZ_FLOAT);
-            floatStore(apa1, sza - ISZ_CFLOAT + ISZ_FLOAT);
+            gen_code_sse(op_movss, op_movsd, sza, apa1, apl1);
+            gen_code_sse(op_movss, op_movsd, sza, apa, apl);
         }
         else if (q->ans->size >= ISZ_FLOAT)
         {
@@ -3039,10 +3018,7 @@ void asm_assn(QUAD* q) /* assignment */
                 make_floatconst(apl);
             if (apl->offset && (isfloatconst(apl->offset)))
                 make_floatconst(apl);
-            if (sz >= ISZ_IFLOAT)
-                sz = sz - ISZ_IFLOAT + ISZ_FLOAT;
-            floatLoad(apl, sz, FALSE);
-            floatStore(apa, sz);
+            gen_code_sse(op_movss, op_movsd, szl, apa, apl);
         }
         else if (sza == ISZ_ULONGLONG)
         {
@@ -3104,80 +3080,37 @@ void asm_assn(QUAD* q) /* assignment */
             int ulbl = beGetLabel;
             if (q->dc.left->size >= ISZ_CFLOAT)
             {
-                int lab1 = beGetLabel;
-                int lab2 = beGetLabel;
-                if (apl->mode != am_freg)
-                    floatLoad(apl, szl - ISZ_CFLOAT + ISZ_FLOAT, FALSE);
-                gen_code(op_fldz, 0, 0);
-                gen_code(op_fucompp, 0, 0);
-                if (apa->liveRegs & (1 << EAX))
-                    gen_code(op_push, makedreg(EAX), 0);
-                gen_codes(op_fstsw, ISZ_USHORT, makedreg(EAX), 0);
-                gen_codes(op_bt, ISZ_UINT, makedreg(EAX), aimmed(10));
-                gen_code(op_jnc, make_label(ulbl), 0);
-                gen_codes(op_btr, ISZ_UINT, makedreg(EAX), aimmed(14));
-                oa_gen_label(ulbl);
-                gen_code(op_sahf, 0, 0);
-                if (apa->liveRegs & (1 << EAX))
-                    gen_code(op_pop, makedreg(EAX), 0);
-                gen_branch(op_jne, lab1);
-
-                if (apl->mode != am_freg)
-                    floatLoad(apl1, szl - ISZ_CFLOAT + ISZ_FLOAT, FALSE);
-                gen_code(op_fldz, 0, 0);
-                gen_code(op_fucompp, 0, 0);
-                if (apa->liveRegs & (1 << EAX))
-                    gen_code(op_push, makedreg(EAX), 0);
-                gen_codes(op_fstsw, ISZ_USHORT, makedreg(EAX), 0);
-                gen_codes(op_bt, ISZ_UINT, makedreg(EAX), aimmed(10));
-                gen_code(op_jnc, make_label(ulbl), 0);
-                gen_codes(op_btr, ISZ_UINT, makedreg(EAX), aimmed(14));
-                oa_gen_label(ulbl);
-                gen_code(op_sahf, 0, 0);
-                if (apa->liveRegs & (1 << EAX))
-                    gen_code(op_pop, makedreg(EAX), 0);
-                gen_branch(op_jmp, lab2);
-                gen_label(lab1);
-                gen_code(op_fcomp, makefreg(0), 0);
-                gen_label(lab2);
+         
+                int lbl1 = beGetLabel;
+                AMODE *apz;
+                gen_code_sse(op_ucomiss, op_ucomisd, q->dc.left->size, apl, apz = floatzero());
+                gen_code(op_jnz, make_label(lbl1), NULL);
+                gen_code_sse(op_ucomiss, op_ucomisd, q->dc.left->size, apl1, apz);
+                oa_gen_label(lbl1);
+                gen_code(op_setne, apa, NULL);
+                gen_codes(op_and, ISZ_UINT, apa, aimmed(1));
             }
             else if (q->dc.left->size >= ISZ_IFLOAT)
             {
-                if (apl->mode != am_freg)
-                    floatLoad(apl, szl - ISZ_IFLOAT + ISZ_FLOAT, FALSE);
-                gen_code(op_fldz, 0, 0);
-                gen_code(op_fucompp, 0, 0);
-                if (apa->liveRegs & (1 << EAX))
-                    gen_code(op_push, makedreg(EAX), 0);
-                gen_codes(op_fstsw, ISZ_USHORT, makedreg(EAX), 0);
-                gen_codes(op_bt, ISZ_UINT, makedreg(EAX), aimmed(10));
-                gen_code(op_jnc, make_label(ulbl), 0);
-                gen_codes(op_btr, ISZ_UINT, makedreg(EAX), aimmed(14));
-                oa_gen_label(ulbl);
-                gen_code(op_sahf, 0, 0);
-                if (apa->liveRegs & (1 << EAX))
-                    gen_code(op_pop, makedreg(EAX), 0);
+                gen_code_sse(op_ucomiss, op_ucomisd, q->dc.left->size, apl, floatzero());
+                gen_code(op_setne, apa, NULL);
+                gen_codes(op_and, ISZ_UINT, apa, aimmed(1));
             }
             else if (q->dc.left->size >= ISZ_FLOAT)
             {
-                if (apl->mode != am_freg)
-                    floatLoad(apl, szl, FALSE);
-                gen_code(op_fldz, 0, 0);
-                gen_code(op_fucompp, 0, 0);
-                if (apa->liveRegs & (1 << EAX))
-                    gen_code(op_push, makedreg(EAX), 0);
-                gen_codes(op_fstsw, ISZ_USHORT, makedreg(EAX), 0);
-                gen_codes(op_bt, ISZ_UINT, makedreg(EAX), aimmed(10));
-                gen_code(op_jnc, make_label(ulbl), 0);
-                gen_codes(op_btr, ISZ_UINT, makedreg(EAX), aimmed(14));
-                oa_gen_label(ulbl);
-                gen_code(op_sahf, 0, 0);
-                if (apa->liveRegs & (1 << EAX))
-                    gen_code(op_pop, makedreg(EAX), 0);
+                gen_code_sse(op_ucomiss, op_ucomisd, q->dc.left->size, apl, floatzero());
+                gen_code(op_setne, apa, NULL);
+                gen_codes(op_and, ISZ_UINT, apa, aimmed(1));
+            }
+            else if (q->dc.left->size == ISZ_ULONGLONG || q->dc.left->size == -ISZ_ULONGLONG)
+            {
+                gen_codes(op_mov, ISZ_UINT, apa, apl);
+                gen_codes(op_or, ISZ_UINT, apa, apl1);
             }
             else
             {
-                gen_code(op_cmp, apl, aimmed(0));
+
+                gen_codes(op_cmp, q->dc.left->size, apl, aimmed(0));
             }
             gen_codes(op_setne, ISZ_UCHAR, apa, 0);
         }
@@ -3185,62 +3118,73 @@ void asm_assn(QUAD* q) /* assignment */
         {
             if (q->ans->size >= ISZ_CFLOAT)
             {
-                floatLoad(apl1, szl - ISZ_CFLOAT + ISZ_FLOAT, FALSE);
-                floatLoad(apl, szl - ISZ_CFLOAT + ISZ_FLOAT, FALSE);
-                floatStore(apa, sza - ISZ_CFLOAT + ISZ_FLOAT);
-                floatStore(apa1, sza - ISZ_CFLOAT + ISZ_FLOAT);
+                if (q->ans->size == ISZ_CFLOAT)
+                {
+                    gen_code(op_cvtsd2ss, apa, apl);
+                    gen_code(op_cvtsd2ss, apa1, apl1);
+                }
+                else
+                {
+                    gen_code(op_movsd, apa, apl);
+                    gen_code(op_movsd, apa1, apl1);
+                }
             }
             else if (q->ans->size >= ISZ_IFLOAT)
             {
-                if (apl->mode == am_freg)
-                {
-                    gen_codes(op_fstp, ISZ_LDOUBLE, makefreg(0), 0);
-                }
+                if (q->ans->size == ISZ_IFLOAT)
+                    if (q->dc.left->size == ISZ_CFLOAT)
+                        gen_code(op_movss, apa, apl1);
+                    else
+                        gen_code(op_cvtsd2ss, apa, apl1);
                 else
-                {
-                    floatLoad(apl1, szl - ISZ_CFLOAT + ISZ_FLOAT, FALSE);
-                }
-                floatStore(apa, sza - ISZ_IFLOAT + ISZ_FLOAT);
+                    if (q->dc.left->size == ISZ_CFLOAT)
+                        gen_code(op_cvtss2sd, apa, apl1);
+                    else
+                        gen_code(op_movsd, apa, apl1);
+            }
+            else if (q->ans->size >= ISZ_FLOAT)
+            {
+                if (q->ans->size == ISZ_FLOAT)
+                    if (q->dc.left->size == ISZ_CFLOAT)
+                        gen_code(op_movss, apa, apl);
+                    else
+                        gen_code(op_cvtsd2ss, apa, apl);
+                else
+                    if (q->dc.left->size == ISZ_CFLOAT)
+                        gen_code(op_cvtss2sd, apa, apl);
+                    else
+                        gen_code(op_movsd, apa, apl);
+
             }
             else
             {
-                if (apl->mode == am_freg)
-                {
-                    floatStore(apa, sza);
-                    gen_codes(op_fstp, ISZ_LDOUBLE, makefreg(0), 0);
-                }
-                else
-                {
-                    floatLoad(apl, szl - ISZ_CFLOAT + ISZ_FLOAT, FALSE);
-                    floatStore(apa, sza);
-                }
+                apa->length = ISZ_UINT;
+                gen_code_sse(op_cvtss2si, op_cvtsd2si, q->dc.left->size, apa, apl);
             }
         }
         else if (q->dc.left->size >= ISZ_IFLOAT)
         {
-            if (q->ans->size < ISZ_IFLOAT)
+            if (q->ans->size >= ISZ_IFLOAT)
             {
-                if (apl->mode == am_freg)
-                    gen_codes(op_fstp, ISZ_LDOUBLE, fstack(), 0);
-                gen_code(op_fldz, 0, 0);
-                floatStore(apa, q->ans->size);
-            }
-            else
-            {
-                floatLoad(apl, q->dc.left->size - ISZ_IFLOAT + ISZ_FLOAT, FALSE);
-                floatStore(apa, q->ans->size - ISZ_IFLOAT + ISZ_FLOAT);
+                if (q->ans->size == ISZ_IFLOAT)
+                    gen_code(op_cvtsd2ss, apa, apl);
+                else
+                    gen_code(op_movsd, apa, apl);
             }
         }
         else if (q->dc.left->size >= ISZ_FLOAT)
         {
-            floatLoad(apl, q->dc.left->size, FALSE);
             if (q->ans->size >= ISZ_FLOAT)
             {
-                floatStore(apa, q->ans->size);
+                if (q->ans->size == ISZ_FLOAT)
+                    gen_code(op_cvtsd2ss, apa, apl);
+                else
+                    gen_code(op_movsd, apa, apl);
             }
             else
             {
-                diag("asm_assn: float to int conversion");
+                apa->length = ISZ_UINT;
+                gen_code_sse(op_cvtss2si, op_cvtsd2si, q->dc.left->size, apa, apl);
             }
         }
         else
@@ -3312,123 +3256,85 @@ void asm_assn(QUAD* q) /* assignment */
         {
             if (q->dc.left->size >= ISZ_CFLOAT)
             {
-                floatLoad(apl1, szl - ISZ_CFLOAT + ISZ_FLOAT, FALSE);
-                floatLoad(apl, szl - ISZ_CFLOAT + ISZ_FLOAT, FALSE);
-                floatStore(apa, sza - ISZ_CFLOAT + ISZ_FLOAT);
-                floatStore(apa1, sza - ISZ_CFLOAT + ISZ_FLOAT);
+                if (q->dc.left->size == ISZ_CFLOAT)
+                {
+                    gen_code(op_cvtss2sd, apa, apl);
+                    gen_code(op_cvtss2sd, apa1, apl1);
+                }
+                else
+                {
+                    gen_code(op_movsd, apa, apl);
+                    gen_code(op_movsd, apa1, apl1);
+                }
             }
             else if (q->dc.left->size >= ISZ_IFLOAT)
             {
                 if (q->ans->size >= ISZ_CFLOAT)
                 {
-                    floatLoad(apl, szl - ISZ_IFLOAT + ISZ_FLOAT, FALSE);
-                    gen_code(op_fldz, 0, 0);
-                    {
-                        floatStore(apa, sza - ISZ_CFLOAT + ISZ_FLOAT);
-                        floatStore(apa1, sza - ISZ_CFLOAT + ISZ_FLOAT);
-                    }
+                    gen_code_sse(op_movss, op_movsd, q->ans->size, apa, floatzero());
+                    if (q->dc.left->size == ISZ_IFLOAT)
+                        if (q->ans->size == ISZ_CFLOAT)
+                            gen_code(op_movss, apa1, apl);
+                        else
+                            gen_code(op_cvtss2sd, apa1, apl);
+                    else
+                        if (q->ans->size == ISZ_CFLOAT)
+                            gen_code(op_cvtsd2ss, apa1, apl);
+                        else
+                            gen_code(op_movsd, apa1, apl);
                 }
                 else if (q->ans->size >= ISZ_IFLOAT)
                 {
-                    floatLoad(apl, szl - ISZ_IFLOAT + ISZ_FLOAT, FALSE);
-                    floatStore(apa, sza - ISZ_IFLOAT + ISZ_FLOAT);
-                }
-                else
-                {
-                    gen_code(op_fldz, 0, 0);
-                    floatStore(apa, sza);
+                    if (q->dc.left->size == ISZ_IFLOAT)
+                        if (q->ans->size == ISZ_CFLOAT)
+                            gen_code(op_movss, apa, apl);
+                        else
+                            gen_code(op_cvtss2sd, apa, apl);
+                    else
+                        if (q->ans->size == ISZ_CFLOAT)
+                            gen_code(op_cvtsd2ss, apa, apl);
+                        else
+                            gen_code(op_movsd, apa, apl);
                 }
             }
             else if (q->dc.left->size >= ISZ_FLOAT)
             {
                 if (q->ans->size >= ISZ_CFLOAT)
                 {
-                    floatLoad(apl, szl, FALSE);
-                    gen_code(op_fldz, 0, 0);
-                    if (apa->mode == am_freg)
-                        gen_code(op_fxch, 0, 0);
+                    gen_code_sse(op_movss, op_movsd, q->ans->size, apa1, floatzero());
+                    if (q->dc.left->size == ISZ_FLOAT)
+                        if (q->ans->size == ISZ_CFLOAT)
+                            gen_code(op_movss, apa, apl);
+                        else
+                            gen_code(op_cvtss2sd, apa, apl);
                     else
-                    {
-                        floatStore(apa1, sza - ISZ_CFLOAT + ISZ_FLOAT);
-                        floatStore(apa, sza - ISZ_CFLOAT + ISZ_FLOAT);
-                    }
+                        if (q->ans->size == ISZ_CFLOAT)
+                            gen_code(op_cvtsd2ss, apa, apl);
+                        else
+                            gen_code(op_movsd, apa, apl);
                 }
                 else if (q->ans->size >= ISZ_IFLOAT)
                 {
-                    if (apl->mode == am_freg)
-                        gen_codes(op_fstp, ISZ_LDOUBLE, fstack(), 0);
-                    gen_code(op_fldz, 0, 0);
-                    floatStore(apa, sza - ISZ_IFLOAT + ISZ_FLOAT);
+                    gen_code_sse(op_movss, op_movsd, q->ans->size, apa, floatzero());
                 }
+                else if (q->dc.left->size == ISZ_FLOAT)
+                    gen_code(op_cvtss2sd, apa, apl);
                 else
-                {
-                    floatLoad(apl, q->dc.left->size, FALSE);
-                    floatStore(apa, q->ans->size);
-                }
+                    gen_code(op_movsd, apa, apl);
             }
-            else if (q->dc.left->size == ISZ_ULONGLONG || q->dc.left->size == -ISZ_ULONGLONG)
+            else if (q->dc.left->size == ISZ_ULONGLONG || q->dc.left->size == -ISZ_ULONGLONG || q->dc.left->size == ISZ_ULONG || q->dc.left->size == ISZ_UINT)
             {
-                if (q->ans->size >= ISZ_IFLOAT)
-                {
-                    gen_code(op_fldz, 0, 0);
-                    floatStore(apa, q->ans->size - ISZ_IFLOAT + ISZ_FLOAT);
-                }
-                else
-                {
-                    liveQualify(apl, apl1, 0);
-                    gen_codes(op_push, ISZ_UINT, apl1, 0);
-                    pushlevel += 4;
-                    gen_codes(op_push, ISZ_UINT, apl, 0);
-                    pushlevel += 4;
-                    gen_codes(op_fild, ISZ_ULONGLONG, make_stack(0), 0);
-                    gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(8));
-                    pushlevel -= 8;
-                    if (q->ans->size >= ISZ_CFLOAT)
-                    {
-                        floatStore(apa, q->ans->size - ISZ_CFLOAT + ISZ_FLOAT);
-                        gen_code(op_fldz, 0, 0);
-                        floatStore(apa1, sza - ISZ_CFLOAT + ISZ_FLOAT);
-                        if (apa->mode == am_freg)
-                            gen_code(op_fxch, 0, 0);
-                    }
-                    else
-                        floatStore(apa, q->ans->size);
-                }
-            }
-            else if (q->dc.left->size == ISZ_ULONG || q->dc.left->size == -ISZ_ULONG)
-            {
-                if (q->ans->size >= ISZ_IFLOAT)
-                {
-                    gen_code(op_fldz, 0, 0);
-                    floatStore(apa, q->ans->size - ISZ_IFLOAT + ISZ_FLOAT);
-                }
-                else
-                {
-                    gen_codes(op_push, ISZ_UINT, apl, 0);
-                    gen_codes(op_fild, ISZ_UINT, make_stack(0), 0);
-                    gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(4));
-                    if (q->ans->size >= ISZ_CFLOAT)
-                    {
-                        floatStore(apa, q->ans->size - ISZ_CFLOAT + ISZ_FLOAT);
-                        gen_code(op_fldz, 0, 0);
-                        floatStore(apa1, sza - ISZ_CFLOAT + ISZ_FLOAT);
-                        if (apa->mode == am_freg)
-                            gen_code(op_fxch, 0, 0);
-                    }
-                    else
-                        floatStore(apa, q->ans->size);
-                }
+                diag("asm_assn: untranslated conversion from long or longlong");
             }
             else
             {
-                if (q->ans->size >= ISZ_IFLOAT)
+                if (q->ans->size >= ISZ_IFLOAT && q->ans->size <= ISZ_ILDOUBLE)
                 {
-                    gen_code(op_fldz, 0, 0);
-                    floatStore(apa, q->ans->size - ISZ_IFLOAT + ISZ_FLOAT);
+                    gen_code_sse(op_movss, op_movsd, q->ans->size, apa, floatzero());
                 }
                 else
                 {
-                    if (q->dc.left->size != ISZ_UINT && q->dc.left->size != -ISZ_UINT)
+                    if (q->dc.left->size != -ISZ_ULONG && q->dc.left->size != -ISZ_UINT)
                     {
                         AMODE* ap = makedreg(ECX);
                         ap->liveRegs = q->liveRegs;
@@ -3455,32 +3361,18 @@ void asm_assn(QUAD* q) /* assignment */
                             default:
                                 break;
                         }
-                        gen_codes(op_xchg, ISZ_UINT, ap, make_stack(0));
-                        gen_codes(op_fild, ISZ_UINT, make_stack(0), 0);
-                        gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(4));
+                        gen_code_sse(op_cvtsi2ss, op_cvtsi2sd, q->ans->size, apa, ap);
+                        gen_codes(op_pop, ISZ_UINT, ap, 0);
                         pushlevel -= 4;
                     }
                     else
                     {
-                        if (apl->mode == am_dreg)
-                        {
-                            gen_codes(op_push, ISZ_UINT, apl, 0);
-                            gen_codes(op_fild, ISZ_UINT, make_stack(0), 0);
-                            gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(4));
-                        }
-                        else
-                            gen_codes(op_fild, ISZ_UINT, apl, 0);
+                        gen_code_sse(op_cvtsi2ss, op_cvtsi2sd, q->ans->size, apa, apl);
                     }
                     if (q->ans->size >= ISZ_CFLOAT)
                     {
-                        floatStore(apa, q->ans->size - ISZ_CFLOAT + ISZ_FLOAT);
-                        gen_code(op_fldz, 0, 0);
-                        floatStore(apa1, sza - ISZ_CFLOAT + ISZ_FLOAT);
-                        if (apa->mode == am_freg)
-                            gen_code(op_fxch, 0, 0);
+                        gen_code_sse(op_movss, op_movsd, q->ans->size, apa1, floatzero());
                     }
-                    else
-                        floatStore(apa, q->ans->size);
                 }
             }
         }

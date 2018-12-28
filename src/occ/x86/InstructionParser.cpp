@@ -481,6 +481,12 @@ void InstructionParser::SetOperandTokens(amode* operand)
         case am_seg:
             SetRegToken(operand->preg, 100);
             break;
+        case am_mmreg:
+            SetRegToken(operand->preg, 300);
+            break;
+        case am_xmmreg:
+            SetRegToken(operand->preg, 301);
+            break;
         case am_indisp:
             SetBracketSequence(true, operand->length, operand->seg);
             SetRegToken(operand->preg, ISZ_UINT);

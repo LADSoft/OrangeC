@@ -178,10 +178,10 @@ static ARCH_SIZING sizes = {
     /* char a_struct;  */ /* alignment only */
     4,                    /*char a_float;*/
     8,                    /*char a_double;*/
-    10,                   /*char a_longdouble;*/
+    8,                   /*char a_longdouble;*/
     0,                    /*char a_fcomplexpad;*/
     0,                    /*char a_rcomplexpad;*/
-    2,                    /*char a_lrcomplexpad;*/
+    0,                    /*char a_lrcomplexpad;*/
 };
 static ARCH_SIZING alignments = {
     1, /*char a_bool;*/
@@ -225,8 +225,9 @@ static ARCH_SIZING locks = {
     1,                  /*char a_lrcomplexpad; */
 };
 static ARCH_FLOAT aflt = {-126, 126, 128, 24};
-static ARCH_FLOAT adbl = {-1022, 1022, 1024, 53};
-static ARCH_FLOAT aldbl = {-16382, 16382, 16384, 64};
+static ARCH_FLOAT adbl = { -1022, 1022, 1024, 53 };
+static ARCH_FLOAT aldbl = { -1022, 1022, 1024, 53 };
+//static ARCH_FLOAT aldbl = {-16382, 16382, 16384, 64};
 static ARCH_PEEP peeps[] = {0};
 static char fastcallRegs[3] = {ECX, EDX, EAX};
 static ARCH_CHARACTERISTICS architecture = {
@@ -253,7 +254,7 @@ static ARCH_CHARACTERISTICS architecture = {
     OPT_BYTECOMPARE,                                                     /* preferred optimizations */
     0,                                                                   /* optimizations we don't want */
     0,                                                                   /* error options */
-    FALSE,                                                               /* true if has floating point regs */
+    TRUE,                                                                /* true if has floating point regs */
     0,                                                                   /* floating point modes, not honored currently */
     ABM_USESIZE,                                                         /* BOOLEAN is determined by sizing above */
     ARM_FUNCTIONSCOPE,                                                   /* register allocation across entire function */

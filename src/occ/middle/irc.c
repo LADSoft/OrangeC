@@ -903,6 +903,13 @@ static int tiny(QUAD* head, IMODE* compare)
  * according to Morgan instead of the way it is done in George & Appel
  * accordingly, this function just gets a list of moves
  */
+static int fsizeFromISZ(int sz)
+{
+    int n = sizeFromISZ(sz);
+    if (sz >= ISZ_FLOAT)
+        n += 100;
+    return n;
+}
 static void Build(BLOCK* b)
 {
     QUAD* head;
@@ -932,7 +939,7 @@ static void Build(BLOCK* b)
                     int u = head->ans->offset->v.sp->value.i;
                     int v = head->dc.left->offset->v.sp->value.i;
                     if (tempInfo[u]->regClass && (tempInfo[u]->regClass == tempInfo[v]->regClass ||
-                                                  sizeFromISZ(tempInfo[u]->size) == sizeFromISZ(tempInfo[v]->size)))
+                                                  fsizeFromISZ(tempInfo[u]->size) == fsizeFromISZ(tempInfo[v]->size)))
                     {
                         TEMP_INFO* t;
                         setbit(workingMoves, head->index);
@@ -1802,7 +1809,7 @@ static void SpillCoalesce(BRIGGS_SET* C, BRIGGS_SET* S)
                                 BOOLEAN test;
                                 int a = head->ans->offset->v.sp->value.i;
                                 int b = head->dc.left->offset->v.sp->value.i;
-                                if (sizeFromISZ(tempInfo[a]->size) == sizeFromISZ(tempInfo[b]->size) && !tempInfo[a]->directSpill &&
+                                if (fsizeFromISZ(tempInfo[a]->size) == fsizeFromISZ(tempInfo[b]->size) && !tempInfo[a]->directSpill &&
                                     !tempInfo[b]->directSpill)
                                 {
                                     {

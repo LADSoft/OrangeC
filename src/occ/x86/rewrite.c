@@ -31,6 +31,8 @@ extern BLOCKLIST** blockArray;
 extern int prm_useesp;
 extern BOOLEAN hasXCInfo;
 
+EXPRESSION* fltexp;
+
 int uses_substack;
 
 static IMODE* AllocateTemp(int size) { return InitTempOpt(size, size); }
@@ -920,6 +922,30 @@ int preRegAlloc(QUAD* ins, BRIGGS_SET* globalVars, BRIGGS_SET* eobGlobals, int p
     return 1;
 }
 
+static int floatsize(IMODE *im)
+{
+    if (im && im->mode == i_direct && im->retval)
+        switch (im->size)
+        {
+        case ISZ_FLOAT:
+        case ISZ_IFLOAT:
+            return ISZ_FLOAT;
+        case ISZ_DOUBLE:
+        case ISZ_IDOUBLE:
+        case ISZ_LDOUBLE:
+        case ISZ_ILDOUBLE:
+            return ISZ_DOUBLE;
+        case ISZ_CFLOAT:
+            return ISZ_CFLOAT;
+        case ISZ_CDOUBLE:
+        case ISZ_CLDOUBLE:
+            return ISZ_CDOUBLE;
+        default:
+                break;
+        }
+    return 0;
+}
+
 int examine_icode(QUAD* head)
 {
     BLOCK* b = NULL;
@@ -1193,52 +1219,101 @@ int examine_icode(QUAD* head)
                 /* for conversions from floating to int, replace the assignment with a call to
                  * ftol or ftoll as necessary
                  */
-                if (head->dc.left->size >= ISZ_FLOAT && head->ans->size < ISZ_FLOAT &&
-                    (head->ans->size > ISZ_BOOLEAN || head->ans->size < 0))
+            {
+                BOOLEAN i1 = head->dc.left->size >= ISZ_IFLOAT;
+                BOOLEAN i2 = head->ans->size >= ISZ_IFLOAT;
+                BOOLEAN i3 = head->dc.left->size < ISZ_CFLOAT;
+                BOOLEAN i4 = head->ans->size < ISZ_CFLOAT;
+                if (i1 && i3 && !i2 || i2 && i4 && !i1)
                 {
-                    if (head->dc.left->size >= ISZ_IFLOAT && head->dc.left->size <= ISZ_ILDOUBLE)
-                    {
-                        head->dc.left = make_immed(ISZ_LDOUBLE, 0);
-                    }
+                    head->dc.left = set_symbol("__fzero", FALSE);
+                    head->temps &= ~TEMP_LEFT;
+                }
+                else if (head->dc.left->size >= ISZ_FLOAT && (head->ans->size == ISZ_UINT || head->ans->size == ISZ_ULONG ||
+                    head->ans->size == ISZ_ULONGLONG || head->ans->size == -ISZ_ULONGLONG))
+                {
+                    QUAD* q = (QUAD*)beLocalAlloc(sizeof(QUAD));
+                    IMODE *ret, *temp;
+                    ret = AllocateTemp(head->ans->size);
+                    temp = AllocateTemp(ISZ_LDOUBLE);
+                    ret->retval = TRUE;
+                    q->dc.opcode = i_assn;
+                    q->ans = temp;
+                    q->dc.left = head->dc.left;
+                    q->alwayslive = TRUE; /* we are loading a temp that won't get used
+                                            * except as a function argument.  We aren't pushing it
+                                            * and we don't want the live analysis canceling the
+                                            * instruction
+                                            */
+                    InsertInstruction(head->back, q);
+                    q = (QUAD*)beLocalAlloc(sizeof(QUAD));
+                    q->dc.opcode = i_gosub;
+                    if (head->ans->size == ISZ_ULONGLONG)
+                        q->dc.left = set_symbol("__ftoull", TRUE);
+                    else if (head->ans->size == -ISZ_ULONGLONG)
+                        q->dc.left = set_symbol("__ftoll", TRUE);
                     else
+                        q->dc.left = set_symbol("__ftoul", TRUE);
+                    InsertInstruction(head->back, q);
+                    insert_nullparmadj(head->back, 0);
+                    if (head->ans->mode == i_ind && (head->temps & TEMP_LEFT))
                     {
-                        QUAD* q = (QUAD*)beLocalAlloc(sizeof(QUAD));
-                        IMODE *ret, *temp;
-                        ret = AllocateTemp(head->ans->size);
-                        temp = AllocateTemp(ISZ_LDOUBLE);
-                        ret->retval = TRUE;
-                        q->dc.opcode = i_assn;
-                        q->ans = temp;
-                        q->dc.left = head->dc.left;
-                        q->alwayslive = TRUE; /* we are loading a temp that won't get used
-                                               * except as a function argument.  We aren't pushing it
-                                               * and we don't want the live analysis canceling the
-                                               * instruction
-                                               */
-                        InsertInstruction(head->back, q);
-                        q = (QUAD*)beLocalAlloc(sizeof(QUAD));
-                        q->dc.opcode = i_gosub;
-                        if (head->ans->size == ISZ_ULONGLONG || head->ans->size == -ISZ_ULONGLONG)
-                            q->dc.left = set_symbol("__ftoll", TRUE);
-                        else
-                            q->dc.left = set_symbol("__ftol", TRUE);
-                        InsertInstruction(head->back, q);
-                        insert_nullparmadj(head->back, 0);
-                        if (head->ans->mode == i_ind && (head->temps & TEMP_LEFT))
-                        {
-                            q = Alloc(sizeof(QUAD));
-                            q->ans = head->ans;
-                            head->ans = AllocateTemp(head->ans->size);
-                            q->dc.left = head->ans;
-                            q->temps = TEMP_LEFT | TEMP_ANS;
-                            InsertInstruction(head, q);
-                        }
-                        head->dc.left = ret;
-                        head->temps &= ~(TEMP_LEFT | TEMP_RIGHT);
-                        if (head == b->tail)
-                            b->tail = head->fwd;
-                        changed = TRUE;
+                        q = Alloc(sizeof(QUAD));
+                        q->ans = head->ans;
+                        head->ans = AllocateTemp(head->ans->size);
+                        q->dc.left = head->ans;
+                        q->temps = TEMP_LEFT | TEMP_ANS;
+                        InsertInstruction(head, q);
                     }
+                    head->dc.left = ret;
+                    head->temps &= ~(TEMP_LEFT | TEMP_RIGHT);
+                    if (head == b->tail)
+                        b->tail = head->fwd;
+                    changed = TRUE;
+                }
+                else if (head->ans->size >= ISZ_FLOAT && (head->dc.left->size == ISZ_UINT || head->dc.left->size == ISZ_ULONG ||
+                    head->dc.left->size == ISZ_ULONGLONG || head->dc.left->size == -ISZ_ULONGLONG))
+                {
+                    QUAD* q = (QUAD*)beLocalAlloc(sizeof(QUAD));
+                    IMODE *ret, *temp;
+                    ret = AllocateTemp(ISZ_DOUBLE);
+                    temp = AllocateTemp(head->dc.left->size);
+                    ret->retval = TRUE;
+                    ret->altretval = TRUE;
+                    q->dc.opcode = i_assn;
+                    q->ans = temp;
+                    q->dc.left = head->dc.left;
+                    q->alwayslive = TRUE; /* we are loading a temp that won't get used
+                                            * except as a function argument.  We aren't pushing it
+                                            * and we don't want the live analysis canceling the
+                                            * instruction
+                                            */
+                    InsertInstruction(head->back, q);
+                    q = (QUAD*)beLocalAlloc(sizeof(QUAD));
+                    q->dc.opcode = i_gosub;
+                    if (head->dc.left->size == ISZ_ULONGLONG)
+                        q->dc.left = set_symbol("__ulltof", TRUE);
+                    else if (head->dc.left->size == -ISZ_ULONGLONG)
+                        q->dc.left = set_symbol("__lltof", TRUE);
+                    else
+                        q->dc.left = set_symbol("__ultof", TRUE);
+                    InsertInstruction(head->back, q);
+                    insert_nullparmadj(head->back, 0);
+                    if (head->ans->mode == i_ind && (head->temps & TEMP_LEFT))
+                    {
+                        q = Alloc(sizeof(QUAD));
+                        q->ans = head->ans;
+                        head->ans = AllocateTemp(head->ans->size);
+                        q->dc.left = head->ans;
+                        q->temps = TEMP_LEFT | TEMP_ANS;
+                        InsertInstruction(head, q);
+                    }
+                    head->dc.left = ret;
+                    head->temps &= ~(TEMP_LEFT | TEMP_RIGHT);
+                    if (head == b->tail)
+                        b->tail = head->fwd;
+                    changed = TRUE;
+
                 }
                 else
                 {
@@ -1247,7 +1322,7 @@ int examine_icode(QUAD* head)
                     if (szl != sza)
                     {
                         if (head->dc.left->mode != i_immed &&
-                            (head->dc.left->offset->type != en_tempref || head->dc.left->mode == i_ind))
+                            (head->dc.left->offset->type != en_tempref || head->dc.left->mode == i_ind || szl >= ISZ_FLOAT && sza < ISZ_FLOAT))
                         {
                             IMODE* temp;
                             QUAD* q;
@@ -1257,6 +1332,7 @@ int examine_icode(QUAD* head)
                             q->dc.opcode = i_assn;
                             q->ans = temp;
                             q->dc.left = head->dc.left;
+                            q->temps = head->temps | TEMP_ANS;
                             head->dc.left = temp;
                             head->temps |= TEMP_LEFT;
                             InsertInstruction(head->back, q);
@@ -1272,6 +1348,7 @@ int examine_icode(QUAD* head)
                             q->dc.opcode = i_assn;
                             q->dc.left = temp;
                             q->ans = head->ans;
+                            q->temps = head->temps | TEMP_LEFT;
                             head->ans = temp;
                             head->temps |= TEMP_ANS;
                             InsertInstruction(head, q);
@@ -1279,9 +1356,9 @@ int examine_icode(QUAD* head)
                         }
                     }
                     else if (!head->dc.left->retval &&
-                             (head->dc.left->offset->type != en_tempref || head->dc.left->mode == i_ind) &&
-                             (head->dc.left->mode != i_immed || !isintconst(head->dc.left->offset)) && !head->ans->retval &&
-                             (head->ans->offset->type != en_tempref || head->ans->mode == i_ind))
+                        (head->dc.left->offset->type != en_tempref || head->dc.left->mode == i_ind) &&
+                        (head->dc.left->mode != i_immed || !isintconst(head->dc.left->offset)) && !head->ans->retval &&
+                        (head->ans->offset->type != en_tempref || head->ans->mode == i_ind))
                     { /* make sure at least one side of the assignment is in a reg */
                         if (szl < ISZ_FLOAT)
                         {
@@ -1300,6 +1377,7 @@ int examine_icode(QUAD* head)
                         }
                     }
                 }
+            }
                 break;
             case i_substack:
                 uses_substack = TRUE;
@@ -1934,6 +2012,44 @@ int examine_icode(QUAD* head)
     {
         extern void SetUsesESP(BOOLEAN yes);
         SetUsesESP(!uses_substack && !hasXCInfo);
+    }
+    int floatretsize = 0;
+    head = hold;
+    while (head)
+    {
+        if (head->dc.opcode == i_assn)
+        {
+            floatretsize = max(floatretsize, floatsize(head->ans));
+            floatretsize = max(floatretsize, floatsize(head->dc.left));
+        }
+        head = head->fwd;
+    }
+    TYPE *fltret = NULL;
+    switch (floatretsize)
+    {
+    case ISZ_FLOAT:
+    case ISZ_DOUBLE:
+        fltret = (TYPE *)Alloc(sizeof(TYPE));
+        fltret->type = bt_double;
+        fltret->size = 8;
+        fltret->rootType = fltret;
+        break;
+    case ISZ_CFLOAT:
+    case ISZ_CDOUBLE:
+        fltret = (TYPE *)Alloc(sizeof(TYPE));
+        fltret->type = bt_double_complex;
+        fltret->size = 16;
+        fltret->rootType = fltret;
+        break;
+    }
+    if (fltret)
+    {
+        fltexp = anonymousVar(sc_auto, fltret);
+        cacheTempSymbol(fltexp->v.sp);
+    }
+    else
+    {
+        fltexp = NULL;
     }
     return changed;
 }

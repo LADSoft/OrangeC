@@ -553,6 +553,12 @@ void oa_putamode(int op, int szalt, AMODE* ap)
         case am_dreg:
             putsizedreg("%s", ap->preg, ap->length);
             break;
+        case am_xmmreg:
+            bePrintf("xmm%d", ap->preg);
+            break;
+        case am_mmreg:
+            bePrintf("mm%d", ap->preg);
+            break;
         case am_freg:
             if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
                 bePrintf("st%d", ap->preg);
@@ -1380,6 +1386,22 @@ long queue_muldivval(long number)
     return p->label = beGetLabel;
 }
 
+long queue_large_const(unsigned constant[], int count)
+{
+    int lbl = beGetLabel;
+    MULDIV *p, **q = &muldivlink;
+
+    while (*q) q = &(*q)->next;
+    for (int i = 0; i < count; i++, q=&(*q)->next)
+    {
+        p = (MULDIV*)beGlobalAlloc(sizeof(MULDIV));
+        p->value = constant[i];
+        if (i == 0)
+            p->label = lbl;
+
+    }
+    return lbl;
+}
 /*-------------------------------------------------------------------------*/
 
 long queue_floatval(FPFC* number, int size)
@@ -1420,7 +1442,8 @@ void dump_muldivval(void)
         while (muldivlink)
         {
             oa_align(8);
-            oa_put_label(muldivlink->label);
+            if (muldivlink->label)
+                oa_put_label(muldivlink->label);
             if (muldivlink->size == ISZ_NONE)
                 bePrintf("\tdd\t0%xh\n", muldivlink->value);
             else
@@ -1440,13 +1463,10 @@ void dump_muldivval(void)
                             break;
                         case ISZ_DOUBLE:
                         case ISZ_IDOUBLE:
-                            FPFToDouble(data, &muldivlink->floatvalue);
-                            len = 8;
-                            break;
                         case ISZ_LDOUBLE:
                         case ISZ_ILDOUBLE:
-                            FPFToLongDouble(data, &muldivlink->floatvalue);
-                            len = 10;
+                            FPFToDouble(data, &muldivlink->floatvalue);
+                            len = 8;
                             break;
                     }
                     bePrintf("\tdb\t");
@@ -1466,10 +1486,8 @@ void dump_muldivval(void)
                     {
                         bePrintf("\tdd\t%s\n", buf);
                     }
-                    else if (muldivlink->size == ISZ_DOUBLE || muldivlink->size == ISZ_IDOUBLE)
-                        bePrintf("\tdq\t%s\n", buf);
                     else
-                        bePrintf("\tdt\t%s\n", buf);
+                        bePrintf("\tdq\t%s\n", buf);
                 }
             }
             muldivlink = muldivlink->next;

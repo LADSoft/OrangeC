@@ -22,32 +22,15 @@
 ;         email: TouchStone222@runbox.com <David Lindauer>
 ; 
 
-%include "matherr.inc"
-
 %ifdef __BUILDING_LSCRTL_DLL
-[export __ftol]
+[export __fzero]
+[export __fdchsmask]
+[export __fschsmask]
 %endif
-[global __ftol]
-SECTION data CLASS=DATA USE32
-nm  db "_ftol",0
-
-SECTION code CLASS=CODE USE32
-__ftol:
-    lea eax,[nm]
-    call clearmath
-    sub	esp,12
-    fnstcw	[esp+8]
-    mov	ax,[esp+8]
-    or	ah,0ch
-    mov	[esp+10],ax
-    fldcw	[esp+10]
-    fistp	qword [esp]
-    call checkinvalid
-    jnc ok
-    popone
-    mov dword [esp],07fffffffh
-ok:
-    fldcw	[esp+8]
-    mov	eax,[esp]
-    add esp,12
-    ret
+[global __fzero]
+[global __fdchsmask]
+[global __fschsmask]
+SECTION data CLASS=DATA USE32 ALIGN=16
+__fzero dd  0,0,0,0
+__fdchsmask dd 0,80000000h,0,80000000h
+__fschsmask dd 80000000h,80000000h,80000000h,80000000h

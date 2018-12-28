@@ -1360,7 +1360,7 @@ int examine_icode(QUAD* head)
                         (head->dc.left->mode != i_immed || !isintconst(head->dc.left->offset)) && !head->ans->retval &&
                         (head->ans->offset->type != en_tempref || head->ans->mode == i_ind))
                     { /* make sure at least one side of the assignment is in a reg */
-                        if (szl < ISZ_FLOAT)
+                        if (szl < ISZ_FLOAT || chosenAssembler->arch->hasFloatRegs)
                         {
                             IMODE* temp;
                             QUAD* q;

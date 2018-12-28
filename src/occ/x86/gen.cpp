@@ -396,7 +396,7 @@ void floatchs(AMODE *ap, int sz)
             doubleLabel = an;
         }
         lbl = doubleLabel;
-        op = op_xorps;
+        op = op_xorpd;
     }
     gen_code(op, ap, lbl);
 }
@@ -3159,7 +3159,7 @@ void asm_assn(QUAD* q) /* assignment */
             else
             {
                 apa->length = ISZ_UINT;
-                gen_code_sse(op_cvtss2si, op_cvtsd2si, q->dc.left->size, apa, apl);
+                gen_code_sse(op_cvttss2si, op_cvttsd2si, q->dc.left->size, apa, apl);
             }
         }
         else if (q->dc.left->size >= ISZ_IFLOAT)
@@ -3184,7 +3184,7 @@ void asm_assn(QUAD* q) /* assignment */
             else
             {
                 apa->length = ISZ_UINT;
-                gen_code_sse(op_cvtss2si, op_cvtsd2si, q->dc.left->size, apa, apl);
+                gen_code_sse(op_cvttss2si, op_cvttsd2si, q->dc.left->size, apa, apl);
             }
         }
         else

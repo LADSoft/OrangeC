@@ -836,7 +836,7 @@ void optimize(SYMBOL* funcsp)
     /*
      * icode optimizations goes here.  Note that LCSE is done through
      * DAG construction during the actual construction of the blocks
-     * so it is already done at this point.
+     * so- it is already done at this point.
      *
      * Order IS important!!!!!!!!! be careful!!!!!
      *
@@ -853,7 +853,7 @@ void optimize(SYMBOL* funcsp)
     if ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) && !functionHasAssembly)
     {
         Precolor();
-        RearrangePrecolors();
+        RearrangePrecolors();                                                                   
         // printf("ssa\n");
         TranslateToSSA();
 

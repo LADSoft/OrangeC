@@ -1879,12 +1879,35 @@ int examine_icode(QUAD* head)
                     QUAD* q;
                     int limited = head->cxlimited;
                     IMODE* ret;
-                    ret = AllocateTemp(ISZ_CLDOUBLE);
+                    ret = AllocateTemp(ISZ_CDOUBLE);
                     ret->retval = TRUE;
+                    if (head->ans->size == ISZ_CFLOAT)
+                    {
+                        q = (QUAD *)beLocalAlloc(sizeof(QUAD));
+                        q->dc.opcode = i_assn;
+                        q->alwayslive = TRUE;
+                        q->ans = InitTempOpt(ISZ_CLDOUBLE, ISZ_CLDOUBLE);
+                        q->dc.left = head->dc.right;
+                        head->dc.right = q->ans;
+                        q->temps = TEMP_ANS | (head->temps & TEMP_RIGHT ? TEMP_LEFT : 0);
+                        InsertInstruction(head->back, q);
+                    }
                     q = (QUAD*)beLocalAlloc(sizeof(QUAD));
                     q->dc.opcode = i_parm;
                     q->dc.left = head->dc.right;
                     insert_parm(head->back, q);
+                    if (head->ans->size == ISZ_CFLOAT)
+                    {
+                        q = (QUAD *)beLocalAlloc(sizeof(QUAD));
+                        q->dc.opcode = i_assn;
+                        q->alwayslive = TRUE;
+                        q->ans = InitTempOpt(ISZ_CLDOUBLE, ISZ_CLDOUBLE);
+                        q->dc.left = head->dc.left;
+                        head->dc.left= q->ans;
+                        q->temps = TEMP_ANS | (head->temps & TEMP_LEFT ? TEMP_LEFT : 0);
+                        InsertInstruction(head->back, q);
+
+                    }
                     q = (QUAD*)beLocalAlloc(sizeof(QUAD));
                     q->dc.opcode = i_parm;
                     q->dc.left = head->dc.left;
@@ -1912,6 +1935,7 @@ int examine_icode(QUAD* head)
                     InsertInstruction(head->back, q);
                     insert_nullparmadj(head->back, 12 * 4);
                     head->dc.left = ret;
+                    head->ans->size = ret->size;
                     head->dc.right = NULL;
                     head->dc.opcode = i_assn;
                     head->temps &= ~(TEMP_LEFT | TEMP_RIGHT);

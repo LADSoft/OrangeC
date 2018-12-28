@@ -199,7 +199,7 @@ static ARCH_REGCLASS* regClasses[27][2] = {{NULL, NULL},
 };
 static ARCH_REGVERTEX pushedVertex = {&pushedByteRegs, NULL, NULL};
 static ARCH_REGVERTEX unpushedVertex = {&unpushedByteRegs, NULL, NULL};
-static ARCH_REGVERTEX regRoot = {&allDoubleFloatRegs, &pushedVertex, &unpushedVertex};
+static ARCH_REGVERTEX regRoot = {&allDoubleDoubleRegs, &pushedVertex, &unpushedVertex};
 
 static ARCH_SIZING regCosts = {
     1, /*char a_bool; */

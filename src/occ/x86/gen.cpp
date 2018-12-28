@@ -2180,11 +2180,6 @@ void asm_add(QUAD* q) /* evaluate an addition */
     getAmodes(q, &opa, q->ans, &apal, &apah);
     if (q->ans->size >= ISZ_CFLOAT)
     {
-        int sz = 8;
-        if (q->dc.left->size == ISZ_FLOAT || q->dc.left->size == ISZ_IFLOAT)
-            sz = 4;
-        gen_codes(op_sub, ISZ_UINT, makedreg(ESP), aimmed(sz * 2));
-        pushlevel += sz * 2;
 
         if (equal_address(apal, apll))
         {
@@ -2329,12 +2324,6 @@ void asm_sub(QUAD* q) /* evaluate a subtraction */
     getAmodes(q, &opa, q->ans, &apal, &apah);
     if (q->ans->size >= ISZ_CFLOAT)
     {
-        int sz = 8;
-        if (q->dc.left->size == ISZ_FLOAT || q->dc.left->size == ISZ_IFLOAT)
-            sz = 4;
-        gen_codes(op_sub, ISZ_UINT, makedreg(ESP), aimmed(sz * 2));
-        pushlevel += sz * 2;
-
         if (equal_address(apal, apll))
         {
             gen_code_sse(op_subss, op_subsd, q->ans->size, apal, aprl);
@@ -2925,11 +2914,11 @@ void asm_assn(QUAD* q) /* assignment */
                     if (q->ans->size == ISZ_CFLOAT)
                         sz = 4;
                     AMODE *ap1 = make_offset(exprNode(en_add, fltexp, intNode(en_c_i, sz)));
-                    gen_code_sse(op_movss, op_movsd, q->ans->size, ap, apa);
-                    gen_code_sse(op_movss, op_movsd, q->ans->size, ap1, apa1);
+                    gen_code_sse(op_movss, op_movsd, q->ans->size, ap, apl);
+                    gen_code_sse(op_movss, op_movsd, q->ans->size, ap1, apl1);
                     ap1->length = ap->length = q->ans->size - ISZ_CFLOAT + ISZ_FLOAT;
-                    gen_codef(op_fld, ap1, NULL);
                     gen_codef(op_fld, ap, NULL);
+                    gen_codef(op_fld, ap1, NULL);
                 }
                 else
                 {

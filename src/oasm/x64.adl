@@ -455,10 +455,10 @@
     <Address Name="[ss:'base:base32'+esp]" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 0x36 *'mand' 0x40+'W'+'R'+'base.X':8 'op' 0:2 'mod':3 0x4:3 0:2 'base.Ord':3 4:3"/>
     <Address Name="['seg:segment':'base:base32']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix' *'mand' 0x40+'W'+'R'+'base.B':8 'op' 0:2 'mod':3 'base.Ord':3"/>
     <Address Name="['seg:segment':'base:base32'+esp]" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' 'seg.Prefix' *'mand' 0x40+'W'+'R'+'base.X':8 'op' 0:2 'mod':3 0x4:3 0:2 'base.Ord':3 4:3"/>
-	<Address Name="['mem:address32']" Class="rmx,rm,frm,rm8,rm16,rm32,rm32bit" Coding="'addr32' *'mand' 0x40+'W'+'R':8  'op' 0:2 'mod':3 0x05:3 'mem':32"/>
-	<Address Name="[ds:'mem:address32']" Class="rmx,rm,frm,rm8,rm16,rm32,rm32bit" Coding="0x3e:8 'addr32' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x05:3 'mem':32"/>
-	<Address Name="[ss:'mem:address32']" Class="rmx,rm,frm,rm8,rm16,rm32,rm32bit" Coding="0x36:8 'addr32' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x05:3 'mem':32"/>
-	<Address Name="['seg:segment':'mem:address32']" Class="rmx,rm,frm,rm8,rm16,rm32,rm32bit" Coding="'seg.Prefix':8 'addr32' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x05:3 'mem':32"/>
+	<Address Name="['mem:address32']" Class="rmx,rm,frm,rm8,rm16,rm32,mmrm,sserm,rm32bit" Coding="'addr32' *'mand' 0x40+'W'+'R':8  'op' 0:2 'mod':3 0x05:3 'mem':32"/>
+	<Address Name="[ds:'mem:address32']" Class="rmx,rm,frm,rm8,rm16,rm32,mmrm,sserm,rm32bit" Coding="0x3e:8 'addr32' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x05:3 'mem':32"/>
+	<Address Name="[ss:'mem:address32']" Class="rmx,rm,frm,rm8,rm16,rm32,mmrm,sserm,rm32bit" Coding="0x36:8 'addr32' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x05:3 'mem':32"/>
+	<Address Name="['seg:segment':'mem:address32']" Class="rmx,rm,frm,rm8,rm16,rm32,mmrm,sserm,rm32bit" Coding="'seg.Prefix':8 'addr32' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x05:3 'mem':32"/>
 
     <Address Name="[esp+'z:zero']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R':8 'op' 0:2 'mod':3 0x4:3 0:2 0x4:3 0x4:3"/>
     <Address Name="[ebp+'z:zero']" Class="rm,frm,rm8,rm16,rm32,rm64,mmrm,sserm,rm32bit,rm64bit" Coding="'addr32' *'mand' 0x40+'W'+'R':8 'op' 1:2 'mod':3 0x5:3 0x0:8"/>
@@ -1320,7 +1320,7 @@
       <Operands Name="'modreg:reg64', 'rm:regsserm'" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
     </Opcode>
     <Opcode Class="sserm">
-      <Operands Name="'modreg:regsse', dword 'rm:rm32'" mod="'modreg.Ord'" R="'modreg.R'" W="0" />
+      <Operands Name="'modreg:regsse', {dword} 'rm:rm32'" mod="'modreg.Ord'" R="'modreg.R'" W="0" />
       <Operands Name="'modreg:regsse', qword 'rm:rm64'" mod="'modreg.Ord'" R="'modreg.R'" W="8" />
     </Opcode>
     <Opcode Class="ssepack">
@@ -1985,9 +1985,9 @@
     <Opcode Name="movsb" op="0xa4:8" Class="single"/>
     <Opcode Name="movsw" op="'data16' 0xa5" Class="single"/>
     <Opcode Name="movsd">
-      <Operands Name="empty" Coding="'data32' 0x40:8 0xa5"/>
       <Operands Name="'modreg:regsse', 'rm:sserm'" mand="0xf2:8" op="0x0f:8 0x10:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
       <Operands Name="'rm:sserm', 'modreg:regsse'" mand="0xf2:8" op="0x0f:8 0x11:8" mod="'modreg.Ord'" R="'modreg.R'" W="'modreg.W'" />
+      <Operands Name="empty" Coding="'data32' 0x40:8 0xa5"/>
     </Opcode>
     <Opcode Name="movsq">
       <Operands Name="empty" Coding="0x48:8 'data64' 0xa5:8"/>

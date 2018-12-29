@@ -49,25 +49,27 @@ unload:
         ret
 
 __ftoul:
+        movsd xmm0,[esp+4]      
         sub esp,8
         movsd [esp], xmm1
         mov edx,2
         call unload
         shl eax,16
-        cvtsd2si edx, xmm0
+        cvttsd2si edx, xmm0
         or eax,edx
         mov edx,ecx
         movsd xmm1,[esp]
         add esp,8
-        ret
+        ret 8
 __ftoll:
+        movsd xmm0,[esp+4]      
         sub esp,8
         movsd [esp], xmm1
         ucomisd xmm0,[__fzero]
         mov ecx, 0
-        ja noneg
+        jae noneg
         inc ecx
-        xorps xmm0,[__fdchsmask]
+        xorpd xmm0,[__fdchsmask]
 noneg:
         push ecx
         sub edx,edx
@@ -80,7 +82,7 @@ noneg:
         inc edx
         call unload
         shl eax,16
-        cvtsd2si edx, xmm0
+        cvttsd2si edx, xmm0
         or eax,edx
         mov edx,ecx
         pop ecx
@@ -93,8 +95,10 @@ noneg:
 nochs:
         movsd xmm1,[esp]
         add esp,8
-        ret
+        ret 8
 __ftoull:
+        movsd xmm0,[esp+4]      
+
         sub esp,8
         movsd [esp], xmm1
         sub edx,edx
@@ -107,9 +111,10 @@ __ftoull:
         inc edx
         call unload
         shl eax,16
-        cvtsd2si edx, xmm0
+        cvttsd2si edx, xmm0
         or eax,edx
         mov edx,ecx
         movsd xmm1,[esp]
         add esp,8
-        ret
+        ret 8
+        

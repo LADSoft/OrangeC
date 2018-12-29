@@ -1237,15 +1237,10 @@ int examine_icode(QUAD* head)
                     ret = AllocateTemp(head->ans->size);
                     temp = AllocateTemp(ISZ_LDOUBLE);
                     ret->retval = TRUE;
-                    q->dc.opcode = i_assn;
-                    q->ans = temp;
+                    q->dc.opcode = i_parm;
                     q->dc.left = head->dc.left;
-                    q->alwayslive = TRUE; /* we are loading a temp that won't get used
-                                            * except as a function argument.  We aren't pushing it
-                                            * and we don't want the live analysis canceling the
-                                            * instruction
-                                            */
-                    InsertInstruction(head->back, q);
+                    insert_parm(head->back, q);
+
                     q = (QUAD*)beLocalAlloc(sizeof(QUAD));
                     q->dc.opcode = i_gosub;
                     if (head->ans->size == ISZ_ULONGLONG)
@@ -1255,7 +1250,7 @@ int examine_icode(QUAD* head)
                     else
                         q->dc.left = set_symbol("__ftoul", TRUE);
                     InsertInstruction(head->back, q);
-                    insert_nullparmadj(head->back, 0);
+                    insert_nullparmadj(head->back, sizeFromISZ(ISZ_DOUBLE));
                     if (head->ans->mode == i_ind && (head->temps & TEMP_LEFT))
                     {
                         q = Alloc(sizeof(QUAD));
@@ -1280,15 +1275,9 @@ int examine_icode(QUAD* head)
                     temp = AllocateTemp(head->dc.left->size);
                     ret->retval = TRUE;
                     ret->altretval = TRUE;
-                    q->dc.opcode = i_assn;
-                    q->ans = temp;
+                    q->dc.opcode = i_parm;
                     q->dc.left = head->dc.left;
-                    q->alwayslive = TRUE; /* we are loading a temp that won't get used
-                                            * except as a function argument.  We aren't pushing it
-                                            * and we don't want the live analysis canceling the
-                                            * instruction
-                                            */
-                    InsertInstruction(head->back, q);
+                    insert_parm(head->back, q);
                     q = (QUAD*)beLocalAlloc(sizeof(QUAD));
                     q->dc.opcode = i_gosub;
                     if (head->dc.left->size == ISZ_ULONGLONG)
@@ -1298,7 +1287,7 @@ int examine_icode(QUAD* head)
                     else
                         q->dc.left = set_symbol("__ultof", TRUE);
                     InsertInstruction(head->back, q);
-                    insert_nullparmadj(head->back, 0);
+                    insert_nullparmadj(head->back, sizeFromISZ(head->dc.left->size));
                     if (head->ans->mode == i_ind && (head->temps & TEMP_LEFT))
                     {
                         q = Alloc(sizeof(QUAD));

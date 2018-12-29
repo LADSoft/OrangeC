@@ -48,6 +48,7 @@ load:
     mulsd xmm1,[temp]
     ret
 __ultof:
+    mov eax,[esp+4]
     sub esp,8
     movsd [esp],xmm1
     push eax
@@ -62,8 +63,10 @@ __ultof:
     addsd xmm0, xmm1
     movsd xmm1,[esp]
     add esp,8
-    ret
+    ret 4
 __lltof:
+    mov eax,[esp+4]
+    mov edx,[esp+8]
     push edx
     or edx,edx
     jns noneg
@@ -72,15 +75,14 @@ __lltof:
     neg edx
 noneg:
     push edx
-    call __ultof
+    push eax
+    call __ultof ; pops eax off the stack...
     pop eax
     pop edx
     sub esp,8
     movsd [esp],xmm1
     push edx
     push eax
-
-    mov eax,[esp]
     mov cx,2000h
     mov edx,0ffffh
     call load
@@ -97,11 +99,11 @@ noneg:
 nochs:
     movsd xmm1,[esp]
     add esp,8
-    ret
+    ret 8
 __ulltof:
-    push edx
+    push dword [esp+4]
     call __ultof
-    pop eax
+    mov eax,[esp+8]
     sub esp,8
     movsd [esp],xmm1
     push eax
@@ -112,7 +114,7 @@ __ulltof:
     pop eax
     mov cl, 10h
     call load
-    movsd xmm0, xmm1
+    addsd xmm0, xmm1
     movsd xmm1,[esp]
     add esp,8
-    ret
+    ret 8

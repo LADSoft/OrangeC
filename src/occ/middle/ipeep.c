@@ -394,11 +394,14 @@ static int peep_assn(BLOCK* b, QUAD* head)
                 if (head->back->ans->size == head->back->dc.left->size && head->back->ans == head->dc.left)
                     if (head->back->dc.left->mode != i_immed && !head->back->dc.left->bits)
                     {
-                        head->dc.left = head->back->dc.left;
-                        if ((!head->dc.left->offset || head->dc.left->offset->type != en_tempref) &&
-                            (!head->dc.left->offset2 || head->dc.left->offset2->type != en_tempref))
-                            head->temps &= ~TEMP_LEFT;
-                        return -1;
+                        if (!head->back->dc.left->retval)
+                        {
+                            head->dc.left = head->back->dc.left;
+                            if ((!head->dc.left->offset || head->dc.left->offset->type != en_tempref) &&
+                                (!head->dc.left->offset2 || head->dc.left->offset2->type != en_tempref))
+                                head->temps &= ~TEMP_LEFT;
+                            return -1;
+                        }
                     }
             }
         }

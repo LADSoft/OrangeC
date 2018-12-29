@@ -552,7 +552,8 @@ void getAmodes(QUAD* q, enum e_opcode* op, IMODE* im, AMODE** apl, AMODE** aph)
         }
         (*apl)->scale = im->scale;
         (*apl)->offset = im->offset3 ? im->offset3 : intNode(en_c_i, 0);
-        (*apl)->length = im->size;
+        if (im->size < ISZ_FLOAT)
+            (*apl)->length = im->size;
         if (im->offset3)
         {
             if (isauto(im->offset3))
@@ -662,7 +663,8 @@ void getAmodes(QUAD* q, enum e_opcode* op, IMODE* im, AMODE** apl, AMODE** aph)
                         *op = op_lea;
                     else
                         (*apl)->mode = am_immed;
-                    (*apl)->length = im->size;
+                    if (im->size < ISZ_FLOAT)
+                        (*apl)->length = im->size;
                 }
                 else if (im->offset->type == en_c_ll || im->offset->type == en_c_ull)
                 {
@@ -762,12 +764,14 @@ void getAmodes(QUAD* q, enum e_opcode* op, IMODE* im, AMODE** apl, AMODE** aph)
         {
             int l = regmap[beRegFromTemp(q, im)][0];
             *apl = makedreg(l);
-            (*apl)->length = im->size;
+            if (im->size < ISZ_FLOAT)
+                (*apl)->length = im->size;
         }
         else
         {
             *apl = make_offset(im->offset);
-            (*apl)->length = im->size;
+            if (im->size < ISZ_FLOAT)
+                (*apl)->length = im->size;
         }
     }
     if (!(*aph))
@@ -1046,7 +1050,7 @@ void gen_xset(QUAD* q, enum e_opcode pos, enum e_opcode neg, enum e_opcode flt)
     {
         getAmodes(q, &opa, right, &aprl, &aprh);
         getAmodes(q, &opa, left, &apll, &aplh);
-        gen_code_sse(op_ucomiss, op_ucomisd, apll->length, apll, aprl);
+        gen_code_sse(op_ucomiss, op_ucomisd, left->size, apll, aprl);
         getAmodes(q, &opa, q->ans, &apal, &apah);
         gen_codes(flt, ISZ_UCHAR, apal, 0);
         gen_codes(op_and, ISZ_UINT, apal, aimmed(1));
@@ -1256,7 +1260,7 @@ void gen_goto(QUAD* q, enum e_opcode pos, enum e_opcode neg, enum e_opcode llpos
 
         getAmodes(q, &opa, right, &aprl, &aprh);
         getAmodes(q, &opa, left, &apll, &aplh);
-        gen_code_sse(op_ucomiss, op_ucomisd, apll->length, apll, aprl);
+        gen_code_sse(op_ucomiss, op_ucomisd, left->size, apll, aprl);
         gen_branch(flt , q->dc.v.label);
     }
     else
@@ -1835,7 +1839,7 @@ void asm_parm(QUAD* q) /* push a parameter*/
             }
             else
             {
-                if (pushlevel == 8)
+                if (sz == 8)
                     gen_codes(op_push, ISZ_UINT, make_offset(exprNode(en_add, apl->offset, intNode(en_c_i, 4))), NULL);
                 gen_codes(op_push, ISZ_UINT, apl, NULL);
             }
@@ -1893,8 +1897,8 @@ void asm_parm(QUAD* q) /* push a parameter*/
                 sz = 4;
             gen_codes(op_sub, ISZ_UINT, makedreg(ESP), aimmed(sz * 2));
             pushlevel += sz * 2;
-            gen_code_sse(op_movss, op_movsd, apl->length, make_stack(-sz), aph);
-            gen_code_sse(op_movss, op_movsd, apl->length, make_stack(0), apl);
+            gen_code_sse(op_movss, op_movsd, q->dc.left->size, make_stack(-sz), aph);
+            gen_code_sse(op_movss, op_movsd, q->dc.left->size, make_stack(0), apl);
         }
         else if (q->dc.left->size >= ISZ_FLOAT)
         {
@@ -2621,9 +2625,9 @@ void asm_neg(QUAD* q) /* negation */
         }
         else
         {
-            gen_code_sse(op_movss, op_movsd, apll->length, apal, apll);
+            gen_code_sse(op_movss, op_movsd, q->ans->size, apal, apll);
             floatchs(apal, q->ans->size);
-            gen_code_sse(op_movss, op_movsd, aplh->length, apal, aplh);
+            gen_code_sse(op_movss, op_movsd, q->ans->size, apal, aplh);
             floatchs(apah, q->ans->size);
         }
     }
@@ -2635,7 +2639,7 @@ void asm_neg(QUAD* q) /* negation */
         }
         else
         {
-            gen_code_sse(op_movss, op_movsd, apll->length, apal, apll);
+            gen_code_sse(op_movss, op_movsd, q->ans->size, apal, apll);
             floatchs(apal, q->ans->size);
         }
     }

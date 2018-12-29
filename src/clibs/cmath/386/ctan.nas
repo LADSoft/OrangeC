@@ -140,8 +140,8 @@ redupil:
 lt
     fsub qword [pointfive]
 join:
-    call __ftol
-    push eax
+;    call __ftol
+;    push eax
     fld tword [dp1]
     fimul dword [esp]
     fsubp st1
@@ -151,7 +151,7 @@ join:
     fld tword [dp3]
     fimul dword [esp]
     fsubp st1
-    pop eax
+;    pop eax
     ret
 ; series expansion for cosh(2y) - cos(2x)
 ;

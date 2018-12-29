@@ -50,14 +50,14 @@
 
 #define DBL_MANT_DIG        53
 #define FLT_MANT_DIG        24
-#define LDBL_MANT_DIG       64
+#define LDBL_MANT_DIG       53
 #define __DBL_MANT_DIG__    DBL_MANT_DIG
 #define __FLT_MANT_DIG__    FLT_MANT_DIG
 #define __LDBL_MANT_DIG__   LDBL_MANT_DIG
 
 #define DBL_DIG             15
 #define FLT_DIG             6
-#define LDBL_DIG            18
+#define LDBL_DIG            15
 #define __DBL_DIG__         DBL_DIG
 #define __FLT_DIG__         FLT_DIG
 #define __LDBL_DIG__        LDBL_DIG
@@ -70,7 +70,7 @@
 
 #define DBL_EPSILON         0x1P-52
 #define FLT_EPSILON         0x1P-23
-#define LDBL_EPSILON        0x1P-63
+#define LDBL_EPSILON        0x1P-52
 #define __DBL_EPSILON__	    DBL_EPSILON
 #define __FLT_EPSILON__     FLT_EPSILON
 #define __LDBL_EPSILON__    LDBL_EPSILON
@@ -78,42 +78,42 @@
 /* smallest positive IEEE normal numbers */
 #define DBL_MIN             0x1P-1022
 #define FLT_MIN             0x1P-126F
-#define LDBL_MIN            0x1P-16382L
+#define LDBL_MIN            0x1P-1022L
 #define __DBL_MIN__	    DBL_MIN
 #define __FLT_MIN__         FLT_MIN
 #define __LDBL_MIN__        LDBL_MIN
 
 #define DBL_MAX             0x1.FFFFFFFFFFFFFP+1023
 #define FLT_MAX             0x1.FFFFFEP+127F
-#define LDBL_MAX            0x1.FFFFFFFFFFFFFFFEP+16383L
+#define LDBL_MAX            0x1.FFFFFFFFFFFFFP+1023L
 #define __DBL_MAX__	    DBL_MAX
 #define __FLT_MAX__         FLT_MAX
 #define __LDBL_MAX__        LDBL_MAX
 
 #define DBL_MAX_EXP         +1024
 #define FLT_MAX_EXP         +128
-#define LDBL_MAX_EXP        +16384
+#define LDBL_MAX_EXP        +1024
 #define __DBL_MAX_EXP__     DBL_MAX_EXP
 #define __FLT_MAX_EXP__     FLT_MAX_EXP
 #define __LDBL_MAX_EXP__    LDBL_MAX_EXP
 
 #define DBL_MIN_EXP         -1021
 #define FLT_MIN_EXP         -125
-#define LDBL_MIN_EXP        -16381
+#define LDBL_MIN_EXP        -1021
 #define __DBL_MIN_EXP__     DBL_MIN_EXP
 #define __FLT_MIN_EXP__     FLT_MIN_EXP
 #define __LDBL_MIN_EXP__    LDBL_MIN_EXP
 
 #define DBL_MAX_10_EXP      +308
 #define FLT_MAX_10_EXP      +38
-#define LDBL_MAX_10_EXP     +4932
+#define LDBL_MAX_10_EXP     +308
 #define __DBL_MAX_10_EXP__   DBL_MAX_10_EXP
 #define __FLT_MAX_10_EXP__   FLT_MAX_10_EXP
 #define __LDBL_MAX_10_EXP__  LDBL_MAX_10_EXP
 
 #define DBL_MIN_10_EXP      -307
 #define FLT_MIN_10_EXP      -37
-#define LDBL_MIN_10_EXP     -4931
+#define LDBL_MIN_10_EXP     -307
 #define __DBL_MIN_10_EXP__   DBL_MIN_10_EXP
 #define __FLT_MIN_10_EXP__   FLT_MIN_10_EXP
 #define __LDBL_MIN_10_EXP__  LDBL_MIN_10_EXP
@@ -124,7 +124,7 @@
 
 #define DBL_TRUE_MIN        0x1P-1075
 #define FLT_TRUE_MIN        0x1P-150
-#define LDBL_TRUE_MIN       0x1P-16446L
+#define LDBL_TRUE_MIN       0x1P-1075L
 
 #ifdef __cplusplus
 namespace __STD_NS__ {

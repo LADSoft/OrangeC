@@ -905,6 +905,7 @@ void optimize(SYMBOL* funcsp)
         RemoveCriticalThunks();
         RemoveInfiniteThunks();
     }
+
     /* backend modifies ICODE to improve code generation */
     if (chosenAssembler->gen->post_gcse)
     {

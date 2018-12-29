@@ -383,15 +383,9 @@ void pointersize(int size)
     {
         case ISZ_LDOUBLE:
         case ISZ_ILDOUBLE:
-            if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
-                bePrintf("tword ");
-            else
-                bePrintf("tbyte ");
-            break;
         case ISZ_ULONGLONG:
         case ISZ_DOUBLE:
         case ISZ_IDOUBLE:
-            /* should never happen                      */
             bePrintf("qword ");
             break;
         case ISZ_FLOAT:

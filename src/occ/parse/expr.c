@@ -5715,6 +5715,7 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
                 else
                 {
                     castToArithmetic(FALSE, tp, exp, kw, NULL, TRUE);
+                    *exp = exprNode(en_uminus, *exp, NULL);
                     if (isstructured(*tp))
                         error(ERR_ILL_STRUCTURE_OPERATION);
                     else if (isvoid(*tp) || ismsil(*tp))
@@ -5735,7 +5736,6 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
                         cast(&stdint, exp);
                         *tp = &stdint;
                     }
-                    *exp = exprNode(en_uminus, *exp, NULL);
                 }
             }
             break;
@@ -5802,6 +5802,7 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
                 else
                 {
                     castToArithmetic(TRUE, tp, exp, kw, NULL, TRUE);
+                    *exp = exprNode(en_compl, *exp, NULL);
                     if (isstructured(*tp))
                         error(ERR_ILL_STRUCTURE_OPERATION);
                     else if (iscomplex(*tp))
@@ -5826,7 +5827,6 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
                         cast(&stdint, exp);
                         *tp = &stdint;
                     }
-                    *exp = exprNode(en_compl, *exp, NULL);
                 }
             }
             break;

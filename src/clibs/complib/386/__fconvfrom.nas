@@ -23,19 +23,29 @@
 ; 
 
 %ifdef __ftoBUILDING_LSCRTL_DLL
-[export __ftoul]
+[export __ftoi]
 [export __ftoull]
 [export __ftoll]
 %endif
-[global __ftoul]
+[global __ftoi]
 [global __ftoull]
 [global __ftoll]
 [extern __fdchsmask]
 [extern __fzero]
+[extern _fesetexceptflag]
 SECTION data CLASS=DATA USE32 ALIGN=8
+ranges  dq  0.0, 255.0
+        dq  -128.0, 128
+        dq  0.0, 65536.0
+        dq  -32768.0, 32767.0
+        dq  0.0,4294967296.0
+        dq  -2147483648.0,2147483648.0
+        dq  0.0,18446744073709551616.0
+        dq  -9223372036854775808.0, 9223372036854775808.0
 divmap  dd  0,42f00000h
         dd  0,41f00000h
         dd  0,40f00000h
+temp    dd  1 ; //FE_INVALID
 SECTION code CLASS=CODE USE32
 unload:
         movsd   xmm1,xmm0
@@ -48,8 +58,11 @@ unload:
         movsd xmm0,xmm1
         ret
 
-__ftoul:
-        movsd xmm0,[esp+4]      
+__ftoi:
+        mov ecx,[esp +12]
+        movsd xmm0,[esp+4]
+        call checkrange
+        jc reti
         sub esp,8
         movsd [esp], xmm1
         mov edx,2
@@ -60,9 +73,13 @@ __ftoul:
         mov edx,ecx
         movsd xmm1,[esp]
         add esp,8
-        ret 8
+reti:
+        ret 12
 __ftoll:
-        movsd xmm0,[esp+4]      
+        mov ecx,7
+        movsd xmm0,[esp+4]
+        call checkrange      
+        jc retll
         sub esp,8
         movsd [esp], xmm1
         ucomisd xmm0,[__fzero]
@@ -95,9 +112,13 @@ noneg:
 nochs:
         movsd xmm1,[esp]
         add esp,8
+retll:
         ret 8
 __ftoull:
-        movsd xmm0,[esp+4]      
+        mov ecx,6
+        movsd xmm0,[esp+4]
+        call checkrange      
+        jc retull
 
         sub esp,8
         movsd [esp], xmm1
@@ -116,5 +137,23 @@ __ftoull:
         mov edx,ecx
         movsd xmm1,[esp]
         add esp,8
+retull:
         ret 8
         
+checkrange:
+    add ecx,ecx
+    ucomisd xmm0, [ranges + ecx * 8];
+    jc err
+    ucomisd xmm0, [ranges + 8 + ecx * 8]
+    jb ok
+err:
+    push 1                      ; FE_INVALID
+    push dword temp
+    call _fesetexceptflag
+    pop ecx
+    pop ecx
+    sub eax,eax
+    sub edx,edx
+ok:
+    cmc
+    ret

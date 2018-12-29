@@ -422,8 +422,9 @@ AsmExprNode* AsmExpr::Eval(AsmExprNode* n, int pc)
             }
             else if (xleft->GetType() == AsmExprNode::FVAL)
             {
-                fv -= xleft->fval;
-                rv = new AsmExprNode(fv);
+                xleft->fval.Negate();
+                rv = xleft;
+                xleft = nullptr;
             }
             else
             {

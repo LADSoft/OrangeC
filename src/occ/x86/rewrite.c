@@ -31,6 +31,8 @@ extern BLOCKLIST** blockArray;
 extern int prm_useesp;
 extern BOOLEAN hasXCInfo;
 
+extern int prm_lscrtdll;
+
 EXPRESSION* fltexp;
 
 int uses_substack;
@@ -1226,8 +1228,31 @@ int examine_icode(QUAD* head)
                 BOOLEAN i4 = head->ans->size < ISZ_CFLOAT;
                 if (i1 && i3 && !i2 || i2 && i4 && !i1)
                 {
-                    head->dc.left = set_symbol("__fzero", FALSE);
-                    head->temps &= ~TEMP_LEFT;
+
+                    if (prm_lscrtdll)
+                    {
+                        QUAD *q = (QUAD *)Alloc(sizeof(QUAD));
+                        q->dc.opcode = i_assn;
+                        q->dc.left = set_symbol("__fzero", FALSE);
+                        q->dc.left->mode = i_direct;
+                        q->dc.left->size = ISZ_ADDR;
+                        q->ans = InitTempOpt(ISZ_ADDR, ISZ_ADDR);
+                        q->temps = TEMP_ANS;
+                        IMODE *im = (QUAD *)Alloc(sizeof(QUAD));
+                        *im = *q->ans;
+                        im->mode = i_ind;
+                        im->size = head->ans->size;
+
+                        InsertInstruction(head->back, q);
+                        head->dc.left = im;
+                        head->temps |= TEMP_LEFT;
+
+                    }
+                    else
+                    {
+                        head->dc.left = set_symbol("__fzero", FALSE);
+                        head->temps &= ~TEMP_LEFT;
+                    }
                 }
                 else if (head->dc.left->size >= ISZ_FLOAT && (head->ans->size == ISZ_UINT || head->ans->size == ISZ_ULONG ||
                     head->ans->size == ISZ_ULONGLONG || head->ans->size == -ISZ_ULONGLONG))

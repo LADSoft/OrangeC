@@ -210,6 +210,10 @@ asmError InstructionParser::GetInstruction(OCODE* ins, Instruction*& newIns, std
         {
             switch (ins->opcode)
             {
+                case op_ret:
+                    if (ins->oper1)
+                        ins->oper1->length = 0;
+                    break;
                 case op_lea:
                     ins->oper2->length = 0;
                     break;

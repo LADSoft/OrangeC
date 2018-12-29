@@ -34,6 +34,7 @@ extern "C" EXPRESSION* fltexp;
 extern "C" OCODE* peep_tail;
 extern "C" int startlab, retlab;
 extern "C" int usingEsp;
+extern "C" int prm_lscrtdll;
 
 #define MAX_ALIGNS 50
 extern "C" int pushlevel = 0;
@@ -41,6 +42,7 @@ extern "C" int funcstackheight = 0;
 
 AMODE* singleLabel, *doubleLabel, *zerolabel;
 
+static int fconstcleanup = -1;
 static int floatpop;
 static int fstackid;
 static int inframe;
@@ -398,10 +400,58 @@ void floatchs(AMODE *ap, int sz)
         lbl = doubleLabel;
         op = op_xorpd;
     }
+    int reg = -1;
+    if (prm_lscrtdll)
+    {
+        BOOLEAN pushed = FALSE;
+        if (!(ap->liveRegs & (1 << EAX)))
+        {
+            reg = EAX;
+        }
+        else if (!(ap->liveRegs & (1 << ECX)))
+        {
+            reg = ECX;
+        }
+        else if (!(ap->liveRegs & (1 << EDX)))
+        {
+            reg = EDX;
+        }
+        else
+        {
+            gen_code(op_push, makedreg(EAX), NULL);
+            pushlevel += 4;
+            pushed = TRUE;
+            reg = EAX;
+        }
+        AMODE *ap1 = (AMODE *)Alloc(sizeof(AMODE));
+        *ap1 = *lbl;
+        ap1->mode = am_direct;
+        lbl = makedreg(reg);
+        gen_code(op_mov, lbl, ap1);
+        lbl->mode = am_indisp;
+        lbl->offset = intNode(en_c_i, 0);
+        lbl->length = 0;
+        if (!pushed)
+            reg = -1;
+    }
     gen_code(op, ap, lbl);
+    if (reg != -1)
+    {
+        pushlevel -= 4;
+        gen_code(op_pop, makedreg(reg), NULL);
+    }
 }
 
-AMODE *floatzero(void)
+void zerocleanup(void)
+{
+    if (fconstcleanup >= 0)
+    {
+        gen_code(op_pop, makedreg(fconstcleanup), NULL);
+        pushlevel -= 4;
+    }
+    fconstcleanup = -1;
+}
+AMODE *floatzero(AMODE *ap)
 {
     if (!zerolabel)
     {
@@ -411,6 +461,35 @@ AMODE *floatzero(void)
         an->mode = am_direct;
         zerolabel = an;
 
+    }
+    if (prm_lscrtdll)
+    {
+        int reg;
+        if (!(ap->liveRegs & (1 << EAX)))
+        {
+            reg = EAX;
+        }
+        else if (!(ap->liveRegs & (1 << ECX)))
+        {
+            reg = ECX;
+        }
+        else if (!(ap->liveRegs & (1 << EDX)))
+        {
+            reg = EDX;
+        }
+        else
+        {
+            gen_code(op_push, makedreg(EAX), NULL);
+            pushlevel += 4;
+            reg = EAX;
+        }
+        AMODE *ap1 = (AMODE *)Alloc(sizeof(AMODE));
+        *ap1 = *zerolabel;
+        ap1->mode = am_direct;
+        zerolabel = makedreg(reg);
+        gen_code(op_mov, zerolabel, ap1);
+        zerolabel->mode = am_indisp;
+        zerolabel->offset = intNode(en_c_i, 0);
     }
     return zerolabel;
 }
@@ -3076,7 +3155,8 @@ void asm_assn(QUAD* q) /* assignment */
          
                 int lbl1 = beGetLabel;
                 AMODE *apz;
-                gen_code_sse(op_ucomiss, op_ucomisd, q->dc.left->size, apl, apz = floatzero());
+                gen_code_sse(op_ucomiss, op_ucomisd, q->dc.left->size, apl, apz = floatzero(apl));
+                zerocleanup();
                 gen_code(op_jnz, make_label(lbl1), NULL);
                 gen_code_sse(op_ucomiss, op_ucomisd, q->dc.left->size, apl1, apz);
                 oa_gen_label(lbl1);
@@ -3085,13 +3165,15 @@ void asm_assn(QUAD* q) /* assignment */
             }
             else if (q->dc.left->size >= ISZ_IFLOAT)
             {
-                gen_code_sse(op_ucomiss, op_ucomisd, q->dc.left->size, apl, floatzero());
+                gen_code_sse(op_ucomiss, op_ucomisd, q->dc.left->size, apl, floatzero(apl));
+                zerocleanup();
                 gen_code(op_setne, apa, NULL);
                 gen_codes(op_and, ISZ_UINT, apa, aimmed(1));
             }
             else if (q->dc.left->size >= ISZ_FLOAT)
             {
-                gen_code_sse(op_ucomiss, op_ucomisd, q->dc.left->size, apl, floatzero());
+                gen_code_sse(op_ucomiss, op_ucomisd, q->dc.left->size, apl, floatzero(apl));
+                zerocleanup();
                 gen_code(op_setne, apa, NULL);
                 gen_codes(op_and, ISZ_UINT, apa, aimmed(1));
             }
@@ -3264,7 +3346,8 @@ void asm_assn(QUAD* q) /* assignment */
             {
                 if (q->ans->size >= ISZ_CFLOAT)
                 {
-                    gen_code_sse(op_movss, op_movsd, q->ans->size, apa, floatzero());
+                    gen_code_sse(op_movss, op_movsd, q->ans->size, apa, floatzero(apl));
+                    zerocleanup();
                     if (q->dc.left->size == ISZ_IFLOAT)
                         if (q->ans->size == ISZ_CFLOAT)
                             gen_code(op_movss, apa1, apl);
@@ -3294,7 +3377,8 @@ void asm_assn(QUAD* q) /* assignment */
             {
                 if (q->ans->size >= ISZ_CFLOAT)
                 {
-                    gen_code_sse(op_movss, op_movsd, q->ans->size, apa1, floatzero());
+                    gen_code_sse(op_movss, op_movsd, q->ans->size, apa1, floatzero(apl));
+                    zerocleanup();
                     if (q->dc.left->size == ISZ_FLOAT)
                         if (q->ans->size == ISZ_CFLOAT)
                             gen_code(op_movss, apa, apl);
@@ -3308,7 +3392,8 @@ void asm_assn(QUAD* q) /* assignment */
                 }
                 else if (q->ans->size >= ISZ_IFLOAT)
                 {
-                    gen_code_sse(op_movss, op_movsd, q->ans->size, apa, floatzero());
+                    gen_code_sse(op_movss, op_movsd, q->ans->size, apa, floatzero(apl));
+                    zerocleanup();
                 }
                 else if (q->dc.left->size == ISZ_FLOAT)
                     gen_code(op_cvtss2sd, apa, apl);
@@ -3323,7 +3408,8 @@ void asm_assn(QUAD* q) /* assignment */
             {
                 if (q->ans->size >= ISZ_IFLOAT && q->ans->size <= ISZ_ILDOUBLE)
                 {
-                    gen_code_sse(op_movss, op_movsd, q->ans->size, apa, floatzero());
+                    gen_code_sse(op_movss, op_movsd, q->ans->size, apa, floatzero(apl));
+                    zerocleanup();
                 }
                 else
                 {
@@ -3364,7 +3450,8 @@ void asm_assn(QUAD* q) /* assignment */
                     }
                     if (q->ans->size >= ISZ_CFLOAT)
                     {
-                        gen_code_sse(op_movss, op_movsd, q->ans->size, apa1, floatzero());
+                        gen_code_sse(op_movss, op_movsd, q->ans->size, apa1, floatzero(apl));
+                        zerocleanup();
                     }
                 }
             }

@@ -1,7 +1,6 @@
 ; Software License Agreement
 ; 
-;     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
-; 
+;     Copyright(C) 1994-2018 David Lindauer, (LADSoft); 
 ;     This file is part of the Orange C Compiler package.
 ; 
 ;     The Orange C Compiler package is free software: you can redistribute it and/or modify
@@ -22,7 +21,7 @@
 ;         email: TouchStone222@runbox.com <David Lindauer>
 ; 
 
-%ifdef __ftoBUILDING_LSCRTL_DLL
+%ifdef __BUILDING_LSCRTL_DLL
 [export __ftoi]
 [export __ftoull]
 [export __ftoll]

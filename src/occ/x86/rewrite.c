@@ -947,6 +947,7 @@ static int floatsize(IMODE *im)
         }
     return 0;
 }
+#define imax(x,y) ((x) > (y) ? (x) : (y))
 
 int examine_icode(QUAD* head)
 {
@@ -2134,8 +2135,8 @@ int examine_icode(QUAD* head)
     {
         if (head->dc.opcode == i_assn)
         {
-            floatretsize = max(floatretsize, floatsize(head->ans));
-            floatretsize = max(floatretsize, floatsize(head->dc.left));
+            floatretsize = imax(floatretsize, floatsize(head->ans));
+            floatretsize = imax(floatretsize, floatsize(head->dc.left));
         }
         head = head->fwd;
     }

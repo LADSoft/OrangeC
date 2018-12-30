@@ -39,6 +39,8 @@ extern TYPE stdvoid, stdfunc;
 extern TYPE stdwcharptr;
 extern TYPE stdcharptr;
 extern TYPE stdfloatimaginary;
+extern TYPE stddoubleimaginary;
+extern TYPE stdlongdoubleimaginary;
 extern TYPE stdbool;
 extern TYPE stdunsigned;
 extern TYPE stdunsignedlong;
@@ -49,6 +51,9 @@ extern TYPE stdfloat;
 extern TYPE stdlongdouble;
 extern TYPE stdchar;
 extern TYPE stdwidechar;
+extern TYPE stdfloatcomplex;
+extern TYPE stddoublecomplex;
+extern TYPE stdlongdoublecomplex;
 extern TYPE std__func__;
 extern TYPE std__string;
 extern TYPE stdchar16tptr;
@@ -6287,22 +6292,75 @@ static LEXEME* expression_times(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** t
                 error(ERR_ILL_POINTER_OPERATION);
             else
             {
-                *tp = destSize(*tp, tp1, exp, &exp1, FALSE, NULL);
                 switch (kw)
                 {
-                    case star:
-                        type = en_mul;
+                case star:
+                    type = en_mul;
+                    break;
+                case divide:
+                    type = isunsigned(*tp) ? en_udiv : en_div;
+                    break;
+                case mod:
+                    type = isunsigned(*tp) ? en_umod : en_mod;
+                    break;
+                default:
+                    break;
+                }
+                int m1 = -1, m2 = -1;
+                if (isimaginary(*tp) && isimaginary(tp1))
+                {
+                    *exp = exprNode(en_uminus, *exp, NULL);
+                    *tp = destSize(*tp, tp1, exp, &exp1, FALSE, NULL);
+                }
+                else if (isimaginary(*tp) && (isfloat(tp1) || isint(tp1)))
+                {
+                    m1 = (*tp)->type - bt_float_imaginary;
+                    m2 = isfloat(tp1) ? tp1->type - bt_float : m1;
+                }
+                else if ((isfloat(*tp) || isint(*tp)) && isimaginary(tp1))
+                {
+                    m1 = tp1->type - bt_float_imaginary;
+                    m2 = isfloat(*tp) ? (*tp)->type - bt_float : m1;
+
+                }
+                if (m1 >= 0)
+                {
+                    BOOLEAN b = isimaginary(*tp);
+                    m1 = m1 > m2 ? m1 : m2;
+                    switch (m1)
+                    {
+                    case 0:
+                        *tp = &stdfloatimaginary;
+                        tp1 = &stdfloat;
                         break;
-                    case divide:
-                        type = isunsigned(*tp) ? en_udiv : en_div;
-                        break;
-                    case mod:
-                        type = isunsigned(*tp) ? en_umod : en_mod;
+                    case 1:
+                        *tp = &stddoubleimaginary;
+                        tp1 = &stddouble;
                         break;
                     default:
+                        *tp = &stdlongdoubleimaginary;
+                        tp1 = &stdlongdouble;
                         break;
+                    }
+                    if (b)
+                    {
+                        cast(*tp, exp);
+                        cast(tp1, &exp1);
+                    }
+                    else
+                    {
+                        cast(tp1, exp);
+                        cast(*tp, &exp1);
+                    }
+                    *exp = exprNode(type, *exp, exp1);
                 }
-                *exp = exprNode(type, *exp, exp1);
+                else
+                {
+                    *tp = destSize(*tp, tp1, exp, &exp1, FALSE, NULL);
+                    *exp = exprNode(type, *exp, exp1);
+
+                }
+
             }
         }
     }
@@ -6448,8 +6506,61 @@ static LEXEME* expression_add(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
         }
         else
         {
-            *tp = destSize(*tp, tp1, exp, &exp1, TRUE, atp);
-            *exp = exprNode(kw == plus ? en_add : en_sub, *exp, exp1);
+            int m1 = -1, m2 = -1;
+            if (isimaginary(*tp) && (isfloat(tp1) || isint(tp1)))
+            {
+                m1 = (*tp)->type - bt_float_imaginary;
+                m2 = isfloat(tp1) ? tp1->type - bt_float : m1;
+            }
+            else if ((isfloat(*tp) || isint(*tp)) && isimaginary(tp1))
+            {
+                m1 = tp1->type - bt_float_imaginary;
+                m2 = isfloat(*tp) ? (*tp)->type - bt_float : m1;
+
+            }
+            if (m1 >= 0)
+            {
+                m1 = m1 > m2 ? m1 : m2;
+                TYPE *tpa, *tpb;
+                switch (m1)
+                {
+                case 0:
+                    *tp = &stdfloatcomplex;
+                    tpa = &stdfloat;
+                    tpb = &stdfloatimaginary;
+                    break;
+                case 1:
+                    *tp = &stddoublecomplex;
+                    tpa = &stddouble;
+                    tpb = &stddoubleimaginary;
+                    break;
+                default:
+                    *tp = &stdlongdoublecomplex;
+                    tpa = &stdlongdouble;
+                    tpb = &stdlongdoubleimaginary;
+                    break;
+                }
+                if (isimaginary(tp1))
+                {
+                    cast(tpa, exp);
+                    cast(tpb, &exp1);
+                }
+                else
+                {
+                    cast(tpb, exp);
+                    cast(tpa, &exp1);
+
+                }
+                if (kw != plus)
+                    exp1 = exprNode(en_uminus, exp1, NULL);
+                *exp = exprNode(en_add, *exp, exp1);
+                cast(*tp, exp);
+            }
+            else
+            {
+                *tp = destSize(*tp, tp1, exp, &exp1, TRUE, atp);
+                *exp = exprNode(kw == plus ? en_add : en_sub, *exp, exp1);
+            }
         }
     }
     return lex;

@@ -1062,11 +1062,17 @@ IMODE* gen_binary(SYMBOL* funcsp, EXPRESSION* node, int flags, int size, enum i_
         size = imax(ap1->size, ap2->size);
     else if (ap1->size >= ISZ_IFLOAT && ap2->size < ISZ_IFLOAT)
     {
-        size = ap1->size;
+        if (op == i_add)
+            size = ap1->size - ISZ_IFLOAT + ISZ_CFLOAT;
+        else
+            size = ap1->size;
     }
     else if (ap2->size >= ISZ_IFLOAT && ap1->size < ISZ_IFLOAT)
     {
-        size = ap2->size;
+        if (op == i_add)
+            size = ap2->size - ISZ_IFLOAT + ISZ_CFLOAT;
+        else
+            size = ap2->size;
     }
     ap = LookupExpression(op, size, ap1, ap2);
     return ap;

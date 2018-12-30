@@ -1233,7 +1233,7 @@ int examine_icode(QUAD* head)
                 BOOLEAN i4 = head->ans->size < ISZ_CFLOAT;
                 if (i1 && i3 && !i2 || i2 && i4 && !i1)
                 {
-
+    
                     if (prm_lscrtdll)
                     {
                         QUAD *q = (QUAD *)Alloc(sizeof(QUAD));

@@ -41,6 +41,7 @@ extern TYPE stdunsignedlong;
 extern TYPE stdunsignedlonglong;
 extern TYPE stdfloatcomplex;
 extern TYPE stddoublecomplex;
+extern TYPE stddoubleimaginary;
 extern TYPE stdlongdoublecomplex;
 extern TYPE stdchar16t;
 extern TYPE stdchar32t;
@@ -1816,89 +1817,129 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, BOOLE
     */
     if (tp1->type >= bt_float || tp2->type >= bt_float)
     {
-
+        TYPE *tp = NULL;
         int isim1 = tp1->type >= bt_float_imaginary && tp1->type <= bt_long_double_imaginary;
         int isim2 = tp2->type >= bt_float_imaginary && tp2->type <= bt_long_double_imaginary;
-        if (isim1 && !isim2 && tp2->type < bt_float_imaginary)
+        int iscx1 = tp1->type >= bt_float_complex && tp1->type <= bt_long_double_complex;
+        int iscx2 = tp2->type >= bt_float_complex && tp2->type <= bt_long_double_complex;
+        if (iscx1)
         {
-            TYPE* tp;
-            if (tp1->type == bt_long_double_imaginary || tp2->type == bt_long_double)
-                tp = &stdlongdoublecomplex;
-            else if (tp1->type == bt_double_imaginary || tp2->type == bt_double || tp1->type == bt_long_long ||
-                     tp1->type == bt_unsigned_long_long)
-                tp = &stddoublecomplex;
-            else
-                tp = &stdfloatcomplex;
-            if (exp1)
-                cast(tp, exp1);
-            if (exp2)
-                cast(tp, exp2);
-            return tp;
-        }
-        else if (isim2 && !isim1 && tp1->type < bt_float_imaginary)
-        {
-            TYPE* tp;
-            if (tp2->type == bt_long_double_imaginary || tp1->type == bt_long_double)
-                tp = &stdlongdoublecomplex;
-            else if (tp2->type == bt_double_imaginary || tp1->type == bt_double || tp1->type == bt_long_long ||
-                     tp1->type == bt_unsigned_long_long)
-                tp = &stddoublecomplex;
-            else
-                tp = &stdfloatcomplex;
-            if (exp1)
-                cast(tp, exp1);
-            if (exp2)
-                cast(tp, exp2);
-            return tp;
-        }
-        else if (tp1->type > tp2->type)
-        {
-            if (exp2)
-                cast(tp1, exp2);
-        }
-        else if (tp1->type < tp2->type)
-        {
-            if (exp1)
-                cast(tp2, exp1);
-        }
+            if (iscx2)
+            {
+                if (tp1->type > tp2->type)
+                    tp = tp1;
+                else
+                    tp = tp2;
+            }
+            else if (isim2)
+            {
+                if (tp1->type - bt_float_complex >= tp2->type - bt_float_imaginary)
+                    tp = tp1;
+                else
+                    tp = &stddoublecomplex;
+            }
+            else if (tp2->type >= bt_float)
+            {
+                if (tp1->type - bt_float_complex >= tp2->type - bt_float)
+                    tp = tp1;
+                else
+                    tp = &stddoublecomplex;
 
-        if (tp1->type == bt_long_double_complex && isctp2)
-            return tp1;
-        if (tp2->type == bt_long_double_complex && isctp1)
-            return tp2;
+            }
+            else
+            {
+                tp = tp1;
+            }
 
-        if (tp1->type == bt_long_double_imaginary && isim2)
-            return tp1;
-        if (tp2->type == bt_long_double_imaginary && isim1)
-            return tp2;
-        if (tp1->type == bt_long_double && isctp2)
-            return tp1;
-        if (tp2->type == bt_long_double && isctp1)
-            return tp2;
-        if (tp1->type == bt_double_complex && isctp2)
-            return tp1;
-        if (tp2->type == bt_double_complex && isctp1)
-            return tp2;
-        if (tp1->type == bt_double_imaginary && isim2)
-            return tp1;
-        if (tp2->type == bt_double_imaginary && isim1)
-            return tp2;
-        if (tp1->type == bt_double && isctp2)
-            return tp1;
-        if (tp2->type == bt_double && isctp1)
-            return tp2;
-        if (tp1->type == bt_float_complex && isctp2)
-            return tp1;
-        if (tp2->type == bt_float_complex && isctp1)
-            return tp2;
-        if (tp1->type == bt_float_imaginary && isim2)
-            return tp1;
-        if (tp2->type == bt_float_imaginary && isim1)
-            return tp2;
-        if (tp1->type == bt_float && isctp2)
-            return tp1;
-        if (tp2->type == bt_float && isctp1)
-            return tp2;
+        }
+        else if (iscx2)
+        {
+            if (iscx1)
+            {
+                if (tp1->type > tp2->type)
+                    tp = tp1;
+                else
+                    tp = tp2;
+            }
+            else if (isim1)
+            {
+                if (tp1->type - bt_float_imaginary <= tp2->type - bt_float_complex)
+                    tp = tp2;
+                else
+                    tp = &stddoublecomplex;
+            }
+            else if (tp2->type >= bt_float)
+            {
+                if (tp1->type - bt_float <= tp2->type - bt_float_complex)
+                    tp = tp2;
+                else
+                    tp = &stddoublecomplex;
+
+            }
+            else
+            {
+                tp = tp2;
+            }
+        }
+        else if (isim1)
+        {
+            if (isim2)
+            {
+                if (tp1->type > tp2->type)
+                    tp = tp1;
+                else
+                    tp = tp2;
+            }
+            else if (tp2->type >= bt_float)
+            {
+                if (tp1->type - bt_float_imaginary >= tp2->type - bt_float)
+                    tp = tp1;
+                else
+                    tp = &stddoubleimaginary;
+            }
+            else
+            {
+                tp = tp1;
+            }
+        }
+        else if (isim2)
+        {
+            if (isim1)
+            {
+                if (tp1->type > tp2->type)
+                    tp = tp1;
+                else
+                    tp = tp2;
+            }
+            else if (tp1->type >= bt_float)
+            {
+                if (tp1->type - bt_float <= tp2->type - bt_float_imaginary)
+                    tp = tp2;
+                else
+                    tp = &stddoubleimaginary;
+            }
+            else
+            {
+                tp = tp2;
+            }
+
+        }
+        else if (tp1->type >= bt_float && tp2->type >= bt_float)
+        {
+            if (tp1->type > tp2->type)
+                tp = tp1;
+            else
+                tp = tp2;
+        }
+        else if (tp1->type >= bt_float)
+            tp = tp1;
+        else
+            tp = tp2;
+        if (tp->type != tp1->type && exp1)
+            cast(tp, exp1);
+        if (tp->type != tp2->type && exp1)
+            cast(tp, exp2);
+        return tp;
     }
     if (isctp1 && isctp2)
     {

@@ -44,7 +44,7 @@ TYPE std__object = {bt___object, 4};
 TYPE stdnullpointer = {bt_pointer, 4, &stdvoid};
 TYPE stdfloatcomplex = {bt_float_complex, 8};
 TYPE stddoublecomplex = {bt_double_complex, 16};
-TYPE stdlongdoublecomplex = {bt_long_double_complex, 24};
+TYPE stdlongdoublecomplex = {bt_long_double_complex, 16};
 TYPE stdfloat = {
     bt_float,
     4,
@@ -55,7 +55,7 @@ TYPE stdfloatimaginary = {
 };
 TYPE stddouble = {bt_double, 8};
 TYPE stddoubleimaginary = {bt_double_imaginary, 8};
-TYPE stdlongdoubleimaginary = {bt_long_double_imaginary, 12};
+TYPE stdlongdoubleimaginary = {bt_long_double_imaginary, 8};
 TYPE stdlonglong = {bt_long_long, 8};
 TYPE stdunsigned = {bt_unsigned, 4};
 TYPE stdunative = {bt_unative, 4};
@@ -105,7 +105,7 @@ TYPE stdstring = {bt_pointer, 4, &stdchar};
 TYPE stdint = {bt_int, 4};
 TYPE stdinative = {bt_inative, 4};
 TYPE stdlong = {bt_long, 4};
-TYPE stdlongdouble = {bt_long_double, 10};
+TYPE stdlongdouble = {bt_long_double, 8};
 TYPE stdbool = {bt_bool, 1};
 TYPE stdwidechar = {bt_wchar_t, 0};
 TYPE stdwcharptr = {bt_pointer, 0, &stdwidechar};
@@ -600,8 +600,8 @@ int init_backend(int* argc, char** argv)
         stddouble.size = stddoubleimaginary.size = getSize(bt_double);
         stdlongdouble.size = stdlongdoubleimaginary.size = getSize(bt_long_double);
         stdfloatcomplex.size = getSize(bt_float_complex);
-        stddoublecomplex.size = getSize(bt_float_complex);
-        stdlongdoublecomplex.size = getSize(bt_float_complex);
+        stddoublecomplex.size = getSize(bt_double_complex);
+        stdlongdoublecomplex.size = getSize(bt_long_double_complex);
         stdunsignedlonglong.size = stdlonglong.size = getSize(bt_long_long);
         stdunsignedlong.size = stdlong.size = getSize(bt_long);
         stdconst.size = stdunsigned.size = stdint.size = getSize(bt_unsigned);

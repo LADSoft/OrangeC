@@ -742,7 +742,7 @@ void outcode_dump_muldivval(void)
             *(int*)buf = v->value;
             emit(buf, 4);
         }
-        else if (v->size == ISZ_FLOAT || v->size == ISZ_IFLOAT)
+        else if (v->size == ISZ_FLOAT || v->size == ISZ_IFLOAT || v->size == ISZ_CFLOAT)
         {
             FPFToFloat(buf, &v->floatvalue);
             emit(buf, 4);

@@ -71,9 +71,13 @@ static void rvColor(IMODE* ip)
 {
     int n = ip->offset->v.sp->value.i;
     tempInfo[n]->precolored = TRUE;
-    if (ip->size >= ISZ_FLOAT)
+    if (ip->size >= ISZ_CFLOAT)
     {
-        tempInfo[n]->color = R_EAX;
+        tempInfo[n]->color = ip->size == ISZ_CFLOAT ? 40 : 56;
+    }
+    else if (ip->size >= ISZ_FLOAT)
+    {
+        tempInfo[n]->color = ip->size == ISZ_FLOAT  || ip->size == ISZ_IFLOAT ? 32 : 48;
     }
     else if (ip->size == ISZ_ULONGLONG || ip->size == -ISZ_ULONGLONG)
     {
@@ -2025,9 +2029,17 @@ int examine_icode(QUAD* head)
                             break;
                     }
                     InsertInstruction(head->back, q);
-                    insert_nullparmadj(head->back, 12 * 4);
+                    insert_nullparmadj(head->back, 8 * 4);
+                    if (head->ans->size == ISZ_CFLOAT)
+                    {
+                        QUAD* q1 = (QUAD *)Alloc(sizeof(QUAD));
+                        q1->dc.opcode = i_assn;
+                        q1->dc.left = ret;
+                        ret = q1->ans = InitTempOpt(ret->size, ret->size);
+                        InsertInstruction(head->back, q1);
+                    }
+
                     head->dc.left = ret;
-                    head->ans->size = ret->size;
                     head->dc.right = NULL;
                     head->dc.opcode = i_assn;
                     head->temps &= ~(TEMP_LEFT | TEMP_RIGHT);

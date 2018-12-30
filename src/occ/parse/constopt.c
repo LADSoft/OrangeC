@@ -532,6 +532,20 @@ FPFC refloat(EXPRESSION* node)
         case en_c_ldi:
             rv = CastToFloat(ISZ_LDOUBLE, &node->v.f);
             break;
+        case en_c_fc:
+            rv = CastToFloat(ISZ_FLOAT, &node->v.c.i);
+            rv = CastToFloat(ISZ_FLOAT, &node->v.c.r);
+            break;
+
+        case en_c_dc:
+            rv = CastToFloat(ISZ_DOUBLE, &node->v.c.i);
+            rv = CastToFloat(ISZ_DOUBLE, &node->v.c.r);
+            break;
+        case en_c_ldc:
+            rv = CastToFloat(ISZ_LDOUBLE, &node->v.c.i);
+            rv = CastToFloat(ISZ_LDOUBLE, &node->v.c.r);
+            break;
+
         default:
             break;
     }

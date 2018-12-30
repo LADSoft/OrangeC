@@ -99,10 +99,10 @@ int fextract(long double *fmant, int *fexp, int *fsign, unsigned char *buf)
     long double rval = *fmant;
     int exp, type, i;
     *fsign = rval < 0 ? -1 : 1;
-    rval = fabs(rval);
+    rval = fabsl(rval);
     if (rval)
     {
-        exp = (int)log10(rval);
+        exp = (int)log10l(rval);
         rval /= __tensexp(exp);
         if (rval >= 10)
         {

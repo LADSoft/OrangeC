@@ -148,9 +148,9 @@ float _RTL_FUNC _IMPORTMM nanf(const char *tagp);
 double _RTL_FUNC _IMPORTMM nan(const char *tagp);
 long double _RTL_FUNC _IMPORTMM nanl(const char *tagp);
 
-int _RTL_FUNC _IMPORTMM __signbitf(float __x);
-int _RTL_FUNC _IMPORTMM __signbit(double __x);
-int _RTL_FUNC _IMPORTMM __signbitl(long double __x);
+int _RTL_FUNC _IMPORTMM signbitf(float __x);
+int _RTL_FUNC _IMPORTMM signbit(double __x);
+int _RTL_FUNC _IMPORTMM signbitl(long double __x);
 int _RTL_FUNC _IMPORTMM __nancompare(long double __x, long double __y, int type);
 
 
@@ -160,9 +160,9 @@ int _RTL_FUNC _IMPORTMM __nancompare(long double __x, long double __y, int type)
     __fpclassifyl(x))
 
 #define signbit(x) \
-    ((sizeof(x) == sizeof(float)) ? __signbitf(x) : \
-    (sizeof(x) == sizeof(double)) ? __signbit(x) : \
-    __signbitl(x))
+    ((sizeof(x) == sizeof(float)) ? signbitf(x) : \
+    (sizeof(x) == sizeof(double)) ? signbit(x) : \
+    signbitl(x))
 
 #define isfinite(x) (fpclassify(x) >= FP_NORMAL)
 #define isinf(x) (fpclassify(x) == FP_INFINITE)
@@ -463,9 +463,9 @@ inline long long abs(long long f) { return fabs(f); }
         using __STD_NS_QUALIFIER __fpclassifyf;
         using __STD_NS_QUALIFIER __fpclassify;
         using __STD_NS_QUALIFIER __fpclassifyl;
-        using __STD_NS_QUALIFIER __signbitf;
-        using __STD_NS_QUALIFIER __signbit;
-        using __STD_NS_QUALIFIER __signbitl;
+        using __STD_NS_QUALIFIER signbitf;
+        using __STD_NS_QUALIFIER signbit;
+        using __STD_NS_QUALIFIER signbitl;
         using __STD_NS_QUALIFIER __nancompare;
         using __STD_NS_QUALIFIER acosf;
         using __STD_NS_QUALIFIER asinf;

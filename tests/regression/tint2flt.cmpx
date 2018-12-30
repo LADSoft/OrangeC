@@ -1,0 +1,38 @@
+Info:  'TAILOR' not defined => NOT using any bug workarounds.
+This program tests conversions from integer types to floating-point types.
+For all types, it test positive powers of 2, e.g., 2**j
+For signed types, it also tests negative of positive powers of 2, e.g., -(2**j)
+For numbers that are representable, it checks expected value and no exceptions.
+This implementation does not claim conformance to IEC-60559 or IEEE-754
+Checks of the floating-point exception flags may be meaningless.
+Testing conversion from unsigned long long to long double
+Testing conversion from signed long long to long double
+Testing conversion from unsigned long to long double
+Testing conversion from signed long to long double
+Testing conversion from unsigned int to long double
+Testing conversion from signed int to long double
+Testing conversion from unsigned short to long double
+Testing conversion from signed short to long double
+Testing conversion from unsigned char to long double
+Testing conversion from signed char to long double
+Testing conversion from unsigned long long to double
+Testing conversion from signed long long to double
+Testing conversion from unsigned long to double
+Testing conversion from signed long to double
+Testing conversion from unsigned int to double
+Testing conversion from signed int to double
+Testing conversion from unsigned short to double
+Testing conversion from signed short to double
+Testing conversion from unsigned char to double
+Testing conversion from signed char to double
+Testing conversion from unsigned long long to float
+Testing conversion from signed long long to float
+Testing conversion from unsigned long to float
+Testing conversion from signed long to float
+Testing conversion from unsigned int to float
+Testing conversion from signed int to float
+Testing conversion from unsigned short to float
+Testing conversion from signed short to float
+Testing conversion from unsigned char to float
+Testing conversion from signed char to float
+Test ( Pass ) {} 

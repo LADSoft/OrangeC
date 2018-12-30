@@ -797,8 +797,16 @@ void getAmodes(QUAD* q, enum e_opcode* op, IMODE* im, AMODE** apl, AMODE** aph)
                 {
                     int clr = beRegFromTemp(q, im);
                     int reg1, reg2;
-                    reg1 = regmap[clr & 0xff][1];
-                    reg2 = regmap[clr & 0xff][0];
+                    if (clr == 0)
+                    {
+                        reg1 = 1;
+                        reg2 = 0;
+                    }
+                    else
+                    {
+                        reg1 = regmap[clr & 0xff][1];
+                        reg2 = regmap[clr & 0xff][0];
+                    }
                     *apl = makeSSE(reg2);
                     *aph = makeSSE(reg1);
 //                    (*apl)->liveRegs = (*aph)->liveRegs = (1 << reg1) | (1 << reg2);
@@ -1895,7 +1903,7 @@ void asm_parm(QUAD* q) /* push a parameter*/
         if (q->dc.left->size >= ISZ_CFLOAT)
         {
             int sz = 8;
-            if (q->dc.left->size == ISZ_FLOAT || q->dc.left->size == ISZ_IFLOAT)
+            if (q->dc.left->size == ISZ_FLOAT || q->dc.left->size == ISZ_IFLOAT || q->dc.left->size == ISZ_CFLOAT)
                 sz = 4;
             gen_codes(op_sub, ISZ_UINT, makedreg(ESP), aimmed(sz*2));
             pushlevel += sz * 2;
@@ -1905,7 +1913,7 @@ void asm_parm(QUAD* q) /* push a parameter*/
         else if (q->dc.left->size >= ISZ_FLOAT)
         {
             int sz = 8;
-            if (q->dc.left->size == ISZ_FLOAT || q->dc.left->size == ISZ_IFLOAT)
+            if (q->dc.left->size == ISZ_FLOAT || q->dc.left->size == ISZ_IFLOAT || q->dc.left->size == ISZ_CFLOAT)
                 sz = 4;
             pushlevel += sz;
             if (apl->mode == am_xmmreg)
@@ -1972,7 +1980,7 @@ void asm_parm(QUAD* q) /* push a parameter*/
         if (q->dc.left->size >= ISZ_CFLOAT)
         {
             int sz = 8;
-            if (q->dc.left->size == ISZ_FLOAT || q->dc.left->size == ISZ_IFLOAT)
+            if (q->dc.left->size == ISZ_FLOAT || q->dc.left->size == ISZ_IFLOAT || q->dc.left->size == ISZ_CFLOAT)
                 sz = 4;
             gen_codes(op_sub, ISZ_UINT, makedreg(ESP), aimmed(sz * 2));
             pushlevel += sz * 2;
@@ -1982,7 +1990,7 @@ void asm_parm(QUAD* q) /* push a parameter*/
         else if (q->dc.left->size >= ISZ_FLOAT)
         {
             int sz = 8;
-            if (q->dc.left->size == ISZ_FLOAT || q->dc.left->size == ISZ_IFLOAT)
+            if (q->dc.left->size == ISZ_FLOAT || q->dc.left->size == ISZ_IFLOAT || q->dc.left->size == ISZ_CFLOAT)
                 sz = 4;
             if (sz == 4)
                 gen_code(op_push, makedreg(ECX), NULL);
@@ -2997,8 +3005,36 @@ void asm_assn(QUAD* q) /* assignment */
                     if (q->ans->size == ISZ_CFLOAT)
                         sz = 4;
                     AMODE *ap1 = make_offset(exprNode(en_add, fltexp, intNode(en_c_i, sz)));
-                    gen_code_sse(op_movss, op_movsd, q->ans->size, ap, apl);
-                    gen_code_sse(op_movss, op_movsd, q->ans->size, ap1, apl1);
+                    if (apl->mode == am_xmmreg)
+                    {
+                        apa = apl;
+                    }
+                    else
+                    {
+                        if (apl->mode == am_immed)
+                        {
+                            make_floatconst(apl);
+                        }
+                        apa->preg = 0;
+                        gen_code_sse(op_movss, op_movsd, q->ans->size, apa, apl);
+
+                    }
+                    if (apl->mode == am_xmmreg)
+                    {
+                        apa1 = apl1;
+                    }
+                    else
+                    {
+                        if (apl1->mode == am_immed)
+                        {
+                            make_floatconst(apl1);
+                        }
+                        apa1->preg = 1;
+                        gen_code_sse(op_movss, op_movsd, q->ans->size, apa1, apl1);
+
+                    }
+                    gen_code_sse(op_movss, op_movsd, q->ans->size, ap, apa);
+                    gen_code_sse(op_movss, op_movsd, q->ans->size, ap1, apa1);
                     ap1->length = ap->length = q->ans->size - ISZ_CFLOAT + ISZ_FLOAT;
                     gen_codef(op_fld, ap, NULL);
                     gen_codef(op_fld, ap1, NULL);

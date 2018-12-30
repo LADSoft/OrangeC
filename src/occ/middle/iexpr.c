@@ -3264,7 +3264,6 @@ IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
         case en_c_fc:
         case en_c_dc:
         case en_c_ldc:
-            diag("gen_expr: Complex Constant");
             ap1 = Alloc(sizeof(IMODE));
             ap1->mode = i_immed;
             ap1->offset = node;

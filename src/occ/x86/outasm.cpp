@@ -1475,7 +1475,7 @@ void dump_muldivval(void)
                 else
                 {
                     FPFToString(buf, &muldivlink->floatvalue);
-                    if (muldivlink->size == ISZ_FLOAT || muldivlink->size == ISZ_IFLOAT)
+                    if (muldivlink->size == ISZ_FLOAT || muldivlink->size == ISZ_IFLOAT || muldivlink->size == ISZ_CFLOAT)
 
                     {
                         bePrintf("\tdd\t%s\n", buf);

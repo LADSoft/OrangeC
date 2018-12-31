@@ -2128,6 +2128,15 @@ int examine_icode(QUAD* head)
                         b->tail = head->fwd;
                     changed = TRUE;
                 }
+                // this is primarily to optimize away the multiply by I needed to get an imaginary number
+                // the multiplication isn't fixed in the front end because the resulting conversion would be caught in this function and replaced with zero...
+                else if (head->dc.right->mode == i_immed && (isfloatconst(head->dc.right->offset) || isimaginaryconst(head->dc.right->offset)) && ValueIsOne(&head->dc.right->offset->v.f))
+                {
+                    head->temps &= ~TEMP_RIGHT;
+                    head->dc.right = NULL;
+                    head->dc.opcode = i_assn;
+                    break;
+                }
                 else
                     goto binary_join;
                 break;

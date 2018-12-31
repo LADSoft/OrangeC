@@ -186,12 +186,16 @@ AMODE *moveFP(AMODE *apa, int sza, AMODE *apl, int szl)
     }
     else if (apl->mode == am_xmmreg)
     {
-        apa = apl;
         int m1 = (sza - ISZ_FLOAT) % 3;
         int m2 = (szl - ISZ_FLOAT) % 3;
         if (m1 && !m2 || m2 && !m1)
         {
-            gen_code_sse(op_cvtsd2ss, op_cvtss2sd, sza, apa, apa);
+            gen_code_sse(op_cvtsd2ss, op_cvtss2sd, sza, apa, apl);
+        }
+        else
+        {
+            gen_code_sse(op_movss, op_movsd, sza, apa, apl);
+
         }
     }
     else
@@ -215,7 +219,7 @@ AMODE *moveFP(AMODE *apa, int sza, AMODE *apl, int szl)
                 gen_code_sse(op_movss, op_movsd, sza, apa, apl);
         }
     }
-    return apl;
+    return apa;
 }
 /*-------------------------------------------------------------------------*/
 

@@ -1567,6 +1567,55 @@ void peep_call(OCODE* ip)
         }
     }
 }
+void peep_fmovs(OCODE *ip)
+{
+    if (ip->oper1 && ip->oper2) // might be plain strin movsd...
+        if (ip->oper1->mode == am_xmmreg && ip->oper2->mode == am_xmmreg)
+            if (ip->oper1->preg == ip->oper2->preg)
+            {
+                remove_peep_entry(ip);
+                return;
+            }
+}
+void peep_fld(OCODE *ip)
+{
+    // don't try to optimize complex returns
+    if (ip->fwd->opcode == op_fld || ip->back->opcode == op_fld)
+        return;
+    int n = ip->oper1->length;
+    ip->oper1->length = 0;
+    if (ip->back->opcode == op_movsd || ip->back->opcode == op_movss)
+    {
+        if (equal_address(ip->back->oper1, ip->oper1))
+        {
+            if (ip->back->oper2->mode == am_xmmreg)
+            {
+                if (ip->back->back->opcode == ip->back->opcode)
+                {
+                    if (equal_address(ip->back->back->oper1, ip->back->oper2))
+                    {
+                        if (ip->back->back->oper2->mode != am_xmmreg)
+                        {
+                            ip->oper1 = ip->back->back->oper2;
+                            remove_peep_entry(ip->back->back);
+                            remove_peep_entry(ip->back);
+                        }
+
+                    }
+                }
+            }
+        }
+    }
+    ip->oper1->length = n;
+    if (ip->back->opcode == op_fstp)
+    {
+        if (equal_address(ip->back->oper1, ip->oper1))
+        {
+            remove_peep_entry(ip->back);
+            remove_peep_entry(ip);
+        }
+    }
+}
 void insert_peep_entry(OCODE* after, enum e_opcode opcode, int size, AMODE* ap1, AMODE* ap2)
 {
     OCODE* a = (OCODE*)beLocalAlloc(sizeof(OCODE));
@@ -1700,6 +1749,13 @@ void oa_peep(void)
                 case op_div:
                 case op_idiv:
                     ip = peep_div(ip);
+                    break;
+                case op_movss:
+                case op_movsd:
+                    peep_fmovs(ip);
+                    break;
+                case op_fld:
+                    peep_fld(ip);
                     break;
                 default:
                     break;

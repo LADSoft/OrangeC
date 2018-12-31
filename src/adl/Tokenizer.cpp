@@ -261,7 +261,7 @@ void Parser::TagClasses(std::string& cclass, std::string coding, std::map<std::s
     BYTE* b = new BYTE[bytes];
     memset(b, 0, bytes);
     std::string temp = cclass;
-    while (!temp.empty()
+    while (!temp.empty())
     {
         int npos = temp.find_first_not_of(", \t");
         if (npos == std::string::npos)
@@ -284,7 +284,7 @@ void Parser::TagClasses(std::string& cclass, std::string coding, std::map<std::s
     {
         x->SetBytes(b, bytes);
     }
-    if (!nodes.empty()
+    if (!nodes.empty())
     {
         if (coding != "")
         {
@@ -498,7 +498,7 @@ bool Parser::LoadOperandTokens(std::string name, std::string coding, std::map<st
         rv = false;
         std::cout << "Operand Error { " << expr << " } Begin without end." << std::endl;
     }
-    if (!nodes.empty()
+    if (!nodes.empty())
     {
         if (coding != "")
         {

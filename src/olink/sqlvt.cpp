@@ -1,8 +1,8 @@
 
 #include "../sqlite3/sqlite3.h"
 #include "sqlvt.h"
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 int IntegerColumnsVirtualTable::id;
 sqlite3_module SQL3ReadOnlyVirtualTable::Module = {

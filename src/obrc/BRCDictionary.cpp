@@ -28,7 +28,7 @@
 #include "ObjSymbol.h"
 #include "ObjBrowseInfo.h"
 #include "Utils.h"
-#include <ctype.h>
+#include <cctype>
 int BRCDictionary::primes[] = {
     3,    5,    7,    11,   13,   17,   19,   23,   29,   31,   37,   41,   43,   47,   53,   59,   61,   67,   71,   73,   79,
     83,   89,   97,   101,  103,  107,  109,  113,  127,  131,  137,  139,  149,  151,  157,  163,  167,  173,  179,  181,  191,
@@ -90,8 +90,8 @@ int BRCDictionary::primes[] = {
     9721, 9733, 9739, 9743, 9749, 9767, 9769, 9781, 9787, 9791, 9803, 9811, 9817, 9829, 9833, 9839, 9851, 9857, 9859, 9871, 9883,
     9887, 9901, 9907, 9923, 9929, 9931, 9941, 9949, 9967, 9973,
 };
-int BRCDictionary::ROTL(int x, int by) { return ((x << by) || (x >> (16 - by))) & 0xffff; }
-int BRCDictionary::ROTR(int x, int by) { return ((x >> by) || (x << (16 - by))) & 0xffff; }
+inline int BRCDictionary::ROTL(int x, int by) { return ((x << by) | (x >> (16 - by))) & 0xffff; }
+inline int BRCDictionary::ROTR(int x, int by) { return ((x >> by) | (x << (16 - by))) & 0xffff; }
 #define max(x, y) (((x) > (y)) ? (x) : (y))
 void BRCDictionary::ComputeHash(const char* name)
 {
@@ -130,7 +130,7 @@ void BRCDictionary::CreateDictionary(void)
         Clear();
     for (auto sym : symbols)
     {
-        int n = strlen(sym.first.c_str()) + 1;
+        int n = sym.first.length() + 1;
         if (n & 1)
             n++;
         total += n;

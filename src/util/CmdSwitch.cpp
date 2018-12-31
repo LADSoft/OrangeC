@@ -27,12 +27,11 @@
 
 #include "CmdSwitch.h"
 #include "Utils.h"
-#include <ctype.h>
+#include <cctype>
 #include <fstream>
-#include <limits.h>
-#include <stdlib.h>
-
-#include <string.h>
+#include <climits>
+#include <cstdlib>
+#include <cstring>
 
 CmdSwitchBase::CmdSwitchBase(CmdSwitchParser& parser, char SwitchChar) : exists(false), switchChar(SwitchChar) { parser += this; }
 int CmdSwitchBool::Parse(const char* data)
@@ -86,7 +85,7 @@ int CmdSwitchString::Parse(const char* data)
         data++;
     if (concat)
     {
-        if (concat != '+' && value.size())
+        if (concat != '+' && !value.empty())
             value += concat;
         value += data;
     }
@@ -173,7 +172,7 @@ int CmdSwitchFile::Parse(const char* data)
     int n = CmdSwitchString::Parse(data);
     if (n < 0 || argv)
         return n;
-    std::fstream in(CmdSwitchString::GetValue().c_str(), std::ios::in);
+    std::fstream in(CmdSwitchString::GetValue(), std::ios::in);
     if (!in.fail())
     {
         in.seekg(0, std::ios::end);
@@ -275,7 +274,7 @@ bool CmdSwitchParser::Parse(int* argc, char* argv[])
             if (it == switches.end())
                 return false;
             (*it)->Parse(&argv[0][1]);
-            memcpy(argv, argv + 1, (*argc + 1 - i) * sizeof(char*));
+            memmove(argv, argv + 1, (*argc + 1 - i) * sizeof(char*));
             (*argc)--;
         }
         else if ((argv[0][0] == '-' || argv[0][0] == '/') && argv[0][1])
@@ -299,7 +298,7 @@ bool CmdSwitchParser::Parse(int* argc, char* argv[])
                     while (n == INT_MAX && argv[1])
                     {
                         // use next arg as the value
-                        memcpy(argv, argv + 1, (*argc - i) * sizeof(char*));
+                        memmove(argv, argv + 1, (*argc - i) * sizeof(char*));
                         (*argc)--;
                         data = &argv[0][0];
                         end = data + strlen(data);
@@ -314,7 +313,7 @@ bool CmdSwitchParser::Parse(int* argc, char* argv[])
                     data += n;
                 }
             }
-            memcpy(argv, argv + 1, (*argc - i) * sizeof(char*));
+            memmove(argv, argv + 1, (*argc - i) * sizeof(char*));
             (*argc)--;
         }
         else

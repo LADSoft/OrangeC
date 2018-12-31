@@ -25,9 +25,9 @@
 
 #include "ObjExpression.h"
 #include "ObjSymbol.h"
-#include <ctype.h>
-#include <stdio.h>
-#include <string.h>
+#include <cctype>
+#include <cstdio>
+#include <cstring>
 
 static char* unmangle(char* val, char* name);
 

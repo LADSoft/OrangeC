@@ -28,7 +28,7 @@
 #include "CmdFiles.h"
 #include "PreProcessor.h"
 #include "Errors.h"
-#include <stdlib.h>
+#include <cstdlib>
 
 CmdSwitchParser ppMain::SwitchParser;
 CmdSwitchBool ppMain::assembly(SwitchParser, 'a', false);
@@ -64,7 +64,7 @@ int ppMain::Run(int argc, char* argv[])
     Utils::SetEnvironmentToPathParent("ORANGEC");
     CmdSwitchFile internalConfig(SwitchParser);
     std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
-    std::fstream configTest(configName.c_str(), std::ios::in);
+    std::fstream configTest(configName, std::ios::in);
     if (!configTest.fail())
     {
         configTest.close();
@@ -81,7 +81,7 @@ int ppMain::Run(int argc, char* argv[])
 
     std::string sysSrchPth;
     std::string srchPth;
-    if (includePath.GetValue().size())
+    if (!includePath.GetValue().empty())
     {
         size_t n = includePath.GetValue().find_first_of(';');
         if (n == std::string::npos)
@@ -96,7 +96,7 @@ int ppMain::Run(int argc, char* argv[])
     }
     Tokenizer::SetAnsi(disableExtensions.GetValue());
     Tokenizer::SetC99(c99Mode.GetValue());
-    for (CmdFiles::FileNameIterator it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
+    for (auto it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
     {
         PreProcessor pp(*(*it), srchPth, sysSrchPth, false, trigraphs.GetValue(), assembly.GetValue() ? '%' : '#', false,
                         !c99Mode.GetValue(), !disableExtensions.GetValue());
@@ -112,7 +112,7 @@ int ppMain::Run(int argc, char* argv[])
             pp.Define("__STDC_VERSION__", ver, true);
         }
         std::string working = undefines.GetValue();
-        while (working.size())
+        while (!working.empty())
         {
             size_t n = working.find_first_of(';');
             if (n == std::string::npos)
@@ -128,7 +128,7 @@ int ppMain::Run(int argc, char* argv[])
             }
         }
         working = errorMax.GetValue();
-        if (working.size())
+        if (!working.empty())
         {
             if (working[0] == '+')
             {
@@ -141,14 +141,14 @@ int ppMain::Run(int argc, char* argv[])
                 Errors::SetMaxErrors(n);
             }
         }
-        if (outputPath.GetValue().size())
+        if (!outputPath.GetValue().empty())
             working = outputPath.GetValue();
         else if (getenv("OCC_LEGACY_OPTIONS"))
             working = Utils::QualifiedFile((*it)->c_str(), ".i");
 
         std::ostream* outstream = nullptr;
-        if (working.size())
-            outstream = new std::fstream(working.c_str(), std::ios::out);
+        if (!working.empty())
+            outstream = new std::fstream(working, std::ios::out);
         else
             outstream = &std::cout;
         while (pp.GetLine(working))
@@ -219,7 +219,7 @@ int ppMain::Run(int argc, char* argv[])
                     }
                 }
             }
-            (*outstream) << working.c_str() << std::endl;
+            (*outstream) << working << std::endl;
         }
         if (outstream != &std::cout)
         {

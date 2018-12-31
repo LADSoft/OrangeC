@@ -30,7 +30,7 @@
 #include "SymbolTable.h"
 #include "Sorter.h"
 #include "PrintFormatter.h"
-#include <string.h>
+#include <cstring>
 
 CmdSwitchParser nmMain::SwitchParser;
 CmdSwitchBool nmMain::filePerLine(SwitchParser, 'A');
@@ -83,7 +83,7 @@ int nmMain::Run(int argc, char** argv)
     Utils::SetEnvironmentToPathParent("ORANGEC");
     CmdSwitchFile internalConfig(SwitchParser);
     std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
-    std::fstream configTest(configName.c_str(), std::ios::in);
+    std::fstream configTest(configName, std::ios::in);
     if (!configTest.fail())
     {
         configTest.close();

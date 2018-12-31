@@ -31,9 +31,9 @@
 #include "ObjFactory.h"
 #include "ObjIeee.h"
 #include "LinkRegionFileSpec.h"
-#include <time.h>
-#include <stdio.h>
-#include <string.h>
+#include <ctime>
+#include <cstdio>
+#include <cstring>
 
 unsigned LinkRemapper::crc_table[256] = {
     0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f, 0xe963a535, 0x9e6495a3, 0x0edb8832, 0x79dcb8a4,
@@ -65,8 +65,7 @@ unsigned LinkRemapper::crc_table[256] = {
 };
 unsigned LinkRemapper::crc32(unsigned char* buf, int len, unsigned crc)
 {
-    int i;
-    for (i = 0; i < len; i++)
+    for (int i = 0; i < len; i++)
     {
         crc = crc_table[(crc ^ buf[i]) & 0xFF] ^ (crc >> 8);
     }
@@ -98,7 +97,7 @@ ObjInt LinkRemapper::RenumberSection(LinkRegion* region, ObjSection* dest, LinkR
             n = 0;
         }
         source->section->SetOffset(new ObjExpression(base + n));
-        for (ObjMemoryManager::MemoryIterator it = memManager.MemoryBegin(); it != memManager.MemoryEnd(); ++it)
+        for (auto it = memManager.MemoryBegin(); it != memManager.MemoryEnd(); ++it)
         {
             n += (*it)->GetSize();
             // redo source file indexes
@@ -241,7 +240,7 @@ ObjExpression* LinkRemapper::ScanExpression(ObjExpression* offset, LinkSymbolDat
             if (d && offset->GetSymbol()->GetType() == ObjSymbol::eExternal)
             {
                 d->SetSymbol(offset->GetSymbol());
-                LinkManager::SymbolIterator it = manager->PublicFind(d);
+                auto it = manager->PublicFind(d);
                 if (it != manager->PublicEnd())
                 {
                     return (*it)->GetSymbol()->GetOffset();
@@ -299,8 +298,7 @@ ObjInt LinkRemapper::GetTypeIndex(ObjType* type)
 {
     if (type->GetType() < ObjType::eVoid)
         return LookupFileType(type->GetIndex());
-    else
-        return LookupFileType((int)type->GetType());
+    return LookupFileType((int)type->GetType());
 }
 /*
 void LinkRemapper::SetTypeIndex(ObjType *type)
@@ -365,7 +363,7 @@ ObjInt LinkRemapper::MapType(ObjFile* file, ObjType* type)
             // structure name different ways in differnet files..
             unsigned crc = 0xffffffff;
             {
-                for (ObjType::FieldIterator it = type->FieldBegin(); it != type->FieldEnd(); ++it)
+                for (auto it = type->FieldBegin(); it != type->FieldEnd(); ++it)
                 {
                     sprintf(name, "%s;%d;", (*it)->GetName().c_str(), (*it)->GetConstVal());
                     crc = crc32((unsigned char*)name, strlen(name), crc);
@@ -398,8 +396,7 @@ ObjInt LinkRemapper::LookupFileType(ObjInt type)
     auto nty = fileTypes.find(type);
     if (nty != fileTypes.end())
         return nty->second;
-    else
-        return 0;
+    return 0;
 }
 void LinkRemapper::RenumberType(ObjFile* file, ObjType* type)
 {
@@ -430,12 +427,11 @@ ObjFile* LinkRemapper::Remap()
     if (tmx)
         file->SetFileTime(*tmx);
     int group = 0;
-    for (LinkManager::PartitionIterator it = manager->PartitionBegin(); it != manager->PartitionEnd(); ++it)
+    for (auto it = manager->PartitionBegin(); it != manager->PartitionEnd(); ++it)
     {
         if ((*it)->GetPartition())
         {
-            for (LinkPartition::OverlayIterator ito = (*it)->GetPartition()->OverlayBegin();
-                 ito != (*it)->GetPartition()->OverlayEnd(); ++ito)
+            for (auto ito = (*it)->GetPartition()->OverlayBegin(); ito != (*it)->GetPartition()->OverlayEnd(); ++ito)
             {
                 if ((*ito)->GetOverlay())
                 {
@@ -448,15 +444,15 @@ ObjFile* LinkRemapper::Remap()
         }
     }
     std::map<std::string, int> externs;
-    for (LinkManager::FileIterator it = manager->FileBegin(); it != manager->FileEnd(); ++it)
+    for (auto it = manager->FileBegin(); it != manager->FileEnd(); ++it)
     {
         if ((*it)->GetBigEndian())
             file->SetBigEndian(true);
-        for (ObjFile::SymbolIterator its = (*it)->PublicBegin(); its != (*it)->PublicEnd(); ++its)
+        for (auto its = (*it)->PublicBegin(); its != (*it)->PublicEnd(); ++its)
         {
             RenumberSymbol(file, *its, indexManager->NextPublic());
         }
-        for (ObjFile::SymbolIterator its = (*it)->ExternalBegin(); its != (*it)->ExternalEnd(); ++its)
+        for (auto its = (*it)->ExternalBegin(); its != (*it)->ExternalEnd(); ++its)
         {
             std::string name = (*its)->GetName();
             if (manager->IsExternal(name))
@@ -478,48 +474,47 @@ ObjFile* LinkRemapper::Remap()
                 }
             }
         }
-        for (ObjFile::SymbolIterator its = (*it)->LocalBegin(); its != (*it)->LocalEnd(); ++its)
+        for (auto its = (*it)->LocalBegin(); its != (*it)->LocalEnd(); ++its)
         {
             RenumberSymbol(file, *its, indexManager->NextLocal());
         }
-        for (ObjFile::SymbolIterator its = (*it)->AutoBegin(); its != (*it)->AutoEnd(); ++its)
+        for (auto its = (*it)->AutoBegin(); its != (*it)->AutoEnd(); ++its)
         {
             RenumberSymbol(file, *its, indexManager->NextAuto());
         }
-        for (ObjFile::SymbolIterator its = (*it)->RegBegin(); its != (*it)->RegEnd(); ++its)
+        for (auto its = (*it)->RegBegin(); its != (*it)->RegEnd(); ++its)
         {
             RenumberSymbol(file, *its, indexManager->NextReg());
         }
-        for (ObjFile::SymbolIterator its = (*it)->ExportBegin(); its != (*it)->ExportEnd(); ++its)
+        for (auto its = (*it)->ExportBegin(); its != (*it)->ExportEnd(); ++its)
         {
             RenumberSymbol(file, *its, 0);
         }
-        for (ObjFile::TypeIterator its = (*it)->TypeBegin(); its != (*it)->TypeEnd(); ++its)
+        for (auto its = (*it)->TypeBegin(); its != (*it)->TypeEnd(); ++its)
         {
             RenumberType(file, *its);
         }
-        for (ObjFile::TypeIterator its = (*it)->TypeBegin(); its != (*it)->TypeEnd(); ++its)
+        for (auto its = (*it)->TypeBegin(); its != (*it)->TypeEnd(); ++its)
         {
             (*its)->SetIndex(LookupFileType((*its)->GetIndex()));
         }
         fileTypes.clear();
-        for (ObjFile::SourceFileIterator its = (*it)->SourceFileBegin(); its != (*it)->SourceFileEnd(); ++its)
+        for (auto its = (*it)->SourceFileBegin(); its != (*it)->SourceFileEnd(); ++its)
         {
             RenumberSourceFile(file, *its);
         }
     }
-    for (LinkManager::SymbolIterator its = manager->ImportBegin(); its != manager->ImportEnd(); ++its)
+    for (auto its = manager->ImportBegin(); its != manager->ImportEnd(); ++its)
     {
         ObjSymbol* sym = (*its)->GetSymbol();
         RenumberSymbol(file, sym, 0);
     }
     group = 0;
-    for (LinkManager::PartitionIterator it = manager->PartitionBegin(); it != manager->PartitionEnd(); ++it)
+    for (auto it = manager->PartitionBegin(); it != manager->PartitionEnd(); ++it)
     {
         if ((*it)->GetPartition())
         {
-            for (LinkPartition::OverlayIterator ito = (*it)->GetPartition()->OverlayBegin();
-                 ito != (*it)->GetPartition()->OverlayEnd(); ++ito)
+            for (auto ito = (*it)->GetPartition()->OverlayBegin(); ito != (*it)->GetPartition()->OverlayEnd(); ++ito)
             {
                 if ((*ito)->GetOverlay())
                 {
@@ -529,22 +524,20 @@ ObjFile* LinkRemapper::Remap()
                     section->SetAlignment((*ito)->GetOverlay()->GetAttribs().GetAlign());
                     if ((*ito)->GetOverlay()->GetAttribs().GetSize() > 0)
                         section->SetSize(new ObjExpression((*ito)->GetOverlay()->GetAttribs().GetSize()));
-                    for (LinkOverlay::RegionIterator itr = (*ito)->GetOverlay()->RegionBegin();
-                         itr != (*ito)->GetOverlay()->RegionEnd(); ++itr)
+                    for (auto itr = (*ito)->GetOverlay()->RegionBegin(); itr != (*ito)->GetOverlay()->RegionEnd(); ++itr)
                     {
                         if ((*itr)->GetRegion())
                         {
                             ObjInt bytes = 0;
-                            for (LinkRegion::SectionDataIterator its = (*itr)->GetRegion()->NowDataBegin();
-                                 its != (*itr)->GetRegion()->NowDataEnd(); ++its)
+                            for (auto its = (*itr)->GetRegion()->NowDataBegin(); its != (*itr)->GetRegion()->NowDataEnd(); ++its)
                                 for (auto cursect : (*its)->sections)
                                     bytes += RenumberSection((*itr)->GetRegion(), section, &cursect, group, bytes + base);
-                            for (LinkRegion::SectionDataIterator its = (*itr)->GetRegion()->NormalDataBegin();
-                                 its != (*itr)->GetRegion()->NormalDataEnd(); ++its)
+                            for (auto its = (*itr)->GetRegion()->NormalDataBegin(); its != (*itr)->GetRegion()->NormalDataEnd();
+                                 ++its)
                                 for (auto cursect : (*its)->sections)
                                     bytes += RenumberSection((*itr)->GetRegion(), section, &cursect, group, bytes + base);
-                            for (LinkRegion::SectionDataIterator its = (*itr)->GetRegion()->PostponeDataBegin();
-                                 its != (*itr)->GetRegion()->PostponeDataEnd(); ++its)
+                            for (auto its = (*itr)->GetRegion()->PostponeDataBegin(); its != (*itr)->GetRegion()->PostponeDataEnd();
+                                 ++its)
                                 for (auto cursect : (*its)->sections)
                                     bytes += RenumberSection((*itr)->GetRegion(), section, &cursect, group, bytes + base);
                             /*

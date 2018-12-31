@@ -41,10 +41,7 @@ class BRCDictionary
     typedef std::map<ObjString, ObjInt> Dictionary;
     enum
     {
-        LIB_PAGE_SIZE = 512
-    };
-    enum
-    {
+        LIB_PAGE_SIZE = 512,
         LIB_BUCKETS = 37
     };
     union DICTPAGE

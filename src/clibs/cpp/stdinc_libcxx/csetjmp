@@ -1,3 +1,0 @@
-#define __USING_CNAME__
-#include <setjmp.h>
-#undef __USING_CNAME__

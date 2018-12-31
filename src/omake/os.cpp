@@ -22,38 +22,36 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-
+// This file contains a lot of comments that use mutexes, this is because OrangeC currently does not have C++ mutexes but once it
+// does it'll be done
 #define _CRT_SECURE_NO_WARNINGS
 
 #ifdef GCCLINUX
 #    include <unistd.h>
 #else
 #    include <windows.h>
-#    define __MT__  // BCC55 support
 #    include <process.h>
 #    include <direct.h>
 #endif
 #undef WriteConsole
-#include <stdio.h>
-#include <time.h>
+#define __MT__  // BCC55 support
+#include <cstdio>
+#include <ctime>
 #include <string>
-#undef min
-#undef max
 #include "Variable.h"
 #include "Eval.h"
 #include "os.h"
 #include <algorithm>
 #include <iostream>
 #include <sstream>
-
+//#include <mutex>
+#include "semaphores.h"
 //#define DEBUG
-
-#ifndef GCCLINUX
-static HANDLE jobsSemaphore;
-
+static Semaphore sema;
+#ifdef _WIN32
 static CRITICAL_SECTION consoleSync;
 #endif
-
+// static std::recursive_mutex consoleMut;
 std::deque<int> OS::jobCounts;
 bool OS::isSHEXE;
 int OS::jobsLeft;
@@ -116,11 +114,14 @@ void OS::Init()
     InitializeCriticalSection(&consoleSync);
 #endif
 }
+
 void OS::WriteConsole(std::string string)
 {
+    // std::lock_guard<decltype(consoleMut)> lg(consoleMut);
 #ifdef _WIN32
-    DWORD written;
     EnterCriticalSection(&consoleSync);
+
+    DWORD written;
     WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), string.c_str(), string.size(), &written, nullptr);
     LeaveCriticalSection(&consoleSync);
 #else
@@ -129,6 +130,7 @@ void OS::WriteConsole(std::string string)
 }
 void OS::ToConsole(std::deque<std::string>& strings)
 {
+// std::lock_guard<decltype(consoleMut)> lg(consoleMut);
 #ifdef _WIN32
     EnterCriticalSection(&consoleSync);
 #endif
@@ -143,6 +145,7 @@ void OS::ToConsole(std::deque<std::string>& strings)
 }
 void OS::AddConsole(std::deque<std::string>& strings, std::string string)
 {
+// std::lock_guard<decltype(consoleMut)> lg(consoleMut);
 #ifdef _WIN32
     EnterCriticalSection(&consoleSync);
 #endif
@@ -163,17 +166,10 @@ void OS::PopJobCount()
 }
 bool OS::TakeJob()
 {
-#ifdef _WIN32
-    WaitForSingleObject(jobsSemaphore, INFINITE);
-#endif
+    sema.Wait();
     return false;
 }
-void OS::GiveJob()
-{
-#ifdef _WIN32
-    ReleaseSemaphore(jobsSemaphore, 1, nullptr);
-#endif
-}
+void OS::GiveJob() { sema.Post(); }
 void OS::JobInit()
 {
     std::string name;
@@ -185,7 +181,7 @@ void OS::JobInit()
     else
     {
         std::ostringstream t;
-        srand((unsigned)time(NULL));
+        srand((unsigned)time(nullptr));
         t << rand() << rand();
         name = t.str();
         v = new Variable(".OMAKESEM", name, Variable::f_recursive, Variable::o_environ);
@@ -193,16 +189,9 @@ void OS::JobInit()
     }
     v->SetExport(true);
     name = std::string("OMAKE") + name;
-#ifdef _WIN32
-    jobsSemaphore = CreateSemaphore(nullptr, jobsLeft, jobsLeft, name.c_str());
-#endif
+    sema = Semaphore(name, jobsLeft);
 }
-void OS::JobRundown()
-{
-#ifdef _WIN32
-    CloseHandle(jobsSemaphore);
-#endif
-}
+void OS::JobRundown() { sema.~Semaphore(); }
 void OS::Take()
 {
 #ifdef _WIN32
@@ -250,7 +239,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         cmd += " /c ";
     }
     cmd += QuoteCommand(command1);
-    STARTUPINFO startup;
+    STARTUPINFO startup = {};
     PROCESS_INFORMATION pi;
     HANDLE pipeRead, pipeWrite, pipeWriteDuplicate;
     if (output)
@@ -260,7 +249,6 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         CloseHandle(pipeWrite);
     }
     int rv;
-    memset(&startup, 0, sizeof(startup));
     startup.cb = sizeof(STARTUPINFO);
     startup.dwFlags = STARTF_USESTDHANDLES;
     startup.hStdInput = GetStdHandle(STD_INPUT_HANDLE);

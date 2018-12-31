@@ -26,10 +26,10 @@
 #include "BRCDictionary.h"
 #include "BRCWriter.h"
 #include "ObjBrowseInfo.h"
-#include <stdio.h>
+#include <cstdio>
 #include <algorithm>
-#include <string.h>
-#include <stdlib.h>
+#include <cstring>
+#include <cstdlib>
 #ifdef GCCLINUX
 #    include <unistd.h>
 #else
@@ -434,7 +434,7 @@ bool BRCWriter::WriteFileList()
     {
         std::string myString = item.first;
         std::transform(myString.begin(), myString.end(), myString.begin(), easytolower);
-        if (!Insert(myString.c_str(), item.second))
+        if (!Insert(myString, item.second))
             return false;
     }
     End();
@@ -555,7 +555,7 @@ bool BRCWriter::WriteDictionary(Symbols& syms)
                     break;
             }
         }
-        if (!Insert(sym1.first.c_str(), type, &sym->index))
+        if (!Insert(sym1.first, type, &sym->index))
             return false;
     }
     End();
@@ -611,7 +611,7 @@ bool BRCWriter::WriteJumpTable(Symbols& syms)
     for (auto sym : syms)
     {
         SymData* s = sym.second;
-        if (s->data.size())
+        if (!s->data.empty())
         {
             BrowseData *gl = nullptr, *ex = nullptr;
             for (auto b : s->data)

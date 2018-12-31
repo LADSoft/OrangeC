@@ -174,7 +174,7 @@ void ppPragma::HandleSR(Tokenizer& tk, bool startup)
 }
 Startups::~Startups()
 {
-    for (StartupIterator it = begin(); it != end(); ++it)
+    for (auto it = begin(); it != end(); ++it)
     {
         Properties* x = it->second;
         delete x;

@@ -27,10 +27,10 @@
 #include "Utils.h"
 #include "sqlite3.h"
 
-#include <stdio.h>
-#include <ctype.h>
+#include <cstdio>
+#include <cctype>
 #include <map>
-#include <string.h>
+#include <cstring>
 
 void PEDebugObject::Setup(ObjInt& endVa, ObjInt& endPhys)
 {

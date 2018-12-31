@@ -94,7 +94,7 @@ void LinkMap::ShowPartitionLine(std::fstream& stream, LinkPartition* partition)
     if (partition)
     {
         LinkAttribs& attribs = partition->GetAttribs();
-        stream << "Partition: " << partition->GetName().c_str();
+        stream << "Partition: " << partition->GetName();
         ShowAttribs(stream, attribs, 0, -1);
     }
 }
@@ -103,7 +103,7 @@ void LinkMap::ShowOverlayLine(std::fstream& stream, LinkOverlay* overlay)
     if (overlay)
     {
         LinkAttribs& attribs = overlay->GetAttribs();
-        stream << "  Overlay: " << overlay->GetName().c_str();
+        stream << "  Overlay: " << overlay->GetName();
         ShowAttribs(stream, attribs, 0, -1);
     }
 }
@@ -112,13 +112,13 @@ void LinkMap::ShowRegionLine(std::fstream& stream, LinkRegion* region, ObjInt of
     if (region)
     {
         LinkAttribs& attribs = region->GetAttribs();
-        stream << "    Region: " << region->GetName().c_str();
+        stream << "    Region: " << region->GetName();
         ShowAttribs(stream, attribs, offs, group);
     }
 }
 void LinkMap::ShowFileLine(std::fstream& stream, LinkRegion::OneSection* data, ObjInt n)
 {
-    stream << "      File: " << data->file->GetName().c_str() << "(" << data->section->GetName().c_str() << ") ";
+    stream << "      File: " << data->file->GetName() << "(" << data->section->GetName() << ") ";
     stream << "addr=" << std::setw(6) << std::setfill('0') << std::hex << data->section->GetOffset()->Eval(0) /*+ n*/ << " ";
     stream << "size=" << std::setw(4) << std::setfill('0') << std::hex << data->section->GetSize()->Eval(0) << " ";
     stream << std::endl;
@@ -130,18 +130,17 @@ void LinkMap::ShowSymbol(std::fstream& stream, const MapSymbolData& symbol)
         stream << "   ";
     else
         stream << " X ";
-    stream << symbol.sym->GetSymbol()->GetDisplayName().c_str() << std::setw(1) << std::endl;
+    stream << symbol.sym->GetSymbol()->GetDisplayName() << std::setw(1) << std::endl;
 }
 void LinkMap::NormalSections(std::fstream& stream)
 {
     stream << "Partition Map" << std::endl << std::endl;
-    for (LinkManager::PartitionIterator it = manager->PartitionBegin(); it != manager->PartitionEnd(); ++it)
+    for (auto it = manager->PartitionBegin(); it != manager->PartitionEnd(); ++it)
     {
         ShowPartitionLine(stream, (*it)->GetPartition());
         if ((*it)->GetPartition())
         {
-            for (LinkPartition::OverlayIterator itc = (*it)->GetPartition()->OverlayBegin();
-                 itc != (*it)->GetPartition()->OverlayEnd(); ++itc)
+            for (auto itc = (*it)->GetPartition()->OverlayBegin(); itc != (*it)->GetPartition()->OverlayEnd(); ++itc)
             {
                 if ((*itc)->GetOverlay())
                 {
@@ -155,43 +154,39 @@ void LinkMap::DetailedSections(std::fstream& stream)
 {
     stream << "Detailed Section Map" << std::endl << std::endl;
     int group = 1;
-    for (LinkManager::PartitionIterator it = manager->PartitionBegin(); it != manager->PartitionEnd(); ++it)
+    for (auto it = manager->PartitionBegin(); it != manager->PartitionEnd(); ++it)
     {
         if ((*it)->GetPartition())
         {
             ShowPartitionLine(stream, (*it)->GetPartition());
-            for (LinkPartition::OverlayIterator itc = (*it)->GetPartition()->OverlayBegin();
-                 itc != (*it)->GetPartition()->OverlayEnd(); ++itc)
+            for (auto itc = (*it)->GetPartition()->OverlayBegin(); itc != (*it)->GetPartition()->OverlayEnd(); ++itc)
             {
                 if ((*itc)->GetOverlay())
                 {
                     overlays.push_back((*itc)->GetOverlay());
                     ShowOverlayLine(stream, (*itc)->GetOverlay());
-                    for (LinkOverlay::RegionIterator itr = (*itc)->GetOverlay()->RegionBegin();
-                         itr != (*itc)->GetOverlay()->RegionEnd(); ++itr)
+                    for (auto itr = (*itc)->GetOverlay()->RegionBegin(); itr != (*itc)->GetOverlay()->RegionEnd(); ++itr)
                     {
                         if ((*itr)->GetRegion())
                         {
                             int n = (*itc)->GetOverlay()->GetAttribs().GetAddress();
                             ShowRegionLine(stream, (*itr)->GetRegion(), n, group);
-                            for (LinkRegion::SectionDataIterator it = (*itr)->GetRegion()->NowDataBegin();
-                                 it != (*itr)->GetRegion()->NowDataEnd(); ++it)
+                            for (auto it = (*itr)->GetRegion()->NowDataBegin(); it != (*itr)->GetRegion()->NowDataEnd(); ++it)
                             {
                                 for (auto sect : (*it)->sections)
                                 {
                                     ShowFileLine(stream, &sect, n);
                                 }
                             }
-                            for (LinkRegion::SectionDataIterator it = (*itr)->GetRegion()->NormalDataBegin();
-                                 it != (*itr)->GetRegion()->NormalDataEnd(); ++it)
+                            for (auto it = (*itr)->GetRegion()->NormalDataBegin(); it != (*itr)->GetRegion()->NormalDataEnd(); ++it)
                             {
                                 for (auto sect : (*it)->sections)
                                 {
                                     ShowFileLine(stream, &sect, n);
                                 }
                             }
-                            for (LinkRegion::SectionDataIterator it = (*itr)->GetRegion()->PostponeDataBegin();
-                                 it != (*itr)->GetRegion()->PostponeDataEnd(); ++it)
+                            for (auto it = (*itr)->GetRegion()->PostponeDataBegin(); it != (*itr)->GetRegion()->PostponeDataEnd();
+                                 ++it)
                             {
                                 for (auto sect : (*it)->sections)
                                 {
@@ -210,7 +205,7 @@ void LinkMap::Publics(std::fstream& stream)
 {
     std::set<MapSymbolData, linkltcomparebyname> byName;
     std::set<MapSymbolData, linkltcomparebyvalue> byValue;
-    for (LinkManager::SymbolIterator it = manager->PublicBegin(); it != manager->PublicEnd(); it++)
+    for (auto it = manager->PublicBegin(); it != manager->PublicEnd(); it++)
     {
         int group;
         ObjInt base = PublicBase((*it)->GetSymbol()->GetOffset(), group);
@@ -227,7 +222,7 @@ void LinkMap::Publics(std::fstream& stream)
 }
 void LinkMap::WriteMap()
 {
-    std::fstream stream(name.c_str(), std::ios::out | std::ios::trunc);
+    std::fstream stream(name, std::ios::out | std::ios::trunc);
     if (!stream.fail())
     {
         if (type == eDetailed)

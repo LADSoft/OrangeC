@@ -26,8 +26,6 @@
 #ifndef CMDFILES_H
 #define CMDFILES_H
 
-#undef min
-#undef max
 #include <vector>
 #include <string>
 

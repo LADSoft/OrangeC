@@ -35,7 +35,7 @@
 #include "DefFile.h"
 #include "DLLExportReader.h"
 
-#include <ctype.h>
+#include <cctype>
 #include <iostream>
 
 int main(int argc, char** argv)
@@ -127,7 +127,7 @@ void ImpLibMain::AddFile(LibManager& librarian, const char* arg)
                             DefFile defFile(inputFile, CDLLSwitch.GetValue());
                             if (!defFile.Read())
                             {
-                                std::cout << "Def file '" << inputFile.c_str() << "' is missing or in wrong format" << std::endl;
+                                std::cout << "Def file '" << inputFile << "' is missing or in wrong format" << std::endl;
                                 return;
                             }
                             defFile.SetFileName(inputFile);
@@ -141,14 +141,13 @@ void ImpLibMain::AddFile(LibManager& librarian, const char* arg)
                                 case 0:
                                     break;
                                 case 1:
-                                    std::cout << "Dll file '" << inputFile.c_str() << "' is missing" << std::endl;
+                                    std::cout << "Dll file '" << inputFile << "' is missing" << std::endl;
                                     break;
                                 case 2:
-                                    std::cout << "Dll file '" << inputFile.c_str() << "' is invalid format" << std::endl;
+                                    std::cout << "Dll file '" << inputFile << "' is invalid format" << std::endl;
                                     break;
                                 case 3:
-                                    std::cout << "Dll file '" << inputFile.c_str() << "' exports are missing or invalid"
-                                              << std::endl;
+                                    std::cout << "Dll file '" << inputFile << "' exports are missing or invalid" << std::endl;
                                     break;
                                     return;
                             }
@@ -263,14 +262,14 @@ ObjFile* ImpLibMain::DefFileToObjFile(DefFile& def)
 {
     ObjectData* od = new ObjectData;
     ObjFile* obj = new ObjFile(def.GetLibraryName());
-    for (DefFile::ExportIterator it = def.ExportBegin(); it != def.ExportEnd(); ++it)
+    for (auto it = def.ExportBegin(); it != def.ExportEnd(); ++it)
     {
         ObjImportSymbol* p = od->factory.MakeImportSymbol(
             (CDLLSwitch.GetValue() && (*it)->id.find('@') == std::string::npos ? "_" : "") + (*it)->id);
         p->SetExternalName((*it)->entry);
         p->SetByOrdinal((*it)->byOrd);
         p->SetOrdinal((*it)->ord);
-        if ((*it)->module.size())
+        if (!(*it)->module.empty())
             p->SetDllName((*it)->module);
         else
             p->SetDllName(def.GetLibraryName());
@@ -331,10 +330,7 @@ int ImpLibMain::HandleObjFile(const std::string& outputFile, int argc, char** ar
         fclose(stream);
         return 0;
     }
-    else
-    {
-        return 1;
-    }
+    return 1;
 }
 int ImpLibMain::HandleLibrary(const std::string& outputFile, int argc, char** argv)
 {
@@ -343,18 +339,18 @@ int ImpLibMain::HandleLibrary(const std::string& outputFile, int argc, char** ar
     if (librarian.IsOpen())
         if (!librarian.LoadLibrary())
         {
-            std::cout << outputFile.c_str() << " is not a library" << std::endl;
+            std::cout << outputFile << " is not a library" << std::endl;
             return 1;
         }
     for (int i = 2; i < argc; i++)
         AddFile(librarian, argv[i]);
     for (int i = 1; i < File.GetCount(); i++)
         AddFile(librarian, File.GetValue()[i]);
-    for (CmdFiles::FileNameIterator it = addFiles.FileNameBegin(); it != addFiles.FileNameEnd(); ++it)
+    for (auto it = addFiles.FileNameBegin(); it != addFiles.FileNameEnd(); ++it)
     {
         librarian.AddFile(*(*it));
     }
-    for (CmdFiles::FileNameIterator it = replaceFiles.FileNameBegin(); it != replaceFiles.FileNameEnd(); ++it)
+    for (auto it = replaceFiles.FileNameBegin(); it != replaceFiles.FileNameEnd(); ++it)
     {
         librarian.ReplaceFile(*(*it));
     }
@@ -381,7 +377,7 @@ int ImpLibMain::Run(int argc, char** argv)
     Utils::SetEnvironmentToPathParent("ORANGEC");
     CmdSwitchFile internalConfig(SwitchParser);
     std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
-    std::fstream configTest(configName.c_str(), std::ios::in);
+    std::fstream configTest(configName, std::ios::in);
     if (!configTest.fail())
     {
         configTest.close();
@@ -437,7 +433,7 @@ int ImpLibMain::Run(int argc, char** argv)
         }
         else if (ext != ".l" && ext != ".a" && ext != ".lib")
         {
-            std::cout << outputFile.c_str() << " is an invalid output file type" << std::endl;
+            std::cout << outputFile << " is an invalid output file type" << std::endl;
             return 1;
         }
     }

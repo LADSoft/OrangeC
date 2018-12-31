@@ -27,7 +27,7 @@
 #include "ppMacro.h"
 #include "UTF8.h"
 #include <fstream>
-#include <limits.h>
+#include <climits>
 
 ppMacro::ppMacro(ppInclude& Include, ppDefine& Define) : include(Include), expr(false), define(Define), nextMacro(1)
 {
@@ -35,7 +35,7 @@ ppMacro::ppMacro(ppInclude& Include, ppDefine& Define) : include(Include), expr(
 }
 ppMacro::~ppMacro()
 {
-    while (stack.size())
+    while (!stack.empty())
         HandleExitRep();
 }
 bool ppMacro::Check(int token, std::string& line)
@@ -70,7 +70,7 @@ bool ppMacro::Check(int token, std::string& line)
 }
 bool ppMacro::GetLine(std::string& line, int& lineno)
 {
-    while (stack.size())
+    while (!stack.empty())
     {
         MacroData* p = stack.back();
         if (p->offset >= p->lines.size())
@@ -324,14 +324,14 @@ bool ppMacro::HandleMacro(std::string& line, bool caseInsensitive)
         line = next->GetChars() + tk.GetString();
         int count = 0;
         GetArgs(end - start, line, p->defaults);
-        if (line.size())
+        if (!line.empty())
         {
             if (line.find_first_not_of(" \t\r\n\v") == std::string::npos)
                 line.erase(0, line.size());
         }
         if ((p->defaults.size() + (line.size() != 0)) > end - start + plussign)
             Errors::Error("Too many default arguments to macro");
-        if (line.size())
+        if (!line.empty())
             p->defaults.push_back(line);
     }
     std::string ll;
@@ -369,9 +369,7 @@ void ppMacro::reverse(std::vector<std::string>& x, int offs, int len)
 {
     for (int i = 0; i < len / 2; i++)
     {
-        std::string n = x[offs + i];
-        x[offs + i] = x[offs + len - i - 1];
-        x[offs + len - i - 1] = n;
+        std::swap(x[offs+i], x[offs+len-i-1]);
     }
 }
 bool ppMacro::HandleRotate(std::string& line)
@@ -428,7 +426,7 @@ bool ppMacro::Invoke(std::string name, std::string line)
     }
     p->args.clear();
     GetArgs(p->argmax, line, p->args);
-    if (line.size())
+    if (!line.empty())
     {
         if (line.find_first_not_of(" \t\r\n\v") == std::string::npos)
             line.erase(0, line.size());
@@ -447,7 +445,7 @@ bool ppMacro::Invoke(std::string name, std::string line)
     {
         p->args.push_back(p->defaults[p->args.size() - p->argmin]);
     }
-    if (line.size())
+    if (!line.empty())
         p->args.push_back(line);
     p->id = nextMacro++;
     p->repsLeft = 1;

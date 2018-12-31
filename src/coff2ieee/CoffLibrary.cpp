@@ -27,8 +27,8 @@
 #include "CoffFile.h"
 #include "ObjIeee.h"
 #include "ObjFactory.h"
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 
 CoffLibrary::~CoffLibrary()
 {
@@ -42,7 +42,7 @@ CoffLibrary::~CoffLibrary()
 }
 bool CoffLibrary::Load()
 {
-    inputFile = new std::fstream(name.c_str(), std::ios::in | std::ios::binary);
+    inputFile = new std::fstream(name, std::ios::in | std::ios::binary);
     if (inputFile && inputFile->is_open())
     {
         inputFile->seekg(

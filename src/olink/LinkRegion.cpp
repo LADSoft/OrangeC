@@ -37,7 +37,7 @@
 #include "ObjFile.h"
 #include "UTF8.h"
 //#include <dir.h>
-#include <ctype.h>
+#include <cctype>
 
 LinkRegion::~LinkRegion()
 {
@@ -214,7 +214,7 @@ bool LinkRegion::Matches(const ObjString& name, const ObjString& spec)
 }
 void LinkRegion::AddSourceFile(CmdFiles& filelist, const ObjString& spec)
 {
-    for (CmdFiles::FileNameIterator it = filelist.FileNameBegin(); it != filelist.FileNameEnd(); ++it)
+    for (auto it = filelist.FileNameBegin(); it != filelist.FileNameEnd(); ++it)
         if (Matches(**it, spec))
             sourceFiles.push_back(*it);
 }
@@ -223,7 +223,7 @@ void LinkRegion::AddData(SectionData& data, LookasideBuf& lookaside, ObjFile* fi
     NamedSection* ns = nullptr;
     NamedSection aa;
     aa.name = section->GetName();
-    LookasideBuf::iterator it = lookaside.find(&aa);
+    auto it = lookaside.find(&aa);
     if (it != lookaside.end())
         ns = *it;
     if (ns == nullptr)
@@ -239,7 +239,7 @@ void LinkRegion::AddData(SectionData& data, LookasideBuf& lookaside, ObjFile* fi
 void LinkRegion::AddFile(ObjFile* file)
 {
     LinkNameLogic logic(name);
-    for (ObjFile::SectionIterator it = file->SectionBegin(); it != file->SectionEnd(); ++it)
+    for (auto it = file->SectionBegin(); it != file->SectionEnd(); ++it)
     {
         ObjSection* sect = *it;
         if (logic.Matches(sect->GetName()))
@@ -269,10 +269,10 @@ void LinkRegion::AddFile(ObjFile* file)
 }
 void LinkRegion::AddSection(LinkManager* manager)
 {
-    for (LinkManager::FileIterator it = manager->FileBegin(); it != manager->FileEnd(); ++it)
+    for (auto it = manager->FileBegin(); it != manager->FileEnd(); ++it)
     {
         ObjFile* file = *it;
-        if (sourceFiles.size() == 0)
+        if (sourceFiles.empty())
             AddFile(file);
         else
             for (auto srcFile : sourceFiles)

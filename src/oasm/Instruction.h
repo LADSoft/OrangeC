@@ -28,12 +28,11 @@
 
 #include "Label.h"
 #include "AsmExpr.h"
+#include <vector>
+#include <string>
 
 class Fixup;
 class AsmFile;
-
-#include <vector>
-#include <string>
 
 typedef std::vector<Fixup*> FixupContainer;
 class Instruction
@@ -107,13 +106,11 @@ class Instruction
             int n = size - offs % size;
             if (n == size)
                 return 0;
-            else
-                return n;
+            return n;
         }
         else if (type == RESERVE)
             return size * repeat;
-        else
-            return size;
+        return size;
     }
     unsigned char* GetData() { return data; }
     int GetRepeat() { return repeat; }

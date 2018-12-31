@@ -27,7 +27,7 @@
 #include "LinkExpression.h"
 #include "ObjUtil.h"
 #include "UTF8.h"
-#include <ctype.h>
+#include <cctype>
 LinkTokenizer::eTokenType LinkTokenizer::NextToken()
 {
     const char* str = data.c_str();
@@ -52,12 +52,10 @@ LinkTokenizer::eTokenType LinkTokenizer::NextToken()
 
             case '+':
                 data.replace(0, end, "");
-                ;
                 token = eAdd;
                 return token;
             case '-':
                 data.replace(0, end, "");
-                ;
                 token = eSub;
                 return token;
             case '*':
@@ -67,62 +65,50 @@ LinkTokenizer::eTokenType LinkTokenizer::NextToken()
                     goto alphajoin;
                 }
                 data.replace(0, end, "");
-                ;
                 token = eMul;
                 return token;
             case '/':
                 data.replace(0, end, "");
-                ;
                 token = eDiv;
                 return token;
             case '~':
                 data.replace(0, end, "");
-                ;
                 token = eCmpl;
                 return token;
             case ',':
                 data.replace(0, end, "");
-                ;
                 token = eComma;
                 return token;
             case '{':
                 data.replace(0, end, "");
-                ;
                 token = eBegin;
                 return token;
             case '}':
                 data.replace(0, end, "");
-                ;
                 token = eEnd;
                 return token;
             case ';':
                 data.replace(0, end, "");
-                ;
                 token = eSemi;
                 return token;
             case '(':
                 data.replace(0, end, "");
-                ;
                 token = eOpen;
                 return token;
             case ')':
                 data.replace(0, end, "");
-                ;
                 token = eClose;
                 return token;
             case '[':
                 data.replace(0, end, "");
-                ;
                 token = eBracketOpen;
                 return token;
             case ']':
                 data.replace(0, end, "");
-                ;
                 token = eBracketClose;
                 return token;
             case '=':
                 data.replace(0, end, "");
-                ;
                 token = eAssign;
                 return token;
             case '%':
@@ -144,7 +130,6 @@ LinkTokenizer::eTokenType LinkTokenizer::NextToken()
                 else
                 {
                     data.replace(0, end, "");
-                    ;
                     token = ePC;
                 }
                 return token;
@@ -193,7 +178,6 @@ LinkTokenizer::eTokenType LinkTokenizer::NextToken()
                     }
                     std::string sym = data.substr(start, end - start);
                     data.replace(0, end, "");
-                    ;
                     switch (base)
                     {
                         case 2:
@@ -228,7 +212,6 @@ LinkTokenizer::eTokenType LinkTokenizer::NextToken()
                         }
                         std::string sym = data.substr(start, end - start);
                         data.replace(0, end, "");
-                        ;
                         if (sym == "region" || sym == "REGION")
                         {
                             token = eRegion;

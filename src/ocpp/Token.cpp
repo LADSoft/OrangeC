@@ -27,8 +27,8 @@
 #include "Errors.h"
 #include "SymbolTable.h"
 #include "UTF8.h"
-#include <float.h>
-#include <limits.h>
+#include <cfloat>
+#include <climits>
 
 typedef unsigned long long L_UINT;
 
@@ -654,7 +654,7 @@ const Token* Tokenizer::Next()
     size_t n = line.find_first_not_of("\t \v");
     line.erase(0, n);
     delete currentToken;
-    if (line.size() == 0)
+    if (line.empty())
         currentToken = new EndToken;
     else if (NumericToken::Start(line))
         currentToken = new NumericToken(line);

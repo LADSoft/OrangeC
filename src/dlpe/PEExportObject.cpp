@@ -30,11 +30,11 @@
 #include "ObjExpression.h"
 
 #include <string>
-#include <ctype.h>
-#include <time.h>
+#include <cctype>
+#include <ctime>
 #include <map>
 #include <iostream>
-#include <string.h>
+#include <cstring>
 
 class namelt
 {
@@ -54,7 +54,7 @@ void PEExportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     }
     raw_addr = endPhys;
     std::map<std::string, ObjInt> publics;
-    for (ObjFile::SymbolIterator it = file->PublicBegin(); it != file->PublicEnd(); ++it)
+    for (auto it = file->PublicBegin(); it != file->PublicEnd(); ++it)
     {
         publics[(*it)->GetName()] = (*it)->GetOffset()->Eval(0);
     }
@@ -74,7 +74,7 @@ void PEExportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     unsigned maxOrd = 0;
     unsigned count = 0;
     std::set<ObjExportSymbol*, namelt> names;
-    for (ObjFile::SymbolIterator it = file->ExportBegin(); it != file->ExportEnd(); ++it)
+    for (auto it = file->ExportBegin(); it != file->ExportEnd(); ++it)
     {
         ObjExportSymbol* s = (ObjExportSymbol*)(*it);
         names.insert(s);
@@ -120,17 +120,17 @@ void PEExportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     header->ordinal_rva = virtual_addr + ((unsigned char*)ordinalTable) - data;
 
     /* process numbered exports */
-    for (ObjFile::SymbolIterator it = file->ExportBegin(); it != file->ExportEnd(); ++it)
+    for (auto it = file->ExportBegin(); it != file->ExportEnd(); ++it)
     {
         ObjExportSymbol* s = (ObjExportSymbol*)(*it);
         if (s->GetByOrdinal())
         {
             int n = s->GetOrdinal();
             if (rvaTable[n - minOrd] != 0)
-                std::cout << "Warning: Export '" << s->GetDisplayName().c_str() << "' duplicates an ordinal" << std::endl;
+                std::cout << "Warning: Export '" << s->GetDisplayName() << "' duplicates an ordinal" << std::endl;
             int addr = publics[s->GetName()];
             if (addr == 0)
-                std::cout << "Warning: Export '" << s->GetDisplayName().c_str() << "' has no related public" << std::endl;
+                std::cout << "Warning: Export '" << s->GetDisplayName() << "' has no related public" << std::endl;
 
             rvaTable[n - minOrd] = addr - imageBase;
         }
@@ -138,7 +138,7 @@ void PEExportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
 
     /* process non-numbered exports */
     pos = 0;
-    for (ObjFile::SymbolIterator it = file->ExportBegin(); it != file->ExportEnd(); ++it)
+    for (auto it = file->ExportBegin(); it != file->ExportEnd(); ++it)
     {
         ObjExportSymbol* s = (ObjExportSymbol*)(*it);
         if (!s->GetByOrdinal())
@@ -148,7 +148,7 @@ void PEExportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
             s->SetOrdinal(pos + minOrd);
             int addr = publics[s->GetName()];
             if (addr == 0)
-                std::cout << "Warning: Export '" << s->GetDisplayName().c_str() << "' has no related public" << std::endl;
+                std::cout << "Warning: Export '" << s->GetDisplayName() << "' has no related public" << std::endl;
             rvaTable[pos] = addr - imageBase;
         }
     }
@@ -171,7 +171,7 @@ void PEExportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
         *stringTable++ = 0;
     }
     // throw in the DLL name
-    if (name.size())
+    if (!name.empty())
     {
         header->exe_name_rva = (unsigned)((unsigned char*)stringTable - data + virtual_addr);
         for (int i = 0; i < name.size(); i++)

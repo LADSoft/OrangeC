@@ -32,9 +32,9 @@
 #include "SymbolTable.h"
 #include "UTF8.h"
 #include "Utils.h"
-#include <time.h>
-#include <limits.h>
-#include <stdlib.h>
+#include <ctime>
+#include <climits>
+#include <cstdlib>
 
 static const int ellipses = 100;
 
@@ -286,8 +286,8 @@ void ppDefine::DoDefine(std::string& line, bool caseInsensitive)
         {
             name = next->GetId();
         }
-        if (tk.GetString().c_str()[0] == '(')  // yes it HAS to be the first character, no spaces
-                                               // or other characters allowed
+        if (tk.GetString()[0] == '(')  // yes it HAS to be the first character, no spaces
+                                       // or other characters allowed
         {
             // the below is ok because the first one gets the '(' and the next one gets the next token
             next = tk.Next();  // get '('
@@ -330,7 +330,10 @@ void ppDefine::DoDefine(std::string& line, bool caseInsensitive)
         }
     }
     if (!failed)
-        Define(name, tk.GetString(), da, false, hasEllipses, !asmpp, caseInsensitive);
+    {
+        std::string ref = tk.GetString();
+        Define(name, ref, da, false, hasEllipses, !asmpp, caseInsensitive);
+    }
     else
         Errors::Error("Macro argument syntax error");
 }
@@ -407,7 +410,7 @@ std::string ppDefine::defid(const std::string& macroname, int& i, int& j)
             inctx = true;
         }
     }
-    while (j < macroname.size() && Tokenizer::Tokenizer::Tokenizer::IsSymbolChar(macroname.c_str() + j, false))
+    while (j < macroname.size() && Tokenizer::IsSymbolChar(macroname.c_str() + j, false))
     {
         int n = UTF8::CharSpan(macroname.c_str() + j);
         for (int i = 0; i < n && macroname[j]; i++)
@@ -536,7 +539,7 @@ int ppDefine::InsertReplacementString(std::string& macro, int end, int begin, st
         q++;
     if (macro[q] == REPLACED_TOKENIZING)
     {
-        if (!text.size())
+        if (text.empty())
         {
             text = nullptrTOKEN;
         }
@@ -555,7 +558,7 @@ int ppDefine::InsertReplacementString(std::string& macro, int end, int begin, st
                 q--;
             if (macro[q] == REPLACED_TOKENIZING)
             {
-                if (!text.size())
+                if (text.empty())
                 {
                     text = nullptrTOKEN;
                 }
@@ -589,7 +592,7 @@ bool ppDefine::ppNumber(const std::string& macro, int start, int pos)
         isdigit(macro[pos]))  // we would get here with the first alpha char following the number
     {
         // backtrack through all characters that could possibly be part of the number
-        while (pos >= start && (Tokenizer::Tokenizer::Tokenizer::IsSymbolChar(macro.c_str() + pos, false) || macro[pos] == '.' ||
+        while (pos >= start && (Tokenizer::IsSymbolChar(macro.c_str() + pos, false) || macro[pos] == '.' ||
                                 ((macro[pos] == '-' || macro[pos] == '+') && (macro[pos - 1] == 'e' || macro[pos - 1] == 'E' ||
                                                                               macro[pos - 1] == 'p' || macro[pos - 1] == 'P'))))
         {
@@ -626,13 +629,13 @@ bool ppDefine::ReplaceArgs(std::string& macro, const DefinitionArgList& oldargs,
             if (macro[p] == waiting && NotSlashed(macro, p))
                 waiting = 0;
         }
-        else if (Tokenizer::Tokenizer::Tokenizer::IsSymbolChar(macro.c_str() + p, false))
+        else if (Tokenizer::IsSymbolChar(macro.c_str() + p, false))
         {
             int q = p;
             name = defid(macro, q, p);
             if (!c89 && name == "__VA_ARGS__")
             {
-                if (!varargs.size())
+                if (varargs.empty())
                 {
                     int rv;
                     if ((rv = InsertReplacementString(macro, p, q, "", "")) < -MACRO_REPLACE_SIZE)
@@ -680,7 +683,7 @@ void ppDefine::SetupAlreadyReplaced(std::string& macro)
     {
         if ((macro[p] == '"' || macro[p] == '\'') && NotSlashed(macro, p))
             instr = !instr;
-        if (Tokenizer::Tokenizer::Tokenizer::IsSymbolChar(macro.c_str() + p, true) && !instr)
+        if (Tokenizer::IsSymbolChar(macro.c_str() + p, true) && !instr)
         {
             int q = p;
             std::string name;
@@ -720,8 +723,8 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr)
             if (line[p] == waiting && NotSlashed(line, p))
                 waiting = 0;
         }
-        else if (Tokenizer::Tokenizer::Tokenizer::IsSymbolChar(line.c_str() + p, true) &&
-                 (p == begin || line[p - 1] == '$' || !Tokenizer::Tokenizer::Tokenizer::IsSymbolChar(line.c_str() + p - 1, false)))
+        else if (Tokenizer::IsSymbolChar(line.c_str() + p, true) &&
+                 (p == begin || line[p - 1] == '$' || !Tokenizer::IsSymbolChar(line.c_str() + p - 1, false)))
         {
             name = defid(line, q, p);
             Symbol* sym = symtab.Lookup(name);
@@ -850,7 +853,7 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr)
                     }
 
                     macro = d->GetValue();
-                    if (count != 0 || varargs.size())
+                    if (count != 0 || !varargs.empty())
                         if (!ReplaceArgs(macro, *d->GetArgList(), args, expandedargs, varargs))
                             return INT_MIN;
                     Tokenize(macro);
@@ -945,8 +948,7 @@ void ppDefine::ParseAsmSubstitutions(std::string& line)
                 }
                 else if (n == 0)
                 {
-                    if ((n < line.size() - 2) && line[n + 1] == '$' &&
-                        Tokenizer::Tokenizer::Tokenizer::IsSymbolChar(line.c_str() + n + 2, true))
+                    if ((n < line.size() - 2) && line[n + 1] == '$' && Tokenizer::IsSymbolChar(line.c_str() + n + 2, true))
                     {
                         int n1 = ctx->GetTopId();
                         if (n1 != -1)
@@ -982,7 +984,7 @@ void ppDefine::ParseAsmSubstitutions(std::string& line)
                         else
                         {
                             char* c;
-                            int val = strtoul(line.c_str() + n1, &c, 10);
+                            int val = std::strtoul(line.c_str() + n1, &c, 10);
                             n1 = c - line.c_str();
                             if (macro->GetMacroId() == -1)
                             {
@@ -1034,10 +1036,10 @@ void ppDefine::ReplaceAsmMacros(std::string& line)
 {
 
     int n = line.find_first_not_of(" \t\r\v\n");
-    while (n != std::string::npos && Tokenizer::Tokenizer::Tokenizer::IsSymbolChar(line.c_str() + n, true))
+    while (n != std::string::npos && Tokenizer::IsSymbolChar(line.c_str() + n, true))
     {
         int n1 = n;
-        while (n1 != line.size() && Tokenizer::Tokenizer::Tokenizer::IsSymbolChar(line.c_str() + n1, false))
+        while (n1 != line.size() && Tokenizer::IsSymbolChar(line.c_str() + n1, false))
         {
             int n5 = UTF8::CharSpan(line.c_str() + n1);
             for (int i = 0; i < n5 && n1 < line.size(); i++)
@@ -1074,10 +1076,10 @@ void ppDefine::replaceDefined(std::string& line)
         }
         while (m < line.size() && isspace(line[m]))
             m++;
-        if (Tokenizer::Tokenizer::Tokenizer::IsSymbolChar(line.c_str() + m, true))
+        if (Tokenizer::IsSymbolChar(line.c_str() + m, true))
         {
             int q = m++;
-            while (Tokenizer::Tokenizer::Tokenizer::IsSymbolChar(line.c_str() + m, false))
+            while (Tokenizer::IsSymbolChar(line.c_str() + m, false))
                 m++;
             if (Lookup(line.substr(q, m - q)))
                 val = "1";

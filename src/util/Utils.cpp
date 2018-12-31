@@ -25,22 +25,18 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 
-#include <stdio.h>
-#include <stdarg.h>
+#include <cstdio>
+#include <cstdarg>
 #include <fstream>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 #ifdef _WIN32
 #    include <windows.h>
 #endif
 #include "Utils.h"
 #include "CmdFiles.h"
 
-#ifdef OPENWATCOM
-#    include <strstream>
-#else
-#    include <sstream>
-#endif
+#include <sstream>
 #include "../version.h"
 #include <iostream>
 
@@ -91,17 +87,6 @@ void Utils::usage(const char* prog_name, const char* text)
     fprintf(stderr, "\nUsage: %s %s", ShortName(prog_name), text);
     exit(1);
 }
-void Utils::fatal(const char* format, ...)
-{
-    va_list argptr;
-
-    va_start(argptr, format);
-    fprintf(stderr, "Fatal error: ");
-    vfprintf(stderr, format, argptr);
-    va_end(argptr);
-    fputc('\n', stderr);
-    exit(1);
-}
 char* Utils::GetModuleName()
 {
     static char buf[256];
@@ -141,21 +126,21 @@ void Utils::SetEnvironmentToPathParent(const char* name)
 }
 std::string Utils::FullPath(const std::string& path, const std::string& name)
 {
-    std::fstream in(name.c_str(), std::ios::in);
+    std::fstream in(name, std::ios::in);
     if (!in.fail())
     {
         return name;
     }
-    if (path.size())
+    if (!path.empty())
     {
         std::string fpath = path;
         //        if (path.c_str()[strlen(path.c_str())-1] != '\\')
-        if (path.c_str()[path.length() - 1] != '\\')
+        if (path[path.length() - 1] != '\\')
         {
-            fpath += std::string("\\");
+            fpath += "\\";
         }
         fpath += name;
-        std::fstream in(fpath.c_str(), std::ios::in);
+        std::fstream in(fpath, std::ios::in);
         if (!in.fail())
         {
             return fpath;
@@ -182,7 +167,7 @@ std::string Utils::SearchForFile(const std::string& path, const std::string& nam
         return name;
     }
     std::string fpath = path;
-    while (fpath.size())
+    while (!fpath.empty())
     {
         int npos = fpath.find_first_of(CmdFiles::PATH_SEP[0]);
         std::string current;
@@ -210,65 +195,12 @@ std::string Utils::SearchForFile(const std::string& path, const std::string& nam
     }
     return name;
 }
-std::string Utils::NumberToString(int num)
-{
-#ifdef OPENWATCOM
-    std::ostrstream aa;
-    aa << num;
-    return std::string(aa.rdbuf()->str());
-#else
-    std::stringstream aa;
-    aa << num;
-    std::string rv;
-    aa >> rv;
-    return rv;
-#endif
-}
+std::string Utils::NumberToString(int num) { return std::to_string(num); }
 std::string Utils::NumberToStringHex(int num)
 {
-#ifdef OPENWATCOM
-    std::ostrstream aa;
-    aa << std::hex << num;
-    return std::string(aa.rdbuf()->str());
-#else
     std::stringstream aa;
     aa << std::hex << num;
-    std::string rv;
-    aa >> rv;
-    return rv;
-#endif
+    return aa.str();
 }
-int Utils::StringToNumber(std::string str)
-{
-#ifdef OPENWATCOM
-    std::ostrstream aa;
-    aa << str.c_str();
-    std::istrstream bb(aa.rdbuf()->str());
-    int rv;
-    bb >> rv;
-    return rv;
-#else
-    std::stringstream aa;
-    aa << str;
-    int rv;
-    aa >> rv;
-    return rv;
-#endif
-}
-int Utils::StringToNumberHex(std::string str)
-{
-#ifdef OPENWATCOM
-    std::ostrstream aa;
-    aa << str.c_str();
-    std::istrstream bb(aa.rdbuf()->str());
-    int rv;
-    bb >> std::hex >> rv;
-    return rv;
-#else
-    std::stringstream aa;
-    aa << str;
-    int rv;
-    aa >> std::hex >> rv;
-    return rv;
-#endif
-}
+int Utils::StringToNumber(std::string str) { return std::stoi(str); }
+int Utils::StringToNumberHex(std::string str) { return std::stoi(str, 0, 16); }

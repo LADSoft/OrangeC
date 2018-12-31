@@ -35,8 +35,6 @@
 
 class ObjFile;
 class ObjBrowseInfo;
-#include <map>
-#include <string>
 
 class SymData;
 

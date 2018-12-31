@@ -26,12 +26,12 @@
 #include "PEObject.h"
 #include "ResourceContainer.h"
 #include "Utils.h"
-#include <time.h>
-#include <string.h>
+#include <ctime>
+#include <cstring>
 
 void PEResourceObject::Setup(ObjInt& endVa, ObjInt& endPhys)
 {
-    if (resources.size() == 0)
+    if (resources.empty())
         return;
     if (!resources.LoadFiles())
         Utils::fatal("Error loading resources");

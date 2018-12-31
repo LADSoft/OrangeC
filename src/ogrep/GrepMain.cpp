@@ -26,7 +26,7 @@
 #include "GrepMain.h"
 #include "CmdFiles.h"
 #include "Utils.h"
-#include <stdlib.h>
+#include <cstdlib>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -35,12 +35,6 @@
 #    include <unistd.h>
 #else
 #    include <io.h>
-#endif
-#ifdef OPENWATCOM
-namespace std
-{
-ios& left(ios& in) { return in; }
-}  // namespace std
 #endif
 CmdSwitchParser GrepMain::SwitchParser;
 
@@ -129,7 +123,7 @@ void GrepMain::DisplayMatch(const std::string& fileName, int& matchCount, int li
 {
     if (matchCount == 0 && displayHeaderFileName.GetValue())
     {
-        std::cout << "FILE: " << fileName.c_str();
+        std::cout << "FILE: " << fileName;
         if (verboseMode.GetValue() || !displayMatchCount.GetValue())
             std::cout << std::endl;
     }
@@ -148,7 +142,7 @@ void GrepMain::DisplayMatch(const std::string& fileName, int& matchCount, int li
         {
             int n = fileName.size();
             n = ((n + 8) / 8) * 8;
-            std::cout << std::setfill(' ') << std::setw(n) << std::left << fileName.c_str();
+            std::cout << std::setfill(' ') << std::setw(n) << std::left << fileName;
         }
         if (displayLineNumbers.GetValue())
         {
@@ -204,7 +198,7 @@ int GrepMain::OneFile(RegExpContext& regexp, const std::string fileName, std::is
     int length = bufs.size() - 1;
     if (!fil.fail())
     {
-        char* buf = (char*)bufs.c_str();
+        char* buf = const_cast<char*>(bufs.c_str());
         char* str = buf + 1;
         char* matchPos = buf + 1;
         int matchLine = 1;
@@ -297,7 +291,7 @@ int GrepMain::Run(int argc, char** argv)
         matchCount += OneFile(regexp, "STDIN", std::cin, openCount);
     }
     else
-        for (CmdFiles::FileNameIterator it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
+        for (auto it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
         {
             std::fstream fil(*(*it), std::ios::in | std::ios::binary);
             if (fil.is_open())

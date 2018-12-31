@@ -33,7 +33,10 @@ int _RTL_FUNC wscanf(const wchar_t *format, ...)
 {
    return __wscanf(stdin,format,((char *)&format+sizeof(wchar_t *)));
 }
-
+int _RTL_FUNC vwscanf(const wchar_t* restrict format, va_list arglist)
+{
+   vfwscanf(stdin, format, arglist);
+}
 int _RTL_FUNC vswscanf(wchar_t *restrict buf, const wchar_t *restrict format, 
             va_list list)
 {

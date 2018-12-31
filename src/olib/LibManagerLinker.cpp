@@ -24,11 +24,11 @@
  */
 
 #include "LibManager.h"
-#include <string.h>
+#include <cstring>
 
 void LibManager::InitHeader()
 {
-    memset(&header, 0, sizeof(header));
+    header = {};
     header.sig = LibHeader::LIB_SIG;
 }
 bool LibManager::LoadLibrary()

@@ -30,7 +30,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <stdlib.h>
+#include <cstdlib>
 
 void dump_mz(std::fstream& file, MZHeader& mzh)
 {

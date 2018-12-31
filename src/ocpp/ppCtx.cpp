@@ -28,7 +28,7 @@
 
 ppCtx::~ppCtx()
 {
-    while (stack.size())
+    while (!stack.empty())
         pop();
 }
 bool ppCtx::Check(int token, std::string& line)
@@ -67,7 +67,7 @@ bool ppCtx::push(std::string& line)
 }
 bool ppCtx::pop()
 {
-    if (stack.size())
+    if (!stack.empty())
     {
         CtxData* p = stack.front();
         stack.pop_front();
@@ -81,7 +81,7 @@ bool ppCtx::pop()
 }
 bool ppCtx::repl(std::string& line)
 {
-    if (stack.size())
+    if (!stack.empty())
     {
         define.Process(line);
         CtxData* p = stack.front();

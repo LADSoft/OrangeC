@@ -25,9 +25,9 @@
 
 #include "InstructionParser.h"
 #include "Errors.h"
-#include <ctype.h>
+#include <cctype>
 #include <fstream>
-#include <stdio.h>
+#include <cstdio>
 #include <algorithm>
 #include "Instruction.h"
 #include "Fixup.h"
@@ -121,9 +121,7 @@ bool InstructionParser::SetNumber(int tokenPos, int oldVal, int newVal)
             {
                 if (val->ival == oldVal)
                 {
-                    numeric = new Numeric;
-                    memset(numeric, 0, sizeof(*numeric));
-                    numeric->node = new AsmExprNode(newVal);
+                    numeric = new Numeric(new AsmExprNode(newVal));
                     rv = true;
                 }
             }

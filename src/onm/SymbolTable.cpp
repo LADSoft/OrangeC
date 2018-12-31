@@ -34,7 +34,6 @@
 #include "LibManager.h"
 #include "LibFiles.h"
 #include <iostream>
-
 const char Symbol::SymbolTypeChars[] = "ABbCDdiNRrSTtU?";
 
 Symbol::SymbolType SymbolTable::GlobalSymbolType(ObjSymbol* sym, bool local)
@@ -47,25 +46,29 @@ Symbol::SymbolType SymbolTable::GlobalSymbolType(ObjSymbol* sym, bool local)
         {
             ObjSection* sect = e->GetSection();
             if (sect->GetName() == "code")
+            {
                 if (local)
                     return Symbol::TextLocal;
-                else
-                    return Symbol::TextGlobal;
+                return Symbol::TextGlobal;
+            }
             else if (sect->GetName() == "data")
+            {
                 if (local)
                     return Symbol::DataLocal;
-                else
-                    return Symbol::DataGlobal;
+                return Symbol::DataGlobal;
+            }
             else if (sect->GetName() == "bss")
+            {
                 if (local)
                     return Symbol::BSSLocal;
-                else
-                    return Symbol::BSSGlobal;
+                return Symbol::BSSGlobal;
+            }
             else if (sect->GetQuals() & ObjSection::rom)
+            {
                 if (local)
                     return Symbol::ROLocal;
-                else
-                    return Symbol::ROGlobal;
+                return Symbol::ROGlobal;
+            }
             else if (sect->GetQuals() & ObjSection::common)
                 return Symbol::Common;
         }

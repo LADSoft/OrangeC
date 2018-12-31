@@ -87,7 +87,7 @@ int Spawner::InternalRun()
     std::string longstr;
     std::deque<std::string> tempFiles;
     bool make = false;
-    for (Command::iterator it = commands->begin(); it != commands->end() && (!rv || !posix); ++it)
+    for (auto it = commands->begin(); it != commands->end() && (!rv || !posix); ++it)
     {
         bool curSilent = silent;
         bool curIgnore = ignoreErrors;
@@ -127,9 +127,9 @@ int Spawner::InternalRun()
             else
                 makeName = makeName + Utils::NumberToString(tempNum);
             tempNum++;
-            if (!keepResponseFiles && makeName.size())
+            if (!keepResponseFiles && !makeName.empty())
                 tempFiles.push_back(makeName);
-            std::fstream fil(makeName.c_str(), std::ios::out);
+            std::fstream fil(makeName, std::ios::out);
             bool done = false;
             std::string tail;
             do
@@ -145,7 +145,7 @@ int Spawner::InternalRun()
                     current.erase(n);
                 }
                 Eval ce(current, false, ruleList, rule);
-                fil << ce.Evaluate().c_str() << std::endl;
+                fil << ce.Evaluate() << std::endl;
             } while (!done);
             fil.close();
             cmd += makeName + tail;
@@ -215,13 +215,13 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
             if (!make1)
                 OS::TakeJob();
             if (!silent)
-                OS::WriteConsole(std::string("\t") + command.c_str() + "\n");
+                OS::WriteConsole(std::string("\t") + command + "\n");
             int rv1;
             if (!dontrun)
             {
                 std::string str;
                 rv1 = OS::Spawn(command, environment, outputType != o_none && (outputType != o_recurse || !make) ? &str : nullptr);
-                if (outputType != o_none && str.size())
+                if (outputType != o_none && !str.empty())
                     output.push_back(str);
                 if (!rv)
                     rv = rv1;
@@ -270,7 +270,7 @@ bool Spawner::split(const std::string& cmd)
                 break;
             }
         }
-        if (middle.size())
+        if (!middle.empty())
         {
             cmdList.push_back(first + middle + last);
         }
@@ -297,11 +297,11 @@ std::string Spawner::QualifyFiles(const std::string& cmd)
 {
     std::string rv;
     std::string working = cmd;
-    while (working.size())
+    while (!working.empty())
     {
         std::string cur = Eval::ExtractFirst(working, " ");
         cur = Maker::GetFullName(cur);
-        if (rv.size())
+        if (!rv.empty())
             rv += " ";
         rv += cur;
     }

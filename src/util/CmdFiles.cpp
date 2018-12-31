@@ -24,7 +24,7 @@
  */
 
 #ifndef GCCLINUX
-#    include "io.h"
+#    include <io.h>
 #endif
 
 #include "CmdFiles.h"
@@ -69,7 +69,6 @@ bool CmdFiles::RecurseDirs(const std::string& path, const std::string& name, boo
                 if (find.attrib & _A_SUBDIR)
                 {
                     std::string newName = path + std::string(find.name) + DIR_SEP + name;
-                    ;
                     rv |= Add(newName, recurseDirs);
                 }
             }

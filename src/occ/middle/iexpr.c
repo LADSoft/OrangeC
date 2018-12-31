@@ -1074,6 +1074,11 @@ IMODE* gen_binary(SYMBOL* funcsp, EXPRESSION* node, int flags, int size, enum i_
         else
             size = ap2->size;
     }
+    else if (ap1->size >= ISZ_IFLOAT && ap2->size >= ISZ_IFLOAT)
+    {
+        if (op == i_mul || op == i_sdiv)
+            size = ap2->size - ISZ_IFLOAT + ISZ_FLOAT;
+    }
     ap = LookupExpression(op, size, ap1, ap2);
     return ap;
 }

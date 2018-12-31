@@ -166,6 +166,57 @@ void make_floatconst(AMODE* ap)
     ap->length = 0;
     ap->offset = ap1->offset;
 }
+AMODE *moveFP(AMODE *apa, int sza, AMODE *apl, int szl)
+{
+    if (apa->mode != am_xmmreg)
+    {
+        if (sza < ISZ_FLOAT)
+            gen_code_sse(op_cvtsd2si, op_cvtss2si, szl , apa, apl);
+        else if (szl < ISZ_FLOAT)
+            gen_code_sse(op_cvtsi2ss, op_cvtsi2sd, sza, apa, apl);
+        else
+        {
+            int m1 = (sza - ISZ_FLOAT) % 3;
+            int m2 = (szl - ISZ_FLOAT) % 3;
+            if (m1 == 0 && m2 != 0 || m2 == 0 && m1 != 0)
+                gen_code_sse(op_cvtsd2ss, op_cvtss2sd, sza, apa, apl);
+            else
+                gen_code_sse(op_movss, op_movsd, sza, apa, apl);
+        }
+    }
+    else if (apl->mode == am_xmmreg)
+    {
+        apa = apl;
+        int m1 = (sza - ISZ_FLOAT) % 3;
+        int m2 = (szl - ISZ_FLOAT) % 3;
+        if (m1 && !m2 || m2 && !m1)
+        {
+            gen_code_sse(op_cvtsd2ss, op_cvtss2sd, sza, apa, apa);
+        }
+    }
+    else
+    {
+        if (apl->mode == am_immed)
+        {
+            make_floatconst(apl);
+        }
+        if (szl < ISZ_FLOAT)
+        {
+            gen_code_sse(op_cvtsi2ss, op_cvtsi2sd, sza, apa, apl);
+            apl->length = szl;
+        }
+        else
+        {
+            int m1 = (sza - ISZ_FLOAT) % 3;
+            int m2 = (szl - ISZ_FLOAT) % 3;
+            if (m1 == 0 && m2 != 0 || m2 == 0 && m1 != 0)
+                gen_code_sse(op_cvtsd2ss, op_cvtss2sd, sza, apa, apl);
+            else
+                gen_code_sse(op_movss, op_movsd, sza, apa, apl);
+        }
+    }
+    return apl;
+}
 /*-------------------------------------------------------------------------*/
 
 AMODE* aimmed(ULLONG_TYPE i)
@@ -3030,40 +3081,8 @@ void asm_assn(QUAD* q) /* assignment */
                     if (q->ans->size == ISZ_CFLOAT)
                         sz = 4;
                     AMODE *ap1 = make_offset(exprNode(en_add, fltexp, intNode(en_c_i, sz)));
-                    if (apl->mode == am_xmmreg)
-                    {
-                        apa = apl;
-                    }
-                    else
-                    {
-                        if (apl->mode == am_immed)
-                        {
-                            make_floatconst(apl);
-                        }
-                        apa->preg = 0;
-                        if (q->ans->size != q->dc.left->size && (q->ans->size == ISZ_CFLOAT || q->dc.left->size == ISZ_CFLOAT))
-                            gen_code_sse(op_cvtsd2ss, op_cvtss2sd, q->ans->size, apa, apl);
-                        else
-                            gen_code_sse(op_movss, op_movsd, q->ans->size, apa, apl);
-
-                    }
-                    if (apl->mode == am_xmmreg)
-                    {
-                        apa1 = apl1;
-                    }
-                    else
-                    {
-                        if (apl1->mode == am_immed)
-                        {
-                            make_floatconst(apl1);
-                        }
-                        apa1->preg = 1;
-                        if (q->ans->size != q->dc.left->size && (q->ans->size == ISZ_CFLOAT || q->dc.left->size == ISZ_CFLOAT))
-                            gen_code_sse(op_cvtsd2ss, op_cvtss2sd, q->ans->size, apa, apl);
-                        else
-                            gen_code_sse(op_movss, op_movsd, q->ans->size, apa1, apl1);
-
-                    }
+                    apa = moveFP(apa, q->ans->size, apl, q->dc.left->size);
+                    apa1 = moveFP(apa1, q->ans->size, apl1, q->dc.left->size);
                     gen_code_sse(op_movss, op_movsd, q->ans->size, ap, apa);
                     gen_code_sse(op_movss, op_movsd, q->ans->size, ap1, apa1);
                     ap1->length = ap->length = q->ans->size - ISZ_CFLOAT + ISZ_FLOAT;
@@ -3072,22 +3091,7 @@ void asm_assn(QUAD* q) /* assignment */
                 }
                 else
                 {
-                    if (apl->mode == am_xmmreg)
-                    {
-                        apa = apl;
-                    }
-                    else
-                    {
-                        if (apl->mode == am_immed)
-                        {
-                            make_floatconst(apl);
-                        }
-                        if (q->ans->size != q->dc.left->size && (q->ans->size == ISZ_FLOAT || q->dc.left->size == ISZ_FLOAT || q->ans->size == ISZ_IFLOAT || q->dc.left->size == ISZ_IFLOAT))
-                            gen_code_sse(op_cvtsd2ss, op_cvtss2sd, q->ans->size, apa, apl);
-                        else
-                            gen_code_sse(op_movss, op_movsd, q->ans->size, apa, apl);
-
-                    }
+                    apa = moveFP(apa, q->ans->size, apl, q->dc.left->size);
                     gen_code_sse(op_movss, op_movsd, q->ans->size, ap, apa);
                     ap->length = q->ans->size >= ISZ_IFLOAT ? q->ans->size - ISZ_IFLOAT + ISZ_FLOAT : q->ans->size;
                     gen_codef(op_fld, ap, NULL);
@@ -3103,8 +3107,7 @@ void asm_assn(QUAD* q) /* assignment */
         {
             if (q->dc.left->altretval)
             {
-                if (apa->preg != 0)
-                    gen_code_sse(op_movss, op_movsd, q->ans->size, apa, makeSSE(0));
+                moveFP(apa, q->ans->size, makeSSE(0), q->dc.left->size);
             }
             else
             {
@@ -3142,38 +3145,12 @@ void asm_assn(QUAD* q) /* assignment */
         }
         else if (q->ans->size >= ISZ_CFLOAT)
         {
-            if (apl1->offset && apl1->mode == am_immed && isintconst(apl1->offset))
-                make_floatconst(apl1);
-            if (apl1->offset && (isfloatconst(apl1->offset)))
-                make_floatconst(apl1);
-            if (apl->offset && apl->mode == am_immed && isintconst(apl->offset))
-                make_floatconst(apl);
-            if (apl->offset && (isfloatconst(apl->offset)))
-                make_floatconst(apl);
-            if (q->ans->size != q->dc.left->size && q->dc.left->size == ISZ_CFLOAT)
-            {
-                gen_code_sse(op_cvtsd2ss, op_cvtss2sd, sza, apa1, apl1);
-                gen_code_sse(op_cvtsd2ss, op_cvtss2sd, sza, apa, apl);
-
-            }
-            else
-            {
-
-                gen_code_sse(op_movss, op_movsd, sza, apa1, apl1);
-                gen_code_sse(op_movss, op_movsd, sza, apa, apl);
-            }
+            moveFP(apa, q->ans->size, apa1, q->dc.left->size);
+            moveFP(apa1, q->ans->size, apl1, q->dc.left->size);
         }
         else if (q->ans->size >= ISZ_FLOAT)
         {
-            int sz = sza;
-            if (apl->offset && apl->mode == am_immed && isintconst(apl->offset))
-                make_floatconst(apl);
-            if (apl->offset && (isfloatconst(apl->offset)))
-                make_floatconst(apl);
-            if (q->ans->size != q->dc.left->size && (q->dc.left->size == ISZ_FLOAT || q->dc.left->size == ISZ_IFLOAT))
-                gen_code_sse(op_cvtsd2ss, op_cvtss2sd, sza, apa, apl);
-            else
-                gen_code_sse(op_movss, op_movsd, sza, apa, apl);
+            moveFP(apa, q->ans->size, apl, q->dc.left->size);
         }
         else if (sza == ISZ_ULONGLONG)
         {
@@ -3276,74 +3253,26 @@ void asm_assn(QUAD* q) /* assignment */
         {
             if (q->ans->size >= ISZ_CFLOAT)
             {
-                if (q->ans->size == ISZ_CFLOAT)
-                {
-                    gen_code(op_cvtsd2ss, apa, apl);
-                    gen_code(op_cvtsd2ss, apa1, apl1);
-                }
-                else
-                {
-                    gen_code(op_movsd, apa, apl);
-                    gen_code(op_movsd, apa1, apl1);
-                }
+                moveFP(apa, q->ans->size, apl, q->dc.left->size);
+                moveFP(apa1, q->ans->size, apl, q->dc.left->size);
             }
             else if (q->ans->size >= ISZ_IFLOAT)
             {
-                if (q->ans->size == ISZ_IFLOAT)
-                    if (q->dc.left->size == ISZ_CFLOAT)
-                        gen_code(op_movss, apa, apl1);
-                    else
-                        gen_code(op_cvtsd2ss, apa, apl1);
-                else
-                    if (q->dc.left->size == ISZ_CFLOAT)
-                        gen_code(op_cvtss2sd, apa, apl1);
-                    else
-                        gen_code(op_movsd, apa, apl1);
+                moveFP(apa, q->ans->size, apl1, q->dc.left->size);
             }
             else if (q->ans->size >= ISZ_FLOAT)
             {
-                if (q->ans->size == ISZ_FLOAT)
-                    if (q->dc.left->size == ISZ_CFLOAT)
-                        gen_code(op_movss, apa, apl);
-                    else
-                        gen_code(op_cvtsd2ss, apa, apl);
-                else
-                    if (q->dc.left->size == ISZ_CFLOAT)
-                        gen_code(op_cvtss2sd, apa, apl);
-                    else
-                        gen_code(op_movsd, apa, apl);
-
+                moveFP(apa, q->ans->size, apl, q->dc.left->size);
             }
             else
             {
                 apa->length = ISZ_UINT;
                 gen_code_sse(op_cvttss2si, op_cvttsd2si, q->dc.left->size, apa, apl);
-            }
-        }
-        else if (q->dc.left->size >= ISZ_IFLOAT)
-        {
-            if (q->ans->size >= ISZ_IFLOAT)
-            {
-                if (q->ans->size == ISZ_IFLOAT)
-                    gen_code(op_cvtsd2ss, apa, apl);
-                else
-                    gen_code(op_movsd, apa, apl);
             }
         }
         else if (q->dc.left->size >= ISZ_FLOAT)
         {
-            if (q->ans->size >= ISZ_FLOAT)
-            {
-                if (q->ans->size == ISZ_FLOAT)
-                    gen_code(op_cvtsd2ss, apa, apl);
-                else
-                    gen_code(op_movsd, apa, apl);
-            }
-            else
-            {
-                apa->length = ISZ_UINT;
-                gen_code_sse(op_cvttss2si, op_cvttsd2si, q->dc.left->size, apa, apl);
-            }
+            moveFP(apa, q->ans->size, apl, q->dc.left->size);
         }
         else
         {
@@ -3414,16 +3343,8 @@ void asm_assn(QUAD* q) /* assignment */
         {
             if (q->dc.left->size >= ISZ_CFLOAT)
             {
-                if (q->dc.left->size == ISZ_CFLOAT)
-                {
-                    gen_code(op_cvtss2sd, apa, apl);
-                    gen_code(op_cvtss2sd, apa1, apl1);
-                }
-                else
-                {
-                    gen_code(op_movsd, apa, apl);
-                    gen_code(op_movsd, apa1, apl1);
-                }
+                moveFP(apa, q->ans->size, apl, q->dc.left->size);
+                moveFP(apa1, q->ans->size, apl1, q->dc.left->size);
             }
             else if (q->dc.left->size >= ISZ_IFLOAT)
             {
@@ -3431,29 +3352,11 @@ void asm_assn(QUAD* q) /* assignment */
                 {
                     gen_code_sse(op_movss, op_movsd, q->ans->size, apa, floatzero(apl));
                     zerocleanup();
-                    if (q->dc.left->size == ISZ_IFLOAT)
-                        if (q->ans->size == ISZ_CFLOAT)
-                            gen_code(op_movss, apa1, apl);
-                        else
-                            gen_code(op_cvtss2sd, apa1, apl);
-                    else
-                        if (q->ans->size == ISZ_CFLOAT)
-                            gen_code(op_cvtsd2ss, apa1, apl);
-                        else
-                            gen_code(op_movsd, apa1, apl);
+                    moveFP(apa1, q->ans->size, apl, q->dc.left->size);
                 }
-                else if (q->ans->size >= ISZ_IFLOAT)
+                else
                 {
-                    if (q->dc.left->size == ISZ_IFLOAT)
-                        if (q->ans->size == ISZ_CFLOAT)
-                            gen_code(op_movss, apa, apl);
-                        else
-                            gen_code(op_cvtss2sd, apa, apl);
-                    else
-                        if (q->ans->size == ISZ_CFLOAT)
-                            gen_code(op_cvtsd2ss, apa, apl);
-                        else
-                            gen_code(op_movsd, apa, apl);
+                    moveFP(apa, q->ans->size, apl, q->dc.left->size);
                 }
             }
             else if (q->dc.left->size >= ISZ_FLOAT)
@@ -3462,26 +3365,12 @@ void asm_assn(QUAD* q) /* assignment */
                 {
                     gen_code_sse(op_movss, op_movsd, q->ans->size, apa1, floatzero(apl));
                     zerocleanup();
-                    if (q->dc.left->size == ISZ_FLOAT)
-                        if (q->ans->size == ISZ_CFLOAT)
-                            gen_code(op_movss, apa, apl);
-                        else
-                            gen_code(op_cvtss2sd, apa, apl);
-                    else
-                        if (q->ans->size == ISZ_CFLOAT)
-                            gen_code(op_cvtsd2ss, apa, apl);
-                        else
-                            gen_code(op_movsd, apa, apl);
+                    moveFP(apa, q->ans->size, apl, q->dc.left->size);
                 }
-                else if (q->ans->size >= ISZ_IFLOAT)
-                {
-                    gen_code_sse(op_movss, op_movsd, q->ans->size, apa, floatzero(apl));
-                    zerocleanup();
-                }
-                else if (q->dc.left->size == ISZ_FLOAT)
-                    gen_code(op_cvtss2sd, apa, apl);
                 else
-                    gen_code(op_movsd, apa, apl);
+                {
+                    moveFP(apa, q->ans->size, apl, q->dc.left->size);
+                }
             }
             else if (q->dc.left->size == ISZ_ULONGLONG || q->dc.left->size == -ISZ_ULONGLONG || q->dc.left->size == ISZ_ULONG || q->dc.left->size == ISZ_UINT)
             {

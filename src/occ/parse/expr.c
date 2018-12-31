@@ -6309,57 +6309,78 @@ static LEXEME* expression_times(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** t
                 int m1 = -1, m2 = -1;
                 if (isimaginary(*tp) && isimaginary(tp1))
                 {
-                    *exp = exprNode(en_uminus, *exp, NULL);
-                    *tp = destSize(*tp, tp1, exp, &exp1, FALSE, NULL);
-                }
-                else if (isimaginary(*tp) && (isfloat(tp1) || isint(tp1)))
-                {
+                    if (kw == star)
+                       *exp = exprNode(en_uminus, *exp, NULL);
                     m1 = (*tp)->type - bt_float_imaginary;
-                    m2 = isfloat(tp1) ? tp1->type - bt_float : m1;
-                }
-                else if ((isfloat(*tp) || isint(*tp)) && isimaginary(tp1))
-                {
-                    m1 = tp1->type - bt_float_imaginary;
-                    m2 = isfloat(*tp) ? (*tp)->type - bt_float : m1;
-
-                }
-                if (m1 >= 0)
-                {
-                    BOOLEAN b = isimaginary(*tp);
+                    m2 = tp1->type - bt_float_imaginary;
                     m1 = m1 > m2 ? m1 : m2;
                     switch (m1)
                     {
                     case 0:
-                        *tp = &stdfloatimaginary;
-                        tp1 = &stdfloat;
+                        *tp = &stdfloat;
+                        tp1 = &stdfloatimaginary;
                         break;
                     case 1:
-                        *tp = &stddoubleimaginary;
-                        tp1 = &stddouble;
+                        *tp = &stddouble;
+                        tp1 - &stddoubleimaginary;
                         break;
-                    default:
-                        *tp = &stdlongdoubleimaginary;
-                        tp1 = &stdlongdouble;
+                    case 2:
+                        *tp = &stdlongdouble;
+                        tp1 = &stdlongdoubleimaginary;
                         break;
                     }
-                    if (b)
+                    cast(tp1, exp);
+                    cast(tp1, &exp1);
+                }
+                else {
+                    if (isimaginary(*tp) && (isfloat(tp1) || isint(tp1)))
                     {
-                        cast(*tp, exp);
-                        cast(tp1, &exp1);
+                        m1 = (*tp)->type - bt_float_imaginary;
+                        m2 = isfloat(tp1) ? tp1->type - bt_float : m1;
+                    }
+                    else if ((isfloat(*tp) || isint(*tp)) && isimaginary(tp1))
+                    {
+                        m1 = tp1->type - bt_float_imaginary;
+                        m2 = isfloat(*tp) ? (*tp)->type - bt_float : m1;
+
+                    }
+                    if (m1 >= 0)
+                    {
+                        BOOLEAN b = isimaginary(*tp);
+                        m1 = m1 > m2 ? m1 : m2;
+                        switch (m1)
+                        {
+                        case 0:
+                            *tp = &stdfloatimaginary;
+                            tp1 = &stdfloat;
+                            break;
+                        case 1:
+                            *tp = &stddoubleimaginary;
+                            tp1 = &stddouble;
+                            break;
+                        default:
+                            *tp = &stdlongdoubleimaginary;
+                            tp1 = &stdlongdouble;
+                            break;
+                        }
+                        if (b)
+                        {
+                            cast(*tp, exp);
+                            cast(tp1, &exp1);
+                        }
+                        else
+                        {
+                            cast(tp1, exp);
+                            cast(*tp, &exp1);
+                        }
                     }
                     else
                     {
-                        cast(tp1, exp);
-                        cast(*tp, &exp1);
-                    }
-                    *exp = exprNode(type, *exp, exp1);
-                }
-                else
-                {
-                    *tp = destSize(*tp, tp1, exp, &exp1, FALSE, NULL);
-                    *exp = exprNode(type, *exp, exp1);
+                        *tp = destSize(*tp, tp1, exp, &exp1, FALSE, NULL);
 
+                    }
                 }
+                *exp = exprNode(type, *exp, exp1);
 
             }
         }

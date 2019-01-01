@@ -94,7 +94,7 @@ static void rvColor(IMODE* ip)
 }
 void precolor(QUAD* head) /* precolor an instruction */
 {
-    if (head->fastcall)
+    if (head->fastcall && head->dc.opcode != i_gosub)
     {
         int ta;
         if (head->fastcall < 0)

@@ -1660,7 +1660,7 @@ static void iterateConstants(void)
             while (uses)
             {
 
-                if (uses->ins->dc.opcode != i_assn && (uses->ins->temps & TEMP_LEFT) && uses->ins->dc.left->mode == i_direct)
+                if (uses->ins->dc.opcode != i_assn && (uses->ins->temps & TEMP_LEFT) && uses->ins->dc.left->mode == i_direct && !uses->ins->fastcall)
                 {
                     int t = uses->ins->dc.left->offset->v.sp->value.i;
                     if (t == i)

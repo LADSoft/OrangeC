@@ -70,7 +70,7 @@ endif
 DEFINES:=$(addprefix -D,$(DEFINES))
 DEFINES:=$(subst @, ,$(DEFINES))
 
-CCFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES)\
+CCFLAGS := $(CCFLAGS) $(CINCLUDES) -fpermissive $(DEFINES)\
     -DGNUC
 
 ifeq "$(TARGET)" "GUI"

@@ -141,8 +141,13 @@ format:
 	@$(MAKE) -f $(_TREEROOT) format
 endif
 
+ifeq "$(COMPILER)" "gcc-linux"
+x64Parser.cpp: ..$(PATHEXT2)..$(PATHEXT2)oasm$(PATHEXT2)x64Parser.cpp
+	cp $< $@
+else
 x64Parser.cpp: ..$(PATHEXT2)..$(PATHEXT2)oasm$(PATHEXT2)x64Parser.cpp
 	copy $< $@
+endif
 
 DISTRIBUTE: copyexe
 	copy target.cfg $(DISTBIN)$(PATHEXT2)occ.cfg

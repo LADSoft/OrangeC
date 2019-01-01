@@ -41,12 +41,14 @@ version 6.0.40:
     ocide: empty status bar after scanning for dependencies
     ocide: bad DOCKS entry in user prefs file leads to hang
     ocide: when starting the debugger with no windows open, the disassembly window would open instead of the source file window
+    ocide: make it work when compiled against LSCRTL.DLL
     rtl: fix recently broken strncpy to work properly again
     rtl: fix tgmath.h
     rtl: fix chrono::system_clock::now();
     rtl: rewrite qsort to make it non-recursive
     rtl: fix sprintf() and friends to print floating point numbers correctly
     rtl: replace 8087 math functions with cephes library
+    rtl: fix startup routines to pass correct version of hInstance to WinMain and DLLMain when compiled against LSCRTL.DLL
 
 version 6.0.39: 11/15/2018
     rtl: add msvcrt.l and crtdll.l back into the project

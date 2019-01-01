@@ -65,6 +65,7 @@ int __stdcall ___lscrtl_startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvRese
                 return 1;
             }
         }
+        hInst= GetModuleHandleA(0);
     }
     __srproc(INITSTART, INITEND);
     if (flags & DLL)

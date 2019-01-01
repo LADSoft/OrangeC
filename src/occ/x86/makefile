@@ -141,7 +141,7 @@ format:
 	@$(MAKE) -f $(_TREEROOT) format
 endif
 
-x64Parser.cpp: ..$(PATHEXT2)..$(PATHEXT2)oasm$(PATHEXT2)x64parser.cpp
+x64Parser.cpp: ..$(PATHEXT2)..$(PATHEXT2)oasm$(PATHEXT2)x64Parser.cpp
 	copy $< $@
 
 DISTRIBUTE: copyexe

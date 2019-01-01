@@ -1443,46 +1443,32 @@ void dump_muldivval(void)
             else
             {
                 char buf[256];
-                if (muldivlink->floatvalue.type == IFPF_IS_INFINITY || muldivlink->floatvalue.type == IFPF_IS_NAN)
+                UBYTE data[12];
+                int len = 0;
+                int i;
+                switch (muldivlink->size)
                 {
-                    UBYTE data[12];
-                    int len = 0;
-                    int i;
-                    switch (muldivlink->size)
-                    {
-                        case ISZ_FLOAT:
-                        case ISZ_IFLOAT:
-                            FPFToFloat(data, &muldivlink->floatvalue);
-                            len = 4;
-                            break;
-                        case ISZ_DOUBLE:
-                        case ISZ_IDOUBLE:
-                        case ISZ_LDOUBLE:
-                        case ISZ_ILDOUBLE:
-                            FPFToDouble(data, &muldivlink->floatvalue);
-                            len = 8;
-                            break;
-                    }
-                    bePrintf("\tdb\t");
-                    for (i = 0; i < len; i++)
-                    {
-                        bePrintf("0%02XH", data[i]);
-                        if (i != len - 1)
-                            bePrintf(",");
-                    }
-                    bePrintf("\n");
+                    case ISZ_FLOAT:
+                    case ISZ_IFLOAT:
+                        FPFToFloat(data, &muldivlink->floatvalue);
+                        len = 4;
+                        break;
+                    case ISZ_DOUBLE:
+                    case ISZ_IDOUBLE:
+                    case ISZ_LDOUBLE:
+                    case ISZ_ILDOUBLE:
+                        FPFToDouble(data, &muldivlink->floatvalue);
+                        len = 8;
+                        break;
                 }
-                else
+                bePrintf("\tdb\t");
+                for (i = 0; i < len; i++)
                 {
-                    FPFToString(buf, &muldivlink->floatvalue);
-                    if (muldivlink->size == ISZ_FLOAT || muldivlink->size == ISZ_IFLOAT || muldivlink->size == ISZ_CFLOAT)
-
-                    {
-                        bePrintf("\tdd\t%s\n", buf);
-                    }
-                    else
-                        bePrintf("\tdq\t%s\n", buf);
+                    bePrintf("0%02XH", data[i]);
+                    if (i != len - 1)
+                        bePrintf(",");
                 }
+                bePrintf("\n");
             }
             muldivlink = muldivlink->next;
         }

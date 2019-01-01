@@ -55,12 +55,12 @@ int fastcallAlias;
 
 static void CalculateFastcall(SYMBOL* funcsp)
 {
+    fastcallAlias = 0;
 #ifndef CPPTHISCALL
     if (funcsp->linkage != lk_fastcall)
         return;
 #endif
 
-    fastcallAlias = 0;
     if (chosenAssembler->arch->fastcallRegCount)
     {
         HASHREC* hr = basetype(funcsp->tp)->syms->table[0];

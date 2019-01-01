@@ -1192,9 +1192,36 @@ void gen_xset(QUAD* q, enum e_opcode pos, enum e_opcode neg, enum e_opcode flt)
     {
         getAmodes(q, &opa, right, &aprl, &aprh);
         getAmodes(q, &opa, left, &apll, &aplh);
-        gen_code_sse(op_ucomiss, op_ucomisd, left->size, apll, aprl);
+        if (apll->mode == am_xmmreg)
+            gen_code_sse(op_ucomiss, op_ucomisd, left->size, apll, aprl);
+        else
+            gen_code_sse(op_ucomiss, op_ucomisd, left->size, aprl, apll);
         getAmodes(q, &opa, q->ans, &apal, &apah);
-        gen_codes(flt, ISZ_UCHAR, apal, 0);
+        if (apll->mode == am_xmmreg)
+        {
+            gen_codes(flt, ISZ_UCHAR, apal, 0);
+        }
+        else
+        {
+            switch (flt)
+            {
+            case op_setc:
+                flt = op_seta;
+                break;
+            case op_seta:
+                flt = op_setc;
+                break;
+            case op_setbe:
+                flt = op_setae;
+                break;
+            case op_setae:
+                flt = op_setbe;
+                break;
+
+            }
+            gen_codes(flt, ISZ_UCHAR, apal, 0);
+
+        }
         gen_codes(op_and, ISZ_UINT, apal, aimmed(1));
         return;
     }
@@ -1402,8 +1429,32 @@ void gen_goto(QUAD* q, enum e_opcode pos, enum e_opcode neg, enum e_opcode llpos
 
         getAmodes(q, &opa, right, &aprl, &aprh);
         getAmodes(q, &opa, left, &apll, &aplh);
-        gen_code_sse(op_ucomiss, op_ucomisd, left->size, apll, aprl);
-        gen_branch(flt , q->dc.v.label);
+        if (apll->mode == am_xmmreg)
+        {
+            gen_code_sse(op_ucomiss, op_ucomisd, left->size, apll, aprl);
+            gen_branch(flt, q->dc.v.label);
+        }
+        else
+        {
+            gen_code_sse(op_ucomiss, op_ucomisd, left->size, aprl, apll);
+            switch (flt)
+            {
+            case op_jb:
+                flt = op_ja;
+                break;
+            case op_ja:
+                flt = op_jb;
+                break;
+            case op_jae:
+                flt = op_jbe;
+                break;
+            case op_jbe:
+                flt = op_jae;
+                break;
+            }
+            gen_branch(flt, q->dc.v.label);
+
+        }
     }
     else
     {
@@ -3016,7 +3067,7 @@ void asm_setc(QUAD* q) /* evaluate a = b U< c */ { gen_xset(q, op_setc, op_seta,
 void asm_seta(QUAD* q) /* evaluate a = b U> c */ { gen_xset(q, op_seta, op_setc, op_seta); }
 void asm_setnc(QUAD* q) /* evaluate a = b U>= c */ { gen_xset(q, op_setnc, op_setbe, op_setae); }
 void asm_setbe(QUAD* q) /* evaluate a = b U<= c */ { gen_xset(q, op_setbe, op_setnc, op_setbe); }
-void asm_setl(QUAD* q) /* evaluate a = b S< c */ { gen_xset(q, op_setl, op_setg, op_setb); }
+void asm_setl(QUAD* q) /* evaluate a = b S< c */ { gen_xset(q, op_setl, op_setg, op_setc); }
 void asm_setg(QUAD* q) /* evaluate a = b s> c */ { gen_xset(q, op_setg, op_setl, op_seta); }
 void asm_setle(QUAD* q) /* evaluate a = b S<= c */ { gen_xset(q, op_setle, op_setge, op_setbe); }
 void asm_setge(QUAD* q) /* evaluate a = b S>= c */ { gen_xset(q, op_setge, op_setle, op_setae); }

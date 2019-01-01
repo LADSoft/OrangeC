@@ -38,6 +38,43 @@
 #include <limits.h>
 //#include "_lfloat.h"
 
+long double __tensexp(int n)
+{
+    static int table[] = {
+    1,
+    10,
+    100,
+    1000,
+    10000,
+    100000,
+    1000000,
+    10000000,
+    100000000,
+    1000000000,
+
+    };
+    long double rval = 1.0;
+    if (n < 0)
+    {
+        n = - n;
+        while (n >= sizeof(table)/sizeof(table[0]))
+        {
+            rval /= table[sizeof(table)/sizeof(table[0])-1];
+            n -= sizeof(table)/sizeof(table[0])-1;
+        }
+        return rval/table[n];
+    }
+    else
+    {
+        while (n >= sizeof(table)/sizeof(table[0]))
+        {
+            rval *= table[sizeof(table)/sizeof(table[0])-1];
+            n -= sizeof(table)/sizeof(table[0])-1;
+        }
+        return rval*table[n];
+    }
+}                    
+
 static unsigned floating_infinity = 0x7f800000;
 static unsigned floating_nan = 0x7fc00000;
 

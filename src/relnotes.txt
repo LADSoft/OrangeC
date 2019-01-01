@@ -10,6 +10,7 @@ version 6.0.40:
     occ: print return code of linker when calling --y
     occ: faster evaluation when constexpr functions are used
     occ: rewrite backend to use assembler core
+    occ: convert floating point calculations to use SSE2
     occ: fix bug in assembly output when virtual function patches are applied to an overridden virtual table
     occ: allow implicit use of captured this in lambda expressions
     occ: fix problem with constructor initializers: direct initialization of a structure member resulted in bad code
@@ -21,7 +22,8 @@ version 6.0.40:
     occ: when a structure is copy-constructed into a function argument, a throw in the function resulted in undefined behavior
     occ: fix some problems with lambda functions being force fit into std::function
     occ: fix unary operators - would apply the conversion AFTER any cast to the destination size instead of before
-    occ: fix various problems with complex number handling
+    occ: fix various problems with complex and imaginary number handling
+    occ: in assembly file, represent floating point numbers as a byte sequence instead of as a decimal value
     oasm: speed up assembly of large files
     oasm: negative floating point numbers were being represented as positive in the output
     dlpe/oimplib: handle -y switch 
@@ -43,6 +45,9 @@ version 6.0.40:
     rtl: fix tgmath.h
     rtl: fix chrono::system_clock::now();
     rtl: rewrite qsort to make it non-recursive
+    rtl: fix sprintf() and friends to print floating point numbers correctly
+    rtl: replace 8087 math functions with cephes library
+
 version 6.0.39: 11/15/2018
     rtl: add msvcrt.l and crtdll.l back into the project
     rtl: improve stack trace for certain edge cases

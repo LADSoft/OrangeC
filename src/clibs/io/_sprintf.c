@@ -38,7 +38,20 @@
 
 int _e_min_exp_digit = 2;  /* min exp digits for %e (stdc, MS is 3) */
 
-int fextractdouble(double fmant, int *fexp, int *fsign, unsigned char *buf);   
+char *dtoa(double d, int mode, int ndigits,
+			int *decpt, int *sign, char **rve);
+
+int fextractdouble(double fmant, int *fexp, int *fsign, unsigned char *buf)
+{
+    *fsign = fmant < 0 ? -1 : 1;
+    fmant = fabsl(fmant);
+    int temp;
+	char *s =  dtoa(fmant, 2, 80, fexp, &temp, NULL);
+	(*fexp)--;
+	strcpy(buf, s);
+	freedtoa(s);
+	return fmant == 0.0;
+}
 
 #ifdef _i386_
 #define USE_FLOAT
@@ -55,86 +68,6 @@ int fnd(unsigned char *buf, int index)
   return buf[index] - '0';
 }
 
-long double __tensexp(int n)
-{
-    int table[] = {
-    1,
-    10,
-    100,
-    1000,
-    10000,
-    100000,
-    1000000,
-    10000000,
-    100000000,
-    1000000000,
-
-    };
-    long double rval = 1.0;
-    if (n < 0)
-    {
-        n = - n;
-        while (n >= sizeof(table)/sizeof(table[0]))
-        {
-            rval /= table[sizeof(table)/sizeof(table[0])-1];
-            n -= sizeof(table)/sizeof(table[0])-1;
-        }
-        return rval/table[n];
-    }
-    else
-    {
-        while (n >= sizeof(table)/sizeof(table[0]))
-        {
-            rval *= table[sizeof(table)/sizeof(table[0])-1];
-            n -= sizeof(table)/sizeof(table[0])-1;
-        }
-        return rval*table[n];
-    }
-}                    
-
-int fextract(long double *fmant, int *fexp, int *fsign, unsigned char *buf)
-{
-    int count = 0;
-    unsigned char *q = buf;
-    long double rval = *fmant;
-    int exp, type, i;
-    *fsign = rval < 0 ? -1 : 1;
-    rval = fabsl(rval);
-    if (rval)
-    {
-        exp = (int)log10l(rval);
-        rval /= __tensexp(exp);
-        if (rval >= 10)
-        {
-            *q++ = '1';
-            rval-= 10;
-            exp++;
-        }
-        else if (rval < 1)
-        {
-            rval = rval * 10;
-            exp--;
-        }
-        while (rval != 0 && count < LDBL_DIG)
-        {
-            int val;
-            val = rval;
-            rval -= val;
-            *q++ = val + '0';     
-            rval = rval * 10;
-            count++;
-        }
-    }
-    else
-    {
-        
-        exp = 0;
-        *q++ = '0';
-    }        
-    *q = 0;
-    *fexp = exp;
-    return exp == 0;
-}
 static char * getnum(char *string, LLONG_TYPE num,int radix,int lc,int unsign)
 {
     static const char digitsArray[] =
@@ -553,17 +486,10 @@ doinf:
                     strcpy(fbp,"INF");
             } else {
                 int bcdIndex = 0, isZero;
-                unsigned char bcdBuf[32];
+                unsigned char bcdBuf[100];
                 int exp;
                 
-                if (mode == 'L')
-     			    isZero = fextract(&fmant,&fexp,&fsign, bcdBuf);
-                else
-                {
                     isZero = fextractdouble(*(double *)arg, &fexp, &fsign, bcdBuf);
-                    if (fexp == INT_MAX)
-         			    isZero = fextract(&fmant,&fexp,&fsign, bcdBuf);
-                }
 				/* sign */
 				if (issigned || spaced || fsign < 0)
 					if (fsign < 0)
@@ -578,7 +504,6 @@ doinf:
 					{
 						isf = 0;
 					}
-					/* adjust for negative exponents, I was too lazy to do this in ASM */
 /*
 					if (fexp < 0) {
                         bcdIndex++;

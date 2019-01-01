@@ -44,7 +44,7 @@ extern int _e_min_exp_digit;  /* min exp digits for %e (stdc is 2, MS is 3) */
 #define PUTSTR(x) fputws(x, __stream)
 
 extern int fnd(unsigned char *buf, int index);
-extern int fextract(long double *fmant, int *fexp, int *fsign, unsigned char *buf);
+extern int fextractdouble(long double *fmant, int *fexp, int *fsign, unsigned char *buf);
 
 static wchar_t * getnum(wchar_t *string, LLONG_TYPE num,int radix,int lc,int unsign)
 {
@@ -392,8 +392,8 @@ doinf:
                     wcscpy(fbp,L"INF");
             } else {
                 int bcdIndex = 0, ftype;
-                unsigned char bcdBuf[32];
- 			    ftype = fextract(&fmant,&fexp,&fsign, bcdBuf);
+                unsigned char bcdBuf[100];
+ 			    ftype = fextractdouble(&fmant,&fexp,&fsign, bcdBuf);
 				/* sign */
 				if (issigned || spaced || fsign < 0)
 					if (fsign < 0)

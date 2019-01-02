@@ -28,7 +28,7 @@ endif
 
 ZIP:="c:/program files/7-zip/7z" -tzip -bd
 
-VERNAME := $(word 3, $(shell type,\orangec\src\version.h))
+VERNAME := $(word 3, $(shell cmd /C type \orangec\src\version.h))
 VERNAME := $(subst ",,$(VERNAME))
 VERNAME := $(subst .,,$(VERNAME))
 

@@ -70,6 +70,7 @@
 #define ERANGE 34       /* Result too large         */
 #define EEXIST 35       /* File already exists      */
 #define EDEADLOCK 36    /* Locking violation        */
+#define EDEADLK EDEADLOCK  /* Locking violation     */
 #define EPERM 37        /* Operation not permitted  */
 #define ESRCH 38        /* UNIX - not MSDOS         */
 #define EINTR 39        /* Interrupted function call */

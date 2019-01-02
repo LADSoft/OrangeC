@@ -444,7 +444,11 @@ static DWORD LoadFirstWorkArea(void* v)
             char cwd[256];
             int munged = FALSE;
             StringToProfile("FILEDIR", (char*)getcwd(cwd, 256));
-            for (i = 1; i < argc; i++)
+            if (argc == 2 &&strstr(argv[1], ".cwa"))
+            {
+                LoadWorkArea(argv[1], TRUE);
+            }
+            else for (i = 1; i < argc; i++)
             {
                 DWINFO info;
                 char* p = strrchr(argv[i], '\\');
@@ -963,7 +967,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
                     /*
                     {
                         MENUITEMINFO info;
-                    
+                    
                         info.cbSize = sizeof(MENUITEMINFO);
                         info.fMask = MIIM_STATE;
                         GetMenuItemInfo(hMenuMain, IDM_VIEWASM, MF_BYCOMMAND, &info);

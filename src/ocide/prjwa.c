@@ -173,6 +173,7 @@ void LoadWorkArea(char* name, BOOL existing)
         if (workArea)
         {
             CalculateProjectDepends(workArea);
+            SetStatusMessage("", FALSE);
             RecursiveCreateTree(TVI_ROOT, TVI_FIRST, workArea);
         }
     }

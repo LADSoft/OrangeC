@@ -28,12 +28,11 @@
 
 #include "Label.h"
 #include "AsmExpr.h"
+#include <vector>
+#include <string>
 
 class Fixup;
 class AsmFile;
-
-#include <vector>
-#include <string>
 
 typedef std::vector<Fixup*> FixupContainer;
 class Instruction
@@ -45,33 +44,59 @@ class Instruction
         DATA,
         CODE,
         ALIGN,
-        RESERVE
+        RESERVE,
+        ALT
     };
-    Instruction(Label* lbl) : data(nullptr), label(lbl), type(LABEL), pos(0), fpos(0), size(0), offs(0), repeat(1) {}
-    Instruction(unsigned char* Data, int Size, bool isData = false) :
+    Instruction(Label* lbl) : data(nullptr), label(lbl), type(LABEL), altdata(nullptr), pos(0), fpos(0), size(0), offs(0), repeat(1)
+    {
+    }
+    Instruction(void* Data, int Size, bool isData = false) :
         type(isData ? DATA : CODE),
         label(nullptr),
         pos(0),
         fpos(0),
         repeat(1),
         size(Size),
-        offs(0)
+        offs(0),
+        lost(false)
     {
-        data = new unsigned char[size];
-        memcpy(data, Data, size);
+        data = LoadData(!isData, (unsigned char*)Data, Size);
     }
-    Instruction(int aln) : data(nullptr), type(ALIGN), label(nullptr), pos(0), fpos(0), size(aln), offs(0), repeat(1) {}
-    Instruction(int Repeat, int Size) : type(RESERVE), label(nullptr), pos(0), fpos(0), size(Size), repeat(Repeat), offs(0)
+    Instruction(int aln) :
+        data(nullptr),
+        type(ALIGN),
+        label(nullptr),
+        altdata(nullptr),
+        pos(0),
+        fpos(0),
+        size(aln),
+        offs(0),
+        repeat(1)
+    {
+    }
+    Instruction(int Repeat, int Size) :
+        type(RESERVE),
+        label(nullptr),
+        altdata(nullptr),
+        pos(0),
+        fpos(0),
+        size(Size),
+        repeat(Repeat),
+        offs(0)
     {
         data = new unsigned char[size];
         memset(data, 0, size);
     }
+    Instruction(void* data) : data(nullptr), type(ALT), label(nullptr), altdata(data), pos(0), fpos(0), size(0), offs(0), repeat(1)
+    {
+    }
     virtual ~Instruction();
 
+    void* GetAltData() { return altdata; }
     Label* GetLabel() { return label; }
     bool IsLabel() { return type == LABEL; }
     int GetType() { return type; }
-    void Optimize(int pc, bool doErrors);
+    void Optimize(Section* sect, int pc, bool doErrors);
     void SetOffset(int Offs) { offs = Offs; }
     int GetOffset() { return offs; }
     int GetSize()
@@ -81,14 +106,13 @@ class Instruction
             int n = size - offs % size;
             if (n == size)
                 return 0;
-            else
-                return n;
+            return n;
         }
         else if (type == RESERVE)
             return size * repeat;
-        else
-            return size;
+        return size;
     }
+    unsigned char* GetData() { return data; }
     int GetRepeat() { return repeat; }
     int GetNext(Fixup& fixup, unsigned char* buf);
     void Rewind() { pos = fpos = 0; }
@@ -97,6 +121,8 @@ class Instruction
     unsigned char* GetBytes() { return data; }
     FixupContainer* GetFixups() { return &fixups; }
     static void SetBigEndian(bool be) { bigEndian = be; }
+    unsigned char* LoadData(bool isCode, unsigned char* data, size_t size);
+    bool Lost() const { return lost; }
 
   private:
     enum iType type;
@@ -107,6 +133,8 @@ class Instruction
     int pos;
     int fpos;
     int repeat, xrepeat;
+    void* altdata;
+    bool lost;
 
     FixupContainer fixups;
     static bool bigEndian;

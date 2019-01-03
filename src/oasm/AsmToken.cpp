@@ -31,13 +31,28 @@
 #include <limits.h>
 #include <fstream>
 
-typedef unsigned L_INT L_UINT;
-
 bool CharacterToken::unsignedchar;
 bool NumericToken::ansi;
 bool NumericToken::c99;
 
 unsigned llminus1 = -1;
+static bool IsSymbolStartChar(const char* data)
+{
+    return *data == '@' || *data == '_' || *data == '?' || *data == '.' || UTF8::IsAlpha(data);
+}
+static bool IsSymbolChar(const char* data)
+{
+    return *data == '_' || *data == '$' || *data == '#' || *data == '@' || *data == '~' || *data == '?' || *data == '.' ||
+           *data == '&' || UTF8::IsAlnum(data);
+}
+
+static bool IsSymbolCharRoutine(const char* data, bool startOnly)
+{
+    return startOnly ? IsSymbolStartChar(data) : IsSymbolChar(data);
+}
+
+bool (*Tokenizer::IsSymbolChar)(const char*, bool) = IsSymbolCharRoutine;
+
 bool StringToken::Start(const std::string& line)
 {
     if (line[0] == '"' || line[0] == '\'')
@@ -115,11 +130,11 @@ void CharacterToken::Parse(std::string& line)
     line.erase(0, start - line.c_str());
 }
 int CharacterToken::QuotedChar(int bytes, const char** source) { return *(*source)++; }
-L_INT NumericToken::GetInteger() const
+long long NumericToken::GetInteger() const
 {
     if (parsedAsFloat)
     {
-        return (L_INT)floatValue;
+        return (long long)floatValue;
     }
     return intValue;
 }
@@ -150,9 +165,9 @@ int NumericToken::Radix36(char c)
         return c - 'A' + 10;
     return INT_MAX;
 }
-L_INT NumericToken::GetBase(int b, char** ptr)
+long long NumericToken::GetBase(int b, char** ptr)
 {
-    L_INT i;
+    long long i;
     int j;
     int errd = 0;
     i = 0;
@@ -407,13 +422,13 @@ int NumericToken::GetNumber(const char** ptr)
             if (intValue > INT_MAX)
             {
                 type = t_unsignedint;
-                if (radix == 10 || (L_UINT)intValue > UINT_MAX)
+                if (radix == 10 || (unsigned long long)intValue > UINT_MAX)
                 {
                     type = t_longint;
                     if (intValue > LONG_MAX)
                     {
                         type = t_unsignedlongint;
-                        if (radix == 10 || (L_UINT)intValue > ULONG_MAX)
+                        if (radix == 10 || (unsigned long long)intValue > ULONG_MAX)
                         {
                             if (radix == 10)
                             {

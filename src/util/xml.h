@@ -83,7 +83,9 @@ class xmlNode
     void SetStripSpaces(bool flag) { stripSpaces = flag; }
     bool GetStripSpaces() const { return stripSpaces; }
     void Strip();
-
+    static int Line() { return lineno; }
+    static void Reset() { lineno = 1; }
+    static void IncLine() { lineno++; }
     static bool IsSpecial(char t) { return xmlAttrib::IsSpecial(t); }
     static bool ReadTextString(std::fstream& stream, std::string& str);
     static void WriteTextChar(std::fstream& stream, char t);
@@ -95,5 +97,6 @@ class xmlNode
     std::deque<xmlAttrib*> attribs;
     std::deque<xmlNode*> children;
     bool stripSpaces;
+    static int lineno;
 };
 #endif

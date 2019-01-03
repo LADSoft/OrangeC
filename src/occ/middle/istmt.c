@@ -65,6 +65,7 @@ extern LIST* temporarySymbols;
 extern int inlinesym_count;
 extern int tempBottom, nextTemp;
 extern TYPE stdint;
+extern SYMBOL* baseThisPtr;
 
 IMODE* returnImode;
 int retcount;
@@ -835,7 +836,7 @@ void optimize(SYMBOL* funcsp)
     /*
      * icode optimizations goes here.  Note that LCSE is done through
      * DAG construction during the actual construction of the blocks
-     * so it is already done at this point.
+     * so- it is already done at this point.
      *
      * Order IS important!!!!!!!!! be careful!!!!!
      *
@@ -852,7 +853,7 @@ void optimize(SYMBOL* funcsp)
     if ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) && !functionHasAssembly)
     {
         Precolor();
-        RearrangePrecolors();
+        RearrangePrecolors();                                                                   
         // printf("ssa\n");
         TranslateToSSA();
 
@@ -904,6 +905,7 @@ void optimize(SYMBOL* funcsp)
         RemoveCriticalThunks();
         RemoveInfiniteThunks();
     }
+
     /* backend modifies ICODE to improve code generation */
     if (chosenAssembler->gen->post_gcse)
     {
@@ -1089,6 +1091,13 @@ void genfunc(SYMBOL* funcsp, BOOLEAN doOptimize)
             gen_varstart(exp);
         }
     }
+    else
+    {
+        if (basetype(funcsp->tp)->syms->table[0] && ((SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p)->thisPtr)
+        {
+            baseThisPtr = (SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p;
+        }
+    }
     gen_label(startlab);
     AddProfilerData(funcsp);
     if (cparams.prm_xcept && funcsp->xc && funcsp->xc->xcInitializeFunc)
@@ -1135,6 +1144,7 @@ void genfunc(SYMBOL* funcsp, BOOLEAN doOptimize)
     if (funcsp->linkage == lk_virtual || tmpl)
         gen_endvirtual(funcsp);
     AllocateLocalContext(NULL, funcsp, nextLabel++);
+    funcsp->retblockparamadjust = chosenAssembler->arch->retblockparamadjust;
     XTDumpTab(funcsp);
     FreeLocalContext(NULL, funcsp, nextLabel++);
     intermed_head = NULL;
@@ -1160,6 +1170,7 @@ void genfunc(SYMBOL* funcsp, BOOLEAN doOptimize)
         }
         hr = hr->next;
     }
+    baseThisPtr = NULL;
 }
 void genASM(STATEMENT* st)
 {

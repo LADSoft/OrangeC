@@ -28,10 +28,10 @@
 
 #include <string>
 
-#include "token.h"
+#include "Token.h"
 class ppDefine;
 
-typedef L_INT PPINT;
+typedef long long PPINT;
 
 enum kw
 {

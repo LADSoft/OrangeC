@@ -37,6 +37,7 @@
 
 #define MAX_STRLEN 257
 
+extern BOOL needingID;
 extern char* rcIdFile;
 extern WCHAR inputline[];
 extern FILE* inputFile;
@@ -141,7 +142,9 @@ int preprocess(void)
 {
     ++lptr;
     lastch = ' ';
+    needingID++;
     getsym(); /* get first word on line */
+    needingID--;
 
     if (lastst != ident)
     {
@@ -451,7 +454,9 @@ int dodefine(void)
     int p;
     LIST* prevLines = inSymFile ? GetCachedLines() : NULL;
 
+    needingID++;
     getsym(); /* get past #define */
+    needingID--;
     if (ifskip)
         return incldepth == 0;
     olptr = lptr;

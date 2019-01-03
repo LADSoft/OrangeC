@@ -68,7 +68,7 @@ void errortype (int err, TYPE *tp1, TYPE *tp2);
 void membererror(char *name, TYPE *tp1);
 void errorarg(int err, int argnum, SYMBOL *declsp, SYMBOL *funcsp);
 void specerror(int err, char *name, char *file, int line);
-void diag(char *fmt, ...);
+void diag(const char *fmt, ...);
 void printToListFile(char *fmt, ...);
 void ErrorsToListFile(void);
 void AddErrorToList(char *tag, char *str);
@@ -91,9 +91,9 @@ int main(int argc, char *argv[]);
 
 void constoptinit(void);
 ULLONG_TYPE CastToInt(int size, LLONG_TYPE value);
-FPF CastToFloat(int size, FPF *value);
-FPF *IntToFloat(FPF* temp, int size, LLONG_TYPE value);
-FPF refloat(EXPRESSION *node);
+FPFC CastToFloat(int size, FPFC *value);
+FPFC *IntToFloat(FPFC* temp, int size, LLONG_TYPE value);
+FPFC refloat(EXPRESSION *node);
 LLONG_TYPE MaxOut(enum e_bt size, LLONG_TYPE value);
 ULLONG_TYPE reint(EXPRESSION *node);
 void dooper(EXPRESSION **node, int mode);
@@ -117,6 +117,8 @@ unsigned CRC32(unsigned char *data, size_t len);
 void displayLexeme(LEXEME *lex);
 
                               /* Declare.c */
+SYMBOL* finishSearch(char* name, SYMBOL* encloser, NAMESPACEVALUES* ns, BOOLEAN tagsOnly, BOOLEAN throughClass,
+                     BOOLEAN namespaceOnly);
 
 BOOLEAN intcmp(TYPE *t1, TYPE *t2);
 EXPRESSION *GetSymRef(EXPRESSION *n);
@@ -130,6 +132,8 @@ BOOLEAN hasVTab(SYMBOL *sp);
 BOOLEAN sameTemplatePointedTo(TYPE *tnew, TYPE *told);
 BOOLEAN sameTemplate(TYPE *P, TYPE *A);
 void ParseBuiltins(void);
+LEXEME* tagsearch(LEXEME* lex, char* name, SYMBOL** rsp, HASHTABLE** table, SYMBOL** strSym_out, NAMESPACEVALUES** nsv_out,
+                         enum e_sc storage_class);
 BOOLEAN ParseAttributeSpecifiers(LEXEME **lex, SYMBOL *funcsp, BOOLEAN always);
 void declare_init(void);
 void addStructureDeclaration(STRUCTSYM *decl);
@@ -168,6 +172,10 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
                     BOOLEAN checkcopy, EXPRESSION *arrayElms, BOOLEAN top, 
                     BOOLEAN maybeConversion, BOOLEAN implicit, BOOLEAN pointer,
                     BOOLEAN usesInitList);
+BOOLEAN callConstructorParam(TYPE** tp, EXPRESSION** exp, TYPE *paramTP, EXPRESSION *paramExp, BOOLEAN top,
+    BOOLEAN maybeConversion, BOOLEAN implicit, BOOLEAN pointer);
+void PromoteConstructorArgs(SYMBOL *cons1, FUNCTIONCALL *params);
+
 LEXEME *getDeclType(LEXEME *lex, SYMBOL *funcsp, TYPE **tn);
 LEXEME *insertNamespace(LEXEME *lex, enum e_lk linkage, enum e_sc storage_class, BOOLEAN *linked);
 LEXEME *insertUsing(LEXEME *lex, SYMBOL **sp, enum e_ac access, enum e_sc storage_class, BOOLEAN inTemplate, BOOLEAN hasAttribs);
@@ -195,7 +203,7 @@ LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defa
 void resolveAnonymousUnions(SYMBOL *sp);
 SYMBOL * calculateStructAbstractness(SYMBOL *top, SYMBOL *sp);
 LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp, BOOLEAN inTemplate, enum e_sc storage_class);
-LEXEME *getQualifiers(LEXEME *lex, TYPE **tp, enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3);
+LEXEME *getQualifiers(LEXEME *lex, TYPE **tp, enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3, BOOLEAN *asFriend);
 LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym, BOOLEAN isTemplate, enum e_sc storage_class, 
 					enum e_lk *linkage_in, enum e_lk *linkage2_in, enum e_lk *linkage3, 
                     enum e_ac access, BOOLEAN *notype, BOOLEAN *defd, int *consdest, 
@@ -209,6 +217,7 @@ void SetParams(SYMBOL *cons);
 void unvisitUsingDirectives(NAMESPACEVALUES *v);
 void injectThisPtr(SYMBOL *sp, HASHTABLE *syms);
 void TemplateValidateSpecialization(TEMPLATEPARAMLIST *arg);
+TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, BOOLEAN alt);
 TYPE *TemplateLookupTypeFromDeclType(TYPE *tp);
 void propagateTemplateDefinition(SYMBOL *sym);
 int PushTemplateNamespace(SYMBOL *sym);
@@ -253,7 +262,7 @@ LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum 
 BOOLEAN isConstexprConstructor(SYMBOL *sym);
 BOOLEAN MatchesConstFunction(SYMBOL *sp);
 LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_class, enum e_lk defaultLinkage,
-					   BLOCKDATA *parent, BOOLEAN needsemi, int asExpression, BOOLEAN asfriend, BOOLEAN isTemplate, enum e_ac access );
+					   BLOCKDATA *parent, BOOLEAN needsemi, int asExpression, BOOLEAN isTemplate, enum e_ac access );
 
                                /* Expr.c */
 
@@ -315,15 +324,15 @@ LEXEME *expression(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION
 
                                /* Float.c */
 
-void SetFPFZero(FPF *dest,
+void SetFPFZero(FPFC *dest,
                         uchar sign);
-void SetFPFInfinity(FPF *dest,
+void SetFPFInfinity(FPFC *dest,
                         uchar sign);
-void SetFPFNaN(FPF *dest);
-int ValueIsOne(FPF *value);
-int FPFEQ(FPF *left, FPF *right);
-int FPFGT(FPF *left, FPF *right);
-int FPFGTE(FPF *left, FPF *right);
+void SetFPFNaN(FPFC *dest);
+int ValueIsOne(FPFC *value);
+int FPFEQ(FPFC *left, FPFC *right);
+int FPFGT(FPFC *left, FPFC *right);
+int FPFGTE(FPFC *left, FPFC *right);
 int IsMantissaZero(uf16 *mant);
 int IsMantissaOne(uf16 *mant);
 void Add16Bits(uf16 *carry,
@@ -338,37 +347,37 @@ void ShiftMantLeft1(uf16 *carry,
                         uf16 *mantissa);
 void ShiftMantRight1(uf16 *carry,
                         uf16 *mantissa);
-void StickyShiftRightMant(FPF *ptr,
+void StickyShiftRightMant(FPFC *ptr,
                         int amount);
-void normalize(FPF *ptr);
-void denormalize(FPF *ptr,
+void normalize(FPFC *ptr);
+void denormalize(FPFC *ptr,
                 int minimum_exponent);
-void RoundFPF(FPF *ptr);
-void choose_nan(FPF *x,
-                FPF *y,
-                FPF *z,
+void RoundFPF(FPFC *ptr);
+void choose_nan(FPFC *x,
+                FPFC *y,
+                FPFC *z,
                 int intel_flag);
 void AddSubFPF(uchar operation,
-                FPF *x,
-                FPF *y,
-                FPF *z);
-void MultiplyFPF(FPF *x,
-                        FPF *y,
-                        FPF *z);
-void DivideFPF(FPF *x, 
-                        FPF *y, 
-                        FPF *z);
-void LongLongToFPF(FPF *dest, LLONG_TYPE myllong);
-void UnsignedLongLongToFPF(FPF *dest, LLONG_TYPE myllong);
-int FPFTensExponent(FPF *value);
-void FPFMultiplyPowTen(FPF *value, int power);
+                FPFC *x,
+                FPFC *y,
+                FPFC *z);
+void MultiplyFPF(FPFC *x,
+                        FPFC *y,
+                        FPFC *z);
+void DivideFPF(FPFC *x, 
+                        FPFC *y, 
+                        FPFC *z);
+void LongLongToFPF(FPFC *dest, LLONG_TYPE myllong);
+void UnsignedLongLongToFPF(FPFC *dest, LLONG_TYPE myllong);
+int FPFTensExponent(FPFC *value);
+void FPFMultiplyPowTen(FPFC *value, int power);
 char * FPFToString(char *dest,
-                FPF *src);
-LLONG_TYPE FPFToLongLong(FPF *src);
-int FPFToFloat(unsigned char *dest, FPF *src);
-int FPFToDouble(unsigned char *dest, FPF *src);
-int FPFToLongDouble(unsigned char *dest, FPF *src);
-void FPFTruncate(FPF *value, int bits, int maxexp, int minexp);
+                FPFC *src);
+LLONG_TYPE FPFToLongLong(FPFC *src);
+int FPFToFloat(unsigned char *dest, FPFC *src);
+int FPFToDouble(unsigned char *dest, FPFC *src);
+int FPFToLongDouble(unsigned char *dest, FPFC *src);
+void FPFTruncate(FPFC *value, int bits, int maxexp, int minexp);
 
                                /* Help.c */
 void helpinit();
@@ -387,9 +396,9 @@ BOOLEAN iscomplex(TYPE *tp);
 BOOLEAN isimaginary(TYPE *tp);
 BOOLEAN isarithmetic(TYPE *tp);
 BOOLEAN ismsil(TYPE *tp);
-BOOLEAN isconstraw(TYPE *tp, BOOLEAN useTemplate);
-BOOLEAN isconst(TYPE *tp);
-BOOLEAN isvolatile(TYPE *tp);
+BOOLEAN isconstraw(const TYPE *tp, BOOLEAN useTemplate);
+BOOLEAN isconst(const TYPE *tp);
+BOOLEAN isvolatile(const TYPE *tp);
 BOOLEAN islrqual(TYPE *tp);
 BOOLEAN isrrqual(TYPE *tp);
 BOOLEAN isrestrict(TYPE *tp);
@@ -454,7 +463,7 @@ void flush_dag(void);
 QUAD * gen_icode_with_conflict(enum i_ops op, IMODE *res, IMODE *left, IMODE *right, BOOLEAN conflicting);
 QUAD * gen_icode(enum i_ops op, IMODE *res, IMODE *left, IMODE *right);
 void gen_iiconst(IMODE *res, LLONG_TYPE val);
-void gen_ifconst(IMODE *res, FPF val);
+void gen_ifconst(IMODE *res, FPFC val);
 void gen_igoto(enum i_ops op, long label);
 void gen_data(int val);
 void gen_icgoto(enum i_ops op, long label, IMODE *left, IMODE *right);
@@ -500,7 +509,7 @@ void DumpIncDec(SYMBOL *funcsp);
 IMODE *make_imaddress(EXPRESSION *node, int size);
 IMODE *make_bf(EXPRESSION *node, IMODE *ap, int size);
 IMODE *make_immed(int size, LLONG_TYPE i);
-IMODE *make_fimmed(int size,FPF f);
+IMODE *make_fimmed(int size,FPFC f);
 IMODE *make_parmadj(long i);
 IMODE *make_ioffset(EXPRESSION *node);
 IMODE *genasn(EXPRESSION *node, SYMBOL *funcsp, int size);
@@ -673,9 +682,9 @@ void gen_importThunk(SYMBOL *func);
 void gen_vc1(SYMBOL *func);
 void put_label(int lab);
 void put_staticlabel(long label);
-void genfloat(FPF *val);
-void gendouble(FPF *val);
-void genlongdouble(FPF *val);
+void genfloat(FPFC *val);
+void gendouble(FPFC *val);
+void genlongdouble(FPFC *val);
 void genUBYTE(long val);
 void genBOOLEAN(int val);
 void genbit(SYMBOL *sp, int val);
@@ -731,6 +740,7 @@ void peep_icode(BOOLEAN branches);
 
 void regInit(void);
 void alloc_init(void);
+void cacheTempSymbol(SYMBOL* sp);
 void AllocateStackSpace(SYMBOL *funcsp);
 void FillInPrologue(QUAD *head, SYMBOL *funcsp);
 void Precolor(void);
@@ -839,10 +849,10 @@ void *aAlloc(int size);
 void aFree(void);
 void *tAlloc(int size);
 void tFree(void);
-void *sAlloc(int size);
-void sFree(void);
 void *cAlloc(int size);
 void cFree(void);
+void *sAlloc(int size);
+void sFree(void);
 void IncGlobalFlag(void);
 void DecGlobalFlag(void);
 void SetGlobalFlag(int flag);
@@ -865,6 +875,7 @@ FILE *SrchPth(char *name, char *path, char *attrib, BOOLEAN sys);
 BOOLEAN parse_args(int *argc, char *argv[], BOOLEAN case_sensitive);
 void err_setup(char select, char *string);
 void incl_setup(char select, char *string);
+void sysincl_setup(char select, char *string);
 void def_setup(char select, char *string);
 void undef_setup(char select, char *string);
 void output_setup(char select, char *string);
@@ -893,7 +904,7 @@ void owrite(char *buf, size_t size, int n, FILE *fil);
 void beWrite(char *buf, size_t size);
 void oprintf(FILE *file, char *format, ...);
 void bePrintf(char *format, ...);
-
+void beRewind(void);
                               /* Ppexpr.c */
 
 int getsch(int UBYTEs, unsigned char **source) ;
@@ -914,7 +925,7 @@ BOOLEAN expectid(char *buf);
 BOOLEAN expectstring(char *buf, unsigned char **in, BOOLEAN angle);
 LLONG_TYPE expectnum(BOOLEAN *uns);
 int getstring(unsigned char *s, int len, FILE *file);
-BOOLEAN getline(void);
+BOOLEAN GetLine(void);
 void preprocess(void);
 void doerror(void);
 void dowarning(void);

@@ -41,11 +41,17 @@ class ppError
             IssueError(args);
             return true;
         }
+        if (token == WARNING)
+        {
+            IssueWarning(args);
+            return true;
+        }
         return false;
     }
 
   protected:
     void IssueError(const std::string& msg) { Errors::Error("Error directive:" + msg); }
+    void IssueWarning(const std::string& msg) { Errors::Warning("Warning directive:" + msg); }
 
   private:
 };

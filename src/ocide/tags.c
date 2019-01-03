@@ -36,12 +36,8 @@ extern HWND hwndFrame;
 extern HINSTANCE hInstance;
 extern enum DebugState uState;
 
-HWND hwndBookmark;
-
 static char bpModule[256];
 static int bpLine;
-
-DWINFO currentBM;
 
 struct tagfile *tagFileList, *last_module;
 

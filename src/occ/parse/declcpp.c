@@ -134,7 +134,7 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, VTABENTRY* ent
                     thunks[count].entry = entry;
                     if (vf->func->linkage2 == lk_import)
                     {
-                        EXPRESSION *exp = varNode(en_pc, vf->func);
+                        EXPRESSION* exp = varNode(en_pc, vf->func);
                         thunkForImportTable(&exp);
                         thunks[count].func = exp->v.sp;
                     }
@@ -155,7 +155,7 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, VTABENTRY* ent
                 {
                     if (vf->func->linkage2 == lk_import)
                     {
-                        EXPRESSION *exp = varNode(en_pc, vf->func);
+                        EXPRESSION* exp = varNode(en_pc, vf->func);
                         thunkForImportTable(&exp);
                         genref(exp->v.sp, 0);
                     }
@@ -1229,7 +1229,9 @@ LEXEME* baseClasses(LEXEME* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac defa
                         // throwaway
                         TEMPLATEPARAMLIST* lst = NULL;
                         SYMBOL* sp1;
-                        lex = GetTemplateArguments(lex, funcsp, NULL, &lst);
+                        inTemplateSpecialization++;
+                        lex = GetTemplateArguments(lex, funcsp, bcsym, &lst);
+                        inTemplateSpecialization--;
                         sp1 = GetTypedefSpecialization(bcsym, lst);
                         if (sp1)
                         {
@@ -1238,8 +1240,8 @@ LEXEME* baseClasses(LEXEME* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac defa
                                 bcsym->tp = PerformDeferredInitialization(bcsym->tp, funcsp);
                             else
                                 bcsym->tp = SynthesizeType(bcsym->tp, NULL, FALSE);
-                            if (isstructured(bcsym->tp))
-                                bcsym = bcsym->tp->sp;
+                            //                            if (isstructured(bcsym->tp))
+                            //                                bcsym = basetype(bcsym->tp)->sp;
                         }
                     }
                     else
@@ -2211,7 +2213,7 @@ void checkOperatorArgs(SYMBOL* sp, BOOLEAN asFriend)
                     case plus:
                     case minus:
                     case star:
-                    case and:
+                    case andx:
                         // needs zero or one argument
                         if (hr && hr->next)
                         {
@@ -2230,14 +2232,14 @@ void checkOperatorArgs(SYMBOL* sp, BOOLEAN asFriend)
                                 case star:
                                     sp->operatorId = star_unary;
                                     break;
-                                case and:
+                                case andx:
                                     sp->operatorId = and_unary;
                                     break;
                             }
                         }
                         break;
-                    case not:
-                    case compl:
+                    case notx:
+                    case complx:
                         // needs no argument
                         sym = (SYMBOL*)hr->p;
                         if (sym->tp->type != bt_void)
@@ -2257,7 +2259,7 @@ void checkOperatorArgs(SYMBOL* sp, BOOLEAN asFriend)
                     case geq:
                     case land:
                     case lor:
-                    case or:
+                    case orx:
                     case uparrow:
                     case comma:
                     case pointstar:
@@ -2359,7 +2361,7 @@ void checkOperatorArgs(SYMBOL* sp, BOOLEAN asFriend)
                 case plus:
                 case minus:
                 case star:
-                case and:
+                case andx:
                 case asplus:
                 case asminus:
                 case astimes:
@@ -2382,8 +2384,8 @@ void checkOperatorArgs(SYMBOL* sp, BOOLEAN asFriend)
                             errorstr(ERR_OPERATOR_NEEDS_A_CLASS_OR_ENUMERATION_PARAMETER, overloadXlateTab[sp->operatorId]);
                     }
                     break;
-                case not:
-                case compl:
+                case notx:
+                case complx:
                     // needs one arg of class or enum type
                     sym = (SYMBOL*)hr->p;
                     if (sym->tp->type == bt_void || hr->next)
@@ -2409,7 +2411,7 @@ void checkOperatorArgs(SYMBOL* sp, BOOLEAN asFriend)
                 case geq:
                 case land:
                 case lor:
-                case or:
+                case orx:
                 case uparrow:
                 case comma:
                     // needs two args, one of class or enum type
@@ -2973,9 +2975,10 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                         ssp1 = sp1->parentClass;
                         if (ssp && ismember(sp1))
                             sp1->parentClass = ssp;
-                        sp1->mainsym = sym;
-                        while (sp1->mainsym->mainsym)
-                            sp1->mainsym = sp1->mainsym->mainsym;
+                        // sp1->mainsym = sym;
+                        // while (sp1->mainsym->mainsym)
+                        //    sp1->mainsym = sp1->mainsym->mainsym;
+                        sym->mainsym - sp1;
                         sp1->access = access;
                         InsertSymbol(sp1, storage_class, sp1->linkage, TRUE);
                         InsertExtern(sp1);
@@ -3036,7 +3039,7 @@ static void balancedAttributeParameter(LEXEME** lex)
         needkw(lex, endp);
     }
 }
-void ParseOut__attribute__(LEXEME **lex, SYMBOL *funcsp)
+void ParseOut__attribute__(LEXEME** lex, SYMBOL* funcsp)
 {
     if (MATCHKW(*lex, kw__attribute))
     {
@@ -3048,7 +3051,7 @@ void ParseOut__attribute__(LEXEME **lex, SYMBOL *funcsp)
             error(ERR_IGNORING__ATTRIBUTE);
         }
     }
-    }
+}
 BOOLEAN ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, BOOLEAN always)
 {
     (void)always;
@@ -3127,6 +3130,8 @@ BOOLEAN ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, BOOLEAN always)
                     }
                     needkw(lex, closepa);
                     alignas_value = align;
+                    if (alignas_value > 0x10000 || (alignas_value & (alignas_value - 1)) != 0)
+                        error(ERR_INVALID_ALIGNMENT);
                 }
             }
             else if (MATCHKW(*lex, openbr))
@@ -3343,7 +3348,7 @@ LEXEME* getDeclType(LEXEME* lex, SYMBOL* funcsp, TYPE** tn)
     lex = getsym();
     needkw(&lex, openpa);
     BOOLEAN extended = MATCHKW(lex, openpa);
-    hasAmpersand = MATCHKW(lex, and);
+    hasAmpersand = MATCHKW(lex, andx);
     if (extended || hasAmpersand)
     {
         lex = getsym();
@@ -3359,7 +3364,7 @@ LEXEME* getDeclType(LEXEME* lex, SYMBOL* funcsp, TYPE** tn)
         if (extended || hasAmpersand)
             lex = getsym();
         lex = getsym();
-        if (MATCHKW(lex, and) || MATCHKW(lex, land))
+        if (MATCHKW(lex, andx) || MATCHKW(lex, land))
         {
             lex = getsym();
             error(ERR_DECLTYPE_AUTO_NO_REFERENCE);

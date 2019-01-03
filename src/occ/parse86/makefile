@@ -21,15 +21,15 @@
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
+include ../../pathext2.mak
 
 NAME=occpr
 MAIN_FILE=ccmain.c
-INCLUDES=..\parse ..\preproc ..\middle
 C_DEPENDENCIES= \
     $(BACKEND_FILES) \
     ccmain.c \
     ccif.c \
-    crc.c \
+    crc32.c \
     db.c \
     piper.c \
     beinterf.c \
@@ -68,22 +68,28 @@ C_DEPENDENCIES= \
     wseh.c
 LIB_DEPENDENCIES=sqlite3
 #determine if we can ignore the banner for a batch compile
-WIN32 = WIN32
 #use long long type
 LL = USE_LONGLONG
-DEFINES=$(i386) $(LL) $(MSDOS) $(WIN32) PARSER_ONLY 
-
-SOURCE = ..\parse;..\preproc;..\middle
+DEFINES=$(i386) $(LL) $(MSDOS) PARSER_ONLY 
 
 BACKEND_INCLUDE_PATH=.
+
+ifeq "$(COMPILER)" "gcc-linux"
+SOURCE = ..$(PATHEXT2)parse:..$(PATHEXT2)preproc:..$(PATHEXT2)middle
+INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle
+SRCPATH:=$(BACKEND_INCLUDE_PATH):$(SOURCE):..
+else
+SOURCE = ..$(PATHEXT2)parse;..$(PATHEXT2)preproc;..$(PATHEXT2)middle
+INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle
 SRCPATH:=$(BACKEND_INCLUDE_PATH);$(SOURCE);..
+endif
 BACKEND_FILES = config.c
 
 
 vpath %.c $(SRCPATH)
 
 ifndef _TREEROOT
-_TREEROOT := $(CURDIR)\..\..\treetop.mak
+_TREEROOT := $(CURDIR)$(PATHEXT2)..$(PATHEXT2)..$(PATHEXT2)treetop.mak
 _TREETARGET := $(CURDIR)
 export _TREEROOT
 export _TREETARGET

@@ -26,7 +26,7 @@
 #ifndef LINKREGION_H
 #define LINKREGION_H
 
-#include <string.h>
+#include <cstring>
 #include <vector>
 #include <vector>
 #include <map>

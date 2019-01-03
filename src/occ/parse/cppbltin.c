@@ -55,11 +55,7 @@ static unsigned char *cppbuiltin = (unsigned char *)"void * operator new(unsigne
     "} "
     "typedef std::type_info typeinfo; "
     "extern \"C\" {"
-    "int __rtllinkage __builtin_ctz(unsigned x);"
-    "int __rtllinkage __builtin_ctzl(unsigned long x);"
     "int __rtllinkage __builtin_ctzll(unsigned long long x);"
-    "int __rtllinkage __builtin_clz(unsigned x);"
-    "int __rtllinkage __builtin_clzl(unsigned long x);"
     "int __rtllinkage __builtin_clzll(unsigned long long x);"
     "int __rtllinkage __builtin_popcount(unsigned x);"
     "int __rtllinkage __builtin_popcountl(unsigned long x);"
@@ -88,7 +84,7 @@ void ParseBuiltins(void)
         lex = getsym();
         if (lex)
         {
-            while ((lex = declare(lex, NULL, NULL, sc_global, lk_none, NULL, TRUE, FALSE, FALSE, FALSE, ac_public)) != NULL)
+            while ((lex = declare(lex, NULL, NULL, sc_global, lk_none, NULL, TRUE, FALSE, FALSE, ac_public)) != NULL)
                 ;
         }
     }
@@ -98,7 +94,7 @@ void ParseBuiltins(void)
         lex = getsym();
         if (lex)
         {
-            while ((lex = declare(lex, NULL, NULL, sc_global, lk_none, NULL, TRUE, FALSE, FALSE, FALSE, ac_public)) != NULL)
+            while ((lex = declare(lex, NULL, NULL, sc_global, lk_none, NULL, TRUE, FALSE, FALSE, ac_public)) != NULL)
                 ;
         }
     }

@@ -41,6 +41,7 @@ extern TYPE stdunsignedlong;
 extern TYPE stdunsignedlonglong;
 extern TYPE stdfloatcomplex;
 extern TYPE stddoublecomplex;
+extern TYPE stddoubleimaginary;
 extern TYPE stdlongdoublecomplex;
 extern TYPE stdchar16t;
 extern TYPE stdchar32t;
@@ -323,7 +324,7 @@ BOOLEAN ismsil(TYPE* tp)
     tp = basetype(tp);
     return tp->type == bt___string || tp->type == bt___object;
 }
-BOOLEAN isconstraw(TYPE* tp, BOOLEAN useTemplate)
+BOOLEAN isconstraw(const TYPE* tp, BOOLEAN useTemplate)
 {
     BOOLEAN done = FALSE;
     BOOLEAN rv = FALSE;
@@ -364,8 +365,8 @@ BOOLEAN isconstraw(TYPE* tp, BOOLEAN useTemplate)
     }
     return rv;
 }
-BOOLEAN isconst(TYPE* tp) { return isconstraw(tp, FALSE); }
-BOOLEAN isvolatile(TYPE* tp)
+BOOLEAN isconst(const TYPE* tp) { return isconstraw(tp, FALSE); }
+BOOLEAN isvolatile(const TYPE* tp)
 {
     while (tp)
     {
@@ -521,7 +522,7 @@ BOOLEAN isarray(TYPE* tp)
 {
     tp = basetype(tp);
     if (tp)
-        return ispointer(tp) && tp->array;
+        return ispointer(tp) && basetype(tp)->array;
     return FALSE;
 }
 BOOLEAN isunion(TYPE* tp)
@@ -1224,7 +1225,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
     BOOLEAN local = FALSE;
     EXPRESSION *rv = NULL, **pos = &rv;
     EXPRESSION *exp = NULL, **expp;
-    EXPRESSION* expsym;
+    EXPRESSION *expsym, *base;
     BOOLEAN noClear = FALSE;
     if (sp)
         sp->destructed = FALSE;
@@ -1313,6 +1314,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
                 expsym = intNode(en_c_i, 0);
                 break;
         }
+    base = copy_expression(expsym);
     if (sp && isarray(sp->tp) && sp->tp->msil && !init->noassign)
     {
         exp = intNode(en_msil_array_init, 0);
@@ -1378,11 +1380,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
                     else if ((cparams.prm_cplusplus) && !basetype(init->basetp)->sp->trivialCons)
                     {
                         TYPE* ctype = init->basetp;
-                        FUNCTIONCALL* funcparams = Alloc(sizeof(FUNCTIONCALL));
-                        funcparams->arguments = Alloc(sizeof(INITLIST));
-                        funcparams->arguments->tp = ctype;
-                        funcparams->arguments->exp = exp2;
-                        callConstructor(&ctype, &expsym, funcparams, FALSE, NULL, TRUE, FALSE, FALSE, FALSE, FALSE);
+                        callConstructorParam(&ctype, &expsym, ctype, exp2, TRUE, FALSE, FALSE, FALSE);
                         exp = expsym;
                     }
                     else
@@ -1460,11 +1458,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
                             if (cparams.prm_cplusplus && isstructured(init->basetp) && !init->basetp->sp->trivialCons)
                             {
                                 TYPE* ctype = init->basetp;
-                                FUNCTIONCALL* funcparams = Alloc(sizeof(FUNCTIONCALL));
-                                funcparams->arguments = Alloc(sizeof(INITLIST));
-                                funcparams->arguments->tp = ctype;
-                                funcparams->arguments->exp = exp;
-                                callConstructor(&ctype, &expsym, funcparams, FALSE, NULL, TRUE, FALSE, FALSE, FALSE, FALSE);
+                                callConstructorParam(&ctype, &expsym, ctype, exp, TRUE, FALSE, FALSE, FALSE);
                                 exp = expsym;
                             }
                             else
@@ -1539,6 +1533,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
                     exps = exprNode(en_add, exps, intNode(en_c_i, init->offset));
                 if (exps->type != en_msil_array_access)
                     deref(init->basetp, &exps);
+                optimize_for_constants(&exps);
                 exp = init->exp;
                 if (exp->type == en_void)
                 {
@@ -1599,15 +1594,16 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
     if (sp && !noClear && !isdest &&
         (isarray(tp) || isstructured(tp) && (!cparams.prm_cplusplus && !chosenAssembler->msil || basetype(tp)->sp->trivialCons)))
     {
-        EXPRESSION* fexp = expsym;
+        EXPRESSION* fexp = base;
         EXPRESSION* exp;
+        optimize_for_constants(&fexp);
         if (fexp->type == en_thisref)
             fexp = fexp->left->v.func->thisptr;
         exp = exprNode(en_blockclear, fexp, NULL);
         exp->size = sp->tp->size;
         rv = exprNode(en_void, exp, rv);
     }
-    if (isstructured(tp) && !cparams.prm_cplusplus)
+    if (isstructured(tp))
     {
         if (*pos)
         {
@@ -1621,6 +1617,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
     }
     if (!rv)
         rv = intNode(en_c_i, 0);
+
     return rv;
 }
 BOOLEAN assignDiscardsConst(TYPE* dest, TYPE* source)
@@ -1820,89 +1817,129 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, BOOLE
     */
     if (tp1->type >= bt_float || tp2->type >= bt_float)
     {
-
+        TYPE *tp = NULL;
         int isim1 = tp1->type >= bt_float_imaginary && tp1->type <= bt_long_double_imaginary;
         int isim2 = tp2->type >= bt_float_imaginary && tp2->type <= bt_long_double_imaginary;
-        if (isim1 && !isim2 && tp2->type < bt_float_imaginary)
+        int iscx1 = tp1->type >= bt_float_complex && tp1->type <= bt_long_double_complex;
+        int iscx2 = tp2->type >= bt_float_complex && tp2->type <= bt_long_double_complex;
+        if (iscx1)
         {
-            TYPE* tp;
-            if (tp1->type == bt_long_double_imaginary || tp2->type == bt_long_double)
-                tp = &stdlongdoublecomplex;
-            else if (tp1->type == bt_double_imaginary || tp2->type == bt_double || tp1->type == bt_long_long ||
-                     tp1->type == bt_unsigned_long_long)
-                tp = &stddoublecomplex;
-            else
-                tp = &stdfloatcomplex;
-            if (exp1)
-                cast(tp, exp1);
-            if (exp2)
-                cast(tp, exp2);
-            return tp;
-        }
-        else if (isim2 && !isim1 && tp1->type < bt_float_imaginary)
-        {
-            TYPE* tp;
-            if (tp2->type == bt_long_double_imaginary || tp1->type == bt_long_double)
-                tp = &stdlongdoublecomplex;
-            else if (tp2->type == bt_double_imaginary || tp1->type == bt_double || tp1->type == bt_long_long ||
-                     tp1->type == bt_unsigned_long_long)
-                tp = &stddoublecomplex;
-            else
-                tp = &stdfloatcomplex;
-            if (exp1)
-                cast(tp, exp1);
-            if (exp2)
-                cast(tp, exp2);
-            return tp;
-        }
-        else if (tp1->type > tp2->type)
-        {
-            if (exp2)
-                cast(tp1, exp2);
-        }
-        else if (tp1->type < tp2->type)
-        {
-            if (exp1)
-                cast(tp2, exp1);
-        }
+            if (iscx2)
+            {
+                if (tp1->type > tp2->type)
+                    tp = tp1;
+                else
+                    tp = tp2;
+            }
+            else if (isim2)
+            {
+                if (tp1->type - bt_float_complex >= tp2->type - bt_float_imaginary)
+                    tp = tp1;
+                else
+                    tp = &stddoublecomplex;
+            }
+            else if (tp2->type >= bt_float)
+            {
+                if (tp1->type - bt_float_complex >= tp2->type - bt_float)
+                    tp = tp1;
+                else
+                    tp = &stddoublecomplex;
 
-        if (tp1->type == bt_long_double_complex && isctp2)
-            return tp1;
-        if (tp2->type == bt_long_double_complex && isctp1)
-            return tp2;
+            }
+            else
+            {
+                tp = tp1;
+            }
 
-        if (tp1->type == bt_long_double_imaginary && isim2)
-            return tp1;
-        if (tp2->type == bt_long_double_imaginary && isim1)
-            return tp2;
-        if (tp1->type == bt_long_double && isctp2)
-            return tp1;
-        if (tp2->type == bt_long_double && isctp1)
-            return tp2;
-        if (tp1->type == bt_double_complex && isctp2)
-            return tp1;
-        if (tp2->type == bt_double_complex && isctp1)
-            return tp2;
-        if (tp1->type == bt_double_imaginary && isim2)
-            return tp1;
-        if (tp2->type == bt_double_imaginary && isim1)
-            return tp2;
-        if (tp1->type == bt_double && isctp2)
-            return tp1;
-        if (tp2->type == bt_double && isctp1)
-            return tp2;
-        if (tp1->type == bt_float_complex && isctp2)
-            return tp1;
-        if (tp2->type == bt_float_complex && isctp1)
-            return tp2;
-        if (tp1->type == bt_float_imaginary && isim2)
-            return tp1;
-        if (tp2->type == bt_float_imaginary && isim1)
-            return tp2;
-        if (tp1->type == bt_float && isctp2)
-            return tp1;
-        if (tp2->type == bt_float && isctp1)
-            return tp2;
+        }
+        else if (iscx2)
+        {
+            if (iscx1)
+            {
+                if (tp1->type > tp2->type)
+                    tp = tp1;
+                else
+                    tp = tp2;
+            }
+            else if (isim1)
+            {
+                if (tp1->type - bt_float_imaginary <= tp2->type - bt_float_complex)
+                    tp = tp2;
+                else
+                    tp = &stddoublecomplex;
+            }
+            else if (tp2->type >= bt_float)
+            {
+                if (tp1->type - bt_float <= tp2->type - bt_float_complex)
+                    tp = tp2;
+                else
+                    tp = &stddoublecomplex;
+
+            }
+            else
+            {
+                tp = tp2;
+            }
+        }
+        else if (isim1)
+        {
+            if (isim2)
+            {
+                if (tp1->type > tp2->type)
+                    tp = tp1;
+                else
+                    tp = tp2;
+            }
+            else if (tp2->type >= bt_float)
+            {
+                if (tp1->type - bt_float_imaginary >= tp2->type - bt_float)
+                    tp = tp1;
+                else
+                    tp = &stddoubleimaginary;
+            }
+            else
+            {
+                tp = tp1;
+            }
+        }
+        else if (isim2)
+        {
+            if (isim1)
+            {
+                if (tp1->type > tp2->type)
+                    tp = tp1;
+                else
+                    tp = tp2;
+            }
+            else if (tp1->type >= bt_float)
+            {
+                if (tp1->type - bt_float <= tp2->type - bt_float_imaginary)
+                    tp = tp2;
+                else
+                    tp = &stddoubleimaginary;
+            }
+            else
+            {
+                tp = tp2;
+            }
+
+        }
+        else if (tp1->type >= bt_float && tp2->type >= bt_float)
+        {
+            if (tp1->type > tp2->type)
+                tp = tp1;
+            else
+                tp = tp2;
+        }
+        else if (tp1->type >= bt_float)
+            tp = tp1;
+        else
+            tp = tp2;
+        if (tp->type != tp1->type && exp1)
+            cast(tp, exp1);
+        if (tp->type != tp2->type && exp1)
+            cast(tp, exp2);
+        return tp;
     }
     if (isctp1 && isctp2)
     {

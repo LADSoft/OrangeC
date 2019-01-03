@@ -22,11 +22,22 @@
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
 
+ifneq "$(COMPILER)" "gcc-linux"
 SHELL=cmd.exe
+endif
+
+include pathext2.mak
 
 ifndef _TREEROOT
-_TREEROOT := $(CURDIR)/treetop.mak
-_TREETARGET := $(CURDIR)
+ifeq "$(COMPILER)" "gcc-linux"
+CURRENT := $(CURDIR)
+else
+CURRENT := $(subst /,\,$(CURDIR))
+
+endif
+
+_TREEROOT := $(CURRENT)$(PATHEXT2)treetop.mak
+_TREETARGET := $(CURRENT)
 export _TREEROOT
 export _TREETARGET
 

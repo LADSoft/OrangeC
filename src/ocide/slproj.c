@@ -339,6 +339,7 @@ void RestoreProject(PROJECTITEM* project, BOOL loadWA)
     }
     xmlFree(root);
     CalculateProjectDepends(project);
+    SetStatusMessage("", FALSE);
     project->loaded = TRUE;
 }
 BOOL HasProperties(PROJECTITEM* pj)

@@ -29,7 +29,7 @@
 #include <map>
 #include <deque>
 #include <string>
-#include <ctype.h>
+#include <cctype>
 #include "Errors.h"
 #include "Token.h"
 class Symbol
@@ -54,7 +54,7 @@ class Symbol
     void DefinedError(const std::string& msg)
     {
         Errors::Error(name + " " + msg);
-        if (lineNo && fileName.size())
+        if (lineNo && !fileName.empty())
             Errors::Previous(name, lineNo, fileName);
     }
 

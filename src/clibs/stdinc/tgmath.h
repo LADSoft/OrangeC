@@ -25,7 +25,6 @@
 
 #ifndef __TGMATH_H
 #define __TGMATH_H
-
 #ifndef __MATH_H
 #include <math.h>
 #endif

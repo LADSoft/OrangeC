@@ -30,8 +30,10 @@
 SECTION code CLASS=CODE USE32
 
 _strncat:
+		push ebp
+		mov ebp, esp
 		mov	ah,3
-		mov	edx,[esp+4]	;	str1
+		mov	edx,[ebp+8]	;	str1
 TestEdx:
 		test	dl,ah
 		jnz	DoAlign
@@ -68,8 +70,8 @@ DoAlign:
         mov ecx,edx
         dec ecx
 fin:
-        push dword [esp+12]
-        push dword [esp + 12]
+        push dword [ebp+16]
+        push dword [ebp + 12]
         push ecx
 	call _strncpy
         add esp, 12
@@ -77,7 +79,9 @@ fin:
         jz xit
 	mov byte [ecx], 0
 xit:
+    pop ebp
 	ret
 exit:
-        mov eax,[esp+4]
+        mov eax,[ebp+8]
+		pop ebp
         ret

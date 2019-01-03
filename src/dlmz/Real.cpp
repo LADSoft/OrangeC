@@ -35,7 +35,7 @@ bool Real::ReadSections(ObjFile* file, ObjExpression* start)
     int base = GetFirstSeg(start);
     startOffs = start->Eval(0);
     startSeg = base >> 16;
-    for (ObjFile::SectionIterator it = file->SectionBegin(); it != file->SectionEnd(); ++it)
+    for (auto it = file->SectionBegin(); it != file->SectionEnd(); ++it)
     {
         if ((*it)->GetName() == ".stack")
         {
@@ -51,13 +51,13 @@ bool Real::ReadSections(ObjFile* file, ObjExpression* start)
     }
     data = new unsigned char[size];
     int ofs = 0;
-    for (ObjFile::SectionIterator it = file->SectionBegin(); it != file->SectionEnd(); ++it)
+    for (auto it = file->SectionBegin(); it != file->SectionEnd(); ++it)
     {
         if ((*it)->GetName() != ".stack")
         {
             ObjSection* sect = *it;
             ObjMemoryManager& m = sect->GetMemoryManager();
-            for (ObjMemoryManager::MemoryIterator it = m.MemoryBegin(); it != m.MemoryEnd(); ++it)
+            for (auto it = m.MemoryBegin(); it != m.MemoryEnd(); ++it)
             {
                 int msize = (*it)->GetSize();
                 ObjByte* mdata = (*it)->GetData();

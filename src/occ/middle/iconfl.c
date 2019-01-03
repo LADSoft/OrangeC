@@ -170,6 +170,21 @@ void CalculateConflictGraph(BRIGGS_SET* nodes, BOOLEAN optimize)
                         insertConflict(tail->dc.right->offset->v.sp->value.i, tail->dc.left->offset->v.sp->value.i);
                     }
                 }
+                else if (tail->dc.opcode == i_gosub)
+                {
+                    if (tail->fastcall)
+                    {
+                        QUAD * x = tail->back;
+                        while (x->dc.opcode != i_gosub && x->dc.opcode != i_block && x->dc.opcode != i_parmstack)
+                        {
+                            if (x->fastcall > 0)
+                            {
+                                briggsSet(live, x->dc.left->offset->v.sp->value.i);
+                            }
+                            x = x->back;
+                        }
+                    }
+                }
                 else if (tail->temps & TEMP_ANS)
                 {
                     if (tail->ans->mode == i_direct)
@@ -205,8 +220,9 @@ void CalculateConflictGraph(BRIGGS_SET* nodes, BOOLEAN optimize)
                             {
                                 if (tail->dc.left->mode == i_ind)
                                 {
-                                    if (tail->dc.left->offset)
-                                        insertConflict(tnum, tail->dc.left->offset->v.sp->value.i);
+                                    //                                    if (tail->dc.left->offset)
+                                    //                                        insertConflict(tnum,
+                                    //                                        tail->dc.left->offset->v.sp->value.i);
                                     if (tail->dc.left->offset2)
                                         insertConflict(tnum, tail->dc.left->offset2->v.sp->value.i);
                                 }

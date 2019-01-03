@@ -21,15 +21,16 @@
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
+include ../pathext2.mak
 
 NAME=oimplib
 MAIN_FILE=ImpLibMain.cpp
-INCLUDES=..\util ..\objlib ..\olib ..\olink ..\ocpp ..\exefmt
+INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)objlib ..$(PATHEXT2)olib ..$(PATHEXT2)olink ..$(PATHEXT2)ocpp ..$(PATHEXT2)exefmt
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=sqlite3 ocpplib olib olink objlib util
-DEFINES=L_INT=__int64
+DEFINES=
 H_FILES=$(wildcard *.h)
 
-include ..\redirect.mak
+include ../redirect.mak
 
 DISTRIBUTE: copyexe

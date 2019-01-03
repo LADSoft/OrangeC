@@ -1,6 +1,59 @@
 Release notes:
 
-version 6.0.38:
+version 6.0.40:
+    occ: fix stack frame in the presence of try/catch processing: don't optimize out the EBP references
+    occ: add __offsetof and use in library
+    occ: add __typeid and fix tgmath.h
+    occ: fix alignas and alignof, propagate section alignment through to linker
+    occ: when putting a qualifier in front of the friend keyword, the friend keyword got ignored
+    occ: fix problem with hook; when one side is a structure the other side might need a constructor call to coerce to the same type
+    occ: print return code of linker when calling --y
+    occ: faster evaluation when constexpr functions are used
+    occ: rewrite backend to use assembler core
+    occ: convert floating point calculations to use SSE2
+    occ: fix bug in assembly output when virtual function patches are applied to an overridden virtual table
+    occ: allow implicit use of captured this in lambda expressions
+    occ: fix problem with constructor initializers: direct initialization of a structure member resulted in bad code
+    occ: handle return of reference values properly, by generating an error if generating the return value requires a temporary
+    occ: c++: allow function name to be used in arithmetic expressions, warn when this is being done
+    occ: consider strings as const pointers for purposes of function argument matching
+    occ: when a member name matched a structure at global scope, various problems would occur
+    occ: assignment of constant data to a structure crashed the generated program (C++ mode only)
+    occ: when a structure is copy-constructed into a function argument, a throw in the function resulted in undefined behavior
+    occ: fix some problems with lambda functions being force fit into std::function
+    occ: fix unary operators - would apply the conversion AFTER any cast to the destination size instead of before
+    occ: fix various problems with complex and imaginary number handling
+    occ: in assembly file, represent floating point numbers as a byte sequence instead of as a decimal value
+    oasm: speed up assembly of large files
+    oasm: negative floating point numbers were being represented as positive in the output
+    dlpe/oimplib: handle -y switch 
+    orc: fix crash when compiled with package, when processing invalid input file
+    ocpp: (c++ version) allow # without a directive
+    ocpp: (c++ version) default to C99
+    ocpp: (c++ version) add #warning
+    ocpp: (c++ version) add __has_include and #pragma once
+    ocpp: (c++ version) reorganize sources for better interoperability with other packages
+    ocide: fix function prototype popup when compiled with package, does not go away 
+    ocide: when stopping on step into function, don't stop until stack frame is set up
+    ocide: when parsing RC file can't redefine keywords with preprocessing...
+    ocide: when processing strings in RC files, limit '\x##' to two hex digits
+    ocide: add orangec\bin to the path when running/debugging executables
+    ocide: empty status bar after scanning for dependencies
+    ocide: bad DOCKS entry in user prefs file leads to hang
+    ocide: when starting the debugger with no windows open, the disassembly window would open instead of the source file window
+    ocide: make it work when compiled against LSCRTL.DLL
+    rtl: fix recently broken strncpy to work properly again
+    rtl: fix tgmath.h
+    rtl: fix chrono::system_clock::now();
+    rtl: rewrite qsort to make it non-recursive
+    rtl: fix sprintf() and friends to print floating point numbers correctly
+    rtl: replace 8087 math functions with cephes library
+    rtl: fix startup routines to pass correct version of hInstance to WinMain and DLLMain when compiled against LSCRTL.DLL
+
+version 6.0.39: 11/15/2018
+    rtl: add msvcrt.l and crtdll.l back into the project
+    rtl: improve stack trace for certain edge cases
+version 6.0.38: 11/11/2018
     occ: speed up slow symbol table searches in classes with a lot of members
     occ: fix problems compiling C++ regex header
     occ: fix various problems where template specializations *should* have been instantantiated even though they weren't
@@ -37,6 +90,11 @@ version 6.0.38:
     occ: line numbers in c++ code were off by one.
     occ: when a template defined in a template using statement was used as the specialization of another template,
          it wasn't evaluated properly.
+    occ: fix various problems with generating assembly code that oasm couldn't parse
+    occ: add fastcall and switch some of the STL support functions to being intrinsics
+    occ: fix vagaray in debug format, sometimes function types would not be emitted (could cause link problems)
+    occ: fix problem generating code for debug mode, sometimes the resulting code would not run
+    oasm: fix bug where too-full buffer could modify generated code stream
     olink: fix a crash if occ failed to output line information properly
     dlpe: fix the fixup of relative branch to import thunks, to allow the thunks to be relocated
     dlpe: use --nologo when invokeing oimplib
@@ -85,7 +143,9 @@ version 6.0.38:
     rtl: fix strerror(), was adding a line feed to end of string
     rtl: fix problems with LSCRTL: double load issue and issue where DLLs couldn't use it
     rtl: precision on integers in sprintf did not have the desired effect
+    rtl: add _TRUE_MIN constants to float.h
     all: add 'clang' to continuous integration builds
+    all: add compile-via-assembly to continuous integration builds
     documentation: add minimal documentation for ancilliary projects
 Version 6.0.37: 5/20/2018
     documentation:   various upgrades

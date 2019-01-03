@@ -33,7 +33,26 @@ class Utils
   public:
     static void banner(const char* progName);
     static void usage(const char* progName, const char* text);
-    static void fatal(const char* format, ...);
+    static void fatal(const char* format)
+    {
+        fprintf(stderr, "Fatal error: ");
+        fputs(format, stderr);
+        exit(1);
+    }
+    template <typename... Args>  // templates are MUCH more portable than varargs
+    static void fatal(const char* format, Args... arg)
+    {
+        fprintf(stderr, "Fatal error: ");
+        fprintf(stderr, format, arg...);
+        fputc('\n', stderr);
+        exit(1);
+    }
+    static void fatal(const std::string& format) { fatal(format.c_str()); }
+    template <typename... Args>
+    static void fatal(const std::string& format, Args... arg)
+    {
+        fatal(format.c_str(), arg...);
+    }
     static char* GetModuleName();
     static void SetEnvironmentToPathParent(const char* name);
     static std::string FullPath(const std::string& path, const std::string& name);
@@ -43,7 +62,20 @@ class Utils
     static std::string NumberToStringHex(int num);
     static int StringToNumber(std::string str);
     static int StringToNumberHex(std::string str);
-
     static char* ShortName(const char* v);
+
+    static unsigned PartialCRC32(unsigned crc, unsigned char* data, size_t len);
+    static unsigned CRC32(unsigned char* data, size_t len) { PartialCRC32(0, data, len); };
+    template <size_t len>
+    static unsigned CRC32(unsigned char (&data)[len])
+    {
+        CRC32(data, len);
+    }
+    template <size_t len>
+    static unsigned PartialCRC32(unsigned crc, unsigned char* data)
+    {
+        PartialCRC32(crc, data, len);
+    }
+    static unsigned crctab[256];
 };
 #endif

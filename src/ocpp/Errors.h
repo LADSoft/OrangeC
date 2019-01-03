@@ -57,7 +57,7 @@ class Errors
     static bool ErrorCount();
     static void SetMaxErrors(int count) { maxErrors = count; }
     static void SetInclude(ppInclude* inc) { include = inc; }
-    static std::string ToNum(L_INT num);
+    static std::string ToNum(long long num);
     static int GetErrorLine();
     static std::string GetFileName();
     static void IncrementCount() { errorCount++; }

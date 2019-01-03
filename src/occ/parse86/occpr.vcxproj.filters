@@ -132,10 +132,10 @@
     <ClCompile Include="..\parse\libcxx.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\parse\crc.c">
+    <ClCompile Include="..\parse\wseh.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\parse\wseh.c">
+    <ClCompile Include="..\parse\crc32.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

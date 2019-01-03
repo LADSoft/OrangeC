@@ -1265,7 +1265,7 @@ void AliasUses(BITINT* bits, IMODE* im, BOOLEAN rhs)
                     setbit(bits, termMap[im->offset->v.sp->value.i]);
                 }
             }
-            else if (im->mode == i_immed && !isintconst(im->offset) && !iscomplexconst(im->offset) && !isfloatconst(im->offset) &&
+            else if (im->mode == i_immed && !isintconst(im->offset) && !isimaginaryconst(im->offset) && !iscomplexconst(im->offset) && !isfloatconst(im->offset) &&
                      im->offset->type != en_labcon)
             {
                 ALIASNAME* an = LookupMem(im);

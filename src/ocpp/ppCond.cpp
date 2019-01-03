@@ -27,13 +27,13 @@
 #include "Errors.h"
 #include "PreProcessor.h"
 #include "UTF8.h"
-#include <ctype.h>
+#include <cctype>
 
 ppCond::~ppCond()
 {
 
     delete current;
-    while (skipList.size())
+    while (!skipList.empty())
     {
         current = skipList.front();
         skipList.pop_front();
@@ -177,7 +177,7 @@ void ppCond::HandleElif(bool val, const std::string& line)
     else
     {
         skip* old = nullptr;
-        if (skipList.size())
+        if (!skipList.empty())
             old = skipList.front();
         if ((!old || !old->skipping) && current->takeElse && val)
         {
@@ -192,6 +192,19 @@ void ppCond::HandleElif(bool val, const std::string& line)
 }
 void ppCond::HandleElse(std::string& line)
 {
+    int npos = line.find_first_not_of(" \r\n\t\v");
+    if (npos != std::string::npos)
+    {
+        std::string line1 = line;
+        if (line1.substr(npos, 2) == "if")
+        {
+            line1 = line1.substr(npos + 2);
+            define->replaceDefined(line1);
+            define->Process(line1);
+            HandleElif(expr.Eval(line1), line1);
+            return;
+        }
+    }
     ansieol(line);
     if (!current)
     {
@@ -224,7 +237,7 @@ void ppCond::HandleEndIf(std::string& line)
     else
     {
         delete current;
-        if (skipList.size())
+        if (!skipList.empty())
         {
             current = skipList.front();
             skipList.pop_front();
@@ -414,7 +427,7 @@ void ppCond::ansieol(const std::string& line)
 }
 void ppCond::CheckErrors()
 {
-    if (skipList.size() || current)
+    if (!skipList.empty() || current)
     {
         Errors::Error("Non-terminated preprocessor conditional started in line " + Errors::ToNum(current->line));
     }

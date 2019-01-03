@@ -39,27 +39,33 @@ eight dd 8
 
 SECTION code CLASS=CODE USE32
 _remquof:
-    lea	ecx,[esp+4]
-    lea	edx,[esp+8]
+    push ebp
+	mov ebp,esp
+    lea	ecx,[ebp+8]
+    lea	edx,[ebp+12]
     fld	dword[edx]
     fld	dword[ecx]
-    mov ecx,[esp+12]
+    mov ecx,[ebp+16]
     sub dl,dl
     jmp short remquo
 _remquol:
-    lea	ecx,[esp+4]
-    lea	edx,[esp+16]
+    push ebp
+	mov ebp,esp
+    lea	ecx,[ebp+8]
+    lea	edx,[ebp+20]
     fld	tword[edx]
     fld	tword[ecx]
-    mov ecx,[esp+28]
+    mov ecx,[ebp+32]
     mov dl,2
     jmp short remquo
 _remquo:
-    lea	ecx,[esp+4]
-    lea	edx,[esp+12]
+    push ebp
+	mov ebp,esp
+    lea	ecx,[ebp+8]
+    lea	edx,[ebp+16]
     fld	qword[edx]
     fld	qword[ecx]
-    mov ecx,[esp+20]
+    mov ecx,[ebp+24]
     mov dl,1
 remquo:
     lea eax,[nm]
@@ -114,7 +120,11 @@ noadjust:
     faddp st1
 noadj2:
     fistp dword [ecx]    
-    jmp wrapmath
+    call wrapmath
+	pop ebp
+	ret
 moderr:
     popone
-    jmp domainerr
+    call domainerr
+	pop ebp
+	ret

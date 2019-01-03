@@ -98,6 +98,7 @@ typedef struct _imode_
     unsigned char vol : 1;        /* TRUE if is a node for a volatile var */
     unsigned char restricted : 1; /* TRUE if pointer type is set to restricted */
     unsigned char retval : 1;     /* TRUE if this is the value returned by a function */
+    unsigned char altretval : 1;  /* TRUE if an alternate return value should be used (e.g. SSE instead of FP)*/
     unsigned char fieldname : 1;  /* vararg is an en_structelem field name */
     unsigned char msilObject : 1; /* TRUE if this is an MSIL object that shouldn't be loaded by address */
 } IMODE;
@@ -135,11 +136,11 @@ typedef struct quad
         {
             /* values for constant nodes */
             LLONG_TYPE i;
-            FPF f;
+            FPFC f;
             struct
             {
-                FPF r;
-                FPF i;
+                FPFC r;
+                FPFC i;
             } c;
             void* data; /* generic data, won't be filled in until after LCSE */
             PHIDATA* phi;
@@ -195,6 +196,7 @@ typedef struct quad
     int beforeGosub : 1;
     int nullvararg : 1;
     int blockassign : 1;
+    char fastcall; /* index for fastcall-related arg, positive for call sites and negative as callee */
     char oldmode;
     char novalue;
     char temps;

@@ -31,11 +31,13 @@
 
 SECTION code CLASS=CODE USE32
 _bcopy:
+	push	ebp
+	mov		ebp, esp
     push	ebx
-    mov	ecx,[esp+16]
+    mov	ecx,[ebp+16]
     jecxz	x1
-    mov	edx,[esp+12]
-    mov	ebx,[esp+8]
+    mov	edx,[ebp+12]
+    mov	ebx,[ebp+8]
 join:
     cmp	edx,ebx	
     jbe	memcpy_x
@@ -50,4 +52,5 @@ lp2:
 x1:
     mov	eax,edx
     pop	ebx
+	pop ebp
     ret

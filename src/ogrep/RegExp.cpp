@@ -24,8 +24,8 @@
  */
 
 #include "RegExp.h"
-#include <limits.h>
-#include <stdlib.h>
+#include <climits>
+#include <cstdlib>
 
 UBYTE RegExpMatch::wordChars[256 / 8];
 bool RegExpMatch::initted;
@@ -338,16 +338,13 @@ int RegExpMatch::Matches(RegExpContext& context, const char* str)
         }
         if (m)
             return -m;
-        else
-            return -1;
+        return -1;
     }
-    else
-        return MatchOne(context, str);
-    ;
+    return MatchOne(context, str);
 }
 void RegExpContext::Clear()
 {
-    while (matches.size())
+    while (!matches.empty())
     {
         RegExpMatch* m = matches.front();
         matches.pop_front();

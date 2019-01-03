@@ -30,8 +30,9 @@
 #include "Loader.h"
 #include "GenParser.h"
 #include <fstream>
+#include <iostream>
 
-char *ADLMain::usageText = "[options] inputfile\n"
+const char *ADLMain::usageText = "[options] inputfile\n"
             "\n"
             "  -d    dump database\n"
             "\nTime: " __TIME__ "  Date: " __DATE__;
@@ -59,14 +60,15 @@ int ADLMain::Run(int argc, char **argv)
     std::string name = argv[1];
     if (name.find_first_of(".") == std::string::npos)
         name += ".adl";
-    std::fstream in(name.c_str(), std::ios::in);
+    std::fstream in(name, std::ios::in);
     if (in)
     {
         xmlNode node;
+        node.Reset();
         node.SetStripSpaces(false);
         if (!node.Read(in))
         {
-            Utils::fatal("Invalid file format");
+            Utils::fatal("Invalid file format in line %d", node.Line());
         }
         else
         {

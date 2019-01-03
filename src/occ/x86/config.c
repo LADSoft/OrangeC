@@ -35,6 +35,8 @@
 extern int dbgblocknum;
 extern ASMNAME oplst[];
 extern ASMREG reglst[];
+extern char BackendIntrinsicPrototypes[];
+
 #ifndef WIN32
 int prm_targettype = DOS32A;
 #else
@@ -176,10 +178,10 @@ static ARCH_SIZING sizes = {
     /* char a_struct;  */ /* alignment only */
     4,                    /*char a_float;*/
     8,                    /*char a_double;*/
-    10,                   /*char a_longdouble;*/
+    8,                   /*char a_longdouble;*/
     0,                    /*char a_fcomplexpad;*/
     0,                    /*char a_rcomplexpad;*/
-    2,                    /*char a_lrcomplexpad;*/
+    0,                    /*char a_lrcomplexpad;*/
 };
 static ARCH_SIZING alignments = {
     1, /*char a_bool;*/
@@ -223,9 +225,11 @@ static ARCH_SIZING locks = {
     1,                  /*char a_lrcomplexpad; */
 };
 static ARCH_FLOAT aflt = {-126, 126, 128, 24};
-static ARCH_FLOAT adbl = {-1022, 1022, 1024, 53};
-static ARCH_FLOAT aldbl = {-16382, 16382, 16384, 64};
+static ARCH_FLOAT adbl = { -1022, 1022, 1024, 53 };
+static ARCH_FLOAT aldbl = { -1022, 1022, 1024, 53 };
+//static ARCH_FLOAT aldbl = {-16382, 16382, 16384, 64};
 static ARCH_PEEP peeps[] = {0};
+static char fastcallRegs[3] = {ECX, EDX, EAX};
 static ARCH_CHARACTERISTICS architecture = {
     &alignments, /* alignments */
     0,           /* custom alignment routine */
@@ -245,10 +249,12 @@ static ARCH_CHARACTERISTICS architecture = {
     &regNames[0],                                                        /* defines registers */
     1,                                                                   /* register trees count */
     &regRoot, (ARCH_REGCLASS**)regClasses, &regCosts, allocOrder, peeps, /* defines peephole information */
+    sizeof(fastcallRegs) / sizeof(fastcallRegs[0]),                      /* Max number of regs considered for fastcall */
+    fastcallRegs,                                                        /* register list for regs used in fastcall */
     OPT_BYTECOMPARE,                                                     /* preferred optimizations */
     0,                                                                   /* optimizations we don't want */
     0,                                                                   /* error options */
-    FALSE,                                                               /* true if has floating point regs */
+    TRUE,                                                                /* true if has floating point regs */
     0,                                                                   /* floating point modes, not honored currently */
     ABM_USESIZE,                                                         /* BOOLEAN is determined by sizing above */
     ARM_FUNCTIONSCOPE,                                                   /* register allocation across entire function */
@@ -258,10 +264,11 @@ static ARCH_CHARACTERISTICS architecture = {
     FALSE, /* locals in stack memory*/
     FALSE, /* stack pointer grows down */
     FALSE, /* preallocate locals */
-    8,     /* size of a return block on stack (e.g. function ret addr & frame ptr) */
+    4,     /* size of a return block on stack (e.g. function ret addr & frame ptr) */
     4,     /* minimium width/ padding of passed parameters in maus */
     4,     /* minimum stack alignment */
     FALSE, /* library functions should bes genned as import calls */
+    0,     /* ret block param adjust */
 };
 extern ARCH_GEN outputfunctions;
 ARCH_GEN outputfunctions;
@@ -479,11 +486,6 @@ void adjustUsesESP()
     {
         prm_useesp = FALSE;
     }
-    else
-    {
-        if (prm_useesp)
-            architecture.retblocksize = 4;
-    }
     SetUsesESP(prm_useesp);
 }
 ARCH_DEBUG dbgStruct[] = {{
@@ -533,6 +535,7 @@ ARCH_GEN outputfunctions = {
     oa_gen_importThunk,   /* do an import thunk entry */
     oa_genstorage,        /* generate uninitialized storage */
     oa_align,             /* put an alignment command */
+    oa_setalign,          /* put alignment sizes */
     oa_enterseg,          /* switch to new seg */
     oa_exitseg,           /* exit current segment */
     oa_globaldef,         /* put a global definition */
@@ -637,15 +640,13 @@ ARCH_ASM assemblerInterface[] = {
         usage_text,                     /* pointer to usage text */
         args,                           /* extra args */
         sizeof(args) / sizeof(args[0]), /* number of args */
-        oplst,                          /* inline assembler opcode list, or null */
-        reglst,                         /* inline assembler register list, or null */
         prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
         defines,                        /* defines list to create at compile time, or null */
         &dbgStruct[0],                  /* debug structure, or NULL */
         &architecture,                  /* architecture characteristics */
         &outputfunctions,               /* pointer to backend function linkages */
         NULL,                           /* pointer to MSIL-specific data and functions */
-        NULL,                           /* pointer to extra builtin data */
+        BackendIntrinsicPrototypes,     /* pointer to extra builtin data */
         initnasm,                       /* return 1 to proceed */
         0,                              /* precompile function, or NULL */
         0,                              /* postcompile function, or NULL */
@@ -680,15 +681,13 @@ ARCH_ASM assemblerInterface[] = {
         usage_text,                     /* pointer to usage text */
         args,                           /* extra args */
         sizeof(args) / sizeof(args[0]), /* number of args */
-        oplst,                          /* inline assembler opcode list, or null */
-        reglst,                         /* inline assembler register list, or null */
         prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
         defines,                        /* defines list to create at compile time, or null */
         &dbgStruct[0],                  /* debug structure, or NULL */
         &architecture,                  /* architecture characteristics */
         &outputfunctions,               /* pointer to backend function linkages */
         NULL,                           /* pointer to MSIL-specific data and functions */
-        NULL,                           /* pointer to extra builtin data */
+        BackendIntrinsicPrototypes,     /* pointer to extra builtin data */
         initfasm,                       /* return 1 to proceed */
         0,                              /* precompile function, or NULL */
         0,                              /* postcompile function, or NULL */
@@ -723,15 +722,13 @@ ARCH_ASM assemblerInterface[] = {
         usage_text,                     /* pointer to usage text */
         args,                           /* extra args */
         sizeof(args) / sizeof(args[0]), /* number of args */
-        oplst,                          /* inline assembler opcode list, or null */
-        reglst,                         /* inline assembler register list, or null */
         prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
         defines,                        /* defines list to create at compile time, or null */
         &dbgStruct[0],                  /* debug structure, or NULL */
         &architecture,                  /* architecture characteristics */
         &outputfunctions,               /* pointer to backend function linkages */
         NULL,                           /* pointer to MSIL-specific data and functions */
-        NULL,                           /* pointer to extra builtin data */
+        BackendIntrinsicPrototypes,     /* pointer to extra builtin data */
         inittasm,                       /* return 1 to proceed */
         0,                              /* precompile function, or NULL */
         0,                              /* postcompile function, or NULL */
@@ -766,15 +763,13 @@ ARCH_ASM assemblerInterface[] = {
         usage_text,                     /* pointer to usage text */
         args,                           /* extra args */
         sizeof(args) / sizeof(args[0]), /* number of args */
-        oplst,                          /* inline assembler opcode list, or null */
-        reglst,                         /* inline assembler register list, or null */
         prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
         defines,                        /* defines list to create at compile time, or null */
         &dbgStruct[0],                  /* debug structure, or NULL */
         &architecture,                  /* architecture characteristics */
         &outputfunctions,               /* pointer to backend function linkages */
         NULL,                           /* pointer to MSIL-specific data and functions */
-        NULL,                           /* pointer to extra builtin data */
+        BackendIntrinsicPrototypes,     /* pointer to extra builtin data */
         initmasm,                       /* return 1 to proceed */
         0,                              /* precompile function, or NULL */
         0,                              /* postcompile function, or NULL */
@@ -809,8 +804,6 @@ ARCH_ASM assemblerInterface[] = {
         usage_text,                     /* pointer to usage text */
         args,                           /* extra args */
         sizeof(args) / sizeof(args[0]), /* number of args */
-        oplst,                          /* inline assembler opcode list, or null */
-        reglst,                         /* inline assembler register list, or null */
         prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
         defines,                        /* defines list to create at compile time, or null */
         &dbgStruct[0],                  /* debug structure, or NULL */

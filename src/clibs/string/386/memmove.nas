@@ -31,11 +31,13 @@
 
 section code CLASS=CODE USE32
 _memmove:
+	push ebp
+	mov ebp, esp
 	push	ebx
-	mov	ecx,[esp+16]
+	mov	ecx,[ebp+16]
 	jecxz x1
-	mov	ebx,[esp+12]
-	mov	edx,[esp+8]
+	mov	ebx,[ebp+12]
+	mov	edx,[ebp+8]
 join:
 	cmp	edx,ebx	
 	jbe	memcpy_x
@@ -50,4 +52,5 @@ lp2:
 x1:
 	mov	eax,[esp+8]
 	pop	ebx
+	pop ebp
 	ret

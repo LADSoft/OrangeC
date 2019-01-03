@@ -70,19 +70,19 @@ void RunProgram(PROJECTITEM* plist)
     free(exeName);
     free(exeArgs);
 }
-int initiateDebug(int stopimmediately)
+int initiateDebug(PROJECTITEM* pj, int stopimmediately)
 {
     static char cmd[4096];
-    if (uState == notDebugging && activeProject)
+    if (uState == notDebugging && pj)
     {
         int val = 0;
         char *exe, *args, *wd;
         char wdbuf[MAX_PATH];
-        SetOutputNames(activeProject, TRUE);
-        AddRootTables(activeProject, FALSE);
-        exe = Lookup("__DEBUG_EXECUTABLE", activeProject, NULL);
-        args = Lookup("__DEBUG_ARGUMENTS", activeProject, NULL);
-        wd = Lookup("__DEBUG_WORKING_DIR", activeProject, NULL);
+        SetOutputNames(pj, TRUE);
+        AddRootTables(pj, FALSE);
+        exe = Lookup("__DEBUG_EXECUTABLE", pj, NULL);
+        args = Lookup("__DEBUG_ARGUMENTS", pj, NULL);
+        wd = Lookup("__DEBUG_WORKING_DIR", pj, NULL);
         strcpy(wdbuf, wd);
         free(wd);
         if (wdbuf[0] == 0)
@@ -668,10 +668,11 @@ void StartDebug(char* cmd)
 
     stStartInfo.cb = sizeof(STARTUPINFO);
 
+    LPTCH env = GetEnv();
     bRet = CreateProcess(NULL, cmd, NULL, NULL, FALSE,
                          CREATE_NEW_PROCESS_GROUP | DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS |
                              (PropGetInt(activeProject, "__PROJECTTYPE") == BT_CONSOLE ? CREATE_NEW_CONSOLE : 0),
-                         NULL, pwd, &stStartInfo, &stProcessInfo);
+                         env, pwd, &stStartInfo, &stProcessInfo);
     if (!bRet)
     {
         ReleaseSemaphore(StartupSem, 1, 0);
@@ -692,6 +693,7 @@ void StartDebug(char* cmd)
 
             LocalFree(msg);
         }
+        FreeEnv(env);
         return;
     }
     Sleep(500); /* Needed to make things happy */
@@ -1171,4 +1173,5 @@ void StartDebug(char* cmd)
     SetStatusMessage("Stopping Debugger", FALSE);
     if (hpsapiLib)
         FreeLibrary(hpsapiLib);
+    FreeEnv(env);
 }

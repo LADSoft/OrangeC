@@ -35,9 +35,7 @@ char* overloadNameTab[] = {"$bctr",  "$bdtr",   "$bcast",  "$bnew",   "$bdel",  
                            "$basn",  "$basadd", "$bassub", "$basmul", "$basdiv", "$basmod", "$basshl", "$bsasshr", "$basand",
                            "$basor", "$basxor", "$binc",   "$bdec",   "$barray", "$bcall",  "$bstar",  "$barrow",  "$bcomma",
                            "$blor",  "$bland",  "$bnot",   "$bor",    "$band",   "$bxor",   "$bcpl",   "$bnwa",    "$bdla",
-                           "$blit",  "$badd",   "$bsub",   "$bmul",   "$band"
-
-};
+                           "$blit",  "$badd",   "$bsub",   "$bmul",   "$band"};
 char* msiloverloadNameTab[] = {".ctor",
                                ".dtor",
                                ".bcast",
@@ -91,8 +89,7 @@ char* msiloverloadNameTab[] = {".ctor",
 char* overloadXlateTab[] = {
     0,    0,   0,    "new", "delete", "+",  "-",  "*",   "/",   "<<",    ">>",       "%",    "==", "!=", "<",  "<=", ">",
     ">=", "=", "+=", "-=",  "*=",     "/=", "%=", "<<=", ">>=", "&=",    "|=",       "^=",   "++", "--", "[]", "()", "->*",
-    "->", ",", "||", "&&",  "!",      "|",  "&",  "^",   "~",   "new[]", "delete[]", "\"\"", "+",  "-",  "*",  "&",
-};
+    "->", ",", "||", "&&",  "!",      "|",  "&",  "^",   "~",   "new[]", "delete[]", "\"\"", "+",  "-",  "*",  "&"};
 #define IT_THRESHOLD 2
 #define IT_OV_THRESHOLD 2
 #define IT_SIZE (sizeof(cpp_funcname_tab) / sizeof(char*))
@@ -104,9 +101,11 @@ int mangledNamesCount;
 
 static int declTypeIndex;
 static char* lookupName(char* in, char* name);
+static int uniqueID;
 
 void mangleInit()
 {
+    uniqueID = 0;
     if (chosenAssembler->msil)
     {
         memcpy(overloadNameTab, msiloverloadNameTab, sizeof(msiloverloadNameTab));
@@ -903,7 +902,7 @@ void SetLinkerNames(SYMBOL* sym, enum e_lk linkage)
         linkage = lk_c;
     if (linkage == lk_c && !cparams.prm_cmangle)
         linkage = lk_stdcall;
-    if (linkage == lk_virtual)
+    if (linkage == lk_virtual || linkage == lk_fastcall)
     {
         if (cparams.prm_cplusplus)
             linkage = lk_cpp;
@@ -935,6 +934,9 @@ void SetLinkerNames(SYMBOL* sym, enum e_lk linkage)
                 strcpy(errbuf, sym->parent->decoratedName);
                 strcat(errbuf, "_");
                 strcat(errbuf, sym->name);
+                if (sym->uniqueID == 0)
+                    sym->uniqueID = uniqueID++;
+                sprintf(errbuf + strlen(errbuf), "_%d", sym->uniqueID);
             }
             else
             {

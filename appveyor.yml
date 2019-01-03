@@ -1,7 +1,7 @@
 image: Visual Studio 2017
 
 install:
-    - choco install InnoSetup
+    - appveyor-retry choco install InnoSetup
     - set PATH=c:\orangec\bin;%PATH%;C:\Program Files (x86)\Inno Setup 5
     - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars32.bat"
     - set PATH=C:\mingw-w64\x86_64-7.2.0-posix-seh-rt_v5-rev1\mingw64\bin;%PATH%
@@ -17,8 +17,22 @@ environment:
     - type: MS WITH LSCRTL
       BUILD_PROFILE: MS
       LSCRTL: YES
+    - type: MS VIA ASSEMBLY
+      BUILD_PROFILE: MS
+      VIAASSEMBLY: YES
+    - type: MS WITH DEBUG
+      BUILD_PROFILE: MS
+      WITHDEBUG: YES
     - type: CLANG
       BUILD_PROFILE: CLANG
+ 
+skip_commits:
+  files:
+    - '**/*.txt'
+    - '**/*.doc'
+    - '**/*.md'
+    - '**/*.html'
+    - '*.yml'
  
 build_script:
 # the appveyor virtual machine reported two processors, so, lets try running parallel compile!
@@ -30,13 +44,13 @@ build_script:
         - mingw32-make fullbuild --eval="COMPILER=$(BUILD_PROFILE)" -j 4
         - c:\orangec\bin\occ /V
         - copy omake\omake.exe \orangec\temp
-        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC /DLSCRTL=%LSCRTL% -B fullbuild -j:4
+        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% -B fullbuild -j:4
         - c:\orangec\bin\occ /V
         - copy omake\omake.exe \orangec\temp
-        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC /DLSCRTL=%LSCRTL% -B fullbuild -j:4
+        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% -B fullbuild -j:4
         - c:\orangec\bin\occ /V
         - copy omake\omake.exe \orangec\temp
-        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC /DLSCRTL=%LSCRTL% -B fullbuild -j:4
+        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% -B fullbuild -j:4
         - path=%ORIGPATH%
         - cd ..\tests
         - omake -B -j:4

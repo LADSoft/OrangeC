@@ -24,14 +24,16 @@
  */
 
 #include "rcMain.h"
-#include "rcFile.h"
-#include "resFile.h"
+#include "RCFile.h"
+#include "ResFile.h"
 
 #include "Utils.h"
 #include "CmdFiles.h"
 #include "PreProcessor.h"
 
-#include <windows.h>
+#ifndef GCCLINUX
+#    include <windows.h>
+#endif
 
 CmdSwitchParser rcMain::SwitchParser;
 CmdSwitchFile rcMain::File(SwitchParser, '@');
@@ -64,12 +66,16 @@ int main(int argc, char* argv[])
 int rcMain::Run(int argc, char* argv[])
 {
     int rv = 0;
+#ifndef GCCLINUX
     int language = LANG_ENGLISH + (SUBLANG_ENGLISH_US << 10);
+#else
+    int language = 0;
+#endif
     Utils::banner(argv[0]);
     Utils::SetEnvironmentToPathParent("ORANGEC");
     CmdSwitchFile internalConfig(SwitchParser);
     std::string configName = Utils::QualifiedFile(Utils::GetModuleName(), ".cfg");
-    std::fstream configTest(configName.c_str(), std::ios::in);
+    std::fstream configTest(configName, std::ios::in);
     if (!configTest.fail())
     {
         configTest.close();
@@ -83,11 +89,11 @@ int rcMain::Run(int argc, char* argv[])
     CmdFiles files(argv + 1);
     if (File.GetValue())
         files.Add(File.GetValue() + 1);
-    if (files.GetSize() > 1 && OutputFile.GetValue().size())
+    if (files.GetSize() > 1 && !OutputFile.GetValue().empty())
         Utils::fatal("Cannot specify output file for multiple input files");
     std::string sysSrchPth;
     std::string srchPth;
-    if (includePath.GetValue().size())
+    if (!includePath.GetValue().empty())
     {
         size_t n = includePath.GetValue().find_first_of(';');
         if (n == std::string::npos)
@@ -103,15 +109,15 @@ int rcMain::Run(int argc, char* argv[])
     char* cpath = getenv("CPATH");
     if (cpath)
     {
-        if (srchPth.size())
+        if (!srchPth.empty())
             srchPth += ";";
         srchPth += cpath;
     }
-    if (Language.GetValue().size())
+    if (!Language.GetValue().empty())
     {
         sscanf(Language.GetValue().c_str(), "%d", &language);
     }
-    for (CmdFiles::FileNameIterator it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
+    for (auto it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
     {
         std::string inName = Utils::QualifiedFile((*it)->c_str(), ".rc");
         PreProcessor pp(inName, srchPth, sysSrchPth, false, false, '#', false, true, true);
@@ -124,7 +130,7 @@ int rcMain::Run(int argc, char* argv[])
         std::string s("");
         pp.Define("RC_INVOKED", s, false);
         std::string outName;
-        if (OutputFile.GetValue().size() != 0)
+        if (!OutputFile.GetValue().empty())
             outName = OutputFile.GetValue();
         else
             outName = Utils::QualifiedFile((*it)->c_str(), ".res");

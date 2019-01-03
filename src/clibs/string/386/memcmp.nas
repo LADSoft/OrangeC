@@ -28,12 +28,14 @@
 [global _memcmp]
 SECTION code CLASS=CODE USE32
 _memcmp:
+    push    ebp
+	mov     ebp, esp
     push	ebx
-    mov		ecx,[esp+16]
+    mov		ecx,[ebp+16]
     sub		eax,eax
     jecxz	x1
-    mov		ebx,[esp+8]
-    mov		edx,[esp+12]
+    mov		ebx,[ebp+8]
+    mov		edx,[ebp+12]
     dec		edx
 lp:
     inc		edx
@@ -44,8 +46,10 @@ lp:
     jnz		x1
     sub		eax,eax
     pop		ebx
+	pop     ebp
     ret
 x1:
     movsx	eax,al
     pop		ebx
+	pop     ebp
     ret

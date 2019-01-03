@@ -23,7 +23,7 @@
  *
  */
 
-#include "dlHexMain.h"
+#include "dlhexmain.h"
 #include "CmdSwitch.h"
 #include "Utils.h"
 #include "OutputObjects.h"
@@ -33,7 +33,7 @@
 #include "ObjExpression.h"
 #include <iostream>
 #include <string.h>
-#include <stdlib.h>
+#include <cstdlib>
 
 CmdSwitchParser dlHexMain::SwitchParser;
 
@@ -87,7 +87,7 @@ void dlHexMain::GetSectionNames(std::vector<std::string>& names, ObjFile* file)
                     if (file->FindSection(name))
                         names.push_back(name);
                     else
-                        std::cout << "Warning: Section '" << name.c_str() << "' not in .rel file" << std::endl;
+                        std::cout << "Warning: Section '" << name << "' not in .rel file" << std::endl;
                 }
                 p++;
             }
@@ -101,12 +101,12 @@ void dlHexMain::GetSectionNames(std::vector<std::string>& names, ObjFile* file)
             if (file->FindSection(name))
                 names.push_back(name);
             else
-                std::cout << "Warning: Section '" << name.c_str() << "' not in .rel file" << std::endl;
+                std::cout << "Warning: Section '" << name << "' not in .rel file" << std::endl;
         }
     }
     else
     {
-        for (ObjFile::SectionIterator it = file->SectionBegin(); it != file->SectionEnd(); ++it)
+        for (auto it = file->SectionBegin(); it != file->SectionEnd(); ++it)
         {
             names.push_back((*it)->GetName());
         }
@@ -125,7 +125,7 @@ void dlHexMain::GetInputSections(const std::vector<std::string>& names, ObjFile*
         s->ResolveSymbols(factory);
         ObjMemoryManager& m = s->GetMemoryManager();
         int ofs = 0;
-        for (ObjMemoryManager::MemoryIterator it = m.MemoryBegin(); it != m.MemoryEnd(); ++it)
+        for (auto it = m.MemoryBegin(); it != m.MemoryEnd(); ++it)
         {
             int msize = (*it)->GetSize();
             ObjByte* mdata = (*it)->GetData();
@@ -211,12 +211,12 @@ bool dlHexMain::ReadSections(const std::string& path)
 bool dlHexMain::GetOutputMode()
 {
     const std::string& modeStr = modeSwitch.GetValue();
-    if (modeStr.size() == 0)
+    if (modeStr.empty())
     {
         outputMode = eBinary;
         return true;
     }
-    switch (modeStr.c_str()[0])
+    switch (modeStr[0])
     {
         case 'm':
         case 'M':
@@ -246,7 +246,7 @@ bool dlHexMain::GetOutputMode()
 std::string dlHexMain::GetOutputName(char* infile) const
 {
     std::string name;
-    if (outputFileSwitch.GetValue().size() != 0)
+    if (!outputFileSwitch.GetValue().empty())
     {
         name = outputFileSwitch.GetValue();
         const char* p = strrchr(name.c_str(), '.');
@@ -280,7 +280,7 @@ int dlHexMain::Run(int argc, char** argv)
     Utils::SetEnvironmentToPathParent("ORANGEC");
     CmdSwitchFile internalConfig(SwitchParser);
     std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
-    std::fstream configTest(configName.c_str(), std::ios::in);
+    std::fstream configTest(configName, std::ios::in);
     if (!configTest.fail())
     {
         configTest.close();
@@ -292,7 +292,7 @@ int dlHexMain::Run(int argc, char** argv)
         Utils::usage(argv[0], usageText);
     }
     if (!ReadSections(std::string(argv[1])))
-        Utils::fatal("Invalid .rel file");
+        Utils::fatal("Invalid .rel file failed to read sections");
 
     std::string outputName = GetOutputName(argv[1]);
     OutputObject* o = nullptr;
@@ -308,7 +308,7 @@ int dlHexMain::Run(int argc, char** argv)
             o = new MotorolaOutputObject(outputName, extraMode);
             break;
     }
-    std::fstream out(outputName.c_str(), o->GetOpenFlags());
+    std::fstream out(outputName, o->GetOpenFlags());
     if (!out.fail())
     {
         int addr = 0;
@@ -325,8 +325,5 @@ int dlHexMain::Run(int argc, char** argv)
         out.close();
         return !!out.fail();
     }
-    else
-    {
-        return 1;
-    }
+    return 1;
 }

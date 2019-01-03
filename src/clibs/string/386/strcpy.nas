@@ -31,10 +31,12 @@
 SECTION code CLASS=CODE USE32
 
 _strcpy:
-		mov	ecx,[esp+4]	;	str1
+		push ebp
+		mov ebp, esp
+		mov	ecx,[ebp+8]	;	str1
 strcat_fin:
 		mov	ah,3
-		mov	edx,[esp+8]	;  str2
+		mov	edx,[ebp+12]	;  str2
 TestEdx:
 		test	dl,ah
 		jnz	DoAlign
@@ -57,27 +59,31 @@ QuadLoop:
 		jnz	QuadLoop
     
 CpyDone:
-		mov	eax,[esp+4]
+		mov	eax,[esp+8]
+		pop ebp
 		ret
 
 CpyDoneLoLo:
 		mov	[ecx],al	; this is a zero
-		mov	eax,[esp+4]
+		mov	eax,[ebp+8]
+		pop ebp
 		ret
 
 CpyDoneLoHi:
 		xor	dl,dl
 		mov	[ecx],al
 		mov	[ecx+1],dl
-		mov	eax,[esp+4]
+		mov	eax,[ebp+8]
+		pop ebp
 		ret
 
 CpyDoneHiLo:
 		mov	[ecx],al
 		xor	dl,dl
 		mov	[ecx+1],ah
-		mov	eax,[esp+4]
+		mov	eax,[ebp+8]
 		mov	[ecx+2],dl
+		pop ebp
 		ret
 
 DoAlign:
@@ -87,5 +93,6 @@ DoAlign:
 		inc	ecx
 		test	al,al
 		jnz	TestEdx
-		mov	eax,[esp+4]
+		mov	eax,[ebp+8]
+		pop ebp
 		ret

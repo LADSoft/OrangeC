@@ -21,16 +21,18 @@
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
+include ../pathext2.mak
 
 NAME=orc
 MAIN_FILE=rcMain.cpp
-INCLUDES=..\util ..\ocpp
+INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)ocpp
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=ocpplib util
-DEFINES=L_INT=__int64
+DEFINES=
 H_FILES=$(wildcard *.h)
 
-include ..\redirect.mak
+include ../redirect.mak
 
 DISTRIBUTE: copyexe
-	copy target.cfg $(DISTBIN)\orc.cfg
+	copy orc.exe ..$(PATHEXT2)
+	copy target.cfg $(DISTBIN)$(PATHEXT2)orc.cfg

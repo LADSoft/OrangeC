@@ -28,7 +28,9 @@
 [global _strlen]
 SECTION code CLASS=CODE USE32
 _strlen:
-    mov	eax,[esp+4]
+    push ebp
+	mov ebp, esp
+    mov	eax,[ebp+8]
     dec	eax
 lp1:
     inc	eax
@@ -47,5 +49,6 @@ lp2:
 x1:
     cmp	byte [eax],BYTE 0
     jne	lp1
-    sub eax,[esp+4]
+    sub eax,[ebp+8]
+	pop ebp
     ret

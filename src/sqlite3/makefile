@@ -21,6 +21,7 @@
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
+include ../pathext2.mak
 
 NAME=sqlite3
 MAIN_FILE=
@@ -28,6 +29,6 @@ INCLUDES=
 C_DEPENDENCIES=sqlite3.c
 LIB_DEPENDENCIES=
 
-include ..\redirect.mak
+include ../redirect.mak
 
 DISTRIBUTE:

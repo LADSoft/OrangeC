@@ -29,9 +29,11 @@
 SECTION code CLASS=CODE USE32
 
 _stpcpy:
-    mov	eax,[esp+4]
+    push ebp
+	mov ebp, esp
+    mov	eax,[ebp+8]
     dec eax
-    mov	edx,[esp+8]
+    mov	edx,[ebp+12]
 lp:
     inc	eax
     mov	cl,[edx]
@@ -39,5 +41,6 @@ lp:
     mov [eax],cl
     or	cl,cl
     jnz	lp
+	pop ebp
     ret
     

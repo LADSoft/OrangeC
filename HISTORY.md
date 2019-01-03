@@ -1,5 +1,102 @@
 Release notes:
 
+version 6.0.39: 11/15/2018
+* rtl: add msvcrt.l and crtdll.l back into the project
+* rtl: improve stack trace for certain edge cases
+
+version 6.0.38: 11/11/2018
+* occ: speed up slow symbol table searches in classes with a lot of members
+* occ: fix problems compiling C++ regex header
+* occ: fix various problems where template specializations *should* have been instantantiated even though they weren't used in the current source file
+* occ: fix problems with linking template functions with static variables
+* occ: remove unreferenced external declarations from the object file
+* occ: extend range of things you can reference with a __declspec declaration
+* occ: call assembler even if -c was specified on the command line
+* occ: the -lxxx switch set xxx as the output file name
+* occ: fix problems when using namespace qualifiers on member initializer names for base classes
+* occ: fix problems with member initializers not being set up correctly
+* occ: use 'real' line number in debug info
+* occ: add common options to emit data.
+* occ, olink, olib: allow '.a' and '.lib' to be used as extensions for libraries
+* occ: fix /S switch so you can use -S as well.
+* occ: remove 'expression has no effect' warning when both paths of a ?: expression are void values
+* occ: fix a newly introduced problem where sometimes it could generate bad output files for static data
+* occ: fix a crash if an intermediate code block became dead while it was still being used...
+* occ: fix problem where constexpr static variable initializations failed for constexpr functions and constructors
+* occ: fix some crashes while errors were occurring
+* occ: implement CPATH and SOURCE_DATE_EPOCH environment variables
+* occ: pass specified /o switch to assembler or RC compiler, if /c is also specified
+* occ: fix problems with auto pointers
+* occ: fix problems with the preprocessor not being able to handle maxed out 64-bit unsigned numbers
+* occ: delete output files on error
+* occ: fix problem where things trailing a function prototype sometimes couldn't refernece the arguments from the prototype
+* occ: remove 'suspicious pointer' warning when assigning to a function pointer
+* occ: add command line and pragma support for warning control
+* occ: pass output file name to assembler, rc compiler when compiling a single file
+* occ: fix rare problem with register allocator failing
+* occ: implicit cast from long long to 'enum type' as a function arg could result in bad code generation
+* occ: local initialization of char aa[10] = ""; didn't work.  Forms without the empty string worked
+* occ: a negative long long constant got downconverted to int during constant evaluation
+* occ: line numbers in c++ code were off by one.
+* occ: when a template defined in a template using statement was used as the specialization of another template, it wasn't evaluated properly.
+* occ: fix various problems with generating assembly code that oasm couldn't parse
+* occ: add fastcall and switch some of the STL support functions to being intrinsics
+* occ: fix vagaray in debug format, sometimes function types would not be emitted (could cause link problems)
+* occ: fix problem generating code for debug mode, sometimes the resulting code would not run
+* oasm: fix bug where too-full buffer could modify generated code stream
+* olink: fix a crash if occ failed to output line information properly
+* dlpe: fix the fixup of relative branch to import thunks, to allow the thunks to be relocated
+* dlpe: use --nologo when invokeing oimplib
+* dlpe: fix a rare problem where a write past the end of allocated memory could cause a crash
+* occpr (symbol table parser): fix two crashes
+* oimplib: 'replace' dll modules in library, instead of 'adding' them, so they don't go stale
+* olib: fix '/o' switch
+* olib: implement LIBRARY_PATH environment variable
+* omake: fix some problems interacting with autoconf-generated make systems
+* ocide: could not step into a dll function
+* ocide & docs: add step functions to the debug menu
+* ocide: fix crash when starting program with 'stop in dll' set
+* ocide: fix various problems with 'stop in dll' including problems with invalid breakpoints
+* ocide: detect end of file boundary properly when trying to find a breakpoint line
+* ocide: fix problems with single stepping and setting breakpoints in dll
+* ocide: fix problems with DLL breakpoints not being reset after program is restarted
+* ocide: fix perenial crash if closing windows while the colorization is updating
+* ocide: clean up menus related to file close options
+* ocide: fix problem with 'browseto' (F12) - it wouldn't browse to macro definitions
+* ocide: fix various crashes that could occur during database fetches, while editing or opening/closeing debugger
+* ocide: fix various display problems with 'build properties' window
+* ocide: fix so that build properties window can be refreshed with new data, if left open.
+* ocide: be explicit about errors when can't debug a program , especially the 'invalid workding directory' error.
+* ocide: find 'stdcall' functions in the code completion
+* ocide: fix various other problems with code completion
+* ocide: fix build: handle data imports correctly
+* ocide: fix problem with browse info and default workspace
+* oimplib, olib, olink: fix more problems when '/' was used as a path separator
+* olink: bail with an error if a library cannot be found
+* olink: make sure intermediate file always has a .rel extension
+* omake: fix compatibility issues with /bin/sh
+* omake: fix 'order' prerequisites to work correctly
+* obrc: tweak error message to not mention object files
+* rtl:  sprintf could try to modify input strings, didn't work if string is in readonly memory
+* rtl: remove definition of __declspec in the _defs.h
+* rtl: fix C++ check in stdbool.h
+* rtl: fix strncat to work as per the standard
+* rtl: uncaught throw will now result in abnormal program termination
+* rtl: fix definition of 'bad_cast' to inherit from 'exception'
+* rtl: fix the definition of __sync_add_and_fetch provided for locale.cpp to add to the result
+* rtl: add a 'helper' dll which can output a stack trace if a program crashes
+* rtl: fix the definition of 'TryEnterCriticalSection'
+* rtl: access() set errno to EACCESS instead of ENOENT on failure.
+* rtl: open/sopen would set errno to ENOENT if they were successfully creating an output file
+* rtl: implement fcntl
+* rtl: fix strerror(), was adding a line feed to end of string
+* rtl: fix problems with LSCRTL: double load issue and issue where DLLs couldn't use it
+* rtl: precision on integers in sprintf did not have the desired effect
+* rtl: add _TRUE_MIN constants to float.h
+* all: add 'clang' to continuous integration builds
+* all: add compile-via-assembly to continuous integration builds
+* documentation: add minimal documentation for ancilliary projects
+
 Version 6.0.37: 5/20/2018
 * documentation:   various upgrades
 * all programs: add --version

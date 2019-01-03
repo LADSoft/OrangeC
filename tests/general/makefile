@@ -8,7 +8,7 @@
 %.exe: %.o
 	olink /c /! /T:CON32 /o$@ c0xpe.o $^ clwin.l climp.l
 
-test: bzip2.exe parsecsv.exe stlcontainers.exe label.exe delegate.exe
+test: bzip2.exe parsecsv.exe label.exe delegate.exe
 	bzip2 bzip2.test
 	fc /b bzip2.test.bz2 bzip2.test.bz2.cmpx
 	bzip2 -d bzip2.test.bz2
@@ -16,8 +16,6 @@ test: bzip2.exe parsecsv.exe stlcontainers.exe label.exe delegate.exe
 	del out.pcl
 	parsecsv
 	fc /b test.cmpx out.pcl
-	stlcontainers > stlcontainers.out
-	fc /b stlcontainers.cmpx stlcontainers.out
 	del label1.exe
 	label
 	label1 > label1.out

@@ -25,6 +25,7 @@
 
 #include "compiler.h"
 #include <assert.h>
+#include <limits.h>
 /* initializers, local... can do w/out c99 */
 
 extern ARCH_DEBUG* chosenDebugger;
@@ -658,7 +659,7 @@ int dumpInit(SYMBOL* sp, INITIALIZER* init)
     TYPE* tp = basetype(init->basetp);
     int rv;
     LLONG_TYPE i;
-    FPF f, im;
+    FPFC f, im;
     if (tp->type == bt_templateparam)
         tp = tp->templateParam->p->byClass.val;
     if (isstructured(tp))
@@ -995,11 +996,15 @@ void dumpInitGroup(SYMBOL* sp, TYPE* tp)
 static void dumpStaticInitializers(void)
 {
 #ifndef PARSER_ONLY
+    int abss = 0;
+    int adata = 0;
+    int aconst = 0;
+    int anull = 0;
     int sconst = 0;
     int bss = 0;
     int data = 0;
     int thread = 0;
-    int* sizep;
+    int *sizep, *alignp;
     symListTail = symListHead;
     while (symListTail)
     {
@@ -1016,26 +1021,33 @@ static void dumpStaticInitializers(void)
             {
                 xconstseg();
                 sizep = &sconst;
+                alignp = &aconst;
             }
             else if (sp->linkage3 == lk_threadlocal)
             {
                 tseg();
                 sizep = &thread;
+                alignp = &anull;
             }
             else if (sp->init || !cparams.prm_bss)
             {
                 dseg();
                 sizep = &data;
+                alignp = &adata;
             }
             else
             {
                 bssseg();
                 sizep = &bss;
+                alignp = &abss;
             }
             if (sp->structAlign)
                 al = sp->structAlign;
             else
                 al = getAlign(sc_global, basetype(tp));
+
+            if (*alignp < al)
+                *alignp = al;
             if (*sizep % al)
             {
                 int n = al - *sizep % al;
@@ -1084,6 +1096,7 @@ static void dumpStaticInitializers(void)
         symListTail = symListTail->next;
     }
     symListHead = NULL;
+    chosenAssembler->gen->setalign(0, adata, abss, aconst);
 #endif
 }
 void dumpInitializers(void)
@@ -1299,9 +1312,41 @@ static LEXEME* initialize_arithmetic_type(LEXEME* lex, SYMBOL* funcsp, int offse
                     checkscope(tp, itype);
                 if (!comparetypes(itype, tp, TRUE))
                 {
-                    if (cparams.prm_cplusplus && needend && basetype(tp)->type > bt_int)
+                    if (cparams.prm_cplusplus && needend)
                         if (basetype(itype)->type < basetype(tp)->type)
-                            error(ERR_INIT_NARROWING);
+                        {
+                            if (isintconst(exp))
+                            {
+
+                                int val = exp->v.i;
+                                switch (basetype(itype)->type)
+                                {
+                                    case bt_char:
+                                        if (val < CHAR_MIN || val > CHAR_MAX)
+                                            error(ERR_INIT_NARROWING);
+                                        break;
+                                    case bt_unsigned_char:
+                                        if (val < 0 || val > UCHAR_MAX)
+                                            error(ERR_INIT_NARROWING);
+                                        break;
+                                    case bt_short:
+                                        if (val < SHRT_MIN || val > SHRT_MAX)
+                                            error(ERR_INIT_NARROWING);
+                                        break;
+                                    case bt_unsigned_short:
+                                        if (val < 0 || val > USHRT_MAX)
+                                            error(ERR_INIT_NARROWING);
+                                        break;
+                                    default:
+                                        error(ERR_INIT_NARROWING);
+                                        break;
+                                }
+                            }
+                            else
+                            {
+                                error(ERR_INIT_NARROWING);
+                            }
+                        }
                     cast(itype, &exp);
                     optimize_for_constants(&exp);
                 }
@@ -1374,6 +1419,7 @@ static LEXEME* initialize_pointer_type(LEXEME* lex, SYMBOL* funcsp, int offset, 
 {
     TYPE* tp;
     EXPRESSION* exp;
+    BOOLEAN string = FALSE;
     BOOLEAN needend = FALSE;
     if (MATCHKW(lex, begin))
     {
@@ -1403,6 +1449,7 @@ static LEXEME* initialize_pointer_type(LEXEME* lex, SYMBOL* funcsp, int offset, 
         else
         {
             lex = initialize_string(lex, funcsp, &tp, &exp);
+            string = TRUE;
         }
         castToPointer(&tp, &exp, (enum e_kw) - 1, itype);
         DeduceAuto(&itype, tp);
@@ -1437,11 +1484,15 @@ static LEXEME* initialize_pointer_type(LEXEME* lex, SYMBOL* funcsp, int offset, 
             {
                 errortype(ERR_CANNOT_CONVERT_TYPE, tp, itype);
             }
+            if (cparams.prm_cplusplus && !isconst(basetype(itype)->btp) && string)
+                error(ERR_INVALID_CHARACTER_STRING_CONVERSION);
+
             if (isarray(tp) && (tp)->msil)
                 error(ERR_MANAGED_OBJECT_NO_ADDRESS);
             else if (isstructured(tp))
                 error(ERR_ILL_STRUCTURE_ASSIGNMENT);
-            else if (!ispointer(tp) && !isfunction(tp) && !isint(tp) && tp->type != bt_aggregate)
+            else if (!ispointer(tp) && (tp->btp && !ispointer(tp->btp)) && !isfunction(tp) && !isint(tp) &&
+                     tp->type != bt_aggregate)
                 error(ERR_INVALID_POINTER_CONVERSION);
             else if (isfunction(tp) || tp->type == bt_aggregate)
             {
@@ -1861,14 +1912,11 @@ static LEXEME* initialize_reference_type(LEXEME* lex, SYMBOL* funcsp, int offset
         {
             if (isstructured(itype->btp))
             {
-                FUNCTIONCALL* funcparams = Alloc(sizeof(FUNCTIONCALL));
                 EXPRESSION* ths = anonymousVar(sc_auto, tp);
+                EXPRESSION* paramexp = exp;
                 TYPE* ctype = basetype(itype->btp);
-                funcparams->arguments = Alloc(sizeof(INITLIST));
-                funcparams->arguments->tp = tp;
-                funcparams->arguments->exp = exp;
                 exp = ths;
-                callConstructor(&ctype, &exp, funcparams, FALSE, NULL, TRUE, FALSE, FALSE, FALSE, FALSE);
+                callConstructorParam(&ctype, &exp, tp, paramexp, TRUE, FALSE, FALSE, FALSE);
             }
             else
             {
@@ -2227,7 +2275,7 @@ static void quicksort(const void* base, int lo, int hi, size_t width, int (*comp
             if (i <= j)
             {
                 memcpy(buf, (char*)base + i * width, width);
-                memcpy((char*)base + i * width, (char*)base + j * width, width);
+                memmove((char*)base + i * width, (char*)base + j * width, width);
                 memcpy((char*)base + j * width, buf, width);
                 i++;
                 j--;
@@ -2694,6 +2742,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
             {
                 callConstructor(&ctype, &exp, funcparams, FALSE, NULL, TRUE, maybeConversion, FALSE, FALSE,
                                 isList ? _F_INITLIST : 0);
+                PromoteConstructorArgs(funcparams->sp, funcparams);
             }
             initInsert(&it, itype, exp, offset, TRUE);
             if (sc != sc_auto && sc != sc_localstatic && sc != sc_parameter && sc != sc_member && sc != sc_mutable && !arrayMember)
@@ -2793,6 +2842,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
                     funcparams->thistp = ttp;
                     exp1 = baseexp;
                     callConstructor(&tp1, &exp1, funcparams, FALSE, NULL, TRUE, FALSE, FALSE, FALSE, 0);
+                    PromoteConstructorArgs(funcparams->sp, funcparams);
                     initInsert(&it, itype, exp1, offset, TRUE);
                 }
                 if (sc != sc_auto && sc != sc_localstatic && sc != sc_parameter && sc != sc_member && sc != sc_mutable &&
@@ -3344,6 +3394,12 @@ LEXEME* initType(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, INITIALI
         default:
             if (!templateNestingCount)
                 errortype(ERR_CANNOT_INITIALIZE, tp, NULL);
+            else if (MATCHKW(lex, begin))
+            {
+                lex = getsym();
+                errskim(&lex, skim_end);
+                skip(&lex, end);
+            }
             break;
     }
     return lex;
@@ -3983,6 +4039,20 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_sc storage_cl
                 l = l->next;
             }
         }
+        else if (!isfunction(tp))
+        {
+            TYPE* t = (TYPE*)Alloc(sizeof(TYPE));
+            t->btp = tp;
+            t->type = bt_const;
+            t->size = tp->size;
+            UpdateRootTypes(t);
+            tp = t;
+            if (!IsConstantExpression(sp->init->exp, FALSE, TRUE))
+            {
+                sp->init->exp = intNode(en_c_i, 0);
+                error(ERR_CONSTANT_EXPRESSION_EXPECTED);
+            }
+        }
         else
         {
             if (!IsConstantExpression(sp->init->exp, FALSE, TRUE))
@@ -4003,8 +4073,11 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_sc storage_cl
                     if (sp->storage_class != sc_external && sp->storage_class != sc_typedef && sp->storage_class != sc_member &&
                         sp->storage_class != sc_mutable)
                     {
-                        if (!isstructured(tp) || !cparams.prm_cplusplus || (basetype(tp)->sp->trivialCons && hasData(tp)))
+                        if (!sp->assigned &&
+                            (!isstructured(tp) || !cparams.prm_cplusplus || (basetype(tp)->sp->trivialCons && hasData(tp))))
+                        {
                             errorsym(ERR_CONSTANT_MUST_BE_INITIALIZED, sp);
+                        }
                     }
                 }
             }
@@ -4050,11 +4123,12 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_sc storage_cl
             SYMBOL* tmpl;
             tmpl = sp;
             while (tmpl)
+            {
                 if (tmpl->templateLevel)
                     break;
                 else
-
                     tmpl = tmpl->parentClass;
+            }
             if (!tmpl)
             {
                 insertInitSym(sp);

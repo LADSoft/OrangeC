@@ -35,7 +35,7 @@ bool Tiny::ReadSections(ObjFile* file, ObjExpression* start)
         Utils::fatal("Start address for tiny program must be 0100h");
     int count = 0;
     ObjSection* sect;
-    for (ObjFile::SectionIterator it = file->SectionBegin(); it != file->SectionEnd(); ++it)
+    for (auto it = file->SectionBegin(); it != file->SectionEnd(); ++it)
     {
         sect = *it;
         size = (*it)->GetOffset()->Eval(0) + (*it)->GetSize()->Eval(0);
@@ -46,7 +46,7 @@ bool Tiny::ReadSections(ObjFile* file, ObjExpression* start)
     data = new unsigned char[size];
     ObjMemoryManager& m = sect->GetMemoryManager();
     int ofs = 0;
-    for (ObjMemoryManager::MemoryIterator it = m.MemoryBegin(); it != m.MemoryEnd(); ++it)
+    for (auto it = m.MemoryBegin(); it != m.MemoryEnd(); ++it)
     {
         int msize = (*it)->GetSize();
         ObjByte* mdata = (*it)->GetData();

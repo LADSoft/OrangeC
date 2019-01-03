@@ -24,7 +24,6 @@
  */
 
 #include <stdio.h>
-#include <process.h>
 #include <string.h>
 #include <stdlib.h>
 #include "be.h"
@@ -48,7 +47,7 @@ char* winc0[] = {"c0xpe.o", "c0pe.o", "c0dpe.o", "c0pm.o", "c0wat.o", "", "c0xpe
 LIST *objlist, *asmlist, *liblist, *reslist, *rclist;
 static char outputFileName[256];
 static char *asm_params, *rc_params, *link_params;
-#ifdef MICROSOFT
+#ifdef _WIN32
 #    define system(x) winsystem(x)
 extern int winsystem(const char*);
 #endif
@@ -256,11 +255,26 @@ int RunExternalFiles(char* rootPath)
     }
     if (!cparams.prm_compileonly && objlist)
     {
+
         char tempFile[260];
         tmpnam(tempFile);
+        if (tempFile[0] == '\\')
+        {
+            // fix for buggy mingw on windows
+            strcpy(tempFile, getenv("TMP"));
+            tmpnam(tempFile + strlen(tempFile));
+        }
         FILE* fil = fopen(tempFile, "w");
         if (!fil)
-            return 1;
+        {
+            strcpy(tempFile, ".\\");
+            tmpnam(tempFile + strlen(tempFile));
+            fil = fopen(tempFile, "w");
+            if (!fil)
+            {
+                fatal("TMP environment variable not set or invalid");
+            }
+        }
         if (prm_libpath)
         {
             fprintf(fil, "\"/L%s\" ", prm_libpath);
@@ -324,10 +338,13 @@ int RunExternalFiles(char* rootPath)
                 while ((len = fread(buffer, 1, 8192, fil)) > 0)
                     fwrite(buffer, 1, len, stdout);
                 fclose(fil);
+                fputc('\n', stdout);
             }
         }
         rv = system(spname);
         unlink(tempFile);
+        if (verbosity > 1)
+            printf("Return code: %d\n", rv);
 
         if (rv)
             return rv;

@@ -31,9 +31,9 @@
 #define CI_NEW 3
 #define CI_DELETE 4
 #define CI_FUNC (openpa + 3)
-#define CI_NEWA (compl+1 + 3)
-#define CI_DELETEA (compl+2 + 3)
-#define CI_LIT (compl+3 + 3)
+#define CI_NEWA (complx + 1 + 3)
+#define CI_DELETEA (complx + 2 + 3)
+#define CI_LIT (complx + 3 + 3)
 
 #define issymchar(x) (((x) >= 0) && (isalnum(x) || (x) == '_'))
 #define isstartchar(x) (((x) >= 0) && (isalpha(x) || (x) == '_'))
@@ -84,8 +84,8 @@ enum e_kw
     kw_new, kw_delete, plus, minus, star, divide, leftshift, rightshift, mod, eq,
         neq, lt, leq, gt, geq, assign, asplus, asminus, astimes, asdivide,
         asmod, asleftshift, asrightshift, asand, asor, asxor, autoinc, autodec,
-        openbr, openpa, pointstar, pointsto, comma, lor, land, not, or, and, uparrow,
-        compl, kw_newa, kw_dela, quot,
+        openbr, openpa, pointstar, pointsto, comma, lor, land, notx, orx, andx, uparrow,
+        complx, kw_newa, kw_dela, quot,
         plus_unary, minus_unary, star_unary, and_unary,
     /* then generic stuff that isn't overloadable or is internal */
     id, hook, colon, begin, end, dot,
@@ -112,12 +112,13 @@ enum e_kw
     /* Extended */
     kw_atomic_flag_test_set, kw_atomic_flag_clear, kw_atomic_fence, kw_atomic_kill_dependency,
         kw_atomic_load, kw_atomic_store, kw_atomic_modify, kw_atomic_cmpswp, kw_atomic_var_init,
-        kw__pascal, kw__stdcall, kw__cdecl, kw__intrinsic, kw_asm, kw__loadds,
+        kw__pascal, kw__stdcall, kw__fastcall, kw__cdecl, kw__intrinsic, kw_asm, kw__loadds,
         kw__far, kw_asmreg, kw_asminst, kw__indirect, kw__export, kw__import, kw___func__,
         kw__near, kw__seg, kw___typeid, kw___int64, kw_alloca, kw__msil_rtl,
         kw___va_list__,  kw___va_typeof__, kw__unmanaged,  kw__uuid, kw__uuidof,
         kw___string, kw___object,  kw_native, kw__cpblk, kw__initblk, kw__property,  kw__entrypoint,
         kw___try, kw___catch, kw___finally, kw___fault,  kw__declspec,  kw__rtllinkage, kw__attribute,
+        kw___offsetof,
     /* These next are generic register names */
     kw_D0, kw_D1, kw_D2, kw_D3, kw_D4, kw_D5, kw_D6, kw_D7, kw_D8, kw_D9, kw_DA,
         kw_DB, kw_DC, kw_DD, kw_DE, kw_DF, kw_A0, kw_A1, kw_A2, kw_A3, kw_A4,
@@ -144,8 +145,8 @@ enum ovcl
 
 typedef struct
 {
-    FPF r;
-    FPF i;
+    FPFC r;
+    FPFC i;
 } _COMPLEX_S;
 
 // clang-format off
@@ -236,7 +237,7 @@ enum e_bt
 // clang-format on
 
 // clang-format off
-enum e_lk { lk_none, lk_cdecl, lk_pascal, lk_stdcall, lk_c, lk_cpp,
+enum e_lk { lk_none, lk_cdecl, lk_pascal, lk_stdcall, lk_fastcall, lk_c, lk_cpp,
     lk_interrupt, lk_fault, lk_inline, lk_virtual, lk_noreturn, lk_threadlocal, 
     lk_import, lk_export, lk_auto, lk_msil_rtl, lk_unmanaged, lk_property, lk_entrypoint };
 // clang-format on
@@ -306,7 +307,7 @@ typedef struct expr
     union
     {
         LLONG_TYPE i;
-        FPF f;
+        FPFC f;
         _COMPLEX_S c;
         struct sym* sp; /* sym will be defined later */
         char* name;     /* name during base class processing */
@@ -370,7 +371,7 @@ union u_val
 {
     LLONG_TYPE i;  /* int val */
     ULLONG_TYPE u; /* nsigned val */
-    FPF f;         /* float val */
+    FPFC f;        /* float val */
     _COMPLEX_S c;
     union
     {
@@ -403,6 +404,7 @@ typedef struct typ
     int rref : 1;
     int decltypeauto : 1;
     int decltypeautoextended : 1;
+    int stringconst : 1;
     char bits;      /* -1 for not a bit val, else bit field len */
     char startbit;  /* start of bit field */
     struct sym* sp; /* pointer to a symbol which describes the type */
@@ -657,12 +659,14 @@ typedef struct sym
     int offset;                                           /* address offset of data in the given seg, or optimize register */
     int vtaboffset;                                       /* vtab offset for virtual functions */
     int label;                                            /* label number for statics */
+    int uniqueID;                                         /* unique index for local statics */
     int startLine, endLine;                               /* line numbers spanning the function */
     short paramsize;                                      /* Size of parameter list for stdcall functions */
     short structAlign;                                    /* alignment of structures/ unions */
     short accessibleTemplateArgument;                     /* something used as a template argument was validated for
                                                            * accessibility before instantiating the template */
-    int retcount;                                         /* number of return statements in a function */
+    short retblockparamadjust;                            /* Adjustment for retblock parameters */
+    short retcount;                                         /* number of return statements in a function */
     /* Also name for CPP overload lists */
     /* also default for template parameters, is a TYP */
     char* importfile;    /* import name */
@@ -995,16 +999,41 @@ typedef struct kwblk
      (((lex)->kw->key == kw_auto ? (cparams.prm_cplusplus ? TT_BASETYPE : TT_STORAGE_CLASS) : (lex)->kw->tokenTypes) & (types)))
 #define KW(lex) (ISKW(lex) ? (lex)->kw->key : kw_none)
 
+enum e_lexType
+{
+    l_none,
+    l_i,
+    l_ui,
+    l_l,
+    l_ul,
+    l_ll,
+    l_ull,
+    l_f,
+    l_d,
+    l_ld,
+    l_I,
+    l_id,
+    l_kw,
+    l_astr,
+    l_wstr,
+    l_ustr,
+    l_Ustr,
+    l_u8str,
+    l_msilstr,
+    l_achr,
+    l_wchr,
+    l_uchr,
+    l_Uchr,
+    l_qualifiedname,
+    l_asminst,
+    l_asmreg
+};
+
 typedef struct lexeme
 {
     struct lexeme *next, *prev;
     // clang-format off
-    enum e_lexType { l_none, l_i, l_ui, l_l, l_ul, l_ll, l_ull, l_f, l_d, l_ld, l_I, 
-            l_id, l_kw, 
-            l_astr, l_wstr,  l_ustr, l_Ustr, l_u8str, l_msilstr, 
-            l_achr, l_wchr, l_uchr, l_Uchr, 
-            l_qualifiedname, l_asminst, l_asmreg
-         } type;
+    enum e_lexType type;
     // clang-format on
     union u_val value;
     char* litaslit;

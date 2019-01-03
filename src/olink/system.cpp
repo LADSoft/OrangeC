@@ -1,7 +1,10 @@
 #include <string.h>
 #include <ctype.h>
-#include <windows.h>
-
+#ifdef GCCLINUX
+#    include <stdlib.h>
+#else
+#    include <windows.h>
+#endif
 namespace std
 
 {
@@ -10,6 +13,9 @@ namespace std
 // when it is used...
 int winsystem(const char* cmd)
 {
+#ifdef GCCLINUX
+    return system(cmd);
+#else
     STARTUPINFO stStartInfo;
     PROCESS_INFORMATION stProcessInfo;
     DWORD exitCode;
@@ -33,5 +39,6 @@ int winsystem(const char* cmd)
     CloseHandle(stProcessInfo.hProcess);
     CloseHandle(stProcessInfo.hThread);
     return 0;
+#endif
 }
 }  // namespace std

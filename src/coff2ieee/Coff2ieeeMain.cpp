@@ -33,9 +33,9 @@
 #include "ObjFile.h"
 #include "ObjIeee.h"
 #include <iostream>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <cstring>
+#include <cstdlib>
+#include <cstdio>
 #include <fstream>
 
 CmdSwitchParser Coff2ieeeMain::SwitchParser;
@@ -59,7 +59,7 @@ Coff2ieeeMain::~Coff2ieeeMain() {}
 std::string Coff2ieeeMain::GetOutputName(char* infile) const
 {
     std::string name;
-    if (outputFileSwitch.GetValue().size() != 0)
+    if (!outputFileSwitch.GetValue().empty())
     {
         name = outputFileSwitch.GetValue();
         const char* p = strrchr(name.c_str(), '.');
@@ -99,7 +99,7 @@ int Coff2ieeeMain::Run(int argc, char** argv)
     char* modName = Utils::GetModuleName();
     CmdSwitchFile internalConfig(SwitchParser);
     std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
-    std::fstream configTest(configName.c_str(), std::ios::in);
+    std::fstream configTest(configName, std::ios::in);
     if (!configTest.fail())
     {
         configTest.close();

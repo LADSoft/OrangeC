@@ -33,7 +33,7 @@
 #include "CmdFiles.h"
 #include "LinkTokenizer.h"
 #include <iostream>
-#include <string.h>
+#include <cstring>
 #include <map>
 
 class LibManager;
@@ -165,13 +165,13 @@ class LinkManager
     static void LinkError(const ObjString& error)
     {
         HookError(0);
-        std::cout << "Error: " << error.c_str() << std::endl;
+        std::cout << "Error: " << error << std::endl;
         errors++;
     }
     static void LinkWarning(const ObjString& error)
     {
         HookError(1);
-        std::cout << "Warning: " << error.c_str() << std::endl;
+        std::cout << "Warning: " << error << std::endl;
         warnings++;
     }
 
@@ -191,6 +191,7 @@ class LinkManager
   private:
     void LoadExterns(ObjFile* file, ObjExpression* exp);
     void LoadSectionExternals(ObjFile* file, ObjSection* section);
+    void MarkExternals(ObjFile* file);
     void MergePublics(ObjFile* file, bool toerr);
     bool ScanVirtuals();
     void LoadFiles();

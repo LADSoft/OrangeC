@@ -27,7 +27,7 @@
 #define LIBDICTIONARY_H
 
 #include "ObjTypes.h"
-#include <stdio.h>
+#include <cstdio>
 #include <map>
 
 class ObjFile;

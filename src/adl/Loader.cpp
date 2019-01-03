@@ -1,112 +1,102 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
+ *     (at your option) any later version, with the addition of the
  *     Orange C "Target Code" exception.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "Loader.h"
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <fstream>
+#include <iostream>
 
 void Parser::DumpDB()
 {
     std::cout << "Name: " << processorName << std::endl;
-    for (std::map<std::string, std::string>::iterator it = parameters.begin();
-         it != parameters.end(); ++it)
+    for (auto& m : parameters)
     {
-        std::cout << "Param: " << it->first << " Value: " << it->second << std::endl;
+        std::cout << "Param: " << m.first << " Value: " << m.second << std::endl;
     }
-    for (std::deque<Number *>::iterator it = numbers.begin(); it != numbers.end();
-         ++it)
+    for (auto x : numbers)
     {
-        Number *n = (*it);
+        Number* n = (x);
         std::cout << "Number: " << n->name << std::endl;
-        for (std::deque<std::string>::iterator it1 = n->values.begin();
-             it1 != n->values.end(); ++it1)
+        for (auto n : n->values)
         {
-            std::cout << "\t" << (*it1) << std::endl;
+            std::cout << "\t" << n << std::endl;
         }
     }
-    for (std::map<std::string, std::string>::iterator it = stateVars.begin();
-         it != stateVars.end(); ++it)
+    for (auto& m : stateVars)
     {
-        std::cout << "State Var: " << it->first << " Init: " << it->second << std::endl;
+        std::cout << "State Var: " << m.first << " Init: " << m.second << std::endl;
     }
-    for (std::deque<State *>::iterator it = states.begin(); it != states.end(); ++it)
+    for (auto x : states)
     {
-        State *s = *it;
+        State* s = x;
         std::cout << "State: " << s->name << std::endl;
-        for (std::map<std::string, std::string>::iterator it1 = s->clauses.begin();
-             it1 != s->clauses.end(); ++it1)
+        for (auto& m : s->clauses)
         {
-            std::cout << "\t if (" <<it1->first << "): '" << it1->second << "'" << std::endl;
+            std::cout << "\t if (" << m.first << "): '" << m.second << "'" << std::endl;
         }
     }
-    for (std::deque<Register *>::iterator it = registers.begin(); it != registers.end(); ++it)
+    for (auto x : registers)
     {
-        Register *r = *it;
+        Register* r = x;
         std::cout << "Register: " << r->name << " Classes: " << r->cclass << std::endl;
-        for (std::map<std::string, std::string>::iterator it1 = r->values.begin();
-             it1 != r->values.end(); ++it1)
+        for (auto& m : r->values)
         {
-            std::cout << "\tExpr: " << it1->first << " Value: " << it1->second << std::endl;
+            std::cout << "\texpr: " << m.first << " Value: " << m.second << std::endl;
         }
     }
-    for (std::deque<Address *>::iterator it = addresses.begin(); it != addresses.end(); ++it)
+    for (auto x : addresses)
     {
-        Address *r = *it;
+        Address* r = x;
         std::cout << "Address: " << r->name << " Classes: " << r->cclass << std::endl;
         std::cout << "\tCoding: " << r->coding << std::endl;
-        for (std::map<std::string, std::string>::iterator it1 = r->values.begin();
-             it1 != r->values.end(); ++it1)
+        for (auto& m : r->values)
         {
-            std::cout << "\tExpr: " << it1->first << " Value: " << it1->second << std::endl;
+            std::cout << "\texpr: " << m.first << " Value: " << m.second << std::endl;
         }
     }
-    for (std::deque<Opcode *>::iterator it = opcodes.begin(); it != opcodes.end(); ++it)
+    for (auto x : opcodes)
     {
-        Opcode *r = *it;
+        Opcode* r = x;
         std::cout << "Opcode: " << r->name << " Classes: " << r->cclass << std::endl;
-        for (std::map<std::string, std::string>::iterator it1 = r->values.begin();
-             it1 != r->values.end(); ++it1)
+        for (auto& m : r->values)
         {
-            std::cout << "\tExpr: " << it1->first << " Value: " << it1->second << std::endl;
+            std::cout << "\texpr: " << m.first << " Value: " << m.second << std::endl;
         }
-        for (std::deque<Operand *>::iterator it1 = r->operands.begin();
-             it1 != r->operands.end(); ++ it1)
+        for (auto o : r->operands)
         {
-            Operand *o = *it1;
             std::cout << "Operand: " << o->name << " Coding: " << o->coding << std::endl;
-            for (std::map<std::string, std::string>::iterator it2 = o->values.begin();
-                 it2 != o->values.end(); ++it2)
+            for (std::map<std::string, std::string>::iterator itm = o->values.begin(); itm != o->values.end(); ++itm)
             {
-                std::cout << "\tExpr: " << it2->first << " Value: " << it2->second << std::endl;
+                std::cout << "\texpr: " << itm->first << " Value: " << itm->second << std::endl;
             }
         }
     }
-    for (std::deque<Prefix *>::iterator it = prefixes.begin(); it != prefixes.end(); ++it)
+    for (auto x : prefixes)
     {
-        Prefix *p = *it;
+        Prefix* p = x;
         std::cout << "Prefix: " << p->name << " Coding: " << p->coding << std::endl;
     }
 }
@@ -118,24 +108,24 @@ struct Param
 };
 struct RegData
 {
-    Parser *parser;
+    Parser* parser;
     std::string name;
     std::string defaultClass;
     std::string extendedClass;
     std::map<std::string, std::string> values;
-} ;
+};
 struct StateVar
 {
-    Parser *parser;
+    Parser* parser;
     std::string name;
     std::string init;
 };
-bool Parser::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
+bool Parser::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData)
 {
     // shouldn't be any attribs
     return true;
 }
-bool Parser::VisitNode(xmlNode &node, xmlNode *child, void *userData)
+bool Parser::VisitNode(xmlNode& node, xmlNode* child, void* userData)
 {
     if (child->GetName() == "Processor")
     {
@@ -149,59 +139,53 @@ bool Parser::VisitNode(xmlNode &node, xmlNode *child, void *userData)
     }
     return true;
 }
-bool Parser::ProcessorParser::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
+bool Parser::ProcessorParser::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData)
 {
-    Parser *parser = (Parser *)userData;
-    if (attrib->GetName() == "Name" )
+    Parser* parser = (Parser*)userData;
+    if (attrib->GetName() == "Name")
     {
         parser->processorName = attrib->GetValue();
     }
     return true;
 }
-bool Parser::ProcessorParser::VisitNode(xmlNode &node, xmlNode *child, void *userData)
+bool Parser::ProcessorParser::VisitNode(xmlNode& node, xmlNode* child, void* userData) { return true; }
+bool Parser::CodingParser::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData) { return true; }
+bool Parser::CodingParser::VisitNode(xmlNode& node, xmlNode* child, void* userData)
 {
-    return true;
-}
-bool Parser::CodingParser::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
-{
-    return true;
-}
-bool Parser::CodingParser::VisitNode(xmlNode &node, xmlNode *child, void *userData)
-{
-    Parser *parser = (Parser *)userData;
+    Parser* parser = (Parser*)userData;
     if (child->GetName() == "Param")
     {
         CodingParamParser p;
         Param x;
         x.name = "";
-        x.value= "";
+        x.value = "";
         child->Visit(p, &x);
         parser->parameters[x.name] = x.value;
     }
     else if (child->GetName() == "Number")
     {
         CodingNumberParser p;
-        Number *number = new Number;
+        Number* number = new Number;
         child->Visit(p, number);
         number->id = parser->numbers.size();
         parser->numbers.push_back(number);
     }
     else if (child->GetName() == "StateVars")
     {
-    
+
         CodingStatevarsParser p;
         StateVar r;
         r.parser = parser;
         child->Visit(p, &r);
     }
-    else if (child->GetName()== "State")
+    else if (child->GetName() == "State")
     {
         CodingStateParser p;
-        State *s = new State;
+        State* s = new State;
         child->Visit(p, s);
         parser->states.push_back(s);
     }
-    else if (child->GetName()== "Register")
+    else if (child->GetName() == "Register")
     {
         CodingRegisterParser p;
         RegData r;
@@ -211,66 +195,62 @@ bool Parser::CodingParser::VisitNode(xmlNode &node, xmlNode *child, void *userDa
     else if (child->GetName() == "Address")
     {
         CodingAddressParser p;
-        Address *a = new Address;
+        Address* a = new Address;
         child->Visit(p, a);
         parser->addresses.push_back(a);
     }
     else if (child->GetName() == "Opcode")
     {
         CodingOpcodeParser p;
-        Opcode *o = new Opcode;
+        Opcode* o = new Opcode;
         child->Visit(p, o);
         o->id = parser->opcodes.size();
         parser->opcodes.push_back(o);
         if (o->name == "")
             parser->opcodeClasses[o->cclass] = o;
-        for (std::deque<Operand *>::iterator it = o->operands.begin();
-             it != o->operands.end(); ++it)
+        for (auto x : o->operands)
         {
-            (*it)->id = parser->operands.size();
-            parser->operands.push_back(*it);
+            x->id = parser->operands.size();
+            parser->operands.push_back(x);
         }
     }
     else if (child->GetName() == "Prefix")
     {
         CodingPrefixParser p;
-        Prefix *prefix = new Prefix;
+        Prefix* prefix = new Prefix;
         child->Visit(p, prefix);
         parser->prefixes.push_back(prefix);
     }
     return true;
 }
-bool Parser::CodingParamParser::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
+bool Parser::CodingParamParser::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData)
 {
-    Param *x = (Param *)userData;
-    if (attrib->GetName() == "Name" )
+    Param* x = (Param*)userData;
+    if (attrib->GetName() == "Name")
     {
         x->name = attrib->GetValue();
     }
-    else if (attrib->GetName() == "Value" )
+    else if (attrib->GetName() == "Value")
     {
         x->value = attrib->GetValue();
     }
     return true;
 }
-bool Parser::CodingParamParser::VisitNode(xmlNode &node, xmlNode *child, void *userData)
+bool Parser::CodingParamParser::VisitNode(xmlNode& node, xmlNode* child, void* userData) { return true; }
+bool Parser::CodingNumberParser::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData)
 {
-    return true;
-}
-bool Parser::CodingNumberParser::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
-{
-    Number *number = (Number *)userData;
-    if (attrib->GetName() == "Name" )
+    Number* number = (Number*)userData;
+    if (attrib->GetName() == "Name")
     {
         number->name = attrib->GetValue();
     }
     else if (attrib->GetName() == "relOfs")
     {
-        number->relOfs = atoi(attrib->GetValue().c_str());
+        number->relOfs = std::stoi(attrib->GetValue());
     }
     return true;
 }
-bool Parser::CodingNumberParser::VisitNode(xmlNode &node, xmlNode *child, void *userData)
+bool Parser::CodingNumberParser::VisitNode(xmlNode& node, xmlNode* child, void* userData)
 {
     if (child->GetName() == "Instance")
     {
@@ -279,10 +259,10 @@ bool Parser::CodingNumberParser::VisitNode(xmlNode &node, xmlNode *child, void *
     }
     return true;
 }
-bool Parser::CodingNumberInstanceParser::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
+bool Parser::CodingNumberInstanceParser::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData)
 {
-    Number *number = (Number *)userData;
-    if (attrib->GetName() == "Value" )
+    Number* number = (Number*)userData;
+    if (attrib->GetName() == "Value")
     {
         number->values.push_back(attrib->GetValue());
     }
@@ -292,17 +272,11 @@ bool Parser::CodingNumberInstanceParser::VisitAttrib(xmlNode &node, xmlAttrib *a
     }
     return true;
 }
-bool Parser::CodingNumberInstanceParser::VisitNode(xmlNode &node, xmlNode *child, void *userData)
+bool Parser::CodingNumberInstanceParser::VisitNode(xmlNode& node, xmlNode* child, void* userData) { return true; }
+bool Parser::CodingStatevarsParser::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData) { return false; }
+bool Parser::CodingStatevarsParser::VisitNode(xmlNode& node, xmlNode* child, void* userData)
 {
-    return true;
-}
-bool Parser::CodingStatevarsParser::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
-{
-    return false;
-}
-bool Parser::CodingStatevarsParser::VisitNode(xmlNode &node, xmlNode *child, void *userData)
-{
-    StateVar *r = (StateVar *)userData;
+    StateVar* r = (StateVar*)userData;
     if (child->GetName() == "Instance")
     {
         CodingStatevarsInstanceParser p;
@@ -313,36 +287,33 @@ bool Parser::CodingStatevarsParser::VisitNode(xmlNode &node, xmlNode *child, voi
     }
     return true;
 }
-bool Parser::CodingStatevarsInstanceParser::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
+bool Parser::CodingStatevarsInstanceParser::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData)
 {
-    StateVar *r = (StateVar *)userData;
-    if (attrib->GetName() == "Name" )
+    StateVar* r = (StateVar*)userData;
+    if (attrib->GetName() == "Name")
     {
         r->name = attrib->GetValue();
     }
-    else if (attrib->GetName() == "Init" )
+    else if (attrib->GetName() == "Init")
     {
         r->init = attrib->GetValue();
     }
     return true;
 }
-bool Parser::CodingStatevarsInstanceParser::VisitNode(xmlNode &node, xmlNode *child, void *userData)
+bool Parser::CodingStatevarsInstanceParser::VisitNode(xmlNode& node, xmlNode* child, void* userData) { return true; }
+bool Parser::CodingStateParser ::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData)
 {
-    return true;
-}
-bool Parser::CodingStateParser ::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
-{
-    State *s = (State *)userData;
-    if (attrib->GetName() == "Name" )
+    State* s = (State*)userData;
+    if (attrib->GetName() == "Name")
     {
         s->name = attrib->GetValue();
-    }	
+    }
     return true;
 }
-bool Parser::CodingStateParser ::VisitNode(xmlNode &node, xmlNode *child, void *userData)
+bool Parser::CodingStateParser ::VisitNode(xmlNode& node, xmlNode* child, void* userData)
 {
-    State *s = (State *)userData;
-    if (child->GetName()=="When")
+    State* s = (State*)userData;
+    if (child->GetName() == "When")
     {
         CodingStateWhenParser p;
         Param r;
@@ -351,56 +322,53 @@ bool Parser::CodingStateParser ::VisitNode(xmlNode &node, xmlNode *child, void *
     }
     return true;
 }
-bool Parser::CodingStateWhenParser::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
+bool Parser::CodingStateWhenParser::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData)
 {
-    Param *p = (Param *)userData;
-    if (attrib->GetName() == "Cond" )
+    Param* p = (Param*)userData;
+    if (attrib->GetName() == "Cond")
     {
         p->name = attrib->GetValue();
     }
-    else if (attrib->GetName() == "Value" )
+    else if (attrib->GetName() == "Value")
     {
         p->value = attrib->GetValue();
     }
     return true;
 }
-bool Parser::CodingStateWhenParser::VisitNode(xmlNode &node, xmlNode *child, void *userData)
+bool Parser::CodingStateWhenParser::VisitNode(xmlNode& node, xmlNode* child, void* userData) { return true; }
+bool Parser::CodingRegisterParser::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData)
 {
-    return true;
-}
-bool Parser::CodingRegisterParser::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
-{
-    RegData *r = (RegData *)userData;
-    if (attrib->GetName() == "Class" )
+    RegData* r = (RegData*)userData;
+    if (attrib->GetName() == "Class")
     {
         r->defaultClass = attrib->GetValue();
     }
     return true;
 }
-bool Parser::CodingRegisterParser::VisitNode(xmlNode &node, xmlNode *child, void *userData)
+bool Parser::CodingRegisterParser::VisitNode(xmlNode& node, xmlNode* child, void* userData)
 {
-    RegData * r = (RegData *)userData;
+    RegData* r = (RegData*)userData;
     if (child->GetName() == "Instance")
     {
         CodingRegisterInstanceParser p;
         r->name = "";
         r->values.clear();
-        r->extendedClass="";
+        r->extendedClass = "";
         child->Visit(p, r);
-        Register *reg = new Register(r->name, r->defaultClass+","+r->extendedClass, r->values);
+        Register* reg = new Register(r->name, r->defaultClass + "," + r->extendedClass, r->values);
         reg->id = r->parser->registers.size();
         r->parser->registers.push_back(reg);
     }
     return true;
 }
-bool Parser::CodingRegisterInstanceParser::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
+bool Parser::CodingRegisterInstanceParser::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData)
 {
-    RegData * r = (RegData *)userData;
-    if (attrib->GetName() == "Name" )
+    RegData* r = (RegData*)userData;
+    if (attrib->GetName() == "Name")
     {
         r->name = attrib->GetValue();
     }
-    else if (attrib->GetName() == "Class" )
+    else if (attrib->GetName() == "Class")
     {
         r->extendedClass = attrib->GetValue();
     }
@@ -410,33 +378,27 @@ bool Parser::CodingRegisterInstanceParser::VisitAttrib(xmlNode &node, xmlAttrib 
     }
     return true;
 }
-bool Parser::CodingRegisterInstanceParser::VisitNode(xmlNode &node, xmlNode *child, void *userData)
+bool Parser::CodingRegisterInstanceParser::VisitNode(xmlNode& node, xmlNode* child, void* userData) { return true; }
+bool Parser::CodingDoubleRegParser ::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData)
 {
-    return true;
-}
-bool Parser::CodingDoubleRegParser ::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
-{
-    if (attrib->GetName() == "Name" )
+    if (attrib->GetName() == "Name")
     {
     }
     return true;
 }
-bool Parser::CodingDoubleRegParser ::VisitNode(xmlNode &node, xmlNode *child, void *userData)
+bool Parser::CodingDoubleRegParser ::VisitNode(xmlNode& node, xmlNode* child, void* userData) { return true; }
+bool Parser::CodingAddressParser ::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData)
 {
-    return true;
-}
-bool Parser::CodingAddressParser ::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
-{
-    Address *r = (Address *)userData;
-    if (attrib->GetName() == "Name" )
+    Address* r = (Address*)userData;
+    if (attrib->GetName() == "Name")
     {
         r->name = attrib->GetValue();
     }
-    else if (attrib->GetName() == "Class" )
+    else if (attrib->GetName() == "Class")
     {
         r->cclass = attrib->GetValue();
     }
-    else if (attrib->GetName() == "Coding" )
+    else if (attrib->GetName() == "Coding")
     {
         r->coding = attrib->GetValue();
     }
@@ -445,20 +407,16 @@ bool Parser::CodingAddressParser ::VisitAttrib(xmlNode &node, xmlAttrib *attrib,
         r->values[attrib->GetName()] = attrib->GetValue();
     }
     return true;
-
 }
-bool Parser::CodingAddressParser ::VisitNode(xmlNode &node, xmlNode *child, void *userData)
+bool Parser::CodingAddressParser ::VisitNode(xmlNode& node, xmlNode* child, void* userData) { return true; }
+bool Parser::CodingOpcodeParser::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData)
 {
-    return true;
-}
-bool Parser::CodingOpcodeParser::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
-{
-    Opcode *r = (Opcode *) userData;
-    if (attrib->GetName() == "Name" )
+    Opcode* r = (Opcode*)userData;
+    if (attrib->GetName() == "Name")
     {
         r->name = attrib->GetValue();
     }
-    else if (attrib->GetName() == "Class" )
+    else if (attrib->GetName() == "Class")
     {
         r->cclass = attrib->GetValue();
     }
@@ -468,25 +426,26 @@ bool Parser::CodingOpcodeParser::VisitAttrib(xmlNode &node, xmlAttrib *attrib, v
     }
     return true;
 }
-bool Parser::CodingOpcodeParser::VisitNode(xmlNode &node, xmlNode *child, void *userData)
+bool Parser::CodingOpcodeParser::VisitNode(xmlNode& node, xmlNode* child, void* userData)
 {
-    Opcode *opcodes = (Opcode *)userData;
+    Opcode* opcodes = (Opcode*)userData;
     if (child->GetName() == "Operands")
     {
         CodingOpcodeOperandParser p;
-        Operand *o = new Operand;
+        Operand* o = new Operand;
         child->Visit(p, o);
         opcodes->operands.push_back(o);
     }
+    return true;
 }
-bool Parser::CodingOpcodeOperandParser::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
+bool Parser::CodingOpcodeOperandParser::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData)
 {
-    Operand *operand = (Operand *)userData;
-    if (attrib->GetName() == "Name" )
+    Operand* operand = (Operand*)userData;
+    if (attrib->GetName() == "Name")
     {
         operand->name = attrib->GetValue();
     }
-    else if (attrib->GetName() == "Coding" )
+    else if (attrib->GetName() == "Coding")
     {
         operand->coding = attrib->GetValue();
     }
@@ -496,13 +455,10 @@ bool Parser::CodingOpcodeOperandParser::VisitAttrib(xmlNode &node, xmlAttrib *at
     }
     return true;
 }
-bool Parser::CodingOpcodeOperandParser::VisitNode(xmlNode &node, xmlNode *child, void *userData)
+bool Parser::CodingOpcodeOperandParser::VisitNode(xmlNode& node, xmlNode* child, void* userData) { return true; }
+bool Parser::CodingPrefixParser::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData)
 {
-    return true;
-}
-bool Parser::CodingPrefixParser::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
-{
-    Prefix *prefix = (Prefix *)userData;
+    Prefix* prefix = (Prefix*)userData;
     if (attrib->GetName() == "Name")
     {
         prefix->name = attrib->GetValue();
@@ -513,8 +469,4 @@ bool Parser::CodingPrefixParser::VisitAttrib(xmlNode &node, xmlAttrib *attrib, v
     }
     return true;
 }
-bool Parser::CodingPrefixParser::VisitNode(xmlNode &node, xmlNode *child, void *userData)
-{
-    return true;
-}
-
+bool Parser::CodingPrefixParser::VisitNode(xmlNode& node, xmlNode* child, void* userData) { return true; }

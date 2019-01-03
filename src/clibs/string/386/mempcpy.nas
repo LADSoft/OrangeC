@@ -29,11 +29,13 @@
 section code CLASS=CODE USE32
 
 _mempcpy:
+	push ebp
+	mov ebp, esp
 	push ebx
-	mov	edx,[esp+8]
-	mov ecx,[esp+ 16]
+	mov	edx,[ebp+8]
+	mov ecx,[ebp+ 16]
 	jecxz	x2
-	mov	ebx,[esp+12]
+	mov	ebx,[ebp+12]
 lp1:
 	test	dl,3
 	jz	lp
@@ -63,4 +65,5 @@ lp2:
 x2:
 	mov eax,edx
 	pop	ebx
+	pop ebp
 	ret

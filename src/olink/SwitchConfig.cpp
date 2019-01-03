@@ -28,9 +28,9 @@
 #include "ObjExpression.h"
 #include "LinkExpression.h"
 #include <fstream>
-#include <stdlib.h>
-#include <ctype.h>
-#include <string.h>
+#include <cstdlib>
+#include <cctype>
+#include <cstring>
 
 #if defined(WIN32) || defined(MICROSOFT)
 #    define system(x) winsystem(x)
@@ -116,7 +116,7 @@ bool ConfigData::VisitNode(xmlNode& node, xmlNode* child, void* userData)
 }
 void ConfigData::AddDefine(LinkManager& linker, const std::string& name, const std::string& value)
 {
-    int n = strtoul(value.c_str(), nullptr, 0);
+    int n = std::stoi(value, nullptr, 0);
     LinkExpression* lexp = new LinkExpression(n);
     LinkExpressionSymbol* lsym = new LinkExpressionSymbol(name, lexp);
     LinkExpression::EnterSymbol(lsym, true);
@@ -168,7 +168,7 @@ int SwitchConfig::Parse(const char* data)
 }
 bool SwitchConfig::ReadConfigFile(const std::string& file)
 {
-    std::fstream in(file.c_str(), std::ios::in);
+    std::fstream in(file, std::ios::in);
     if (!in.fail())
     {
         xmlNode* node = new xmlNode();
@@ -191,14 +191,14 @@ bool SwitchConfig::Validate()
     {
         if (data->selected)
         {
-            if (name.size() != 0)
+            if (!name.empty())
             {
                 if (name != data->app)
                     return false;
             }
             else
                 name = data->app;
-            if (spec.size() != 0)
+            if (!spec.empty())
             {
                 if (spec != data->specFile)
                     return false;
@@ -312,11 +312,15 @@ int SwitchConfig::RunApp(const std::string& path, const std::string& file, const
             flags = flags + " " + data->appFlags;
         }
     }
-    if (name.size() == 0)
+    if (name.empty())
         return 0;  // nothing to do, all ok
-    std::string cmd = std::string("\"") + path + name + "\" -! ";
-    if (debugFile.size())
+    std::string cmd = std::string("\"") + path + name + "\" ";
+    if (!verbose)
+        cmd = cmd + "/! ";
+    if (!debugFile.empty())
         cmd = cmd + "\"/v" + debugFile + "\" ";
+    if (verbose)
+        cmd = cmd + "/y ";
     cmd = cmd + flags + "\"" + file + "\"";
     for (auto name : files)
         cmd = cmd + " \"" + name + "\"";

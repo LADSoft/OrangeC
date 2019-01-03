@@ -81,7 +81,7 @@ class ppMacro
         else
             return nullptr;
     }
-    bool InMacro() { return stack.size() != 0; }
+    bool InMacro() { return !stack.empty(); }
     void SetPreProcessor(PreProcessor* PP) { pp = PP; }
 
   protected:

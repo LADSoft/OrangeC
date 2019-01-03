@@ -31,16 +31,33 @@
 #include <list>
 #include <vector>
 #include <stdlib.h>
-#include <limits.h>
+#include <climits>
 #include "AsmExpr.h"
 
 class Instruction;
 class Section;
 class AsmFile;
 
+struct ocode;  // compiler support
+struct expr;   // compiler support
+struct amode;  // compiler support
+
+enum asmError
+{
+    AERR_NONE,
+    AERR_SYNTAX,
+    AERR_OPERAND,
+    AERR_BADCOMBINATIONOFOPERANDS,
+    AERR_UNKNOWNOPCODE,
+    AERR_INVALIDINSTRUCTIONUSE
+};
+
 class Coding
 {
   public:
+#ifdef DEBUG
+    std::string name;
+#endif
     enum Type
     {
         eot,
@@ -52,49 +69,32 @@ class Coding
         stateFunc = 32,
         stateVar = 64,
         number = 128,
-        native = 256,
-        illegal = 512
+        optional = 256,
+        native = 512,
+        illegal = 1024
     } type;
     int val;
-    int bits;
-    int field;
-    int math;
-    int mathval;
+    unsigned char bits;
+    unsigned char field;
+    char unary;
+    char binary;
 };
-class CodingHelper
-{
-  public:
-    CodingHelper() : bits(8), math(0), mathval(0), field(-1) {}
-    CodingHelper(const CodingHelper& old)
-    {
-        bits = old.bits;
-        math = old.math;
-        mathval = old.mathval;
-        field = old.field;
-    }
-    CodingHelper& operator=(const CodingHelper& old)
-    {
-        bits = old.bits;
-        math = old.math;
-        mathval = old.mathval;
-        field = old.field;
-        return *this;
-    }
-    int DoMath(int val);
-    int bits;
-    int math;
-    int mathval;
-    int field;
-};
+#ifdef DEBUG
+#    define CODING_NAME(x) x,
+#else
+#    define CODING_NAME(x)
+#endif
+
 class Numeric
 {
   public:
+    Numeric(AsmExprNode* n) : node(n) {}
     Numeric() : node(nullptr) {}
     AsmExprNode* node;
-    int pos;
-    int relOfs;
-    int size;
-    int used;
+    int pos = 0;
+    int relOfs = 0;
+    int size = 0;
+    int used = 0;
 };
 class BitStream
 {
@@ -129,7 +129,7 @@ class InputToken
 class InstructionParser
 {
   public:
-    InstructionParser() : expr(nullptr) {}
+    InstructionParser() : asmexpr(nullptr) {}
 
     static InstructionParser* GetInstance();
 
@@ -139,6 +139,7 @@ class InstructionParser
     virtual void Setup(Section* sect) = 0;
     virtual void Init() = 0;
     virtual bool ParseSection(AsmFile* fil, Section* sect) = 0;
+    virtual bool ParseDirective(AsmFile* fil, Section* sect) = 0;
     virtual bool IsBigEndian() = 0;
     bool SetNumber(int tokenPos, int oldVal, int newVal);
 
@@ -157,7 +158,7 @@ class InstructionParser
         TOKEN_BASE = 0,
         REGISTER_BASE = 1000
     };
-    virtual bool DispatchOpcode(int opcode) = 0;
+    virtual asmError DispatchOpcode(int opcode) = 0;
     void NextToken(int PC);
     enum
     {
@@ -172,21 +173,30 @@ class InstructionParser
     AsmExprNode* val;
     int tokenPos;
     Numeric* numeric;
-    struct lt
-    {
-        bool operator()(const std::string& left, const std::string& right) const
-        {
-            return stricmp(left.c_str(), right.c_str()) < 0;
-        }
-    };
-    std::map<std::string, int, lt> tokenTable;
-    std::map<std::string, int, lt> opcodeTable;
-    std::map<std::string, int, lt> prefixTable;
+    std::map<std::string, int> tokenTable;
+    std::map<std::string, int> opcodeTable;
+    std::map<std::string, int> prefixTable;
     std::list<Numeric*> operands;
     std::list<Coding*> CleanupValues;
     std::list<int> prefixes;
     std::vector<InputToken*> inputTokens;
     BitStream bits;
-    AsmExpr expr;
+    AsmExpr asmexpr;
+
+    // c compiler support
+
+  public:
+    std::string FormatInstruction(ocode* ins);
+    asmError GetInstruction(ocode* ins, Instruction*& newIns, std::list<Numeric*>& operands);
+
+  protected:
+    void SetRegToken(int reg, int sz);
+    void SetNumberToken(int val);
+    bool SetNumberToken(expr* offset, int& n);
+    void SetExpressionToken(expr* offset);
+    void SetSize(int sz);
+    void SetBracketSequence(bool open, int sz, int seg);
+    void SetOperandTokens(amode* operand);
+    void SetTokens(ocode* ins);
 };
 #endif

@@ -35,8 +35,6 @@
 
 class ObjFile;
 class ObjBrowseInfo;
-#include <map>
-#include <string>
 
 class SymData;
 
@@ -82,7 +80,7 @@ class SymData
     int globalCount;
     int argCount;
     int localCount;
-    __int64 index;
+    long long index;
     unsigned fileOffs;
     void insert(BrowseData* xx) { data.push_back(xx); }
 };

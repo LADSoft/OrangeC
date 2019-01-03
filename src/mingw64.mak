@@ -41,8 +41,8 @@ LLIB_DEPENDENCIES = $(notdir $(filter-out $(EXCLUDE) $(MAIN_DEPENDENCIES), $(CPP
 
 
 CC=x86_64-w64-mingw32-gcc
-CCFLAGS = -c -D__MSVCRT__ -U__STRICT_ANSI__
-
+CCFLAGS = -c -D__MSVCRT__ -U__STRICT_ANSI__ -fpermissive
+CPPFLAGS = -std=c++11
 LINK=ld
 LFLAGS=-L$(_LIBDIR)
 
@@ -65,7 +65,7 @@ DEFINES:=$(addprefix -D,$(DEFINES))
 DEFINES:=$(subst @, ,$(DEFINES))
 
 CCFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES)\
-    -DGNUC -DWIN32 -D_WIN32_IE=0x600 -D_WIN32_WINNT=0x500 -DWINVER=0x500
+    -DGNUC -DWIN32 -D_WIN32_IE=0x600 -D_WIN32_WINNT=0x500 -DWINVER=0x500 -D_WIN32
 
 ifeq "$(TARGET)" "GUI"
 LFLAGS := $(LFLAGS) -s -Wl,--subsystem,windows
@@ -79,7 +79,7 @@ vpath %.a $(_LIBDIR)
 vpath %.res $(_OUTPUTDIR)
 
 %.o: %.cpp
-	$(CC) -std=c++11 $(CCFLAGS) -o$(_OUTPUTDIR)/$@ $^
+	$(CC) $(CPPFLAGS) $(CCFLAGS) -o$(_OUTPUTDIR)/$@ $^
 
 %.o: %.c
 	$(CC) $(CCFLAGS) -o$(_OUTPUTDIR)/$@ $^

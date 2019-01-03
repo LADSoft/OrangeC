@@ -53,7 +53,6 @@ extern int errlineno;
 extern int inSymFile;
 extern char* rcIdFile;
 
-char* infile;
 extern WCHAR* lptr;         /* shared with preproc */
 extern FILE* inclfile[10];  /* shared with preproc */
 extern char* inclfname[10]; /* shared with preproc */
@@ -65,6 +64,9 @@ extern int inclInputLen[10];
 extern char* inclInputBuffer[10];
 extern char* inclibufPtr[10];
 extern int inhfile;
+
+BOOL needingID;
+char* infile;
 
 char intstring[50];
 int lineno;
@@ -246,7 +248,7 @@ static void CacheLine(WCHAR* lptr, char* xbuf)
 }
 //-------------------------------------------------------------------------
 
-int getline(int listflag)
+int GetLine(int listflag)
 /*
  * Read in a line, preprocess it, and dump it to the list and preproc files
  * Also strip comments and alter trigraphs
@@ -376,7 +378,7 @@ int getch(void)
             lastch = ' ';
             break;
         }
-        if (getline(incldepth == 0))
+        if (GetLine(incldepth == 0))
             return lastch = -1;
     }
     return lastch;
@@ -485,7 +487,7 @@ int getsch(void) /* return an in-quote character */
         case 'x':
         {
             int n = 0, count = 0;
-            while (isxdigit(lastch))
+            while (isxdigit(lastch) && count < 2)
             {
                 count++;
                 lastch -= 0x30;
@@ -1110,7 +1112,8 @@ void getsym(void)
     else if (isstartchar(lastch))
     {
         getid();
-        searchkw();
+        if (!needingID)
+            searchkw();
     }
     else
         getsym2();

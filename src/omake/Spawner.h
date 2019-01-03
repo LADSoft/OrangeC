@@ -32,6 +32,8 @@
 #include "os.h"
 #ifdef _WIN32
 #    define WINFUNC __stdcall
+#else
+#    define WINFUNC
 #endif
 
 enum OutputType

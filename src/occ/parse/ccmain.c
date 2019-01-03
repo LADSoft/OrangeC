@@ -38,7 +38,7 @@ extern char version[256];
 extern int optflags;
 extern LIST* nonSysIncludeFiles;
 
-#ifdef MICROSOFT
+#ifdef _WIN32
 char* __stdcall GetModuleFileNameA(int handle, char* buf, int size);
 #endif
 
@@ -59,7 +59,7 @@ FILE *errFile, *icdFile;
 char infile[256];
 
 static char tempOutFile[260];
-static char realOutFile[260];
+char realOutFile[260];
 static char oldOutFile[260];
 
 static FILE* inputFile = 0;
@@ -119,6 +119,7 @@ void verbose_setup(char select, char* string);
 void library_setup(char select, char* string);
 void tool_setup(char select, char* string);
 void warning_setup(char select, char* string);
+void sysincl_setup(char select, char* string);
 /* setup for ARGS.C */
 static CMDLIST Args[] = {{'8', ARG_BOOL, bool_setup},
                          {'9', ARG_BOOL, bool_setup},
@@ -126,6 +127,7 @@ static CMDLIST Args[] = {{'8', ARG_BOOL, bool_setup},
                          {'A', ARG_BOOL, bool_setup},
                          {'E', ARG_CONCATSTRING, err_setup},
                          {'I', ARG_COMBINESTRING, incl_setup},
+                         {'z', ARG_COMBINESTRING, sysincl_setup},
                          {'L', ARG_COMBINESTRING, libpath_setup},
                          {'D', ARG_CONCATSTRING, def_setup},
                          {'U', ARG_CONCATSTRING, undef_setup},
@@ -462,7 +464,7 @@ void compile(BOOLEAN global)
         lex = getsym();
         if (lex)
         {
-            while ((lex = declare(lex, NULL, NULL, sc_global, lk_none, NULL, TRUE, FALSE, FALSE, FALSE, ac_public)) != NULL)
+            while ((lex = declare(lex, NULL, NULL, sc_global, lk_none, NULL, TRUE, FALSE, FALSE, ac_public)) != NULL)
                 ;
         }
     }
@@ -695,7 +697,7 @@ int main(int argc, char* argv[])
             if (cparams.prm_browse)
             {
                 char name[260];
-                strcpy(name, outfile);
+                strcpy(name, realOutFile);
                 StripExt(name);
                 AddExt(name, ".cbr");
                 browseFile = fopen(name, "wb");
@@ -797,7 +799,7 @@ int main(int argc, char* argv[])
             rv = 0;
             if (chosenAssembler->compiler_postprocess)
             {
-#ifdef MICROSOFT
+#ifdef _WIN32
                 GetModuleFileNameA(NULL, buffer, sizeof(buffer));
 #else
                 strcpy(buffer, argv[0]);

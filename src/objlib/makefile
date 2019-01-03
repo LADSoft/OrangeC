@@ -21,15 +21,16 @@
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
+include ../pathext2.mak
 
 NAME=objlib
 MAIN_FILE=test2.cpp
-INCLUDES=..\util
+INCLUDES=..$(PATHEXT2)util
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=util
 EXCLUDE=ObjIO test2
 H_FILES=$(wildcard *.h)
 
-include ..\redirect.mak
+include ../redirect.mak
 
 DISTRIBUTE:

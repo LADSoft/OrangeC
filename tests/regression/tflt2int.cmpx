@@ -1,0 +1,39 @@
+Info:  'TAILOR' not defined => NOT using any bug workarounds.
+This program tests conversions from floating-point types to integer types.
+It tests positive powers of 2.0, e.g., f = 2.0**j
+It tests both i = +f; and i = -f;
+For numbers that are representable, it checks expected value and no exceptions.
+For numbers that are NOT representable, it checks for FE_INVALID exception.
+This implementation does not claim conformance to IEC-60559 or IEEE-754
+Checks of the floating-point exception flags may be meaningless.
+Testing conversion from long double to unsigned long long
+Testing conversion from long double to signed long long
+Testing conversion from long double to unsigned long
+Testing conversion from long double to signed long
+Testing conversion from long double to unsigned int
+Testing conversion from long double to signed int
+Testing conversion from long double to unsigned short
+Testing conversion from long double to signed short
+Testing conversion from long double to unsigned char
+Testing conversion from long double to signed char
+Testing conversion from double to unsigned long long
+Testing conversion from double to signed long long
+Testing conversion from double to unsigned long
+Testing conversion from double to signed long
+Testing conversion from double to unsigned int
+Testing conversion from double to signed int
+Testing conversion from double to unsigned short
+Testing conversion from double to signed short
+Testing conversion from double to unsigned char
+Testing conversion from double to signed char
+Testing conversion from float to unsigned long long
+Testing conversion from float to signed long long
+Testing conversion from float to unsigned long
+Testing conversion from float to signed long
+Testing conversion from float to unsigned int
+Testing conversion from float to signed int
+Testing conversion from float to unsigned short
+Testing conversion from float to signed short
+Testing conversion from float to unsigned char
+Testing conversion from float to signed char
+Test ( Pass ) {} 

@@ -18,6 +18,9 @@
     <None Include="parse\compiler.p">
       <Filter>Header Files</Filter>
     </None>
+    <None Include="x86\be.p">
+      <Filter>Header Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="parse\beinterf.c">
@@ -69,9 +72,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="parse\mangle.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="parse\memory.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="parse\osutil.c">
@@ -158,22 +158,7 @@
     <ClCompile Include="preproc\PREPROC.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="x86\gen.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="x86\inasm.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="x86\invoke.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="x86\outasm.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="x86\outcode.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="x86\peep.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="x86\config.c">
@@ -183,9 +168,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\util\winsystem.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="x86\objieeea.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="parse\cppbltin.c">
@@ -209,9 +191,6 @@
     <ClCompile Include="parse\libcxx.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\crc.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="parse\ccerr.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -219,6 +198,60 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="parse\wseh.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x86\beIntrins.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x86\gen.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x86\inasm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x86\outasm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x86\peep.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x86\outcode.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x86\InstructionParser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\oasm\AsmExpr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\oasm\Instruction.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\oasm\x64Instructions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x86\x64stub.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parse\memory.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\oasm\Section.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\oasm\AsmFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\oasm\AsmLexer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parse\crc32.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x86\x64Parser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x86\dbgtypes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -263,6 +296,45 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="x86\x86regs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="x86\beIntrinsicProtos.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\oasm\AsmExpr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\oasm\Fixup.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\oasm\Instruction.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\oasm\Label.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\oasm\x64Instructions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\oasm\x64Operand.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\oasm\x64Parser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\oasm\Section.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\oasm\AsmFile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\oasm\AsmLexer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="x86\dbgtypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\oasm\InstructionParser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

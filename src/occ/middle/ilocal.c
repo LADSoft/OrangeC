@@ -51,7 +51,52 @@ int tempSize;
 BRIGGS_SET* killed;
 int tempBottom, nextTemp;
 
-static void renameOneSym(SYMBOL* sp)
+int fastcallAlias;
+
+static void CalculateFastcall(SYMBOL* funcsp)
+{
+    fastcallAlias = 0;
+#ifndef CPPTHISCALL
+    if (funcsp->linkage != lk_fastcall)
+        return;
+#endif
+
+    if (chosenAssembler->arch->fastcallRegCount)
+    {
+        HASHREC* hr = basetype(funcsp->tp)->syms->table[0];
+        while (hr)
+        {
+            SYMBOL* sp = (SYMBOL*)hr->p;
+            if (sp->thisPtr)
+            {
+                fastcallAlias++;
+            }
+            else
+            {
+                if (funcsp->linkage != lk_fastcall)
+                    break;
+                if (fastcallAlias >= chosenAssembler->arch->fastcallRegCount)
+                    break;
+                TYPE* tp = basetype(sp->tp);
+
+                if ((tp->type < bt_float || (tp->type == bt_pointer && basetype(basetype(tp)->btp)->type != bt_func) ||
+                     isref(tp)) &&
+                    (sp->storage_class == sc_parameter))
+                {
+                    if (sp->tp->size > chosenAssembler->arch->parmwidth)
+                        break;
+                }
+                else
+                {
+                    break;
+                }
+                fastcallAlias++;
+            }
+            hr = hr->next;
+        }
+    }
+}
+static void renameOneSym(SYMBOL* sp, BOOLEAN structret)
 {
     TYPE* tp;
     /* needed for pointer aliasing */
@@ -90,33 +135,76 @@ static void renameOneSym(SYMBOL* sp)
     if (tp->type == bt_typedef)
         tp = tp->btp;
     tp = basetype(tp);
-    if (!sp->pushedtotemp && !sp->imaddress && !sp->inasm && !sp->inCatch &&
+
+    BOOLEAN fastcallCandidate =
+        sp->storage_class == sc_parameter && fastcallAlias &&
+        (sp->offset - fastcallAlias * chosenAssembler->arch->parmwidth < chosenAssembler->arch->retblocksize);
+
+    if (!sp->pushedtotemp && (!sp->imaddress || fastcallCandidate) && !sp->inasm && (!sp->inCatch || fastcallCandidate) &&
         (((chosenAssembler->arch->hasFloatRegs || tp->type < bt_float) && tp->type < bt_void) ||
-         (tp->type == bt_pointer && tp->btp->type != bt_func) || isref(tp)) &&
-        (sp->storage_class == sc_auto || sp->storage_class == sc_register || sp->storage_class == sc_parameter) && !sp->usedasbit)
+         (tp->type == bt_pointer && basetype(basetype(tp)->btp)->type != bt_func) || isref(tp)) &&
+        (sp->storage_class == sc_auto || sp->storage_class == sc_register || sp->storage_class == sc_parameter) &&
+        (!sp->usedasbit || fastcallCandidate))
     {
         /* this works because all IMODES refering to the same
          * variable are the same, at least until this point
          * that will change when we start inserting temps
          */
         IMODE* parmName;
-        EXPRESSION* ep = tempenode();
-        ep->v.sp->tp = sp->tp;
-        ep->right = (EXPRESSION*)sp;
-        /* marking both the orignal var and the new temp as pushed to temp*/
-        sp->pushedtotemp = TRUE;
-        ep->v.sp->pushedtotemp = TRUE;
+        EXPRESSION* ep;
+        if (sp->imaddress || sp->inCatch)
+        {
+            ep = anonymousVar(sc_auto, sp->tp);  // fastcall which takes an address
+        }
+        else
+        {
+            ep = tempenode();
+            ep->v.sp->tp = sp->tp;
+            ep->right = (EXPRESSION*)sp;
+            /* marking both the orignal var and the new temp as pushed to temp*/
+            sp->pushedtotemp = TRUE;
+            ep->v.sp->pushedtotemp = TRUE;
+        }
         sp->allocate = FALSE;
+
+        BOOLEAN dofastcall = FALSE;
+
         if (sp->storage_class == sc_parameter)
         {
-            parmName = (IMODE*)Alloc(sizeof(IMODE));
-            *parmName = *sp->imvalue;
+            if (fastcallAlias)
+            {
+                // for fastcall, rename the affected parameter nodes with
+                // a temp.   It will later be precolored...
+                if (sp->offset - (fastcallAlias + structret) * chosenAssembler->arch->parmwidth <
+                        chosenAssembler->arch->retblocksize &&
+                    (!structret || sp->offset != chosenAssembler->arch->retblocksize))
+                {
+                    parmName = tempreg(sp->imvalue->size, 0);
+                    dofastcall = TRUE;
+                }
+                else
+                {
+                    parmName = (IMODE*)Alloc(sizeof(IMODE));
+                    *parmName = *sp->imvalue;
+                }
+            }
+            else
+            {
+                parmName = (IMODE*)Alloc(sizeof(IMODE));
+                *parmName = *sp->imvalue;
+            }
         }
         if (sp->imvalue)
         {
             ep->isvolatile = sp->imvalue->offset->isvolatile;
             ep->isrestrict = sp->imvalue->offset->isrestrict;
             sp->imvalue->offset = ep;
+        }
+        if (sp->imaddress)
+        {
+            ep->isvolatile = sp->imvalue->offset->isvolatile;
+            ep->isrestrict = sp->imvalue->offset->isrestrict;
+            sp->imaddress->offset = ep;
         }
         if (sp->imind)
         {
@@ -137,6 +225,12 @@ static void renameOneSym(SYMBOL* sp)
             while (bl1->fwd->dc.opcode == i_line || bl1->fwd->dc.opcode == i_label)
                 bl1 = bl1->fwd;
             gen_icode(i_assn, sp->imvalue, parmName, 0);
+            if (dofastcall)
+            {
+                intermed_tail->alwayslive = TRUE;
+                intermed_tail->fastcall =
+                    -(sp->offset - chosenAssembler->arch->retblocksize) / chosenAssembler->arch->parmwidth - 1 + structret;
+            }
             q = intermed_tail;
             q->back->fwd = NULL;
             intermed_tail = q->back;
@@ -153,10 +247,12 @@ static void renameToTemps(SYMBOL* funcsp)
     LIST* lst;
     BOOLEAN doRename = TRUE;
     HASHTABLE* temp = funcsp->inlineFunc.syms;
+    CalculateFastcall(funcsp);
     doRename &= (cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) && !functionHasAssembly;
     /* if there is a setjmp in the function, no variable gets moved into a reg */
     doRename &= !(setjmp_used);
     temp = funcsp->inlineFunc.syms;
+    BOOLEAN structret = !!isstructured(basetype(funcsp->tp)->btp);
     while (temp)
     {
         HASHREC* hr = temp->table[0];
@@ -164,7 +260,7 @@ static void renameToTemps(SYMBOL* funcsp)
         {
             SYMBOL* sym = (SYMBOL*)hr->p;
             if (doRename)
-                renameOneSym(sym);
+                renameOneSym(sym, structret);
             hr = hr->next;
         }
         temp = temp->next;
@@ -175,7 +271,7 @@ static void renameToTemps(SYMBOL* funcsp)
         SYMBOL* sym = (SYMBOL*)lst->data;
         if (!sym->anonymous && doRename)
         {
-            renameOneSym(sym);
+            renameOneSym(sym, structret);
         }
         lst = lst->next;
     }

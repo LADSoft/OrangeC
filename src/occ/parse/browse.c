@@ -29,8 +29,11 @@
 #include <string.h>
 #include "compiler.h"
 #include "browse.h"
-#include <direct.h>
-
+#ifndef GCCLINUX
+#    include <direct.h>
+#else
+#    include <unistd.h>
+#endif
 extern COMPILER_PARAMS cparams;
 extern ARCH_DEBUG* chosenDebugger;
 extern INCLUDES* includes;
@@ -72,6 +75,7 @@ void abspath(char* name)
         strcpy(p, name);
         strcpy(nname, projname);
     }
+#ifdef WIN32
     else
     {
         projname[0] = _getdrive() + 'A' - 1;
@@ -79,6 +83,7 @@ void abspath(char* name)
         strcpy(projname + 2, name);
         strcpy(name, projname);
     }
+#endif
 }
 
 /*-------------------------------------------------------------------------*/

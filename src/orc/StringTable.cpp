@@ -27,7 +27,6 @@
 #include "ResFile.h"
 #include "RCFile.h"
 #include "Errors.h"
-#include <windows.h>
 #include <stdexcept>
 
 std::map<int, StringTable*> StringTable::stringTables;
@@ -80,7 +79,7 @@ void StringTable::Add(int id, const std::wstring& val)
 {
     int errid = id;
     id &= 15;
-    if (strings[id].size() != 0)
+    if (!strings[id].empty())
         throw new std::runtime_error(std::string("String id ") + Errors::ToNum(errid) + " already used");
     strings[id] = val;
 }
@@ -92,11 +91,8 @@ StringTable* StringTable::Lookup(ResFile& resFile, int id)
     {
         return it->second;
     }
-    else
-    {
-        StringTable* rv = new StringTable(id, currentInfo);
-        // if (rv)
-        resFile.Add(rv);
-        return rv;
-    }
+    StringTable* rv = new StringTable(id, currentInfo);
+    // if (rv)
+    resFile.Add(rv);
+    return rv;
 }

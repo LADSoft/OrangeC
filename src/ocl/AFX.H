@@ -9,7 +9,7 @@
 #  define DEBUG 0
 #endif
 
-#include "..\version.h"
+#include "../version.h"
 
 typedef struct {
 	int temp;

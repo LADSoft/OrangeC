@@ -24,10 +24,10 @@
  */
 
 #include "Utils.h"
-#include "floating.h"
+#include "Floating.h"
 #include <iostream>
 #include <fstream>
-#include <limits.h>
+#include <climits>
 
 bool FPF::bigEndian = false;
 
@@ -608,7 +608,7 @@ FPF& FPF::Divide(FPF& dest, const FPF& x, const FPF& y)
     dest.Round();
     return dest;
 }
-void FPF::FromLongLong(L_INT myllong)
+void FPF::FromLongLong(long long myllong)
 {
     u16 myword; /* Used to hold converted stuff */
     if (myllong < 0L)
@@ -648,7 +648,7 @@ void FPF::FromLongLong(L_INT myllong)
         Normalize();
     }
 }
-void FPF::FromUnsignedLongLong(unsigned L_INT myllong)
+void FPF::FromUnsignedLongLong(unsigned long long myllong)
 {
     u16 myword; /* Used to hold converted stuff */
     sign = 0;
@@ -820,11 +820,11 @@ void FPF::ToString(std::string& dest) const
     }
 }
 
-L_INT FPF::ToLongLong() const
+long long FPF::ToLongLong() const
 {
     FPF stemp = *this;
     int exp = stemp.exp;
-    L_INT rv = 0;
+    long long rv = 0;
 #ifdef LLONG_MAX
     int maxExp = 63;
 #else

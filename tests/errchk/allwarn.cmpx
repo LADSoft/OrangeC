@@ -1,7 +1,0 @@
-Warning(141)  errparam.c(3):  Parameter 'a' unused in function err_1
-Warning(105)  errparam.c(3):  Function should return a value in function err_1
-Warning( 73)  errparam.c(5):  Missing type in declaration
-Warning(105)  errparam.c(6):  Function should return a value in function err_2
-Warning( 73)  errparam.c(8):  Missing type in declaration
-Warning( 21)  errparam.c(9):  File not terminated with End Of Line character in function err_3
-Warning(105)  errparam.c(9):  Function should return a value in function err_3

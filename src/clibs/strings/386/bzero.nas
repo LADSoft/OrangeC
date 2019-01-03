@@ -27,42 +27,11 @@
 %endif
 [global _bzero]
 
+[extern _memset]
+
 SECTION code CLASS=CODE USE32
 _bzero:
-    mov	ecx,[esp+8]
-    jecxz	x2
-    sub eax,eax
-    cld
-    mov	edx,[esp + 4]
-    push	edi
-    mov	edi,edx
-    xchg ecx,edx
-    and	ecx,3		; all this up to notwoa is to align on a dword boundary
-    jecxz	aligned
-    neg	ecx
-    add	ecx,4
-allp:
-    stosb
-    dec	edx
-    jz	x1
-    loop	allp
-aligned:
-    mov	ecx,edx
-    push 	ecx
-    shr	ecx,2
-    rep	stosd
-    pop	ecx
-    shr	cl,1
-    jnc	noone
-    stosb
-noone:
-    shr	cl,1
-    jnc	notwo
-    stosw
-notwo:
-x1:
-    pop	edi
-x2:
-    mov eax,[esp+4]
-    ret
-    
+	pop		eax
+	push	0
+	push	eax
+	jmp		_memset

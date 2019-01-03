@@ -29,10 +29,12 @@
 SECTION code CLASS=CODE USE32
 
 _strncpy:
-		mov	ecx,[esp+4]	;	str1
+        push ebp
+		mov ebp, esp
+		mov	ecx,[ebp+8]	;	str1
 		mov	ah,3
-		mov	edx,[esp+8]	;  str2
-        cmp dword [esp+12],0
+		mov	edx,[ebp+12]	;  str2
+        cmp dword [ebp+16],0
         jz  CpyDone
 TestEdx:
 		test	dl,ah
@@ -46,38 +48,41 @@ QuadLoop:
 		add	edx,4		;	Update pointer
 		test	al,al	;	Look for null
 		jz	CpyDoneLoLo
-        cmp dword [esp+12],1
+        cmp dword [ebp+16],1
         jz  CpyDoneLoLo
 		test	ah,ah
 		jz	CpyDoneLoHi
-        cmp dword [esp+12],2
+        cmp dword [ebp+16],2
         jz  CpyDoneLoHi
 		test eax,0xFF0000
 		jz	CpyDoneHiLo
-        cmp dword [esp+12],3
+        cmp dword [ebp+16],3
         jz  CpyDoneHiLo
 		mov	[ecx],eax
 		add	ecx,4		;	(or 4 if misaligned)
-        sub dword [esp+12], 4
+        sub dword [ebp+16], 4
         jz  CpyDone
 		test eax,0xFF000000
 		jnz	QuadLoop
     
 CpyDone:
-		mov	eax,[esp+4]
+		mov	eax,[ebp+8]
+		pop ebp
 		ret
 
 CpyDoneLoLo:
 		mov	[ecx],al	; this is a zero
                 inc     ecx;
-		mov	eax,[esp+4]
+		mov	eax,[ebp+8]
+		pop ebp
 		ret
 
 CpyDoneLoHi:
 		mov	[ecx],ax
                 inc     ecx
                 inc     ecx
-		mov	eax,[esp+4]
+		mov	eax,[ebp+8]
+		pop ebp
 		ret
 
 CpyDoneHiLo:
@@ -85,7 +90,8 @@ CpyDoneHiLo:
         shr eax,16
         mov [ecx+2],al
         add ecx,3
-		mov	eax,[esp+4]
+		mov	eax,[ebp+8]
+		pop ebp
 		ret
 
 DoAlign:
@@ -93,9 +99,10 @@ DoAlign:
 		inc	edx
 		mov	[ecx],al
 		inc	ecx
-        dec dword [esp+12]
+        dec dword [ebp+16]
         jz  CpyDone
 		test	al,al
 		jnz	TestEdx
-		mov	eax,[esp+4]
+		mov	eax,[ebp+8]
+		pop ebp
 		ret

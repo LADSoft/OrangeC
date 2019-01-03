@@ -31,8 +31,10 @@
 SECTION code CLASS=CODE USE32
 
 _strcat:
+        push ebp
+		mov ebp, esp
 		mov	ah,3
-		mov	edx,[esp+4]	;	str1
+		mov	edx,[ebp+8]	;	str1
 TestEdx:
 		test	dl,ah
 		jnz	DoAlign

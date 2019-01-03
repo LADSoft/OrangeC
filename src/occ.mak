@@ -29,7 +29,7 @@ OBJ_IND_PATH := occ
 
 CPP_deps = $(notdir $(CPP_DEPENDENCIES:.cpp=.o))
 C_deps = $(notdir $(C_DEPENDENCIES:.c=.o))
-ASM_deps = $(notdir $(ASM_DEPENDENCIES:.nas=.o))
+ASM_deps = $(notdir $(ASM_DEPENDENCIES:.asm=.o))
 TASM_deps = $(notdir $(TASM_DEPENDENCIES:.asm=.o))
 RES_deps = $(notdir $(RC_DEPENDENCIES:.rc=.res))
 
@@ -42,17 +42,24 @@ LLIB_DEPENDENCIES = $(notdir $(filter-out $(addsuffix .o,$(EXCLUDE)) $(MAIN_DEPE
 
 
 CC=$(COMPILER_PATH)\bin\occ
-CCFLAGS = /c /E- /!
+ifneq "$(WITHDEBUG)" ""
+DEBUGFLAG := /v
+endif
 
+ifeq "$(VIAASSEMBLY)" ""
+CCFLAGS = /c /E- /! $(DEBUGFLAG)
+else
+CCFLAGS = /S /E- /!
+endif
 LINK=$(COMPILER_PATH)\bin\olink
-LFLAGS=-c -mx /L$(_LIBDIR) /!
+LFLAGS=-c -mx /L$(_LIBDIR) /! $(DEBUGFLAG)
 
 LIB=$(COMPILER_PATH)\bin\olib
 LIB_EXT:=.l
 LIB_PREFIX:=
 LIBFLAGS= /!
 
-ASM=$(COMPILER_PATH)\bin\\oasm
+ASM=$(COMPILER_PATH)\bin\oasm
 
 ASM=oasm
 ASMFLAGS= /!
@@ -97,13 +104,23 @@ vpath %.o $(_OUTPUTDIR)
 vpath %.l $(_LIBDIR)
 vpath %.res $(_OUTPUTDIR)
 
+ifeq "$(VIAASSEMBLY)" ""
 %.o: %.cpp
 	$(CC) $(CCFLAGS) -o$(_OUTPUTDIR)/$@ $^
 
 %.o: %.c
-	$(CC) /9 $(CCFLAGS) -o$(_OUTPUTDIR)/$@ $^
+	$(CC) $(CCFLAGS) -o$(_OUTPUTDIR)/$@ $^
 
-%.o: %.nas
+else
+%.o: %.cpp
+	$(CC) $(CCFLAGS) -o$(_OUTPUTDIR)/$*.asm $^
+	$(ASM) $(ASMFLAGS) -o$(_OUTPUTDIR)/$@ $(_OUTPUTDIR)/$*.asm
+%.o: %.c
+	$(CC) /9 $(CCFLAGS) -o$(_OUTPUTDIR)/$*.asm $^
+	$(ASM) $(ASMFLAGS) -o$(_OUTPUTDIR)/$@ $(_OUTPUTDIR)/$*.asm
+endif
+
+%.o: %.asm
 	$(ASM) $(ASMFLAGS) -o$(_OUTPUTDIR)/$@ $^
 
 %.res: %.rc

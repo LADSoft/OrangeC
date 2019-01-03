@@ -173,6 +173,22 @@
 #define PRIxPTR64           "llx"
 #define PRIXPTR64           "llX"
 
+#ifdef UINTPTR_MAX == INT32_MAX
+#define PRIdPTR             PRIdPTR32
+#define PRIiPTR             PRIiPTR32
+#define PRIoPTR             PRIoPTR32
+#define PRIuPTR             PRIuPTR32
+#define PRIxPTR             PRIxPTR32
+#define PRIXPTR             PRIXPTR32
+#else
+#define PRIdPTR             PRIdPTR64
+#define PRIiPTR             PRIiPTR64
+#define PRIoPTR             PRIoPTR64
+#define PRIuPTR             PRIuPTR64
+#define PRIxPTR             PRIxPTR64
+#define PRIXPTR             PRIXPTR64
+#endif
+
 #define SCNd8               "hhd"
 #define SCNi8               "hhi"
 #define SCNo8               "hho"
@@ -301,7 +317,6 @@ typedef struct {
 } imaxdiv_t;
 
 #ifdef __cplusplus
-namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -321,16 +336,6 @@ uintmax_t _RTL_FUNC _IMPORT wcstoumax(const wchar_t * restrict __nptr,
 
 #ifdef __cplusplus
 }
-}
 #endif
 
-#endif
-#if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__INTTYPES_H_USING_LIST)
-#define __INTTYPES_H_USING_LIST
-    using __STD_NS_QUALIFIER imaxabs ;
-    using __STD_NS_QUALIFIER imaxdiv ;
-    using __STD_NS_QUALIFIER strtoimax;
-    using __STD_NS_QUALIFIER strtoumax;
-    using __STD_NS_QUALIFIER wcstoimax;
-    using __STD_NS_QUALIFIER wcstoumax;
 #endif

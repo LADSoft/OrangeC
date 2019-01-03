@@ -27,7 +27,7 @@
 #include "Utils.h"
 #include "ObjExpression.h"
 #include "ObjFile.h"
-#include <string.h>
+#include <cstring>
 
 void PEFixupObject::Setup(ObjInt& endVa, ObjInt& endPhys)
 {
@@ -46,7 +46,7 @@ void PEFixupObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     {
         SetThunk(i, 0);
     }
-    if (fixups.size() == 0)
+    if (fixups.empty())
     {
         // for WINNT, he needs some reloc data even if it is empty...
         Block block;
@@ -113,12 +113,12 @@ bool PEFixupObject::IsRel(ObjExpression* e)
 }
 void PEFixupObject::LoadFixups()
 {
-    for (ObjFile::SectionIterator it = file->SectionBegin(); it != file->SectionEnd(); ++it)
+    for (auto it = file->SectionBegin(); it != file->SectionEnd(); ++it)
     {
         ObjInt base = (*it)->GetOffset()->Eval(0);
         ObjMemoryManager& m = (*it)->GetMemoryManager();
         int ofs = 0;
-        for (ObjMemoryManager::MemoryIterator it = m.MemoryBegin(); it != m.MemoryEnd(); ++it)
+        for (auto it = m.MemoryBegin(); it != m.MemoryEnd(); ++it)
         {
             int msize = (*it)->GetSize();
             ObjByte* mdata = (*it)->GetData();

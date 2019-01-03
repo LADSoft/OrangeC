@@ -22,30 +22,36 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-
+// This file contains a lot of comments that use mutexes, this is because OrangeC currently does not have C++ mutexes but once it
+// does it'll be done
 #define _CRT_SECURE_NO_WARNINGS
 
-#include <windows.h>
+#ifdef GCCLINUX
+#    include <unistd.h>
+#else
+#    include <windows.h>
+#    include <process.h>
+#    include <direct.h>
+#endif
 #undef WriteConsole
 #define __MT__  // BCC55 support
-#include <process.h>
-#include <direct.h>
-#include <stdio.h>
-#include <time.h>
-#undef min
-#undef max
+#include <cstdio>
+#include <ctime>
+#include <string>
 #include "Variable.h"
 #include "Eval.h"
 #include "os.h"
 #include <algorithm>
 #include <iostream>
 #include <sstream>
-
+//#include <mutex>
+#include "semaphores.h"
 //#define DEBUG
-
-static HANDLE jobsSemaphore;
-
+static Semaphore sema;
+#ifdef _WIN32
 static CRITICAL_SECTION consoleSync;
+#endif
+// static std::recursive_mutex consoleMut;
 std::deque<int> OS::jobCounts;
 bool OS::isSHEXE;
 int OS::jobsLeft;
@@ -76,12 +82,6 @@ static std::string QuoteCommand(std::string command)
                 rv.append(slashcount * 2, L'\\');
                 break;
             }
-            else if (*it == L'"')
-            {
-                // escape all the backslashes and add a \"
-                rv.append(slashcount * 2 + 1, L'\\');
-                rv.push_back('"');
-            }
             else
             {
                 // no escape
@@ -102,29 +102,51 @@ bool Time::operator>(const Time& last)
             return true;
     return false;
 }
-void OS::Init() { InitializeCriticalSection(&consoleSync); }
+void OS::Init()
+{
+#ifdef _WIN32
+    InitializeCriticalSection(&consoleSync);
+#endif
+}
+
 void OS::WriteConsole(std::string string)
 {
-    DWORD written;
+    // std::lock_guard<decltype(consoleMut)> lg(consoleMut);
+#ifdef _WIN32
     EnterCriticalSection(&consoleSync);
+
+    DWORD written;
     WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), string.c_str(), string.size(), &written, nullptr);
     LeaveCriticalSection(&consoleSync);
+#else
+    printf("%s\n", string.c_str());
+#endif
 }
 void OS::ToConsole(std::deque<std::string>& strings)
 {
+// std::lock_guard<decltype(consoleMut)> lg(consoleMut);
+#ifdef _WIN32
     EnterCriticalSection(&consoleSync);
+#endif
     for (auto s : strings)
     {
         WriteConsole(s);
     }
     strings.clear();
+#ifdef _WIN32
     LeaveCriticalSection(&consoleSync);
+#endif
 }
 void OS::AddConsole(std::deque<std::string>& strings, std::string string)
 {
+// std::lock_guard<decltype(consoleMut)> lg(consoleMut);
+#ifdef _WIN32
     EnterCriticalSection(&consoleSync);
+#endif
     strings.push_back(string);
+#ifdef _WIN32
     LeaveCriticalSection(&consoleSync);
+#endif
 }
 void OS::PushJobCount(int jobs)
 {
@@ -138,10 +160,10 @@ void OS::PopJobCount()
 }
 bool OS::TakeJob()
 {
-    WaitForSingleObject(jobsSemaphore, INFINITE);
+    sema.Wait();
     return false;
 }
-void OS::GiveJob() { ReleaseSemaphore(jobsSemaphore, 1, nullptr); }
+void OS::GiveJob() { sema.Post(); }
 void OS::JobInit()
 {
     std::string name;
@@ -153,7 +175,7 @@ void OS::JobInit()
     else
     {
         std::ostringstream t;
-        srand((unsigned)time(NULL));
+        srand((unsigned)time(nullptr));
         t << rand() << rand();
         name = t.str();
         v = new Variable(".OMAKESEM", name, Variable::f_recursive, Variable::o_environ);
@@ -161,13 +183,24 @@ void OS::JobInit()
     }
     v->SetExport(true);
     name = std::string("OMAKE") + name;
-    jobsSemaphore = CreateSemaphore(nullptr, jobsLeft, jobsLeft, name.c_str());
+    sema = Semaphore(name, jobsLeft);
 }
-void OS::JobRundown() { CloseHandle(jobsSemaphore); }
-void OS::Take() { EnterCriticalSection(&consoleSync); }
-void OS::Give() { LeaveCriticalSection(&consoleSync); }
+void OS::JobRundown() { sema.~Semaphore(); }
+void OS::Take()
+{
+#ifdef _WIN32
+    EnterCriticalSection(&consoleSync);
+#endif
+}
+void OS::Give()
+{
+#ifdef _WIN32
+    LeaveCriticalSection(&consoleSync);
+#endif
+}
 int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::string* output)
 {
+#ifdef _WIN32
     std::string command1 = command;
 
     Variable* v = VariableContainer::Instance()->Lookup("SHELL");
@@ -200,7 +233,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         cmd += " /c ";
     }
     cmd += QuoteCommand(command1);
-    STARTUPINFO startup;
+    STARTUPINFO startup = {};
     PROCESS_INFORMATION pi;
     HANDLE pipeRead, pipeWrite, pipeWriteDuplicate;
     if (output)
@@ -210,7 +243,6 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         CloseHandle(pipeWrite);
     }
     int rv;
-    memset(&startup, 0, sizeof(startup));
     startup.cb = sizeof(STARTUPINFO);
     startup.dwFlags = STARTF_USESTDHANDLES;
     startup.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
@@ -325,13 +357,17 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         CloseHandle(pipeWriteDuplicate);
     }
     delete[] env;
-#ifdef DEBUG
+#    ifdef DEBUG
     std::cout << rv << ":" << cmd << std::endl;
-#endif
+#    endif
     return rv;
+#else
+    return -1;
+#endif
 }
 std::string OS::SpawnWithRedirect(const std::string command)
 {
+#ifdef _WIN32
     std::string rv;
     Variable* v = VariableContainer::Instance()->Lookup("SHELL");
     if (!v)
@@ -380,9 +416,14 @@ std::string OS::SpawnWithRedirect(const std::string command)
     CloseHandle(pipeRead);
     CloseHandle(pipeWriteDuplicate);
     return rv;
+#else
+    return "";
+#endif
 }
 Time OS::GetCurrentTime()
 {
+#ifdef _WIN32
+
     SYSTEMTIME systemTime;
     ::GetLocalTime(&systemTime);
     struct tm tmx;
@@ -396,9 +437,14 @@ Time OS::GetCurrentTime()
     time_t t = mktime(&tmx);
     Time rv(t, systemTime.wMilliseconds);
     return rv;
+#else
+    Time rv;
+    return rv;
+#endif
 }
 Time OS::GetFileTime(const std::string fileName)
 {
+#ifdef _WIN32
     WIN32_FILE_ATTRIBUTE_DATA data;
     if (GetFileAttributesEx(fileName.c_str(), GetFileExInfoStandard, &data))
     {
@@ -419,11 +465,13 @@ Time OS::GetFileTime(const std::string fileName)
         Time rv(t, systemTime.wMilliseconds);
         return rv;
     }
+#endif
     Time rv;
     return rv;
 }
 void OS::SetFileTime(const std::string fileName, Time time)
 {
+#ifdef _WIN32
     FILETIME cr, ac, mod;
     HANDLE h =
         CreateFile(fileName.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
@@ -447,11 +495,12 @@ void OS::SetFileTime(const std::string fileName, Time time)
         ::SetFileTime(h, nullptr, nullptr, &mod);
         CloseHandle(h);
     }
+#endif
 }
 std::string OS::GetWorkingDir()
 {
-    char buf[MAX_PATH];
-    getcwd(buf, MAX_PATH);
+    char buf[260];
+    getcwd(buf, 260);
     return buf;
 }
 bool OS::SetWorkingDir(const std::string name) { return !chdir(name.c_str()); }
@@ -492,6 +541,13 @@ std::string OS::NormalizeFileName(const std::string file)
 }
 void OS::CreateThread(void* func, void* data)
 {
+#ifdef _WIN32
     CloseHandle((HANDLE)_beginthreadex(nullptr, 0, (unsigned(CALLBACK*)(void*))func, data, 0, NULL));
+#endif
 }
-void OS::Yield() { ::Sleep(10); }
+void OS::Yield()
+{
+#ifdef _WIN32
+    ::Sleep(10);
+#endif
+}

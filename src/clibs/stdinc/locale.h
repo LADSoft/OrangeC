@@ -56,7 +56,6 @@
 typedef void *locale_t;
 
 #ifdef __cplusplus
-namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -99,17 +98,8 @@ struct lconv *  _RTL_FUNC _IMPORT _llocaleconv( void );
 #endif
 #ifdef __cplusplus
 };
-};
 #endif
 
 #pragma pack()
 
 #endif  /* __LOCALE_H */
-#if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__LOCALE_H_USING_LIST)
-#define __LOCALE_H_USING_LIST
-    using __STD_NS_QUALIFIER lconv ;
-    using __STD_NS_QUALIFIER setlocale;
-    using __STD_NS_QUALIFIER _lsetlocale;
-    using __STD_NS_QUALIFIER localeconv;
-    using __STD_NS_QUALIFIER _llocaleconv;
-#endif

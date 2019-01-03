@@ -237,6 +237,8 @@ static ARCH_CHARACTERISTICS architecture = {
     0,                 /* defines registers */
     1,                 /* register trees count */
     0, 0, 0, 0, 0,     /* defines peephole information */
+    0,                 /* Max number of regs considered for fastcall */
+    NULL,              /* register list for regs used in fastcall */
     0,                 /* preferred optimizations */
     0,                 /* optimizations we don't want */
     0,                 /* error options */
@@ -398,8 +400,6 @@ ARCH_ASM assemblerInterface[] = {{
                                      usage_text, /* pointer to usage text */
                                      args,       /* extra args */
                                      sizeof(args) / sizeof(args[0]), /* number of args */
-                                     NULL,                           /* inline assembler opcode list, or null */
-                                     NULL,                           /* inline assembler register list, or null */
                                      prockeywords,     /* specific keywords, e.g. allow a 'bit' keyword and so forth */
                                      defines,          /* defines list to create at compile time, or null */
                                      NULL,             /* debug structure, or NULL */
@@ -440,8 +440,6 @@ ARCH_ASM assemblerInterface[] = {{
                                      usage_text, /* pointer to usage text */
                                      args,       /* extra args */
                                      sizeof(args) / sizeof(args[0]), /* number of args */
-                                     NULL,                           /* inline assembler opcode list, or null */
-                                     NULL,                           /* inline assembler register list, or null */
                                      prockeywords,     /* specific keywords, e.g. allow a 'bit' keyword and so forth */
                                      defines,          /* defines list to create at compile time, or null */
                                      NULL,             /* debug structure, or NULL */
@@ -482,8 +480,6 @@ ARCH_ASM assemblerInterface[] = {{
                                      usage_text, /* pointer to usage text */
                                      args,       /* extra args */
                                      sizeof(args) / sizeof(args[0]), /* number of args */
-                                     NULL,                           /* inline assembler opcode list, or null */
-                                     NULL,                           /* inline assembler register list, or null */
                                      prockeywords,     /* specific keywords, e.g. allow a 'bit' keyword and so forth */
                                      defines,          /* defines list to create at compile time, or null */
                                      NULL,             /* debug structure, or NULL */

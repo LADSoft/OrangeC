@@ -29,12 +29,14 @@
 SECTION code CLASS=CODE USE32
 
 _stpncpy:
+	push	ebp
+	mov		ebp, esp
     push	ebx
-    mov		ecx,[esp+16]
-    mov		eax,[esp+8]
+    mov		ecx,[ebp+16]
+    mov		eax,[ebp+8]
     dec		eax
     jecxz	x1
-    mov		edx,[esp+12]
+    mov		edx,[ebp+12]
 lp:
     inc		eax
     mov		bl,[edx]
@@ -44,9 +46,11 @@ lp:
     loopnz	lp
     jnz		x1
     pop	ebx
+	pop ebp
     ret
 x1:
     inc	eax
     pop	ebx
+	pop ebp
     ret
     

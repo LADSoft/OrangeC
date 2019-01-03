@@ -39,6 +39,7 @@ class ResourceContainer
     bool LoadFiles();
 
     size_t size() { return names.size(); }
+    bool empty() { return names.size() == 0; }
 #define SIGNAT 0x494e4753  //'SG' + ('NI' << 16)
     struct ResourceData
     {

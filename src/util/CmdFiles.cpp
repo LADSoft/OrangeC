@@ -23,8 +23,10 @@
  *
  */
 
-#include <windows.h>
-#include <io.h>
+#ifndef GCCLINUX
+#    include <io.h>
+#endif
+
 #include "CmdFiles.h"
 using namespace std;  // borland puts the io stuff in the std namespace...
                       // microsoft does not seem to.
@@ -51,10 +53,13 @@ bool CmdFiles::Add(char** array, bool recurseDirs)
 bool CmdFiles::RecurseDirs(const std::string& path, const std::string& name, bool recurseDirs)
 {
     bool rv = false;
+#ifndef GCCLINUX
     struct _finddata_t find;
+#endif
     std::string q = path + "*.*";
     size_t handle;
     // borland does not define the char * as const...
+#ifndef GCCLINUX
     if ((handle = _findfirst(const_cast<char*>(q.c_str()), &find)) != -1)
     {
         do
@@ -64,19 +69,21 @@ bool CmdFiles::RecurseDirs(const std::string& path, const std::string& name, boo
                 if (find.attrib & _A_SUBDIR)
                 {
                     std::string newName = path + std::string(find.name) + DIR_SEP + name;
-                    ;
                     rv |= Add(newName, recurseDirs);
                 }
             }
         } while (_findnext(handle, &find) != -1);
         _findclose(handle);
     }
+#endif
     return rv;
 }
 bool CmdFiles::Add(const std::string& name, bool recurseDirs)
 {
     bool rv = false;
+#ifndef GCCLINUX
     struct _finddata_t find;
+#endif
     std::string path, lname;
     size_t n = name.find_last_of(DIR_SEP[0]);
     size_t n1 = name.find_last_of('/');
@@ -104,6 +111,7 @@ bool CmdFiles::Add(const std::string& name, bool recurseDirs)
     }
     size_t handle;
     // borland does not define the char * as const...
+#ifndef GCCLINUX
     if ((handle = _findfirst(const_cast<char*>(name.c_str()), &find)) != -1)
     {
         do
@@ -118,6 +126,7 @@ bool CmdFiles::Add(const std::string& name, bool recurseDirs)
         } while (_findnext(handle, &find) != -1);
         _findclose(handle);
     }
+#endif
     if (recurseDirs)
     {
         rv |= RecurseDirs(path, lname, recurseDirs);

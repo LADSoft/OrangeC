@@ -26,7 +26,7 @@
 #include "Runner.h"
 #include "Depends.h"
 #include "Eval.h"
-#include "utils.h"
+#include "Utils.h"
 #include "Variable.h"
 #include <fstream>
 #include <list>
@@ -167,7 +167,7 @@ void Runner::CancelOne(Depends* depend)
         CancelOne(d);
     }
     std::string path = filePaths[depend->GetGoal()];
-    if (path.size() != 0)
+    if (!path.empty())
     {
         Variable* v = VariableContainer::Instance()->Lookup("GPATH");
         if (v)

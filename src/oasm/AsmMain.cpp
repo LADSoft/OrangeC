@@ -32,7 +32,11 @@
 #include "Listing.h"
 #include "UTF8.h"
 #include <stdlib.h>
-#include <io.h>
+#ifdef GCCLINUX
+#    include <unistd.h>
+#else
+#    include <io.h>
+#endif
 
 CmdSwitchParser AsmMain::SwitchParser;
 CmdSwitchBool AsmMain::CaseInsensitive(SwitchParser, 'i');
@@ -42,15 +46,17 @@ CmdSwitchBool AsmMain::PreprocessOnly(SwitchParser, 'e');
 CmdSwitchOutput AsmMain::OutputFile(SwitchParser, 'o', ".o");
 CmdSwitchDefine AsmMain::Defines(SwitchParser, 'D');
 CmdSwitchCombineString AsmMain::includePath(SwitchParser, 'I', ';');
+CmdSwitchBool AsmMain::BinaryOutput(SwitchParser, 'b');
 
 const char* AsmMain::usageText =
     "[options] file"
     "\n"
     "  @filename  use response file\n"
-    "  /e              Preprocess only                  /i     Case Insensitive Labels\n"
-    "  /l[m]           Listing file [macro expansions]  /oxxx  Set output file name\n"
-    "  /Dxxx           Define something                 /Ixxx  Set include file path\n"
-    "  /V, --version   Show version and date            /!,--nologo No logo\n"
+    "  /b     binary output                             /e              Preprocess only\n"
+    "  /i     Case Insensitive Labels                   /l[m]           Listing file [macro expansions]\n"
+    "  /oxxx  Set output file name                      /Dxxx           Define something\n"
+    "  /Ixxx  Set include file path                     /V, --version   Show version and date\n"
+    "  /!,--nologo No logo\n"
     "\n"
     "Time: " __TIME__ "  Date: " __DATE__;
 
@@ -86,7 +92,7 @@ void AsmMain::CheckAssign(std::string& line, PreProcessor& pp)
                 std::string name;
                 int value = 0;
                 npos = line.find_first_not_of(" \t\r\b\v", npos + 6 + (caseInsensitive ? 1 : 0));
-                if (npos == std::string::npos || !IsSymbolStartChar(line.c_str() + npos))
+                if (npos == std::string::npos || !Tokenizer::IsSymbolChar(line.c_str() + npos, true))
                 {
                     Errors::Error("Expected identifier");
                 }
@@ -94,7 +100,7 @@ void AsmMain::CheckAssign(std::string& line, PreProcessor& pp)
                 {
                     int npos1 = npos;
 
-                    while (npos1 != line.size() && IsSymbolChar(line.c_str() + npos1))
+                    while (npos1 != line.size() && Tokenizer::IsSymbolChar(line.c_str() + npos1, false))
                     {
                         int n = UTF8::CharSpan(line.c_str() + npos);
                         while (n && npos1 < line.size())
@@ -214,7 +220,7 @@ int AsmMain::Run(int argc, char* argv[])
         else
         {
             Listing listing;
-            AsmFile asmFile(pp, CaseInsensitive.GetValue(), listing);
+            AsmFile asmFile(pp, CaseInsensitive.GetValue(), BinaryOutput.GetValue(), listing);
             if (asmFile.Read())
             {
                 if (!asmFile.Write(outName, inName) || Errors::ErrorCount())

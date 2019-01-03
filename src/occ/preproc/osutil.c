@@ -29,7 +29,7 @@
 #include <stdarg.h>
 #include <ctype.h>
 #include <stdlib.h>
-#include "..\..\version.h"
+#include "../../version.h"
 
 #if defined(WIN32) || defined(MICROSOFT)
 char* __stdcall GetModuleFileNameA(void* handle, char* buf, int size);

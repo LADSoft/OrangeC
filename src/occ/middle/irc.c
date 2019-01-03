@@ -289,9 +289,9 @@ void regInit(void)
 }
 
 void alloc_init(void) { spillcount = maxAllocationSpills = 0; }
-static void cacheTempSymbol(SYMBOL* sp)
+void cacheTempSymbol(SYMBOL* sp)
 {
-    if (sp->anonymous && !sp->stackblock && sp->storage_class != sc_parameter)
+    if (sp->anonymous && sp->storage_class != sc_parameter)
     {
         if (sp->allocate && !sp->inAllocTable)
         {
@@ -416,7 +416,7 @@ void AllocateStackSpace(SYMBOL* funcsp)
         while (*temps)
         {
             SYMBOL* sp = (SYMBOL*)(*temps)->data;
-            if (sp->storage_class != sc_static && (sp->storage_class == sc_constant || sp->value.i == i))
+            if (sp->storage_class != sc_static && (sp->storage_class == sc_constant || sp->value.i == i) && !sp->stackblock)
             {
                 int val, align = sp->structAlign ? sp->structAlign : getAlign(sc_auto, basetype(sp->tp));
                 lc_maxauto += basetype(sp->tp)->size;
@@ -429,6 +429,20 @@ void AllocateStackSpace(SYMBOL* funcsp)
                 oldauto = max;
                 *temps = (*temps)->next;
                 sp->inAllocTable = FALSE;  // needed because due to inlining a temp may be used across multiple function bodies
+            }
+            else
+            {
+                temps = &(*temps)->next;
+            }
+        }
+        temps = &temporarySymbols;
+        while (*temps)
+        {
+            SYMBOL* sp = (SYMBOL*)(*temps)->data;
+            if (sp->stackblock)
+            {
+                sp->offset -= max;
+                *temps = (*temps)->next;
             }
             else
             {
@@ -889,6 +903,13 @@ static int tiny(QUAD* head, IMODE* compare)
  * according to Morgan instead of the way it is done in George & Appel
  * accordingly, this function just gets a list of moves
  */
+static int fsizeFromISZ(int sz)
+{
+    int n = sizeFromISZ(sz);
+    if (sz >= ISZ_FLOAT)
+        n += 100;
+    return n;
+}
 static void Build(BLOCK* b)
 {
     QUAD* head;
@@ -918,7 +939,7 @@ static void Build(BLOCK* b)
                     int u = head->ans->offset->v.sp->value.i;
                     int v = head->dc.left->offset->v.sp->value.i;
                     if (tempInfo[u]->regClass && (tempInfo[u]->regClass == tempInfo[v]->regClass ||
-                                                  sizeFromISZ(tempInfo[u]->size) == sizeFromISZ(tempInfo[v]->size)))
+                                                  fsizeFromISZ(tempInfo[u]->size) == fsizeFromISZ(tempInfo[v]->size)))
                     {
                         TEMP_INFO* t;
                         setbit(workingMoves, head->index);
@@ -1788,7 +1809,7 @@ static void SpillCoalesce(BRIGGS_SET* C, BRIGGS_SET* S)
                                 BOOLEAN test;
                                 int a = head->ans->offset->v.sp->value.i;
                                 int b = head->dc.left->offset->v.sp->value.i;
-                                if (sizeFromISZ(tempInfo[a]->size) == sizeFromISZ(tempInfo[b]->size) && !tempInfo[a]->directSpill &&
+                                if (fsizeFromISZ(tempInfo[a]->size) == fsizeFromISZ(tempInfo[b]->size) && !tempInfo[a]->directSpill &&
                                     !tempInfo[b]->directSpill)
                                 {
                                     {

@@ -27,7 +27,7 @@
 #include "ObjFunction.h"
 #include "ObjSection.h"
 #include "ObjExpression.h"
-#include <stdio.h>
+#include <cstdio>
 
 ObjSection* ObjExpression::GetSection()
 {
@@ -129,8 +129,7 @@ ObjInt ObjExpression::EvalNoModify(ObjInt pc)
         case eDiv:
             if (right->EvalNoModify(pc))
                 return left->EvalNoModify(pc) / right->EvalNoModify(pc);
-            else
-                return 0;
+            return 0;
         case eNeg:
             return -left->EvalNoModify(pc);
         case eCmpl:

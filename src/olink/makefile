@@ -21,19 +21,20 @@
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
+include ../pathext2.mak
 
 NAME=olink
 MAIN_FILE=LinkerMain.cpp
-INCLUDES=..\util ..\objlib ..\olib ..\sqlite3
+INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)objlib ..$(PATHEXT2)olib ..$(PATHEXT2)sqlite3
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=sqlite3 util objlib olib
 DEFINES=SQLITE_THREADSAFE=0
 H_FILES=$(wildcard *.h)
 
-include ..\redirect.mak
+include ../redirect.mak
 
 DISTRIBUTE: copyexe
 	copy *.app $(DISTBIN)
-	copy target.cfg $(DISTBIN)\olink.cfg
+	copy target.cfg $(DISTBIN)$(PATHEXT2)olink.cfg
 
 

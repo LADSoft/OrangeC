@@ -1,4 +1,8 @@
-#include <windows.h>
+#ifndef GCCLINUX
+#    include <windows.h>
+#else
+#    include <string.h>
+#endif
 #include <stdio.h>
 
 void fatal(char*, ...);
@@ -10,6 +14,8 @@ struct data
     int level;
     int length;
 };
+#ifndef GCCLINUX
+
 static void WaitForPipeData(HANDLE hPipe, int size)
 {
     int xx = GetTickCount();
@@ -28,10 +34,12 @@ static void WaitForPipeData(HANDLE hPipe, int size)
     }
     fatal("Broken pipe");
 }
+#endif
 static struct data* readFileFromPipe(char* filname)
 {
     char pipe[260];
     struct data* rv = NULL;
+#ifndef GCCLINUX
     HANDLE handle;
     sprintf(pipe, "\\\\.\\pipe\\%s", pipeName);
     handle = CreateFile(pipe, GENERIC_READ | GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -65,6 +73,7 @@ static struct data* readFileFromPipe(char* filname)
         }
         CloseHandle(handle);
     }
+#endif
     return rv;
 }
 void ccCloseFile(FILE* handle)

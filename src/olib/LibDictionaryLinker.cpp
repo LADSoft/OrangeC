@@ -25,7 +25,7 @@
 
 #include "LibDictionary.h"
 #include "ObjFile.h"
-#include <ctype.h>
+#include <cctype>
 #include <iostream>
 
 bool DictCompare::caseSensitive;
@@ -53,12 +53,11 @@ ObjInt DictCompare::casecmp(const char* str1, const char* str2, int n) const
     }
     else if (!*str2)
         return 1;
-    else
-        return *str1 < *str2 ? -1 : 1;
+    return *str1 < *str2 ? -1 : 1;
 }
 ObjInt LibDictionary::Lookup(FILE* stream, ObjInt dictionaryOffset, ObjInt dictionarySize, const ObjString& name)
 {
-    if (!dictionary.size())
+    if (dictionary.empty())
     {
         fseek(stream, 0, SEEK_END);
         int end = ftell(stream);

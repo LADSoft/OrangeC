@@ -26,10 +26,7 @@
 #ifndef CMDSWITCH_H
 #define CMDSWITCH_H
 
-// next lines are for watcom
-#undef min
-#undef max
-#include <limits.h>
+#include <climits>
 #include <string>
 #include <set>
 #include <vector>

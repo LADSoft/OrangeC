@@ -30,11 +30,13 @@
 SECTION code CLASS=CODE USE32
 
 _memcpy:
+	push ebp
+	mov ebp, esp
     push ebx
-    mov ecx,[esp+ 16]
+    mov ecx,[ebp+ 16]
     jecxz	x2
-    mov	edx,[esp+8]
-    mov	ebx,[esp+12]
+    mov	edx,[ebp+8]
+    mov	ebx,[ebp+12]
 memcpy_x:	; from MEMMOVE
     dec	edx
 lp1:
@@ -67,5 +69,6 @@ lp2:
 x2:
     mov eax,[esp+8]
     pop	ebx
+	pop ebp
     ret
     

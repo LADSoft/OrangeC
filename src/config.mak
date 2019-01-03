@@ -32,3 +32,4 @@ include $(TREETOP)\mingw.mak
 include $(TREETOP)\mingw64.mak
 include $(TREETOP)\clang.mak
 include $(TREETOP)\occ.mak
+include $(TREETOP)\gcc-linux.mak

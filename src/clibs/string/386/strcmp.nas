@@ -26,12 +26,12 @@
 [export _strcmp]
 %endif
 [global _strcmp]
-[global strcmp_x]
 SECTION code CLASS=CODE USE32
 _strcmp:
-    mov		ecx,[esp+4]
-    mov		edx,[esp+8]
-strcmp_x:		; from strstr
+    push	ebp
+	mov		ebp, esp
+    mov		ecx,[ebp+8]
+    mov		edx,[ebp+12]
 
 	;
 	; do multiple of 4 bytes at a time
@@ -86,4 +86,5 @@ Unequal:
     or  eax,1
     
 End:
+	pop	ebp
     ret

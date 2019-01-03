@@ -40,7 +40,7 @@
 #include <exception>
 #include <fstream>
 #include <iostream>
-#include <limits.h>
+#include <climits>
 
 AsmFile::~AsmFile()
 {
@@ -509,7 +509,9 @@ void AsmFile::Directive()
             TimesDirective();  // timesdirective eats the ']'
             return;
         default:
-            throw new std::runtime_error("Expected directive");
+            NeedSection();
+            if (!GetParser()->ParseDirective(this, currentSection))
+                throw new std::runtime_error("Expected directive");
     }
     if (GetKeyword() == Lexer::closebr)
     {
@@ -566,6 +568,10 @@ void AsmFile::TimesDirective()
         else if (parser->MatchesOpcode(GetToken()->GetChars()))
         {
             Instruction* ins = parser->Parse(lexer.GetRestOfLine(), currentSection->GetPC());
+            for (auto f : *ins->GetFixups())
+            {
+                f->SetExpr(AsmExpr::Eval(f->GetExpr(), currentSection->GetPC()));
+            }
             currentSection->InsertInstruction(ins);
         }
         else
@@ -748,19 +754,26 @@ bool AsmFile::Write(std::string& fileName, std::string& srcName)
         FILE* out = fopen(fileName.c_str(), "wb");
         if (out != nullptr)
         {
-
             ObjIeee i(fileName.c_str());
-            i.SetTranslatorName(ObjString("oasm"));
-            i.SetDebugInfoFlag(false);
-
-            if (startSection)
+            if (binaryOutput)
             {
-                ObjExpression* left = f.MakeExpression(startSection);
-                ObjExpression* right = f.MakeExpression(startupLabel->GetOffset()->ival);
-                ObjExpression* sa = f.MakeExpression(ObjExpression::eAdd, left, right);
-                i.SetStartAddress(fi, sa);
+                i.BinaryWrite(out, fi, &f);
             }
-            i.Write(out, fi, &f);
+            else
+            {
+
+                i.SetTranslatorName(ObjString("oasm"));
+                i.SetDebugInfoFlag(false);
+
+                if (startSection)
+                {
+                    ObjExpression* left = f.MakeExpression(startSection);
+                    ObjExpression* right = f.MakeExpression(startupLabel->GetOffset()->ival);
+                    ObjExpression* sa = f.MakeExpression(ObjExpression::eAdd, left, right);
+                    i.SetStartAddress(fi, sa);
+                }
+                i.Write(out, fi, &f);
+            }
             fclose(out);
             //            out.close();
         }
@@ -787,7 +800,7 @@ ObjFile* AsmFile::MakeFile(ObjFactory& factory, std::string& name)
         fi->Add(sf);
         for (int i = 0; i < numericSections.size(); ++i)
         {
-            numericSections[i]->Resolve(this);
+            numericSections[i]->Resolve();
             ObjSection* s = numericSections[i]->CreateObject(factory);
             if (s)
             {
@@ -799,6 +812,7 @@ ObjFile* AsmFile::MakeFile(ObjFactory& factory, std::string& name)
                 fi->Add(s);
             }
         }
+
         if (objSections.size())
         {
             for (int i = 0; i < numericLabels.size(); ++i)
@@ -847,7 +861,9 @@ ObjFile* AsmFile::MakeFile(ObjFactory& factory, std::string& name)
         }
         for (int i = 0; i < numericSections.size(); i++)
         {
-            if (!numericSections[i]->MakeData(factory, this))
+            if (!numericSections[i]->MakeData(factory, [this](std::string& aa) { return Lookup(aa); },
+                                              [this](std::string& aa) { return GetSectionByName(aa); },
+                                              [](ObjFactory&, Section*, Instruction*) {}))
                 rv = false;
         }
     }

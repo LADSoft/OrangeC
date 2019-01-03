@@ -25,48 +25,22 @@
 
 #include "InstructionParser.h"
 #include "Errors.h"
-#include <ctype.h>
+#include <cctype>
 #include <fstream>
-#include <stdio.h>
+#include <cstdio>
+#include <algorithm>
 #include "Instruction.h"
 #include "Fixup.h"
 #include "UTF8.h"
 #include <stdexcept>
-
-extern bool IsSymbolStartChar(char ch);
-extern bool IsSymbolChar(char ch);
+#include <iostream>
+#include "Token.h"
 
 static const unsigned mask[32] = {
     0x1,      0x3,      0x7,       0xf,       0x1f,      0x3f,      0x7f,       0xff,       0x1ff,      0x3ff,      0x7ff,
     0xfff,    0x1fff,   0x3fff,    0x7fff,    0xffff,    0x1ffff,   0x3ffff,    0x7ffff,    0xfffff,    0x1fffff,   0x3fffff,
     0x7fffff, 0xffffff, 0x1ffffff, 0x3ffffff, 0x7ffffff, 0xfffffff, 0x1fffffff, 0x3fffffff, 0x7fffffff, 0xffffffff,
 };
-int CodingHelper::DoMath(int val)
-{
-    switch (math)
-    {
-        case '!':
-            return -val;
-        case '~':
-            return ~val;
-        case '+':
-            return val + mathval;
-        case '-':
-            return val - mathval;
-        case '>':
-            return val >> mathval;
-        case '<':
-            return val << mathval;
-        case '&':
-            return val & mathval;
-        case '|':
-            return val | mathval;
-        case '^':
-            return val ^ mathval;
-        default:
-            return val;
-    }
-}
 void BitStream::Add(int val, int cnt)
 {
     val &= mask[cnt - 1];
@@ -98,6 +72,7 @@ void BitStream::Add(int val, int cnt)
 }
 bool InstructionParser::ParseNumber(int relOfs, int sign, int bits, int needConstant, int tokenPos)
 {
+
     if (inputTokens[tokenPos]->type == InputToken::NUMBER)
     {
         val = inputTokens[tokenPos]->val;
@@ -146,9 +121,7 @@ bool InstructionParser::SetNumber(int tokenPos, int oldVal, int newVal)
             {
                 if (val->ival == oldVal)
                 {
-                    numeric = new Numeric;
-                    memset(numeric, 0, sizeof(*numeric));
-                    numeric->node = new AsmExprNode(newVal);
+                    numeric = new Numeric(new AsmExprNode(newVal));
                     rv = true;
                 }
             }
@@ -158,6 +131,8 @@ bool InstructionParser::SetNumber(int tokenPos, int oldVal, int newVal)
 }
 bool InstructionParser::MatchesOpcode(std::string opcode)
 {
+    std::transform(opcode.begin(), opcode.end(), opcode.begin(), ::tolower);
+
     return opcodeTable.end() != opcodeTable.find(opcode) || prefixTable.end() != prefixTable.find(opcode);
 }
 Instruction* InstructionParser::Parse(const std::string args, int PC)
@@ -219,10 +194,12 @@ Instruction* InstructionParser::Parse(const std::string args, int PC)
             break;
         }
     }
+    std::transform(op.begin(), op.end(), op.begin(), ::tolower);
+
     if (op == "")
     {
-        bool rv = DispatchOpcode(-1);
-        if (rv)
+        auto rv = DispatchOpcode(-1);
+        if (rv == AERR_NONE)
         {
             unsigned char buf[32];
             bits.GetBytes(buf, 32);
@@ -237,43 +214,61 @@ Instruction* InstructionParser::Parse(const std::string args, int PC)
             bits.Reset();
             if (!Tokenize(PC))
             {
-                throw new std::runtime_error("Syntax error");
+                throw new std::runtime_error("Unknown token sequence");
             }
             eol = false;
-            bool rv = DispatchOpcode(it->second);
+            auto rv = DispatchOpcode(it->second);
             Instruction* s = nullptr;
-            if (rv)
+            switch (rv)
             {
-                unsigned char buf[32];
-                bits.GetBytes(buf, 32);
-#ifdef XXXXX
-                std::cout << std::hex << bits.GetBits() << " ";
-                for (int i = 0; i<bits.GetBits()>> 3; i++)
-                    std::cout << std::hex << (int)buf[i] << " ";
-                std::cout << std::endl;
-#endif
-                if (!eol)
-                    throw new std::runtime_error("Extra characters at end of line");
-                s = new Instruction(buf, (bits.GetBits() + 7) / 8);
-                //			std::cout << bits.GetBits() << std::endl;
-                for (auto operand : operands)
+                case AERR_NONE:
                 {
-                    if (operand->used && operand->size)
+                    unsigned char buf[32];
+                    bits.GetBytes(buf, 32);
+#ifdef XXXXX
+                    std::cout << std::hex << bits.GetBits() << " ";
+                    for (int i = 0; i<bits.GetBits()>> 3; i++)
+                        std::cout << std::hex << (int)buf[i] << " ";
+                    std::cout << std::endl;
+#endif
+                    if (!eol)
+                        throw new std::runtime_error("Extra characters at end of line");
+                    s = new Instruction(buf, (bits.GetBits() + 7) / 8);
+                    //			std::cout << bits.GetBits() << std::endl;
+                    for (auto operand : operands)
                     {
-                        int n = operand->relOfs;
-                        if (n < 0)
-                            n = -n;
-                        Fixup* f = new Fixup(operand->node, (operand->size + 7) / 8, operand->relOfs != 0, n, operand->relOfs > 0);
-                        f->SetInsOffs((operand->pos + 7) / 8);
-                        f->SetFileName(errName);
-                        f->SetErrorLine(errLine);
-                        s->Add(f);
+                        if (operand->used && operand->size)
+                        {
+                            if (operand->node->GetType() != AsmExprNode::IVAL && operand->node->GetType() != AsmExprNode::FVAL)
+                            {
+                                if (s->Lost() && operand->pos)
+                                    operand->pos -= 8;
+                                int n = operand->relOfs;
+                                if (n < 0)
+                                    n = -n;
+                                Fixup* f =
+                                    new Fixup(operand->node, (operand->size + 7) / 8, operand->relOfs != 0, n, operand->relOfs > 0);
+                                f->SetInsOffs((operand->pos + 7) / 8);
+                                f->SetFileName(errName);
+                                f->SetErrorLine(errLine);
+                                s->Add(f);
+                            }
+                        }
                     }
                 }
-            }
-            else
-            {
-                throw new std::runtime_error("Syntax error");
+                break;
+                case AERR_SYNTAX:
+                    throw new std::runtime_error("Syntax error while parsing instruction");
+                case AERR_OPERAND:
+                    throw new std::runtime_error("Unknown operand");
+                case AERR_BADCOMBINATIONOFOPERANDS:
+                    throw new std::runtime_error("Bad combination of operands");
+                case AERR_UNKNOWNOPCODE:
+                    throw new std::runtime_error("Unrecognized opcode");
+                case AERR_INVALIDINSTRUCTIONUSE:
+                    throw new std::runtime_error("Invalid use of instruction");
+                default:
+                    throw new std::runtime_error("unknown error");
             }
             return s;
         }
@@ -284,7 +279,9 @@ void InstructionParser::RenameRegisters(AsmExprNode* val)
 {
     if (val->GetType() == AsmExprNode::LABEL)
     {
-        auto it = tokenTable.find(val->label);
+        auto test = val->label;
+        std::transform(test.begin(), test.end(), test.begin(), ::tolower);
+        auto it = tokenTable.find(test);
         if (it != tokenTable.end())
         {
             int n = it->second;
@@ -483,7 +480,10 @@ void InstructionParser::ParseNumeric(int PC)
     RenameRegisters(val);
     if (val->GetType() == AsmExprNode::LABEL)
     {
-        auto it = tokenTable.find(val->label);
+        auto test = val->label;
+        std::transform(test.begin(), test.end(), test.begin(), ::tolower);
+        auto it = tokenTable.find(test);
+
         InputToken* next;
         if (it != tokenTable.end())
         {
@@ -656,9 +656,9 @@ void InstructionParser::NextToken(int PC)
             id = TK_NUMERIC;
             val = new AsmExprNode(accum);
         }
-        else if (IsSymbolStartChar(line.c_str()) || IsNumber() || line[0] == '$')
+        else if (Tokenizer::IsSymbolChar(line.c_str(), true) || IsNumber() || line[0] == '$')
         {
-            val = expr.Build(line);
+            val = asmexpr.Build(line);
             id = TK_NUMERIC;
         }
         else if (ispunct(line[0]))

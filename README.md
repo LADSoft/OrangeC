@@ -3,11 +3,15 @@
 
 OrangeC Compiler And Tool Chain
 
-Project Build Status: 
-[![Build status](https://ci.appveyor.com/api/projects/status/4ts7bsgas67osyht?svg=true)](https://ci.appveyor.com/project/LADSoft/orangec)
+Project Build Status:
+[![Build status Appveyor](https://ci.appveyor.com/api/projects/status/4ts7bsgas67osyht?svg=true)](https://ci.appveyor.com/project/LADSoft/orangec)
+[![Build status Travis-CI](https://api.travis-ci.org/LADSoft/OrangeC.svg?branch=master)](https://travis-ci.org/LADSoft/OrangeC)
 
 Documentation status: 
 [![Documentation Status](https://readthedocs.org/projects/orangec/badge/?version=latest)](http://orangec.readthedocs.io/en/latest/Tools/)
+
+Coverity scan status:
+[![Coverity Scan Build Status](https://scan.coverity.com/projects/15633/badge.svg)](https://scan.coverity.com/projects/ladsoft-orangec)
 
 The Orange C compiler is going to be a retargetable optimizing compiler and toolchain.  Work over the last few years has resulted in an optimizing compiler than generates working WIN32 programs.  The optimizations in the compiler follow some of the standard optimizations, and also perform some optimizations from the literature.
 

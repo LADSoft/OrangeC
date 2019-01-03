@@ -27,8 +27,9 @@
 #include "RCFile.h"
 #include "ResourceData.h"
 #include "ResFile.h"
-#include <windows.h>
-
+#ifndef GCCLINUX
+#    include <windows.h>
+#endif
 #include <stdexcept>
 
 #define BITMAP_SIG 0x4d42  // BM
@@ -55,6 +56,7 @@ void Bitmap::ReadRC(RCFile& rcFile)
     resInfo.ReadRC(rcFile, false);
     ResourceData* rd = new ResourceData;
     rd->ReadRC(rcFile);
+#ifndef GCCLINUX
     if (rd->GetLen() <= sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER))
     {
         delete rd;
@@ -82,5 +84,6 @@ void Bitmap::ReadRC(RCFile& rcFile)
         data = new ResourceData((unsigned char*)p, rd->GetLen() - sizeof(BITMAPFILEHEADER));
         delete rd;
     }
+#endif
     rcFile.NeedEol();
 }

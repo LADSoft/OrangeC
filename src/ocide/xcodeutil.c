@@ -37,12 +37,12 @@
 extern LOGFONT systemDialogFont;
 extern HINSTANCE hInstance;
 extern KEYLIST C_keywordList[1];
+extern HWND hwndShowFunc;
 
 #define TRANSPARENT_COLOR 0x872395
 
-HWND codecompleteBox;
-BOOL inStructBox;
-HWND hwndShowFunc;
+extern HWND codecompleteBox;
+extern BOOL inStructBox;
 
 BOOL GetContainerData(int lineno, char* file, char* ns, char* func)
 {

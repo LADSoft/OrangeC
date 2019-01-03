@@ -34,7 +34,7 @@ class AsmExprNode;
 class Fixup
 {
   public:
-    Fixup() : expr(NULL), rel(0), size(0), relOffs(0), resolved(false), insOffs(0), errorLine(0), adjustable(false) {}
+    Fixup() : expr(nullptr), rel(0), size(0), relOffs(0), resolved(false), insOffs(0), errorLine(0), adjustable(false) {}
     Fixup(AsmExprNode* Expr, int Size, int Rel, int RelOffs = 0, bool Adjustable = false) :
         expr(Expr),
         rel(Rel),
@@ -55,6 +55,7 @@ class Fixup
     void SetInsOffs(int offs) { insOffs = offs; }
     int GetInsOffs() { return insOffs; }
     AsmExprNode* GetExpr() { return expr; }
+    void SetExpr(AsmExprNode* newExpr) { expr = newExpr; }
     void SetResolved() { resolved = true; }
     bool IsResolved() { return resolved; }
     void SetAdjustable(bool adj) { adjustable = adj; }

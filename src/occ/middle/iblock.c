@@ -676,7 +676,7 @@ void gen_iiconst(IMODE* res, LLONG_TYPE val)
 
 /*-------------------------------------------------------------------------*/
 
-void gen_ifconst(IMODE* res, FPF val)
+void gen_ifconst(IMODE* res, FPFC val)
 /*
  *      generate an integer constant sequence into the peep list.
  */
@@ -865,6 +865,15 @@ void InsertUses(QUAD* ins, int tnum)
 }
 void RemoveInstruction(QUAD* ins)
 {
+    if (ins->dc.opcode == i_assn && ins->dc.left->retval)
+    {
+        // this is so we can inform the backend that the store is gone, e.g. so any fstp will not disappear entirely
+        QUAD *find = ins->back;
+        while (find->dc.opcode != i_block && find->dc.opcode != i_gosub)
+            find = find->back;
+        if (find->dc.opcode == i_gosub)
+            find->novalue = ins->dc.left->size;
+    }
     switch (ins->dc.opcode)
     {
         case i_dbgblock:

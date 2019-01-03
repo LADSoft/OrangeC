@@ -21,24 +21,29 @@
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
+include ../pathext2.mak
 
+ifneq "$(COMPILER)" "MINGW64"
 NAME=ocide
 TARGET=GUI
 MAIN_FILE= ocide.c
 DEF_DEPENDENCIES=ocide.def
-INCLUDES=..\sqlite3
+INCLUDES=..$(PATHEXT2)sqlite3
 C_DEPENDENCIES= $(wildcard *.c)
 RC_DEPENDENCIES=ociderc.rc
 LIB_DEPENDENCIES=sqlite3
-#OBJ_DEPENDENCIES=\bcc55\lib\wildargs.obj
+#OBJ_DEPENDENCIES=$(PATHEXT2)bcc55$(PATHEXT2)lib$(PATHEXT2)wildargs.obj
 DEFINES=GUI
 H_FILES=$(wildcard *.h)
 
-vpath %.c ..\util
+vpath %.c ..$(PATHEXT2)util
 
-include ..\redirect.mak
+include ../redirect.mak
 
 DISTRIBUTE: copyexe
-	copy rule\*.rul $(DISTROOT)\rule
-	copy rule\*.props $(DISTBIN)
-	copy fonts\ttf-bitstream-vera-1.10\veramono.ttf $(DISTBIN)
+else
+DISTRIBUTE:
+endif
+	copy rule$(PATHEXT2)*.rul $(DISTROOT)$(PATHEXT2)rule
+	copy rule$(PATHEXT2)*.props $(DISTBIN)
+	copy fonts$(PATHEXT2)ttf-bitstream-vera-1.10$(PATHEXT2)veramono.ttf $(DISTBIN)

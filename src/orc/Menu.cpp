@@ -31,7 +31,7 @@
 
 MenuItem::~MenuItem()
 {
-    for (iterator it = begin(); it != end(); ++it)
+    for (auto it = begin(); it != end(); ++it)
     {
         MenuItem* item = *it;
         delete item;
@@ -42,7 +42,7 @@ void MenuItem::WriteRes(ResFile& resFile, bool ex, bool last)
     if (!ex)
     {
         int fl = type;
-        if (popup.size())
+        if (!popup.empty())
             fl |= Popup;
         if (last)
             fl |= EndMenu;
@@ -66,7 +66,7 @@ void MenuItem::WriteRes(ResFile& resFile, bool ex, bool last)
         resFile.WriteDWord(state);
         resFile.WriteDWord(id);
         int fl = 0;
-        if (popup.size())
+        if (!popup.empty())
             fl |= 1;
         if (last)
             fl |= EndMenu;
@@ -231,7 +231,7 @@ void MenuItem::ReadRC(RCFile& rcFile, MenuItemList& list, bool ex)
 }
 Menu::~Menu()
 {
-    for (iterator it = begin(); it != end(); ++it)
+    for (auto it = begin(); it != end(); ++it)
     {
         MenuItem* item = *it;
         delete item;

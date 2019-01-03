@@ -22,13 +22,14 @@
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
 
+include ../../pathext2.mak
+
 NAME=occ
 MAIN_FILE=ccmain.c
-INCLUDES=..\parse ..\preproc ..\middle
 C_DEPENDENCIES= \
-    $(BACKEND_FILES) \
     ccmain.c \
-    crc.c \
+    config.c \
+    crc32.c \
     beinterf.c \
     browse.c \
     ccerr.c \
@@ -57,6 +58,7 @@ C_DEPENDENCIES= \
     iloop.c \
     init.c \
     inline.c \
+    invoke.c \
     ioptutil.c \
     iout.c \
     ipeep.c \
@@ -77,36 +79,58 @@ C_DEPENDENCIES= \
     preproc.c \
     property.c \
     ppexpr.c \
+    rewrite.c \
     rtti.c \
     stmt.c \
     symtab.c \
     template.c \
     types.c \
-    unmangle.c\
+    unmangle.c \
     winsystem.c \
     wseh.c
 
-H_FILES=$(wildcard *.h) $(wildcard ..\parse\*.h) $(wildcard ..\middle\*.h) $(wildcard ..\preproc\*.h)
+CPP_DEPENDENCIES = \
+    beIntrins.cpp \
+    dbgtypes.cpp \
+    gen.cpp \
+    outasm.cpp \
+    outcode.cpp \
+    inasm.cpp \
+    peep.cpp \
+    InstructionParser.cpp \
+    x64stub.cpp \
+    x64Parser.cpp
 
-#LIB_DEPENDENCIES=util.lib objlib.lib
+ifeq "$(COMPILER)" "gcc-linux"
+H_FILES=$(wildcard *.h) $(wildcard ../parse/*.h) $(wildcard ../middle/*.h) $(wildcard ../preproc/*.h)
+else
+H_FILES=$(wildcard *.h) $(wildcard ..$(PATHEXT2)parse$(PATHEXT2)*.h) $(wildcard ..$(PATHEXT2)middle$(PATHEXT2)*.h) $(wildcard ..$(PATHEXT2)preproc$(PATHEXT2)*.h)
+endif
+
+LIB_DEPENDENCIES=oasm ocpplib objlib util
 #determine if we can ignore the banner for a batch compile
-WIN32 = WIN32
 #use long long type
 LL = USE_LONGLONG
-DEFINES=$(i386) $(LL) $(MSDOS) $(WIN32)
+DEFINES=$(i386) $(LL) $(MSDOS) x64
 
-SOURCE = ..\parse;..\preproc;..\middle
-
-SRCPATH=$(BACKEND_INCLUDE_PATH);$(SOURCE);..;..\..\util
-BACKEND_FILES = config.c gen.c inasm.c invoke.c objieeea.c outasm.c outcode.c peep.c rewrite.c
-
-BACKEND_INCLUDE_PATH=.
-
+ifeq "$(COMPILER)" "gcc-linux"
+SOURCE = ..$(PATHEXT2)parse:..$(PATHEXT2)preproc:..$(PATHEXT2)middle
+INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle ..$(PATHEXT2)..$(PATHEXT2)ocpp ..$(PATHEXT2)..$(PATHEXT2)oasm ..$(PATHEXT2)..$(PATHEXT2)util ..$(PATHEXT2)..$(PATHEXT2)objlib
+SRCPATH=.$(PATHEXT2):$(SOURCE):..:..$(PATHEXT2)..$(PATHEXT2)util:..$(PATHEXT2)
+else
+SOURCE = ..$(PATHEXT2)parse$(PATHEXT2);..$(PATHEXT2)preproc$(PATHEXT2);..$(PATHEXT2)middle$(PATHEXT2)
+INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle ..$(PATHEXT2)..$(PATHEXT2)ocpp ..$(PATHEXT2)..$(PATHEXT2)oasm ..$(PATHEXT2)..$(PATHEXT2)util ..$(PATHEXT2)..$(PATHEXT2)objlib
+SRCPATH=.$(PATHEXT2);$(SOURCE);..;..$(PATHEXT2)..$(PATHEXT2)util$(PATHEXT2);..$(PATHEXT2)
+ifeq "$(ISOMAKE)" ""
+SRCPATH:=$(subst $(PATHEXT2),/,$(SRCPATH))
+endif
+endif
 
 vpath %.c $(SRCPATH)
+vpath %.cpp $(SRCPATH)
 
 ifndef _TREEROOT
-_TREEROOT := $(CURDIR)\..\..\treetop.mak
+_TREEROOT := $(CURDIR)$(PATHEXT2)..$(PATHEXT2)..$(PATHEXT2)treetop.mak
 _TREETARGET := $(CURDIR)
 export _TREEROOT
 export _TREETARGET
@@ -117,5 +141,13 @@ format:
 	@$(MAKE) -f $(_TREEROOT) format
 endif
 
+ifeq "$(COMPILER)" "gcc-linux"
+x64Parser.cpp: ..$(PATHEXT2)..$(PATHEXT2)oasm$(PATHEXT2)x64Parser.cpp
+	cp $< $@
+else
+x64Parser.cpp: ..$(PATHEXT2)..$(PATHEXT2)oasm$(PATHEXT2)x64Parser.cpp
+	copy $< $@
+endif
+
 DISTRIBUTE: copyexe
-	copy target.cfg $(DISTBIN)\occ.cfg
+	copy target.cfg $(DISTBIN)$(PATHEXT2)occ.cfg

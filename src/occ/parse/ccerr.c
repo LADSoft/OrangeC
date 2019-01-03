@@ -441,7 +441,7 @@ static struct
     {"For-range array expression unsized", ERROR},
     {"For-range declarator cannot be initialized", ERROR},
     {"For declarator must be initialized", ERROR},
-    {"Initialization from higher type", WARNING},
+    {"Value narrowing within { } is not allowed", ERROR},
     {"Nonstructured initializer list expected", ERROR},
     {"Cannot use initializer list here", ERROR},
     {"Initializer list requires overloaded operator []", ERROR},
@@ -563,6 +563,10 @@ static struct
     {"%s: attempting to redefine dll interface linkage for class", WARNING},
     {"Ignoring __attribute__ specifier", WARNING},
     {"Ignoring __declspec specifier", WARNING},
+    {"Invalid alignment value", ERROR},
+    {"Conversion of character string to 'char *' deprecated", WARNING},
+    {"Function call needs argument list", WARNING},
+    {"Return value would require a temporary variable", ERROR},
 #endif
 };
 
@@ -1161,7 +1165,7 @@ BOOLEAN needkw(LEXEME** lex, enum e_kw kw)
     }
 }
 void specerror(int err, char* name, char* file, int line) { printerr(err, file, line, name); }
-void diag(char* fmt, ...)
+void diag(const char* fmt, ...)
 {
     if (cparams.prm_diag)
     {
@@ -1629,7 +1633,7 @@ static void validateGotos(VLASHIM* shim, VLASHIM* root)
             case v_branch:
                 break;
             case v_goto:
-                if (shim->checkme)
+                if (shim->checkme && shim->fwd)
                 {
                     VLASHIM* sgoto = shim;
                     VLASHIM* fwd = sgoto->fwd;

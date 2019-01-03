@@ -182,7 +182,7 @@ int main(int argc, char* argv[])
         }
         preprocini(infile, inputFile);
         setglbdefs();
-        while (!getline())
+        while (!GetLine())
             ;
 
         dumperrs(stdout);

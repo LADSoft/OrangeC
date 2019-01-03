@@ -25,7 +25,7 @@
 
 #ifndef DB_H
 #define DB_H
-#include "..\..\sqlite3\sqlite3.h"
+#include "../../sqlite3/sqlite3.h"
 
 void ccReset(void);
 int ccDBOpen(char *name);

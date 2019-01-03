@@ -50,6 +50,7 @@ class AsmMain
     static CmdSwitchOutput OutputFile;
     static CmdSwitchDefine Defines;
     static CmdSwitchCombineString includePath;
+    static CmdSwitchBool BinaryOutput;
 
     static const char* usageText;
 };

@@ -43,42 +43,42 @@ void ObjIndexManager::ResetIndexes()
 void ObjIndexManager::LoadIndexes(ObjFile* file)
 {
     ResetIndexes();
-    for (ObjFile::SymbolIterator it = file->PublicBegin(); it != file->PublicEnd(); ++it)
+    for (auto it = file->PublicBegin(); it != file->PublicEnd(); ++it)
     {
         if ((*it)->GetIndex() >= Public)
             Public = (*it)->GetIndex() + 1;
     }
-    for (ObjFile::SymbolIterator it = file->ExternalBegin(); it != file->ExternalEnd(); ++it)
+    for (auto it = file->ExternalBegin(); it != file->ExternalEnd(); ++it)
     {
         if ((*it)->GetIndex() >= External)
             External = (*it)->GetIndex() + 1;
     }
-    for (ObjFile::SymbolIterator it = file->LocalBegin(); it != file->LocalEnd(); ++it)
+    for (auto it = file->LocalBegin(); it != file->LocalEnd(); ++it)
     {
         if ((*it)->GetIndex() >= Local)
             Local = (*it)->GetIndex() + 1;
     }
-    for (ObjFile::SymbolIterator it = file->AutoBegin(); it != file->AutoEnd(); ++it)
+    for (auto it = file->AutoBegin(); it != file->AutoEnd(); ++it)
     {
         if ((*it)->GetIndex() >= Auto)
             Auto = (*it)->GetIndex() + 1;
     }
-    for (ObjFile::SymbolIterator it = file->RegBegin(); it != file->RegEnd(); ++it)
+    for (auto it = file->RegBegin(); it != file->RegEnd(); ++it)
     {
         if ((*it)->GetIndex() >= Reg)
             Reg = (*it)->GetIndex() + 1;
     }
-    for (ObjFile::SectionIterator it = file->SectionBegin(); it != file->SectionEnd(); ++it)
+    for (auto it = file->SectionBegin(); it != file->SectionEnd(); ++it)
     {
         if ((*it)->GetIndex() >= Section)
             Section = (*it)->GetIndex() + 1;
     }
-    for (ObjFile::TypeIterator it = file->TypeBegin(); it != file->TypeEnd(); ++it)
+    for (auto it = file->TypeBegin(); it != file->TypeEnd(); ++it)
     {
         if ((*it)->GetIndex() >= Type)
             Type = (*it)->GetIndex() + 1;
     }
-    for (ObjFile::SourceFileIterator it = file->SourceFileBegin(); it != file->SourceFileEnd(); ++it)
+    for (auto it = file->SourceFileBegin(); it != file->SourceFileEnd(); ++it)
     {
         if ((*it)->GetIndex() >= File)
             File = (*it)->GetIndex() + 1;

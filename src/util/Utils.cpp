@@ -25,28 +25,24 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 
-#include <stdio.h>
-#include <stdarg.h>
-#include <windows.h>
+#include <cstdio>
+#include <cstdarg>
 #include <fstream>
-#include <stdlib.h>
-#ifdef MICROSOFT
+#include <cstdlib>
+#include <cstring>
+#ifdef _WIN32
 #    include <windows.h>
 #endif
-#include "utils.h"
+#include "Utils.h"
 #include "CmdFiles.h"
 
-#ifdef OPENWATCOM
-#    include <strstream>
-#else
-#    include <sstream>
-#endif
-#include "..\version.h"
+#include <sstream>
+#include "../version.h"
 #include <iostream>
 
 char* Utils::ShortName(const char* v)
 {
-    static char prog_name[MAX_PATH], *short_name, *extension;
+    static char prog_name[260], *short_name, *extension;
     strcpy(prog_name, v);
     short_name = strrchr(prog_name, '\\');
     if (short_name == nullptr)
@@ -67,12 +63,15 @@ void Utils::banner(const char* progName)
 {
     // no banner if they specify -!, this is also caught in the cmd switch module
     // so it is transparent to the proggy
+#ifndef GCCLINUX
     for (int i = 1; i < __argc && __argv[i]; i++)
         if (__argv[i] && (__argv[i][0] == '/' || __argv[i][0] == '-'))
             if (__argv[i][1] == '!' || !strcmp(__argv[i], "--nologo"))
                 return;
+#endif
     fprintf(stderr, "%s Version " STRING_VERSION " " COPYRIGHT "\n", ShortName(progName));
 
+#ifndef GCCLINUX
     // handle /V switch
     for (int i = 1; i < __argc && __argv[i]; i++)
         if (__argv[i] && (__argv[i][0] == '/' || __argv[i][0] == '-'))
@@ -81,30 +80,24 @@ void Utils::banner(const char* progName)
                 fprintf(stderr, "\nCompile date: " __DATE__ " time: " __TIME__ "\n");
                 exit(0);
             }
+#endif
 }
 void Utils::usage(const char* prog_name, const char* text)
 {
     fprintf(stderr, "\nUsage: %s %s", ShortName(prog_name), text);
     exit(1);
 }
-void Utils::fatal(const char* format, ...)
-{
-    va_list argptr;
-
-    va_start(argptr, format);
-    fprintf(stderr, "Fatal error: ");
-    vfprintf(stderr, format, argptr);
-    va_end(argptr);
-    fputc('\n', stderr);
-    exit(1);
-}
 char* Utils::GetModuleName()
 {
     static char buf[256];
-#if defined(WIN32) || defined(MICROSOFT)
+#if defined(_WIN32)
     GetModuleFileNameA(nullptr, buf, sizeof(buf));
 #else
+#    ifdef GCCLINUX
+    strcpy(buf, "unknown");
+#    else
     strcpy(buf, __argv[0]);
+#    endif
 #endif
     return buf;
 }
@@ -133,21 +126,21 @@ void Utils::SetEnvironmentToPathParent(const char* name)
 }
 std::string Utils::FullPath(const std::string& path, const std::string& name)
 {
-    std::fstream in(name.c_str(), std::ios::in);
+    std::fstream in(name, std::ios::in);
     if (!in.fail())
     {
         return name;
     }
-    if (path.size())
+    if (!path.empty())
     {
         std::string fpath = path;
         //        if (path.c_str()[strlen(path.c_str())-1] != '\\')
-        if (path.c_str()[path.length() - 1] != '\\')
+        if (path[path.length() - 1] != '\\')
         {
-            fpath += std::string("\\");
+            fpath += "\\";
         }
         fpath += name;
-        std::fstream in(fpath.c_str(), std::ios::in);
+        std::fstream in(fpath, std::ios::in);
         if (!in.fail())
         {
             return fpath;
@@ -157,7 +150,7 @@ std::string Utils::FullPath(const std::string& path, const std::string& name)
 }
 std::string Utils::QualifiedFile(const char* path, const char* ext)
 {
-    char buf[MAX_PATH];
+    char buf[260];
     strcpy(buf, path);
     char* p = strrchr(buf, '.');
     if (!p || p[-1] == '.' || p[1] == '\\')
@@ -174,7 +167,7 @@ std::string Utils::SearchForFile(const std::string& path, const std::string& nam
         return name;
     }
     std::string fpath = path;
-    while (fpath.size())
+    while (!fpath.empty())
     {
         int npos = fpath.find_first_of(CmdFiles::PATH_SEP[0]);
         std::string current;
@@ -202,65 +195,12 @@ std::string Utils::SearchForFile(const std::string& path, const std::string& nam
     }
     return name;
 }
-std::string Utils::NumberToString(int num)
-{
-#ifdef OPENWATCOM
-    std::ostrstream aa;
-    aa << num;
-    return std::string(aa.rdbuf()->str());
-#else
-    std::stringstream aa;
-    aa << num;
-    std::string rv;
-    aa >> rv;
-    return rv;
-#endif
-}
+std::string Utils::NumberToString(int num) { return std::to_string(num); }
 std::string Utils::NumberToStringHex(int num)
 {
-#ifdef OPENWATCOM
-    std::ostrstream aa;
-    aa << std::hex << num;
-    return std::string(aa.rdbuf()->str());
-#else
     std::stringstream aa;
     aa << std::hex << num;
-    std::string rv;
-    aa >> rv;
-    return rv;
-#endif
+    return aa.str();
 }
-int Utils::StringToNumber(std::string str)
-{
-#ifdef OPENWATCOM
-    std::ostrstream aa;
-    aa << str.c_str();
-    std::istrstream bb(aa.rdbuf()->str());
-    int rv;
-    bb >> rv;
-    return rv;
-#else
-    std::stringstream aa;
-    aa << str;
-    int rv;
-    aa >> rv;
-    return rv;
-#endif
-}
-int Utils::StringToNumberHex(std::string str)
-{
-#ifdef OPENWATCOM
-    std::ostrstream aa;
-    aa << str.c_str();
-    std::istrstream bb(aa.rdbuf()->str());
-    int rv;
-    bb >> std::hex >> rv;
-    return rv;
-#else
-    std::stringstream aa;
-    aa << str;
-    int rv;
-    aa >> std::hex >> rv;
-    return rv;
-#endif
-}
+int Utils::StringToNumber(std::string str) { return std::stoi(str); }
+int Utils::StringToNumberHex(std::string str) { return std::stoi(str, 0, 16); }

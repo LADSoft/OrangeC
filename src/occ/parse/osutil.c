@@ -31,9 +31,9 @@
 #include <stdlib.h>
 
 #ifdef MSIL
-#    include "..\version.h"
+#    include "../version.h"
 #else
-#    include "..\..\version.h"
+#    include "../../version.h"
 #endif
 #if defined(_MSC_VER) || defined(BORLAND) || defined(__ORANGEC__)
 #    include <io.h>
@@ -581,6 +581,22 @@ void warning_setup(char select, char* string)
 
 /*-------------------------------------------------------------------------*/
 
+void sysincl_setup(char select, char* string)
+{
+    (void)select;
+    if (sys_searchpath)
+    {
+        sys_searchpath = realloc(sys_searchpath, strlen(string) + strlen(sys_searchpath) + 2);
+        strcat(sys_searchpath, ";");
+    }
+    else
+    {
+        sys_searchpath = malloc(strlen(string) + 1);
+        sys_searchpath[0] = 0;
+    }
+    fflush(stdout);
+    strcat(sys_searchpath, string);
+}
 void incl_setup(char select, char* string)
 /*
  * activation for include paths
@@ -1234,5 +1250,5 @@ void ccinit(int argc, char* argv[])
 
     /* Set up a ctrl-C handler so we can exit the prog with cleanup */
     signal(SIGINT, ctrlchandler);
-    signal(SIGSEGV, internalError);
+    //    signal(SIGSEGV, internalError);
 }

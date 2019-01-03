@@ -21,22 +21,27 @@
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
+include ../../pathext2.mak
 
 NAME=ocpp
 MAIN_FILE=ppmain.c
-INCLUDES=. ..\parse ..\middle
+INCLUDES=. ..$(PATHEXT2)parse ..$(PATHEXT2)middle
 C_DEPENDENCIES=$(wildcard *.c)
 #LIB_DEPENDENCIES=util.lib objlib.lib
 DEFINES=CPREPROCESSOR USE_LONGLONG
 H_FILES=$(wildcard *.h)
 
 ifndef _TREEROOT
-redirect:
-	@$(MAKE) /T
+_TREEROOT := $(CURDIR)$(PATHEXT2)..$(PATHEXT2)..$(PATHEXT2)treetop.mak
+_TREETARGET := $(CURDIR)
+export _TREEROOT
+export _TREETARGET
 
+redirect:
+	@$(MAKE) -f$(_TREEROOT)
 format:
-	@$(MAKE) /T format
+	@$(MAKE) -f $(_TREEROOT) format
 endif
 
 DISTRIBUTE: copyexe
-	copy target.cfg $(DISTBIN)\ocpp.cfg
+	copy target.cfg $(DISTBIN)$(PATHEXT2)ocpp.cfg

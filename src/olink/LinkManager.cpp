@@ -25,7 +25,7 @@
 
 #include "ObjSection.h"
 #include "ObjFile.h"
-#include "ObjIo.h"
+#include "ObjIO.h"
 #include "ObjFactory.h"
 #include "ObjUtil.h"
 #include "ObjType.h"
@@ -40,8 +40,8 @@
 #include "Utils.h"
 
 #include <fstream>
-#include <stdio.h>
-#include <limits.h>
+#include <cstdio>
+#include <climits>
 
 int LinkManager::errors;
 int LinkManager::warnings;
@@ -80,7 +80,7 @@ void LinkManager::LoadExterns(ObjFile* file, ObjExpression* exp)
             LinkSymbolData test(file, exp->GetSymbol());
             if (externals.find(&test) == externals.end())
             {
-                SymbolIterator it = publics.find(&test);
+                auto it = publics.find(&test);
                 if (it != publics.end())
                 {
                     (*it)->SetUsed(true);
@@ -108,7 +108,7 @@ void LinkManager::LoadExterns(ObjFile* file, ObjExpression* exp)
                 std::string name = sect->GetName().substr(n);
                 ObjSymbol sym(name, ObjSymbol::ePublic, -1);
                 LinkSymbolData test(file, &sym);
-                SymbolIterator it = virtsections.find(&test);
+                auto it = virtsections.find(&test);
                 if (it == virtsections.end() || !(*it)->GetUsed())
                 {
                     LinkSymbolData* newSymbol = new LinkSymbolData(file, new ObjSymbol(sym));
@@ -135,7 +135,7 @@ void LinkManager::LoadSectionExternals(ObjFile* file, ObjSection* section)
     {
         section->SetUsed(true);
         ObjMemoryManager& memManager = section->GetMemoryManager();
-        for (ObjMemoryManager::MemoryIterator it = memManager.MemoryBegin(); it != memManager.MemoryEnd(); ++it)
+        for (auto it = memManager.MemoryBegin(); it != memManager.MemoryEnd(); ++it)
         {
             if ((*it)->GetFixup())
             {
@@ -144,9 +144,32 @@ void LinkManager::LoadSectionExternals(ObjFile* file, ObjSection* section)
         }
     }
 }
+void LinkManager::MarkExternals(ObjFile* file)
+{
+    for (ObjFile::SymbolIterator it = file->ExternalBegin(); it != file->ExternalEnd(); ++it)
+    {
+        LinkSymbolData sym(*it);
+        SymbolIterator it1 = publics.find(&sym);
+        if (it1 != publics.end())
+        {
+            (*it1)->SetUsed(true);
+        }
+        SymbolIterator its = imports.find(&sym);
+        if (its != imports.end())
+        {
+            (*its)->SetUsed(true);
+        }
+        SymbolIterator itv = virtsections.find(&sym);
+        if (itv != virtsections.end())
+        {
+            (*itv)->SetUsed(true);
+            (*itv)->SetRemapped(true);
+        }
+    }
+}
 void LinkManager::MergePublics(ObjFile* file, bool toerr)
 {
-    for (ObjFile::SymbolIterator it = file->PublicBegin(); it != file->PublicEnd(); ++it)
+    for (auto it = file->PublicBegin(); it != file->PublicEnd(); ++it)
     {
         LinkSymbolData test(file, *it);
         if (publics.find(&test) != publics.end() || virtsections.find(&test) != virtsections.end())
@@ -158,7 +181,7 @@ void LinkManager::MergePublics(ObjFile* file, bool toerr)
         {
             LinkSymbolData* newSymbol = new LinkSymbolData(file, *it);
             publics.insert(newSymbol);
-            SymbolIterator it = exports.find(newSymbol);
+            auto it = exports.find(newSymbol);
             if (it != exports.end())
             {
                 (*it)->SetUsed(true);
@@ -174,7 +197,7 @@ void LinkManager::MergePublics(ObjFile* file, bool toerr)
             }
         }
     }
-    for (ObjFile::SymbolIterator it = file->ImportBegin(); it != file->ImportEnd(); ++it)
+    for (auto it = file->ImportBegin(); it != file->ImportEnd(); ++it)
     {
         LinkSymbolData test(file, *it);
         if (imports.find(&test) == imports.end())
@@ -183,7 +206,7 @@ void LinkManager::MergePublics(ObjFile* file, bool toerr)
             imports.insert(newSymbol);
         }
     }
-    for (ObjFile::SymbolIterator it = file->ExportBegin(); it != file->ExportEnd(); ++it)
+    for (auto it = file->ExportBegin(); it != file->ExportEnd(); ++it)
     {
         LinkSymbolData test(file, *it);
         if (exports.find(&test) == exports.end())
@@ -211,7 +234,7 @@ void LinkManager::MergePublics(ObjFile* file, bool toerr)
                     }
                     else
                     {
-                        SymbolIterator it1 = virtsections.find(&test);
+                        auto it1 = virtsections.find(&test);
                         if (it1 == virtsections.end())
                         {
                             LinkSymbolData* newSymbol = new LinkSymbolData(file, new ObjSymbol(sym));
@@ -223,7 +246,7 @@ void LinkManager::MergePublics(ObjFile* file, bool toerr)
             }
         }
     }
-    for (ObjFile::SectionIterator it = file->SectionBegin(); it != file->SectionEnd(); ++it)
+    for (auto it = file->SectionBegin(); it != file->SectionEnd(); ++it)
     {
         if (!((*it)->GetQuals() & ObjSection::virt))
         {
@@ -244,7 +267,7 @@ void LinkManager::MergePublics(ObjFile* file, bool toerr)
                 }
                 else
                 {
-                    SymbolIterator it1 = virtsections.find(&test);
+                    auto it1 = virtsections.find(&test);
                     if (it1 == virtsections.end())
                     {
                         LinkSymbolData* newSymbol = new LinkSymbolData(file, new ObjSymbol(sym));
@@ -271,9 +294,9 @@ void LinkManager::MergePublics(ObjFile* file, bool toerr)
             }
         }
     }
-    for (SymbolIterator it = externals.begin(); it != externals.end();)
+    for (auto it = externals.begin(); it != externals.end();)
     {
-        SymbolIterator it1 = publics.find(*it);
+        auto it1 = publics.find(*it);
         if (it1 != publics.end())
         {
             (*it)->SetUsed(true);
@@ -284,7 +307,7 @@ void LinkManager::MergePublics(ObjFile* file, bool toerr)
         }
         else
         {
-            SymbolIterator its = imports.find(*it);
+            auto its = imports.find(*it);
             if (its != imports.end())
             {
                 (*it)->SetUsed(true);
@@ -307,7 +330,7 @@ bool LinkManager::HasVirtual(std::string name)
         ObjSymbol sym(name, ObjSymbol::ePublic, -1);
         ObjFile file(name);
         LinkSymbolData test(&file, &sym);
-        SymbolIterator it = virtsections.find(&test);
+        auto it = virtsections.find(&test);
         if (it != virtsections.end())
         {
             return (*it)->GetUsed();
@@ -327,9 +350,9 @@ bool LinkManager::ScanVirtuals()
             rv = true;
         }
     }
-    for (SymbolIterator it = externals.begin(); it != externals.end();)
+    for (auto it = externals.begin(); it != externals.end();)
     {
-        SymbolIterator it1 = virtsections.find(*it);
+        auto it1 = virtsections.find(*it);
         if (it1 != virtsections.end())
         {
             if (!(*it1)->GetUsed())
@@ -348,9 +371,9 @@ bool LinkManager::ScanVirtuals()
             ++it;
         }
     }
-    for (SymbolIterator it = exports.begin(); it != exports.end(); ++it)
+    for (auto it = exports.begin(); it != exports.end(); ++it)
     {
-        SymbolIterator it1 = virtsections.find(*it);
+        auto it1 = virtsections.find(*it);
         if (it1 != virtsections.end())
         {
             if (!(*it1)->GetUsed())
@@ -370,14 +393,14 @@ void LinkManager::LoadFiles()
     }
     int bpmau = INT_MAX;
     int mau = 1;
-    for (CmdFiles::FileNameIterator it = objectFiles.FileNameBegin(); it != objectFiles.FileNameEnd(); ++it)
+    for (auto it = objectFiles.FileNameBegin(); it != objectFiles.FileNameEnd(); ++it)
     {
         ObjString name = *(*it);
         FILE* infile = fopen(name.c_str(), "rb");
         if (!infile)
         {
             std::string hold = libPath;
-            while (hold.size())
+            while (!hold.empty())
             {
                 std::string next;
                 size_t npos = hold.find(";");
@@ -439,7 +462,7 @@ LinkLibrary* LinkManager::OpenLibrary(const ObjString& name)
         }
         std::string hold = libPath;
         std::string next;
-        while (hold.size())
+        while (!hold.empty())
         {
             size_t npos = hold.find(";");
             if (npos == std::string::npos)
@@ -481,7 +504,7 @@ LinkLibrary* LinkManager::OpenLibrary(const ObjString& name)
 }
 void LinkManager::LoadLibraries()
 {
-    for (CmdFiles::FileNameIterator it = libFiles.FileNameBegin(); it != libFiles.FileNameEnd(); ++it)
+    for (auto it = libFiles.FileNameBegin(); it != libFiles.FileNameEnd(); ++it)
     {
         LinkLibrary* newLibrary = OpenLibrary((**it));
         if (newLibrary)
@@ -545,10 +568,10 @@ bool LinkManager::ResolveLibrary(LinkLibrary* lib, std::string& name)
 void LinkManager::ScanLibraries()
 {
     SymbolData dt;
-    while (externals.size())
+    while (!externals.empty())
     {
         bool found = false;
-        SymbolIterator extit = externals.begin();
+        auto extit = externals.begin();
         for (; extit != externals.end(); ++extit)
         {
             if (!(*extit)->GetUsed() && virtsections.find(*extit) == virtsections.end())
@@ -613,7 +636,7 @@ bool LinkManager::CreateSeparateRegions(LinkManager* manager, CmdFiles& files, L
         return false;
     if (!spec.MustMatch(LinkTokenizer::eSemi))
         return false;
-    for (LinkRegion::SectionDataIterator itr = newRegion->NowDataBegin(); itr != newRegion->NowDataEnd(); ++itr)
+    for (auto itr = newRegion->NowDataBegin(); itr != newRegion->NowDataEnd(); ++itr)
     {
         for (auto sect : (*itr)->sections)
         {
@@ -630,7 +653,7 @@ bool LinkManager::CreateSeparateRegions(LinkManager* manager, CmdFiles& files, L
             region->AddNormalData(sect.file, sect.section);
         }
     }
-    for (LinkRegion::SectionDataIterator itr = newRegion->NormalDataBegin(); itr != newRegion->NormalDataEnd(); ++itr)
+    for (auto itr = newRegion->NormalDataBegin(); itr != newRegion->NormalDataEnd(); ++itr)
     {
         for (auto sect : (*itr)->sections)
         {
@@ -647,7 +670,7 @@ bool LinkManager::CreateSeparateRegions(LinkManager* manager, CmdFiles& files, L
             region->AddNormalData(sect.file, sect.section);
         }
     }
-    for (LinkRegion::SectionDataIterator itr = newRegion->PostponeDataBegin(); itr != newRegion->PostponeDataEnd(); ++itr)
+    for (auto itr = newRegion->PostponeDataBegin(); itr != newRegion->PostponeDataEnd(); ++itr)
     {
         for (auto sect : (*itr)->sections)
         {
@@ -672,12 +695,8 @@ bool LinkManager::CreateSeparateRegions(LinkManager* manager, CmdFiles& files, L
 bool LinkManager::ParsePartitions()
 {
     bool done = false;
-    int numImports = 0;
-    for (auto import : imports)
-        if (import->GetUsed())
-            numImports++;
 
-    LinkExpression* value = new LinkExpression(numImports);
+    LinkExpression* value = new LinkExpression(externals.size());
     LinkExpressionSymbol* esym = new LinkExpressionSymbol("IMPORTCOUNT", value);
     LinkExpression::EnterSymbol(esym);
     while (!done)
@@ -714,7 +733,7 @@ void LinkManager::CreatePartitions()
     std::map<ObjString, LinkRegion*> createdRegions;
     for (auto file : fileData)
     {
-        for (ObjFile::SectionIterator its = file->SectionBegin(); its != file->SectionEnd(); ++its)
+        for (auto its = file->SectionBegin(); its != file->SectionEnd(); ++its)
         {
             ObjString name = (*its)->GetName();
             auto itr = createdRegions.find(name);
@@ -769,7 +788,7 @@ void LinkManager::PlaceSections()
 void LinkManager::UnplacedWarnings()
 {
     for (auto file : fileData)
-        for (ObjFile::SectionIterator its = file->SectionBegin(); its != file->SectionEnd(); ++its)
+        for (auto its = file->SectionBegin(); its != file->SectionEnd(); ++its)
             if (!(*its)->GetUtilityFlag())
                 LinkError("Section " + (*its)->GetName() + " unused in module " + file->GetName());
 }
@@ -841,7 +860,7 @@ void LinkManager::CreateOutputFile()
         if (ofile != nullptr)
         {
             // copy the definitions into the rel file
-            for (LinkExpression::iterator it = LinkExpression::begin(); it != LinkExpression::end(); ++it)
+            for (auto it = LinkExpression::begin(); it != LinkExpression::end(); ++it)
             {
                 ObjDefinitionSymbol* d = factory->MakeDefinitionSymbol((*it)->GetName());
                 d->SetValue((*it)->GetValue()->Eval(0));
@@ -854,7 +873,7 @@ void LinkManager::CreateOutputFile()
                 if (!debugPassThrough)
                 {
                     ioBase->SetDebugInfoFlag(false);
-                    if (debugFile.size())
+                    if (!debugFile.empty())
                     {
                         LinkDebugFile df(debugFile, file, this->virtualSections, this->parentSections);
                         df.CreateOutput();
@@ -880,8 +899,10 @@ void LinkManager::Link()
     LoadFiles();
     if (completeLink)
     {
-        if (externals.size())
+        if (!externals.empty())
         {
+            for (auto file : fileData)
+                MarkExternals(file);
             LoadLibraries();
             do
             {
@@ -889,7 +910,7 @@ void LinkManager::Link()
             } while (ScanVirtuals());
         }
     }
-    if (!specName.size())
+    if (specName.empty())
     {
         CreatePartitions();
     }
@@ -897,8 +918,8 @@ void LinkManager::Link()
     {
         if (!ParsePartitions())
         {
-            std::string err = std::string("Specification file line ") + Utils::NumberToString(specification.GetLineNo()) +
-                              specification.GetError();
+            std::string err =
+                "Specification file line " + Utils::NumberToString(specification.GetLineNo()) + specification.GetError();
             LinkError(err);
         }
     }

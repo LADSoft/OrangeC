@@ -28,16 +28,16 @@
 #include <fstream>
 #include <stdexcept>
 #include <map>
-#include <stdarg.h>
-#include <time.h>
-#include <string.h>
-#include "utils.h"
+#include <cstdarg>
+#include <ctime>
+#include <cstring>
+#include "Utils.h"
 #include "ObjIO.h"
 #include "ObjUtil.h"
 #include "ObjIndexManager.h"
 #include "ObjType.h"
 #include "ObjMemory.h"
-#include "ObjIEeeConstants.h"
+#include "ObjIeeeConstants.h"
 class ObjSymbol;
 class ObjSection;
 class ObjSourceFile;
@@ -87,7 +87,7 @@ class ObjIeeeBinary : public ObjIOBase
     {
       public:
         BadCS() : std::domain_error("Bad Checksum") {}
-        virtual ~BadCS() throw(){};
+        virtual ~BadCS() noexcept {};
     };
     class SyntaxError : public std::domain_error
     {
@@ -97,7 +97,7 @@ class ObjIeeeBinary : public ObjIOBase
             lineNo(lineno)
         {
         }
-        virtual ~SyntaxError() throw(){};
+        virtual ~SyntaxError() noexcept {};
 
         int GetLineNo() const { return lineNo; }
 
@@ -295,6 +295,13 @@ class ObjIeeeAscii : public ObjIOBase
         file = nullptr;
         return HandleRead(ParseType);
     }
+    virtual bool BinaryWrite(FILE* fil, ObjFile* File, ObjFactory* Factory)
+    {
+        sfile = fil;
+        factory = Factory;
+        file = File;
+        return BinaryWrite();
+    }
     virtual std::string GetErrorQualifier() { return std::string("in line ") + Utils::NumberToString(lineno); }
 
     struct ParseDataLT
@@ -330,7 +337,7 @@ class ObjIeeeAscii : public ObjIOBase
     {
       public:
         BadCS() : std::domain_error("Bad Checksum") {}
-        virtual ~BadCS() throw(){};
+        virtual ~BadCS() noexcept {};
     };
     class SyntaxError : public std::domain_error
     {
@@ -340,7 +347,7 @@ class ObjIeeeAscii : public ObjIOBase
             lineNo(lineno)
         {
         }
-        virtual ~SyntaxError() throw(){};
+        virtual ~SyntaxError() noexcept {};
 
         int GetLineNo() const { return lineNo; }
 
@@ -349,6 +356,7 @@ class ObjIeeeAscii : public ObjIOBase
     };
     friend class ObjIeeeAscii::ParseData;
     bool HandleWrite();
+    bool BinaryWrite();
     ObjFile* HandleRead(eParseType Type);
 
     void GatherCS(const char* cstr);
@@ -450,6 +458,7 @@ class ObjIeeeAscii : public ObjIOBase
     void RenderSection(ObjSection* Section);
     void RenderDebugTag(ObjDebugTag* Tag);
     void RenderMemory(ObjMemoryManager* Memory);
+    void RenderMemoryBinary(ObjMemoryManager* Memory);
     void RenderBrowseInfo(ObjBrowseInfo* Memory);
     void RenderExpression(ObjExpression* Expression);
     void PutSymbol(SymbolMap& map, int index, ObjSymbol* sym);

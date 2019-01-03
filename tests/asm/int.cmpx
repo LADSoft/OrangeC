@@ -1,0 +1,68 @@
+	popcnt	ebx,[ecx]: 66 67 F3 0F B8 19 : 67 F3 66 0F B8 19 
+	mov	ebx, fs: 66 8C E3 : 8C E3 
+	jmp	near lbl104: E9 02 00 00 00 : EB 02 
+	ja	near lbl106: 0F 87 02 00 00 00 : 77 02 
+	jae	near lbl109: 0F 83 02 00 00 00 : 73 02 
+	jb	near lbl112: 0F 82 02 00 00 00 : 72 02 
+	jbe	near lbl115: 0F 86 02 00 00 00 : 76 02 
+	jc	near lbl118: 0F 82 02 00 00 00 : 72 02 
+	je	near lbl121: 0F 84 02 00 00 00 : 74 02 
+	jg	near lbl124: 0F 8F 02 00 00 00 : 7F 02 
+	jge	near lbl127: 0F 8D 02 00 00 00 : 7D 02 
+	jl	near lbl130: 0F 8C 02 00 00 00 : 7C 02 
+	jle	near lbl133: 0F 8E 02 00 00 00 : 7E 02 
+	jna	near lbl136: 0F 86 02 00 00 00 : 76 02 
+	jnae	near lbl139: 0F 82 02 00 00 00 : 72 02 
+	jnb	near lbl142: 0F 83 02 00 00 00 : 73 02 
+	jnbe	near lbl145: 0F 87 02 00 00 00 : 77 02 
+	jnc	near lbl148: 0F 83 02 00 00 00 : 73 02 
+	jne	near lbl151: 0F 85 02 00 00 00 : 75 02 
+	jng	near lbl154: 0F 8E 02 00 00 00 : 7E 02 
+	jnge	near lbl157: 0F 8C 02 00 00 00 : 7C 02 
+	jnl	near lbl160: 0F 8D 02 00 00 00 : 7D 02 
+	jnle	near lbl163: 0F 8F 02 00 00 00 : 7F 02 
+	jno	near lbl166: 0F 81 02 00 00 00 : 71 02 
+	jnp	near lbl169: 0F 8B 02 00 00 00 : 7B 02 
+	jns	near lbl172: 0F 89 02 00 00 00 : 79 02 
+	jnz	near lbl175: 0F 85 02 00 00 00 : 75 02 
+	jo	near lbl178: 0F 80 02 00 00 00 : 70 02 
+	jp	near lbl181: 0F 8A 02 00 00 00 : 7A 02 
+	jpe	near lbl184: 0F 8A 02 00 00 00 : 7A 02 
+	jpo	near lbl187: 0F 8B 02 00 00 00 : 7B 02 
+	js	near lbl190: 0F 88 02 00 00 00 : 78 02 
+	jz	near lbl193: 0F 84 02 00 00 00 : 74 02 
+	popcnt	bx,[ecx]: 66 F3 0F B8 19 : F3 66 0F B8 19 
+	jmp	near lbl205: E9 02 00 00 00 : EB 02 
+	ja	near lbl207: 0F 87 02 00 00 00 : 77 02 
+	jae	near lbl210: 0F 83 02 00 00 00 : 73 02 
+	jb	near lbl213: 0F 82 02 00 00 00 : 72 02 
+	jbe	near lbl216: 0F 86 02 00 00 00 : 76 02 
+	jc	near lbl219: 0F 82 02 00 00 00 : 72 02 
+	je	near lbl222: 0F 84 02 00 00 00 : 74 02 
+	jg	near lbl225: 0F 8F 02 00 00 00 : 7F 02 
+	jge	near lbl228: 0F 8D 02 00 00 00 : 7D 02 
+	jl	near lbl231: 0F 8C 02 00 00 00 : 7C 02 
+	jle	near lbl234: 0F 8E 02 00 00 00 : 7E 02 
+	jna	near lbl237: 0F 86 02 00 00 00 : 76 02 
+	jnae	near lbl240: 0F 82 02 00 00 00 : 72 02 
+	jnb	near lbl243: 0F 83 02 00 00 00 : 73 02 
+	jnbe	near lbl246: 0F 87 02 00 00 00 : 77 02 
+	jnc	near lbl249: 0F 83 02 00 00 00 : 73 02 
+	jne	near lbl252: 0F 85 02 00 00 00 : 75 02 
+	jng	near lbl255: 0F 8E 02 00 00 00 : 7E 02 
+	jnge	near lbl258: 0F 8C 02 00 00 00 : 7C 02 
+	jnl	near lbl261: 0F 8D 02 00 00 00 : 7D 02 
+	jnle	near lbl264: 0F 8F 02 00 00 00 : 7F 02 
+	jno	near lbl267: 0F 81 02 00 00 00 : 71 02 
+	jnp	near lbl270: 0F 8B 02 00 00 00 : 7B 02 
+	jns	near lbl273: 0F 89 02 00 00 00 : 79 02 
+	jnz	near lbl276: 0F 85 02 00 00 00 : 75 02 
+	jo	near lbl279: 0F 80 02 00 00 00 : 70 02 
+	jp	near lbl282: 0F 8A 02 00 00 00 : 7A 02 
+	jpe	near lbl285: 0F 8A 02 00 00 00 : 7A 02 
+	jpo	near lbl288: 0F 8B 02 00 00 00 : 7B 02 
+	js	near lbl291: 0F 88 02 00 00 00 : 78 02 
+	jz	near lbl294: 0F 84 02 00 00 00 : 74 02 
+	popcnt	bx,[ecx]: 66 67 F3 0F B8 19 : 67 F3 66 0F B8 19 
+	popcnt	r14w,[ecx]: 66 67 F3 44 0F B8 31 : 67 F3 44 66 0F B8 31 
+4863 Instructions

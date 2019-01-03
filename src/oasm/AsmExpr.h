@@ -32,7 +32,7 @@
 class ppDefine;
 class Section;
 
-typedef L_INT PPINT;
+typedef long long PPINT;
 
 class AsmExprNode
 {
@@ -78,7 +78,7 @@ class AsmExprNode
         sect(nullptr)
     {
     }
-    AsmExprNode(PPINT Ival) : type(IVAL), ival(Ival), left(nullptr), right(nullptr), sect(nullptr) {}
+    AsmExprNode(PPINT Ival, bool reg = false) : type(reg ? REG : IVAL), ival(Ival), left(nullptr), right(nullptr), sect(nullptr) {}
     AsmExprNode(const FPF& Fval) : type(FVAL), ival(0), fval(Fval), left(nullptr), right(nullptr), sect(nullptr) {}
     AsmExprNode(std::string lbl) : type(LABEL), ival(0), left(nullptr), right(nullptr), label(lbl), sect(nullptr) {}
     AsmExprNode(Section* Sect, int offs) : type(BASED), ival(offs), left(nullptr), right(nullptr), sect(Sect) {}
@@ -123,6 +123,7 @@ class AsmExprNode
 class AsmExpr
 {
   public:
+    AsmExpr() : define(nullptr) {}
     AsmExpr(ppDefine* Define) : define(Define) { InitHash(); }
     ~AsmExpr() {}
     AsmExprNode* Build(std::string& line);
@@ -134,7 +135,7 @@ class AsmExpr
     static Section* GetSection() { return section; }
     static void SetEqu(std::string name, AsmExprNode* n) { equs[name] = n; }
     static AsmExprNode* ConvertToBased(AsmExprNode* n, int pc);
-    static AsmExprNode* GetEqu(std::string name)
+    static AsmExprNode* GetEqu(std::string& name)
     {
         auto it = equs.find(name);
         if (it != equs.end())

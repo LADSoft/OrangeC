@@ -29,8 +29,11 @@
 #include <list>
 #include <string>
 #include <map>
-
+#include <set>
+#include <ctime>
 #include "Token.h"
+
+class ppInclude;
 
 class Packing
 {
@@ -237,10 +240,58 @@ class Startups
     static Startups* instance;
     std::map<std::string, Properties*> list;
 };
+class Once
+{
+  public:
+    static Once* Instance()
+    {
+        if (!instance)
+            instance = new Once;
+        return instance;
+    }
+    ~Once();
+
+    void SetInclude(ppInclude* Include)
+    {
+        include = Include;
+        items.clear();
+    }
+    void CheckForMultiple()
+    {
+        if (!AddToList())
+            TriggerEOF();
+    }
+
+  protected:
+    Once() : include(nullptr) {}
+    bool AddToList();
+    void TriggerEOF();
+
+  private:
+    struct OnceItem
+    {
+        OnceItem(const std::string& fileName) { SetParams(fileName); }
+        OnceItem(const OnceItem& right) = default;
+        bool operator<(const OnceItem& right) const;
+        void SetParams(const std::string& fileName);
+
+        long filesize;
+        time_t filetime;
+        unsigned crc;
+    };
+
+    static Once* instance;
+    std::set<OnceItem> items;
+    ppInclude* include;
+};
 class ppPragma
 {
   public:
-    ppPragma() { InitHash(); }
+    ppPragma(ppInclude* Include)
+    {
+        InitHash();
+        Once::Instance()->SetInclude(Include);
+    }
     void InitHash();
     bool Check(int token, const std::string& args);
     void ParsePragma(const std::string& args);
@@ -268,6 +319,7 @@ class ppPragma
     void HandleLibrary(Tokenizer& tk);
     void HandleAlias(Tokenizer& tk);
     void HandleFar(Tokenizer& tk);
+    void HandleOnce(Tokenizer& tk);
 
   private:
     KeywordHash hash;

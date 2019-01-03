@@ -1,11 +1,9 @@
 # Tools - Table Of Contents
-
  
  This document serves as a table of contents, for the documentation on the Orange toolchain.
 
 
 ## General Tools
-
  
  General tools compile or assemble code, and manage the resulting object files.
  
@@ -16,7 +14,6 @@
 
 
 ## Linker Postprocessing Tools
- 
 
  Linker postprocessing tools take the linker output, and make some sort of device or OS-specific binary image that serves as the final executable image.
  
@@ -28,7 +25,6 @@
 
 ## Utilities
 
- 
  Utilities are external utilites that aren't generally needed for developing programs, but are somewhat useful.
  
 * [OCPP](general/OCPP.md) is a C and assembly language preprocessor.  It understands C89, C99, and OAsm preprocessor directive syntaxes.
@@ -36,9 +32,8 @@
 * [OMake](omake/OMake.md) is a make utility similar to GNU make.
 * [onm](general/onm.md) dumps the symbols from object files
 
-## WIN32 Specific tools
- 
 
+## WIN32 Specific tools
  
  WIN32 specific tools are tools that aid in the development of WIN32 programs.
  
@@ -49,13 +44,15 @@
 * [OBRC](general/Obrc.md) Orange C Browse Compiler
 * [OCCPR](general/Occpr.md) Orange C Code Completion compiler
 
+
 ## Tools Setup
-
-
  
- The tools come with configuration files that set up their run-time enviroment, however there are a couple of external dependencies.  First, the tools bin directory must be on the path.  Second, an environment variable ORANGEC must be set up to point to the tools directory.
+ The tools come with configuration files that set up their run-time enviroment. These are automatically read relative to the binaries, therefore only the OrangeC bin directory must be on PATH.
 
-For example, if the tools are installed in c:\\orangec, the following command line commands could be used to set up their environment:
+For example, if the tools are installed in c:\\orangec, the following command line command is enough to set up the OrangeC environment:
+
+>     PATH=c:\\orangec\\bin;%PATH%
+
+There is also an ORANGEC environment variable.   Usually it doesn't need to be set, but if you have multiple installations of orange c on the path you may want to set it to avoid ambiguity.   It is set to the OrangeC root directory:
 
 >     set ORANGEC=c:\\orangec
->     PATH=c:\\orangec\\bin;%PATH%

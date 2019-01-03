@@ -757,11 +757,7 @@ static EXPRESSION* createLambda(BOOLEAN noinline)
                     TYPE* ctp = capture->tp;
                     if (isstructured(ctp))
                     {
-                        FUNCTIONCALL* params = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
-                        params->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
-                        params->arguments->tp = sp->tp;
-                        params->arguments->exp = sp->init->exp;
-                        if (!callConstructor(&ctp, &en1, params, FALSE, NULL, TRUE, FALSE, TRUE, FALSE, FALSE))
+                        if (!callConstructorParam(&ctp, &en1, sp->tp, sp->init->exp, TRUE, FALSE, TRUE, FALSE))
                             errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, lsp->sym);
                         en = en1;
                     }
@@ -812,11 +808,7 @@ static EXPRESSION* createLambda(BOOLEAN noinline)
                     }
                     if (isstructured(ctp))
                     {
-                        FUNCTIONCALL* params = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
-                        params->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
-                        params->arguments->tp = ctp;
-                        params->arguments->exp = en;
-                        if (!callConstructor(&ctp, &en1, params, FALSE, NULL, TRUE, FALSE, TRUE, FALSE, FALSE))
+                        if (!callConstructorParam(&ctp, &en1, ctp, en, TRUE, FALSE, TRUE, FALSE))
                             errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, lsp->sym);
                         en = en1;
                     }
@@ -909,7 +901,7 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                 lex = backupsym();
             }
         }
-        else if (MATCHKW(lex, and))
+        else if (MATCHKW(lex, andx))
         {
             lex = getsym();
             if (MATCHKW(lex, comma) || MATCHKW(lex, closebr))
@@ -947,7 +939,7 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                     }
                     continue;
                 }
-                else if (MATCHKW(lex, and))
+                else if (MATCHKW(lex, andx))
                 {
                     if (localMode == cmRef)
                     {

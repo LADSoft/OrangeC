@@ -27,10 +27,10 @@
 #include "RCFile.h"
 #include "ResFile.h"
 #include "ResourceData.h"
-#include <windows.h>
+#include <cstring>
 RCData::~RCData()
 {
-    for (iterator it = begin(); it != end(); ++it)
+    for (auto it = begin(); it != end(); ++it)
     {
         ResourceData* r = (*it);
         delete r;
@@ -86,10 +86,10 @@ void RCData::ReadRC(RCFile& rcFile)
                 {
                     // this is being done for portability
                     int n = t->GetString().size();
-                    WORD* p = new WORD[n];
+                    wchar_t* p = new wchar_t[n];
                     for (int i = 0; i < n; i++)
                         p[i] = t->GetString()[i];
-                    ResourceData* rd = new ResourceData((unsigned char*)p, n * sizeof(WORD));
+                    ResourceData* rd = new ResourceData((unsigned char*)p, n * sizeof(wchar_t));
                     data.push_back(rd);
                     delete[] p;
                     concatwide = true;

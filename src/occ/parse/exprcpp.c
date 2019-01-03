@@ -364,7 +364,7 @@ void castToArithmetic(BOOLEAN integer, TYPE** tp, EXPRESSION** exp, enum e_kw kw
         if (!castToArithmeticInternal(integer, tp, exp, kw, other, implicit))
         {
             // failed at conversion
-            if (kw >= kw_new && kw <= compl)
+            if (kw >= kw_new && kw <= complx)
             {
                 // LHS, put up an operator whatever message
                 char buf[256];
@@ -692,6 +692,7 @@ LEXEME* expression_func_type_cast(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
                 exp2 = exp1 = *exp = anonymousVar(sc_auto, unboxed ? unboxed : basetype(*tp)->sp->tp);
                 sp = exp1->v.sp;
                 callConstructor(&ctype, exp, funcparams, FALSE, NULL, TRUE, TRUE, FALSE, FALSE, FALSE);
+                PromoteConstructorArgs(funcparams->sp, funcparams);
                 callDestructor(basetype(*tp)->sp, NULL, &exp1, NULL, TRUE, FALSE, FALSE);
                 if (chosenAssembler->msil)
                     *exp = exprNode(en_void, *exp, exp2);
@@ -1757,6 +1758,7 @@ LEXEME* expression_new(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp,
                 *exp = val;
                 tpf = *tp;
                 callConstructor(&tpf, exp, initializers, FALSE, arrSize, TRUE, FALSE, FALSE, TRUE, FALSE);
+                PromoteConstructorArgs(initializers->sp, initializers);
             }
         }
         else

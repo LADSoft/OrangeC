@@ -29,7 +29,7 @@
 
 DLLExportReader::~DLLExportReader()
 {
-    for (iterator it = begin(); it != end(); ++it)
+    for (auto it = begin(); it != end(); ++it)
     {
         DLLExport* p = *it;
         delete p;
@@ -56,6 +56,8 @@ bool DLLExportReader::doExports(std::fstream& in, int phys, int rva)
             {
                 in.seekg(nameptr - rva + phys);
                 in.read(buf, 256);
+                if (in.eof())
+                    in.clear(std::ios::failbit); // the preceding read may have read PAST the eof.
                 buf[255] = 0;  // just in case
                 byOrd = false;
             }
@@ -70,10 +72,12 @@ bool DLLExportReader::doExports(std::fstream& in, int phys, int rva)
     }
     return !in.fail();
 }
-bool DLLExportReader::Read()
+int DLLExportReader::Read()
 {
-    bool rv = false;
-    std::fstream in(name.c_str(), std::ios::in | std::ios::binary);
+    int rv = 2;
+    std::fstream in(name, std::ios::in | std::ios::binary);
+    if (!in.is_open())
+        return 1;  // can't find file
     if (!in.fail())
     {
         MZHeader mzh;
@@ -93,6 +97,7 @@ bool DLLExportReader::Read()
                     in.read((char*)&peh, sizeof(peh));
                     if (!in.fail() && peh.signature == PESIG)
                     {
+                        rv = 3;  // no export table
                         for (int i = 0; i < peh.num_objects; i++)
                         {
                             PEObject obj;
@@ -101,7 +106,8 @@ bool DLLExportReader::Read()
                             {
                                 if (peh.export_rva >= obj.virtual_addr && peh.export_rva < obj.virtual_addr + obj.virtual_size)
                                 {
-                                    rv = doExports(in, obj.raw_ptr + peh.export_rva - obj.virtual_addr, peh.export_rva);
+                                    if (doExports(in, obj.raw_ptr + peh.export_rva - obj.virtual_addr, peh.export_rva))
+                                        rv = 0;
                                     break;
                                 }
                             }

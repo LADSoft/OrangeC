@@ -13,7 +13,7 @@ void diag(char* s);
 //#undef USE_LONGLONG
 
 static const int BigEndian = 0;
-static FPF tensTab[10];
+static FPFC tensTab[10];
 /*
 ** emfloat.c
 ** BYTEmark (tm)
@@ -40,7 +40,7 @@ static void FPFInit(void)
 ** Set an internal floating-point-format number to zero.
 ** sign determines the sign of the zero.
 */
-void SetFPFZero(FPF* dest, uchar sign)
+void SetFPFZero(FPFC* dest, uchar sign)
 {
     int i; /* Index */
 
@@ -59,7 +59,7 @@ void SetFPFZero(FPF* dest, uchar sign)
 ** This can happen if the exponent exceeds MAX_EXP.
 ** As above, sign picks the sign of infinity.
 */
-void SetFPFInfinity(FPF* dest, uchar sign)
+void SetFPFInfinity(FPFC* dest, uchar sign)
 {
     int i; /* Index */
 
@@ -78,7 +78,7 @@ void SetFPFInfinity(FPF* dest, uchar sign)
 ** (not a number).  Note that we "emulate" an 80x87 as far
 ** as the mantissa bits go.
 */
-void SetFPFNaN(FPF* dest)
+void SetFPFNaN(FPFC* dest)
 {
     int i; /* Index */
 
@@ -92,7 +92,7 @@ void SetFPFNaN(FPF* dest)
     return;
 }
 
-int ValueIsOne(FPF* value)
+int ValueIsOne(FPFC* value)
 {
     if (value->type != IFPF_IS_NORMAL)
         return 0;
@@ -100,7 +100,7 @@ int ValueIsOne(FPF* value)
         return 0;
     return IsMantissaOne(value->mantissa);
 }
-int FPFEQ(FPF* left, FPF* right)
+int FPFEQ(FPFC* left, FPFC* right)
 {
     if (left->type != right->type)
         return 0;
@@ -116,7 +116,7 @@ int FPFEQ(FPF* left, FPF* right)
         return 0;
     return !memcmp(left->mantissa, right->mantissa, sizeof(right->mantissa));
 }
-int FPFGT(FPF* left, FPF* right)
+int FPFGT(FPFC* left, FPFC* right)
 {
     if (left->type == IFPF_IS_NAN || right->type == IFPF_IS_NAN)
         return 0;
@@ -146,7 +146,7 @@ int FPFGT(FPF* left, FPF* right)
         return 0;
     return (memcmp(left->mantissa, right->mantissa, sizeof(left->mantissa)) > 0);
 }
-int FPFGTE(FPF* left, FPF* right) { return FPFGT(left, right) || FPFEQ(left, right); }
+int FPFGTE(FPFC* left, FPFC* right) { return FPFGT(left, right) || FPFEQ(left, right); }
 /*******************
 ** IsMantissaZero **
 ********************
@@ -272,7 +272,7 @@ void ShiftMantRight1(uf16* carry, uf16* mantissa)
 ** I.E., if a carry of 1 is shifted out of the least significant
 ** bit, the least significant bit is set to 1.
 */
-void StickyShiftRightMant(FPF* ptr, int amount)
+void StickyShiftRightMant(FPFC* ptr, int amount)
 {
     int i;      /* Index */
     uf16 carry; /* Self-explanatory */
@@ -316,7 +316,7 @@ void StickyShiftRightMant(FPF* ptr, int amount)
 ** Normalize an internal-representation number.  Normalization
 ** discards empty most-significant bits.
 */
-void normalize(FPF* ptr)
+void normalize(FPFC* ptr)
 {
     uf16 carry;
 
@@ -344,7 +344,7 @@ void normalize(FPF* ptr)
 ** minimum_exponent. (You have to do this often in order
 ** to perform additions and subtractions).
 */
-void denormalize(FPF* ptr, int minimum_exponent)
+void denormalize(FPFC* ptr, int minimum_exponent)
 {
     long exponent_difference;
 
@@ -381,7 +381,7 @@ void denormalize(FPF* ptr, int minimum_exponent)
 ** The kind of rounding we do here is simplest...referred to as
 ** "chop".  "Extraneous" rightmost bits are simply hacked off.
 */
-void RoundFPF(FPF* ptr)
+void RoundFPF(FPFC* ptr)
 {
     /* int i; */
 
@@ -423,7 +423,7 @@ void RoundFPF(FPF* ptr)
 ** a pair of NaN's.  This routine "selects" which NaN is
 ** to be returned.
 */
-void choose_nan(FPF* x, FPF* y, FPF* z, int intel_flag)
+void choose_nan(FPFC* x, FPFC* y, FPFC* z, int intel_flag)
 {
     int i;
 
@@ -436,12 +436,12 @@ void choose_nan(FPF* x, FPF* y, FPF* z, int intel_flag)
     {
         if (x->mantissa[i] > y->mantissa[i])
         {
-            memcpy((void*)z, (void*)x, sizeof(FPF));
+            memcpy((void*)z, (void*)x, sizeof(FPFC));
             return;
         }
         if (x->mantissa[i] < y->mantissa[i])
         {
-            memcpy((void*)z, (void*)y, sizeof(FPF));
+            memcpy((void*)z, (void*)y, sizeof(FPFC));
             return;
         }
     }
@@ -451,10 +451,10 @@ void choose_nan(FPF* x, FPF* y, FPF* z, int intel_flag)
     */
     if (!intel_flag)
         /* if the operation is addition */
-        memcpy((void*)z, (void*)x, sizeof(FPF));
+        memcpy((void*)z, (void*)x, sizeof(FPFC));
     else
         /* if the operation is multiplication */
-        memcpy((void*)z, (void*)y, sizeof(FPF));
+        memcpy((void*)z, (void*)y, sizeof(FPFC));
     return;
 }
 
@@ -465,13 +465,13 @@ void choose_nan(FPF* x, FPF* y, FPF* z, int intel_flag)
 ** -representation numbers pointed to by x and y are
 ** added/subtracted and the result returned in z.
 */
-void AddSubFPF(uchar operation, FPF* x, FPF* y, FPF* z)
+void AddSubFPF(uchar operation, FPFC* x, FPFC* y, FPFC* z)
 {
     int exponent_difference;
     uf16 borrow;
     uf16 carry;
     int i;
-    FPF locx, locy; /* Needed since we alter them */
+    FPFC locx, locy; /* Needed since we alter them */
 
     /*
     ** Following big switch statement handles the
@@ -480,7 +480,7 @@ void AddSubFPF(uchar operation, FPF* x, FPF* y, FPF* z)
     switch ((x->type * IFPF_TYPE_COUNT) + y->type)
     {
         case ZERO_ZERO:
-            memcpy((void*)z, (void*)x, sizeof(FPF));
+            memcpy((void*)z, (void*)x, sizeof(FPFC));
             if (x->sign ^ y->sign ^ operation)
             {
                 z->sign = 0; /* positive */
@@ -496,14 +496,14 @@ void AddSubFPF(uchar operation, FPF* x, FPF* y, FPF* z)
         case INFINITY_ZERO:
         case INFINITY_SUBNORMAL:
         case INFINITY_NORMAL:
-            memcpy((void*)z, (void*)x, sizeof(FPF));
+            memcpy((void*)z, (void*)x, sizeof(FPFC));
             break;
 
         case ZERO_NAN:
         case SUBNORMAL_NAN:
         case NORMAL_NAN:
         case INFINITY_NAN:
-            memcpy((void*)z, (void*)y, sizeof(FPF));
+            memcpy((void*)z, (void*)y, sizeof(FPFC));
             break;
 
         case ZERO_SUBNORMAL:
@@ -511,7 +511,7 @@ void AddSubFPF(uchar operation, FPF* x, FPF* y, FPF* z)
         case ZERO_INFINITY:
         case SUBNORMAL_INFINITY:
         case NORMAL_INFINITY:
-            memcpy((void*)z, (void*)y, sizeof(FPF));
+            memcpy((void*)z, (void*)y, sizeof(FPFC));
             z->sign ^= operation;
             break;
 
@@ -523,8 +523,8 @@ void AddSubFPF(uchar operation, FPF* x, FPF* y, FPF* z)
             ** Copy x and y to locals, since we may have
             ** to alter them.
             */
-            memcpy((void*)&locx, (void*)x, sizeof(FPF));
-            memcpy((void*)&locy, (void*)y, sizeof(FPF));
+            memcpy((void*)&locx, (void*)x, sizeof(FPFC));
+            memcpy((void*)&locy, (void*)y, sizeof(FPFC));
 
             /* compute sum/difference */
             exponent_difference = locx.exp - locy.exp;
@@ -653,13 +653,13 @@ void AddSubFPF(uchar operation, FPF* x, FPF* y, FPF* z)
 ** Two internal-representation numbers x and y are multiplied; the
 ** result is returned in z.
 */
-void MultiplyFPF(FPF* x, FPF* y, FPF* z)
+void MultiplyFPF(FPFC* x, FPFC* y, FPFC* z)
 {
     int i;
     int j;
     uf16 carry;
     uf16 extra_bits[INTERNAL_FPF_PRECISION];
-    FPF locy; /* Needed since this will be altered */
+    FPFC locy; /* Needed since this will be altered */
     /*
     ** As in the preceding function, this large switch
     ** statement selects among the many combinations
@@ -673,7 +673,7 @@ void MultiplyFPF(FPF* x, FPF* y, FPF* z)
         case ZERO_ZERO:
         case ZERO_SUBNORMAL:
         case ZERO_NORMAL:
-            memcpy((void*)z, (void*)x, sizeof(FPF));
+            memcpy((void*)z, (void*)x, sizeof(FPFC));
             z->sign ^= y->sign;
             break;
 
@@ -681,7 +681,7 @@ void MultiplyFPF(FPF* x, FPF* y, FPF* z)
         case NORMAL_INFINITY:
         case SUBNORMAL_ZERO:
         case NORMAL_ZERO:
-            memcpy((void*)z, (void*)y, sizeof(FPF));
+            memcpy((void*)z, (void*)y, sizeof(FPFC));
             z->sign ^= x->sign;
             break;
 
@@ -694,14 +694,14 @@ void MultiplyFPF(FPF* x, FPF* y, FPF* z)
         case NAN_SUBNORMAL:
         case NAN_NORMAL:
         case NAN_INFINITY:
-            memcpy((void*)z, (void*)x, sizeof(FPF));
+            memcpy((void*)z, (void*)x, sizeof(FPFC));
             break;
 
         case ZERO_NAN:
         case SUBNORMAL_NAN:
         case NORMAL_NAN:
         case INFINITY_NAN:
-            memcpy((void*)z, (void*)y, sizeof(FPF));
+            memcpy((void*)z, (void*)y, sizeof(FPFC));
             break;
 
         case SUBNORMAL_SUBNORMAL:
@@ -712,7 +712,7 @@ void MultiplyFPF(FPF* x, FPF* y, FPF* z)
             ** Make a local copy of the y number, since we will be
             ** altering it in the process of multiplying.
             */
-            memcpy((void*)&locy, (void*)y, sizeof(FPF));
+            memcpy((void*)&locy, (void*)y, sizeof(FPFC));
 
             /*
             ** Check for unnormal zero arguments
@@ -805,15 +805,15 @@ void MultiplyFPF(FPF* x, FPF* y, FPF* z)
 /**********************
 ** DivideFPF **
 ***********************
-** Divide internal FPF number x by y.  Return result in z.
+** Divide internal FPFC number x by y.  Return result in z.
 */
-void DivideFPF(FPF* x, FPF* y, FPF* z)
+void DivideFPF(FPFC* x, FPFC* y, FPFC* z)
 {
     int i;
     int j;
     uf16 carry;
     uf16 extra_bits[INTERNAL_FPF_PRECISION];
-    FPF locx; /* Local for x number */
+    FPFC locx; /* Local for x number */
 
     /*
     ** As with preceding function, the following switch
@@ -860,14 +860,14 @@ void DivideFPF(FPF* x, FPF* y, FPF* z)
         case NAN_SUBNORMAL:
         case NAN_NORMAL:
         case NAN_INFINITY:
-            memcpy((void*)z, (void*)x, sizeof(FPF));
+            memcpy((void*)z, (void*)x, sizeof(FPFC));
             break;
 
         case ZERO_NAN:
         case SUBNORMAL_NAN:
         case NORMAL_NAN:
         case INFINITY_NAN:
-            memcpy((void*)z, (void*)y, sizeof(FPF));
+            memcpy((void*)z, (void*)y, sizeof(FPFC));
             break;
 
         case SUBNORMAL_SUBNORMAL:
@@ -878,7 +878,7 @@ void DivideFPF(FPF* x, FPF* y, FPF* z)
             ** Make local copy of x number, since we'll be
             ** altering it in the process of dividing.
             */
-            memcpy((void*)&locx, (void*)x, sizeof(FPF));
+            memcpy((void*)&locx, (void*)x, sizeof(FPFC));
 
             /*
             ** Check for unnormal zero arguments
@@ -952,7 +952,7 @@ void DivideFPF(FPF* x, FPF* y, FPF* z)
     */
     RoundFPF(z);
 }
-void LongLongToFPF(FPF* dest, LLONG_TYPE myllong)
+void LongLongToFPF(FPFC* dest, LLONG_TYPE myllong)
 {
     int i;       /* Index */
     uf16 myword; /* Used to hold converted stuff */
@@ -1007,7 +1007,7 @@ void LongLongToFPF(FPF* dest, LLONG_TYPE myllong)
     normalize(dest);
     return;
 }
-void UnsignedLongLongToFPF(FPF* dest, LLONG_TYPE myllong)
+void UnsignedLongLongToFPF(FPFC* dest, LLONG_TYPE myllong)
 {
     int i;       /* Index */
     uf16 myword; /* Used to hold converted stuff */
@@ -1055,11 +1055,11 @@ void UnsignedLongLongToFPF(FPF* dest, LLONG_TYPE myllong)
  * we are using real floating point here but not depending on the format
  */
 #define LB2_10 (M_LN10 / M_LN2)
-int FPFTensExponent(FPF* value) { return (int)((float)value->exp / LB2_10); }
+int FPFTensExponent(FPFC* value) { return (int)((float)value->exp / LB2_10); }
 /* multiply by a power of ten */
-void FPFMultiplyPowTen(FPF* value, int power)
+void FPFMultiplyPowTen(FPFC* value, int power)
 {
-    FPF temp, mul;
+    FPFC temp, mul;
     int i;
     if (!tensTab[0].mantissa[0])
         FPFInit();
@@ -1108,7 +1108,7 @@ void FPFMultiplyPowTen(FPF* value, int power)
     mul = temp;
     while (power)
     {
-        FPF internal;
+        FPFC internal;
         if (power & 1)
         {
             MultiplyFPF(value, &mul, &internal);
@@ -1136,7 +1136,7 @@ void FPFMultiplyPowTen(FPF* value, int power)
 **  conversion.  It should be more than enough for programmers
 **  to determine whether the package is properly ported.
 */
-char* FPFToString(char* dest, FPF* src)
+char* FPFToString(char* dest, FPFC* src)
 {
     char* old = dest;
     if (src->type == IFPF_IS_NAN)
@@ -1160,7 +1160,7 @@ char* FPFToString(char* dest, FPF* src)
     else
     {
         uf16 mantissa[INTERNAL_FPF_PRECISION];
-        FPF temp = *src;
+        FPFC temp = *src;
         int power = FPFTensExponent(&temp);
         uf16 carry;
         int val, val1, i, j, c;
@@ -1252,9 +1252,9 @@ char* FPFToString(char* dest, FPF* src)
     return old;
 }
 
-LLONG_TYPE FPFToLongLong(FPF* src)
+LLONG_TYPE FPFToLongLong(FPFC* src)
 {
-    FPF stemp = *src;
+    FPFC stemp = *src;
     LLONG_TYPE temp;
     uf16 tmant[INTERNAL_FPF_PRECISION];
     int i;
@@ -1309,7 +1309,7 @@ LLONG_TYPE FPFToLongLong(FPF* src)
                     return LONG_MAX;
             if (stemp.exp < 0)
                 return 0;
-            while (exp++ != 32)
+            while (stemp.exp++ != 32)
             {
                 uf16 carry = 0;
                 ShiftMantRight1(&carry, tmant);
@@ -1327,7 +1327,7 @@ LLONG_TYPE FPFToLongLong(FPF* src)
     }
     return 0;
 }
-int FPFToFloat(unsigned char* dest, FPF* src)
+int FPFToFloat(unsigned char* dest, FPFC* src)
 {
     uf32 val;
     FPFTruncate(src, 24, 128, -126);
@@ -1383,7 +1383,7 @@ int FPFToFloat(unsigned char* dest, FPF* src)
     }
     return 1;
 }
-int FPFToDouble(unsigned char* dest, FPF* src)
+int FPFToDouble(unsigned char* dest, FPFC* src)
 {
     uf32 val[2];
     FPFTruncate(src, 53, 1024, -1022);
@@ -1468,7 +1468,7 @@ int FPFToDouble(unsigned char* dest, FPF* src)
     }
     return 1;
 }
-int FPFToLongDouble(unsigned char* dest, FPF* src)
+int FPFToLongDouble(unsigned char* dest, FPFC* src)
 {
     uf32 val[3];
     FPFTruncate(src, 64, 16384, -16382);
@@ -1563,7 +1563,7 @@ int FPFToLongDouble(unsigned char* dest, FPF* src)
     }
     return 1;
 }
-int LongDoubleToFPF(FPF* dest, unsigned char* src)
+int LongDoubleToFPF(FPFC* dest, unsigned char* src)
 {
     int i, exp;
     if (BigEndian)
@@ -1611,7 +1611,7 @@ int LongDoubleToFPF(FPF* dest, unsigned char* src)
     }
     return 1;
 }
-void FPFTruncate(FPF* value, int bits, int maxexp, int minexp)
+void FPFTruncate(FPFC* value, int bits, int maxexp, int minexp)
 {
     switch (value->type)
     {
@@ -1716,7 +1716,7 @@ void main()
     float f;
     double d;
     long double l;
-    FPF one, two, three;
+    FPFC one, two, three;
     int val;
     LLONG_TYPE aa;
     LongLongToFPF(&one, -1976543);

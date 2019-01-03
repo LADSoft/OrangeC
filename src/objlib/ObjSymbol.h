@@ -42,7 +42,7 @@ class ObjSymbol : public ObjWrapper
     // clang-format on
     ObjSymbol(const ObjString Name, eType Type, ObjInt Index) :
         name(Name),
-        offset(0),
+        offset(nullptr),
         index(Index),
         type(Type),
         baseType(nullptr),

@@ -29,14 +29,16 @@
 SECTION code CLASS=CODE USE32
 
 _strpbrk:
-    mov	ecx,[esp + 4]
+	push ebp
+	mov ebp, esp
+    mov	ecx,[ebp + 8]
     dec ecx
 lp:
     inc	ecx
     mov	al,[ecx]
     or	al,al
     je	short ex1
-    mov	edx,[esp + 8]
+    mov	edx,[ebp + 12]
     dec edx
 lp1:
     inc	edx
@@ -47,7 +49,9 @@ lp1:
 ex2:
     mov eax,ecx
 exit:
+    pop ebp
     ret
 ex1:
     sub	eax,eax
+	pop ebp
     ret

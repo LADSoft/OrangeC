@@ -118,7 +118,7 @@ bool RuleList::HasCommands()
 }
 bool RuleList::Add(Rule* rule, bool Double)
 {
-    if (rules.size() && Double != doubleColon)
+    if (!rules.empty() && Double != doubleColon)
         return false;
     rules.push_back(rule);
     return true;
@@ -133,7 +133,7 @@ void RuleList::SecondaryEval()
 bool RuleList::IsUpToDate()
 {
     bool rv = true;
-    for (std::list<Rule*>::iterator it = rules.begin(); it != rules.end() && rv; ++it)
+    for (auto it = rules.begin(); it != rules.end() && rv; ++it)
         rv &= (*it)->IsUpToDate();
     return rv;
 }
@@ -141,7 +141,7 @@ void RuleList::SetBuilt()
 {
     isBuilt = true;
     std::string working = relatedPatternRules;
-    while (working.size())
+    while (!working.empty())
     {
         std::string temp = Eval::ExtractFirst(working, " ");
         RuleList* rl = RuleContainer::Instance()->Lookup(temp);
@@ -212,7 +212,7 @@ bool RuleContainer::OnList(const std::string& goal, char* what)
     RuleList* rl = Lookup(what);
     if (rl)
     {
-        for (RuleList::iterator it = rl->begin(); !rv && it != rl->end(); ++it)
+        for (auto it = rl->begin(); !rv && it != rl->end(); ++it)
         {
             std::string value = (*it)->GetPrerequisites();
             rv = ScanList(value, goal);
@@ -227,7 +227,7 @@ bool RuleContainer::NoList(char* what)
     if (rl)
     {
         rv = true;
-        for (RuleList::iterator it = rl->begin(); rv && it != rl->end(); ++it)
+        for (auto it = rl->begin(); rv && it != rl->end(); ++it)
         {
             if (Eval::ExtractFirst((*it)->GetPrerequisites(), " ") != "")
             {
@@ -241,7 +241,7 @@ bool RuleContainer::ScanList(const std::string& v, const std::string& goal)
 {
     std::string value = v;
     bool rv = false;
-    while (value.size() && !rv)
+    while (!value.empty() && !rv)
     {
         size_t start;
         size_t span;

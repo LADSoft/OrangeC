@@ -27,7 +27,7 @@
 #include "LinkRegionFileSpec.h"
 #include "UTF8.h"
 #include <fstream>
-#include <ctype.h>
+#include <cctype>
 #include <iostream>
 bool LinkNameLogic::ParseItem::Matches(const std::string& name)
 {
@@ -80,7 +80,7 @@ void LinkNameLogic::ParseOut(std::string spec)
 {
     top = ParseOutOr(spec);
     if (!top)
-        std::cout << "Warning: region specifier '" << spec.c_str() << "' is invalid" << std::endl;
+        std::cout << "Warning: region specifier '" << spec << "' is invalid" << std::endl;
 }
 LinkNameLogic::ParseItem* LinkNameLogic::ParseOutOr(std::string& spec)
 {
@@ -90,7 +90,7 @@ LinkNameLogic::ParseItem* LinkNameLogic::ParseOutOr(std::string& spec)
     {
         spec.erase(0, n);
     }
-    while (rv && spec.size() && spec[0] == '|')
+    while (rv && !spec.empty() && spec[0] == '|')
     {
         spec.erase(0, 1);
         ParseItem* right = ParseOutAnd(spec);
@@ -115,7 +115,7 @@ LinkNameLogic::ParseItem* LinkNameLogic::ParseOutAnd(std::string& spec)
     {
         spec.erase(0, n);
     }
-    while (rv && spec.size() && spec[0] == '&')
+    while (rv && !spec.empty() && spec[0] == '&')
     {
         spec.erase(0, 1);
         ParseItem* right = ParseOutAnd(spec);
@@ -141,7 +141,7 @@ LinkNameLogic::ParseItem* LinkNameLogic::ParseOutNot(std::string& spec)
     {
         spec.erase(0, n);
     }
-    while (spec.size() && spec[0] == '!')
+    while (!spec.empty() && spec[0] == '!')
     {
         spec.erase(0, 1);
         invert = !invert;
@@ -177,14 +177,14 @@ LinkNameLogic::ParseItem* LinkNameLogic::ParseOutPrimary(std::string& spec)
         {
             spec.erase(0, n);
         }
-        if (!spec.size() || spec[0] != ')')
+        if (spec.empty() || spec[0] != ')')
             return nullptr;
         spec.erase(0, 1);
         return rv;
     }
     char buf[4096], *q = buf;
     n = 0;
-    while ((UTF8::IsAlnum(spec.c_str() + n) || spec[n] == '*' || spec[n] == '?') && spec.size() > n)
+    while ((UTF8::IsAlnum(spec[n]) || spec[n] == '*' || spec[n] == '?') && spec.size() > n)
     {
         int v = UTF8::CharSpan(spec.c_str() + n);
         for (int i = 0; i < v && spec.size() >= v + n; i++)

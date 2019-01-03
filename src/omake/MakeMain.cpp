@@ -41,12 +41,6 @@
 #include <stdio.h>
 #include <algorithm>
 
-#ifdef OPENWATCOM
-namespace std
-{
-ios& right(ios& in) { return in; }
-}  // namespace std
-#endif
 CmdSwitchParser MakeMain::switchParser;
 CmdSwitchCombineString MakeMain::specifiedFiles(switchParser, 'f', ' ');
 CmdSwitchBool MakeMain::displayOnly(switchParser, 'n');
@@ -242,7 +236,7 @@ void MakeMain::SetMakeFlags()
     {
         vals += std::string(" -O") + jobOutputMode.GetValue();
     }
-    if (includes.GetValue().size())
+    if (!includes.GetValue().empty())
     {
         vals += "\"-I" + includes.GetValue() + "\"";
     }
@@ -251,7 +245,7 @@ void MakeMain::SetMakeFlags()
     vals = "";
     for (int i = 0; i < defines.GetCount(); i++)
     {
-        if (vals.size())
+        if (!vals.empty())
             vals += " ";
         const CmdSwitchDefine::define* def = defines.GetValue(i);
         vals += "\"/D" + def->name + "=" + def->value + "\"";
@@ -277,12 +271,16 @@ void MakeMain::LoadJobArgs()
         else if (jobOutputMode.GetValue() == "recurse")
             outputType = o_recurse;
         else
-            Utils::fatal((std::string("Unknown output mode: ") + jobOutputMode.GetValue()).c_str());
+            Utils::fatal((std::string("Unknown output mode: ") + jobOutputMode.GetValue()));
     }
 }
 void MakeMain::LoadEnvironment()
 {
+#ifdef GCCLINUX
+    char** env = 0;
+#else
     char** env = environ;
+#endif
     Variable::Origin origin;
     if (environOverride.GetValue())
         origin = Variable::o_environ_override;
@@ -340,27 +338,27 @@ void MakeMain::ShowRule(RuleList* ruleList)
 {
     for (auto rule : *ruleList)
     {
-        std::cout << ruleList->GetTarget().c_str() << (ruleList->GetDoubleColon() ? "::" : ":") << std::endl;
+        std::cout << ruleList->GetTarget() << (ruleList->GetDoubleColon() ? "::" : ":") << std::endl;
         std::cout << "\tPrerequisites:" << std::endl;
-        std::cout << "\t\t" << rule->GetPrerequisites().c_str() << std::endl;
+        std::cout << "\t\t" << rule->GetPrerequisites() << std::endl;
         std::cout << "\tOrder Prerequisites:" << std::endl;
-        std::cout << "\t\t" << rule->GetOrderPrerequisites().c_str() << std::endl;
+        std::cout << "\t\t" << rule->GetOrderPrerequisites() << std::endl;
         std::cout << "\tCommands:" << std::endl;
         Command* commands = rule->GetCommands();
         for (auto command : *rule->GetCommands())
         {
-            std::cout << "\t\t" << command.c_str() << std::endl;
+            std::cout << "\t\t" << command << std::endl;
         }
     }
     std::cout << "\tTargetVariables:" << std::endl;
-    for (RuleList::VariableIterator it = ruleList->VariableBegin(); it != ruleList->VariableEnd(); ++it)
+    for (auto it = ruleList->VariableBegin(); it != ruleList->VariableEnd(); ++it)
     {
-        std::cout << std::setw(25) << std::setfill(' ') << std::right << (*it->first).c_str();
+        std::cout << std::setw(25) << std::setfill(' ') << std::right << (*it->first);
         if (it->second->GetFlavor() == Variable::f_recursive)
             std::cout << " =  ";
         else
             std::cout << " := ";
-        std::cout << it->second->GetValue().c_str() << std::endl;
+        std::cout << it->second->GetValue() << std::endl;
     }
 }
 void MakeMain::ShowDatabase()
@@ -368,12 +366,12 @@ void MakeMain::ShowDatabase()
     std::cout << "Variables:" << std::endl;
     for (auto var : *VariableContainer::Instance())
     {
-        std::cout << std::setw(25) << std::setfill(' ') << std::right << (*var.first).c_str();
+        std::cout << std::setw(25) << std::setfill(' ') << std::right << (*var.first);
         if (var.second->GetFlavor() == Variable::f_recursive)
             std::cout << " =  ";
         else
             std::cout << " := ";
-        std::cout << var.second->GetValue().c_str() << std::endl;
+        std::cout << var.second->GetValue() << std::endl;
     }
     std::cout << std::endl << "Explicit rules:" << std::endl;
     for (auto rule : *RuleContainer::Instance())
@@ -381,7 +379,7 @@ void MakeMain::ShowDatabase()
         ShowRule(rule.second);
     }
     std::cout << std::endl << "Implicit rules:" << std::endl;
-    for (RuleContainer::ImplicitIterator it = RuleContainer::Instance()->ImplicitBegin();
+    for (auto it = RuleContainer::Instance()->ImplicitBegin();
          it != RuleContainer::Instance()->ImplicitEnd(); ++it)
     {
         ShowRule(*it);
@@ -399,7 +397,7 @@ void MakeMain::SetTreePath(std::string& files)
         do
         {
             path = wd.substr(0, pos + 1) + files;
-            std::fstream check(path.c_str(), std::ios::in);
+            std::fstream check(path, std::ios::in);
             if (!check.fail())
             {
                 found = true;
@@ -413,7 +411,7 @@ void MakeMain::SetTreePath(std::string& files)
                     path = "";
             }
         } while (!found && pos != std::string::npos);
-        if (path.size())
+        if (!path.empty())
         {
             files = path;
             SetVariable("_TREEROOT", files, Variable::o_command_line, false);
@@ -456,22 +454,22 @@ int MakeMain::Run(int argc, char** argv)
     char* cpath = getenv("CPATH");
     if (cpath)
     {
-        if (includes.GetValue().size())
+        if (!includes.GetValue().empty())
             includes += ";";
         includes += cpath;
     }
-    if (dir.GetValue().size())
+    if (!dir.GetValue().empty())
     {
         cwd = OS::GetWorkingDir();
         if (!OS::SetWorkingDir(dir.GetValue()))
         {
-            std::cout << "Cannot set working dir to: " << dir.GetValue().c_str() << std::endl;
+            std::cout << "Cannot set working dir to: " << dir.GetValue() << std::endl;
             return 2;
         }
     }
     if (printDir.GetValue())
     {
-        std::cout << OS::GetWorkingDir().c_str() << std::endl;
+        std::cout << OS::GetWorkingDir() << std::endl;
     }
 #ifdef OPENWATCOM
     else
@@ -519,7 +517,7 @@ int MakeMain::Run(int argc, char** argv)
         std::string goals;
         for (int i = 1; i < argc; i++)
         {
-            if (goals.size())
+            if (!goals.empty())
                 goals += " ";
             goals += argv[i];
         }
@@ -556,7 +554,7 @@ int MakeMain::Run(int argc, char** argv)
         ruleList->Add(rule, false);
         *RuleContainer::Instance() += ruleList;
         std::string files = specifiedFiles.GetValue();
-        if (!files.size())
+        if (files.empty())
         {
             if (treeBuild.GetValue())
                 files = "treetop.mak";
@@ -624,10 +622,10 @@ int MakeMain::Run(int argc, char** argv)
                 for (auto r1 : *r)
                 {
                     auto p = r1->GetPrerequisites();
-                    while (p.size())
+                    while (!p.empty())
                     {
                         auto s = Eval::ExtractFirst(p, " ");
-                        if (s.size())
+                        if (!s.empty())
                         {
                             maker.AddGoal(s);
                         }
@@ -653,13 +651,13 @@ int MakeMain::Run(int argc, char** argv)
             rv = 2;
         }
     }
-    if (dir.GetValue().size())
+    if (!dir.GetValue().empty())
     {
         OS::SetWorkingDir(cwd);
     }
     if (printDir.GetValue())
     {
-        std::cout << OS::GetWorkingDir().c_str() << std::endl;
+        std::cout << OS::GetWorkingDir() << std::endl;
     }
 #ifdef OPENWATCOM
     else

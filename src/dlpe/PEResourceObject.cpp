@@ -26,13 +26,12 @@
 #include "PEObject.h"
 #include "ResourceContainer.h"
 #include "Utils.h"
-#include "windows.h"
-#include <time.h>
-#include <string.h>
+#include <ctime>
+#include <cstring>
 
 void PEResourceObject::Setup(ObjInt& endVa, ObjInt& endPhys)
 {
-    if (resources.size() == 0)
+    if (resources.empty())
         return;
     if (!resources.LoadFiles())
         Utils::fatal("Error loading resources");
@@ -125,7 +124,7 @@ void PEResourceObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     {
         types[i].subdir_or_data = SUBDIR | (((unsigned char*)dir) - data);
         types[i++].rva_or_id = RVA | ((unsigned char*)name - data);
-        const WCHAR* p = type.first.c_str();
+        const wchar_t* p = type.first.c_str();
         *name++ = type.first.size();
         while (*p)
         {
@@ -142,7 +141,7 @@ void PEResourceObject::Setup(ObjInt& endVa, ObjInt& endPhys)
         {
             ids[j].subdir_or_data = SUBDIR | ((unsigned char*)dir - data);
             ids[j++].rva_or_id = RVA | ((unsigned char*)name - data);
-            const WCHAR* p = nameId.first.c_str();
+            const wchar_t* p = nameId.first.c_str();
             *name++ = nameId.first.size();
             while (*p)
             {
@@ -196,7 +195,7 @@ void PEResourceObject::Setup(ObjInt& endVa, ObjInt& endPhys)
         {
             ids[j].subdir_or_data = SUBDIR | ((unsigned char*)dir - data);
             ids[j++].rva_or_id = RVA | ((unsigned char*)name - data);
-            const WCHAR* p = namedId.first.c_str();
+            const wchar_t* p = namedId.first.c_str();
             *name++ = namedId.first.size();
             while (*p)
             {

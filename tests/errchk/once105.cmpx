@@ -1,3 +1,0 @@
-Warning(105)  errparam.c(3):  Function should return a value in function err_1
-Warning( 73)  errparam.c(5):  Missing type in declaration
-Warning( 73)  errparam.c(8):  Missing type in declaration

@@ -67,6 +67,7 @@ class Lexer
         // must be after punctuation
         ABSOLUTE,
         ALIGN,
+        BITS,
         CLASS,
         DB,
         DD,
@@ -92,6 +93,7 @@ class Lexer
         TIMES,
         USE16,
         USE32,
+        USE64,
         VIRTUAL
     };
     Lexer(PreProcessor& PP);

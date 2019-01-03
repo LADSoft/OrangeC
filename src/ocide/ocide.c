@@ -71,6 +71,7 @@ extern enum DebugState uState;
 extern PROJECTITEM* workArea;
 extern BOOL stopCCThread;
 extern HWND hwndGeneralProps;
+extern PROJECTITEM* activeProject;
 
 void ApplyDialogFont(HWND hwnd);
 char* getcwd(char* __buf, int __buflen);  // can't include dir.h because it defines eof...
@@ -443,7 +444,11 @@ static DWORD LoadFirstWorkArea(void* v)
             char cwd[256];
             int munged = FALSE;
             StringToProfile("FILEDIR", (char*)getcwd(cwd, 256));
-            for (i = 1; i < argc; i++)
+            if (argc == 2 &&strstr(argv[1], ".cwa"))
+            {
+                LoadWorkArea(argv[1], TRUE);
+            }
+            else for (i = 1; i < argc; i++)
             {
                 DWINFO info;
                 char* p = strrchr(argv[i], '\\');
@@ -815,18 +820,25 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
                     break;
                 case IDM_STEPIN:
                     if (uState == notDebugging)
-                        dbgRebuildMain(wParam);
+                        dbgRebuildMain(wParam, activeProject);
                     else if (uState != notDebugging && uState != Running)
                     {
-                        if ((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwndASM)
+                        if (hwndASM && (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwndASM)
                             StepFromASM = TRUE;
                         StepIn(dbe);
                         if (hwndASM)
                             InvalidateRect(hwndASM, 0, 1);
                     }
                     return 0;
+                case IDM_RUNPROJ:
+                case IDM_RUNNODEBUGPROJ:
+                    if (uState == notDebugging)
+                    {
+                        PostDIDMessage(DID_PROJWND, WM_COMMAND, wParam, 0);
+                    }
+                    break;
                 case IDM_RUN:
-                    if ((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwndASM)
+                    if (hwndASM && (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwndASM)
                         StepFromASM = TRUE;
                     else
                         StepFromASM = FALSE;
@@ -853,10 +865,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
                     break;
                 case IDM_STEPOVER:
                     if (uState == notDebugging)
-                        dbgRebuildMain(wParam);
+                        dbgRebuildMain(wParam, activeProject);
                     else if (uState != notDebugging && uState != Running)
                     {
-                        if ((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwndASM)
+                        if (hwndASM && (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwndASM)
                             StepFromASM = TRUE;
                         StepOver(dbe);
                         if (hwndASM)
@@ -865,10 +877,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
                     return 0;
                 case IDM_STEPOUT:
                     if (uState == notDebugging)
-                        dbgRebuildMain(wParam);
+                        dbgRebuildMain(wParam, activeProject);
                     else if (uState != notDebugging && uState != Running)
                     {
-                        if ((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwndASM)
+                        if (hwndASM && (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwndASM)
                             StepFromASM = TRUE;
                         StepOut(dbe);
                         if (hwndASM)
@@ -876,7 +888,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
                     }
                     return 0;
                 case IDM_RUNTO:
-                    if ((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwndASM)
+                    if (hwndASM && (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwndASM)
                         StepFromASM = TRUE;
                     if (RunTo(dbe))
                     {
@@ -955,7 +967,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
                     /*
                     {
                         MENUITEMINFO info;
-                    
+                    
                         info.cbSize = sizeof(MENUITEMINFO);
                         info.fMask = MIIM_STATE;
                         GetMenuItemInfo(hMenuMain, IDM_VIEWASM, MF_BYCOMMAND, &info);

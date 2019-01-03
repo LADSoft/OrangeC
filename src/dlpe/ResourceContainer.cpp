@@ -25,9 +25,9 @@
 
 #include "ResourceContainer.h"
 #include "Utils.h"
-#include <windows.h>
 #include <fstream>
 #include <iostream>
+#include <cstring>
 
 unsigned char ResourceContainer::resourceHeader[32] = {0, 0, 0, 0, 0x20, 0, 0, 0, 0xff, 0xff, 0, 0, 0xff, 0xff, 0, 0,
                                                        0, 0, 0, 0, 0,    0, 0, 0, 0,    0,    0, 0, 0,    0,    0, 0};
@@ -55,7 +55,7 @@ bool ResourceContainer::LoadFiles()
     {
         if (!LoadFile(name))
         {
-            std::cout << "Error loading resource file '" << name.c_str() << "'" << std::endl;
+            std::cout << "Error loading resource file '" << name << "'" << std::endl;
             rv = false;
         }
     }
@@ -70,7 +70,7 @@ int ResourceContainer::GetId(unsigned short* hdrdata, int& i, int& id, std::wstr
     }
     else
     {
-        WCHAR buf[65535];
+        wchar_t buf[65535];
         int k = 0;
         while (hdrdata[i] != 0)
         {
@@ -83,7 +83,7 @@ int ResourceContainer::GetId(unsigned short* hdrdata, int& i, int& id, std::wstr
 }
 bool ResourceContainer::LoadFile(const std::string& name)
 {
-    std::fstream in(name.c_str(), std::ios::in | std::ios::binary);
+    std::fstream in(name, std::ios::in | std::ios::binary);
     if (!in.is_open())
         return false;
     unsigned char buf[sizeof(resourceHeader)];
@@ -144,9 +144,9 @@ void ResourceContainer::InsertResource(int typeId, std::wstring type, int nameId
     n.data = data;
     n.length = len;
     n.language = language;
-    if (type.size() == 0)
+    if (type.empty())
     {
-        if (name.size() == 0)
+        if (name.empty())
         {
             d = numberedTypes[typeId].numberedIds[nameId];
             numberedTypes[typeId].numberedIds[nameId] = n;
@@ -159,7 +159,7 @@ void ResourceContainer::InsertResource(int typeId, std::wstring type, int nameId
     }
     else
     {
-        if (name.size() == 0)
+        if (name.empty())
         {
             d = namedTypes[type].numberedIds[nameId];
             namedTypes[type].numberedIds[nameId] = n;

@@ -796,6 +796,9 @@ static void iop_setge(QUAD* q)
 
 static void iop_parm(QUAD* q)
 {
+    // for fastcall, the moves generated before the push are sufficient.
+    if (q->fastcall)
+        return;
     if (chosenAssembler->gen->asm_parm)
         chosenAssembler->gen->asm_parm(q);
     if (!icdFile)
@@ -1692,7 +1695,6 @@ void gen_importThunk(SYMBOL* func)
 }
 void gen_vc1(SYMBOL* func)
 {
-    gen_strlab(func);
     if (chosenAssembler->gen->gen_vc1)
         chosenAssembler->gen->gen_vc1(func);
     if (!icdFile)
@@ -1751,7 +1753,7 @@ void put_staticlabel(long label) { put_label(label); }
 
 /*-------------------------------------------------------------------------*/
 
-void genfloat(FPF* val)
+void genfloat(FPFC* val)
 /*
  * Output a float value
  */
@@ -1778,7 +1780,7 @@ void genfloat(FPF* val)
 
 /*-------------------------------------------------------------------------*/
 
-void gendouble(FPF* val)
+void gendouble(FPFC* val)
 /*
  * Output a double value
  */
@@ -1805,7 +1807,7 @@ void gendouble(FPF* val)
 
 /*-------------------------------------------------------------------------*/
 
-void genlongdouble(FPF* val)
+void genlongdouble(FPFC* val)
 /*
  * Output a double value
  */
@@ -2730,10 +2732,13 @@ void putexterns(void)
         while (externList)
         {
             SYMBOL* sp = externList->data;
-            if (!sp->ispure && (sp->dontinstantiate && sp->genreffed ||
-                                !sp->inlineFunc.stmt && !sp->init &&
-                                    (sp->parentClass && sp->genreffed || sp->genreffed && sp->storage_class == sc_external)) &
-                                   !sp->noextern)
+            if (!sp->ispure &&
+                (sp->dontinstantiate && sp->genreffed ||
+                 !sp->inlineFunc.stmt && !sp->init &&
+                     (isfunction(sp->tp) || !isfunction(sp->tp) && sp->storage_class != sc_global &&
+                                                sp->storage_class != sc_static && sp->storage_class != sc_localstatic) &&
+                     (sp->parentClass && sp->genreffed || sp->genreffed && sp->storage_class == sc_external)) &
+                    !sp->noextern)
             {
                 notyet = put_exfunc(sp, notyet);
                 sp->genreffed = FALSE;

@@ -27,10 +27,11 @@
 
 #include "ObjFactory.h"
 #include "ObjIeee.h"
-#include <stdio.h>
+#include <cstdio>
 #include <stack>
-#include <ctype.h>
-#include <stdio.h>
+#include <cctype>
+#include <cstdio>
+#include <algorithm>
 void DebugThrowHook() {}
 ObjIeeeAscii::ParseData ObjIeeeAscii::parseData[] = {
     ObjIeeeAscii::ParseData("LD", &ObjIeeeAscii::Data),
@@ -227,7 +228,7 @@ ObjExpression* ObjIeeeAscii::GetExpression(const char* buffer, int* pos)
 }
 bool ObjIeeeAscii::Parse(const char* buffer, eParseType ParseType)
 {
-    if (!parseTree.size())
+    if (parseTree.empty())
     {
         ParseData* parser = &parseData[0];
         for (int i = 0; i < sizeof(parseData) / sizeof(parseData[0]); i++)
@@ -236,7 +237,7 @@ bool ObjIeeeAscii::Parse(const char* buffer, eParseType ParseType)
             parser++;
         }
     }
-    std::map<const char*, ObjIeeeAscii::ParseData*, ObjIeeeAscii::ParseDataLT>::iterator it = parseTree.find(buffer);
+    auto it = parseTree.find(buffer);
     if (it != parseTree.end())
     {
         return it->second->Dispatch(this, buffer, ParseType);
@@ -671,7 +672,7 @@ void ObjIeeeAscii::DefineStruct(ObjType::eType stype, int index, const char* buf
         // chaining to next field definition?
         if (fieldTypeBase->GetType() == ObjType::eField)
         {
-            for (ObjType::FieldIterator it = fieldTypeBase->FieldBegin(); it != fieldTypeBase->FieldEnd(); ++it)
+            for (auto it = fieldTypeBase->FieldBegin(); it != fieldTypeBase->FieldEnd(); ++it)
                 type->Add(*it);
             break;
         }

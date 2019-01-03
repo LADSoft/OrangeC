@@ -24,12 +24,15 @@
  */
 
 #include "ObjSourceFile.h"
-#include <io.h>
-#include <fcntl.h>
-#include <time.h>
+#ifndef GCCLINUX
+#    include <io.h>
+#    include <fcntl.h>
+#endif
+#include <ctime>
 #include <sys/stat.h>
 void ObjSourceFile::RetrieveFileTime(const ObjString name)
 {
+#ifndef GCCLINUX
     //    struct stat xxstat;
     //    stat(const_cast<char *>(name.c_str()), &xxstat);
     //	struct tm *tmx = localtime(&xxstat.st_mtime);
@@ -43,4 +46,5 @@ void ObjSourceFile::RetrieveFileTime(const ObjString name)
         struct tm* tmx = localtime(&data.time_write);
         fileTime = *tmx;
     }
+#endif
 }

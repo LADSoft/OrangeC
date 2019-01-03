@@ -148,7 +148,7 @@ AsmExprNode* AsmExpr::Eval(AsmExprNode* n, int pc)
             {
                 rv = Eval(num, pc);
             }
-            else
+            else if (pc != -1)
             {
                 auto it = section->Lookup(n->label);
                 if (it != section->GetLabels().end())
@@ -160,10 +160,17 @@ AsmExprNode* AsmExpr::Eval(AsmExprNode* n, int pc)
                     rv = new AsmExprNode(*n);
                 }
             }
+            else
+            {
+                rv = new AsmExprNode(*n);
+            }
             break;
         }
         case AsmExprNode::PC:
-            rv = new AsmExprNode(pc);
+            if (pc == -1)
+                rv = new AsmExprNode(*n);
+            else
+                rv = new AsmExprNode(pc);
             break;
         case AsmExprNode::SECTBASE:
             rv = new AsmExprNode(0);
@@ -415,8 +422,9 @@ AsmExprNode* AsmExpr::Eval(AsmExprNode* n, int pc)
             }
             else if (xleft->GetType() == AsmExprNode::FVAL)
             {
-                fv -= xleft->fval;
-                rv = new AsmExprNode(fv);
+                xleft->fval.Negate();
+                rv = xleft;
+                xleft = nullptr;
             }
             else
             {
@@ -541,11 +549,13 @@ AsmExprNode* AsmExpr::Eval(AsmExprNode* n, int pc)
 bool AsmExprNode::IsAbsoluteInternal(int& n)
 {
     bool rv = true;
+    ;
     if (type == LABEL)
     {
-        auto it = AsmExpr::GetSection()->Lookup(label);
         AsmExprNode* num = AsmExpr::GetEqu(label);
         if (!num)
+        {
+            auto it = AsmExpr::GetSection()->Lookup(label);
             if (it == AsmExpr::GetSection()->GetLabels().end())
             {
                 rv = false;
@@ -554,6 +564,7 @@ bool AsmExprNode::IsAbsoluteInternal(int& n)
             {
                 n++;
             }
+        }
         else
             rv = num->IsAbsoluteInternal(n);
     }

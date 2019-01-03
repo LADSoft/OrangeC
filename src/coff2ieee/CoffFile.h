@@ -23,7 +23,7 @@
  *
  */
 
-#ifndef COFFFILE_h
+#ifndef COFFFILE_H
 #    define COFFFILE_H
 
 #    include "CoffHeader.h"

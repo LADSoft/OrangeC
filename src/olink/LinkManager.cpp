@@ -78,17 +78,17 @@ void LinkManager::LoadExterns(ObjFile* file, ObjExpression* exp)
         if (exp->GetSymbol()->GetType() == ObjSymbol::eExternal)
         {
             LinkSymbolData test(file, exp->GetSymbol());
-            if (externals.find(&test) == externals.end())
+            auto it = publics.find(&test);
+            if (it != publics.end())
             {
-                auto it = publics.find(&test);
-                if (it != publics.end())
+                (*it)->SetUsed(true);
+            }
+            else
+            {
+                it = virtsections.find(&test);
+                if (it == virtsections.end() || !(*it)->GetUsed())
                 {
-                    (*it)->SetUsed(true);
-                }
-                else
-                {
-                    it = virtsections.find(&test);
-                    if (it == virtsections.end() || !(*it)->GetUsed())
+                    if (externals.find(&test) == externals.end())
                     {
                         LinkSymbolData* newSymbol = new LinkSymbolData(file, exp->GetSymbol());
                         externals.insert(newSymbol);

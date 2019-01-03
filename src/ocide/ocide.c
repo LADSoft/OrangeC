@@ -442,10 +442,10 @@ static DWORD LoadFirstWorkArea(void* v)
         {
             int i;
             char cwd[256];
-            char *ext ==;
-            if (argc == 2) ext = strrchr(argv[1], '.') + 1;
+            char *ext = NULL;
             int munged = FALSE;
             StringToProfile("FILEDIR", (char*)getcwd(cwd, 256));
+            if (argc == 2) ext = strrchr(argv[1], '.') + 1;
             if (ext && !strcasecmp(ext, "cwa"))
             {
                 LoadWorkArea(argv[1], TRUE);

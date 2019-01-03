@@ -23,181 +23,181 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="parse\beinterf.c">
+    <ClCompile Include="parse\beinterf.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\BROWSE.c">
+    <ClCompile Include="parse\BROWSE.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\ccmain.c">
+    <ClCompile Include="parse\ccmain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\constopt.c">
+    <ClCompile Include="parse\constopt.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\cpplookup.c">
+    <ClCompile Include="parse\cpplookup.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\debug.c">
+    <ClCompile Include="parse\debug.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\declare.c">
+    <ClCompile Include="parse\declare.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\declcpp.c">
+    <ClCompile Include="parse\declcpp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\expr.c">
+    <ClCompile Include="parse\expr.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\exprcpp.c">
+    <ClCompile Include="parse\exprcpp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\float.c">
+    <ClCompile Include="parse\float.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\help.c">
+    <ClCompile Include="parse\help.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\init.c">
+    <ClCompile Include="parse\init.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\INLINE.c">
+    <ClCompile Include="parse\INLINE.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\lex.c">
+    <ClCompile Include="parse\lex.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\LIST.c">
+    <ClCompile Include="parse\LIST.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\mangle.c">
+    <ClCompile Include="parse\mangle.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\osutil.c">
+    <ClCompile Include="parse\osutil.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\output.c">
+    <ClCompile Include="parse\output.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\stmt.c">
+    <ClCompile Include="parse\stmt.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\symtab.c">
+    <ClCompile Include="parse\symtab.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\types.c">
+    <ClCompile Include="parse\types.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\unmangle.c">
+    <ClCompile Include="parse\unmangle.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="middle\ialias.c">
+    <ClCompile Include="middle\ialias.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="middle\IBLOCK.c">
+    <ClCompile Include="middle\IBLOCK.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="middle\iconfl.c">
+    <ClCompile Include="middle\iconfl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="middle\ICONST.c">
+    <ClCompile Include="middle\ICONST.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="middle\IEXPR.c">
+    <ClCompile Include="middle\IEXPR.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="middle\IFLOW.c">
+    <ClCompile Include="middle\IFLOW.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="middle\iinvar.c">
+    <ClCompile Include="middle\iinvar.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="middle\ilazy.c">
+    <ClCompile Include="middle\ilazy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="middle\ilive.c">
+    <ClCompile Include="middle\ilive.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="middle\ilocal.c">
+    <ClCompile Include="middle\ilocal.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="middle\iloop.c">
+    <ClCompile Include="middle\iloop.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="middle\ioptutil.c">
+    <ClCompile Include="middle\ioptutil.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="middle\iout.c">
+    <ClCompile Include="middle\iout.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="middle\IPEEP.c">
+    <ClCompile Include="middle\IPEEP.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="middle\irc.c">
+    <ClCompile Include="middle\irc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="middle\ireshape.c">
+    <ClCompile Include="middle\ireshape.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="middle\irewrite.c">
+    <ClCompile Include="middle\irewrite.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="middle\issa.c">
+    <ClCompile Include="middle\issa.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="middle\ISTMT.c">
+    <ClCompile Include="middle\ISTMT.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="middle\istren.c">
+    <ClCompile Include="middle\istren.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="preproc\ppexpr.c">
+    <ClCompile Include="preproc\ppexpr.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="preproc\PREPROC.c">
+    <ClCompile Include="preproc\PREPROC.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="x86\invoke.c">
+    <ClCompile Include="x86\invoke.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="x86\config.c">
+    <ClCompile Include="x86\config.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="x86\rewrite.c">
+    <ClCompile Include="x86\rewrite.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\util\winsystem.c">
+    <ClCompile Include="..\util\winsystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\cppbltin.c">
+    <ClCompile Include="parse\cppbltin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\declcons.c">
+    <ClCompile Include="parse\declcons.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\lambda.c">
+    <ClCompile Include="parse\lambda.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\rtti.c">
+    <ClCompile Include="parse\rtti.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\template.c">
+    <ClCompile Include="parse\template.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="middle\iinline.c">
+    <ClCompile Include="middle\iinline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\libcxx.c">
+    <ClCompile Include="parse\libcxx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\ccerr.c">
+    <ClCompile Include="parse\ccerr.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\property.c">
+    <ClCompile Include="parse\property.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\wseh.c">
+    <ClCompile Include="parse\wseh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="x86\beIntrins.cpp">
@@ -233,7 +233,7 @@
     <ClCompile Include="x86\x64stub.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\memory.c">
+    <ClCompile Include="parse\memory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\oasm\Section.cpp">
@@ -245,7 +245,7 @@
     <ClCompile Include="..\oasm\AsmLexer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\crc32.c">
+    <ClCompile Include="parse\crc32.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="x86\x64Parser.cpp">

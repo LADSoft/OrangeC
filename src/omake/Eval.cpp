@@ -158,9 +158,9 @@ std::string Eval::ExtractFirst(std::string& value, const std::string& seps)
 {
     StripLeadingSpaces(value);
     int n = value.size();
-    if (seps == " " && value[0] == '"')
+    if (seps == " " && (value[0] == '"' || value[0] == '\''))
     {
-        int m = value.find_first_of("\"", 1);
+        int m = value.find_first_of(value[0], 1);
         if (m != std::string::npos)
             n = m + 1;
     }
@@ -177,7 +177,7 @@ std::string Eval::ExtractFirst(std::string& value, const std::string& seps)
     std::string rv = value.substr(0, n);
     if (value.find_first_not_of(" \t", n) == std::string::npos)
         value.replace(0, value.size(), "");
-    else if (value[0] == '"' && seps == " ")
+    else if ((value[0] == '"' || value[0] == '\'') && seps == " ")
         value.replace(0, n, "");
     else
         value.replace(0, n + 1, "");

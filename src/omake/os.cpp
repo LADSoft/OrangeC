@@ -82,12 +82,6 @@ static std::string QuoteCommand(std::string command)
                 rv.append(slashcount * 2, L'\\');
                 break;
             }
-            else if (*it == L'"')
-            {
-                // escape all the backslashes and add a \"
-                rv.append(slashcount * 2 + 1, L'\\');
-                rv.push_back('"');
-            }
             else
             {
                 // no escape
